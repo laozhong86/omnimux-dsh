@@ -188,7 +188,7 @@ omnimux skill status
 /Users/x/Desktop/Project/OmniMux/cli/skill/<id>/SKILL.md
 ```
 
-不要把 skill 正文拷进 `tiktokdramacenter` 或 `short-drama-router`。
+不要把 skill 正文拷进 `omnimux-dsh` 或 `short-drama-router`。
 
 ## 视频方法论管线与字段交接
 

@@ -1,6 +1,6 @@
 # dsh-omnimux
 
-Public dsh bundle: OmniMux as the model and media plane.
+Execution hub for landing OmniMux on official dsh. Domain plugins (drama, later verticals) reuse this package. Third-party compatible APIs are configured here, not in each vertical. OmniMux-only paid APIs stay here because their logic lives in the OmniMux gateway.
 
 `ctx.omnimuxVideo.execute({ prompt, dest, duration, signal })` and `omnimux_video_submit` POST `/v1/video/generations`, poll, download the mp4.
 

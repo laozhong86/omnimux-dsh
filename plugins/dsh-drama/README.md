@@ -1,6 +1,6 @@
 # dsh-drama
 
-Disk contract for a short-drama project. Session logs are not the product store.
+First vertical on this repo's OmniMux × dsh line: open-source short-drama production (social-ops automation). Session logs are not the product store. Generate goes through the hub seam, not a private OmniMux client.
 
 Field list and error codes: `docs/contracts/series.md`.
 

@@ -1,6 +1,6 @@
-# tiktokdramacenter
+# omnimux-dsh
 
-Out-of-tree DeepSeek Harness bundles. Coding agents edit this tree. The product agent is `dsh --profile drama`.
+OmniMux landing on official DeepSeek Harness as out-of-tree plugins. Hub is `dsh-omnimux`. First vertical is short-drama (`dsh-drama`), the first social-ops automation solution. Coding agents edit this tree. The product agent is `dsh --profile drama`.
 
 ## Hard bounds
 
@@ -21,14 +21,15 @@ Out-of-tree DeepSeek Harness bundles. Coding agents edit this tree. The product 
 | `CONTEXT.md` | Terms, two-agent split, shot statuses |
 | `docs/capabilities.md` | Real / stub / absent |
 | `docs/contracts/series.md` | Disk fields + error codes |
-| `plugins/dsh-omnimux/` | OmniMux video execute + `omnimux_video_submit` |
-| `plugins/dsh-drama/` | `series/` domain + `drama_*` |
+| `plugins/dsh-omnimux/` | Execution hub: video execute + later OmniMux-only paid APIs |
+| `plugins/dsh-drama/` | First vertical: `series/` domain + `drama_*` |
 | `fixtures/demo-series/` | Keyless replay (2 episodes, 3 shots) |
 | `presets/drama/` | Product-agent persona + `short-drama` skill |
 | `.agents/skills/dsh-plugin-dev/` | How to change these plugins |
 | `.agents/skills/short-drama-router/` | Study index for other repos |
 | `.agents/skills/tiktok-drama-center/` | Human Drama Center SOP |
 | `docs/handoff-audit.md` | Stale-scaffold correction. Read if you still think `packages/drama-*` or phase letters are live. |
+| `docs/decisions/2026-08-14-execution-hub.md` | Confirmed hub vs domain split. Live code still uses `omnimuxVideo` until that doc's gap list is closed. |
 | `research/` | Extracts. Load only when changing positioning or platform SOP. |
 
 ## Package imports
@@ -50,6 +51,7 @@ Do not claim the `drama` profile works unless `dsh --profile drama --dump-config
 ## Pointers
 
 - Positioning: `research/dsh/POSITIONING.md`
+- Execution hub decision (2026-08-14): `docs/decisions/2026-08-14-execution-hub.md`
 - Extension facts: `research/dsh/EXTENSION.md`
 - OmniMux layers: `research/omnimux/PLUGIN.md`
 - Add a tool: `.agents/skills/dsh-plugin-dev/SKILL.md`

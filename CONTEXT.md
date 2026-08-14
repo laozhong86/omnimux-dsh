@@ -1,5 +1,7 @@
 # Domain
 
+This repo lands OmniMux on official dsh. `dsh-omnimux` is the execution hub. `dsh-drama` is the first vertical (short-drama production). Drama Center upload is a different skill.
+
 Two agents share this repo. Do not mix their jobs.
 
 | Agent | Lives in | Job |
@@ -36,7 +38,7 @@ A shot cannot become `generating` or `ready` if any `character_ids` entry is mis
 
 | Package | Owns | Does not own |
 |---|---|---|
-| `dsh-omnimux` | OmniMux as dsh provider + paid media jobs | `series/` files, Drama Center |
-| `dsh-drama` | `series/` contract and `drama_*` tools | OmniMux HTTP |
+| `dsh-omnimux` | Execution hub: media jobs, later OmniMux-only paid APIs, third-party compatible endpoints | `series/` files, Drama Center, social scheduling |
+| `dsh-drama` | `series/` contract and `drama_*` tools | Hub HTTP, OmniMux-only paid APIs |
 
 Field list: `docs/contracts/series.md`. What is real vs stub: `docs/capabilities.md`.
