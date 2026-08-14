@@ -161,7 +161,7 @@ dsh 不会替插件弹窗。提示只能是工具自己的结构化错误（比�
 
 下面这些**今天还是真的**，被本决策标为待改，不是已经落地：
 
-- `ctx.provide('omnimuxVideo')` / `get('omnimuxVideo')`，不是中性 `videoGenerate`
+- `ctx.provide('omnimuxVideo')` / `get('omnimuxVideo')`，不是中性 `videoGenerate`（缝改名须同步 `scripts/verify-cordis-propagate.mjs` 与 `docs/capabilities.md` 相关行；T8 闭环）
 - `AGENTS.md`：「Live generate belongs in `dsh-omnimux` (`ctx.omnimuxVideo`)」
 - `presets/drama/agent.cordis.yml` 仍写 generate 返回 stub（和 live 路径可能不一致）
 - 根 README 仍有「真出片还没接到 OmniMux」一类过期句（以 `docs/capabilities.md` 为准）

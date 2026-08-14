@@ -6,9 +6,9 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. Hub is `dsh
 
 - MUST NOT edit a sibling official `deepseek-harness/packages/` tree or open feature PRs upstream. Ship `dsh-plugin` packages and `dsh plugin add`.
 - MUST NOT put `series/` or Drama Center logic in `plugins/dsh-omnimux/`.
-- MUST NOT call OmniMux HTTP (or Gxgen / extra Seedance SDKs) from `plugins/dsh-drama/`.
+- `dsh-drama` MUST NOT import the hub, ship a brand-specific HTTP client, or store provider keys. Generate only consumes the neutral `videoGenerate` seam.
 - MUST NOT claim live video unless `drama_generate_shot` / `omnimux_video_submit` returned `mode: "live"`. `mode: "stub"` is a file copy.
-- Live generate belongs in `dsh-omnimux` (`ctx.omnimuxVideo`). `dsh-drama` only updates `series/`.
+- Provider HTTP + keys live in `dsh-omnimux` only; it provides the neutral seam `videoGenerate`. `dsh-drama` only updates `series/`.
 - MUST throw `DramaDomainError` from drama tools. MUST NOT return `{ ok: false }` as a successful tool value.
 - MUST NOT commit secrets. Inject with `omnimux tokens exec` or the process environment.
 - Product truth is `series/` on disk. Session logs are not the store.
