@@ -25,7 +25,7 @@ export function apply(ctx) {
       return executeOmnimuxVideo(req)
     },
   }
-  ctx.omnimuxVideo = api
+  ctx.provide('omnimuxVideo', api)
 
   ctx.tools.register({
     name: 'omnimux_video_submit',

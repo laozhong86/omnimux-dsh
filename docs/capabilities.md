@@ -4,12 +4,12 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 
 | Surface | Status | Evidence |
 |---|---|---|
-| `dsh plugin add ./plugins/dsh-omnimux` | **real** | bundle `dsh.bundle` + `apply()` |
+| `dsh plugin add ./plugins/dsh-omnimux` | **real** | 2026-08-14：`DSH_SRC=… pnpm dsh --profile drama --help` 启动不再 `provide` 崩溃；`scripts/verify-cordis-propagate.mjs` |
 | `dsh plugin add ./plugins/dsh-drama` | **real** | same |
 | `drama_project_status` | **real** | reads `series/` |
 | `drama_init_project` | **real** | creates empty `series/` |
 | `drama_upsert_series` / `drama_upsert_shot` / `drama_confirm_bible` | **real** | writes yaml/json |
-| `drama_generate_shot` | **unproven + stub** | stub copy works in unit tests. live 在真实 dsh 不可达：`dsh --profile drama` 启动失败（`cannot set property "omnimuxVideo" without provide`）；profile 只有 base + 两插件，没有 headless/web runner |
+| `drama_generate_shot` | **unproven + stub** | 服务已 `ctx.provide` / `ctx.get` 注入，boot 通过，cordis 传播见 `scripts/verify-cordis-propagate.mjs`；经真实 dsh 会话端到端出片仍未验 |
 | `omnimux_video_submit` | **real** | [docs/evidence/omnimux-video-2026-08-14.md](evidence/omnimux-video-2026-08-14.md) |
 | OmniMux chat as default dsh model | **absent** | no adapter; Settings custom provider still works |
 | OmniMux image jobs | **absent** | video only |

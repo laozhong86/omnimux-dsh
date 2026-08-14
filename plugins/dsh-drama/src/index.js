@@ -32,6 +32,7 @@ function cwdOf(exec) {
  * @param {{
  *   tools: { register: (tool: object) => unknown },
  *   systemPrompt: { section: (spec: object) => unknown },
+ *   get: (name: string) => unknown,
  *   effect?: (fn: () => unknown, label?: string) => unknown,
  * }} ctx
  */
@@ -153,12 +154,13 @@ export function apply(ctx) {
     output: jsonOut,
     async execute(args, exec) {
       const root = requireProjectRoot(cwdOf(exec))
-      const video = ctx.omnimuxVideo
+      const video = ctx.get('omnimuxVideo')
       if (!video) {
         return generateShot(root, args.shot_id)
       }
-      const startJob = ctx.jobs && typeof ctx.jobs.start === 'function'
-        ? ctx.jobs.start.bind(ctx.jobs)
+      const jobs = ctx.get('jobs')
+      const startJob = jobs && typeof jobs.start === 'function'
+        ? jobs.start.bind(jobs)
         : null
       if (!startJob) {
         return runGenerateShot(root, args.shot_id, ({ dest, shot }) => video.execute({
