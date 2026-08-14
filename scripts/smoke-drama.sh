@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Keyless assemble check. Does not call a model.
 set -euo pipefail
-root="$(cd "$(dirname "$0")/.." && pwd)"
+root="$(cd "$(dirname "$0")/.." && pwd -P)"
 cd "$root"
 
 pnpm --filter dsh-drama test
@@ -9,7 +9,14 @@ pnpm --filter dsh-drama test
 preset_src="$root/presets/drama"
 preset_dst="${DSH_HOME:-$HOME/.dsh}/.agent-presets/drama"
 mkdir -p "$(dirname "$preset_dst")"
-if [[ ! -e "$preset_dst" ]]; then
+if [[ -L "$preset_dst" ]]; then
+  current="$(readlink "$preset_dst")"
+  if [[ ! -e "$preset_dst" || "$current" != "$preset_src" ]]; then
+    rm "$preset_dst"
+    ln -s "$preset_src" "$preset_dst"
+    echo "smoke: relinked drama preset -> $preset_dst"
+  fi
+elif [[ ! -e "$preset_dst" ]]; then
   ln -s "$preset_src" "$preset_dst"
   echo "smoke: linked drama preset -> $preset_dst"
 fi
