@@ -10,7 +10,7 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | `drama_init_project` | **real** | creates empty `series/` |
 | `drama_upsert_series` / `drama_upsert_shot` / `drama_confirm_bible` | **real** | writes yaml/json |
 | `drama_generate_shot` | **unproven + stub** | live path when `ctx.omnimuxVideo` is mounted (`mode: "live"`) is unproven; else copies `stub.mp4` (`mode: "stub"`) |
-| `omnimux_video_submit` | **unproven** | writes dest via OmniMux `/v1/video/generations`; needs `OMNIMUX_API_KEY`; mock tests only |
+| `omnimux_video_submit` | **real** | [docs/evidence/omnimux-video-2026-08-14.md](evidence/omnimux-video-2026-08-14.md) |
 | OmniMux chat as default dsh model | **absent** | no adapter; Settings custom provider still works |
 | OmniMux image jobs | **absent** | video only |
 | Custom provider in Settings (manual) | **upstream** | dsh Web → Add a custom provider → `https://api.omnimux.ai/v1` |

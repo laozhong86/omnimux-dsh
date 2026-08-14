@@ -25,4 +25,4 @@ Web 里把工作区指到 `fixtures/demo-series`，问「当前项目有几集�
 
 可选预设：`presets/drama`（smoke 会链到 `$DSH_HOME/.agent-presets/drama`）。
 
-密钥不要写进仓库。真出片还没接到 OmniMux。
+密钥不要写进仓库。`omnimux_video_submit` 已对真实 OmniMux 验证（见 [docs/evidence/omnimux-video-2026-08-14.md](docs/evidence/omnimux-video-2026-08-14.md)）；`drama_generate_shot` 的 live 分支待 dsh 内接线验证。
