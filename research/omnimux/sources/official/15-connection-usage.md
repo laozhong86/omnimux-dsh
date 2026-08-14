@@ -1,0 +1,35 @@
+# Connection and usage
+
+> Source: /Users/x/Desktop/Project/OmniMux-docs/en/faqs/connection-usage.mdx  
+> Live: https://docs.omnimux.ai/en/faqs/connection-usage  
+> Copied 2026-08-14 from sibling docs repo.
+
+## Wrong Base URL?
+
+| Surface | Base |
+| --- | --- |
+| AI gateway / social data (`sk-`) | `https://api.omnimux.ai` or `https://api.omnimux.ai/v1` |
+| Publishing / device-login user APIs | `https://omnimux.ai` (access token + `New-Api-User`) |
+
+Do not mix the two credential surfaces.
+
+## 401 / 403 / 402 / 429
+
+| Status | Typical cause |
+| --- | --- |
+| **401** | Missing/invalid Bearer token |
+| **403** | Model or group not allowed for this token |
+| **402** | Insufficient quota on pre-consume |
+| **429** | Rate limited |
+
+## Unexpected content
+
+- Use live model ids
+- Chat needs valid `messages`; social-data needs business fields
+- Video poll: `GET /v1/video/generations/{task_id}` only — not `/v1/videos/*/content` for Omni Flash / MiniMax creates
+
+## Cannot connect
+
+- Firewall/proxy TLS to `api.omnimux.ai`
+- Many OpenAI SDKs need base ending with `/v1`
+- Probe with `GET /v1/models`

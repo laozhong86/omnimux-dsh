@@ -1,0 +1,113 @@
+# OmniMux - OmniMux
+
+> Source: https://docs.omnimux.ai/en
+
+Documentation Index
+
+Fetch the complete documentation index at: /llms.txt
+
+Use this file to discover all available pages before exploring further.
+
+Skip to main content
+
+OmniMux home page
+English
+
+Search...
+
+⌘KAsk Assistant
+
+Search...
+
+Navigation
+
+Getting started
+
+OmniMux
+
+API manual
+
+Integration guide
+
+User guide
+
+FAQs
+
+Getting started
+
+OmniMux
+
+Copy pageCopy page
+
+All-in-one social media API for AI agents — one API to create and orchestrate content across platforms. Pay per call, no subscription.
+
+Copy pageCopy page
+
+OmniMux is the all-in-one social media API for AI agents. One API to create content and orchestrate multi-platform distribution. Pay per call, no subscription. Delivered as REST API, local CLI, Agent Skill, and MCP Server so any agent can plug in. Global channels: X, LinkedIn, YouTube, Instagram, TikTok, Threads, and more under one abstraction and auth model (the product support matrix does not include mainland China domestic platforms). Agent-first delivery: send the product URL to your agent; install, init, and platform authorization can be completed by the agent.
+Production: console omnimux.ai/dashboard · API https://api.omnimux.ai · docs docs.omnimux.ai.
+
+​
+
+Platform advantages
+
+Agent-native access
+
+One capability surface as API, CLI, Skill, and MCP — meet your agent wherever it runs.
+
+Create + orchestrate
+
+Content production and multi-platform publishing share one interface — no two half-stack products or bills.
+
+Global channels
+
+X, LinkedIn, YouTube, Instagram, TikTok, Threads, and more with unified abstraction and auth.
+
+Pay per call, no subscription
+
+Free to install. Each action has a credit unit price, estimates before invoke, and usage returned with the response.
+
+​
+
+Capabilities
+
+​
+
+Content creation
+
+Multi-channel content and asset production, exposed as API and Skill for your agent to call — your agent keeps creative control.
+
+​
+
+Multi-platform orchestration
+
+Close the loop on global channels. Orchestration sub-capabilities include:
+
+Publish multi-platform posting and scheduling by platform rules
+
+Adapt per-channel format, specs, and tone
+
+Distribute account-matrix distribution at a human pace, fully auditable
+
+Collect engagement and performance back into the next plan
+
+Messaging and promotion capabilities expand with the channel matrix as orchestration extensions.
+One call surface: create + orchestrate through one API.
+
+​
+
+Core features
+
+Unified auth
+One key for creation and orchestration across channels.
+Auditable execution
+Idempotent publish; request, response, latency, and cost on every call.
+Human-paced execution
+Configurable pacing treats platform rules as constraints.
+Stable routing
+Intelligent routing fails over when upstream degrades; the contract and metering stay the same.
+
+⌘I
+
+Assistant
+
+Responses are generated using AI and may contain mistakes.

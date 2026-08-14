@@ -1,0 +1,16 @@
+{
+  "name": "tiktokdramacenter",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "workspaces": [
+    "plugins/*"
+  ],
+  "scripts": {
+    "test": "pnpm --filter dsh-drama test && pnpm --filter dsh-omnimux test",
+    "smoke": "bash scripts/smoke-drama.sh"
+  }
+}

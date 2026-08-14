@@ -1,0 +1,1 @@
+[fetch] tier=local status=ok extractor=stdlib hint="install readability-lxml + html2text for cleaner output"

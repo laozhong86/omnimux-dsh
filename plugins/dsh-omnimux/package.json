@@ -1,0 +1,25 @@
+{
+  "name": "dsh-omnimux",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.js",
+  "files": [
+    "src/index.js",
+    "src/video.js",
+    "cordis.patch.yml"
+  ],
+  "scripts": {
+    "test": "node --test src/video.test.js"
+  },
+  "dependencies": {
+    "aigc-provider-runtime-kit": "file:../../../aigc-provider-runtime-kit"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+
+  "license": "MIT",
+  "description": "OmniMux video execute + job tool for DeepSeek Harness."
+}

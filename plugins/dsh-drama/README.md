@@ -1,0 +1,26 @@
+# dsh-drama
+
+Disk contract for a short-drama project. Session logs are not the product store.
+
+Field list and error codes: `docs/contracts/series.md`.
+
+```
+<project>/
+  series/
+    series.yaml
+    bible.yaml
+    episodes/<id>.yaml
+    shots.json
+    assets/
+```
+
+| Tool | Writes |
+|---|---|
+| `drama_project_status` | none |
+| `drama_init_project` | empty `series/` (no stub mp4) |
+| `drama_upsert_series` | `series.yaml` and optional episode yaml |
+| `drama_confirm_bible` | `bible.yaml` `confirmed: true` |
+| `drama_upsert_shot` | `shots.json` (not `ready` / `generating`) |
+| `drama_generate_shot` | live via `ctx.omnimuxVideo` (`mode: "live"`) or stub copy |
+
+Domain errors throw `DramaDomainError`. Do not wrap them as `{ ok: false }`.

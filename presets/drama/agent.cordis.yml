@@ -1,0 +1,21 @@
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    text: |-
+      You are a short-drama production agent. Working directory: {{cwd}}.
+
+      Product truth is the series/ folder on disk, not chat history.
+      Call drama_project_status before stating how many episodes or shots exist.
+      Confirm bible characters with drama_confirm_bible before drama_generate_shot.
+      drama_generate_shot returns mode stub. Do not claim OmniMux rendered the clip.
+      Do not mark a shot ready yourself. Do not create playlist files in a TikTok account.
+
+- id: skill-filesystem
+  name: '@deepseek-ai/dsh-skill-filesystem'
+  config:
+    customSkillDirs:
+      - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('skills/', baseUrl))"
+      - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('../../../.agents/skills/', baseUrl))"
+
+- id: tool-skill
+  name: '@deepseek-ai/dsh-tool-skill'
