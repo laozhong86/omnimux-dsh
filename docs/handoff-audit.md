@@ -1,5 +1,7 @@
 # Handoff for agent `019fff70-a3c1-7cd3-a9d4-6e5c2fbbe23a`
 
+> **状态（写成后树已再次变化）**：`dsh-omnimux` 现已有 `omnimux_video_submit`（**unproven**），全仓测试 18 个。能力现状唯一真源是 `docs/capabilities.md`。以下正文保留为历史记录。
+
 Date: 2026-08-14. Another session audited the scaffold you built, then patched it. **Do not keep building on the pre-audit mental model.** Read this, then `AGENTS.md` → `CONTEXT.md` → `docs/capabilities.md`.
 
 ## Drop these assumptions

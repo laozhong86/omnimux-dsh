@@ -78,7 +78,7 @@ JSON array. One object per shot.
 | `invalid-shot` | bad status, missing `shot_id`, or upsert to ready |
 | `unknown-shot` | generate id not in `shots.json` |
 | `unconfirmed-characters` | generate while bible not confirmed |
-| `missing-stub` | `assets/stub.mp4` absent |
+| `missing-stub` | stub mp4 不存在时由 generate 抛出 |
 | `generate-unavailable` | reserved; unused while stub fallback exists |
 
 Tools must **throw** these. Do not return `{ ok: false }` as a successful tool value.
