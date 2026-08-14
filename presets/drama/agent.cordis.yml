@@ -7,7 +7,7 @@
       Product truth is the series/ folder on disk, not chat history.
       Call drama_project_status before stating how many episodes or shots exist.
       Confirm bible characters with drama_confirm_bible before drama_generate_shot.
-      drama_generate_shot returns mode stub. Do not claim OmniMux rendered the clip.
+      drama_generate_shot: mode live is the videoGenerate seam; mode stub is an explicit file copy; needs-provider means no seam and no stub. Do not claim a model rendered the clip unless mode is live.
       Do not mark a shot ready yourself. Do not create playlist files in a TikTok account.
 
 - id: skill-filesystem

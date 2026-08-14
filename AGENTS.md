@@ -29,7 +29,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. Hub is `dsh
 | `.agents/skills/short-drama-router/` | Study index for other repos |
 | `.agents/skills/tiktok-drama-center/` | Human Drama Center SOP |
 | `docs/handoff-audit.md` | Stale-scaffold correction. Read if you still think `packages/drama-*` or phase letters are live. |
-| `docs/decisions/2026-08-14-execution-hub.md` | Confirmed hub vs domain split. Live code still uses `omnimuxVideo` until that doc's gap list is closed. |
+| `docs/decisions/2026-08-14-execution-hub.md` | Confirmed hub vs domain split. Live seam is `videoGenerate`. |
 | `research/` | Extracts. Load only when changing positioning or platform SOP. |
 
 ## Package imports

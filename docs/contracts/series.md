@@ -9,7 +9,7 @@ Product store. Session logs are not this store.
     bible.yaml
     episodes/<episode_id>.yaml
     shots.json
-    assets/stub.mp4          # required for stub generate
+    assets/stub.mp4          # optional explicit stub; else generate throws needs-provider
     assets/<shot_id>.mp4     # written by generate only
 ```
 
@@ -78,7 +78,8 @@ JSON array. One object per shot.
 | `invalid-shot` | bad status, missing `shot_id`, or upsert to ready |
 | `unknown-shot` | generate id not in `shots.json` |
 | `unconfirmed-characters` | generate while bible not confirmed |
-| `missing-stub` | stub mp4 不存在时由 generate 抛出 |
+| `missing-stub` | `DRAMA_STUB_MP4`（或显式 stubPath）指向的文件不存在 |
+| `needs-provider` | 未挂 `videoGenerate` 缝，且项目没有 `assets/stub.mp4`、也未设 `DRAMA_STUB_MP4` |
 | `generate-unavailable` | reserved; unused while stub fallback exists |
 
 Tools must **throw** these. Do not return `{ ok: false }` as a successful tool value.

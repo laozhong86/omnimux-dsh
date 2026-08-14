@@ -323,7 +323,7 @@ export async function runGenerateShot(root, shotId, produce) {
 }
 
 /**
- * Keyless stub: copy assets/stub.mp4. Live generate goes through runGenerateShot + omnimuxVideo.
+ * No videoGenerate seam: copy an explicit stub, or throw needs-provider.
  * @param {string} root
  * @param {string} shotId
  * @param {string} [stubPath]
@@ -331,14 +331,23 @@ export async function runGenerateShot(root, shotId, produce) {
 export async function generateShot(root, shotId, stubPath) {
   return runGenerateShot(root, shotId, async ({ dest }) => {
     const project = loadProject(root)
-    const stub = stubPath
-      ?? process.env.DRAMA_STUB_MP4
-      ?? join(project.seriesDir, 'assets', 'stub.mp4')
-    if (!existsSync(stub)) {
-      throw new DramaDomainError('missing-stub', `stub mp4 not found at ${stub}`)
+    const explicit = stubPath ?? process.env.DRAMA_STUB_MP4
+    const projectStub = join(project.seriesDir, 'assets', 'stub.mp4')
+    if (explicit) {
+      if (!existsSync(explicit)) {
+        throw new DramaDomainError('missing-stub', `stub mp4 not found at ${explicit}`)
+      }
+      copyFileSync(explicit, dest)
+      return { mode: 'stub' }
     }
-    copyFileSync(stub, dest)
-    return { mode: 'stub' }
+    if (existsSync(projectStub)) {
+      copyFileSync(projectStub, dest)
+      return { mode: 'stub' }
+    }
+    throw new DramaDomainError(
+      'needs-provider',
+      'install dsh plugin add ./plugins/dsh-omnimux and configure a provider',
+    )
   })
 }
 

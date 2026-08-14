@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { describe, it } from 'node:test'
@@ -140,6 +140,29 @@ describe('initProject', () => {
     assert.throws(
       () => initProject(empty, { id: 'other' }),
       (error) => error instanceof DramaDomainError && error.code === 'already-a-project',
+    )
+  })
+
+  it('generate without seam or stub throws needs-provider', async () => {
+    writeFileSync(join(empty, 'series/bible.yaml'), [
+      'characters:',
+      '  - id: hero',
+      '    name: Hero',
+      '    confirmed: true',
+      'scenes: []',
+      'voice: ""',
+      '',
+    ].join('\n'))
+    upsertShot(empty, {
+      shot_id: 'e01-s01',
+      episode_id: 'e01',
+      character_ids: ['hero'],
+      status: 'confirmed',
+      visual_description: 'a face in torchlight',
+    })
+    await assert.rejects(
+      () => generateShot(empty, 'e01-s01'),
+      (error) => error instanceof DramaDomainError && error.code === 'needs-provider',
     )
   })
 

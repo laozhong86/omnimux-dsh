@@ -18,7 +18,7 @@ const DRAMA_PROMPT = `This workspace may be a short-drama project. Truth lives i
 Call drama_project_status before stating episode or shot counts.
 If there is no project, call drama_init_project.
 Mutate series files only through drama_* tools.
-drama_generate_shot is live when OmniMux is mounted (mode "live"); otherwise it copies assets/stub.mp4 and returns mode "stub".
+drama_generate_shot is live when the videoGenerate seam is mounted (mode "live"). Without the seam, an explicit stub.mp4 or DRAMA_STUB_MP4 copies (mode "stub"); otherwise it throws needs-provider.
 A shot whose character_ids are unconfirmed in bible.yaml cannot be generated.`
 
 /**
@@ -147,14 +147,14 @@ export function apply(ctx) {
   ctx.tools.register({
     name: 'drama_generate_shot',
     description:
-      'Generate one shot to series/assets/<shot_id>.mp4. Uses OmniMux when mounted (mode live). Otherwise copies stub.mp4 (mode stub). Fails if any character_id is unconfirmed.',
+      'Generate one shot to series/assets/<shot_id>.mp4. Uses the videoGenerate seam when mounted (mode live). Without the seam, copies an explicit stub or throws needs-provider. Fails if any character_id is unconfirmed.',
     parameters: {
       shot_id: { type: 'string', required: true },
     },
     output: jsonOut,
     async execute(args, exec) {
       const root = requireProjectRoot(cwdOf(exec))
-      const video = ctx.get('omnimuxVideo')
+      const video = ctx.get('videoGenerate')
       if (!video) {
         return generateShot(root, args.shot_id)
       }

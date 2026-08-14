@@ -9,7 +9,8 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | `drama_project_status` | **real** | reads `series/` |
 | `drama_init_project` | **real** | creates empty `series/` |
 | `drama_upsert_series` / `drama_upsert_shot` / `drama_confirm_bible` | **real** | writes yaml/json |
-| `drama_generate_shot` | **unproven + stub** | 服务已 `ctx.provide` / `ctx.get` 注入，boot 通过，cordis 传播见 `scripts/verify-cordis-propagate.mjs`；经真实 dsh 会话端到端出片仍未验 |
+| `drama_generate_shot` | **unproven + stub** | stub（显式工件）/ needs-provider（默认）/ live 经 `videoGenerate` 缝（cordis 级已验，端到端未验） |
+| Third-party compatible endpoint via `OMNIMUX_BASE_URL` env | **unproven** | 仅 OpenAI-video 兼容形；只有 OmniMux 本身经真实任务验证过 |
 | `omnimux_video_submit` | **real** | [docs/evidence/omnimux-video-2026-08-14.md](evidence/omnimux-video-2026-08-14.md) |
 | OmniMux chat as default dsh model | **absent** | no adapter; Settings custom provider still works |
 | OmniMux image jobs | **absent** | video only |

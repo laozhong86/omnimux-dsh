@@ -1,7 +1,7 @@
 # 决策：执行中枢与领域插件
 
 日期：2026-08-14。  
-状态：**站位已确认，代码未改。** 活树仍按旧缝运行，见文末「与活树的差距」。  
+状态：**站位已确认。** 中性缝 `videoGenerate` 与 `needs-provider` 已于 T8 落地。其余差距见文末。  
 性质：架构决策 + 讨论审计。本文件是这次讨论的可追溯真源，不替代 `docs/capabilities.md` 的能力表。
 
 依据：同日会话（设计方向 → 两包关系 → 官方缝 vs 仓规 → 开源获客 → 多垂直复用）+ [POSITIONING.md](../../research/dsh/POSITIONING.md) + [EXTENSION.md](../../research/dsh/EXTENSION.md) + [PLUGIN.md](../../research/omnimux/PLUGIN.md) + 活树 `plugins/`。
@@ -161,10 +161,10 @@ dsh 不会替插件弹窗。提示只能是工具自己的结构化错误（比�
 
 下面这些**今天还是真的**，被本决策标为待改，不是已经落地：
 
-- `ctx.provide('omnimuxVideo')` / `get('omnimuxVideo')`，不是中性 `videoGenerate`（缝改名须同步 `scripts/verify-cordis-propagate.mjs` 与 `docs/capabilities.md` 相关行；T8 闭环）
-- `AGENTS.md`：「Live generate belongs in `dsh-omnimux` (`ctx.omnimuxVideo`)」
-- `presets/drama/agent.cordis.yml` 仍写 generate 返回 stub（和 live 路径可能不一致）
-- 根 README 仍有「真出片还没接到 OmniMux」一类过期句（以 `docs/capabilities.md` 为准）
+- ~~`ctx.provide('omnimuxVideo')` / `get('omnimuxVideo')`，不是中性 `videoGenerate`~~ **done T8**（缝改名已同步 `scripts/verify-cordis-propagate.mjs` 与 `docs/capabilities.md`）
+- ~~`AGENTS.md`：「Live generate belongs in `dsh-omnimux` (`ctx.omnimuxVideo`)」~~ **done T7**
+- ~~`presets/drama/agent.cordis.yml` 仍写 generate 返回 stub（和 live 路径可能不一致）~~ **done T8**
+- ~~根 README 仍有「真出片还没接到 OmniMux」一类过期句（以 `docs/capabilities.md` 为准）~~ **done T4a / T8**
 - 中枢尚未注册聊天 adapter；生图 absent
 - C 类官方独有工具名单未锁，也没有 `needs-omnimux` 错误码
 

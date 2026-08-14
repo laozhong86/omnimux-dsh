@@ -21,6 +21,6 @@ Field list and error codes: `docs/contracts/series.md`.
 | `drama_upsert_series` | `series.yaml` and optional episode yaml |
 | `drama_confirm_bible` | `bible.yaml` `confirmed: true` |
 | `drama_upsert_shot` | `shots.json` (not `ready` / `generating`) |
-| `drama_generate_shot` | live via `ctx.omnimuxVideo` (`mode: "live"`) or stub copy |
+| `drama_generate_shot` | live via `videoGenerate` (`mode: "live"`), explicit stub copy, or `needs-provider` |
 
 Domain errors throw `DramaDomainError`. Do not wrap them as `{ ok: false }`.
