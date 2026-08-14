@@ -1,2 +1,4 @@
 packages:
   - plugins/*
+minimumReleaseAgeExclude:
+  - aigc-provider-runtime-kit@0.2.0

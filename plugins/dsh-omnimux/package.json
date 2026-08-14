@@ -12,7 +12,7 @@
     "test": "node --test src/video.test.js"
   },
   "dependencies": {
-    "aigc-provider-runtime-kit": "file:../../../aigc-provider-runtime-kit"
+    "aigc-provider-runtime-kit": "^0.2.0"
   },
   "dsh": {
     "bundle": {

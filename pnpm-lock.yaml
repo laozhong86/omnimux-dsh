@@ -17,13 +17,13 @@ importers:
   plugins/dsh-omnimux:
     dependencies:
       aigc-provider-runtime-kit:
-        specifier: file:../../../aigc-provider-runtime-kit
-        version: file:../aigc-provider-runtime-kit
+        specifier: ^0.2.0
+        version: 0.2.0
 
 packages:
 
-  aigc-provider-runtime-kit@file:../aigc-provider-runtime-kit:
-    resolution: {directory: ../aigc-provider-runtime-kit, type: directory}
+  aigc-provider-runtime-kit@0.2.0:
+    resolution: {integrity: sha512-7e6X0KtS0ZHO9RTc1prTY7DtdaS2H4y5/M2B/QoLI6k/gxI55xl5Gz4SmtxwX3hTakg3EsxYkBoek+VJ532JyQ==}
     engines: {node: '>=22'}
 
   yaml@2.9.0:
@@ -33,6 +33,6 @@ packages:
 
 snapshots:
 
-  aigc-provider-runtime-kit@file:../aigc-provider-runtime-kit: {}
+  aigc-provider-runtime-kit@0.2.0: {}
 
   yaml@2.9.0: {}
