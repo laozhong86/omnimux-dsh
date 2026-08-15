@@ -64,6 +64,8 @@ JSON array. One object per shot.
 | `asset_path` | string or null | relative to `series/` |
 | `job_id` | string or null | OmniMux task id when live generate exists |
 
+`drama_generate_shot` is synchronous by default (returns after the asset is `ready`). `background: true` starts a job and returns `jobId` immediately.
+
 ## Typed errors (`DramaDomainError.code`)
 
 | Code | When |

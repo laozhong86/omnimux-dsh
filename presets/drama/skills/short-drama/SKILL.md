@@ -21,7 +21,7 @@ description: "Short-drama series disk contract and production loop. Use when wri
 - One shot, one `assets/<shot_id>.mp4`
 - Do not invent ready paths or OmniMux job ids
 - Do not tell the user a model rendered the clip while `mode` is `stub`
-- `mode: "live"` 返回的 `jobId` 只表示任务已提交，`ready` 以 `drama_project_status` 复查为准
+- Default `drama_generate_shot` is synchronous: wait for `mode` and the asset. `jobId` only means submitted when `background: true`; then `ready` needs `drama_project_status`
 - Vertical 9:16, hook at episode end
 
 Field names: repo `docs/contracts/series.md`. Drama Center export is skill `tiktok-drama-center`, not this loop.

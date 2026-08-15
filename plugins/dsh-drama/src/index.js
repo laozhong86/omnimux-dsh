@@ -170,9 +170,10 @@ export function apply(ctx) {
   ctx.tools.register({
     name: 'drama_generate_shot',
     description:
-      'Generate one shot to series/assets/<shot_id>.mp4. Uses the videoGenerate seam when mounted (mode live). Without the seam, copies an explicit stub or throws needs-provider. Fails if any character_id is unconfirmed.',
+      'Generate one shot to series/assets/<shot_id>.mp4. Default is synchronous: waits until the asset is ready and returns mode live/stub (or throws). Set background true only when jobs are mounted to get a jobId immediately; then ready is not guaranteed until drama_project_status. Without the videoGenerate seam, copies an explicit stub or throws needs-provider. Fails if any character_id is unconfirmed.',
     parameters: objectParams({
       shot_id: { type: 'string', required: true },
+      background: { type: 'boolean', description: 'If true and jobs are mounted, return jobId immediately. Default false (wait for ready).' },
     }),
     output: jsonOut,
     async execute(args, exec) {
@@ -181,17 +182,18 @@ export function apply(ctx) {
       if (!video) {
         return generateShot(root, args.shot_id)
       }
+      const produce = ({ dest, shot, signal }) => video.execute({
+        prompt: shot.visual_description,
+        dest,
+        duration: shot.duration ?? undefined,
+        signal,
+      })
       const jobs = ctx.get('jobs')
       const startJob = jobs && typeof jobs.start === 'function'
         ? jobs.start.bind(jobs)
         : null
-      if (!startJob) {
-        return runGenerateShot(root, args.shot_id, ({ dest, shot }) => video.execute({
-          prompt: shot.visual_description,
-          dest,
-          duration: shot.duration ?? undefined,
-          signal: exec.signal,
-        }))
+      if (!args.background || !startJob) {
+        return runGenerateShot(root, args.shot_id, ({ dest, shot }) => produce({ dest, shot, signal: exec.signal }))
       }
       const ac = new AbortController()
       const jobId = startJob({
@@ -199,12 +201,7 @@ export function apply(ctx) {
         label: `omnimux-video ${args.shot_id}`,
         owner: exec.agent,
         run() {
-          const done = runGenerateShot(root, args.shot_id, ({ dest, shot }) => video.execute({
-            prompt: shot.visual_description,
-            dest,
-            duration: shot.duration ?? undefined,
-            signal: ac.signal,
-          })).then(
+          const done = runGenerateShot(root, args.shot_id, ({ dest, shot }) => produce({ dest, shot, signal: ac.signal })).then(
             () => ({ status: 'completed' }),
             (error) => ({
               status: 'failed',

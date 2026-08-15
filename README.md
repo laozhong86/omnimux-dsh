@@ -24,8 +24,8 @@ dsh --profile drama web
 
 Web 里把工作区指到 `fixtures/demo-series`，问「当前项目有几集几镜、谁还没确认」。应调用 `drama_project_status`。
 
-确认卫安后，对 `e01-s01` 调用 `drama_generate_shot`：写出 `series/assets/e01-s01.mp4`，`mode` 为 `stub`。未确认角色的镜不得生成。
+确认卫安后，对 `e01-s01` 调用 `drama_generate_shot`（默认同步）。有 `videoGenerate` 缝时 `mode` 为 `live`；否则显式 stub 或 `needs-provider`。未确认角色的镜不得生成。
 
 可选预设：`presets/drama`（smoke 会链到 `$DSH_HOME/.agent-presets/drama`）。
 
-密钥不要写进仓库。`omnimux_video_submit` 已对真实 OmniMux 验证（见 [docs/evidence/omnimux-video-2026-08-14.md](docs/evidence/omnimux-video-2026-08-14.md)）；`drama_generate_shot` 的 live 分支待 dsh 内接线验证。
+密钥不要写进仓库。`omnimux_video_submit` 与 `drama_generate_shot` 的 live 路径都已对真实 OmniMux / dsh 会话验证（见 [docs/evidence/omnimux-video-2026-08-14.md](docs/evidence/omnimux-video-2026-08-14.md) 与 [docs/evidence/e2e-dsh-2026-08-15.md](docs/evidence/e2e-dsh-2026-08-15.md)）。
