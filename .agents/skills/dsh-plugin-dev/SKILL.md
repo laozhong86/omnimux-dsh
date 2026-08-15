@@ -23,12 +23,12 @@ If both packages seem to need the same HTTP helper, put it in `dsh-omnimux` and 
 
 1. Pure function in `plugins/dsh-drama/src/domain.js`. Throw `DramaDomainError(code, message)`.
 2. Keyless test in `domain.test.js` against a **copy** of `fixtures/demo-series` or a temp `initProject` tree.
-3. Register in `src/index.js`: `execute` calls the function and **rethrows** domain errors (do not wrap as `{ok:false}`).
+3. Register in `src/index.js` with a compiled JSON Schema (`type: "object"`, `properties`, `required`, `additionalProperties: false`). `execute` **rethrows** domain errors (do not wrap as `{ok:false}`).
 4. Update `docs/contracts/series.md` if you add a field or code.
 5. Update `docs/capabilities.md` if the surface moves stub → real.
 6. `pnpm --filter dsh-drama test`.
 
-`defineTool` is optional. Current tools use a raw `ctx.tools.register` object. Keep one style in this package.
+Do not pass a flat field table to `ctx.tools.register`. Official first-party tools wrap that table in `defineTool()`, which compiles it to `{ type: "object", … }`. A bare register sends `type: null` on the wire; OmniMux chat completions 400 (`drama_confirm_bible`, 2026-08-15). This repo cannot depend on `@deepseek-ai/dsh-tools` without pulling the inbox stack, so both bundles compile the object schema inline. Keep that one style.
 
 ## Do not
 

@@ -29,6 +29,28 @@ function cwdOf(exec) {
 }
 
 /**
+ * Compile a flat field table into a JSON Schema object. Raw `register`
+ * does not run defineTool, so the wire schema must already be type:object.
+ * @param {Record<string, Record<string, unknown> & { required?: boolean }>} fields
+ */
+function objectParams(fields) {
+  /** @type {Record<string, unknown>} */
+  const properties = {}
+  const required = []
+  for (const [key, spec] of Object.entries(fields)) {
+    const { required: isRequired, ...rest } = spec
+    properties[key] = rest
+    if (isRequired) required.push(key)
+  }
+  return {
+    type: 'object',
+    properties,
+    ...(required.length > 0 ? { required } : {}),
+    additionalProperties: false,
+  }
+}
+
+/**
  * @param {{
  *   tools: { register: (tool: object) => unknown },
  *   systemPrompt: { section: (spec: object) => unknown },
@@ -54,7 +76,7 @@ export function apply(ctx) {
     name: 'drama_project_status',
     description:
       'Read the short-drama project under the session working directory. Returns episode count, shot status counts, and unconfirmed bible characters. Call this before inventing series facts.',
-    parameters: {},
+    parameters: objectParams({}),
     output: jsonOut,
     async execute(_args, exec) {
       return statusFromCwd(cwdOf(exec))
@@ -65,11 +87,11 @@ export function apply(ctx) {
     name: 'drama_init_project',
     description:
       'Create an empty series/ project in the session working directory. Fails if series/series.yaml already exists. Does not copy demo story or a stub mp4.',
-    parameters: {
+    parameters: objectParams({
       id: { type: 'string', required: true, description: 'kebab-case series id' },
       title: { type: 'string' },
       logline: { type: 'string' },
-    },
+    }),
     output: jsonOut,
     async execute(args, exec) {
       return { ok: true, status: initProject(cwdOf(exec), args) }
@@ -79,7 +101,7 @@ export function apply(ctx) {
   ctx.tools.register({
     name: 'drama_upsert_series',
     description: 'Update series.yaml fields or one episode yaml. Does not confirm bible characters or generate shots.',
-    parameters: {
+    parameters: objectParams({
       title: { type: 'string' },
       logline: { type: 'string' },
       locale: { type: 'string' },
@@ -87,6 +109,7 @@ export function apply(ctx) {
       genre: { type: 'array', items: { type: 'string' } },
       episode: {
         type: 'object',
+        additionalProperties: false,
         properties: {
           id: { type: 'string' },
           title: { type: 'string' },
@@ -95,7 +118,7 @@ export function apply(ctx) {
           status: { type: 'string' },
         },
       },
-    },
+    }),
     output: jsonOut,
     async execute(args, exec) {
       const root = requireProjectRoot(cwdOf(exec))
@@ -108,14 +131,14 @@ export function apply(ctx) {
   ctx.tools.register({
     name: 'drama_confirm_bible',
     description: 'Mark bible.yaml characters as confirmed. Required before drama_generate_shot for any shot that lists those character_ids.',
-    parameters: {
+    parameters: objectParams({
       character_ids: {
         type: 'array',
         required: true,
         items: { type: 'string' },
         description: 'Bible character ids to mark confirmed',
       },
-    },
+    }),
     output: jsonOut,
     async execute(args, exec) {
       return { ok: true, status: confirmBible(requireProjectRoot(cwdOf(exec)), args.character_ids) }
@@ -125,7 +148,7 @@ export function apply(ctx) {
   ctx.tools.register({
     name: 'drama_upsert_shot',
     description: 'Create or update one shot in shots.json. Cannot set status to generating or ready; use drama_generate_shot for that.',
-    parameters: {
+    parameters: objectParams({
       shot_id: { type: 'string', required: true },
       episode_id: { type: 'string' },
       scene_purpose: { type: 'string' },
@@ -137,7 +160,7 @@ export function apply(ctx) {
       start_time: { type: 'number' },
       end_time: { type: 'number' },
       duration: { type: 'number' },
-    },
+    }),
     output: jsonOut,
     async execute(args, exec) {
       return { ok: true, ...upsertShot(requireProjectRoot(cwdOf(exec)), args) }
@@ -148,9 +171,9 @@ export function apply(ctx) {
     name: 'drama_generate_shot',
     description:
       'Generate one shot to series/assets/<shot_id>.mp4. Uses the videoGenerate seam when mounted (mode live). Without the seam, copies an explicit stub or throws needs-provider. Fails if any character_id is unconfirmed.',
-    parameters: {
+    parameters: objectParams({
       shot_id: { type: 'string', required: true },
-    },
+    }),
     output: jsonOut,
     async execute(args, exec) {
       const root = requireProjectRoot(cwdOf(exec))
