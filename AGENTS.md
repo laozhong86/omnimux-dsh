@@ -11,7 +11,8 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. Hub is `dsh
 - Provider HTTP + keys live in `dsh-omnimux` only; it provides the neutral seam `videoGenerate`. `dsh-drama` only updates `series/`.
 - MUST throw `DramaDomainError` from drama tools. MUST NOT return `{ ok: false }` as a successful tool value.
 - MUST NOT commit secrets. Inject with `omnimux tokens exec` or the process environment.
-- Product truth is `series/` on disk. Session logs are not the store.
+- Product truth is `series/` on disk. Session logs and `docs/briefing.md` are not that store.
+- Briefing (`docs/briefing.md`) is project memory, not truth. On conflict, live code, this file, and `docs/contracts/` win.
 - AGPL trees (ArcReel, 墨音) stay isolate-run. MUST NOT merge them here.
 
 ## Map
@@ -21,6 +22,8 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. Hub is `dsh
 | `CONTEXT.md` | Terms, two-agent split, shot statuses |
 | `docs/capabilities.md` | Real / stub / absent |
 | `docs/contracts/series.md` | Disk fields + error codes |
+| `docs/contracts/briefing.md` | Briefing create/update/delete. Memory, not truth |
+| `docs/briefing.md` | Agent–human project briefing log |
 | `plugins/dsh-omnimux/` | Execution hub: video execute + later OmniMux-only paid APIs |
 | `plugins/dsh-drama/` | First vertical: `series/` domain + `drama_*` |
 | `fixtures/demo-series/` | Keyless replay (2 episodes, 3 shots) |
@@ -55,3 +58,4 @@ Do not claim the `drama` profile works unless `dsh --profile drama --dump-config
 - Extension facts: `research/dsh/EXTENSION.md`
 - OmniMux layers: `research/omnimux/PLUGIN.md`
 - Add a tool: `.agents/skills/dsh-plugin-dev/SKILL.md`
+- Briefing create / update / delete: `docs/contracts/briefing.md`. Load `docs/briefing.md` when the task is project direction, a prior decision, or a cross-session design.
