@@ -1,11 +1,11 @@
 ---
 name: dsh-plugin-dev
-description: "Edit the out-of-tree dsh bundles in this repo. Use when adding a drama_* or OmniMux tool, changing series/ files, scaffolding a dsh plugin, or deciding which package a change belongs in. Not for Drama Center SOP, not for forking deepseek-harness."
+description: "Edit the out-of-tree dsh bundles in this repo. Use when adding a drama_* or OmniMux tool, changing series/ files, scaffolding a dsh plugin, or deciding which package a change belongs in. Not for learning official plugin APIs (dsh-plugin-guide), Drama Center SOP, or forking deepseek-harness."
 ---
 
 # dsh-plugin-dev
 
-Read `AGENTS.md` and `CONTEXT.md` first. Then `docs/capabilities.md`.
+Read `AGENTS.md` and `CONTEXT.md` first. Then `docs/capabilities.md`. Learn official plugin APIs with `dsh-plugin-guide`, then come back here to edit this repo.
 
 ## Which package
 

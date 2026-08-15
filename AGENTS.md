@@ -28,6 +28,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. Hub is `dsh
 | `plugins/dsh-drama/` | First vertical: `series/` domain + `drama_*` |
 | `fixtures/demo-series/` | Keyless replay (2 episodes, 3 shots) |
 | `presets/drama/` | Product-agent persona + `short-drama` skill |
+| `.agents/skills/dsh-plugin-guide/` | Learn official plugin APIs: index to `/develop/basic/` |
 | `.agents/skills/dsh-plugin-dev/` | How to change these plugins |
 | `.agents/skills/short-drama-router/` | Study index for other repos |
 | `.agents/skills/tiktok-drama-center/` | Human Drama Center SOP |
@@ -57,5 +58,6 @@ Do not claim the `drama` profile works unless `dsh --profile drama --dump-config
 - Execution hub decision (2026-08-14): `docs/decisions/2026-08-14-execution-hub.md`
 - Extension facts: `research/dsh/EXTENSION.md`
 - OmniMux layers: `research/omnimux/PLUGIN.md`
+- Learn official plugin guide: `.agents/skills/dsh-plugin-guide/SKILL.md`（栏目 `references/catalog.md`）
 - Add a tool: `.agents/skills/dsh-plugin-dev/SKILL.md`
 - Briefing create / update / delete: `docs/contracts/briefing.md`. Load `docs/briefing.md` when the task is project direction, a prior decision, or a cross-session design.
