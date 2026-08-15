@@ -1,3 +1,53 @@
 - insert:
     - id: dsh-omnimux
       name: dsh-omnimux
+
+    # OmniMux multi-model route for the harness's pi-ai adapter.
+    #
+    # The dsh-base bundle mounts @deepseek-ai/dsh-llm-pi-ai dormant (row id
+    # `llm-pi-ai`, no config). Patch semantics: later bundles address base rows
+    # by id, last write wins per row, and a write replaces the row's whole
+    # `config`. So this row restates that plugin identity and supplies the
+    # provider profiles that activate it — one OmniMux user token
+    # (OMNIMUX_API_KEY) serves every model below in the `default` billing
+    # group, so no per-brand key is needed.
+    #
+    # Model set: the single latest flagship per brand as of the OmniMux live
+    # catalog (api.omnimux.ai/api/pricing). All seven speak the OpenAI-compatible
+    # `/v1` endpoint; contextWindow is set only where the catalog documents the
+    # number, and reasoning effort stays at each model's gateway default.
+    - id: llm-pi-ai
+      name: '@deepseek-ai/dsh-llm-pi-ai'
+      config:
+        providers:
+          # Hand-declared route: pi-ai ships nothing under this key.
+          omnimux:
+            displayName: OmniMux
+            apiKeyEnv: OMNIMUX_API_KEY
+            api: openai-completions
+            baseURL: https://api.omnimux.ai/v1
+            retryPolicy:
+              mode: normal
+              maxRetries: 2
+            models:
+              - id: claude-opus-5
+                name: Claude Opus 5
+                contextWindow: 1000000
+                maxTokens: 128000
+              - id: gpt-5.6-sol
+                name: GPT-5.6 Sol
+                contextWindow: 1000000
+              - id: grok-4.6
+                name: Grok 4.6
+              - id: kimi-k3
+                name: Kimi K3
+                contextWindow: 1000000
+              - id: deepseek-v4-pro
+                name: DeepSeek V4 Pro
+                contextWindow: 1000000
+              - id: gemini-3.7-flash
+                name: Gemini 3.7 Flash
+                contextWindow: 1000000
+                maxTokens: 65536
+              - id: glm-5.3
+                name: GLM-5.3
