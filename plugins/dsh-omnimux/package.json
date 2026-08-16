@@ -15,6 +15,7 @@
     "src/brand",
     "src/media",
     "src/official",
+    "src/plugins",
     "src/client",
     "assets/logo.svg",
     "lib/client.js",
@@ -24,7 +25,7 @@
   "scripts": {
     "build": "node scripts/build-client.mjs",
     "prepare": "node scripts/build-client.mjs",
-    "test": "node --test src/config.test.js src/media/*.test.js src/auth/*.test.js src/brand/*.test.js src/official/*.test.js src/client/api.test.js src/client/apps-store.test.js src/client/apps-stage-box.test.js"
+    "test": "node --test src/config.test.js src/media/*.test.js src/auth/*.test.js src/brand/*.test.js src/official/*.test.js src/plugins/*.test.js src/client/api.test.js src/client/apps-store.test.js src/client/apps-stage-box.test.js"
   },
   "dependencies": {
     "aigc-provider-runtime-kit": "^0.2.0"

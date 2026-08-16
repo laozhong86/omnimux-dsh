@@ -49,4 +49,4 @@ OmniMux 桌面预置 profile `omnimux` 的用户层默认模型：
 
 预置还带社区 `dsh-better-sidebar`（后期要用）。`dsh-drama` 仍是垂直包，按场景装，不默认进消费者桌面，除非另拍板。
 
-活树：`apps/desktop` 首次启动种子 `$DSH_HOME/profiles/omnimux`，Host 走 `dsh --profile omnimux`。
+活树：桌面仓 `/Users/x/Desktop/Project/omnimux-desktop` 首次启动种子 `$DSH_HOME/profiles/omnimux`，Host 走 `dsh --profile omnimux`。设置「DSH 插件」经捆绑 pnpm + 打包 `dsh plugin` 写入该 profile 的 bundles；不可卸 `dsh-omnimux` / `dsh-base` / `dsh-web-app`。

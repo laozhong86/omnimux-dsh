@@ -2,6 +2,7 @@
 import { NS, en, zh } from './locales.js'
 import { createAppsStore } from './apps-store.js'
 import { ProfileSection } from './ProfileSection.jsx'
+import { DshPluginsSection } from './DshPluginsSection.jsx'
 import { AppsEntry } from './AppsEntry.jsx'
 import { AppsStage } from './AppsStage.jsx'
 import { configFromWindow, startOverlay } from '../brand/overlay.js'
@@ -33,6 +34,14 @@ export function apply(ctx) {
     locale: NS,
     inject: () => ({ t }),
   }, ProfileSection))
+  ctx.slots.inject('settings.section', () => ctx.slots.register({
+    name: 'settings.section',
+    id: 'omnimux-dsh-plugins',
+    order: 6,
+    label: () => t('dshPlugins.nav'),
+    locale: NS,
+    inject: () => ({ t }),
+  }, DshPluginsSection))
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({
     name: 'shell.overlay',
     id: 'omnimux-apps-stage',

@@ -8,7 +8,7 @@ I/O and the seam list: repo `docs/contracts/hub.md`.
 
 ## Identity (settings)
 
-The Web client registers **个人资料** in Settings and **应用** in the left sidebar. Clicking Apps fills the conversation column (`shell.overlay` over `[data-slot="conversation"]`); it is not a sidebar menu. The button uses the official `sidebar.footer.action` seat above Settings. Host talks to OmniMux device-login HTTP itself (`POST /api/user/device/code` and `/token` on the site origin). The OmniMux CLI is not required.
+The Web client registers **个人资料** and **DSH 插件** in Settings, and **应用** in the left sidebar. **DSH 插件** is mounted only when the OmniMux desktop injects `OMNIMUX_DSH_CLI`; it installs npm packages into the `omnimux` profile through packaged `dsh plugin`. Clicking Apps fills the conversation column (`shell.overlay` over `[data-slot="conversation"]`); it is not a sidebar menu. The button uses the official `sidebar.footer.action` seat above Settings. Host talks to OmniMux device-login HTTP itself (`POST /api/user/device/code` and `/token` on the site origin). The OmniMux CLI is not required.
 
 Host plugins read `ctx.get('identity')`: `status({ verify })` returns the public profile; `require()` throws `needs-omnimux` when unsigned. The browser still only calls `/omnimux/auth/*`.
 

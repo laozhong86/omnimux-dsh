@@ -62,7 +62,17 @@ var zh = {
   "plugins.denied": "\u767B\u5F55\u88AB\u62D2\u7EDD\u3002",
   "plugins.expired": "\u767B\u5F55\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u91CD\u8BD5\u3002",
   "plugins.error": "\u767B\u5F55\u5931\u8D25\u3002",
-  "plugins.close": "\u5173\u95ED\u5E94\u7528"
+  "plugins.close": "\u5173\u95ED\u5E94\u7528",
+  "dshPlugins.nav": "DSH \u63D2\u4EF6",
+  "dshPlugins.title": "DSH \u63D2\u4EF6",
+  "dshPlugins.hint": "\u4ECE npm \u5B89\u88C5\u5230\u672C\u673A omnimux profile\u3002\u5B89\u88C5\u811A\u672C\u4F1A\u5728\u672C\u673A\u6267\u884C\u3002\u88C5\u5B8C\u540E\u91CD\u542F Host \u624D\u4F1A\u52A0\u8F7D\u3002",
+  "dshPlugins.placeholder": "\u5305\u540D\uFF0C\u4F8B\u5982 dsh-cron-parse",
+  "dshPlugins.add": "\u5B89\u88C5",
+  "dshPlugins.remove": "\u5378\u8F7D",
+  "dshPlugins.protected": "\u4E0D\u53EF\u5378\u8F7D",
+  "dshPlugins.restart": "\u91CD\u542F\u4EE5\u4F7F\u63D2\u4EF6\u751F\u6548",
+  "dshPlugins.desktopOnly": "\u5728 OmniMux \u684C\u9762\u91CC\u624D\u80FD\u7BA1\u7406 DSH \u63D2\u4EF6\u3002",
+  "dshPlugins.needDesktop": "\u9700\u8981\u684C\u9762\u58F3\u624D\u80FD\u91CD\u542F Host\u3002"
 };
 var en = {
   "profile.nav": "Profile",
@@ -95,7 +105,17 @@ var en = {
   "plugins.denied": "Sign-in was denied.",
   "plugins.expired": "Sign-in expired. Try again.",
   "plugins.error": "Sign-in failed.",
-  "plugins.close": "Close apps"
+  "plugins.close": "Close apps",
+  "dshPlugins.nav": "DSH plugins",
+  "dshPlugins.title": "DSH plugins",
+  "dshPlugins.hint": "Install npm packages into this machine\u2019s omnimux profile. Install scripts run locally. Restart the Host to load a change.",
+  "dshPlugins.placeholder": "Package name, e.g. dsh-cron-parse",
+  "dshPlugins.add": "Install",
+  "dshPlugins.remove": "Remove",
+  "dshPlugins.protected": "required",
+  "dshPlugins.restart": "Restart to apply plugins",
+  "dshPlugins.desktopOnly": "Manage DSH plugins from the OmniMux desktop app.",
+  "dshPlugins.needDesktop": "The desktop shell is required to restart the Host."
 };
 var NS = "omnimux";
 
@@ -159,13 +179,13 @@ var PUBLIC_KEYS = [
   "official"
 ];
 function pickPublic(raw) {
-  const row2 = raw && typeof raw === "object" ? (
+  const row3 = raw && typeof raw === "object" ? (
     /** @type {Record<string, unknown>} */
     raw
   ) : {};
   const out = {};
   for (const key of PUBLIC_KEYS) {
-    if (key in row2) out[key] = row2[key];
+    if (key in row3) out[key] = row3[key];
   }
   return out;
 }
@@ -370,9 +390,172 @@ function ProfileSection({ t }) {
   ] });
 }
 
-// src/client/AppsEntry.jsx
+// src/client/DshPluginsSection.jsx
 var import_react2 = require("react");
 var import_jsx_runtime2 = require("react/jsx-runtime");
+var page2 = {
+  padding: "16px 20px",
+  color: "var(--dsw-text-primary, inherit)",
+  display: "flex",
+  flexDirection: "column",
+  gap: 12,
+  maxWidth: 560
+};
+var muted2 = { color: "var(--dsw-text-secondary, inherit)", lineHeight: 1.5, margin: 0 };
+var row2 = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 };
+var button2 = {
+  padding: "6px 12px",
+  border: "1px solid var(--dsw-border, currentColor)",
+  background: "transparent",
+  color: "inherit",
+  borderRadius: 6,
+  cursor: "pointer"
+};
+var input = {
+  flex: 1,
+  padding: "6px 8px",
+  border: "1px solid var(--dsw-border, currentColor)",
+  background: "transparent",
+  color: "inherit",
+  borderRadius: 6
+};
+async function pluginRequest(path, opts = {}) {
+  const response = await fetch(path, {
+    method: opts.method ?? "GET",
+    headers: opts.body === void 0 ? void 0 : { "Content-Type": "application/json" },
+    body: opts.body === void 0 ? void 0 : JSON.stringify(opts.body)
+  });
+  let json = {};
+  try {
+    json = await response.json();
+  } catch {
+    json = { error: `HTTP ${String(response.status)}` };
+  }
+  return { ok: response.ok, status: response.status, body: json };
+}
+function desktopBridge() {
+  const api = window.dshDesktop;
+  return api && typeof api.restartHost === "function" ? api : void 0;
+}
+function DshPluginsSection({ t }) {
+  const [spec, setSpec] = (0, import_react2.useState)("");
+  const [available, setAvailable] = (0, import_react2.useState)(false);
+  const [plugins, setPlugins] = (0, import_react2.useState)([]);
+  const [busy, setBusy] = (0, import_react2.useState)(false);
+  const [error, setError] = (0, import_react2.useState)("");
+  const [pendingRestart, setPendingRestart] = (0, import_react2.useState)(false);
+  const applyList = (body) => {
+    setAvailable(body.available === true);
+    setPlugins(Array.isArray(body.plugins) ? body.plugins : []);
+  };
+  const refresh = () => {
+    return pluginRequest("/omnimux/plugins").then((result) => {
+      applyList(result.body);
+      if (!result.ok && result.body.error) setError(String(result.body.error));
+    }).catch((caught) => {
+      setError(caught instanceof Error ? caught.message : String(caught));
+    });
+  };
+  (0, import_react2.useEffect)(() => {
+    void refresh();
+  }, []);
+  const run = (work) => {
+    setBusy(true);
+    setError("");
+    return work().then((result) => {
+      if (!result.ok) {
+        setError(String(result.body.error || `HTTP ${String(result.status)}`));
+        return false;
+      }
+      applyList(result.body);
+      setPendingRestart(true);
+      return true;
+    }).catch((caught) => {
+      setError(caught instanceof Error ? caught.message : String(caught));
+      return false;
+    }).finally(() => {
+      setBusy(false);
+    });
+  };
+  const install = () => {
+    const value = spec.trim();
+    if (value === "") return;
+    void run(() => pluginRequest("/omnimux/plugins", { method: "POST", body: { spec: value } })).then((ok) => {
+      if (ok) setSpec("");
+    });
+  };
+  const uninstall = (name2) => {
+    void run(() => pluginRequest(`/omnimux/plugins/${encodeURIComponent(name2)}`, { method: "DELETE" }));
+  };
+  const restart = () => {
+    const bridge = desktopBridge();
+    if (bridge === void 0) {
+      setError(t("dshPlugins.needDesktop"));
+      return;
+    }
+    setBusy(true);
+    setError("");
+    void bridge.restartHost().then(() => {
+      setPendingRestart(false);
+    }).catch((caught) => {
+      setError(caught instanceof Error ? caught.message : String(caught));
+    }).finally(() => {
+      setBusy(false);
+    });
+  };
+  if (!available && plugins.length === 0 && error === "") {
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: page2, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { style: { margin: 0, fontSize: 16 }, children: t("dshPlugins.title") }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: muted2, children: t("dshPlugins.desktopOnly") })
+    ] });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: page2, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { style: { margin: 0, fontSize: 16 }, children: t("dshPlugins.title") }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: muted2, children: t("dshPlugins.hint") }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("ul", { style: { margin: 0, paddingLeft: 18, lineHeight: 1.7 }, children: plugins.map((plugin) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("li", { style: row2, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { children: [
+        plugin.name,
+        plugin.protected ? ` (${t("dshPlugins.protected")})` : ""
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        "button",
+        {
+          type: "button",
+          style: button2,
+          disabled: busy || plugin.protected === true,
+          onClick: () => {
+            uninstall(plugin.name);
+          },
+          children: t("dshPlugins.remove")
+        }
+      )
+    ] }, plugin.name)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: row2, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        "input",
+        {
+          style: input,
+          value: spec,
+          disabled: busy,
+          placeholder: t("dshPlugins.placeholder"),
+          onChange: (event) => {
+            setSpec(event.target.value);
+          },
+          onKeyDown: (event) => {
+            if (event.key === "Enter") install();
+          }
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", style: button2, disabled: busy || spec.trim() === "", onClick: install, children: t("dshPlugins.add") })
+    ] }),
+    pendingRestart ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", style: button2, disabled: busy, onClick: restart, children: t("dshPlugins.restart") }) : null,
+    error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: muted2, children: error }) : null
+  ] });
+}
+
+// src/client/AppsEntry.jsx
+var import_react3 = require("react");
+var import_jsx_runtime3 = require("react/jsx-runtime");
 var fill = "var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08))";
 var item = {
   display: "flex",
@@ -406,17 +589,17 @@ var railItem = {
   gap: 0
 };
 function AppsIcon({ size }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { width: size, height: size, viewBox: "0 0 16 16", "aria-hidden": "true", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("rect", { x: "1.5", y: "1.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("rect", { x: "9.5", y: "1.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("rect", { x: "1.5", y: "9.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("rect", { x: "9.5", y: "9.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" })
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { width: size, height: size, viewBox: "0 0 16 16", "aria-hidden": "true", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "1.5", y: "1.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "9.5", y: "1.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "1.5", y: "9.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "9.5", y: "9.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" })
   ] });
 }
 function AppsEntry({ wide, t, apps }) {
-  const open = (0, import_react2.useSyncExternalStore)(apps.subscribe, apps.getSnapshot);
-  const [hover, setHover] = (0, import_react2.useState)(false);
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+  const open = (0, import_react3.useSyncExternalStore)(apps.subscribe, apps.getSnapshot);
+  const [hover, setHover] = (0, import_react3.useState)(false);
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
     "button",
     {
       type: "button",
@@ -436,15 +619,15 @@ function AppsEntry({ wide, t, apps }) {
         apps?.toggle();
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(AppsIcon, { size: wide ? 16 : 18 }),
-        wide && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("plugins.nav") })
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(AppsIcon, { size: wide ? 16 : 18 }),
+        wide && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: t("plugins.nav") })
       ]
     }
   );
 }
 
 // src/client/AppsStage.jsx
-var import_react4 = require("react");
+var import_react5 = require("react");
 
 // src/client/conversation-box.js
 function sizableBox(node) {
@@ -469,9 +652,9 @@ function readConversationBox() {
 }
 
 // src/client/PluginsSection.jsx
-var import_react3 = require("react");
-var import_jsx_runtime3 = require("react/jsx-runtime");
-var page2 = {
+var import_react4 = require("react");
+var import_jsx_runtime4 = require("react/jsx-runtime");
+var page3 = {
   padding: "16px 20px",
   color: "var(--dsw-text-primary, inherit)",
   display: "flex",
@@ -491,8 +674,8 @@ var gate = {
   color: "var(--dsw-text-primary, inherit)",
   textAlign: "center"
 };
-var muted2 = { color: "var(--dsw-text-secondary, inherit)", lineHeight: 1.5, margin: 0 };
-var button2 = {
+var muted3 = { color: "var(--dsw-text-secondary, inherit)", lineHeight: 1.5, margin: 0 };
+var button3 = {
   padding: "8px 24px",
   border: "1px solid var(--dsw-border, currentColor)",
   background: "transparent",
@@ -503,8 +686,8 @@ var button2 = {
 var CAP_KEYS = ["identity", "videoGenerate", "imageGenerate", "official"];
 function PluginsSection({ t }) {
   const { state, beginLogin, openUrl } = useOmnimuxAuth({ verifyOnMount: true });
-  const [caps, setCaps] = (0, import_react3.useState)(null);
-  (0, import_react3.useEffect)(() => {
+  const [caps, setCaps] = (0, import_react4.useState)(null);
+  (0, import_react4.useEffect)(() => {
     if (state.phase !== "ready") return void 0;
     let cancelled = false;
     getCapabilities().then((result) => {
@@ -517,14 +700,14 @@ function PluginsSection({ t }) {
     };
   }, [state.phase]);
   if (state.phase === "ready") {
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: page2, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted2, children: t("plugins.empty") }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: { ...muted2, marginTop: 8 }, children: t("plugins.hub") }),
-      caps ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("ul", { style: { margin: 0, paddingLeft: 18, lineHeight: 1.7 }, children: CAP_KEYS.map((key) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("li", { children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: page3, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: t("plugins.empty") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { ...muted3, marginTop: 8 }, children: t("plugins.hub") }),
+      caps ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("ul", { style: { margin: 0, paddingLeft: 18, lineHeight: 1.7 }, children: CAP_KEYS.map((key) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("li", { children: [
         t(`plugins.cap.${key}`),
         " \u2014 ",
         caps[key] ? t("plugins.cap.on") : t("plugins.cap.off")
-      ] }, key)) }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted2, children: t("profile.loading") })
+      ] }, key)) }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: t("profile.loading") })
     ] });
   }
   const message = {
@@ -538,34 +721,34 @@ function PluginsSection({ t }) {
   }[state.phase] || t("plugins.needLogin");
   const showLogin = state.phase === "need-login" || state.phase === "denied" || state.phase === "expired" || state.phase === "error";
   const showStatus = state.phase !== "need-login";
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: gate, children: [
-    showStatus ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted2, children: message }) : null,
-    state.phase === "error" && state.detail ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted2, children: state.detail }) : null,
-    state.phase === "waiting" && state.user_code ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("p", { style: muted2, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: gate, children: [
+    showStatus ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: message }) : null,
+    state.phase === "error" && state.detail ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: state.detail }) : null,
+    state.phase === "waiting" && state.user_code ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { style: muted3, children: [
       t("plugins.code"),
       ": ",
       state.user_code
     ] }) : null,
-    state.phase === "waiting" && state.verification_url ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", style: button2, onClick: () => openUrl(state.verification_url), children: t("plugins.open") }) : null,
-    showLogin ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", style: button2, onClick: () => {
+    state.phase === "waiting" && state.verification_url ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", style: button3, onClick: () => openUrl(state.verification_url), children: t("plugins.open") }) : null,
+    showLogin ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", style: button3, onClick: () => {
       void beginLogin();
     }, children: t("plugins.login") }) : null
   ] });
 }
 
 // src/client/AppsStage.jsx
-var import_jsx_runtime4 = require("react/jsx-runtime");
+var import_jsx_runtime5 = require("react/jsx-runtime");
 function AppsStage({ t, apps, useSessions }) {
-  const open = (0, import_react4.useSyncExternalStore)(
+  const open = (0, import_react5.useSyncExternalStore)(
     apps ? apps.subscribe : () => () => {
     },
     apps ? apps.getSnapshot : () => false
   );
   const readSessions = useSessions ?? ((select) => select({}));
   const currentSession = readSessions((state) => state.current);
-  const lastSession = (0, import_react4.useRef)(currentSession);
-  const [box, setBox] = (0, import_react4.useState)(() => readConversationBox());
-  (0, import_react4.useLayoutEffect)(() => {
+  const lastSession = (0, import_react5.useRef)(currentSession);
+  const [box, setBox] = (0, import_react5.useState)(() => readConversationBox());
+  (0, import_react5.useLayoutEffect)(() => {
     if (!open) return void 0;
     const update = () => {
       setBox(readConversationBox());
@@ -581,11 +764,11 @@ function AppsStage({ t, apps, useSessions }) {
       window.removeEventListener("resize", update);
     };
   }, [open]);
-  (0, import_react4.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (open && lastSession.current !== currentSession) apps?.set(false);
     lastSession.current = currentSession;
   }, [apps, currentSession, open]);
-  (0, import_react4.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (!open || !apps) return void 0;
     const header = document.querySelector('[data-slot="conversation.session.header"]');
     if (!(header instanceof HTMLElement)) return void 0;
@@ -598,7 +781,7 @@ function AppsStage({ t, apps, useSessions }) {
     };
   }, [apps, open]);
   if (!open || !apps) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
     "div",
     {
       role: "region",
@@ -618,7 +801,7 @@ function AppsStage({ t, apps, useSessions }) {
         overflow: "auto"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
           "button",
           {
             type: "button",
@@ -642,7 +825,7 @@ function AppsStage({ t, apps, useSessions }) {
             children: "\xD7"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PluginsSection, { t }) })
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(PluginsSection, { t }) })
       ]
     }
   );
@@ -949,6 +1132,14 @@ function apply(ctx) {
     locale: NS,
     inject: () => ({ t })
   }, ProfileSection));
+  ctx.slots.inject("settings.section", () => ctx.slots.register({
+    name: "settings.section",
+    id: "omnimux-dsh-plugins",
+    order: 6,
+    label: () => t("dshPlugins.nav"),
+    locale: NS,
+    inject: () => ({ t })
+  }, DshPluginsSection));
   ctx.slots.inject("shell.overlay", () => ctx.slots.register({
     name: "shell.overlay",
     id: "omnimux-apps-stage",

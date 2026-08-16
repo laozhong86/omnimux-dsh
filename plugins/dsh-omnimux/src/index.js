@@ -4,6 +4,7 @@ import { executeOmnimuxImage } from './media/image.js'
 import { executeOmnimuxVideo, OmnimuxError } from './media/video.js'
 import { CLIENT_NAME, DEFAULT_SITE, resolveSiteBaseUrl } from './auth/omnimux-auth.js'
 import { createAuthDispatcher, registerAuthRoutes } from './auth/http-routes.js'
+import { createPluginDispatcher, registerPluginRoutes } from './plugins/http-routes.js'
 import { createPendingStore } from './auth/pending.js'
 import { createIdentity } from './auth/identity.js'
 import { createTokenStore } from './auth/store.js'
@@ -87,8 +88,15 @@ export function apply(ctx, config = {}) {
         official: hub.official.mount,
       },
     })
-    const mount = () => registerAuthRoutes(webServer, dispatcher)
-    if (typeof httpCtx.effect === 'function') httpCtx.effect(mount, 'dsh-omnimux: auth routes')
+    const mount = () => {
+      const stopAuth = registerAuthRoutes(webServer, dispatcher)
+      const stopPlugins = registerPluginRoutes(webServer, createPluginDispatcher())
+      return () => {
+        stopAuth()
+        stopPlugins()
+      }
+    }
+    if (typeof httpCtx.effect === 'function') httpCtx.effect(mount, 'dsh-omnimux: http routes')
     else mount()
     if (typeof webServer.tapIndex !== 'function') return
     const tap = () => webServer.tapIndex(html => injectBrandBoot(html, brand))

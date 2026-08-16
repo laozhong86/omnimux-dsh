@@ -17,6 +17,13 @@
 # deepseek-v4-flash is the product default agent model (desktop preset and web
 # profile set agent-default-model to it), so it stays selectable here.
 #
+# Input modalities follow the same rule: `input: [text, image]` is declared
+# only where the pricing catalog documents image input (grok-4.6 says
+# "text+image input"; the other seven descriptions do not mention images).
+# Under-declaring refuses an image before it attaches (naming the model);
+# over-declaring admits one the provider rejects mid-turn after the message
+# is durable — so the catalog, not real-world brand knowledge, is the gate.
+#
 # Layering rule: user-layer cordis.patch.yml files (machine-local, per profile)
 # MUST NOT redefine this `llm-pi-ai` row — an id-matched patch replaces the
 # whole row and silently shadows this list. They set `agent-default-model`
@@ -45,6 +52,7 @@
           - id: grok-4.6
             name: Grok 4.6
             contextWindow: 500000
+            input: [text, image]
           - id: kimi-k3
             name: Kimi K3
             contextWindow: 1000000

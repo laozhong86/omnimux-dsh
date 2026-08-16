@@ -30,6 +30,16 @@ export const zh = {
   'plugins.expired': '登录已过期，请重试。',
   'plugins.error': '登录失败。',
   'plugins.close': '关闭应用',
+  'dshPlugins.nav': 'DSH 插件',
+  'dshPlugins.title': 'DSH 插件',
+  'dshPlugins.hint': '从 npm 安装到本机 omnimux profile。安装脚本会在本机执行。装完后重启 Host 才会加载。',
+  'dshPlugins.placeholder': '包名，例如 dsh-cron-parse',
+  'dshPlugins.add': '安装',
+  'dshPlugins.remove': '卸载',
+  'dshPlugins.protected': '不可卸载',
+  'dshPlugins.restart': '重启以使插件生效',
+  'dshPlugins.desktopOnly': '在 OmniMux 桌面里才能管理 DSH 插件。',
+  'dshPlugins.needDesktop': '需要桌面壳才能重启 Host。',
 }
 
 export const en = {
@@ -64,6 +74,16 @@ export const en = {
   'plugins.expired': 'Sign-in expired. Try again.',
   'plugins.error': 'Sign-in failed.',
   'plugins.close': 'Close apps',
+  'dshPlugins.nav': 'DSH plugins',
+  'dshPlugins.title': 'DSH plugins',
+  'dshPlugins.hint': 'Install npm packages into this machine’s omnimux profile. Install scripts run locally. Restart the Host to load a change.',
+  'dshPlugins.placeholder': 'Package name, e.g. dsh-cron-parse',
+  'dshPlugins.add': 'Install',
+  'dshPlugins.remove': 'Remove',
+  'dshPlugins.protected': 'required',
+  'dshPlugins.restart': 'Restart to apply plugins',
+  'dshPlugins.desktopOnly': 'Manage DSH plugins from the OmniMux desktop app.',
+  'dshPlugins.needDesktop': 'The desktop shell is required to restart the Host.',
 }
 
 export const NS = 'omnimux'
