@@ -69,6 +69,20 @@ describe('plugin dispatcher', () => {
     assert.equal(result.status, 400)
     assert.match(result.body.error, /only npm package names/)
   })
+
+  it('refuses a cross-origin install', () => {
+    const dispatcher = createPluginDispatcher({
+      env: { OMNIMUX_DSH_CLI: '/cli' },
+      spawn() { throw new Error('should not spawn') },
+    })
+    const result = dispatcher.dispatch({
+      method: 'POST',
+      url: '/omnimux/plugins',
+      origin: 'https://evil.example',
+      body: { spec: 'dsh-cron-parse@1.0.0' },
+    })
+    assert.equal(result.status, 403)
+  })
 })
 
 describe('resolvePluginCli', () => {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { pickPublic } from './api.js'
+import { pickAppsView, pickPublic } from './api.js'
 
 describe('client auth payload filter', () => {
   it('keeps public fields and drops tokens', () => {
@@ -14,5 +14,27 @@ describe('client auth payload filter', () => {
     assert.equal(picked.username, 'ada')
     assert.equal('access_token' in picked, false)
     assert.equal('email' in picked, false)
+  })
+})
+
+describe('client apps view filter', () => {
+  it('keeps shelf fields and drops unknown keys', () => {
+    const picked = pickAppsView({
+      schema: 1,
+      source: 'bundled',
+      stale: false,
+      apps: [{
+        id: 'accounts',
+        title: '账号',
+        install_spec: 'dsh-omnimux-accounts@0.1.0',
+        token: 'pat-nope',
+      }],
+      secret: 'sk-nope',
+    })
+    assert.equal(picked.schema, 1)
+    assert.equal(picked.apps[0].id, 'accounts')
+    assert.equal(picked.apps[0].install_spec, 'dsh-omnimux-accounts@0.1.0')
+    assert.equal('token' in picked.apps[0], false)
+    assert.equal('secret' in picked, false)
   })
 })

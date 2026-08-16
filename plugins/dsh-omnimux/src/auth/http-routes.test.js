@@ -146,6 +146,7 @@ describe('auth http dispatcher', () => {
       'exact:/omnimux/auth/logout',
       'exact:/omnimux/capabilities',
       'prefix:/omnimux/plugins',
+      'prefix:/omnimux/apps',
     ])
   })
 

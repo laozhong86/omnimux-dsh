@@ -10,6 +10,8 @@ test('parseHubConfig fills brand and the OmniMux media row', () => {
   assert.equal(parsed.media.providers.omnimux.models.video, 'seedance-2-0-fast')
   assert.equal(parsed.media.providers.omnimux.models.image, 'gpt-image-2')
   assert.equal(parsed.official.mount, true)
+  assert.equal(parsed.apps.remote, false)
+  assert.equal(parsed.apps.ttlSeconds, 21600)
 })
 
 test('Config Standard Schema accepts empty input', () => {
@@ -25,4 +27,13 @@ test('Config Standard Schema rejects a bad media protocol', () => {
   })
   assert.ok('issues' in result)
   assert.match(result.issues[0]?.message ?? '', /protocol must be one of/)
+})
+
+test('Config Standard Schema rejects a catalog URL on another host', () => {
+  const result = Config['~standard'].validate({
+    siteBaseUrl: 'https://omnimux.ai',
+    apps: { catalogUrl: 'https://evil.example/apps/catalog.json' },
+  })
+  assert.ok('issues' in result)
+  assert.match(result.issues[0]?.message ?? '', /host must match/)
 })

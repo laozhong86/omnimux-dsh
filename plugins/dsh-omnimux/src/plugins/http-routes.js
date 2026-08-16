@@ -1,4 +1,5 @@
 import { sendJson, readJsonBody } from '../auth/http-routes.js'
+import { assertLocalWrite } from '../apps/origin.js'
 import {
   assertNpmSpec,
   assertRemovable,
@@ -32,6 +33,14 @@ export function createPluginDispatcher(deps = {}) {
     }
 
     if (exe === undefined) return { status: 501, body: { error: 'desktop plugin CLI is not configured' } }
+
+    if (method !== 'GET') {
+      try {
+        assertLocalWrite(req)
+      } catch (error) {
+        return { status: 403, body: { error: error instanceof Error ? error.message : String(error) } }
+      }
+    }
 
     if (method === 'POST' && path === '/omnimux/plugins') {
       const spec = req.body && typeof req.body === 'object' ? /** @type {{ spec?: unknown }} */ (req.body).spec : undefined
@@ -81,6 +90,9 @@ export function registerPluginRoutes(webServer, dispatcher) {
           method: req.method || 'GET',
           url: req.url || '/omnimux/plugins',
           body,
+          origin: header(req, 'origin'),
+          referer: header(req, 'referer'),
+          secFetchSite: header(req, 'sec-fetch-site'),
         })
         sendJson(res, result.status, result.body)
       } catch {
@@ -92,4 +104,13 @@ export function registerPluginRoutes(webServer, dispatcher) {
   return () => {
     for (const dispose of disposers) dispose()
   }
+}
+
+/**
+ * @param {{ headers?: Record<string, string | string[] | undefined> }} req
+ * @param {string} name
+ */
+function header(req, name) {
+  const value = req.headers?.[name] ?? req.headers?.[name.toLowerCase()]
+  return Array.isArray(value) ? value[0] : value
 }

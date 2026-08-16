@@ -75,3 +75,84 @@ export function logout() {
 export function getCapabilities() {
   return authRequest('/omnimux/capabilities')
 }
+
+const APP_KEYS = [
+  'schema', 'source', 'stale', 'fetched_at', 'refresh', 'error', 'apps',
+]
+
+const APP_ROW_KEYS = [
+  'id', 'title', 'summary', 'kind', 'capabilities', 'client', 'spec', 'state', 'install_spec',
+]
+
+/**
+ * @param {unknown} raw
+ */
+export function pickAppsView(raw) {
+  const row = raw && typeof raw === 'object' ? /** @type {Record<string, unknown>} */ (raw) : {}
+  /** @type {Record<string, unknown>} */
+  const out = {}
+  for (const key of APP_KEYS) {
+    if (key in row) out[key] = row[key]
+  }
+  if (Array.isArray(out.apps)) {
+    out.apps = out.apps.map((item) => {
+      const app = item && typeof item === 'object' ? /** @type {Record<string, unknown>} */ (item) : {}
+      /** @type {Record<string, unknown>} */
+      const next = {}
+      for (const key of APP_ROW_KEYS) {
+        if (key in app) next[key] = app[key]
+      }
+      return next
+    })
+  }
+  return out
+}
+
+/**
+ * @param {string} path
+ * @param {{ method?: string }} [opts]
+ */
+export async function appsRequest(path, opts = {}) {
+  const response = await fetch(path, { method: opts.method ?? 'GET' })
+  const contentType = response.headers.get('content-type') || ''
+  if (!contentType.includes('json')) {
+    return {
+      ok: false,
+      status: response.status,
+      body: { error: response.status === 404 ? 'apps routes not mounted' : `unexpected ${contentType || 'response'}` },
+    }
+  }
+  let json = null
+  try {
+    json = await response.json()
+  } catch {
+    json = {}
+  }
+  return { ok: response.ok, status: response.status, body: pickAppsView(json) }
+}
+
+export function getApps() {
+  return appsRequest('/omnimux/apps')
+}
+
+export function refreshApps() {
+  return appsRequest('/omnimux/apps/refresh', { method: 'POST' })
+}
+
+/**
+ * @param {string} spec
+ */
+export async function installApp(spec) {
+  const response = await fetch('/omnimux/plugins', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ spec }),
+  })
+  let json = {}
+  try {
+    json = await response.json()
+  } catch {
+    json = { error: `HTTP ${String(response.status)}` }
+  }
+  return { ok: response.ok, status: response.status, body: json }
+}

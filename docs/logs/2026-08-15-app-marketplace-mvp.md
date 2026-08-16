@@ -1,9 +1,9 @@
 # 开发日志：OmniMux 应用市场 MVP
 
 - **日期:** 2026-08-15
-- **状态:** 产品方向已确认；**应用 server 尚未设计**。本文件给后续代理当入口，不是 server 实现规格。
-- **读者:** 在 `OmniMux` 仓设计应用 server 的代理；在 `omnimux-dsh` 接货架 / 打开 WebUI 的代理。
-- **不要在本仓实现应用目录服务。** Server、管理员鉴权、目录存储属于 OmniMux 云（`/Users/x/Desktop/Project/OmniMux`）。Desktop 侧只消费目录、打开应用 WebUI、复用已有登录。`dsh-omnimux` 是执行中枢，不是网关。
+- **状态:** 官方货架存储已改。规范真源：[docs/contracts/apps-catalog.md](../contracts/apps-catalog.md)（bundled JSON + 可选远程 JSON）。本文件保留用户故事和「应用 = 带 WebUI 的 dsh 插件」约束；**不要再按「先做 OmniMux 应用表」开工。**
+- **读者:** 在 `omnimux-dsh` 接货架 / 打开 WebUI 的代理。个人「我的」与管理员写接口仍不做。
+- **不要在本仓实现应用目录服务。** 允许中枢持有静态 catalog 与本机缓存。禁止再做一套带鉴权的应用表。`dsh-omnimux` 是执行中枢，不是网关。
 
 ---
 
@@ -26,7 +26,7 @@ Desktop / `dsh-omnimux` 已经有：
 - PAT 只在 Host，键名 `OMNIMUX_ACCESS_TOKEN`，浏览器拿不到。
 - `dsh-omnimux` 随 Desktop / web profile 默认安装，是原生底座，**不是货架上的普通应用**。
 
-货架列表仍是空文案：「还没有已发布的应用。」等 server 目录接通。
+货架列表现读本机 `GET /omnimux/apps`。bundled `apps/catalog.json` 当前仍是空数组，所以文案仍是「还没有已发布的应用。」第一条官方行另 PR。
 
 ---
 

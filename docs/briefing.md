@@ -9,9 +9,10 @@
 |---|---|---|---|
 | 2026-08-15-briefing-log | 2026-08-15 | decided | 项目级协同简报 |
 | 2026-08-15-omnimux-identity | 2026-08-15 | decided | dsh-omnimux 身份独立于 CLI |
-| 2026-08-15-app-marketplace | 2026-08-15 | decided | OmniMux 应用市场 MVP：故事已收，server 待设计 |
+| 2026-08-15-app-marketplace | 2026-08-15 | superseded | OmniMux 应用市场 MVP：故事已收，server 待设计 |
 | 2026-08-16-hub-io | 2026-08-16 | decided | 执行中枢 I/O；不再称中枢为网关 |
 | 2026-08-16-harness-consume | 2026-08-16 | decided | 消费官方 dsh，不整仓 fork |
+| 2026-08-17-apps-catalog-json | 2026-08-17 | decided | 官方货架用 bundled + 远程 JSON，不做应用表 |
 
 ## 2026-08-15-briefing-log
 
@@ -43,13 +44,17 @@
 
 ## 2026-08-15-app-marketplace
 
-- **status:** decided
+- **status:** superseded
 - **topic:** OmniMux 应用市场 MVP：故事已收，server 待设计
 - **decision:** 应用带 WebUI、点开即用。实现单位仍是 dsh 插件。货架和云接口在 OmniMux。`dsh-omnimux` 是原生底座。管理员用 CLI 上下架，不做后台 WebUI。用户故事和前置约束以 `docs/logs/2026-08-15-app-marketplace-mvp.md` 为准。Server 设计在 OmniMux 仓另做，确认后再写代码。
 - **why:** MVP 可以糙，目录、打开方式、身份、官方/个人必须先定，否则后迁。公开 `@omnimux/cli` 现网禁止管理员路由前缀，上下架 CLI 怎么挂要在 server 设计里先选。
 - **not:** 不是官方 dsh 商店；不是每人一台云函数；不是管理员 Web 后台；不是本仓实现应用目录服务（属 OmniMux 云）。
 - **authority:** `docs/logs/2026-08-15-app-marketplace-mvp.md`
-- **updated:** —
+- **superseded_by:** `2026-08-17-apps-catalog-json` / `docs/contracts/apps-catalog.md`
+- **updated:** 2026-08-17
+
+### Amendments
+- 2026-08-17 — 官方货架改为 bundled + 远程 JSON。不再等 OmniMux 应用表。个人「我的」与管理员写接口仍不做。
 
 ## 2026-08-16-hub-io
 
@@ -79,3 +84,16 @@
 - **not:** 不搬 `apps/desktop` 独立仓。不向上游提功能 PR。不新开 `sidebar.lead.action`。
 - **authority:** `docs/decisions/2026-08-16-harness-consume-not-fork.md`, `docs/harness-pin.md`
 - **updated:** 2026-08-16
+
+## 2026-08-17-apps-catalog-json
+
+- **status:** decided
+- **topic:** 官方货架用 bundled + 远程 JSON，不做应用表
+- **decision:** Apps 列表只来自 `omnimux.app` 标记过的官方目录。底是中枢自带的 `apps/catalog.json`。可选再拉 `{siteBaseUrl}/apps/catalog.json`，缓存在 `$DSH_HOME/omnimux/apps/`。浏览器只打本机 `GET /omnimux/apps`。安装仍是钉版本的 `dsh plugin add`。不扫 profile 里全部 dsh 插件。
+- **why:** 要躲的是应用管理后端，不是 OmniMux 云。不发 Desktop 也能改官方上架，但第一期可以只读 bundled。
+- **not:** 不是个人「我的」；不是管理员写 API；不是远程代码；不是自动装卸。
+- **authority:** `docs/contracts/apps-catalog.md`
+- **updated:** 2026-08-17
+
+### Amendments
+- 2026-08-17 — Phase 1–3 landed in `dsh-omnimux`: bundled catalog, Host cache/refresh, Apps overlay reads `/omnimux/apps`. First real row is still a later PR.

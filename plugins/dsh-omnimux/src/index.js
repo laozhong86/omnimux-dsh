@@ -5,6 +5,8 @@ import { executeOmnimuxVideo, OmnimuxError } from './media/video.js'
 import { CLIENT_NAME, DEFAULT_SITE, resolveSiteBaseUrl } from './auth/omnimux-auth.js'
 import { createAuthDispatcher, registerAuthRoutes } from './auth/http-routes.js'
 import { createPluginDispatcher, registerPluginRoutes } from './plugins/http-routes.js'
+import { createAppsDispatcher, registerAppsRoutes } from './apps/http-routes.js'
+import { createAppsStore } from './apps/store.js'
 import { createPendingStore } from './auth/pending.js'
 import { createIdentity } from './auth/identity.js'
 import { createTokenStore } from './auth/store.js'
@@ -68,6 +70,20 @@ export function apply(ctx, config = {}) {
   const identity = createIdentity({ store, siteBaseUrl })
   void store.describe()
   ctx.provide('identity', { status: identity.status, require: identity.require })
+  const homeDir = process.env.DSH_HOME || join(homedir(), '.dsh')
+  const profile = process.env.OMNIMUX_PLUGIN_PROFILE && process.env.OMNIMUX_PLUGIN_PROFILE.trim() !== ''
+    ? process.env.OMNIMUX_PLUGIN_PROFILE
+    : 'omnimux'
+  const appsStore = createAppsStore({
+    home: homeDir,
+    profile,
+    apps: hub.apps,
+    siteBaseUrl,
+  })
+  if (typeof ctx.effect === 'function') {
+    ctx.effect(() => () => appsStore.dispose(), 'dsh-omnimux: apps catalog')
+  }
+  appsStore.maybeRefresh()
 
   /**
    * @param {{ webServer?: { register: Function, tapIndex?: Function }, get?: Function, effect?: Function }} httpCtx
@@ -91,9 +107,17 @@ export function apply(ctx, config = {}) {
     const mount = () => {
       const stopAuth = registerAuthRoutes(webServer, dispatcher)
       const stopPlugins = registerPluginRoutes(webServer, createPluginDispatcher())
+      const stopApps = registerAppsRoutes(webServer, createAppsDispatcher({
+        homeDir,
+        profile,
+        apps: hub.apps,
+        siteBaseUrl,
+        store: appsStore,
+      }))
       return () => {
         stopAuth()
         stopPlugins()
+        stopApps()
       }
     }
     if (typeof httpCtx.effect === 'function') httpCtx.effect(mount, 'dsh-omnimux: http routes')

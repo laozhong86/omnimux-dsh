@@ -128,9 +128,10 @@ Hub implementation stays in `plugins/dsh-omnimux`. New capability = new director
 
 ```text
 plugins/dsh-omnimux/src/
-  config.js              plugin Config (brand + media)
+  config.js              plugin Config (brand + media + apps)
   brand/                 chrome overlay
   auth/                  device login, token store, provide('identity'), /omnimux/auth/*
+  apps/                  official catalog parse, cache, resolve, /omnimux/apps
   llm/                   omnimux chat route / future adapter only
   media/
     route.js             resolve provider + protocol + model
@@ -153,4 +154,4 @@ The plugin entry exports `Config` (Standard Schema). Brand strings and `media.pr
 | write its own disk contract | implement chrome, login, or provider routes |
 | stub or throw `needs-provider` when a seam is absent | claim `mode: "stub"` is a model render |
 
-`dsh-omnimux` itself is not a shelf app. Catalog rows belong on OmniMux cloud.
+`dsh-omnimux` itself is not a shelf app. Official catalog rows: [apps-catalog.md](apps-catalog.md).

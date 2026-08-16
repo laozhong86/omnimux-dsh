@@ -1,3 +1,5 @@
+import { parseAppsConfig } from './apps/config.js'
+import { DEFAULT_SITE, resolveSiteBaseUrl } from './auth/omnimux-auth.js'
 import { parseBrandConfig } from './brand/config.js'
 import { parseMediaConfig } from './media/route.js'
 import { parseOfficialConfig } from './official/config.js'
@@ -14,6 +16,14 @@ export function parseHubConfig(value) {
     ...brand,
     media: parseMediaConfig(raw.media),
     official: parseOfficialConfig(raw.official),
+    apps: parseAppsConfig(
+      raw.apps,
+      resolveSiteBaseUrl(
+        typeof raw.siteBaseUrl === 'string' && raw.siteBaseUrl.trim()
+          ? raw.siteBaseUrl
+          : process.env.OMNIMUX_SITE_URL || DEFAULT_SITE,
+      ),
+    ),
   }
 }
 

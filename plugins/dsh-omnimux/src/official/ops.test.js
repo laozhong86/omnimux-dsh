@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { apply } from '../index.js'
 import { OmnimuxError } from '../media/errors.js'
@@ -53,19 +56,35 @@ describe('official social ops', () => {
 
   it('unsigned account tools throw needs-omnimux', async () => {
     const tools = {}
-    apply({
-      tools: { register(tool) { tools[tool.name] = tool } },
-      provide() {},
-      get() { return undefined },
-    })
-    await assert.rejects(
-      () => tools.omnimux_accounts_list.execute({}),
-      (error) => error instanceof OmnimuxError && error.code === 'needs-omnimux',
-    )
-    await assert.rejects(
-      () => tools.omnimux_publish_get.execute({ id: 'p1' }),
-      (error) => error instanceof OmnimuxError && error.code === 'needs-omnimux',
-    )
+    const home = mkdtempSync(join(tmpdir(), 'omnimux-ops-'))
+    const previousHome = process.env.DSH_HOME
+    const previousKey = process.env.OMNIMUX_API_KEY
+    const previousToken = process.env.OMNIMUX_TOKEN
+    process.env.DSH_HOME = home
+    delete process.env.OMNIMUX_API_KEY
+    delete process.env.OMNIMUX_TOKEN
+    try {
+      apply({
+        tools: { register(tool) { tools[tool.name] = tool } },
+        provide() {},
+        get() { return undefined },
+      })
+      await assert.rejects(
+        () => tools.omnimux_accounts_list.execute({}),
+        (error) => error instanceof OmnimuxError && error.code === 'needs-omnimux',
+      )
+      await assert.rejects(
+        () => tools.omnimux_publish_get.execute({ id: 'p1' }),
+        (error) => error instanceof OmnimuxError && error.code === 'needs-omnimux',
+      )
+    } finally {
+      if (previousHome === undefined) delete process.env.DSH_HOME
+      else process.env.DSH_HOME = previousHome
+      if (previousKey === undefined) delete process.env.OMNIMUX_API_KEY
+      else process.env.OMNIMUX_API_KEY = previousKey
+      if (previousToken === undefined) delete process.env.OMNIMUX_TOKEN
+      else process.env.OMNIMUX_TOKEN = previousToken
+    }
   })
 
   it('social data without a key is omnimux-unconfigured', async () => {

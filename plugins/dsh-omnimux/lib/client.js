@@ -51,7 +51,10 @@ var zh = {
   "plugins.waiting": "\u8BF7\u5728\u6253\u5F00\u7684\u9875\u9762\u786E\u8BA4\u767B\u5F55\u3002",
   "plugins.code": "\u8BBE\u5907\u7801",
   "plugins.open": "\u6253\u5F00\u786E\u8BA4\u9875",
-  "plugins.empty": "\u8FD8\u6CA1\u6709\u5DF2\u53D1\u5E03\u7684\u5E94\u7528\u3002\u5E02\u573A\u76EE\u5F55\u4E0B\u4E00\u671F\u63A5\u901A\u3002",
+  "plugins.empty": "\u8FD8\u6CA1\u6709\u5DF2\u53D1\u5E03\u7684\u5E94\u7528\u3002",
+  "plugins.install": "\u5B89\u88C5",
+  "plugins.update": "\u66F4\u65B0",
+  "plugins.installed": "\u5DF2\u5B89\u88C5\u3002\u6253\u5F00\u5E94\u7528\u4E0B\u4E00\u671F\u63A5\u901A\u3002",
   "plugins.hub": "\u672C\u673A\u4E2D\u67A2\u80FD\u529B",
   "plugins.cap.identity": "\u8EAB\u4EFD",
   "plugins.cap.videoGenerate": "\u89C6\u9891\u751F\u6210",
@@ -94,7 +97,10 @@ var en = {
   "plugins.waiting": "Confirm the login in the opened page.",
   "plugins.code": "Device code",
   "plugins.open": "Open confirmation page",
-  "plugins.empty": "No published apps yet. The catalog comes in a later release.",
+  "plugins.empty": "No published apps yet.",
+  "plugins.install": "Install",
+  "plugins.update": "Update",
+  "plugins.installed": "Installed. Opening an app comes in a later release.",
   "plugins.hub": "Hub capabilities on this machine",
   "plugins.cap.identity": "Identity",
   "plugins.cap.videoGenerate": "Video generate",
@@ -179,13 +185,13 @@ var PUBLIC_KEYS = [
   "official"
 ];
 function pickPublic(raw) {
-  const row3 = raw && typeof raw === "object" ? (
+  const row4 = raw && typeof raw === "object" ? (
     /** @type {Record<string, unknown>} */
     raw
   ) : {};
   const out = {};
   for (const key of PUBLIC_KEYS) {
-    if (key in row3) out[key] = row3[key];
+    if (key in row4) out[key] = row4[key];
   }
   return out;
 }
@@ -227,8 +233,84 @@ function pollLogin(flowId) {
 function logout() {
   return authRequest("/omnimux/auth/logout", { method: "POST" });
 }
-function getCapabilities() {
-  return authRequest("/omnimux/capabilities");
+var APP_KEYS = [
+  "schema",
+  "source",
+  "stale",
+  "fetched_at",
+  "refresh",
+  "error",
+  "apps"
+];
+var APP_ROW_KEYS = [
+  "id",
+  "title",
+  "summary",
+  "kind",
+  "capabilities",
+  "client",
+  "spec",
+  "state",
+  "install_spec"
+];
+function pickAppsView(raw) {
+  const row4 = raw && typeof raw === "object" ? (
+    /** @type {Record<string, unknown>} */
+    raw
+  ) : {};
+  const out = {};
+  for (const key of APP_KEYS) {
+    if (key in row4) out[key] = row4[key];
+  }
+  if (Array.isArray(out.apps)) {
+    out.apps = out.apps.map((item2) => {
+      const app = item2 && typeof item2 === "object" ? (
+        /** @type {Record<string, unknown>} */
+        item2
+      ) : {};
+      const next = {};
+      for (const key of APP_ROW_KEYS) {
+        if (key in app) next[key] = app[key];
+      }
+      return next;
+    });
+  }
+  return out;
+}
+async function appsRequest(path, opts = {}) {
+  const response = await fetch(path, { method: opts.method ?? "GET" });
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("json")) {
+    return {
+      ok: false,
+      status: response.status,
+      body: { error: response.status === 404 ? "apps routes not mounted" : `unexpected ${contentType || "response"}` }
+    };
+  }
+  let json = null;
+  try {
+    json = await response.json();
+  } catch {
+    json = {};
+  }
+  return { ok: response.ok, status: response.status, body: pickAppsView(json) };
+}
+function getApps() {
+  return appsRequest("/omnimux/apps");
+}
+async function installApp(spec) {
+  const response = await fetch("/omnimux/plugins", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ spec })
+  });
+  let json = {};
+  try {
+    json = await response.json();
+  } catch {
+    json = { error: `HTTP ${String(response.status)}` };
+  }
+  return { ok: response.ok, status: response.status, body: json };
 }
 
 // src/client/use-omnimux-auth.js
@@ -662,77 +744,116 @@ var page3 = {
   gap: 12,
   maxWidth: 520
 };
-var gate = {
-  flex: 1,
-  minHeight: "100%",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 12,
-  padding: "16px 20px",
-  color: "var(--dsw-text-primary, inherit)",
-  textAlign: "center"
-};
 var muted3 = { color: "var(--dsw-text-secondary, inherit)", lineHeight: 1.5, margin: 0 };
+var row3 = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: 12,
+  padding: "10px 0",
+  borderBottom: "1px solid var(--dsw-border, currentColor)"
+};
 var button3 = {
-  padding: "8px 24px",
+  padding: "6px 12px",
   border: "1px solid var(--dsw-border, currentColor)",
   background: "transparent",
   color: "inherit",
   borderRadius: 6,
-  cursor: "pointer"
+  cursor: "pointer",
+  flexShrink: 0
 };
-var CAP_KEYS = ["identity", "videoGenerate", "imageGenerate", "official"];
+function desktopBridge2() {
+  const api = window.dshDesktop;
+  return api && typeof api.restartHost === "function" ? api : void 0;
+}
 function PluginsSection({ t }) {
-  const { state, beginLogin, openUrl } = useOmnimuxAuth({ verifyOnMount: true });
-  const [caps, setCaps] = (0, import_react4.useState)(null);
-  (0, import_react4.useEffect)(() => {
-    if (state.phase !== "ready") return void 0;
-    let cancelled = false;
-    getCapabilities().then((result) => {
-      if (!cancelled) setCaps(result.body);
-    }).catch(() => {
-      if (!cancelled) setCaps(null);
+  const [view, setView] = (0, import_react4.useState)(null);
+  const [busy, setBusy] = (0, import_react4.useState)("");
+  const [error, setError] = (0, import_react4.useState)("");
+  const [pendingRestart, setPendingRestart] = (0, import_react4.useState)(false);
+  const applyView = (body) => {
+    setView(body && typeof body === "object" ? body : null);
+    if (body && typeof body.error === "string" && body.error) setError(body.error);
+  };
+  const refresh = () => {
+    return getApps().then((result) => {
+      if (!result.ok) {
+        setError(String(result.body.error || `HTTP ${String(result.status)}`));
+        return;
+      }
+      setError(typeof result.body.error === "string" ? result.body.error : "");
+      applyView(result.body);
+    }).catch((caught) => {
+      setError(caught instanceof Error ? caught.message : String(caught));
     });
-    return () => {
-      cancelled = true;
-    };
-  }, [state.phase]);
-  if (state.phase === "ready") {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: page3, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: t("plugins.empty") }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { ...muted3, marginTop: 8 }, children: t("plugins.hub") }),
-      caps ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("ul", { style: { margin: 0, paddingLeft: 18, lineHeight: 1.7 }, children: CAP_KEYS.map((key) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("li", { children: [
-        t(`plugins.cap.${key}`),
-        " \u2014 ",
-        caps[key] ? t("plugins.cap.on") : t("plugins.cap.off")
-      ] }, key)) }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: t("profile.loading") })
-    ] });
-  }
-  const message = {
-    checking: t("profile.loading"),
-    "need-login": t("plugins.needLogin"),
-    starting: t("profile.loading"),
-    waiting: t("plugins.waiting"),
-    denied: t("plugins.denied"),
-    expired: t("plugins.expired"),
-    error: t("plugins.error")
-  }[state.phase] || t("plugins.needLogin");
-  const showLogin = state.phase === "need-login" || state.phase === "denied" || state.phase === "expired" || state.phase === "error";
-  const showStatus = state.phase !== "need-login";
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: gate, children: [
-    showStatus ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: message }) : null,
-    state.phase === "error" && state.detail ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: state.detail }) : null,
-    state.phase === "waiting" && state.user_code ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { style: muted3, children: [
-      t("plugins.code"),
-      ": ",
-      state.user_code
-    ] }) : null,
-    state.phase === "waiting" && state.verification_url ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", style: button3, onClick: () => openUrl(state.verification_url), children: t("plugins.open") }) : null,
-    showLogin ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", style: button3, onClick: () => {
-      void beginLogin();
-    }, children: t("plugins.login") }) : null
+  };
+  (0, import_react4.useEffect)(() => {
+    void refresh();
+  }, []);
+  const install = (spec) => {
+    if (!spec) return;
+    setBusy(spec);
+    setError("");
+    void installApp(spec).then((result) => {
+      if (!result.ok) {
+        setError(String(result.body.error || `HTTP ${String(result.status)}`));
+        return;
+      }
+      setPendingRestart(true);
+      return refresh();
+    }).catch((caught) => {
+      setError(caught instanceof Error ? caught.message : String(caught));
+    }).finally(() => {
+      setBusy("");
+    });
+  };
+  const restart = () => {
+    const bridge = desktopBridge2();
+    if (bridge === void 0) {
+      setError(t("dshPlugins.needDesktop"));
+      return;
+    }
+    setBusy("restart");
+    setError("");
+    void bridge.restartHost().then(() => {
+      setPendingRestart(false);
+    }).catch((caught) => {
+      setError(caught instanceof Error ? caught.message : String(caught));
+    }).finally(() => {
+      setBusy("");
+    });
+  };
+  const apps = Array.isArray(view?.apps) ? view.apps : [];
+  const softError = typeof view?.error === "string" ? view.error : "";
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: page3, children: [
+    view == null && error === "" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: t("profile.loading") }) : null,
+    apps.length === 0 && view != null ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: t("plugins.empty") }) : null,
+    apps.map((app) => {
+      const spec = typeof app.install_spec === "string" ? app.install_spec : "";
+      const action = app.state === "update" ? "update" : app.state === "available" ? "install" : "";
+      return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: row3, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { children: app.title }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { ...muted3, marginTop: 4 }, children: app.summary }),
+          app.state === "installed" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: t("plugins.installed") }) : null
+        ] }),
+        action !== "" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          "button",
+          {
+            type: "button",
+            style: button3,
+            disabled: busy !== "" || spec === "",
+            onClick: () => {
+              install(spec);
+            },
+            children: t(action === "update" ? "plugins.update" : "plugins.install")
+          }
+        ) : null
+      ] }, String(app.id));
+    }),
+    pendingRestart ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", style: button3, disabled: busy !== "", onClick: restart, children: t("dshPlugins.restart") }) : null,
+    softError !== "" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: softError }) : null,
+    error !== "" && error !== softError ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: error }) : null
   ] });
 }
 

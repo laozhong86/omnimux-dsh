@@ -32,8 +32,9 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `docs/contracts/series.md` | Disk fields + error codes |
 | `docs/contracts/briefing.md` | Briefing create/update/delete. Memory, not truth |
 | `docs/briefing.md` | Agent–human project briefing log |
-| `plugins/dsh-omnimux/` | Execution hub. Verticals I/O through its seams. Marketplace *client* only; catalog lives on OmniMux cloud. |
-| `docs/logs/2026-08-15-app-marketplace-mvp.md` | App-market MVP user stories + constraints. Server design happens in the OmniMux repo. |
+| `plugins/dsh-omnimux/` | Execution hub. Verticals I/O through its seams. Apps shelf client. Catalog contract: [docs/contracts/apps-catalog.md](docs/contracts/apps-catalog.md). |
+| `docs/contracts/apps-catalog.md` | Official Apps catalog: bundled JSON + optional remote JSON. Not an application table. |
+| `docs/logs/2026-08-15-app-marketplace-mvp.md` | Earlier marketplace stories. Catalog storage is superseded by `docs/contracts/apps-catalog.md`. |
 | `docs/logs/2026-08-16-hub-capability-mount.md` | P3–P8 hub capability mount plan and status |
 | `plugins/dsh-drama/` | First vertical: `series/` domain + `drama_*` |
 | `fixtures/demo-series/` | Keyless replay (2 episodes, 3 shots) |
@@ -71,6 +72,7 @@ Do not claim the `drama` profile works unless `dsh --profile drama --dump-config
 
 - Positioning: `research/dsh/POSITIONING.md`
 - Hub I/O contract: `docs/contracts/hub.md`
+- Apps catalog (bundled + optional remote JSON): `docs/contracts/apps-catalog.md`
 - Execution hub decision (2026-08-14, amended 2026-08-16): `docs/decisions/2026-08-14-execution-hub.md`
 - Hub owns core (2026-08-16): `docs/decisions/2026-08-16-hub-owns-core.md`
 - Consume official dsh, no fork (2026-08-16): `docs/decisions/2026-08-16-harness-consume-not-fork.md`

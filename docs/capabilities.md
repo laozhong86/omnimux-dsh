@@ -19,13 +19,13 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | `needs-omnimux` error | **real** (keyless) | `identity.require()` throws `needs-omnimux` when unsigned. Official-only tools throw the same code when unsigned |
 | `omnimux_social_data` | **unproven** | First cut: tiktok/video, tiktok/user, instagram/post via `/v1/chat/completions`. Keyless only |
 | Accounts / publish tools | **unproven** | `omnimux_accounts_*` + `omnimux_publish_*` wrap `/api/social/v1`. Unauthenticated → `needs-omnimux` |
-| Apps hub capability list | **real** (keyless) | `GET /omnimux/capabilities` + Apps page. Not the marketplace catalog |
+| Apps hub capability list | **real** (keyless) | `GET /omnimux/capabilities`. Apps overlay now renders the catalog, not this list |
 | Custom provider in Settings (manual) | **upstream** | dsh Web → Add a custom provider → `https://api.omnimux.ai/v1` |
 | Drama Center login / upload / payout | **docs only** | skill `tiktok-drama-center`; no tool |
 | Official dsh plugin marketplace | **absent** | install via `dsh plugin add`; discover via `dsh-plugin` topic |
 | OmniMux settings login (device HTTP, no CLI) | **unproven** | Host `/omnimux/auth/*` + settings 个人资料登录 + 侧栏「应用」. Keyless unit tests only; live login not claimed until a manual pass |
 | OmniMux product chrome (logo / wordmark / tab title / favicon) | **real** (keyless) | Hub `src/brand` overlay + `tapIndex` boot. Tests in `plugins/dsh-omnimux/src/brand/*.test.js`. No sibling `omnimux-brand` package |
-| OmniMux app marketplace (catalog + open WebUI) | **absent** | Stories and constraints: [logs/2026-08-15-app-marketplace-mvp.md](logs/2026-08-15-app-marketplace-mvp.md). Server not designed. |
+| OmniMux Apps catalog (bundled + optional remote JSON) | **real** (keyless) | Host `GET /omnimux/apps` + Apps overlay. Remote is `Config.apps.remote` (default off). Tests inject fetchers. Contract: [contracts/apps-catalog.md](contracts/apps-catalog.md) |
 | `dsh web --host 0.0.0.0` | **blocked upstream** | official CLI rejects it |
 
 Phase labels in older notes (`A` / `B` / `C`) are history. Use this table.

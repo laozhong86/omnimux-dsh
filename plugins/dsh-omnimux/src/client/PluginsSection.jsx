@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getCapabilities } from './api.js'
-import { useOmnimuxAuth } from './use-omnimux-auth.js'
+import { getApps, installApp } from './api.js'
 
 const page = {
   padding: '16px 20px',
@@ -11,101 +10,133 @@ const page = {
   maxWidth: 520,
 }
 
-const gate = {
-  flex: 1,
-  minHeight: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 12,
-  padding: '16px 20px',
-  color: 'var(--dsw-text-primary, inherit)',
-  textAlign: 'center',
-}
-
 const muted = { color: 'var(--dsw-text-secondary, inherit)', lineHeight: 1.5, margin: 0 }
+const row = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'flex-start',
+  gap: 12,
+  padding: '10px 0',
+  borderBottom: '1px solid var(--dsw-border, currentColor)',
+}
 const button = {
-  padding: '8px 24px',
+  padding: '6px 12px',
   border: '1px solid var(--dsw-border, currentColor)',
   background: 'transparent',
   color: 'inherit',
   borderRadius: 6,
   cursor: 'pointer',
+  flexShrink: 0,
+}
+
+function desktopBridge() {
+  const api = window.dshDesktop
+  return api && typeof api.restartHost === 'function' ? api : undefined
 }
 
 /**
  * @param {{ t: (key: string) => string }} props
  */
-const CAP_KEYS = ['identity', 'videoGenerate', 'imageGenerate', 'official']
-
 export function PluginsSection({ t }) {
-  const { state, beginLogin, openUrl } = useOmnimuxAuth({ verifyOnMount: true })
-  const [caps, setCaps] = useState(null)
+  const [view, setView] = useState(null)
+  const [busy, setBusy] = useState('')
+  const [error, setError] = useState('')
+  const [pendingRestart, setPendingRestart] = useState(false)
 
-  useEffect(() => {
-    if (state.phase !== 'ready') return undefined
-    let cancelled = false
-    getCapabilities().then((result) => {
-      if (!cancelled) setCaps(result.body)
-    }).catch(() => {
-      if (!cancelled) setCaps(null)
-    })
-    return () => { cancelled = true }
-  }, [state.phase])
-
-  if (state.phase === 'ready') {
-    return (
-      <div style={page}>
-        <p style={muted}>{t('plugins.empty')}</p>
-        <p style={{ ...muted, marginTop: 8 }}>{t('plugins.hub')}</p>
-        {caps ? (
-          <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
-            {CAP_KEYS.map((key) => (
-              <li key={key}>
-                {t(`plugins.cap.${key}`)}
-                {' — '}
-                {caps[key] ? t('plugins.cap.on') : t('plugins.cap.off')}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p style={muted}>{t('profile.loading')}</p>
-        )}
-      </div>
-    )
+  const applyView = (body) => {
+    setView(body && typeof body === 'object' ? body : null)
+    if (body && typeof body.error === 'string' && body.error) setError(body.error)
   }
 
-  const message = {
-    checking: t('profile.loading'),
-    'need-login': t('plugins.needLogin'),
-    starting: t('profile.loading'),
-    waiting: t('plugins.waiting'),
-    denied: t('plugins.denied'),
-    expired: t('plugins.expired'),
-    error: t('plugins.error'),
-  }[state.phase] || t('plugins.needLogin')
+  const refresh = () => {
+    return getApps().then((result) => {
+      if (!result.ok) {
+        setError(String(result.body.error || `HTTP ${String(result.status)}`))
+        return
+      }
+      setError(typeof result.body.error === 'string' ? result.body.error : '')
+      applyView(result.body)
+    }).catch((caught) => {
+      setError(caught instanceof Error ? caught.message : String(caught))
+    })
+  }
 
-  const showLogin = state.phase === 'need-login' || state.phase === 'denied' || state.phase === 'expired' || state.phase === 'error'
-  const showStatus = state.phase !== 'need-login'
+  useEffect(() => {
+    void refresh()
+  }, [])
+
+  const install = (spec) => {
+    if (!spec) return
+    setBusy(spec)
+    setError('')
+    void installApp(spec).then((result) => {
+      if (!result.ok) {
+        setError(String(result.body.error || `HTTP ${String(result.status)}`))
+        return
+      }
+      setPendingRestart(true)
+      return refresh()
+    }).catch((caught) => {
+      setError(caught instanceof Error ? caught.message : String(caught))
+    }).finally(() => {
+      setBusy('')
+    })
+  }
+
+  const restart = () => {
+    const bridge = desktopBridge()
+    if (bridge === undefined) {
+      setError(t('dshPlugins.needDesktop'))
+      return
+    }
+    setBusy('restart')
+    setError('')
+    void bridge.restartHost().then(() => {
+      setPendingRestart(false)
+    }).catch((caught) => {
+      setError(caught instanceof Error ? caught.message : String(caught))
+    }).finally(() => {
+      setBusy('')
+    })
+  }
+
+  const apps = Array.isArray(view?.apps) ? view.apps : []
+  const softError = typeof view?.error === 'string' ? view.error : ''
 
   return (
-    <div style={gate}>
-      {showStatus ? <p style={muted}>{message}</p> : null}
-      {state.phase === 'error' && state.detail ? <p style={muted}>{state.detail}</p> : null}
-      {state.phase === 'waiting' && state.user_code ? (
-        <p style={muted}>{t('plugins.code')}: {state.user_code}</p>
-      ) : null}
-      {state.phase === 'waiting' && state.verification_url ? (
-        <button type="button" style={button} onClick={() => openUrl(state.verification_url)}>
-          {t('plugins.open')}
+    <div style={page}>
+      {view == null && error === '' ? <p style={muted}>{t('profile.loading')}</p> : null}
+      {apps.length === 0 && view != null ? <p style={muted}>{t('plugins.empty')}</p> : null}
+      {apps.map((app) => {
+        const spec = typeof app.install_spec === 'string' ? app.install_spec : ''
+        const action = app.state === 'update' ? 'update' : app.state === 'available' ? 'install' : ''
+        return (
+          <div key={String(app.id)} style={row}>
+            <div>
+              <div>{app.title}</div>
+              <p style={{ ...muted, marginTop: 4 }}>{app.summary}</p>
+              {app.state === 'installed' ? <p style={muted}>{t('plugins.installed')}</p> : null}
+            </div>
+            {action !== '' ? (
+              <button
+                type="button"
+                style={button}
+                disabled={busy !== '' || spec === ''}
+                onClick={() => { install(spec) }}
+              >
+                {t(action === 'update' ? 'plugins.update' : 'plugins.install')}
+              </button>
+            ) : null}
+          </div>
+        )
+      })}
+      {pendingRestart ? (
+        <button type="button" style={button} disabled={busy !== ''} onClick={restart}>
+          {t('dshPlugins.restart')}
         </button>
       ) : null}
-      {showLogin ? (
-        <button type="button" style={button} onClick={() => { void beginLogin() }}>
-          {t('plugins.login')}
-        </button>
-      ) : null}
+      {softError !== '' ? <p style={muted}>{softError}</p> : null}
+      {error !== '' && error !== softError ? <p style={muted}>{error}</p> : null}
     </div>
   )
 }

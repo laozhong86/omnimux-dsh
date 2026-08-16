@@ -21,7 +21,9 @@ Two keys, two URLs:
 | `OMNIMUX_SITE_URL` or config `siteBaseUrl` (default `https://omnimux.ai`) | Login and `/api/user/self` |
 | `OMNIMUX_BASE_URL` (default `https://api.omnimux.ai/v1`) | Video API |
 
-Startup only describes the stored access token. Opening **应用** verifies it. **应用** and Settings **个人资料** can both start device login (`client_name: dsh-omnimux`).
+Startup only describes the stored access token. Settings **个人资料** can start device login (`client_name: dsh-omnimux`). **应用** lists official catalog rows from `GET /omnimux/apps` without a login gate.
+
+Official Apps rows come from `apps/catalog.json` (floor) plus an optional Host GET of `{siteBaseUrl}/apps/catalog.json` when `Config.apps.remote` is true. The cache is `$DSH_HOME/omnimux/apps/`. The browser never fetches the site file. Install uses the catalog's pinned `install_spec` through `/omnimux/plugins`. Contract: repo `docs/contracts/apps-catalog.md`.
 
 ## Product chrome
 
