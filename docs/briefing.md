@@ -66,7 +66,7 @@
 - 2026-08-16 — 媒体四层写入 `docs/contracts/hub.md`；脚手架：`src/media/route.js` + `protocols/` + `vendors/`。
 - 2026-08-16 — `videoGenerate` 支持 `wait: false` 与 `{ dest, taskId }` 续取；drama 提交当下写 `job_id`。
 - 2026-08-16 — `ctx.provide('identity')`；`require()` 抛 `needs-omnimux`。
-- 2026-08-16 — `imageGenerate` + `omnimux_image_submit`；默认 `gpt-image2`。
+- 2026-08-16 — `imageGenerate` + `omnimux_image_submit`；默认 `gpt-image-2`（同步出图；`gpt-image2` 是另一条异步渠）。
 - 2026-08-16 — P3–P7：能力门、official 客户端、社交数据第一刀、连账户/发帖、口播 metadata。
 - 2026-08-16 — 分期计划真源：`docs/logs/2026-08-16-hub-capability-mount.md`。
 

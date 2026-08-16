@@ -45,6 +45,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `docs/decisions/2026-08-16-hub-io-and-facilities.md` | Hub I/O wording + facility phases |
 | `docs/decisions/2026-08-16-harness-consume-not-fork.md` | Consume official dsh; no full-repo fork |
 | `/Users/x/Desktop/Project/omnimux-desktop` | OmniMux Electron shell (independent). Not this tree. |
+| `/Users/x/Desktop/Project/Github/deepseek-harness-desktop` | anywhere-labs DSH desktop. Study only. Consult on major desktop changes; rules in that shell's `AGENTS.md`. |
 | `docs/harness-pin.md` | Official SHA / overlay list / bump ritual |
 | `research/` | Extracts. Load only when changing positioning or platform SOP. |
 
@@ -75,6 +76,7 @@ Do not claim the `drama` profile works unless `dsh --profile drama --dump-config
 - Consume official dsh, no fork (2026-08-16): `docs/decisions/2026-08-16-harness-consume-not-fork.md`
 - Official pin + overlay: `docs/harness-pin.md`
 - Desktop shell home: `/Users/x/Desktop/Project/omnimux-desktop`
+- Desktop study reference: `/Users/x/Desktop/Project/Github/deepseek-harness-desktop` (`docs/architecture.md`; consult on major shell changes)
 - Hub I/O and facilities (2026-08-16): `docs/decisions/2026-08-16-hub-io-and-facilities.md`
 - Extension facts: `research/dsh/EXTENSION.md`
 - OmniMux cloud layers (extract; live terms in `docs/contracts/hub.md`): `research/omnimux/PLUGIN.md`

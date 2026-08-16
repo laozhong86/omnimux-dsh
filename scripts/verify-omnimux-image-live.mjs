@@ -141,10 +141,10 @@ try {
     url: redact(result.url),
     bytes,
     dest,
-    modelId: process.env.OMNIMUX_IMAGE_MODEL ?? 'gpt-image2',
+    modelId: process.env.OMNIMUX_IMAGE_MODEL ?? 'gpt-image-2',
     elapsedMs: Date.now() - started,
   })}\n`)
-  if (result.mode !== 'live' || !result.taskId || !result.url || bytes <= 0) {
+  if (result.mode !== 'live' || !result.url || bytes <= 0) {
     process.exitCode = 1
   }
 } catch (error) {

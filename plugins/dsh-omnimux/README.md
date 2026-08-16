@@ -4,7 +4,7 @@ Execution hub for landing OmniMux on official dsh. Not a gateway: OmniMux cloud 
 
 I/O and the seam list: repo `docs/contracts/hub.md`.
 
-`ctx.provide('videoGenerate' | 'imageGenerate')` then `api.execute({ prompt, dest, … })`. Default waits until the file is on disk (`mode: "live"`). `wait: false` returns `{ mode: "submitted", taskId }`. `{ dest, taskId }` skips submit and only polls then downloads. Tools: `omnimux_video_submit`, `omnimux_image_submit`. Default image model is `gpt-image2` (`OMNIMUX_IMAGE_MODEL`). The hub resolves `Config.media` (provider → protocol → vendor fields). The hub does not keep a task ledger.
+`ctx.provide('videoGenerate' | 'imageGenerate')` then `api.execute({ prompt, dest, … })`. Default waits until the file is on disk (`mode: "live"`). `wait: false` returns `{ mode: "submitted", taskId }`. `{ dest, taskId }` skips submit and only polls then downloads. Tools: `omnimux_video_submit`, `omnimux_image_submit`. Default image model is `gpt-image-2` (`OMNIMUX_IMAGE_MODEL`). The hub resolves `Config.media` (provider → protocol → vendor fields). The hub does not keep a task ledger.
 
 ## Identity (settings)
 

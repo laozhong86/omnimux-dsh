@@ -40,6 +40,8 @@ export function pickMediaUrl(raw) {
     ?? data?.url ?? data?.result_url
     ?? firstData?.url
   if (typeof direct === 'string' && direct) return direct
+  const b64 = firstData?.b64_json ?? row.b64_json ?? data?.b64_json
+  if (typeof b64 === 'string' && b64.trim()) return `data:image/png;base64,${b64.trim()}`
   const list = row.videoUrls ?? row.video_urls ?? row.imageUrls ?? row.image_urls
     ?? row.images ?? data?.videoUrls ?? data?.video_urls ?? data?.imageUrls ?? data?.images
   if (Array.isArray(list) && typeof list[0] === 'string') return list[0]

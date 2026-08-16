@@ -8,7 +8,7 @@ test('parseHubConfig fills brand and the OmniMux media row', () => {
   assert.equal(parsed.media.defaultProvider, 'omnimux')
   assert.equal(parsed.media.providers.omnimux.protocol, 'openai-media')
   assert.equal(parsed.media.providers.omnimux.models.video, 'seedance-2-0-fast')
-  assert.equal(parsed.media.providers.omnimux.models.image, 'gpt-image2')
+  assert.equal(parsed.media.providers.omnimux.models.image, 'gpt-image-2')
   assert.equal(parsed.official.mount, true)
 })
 

@@ -15,7 +15,7 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | Media provider route table | **real** (keyless) | `src/media/route.js`. Unknown provider/protocol fail at resolve. One live vendor row: OmniMux |
 | OmniMux chat as default dsh model | **absent** | no adapter; Settings custom provider still works |
 | `identity` provide for other plugins | **real** (keyless) | `ctx.get('identity').status` / `require`. PAT never in the payload. HTTP `/omnimux/auth/*` still for the browser. |
-| `imageGenerate` / `omnimux_image_submit` | **unproven** | Same route table as video (`gpt-image2`, `openai-media`). `wait` / `taskId` work. `pnpm verify:image-live` exists. 2026-08-16 live: `gpt-image2` POST `/v1/images/generations` HTTP 500 `fail_to_fetch_task`; `nano_banana_2` HTTP 403 no route permission. No `task_id` / dest file |
+| `imageGenerate` / `omnimux_image_submit` | **real** | Default `gpt-image-2`. Live: [docs/evidence/omnimux-image-2026-08-16.md](evidence/omnimux-image-2026-08-16.md). Also live: `grok-imagine-image`. `nano_banana_2` excluded (tokens-flow 403) |
 | `needs-omnimux` error | **real** (keyless) | `identity.require()` throws `needs-omnimux` when unsigned. Official-only tools throw the same code when unsigned |
 | `omnimux_social_data` | **unproven** | First cut: tiktok/video, tiktok/user, instagram/post via `/v1/chat/completions`. Keyless only |
 | Accounts / publish tools | **unproven** | `omnimux_accounts_*` + `omnimux_publish_*` wrap `/api/social/v1`. Unauthenticated → `needs-omnimux` |

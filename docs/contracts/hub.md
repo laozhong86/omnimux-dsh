@@ -84,7 +84,7 @@ media:
       apiKeyEnv: OMNIMUX_API_KEY
       models:
         video: seedance-2-0-fast
-        image: gpt-image2
+        image: gpt-image-2
 ```
 
 `OMNIMUX_BASE_URL` / `OMNIMUX_VIDEO_MODEL` / `OMNIMUX_IMAGE_MODEL` / `OMNIMUX_API_KEY` overlay the `omnimux` row at resolve time. Adding a vendor is a new `providers` row plus `src/media/vendors/<id>.js`. Adding a wire format is a new `src/media/protocols/<id>.js`. Do not grow `apply()` or the seam.

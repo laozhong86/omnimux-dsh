@@ -1,7 +1,7 @@
 # 中枢其余能力挂接计划
 
 - **日期:** 2026-08-16
-- **状态:** P3–P7 已落地（keyless，72 测通过）。P8 脚本已加；2026-08-16 live 未过（`gpt-image2` HTTP 500 `fail_to_fetch_task`；`nano_banana_2` HTTP 403 无路由权限）。设置登录本机无 PAT，仍 **unproven**。
+- **状态:** P3–P7 已落地。P8 出图已升 **real**（默认 `gpt-image-2`；`grok-imagine-image` 同步出图也过）。`nano_banana_2` 另修，不挡。设置登录仍 **unproven**。
 - **合同:** [docs/contracts/hub.md](../contracts/hub.md)
 - **能力表:** [docs/capabilities.md](../capabilities.md)
 
@@ -20,7 +20,7 @@
 | P5 | `omnimux_social_data` 第一刀：tiktok/video、tiktok/user、instagram/post | 已挂，**unproven** |
 | P6 | `omnimux_accounts_*` / `omnimux_publish_*` | 已挂，**unproven** |
 | P7 | `videoGenerate` 可选 `speech` / `audio` → vendor `metadata` | 已挂，keyless |
-| P8 | `scripts/verify-omnimux-image-live.mjs`；手工登录 | 脚本已加。live 未过，image / 登录不得升 **real** |
+| P8 | `scripts/verify-omnimux-image-live.mjs`；手工登录 | 出图 **real**。登录仍要手工过一遍 |
 
 不做：`audioGenerate`、中枢任务台、账号矩阵/排期/预热、货架 server（OmniMux 仓）、Drama Center 工具、按供应商拆缝。
 

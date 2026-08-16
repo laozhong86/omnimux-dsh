@@ -9,10 +9,10 @@ import { pickMediaUrl } from './vendors/omnimux.js'
 import { resolveMediaRoute, parseMediaConfig } from './route.js'
 
 describe('omnimux image helpers', () => {
-  it('defaults to gpt-image2 on the openai-media row', () => {
+  it('defaults to gpt-image-2 on the openai-media row', () => {
     const config = readOmnimuxImageConfig({})
     assert.equal(config.baseUrl, 'https://api.omnimux.ai/v1')
-    assert.equal(config.modelId, 'gpt-image2')
+    assert.equal(config.modelId, 'gpt-image-2')
     assert.equal(config.apiKey, '')
   })
 
@@ -27,6 +27,13 @@ describe('omnimux image helpers', () => {
 
   it('picks OpenAI data[0].url envelopes', () => {
     assert.equal(pickMediaUrl({ data: [{ url: 'https://cdn.example/a.png' }] }), 'https://cdn.example/a.png')
+  })
+
+  it('picks OpenAI data[0].b64_json envelopes as a data URL', () => {
+    assert.equal(
+      pickMediaUrl({ data: [{ b64_json: 'cG5n' }] }),
+      'data:image/png;base64,cG5n',
+    )
   })
 
   it('refuses to execute without a key', async () => {
@@ -59,6 +66,30 @@ describe('omnimux image helpers', () => {
     })
     assert.equal(result.mode, 'live')
     assert.equal(result.taskId, 'img-1')
+    assert.equal(readFileSync(dest, 'utf8'), 'png-bytes')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('writes dest from a synchronous b64_json envelope', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-'))
+    const dest = join(dir, 'out.png')
+    const result = await executeOmnimuxImage({
+      prompt: 'a lamp',
+      dest,
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+      fetcher: async (url, init) => {
+        assert.equal(String(init?.method ?? 'GET').toUpperCase(), 'POST')
+        assert.match(String(url), /images\/generations$/)
+        return {
+          ok: true,
+          status: 200,
+          headers: { get() { return undefined } },
+          text: async () => JSON.stringify({ data: [{ b64_json: Buffer.from('png-bytes').toString('base64') }] }),
+          json: async () => ({ data: [{ b64_json: Buffer.from('png-bytes').toString('base64') }] }),
+        }
+      },
+    })
+    assert.equal(result.mode, 'live')
     assert.equal(readFileSync(dest, 'utf8'), 'png-bytes')
     rmSync(dir, { recursive: true, force: true })
   })

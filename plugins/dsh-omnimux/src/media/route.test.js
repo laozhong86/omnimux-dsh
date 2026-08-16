@@ -15,11 +15,11 @@ describe('media route', () => {
     assert.equal(route.apiKey, '')
   })
 
-  it('defaults image to gpt-image2 on the same provider row', () => {
+  it('defaults image to gpt-image-2 on the same provider row', () => {
     const route = resolveMediaRoute('image', {}, parseMediaConfig(undefined), {})
     assert.equal(route.providerId, 'omnimux')
     assert.equal(route.protocol, 'openai-media')
-    assert.equal(route.modelId, 'gpt-image2')
+    assert.equal(route.modelId, 'gpt-image-2')
   })
 
   it('overlays OmniMux env on the omnimux row', () => {

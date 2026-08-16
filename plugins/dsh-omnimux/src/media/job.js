@@ -28,12 +28,23 @@ export async function getJson(fetcher, url, apiKey, signal) {
  * @param {{ dest: string, url: string, fetcher?: typeof fetch, signal?: AbortSignal }} options
  */
 export async function downloadMediaFile(options) {
-  const fetcher = options.fetcher ?? fetch
-  const response = await fetcher(options.url, options.signal ? { signal: options.signal } : {})
-  if (!response.ok) {
-    throw new OmnimuxError('omnimux-download-failed', `download failed: ${response.status}`)
+  const url = options.url
+  let buffer
+  if (url.startsWith('data:')) {
+    const comma = url.indexOf(',')
+    const payload = comma >= 0 ? url.slice(comma + 1) : ''
+    if (!payload) {
+      throw new OmnimuxError('omnimux-download-failed', 'data URL has no payload')
+    }
+    buffer = Buffer.from(payload, 'base64')
+  } else {
+    const fetcher = options.fetcher ?? fetch
+    const response = await fetcher(url, options.signal ? { signal: options.signal } : {})
+    if (!response.ok) {
+      throw new OmnimuxError('omnimux-download-failed', `download failed: ${response.status}`)
+    }
+    buffer = Buffer.from(await response.arrayBuffer())
   }
-  const buffer = Buffer.from(await response.arrayBuffer())
   mkdirSync(dirname(options.dest), { recursive: true })
   writeFileSync(options.dest, buffer)
 }
