@@ -3,23 +3,60 @@
   "version": "0.1.0",
   "type": "module",
   "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
   "files": [
     "src/index.js",
-    "src/video.js",
+    "src/config.js",
+    "src/auth",
+    "src/brand",
+    "src/media",
+    "src/official",
+    "src/client",
+    "assets/logo.svg",
+    "lib/client.js",
+    "scripts/build-client.mjs",
     "cordis.patch.yml"
   ],
   "scripts": {
-    "test": "node --test src/video.test.js"
+    "build": "node scripts/build-client.mjs",
+    "prepare": "node scripts/build-client.mjs",
+    "test": "node --test src/config.test.js src/media/*.test.js src/auth/*.test.js src/brand/*.test.js src/official/*.test.js src/client/api.test.js src/client/apps-store.test.js src/client/apps-stage-box.test.js"
   },
   "dependencies": {
     "aigc-provider-runtime-kit": "^0.2.0"
   },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jsdom": "^30.0.1"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-layout"
+      ],
+      "platform": "web"
     }
   },
-
   "license": "MIT",
-  "description": "OmniMux video execute + job tool for DeepSeek Harness."
+  "description": "OmniMux execution hub for DeepSeek Harness: product chrome, identity, model routes, and video jobs."
 }

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
@@ -75,6 +75,57 @@ describe('omnimux video helpers', () => {
     assert.equal(result.mode, 'live')
     assert.equal(result.taskId, 'task-9')
     assert.equal(readFileSync(dest, 'utf8'), 'mp4-bytes')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('wait false returns submitted without writing dest', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-'))
+    const dest = join(dir, 'out.mp4')
+    const result = await executeOmnimuxVideo({
+      prompt: 'a wall at night',
+      dest,
+      wait: false,
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+      runtime: {
+        async execute() {
+          return { taskId: 'task-wait', outputs: [] }
+        },
+      },
+    })
+    assert.equal(result.mode, 'submitted')
+    assert.equal(result.taskId, 'task-wait')
+    assert.equal(result.url, null)
+    assert.equal(existsSync(dest), false)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('resumes from taskId without submitting', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-'))
+    const dest = join(dir, 'out.mp4')
+    let posts = 0
+    const result = await executeOmnimuxVideo({
+      dest,
+      taskId: 'task-7',
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+      fetcher: async (url, init) => {
+        if (init?.method === 'POST') {
+          posts += 1
+          return { ok: true, json: async () => ({}) }
+        }
+        if (String(url).includes('/video/generations/task-7')) {
+          return {
+            ok: true,
+            json: async () => ({ status: 'completed', url: 'https://cdn.example/done.mp4' }),
+          }
+        }
+        assert.equal(String(url), 'https://cdn.example/done.mp4')
+        return { ok: true, arrayBuffer: async () => Buffer.from('resumed') }
+      },
+    })
+    assert.equal(posts, 0)
+    assert.equal(result.mode, 'live')
+    assert.equal(result.taskId, 'task-7')
+    assert.equal(readFileSync(dest, 'utf8'), 'resumed')
     rmSync(dir, { recursive: true, force: true })
   })
 })

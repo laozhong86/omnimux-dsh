@@ -103,6 +103,21 @@ describe('writes on a fixture copy', () => {
     assert.equal(raw.framing, '近景')
   })
 
+  it('keeps generating and stores job_id when produce returns submitted', async () => {
+    const heldRoot = mkdtempSync(join(tmpdir(), 'drama-submitted-'))
+    cpSync(fixtureRoot, heldRoot, { recursive: true })
+    confirmBible(heldRoot, ['wei-an'])
+    const result = await runGenerateShot(heldRoot, 'e01-s01', async () => ({
+      mode: 'submitted',
+      taskId: 'task-early',
+    }))
+    assert.equal(result.mode, 'submitted')
+    assert.equal(result.shot.status, 'generating')
+    assert.equal(result.shot.job_id, 'task-early')
+    assert.equal(existsSync(join(heldRoot, 'series/assets/e01-s01.mp4')), false)
+    rmSync(heldRoot, { recursive: true, force: true })
+  })
+
   it('marks only the failed shot when produce throws', async () => {
     await assert.rejects(
       () => runGenerateShot(root, 'e01-s01', async () => {

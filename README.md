@@ -2,10 +2,10 @@
 
 把 [OmniMux](https://omnimux.ai) 落到官方 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件生态。不 fork harness。
 
-- `dsh-omnimux`：执行中枢。模型 / 出片配一次，各领域包复用。默认 OmniMux。兼容 OpenAI video 形的第三方 endpoint 可经 `OMNIMUX_BASE_URL` 指入（未验证）；正式配置面待 C 类决策。只有网关里封装了业务逻辑的付费接口，必须走 OmniMux。
-- `dsh-drama`：第一条开源解决方案（社交媒体运营自动化方向的短剧创作）。管 `series/`。出片消费中枢，不单独存密钥。
+- `dsh-omnimux`：执行中枢。产品外壳、账号、模型 / 出片配一次，各垂直包复用。默认 OmniMux。兼容 OpenAI video 形的第三方 endpoint 可经 `OMNIMUX_BASE_URL` 指入（未验证）。只有 OmniMux 云里封装了业务逻辑的付费接口，必须走官方密钥并报 `needs-omnimux`。不要叫它网关，也不另开换标 / 登录插件。
+- `dsh-drama`：第一条垂直方案（短剧创作）。管 `series/`。出片向中枢输入、接收结果，不单独存密钥。电商设计、品牌营销等同属垂直包。
 
-站位 [research/dsh/POSITIONING.md](research/dsh/POSITIONING.md)。拆包决策 [docs/decisions/2026-08-14-execution-hub.md](docs/decisions/2026-08-14-execution-hub.md)。能力真假 [docs/capabilities.md](docs/capabilities.md)。领域词表 [CONTEXT.md](CONTEXT.md)。
+I/O [docs/contracts/hub.md](docs/contracts/hub.md)。站位 [research/dsh/POSITIONING.md](research/dsh/POSITIONING.md)。拆包 [docs/decisions/2026-08-14-execution-hub.md](docs/decisions/2026-08-14-execution-hub.md)。能力真假 [docs/capabilities.md](docs/capabilities.md)。领域词表 [CONTEXT.md](CONTEXT.md)。
 
 ## 启动
 

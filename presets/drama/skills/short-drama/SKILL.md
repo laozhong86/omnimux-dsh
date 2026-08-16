@@ -1,6 +1,6 @@
 ---
 name: short-drama
-description: "Short-drama series disk contract and production loop. Use when writing episodes, confirming bible characters, or generating a shot. Not for Drama Center upload (tiktok-drama-center) or a second video gateway."
+description: "Short-drama series disk contract and production loop. Use when writing episodes, confirming bible characters, or generating a shot. Not for Drama Center upload (tiktok-drama-center) or a second video HTTP client."
 ---
 
 # short-drama
@@ -13,7 +13,7 @@ description: "Short-drama series disk contract and production loop. Use when wri
 2. Fill `series.yaml` / episodes with `drama_upsert_series`
 3. Confirm every `character_ids` entry with `drama_confirm_bible`
 4. `drama_upsert_shot` for draft/confirmed only
-5. `drama_generate_shot` — `mode: "live"` is the `videoGenerate` seam; `mode: "stub"` is an explicit stub copy; no seam and no stub throws `needs-provider`
+5. `drama_generate_shot` — `mode: "live"` is the `videoGenerate` seam; `mode: "stub"` is an explicit stub copy; no seam and no stub throws `needs-provider`. A `generating` shot with `job_id` resumes that cloud task.
 
 ## Hard gates
 

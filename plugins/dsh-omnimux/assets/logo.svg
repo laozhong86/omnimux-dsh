@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- OmniMux logo: 16x16 pixel-grid mux fan-in mark (brand book §5.2) on a
+       dark tile so the white node stays visible on light themes. -->
+  <rect width="32" height="32" rx="7" fill="#0A0A0B"/>
+  <g transform="translate(4 4) scale(1.5)">
+    <path d="M0 2.5h4.5l2.5 4" stroke="#A1A1AA"/>
+    <path d="M0 8h6.5" stroke="#A1A1AA"/>
+    <path d="M0 13.5h4.5l2.5-4" stroke="#A1A1AA"/>
+    <rect x="7" y="7" width="2" height="2" fill="#FAFAFA"/>
+    <path d="M9.5 8H14" stroke="#C8F135"/>
+    <rect x="14" y="7" width="2" height="2" fill="#C8F135"/>
+  </g>
+</svg>

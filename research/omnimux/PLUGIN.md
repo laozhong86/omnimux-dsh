@@ -5,6 +5,8 @@
 消化过程见 [NOTES.md](NOTES.md)，来源表见 [SOURCES.md](SOURCES.md)。  
 本文件只写开发参考。不拷 skill 正文，不在本会话执行 `omnimux skill install`，不出片。
 
+现行用语：`dsh-omnimux` 是**执行中枢**，不是网关。词表与 I/O 见 [docs/contracts/hub.md](../../docs/contracts/hub.md)。下文「网关」只指 OmniMux 云 HTTP（new-api fork），不是这个插件。
+
 ## 这篇文档回答什么
 
 你们已经定了：核心业务是 OmniMux；短剧只是接到 dsh 上的一层领域工具。上一份 [dsh 站位](../dsh/POSITIONING.md) 把公式写成：

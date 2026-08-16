@@ -62,9 +62,9 @@ JSON array. One object per shot.
 | `subject` | string | who or what is on camera |
 | `start_time` / `end_time` / `duration` | number | seconds |
 | `asset_path` | string or null | relative to `series/` |
-| `job_id` | string or null | OmniMux task id when live generate exists |
+| `job_id` | string or null | Cloud task id. Written as soon as submit returns, while status is still `generating` |
 
-`drama_generate_shot` is synchronous by default (returns after the asset is `ready`). `background: true` starts a job and returns `jobId` immediately.
+`drama_generate_shot` is synchronous by default (returns after the asset is `ready`). A shot that is `generating` with `job_id` resumes poll+download and does not submit again. `background: true` starts a dsh `ctx.jobs` row and returns that `jobId` immediately.
 
 ## Typed errors (`DramaDomainError.code`)
 

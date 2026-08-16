@@ -1,14 +1,19 @@
 # omnimux-dsh
 
-OmniMux landing on official DeepSeek Harness as out-of-tree plugins. Hub is `dsh-omnimux`. First vertical is short-drama (`dsh-drama`), the first social-ops automation solution. Coding agents edit this tree. The product agent is `dsh --profile drama`.
+OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This product tree lives at `/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh`. Hub is `dsh-omnimux`. First vertical is short-drama (`dsh-drama`), the first social-ops automation solution. Coding agents edit this tree. The product agent is `dsh --profile drama`.
 
 ## Hard bounds
 
-- MUST NOT edit a sibling official `deepseek-harness/packages/` tree or open feature PRs upstream. Ship `dsh-plugin` packages and `dsh plugin add`.
+- MUST NOT treat a sibling official `deepseek-harness/packages/` tree as product source. MUST NOT open feature PRs upstream. Ship `dsh-plugin` packages and `dsh plugin add`.
+- The Electron shell is `/Users/x/Desktop/Project/omnimux-desktop`. MUST NOT recreate `apps/desktop/` on the official clone.
+- Official-clone overlays MUST live in `patches/` against the pin in `docs/harness-pin.md`. Apply/reset: `scripts/apply-harness-overlay.sh` and `scripts/reset-harness-overlay.sh`. MUST NOT accumulate product edits only as uncommitted diffs in the official clone.
+- OmniMux core MUST live in `plugins/dsh-omnimux/`: product chrome (logo, wordmark, tab title, favicon), auth, credentials, model/provider routes, hub Settings/Apps UI, and execution seams. MUST NOT add a sibling plugin for those (`omnimux-brand` and the same split under another name are forbidden).
+- A new plugin in this tree MUST be one vertical business scene (short-drama, later e-commerce design, brand marketing). A vertical MUST NOT implement hub chrome, auth, or provider routes.
+- MUST call `dsh-omnimux` the execution hub. MUST NOT call it a gateway or implement a second OmniMux router inside it. I/O: [docs/contracts/hub.md](docs/contracts/hub.md).
 - MUST NOT put `series/` or Drama Center logic in `plugins/dsh-omnimux/`.
-- `dsh-drama` MUST NOT import the hub, ship a brand-specific HTTP client, or store provider keys. Generate only consumes the neutral `videoGenerate` seam.
+- A vertical MUST NOT import the hub, ship a brand-specific HTTP client, or store provider keys. It inputs through `ctx.get` / `omnimux_*` and writes only its own disk.
 - MUST NOT claim live video unless `drama_generate_shot` / `omnimux_video_submit` returned `mode: "live"`. `mode: "stub"` is a file copy.
-- Provider HTTP + keys live in `dsh-omnimux` only; it provides the neutral seam `videoGenerate`. `dsh-drama` only updates `series/`.
+- Provider HTTP + keys live in `dsh-omnimux` only. Neutral seams and official-only tools are listed in `docs/contracts/hub.md`. `dsh-drama` only updates `series/`.
 - MUST throw `DramaDomainError` from drama tools. MUST NOT return `{ ok: false }` as a successful tool value.
 - MUST NOT commit secrets. Inject with `omnimux tokens exec` or the process environment.
 - Product truth is `series/` on disk. Session logs and `docs/briefing.md` are not that store.
@@ -21,19 +26,25 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. Hub is `dsh
 |---|---|
 | `CONTEXT.md` | Terms, two-agent split, shot statuses |
 | `docs/capabilities.md` | Real / stub / absent |
+| `docs/contracts/hub.md` | Execution-hub terms, I/O, seams, official-only list |
+| `docs/model-list-ownership.md` | Who owns the OmniMux model list (plugin patch only; user layers set `agent-default-model` only) |
 | `docs/contracts/series.md` | Disk fields + error codes |
 | `docs/contracts/briefing.md` | Briefing create/update/delete. Memory, not truth |
 | `docs/briefing.md` | Agent–human project briefing log |
-| `plugins/dsh-omnimux/` | Execution hub: video execute + later OmniMux-only paid APIs |
+| `plugins/dsh-omnimux/` | Execution hub. Verticals I/O through its seams. Marketplace *client* only; catalog lives on OmniMux cloud. |
+| `docs/logs/2026-08-15-app-marketplace-mvp.md` | App-market MVP user stories + constraints. Server design happens in the OmniMux repo. |
+| `docs/logs/2026-08-16-hub-capability-mount.md` | P3–P8 hub capability mount plan and status |
 | `plugins/dsh-drama/` | First vertical: `series/` domain + `drama_*` |
 | `fixtures/demo-series/` | Keyless replay (2 episodes, 3 shots) |
 | `presets/drama/` | Product-agent persona + `short-drama` skill |
-| `.agents/skills/dsh-plugin-guide/` | Learn official plugin APIs: index to `/develop/basic/` |
-| `.agents/skills/dsh-plugin-dev/` | How to change these plugins |
 | `.agents/skills/short-drama-router/` | Study index for other repos |
 | `.agents/skills/tiktok-drama-center/` | Human Drama Center SOP |
 | `docs/handoff-audit.md` | Stale-scaffold correction. Read if you still think `packages/drama-*` or phase letters are live. |
-| `docs/decisions/2026-08-14-execution-hub.md` | Confirmed hub vs domain split. Live seam is `videoGenerate`. |
+| `docs/decisions/2026-08-14-execution-hub.md` | Hub vs vertical split. Live seam is `videoGenerate`. |
+| `docs/decisions/2026-08-16-hub-io-and-facilities.md` | Hub I/O wording + facility phases |
+| `docs/decisions/2026-08-16-harness-consume-not-fork.md` | Consume official dsh; no full-repo fork |
+| `/Users/x/Desktop/Project/omnimux-desktop` | OmniMux Electron shell (independent). Not this tree. |
+| `docs/harness-pin.md` | Official SHA / overlay list / bump ritual |
 | `research/` | Extracts. Load only when changing positioning or platform SOP. |
 
 ## Package imports
@@ -41,23 +52,29 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. Hub is `dsh
 | Package | May depend on | Must not import |
 |---|---|---|
 | `dsh-drama` | `yaml`, Node stdlib | OmniMux SDK, `dsh-omnimux` internals |
-| `dsh-omnimux` | OmniMux CLI / gateway | `dsh-drama` domain, `series/` paths |
+| `dsh-omnimux` | OmniMux HTTP, `aigc-provider-runtime-kit` | `dsh-drama` domain, `series/` paths |
 
 ## Verify
 
 ```sh
 pnpm test
 ./scripts/smoke-drama.sh
+pnpm verify:models
+pnpm verify:image-live
 ```
 
-Do not claim the `drama` profile works unless `dsh --profile drama --dump-config` lists both `dsh-omnimux` and `dsh-drama`. Smoke exits 0 and prints a skip line when `dsh` is missing.
+Do not claim the `drama` profile works unless `dsh --profile drama --dump-config` lists both `dsh-omnimux` and `dsh-drama`. Smoke exits 0 and prints a skip line when `dsh` is missing. `verify:models` asserts every model in `plugins/dsh-omnimux/cordis.patch.yml` exists on the live gateway; it self-skips without `OMNIMUX_API_KEY` (see [docs/model-list-ownership.md](docs/model-list-ownership.md)). `verify:image-live` is the P8 image evidence gate; same key rule; not part of `pnpm test`.
 
 ## Pointers
 
 - Positioning: `research/dsh/POSITIONING.md`
-- Execution hub decision (2026-08-14): `docs/decisions/2026-08-14-execution-hub.md`
+- Hub I/O contract: `docs/contracts/hub.md`
+- Execution hub decision (2026-08-14, amended 2026-08-16): `docs/decisions/2026-08-14-execution-hub.md`
+- Hub owns core (2026-08-16): `docs/decisions/2026-08-16-hub-owns-core.md`
+- Consume official dsh, no fork (2026-08-16): `docs/decisions/2026-08-16-harness-consume-not-fork.md`
+- Official pin + overlay: `docs/harness-pin.md`
+- Desktop shell home: `/Users/x/Desktop/Project/omnimux-desktop`
+- Hub I/O and facilities (2026-08-16): `docs/decisions/2026-08-16-hub-io-and-facilities.md`
 - Extension facts: `research/dsh/EXTENSION.md`
-- OmniMux layers: `research/omnimux/PLUGIN.md`
-- Learn official plugin guide: `.agents/skills/dsh-plugin-guide/SKILL.md`（栏目 `references/catalog.md`）
-- Add a tool: `.agents/skills/dsh-plugin-dev/SKILL.md`
+- OmniMux cloud layers (extract; live terms in `docs/contracts/hub.md`): `research/omnimux/PLUGIN.md`
 - Briefing create / update / delete: `docs/contracts/briefing.md`. Load `docs/briefing.md` when the task is project direction, a prior decision, or a cross-session design.

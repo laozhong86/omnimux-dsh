@@ -2,52 +2,60 @@
     - id: dsh-omnimux
       name: dsh-omnimux
 
-    # OmniMux multi-model route for the harness's pi-ai adapter.
-    #
-    # The dsh-base bundle mounts @deepseek-ai/dsh-llm-pi-ai dormant (row id
-    # `llm-pi-ai`, no config). Patch semantics: later bundles address base rows
-    # by id, last write wins per row, and a write replaces the row's whole
-    # `config`. So this row restates that plugin identity and supplies the
-    # provider profiles that activate it — one OmniMux user token
-    # (OMNIMUX_API_KEY) serves every model below in the `default` billing
-    # group, so no per-brand key is needed.
-    #
-    # Model set: the single latest flagship per brand as of the OmniMux live
-    # catalog (api.omnimux.ai/api/pricing). All seven speak the OpenAI-compatible
-    # `/v1` endpoint; contextWindow is set only where the catalog documents the
-    # number, and reasoning effort stays at each model's gateway default.
-    - id: llm-pi-ai
-      name: '@deepseek-ai/dsh-llm-pi-ai'
-      config:
-        providers:
-          # Hand-declared route: pi-ai ships nothing under this key.
-          omnimux:
-            displayName: OmniMux
-            apiKeyEnv: OMNIMUX_API_KEY
-            api: openai-completions
-            baseURL: https://api.omnimux.ai/v1
-            retryPolicy:
-              mode: normal
-              maxRetries: 2
-            models:
-              - id: claude-opus-5
-                name: Claude Opus 5
-                contextWindow: 1000000
-                maxTokens: 128000
-              - id: gpt-5.6-sol
-                name: GPT-5.6 Sol
-                contextWindow: 1000000
-              - id: grok-4.6
-                name: Grok 4.6
-              - id: kimi-k3
-                name: Kimi K3
-                contextWindow: 1000000
-              - id: deepseek-v4-pro
-                name: DeepSeek V4 Pro
-                contextWindow: 1000000
-              - id: gemini-3.7-flash
-                name: Gemini 3.7 Flash
-                contextWindow: 1000000
-                maxTokens: 65536
-              - id: glm-5.3
-                name: GLM-5.3
+# OmniMux multi-model route for the harness's pi-ai adapter.
+#
+# The dsh-base bundle already mounts @deepseek-ai/dsh-llm-pi-ai as row
+# `llm-pi-ai`. This layer addresses that row by id (whole-row replace, not
+# insert). Putting it under `insert` throws: duplicate loader entry id.
+#
+# SINGLE SOURCE OF TRUTH for the OmniMux model list in the app. Every model id
+# below was verified live against api.omnimux.ai/v1/models (94 models) on
+# 2026-08-16; contextWindow values come from api.omnimux.ai/api/pricing and are
+# set only where that catalog documents the number. One OmniMux user token
+# (OMNIMUX_API_KEY) serves every model; all eight speak the OpenAI-compatible
+# `/v1` endpoint and reasoning effort stays at each model's gateway default.
+# deepseek-v4-flash is the product default agent model (desktop preset and web
+# profile set agent-default-model to it), so it stays selectable here.
+#
+# Layering rule: user-layer cordis.patch.yml files (machine-local, per profile)
+# MUST NOT redefine this `llm-pi-ai` row — an id-matched patch replaces the
+# whole row and silently shadows this list. They set `agent-default-model`
+# only. Re-check after any model change: `pnpm verify:models`.
+- id: llm-pi-ai
+  name: '@deepseek-ai/dsh-llm-pi-ai'
+  config:
+    providers:
+      # Hand-declared route: pi-ai ships nothing under this key.
+      omnimux:
+        displayName: OmniMux
+        apiKeyEnv: OMNIMUX_API_KEY
+        api: openai-completions
+        baseURL: https://api.omnimux.ai/v1
+        retryPolicy:
+          mode: normal
+          maxRetries: 2
+        models:
+          - id: claude-opus-5
+            name: Claude Opus 5
+            contextWindow: 1000000
+            maxTokens: 128000
+          - id: gpt-5.6-sol
+            name: GPT-5.6 Sol
+            contextWindow: 1000000
+          - id: grok-4.6
+            name: Grok 4.6
+            contextWindow: 500000
+          - id: kimi-k3
+            name: Kimi K3
+            contextWindow: 1000000
+          - id: deepseek-v4-pro
+            name: DeepSeek V4 Pro
+            contextWindow: 1000000
+          - id: deepseek-v4-flash
+            name: DeepSeek V4 Flash
+          - id: gemini-3.7-flash
+            name: Gemini 3.7 Flash
+            contextWindow: 1000000
+            maxTokens: 65536
+          - id: glm-5.3
+            name: GLM-5.3

@@ -8,6 +8,10 @@
 | id | date | status | topic |
 |---|---|---|---|
 | 2026-08-15-briefing-log | 2026-08-15 | decided | 项目级协同简报 |
+| 2026-08-15-omnimux-identity | 2026-08-15 | decided | dsh-omnimux 身份独立于 CLI |
+| 2026-08-15-app-marketplace | 2026-08-15 | decided | OmniMux 应用市场 MVP：故事已收，server 待设计 |
+| 2026-08-16-hub-io | 2026-08-16 | decided | 执行中枢 I/O；不再称中枢为网关 |
+| 2026-08-16-harness-consume | 2026-08-16 | decided | 消费官方 dsh，不整仓 fork |
 
 ## 2026-08-15-briefing-log
 
@@ -18,3 +22,60 @@
 - **not:** 不替代 `series/`、contracts、CONTEXT、AGENTS hard bounds、稀有 ADR。不自动记录每轮聊天。
 - **authority:** `docs/contracts/briefing.md`, `AGENTS.md`
 - **updated:** —
+
+## 2026-08-15-omnimux-identity
+
+- **status:** decided
+- **topic:** dsh-omnimux 设置登录不绑定 OmniMux CLI
+- **decision:** 插件直连 OmniMux device-login HTTP；PAT 存在 `OMNIMUX_ACCESS_TOKEN`。启动只探活。侧栏「应用」和设置「个人资料」都可以发起登录；个人资料展示剥过的账户字段。
+- **why:** 用户环境可以没有 CLI。CLI 与 dsh 各登各的，和 Codex App/CLI 同一模型。
+- **not:** 不是云端插件市场；不是读 CLI 钥匙串；登录票不是 `sk-` / `OMNIMUX_TOKEN`。
+- **authority:** `plugins/dsh-omnimux/README.md`
+- **updated:** —
+
+### Amendments
+- 2026-08-15 — 计划确认后落地。
+- 2026-08-15 — 设置入口由「我的插件」改为「插件」。
+- 2026-08-15 — 为与 dsh「插件」区分，入口改为「应用」/ Apps。
+- 2026-08-15 — 「应用」从设置挪到左侧栏新会话下方（`sidebar.lead.action`）。
+- 2026-08-15 — 设置「个人资料」也可登录；页标题改为「个人资料」。
+- 2026-08-16 — 「应用」改挂官方 `sidebar.footer.action`（设置上方）；不再改官方壳。
+
+## 2026-08-15-app-marketplace
+
+- **status:** decided
+- **topic:** OmniMux 应用市场 MVP：故事已收，server 待设计
+- **decision:** 应用带 WebUI、点开即用。实现单位仍是 dsh 插件。货架和云接口在 OmniMux。`dsh-omnimux` 是原生底座。管理员用 CLI 上下架，不做后台 WebUI。用户故事和前置约束以 `docs/logs/2026-08-15-app-marketplace-mvp.md` 为准。Server 设计在 OmniMux 仓另做，确认后再写代码。
+- **why:** MVP 可以糙，目录、打开方式、身份、官方/个人必须先定，否则后迁。公开 `@omnimux/cli` 现网禁止管理员路由前缀，上下架 CLI 怎么挂要在 server 设计里先选。
+- **not:** 不是官方 dsh 商店；不是每人一台云函数；不是管理员 Web 后台；不是本仓实现应用目录服务（属 OmniMux 云）。
+- **authority:** `docs/logs/2026-08-15-app-marketplace-mvp.md`
+- **updated:** —
+
+## 2026-08-16-hub-io
+
+- **status:** decided
+- **topic:** 执行中枢 I/O；不再称中枢为网关
+- **decision:** `dsh-omnimux` 只叫执行中枢。垂直包向中枢输入请求、接收结果或错误，不写 OmniMux HTTP。词表和缝名单在 `docs/contracts/hub.md`。落地分期在 `docs/decisions/2026-08-16-hub-io-and-facilities.md`。
+- **why:** 「网关」会诱使代理在插件里再做一层路由计费。扩展单位是中性缝和官方独有工具。
+- **not:** 不推翻「账号排期不进中枢」。不在本轮写 `imageGenerate` 代码。
+- **authority:** `docs/contracts/hub.md`, `docs/decisions/2026-08-16-hub-io-and-facilities.md`
+- **updated:** —
+
+### Amendments
+- 2026-08-16 — 规范落地。
+- 2026-08-16 — 媒体四层写入 `docs/contracts/hub.md`；脚手架：`src/media/route.js` + `protocols/` + `vendors/`。
+- 2026-08-16 — `videoGenerate` 支持 `wait: false` 与 `{ dest, taskId }` 续取；drama 提交当下写 `job_id`。
+- 2026-08-16 — `ctx.provide('identity')`；`require()` 抛 `needs-omnimux`。
+- 2026-08-16 — `imageGenerate` + `omnimux_image_submit`；默认 `gpt-image2`。
+- 2026-08-16 — P3–P7：能力门、official 客户端、社交数据第一刀、连账户/发帖、口播 metadata。
+- 2026-08-16 — 分期计划真源：`docs/logs/2026-08-16-hub-capability-mount.md`。
+
+## 2026-08-16-harness-consume
+
+- **status:** decided
+- **topic:** 消费官方 dsh，不整仓 fork
+- **decision:** 不 fork `deepseek-harness`。版本单位是官方 pin × 产品仓 × 相对 pin 的补丁。官方 clone 只读。「应用」挂官方 `sidebar.footer.action`。桌面是新产品面，不是 fork。
+- **why:** 整仓 fork 把上游预览期抖动焊进产品历史。设置上方已是官方加法位，不必改壳。
+- **not:** 不搬 `apps/desktop` 独立仓。不向上游提功能 PR。不新开 `sidebar.lead.action`。
+- **authority:** `docs/decisions/2026-08-16-harness-consume-not-fork.md`, `docs/harness-pin.md`
+- **updated:** 2026-08-16

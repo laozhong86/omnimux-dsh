@@ -18,7 +18,7 @@ const DRAMA_PROMPT = `This workspace may be a short-drama project. Truth lives i
 Call drama_project_status before stating episode or shot counts.
 If there is no project, call drama_init_project.
 Mutate series files only through drama_* tools.
-drama_generate_shot is live when the videoGenerate seam is mounted (mode "live"). Without the seam, an explicit stub.mp4 or DRAMA_STUB_MP4 copies (mode "stub"); otherwise it throws needs-provider.
+drama_generate_shot is live when the videoGenerate seam is mounted (mode "live"). A generating shot with job_id resumes that task. Without the seam, an explicit stub.mp4 or DRAMA_STUB_MP4 copies (mode "stub"); otherwise it throws needs-provider.
 A shot whose character_ids are unconfirmed in bible.yaml cannot be generated.`
 
 /**
@@ -170,7 +170,7 @@ export function apply(ctx) {
   ctx.tools.register({
     name: 'drama_generate_shot',
     description:
-      'Generate one shot to series/assets/<shot_id>.mp4. Default is synchronous: waits until the asset is ready and returns mode live/stub (or throws). Set background true only when jobs are mounted to get a jobId immediately; then ready is not guaranteed until drama_project_status. Without the videoGenerate seam, copies an explicit stub or throws needs-provider. Fails if any character_id is unconfirmed.',
+      'Generate one shot to series/assets/<shot_id>.mp4. Default is synchronous: waits until the asset is ready and returns mode live/stub (or throws). A generating shot with job_id resumes poll and download. Set background true only when jobs are mounted to get a dsh jobId immediately; then ready is not guaranteed until drama_project_status. Without the videoGenerate seam, copies an explicit stub or throws needs-provider. Fails if any character_id is unconfirmed.',
     parameters: objectParams({
       shot_id: { type: 'string', required: true },
       background: { type: 'boolean', description: 'If true and jobs are mounted, return jobId immediately. Default false (wait for ready).' },
@@ -182,12 +182,31 @@ export function apply(ctx) {
       if (!video) {
         return generateShot(root, args.shot_id)
       }
-      const produce = ({ dest, shot, signal }) => video.execute({
-        prompt: shot.visual_description,
-        dest,
-        duration: shot.duration ?? undefined,
-        signal,
-      })
+      const produce = async ({ dest, shot, signal }) => {
+        const resumeId = shot.status === 'generating' && shot.job_id ? shot.job_id : ''
+        if (resumeId) {
+          return video.execute({ dest, taskId: resumeId, signal })
+        }
+        const first = await video.execute({
+          prompt: shot.visual_description,
+          dest,
+          duration: shot.duration ?? undefined,
+          wait: false,
+          signal,
+        })
+        if (first?.taskId) {
+          upsertShot(root, {
+            shot_id: args.shot_id,
+            status: 'generating',
+            job_id: first.taskId,
+          }, { allowReady: true })
+        }
+        if (first?.mode === 'live') return first
+        if (!first?.taskId) {
+          throw new Error('videoGenerate submit returned no taskId')
+        }
+        return video.execute({ dest, taskId: first.taskId, signal })
+      }
       const jobs = ctx.get('jobs')
       const startJob = jobs && typeof jobs.start === 'function'
         ? jobs.start.bind(jobs)

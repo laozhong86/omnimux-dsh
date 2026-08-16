@@ -34,7 +34,6 @@ Date: 2026-08-14. Another session audited the scaffold you built, then patched i
 - `CONTEXT.md` — two-agent split, objects, shot statuses.
 - `docs/capabilities.md` — honest surface table.
 - `docs/contracts/series.md` — fields + error codes.
-- `.agents/skills/dsh-plugin-dev/SKILL.md` — which package, how to add a tool.
 - `drama_init_project`; generate returns `mode: "stub"`; tools **throw**.
 - `dsh-omnimux` mounts a prompt: no adapter, no generate tools. Do not invent `omnimux_generate_*`.
 - Tests: `pnpm test` → 12 pass. Smoke without `dsh` skips dump-config.

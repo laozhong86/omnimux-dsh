@@ -5,7 +5,7 @@ import { mkdtempSync, readFileSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { executeOmnimuxVideo } from '../plugins/dsh-omnimux/src/video.js'
+import { executeOmnimuxVideo } from '../plugins/dsh-omnimux/src/media/video.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const shots = JSON.parse(readFileSync(join(root, 'fixtures/demo-series/series/shots.json'), 'utf8'))

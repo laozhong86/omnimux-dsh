@@ -307,13 +307,22 @@ export async function runGenerateShot(root, shotId, produce) {
   mkdirSync(dirname(dest), { recursive: true })
   try {
     const meta = await produce({ dest, destRel, shot })
+    if (meta?.mode === 'submitted') {
+      const taskId = meta.taskId ?? shot.job_id ?? null
+      const held = upsertShot(root, {
+        shot_id: shotId,
+        status: 'generating',
+        job_id: taskId,
+      }, { allowReady: true })
+      return { mode: 'submitted', ...held }
+    }
     return {
       mode: meta?.mode ?? 'live',
       ...upsertShot(root, {
         shot_id: shotId,
         status: 'ready',
         asset_path: destRel,
-        job_id: meta?.taskId ?? null,
+        job_id: meta?.taskId ?? shot.job_id ?? null,
       }, { allowReady: true }),
     }
   } catch (error) {

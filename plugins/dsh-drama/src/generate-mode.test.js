@@ -52,14 +52,17 @@ describe('drama_generate_shot execution mode', () => {
   })
 
   it('stays synchronous when jobs exist and background is omitted', async () => {
-    const destWrites = []
+    const calls = []
     const { tools, jobStarts } = mount({
       jobs: true,
       video: {
-        async execute({ dest }) {
-          destWrites.push(dest)
-          writeFileSync(dest, 'live-bytes')
-          return { mode: 'live', taskId: 'task-sync', url: 'https://cdn.example/a.mp4' }
+        async execute(req) {
+          calls.push(req)
+          if (req.wait === false) {
+            return { mode: 'submitted', taskId: 'task-sync', url: null }
+          }
+          writeFileSync(req.dest, 'live-bytes')
+          return { mode: 'live', taskId: req.taskId, url: 'https://cdn.example/a.mp4' }
         },
       },
     })
@@ -71,8 +74,43 @@ describe('drama_generate_shot execution mode', () => {
     assert.equal(result.mode, 'live')
     assert.equal(readFileSync(join(root, 'series/assets/e01-s01.mp4'), 'utf8'), 'live-bytes')
     const shots = JSON.parse(readFileSync(join(root, 'series/shots.json'), 'utf8'))
-    assert.equal(shots.find((row) => row.shot_id === 'e01-s01').status, 'ready')
-    assert.equal(destWrites.length, 1)
+    const shot = shots.find((row) => row.shot_id === 'e01-s01')
+    assert.equal(shot.status, 'ready')
+    assert.equal(shot.job_id, 'task-sync')
+    assert.equal(calls.length, 2)
+    assert.equal(calls[0].wait, false)
+    assert.equal(calls[1].taskId, 'task-sync')
+  })
+
+  it('resumes a generating shot from job_id', async () => {
+    const rootResume = mkdtempSync(join(tmpdir(), 'drama-resume-'))
+    cpSync(fixtureRoot, rootResume, { recursive: true })
+    const shotsPath = join(rootResume, 'series/shots.json')
+    const rows = JSON.parse(readFileSync(shotsPath, 'utf8'))
+    const row = rows.find((item) => item.shot_id === 'e01-s01')
+    row.status = 'generating'
+    row.job_id = 'task-resume'
+    writeFileSync(shotsPath, `${JSON.stringify(rows, null, 2)}\n`)
+    const calls = []
+    const { tools } = mount({
+      video: {
+        async execute(req) {
+          calls.push(req)
+          writeFileSync(req.dest, 'resumed-bytes')
+          return { mode: 'live', taskId: req.taskId, url: 'https://cdn.example/r.mp4' }
+        },
+      },
+    })
+    const result = await tools.get('drama_generate_shot').execute(
+      { shot_id: 'e01-s01' },
+      { agent: { session: { header: { cwd: rootResume } } } },
+    )
+    assert.equal(result.mode, 'live')
+    assert.equal(calls.length, 1)
+    assert.equal(calls[0].taskId, 'task-resume')
+    assert.equal(calls[0].wait, undefined)
+    assert.equal(readFileSync(join(rootResume, 'series/assets/e01-s01.mp4'), 'utf8'), 'resumed-bytes')
+    rmSync(rootResume, { recursive: true, force: true })
   })
 
   it('starts a job only when background is true', async () => {

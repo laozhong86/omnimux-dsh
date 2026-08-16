@@ -1,8 +1,8 @@
 # 官方意图对齐：OmniMux 落到 dsh 插件生态
 
-日期：2026-08-14。  
-依据：[EXTENSION.md](EXTENSION.md) 的扩展面事实 + 官方中英产品页。  
-本文件只定站位，不写实现。活能力和包边界见 [docs/capabilities.md](../../docs/capabilities.md)、[docs/decisions/2026-08-14-execution-hub.md](../../docs/decisions/2026-08-14-execution-hub.md)。
+日期：2026-08-14。
+依据：[EXTENSION.md](EXTENSION.md) 的扩展面事实 + 官方中英产品页。
+本文件只定站位，不写实现。活能力和包边界见 [docs/capabilities.md](../../docs/capabilities.md)、[docs/contracts/hub.md](../../docs/contracts/hub.md)、[docs/decisions/2026-08-14-execution-hub.md](../../docs/decisions/2026-08-14-execution-hub.md)。
 
 ## 本仓是什么
 
@@ -12,12 +12,12 @@
 
 | | 是什么 | 现在的包 |
 |---|---|---|
-| 执行中枢 | dsh 上的 OmniMux 接头：模型 / 图 / 视频；第三方兼容 API 也配在这里；只有网关里封装了业务逻辑的付费接口，只能走 OmniMux | `dsh-omnimux` |
+| 执行中枢 | dsh 上的 OmniMux 接头：产品外壳、账号、模型 / 图 / 视频；第三方兼容 API 也配在这里；只有 OmniMux 云里封装了业务逻辑的付费接口，只能走官方密钥 | `dsh-omnimux` |
 | 垂直解决方案 | 开源、可产品化的领域包。可接第三方 API（经中枢配一次）。OmniMux 是推荐渠道 | 第一条：`dsh-drama` 短剧创作 |
 
 短剧创作是 **社交媒体运营自动化** 方向的第一条解决方案，不是本仓的唯一产品，也不是 Drama Center 后台。以后的电商视频、电商设计是同一条线上的后续包。中枢不是社媒运营套件，不认 `series/`，也不做账号排期。
 
-开源切入：基础能力（领域状态机、兼容的出片合同）用户可接任意第三方。付费接口服务可选；这类接口的业务逻辑封在 OmniMux 网关里，第三方接不进，领域包只能提示安装 / 配置中枢。
+开源切入：基础能力（领域状态机、兼容的出片合同）用户可接任意第三方。付费接口服务可选；这类接口的业务逻辑封在 OmniMux 云里，第三方接不进，垂直包只能提示安装 / 配置中枢。不要把执行中枢叫网关。
 
 ## 官方在做什么
 
@@ -25,7 +25,7 @@
 
 他们的公式：
 
-> Agent = Model + Harness  
+> Agent = Model + Harness
 > 模型是 Agent 的灵魂。Harness 给予 Agent 理解环境、使用工具，并在真实场景中持续工作的能力。
 
 Cordis 内核「只负责插件的加载、卸载和依赖关系，**不承载 Agent 的具体能力**」。官方自己的标准 / PTC / 极简 / 创造模式，是这套内核上的展示组合，不是唯一合法业务。
@@ -66,7 +66,7 @@ Cordis 内核「只负责插件的加载、卸载和依赖关系，**不承载 A
 | `dsh-omnimux` | 所有 dsh 用户；也被各领域包复用 | 「不 fork，把 OmniMux 接到 dsh：模型 + 图 + 视频」 | **对外主资产**；付费独有接口只走这里 |
 | `dsh-drama`（或 preset） | 短剧工作流 | 开源短剧方案：系列文件 + 分镜工具；出片经中枢 | 第一条垂直方案，不是中枢的子包 |
 
-只发短剧包、把 OmniMux 藏在里面：官方社区看不懂，也带不来网关用户。  
+只发短剧包、把 OmniMux 藏在里面：官方社区看不懂，也带不来只想接 OmniMux 的 dsh 用户。
 只做中枢、短剧全靠 bash：系列状态会散在聊天里（见 EXTENSION）。
 
 借力官方通道时，推的是中枢。短剧包在 Discussions 里当第一条 worked example，不要当整仓主标题。
@@ -102,7 +102,7 @@ Cordis 内核「只负责插件的加载、卸载和依赖关系，**不承载 A
 
 官方社区的人是 harness 开发者。他们能转化成 OmniMux 的，是需要多模型 + 生视频的人。短剧创作者不在这条通道里；那条获客不要指望 Discussions。
 
-模型面官方就不是 DeepSeek 专用：Settings 可加 catalog 提供方（Anthropic、OpenAI、Bedrock、Vertex、Azure、Codex）和 custom provider（任意 OpenAI-compat 网关）。`dsh-omnimux` 应把 OmniMux 注册成一条可切换路由，并允许用户另接别的提供方。不要把短剧包写成只认 DeepSeek。
+模型面官方就不是 DeepSeek 专用：Settings 可加 catalog 提供方（Anthropic、OpenAI、Bedrock、Vertex、Azure、Codex）和 custom provider（任意 OpenAI-compat endpoint）。`dsh-omnimux` 应把 OmniMux 注册成一条可切换路由，并允许用户另接别的提供方。不要把短剧包写成只认 DeepSeek。
 
 ## 领域层写多薄
 
@@ -118,7 +118,7 @@ dsh 已经有：loop、session、jobs、skill 加载、审批瀑布、Web。
 
 ## 成功标准（和官方意图对齐）
 
-生态向：一个没听说过短剧的 dsh 用户，能 `dsh plugin add` 中枢之后用 OmniMux 打一轮带 tool 的对话，并提交一个视频任务。  
-方案向：同一套运行时，一句话题材写出 `series/` 并出一镜；出片既可走第三方兼容 API，也可走 OmniMux。  
-付费向：点到只有网关里封装了业务逻辑的接口时，清楚提示必须接 OmniMux，第三方接不进。  
+生态向：一个没听说过短剧的 dsh 用户，能 `dsh plugin add` 中枢之后用 OmniMux 打一轮带 tool 的对话，并提交一个视频任务。
+方案向：同一套运行时，一句话题材写出 `series/` 并出一镜；出片既可走第三方兼容 API，也可走 OmniMux。
+付费向：点到只有 OmniMux 云里封装了业务逻辑的接口时，清楚提示必须接 OmniMux，第三方接不进。
 失败相：为了短剧 fork harness；为了垂直包重写一套 agent 框架；或把中枢做成社媒运营套件 / 某个领域的私有后端。

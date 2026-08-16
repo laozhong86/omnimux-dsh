@@ -31,6 +31,7 @@
 | `sources/community/01-dsh-tool-policy.md` | https://github.com/deepseek-ai/deepseek-harness/discussions/174 | 树外政策插件；peer `>=0.1.0-rc.5 <0.2.0`；缺 `dsh.bundle` 会装不上 | 讨论页含站点导航噪音 |
 | `sources/community/02-session-memory-plugin.md` | https://github.com/deepseek-ai/deepseek-harness/discussions/516 | 树外记忆插件；`dsh plugin add` tarball；不改 harness 源码 | 同上 |
 | `sources/community/03-dsh-plugin-topic.md` | https://github.com/topics/dsh-plugin | topic 页被无关仓污染，**不当作插件清单** | 误报多，只作背景 |
+| `community-scheduled-task-plugins.md` | Discussions / 社区仓 / npm（2026-08-16 一手） | 定时任务社区插件对照官方 `dsh-schedule` | 清单会过期；不当作安装真源 |
 
 ## 未采用
 

@@ -2,6 +2,8 @@
 
 日期：2026-08-14。  
 状态：**站位已确认。** 中性缝 `videoGenerate` 与 `needs-provider` 已于 T8 落地。其余差距见文末。  
+补丁：[2026-08-16 中枢拥有全部核心能力](2026-08-16-hub-owns-core.md) — 产品外壳 / 登录 / 模型路由也进 `dsh-omnimux`，禁止再拆兄弟包。
+补丁：[2026-08-16 执行中枢 I/O 与落地设施](2026-08-16-hub-io-and-facilities.md) — 规范用语是执行中枢，不是网关；垂直包只经中枢 I/O。词表真源 [docs/contracts/hub.md](../contracts/hub.md)。
 性质：架构决策 + 讨论审计。本文件是这次讨论的可追溯真源，不替代 `docs/capabilities.md` 的能力表。
 
 依据：同日会话（设计方向 → 两包关系 → 官方缝 vs 仓规 → 开源获客 → 多垂直复用）+ [POSITIONING.md](../../research/dsh/POSITIONING.md) + [EXTENSION.md](../../research/dsh/EXTENSION.md) + [PLUGIN.md](../../research/omnimux/PLUGIN.md) + 活树 `plugins/`。
@@ -14,7 +16,7 @@
 
 短剧包不依赖中枢才能存在。没装中枢时，领域读写照常，出片走 stub 或报 `needs-provider`。装上并配好，所有领域包一起打通。
 
-OmniMux 云才是网关。`dsh-omnimux` 不是网关，是把 `/v1`（或兼容 endpoint）收成 dsh 可调用服务 / 工具的包。
+OmniMux 云提供 `/v1` 与官方独有 HTTP。`dsh-omnimux` 是执行中枢：把这些收成 dsh 可调用的缝和工具。不要把中枢叫网关。
 
 ## 背景：讨论从哪来
 
@@ -96,11 +98,11 @@ dsh 不会替插件弹窗。提示只能是工具自己的结构化错误（比�
 
 | 方案 | 为何否决 |
 |---|---|
-| 合成一个「OmniMux 短剧包」 | 官方社区看不懂；网关用户被短剧绑架 |
+| 合成一个「OmniMux 短剧包」 | 官方社区看不懂；只想装中枢的用户被短剧绑架 |
 | 发改过的 dsh 发行版 / `om-drama` 家族前缀 | 官方不要垂直发行版；`dsh-` 才是插件话题握手；`om-` 和「可接任意 API」打架 |
 | 把 `dsh-omnimux` 改定义成通用社媒运营套件 | 那是公司产品句，不是本仓已写下的包；社交 API 默认关，短剧 v1 不依赖；硬边界禁止把 Drama Center / 社交塞进此包 |
 | 每个领域包自己配第三方 API | 垂直一多就复制密钥和 poll；和官方 seam（一处 provider 换全树）相反 |
-| 在 drama 里抽象「每一个模型 / 工具调用」+ 任意自定义 HTTP | 第二套网关，踩中 POSITIONING 失败相 |
+| 在 drama 里抽象「每一个模型 / 工具调用」+ 任意自定义 HTTP | 第二套执行客户端，踩中 POSITIONING 失败相 |
 | 聊天也由 drama 配置 | dsh 已有 `ctx.llm` 和 Settings |
 | 把 OmniMux 方法论 skill 正文 vendoring 进插件 | 继续 `omnimux skill install` |
 
@@ -183,7 +185,7 @@ dsh 不会替插件弹窗。提示只能是工具自己的结构化错误（比�
 | `research/dsh/POSITIONING.md` | 旧站位：两包、不 fork、短剧要薄 |
 | `research/dsh/EXTENSION.md` | 官方扩展面；adapter 不能放 preset |
 | `research/dsh/sources/official/05-architecture.md` | seam：接口 / provider / consumer |
-| `research/omnimux/PLUGIN.md` | OmniMux 是网关；skill 不执行；社交不是短剧发行 |
+| `research/omnimux/PLUGIN.md` | OmniMux 云提供 `/v1`；skill 不执行；社交不是短剧发行 |
 | `AGENTS.md` + `plugins/dsh-drama/src/index.js` | 旧缝：`omnimuxVideo` 是仓规不是上游 |
 | `docs/capabilities.md` | 活能力真假；本决策不覆盖该表 |
 
@@ -196,6 +198,6 @@ POSITIONING 里「调 OmniMux 的生成应复用 dsh-omnimux，不要复制」�
 1. 本仓是 **OmniMux 落到 dsh 插件生态** 的项目，不是 Drama Center 产品仓。文件夹与根包名是 `omnimux-dsh`。
 2. 短剧创作是 **社交媒体运营自动化** 方向的第一条开源、可产品化解决方案，后面还可以有电商视频、电商设计。
 3. 基础能力经中枢接第三方兼容 API。OmniMux 是推荐渠道。
-4. 付费接口服务可选；业务逻辑封在 OmniMux 网关里，第三方接不进，只能装中枢并配官方密钥。
+4. 付费接口服务可选；业务逻辑封在 OmniMux 云里，第三方接不进，只能装中枢并配官方密钥。
 
 仍不把 `dsh-omnimux` 做成社媒运营套件。中枢继续只做执行面和官方独有接口。账号排期、Drama Center 传片不进这个包。活树尚未实现第三方配置和 C 类付费工具表。

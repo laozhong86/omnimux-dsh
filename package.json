@@ -11,6 +11,8 @@
   ],
   "scripts": {
     "test": "pnpm --filter dsh-drama test && pnpm --filter dsh-omnimux test",
-    "smoke": "bash scripts/smoke-drama.sh"
+    "smoke": "bash scripts/smoke-drama.sh",
+    "verify:models": "node scripts/verify-models.mjs",
+    "verify:image-live": "node scripts/verify-omnimux-image-live.mjs"
   }
 }
