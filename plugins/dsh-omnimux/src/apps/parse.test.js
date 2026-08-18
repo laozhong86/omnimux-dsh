@@ -81,10 +81,12 @@ describe('parseCatalog', () => {
 })
 
 describe('loadBundledCatalog', () => {
-  it('reads the shipped empty catalog', () => {
+  it('reads the shipped official catalog', () => {
     const parsed = loadBundledCatalog()
     assert.equal(parsed.schema, 1)
-    assert.deepEqual(parsed.apps, [])
+    assert.equal(parsed.apps[0].id, 'accounts')
+    assert.equal(parsed.apps[0].spec.name, 'dsh-omnimux-accounts')
+    assert.equal(parsed.apps[0].spec.version, '0.1.0')
   })
 
   it('fails when the bundled file is missing', () => {

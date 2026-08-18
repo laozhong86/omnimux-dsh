@@ -54,7 +54,8 @@ var zh = {
   "plugins.empty": "\u8FD8\u6CA1\u6709\u5DF2\u53D1\u5E03\u7684\u5E94\u7528\u3002",
   "plugins.install": "\u5B89\u88C5",
   "plugins.update": "\u66F4\u65B0",
-  "plugins.installed": "\u5DF2\u5B89\u88C5\u3002\u6253\u5F00\u5E94\u7528\u4E0B\u4E00\u671F\u63A5\u901A\u3002",
+  "plugins.remove": "\u5378\u8F7D",
+  "plugins.installed": "\u5DF2\u5B89\u88C5\u3002\u91CD\u542F Host \u540E\u6253\u5F00\u5E94\u7528\u3002",
   "plugins.hub": "\u672C\u673A\u4E2D\u67A2\u80FD\u529B",
   "plugins.cap.identity": "\u8EAB\u4EFD",
   "plugins.cap.videoGenerate": "\u89C6\u9891\u751F\u6210",
@@ -100,7 +101,8 @@ var en = {
   "plugins.empty": "No published apps yet.",
   "plugins.install": "Install",
   "plugins.update": "Update",
-  "plugins.installed": "Installed. Opening an app comes in a later release.",
+  "plugins.remove": "Remove",
+  "plugins.installed": "Installed. Restart the Host to open the app.",
   "plugins.hub": "Hub capabilities on this machine",
   "plugins.cap.identity": "Identity",
   "plugins.cap.videoGenerate": "Video generate",
@@ -304,6 +306,16 @@ async function installApp(spec) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ spec })
   });
+  let json = {};
+  try {
+    json = await response.json();
+  } catch {
+    json = { error: `HTTP ${String(response.status)}` };
+  }
+  return { ok: response.ok, status: response.status, body: json };
+}
+async function uninstallApp(name2) {
+  const response = await fetch(`/omnimux/plugins/${encodeURIComponent(name2)}`, { method: "DELETE" });
   let json = {};
   try {
     json = await response.json();
@@ -790,11 +802,10 @@ function PluginsSection({ t }) {
   (0, import_react4.useEffect)(() => {
     void refresh();
   }, []);
-  const install = (spec) => {
-    if (!spec) return;
-    setBusy(spec);
+  const runChange = (key, work) => {
+    setBusy(key);
     setError("");
-    void installApp(spec).then((result) => {
+    void work().then((result) => {
       if (!result.ok) {
         setError(String(result.body.error || `HTTP ${String(result.status)}`));
         return;
@@ -806,6 +817,14 @@ function PluginsSection({ t }) {
     }).finally(() => {
       setBusy("");
     });
+  };
+  const install = (spec) => {
+    if (!spec) return;
+    runChange(spec, () => installApp(spec));
+  };
+  const uninstall = (name2) => {
+    if (!name2) return;
+    runChange(name2, () => uninstallApp(name2));
   };
   const restart = () => {
     const bridge = desktopBridge2();
@@ -830,6 +849,7 @@ function PluginsSection({ t }) {
     apps.length === 0 && view != null ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted3, children: t("plugins.empty") }) : null,
     apps.map((app) => {
       const spec = typeof app.install_spec === "string" ? app.install_spec : "";
+      const name2 = typeof app.spec?.name === "string" ? app.spec.name : "";
       const action = app.state === "update" ? "update" : app.state === "available" ? "install" : "";
       return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: row3, children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
@@ -848,7 +868,18 @@ function PluginsSection({ t }) {
             },
             children: t(action === "update" ? "plugins.update" : "plugins.install")
           }
-        ) : null
+        ) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          "button",
+          {
+            type: "button",
+            style: button3,
+            disabled: busy !== "" || name2 === "",
+            onClick: () => {
+              uninstall(name2);
+            },
+            children: t("plugins.remove")
+          }
+        )
       ] }, String(app.id));
     }),
     pendingRestart ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", style: button3, disabled: busy !== "", onClick: restart, children: t("dshPlugins.restart") }) : null,
@@ -1253,10 +1284,10 @@ function apply(ctx) {
     locale: NS,
     inject: () => ({ t })
   }, ProfileSection));
-  ctx.slots.inject("settings.section", () => ctx.slots.register({
-    name: "settings.section",
+  ctx.slots.inject("settings.plugins.tab", () => ctx.slots.register({
+    name: "settings.plugins.tab",
     id: "omnimux-dsh-plugins",
-    order: 6,
+    order: 20,
     label: () => t("dshPlugins.nav"),
     locale: NS,
     inject: () => ({ t })

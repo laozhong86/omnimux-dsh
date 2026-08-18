@@ -8,7 +8,9 @@ I/O and the seam list: repo `docs/contracts/hub.md`.
 
 ## Identity (settings)
 
-The Web client registers **个人资料** and **DSH 插件** in Settings, and **应用** in the left sidebar. **DSH 插件** is mounted only when the OmniMux desktop injects `OMNIMUX_DSH_CLI`; it installs npm packages into the `omnimux` profile through packaged `dsh plugin`. Clicking Apps fills the conversation column (`shell.overlay` over `[data-slot="conversation"]`); it is not a sidebar menu. The button uses the official `sidebar.footer.action` seat above Settings. Host talks to OmniMux device-login HTTP itself (`POST /api/user/device/code` and `/token` on the site origin). The OmniMux CLI is not required.
+The Web client registers **个人资料** as a Settings page (`settings.section`) and **DSH 插件** as a tab under official **设置 → 插件** (`settings.plugins.tab`). **应用** sits in the left sidebar. **DSH 插件** is mounted only when the OmniMux desktop injects `OMNIMUX_DSH_CLI`; it installs npm packages into the `omnimux` profile through packaged `dsh plugin`. Clicking Apps fills the conversation column (`shell.overlay` over `[data-slot="conversation"]`); it is not a sidebar menu. The button uses the official `sidebar.footer.action` seat above Settings. Host talks to OmniMux device-login HTTP itself (`POST /api/user/device/code` and `/token` on the site origin). The OmniMux CLI is not required. Plugin UI seats: repo `docs/contracts/settings-ui.md`.
+
+The agent's `web_search` (official `web-search-deepseek` provider) needs a DeepSeek API key under the `DEEPSEEK_API_KEY` credential reference. The canonical configuration surface is the official **Settings → 插件 → Web Search** card (`settings.plugin.item`), which writes the key through the credentials domain — the same store this plugin's login token uses. No product settings page is registered for it.
 
 Host plugins read `ctx.get('identity')`: `status({ verify })` returns the public profile; `require()` throws `needs-omnimux` when unsigned. The browser still only calls `/omnimux/auth/*`.
 
@@ -18,12 +20,13 @@ Two keys, two URLs:
 |---|---|
 | `OMNIMUX_ACCESS_TOKEN` in `$DSH_HOME/.credentials.yaml` (or `$DSH_HOME/omnimux/access-token`) | Who you are. Issued by device login. Never sent to the browser. |
 | `OMNIMUX_API_KEY` / `OMNIMUX_TOKEN` | Metered video/API calls. Unchanged. |
+| `DEEPSEEK_API_KEY` in `$DSH_HOME/.credentials.yaml` | Agent `web_search` (official `web-search-deepseek` provider). Configured from the official **Settings → 插件 → Web Search** card; never sent to the browser. |
 | `OMNIMUX_SITE_URL` or config `siteBaseUrl` (default `https://omnimux.ai`) | Login and `/api/user/self` |
 | `OMNIMUX_BASE_URL` (default `https://api.omnimux.ai/v1`) | Video API |
 
 Startup only describes the stored access token. Settings **个人资料** can start device login (`client_name: dsh-omnimux`). **应用** lists official catalog rows from `GET /omnimux/apps` without a login gate.
 
-Official Apps rows come from `apps/catalog.json` (floor) plus an optional Host GET of `{siteBaseUrl}/apps/catalog.json` when `Config.apps.remote` is true. The cache is `$DSH_HOME/omnimux/apps/`. The browser never fetches the site file. Install uses the catalog's pinned `install_spec` through `/omnimux/plugins`. Contract: repo `docs/contracts/apps-catalog.md`.
+Official Apps rows come from `apps/catalog.json` (floor) plus an optional Host GET of `{siteBaseUrl}/apps/catalog.json` when `Config.apps.remote` is true. The cache is `$DSH_HOME/omnimux/apps/`. The browser never fetches the site file. Install uses the catalog's pinned `install_spec` through `/omnimux/plugins`. The first official row is `accounts` (`dsh-omnimux-accounts@0.1.0`). Connected accounts are listed on Host `GET /omnimux/accounts`. Contract: repo `docs/contracts/apps-catalog.md`.
 
 ## Product chrome
 

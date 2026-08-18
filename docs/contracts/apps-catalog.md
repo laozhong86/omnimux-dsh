@@ -9,7 +9,7 @@ Normative local + remote JSON catalog for the Apps shelf. Status of the live UI 
 | Bundled catalog | `plugins/dsh-omnimux/apps/catalog.json` shipped with the hub | A scan of the profile's `dsh.profile.bundles` |
 | Disk cache | `$DSH_HOME/omnimux/apps/catalog.json` plus `meta.json` | A second source of truth beside a valid newer bundled file |
 | Remote catalog | `GET {siteBaseUrl}/apps/catalog.json` | An authenticated write API, a per-user "mine" list |
-| Shelf view | `GET /omnimux/apps` JSON the Apps page renders | The Settings "DSH plugins" inventory |
+| Shelf view | `GET /omnimux/apps` JSON the Apps page renders | The Settings → 插件 tab that installs Host plugins |
 | App row | One object in `apps[]` with `omnimux.app` identity | `dsh-omnimux`, `dsh-base`, `dsh-web-app`, community plugins |
 
 `dsh-omnimux` renders the shelf and is never a row. Installation stays `dsh plugin add`. The browser never fetches the remote file.
@@ -59,10 +59,10 @@ Schema `1` only. Unknown `schema` rejects the whole document.
     {
       "id": "accounts",
       "title": "账号",
-      "summary": "查看并连接已绑定的社媒账号",
+      "summary": "按平台或分组查看并连接已绑定的社媒账号",
       "kind": "official",
       "listed": true,
-      "capabilities": ["identity"],
+      "capabilities": ["identity", "official"],
       "client": true,
       "spec": {
         "source": "npm",
@@ -255,4 +255,4 @@ Each step is usable alone.
 1. Bundled `catalog.json` (may be `{ "schema": 1, "generated_at": "…", "min_hub": "0.1.0", "apps": [] }`) + `parseCatalog` + `GET /omnimux/apps` from bundled only.
 2. Disk cache + remote GET + `POST /omnimux/apps/refresh` + `Config.apps`.
 3. Apps page renders the view instead of only the empty sentence.
-4. First real row (for example accounts) with `client: true` and a pinned spec. Install goes through `/omnimux/plugins`.
+4. First real row `accounts` (`dsh-omnimux-accounts@0.1.0`) with `client: true`. Install goes through `/omnimux/plugins`. Isolated add/remove: `scripts/accept-apps-install.sh`.

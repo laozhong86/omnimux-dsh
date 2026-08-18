@@ -156,3 +156,17 @@ export async function installApp(spec) {
   }
   return { ok: response.ok, status: response.status, body: json }
 }
+
+/**
+ * @param {string} name
+ */
+export async function uninstallApp(name) {
+  const response = await fetch(`/omnimux/plugins/${encodeURIComponent(name)}`, { method: 'DELETE' })
+  let json = {}
+  try {
+    json = await response.json()
+  } catch {
+    json = { error: `HTTP ${String(response.status)}` }
+  }
+  return { ok: response.ok, status: response.status, body: json }
+}

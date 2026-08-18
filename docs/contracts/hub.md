@@ -119,6 +119,7 @@ The hub may wrap those HTTP calls. It must not store an account matrix, posting 
 |---|---|---|
 | `OMNIMUX_ACCESS_TOKEN` | identity + social publish | never |
 | `OMNIMUX_API_KEY` / `OMNIMUX_TOKEN` | chat route, media, social data | never |
+| `DEEPSEEK_API_KEY` | agent `web_search` (`web-search-deepseek` provider), written via the official credentials domain | never |
 
 Do not export a `sk-` as `OMNIMUX_ACCESS_TOKEN`.
 
@@ -139,8 +140,8 @@ plugins/dsh-omnimux/src/
     video.js             videoGenerate over the route
     protocols/           openai-media.js  (HTTP)
     vendors/             omnimux.js       (envelope + defaults)
-  official/              social-data and publish tools
-  client/                Profile, Apps shell
+  official/              social-data, publish tools, Host /omnimux/accounts
+  client/                Profile page; DSH plugins tab under Settings → 插件
 ```
 
 The plugin entry exports `Config` (Standard Schema). Brand strings and `media.providers` live there, not in `apply()`.

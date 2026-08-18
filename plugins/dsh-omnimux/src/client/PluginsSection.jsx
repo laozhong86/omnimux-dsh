@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getApps, installApp } from './api.js'
+import { getApps, installApp, uninstallApp } from './api.js'
 
 const page = {
   padding: '16px 20px',
@@ -65,11 +65,10 @@ export function PluginsSection({ t }) {
     void refresh()
   }, [])
 
-  const install = (spec) => {
-    if (!spec) return
-    setBusy(spec)
+  const runChange = (key, work) => {
+    setBusy(key)
     setError('')
-    void installApp(spec).then((result) => {
+    void work().then((result) => {
       if (!result.ok) {
         setError(String(result.body.error || `HTTP ${String(result.status)}`))
         return
@@ -81,6 +80,16 @@ export function PluginsSection({ t }) {
     }).finally(() => {
       setBusy('')
     })
+  }
+
+  const install = (spec) => {
+    if (!spec) return
+    runChange(spec, () => installApp(spec))
+  }
+
+  const uninstall = (name) => {
+    if (!name) return
+    runChange(name, () => uninstallApp(name))
   }
 
   const restart = () => {
@@ -109,6 +118,7 @@ export function PluginsSection({ t }) {
       {apps.length === 0 && view != null ? <p style={muted}>{t('plugins.empty')}</p> : null}
       {apps.map((app) => {
         const spec = typeof app.install_spec === 'string' ? app.install_spec : ''
+        const name = typeof app.spec?.name === 'string' ? app.spec.name : ''
         const action = app.state === 'update' ? 'update' : app.state === 'available' ? 'install' : ''
         return (
           <div key={String(app.id)} style={row}>
@@ -126,7 +136,16 @@ export function PluginsSection({ t }) {
               >
                 {t(action === 'update' ? 'plugins.update' : 'plugins.install')}
               </button>
-            ) : null}
+            ) : (
+              <button
+                type="button"
+                style={button}
+                disabled={busy !== '' || name === ''}
+                onClick={() => { uninstall(name) }}
+              >
+                {t('plugins.remove')}
+              </button>
+            )}
           </div>
         )
       })}

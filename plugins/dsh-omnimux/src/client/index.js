@@ -34,10 +34,10 @@ export function apply(ctx) {
     locale: NS,
     inject: () => ({ t }),
   }, ProfileSection))
-  ctx.slots.inject('settings.section', () => ctx.slots.register({
-    name: 'settings.section',
+  ctx.slots.inject('settings.plugins.tab', () => ctx.slots.register({
+    name: 'settings.plugins.tab',
     id: 'omnimux-dsh-plugins',
-    order: 6,
+    order: 20,
     label: () => t('dshPlugins.nav'),
     locale: NS,
     inject: () => ({ t }),

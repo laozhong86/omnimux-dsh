@@ -11,6 +11,7 @@ import { createPendingStore } from './auth/pending.js'
 import { createIdentity } from './auth/identity.js'
 import { createTokenStore } from './auth/store.js'
 import { parseHubConfig, Config } from './config.js'
+import { createOfficialDispatcher, registerOfficialRoutes } from './official/http-routes.js'
 import { mountOfficial } from './official/mount.js'
 import { injectBrandBoot } from './brand/inject-index.js'
 
@@ -114,10 +115,17 @@ export function apply(ctx, config = {}) {
         siteBaseUrl,
         store: appsStore,
       }))
+      const stopOfficial = registerOfficialRoutes(webServer, createOfficialDispatcher({
+        official: hub.official,
+        identity,
+        store,
+        siteBaseUrl,
+      }))
       return () => {
         stopAuth()
         stopPlugins()
         stopApps()
+        stopOfficial()
       }
     }
     if (typeof httpCtx.effect === 'function') httpCtx.effect(mount, 'dsh-omnimux: http routes')

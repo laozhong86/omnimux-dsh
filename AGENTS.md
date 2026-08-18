@@ -7,6 +7,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 - MUST NOT treat a sibling official `deepseek-harness/packages/` tree as product source. MUST NOT open feature PRs upstream. Ship `dsh-plugin` packages and `dsh plugin add`.
 - The Electron shell is `/Users/x/Desktop/Project/omnimux-desktop`. MUST NOT recreate `apps/desktop/` on the official clone.
 - Settings "DSH plugins" install into the `omnimux` profile bundles via packaged `dsh plugin`. MUST NOT remove `@deepseek-ai/dsh-base`, `@deepseek-ai/dsh-web-app`, or `dsh-omnimux`.
+- Plugin config and plugin management MUST use official Settings plugin seats (`settings.plugins.tab` or `settings.plugin.item`). MUST NOT add a first-level `settings.section` for a plugin's knobs, install UI, or keys. Placement: [docs/contracts/settings-ui.md](docs/contracts/settings-ui.md).
 - Official-clone overlays MUST live in `patches/` against the pin in `docs/harness-pin.md`. Apply/reset: `scripts/apply-harness-overlay.sh` and `scripts/reset-harness-overlay.sh`. MUST NOT accumulate product edits only as uncommitted diffs in the official clone.
 - OmniMux core MUST live in `plugins/dsh-omnimux/`: product chrome (logo, wordmark, tab title, favicon), auth, credentials, model/provider routes, hub Settings/Apps UI, and execution seams. MUST NOT add a sibling plugin for those (`omnimux-brand` and the same split under another name are forbidden).
 - A new plugin in this tree MUST be one vertical business scene (short-drama, later e-commerce design, brand marketing). A vertical MUST NOT implement hub chrome, auth, or provider routes.
@@ -28,11 +29,13 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `CONTEXT.md` | Terms, two-agent split, shot statuses |
 | `docs/capabilities.md` | Real / stub / absent |
 | `docs/contracts/hub.md` | Execution-hub terms, I/O, seams, official-only list |
+| `docs/contracts/settings-ui.md` | Where plugin UI sits in official Settings (no first-level plugin nav) |
 | `docs/model-list-ownership.md` | Who owns the OmniMux model list (plugin patch only; user layers set `agent-default-model` only) |
 | `docs/contracts/series.md` | Disk fields + error codes |
 | `docs/contracts/briefing.md` | Briefing create/update/delete. Memory, not truth |
 | `docs/briefing.md` | Agent–human project briefing log |
 | `plugins/dsh-omnimux/` | Execution hub. Verticals I/O through its seams. Apps shelf client. Catalog contract: [docs/contracts/apps-catalog.md](docs/contracts/apps-catalog.md). |
+| `plugins/dsh-omnimux-accounts/` | First official Apps row. Settings → 插件 tab **账号**. Host `/omnimux/accounts` only. |
 | `docs/contracts/apps-catalog.md` | Official Apps catalog: bundled JSON + optional remote JSON. Not an application table. |
 | `docs/logs/2026-08-15-app-marketplace-mvp.md` | Earlier marketplace stories. Catalog storage is superseded by `docs/contracts/apps-catalog.md`. |
 | `docs/logs/2026-08-16-hub-capability-mount.md` | P3–P8 hub capability mount plan and status |
@@ -56,12 +59,14 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 |---|---|---|
 | `dsh-drama` | `yaml`, Node stdlib | OmniMux SDK, `dsh-omnimux` internals |
 | `dsh-omnimux` | OmniMux HTTP, `aigc-provider-runtime-kit` | `dsh-drama` domain, `series/` paths |
+| `dsh-omnimux-accounts` | Node stdlib, Host `/omnimux/accounts` | hub internals, `OMNIMUX_*` secrets |
 
 ## Verify
 
 ```sh
 pnpm test
 ./scripts/smoke-drama.sh
+./scripts/accept-apps-install.sh
 pnpm verify:models
 pnpm verify:image-live
 ```
