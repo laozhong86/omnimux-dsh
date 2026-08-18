@@ -96,7 +96,7 @@ describe('auth http dispatcher', () => {
       store: createTokenStore({ homeDir: mkdtempSync(join(tmpdir(), 'dsh-omnimux-cap-')) }),
       pending: createPendingStore(),
       siteBaseUrl: 'https://omnimux.ai',
-      capabilities: { identity: true, videoGenerate: true, imageGenerate: true, official: true },
+      capabilities: { identity: true, videoGenerate: true, imageGenerate: true, textComplete: true, official: true },
     })
     const result = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/capabilities' })
     assert.equal(result.status, 200)

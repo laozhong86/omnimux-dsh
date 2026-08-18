@@ -6,6 +6,8 @@ I/O and the seam list: repo `docs/contracts/hub.md`.
 
 `ctx.provide('videoGenerate' | 'imageGenerate')` then `api.execute({ prompt, dest, … })`. Default waits until the file is on disk (`mode: "live"`). `wait: false` returns `{ mode: "submitted", taskId }`. `{ dest, taskId }` skips submit and only polls then downloads. Tools: `omnimux_video_submit`, `omnimux_image_submit`. Default image model is `gpt-image-2` (`OMNIMUX_IMAGE_MODEL`). The hub resolves `Config.media` (provider → protocol → vendor fields). The hub does not keep a task ledger.
 
+`ctx.provide('textComplete')` then `api.execute({ prompt, model?, image?, … })` runs one `ctx.llm.stream` call on an enabled `Config.text.models` row. Tool: `omnimux_text_complete`. Not a second chat: no parent messages, no tools, image stays on that request. A text-only call must name `model`. An image call may omit it and uses `grok-4.6` (`OMNIMUX_VISION_MODEL`). The eight chat-directory models start enabled.
+
 ## Identity (settings)
 
 The Web client registers **个人资料** as a Settings page (`settings.section`) and **DSH 插件** as a tab under official **设置 → 插件** (`settings.plugins.tab`). **应用** sits in the left sidebar. **DSH 插件** is mounted only when the OmniMux desktop injects `OMNIMUX_DSH_CLI`; it installs npm packages into the `omnimux` profile through packaged `dsh plugin`. Clicking Apps fills the conversation column (`shell.overlay` over `[data-slot="conversation"]`); it is not a sidebar menu. The button uses the official `sidebar.footer.action` seat above Settings. Host talks to OmniMux device-login HTTP itself (`POST /api/user/device/code` and `/token` on the site origin). The OmniMux CLI is not required. Plugin UI seats: repo `docs/contracts/settings-ui.md`.

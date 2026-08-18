@@ -82,5 +82,6 @@ describe('identity seam', () => {
     assert.equal(typeof provided.identity.status, 'function')
     assert.equal(typeof provided.identity.require, 'function')
     assert.equal(typeof provided.videoGenerate.execute, 'function')
+    assert.equal(typeof provided.textComplete.execute, 'function')
   })
 })

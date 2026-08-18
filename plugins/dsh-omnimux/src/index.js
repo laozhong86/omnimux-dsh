@@ -14,6 +14,8 @@ import { parseHubConfig, Config } from './config.js'
 import { createOfficialDispatcher, registerOfficialRoutes } from './official/http-routes.js'
 import { mountOfficial } from './official/mount.js'
 import { injectBrandBoot } from './brand/inject-index.js'
+import { enabledTextModels } from './text/catalog.js'
+import { executeOmnimuxText } from './text/execute.js'
 
 export const name = 'dsh-omnimux'
 export const inject = ['tools']
@@ -24,6 +26,76 @@ export { Config }
  */
 function rethrow(error) {
   throw error
+}
+
+/**
+ * @param {{
+ *   tools: { register: (tool: object) => unknown },
+ *   provide?: (name: string, value: unknown) => void,
+ *   get?: (name: string) => unknown,
+ * }} ctx
+ * @param {{ text: ReturnType<typeof parseHubConfig>['text'] }} hub
+ * @param {object} jsonOut
+ * @param {(error: unknown) => never} onError
+ */
+function mountTextComplete(ctx, hub, jsonOut, onError) {
+  const enabled = enabledTextModels(hub.text)
+  const modelIds = enabled.map((row) => row.id)
+  const api = {
+    /**
+     * @param {{ prompt: string, model?: string, image?: string, system?: string, maxTokens?: number, signal?: AbortSignal }} req
+     */
+    execute(req) {
+      return executeOmnimuxText({
+        ...req,
+        text: hub.text,
+        llm: ctx.get?.('llm'),
+        attachments: ctx.get?.('attachments'),
+      })
+    },
+  }
+  ctx.provide('textComplete', api)
+  ctx.tools.register({
+    name: 'omnimux_text_complete',
+    description:
+      'Run one one-shot completion on an enabled OmniMux whitelist model. Not a second chat: the expert does not see this conversation and receives no tools. Call only when the current model cannot do the work, or the user / contract names that model. Pass image (absolute path, URL, or data URI) for vision; omit model then to use the first image-capable whitelist row (grok-4.6). Do not use this to continue the conversation.',
+    parameters: objectParams({
+      model: {
+        type: 'string',
+        ...(modelIds.length > 0 ? { enum: modelIds } : {}),
+        description: 'Whitelist model id. Required unless image is set.',
+      },
+      prompt: { type: 'string', required: true, description: 'Self-contained prompt. The expert cannot see the parent chat.' },
+      image: { type: 'string', description: 'Absolute path, http(s) URL, or data URI. Model must declare image input.' },
+      reason: { type: 'string', required: true, description: 'Which missing capability, or which user / contract line authorizes this call.' },
+      system: { type: 'string', description: 'Optional system text for this one request only.' },
+      max_tokens: { type: 'number', description: 'Optional output cap. Defaults to Config.text.maxTokens.' },
+    }),
+    output: jsonOut,
+    async execute(args, exec) {
+      const reason = typeof args.reason === 'string' ? args.reason.trim() : ''
+      if (!reason) {
+        throw new OmnimuxError('omnimux-invalid-request', 'reason is required')
+      }
+      try {
+        return await executeOmnimuxText({
+          prompt: args.prompt,
+          model: args.model,
+          image: args.image,
+          system: args.system,
+          maxTokens: args.max_tokens,
+          signal: exec?.signal,
+          sessionId: exec?.agent?.session?.id,
+          text: hub.text,
+          llm: ctx.get?.('llm'),
+          attachments: ctx.get?.('attachments'),
+        })
+      } catch (error) {
+        if (error instanceof OmnimuxError) throw error
+        return onError(error)
+      }
+    },
+  })
 }
 
 /**
@@ -102,6 +174,7 @@ export function apply(ctx, config = {}) {
         identity: true,
         videoGenerate: true,
         imageGenerate: true,
+        textComplete: true,
         official: hub.official.mount,
       },
     })
@@ -195,6 +268,7 @@ export function apply(ctx, config = {}) {
 
   mountMedia('video', executeOmnimuxVideo)
   mountMedia('image', executeOmnimuxImage)
+  mountTextComplete(ctx, hub, jsonOut, rethrow)
   mountOfficial(ctx, {
     hub,
     identity,

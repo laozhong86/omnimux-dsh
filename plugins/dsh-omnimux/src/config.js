@@ -3,6 +3,7 @@ import { DEFAULT_SITE, resolveSiteBaseUrl } from './auth/omnimux-auth.js'
 import { parseBrandConfig } from './brand/config.js'
 import { parseMediaConfig } from './media/route.js'
 import { parseOfficialConfig } from './official/config.js'
+import { parseTextConfig } from './text/catalog.js'
 
 /**
  * @param {unknown} value
@@ -24,6 +25,7 @@ export function parseHubConfig(value) {
           : process.env.OMNIMUX_SITE_URL || DEFAULT_SITE,
       ),
     ),
+    text: parseTextConfig(raw.text),
   }
 }
 

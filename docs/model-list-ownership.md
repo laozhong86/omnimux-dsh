@@ -42,6 +42,9 @@ it that way: user layers set `agent-default-model` only.
   over-claiming image input is rejected by the provider mid-turn after the
   message is durable — so the catalog, not real-world brand knowledge, is the
   gate. `verify:models` enforces both directions keyless.
+- The one-shot expert whitelist (`plugins/dsh-omnimux/src/text/catalog.js`
+  `CHAT_MODELS`) is a subset of this patch list. `verify:models` fails if a
+  whitelist id is missing from the patch.
 
 ## Changing the list
 

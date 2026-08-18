@@ -36,7 +36,7 @@
 | 把 OmniMux 渠道号（50/61/…）写进中枢 | 复制云端渠道表 |
 | 数字人独立 HTTP 客户端 | 公开手册没有这条族；走 `videoGenerate` 请求 |
 | 现在发明 `audioGenerate` | 无 live 音频生成合同 |
-| 中枢再挂一套 chat tool | 和 dsh LLM 面抢请求 |
+| 中枢再挂一套 chat tool | 和 dsh LLM 面抢请求。一次性 `textComplete` 不是 chat，另见 [hub.md](../contracts/hub.md#text-complete) |
 | 把矩阵 / 排期塞进中枢 | 推翻「中枢不是社媒运营套件」 |
 
 ## 落地设施（按期可独立合并）
@@ -83,9 +83,10 @@
 今天仍为真、由本决策标为待做：
 
 - `imageGenerate` / 社交数据 / 发帖仅 keyless；标 **real** 仍要真实回包
+- `textComplete` 仅 keyless；标 **real** 仍要一次真实 `grok-4.6` 识图回包
 - 货架目录仍空（OmniMux 仓）
 
-已落地：媒体路由与句柄；`identity`；`imageGenerate`；应用页本机能力门；`official` 客户端；社交数据第一刀；连账户/发帖薄工具；口播字段走 `videoGenerate` metadata。
+已落地：媒体路由与句柄；`identity`；`imageGenerate`；应用页本机能力门；`official` 客户端；社交数据第一刀；连账户/发帖薄工具；口播字段走 `videoGenerate` metadata；一次性 `textComplete` 白名单。
 
 ## 源
 

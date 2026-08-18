@@ -35,11 +35,13 @@ await ctx.plugin(drama)
 
 assert.equal(typeof ctx.get('videoGenerate')?.execute, 'function', 'drama host must see provided videoGenerate')
 assert.equal(typeof ctx.get('imageGenerate')?.execute, 'function', 'drama host must see provided imageGenerate')
+assert.equal(typeof ctx.get('textComplete')?.execute, 'function', 'drama host must see provided textComplete')
 assert.equal(typeof ctx.get('identity')?.status, 'function', 'drama host must see provided identity')
 assert.equal(ctx.get('jobs'), undefined, 'jobs stays optional')
 assert.ok(tools.has('drama_generate_shot'))
 assert.ok(tools.has('omnimux_video_submit'))
 assert.ok(tools.has('omnimux_image_submit'))
+assert.ok(tools.has('omnimux_text_complete'))
 assert.ok(tools.has('omnimux_social_data'))
 assert.ok(tools.has('omnimux_accounts_list'))
 
@@ -60,6 +62,7 @@ try {
 await omniFiber.dispose()
 assert.equal(ctx.get('videoGenerate'), undefined, 'dispose unregisters videoGenerate')
 assert.equal(ctx.get('imageGenerate'), undefined, 'dispose unregisters imageGenerate')
+assert.equal(ctx.get('textComplete'), undefined, 'dispose unregisters textComplete')
 assert.equal(ctx.get('identity'), undefined, 'dispose unregisters identity')
 
 const stub = await tools.get('drama_generate_shot').execute({ shot_id: 'e01-s01' }, exec(stubRoot))

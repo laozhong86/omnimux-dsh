@@ -29,7 +29,7 @@ vertical disk  <--only the vertical writes its own files
 - Official-only tool and OmniMux is not configured or the user is not signed in: throw `needs-omnimux`. Do not return 500 or a successful empty value.
 - Apps and other plugins consume the same seams. They must not import `dsh-omnimux` internals.
 
-Chat stays on the dsh LLM surface (`llm-pi-ai` `omnimux` route). The hub must not register a parallel chat tool.
+Chat stays on the dsh LLM surface (`llm-pi-ai` `omnimux` route). The hub must not register a parallel chat tool. A one-shot expert completion (`textComplete` / `omnimux_text_complete`) is not chat: it runs one `ctx.llm.stream` call with no tools and no parent messages.
 
 ## Media layers
 
@@ -89,6 +89,29 @@ media:
 
 `OMNIMUX_BASE_URL` / `OMNIMUX_VIDEO_MODEL` / `OMNIMUX_IMAGE_MODEL` / `OMNIMUX_API_KEY` overlay the `omnimux` row at resolve time. Adding a vendor is a new `providers` row plus `src/media/vendors/<id>.js`. Adding a wire format is a new `src/media/protocols/<id>.js`. Do not grow `apply()` or the seam.
 
+## Text complete
+
+`textComplete` is a one-shot expert call, not a second chat. It does not inherit parent messages, does not pass tools, and does not write the image into the parent session. Authorization is the enabled whitelist plus the tool's required `reason`. The hub does not prompt the user.
+
+The callable set is `Config.text.models`. Every `id` must already be a `cordis.patch.yml` `omnimux` chat model. `enabled: false` hides that row from the tool. Omitted `models` uses the eight chat-directory defaults, all enabled. Image input is not a separate capability: a request with `image` must resolve to a row whose chat-directory `input` includes `image` (today only `grok-4.6`). `OMNIMUX_VISION_MODEL` overlays that default and must stay enabled and image-capable.
+
+```text
+text:
+  defaultProvider: omnimux
+  maxTokens: 4096
+  models:
+    - { id: claude-opus-5,     brand: anthropic, role: flagship, enabled: true }
+    - { id: gpt-5.6-sol,       brand: openai,    role: flagship, enabled: true }
+    - { id: grok-4.6,          brand: xai,       role: flagship, enabled: true }
+    - { id: kimi-k3,           brand: moonshot,  role: flagship, enabled: true }
+    - { id: deepseek-v4-pro,   brand: deepseek,  role: flagship, enabled: true }
+    - { id: deepseek-v4-flash, brand: deepseek,  role: classic,  enabled: true }
+    - { id: gemini-3.7-flash,  brand: google,    role: flagship, enabled: true }
+    - { id: glm-5.3,           brand: zhipu,     role: flagship, enabled: true }
+```
+
+A text-only request must name `model`. An image request may omit it and uses the first image-capable enabled row. The image is an absolute path, `http(s)` URL, or data URI. Missing `ctx.llm` or (when `image` is set) `ctx.attachments` throws `needs-provider`.
+
 ## Seams and tools
 
 | Name | Kind | Request | Success | Failure |
@@ -98,6 +121,8 @@ media:
 | `imageGenerate` | neutral provide | same job handle as video | same | same |
 | `omnimux_video_submit` | hub tool over `videoGenerate` | same as the seam | same | same |
 | `omnimux_image_submit` | hub tool over `imageGenerate` | same as the seam | same | same |
+| `textComplete` | neutral provide | `{ prompt, model?, image?, system?, maxTokens?, signal? }` | `{ mode: "live", model, text }` | `needs-provider`, `unknown-model`, `omnimux-invalid-request`, stream errors |
+| `omnimux_text_complete` | hub tool over `textComplete` | same plus required `reason` | same | same |
 | `omnimux_social_data` | official-only tool | `platform` + `capability` + `url`/`id`/`query`; `sk-` | `{ platform, capability, model, data }` | `omnimux-unconfigured`, `omnimux-invalid-request` |
 | `omnimux_accounts_*` / `omnimux_publish_*` | official-only tools | connect / list / presign / create / get post; access token | upstream JSON, secrets stripped | `needs-omnimux` |
 
@@ -118,7 +143,7 @@ The hub may wrap those HTTP calls. It must not store an account matrix, posting 
 | Secret | Who uses it | Browser |
 |---|---|---|
 | `OMNIMUX_ACCESS_TOKEN` | identity + social publish | never |
-| `OMNIMUX_API_KEY` / `OMNIMUX_TOKEN` | chat route, media, social data | never |
+| `OMNIMUX_API_KEY` / `OMNIMUX_TOKEN` | chat route, media, text complete, social data | never |
 | `DEEPSEEK_API_KEY` | agent `web_search` (`web-search-deepseek` provider), written via the official credentials domain | never |
 
 Do not export a `sk-` as `OMNIMUX_ACCESS_TOKEN`.
@@ -129,10 +154,11 @@ Hub implementation stays in `plugins/dsh-omnimux`. New capability = new director
 
 ```text
 plugins/dsh-omnimux/src/
-  config.js              plugin Config (brand + media + apps)
+config.js              plugin Config (brand + media + apps + text)
   brand/                 chrome overlay
   auth/                  device login, token store, provide('identity'), /omnimux/auth/*
   apps/                  official catalog parse, cache, resolve, /omnimux/apps
+  text/                  textComplete whitelist + one-shot execute
   llm/                   omnimux chat route / future adapter only
   media/
     route.js             resolve provider + protocol + model
@@ -144,7 +170,7 @@ plugins/dsh-omnimux/src/
   client/                Profile page; DSH plugins tab under Settings → 插件
 ```
 
-The plugin entry exports `Config` (Standard Schema). Brand strings and `media.providers` live there, not in `apply()`.
+The plugin entry exports `Config` (Standard Schema). Brand strings, `media.providers`, and `text.models` live there, not in `apply()`.
 
 ## Vertical duties
 

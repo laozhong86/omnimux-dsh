@@ -6,7 +6,7 @@ const PUBLIC_KEYS = [
   'logged_in', 'verified', 'base_url', 'id', 'username', 'display_name',
   'group', 'quota_usd', 'used_quota_usd', 'flow_id', 'verification_url',
   'user_code', 'expires_in', 'interval', 'kind', 'error',
-  'identity', 'videoGenerate', 'imageGenerate', 'official',
+  'identity', 'videoGenerate', 'imageGenerate', 'textComplete', 'official',
 ]
 
 /**

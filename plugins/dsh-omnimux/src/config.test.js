@@ -12,6 +12,10 @@ test('parseHubConfig fills brand and the OmniMux media row', () => {
   assert.equal(parsed.official.mount, true)
   assert.equal(parsed.apps.remote, false)
   assert.equal(parsed.apps.ttlSeconds, 21600)
+  assert.equal(parsed.text.defaultProvider, 'omnimux')
+  assert.equal(parsed.text.maxTokens, 4096)
+  assert.equal(parsed.text.models.length, 8)
+  assert.equal(parsed.text.models.every((row) => row.enabled), true)
 })
 
 test('Config Standard Schema accepts empty input', () => {
@@ -36,4 +40,12 @@ test('Config Standard Schema rejects a catalog URL on another host', () => {
   })
   assert.ok('issues' in result)
   assert.match(result.issues[0]?.message ?? '', /host must match/)
+})
+
+test('Config Standard Schema rejects a text model outside the chat directory', () => {
+  const result = Config['~standard'].validate({
+    text: { models: [{ id: 'claude-haiku-4-5' }] },
+  })
+  assert.ok('issues' in result)
+  assert.match(result.issues[0]?.message ?? '', /not in the chat directory/)
 })

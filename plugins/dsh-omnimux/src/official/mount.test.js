@@ -25,5 +25,6 @@ describe('official mount', () => {
     assert.equal(names.includes('omnimux_social_data'), false)
     assert.ok(names.includes('omnimux_video_submit'))
     assert.ok(names.includes('omnimux_image_submit'))
+    assert.ok(names.includes('omnimux_text_complete'))
   })
 })

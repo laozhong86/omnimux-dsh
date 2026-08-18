@@ -8,7 +8,11 @@
 //      documented as image-capable. Over-declaring admits an image the
 //      provider rejects mid-turn, so the catalog is the gate, never real-world
 //      brand knowledge.
-//   2. Gateway existence (needs OMNIMUX_API_KEY, else self-skips): every
+//   2. Expert whitelist (always runs): every id in
+//      plugins/dsh-omnimux/src/text/catalog.js CHAT_MODELS must appear on the
+//      patch model list. The one-shot tool cannot name a model the chat
+//      adapter does not advertise.
+//   3. Gateway existence (needs OMNIMUX_API_KEY, else self-skips): every
 //      declared model id must exist on api.omnimux.ai/v1/models.
 //
 // Key resolution: OMNIMUX_API_KEY env, else parsed from
@@ -23,6 +27,7 @@ import { readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { CHAT_MODEL_IDS } from '../plugins/dsh-omnimux/src/text/catalog.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const patchPath = join(root, 'plugins/dsh-omnimux/cordis.patch.yml')
@@ -135,6 +140,8 @@ if (models.length === 0) {
 
 const pricing = await fetchPricing()
 const mismatches = modalityMismatches(models, pricing)
+const patchIds = new Set(models.map((model) => model.id))
+const whitelistMissing = CHAT_MODEL_IDS.filter((id) => !patchIds.has(id))
 const key = resolveKey()
 
 if (!key) {
@@ -143,15 +150,16 @@ if (!key) {
     patch: 'plugins/dsh-omnimux/cordis.patch.yml',
     baseURL,
     modalityMismatches: mismatches,
+    whitelistMissing,
     skip: 'no OMNIMUX_API_KEY — gateway existence check skipped; modality check ran keyless',
     hint: 'omnimux tokens exec 40 --yes --timeout=600 -- env OMNIMUX_API_KEY=__OMNIMUX_TOKEN_40__ node scripts/verify-models.mjs',
     checkedAt: new Date().toISOString(),
   })}\n`)
-  if (mismatches.length > 0) {
-    process.stderr.write(`verify-models: modality mismatch (${mismatches.map((row) => row.id).join(', ')})\n`)
+  if (mismatches.length > 0 || whitelistMissing.length > 0) {
+    process.stderr.write(`verify-models: modality mismatch (${mismatches.map((row) => row.id).join(', ')}); whitelist not on patch (${whitelistMissing.join(', ')})\n`)
     process.exit(1)
   }
-  process.stderr.write('verify-models: ok (modality only)\n')
+  process.stderr.write('verify-models: ok (modality + whitelist)\n')
   process.exit(0)
 }
 
@@ -184,11 +192,12 @@ process.stdout.write(`${JSON.stringify({
   table,
   missing,
   modalityMismatches: mismatches,
+  whitelistMissing,
   checkedAt: new Date().toISOString(),
 })}\n`)
 
-if (missing.length > 0 || mismatches.length > 0) {
-  process.stderr.write(`verify-models: not on gateway (${missing.join(', ')}); modality mismatch (${mismatches.map((row) => row.id).join(', ')})\n`)
+if (missing.length > 0 || mismatches.length > 0 || whitelistMissing.length > 0) {
+  process.stderr.write(`verify-models: not on gateway (${missing.join(', ')}); modality mismatch (${mismatches.map((row) => row.id).join(', ')}); whitelist not on patch (${whitelistMissing.join(', ')})\n`)
   process.exit(1)
 }
 process.stderr.write('verify-models: ok\n')

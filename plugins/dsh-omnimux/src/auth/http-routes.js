@@ -75,6 +75,7 @@ export function createAuthDispatcher(deps) {
           identity: true,
           videoGenerate: true,
           imageGenerate: true,
+          textComplete: true,
           official: false,
           ...deps.capabilities,
         },

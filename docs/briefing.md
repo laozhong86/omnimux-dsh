@@ -13,6 +13,7 @@
 | 2026-08-16-hub-io | 2026-08-16 | decided | 执行中枢 I/O；不再称中枢为网关 |
 | 2026-08-16-harness-consume | 2026-08-16 | decided | 消费官方 dsh，不整仓 fork |
 | 2026-08-17-apps-catalog-json | 2026-08-17 | decided | 官方货架用 bundled + 远程 JSON，不做应用表 |
+| 2026-08-16-text-complete | 2026-08-16 | decided | 一次性专家补全；白名单不是第二套 chat |
 
 ## 2026-08-15-briefing-log
 
@@ -98,3 +99,13 @@
 ### Amendments
 - 2026-08-17 — Phase 1–3 landed in `dsh-omnimux`: bundled catalog, Host cache/refresh, Apps overlay reads `/omnimux/apps`. First real row is still a later PR.
 - 2026-08-16 — First official row `accounts` (`dsh-omnimux-accounts`) + Host `/omnimux/accounts`. Bundled source: the package ships with the Desktop seed (or a local add); the shelf installs the bare name without a registry lookup. Isolated add/remove: `scripts/accept-apps-install.sh`.
+
+## 2026-08-16-text-complete
+
+- **status:** decided
+- **topic:** 一次性专家补全；白名单不是第二套 chat
+- **decision:** `textComplete` / `omnimux_text_complete` 走 `ctx.llm.stream` 一次。默认可调 `cordis.patch.yml` 里 8 个 chat 模型，用户可关。无图必须点名模型；有图默认识图行（`grok-4.6`）。不弹确认。图不进父会话。
+- **why:** flash 等大脑缺识图或用户点名旗舰时，需要和生图同构的单次任务，而不是子代理或平行 chat。
+- **not:** 不开放定价 94 个模型；本期不把 haiku / mini / flash-lite 写入 chat 目录；不直接打 `/v1/chat/completions`。
+- **authority:** `docs/contracts/hub.md`
+- **updated:** 2026-08-16

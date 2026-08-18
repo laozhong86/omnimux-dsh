@@ -60,6 +60,7 @@ var zh = {
   "plugins.cap.identity": "\u8EAB\u4EFD",
   "plugins.cap.videoGenerate": "\u89C6\u9891\u751F\u6210",
   "plugins.cap.imageGenerate": "\u56FE\u50CF\u751F\u6210",
+  "plugins.cap.textComplete": "\u4E13\u5BB6\u8865\u5168",
   "plugins.cap.official": "\u5B98\u65B9\u793E\u4EA4\u63A5\u53E3",
   "plugins.cap.on": "\u5DF2\u6302\u4E0A",
   "plugins.cap.off": "\u672A\u6302\u4E0A",
@@ -107,6 +108,7 @@ var en = {
   "plugins.cap.identity": "Identity",
   "plugins.cap.videoGenerate": "Video generate",
   "plugins.cap.imageGenerate": "Image generate",
+  "plugins.cap.textComplete": "Expert complete",
   "plugins.cap.official": "Official social APIs",
   "plugins.cap.on": "mounted",
   "plugins.cap.off": "missing",
@@ -184,6 +186,7 @@ var PUBLIC_KEYS = [
   "identity",
   "videoGenerate",
   "imageGenerate",
+  "textComplete",
   "official"
 ];
 function pickPublic(raw) {

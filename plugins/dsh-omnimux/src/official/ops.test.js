@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
@@ -58,7 +58,7 @@ describe('official social ops', () => {
     const tools = {}
     const home = mkdtempSync(join(tmpdir(), 'omnimux-ops-'))
     const previousHome = process.env.DSH_HOME
-    const previousKey = process.env.OMNIMUX_API_KEY
+const previousKey = process.env.OMNIMUX_API_KEY
     const previousToken = process.env.OMNIMUX_TOKEN
     process.env.DSH_HOME = home
     delete process.env.OMNIMUX_API_KEY
@@ -80,10 +80,11 @@ describe('official social ops', () => {
     } finally {
       if (previousHome === undefined) delete process.env.DSH_HOME
       else process.env.DSH_HOME = previousHome
-      if (previousKey === undefined) delete process.env.OMNIMUX_API_KEY
+if (previousKey === undefined) delete process.env.OMNIMUX_API_KEY
       else process.env.OMNIMUX_API_KEY = previousKey
       if (previousToken === undefined) delete process.env.OMNIMUX_TOKEN
       else process.env.OMNIMUX_TOKEN = previousToken
+      rmSync(home, { recursive: true, force: true })
     }
   })
 
