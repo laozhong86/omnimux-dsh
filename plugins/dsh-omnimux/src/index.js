@@ -58,15 +58,15 @@ function mountTextComplete(ctx, hub, jsonOut, onError) {
   ctx.tools.register({
     name: 'omnimux_text_complete',
     description:
-      'Run one one-shot completion on an enabled OmniMux whitelist model. Not a second chat: the expert does not see this conversation and receives no tools. Call only when the current model cannot do the work, or the user / contract names that model. Pass image (absolute path, URL, or data URI) for vision; omit model then to use the first image-capable whitelist row (grok-4.6). Do not use this to continue the conversation.',
+      'Run one one-shot completion on an enabled OmniMux whitelist model. Not a second chat: the expert does not see this conversation and receives no tools. Call only when the current model cannot do the work, or the user / contract names that model. Omit model to use the configured default (gemini-3.7-flash). Pass image (absolute path, URL, or data URI) for vision on models that accept image input; omit model then to use the same default. claude-opus-5 is listed but its chat-completions group is temporarily 403. Do not use this to continue the conversation.',
     parameters: objectParams({
       model: {
         type: 'string',
         ...(modelIds.length > 0 ? { enum: modelIds } : {}),
-        description: 'Whitelist model id. Required unless image is set.',
+        description: 'Whitelist model id. Omit to use the configured default (gemini-3.7-flash).',
       },
       prompt: { type: 'string', required: true, description: 'Self-contained prompt. The expert cannot see the parent chat.' },
-      image: { type: 'string', description: 'Absolute path, http(s) URL, or data URI. Model must declare image input.' },
+      image: { type: 'string', description: 'Absolute path, http(s) URL, or data URI. Model must accept image input.' },
       reason: { type: 'string', required: true, description: 'Which missing capability, or which user / contract line authorizes this call.' },
       system: { type: 'string', description: 'Optional system text for this one request only.' },
       max_tokens: { type: 'number', description: 'Optional output cap. Defaults to Config.text.maxTokens.' },

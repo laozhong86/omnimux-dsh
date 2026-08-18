@@ -83,7 +83,7 @@
 今天仍为真、由本决策标为待做：
 
 - `imageGenerate` / 社交数据 / 发帖仅 keyless；标 **real** 仍要真实回包
-- `textComplete` 仅 keyless；标 **real** 仍要一次真实 `grok-4.6` 识图回包
+- `textComplete` 仅 keyless；标 **real** 仍要一次真实识图回包（默认 `gemini-3.7-flash`）。模型能力矩阵已实测：`docs/evidence/omnimux-modality-2026-08-18.md`
 - 货架目录仍空（OmniMux 仓）
 
 已落地：媒体路由与句柄；`identity`；`imageGenerate`；应用页本机能力门；`official` 客户端；社交数据第一刀；连账户/发帖薄工具；口播字段走 `videoGenerate` metadata；一次性 `textComplete` 白名单。

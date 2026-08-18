@@ -81,7 +81,7 @@ describe('textComplete execute', () => {
           },
         },
       })
-      assert.equal(result.model, 'grok-4.6')
+      assert.equal(result.model, 'gemini-3.7-flash')
       assert.equal(saved.length, 1)
       assert.equal(saved[0].mediaType, 'image/png')
       assert.equal(seen[0].messages[0].content[1].type, 'image')
@@ -140,6 +140,7 @@ describe('omnimux_text_complete tool', () => {
     assert.equal(typeof provided.textComplete.execute, 'function')
     assert.ok(tools.omnimux_text_complete)
     assert.ok(tools.omnimux_text_complete.parameters.properties.model.enum.includes('grok-4.6'))
+    assert.ok(tools.omnimux_text_complete.parameters.properties.model.enum.includes('gemini-3.7-flash'))
     assert.equal(tools.omnimux_text_complete.parameters.properties.model.enum.includes('claude-haiku-4-5'), false)
     assert.match(tools.omnimux_text_complete.description, /whitelist/)
     const result = await tools.omnimux_text_complete.execute({

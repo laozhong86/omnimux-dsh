@@ -17,12 +17,16 @@
 # deepseek-v4-flash is the product default agent model (desktop preset and web
 # profile set agent-default-model to it), so it stays selectable here.
 #
-# Input modalities follow the same rule: `input: [text, image]` is declared
-# only where the pricing catalog documents image input (grok-4.6 says
-# "text+image input"; the other seven descriptions do not mention images).
-# Under-declaring refuses an image before it attaches (naming the model);
-# over-declaring admits one the provider rejects mid-turn after the message
-# is durable — so the catalog, not real-world brand knowledge, is the gate.
+# Input modalities follow the measured gateway matrix
+# (docs/evidence/omnimux-modality-2026-08-18.md): a 64px red image plus a
+# content prompt was sent to every row; rows that answered with the image
+# color declare `input: [text, image]`. deepseek-v4-pro/flash and glm-5.3
+# rejected `image_url` upstream and stay text-only. claude-opus-5 supports
+# images on the Anthropic `/v1/messages` protocol, but the chat-completions
+# group is currently 403 for this key; it will carry `input` once that group
+# is upgraded. Under-declaring refuses an image before it attaches; declaring
+# image on a model the gateway rejects drops the request mid-turn — the
+# measured matrix, not vendor marketing, is the gate.
 #
 # Layering rule: user-layer cordis.patch.yml files (machine-local, per profile)
 # MUST NOT redefine this `llm-pi-ai` row — an id-matched patch replaces the
@@ -49,6 +53,7 @@
           - id: gpt-5.6-sol
             name: GPT-5.6 Sol
             contextWindow: 1000000
+            input: [text, image]
           - id: grok-4.6
             name: Grok 4.6
             contextWindow: 500000
@@ -56,6 +61,7 @@
           - id: kimi-k3
             name: Kimi K3
             contextWindow: 1000000
+            input: [text, image]
           - id: deepseek-v4-pro
             name: DeepSeek V4 Pro
             contextWindow: 1000000
@@ -65,5 +71,6 @@
             name: Gemini 3.7 Flash
             contextWindow: 1000000
             maxTokens: 65536
+            input: [text, image]
           - id: glm-5.3
             name: GLM-5.3

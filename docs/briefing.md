@@ -104,8 +104,11 @@
 
 - **status:** decided
 - **topic:** 一次性专家补全；白名单不是第二套 chat
-- **decision:** `textComplete` / `omnimux_text_complete` 走 `ctx.llm.stream` 一次。默认可调 `cordis.patch.yml` 里 8 个 chat 模型，用户可关。无图必须点名模型；有图默认识图行（`grok-4.6`）。不弹确认。图不进父会话。
+- **decision:** `textComplete` / `omnimux_text_complete` 走 `ctx.llm.stream` 一次。可调 `cordis.patch.yml` 里 8 个 chat 模型，用户可关。`model` 可省略，默认 `gemini-3.7-flash`（`OMNIMUX_TEXT_DEFAULT_MODEL` 覆盖）。不弹确认。图不进父会话。
 - **why:** flash 等大脑缺识图或用户点名旗舰时，需要和生图同构的单次任务，而不是子代理或平行 chat。
 - **not:** 不开放定价 94 个模型；本期不把 haiku / mini / flash-lite 写入 chat 目录；不直接打 `/v1/chat/completions`。
 - **authority:** `docs/contracts/hub.md`
-- **updated:** 2026-08-16
+- **updated:** 2026-08-18
+
+### Amendments
+- 2026-08-18 — 识图模型按实测矩阵开放（gpt-5.6-sol / grok-4.6 / kimi-k3 / gemini-3.7-flash），默认模型改为 `gemini-3.7-flash`。证据：`docs/evidence/omnimux-modality-2026-08-18.md`。claude-opus-5 走 `/v1/messages` 支持图，但 chat-completions 分组 403，待分组升级后接入。

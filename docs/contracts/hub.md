@@ -93,11 +93,12 @@ media:
 
 `textComplete` is a one-shot expert call, not a second chat. It does not inherit parent messages, does not pass tools, and does not write the image into the parent session. Authorization is the enabled whitelist plus the tool's required `reason`. The hub does not prompt the user.
 
-The callable set is `Config.text.models`. Every `id` must already be a `cordis.patch.yml` `omnimux` chat model. `enabled: false` hides that row from the tool. Omitted `models` uses the eight chat-directory defaults, all enabled. Image input is not a separate capability: a request with `image` must resolve to a row whose chat-directory `input` includes `image` (today only `grok-4.6`). `OMNIMUX_VISION_MODEL` overlays that default and must stay enabled and image-capable.
+The callable set is `Config.text.models`. Every `id` must already be a `cordis.patch.yml` `omnimux` chat model. `enabled: false` hides that row from the tool. Omitted `models` uses the eight chat-directory defaults, all enabled. `defaultModel` is what an omitted `model` resolves to on both text-only and image requests; `OMNIMUX_TEXT_DEFAULT_MODEL` overlays it. Image input is not a separate capability: a request with `image` must land on a row whose measured `input` includes `image` — gpt-5.6-sol, grok-4.6, kimi-k3, gemini-3.7-flash (evidence: `docs/evidence/omnimux-modality-2026-08-18.md`). deepseek-v4-pro/flash and glm-5.3 stay text-only; claude-opus-5 is listed but its chat-completions group is temporarily 403.
 
 ```text
 text:
   defaultProvider: omnimux
+  defaultModel: gemini-3.7-flash
   maxTokens: 4096
   models:
     - { id: claude-opus-5,     brand: anthropic, role: flagship, enabled: true }
@@ -110,7 +111,7 @@ text:
     - { id: glm-5.3,           brand: zhipu,     role: flagship, enabled: true }
 ```
 
-A text-only request must name `model`. An image request may omit it and uses the first image-capable enabled row. The image is an absolute path, `http(s)` URL, or data URI. Missing `ctx.llm` or (when `image` is set) `ctx.attachments` throws `needs-provider`.
+A request may name `model` or omit it for `defaultModel`. The image is an absolute path, `http(s)` URL, or data URI. Missing `ctx.llm` or (when `image` is set) `ctx.attachments` throws `needs-provider`.
 
 ## Seams and tools
 

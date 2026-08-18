@@ -2,15 +2,17 @@
 // Verify the OmniMux model declarations in plugins/dsh-omnimux/cordis.patch.yml
 // against the live OmniMux catalogs:
 //
-//   1. Modality consistency (always runs; the pricing catalog is keyless):
-//      a model whose pricing description documents image input must declare
-//      `input: [text, image]`, and a model declaring image input must be
-//      documented as image-capable. Over-declaring admits an image the
-//      provider rejects mid-turn, so the catalog is the gate, never real-world
-//      brand knowledge.
-//   2. Expert whitelist (always runs): every id in
-//      plugins/dsh-omnimux/src/text/catalog.js CHAT_MODELS must appear on the
-//      patch model list. The one-shot tool cannot name a model the chat
+//   1. Modality consistency (always runs, keyless): the patch `input` matrix
+//      and the expert whitelist must agree with the measured gateway matrix in
+//      plugins/dsh-omnimux/src/text/catalog.js (CHAT_MODELS). A patch row
+//      declaring image input the measured matrix does not (over-declare)
+//      admits an image the provider rejects mid-turn; a measured image-capable
+//      model missing `input` on the patch (under-declare) refuses an image
+//      before it attaches. The measured matrix, not the pricing catalog text,
+//      is the gate: gpt-5.6-sol / kimi-k3 / gemini-3.7-flash accept images in
+//      live probes although the pricing descriptions do not mention them.
+//   2. Expert whitelist (always runs): every id in CHAT_MODELS must appear on
+//      the patch model list. The one-shot tool cannot name a model the chat
 //      adapter does not advertise.
 //   3. Gateway existence (needs OMNIMUX_API_KEY, else self-skips): every
 //      declared model id must exist on api.omnimux.ai/v1/models.
@@ -27,7 +29,7 @@ import { readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { CHAT_MODEL_IDS } from '../plugins/dsh-omnimux/src/text/catalog.js'
+import { CHAT_MODELS } from '../plugins/dsh-omnimux/src/text/catalog.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const patchPath = join(root, 'plugins/dsh-omnimux/cordis.patch.yml')
@@ -112,22 +114,28 @@ async function fetchPricing() {
 }
 
 /**
+ * The measured gateway matrix in CHAT_MODELS is the single source of truth for
+ * image input. The patch must neither over-declare (image on a model the
+ * matrix says is text-only) nor under-declare (matrix image-capable but no
+ * `input` on the patch), because the chat adapter gates the image block on the
+ * patch declaration and the one-shot tool gates on the matrix.
  * @param {Array<{ id: string; input: string[] }>} models
- * @param {Map<string, string>} descriptions pricing catalog model_name → description
+ * @param {Array<{ id: string; input: readonly string[] }>} chatModels
  * @returns {Array<{ id: string; problem: string }>}
  */
-function modalityMismatches(models, descriptions) {
+function modalityMismatches(models, chatModels) {
+  const byId = new Map(chatModels.map((row) => [row.id, row.input]))
   const mismatches = []
   for (const model of models) {
-    const description = descriptions.get(model.id)
-    if (description === undefined) continue // not in the pricing catalog; nothing to check
-    const documented = /image/i.test(description)
+    const measured = byId.get(model.id)
+    if (!measured) continue // not on the whitelist; the whitelist check reports it
     const declared = model.input.includes('image')
-    if (documented && !declared) {
-      mismatches.push({ id: model.id, problem: 'pricing documents image input but the patch declares none' })
+    const capable = measured.includes('image')
+    if (declared && !capable) {
+      mismatches.push({ id: model.id, problem: 'patch declares image input but the measured matrix says text-only' })
     }
-    if (declared && !documented) {
-      mismatches.push({ id: model.id, problem: 'patch declares image input but the pricing catalog does not document it' })
+    if (capable && !declared) {
+      mismatches.push({ id: model.id, problem: 'measured image-capable but the patch declares no image input' })
     }
   }
   return mismatches
@@ -138,10 +146,19 @@ if (models.length === 0) {
   throw new Error('no models parsed from the llm-pi-ai row — patch structure changed?')
 }
 
+// Pricing stays informative only: the measured matrix supersedes it. A model
+// whose pricing description mentions image but the matrix did not confirm is
+// reported as a note, never a failure, because the pricing text lags reality
+// (e.g. kimi-k3 accepts images live but its description is silent).
 const pricing = await fetchPricing()
-const mismatches = modalityMismatches(models, pricing)
+const pricingNotes = models
+  .filter((model) => /image/i.test(pricing.get(model.id) ?? ''))
+  .filter((model) => !model.input.includes('image'))
+  .map((model) => ({ id: model.id, note: 'pricing mentions image; measured matrix says text-only — confirm live' }))
+
+const mismatches = modalityMismatches(models, CHAT_MODELS)
 const patchIds = new Set(models.map((model) => model.id))
-const whitelistMissing = CHAT_MODEL_IDS.filter((id) => !patchIds.has(id))
+const whitelistMissing = CHAT_MODELS.filter((row) => !patchIds.has(row.id)).map((row) => row.id)
 const key = resolveKey()
 
 if (!key) {
@@ -151,6 +168,7 @@ if (!key) {
     baseURL,
     modalityMismatches: mismatches,
     whitelistMissing,
+    pricingNotes,
     skip: 'no OMNIMUX_API_KEY — gateway existence check skipped; modality check ran keyless',
     hint: 'omnimux tokens exec 40 --yes --timeout=600 -- env OMNIMUX_API_KEY=__OMNIMUX_TOKEN_40__ node scripts/verify-models.mjs',
     checkedAt: new Date().toISOString(),
@@ -193,6 +211,7 @@ process.stdout.write(`${JSON.stringify({
   missing,
   modalityMismatches: mismatches,
   whitelistMissing,
+  pricingNotes,
   checkedAt: new Date().toISOString(),
 })}\n`)
 

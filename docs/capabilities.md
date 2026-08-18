@@ -13,7 +13,7 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | Third-party compatible endpoint via `OMNIMUX_BASE_URL` env | **unproven** | 仅 OpenAI-video 兼容形；只有 OmniMux 本身经真实任务验证过 |
 | `omnimux_video_submit` | **real** | [docs/evidence/omnimux-video-2026-08-14.md](evidence/omnimux-video-2026-08-14.md). Routed through `Config.media` (`omnimux` + `openai-media`) |
 | Media provider route table | **real** (keyless) | `src/media/route.js`. Unknown provider/protocol fail at resolve. One live vendor row: OmniMux |
-| `textComplete` / `omnimux_text_complete` | **unproven** | One-shot `ctx.llm.stream` over the enabled `Config.text.models` whitelist. Keyless only. Image stays on that request; not a second chat |
+| `textComplete` / `omnimux_text_complete` | **unproven** | One-shot `ctx.llm.stream` over the enabled `Config.text.models` whitelist. Default model `gemini-3.7-flash` (`OMNIMUX_TEXT_DEFAULT_MODEL` overlays). Image-capable set measured live: [docs/evidence/omnimux-modality-2026-08-18.md](evidence/omnimux-modality-2026-08-18.md). Image stays on that request; not a second chat |
 | OmniMux chat as default dsh model | **absent** | no adapter; Settings custom provider still works |
 | `identity` provide for other plugins | **real** (keyless) | `ctx.get('identity').status` / `require`. PAT never in the payload. HTTP `/omnimux/auth/*` still for the browser. |
 | `imageGenerate` / `omnimux_image_submit` | **real** | Default `gpt-image-2`. Live: [docs/evidence/omnimux-image-2026-08-16.md](evidence/omnimux-image-2026-08-16.md). Also live: `grok-imagine-image`. `nano_banana_2` excluded (tokens-flow 403) |

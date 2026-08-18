@@ -35,15 +35,21 @@ it that way: user layers set `agent-default-model` only.
   the number. Undocumented windows stay unset and fall back to the requester's
   `defaultContextWindow` — an over-high client-side window causes context
   over-fill and server rejects, so an unset window is the safe direction.
-- Input modalities: `input: [text, image]` is declared only where the pricing
-  catalog documents image input (grok-4.6 says "text+image input"; the other
-  seven descriptions do not mention images). The pi-ai adapter refuses an
+- Input modalities: `input: [text, image]` is declared only where the measured
+  gateway matrix confirms image input (`docs/evidence/omnimux-modality-2026-08-18.md`
+  — a 64px red image plus a content prompt; rows that read the color declare
+  image). gpt-5.6-sol, grok-4.6, kimi-k3, gemini-3.7-flash accept images;
+  deepseek-v4-pro/flash and glm-5.3 reject `image_url` upstream and stay
+  text-only; claude-opus-5 accepts images on `/v1/messages` but the
+  chat-completions group is 403 for this key. The pi-ai adapter refuses an
   image before it attaches when the model's `input` lacks `image`, and a model
   over-claiming image input is rejected by the provider mid-turn after the
-  message is durable — so the catalog, not real-world brand knowledge, is the
-  gate. `verify:models` enforces both directions keyless.
+  message is durable — so the measured matrix, not the pricing catalog text
+  (which lags reality: it only mentions grok-4.6), is the gate.
+  `verify:models` enforces both directions keyless against `CHAT_MODELS`.
 - The one-shot expert whitelist (`plugins/dsh-omnimux/src/text/catalog.js`
-  `CHAT_MODELS`) is a subset of this patch list. `verify:models` fails if a
+  `CHAT_MODELS`) is a subset of this patch list, and its `input` matrix must
+  agree with the patch. `verify:models` fails on any mismatch or if a
   whitelist id is missing from the patch.
 
 ## Changing the list
@@ -64,9 +70,9 @@ reference shape.
 
 ## Verify
 
-- `pnpm verify:models` — modality declarations match the pricing catalog
-  (keyless) and every declared model id exists on the live gateway (with a
-  key).
+- `pnpm verify:models` — modality declarations match the measured matrix in
+  `CHAT_MODELS` (keyless) and every declared model id exists on the live
+  gateway (with a key).
 - `dsh --profile <name> --dump-config` — the composed `llm-pi-ai` provider
   block must come from `dsh-omnimux` (dump headers name the patching layer),
   and no `omnimux-compat` provider may exist anywhere.

@@ -13,6 +13,7 @@ describe('text whitelist', () => {
   it('defaults to the eight chat-directory models, all enabled', () => {
     const parsed = parseTextConfig(undefined)
     assert.equal(parsed.defaultProvider, 'omnimux')
+    assert.equal(parsed.defaultModel, 'gemini-3.7-flash')
     assert.equal(parsed.maxTokens, 4096)
     assert.deepEqual(parsed.models.map((row) => row.id), [...CHAT_MODEL_IDS])
     assert.equal(enabledTextModels(parsed).length, 8)
@@ -48,34 +49,33 @@ describe('text whitelist', () => {
     )
   })
 
-  it('requires a model when there is no image', () => {
-    assert.throws(
-      () => resolveTextRoute({ prompt: 'hi' }, parseTextConfig(undefined)),
-      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
-    )
-  })
-
-  it('defaults a vision call to grok-4.6', () => {
-    const route = resolveTextRoute({ image: '/tmp/a.png' }, parseTextConfig(undefined))
-    assert.equal(route.modelId, 'grok-4.6')
+  it('defaults a named-less request to the configured model', () => {
+    const route = resolveTextRoute({ prompt: 'hi' }, parseTextConfig(undefined))
+    assert.equal(route.modelId, 'gemini-3.7-flash')
     assert.equal(route.providerId, 'omnimux')
     assert.ok(route.input.includes('image'))
   })
 
-  it('honors OMNIMUX_VISION_MODEL when that id is enabled and image-capable', () => {
+  it('defaults an image request to the configured model too', () => {
+    const route = resolveTextRoute({ image: '/tmp/a.png' }, parseTextConfig(undefined))
+    assert.equal(route.modelId, 'gemini-3.7-flash')
+    assert.ok(route.input.includes('image'))
+  })
+
+  it('honors OMNIMUX_TEXT_DEFAULT_MODEL when that id is enabled', () => {
     const text = parseTextConfig({
       models: [{ id: 'grok-4.6' }, { id: 'deepseek-v4-pro' }],
     })
-    const route = resolveTextRoute({ image: '/tmp/a.png' }, text, { OMNIMUX_VISION_MODEL: 'grok-4.6' })
+    const route = resolveTextRoute({ prompt: 'hi' }, text, { OMNIMUX_TEXT_DEFAULT_MODEL: 'grok-4.6' })
     assert.equal(route.modelId, 'grok-4.6')
   })
 
-  it('rejects OMNIMUX_VISION_MODEL when the model is disabled', () => {
+  it('rejects OMNIMUX_TEXT_DEFAULT_MODEL when the model is disabled', () => {
     const text = parseTextConfig({
       models: [{ id: 'grok-4.6', enabled: false }, { id: 'deepseek-v4-pro' }],
     })
     assert.throws(
-      () => resolveTextRoute({ image: '/tmp/a.png' }, text, { OMNIMUX_VISION_MODEL: 'grok-4.6' }),
+      () => resolveTextRoute({ prompt: 'hi' }, text, { OMNIMUX_TEXT_DEFAULT_MODEL: 'grok-4.6' }),
       (error) => error instanceof OmnimuxError && error.code === 'unknown-model',
     )
   })
@@ -85,7 +85,7 @@ describe('text whitelist', () => {
       () => resolveTextRoute({ model: 'deepseek-v4-flash', image: '/tmp/a.png' }, parseTextConfig(undefined)),
       (error) => error instanceof OmnimuxError
         && error.code === 'omnimux-invalid-request'
-        && /does not declare image input/.test(error.message),
+        && /does not accept image input/.test(error.message),
     )
   })
 
@@ -98,5 +98,6 @@ describe('text whitelist', () => {
   it('keeps the default table frozen identity for omitted config', () => {
     assert.equal(DEFAULT_TEXT.models.length, 8)
     assert.equal(DEFAULT_TEXT.models[2].id, 'grok-4.6')
+    assert.equal(DEFAULT_TEXT.defaultModel, 'gemini-3.7-flash')
   })
 })
