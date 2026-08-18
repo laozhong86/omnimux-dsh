@@ -29,6 +29,7 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | OmniMux Apps catalog (bundled + optional remote JSON) | **real** (keyless) | Host `GET /omnimux/apps` + Apps overlay. Remote is `Config.apps.remote` (default off). Tests inject fetchers. Contract: [contracts/apps-catalog.md](contracts/apps-catalog.md) |
 | Official Apps row `accounts` | **real** (keyless) | Bundled catalog lists `dsh-omnimux-accounts` (`source: bundled`). Shelf install posts the bare name to `/omnimux/plugins`; the package must be on disk (Desktop seed or a local add). Isolated add/remove: `scripts/accept-apps-install.sh` |
 | Accounts app UI | **unproven** | Settings 账号 + `GET /omnimux/accounts`. Filters and connect/disconnect are keyless-tested. Live OmniMux account list not claimed |
+| Profile avatar (blobatar) | **real** (keyless) | Host `GET`/`PATCH /omnimux/avatar`; the profile page hover-**编辑** dialog re-rolls, pins a hue, uploads an image (≤200KB raster data URI), or resets. Default is `blobatarUri(username)`; customized rows persist a snapshot URI under `$DSH_HOME/omnimux/avatar.json`. Tests in `plugins/dsh-omnimux/src/avatar/*.test.js`. No network. |
 | `dsh web --host 0.0.0.0` | **blocked upstream** | official CLI rejects it |
 
 Phase labels in older notes (`A` / `B` / `C`) are history. Use this table.

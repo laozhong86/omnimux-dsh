@@ -16,6 +16,8 @@ The agent's `web_search` (official `web-search-deepseek` provider) needs a DeepS
 
 Host plugins read `ctx.get('identity')`: `status({ verify })` returns the public profile; `require()` throws `needs-omnimux` when unsigned. The browser still only calls `/omnimux/auth/*`.
 
+The signed-in **个人资料** page shows a deterministic [blobatar](https://github.com/Alain00/blobatar) from the username. Hover the face and click **编辑** for the avatar dialog: **换一个** re-rolls, the colour row pins a hue, **上传图片** accepts a PNG/JPEG/WebP/GIF under 200KB, and **恢复默认** clears everything. Host `GET`/`PATCH /omnimux/avatar` reads and writes per-profile overrides (`$DSH_HOME/omnimux/avatar.json`). A first login with no stored row is the default; any change persists a snapshot URI so a later library upgrade never moves a customized face.
+
 Two keys, two URLs:
 
 | Key / URL | Purpose |

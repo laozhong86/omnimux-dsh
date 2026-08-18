@@ -168,6 +168,7 @@ config.js              plugin Config (brand + media + apps + text)
     protocols/           openai-media.js  (HTTP)
     vendors/             omnimux.js       (envelope + defaults)
   official/              social-data, publish tools, Host /omnimux/accounts
+  avatar/                blobatar profile face, Host /omnimux/avatar
   client/                Profile page; DSH plugins tab under Settings → 插件
 ```
 

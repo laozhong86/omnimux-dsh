@@ -4,3 +4,4 @@ allowBuilds:
   esbuild: true
 minimumReleaseAgeExclude:
   - aigc-provider-runtime-kit@0.2.0
+  - blobatar@0.2.0

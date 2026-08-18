@@ -13,6 +13,8 @@ import { createTokenStore } from './auth/store.js'
 import { parseHubConfig, Config } from './config.js'
 import { createOfficialDispatcher, registerOfficialRoutes } from './official/http-routes.js'
 import { mountOfficial } from './official/mount.js'
+import { createAvatarStore } from './avatar/store.js'
+import { createAvatarDispatcher, registerAvatarRoutes } from './avatar/routes.js'
 import { injectBrandBoot } from './brand/inject-index.js'
 import { enabledTextModels } from './text/catalog.js'
 import { executeOmnimuxText } from './text/execute.js'
@@ -157,6 +159,7 @@ export function apply(ctx, config = {}) {
     ctx.effect(() => () => appsStore.dispose(), 'dsh-omnimux: apps catalog')
   }
   appsStore.maybeRefresh()
+  const avatarStore = createAvatarStore({ home: homeDir })
 
   /**
    * @param {{ webServer?: { register: Function, tapIndex?: Function }, get?: Function, effect?: Function }} httpCtx
@@ -194,11 +197,16 @@ export function apply(ctx, config = {}) {
         store,
         siteBaseUrl,
       }))
+      const stopAvatar = registerAvatarRoutes(webServer, createAvatarDispatcher({
+        store: avatarStore,
+        identity,
+      }))
       return () => {
         stopAuth()
         stopPlugins()
         stopApps()
         stopOfficial()
+        stopAvatar()
       }
     }
     if (typeof httpCtx.effect === 'function') httpCtx.effect(mount, 'dsh-omnimux: http routes')
