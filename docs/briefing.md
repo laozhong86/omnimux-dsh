@@ -97,4 +97,4 @@
 
 ### Amendments
 - 2026-08-17 — Phase 1–3 landed in `dsh-omnimux`: bundled catalog, Host cache/refresh, Apps overlay reads `/omnimux/apps`. First real row is still a later PR.
-- 2026-08-16 — First official row `accounts` (`dsh-omnimux-accounts@0.1.0`) + Host `/omnimux/accounts`. Shelf install still needs a registry package; isolated add/remove is `scripts/accept-apps-install.sh`.
+- 2026-08-16 — First official row `accounts` (`dsh-omnimux-accounts`) + Host `/omnimux/accounts`. Bundled source: the package ships with the Desktop seed (or a local add); the shelf installs the bare name without a registry lookup. Isolated add/remove: `scripts/accept-apps-install.sh`.

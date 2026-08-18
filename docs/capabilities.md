@@ -26,7 +26,7 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | OmniMux settings login (device HTTP, no CLI) | **unproven** | Host `/omnimux/auth/*` + settings 个人资料登录 + 侧栏「应用」. Keyless unit tests only; live login not claimed until a manual pass |
 | OmniMux product chrome (logo / wordmark / tab title / favicon) | **real** (keyless) | Hub `src/brand` overlay + `tapIndex` boot. Tests in `plugins/dsh-omnimux/src/brand/*.test.js`. No sibling `omnimux-brand` package |
 | OmniMux Apps catalog (bundled + optional remote JSON) | **real** (keyless) | Host `GET /omnimux/apps` + Apps overlay. Remote is `Config.apps.remote` (default off). Tests inject fetchers. Contract: [contracts/apps-catalog.md](contracts/apps-catalog.md) |
-| Official Apps row `accounts` | **real** (keyless) | Bundled catalog lists `dsh-omnimux-accounts@0.1.0`. Isolated add/remove: `scripts/accept-apps-install.sh`. npm registry publish still absent |
+| Official Apps row `accounts` | **real** (keyless) | Bundled catalog lists `dsh-omnimux-accounts` (`source: bundled`). Shelf install posts the bare name to `/omnimux/plugins`; the package must be on disk (Desktop seed or a local add). Isolated add/remove: `scripts/accept-apps-install.sh` |
 | Accounts app UI | **unproven** | Settings 账号 + `GET /omnimux/accounts`. Filters and connect/disconnect are keyless-tested. Live OmniMux account list not claimed |
 | `dsh web --host 0.0.0.0` | **blocked upstream** | official CLI rejects it |
 

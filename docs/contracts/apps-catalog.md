@@ -255,4 +255,4 @@ Each step is usable alone.
 1. Bundled `catalog.json` (may be `{ "schema": 1, "generated_at": "…", "min_hub": "0.1.0", "apps": [] }`) + `parseCatalog` + `GET /omnimux/apps` from bundled only.
 2. Disk cache + remote GET + `POST /omnimux/apps/refresh` + `Config.apps`.
 3. Apps page renders the view instead of only the empty sentence.
-4. First real row `accounts` (`dsh-omnimux-accounts@0.1.0`) with `client: true`. Install goes through `/omnimux/plugins`. Isolated add/remove: `scripts/accept-apps-install.sh`.
+4. First real row `accounts` (`dsh-omnimux-accounts`, `source: bundled`) with `client: true`. Install posts the bare name to `/omnimux/plugins`; the package must already be on disk (Desktop seed or a local add). Isolated add/remove: `scripts/accept-apps-install.sh`.

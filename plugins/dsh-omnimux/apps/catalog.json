@@ -12,9 +12,8 @@
       "capabilities": ["identity", "official"],
       "client": true,
       "spec": {
-        "source": "npm",
-        "name": "dsh-omnimux-accounts",
-        "version": "0.1.0"
+        "source": "bundled",
+        "name": "dsh-omnimux-accounts"
       }
     }
   ]

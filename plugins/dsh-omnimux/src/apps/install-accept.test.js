@@ -34,7 +34,7 @@ describe('official accounts row install state', () => {
       })
       assert.equal(before.apps[0].id, 'accounts')
       assert.equal(before.apps[0].state, 'available')
-      assert.equal(before.apps[0].install_spec, 'dsh-omnimux-accounts@0.1.0')
+      assert.equal(before.apps[0].install_spec, 'dsh-omnimux-accounts')
 
       writeProfile(
         home,
@@ -88,7 +88,7 @@ describe('official accounts row install state', () => {
         method: 'POST',
         url: '/omnimux/plugins',
         origin: 'http://127.0.0.1:8787',
-        body: { spec: 'dsh-omnimux-accounts@0.1.0' },
+        body: { spec: 'dsh-omnimux-accounts' },
       })
       assert.equal(added.status, 200)
       assert.equal(added.body.plugins.some((row) => row.name === 'dsh-omnimux-accounts'), true)
@@ -100,7 +100,7 @@ describe('official accounts row install state', () => {
       assert.equal(removed.status, 200)
       assert.equal(removed.body.plugins.some((row) => row.name === 'dsh-omnimux-accounts'), false)
       assert.deepEqual(seen, [
-        ['--profile', 'omnimux', 'add', 'dsh-omnimux-accounts@0.1.0'],
+        ['--profile', 'omnimux', 'add', 'dsh-omnimux-accounts'],
         ['--profile', 'omnimux', 'remove', 'dsh-omnimux-accounts'],
       ])
     } finally {

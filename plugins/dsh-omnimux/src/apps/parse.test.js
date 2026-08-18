@@ -86,7 +86,8 @@ describe('loadBundledCatalog', () => {
     assert.equal(parsed.schema, 1)
     assert.equal(parsed.apps[0].id, 'accounts')
     assert.equal(parsed.apps[0].spec.name, 'dsh-omnimux-accounts')
-    assert.equal(parsed.apps[0].spec.version, '0.1.0')
+    assert.equal(parsed.apps[0].spec.source, 'bundled')
+    assert.equal(parsed.apps[0].spec.version, undefined)
   })
 
   it('fails when the bundled file is missing', () => {
