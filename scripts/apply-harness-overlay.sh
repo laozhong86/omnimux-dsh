@@ -3,8 +3,9 @@
 # Desktop packaging no longer overlays this clone.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd -P)"
-pin_sha="47f943859bef60e4160492346772ded9b24f765a"
+pin_sha="99f6f02fecdb7dff40c3fbc9470f5907c29f74ca"
 src="${DSH_SRC:-/Users/x/Desktop/Project/Github/deepseek-harness}"
+patch_dir="$root/patches/dsh-0.1.0-rc.7"
 
 if [[ ! -d "$src/.git" ]]; then
   echo "apply-harness-overlay: DSH_SRC is not a git clone: $src" >&2
@@ -17,5 +18,21 @@ if [[ "$head" != "$pin_sha" ]]; then
   exit 1
 fi
 
-echo "apply-harness-overlay: no desktop overlays; Electron shell is /Users/x/Desktop/Project/omnimux-desktop"
+if [[ -d "$patch_dir" ]]; then
+  shopt -s nullglob
+  patches=("$patch_dir"/*.patch)
+  shopt -u nullglob
+  for patch in "${patches[@]}"; do
+    name="$(basename "$patch")"
+    if git -C "$src" apply --reverse --check "$patch" >/dev/null 2>&1; then
+      echo "apply-harness-overlay: already applied $name"
+      continue
+    fi
+    echo "apply-harness-overlay: git apply $name"
+    git -C "$src" apply --check "$patch"
+    git -C "$src" apply "$patch"
+  done
+fi
+
+echo "apply-harness-overlay: desktop home is /Users/x/Desktop/Project/omnimux-desktop"
 echo "apply-harness-overlay: pin ok on $src"

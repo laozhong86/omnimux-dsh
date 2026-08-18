@@ -4,17 +4,17 @@ Current upstream this product builds against. Not a fork record.
 
 | Field | Value |
 |---|---|
-| Package | `dsh@0.1.0-rc.5` |
-| SHA | `47f943859bef60e4160492346772ded9b24f765a` |
+| Package | `dsh@0.1.0-rc.7` |
+| SHA | `99f6f02fecdb7dff40c3fbc9470f5907c29f74ca` |
 | Remote | `https://github.com/deepseek-ai/deepseek-harness.git` |
 | Default local clone | `/Users/x/Desktop/Project/Github/deepseek-harness` |
-| Recorded | 2026-08-16 |
+| Recorded | 2026-08-18 |
 
 Override the clone path with `DSH_SRC`. Decision: [decisions/2026-08-16-harness-consume-not-fork.md](decisions/2026-08-16-harness-consume-not-fork.md).
 
 ## Overlay against this pin
 
-Directory: `patches/dsh-0.1.0-rc.5/`. Desktop packaging patches have left this clone; the shell is `/Users/x/Desktop/Project/omnimux-desktop`.
+Directory: `patches/dsh-0.1.0-rc.7/`. Current overlay: `quota-403-not-auth.patch` (classify exhausted-quota 403 as `QUOTA`, not `AUTH`). Desktop packaging patches have left this clone; the shell is `/Users/x/Desktop/Project/omnimux-desktop`.
 
 `pnpm-lock.yaml` is not a patch.
 

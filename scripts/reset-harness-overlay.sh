@@ -11,8 +11,14 @@ fi
 git -C "$src" checkout -- \
   package.json \
   pnpm-workspace.yaml \
-  pnpm-lock.yaml
+  pnpm-lock.yaml \
+  packages/llm/llm-pi-ai/src/stream.ts \
+  packages/llm/llm-pi-ai/tests/convert.spec.ts \
+  packages/llm/llm/src/error.ts \
+  packages/llm/llm/tests/service.spec.ts \
+  packages/client/runtime/src/client/sessions/failure-display.ts
 
+rm -f "$src/packages/client/runtime/tests/failure-display.client.spec.ts"
 rm -f "$src/patches/app-builder-lib@26.15.3.patch"
 
 echo "reset-harness-overlay: tracked overlay files restored in $src"
