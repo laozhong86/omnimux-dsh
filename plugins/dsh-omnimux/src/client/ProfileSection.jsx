@@ -163,9 +163,6 @@ function AvatarModal({ t, avatar, initial, busy, error, onApply, onClose }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <span style={{ fontSize: 14, fontWeight: 600 }}>{t('avatar.title')}</span>
-          <span style={{ fontSize: 12, color: tokens.textSecondary }}>
-            {avatar?.using_default === false ? t('avatar.custom') : t('avatar.default')}
-          </span>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>

@@ -46,8 +46,6 @@ var zh = {
   "profile.topUp": "\u53BB\u5145\u503C",
   "profile.loading": "\u6B63\u5728\u8BFB\u53D6\u2026",
   "avatar.title": "\u5934\u50CF",
-  "avatar.default": "\u9ED8\u8BA4\uFF1A\u7531\u7528\u6237\u540D\u751F\u6210",
-  "avatar.custom": "\u5DF2\u81EA\u5B9A\u4E49",
   "avatar.reroll": "\u6362\u4E00\u4E2A",
   "avatar.hue": "\u989C\u8272",
   "avatar.reset": "\u6062\u590D\u9ED8\u8BA4",
@@ -112,8 +110,6 @@ var en = {
   "profile.topUp": "Top up",
   "profile.loading": "Loading\u2026",
   "avatar.title": "Avatar",
-  "avatar.default": "Default: generated from your username",
-  "avatar.custom": "Customised",
   "avatar.reroll": "Re-roll",
   "avatar.hue": "Colour",
   "avatar.reset": "Reset to default",
@@ -761,10 +757,7 @@ function AvatarModal({ t, avatar, initial, busy, error, onApply, onClose }) {
               gap: 14
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 14, fontWeight: 600 }, children: t("avatar.title") }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 12, color: tokens.textSecondary }, children: avatar?.using_default === false ? t("avatar.custom") : t("avatar.default") })
-              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 14, fontWeight: 600 }, children: t("avatar.title") }) }),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AvatarFace, { uri: avatar?.uri, initial, size: 96 }) }),
               /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }, children: [
                 /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 12, color: tokens.textSecondary }, children: t("avatar.hue") }),
