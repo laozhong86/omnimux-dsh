@@ -59,7 +59,7 @@ function newSessionButton(root) {
  * @param {HTMLElement} root
  */
 function anchorRow(root) {
-  const assets = root.querySelector('[data-dsh-omnimux-assets-entry]')
+  const assets = root.querySelector('[data-omnimux-assets-entry]')
   if (assets instanceof HTMLElement) return assets
   const esc = root.querySelector('[data-dsh-esc-entry]')
   if (esc instanceof HTMLElement) return esc

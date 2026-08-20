@@ -1,0 +1,178 @@
+/**
+ * Sidebar row under 新会话: same mount mechanism as the hub's sidebar-entry.js
+ * (sidebarRoot / newSessionButton probing + double MutationObserver + 2s retry
+ * + unmount cleanup). Placement: last extra row — after the ESC entry, then
+ * after the taskboard entry, then right after 新会话.
+ */
+
+export const ENTRY_SELECTOR = '[data-omnimux-assets-entry]'
+
+const ICON = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M1.5 6.5h13"/><path d="M5.5 6.5v7"/></svg>'
+
+// Match official workspace session rows: 32px row / 14px label + 14px icon.
+// Product rule: docs/contracts/sidebar-extra-entries.md
+const STYLES = `
+.omnimux-assets-entry {
+  box-sizing: border-box; display: flex; align-items: center; gap: 6px; position: relative;
+  width: calc(100% - 8px); height: 32px; margin: 0 4px; padding: 0 8px;
+  border: none; border-radius: 8px; background: transparent;
+  color: var(--dsw-alias-label-primary, inherit);
+  font: var(--dsw-font-s-14, inherit); font-size: 14px; line-height: 20px;
+  cursor: pointer; text-align: left;
+}
+.omnimux-assets-entry:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12)); }
+.omnimux-assets-entry[data-active="true"] { background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18)); font-weight: 500; }
+.omnimux-assets-entry-icon { flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
+.omnimux-assets-entry svg { display: block; width: 14px; height: 14px; }
+.omnimux-assets-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
+`
+
+function injectStyles() {
+  if (document.getElementById('omnimux-assets-entry-styles')) return
+  const style = document.createElement('style')
+  style.id = 'omnimux-assets-entry-styles'
+  style.textContent = STYLES
+  document.head.append(style)
+}
+
+function sidebarRoot() {
+  const column = document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]')
+  if (!(column instanceof HTMLElement)) return undefined
+  const logoOwner = column.querySelector('[class*="logoRow"]')?.parentElement
+  return logoOwner ?? (column.firstElementChild instanceof HTMLElement ? column.firstElementChild : undefined)
+}
+
+function newSessionButton(root) {
+  const nested = root.querySelector('button[class*="newSession"]')
+  if (nested instanceof HTMLButtonElement) return nested
+  for (const child of root.children) {
+    if (child instanceof HTMLButtonElement) return child
+  }
+  const byAria = root.querySelector(
+    'button[aria-label="新建会话"], button[aria-label="New Session"], button[aria-label*="新会话"], button[aria-label*="new session" i]',
+  )
+  if (byAria instanceof HTMLButtonElement) return byAria
+  return [...root.querySelectorAll('button')].find((button) => /新会话|新建会话|new session/i.test(button.textContent ?? ''))
+}
+
+/**
+ * Default placement is last: after the ESC row, else after the taskboard
+ * row, else right after 新会话.
+ * @param {HTMLElement} root
+ */
+function anchorRow(root) {
+  const esc = root.querySelector('[data-dsh-esc-entry]')
+  if (esc instanceof HTMLElement) return esc
+  const taskboard = root.querySelector('[data-dsh-taskboard-entry]')
+  if (taskboard instanceof HTMLElement) return taskboard
+  return newSessionButton(root)
+}
+
+/**
+ * @param {HTMLButtonElement} entry
+ * @param {string} label
+ */
+function paintLabel(entry, label) {
+  entry.setAttribute('aria-label', label)
+  const node = entry.querySelector('.omnimux-assets-entry-label')
+  if (node) node.textContent = label
+}
+
+/**
+ * @param {{ getSnapshot: () => boolean, subscribe: (fn: () => void) => () => void, toggle: () => void }} stage
+ * @param {(key: string) => string} t
+ */
+function createEntry(stage, t) {
+  const entry = document.createElement('button')
+  entry.type = 'button'
+  entry.dataset.dshOmnimuxAssetsEntry = ''
+  entry.className = 'omnimux-assets-entry'
+  entry.innerHTML = `<span class="omnimux-assets-entry-icon">${ICON}</span><span class="omnimux-assets-entry-label"></span>`
+  paintLabel(entry, t('nav'))
+  entry.addEventListener('click', () => { stage.toggle() })
+  return entry
+}
+
+/**
+ * Keep this row the last extra under 新会话.
+ * @param {HTMLElement} root
+ * @param {HTMLButtonElement} entry
+ */
+function placeEntry(root, entry) {
+  const anchor = anchorRow(root)
+  if (anchor === undefined) return false
+  if (entry.previousElementSibling === anchor && entry.parentElement === root) return true
+  anchor.after(entry)
+  return true
+}
+
+/**
+ * @param {{ getSnapshot: () => boolean, subscribe: (fn: () => void) => () => void, toggle: () => void }} stage
+ * @param {(key: string) => string} t
+ * @param {{ subscribe?: (fn: () => void) => () => void }} [locale]
+ * @returns {() => void} disposer
+ */
+export function mountSidebarEntry(stage, t, locale) {
+  injectStyles()
+  const entry = createEntry(stage, t)
+  const paint = () => { paintLabel(entry, t('nav')) }
+  const unsubscribeLocale = typeof locale?.subscribe === 'function' ? locale.subscribe(paint) : () => {}
+  let root
+  let placed = false
+
+  const syncActive = () => {
+    if (stage.getSnapshot()) entry.dataset.active = 'true'
+    else delete entry.dataset.active
+  }
+
+  const tryPlace = () => {
+    if (root !== undefined && !root.isConnected) {
+      rootObserver.disconnect()
+      root = undefined
+      placed = false
+    }
+    if (placed) {
+      if (!document.body.contains(entry)) {
+        rootObserver.disconnect()
+        root = undefined
+        placed = false
+      } else if (root !== undefined) {
+        const anchor = anchorRow(root)
+        if (anchor !== undefined && entry.previousElementSibling === anchor && entry.parentElement === root) return
+        placed = false
+      }
+    }
+    root ??= sidebarRoot()
+    if (root === undefined) return
+    placed = placeEntry(root, entry)
+    if (placed) rootObserver.observe(root, { childList: true, subtree: true })
+  }
+
+  const waitObserver = new MutationObserver(() => { tryPlace() })
+  waitObserver.observe(document.body, { childList: true, subtree: true })
+
+  const rootObserver = new MutationObserver(() => {
+    if (root === undefined || !root.isConnected) {
+      placed = false
+      tryPlace()
+      return
+    }
+    if (!root.contains(entry) || entry.previousElementSibling !== anchorRow(root)) {
+      placed = placeEntry(root, entry)
+    }
+  })
+
+  const retry = setInterval(() => { tryPlace() }, 2000)
+  const unsubscribe = stage.subscribe(syncActive)
+  syncActive()
+  tryPlace()
+
+  return () => {
+    clearInterval(retry)
+    waitObserver.disconnect()
+    rootObserver.disconnect()
+    unsubscribe()
+    unsubscribeLocale()
+    entry.remove()
+  }
+}

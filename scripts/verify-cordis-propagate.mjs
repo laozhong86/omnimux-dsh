@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Cordis-level proof that dsh-omnimux provides videoGenerate and dsh-drama
+// Cordis-level proof that omnimux provides videoGenerate and dsh-drama
 // reads it with ctx.get (optional). One command:
 //   DSH_SRC=/Users/x/Desktop/Project/Github/deepseek-harness node scripts/verify-cordis-propagate.mjs
 // Resolves the same @deepseek-ai/cordis as DSH_SRC (vendor/cordis). Does not
@@ -9,7 +9,7 @@ import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import * as omnimux from '../plugins/dsh-omnimux/src/index.js'
+import * as omnimux from '../plugins/omnimux/src/index.js'
 import * as drama from '../plugins/dsh-drama/src/index.js'
 import { generateShot, initProject, upsertShot } from '../plugins/dsh-drama/src/domain.js'
 

@@ -2,7 +2,7 @@
 # Isolated official-row install/remove. Does not touch ~/.dsh/profiles/omnimux.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd -P)"
-pkg="$root/plugins/dsh-omnimux-accounts"
+pkg="$root/plugins/omnimux-accounts"
 home="$(mktemp -d "${TMPDIR:-/tmp}/omnimux-apps-accept.XXXXXX")"
 cleanup() { rm -rf "$home"; }
 trap cleanup EXIT
@@ -27,19 +27,19 @@ from pathlib import Path
 home, profile = sys.argv[1], sys.argv[2]
 manifest = json.loads((Path(home) / 'profiles' / profile / 'package.json').read_text())
 bundles = manifest['dsh']['profile']['bundles']
-assert 'dsh-omnimux-accounts' in bundles, bundles
-pkg = Path(home) / 'profiles' / profile / 'node_modules' / 'dsh-omnimux-accounts' / 'package.json'
+assert 'omnimux-accounts' in bundles, bundles
+pkg = Path(home) / 'profiles' / profile / 'node_modules' / 'omnimux-accounts' / 'package.json'
 assert pkg.is_file(), pkg
 print('accept: installed', json.loads(pkg.read_text())['version'])
 PY
-"${dsh_cmd[@]}" plugin --profile "$profile" remove dsh-omnimux-accounts
+"${dsh_cmd[@]}" plugin --profile "$profile" remove omnimux-accounts
 python3 - "$home" "$profile" <<'PY'
 import json, sys
 from pathlib import Path
 home, profile = sys.argv[1], sys.argv[2]
 manifest = json.loads((Path(home) / 'profiles' / profile / 'package.json').read_text())
 bundles = manifest['dsh']['profile']['bundles']
-assert 'dsh-omnimux-accounts' not in bundles, bundles
+assert 'omnimux-accounts' not in bundles, bundles
 print('accept: removed')
 PY
 echo "accept: official accounts row add/remove passed"

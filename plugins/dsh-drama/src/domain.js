@@ -355,7 +355,7 @@ export async function generateShot(root, shotId, stubPath) {
     }
     throw new DramaDomainError(
       'needs-provider',
-      'install dsh plugin add ./plugins/dsh-omnimux and configure a provider',
+      'install dsh plugin add ./plugins/omnimux and configure a provider',
     )
   })
 }

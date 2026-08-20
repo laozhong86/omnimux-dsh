@@ -1,0 +1,197 @@
+/**
+ * Pure view helpers for the Accounts app: filtering, sorting, summary numbers,
+ * and relative-time formatting. No React, no DOM — fully unit-testable.
+
+ * Account rows come from the hub as ViewRows:
+ * { id, platform?, display_name?, username?, name?, group?, status?,
+ *   avatar_url?, agent_usable?, last_used_at?, expires_at?, connected_at? }
+ * Every field is optional beyond id; rendering stays field-driven.
+ */
+
+const STATUS_ORDER = Object.freeze({ active: 0, expiring: 1, expired: 2, error: 3 })
+
+/**
+ * Text search across the searchable fields. Empty query matches everything.
+ * @param {Record<string, unknown>} row
+ * @param {string} query already-trimmed, lower-cased text
+ */
+function matchesQuery(row, query) {
+  if (query === '') return true
+  const hay = [row.display_name, row.username, row.name, row.platform, row.group, row.id]
+    .filter((value) => typeof value === 'string')
+    .join(' ')
+    .toLocaleLowerCase()
+  return hay.includes(query)
+}
+
+/**
+ * Filters accounts by free-text query plus exact platform / group / status.
+ * Missing filters are skipped; comparisons are case-insensitive where the
+ * underlying values are strings.
+ * @param {Array<Record<string, unknown>>} accounts
+ * @param {{ query?: string, platform?: string, group?: string, status?: string }} filters
+ * @returns {Array<Record<string, unknown>>}
+ */
+export function filterAccounts(accounts, filters = {}) {
+  const query = String(filters.query || '').trim().toLocaleLowerCase()
+  const platform = String(filters.platform || '').trim().toLocaleLowerCase()
+  const group = String(filters.group || '').trim().toLocaleLowerCase()
+  const status = String(filters.status || '').trim().toLocaleLowerCase()
+  return (Array.isArray(accounts) ? accounts : []).filter((row) => {
+    if (!matchesQuery(row, query)) return false
+    if (platform && String(row.platform || '').toLocaleLowerCase() !== platform) return false
+    if (group && String(row.group || '').toLocaleLowerCase() !== group) return false
+    if (status && String(row.status || '').toLocaleLowerCase() !== status) return false
+    return true
+  })
+}
+
+/**
+ * Sort key comparators. Missing values always sink to the end regardless of
+ * direction so an asc/desc toggle never hides rows.
+ * @param {Record<string, unknown>} row
+ * @param {string} key
+ */
+function sortValue(row, key) {
+  const value = row[key]
+  if (key === 'status') {
+    const status = typeof value === 'string' ? value : ''
+    return STATUS_ORDER[status] ?? STATUS_ORDER.error
+  }
+  return typeof value === 'string' ? value.toLocaleLowerCase() : undefined
+}
+
+/**
+ * Sorts a copy of the accounts list. Supported keys: display_name, platform,
+ * status, last_used_at, connected_at (ISO 8601 UTC strings sort correctly as
+ * plain text). Unknown keys fall back to display_name.
+ * @param {Array<Record<string, unknown>>} accounts
+ * @param {string} key
+ * @param {'asc' | 'desc'} dir
+ * @returns {Array<Record<string, unknown>>}
+ */
+export function sortAccounts(accounts, key = 'display_name', dir = 'asc') {
+  const rows = Array.isArray(accounts) ? [...accounts] : []
+  const effectiveKey = ['display_name', 'platform', 'status', 'last_used_at', 'connected_at'].includes(key)
+    ? key
+    : 'display_name'
+  const sign = dir === 'desc' ? -1 : 1
+  const fallbackKey = effectiveKey === 'display_name' ? 'username' : 'display_name'
+  return rows.sort((a, b) => {
+    const av = sortValue(a, effectiveKey) ?? sortValue(a, fallbackKey)
+    const bv = sortValue(b, effectiveKey) ?? sortValue(b, fallbackKey)
+    if (av === undefined && bv === undefined) return 0
+    if (av === undefined) return 1 // missing values last, always
+    if (bv === undefined) return -1
+    if (av < bv) return -1 * sign
+    if (av > bv) return 1 * sign
+    return 0
+  })
+}
+
+/**
+ * Overview numbers. "connected" counts active + expiring (still usable),
+ * "needsAttention" counts expired + error, "platformCount" counts distinct
+ * non-empty platforms.
+ * @param {Array<Record<string, unknown>>} accounts
+ * @returns {{ total: number, connected: number, needsAttention: number, platformCount: number }}
+ */
+export function summarize(accounts) {
+  const rows = Array.isArray(accounts) ? accounts : []
+  let connected = 0
+  let needsAttention = 0
+  const platforms = new Set()
+  for (const row of rows) {
+    const status = String(row.status || '').toLowerCase()
+    if (status === 'active' || status === 'expiring') connected += 1
+    if (status === 'expired' || status === 'error') needsAttention += 1
+    const platform = typeof row.platform === 'string' ? row.platform.trim() : ''
+    if (platform !== '') platforms.add(platform.toLocaleLowerCase())
+  }
+  return {
+    total: rows.length,
+    connected,
+    needsAttention,
+    platformCount: platforms.size,
+  }
+}
+
+/**
+ * Relative time via Intl.RelativeTimeFormat ("2 days ago", "in 18 hours").
+ * Returns '' for missing / unparseable input.
+ * @param {unknown} iso ISO 8601 date string
+ * @param {number | Date} [now]
+ * @returns {string}
+ */
+export function relativeTime(iso, now = Date.now()) {
+  if (typeof iso !== 'string' || iso === '') return ''
+  const then = Date.parse(iso)
+  if (!Number.isFinite(then)) return ''
+  const base = now instanceof Date ? now.getTime() : now
+  const diffMs = then - base
+  const abs = Math.abs(diffMs)
+  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+  if (abs < 60 * 1000) return formatter.format(Math.round(diffMs / 1000), 'second')
+  if (abs < 60 * 60 * 1000) return formatter.format(Math.round(diffMs / (60 * 1000)), 'minute')
+  if (abs < 24 * 60 * 60 * 1000) return formatter.format(Math.round(diffMs / (60 * 60 * 1000)), 'hour')
+  return formatter.format(Math.round(diffMs / (24 * 60 * 60 * 1000)), 'day')
+}
+
+/**
+ * Unique, sorted non-empty values of a string field — used to derive filter
+ * dropdown options from live data (empty data ⇒ no options rendered).
+ * @param {Array<Record<string, unknown>>} accounts
+ * @param {string} key
+ * @returns {string[]}
+ */
+export function uniqueValues(accounts, key) {
+  const seen = new Set()
+  /** @type {string[]} */
+  const values = []
+  for (const row of Array.isArray(accounts) ? accounts : []) {
+    const value = typeof row[key] === 'string' ? /** @type {string} */ (row[key]).trim() : ''
+    if (value === '' || seen.has(value)) continue
+    seen.add(value)
+    values.push(value)
+  }
+  return values.sort((a, b) => a.localeCompare(b))
+}
+
+/**
+ * Statuses actually present in the data, in display order.
+ * @param {Array<Record<string, unknown>>} accounts
+ * @returns {string[]}
+ */
+export function presentStatuses(accounts) {
+  const present = new Set()
+  for (const row of Array.isArray(accounts) ? accounts : []) {
+    const status = String(row.status || '').toLowerCase()
+    if (status !== '') present.add(status)
+  }
+  return ['active', 'expiring', 'expired', 'error'].filter((status) => present.has(status))
+}
+
+/**
+ * Single-brace template formatting: fmt('Hi {name}', { name }) → 'Hi Ada'.
+ * Unknown placeholders are left intact.
+ * @param {string} template
+ * @param {Record<string, unknown>} vars
+ * @returns {string}
+ */
+export function fmt(template, vars) {
+  return String(template).replace(/\{(\w+)\}/g, (whole, key) => (key in vars ? String(vars[key]) : whole))
+}
+
+/**
+ * Locale lookup with a fallback for keys the dictionaries do not define
+ * (e.g. a platform id the registry does not know). Handles binders that echo
+ * the key, return empty, or return undefined for missing entries.
+ * @param {(key: string) => string} t
+ * @param {string} key
+ * @param {string} fallback
+ * @returns {string}
+ */
+export function localeText(t, key, fallback) {
+  const value = t(key)
+  return typeof value === 'string' && value !== '' && value !== key ? value : fallback
+}

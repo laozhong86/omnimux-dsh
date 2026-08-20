@@ -2,7 +2,7 @@
  * Build the chrome bundle: src/client/index.js -> lib/client.js.
  *
  * React stays external (host React 18 via ModuleLoader), matching the
- * dsh-omnimux-assets plugin convention. The chrome never mounts the
+ * omnimux-assets plugin convention. The chrome never mounts the
  * canvas island itself — CanvasBridge only passes a DOM container and
  * plain-data props to window.__dshWorkflowCanvas.
  */

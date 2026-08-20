@@ -33,9 +33,9 @@ if [[ ${#dsh_cmd[@]} -eq 0 ]]; then
   exit 0
 fi
 
-if ! "${dsh_cmd[@]}" --profile drama --dump-config 2>/dev/null | rg -q "dsh-omnimux|dsh-drama"; then
+if ! "${dsh_cmd[@]}" --profile drama --dump-config 2>/dev/null | rg -q "omnimux|dsh-drama"; then
   echo "smoke: profile drama is missing bundles. From this repo run:"
-  echo "  ${dsh_cmd[*]} plugin --profile drama add $root/plugins/dsh-omnimux"
+  echo "  ${dsh_cmd[*]} plugin --profile drama add $root/plugins/omnimux"
   echo "  ${dsh_cmd[*]} plugin --profile drama add $root/plugins/dsh-drama"
   exit 1
 fi

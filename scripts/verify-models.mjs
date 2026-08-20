@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// Verify the OmniMux model declarations in plugins/dsh-omnimux/cordis.patch.yml
+// Verify the OmniMux model declarations in plugins/omnimux/cordis.patch.yml
 // against the live OmniMux catalogs:
 //
 //   1. Modality consistency (always runs, keyless): the patch `input` matrix
 //      and the expert whitelist must agree with the measured gateway matrix in
-//      plugins/dsh-omnimux/src/text/catalog.js (CHAT_MODELS). A patch row
+//      plugins/omnimux/src/text/catalog.js (CHAT_MODELS). A patch row
 //      declaring image input the measured matrix does not (over-declare)
 //      admits an image the provider rejects mid-turn; a measured image-capable
 //      model missing `input` on the patch (under-declare) refuses an image
@@ -14,7 +14,13 @@
 //   2. Expert whitelist (always runs): every id in CHAT_MODELS must appear on
 //      the patch model list. The one-shot tool cannot name a model the chat
 //      adapter does not advertise.
-//   3. Gateway existence (needs OMNIMUX_API_KEY, else self-skips): every
+//   3. Reasoning declaration (always runs, keyless): every patch model must
+//      declare `reasoningEfforts` that includes `max`, and the omnimux route
+//      must set `reasoning: max`. The composer hides the effort pane when
+//      that field is absent; a missing `max` would leave the route default
+//      unset on that row. Levels themselves follow the measured gateway
+//      matrix in docs/evidence/omnimux-reasoning-2026-08-20.md.
+//   4. Gateway existence (needs OMNIMUX_API_KEY, else self-skips): every
 //      declared model id must exist on api.omnimux.ai/v1/models.
 //
 // Key resolution: OMNIMUX_API_KEY env, else parsed from
@@ -29,14 +35,24 @@ import { readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { CHAT_MODELS } from '../plugins/dsh-omnimux/src/text/catalog.js'
+import { CHAT_MODELS } from '../plugins/omnimux/src/text/catalog.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const patchPath = join(root, 'plugins/dsh-omnimux/cordis.patch.yml')
+const patchPath = join(root, 'plugins/omnimux/cordis.patch.yml')
 
 // Scoped parser for the fixed patch structure (no runtime dependency; yaml is
 // not a root dependency of this repo). The file shape is owned by this repo —
 // if it changes, the parser fails loud instead of silently checking nothing.
+function unquote(value) {
+  if (
+    (value.startsWith("'") && value.endsWith("'") && value.length >= 2)
+    || (value.startsWith('"') && value.endsWith('"') && value.length >= 2)
+  ) {
+    return value.slice(1, -1)
+  }
+  return value
+}
+
 function extract(text) {
   const lines = text.split(/\r?\n/)
   const rowLines = []
@@ -50,8 +66,10 @@ function extract(text) {
   }
   const block = lines.slice(rowLines[start], rowLines[start + 1] ?? lines.length)
   let baseURL = null
+  let reasoning = null
   let inModels = false
-  /** @type {Array<{ id: string; contextWindow: number | null; input: string[] }>} */
+  let inEfforts = false
+  /** @type {Array<{ id: string; contextWindow: number | null; input: string[]; reasoningEfforts: Record<string, string> | null }>} */
   const models = []
   for (const line of block) {
     const trimmed = line.trim()
@@ -62,6 +80,11 @@ function extract(text) {
       baseURL = baseURLMatch[1].trim()
       continue
     }
+    const reasoningMatch = trimmed.match(/^reasoning: (.+)$/)
+    if (reasoningMatch && !inModels) {
+      reasoning = unquote(reasoningMatch[1].trim())
+      continue
+    }
     if (trimmed === 'models:') {
       inModels = true
       continue
@@ -69,19 +92,40 @@ function extract(text) {
     if (!inModels) continue
     if (indent < 10) break // left the models block
     if (indent === 10) {
+      inEfforts = false
       const idMatch = trimmed.match(/^- id: (.+)$/)
-      if (idMatch) models.push({ id: idMatch[1].trim(), contextWindow: null, input: [] })
+      if (idMatch) {
+        models.push({
+          id: idMatch[1].trim(),
+          contextWindow: null,
+          input: [],
+          reasoningEfforts: null,
+        })
+      }
       continue
     }
     if (indent === 12 && models.length > 0) {
       const current = models[models.length - 1]
+      inEfforts = trimmed === 'reasoningEfforts:'
+      if (inEfforts) {
+        current.reasoningEfforts = {}
+        continue
+      }
       const windowMatch = trimmed.match(/^contextWindow: (\d+)$/)
       if (windowMatch) current.contextWindow = Number(windowMatch[1])
       const inputMatch = trimmed.match(/^input: \[(.+)\]$/)
       if (inputMatch) current.input = inputMatch[1].split(',').map((part) => part.trim())
+      continue
+    }
+    if (indent === 14 && inEfforts && models.length > 0) {
+      const current = models[models.length - 1]
+      const effortMatch = trimmed.match(/^([^:]+):\s*(.*)$/)
+      if (effortMatch && current.reasoningEfforts) {
+        current.reasoningEfforts[unquote(effortMatch[1].trim())] = unquote(effortMatch[2].trim())
+      }
     }
   }
-  return { baseURL, models }
+  return { baseURL, reasoning, models }
 }
 
 function resolveKey() {
@@ -141,7 +185,7 @@ function modalityMismatches(models, chatModels) {
   return mismatches
 }
 
-const { baseURL, models } = extract(readFileSync(patchPath, 'utf8'))
+const { baseURL, reasoning, models } = extract(readFileSync(patchPath, 'utf8'))
 if (models.length === 0) {
   throw new Error('no models parsed from the llm-pi-ai row — patch structure changed?')
 }
@@ -159,25 +203,32 @@ const pricingNotes = models
 const mismatches = modalityMismatches(models, CHAT_MODELS)
 const patchIds = new Set(models.map((model) => model.id))
 const whitelistMissing = CHAT_MODELS.filter((row) => !patchIds.has(row.id)).map((row) => row.id)
+const reasoningMissing = models
+  .filter((model) => model.reasoningEfforts == null || !Object.prototype.hasOwnProperty.call(model.reasoningEfforts, 'max'))
+  .map((model) => model.id)
+const reasoningDefaultWrong = reasoning === 'max' ? [] : [reasoning]
 const key = resolveKey()
 
 if (!key) {
   process.stdout.write(`${JSON.stringify({
     event: 'models',
-    patch: 'plugins/dsh-omnimux/cordis.patch.yml',
+    patch: 'plugins/omnimux/cordis.patch.yml',
     baseURL,
+    reasoning,
     modalityMismatches: mismatches,
     whitelistMissing,
+    reasoningMissing,
+    reasoningDefaultWrong,
     pricingNotes,
-    skip: 'no OMNIMUX_API_KEY — gateway existence check skipped; modality check ran keyless',
+    skip: 'no OMNIMUX_API_KEY — gateway existence check skipped; modality and reasoning checks ran keyless',
     hint: 'omnimux tokens exec 40 --yes --timeout=600 -- env OMNIMUX_API_KEY=__OMNIMUX_TOKEN_40__ node scripts/verify-models.mjs',
     checkedAt: new Date().toISOString(),
   })}\n`)
-  if (mismatches.length > 0 || whitelistMissing.length > 0) {
-    process.stderr.write(`verify-models: modality mismatch (${mismatches.map((row) => row.id).join(', ')}); whitelist not on patch (${whitelistMissing.join(', ')})\n`)
+  if (mismatches.length > 0 || whitelistMissing.length > 0 || reasoningMissing.length > 0 || reasoningDefaultWrong.length > 0) {
+    process.stderr.write(`verify-models: modality mismatch (${mismatches.map((row) => row.id).join(', ')}); whitelist not on patch (${whitelistMissing.join(', ')}); missing reasoning max (${reasoningMissing.join(', ')}); route reasoning (${reasoning})\n`)
     process.exit(1)
   }
-  process.stderr.write('verify-models: ok (modality + whitelist)\n')
+  process.stderr.write('verify-models: ok (modality + whitelist + reasoning)\n')
   process.exit(0)
 }
 
@@ -197,26 +248,30 @@ const table = models.map((model) => ({
   id: model.id,
   contextWindow: model.contextWindow,
   input: model.input.length > 0 ? model.input : null,
+  reasoningEfforts: model.reasoningEfforts,
   onGateway: gatewayIds.has(model.id),
 }))
 const missing = table.filter((row) => !row.onGateway).map((row) => row.id)
 
 process.stdout.write(`${JSON.stringify({
   event: 'models',
-  patch: 'plugins/dsh-omnimux/cordis.patch.yml',
+  patch: 'plugins/omnimux/cordis.patch.yml',
   baseURL,
+  reasoning,
   gatewayTotal: gatewayIds.size,
   configured: models.length,
   table,
   missing,
   modalityMismatches: mismatches,
   whitelistMissing,
+  reasoningMissing,
+  reasoningDefaultWrong,
   pricingNotes,
   checkedAt: new Date().toISOString(),
 })}\n`)
 
-if (missing.length > 0 || mismatches.length > 0 || whitelistMissing.length > 0) {
-  process.stderr.write(`verify-models: not on gateway (${missing.join(', ')}); modality mismatch (${mismatches.map((row) => row.id).join(', ')}); whitelist not on patch (${whitelistMissing.join(', ')})\n`)
+if (missing.length > 0 || mismatches.length > 0 || whitelistMissing.length > 0 || reasoningMissing.length > 0 || reasoningDefaultWrong.length > 0) {
+  process.stderr.write(`verify-models: not on gateway (${missing.join(', ')}); modality mismatch (${mismatches.map((row) => row.id).join(', ')}); whitelist not on patch (${whitelistMissing.join(', ')}); missing reasoning max (${reasoningMissing.join(', ')}); route reasoning (${reasoning})\n`)
   process.exit(1)
 }
 process.stderr.write('verify-models: ok\n')

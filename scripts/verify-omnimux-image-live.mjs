@@ -6,7 +6,7 @@
 import { mkdtempSync, readFileSync, statSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { executeOmnimuxImage } from '../plugins/dsh-omnimux/src/media/image.js'
+import { executeOmnimuxImage } from '../plugins/omnimux/src/media/image.js'
 
 const destDir = mkdtempSync(join(tmpdir(), 'omnimux-image-live-'))
 const dest = join(destDir, 'probe.png')

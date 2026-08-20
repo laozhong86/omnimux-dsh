@@ -1,6 +1,6 @@
 /**
  * Self-implemented product-stage plumbing (equivalent copy of the
- * dsh-omnimux-assets stage-box.js, ids isolated so nothing imports the hub).
+ * omnimux-assets stage-box.js, ids isolated so nothing imports the hub).
  */
 
 /**

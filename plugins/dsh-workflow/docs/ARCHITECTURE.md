@@ -85,6 +85,6 @@
 ## 6. 红线遵守
 
 - 插件源码只在 `plugins/dsh-workflow/` 内；Gxgen 源码只读；不进官方 harness packages/
-- 不 import hub（dsh-omnimux）、不自带 HTTP client、不存 provider keys
+- 不 import hub（omnimux）、不自带 HTTP client、不存 provider keys
 - 运行时 I/O 只写 `$DSH_HOME/omnimux/workflow/`；写路由 assertLocalWrite（loopback only）
 - host 运行时零三方依赖（Node builtins + 打包进 bundle 的 zod）

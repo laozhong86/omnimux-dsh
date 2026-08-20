@@ -29,7 +29,7 @@ npm run build      # 手动重建：dist/index.js + lib/client.js + lib/canvas.j
 **M1 已验证的部分**（不依赖完整 harness 启动）：
 - host 面：`dist/index.js` 按 cordis 契约导出 `name/inject/apply`，`apply(ctx)` 经真实 HTTP handler 冒烟测试（5/5 通过：快照 CRUD、乐观锁 409、跨域写拒绝、媒体防穿越、能力目录）
 - client 面：`lib/client.js` 在 ModuleLoader 契约 shim 下评估通过，`apply(ctx)` 正确注册 locale / shell.overlay slot / 侧边栏条目
-- manifest 结构与已上线的 dsh-omnimux-assets 插件逐字段对齐（main/exports/dsh.bundle.patch/dsh.client.inject/cordis.patch.yml）
+- manifest 结构与已上线的 omnimux-assets 插件逐字段对齐（main/exports/dsh.bundle.patch/dsh.client.inject/cordis.patch.yml）
 
 **待现场验证**：在真实 profile 中 `pnpm install` 并启动 dsh web 后，侧边栏出现「工作流」条目、画布可打开（需要完整 harness 运行时）。
 

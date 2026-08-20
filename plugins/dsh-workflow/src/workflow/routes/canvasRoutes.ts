@@ -14,7 +14,7 @@
  *
  * Self-implemented helpers equivalent to hub logic (no hub imports):
  * sendJson secret guard + assertLocalWrite loopback check, matching the
- * dsh-omnimux-assets plugin conventions.
+ * omnimux-assets plugin conventions.
  */
 import { createHash } from 'node:crypto';
 import {
