@@ -40,7 +40,7 @@ const code = result.outputFiles[0]?.text
 if (!code) throw new Error('esbuild produced no output')
 
 const wrapped = `window.__ModuleLoader__.load({
-  id: "dsh-workflow",
+  id: "omnimux-workflow",
   factory: (require) => {
     var module = { exports: {} };
     var exports = module.exports;
