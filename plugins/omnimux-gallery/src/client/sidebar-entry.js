@@ -1,18 +1,16 @@
 /**
- * Sidebar row under 新会话: same mount mechanism as the hub's sidebar-entry.js
- * (sidebarRoot / newSessionButton probing + double MutationObserver + 2s retry
- * + unmount cleanup). Placement: last extra row — after the ESC entry, then
- * after the taskboard entry, then right after 新会话.
+ * Same mount as dsh-taskboard: inject a row under 新会话, not footer.action.
+ * Plain DOM so React shell re-renders cannot drop a slot child.
  */
 
-export const ENTRY_SELECTOR = '[data-omnimux-assets-entry]'
+export const ENTRY_SELECTOR = '[data-omnimux-esc-entry]'
 
-const ICON = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M1.5 6.5h13"/><path d="M5.5 6.5v7"/></svg>'
+const ICON = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="2.1"/><circle cx="11" cy="6" r="2.1"/><path d="M2.5 13c.6-2 2-3 3.5-3s2.9 1 3.5 3"/><path d="M9 13c.4-1.3 1.3-2 2.5-2s2 .6 2.5 2"/></svg>'
 
 // Match official workspace session rows: 32px row / 14px label + 14px icon.
-// Product rule: docs/contracts/sidebar-extra-entries.md
+// Product rule: omnimux-dsh/docs/contracts/sidebar-extra-entries.md
 const STYLES = `
-.omnimux-assets-entry {
+.omnimux-esc-entry {
   box-sizing: border-box; display: flex; align-items: center; gap: 6px; position: relative;
   width: calc(100% - 8px); height: 32px; margin: 0 4px; padding: 0 8px;
   border: none; border-radius: 8px; background: transparent;
@@ -20,17 +18,17 @@ const STYLES = `
   font: var(--dsw-font-s-14, inherit); font-size: 14px; line-height: 20px;
   cursor: pointer; text-align: left;
 }
-.omnimux-assets-entry:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12)); }
-.omnimux-assets-entry[data-active="true"] { background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18)); font-weight: 500; }
-.omnimux-assets-entry-icon { flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
-.omnimux-assets-entry svg { display: block; width: 14px; height: 14px; }
-.omnimux-assets-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
+.omnimux-esc-entry:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12)); }
+.omnimux-esc-entry[data-active="true"] { background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18)); font-weight: 500; }
+.omnimux-esc-entry-icon { flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
+.omnimux-esc-entry svg { display: block; width: 14px; height: 14px; }
+.omnimux-esc-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
 `
 
 function injectStyles() {
-  if (document.getElementById('omnimux-assets-entry-styles')) return
+  if (document.getElementById('omnimux-esc-entry-styles')) return
   const style = document.createElement('style')
-  style.id = 'omnimux-assets-entry-styles'
+  style.id = 'omnimux-esc-entry-styles'
   style.textContent = STYLES
   document.head.append(style)
 }
@@ -56,72 +54,68 @@ function newSessionButton(root) {
 }
 
 /**
- * Default placement is last: after the ESC row, else after the taskboard
- * row, else right after 新会话.
- * @param {HTMLElement} root
- */
-function anchorRow(root) {
-  const esc = root.querySelector('[data-omnimux-esc-entry]')
-  if (esc instanceof HTMLElement) return esc
-  const taskboard = root.querySelector('[data-dsh-taskboard-entry]')
-  if (taskboard instanceof HTMLElement) return taskboard
-  return newSessionButton(root)
-}
-
-/**
  * @param {HTMLButtonElement} entry
  * @param {string} label
  */
 function paintLabel(entry, label) {
   entry.setAttribute('aria-label', label)
-  const node = entry.querySelector('.omnimux-assets-entry-label')
+  const node = entry.querySelector('.omnimux-esc-entry-label')
   if (node) node.textContent = label
 }
 
 /**
- * @param {{ getSnapshot: () => boolean, subscribe: (fn: () => void) => () => void, toggle: () => void }} stage
+ * @param {{ getSnapshot: () => boolean, subscribe: (fn: () => void) => () => void, toggle: () => void }} gallery
  * @param {(key: string) => string} t
  */
-function createEntry(stage, t) {
+function createEntry(gallery, t) {
   const entry = document.createElement('button')
   entry.type = 'button'
-  entry.dataset.dshOmnimuxAssetsEntry = ''
-  entry.className = 'omnimux-assets-entry'
-  entry.innerHTML = `<span class="omnimux-assets-entry-icon">${ICON}</span><span class="omnimux-assets-entry-label"></span>`
+  entry.dataset.dshEscEntry = ''
+  entry.className = 'omnimux-esc-entry'
+  entry.innerHTML = `<span class="omnimux-esc-entry-icon">${ICON}</span><span class="omnimux-esc-entry-label"></span>`
   paintLabel(entry, t('nav'))
-  entry.addEventListener('click', () => { stage.toggle() })
+  entry.addEventListener('click', () => { gallery.toggle() })
   return entry
 }
 
 /**
- * Keep this row the last extra under 新会话.
+ * Sit in the same block as 任务看板: after the family rows under 新会话.
  * @param {HTMLElement} root
  * @param {HTMLButtonElement} entry
  */
 function placeEntry(root, entry) {
-  const anchor = anchorRow(root)
-  if (anchor === undefined) return false
-  if (entry.previousElementSibling === anchor && entry.parentElement === root) return true
-  anchor.after(entry)
+  const button = newSessionButton(root)
+  if (button === undefined) return false
+  if (entry.parentElement !== root) {
+    const row = button.closest('[class*="logoRow"]')
+    const base = (row instanceof HTMLElement && row.parentElement === root) ? row : button
+    const family = [...root.children].filter(
+      (el) => el instanceof HTMLElement && el.matches('[data-dsh-atb-entry], [data-dsh-taskboard-entry], [data-dsh-ssh-entry]'),
+    )
+    const apps = root.querySelector('[data-omnimux-apps-entry]')
+    const last = family[family.length - 1]
+    const after = last ?? (apps instanceof HTMLElement ? apps : base)
+    const anchor = after.nextElementSibling
+    root.insertBefore(entry, anchor === entry ? entry.nextElementSibling : anchor)
+  }
   return true
 }
 
 /**
- * @param {{ getSnapshot: () => boolean, subscribe: (fn: () => void) => () => void, toggle: () => void }} stage
+ * @param {{ getSnapshot: () => boolean, subscribe: (fn: () => void) => () => void, toggle: () => void }} gallery
  * @param {(key: string) => string} t
  * @param {{ subscribe?: (fn: () => void) => () => void }} [locale]
- * @returns {() => void} disposer
  */
-export function mountSidebarEntry(stage, t, locale) {
+export function mountSidebarEntry(gallery, t, locale) {
   injectStyles()
-  const entry = createEntry(stage, t)
+  const entry = createEntry(gallery, t)
   const paint = () => { paintLabel(entry, t('nav')) }
   const unsubscribeLocale = typeof locale?.subscribe === 'function' ? locale.subscribe(paint) : () => {}
   let root
   let placed = false
 
   const syncActive = () => {
-    if (stage.getSnapshot()) entry.dataset.active = 'true'
+    if (gallery.getSnapshot()) entry.dataset.active = 'true'
     else delete entry.dataset.active
   }
 
@@ -132,15 +126,10 @@ export function mountSidebarEntry(stage, t, locale) {
       placed = false
     }
     if (placed) {
-      if (!document.body.contains(entry)) {
-        rootObserver.disconnect()
-        root = undefined
-        placed = false
-      } else if (root !== undefined) {
-        const anchor = anchorRow(root)
-        if (anchor !== undefined && entry.previousElementSibling === anchor && entry.parentElement === root) return
-        placed = false
-      }
+      if (document.body.contains(entry)) return
+      rootObserver.disconnect()
+      root = undefined
+      placed = false
     }
     root ??= sidebarRoot()
     if (root === undefined) return
@@ -157,13 +146,11 @@ export function mountSidebarEntry(stage, t, locale) {
       tryPlace()
       return
     }
-    if (!root.contains(entry) || entry.previousElementSibling !== anchorRow(root)) {
-      placed = placeEntry(root, entry)
-    }
+    if (!root.contains(entry)) placed = placeEntry(root, entry)
   })
 
   const retry = setInterval(() => { tryPlace() }, 2000)
-  const unsubscribe = stage.subscribe(syncActive)
+  const unsubscribe = gallery.subscribe(syncActive)
   syncActive()
   tryPlace()
 

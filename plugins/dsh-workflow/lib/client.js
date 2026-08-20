@@ -206,7 +206,7 @@ function newSessionButton(root) {
 function anchorRow(root) {
   const assets = root.querySelector("[data-omnimux-assets-entry]");
   if (assets instanceof HTMLElement) return assets;
-  const esc = root.querySelector("[data-dsh-esc-entry]");
+  const esc = root.querySelector("[data-omnimux-esc-entry]");
   if (esc instanceof HTMLElement) return esc;
   const taskboard = root.querySelector("[data-dsh-taskboard-entry]");
   if (taskboard instanceof HTMLElement) return taskboard;
