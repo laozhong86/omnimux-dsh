@@ -65,22 +65,34 @@ export const STYLES = `
   align-items: center;
   gap: 12px;
 }
+.omnimux-accounts-page-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
 .omnimux-accounts-cta {
-  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  border: none;
-  border-radius: 8px;
+  padding: 8px 16px;
+  min-width: 120px;
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
+  border-radius: 10px;
   background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.18));
   color: var(--dsw-alias-label-primary, inherit);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
 }
 .omnimux-accounts-cta:hover {
   background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.26));
+}
+.omnimux-accounts-cta:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 /* ---------- filter bar ---------- */

@@ -1,17 +1,16 @@
 /**
- * Overview strip: four stat numbers plus the primary "+ Connect" CTA.
- * Every stat is a button — clicking it drives the corresponding filter
- * (connected → active, needs-reconnect → expired, platforms → clear the
- * platform filter, total → clear all filters).
+ * Overview strip: four clickable stat numbers (connected / needs attention /
+ * platforms / total). The "+ Connect" CTA is rendered separately by
+ * AccountsSection above this strip — it is the page-level primary action,
+ * not an overview element.
  * @param {{
  *   t: (key: string) => string,
  *   summary: { total: number, connected: number, needsAttention: number, platformCount: number },
- *   onConnect: () => void,
  *   onFilterClick: (filter: { status?: string, platform?: string } | null) => void,
  *   busy: string,
  * }} props
  */
-export function OverviewBar({ t, summary, onConnect, onFilterClick, busy = '' }) {
+export function OverviewBar({ t, summary, onFilterClick, busy = '' }) {
   const stats = [
     { key: 'connected', label: t('overview.connected'), value: summary.connected, filter: { status: 'active' } },
     { key: 'needsAttention', label: t('overview.needsAttention'), value: summary.needsAttention, filter: { status: 'expired' } },
@@ -34,14 +33,6 @@ export function OverviewBar({ t, summary, onConnect, onFilterClick, busy = '' })
           </button>
         ))}
       </div>
-      <button
-        type="button"
-        className="omnimux-accounts-cta"
-        disabled={busy !== ''}
-        onClick={onConnect}
-      >
-        + {t('connect')}
-      </button>
     </div>
   )
 }

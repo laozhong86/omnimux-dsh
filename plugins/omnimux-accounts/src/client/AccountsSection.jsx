@@ -235,7 +235,17 @@ export function AccountsSection({ t }) {
 
   return (
     <div className="omnimux-accounts-root">
-      <OverviewBar t={t} summary={summary} onConnect={openConnect} onFilterClick={onFilterClick} busy={combinedBusy} />
+      <div className="omnimux-accounts-page-actions">
+        <button
+          type="button"
+          className="omnimux-accounts-cta"
+          disabled={combinedBusy}
+          onClick={openConnect}
+        >
+          + {t('connect')}
+        </button>
+      </div>
+      <OverviewBar t={t} summary={summary} onFilterClick={onFilterClick} busy={combinedBusy} />
       {accounts.length > 0 ? (
         <FilterBar
           t={t}

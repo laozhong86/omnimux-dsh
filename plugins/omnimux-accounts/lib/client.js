@@ -1054,44 +1054,29 @@ function FilterBar(props) {
 
 // src/client/OverviewBar.jsx
 var import_jsx_runtime8 = require("react/jsx-runtime");
-function OverviewBar({ t, summary, onConnect, onFilterClick, busy = "" }) {
+function OverviewBar({ t, summary, onFilterClick, busy = "" }) {
   const stats = [
     { key: "connected", label: t("overview.connected"), value: summary.connected, filter: { status: "active" } },
     { key: "needsAttention", label: t("overview.needsAttention"), value: summary.needsAttention, filter: { status: "expired" } },
     { key: "platforms", label: t("overview.platforms"), value: summary.platformCount, filter: { platform: "" } },
     { key: "total", label: t("overview.total"), value: summary.total, filter: null }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-accounts-overview-row", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-accounts-overview", children: stats.map((stat) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
-      "button",
-      {
-        type: "button",
-        className: "omnimux-accounts-stat",
-        disabled: busy !== "",
-        onClick: () => {
-          onFilterClick(stat.filter);
-        },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "omnimux-accounts-stat-value", children: String(stat.value) }),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "omnimux-accounts-stat-label", children: stat.label })
-        ]
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-accounts-overview-row", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-accounts-overview", children: stats.map((stat) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+    "button",
+    {
+      type: "button",
+      className: "omnimux-accounts-stat",
+      disabled: busy !== "",
+      onClick: () => {
+        onFilterClick(stat.filter);
       },
-      stat.key
-    )) }),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
-      "button",
-      {
-        type: "button",
-        className: "omnimux-accounts-cta",
-        disabled: busy !== "",
-        onClick: onConnect,
-        children: [
-          "+ ",
-          t("connect")
-        ]
-      }
-    )
-  ] });
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "omnimux-accounts-stat-value", children: String(stat.value) }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "omnimux-accounts-stat-label", children: stat.label })
+      ]
+    },
+    stat.key
+  )) }) });
 }
 
 // src/client/use-accounts.js
@@ -1323,22 +1308,34 @@ var STYLES = `
   align-items: center;
   gap: 12px;
 }
+.omnimux-accounts-page-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
 .omnimux-accounts-cta {
-  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  border: none;
-  border-radius: 8px;
+  padding: 8px 16px;
+  min-width: 120px;
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
+  border-radius: 10px;
   background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.18));
   color: var(--dsw-alias-label-primary, inherit);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
 }
 .omnimux-accounts-cta:hover {
   background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.26));
+}
+.omnimux-accounts-cta:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 /* ---------- filter bar ---------- */
@@ -2177,7 +2174,20 @@ function AccountsSection({ t }) {
   }
   const errorText = sectionError !== "" ? sectionError : error;
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "omnimux-accounts-root", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(OverviewBar, { t, summary, onConnect: openConnect, onFilterClick, busy: combinedBusy }),
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "omnimux-accounts-page-actions", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+      "button",
+      {
+        type: "button",
+        className: "omnimux-accounts-cta",
+        disabled: combinedBusy,
+        onClick: openConnect,
+        children: [
+          "+ ",
+          t("connect")
+        ]
+      }
+    ) }),
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(OverviewBar, { t, summary, onFilterClick, busy: combinedBusy }),
     accounts.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       FilterBar,
       {
