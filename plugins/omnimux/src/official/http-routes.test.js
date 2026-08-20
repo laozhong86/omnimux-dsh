@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { OmnimuxError } from '../media/errors.js'
-import { createOfficialDispatcher } from './http-routes.js'
+import { createOfficialDispatcher, registerOfficialRoutes } from './http-routes.js'
 import { createAccountMetaStore } from './account-meta.js'
 
 function clientWith(handler) {
@@ -297,5 +297,107 @@ describe('official accounts overlay', () => {
     } finally {
       rmSync(home, { recursive: true, force: true })
     }
+  })
+
+  it('clears an overlay group with an explicit null so the site group resurfaces', async () => {
+    const meta = fakeMetaStore()
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client: clientWith(async () => accountFixture()),
+      metaStore: meta,
+    })
+    await dispatcher.dispatch({
+      method: 'PATCH',
+      url: '/omnimux/accounts/a',
+      origin: LOCAL_ORIGIN,
+      body: { group: 'local' },
+    })
+    const cleared = await dispatcher.dispatch({
+      method: 'PATCH',
+      url: '/omnimux/accounts/a',
+      origin: LOCAL_ORIGIN,
+      body: { group: null },
+    })
+    assert.equal(cleared.status, 200)
+    assert.equal(cleared.body.account.group, 'site-group')
+    assert.deepEqual(meta.calls[1], { op: 'update', id: 'a', patch: { group: null } })
+  })
+})
+
+describe('registerOfficialRoutes body parsing', () => {
+  /** Minimal async-iterable request stub readJsonBody can consume. */
+  function fakeReq(method, url, rawBody) {
+    return {
+      method,
+      url,
+      headers: { origin: 'http://127.0.0.1:8787' },
+      async *[Symbol.asyncIterator]() {
+        if (rawBody !== undefined) yield Buffer.from(rawBody, 'utf8')
+      },
+    }
+  }
+
+  function fakeRes() {
+    const state = { status: 0, body: '' }
+    return {
+      state,
+      writeHead(status) { state.status = status },
+      end(text) { state.body = String(text) },
+    }
+  }
+
+  function fakeWebServer() {
+    /** @type {Array<{ kind: string, path: string, handler: Function }>} */
+    const routes = []
+    return {
+      routes,
+      register(route) {
+        routes.push(route)
+        return () => {}
+      },
+    }
+  }
+
+  function handlerFor(webServer) {
+    const route = webServer.routes.find((entry) => entry.path === '/omnimux/accounts')
+    assert.ok(route, 'prefix route registered')
+    return route.handler
+  }
+
+  it('parses a PATCH body and forwards it to the dispatcher', async () => {
+    const webServer = fakeWebServer()
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client: clientWith(async () => accountFixture()),
+    })
+    registerOfficialRoutes(webServer, dispatcher)
+    const res = fakeRes()
+    await handlerFor(webServer)(fakeReq('PATCH', '/omnimux/accounts/a', '{"group":"ops"}'), res)
+    assert.equal(res.state.status, 200)
+    assert.equal(JSON.parse(res.state.body).account.group, 'ops')
+  })
+
+  it('rejects an invalid JSON PATCH body with 400 before dispatching', async () => {
+    const webServer = fakeWebServer()
+    let dispatched = 0
+    const dispatcher = {
+      async dispatch() { dispatched += 1; return { status: 200, body: {} } },
+    }
+    registerOfficialRoutes(webServer, dispatcher)
+    const res = fakeRes()
+    await handlerFor(webServer)(fakeReq('PATCH', '/omnimux/accounts/a', 'not-json{'), res)
+    assert.equal(res.state.status, 400)
+    assert.equal(JSON.parse(res.state.body).error, 'invalid json')
+    assert.equal(dispatched, 0, 'the dispatcher never sees a broken body')
+  })
+
+  it('rejects an invalid JSON POST body with 400', async () => {
+    const webServer = fakeWebServer()
+    const dispatcher = { async dispatch() { return { status: 200, body: {} } } }
+    registerOfficialRoutes(webServer, dispatcher)
+    const res = fakeRes()
+    await handlerFor(webServer)(fakeReq('POST', '/omnimux/accounts', '{oops'), res)
+    assert.equal(res.state.status, 400)
+    assert.equal(JSON.parse(res.state.body).error, 'invalid json')
   })
 })

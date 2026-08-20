@@ -1,8 +1,8 @@
 /**
  * Filter toolbar: search, platform / group / status dropdowns (options are
  * derived from live data — a control with no options is not rendered), sort
- * key + direction, and the view toggle. The grid/table toggle renders
- * disabled this batch; T05 (table view) enables it.
+ * key + direction, and the grid / table view toggle (persisted by the
+ * section).
  * @param {{
  *   t: (key: string) => string,
  *   query: string,
@@ -11,16 +11,18 @@
  *   status: string,
  *   sortKey: string,
  *   sortDir: 'asc' | 'desc',
+ *   view: 'grid' | 'table',
  *   platforms: string[],
  *   groups: string[],
  *   statuses: string[],
  *   onFilterChange: (patch: { query?: string, platform?: string, group?: string, status?: string }) => void,
  *   onSortChange: (patch: { key?: string, dir?: 'asc' | 'desc' }) => void,
+ *   onViewChange: (view: 'grid' | 'table') => void,
  *   busy: string,
  * }} props
  */
 export function FilterBar(props) {
-  const { t, query, platform, group, status, sortKey, sortDir, platforms, groups, statuses, onFilterChange, onSortChange, busy = '' } = props
+  const { t, query, platform, group, status, sortKey, sortDir, view, platforms, groups, statuses, onFilterChange, onSortChange, onViewChange, busy = '' } = props
   const disabled = busy !== ''
   const sortOptions = [
     { key: 'display_name', label: t('sort.display_name') },
@@ -99,7 +101,9 @@ export function FilterBar(props) {
         className="omnimux-accounts-iconbtn"
         aria-label={t('filter.viewGrid')}
         title={t('filter.viewGrid')}
-        disabled
+        aria-pressed={view === 'grid'}
+        disabled={disabled}
+        onClick={() => { onViewChange('grid') }}
       >
         ⊞
       </button>
@@ -108,7 +112,9 @@ export function FilterBar(props) {
         className="omnimux-accounts-iconbtn"
         aria-label={t('filter.viewTable')}
         title={t('filter.viewTable')}
-        disabled
+        aria-pressed={view === 'table'}
+        disabled={disabled}
+        onClick={() => { onViewChange('table') }}
       >
         ≣
       </button>

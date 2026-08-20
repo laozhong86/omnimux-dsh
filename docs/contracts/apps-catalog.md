@@ -191,7 +191,29 @@ Each row in `apps` is a catalog app plus local state and `install_spec` (`name@v
 
 Install and remove stay on `/omnimux/plugins` with the catalog's pinned `name@version` (npm) or `name` (bundled). The Apps page must not send a free-typed spec. Settings "DSH plugins" remains the inventory of every bundle, including unmarked community packages.
 
+Bundled install resolution: `POST /omnimux/plugins` with a bare name whose catalog row is `spec.source: "bundled"` must resolve the name to a local package directory before invoking `dsh plugin add` — the CLI is a pnpm forwarder and a bare name would hit the registry (404 for private packages). Resolution order: `Config.apps.bundledDir/<name>` first, then the profile's installed copy (`<profile>/node_modules/<name>`, real path). Neither present → `400` with a "not on disk" error; the Host never falls back to the registry for a bundled row. `Config.apps.bundledDir` (or env `OMNIMUX_APPS_BUNDLED_DIR`) points at the desktop preset plugins directory in production, or a dev plugin tree on a development machine.
+
 Unpublish (`listed: false`) removes the card. The local bundle is not deleted.
+
+### Card click and the fixed action slot
+
+Clicking the card body (title / summary area, not the footer) is the open path:
+
+| Card state | Card body click | Fixed action slot | Overflow (`···`) menu |
+|---|---|---|---|
+| `available` | Install confirm bubble 「是否安装「{title}」？」 | Primary「安装」 | none |
+| `update` | Open the app page (same as `installed`) | Primary「更新」 | 打开 · 卸载 |
+| `installed` | Open the app page | `···` icon button | 打开 · 卸载 |
+
+Open path: `canOpen` (installed or update, `client: true`, no pending restart) → device-login gate when the row has the `identity` capability and the user is signed out → `dsh-omnimux-app-open` dispatch → the app claims the product stage. When no app claims within 600 ms (usually a pending Host restart), the page surfaces 重启后可用 instead of a dead screen.
+
+`pendingRestart` is page-level client state on the Apps page: set after any successful install / update / remove and cleared after the desktop shell restarts the Host. While it holds, the menu's 打开 item is disabled with the 重启后可用 hint and card-body open attempts return the same hint.
+
+Remove is destructive and lives only in the overflow menu behind a second confirm bubble; PROTECTED_BUNDLES never get a remove entry.
+
+### Tabs records
+
+Opening an app also records a sidebar tab. The Host owns the records: `GET /omnimux/apps/tabs` (filtered view), `POST /omnimux/apps/tabs/{id}` (upsert on open), `PATCH /omnimux/apps/tabs/{id}` (pin / top), `DELETE /omnimux/apps/tabs/{id}`; uninstalling a bundle removes its tab. Tab row rendering, hover actions, and sorting semantics live in the sidebar contract ([sidebar-extra-entries.md](sidebar-extra-entries.md), *Dynamic app tabs*).
 
 ## Config
 
@@ -203,6 +225,7 @@ Hub `Config.apps` (all optional):
 | `catalogUrl` | empty → `{siteBaseUrl}/apps/catalog.json` | Absolute `https:` URL on the site host only |
 | `ttlSeconds` | `21600` | Freshness window |
 | `timeoutMs` | `5000` | Remote GET and refresh wait |
+| `bundledDir` | empty; env fallback `OMNIMUX_APPS_BUNDLED_DIR` | Directory holding bundled plugin packages for local install resolution |
 
 A `catalogUrl` whose host is not the resolved site host fails at config parse. No silent fallback.
 

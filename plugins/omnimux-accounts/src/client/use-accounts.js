@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { connectAccount, disconnectAccount, listAccounts, patchAccount } from './api.js'
+import { disconnectAccount, listAccounts, patchAccount } from './api.js'
+
+/** Connect-flow poll interval (ms). */
+const WATCH_POLL_MS = 5000
 
 /**
  * Data hook for the Accounts app. Owns loading, the 401 → need-login phase
- * transition, optimistic metadata patches with rollback, and disconnects.
- *
- * The connect-flow poller (watchConnect) lands with the ConnectModal in T04;
- * it will reuse `refresh` as its completion signal, which is why every state
- * mutation goes through commitAccounts.
+ * transition, optimistic metadata patches with rollback, disconnects, and
+ * the connect-flow poller.
  * @returns {{
  *   phase: 'loading' | 'ready' | 'need-login',
  *   accounts: Array<Record<string, unknown>>,
  *   error: string,
  *   busy: string,
  *   refresh: () => Promise<boolean>,
- *   connect: (platform: string) => Promise<boolean>,
+ *   watchConnect: (platform: string, onChange: (row: Record<string, unknown> | null) => void) => () => void,
  *   patch: (id: string, body: { group?: string | null, agent_usable?: boolean }) => Promise<boolean>,
  *   disconnect: (id: string) => Promise<boolean>,
  * }}
@@ -25,10 +25,12 @@ export function useAccounts() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState('')
   const accountsRef = useRef([])
+  /** @type {import('react').MutableRefObject<{ stop: () => void } | null>} */
+  const watchRef = useRef(null)
 
   /**
    * Single funnel for account-list mutations so the ref mirror (used for
-   * optimistic rollback) can never drift from React state.
+   * optimistic rollback and connect baselines) can never drift from state.
    * @param {Array<Record<string, unknown>>} next
    */
   const commitAccounts = useCallback((next) => {
@@ -71,35 +73,82 @@ export function useAccounts() {
   }, [refresh])
 
   /**
-   * Opens the site OAuth page for the platform (the site only returns an
-   * auth_url today — no device-code endpoint exists yet) and refreshes once
-   * the request resolves. T04 adds the poll-until-connected loop.
-   * @param {string} platform
+   * Stops the current connect-flow poll, if any. Idempotent.
    */
-  const connect = useCallback((platform) => {
-    setBusy('connect')
-    setError('')
-    return connectAccount(platform).then((result) => {
-      if (result.status === 401) {
-        setPhase('need-login')
-        return false
+  const stopWatch = useCallback(() => {
+    const watch = watchRef.current
+    watchRef.current = null
+    if (watch) watch.stop()
+  }, [])
+
+  /**
+   * Connect-flow poller: every WATCH_POLL_MS the account list is re-fetched
+   * and compared against the snapshot taken when the watch starts. A new id
+   * (any platform) or a higher row count for the target platform means the
+   * authorization landed: the poll stops and `onChange` receives the new row
+   * (null when only a platform count increase was observed). Re-entering
+   * stops the previous watch; the hook's unmount stops it too, so a stray
+   * timer can never outlive the modal.
+   * @param {string} platform
+   * @param {(row: Record<string, unknown> | null) => void} onChange
+   * @returns {() => void} stop
+   */
+  const watchConnect = useCallback((platform, onChange) => {
+    stopWatch()
+    const key = String(platform || '').toLowerCase()
+    const baselineIds = new Set(accountsRef.current.map((row) => String(row.id)))
+    const baselineCount = accountsRef.current
+      .filter((row) => String(row.platform || '').toLowerCase() === key)
+      .length
+    let stopped = false
+    /** @type {number | ReturnType<typeof setTimeout>} */
+    let timer = 0
+
+    const stop = () => {
+      if (stopped) return
+      stopped = true
+      if (timer) {
+        clearTimeout(timer)
+        timer = 0
       }
-      if (!result.ok) {
-        setError(String((result.body && typeof result.body === 'object' && result.body.error) || `HTTP ${String(result.status)}`))
-        return false
+      if (watchRef.current && watchRef.current.stop === stop) watchRef.current = null
+    }
+    watchRef.current = { stop }
+
+    const poll = async () => {
+      if (stopped) return
+      try {
+        const result = await listAccounts()
+        if (stopped) return
+        if (result.ok && result.status === 200) {
+          const body = result.body && typeof result.body === 'object' ? /** @type {Record<string, unknown>} */ (result.body) : {}
+          const rows = Array.isArray(body.accounts) ? body.accounts : []
+          /** @type {Record<string, unknown> | null} */
+          let fresh = null
+          let count = 0
+          for (const row of rows) {
+            if (String(row.platform || '').toLowerCase() === key) count += 1
+            const id = String(row.id)
+            if (!baselineIds.has(id) && fresh === null) fresh = row
+          }
+          if (fresh !== null || count > baselineCount) {
+            stop()
+            onChange(fresh)
+            return
+          }
+        }
+      } catch {
+        // transient fetch failure — keep polling until stopped
       }
-      const body = result.body && typeof result.body === 'object' ? /** @type {Record<string, unknown>} */ (result.body) : {}
-      if (typeof body.auth_url === 'string' && body.auth_url) {
-        window.open(body.auth_url, '_blank', 'noopener,noreferrer')
-      }
-      return refresh().then(() => true)
-    }).catch((caught) => {
-      setError(caught instanceof Error ? caught.message : String(caught))
-      return false
-    }).finally(() => {
-      setBusy('')
-    })
-  }, [refresh])
+      if (!stopped) timer = setTimeout(() => { void poll() }, WATCH_POLL_MS)
+    }
+
+    timer = setTimeout(() => { void poll() }, WATCH_POLL_MS)
+    return stop
+  }, [stopWatch])
+
+  // Unmount: stop any running poll so no timer leaks past the component.
+  useEffect(() => () => { stopWatch() }, [stopWatch])
 
   /**
    * Optimistic metadata patch; rolls the row back and surfaces an error if
@@ -129,9 +178,8 @@ export function useAccounts() {
         setError(String((result.body && typeof result.body === 'object' && result.body.error) || `HTTP ${String(result.status)}`))
         return false
       }
-      const bodyRow = result.body && typeof result.body === 'object' && /** @type {Record<string, unknown>} */ (result.body).account && typeof /** @type {Record<string, unknown>} */ (result.body).account === 'object'
-        ? /** @type {Record<string, unknown>} */ (/** @type {Record<string, unknown>} */ (result.body).account)
-        : null
+      const raw = result.body && typeof result.body === 'object' ? /** @type {Record<string, unknown>} */ (result.body) : {}
+      const bodyRow = raw.account && typeof raw.account === 'object' ? /** @type {Record<string, unknown>} */ (raw.account) : null
       if (bodyRow) {
         commitAccounts(accountsRef.current.map((row) => (String(row.id) === key ? bodyRow : row)))
       }
@@ -169,5 +217,5 @@ export function useAccounts() {
     })
   }, [commitAccounts])
 
-  return { phase, accounts, error, busy, refresh, connect, patch, disconnect }
+  return { phase, accounts, error, busy, refresh, watchConnect, patch, disconnect }
 }

@@ -57,6 +57,16 @@ describe('computeStatus', () => {
     assert.equal(computeStatus({ expires_at: 'not-a-date' }, now), 'active')
   })
 
+  it('treats the exact boundaries as expired / expiring (<= semantics)', () => {
+    const DAY_MS = 24 * 60 * 60 * 1000
+    // exactly now → already expired
+    assert.equal(computeStatus({ expires_at: '2026-08-20T12:00:00Z' }, now), 'expired')
+    // exactly now + 24h → last moment of the expiring window
+    assert.equal(computeStatus({ expires_at: '2026-08-21T12:00:00Z' }, now), 'expiring')
+    // one millisecond past the window → active
+    assert.equal(computeStatus({ expires_at: new Date(now + DAY_MS + 1).toISOString() }, now), 'active')
+  })
+
   it('defaults to active with neither status nor expires_at', () => {
     assert.equal(computeStatus({}, now), 'active')
     assert.equal(computeStatus(undefined, now), 'active')

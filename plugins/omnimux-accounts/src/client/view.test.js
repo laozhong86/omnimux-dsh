@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { filterAccounts, presentStatuses, relativeTime, sortAccounts, summarize, uniqueValues } from './view.js'
+import { filterAccounts, presentStatuses, relativeTime, selectAllState, selectRows, sortAccounts, summarize, uniqueValues } from './view.js'
 
 const NOW = Date.parse('2026-08-20T12:00:00Z')
 
@@ -140,5 +140,24 @@ describe('option derivation', () => {
     assert.deepEqual(presentStatuses([{ status: 'expired' }, { status: 'expired' }]), ['expired'])
     assert.deepEqual(presentStatuses([]), [])
     assert.deepEqual(presentStatuses([{ id: 'a' }]), [])
+  })
+})
+
+describe('selection helpers', () => {
+  it('selectRows keeps input order and accepts Set or array of ids', () => {
+    assert.deepEqual(selectRows(rows, new Set(['b', 'd'])).map((r) => r.id), ['b', 'd'])
+    assert.deepEqual(selectRows(rows, ['d', 'b']).map((r) => r.id), ['b', 'd'])
+    assert.deepEqual(selectRows(rows, new Set(['ghost'])), [])
+    assert.deepEqual(selectRows(rows, new Set()), [])
+    assert.deepEqual(selectRows('nope', new Set(['a'])), [])
+  })
+
+  it('selectAllState reports all / some / count over visible rows', () => {
+    assert.deepEqual(selectAllState(rows, new Set(['a', 'b', 'c', 'd', 'e'])), { all: true, some: true, count: 5 })
+    assert.deepEqual(selectAllState(rows, new Set(['a'])), { all: false, some: true, count: 1 })
+    assert.deepEqual(selectAllState(rows, new Set(['ghost'])), { all: false, some: false, count: 0 })
+    assert.deepEqual(selectAllState([], new Set(['a'])), { all: false, some: false, count: 0 })
+    // ids not currently visible do not count toward all
+    assert.deepEqual(selectAllState(rows.slice(0, 2), new Set(['a', 'b', 'c'])), { all: true, some: true, count: 2 })
   })
 })

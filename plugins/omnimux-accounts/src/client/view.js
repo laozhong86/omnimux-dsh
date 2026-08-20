@@ -195,3 +195,36 @@ export function localeText(t, key, fallback) {
   const value = t(key)
   return typeof value === 'string' && value !== '' && value !== key ? value : fallback
 }
+
+/**
+ * Rows whose id is in the selection, preserving the input order. Accepts a
+ * Set or an array of ids (string coercion matches the rest of the app).
+ * @param {Array<Record<string, unknown>>} accounts
+ * @param {Set<string> | Array<string>} selectedIds
+ * @returns {Array<Record<string, unknown>>}
+ */
+export function selectRows(accounts, selectedIds) {
+  const ids = selectedIds instanceof Set ? selectedIds : new Set(Array.isArray(selectedIds) ? selectedIds : [])
+  return (Array.isArray(accounts) ? accounts : []).filter((row) => ids.has(String(row.id)))
+}
+
+/**
+ * Select-all checkbox state over the visible rows: `all` when every visible
+ * row is selected (and at least one exists), `some` when at least one is.
+ * @param {Array<Record<string, unknown>>} accounts visible rows
+ * @param {Set<string>} selectedIds
+ * @returns {{ all: boolean, some: boolean, count: number }}
+ */
+export function selectAllState(accounts, selectedIds) {
+  const rows = Array.isArray(accounts) ? accounts : []
+  const ids = selectedIds instanceof Set ? selectedIds : new Set()
+  let hit = 0
+  for (const row of rows) {
+    if (ids.has(String(row.id))) hit += 1
+  }
+  return {
+    all: rows.length > 0 && hit === rows.length,
+    some: hit > 0,
+    count: hit,
+  }
+}

@@ -139,6 +139,21 @@ These cannot be swapped for a third-party endpoint. Unconfigured calls throw `ne
 
 The hub may wrap those HTTP calls. It must not store an account matrix, posting calendar, warmup roster, or Drama Center upload.
 
+### Accounts HTTP (Host `/omnimux/accounts`)
+
+Browser-local write routes (same-origin guard); the browser app is `plugins/omnimux-accounts`.
+
+| Method & Path | Body | Success |
+|---|---|---|
+| GET `/omnimux/accounts` | — | `{accounts: [ViewRow]}`; optional `?platform=&group=` filters |
+| POST `/omnimux/accounts` | `{platform, redirect_url?}` | `{auth_url}` (site OAuth page; no device-code endpoint exists yet) |
+| PATCH `/omnimux/accounts/{id}` | `{group?: string \| null, agent_usable?: boolean}` | `{account: ViewRow}`; empty-string `group` clears; a missing site row still updates pure metadata |
+| DELETE `/omnimux/accounts/{id}` | — | `{ok: true}` |
+
+ViewRow = the `pickAccount` whitelist (id/platform/display_name/username/name/group/status/expires_at?/connected_at?/https avatar_url) plus overlay fields `agent_usable?` / `last_used_at?` and a computed `status` (site status normalized; else expires_at-driven: past → `expired`, <24h → `expiring`; else `active`).
+
+Local metadata overlay (`group` / `agent_usable` / `last_used_at`) persists to `$DSH_HOME/omnimux/accounts.json` (dir 0700, file 0600, whole-document rewrite); GET merges it over site rows, DELETE and a lazy GET-time prune reclaim ids the site no longer returns. Tokens never reach the Host — connect is site-side OAuth.
+
 ## Credentials
 
 | Secret | Who uses it | Browser |

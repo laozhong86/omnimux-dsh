@@ -1,18 +1,35 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AccountCard } from './AccountCard.jsx'
+import { AccountTable } from './AccountTable.jsx'
+import { ConnectModal } from './ConnectModal.jsx'
+import { EmptyState } from './EmptyState.jsx'
 import { FilterBar } from './FilterBar.jsx'
 import { OverviewBar } from './OverviewBar.jsx'
 import { useAccounts } from './use-accounts.js'
 import { injectAccountsStyles } from './styles.js'
-import { filterAccounts, presentStatuses, sortAccounts, summarize, uniqueValues } from './view.js'
+import { disconnectAccount, patchAccount } from './api.js'
+import { filterAccounts, fmt, presentStatuses, sortAccounts, summarize, uniqueValues } from './view.js'
 
 const SKELETON_CARDS = 8
+const VIEW_STORAGE_KEY = 'omnimux-accounts-view'
+const NOTICE_TIMEOUT_MS = 6000
 
 /**
- * Accounts page body: overview strip + filter toolbar + card grid, with the
- * loading skeleton, need-login gate, error bar and (simple) empty state.
- * The full empty state and the connect dialog arrive in T04; until then the
- * CTA falls back to the v0.1 platform-input + auth_url flow.
+ * @returns {'grid' | 'table'}
+ */
+function readStoredView() {
+  try {
+    const value = window.localStorage.getItem(VIEW_STORAGE_KEY)
+    return value === 'table' ? 'table' : 'grid'
+  } catch {
+    return 'grid'
+  }
+}
+
+/**
+ * Accounts page body: overview strip + filter toolbar + card grid or table,
+ * connect dialog, bulk-selection bar, loading skeleton, need-login gate,
+ * error bar and empty state.
  * @param {{ t: (key: string) => string }} props
  */
 export function AccountsSection({ t }) {
@@ -20,13 +37,54 @@ export function AccountsSection({ t }) {
     injectAccountsStyles()
   }, [])
 
-  const { phase, accounts, error, busy, connect, patch, disconnect } = useAccounts()
+  const { phase, accounts, error, busy, refresh, watchConnect, patch, disconnect } = useAccounts()
 
   const [filters, setFilters] = useState({ query: '', platform: '', group: '', status: '' })
   const [sortKey, setSortKey] = useState('display_name')
   const [sortDir, setSortDir] = useState('asc')
-  const [connectOpen, setConnectOpen] = useState(false)
-  const [nextPlatform, setNextPlatform] = useState('')
+  const [view, setView] = useState(readStoredView)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [notice, setNotice] = useState('')
+  const [selected, setSelected] = useState(() => new Set())
+  const [bulkProgress, setBulkProgress] = useState(null) // null | { done, total }
+  const [confirmBulk, setConfirmBulk] = useState(false)
+  const [sectionError, setSectionError] = useState('') // bulk failures; hook errors ride `error`
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, view)
+    } catch {
+      // storage unavailable — the toggle still works for this session
+    }
+  }, [view])
+
+  useEffect(() => {
+    if (notice === '') return undefined
+    const timer = window.setTimeout(() => { setNotice('') }, NOTICE_TIMEOUT_MS)
+    return () => { window.clearTimeout(timer) }
+  }, [notice])
+
+  // Drop selection entries whose accounts disappeared (disconnect / refresh).
+  useEffect(() => {
+    setSelected((current) => {
+      const alive = new Set(accounts.map((row) => String(row.id)))
+      const next = new Set([...current].filter((id) => alive.has(id)))
+      return next.size === current.size ? current : next
+    })
+  }, [accounts])
+
+  // Close the bulk-confirm popover on any outside pointer press (same
+  // pattern as the card / row menus).
+  useEffect(() => {
+    if (!confirmBulk) return undefined
+    const onPointerDown = (event) => {
+      const target = event.target
+      if (target instanceof Element && target.closest('[data-omnimux-accounts-popover]') !== null) return
+      setConfirmBulk(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => { document.removeEventListener('pointerdown', onPointerDown) }
+  }, [confirmBulk])
 
   const summary = useMemo(() => summarize(accounts), [accounts])
   const platforms = useMemo(() => uniqueValues(accounts, 'platform'), [accounts])
@@ -36,6 +94,9 @@ export function AccountsSection({ t }) {
     () => sortAccounts(filterAccounts(accounts, filters), sortKey, sortDir),
     [accounts, filters, sortKey, sortDir],
   )
+
+  const bulkRunning = bulkProgress !== null
+  const combinedBusy = bulkRunning || busy !== '' ? (bulkRunning ? 'bulk' : busy) : ''
 
   /**
    * Overview stat click → filter patch. `null` clears every filter.
@@ -49,19 +110,104 @@ export function AccountsSection({ t }) {
     setFilters((current) => ({ ...current, ...filter }))
   }
 
-  const onConnect = () => {
-    setConnectOpen(true)
+  /** Table header click: same key flips direction, new key resets to asc. */
+  const onSortHeader = (key) => {
+    if (key === sortKey) {
+      setSortDir((current) => (current === 'asc' ? 'desc' : 'asc'))
+      return
+    }
+    setSortKey(key)
+    setSortDir('asc')
   }
 
-  const onConnectSubmit = () => {
-    const platform = nextPlatform.trim()
-    if (platform === '') return
-    void connect(platform).then((ok) => {
-      if (ok) {
-        setNextPlatform('')
-        setConnectOpen(false)
-      }
+  const openConnect = () => { setModalOpen(true) }
+
+  const closeConnect = () => {
+    setModalOpen(false)
+    void refresh()
+  }
+
+  /**
+   * @param {Record<string, unknown> | null} _row new account row (unused copy)
+   */
+  const handleConnected = (_row) => {
+    setModalOpen(false)
+    setSectionError('')
+    setNotice(t('connect.connected'))
+    void refresh()
+  }
+
+  const toggleSelect = (id) => {
+    setSelected((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
     })
+  }
+
+  const toggleSelectAll = () => {
+    setSelected((current) => {
+      const ids = visible.map((row) => String(row.id))
+      const all = ids.length > 0 && ids.every((id) => current.has(id))
+      const next = new Set(current)
+      if (all) ids.forEach((id) => next.delete(id))
+      else ids.forEach((id) => next.add(id))
+      return next
+    })
+  }
+
+  /**
+   * Serial bulk runner (D5: no concurrency — avoid OAuth-side rate limits).
+   * A 401 aborts the loop early; the trailing refresh flips the page to
+   * need-login. Individual failures accumulate into one error line; every
+   * other account still runs.
+   * @param {(id: string) => Promise<{ ok: boolean, status: number }>} work
+   */
+  const runBulk = async (work) => {
+    const ids = [...selected]
+    if (ids.length === 0 || bulkProgress !== null) return
+    /** @type {string[]} */
+    const failures = []
+    let signedOut = false
+    let done = 0
+    setSectionError('')
+    setBulkProgress({ done: 0, total: ids.length })
+    for (const id of ids) {
+      if (signedOut) break
+      try {
+        const result = await work(id)
+        if (result.status === 401) {
+          signedOut = true
+        } else if (!result.ok) {
+          failures.push(id)
+        }
+      } catch {
+        failures.push(id)
+      }
+      done += 1
+      setBulkProgress({ done, total: ids.length })
+    }
+    setBulkProgress(null)
+    setSelected(new Set())
+    setConfirmBulk(false)
+    await refresh()
+    if (!signedOut && failures.length > 0) {
+      setSectionError(fmt(t('bulk.partialError'), { count: failures.length }))
+    } else if (!signedOut) {
+      setNotice(t('bulk.done'))
+    }
+  }
+
+  const bulkDisconnect = () => {
+    return runBulk((id) => disconnectAccount(id))
+  }
+
+  /**
+   * @param {boolean} value
+   */
+  const bulkAgent = (value) => {
+    return runBulk((id) => patchAccount(id, { agent_usable: value }))
   }
 
   if (phase === 'loading') {
@@ -85,45 +231,11 @@ export function AccountsSection({ t }) {
     )
   }
 
+  const errorText = sectionError !== '' ? sectionError : error
+
   return (
     <div className="omnimux-accounts-root">
-      <OverviewBar t={t} summary={summary} onConnect={onConnect} onFilterClick={onFilterClick} busy={busy} />
-      {connectOpen ? (
-        <div className="omnimux-accounts-filterbar" style={{ position: 'static' }}>
-          <input
-            type="text"
-            className="omnimux-accounts-search"
-            style={{ flex: '0 1 240px' }}
-            value={nextPlatform}
-            placeholder={t('platformHint')}
-            aria-label={t('platformHint')}
-            disabled={busy !== ''}
-            onChange={(event) => { setNextPlatform(event.currentTarget.value) }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                onConnectSubmit()
-              }
-            }}
-          />
-          <button
-            type="button"
-            className="omnimux-accounts-btn omnimux-accounts-btn--primary"
-            disabled={busy !== '' || nextPlatform.trim() === ''}
-            onClick={onConnectSubmit}
-          >
-            {t('connect')}
-          </button>
-          <button
-            type="button"
-            className="omnimux-accounts-btn"
-            disabled={busy !== ''}
-            onClick={() => { setConnectOpen(false) }}
-          >
-            {t('action.cancel')}
-          </button>
-        </div>
-      ) : null}
+      <OverviewBar t={t} summary={summary} onConnect={openConnect} onFilterClick={onFilterClick} busy={combinedBusy} />
       {accounts.length > 0 ? (
         <FilterBar
           t={t}
@@ -133,6 +245,7 @@ export function AccountsSection({ t }) {
           status={filters.status}
           sortKey={sortKey}
           sortDir={sortDir}
+          view={view}
           platforms={platforms}
           groups={groups}
           statuses={statuses}
@@ -141,25 +254,94 @@ export function AccountsSection({ t }) {
             if (patchSort.key !== undefined) setSortKey(patchSort.key)
             if (patchSort.dir !== undefined) setSortDir(patchSort.dir)
           }}
-          busy={busy}
+          onViewChange={setView}
+          busy={combinedBusy}
         />
       ) : null}
-      {error !== '' ? <p className="omnimux-accounts-error" role="alert">{error}</p> : null}
-      {accounts.length === 0 ? (
-        <div className="omnimux-accounts-empty">
-          <p className="omnimux-accounts-empty-text">{t('empty.none')}</p>
-          <p className="omnimux-accounts-empty-text">{t('empty.noneHint')}</p>
+      {selected.size > 0 ? (
+        <div className="omnimux-accounts-bulkbar">
+          <span className="omnimux-accounts-bulk-text">
+            {fmt(t('bulk.selected'), { count: selected.size })}
+          </span>
+          {bulkProgress !== null ? (
+            <span className="omnimux-accounts-bulk-progress">
+              {String(bulkProgress.done)}/{String(bulkProgress.total)}
+            </span>
+          ) : null}
           <button
             type="button"
-            className="omnimux-accounts-btn omnimux-accounts-btn--primary"
-            disabled={busy !== ''}
-            onClick={onConnect}
+            className="omnimux-accounts-btn omnimux-accounts-btn--danger"
+            disabled={combinedBusy !== ''}
+            onClick={() => { setConfirmBulk(true) }}
           >
-            {t('connect')}
+            {t('bulk.disconnect')}
           </button>
+          <button
+            type="button"
+            className="omnimux-accounts-btn"
+            disabled={combinedBusy !== ''}
+            onClick={() => { void bulkAgent(true) }}
+          >
+            {t('bulk.agentOn')}
+          </button>
+          <button
+            type="button"
+            className="omnimux-accounts-btn"
+            disabled={combinedBusy !== ''}
+            onClick={() => { void bulkAgent(false) }}
+          >
+            {t('bulk.agentOff')}
+          </button>
+          <button
+            type="button"
+            className="omnimux-accounts-btn"
+            disabled={combinedBusy !== ''}
+            onClick={() => { setSelected(new Set()) }}
+          >
+            {t('bulk.clear')}
+          </button>
+          {confirmBulk ? (
+            <div data-omnimux-accounts-popover="" role="dialog" className="omnimux-accounts-popover">
+              <p className="omnimux-accounts-popover-text">
+                {fmt(t('bulk.confirmDisconnect'), { count: selected.size })}
+              </p>
+              <div className="omnimux-accounts-popover-actions">
+                <button
+                  type="button"
+                  className="omnimux-accounts-btn omnimux-accounts-btn--danger"
+                  disabled={combinedBusy !== ''}
+                  onClick={() => { void bulkDisconnect() }}
+                >
+                  {t('disconnect')}
+                </button>
+                <button type="button" className="omnimux-accounts-btn" onClick={() => { setConfirmBulk(false) }}>
+                  {t('action.cancel')}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
+      ) : null}
+      {errorText !== '' ? <p className="omnimux-accounts-error" role="alert">{errorText}</p> : null}
+      {notice !== '' ? <p className="omnimux-accounts-notice" role="status">{notice}</p> : null}
+      {accounts.length === 0 ? (
+        <EmptyState t={t} onConnect={openConnect} busy={combinedBusy} />
       ) : visible.length === 0 ? (
         <p className="omnimux-accounts-muted">{t('filter.noResults')}</p>
+      ) : view === 'table' ? (
+        <AccountTable
+          t={t}
+          accounts={visible}
+          selected={selected}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          busy={combinedBusy}
+          onSortHeader={onSortHeader}
+          onToggleSelect={toggleSelect}
+          onToggleSelectAll={toggleSelectAll}
+          onAgentToggle={(id, next) => { void patch(id, { agent_usable: next }) }}
+          onDisconnect={(id) => { void disconnect(id) }}
+        />
       ) : (
         <div className="omnimux-accounts-grid">
           {visible.map((account) => (
@@ -167,13 +349,21 @@ export function AccountsSection({ t }) {
               key={String(account.id)}
               t={t}
               account={account}
-              busy={busy}
+              busy={combinedBusy}
               onAgentToggle={(id, next) => { void patch(id, { agent_usable: next }) }}
               onDisconnect={(id) => { void disconnect(id) }}
             />
           ))}
         </div>
       )}
+      {modalOpen ? (
+        <ConnectModal
+          t={t}
+          watchConnect={watchConnect}
+          onClose={closeConnect}
+          onConnected={handleConnected}
+        />
+      ) : null}
     </div>
   )
 }

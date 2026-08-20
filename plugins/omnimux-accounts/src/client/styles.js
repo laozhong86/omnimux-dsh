@@ -494,10 +494,54 @@ export const STYLES = `
 .omnimux-accounts-table td {
   padding: 8px 12px;
   border-bottom: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.06));
+  vertical-align: middle;
+  white-space: nowrap;
 }
 .omnimux-accounts-table tr:last-child td { border-bottom: none; }
 .omnimux-accounts-table tbody tr:hover {
   background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.08));
+}
+.omnimux-accounts-row-selected {
+  background: color-mix(in srgb, var(--dsw-alias-state-business-primary, #4c8dff) 10%, transparent);
+}
+.omnimux-accounts-table-check { width: 36px; }
+.omnimux-accounts-table input[type="checkbox"] {
+  accent-color: var(--dsw-alias-state-business-primary, #4c8dff);
+  cursor: pointer;
+}
+.omnimux-accounts-table input[type="checkbox"]:disabled { cursor: default; }
+.omnimux-accounts-sortbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.omnimux-accounts-sortbtn:not(:disabled):hover {
+  color: var(--dsw-alias-label-primary, inherit);
+}
+.omnimux-accounts-sortbtn:disabled { cursor: default; opacity: 0.5; }
+.omnimux-accounts-sortmark { opacity: 0.6; }
+.omnimux-accounts-thtext {
+  font-size: 12px;
+  font-weight: 600;
+}
+.omnimux-accounts-cell-id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.omnimux-accounts-cellmenu {
+  position: relative;
+  display: inline-block;
 }
 .omnimux-accounts-bulkbar {
   position: sticky;
@@ -512,6 +556,181 @@ export const STYLES = `
   border-radius: 10px;
   background: var(--dsw-alias-bg-primary, var(--dsw-bg, #16181d));
   box-shadow: 0 -4px 16px rgba(0,0,0,0.25);
+}
+.omnimux-accounts-bulkbar .omnimux-accounts-popover {
+  top: auto;
+  bottom: 44px;
+}
+.omnimux-accounts-bulk-text {
+  font-size: 13px;
+  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
+}
+.omnimux-accounts-bulk-progress {
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- notice (non-error feedback channel) ---------- */
+.omnimux-accounts-notice {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--dsw-alias-state-success-primary, #4caf7d);
+}
+
+/* ---------- connect modal ---------- */
+.omnimux-accounts-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0,0,0,0.55);
+}
+.omnimux-accounts-modal {
+  width: min(480px, 100%);
+  max-height: min(560px, 100%);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.16));
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-primary, var(--dsw-bg, #16181d));
+  box-shadow: 0 16px 48px rgba(0,0,0,0.45);
+}
+.omnimux-accounts-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.08));
+}
+.omnimux-accounts-modal-title {
+  margin: 0;
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+}
+.omnimux-accounts-modal-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.omnimux-accounts-modal-close:not(:disabled):hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.12));
+}
+.omnimux-accounts-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+.omnimux-accounts-modal-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.omnimux-accounts-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.omnimux-accounts-modal-link {
+  align-self: flex-start;
+}
+.omnimux-accounts-platform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.omnimux-accounts-platform-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.omnimux-accounts-platform-btn:not(:disabled):hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.12));
+}
+.omnimux-accounts-platform-btn:active {
+  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.18));
+}
+.omnimux-accounts-platform-btn:disabled { cursor: default; opacity: 0.5; }
+.omnimux-accounts-platform-btn--coming {
+  cursor: default;
+  opacity: 0.55;
+}
+.omnimux-accounts-platform-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+.omnimux-accounts-platform-soon {
+  font-size: 11px;
+  line-height: 16px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.18));
+  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
+  white-space: nowrap;
+}
+
+/* ---------- empty state ---------- */
+.omnimux-accounts-empty-icon {
+  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
+}
+.omnimux-accounts-empty-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+}
+.omnimux-accounts-empty-platforms {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding-top: 12px;
+  border-top: 1px dashed var(--dsw-alias-border, rgba(255,255,255,0.16));
+}
+.omnimux-accounts-empty-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.omnimux-accounts-empty-grouptitle {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
+}
+.omnimux-accounts-empty-soonchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ---------- focus visibility (keyboard only) ---------- */
