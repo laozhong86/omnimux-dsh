@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { readConversationBox } from './stage-box.js'
 import { FOCUS_CSS } from './a11y.js'
 import { CloseIcon, RefreshIcon } from './icons.jsx'
 import {
@@ -97,7 +96,7 @@ export function AssetsStage({ t, stage }) {
 
   useLayoutEffect(() => {
     if (!open) return undefined
-    const update = () => { setBox(readConversationBox()) }
+    const update = () => { setBox(stage.readBox()) }
     update()
     const scroll = document.querySelector('[data-conversation-scroll]')
     const target = scroll instanceof HTMLElement

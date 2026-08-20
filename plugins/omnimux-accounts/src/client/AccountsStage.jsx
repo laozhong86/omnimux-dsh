@@ -1,105 +1,51 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { AccountsSection } from './AccountsSection.jsx'
 
-// Event names are owned by the hub plugin
-// (plugins/omnimux/src/client/open-app.js and conversation-box.js). This
-// app package must not import hub internals (AGENTS.md package imports), so
-// the literals are duplicated here on purpose and must stay in sync.
+// The app-open event name is owned by the hub plugin. The stage primitives
+// (claim/release/readBox/event) come from the hub's `product-stage` client
+// seam, so this app package ships no copy.
 const APP_OPEN_EVENT = 'omnimux-app-open'
-const PRODUCT_STAGE_EVENT = 'dsh-product-stage'
 const CATALOG_ID = 'accounts'
 const STAGE_ID = 'omnimux-app-accounts'
-
-/**
- * Same stage-claim protocol as the hub's conversation-box.js. Local copy:
- * the app must not import the hub, and the protocol is two DOM operations.
- * @param {string} id
- */
-function claimProductStage(id) {
-  window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id } }))
-  document.documentElement.dataset.dshProductStage = id
-}
-
-/**
- * @param {string} id
- */
-function releaseProductStage(id) {
-  if (document.documentElement.dataset.dshProductStage === id) {
-    delete document.documentElement.dataset.dshProductStage
-  }
-}
-
-/**
- * @param {unknown} node
- * @returns {{ top: number, left: number, width: number, height: number } | null}
- */
-function sizableBox(node) {
-  if (!node || typeof node.getBoundingClientRect !== 'function') return null
-  const rect = node.getBoundingClientRect()
-  if (rect.width >= 8 && rect.height >= 8) {
-    return { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
-  }
-  return null
-}
-
-/**
- * Cover the whole conversation column (header + body + composer).
- * Minimal local copy of the hub's readConversationBox
- * (plugins/omnimux/src/client/conversation-box.js); first-level product
- * pages are not session views. Duplicated, not imported.
- * @returns {{ top: number, left: number, width: number, height: number }}
- */
-export function readStageBox() {
-  let node = document.querySelector('[data-slot="conversation"]')
-  while (node) {
-    const box = sizableBox(node)
-    if (box) return box
-    node = node.parentElement
-  }
-  const preferred = sizableBox(document.querySelector('[data-conversation-scroll]'))
-  if (preferred) return preferred
-  const left = 56
-  return { top: 0, left, width: Math.max(8, window.innerWidth - left), height: Math.max(8, window.innerHeight) }
-}
 
 /**
  * Standalone Accounts app page. The hub Apps card dispatches
  * `omnimux-app-open` with detail.id 'accounts'; this stage claims the
  * product stage (mutual exclusion with Apps / 任务看板 / expert pages) and
  * renders over the conversation column.
- * @param {{ t: (key: string) => string }} props
+ * @param {{ t: (key: string) => string, stage: { claim: (id: string) => void, release: (id: string) => void, PRODUCT_STAGE_EVENT: string, readBox: () => { top: number, left: number, width: number, height: number } } }} props
  */
-export function AccountsStage({ t }) {
+export function AccountsStage({ t, stage }) {
   const [open, setOpen] = useState(false)
-  const [box, setBox] = useState(() => readStageBox())
+  const [box, setBox] = useState(() => stage.readBox())
 
   useEffect(() => {
     const onOpenRequest = (event) => {
       const id = event instanceof CustomEvent ? event.detail?.id : undefined
       if (id !== CATALOG_ID) return
       setOpen(true)
-      claimProductStage(STAGE_ID)
+      stage.claim(STAGE_ID)
     }
     const onStageChange = (event) => {
       const id = event instanceof CustomEvent ? event.detail?.id : undefined
       if (id === STAGE_ID) return
       setOpen((current) => {
-        if (current) releaseProductStage(STAGE_ID)
+        if (current) stage.release(STAGE_ID)
         return false
       })
     }
     window.addEventListener(APP_OPEN_EVENT, onOpenRequest)
-    window.addEventListener(PRODUCT_STAGE_EVENT, onStageChange)
+    window.addEventListener(stage.PRODUCT_STAGE_EVENT, onStageChange)
     return () => {
       window.removeEventListener(APP_OPEN_EVENT, onOpenRequest)
-      window.removeEventListener(PRODUCT_STAGE_EVENT, onStageChange)
-      releaseProductStage(STAGE_ID)
+      window.removeEventListener(stage.PRODUCT_STAGE_EVENT, onStageChange)
+      stage.release(STAGE_ID)
     }
   }, [])
 
   useLayoutEffect(() => {
     if (!open) return undefined
-    const update = () => { setBox(readStageBox()) }
+    const update = () => { setBox(stage.readBox()) }
     update()
     window.addEventListener('resize', update)
     return () => { window.removeEventListener('resize', update) }
@@ -151,7 +97,7 @@ export function AccountsStage({ t }) {
           type="button"
           aria-label={t('close')}
           onClick={() => {
-            releaseProductStage(STAGE_ID)
+            stage.release(STAGE_ID)
             setOpen(false)
           }}
           style={{

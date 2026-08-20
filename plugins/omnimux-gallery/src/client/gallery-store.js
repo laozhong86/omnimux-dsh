@@ -1,10 +1,12 @@
-/** Shared open state for the sidebar entry and the center stage. */
+/**
+ * Shared open state for the sidebar entry and the center stage.
+ * The product-stage primitives (claim/release/event) come from the hub's
+ * `product-stage` client seam, so this plugin does not ship a copy.
+ * @param {{ claim: (id: string) => void, release: (id: string) => void, PRODUCT_STAGE_EVENT: string, readBox?: () => { top: number, left: number, width: number, height: number } }} stage
+ */
+const STAGE_ID = 'omnimux-gallery'
 
-import { PRODUCT_STAGE_EVENT, claimProductStage, releaseProductStage } from './conversation-box.js'
-
-const STAGE_ID = 'esc-gallery'
-
-export function createGalleryStore() {
+export function createGalleryStore(stage) {
   let open = false
   const listeners = new Set()
 
@@ -12,7 +14,7 @@ export function createGalleryStore() {
     for (const listener of listeners) listener()
   }
 
-  window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
+  window.addEventListener(stage.PRODUCT_STAGE_EVENT, (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : undefined
     if (id !== STAGE_ID && open) {
       open = false
@@ -22,6 +24,7 @@ export function createGalleryStore() {
 
   return {
     getSnapshot: () => open,
+    readBox: stage.readBox,
     /**
      * @param {() => void} listener
      */
@@ -35,8 +38,8 @@ export function createGalleryStore() {
     set(next) {
       if (open === next) return
       open = next
-      if (open) claimProductStage(STAGE_ID)
-      else releaseProductStage(STAGE_ID)
+      if (open) stage.claim(STAGE_ID)
+      else stage.release(STAGE_ID)
       emit()
     },
     toggle() {

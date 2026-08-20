@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { installHub, installItem, listHub, loadCatalog, searchHub, summonItem, uninstallHub } from './api.js'
-import { readConversationBox } from './conversation-box.js'
 import { insertGesture } from './insert-gesture.js'
 
 const TABS = [
@@ -55,7 +54,7 @@ export function GalleryStage({ t, gallery, useSessions }) {
   const readSessions = useSessions ?? ((select) => select({}))
   const currentSession = readSessions((state) => state.current)
   const lastSession = useRef(currentSession)
-  const [box, setBox] = useState(() => readConversationBox())
+  const [box, setBox] = useState(() => gallery.readBox())
   const [tab, setTab] = useState('experts')
   const [category, setCategory] = useState('all')
   const [query, setQuery] = useState('')
@@ -72,7 +71,7 @@ export function GalleryStage({ t, gallery, useSessions }) {
 
   useLayoutEffect(() => {
     if (!open) return undefined
-    const update = () => { setBox(readConversationBox()) }
+    const update = () => { setBox(gallery.readBox()) }
     update()
     const scroll = document.querySelector('[data-conversation-scroll]')
     const target = scroll instanceof HTMLElement

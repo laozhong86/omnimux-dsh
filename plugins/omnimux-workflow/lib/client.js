@@ -49,85 +49,15 @@ var en = {
 };
 var NS = "dsh-workflow";
 
-// src/client/stage-box.js
-function sizableBox(node) {
-  if (!node || typeof node.getBoundingClientRect !== "function") return null;
-  const rect = node.getBoundingClientRect();
-  if (rect.width >= 8 && rect.height >= 8) {
-    return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
-  }
-  return null;
-}
-var PRODUCT_STAGE_EVENT = "dsh-product-stage";
-function claimProductStage(id) {
-  window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id } }));
-  document.documentElement.dataset.dshProductStage = id;
-  ensureProductStageChrome();
-}
-function releaseProductStage(id) {
-  if (document.documentElement.dataset.dshProductStage === id) {
-    delete document.documentElement.dataset.dshProductStage;
-  }
-}
-var PRODUCT_STAGE_CHROME = `
-[data-slot="shell.overlay"]{pointer-events:none!important;}
-html:not([data-dsh-product-stage]) [class*="toggleCluster"],
-html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}
-html[data-dsh-product-stage] [class*="toggleCluster"]{display:none!important;}
-html[data-dsh-product-stage] #dsh-window-drag{-webkit-app-region:no-drag!important;pointer-events:none!important;}
-html[data-dsh-product-stage] header{-webkit-app-region:no-drag!important;}
-html[data-dsh-product-stage] [data-slot="conversation.session.header"],
-html[data-dsh-product-stage] [data-slot="conversation"] > header {display:none!important;}
-html[data-dsh-product-stage] [role="treeitem"][aria-selected="true"]{background:transparent!important;}
-`;
-function ensureProductStageChrome() {
-  const existing = document.getElementById("dsh-workflow-stage-chrome");
-  if (existing instanceof HTMLStyleElement) {
-    if (!existing.textContent?.includes("dsh-window-drag")) existing.textContent = PRODUCT_STAGE_CHROME;
-  } else {
-    const style = document.createElement("style");
-    style.id = "dsh-workflow-stage-chrome";
-    style.textContent = PRODUCT_STAGE_CHROME;
-    document.head.append(style);
-  }
-  watchSelectedSessionClick();
-}
-function watchSelectedSessionClick() {
-  if (document.documentElement.dataset.dshWorkflowSessionCloser === "1") return;
-  document.documentElement.dataset.dshWorkflowSessionCloser = "1";
-  document.addEventListener("click", (event) => {
-    if (!document.documentElement.dataset.dshProductStage) return;
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const row = target.closest('[role="treeitem"][aria-selected="true"]');
-    if (!(row instanceof HTMLElement)) return;
-    if (target.closest("button") !== null) return;
-    delete document.documentElement.dataset.dshProductStage;
-    window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: "" } }));
-  }, true);
-}
-function readConversationBox() {
-  let node = document.querySelector('[data-slot="conversation"]');
-  while (node) {
-    const box = sizableBox(node);
-    if (box) return box;
-    node = node.parentElement;
-  }
-  const preferred = sizableBox(document.querySelector("[data-conversation-scroll]"));
-  if (preferred) return preferred;
-  const left = 56;
-  return { top: 0, left, width: Math.max(8, window.innerWidth - left), height: Math.max(8, window.innerHeight) };
-}
-
 // src/client/stage-store.js
-var STAGE_ID = "dsh-workflow";
-function createStageStore() {
+var STAGE_ID = "omnimux-workflow";
+function createStageStore(stage) {
   let open = false;
   const listeners = /* @__PURE__ */ new Set();
   function emit() {
     for (const listener of listeners) listener();
   }
-  window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
+  window.addEventListener(stage.PRODUCT_STAGE_EVENT, (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : void 0;
     if (id !== STAGE_ID && open) {
       open = false;
@@ -136,6 +66,7 @@ function createStageStore() {
   });
   return {
     getSnapshot: () => open,
+    readBox: stage.readBox,
     /**
      * @param {() => void} listener
      */
@@ -151,8 +82,8 @@ function createStageStore() {
     set(next) {
       if (open === next) return;
       open = next;
-      if (open) claimProductStage(STAGE_ID);
-      else releaseProductStage(STAGE_ID);
+      if (open) stage.claim(STAGE_ID);
+      else stage.release(STAGE_ID);
       emit();
     },
     toggle() {
@@ -325,7 +256,7 @@ async function workflowRequest(path, opts = {}) {
 }
 async function fetchCanvasHash() {
   try {
-    const result = await workflowRequest("/dsh-workflow/api/manifest");
+    const result = await workflowRequest("/omnimux-workflow/api/manifest");
     const hash = result.body?.canvasHash;
     return typeof hash === "string" ? hash : null;
   } catch {
@@ -335,8 +266,8 @@ async function fetchCanvasHash() {
 
 // src/client/CanvasBridge.jsx
 var import_jsx_runtime = require("react/jsx-runtime");
-var CANVAS_GLOBAL = "__dshWorkflowCanvas";
-var SCRIPT_ID = "dsh-workflow-canvas-island";
+var CANVAS_GLOBAL = "__omnimuxWorkflowCanvas";
+var SCRIPT_ID = "omnimux-workflow-canvas-island";
 function ensureCanvasScript(hash) {
   const existing = document.getElementById(SCRIPT_ID);
   if (existing instanceof HTMLScriptElement && existing.dataset.loaded === "1") {
@@ -352,7 +283,7 @@ function ensureCanvasScript(hash) {
       script.addEventListener("error", () => reject(new Error("canvas island script failed")), { once: true });
       return;
     }
-    script.src = `/dsh-workflow/canvas.js?v=${encodeURIComponent(hash)}`;
+    script.src = `/omnimux-workflow/canvas.js?v=${encodeURIComponent(hash)}`;
     script.async = true;
     script.addEventListener("load", () => {
       script.dataset.loaded = "1";
@@ -467,7 +398,7 @@ function WorkflowStage({ t, stage }) {
   (0, import_react2.useLayoutEffect)(() => {
     if (!open) return void 0;
     const update = () => {
-      setBox(readConversationBox());
+      setBox(stage.readBox());
     };
     update();
     const scroll = document.querySelector("[data-conversation-scroll]");
@@ -561,17 +492,17 @@ function WorkflowStage({ t, stage }) {
 }
 
 // src/client/index.js
-var name = "dsh-workflow";
-var inject = ["slots", "locale"];
+var name = "omnimux-workflow";
+var inject = ["slots", "locale", "product-stage"];
 function apply(ctx) {
-  ctx.effect(() => ctx.locale.register(NS, { zh, en }), "dsh-workflow: dictionaries");
+  ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux-workflow: dictionaries");
   const t = ctx.locale.bind(NS);
-  const stage = createStageStore();
+  const stage = createStageStore(ctx.get("product-stage"));
   const stageFace = () => ({ t, stage });
-  ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), "dsh-workflow: sidebar entry");
+  ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), "omnimux-workflow: sidebar entry");
   ctx.slots.inject("shell.overlay", () => ctx.slots.register({
     name: "shell.overlay",
-    id: "dsh-workflow-stage",
+    id: "omnimux-workflow-stage",
     order: 40,
     locale: NS,
     inject: stageFace

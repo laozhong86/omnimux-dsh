@@ -93,85 +93,15 @@ var en = {
   fromHub: "from SkillHub"
 };
 
-// src/client/conversation-box.js
-function sizableBox(node) {
-  if (!node || typeof node.getBoundingClientRect !== "function") return null;
-  const rect = node.getBoundingClientRect();
-  if (rect.width >= 8 && rect.height >= 8) {
-    return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
-  }
-  return null;
-}
-var PRODUCT_STAGE_EVENT = "dsh-product-stage";
-function claimProductStage(id) {
-  window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id } }));
-  document.documentElement.dataset.dshProductStage = id;
-  ensureProductStageChrome();
-}
-function releaseProductStage(id) {
-  if (document.documentElement.dataset.dshProductStage === id) {
-    delete document.documentElement.dataset.dshProductStage;
-  }
-}
-var PRODUCT_STAGE_CHROME = `
-[data-slot="shell.overlay"]{pointer-events:none!important;}
-html:not([data-dsh-product-stage]) [class*="toggleCluster"],
-html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}
-html[data-dsh-product-stage] [class*="toggleCluster"]{display:none!important;}
-html[data-dsh-product-stage] #dsh-window-drag{-webkit-app-region:no-drag!important;pointer-events:none!important;}
-html[data-dsh-product-stage] header{-webkit-app-region:no-drag!important;}
-html[data-dsh-product-stage] [data-slot="conversation.session.header"],
-html[data-dsh-product-stage] [data-slot="conversation"] > header {display:none!important;}
-html[data-dsh-product-stage] [role="treeitem"][aria-selected="true"]{background:transparent!important;}
-`;
-function ensureProductStageChrome() {
-  const existing = document.getElementById("dsh-product-stage-chrome");
-  if (existing instanceof HTMLStyleElement) {
-    if (!existing.textContent?.includes("dsh-window-drag")) existing.textContent = PRODUCT_STAGE_CHROME;
-  } else {
-    const style = document.createElement("style");
-    style.id = "dsh-product-stage-chrome";
-    style.textContent = PRODUCT_STAGE_CHROME;
-    document.head.append(style);
-  }
-  watchSelectedSessionClick();
-}
-function watchSelectedSessionClick() {
-  if (document.documentElement.dataset.dshSessionCloser === "1") return;
-  document.documentElement.dataset.dshSessionCloser = "1";
-  document.addEventListener("click", (event) => {
-    if (!document.documentElement.dataset.dshProductStage) return;
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const row = target.closest('[role="treeitem"][aria-selected="true"]');
-    if (!(row instanceof HTMLElement)) return;
-    if (target.closest("button") !== null) return;
-    delete document.documentElement.dataset.dshProductStage;
-    window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: "" } }));
-  }, true);
-}
-function readConversationBox() {
-  let node = document.querySelector('[data-slot="conversation"]');
-  while (node) {
-    const box = sizableBox(node);
-    if (box) return box;
-    node = node.parentElement;
-  }
-  const preferred = sizableBox(document.querySelector("[data-conversation-scroll]"));
-  if (preferred) return preferred;
-  const left = 56;
-  return { top: 0, left, width: Math.max(8, window.innerWidth - left), height: Math.max(8, window.innerHeight) };
-}
-
 // src/client/gallery-store.js
-var STAGE_ID = "esc-gallery";
-function createGalleryStore() {
+var STAGE_ID = "omnimux-gallery";
+function createGalleryStore(stage) {
   let open = false;
   const listeners = /* @__PURE__ */ new Set();
   function emit() {
     for (const listener of listeners) listener();
   }
-  window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
+  window.addEventListener(stage.PRODUCT_STAGE_EVENT, (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : void 0;
     if (id !== STAGE_ID && open) {
       open = false;
@@ -180,6 +110,7 @@ function createGalleryStore() {
   });
   return {
     getSnapshot: () => open,
+    readBox: stage.readBox,
     /**
      * @param {() => void} listener
      */
@@ -195,8 +126,8 @@ function createGalleryStore() {
     set(next) {
       if (open === next) return;
       open = next;
-      if (open) claimProductStage(STAGE_ID);
-      else releaseProductStage(STAGE_ID);
+      if (open) stage.claim(STAGE_ID);
+      else stage.release(STAGE_ID);
       emit();
     },
     toggle() {
@@ -325,7 +256,7 @@ function GalleryStage({ t, gallery, useSessions }) {
   const readSessions = useSessions ?? ((select) => select({}));
   const currentSession = readSessions((state) => state.current);
   const lastSession = (0, import_react.useRef)(currentSession);
-  const [box, setBox] = (0, import_react.useState)(() => readConversationBox());
+  const [box, setBox] = (0, import_react.useState)(() => gallery.readBox());
   const [tab, setTab] = (0, import_react.useState)("experts");
   const [category, setCategory] = (0, import_react.useState)("all");
   const [query, setQuery] = (0, import_react.useState)("");
@@ -342,7 +273,7 @@ function GalleryStage({ t, gallery, useSessions }) {
   (0, import_react.useLayoutEffect)(() => {
     if (!open) return void 0;
     const update = () => {
-      setBox(readConversationBox());
+      setBox(gallery.readBox());
     };
     update();
     const scroll = document.querySelector("[data-conversation-scroll]");
@@ -985,20 +916,15 @@ function mountSidebarEntry(gallery, t, locale) {
 
 // src/client/index.js
 var name = "omnimux-gallery";
-var inject = ["slots", "locale"];
+var inject = ["slots", "locale", "product-stage"];
 function apply(ctx) {
-  ctx.effect(() => {
-    ensureProductStageChrome();
-    return () => {
-    };
-  }, "omnimux-gallery: product-stage chrome");
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux-gallery: dictionaries");
   const t = ctx.locale.bind(NS);
-  const gallery = createGalleryStore();
+  const gallery = createGalleryStore(ctx.get("product-stage"));
   ctx.effect(() => mountSidebarEntry(gallery, t, ctx.locale), "omnimux-gallery: sidebar entry");
   ctx.slots.inject("shell.overlay", () => ctx.slots.register({
     name: "shell.overlay",
-    id: "esc-gallery-stage",
+    id: "omnimux-gallery-stage",
     order: 25,
     locale: NS,
     inject: () => ({ t, gallery })

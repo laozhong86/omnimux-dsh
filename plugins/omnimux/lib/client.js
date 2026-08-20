@@ -2557,6 +2557,12 @@ function apply(ctx) {
     return () => {
     };
   }, "omnimux: product-stage chrome");
+  ctx.provide("product-stage", {
+    claim: claimProductStage,
+    release: releaseProductStage,
+    PRODUCT_STAGE_EVENT,
+    readBox: readConversationBox
+  });
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux: dictionaries");
   const t = ctx.locale.bind(NS);
   const apps = createAppsStore();

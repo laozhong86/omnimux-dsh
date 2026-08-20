@@ -4,7 +4,6 @@
  * body delegates to CanvasBridge which mounts the React 19 island.
  */
 import { useLayoutEffect, useState, useSyncExternalStore } from 'react'
-import { readConversationBox } from './stage-box.js'
 import { CanvasBridge } from './CanvasBridge.jsx'
 
 const chromeButton = {
@@ -33,7 +32,7 @@ export function WorkflowStage({ t, stage }) {
 
   useLayoutEffect(() => {
     if (!open) return undefined
-    const update = () => { setBox(readConversationBox()) }
+    const update = () => { setBox(stage.readBox()) }
     update()
     const scroll = document.querySelector('[data-conversation-scroll]')
     const target = scroll instanceof HTMLElement

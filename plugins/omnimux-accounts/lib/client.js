@@ -2328,68 +2328,38 @@ function AccountsSection({ t }) {
 // src/client/AccountsStage.jsx
 var import_jsx_runtime10 = require("react/jsx-runtime");
 var APP_OPEN_EVENT = "omnimux-app-open";
-var PRODUCT_STAGE_EVENT = "dsh-product-stage";
 var CATALOG_ID = "accounts";
 var STAGE_ID = "omnimux-app-accounts";
-function claimProductStage(id) {
-  window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id } }));
-  document.documentElement.dataset.dshProductStage = id;
-}
-function releaseProductStage(id) {
-  if (document.documentElement.dataset.dshProductStage === id) {
-    delete document.documentElement.dataset.dshProductStage;
-  }
-}
-function sizableBox(node) {
-  if (!node || typeof node.getBoundingClientRect !== "function") return null;
-  const rect = node.getBoundingClientRect();
-  if (rect.width >= 8 && rect.height >= 8) {
-    return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
-  }
-  return null;
-}
-function readStageBox() {
-  let node = document.querySelector('[data-slot="conversation"]');
-  while (node) {
-    const box = sizableBox(node);
-    if (box) return box;
-    node = node.parentElement;
-  }
-  const preferred = sizableBox(document.querySelector("[data-conversation-scroll]"));
-  if (preferred) return preferred;
-  const left = 56;
-  return { top: 0, left, width: Math.max(8, window.innerWidth - left), height: Math.max(8, window.innerHeight) };
-}
-function AccountsStage({ t }) {
+function AccountsStage({ t, stage }) {
   const [open, setOpen] = (0, import_react6.useState)(false);
-  const [box, setBox] = (0, import_react6.useState)(() => readStageBox());
+  const [box, setBox] = (0, import_react6.useState)(() => stage.readBox());
   (0, import_react6.useEffect)(() => {
     const onOpenRequest = (event) => {
       const id = event instanceof CustomEvent ? event.detail?.id : void 0;
       if (id !== CATALOG_ID) return;
       setOpen(true);
-      claimProductStage(STAGE_ID);
+      stage.claim(STAGE_ID);
     };
     const onStageChange = (event) => {
       const id = event instanceof CustomEvent ? event.detail?.id : void 0;
       if (id === STAGE_ID) return;
       setOpen((current) => {
-        if (current) releaseProductStage(STAGE_ID);
+        if (current) stage.release(STAGE_ID);
         return false;
       });
     };
     window.addEventListener(APP_OPEN_EVENT, onOpenRequest);
-    window.addEventListener(PRODUCT_STAGE_EVENT, onStageChange);
+    window.addEventListener(stage.PRODUCT_STAGE_EVENT, onStageChange);
     return () => {
       window.removeEventListener(APP_OPEN_EVENT, onOpenRequest);
-      window.removeEventListener(PRODUCT_STAGE_EVENT, onStageChange);
-      releaseProductStage(STAGE_ID);
+      window.removeEventListener(stage.PRODUCT_STAGE_EVENT, onStageChange);
+      stage.release(STAGE_ID);
     };
   }, []);
   (0, import_react6.useLayoutEffect)(() => {
     if (!open) return void 0;
     const update = () => {
-      setBox(readStageBox());
+      setBox(stage.readBox());
     };
     update();
     window.addEventListener("resize", update);
@@ -2451,7 +2421,7 @@ function AccountsStage({ t }) {
                   type: "button",
                   "aria-label": t("close"),
                   onClick: () => {
-                    releaseProductStage(STAGE_ID);
+                    stage.release(STAGE_ID);
                     setOpen(false);
                   },
                   style: {
@@ -2478,16 +2448,17 @@ function AccountsStage({ t }) {
 
 // src/client/index.js
 var name = "omnimux-accounts";
-var inject = ["slots", "locale"];
+var inject = ["slots", "locale", "product-stage"];
 function apply(ctx) {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux-accounts: dictionaries");
   const t = ctx.locale.bind(NS);
+  const stage = ctx.get("product-stage");
   ctx.slots.inject("shell.overlay", () => ctx.slots.register({
     name: "shell.overlay",
     id: "omnimux-app-accounts",
     order: 21,
     locale: NS,
-    inject: () => ({ t })
+    inject: () => ({ t, stage })
   }, AccountsStage));
 }
 

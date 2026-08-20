@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { readConversationBox } from './conversation-box.js'
+import { PRODUCT_STAGE_CHROME, readConversationBox } from './conversation-box.js'
 
 function fakeEl(rect, parent = null) {
   return {
@@ -64,5 +64,15 @@ describe('readConversationBox', () => {
     } finally {
       restore()
     }
+  })
+})
+
+describe('PRODUCT_STAGE_CHROME', () => {
+  it('hides the session header and selected-row highlight while a product stage is active', () => {
+    assert.match(PRODUCT_STAGE_CHROME, /conversation\.session\.header/)
+    assert.match(PRODUCT_STAGE_CHROME, /treeitem/)
+    assert.match(PRODUCT_STAGE_CHROME, /toggleCluster/)
+    assert.match(PRODUCT_STAGE_CHROME, /pointer-events:none/)
+    assert.match(PRODUCT_STAGE_CHROME, /dsh-window-drag/)
   })
 })

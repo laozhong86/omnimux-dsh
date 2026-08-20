@@ -7,15 +7,26 @@ import { AppsStage } from './AppsStage.jsx'
 import { mountSidebarEntry } from './sidebar-entry.js'
 import { mountAppTabs } from './app-tabs.js'
 import { configFromWindow, startOverlay } from '../brand/overlay.js'
-import { ensureProductStageChrome } from './conversation-box.js'
+import {
+  PRODUCT_STAGE_EVENT,
+  claimProductStage,
+  ensureProductStageChrome,
+  readConversationBox,
+  releaseProductStage,
+} from './conversation-box.js'
 
 export const name = 'omnimux'
 export const inject = ['slots', 'locale']
 
 /**
+ * Client seam for vertical plugins: single source of truth for the
+ * first-level product stage. Only the hub installs the chrome style and the
+ * document click listener, so concurrent verticals cannot double-register
+ * global side-effects (the duplicate-copy race that wedged the page).
  * @param {{
  *   locale: { register: Function, bind: Function },
  *   slots: { inject: Function, register: Function },
+ *   provide: (name: string, impl: unknown) => void,
  *   effect?: Function,
  * }} ctx
  */
@@ -28,6 +39,12 @@ export function apply(ctx) {
     ensureProductStageChrome()
     return () => {}
   }, 'omnimux: product-stage chrome')
+  ctx.provide('product-stage', {
+    claim: claimProductStage,
+    release: releaseProductStage,
+    PRODUCT_STAGE_EVENT,
+    readBox: readConversationBox,
+  })
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'omnimux: dictionaries')
   const t = ctx.locale.bind(NS)
   const apps = createAppsStore()
