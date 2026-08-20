@@ -2,13 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { filterAccounts, uniqueValues } from '../filter.js'
 import { connectAccount, disconnectAccount, listAccounts } from './api.js'
 
+// Full-width product-page layout: the AccountsStage chrome carries the title,
+// so this section only renders the controls and rows. Padding matches the
+// hub Apps page (PluginsSection).
 const page = {
-  padding: '16px 20px',
-  color: 'var(--dsw-text-primary, inherit)',
+  padding: '0 20px 24px',
+  color: 'var(--dsw-alias-label-primary, var(--dsw-text-primary, inherit))',
   display: 'flex',
   flexDirection: 'column',
-  gap: 12,
-  maxWidth: 560,
+  gap: 16,
 }
 
 const muted = { color: 'var(--dsw-text-secondary, inherit)', lineHeight: 1.5, margin: 0 }
@@ -109,15 +111,14 @@ export function AccountsSection({ t }) {
   if (phase === 'need-login') {
     return (
       <div style={page}>
-        <h2 style={{ margin: 0, fontSize: 16 }}>{t('title')}</h2>
         <p style={muted}>{t('needLogin')}</p>
+        <p style={muted}>{t('needLoginHint')}</p>
       </div>
     )
   }
 
   return (
     <div style={page}>
-      <h2 style={{ margin: 0, fontSize: 16 }}>{t('title')}</h2>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <label style={muted}>
           {t('platform')}

@@ -1,5 +1,9 @@
 /** Shared open state for the sidebar Apps entry and the center stage. */
 
+import { PRODUCT_STAGE_EVENT, claimProductStage, releaseProductStage } from './conversation-box.js'
+
+const STAGE_ID = 'omnimux-apps'
+
 export function createAppsStore() {
   let open = false
   const listeners = new Set()
@@ -7,6 +11,14 @@ export function createAppsStore() {
   function emit() {
     for (const listener of listeners) listener()
   }
+
+  window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
+    const id = event instanceof CustomEvent ? event.detail?.id : undefined
+    if (id !== STAGE_ID && open) {
+      open = false
+      emit()
+    }
+  })
 
   return {
     getSnapshot: () => open,
@@ -23,11 +35,12 @@ export function createAppsStore() {
     set(next) {
       if (open === next) return
       open = next
+      if (open) claimProductStage(STAGE_ID)
+      else releaseProductStage(STAGE_ID)
       emit()
     },
     toggle() {
-      open = !open
-      emit()
+      this.set(!open)
     },
   }
 }

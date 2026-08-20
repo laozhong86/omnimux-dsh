@@ -1,0 +1,66 @@
+{
+  "name": "dsh-workflow",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/index.js",
+    "lib/client.js",
+    "lib/canvas.js",
+    "src/shared",
+    "scripts",
+    "cordis.patch.yml",
+    "README.md",
+    "docs"
+  ],
+  "scripts": {
+    "build": "node scripts/build-host.mjs && node scripts/build-client.mjs && node scripts/build-canvas.mjs",
+    "dev": "node scripts/dev.mjs",
+    "typecheck": "node node_modules/typescript/bin/tsc -p tsconfig.canvas.json --noEmit && node node_modules/typescript/bin/tsc -p tsconfig.host.json --noEmit",
+    "test": "node --test src/workflow/*.test.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ],
+      "platform": "web"
+    }
+  },
+  "dependencies": {
+    "@xyflow/react": "12.11.3",
+    "antd": "6.6.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "uuid": "13.0.0",
+    "zustand": "5.0.15"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.2.8"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.4",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "esbuild": "^0.28.2",
+    "typescript": "~5.9.3",
+    "zod": "^4.4.3"
+  },
+  "license": "MIT",
+  "description": "dsh-workflow: workflow infinite canvas plugin for DeepSeek Harness. Node DAG editing, local persistence, execution via OmniMux seams (M1: canvas shell)."
+}

@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
 
 /** Bundles that Settings must not uninstall. */
 export const PROTECTED_BUNDLES = Object.freeze([
@@ -58,12 +58,21 @@ export function resolvePluginCli(env = process.env) {
 }
 
 /**
+ * Absolute profile directory for a profile name.
+ * @param {string} profile
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+export function resolveProfileDir(profile, env = process.env) {
+  const home = env.DSH_HOME && env.DSH_HOME.trim() !== '' ? env.DSH_HOME : join(homedir(), '.dsh')
+  return join(home, 'profiles', profile)
+}
+
+/**
  * @param {string} profile
  * @param {NodeJS.ProcessEnv} [env]
  */
 export function readProfilePlugins(profile, env = process.env) {
-  const home = env.DSH_HOME && env.DSH_HOME.trim() !== '' ? env.DSH_HOME : join(homedir(), '.dsh')
-  const path = join(home, 'profiles', profile, 'package.json')
+  const path = join(resolveProfileDir(profile, env), 'package.json')
   const raw = readFileSync(path, 'utf8')
   const manifest = JSON.parse(raw)
   const bundles = manifest?.dsh?.profile?.bundles
@@ -72,6 +81,41 @@ export function readProfilePlugins(profile, env = process.env) {
     name,
     protected: PROTECTED_BUNDLES.includes(name),
   }))
+}
+
+/**
+ * Resolve a bundled catalog row's bare package name to a local directory so
+ * `dsh plugin add` installs from disk instead of the npm registry. Order:
+ * `bundledDir/<name>` (desktop preset or dev tree), then the profile's own
+ * installed copy (survives as long as the package is installed).
+ * @param {{
+ *   name: string,
+ *   bundledDir?: string,
+ *   profileDir?: string,
+ *   exists?: (path: string) => boolean,
+ *   realpath?: (path: string) => string,
+ * }} options
+ * @returns {string | undefined} absolute package path, or undefined when the
+ * bundled package is not on disk.
+ */
+export function resolveBundledInstall(options) {
+  const exists = options.exists ?? existsSync
+  const realpath = options.realpath ?? realpathSync
+  if (options.bundledDir && options.bundledDir.trim() !== '') {
+    const candidate = join(options.bundledDir, options.name)
+    if (exists(candidate)) return candidate
+  }
+  if (options.profileDir && options.profileDir.trim() !== '') {
+    const candidate = join(options.profileDir, 'node_modules', options.name)
+    if (exists(candidate)) {
+      try {
+        return realpath(candidate)
+      } catch {
+        return candidate
+      }
+    }
+  }
+  return undefined
 }
 
 /**

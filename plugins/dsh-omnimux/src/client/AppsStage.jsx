@@ -64,7 +64,7 @@ export function AppsStage({ t, apps, useSessions }) {
         left: box.left,
         width: box.width,
         height: box.height,
-        zIndex: 20,
+        zIndex: 200,
         pointerEvents: 'auto',
         display: 'flex',
         flexDirection: 'column',
@@ -73,26 +73,45 @@ export function AppsStage({ t, apps, useSessions }) {
         overflow: 'auto',
       }}
     >
-      <button
-        type="button"
-        aria-label={t('plugins.close')}
-        onClick={() => { apps.set(false) }}
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: 16,
-          zIndex: 1,
-          border: 'none',
-          background: 'transparent',
-          color: 'inherit',
-          cursor: 'pointer',
-          fontSize: 18,
-          lineHeight: 1,
-          padding: 4,
-        }}
+      <div style={{
+        flex: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        minHeight: 32,
+        padding: '12px 20px 12px',
+        WebkitAppRegion: 'no-drag',
+      }}
       >
-        ×
-      </button>
+        <h1 style={{
+          margin: 0,
+          flex: 1,
+          minWidth: 0,
+          fontSize: 16,
+          fontWeight: 600,
+          lineHeight: '32px',
+        }}
+        >
+          {t('plugins.title')}
+        </h1>
+        <button
+          type="button"
+          aria-label={t('plugins.close')}
+          onClick={() => { apps.set(false) }}
+          style={{
+            WebkitAppRegion: 'no-drag',
+            border: 'none',
+            background: 'transparent',
+            color: 'inherit',
+            cursor: 'pointer',
+            fontSize: 20,
+            lineHeight: 1,
+            padding: 4,
+          }}
+        >
+          ×
+        </button>
+      </div>
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
         <PluginsSection t={t} />
       </div>

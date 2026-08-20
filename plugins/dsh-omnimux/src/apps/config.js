@@ -7,6 +7,7 @@ export const DEFAULT_APPS = Object.freeze({
   catalogUrl: '',
   ttlSeconds: 21600,
   timeoutMs: 5000,
+  bundledDir: '',
 })
 
 /**
@@ -48,6 +49,7 @@ export function parseAppsConfig(value, siteBaseUrl) {
     catalogUrl,
     ttlSeconds,
     timeoutMs,
+    bundledDir: input.bundledDir == null ? '' : String(input.bundledDir).trim(),
   }
 }
 

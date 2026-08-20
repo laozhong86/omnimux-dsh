@@ -7,6 +7,7 @@ import { createAuthDispatcher, registerAuthRoutes } from './auth/http-routes.js'
 import { createPluginDispatcher, registerPluginRoutes } from './plugins/http-routes.js'
 import { createAppsDispatcher, registerAppsRoutes } from './apps/http-routes.js'
 import { createAppsStore } from './apps/store.js'
+import { createTabsStore } from './apps/tabs.js'
 import { createPendingStore } from './auth/pending.js'
 import { createIdentity } from './auth/identity.js'
 import { createTokenStore } from './auth/store.js'
@@ -160,6 +161,16 @@ export function apply(ctx, config = {}) {
   }
   appsStore.maybeRefresh()
   const avatarStore = createAvatarStore({ home: homeDir })
+  const tabsStore = createTabsStore({ home: homeDir })
+
+  /**
+   * Sidebar tab records for opened Apps live next to the catalog cache.
+   * @returns {Array<{ id?: unknown, spec?: { name?: unknown } }>}
+   */
+  const shelfApps = () => {
+    const body = appsStore.view()
+    return Array.isArray(body.apps) ? body.apps : []
+  }
 
   /**
    * @param {{ webServer?: { register: Function, tapIndex?: Function }, get?: Function, effect?: Function }} httpCtx
@@ -183,13 +194,18 @@ export function apply(ctx, config = {}) {
     })
     const mount = () => {
       const stopAuth = registerAuthRoutes(webServer, dispatcher)
-      const stopPlugins = registerPluginRoutes(webServer, createPluginDispatcher())
+      const stopPlugins = registerPluginRoutes(webServer, createPluginDispatcher({
+        appsView: shelfApps,
+        tabsRemove: (id) => { tabsStore.remove(id) },
+        bundledDir: hub.apps.bundledDir || process.env.OMNIMUX_APPS_BUNDLED_DIR || '',
+      }))
       const stopApps = registerAppsRoutes(webServer, createAppsDispatcher({
         homeDir,
         profile,
         apps: hub.apps,
         siteBaseUrl,
         store: appsStore,
+        tabsStore,
       }))
       const stopOfficial = registerOfficialRoutes(webServer, createOfficialDispatcher({
         official: hub.official,

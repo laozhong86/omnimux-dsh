@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom'
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
-import { DEFAULT_CONFIG, DEFAULT_LOGO_SVG, FISH_VIEWBOX, WORDMARK_VIEWBOX } from './defaults.js'
+import { DEFAULT_CONFIG, DEFAULT_LOGO_SVG, FISH_VIEWBOX, NAME_WORDMARK_VIEWBOX, WORDMARK_VIEWBOX } from './defaults.js'
 import {
   applyOverlay,
   brandedTitle,
@@ -70,10 +70,38 @@ test('welcomeReplacements do not rewrite a standalone DeepSeek provider name', (
   assert.match(text, /OmniMux plugin ecosystem/)
 })
 
+test('expanded sidebar mark and name slots are covered without emptying the identity', () => {
+  const document = load(`
+    <div class="logoRow">
+      <button class="brand">
+        <span class="brandIdentity">
+          <span class="brandMark">${officialSvg(FISH_VIEWBOX, '24')}</span>
+          <span class="brandName">${officialSvg(NAME_WORDMARK_VIEWBOX, '156')}</span>
+        </span>
+      </button>
+    </div>
+    <div data-pane="sidebar"><span class="railMark">${officialSvg(FISH_VIEWBOX, '24')}</span></div>
+  `)
+  applyOverlay(document, DEFAULT_CONFIG, [])
+  const identity = document.querySelector('.brandIdentity')
+  assert.equal(identity?.querySelector('.brandMark [data-omnimux-brand="fish"]') != null, true)
+  assert.equal(identity?.querySelector('.brandName [data-omnimux-brand="wordmark"]')?.textContent, 'OmniMux')
+  assert.ok(svgsWithViewBox(document, FISH_VIEWBOX).find(svg => svg.closest('.brandMark'))?.hasAttribute('data-omnimux-covered'))
+  assert.ok(svgsWithViewBox(document, NAME_WORDMARK_VIEWBOX)[0]?.hasAttribute('data-omnimux-covered'))
+  assert.ok(svgsWithViewBox(document, FISH_VIEWBOX).find(svg => svg.closest('.railMark'))?.hasAttribute('data-omnimux-covered'))
+})
+
+test('name-only wordmark outside brandIdentity is still covered', () => {
+  const document = load(officialSvg(NAME_WORDMARK_VIEWBOX, '156'))
+  applyOverlay(document, DEFAULT_CONFIG, [])
+  assert.ok(document.querySelector('[data-omnimux-brand="wordmark"]'))
+  assert.ok(svgsWithViewBox(document, NAME_WORDMARK_VIEWBOX)[0]?.hasAttribute('data-omnimux-covered'))
+})
+
 test('applyOverlay covers the collapsed rail whale and leaves the panel icon in the tree', () => {
   const document = load(`
     <button>${officialSvg(WORDMARK_VIEWBOX, '182')}</button>
-    <button>${officialSvg(FISH_VIEWBOX, '24')}<svg viewBox="0 0 16 16" width="16" class="panel"></svg></button>
+    <div data-pane="sidebar"><button class="railMark">${officialSvg(FISH_VIEWBOX, '24')}<svg viewBox="0 0 16 16" width="16" class="panel"></svg></button></div>
   `)
   const restores = []
   applyOverlay(document, DEFAULT_CONFIG, restores)
@@ -88,15 +116,55 @@ test('applyOverlay covers the collapsed rail whale and leaves the panel icon in 
 })
 
 test('collapsed rail and hero fish are both covered', () => {
-  const document = load(officialSvg(FISH_VIEWBOX, '34') + officialSvg(FISH_VIEWBOX, '24'))
+  const document = load(`
+    <div class="headline"><span class="fishHitbox">${officialSvg(FISH_VIEWBOX, '34')}</span></div>
+    <div data-pane="sidebar"><span class="railMark">${officialSvg(FISH_VIEWBOX, '24')}</span></div>
+  `)
   applyOverlay(document, DEFAULT_CONFIG, [])
   const fishes = svgsWithViewBox(document, FISH_VIEWBOX)
   assert.equal(fishes.length, 2)
   assert.ok(fishes.every(svg => svg.hasAttribute('data-omnimux-covered')))
 })
 
+test('brand mark cover stays in brandMark, not on a session row', () => {
+  const document = load(`
+    <div class="logoRow">
+      <span class="brandIdentity">
+        <span class="brandMark">${officialSvg(FISH_VIEWBOX, '24')}</span>
+        <span class="brandName">${officialSvg(NAME_WORDMARK_VIEWBOX, '156')}</span>
+      </span>
+    </div>
+    <div class="sidebarCol">
+      <div role="treeitem" class="sessionRow selected">session title</div>
+    </div>
+  `)
+  applyOverlay(document, DEFAULT_CONFIG, [])
+  const mark = document.querySelector('[data-omnimux-brand="fish"]')
+  assert.ok(mark?.closest('.brandMark'))
+  assert.equal(mark?.style.position, '')
+  assert.equal(document.querySelector('[role="treeitem"] [data-omnimux-brand]'), null)
+})
+
+test('does not paint a brand mark on the composer card', () => {
+  const document = load(`
+    <div class="composerHero" style="position:relative">
+      <div class="headline"><span class="fishHitbox">${officialSvg(FISH_VIEWBOX, '34')}</span></div>
+      <div data-composer-seat>${officialSvg(FISH_VIEWBOX, '34')}</div>
+    </div>
+  `)
+  applyOverlay(document, DEFAULT_CONFIG, [])
+  const cover = document.querySelector('[data-omnimux-brand="fish"]')
+  assert.ok(cover?.closest('.fishHitbox'))
+  assert.equal(document.querySelector('[data-composer-seat] [data-omnimux-brand="fish"]'), null)
+  const inComposer = svgsWithViewBox(document, FISH_VIEWBOX).find(svg => svg.closest('[data-composer-seat]'))
+  assert.equal(inComposer?.hasAttribute('data-omnimux-covered'), false)
+})
+
 test('replaceHeroMark false still covers the collapsed rail whale', () => {
-  const document = load(officialSvg(FISH_VIEWBOX, '34') + officialSvg(FISH_VIEWBOX, '24'))
+  const document = load(`
+    <span class="fishHitbox">${officialSvg(FISH_VIEWBOX, '34')}</span>
+    <div data-pane="sidebar"><span class="railMark">${officialSvg(FISH_VIEWBOX, '24')}</span></div>
+  `)
   applyOverlay(document, resolveConfig({ replaceHeroMark: false }), [])
   const fishes = svgsWithViewBox(document, FISH_VIEWBOX)
   const hero = fishes.find(svg => svg.getAttribute('width') === '34')
@@ -106,7 +174,7 @@ test('replaceHeroMark false still covers the collapsed rail whale', () => {
 })
 
 test('orphan covers are removed after the official svg unmounts', () => {
-  const document = load(`<button>${officialSvg(FISH_VIEWBOX, '34')}</button>`)
+  const document = load(`<div data-pane="sidebar"><button class="railMark">${officialSvg(FISH_VIEWBOX, '24')}</button></div>`)
   applyOverlay(document, DEFAULT_CONFIG, [])
   assert.ok(document.querySelector('[data-omnimux-brand="fish"]'))
   svgsWithViewBox(document, FISH_VIEWBOX)[0]?.remove()
@@ -117,7 +185,7 @@ test('orphan covers are removed after the official svg unmounts', () => {
 test('hidePreviewBadge hides locale pills without display:none', () => {
   const document = load(`
     <div>
-      ${officialSvg(FISH_VIEWBOX, '34')}
+      <span class="fishHitbox">${officialSvg(FISH_VIEWBOX, '34')}</span>
       <span>探索未至之境</span>
       <span>预览版</span>
     </div>
@@ -148,7 +216,7 @@ test('replaces the official sidebar fallback brand text and restores it', () => 
 test('dispose restores official chrome', () => {
   const document = load(`
     <button>${officialSvg(WORDMARK_VIEWBOX, '182')}</button>
-    ${officialSvg(FISH_VIEWBOX, '24')}
+    <div data-pane="sidebar"><span class="railMark">${officialSvg(FISH_VIEWBOX, '24')}</span></div>
   `)
   const stop = startOverlay(document, DEFAULT_CONFIG)
   assert.ok(document.querySelector('[data-omnimux-brand="wordmark"]'))

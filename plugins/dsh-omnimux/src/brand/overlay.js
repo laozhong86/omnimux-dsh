@@ -10,6 +10,7 @@ import {
   FALLBACK_BRAND_TEXTS,
   FISH_VIEWBOX,
   HERO_FISH_MIN_WIDTH,
+  NAME_WORDMARK_VIEWBOX,
   OFFICIAL_PRODUCT_TITLE,
   PREVIEW_BADGE_TEXTS,
   WORDMARK_VIEWBOX,
@@ -95,6 +96,7 @@ export function applyOverlay(document, config, restores) {
   sweepOrphanCovers(document)
   coverBrandText(document, config, restores)
   coverWordmarks(document, config, restores)
+  coverBrandMarkFish(document, config, restores)
   coverRailFish(document, config, restores)
   coverHeroFish(document, config, restores)
   if (config.hidePreviewBadge) hidePreviewBadges(document, restores)
@@ -197,9 +199,30 @@ function replaceFavicon(document, logoSvg, restores) {
  * @param {Array<() => void>} restores Disposer stack.
  */
 function coverWordmarks(document, config, restores) {
-  for (const svg of officialSvgs(document, WORDMARK_VIEWBOX)) {
-    coverOfficial(svg, createWordmark(document, config), restores)
+  for (const viewBox of [WORDMARK_VIEWBOX, NAME_WORDMARK_VIEWBOX]) {
+    for (const svg of officialSvgs(document, viewBox)) {
+      const branded = viewBox === NAME_WORDMARK_VIEWBOX && inExpandedBrand(svg)
+        ? createWordmarkLabel(document, config)
+        : createWordmark(document, config)
+      coverOfficial(svg, branded, restores)
+    }
   }
+}
+
+function inExpandedBrand(node) {
+  return node.closest('[class*="brandIdentity"]') !== null
+}
+
+function inComposer(node) {
+  return node.closest('[data-composer-seat], [data-composer-card], [data-input-scroll]') !== null
+}
+
+function inHeroMark(node) {
+  return node.closest('[class*="fishHitbox"], [class*="headline"]') !== null
+}
+
+function inSidebarRail(node) {
+  return node.closest('[class*="railMark"]') !== null
 }
 
 /**
@@ -230,8 +253,18 @@ function coverBrandText(document, config, restores) {
  * @param {BrandConfig} config Overlay config.
  * @param {Array<() => void>} restores Disposer stack.
  */
+function coverBrandMarkFish(document, config, restores) {
+  for (const svg of officialSvgs(document, FISH_VIEWBOX)) {
+    if (!inExpandedBrand(svg) || inComposer(svg)) continue
+    const width = Number.parseFloat(svg.getAttribute('width') ?? '0')
+    if (width >= HERO_FISH_MIN_WIDTH) continue
+    coverOfficial(svg, createMark(document, config.logoSvg, svg), restores)
+  }
+}
+
 function coverRailFish(document, config, restores) {
   for (const svg of officialSvgs(document, FISH_VIEWBOX)) {
+    if (inExpandedBrand(svg) || inComposer(svg) || inHeroMark(svg) || !inSidebarRail(svg)) continue
     const width = Number.parseFloat(svg.getAttribute('width') ?? '0')
     if (width >= HERO_FISH_MIN_WIDTH) continue
     coverOfficial(svg, createMark(document, config.logoSvg, svg), restores)
@@ -247,10 +280,32 @@ function coverRailFish(document, config, restores) {
 function coverHeroFish(document, config, restores) {
   if (!config.replaceHeroMark) return
   for (const svg of officialSvgs(document, FISH_VIEWBOX)) {
+    if (inExpandedBrand(svg) || inComposer(svg) || !inHeroMark(svg)) continue
     const width = Number.parseFloat(svg.getAttribute('width') ?? '0')
     if (width < HERO_FISH_MIN_WIDTH) continue
-    coverOfficial(svg, createMark(document, config.logoSvg, svg), restores)
+    // In-flow: the hero stack `.composerHero` is already `position:relative`.
+    // An absolute cover keyed to a large parent paints on the input card.
+    replaceInPlace(svg, createMark(document, config.logoSvg, svg), restores)
   }
+}
+
+/**
+ * Hide the official SVG and insert the branded mark as the next in-flow sibling.
+ * @param {Element} official Official SVG.
+ * @param {HTMLElement | SVGElement} branded Overlay node we own.
+ * @param {Array<() => void>} restores Disposer stack.
+ */
+function replaceInPlace(official, branded, restores) {
+  if (official.hasAttribute(COVER_ATTR)) return
+  official.setAttribute(COVER_ATTR, '')
+  const previousDisplay = official.style.display
+  official.style.display = 'none'
+  official.after(branded)
+  restores.push(() => {
+    branded.remove()
+    official.style.display = previousDisplay
+    official.removeAttribute(COVER_ATTR)
+  })
 }
 
 /**
@@ -348,31 +403,7 @@ function officialSvgs(document, viewBox) {
  * @param {Array<() => void>} restores Disposer stack.
  */
 function coverOfficial(official, branded, restores) {
-  if (official.hasAttribute(COVER_ATTR)) return
-  const sibling = official.nextElementSibling
-  if (sibling?.hasAttribute(BRAND_ATTR)) {
-    official.setAttribute(COVER_ATTR, '')
-    return
-  }
-  const parent = official.parentElement
-  if (parent === null) return
-  const previousPosition = parent.style.position
-  if (previousPosition === '' || previousPosition === 'static') {
-    parent.style.position = 'relative'
-  }
-  official.setAttribute(COVER_ATTR, '')
-  branded.style.position = 'absolute'
-  branded.style.left = '0'
-  branded.style.top = '50%'
-  branded.style.transform = 'translateY(-50%)'
-  branded.style.pointerEvents = 'none'
-  branded.style.zIndex = '1'
-  official.after(branded)
-  restores.push(() => {
-    branded.remove()
-    official.removeAttribute(COVER_ATTR)
-    parent.style.position = previousPosition
-  })
+  replaceInPlace(official, branded, restores)
 }
 
 /**
@@ -390,11 +421,24 @@ function createWordmark(document, config) {
   mark.setAttribute('width', '24')
   mark.setAttribute('height', '24')
   mark.style.flex = 'none'
+  wrap.append(mark, createWordmarkLabel(document, config, false))
+  return wrap
+}
+
+/**
+ * Name-slot overlay: the expanded sidebar already has a separate mark slot.
+ * @param {Document} document Browser document.
+ * @param {BrandConfig} config Overlay config.
+ * @param {boolean} [ownAttr=true] When false, the parent wordmark wrap owns {@link BRAND_ATTR}.
+ * @returns {HTMLElement} label node.
+ */
+function createWordmarkLabel(document, config, ownAttr = true) {
   const label = document.createElement('span')
+  if (ownAttr) label.setAttribute(BRAND_ATTR, 'wordmark')
+  label.setAttribute('aria-hidden', 'true')
   label.textContent = config.wordmarkText
   label.style.cssText = 'font-size:15px;font-weight:600;letter-spacing:-0.02em;line-height:24px;white-space:nowrap'
-  wrap.append(mark, label)
-  return wrap
+  return label
 }
 
 /**

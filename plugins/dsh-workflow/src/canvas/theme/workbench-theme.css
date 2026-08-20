@@ -1,0 +1,470 @@
+/**
+ * dsh-workflow canvas island theme — the --wb-* token layer.
+ *
+ * Skin mechanism (validated by the spike): every canvas color references a
+ * --wb-* variable; --wb-* values in turn reference the host's --dsw-* design
+ * tokens, so the island follows the host theme (including
+ * body[data-ds-dark-theme]) with zero React coupling. Fallbacks pin the dsh
+ * brand blue #4176E6 (--dsw-static-deepseek-500) for standalone runs.
+ */
+
+.wf-canvas-root {
+  /* brand accent — the single skin switch */
+  --wb-accent: var(--dsw-static-deepseek-500, #4176E6);
+  --wb-accent-hover: var(--dsw-static-deepseek-400, #679EFE);
+  --wb-accent-soft: color-mix(in srgb, var(--wb-accent) 12%, transparent);
+  --wb-success: #C8F135; /* OmniMux lime */
+  --wb-danger: #ef4444;
+
+  /* surfaces */
+  --wb-bg: var(--dsw-alias-bg-primary, #F7F8FA);
+  --wb-bg-canvas: var(--dsw-alias-bg-secondary, #F3F4F7);
+  --wb-surface: var(--dsw-alias-bg-primary, #ffffff);
+  --wb-surface-raised: var(--dsw-alias-bg-secondary, #fbfbfc);
+  --wb-border: var(--dsw-alias-border, rgba(15, 20, 32, 0.08));
+  --wb-border-strong: var(--dsw-alias-border-strong, rgba(15, 20, 32, 0.16));
+
+  /* text */
+  --wb-text-primary: var(--dsw-alias-label-primary, #1a1d26);
+  --wb-text-secondary: var(--dsw-alias-label-secondary, #5f6472);
+  --wb-text-muted: var(--dsw-alias-label-tertiary, #9aa0ae);
+
+  /* canvas chrome */
+  --wb-edge: #b1b1b7;
+  --wb-grid-dot: #C9CBD6;
+
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--wb-bg);
+  color: var(--wb-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+}
+
+/* Dark-theme following: --dsw-alias-* tokens already flip with
+   body[data-ds-dark-theme]; these explicit fallback swaps keep the island
+   correct even when host tokens are absent (standalone dev harness). */
+body[data-ds-dark-theme] .wf-canvas-root {
+  --wb-bg: #141416;
+  --wb-bg-canvas: #101012;
+  --wb-surface: #1b1b1e;
+  --wb-surface-raised: #222226;
+  --wb-border: rgba(250, 250, 250, 0.1);
+  --wb-border-strong: rgba(250, 250, 250, 0.2);
+  --wb-text-primary: #f5f5f5;
+  --wb-text-secondary: #a1a1aa;
+  --wb-text-muted: #71717a;
+  --wb-grid-dot: #2e2e33;
+}
+
+/* ==================== island header ==================== */
+
+.wf-canvas-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--wb-border);
+  background: var(--wb-surface);
+  flex-shrink: 0;
+}
+
+.wf-canvas-header__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.wf-canvas-header__status {
+  font-size: 12px;
+  color: var(--wb-text-muted);
+}
+
+.wf-canvas-header__spacer {
+  flex: 1;
+}
+
+.wf-canvas-header__button {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--wb-accent);
+  color: var(--wb-accent);
+  background: var(--wb-accent-soft);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.wf-canvas-header__button:hover {
+  background: var(--wb-accent);
+  color: #fff;
+}
+
+.wf-canvas-header__button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.wf-canvas-header__button--ghost {
+  border-color: var(--wb-border-strong);
+  color: var(--wb-text-secondary);
+  background: transparent;
+}
+
+.wf-canvas-header__button--ghost:hover {
+  background: var(--wb-surface-raised);
+  color: var(--wb-text-primary);
+}
+
+.wf-canvas-main {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* ==================== React Flow theme overrides ==================== */
+
+.wf-canvas-root .react-flow {
+  background: var(--wb-bg-canvas);
+}
+
+.wf-canvas-root .react-flow__edge-path {
+  stroke: var(--wb-edge);
+}
+
+.wf-canvas-root .react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--wb-accent);
+  stroke-width: 2.5;
+}
+
+.wf-canvas-root .react-flow__handle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--wb-surface);
+  border: 2px solid var(--wb-accent);
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.wf-canvas-root .react-flow__handle:hover {
+  background: var(--wb-accent);
+  transform: scale(1.25);
+}
+
+.wf-canvas-root .react-flow__node {
+  outline: none;
+}
+
+.wf-canvas-root .react-flow__controls {
+  box-shadow: 0 4px 16px rgba(15, 20, 32, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--wb-border);
+}
+
+.wf-canvas-root .react-flow__controls-button {
+  background: var(--wb-surface);
+  border-bottom: 1px solid var(--wb-border);
+  color: var(--wb-text-secondary);
+}
+
+.wf-canvas-root .react-flow__controls-button:hover {
+  background: var(--wb-surface-raised);
+}
+
+.wf-canvas-root .react-flow__controls-button svg {
+  fill: var(--wb-text-secondary);
+}
+
+.wf-canvas-root .react-flow__minimap {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--wb-border);
+  background: var(--wb-surface);
+}
+
+.wf-canvas-root .react-flow__minimap-mask {
+  fill: color-mix(in srgb, var(--wb-bg-canvas) 70%, transparent);
+}
+
+.wf-canvas-root .react-flow__minimap-node {
+  fill: var(--wb-accent-soft);
+  stroke: var(--wb-accent);
+}
+
+.wf-canvas-root .react-flow__selection {
+  background: var(--wb-accent-soft);
+  border: 1px dashed var(--wb-accent);
+}
+
+/* ==================== toolbar ==================== */
+
+.wf-canvas-toolbar {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-border);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.08);
+}
+
+.wf-canvas-toolbar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 60px;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--wb-text-secondary);
+  transition: all 150ms ease;
+}
+
+.wf-canvas-toolbar__item:hover {
+  background: var(--wb-accent-soft);
+  color: var(--wb-accent);
+}
+
+.wf-canvas-toolbar__icon {
+  font-size: 18px;
+}
+
+.wf-canvas-toolbar__label {
+  font-size: 11px;
+}
+
+/* ==================== material node ==================== */
+
+.wf-material-node {
+  position: relative;
+}
+
+.wf-material-node__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  padding: 0 4px;
+  min-height: 22px;
+}
+
+.wf-material-node__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--wb-text-secondary);
+  cursor: default;
+  user-select: none;
+}
+
+.wf-material-node__label-input {
+  font-size: 13px;
+  padding: 2px 6px;
+  border: 1px solid var(--wb-accent);
+  border-radius: 6px;
+  outline: none;
+  background: var(--wb-surface);
+  color: var(--wb-text-primary);
+  width: 160px;
+}
+
+.wf-material-node__badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.wf-material-node__badge--running {
+  background: var(--wb-accent);
+  animation: wf-pulse 1.2s ease-in-out infinite;
+}
+
+.wf-material-node__badge--done {
+  background: var(--wb-success);
+}
+
+.wf-material-node__badge--failed {
+  background: var(--wb-danger);
+}
+
+@keyframes wf-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
+}
+
+.wf-material-node__card {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid var(--wb-border);
+  background: color-mix(in srgb, var(--wb-surface) 88%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.06);
+  overflow: hidden;
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.wf-material-node:hover .wf-material-node__card {
+  box-shadow: 0 12px 32px rgba(15, 20, 32, 0.1);
+}
+
+.wf-material-node--selected .wf-material-node__card {
+  border-color: var(--wb-accent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--wb-accent) 40%, transparent),
+    0 12px 32px rgba(15, 20, 32, 0.12);
+}
+
+.wf-material-node__text-editor {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--wb-text-primary);
+  font-family: inherit;
+}
+
+.wf-material-node__text-editor::placeholder {
+  color: var(--wb-text-muted);
+}
+
+.wf-material-node__media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  padding: 12px;
+}
+
+.wf-material-node__media-image {
+  max-width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.wf-material-node__media-placeholder {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1.5px dashed var(--wb-border-strong);
+  color: var(--wb-text-muted);
+  font-size: 12px;
+  background: var(--wb-surface-raised);
+}
+
+.wf-material-node__media-placeholder--running {
+  border-color: var(--wb-accent);
+  color: var(--wb-accent);
+  border-style: solid;
+  background: var(--wb-accent-soft);
+}
+
+.wf-material-node__media-placeholder--done {
+  border-color: var(--wb-success);
+  color: var(--wb-text-secondary);
+}
+
+.wf-material-node__error {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--wb-danger);
+  background: color-mix(in srgb, var(--wb-danger) 8%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--wb-danger) 20%, transparent);
+}
+
+/* ==================== config panel ==================== */
+
+.wf-config-panel {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--wb-border);
+  background: var(--wb-surface);
+  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wf-config-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wb-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.wf-config-panel__close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--wb-text-muted);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.wf-config-panel__close:hover {
+  background: var(--wb-accent-soft);
+  color: var(--wb-accent);
+}
+
+.wf-config-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wf-config-panel__field label {
+  font-size: 11px;
+  color: var(--wb-text-muted);
+}
+
+/* antd primary color follows the theme variable (the formal approach is
+   ConfigProvider token with a JS value read once from CSS vars). */
+.wf-canvas-root .ant-btn-primary {
+  background: var(--wb-accent);
+  border-color: var(--wb-accent);
+  box-shadow: none;
+}
+
+.wf-canvas-root .ant-btn-primary:hover:not(:disabled) {
+  background: var(--wb-accent-hover) !important;
+  border-color: var(--wb-accent-hover) !important;
+}
+
+/* ==================== rejection toast ==================== */
+
+.wf-rejected-toast {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--wb-text-primary);
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-border-strong);
+  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.12);
+}

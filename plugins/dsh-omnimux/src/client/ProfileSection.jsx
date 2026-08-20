@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { walletUrl } from './quota-failure.js'
 import { useOmnimuxAuth } from './use-omnimux-auth.js'
 import { getAvatar, updateAvatar } from './avatar-api.js'
 
@@ -227,9 +228,13 @@ function AvatarModal({ t, avatar, initial, busy, error, onApply, onClose }) {
   )
 }
 
-function SignedIn({ t, profile, onSignOut }) {
+function SignedIn({ t, profile, onTopUp, onSignOut }) {
   const name = profile.display_name || profile.username || ''
   const initial = (name.trim().charAt(0) || '?').toUpperCase()
+  const balance = typeof profile.quota_usd === 'number' ? profile.quota_usd : 0
+  const used = typeof profile.used_quota_usd === 'number' ? profile.used_quota_usd : 0
+  const total = balance + used
+  const usedPct = total > 0 ? Math.min(100, (used / total) * 100) : 0
   const [avatar, setAvatar] = useState(null)
   const [avatarError, setAvatarError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -300,9 +305,23 @@ function SignedIn({ t, profile, onSignOut }) {
         <p style={{ margin: 0, fontSize: 12, color: tokens.error, lineHeight: 1.5 }}>{avatarError}</p>
       ) : null}
 
+      <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '1 1 auto', minWidth: 0 }}>
+          <span style={label}>{t('profile.quota')}</span>
+          <span style={{ fontSize: 22, fontWeight: 600, lineHeight: 1.2 }}>{money(profile.quota_usd)}</span>
+          <span style={{ fontSize: 12, color: tokens.textSecondary }}>
+            {t('profile.used')} {money(profile.used_quota_usd)}
+          </span>
+          <div style={{ height: 4, borderRadius: 2, background: tokens.border, overflow: 'hidden', marginTop: 2 }}>
+            <div style={{ width: `${usedPct}%`, height: '100%', borderRadius: 2, background: tokens.primaryFill }} />
+          </div>
+        </div>
+        <button type="button" className="omx-btn omx-btn-primary" style={{ flex: '0 0 auto' }} onClick={onTopUp}>
+          {t('profile.topUp')}
+        </button>
+      </div>
+
       <div style={{ ...card, padding: '4px 16px' }}>
-        <DetailRow name={t('profile.quota')}>{money(profile.quota_usd)}</DetailRow>
-        <DetailRow name={t('profile.used')}>{money(profile.used_quota_usd)}</DetailRow>
         <DetailRow name={t('profile.username')}>{profile.username || '—'}</DetailRow>
         <DetailRow name={t('profile.displayName')}>{profile.display_name || '—'}</DetailRow>
         <DetailRow name={t('profile.group')}>{profile.group || '—'}</DetailRow>
@@ -340,6 +359,7 @@ export function ProfileSection({ t }) {
       <SignedIn
         t={t}
         profile={profile}
+        onTopUp={() => openUrl(walletUrl(profile.base_url))}
         onSignOut={() => { void signOut() }}
       />
     )

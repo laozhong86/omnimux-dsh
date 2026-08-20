@@ -17,7 +17,6 @@
   ],
   "scripts": {
     "build": "node scripts/build-client.mjs",
-    "prepare": "node scripts/build-client.mjs",
     "test": "node --test src/*.test.js src/client/*.test.js"
   },
   "dsh": {

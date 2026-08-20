@@ -3,6 +3,7 @@ export const zh = {
   'title': '账号',
   'loading': '正在读取账号…',
   'needLogin': '查看已绑定账号需要登录 OmniMux。',
+  'needLoginHint': '可在 设置 → 个人资料 中登录 OmniMux。',
   'login': '登录',
   'empty': '还没有绑定的账号。',
   'platform': '平台',
@@ -11,6 +12,7 @@ export const zh = {
   'connect': '连接账号',
   'disconnect': '断开',
   'platformHint': '平台，例如 tiktok',
+  'close': '关闭',
 }
 
 export const en = {
@@ -18,6 +20,7 @@ export const en = {
   'title': 'Accounts',
   'loading': 'Loading accounts…',
   'needLogin': 'Sign in to OmniMux to see connected accounts.',
+  'needLoginHint': 'Sign in under Settings → Profile.',
   'login': 'Sign in',
   'empty': 'No connected accounts yet.',
   'platform': 'Platform',
@@ -26,6 +29,7 @@ export const en = {
   'connect': 'Connect account',
   'disconnect': 'Disconnect',
   'platformHint': 'Platform, e.g. tiktok',
+  'close': 'Close',
 }
 
 export const NS = 'omnimux-accounts'

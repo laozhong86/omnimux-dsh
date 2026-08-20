@@ -15,8 +15,11 @@ export const FALLBACK_BRAND_TEXTS = ['DSH Local Build']
 /** DeepSeek fish mark `viewBox` (sidebar rail + empty-session hero). */
 export const FISH_VIEWBOX = '0 0 23.16 17.04'
 
-/** DeepSeek wordmark `viewBox` (expanded sidebar brand). */
+/** DeepSeek wordmark `viewBox` (full whale + name artwork). */
 export const WORDMARK_VIEWBOX = '0 0 182 24'
+
+/** Official sidebar name slot (`BrandWordmark includeMark={false}`). */
+export const NAME_WORDMARK_VIEWBOX = '26 0 156 24'
 
 /** Hero fish width in px (`FishLogo size={34}`). Smaller marks are the rail. */
 export const HERO_FISH_MIN_WIDTH = 34

@@ -6,7 +6,6 @@ const PUBLIC_KEYS = [
   'logged_in', 'verified', 'base_url', 'id', 'username', 'display_name',
   'group', 'quota_usd', 'used_quota_usd', 'flow_id', 'verification_url',
   'user_code', 'expires_in', 'interval', 'kind', 'error',
-  'identity', 'videoGenerate', 'imageGenerate', 'textComplete', 'official',
 ]
 
 /**
@@ -72,10 +71,6 @@ export function logout() {
   return authRequest('/omnimux/auth/logout', { method: 'POST' })
 }
 
-export function getCapabilities() {
-  return authRequest('/omnimux/capabilities')
-}
-
 const APP_KEYS = [
   'schema', 'source', 'stale', 'fetched_at', 'refresh', 'error', 'apps',
 ]
@@ -137,6 +132,84 @@ export function getApps() {
 
 export function refreshApps() {
   return appsRequest('/omnimux/apps/refresh', { method: 'POST' })
+}
+
+const TABS_KEYS = [
+  'schema', 'tabs', 'error',
+]
+
+const TAB_ROW_KEYS = [
+  'id', 'title', 'pinned', 'lastOpenedAt',
+]
+
+/**
+ * Whitelist picker for the tabs view. Response parsing drops unknown keys.
+ * @param {unknown} raw
+ */
+export function pickTabsView(raw) {
+  const row = raw && typeof raw === 'object' ? /** @type {Record<string, unknown>} */ (raw) : {}
+  /** @type {Record<string, unknown>} */
+  const out = {}
+  for (const key of TABS_KEYS) {
+    if (key in row) out[key] = row[key]
+  }
+  if (Array.isArray(out.tabs)) {
+    out.tabs = out.tabs.map((item) => {
+      const tab = item && typeof item === 'object' ? /** @type {Record<string, unknown>} */ (item) : {}
+      /** @type {Record<string, unknown>} */
+      const next = {}
+      for (const key of TAB_ROW_KEYS) {
+        if (key in tab) next[key] = tab[key]
+      }
+      return next
+    })
+  }
+  return out
+}
+
+/**
+ * @param {string} path
+ * @param {{ method?: string, body?: unknown }} [opts]
+ */
+export async function tabsRequest(path, opts = {}) {
+  const response = await fetch(path, {
+    method: opts.method ?? 'GET',
+    headers: opts.body === undefined ? undefined : { 'Content-Type': 'application/json' },
+    body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+  })
+  let json = {}
+  try {
+    json = await response.json()
+  } catch {
+    json = { error: `HTTP ${String(response.status)}` }
+  }
+  return { ok: response.ok, status: response.status, body: pickTabsView(json) }
+}
+
+export function getAppTabs() {
+  return tabsRequest('/omnimux/apps/tabs')
+}
+
+/**
+ * @param {string} id
+ */
+export function upsertAppTab(id) {
+  return tabsRequest(`/omnimux/apps/tabs/${encodeURIComponent(id)}`, { method: 'POST' })
+}
+
+/**
+ * @param {string} id
+ * @param {{ pinned?: boolean, order?: 'top' }} body
+ */
+export function patchAppTab(id, body) {
+  return tabsRequest(`/omnimux/apps/tabs/${encodeURIComponent(id)}`, { method: 'PATCH', body })
+}
+
+/**
+ * @param {string} id
+ */
+export function removeAppTab(id) {
+  return tabsRequest(`/omnimux/apps/tabs/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
 /**

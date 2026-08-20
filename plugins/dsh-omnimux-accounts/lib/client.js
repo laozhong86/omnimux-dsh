@@ -36,6 +36,7 @@ var zh = {
   "title": "\u8D26\u53F7",
   "loading": "\u6B63\u5728\u8BFB\u53D6\u8D26\u53F7\u2026",
   "needLogin": "\u67E5\u770B\u5DF2\u7ED1\u5B9A\u8D26\u53F7\u9700\u8981\u767B\u5F55 OmniMux\u3002",
+  "needLoginHint": "\u53EF\u5728 \u8BBE\u7F6E \u2192 \u4E2A\u4EBA\u8D44\u6599 \u4E2D\u767B\u5F55 OmniMux\u3002",
   "login": "\u767B\u5F55",
   "empty": "\u8FD8\u6CA1\u6709\u7ED1\u5B9A\u7684\u8D26\u53F7\u3002",
   "platform": "\u5E73\u53F0",
@@ -43,13 +44,15 @@ var zh = {
   "all": "\u5168\u90E8",
   "connect": "\u8FDE\u63A5\u8D26\u53F7",
   "disconnect": "\u65AD\u5F00",
-  "platformHint": "\u5E73\u53F0\uFF0C\u4F8B\u5982 tiktok"
+  "platformHint": "\u5E73\u53F0\uFF0C\u4F8B\u5982 tiktok",
+  "close": "\u5173\u95ED"
 };
 var en = {
   "nav": "Accounts",
   "title": "Accounts",
   "loading": "Loading accounts\u2026",
   "needLogin": "Sign in to OmniMux to see connected accounts.",
+  "needLoginHint": "Sign in under Settings \u2192 Profile.",
   "login": "Sign in",
   "empty": "No connected accounts yet.",
   "platform": "Platform",
@@ -57,9 +60,13 @@ var en = {
   "all": "All",
   "connect": "Connect account",
   "disconnect": "Disconnect",
-  "platformHint": "Platform, e.g. tiktok"
+  "platformHint": "Platform, e.g. tiktok",
+  "close": "Close"
 };
 var NS = "omnimux-accounts";
+
+// src/client/AccountsStage.jsx
+var import_react2 = require("react");
 
 // src/client/AccountsSection.jsx
 var import_react = require("react");
@@ -118,12 +125,11 @@ function disconnectAccount(id) {
 // src/client/AccountsSection.jsx
 var import_jsx_runtime = require("react/jsx-runtime");
 var page = {
-  padding: "16px 20px",
-  color: "var(--dsw-text-primary, inherit)",
+  padding: "0 20px 24px",
+  color: "var(--dsw-alias-label-primary, var(--dsw-text-primary, inherit))",
   display: "flex",
   flexDirection: "column",
-  gap: 12,
-  maxWidth: 560
+  gap: 16
 };
 var muted = { color: "var(--dsw-text-secondary, inherit)", lineHeight: 1.5, margin: 0 };
 var row = {
@@ -212,12 +218,11 @@ function AccountsSection({ t }) {
   }
   if (phase === "need-login") {
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: page, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { style: { margin: 0, fontSize: 16 }, children: t("title") }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: muted, children: t("needLogin") })
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: muted, children: t("needLogin") }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: muted, children: t("needLoginHint") })
     ] });
   }
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: page, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { style: { margin: 0, fontSize: 16 }, children: t("title") }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", { style: muted, children: [
         t("platform"),
@@ -287,20 +292,170 @@ function AccountsSection({ t }) {
   ] });
 }
 
+// src/client/AccountsStage.jsx
+var import_jsx_runtime2 = require("react/jsx-runtime");
+var APP_OPEN_EVENT = "dsh-omnimux-app-open";
+var PRODUCT_STAGE_EVENT = "dsh-product-stage";
+var CATALOG_ID = "accounts";
+var STAGE_ID = "omnimux-app-accounts";
+function claimProductStage(id) {
+  window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id } }));
+  document.documentElement.dataset.dshProductStage = id;
+}
+function releaseProductStage(id) {
+  if (document.documentElement.dataset.dshProductStage === id) {
+    delete document.documentElement.dataset.dshProductStage;
+  }
+}
+function sizableBox(node) {
+  if (!node || typeof node.getBoundingClientRect !== "function") return null;
+  const rect = node.getBoundingClientRect();
+  if (rect.width >= 8 && rect.height >= 8) {
+    return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+  }
+  return null;
+}
+function readStageBox() {
+  let node = document.querySelector('[data-slot="conversation"]');
+  while (node) {
+    const box = sizableBox(node);
+    if (box) return box;
+    node = node.parentElement;
+  }
+  const preferred = sizableBox(document.querySelector("[data-conversation-scroll]"));
+  if (preferred) return preferred;
+  const left = 56;
+  return { top: 0, left, width: Math.max(8, window.innerWidth - left), height: Math.max(8, window.innerHeight) };
+}
+function AccountsStage({ t }) {
+  const [open, setOpen] = (0, import_react2.useState)(false);
+  const [box, setBox] = (0, import_react2.useState)(() => readStageBox());
+  (0, import_react2.useEffect)(() => {
+    const onOpenRequest = (event) => {
+      const id = event instanceof CustomEvent ? event.detail?.id : void 0;
+      if (id !== CATALOG_ID) return;
+      setOpen(true);
+      claimProductStage(STAGE_ID);
+    };
+    const onStageChange = (event) => {
+      const id = event instanceof CustomEvent ? event.detail?.id : void 0;
+      if (id === STAGE_ID) return;
+      setOpen((current) => {
+        if (current) releaseProductStage(STAGE_ID);
+        return false;
+      });
+    };
+    window.addEventListener(APP_OPEN_EVENT, onOpenRequest);
+    window.addEventListener(PRODUCT_STAGE_EVENT, onStageChange);
+    return () => {
+      window.removeEventListener(APP_OPEN_EVENT, onOpenRequest);
+      window.removeEventListener(PRODUCT_STAGE_EVENT, onStageChange);
+      releaseProductStage(STAGE_ID);
+    };
+  }, []);
+  (0, import_react2.useLayoutEffect)(() => {
+    if (!open) return void 0;
+    const update = () => {
+      setBox(readStageBox());
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("resize", update);
+    };
+  }, [open]);
+  if (!open) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+    "div",
+    {
+      role: "region",
+      "aria-label": t("title"),
+      style: {
+        position: "fixed",
+        top: box.top,
+        left: box.left,
+        width: box.width,
+        height: box.height,
+        zIndex: 200,
+        pointerEvents: "auto",
+        display: "flex",
+        flexDirection: "column",
+        background: "var(--dsw-alias-bg-primary, var(--dsw-bg, #111))",
+        color: "var(--dsw-alias-label-primary, inherit)",
+        overflow: "auto"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+          "div",
+          {
+            style: {
+              flex: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              minHeight: 32,
+              padding: "12px 20px 12px",
+              WebkitAppRegion: "no-drag"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "h1",
+                {
+                  style: {
+                    margin: 0,
+                    flex: 1,
+                    minWidth: 0,
+                    fontSize: 16,
+                    fontWeight: 600,
+                    lineHeight: "32px"
+                  },
+                  children: t("title")
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "button",
+                {
+                  type: "button",
+                  "aria-label": t("close"),
+                  onClick: () => {
+                    releaseProductStage(STAGE_ID);
+                    setOpen(false);
+                  },
+                  style: {
+                    WebkitAppRegion: "no-drag",
+                    border: "none",
+                    background: "transparent",
+                    color: "inherit",
+                    cursor: "pointer",
+                    fontSize: 20,
+                    lineHeight: 1,
+                    padding: 4
+                  },
+                  children: "\xD7"
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(AccountsSection, { t }) })
+      ]
+    }
+  );
+}
+
 // src/client/index.js
 var name = "dsh-omnimux-accounts";
 var inject = ["slots", "locale"];
 function apply(ctx) {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "dsh-omnimux-accounts: dictionaries");
   const t = ctx.locale.bind(NS);
-  ctx.slots.inject("settings.plugins.tab", () => ctx.slots.register({
-    name: "settings.plugins.tab",
-    id: "omnimux-accounts",
-    order: 30,
-    label: () => t("nav"),
+  ctx.slots.inject("shell.overlay", () => ctx.slots.register({
+    name: "shell.overlay",
+    id: "omnimux-app-accounts",
+    order: 21,
     locale: NS,
     inject: () => ({ t })
-  }, AccountsSection));
+  }, AccountsStage));
 }
 
     return module.exports;

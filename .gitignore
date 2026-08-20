@@ -1,7 +1,9 @@
 node_modules
 .DS_Store
 *.log
+*.tsbuildinfo
 dist
+!plugins/dsh-workflow/dist/
 .pnpm-store
 
 # 本机符号链接，指向仓外 OPC 资产库，仅开发机可用。
