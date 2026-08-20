@@ -7,6 +7,7 @@
 import {
   BOOT_WINDOW_KEY,
   DEFAULT_CONFIG,
+  FALLBACK_BRAND_TEXTS,
   FISH_VIEWBOX,
   HERO_FISH_MIN_WIDTH,
   OFFICIAL_PRODUCT_TITLE,
@@ -92,6 +93,7 @@ export function applyOverlay(document, config, restores) {
   rewriteTitle(document, config.productName, restores)
   replaceFavicon(document, config.logoSvg, restores)
   sweepOrphanCovers(document)
+  coverBrandText(document, config, restores)
   coverWordmarks(document, config, restores)
   coverRailFish(document, config, restores)
   coverHeroFish(document, config, restores)
@@ -197,6 +199,27 @@ function replaceFavicon(document, logoSvg, restores) {
 function coverWordmarks(document, config, restores) {
   for (const svg of officialSvgs(document, WORDMARK_VIEWBOX)) {
     coverOfficial(svg, createWordmark(document, config), restores)
+  }
+}
+
+/**
+ * Replace the official sidebar fallback brand name text with the configured
+ * name. Newer spawns render the brand as a text node instead of a wordmark
+ * SVG, so {@link coverWordmarks} alone leaves the fallback name visible.
+ * Restores the original text on teardown.
+ * @param {Document} document Browser document.
+ * @param {BrandConfig} config Overlay config.
+ * @param {Array<() => void>} restores Disposer stack.
+ */
+function coverBrandText(document, config, restores) {
+  for (const text of FALLBACK_BRAND_TEXTS) {
+    for (const el of document.querySelectorAll('div,span')) {
+      if (el.childElementCount !== 0 || el.textContent?.trim() !== text) continue
+      const original = el.textContent
+      if (original === config.productName) continue
+      el.textContent = config.productName
+      restores.push(() => { el.textContent = original })
+    }
   }
 }
 

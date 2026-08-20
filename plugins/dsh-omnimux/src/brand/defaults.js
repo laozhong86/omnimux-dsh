@@ -9,6 +9,9 @@ export const BOOT_WINDOW_KEY = '__OMNIMUX_BRAND__'
 /** Official product title the overlay rewrites in `document.title`. */
 export const OFFICIAL_PRODUCT_TITLE = 'DeepSeek Harness'
 
+/** Official sidebar fallback brand name when no brand is supplied. */
+export const FALLBACK_BRAND_TEXTS = ['DSH Local Build']
+
 /** DeepSeek fish mark `viewBox` (sidebar rail + empty-session hero). */
 export const FISH_VIEWBOX = '0 0 23.16 17.04'
 

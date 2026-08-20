@@ -137,6 +137,14 @@ test('rewriteWelcome rewrites product phrases and dispose restores them', () => 
   assert.match(document.body.textContent ?? '', /DSH plugin ecosystem/)
 })
 
+test('replaces the official sidebar fallback brand text and restores it', () => {
+  const document = load('<div><span class="fallbackBrandName">DSH Local Build</span></div>')
+  const stop = startOverlay(document, DEFAULT_CONFIG)
+  assert.equal(document.querySelector('.fallbackBrandName')?.textContent, 'OmniMux')
+  stop()
+  assert.equal(document.querySelector('.fallbackBrandName')?.textContent, 'DSH Local Build')
+})
+
 test('dispose restores official chrome', () => {
   const document = load(`
     <button>${officialSvg(WORDMARK_VIEWBOX, '182')}</button>

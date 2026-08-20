@@ -1755,6 +1755,7 @@ function mountSidebarEntry(apps, t, locale) {
 // src/brand/defaults.js
 var BOOT_WINDOW_KEY = "__OMNIMUX_BRAND__";
 var OFFICIAL_PRODUCT_TITLE = "DeepSeek Harness";
+var FALLBACK_BRAND_TEXTS = ["DSH Local Build"];
 var FISH_VIEWBOX = "0 0 23.16 17.04";
 var WORDMARK_VIEWBOX = "0 0 182 24";
 var HERO_FISH_MIN_WIDTH = 34;
@@ -1828,6 +1829,7 @@ function applyOverlay(document2, config, restores) {
   rewriteTitle(document2, config.productName, restores);
   replaceFavicon(document2, config.logoSvg, restores);
   sweepOrphanCovers(document2);
+  coverBrandText(document2, config, restores);
   coverWordmarks(document2, config, restores);
   coverRailFish(document2, config, restores);
   coverHeroFish(document2, config, restores);
@@ -1896,6 +1898,19 @@ function replaceFavicon(document2, logoSvg, restores) {
 function coverWordmarks(document2, config, restores) {
   for (const svg of officialSvgs(document2, WORDMARK_VIEWBOX)) {
     coverOfficial(svg, createWordmark(document2, config), restores);
+  }
+}
+function coverBrandText(document2, config, restores) {
+  for (const text of FALLBACK_BRAND_TEXTS) {
+    for (const el of document2.querySelectorAll("div,span")) {
+      if (el.childElementCount !== 0 || el.textContent?.trim() !== text) continue;
+      const original = el.textContent;
+      if (original === config.productName) continue;
+      el.textContent = config.productName;
+      restores.push(() => {
+        el.textContent = original;
+      });
+    }
   }
 }
 function coverRailFish(document2, config, restores) {
