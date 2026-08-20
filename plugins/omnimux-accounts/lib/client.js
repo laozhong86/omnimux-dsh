@@ -1280,6 +1280,8 @@ var STYLES = `
 
 /* ---------- overview bar ---------- */
 .omnimux-accounts-overview {
+  flex: 1 1 auto;
+  min-width: 0; /* allow the auto-fill grid to compute more than one 160px track inside the flex row */
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 12px;
