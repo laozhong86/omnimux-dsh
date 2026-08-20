@@ -2328,38 +2328,39 @@ function AccountsSection({ t }) {
 // src/client/AccountsStage.jsx
 var import_jsx_runtime10 = require("react/jsx-runtime");
 var APP_OPEN_EVENT = "omnimux-app-open";
+var PRODUCT_STAGE_EVENT = "dsh-product-stage";
 var CATALOG_ID = "accounts";
 var STAGE_ID = "omnimux-app-accounts";
-function AccountsStage({ t, stage }) {
+function AccountsStage({ t, getStage }) {
   const [open, setOpen] = (0, import_react6.useState)(false);
-  const [box, setBox] = (0, import_react6.useState)(() => stage.readBox());
+  const [box, setBox] = (0, import_react6.useState)(() => getStage().readBox());
   (0, import_react6.useEffect)(() => {
     const onOpenRequest = (event) => {
       const id = event instanceof CustomEvent ? event.detail?.id : void 0;
       if (id !== CATALOG_ID) return;
       setOpen(true);
-      stage.claim(STAGE_ID);
+      getStage().claim(STAGE_ID);
     };
     const onStageChange = (event) => {
       const id = event instanceof CustomEvent ? event.detail?.id : void 0;
       if (id === STAGE_ID) return;
       setOpen((current) => {
-        if (current) stage.release(STAGE_ID);
+        if (current) getStage().release(STAGE_ID);
         return false;
       });
     };
     window.addEventListener(APP_OPEN_EVENT, onOpenRequest);
-    window.addEventListener(stage.PRODUCT_STAGE_EVENT, onStageChange);
+    window.addEventListener(PRODUCT_STAGE_EVENT, onStageChange);
     return () => {
       window.removeEventListener(APP_OPEN_EVENT, onOpenRequest);
-      window.removeEventListener(stage.PRODUCT_STAGE_EVENT, onStageChange);
-      stage.release(STAGE_ID);
+      window.removeEventListener(PRODUCT_STAGE_EVENT, onStageChange);
+      getStage().release(STAGE_ID);
     };
   }, []);
   (0, import_react6.useLayoutEffect)(() => {
     if (!open) return void 0;
     const update = () => {
-      setBox(stage.readBox());
+      setBox(getStage().readBox());
     };
     update();
     window.addEventListener("resize", update);
@@ -2421,7 +2422,7 @@ function AccountsStage({ t, stage }) {
                   type: "button",
                   "aria-label": t("close"),
                   onClick: () => {
-                    stage.release(STAGE_ID);
+                    getStage().release(STAGE_ID);
                     setOpen(false);
                   },
                   style: {
@@ -2448,17 +2449,17 @@ function AccountsStage({ t, stage }) {
 
 // src/client/index.js
 var name = "omnimux-accounts";
-var inject = ["slots", "locale", "product-stage"];
+var inject = ["slots", "locale"];
 function apply(ctx) {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux-accounts: dictionaries");
   const t = ctx.locale.bind(NS);
-  const stage = ctx.get("product-stage");
+  const getStage = () => window.__omnimuxStage;
   ctx.slots.inject("shell.overlay", () => ctx.slots.register({
     name: "shell.overlay",
     id: "omnimux-app-accounts",
     order: 21,
     locale: NS,
-    inject: () => ({ t, stage })
+    inject: () => ({ t, getStage })
   }, AccountsStage));
 }
 

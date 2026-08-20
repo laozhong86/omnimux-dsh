@@ -1,5 +1,5 @@
 /**
- * dsh-workflow shared canvas data model.
+ * omnimux-workflow shared canvas data model.
  *
  * Single source of truth for the canvas document contract, referenced
  * type-only from both the host (src/workflow) and the canvas island
@@ -62,7 +62,7 @@ export interface WorkspaceSummary {
   updatedAt: string;
 }
 
-/** REST response envelope used by every /dsh-workflow/api/* route. */
+/** REST response envelope used by every /omnimux-workflow/api/* route. */
 export interface ApiError {
   error: string;
   message: string;

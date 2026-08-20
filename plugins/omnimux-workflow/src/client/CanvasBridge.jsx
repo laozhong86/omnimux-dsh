@@ -10,14 +10,14 @@
  *
  * Loading: the island bundle is lazy — first open fetches the build
  * manifest (canvas.js content hash), injects one <script> tag
- * (/dsh-workflow/canvas.js?v=<hash>), then mounts. The script is injected
- * at most once per hash per document.
+ * (/omnimux-workflow/canvas.js?v=<hash>), then mounts. The script is
+ * injected at most once per hash per document.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchCanvasHash } from './api.js'
 
-const CANVAS_GLOBAL = '__dshWorkflowCanvas'
-const SCRIPT_ID = 'dsh-workflow-canvas-island'
+const CANVAS_GLOBAL = '__omnimuxWorkflowCanvas'
+const SCRIPT_ID = 'omnimux-workflow-canvas-island'
 
 /**
  * Inject the island script once; resolves when the global API is ready.
@@ -40,7 +40,7 @@ function ensureCanvasScript(hash) {
       script.addEventListener('error', () => reject(new Error('canvas island script failed')), { once: true })
       return
     }
-    script.src = `/dsh-workflow/canvas.js?v=${encodeURIComponent(hash)}`
+    script.src = `/omnimux-workflow/canvas.js?v=${encodeURIComponent(hash)}`
     script.async = true
     script.addEventListener('load', () => {
       script.dataset.loaded = '1'

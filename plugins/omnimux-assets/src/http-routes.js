@@ -163,7 +163,12 @@ export function createAssetsDispatcher(deps) {
   function resolveSubPath(rootPath, subPath) {
     const cleaned = String(subPath ?? '').replace(/^\/+/, '')
     if (cleaned === '') return rootPath
-    const rootReal = realpathSync(rootPath)
+    let rootReal
+    try {
+      rootReal = realpathSync(rootPath)
+    } catch {
+      throw new AssetsError('path-not-found', 'mapping root does not exist')
+    }
     const resolved = resolve(rootReal, cleaned)
     if (resolved !== rootReal && !resolved.startsWith(rootReal + sep)) {
       throw new AssetsError('path-denied', 'sub path escapes the mapping root')
@@ -296,6 +301,11 @@ export function createAssetsDispatcher(deps) {
         const mapping = mappings.get(id)
         if (!mapping) throw new AssetsError('mapping-not-found', 'mapping not found')
         if (mapping.kind === 'file') throw new AssetsError('path-not-dir', 'file mappings have no sub directories')
+        // Root may have been deleted/moved after mounting: answer like the
+        // top-level loader (invalid view + empty list) instead of a 500.
+        if (statStatus(mapping.real_path, 'directory') !== 'ok') {
+          return { status: 200, body: { mapping: mappings.getView(id), files: [] } }
+        }
         const files = scanMapping({ ...mapping, kind: 'directory' }, subPath)
         return { status: 200, body: { mapping: mappings.getView(id), files, path: subPath } }
       }

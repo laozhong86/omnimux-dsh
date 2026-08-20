@@ -1,5 +1,5 @@
 /**
- * dsh-workflow SSE event protocol constants (M1 scaffold, M3 wires the wire).
+ * omnimux-workflow SSE event protocol constants (M1 scaffold, M3 wires the wire).
  *
  * The 11-event protocol is ported as-is from Gxgen useExecutionSSE so the
  * M3 execution engine transplant keeps protocol compatibility.

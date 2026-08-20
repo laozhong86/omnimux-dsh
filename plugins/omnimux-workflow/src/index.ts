@@ -1,5 +1,5 @@
 /**
- * dsh-workflow host entry (Cordis host face).
+ * omnimux-workflow host entry (Cordis host face).
  *
  * M1: HTTP routes only (workspace CRUD + island bundle + media).
  * No agent tools, no systemPrompt — those are M5 candidates.

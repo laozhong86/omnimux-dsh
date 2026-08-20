@@ -53,10 +53,12 @@ function fakeReq({ method = 'GET', url = '/', headers = {}, body = undefined }) 
 }
 
 function makeHarness() {
-  const dir = mkdtempSync(join(tmpdir(), 'dsh-workflow-test-'));
+  const dir = mkdtempSync(join(tmpdir(), 'omnimux-workflow-test-'));
+  const registered = [];
   const captured = { handler: null, path: '' };
   const webServer = {
     register(route) {
+      registered.push({ path: route.path, handler: route.handler });
       captured.handler = route.handler;
       captured.path = route.path;
       return () => {};
@@ -93,13 +95,15 @@ function makeHarness() {
     }
     return { status: res.state.status, body: json, raw: res.state.body };
   };
-  return { dir, captured, call, localHeaders, dispose };
+  return { dir, captured, registered, call, localHeaders, dispose };
 }
 
-test('routes mount under /dsh-workflow prefix', () => {
+test('routes mount under /omnimux-workflow with the /dsh-workflow legacy alias', () => {
   const h = makeHarness();
   try {
-    assert.equal(h.captured.path, '/dsh-workflow');
+    const paths = h.registered.map((route) => route.path);
+    assert.ok(paths.includes('/omnimux-workflow'), 'canonical prefix registered');
+    assert.ok(paths.includes('/dsh-workflow'), 'legacy alias registered');
     assert.equal(typeof h.captured.handler, 'function');
   } finally {
     h.dispose();

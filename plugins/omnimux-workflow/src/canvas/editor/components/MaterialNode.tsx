@@ -1,17 +1,23 @@
 /**
- * Simplified port of Gxgen MaterialNode (validated by the extraction
- * spike): single node = input + generation config + output; the config
- * panel expands below the card when selected; sizes flow through
- * nodeSizeConfig; stub execution simulates the task state machine.
- *
- * Model options come from the capability catalog fetched through the
- * bridge api client (mock gateway in M1).
+ * Port of Gxgen MaterialNode (validated by the extraction spike), completed
+ * for M2: single node = input + generation config + output; the config
+ * panel expands below the card when selected and now carries the full
+ * editor surface — tool selector, prompt input, model select (capability
+ * catalog), parameter panel (duration / aspect ratio / fail strategy) and
+ * the reference-media placeholder. Sizes flow through nodeSizeConfig;
+ * stub execution simulates the task state machine.
  */
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type NodeProps, useReactFlow } from '@xyflow/react';
-import { Button, Input, Select } from 'antd';
-import type { MaterialNodeData, MaterialType } from '../../types/materialNode';
+import { Button, Input, Select, Slider } from 'antd';
+import type { MaterialNodeData, MaterialType, MaterialTool } from '../../types/materialNode';
+import {
+  ASPECT_RATIO_OPTIONS,
+  MATERIAL_TOOLS,
+  MATERIAL_TOOL_LABELS,
+  isGenerativeTool,
+} from '../../types/materialNode';
 import CanvasNodeHandle from './CanvasNodeHandle';
 import {
   getDefaultNodeWidth,
@@ -20,7 +26,7 @@ import {
 } from '../utils/nodeSizeConfig';
 import type { CapabilityCatalog } from '../../../shared/api';
 
-const MATERIAL_TYPE_ICONS: Record<MaterialType, string> = {
+export const MATERIAL_TYPE_ICONS: Record<MaterialType, string> = {
   text: '📝',
   image: '🖼️',
   video: '🎬',
@@ -61,7 +67,7 @@ interface MaterialConfigPanelProps {
   onClose: () => void;
 }
 
-/** 配置面板：选中节点时在卡片下方展开（Gxgen MaterialConfigPanel 的窄化版） */
+/** 配置面板：选中节点时在卡片下方展开（Gxgen MaterialConfigPanel 的 M2 完整版） */
 const MaterialConfigPanel: React.FC<MaterialConfigPanelProps> = ({
   nodeData,
   catalog,
@@ -69,12 +75,39 @@ const MaterialConfigPanel: React.FC<MaterialConfigPanelProps> = ({
   onGenerate,
   onClose,
 }) => {
-  const { materialType } = nodeData;
+  const { materialType, selectedTool, params } = nodeData;
+  const generative = isGenerativeTool(selectedTool);
+
+  const toolOptions = useMemo(
+    () =>
+      (MATERIAL_TOOLS[materialType] ?? []).map((tool: MaterialTool) => ({
+        value: tool,
+        label: MATERIAL_TOOL_LABELS[tool],
+      })),
+    [materialType],
+  );
+
   const modelOptions = useMemo(() => {
     const rows = catalog?.[materialType] ?? [];
     return rows.map((row) => ({ value: row.id, label: row.label }));
   }, [catalog, materialType]);
-  const modelValue = typeof nodeData.params.model === 'string' ? nodeData.params.model : modelOptions[0]?.value;
+  const modelValue = typeof params.model === 'string' ? params.model : modelOptions[0]?.value;
+
+  const updateParam = useCallback(
+    (key: string, value: unknown) => {
+      onUpdateNodeData({ params: { ...params, [key]: value } });
+    },
+    [onUpdateNodeData, params],
+  );
+
+  // 时长参数：视频 1-20s，音频 1-60s（Gxgen ParamBar 的窄化）
+  const showDuration = generative && (materialType === 'video' || materialType === 'audio');
+  const durationMax = materialType === 'video' ? 20 : 60;
+  const durationValue = typeof params.duration === 'number' ? params.duration : 5;
+
+  // 画幅参数：图片/视频生成型节点
+  const showAspectRatio = generative && (materialType === 'image' || materialType === 'video');
+  const aspectRatioValue = typeof params.aspectRatio === 'string' ? params.aspectRatio : '16:9';
 
   return (
     <div className="wf-config-panel nodrag">
@@ -82,27 +115,105 @@ const MaterialConfigPanel: React.FC<MaterialConfigPanelProps> = ({
         <span>生成配置</span>
         <button className="wf-config-panel__close" onClick={onClose}>✕</button>
       </div>
+
+      {/* 工具选择：决定节点行为与连线类型合同 */}
       <div className="wf-config-panel__field">
-        <label>Prompt</label>
-        <Input.TextArea
-          value={nodeData.prompt ?? ''}
-          onChange={(e) => onUpdateNodeData({ prompt: e.target.value })}
-          placeholder="输入提示词…"
-          autoSize={{ minRows: 2, maxRows: 5 }}
-        />
-      </div>
-      <div className="wf-config-panel__field">
-        <label>模型（能力目录）</label>
+        <label>工具</label>
         <Select
-          value={modelValue}
-          options={modelOptions}
+          value={selectedTool}
+          options={toolOptions}
           style={{ width: '100%' }}
-          onChange={(value) => onUpdateNodeData({ params: { ...nodeData.params, model: value } })}
+          onChange={(value: MaterialTool) => onUpdateNodeData({ selectedTool: value })}
         />
       </div>
-      <Button type="primary" block onClick={onGenerate} loading={nodeData.status === 'generating'}>
-        执行（stub）
-      </Button>
+
+      {generative ? (
+        <>
+          <div className="wf-config-panel__field">
+            <label>Prompt</label>
+            <Input.TextArea
+              value={nodeData.prompt ?? ''}
+              onChange={(e) => onUpdateNodeData({ prompt: e.target.value })}
+              placeholder="输入提示词…"
+              autoSize={{ minRows: 2, maxRows: 5 }}
+            />
+          </div>
+
+          <div className="wf-config-panel__field">
+            <label>模型（能力目录）</label>
+            <Select
+              value={modelValue}
+              options={modelOptions}
+              style={{ width: '100%' }}
+              placeholder={modelOptions.length === 0 ? '能力目录为空（stub）' : undefined}
+              onChange={(value) => updateParam('model', value)}
+            />
+          </div>
+
+          {showDuration ? (
+            <div className="wf-config-panel__field">
+              <label>时长（秒）</label>
+              <Slider
+                min={1}
+                max={durationMax}
+                step={1}
+                value={durationValue}
+                marks={{ 1: '1', [durationMax]: String(durationMax) }}
+                onChange={(value: number) => updateParam('duration', value)}
+              />
+            </div>
+          ) : null}
+
+          {showAspectRatio ? (
+            <div className="wf-config-panel__field">
+              <label>画幅</label>
+              <Select
+                value={aspectRatioValue}
+                options={ASPECT_RATIO_OPTIONS.map((ratio) => ({ value: ratio, label: ratio }))}
+                style={{ width: '100%' }}
+                onChange={(value) => updateParam('aspectRatio', value)}
+              />
+            </div>
+          ) : null}
+
+          <div className="wf-config-panel__field">
+            <label>失败策略</label>
+            <Select
+              value={nodeData.failStrategy ?? 'abort'}
+              options={[
+                { value: 'abort', label: '出错即中止' },
+                { value: 'skip', label: '跳过该节点' },
+              ]}
+              style={{ width: '100%' }}
+              onChange={(value: 'abort' | 'skip') => onUpdateNodeData({ failStrategy: value })}
+            />
+          </div>
+
+          {/* 参考媒体占位：上游连线输入在 M4 接入真实媒体引用/上传 */}
+          <div className="wf-config-panel__refs">
+            <span className="wf-config-panel__refs-title">📎 参考媒体</span>
+            <span className="wf-config-panel__refs-hint">
+              上游节点连线输入将作为参考素材在此展示（M4 接入媒体引用与上传）
+            </span>
+          </div>
+
+          <Button type="primary" block onClick={onGenerate} loading={nodeData.status === 'generating'}>
+            执行（stub）
+          </Button>
+        </>
+      ) : (
+        <>
+          {/* 非生成型工具（导入/文本编辑）：仅保留参考占位与提示 */}
+          <div className="wf-config-panel__refs">
+            <span className="wf-config-panel__refs-title">📎 参考媒体</span>
+            <span className="wf-config-panel__refs-hint">
+              {materialType === 'text'
+                ? '文本编辑节点直接在卡片内编辑内容；上游输入可通过文生类工具引用'
+                : '导入素材节点由上游连线输入填充；上传入口在 M4 提供'}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -261,7 +372,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         )}
       </div>
 
-      {/* 配置面板：在卡片下方展开（生成型节点） */}
+      {/* 配置面板：在卡片下方展开 */}
       {panelVisible && (
         <MaterialConfigPanel
           nodeData={nodeData}

@@ -4,8 +4,8 @@
  * React 19.2.8 + react-dom are BUNDLED IN (not external) — this is the
  * React-island strategy (plan §2.2 α): the island owns its own React
  * runtime and never exchanges elements/refs/context with the host React 18
- * tree. Format: IIFE with global `__dshWorkflowCanvas`, lazy-loaded by
- * CanvasBridge via GET /dsh-workflow/canvas.js.
+ * tree. Format: IIFE with global `__omnimuxWorkflowCanvas`, lazy-loaded by
+ * CanvasBridge via GET /omnimux-workflow/canvas.js.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -23,7 +23,7 @@ const result = await esbuild.build({
   platform: 'browser',
   target: 'es2020',
   jsx: 'automatic',
-  globalName: '__dshWorkflowCanvas',
+  globalName: '__omnimuxWorkflowCanvas',
   minify: true,
   write: false,
   logLevel: 'info',

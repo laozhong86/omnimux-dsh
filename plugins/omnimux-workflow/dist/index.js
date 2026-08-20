@@ -14608,11 +14608,19 @@ var workspaceSnapshotSchema = external_exports.object({
 });
 
 // src/workflow/workspace/WorkspaceStore.ts
+var MAX_WORKSPACE_NAME_LENGTH = 200;
 var WorkflowStoreError = class extends Error {
   code;
-  constructor(code, message) {
+  /**
+   * Server-side current version carried by version_conflict errors, so the
+   * HTTP layer can surface it in the 409 body without parsing the message
+   * (M2 QA fix #5 — the regex-based extraction was brittle).
+   */
+  current;
+  constructor(code, message, details = {}) {
     super(message);
     this.code = code;
+    this.current = details.current;
     this.name = "WorkflowStoreError";
   }
 };
@@ -14681,6 +14689,12 @@ function createWorkspaceStore(opts) {
       return rows;
     },
     create(name2) {
+      if (typeof name2 === "string" && name2.trim().length > MAX_WORKSPACE_NAME_LENGTH) {
+        throw new WorkflowStoreError(
+          "name-too-long",
+          `workspace name exceeds ${MAX_WORKSPACE_NAME_LENGTH} characters (got ${name2.trim().length})`
+        );
+      }
       const id = newWorkspaceId();
       const now = (/* @__PURE__ */ new Date()).toISOString();
       const snapshot = {
@@ -14708,7 +14722,8 @@ function createWorkspaceStore(opts) {
       if (typeof payload.expectedVersion === "number" && payload.expectedVersion !== current.version) {
         throw new WorkflowStoreError(
           "version_conflict",
-          `workspace ${id} moved on: expected ${String(payload.expectedVersion)}, current ${String(current.version)}`
+          `workspace ${id} moved on: expected ${String(payload.expectedVersion)}, current ${String(current.version)}`,
+          { current: current.version }
         );
       }
       const now = (/* @__PURE__ */ new Date()).toISOString();
@@ -14810,16 +14825,40 @@ import {
   createReadStream,
   existsSync as existsSync2,
   readFileSync as readFileSync2,
+  realpathSync,
   statSync
 } from "node:fs";
-import { dirname, extname, join as join4, normalize, resolve } from "node:path";
+import { dirname, extname, join as join4, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+
+// src/shared/api.ts
+var WORKFLOW_ROUTE_PREFIX = "/omnimux-workflow";
+var LEGACY_WORKFLOW_ROUTE_PREFIX = "/dsh-workflow";
+var WORKFLOW_API_ROUTES = {
+  /** GET: build manifest (canvas.js hash for cache busting). */
+  manifest: `${WORKFLOW_ROUTE_PREFIX}/api/manifest`,
+  /** GET: island bundle (lazy-loaded by CanvasBridge). */
+  canvasJs: `${WORKFLOW_ROUTE_PREFIX}/canvas.js`,
+  /** GET: workspace summaries. POST: create workspace. */
+  workspaces: `${WORKFLOW_ROUTE_PREFIX}/api/workspaces`,
+  /** GET/PUT/DELETE one workspace snapshot (PUT uses optimistic lock). */
+  workspace: (id) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}`,
+  /** GET: generation capability catalog (M3/M4 fills real data). */
+  capabilities: `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`,
+  /** GET: media files under the plugin-owned media dir (traversal-guarded). */
+  media: `${WORKFLOW_ROUTE_PREFIX}/media`
+};
+
+// src/workflow/routes/canvasRoutes.ts
 var LOCAL_HOSTS = /* @__PURE__ */ new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
+var MAX_JSON_BODY_BYTES = 1024 * 1024;
 var STATUS_BY_CODE = {
   "invalid-json": 400,
   "invalid-id": 400,
   "invalid-snapshot": 400,
   "name-required": 400,
+  "name-too-long": 400,
+  "body-too-large": 413,
   "version_conflict": 409,
   "workspace-not-found": 404,
   "not-found": 404,
@@ -14861,10 +14900,24 @@ function sendJson(res, status, body) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(text);
 }
-async function readJsonBody(req) {
+var JsonBodyLimitError = class extends Error {
+  limit;
+  constructor(limit) {
+    super(`request body exceeds ${String(limit)} bytes`);
+    this.limit = limit;
+    this.name = "JsonBodyLimitError";
+  }
+};
+async function readJsonBody(req, maxBytes = MAX_JSON_BODY_BYTES) {
   const chunks = [];
+  let total = 0;
   for await (const chunk of req) {
-    chunks.push(chunk);
+    const buffer = chunk;
+    total += buffer.length;
+    if (total > maxBytes) {
+      throw new JsonBodyLimitError(maxBytes);
+    }
+    chunks.push(buffer);
   }
   if (chunks.length === 0) return {};
   try {
@@ -14924,9 +14977,18 @@ function serveFile(res, filePath, fallbackMime) {
   });
   stream.pipe(res);
 }
+function isInsideDir(target, root) {
+  return target === root || target.startsWith(root + sep);
+}
 function createWorkflowDispatcher(deps) {
   const { store, gateway, mediaDir } = deps;
   const mediaRoot = resolve(mediaDir);
+  const mediaApiPath = `${WORKFLOW_ROUTE_PREFIX}/media/`;
+  const workspaceRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)$`);
+  const capabilitiesPath = `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`;
+  const workspacesPath = `${WORKFLOW_ROUTE_PREFIX}/api/workspaces`;
+  const manifestPath = `${WORKFLOW_ROUTE_PREFIX}/api/manifest`;
+  const canvasJsPath = `${WORKFLOW_ROUTE_PREFIX}/canvas.js`;
   let cachedCanvasHash = null;
   function canvasJsHash() {
     const now = Date.now();
@@ -14939,11 +15001,18 @@ function createWorkflowDispatcher(deps) {
     cachedCanvasHash = { hash: hash2, at: now };
     return hash2;
   }
+  function normalizePath(path) {
+    if (path === LEGACY_WORKFLOW_ROUTE_PREFIX) return WORKFLOW_ROUTE_PREFIX;
+    if (path.startsWith(`${LEGACY_WORKFLOW_ROUTE_PREFIX}/`)) {
+      return WORKFLOW_ROUTE_PREFIX + path.slice(LEGACY_WORKFLOW_ROUTE_PREFIX.length);
+    }
+    return path;
+  }
   async function dispatch(req) {
     try {
       const url2 = new URL(req.url, "http://127.0.0.1");
       const method = (req.method || "GET").toUpperCase();
-      const path = decodeURIComponent(url2.pathname);
+      const path = normalizePath(decodeURIComponent(url2.pathname));
       if (method === "POST" || method === "PUT" || method === "DELETE") {
         try {
           assertLocalWrite(req);
@@ -14951,17 +15020,17 @@ function createWorkflowDispatcher(deps) {
           return { status: 403, body: { error: "not-local", message: "cross-origin write refused" } };
         }
       }
-      if (method === "GET" && path === "/dsh-workflow/canvas.js") {
+      if (method === "GET" && path === canvasJsPath) {
         const file2 = join4(PLUGIN_ROOT, "lib", "canvas.js");
         if (!existsSync2(file2)) {
           return { status: 404, body: { error: "not-found", message: "canvas bundle not built (run npm run build)" } };
         }
         return { status: 200, file: file2 };
       }
-      if (method === "GET" && path === "/dsh-workflow/api/manifest") {
+      if (method === "GET" && path === manifestPath) {
         return { status: 200, body: { canvasHash: canvasJsHash() } };
       }
-      if (path === "/dsh-workflow/api/workspaces") {
+      if (path === workspacesPath) {
         if (method === "GET") {
           return { status: 200, body: { workspaces: store.list() } };
         }
@@ -14974,7 +15043,7 @@ function createWorkflowDispatcher(deps) {
         }
         return { status: 404, body: { error: "not-found", message: "unknown route" } };
       }
-      const workspaceMatch = /^\/dsh-workflow\/api\/workspaces\/([^/]+)$/.exec(path);
+      const workspaceMatch = workspaceRouteRe.exec(path);
       if (workspaceMatch) {
         const id = workspaceMatch[1] ?? "";
         if (method === "GET") {
@@ -14996,51 +15065,54 @@ function createWorkflowDispatcher(deps) {
         }
         return { status: 404, body: { error: "not-found", message: "unknown route" } };
       }
-      if (method === "GET" && path === "/dsh-workflow/api/capabilities") {
+      if (method === "GET" && path === capabilitiesPath) {
         return { status: 200, body: await gateway.capabilities() };
       }
-      if (method === "GET" && path.startsWith("/dsh-workflow/media/")) {
-        const rel = path.slice("/dsh-workflow/media/".length);
+      if (method === "GET" && path.startsWith(mediaApiPath)) {
+        const rel = path.slice(mediaApiPath.length);
         if (rel.split("/").some((segment) => segment === "..")) {
           return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
         }
         const target = resolve(join4(mediaRoot, normalize(`/${rel}`)));
-        if (!target.startsWith(mediaRoot)) {
+        if (!isInsideDir(target, mediaRoot)) {
           return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
         }
-        if (!existsSync2(target) || !statSync(target).isFile()) {
+        let realTarget;
+        try {
+          const realRoot = realpathSync(mediaRoot);
+          realTarget = realpathSync(target);
+          if (!isInsideDir(realTarget, realRoot)) {
+            return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
+          }
+        } catch {
           return { status: 404, body: { error: "not-found", message: "media file not found" } };
         }
-        return { status: 200, file: target };
+        if (!statSync(realTarget).isFile()) {
+          return { status: 404, body: { error: "not-found", message: "media file not found" } };
+        }
+        return { status: 200, file: realTarget };
       }
       return { status: 404, body: { error: "not-found", message: "unknown route" } };
     } catch (error51) {
       if (error51 instanceof WorkflowStoreError) {
         const conflict = error51.code === "version_conflict";
-        const current = conflict ? currentVersionOf(error51.message) : void 0;
         return {
           status: STATUS_BY_CODE[error51.code] ?? 400,
           body: {
             error: error51.code,
             message: error51.message,
-            ...conflict && current !== void 0 ? { current } : {}
+            ...conflict && error51.current !== void 0 ? { current: error51.current } : {}
           }
         };
       }
       return { status: 500, body: { error: "internal", message: messageOf(error51) } };
     }
   }
-  function currentVersionOf(message) {
-    const match = /current (\d+)$/.exec(message);
-    return match ? Number(match[1]) : void 0;
-  }
   return { dispatch };
 }
 function registerWorkflowRoutes(webServer, dispatcher) {
-  const dispose = webServer.register({
-    kind: "prefix",
-    path: "/dsh-workflow",
-    async handler(req, res) {
+  const makeHandler = () => {
+    return async function handler(req, res) {
       try {
         const method = (req.method || "GET").toUpperCase();
         let body;
@@ -15049,7 +15121,7 @@ function registerWorkflowRoutes(webServer, dispatcher) {
         }
         const result = await dispatcher.dispatch({
           method,
-          url: req.url || "/dsh-workflow/api/manifest",
+          url: req.url || `${WORKFLOW_ROUTE_PREFIX}/api/manifest`,
           origin: header(req, "origin"),
           referer: header(req, "referer"),
           secFetchSite: header(req, "sec-fetch-site"),
@@ -15060,13 +15132,24 @@ function registerWorkflowRoutes(webServer, dispatcher) {
           return;
         }
         sendJson(res, result.status, result.body ?? {});
-      } catch {
+      } catch (error51) {
+        if (error51 instanceof JsonBodyLimitError) {
+          sendJson(res, STATUS_BY_CODE["body-too-large"] ?? 413, {
+            error: "body-too-large",
+            message: `request body exceeds ${String(error51.limit)} bytes`
+          });
+          return;
+        }
         sendJson(res, 500, { error: "internal", message: "internal error" });
       }
-    }
-  });
+    };
+  };
+  const disposers = [
+    webServer.register({ kind: "prefix", path: WORKFLOW_ROUTE_PREFIX, handler: makeHandler() }),
+    webServer.register({ kind: "prefix", path: LEGACY_WORKFLOW_ROUTE_PREFIX, handler: makeHandler() })
+  ];
   return () => {
-    dispose();
+    for (const dispose of disposers) dispose();
   };
 }
 
@@ -15086,7 +15169,7 @@ function mountWorkflowHost(ctx, opts = {}) {
       disposers.push(registerWorkflowRoutes(webServer, dispatcher));
     };
     if (typeof ctx.effect === "function") {
-      ctx.effect(mount, "dsh-workflow: http routes");
+      ctx.effect(mount, "omnimux-workflow: http routes");
     } else {
       mount();
     }

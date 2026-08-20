@@ -1,6 +1,7 @@
 /**
  * Workflow host assembly: mounts the WorkspaceStore, the (mock) generation
- * gateway, and the /dsh-workflow HTTP routes onto the webServer seat.
+ * gateway, and the /omnimux-workflow HTTP routes (with the legacy
+ * /dsh-workflow alias) onto the webServer seat.
  *
  * M1 scope: workspace CRUD + bundle/media serving. The ExecutionScheduler,
  * SSE, and the real OmniMux seam client land in M3/M4 — the extension
@@ -53,7 +54,7 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
       disposers.push(registerWorkflowRoutes(webServer, dispatcher));
     };
     if (typeof ctx.effect === 'function') {
-      ctx.effect(mount, 'dsh-workflow: http routes');
+      ctx.effect(mount, 'omnimux-workflow: http routes');
     } else {
       mount();
     }

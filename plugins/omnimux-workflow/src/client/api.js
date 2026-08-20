@@ -29,7 +29,7 @@ export async function workflowRequest(path, opts = {}) {
  */
 export async function fetchCanvasHash() {
   try {
-    const result = await workflowRequest('/dsh-workflow/api/manifest')
+    const result = await workflowRequest('/omnimux-workflow/api/manifest')
     const hash = result.body?.canvasHash
     return typeof hash === 'string' ? hash : null
   } catch {

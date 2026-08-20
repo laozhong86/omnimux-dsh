@@ -1,8 +1,8 @@
 /**
- * dsh-workflow canvas island entry — the IIFE global API.
+ * omnimux-workflow canvas island entry — the IIFE global API.
  *
  * build-canvas.mjs bundles this file (React 19 included) into
- * lib/canvas.js with globalName `__dshWorkflowCanvas`. The host React 18
+ * lib/canvas.js with globalName `__omnimuxWorkflowCanvas`. The host React 18
  * CanvasBridge calls mountCanvas(el, props) / unmountCanvas(el).
  *
  * ★ HARD RULE: props crossing this boundary are plain data + callbacks
@@ -26,16 +26,16 @@ let stylesInjected = false;
 
 function injectStyles(): void {
   if (stylesInjected) return;
-  const xyflowId = 'dsh-workflow-xyflow-base';
+  const xyflowId = 'omnimux-workflow-xyflow-base';
   if (!document.getElementById(xyflowId)) {
     const style = document.createElement('style');
     style.id = xyflowId;
     style.textContent = xyflowCss;
     document.head.append(style);
   }
-  if (!document.getElementById('dsh-workflow-theme')) {
+  if (!document.getElementById('omnimux-workflow-theme')) {
     const style = document.createElement('style');
-    style.id = 'dsh-workflow-theme';
+    style.id = 'omnimux-workflow-theme';
     style.textContent = themeCss;
     document.head.append(style);
   }

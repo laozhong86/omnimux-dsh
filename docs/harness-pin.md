@@ -4,17 +4,17 @@ Current upstream this product builds against. Not a fork record.
 
 | Field | Value |
 |---|---|
-| Package | `dsh@0.1.0-rc.7` |
-| SHA | `99f6f02fecdb7dff40c3fbc9470f5907c29f74ca` |
+| Package | `dsh@0.1.0-rc.8` |
+| SHA | `141eb6fef83422698aef7a981029e843e8161534` |
 | Remote | `https://github.com/deepseek-ai/deepseek-harness.git` |
 | Default local clone | `/Users/x/Desktop/Project/Github/deepseek-harness` |
-| Recorded | 2026-08-18 |
+| Recorded | 2026-08-20 |
 
 Override the clone path with `DSH_SRC`. Decision: [decisions/2026-08-16-harness-consume-not-fork.md](decisions/2026-08-16-harness-consume-not-fork.md).
 
 ## Overlay against this pin
 
-Directory: `patches/dsh-0.1.0-rc.7/`. Current overlay: `quota-403-not-auth.patch` (classify exhausted-quota 403 as `QUOTA`, not `AUTH`). Desktop packaging patches have left this clone; the shell is `/Users/x/Desktop/Project/omnimux-desktop`.
+Directory: `patches/dsh-0.1.0-rc.8/`. Current overlay: `quota-403-not-auth.patch` (classify exhausted-quota 403 as `QUOTA`, not `AUTH`). Desktop packaging patches have left this clone; the shell is `/Users/x/Desktop/Project/omnimux-desktop`.
 
 `pnpm-lock.yaml` is not a patch.
 
@@ -35,4 +35,5 @@ Apply requires `HEAD` to equal the SHA above. Reset restores tracked overlay fil
 2. `reset-harness-overlay.sh`, then `git checkout` that SHA in `DSH_SRC`.
 3. Replay each patch. If official added the same seat or desktop wiring, delete that patch instead of rebasing it.
 4. `pnpm install` in the clone. Run `dsh-omnimux` / `dsh-drama` tests and desktop smoke.
-5. Tag the product repo. Changelog names the new dsh pin.
+5. Load skill `omnimux-rc-upgrade` (`.agents/skills/omnimux-rc-upgrade/SKILL.md`) and finish its report. MUST NOT tag or call the bump done while any `screens.*` is `missing`.
+6. Tag the product repo. Changelog names the new dsh pin.

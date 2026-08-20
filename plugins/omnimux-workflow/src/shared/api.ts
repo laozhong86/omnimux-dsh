@@ -1,16 +1,29 @@
 /**
- * dsh-workflow HTTP API contract (route paths + DTO shapes).
+ * omnimux-workflow HTTP API contract (route paths + DTO shapes).
  *
  * Contract-first: host routes (src/workflow/routes/canvasRoutes.ts) and the
  * island api client (src/canvas/bridge/apiClient.ts) both reference these
  * constants/types. Full human-readable contract:
  * docs/contracts/canvas-http-api.md.
+ *
+ * M2 prefix migration: the canonical prefix is /omnimux-workflow. The M1
+ * prefix /dsh-workflow stays mounted as a legacy alias (dual registration,
+ * no redirect) so existing sessions/bookmarks keep working.
  */
 
-export const WORKFLOW_ROUTE_PREFIX = '/dsh-workflow';
+export const WORKFLOW_ROUTE_PREFIX = '/omnimux-workflow';
+
+/** M1 legacy prefix — still matched by the host dispatcher (read + write). */
+export const LEGACY_WORKFLOW_ROUTE_PREFIX = '/dsh-workflow';
+
+/** All prefixes the host answers on (canonical first). */
+export const WORKFLOW_ROUTE_PREFIXES = [
+  WORKFLOW_ROUTE_PREFIX,
+  LEGACY_WORKFLOW_ROUTE_PREFIX,
+] as const;
 
 export const WORKFLOW_API_ROUTES = {
-  /** GET: build manifest (canvas.js content hash for cache busting). */
+  /** GET: build manifest (canvas.js hash for cache busting). */
   manifest: `${WORKFLOW_ROUTE_PREFIX}/api/manifest`,
   /** GET: island bundle (lazy-loaded by CanvasBridge). */
   canvasJs: `${WORKFLOW_ROUTE_PREFIX}/canvas.js`,

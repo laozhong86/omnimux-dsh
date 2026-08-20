@@ -6,6 +6,11 @@
  * detail that edge removals route through the mutation gateway. The UI
  * slice is minimal (selection). Timeline/Overlay/Playback slices are cut
  * (timeline domain, V1 out of scope).
+ *
+ * M2 adds the History slice: snapshot-based undo/redo ported from Gxgen
+ * `useCanvasHistory` (nodes/edges only — tracks/textOverlays are cut).
+ * The snapshot stacks live in the store (not a hook) so the keyboard
+ * shortcuts, the context menu, and the toolbar all share one history.
  */
 
 import { create } from 'zustand';
@@ -31,6 +36,35 @@ import {
 
 export type SelectedElementType = 'none' | 'node';
 
+// ============================================================================
+// History (ported from Gxgen useCanvasHistory, narrowed to nodes/edges)
+// ============================================================================
+
+/** Max undo steps kept (same as Gxgen). */
+const MAX_HISTORY_SIZE = 50;
+/** Coalescing window: rapid changes (e.g. node drags) share one snapshot. */
+const HISTORY_DEBOUNCE_MS = 300;
+
+interface HistorySnapshot {
+  nodes: CanvasNode[];
+  edges: Edge[];
+  /** Serialized signature cache — equality checks avoid re-stringify. */
+  sig: string;
+}
+
+function snapshotOf(nodes: CanvasNode[], edges: Edge[]): HistorySnapshot {
+  // Deep clone via JSON so history entries are detached from live state.
+  const sig = JSON.stringify({ nodes, edges });
+  const clone = JSON.parse(sig) as { nodes: CanvasNode[]; edges: Edge[] };
+  return { nodes: clone.nodes, edges: clone.edges, sig };
+}
+
+/** Module-private history bookkeeping (single canvasStore instance). */
+const history = {
+  current: null as HistorySnapshot | null,
+  lastPushAt: 0,
+};
+
 export interface CanvasState {
   // ===== Graph Slice =====
   nodes: CanvasNode[];
@@ -45,6 +79,18 @@ export interface CanvasState {
   deleteElements: (nodeIds: string[], edgeIds: string[]) => void;
   /** Replace the whole graph (workspace load). */
   hydrateGraph: (nodes: CanvasNode[], edges: Edge[]) => void;
+
+  // ===== History Slice（M2，Gxgen useCanvasHistory 移植）=====
+  /** Undo stack (past states, oldest first). */
+  past: HistorySnapshot[];
+  /** Redo stack (undone states, oldest first). */
+  future: HistorySnapshot[];
+  /** Record the current graph as a potential undo target (debounced). */
+  pushHistory: () => void;
+  undo: () => void;
+  redo: () => void;
+  /** Drop all history and reseed from the current graph. */
+  clearHistory: () => void;
 
   // ===== UI Slice（最小）=====
   selectedElement: { type: SelectedElementType; id: string | null };
@@ -129,7 +175,76 @@ export const useCanvasStore = create<CanvasState>()(
     },
 
     hydrateGraph: (nodes, edges) => {
-      set({ nodes, edges, selectedElement: { type: 'none', id: null } });
+      set({ nodes, edges, selectedElement: { type: 'none', id: null }, past: [], future: [] });
+      history.current = snapshotOf(nodes, edges);
+      history.lastPushAt = 0;
+    },
+
+    // ========================================================================
+    // History Slice（M2）
+    // ========================================================================
+    past: [] as HistorySnapshot[],
+    future: [] as HistorySnapshot[],
+
+    pushHistory: () => {
+      const snap = snapshotOf(get().nodes, get().edges);
+      // No-op when nothing changed (also absorbs the re-render that undo
+      // itself triggers: history.current was already moved to the restored
+      // state before set(), so the signatures match and we return early).
+      if (history.current && history.current.sig === snap.sig) return;
+
+      const now = Date.now();
+      if (
+        history.current
+        && now - history.lastPushAt >= HISTORY_DEBOUNCE_MS
+      ) {
+        const previous = history.current;
+        set((state) => ({
+          past: [...state.past, previous].slice(-MAX_HISTORY_SIZE),
+          future: [],
+        }));
+        history.lastPushAt = now;
+      }
+      // Within the debounce window we only move the "current" pointer —
+      // rapid changes (node drags, typing) coalesce into one undo step.
+      history.current = snap;
+    },
+
+    undo: () => {
+      const { past, nodes, edges } = get();
+      if (past.length === 0) return;
+      const previous = past[past.length - 1];
+      if (!previous) return;
+      const current = snapshotOf(nodes, edges);
+      history.current = previous;
+      set((state) => ({
+        nodes: previous.nodes,
+        edges: previous.edges,
+        past: past.slice(0, -1),
+        future: [...state.future, current],
+      }));
+    },
+
+    redo: () => {
+      const { future, nodes, edges } = get();
+      if (future.length === 0) return;
+      const next = future[future.length - 1];
+      if (!next) return;
+      const current = snapshotOf(nodes, edges);
+      history.current = next;
+      set((state) => ({
+        nodes: next.nodes,
+        edges: next.edges,
+        past: [...state.past, current],
+        future: future.slice(0, -1),
+      }));
+    },
+
+    clearHistory: () => {
+      const { nodes, edges } = get();
+      set({ past: [], future: [] });
+      history.current = snapshotOf(nodes, edges);
+      history.lastPushAt = 0;
     },
 
     // ========================================================================
@@ -149,7 +264,11 @@ export const useCanvasStore = create<CanvasState>()(
         nodes: [],
         edges: [],
         selectedElement: { type: 'none', id: null },
+        past: [],
+        future: [],
       });
+      history.current = null;
+      history.lastPushAt = 0;
     },
   }),
 );
@@ -178,3 +297,7 @@ export const useSelection = () =>
       setSelectedElement: state.setSelectedElement,
     })),
   );
+
+export const useCanUndo = () => useCanvasStore((state) => state.past.length > 0);
+
+export const useCanRedo = () => useCanvasStore((state) => state.future.length > 0);

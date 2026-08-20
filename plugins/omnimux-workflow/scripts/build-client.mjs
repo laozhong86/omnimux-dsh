@@ -4,7 +4,7 @@
  * React stays external (host React 18 via ModuleLoader), matching the
  * omnimux-assets plugin convention. The chrome never mounts the
  * canvas island itself — CanvasBridge only passes a DOM container and
- * plain-data props to window.__dshWorkflowCanvas.
+ * plain-data props to window.__omnimuxWorkflowCanvas.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

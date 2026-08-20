@@ -1,16 +1,18 @@
 /**
  * Workflow HTTP routes mounted on the official webServer seat.
  *
- * Prefix: /dsh-workflow/*
- *   GET  /dsh-workflow/canvas.js            island bundle (cache-busted)
- *   GET  /dsh-workflow/api/manifest         build manifest (canvas.js hash)
- *   GET  /dsh-workflow/api/workspaces       list summaries
- *   POST /dsh-workflow/api/workspaces       create
- *   GET  /dsh-workflow/api/workspaces/:id   snapshot
- *   PUT  /dsh-workflow/api/workspaces/:id   save (optimistic lock -> 409)
- *   DELETE /dsh-workflow/api/workspaces/:id
- *   GET  /dsh-workflow/api/capabilities     capability catalog (stub in M1)
- *   GET  /dsh-workflow/media/*              media files (traversal-guarded)
+ * Prefix: /omnimux-workflow/* (canonical, M2+) with the M1 /dsh-workflow/*
+ * prefix kept as a legacy alias — both prefixes dispatch into the same
+ * handler, so existing sessions/bookmarks keep working without a redirect.
+ *   GET  /omnimux-workflow/canvas.js            island bundle (cache-busted)
+ *   GET  /omnimux-workflow/api/manifest         build manifest (canvas.js hash)
+ *   GET  /omnimux-workflow/api/workspaces       list summaries
+ *   POST /omnimux-workflow/api/workspaces       create (name validated, 400 if >200 chars)
+ *   GET  /omnimux-workflow/api/workspaces/:id   snapshot
+ *   PUT  /omnimux-workflow/api/workspaces/:id   save (optimistic lock -> 409, body limit 1MB)
+ *   DELETE /omnimux-workflow/api/workspaces/:id
+ *   GET  /omnimux-workflow/api/capabilities     capability catalog (stub in M1)
+ *   GET  /omnimux-workflow/media/*              media files (traversal- + symlink-guarded)
  *
  * Self-implemented helpers equivalent to hub logic (no hub imports):
  * sendJson secret guard + assertLocalWrite loopback check, matching the
@@ -21,11 +23,16 @@ import {
   createReadStream,
   existsSync,
   readFileSync,
+  realpathSync,
   statSync,
 } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { dirname, extname, join, normalize, resolve } from 'node:path';
+import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  LEGACY_WORKFLOW_ROUTE_PREFIX,
+  WORKFLOW_ROUTE_PREFIX,
+} from '../../shared/api';
 import type { SaveCanvasWorkspacePayload } from '../../shared/canvasTypes';
 import { WorkflowStoreError } from '../workspace/WorkspaceStore';
 import type { WorkspaceStore } from '../workspace/WorkspaceStore';
@@ -33,11 +40,16 @@ import type { GenerationGateway } from '../seam/gateway';
 
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]', '::1']);
 
+/** Request-body cap for JSON routes (M2 QA fix #2: bound memory usage). */
+export const MAX_JSON_BODY_BYTES = 1024 * 1024;
+
 const STATUS_BY_CODE: Record<string, number> = {
   'invalid-json': 400,
   'invalid-id': 400,
   'invalid-snapshot': 400,
   'name-required': 400,
+  'name-too-long': 400,
+  'body-too-large': 413,
   'version_conflict': 409,
   'workspace-not-found': 404,
   'not-found': 404,
@@ -89,10 +101,30 @@ export function sendJson(res: ServerResponse, status: number, body: unknown): vo
   res.end(text);
 }
 
-export async function readJsonBody(req: IncomingMessage): Promise<unknown> {
+/** Thrown by readJsonBody when the incoming body exceeds the byte cap. */
+export class JsonBodyLimitError extends Error {
+  readonly limit: number;
+
+  constructor(limit: number) {
+    super(`request body exceeds ${String(limit)} bytes`);
+    this.limit = limit;
+    this.name = 'JsonBodyLimitError';
+  }
+}
+
+export async function readJsonBody(
+  req: IncomingMessage,
+  maxBytes: number = MAX_JSON_BODY_BYTES,
+): Promise<unknown> {
   const chunks: Buffer[] = [];
+  let total = 0;
   for await (const chunk of req) {
-    chunks.push(chunk as Buffer);
+    const buffer = chunk as Buffer;
+    total += buffer.length;
+    if (total > maxBytes) {
+      throw new JsonBodyLimitError(maxBytes);
+    }
+    chunks.push(buffer);
   }
   if (chunks.length === 0) return {};
   try {
@@ -164,6 +196,11 @@ function serveFile(res: ServerResponse, filePath: string, fallbackMime: string):
   stream.pipe(res);
 }
 
+/** Lexical containment check with a separator boundary (no prefix false-positives). */
+function isInsideDir(target: string, root: string): boolean {
+  return target === root || target.startsWith(root + sep);
+}
+
 export interface WorkflowDispatcherDeps {
   store: WorkspaceStore;
   gateway: GenerationGateway;
@@ -184,6 +221,12 @@ export type DispatchResult = { status: number; body?: unknown } | { status: numb
 export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
   const { store, gateway, mediaDir } = deps;
   const mediaRoot = resolve(mediaDir);
+  const mediaApiPath = `${WORKFLOW_ROUTE_PREFIX}/media/`;
+  const workspaceRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)$`);
+  const capabilitiesPath = `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`;
+  const workspacesPath = `${WORKFLOW_ROUTE_PREFIX}/api/workspaces`;
+  const manifestPath = `${WORKFLOW_ROUTE_PREFIX}/api/manifest`;
+  const canvasJsPath = `${WORKFLOW_ROUTE_PREFIX}/canvas.js`;
 
   let cachedCanvasHash: { hash: string; at: number } | null = null;
   function canvasJsHash(): string {
@@ -198,11 +241,24 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
     return hash;
   }
 
+  /**
+   * Legacy M1 prefix compatibility: /dsh-workflow/* is rewritten (in-memory,
+   * no redirect) to the canonical /omnimux-workflow/* before routing, so old
+   * sessions and bookmarks keep working.
+   */
+  function normalizePath(path: string): string {
+    if (path === LEGACY_WORKFLOW_ROUTE_PREFIX) return WORKFLOW_ROUTE_PREFIX;
+    if (path.startsWith(`${LEGACY_WORKFLOW_ROUTE_PREFIX}/`)) {
+      return WORKFLOW_ROUTE_PREFIX + path.slice(LEGACY_WORKFLOW_ROUTE_PREFIX.length);
+    }
+    return path;
+  }
+
   async function dispatch(req: WorkflowDispatchRequest): Promise<DispatchResult> {
     try {
       const url = new URL(req.url, 'http://127.0.0.1');
       const method = (req.method || 'GET').toUpperCase();
-      const path = decodeURIComponent(url.pathname);
+      const path = normalizePath(decodeURIComponent(url.pathname));
 
       if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
         try {
@@ -213,7 +269,7 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
       }
 
       // ---- island bundle ----
-      if (method === 'GET' && path === '/dsh-workflow/canvas.js') {
+      if (method === 'GET' && path === canvasJsPath) {
         const file = join(PLUGIN_ROOT, 'lib', 'canvas.js');
         if (!existsSync(file)) {
           return { status: 404, body: { error: 'not-found', message: 'canvas bundle not built (run npm run build)' } };
@@ -222,12 +278,12 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
       }
 
       // ---- manifest ----
-      if (method === 'GET' && path === '/dsh-workflow/api/manifest') {
+      if (method === 'GET' && path === manifestPath) {
         return { status: 200, body: { canvasHash: canvasJsHash() } };
       }
 
       // ---- workspaces collection ----
-      if (path === '/dsh-workflow/api/workspaces') {
+      if (path === workspacesPath) {
         if (method === 'GET') {
           return { status: 200, body: { workspaces: store.list() } };
         }
@@ -242,7 +298,7 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
       }
 
       // ---- one workspace ----
-      const workspaceMatch = /^\/dsh-workflow\/api\/workspaces\/([^/]+)$/.exec(path);
+      const workspaceMatch = workspaceRouteRe.exec(path);
       if (workspaceMatch) {
         const id = workspaceMatch[1] ?? '';
         if (method === 'GET') {
@@ -266,39 +322,54 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
       }
 
       // ---- capabilities (stub until M4 wires the OmniMux catalog) ----
-      if (method === 'GET' && path === '/dsh-workflow/api/capabilities') {
+      if (method === 'GET' && path === capabilitiesPath) {
         return { status: 200, body: await gateway.capabilities() };
       }
 
-      // ---- media static route (traversal-guarded) ----
-      if (method === 'GET' && path.startsWith('/dsh-workflow/media/')) {
-        const rel = path.slice('/dsh-workflow/media/'.length);
+      // ---- media static route (traversal- and symlink-guarded) ----
+      if (method === 'GET' && path.startsWith(mediaApiPath)) {
+        const rel = path.slice(mediaApiPath.length);
         // Explicit '..' segment check: attempts to escape -> 403 (the
         // normalize() clamp below additionally prevents silent escapes).
         if (rel.split('/').some((segment) => segment === '..')) {
           return { status: 403, body: { error: 'path-denied', message: 'path escapes media root' } };
         }
         const target = resolve(join(mediaRoot, normalize(`/${rel}`)));
-        if (!target.startsWith(mediaRoot)) {
+        // Lexical pre-check first (cheap, catches plain traversal)…
+        if (!isInsideDir(target, mediaRoot)) {
           return { status: 403, body: { error: 'path-denied', message: 'path escapes media root' } };
         }
-        if (!existsSync(target) || !statSync(target).isFile()) {
+        // …then resolve symlinks on BOTH ends (M2 QA fix #3): a symlink
+        // inside media/ pointing outside must not be served. realpath
+        // failure (missing file / broken link) maps to 404.
+        let realTarget: string;
+        try {
+          const realRoot = realpathSync(mediaRoot);
+          realTarget = realpathSync(target);
+          if (!isInsideDir(realTarget, realRoot)) {
+            return { status: 403, body: { error: 'path-denied', message: 'path escapes media root' } };
+          }
+        } catch {
           return { status: 404, body: { error: 'not-found', message: 'media file not found' } };
         }
-        return { status: 200, file: target };
+        if (!statSync(realTarget).isFile()) {
+          return { status: 404, body: { error: 'not-found', message: 'media file not found' } };
+        }
+        return { status: 200, file: realTarget };
       }
 
       return { status: 404, body: { error: 'not-found', message: 'unknown route' } };
     } catch (error) {
       if (error instanceof WorkflowStoreError) {
         const conflict = error.code === 'version_conflict';
-        const current = conflict ? currentVersionOf(error.message) : undefined;
+        // M2 QA fix #5: the server version comes from the error object's
+        // `current` field — no message-string regex parsing.
         return {
           status: STATUS_BY_CODE[error.code] ?? 400,
           body: {
             error: error.code,
             message: error.message,
-            ...(conflict && current !== undefined ? { current } : {}),
+            ...(conflict && error.current !== undefined ? { current: error.current } : {}),
           },
         };
       }
@@ -306,27 +377,20 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
     }
   }
 
-  /** Extract the trailing "current <n>" from conflict messages (see save()). */
-  function currentVersionOf(message: string): number | undefined {
-    const match = /current (\d+)$/.exec(message);
-    return match ? Number(match[1]) : undefined;
-  }
-
   return { dispatch };
 }
 
 /**
- * Mount the /dsh-workflow prefix on the official webServer seat.
- * JSON results go through sendJson; file results stream from disk.
+ * Mount the /omnimux-workflow prefix (plus the legacy /dsh-workflow alias)
+ * on the official webServer seat. JSON results go through sendJson; file
+ * results stream from disk.
  */
 export function registerWorkflowRoutes(
   webServer: { register: (route: { kind: string; path: string; handler: (req: IncomingMessage, res: ServerResponse) => Promise<void> }) => () => void },
   dispatcher: ReturnType<typeof createWorkflowDispatcher>,
 ): () => void {
-  const dispose = webServer.register({
-    kind: 'prefix',
-    path: '/dsh-workflow',
-    async handler(req, res) {
+  const makeHandler = () => {
+    return async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
       try {
         const method = (req.method || 'GET').toUpperCase();
         let body: unknown;
@@ -335,7 +399,7 @@ export function registerWorkflowRoutes(
         }
         const result = await dispatcher.dispatch({
           method,
-          url: req.url || '/dsh-workflow/api/manifest',
+          url: req.url || `${WORKFLOW_ROUTE_PREFIX}/api/manifest`,
           origin: header(req, 'origin'),
           referer: header(req, 'referer'),
           secFetchSite: header(req, 'sec-fetch-site'),
@@ -346,12 +410,26 @@ export function registerWorkflowRoutes(
           return;
         }
         sendJson(res, result.status, result.body ?? {});
-      } catch {
+      } catch (error) {
+        if (error instanceof JsonBodyLimitError) {
+          sendJson(res, STATUS_BY_CODE['body-too-large'] ?? 413, {
+            error: 'body-too-large',
+            message: `request body exceeds ${String(error.limit)} bytes`,
+          });
+          return;
+        }
         sendJson(res, 500, { error: 'internal', message: 'internal error' });
       }
-    },
-  });
+    };
+  };
+
+  // Canonical prefix first, legacy alias second (dual registration instead
+  // of a 301: keeps old fetches transparently working).
+  const disposers = [
+    webServer.register({ kind: 'prefix', path: WORKFLOW_ROUTE_PREFIX, handler: makeHandler() }),
+    webServer.register({ kind: 'prefix', path: LEGACY_WORKFLOW_ROUTE_PREFIX, handler: makeHandler() }),
+  ];
   return () => {
-    dispose();
+    for (const dispose of disposers) dispose();
   };
 }

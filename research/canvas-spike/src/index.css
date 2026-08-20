@@ -1,0 +1,475 @@
+/**
+ * ============================================================================
+ * Spike 主题层 —— 验证「CSS 变量注入换肤」机制
+ * ============================================================================
+ *
+ * 对应技术方案的 workbench-theme.css 设计：
+ * - 画布所有颜色只引用 --wb-* 变量（禁止裸值，React Flow 默认样式
+ *   用 .spike-root .react-flow__* 选择器覆盖）
+ * - --wb-* 的默认值 = 假想的 dsh 蓝 #4176E6（真实插件中会写成
+ *   var(--dsw-static-deepseek-500, #4176E6) 引用宿主 token）
+ * - data-theme="alt" 切换到 OmniMux 酸橙绿 #C8F135 —— 一处变量
+ *   改动，节点选中框/连线/Handle/按钮/网格点全部跟随变化，
+ *   即证明「Gxgen 硬编码紫色 → 品牌变量化」路线可行
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+}
+
+/* ==================== 主题变量（dsh 蓝 默认） ==================== */
+
+.spike-root {
+  /* 品牌主色 —— 换肤唯一开关 */
+  --wb-accent: #4176E6;
+  --wb-accent-hover: #679EFE;
+  --wb-accent-soft: color-mix(in srgb, var(--wb-accent) 12%, transparent);
+  --wb-success: #C8F135;
+  --wb-danger: #ef4444;
+
+  /* 表面 */
+  --wb-bg: #F7F8FA;
+  --wb-bg-canvas: #F3F4F7;
+  --wb-surface: #ffffff;
+  --wb-surface-raised: #fbfbfc;
+  --wb-border: rgba(15, 20, 32, 0.08);
+  --wb-border-strong: rgba(15, 20, 32, 0.16);
+
+  /* 文本 */
+  --wb-text-primary: #1a1d26;
+  --wb-text-secondary: #5f6472;
+  --wb-text-muted: #9aa0ae;
+
+  /* 画布连线 */
+  --wb-edge: #b1b1b7;
+  --wb-grid-dot: #C9CBD6;
+
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--wb-bg);
+  color: var(--wb-text-primary);
+}
+
+/* alt 主题（OmniMux 酸橙绿）—— 验证变量注入换肤 */
+.spike-root[data-theme='omnimux'] {
+  --wb-accent: #5a7d1e;
+  --wb-accent-hover: #C8F135;
+  --wb-success: #4176E6;
+  --wb-bg-canvas: #F4F6EC;
+}
+
+/* ==================== Header ==================== */
+
+.spike-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--wb-border);
+  background: var(--wb-surface);
+  flex-shrink: 0;
+}
+
+.spike-header__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.spike-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.spike-header__hint {
+  font-size: 12px;
+  color: var(--wb-text-muted);
+}
+
+.spike-theme-toggle {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--wb-accent);
+  color: var(--wb-accent);
+  background: var(--wb-accent-soft);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.spike-theme-toggle:hover {
+  background: var(--wb-accent);
+  color: #fff;
+}
+
+.spike-main {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ==================== React Flow 主题覆盖 ==================== */
+
+.canvas-editor {
+  position: relative;
+  height: 100%;
+}
+
+.canvas-editor .react-flow {
+  background: var(--wb-bg-canvas);
+}
+
+/* 连线选中/默认颜色跟随主题变量 */
+.canvas-editor .react-flow__edge-path {
+  stroke: var(--wb-edge);
+}
+
+.canvas-editor .react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--wb-accent);
+  stroke-width: 2.5;
+}
+
+/* Handle 锚点 */
+.canvas-editor .react-flow__handle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--wb-surface);
+  border: 2px solid var(--wb-accent);
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.canvas-editor .react-flow__handle:hover {
+  background: var(--wb-accent);
+  transform: scale(1.25);
+}
+
+/* 选中框 */
+.canvas-editor .react-flow__node.selected {
+  filter: drop-shadow(0 0 0 var(--wb-accent));
+}
+
+.canvas-editor .react-flow__node {
+  outline: none;
+}
+
+/* Controls / MiniMap */
+.canvas-editor .react-flow__controls {
+  box-shadow: 0 4px 16px rgba(15, 20, 32, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--wb-border);
+}
+
+.canvas-editor .react-flow__controls-button {
+  background: var(--wb-surface);
+  border-bottom: 1px solid var(--wb-border);
+  color: var(--wb-text-secondary);
+}
+
+.canvas-editor .react-flow__controls-button:hover {
+  background: var(--wb-surface-raised);
+}
+
+.canvas-editor .react-flow__minimap {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--wb-border);
+  background: var(--wb-surface);
+}
+
+.canvas-editor .react-flow__minimap-mask {
+  fill: color-mix(in srgb, var(--wb-bg-canvas) 70%, transparent);
+}
+
+.canvas-editor .react-flow__minimap-node {
+  fill: var(--wb-accent-soft);
+  stroke: var(--wb-accent);
+}
+
+/* 选择框 */
+.canvas-editor .react-flow__selection {
+  background: var(--wb-accent-soft);
+  border: 1px dashed var(--wb-accent);
+}
+
+/* ==================== 左侧工具栏 ==================== */
+
+.canvas-toolbar {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-border);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.08);
+}
+
+.canvas-toolbar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 60px;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--wb-text-secondary);
+  transition: all 150ms ease;
+}
+
+.canvas-toolbar__item:hover {
+  background: var(--wb-accent-soft);
+  color: var(--wb-accent);
+}
+
+.canvas-toolbar__icon {
+  font-size: 18px;
+}
+
+.canvas-toolbar__label {
+  font-size: 11px;
+}
+
+/* ==================== MaterialNode ==================== */
+
+.material-node {
+  position: relative;
+}
+
+.material-node__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  padding: 0 4px;
+  min-height: 22px;
+}
+
+.material-node__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--wb-text-secondary);
+  cursor: default;
+  user-select: none;
+}
+
+.material-node__label-input {
+  font-size: 13px;
+  padding: 2px 6px;
+  border: 1px solid var(--wb-accent);
+  border-radius: 6px;
+  outline: none;
+  background: var(--wb-surface);
+  color: var(--wb-text-primary);
+  width: 160px;
+}
+
+.material-node__badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.material-node__badge--running {
+  background: var(--wb-accent);
+  animation: wb-pulse 1.2s ease-in-out infinite;
+}
+
+.material-node__badge--done {
+  background: var(--wb-success);
+}
+
+.material-node__badge--failed {
+  background: var(--wb-danger);
+}
+
+@keyframes wb-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
+}
+
+.material-node__card {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid var(--wb-border);
+  background: color-mix(in srgb, var(--wb-surface) 88%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.06);
+  overflow: hidden;
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.material-node:hover .material-node__card {
+  box-shadow: 0 12px 32px rgba(15, 20, 32, 0.1);
+}
+
+.material-node--selected .material-node__card {
+  border-color: var(--wb-accent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--wb-accent) 40%, transparent),
+    0 12px 32px rgba(15, 20, 32, 0.12);
+}
+
+.material-node__text-editor {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--wb-text-primary);
+  font-family: inherit;
+}
+
+.material-node__text-editor::placeholder {
+  color: var(--wb-text-muted);
+}
+
+.material-node__media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  padding: 12px;
+}
+
+.material-node__media-image {
+  max-width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.material-node__media-placeholder {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1.5px dashed var(--wb-border-strong);
+  color: var(--wb-text-muted);
+  font-size: 12px;
+  background: var(--wb-surface-raised);
+}
+
+.material-node__media-placeholder--running {
+  border-color: var(--wb-accent);
+  color: var(--wb-accent);
+  border-style: solid;
+  background: var(--wb-accent-soft);
+}
+
+.material-node__media-placeholder--done {
+  border-color: var(--wb-success);
+  color: var(--wb-text-secondary);
+}
+
+.material-node__error {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--wb-danger);
+  background: color-mix(in srgb, var(--wb-danger) 8%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--wb-danger) 20%, transparent);
+}
+
+/* ==================== 配置面板（卡片下方展开） ==================== */
+
+.material-config-panel {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--wb-border);
+  background: var(--wb-surface);
+  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.material-config-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wb-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.material-config-panel__close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--wb-text-muted);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.material-config-panel__close:hover {
+  background: var(--wb-accent-soft);
+  color: var(--wb-accent);
+}
+
+.material-config-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.material-config-panel__field label {
+  font-size: 11px;
+  color: var(--wb-text-muted);
+}
+
+/* antd 主色跟随主题变量（antd token 需 JS 值，spike 用 CSS 覆盖演示） */
+.spike-root .ant-btn-primary {
+  background: var(--wb-accent);
+  border-color: var(--wb-accent);
+  box-shadow: none;
+}
+
+.spike-root .ant-btn-primary:hover {
+  background: var(--wb-accent-hover) !important;
+  border-color: var(--wb-accent-hover) !important;
+}
+
+/* ==================== 连线拒绝提示 ==================== */
+
+.canvas-rejected-toast {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--wb-text-primary);
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-border-strong);
+  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.12);
+}

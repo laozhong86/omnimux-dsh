@@ -95,7 +95,15 @@ export function ConfirmRemoveDialog({ t, name, busy, onCancel, onConfirm }) {
         style={dialog}
         onKeyDown={(event) => {
           if (event.key === 'Escape') onCancel()
-          if (event.key === 'Enter') onConfirm()
+          // Enter only confirms when the danger button itself is focused —
+          // otherwise focusing "cancel" and pressing Enter would remove.
+          if (
+            event.key === 'Enter' &&
+            event.target instanceof HTMLElement &&
+            event.target.dataset.confirmRemove === 'true'
+          ) {
+            onConfirm()
+          }
         }}
       >
         <h2 style={heading}>{t('mapping.removeTitle').replace('{name}', name)}</h2>
@@ -108,6 +116,7 @@ export function ConfirmRemoveDialog({ t, name, busy, onCancel, onConfirm }) {
             type="button"
             style={busy ? dangerButtonDisabled : dangerButton}
             disabled={busy}
+            data-confirm-remove="true"
             onClick={onConfirm}
           >
             {t('mapping.removeConfirm')}

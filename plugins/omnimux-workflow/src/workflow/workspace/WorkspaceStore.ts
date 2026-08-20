@@ -25,12 +25,22 @@ import {
 } from '../../shared/canvasTypes';
 import { workspaceSnapshotSchema } from './snapshotSchema';
 
+/** Mirrors the snapshot schema name cap (workspaceSnapshotSchema). */
+const MAX_WORKSPACE_NAME_LENGTH = 200;
+
 export class WorkflowStoreError extends Error {
   readonly code: string;
+  /**
+   * Server-side current version carried by version_conflict errors, so the
+   * HTTP layer can surface it in the 409 body without parsing the message
+   * (M2 QA fix #5 — the regex-based extraction was brittle).
+   */
+  readonly current?: number;
 
-  constructor(code: string, message: string) {
+  constructor(code: string, message: string, details: { current?: number } = {}) {
     super(message);
     this.code = code;
+    this.current = details.current;
     this.name = 'WorkflowStoreError';
   }
 }
@@ -121,6 +131,16 @@ export function createWorkspaceStore(opts: {
     },
 
     create(name: string | undefined): CanvasWorkspaceSnapshot {
+      // M2 QA fix #1: validate BEFORE writing anything to disk. Without this
+      // a >200-char name was persisted by create() but rejected by the read
+      // side (workspaceSnapshotSchema), leaving an unreadable "zombie"
+      // workspace behind (list invisible / GET+PUT 404, only DELETE worked).
+      if (typeof name === 'string' && name.trim().length > MAX_WORKSPACE_NAME_LENGTH) {
+        throw new WorkflowStoreError(
+          'name-too-long',
+          `workspace name exceeds ${MAX_WORKSPACE_NAME_LENGTH} characters (got ${name.trim().length})`,
+        );
+      }
       const id = newWorkspaceId();
       const now = new Date().toISOString();
       const snapshot: CanvasWorkspaceSnapshot = {
@@ -154,6 +174,7 @@ export function createWorkspaceStore(opts: {
         throw new WorkflowStoreError(
           'version_conflict',
           `workspace ${id} moved on: expected ${String(payload.expectedVersion)}, current ${String(current.version)}`,
+          { current: current.version },
         );
       }
 

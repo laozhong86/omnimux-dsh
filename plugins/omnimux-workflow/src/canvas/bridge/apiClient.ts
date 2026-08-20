@@ -1,5 +1,5 @@
 /**
- * Island-side fetch wrapper over the host /dsh-workflow/api/* routes.
+ * Island-side fetch wrapper over the host /omnimux-workflow/api/* routes.
  *
  * Plain fetch (same origin — the island is served by the same webServer);
  * no axios, no custom HTTP client (plugin red line). Route paths come from
