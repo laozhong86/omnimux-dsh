@@ -15103,7 +15103,7 @@ function mountWorkflowHost(ctx, opts = {}) {
 }
 
 // src/index.ts
-var name = "dsh-workflow";
+var name = "omnimux-workflow";
 var inject = ["webServer"];
 function apply(ctx) {
   mountWorkflowHost(ctx);

@@ -1,12 +1,12 @@
 # Execution hub
 
-Normative I/O for `dsh-omnimux` and every vertical. Status of a live surface is [capabilities.md](../capabilities.md). Rationale: [2026-08-16 hub I/O and facilities](../decisions/2026-08-16-hub-io-and-facilities.md).
+Normative I/O for `omnimux` and every vertical. Status of a live surface is [capabilities.md](../capabilities.md). Rationale: [2026-08-16 hub I/O and facilities](../decisions/2026-08-16-hub-io-and-facilities.md).
 
 ## Terms
 
 | Term | Means | Must not be called |
 |---|---|---|
-| Execution hub | `dsh-omnimux`. Product chrome, identity, model routes, media seams, official-only tools, Apps shell | Gateway, 网关, OmniMux cloud, a vertical |
+| Execution hub | `omnimux`. Product chrome, identity, model routes, media seams, official-only tools, Apps shell | Gateway, 网关, OmniMux cloud, a vertical |
 | Vertical | One scene plugin (`dsh-drama`, later e-commerce / brand). Owns its disk and tools | Hub sibling, second chrome/auth package |
 | Neutral seam | `ctx.provide` / `ctx.get` interface a third-party adapter may satisfy | An `omnimux_*` official-only tool |
 | Official-only tool | `omnimux_*` tool that exists only because OmniMux cloud implements it | A swap-in provider |
@@ -27,7 +27,7 @@ vertical disk  <--only the vertical writes its own files
 - The hub returns a result object or throws. It does not write `series/`, 货盘, or any other vertical store.
 - Missing hub: the vertical stubs from its own explicit fixture, or throws `needs-provider`. It must not pretend a model ran.
 - Official-only tool and OmniMux is not configured or the user is not signed in: throw `needs-omnimux`. Do not return 500 or a successful empty value.
-- Apps and other plugins consume the same seams. They must not import `dsh-omnimux` internals.
+- Apps and other plugins consume the same seams. They must not import `omnimux` internals.
 
 Chat stays on the dsh LLM surface (`llm-pi-ai` `omnimux` route). The hub must not register a parallel chat tool. A one-shot expert completion (`textComplete` / `omnimux_text_complete`) is not chat: it runs one `ctx.llm.stream` call with no tools and no parent messages.
 
@@ -166,10 +166,10 @@ Do not export a `sk-` as `OMNIMUX_ACCESS_TOKEN`.
 
 ## Package layout
 
-Hub implementation stays in `plugins/dsh-omnimux`. New capability = new directory under that package, not a sibling plugin.
+Hub implementation stays in `plugins/omnimux`. New capability = new directory under that package, not a sibling plugin.
 
 ```text
-plugins/dsh-omnimux/src/
+plugins/omnimux/src/
 config.js              plugin Config (brand + media + apps + text)
   brand/                 chrome overlay
   auth/                  device login, token store, provide('identity'), /omnimux/auth/*
@@ -198,4 +198,4 @@ The plugin entry exports `Config` (Standard Schema). Brand strings, `media.provi
 | write its own disk contract | implement chrome, login, or provider routes |
 | stub or throw `needs-provider` when a seam is absent | claim `mode: "stub"` is a model render |
 
-`dsh-omnimux` itself is not a shelf app. Official catalog rows: [apps-catalog.md](apps-catalog.md).
+`omnimux` itself is not a shelf app. Official catalog rows: [apps-catalog.md](apps-catalog.md).

@@ -6,13 +6,13 @@ Normative local + remote JSON catalog for the Apps shelf. Status of the live UI 
 
 | Term | Means | Must not be |
 |---|---|---|
-| Bundled catalog | `plugins/dsh-omnimux/apps/catalog.json` shipped with the hub | A scan of the profile's `dsh.profile.bundles` |
+| Bundled catalog | `plugins/omnimux/apps/catalog.json` shipped with the hub | A scan of the profile's `dsh.profile.bundles` |
 | Disk cache | `$DSH_HOME/omnimux/apps/catalog.json` plus `meta.json` | A second source of truth beside a valid newer bundled file |
 | Remote catalog | `GET {siteBaseUrl}/apps/catalog.json` | An authenticated write API, a per-user "mine" list |
 | Shelf view | `GET /omnimux/apps` JSON the Apps page renders | The Settings → 插件 tab that installs Host plugins |
-| App row | One object in `apps[]` with `omnimux.app` identity | `dsh-omnimux`, `dsh-base`, `dsh-web-app`, community plugins |
+| App row | One object in `apps[]` with `omnimux.app` identity | `omnimux`, `dsh-base`, `dsh-web-app`, community plugins |
 
-`dsh-omnimux` renders the shelf and is never a row. Installation stays `dsh plugin add`. The browser never fetches the remote file.
+`omnimux` renders the shelf and is never a row. Installation stays `dsh plugin add`. The browser never fetches the remote file.
 
 ## Layers
 
@@ -38,8 +38,8 @@ Resolve never blocks Host boot. A failed remote leaves the previous view in plac
 
 | Path | Owner | Role |
 |---|---|---|
-| `plugins/dsh-omnimux/apps/catalog.json` | hub package | Floor. Copied onto the machine with the hub (Desktop seed or `dsh plugin add`) |
-| `plugins/dsh-omnimux/apps/catalog.schema.json` | hub package | Validator used by tests and by `parseCatalog` |
+| `plugins/omnimux/apps/catalog.json` | hub package | Floor. Copied onto the machine with the hub (Desktop seed or `dsh plugin add`) |
+| `plugins/omnimux/apps/catalog.schema.json` | hub package | Validator used by tests and by `parseCatalog` |
 | `$DSH_HOME/omnimux/apps/catalog.json` | Host | Last valid remote body. Mode `0600`, directory `0700` |
 | `$DSH_HOME/omnimux/apps/meta.json` | Host | ETag, fetch time, URL, sha256, last error. No secrets |
 | `{siteBaseUrl}/apps/catalog.json` | OmniMux site origin | Public official catalog. Same host as device-login (`https://omnimux.ai` by default) |
@@ -66,7 +66,7 @@ Schema `1` only. Unknown `schema` rejects the whole document.
       "client": true,
       "spec": {
         "source": "npm",
-        "name": "dsh-omnimux-accounts",
+        "name": "omnimux-accounts",
         "version": "0.1.0"
       }
     }
@@ -78,7 +78,7 @@ Schema `1` only. Unknown `schema` rejects the whole document.
 |---|---|
 | `schema` | Integer `1` |
 | `generated_at` | UTC instant (`YYYY-MM-DDTHH:mm:ssZ`). Compare as instants, not strings |
-| `min_hub` | Semver of `dsh-omnimux`. Remote is discarded when local hub version is lower |
+| `min_hub` | Semver of `omnimux`. Remote is discarded when local hub version is lower |
 | `apps` | Array, max 64 rows, max document 65536 bytes |
 | `id` | `[a-z0-9]+(-[a-z0-9]+)*`, 2–64 chars. Unique in the document |
 | `title`, `summary` | Non-empty strings. `title` ≤ 40, `summary` ≤ 160 |
@@ -90,7 +90,7 @@ Schema `1` only. Unknown `schema` rejects the whole document.
 | `spec.name` | npm package name. Same allowlist as Settings install (`assertNpmSpec` without a range) |
 | `spec.version` | Required when `source` is `npm`. Forbidden when `source` is `bundled`. Exact `MAJOR.MINOR.PATCH` with optional `-prerelease`. No `latest`, `*`, `x`, `^`, `~`, or git URL |
 
-Forbidden `id` and `spec.name` values: `dsh-omnimux`, `@deepseek-ai/dsh-base`, `@deepseek-ai/dsh-web-app`, `dsh-better-sidebar`.
+Forbidden `id` and `spec.name` values: `omnimux`, `@deepseek-ai/dsh-base`, `@deepseek-ai/dsh-web-app`, `dsh-better-sidebar`.
 
 `bundled` means the package is already on disk from Desktop seed (or an equivalent local add). The shelf enables it with `dsh plugin add <name>` against that local copy. It does not download.
 
@@ -205,7 +205,7 @@ Clicking the card body (title / summary area, not the footer) is the open path:
 | `update` | Open the app page (same as `installed`) | Primary「更新」 | 打开 · 卸载 |
 | `installed` | Open the app page | `···` icon button | 打开 · 卸载 |
 
-Open path: `canOpen` (installed or update, `client: true`, no pending restart) → device-login gate when the row has the `identity` capability and the user is signed out → `dsh-omnimux-app-open` dispatch → the app claims the product stage. When no app claims within 600 ms (usually a pending Host restart), the page surfaces 重启后可用 instead of a dead screen.
+Open path: `canOpen` (installed or update, `client: true`, no pending restart) → device-login gate when the row has the `identity` capability and the user is signed out → `omnimux-app-open` dispatch → the app claims the product stage. When no app claims within 600 ms (usually a pending Host restart), the page surfaces 重启后可用 instead of a dead screen.
 
 `pendingRestart` is page-level client state on the Apps page: set after any successful install / update / remove and cleared after the desktop shell restarts the Host. While it holds, the menu's 打开 item is disabled with the 重启后可用 hint and card-body open attempts return the same hint.
 
@@ -233,7 +233,7 @@ A `catalogUrl` whose host is not the resolved site host fails at config parse. N
 
 There is no write HTTP. Official unpublish is: edit the site `apps/catalog.json`, bump `generated_at`, deploy the static file. The next successful Host GET updates every machine that can reach the origin.
 
-The same file lives in `plugins/dsh-omnimux/apps/catalog.json` so a Desktop or hub release ships a floor for offline machines. After a shelf change, update the hub copy in the same product PR when the change should survive a later seed that is newer than an old cache.
+The same file lives in `plugins/omnimux/apps/catalog.json` so a Desktop or hub release ships a floor for offline machines. After a shelf change, update the hub copy in the same product PR when the change should survive a later seed that is newer than an old cache.
 
 ## Client
 
@@ -262,7 +262,7 @@ Login stays as it is: unsigned users can see official listed rows. Opening an in
 | Remote `min_hub` above local hub | Remote ignored; previous view kept; `meta.status` is `invalid` |
 | Remote body > 65536 bytes | Treated as invalid; previous view kept |
 | `spec.version` is `latest` or `^1.0.0` | Document invalid |
-| Row `id` or `name` is `dsh-omnimux` | Document invalid |
+| Row `id` or `name` is `omnimux` | Document invalid |
 | Timeout / 5xx | Previous view; `refresh` becomes `failed`; `error` set |
 | `304` | `fetched_at` updates; catalog body unchanged |
 | Two overlapping refreshes | One GET |
@@ -278,4 +278,4 @@ Each step is usable alone.
 1. Bundled `catalog.json` (may be `{ "schema": 1, "generated_at": "…", "min_hub": "0.1.0", "apps": [] }`) + `parseCatalog` + `GET /omnimux/apps` from bundled only.
 2. Disk cache + remote GET + `POST /omnimux/apps/refresh` + `Config.apps`.
 3. Apps page renders the view instead of only the empty sentence.
-4. First real row `accounts` (`dsh-omnimux-accounts`, `source: bundled`) with `client: true`. Install posts the bare name to `/omnimux/plugins`; the package must already be on disk (Desktop seed or a local add). Isolated add/remove: `scripts/accept-apps-install.sh`.
+4. First real row `accounts` (`omnimux-accounts`, `source: bundled`) with `client: true`. Install posts the bare name to `/omnimux/plugins`; the package must already be on disk (Desktop seed or a local add). Isolated add/remove: `scripts/accept-apps-install.sh`.

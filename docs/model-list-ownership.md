@@ -1,6 +1,6 @@
 # OmniMux model-list ownership
 
-The app's OmniMux model list has exactly one owner: `plugins/dsh-omnimux/cordis.patch.yml`.
+The app's OmniMux model list has exactly one owner: `plugins/omnimux/cordis.patch.yml`.
 
 ## Why one owner
 
@@ -16,7 +16,7 @@ that the gateway does not document) and hid the plugin's list.
 
 Layer order (later wins on id match):
 
-1. bundle patches (each `dsh.profile.bundles` entry, `dsh-omnimux` ships its
+1. bundle patches (each `dsh.profile.bundles` entry, `omnimux` ships its
    patch here)
 2. profile-local `cordis.patch.yml` (`~/.dsh/profiles/<name>/cordis.patch.yml`)
 3. `$DSH_HOME/cordis.patch.yml`
@@ -47,14 +47,25 @@ it that way: user layers set `agent-default-model` only.
   message is durable — so the measured matrix, not the pricing catalog text
   (which lags reality: it only mentions grok-4.6), is the gate.
   `verify:models` enforces both directions keyless against `CHAT_MODELS`.
-- The one-shot expert whitelist (`plugins/dsh-omnimux/src/text/catalog.js`
+- Reasoning efforts: each model declares `reasoningEfforts` from the measured
+  gateway matrix (`docs/evidence/omnimux-reasoning-2026-08-20.md`). Only
+  levels that returned HTTP 200 on `POST /v1/chat/completions` with
+  `reasoning_effort` are listed; the route default is `reasoning: max` so the
+  composer effort pane opens on Max. A literal `off` 400s on most upstreams
+  — rows that can disable thinking map `off` to wire `none`; rows that still
+  think when the field is omitted do not offer Off. The route also sets
+  `supportsDeveloperRole: false` because this gateway rejects the
+  `developer` role pi-ai would otherwise send on a reasoning model.
+  `verify:models` fails if a patch row omits `reasoningEfforts.max` or if
+  the route default is not `max`.
+- The one-shot expert whitelist (`plugins/omnimux/src/text/catalog.js`
   `CHAT_MODELS`) is a subset of this patch list, and its `input` matrix must
   agree with the patch. `verify:models` fails on any mismatch or if a
   whitelist id is missing from the patch.
 
 ## Changing the list
 
-1. Edit `plugins/dsh-omnimux/cordis.patch.yml` (provider row + models).
+1. Edit `plugins/omnimux/cordis.patch.yml` (provider row + models).
 2. Run `pnpm verify:models` — modality consistency always runs (keyless);
    the gateway existence check needs `OMNIMUX_API_KEY` (reads
    `~/.config/omnimux/dsh.env` when the env var is absent).
@@ -71,8 +82,9 @@ reference shape.
 ## Verify
 
 - `pnpm verify:models` — modality declarations match the measured matrix in
-  `CHAT_MODELS` (keyless) and every declared model id exists on the live
-  gateway (with a key).
+  `CHAT_MODELS` (keyless), every patch model declares `reasoningEfforts.max`
+  with route `reasoning: max` (keyless), and every declared model id exists
+  on the live gateway (with a key).
 - `dsh --profile <name> --dump-config` — the composed `llm-pi-ai` provider
-  block must come from `dsh-omnimux` (dump headers name the patching layer),
+  block must come from `omnimux` (dump headers name the patching layer),
   and no `omnimux-compat` provider may exist anywhere.

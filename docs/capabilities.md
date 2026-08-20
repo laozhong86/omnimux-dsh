@@ -4,7 +4,7 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 
 | Surface | Status | Evidence |
 |---|---|---|
-| `dsh plugin add ./plugins/dsh-omnimux` | **real** | 2026-08-14：`DSH_SRC=… pnpm dsh --profile drama --help` 启动不再 `provide` 崩溃；`scripts/verify-cordis-propagate.mjs` |
+| `dsh plugin add ./plugins/omnimux` | **real** | 2026-08-14：`DSH_SRC=… pnpm dsh --profile drama --help` 启动不再 `provide` 崩溃；`scripts/verify-cordis-propagate.mjs` |
 | `dsh plugin add ./plugins/dsh-drama` | **real** | same |
 | `drama_project_status` | **real** | reads `series/` |
 | `drama_init_project` | **real** | creates empty `series/` |
@@ -25,13 +25,13 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | Drama Center login / upload / payout | **docs only** | skill `tiktok-drama-center`; no tool |
 | Official dsh plugin marketplace | **absent** | install via `dsh plugin add`; discover via `dsh-plugin` topic |
 | OmniMux settings login (device HTTP, no CLI) | **unproven** | Host `/omnimux/auth/*` + settings 个人资料登录 + 侧栏「应用」. Keyless unit tests only; live login not claimed until a manual pass |
-| OmniMux product chrome (logo / wordmark / tab title / favicon) | **real** (keyless) | Hub `src/brand` overlay + `tapIndex` boot. Tests in `plugins/dsh-omnimux/src/brand/*.test.js`. No sibling `omnimux-brand` package |
+| OmniMux product chrome (logo / wordmark / tab title / favicon) | **real** (keyless) | Hub `src/brand` overlay + `tapIndex` boot. Tests in `plugins/omnimux/src/brand/*.test.js`. No sibling `omnimux-brand` package |
 | OmniMux Apps catalog (bundled + optional remote JSON) | **real** (keyless) | Host `GET /omnimux/apps` + Apps overlay. Remote is `Config.apps.remote` (default off). Tests inject fetchers. Contract: [contracts/apps-catalog.md](contracts/apps-catalog.md) |
-| Official Apps row `accounts` | **real** (keyless) | Bundled catalog lists `dsh-omnimux-accounts` (`source: bundled`). Shelf install posts the bare name to `/omnimux/plugins`; the package must be on disk (Desktop seed or a local add). Isolated add/remove: `scripts/accept-apps-install.sh` |
-| Apps card actions (action-slot matrix + overflow menu + confirm bubbles + login gate) | **real** (keyless) | Hub `PluginsSection` + `open-app-flow`. Matrix tests in `plugins/dsh-omnimux/src/client/app-actions.test.js`; stage placement in `src/client/settings-placement.test.js`. Contract: [contracts/apps-catalog.md](contracts/apps-catalog.md) |
+| Official Apps row `accounts` | **real** (keyless) | Bundled catalog lists `omnimux-accounts` (`source: bundled`). Shelf install posts the bare name to `/omnimux/plugins`; the package must be on disk (Desktop seed or a local add). Isolated add/remove: `scripts/accept-apps-install.sh` |
+| Apps card actions (action-slot matrix + overflow menu + confirm bubbles + login gate) | **real** (keyless) | Hub `PluginsSection` + `open-app-flow`. Matrix tests in `plugins/omnimux/src/client/app-actions.test.js`; stage placement in `src/client/settings-placement.test.js`. Contract: [contracts/apps-catalog.md](contracts/apps-catalog.md) |
 | App tabs (sidebar dynamic tab rows, `tabs.json` 0600 persistence) | **real** (keyless) | Host `GET/POST/PATCH/DELETE /omnimux/apps/tabs*` + `$DSH_HOME/omnimux/apps/tabs.json` (0600, dir 0700) + sidebar rows after 应用. Tests: `src/apps/tabs.test.js`, `src/apps/http-routes.test.js`, `src/plugins/http-routes.test.js`, `src/client/app-tabs.test.js`. Contract: [contracts/sidebar-extra-entries.md](contracts/sidebar-extra-entries.md) |
 | Accounts app UI | **unproven** | App stage page (`shell.overlay`, opened from the Apps card / sidebar tab; no longer a Settings tab). v0.2 visual rebuild over `GET/POST/PATCH/DELETE /omnimux/accounts`: overview strip, card grid + table view (sortable headers, view persisted), bulk disconnect / bulk Agent toggle (serial), Agent-usable switch (optimistic PATCH), connect dialog (platform picker + auth_url + 5s poll), empty state with platform support list. Keyless-tested in `plugins/omnimux-accounts/src/client/view.test.js` + `src/filter.test.js` and hub-side in `plugins/omnimux/src/official/{http-routes,public-account,account-meta}.test.js`. Live OmniMux account list not claimed |
-| Profile avatar (blobatar) | **real** (keyless) | Host `GET`/`PATCH /omnimux/avatar`; the profile page hover-**编辑** dialog re-rolls, pins a hue, uploads an image (≤200KB raster data URI), or resets. Default is `blobatarUri(username)`; customized rows persist a snapshot URI under `$DSH_HOME/omnimux/avatar.json`. Tests in `plugins/dsh-omnimux/src/avatar/*.test.js`. No network. |
+| Profile avatar (blobatar) | **real** (keyless) | Host `GET`/`PATCH /omnimux/avatar`; the profile page hover-**编辑** dialog re-rolls, pins a hue, uploads an image (≤200KB raster data URI), or resets. Default is `blobatarUri(username)`; customized rows persist a snapshot URI under `$DSH_HOME/omnimux/avatar.json`. Tests in `plugins/omnimux/src/avatar/*.test.js`. No network. |
 | `dsh web --host 0.0.0.0` | **blocked upstream** | official CLI rejects it |
 
 Phase labels in older notes (`A` / `B` / `C`) are history. Use this table.

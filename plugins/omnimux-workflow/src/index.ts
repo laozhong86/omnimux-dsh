@@ -6,7 +6,7 @@
  */
 import { mountWorkflowHost } from './workflow/index';
 
-export const name = 'dsh-workflow';
+export const name = 'omnimux-workflow';
 export const inject = ['webServer'];
 
 /**
