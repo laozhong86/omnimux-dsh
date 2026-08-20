@@ -1527,7 +1527,7 @@ function PluginsSection({ t }) {
       setBusy("");
     });
   };
-  const install = (spec) => {
+  const install2 = (spec) => {
     if (!spec) return;
     runChange(spec, () => installApp(spec));
   };
@@ -1666,7 +1666,7 @@ function PluginsSection({ t }) {
             disabled: busy !== "" || spec === "",
             onClick: (event) => {
               event.stopPropagation();
-              install(spec);
+              install2(spec);
             },
             children: t(primary === "update" ? "plugins.update" : "plugins.install")
           }
@@ -1715,7 +1715,7 @@ function PluginsSection({ t }) {
                 disabled: busy !== "" || spec === "",
                 onClick: () => {
                   setPopover(null);
-                  install(spec);
+                  install2(spec);
                 },
                 children: t("plugins.install")
               }
@@ -1878,7 +1878,6 @@ function AppsStage({ t, apps, useSessions }) {
 }
 
 // src/client/sidebar-entry.js
-var ENTRY_SELECTOR = "[data-omnimux-apps-entry]";
 var ICON = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg>';
 var STYLES = `
 .omnimux-apps-entry {
@@ -1895,37 +1894,12 @@ var STYLES = `
 .omnimux-apps-entry svg { display: block; width: 14px; height: 14px; }
 .omnimux-apps-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
 `;
-function injectStyles() {
-  if (document.getElementById("omnimux-apps-entry-styles")) return;
-  const style = document.createElement("style");
-  style.id = "omnimux-apps-entry-styles";
-  style.textContent = STYLES;
-  document.head.append(style);
-}
-function sidebarRoot() {
-  const column = document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]');
-  if (!(column instanceof HTMLElement)) return void 0;
-  const logoOwner = column.querySelector('[class*="logoRow"]')?.parentElement;
-  return logoOwner ?? (column.firstElementChild instanceof HTMLElement ? column.firstElementChild : void 0);
-}
-function newSessionButton(root) {
-  const nested = root.querySelector('button[class*="newSession"]');
-  if (nested instanceof HTMLButtonElement) return nested;
-  for (const child of root.children) {
-    if (child instanceof HTMLButtonElement) return child;
-  }
-  const byAria = root.querySelector(
-    'button[aria-label="\u65B0\u5EFA\u4F1A\u8BDD"], button[aria-label="New Session"], button[aria-label*="\u65B0\u4F1A\u8BDD"], button[aria-label*="new session" i]'
-  );
-  if (byAria instanceof HTMLButtonElement) return byAria;
-  return [...root.querySelectorAll("button")].find((button) => /新会话|新建会话|new session/i.test(button.textContent ?? ""));
-}
 function paintLabel(entry, label2) {
   entry.setAttribute("aria-label", label2);
   const node = entry.querySelector(".omnimux-apps-entry-label");
   if (node) node.textContent = label2;
 }
-function createEntry(apps, t) {
+function mountSidebarEntry(apps, t, locale, register) {
   const entry = document.createElement("button");
   entry.type = "button";
   entry.dataset.dshOmnimuxAppsEntry = "";
@@ -1935,78 +1909,28 @@ function createEntry(apps, t) {
   entry.addEventListener("click", () => {
     apps.toggle();
   });
-  return entry;
-}
-function placeEntry(root, entry) {
-  const button = newSessionButton(root);
-  if (button === void 0) return false;
-  if (entry.previousElementSibling === button && entry.parentElement === root) return true;
-  const next = button.nextElementSibling;
-  root.insertBefore(entry, next === entry ? entry.nextElementSibling : next);
-  return true;
-}
-function mountSidebarEntry(apps, t, locale) {
-  injectStyles();
-  const entry = createEntry(apps, t);
   const paint = () => {
     paintLabel(entry, t("plugins.nav"));
   };
   const unsubscribeLocale = typeof locale?.subscribe === "function" ? locale.subscribe(paint) : () => {
   };
-  let root;
-  let placed = false;
   const syncActive = () => {
     if (apps.getSnapshot()) entry.dataset.active = "true";
     else delete entry.dataset.active;
   };
-  const tryPlace = () => {
-    if (root !== void 0 && !root.isConnected) {
-      rootObserver.disconnect();
-      root = void 0;
-      placed = false;
-    }
-    if (placed) {
-      if (document.body.contains(entry) && entry.previousElementSibling && /新会话|新建会话|new session/i.test(entry.previousElementSibling.getAttribute?.("aria-label") || entry.previousElementSibling.textContent || "")) {
-        return;
-      }
-      if (!document.body.contains(entry)) {
-        rootObserver.disconnect();
-        root = void 0;
-        placed = false;
-      }
-    }
-    root ??= sidebarRoot();
-    if (root === void 0) return;
-    placed = placeEntry(root, entry);
-    if (placed) rootObserver.observe(root, { childList: true, subtree: true });
-  };
-  const waitObserver = new MutationObserver(() => {
-    tryPlace();
-  });
-  waitObserver.observe(document.body, { childList: true, subtree: true });
-  const rootObserver = new MutationObserver(() => {
-    if (root === void 0 || !root.isConnected) {
-      placed = false;
-      tryPlace();
-      return;
-    }
-    if (!root.contains(entry) || entry.previousElementSibling !== newSessionButton(root)) {
-      placed = placeEntry(root, entry);
-    }
-  });
-  const retry = setInterval(() => {
-    tryPlace();
-  }, 2e3);
-  const unsubscribe = apps.subscribe(syncActive);
+  const unsubscribeApps = apps.subscribe(syncActive);
   syncActive();
-  tryPlace();
+  const unregister = register({
+    id: "omnimux-apps-entry",
+    rank: 1,
+    styles: STYLES,
+    styleId: "omnimux-apps-entry-styles",
+    create: () => entry
+  });
   return () => {
-    clearInterval(retry);
-    waitObserver.disconnect();
-    rootObserver.disconnect();
-    unsubscribe();
+    unregister();
+    unsubscribeApps();
     unsubscribeLocale();
-    entry.remove();
   };
 }
 
@@ -2060,20 +1984,6 @@ function tabRowModel(view) {
   }
   return rows;
 }
-function placeTabsContainer(entry, container) {
-  const parent = entry?.parentElement;
-  if (!parent || typeof parent.insertBefore !== "function") return false;
-  if (entry.nextElementSibling === container) return true;
-  parent.insertBefore(container, entry.nextElementSibling ?? null);
-  return true;
-}
-function injectStyles2() {
-  if (document.getElementById("omnimux-app-tabs-styles")) return;
-  const style = document.createElement("style");
-  style.id = "omnimux-app-tabs-styles";
-  style.textContent = STYLES2;
-  document.head.append(style);
-}
 function iconFor(id) {
   return id === "accounts" ? ICON_ACCOUNTS : ICON_DEFAULT;
 }
@@ -2102,12 +2012,10 @@ function paintAction(row2, kind, label2, glyph) {
   action.setAttribute("aria-label", label2);
   action.textContent = glyph;
 }
-function mountAppTabs(t, locale) {
-  injectStyles2();
+function mountAppTabs(t, locale, register) {
   const container = document.createElement("div");
   container.dataset.dshOmnimuxAppTabs = "";
   let rows = [];
-  let placed = false;
   const modelFor = (id) => rows.find((row2) => row2.id === id);
   function syncActive() {
     const stage = document.documentElement.dataset.dshProductStage;
@@ -2187,16 +2095,6 @@ function mountAppTabs(t, locale) {
     const id = row2.getAttribute("data-omnimux-app-tab") ?? "";
     if (id !== "") openApp(id);
   }
-  function tryPlace() {
-    if (placed) {
-      const previous = container.previousElementSibling;
-      if (container.isConnected && previous instanceof Element && previous.matches(ENTRY_SELECTOR)) return;
-      placed = false;
-    }
-    const entry = document.querySelector(ENTRY_SELECTOR);
-    if (!(entry instanceof Element)) return;
-    placed = placeTabsContainer(entry, container);
-  }
   container.addEventListener("click", onClick);
   container.addEventListener("keydown", onKeyDown);
   const onTabsChanged = () => {
@@ -2209,18 +2107,16 @@ function mountAppTabs(t, locale) {
   window.addEventListener(PRODUCT_STAGE_EVENT, onStageChange);
   const unsubscribeLocale = typeof locale?.subscribe === "function" ? locale.subscribe(render) : () => {
   };
-  const waitObserver = new MutationObserver(() => {
-    tryPlace();
+  const unregister = register({
+    id: "omnimux-app-tabs",
+    rank: 2,
+    styles: STYLES2,
+    styleId: "omnimux-app-tabs-styles",
+    create: () => container
   });
-  waitObserver.observe(document.body, { childList: true, subtree: true });
-  const retry = setInterval(() => {
-    tryPlace();
-  }, 2e3);
-  tryPlace();
   void refresh();
   return () => {
-    clearInterval(retry);
-    waitObserver.disconnect();
+    unregister();
     window.removeEventListener(TABS_CHANGED_EVENT, onTabsChanged);
     window.removeEventListener(PRODUCT_STAGE_EVENT, onStageChange);
     unsubscribeLocale();
@@ -2544,10 +2440,128 @@ function svgDataUri(logoSvg) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(logoSvg)}`;
 }
 
+// src/client/stage.js
+var STAGE_GLOBAL_KEY = "__omnimuxStage";
+function installStageGlobal(target = window) {
+  const existing = target[STAGE_GLOBAL_KEY];
+  if (existing !== void 0) return existing;
+  const api = {
+    claim: claimProductStage,
+    release: releaseProductStage,
+    PRODUCT_STAGE_EVENT,
+    readBox: readConversationBox
+  };
+  target[STAGE_GLOBAL_KEY] = api;
+  return api;
+}
+installStageGlobal();
+
+// src/client/sidebar-coordinator.js
+var SIDEBAR_GLOBAL_KEY = "__omnimuxSidebar";
+var SIDEBAR_GLOBAL = () => typeof window !== "undefined" ? window[SIDEBAR_GLOBAL_KEY] : void 0;
+var ROWS = [];
+var seen = /* @__PURE__ */ new Set();
+function sidebarRoot() {
+  const column = document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]');
+  if (!(column instanceof HTMLElement)) return void 0;
+  const logoOwner = column.querySelector('[class*="logoRow"]')?.parentElement;
+  return logoOwner ?? (column.firstElementChild instanceof HTMLElement ? column.firstElementChild : void 0);
+}
+function newSessionButton(root) {
+  const nested = root.querySelector('button[class*="newSession"]');
+  if (nested instanceof HTMLButtonElement) return nested;
+  for (const child of root.children) {
+    if (child instanceof HTMLButtonElement) return child;
+  }
+  const byAria = root.querySelector(
+    'button[aria-label="\u65B0\u5EFA\u4F1A\u8BDD"], button[aria-label="New Session"], button[aria-label*="\u65B0\u4F1A\u8BDD"], button[aria-label*="new session" i]'
+  );
+  if (byAria instanceof HTMLButtonElement) return byAria;
+  return [...root.querySelectorAll("button")].find((button) => /新会话|新建会话|new session/i.test(button.textContent ?? ""));
+}
+function externalAnchor(root) {
+  return [...root.children].find(
+    (el) => el instanceof HTMLElement && el.matches("[data-dsh-taskboard-entry], [data-dsh-atb-entry], [data-dsh-ssh-entry]")
+  );
+}
+function injectStyles(styleText, styleId) {
+  if (!styleText) return;
+  if (document.getElementById(styleId)) return;
+  const style = document.createElement("style");
+  style.id = styleId;
+  style.textContent = styleText;
+  document.head.append(style);
+}
+var waitObserver;
+var retry;
+function runPlaceAll() {
+  const root = sidebarRoot();
+  if (root === void 0) return;
+  const sorted = [...ROWS].sort((a, b) => a.rank - b.rank);
+  let anchor = newSessionButton(root);
+  if (anchor === void 0) return;
+  let slotExternal = true;
+  for (const row2 of sorted) {
+    if (row2.rank >= 3 && slotExternal) {
+      const ext = externalAnchor(root);
+      if (ext instanceof HTMLElement) anchor = ext;
+      slotExternal = false;
+    }
+    const el = row2.element;
+    if (el.parentElement === root && el.previousElementSibling === anchor) {
+      anchor = el;
+      continue;
+    }
+    root.insertBefore(el, anchor.nextElementSibling ?? null);
+    anchor = el;
+  }
+}
+function createApi() {
+  return {
+    register(row2) {
+      const id = row2.id;
+      if (seen.has(id)) return () => {
+      };
+      seen.add(id);
+      if (row2.styles) injectStyles(row2.styles, row2.styleId);
+      const element = row2.create();
+      ROWS.push({ id, rank: row2.rank, element });
+      runPlaceAll();
+      return () => {
+        const i = ROWS.findIndex((r) => r.id === id);
+        if (i >= 0) ROWS.splice(i, 1);
+        seen.delete(id);
+        element.remove();
+        runPlaceAll();
+      };
+    },
+    place: runPlaceAll
+  };
+}
+function install() {
+  const existing = SIDEBAR_GLOBAL();
+  if (existing) return existing;
+  const api = createApi();
+  waitObserver = new MutationObserver(() => {
+    runPlaceAll();
+  });
+  waitObserver.observe(document.body, { childList: true, subtree: true });
+  retry = setInterval(() => {
+    runPlaceAll();
+  }, 2e3);
+  Object.defineProperty(window, SIDEBAR_GLOBAL_KEY, { value: api, configurable: true });
+  return api;
+}
+function installSidebarGlobal() {
+  install();
+}
+
 // src/client/index.js
 var name = "omnimux";
 var inject = ["slots", "locale"];
 function apply(ctx) {
+  installStageGlobal();
+  installSidebarGlobal();
   ctx.effect(
     () => startOverlay(document, configFromWindow(window)),
     "omnimux: brand overlay"
@@ -2557,12 +2571,6 @@ function apply(ctx) {
     return () => {
     };
   }, "omnimux: product-stage chrome");
-  ctx.provide("product-stage", {
-    claim: claimProductStage,
-    release: releaseProductStage,
-    PRODUCT_STAGE_EVENT,
-    readBox: readConversationBox
-  });
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux: dictionaries");
   const t = ctx.locale.bind(NS);
   const apps = createAppsStore();
@@ -2583,8 +2591,8 @@ function apply(ctx) {
     locale: NS,
     inject: () => ({ t })
   }, DshPluginsSection));
-  ctx.effect(() => mountSidebarEntry(apps, t, ctx.locale), "omnimux: sidebar apps entry");
-  ctx.effect(() => mountAppTabs(t, ctx.locale), "omnimux: sidebar app tabs");
+  ctx.effect(() => mountSidebarEntry(apps, t, ctx.locale, SIDEBAR_GLOBAL().register), "omnimux: sidebar apps entry");
+  ctx.effect(() => mountAppTabs(t, ctx.locale, SIDEBAR_GLOBAL().register), "omnimux: sidebar app tabs");
   ctx.slots.inject("shell.overlay", () => ctx.slots.register({
     name: "shell.overlay",
     id: "omnimux-apps-stage",

@@ -2,9 +2,12 @@ import { useEffect, useLayoutEffect, useState } from 'react'
 import { AccountsSection } from './AccountsSection.jsx'
 
 // The app-open event name is owned by the hub plugin. The stage primitives
-// (claim/release/readBox/event) come from the hub's `product-stage` client
-// seam, so this app package ships no copy.
+// (claim/release/readBox) come from the hub's `window.__omnimuxStage`
+// singleton, read lazily via `getStage` so this package ships no copy and
+// does not depend on hub/vertical apply ordering (stage is only used once
+// the hub has opened this app).
 const APP_OPEN_EVENT = 'omnimux-app-open'
+const PRODUCT_STAGE_EVENT = 'dsh-product-stage'
 const CATALOG_ID = 'accounts'
 const STAGE_ID = 'omnimux-app-accounts'
 
@@ -13,39 +16,39 @@ const STAGE_ID = 'omnimux-app-accounts'
  * `omnimux-app-open` with detail.id 'accounts'; this stage claims the
  * product stage (mutual exclusion with Apps / 任务看板 / expert pages) and
  * renders over the conversation column.
- * @param {{ t: (key: string) => string, stage: { claim: (id: string) => void, release: (id: string) => void, PRODUCT_STAGE_EVENT: string, readBox: () => { top: number, left: number, width: number, height: number } } }} props
+ * @param {{ t: (key: string) => string, getStage: () => { claim: (id: string) => void, release: (id: string) => void, PRODUCT_STAGE_EVENT: string, readBox: () => { top: number, left: number, width: number, height: number } } }} props
  */
-export function AccountsStage({ t, stage }) {
+export function AccountsStage({ t, getStage }) {
   const [open, setOpen] = useState(false)
-  const [box, setBox] = useState(() => stage.readBox())
+  const [box, setBox] = useState(() => getStage().readBox())
 
   useEffect(() => {
     const onOpenRequest = (event) => {
       const id = event instanceof CustomEvent ? event.detail?.id : undefined
       if (id !== CATALOG_ID) return
       setOpen(true)
-      stage.claim(STAGE_ID)
+      getStage().claim(STAGE_ID)
     }
     const onStageChange = (event) => {
       const id = event instanceof CustomEvent ? event.detail?.id : undefined
       if (id === STAGE_ID) return
       setOpen((current) => {
-        if (current) stage.release(STAGE_ID)
+        if (current) getStage().release(STAGE_ID)
         return false
       })
     }
     window.addEventListener(APP_OPEN_EVENT, onOpenRequest)
-    window.addEventListener(stage.PRODUCT_STAGE_EVENT, onStageChange)
+    window.addEventListener(PRODUCT_STAGE_EVENT, onStageChange)
     return () => {
       window.removeEventListener(APP_OPEN_EVENT, onOpenRequest)
-      window.removeEventListener(stage.PRODUCT_STAGE_EVENT, onStageChange)
-      stage.release(STAGE_ID)
+      window.removeEventListener(PRODUCT_STAGE_EVENT, onStageChange)
+      getStage().release(STAGE_ID)
     }
   }, [])
 
   useLayoutEffect(() => {
     if (!open) return undefined
-    const update = () => { setBox(stage.readBox()) }
+    const update = () => { setBox(getStage().readBox()) }
     update()
     window.addEventListener('resize', update)
     return () => { window.removeEventListener('resize', update) }
@@ -97,7 +100,7 @@ export function AccountsStage({ t, stage }) {
           type="button"
           aria-label={t('close')}
           onClick={() => {
-            stage.release(STAGE_ID)
+            getStage().release(STAGE_ID)
             setOpen(false)
           }}
           style={{

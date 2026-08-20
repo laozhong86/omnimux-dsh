@@ -94,14 +94,15 @@ var en = {
 };
 
 // src/client/gallery-store.js
+var PRODUCT_STAGE_EVENT = "dsh-product-stage";
 var STAGE_ID = "omnimux-gallery";
-function createGalleryStore(stage) {
+function createGalleryStore(getStage) {
   let open = false;
   const listeners = /* @__PURE__ */ new Set();
   function emit() {
     for (const listener of listeners) listener();
   }
-  window.addEventListener(stage.PRODUCT_STAGE_EVENT, (event) => {
+  window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : void 0;
     if (id !== STAGE_ID && open) {
       open = false;
@@ -110,7 +111,9 @@ function createGalleryStore(stage) {
   });
   return {
     getSnapshot: () => open,
-    readBox: stage.readBox,
+    readBox() {
+      return getStage().readBox();
+    },
     /**
      * @param {() => void} listener
      */
@@ -126,6 +129,7 @@ function createGalleryStore(stage) {
     set(next) {
       if (open === next) return;
       open = next;
+      const stage = getStage();
       if (open) stage.claim(STAGE_ID);
       else stage.release(STAGE_ID);
       emit();
@@ -796,37 +800,31 @@ var STYLES = `
 .omnimux-esc-entry svg { display: block; width: 14px; height: 14px; }
 .omnimux-esc-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
 `;
-function injectStyles() {
-  if (document.getElementById("omnimux-esc-entry-styles")) return;
-  const style = document.createElement("style");
-  style.id = "omnimux-esc-entry-styles";
-  style.textContent = STYLES;
-  document.head.append(style);
-}
-function sidebarRoot() {
-  const column = document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]');
-  if (!(column instanceof HTMLElement)) return void 0;
-  const logoOwner = column.querySelector('[class*="logoRow"]')?.parentElement;
-  return logoOwner ?? (column.firstElementChild instanceof HTMLElement ? column.firstElementChild : void 0);
-}
-function newSessionButton(root) {
-  const nested = root.querySelector('button[class*="newSession"]');
-  if (nested instanceof HTMLButtonElement) return nested;
-  for (const child of root.children) {
-    if (child instanceof HTMLButtonElement) return child;
-  }
-  const byAria = root.querySelector(
-    'button[aria-label="\u65B0\u5EFA\u4F1A\u8BDD"], button[aria-label="New Session"], button[aria-label*="\u65B0\u4F1A\u8BDD"], button[aria-label*="new session" i]'
-  );
-  if (byAria instanceof HTMLButtonElement) return byAria;
-  return [...root.querySelectorAll("button")].find((button) => /新会话|新建会话|new session/i.test(button.textContent ?? ""));
-}
 function paintLabel(entry, label) {
   entry.setAttribute("aria-label", label);
   const node = entry.querySelector(".omnimux-esc-entry-label");
   if (node) node.textContent = label;
 }
-function createEntry(gallery, t) {
+function registerWhenReady(row) {
+  let unregister = () => {
+  };
+  let disposed = false;
+  const attempt = () => {
+    if (disposed) return;
+    const api = window.__omnimuxSidebar;
+    if (!api || typeof api.register !== "function") return;
+    unregister = api.register(row);
+    clearInterval(timer);
+  };
+  const timer = setInterval(attempt, 500);
+  attempt();
+  return () => {
+    disposed = true;
+    clearInterval(timer);
+    unregister();
+  };
+}
+function mountSidebarEntry(gallery, t, locale) {
   const entry = document.createElement("button");
   entry.type = "button";
   entry.dataset.dshEscEntry = "";
@@ -836,91 +834,38 @@ function createEntry(gallery, t) {
   entry.addEventListener("click", () => {
     gallery.toggle();
   });
-  return entry;
-}
-function placeEntry(root, entry) {
-  const button = newSessionButton(root);
-  if (button === void 0) return false;
-  if (entry.parentElement !== root) {
-    const row = button.closest('[class*="logoRow"]');
-    const base = row instanceof HTMLElement && row.parentElement === root ? row : button;
-    const family = [...root.children].filter(
-      (el) => el instanceof HTMLElement && el.matches("[data-dsh-atb-entry], [data-dsh-taskboard-entry], [data-dsh-ssh-entry]")
-    );
-    const apps = root.querySelector("[data-omnimux-apps-entry]");
-    const last = family[family.length - 1];
-    const after = last ?? (apps instanceof HTMLElement ? apps : base);
-    const anchor = after.nextElementSibling;
-    root.insertBefore(entry, anchor === entry ? entry.nextElementSibling : anchor);
-  }
-  return true;
-}
-function mountSidebarEntry(gallery, t, locale) {
-  injectStyles();
-  const entry = createEntry(gallery, t);
   const paint = () => {
     paintLabel(entry, t("nav"));
   };
   const unsubscribeLocale = typeof locale?.subscribe === "function" ? locale.subscribe(paint) : () => {
   };
-  let root;
-  let placed = false;
   const syncActive = () => {
     if (gallery.getSnapshot()) entry.dataset.active = "true";
     else delete entry.dataset.active;
   };
-  const tryPlace = () => {
-    if (root !== void 0 && !root.isConnected) {
-      rootObserver.disconnect();
-      root = void 0;
-      placed = false;
-    }
-    if (placed) {
-      if (document.body.contains(entry)) return;
-      rootObserver.disconnect();
-      root = void 0;
-      placed = false;
-    }
-    root ??= sidebarRoot();
-    if (root === void 0) return;
-    placed = placeEntry(root, entry);
-    if (placed) rootObserver.observe(root, { childList: true, subtree: true });
-  };
-  const waitObserver = new MutationObserver(() => {
-    tryPlace();
-  });
-  waitObserver.observe(document.body, { childList: true, subtree: true });
-  const rootObserver = new MutationObserver(() => {
-    if (root === void 0 || !root.isConnected) {
-      placed = false;
-      tryPlace();
-      return;
-    }
-    if (!root.contains(entry)) placed = placeEntry(root, entry);
-  });
-  const retry = setInterval(() => {
-    tryPlace();
-  }, 2e3);
-  const unsubscribe = gallery.subscribe(syncActive);
+  const unsubscribeGallery = gallery.subscribe(syncActive);
   syncActive();
-  tryPlace();
+  const unregister = registerWhenReady({
+    id: "omnimux-gallery-entry",
+    rank: 3,
+    styles: STYLES,
+    styleId: "omnimux-esc-entry-styles",
+    create: () => entry
+  });
   return () => {
-    clearInterval(retry);
-    waitObserver.disconnect();
-    rootObserver.disconnect();
-    unsubscribe();
+    unregister();
+    unsubscribeGallery();
     unsubscribeLocale();
-    entry.remove();
   };
 }
 
 // src/client/index.js
 var name = "omnimux-gallery";
-var inject = ["slots", "locale", "product-stage"];
+var inject = ["slots", "locale"];
 function apply(ctx) {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux-gallery: dictionaries");
   const t = ctx.locale.bind(NS);
-  const gallery = createGalleryStore(ctx.get("product-stage"));
+  const gallery = createGalleryStore(() => window.__omnimuxStage);
   ctx.effect(() => mountSidebarEntry(gallery, t, ctx.locale), "omnimux-gallery: sidebar entry");
   ctx.slots.inject("shell.overlay", () => ctx.slots.register({
     name: "shell.overlay",

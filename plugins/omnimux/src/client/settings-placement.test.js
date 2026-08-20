@@ -51,7 +51,7 @@ describe('settings placement', () => {
     assert.ok(source.includes("'omnimux-app-open'"), 'listens for the hub APP_OPEN_EVENT literal')
     assert.ok(source.includes("'accounts'"), 'matches its catalog id')
     assert.ok(source.includes("'omnimux-app-accounts'"), 'claims stage id omnimux-app-accounts')
-    assert.ok(source.includes('stage.claim('), 'uses the hub product-stage seam, not a local copy')
+    assert.ok(source.includes('getStage().claim('), 'uses the hub product-stage seam, not a local copy')
     assert.ok(!/function claimProductStage|function readStageBox|PRODUCT_STAGE_CHROME/.test(source), 'does not duplicate the stage-claim protocol')
     assert.ok(!/import[^\n]*omnimux/.test(source), 'must not import the hub package')
   })

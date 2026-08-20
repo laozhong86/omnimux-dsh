@@ -8,7 +8,6 @@
 import { PRODUCT_STAGE_EVENT } from './conversation-box.js'
 import { openApp } from './open-app.js'
 import { TABS_CHANGED_EVENT } from './open-app-flow.js'
-import { ENTRY_SELECTOR } from './sidebar-entry.js'
 import { getAppTabs, patchAppTab, removeAppTab } from './api.js'
 
 export const TABS_CONTAINER_SELECTOR = '[data-omnimux-app-tabs]'
@@ -85,14 +84,6 @@ export function placeTabsContainer(entry, container) {
   return true
 }
 
-function injectStyles() {
-  if (document.getElementById('omnimux-app-tabs-styles')) return
-  const style = document.createElement('style')
-  style.id = 'omnimux-app-tabs-styles'
-  style.textContent = STYLES
-  document.head.append(style)
-}
-
 /**
  * @param {string} id
  */
@@ -142,13 +133,11 @@ function paintAction(row, kind, label, glyph) {
  * @param {{ getSnapshot?: Function }} [locale]
  * @param {(key: string) => string} t
  */
-export function mountAppTabs(t, locale) {
-  injectStyles()
+export function mountAppTabs(t, locale, register) {
   const container = document.createElement('div')
   container.dataset.dshOmnimuxAppTabs = ''
   /** @type {Array<{ id: string, title: string, pinned: boolean, lastOpenedAt: string }>} */
   let rows = []
-  let placed = false
 
   const modelFor = (id) => rows.find((row) => row.id === id)
 
@@ -234,17 +223,6 @@ export function mountAppTabs(t, locale) {
     if (id !== '') openApp(id)
   }
 
-  function tryPlace() {
-    if (placed) {
-      const previous = container.previousElementSibling
-      if (container.isConnected && previous instanceof Element && previous.matches(ENTRY_SELECTOR)) return
-      placed = false
-    }
-    const entry = document.querySelector(ENTRY_SELECTOR)
-    if (!(entry instanceof Element)) return
-    placed = placeTabsContainer(entry, container)
-  }
-
   container.addEventListener('click', onClick)
   container.addEventListener('keydown', onKeyDown)
 
@@ -254,16 +232,18 @@ export function mountAppTabs(t, locale) {
   window.addEventListener(PRODUCT_STAGE_EVENT, onStageChange)
   const unsubscribeLocale = typeof locale?.subscribe === 'function' ? locale.subscribe(render) : () => {}
 
-  const waitObserver = new MutationObserver(() => { tryPlace() })
-  waitObserver.observe(document.body, { childList: true, subtree: true })
-  const retry = setInterval(() => { tryPlace() }, 2000)
+  const unregister = register({
+    id: 'omnimux-app-tabs',
+    rank: 2,
+    styles: STYLES,
+    styleId: 'omnimux-app-tabs-styles',
+    create: () => container,
+  })
 
-  tryPlace()
   void refresh()
 
   return () => {
-    clearInterval(retry)
-    waitObserver.disconnect()
+    unregister()
     window.removeEventListener(TABS_CHANGED_EVENT, onTabsChanged)
     window.removeEventListener(PRODUCT_STAGE_EVENT, onStageChange)
     unsubscribeLocale()
