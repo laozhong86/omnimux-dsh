@@ -1,6 +1,6 @@
 {
   "name": "omnimux-gallery",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Experts · Skills · Connectors gallery for DeepSeek Harness. Remote index; install on demand; summon experts without 45 presets.",
   "type": "module",
   "main": "src/index.js",
