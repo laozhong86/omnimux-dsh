@@ -92,3 +92,7 @@ omnimux-dev-gallery   → link: omnimux-gallery  | 其余物化副本
 - dev 环境需要真实数据时，从生产**只读拷贝**映射注册表等 JSON 到 `~/.dsh-dev/omnimux/` 对应目录；MUST NOT 反向写。
 - dev Host 日志：`<env>/host.log`；停止失败查 `lsof -nP -iTCP -sTCP:LISTEN | grep <pid>`。
 - dev 环境 Host 由 `$DSH_SRC/apps/cli/lib/bin.js` 启动；DSH_SRC 变更需重建克隆 lib。
+
+## 上游同步合同（fork 桌面壳）
+
+fork 桌面壳（`laozhong86/omnimux-desktop-fork`）与 DSH 官方上游的同步遵循 fork 仓库内 `docs/contracts/upstream-sync.md` 合同：四级合并决策（自动合/模板解/停等确认/直接拒绝）+ 强制决策日志（`upstream-sync-log.md`）+ 周级纪律。任何 agent 执行上游 merge 前必读该合同；无日志的 merge 不算完成。
