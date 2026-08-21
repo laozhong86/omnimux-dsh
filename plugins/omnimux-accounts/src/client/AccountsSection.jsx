@@ -235,38 +235,38 @@ export function AccountsSection({ t }) {
 
   return (
     <div className="omnimux-accounts-root">
-      <div className="omnimux-accounts-page-actions">
-        <button
-          type="button"
-          className="omnimux-accounts-cta"
-          disabled={combinedBusy}
-          onClick={openConnect}
-        >
-          + {t('connect')}
-        </button>
-      </div>
       <OverviewBar t={t} summary={summary} onFilterClick={onFilterClick} busy={combinedBusy} />
       {accounts.length > 0 ? (
-        <FilterBar
-          t={t}
-          query={filters.query}
-          platform={filters.platform}
-          group={filters.group}
-          status={filters.status}
-          sortKey={sortKey}
-          sortDir={sortDir}
-          view={view}
-          platforms={platforms}
-          groups={groups}
-          statuses={statuses}
-          onFilterChange={(patchFilters) => { setFilters((current) => ({ ...current, ...patchFilters })) }}
-          onSortChange={(patchSort) => {
-            if (patchSort.key !== undefined) setSortKey(patchSort.key)
+        <div className="omnimux-accounts-toolbar">
+          <FilterBar
+            t={t}
+            query={filters.query}
+            platform={filters.platform}
+            group={filters.group}
+            status={filters.status}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            view={view}
+            platforms={platforms}
+            groups={groups}
+            statuses={statuses}
+            onFilterChange={(patchFilters) => { setFilters((current) => ({ ...current, ...patchFilters })) }}
+            onSortChange={(patchSort) => {
+              if (patchSort.key !== undefined) setSortKey(patchSort.key)
             if (patchSort.dir !== undefined) setSortDir(patchSort.dir)
           }}
           onViewChange={setView}
           busy={combinedBusy}
         />
+          <button
+            type="button"
+            className="omnimux-accounts-cta"
+            disabled={combinedBusy}
+            onClick={openConnect}
+          >
+            + {t('connect')}
+          </button>
+        </div>
       ) : null}
       {selected.size > 0 ? (
         <div className="omnimux-accounts-bulkbar">

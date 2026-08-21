@@ -65,14 +65,15 @@ export const STYLES = `
   align-items: center;
   gap: 12px;
 }
-.omnimux-accounts-page-actions {
+.omnimux-accounts-toolbar {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 12px;
 }
 .omnimux-accounts-cta {
+  margin-left: auto; /* sit at the right end of the toolbar row, after the filter controls */
   display: inline-flex;
   align-items: center;
   gap: 6px;

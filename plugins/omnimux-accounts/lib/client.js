@@ -185,6 +185,129 @@ var en = {
 };
 var NS = "omnimux-accounts";
 
+// src/client/stage-store.js
+var PRODUCT_STAGE_EVENT = "dsh-product-stage";
+var STAGE_ID = "omnimux-accounts";
+function createStageStore(getStage) {
+  let open = false;
+  const listeners = /* @__PURE__ */ new Set();
+  function emit() {
+    for (const listener of listeners) listener();
+  }
+  window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
+    const id = event instanceof CustomEvent ? event.detail?.id : void 0;
+    if (id !== STAGE_ID && open) {
+      open = false;
+      emit();
+    }
+  });
+  return {
+    getSnapshot: () => open,
+    readBox() {
+      return getStage().readBox();
+    },
+    /**
+     * @param {() => void} listener
+     */
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    /**
+     * @param {boolean} next
+     */
+    set(next) {
+      if (open === next) return;
+      open = next;
+      const stage = getStage();
+      if (open) stage.claim(STAGE_ID);
+      else stage.release(STAGE_ID);
+      emit();
+    },
+    toggle() {
+      this.set(!open);
+    }
+  };
+}
+
+// src/client/sidebar-entry.js
+var ICON = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><circle cx="8" cy="5.2" r="2.4"/><path d="M3.4 13c.6-2.4 2.3-3.6 4.6-3.6s4 1.2 4.6 3.6" stroke-linecap="round"/></svg>';
+var STYLES = `
+.omnimux-accounts-entry {
+  box-sizing: border-box; display: flex; align-items: center; gap: 6px; position: relative;
+  width: calc(100% - 8px); height: 32px; margin: 0 4px; padding: 0 8px;
+  border: none; border-radius: 8px; background: transparent;
+  color: var(--dsw-alias-label-primary, inherit);
+  font: var(--dsw-font-s-14, inherit); font-size: 14px; line-height: 20px;
+  cursor: pointer; text-align: left;
+}
+.omnimux-accounts-entry:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12)); }
+.omnimux-accounts-entry[data-active="true"] { background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18)); font-weight: 500; }
+.omnimux-accounts-entry-icon { flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
+.omnimux-accounts-entry svg { display: block; width: 14px; height: 14px; }
+.omnimux-accounts-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
+`;
+function paintLabel(entry, label) {
+  entry.setAttribute("aria-label", label);
+  const node = entry.querySelector(".omnimux-accounts-entry-label");
+  if (node) node.textContent = label;
+}
+function registerWhenReady(row) {
+  let unregister = () => {
+  };
+  let disposed = false;
+  const attempt = () => {
+    if (disposed) return;
+    const api = window.__omnimuxSidebar;
+    if (!api || typeof api.register !== "function") return;
+    unregister = api.register(row);
+    clearInterval(timer);
+  };
+  const timer = setInterval(attempt, 500);
+  attempt();
+  return () => {
+    disposed = true;
+    clearInterval(timer);
+    unregister();
+  };
+}
+function mountSidebarEntry(stage, t, locale) {
+  const entry = document.createElement("button");
+  entry.type = "button";
+  entry.dataset.omnimuxAccountsEntry = "";
+  entry.className = "omnimux-accounts-entry";
+  entry.innerHTML = `<span class="omnimux-accounts-entry-icon">${ICON}</span><span class="omnimux-accounts-entry-label"></span>`;
+  paintLabel(entry, t("nav"));
+  entry.addEventListener("click", () => {
+    stage.toggle();
+  });
+  const paint = () => {
+    paintLabel(entry, t("nav"));
+  };
+  const unsubscribeLocale = typeof locale?.subscribe === "function" ? locale.subscribe(paint) : () => {
+  };
+  const syncActive = () => {
+    if (stage.getSnapshot()) entry.dataset.active = "true";
+    else delete entry.dataset.active;
+  };
+  const unsubscribeStage = stage.subscribe(syncActive);
+  syncActive();
+  const unregister = registerWhenReady({
+    id: "omnimux-accounts-entry",
+    rank: 3,
+    styles: STYLES,
+    styleId: "omnimux-accounts-entry-styles",
+    create: () => entry
+  });
+  return () => {
+    unregister();
+    unsubscribeStage();
+    unsubscribeLocale();
+  };
+}
+
 // src/client/AccountsStage.jsx
 var import_react6 = require("react");
 
@@ -1250,7 +1373,7 @@ function useAccounts() {
 }
 
 // src/client/styles.js
-var STYLES = `
+var STYLES2 = `
 .omnimux-accounts-root {
   box-sizing: border-box;
   display: flex;
@@ -1308,14 +1431,15 @@ var STYLES = `
   align-items: center;
   gap: 12px;
 }
-.omnimux-accounts-page-actions {
+.omnimux-accounts-toolbar {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 12px;
 }
 .omnimux-accounts-cta {
+  margin-left: auto; /* sit at the right end of the toolbar row, after the filter controls */
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -2002,7 +2126,7 @@ function injectAccountsStyles() {
   if (document.getElementById(STYLE_ELEMENT_ID)) return;
   const style = document.createElement("style");
   style.id = STYLE_ELEMENT_ID;
-  style.textContent = STYLES;
+  style.textContent = STYLES2;
   document.head.append(style);
 }
 
@@ -2174,45 +2298,47 @@ function AccountsSection({ t }) {
   }
   const errorText = sectionError !== "" ? sectionError : error;
   return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "omnimux-accounts-root", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "omnimux-accounts-page-actions", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
-      "button",
-      {
-        type: "button",
-        className: "omnimux-accounts-cta",
-        disabled: combinedBusy,
-        onClick: openConnect,
-        children: [
-          "+ ",
-          t("connect")
-        ]
-      }
-    ) }),
     /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(OverviewBar, { t, summary, onFilterClick, busy: combinedBusy }),
-    accounts.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
-      FilterBar,
-      {
-        t,
-        query: filters.query,
-        platform: filters.platform,
-        group: filters.group,
-        status: filters.status,
-        sortKey,
-        sortDir,
-        view,
-        platforms,
-        groups,
-        statuses,
-        onFilterChange: (patchFilters) => {
-          setFilters((current) => ({ ...current, ...patchFilters }));
-        },
-        onSortChange: (patchSort) => {
-          if (patchSort.key !== void 0) setSortKey(patchSort.key);
-          if (patchSort.dir !== void 0) setSortDir(patchSort.dir);
-        },
-        onViewChange: setView,
-        busy: combinedBusy
-      }
-    ) : null,
+    accounts.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "omnimux-accounts-toolbar", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+        FilterBar,
+        {
+          t,
+          query: filters.query,
+          platform: filters.platform,
+          group: filters.group,
+          status: filters.status,
+          sortKey,
+          sortDir,
+          view,
+          platforms,
+          groups,
+          statuses,
+          onFilterChange: (patchFilters) => {
+            setFilters((current) => ({ ...current, ...patchFilters }));
+          },
+          onSortChange: (patchSort) => {
+            if (patchSort.key !== void 0) setSortKey(patchSort.key);
+            if (patchSort.dir !== void 0) setSortDir(patchSort.dir);
+          },
+          onViewChange: setView,
+          busy: combinedBusy
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+        "button",
+        {
+          type: "button",
+          className: "omnimux-accounts-cta",
+          disabled: combinedBusy,
+          onClick: openConnect,
+          children: [
+            "+ ",
+            t("connect")
+          ]
+        }
+      )
+    ] }) : null,
     selected.size > 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "omnimux-accounts-bulkbar", children: [
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "omnimux-accounts-bulk-text", children: fmt(t("bulk.selected"), { count: selected.size }) }),
       bulkProgress !== null ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { className: "omnimux-accounts-bulk-progress", children: [
@@ -2339,40 +2465,17 @@ function AccountsSection({ t }) {
 
 // src/client/AccountsStage.jsx
 var import_jsx_runtime10 = require("react/jsx-runtime");
-var APP_OPEN_EVENT = "omnimux-app-open";
-var PRODUCT_STAGE_EVENT = "dsh-product-stage";
-var CATALOG_ID = "accounts";
-var STAGE_ID = "omnimux-app-accounts";
-function AccountsStage({ t, getStage }) {
-  const [open, setOpen] = (0, import_react6.useState)(false);
-  const [box, setBox] = (0, import_react6.useState)(() => getStage().readBox());
-  (0, import_react6.useEffect)(() => {
-    const onOpenRequest = (event) => {
-      const id = event instanceof CustomEvent ? event.detail?.id : void 0;
-      if (id !== CATALOG_ID) return;
-      setOpen(true);
-      getStage().claim(STAGE_ID);
-    };
-    const onStageChange = (event) => {
-      const id = event instanceof CustomEvent ? event.detail?.id : void 0;
-      if (id === STAGE_ID) return;
-      setOpen((current) => {
-        if (current) getStage().release(STAGE_ID);
-        return false;
-      });
-    };
-    window.addEventListener(APP_OPEN_EVENT, onOpenRequest);
-    window.addEventListener(PRODUCT_STAGE_EVENT, onStageChange);
-    return () => {
-      window.removeEventListener(APP_OPEN_EVENT, onOpenRequest);
-      window.removeEventListener(PRODUCT_STAGE_EVENT, onStageChange);
-      getStage().release(STAGE_ID);
-    };
-  }, []);
+function AccountsStage({ t, stage }) {
+  const open = (0, import_react6.useSyncExternalStore)(
+    stage ? stage.subscribe : () => () => {
+    },
+    stage ? stage.getSnapshot : () => false
+  );
+  const [box, setBox] = (0, import_react6.useState)(() => stage.readBox());
   (0, import_react6.useLayoutEffect)(() => {
     if (!open) return void 0;
     const update = () => {
-      setBox(getStage().readBox());
+      setBox(stage.readBox());
     };
     update();
     window.addEventListener("resize", update);
@@ -2380,7 +2483,7 @@ function AccountsStage({ t, getStage }) {
       window.removeEventListener("resize", update);
     };
   }, [open]);
-  if (!open) return null;
+  if (!open || !stage) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
     "div",
     {
@@ -2434,8 +2537,7 @@ function AccountsStage({ t, getStage }) {
                   type: "button",
                   "aria-label": t("close"),
                   onClick: () => {
-                    getStage().release(STAGE_ID);
-                    setOpen(false);
+                    stage.set(false);
                   },
                   style: {
                     WebkitAppRegion: "no-drag",
@@ -2465,13 +2567,15 @@ var inject = ["slots", "locale"];
 function apply(ctx) {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux-accounts: dictionaries");
   const t = ctx.locale.bind(NS);
-  const getStage = () => window.__omnimuxStage;
+  const stage = createStageStore(() => window.__omnimuxStage);
+  const stageFace = () => ({ t, stage });
+  ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), "omnimux-accounts: sidebar entry");
   ctx.slots.inject("shell.overlay", () => ctx.slots.register({
     name: "shell.overlay",
-    id: "omnimux-app-accounts",
+    id: "omnimux-accounts-stage",
     order: 21,
     locale: NS,
-    inject: () => ({ t, getStage })
+    inject: stageFace
   }, AccountsStage));
 }
 
