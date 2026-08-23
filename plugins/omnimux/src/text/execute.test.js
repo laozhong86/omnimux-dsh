@@ -7,6 +7,7 @@ import { apply } from '../index.js'
 import { OmnimuxError } from '../media/errors.js'
 import { decodeDataUri, mediaFromMagic } from './image.js'
 import { executeOmnimuxText } from './execute.js'
+import { loadTextVideo, toVideoImageUrlPart } from './video.js'
 
 const PNG = Uint8Array.from([
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
@@ -122,6 +123,88 @@ describe('textComplete execute', () => {
     assert.equal(decoded.mediaType, 'image/png')
     assert.equal(mediaFromMagic(decoded.data), 'image/png')
   })
+
+  it('rejects image and video together', async () => {
+    await assert.rejects(
+      () => executeOmnimuxText({
+        prompt: 'describe',
+        image: 'data:image/png;base64,iVBORw0KGgo=',
+        video: 'data:video/mp4;base64,AAAA',
+        llm: collectStream([]),
+      }),
+      (error) => error instanceof OmnimuxError
+        && error.code === 'omnimux-invalid-request'
+        && /image or video/.test(error.message),
+    )
+  })
+
+  it('rejects video on a model without video input', async () => {
+    await assert.rejects(
+      () => executeOmnimuxText({
+        prompt: 'describe',
+        model: 'grok-4.6',
+        video: 'data:video/mp4;base64,AAAA',
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        fetcher: async () => ({ ok: true, json: async () => ({}) }),
+      }),
+      (error) => error instanceof OmnimuxError
+        && error.code === 'omnimux-invalid-request'
+        && /does not accept video input/.test(error.message),
+    )
+  })
+
+  it('bypasses llm.stream for video and packs image_url(data:video)', async () => {
+    const seen = []
+    const tiny = Buffer.from('ftypisomfake', 'utf8')
+    const dataUri = `data:video/mp4;base64,${tiny.toString('base64')}`
+    const result = await executeOmnimuxText({
+      prompt: 'what motion is in this clip',
+      video: dataUri,
+      env: { OMNIMUX_API_KEY: 'sk-test', OMNIMUX_BASE_URL: 'https://api.example/v1' },
+      fetcher: async (url, init) => {
+        seen.push({ url, body: JSON.parse(String(init.body)) })
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            choices: [{ message: { content: 'BG=red; SQUARE=YES_WHITE_SQUARE' } }],
+          }),
+        }
+      },
+    })
+    assert.deepEqual(result, {
+      mode: 'live',
+      model: 'gemini-3.7-flash',
+      text: 'BG=red; SQUARE=YES_WHITE_SQUARE',
+    })
+    assert.equal(seen.length, 1)
+    assert.equal(seen[0].url, 'https://api.example/v1/chat/completions')
+    assert.equal(seen[0].body.model, 'gemini-3.7-flash')
+    const parts = seen[0].body.messages[0].content
+    assert.equal(parts[0].type, 'text')
+    assert.equal(parts[1].type, 'image_url')
+    assert.match(parts[1].image_url.url, /^data:video\/mp4;base64,/)
+    assert.equal(parts[1].type === 'video_url', false)
+  })
+
+  it('throws omnimux-unconfigured when video lacks an API key', async () => {
+    await assert.rejects(
+      () => executeOmnimuxText({
+        prompt: 'describe',
+        video: 'data:video/mp4;base64,AAAA',
+        env: {},
+        fetcher: async () => ({ ok: true, json: async () => ({}) }),
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-unconfigured',
+    )
+  })
+
+  it('packs loadTextVideo into image_url only', async () => {
+    const packed = await loadTextVideo('data:video/webm;base64,AAAA')
+    const part = toVideoImageUrlPart(packed)
+    assert.equal(part.type, 'image_url')
+    assert.match(part.image_url.url, /^data:video\/webm;base64,/)
+  })
 })
 
 describe('omnimux_text_complete tool', () => {
@@ -143,6 +226,8 @@ describe('omnimux_text_complete tool', () => {
     assert.ok(tools.omnimux_text_complete.parameters.properties.model.enum.includes('gemini-3.7-flash'))
     assert.equal(tools.omnimux_text_complete.parameters.properties.model.enum.includes('claude-haiku-4-5'), false)
     assert.match(tools.omnimux_text_complete.description, /whitelist/)
+    assert.ok(tools.omnimux_text_complete.parameters.properties.video)
+    assert.match(tools.omnimux_text_complete.description, /image_url\(data:video\)/)
     const result = await tools.omnimux_text_complete.execute({
       model: 'glm-5.3',
       prompt: 'one line',

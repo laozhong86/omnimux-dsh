@@ -1,14 +1,19 @@
 import { OmnimuxError } from '../media/errors.js'
 import { parseTextConfig, resolveTextRoute } from './catalog.js'
+import { completeTextViaChat } from './chat.js'
 import { loadTextImage } from './image.js'
+import { loadTextVideo, toVideoImageUrlPart } from './video.js'
 
 /**
- * One-shot expert completion over `ctx.llm.stream`. Not a chat turn: no
+ * One-shot expert completion. Default path: `ctx.llm.stream` (text / image).
+ * Video path: bypass stream + attachments and POST chat completions with
+ * `image_url` + `data:video/…` (spike-locked protocol). Not a chat turn: no
  * tools, no parent messages, no dest, no poll.
  * @param {{
  *   prompt?: string,
  *   model?: string,
  *   image?: string,
+ *   video?: string,
  *   system?: string,
  *   maxTokens?: number,
  *   signal?: AbortSignal,
@@ -18,6 +23,8 @@ import { loadTextImage } from './image.js'
  *   llm?: { stream: (options: object) => AsyncIterable<object> },
  *   attachments?: { saveImage: Function, imageLimits?: object },
  *   fetcher?: typeof fetch,
+ *   apiKey?: string,
+ *   baseUrl?: string,
  * }} input
  */
 export async function executeOmnimuxText(input) {
@@ -25,12 +32,37 @@ export async function executeOmnimuxText(input) {
   if (!prompt) {
     throw new OmnimuxError('omnimux-invalid-request', 'prompt is required')
   }
+  const text = parseTextConfig(input.text)
+  const image = typeof input.image === 'string' ? input.image.trim() : ''
+  const video = typeof input.video === 'string' ? input.video.trim() : ''
+  if (image && video) {
+    throw new OmnimuxError('omnimux-invalid-request', 'pass image or video, not both')
+  }
+  const route = resolveTextRoute({ model: input.model, image, video }, text, input.env)
+  const maxTokens = typeof input.maxTokens === 'number' && Number.isFinite(input.maxTokens) && input.maxTokens > 0
+    ? input.maxTokens
+    : route.maxTokens
+  const system = typeof input.system === 'string' ? input.system.trim() : ''
+
+  if (video) {
+    const packed = await loadTextVideo(video, { signal: input.signal })
+    return completeTextViaChat({
+      model: route.modelId,
+      prompt,
+      system,
+      maxTokens,
+      videoPart: toVideoImageUrlPart(packed),
+      env: input.env,
+      fetcher: input.fetcher,
+      signal: input.signal,
+      apiKey: input.apiKey,
+      baseUrl: input.baseUrl,
+    })
+  }
+
   if (!input.llm || typeof input.llm.stream !== 'function') {
     throw new OmnimuxError('needs-provider', 'textComplete requires ctx.llm')
   }
-  const text = parseTextConfig(input.text)
-  const image = typeof input.image === 'string' ? input.image.trim() : ''
-  const route = resolveTextRoute({ model: input.model, image }, text, input.env)
   const content = [{ type: 'text', text: prompt }]
   if (image) {
     if (!input.attachments || typeof input.attachments.saveImage !== 'function') {
@@ -43,10 +75,6 @@ export async function executeOmnimuxText(input) {
     })
     content.push({ type: 'image', attachment })
   }
-  const maxTokens = typeof input.maxTokens === 'number' && Number.isFinite(input.maxTokens) && input.maxTokens > 0
-    ? input.maxTokens
-    : route.maxTokens
-  const system = typeof input.system === 'string' ? input.system.trim() : ''
   const options = {
     provider: route.providerId,
     model: route.modelId,

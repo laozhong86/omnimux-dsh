@@ -47,7 +47,7 @@ const hoverStyles = `
 .omx-profile .omx-btn-ghost:hover { color: ${tokens.text}; background: ${tokens.hover}; }
 .omx-profile .omx-btn-danger:hover { color: ${tokens.error}; border-color: ${tokens.error}; background: transparent; }
 .omx-avatar { position: relative; cursor: pointer; flex: 0 0 auto; }
-.omx-avatar-edit { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; opacity: 0; transition: opacity .15s ease; pointer-events: none; }
+.omx-avatar-edit { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--dsw-alias-bg-mask-1, rgba(0,0,0,.55)); color: var(--dsw-alias-label-primary-inverted, #fff); font-size: 11px; opacity: 0; transition: opacity .15s ease; pointer-events: none; }
 .omx-avatar:hover .omx-avatar-edit { opacity: 1; }
 `
 
@@ -141,7 +141,7 @@ function AvatarModal({ t, avatar, initial, busy, error, onApply, onClose }) {
         position: 'fixed',
         inset: 0,
         zIndex: 1100,
-        background: 'rgba(0,0,0,.45)',
+        background: 'var(--dsw-alias-bg-mask-1, rgba(0,0,0,.45))',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -351,7 +351,7 @@ function SignedIn({ t, profile, onTopUp, onSignOut }) {
  * @param {{ t: (key: string) => string }} props
  */
 export function ProfileSection({ t }) {
-  const { state, beginLogin, signOut, openUrl } = useOmnimuxAuth({ verifyOnMount: false })
+  const { state, signOut, openUrl, recheck } = useOmnimuxAuth({ verifyOnMount: false })
 
   if (state.phase === 'ready') {
     const profile = state.profile || {}
@@ -365,17 +365,30 @@ export function ProfileSection({ t }) {
     )
   }
 
+  // Sign-in is converged onto the unified gate: this section only shows a
+  // short message and a single entry button. The gate owns the device code,
+  // the verification page, polling, and the resume-after-login intent queue.
+  const signIn = () => {
+    const gate = typeof window !== 'undefined' ? /** @type {any} */ (window).__omnimuxAuth : undefined
+    if (gate && typeof gate.ensureLogin === 'function') {
+      gate.ensureLogin({
+        reason: t('auth.gate.reason.account'),
+        onSuccess: () => { void recheck() },
+      })
+    } else {
+      void recheck()
+    }
+  }
+
   const message = {
     checking: t('profile.loading'),
     'need-login': t('profile.signedOut'),
-    starting: t('profile.loading'),
-    waiting: t('plugins.waiting'),
     denied: t('plugins.denied'),
     expired: t('plugins.expired'),
     error: t('plugins.error'),
   }[state.phase] || t('profile.signedOut')
 
-  const showLogin = state.phase === 'need-login' || state.phase === 'denied' || state.phase === 'expired' || state.phase === 'error'
+  const showLogin = state.phase !== 'checking'
 
   return (
     <div style={page} className="omx-profile">
@@ -383,28 +396,8 @@ export function ProfileSection({ t }) {
       <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{t('profile.title')}</h2>
       <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
         <p style={{ margin: 0, fontSize: 13, color: tokens.textSecondary, lineHeight: 1.5 }}>{message}</p>
-        {state.phase === 'error' && state.detail ? (
-          <p style={{ margin: 0, fontSize: 12, color: tokens.error, lineHeight: 1.5 }}>{state.detail}</p>
-        ) : null}
-        {state.phase === 'waiting' && state.user_code ? (
-          <div style={{
-            fontFamily: 'var(--dsw-font-markdown-code-font-family, monospace)',
-            fontSize: 16,
-            letterSpacing: 2,
-            padding: '6px 12px',
-            borderRadius: 6,
-            border: `1px solid ${tokens.border}`,
-          }}>
-            {state.user_code}
-          </div>
-        ) : null}
-        {state.phase === 'waiting' && state.verification_url ? (
-          <button type="button" className="omx-btn omx-btn-primary" onClick={() => openUrl(state.verification_url)}>
-            {t('plugins.open')}
-          </button>
-        ) : null}
         {showLogin ? (
-          <button type="button" className="omx-btn omx-btn-primary" onClick={() => { void beginLogin() }}>
+          <button type="button" className="omx-btn omx-btn-primary" onClick={signIn}>
             {t('plugins.login')}
           </button>
         ) : null}

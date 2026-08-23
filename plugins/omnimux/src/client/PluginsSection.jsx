@@ -152,7 +152,7 @@ const tag = {
   lineHeight: '16px',
   padding: '2px 8px',
   borderRadius: 999,
-  background: 'rgba(255,255,255,0.08)',
+  background: 'var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08))',
   whiteSpace: 'nowrap',
 }
 
@@ -216,7 +216,7 @@ const popover = {
   borderRadius: 10,
   background: 'var(--dsw-alias-bg-primary, var(--dsw-bg, #16181d))',
   border: '1px solid var(--dsw-alias-border, rgba(255,255,255,0.16))',
-  boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+  boxShadow: '0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.35))',
 }
 
 const menuItem = {

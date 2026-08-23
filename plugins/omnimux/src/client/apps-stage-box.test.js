@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
-import { PRODUCT_STAGE_CHROME, readConversationBox } from './conversation-box.js'
+import { afterEach, describe, it } from 'node:test'
+import { JSDOM } from 'jsdom'
+import { PRODUCT_STAGE_CHROME, ensureProductStageChrome, readConversationBox } from './conversation-box.js'
 
 function fakeEl(rect, parent = null) {
   return {
@@ -74,5 +75,151 @@ describe('PRODUCT_STAGE_CHROME', () => {
     assert.match(PRODUCT_STAGE_CHROME, /toggleCluster/)
     assert.match(PRODUCT_STAGE_CHROME, /pointer-events:none/)
     assert.match(PRODUCT_STAGE_CHROME, /dsh-window-drag/)
+    assert.match(PRODUCT_STAGE_CHROME, /data-dsh-panel-host/)
+    assert.match(PRODUCT_STAGE_CHROME, /--dsh-sidebar-width/)
+    assert.match(PRODUCT_STAGE_CHROME, /--dsh-sidebar-height/)
+  })
+})
+
+describe('session-row closer', () => {
+  /** @type {JSDOM | undefined} */
+  let dom
+  const previous = {
+    window: globalThis.window,
+    document: globalThis.document,
+    HTMLElement: globalThis.HTMLElement,
+    HTMLStyleElement: globalThis.HTMLStyleElement,
+    Element: globalThis.Element,
+    CustomEvent: globalThis.CustomEvent,
+  }
+
+  afterEach(() => {
+    dom?.window.close()
+    dom = undefined
+    globalThis.window = previous.window
+    globalThis.document = previous.document
+    globalThis.HTMLElement = previous.HTMLElement
+    globalThis.HTMLStyleElement = previous.HTMLStyleElement
+    globalThis.Element = previous.Element
+    globalThis.CustomEvent = previous.CustomEvent
+  })
+
+  function setup() {
+    dom = new JSDOM(`<!doctype html><html><body>
+      <button type="button" class="brand" aria-label="新建会话" id="brand">OmniMux</button>
+      <button type="button" class="newSession" aria-label="新建会话" id="new-session">新会话</button>
+      <button type="button" class="omnimux-sidebar-inline-btn" id="new-project">新建项目</button>
+      <div role="treeitem" aria-selected="true" id="current">当前会话<button type="button" id="pin">pin</button></div>
+      <div role="treeitem" aria-selected="false" id="other">其它会话</div>
+      <div role="treeitem" id="workspace">工作区<button type="button" id="ws-plus" aria-label="在“演示”中新建会话">+</button></div>
+      <div id="omnimux-sidebar-new-menu" class="omnimux-sidebar-new-menu">
+        <button type="button" role="menuitem" id="menu-session">新建会话</button>
+        <button type="button" role="menuitem" id="menu-project">新建项目</button>
+      </div>
+    </body></html>`, { url: 'http://127.0.0.1/' })
+    globalThis.window = dom.window
+    globalThis.document = dom.window.document
+    globalThis.HTMLElement = dom.window.HTMLElement
+    globalThis.HTMLStyleElement = dom.window.HTMLStyleElement
+    globalThis.Element = dom.window.Element
+    globalThis.CustomEvent = dom.window.CustomEvent
+    document.documentElement.dataset.dshProductStage = 'omnimux-assets'
+    delete document.documentElement.dataset.dshSessionCloser
+  }
+
+  it('rewrites injected chrome that has window-drag but not panel-host', () => {
+    setup()
+    const style = document.createElement('style')
+    style.id = 'dsh-product-stage-chrome'
+    style.textContent = 'html[data-dsh-product-stage] #dsh-window-drag{-webkit-app-region:no-drag}'
+    document.head.append(style)
+    ensureProductStageChrome()
+    assert.match(style.textContent, /data-dsh-panel-host/)
+    assert.match(style.textContent, /--dsh-sidebar-width/)
+  })
+
+  it('closes the product page when an unselected session row is clicked', () => {
+    setup()
+    /** @type {{ id?: string } | null} */
+    let detail = null
+    window.addEventListener('dsh-product-stage', (event) => {
+      detail = /** @type {CustomEvent} */ (event).detail
+    })
+    ensureProductStageChrome()
+    document.getElementById('other').click()
+    assert.equal(document.documentElement.dataset.dshProductStage, undefined)
+    assert.deepEqual(detail, { id: '' })
+  })
+
+  it('closes the product page when the already-selected session row is clicked', () => {
+    setup()
+    ensureProductStageChrome()
+    document.getElementById('current').click()
+    assert.equal(document.documentElement.dataset.dshProductStage, undefined)
+  })
+
+  it('does not close when a button inside a session row is clicked', () => {
+    setup()
+    ensureProductStageChrome()
+    document.getElementById('pin').click()
+    assert.equal(document.documentElement.dataset.dshProductStage, 'omnimux-assets')
+  })
+
+  it('is a no-op when no product stage is open', () => {
+    setup()
+    delete document.documentElement.dataset.dshProductStage
+    ensureProductStageChrome()
+    assert.doesNotThrow(() => { document.getElementById('other').click() })
+  })
+
+  it('closes the product page when 新会话 is clicked', () => {
+    setup()
+    ensureProductStageChrome()
+    document.getElementById('new-session').click()
+    assert.equal(document.documentElement.dataset.dshProductStage, undefined)
+  })
+
+  it('closes the product page when the brand new-session shortcut is clicked', () => {
+    setup()
+    ensureProductStageChrome()
+    document.getElementById('brand').click()
+    assert.equal(document.documentElement.dataset.dshProductStage, undefined)
+  })
+
+  it('closes the product page when a workspace-group plus is clicked', () => {
+    setup()
+    ensureProductStageChrome()
+    document.getElementById('ws-plus').click()
+    assert.equal(document.documentElement.dataset.dshProductStage, undefined)
+  })
+
+  it('closes the product page when the collapsed menu pick 新建会话 is clicked', () => {
+    setup()
+    ensureProductStageChrome()
+    document.getElementById('menu-session').click()
+    assert.equal(document.documentElement.dataset.dshProductStage, undefined)
+  })
+
+  it('does not close when 新建项目 is clicked', () => {
+    setup()
+    ensureProductStageChrome()
+    document.getElementById('new-project').click()
+    assert.equal(document.documentElement.dataset.dshProductStage, 'omnimux-assets')
+  })
+
+  it('does not close when the collapsed menu pick 新建项目 is clicked', () => {
+    setup()
+    ensureProductStageChrome()
+    document.getElementById('menu-project').click()
+    assert.equal(document.documentElement.dataset.dshProductStage, 'omnimux-assets')
+  })
+
+  it('does not close when collapsed-rail plus is captured to open the menu', () => {
+    setup()
+    ensureProductStageChrome()
+    const btn = document.getElementById('new-session')
+    btn.addEventListener('click', (event) => { event.stopPropagation() }, true)
+    btn.click()
+    assert.equal(document.documentElement.dataset.dshProductStage, 'omnimux-assets')
   })
 })

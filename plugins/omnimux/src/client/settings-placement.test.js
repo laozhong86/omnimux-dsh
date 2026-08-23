@@ -37,22 +37,33 @@ describe('settings placement', () => {
     assert.deepEqual(pluginsTabIds(hub), ['omnimux-dsh-plugins'])
   })
 
-  it('registers accounts as an app stage, not a Settings seat', () => {
+  it('registers accounts as a pinned first-level page, not a Settings seat', () => {
     const source = readFileSync(accountsClient, 'utf8')
     assert.deepEqual(sectionIds(source), [])
     assert.deepEqual(pluginsTabIds(source), [])
     assert.ok(!source.includes('settings.section'))
     assert.ok(!source.includes('settings.plugins.tab'))
-    assert.match(source, /ctx\.slots\.inject\(\s*'shell\.overlay'[\s\S]*?id:\s*'omnimux-app-accounts'/)
+    assert.match(source, /ctx\.slots\.inject\(\s*'shell\.overlay'[\s\S]*?id:\s*'omnimux-accounts-stage'/)
+    assert.ok(source.includes("mountSidebarEntry(stage"), 'mounts its own pinned sidebar row')
   })
 
-  it('AccountsStage claims the product stage on the hub app-open event', () => {
+  it('AccountsStage reads open state from the stage store, not the hub app-open event', () => {
     const source = readFileSync(accountsStage, 'utf8')
-    assert.ok(source.includes("'omnimux-app-open'"), 'listens for the hub APP_OPEN_EVENT literal')
-    assert.ok(source.includes("'accounts'"), 'matches its catalog id')
-    assert.ok(source.includes("'omnimux-app-accounts'"), 'claims stage id omnimux-app-accounts')
-    assert.ok(source.includes('getStage().claim('), 'uses the hub product-stage seam, not a local copy')
+    assert.ok(!source.includes("'omnimux-app-open'"), 'no longer listens for the hub APP_OPEN_EVENT literal')
+    assert.ok(source.includes('useSyncExternalStore'), 'reads open state from the stage store')
+    assert.ok(source.includes('stage.set(false)'), 'closes through the stage store, not a local claim copy')
     assert.ok(!/function claimProductStage|function readStageBox|PRODUCT_STAGE_CHROME/.test(source), 'does not duplicate the stage-claim protocol')
     assert.ok(!/import[^\n]*omnimux/.test(source), 'must not import the hub package')
+  })
+
+  it('AccountsStage keeps the page mounted after the first open', () => {
+    const source = readFileSync(accountsStage, 'utf8')
+    const section = readFileSync(join(here, '../../../omnimux-accounts/src/client/AccountsSection.jsx'), 'utf8')
+    const hook = readFileSync(join(here, '../../../omnimux-accounts/src/client/use-accounts.js'), 'utf8')
+    assert.ok(source.includes('everOpened'), 'remembers first open so the subtree can stay mounted')
+    assert.ok(source.includes("display: open ? 'flex' : 'none'"), 'hides with display:none instead of unmounting')
+    assert.ok(!/if \(!open \|\| !stage\) return null/.test(source), 'must not unmount the overlay on close')
+    assert.ok(section.includes('active'), 'section receives overlay visibility')
+    assert.ok(hook.includes('sessionCache'), 'list hook rehydrates from a session cache')
   })
 })

@@ -6,12 +6,14 @@ import { OmnimuxError } from '../media/errors.js'
  * fails at the adapter as UNKNOWN_MODEL.
  *
  * `input` follows the measured gateway matrix (docs/evidence/
- * omnimux-modality-2026-08-18.md): a 64px red image plus a content prompt
- * was sent to every row; rows that answered with the image color declare
- * image. deepseek-v4-pro/flash and glm-5.3 rejected `image_url` upstream and
- * stay text-only. claude-opus-5 supports images on the Anthropic `/v1/messages`
- * protocol but the chat-completions group is currently 403 for this key; it
- * is wired in after that group is upgraded, so it stays text-only here.
+ * omnimux-modality-2026-08-18.md) plus the 2026-08-22 video spike
+ * (image_url + data:video on gemini-3.7-flash). A 64px red image plus a
+ * content prompt was sent to every row; rows that answered with the image
+ * color declare image. Video is declared only where the spike proved native
+ * mp4 understanding. deepseek-v4-pro and glm-5.3 rejected `image_url`
+ * upstream and stay text-only. claude-opus-5 supports images on the
+ * Anthropic `/v1/messages` protocol but the chat-completions group is
+ * currently 403 for this key; it stays text-only here.
  */
 export const CHAT_MODELS = Object.freeze([
   Object.freeze({ id: 'claude-opus-5', brand: 'anthropic', role: 'flagship', input: Object.freeze(['text']) }),
@@ -19,8 +21,8 @@ export const CHAT_MODELS = Object.freeze([
   Object.freeze({ id: 'grok-4.6', brand: 'xai', role: 'flagship', input: Object.freeze(['text', 'image']) }),
   Object.freeze({ id: 'kimi-k3', brand: 'moonshot', role: 'flagship', input: Object.freeze(['text', 'image']) }),
   Object.freeze({ id: 'deepseek-v4-pro', brand: 'deepseek', role: 'flagship', input: Object.freeze(['text']) }),
-  Object.freeze({ id: 'deepseek-v4-flash', brand: 'deepseek', role: 'classic', input: Object.freeze(['text']) }),
-  Object.freeze({ id: 'gemini-3.7-flash', brand: 'google', role: 'flagship', input: Object.freeze(['text', 'image']) }),
+  Object.freeze({ id: 'deepseek-v4-flash-vision-exp', brand: 'deepseek', role: 'classic', input: Object.freeze(['text', 'image']) }),
+  Object.freeze({ id: 'gemini-3.7-flash', brand: 'google', role: 'flagship', input: Object.freeze(['text', 'image', 'video']) }),
   Object.freeze({ id: 'glm-5.3', brand: 'zhipu', role: 'flagship', input: Object.freeze(['text']) }),
 ])
 
@@ -79,16 +81,21 @@ export function enabledTextModels(text) {
 
 /**
  * Resolve which model a one-shot request runs on. An omitted `model` uses
- * `text.defaultModel` on both text-only and image requests; `OMNIMUX_TEXT_
- * DEFAULT_MODEL` overlays it. The chosen row must be enabled, and an image
- * request must land on a row whose measured matrix includes image.
- * @param {{ model?: string, image?: string }} request
+ * `text.defaultModel` on text-only, image, and video requests; `OMNIMUX_TEXT_
+ * DEFAULT_MODEL` overlays it. The chosen row must be enabled; image/video
+ * requests must land on a row whose measured matrix includes that modality.
+ * `image` and `video` are mutually exclusive on one request.
+ * @param {{ model?: string, image?: string, video?: string }} request
  * @param {ReturnType<typeof parseTextConfig>} text
  * @param {Record<string, string | undefined>} [env]
  */
 export function resolveTextRoute(request, text, env = process.env) {
   const enabled = enabledTextModels(text)
   const hasImage = typeof request.image === 'string' && request.image.trim().length > 0
+  const hasVideo = typeof request.video === 'string' && request.video.trim().length > 0
+  if (hasImage && hasVideo) {
+    throw new OmnimuxError('omnimux-invalid-request', 'pass image or video, not both')
+  }
   const requested = typeof request.model === 'string' ? request.model.trim() : ''
   const modelId = requested || resolveDefaultModel(enabled, text.defaultModel, env)
   const row = enabled.find((item) => item.id === modelId)
@@ -99,6 +106,9 @@ export function resolveTextRoute(request, text, env = process.env) {
   const input = chat?.input ?? ['text']
   if (hasImage && !input.includes('image')) {
     throw new OmnimuxError('omnimux-invalid-request', `model '${row.id}' does not accept image input`)
+  }
+  if (hasVideo && !input.includes('video')) {
+    throw new OmnimuxError('omnimux-invalid-request', `model '${row.id}' does not accept video input`)
   }
   return {
     providerId: text.defaultProvider,

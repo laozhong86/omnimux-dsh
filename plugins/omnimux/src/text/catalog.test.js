@@ -17,7 +17,7 @@ describe('text whitelist', () => {
     assert.equal(parsed.maxTokens, 4096)
     assert.deepEqual(parsed.models.map((row) => row.id), [...CHAT_MODEL_IDS])
     assert.equal(enabledTextModels(parsed).length, 8)
-    assert.equal(parsed.models.find((row) => row.id === 'deepseek-v4-flash')?.role, 'classic')
+    assert.equal(parsed.models.find((row) => row.id === 'deepseek-v4-flash-vision-exp')?.role, 'classic')
     assert.equal(parsed.models.find((row) => row.id === 'grok-4.6')?.brand, 'xai')
   })
 
@@ -82,10 +82,34 @@ describe('text whitelist', () => {
 
   it('rejects an image on a text-only model', () => {
     assert.throws(
-      () => resolveTextRoute({ model: 'deepseek-v4-flash', image: '/tmp/a.png' }, parseTextConfig(undefined)),
+      () => resolveTextRoute({ model: 'deepseek-v4-pro', image: '/tmp/a.png' }, parseTextConfig(undefined)),
       (error) => error instanceof OmnimuxError
         && error.code === 'omnimux-invalid-request'
         && /does not accept image input/.test(error.message),
+    )
+  })
+
+  it('defaults a video request to gemini and accepts video modality', () => {
+    const route = resolveTextRoute({ video: '/tmp/a.mp4' }, parseTextConfig(undefined))
+    assert.equal(route.modelId, 'gemini-3.7-flash')
+    assert.ok(route.input.includes('video'))
+  })
+
+  it('rejects video on a vision-but-not-video model', () => {
+    assert.throws(
+      () => resolveTextRoute({ model: 'grok-4.6', video: '/tmp/a.mp4' }, parseTextConfig(undefined)),
+      (error) => error instanceof OmnimuxError
+        && error.code === 'omnimux-invalid-request'
+        && /does not accept video input/.test(error.message),
+    )
+  })
+
+  it('rejects image and video together at resolve', () => {
+    assert.throws(
+      () => resolveTextRoute({ image: '/tmp/a.png', video: '/tmp/a.mp4' }, parseTextConfig(undefined)),
+      (error) => error instanceof OmnimuxError
+        && error.code === 'omnimux-invalid-request'
+        && /image or video/.test(error.message),
     )
   })
 
