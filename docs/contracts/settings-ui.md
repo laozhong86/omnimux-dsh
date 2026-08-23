@@ -10,7 +10,8 @@ Normative seat for OmniMux plugin UI in the official Web Settings panel. Live sl
 | Whole plugin management / inventory page | `settings.plugins.tab` | Settings → 插件, one tab | Install, uninstall, list, or a multi-control page owned by one plugin |
 | One plugin's compact controls | `settings.plugin.item` | Settings → 插件 → 可配置 tab, one card | A few fields that belong to one Host plugin (bash, agent-loop, web-search) |
 | One preference with no page of its own | `settings.general.item` | Settings → 通用, one row | A single toggle or picker |
-| A single published app's own user page | app stage (`shell.overlay` + the hub `omnimux-app-open` event) | Full-width product page over the conversation column, opened from the Apps card / sidebar tab | The page is the app itself (accounts, future verticals), not plugin config and not an inventory |
+| A pinned first-level plugin's own page | product stage (`shell.overlay` + a stage store, opened directly from its own sidebar row) | Full-width product page over the conversation column, toggled from the pinned row (账号, 资产库, 专家·技能·连接器, 工作流) | The page is the plugin itself, not plugin config and not an inventory |
+| A published catalog app's own user page | app stage (`shell.overlay` + the hub `omnimux-app-open` event) | Full-width product page over the conversation column, opened from the Apps card / sidebar tab | For future catalog apps; the Apps shelf is currently taken down, so this path is dormant |
 | Secret (API key, token) | credentials domain (`ctx.credentials` / `api.credentials`) | Value never appears in Settings responses | Always. The UI only shows configured / source / writable |
 
 MUST NOT register plugin config, plugin install, or social-account management as a new `settings.section`. That slot is the first-level sidebar. Adding a row there is how "DeepSeek 搜索密钥" and "DSH 插件" leaked into the nav.
@@ -22,7 +23,7 @@ MUST NOT register plugin config, plugin install, or social-account management as
 | `settings.section` | `omnimux-profile` | `omnimux` | Device login and public profile |
 | `settings.plugins.tab` | `omnimux-dsh-plugins` | `omnimux` | Install / uninstall into the `omnimux` profile |
 | `settings.plugin.item` | `web-search` | official `ui-settings-plugins` | DeepSeek search key via credentials |
-| `shell.overlay` | `omnimux-app-accounts` | `omnimux-accounts` | Accounts app stage, opened via `omnimux-app-open` (not a Settings seat) |
+| `shell.overlay` | `omnimux-accounts-stage` | `omnimux-accounts` | Pinned Accounts page, opened directly via the product stage from its own sidebar row (not a Settings seat, not the Apps shelf) |
 
 Official tabs already occupy `configurable` (order 0) and `all` (order 10). Product tabs use order ≥ 20 so they sit after the official ones.
 

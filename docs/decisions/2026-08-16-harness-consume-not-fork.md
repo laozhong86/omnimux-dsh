@@ -47,3 +47,5 @@ OmniMux 消费官方 `deepseek-ai/deepseek-harness`，不创建也不维护它�
 ## 升级官方
 
 仪式在 [docs/harness-pin.md](../harness-pin.md)。换 pin → 重放补丁 → 冒烟 → 产品自己打 tag。不为了「跟上 master」而升。
+
+> 2026-08-22 注：桌面壳已于 2026-08-21 切换为 fork 线（`omnimux-desktop-fork`，fork 自 anywhere-labs），旧 slim 壳 `omnimux-desktop` 归档为只读参考；本文为其时决策，路径以 [dev-pipeline.md](../contracts/dev-pipeline.md) 为准。

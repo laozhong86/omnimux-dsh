@@ -1,7 +1,7 @@
 # OmniMux 插件系列设计规范 —— x.ai 品牌语言的设计令牌落地（v1.0）
 
 > 品牌参考：[x.ai DESIGN.md](https://github.com/ricocc/brands-design-md/tree/master/brands/x.ai)（2026-08-01 对官网校验，验证主题为 light）。
-> 适用范围：本仓库（omnimux-dsh）内全部带 Web 客户端的插件——`plugins/omnimux`（hub 壳层与货架页）、`plugins/omnimux-accounts`、`plugins/omnimux-assets`、`plugins/omnimux-workflow`，及后续新插件。`plugins/dsh-drama` 现为纯域层，一旦新增 UI 同样遵循。
+> 适用范围：本仓库（omnimux-dsh）内全部带 Web 客户端的插件——`plugins/omnimux`（hub 壳层与货架页）、`plugins/omnimux-accounts`、`plugins/omnimux-assets`、`plugins/omnimux-workflow`、`plugins/omnimux-products`，及后续新插件。`plugins/dsh-drama` 现为纯域层，一旦新增 UI 同样遵循。
 > 本文件是该规范的唯一事实源（触发场景与索引见 `AGENTS.md`）；与旧实现冲突时以本文为准。
 
 ---
@@ -185,14 +185,21 @@ plugins/omnimux-theme/
 - **默认策略（阶段 1–2）**：插件 UI 完全走 `--omx-*`，不再读 `--dsw-alias-*`。视觉上插件 stage 形成 x.ai 风格岛，宿主壳保持原样。
 - **可选终态（阶段 3，需老板拍板）**：通过宿主主题服务把整个壳的别名层也染成 x.ai 调色板（OmniMux 桌面本来就全由本系列插件构成，全壳统一是合理终态）：
 
+> 注意：`bg-primary` / `bg-secondary` / `border` 这三个 token 名在官方源码中不存在（官方用 `bg-base` / `bg-layer-*` / `border-l*`）。下面仅示意最小核心集合；**完整 84 枚全壳覆盖见 `plugins/omnimux/src/client/xai-theme.js`（已落地）**。
+
 ```js
 // 注册进宿主 theme 服务（ctx.theme.overrideTokens，天然双模式、可整体卸载）
 ctx.theme.overrideTokens('omnimux-xai', {
-  '--dsw-alias-bg-primary':          { light: '#ffffff', dark: '#0a0a0a' },
-  '--dsw-alias-bg-secondary':        { light: '#f7f7f7', dark: '#131313' },
-  '--dsw-alias-border':              { light: '#dbdbdb', dark: '#242424' },
+  '--dsw-alias-bg-base':             { light: '#ffffff', dark: '#0a0a0a' },
+  '--dsw-alias-bg-layer-1':          { light: '#fbfbfb', dark: '#171717' },
+  '--dsw-alias-bg-layer-2':          { light: '#fbfbfb', dark: '#171717' },
+  '--dsw-alias-bg-layer-3':          { light: '#fbfbfb', dark: '#171717' },
+  '--dsw-alias-border-l1':           { light: 'rgba(10,10,10,.06)', dark: 'rgba(255,255,255,.08)' },
+  '--dsw-alias-border-l2':           { light: '#dbdbdb', dark: '#242424' },
+  '--dsw-alias-border-l3':           { light: '#dbdbdb', dark: '#3d3d3d' },
   '--dsw-alias-label-primary':       { light: '#0a0a0a', dark: '#ffffff' },
   '--dsw-alias-label-secondary':     { light: '#4b4b4b', dark: '#b4b4b4' },
+  '--dsw-alias-label-tertiary':      { light: '#848484', dark: '#7c7c7c' },
   '--dsw-alias-label-primary-inverted': { light: '#ffffff', dark: '#0a0a0a' },
   '--dsw-alias-interactive-bg-hover':   { light: 'rgba(10,10,10,.05)',  dark: 'rgba(255,255,255,.07)' },
   '--dsw-alias-interactive-bg-active':  { light: 'rgba(10,10,10,.09)',  dark: 'rgba(255,255,255,.13)' },
@@ -314,7 +321,7 @@ ctx.effect(() => installOmniMuxTheme({ scope: stageEl, ctx }), 'omnimux-assets: 
 
 ### 7.0 现状引用 → 目标令牌对照表（机械替换依据）
 
-已在 omnimux-assets / omnimux-accounts / omnimux-workflow / omnimux（hub 客户端）确认的现存写法，全部是 `var(--dsw-alias-*, 兜底值)` 模式：
+已在 omnimux-assets / omnimux-accounts / omnimux-workflow / omnimux-products / omnimux（hub 客户端）确认的现存写法，全部是 `var(--dsw-alias-*, 兜底值)` 模式（一级页只用 `--dsw-alias-*`，禁止 `--omx-*` fallback）：
 
 | 现有写法 | 出现位置（举例） | 替换为 |
 |---|---|---|

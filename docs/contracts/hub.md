@@ -29,7 +29,7 @@ vertical disk  <--only the vertical writes its own files
 - Official-only tool and OmniMux is not configured or the user is not signed in: throw `needs-omnimux`. Do not return 500 or a successful empty value.
 - Apps and other plugins consume the same seams. They must not import `omnimux` internals.
 
-Chat stays on the dsh LLM surface (`llm-pi-ai` `omnimux` route). The hub must not register a parallel chat tool. A one-shot expert completion (`textComplete` / `omnimux_text_complete`) is not chat: it runs one `ctx.llm.stream` call with no tools and no parent messages.
+Chat stays on the dsh LLM surface (`llm-pi-ai` `omnimux` route). The hub must not register a parallel chat tool. A one-shot expert completion (`textComplete` / `omnimux_text_complete`) is not chat: text/image runs one `ctx.llm.stream` call with no tools and no parent messages; **video** bypasses stream/attachments and POSTs `/v1/chat/completions` with `image_url` + `data:video/…` (harness `ImageMediaType` cannot store video MIME).
 
 ## Media layers
 
@@ -91,9 +91,9 @@ media:
 
 ## Text complete
 
-`textComplete` is a one-shot expert call, not a second chat. It does not inherit parent messages, does not pass tools, and does not write the image into the parent session. Authorization is the enabled whitelist plus the tool's required `reason`. The hub does not prompt the user.
+`textComplete` is a one-shot expert call, not a second chat. It does not inherit parent messages, does not pass tools, and does not write the image/video into the parent session. Authorization is the enabled whitelist plus the tool's required `reason`. The hub does not prompt the user.
 
-The callable set is `Config.text.models`. Every `id` must already be a `cordis.patch.yml` `omnimux` chat model. `enabled: false` hides that row from the tool. Omitted `models` uses the eight chat-directory defaults, all enabled. `defaultModel` is what an omitted `model` resolves to on both text-only and image requests; `OMNIMUX_TEXT_DEFAULT_MODEL` overlays it. Image input is not a separate capability: a request with `image` must land on a row whose measured `input` includes `image` — gpt-5.6-sol, grok-4.6, kimi-k3, gemini-3.7-flash (evidence: `docs/evidence/omnimux-modality-2026-08-18.md`). deepseek-v4-pro/flash and glm-5.3 stay text-only; claude-opus-5 is listed but its chat-completions group is temporarily 403.
+The callable set is `Config.text.models`. Every `id` must already be a `cordis.patch.yml` `omnimux` chat model. `enabled: false` hides that row from the tool. Omitted `models` uses the eight chat-directory defaults, all enabled. `defaultModel` is what an omitted `model` resolves to on text-only, image, and video requests; `OMNIMUX_TEXT_DEFAULT_MODEL` overlays it. Image / video are not separate seams: a request with `image` must land on a row whose measured `input` includes `image` (gpt-5.6-sol, grok-4.6, kimi-k3, deepseek-v4-flash-vision-exp, gemini-3.7-flash — evidence: `docs/evidence/omnimux-modality-2026-08-18.md`); a request with `video` must land on a row whose `input` includes `video` (**today only `gemini-3.7-flash`**, evidence: 2026-08-22 spike — pack as `image_url` + `data:video/…`, never `video_url`). `image` and `video` are mutually exclusive. deepseek-v4-pro and glm-5.3 stay text-only; claude-opus-5 is listed but its chat-completions group is temporarily 403.
 
 ```text
 text:
@@ -111,7 +111,7 @@ text:
     - { id: glm-5.3,           brand: zhipu,     role: flagship, enabled: true }
 ```
 
-A request may name `model` or omit it for `defaultModel`. The image is an absolute path, `http(s)` URL, or data URI. Missing `ctx.llm` or (when `image` is set) `ctx.attachments` throws `needs-provider`.
+A request may name `model` or omit it for `defaultModel`. The image is an absolute path, `http(s)` URL, or data URI (still via `ctx.llm.stream` + `ctx.attachments`). The video is an absolute path (`.mp4` / `.webm` / `.mov`) or `data:video/…` URI; video **bypasses** `ctx.llm` / attachments and uses hub chat completions with `OMNIMUX_API_KEY` / `OMNIMUX_TOKEN` (+ optional `OMNIMUX_BASE_URL`). Missing `ctx.llm` on text/image, or (when `image` is set) `ctx.attachments`, throws `needs-provider`. Missing key on video throws `omnimux-unconfigured`.
 
 ## Seams and tools
 
@@ -122,10 +122,12 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `imageGenerate` | neutral provide | same job handle as video | same | same |
 | `omnimux_video_submit` | hub tool over `videoGenerate` | same as the seam | same | same |
 | `omnimux_image_submit` | hub tool over `imageGenerate` | same as the seam | same | same |
-| `textComplete` | neutral provide | `{ prompt, model?, image?, system?, maxTokens?, signal? }` | `{ mode: "live", model, text }` | `needs-provider`, `unknown-model`, `omnimux-invalid-request`, stream errors |
+| `textComplete` | neutral provide | `{ prompt, model?, image?, video?, system?, maxTokens?, signal? }` | `{ mode: "live", model, text }` | `needs-provider`, `omnimux-unconfigured` (video), `unknown-model`, `omnimux-invalid-request`, stream / HTTP errors |
 | `omnimux_text_complete` | hub tool over `textComplete` | same plus required `reason` | same | same |
 | `omnimux_social_data` | official-only tool | `platform` + `capability` + `url`/`id`/`query`; `sk-` | `{ platform, capability, model, data }` | `omnimux-unconfigured`, `omnimux-invalid-request` |
 | `omnimux_accounts_*` / `omnimux_publish_*` | official-only tools | connect / list / presign / create / get post; access token | upstream JSON, secrets stripped | `needs-omnimux` |
+| `videoProcess` | neutral provide（provider: dsh-video） | `{ capability, input, dest, signal? }` | `{ mode: "live", files?: [{ path, kind, meta? }], result? }` | `ffmpeg-missing`, `unknown-capability`, `video-invalid-input`, `video-ffmpeg-failed`, `video-incompatible-streams`, `video-canceled`, `video-timeout`, `video-<capability>-failed` |
+| `video_process` | dsh-video tool over `videoProcess` | same | same | same |
 
 `audioGenerate` does not exist until OmniMux publishes a live audio generation contract. Digital-human / talking-head is a `videoGenerate` request (reference image, duration, speech constraints), not a third HTTP client.
 

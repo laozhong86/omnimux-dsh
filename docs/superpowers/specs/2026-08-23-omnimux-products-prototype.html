@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-dsh-product-stage>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OmniMux 产品库 · P0 原型</title>
+  <style>
+    :root {
+      --dsw-alias-bg-base: #ffffff;
+      --dsw-alias-bg-layer-1: #fbfbfb;
+      --dsw-alias-bg-module-platform: #f7f7f7;
+      --dsw-alias-label-primary: #0a0a0a;
+      --dsw-alias-label-secondary: #4b4b4b;
+      --dsw-alias-label-tertiary: #848484;
+      --dsw-alias-label-primary-inverted: #ffffff;
+      --dsw-alias-label-primary-foreground: #ffffff;
+      --dsw-alias-label-error: #b91c1c;
+      --dsw-alias-state-error-primary: #b91c1c;
+      --dsw-alias-state-warn-primary: #b45309;
+      --dsw-alias-border-l2: #dbdbdb;
+      --dsw-alias-border-l3: #bfbfbf;
+      --dsw-alias-border-l4: #dbdbdb;
+      --dsw-alias-interactive-bg-hover: rgba(10,10,10,.05);
+      --dsw-alias-interactive-bg-active: rgba(10,10,10,.09);
+      --dsw-alias-button-primary-fill: #0a0a0a;
+      --dsw-alias-button-primary-hover: #242424;
+      --dsw-alias-bg-mask-1: rgba(10,10,10,.40);
+      --dsw-sidebar: #f7f7f7;
+      --dsw-font: "Inter", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: var(--dsw-font);
+      color: var(--dsw-alias-label-primary);
+      background: #ececec;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+    button, input, textarea { font: inherit; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--dsw-alias-label-primary);
+      outline-offset: 2px;
+    }
+
+    .shell {
+      width: min(1280px, 100vw);
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 236px 1fr;
+      background: var(--dsw-alias-bg-base);
+      color: var(--dsw-alias-label-primary);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      background: var(--dsw-sidebar);
+      border-right: 1px solid var(--dsw-alias-border-l2);
+      display: flex;
+      flex-direction: column;
+      padding: 10px 8px 16px;
+      min-width: 0;
+    }
+    .brand {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 8px 12px;
+      letter-spacing: -.2px;
+    }
+    .new-session {
+      height: 32px;
+      margin: 0 4px 8px;
+      padding: 0 8px;
+      border: 1px solid var(--dsw-alias-border-l2);
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      font-size: 14px;
+    }
+    .new-session:hover { background: var(--dsw-alias-interactive-bg-hover); }
+    .extra {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: calc(100% - 8px);
+      height: 32px;
+      margin: 0 4px;
+      padding: 0 8px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: inherit;
+      font-size: 14px;
+      line-height: 20px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .extra:hover { background: var(--dsw-alias-interactive-bg-hover); }
+    .extra[data-active="true"] {
+      background: var(--dsw-alias-interactive-bg-active);
+      font-weight: 500;
+    }
+    .extra svg { display: block; width: 14px; height: 14px; flex: none; }
+    .extra-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .section {
+      margin: 12px 8px 6px;
+      font-size: 11px;
+      color: var(--dsw-alias-label-tertiary);
+    }
+    .session {
+      height: 32px;
+      margin: 0 4px;
+      padding: 0 8px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .session:hover { background: var(--dsw-alias-interactive-bg-hover); }
+    .proto-note {
+      margin-top: auto;
+      padding: 8px;
+      font-size: 11px;
+      line-height: 16px;
+      color: var(--dsw-alias-label-tertiary);
+    }
+
+    .stage {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--dsw-alias-bg-base);
+      overflow: hidden;
+    }
+    .header {
+      flex: none;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 20px 12px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 32px;
+    }
+    .header p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 20px;
+      color: var(--dsw-alias-label-secondary);
+    }
+    .ghost {
+      border: 1px solid var(--dsw-alias-border-l2);
+      background: transparent;
+      color: inherit;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 20px;
+      padding: 6px 12px;
+    }
+    .icon-close {
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+    }
+    .actions { flex: none; display: flex; gap: 8px; padding: 0 20px 16px; }
+    .primary {
+      border: none;
+      background: var(--dsw-alias-button-primary-fill);
+      color: var(--dsw-alias-label-primary-foreground);
+      border-radius: 999px;
+      padding: 8px 16px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .primary:hover { background: var(--dsw-alias-button-primary-hover); }
+    .primary:disabled {
+      background: var(--dsw-alias-border-l2);
+      cursor: default;
+    }
+    .filters {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px 12px;
+      border-bottom: 1px solid var(--dsw-alias-border-l2);
+    }
+    .search {
+      margin-left: auto;
+      border: 1px solid var(--dsw-alias-border-l2);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 13px;
+      min-width: 220px;
+      background: transparent;
+      color: inherit;
+    }
+    .meta { font-size: 12px; color: var(--dsw-alias-label-tertiary); }
+    .toast {
+      margin: 0;
+      padding: 6px 20px;
+      font-size: 12px;
+      color: var(--dsw-alias-label-secondary);
+    }
+    .toast.error { color: var(--dsw-alias-label-error); }
+    .body { flex: 1; min-height: 0; overflow: auto; padding: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .empty {
+      border: 1px dashed var(--dsw-alias-border-l4);
+      border-radius: 12px;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--dsw-alias-label-tertiary);
+      font-size: 13px;
+    }
+
+    .card {
+      border: 1px solid var(--dsw-alias-border-l2);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      background: var(--dsw-alias-bg-base);
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      padding: 0;
+      color: inherit;
+    }
+    .cover {
+      height: 112px;
+      background: var(--dsw-alias-bg-module-platform);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--dsw-alias-label-tertiary);
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .chip {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 11px;
+      line-height: 16px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--dsw-alias-bg-base);
+      border: 1px solid var(--dsw-alias-border-l2);
+    }
+    .warn {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      font-size: 11px;
+      color: var(--dsw-alias-state-warn-primary);
+    }
+    .card-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; min-height: 72px; }
+    .name { font-size: 14px; font-weight: 500; line-height: 20px; }
+    .sub {
+      font-size: 12px;
+      line-height: 18px;
+      color: var(--dsw-alias-label-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .row-actions { display: flex; gap: 8px; margin-top: 6px; }
+    .link {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--dsw-alias-label-secondary);
+      padding: 0;
+    }
+    .link.danger { color: var(--dsw-alias-label-error); }
+
+    .mask {
+      position: fixed;
+      inset: 0;
+      z-index: 320;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--dsw-alias-bg-mask-1);
+    }
+    .sheet {
+      width: 560px;
+      max-width: calc(100vw - 48px);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      background: var(--dsw-alias-bg-base);
+      color: var(--dsw-alias-label-primary);
+      border-radius: 16px;
+      border: 1px solid var(--dsw-alias-border-l2);
+    }
+    .sheet-head { display: flex; align-items: center; gap: 8px; padding: 16px 20px 8px; }
+    .at { color: var(--dsw-alias-label-tertiary); font-size: 18px; }
+    .name-input {
+      border: none;
+      outline: none;
+      background: transparent;
+      color: inherit;
+      width: 100%;
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 28px;
+    }
+    .fields { padding: 0 20px 12px; display: flex; flex-direction: column; gap: 8px; }
+    .field {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 8px;
+      align-items: start;
+      font-size: 13px;
+    }
+    .field span { color: var(--dsw-alias-label-tertiary); padding-top: 7px; }
+    .field input, .field textarea {
+      border: none;
+      outline: none;
+      background: transparent;
+      color: inherit;
+      width: 100%;
+      resize: vertical;
+    }
+    .field textarea { min-height: 40px; color: var(--dsw-alias-label-secondary); }
+    .drop {
+      margin: 0 16px 8px;
+      min-height: 112px;
+      border: 1px dashed var(--dsw-alias-border-l4);
+      border-radius: 12px;
+      color: var(--dsw-alias-label-tertiary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      padding: 16px;
+    }
+    .media-list { margin: 0 16px 8px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .media-list li {
+      display: flex;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--dsw-alias-label-secondary);
+      align-items: center;
+    }
+    .media-list li.gone { color: var(--dsw-alias-state-warn-primary); }
+    .path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px; }
+    .tag {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--dsw-alias-bg-module-platform);
+    }
+    .sheet-foot {
+      border-top: 1px solid var(--dsw-alias-border-l2);
+      padding: 10px 16px 16px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .hint {
+      margin: 0 16px 8px;
+      font-size: 12px;
+      color: var(--dsw-alias-label-tertiary);
+    }
+    .dialog {
+      width: 360px;
+      max-width: calc(100vw - 48px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 20px;
+      border-radius: 16px;
+      background: var(--dsw-alias-bg-base);
+      border: 1px solid var(--dsw-alias-border-l2);
+    }
+    .dialog h2 { margin: 0; font-size: 15px; font-weight: 600; line-height: 22px; }
+    .dialog p { margin: 0; font-size: 12px; line-height: 18px; color: var(--dsw-alias-label-secondary); }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+    .danger {
+      border: none;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      background: var(--dsw-alias-label-error);
+      cursor: pointer;
+    }
+    .hidden { display: none !important; }
+    .agent-dock {
+      margin: 8px 4px 0;
+      padding: 8px;
+      border: 1px dashed var(--dsw-alias-border-l3);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .agent-dock .meta { font-size: 11px; line-height: 16px; }
+    .banner {
+      flex: none;
+      margin: 0 20px 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 18px;
+      background: var(--dsw-alias-bg-module-platform);
+      color: var(--dsw-alias-label-secondary);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .banner .link { color: inherit; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">OmniMux</div>
+      <button class="new-session" type="button" id="newSession">＋ 新会话</button>
+      <button class="extra" type="button" disabled>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/></svg>
+        <span class="extra-label">应用</span>
+      </button>
+      <button class="extra" type="button" disabled>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="5.5" r="2"/><path d="M3.5 12.5c.6-2 2.2-3 4.5-3s3.9 1 4.5 3"/></svg>
+        <span class="extra-label">账号</span>
+      </button>
+      <button class="extra" type="button" disabled>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M1.5 6.5h13"/><path d="M5.5 6.5v7"/></svg>
+        <span class="extra-label">资产库</span>
+      </button>
+      <button class="extra" type="button" disabled>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 12.5 7 3.5h2l4 9"/><path d="M5 8.5h6"/></svg>
+        <span class="extra-label">项目库</span>
+      </button>
+      <button class="extra" type="button" data-active="true" id="navProducts">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="4" width="10" height="9" rx="1.5"/><path d="M6 4V3.5a2 2 0 0 1 4 0V4"/><path d="M3 8h10"/></svg>
+        <span class="extra-label">产品库</span>
+      </button>
+      <div class="section">工作区</div>
+      <button class="session" type="button" data-session>防晒带货草稿</button>
+      <button class="session" type="button" data-session>未命名会话</button>
+      <div class="agent-dock">
+        <span class="meta">示意：会话里的 Agent 写同一份库。真机 ≤5s；这里立刻刷网格。</span>
+        <button class="ghost" type="button" id="agentCreate">Agent 添加产品</button>
+        <button class="ghost" type="button" id="agentUpdate">Agent 改卖点</button>
+        <button class="ghost" type="button" id="agentEmpty">Agent 空货（应失败）</button>
+      </div>
+      <p class="proto-note">P0 原型 · rank 6 · 人/Agent 都能添加和编辑 · 写完网格跟上。不画 CSV / URL / 数字产品。</p>
+    </aside>
+
+    <main class="stage" id="stage">
+      <div class="header">
+        <div style="flex:1;min-width:0">
+          <h1>产品库</h1>
+          <p>沉淀要卖的货：卖点、人群、主图，在会话里给 Agent 引用</p>
+        </div>
+        <button class="ghost" type="button" id="seedEmpty">看空态</button>
+        <button class="icon-close" type="button" id="closeStage" aria-label="关闭">✕</button>
+      </div>
+      <div class="actions">
+        <button class="primary" type="button" id="addBtn">＋ 添加产品</button>
+      </div>
+      <div class="filters">
+        <input class="search" id="search" placeholder="搜索名称 / 卖点 / 品牌 / SKU" />
+        <span class="meta">最近更新</span>
+      </div>
+      <p class="toast hidden" id="toast"></p>
+      <div class="banner hidden" id="staleBanner">
+        <span>库中该产品刚被更新。正在填的内容没动。</span>
+        <button class="link" type="button" id="reloadDraft">重新加载</button>
+        <button class="link" type="button" id="keepDraft">继续提交</button>
+      </div>
+      <div class="body">
+        <div id="empty" class="empty hidden">
+          <p>还没有产品。先添加一件要卖的货。</p>
+          <button class="primary" type="button" id="emptyAdd">添加产品</button>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="mask hidden" id="formMask">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+      <div class="sheet-head">
+        <span class="at">@</span>
+        <input class="name-input" id="fName" placeholder="产品名称" maxlength="40" />
+        <button class="icon-close" type="button" data-close-form aria-label="关闭">✕</button>
+      </div>
+      <p class="hint" id="formTitle">引用句会是 @产品/名称。媒体只记本机路径，不拷贝文件。</p>
+      <div class="fields">
+        <label class="field"><span>卖点</span><textarea id="fPoints" placeholder="一句话说清楚为什么买"></textarea></label>
+        <label class="field"><span>人群</span><input id="fAudience" placeholder="谁会买" /></label>
+        <label class="field"><span>品牌</span><input id="fBrand" placeholder="可选" /></label>
+        <label class="field"><span>特点</span><input id="fFeatures" placeholder="可选" /></label>
+        <label class="field"><span>价格</span><input id="fPrice" placeholder="自由文本，不做币种" /></label>
+        <label class="field"><span>SKU</span><input id="fSku" /></label>
+        <label class="field"><span>促销</span><input id="fPromo" /></label>
+        <label class="field"><span>链接</span><input id="fLink" placeholder="P0 只存不抓" /></label>
+        <label class="field"><span>类别</span><input id="fCats" placeholder="回车添加，最多 5 个" /></label>
+      </div>
+      <div class="tags" id="tagList"></div>
+      <div class="drop" id="drop">
+        将本地图片拖入，或点下面按钮（原型用假路径）
+        <button class="ghost" type="button" id="fakePick">选择文件</button>
+      </div>
+      <ul class="media-list" id="mediaList"></ul>
+      <p class="toast error hidden" id="formError"></p>
+      <div class="sheet-foot">
+        <button class="primary" type="button" id="saveBtn" disabled>创建产品</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mask hidden" id="delMask">
+    <div class="dialog" role="alertdialog" aria-modal="true">
+      <h2 id="delTitle">移除这件产品？</h2>
+      <p>只从产品库移除，不会删除磁盘上的原文件。不可恢复。</p>
+      <div class="dialog-actions">
+        <button class="ghost" type="button" id="delCancel">取消</button>
+        <button class="danger" type="button" id="delConfirm">移除</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const seed = [
+      {
+        id: "prd_sun",
+        name: "某防晒",
+        selling_points: "清爽不搓泥，海边也能撑一整天",
+        target_audience: "户外通勤女生",
+        brand: "光织",
+        features: "SPF50+ / 轻薄",
+        price: "128",
+        sku: "SUN-50",
+        promotion: "第二件半价",
+        link: "https://shop.example/sun",
+        categories: ["防晒", "护肤"],
+        media: [
+          { id: "m1", real_path: "/Users/x/Pictures/sun-cover.jpg", missing: false, is_primary: true },
+          { id: "m2", real_path: "/Users/x/Pictures/sun-detail.jpg", missing: false }
+        ],
+        updated: "今天 10:12"
+      },
+      {
+        id: "prd_mug",
+        name: "钛杯 380",
+        selling_points: "单手开盖，通勤热水不烫手",
+        target_audience: "通勤上班族",
+        brand: "行装",
+        features: "",
+        price: "199",
+        sku: "MUG-380",
+        promotion: "",
+        link: "",
+        categories: ["杯具"],
+        media: [],
+        updated: "昨天"
+      },
+      {
+        id: "prd_gone",
+        name: "夜跑腰带",
+        selling_points: "反光条夜间可见",
+        target_audience: "夜跑",
+        brand: "",
+        features: "",
+        price: "",
+        sku: "BELT-N",
+        promotion: "",
+        link: "",
+        categories: [],
+        media: [
+          { id: "m3", real_path: "/Volumes/SSD/night-belt.png", missing: true, is_primary: true }
+        ],
+        updated: "上周"
+      }
+    ];
+
+    let products = structuredClone(seed);
+    let editingId = null;
+    let pendingDelete = null;
+    let formCats = [];
+    let formMedia = [];
+    let formDirty = false;
+    let staleId = null;
+    let agentSeq = 1;
+
+    const $ = (id) => document.getElementById(id);
+    const toast = (text, isError) => {
+      const el = $("toast");
+      el.textContent = text;
+      el.classList.toggle("hidden", !text);
+      el.classList.toggle("error", !!isError);
+      if (text) setTimeout(() => { if (el.textContent === text) el.classList.add("hidden"); }, 1800);
+    };
+
+    function citeOf(p) { return `@产品/${p.name}`; }
+    function coverGlyph(name) { return (name || "货").trim().slice(0, 1); }
+    function visibleMedia(p) { return (p.media || []).filter((m) => !m.missing); }
+    function coverOf(p) { return visibleMedia(p)[0] || null; }
+
+    function hay(p) {
+      return [p.name, p.selling_points, p.brand, p.sku, p.handle, (p.categories || []).join(" ")].join("\n").toLowerCase();
+    }
+
+    function render() {
+      const q = $("search").value.trim().toLowerCase();
+      const list = products
+        .filter((p) => !q || hay(p).includes(q))
+        .slice()
+        .reverse();
+      const empty = list.length === 0;
+      $("empty").classList.toggle("hidden", !empty);
+      $("grid").classList.toggle("hidden", empty);
+      $("grid").innerHTML = list.map((p) => {
+        const cover = coverOf(p);
+        const missingAll = (p.media || []).length > 0 && !cover;
+        const face = cover
+          ? `<span style="font-size:12px;color:var(--dsw-alias-label-secondary)">${escapeHtml(cover.real_path.split("/").pop())}</span>`
+          : escapeHtml(coverGlyph(p.name));
+        return `<article class="card" data-open="${p.id}">
+          <div class="cover">
+            ${face}
+            <span class="chip">实体</span>
+            ${missingAll ? `<span class="warn">素材缺失</span>` : ""}
+          </div>
+          <div class="card-body">
+            <div class="name">${escapeHtml(p.name)}</div>
+            <div class="sub">${escapeHtml(p.selling_points || "—")}</div>
+            <div class="row-actions">
+              <button class="link" type="button" data-copy="${p.id}">复制引用</button>
+              <button class="link danger" type="button" data-del="${p.id}">移除</button>
+            </div>
+          </div>
+        </article>`;
+      }).join("");
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function openForm(product) {
+      editingId = product ? product.id : null;
+      $("saveBtn").textContent = product ? "保存" : "创建产品";
+      $("fName").value = product?.name || "";
+      $("fPoints").value = product?.selling_points || "";
+      $("fAudience").value = product?.target_audience || "";
+      $("fBrand").value = product?.brand || "";
+      $("fFeatures").value = product?.features || "";
+      $("fPrice").value = product?.price || "";
+      $("fSku").value = product?.sku || "";
+      $("fPromo").value = product?.promotion || "";
+      $("fLink").value = product?.link || "";
+      formCats = [...(product?.categories || [])];
+      formMedia = structuredClone(product?.media || []);
+      formDirty = false;
+      staleId = null;
+      $("staleBanner").classList.add("hidden");
+      $("formError").classList.add("hidden");
+      paintTags();
+      paintMedia();
+      syncSave();
+      $("formMask").classList.remove("hidden");
+      $("fName").focus();
+    }
+
+    function paintTags() {
+      $("tagList").innerHTML = formCats.map((tag, i) =>
+        `<span class="tag">${escapeHtml(tag)} <button class="link" type="button" data-untag="${i}">×</button></span>`
+      ).join("");
+    }
+    function paintMedia() {
+      $("mediaList").innerHTML = formMedia.map((m, i) =>
+        `<li class="${m.missing ? "gone" : ""}">
+          <span class="path">${m.is_primary && !m.missing ? "主图 · " : ""}${escapeHtml(m.real_path)}${m.missing ? "（失效，保存后不显示）" : ""}</span>
+          ${!m.missing ? `<button class="link" type="button" data-primary="${i}">设为主图</button>` : ""}
+          <button class="link" type="button" data-unmedia="${i}">×</button>
+        </li>`
+      ).join("");
+    }
+    function syncSave() {
+      const name = $("fName").value.trim();
+      const bad = !name || name.length > 40 || /[\/\u0000-\u001f]/.test(name);
+      $("saveBtn").disabled = bad;
+    }
+    function closeForm() {
+      $("formMask").classList.add("hidden");
+      $("staleBanner").classList.add("hidden");
+      editingId = null;
+      formDirty = false;
+      staleId = null;
+    }
+
+    function markDirty() {
+      if (!$("formMask").classList.contains("hidden")) formDirty = true;
+    }
+
+    function agentCreate() {
+      const name = "Agent 建的货 " + agentSeq++;
+      const clash = products.find((p) => p.name === name);
+      if (clash) return toast("同名冲突 409", true);
+      products.push({
+        id: "prd_" + Math.random().toString(36).slice(2, 10),
+        name,
+        selling_points: "会话里 Agent 刚建的，不必点刷新",
+        target_audience: "演示",
+        brand: "",
+        features: "",
+        price: "",
+        sku: "",
+        promotion: "",
+        link: "",
+        categories: ["Agent"],
+        media: [],
+        updated: "刚刚 · Agent"
+      });
+      render();
+      toast("products_create 成功 · 网格已同步 @" + "产品/" + name);
+    }
+
+    function agentUpdate() {
+      const target = products.find((p) => p.id === "prd_sun") || products[0];
+      if (!target) return toast("库是空的，先添加或让 Agent 建一条", true);
+      target.selling_points = "Agent 改过的卖点 · " + new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      target.updated = "刚刚 · Agent";
+      render();
+      if (editingId === target.id && formDirty) {
+        staleId = target.id;
+        $("staleBanner").classList.remove("hidden");
+        toast("网格已更新。表单没冲，可重新加载或继续提交。");
+        return;
+      }
+      if (editingId === target.id && !formDirty) {
+        $("fPoints").value = target.selling_points;
+      }
+      toast("products_update 成功 · 「" + target.name + "」卡片副文案已换");
+    }
+
+    function saveForm() {
+      const name = $("fName").value.trim();
+      if (!name) return;
+      if (/[\/\u0000-\u001f]/.test(name) || name.length > 40) {
+        $("formError").textContent = "名称 1–40 字，不能含 / 或控制字符。";
+        $("formError").classList.remove("hidden");
+        return;
+      }
+      const clash = products.find((p) => p.name === name && p.id !== editingId);
+      if (clash) {
+        $("formError").textContent = "已有同名产品，请换一个名称。";
+        $("formError").classList.remove("hidden");
+        return;
+      }
+      const row = {
+        id: editingId || "prd_" + Math.random().toString(36).slice(2, 10),
+        name,
+        selling_points: $("fPoints").value.trim(),
+        target_audience: $("fAudience").value.trim(),
+        brand: $("fBrand").value.trim(),
+        features: $("fFeatures").value.trim(),
+        price: $("fPrice").value.trim(),
+        sku: $("fSku").value.trim(),
+        promotion: $("fPromo").value.trim(),
+        link: $("fLink").value.trim(),
+        categories: formCats.slice(0, 5),
+        media: formMedia.map((m, i) => ({ ...m, is_primary: i === formMedia.findIndex((x) => !x.missing) ? true : m.is_primary })),
+        updated: "刚刚"
+      };
+      if (editingId) products = products.map((p) => p.id === editingId ? row : p);
+      else products.push(row);
+      closeForm();
+      render();
+      toast(editingId ? "已保存" : "已创建。引用句：" + citeOf(row));
+    }
+
+    document.addEventListener("click", (event) => {
+      const copy = event.target.closest("[data-copy]");
+      if (copy) {
+        event.stopPropagation();
+        const p = products.find((x) => x.id === copy.dataset.copy);
+        const text = citeOf(p);
+        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text);
+        copy.textContent = "已复制";
+        toast(text);
+        setTimeout(() => { copy.textContent = "复制引用"; }, 1400);
+        return;
+      }
+      const del = event.target.closest("[data-del]");
+      if (del) {
+        event.stopPropagation();
+        pendingDelete = del.dataset.del;
+        const p = products.find((x) => x.id === pendingDelete);
+        $("delTitle").textContent = `移除「${p.name}」？`;
+        $("delMask").classList.remove("hidden");
+        return;
+      }
+      const open = event.target.closest("[data-open]");
+      if (open) {
+        openForm(products.find((x) => x.id === open.dataset.open));
+        return;
+      }
+      const untag = event.target.closest("[data-untag]");
+      if (untag) {
+        formCats.splice(Number(untag.dataset.untag), 1);
+        paintTags();
+        return;
+      }
+      const unmedia = event.target.closest("[data-unmedia]");
+      if (unmedia) {
+        formMedia.splice(Number(unmedia.dataset.unmedia), 1);
+        paintMedia();
+        return;
+      }
+      const primary = event.target.closest("[data-primary]");
+      if (primary) {
+        const i = Number(primary.dataset.primary);
+        const [row] = formMedia.splice(i, 1);
+        formMedia.unshift(row);
+        formMedia.forEach((m, idx) => { m.is_primary = idx === 0 && !m.missing; });
+        paintMedia();
+      }
+    });
+
+    $("addBtn").onclick = () => openForm(null);
+    $("emptyAdd").onclick = () => openForm(null);
+    $("saveBtn").onclick = saveForm;
+    $("fName").oninput = () => { syncSave(); markDirty(); };
+    ["fPoints","fAudience","fBrand","fFeatures","fPrice","fSku","fPromo","fLink"].forEach((id) => {
+      $(id).addEventListener("input", markDirty);
+    });
+    $("agentCreate").onclick = agentCreate;
+    $("agentUpdate").onclick = agentUpdate;
+    $("agentEmpty").onclick = () => toast("products_create 拒绝：要名称，还要卖点或描述。", true);
+    $("reloadDraft").onclick = () => {
+      if (!staleId) return;
+      openForm(products.find((p) => p.id === staleId));
+    };
+    $("keepDraft").onclick = () => {
+      $("staleBanner").classList.add("hidden");
+      toast("继续提交：点保存即后写胜。");
+    };
+    document.querySelector("[data-close-form]").onclick = closeForm;
+    $("formMask").addEventListener("mousedown", (e) => { if (e.target === $("formMask")) closeForm(); });
+    $("delMask").addEventListener("mousedown", (e) => { if (e.target === $("delMask")) $("delMask").classList.add("hidden"); });
+    $("delCancel").onclick = () => $("delMask").classList.add("hidden");
+    $("delConfirm").onclick = () => {
+      const gone = products.find((p) => p.id === pendingDelete);
+      products = products.filter((p) => p.id !== pendingDelete);
+      $("delMask").classList.add("hidden");
+      render();
+      toast(`已从产品库移除「${gone.name}」。磁盘原文件还在。`);
+    };
+    $("search").oninput = render;
+    $("seedEmpty").onclick = () => {
+      if (products.length) {
+        products = [];
+        $("seedEmpty").textContent = "看示例";
+      } else {
+        products = structuredClone(seed);
+        $("seedEmpty").textContent = "看空态";
+      }
+      render();
+    };
+    $("closeStage").onclick = () => toast("一级页关闭（点会话行同样关页）。原型不跳聊天。");
+    document.querySelectorAll("[data-session], #newSession").forEach((el) => {
+      el.onclick = () => toast("点会话行 / 新会话 → 关产品库，回聊天。官方已选中行也要关。");
+    });
+    $("fCats").addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const tag = $("fCats").value.trim();
+      if (!tag) return;
+      if (formCats.length >= 5) {
+        $("formError").textContent = "类别最多 5 个。";
+        $("formError").classList.remove("hidden");
+        return;
+      }
+      if (!formCats.some((t) => t.toLowerCase() === tag.toLowerCase())) formCats.push(tag);
+      $("fCats").value = "";
+      paintTags();
+    });
+    $("fakePick").onclick = () => {
+      formMedia.push({
+        id: "m" + Date.now(),
+        real_path: "/Users/x/Desktop/产品主图-" + (formMedia.length + 1) + ".jpg",
+        missing: false,
+        is_primary: formMedia.filter((m) => !m.missing).length === 0
+      });
+      paintMedia();
+    };
+    $("drop").addEventListener("dragover", (e) => e.preventDefault());
+    $("drop").addEventListener("drop", (e) => {
+      e.preventDefault();
+      const files = [...(e.dataTransfer?.files || [])];
+      files.forEach((f) => {
+        formMedia.push({
+          id: "m" + Math.random().toString(36).slice(2),
+          real_path: f.path || `/Users/x/Downloads/${f.name}`,
+          missing: false,
+          is_primary: formMedia.filter((m) => !m.missing).length === 0
+        });
+      });
+      paintMedia();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeForm();
+        $("delMask").classList.add("hidden");
+      }
+    });
+    render();
+  </script>
+</body>
+</html>
