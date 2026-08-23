@@ -1,0 +1,26 @@
+{
+  "name": "omnimux-analytics",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml",
+    "README.md",
+    "package.json"
+  ],
+  "scripts": {
+    "test": "node --test src/*.test.js"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT",
+  "description": "OmniMux plugin usage analytics: one host-side hook reports every tool call from all product plugins to the shared Umami instance."
+}
