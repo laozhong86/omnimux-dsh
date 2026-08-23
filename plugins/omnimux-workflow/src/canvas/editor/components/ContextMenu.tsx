@@ -12,7 +12,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { MaterialType } from '../../types/materialNode';
-import { MATERIAL_TYPE_ICONS } from './MaterialNode';
+import { useT } from '../../i18n';
 
 export type ContextMenuAction =
   | 'add-text'
@@ -25,7 +25,9 @@ export type ContextMenuAction =
   | 'delete'
   | 'undo'
   | 'redo'
-  | 'select-all';
+  | 'select-all'
+  | 'execute-selection'
+  | 'execute-node';
 
 export type ContextMenuContext =
   | { type: 'pane' }
@@ -56,11 +58,11 @@ interface MenuItemSpec {
   disabled?: boolean;
 }
 
-const ADD_NODE_ITEMS: Array<{ action: ContextMenuAction; type: MaterialType; label: string }> = [
-  { action: 'add-text', type: 'text', label: '文本节点' },
-  { action: 'add-image', type: 'image', label: '图片节点' },
-  { action: 'add-video', type: 'video', label: '视频节点' },
-  { action: 'add-audio', type: 'audio', label: '音频节点' },
+const ADD_NODE_ITEMS: Array<{ action: ContextMenuAction; type: MaterialType }> = [
+  { action: 'add-text', type: 'text' },
+  { action: 'add-image', type: 'image' },
+  { action: 'add-video', type: 'video' },
+  { action: 'add-audio', type: 'audio' },
 ];
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -76,6 +78,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   hasSelection = false,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   // Close on outside mousedown and on Escape.
   useEffect(() => {
@@ -97,27 +100,38 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   }, [visible, onClose]);
 
   const items = useMemo((): MenuItemSpec[] => {
-    if (context.type === 'node' || context.type === 'selection') {
+    if (context.type === 'node') {
       return [
-        { action: 'copy', label: '复制', shortcut: '⌘C', disabled: !hasSelection },
-        { action: 'duplicate', label: '创建副本', shortcut: '⌘D', disabled: !hasSelection },
-        { action: 'paste', label: '粘贴', shortcut: '⌘V', disabled: !hasClipboard },
-        { action: 'delete', label: '删除', shortcut: 'Del' },
+        { action: 'execute-node', label: t('panel.runHint') },
+        { action: 'copy', label: t('menu.copy'), shortcut: '⌘C' },
+        { action: 'duplicate', label: t('menu.duplicate'), shortcut: '⌘D' },
+        { action: 'paste', label: t('menu.paste'), shortcut: '⌘V', disabled: !hasClipboard },
+        { action: 'delete', label: t('menu.delete'), shortcut: 'Del' },
+      ];
+    }
+    if (context.type === 'selection') {
+      return [
+        // 组执行入口（M4）：选中子集 + 传递上游闭包 = subset 执行。
+        { action: 'execute-selection', label: t('menu.executeSelection') },
+        { action: 'copy', label: t('menu.copy'), shortcut: '⌘C', disabled: !hasSelection },
+        { action: 'duplicate', label: t('menu.duplicate'), shortcut: '⌘D', disabled: !hasSelection },
+        { action: 'paste', label: t('menu.paste'), shortcut: '⌘V', disabled: !hasClipboard },
+        { action: 'delete', label: t('menu.delete'), shortcut: 'Del' },
       ];
     }
     // pane
     const rows: MenuItemSpec[] = ADD_NODE_ITEMS.map((item) => ({
       action: item.action,
-      label: `${MATERIAL_TYPE_ICONS[item.type]} ${item.label}`,
+      label: t(`menu.add.${item.type}`),
     }));
     rows.push(
-      { action: 'undo', label: '撤销', shortcut: '⌘Z', disabled: !canUndo },
-      { action: 'redo', label: '重做', shortcut: '⇧⌘Z', disabled: !canRedo },
-      { action: 'paste', label: '粘贴', shortcut: '⌘V', disabled: !hasClipboard },
-      { action: 'select-all', label: '全选', shortcut: '⌘A' },
+      { action: 'undo', label: t('toolbar.undo'), shortcut: '⌘Z', disabled: !canUndo },
+      { action: 'redo', label: t('toolbar.redo'), shortcut: '⇧⌘Z', disabled: !canRedo },
+      { action: 'paste', label: t('menu.paste'), shortcut: '⌘V', disabled: !hasClipboard },
+      { action: 'select-all', label: t('menu.selectAll'), shortcut: '⌘A' },
     );
     return rows;
-  }, [context, canUndo, canRedo, hasClipboard, hasSelection]);
+  }, [context, canUndo, canRedo, hasClipboard, hasSelection, t]);
 
   if (!visible) return null;
 

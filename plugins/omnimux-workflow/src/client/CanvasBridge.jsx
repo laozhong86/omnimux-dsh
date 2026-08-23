@@ -52,12 +52,16 @@ function ensureCanvasScript(hash) {
 }
 
 /**
- * @param {{ onClose: () => void, t: (key: string) => string }} props
+ * @param {{ onClose: () => void, t: (key: string) => string, locale?: string }} props
  */
-export function CanvasBridge({ onClose, t }) {
+export function CanvasBridge({ onClose, t, locale }) {
   const containerRef = useRef(null)
   const mountedRef = useRef(false)
   const [status, setStatus] = useState('loading') // loading | ready | error
+  // 最新 props 快照：load 完成挂载与 locale live 切换共用（locale 是 island
+  // 边界的纯数据 prop，走 mountCanvas/updateCanvas 下发）。
+  const propsRef = useRef({ onClose, locale })
+  propsRef.current = { onClose, locale }
 
   const load = useCallback(async () => {
     setStatus('loading')
@@ -70,7 +74,7 @@ export function CanvasBridge({ onClose, t }) {
       }
       const el = containerRef.current
       if (el && !mountedRef.current) {
-        api.mountCanvas(el, { onClose })
+        api.mountCanvas(el, propsRef.current)
         mountedRef.current = true
         setStatus('ready')
       }
@@ -90,6 +94,16 @@ export function CanvasBridge({ onClose, t }) {
       mountedRef.current = false
     }
   }, [load])
+
+  // W4 T4.1：宿主切语言 → island updateCanvas 同 root 重 render
+  // （不可 unmount/remount，会丢画布状态）。
+  useEffect(() => {
+    const api = window[CANVAS_GLOBAL]
+    const el = containerRef.current
+    if (mountedRef.current && el && api && typeof api.updateCanvas === 'function') {
+      api.updateCanvas(el, propsRef.current)
+    }
+  }, [locale, onClose])
 
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>

@@ -2,6 +2,76 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 格式。
 
+## [1.0.0-rc.1] - 2026-08-22 — M5 产品化收官
+
+### 新增
+- **Agent 工具（`src/workflow/agent/agentTools.ts`）**：三个 `ctx.tools` 工具（宿主侧直连 store / executionManager，无额外 HTTP 调用、无新 seam 消费），让 dsh 会话里的 Agent 能指挥画布——
+  - `workflow_list`：列出工作区（id/name/version/nodeCount/updatedAt，新→旧），`include_executions: true` 附带最近 5 条执行概览（状态 + 进度）
+  - `workflow_run`：`{workspace_id | workspace_name, mode: full|subset, node_ids?, wait?, timeout_ms?}` 创建执行；`wait=false`（默认）立即返回 executionId + 提示（画布可看实时进度）；`wait=true` 轮询到终态（completed/error/cancelled，默认 120s 超时）返回结果摘要——各节点状态、文本产物摘录（240 字截断）、媒体文件 URL + 本地绝对路径
+  - `workflow_snapshot`：`{workspace_id, include_nodes?}` 工作区摘要（节点/边计数、素材类型分布、执行设置）或完整节点/边结构（Agent 读取画布做分析/修改建议）
+  - 错误统一 `{error, message}` 返回（不抛出，wire 形态确定）：invalid-args / workspace-not-found / ambiguous-workspace-name / invalid-subgraph / empty-graph / execution-not-found
+- **系统提示词**：`ctx.systemPrompt.section` 注册 `workflow:ops`（order 60，与 assets 插件 assets:ops=50 不冲突）——说明三工具用法场景、画布与 OmniMux 生成的关系、「用户在画布上操作时 Agent 可查询/触发执行」的协作提示
+- **性能基线（`scripts/perf-baseline.mjs`，`npm run perf:baseline`）**：host 侧 200 节点 / 380 边分层 DAG + 零延迟网关（纯调度开销，无真实/mock 延迟）——拓扑分层 / subset 上游闭包（各 50 次均值）、引擎直跑 execute()、200 节点快照 PUT、创建执行、创建→SSE complete 全链路（事件吞吐 + 节点吞吐）、状态快照轮询单次成本；island 浏览器侧验证方法记录于 README「性能基线」
+- **测试与自验**：新增 agent 工具测试 12 个（fake ctx.tools 收集注册 + 三工具成功/错误路径全量：空/非空列表、wait 两态、按名解析、subset、超时、五种错误码），全量 51/51 绿；`scripts/m5-self-verify.mjs`（`npm run verify:m5`）自验工具注册齐全 + list/run(wait=false)/snapshot 往返 + 性能基线出数字
+
+### 变更
+- **React Flow 渲染优化（200+ 节点场景）**：`CanvasEditor` 的 catalog 注入节点列表改为 `useMemo`（此前每次编辑器重渲染都全量重建 node/data 对象，击穿 React Flow 节点 memo，每个 MaterialNode 都重渲染——实测修复点）；开启 `onlyRenderVisibleElements` 视口裁剪（离屏节点卸载，节点状态在 canvasStore，重回视口完整恢复）
+- `mountWorkflowHost` 的 ctx 新增可选 `tools` / `systemPrompt` 座位（在场时注册 agent 工具，经 `ctx.effect` 托管销毁）；插件 `inject` 从 `['webServer']` 扩为 `['tools', 'systemPrompt']`（webServer 改经 `ctx.inject(['webServer'])` 获取，omnimux-assets 同款模式）
+- dist/index.js 新增导出：`registerWorkflowAgentSeats` / `WORKFLOW_PROMPT_SECTION` / `DEFAULT_RUN_WAIT_TIMEOUT_MS` 及相关类型
+
+### 修复/清理
+- 删除 canvasRoutes.ts 过时的「canonical 前缀在桌面 Host 不生效」open issue 注释——谜底是「假重启」（quit 未杀净旧 Host 进程，干净重启后 canonical 前缀一切正常）；改为准确的双前缀说明 + 运维提示（重启需杀净进程）
+- 版本 0.3.0 → 1.0.0-rc.1（画布/执行引擎/真实网关/agent 工具四层能力齐备，达到 rc 完整度）
+
+## [0.3.0] - 2026-08-21 — M4 接通 OmniMux 执行中枢
+
+### 新增
+- **OmniMuxSeamClient（`src/workflow/seam/omnimuxGateway.ts`）**：GenerationGateway 的真实实现——经 cordis `ctx.get('videoGenerate' | 'imageGenerate' | 'textComplete')` 消费执行中枢 seam（不 import hub 包 / 无自带 HTTP client / 无 provider key，红线全守）。媒体走 `wait:false` 提交 + `{dest, taskId}` 轮询下载（hub 负责落盘到 `$DSH_HOME/omnimux/workflow/media/executions/`）；textComplete 在 awaitTask 阶段一次性执行并落盘文本产物；AbortSignal 贯通到 hub 的 submit/poll/download。契约调研结论：`docs/m4-hub-seam-research.md`
+- **网关装配与降级（`src/workflow/seam/gatewaySelection.ts`）**：`OMNIMUX_WORKFLOW_GATEWAY=omnimux|mock|auto`（默认 auto：mount 时探测 seam，hub 在场→seam 客户端，否则 mock；auto 模式每次提交前重探，hub 晚挂载可单向升级，已提交任务归原网关）；强制 omnimux 且 seam 缺失时节点报 `[omnimux:needs-provider]`，绝不静默 mock
+- **错误映射**：hub `OmnimuxError`（code+message）透传为节点执行错误 `[omnimux:<code>] <message>`（徽标可见）；failStrategy（abort/skip）语义不变，单节点失败不炸全局
+- **seam 并发上限**：对 hub 的在途请求数计数信号量，默认保守 2（`OMNIMUX_WORKFLOW_MAX_SEAM_CONCURRENCY` / `mountWorkflowHost({ seamConcurrency })` 可调），叠加工作区 maxParallel 防限流
+- **能力目录真数据**：`GET /api/capabilities` 在 seam 可达时返回 `source: "omnimux"`（视频/图片模型 id = hub 路由默认 + `OMNIMUX_VIDEO_MODEL`/`OMNIMUX_IMAGE_MODEL` env 覆盖；文本 = hub 白名单 8 行；audio 空——hub 无 audioGenerate seam）；hub 不可达回退 mock 静态清单。节点配置面板模型下拉原已消费该 API，M4 起数据为真
+- **组/子集执行入口**：右键多选 →「执行选中节点（含上游）」、右键单节点 →「执行此节点（含上游）」（subset 模式，host 自动补传递上游闭包）；串行（maxParallel=1）与批量（N>1）行为经真实网关路径验证
+- **上游参考输入映射**：上游图片 → seam `image`（i2v/图生图/视觉文本）；上游音频（视频节点）→ `audio`；上游视频参考因 hub seam 无对应字段被明确忽略（日志警告 + 节点 UI 提示「等待执行中枢扩展」，README 已知限制）
+- **测试与自验**：新增 seam 客户端测试 11 个（fake seam 注入 ctx.get：全链路/文本/错误映射/skip 策略/取消/目录 env 覆盖/三条回退路径/晚绑定升级/并发默认与可配），全量 38/38 绿；`scripts/m4-self-verify.mjs` 自验 15 项全过（fake seam，零真实模型请求）
+
+### 变更
+- `mountWorkflowHost(ctx, opts)` 的 ctx 新增 `get?: (name) => unknown`（cordis seam 查询）；opts 新增 `gatewayMode` / `seamConcurrency` / `env`（默认装配 knobs；显式 `gateway` 注入优先级不变）
+- materialGatewayExecutor 的上游参考映射从「image/video 能力一律透传上游 mediaUrl」收紧为按上游素材类型映射（图片→image、音频→audio、视频→忽略 + 进度提示）
+- dist/index.js 新增导出：`createOmnimuxSeamClient` / `SeamGatewayError` / `assembleGateway` / `createAutoSwitchGateway` / `probeSeams` / `resolveGatewayMode` 及相关常量
+
+### 已知限制（新增条目，详见 README）
+- 视频参考输入（v2v）等待执行中枢扩展 seam 字段；画幅参数不透传（schema 无字段）；能力目录为 hub 契约默认镜像（hub 无目录 seam）；跨进程任务恢复为重新提交（hub 无任务台账）
+
+## [0.2.0] - 2026-08-20 — M3 执行引擎移植
+
+### 新增
+- **执行引擎（host，Gxgen 全量移植 + TS strict 化）**：
+  - `ExecutionScheduler`：Kahn 拓扑分层（getTopologicalGroups）、maxParallel 节流并行（默认 3，读工作区 settings）、Promise 挂起式暂停/恢复、取消（在途执行器 abort，取消引发的中止不计节点失败）、单步模式（stepOver/stepN）、断点（breakpoint）、500ms 防抖 DAG 状态刷盘
+  - `ExecutionContext`：执行级 + 节点级状态机（pending/running/completed/error/skipped/paused/cancelled）、11 种事件 typed emitter（协议与 Gxgen useExecutionSSE 逐字段对齐）、toJSON/fromJSON
+  - `ExecutionManager`：执行实例编排（创建/暂停/恢复/取消/状态快照）、5s 周期记录同步、30min 超时清理、mount 时 recoverAll 断点恢复（fromPersistedState；崩溃时在途节点回置 pending）
+  - `subgraph.ts`：full/subset 子图解析（节点集合 → 诱导子图，上游闭包）
+  - 事件回放缓冲：创建后订阅 SSE 也能收到完整事件序列（含跨重启恢复，eventLog 随 execution.json 持久化）
+- **执行 API 路由**（挂既有 dispatcher，legacy `/dsh-workflow/*` 前缀兼容，跨域校验/body 上限/错误格式沿用）：
+  - `POST /api/workspaces/:id/executions`（full/subset）、`GET .../executions`、`GET .../executions/:execId`
+  - `POST .../executions/:execId/pause | resume | cancel`（非法状态 409）
+  - `GET .../executions/:execId/events`：SSE（text/event-stream，11 事件 + 30s 心跳 + 回放）
+- **执行器接通 mockGateway**：执行器注册表（扩展点②）挂 gateway 版 material 执行器——生成型工具走 `gateway.submit → awaitTask`（模拟 1-3s 延迟，`mockFail: true` 注入失败），产物落 `$DSH_HOME/omnimux/workflow/media/executions/<id>/` 并转 `/omnimux-workflow/media/` URL 回填；文本能力回填 mock 文本；非生成工具走透传（含上游输入聚合）
+- **画布 island 执行 UI**：
+  - 执行控制条（执行全部/暂停/恢复/取消/重置 + completed/total 进度条）
+  - 节点执行徽标（pending 灰 / running 转圈 + 下游边流动动画 / completed 绿 / error 红 + 错误信息 / skipped 空心）
+  - `useExecutionController`（Gxgen useExecutionSSE + useExecutionSync 移植）：EventSource 订阅、只更新变化节点的 data（触发自动保存）、island 重载后按 executionId 恢复订阅（列表 → 快照回填 → 重订）
+  - 节点面板「执行此节点（含上游）」：subset 单节点执行（替代 M1 stub 按钮）
+- **测试与自验**：新增 16 个测试（调度器单测 11 + 路由/SSE/恢复 5），全量 27/27 绿；`scripts/m3-self-verify.mjs` 端到端自验 13/13 项（3 节点 DAG → SSE 完整序列 → 暂停/恢复/取消 → 断点恢复续跑）
+
+### 修复（开发中发现）
+- 取消执行时 abort 在途执行器导致节点报 error、把执行状态从 cancelled 覆盖为 error——调度器现将取消引发的中止视为取消路径而非节点失败
+- SSE 迟订阅丢 execution_start：事件落 entry 级回放缓冲，订阅时先重放再转发（幂等）
+
+### 破坏性变更
+- `GenerationGateway.awaitTask` 返回值增加 `text?` 字段（文本能力输出）；`SubmitRequest` 增加 `mockFail?` 字段（mock 失败注入，真实客户端忽略）
+- 执行器注册表不再自带 M1 透传 material 执行器——host mount 时注册 gateway 版；直接消费 registry 的代码需自行注册
+
 ## [0.1.0] - 2026-08-20 — M1 脚手架 + 画布壳
 
 ### 新增

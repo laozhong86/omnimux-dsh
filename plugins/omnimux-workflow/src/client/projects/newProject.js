@@ -1,0 +1,104 @@
+/**
+ * 新建本地项目副作用（规格 2026-08-23，桌面壳补丁）：
+ *   1. POST /api/projects { title } → Host mkdir 默认库 + 说明.md + project.json
+ *      （OmniMux.app 的 directoryPicker 是 native，没有 workspaces.createDirectory）
+ *   2. workspaces.create({ path: projectRoot })
+ *   3. sessions.create({ workspaceId }) 禁止 cwd
+ *   4. bind → 关一级页 overlay → sessions.open → activateProjectCanvas 15:85
+ *
+ * 禁止 connectWorkspace、sessions.create({ cwd })、resolveCurrentCwd 当库作用域。
+ */
+import { bindProjectSession, createProject } from '../api.js'
+import { resolveWorkspaceForCwd } from './cwd.js'
+import { validateProjectTitle } from './folderName.js'
+import { activateProjectCanvas } from './projectCanvas.js'
+
+/**
+ * 关掉任意一级页 overlay（项目库 / 资产库 / 产品库…）。
+ * 只关本插件 stage 不够：html[data-dsh-product-stage] 会藏右侧栏。
+ */
+export function dismissProductStage(stage) {
+  try {
+    stage?.set?.(false)
+  } catch {
+    // ignore
+  }
+  const html = typeof document !== 'undefined' ? document.documentElement : null
+  if (html?.dataset?.dshProductStage) {
+    delete html.dataset.dshProductStage
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('dsh-product-stage', { detail: { id: '' } }))
+  }
+}
+
+/**
+ * 在已有项目根上登记工作区并开会话（打开项目 / 补绑定共用）。
+ * 禁止 create({ cwd })、禁止 connectWorkspace。
+ *
+ * @param {{ create: (opts: { workspaceId: string }) => Promise<string> }} sessions
+ * @param {{ create: (input: { path: string }) => Promise<{ workspaceId?: unknown }>, list?: object }} workspaces
+ * @param {string} projectRoot
+ * @returns {Promise<{ ok: true, cwd: string, workspaceId: string, sessionId: string } | { ok: false, error: string }>}
+ */
+export async function createProjectSession(sessions, workspaces, projectRoot) {
+  if (typeof projectRoot !== 'string' || projectRoot.trim() === '') {
+    return { ok: false, error: 'no-workspace' }
+  }
+  if (!workspaces || typeof workspaces.create !== 'function') {
+    return { ok: false, error: 'no-workspace' }
+  }
+  const created = await workspaces.create({ path: projectRoot })
+  const workspaceId = created?.workspaceId !== undefined && created?.workspaceId !== null
+    ? String(created.workspaceId)
+    : resolveWorkspaceForCwd(projectRoot, workspaces)
+  if (!workspaceId) return { ok: false, error: 'no-workspace' }
+  const sessionId = await sessions.create({ workspaceId })
+  return { ok: true, cwd: projectRoot, workspaceId, sessionId }
+}
+
+function errorText(value) {
+  if (!value) return 'create-failed'
+  if (typeof value === 'string') return value
+  return String(value)
+}
+
+/**
+ * @param {{
+ *   sessions: { create: (opts: { workspaceId: string }) => Promise<string>, open: (id: string) => void },
+ *   workspaces: { create: Function },
+ *   layout?: { closeDetails?: () => void },
+ *   betterSidebar?: object,
+ *   t: (key: string) => string,
+ *   stage?: { set?: (open: boolean) => void },
+ * }} ctx
+ * @param {{ title: string }} [opts] 标题必填（弹窗在入口层收，取消则不调用本函数）
+ * @returns {Promise<{ ok: boolean, project?: object, error?: string }>}
+ */
+export async function runNewProject(ctx, opts = {}) {
+  const title = typeof opts.title === 'string' ? opts.title : ''
+  const validated = validateProjectTitle(title)
+  if (!validated.ok) return { ok: false, error: validated.error }
+
+  const seeded = await createProject(validated.title, null)
+  if (!seeded.ok || !seeded.body?.project) {
+    return { ok: false, error: errorText(seeded.body?.error || seeded.body?.message || seeded.status) }
+  }
+  const projectRoot = typeof seeded.body.project.path === 'string' ? seeded.body.project.path : ''
+  if (projectRoot === '') {
+    return { ok: false, error: 'invalid-project-root' }
+  }
+  const project = { ...seeded.body.project, path: projectRoot }
+
+  try {
+    const session = await createProjectSession(ctx.sessions, ctx.workspaces, projectRoot)
+    if (!session.ok) return session
+    await bindProjectSession(project.id, session.sessionId)
+    dismissProductStage(ctx.stage)
+    ctx.sessions.open(session.sessionId)
+    await activateProjectCanvas(ctx, { sessionId: session.sessionId, cwd: projectRoot })
+    return { ok: true, project: { ...project, sessionId: session.sessionId, path: projectRoot } }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+  }
+}

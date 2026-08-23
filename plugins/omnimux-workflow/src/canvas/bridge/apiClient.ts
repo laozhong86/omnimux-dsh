@@ -10,6 +10,10 @@ import { WORKFLOW_API_ROUTES } from '../../shared/api';
 import type {
   BuildManifest,
   CapabilityCatalog,
+  CreateExecutionResponse,
+  ExecutionSnapshotDto,
+  ExecutionSummaryDto,
+  StartExecutionPayload,
 } from '../../shared/api';
 import type {
   CanvasWorkspaceSnapshot,
@@ -77,4 +81,50 @@ export function saveWorkspace(id: string, payload: SaveCanvasWorkspacePayload): 
     method: 'PUT',
     body: payload,
   });
+}
+
+// ============================================================================
+// Execution API (M3)
+// ============================================================================
+
+export function createExecution(
+  workspaceId: string,
+  payload: StartExecutionPayload = {},
+): Promise<ApiResult<CreateExecutionResponse>> {
+  return request<CreateExecutionResponse>(WORKFLOW_API_ROUTES.executions(encodeURIComponent(workspaceId)), {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function listExecutions(
+  workspaceId: string,
+): Promise<ApiResult<{ executions: ExecutionSummaryDto[] }>> {
+  return request<{ executions: ExecutionSummaryDto[] }>(WORKFLOW_API_ROUTES.executions(encodeURIComponent(workspaceId)));
+}
+
+export function getExecution(
+  workspaceId: string,
+  executionId: string,
+): Promise<ApiResult<{ execution: ExecutionSnapshotDto }>> {
+  return request<{ execution: ExecutionSnapshotDto }>(
+    WORKFLOW_API_ROUTES.execution(encodeURIComponent(workspaceId), encodeURIComponent(executionId)),
+  );
+}
+
+export type ExecutionAction = 'pause' | 'resume' | 'cancel';
+
+export function executionAction(
+  workspaceId: string,
+  executionId: string,
+  action: ExecutionAction,
+): Promise<ApiResult<{ ok: boolean }>> {
+  return request<{ ok: boolean }>(
+    WORKFLOW_API_ROUTES.executionAction(
+      encodeURIComponent(workspaceId),
+      encodeURIComponent(executionId),
+      action,
+    ),
+    { method: 'POST', body: {} },
+  );
 }

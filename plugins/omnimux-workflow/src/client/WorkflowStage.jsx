@@ -21,12 +21,24 @@ const chromeButton = {
  * @param {{
  *   t: (key: string) => string,
  *   stage: { getSnapshot: () => boolean, subscribe: Function, set: Function },
+ *   locale?: { subscribe: (fn: () => void) => () => void, getLocale: () => { active: string } },
  * }} props
  */
-export function WorkflowStage({ t, stage }) {
+export function WorkflowStage({ t, stage, locale }) {
   const open = useSyncExternalStore(
     stage ? stage.subscribe : () => () => {},
     stage ? stage.getSnapshot : () => false,
+  )
+  // W4 T4.1：宿主语言 live 订阅（'zh'|'en'），下发给 CanvasBridge → island。
+  // locale.subscribe 是 LocaleRuntime 的实例方法（内部读 this.listeners）。
+  // useSyncExternalStore 会裸调 subscribe(cb)，直接传 locale.subscribe 会丢 this，
+  // 炸成 Cannot read properties of undefined (reading 'listeners')，
+  // 进而 shell.overlay 整页变 data-slot-error（侧栏能点、页面白/空）。
+  const activeLocale = useSyncExternalStore(
+    locale
+      ? (onStoreChange) => locale.subscribe(onStoreChange)
+      : () => () => {},
+    () => (locale ? locale.getLocale().active : 'zh'),
   )
   const [box, setBox] = useState(() => ({ top: 0, left: 0, width: 0, height: 0 }))
 
@@ -108,7 +120,7 @@ export function WorkflowStage({ t, stage }) {
         </button>
       </div>
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-        <CanvasBridge onClose={() => { stage.set(false) }} t={t} />
+        <CanvasBridge onClose={() => { stage.set(false) }} t={t} locale={activeLocale} />
       </div>
     </div>
   )

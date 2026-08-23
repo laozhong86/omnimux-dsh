@@ -2,10 +2,23 @@
  * Simplified port of Gxgen Toolbar: palette-driven node creation + M2
  * undo/redo buttons. Palette entries come from the node registry
  * (extension point ①).
+ *
+ * W1: emoji 图标替换为 lucide-react（T1.1 决策 ②）。
+ *
+ * 工具栏是 ReactFlow sibling（非岛内节点），xyflow 的 panOnDrag /
+ * selectionOnDrag 会把落在 SPAN.wf-canvas-toolbar__icon 上的 pointer
+ * 后续 mousedown 抢走，导致没有 click。根节点必须带 nodrag nopan，
+ * 并在 pointer/mouse down 上 stopPropagation。
  */
 
 import { memo } from 'react';
+import { FileText, ImagePlus, Video, Music, Undo2, Redo2 } from 'lucide-react';
 import type { MaterialType } from '../../types/materialNode';
+import { useT } from '../../i18n';
+import {
+  preventToolbarAddContextMenu,
+  stopToolbarNativeEvent,
+} from './toolbarPointerGuard';
 
 export interface ToolbarProps {
   onAddNode: (type: MaterialType) => void;
@@ -15,48 +28,66 @@ export interface ToolbarProps {
   canRedo?: boolean;
 }
 
-const TOOLBAR_ITEMS: Array<{ type: MaterialType; label: string; icon: string }> = [
-  { type: 'text', label: '文本', icon: '📝' },
-  { type: 'image', label: '图片', icon: '🖼️' },
-  { type: 'video', label: '视频', icon: '🎬' },
-  { type: 'audio', label: '音频', icon: '🎵' },
+const TOOLBAR_ITEMS: Array<{
+  type: MaterialType;
+  Icon: React.ComponentType<{ size?: number }>;
+}> = [
+  { type: 'text', Icon: FileText },
+  { type: 'image', Icon: ImagePlus },
+  { type: 'video', Icon: Video },
+  { type: 'audio', Icon: Music },
 ];
 
 const Toolbar: React.FC<ToolbarProps> = ({ onAddNode, onUndo, onRedo, canUndo = false, canRedo = false }) => {
+  const t = useT();
   return (
-    <div className="wf-canvas-toolbar">
+    <div
+      className="wf-canvas-toolbar nodrag nopan"
+      onPointerDown={stopToolbarNativeEvent}
+      onMouseDown={stopToolbarNativeEvent}
+    >
       {TOOLBAR_ITEMS.map((item) => (
         <button
           key={item.type}
+          type="button"
           className="wf-canvas-toolbar__item"
           onClick={() => onAddNode(item.type)}
-          title={`添加${item.label}节点`}
+          onContextMenu={preventToolbarAddContextMenu}
+          title={t(`toolbar.add.${item.type}`)}
         >
-          <span className="wf-canvas-toolbar__icon">{item.icon}</span>
-          <span className="wf-canvas-toolbar__label">{item.label}</span>
+          <span className="wf-canvas-toolbar__icon">
+            <item.Icon size={18} />
+          </span>
+          <span className="wf-canvas-toolbar__label">{t(`node.type.${item.type}`)}</span>
         </button>
       ))}
       {(onUndo || onRedo) && <div className="wf-canvas-toolbar__divider" />}
       {onUndo ? (
         <button
+          type="button"
           className="wf-canvas-toolbar__item"
           onClick={() => onUndo()}
           disabled={!canUndo}
-          title="撤销（⌘Z）"
+          title={t('toolbar.undoTitle')}
         >
-          <span className="wf-canvas-toolbar__icon">↶</span>
-          <span className="wf-canvas-toolbar__label">撤销</span>
+          <span className="wf-canvas-toolbar__icon">
+            <Undo2 size={18} />
+          </span>
+          <span className="wf-canvas-toolbar__label">{t('toolbar.undo')}</span>
         </button>
       ) : null}
       {onRedo ? (
         <button
+          type="button"
           className="wf-canvas-toolbar__item"
           onClick={() => onRedo()}
           disabled={!canRedo}
-          title="重做（⇧⌘Z）"
+          title={t('toolbar.redoTitle')}
         >
-          <span className="wf-canvas-toolbar__icon">↷</span>
-          <span className="wf-canvas-toolbar__label">重做</span>
+          <span className="wf-canvas-toolbar__icon">
+            <Redo2 size={18} />
+          </span>
+          <span className="wf-canvas-toolbar__label">{t('toolbar.redo')}</span>
         </button>
       ) : null}
     </div>

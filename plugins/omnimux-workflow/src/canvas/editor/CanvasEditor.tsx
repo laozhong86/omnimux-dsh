@@ -7,6 +7,9 @@
  * keyboard-shortcut base set (copy/paste/delete/select-all), the basic
  * context menu (add/delete/copy) and clipboard support — all ported in
  * shape from Gxgen useCanvasHistory / useKeyboardShortcuts / useCanvasMenu.
+ *
+ * Clipboard and context-menu mechanics live in dedicated hooks so this
+ * file stays the ReactFlow wiring shell.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -23,7 +26,6 @@ import {
   type Connection,
   type Node,
   type Edge,
-  type OnConnectEnd,
 } from '@xyflow/react';
 // NOTE: '@xyflow/react/dist/style.css' is injected by src/canvas/index.tsx
 // (esbuild text-loader turns CSS imports into strings — they need manual
@@ -31,17 +33,17 @@ import {
 import { message } from 'antd';
 import { useCanvasStore, useGraphStore, useCanUndo, useCanRedo } from '../store/canvasStore';
 import type { MaterialType } from '../types/materialNode';
-import MaterialNode from './components/MaterialNode';
 import AnimatedEdge from './components/AnimatedEdge';
 import Toolbar from './components/Toolbar';
-import ContextMenu, {
-  type ContextMenuAction,
-  type ContextMenuContext,
-} from './components/ContextMenu';
+import CanvasNodeActionMenu from './components/CanvasNodeActionMenu';
+import ContextMenu from './components/ContextMenu';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { copyNodesToClipboard, pasteFromClipboard, type ClipboardData } from './utils/clipboardUtils';
+import { useConnectionMenu } from './hooks/useConnectionMenu';
+import { useCanvasClipboard } from './hooks/useCanvasClipboard';
+import { useCanvasContextMenu } from './hooks/useCanvasContextMenu';
+import { useT } from '../i18n';
 import { CANVAS_ZOOM_CONFIG } from './utils/nodeSizeConfig';
-import { validateConnection, validateConnectionDetailed } from './utils/connectionValidator';
+import { validateConnection, rejectReasonKey } from './utils/connectionValidator';
 import { DEFAULT_CANVAS_EDGE_OPTIONS } from './utils/canvasConnectionUtils';
 import { createMaterialNode, appendWithSelectionReset } from './utils/nodeFactory';
 import { buildNodeTypes } from '../nodes/registry';
@@ -66,19 +68,16 @@ const CONNECTION_RADIUS = 96;
 
 interface CanvasEditorProps {
   catalog: CapabilityCatalog | null;
+  /**
+   * M4 组/子集执行入口：右键「执行选中节点 / 执行此节点」回调
+   * （subset 模式：nodeIds + 传递上游闭包，由 host 解析）。
+   */
+  onExecuteNodeIds?: (nodeIds: string[]) => void;
 }
 
-interface MenuState {
-  x: number;
-  y: number;
-  visible: boolean;
-  context: ContextMenuContext;
-}
-
-const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog }) => {
+const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNodeIds }) => {
   const { screenToFlowPosition } = useReactFlow();
   const { nodes, edges, onNodesChange, onEdgesChange } = useGraphStore();
-  const onConnect = useCanvasStore((state) => state.onConnect);
   const applyCanvasInputMutation = useCanvasStore((state) => state.applyCanvasInputMutation);
   const setNodes = useCanvasStore((state) => state.setNodes);
   const setSelectedElement = useCanvasStore((state) => state.setSelectedElement);
@@ -90,20 +89,23 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog }) => {
   const [lastRejectedReason, setLastRejectedReason] = useState<string | null>(null);
   const nodeCreateCounter = useRef(0);
 
-  // In-island clipboard (Gxgen pattern: ref, not the system clipboard).
-  const clipboardRef = useRef<ClipboardData>({ nodes: [], edges: [] });
-  const lastPastePositionRef = useRef<{ x: number; y: number } | null>(null);
-
-  // Context menu state (Gxgen useCanvasMenu, base set only).
-  const [menu, setMenu] = useState<MenuState>({
-    x: 0,
-    y: 0,
-    visible: false,
-    context: { type: 'pane' },
-  });
-
   const hasSelection = useMemo(() => nodes.some((node) => node.selected), [nodes]);
-  const hasClipboard = clipboardRef.current.nodes.length > 0;
+
+  const clipboard = useCanvasClipboard(setNodes, setSelectedElement);
+
+  // W3 T3.2: beam activation moved into AnimatedEdge (downstream-target
+  // subscription); the old upstream flowEdges mapping was removed — edges
+  // pass through unchanged.
+  // W3 T3.4: release menu + rejection toast three-branch split.
+  const t = useT();
+  const connectionMenuTitle = t('menu.generateFromNode');
+  const {
+    menuState: connectionMenuState,
+    onConnectStart: handleConnectStart,
+    onConnectEnd: handleConnectEnd,
+    onMenuSelect: handleConnectionMenuSelect,
+    onMenuClose: handleConnectionMenuClose,
+  } = useConnectionMenu({ onReject: setLastRejectedReason });
 
   // History recording: every nodes/edges change offers a snapshot; the
   // store debounces + dedupes internally (Gxgen useCanvasHistory port).
@@ -114,29 +116,30 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog }) => {
   // Nodes carry the capability catalog down to node components via data
   // injection (plain object; island-internal, never persisted — stripped
   // before save by the persistence layer).
-  const flowNodes = catalog
-    ? nodes.map((node) => ({ ...node, data: { ...node.data, __catalog: catalog } }))
-    : nodes;
+  // M5 perf: memoized — without this every editor re-render rebuilt all
+  // node/data objects, defeating React Flow's internal node memoization and
+  // re-rendering every (memo'd) MaterialNode on each keystroke/selection.
+  const flowNodes = useMemo(
+    () =>
+      catalog
+        ? nodes.map((node) => ({ ...node, data: { ...node.data, __catalog: catalog } }))
+        : nodes,
+    [nodes, catalog],
+  );
 
   // 连线入口：store.onConnect 内部经 mutation gateway 校验
   const handleConnect = useCallback(
     (connection: Connection) => {
       const plan = applyCanvasInputMutation({ addEdges: [connection] });
       if (plan.status === 'rejected') {
-        const reasonText = ({
-          self_connection: '不能连接到自己',
-          duplicate_edge: '这两个节点已经连接过了',
-          missing_node: '连接目标不存在',
-          cycle: '这条连线会形成循环依赖',
-          type_contract: '目标节点当前不接受这种素材类型',
-        } as Record<string, string>)[plan.reasonCode ?? ''] ?? '连接无效';
+        const reasonText = t(rejectReasonKey(plan.reasonCode));
         setLastRejectedReason(reasonText);
         message.warning(reasonText);
       } else {
         setLastRejectedReason(null);
       }
     },
-    [applyCanvasInputMutation],
+    [applyCanvasInputMutation, t],
   );
 
   // 拖线过程中的实时校验（同 Gxgen isValidConnection 接线）
@@ -144,26 +147,6 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog }) => {
     (connection: Connection | Edge) => {
       const state = useCanvasStore.getState();
       return validateConnection(connection, state.nodes, state.edges);
-    },
-    [],
-  );
-
-  // 拖线结束但未成线（校验被拒）时，把拒绝原因透出给用户
-  const handleConnectEnd: OnConnectEnd = useCallback(
-    (_event, connectionState) => {
-      const fromId = connectionState.fromNode?.id;
-      const toId = connectionState.toNode?.id;
-      if (connectionState.isValid || !fromId || !toId) return;
-      const state = useCanvasStore.getState();
-      const detail = validateConnectionDetailed(
-        { source: fromId, target: toId, sourceHandle: null, targetHandle: null },
-        state.nodes,
-        state.edges,
-      );
-      if (!detail.valid && detail.reason) {
-        setLastRejectedReason(detail.reason);
-        message.warning(detail.reason);
-      }
     },
     [],
   );
@@ -196,201 +179,40 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog }) => {
     [applyCanvasInputMutation],
   );
 
-  // ==================== 剪贴板 / 选择操作（M2） ====================
-
-  const copySelectedNodes = useCallback(() => {
-    const state = useCanvasStore.getState();
-    const clipboard = copyNodesToClipboard(state.nodes, state.edges);
-    if (clipboard.nodes.length > 0) {
-      clipboardRef.current = clipboard;
-      lastPastePositionRef.current = null;
-    }
-  }, []);
-
-  const pasteNodes = useCallback(
-    (targetPosition?: { x: number; y: number }) => {
-      const result = pasteFromClipboard(
-        clipboardRef.current,
-        targetPosition,
-        lastPastePositionRef.current,
-      );
-      if (!result) return;
-      lastPastePositionRef.current = result.newPastePosition;
-      const state = useCanvasStore.getState();
-      state.applyCanvasInputMutation({
-        addNodes: result.nodes,
-        addEdges: result.edges,
-        nodePatches: state.nodes.map((node) => ({
-          nodeId: node.id,
-          data: {},
-          node: { selected: false },
-        })),
-      });
-    },
-    [],
-  );
-
-  const duplicateSelectedNodes = useCallback(() => {
-    copySelectedNodes();
-    pasteNodes();
-  }, [copySelectedNodes, pasteNodes]);
-
-  const deleteSelectedNodes = useCallback(() => {
-    const state = useCanvasStore.getState();
-    const nodeIds = state.nodes.filter((node) => node.selected).map((node) => node.id);
-    if (nodeIds.length === 0) return;
-    state.applyCanvasInputMutation({ removeNodeIds: nodeIds });
-  }, []);
-
-  const selectAllNodes = useCallback(() => {
-    setNodes((current) => current.map((node) => ({ ...node, selected: true })));
-  }, [setNodes]);
-
-  const clearSelection = useCallback(() => {
-    setNodes((current) => current.map((node) => ({ ...node, selected: false })));
-    setSelectedElement('none', null);
-  }, [setNodes, setSelectedElement]);
+  const {
+    menu,
+    handleNodeContextMenu,
+    handlePaneContextMenu,
+    handleSelectionContextMenu,
+    closeMenu,
+    handleMenuAction,
+  } = useCanvasContextMenu({
+    screenToFlowPosition,
+    handleAddNode,
+    setNodes,
+    copySelectedNodes: clipboard.copySelectedNodes,
+    pasteNodes: clipboard.pasteNodes,
+    duplicateSelectedNodes: clipboard.duplicateSelectedNodes,
+    deleteSelectedNodes: clipboard.deleteSelectedNodes,
+    selectAllNodes: clipboard.selectAllNodes,
+    clearSelection: clipboard.clearSelection,
+    undo,
+    redo,
+    onExecuteNodeIds,
+  });
 
   // 键盘快捷键基础集：复制/粘贴/删除/全选（+撤销重做/取消选中/副本）
   useKeyboardShortcuts({
-    onCopy: copySelectedNodes,
-    onPaste: () => pasteNodes(),
-    onSelectAll: selectAllNodes,
-    onDeleteSelected: deleteSelectedNodes,
-    onClearSelection: clearSelection,
-    onDuplicate: duplicateSelectedNodes,
+    onCopy: clipboard.copySelectedNodes,
+    onPaste: () => clipboard.pasteNodes(),
+    onSelectAll: clipboard.selectAllNodes,
+    onDeleteSelected: clipboard.deleteSelectedNodes,
+    onClearSelection: clipboard.clearSelection,
+    onDuplicate: clipboard.duplicateSelectedNodes,
     onUndo: undo,
     onRedo: redo,
     hasSelection,
   });
-
-  // ==================== 右键菜单（M2 基础版） ====================
-
-  const openContextMenu = useCallback(
-    (event: React.MouseEvent | MouseEvent, node?: Node) => {
-      event.preventDefault();
-      let context: ContextMenuContext = { type: 'pane' };
-      if (node) {
-        context = { type: 'node', nodeId: node.id };
-      } else {
-        const selectedCount = useCanvasStore.getState().nodes.filter((n) => n.selected).length;
-        if (selectedCount > 1) {
-          context = { type: 'selection' };
-        }
-      }
-      setMenu({ visible: true, x: event.clientX, y: event.clientY, context });
-    },
-    [],
-  );
-
-  const handleNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      openContextMenu(event, node);
-    },
-    [openContextMenu],
-  );
-
-  const handlePaneContextMenu = useCallback(
-    (event: React.MouseEvent | MouseEvent) => {
-      openContextMenu(event);
-    },
-    [openContextMenu],
-  );
-
-  const handleSelectionContextMenu = useCallback(
-    (event: React.MouseEvent) => {
-      openContextMenu(event);
-    },
-    [openContextMenu],
-  );
-
-  const closeMenu = useCallback(() => {
-    setMenu((prev) => ({ ...prev, visible: false }));
-  }, []);
-
-  const handleMenuAction = useCallback(
-    (action: ContextMenuAction, context: ContextMenuContext) => {
-      // 落点：菜单坐标转画布坐标（右键位置附近落节点）
-      const flowPosition = screenToFlowPosition({ x: menu.x, y: menu.y });
-      switch (action) {
-        case 'add-text':
-          handleAddNode('text', flowPosition);
-          break;
-        case 'add-image':
-          handleAddNode('image', flowPosition);
-          break;
-        case 'add-video':
-          handleAddNode('video', flowPosition);
-          break;
-        case 'add-audio':
-          handleAddNode('audio', flowPosition);
-          break;
-        case 'copy': {
-          // 右键节点：复制该节点（或选中组）
-          if (context.type === 'node') {
-            const state = useCanvasStore.getState();
-            const target = state.nodes.find((node) => node.id === context.nodeId);
-            if (target && !target.selected) {
-              clearSelection();
-              setNodes((current) =>
-                current.map((node) =>
-                  node.id === context.nodeId ? { ...node, selected: true } : node,
-                ),
-              );
-            }
-          }
-          copySelectedNodes();
-          break;
-        }
-        case 'paste':
-          pasteNodes(flowPosition);
-          break;
-        case 'duplicate':
-          duplicateSelectedNodes();
-          break;
-        case 'delete': {
-          if (context.type === 'node') {
-            const state = useCanvasStore.getState();
-            const target = state.nodes.find((node) => node.id === context.nodeId);
-            if (target?.selected) {
-              deleteSelectedNodes();
-            } else {
-              state.applyCanvasInputMutation({ removeNodeIds: [context.nodeId] });
-            }
-          } else {
-            deleteSelectedNodes();
-          }
-          break;
-        }
-        case 'undo':
-          undo();
-          break;
-        case 'redo':
-          redo();
-          break;
-        case 'select-all':
-          selectAllNodes();
-          break;
-      }
-      closeMenu();
-    },
-    [
-      menu.x,
-      menu.y,
-      screenToFlowPosition,
-      handleAddNode,
-      clearSelection,
-      setNodes,
-      copySelectedNodes,
-      pasteNodes,
-      duplicateSelectedNodes,
-      deleteSelectedNodes,
-      undo,
-      redo,
-      selectAllNodes,
-      closeMenu,
-    ],
-  );
 
   const handleNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
@@ -413,6 +235,7 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog }) => {
         onEdgesChange={onEdgesChange}
         onConnect={handleConnect}
         isValidConnection={isValidConnection}
+        onConnectStart={handleConnectStart}
         onConnectEnd={handleConnectEnd}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
@@ -439,6 +262,10 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog }) => {
         defaultEdgeOptions={DEFAULT_CANVAS_EDGE_OPTIONS}
         connectOnClick={false}
         connectionRadius={CONNECTION_RADIUS}
+        // M5 perf baseline: viewport culling for the 200+ node scenario.
+        // Off-screen nodes unmount — node state lives in canvasStore, so a
+        // scrolled-away node restores fully when it re-enters the viewport.
+        onlyRenderVisibleElements
       >
         <Background color="var(--wb-grid-dot, #C9CBD6)" gap={48} size={3.5} variant={BackgroundVariant.Dots} />
         <Controls />
@@ -462,8 +289,18 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog }) => {
         onAction={handleMenuAction}
         canUndo={canUndo}
         canRedo={canRedo}
-        hasClipboard={hasClipboard}
+        hasClipboard={clipboard.hasClipboard}
         hasSelection={hasSelection}
+      />
+
+      <CanvasNodeActionMenu
+        visible={connectionMenuState.visible}
+        x={connectionMenuState.x}
+        y={connectionMenuState.y}
+        title={connectionMenuTitle}
+        options={connectionMenuState.options}
+        onSelect={handleConnectionMenuSelect}
+        onClose={handleConnectionMenuClose}
       />
 
       {lastRejectedReason && (

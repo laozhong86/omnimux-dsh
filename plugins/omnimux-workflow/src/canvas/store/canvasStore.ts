@@ -33,6 +33,11 @@ import {
   type CanvasInputMutationPlan,
   type CanvasNode,
 } from '../editor/utils/canvasInputMutationGateway';
+import {
+  clearPersistSessionFlags,
+  noteGraphReset,
+  noteUserDeletedGraphElements,
+} from '../bridge/persistPolicy';
 
 export type SelectedElementType = 'none' | 'node';
 
@@ -109,6 +114,10 @@ export const useCanvasStore = create<CanvasState>()(
     edges: [] as Edge[],
 
     onNodesChange: (changes: NodeChange<CanvasNode>[]) => {
+      if (changes.some((change) => change.type === 'remove')) {
+        // xyflow / 键盘删除走 remove change，视为用户删节点
+        noteUserDeletedGraphElements();
+      }
       set({
         nodes: applyNodeChanges(changes, get().nodes),
       });
@@ -132,6 +141,9 @@ export const useCanvasStore = create<CanvasState>()(
     },
 
     applyCanvasInputMutation: (mutation: CanvasInputMutation) => {
+      if (mutation.removeNodeIds && mutation.removeNodeIds.length > 0) {
+        noteUserDeletedGraphElements();
+      }
       const current = get();
       const plan = planCanvasInputMutation(
         { nodes: current.nodes, edges: current.edges },
@@ -167,6 +179,7 @@ export const useCanvasStore = create<CanvasState>()(
     },
 
     deleteElements: (nodeIds, edgeIds) => {
+      if (nodeIds.length > 0) noteUserDeletedGraphElements();
       get().applyCanvasInputMutation({ removeNodeIds: nodeIds, removeEdgeIds: edgeIds });
       const selected = get().selectedElement;
       if (selected.type === 'node' && selected.id && nodeIds.includes(selected.id)) {
@@ -175,6 +188,7 @@ export const useCanvasStore = create<CanvasState>()(
     },
 
     hydrateGraph: (nodes, edges) => {
+      clearPersistSessionFlags();
       set({ nodes, edges, selectedElement: { type: 'none', id: null }, past: [], future: [] });
       history.current = snapshotOf(nodes, edges);
       history.lastPushAt = 0;
@@ -260,6 +274,7 @@ export const useCanvasStore = create<CanvasState>()(
     // Store Reset
     // ========================================================================
     resetStore: () => {
+      noteGraphReset();
       set({
         nodes: [],
         edges: [],

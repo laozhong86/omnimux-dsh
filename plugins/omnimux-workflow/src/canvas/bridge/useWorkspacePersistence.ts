@@ -12,6 +12,11 @@
  * - Selection-only changes are NOT saved (the save signature strips the
  *   transient `selected` flags), so casual clicking never dirties the doc.
  * - Best-effort flush on unmount / pagehide.
+ *
+ * 空图保护（persistPolicy）：
+ * - 决定保存的瞬间同步拷贝 {nodes, edges}，await 后只用这份快照。
+ * - 未观察到用户删光时，禁止把非空图覆盖成空（reset / flush / autosave）。
+ * - hydrate 完成前（enabled=false）不订阅、不 flush。
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -22,6 +27,13 @@ import type {
   SerializedCanvasEdge,
   SerializedCanvasNode,
 } from '../../shared/canvasTypes';
+import {
+  decidePersist,
+  inferPersistCause,
+  shouldPersistEmptyGraph,
+  snapshotGraph,
+  type PersistCause,
+} from './persistPolicy';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 const SAVED_BADGE_MS = 2500;
@@ -49,6 +61,16 @@ export interface PersistenceController {
 export interface UseWorkspacePersistenceOptions {
   /** Called with the fresh server snapshot after every successful save. */
   onSaved?: (workspace: CanvasWorkspaceSnapshot) => void;
+  /**
+   * hydrate 完成前必须为 false：不订阅 store、不 flush。
+   * App 绑 `boot.phase === 'ready'`。
+   */
+  enabled?: boolean;
+}
+
+interface GraphCapture {
+  nodes: SerializedCanvasNode[];
+  edges: SerializedCanvasEdge[];
 }
 
 /** Strip transient fields before persistence (island internals + selection). */
@@ -69,20 +91,30 @@ function signatureOf(nodes: SerializedCanvasNode[], edges: SerializedCanvasEdge[
   return JSON.stringify({ nodes: sanitizeNodes(nodes), edges: sanitizeEdges(edges) });
 }
 
+function readStoreCapture(): GraphCapture {
+  const { nodes, edges } = useCanvasStore.getState();
+  const snap = snapshotGraph(nodes as SerializedCanvasNode[], edges as SerializedCanvasEdge[]);
+  return { nodes: snap.nodes, edges: snap.edges };
+}
+
 export function useWorkspacePersistence(
   workspace: CanvasWorkspaceSnapshot | null,
   opts: UseWorkspacePersistenceOptions = {},
 ): PersistenceController {
+  const enabled = opts.enabled !== false;
   const [status, setStatus] = useState<AutosaveStatus>('idle');
   const [isDirty, setIsDirty] = useState(false);
 
   const workspaceRef = useRef<CanvasWorkspaceSnapshot | null>(workspace);
   const serverVersionRef = useRef(0);
   const lastSavedSigRef = useRef('');
+  const lastSavedNodeCountRef = useRef(0);
   const lastInitIdRef = useRef('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedBadgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
   const onSavedRef = useRef(opts.onSaved);
   onSavedRef.current = opts.onSaved;
 
@@ -95,8 +127,9 @@ export function useWorkspacePersistence(
     serverVersionRef.current = workspace.version;
     if (lastInitIdRef.current === workspace.id) return;
     lastInitIdRef.current = workspace.id;
-    const { nodes, edges } = useCanvasStore.getState();
-    lastSavedSigRef.current = signatureOf(nodes, edges);
+    // 以磁盘/服务端快照为 last-saved，不读可能已被 reset 的 store
+    lastSavedSigRef.current = signatureOf(workspace.nodes, workspace.edges);
+    lastSavedNodeCountRef.current = workspace.nodes.length;
     setIsDirty(false);
     setStatus('idle');
   }, [workspace?.id, workspace?.version]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -108,15 +141,32 @@ export function useWorkspacePersistence(
     }
   };
 
-  const performSave = useCallback(async (): Promise<void> => {
+  /**
+   * 只用调用瞬间传入的 capture；await 之后禁止再读 store。
+   */
+  const performSave = useCallback(async (
+    capture: GraphCapture,
+    cause: PersistCause,
+  ): Promise<void> => {
     const ws = workspaceRef.current;
     if (!ws) return;
+    if (!enabledRef.current) return;
     if (savingRef.current) {
       // A save is in flight; the trailing store notification re-schedules.
       return;
     }
 
-    const { nodes, edges } = useCanvasStore.getState();
+    const decision = decidePersist({
+      lastSavedNodeCount: lastSavedNodeCountRef.current,
+      nextNodes: capture.nodes,
+      nextEdges: capture.edges,
+      cause,
+      lastSavedSignature: lastSavedSigRef.current,
+      nextSignature: signatureOf(capture.nodes, capture.edges),
+    });
+    if (!decision.persist || !decision.snapshot) return;
+
+    const { nodes, edges } = decision.snapshot;
     const name = ws.name;
     savingRef.current = true;
     setStatus('saving');
@@ -130,6 +180,7 @@ export function useWorkspacePersistence(
 
       // 409: pull the server version, adopt it, retry once (local
       // last-write-wins — see plan §5.2 conflict policy).
+      // 重试必须复用 captured 快照，不得再次 getState。
       if (result.status === 409) {
         const latest = await getWorkspace(ws.id);
         if (latest.ok && latest.body.workspace) {
@@ -146,6 +197,7 @@ export function useWorkspacePersistence(
       if (result.ok && result.body.workspace) {
         serverVersionRef.current = result.body.workspace.version;
         lastSavedSigRef.current = signatureOf(nodes, edges);
+        lastSavedNodeCountRef.current = nodes.length;
         setIsDirty(false);
         setStatus('saved');
         clearSavedBadgeTimer();
@@ -166,12 +218,15 @@ export function useWorkspacePersistence(
   }, []);
 
   // Core subscription: debounce store changes, skip no-op notifications.
+  // hydrate 完成前不订阅。
   useEffect(() => {
-    const evaluate = () => {
+    if (!enabled) return;
+    const evaluate = (cause: PersistCause = 'autosave') => {
       const ws = workspaceRef.current;
       if (!ws) return;
-      const { nodes, edges } = useCanvasStore.getState();
-      const sig = signatureOf(nodes, edges);
+      if (!enabledRef.current) return;
+      const capture = readStoreCapture();
+      const sig = signatureOf(capture.nodes, capture.edges);
       const dirty = sig !== lastSavedSigRef.current;
       setIsDirty(dirty);
       if (!dirty) {
@@ -182,15 +237,37 @@ export function useWorkspacePersistence(
         setStatus((prev) => (prev === 'pending' ? 'idle' : prev));
         return;
       }
+      const inferred = inferPersistCause(capture.nodes.length, cause);
+      if (
+        !shouldPersistEmptyGraph({
+          lastSavedNodeCount: lastSavedNodeCountRef.current,
+          nextNodeCount: capture.nodes.length,
+          cause: inferred,
+        })
+      ) {
+        // 从有节点跳到 0 但不是 user-delete：跳过，不要 debounce 存空
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+        setIsDirty(false);
+        setStatus((prev) => (prev === 'pending' ? 'idle' : prev));
+        return;
+      }
       setStatus((prev) => (prev === 'saving' || prev === 'conflict' ? prev : 'pending'));
       if (timerRef.current) clearTimeout(timerRef.current);
+      // 决定保存的瞬间钉死 capture；1s 后只用这份，禁止再读 store
+      const scheduled: GraphCapture = { nodes: capture.nodes, edges: capture.edges };
+      const scheduledCause = inferred;
       timerRef.current = setTimeout(() => {
         timerRef.current = null;
-        void performSave();
+        void performSave(scheduled, scheduledCause);
       }, AUTOSAVE_DEBOUNCE_MS);
     };
 
-    const unsubscribe = useCanvasStore.subscribe(evaluate);
+    const unsubscribe = useCanvasStore.subscribe(() => {
+      evaluate('autosave');
+    });
     return () => {
       unsubscribe();
       if (timerRef.current) {
@@ -198,17 +275,28 @@ export function useWorkspacePersistence(
         timerRef.current = null;
       }
     };
-  }, [performSave]);
+  }, [performSave, enabled]);
 
   // Best-effort flush on unmount / pagehide.
+  // 先同步签名+拷贝，再交给 save（禁止 void performSave() 无快照）。
   useEffect(() => {
+    if (!enabled) return;
     const flushIfDirty = () => {
+      if (!enabledRef.current) return;
       const ws = workspaceRef.current;
       if (!ws) return;
-      const { nodes, edges } = useCanvasStore.getState();
-      if (signatureOf(nodes, edges) !== lastSavedSigRef.current) {
-        void performSave();
-      }
+      const capture = readStoreCapture();
+      const cause = inferPersistCause(capture.nodes.length, 'flush');
+      const decision = decidePersist({
+        lastSavedNodeCount: lastSavedNodeCountRef.current,
+        nextNodes: capture.nodes,
+        nextEdges: capture.edges,
+        cause,
+        lastSavedSignature: lastSavedSigRef.current,
+        nextSignature: signatureOf(capture.nodes, capture.edges),
+      });
+      if (!decision.persist || !decision.snapshot) return;
+      void performSave(decision.snapshot, cause);
     };
     window.addEventListener('pagehide', flushIfDirty);
     return () => {
@@ -216,19 +304,20 @@ export function useWorkspacePersistence(
       flushIfDirty();
       clearSavedBadgeTimer();
     };
-  }, [performSave]);
+  }, [performSave, enabled]);
 
   const saveNow = useCallback(async () => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    await performSave();
+    const capture = readStoreCapture();
+    await performSave(capture, inferPersistCause(capture.nodes.length, 'autosave'));
   }, [performSave]);
 
   const resolveConflict = useCallback(async () => {
-    // performSave already implements pull-latest + retry-once.
-    await performSave();
+    const capture = readStoreCapture();
+    await performSave(capture, inferPersistCause(capture.nodes.length, 'autosave'));
   }, [performSave]);
 
   const reloadFromServer = useCallback(async () => {
@@ -242,6 +331,7 @@ export function useWorkspacePersistence(
     const snapshot = latest.body.workspace;
     serverVersionRef.current = snapshot.version;
     lastSavedSigRef.current = signatureOf(snapshot.nodes, snapshot.edges);
+    lastSavedNodeCountRef.current = snapshot.nodes.length;
     useCanvasStore.getState().hydrateGraph(snapshot.nodes, snapshot.edges);
     setIsDirty(false);
     setStatus('idle');

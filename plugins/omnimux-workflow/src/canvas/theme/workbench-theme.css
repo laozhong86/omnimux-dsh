@@ -33,6 +33,24 @@
   --wb-edge: #b1b1b7;
   --wb-grid-dot: #C9CBD6;
 
+  /* node card tokens (W1 Gxgen alignment) */
+  --wb-node-text-strong: var(--wb-text-secondary);
+  --wb-node-text-muted: var(--wb-text-muted);
+  --wb-node-ring: var(--wb-accent);
+  --wb-node-radius: 16px;
+  --wb-danger-soft: color-mix(in srgb, var(--wb-danger) 12%, transparent);
+  --wb-beam-start: var(--wb-accent);
+  --wb-beam-end: var(--wb-accent-hover);
+
+  /* config panel shell tokens (W2; 来源 Gxgen ConfigPanelShell.tsx:19-22,45-46) */
+  --wb-panel-outer: var(--dsw-alias-bg-secondary, #f5f5f5);
+  --wb-panel-inner: var(--dsw-alias-bg-primary, #ffffff);
+  --wb-panel-shadow:
+    rgba(0, 0, 0, 0.05) 0 0 0 1px,
+    rgba(0, 0, 0, 0.04) 0 10px 10px -5px,
+    rgba(0, 0, 0, 0.04) 0 20px 25px -5px,
+    rgba(0, 0, 0, 0.04) 0 20px 32px -12px;
+
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -56,6 +74,16 @@ body[data-ds-dark-theme] .wf-canvas-root {
   --wb-text-secondary: #a1a1aa;
   --wb-text-muted: #71717a;
   --wb-grid-dot: #2e2e33;
+  /* panel shell dark fallbacks（宿主 --dsw-alias-* 自身翻转是主路径） */
+  --wb-panel-outer: var(--dsw-alias-bg-secondary, #1a1a24);
+  --wb-panel-inner: var(--dsw-alias-bg-primary, #1f1f2b);
+  --wb-panel-shadow:
+    rgba(255, 255, 255, 0.05) 0 0 0 1px,
+    rgba(0, 0, 0, 0.3) 0 10px 10px -5px,
+    rgba(0, 0, 0, 0.3) 0 20px 25px -5px,
+    rgba(0, 0, 0, 0.3) 0 20px 32px -12px;
+  /* node tokens (--wb-node-*/--wb-danger-soft/--wb-beam-*) reference the
+     vars above, so they flip automatically — no JS isDark branch. */
 }
 
 /* ==================== island header ==================== */
@@ -204,6 +232,7 @@ body[data-ds-dark-theme] .wf-canvas-root {
   left: 16px;
   top: 16px;
   z-index: 10;
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -242,377 +271,3 @@ body[data-ds-dark-theme] .wf-canvas-root {
   font-size: 11px;
 }
 
-/* ==================== material node ==================== */
-
-.wf-material-node {
-  position: relative;
-}
-
-.wf-material-node__header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
-  padding: 0 4px;
-  min-height: 22px;
-}
-
-.wf-material-node__label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--wb-text-secondary);
-  cursor: default;
-  user-select: none;
-}
-
-.wf-material-node__label-input {
-  font-size: 13px;
-  padding: 2px 6px;
-  border: 1px solid var(--wb-accent);
-  border-radius: 6px;
-  outline: none;
-  background: var(--wb-surface);
-  color: var(--wb-text-primary);
-  width: 160px;
-}
-
-.wf-material-node__badge {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.wf-material-node__badge--running {
-  background: var(--wb-accent);
-  animation: wf-pulse 1.2s ease-in-out infinite;
-}
-
-.wf-material-node__badge--done {
-  background: var(--wb-success);
-}
-
-.wf-material-node__badge--failed {
-  background: var(--wb-danger);
-}
-
-@keyframes wf-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.75); }
-}
-
-.wf-material-node__card {
-  position: relative;
-  border-radius: 16px;
-  border: 1px solid var(--wb-border);
-  background: color-mix(in srgb, var(--wb-surface) 88%, transparent);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.06);
-  overflow: hidden;
-  transition: box-shadow 200ms ease, border-color 200ms ease;
-}
-
-.wf-material-node:hover .wf-material-node__card {
-  box-shadow: 0 12px 32px rgba(15, 20, 32, 0.1);
-}
-
-.wf-material-node--selected .wf-material-node__card {
-  border-color: var(--wb-accent);
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--wb-accent) 40%, transparent),
-    0 12px 32px rgba(15, 20, 32, 0.12);
-}
-
-.wf-material-node__text-editor {
-  width: 100%;
-  height: 100%;
-  min-height: 120px;
-  padding: 12px;
-  border: none;
-  outline: none;
-  resize: none;
-  background: transparent;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--wb-text-primary);
-  font-family: inherit;
-}
-
-.wf-material-node__text-editor::placeholder {
-  color: var(--wb-text-muted);
-}
-
-.wf-material-node__media {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 140px;
-  padding: 12px;
-}
-
-.wf-material-node__media-image {
-  max-width: 100%;
-  border-radius: 8px;
-  display: block;
-}
-
-.wf-material-node__media-placeholder {
-  width: 100%;
-  height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  border: 1.5px dashed var(--wb-border-strong);
-  color: var(--wb-text-muted);
-  font-size: 12px;
-  background: var(--wb-surface-raised);
-}
-
-.wf-material-node__media-placeholder--running {
-  border-color: var(--wb-accent);
-  color: var(--wb-accent);
-  border-style: solid;
-  background: var(--wb-accent-soft);
-}
-
-.wf-material-node__media-placeholder--done {
-  border-color: var(--wb-success);
-  color: var(--wb-text-secondary);
-}
-
-.wf-material-node__error {
-  padding: 8px 12px;
-  font-size: 12px;
-  color: var(--wb-danger);
-  background: color-mix(in srgb, var(--wb-danger) 8%, transparent);
-  border-top: 1px solid color-mix(in srgb, var(--wb-danger) 20%, transparent);
-}
-
-/* ==================== config panel ==================== */
-
-.wf-config-panel {
-  margin-top: 8px;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid var(--wb-border);
-  background: var(--wb-surface);
-  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.wf-config-panel__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--wb-text-secondary);
-  letter-spacing: 0.02em;
-}
-
-.wf-config-panel__close {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: var(--wb-text-muted);
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 6px;
-}
-
-.wf-config-panel__close:hover {
-  background: var(--wb-accent-soft);
-  color: var(--wb-accent);
-}
-
-.wf-config-panel__field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.wf-config-panel__field label {
-  font-size: 11px;
-  color: var(--wb-text-muted);
-}
-
-/* 参考媒体占位（M2：上游输入占位，M4 接真实媒体引用/上传） */
-.wf-config-panel__refs {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1.5px dashed var(--wb-border-strong);
-  background: var(--wb-surface-raised);
-}
-
-.wf-config-panel__refs-title {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--wb-text-secondary);
-}
-
-.wf-config-panel__refs-hint {
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--wb-text-muted);
-}
-
-/* antd primary color follows the theme variable (the formal approach is
-   ConfigProvider token with a JS value read once from CSS vars). */
-.wf-canvas-root .ant-btn-primary {
-  background: var(--wb-accent);
-  border-color: var(--wb-accent);
-  box-shadow: none;
-}
-
-.wf-canvas-root .ant-btn-primary:hover:not(:disabled) {
-  background: var(--wb-accent-hover) !important;
-  border-color: var(--wb-accent-hover) !important;
-}
-
-/* ==================== toolbar divider ==================== */
-
-.wf-canvas-toolbar__divider {
-  height: 1px;
-  margin: 2px 8px;
-  background: var(--wb-border);
-}
-
-/* ==================== autosave indicator (M2) ==================== */
-
-.wf-canvas-header__save-state {
-  font-size: 12px;
-  color: var(--wb-text-muted);
-  white-space: nowrap;
-}
-
-.wf-canvas-header__save-state--pending {
-  color: var(--wb-text-secondary);
-}
-
-.wf-canvas-header__save-state--saving {
-  color: var(--wb-accent);
-}
-
-.wf-canvas-header__save-state--saved {
-  color: #5a8a00;
-}
-
-.wf-canvas-header__save-state--error,
-.wf-canvas-header__save-state--conflict {
-  color: var(--wb-danger);
-}
-
-body[data-ds-dark-theme] .wf-canvas-header__save-state--saved {
-  color: var(--wb-success);
-}
-
-/* conflict banner (409 冲突处理 UX) */
-.wf-canvas-conflict-banner {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  font-size: 12px;
-  color: var(--wb-text-primary);
-  background: color-mix(in srgb, var(--wb-danger) 8%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--wb-danger) 20%, transparent);
-  flex-shrink: 0;
-}
-
-/* ==================== context menu (M2, body portal) ==================== */
-
-/* Portal target is document.body — outside .wf-canvas-root — so the token
-   block is duplicated here against the host --dsw-* tokens. */
-.wf-context-menu {
-  --wcm-surface: var(--dsw-alias-bg-primary, #ffffff);
-  --wcm-surface-hover: var(--dsw-alias-bg-secondary, #f3f4f7);
-  --wcm-border: var(--dsw-alias-border, rgba(15, 20, 32, 0.08));
-  --wcm-text: var(--dsw-alias-label-primary, #1a1d26);
-  --wcm-text-muted: var(--dsw-alias-label-tertiary, #9aa0ae);
-  --wcm-accent: var(--dsw-static-deepseek-500, #4176E6);
-
-  position: fixed;
-  z-index: 1000;
-  min-width: 190px;
-  padding: 4px;
-  border-radius: 10px;
-  border: 1px solid var(--wcm-border);
-  background: var(--wcm-surface);
-  box-shadow: 0 12px 32px rgba(15, 20, 32, 0.16);
-  user-select: none;
-}
-
-body[data-ds-dark-theme] .wf-context-menu {
-  --wcm-surface: #1b1b1e;
-  --wcm-surface-hover: #222226;
-  --wcm-border: rgba(250, 250, 250, 0.1);
-  --wcm-text: #f5f5f5;
-  --wcm-text-muted: #71717a;
-}
-
-.wf-context-menu__item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 6px 10px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--wcm-text);
-  font-size: 13px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.wf-context-menu__item:hover:not(.wf-context-menu__item--disabled) {
-  background: var(--wcm-surface-hover);
-}
-
-.wf-context-menu__item--disabled {
-  color: var(--wcm-text-muted);
-  cursor: not-allowed;
-}
-
-.wf-context-menu__label {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wf-context-menu__shortcut {
-  font-size: 11px;
-  color: var(--wcm-text-muted);
-}
-
-.wf-context-menu__separator {
-  height: 1px;
-  margin: 4px 8px;
-  background: var(--wcm-border);
-}
-
-/* ==================== rejection toast ==================== */
-
-.wf-rejected-toast {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 12px;
-  color: var(--wb-text-primary);
-  background: var(--wb-surface);
-  border: 1px solid var(--wb-border-strong);
-  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.12);
-}

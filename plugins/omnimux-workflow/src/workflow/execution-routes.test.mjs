@@ -1,0 +1,479 @@
+/**
+ * M3 execution route tests: HTTP create/status/control + SSE event stream +
+ * subset execution + restart recovery (dispose mount -> remount -> resume).
+ *
+ * Runs against the built dist/index.js (npm run build first) over a temp
+ * $DSH_HOME with a fast mock gateway (10-30ms latency).
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { Writable } from 'node:stream';
+
+const host = await import('../../dist/index.js');
+
+class FakeRes extends Writable {
+  constructor() {
+    super();
+    this.state = { status: 0, headers: {}, body: '' };
+  }
+
+  writeHead(status, headers) {
+    this.state.status = status;
+    this.state.headers = headers ?? {};
+    return this;
+  }
+
+  _write(chunk, _encoding, callback) {
+    this.state.body += chunk.toString();
+    callback();
+  }
+
+  end(text) {
+    if (typeof text === 'string') this.state.body += text;
+    super.end();
+    return this;
+  }
+}
+
+function fakeReq({ method = 'GET', url = '/', headers = {}, body = undefined }) {
+  const chunks = body === undefined ? [] : [Buffer.from(JSON.stringify(body))];
+  return {
+    method,
+    url,
+    headers,
+    async *[Symbol.asyncIterator]() {
+      for (const chunk of chunks) yield chunk;
+    },
+  };
+}
+
+function makeHarness({ dir, gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 30 } } = {}) {
+  const root = dir ?? mkdtempSync(join(tmpdir(), 'omnimux-exec-routes-'));
+  const registered = [];
+  const captured = { handler: null, path: '' };
+  const webServer = {
+    register(route) {
+      registered.push({ path: route.path, handler: route.handler });
+      captured.handler = route.handler;
+      captured.path = route.path;
+      return () => {};
+    },
+  };
+  const dispose = host.mountWorkflowHost(
+    { webServer },
+    {
+      paths: {
+        root,
+        workspacesDir: join(root, 'workspaces'),
+        executionsDir: join(root, 'executions'),
+        mediaDir: join(root, 'media'),
+      },
+      gateway: host.createMockGateway(gatewayLatency),
+    },
+  );
+  const localHeaders = { origin: 'http://localhost:3000' };
+
+  const call = async ({ method, url, body, headers }) => {
+    const res = new FakeRes();
+    await captured.handler(fakeReq({ method, url, headers, body }), res);
+    if (!res.writableEnded) {
+      await new Promise((resolve) => {
+        const timer = setTimeout(resolve, 1000);
+        res.once('finish', () => { clearTimeout(timer); resolve(); });
+        res.once('close', () => { clearTimeout(timer); resolve(); });
+      });
+    }
+    let json = null;
+    try {
+      json = JSON.parse(res.state.body);
+    } catch {
+      json = null;
+    }
+    return { status: res.state.status, body: json, raw: res.state.body, res };
+  };
+
+  /** GET an SSE stream; resolves once `until(rawBody)` is satisfied. */
+  const openSse = async ({ url, until, timeoutMs = 5000 }) => {
+    const res = new FakeRes();
+    const handlerPromise = captured.handler(fakeReq({ method: 'GET', url, headers: localHeaders }), res);
+    const satisfied = await new Promise((resolve) => {
+      const deadline = Date.now() + timeoutMs;
+      const poll = () => {
+        if (until(res.state.body) || Date.now() > deadline) {
+          resolve(until(res.state.body));
+          return;
+        }
+        setTimeout(poll, 15);
+      };
+      poll();
+    });
+    await handlerPromise;
+    res.destroy();
+    return { satisfied, raw: res.state.body, headers: res.state.headers };
+  };
+
+  const parseSse = (raw) => {
+    const events = [];
+    let event = '';
+    let data = '';
+    for (const line of raw.split('\n')) {
+      if (line.startsWith('event: ')) event = line.slice(7).trim();
+      else if (line.startsWith('data: ')) data = line.slice(6);
+      else if (line === '' && event && data) {
+        try {
+          events.push({ event, data: JSON.parse(data) });
+        } catch {
+          events.push({ event, data });
+        }
+        event = '';
+        data = '';
+      }
+    }
+    return events;
+  };
+
+  const createLinearWorkspace = async (nodeCount = 3) => {
+    const created = await call({
+      method: 'POST',
+      url: '/omnimux-workflow/api/workspaces',
+      body: { name: '执行测试' },
+      headers: localHeaders,
+    });
+    const ws = created.body.workspace;
+    const nodes = Array.from({ length: nodeCount }, (_, i) => ({
+      id: `n${i + 1}`,
+      type: 'material',
+      position: { x: i * 200, y: 0 },
+      data: {
+        label: `节点${i + 1}`,
+        materialType: 'text',
+        selectedTool: 'text-to-text',
+        prompt: `prompt-${i + 1}`,
+        status: 'ready',
+      },
+    }));
+    const edges = Array.from({ length: nodeCount - 1 }, (_, i) => ({
+      id: `e${i + 1}`,
+      source: `n${i + 1}`,
+      target: `n${i + 2}`,
+    }));
+    await call({
+      method: 'PUT',
+      url: `/omnimux-workflow/api/workspaces/${ws.id}`,
+      body: { expectedVersion: 0, nodes, edges },
+      headers: localHeaders,
+    });
+    return ws.id;
+  };
+
+  const startExecution = async (workspaceId, body = {}) => {
+    const result = await call({
+      method: 'POST',
+      url: `/omnimux-workflow/api/workspaces/${workspaceId}/executions`,
+      body,
+      headers: localHeaders,
+    });
+    return result;
+  };
+
+  const executionStatus = async (workspaceId, executionId) =>
+    call({
+      url: `/omnimux-workflow/api/workspaces/${workspaceId}/executions/${executionId}`,
+      headers: localHeaders,
+    });
+
+  const executionAction = async (workspaceId, executionId, action) =>
+    call({
+      method: 'POST',
+      url: `/omnimux-workflow/api/workspaces/${workspaceId}/executions/${executionId}/${action}`,
+      headers: localHeaders,
+    });
+
+  return {
+    dir: root,
+    registered,
+    call,
+    openSse,
+    parseSse,
+    localHeaders,
+    createLinearWorkspace,
+    startExecution,
+    executionStatus,
+    executionAction,
+    dispose,
+  };
+}
+
+const waitUntil = async (predicate, { timeoutMs = 5000, intervalMs = 15 } = {}) => {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await predicate()) return true;
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  return false;
+};
+
+// ============================================================================
+
+test('execution API: create -> SSE full event sequence -> completed snapshot', async () => {
+  const h = makeHarness();
+  try {
+    const wsId = await h.createLinearWorkspace(3);
+    const created = await h.startExecution(wsId, { mode: 'full' });
+    assert.equal(created.status, 200);
+    const executionId = created.body.execution.id;
+    assert.equal(created.body.execution.totalNodes, 3);
+
+    const sse = await h.openSse({
+      url: `/omnimux-workflow/api/workspaces/${wsId}/executions/${executionId}/events`,
+      until: (raw) => raw.includes('event: execution_complete'),
+    });
+    assert.ok(sse.satisfied, 'SSE stream should reach execution_complete');
+    assert.match(sse.headers['Content-Type'], /text\/event-stream/);
+
+    const events = h.parseSse(sse.raw);
+    const names = events.map((e) => e.event);
+    assert.equal(names[0], 'execution_start', 'replay guarantees the full sequence');
+    assert.ok(names.includes('execution_complete'));
+
+    // Linear DAG + maxParallel: strict node order.
+    const starts = events.filter((e) => e.event === 'node_start').map((e) => e.data.nodeId);
+    const completes = events.filter((e) => e.event === 'node_complete').map((e) => e.data.nodeId);
+    assert.deepEqual(starts, ['n1', 'n2', 'n3']);
+    assert.deepEqual(completes, ['n1', 'n2', 'n3']);
+
+    // node_complete carries the mock gateway output.
+    const first = events.find((e) => e.event === 'node_complete');
+    assert.match(String(first.data.output?.text ?? ''), /mock 生成结果/);
+
+    // Final snapshot via GET.
+    const final = await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, executionId);
+      return status.body?.execution?.status === 'completed';
+    });
+    assert.ok(final, 'status snapshot should reach completed');
+    const snapshot = (await h.executionStatus(wsId, executionId)).body.execution;
+    assert.equal(snapshot.completedNodes, 3);
+    assert.equal(snapshot.progress.percentage, 100);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
+test('execution API: pause -> resume -> completes; cancel -> cancelled', async () => {
+  const h = makeHarness({ gatewayLatency: { minLatencyMs: 200, maxLatencyMs: 300 } });
+  try {
+    const wsId = await h.createLinearWorkspace(3);
+
+    // --- pause/resume ---
+    const created = await h.startExecution(wsId);
+    const execId = created.body.execution.id;
+    await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, execId);
+      return status.body?.execution?.status === 'running';
+    });
+    const paused = await h.executionAction(wsId, execId, 'pause');
+    assert.equal(paused.status, 200);
+    await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, execId);
+      return status.body?.execution?.status === 'paused';
+    });
+
+    const resumed = await h.executionAction(wsId, execId, 'resume');
+    assert.equal(resumed.status, 200);
+    const completed = await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, execId);
+      return status.body?.execution?.status === 'completed';
+    });
+    assert.ok(completed, 'resumed execution should complete');
+
+    // --- cancel ---
+    const created2 = await h.startExecution(wsId);
+    const execId2 = created2.body.execution.id;
+    await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, execId2);
+      return status.body?.execution?.status === 'running';
+    });
+    const cancelled = await h.executionAction(wsId, execId2, 'cancel');
+    assert.equal(cancelled.status, 200);
+    const cancelSettled = await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, execId2);
+      return status.body?.execution?.status === 'cancelled';
+    });
+    assert.ok(cancelSettled, 'cancelled execution should reach cancelled status');
+
+    // Cancel a terminal execution -> 409 invalid state.
+    const reCancel = await h.executionAction(wsId, execId2, 'cancel');
+    assert.equal(reCancel.status, 409);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
+test('execution API: subset mode runs only the induced subgraph', async () => {
+  const h = makeHarness();
+  try {
+    const wsId = await h.createLinearWorkspace(3);
+    // Subset on n2: closure { n1, n2 } — n3 stays out.
+    const created = await h.startExecution(wsId, { mode: 'subset', nodeIds: ['n2'] });
+    assert.equal(created.status, 200);
+    assert.equal(created.body.execution.totalNodes, 2);
+    const execId = created.body.execution.id;
+
+    const completed = await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, execId);
+      return status.body?.execution?.status === 'completed';
+    });
+    assert.ok(completed);
+    const snapshot = (await h.executionStatus(wsId, execId)).body.execution;
+    assert.deepEqual(Object.keys(snapshot.nodeStates).sort(), ['n1', 'n2']);
+    assert.equal(snapshot.nodeStates.n3, undefined, 'n3 excluded from the subset run');
+
+    // Invalid node id -> 400.
+    const bad = await h.startExecution(wsId, { mode: 'subset', nodeIds: ['nope'] });
+    assert.equal(bad.status, 400);
+
+    // Empty nodeIds in subset mode -> 400.
+    const empty = await h.startExecution(wsId, { mode: 'subset', nodeIds: [] });
+    assert.equal(empty.status, 400);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
+test('execution recovery: paused run survives dispose + remount and resumes', async () => {
+  const slowGateway = { gatewayLatency: { minLatencyMs: 150, maxLatencyMs: 250 } };
+  let h = makeHarness(slowGateway);
+  try {
+    const wsId = await h.createLinearWorkspace(3);
+    const created = await h.startExecution(wsId);
+    const execId = created.body.execution.id;
+
+    // Pause mid-run, then simulate a host crash: unmount everything.
+    await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, execId);
+      return status.body?.execution?.status === 'running';
+    });
+    await h.executionAction(wsId, execId, 'pause');
+    await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, execId);
+      return status.body?.execution?.status === 'paused';
+    });
+    h.dispose();
+
+    // Remount the SAME $DSH_HOME: recoverAll picks up the paused execution.
+    h = makeHarness({ ...slowGateway, dir: h.dir });
+
+    // The paused execution is readable after remount (persisted record).
+    const status = await h.executionStatus(wsId, execId);
+    assert.equal(status.status, 200);
+    assert.equal(status.body.execution.status, 'paused');
+
+    // SSE attach (recovered run, replay log covers pre-crash events), then
+    // resume finishes it end-to-end.
+    const sseRes = new FakeRes();
+    const sseHandler = (async () => {
+      // Reach into the harness: same handler both prefixes register.
+      const handler = h.registered[0].handler;
+      await handler(
+        fakeReq({
+          method: 'GET',
+          url: `/omnimux-workflow/api/workspaces/${wsId}/executions/${execId}/events`,
+          headers: h.localHeaders,
+        }),
+        sseRes,
+      );
+    })();
+    const replayed = await waitUntil(() =>
+      sseRes.state.body.includes('event: execution_paused'));
+    assert.ok(replayed, 'SSE replay should include pre-crash events');
+
+    const resumed = await h.executionAction(wsId, execId, 'resume');
+    assert.equal(resumed.status, 200);
+
+    const finished = await waitUntil(() =>
+      sseRes.state.body.includes('event: execution_complete'));
+    assert.ok(finished, 'recovered execution should stream execution_complete');
+    sseRes.destroy();
+    await sseHandler;
+
+    const events = h.parseSse(sseRes.state.body);
+    const names = events.map((e) => e.event);
+    assert.ok(names.includes('execution_start'), 'replay includes execution_start');
+    assert.ok(names.includes('execution_paused'), 'replay includes the pause');
+    assert.ok(names.includes('execution_resumed'));
+    assert.ok(names.includes('execution_complete'));
+    // Completed nodes were not re-run (exactly one execution_start overall).
+    assert.equal(names.filter((n) => n === 'execution_start').length, 1);
+
+    const finalStatus = await h.executionStatus(wsId, execId);
+    assert.equal(finalStatus.body.execution.status, 'completed');
+    assert.equal(finalStatus.body.execution.completedNodes, 3);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
+test('execution API: legacy /dsh-workflow prefix serves executions too', async () => {
+  const h = makeHarness();
+  try {
+    const created = await h.call({
+      method: 'POST',
+      url: '/dsh-workflow/api/workspaces',
+      body: { name: 'legacy' },
+      headers: h.localHeaders,
+    });
+    const wsId = created.body.workspace.id;
+    await h.call({
+      method: 'PUT',
+      url: `/dsh-workflow/api/workspaces/${wsId}`,
+      body: {
+        expectedVersion: 0,
+        nodes: [
+          {
+            id: 'n1',
+            type: 'material',
+            position: { x: 0, y: 0 },
+            data: { label: 'n1', materialType: 'text', selectedTool: 'text-to-text', prompt: 'p' },
+          },
+        ],
+        edges: [],
+      },
+      headers: h.localHeaders,
+    });
+    const exec = await h.call({
+      method: 'POST',
+      url: `/dsh-workflow/api/workspaces/${wsId}/executions`,
+      body: { mode: 'full' },
+      headers: h.localHeaders,
+    });
+    assert.equal(exec.status, 200);
+    const execId = exec.body.execution.id;
+
+    const list = await h.call({
+      url: `/dsh-workflow/api/workspaces/${wsId}/executions`,
+      headers: h.localHeaders,
+    });
+    assert.equal(list.status, 200);
+    assert.ok(Array.isArray(list.body.executions));
+
+    const completed = await waitUntil(async () => {
+      const status = await h.call({
+        url: `/dsh-workflow/api/workspaces/${wsId}/executions/${execId}`,
+        headers: h.localHeaders,
+      });
+      return status.body?.execution?.status === 'completed';
+    });
+    assert.ok(completed, 'legacy prefix execution should complete');
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});

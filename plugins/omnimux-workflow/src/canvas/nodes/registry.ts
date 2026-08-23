@@ -1,5 +1,5 @@
 /**
- * ★ Extension point: node type registry (canvas island side).
+ * NOTE: Extension point: node type registry (canvas island side).
  *
  * Adding a new node type never touches CanvasEditor: register a
  * NodeDefinition here (see docs/contracts/adding-a-node.md). The editor

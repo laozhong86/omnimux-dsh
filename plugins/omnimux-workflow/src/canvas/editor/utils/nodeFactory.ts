@@ -11,7 +11,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { createNode } from '../../nodes/registry';
 import {
   createDefaultMaterialNodeData,
-  getMaterialTypeLabel,
   type MaterialType,
 } from '../../types/materialNode';
 import { getDefaultNodeWidth } from './nodeSizeConfig';
@@ -30,8 +29,8 @@ export function createMaterialNode(
   const id = uuidv4();
   const base = createNode('material', position, id);
   if (!base) return { nodes: [], edges: [] };
+  // label 留空：NodeHeader 回退 i18n 类型名（随宿主语言切换）。
   const data = createDefaultMaterialNodeData(materialType, {
-    label: getMaterialTypeLabel(materialType),
     status: 'empty',
     nodeWidth: getDefaultNodeWidth(materialType),
   });

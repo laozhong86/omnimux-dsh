@@ -7,7 +7,8 @@
  */
 
 import { getOutgoers, type Edge, type Node, type Connection } from '@xyflow/react';
-import { isNodeConnectionValid } from './connectionConfig';
+// 显式 .ts 扩展名：node --test 的 type-stripping 不做 TS 扩展名解析
+import { isNodeConnectionValid } from './connectionConfig.ts';
 
 export interface CanvasConnectionStructureValidation {
   valid: boolean;

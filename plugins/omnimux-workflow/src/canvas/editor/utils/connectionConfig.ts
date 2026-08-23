@@ -10,102 +10,46 @@ import {
   MATERIAL_TOOL_INPUT_TYPES,
   type MaterialType,
   type MaterialTool,
-} from '../../types/materialNode';
+// 显式 .ts 扩展名：node --test 的 type-stripping 不做 TS 扩展名解析
+} from '../../types/materialNode.ts';
 
 // ==================== 输出选项 ====================
-
-export interface OutputOption {
-  key: string;
-  label: string;
-  icon?: string;
-  description?: string;
-}
 
 export interface MaterialOutputOption {
   targetMaterialType: MaterialType;
   targetTool: MaterialTool | string;
-  label: string;
   icon?: string;
-  description?: string;
 }
 
 /**
- * MaterialNode 素材类型到输出选项的映射（原样保留）
+ * MaterialNode 素材类型到输出选项的映射（结构原样保留；label/desc 文案
+ * 已入 i18n 字典 menu.option.*，由 connectionMenuOptions 按 key 派生）。
  */
 const MATERIAL_OUTPUT_OPTIONS: Record<MaterialType, MaterialOutputOption[]> = {
   text: [
-    { targetMaterialType: 'text', targetTool: 'text-to-text', label: 'AI 文本生成', icon: 'TextGen', description: '基于文本生成新文本' },
-    { targetMaterialType: 'image', targetTool: 'text-to-image', label: '文生图', icon: 'ImageGen', description: '根据文本生成图片' },
-    { targetMaterialType: 'video', targetTool: 'video-generation', label: '视频生成', icon: 'VideoGen', description: '根据文本生成视频' },
-    { targetMaterialType: 'audio', targetTool: 'text-to-audio', label: '音频生成', icon: 'AudioLines', description: '根据文本生成音效' },
+    { targetMaterialType: 'text', targetTool: 'text-to-text', icon: 'TextGen' },
+    { targetMaterialType: 'image', targetTool: 'text-to-image', icon: 'ImageGen' },
+    { targetMaterialType: 'video', targetTool: 'video-generation', icon: 'VideoGen' },
+    { targetMaterialType: 'audio', targetTool: 'text-to-audio', icon: 'AudioLines' },
   ],
   image: [
-    { targetMaterialType: 'image', targetTool: 'image-to-image', label: '图生图', icon: 'ImageGen', description: '以图生图、风格迁移' },
-    { targetMaterialType: 'video', targetTool: 'video-generation', label: '图生视频', icon: 'VideoGen', description: '图片转视频、动态效果' },
+    { targetMaterialType: 'image', targetTool: 'image-to-image', icon: 'ImageGen' },
+    { targetMaterialType: 'video', targetTool: 'video-generation', icon: 'VideoGen' },
   ],
   video: [
-    { targetMaterialType: 'text', targetTool: 'text-to-text', label: '文本', icon: 'TextGen', description: '基于视频生成文本' },
-    { targetMaterialType: 'video', targetTool: 'video-generation', label: '视频', icon: 'VideoGen', description: '基于视频参考生成新视频' },
-    { targetMaterialType: 'video', targetTool: 'motion-mimicry', label: '动作模仿', icon: 'PersonStanding', description: '动作迁移、姿态复制' },
+    { targetMaterialType: 'text', targetTool: 'text-to-text', icon: 'TextGen' },
+    { targetMaterialType: 'video', targetTool: 'video-generation', icon: 'VideoGen' },
+    { targetMaterialType: 'video', targetTool: 'motion-mimicry', icon: 'PersonStanding' },
   ],
   audio: [
-    { targetMaterialType: 'video', targetTool: 'video-generation', label: '视频生成', icon: 'VideoGen', description: '为视频添加背景音乐' },
-    { targetMaterialType: 'audio', targetTool: 'voice-clone', label: '声音克隆', icon: 'Mic', description: '复制音色、语音合成' },
-    { targetMaterialType: 'text', targetTool: 'audio-transcription', label: '语音转文字', icon: 'TextGen', description: '语音识别、字幕生成' },
+    { targetMaterialType: 'video', targetTool: 'video-generation', icon: 'VideoGen' },
+    { targetMaterialType: 'audio', targetTool: 'voice-clone', icon: 'Mic' },
+    { targetMaterialType: 'text', targetTool: 'audio-transcription', icon: 'TextGen' },
   ],
 };
 
 export function getOutputOptionsForMaterialNode(materialType: MaterialType): MaterialOutputOption[] {
   return MATERIAL_OUTPUT_OPTIONS[materialType] ?? [];
-}
-
-// ==================== 输入选项 ====================
-
-export interface MaterialInputOption {
-  inputMaterialType: MaterialType;
-  label: string;
-  icon?: string;
-  description?: string;
-}
-
-const MATERIAL_INPUT_OPTIONS: Partial<Record<MaterialTool, MaterialInputOption[]>> = {
-  'text-to-text': [
-    { inputMaterialType: 'text', label: '文本', icon: 'TextGen', description: '添加文本作为上下文' },
-    { inputMaterialType: 'image', label: '图片', icon: 'ImageGen', description: '添加参考图片' },
-    { inputMaterialType: 'video', label: '视频', icon: 'VideoGen', description: '添加参考视频' },
-  ],
-  'text-to-image': [
-    { inputMaterialType: 'text', label: '文本', icon: 'TextGen', description: '添加提示词' },
-  ],
-  'image-to-image': [
-    { inputMaterialType: 'text', label: '文本', icon: 'TextGen', description: '添加提示词' },
-    { inputMaterialType: 'image', label: '图片', icon: 'ImageGen', description: '添加参考图片' },
-  ],
-  'video-generation': [
-    { inputMaterialType: 'text', label: '文本', icon: 'TextGen', description: '添加提示词' },
-    { inputMaterialType: 'image', label: '图片', icon: 'ImageGen', description: '添加参考图片（自动切换模式）' },
-    { inputMaterialType: 'video', label: '视频', icon: 'VideoGen', description: '添加参考视频（动作/镜头/构图）' },
-    { inputMaterialType: 'audio', label: '音频', icon: 'AudioLines', description: '添加驱动音频或节奏参考' },
-  ],
-  'motion-mimicry': [
-    { inputMaterialType: 'text', label: '文本', icon: 'TextGen', description: '添加提示词' },
-    { inputMaterialType: 'image', label: '图片', icon: 'ImageGen', description: '添加人物图片' },
-    { inputMaterialType: 'video', label: '视频', icon: 'VideoGen', description: '添加动作参考视频' },
-  ],
-  'text-to-audio': [
-    { inputMaterialType: 'text', label: '文本', icon: 'TextGen', description: '添加提示词' },
-  ],
-  'voice-clone': [
-    { inputMaterialType: 'text', label: '文本', icon: 'TextGen', description: '添加要朗读的文本' },
-    { inputMaterialType: 'audio', label: '音频', icon: 'AudioLines', description: '添加声音样本' },
-  ],
-  'audio-transcription': [
-    { inputMaterialType: 'audio', label: '音频', icon: 'AudioLines', description: '添加要转录的音频' },
-  ],
-};
-
-export function getInputOptionsForMaterialNode(selectedTool: MaterialTool): MaterialInputOption[] {
-  return MATERIAL_INPUT_OPTIONS[selectedTool] ?? [];
 }
 
 // ==================== 连接校验工具函数 ====================

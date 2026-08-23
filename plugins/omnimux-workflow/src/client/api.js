@@ -36,3 +36,63 @@ export async function fetchCanvasHash() {
     return null
   }
 }
+
+// ============================================================================
+// 项目库 API。作用域 = host 解析的默认库，不再传 cwd。
+// ============================================================================
+
+/**
+ * @typedef {{ id: string, title: string, updatedAt: string, sessionId: string | null, path?: string }} ProjectSummary
+ * @typedef {{ id: string, title: string, createdAt: string, updatedAt: string, sessionId: string | null, canvasWorkspaceIds: string[], path?: string }} Project
+ */
+
+/** Host 解析 videos + ensure OmniMux/Projects。 */
+export function fetchProjectLibrary() {
+  return workflowRequest('/omnimux-workflow/api/projects/library')
+}
+
+/** 扫描默认库下一层含合法 project.json 的文件夹。 */
+export function listProjects() {
+  return workflowRequest('/omnimux-workflow/api/projects')
+}
+
+/**
+ * Host 在默认库 mkdir + 写 说明.md / project.json。
+ * 可选 projectRoot：已存在的作品包路径（打开已有文件夹时种子）。
+ * @param {string} title
+ * @param {string | null} [sessionId]
+ * @param {string} [projectRoot]
+ */
+export function createProject(title, sessionId = null, projectRoot) {
+  return workflowRequest('/omnimux-workflow/api/projects', {
+    method: 'POST',
+    body: {
+      title,
+      sessionId,
+      ...(typeof projectRoot === 'string' && projectRoot !== '' ? { projectRoot } : {}),
+    },
+  })
+}
+
+/** 重命名项目（展示名；不改文件夹名）。 */
+export function renameProject(id, title) {
+  return workflowRequest(`/omnimux-workflow/api/projects/${id}`, {
+    method: 'PATCH',
+    body: { title },
+  })
+}
+
+/** 回写会话绑定。 */
+export function bindProjectSession(id, sessionId) {
+  return workflowRequest(`/omnimux-workflow/api/projects/${id}`, {
+    method: 'PATCH',
+    body: { sessionId },
+  })
+}
+
+/** 删除：只摘元数据。 */
+export function deleteProject(id) {
+  return workflowRequest(`/omnimux-workflow/api/projects/${id}`, {
+    method: 'DELETE',
+  })
+}
