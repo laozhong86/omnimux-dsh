@@ -1,0 +1,306 @@
+import { readFileSync } from 'node:fs';
+import { clamp, fetchSkillCard, parseSlug, searchSkills } from './api.js';
+import { parseCategory } from './categories.js';
+import { assignConfig, dshHome, publicConfig, sanitizePatch, sanitizeSortBy, writeOverlay } from './config-store.js';
+import { configureHttpJsonCache } from './http.js';
+import { BOOT_ID, progress, publicInstallStatus } from './dsh-cli.js';
+import { decorateCatalog, loadCatalog } from './expert/catalog.js';
+import { findItem, installItem, removeMcpRow } from './expert/install.js';
+import { packageRoot, profileDir } from './expert/paths.js';
+import { summonItem } from './expert/summon.js';
+import { writeSessionExpert } from './session-attach.js';
+import { fetchBytes } from './http.js';
+import { installSkill, installedSlugs, listInstalled, uninstallSkill } from './install.js';
+import { listMarketplaceConnectors, resolveMarketplaceIconFile } from './marketplace-connectors.js';
+import { installMarketPlugin, isPluginInstallBusy, listPluginCategories, listPlugins, withPluginInstallLock } from './plugin-market.js';
+import { scheduleRestart, servingPort, trustedRestartRequest } from './restart.js';
+import { fetchEvalScore, fetchSkillTab } from './skill-detail.js';
+let restarting = false;
+export async function handleApi(req, res, cfg) {
+    try {
+        const url = new URL(req.url || '/', 'http://127.0.0.1');
+        const body = req.method === 'POST' ? await readBody(req) : {};
+        const method = String(body.method || url.searchParams.get('method') || 'search');
+        if (method === 'search') {
+            const query = String(body.query || url.searchParams.get('query') || '').trim();
+            const category = parseCategory(body.category || url.searchParams.get('category'));
+            const explicit = Number(body.limit);
+            const limit = Number.isFinite(explicit) && explicit > 0 ? clamp(explicit, 1, 80) : cfg.maxResults;
+            const offset = Math.max(0, Math.floor(Number(body.offset) || 0));
+            const installed = await installedSlugs(cfg.skillsDir);
+            const result = await searchSkills(query, {
+                cfg,
+                queries: body.queries,
+                category,
+                sortBy: sanitizeSortBy(body.sortBy, query ? cfg.sortBy : 'downloads'),
+                limit,
+                offset,
+                installed,
+            });
+            // P0：评分惰性 SWR —— 不 await，不挡 search 返回。失败静默。
+            void attachRatings(result.items, cfg).catch(() => { });
+            return sendJson(res, 200, { ok: true, ...result });
+        }
+        if (method === 'ratings') {
+            const rawSlugs = Array.isArray(body.slugs) ? body.slugs : String(body.slugs || url.searchParams.get('slugs') || '').split(',');
+            const slugs = rawSlugs.map((s) => String(s || '').trim()).filter(Boolean).slice(0, 24);
+            const ratings = {};
+            await Promise.all(slugs.map(async (slug) => {
+                try {
+                    const score = await fetchEvalScore(slug, cfg);
+                    if (score != null)
+                        ratings[slug] = score;
+                }
+                catch { /* skip */ }
+            }));
+            return sendJson(res, 200, { ok: true, ratings });
+        }
+        if (method === 'install') {
+            const slug = String(body.slug || url.searchParams.get('slug') || '').trim();
+            if (!slug)
+                return sendJson(res, 400, { ok: false, error: '缺少 slug' });
+            const version = String(body.version || url.searchParams.get('version') || '').trim();
+            const result = await installSkill(slug, cfg, undefined, undefined, version || undefined);
+            return sendJson(res, 200, { ok: true, ...result });
+        }
+        if (method === 'list') {
+            const items = await listInstalled(cfg.skillsDir);
+            return sendJson(res, 200, { ok: true, skillsDir: cfg.skillsDir, items });
+        }
+        if (method === 'uninstall') {
+            const slug = String(body.slug || url.searchParams.get('slug') || '').trim();
+            if (!slug)
+                return sendJson(res, 400, { ok: false, error: '缺少 slug' });
+            const result = await uninstallSkill(slug, cfg.skillsDir);
+            return sendJson(res, 200, { ok: true, ...result });
+        }
+        if (method === 'config') {
+            if (body.save) {
+                assignConfig(cfg, sanitizePatch(body));
+                writeOverlay(cfg);
+                configureHttpJsonCache({ ttlMs: Math.max(15, cfg.plazaCacheTtlSec) * 1000 });
+            }
+            return sendJson(res, 200, { ok: true, ...publicConfig(cfg) });
+        }
+        if (method === 'updateCheck') {
+            // fork 已分叉（改名 omnimux-market）：上游 release 会覆盖改名，自更新禁用。
+            // 客户端更新提示由响应里的 latest 字段驱动，这里不返回它即可自然隐藏。
+            return sendJson(res, 200, { ok: true, disabled: true, reason: 'fork 已禁用自更新，更新走 omnimux-dsh 仓库' });
+        }
+        if (method === 'update') {
+            return sendJson(res, 200, { ok: true, disabled: true, reason: 'fork 已禁用自更新，更新走 omnimux-dsh 仓库' });
+        }
+        if (method === 'pluginCategories') {
+            const items = await listPluginCategories(cfg);
+            return sendJson(res, 200, { ok: true, items });
+        }
+        if (method === 'plugins') {
+            const result = await listPlugins(cfg, {
+                q: body.q ?? body.query ?? url.searchParams.get('q'),
+                scope: body.scope ?? url.searchParams.get('scope'),
+                category: body.category ?? url.searchParams.get('category'),
+                sort: body.sort ?? url.searchParams.get('sort'),
+                page: body.page ?? url.searchParams.get('page'),
+                pageSize: body.pageSize ?? body.limit ?? url.searchParams.get('page_size') ?? url.searchParams.get('pageSize'),
+            });
+            return sendJson(res, 200, { ok: true, ...result });
+        }
+        if (method === 'pluginInstall') {
+            const result = await withPluginInstallLock(() => installMarketPlugin({
+                owner: body.owner ?? url.searchParams.get('owner'),
+                name: body.name ?? url.searchParams.get('name'),
+                fullName: body.fullName ?? url.searchParams.get('fullName'),
+            }, cfg));
+            return sendJson(res, 200, { ok: true, ...result });
+        }
+        if (method === 'pluginInstallStatus') {
+            return sendJson(res, 200, {
+                ok: true,
+                ...publicInstallStatus(),
+                busy: isPluginInstallBusy() || progress.active,
+                restart: true,
+                boot: BOOT_ID,
+            });
+        }
+        if (method === 'pluginRestart') {
+            if (!trustedRestartRequest(req))
+                return sendJson(res, 403, { ok: false, error: 'restart is limited to same-origin requests' });
+            if (isPluginInstallBusy() || progress.active)
+                return sendJson(res, 409, { ok: false, error: 'cannot restart while a plugin operation is running' });
+            if (restarting)
+                return sendJson(res, 409, { ok: false, error: 'restart already scheduled' });
+            restarting = true;
+            try {
+                const result = scheduleRestart(servingPort(req));
+                return sendJson(res, 202, { ok: true, pid: result.pid, helperPid: result.helperPid, via: result.via });
+            }
+            catch (err) {
+                restarting = false;
+                throw err;
+            }
+        }
+        if (method === 'detail') {
+            const slug = parseSlug(String(body.slug || url.searchParams.get('slug') || ''));
+            const installed = await installedSlugs(cfg.skillsDir);
+            const [card, rating] = await Promise.all([
+                fetchSkillCard(slug, cfg, installed),
+                fetchEvalScore(slug, cfg),
+            ]);
+            if (card && rating != null)
+                card.rating = rating;
+            return sendJson(res, 200, {
+                ok: true,
+                slug,
+                installed: installed.has(slug),
+                version: card?.version || '',
+                card,
+            });
+        }
+        if (method === 'skillTab') {
+            const slug = parseSlug(String(body.slug || url.searchParams.get('slug') || ''));
+            const tab = String(body.tab || url.searchParams.get('tab') || '').trim();
+            if (!tab)
+                return sendJson(res, 400, { ok: false, error: '缺少 tab' });
+            const result = await fetchSkillTab(slug, tab, cfg);
+            return sendJson(res, 200, { ok: true, slug, ...result });
+        }
+        if (method === 'experts') {
+            const doc = decorateCatalog(loadCatalog(), expertRoots());
+            const titles = new Map(doc.categories.map((c) => [c.id, c.title]));
+            const items = doc.items
+                .filter((it) => it.tab === 'experts')
+                .map((it) => catalogCard(it, titles.get(String(it.category)) || ''));
+            const categories = doc.categories.filter((c) => c.tab === 'experts');
+            return sendJson(res, 200, { ok: true, items, categories });
+        }
+        if (method === 'connectors') {
+            // P0：广场连接器 Tab 读 WorkBuddy 本地市场全量，不过滤 visible_in。
+            // 安装仍属下一刀；本接口只负责展示。
+            const { items, categories } = listMarketplaceConnectors();
+            return sendJson(res, 200, { ok: true, items, categories, source: 'workbuddy-marketplace' });
+        }
+        if (method === 'catalogInstall') {
+            const id = String(body.id || url.searchParams.get('id') || '').trim();
+            if (!id)
+                return sendJson(res, 400, { ok: false, error: '缺少 id' });
+            const result = installItem({ catalog: loadCatalog(), id, ...expertRoots() });
+            return sendJson(res, 200, { ok: true, ...result });
+        }
+        if (method === 'catalogSummon') {
+            const id = String(body.id || url.searchParams.get('id') || '').trim();
+            if (!id)
+                return sendJson(res, 400, { ok: false, error: '缺少 id' });
+            const sessionState = body.sessionState === 'blank' ? 'blank' : 'locked';
+            const catalog = loadCatalog();
+            const item = findItem(catalog, id);
+            const result = summonItem({ catalog, id, sessionState, ...expertRoots() });
+            const sessionId = String(body.sessionId || url.searchParams.get('sessionId') || '').trim();
+            let attached = false;
+            if (sessionId && result.skill) {
+                writeSessionExpert(expertRoots().home, sessionId, {
+                    id: String(result.id || id),
+                    skill: String(result.skill),
+                    title: String(item?.title || result.id || id),
+                    kind: String(item?.kind || 'expert'),
+                });
+                attached = true;
+            }
+            return sendJson(res, 200, { ok: true, ...result, attached, sessionId: attached ? sessionId : '' });
+        }
+        if (method === 'catalogUninstall') {
+            const id = String(body.id || url.searchParams.get('id') || '').trim();
+            if (!id)
+                return sendJson(res, 400, { ok: false, error: '缺少 id' });
+            const item = findItem(loadCatalog(), id);
+            if (!item)
+                return sendJson(res, 400, { ok: false, error: `unknown item ${id}` });
+            // 本期只支持连接器卸载（删托管段 MCP 行）；专家/技能卸载留给后续版本
+            if (item.kind !== 'connector')
+                return sendJson(res, 400, { ok: false, error: `item ${id} is not a connector` });
+            removeMcpRow(expertRoots().profileDir, item);
+            return sendJson(res, 200, { ok: true, id, installed: false, kind: 'connector' });
+        }
+        sendJson(res, 400, { ok: false, error: 'unknown method' });
+    }
+    catch (err) {
+        sendJson(res, 500, { ok: false, error: err instanceof Error ? err.message : String(err) });
+    }
+}
+export async function handleIcon(req, res, cfg) {
+    try {
+        const url = new URL(req.url || '/', 'http://127.0.0.1');
+        const target = url.searchParams.get('url') || '';
+        // 本地市场 icons/<id>.* —— 只读 marketplace-icon:<id>，禁止任意路径。
+        const local = resolveMarketplaceIconFile(target);
+        if (local) {
+            const body = readFileSync(local.path);
+            res.statusCode = 200;
+            res.setHeader('content-type', local.contentType);
+            res.setHeader('cache-control', 'public, max-age=3600');
+            res.end(body);
+            return;
+        }
+        if (!/^https:\/\//i.test(target)) {
+            res.statusCode = 400;
+            res.end('bad url');
+            return;
+        }
+        const { body, contentType } = await fetchBytes(target, { timeoutMs: Math.min(cfg.timeoutMs, 15000), userAgent: cfg.userAgent });
+        res.statusCode = 200;
+        res.setHeader('content-type', contentType.startsWith('image/') ? contentType : 'image/png');
+        res.setHeader('cache-control', 'public, max-age=3600');
+        res.end(body);
+    }
+    catch (err) {
+        res.statusCode = 502;
+        res.end(err instanceof Error ? err.message : 'icon failed');
+    }
+}
+async function attachRatings(items, cfg) {
+    await Promise.all(items.slice(0, 24).map(async (it) => {
+        const rating = await fetchEvalScore(it.slug, cfg);
+        if (rating != null)
+            it.rating = rating;
+    }));
+}
+/** Roots the bundled catalog installs against: DSH home, target profile, package root. */
+function expertRoots() {
+    const home = dshHome();
+    return { home, profileDir: profileDir(home), packageRoot: packageRoot() };
+}
+/** Map one bundled-catalog item onto the shared card shape the client renders. */
+function catalogCard(item, categoryTitle) {
+    const subtitle = typeof item.subtitle === 'string' ? item.subtitle : '';
+    const summary = typeof item.summary === 'string' ? item.summary : '';
+    return {
+        id: item.id,
+        slug: item.id,
+        name: item.title,
+        description: subtitle ? `${subtitle} · ${summary}` : summary,
+        iconUrl: item.avatar || '',
+        category: item.category,
+        categoryLabel: categoryTitle,
+        installed: item.installed === true,
+        kind: item.kind,
+        gesture: item.skill ? `/${item.skill}` : '',
+    };
+}
+async function readBody(req) {
+    const chunks = [];
+    for await (const c of req)
+        chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c));
+    const raw = Buffer.concat(chunks).toString('utf8').trim();
+    if (!raw)
+        return {};
+    try {
+        return JSON.parse(raw);
+    }
+    catch {
+        return {};
+    }
+}
+function sendJson(res, code, body) {
+    res.statusCode = code;
+    res.setHeader('content-type', 'application/json; charset=utf-8');
+    res.end(JSON.stringify(body));
+}
