@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AccountCard } from './AccountCard.jsx'
 import { AccountTable } from './AccountTable.jsx'
 import { ConnectModal } from './ConnectModal.jsx'
@@ -30,9 +30,13 @@ function readStoredView() {
  * Accounts page body: overview strip + filter toolbar + card grid or table,
  * connect dialog, bulk-selection bar, loading skeleton, need-login gate,
  * error bar and empty state.
- * @param {{ t: (key: string) => string }} props
+ *
+ * `active` is first-level page visibility. The overlay stays mounted while
+ * hidden so the list does not flash a skeleton on the next open; the connect
+ * dialog, confirm popover and transient notice are dropped on hide.
+ * @param {{ t: (key: string) => string, active?: boolean }} props
  */
-export function AccountsSection({ t }) {
+export function AccountsSection({ t, active = true }) {
   useEffect(() => {
     injectAccountsStyles()
   }, [])
@@ -49,6 +53,7 @@ export function AccountsSection({ t }) {
   const [bulkProgress, setBulkProgress] = useState(null) // null | { done, total }
   const [confirmBulk, setConfirmBulk] = useState(false)
   const [sectionError, setSectionError] = useState('') // bulk failures; hook errors ride `error`
+  const wasActive = useRef(active)
 
   useEffect(() => {
     try {
@@ -63,6 +68,22 @@ export function AccountsSection({ t }) {
     const timer = window.setTimeout(() => { setNotice('') }, NOTICE_TIMEOUT_MS)
     return () => { window.clearTimeout(timer) }
   }, [notice])
+
+  // Hidden overlay: drop floating UI so it does not come back on the next
+  // open. Re-opening after a hide quietly refreshes without a skeleton
+  // (`useAccounts` already fetched on first mount).
+  useEffect(() => {
+    const returning = active && !wasActive.current
+    wasActive.current = active
+    if (!active) {
+      setModalOpen(false)
+      setConfirmBulk(false)
+      setNotice('')
+      return undefined
+    }
+    if (returning) void refresh()
+    return undefined
+  }, [active, refresh])
 
   // Drop selection entries whose accounts disappeared (disconnect / refresh).
   useEffect(() => {
@@ -223,10 +244,24 @@ export function AccountsSection({ t }) {
   }
 
   if (phase === 'need-login') {
+    const signIn = () => {
+      const gate = typeof window !== 'undefined' ? /** @type {any} */ (window).__omnimuxAuth : undefined
+      if (gate && typeof gate.ensureLogin === 'function') {
+        gate.ensureLogin({
+          reason: t('needLogin'),
+          onSuccess: () => { void refresh() },
+        })
+      } else {
+        void refresh()
+      }
+    }
     return (
       <div className="omnimux-accounts-root">
         <p className="omnimux-accounts-muted">{t('needLogin')}</p>
         <p className="omnimux-accounts-muted">{t('needLoginHint')}</p>
+        <button type="button" className="omnimux-accounts-cta" onClick={signIn}>
+          {t('login')}
+        </button>
       </div>
     )
   }

@@ -788,6 +788,28 @@ async function accountsRequest(path, opts = {}) {
   }
   return { ok: response.ok, status: response.status, body: json };
 }
+function authGuard(fn) {
+  return (...args) => {
+    const run = async () => {
+      const result = await fn(...args);
+      if (result.status !== 401) return result;
+      const gate = typeof window !== "undefined" ? (
+        /** @type {any} */
+        window.__omnimuxAuth
+      ) : void 0;
+      if (!gate || typeof gate.ensureLogin !== "function") return result;
+      return new Promise((resolve, reject) => {
+        gate.ensureLogin({
+          onSuccess: () => {
+            fn(...args).then(resolve, reject);
+          },
+          onCancel: () => resolve(result)
+        });
+      });
+    };
+    return run();
+  };
+}
 function listAccounts(filters = {}) {
   const query = new URLSearchParams();
   if (filters.platform) query.set("platform", filters.platform);
@@ -795,15 +817,9 @@ function listAccounts(filters = {}) {
   const suffix = query.toString() ? `?${query}` : "";
   return accountsRequest(`/omnimux/accounts${suffix}`);
 }
-function connectAccount(platform) {
-  return accountsRequest("/omnimux/accounts", { method: "POST", body: { platform } });
-}
-function disconnectAccount(id) {
-  return accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: "DELETE" });
-}
-function patchAccount(id, body) {
-  return accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: "PATCH", body });
-}
+var connectAccount = authGuard((platform) => accountsRequest("/omnimux/accounts", { method: "POST", body: { platform } }));
+var disconnectAccount = authGuard((id) => accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: "DELETE" }));
+var patchAccount = authGuard((id, body) => accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: "PATCH", body }));
 
 // src/client/ConnectModal.jsx
 var import_jsx_runtime5 = require("react/jsx-runtime");
@@ -1205,26 +1221,30 @@ function OverviewBar({ t, summary, onFilterClick, busy = "" }) {
 // src/client/use-accounts.js
 var import_react4 = require("react");
 var WATCH_POLL_MS = 5e3;
+var sessionCache = { phase: "loading", accounts: [] };
 function useAccounts() {
-  const [phase, setPhase] = (0, import_react4.useState)("loading");
-  const [accounts, setAccounts] = (0, import_react4.useState)([]);
+  const [phase, setPhase] = (0, import_react4.useState)(sessionCache.phase);
+  const [accounts, setAccounts] = (0, import_react4.useState)(sessionCache.accounts);
   const [error, setError] = (0, import_react4.useState)("");
   const [busy, setBusy] = (0, import_react4.useState)("");
-  const accountsRef = (0, import_react4.useRef)([]);
+  const accountsRef = (0, import_react4.useRef)(sessionCache.accounts);
   const watchRef = (0, import_react4.useRef)(null);
   const commitAccounts = (0, import_react4.useCallback)((next) => {
     const rows = Array.isArray(next) ? next : [];
     accountsRef.current = rows;
+    sessionCache.accounts = rows;
     setAccounts(rows);
   }, []);
   const applyListResult = (0, import_react4.useCallback)((result) => {
     if (result.status === 401) {
+      sessionCache.phase = "need-login";
       setPhase("need-login");
       commitAccounts([]);
       return true;
     }
     if (!result.ok) {
       setError(String(result.body && typeof result.body === "object" && result.body.error || `HTTP ${String(result.status)}`));
+      sessionCache.phase = "ready";
       setPhase("ready");
       return true;
     }
@@ -1234,12 +1254,14 @@ function useAccounts() {
     ) : {};
     setError("");
     commitAccounts(Array.isArray(body.accounts) ? body.accounts : []);
+    sessionCache.phase = "ready";
     setPhase("ready");
     return true;
   }, [commitAccounts]);
   const refresh = (0, import_react4.useCallback)(() => {
     return listAccounts().then(applyListResult).catch((caught) => {
       setError(caught instanceof Error ? caught.message : String(caught));
+      sessionCache.phase = "ready";
       setPhase("ready");
       return true;
     });
@@ -1321,6 +1343,7 @@ function useAccounts() {
     commitAccounts(previous.map((row) => String(row.id) === key ? optimistic : row));
     return patchAccount(key, body).then((result) => {
       if (result.status === 401) {
+        sessionCache.phase = "need-login";
         setPhase("need-login");
         return false;
       }
@@ -1353,6 +1376,7 @@ function useAccounts() {
     setError("");
     return disconnectAccount(key).then((result) => {
       if (result.status === 401) {
+        sessionCache.phase = "need-login";
         setPhase("need-login");
         return false;
       }
@@ -2143,7 +2167,7 @@ function readStoredView() {
     return "grid";
   }
 }
-function AccountsSection({ t }) {
+function AccountsSection({ t, active = true }) {
   (0, import_react5.useEffect)(() => {
     injectAccountsStyles();
   }, []);
@@ -2158,6 +2182,7 @@ function AccountsSection({ t }) {
   const [bulkProgress, setBulkProgress] = (0, import_react5.useState)(null);
   const [confirmBulk, setConfirmBulk] = (0, import_react5.useState)(false);
   const [sectionError, setSectionError] = (0, import_react5.useState)("");
+  const wasActive = (0, import_react5.useRef)(active);
   (0, import_react5.useEffect)(() => {
     try {
       window.localStorage.setItem(VIEW_STORAGE_KEY, view);
@@ -2173,6 +2198,18 @@ function AccountsSection({ t }) {
       window.clearTimeout(timer);
     };
   }, [notice]);
+  (0, import_react5.useEffect)(() => {
+    const returning = active && !wasActive.current;
+    wasActive.current = active;
+    if (!active) {
+      setModalOpen(false);
+      setConfirmBulk(false);
+      setNotice("");
+      return void 0;
+    }
+    if (returning) void refresh();
+    return void 0;
+  }, [active, refresh]);
   (0, import_react5.useEffect)(() => {
     setSelected((current) => {
       const alive = new Set(accounts.map((row) => String(row.id)));
@@ -2291,9 +2328,26 @@ function AccountsSection({ t }) {
     return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "omnimux-accounts-root", role: "status", "aria-label": t("loading"), children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "omnimux-accounts-skeleton", "aria-hidden": "true", children: Array.from({ length: SKELETON_CARDS }, (_, index) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "omnimux-accounts-skeleton-card" }, index)) }) });
   }
   if (phase === "need-login") {
+    const signIn = () => {
+      const gate = typeof window !== "undefined" ? (
+        /** @type {any} */
+        window.__omnimuxAuth
+      ) : void 0;
+      if (gate && typeof gate.ensureLogin === "function") {
+        gate.ensureLogin({
+          reason: t("needLogin"),
+          onSuccess: () => {
+            void refresh();
+          }
+        });
+      } else {
+        void refresh();
+      }
+    };
     return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "omnimux-accounts-root", children: [
       /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { className: "omnimux-accounts-muted", children: t("needLogin") }),
-      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { className: "omnimux-accounts-muted", children: t("needLoginHint") })
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { className: "omnimux-accounts-muted", children: t("needLoginHint") }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { type: "button", className: "omnimux-accounts-cta", onClick: signIn, children: t("login") })
     ] });
   }
   const errorText = sectionError !== "" ? sectionError : error;
@@ -2471,24 +2525,32 @@ function AccountsStage({ t, stage }) {
     },
     stage ? stage.getSnapshot : () => false
   );
-  const [box, setBox] = (0, import_react6.useState)(() => stage.readBox());
+  const [everOpened, setEverOpened] = (0, import_react6.useState)(false);
+  const [box, setBox] = (0, import_react6.useState)(() => stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 });
+  if (open && !everOpened) setEverOpened(true);
   (0, import_react6.useLayoutEffect)(() => {
-    if (!open) return void 0;
+    if (!open || !stage) return void 0;
     const update = () => {
       setBox(stage.readBox());
     };
     update();
+    const scroll = document.querySelector("[data-conversation-scroll]");
+    const target = scroll instanceof HTMLElement ? scroll : document.querySelector('[data-slot="conversation"]')?.parentElement;
+    const observer = typeof ResizeObserver === "function" && target ? new ResizeObserver(update) : null;
+    if (target && observer) observer.observe(target);
     window.addEventListener("resize", update);
     return () => {
+      observer?.disconnect();
       window.removeEventListener("resize", update);
     };
-  }, [open]);
-  if (!open || !stage) return null;
+  }, [open, stage]);
+  if (!stage || !everOpened) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
     "div",
     {
       role: "region",
       "aria-label": t("title"),
+      "aria-hidden": open ? void 0 : "true",
       style: {
         position: "fixed",
         top: box.top,
@@ -2496,8 +2558,8 @@ function AccountsStage({ t, stage }) {
         width: box.width,
         height: box.height,
         zIndex: 200,
-        pointerEvents: "auto",
-        display: "flex",
+        pointerEvents: open ? "auto" : "none",
+        display: open ? "flex" : "none",
         flexDirection: "column",
         background: "var(--dsw-alias-bg-primary, var(--dsw-bg, #111))",
         color: "var(--dsw-alias-label-primary, inherit)",
@@ -2555,7 +2617,7 @@ function AccountsStage({ t, stage }) {
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(AccountsSection, { t }) })
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(AccountsSection, { t, active: open }) })
       ]
     }
   );
