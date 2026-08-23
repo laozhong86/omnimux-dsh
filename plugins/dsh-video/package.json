@@ -1,0 +1,22 @@
+{
+  "name": "dsh-video",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.js",
+  "files": [
+    "src",
+    "prompts",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test 'src/**/*.test.js'"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT",
+  "description": "Local ffmpeg video processing + hub-backed video understanding (analyze / reverse prompt) for OmniMux."
+}
