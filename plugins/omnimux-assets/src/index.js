@@ -1,15 +1,17 @@
 import { createAssetsDispatcher, registerAssetsRoutes } from './http-routes.js'
 import { createArtifactStore } from './artifacts.js'
+import { createLibraryStore } from './library.js'
 import { createMappingStore, AssetsError } from './mappings.js'
 import { resolveAssetsPaths } from './paths.js'
 
 export const name = 'omnimux-assets'
 export const inject = ['tools', 'systemPrompt']
 
-const ASSETS_PROMPT = `This workspace may mount the OmniMux dual-core assets (omnimux-assets).
-assets_list reads mapped folder files (scope "mappings", or "mapping_files" with mapping_id) and reported artifacts (scope "artifacts", optional type filter).
-assets_upload copies one produced file into the assets store under $DSH_HOME/omnimux/assets/artifacts; pass agent (and run_id when known) so the artifact stays traceable.
-Mapped folders are read-only for you: never modify, move, or delete anything under a mapped real_path; deleting a mapping only removes the registry record.`
+const ASSETS_PROMPT = `This workspace may use the OmniMux creative asset library (omnimux-assets).
+Prefer assets_list with scope "assets" (optional type: character/scene/style/prop/knowledge/custom) and assets_search by name/description/tags.
+Each asset is a reusable creative object (name + type + description + path-referenced files). Cite it as @类型/名称 (example: @角色/林晓). Missing disk paths are omitted from files — do not invent them.
+assets_upload still reports produced files; it does not create a typed asset.
+Never modify, move, or delete a file under an asset real_path; deleting an asset only drops the library record.`
 
 /**
  * Compile a flat field table into a JSON Schema object. Raw `register`
@@ -50,7 +52,9 @@ export function apply(ctx) {
   const paths = resolveAssetsPaths()
   const mappings = createMappingStore({ paths })
   const artifacts = createArtifactStore({ paths })
-  const dispatcher = createAssetsDispatcher({ mappings, artifacts })
+  const library = createLibraryStore({ paths })
+  library.migrateMappings(mappings)
+  const dispatcher = createAssetsDispatcher({ mappings, artifacts, library })
 
   const mountHttp = (httpCtx) => {
     const webServer = httpCtx.webServer ?? httpCtx.get?.('webServer')
@@ -75,20 +79,24 @@ export function apply(ctx) {
   ctx.tools.register({
     name: 'assets_list',
     description:
-      'Read the OmniMux assets registry. scope "mappings" lists mapped folders (id, display name, real path, status, file count); scope "mapping_files" needs mapping_id and lists the files of that mapped folder (one layer, read-only scan); scope "artifacts" lists reported AI artifacts, optionally filtered by type (image/video/audio/document/html/json/other). Read-only: never mutates mapped folders or artifacts. Data lives under $DSH_HOME/omnimux/assets.',
+      'Read the OmniMux creative asset library. Prefer scope "assets" (optional type: character/scene/style/prop/knowledge/custom). Legacy scopes "mappings" / "mapping_files" / "artifacts" remain. Missing file paths are omitted. Read-only. Data lives under $DSH_HOME/omnimux/assets.',
     parameters: objectParams({
       scope: {
         type: 'string',
         required: true,
-        enum: ['mappings', 'mapping_files', 'artifacts'],
-        description: 'What to list: mappings, one mapping\'s files, or artifacts',
+        enum: ['assets', 'mappings', 'mapping_files', 'artifacts'],
+        description: 'What to list: creative assets (preferred), legacy mappings, one mapping\'s files, or artifacts',
       },
       mapping_id: { type: 'string', description: 'Required when scope is mapping_files' },
-      type: { type: 'string', description: 'Optional type filter when scope is artifacts' },
+      type: { type: 'string', description: 'Optional type filter for assets or artifacts' },
     }),
     output: jsonOut,
     async execute(args) {
       const scope = args.scope
+      if (scope === 'assets') {
+        const type = typeof args.type === 'string' && args.type.trim() !== '' ? args.type.trim() : ''
+        return { assets: library.list(type ? { type } : {}) }
+      }
       if (scope === 'mappings') {
         return { mappings: mappings.list() }
       }
@@ -105,6 +113,38 @@ export function apply(ctx) {
         return { artifacts: artifacts.list(type ? { type } : {}) }
       }
       throw new AssetsError('invalid-scope', `unknown scope ${String(scope)}`)
+    },
+  })
+
+  ctx.tools.register({
+    name: 'assets_search',
+    description:
+      'Search creative assets by name, description, handle, or tags. Optional type filter (character/scene/style/prop/knowledge/custom). Missing disk paths are omitted from files.',
+    parameters: objectParams({
+      query: { type: 'string', required: true, description: 'Case-insensitive substring' },
+      type: { type: 'string', description: 'Optional asset type filter' },
+    }),
+    output: jsonOut,
+    async execute(args) {
+      const query = typeof args.query === 'string' ? args.query : ''
+      const type = typeof args.type === 'string' && args.type.trim() !== '' ? args.type.trim() : ''
+      return { assets: library.list({ query, ...(type ? { type } : {}) }) }
+    },
+  })
+
+  ctx.tools.register({
+    name: 'assets_get',
+    description:
+      'Get one creative asset by id or handle, including description and currently visible file refs.',
+    parameters: objectParams({
+      id: { type: 'string', required: true, description: 'Asset id (ast_…) or handle' },
+    }),
+    output: jsonOut,
+    async execute(args) {
+      const id = typeof args.id === 'string' ? args.id : ''
+      const asset = library.getView(id)
+      if (!asset) throw new AssetsError('asset-not-found', `no asset ${id}`)
+      return { asset }
     },
   })
 

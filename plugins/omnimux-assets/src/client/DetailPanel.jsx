@@ -126,7 +126,6 @@ export function DetailPanel({ t, detail, onClose }) {
           <Field label={t('detail.size')} value={file.is_dir ? '—' : formatBytes(Number(file.size))} />
           <Field label={t('detail.mtime')} value={formatDateTime(String(file.mtime))} />
           <Field label={t('detail.type')} value={file.is_dir ? t('type.other') : t(`type.${file.type}`)} />
-          <p style={{ ...fieldValue, fontSize: 12, opacity: 0.7 }}>{t('mapping.deleteHint')}</p>
         </div>
       </aside>
     )

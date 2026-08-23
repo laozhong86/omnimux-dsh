@@ -1,5 +1,16 @@
 import { activateRowKeydown } from './a11y.js'
+import { TypeIcon } from './icons.jsx'
 import { formatRelative } from './format.js'
+
+/** Active row: active-token background + 2px accent bar on the left edge. */
+function activeRowStyle(isActive) {
+  return isActive
+    ? {
+        background: 'var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18))',
+        boxShadow: 'inset 2px 0 0 var(--dsw-alias-bg-interactive-primary, #3b6fbd)',
+      }
+    : {}
+}
 
 const tableStyle = {
   width: '100%',
@@ -46,7 +57,7 @@ const muted = {
  *   onOpen: (artifact: any) => void,
  * }} props
  */
-export function ArtifactTable({ t, artifacts, onOpen }) {
+export function ArtifactTable({ t, artifacts, onOpen, activeKey }) {
   if (artifacts.length === 0) {
     return <p style={muted}>{t('artifact.empty')}</p>
   }
@@ -66,14 +77,19 @@ export function ArtifactTable({ t, artifacts, onOpen }) {
           <tr
             key={String(artifact.id)}
             className="omnimux-assets-focusable"
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', ...activeRowStyle(activeKey === artifact.id) }}
             tabIndex={0}
             role="button"
             aria-label={String(artifact.title)}
             onClick={() => { onOpen(artifact) }}
             onKeyDown={activateRowKeydown(() => { onOpen(artifact) })}
           >
-            <td style={td} title={String(artifact.title)}>{String(artifact.title)}</td>
+            <td style={td} title={String(artifact.title)}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%' }}>
+                <TypeIcon type={artifact.type} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{String(artifact.title)}</span>
+              </span>
+            </td>
             <td style={td}>{String(artifact.source?.agent ?? '—')}</td>
             <td style={td}>{artifact.source?.model ? String(artifact.source.model) : '—'}</td>
             <td style={td}>{t(`type.${artifact.type}`)}</td>

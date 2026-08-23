@@ -5,6 +5,9 @@
  * dialog, no Automation permission needed). Other platforms answer
  * `picker-unsupported` for now — no silent fallback to typing paths.
  *
+ * File picks allow multiple selections. Folder picks also allow multiple
+ * folders; each folder is stored as one path ref (never flattened).
+ *
  * The runner is injectable for deterministic tests.
  */
 import { spawn } from 'node:child_process'
@@ -16,8 +19,40 @@ const PROMPTS = {
 
 /**
  * @param {'file' | 'directory'} kind
+ */
+function pickScript(kind) {
+  const prompt = PROMPTS[kind]
+  const choose = kind === 'file' ? 'file' : 'folder'
+  return [
+    `set theItems to choose ${choose} with prompt "${prompt}" with multiple selections allowed`,
+    'set posixPaths to ""',
+    'repeat with theItem in theItems',
+    'set posixPaths to posixPaths & POSIX path of theItem & linefeed',
+    'end repeat',
+    'return posixPaths',
+  ].join('\n')
+}
+
+/**
+ * Split osascript POSIX-path output into absolute paths.
+ * @param {string} stdout
+ * @returns {string[]}
+ */
+export function parsePickedPaths(stdout) {
+  const text = typeof stdout === 'string' ? stdout : ''
+  const paths = []
+  for (const line of text.split(/\r?\n/)) {
+    const path = line.replace(/\s+$/, '')
+    if (path === '') continue
+    paths.push(path)
+  }
+  return paths
+}
+
+/**
+ * @param {'file' | 'directory'} kind
  * @param {{ platform?: NodeJS.Platform, run?: typeof runCommand }} [deps]
- * @returns {Promise<{ path: string | null }>} path=null means user cancelled.
+ * @returns {Promise<{ path: string | null, paths: string[] }>} path=null means user cancelled.
  */
 export async function pickNativePath(kind, deps = {}) {
   if (kind !== 'file' && kind !== 'directory') {
@@ -28,13 +63,13 @@ export async function pickNativePath(kind, deps = {}) {
     throw new PickerError('picker-unsupported', `native picker not supported on ${platform}`)
   }
   const run = deps.run ?? runCommand
-  const script = `POSIX path of (choose ${kind === 'file' ? 'file' : 'folder'} with prompt "${PROMPTS[kind]}")`
+  const script = pickScript(kind)
   try {
     const { stdout } = await run('osascript', ['-e', script])
-    const path = stdout.replace(/[\r\n]+$/, '')
-    return { path: path === '' ? null : path }
+    const paths = parsePickedPaths(stdout)
+    return { path: paths[0] ?? null, paths }
   } catch (error) {
-    if (isUserCancel(error)) return { path: null }
+    if (isUserCancel(error)) return { path: null, paths: [] }
     throw new PickerError('picker-failed', messageOf(error))
   }
 }

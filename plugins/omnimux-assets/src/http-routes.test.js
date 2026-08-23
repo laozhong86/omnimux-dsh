@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { createAssetsDispatcher } from './http-routes.js'
 import { createArtifactStore } from './artifacts.js'
+import { createLibraryStore } from './library.js'
 import { createMappingStore } from './mappings.js'
 
 let root
@@ -35,9 +36,12 @@ function makeDispatcher(opts = {}) {
       artifactsDir: join(storeDir, 'artifacts'),
     },
   })
-  const deps = { mappings, artifacts }
+  const library = createLibraryStore({
+    paths: { libraryFile: join(storeDir, 'library.json') },
+  })
+  const deps = { mappings, artifacts, library }
   if (opts.picker) deps.picker = opts.picker
-  return { dispatcher: createAssetsDispatcher(deps), mappings, artifacts }
+  return { dispatcher: createAssetsDispatcher(deps), mappings, artifacts, library }
 }
 
 /** POST with default local headers. */
@@ -47,20 +51,92 @@ function post(path, body, extra = {}) {
 
 describe('AssetsDispatcher state', () => {
   it('returns full state initially and unchanged when revisions match', async () => {
-    const { dispatcher, mappings } = makeDispatcher()
+    const { dispatcher, library } = makeDispatcher()
     const first = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/assets/state' })
     assert.equal(first.status, 200)
-    assert.deepEqual(first.body, { mrev: 0, arev: 0, unchanged: false, mappings: [] })
+    assert.equal(first.body.unchanged, false)
+    assert.equal(first.body.lrev, 0)
+    assert.deepEqual(first.body.assets, [])
+    assert.deepEqual(first.body.mappings, [])
 
-    mappings.add(realDir, '素材')
+    library.add({ name: '林晓', type: 'character' })
     const second = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/assets/state?mrev=0&arev=0' })
     assert.equal(second.status, 200)
     assert.equal(second.body.unchanged, false)
-    assert.equal(second.body.mappings.length, 1)
+    assert.equal(second.body.assets.length, 1)
 
     const mrev = second.body.mrev
     const third = await dispatcher.dispatch({ method: 'GET', url: `/omnimux/assets/state?mrev=${mrev}&arev=0` })
-    assert.deepEqual(third.body, { mrev, arev: 0, unchanged: true })
+    assert.equal(third.body.unchanged, true)
+    assert.equal(third.body.lrev, mrev)
+  })
+
+  it('creates a creative asset over POST /library', async () => {
+    const { dispatcher, library } = makeDispatcher()
+    const nested = join(realDir, 'looks')
+    mkdirSync(nested)
+    writeFileSync(join(nested, 'front.png'), 'png')
+    const created = await dispatcher.dispatch(post('/omnimux/assets/library', {
+      name: '林晓',
+      type: 'character',
+      description: '冷白皮',
+      files: [{ real_path: realDir }],
+    }))
+    assert.equal(created.status, 200)
+    assert.equal(created.body.asset.type, 'character')
+    assert.equal(created.body.asset.cite, '@角色/林晓')
+    assert.equal(library.list().length, 1)
+
+    const conflict = await dispatcher.dispatch(post('/omnimux/assets/library', { name: '林晓', type: 'scene' }))
+    assert.equal(conflict.status, 409)
+    assert.equal(conflict.body.error, 'name-conflict')
+
+    const updated = await dispatcher.dispatch(post('/omnimux/assets/library/update', {
+      id: created.body.asset.id,
+      description: '冷白皮长直发',
+    }))
+    assert.equal(updated.status, 200)
+    assert.equal(updated.body.asset.description, '冷白皮长直发')
+
+    const listed = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/assets/library?type=character&q=冷白' })
+    assert.equal(listed.status, 200)
+    assert.equal(listed.body.assets.length, 1)
+
+    const fileId = created.body.asset.files[0].id
+    const layer = await dispatcher.dispatch({
+      method: 'GET',
+      url: `/omnimux/assets/library/files?id=${created.body.asset.id}&file=${fileId}`,
+    })
+    assert.equal(layer.status, 200)
+    assert.equal(layer.body.entries.some((row) => row.name === 'hero.png' && !row.is_dir), true)
+    assert.equal(layer.body.entries.some((row) => row.name === 'looks' && row.is_dir), true)
+    assert.equal(layer.body.entries.some((row) => row.name === 'front.png'), false)
+    const inner = await dispatcher.dispatch({
+      method: 'GET',
+      url: `/omnimux/assets/library/files?id=${created.body.asset.id}&file=${fileId}&path=looks`,
+    })
+    assert.equal(inner.body.entries.map((row) => row.name).join(), 'front.png')
+    const preview = await dispatcher.dispatch({
+      method: 'GET',
+      url: `/omnimux/assets/library/preview?id=${created.body.asset.id}&file=${fileId}&path=looks/front.png`,
+    })
+    assert.equal(preview.status, 200)
+    assert.equal(preview.stream.mime, 'image/png')
+    assert.equal(preview.stream.absolutePath.endsWith('front.png'), true)
+    const previewFolder = await dispatcher.dispatch({
+      method: 'GET',
+      url: `/omnimux/assets/library/preview?id=${created.body.asset.id}&file=${fileId}`,
+    })
+    assert.equal(previewFolder.status, 400)
+    const escaped = await dispatcher.dispatch({
+      method: 'GET',
+      url: `/omnimux/assets/library/files?id=${created.body.asset.id}&file=${fileId}&path=..`,
+    })
+    assert.equal(escaped.status, 400)
+
+    const deleted = await dispatcher.dispatch(post('/omnimux/assets/library/delete', { id: created.body.asset.id }))
+    assert.equal(deleted.status, 200)
+    assert.equal(library.list().length, 0)
   })
 })
 
@@ -175,21 +251,27 @@ describe('AssetsDispatcher mappings routes', () => {
 
   it('picks a native path through the injected picker', async () => {
     const { dispatcher } = makeDispatcher({
-      picker: async (kind) => ({ path: kind === 'file' ? '/tmp/a.png' : '/tmp/dir' }),
+      picker: async (kind) => ({
+        path: kind === 'file' ? '/tmp/a.png' : '/tmp/dir',
+        paths: kind === 'file' ? ['/tmp/a.png', '/tmp/b.jpg'] : ['/tmp/dir'],
+      }),
     })
     const pickedFile = await dispatcher.dispatch(post('/omnimux/assets/pick', { kind: 'file' }))
     assert.equal(pickedFile.status, 200)
     assert.equal(pickedFile.body.path, '/tmp/a.png')
+    assert.deepEqual(pickedFile.body.paths, ['/tmp/a.png', '/tmp/b.jpg'])
 
     const pickedDir = await dispatcher.dispatch(post('/omnimux/assets/pick', {}))
     assert.equal(pickedDir.body.path, '/tmp/dir')
+    assert.deepEqual(pickedDir.body.paths, ['/tmp/dir'])
   })
 
   it('reports picker cancellation as a null path', async () => {
-    const { dispatcher } = makeDispatcher({ picker: async () => ({ path: null }) })
+    const { dispatcher } = makeDispatcher({ picker: async () => ({ path: null, paths: [] }) })
     const cancelled = await dispatcher.dispatch(post('/omnimux/assets/pick', { kind: 'directory' }))
     assert.equal(cancelled.status, 200)
     assert.equal(cancelled.body.path, null)
+    assert.deepEqual(cancelled.body.paths, [])
   })
 })
 

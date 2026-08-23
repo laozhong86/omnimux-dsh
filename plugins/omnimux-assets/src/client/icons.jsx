@@ -102,6 +102,15 @@ export function DotsIcon(props) {
 }
 
 /** @param {{ size?: number }} props */
+export function CheckIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="m5 12 5 5 9-10" />
+    </Icon>
+  )
+}
+
+/** @param {{ size?: number }} props */
 export function CloseIcon(props) {
   return (
     <Icon {...props}>
@@ -130,4 +139,86 @@ export function ChevronRightIcon(props) {
       <path d="m9 6 6 6-6 6" />
     </Icon>
   )
+}
+
+/** @param {{ size?: number }} props */
+export function ImageIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="m21 15-5-5L5 21" />
+    </Icon>
+  )
+}
+
+/** @param {{ size?: number }} props */
+export function VideoIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m10 9 5 3-5 3z" />
+    </Icon>
+  )
+}
+
+/** @param {{ size?: number }} props */
+export function AudioIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </Icon>
+  )
+}
+
+/** @param {{ size?: number }} props */
+export function DocIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 3v5h5" />
+      <path d="M9 13h6" />
+      <path d="M9 17h6" />
+    </Icon>
+  )
+}
+
+/** @param {{ size?: number }} props */
+export function CodeIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="m8 6-6 6 6 6" />
+      <path d="m16 6 6 6-6 6" />
+    </Icon>
+  )
+}
+
+/** @param {{ size?: number }} props */
+export function BracesIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M8 3c-1.5 0-2 .8-2 2v3c0 1.5-.8 2-2 2 1.2 0 2 .8 2 2v3c0 1.2.5 2 2 2" />
+      <path d="M16 3c1.5 0 2 .8 2 2v3c0 1.5.8 2 2 2-1.2 0-2 .8-2 2v3c0 1.2-.5 2-2 2" />
+    </Icon>
+  )
+}
+
+const TYPE_ICONS = {
+  image: ImageIcon,
+  video: VideoIcon,
+  audio: AudioIcon,
+  document: DocIcon,
+  html: CodeIcon,
+  json: BracesIcon,
+}
+
+/**
+ * File-type icon for table rows: picks a bucket icon, falls back to FileIcon.
+ * @param {{ type?: string, size?: number }} props
+ */
+export function TypeIcon({ type, size = 14 }) {
+  const Component = TYPE_ICONS[type] ?? FileIcon
+  return <Component size={size} />
 }

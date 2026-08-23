@@ -31,10 +31,33 @@ export async function assetsRequest(path, opts = {}) {
  */
 export function getState(mrev, arev) {
   const query = new URLSearchParams()
-  if (Number.isFinite(/** @type {number} */ (mrev))) query.set('mrev', String(mrev))
+  if (Number.isFinite(/** @type {number} */ (mrev))) query.set('lrev', String(mrev))
   if (Number.isFinite(/** @type {number} */ (arev))) query.set('arev', String(arev))
   const suffix = query.toString() ? `?${query}` : ''
   return assetsRequest(`/omnimux/assets/state${suffix}`)
+}
+
+/**
+ * @param {{ name: string, type?: string, description?: string, tags?: string[], files?: { real_path: string }[] }} body
+ */
+export function createAsset(body) {
+  return assetsRequest('/omnimux/assets/library', { method: 'POST', body })
+}
+
+/**
+ * @param {string} id
+ * @param {{ name?: string, type?: string, description?: string, tags?: string[], files?: { real_path: string }[] }} patch
+ */
+export function updateAsset(id, patch) {
+  return assetsRequest('/omnimux/assets/library/update', { method: 'POST', body: { id, ...patch } })
+}
+
+/**
+ * Only deletes the library record — real files stay untouched.
+ * @param {string} id
+ */
+export function deleteAsset(id) {
+  return assetsRequest('/omnimux/assets/library/delete', { method: 'POST', body: { id } })
 }
 
 /**
@@ -62,11 +85,37 @@ export function deleteMapping(id) {
 }
 
 /**
- * Open the OS chooser. Resolves { path } or { path: null } when cancelled.
+ * Open the OS chooser. Body is `{ path, paths }` — `path` stays for older
+ * callers; `paths` is the full multi-select list (empty on cancel).
  * @param {'file' | 'directory'} kind
  */
 export function pickPath(kind) {
   return assetsRequest('/omnimux/assets/pick', { method: 'POST', body: { kind } })
+}
+
+/**
+ * One-layer listing of an asset file/folder ref. Folders are not flattened.
+ * @param {string} assetId
+ * @param {string} fileId
+ * @param {string} [subPath]
+ */
+export function listAssetFiles(assetId, fileId, subPath = '') {
+  const query = new URLSearchParams({ id: assetId, file: fileId })
+  if (subPath !== '') query.set('path', subPath)
+  return assetsRequest(`/omnimux/assets/library/files?${query}`)
+}
+
+/**
+ * Read-only image/video preview URL for an asset file or a folder child.
+ * @param {string} assetId
+ * @param {string} [fileId]
+ * @param {string} [subPath]
+ */
+export function previewUrl(assetId, fileId = '', subPath = '') {
+  const query = new URLSearchParams({ id: assetId })
+  if (fileId) query.set('file', fileId)
+  if (subPath !== '') query.set('path', subPath)
+  return `/omnimux/assets/library/preview?${query}`
 }
 
 /**

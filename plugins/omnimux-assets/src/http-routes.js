@@ -6,7 +6,7 @@
  * - sendJson with a secret-emission guard (hub auth/http-routes.js)
  * - assertLocalWrite loopback write check (hub apps/origin.js)
  */
-import { realpathSync } from 'node:fs'
+import { createReadStream, realpathSync } from 'node:fs'
 import { resolve, sep } from 'node:path'
 import { statStatus, scanDir, scanFile } from './scanner.js'
 import { AssetsError } from './mappings.js'
@@ -27,6 +27,13 @@ const STATUS_BY_CODE = {
   'picker-failed': 500,
   'mapping-not-found': 404,
   'artifact-not-found': 404,
+  'asset-not-found': 404,
+  'name-conflict': 409,
+  'type-invalid': 400,
+  'name-invalid': 400,
+  'description-too-long': 400,
+  'tags-invalid': 400,
+  'files-invalid': 400,
   'not-local': 403,
 }
 
@@ -35,6 +42,27 @@ const STATUS_BY_CODE = {
  * @param {number} status
  * @param {unknown} body
  */
+/**
+ * Read-only media stream. Never writes user files.
+ * @param {import('node:http').ServerResponse} res
+ * @param {number} status
+ * @param {{ absolutePath: string, mime: string, size?: number }} stream
+ */
+export function sendPreview(res, status, stream) {
+  res.writeHead(status, {
+    'Content-Type': stream.mime,
+    ...(Number.isFinite(stream.size) ? { 'Content-Length': String(stream.size) } : {}),
+    'Cache-Control': 'private, max-age=30',
+  })
+  createReadStream(stream.absolutePath).on('error', () => {
+    if (!res.headersSent) {
+      sendJson(res, 500, { error: 'internal', message: 'preview stream failed' })
+      return
+    }
+    res.destroy()
+  }).pipe(res)
+}
+
 export function sendJson(res, status, body) {
   const text = JSON.stringify(body)
   if (/access_token|sk-[A-Za-z0-9]/.test(text)) {
@@ -111,11 +139,12 @@ function messageOf(error) {
  * @param {{
  *   mappings: ReturnType<typeof import('./mappings.js').createMappingStore>,
  *   artifacts: ReturnType<typeof import('./artifacts.js').createArtifactStore>,
+ *   library?: ReturnType<typeof import('./library.js').createLibraryStore>,
  *   picker?: (kind: 'file' | 'directory') => Promise<{ path: string | null }>,
  * }} deps
  */
 export function createAssetsDispatcher(deps) {
-  const { mappings, artifacts } = deps
+  const { mappings, artifacts, library } = deps
   const picker = deps.picker ?? ((kind) => pickNativePath(kind))
 
   /**
@@ -134,21 +163,32 @@ export function createAssetsDispatcher(deps) {
   }
 
   /**
-   * GET /omnimux/assets/state?mrev=<n>&arev=<n>
+   * GET /omnimux/assets/state?lrev=<n>&arev=<n>
    * Cheap polling: matching revisions answer `unchanged: true`.
+   * `mrev` is accepted as a legacy alias of `lrev`.
    */
   function stateRoute(url) {
-    const hasBoth = url.searchParams.has('mrev') && url.searchParams.has('arev')
-    const mrev = hasBoth ? Number(url.searchParams.get('mrev')) : NaN
+    const lrevParam = url.searchParams.has('lrev')
+      ? url.searchParams.get('lrev')
+      : url.searchParams.get('mrev')
+    const hasBoth = lrevParam != null && url.searchParams.has('arev')
+    const lrev = hasBoth ? Number(lrevParam) : NaN
     const arev = hasBoth ? Number(url.searchParams.get('arev')) : NaN
-    const currentM = mappings.revision()
+    const currentL = library ? library.revision() : mappings.revision()
     const currentA = artifacts.revision()
-    if (Number.isFinite(mrev) && Number.isFinite(arev) && mrev === currentM && arev === currentA) {
-      return { status: 200, body: { mrev: currentM, arev: currentA, unchanged: true } }
+    if (Number.isFinite(lrev) && Number.isFinite(arev) && lrev === currentL && arev === currentA) {
+      return { status: 200, body: { lrev: currentL, mrev: currentL, arev: currentA, unchanged: true } }
     }
     return {
       status: 200,
-      body: { mrev: currentM, arev: currentA, unchanged: false, mappings: mappings.list() },
+      body: {
+        lrev: currentL,
+        mrev: currentL,
+        arev: currentA,
+        unchanged: false,
+        assets: library ? library.list() : [],
+        mappings: mappings.list(),
+      },
     }
   }
 
@@ -239,6 +279,60 @@ export function createAssetsDispatcher(deps) {
         return stateRoute(url)
       }
 
+      if (library && method === 'GET' && path === '/omnimux/assets/library') {
+        const type = url.searchParams.get('type') || ''
+        const query = url.searchParams.get('q') || ''
+        return { status: 200, body: { lrev: library.revision(), assets: library.list({ type, query }) } }
+      }
+
+      if (library && method === 'GET' && path === '/omnimux/assets/library/detail') {
+        const id = url.searchParams.get('id') || ''
+        const asset = library.getView(id)
+        if (!asset) throw new AssetsError('asset-not-found', 'asset not found')
+        return { status: 200, body: { asset } }
+      }
+
+      if (library && method === 'GET' && path === '/omnimux/assets/library/files') {
+        const id = url.searchParams.get('id') || ''
+        const fileId = url.searchParams.get('file') || ''
+        const subPath = url.searchParams.get('path') || ''
+        const listed = library.listFileEntries(id, fileId, subPath)
+        return { status: 200, body: listed }
+      }
+
+      if (library && method === 'GET' && path === '/omnimux/assets/library/preview') {
+        const id = url.searchParams.get('id') || ''
+        const fileId = url.searchParams.get('file') || ''
+        const subPath = url.searchParams.get('path') || ''
+        const preview = library.resolvePreview(id, fileId, subPath)
+        return { status: 200, stream: preview }
+      }
+
+      if (library && method === 'POST' && path === '/omnimux/assets/library') {
+        const problem = jsonBodyProblem(req)
+        if (problem) return problem
+        const body = /** @type {{ name?: string, type?: string, description?: string, tags?: unknown, files?: unknown }} */ (req.body)
+        const asset = library.add(body)
+        return { status: 200, body: { asset, lrev: library.revision() } }
+      }
+
+      if (library && method === 'POST' && path === '/omnimux/assets/library/update') {
+        const problem = jsonBodyProblem(req)
+        if (problem) return problem
+        const body = /** @type {{ id?: string, name?: string, type?: string, description?: string, tags?: unknown, files?: unknown }} */ (req.body)
+        const id = String(body.id ?? '')
+        const asset = library.update(id, body)
+        return { status: 200, body: { asset, lrev: library.revision() } }
+      }
+
+      if (library && method === 'POST' && path === '/omnimux/assets/library/delete') {
+        const problem = jsonBodyProblem(req)
+        if (problem) return problem
+        const body = /** @type {{ id?: string }} */ (req.body)
+        library.remove(String(body.id ?? ''))
+        return { status: 200, body: { lrev: library.revision() } }
+      }
+
       if (method === 'POST' && path === '/omnimux/assets/mappings') {
         const problem = jsonBodyProblem(req)
         if (problem) return problem
@@ -287,7 +381,10 @@ export function createAssetsDispatcher(deps) {
         const body = /** @type {{ kind?: string }} */ (req.body)
         const kind = body.kind === 'file' ? 'file' : 'directory'
         const result = await picker(kind)
-        return { status: 200, body: result }
+        const paths = Array.isArray(result?.paths)
+          ? result.paths.filter((row) => typeof row === 'string' && row !== '')
+          : (typeof result?.path === 'string' && result.path !== '' ? [result.path] : [])
+        return { status: 200, body: { path: paths[0] ?? result?.path ?? null, paths } }
       }
 
       if (method === 'GET' && path === '/omnimux/assets/mappings/files') {
@@ -368,6 +465,10 @@ export function registerAssetsRoutes(webServer, dispatcher) {
           secFetchSite: header(req, 'sec-fetch-site'),
           body,
         })
+        if (result.stream) {
+          sendPreview(res, result.status, result.stream)
+          return
+        }
         sendJson(res, result.status, result.body)
       } catch {
         sendJson(res, 500, { error: 'internal', message: 'internal error' })

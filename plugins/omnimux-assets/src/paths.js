@@ -21,6 +21,7 @@ export function resolveAssetsPaths(opts = {}) {
   return {
     dir,
     mappingsFile: join(dir, 'mappings.json'),
+    libraryFile: join(dir, 'library.json'),
     artifactsFile: join(dir, 'artifacts.json'),
     scansDir: join(dir, 'scans'),
     artifactsDir: join(dir, 'artifacts'),
