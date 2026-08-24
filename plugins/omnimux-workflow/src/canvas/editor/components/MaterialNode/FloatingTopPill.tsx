@@ -91,11 +91,15 @@ const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
     }
   }, [materialType, t]);
 
+  // 节点标题高度（20px）+ 标题与卡片间隙（4px）+ 工具栏与标题间隙（6px）
+  const headerTotalOffset = 30;
+
   return (
     <div
       className="wf-floating-top-pill nodrag nowheel"
       style={{
-        transform: `scale(${inverseScale})`,
+        top: -(headerTotalOffset * inverseScale),
+        transform: `translate(-50%, -100%) scale(${inverseScale})`,
         transformOrigin: 'bottom center',
       }}
       onClick={(e) => e.stopPropagation()}

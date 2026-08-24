@@ -143,13 +143,12 @@
 /* ==================== 顶部悬浮胶囊栏 (FloatingTopPill) ==================== */
 .wf-floating-top-pill {
   position: absolute;
-  top: -38px;
   left: 50%;
-  transform: translateX(-50%);
   z-index: 30;
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
 }
 
 .wf-floating-top-pill__group,

@@ -293,4 +293,44 @@ Ecolchi 发膜核心拆解。
     assert.equal(res.body?.data?.id, item.id)
     assert.ok(res.body?.error.includes('请勿重复导入'))
   })
+
+  it('supports batch deleting inspirations and moving media files', async () => {
+    const store = createLocalStore({ paths })
+    const item1 = store.add({
+      title: 'Item 1 to delete',
+      source_platform: 'tiktok',
+      source_url: 'https://tiktok.com/@u/video/1',
+    })
+    const item2 = store.add({
+      title: 'Item 2 to delete',
+      source_platform: 'instagram',
+      source_url: 'https://instagram.com/reel/2',
+    })
+    const item3 = store.add({
+      title: 'Item 3 to keep',
+      source_platform: 'youtube',
+      source_url: 'https://youtube.com/watch?v=3',
+    })
+
+    const dispatcher = createLocalInspirationDispatcher({
+      localStore: store,
+    })
+
+    const res = await dispatcher.dispatch({
+      method: 'POST',
+      url: '/omnimux/inspiration/local/batch-delete',
+      body: {
+        ids: [item1.id, item2.id],
+      },
+    })
+
+    assert.equal(res.status, 200)
+    assert.equal(res.body?.data?.count, 2)
+    assert.deepEqual(new Set(res.body?.data?.deleted), new Set([item1.id, item2.id]))
+
+    // Verify remaining
+    const remaining = store.list()
+    assert.equal(remaining.total, 1)
+    assert.equal(remaining.items[0].id, item3.id)
+  })
 })
