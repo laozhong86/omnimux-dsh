@@ -1,0 +1,94 @@
+import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { catalogMemoSize, decorateCatalog, invalidateCatalogMemos, loadCatalog, mcpInstalled, parseCatalog } from './catalog.js'
+import { formatMcpRow, installItem } from './install.js'
+
+const PACKAGE_ROOT = join(import.meta.dirname, '..', '..')
+
+test('loadCatalog memos by path+mtime; install invalidates installed flag', () => {
+  invalidateCatalogMemos()
+  const first = loadCatalog()
+  assert.equal(catalogMemoSize(), 1)
+  const second = loadCatalog()
+  assert.equal(second, first)
+  assert.equal(catalogMemoSize(), 1)
+
+  const home = mkdtempSync(join(tmpdir(), 'omx-cat-memo-'))
+  mkdirSync(join(home, 'profiles', 'omnimux'), { recursive: true })
+  const roots = { home, profileDir: join(home, 'profiles', 'omnimux'), packageRoot: PACKAGE_ROOT }
+  const before = decorateCatalog(loadCatalog(), roots)
+  const demo = before.items.find((row) => row.id === 'esc-demo-skill')
+  assert.equal(demo?.installed, false)
+  installItem({ catalog: loadCatalog(), id: 'esc-demo-skill', ...roots })
+  const after = decorateCatalog(loadCatalog(), roots)
+  assert.equal(after.items.find((row) => row.id === 'esc-demo-skill')?.installed, true)
+})
+
+test('loads bundled catalog', () => {
+  invalidateCatalogMemos()
+  const doc = loadCatalog()
+  assert.equal(doc.schema, 1)
+  const experts = doc.items.filter((item) => item.tab === 'experts')
+  const skills = doc.items.filter((item) => item.tab === 'skills')
+  const connectors = doc.items.filter((item) => item.tab === 'connectors')
+  // 社媒运营四层漏斗（L0 源分类预筛 → L2 黑名单 → L3 人工 → L1 任务重映射）后的数量
+  assert.ok(experts.length >= 60)
+  assert.ok(skills.length >= 50)
+  assert.ok(connectors.length >= 15)
+  assert.ok(experts.every((item) => item.source.type === 'git'))
+  assert.ok(doc.items.some((item) => item.kind === 'connector'))
+  const ui = experts.find((item) => item.id === 'exp-ad-creative-strategist')
+  assert.equal(ui?.title, '广告创意策略师')
+  assert.equal(ui?.subtitle, '点睛睛')
+  assert.match(ui?.avatar || '', /raw\.githubusercontent\.com\/infometa\/workbuddyskills/)
+  assert.ok(doc.categories.some((row) => row.tab === 'skills' && row.title === '协作办公'))
+  assert.equal(doc.categories.some((row) => row.tab === 'skills' && row.title === 'AI / Agent 工具'), false)
+})
+
+test('rejects unknown schema', () => {
+  assert.throws(() => parseCatalog({ schema: 2, generated_at: 'x', items: [] }), /unsupported schema/)
+})
+
+test('decorate marks missing items uninstalled', () => {
+  const home = mkdtempSync(join(tmpdir(), 'omx-cat-'))
+  mkdirSync(join(home, 'profiles', 'omnimux'), { recursive: true })
+  const doc = decorateCatalog(loadCatalog(), {
+    home,
+    profileDir: join(home, 'profiles', 'omnimux'),
+    packageRoot: PACKAGE_ROOT,
+  })
+  assert.equal(doc.items.every((item) => item.installed === false), true)
+})
+
+test('decorate sees a copied skill as installed', () => {
+  const home = mkdtempSync(join(tmpdir(), 'omx-cat-'))
+  mkdirSync(join(home, 'skills', 'esc-demo-note'), { recursive: true })
+  writeFileSync(join(home, 'skills', 'esc-demo-note', 'SKILL.md'), '# x\n')
+  const doc = decorateCatalog(loadCatalog(), {
+    home,
+    profileDir: join(home, 'profiles', 'omnimux'),
+    packageRoot: PACKAGE_ROOT,
+  })
+  const item = doc.items.find((row) => row.id === 'esc-demo-skill')
+  assert.equal(item.installed, true)
+})
+
+test('mcpInstalled matches rows exactly, not by id prefix', () => {
+  // cn-tencent-docs 是 cn-tencent-docs-oa 的 id 前缀：子串匹配会把前者误判为已装
+  const home = mkdtempSync(join(tmpdir(), 'omx-cat-'))
+  const profileDir = join(home, 'profiles', 'omnimux')
+  mkdirSync(profileDir, { recursive: true })
+  const rowOa = formatMcpRow({
+    id: 'cn-tencent-docs-oa',
+    serverName: 'tencent-docs-oa',
+    source: { type: 'mcp', transport: 'stdio', command: 'npx', args: ['-y', 'x'] },
+  })
+  writeFileSync(join(profileDir, 'cordis.patch.yml'), `- insert:\n${rowOa}\n`)
+  assert.equal(mcpInstalled(profileDir, 'cn-tencent-docs-oa'), true)
+  assert.equal(mcpInstalled(profileDir, 'cn-tencent-docs'), false)
+  // patch 文件不存在时一律未装
+  assert.equal(mcpInstalled(join(home, 'profiles', 'none'), 'cn-tencent-docs'), false)
+})

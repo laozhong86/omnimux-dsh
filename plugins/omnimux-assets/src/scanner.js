@@ -20,6 +20,36 @@ const TYPE_BY_EXT = {
 export const DEFAULT_IGNORES = ['.DS_Store']
 export const DEFAULT_MAX_ENTRIES = 2000
 
+const MIME_BY_EXT = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.bmp': 'image/bmp',
+  '.ico': 'image/x-icon',
+  '.avif': 'image/avif',
+  '.heic': 'image/heic',
+  '.tiff': 'image/tiff',
+  '.mp4': 'video/mp4',
+  '.mov': 'video/quicktime',
+  '.avi': 'video/x-msvideo',
+  '.mkv': 'video/x-matroska',
+  '.webm': 'video/webm',
+  '.m4v': 'video/x-m4v',
+  '.flv': 'video/x-flv',
+}
+
+/**
+ * Previewable media only — never stream unknown types out of user paths.
+ * @param {string} name
+ * @returns {string | null}
+ */
+export function previewMimeOf(name) {
+  return MIME_BY_EXT[extOf(name)] ?? null
+}
+
 /**
  * Lowercase extension including the dot, or '' when absent.
  * @param {string} name

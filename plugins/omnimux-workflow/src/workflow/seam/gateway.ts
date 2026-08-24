@@ -2,9 +2,10 @@
  * ★ Extension point: GenerationGateway seam interface (replaceable).
  *
  * The canvas never calls model APIs itself. All generation work flows
- * through this gateway. M1 ships the mock implementation; M4 replaces it
- * with OmniMuxSeamClient built on ctx.get('videoGenerate' | 'imageGenerate'
- * | 'textComplete') — the vertical I/O rule (docs/contracts/hub.md).
+ * through this gateway. M1–M3 shipped the mock implementation; M4 adds the
+ * OmniMux seam client (omnimuxGateway.ts) over ctx.get('videoGenerate' |
+ * 'imageGenerate' | 'textComplete') and assembles one of the two at mount
+ * (gatewaySelection.ts) — the vertical I/O rule (docs/contracts/hub.md).
  */
 
 export type GenerationCapability = 'text' | 'image' | 'video' | 'audio';
@@ -26,6 +27,12 @@ export interface SubmitRequest {
   dest: string;
   /** Cooperative cancel. */
   signal?: AbortSignal;
+  /**
+   * Mock-gateway control (M3): force the simulated task to fail so failure
+   * paths (node error / fail strategy / SSE node_error) are testable.
+   * Real seam clients ignore this field.
+   */
+  mockFail?: boolean;
 }
 
 export interface SubmitResult {
@@ -35,11 +42,18 @@ export interface SubmitResult {
   url?: string;
 }
 
+export interface AwaitTaskResult {
+  /** Absolute path (or URL) of the settled artifact. */
+  url: string;
+  /** Text capability output (mock gateway / future text seam). */
+  text?: string;
+}
+
 export interface GenerationGateway {
   /** Submit a generation task (wait:false semantics). */
   submit(req: SubmitRequest): Promise<SubmitResult>;
   /** Poll a task and download the artifact to its dest. */
-  awaitTask(taskId: string, dest: string, signal?: AbortSignal): Promise<{ url: string }>;
+  awaitTask(taskId: string, dest: string, signal?: AbortSignal): Promise<AwaitTaskResult>;
   /** Capability catalog for the config panel (model lists). */
   capabilities(): Promise<{
     source: 'static-stub' | 'omnimux';

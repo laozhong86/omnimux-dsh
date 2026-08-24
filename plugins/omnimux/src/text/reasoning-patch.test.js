@@ -48,7 +48,7 @@ describe('omnimux patch reasoning offer', () => {
     const byId = new Map(blocks.map((row) => [row.id, row.body]))
     assert.match(byId.get('gpt-5.6-sol') ?? '', /'off': 'none'/)
     assert.match(byId.get('deepseek-v4-pro') ?? '', /'off': 'none'/)
-    assert.match(byId.get('deepseek-v4-flash') ?? '', /'off': 'none'/)
+    assert.match(byId.get('deepseek-v4-flash-vision-exp') ?? '', /'off': 'none'/)
     for (const id of ['claude-opus-5', 'grok-4.6', 'kimi-k3', 'gemini-3.7-flash', 'glm-5.3']) {
       assert.doesNotMatch(byId.get(id) ?? '', /'off':/, `${id} must not offer Off`)
     }

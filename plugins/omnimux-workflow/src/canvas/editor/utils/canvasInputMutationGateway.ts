@@ -8,8 +8,9 @@
  */
 
 import type { Edge, Node } from '@xyflow/react';
-import { normalizeCanvasEdge, type CanvasConnectionLike } from './canvasConnectionUtils';
-import { validateCanvasConnectionStructure } from './canvasConnectionStructure';
+// 显式 .ts 扩展名：node --test 的 type-stripping 不做 TS 扩展名解析
+import { normalizeCanvasEdge, type CanvasConnectionLike } from './canvasConnectionUtils.ts';
+import { validateCanvasConnectionStructure } from './canvasConnectionStructure.ts';
 
 export type CanvasNode = Node<Record<string, unknown>>;
 

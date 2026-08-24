@@ -1,0 +1,548 @@
+/**
+ * ExecutionContext — M3 port of Gxgen
+ * `server/src/services/canvas/ExecutionContext.ts` (strict TypeScript).
+ *
+ * Runtime state container for one workflow execution: the execution state
+ * machine (pending/running/paused/completed/error/cancelled), the node
+ * state machine (pending/running/completed/error/skipped), the node output
+ * cache, media assets, breakpoints and the 11-event protocol emitter the
+ * SSE publisher forwards to the canvas island.
+ *
+ * Port notes (algorithm semantics unchanged):
+ * - Gxgen extends Node's EventEmitter (any-typed); here the emitter is a
+ *   small typed emitter so strict mode holds without `any`.
+ * - `workflowId` keeps the Gxgen property name for wire compatibility;
+ *   the plugin passes the workspace id into it.
+ */
+
+import { randomUUID } from 'node:crypto';
+import { createWorkflowLogger } from './logger';
+
+const LOG_TAG = 'ExecutionContext';
+
+// ============================================================================
+// Status enums (Gxgen ExecutionStatus / NodeStatus, string-valued)
+// ============================================================================
+
+export const ExecutionStatus = {
+  PENDING: 'pending',
+  RUNNING: 'running',
+  PAUSED: 'paused',
+  COMPLETED: 'completed',
+  ERROR: 'error',
+  CANCELLED: 'cancelled',
+} as const;
+
+export type ExecutionStatusValue = (typeof ExecutionStatus)[keyof typeof ExecutionStatus];
+
+export const NodeStatus = {
+  PENDING: 'pending',
+  RUNNING: 'running',
+  COMPLETED: 'completed',
+  ERROR: 'error',
+  SKIPPED: 'skipped',
+} as const;
+
+export type NodeStatusValue = (typeof NodeStatus)[keyof typeof NodeStatus];
+
+// ============================================================================
+// Typed event protocol (11 events, aligned with Gxgen useExecutionSSE)
+// ============================================================================
+
+export interface ExecutionEventPayloads {
+  execution_start: {
+    executionId: string;
+    workflowId: string;
+    totalNodes: number;
+    startedAt: number;
+  };
+  node_start: {
+    executionId: string;
+    nodeId: string;
+    label?: string;
+    type?: string;
+    startedAt: number;
+  };
+  node_progress: {
+    executionId: string;
+    nodeId: string;
+    progress: number;
+    message: string;
+  };
+  node_complete: {
+    executionId: string;
+    nodeId: string;
+    output: unknown;
+    duration: number;
+    progress: number;
+  };
+  node_error: {
+    executionId: string;
+    nodeId: string;
+    error: string;
+    duration: number;
+  };
+  node_skipped: {
+    executionId: string;
+    nodeId: string;
+    reason: string;
+  };
+  execution_paused: {
+    executionId: string;
+    pausedAt: number;
+    pausedAtNode: string | null;
+  };
+  execution_resumed: {
+    executionId: string;
+    resumedAt: number;
+  };
+  execution_complete: {
+    executionId: string;
+    workflowId: string;
+    duration: number;
+    completedNodes: number;
+    totalNodes: number;
+  };
+  execution_error: {
+    executionId: string;
+    workflowId: string;
+    error: string;
+    failedNode: string | null;
+    duration: number;
+  };
+  execution_cancelled: {
+    executionId: string;
+    cancelledAt: number;
+  };
+}
+
+export type ExecutionEventName = keyof ExecutionEventPayloads;
+
+type Handler<K extends ExecutionEventName> = (payload: ExecutionEventPayloads[K]) => void;
+
+/** Storage-level handler: accepts any protocol payload. */
+type StoredHandler = (payload: never) => void;
+
+/** Minimal typed event emitter (zero-dep, strict). */
+class TypedEventEmitter {
+  private readonly handlers = new Map<ExecutionEventName, Set<StoredHandler>>();
+
+  on<K extends ExecutionEventName>(event: K, handler: Handler<K>): void {
+    let set = this.handlers.get(event);
+    if (!set) {
+      set = new Set();
+      this.handlers.set(event, set);
+    }
+    set.add(handler as unknown as StoredHandler);
+  }
+
+  off<K extends ExecutionEventName>(event: K, handler: Handler<K>): void {
+    this.handlers.get(event)?.delete(handler as unknown as StoredHandler);
+  }
+
+  emit<K extends ExecutionEventName>(event: K, payload: ExecutionEventPayloads[K]): void {
+    const set = this.handlers.get(event);
+    if (!set) return;
+    for (const handler of [...set]) {
+      try {
+        (handler as Handler<K>)(payload);
+      } catch (error) {
+        // A broken listener must never break the execution engine.
+        logger.warn('event handler threw', {
+          event,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+  }
+
+  listenerCount(): number {
+    let total = 0;
+    for (const set of this.handlers.values()) total += set.size;
+    return total;
+  }
+}
+
+const logger = createWorkflowLogger(LOG_TAG);
+
+// ============================================================================
+// Persisted state shapes
+// ============================================================================
+
+export interface NodeStateSnapshot {
+  status: NodeStatusValue;
+  startedAt: number | null;
+  completedAt: number | null;
+  error: string | null;
+  skipReason?: string;
+}
+
+export interface SerializedContext {
+  id: string;
+  workflowId: string;
+  status: ExecutionStatusValue;
+  variables: Record<string, unknown>;
+  nodeOutputs: Record<string, unknown>;
+  nodeStates: Record<string, NodeStateSnapshot>;
+  mediaAssets: Record<string, Array<Record<string, unknown>>>;
+  breakpoints: string[];
+  startedAt: number | null;
+  completedAt: number | null;
+  error: string | null;
+  totalNodes: number;
+  completedNodes: number;
+}
+
+export interface ExecutionContextOptions {
+  workflowId: string;
+  /** Execution id override (recovery keeps the persisted id). */
+  id?: string;
+  initialVariables?: Record<string, unknown>;
+  breakpoints?: Set<string>;
+}
+
+export class ExecutionContext {
+  readonly id: string;
+  readonly workflowId: string;
+  readonly events = new TypedEventEmitter();
+
+  status: ExecutionStatusValue = ExecutionStatus.PENDING;
+
+  readonly variables = new Map<string, unknown>();
+  /** nodeId -> node output (unknown: executor-defined shape). */
+  readonly nodeOutputs = new Map<string, unknown>();
+  /** nodeId -> node state snapshot. */
+  readonly nodeStates = new Map<string, NodeStateSnapshot>();
+  /** nodeId -> media assets produced by the node. */
+  readonly mediaAssets = new Map<string, Array<Record<string, unknown>>>();
+  /** Breakpoint node ids (debug pause-before-node). */
+  readonly breakpoints: Set<string>;
+
+  startedAt: number | null = null;
+  completedAt: number | null = null;
+  error: string | null = null;
+  totalNodes = 0;
+  completedNodes = 0;
+
+  constructor(opts: ExecutionContextOptions) {
+    this.id = opts.id ?? randomUUID();
+    this.workflowId = opts.workflowId;
+    this.breakpoints = opts.breakpoints ?? new Set<string>();
+    for (const [key, value] of Object.entries(opts.initialVariables ?? {})) {
+      this.variables.set(key, value);
+    }
+  }
+
+  // ========================================================================
+  // Execution state machine
+  // ========================================================================
+
+  start(totalNodes: number): void {
+    this.status = ExecutionStatus.RUNNING;
+    this.startedAt = Date.now();
+    this.totalNodes = totalNodes;
+    this.completedNodes = 0;
+
+    logger.info('execution started', {
+      executionId: this.id,
+      workflowId: this.workflowId,
+      totalNodes,
+    });
+
+    this.events.emit('execution_start', {
+      executionId: this.id,
+      workflowId: this.workflowId,
+      totalNodes,
+      startedAt: this.startedAt,
+    });
+  }
+
+  pause(nodeId: string | null = null): void {
+    this.status = ExecutionStatus.PAUSED;
+
+    logger.info('execution paused', {
+      executionId: this.id,
+      pausedAtNode: nodeId,
+      progress: `${this.completedNodes}/${this.totalNodes}`,
+    });
+
+    this.events.emit('execution_paused', {
+      executionId: this.id,
+      pausedAt: Date.now(),
+      pausedAtNode: nodeId,
+    });
+  }
+
+  resume(): void {
+    if (this.status !== ExecutionStatus.PAUSED) return;
+    this.status = ExecutionStatus.RUNNING;
+
+    logger.info('execution resumed', {
+      executionId: this.id,
+      progress: `${this.completedNodes}/${this.totalNodes}`,
+    });
+
+    this.events.emit('execution_resumed', {
+      executionId: this.id,
+      resumedAt: Date.now(),
+    });
+  }
+
+  complete(): void {
+    this.status = ExecutionStatus.COMPLETED;
+    this.completedAt = Date.now();
+    const durationMs = this.completedAt - (this.startedAt ?? this.completedAt);
+
+    logger.info('execution completed', {
+      executionId: this.id,
+      durationMs,
+      completedNodes: this.completedNodes,
+      totalNodes: this.totalNodes,
+    });
+
+    this.events.emit('execution_complete', {
+      executionId: this.id,
+      workflowId: this.workflowId,
+      duration: durationMs,
+      completedNodes: this.completedNodes,
+      totalNodes: this.totalNodes,
+    });
+  }
+
+  fail(error: unknown, nodeId: string | null = null): void {
+    this.status = ExecutionStatus.ERROR;
+    this.completedAt = Date.now();
+    this.error = error instanceof Error ? error.message : String(error);
+    const durationMs = this.completedAt - (this.startedAt ?? this.completedAt);
+
+    logger.error('execution failed', {
+      executionId: this.id,
+      error: this.error,
+      failedNodeId: nodeId,
+      durationMs,
+    });
+
+    this.events.emit('execution_error', {
+      executionId: this.id,
+      workflowId: this.workflowId,
+      error: this.error,
+      failedNode: nodeId,
+      duration: durationMs,
+    });
+  }
+
+  cancel(): void {
+    this.status = ExecutionStatus.CANCELLED;
+    this.completedAt = Date.now();
+    const durationMs = this.startedAt !== null ? this.completedAt - this.startedAt : 0;
+
+    logger.info('execution cancelled', {
+      executionId: this.id,
+      durationMs,
+      completedNodes: this.completedNodes,
+      totalNodes: this.totalNodes,
+    });
+
+    this.events.emit('execution_cancelled', {
+      executionId: this.id,
+      cancelledAt: this.completedAt,
+    });
+  }
+
+  // ========================================================================
+  // Node state machine
+  // ========================================================================
+
+  startNode(nodeId: string, nodeInfo: { label?: string; type?: string } = {}): void {
+    const startedAt = Date.now();
+    this.nodeStates.set(nodeId, {
+      status: NodeStatus.RUNNING,
+      startedAt,
+      completedAt: null,
+      error: null,
+    });
+
+    this.events.emit('node_start', {
+      executionId: this.id,
+      nodeId,
+      label: nodeInfo.label,
+      type: nodeInfo.type,
+      startedAt,
+    });
+  }
+
+  reportProgress(nodeId: string, progress: number, message = ''): void {
+    this.events.emit('node_progress', {
+      executionId: this.id,
+      nodeId,
+      progress,
+      message,
+    });
+  }
+
+  completeNode(nodeId: string, output: unknown): void {
+    const state: NodeStateSnapshot = this.nodeStates.get(nodeId) ?? {
+      status: NodeStatus.PENDING,
+      startedAt: null,
+      completedAt: null,
+      error: null,
+    };
+    state.status = NodeStatus.COMPLETED;
+    state.completedAt = Date.now();
+    this.nodeStates.set(nodeId, state);
+
+    this.nodeOutputs.set(nodeId, output);
+    this.completedNodes += 1;
+
+    const durationMs = state.completedAt - (state.startedAt ?? state.completedAt);
+    const progressPercent = this.totalNodes > 0
+      ? Math.round((this.completedNodes / this.totalNodes) * 100)
+      : 0;
+
+    this.events.emit('node_complete', {
+      executionId: this.id,
+      nodeId,
+      output,
+      duration: durationMs,
+      progress: progressPercent,
+    });
+  }
+
+  failNode(nodeId: string, error: unknown): void {
+    const state: NodeStateSnapshot = this.nodeStates.get(nodeId) ?? {
+      status: NodeStatus.PENDING,
+      startedAt: null,
+      completedAt: null,
+      error: null,
+    };
+    state.status = NodeStatus.ERROR;
+    state.completedAt = Date.now();
+    state.error = error instanceof Error ? error.message : String(error);
+    this.nodeStates.set(nodeId, state);
+
+    const durationMs = state.completedAt - (state.startedAt ?? state.completedAt);
+
+    logger.error('node failed', {
+      executionId: this.id,
+      nodeId,
+      error: state.error,
+      durationMs,
+    });
+
+    this.events.emit('node_error', {
+      executionId: this.id,
+      nodeId,
+      error: state.error,
+      duration: durationMs,
+    });
+  }
+
+  skipNode(nodeId: string, reason = ''): void {
+    this.nodeStates.set(nodeId, {
+      status: NodeStatus.SKIPPED,
+      startedAt: null,
+      completedAt: null,
+      error: null,
+      skipReason: reason,
+    });
+
+    this.events.emit('node_skipped', {
+      executionId: this.id,
+      nodeId,
+      reason,
+    });
+  }
+
+  // ========================================================================
+  // Variables / outputs
+  // ========================================================================
+
+  set(key: string, value: unknown): void {
+    this.variables.set(key, value);
+  }
+
+  get(key: string, defaultValue?: unknown): unknown {
+    return this.variables.has(key) ? this.variables.get(key) : defaultValue;
+  }
+
+  getNodeOutput(nodeId: string): unknown {
+    return this.nodeOutputs.get(nodeId);
+  }
+
+  // ========================================================================
+  // Media assets
+  // ========================================================================
+
+  addMediaAsset(nodeId: string, asset: Record<string, unknown>): void {
+    const list = this.mediaAssets.get(nodeId) ?? [];
+    list.push({ ...asset, createdAt: Date.now() });
+    this.mediaAssets.set(nodeId, list);
+  }
+
+  getMediaAssets(nodeId: string): Array<Record<string, unknown>> {
+    return this.mediaAssets.get(nodeId) ?? [];
+  }
+
+  // ========================================================================
+  // Breakpoints
+  // ========================================================================
+
+  hasBreakpoint(nodeId: string): boolean {
+    return this.breakpoints.has(nodeId);
+  }
+
+  addBreakpoint(nodeId: string): void {
+    this.breakpoints.add(nodeId);
+  }
+
+  removeBreakpoint(nodeId: string): void {
+    this.breakpoints.delete(nodeId);
+  }
+
+  // ========================================================================
+  // Serialization (persistence + HTTP snapshots)
+  // ========================================================================
+
+  toJSON(): SerializedContext {
+    return {
+      id: this.id,
+      workflowId: this.workflowId,
+      status: this.status,
+      variables: Object.fromEntries(this.variables),
+      nodeOutputs: Object.fromEntries(this.nodeOutputs),
+      nodeStates: Object.fromEntries(this.nodeStates),
+      mediaAssets: Object.fromEntries(this.mediaAssets),
+      breakpoints: [...this.breakpoints],
+      startedAt: this.startedAt,
+      completedAt: this.completedAt,
+      error: this.error,
+      totalNodes: this.totalNodes,
+      completedNodes: this.completedNodes,
+    };
+  }
+
+  static fromJSON(data: SerializedContext): ExecutionContext {
+    const ctx = new ExecutionContext({
+      workflowId: data.workflowId,
+      id: data.id,
+      initialVariables: data.variables,
+      breakpoints: new Set(data.breakpoints),
+    });
+    ctx.status = data.status;
+    for (const [nodeId, output] of Object.entries(data.nodeOutputs)) {
+      ctx.nodeOutputs.set(nodeId, output);
+    }
+    for (const [nodeId, state] of Object.entries(data.nodeStates)) {
+      ctx.nodeStates.set(nodeId, state);
+    }
+    for (const [nodeId, assets] of Object.entries(data.mediaAssets)) {
+      ctx.mediaAssets.set(nodeId, assets);
+    }
+    ctx.startedAt = data.startedAt;
+    ctx.completedAt = data.completedAt;
+    ctx.error = data.error;
+    ctx.totalNodes = data.totalNodes;
+    ctx.completedNodes = data.completedNodes;
+    return ctx;
+  }
+}

@@ -12,18 +12,21 @@
 │   CanvasBridge.jsx     ★ island 桥：DOM 容器 + plain props  │
 ├──────────────── React 版本边界（硬规则见 §2）───────────────┤
 │ ② CANVAS ISLAND 区（src/canvas/，自带 React 19.2.8，        │
-│    lib/canvas.js 懒加载，IIFE global __dshWorkflowCanvas）   │
-│   editor/              React Flow 容器 + MaterialNode 骨架   │
+│    lib/canvas.js 懒加载，IIFE global __omnimuxWorkflowCanvas）│
+│   hooks/useCanvasBoot  工作区水合 + catalog（App 只做 chrome）│
+│   editor/              ReactFlow 壳；剪贴板/右键在 hooks     │
 │     └ utils/           连接校验链（Gxgen 逐行移植）          │
-│   store/canvasStore.ts Zustand Graph slice（Gxgen 同构）     │
+│   store/canvasStore.ts 文档态（Graph+History）；执行态另店   │
 │   nodes/registry.ts    ★ 扩展点① 节点类型注册表              │
 │   theme/               --wb-* 主题变量层（映射 --dsw-*）      │
-│   bridge/apiClient.ts  同源 fetch → /dsh-workflow/api/*      │
+│   bridge/apiClient.ts  同源 fetch → /omnimux-workflow/api/*  │
 ├──────────────── HTTP /dsh-workflow/*（同源）────────────────┤
-│ ③ HOST 区（src/workflow/ + src/index.ts，dist/index.js，     │
-│    零运行时三方依赖：zod 构建期打包进 bundle）                │
+│ ③ HOST 区（src/workflow/ + src/projects/ + src/http/ +       │
+│    src/index.ts，dist/index.js，零运行时三方：zod 打进 bundle）│
+│   http/helpers         sendJson / 1MB body / loopback 写校验 │
 │   workspace/           WorkspaceStore（快照+乐观锁+原子写）   │
-│   routes/canvasRoutes  REST + bundle/媒体下发                │
+│   routes/              组装器 canvasRoutes + 静态/工作区/执行/媒体 │
+│   projects/            本地项目库（委托进同一 prefix）        │
 │   executors/registry   ★ 扩展点② 执行器注册表                │
 │   seam/gateway         ★ 扩展点③ GenerationGateway（mock）   │
 └────────────────────────────────────────────────────────────┘

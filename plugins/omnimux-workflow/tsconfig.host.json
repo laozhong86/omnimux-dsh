@@ -13,5 +13,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src/workflow", "src/shared", "src/index.ts"]
+  "include": ["src/workflow", "src/projects", "src/shared", "src/http", "src/index.ts"]
 }

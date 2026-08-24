@@ -34,122 +34,154 @@ module.exports = __toCommonJS(index_exports);
 var zh = {
   "nav": "\u8D44\u4EA7\u5E93",
   "stage.title": "\u8D44\u4EA7\u5E93",
+  "stage.subtitle": "\u6C89\u6DC0\u53EF\u590D\u7528\u7684\u89D2\u8272\u3001\u573A\u666F\u3001\u98CE\u683C\u5305\u3001\u9053\u5177\u3001\u77E5\u8BC6\u5305\uFF0C\u5728\u521B\u4F5C\u9875\u91CC\u7ED9 Agent \u5F15\u7528",
   "stage.refresh": "\u5237\u65B0",
+  "stage.refreshing": "\u5237\u65B0\u4E2D\u2026",
   "stage.close": "\u5173\u95ED",
   "loading": "\u6B63\u5728\u8BFB\u53D6\u8D44\u4EA7\u5E93\u6570\u636E\u2026",
-  "mapping.group": "\u672C\u5730\u6587\u4EF6\u5939",
-  "mapping.addDir": "\u6DFB\u52A0\u6587\u4EF6\u5939",
-  "mapping.addFile": "\u6DFB\u52A0\u6587\u4EF6",
-  "mapping.empty": "\u8FD8\u6CA1\u6709\u672C\u5730\u6587\u4EF6\u6216\u6587\u4EF6\u5939\u3002",
-  "mapping.invalid": "\u8DEF\u5F84\u4E0D\u53EF\u7528",
-  "mapping.rename": "\u91CD\u547D\u540D",
-  "mapping.renamePrompt": "\u65B0\u7684\u540D\u79F0",
+  "add.button": "\u6DFB\u52A0\u8D44\u4EA7",
+  "add.title": "\u6DFB\u52A0\u8D44\u4EA7",
+  "add.namePlaceholder": "\u8D44\u4EA7\u540D\u79F0",
+  "add.descriptionPlaceholder": "\u8F93\u5165\u6E05\u6670\u7684\u63CF\u8FF0\uFF0C\u5E2E\u52A9 agent \u66F4\u597D\u5730\u641C\u7D22\u548C\u590D\u7528\u2026",
+  "add.drop": "\u5C06\u6587\u4EF6\u6216\u6587\u4EF6\u5939\u62D6\u5165\uFF0C\u6216\u70B9\u4E0B\u9762\u6309\u94AE\u9009\u62E9",
+  "add.pickFiles": "\u9009\u62E9\u6587\u4EF6",
+  "add.pickFolders": "\u9009\u62E9\u6587\u4EF6\u5939",
+  "add.folderBadge": "\u6587\u4EF6\u5939",
+  "add.tags": "\u6DFB\u52A0\u6807\u7B7E\uFF08\u53EF\u9009\uFF09",
+  "add.tagsPlaceholder": "\u56DE\u8F66\u6DFB\u52A0\u6807\u7B7E",
+  "add.submit": "\u521B\u5EFA\u8D44\u4EA7",
+  "add.cancel": "\u53D6\u6D88",
+  "chip.all": "\u5168\u90E8",
+  "type.character": "\u89D2\u8272",
+  "type.scene": "\u573A\u666F",
+  "type.style": "\u98CE\u683C\u5305",
+  "type.prop": "\u9053\u5177",
+  "type.knowledge": "\u77E5\u8BC6\u5305",
+  "type.custom": "\u81EA\u5B9A\u4E49",
+  "search.placeholder": "\u641C\u7D22\u8D44\u4EA7",
+  "sort.updated": "\u6700\u8FD1\u66F4\u65B0",
+  "empty.all": "\u8FD8\u6CA1\u6709\u521B\u4F5C\u8D44\u4EA7\u3002\u70B9\u300C\u6DFB\u52A0\u8D44\u4EA7\u300D\uFF0C\u5148\u5EFA\u4E00\u4E2A\u89D2\u8272\u6216\u77E5\u8BC6\u5305\u3002",
+  "empty.type": "\u8FD8\u6CA1\u6709{type}\u3002",
+  "empty.addType": "\u6DFB\u52A0{type}",
+  "card.missing": "\u7D20\u6750\u7F3A\u5931",
+  "card.copyCite": "\u590D\u5236\u5F15\u7528",
+  "card.copied": "\u5DF2\u590D\u5236",
+  "card.open": "\u6253\u5F00\u539F\u8DEF\u5F84",
+  "select.count": "\u5DF2\u9009 {n} \u9879",
+  "select.clear": "\u53D6\u6D88\u9009\u62E9",
+  "select.delete": "\u5220\u9664 {n} \u9879",
+  "select.toggle": "\u9009\u62E9\u8D44\u4EA7",
+  "select.removeTitle": "\u79FB\u9664\u8FD9 {n} \u9879\uFF1F",
+  "detail.title": "\u8D44\u4EA7\u8BE6\u60C5",
+  "detail.name": "\u540D\u79F0",
+  "detail.type": "\u7C7B\u578B",
+  "detail.description": "\u63CF\u8FF0",
+  "detail.tags": "\u6807\u7B7E",
+  "detail.files": "\u7D20\u6750",
+  "detail.folder": "\u6587\u4EF6\u5939",
+  "detail.file": "\u6587\u4EF6",
+  "detail.browse": "\u6253\u5F00",
+  "detail.back": "\u8FD4\u56DE",
+  "detail.emptyFolder": "\u8FD9\u4E2A\u6587\u4EF6\u5939\u662F\u7A7A\u7684\u3002",
+  "detail.root": "\u7D20\u6750",
+  "browse.back": "\u8FD4\u56DE",
+  "browse.empty": "\u8FD9\u6761\u8D44\u4EA7\u8FD8\u6CA1\u6709\u7D20\u6750\u6587\u4EF6\u6216\u6587\u4EF6\u5939\u3002",
+  "browse.openFolder": "\u6253\u5F00\u6587\u4EF6\u5939",
+  "browse.previewVideo": "\u9884\u89C8\u89C6\u9891",
+  "media.image": "\u56FE\u7247",
+  "media.video": "\u89C6\u9891",
+  "detail.save": "\u4FDD\u5B58",
+  "detail.close": "\u5173\u95ED",
+  "detail.cite": "\u5F15\u7528",
+  "remove.title": "\u79FB\u9664\u300C{name}\u300D\uFF1F",
+  "remove.hint": "\u4EC5\u4ECE\u8D44\u4EA7\u5E93\u79FB\u9664\uFF0C\u4E0D\u4F1A\u5220\u9664\u4F60\u78C1\u76D8\u4E0A\u7684\u539F\u6587\u4EF6\u3002",
+  "remove.confirm": "\u79FB\u9664",
+  "remove.cancel": "\u53D6\u6D88",
   "mapping.remove": "\u79FB\u9664",
-  "mapping.removeTitle": "\u79FB\u9664\u201C{name}\u201D\uFF1F",
-  "mapping.removeHint": "\u4EC5\u5728\u5F53\u524D\u5217\u8868\u79FB\u9664\uFF0C\u5B9E\u9645\u7684\u6587\u4EF6\u4E0D\u53D7\u5F71\u54CD\u3002",
+  "mapping.removeTitle": "\u79FB\u9664\u300C{name}\u300D\uFF1F",
+  "mapping.removeHint": "\u4EC5\u4ECE\u8D44\u4EA7\u5E93\u79FB\u9664\uFF0C\u4E0D\u4F1A\u5220\u9664\u4F60\u78C1\u76D8\u4E0A\u7684\u539F\u6587\u4EF6\u3002",
   "mapping.removeConfirm": "\u79FB\u9664",
   "mapping.cancel": "\u53D6\u6D88",
-  "mapping.rescan": "\u91CD\u65B0\u626B\u63CF",
-  "mapping.files": "\u6587\u4EF6",
-  "mapping.kindFile": "\u6587\u4EF6",
-  "mapping.kindDir": "\u6587\u4EF6\u5939",
-  "artifact.group": "\u672C\u5730\u4EA7\u7269",
-  "artifact.all": "\u5168\u90E8\u4EA7\u7269",
-  "artifact.empty": "\u8FD8\u6CA1\u6709\u4E0A\u62A5\u7684\u4EA7\u7269\u3002\u53EF\u8BA9 Agent \u8C03\u7528 assets_upload \u4E0A\u62A5\u3002",
-  "artifact.agent": "\u6765\u6E90 Agent",
-  "artifact.model": "\u6A21\u578B",
-  "artifact.filter": "\u7C7B\u578B",
-  "table.name": "\u540D\u79F0",
-  "table.size": "\u5927\u5C0F",
-  "table.mtime": "\u4FEE\u6539\u65F6\u95F4",
-  "table.type": "\u7C7B\u578B",
-  "table.time": "\u65F6\u95F4",
-  "table.empty": "\u6682\u65E0\u5185\u5BB9\u3002",
-  "type.image": "\u56FE\u7247",
-  "type.video": "\u89C6\u9891",
-  "type.audio": "\u97F3\u9891",
-  "type.document": "\u6587\u6863",
-  "type.html": "\u7F51\u9875",
-  "type.json": "JSON",
-  "type.other": "\u5176\u4ED6",
-  "detail.file": "\u6587\u4EF6\u8BE6\u60C5",
-  "detail.artifact": "\u4EA7\u7269\u8BE6\u60C5",
-  "detail.path": "\u771F\u5B9E\u8DEF\u5F84",
-  "detail.size": "\u5927\u5C0F",
-  "detail.mtime": "\u4FEE\u6539\u65F6\u95F4",
-  "detail.type": "\u7C7B\u578B",
-  "detail.agent": "\u6765\u6E90 Agent",
-  "detail.model": "\u6A21\u578B",
-  "detail.promptHash": "Prompt \u6458\u8981",
-  "detail.runId": "\u8FD0\u884C ID",
-  "detail.sessionId": "\u4F1A\u8BDD ID",
-  "detail.traced": "\u5DF2\u6EAF\u6E90",
-  "detail.untraced": "\u672A\u6EAF\u6E90",
-  "detail.contentRef": "\u5B58\u50A8\u4F4D\u7F6E",
-  "detail.close": "\u5173\u95ED",
   "error.generic": "\u8BF7\u6C42\u5931\u8D25",
   "error.pickerUnsupported": "\u5F53\u524D\u5E73\u53F0\u6682\u4E0D\u652F\u6301\u7CFB\u7EDF\u9009\u62E9\u7A97\uFF0C\u8BF7\u4F7F\u7528 macOS\u3002",
-  "error.pickerFailed": "\u7CFB\u7EDF\u9009\u62E9\u7A97\u6253\u5F00\u5931\u8D25\u3002"
+  "error.pickerFailed": "\u7CFB\u7EDF\u9009\u62E9\u7A97\u6253\u5F00\u5931\u8D25\u3002",
+  "error.nameConflict": "\u5DF2\u6709\u540C\u540D\u8D44\u4EA7\uFF0C\u8BF7\u6362\u4E00\u4E2A\u540D\u79F0\u3002"
 };
 var en = {
   "nav": "Assets",
   "stage.title": "Asset Library",
+  "stage.subtitle": "Reusable characters, scenes, style packs, props, and knowledge for later creation",
   "stage.refresh": "Refresh",
+  "stage.refreshing": "Refreshing\u2026",
   "stage.close": "Close",
   "loading": "Loading asset library\u2026",
-  "mapping.group": "Local folders",
-  "mapping.addDir": "Add folder",
-  "mapping.addFile": "Add file",
-  "mapping.empty": "No local files or folders yet.",
-  "mapping.invalid": "Path unavailable",
-  "mapping.rename": "Rename",
-  "mapping.renamePrompt": "New name",
+  "add.button": "Add asset",
+  "add.title": "Add asset",
+  "add.namePlaceholder": "Asset name",
+  "add.descriptionPlaceholder": "A clear description helps the agent search and reuse this asset\u2026",
+  "add.drop": "Drop files or folders here, or use the buttons below",
+  "add.pickFiles": "Choose files",
+  "add.pickFolders": "Choose folders",
+  "add.folderBadge": "Folder",
+  "add.tags": "Tags (optional)",
+  "add.tagsPlaceholder": "Press Enter to add a tag",
+  "add.submit": "Create asset",
+  "add.cancel": "Cancel",
+  "chip.all": "All",
+  "type.character": "Character",
+  "type.scene": "Scene",
+  "type.style": "Style pack",
+  "type.prop": "Prop",
+  "type.knowledge": "Knowledge",
+  "type.custom": "Uncategorized",
+  "search.placeholder": "Search assets",
+  "sort.updated": "Recently updated",
+  "empty.all": "No creative assets yet. Click Add asset to create a character or knowledge pack.",
+  "empty.type": "No {type} yet.",
+  "empty.addType": "Add {type}",
+  "card.missing": "Files missing",
+  "card.copyCite": "Copy citation",
+  "card.copied": "Copied",
+  "card.open": "Reveal original",
+  "select.count": "{n} selected",
+  "select.clear": "Clear selection",
+  "select.delete": "Delete {n}",
+  "select.toggle": "Select asset",
+  "select.removeTitle": "Remove these {n} items?",
+  "detail.title": "Asset details",
+  "detail.name": "Name",
+  "detail.type": "Type",
+  "detail.description": "Description",
+  "detail.tags": "Tags",
+  "detail.files": "Files",
+  "detail.folder": "Folder",
+  "detail.file": "File",
+  "detail.browse": "Open",
+  "detail.back": "Back",
+  "detail.emptyFolder": "This folder is empty.",
+  "detail.root": "Files",
+  "browse.back": "Back",
+  "browse.empty": "This asset has no files or folders yet.",
+  "browse.openFolder": "Open folder",
+  "browse.previewVideo": "Preview video",
+  "media.image": "Image",
+  "media.video": "Video",
+  "detail.save": "Save",
+  "detail.close": "Close",
+  "detail.cite": "Citation",
+  "remove.title": "Remove \u201C{name}\u201D?",
+  "remove.hint": "Only removed from the library \u2014 the real file stays untouched.",
+  "remove.confirm": "Remove",
+  "remove.cancel": "Cancel",
   "mapping.remove": "Remove",
   "mapping.removeTitle": "Remove \u201C{name}\u201D?",
-  "mapping.removeHint": "Only removed from this list \u2014 the real file stays untouched.",
+  "mapping.removeHint": "Only removed from the library \u2014 the real file stays untouched.",
   "mapping.removeConfirm": "Remove",
   "mapping.cancel": "Cancel",
-  "mapping.rescan": "Rescan",
-  "mapping.files": "Files",
-  "mapping.kindFile": "File",
-  "mapping.kindDir": "Folder",
-  "artifact.group": "Local artifacts",
-  "artifact.all": "All artifacts",
-  "artifact.empty": "No reported artifacts yet. Ask the agent to call assets_upload.",
-  "artifact.agent": "Source agent",
-  "artifact.model": "Model",
-  "artifact.filter": "Type",
-  "table.name": "Name",
-  "table.size": "Size",
-  "table.mtime": "Modified",
-  "table.type": "Type",
-  "table.time": "Time",
-  "table.empty": "Nothing here yet.",
-  "type.image": "Image",
-  "type.video": "Video",
-  "type.audio": "Audio",
-  "type.document": "Document",
-  "type.html": "HTML",
-  "type.json": "JSON",
-  "type.other": "Other",
-  "detail.file": "File details",
-  "detail.artifact": "Artifact details",
-  "detail.path": "Real path",
-  "detail.size": "Size",
-  "detail.mtime": "Modified",
-  "detail.type": "Type",
-  "detail.agent": "Source agent",
-  "detail.model": "Model",
-  "detail.promptHash": "Prompt hash",
-  "detail.runId": "Run ID",
-  "detail.sessionId": "Session ID",
-  "detail.traced": "Traced",
-  "detail.untraced": "Not traced",
-  "detail.contentRef": "Stored at",
-  "detail.close": "Close",
   "error.generic": "Request failed",
   "error.pickerUnsupported": "The system picker is only available on macOS for now.",
-  "error.pickerFailed": "Failed to open the system picker."
+  "error.pickerFailed": "Failed to open the system picker.",
+  "error.nameConflict": "An asset with this name already exists."
 };
 var NS = "omnimux-assets";
 
@@ -217,12 +249,12 @@ var STYLES = `
 .omnimux-assets-entry svg { display: block; width: 14px; height: 14px; }
 .omnimux-assets-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
 `;
-function paintLabel(entry, label3) {
-  entry.setAttribute("aria-label", label3);
+function paintLabel(entry, label) {
+  entry.setAttribute("aria-label", label);
   const node = entry.querySelector(".omnimux-assets-entry-label");
-  if (node) node.textContent = label3;
+  if (node) node.textContent = label;
 }
-function registerWhenReady(row3) {
+function registerWhenReady(row) {
   let unregister = () => {
   };
   let disposed = false;
@@ -230,7 +262,7 @@ function registerWhenReady(row3) {
     if (disposed) return;
     const api = window.__omnimuxSidebar;
     if (!api || typeof api.register !== "function") return;
-    unregister = api.register(row3);
+    unregister = api.register(row);
     clearInterval(timer);
   };
   const timer = setInterval(attempt, 500);
@@ -244,7 +276,7 @@ function registerWhenReady(row3) {
 function mountSidebarEntry(stage, t, locale) {
   const entry = document.createElement("button");
   entry.type = "button";
-  entry.dataset.dshOmnimuxAssetsEntry = "";
+  entry.dataset.omnimuxAssetsEntry = "";
   entry.className = "omnimux-assets-entry";
   entry.innerHTML = `<span class="omnimux-assets-entry-icon">${ICON}</span><span class="omnimux-assets-entry-label"></span>`;
   paintLabel(entry, t("nav"));
@@ -277,12 +309,12 @@ function mountSidebarEntry(stage, t, locale) {
 }
 
 // src/client/AssetsStage.jsx
-var import_react2 = require("react");
+var import_react4 = require("react");
 
 // src/client/a11y.js
 var FOCUS_CSS = [
-  ".omnimux-assets-focusable:focus-visible{outline:2px solid var(--dsw-alias-bg-interactive-primary,#3b6fbd);outline-offset:-2px;border-radius:4px;}",
-  "tr.omnimux-assets-focusable:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(128,128,128,.12));}"
+  ".omnimux-assets-focusable:focus-visible{outline:2px solid var(--dsw-alias-label-primary, inherit);outline-offset:2px;border-radius:8px;}",
+  ".omnimux-assets-focusable:hover{border-color:var(--dsw-alias-border-l4, var(--dsw-alias-border-l3, currentColor));}"
 ].join("\n");
 function activateRowKeydown(trigger) {
   return (event) => {
@@ -322,31 +354,14 @@ function FileIcon(props) {
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M14 3v5h5" })
   ] });
 }
-function AlertIcon(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Icon, { ...props, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 4 2.8 20h18.4Z" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 10v4" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 17.5h.01" })
-  ] });
-}
-function FolderCheckIcon(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Icon, { ...props, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "m9 13 2 2 4-4" })
-  ] });
-}
 function PlusIcon(props) {
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Icon, { ...props, children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 5v14" }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M5 12h14" })
   ] });
 }
-function DotsIcon(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Icon, { ...props, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "5", cy: "12", r: "1.6", fill: "currentColor", stroke: "none" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "12", cy: "12", r: "1.6", fill: "currentColor", stroke: "none" }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "19", cy: "12", r: "1.6", fill: "currentColor", stroke: "none" })
-  ] });
+function CheckIcon(props) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, { ...props, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "m5 12 5 5 9-10" }) });
 }
 function CloseIcon(props) {
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Icon, { ...props, children: [
@@ -361,9 +376,6 @@ function RefreshIcon(props) {
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M4 13a8 8 0 0 0 14.9 3" }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M20 19v-4h-4" })
   ] });
-}
-function ChevronRightIcon(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, { ...props, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "m9 6 6 6-6 6" }) });
 }
 
 // src/client/api.js
@@ -386,7 +398,7 @@ function getState(mrev, arev) {
   if (Number.isFinite(
     /** @type {number} */
     mrev
-  )) query.set("mrev", String(mrev));
+  )) query.set("lrev", String(mrev));
   if (Number.isFinite(
     /** @type {number} */
     arev
@@ -394,754 +406,1114 @@ function getState(mrev, arev) {
   const suffix = query.toString() ? `?${query}` : "";
   return assetsRequest(`/omnimux/assets/state${suffix}`);
 }
-function addMapping(path, name2) {
-  return assetsRequest("/omnimux/assets/mappings", { method: "POST", body: { path, name: name2 } });
+function createAsset(body) {
+  return assetsRequest("/omnimux/assets/library", { method: "POST", body });
 }
-function renameMapping(id, name2) {
-  return assetsRequest("/omnimux/assets/mappings/rename", { method: "POST", body: { id, name: name2 } });
+function updateAsset(id, patch) {
+  return assetsRequest("/omnimux/assets/library/update", { method: "POST", body: { id, ...patch } });
 }
-function deleteMapping(id) {
-  return assetsRequest("/omnimux/assets/mappings/delete", { method: "POST", body: { id } });
+function deleteAsset(id) {
+  return assetsRequest("/omnimux/assets/library/delete", { method: "POST", body: { id } });
 }
 function pickPath(kind) {
   return assetsRequest("/omnimux/assets/pick", { method: "POST", body: { kind } });
 }
-function rescanMapping(id) {
-  return assetsRequest("/omnimux/assets/mappings/rescan", { method: "POST", body: { id } });
-}
-function listFiles(id, subPath = "") {
-  const query = new URLSearchParams({ id });
+function listAssetFiles(assetId, fileId, subPath = "") {
+  const query = new URLSearchParams({ id: assetId, file: fileId });
   if (subPath !== "") query.set("path", subPath);
-  return assetsRequest(`/omnimux/assets/mappings/files?${query}`);
+  return assetsRequest(`/omnimux/assets/library/files?${query}`);
 }
-function listArtifacts(type, arev) {
-  const query = new URLSearchParams();
-  if (type) query.set("type", type);
-  if (Number.isFinite(
-    /** @type {number} */
-    arev
-  )) query.set("arev", String(arev));
-  const suffix = query.toString() ? `?${query}` : "";
-  return assetsRequest(`/omnimux/assets/artifacts${suffix}`);
+function previewUrl(assetId, fileId = "", subPath = "") {
+  const query = new URLSearchParams({ id: assetId });
+  if (fileId) query.set("file", fileId);
+  if (subPath !== "") query.set("path", subPath);
+  return `/omnimux/assets/library/preview?${query}`;
 }
 
-// src/client/MappingNav.jsx
+// src/client/AddAssetDialog.jsx
 var import_react = require("react");
 var import_jsx_runtime2 = require("react/jsx-runtime");
-var group = {
-  padding: "8px 12px 4px",
-  display: "flex",
-  flexDirection: "column",
-  gap: 2
-};
-var groupHeaderRow = {
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  padding: "0 8px 6px",
-  position: "relative"
-};
-var groupHeader = {
-  flex: 1,
-  minWidth: 0,
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  fontSize: 12,
-  fontWeight: 600,
-  lineHeight: "16px",
-  letterSpacing: 0.2,
-  color: "var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap"
-};
-var headerAddButton = {
-  flex: "none",
-  width: 22,
-  height: 22,
+var ASSET_TYPE_KEYS = ["character", "scene", "style", "prop", "knowledge", "custom"];
+var overlay = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 320,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "none",
-  background: "transparent",
-  color: "var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))",
-  cursor: "pointer",
-  borderRadius: 4,
-  padding: 0
+  background: "var(--dsw-alias-bg-mask-1, rgba(0,0,0,.40))"
 };
-var row = {
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  height: 32,
-  padding: "0 8px 0 22px",
-  // indented under the group header — visual hierarchy
-  borderRadius: 8,
-  cursor: "pointer",
-  position: "relative",
-  fontSize: 14,
-  lineHeight: "20px"
-};
-var muted = {
-  margin: 0,
-  padding: "2px 8px",
-  fontSize: 12,
-  lineHeight: "18px",
-  color: "var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))"
-};
-var menuButton = {
-  flex: "none",
-  width: 22,
-  height: 22,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "none",
-  background: "transparent",
-  color: "var(--dsw-alias-label-secondary, inherit)",
-  cursor: "pointer",
-  borderRadius: 4,
-  padding: 0
-};
-var dropdown = {
-  position: "absolute",
-  top: "100%",
-  right: 4,
-  zIndex: 6,
+var sheet = {
+  width: 560,
+  maxWidth: "calc(100vw - 48px)",
+  maxHeight: "calc(100vh - 48px)",
+  overflow: "auto",
   display: "flex",
   flexDirection: "column",
-  minWidth: 108,
-  padding: 4,
-  borderRadius: 8,
-  background: "var(--dsw-alias-bg-elevated, var(--dsw-bg, #1c1c1c))",
-  border: "1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.35)))",
-  boxShadow: "0 4px 16px rgba(0,0,0,.24)"
+  background: "var(--dsw-alias-bg-base, var(--dsw-bg, inherit))",
+  color: "var(--dsw-alias-label-primary, inherit)",
+  borderRadius: 16,
+  border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))"
 };
-var headerDropdown = {
-  ...dropdown,
-  right: 0
-};
-var dropdownItem = {
+var inputBare = {
   border: "none",
+  outline: "none",
   background: "transparent",
   color: "inherit",
-  cursor: "pointer",
-  textAlign: "left",
-  padding: "4px 8px",
-  fontSize: 12,
-  lineHeight: "18px",
-  borderRadius: 4,
-  whiteSpace: "nowrap"
+  font: "inherit",
+  width: "100%"
 };
-var dangerItem = {
-  ...dropdownItem,
-  color: "var(--dsw-alias-label-danger, #d45656)"
-};
-var label = { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-var count = { flex: "none", fontSize: 11, opacity: 0.7 };
-function MappingNav({ t, mappings, activeId, busy, onSelect, onAddFile, onAddDir, onRename, onRemove }) {
-  const [menuId, setMenuId] = (0, import_react.useState)("");
-  const [addMenuOpen, setAddMenuOpen] = (0, import_react.useState)(false);
-  const closeMenu = () => {
-    setMenuId("");
+function AddAssetDialog({ t, busy, presetType = "character", error, onCancel, onPick, onSubmit }) {
+  const nameRef = (0, import_react.useRef)(null);
+  const [name2, setName] = (0, import_react.useState)("");
+  const [type, setType] = (0, import_react.useState)(ASSET_TYPE_KEYS.includes(presetType) ? presetType : "character");
+  const [description, setDescription] = (0, import_react.useState)("");
+  const [tagsOpen, setTagsOpen] = (0, import_react.useState)(false);
+  const [tagDraft, setTagDraft] = (0, import_react.useState)("");
+  const [tags, setTags] = (0, import_react.useState)([]);
+  const [files, setFiles] = (0, import_react.useState)([]);
+  (0, import_react.useEffect)(() => {
+    nameRef.current?.focus();
+  }, []);
+  const addTag = () => {
+    const next = tagDraft.trim();
+    if (!next) return;
+    if (tags.some((tag) => tag.toLowerCase() === next.toLowerCase())) {
+      setTagDraft("");
+      return;
+    }
+    setTags([...tags, next]);
+    setTagDraft("");
   };
-  const closeAddMenu = () => {
-    setAddMenuOpen(false);
+  const addPaths = (paths) => {
+    const next = Array.isArray(paths) ? paths.filter((path) => typeof path === "string" && path !== "") : [];
+    if (next.length === 0) return;
+    setFiles((current) => {
+      const seen = new Set(current.map((file) => file.real_path));
+      const extra = [];
+      for (const path of next) {
+        if (seen.has(path)) continue;
+        seen.add(path);
+        extra.push({ real_path: path });
+      }
+      return extra.length === 0 ? current : [...current, ...extra];
+    });
   };
-  const handleRename = (rowValue) => {
-    const next = window.prompt(t("mapping.renamePrompt"), rowValue.display_name);
-    if (next === null) return;
-    const name2 = next.trim();
-    if (name2 === "" || name2 === rowValue.display_name) return;
-    onRename(rowValue.id, name2);
-  };
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: group, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: groupHeaderRow, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: groupHeader, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(FolderIcon, {}),
-        t("mapping.group")
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        "button",
+  const looksLikeFolder = (path) => typeof path === "string" && /\/$/.test(path);
+  const canSubmit = name2.trim() !== "" && !busy;
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    "div",
+    {
+      style: overlay,
+      onMouseDown: (event) => {
+        if (event.target === event.currentTarget) onCancel();
+      },
+      children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+        "div",
         {
-          type: "button",
-          style: headerAddButton,
-          "aria-label": t("mapping.addDir"),
-          disabled: busy,
-          onClick: (event) => {
-            event.stopPropagation();
-            setAddMenuOpen(!addMenuOpen);
+          role: "dialog",
+          "aria-modal": "true",
+          "aria-label": t("add.title"),
+          style: sheet,
+          onKeyDown: (event) => {
+            if (event.key === "Escape") onCancel();
           },
-          children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(PlusIcon, {})
-        }
-      ),
-      addMenuOpen ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-          "div",
-          {
-            style: { position: "fixed", inset: 0, zIndex: 5 },
-            onClick: closeAddMenu
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-          "div",
-          {
-            style: headerDropdown,
-            role: "menu",
-            onKeyDown: (event) => {
-              if (event.key === "Escape") {
-                event.stopPropagation();
-                closeAddMenu();
-              }
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "16px 20px 8px" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { color: "var(--dsw-alias-label-tertiary, inherit)", fontSize: 18 }, children: "@" }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "input",
+                {
+                  ref: nameRef,
+                  value: name2,
+                  placeholder: t("add.namePlaceholder"),
+                  onChange: (event) => {
+                    setName(event.target.value);
+                  },
+                  style: { ...inputBare, fontSize: 18, fontWeight: 500, lineHeight: "28px" }
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                 "button",
                 {
                   type: "button",
-                  style: { ...dropdownItem, display: "flex", alignItems: "center", gap: 6 },
-                  role: "menuitem",
-                  autoFocus: true,
-                  onClick: () => {
-                    closeAddMenu();
-                    onAddDir();
+                  "aria-label": t("stage.close"),
+                  onClick: onCancel,
+                  style: {
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    color: "inherit"
+                  },
+                  children: "\xD7"
+                }
+              )
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "0 20px 12px" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "select",
+                {
+                  value: type,
+                  onChange: (event) => {
+                    setType(event.target.value);
+                  },
+                  style: {
+                    border: "none",
+                    background: "var(--dsw-alias-bg-module-platform, var(--dsw-alias-interactive-bg-hover-solid, inherit))",
+                    borderRadius: 8,
+                    padding: "4px 8px",
+                    fontSize: 13,
+                    color: "inherit"
+                  },
+                  children: ASSET_TYPE_KEYS.map((key) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: key, children: t(`type.${key}`) }, key))
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { color: "var(--dsw-alias-border-l2, var(--dsw-border, currentColor))" }, children: "|" }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "input",
+                {
+                  value: description,
+                  placeholder: t("add.descriptionPlaceholder"),
+                  onChange: (event) => {
+                    setDescription(event.target.value);
+                  },
+                  style: { ...inputBare, fontSize: 13, color: "var(--dsw-alias-label-secondary, inherit)" }
+                }
+              )
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { borderTop: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))", padding: 16 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+                "div",
+                {
+                  onDragOver: (event) => {
+                    event.preventDefault();
+                  },
+                  onDrop: (event) => {
+                    event.preventDefault();
+                    const dropped = Array.from(event.dataTransfer?.files ?? []);
+                    addPaths(dropped.map((file) => typeof file.path === "string" ? file.path : "").filter(Boolean));
+                  },
+                  style: {
+                    width: "100%",
+                    minHeight: 128,
+                    border: "1px dashed var(--dsw-alias-border-l4, var(--dsw-alias-border-l3, currentColor))",
+                    borderRadius: 12,
+                    background: "transparent",
+                    color: "var(--dsw-alias-label-tertiary, inherit)",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    fontSize: 13,
+                    padding: 16,
+                    boxSizing: "border-box"
                   },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(FolderIcon, {}),
-                    t("mapping.addDir")
+                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(FileIcon, { size: 22 }),
+                    t("add.drop"),
+                    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                        "button",
+                        {
+                          type: "button",
+                          onClick: () => {
+                            void onPick("file").then(addPaths);
+                          },
+                          style: {
+                            border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
+                            background: "transparent",
+                            color: "inherit",
+                            borderRadius: 999,
+                            padding: "6px 12px",
+                            cursor: "pointer",
+                            fontSize: 12
+                          },
+                          children: t("add.pickFiles")
+                        }
+                      ),
+                      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                        "button",
+                        {
+                          type: "button",
+                          onClick: () => {
+                            void onPick("directory").then(addPaths);
+                          },
+                          style: {
+                            border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
+                            background: "transparent",
+                            color: "inherit",
+                            borderRadius: 999,
+                            padding: "6px 12px",
+                            cursor: "pointer",
+                            fontSize: 12
+                          },
+                          children: t("add.pickFolders")
+                        }
+                      )
+                    ] })
                   ]
                 }
               ),
+              files.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("ul", { style: { margin: "10px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }, children: files.map((file) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("li", { style: { display: "flex", gap: 8, fontSize: 12, color: "var(--dsw-alias-label-secondary, inherit)", alignItems: "center" }, children: [
+                looksLikeFolder(file.real_path) ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(FolderIcon, { size: 14 }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(FileIcon, { size: 14 }),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: file.real_path }),
+                looksLikeFolder(file.real_path) ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 11, color: "var(--dsw-alias-label-tertiary, inherit)" }, children: t("add.folderBadge") }) : null,
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => {
+                      setFiles((current) => current.filter((row) => row.real_path !== file.real_path));
+                    },
+                    style: { border: "none", background: "transparent", cursor: "pointer", color: "inherit" },
+                    children: "\xD7"
+                  }
+                )
+              ] }, file.real_path)) }) : null
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { borderTop: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))", padding: "10px 16px 16px" }, children: [
               /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
                 "button",
                 {
                   type: "button",
-                  style: { ...dropdownItem, display: "flex", alignItems: "center", gap: 6 },
-                  role: "menuitem",
                   onClick: () => {
-                    closeAddMenu();
-                    onAddFile();
+                    setTagsOpen(!tagsOpen);
                   },
+                  style: { border: "none", background: "transparent", cursor: "pointer", color: "var(--dsw-alias-label-secondary, inherit)", fontSize: 13, padding: 0 },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(FileIcon, {}),
-                    t("mapping.addFile")
+                    tagsOpen ? "\u25BE" : "\u25B8",
+                    " ",
+                    t("add.tags")
                   ]
                 }
-              )
-            ]
-          }
-        )
-      ] }) : null
-    ] }),
-    mappings.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: muted, children: t("mapping.empty") }) : null,
-    mappings.map((mapping) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-      "div",
-      {
-        className: "omnimux-assets-focusable",
-        tabIndex: 0,
-        role: "button",
-        "aria-label": String(mapping.display_name),
-        onKeyDown: activateRowKeydown(() => {
-          onSelect(String(mapping.id));
-        }),
-        style: {
-          ...row,
-          background: mapping.id === activeId ? "var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18))" : "transparent"
-        },
-        onClick: () => {
-          onSelect(String(mapping.id));
-        },
-        onMouseEnter: (event) => {
-          event.currentTarget.style.background = "var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12))";
-        },
-        onMouseLeave: (event) => {
-          event.currentTarget.style.background = mapping.id === activeId ? "var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18))" : "transparent";
-        },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { "aria-hidden": "true", style: { display: "inline-flex", color: mapping.status !== "ok" ? "var(--dsw-alias-label-warning, #d48806)" : "inherit" }, children: mapping.status !== "ok" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(AlertIcon, {}) : mapping.kind === "file" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(FileIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(FolderIcon, {}) }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: label, title: mapping.real_path, children: mapping.display_name }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: count, children: mapping.status === "ok" ? mapping.file_count : "\u2014" }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            "button",
-            {
-              type: "button",
-              "aria-label": t("mapping.rename"),
-              style: menuButton,
-              disabled: busy,
-              onClick: (event) => {
-                event.stopPropagation();
-                setMenuId(menuId === mapping.id ? "" : String(mapping.id));
-              },
-              children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(DotsIcon, {})
-            }
-          ),
-          menuId === mapping.id ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-              "div",
-              {
-                style: { position: "fixed", inset: 0, zIndex: 5 },
-                onClick: (event) => {
-                  event.stopPropagation();
-                  closeMenu();
-                }
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-              "div",
-              {
-                style: dropdown,
-                role: "menu",
-                onClick: (event) => {
-                  event.stopPropagation();
-                },
-                onKeyDown: (event) => {
-                  if (event.key === "Escape") {
-                    event.stopPropagation();
-                    closeMenu();
-                  }
-                },
-                children: [
+              ),
+              tagsOpen ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { marginTop: 8 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }, children: tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--dsw-alias-bg-module-platform, var(--dsw-alias-interactive-bg-hover-solid, inherit))" }, children: [
+                  tag,
                   /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                     "button",
                     {
                       type: "button",
-                      style: dropdownItem,
-                      role: "menuitem",
-                      autoFocus: true,
                       onClick: () => {
-                        closeMenu();
-                        handleRename(mapping);
+                        setTags(tags.filter((item) => item !== tag));
                       },
-                      children: t("mapping.rename")
-                    }
-                  ),
-                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-                    "button",
-                    {
-                      type: "button",
-                      style: dangerItem,
-                      role: "menuitem",
-                      onClick: () => {
-                        closeMenu();
-                        onRemove(mapping);
-                      },
-                      children: t("mapping.remove")
+                      style: { border: "none", background: "transparent", cursor: "pointer", marginLeft: 4 },
+                      children: "\xD7"
                     }
                   )
-                ]
-              }
-            )
-          ] }) : null
-        ]
-      },
-      String(mapping.id)
-    ))
-  ] });
-}
-
-// src/client/ArtifactNav.jsx
-var import_jsx_runtime3 = require("react/jsx-runtime");
-var group2 = {
-  padding: "8px 12px 4px",
-  display: "flex",
-  flexDirection: "column",
-  gap: 2
-};
-var groupHeader2 = {
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  fontSize: 12,
-  fontWeight: 600,
-  lineHeight: "16px",
-  letterSpacing: 0.2,
-  color: "var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))",
-  padding: "0 8px 6px"
-};
-var row2 = {
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  height: 32,
-  padding: "0 8px 0 22px",
-  // indented under the group header — visual hierarchy
-  borderRadius: 8,
-  cursor: "pointer",
-  fontSize: 14,
-  lineHeight: "20px"
-};
-var label2 = { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-var count2 = { flex: "none", fontSize: 11, opacity: 0.7 };
-var BUCKETS = ["image", "video", "audio", "document", "html", "json"];
-function ArtifactNav({ t, artifacts, activeType, onSelect }) {
-  const counts = {};
-  for (const artifact of artifacts) {
-    const type = typeof artifact.type === "string" ? artifact.type : "other";
-    counts[type] = (counts[type] ?? 0) + 1;
-  }
-  const renderRow = (key, text, value, active, rowCount) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-    "div",
-    {
-      className: "omnimux-assets-focusable",
-      tabIndex: 0,
-      role: "button",
-      "aria-label": String(text),
-      onKeyDown: activateRowKeydown(() => {
-        onSelect(value);
-      }),
-      style: {
-        ...row2,
-        background: active ? "var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18))" : "transparent"
-      },
-      onClick: () => {
-        onSelect(value);
-      },
-      onMouseEnter: (event) => {
-        event.currentTarget.style.background = "var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12))";
-      },
-      onMouseLeave: (event) => {
-        event.currentTarget.style.background = active ? "var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18))" : "transparent";
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: label2, children: text }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: count2, children: rowCount })
-      ]
-    },
-    key
-  );
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: group2, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: groupHeader2, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(FolderCheckIcon, {}),
-      t("artifact.group")
-    ] }),
-    renderRow("all", t("artifact.all"), "", activeType === "", artifacts.length),
-    BUCKETS.filter((bucket) => (counts[bucket] ?? 0) > 0).map((bucket) => renderRow(bucket, t(`type.${bucket}`), bucket, activeType === bucket, counts[bucket]))
-  ] });
-}
-
-// src/client/format.js
-function formatBytes(bytes) {
-  const size = Number(bytes);
-  if (!Number.isFinite(size) || size < 0) return "\u2014";
-  if (size < 1024) return `${size} B`;
-  const units = ["KB", "MB", "GB", "TB"];
-  let value = size / 1024;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[unit]}`;
-}
-function formatRelative(iso, now = Date.now()) {
-  const time = Date.parse(iso);
-  if (!Number.isFinite(time)) return "";
-  const deltaSec = Math.round((time - now) / 1e3);
-  const abs = Math.abs(deltaSec);
-  if (abs >= 86400 * 30) return new Date(time).toLocaleString();
-  const rtf = new Intl.RelativeTimeFormat(void 0, { numeric: "auto" });
-  if (abs < 60) return rtf.format(Math.trunc(deltaSec), "second");
-  if (abs < 3600) return rtf.format(Math.trunc(deltaSec / 60), "minute");
-  if (abs < 86400) return rtf.format(Math.trunc(deltaSec / 3600), "hour");
-  return rtf.format(Math.trunc(deltaSec / 86400), "day");
-}
-function formatDateTime(iso) {
-  const time = Date.parse(iso);
-  if (!Number.isFinite(time)) return "";
-  return new Date(time).toLocaleString();
-}
-
-// src/client/FileTable.jsx
-var import_jsx_runtime4 = require("react/jsx-runtime");
-var tableStyle = {
-  width: "100%",
-  borderCollapse: "collapse",
-  fontSize: 13,
-  lineHeight: "20px"
-};
-var th = {
-  textAlign: "left",
-  fontWeight: 600,
-  fontSize: 11,
-  textTransform: "uppercase",
-  letterSpacing: 0.4,
-  color: "var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))",
-  padding: "6px 10px",
-  borderBottom: "1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.25)))",
-  position: "sticky",
-  top: 0,
-  background: "var(--dsw-alias-bg-primary, var(--dsw-bg, #111))"
-};
-var td = {
-  padding: "6px 10px",
-  borderBottom: "1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.15)))",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  maxWidth: 0
-};
-var muted2 = {
-  margin: 0,
-  fontSize: 12,
-  lineHeight: "18px",
-  color: "var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))"
-};
-function FileTable({ t, mapping, files, onOpenFile, onEnterDir }) {
-  if (!mapping) {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted2, children: t("loading") });
-  }
-  if (mapping.status !== "ok") {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { style: muted2, children: [
-      "\u26A0 ",
-      t("mapping.invalid")
-    ] });
-  }
-  if (files.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted2, children: t("table.empty") });
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("table", { style: tableStyle, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("tr", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("th", { style: { ...th, width: "40%" }, children: t("table.name") }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("th", { style: th, children: t("table.size") }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("th", { style: th, children: t("table.mtime") }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("th", { style: th, children: t("table.type") })
-    ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("tbody", { children: files.map((file) => {
-      const activate = () => {
-        if (file.is_dir) onEnterDir(file);
-        else onOpenFile(file);
-      };
-      return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
-        "tr",
-        {
-          className: "omnimux-assets-focusable",
-          style: { cursor: "pointer" },
-          tabIndex: 0,
-          role: "button",
-          "aria-label": String(file.name),
-          onClick: activate,
-          onKeyDown: activateRowKeydown(activate),
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("td", { style: td, title: String(file.relative_path), children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 6, maxWidth: "100%" }, children: [
-              file.is_dir ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FolderIcon, {}) : null,
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { overflow: "hidden", textOverflow: "ellipsis" }, children: String(file.name) }),
-              file.is_dir ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { display: "inline-flex", color: "var(--dsw-alias-label-secondary, rgba(128,128,128,.9))" }, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(ChevronRightIcon, {}) }) : null
-            ] }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("td", { style: td, children: file.is_dir ? "\u2014" : formatBytes(Number(file.size)) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("td", { style: td, children: formatRelative(String(file.mtime)) }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("td", { style: td, children: file.is_dir ? t("type.other") : t(`type.${file.type}`) })
+                ] }, tag)) }),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                  "input",
+                  {
+                    value: tagDraft,
+                    placeholder: t("add.tagsPlaceholder"),
+                    onChange: (event) => {
+                      setTagDraft(event.target.value);
+                    },
+                    onKeyDown: (event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        addTag();
+                      }
+                    },
+                    style: {
+                      ...inputBare,
+                      border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
+                      borderRadius: 8,
+                      padding: "6px 10px",
+                      fontSize: 13
+                    }
+                  }
+                )
+              ] }) : null,
+              error ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { margin: "8px 0 0", fontSize: 12, color: "var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))" }, children: error }) : null,
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: 16 }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "button",
+                {
+                  type: "button",
+                  disabled: !canSubmit,
+                  onClick: () => {
+                    onSubmit({
+                      name: name2.trim(),
+                      type,
+                      description,
+                      tags,
+                      files
+                    });
+                  },
+                  style: {
+                    border: "none",
+                    background: canSubmit ? "var(--dsw-alias-button-primary-fill, var(--dsw-alias-label-primary, currentColor))" : "var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
+                    color: "var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted, #fff))",
+                    borderRadius: 999,
+                    padding: "8px 16px",
+                    fontSize: 14,
+                    fontWeight: 500,
+                    cursor: canSubmit ? "pointer" : "default"
+                  },
+                  children: t("add.submit")
+                }
+              ) })
+            ] })
           ]
+        }
+      )
+    }
+  );
+}
+
+// src/client/AssetBrowse.jsx
+var import_react2 = require("react");
+var import_jsx_runtime3 = require("react/jsx-runtime");
+function isDirectoryRef(file) {
+  return file?.kind === "directory" || file?.is_dir === true;
+}
+function initialStack(asset) {
+  const files = Array.isArray(asset.files) ? asset.files : [];
+  const folders = files.filter(isDirectoryRef);
+  if (folders.length === 1 && files.length === 1) return { file: folders[0], path: "" };
+  return null;
+}
+var muted = {
+  margin: 0,
+  fontSize: 13,
+  color: "var(--dsw-alias-label-tertiary, inherit)"
+};
+var grid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+  gap: 12
+};
+var IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|bmp|ico|avif|heic|tiff)$/i;
+var VIDEO_EXT = /\.(mp4|mov|avi|mkv|webm|m4v|flv)$/i;
+function mediaKind(row) {
+  if (isDirectoryRef(row) || row?.is_dir) return "folder";
+  const kind = String(row?.kind || row?.type || "");
+  if (kind === "image" || kind === "video") return kind;
+  const name2 = String(row?.name || row?.original_name || row?.real_path || "");
+  if (IMAGE_EXT.test(name2)) return "image";
+  if (VIDEO_EXT.test(name2)) return "video";
+  return "file";
+}
+function AssetBrowse({ t, asset, onBack }) {
+  const [stack, setStack] = (0, import_react2.useState)(() => initialStack(asset));
+  const [entries, setEntries] = (0, import_react2.useState)([]);
+  const [loading, setLoading] = (0, import_react2.useState)(false);
+  const [error, setError] = (0, import_react2.useState)("");
+  (0, import_react2.useEffect)(() => {
+    setStack(initialStack(asset));
+    setEntries([]);
+    setError("");
+  }, [asset.id]);
+  (0, import_react2.useEffect)(() => {
+    if (!stack) return void 0;
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    void listAssetFiles(asset.id, stack.file.id, stack.path).then((result) => {
+      if (cancelled) return;
+      if (!result.ok) {
+        setError(String(result.body?.message || result.body?.error || `HTTP ${String(result.status)}`));
+        setEntries([]);
+        setLoading(false);
+        return;
+      }
+      setEntries(Array.isArray(result.body?.entries) ? result.body.entries : []);
+      setLoading(false);
+    }).catch((caught) => {
+      if (cancelled) return;
+      setError(caught instanceof Error ? caught.message : String(caught));
+      setEntries([]);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [asset.id, stack?.file?.id, stack?.path]);
+  const crumbs = stack ? [asset.name, stack.file.original_name || stack.file.real_path, ...String(stack.path || "").split("/").filter(Boolean)] : [asset.name];
+  const goCrumb = (index) => {
+    if (index <= 0) {
+      onBack();
+      return;
+    }
+    if (!stack) return;
+    if (index === 1) {
+      setStack({ file: stack.file, path: "" });
+      return;
+    }
+    const parts = String(stack.path || "").split("/").filter(Boolean);
+    setStack({ file: stack.file, path: parts.slice(0, index - 1).join("/") });
+  };
+  const files = Array.isArray(asset.files) ? asset.files : [];
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12, minHeight: "100%" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", fontSize: 13 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        "button",
+        {
+          type: "button",
+          onClick: () => {
+            if (!stack) {
+              onBack();
+              return;
+            }
+            const parts = String(stack.path || "").split("/").filter(Boolean);
+            if (parts.length === 0) setStack(null);
+            else setStack({ file: stack.file, path: parts.slice(0, -1).join("/") });
+          },
+          style: {
+            border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
+            background: "transparent",
+            color: "inherit",
+            borderRadius: 999,
+            padding: "4px 10px",
+            cursor: "pointer",
+            fontSize: 12
+          },
+          children: t("browse.back")
+        }
+      ),
+      crumbs.map((crumb, index) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { style: { display: "inline-flex", gap: 6, alignItems: "center" }, children: [
+        index > 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { color: "var(--dsw-alias-label-tertiary, inherit)" }, children: "/" }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: () => {
+              goCrumb(index);
+            },
+            style: {
+              border: "none",
+              background: "transparent",
+              color: index === crumbs.length - 1 ? "inherit" : "var(--dsw-alias-label-secondary, inherit)",
+              cursor: "pointer",
+              padding: 0,
+              fontWeight: index === crumbs.length - 1 ? 500 : 400
+            },
+            children: crumb
+          }
+        )
+      ] }, `${crumb}-${index}`))
+    ] }),
+    stack ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+      loading ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted, children: t("loading") }) : null,
+      error ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: { ...muted, color: "var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))" }, children: error }) : null,
+      !loading && !error && entries.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted, children: t("detail.emptyFolder") }) : null,
+      !loading && entries.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: grid, children: entries.map((entry) => {
+        const folder = Boolean(entry.is_dir);
+        const kind = mediaKind(entry);
+        const src = folder ? "" : previewUrl(asset.id, stack.file.id, entry.relative_path || [stack.path, entry.name].filter(Boolean).join("/"));
+        return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          MediaCard,
+          {
+            t,
+            title: entry.name,
+            kind,
+            src,
+            onOpen: folder ? () => {
+              setStack({
+                file: stack.file,
+                path: entry.relative_path || [stack.path, entry.name].filter(Boolean).join("/")
+              });
+            } : void 0
+          },
+          String(entry.relative_path || entry.name)
+        );
+      }) }) : null
+    ] }) : files.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted, children: t("browse.empty") }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: grid, children: files.map((file) => {
+      const folder = isDirectoryRef(file);
+      const kind = mediaKind(file);
+      const src = folder ? "" : previewUrl(asset.id, file.id);
+      return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        MediaCard,
+        {
+          t,
+          title: file.original_name || file.real_path,
+          kind,
+          src,
+          onOpen: folder ? () => {
+            setStack({ file, path: "" });
+          } : void 0
         },
-        String(file.relative_path)
+        file.id
       );
     }) })
   ] });
 }
-
-// src/client/ArtifactTable.jsx
-var import_jsx_runtime5 = require("react/jsx-runtime");
-var tableStyle2 = {
-  width: "100%",
-  borderCollapse: "collapse",
-  fontSize: 13,
-  lineHeight: "20px"
-};
-var th2 = {
-  textAlign: "left",
-  fontWeight: 600,
-  fontSize: 11,
-  textTransform: "uppercase",
-  letterSpacing: 0.4,
-  color: "var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))",
-  padding: "6px 10px",
-  borderBottom: "1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.25)))",
-  position: "sticky",
-  top: 0,
-  background: "var(--dsw-alias-bg-primary, var(--dsw-bg, #111))"
-};
-var td2 = {
-  padding: "6px 10px",
-  borderBottom: "1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.15)))",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  maxWidth: 0
-};
-var muted3 = {
-  margin: 0,
-  fontSize: 12,
-  lineHeight: "18px",
-  color: "var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))"
-};
-function ArtifactTable({ t, artifacts, onOpen }) {
-  if (artifacts.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: muted3, children: t("artifact.empty") });
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("table", { style: tableStyle2, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("tr", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: { ...th2, width: "34%" }, children: t("table.name") }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: th2, children: t("artifact.agent") }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: th2, children: t("artifact.model") }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: th2, children: t("table.type") }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: th2, children: t("table.time") })
-    ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("tbody", { children: artifacts.map((artifact) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
-      "tr",
-      {
-        className: "omnimux-assets-focusable",
-        style: { cursor: "pointer" },
-        tabIndex: 0,
-        role: "button",
-        "aria-label": String(artifact.title),
-        onClick: () => {
-          onOpen(artifact);
-        },
-        onKeyDown: activateRowKeydown(() => {
-          onOpen(artifact);
-        }),
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { style: td2, title: String(artifact.title), children: String(artifact.title) }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { style: td2, children: String(artifact.source?.agent ?? "\u2014") }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { style: td2, children: artifact.source?.model ? String(artifact.source.model) : "\u2014" }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { style: td2, children: t(`type.${artifact.type}`) }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { style: td2, children: formatRelative(String(artifact.created_at)) })
-        ]
+function MediaCard({ t, title, kind, src, onOpen }) {
+  const clickable = typeof onOpen === "function";
+  const activate = clickable ? onOpen : void 0;
+  const [broken, setBroken] = (0, import_react2.useState)(false);
+  const showImage = kind === "image" && Boolean(src) && !broken;
+  const showVideo = kind === "video" && Boolean(src) && !broken;
+  const badge = kind === "folder" ? t("detail.folder") : kind === "image" ? t("media.image") : kind === "video" ? t("media.video") : t("detail.file");
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+    "article",
+    {
+      className: "omnimux-assets-focusable",
+      tabIndex: clickable ? 0 : void 0,
+      role: clickable ? "button" : void 0,
+      "aria-label": title,
+      onClick: activate,
+      onKeyDown: clickable ? activateRowKeydown(activate) : void 0,
+      style: {
+        border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
+        borderRadius: 12,
+        overflow: "hidden",
+        cursor: clickable ? "pointer" : "default",
+        background: "var(--dsw-alias-bg-base, var(--dsw-bg, inherit))",
+        display: "flex",
+        flexDirection: "column"
       },
-      String(artifact.id)
-    )) })
-  ] });
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+          "div",
+          {
+            style: {
+              height: 148,
+              background: "var(--dsw-alias-bg-module-platform, var(--dsw-alias-interactive-bg-hover-solid, inherit))",
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--dsw-alias-label-tertiary, inherit)",
+              overflow: "hidden"
+            },
+            children: [
+              showImage ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+                "img",
+                {
+                  src,
+                  alt: "",
+                  onError: () => {
+                    setBroken(true);
+                  },
+                  style: { width: "100%", height: "100%", objectFit: "cover", display: "block" }
+                }
+              ) : null,
+              showVideo ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+                "video",
+                {
+                  src,
+                  muted: true,
+                  playsInline: true,
+                  preload: "metadata",
+                  controls: true,
+                  "aria-label": t("browse.previewVideo"),
+                  onClick: (event) => {
+                    event.stopPropagation();
+                  },
+                  onError: () => {
+                    setBroken(true);
+                  },
+                  style: { width: "100%", height: "100%", objectFit: "cover", display: "block", background: "black" }
+                }
+              ) : null,
+              !showImage && !showVideo ? kind === "folder" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(FolderIcon, { size: 28 }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(FileIcon, { size: 28 }) : null,
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+                "span",
+                {
+                  style: {
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    fontSize: 11,
+                    lineHeight: "16px",
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                    background: "var(--dsw-alias-bg-base, var(--dsw-bg, inherit))",
+                    border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))"
+                  },
+                  children: badge
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { padding: "10px 12px 12px", minHeight: 44 }, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          "div",
+          {
+            style: {
+              fontSize: 13,
+              fontWeight: 500,
+              lineHeight: "20px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            },
+            children: title
+          }
+        ) })
+      ]
+    }
+  );
 }
 
-// src/client/DetailPanel.jsx
-var import_jsx_runtime6 = require("react/jsx-runtime");
-var panel = {
-  flex: "none",
-  width: 320,
-  overflow: "auto",
-  borderLeft: "1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.25)))",
-  background: "var(--dsw-alias-bg-secondary, var(--dsw-bg, #161616))",
-  display: "flex",
-  flexDirection: "column"
-};
-var header = {
-  flex: "none",
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  padding: "10px 14px",
-  borderBottom: "1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.25)))"
-};
-var title = {
-  flex: 1,
-  minWidth: 0,
-  margin: 0,
-  fontSize: 13,
-  fontWeight: 600,
-  lineHeight: "20px",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap"
-};
-var body = {
-  padding: "8px 14px 14px",
-  display: "flex",
-  flexDirection: "column",
-  gap: 10
-};
-var fieldLabel = {
-  fontSize: 11,
-  lineHeight: "16px",
-  textTransform: "uppercase",
-  letterSpacing: 0.4,
-  color: "var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))"
-};
-var fieldValue = {
-  margin: "2px 0 0",
-  fontSize: 13,
-  lineHeight: "18px",
-  wordBreak: "break-all"
-};
-var closeButton = {
-  flex: "none",
-  width: 24,
-  height: 24,
+// src/client/AssetGrid.jsx
+var import_jsx_runtime4 = require("react/jsx-runtime");
+var checkBase = {
+  position: "absolute",
+  top: 8,
+  left: 8,
+  width: 22,
+  height: 22,
+  borderRadius: "50%",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "none",
-  background: "transparent",
-  color: "inherit",
+  padding: 0,
   cursor: "pointer",
-  borderRadius: 4,
-  padding: 0
+  zIndex: 1
 };
-var badge = {
-  display: "inline-block",
-  fontSize: 11,
-  lineHeight: "16px",
-  padding: "1px 8px",
-  borderRadius: 8
-};
-var tracedBadge = {
-  ...badge,
-  color: "var(--dsw-alias-label-success, #3f9142)",
-  border: "1px solid var(--dsw-alias-label-success, #3f9142)"
-};
-var untracedBadge = {
-  ...badge,
-  color: "var(--dsw-alias-label-warning, #d48806)",
-  border: "1px solid var(--dsw-alias-label-warning, #d48806)"
-};
-function Field({ label: label3, value }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { style: fieldLabel, children: label3 }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { style: fieldValue, children: value === "" || value === void 0 || value === null ? "\u2014" : String(value) })
-  ] });
-}
-function DetailPanel({ t, detail, onClose }) {
-  if (!detail) return null;
-  if (detail.kind === "file") {
-    const { file, mapping } = detail;
-    const realPath = mapping && typeof mapping.real_path === "string" && typeof file.relative_path === "string" ? `${mapping.real_path.replace(/\/$/, "")}/${file.relative_path}` : "";
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("aside", { style: panel, "aria-label": t("detail.file"), children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: header, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { style: title, title: String(file.name), children: String(file.name) }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", "aria-label": t("detail.close"), style: closeButton, onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(CloseIcon, {}) })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: body, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.path"), value: realPath }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.size"), value: file.is_dir ? "\u2014" : formatBytes(Number(file.size)) }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.mtime"), value: formatDateTime(String(file.mtime)) }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.type"), value: file.is_dir ? t("type.other") : t(`type.${file.type}`) }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { style: { ...fieldValue, fontSize: 12, opacity: 0.7 }, children: t("mapping.deleteHint") })
-      ] })
-    ] });
+function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect }) {
+  if (assets.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+      "div",
+      {
+        style: {
+          border: "1px dashed var(--dsw-alias-border-l4, var(--dsw-alias-border-l3, currentColor))",
+          borderRadius: 12,
+          minHeight: 160,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 10,
+          color: "var(--dsw-alias-label-tertiary, inherit)",
+          fontSize: 13
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: 0 }, children: emptyLabel }),
+          emptyActionLabel && onEmptyAction ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+            "button",
+            {
+              type: "button",
+              onClick: onEmptyAction,
+              style: {
+                border: "none",
+                background: "var(--dsw-alias-button-primary-fill, var(--dsw-alias-label-primary, currentColor))",
+                color: "var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted, #fff))",
+                borderRadius: 999,
+                padding: "6px 14px",
+                cursor: "pointer",
+                fontSize: 13
+              },
+              children: emptyActionLabel
+            }
+          ) : null
+        ]
+      }
+    );
   }
-  const artifact = detail.artifact;
-  const source = artifact?.source ?? {};
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("aside", { style: panel, "aria-label": t("detail.artifact"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: header, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { style: title, title: String(artifact.title), children: String(artifact.title) }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", "aria-label": t("detail.close"), style: closeButton, onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(CloseIcon, {}) })
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }, children: assets.map((asset) => {
+    const missing = Number(asset.missing_file_count) > 0 && (!asset.files || asset.files.length === 0);
+    const selected = selectedIds?.has(asset.id);
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+      "article",
+      {
+        className: "omnimux-assets-focusable",
+        tabIndex: 0,
+        role: "button",
+        "aria-selected": selected ? "true" : "false",
+        onClick: () => {
+          onOpen(asset);
+        },
+        onKeyDown: activateRowKeydown(() => {
+          onOpen(asset);
+        }),
+        style: {
+          border: selected ? "1px solid var(--dsw-alias-label-primary, currentColor)" : "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
+          borderRadius: 12,
+          overflow: "hidden",
+          cursor: "pointer",
+          background: "var(--dsw-alias-bg-base, var(--dsw-bg, inherit))",
+          display: "flex",
+          flexDirection: "column"
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+            "div",
+            {
+              style: {
+                height: 112,
+                background: "var(--dsw-alias-bg-module-platform, var(--dsw-alias-interactive-bg-hover-solid, inherit))",
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--dsw-alias-label-tertiary, inherit)"
+              },
+              children: [
+                onToggleSelect ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    "aria-label": t("select.toggle"),
+                    "aria-pressed": selected ? "true" : "false",
+                    onClick: (event) => {
+                      event.stopPropagation();
+                      onToggleSelect(asset);
+                    },
+                    style: {
+                      ...checkBase,
+                      border: selected ? "none" : "1px solid var(--dsw-alias-border-l3, currentColor)",
+                      background: selected ? "var(--dsw-alias-button-primary-fill, var(--dsw-alias-label-primary, currentColor))" : "var(--dsw-alias-bg-base, var(--dsw-bg, inherit))",
+                      color: selected ? "var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted, inherit))" : "inherit"
+                    },
+                    children: selected ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CheckIcon, { size: 12 }) : null
+                  }
+                ) : null,
+                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FileIcon, { size: 22 }),
+                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                  "span",
+                  {
+                    style: {
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      fontSize: 11,
+                      lineHeight: "16px",
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: "var(--dsw-alias-bg-base, var(--dsw-bg, inherit))",
+                      border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))"
+                    },
+                    children: t(`type.${asset.type}`)
+                  }
+                ),
+                missing ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                  "span",
+                  {
+                    style: {
+                      position: "absolute",
+                      bottom: 8,
+                      left: 8,
+                      fontSize: 11,
+                      color: "var(--dsw-alias-state-warn-primary, inherit)"
+                    },
+                    children: t("card.missing")
+                  }
+                ) : null
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { padding: "10px 12px 12px", display: "flex", flexDirection: "column", gap: 4, minHeight: 72 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { fontSize: 14, fontWeight: 500, lineHeight: "20px" }, children: asset.name }),
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+              "div",
+              {
+                style: {
+                  fontSize: 12,
+                  lineHeight: "18px",
+                  color: "var(--dsw-alias-label-secondary, inherit)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap"
+                },
+                children: asset.description || "\u2014"
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { display: "flex", gap: 8, marginTop: 6 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    onCopy(asset);
+                  },
+                  style: { border: "none", background: "transparent", cursor: "pointer", fontSize: 12, color: "var(--dsw-alias-label-secondary, inherit)", padding: 0 },
+                  children: copiedId === asset.id ? t("card.copied") : t("card.copyCite")
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    onRemove(asset);
+                  },
+                  style: { border: "none", background: "transparent", cursor: "pointer", fontSize: 12, color: "var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))", padding: 0 },
+                  children: t("mapping.remove")
+                }
+              )
+            ] })
+          ] })
+        ]
+      },
+      asset.id
+    );
+  }) });
+}
+
+// src/client/AssetDetail.jsx
+var import_react3 = require("react");
+var import_jsx_runtime5 = require("react/jsx-runtime");
+function AssetDetail({ t, asset, busy, onClose, onSave }) {
+  const [name2, setName] = (0, import_react3.useState)(asset.name);
+  const [type, setType] = (0, import_react3.useState)(asset.type);
+  const [description, setDescription] = (0, import_react3.useState)(asset.description || "");
+  const [browse, setBrowse] = (0, import_react3.useState)(null);
+  (0, import_react3.useEffect)(() => {
+    setName(asset.name);
+    setType(asset.type);
+    setDescription(asset.description || "");
+    setBrowse(null);
+  }, [asset.id, asset.name, asset.type, asset.description]);
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+    "aside",
+    {
+      style: {
+        flex: "none",
+        width: 320,
+        overflow: "auto",
+        borderLeft: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
+        background: "var(--dsw-alias-bg-base, var(--dsw-bg, inherit))",
+        display: "flex",
+        flexDirection: "column"
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderBottom: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h2", { style: { margin: 0, flex: 1, fontSize: 13, fontWeight: 600 }, children: t("detail.title") }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+            "button",
+            {
+              type: "button",
+              "aria-label": t("detail.close"),
+              onClick: onClose,
+              style: { border: "none", background: "transparent", cursor: "pointer", width: 24, height: 24 },
+              children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(CloseIcon, { size: 16 })
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { padding: 14, display: "flex", flexDirection: "column", gap: 12, fontSize: 13 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("label", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { fontSize: 11, color: "var(--dsw-alias-label-tertiary, inherit)", marginBottom: 4 }, children: t("detail.name") }),
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("input", { value: name2, onChange: (event) => {
+              setName(event.target.value);
+            }, style: { width: "100%", border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))", borderRadius: 8, padding: "6px 8px", color: "inherit", background: "inherit" } })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("label", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { fontSize: 11, color: "var(--dsw-alias-label-tertiary, inherit)", marginBottom: 4 }, children: t("detail.type") }),
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("select", { value: type, onChange: (event) => {
+              setType(event.target.value);
+            }, style: { width: "100%", border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))", borderRadius: 8, padding: "6px 8px", color: "inherit", background: "inherit" }, children: ASSET_TYPE_KEYS.map((key) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("option", { value: key, children: t(`type.${key}`) }, key)) })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("label", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { fontSize: 11, color: "var(--dsw-alias-label-tertiary, inherit)", marginBottom: 4 }, children: t("detail.description") }),
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("textarea", { value: description, onChange: (event) => {
+              setDescription(event.target.value);
+            }, rows: 6, style: { width: "100%", border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))", borderRadius: 8, padding: "6px 8px", resize: "vertical", color: "inherit", background: "inherit" } })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { fontSize: 11, color: "var(--dsw-alias-label-tertiary, inherit)", marginBottom: 4 }, children: t("detail.cite") }),
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("code", { style: { fontSize: 12 }, children: asset.cite || `@${asset.type}/${asset.name}` })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { fontSize: 11, color: "var(--dsw-alias-label-tertiary, inherit)", marginBottom: 4 }, children: t("detail.files") }),
+            browse ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+              FolderBrowse,
+              {
+                t,
+                assetId: asset.id,
+                file: browse.file,
+                onBack: () => {
+                  setBrowse(null);
+                }
+              }
+            ) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(TopFileList, { t, files: asset.files || [], onOpenFolder: (file) => {
+              setBrowse({ file });
+            } })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+            "button",
+            {
+              type: "button",
+              disabled: busy || name2.trim() === "",
+              onClick: () => {
+                onSave({ name: name2.trim(), type, description });
+              },
+              style: {
+                border: "none",
+                background: "var(--dsw-alias-button-primary-fill, var(--dsw-alias-label-primary, currentColor))",
+                color: "var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted, #fff))",
+                borderRadius: 999,
+                padding: "8px 14px",
+                cursor: "pointer"
+              },
+              children: t("detail.save")
+            }
+          )
+        ] })
+      ]
+    }
+  );
+}
+function isDirectoryRef2(file) {
+  return file?.kind === "directory" || file?.is_dir === true;
+}
+function TopFileList({ t, files, onOpenFolder }) {
+  if (files.length === 0) {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: 0, color: "var(--dsw-alias-label-tertiary, inherit)" }, children: "\u2014" });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("ul", { style: { margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }, children: files.map((file) => {
+    const folder = isDirectoryRef2(file);
+    const activate = folder ? () => {
+      onOpenFolder(file);
+    } : void 0;
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+      "button",
+      {
+        type: "button",
+        className: "omnimux-assets-focusable",
+        disabled: !folder,
+        onClick: activate,
+        onKeyDown: folder ? activateRowKeydown(activate) : void 0,
+        style: {
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          textAlign: "left",
+          border: "none",
+          background: "transparent",
+          color: "inherit",
+          cursor: folder ? "pointer" : "default",
+          padding: "4px 0",
+          fontSize: 12
+        },
+        children: [
+          folder ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(FolderIcon, { size: 14 }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(FileIcon, { size: 14 }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: file.original_name || file.real_path }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: { color: "var(--dsw-alias-label-tertiary, inherit)", fontSize: 11 }, children: folder ? t("detail.browse") : t("detail.file") })
+        ]
+      }
+    ) }, file.id);
+  }) });
+}
+function FolderBrowse({ t, assetId, file, onBack }) {
+  const [path, setPath] = (0, import_react3.useState)("");
+  const [entries, setEntries] = (0, import_react3.useState)([]);
+  const [loading, setLoading] = (0, import_react3.useState)(true);
+  const [error, setError] = (0, import_react3.useState)("");
+  (0, import_react3.useEffect)(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    void listAssetFiles(assetId, file.id, path).then((result) => {
+      if (cancelled) return;
+      if (!result.ok) {
+        setError(String(result.body?.message || result.body?.error || `HTTP ${String(result.status)}`));
+        setEntries([]);
+        setLoading(false);
+        return;
+      }
+      setEntries(Array.isArray(result.body?.entries) ? result.body.entries : []);
+      setLoading(false);
+    }).catch((caught) => {
+      if (cancelled) return;
+      setError(caught instanceof Error ? caught.message : String(caught));
+      setEntries([]);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [assetId, file.id, path]);
+  const crumbs = path === "" ? [] : path.split("/").filter(Boolean);
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", marginBottom: 8, fontSize: 12 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "button",
+        {
+          type: "button",
+          onClick: () => {
+            if (path === "") onBack();
+            else setPath(crumbs.slice(0, -1).join("/"));
+          },
+          style: {
+            border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
+            background: "transparent",
+            color: "inherit",
+            borderRadius: 999,
+            padding: "2px 8px",
+            cursor: "pointer",
+            fontSize: 12
+          },
+          children: t("detail.back")
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "button",
+        {
+          type: "button",
+          onClick: () => {
+            setPath("");
+          },
+          style: { border: "none", background: "transparent", color: "inherit", cursor: "pointer", padding: 0 },
+          children: file.original_name || t("detail.root")
+        }
+      ),
+      crumbs.map((crumb, index) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { style: { display: "inline-flex", gap: 6, alignItems: "center" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: { color: "var(--dsw-alias-label-tertiary, inherit)" }, children: "/" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: () => {
+              setPath(crumbs.slice(0, index + 1).join("/"));
+            },
+            style: { border: "none", background: "transparent", color: "inherit", cursor: "pointer", padding: 0 },
+            children: crumb
+          }
+        )
+      ] }, `${crumb}-${index}`))
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: body, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { style: source.traced ? tracedBadge : untracedBadge, children: source.traced ? t("detail.traced") : t("detail.untraced") }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.agent"), value: source.agent }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.model"), value: source.model }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.promptHash"), value: source.prompt_hash }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.runId"), value: source.run_id }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.sessionId"), value: source.session_id }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.type"), value: t(`type.${artifact.type}`) }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.size"), value: formatBytes(Number(artifact.size)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.mtime"), value: formatDateTime(String(artifact.created_at)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Field, { label: t("detail.contentRef"), value: artifact.content_ref })
-    ] })
+    loading ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: 0, color: "var(--dsw-alias-label-tertiary, inherit)" }, children: t("loading") }) : null,
+    error ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: 0, color: "var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))" }, children: error }) : null,
+    !loading && !error && entries.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: 0, color: "var(--dsw-alias-label-tertiary, inherit)" }, children: t("detail.emptyFolder") }) : null,
+    !loading && entries.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("ul", { style: { margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 2 }, children: entries.map((entry) => {
+      const folder = Boolean(entry.is_dir);
+      const activate = folder ? () => {
+        setPath(entry.relative_path || [path, entry.name].filter(Boolean).join("/"));
+      } : void 0;
+      return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+        "button",
+        {
+          type: "button",
+          className: "omnimux-assets-focusable",
+          disabled: !folder,
+          onClick: activate,
+          onKeyDown: folder ? activateRowKeydown(activate) : void 0,
+          style: {
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            textAlign: "left",
+            border: "none",
+            background: "transparent",
+            color: "inherit",
+            cursor: folder ? "pointer" : "default",
+            padding: "4px 0",
+            fontSize: 12
+          },
+          children: [
+            folder ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(FolderIcon, { size: 14 }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(FileIcon, { size: 14 }),
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: entry.name })
+          ]
+        }
+      ) }, String(entry.relative_path || entry.name));
+    }) }) : null
   ] });
 }
 
 // src/client/ConfirmRemoveDialog.jsx
-var import_jsx_runtime7 = require("react/jsx-runtime");
+var import_jsx_runtime6 = require("react/jsx-runtime");
 var backdrop = {
   position: "fixed",
   inset: 0,
@@ -1149,7 +1521,7 @@ var backdrop = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "rgba(0,0,0,.4)"
+  background: "var(--dsw-alias-bg-mask-1, rgba(0,0,0,.40))"
 };
 var dialog = {
   width: 360,
@@ -1158,10 +1530,9 @@ var dialog = {
   flexDirection: "column",
   gap: 10,
   padding: 20,
-  borderRadius: 12,
-  background: "var(--dsw-alias-bg-elevated, var(--dsw-bg, #1c1c1c))",
-  border: "1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.35)))",
-  boxShadow: "0 8px 32px rgba(0,0,0,.32)",
+  borderRadius: 16,
+  background: "var(--dsw-alias-bg-base, var(--dsw-bg, inherit))",
+  border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
   color: "var(--dsw-alias-label-primary, inherit)"
 };
 var heading = {
@@ -1175,7 +1546,7 @@ var hint = {
   margin: 0,
   fontSize: 12,
   lineHeight: "18px",
-  color: "var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))"
+  color: "var(--dsw-alias-label-secondary, inherit)"
 };
 var buttons = {
   display: "flex",
@@ -1187,9 +1558,9 @@ var ghostButton = {
   padding: "6px 14px",
   fontSize: 13,
   lineHeight: "20px",
-  borderRadius: 6,
+  borderRadius: 999,
   cursor: "pointer",
-  border: "1px solid var(--dsw-alias-border, var(--dsw-border, currentColor))",
+  border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
   background: "transparent",
   color: "inherit"
 };
@@ -1197,23 +1568,23 @@ var dangerButton = {
   ...ghostButton,
   fontWeight: 600,
   border: "none",
-  color: "var(--dsw-alias-label-on-interactive, #fff)",
-  background: "var(--dsw-alias-label-danger, #d45656)"
+  color: "var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted, #fff))",
+  background: "var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))"
 };
 var dangerButtonDisabled = {
   ...dangerButton,
   opacity: 0.5,
   cursor: "default"
 };
-function ConfirmRemoveDialog({ t, name: name2, busy, onCancel, onConfirm }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+function ConfirmRemoveDialog({ t, name: name2, title, busy, onCancel, onConfirm }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
     "div",
     {
       style: backdrop,
       onMouseDown: (event) => {
         if (event.target === event.currentTarget) onCancel();
       },
-      children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+      children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
         "div",
         {
           role: "alertdialog",
@@ -1227,11 +1598,11 @@ function ConfirmRemoveDialog({ t, name: name2, busy, onCancel, onConfirm }) {
             }
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("h2", { style: heading, children: t("mapping.removeTitle").replace("{name}", name2) }),
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("p", { style: hint, children: t("mapping.removeHint") }),
-            /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: buttons, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", style: ghostButton, onClick: onCancel, autoFocus: true, children: t("mapping.cancel") }),
-              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h2", { style: heading, children: title || t("mapping.removeTitle").replace("{name}", name2) }),
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { style: hint, children: t("mapping.removeHint") }),
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { style: buttons, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", style: ghostButton, onClick: onCancel, autoFocus: true, children: t("mapping.cancel") }),
+              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
                 "button",
                 {
                   type: "button",
@@ -1251,9 +1622,10 @@ function ConfirmRemoveDialog({ t, name: name2, busy, onCancel, onConfirm }) {
 }
 
 // src/client/AssetsStage.jsx
-var import_jsx_runtime8 = require("react/jsx-runtime");
+var import_jsx_runtime7 = require("react/jsx-runtime");
 var POLL_MS = 5e3;
 function messageOf(result, t) {
+  if (result.body?.error === "name-conflict") return t("error.nameConflict");
   return String(result.body?.message || result.body?.error || `HTTP ${String(result.status)}` || t("error.generic"));
 }
 function errText(caught) {
@@ -1265,37 +1637,27 @@ function pickErrorText(result, t) {
   if (code === "picker-failed") return t("error.pickerFailed");
   return messageOf(result, t);
 }
+function citeOf(asset) {
+  return asset.cite || `@${asset.type}/${asset.name}`;
+}
 var chromeButton = {
-  border: "1px solid var(--dsw-alias-border, var(--dsw-border, currentColor))",
+  border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
   background: "transparent",
   color: "inherit",
-  borderRadius: 6,
+  borderRadius: 999,
   cursor: "pointer",
-  fontSize: 12,
+  fontSize: 13,
   lineHeight: "20px",
-  padding: "2px 10px"
+  padding: "6px 12px"
 };
-function breadcrumbButton(isCurrent) {
-  return {
-    border: "none",
-    background: "transparent",
-    cursor: isCurrent ? "default" : "pointer",
-    fontSize: 14,
-    fontWeight: 600,
-    lineHeight: "20px",
-    padding: "0 2px",
-    borderRadius: 4,
-    color: isCurrent ? "inherit" : "var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))"
-  };
-}
 function AssetsStage({ t, stage }) {
-  const open = (0, import_react2.useSyncExternalStore)(
-    stage ? stage.subscribe : () => () => {
+  const open = (0, import_react4.useSyncExternalStore)(
+    stage ? (cb) => stage.subscribe(cb) : () => () => {
     },
-    stage ? stage.getSnapshot : () => false
+    stage ? () => stage.getSnapshot() : () => false
   );
-  const [box, setBox] = (0, import_react2.useState)(() => ({ top: 0, left: 0, width: 0, height: 0 }));
-  (0, import_react2.useLayoutEffect)(() => {
+  const [box, setBox] = (0, import_react4.useState)(() => ({ top: 0, left: 0, width: 0, height: 0 }));
+  (0, import_react4.useLayoutEffect)(() => {
     if (!open) return void 0;
     const update = () => {
       setBox(stage.readBox());
@@ -1311,75 +1673,57 @@ function AssetsStage({ t, stage }) {
       window.removeEventListener("resize", update);
     };
   }, [open]);
-  const [mappings, setMappings] = (0, import_react2.useState)([]);
-  const [allArtifacts, setAllArtifacts] = (0, import_react2.useState)([]);
-  const [files, setFiles] = (0, import_react2.useState)([]);
-  const [view, setView] = (0, import_react2.useState)({ kind: "artifacts", type: "", subPath: "" });
-  const [detail, setDetail] = (0, import_react2.useState)(null);
-  const [pendingRemove, setPendingRemove] = (0, import_react2.useState)(null);
-  const [error, setError] = (0, import_react2.useState)("");
-  const [busy, setBusy] = (0, import_react2.useState)(false);
-  const [revisions, setRevisions] = (0, import_react2.useState)({ mrev: null, arev: null });
-  const revisionsRef = (0, import_react2.useRef)(revisions);
-  const refreshState = (0, import_react2.useCallback)((force = false) => {
+  const [assets, setAssets] = (0, import_react4.useState)([]);
+  const [filterType, setFilterType] = (0, import_react4.useState)("");
+  const [query, setQuery] = (0, import_react4.useState)("");
+  const [detail, setDetail] = (0, import_react4.useState)(null);
+  const [creating, setCreating] = (0, import_react4.useState)(null);
+  const [pendingRemove, setPendingRemove] = (0, import_react4.useState)(null);
+  const [selectedIds, setSelectedIds] = (0, import_react4.useState)(() => /* @__PURE__ */ new Set());
+  const [error, setError] = (0, import_react4.useState)("");
+  const [formError, setFormError] = (0, import_react4.useState)("");
+  const [busy, setBusy] = (0, import_react4.useState)(false);
+  const [copiedId, setCopiedId] = (0, import_react4.useState)("");
+  const [revisions, setRevisions] = (0, import_react4.useState)({ lrev: null, arev: null });
+  const revisionsRef = (0, import_react4.useRef)(revisions);
+  const refreshState = (0, import_react4.useCallback)((force = false) => {
     const current = revisionsRef.current;
-    const useRevs = !force && current.mrev !== null && current.arev !== null;
-    return getState(useRevs ? current.mrev : void 0, useRevs ? current.arev : void 0).then((result) => {
+    const useRevs = !force && current.lrev !== null && current.arev !== null;
+    return getState(useRevs ? current.lrev : void 0, useRevs ? current.arev : void 0).then((result) => {
       if (!result.ok) {
         setError(messageOf(result, t));
         return;
       }
       setError("");
-      const next = { mrev: Number(result.body.mrev) || 0, arev: Number(result.body.arev) || 0 };
+      const next = {
+        lrev: Number(result.body.lrev ?? result.body.mrev) || 0,
+        arev: Number(result.body.arev) || 0
+      };
       revisionsRef.current = next;
       setRevisions(next);
       if (result.body.unchanged) return;
-      setMappings(Array.isArray(result.body.mappings) ? result.body.mappings : []);
+      const nextAssets = Array.isArray(result.body.assets) ? result.body.assets : [];
+      setAssets(nextAssets);
+      setDetail((current2) => {
+        if (!current2) return current2;
+        const fresh = nextAssets.find((row) => row.id === current2.id);
+        return fresh ?? current2;
+      });
+      const live = new Set(nextAssets.map((row) => row.id));
+      setSelectedIds((prev) => {
+        const kept = [...prev].filter((id) => live.has(id));
+        if (kept.length === prev.size) return prev;
+        return new Set(kept);
+      });
     }).catch((caught) => {
       setError(errText(caught));
     });
   }, [t]);
-  const reloadArtifacts = (0, import_react2.useCallback)(() => {
-    return listArtifacts().then((result) => {
-      if (result.ok) setAllArtifacts(Array.isArray(result.body.artifacts) ? result.body.artifacts : []);
-      else setError(messageOf(result, t));
-    }).catch((caught) => {
-      setError(errText(caught));
-    });
-  }, [t]);
-  const reloadFiles = (0, import_react2.useCallback)(() => {
-    if (view.kind !== "mapping" || !view.id) {
-      setFiles([]);
-      return Promise.resolve();
-    }
-    return listFiles(view.id, view.subPath ?? "").then((result) => {
-      if (!result.ok) {
-        setError(messageOf(result, t));
-        return;
-      }
-      setError("");
-      setFiles(Array.isArray(result.body.files) ? result.body.files : []);
-      const mapping = result.body.mapping;
-      if (mapping && typeof mapping.id === "string") {
-        setMappings((prev) => prev.map((row3) => row3.id === mapping.id ? { ...row3, ...mapping } : row3));
-      }
-    }).catch((caught) => {
-      setError(errText(caught));
-    });
-  }, [t, view.kind, view.id, view.subPath]);
-  (0, import_react2.useEffect)(() => {
+  (0, import_react4.useEffect)(() => {
     if (!open) return void 0;
     void refreshState(true);
   }, [open, refreshState]);
-  (0, import_react2.useEffect)(() => {
-    if (!open) return void 0;
-    void reloadArtifacts();
-  }, [open, revisions.arev, reloadArtifacts]);
-  (0, import_react2.useEffect)(() => {
-    if (!open) return void 0;
-    void reloadFiles();
-  }, [open, reloadFiles]);
-  (0, import_react2.useEffect)(() => {
+  (0, import_react4.useEffect)(() => {
     if (!open) return void 0;
     const timer = setInterval(() => {
       void refreshState();
@@ -1394,8 +1738,10 @@ function AssetsStage({ t, stage }) {
     void Promise.resolve(work()).then((result) => {
       if (!result.ok) {
         setError(messageOf(result, t));
+        setFormError(messageOf(result, t));
         return;
       }
+      setFormError("");
       if (after) after(result);
       return refreshState(true);
     }).catch((caught) => {
@@ -1404,70 +1750,40 @@ function AssetsStage({ t, stage }) {
       setBusy(false);
     });
   };
-  const handleAddPicked = (kind) => {
-    setBusy(true);
-    setError("");
-    void pickPath(kind).then((result) => {
-      if (!result.ok) {
-        setError(pickErrorText(result, t));
-        return;
-      }
-      const path = typeof result.body?.path === "string" ? result.body.path : null;
-      if (path === null) return;
-      const clean = path.replace(/\/+$/, "");
-      const base = clean.split("/").pop() || clean;
-      return run(() => addMapping(clean, base), (addedResult) => {
-        const mapping = addedResult.body?.mapping;
-        if (mapping && typeof mapping.id === "string") {
-          setView({ kind: "mapping", id: mapping.id, subPath: "" });
-          setDetail(null);
-          setFiles([]);
-        }
-      });
-    }).catch((caught) => {
-      setError(errText(caught));
-    }).finally(() => {
-      setBusy(false);
+  const handlePick = async (kind) => {
+    const result = await pickPath(kind);
+    if (!result.ok) {
+      setFormError(pickErrorText(result, t));
+      return [];
+    }
+    const paths = Array.isArray(result.body?.paths) ? result.body.paths.filter((path) => typeof path === "string" && path !== "") : [];
+    if (paths.length > 0) return paths;
+    return typeof result.body?.path === "string" && result.body.path !== "" ? [result.body.path] : [];
+  };
+  const visible = assets.filter((asset) => {
+    if (filterType && asset.type !== filterType) return false;
+    if (!query.trim()) return true;
+    const hay = `${asset.name}
+${asset.description}
+${(asset.tags || []).join("\n")}`.toLowerCase();
+    return hay.includes(query.trim().toLowerCase());
+  });
+  const selectedCount = selectedIds.size;
+  const selecting = selectedCount > 0;
+  const toggleSelect = (asset) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(asset.id)) next.delete(asset.id);
+      else next.add(asset.id);
+      return next;
     });
   };
-  const handleRename = (id, name2) => {
-    run(() => renameMapping(id, name2));
-  };
-  const handleConfirmRemove = (mapping) => {
-    run(() => deleteMapping(mapping.id), () => {
-      setPendingRemove(null);
-      if (view.kind === "mapping" && view.id === mapping.id) {
-        setView({ kind: "artifacts", type: "" });
-        setFiles([]);
-        setDetail(null);
-      }
-    });
-  };
-  const handleRescan = (id) => {
-    run(() => rescanMapping(id), (result) => {
-      setFiles(Array.isArray(result.body?.files) ? result.body.files : []);
-    });
-  };
-  const handleManualRefresh = () => {
-    void refreshState(true);
-    void reloadArtifacts();
-    void reloadFiles();
-  };
-  const handleEnterDir = (file) => {
-    if (view.kind !== "mapping") return;
-    const next = view.subPath ? `${view.subPath}/${file.name}` : String(file.name);
-    setView({ ...view, subPath: next });
-    setDetail(null);
-  };
-  const handleBreadcrumb = (subPath) => {
-    if (view.kind !== "mapping") return;
-    setView({ ...view, subPath });
-    setDetail(null);
+  const clearSelection = () => {
+    setSelectedIds(/* @__PURE__ */ new Set());
   };
   if (!open || !stage) return null;
-  const currentMapping = view.kind === "mapping" ? mappings.find((row3) => row3.id === view.id) : void 0;
-  const visibleArtifacts = view.kind === "artifacts" ? allArtifacts.filter((row3) => !view.type || row3.type === view.type) : [];
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+  const emptyTypeLabel = filterType ? t(`type.${filterType}`) : "";
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
     "div",
     {
       role: "region",
@@ -1482,52 +1798,47 @@ function AssetsStage({ t, stage }) {
         pointerEvents: "auto",
         display: "flex",
         flexDirection: "column",
-        background: "var(--dsw-alias-bg-primary, var(--dsw-bg, #111))",
+        background: "var(--dsw-alias-bg-base, var(--dsw-bg, inherit))",
         color: "var(--dsw-alias-label-primary, inherit)",
-        overflow: "auto"
+        overflow: "hidden"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("style", { children: FOCUS_CSS }),
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("style", { children: FOCUS_CSS }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
           "div",
           {
             style: {
               flex: "none",
               display: "flex",
-              alignItems: "center",
+              alignItems: "flex-start",
               gap: 12,
-              minHeight: 32,
               padding: "12px 20px 12px",
               WebkitAppRegion: "no-drag"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                "h1",
-                {
-                  style: {
-                    margin: 0,
-                    flex: 1,
-                    minWidth: 0,
-                    fontSize: 16,
-                    fontWeight: 600,
-                    lineHeight: "32px"
-                  },
-                  children: t("stage.title")
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("h1", { style: { margin: 0, fontSize: 16, fontWeight: 600, lineHeight: "32px" }, children: t("stage.title") }),
+                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("p", { style: { margin: 0, fontSize: 13, lineHeight: "20px", color: "var(--dsw-alias-label-secondary, inherit)" }, children: t("stage.subtitle") })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
                 "button",
                 {
                   type: "button",
-                  style: { ...chromeButton, display: "inline-flex", alignItems: "center", gap: 5 },
-                  onClick: handleManualRefresh,
+                  style: { ...chromeButton, display: "inline-flex", alignItems: "center", gap: 5, ...busy ? { opacity: 0.5, cursor: "default" } : {} },
+                  disabled: busy,
+                  onClick: () => {
+                    setBusy(true);
+                    void refreshState(true).finally(() => {
+                      setBusy(false);
+                    });
+                  },
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(RefreshIcon, {}),
-                    t("stage.refresh")
+                    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(RefreshIcon, {}),
+                    busy ? t("stage.refreshing") : t("stage.refresh")
                   ]
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
                 "button",
                 {
                   type: "button",
@@ -1536,7 +1847,6 @@ function AssetsStage({ t, stage }) {
                     stage.set(false);
                   },
                   style: {
-                    WebkitAppRegion: "no-drag",
                     border: "none",
                     background: "transparent",
                     color: "inherit",
@@ -1546,185 +1856,272 @@ function AssetsStage({ t, stage }) {
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    borderRadius: 6,
-                    padding: 0
+                    borderRadius: 6
                   },
-                  children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(CloseIcon, { size: 16 })
+                  children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(CloseIcon, { size: 16 })
                 }
               )
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: { flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
-            "nav",
-            {
-              style: {
-                flex: "none",
-                width: 220,
-                overflow: "auto",
-                padding: "8px 0",
-                borderRight: "1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.25)))"
-              },
-              children: [
-                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                  MappingNav,
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { flex: "none", display: "flex", gap: 8, padding: "0 20px 16px" }, children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+          "button",
+          {
+            type: "button",
+            onClick: () => {
+              setCreating(filterType || "character");
+              setFormError("");
+            },
+            style: {
+              border: "none",
+              background: "var(--dsw-alias-button-primary-fill, var(--dsw-alias-label-primary, currentColor))",
+              color: "var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted, #fff))",
+              borderRadius: 999,
+              padding: "8px 16px",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 500
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(PlusIcon, {}),
+              t("add.button")
+            ]
+          }
+        ) }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+          "div",
+          {
+            style: {
+              flex: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              padding: "0 20px 12px",
+              borderBottom: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { display: "flex", gap: 4, flexWrap: "wrap" }, children: [{ key: "", label: t("chip.all") }, ...ASSET_TYPE_KEYS.map((key) => ({ key, label: t(`type.${key}`) }))].map((chip) => {
+                const active = filterType === chip.key;
+                return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+                  "button",
                   {
-                    t,
-                    mappings,
-                    activeId: view.kind === "mapping" ? view.id : "",
-                    busy,
-                    onSelect: (id) => {
-                      setView({ kind: "mapping", id, subPath: "" });
+                    type: "button",
+                    onClick: () => {
+                      setFilterType(chip.key);
                       setDetail(null);
+                      clearSelection();
                     },
-                    onAddFile: () => {
-                      handleAddPicked("file");
+                    style: {
+                      border: "none",
+                      background: active ? "var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18))" : "transparent",
+                      color: active ? "inherit" : "var(--dsw-alias-label-secondary, inherit)",
+                      borderRadius: 999,
+                      padding: "4px 10px",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      fontWeight: active ? 500 : 400
                     },
-                    onAddDir: () => {
-                      handleAddPicked("directory");
+                    children: chip.label
+                  },
+                  chip.key || "all"
+                );
+              }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+                  "input",
+                  {
+                    value: query,
+                    placeholder: t("search.placeholder"),
+                    onChange: (event) => {
+                      setQuery(event.target.value);
                     },
-                    onRename: handleRename,
-                    onRemove: (mapping) => {
-                      setPendingRemove(mapping);
+                    style: {
+                      border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))",
+                      borderRadius: 999,
+                      padding: "6px 12px",
+                      fontSize: 13,
+                      minWidth: 180,
+                      background: "transparent",
+                      color: "inherit"
                     }
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                  ArtifactNav,
+                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: { fontSize: 12, color: "var(--dsw-alias-label-tertiary, inherit)" }, children: t("sort.updated") })
+              ] })
+            ]
+          }
+        ),
+        selecting ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+          "div",
+          {
+            style: {
+              flex: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "8px 20px",
+              borderBottom: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { style: { fontSize: 13 }, children: t("select.count").replace("{n}", String(selectedCount)) }),
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+                  "button",
                   {
-                    t,
-                    artifacts: allArtifacts,
-                    activeType: view.kind === "artifacts" ? view.type : null,
-                    onSelect: (type) => {
-                      setView({ kind: "artifacts", type });
-                      setDetail(null);
-                    }
+                    type: "button",
+                    onClick: clearSelection,
+                    style: {
+                      border: "none",
+                      background: "transparent",
+                      color: "inherit",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      padding: "4px 8px"
+                    },
+                    children: t("select.clear")
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    disabled: busy,
+                    onClick: () => {
+                      const names = assets.filter((row) => selectedIds.has(row.id)).map((row) => row.name);
+                      setPendingRemove({ ids: [...selectedIds], names });
+                    },
+                    style: {
+                      border: "none",
+                      background: "var(--dsw-alias-state-error-tertiary, var(--dsw-alias-interactive-bg-hover-danger, transparent))",
+                      color: "var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))",
+                      borderRadius: 999,
+                      padding: "6px 12px",
+                      cursor: busy ? "default" : "pointer",
+                      fontSize: 13,
+                      fontWeight: 500,
+                      opacity: busy ? 0.5 : 1
+                    },
+                    children: t("select.delete").replace("{n}", String(selectedCount))
                   }
                 )
-              ]
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("main", { style: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
-              "div",
-              {
-                style: {
-                  flex: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  flexWrap: "wrap",
-                  padding: "10px 16px",
-                  borderBottom: "1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.25)))"
-                },
-                children: [
-                  view.kind === "mapping" && currentMapping ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("nav", { "aria-label": "breadcrumb", style: { display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", minWidth: 0 }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                      "button",
-                      {
-                        type: "button",
-                        style: breadcrumbButton(!view.subPath),
-                        onClick: () => {
-                          handleBreadcrumb("");
-                        },
-                        children: currentMapping.display_name
-                      }
-                    ),
-                    (view.subPath ? view.subPath.split("/") : []).map((segment, index, all) => {
-                      const prefix = all.slice(0, index + 1).join("/");
-                      const isLast = index === all.length - 1;
-                      return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { style: { display: "inline-flex", alignItems: "center", gap: 2 }, children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { style: { color: "var(--dsw-alias-label-secondary, rgba(128,128,128,.9))", fontSize: 12 }, children: "/" }),
-                        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                          "button",
-                          {
-                            type: "button",
-                            style: breadcrumbButton(isLast),
-                            onClick: () => {
-                              handleBreadcrumb(prefix);
-                            },
-                            children: segment
-                          }
-                        )
-                      ] }, prefix);
-                    })
-                  ] }) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("h2", { style: { margin: 0, fontSize: 14, fontWeight: 600, lineHeight: "20px" }, children: view.type ? t(`type.${view.type}`) : t("artifact.all") }),
-                  view.kind === "mapping" && currentMapping && currentMapping.status !== "ok" ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("span", { style: { fontSize: 12, color: "var(--dsw-alias-label-warning, #d48806)" }, children: [
-                    "\u26A0 ",
-                    t("mapping.invalid")
-                  ] }) : null,
-                  view.kind === "mapping" && currentMapping ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                    "button",
-                    {
-                      type: "button",
-                      style: chromeButton,
-                      disabled: busy || currentMapping.status !== "ok",
-                      onClick: () => {
-                        handleRescan(currentMapping.id);
-                      },
-                      children: t("mapping.rescan")
-                    }
-                  ) : null,
-                  view.kind === "artifacts" ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" }, children: ["image", "video", "audio", "document", "html", "json"].map((type) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                    "button",
-                    {
-                      type: "button",
-                      style: {
-                        ...chromeButton,
-                        ...view.type === type ? { fontWeight: 600 } : {}
-                      },
-                      onClick: () => {
-                        setView({ kind: "artifacts", type: view.type === type ? "" : type });
-                        setDetail(null);
-                      },
-                      children: t(`type.${type}`)
-                    },
-                    type
-                  )) }) : null
-                ]
-              }
-            ),
-            error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("p", { style: { margin: 0, padding: "6px 16px", fontSize: 12, color: "var(--dsw-alias-label-danger, #d45656)" }, children: error }) : null,
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { style: { flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { style: { flex: 1, minWidth: 0, overflow: "auto", padding: "8px 16px" }, children: view.kind === "mapping" ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                FileTable,
-                {
-                  t,
-                  mapping: currentMapping,
-                  files,
-                  onOpenFile: (file) => {
-                    setDetail({ kind: "file", file, mapping: currentMapping });
-                  },
-                  onEnterDir: handleEnterDir
-                }
-              ) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                ArtifactTable,
-                {
-                  t,
-                  artifacts: visibleArtifacts,
-                  onOpen: (artifact) => {
-                    setDetail({ kind: "artifact", artifact });
-                  }
-                }
-              ) }),
-              detail ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(DetailPanel, { t, detail, onClose: () => {
+              ] })
+            ]
+          }
+        ) : null,
+        error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("p", { style: { margin: 0, padding: "6px 20px", fontSize: 12, color: "var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))" }, children: error }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { style: { flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { style: { flex: 1, minWidth: 0, overflow: "auto", padding: 16 }, children: detail ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+            AssetBrowse,
+            {
+              t,
+              asset: detail,
+              onBack: () => {
                 setDetail(null);
-              } }) : null
-            ] })
-          ] })
+              }
+            },
+            detail.id
+          ) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+            AssetGrid,
+            {
+              t,
+              assets: visible,
+              emptyLabel: filterType ? t("empty.type").replace("{type}", emptyTypeLabel) : t("empty.all"),
+              emptyActionLabel: filterType ? t("empty.addType").replace("{type}", emptyTypeLabel) : t("add.button"),
+              onEmptyAction: () => {
+                setCreating(filterType || "character");
+                setFormError("");
+              },
+              onOpen: (asset) => {
+                setDetail(asset);
+              },
+              onCopy: (asset) => {
+                const text = citeOf(asset);
+                if (navigator.clipboard?.writeText) void navigator.clipboard.writeText(text);
+                setCopiedId(asset.id);
+                window.setTimeout(() => {
+                  setCopiedId("");
+                }, 1500);
+              },
+              onRemove: (asset) => {
+                setPendingRemove({ ids: [asset.id], names: [asset.name] });
+              },
+              copiedId,
+              selectedIds,
+              onToggleSelect: toggleSelect
+            }
+          ) }),
+          detail ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+            AssetDetail,
+            {
+              t,
+              asset: detail,
+              busy,
+              onClose: () => {
+                setDetail(null);
+              },
+              onSave: (patch) => {
+                run(() => updateAsset(detail.id, patch), (result) => {
+                  setDetail(result.body?.asset ?? { ...detail, ...patch });
+                });
+              }
+            },
+            detail.id
+          ) : null
         ] }),
-        pendingRemove ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+        creating ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+          AddAssetDialog,
+          {
+            t,
+            busy,
+            presetType: creating,
+            error: formError,
+            onCancel: () => {
+              setCreating(null);
+              setFormError("");
+            },
+            onPick: handlePick,
+            onSubmit: (payload) => {
+              run(() => createAsset(payload), (result) => {
+                const asset = result.body?.asset;
+                setCreating(null);
+                if (asset?.type) setFilterType(asset.type);
+                if (asset) setDetail(asset);
+              });
+            }
+          }
+        ) : null,
+        pendingRemove ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
           ConfirmRemoveDialog,
           {
             t,
-            name: String(pendingRemove.display_name),
+            name: String(pendingRemove.names[0] ?? ""),
+            title: pendingRemove.ids.length > 1 ? t("select.removeTitle").replace("{n}", String(pendingRemove.ids.length)) : void 0,
             busy,
             onCancel: () => {
               setPendingRemove(null);
             },
             onConfirm: () => {
-              handleConfirmRemove(pendingRemove);
+              const ids = pendingRemove.ids;
+              run(async () => {
+                let last = { ok: true, status: 200, body: {} };
+                for (const id of ids) {
+                  last = await deleteAsset(id);
+                  if (!last.ok) return last;
+                }
+                return last;
+              }, () => {
+                setPendingRemove(null);
+                if (ids.includes(detail?.id)) setDetail(null);
+                setSelectedIds((prev) => {
+                  const next = new Set(prev);
+                  for (const id of ids) next.delete(id);
+                  return next;
+                });
+              });
             }
           }
         ) : null

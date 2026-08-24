@@ -50,3 +50,5 @@ OmniMux 桌面预置 profile `omnimux` 的用户层默认模型：
 预置还带社区 `dsh-better-sidebar`（后期要用）。`dsh-drama` 仍是垂直包，按场景装，不默认进消费者桌面，除非另拍板。
 
 活树：桌面仓 `/Users/x/Desktop/Project/omnimux-desktop` 首次启动种子 `$DSH_HOME/profiles/omnimux`，Host 走 `dsh --profile omnimux`。设置「DSH 插件」经捆绑 pnpm + 打包 `dsh plugin` 写入该 profile 的 bundles；不可卸 `dsh-omnimux` / `dsh-base` / `dsh-web-app`。
+
+> 2026-08-22 注：桌面壳已于 2026-08-21 切换为 fork 线（`omnimux-desktop-fork`，fork 自 anywhere-labs），旧 slim 壳 `omnimux-desktop` 归档为只读参考；本文为其时决策，路径以 [dev-pipeline.md](../contracts/dev-pipeline.md) 为准。

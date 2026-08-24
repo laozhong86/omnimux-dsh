@@ -6,6 +6,11 @@
  * runtime and never exchanges elements/refs/context with the host React 18
  * tree. Format: IIFE with global `__omnimuxWorkflowCanvas`, lazy-loaded by
  * CanvasBridge via GET /omnimux-workflow/canvas.js.
+ *
+ * `--harness`（dev-only entry，W1 T1.3）：额外把
+ * src/canvas/harness/harness.tsx 打到 dist-harness/canvas-harness.js
+ * （非压缩 + inline sourcemap），由 scripts/canvas-harness.mjs 伺服。
+ * 生产构建不带此 flag，harness 代码不进 lib/。
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -14,23 +19,28 @@ import * as esbuild from 'esbuild'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const outFile = join(root, 'lib', 'canvas.js')
+const withHarness = process.argv.includes('--harness')
 
-const result = await esbuild.build({
+const shared = {
   absWorkingDir: root,
-  entryPoints: ['src/canvas/index.tsx'],
   bundle: true,
   format: 'iife',
   platform: 'browser',
   target: 'es2020',
   jsx: 'automatic',
-  globalName: '__omnimuxWorkflowCanvas',
-  minify: true,
   write: false,
   logLevel: 'info',
   legalComments: 'none',
   loader: {
     '.css': 'text',
   },
+}
+
+const result = await esbuild.build({
+  ...shared,
+  entryPoints: ['src/canvas/index.tsx'],
+  globalName: '__omnimuxWorkflowCanvas',
+  minify: true,
   define: {
     'process.env.NODE_ENV': '"production"',
   },
@@ -42,3 +52,21 @@ if (!code) throw new Error('esbuild produced no output')
 mkdirSync(dirname(outFile), { recursive: true })
 writeFileSync(outFile, code)
 console.log(`wrote ${outFile} (${code.length} bytes)`)
+
+if (withHarness) {
+  const harnessOut = join(root, 'dist-harness', 'canvas-harness.js')
+  const harnessResult = await esbuild.build({
+    ...shared,
+    entryPoints: ['src/canvas/harness/harness.tsx'],
+    minify: false,
+    sourcemap: 'inline',
+    define: {
+      'process.env.NODE_ENV': '"development"',
+    },
+  })
+  const harnessCode = harnessResult.outputFiles[0]?.text
+  if (!harnessCode) throw new Error('esbuild produced no harness output')
+  mkdirSync(dirname(harnessOut), { recursive: true })
+  writeFileSync(harnessOut, harnessCode)
+  console.log(`wrote ${harnessOut} (${harnessCode.length} bytes)`)
+}

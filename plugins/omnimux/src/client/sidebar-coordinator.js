@@ -23,13 +23,168 @@ export const SIDEBAR_GLOBAL_KEY = '__omnimuxSidebar'
 export const SIDEBAR_GLOBAL = () => (typeof window !== 'undefined' ? window[SIDEBAR_GLOBAL_KEY] : undefined)
 
 const ROWS = []
+const INLINE_ROWS = []
 const seen = new Set()
+
+/** Coordinator-owned chrome for the inline row (并排「新建会话」). */
+const INLINE_STYLES = `
+.omnimux-sidebar-inline-row {
+  display: flex; align-items: stretch; gap: 8px;
+  margin: 0 2px 8px;
+}
+.omnimux-sidebar-inline-row > .omnimux-sidebar-inline-btn {
+  flex: 1 1 0; min-width: 0;
+}
+.omnimux-sidebar-inline-row > .omnimux-sidebar-inline-new-session {
+  flex: 1 1 0; min-width: 0; margin: 0;
+}
+/* 收起轨 56px、官方加号 36px。并排第二颗会挤爆，改成一份加号 + 菜单。
+   display:contents 把 wrapper 拆掉，好让官方 .collapsed .newSession 当列的直接子。
+   但不能把展开时的 flex:1 一起带进竖列 —— 否则加号会吃掉 regionArea 的高度，
+   变成截图那种竖条。 */
+[data-sidebar-collapsed] .omnimux-sidebar-inline-row {
+  display: contents;
+}
+[data-sidebar-collapsed] .omnimux-sidebar-inline-btn {
+  display: none !important;
+}
+[data-sidebar-collapsed] .omnimux-sidebar-inline-row > .omnimux-sidebar-inline-new-session {
+  flex: none;
+  align-self: flex-start;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  margin: 0 0 12px;
+}
+.omnimux-sidebar-new-menu {
+  position: fixed; z-index: 400; min-width: 168px; padding: 6px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(128,128,128,.28));
+  border-radius: 10px;
+  /* DSH 没有 bg-elevated/bg-primary；菜单挂 body，必须用现网 layer token。 */
+  background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-bg-base, #232324));
+  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+  color: var(--dsw-alias-label-primary, inherit);
+}
+.omnimux-sidebar-new-menu[hidden] { display: none !important; }
+.omnimux-sidebar-new-menu button {
+  display: block; width: 100%; box-sizing: border-box;
+  margin: 0; padding: 8px 10px; border: 0; border-radius: 8px;
+  background: transparent; color: inherit; cursor: pointer;
+  font: var(--dsw-font-s-14, 14px/20px system-ui); text-align: left;
+}
+.omnimux-sidebar-new-menu button:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12));
+}
+`
 
 function sidebarRoot() {
   const column = document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]')
   if (!(column instanceof HTMLElement)) return undefined
   const logoOwner = column.querySelector('[class*="logoRow"]')?.parentElement
   return logoOwner ?? (column.firstElementChild instanceof HTMLElement ? column.firstElementChild : undefined)
+}
+
+function railCollapsed() {
+  return Boolean(document.querySelector('[data-sidebar-collapsed]'))
+}
+
+function sessionLabel(button) {
+  const raw = button?.getAttribute?.('aria-label') || button?.textContent || ''
+  const text = String(raw).trim()
+  if (/new session/i.test(text)) return 'New Session'
+  return '新建会话'
+}
+
+function projectLabel(button) {
+  const raw = button?.getAttribute?.('aria-label') || button?.textContent || ''
+  const text = String(raw).trim()
+  if (/new project/i.test(text)) return 'New Project'
+  if (text) return text
+  return '新建项目'
+}
+
+let skipNextCollapsedClick = false
+/** 菜单打开时的 document 监听；必须在所有 close 路径上卸掉，避免泄漏。 */
+let menuDocCleanup
+
+function closeNewMenu() {
+  menuDocCleanup?.()
+  menuDocCleanup = undefined
+  document.getElementById('omnimux-sidebar-new-menu')?.remove()
+}
+
+function openNewMenu(anchor, sessionBtn, projectBtn) {
+  closeNewMenu()
+  const menu = document.createElement('div')
+  menu.id = 'omnimux-sidebar-new-menu'
+  menu.className = 'omnimux-sidebar-new-menu'
+  menu.setAttribute('role', 'menu')
+  const sessionItem = document.createElement('button')
+  sessionItem.type = 'button'
+  sessionItem.setAttribute('role', 'menuitem')
+  sessionItem.textContent = sessionLabel(sessionBtn)
+  sessionItem.addEventListener('click', (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    closeNewMenu()
+    skipNextCollapsedClick = true
+    sessionBtn.click()
+  })
+  const projectItem = document.createElement('button')
+  projectItem.type = 'button'
+  projectItem.setAttribute('role', 'menuitem')
+  projectItem.textContent = projectLabel(projectBtn)
+  projectItem.addEventListener('click', (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    closeNewMenu()
+    projectBtn.click()
+  })
+  menu.append(sessionItem, projectItem)
+  document.body.append(menu)
+  const rect = anchor.getBoundingClientRect()
+  const left = Math.min(rect.right + 8, Math.max(8, window.innerWidth - 180))
+  const top = Math.min(rect.top, Math.max(8, window.innerHeight - 96))
+  menu.style.left = `${left}px`
+  menu.style.top = `${top}px`
+  const onDoc = (event) => {
+    if (menu.contains(event.target) || event.target === anchor) return
+    closeNewMenu()
+  }
+  const onKey = (event) => {
+    if (event.key !== 'Escape') return
+    closeNewMenu()
+  }
+  document.addEventListener('mousedown', onDoc, true)
+  document.addEventListener('keydown', onKey, true)
+  menuDocCleanup = () => {
+    document.removeEventListener('mousedown', onDoc, true)
+    document.removeEventListener('keydown', onKey, true)
+  }
+}
+
+function onCollapsedNewSessionClick(event) {
+  if (skipNextCollapsedClick) {
+    skipNextCollapsedClick = false
+    return
+  }
+  if (!railCollapsed()) return
+  const projectBtn = INLINE_ROWS[0]?.element
+  if (!(projectBtn instanceof HTMLElement)) return
+  event.preventDefault()
+  event.stopPropagation()
+  const sessionBtn = event.currentTarget
+  if (!(sessionBtn instanceof HTMLElement)) return
+  openNewMenu(sessionBtn, sessionBtn, projectBtn)
+}
+
+function bindCollapsedNewMenu(sessionBtn) {
+  if (!(sessionBtn instanceof HTMLElement)) return
+  if (sessionBtn.dataset.omnimuxCollapsedMenu === '1') return
+  sessionBtn.dataset.omnimuxCollapsedMenu = '1'
+  sessionBtn.addEventListener('click', onCollapsedNewSessionClick, true)
 }
 
 function newSessionButton(root) {
@@ -62,14 +217,70 @@ function injectStyles(styleText, styleId) {
 }
 
 let waitObserver
+let collapsedAttrObserver
+let collapsedHost
 let retry
 
+/**
+ * 官方 AppFrame 把 `data-sidebar-collapsed` 写在 frame 根节点，不是 `<html>`。
+ * 监听必须覆盖真正带该属性的节点。优先绑 sidebar 列祖先里「已经带属性」
+ * 的节点，展开时属性不在则绑列的 parent（即 AppFrame）。不要对 html/body
+ * 做全树 attributes。
+ */
+function collapsedHostNode() {
+  const column = document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]')
+  if (column instanceof HTMLElement) {
+    const marked = column.closest('[data-sidebar-collapsed]')
+    if (marked instanceof HTMLElement) return marked
+    if (column.parentElement instanceof HTMLElement) return column.parentElement
+    const slot = column.closest('[data-slot="root"]')
+    if (slot instanceof HTMLElement) return slot
+  }
+  const marked = document.querySelector('[data-sidebar-collapsed]')
+  if (marked instanceof HTMLElement) return marked
+  const slot = document.querySelector('[data-slot="root"]')
+  if (slot instanceof HTMLElement) return slot
+  return undefined
+}
+
+function bindCollapsedAttrObserver() {
+  const host = collapsedHostNode()
+  if (!(host instanceof HTMLElement)) return
+  if (host === collapsedHost) return
+  collapsedHost = host
+  collapsedAttrObserver?.disconnect()
+  collapsedAttrObserver = new MutationObserver(() => { runPlaceAll() })
+  // 属性在 host 自身时不需要 subtree。只有 host 是 slot 锚点（属性在子 frame 上）才下探一层。
+  const subtree = host.matches('[data-slot="root"]') && !host.hasAttribute('data-sidebar-collapsed')
+  collapsedAttrObserver.observe(host, {
+    attributes: true,
+    attributeFilter: ['data-sidebar-collapsed'],
+    subtree,
+  })
+}
+
 function runPlaceAll() {
+  bindCollapsedAttrObserver()
   const root = sidebarRoot()
   if (root === undefined) return
+  placeBelow(root)
+  placeInline(root)
+  if (!railCollapsed()) closeNewMenu()
+}
+
+/** Below rows：按 rank 排序，落在「新建会话」下方（既有行为）。 */
+function placeBelow(root) {
   const sorted = [...ROWS].sort((a, b) => a.rank - b.rank)
   let anchor = newSessionButton(root)
   if (anchor === undefined) return
+  // P0 fix：placeInline 会把「新建会话」按钮移进 inline wrapper。此后该按钮
+  // 已非 root 直接子节点，其 nextElementSibling（inline 按钮）也不再是 root
+  // 直接子节点 —— 若仍以按钮为锚点，insertBefore(..., anchor.nextElementSibling)
+  // 会抛 NotFoundError。below 行应锚在 wrapper 之后（wrapper 才是 root 直接子）。
+  const inlineWrap = anchor.closest('[data-omnimux-inline-row]')
+  if (inlineWrap instanceof HTMLElement && inlineWrap.parentElement === root) {
+    anchor = inlineWrap
+  }
   let slotExternal = true
   for (const row of sorted) {
     // External family rows (taskboard/atb/ssh) slot between the hub block
@@ -90,6 +301,37 @@ function runPlaceAll() {
   }
 }
 
+/**
+ * Inline rows：与「新建会话」并排。用一个 coordinator 自有的 wrapper 包裹
+ * 新建会话按钮 + inline 按钮（不动官方按钮内部 DOM，只调整其容器的 flex 布局）。
+ * 幂等：wrapper 已就位时只补齐缺失的 inline 按钮，不重插。
+ */
+function placeInline(root) {
+  if (INLINE_ROWS.length === 0) return
+  const anchor = newSessionButton(root)
+  if (anchor === undefined) return
+  let wrapper = root.querySelector('[data-omnimux-inline-row]')
+  if (!(wrapper instanceof HTMLElement)) {
+    wrapper = document.createElement('div')
+    wrapper.dataset.omnimuxInlineRow = ''
+    wrapper.className = 'omnimux-sidebar-inline-row'
+    anchor.before(wrapper)
+    wrapper.append(anchor)
+    anchor.classList.add('omnimux-sidebar-inline-new-session')
+  }
+  let prev = anchor
+  for (const row of INLINE_ROWS) {
+    const el = row.element
+    if (el.parentElement === wrapper && el.previousElementSibling === prev) {
+      prev = el
+      continue
+    }
+    wrapper.insertBefore(el, prev.nextElementSibling ?? null)
+    prev = el
+  }
+  bindCollapsedNewMenu(anchor)
+}
+
 function createApi() {
   return {
     register(row) {
@@ -98,6 +340,20 @@ function createApi() {
       seen.add(id)
       if (row.styles) injectStyles(row.styles, row.styleId)
       const element = row.create()
+      // kind:'inline' → 并排「新建会话」；否则 → 下方 rank 行。
+      if (row.kind === 'inline') {
+        injectStyles(INLINE_STYLES, 'omnimux-sidebar-inline-styles')
+        element.classList.add('omnimux-sidebar-inline-btn')
+        INLINE_ROWS.push({ id, element })
+        runPlaceAll()
+        return () => {
+          const i = INLINE_ROWS.findIndex((r) => r.id === id)
+          if (i >= 0) INLINE_ROWS.splice(i, 1)
+          seen.delete(id)
+          element.remove()
+          runPlaceAll()
+        }
+      }
       ROWS.push({ id, rank: row.rank, element })
       runPlaceAll()
       return () => {
@@ -116,8 +372,12 @@ function install() {
   const existing = SIDEBAR_GLOBAL()
   if (existing) return existing
   const api = createApi()
+  waitObserver?.disconnect()
+  collapsedAttrObserver?.disconnect()
+  collapsedHost = undefined
   waitObserver = new MutationObserver(() => { runPlaceAll() })
   waitObserver.observe(document.body, { childList: true, subtree: true })
+  bindCollapsedAttrObserver()
   retry = setInterval(() => { runPlaceAll() }, 2000)
   Object.defineProperty(window, SIDEBAR_GLOBAL_KEY, { value: api, configurable: true })
   return api

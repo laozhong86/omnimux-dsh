@@ -56,6 +56,14 @@ var zh = {
   "avatar.close": "\u5173\u95ED",
   "quota.hint": "\u4F59\u989D\u4E0D\u8DB3\uFF0C\u5145\u503C\u540E\u5373\u53EF\u7EE7\u7EED\u3002",
   "quota.topUp": "\u53BB\u5145\u503C",
+  "auth.gate.title": "\u767B\u5F55 OmniMux",
+  "auth.gate.reason.generic": "\u7EE7\u7EED\u4F7F\u7528\u8BE5\u529F\u80FD\u9700\u767B\u5F55 OmniMux\uFF0C\u767B\u5F55\u540E\u5C06\u81EA\u52A8\u7EE7\u7EED\u3002",
+  "auth.gate.reason.account": "\u67E5\u770B\u548C\u7BA1\u7406\u4F60\u7684\u793E\u4EA4\u8D26\u53F7\u9700\u8981\u767B\u5F55 OmniMux\u3002",
+  "auth.gate.reason.publish": "\u53D1\u5E03\u5185\u5BB9\u9700\u8981\u767B\u5F55 OmniMux\u3002",
+  "auth.gate.reason.open": "\u6253\u5F00\u8BE5\u5E94\u7528\u9700\u8981\u767B\u5F55 OmniMux\u3002",
+  "auth.gate.resumeHint": "\u5728\u6253\u5F00\u7684\u9875\u9762\u786E\u8BA4\u767B\u5F55\u540E\uFF0C\u5C06\u81EA\u52A8\u7EE7\u7EED\u4F60\u521A\u624D\u7684\u64CD\u4F5C\u3002",
+  "auth.gate.cancel": "\u53D6\u6D88",
+  "auth.gate.retry": "\u91CD\u8BD5",
   "plugins.nav": "\u5E94\u7528",
   "plugins.title": "\u5E94\u7528",
   "plugins.needLogin": "\u67E5\u770B\u5DF2\u53D1\u5E03\u7684\u5E94\u7528\u9700\u8981\u767B\u5F55 OmniMux\u3002",
@@ -138,6 +146,14 @@ var en = {
   "avatar.close": "Close",
   "quota.hint": "Balance is too low. Top up to continue.",
   "quota.topUp": "Top up",
+  "auth.gate.title": "Sign in to OmniMux",
+  "auth.gate.reason.generic": "Continue using this feature requires signing in to OmniMux. It will continue automatically after you sign in.",
+  "auth.gate.reason.account": "Sign in to OmniMux to view and manage your social accounts.",
+  "auth.gate.reason.publish": "Publishing requires signing in to OmniMux.",
+  "auth.gate.reason.open": "Opening this app requires signing in to OmniMux.",
+  "auth.gate.resumeHint": "After you confirm the login in the opened page, your interrupted action resumes automatically.",
+  "auth.gate.cancel": "Cancel",
+  "auth.gate.retry": "Retry",
   "plugins.nav": "Apps",
   "plugins.title": "Apps",
   "plugins.needLogin": "Sign in to OmniMux to see apps you published.",
@@ -222,6 +238,8 @@ var PRODUCT_STAGE_CHROME = `
 html:not([data-dsh-product-stage]) [class*="toggleCluster"],
 html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}
 html[data-dsh-product-stage] [class*="toggleCluster"]{display:none!important;}
+html[data-dsh-product-stage] [data-dsh-panel-host]{display:none!important;}
+html[data-dsh-product-stage]{--dsh-sidebar-width:0px!important;--dsh-sidebar-height:0px!important;}
 html[data-dsh-product-stage] #dsh-window-drag{-webkit-app-region:no-drag!important;pointer-events:none!important;}
 html[data-dsh-product-stage] header{-webkit-app-region:no-drag!important;}
 html[data-dsh-product-stage] [data-slot="conversation.session.header"],
@@ -231,7 +249,7 @@ html[data-dsh-product-stage] [role="treeitem"][aria-selected="true"]{background:
 function ensureProductStageChrome() {
   const existing = document.getElementById("dsh-product-stage-chrome");
   if (existing instanceof HTMLStyleElement) {
-    if (!existing.textContent?.includes("dsh-window-drag")) existing.textContent = PRODUCT_STAGE_CHROME;
+    if (!existing.textContent?.includes("data-dsh-panel-host")) existing.textContent = PRODUCT_STAGE_CHROME;
   } else {
     const style = document.createElement("style");
     style.id = "dsh-product-stage-chrome";
@@ -240,6 +258,37 @@ function ensureProductStageChrome() {
   }
   watchSelectedSessionClick();
 }
+function leaveProductStage() {
+  if (!document.documentElement.dataset.dshProductStage) return;
+  delete document.documentElement.dataset.dshProductStage;
+  window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: "" } }));
+}
+function sessionRowPlainClick(target) {
+  const row2 = target.closest('[role="treeitem"]');
+  if (!(row2 instanceof HTMLElement)) return false;
+  if (target.closest("button") !== null) return false;
+  return true;
+}
+function workspaceNewSessionButton(target) {
+  const button = target.closest("button");
+  if (!(button instanceof HTMLElement)) return false;
+  if (!button.closest('[role="treeitem"]')) return false;
+  return /新建会话|New session/i.test(button.getAttribute("aria-label") || "");
+}
+function newSessionMenuPick(target) {
+  const item = target.closest('#omnimux-sidebar-new-menu [role="menuitem"]');
+  if (!(item instanceof HTMLElement)) return false;
+  return /新会话|新建会话|new session/i.test(item.textContent || "");
+}
+function shellNewSessionControl(target) {
+  const button = target.closest("button");
+  if (!(button instanceof HTMLElement)) return false;
+  if (button.closest("#omnimux-sidebar-new-menu")) return false;
+  if (button.closest('[role="treeitem"]')) return false;
+  if (String(button.className).includes("newSession")) return true;
+  const aria = (button.getAttribute("aria-label") || "").trim();
+  return /^(新建会话|新会话|New session)$/i.test(aria);
+}
 function watchSelectedSessionClick() {
   if (document.documentElement.dataset.dshSessionCloser === "1") return;
   document.documentElement.dataset.dshSessionCloser = "1";
@@ -247,12 +296,16 @@ function watchSelectedSessionClick() {
     if (!document.documentElement.dataset.dshProductStage) return;
     const target = event.target;
     if (!(target instanceof Element)) return;
-    const row2 = target.closest('[role="treeitem"][aria-selected="true"]');
-    if (!(row2 instanceof HTMLElement)) return;
-    if (target.closest("button") !== null) return;
-    delete document.documentElement.dataset.dshProductStage;
-    window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: "" } }));
+    if (sessionRowPlainClick(target) || workspaceNewSessionButton(target) || newSessionMenuPick(target)) {
+      leaveProductStage();
+    }
   }, true);
+  document.addEventListener("click", (event) => {
+    if (!document.documentElement.dataset.dshProductStage) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (shellNewSessionControl(target)) leaveProductStage();
+  });
 }
 function readConversationBox() {
   let node = document.querySelector('[data-slot="conversation"]');
@@ -265,48 +318,6 @@ function readConversationBox() {
   if (preferred) return preferred;
   const left = 56;
   return { top: 0, left, width: Math.max(8, window.innerWidth - left), height: Math.max(8, window.innerHeight) };
-}
-
-// src/client/apps-store.js
-var STAGE_ID = "omnimux-apps";
-function createAppsStore() {
-  let open = false;
-  const listeners = /* @__PURE__ */ new Set();
-  function emit() {
-    for (const listener of listeners) listener();
-  }
-  window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
-    const id = event instanceof CustomEvent ? event.detail?.id : void 0;
-    if (id !== STAGE_ID && open) {
-      open = false;
-      emit();
-    }
-  });
-  return {
-    getSnapshot: () => open,
-    /**
-     * @param {() => void} listener
-     */
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    /**
-     * @param {boolean} next
-     */
-    set(next) {
-      if (open === next) return;
-      open = next;
-      if (open) claimProductStage(STAGE_ID);
-      else releaseProductStage(STAGE_ID);
-      emit();
-    },
-    toggle() {
-      this.set(!open);
-    }
-  };
 }
 
 // src/client/ProfileSection.jsx
@@ -400,214 +411,135 @@ function pollLogin(flowId) {
 function logout() {
   return authRequest("/omnimux/auth/logout", { method: "POST" });
 }
-var APP_KEYS = [
-  "schema",
-  "source",
-  "stale",
-  "fetched_at",
-  "refresh",
-  "error",
-  "apps"
-];
-var APP_ROW_KEYS = [
-  "id",
-  "title",
-  "summary",
-  "kind",
-  "capabilities",
-  "client",
-  "spec",
-  "state",
-  "install_spec"
-];
-function pickAppsView(raw) {
-  const row2 = raw && typeof raw === "object" ? (
-    /** @type {Record<string, unknown>} */
-    raw
-  ) : {};
-  const out = {};
-  for (const key of APP_KEYS) {
-    if (key in row2) out[key] = row2[key];
-  }
-  if (Array.isArray(out.apps)) {
-    out.apps = out.apps.map((item) => {
-      const app = item && typeof item === "object" ? (
-        /** @type {Record<string, unknown>} */
-        item
-      ) : {};
-      const next = {};
-      for (const key of APP_ROW_KEYS) {
-        if (key in app) next[key] = app[key];
-      }
-      return next;
-    });
-  }
-  return out;
-}
-async function appsRequest(path, opts = {}) {
-  const response = await fetch(path, { method: opts.method ?? "GET" });
-  const contentType = response.headers.get("content-type") || "";
-  if (!contentType.includes("json")) {
-    return {
-      ok: false,
-      status: response.status,
-      body: { error: response.status === 404 ? "apps routes not mounted" : `unexpected ${contentType || "response"}` }
-    };
-  }
-  let json = null;
-  try {
-    json = await response.json();
-  } catch {
-    json = {};
-  }
-  return { ok: response.ok, status: response.status, body: pickAppsView(json) };
-}
-function getApps() {
-  return appsRequest("/omnimux/apps");
-}
-var TABS_KEYS = [
-  "schema",
-  "tabs",
-  "error"
-];
-var TAB_ROW_KEYS = [
-  "id",
-  "title",
-  "pinned",
-  "lastOpenedAt"
-];
-function pickTabsView(raw) {
-  const row2 = raw && typeof raw === "object" ? (
-    /** @type {Record<string, unknown>} */
-    raw
-  ) : {};
-  const out = {};
-  for (const key of TABS_KEYS) {
-    if (key in row2) out[key] = row2[key];
-  }
-  if (Array.isArray(out.tabs)) {
-    out.tabs = out.tabs.map((item) => {
-      const tab = item && typeof item === "object" ? (
-        /** @type {Record<string, unknown>} */
-        item
-      ) : {};
-      const next = {};
-      for (const key of TAB_ROW_KEYS) {
-        if (key in tab) next[key] = tab[key];
-      }
-      return next;
-    });
-  }
-  return out;
-}
-async function tabsRequest(path, opts = {}) {
-  const response = await fetch(path, {
-    method: opts.method ?? "GET",
-    headers: opts.body === void 0 ? void 0 : { "Content-Type": "application/json" },
-    body: opts.body === void 0 ? void 0 : JSON.stringify(opts.body)
-  });
-  let json = {};
-  try {
-    json = await response.json();
-  } catch {
-    json = { error: `HTTP ${String(response.status)}` };
-  }
-  return { ok: response.ok, status: response.status, body: pickTabsView(json) };
-}
-function getAppTabs() {
-  return tabsRequest("/omnimux/apps/tabs");
-}
-function upsertAppTab(id) {
-  return tabsRequest(`/omnimux/apps/tabs/${encodeURIComponent(id)}`, { method: "POST" });
-}
-function patchAppTab(id, body) {
-  return tabsRequest(`/omnimux/apps/tabs/${encodeURIComponent(id)}`, { method: "PATCH", body });
-}
-function removeAppTab(id) {
-  return tabsRequest(`/omnimux/apps/tabs/${encodeURIComponent(id)}`, { method: "DELETE" });
-}
-async function installApp(spec) {
-  const response = await fetch("/omnimux/plugins", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ spec })
-  });
-  let json = {};
-  try {
-    json = await response.json();
-  } catch {
-    json = { error: `HTTP ${String(response.status)}` };
-  }
-  return { ok: response.ok, status: response.status, body: json };
-}
-async function uninstallApp(name2) {
-  const response = await fetch(`/omnimux/plugins/${encodeURIComponent(name2)}`, { method: "DELETE" });
-  let json = {};
-  try {
-    json = await response.json();
-  } catch {
-    json = { error: `HTTP ${String(response.status)}` };
-  }
-  return { ok: response.ok, status: response.status, body: json };
-}
 
 // src/client/use-omnimux-auth.js
 function openAuthUrl(url) {
   if (typeof url === "string" && url) window.open(url, "_blank", "noopener,noreferrer");
 }
+function runLogin(opts = {}) {
+  const onSuccess = typeof opts.onSuccess === "function" ? opts.onSuccess : () => {
+  };
+  const onState = typeof opts.onState === "function" ? opts.onState : () => {
+  };
+  let timer = null;
+  let flowId = "";
+  let cancelled = false;
+  function stop() {
+    if (timer !== null) {
+      window.clearInterval(timer);
+      timer = null;
+    }
+  }
+  function schedulePoll(delaySec) {
+    stop();
+    const delay = Math.max(1, Number(delaySec) || 5) * 1e3;
+    timer = window.setInterval(async () => {
+      if (cancelled || flowId === "") return;
+      try {
+        const result = await pollLogin(flowId);
+        if (cancelled) return;
+        if (result.body?.logged_in) {
+          onSuccess(result.body);
+          stop();
+          return;
+        }
+        const kind = result.body?.kind;
+        if (kind === "pending" || kind === "slow_down") {
+          if (result.body?.interval) schedulePoll(result.body.interval);
+          return;
+        }
+        if (result.status === 403 || kind === "denied") onState("denied", { detail: result.body?.error });
+        else if (result.status === 410 || kind === "expired") onState("expired", { detail: result.body?.error });
+        else onState("error", { detail: result.body?.error || `HTTP ${String(result.status)}` });
+        stop();
+      } catch (error) {
+        if (!cancelled) onState("error", { detail: error instanceof Error ? error.message : "poll failed" });
+        stop();
+      }
+    }, delay);
+  }
+  async function start() {
+    if (cancelled) return;
+    onState("starting");
+    try {
+      const started = await startLogin();
+      if (cancelled) return;
+      if (!started.ok || typeof started.body?.flow_id !== "string" || !started.body.flow_id) {
+        onState("error", { detail: started.body?.error || `HTTP ${String(started.status)}` });
+        return;
+      }
+      flowId = started.body.flow_id;
+      openAuthUrl(started.body.verification_url);
+      onState("waiting", {
+        flow_id: started.body.flow_id,
+        user_code: started.body.user_code,
+        verification_url: started.body.verification_url,
+        interval: started.body.interval
+      });
+      schedulePoll(started.body.interval);
+    } catch (error) {
+      if (!cancelled) onState("error", { detail: error instanceof Error ? error.message : "login failed" });
+    }
+  }
+  function cancel2() {
+    cancelled = true;
+    stop();
+  }
+  return { start, stop, cancel: cancel2 };
+}
 function useOmnimuxAuth(opts = {}) {
   const verifyOnMount = opts.verifyOnMount === true;
-  const [state, setState] = (0, import_react.useState)({ phase: "checking" });
+  const [state2, setState2] = (0, import_react.useState)({ phase: "checking" });
   (0, import_react.useEffect)(() => {
     let cancelled = false;
     getStatus(verifyOnMount).then((result) => {
       if (cancelled) return;
-      if (result.body.logged_in) setState({ phase: "ready", profile: result.body });
-      else setState({ phase: "need-login" });
+      if (result.body.logged_in) setState2({ phase: "ready", profile: result.body });
+      else setState2({ phase: "need-login" });
     }).catch(() => {
-      if (!cancelled) setState({ phase: "need-login" });
+      if (!cancelled) setState2({ phase: "need-login" });
     });
     return () => {
       cancelled = true;
     };
   }, [verifyOnMount]);
   (0, import_react.useEffect)(() => {
-    if (state.phase !== "waiting" || !state.flow_id) return void 0;
+    if (state2.phase !== "waiting" || !state2.flow_id) return void 0;
     let cancelled = false;
-    const delay = Math.max(1, Number(state.interval) || 5) * 1e3;
+    const delay = Math.max(1, Number(state2.interval) || 5) * 1e3;
     const timer = window.setInterval(() => {
-      pollLogin(state.flow_id).then((result) => {
+      pollLogin(state2.flow_id).then((result) => {
         if (cancelled) return;
         if (result.body.logged_in) {
-          setState({ phase: "ready", profile: result.body });
+          setState2({ phase: "ready", profile: result.body });
           return;
         }
         if (result.body.kind === "pending" || result.body.kind === "slow_down") {
-          if (result.body.interval) setState((current) => ({ ...current, interval: result.body.interval }));
+          if (result.body.interval) setState2((current) => ({ ...current, interval: result.body.interval }));
           return;
         }
-        if (result.status === 403 || result.body.kind === "denied") setState({ phase: "denied" });
-        else if (result.status === 410 || result.body.kind === "expired") setState({ phase: "expired" });
-        else setState({ phase: "error", detail: result.body.error || `HTTP ${result.status}` });
+        if (result.status === 403 || result.body.kind === "denied") setState2({ phase: "denied" });
+        else if (result.status === 410 || result.body.kind === "expired") setState2({ phase: "expired" });
+        else setState2({ phase: "error", detail: result.body.error || `HTTP ${result.status}` });
       }).catch((error) => {
-        if (!cancelled) setState({ phase: "error", detail: error instanceof Error ? error.message : "poll failed" });
+        if (!cancelled) setState2({ phase: "error", detail: error instanceof Error ? error.message : "poll failed" });
       });
     }, delay);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [state.phase, state.flow_id, state.interval]);
-  async function beginLogin() {
-    setState({ phase: "starting" });
+  }, [state2.phase, state2.flow_id, state2.interval]);
+  async function beginLogin2() {
+    setState2({ phase: "starting" });
     try {
       const started = await startLogin();
       if (!started.ok || typeof started.body.flow_id !== "string" || !started.body.flow_id) {
-        setState({ phase: "error", detail: started.body.error || `HTTP ${started.status}` });
+        setState2({ phase: "error", detail: started.body.error || `HTTP ${started.status}` });
         return;
       }
       openAuthUrl(started.body.verification_url);
-      setState({
+      setState2({
         phase: "waiting",
         flow_id: started.body.flow_id,
         user_code: started.body.user_code,
@@ -615,15 +547,25 @@ function useOmnimuxAuth(opts = {}) {
         interval: started.body.interval
       });
     } catch (error) {
-      setState({ phase: "error", detail: error instanceof Error ? error.message : "login failed" });
+      setState2({ phase: "error", detail: error instanceof Error ? error.message : "login failed" });
     }
   }
   function signOut() {
     return logout().then(() => {
-      setState({ phase: "need-login" });
+      setState2({ phase: "need-login" });
     });
   }
-  return { state, beginLogin, signOut, openUrl: openAuthUrl };
+  const recheck = (0, import_react.useCallback)(() => {
+    return getStatus(false).then((result) => {
+      if (result.body.logged_in) setState2({ phase: "ready", profile: result.body });
+      else setState2({ phase: "need-login" });
+      return result;
+    }).catch(() => {
+      setState2({ phase: "need-login" });
+      return null;
+    });
+  }, []);
+  return { state: state2, beginLogin: beginLogin2, signOut, openUrl: openAuthUrl, recheck };
 }
 
 // src/client/avatar-api.js
@@ -728,7 +670,7 @@ var hoverStyles = `
 .omx-profile .omx-btn-ghost:hover { color: ${tokens.text}; background: ${tokens.hover}; }
 .omx-profile .omx-btn-danger:hover { color: ${tokens.error}; border-color: ${tokens.error}; background: transparent; }
 .omx-avatar { position: relative; cursor: pointer; flex: 0 0 auto; }
-.omx-avatar-edit { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; opacity: 0; transition: opacity .15s ease; pointer-events: none; }
+.omx-avatar-edit { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--dsw-alias-bg-mask-1, rgba(0,0,0,.55)); color: var(--dsw-alias-label-primary-inverted, #fff); font-size: 11px; opacity: 0; transition: opacity .15s ease; pointer-events: none; }
 .omx-avatar:hover .omx-avatar-edit { opacity: 1; }
 `;
 function money(value2) {
@@ -809,7 +751,7 @@ function AvatarModal({ t, avatar, initial, busy, error, onApply, onClose }) {
           position: "fixed",
           inset: 0,
           zIndex: 1100,
-          background: "rgba(0,0,0,.45)",
+          background: "var(--dsw-alias-bg-mask-1, rgba(0,0,0,.45))",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -1000,9 +942,9 @@ function SignedIn({ t, profile, onTopUp, onSignOut }) {
   ] });
 }
 function ProfileSection({ t }) {
-  const { state, beginLogin, signOut, openUrl } = useOmnimuxAuth({ verifyOnMount: false });
-  if (state.phase === "ready") {
-    const profile = state.profile || {};
+  const { state: state2, signOut, openUrl, recheck } = useOmnimuxAuth({ verifyOnMount: false });
+  if (state2.phase === "ready") {
+    const profile = state2.profile || {};
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
       SignedIn,
       {
@@ -1015,34 +957,36 @@ function ProfileSection({ t }) {
       }
     );
   }
+  const signIn = () => {
+    const gate = typeof window !== "undefined" ? (
+      /** @type {any} */
+      window.__omnimuxAuth
+    ) : void 0;
+    if (gate && typeof gate.ensureLogin === "function") {
+      gate.ensureLogin({
+        reason: t("auth.gate.reason.account"),
+        onSuccess: () => {
+          void recheck();
+        }
+      });
+    } else {
+      void recheck();
+    }
+  };
   const message = {
     checking: t("profile.loading"),
     "need-login": t("profile.signedOut"),
-    starting: t("profile.loading"),
-    waiting: t("plugins.waiting"),
     denied: t("plugins.denied"),
     expired: t("plugins.expired"),
     error: t("plugins.error")
-  }[state.phase] || t("profile.signedOut");
-  const showLogin = state.phase === "need-login" || state.phase === "denied" || state.phase === "expired" || state.phase === "error";
+  }[state2.phase] || t("profile.signedOut");
+  const showLogin = state2.phase !== "checking";
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: page, className: "omx-profile", children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: hoverStyles }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { style: { margin: 0, fontSize: 16, fontWeight: 600 }, children: t("profile.title") }),
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { ...card, display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { margin: 0, fontSize: 13, color: tokens.textSecondary, lineHeight: 1.5 }, children: message }),
-      state.phase === "error" && state.detail ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { margin: 0, fontSize: 12, color: tokens.error, lineHeight: 1.5 }, children: state.detail }) : null,
-      state.phase === "waiting" && state.user_code ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-        fontFamily: "var(--dsw-font-markdown-code-font-family, monospace)",
-        fontSize: 16,
-        letterSpacing: 2,
-        padding: "6px 12px",
-        borderRadius: 6,
-        border: `1px solid ${tokens.border}`
-      }, children: state.user_code }) : null,
-      state.phase === "waiting" && state.verification_url ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omx-btn omx-btn-primary", onClick: () => openUrl(state.verification_url), children: t("plugins.open") }) : null,
-      showLogin ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omx-btn omx-btn-primary", onClick: () => {
-        void beginLogin();
-      }, children: t("plugins.login") }) : null
+      showLogin ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omx-btn omx-btn-primary", onClick: signIn, children: t("plugins.login") }) : null
     ] })
   ] });
 }
@@ -1104,256 +1048,7 @@ var import_react5 = require("react");
 
 // src/client/PluginsSection.jsx
 var import_react4 = require("react");
-
-// src/client/app-actions.js
-function primaryActionFor(state) {
-  if (state === "available") return "install";
-  if (state === "update") return "update";
-  return null;
-}
-function hasOverflowMenu(state) {
-  return state === "installed" || state === "update";
-}
-function canOpen(app, pendingRestart) {
-  const state = app?.state;
-  return (state === "installed" || state === "update") && app?.client === true && !pendingRestart;
-}
-function needsIdentity(app) {
-  return Array.isArray(app?.capabilities) && app.capabilities.includes("identity");
-}
-
-// src/client/open-app.js
-var APP_OPEN_EVENT = "omnimux-app-open";
-function openApp(id, target = window) {
-  target.dispatchEvent(new CustomEvent(APP_OPEN_EVENT, { detail: { id } }));
-}
-function waitForStageClaim(readStage, timeoutMs = 600) {
-  return new Promise((resolve) => {
-    const started = Date.now();
-    const poll = () => {
-      const stage = readStage();
-      if (typeof stage === "string" && stage !== "" && stage !== "omnimux-apps") {
-        resolve(true);
-        return;
-      }
-      if (Date.now() - started >= timeoutMs) {
-        resolve(false);
-        return;
-      }
-      setTimeout(poll, 60);
-    };
-    poll();
-  });
-}
-
-// src/client/open-app-flow.js
-var TABS_CHANGED_EVENT = "omnimux-app-tabs-changed";
-function notifyTabsChanged(target) {
-  const scope = target ?? (typeof window === "undefined" ? void 0 : window);
-  if (scope === void 0 || typeof scope.dispatchEvent !== "function") return;
-  if (typeof CustomEvent === "undefined") return;
-  scope.dispatchEvent(new CustomEvent(TABS_CHANGED_EVENT));
-}
-function recordTab(id) {
-  upsertAppTab(id).then((result) => {
-    if (result.ok) notifyTabsChanged();
-  }).catch(() => {
-  });
-}
-async function attemptOpen(app, opts = {}) {
-  const pendingRestart = opts.pendingRestart === true;
-  const readStage = opts.readStage ?? defaultReadStage;
-  const id = typeof app?.id === "string" ? app.id : "";
-  if (!canOpen(app, pendingRestart) || id === "") return { kind: "restart" };
-  if (needsIdentity(app) && opts.isLoggedIn !== true) return { kind: "login" };
-  openApp(id);
-  const claimed = await waitForStageClaim(readStage);
-  if (!claimed) return { kind: "restart" };
-  recordTab(id);
-  return { kind: "opened" };
-}
-function defaultReadStage() {
-  return typeof document === "undefined" ? void 0 : document.documentElement.dataset.dshProductStage;
-}
-
-// src/client/PluginsSection.jsx
 var import_jsx_runtime3 = require("react/jsx-runtime");
-var page3 = {
-  padding: "0 20px 24px",
-  color: "var(--dsw-alias-label-primary, var(--dsw-text-primary, inherit))",
-  display: "flex",
-  flexDirection: "column",
-  gap: 16
-};
-var toolbar = {
-  display: "flex",
-  flexWrap: "wrap",
-  alignItems: "center",
-  gap: 10
-};
-var search = {
-  width: 280,
-  maxWidth: "100%",
-  flex: "0 1 280px",
-  height: 32,
-  borderRadius: 8,
-  border: "1px solid var(--dsw-alias-border, rgba(255,255,255,0.12))",
-  background: "transparent",
-  color: "inherit",
-  padding: "0 10px",
-  font: "inherit",
-  fontSize: 13
-};
-var grid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-  alignItems: "stretch",
-  gap: 12
-};
-var card2 = {
-  position: "relative",
-  display: "flex",
-  flexDirection: "column",
-  gap: 12,
-  minHeight: 176,
-  borderRadius: 12,
-  padding: 16,
-  background: "var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04))",
-  border: "1px solid var(--dsw-alias-border, rgba(255,255,255,0.08))"
-};
-var cardBody = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 12,
-  cursor: "pointer",
-  outline: "none"
-};
-var titleRow = {
-  display: "flex",
-  alignItems: "flex-start",
-  gap: 10
-};
-var iconBox = {
-  width: 36,
-  height: 36,
-  borderRadius: 10,
-  display: "grid",
-  placeItems: "center",
-  background: "var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.10))",
-  color: "var(--dsw-alias-label-primary, inherit)",
-  flex: "0 0 auto"
-};
-var titleLine = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  minWidth: 0,
-  flex: 1,
-  paddingRight: 34
-  // reserve space for the top-right ⋯ button so the title / badge never overlap it
-};
-var title = {
-  margin: 0,
-  minWidth: 0,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  fontSize: 15,
-  fontWeight: 600,
-  lineHeight: "22px"
-};
-var stateBadge = (state) => {
-  if (state === "installed") {
-    return {
-      fontSize: 11,
-      lineHeight: "16px",
-      padding: "2px 8px",
-      borderRadius: 999,
-      background: "color-mix(in srgb, var(--dsw-alias-state-success-primary, #4caf7d) 16%, transparent)",
-      color: "var(--dsw-alias-state-success-primary, #4caf7d)",
-      whiteSpace: "nowrap"
-    };
-  }
-  if (state === "update") {
-    return {
-      fontSize: 11,
-      lineHeight: "16px",
-      padding: "2px 8px",
-      borderRadius: 999,
-      background: "color-mix(in srgb, var(--dsw-alias-state-business-primary, #4c8dff) 16%, transparent)",
-      color: "var(--dsw-alias-state-business-primary, #4c8dff)",
-      whiteSpace: "nowrap"
-    };
-  }
-  if (state === "available") {
-    return {
-      fontSize: 11,
-      lineHeight: "16px",
-      padding: "2px 8px",
-      borderRadius: 999,
-      background: "var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08))",
-      color: "var(--dsw-alias-label-secondary, rgba(255,255,255,0.72))",
-      whiteSpace: "nowrap"
-    };
-  }
-  return null;
-};
-var summary = {
-  margin: 0,
-  fontSize: 13,
-  lineHeight: 1.55,
-  opacity: 0.72
-};
-var tags = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 6
-};
-var tag = {
-  fontSize: 11,
-  lineHeight: "16px",
-  padding: "2px 8px",
-  borderRadius: 999,
-  background: "rgba(255,255,255,0.08)",
-  whiteSpace: "nowrap"
-};
-var footer = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: 10,
-  marginTop: "auto"
-};
-var pill = (tone) => ({
-  flex: "0 0 auto",
-  border: tone === "danger" || tone === "ghost" ? "1px solid var(--dsw-alias-border, rgba(255,255,255,0.16))" : "none",
-  borderRadius: 8,
-  padding: "4px 10px",
-  font: "inherit",
-  fontSize: 13,
-  cursor: "pointer",
-  background: tone === "danger" || tone === "ghost" ? "transparent" : "var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.12))",
-  color: tone === "danger" ? "var(--dsw-alias-state-error-primary, #e06c75)" : "inherit"
-});
-var moreButton = {
-  position: "absolute",
-  top: 8,
-  right: 8,
-  zIndex: 1,
-  display: "grid",
-  placeItems: "center",
-  width: 26,
-  height: 26,
-  padding: 0,
-  border: "1px solid var(--dsw-alias-border, rgba(255,255,255,0.16))",
-  borderRadius: 8,
-  background: "transparent",
-  color: "inherit",
-  font: "inherit",
-  fontSize: 16,
-  lineHeight: 1,
-  cursor: "pointer"
-};
 var menuItem = {
   display: "flex",
   flexDirection: "column",
@@ -1369,760 +1064,13 @@ var menuItem = {
   textAlign: "left",
   cursor: "pointer"
 };
-var menuItemHint = {
-  fontSize: 11,
-  lineHeight: "16px",
-  opacity: 0.6
-};
 var menuItemDanger = {
   ...menuItem,
   color: "var(--dsw-alias-state-error-primary, #e06c75)"
 };
-var bubbleText = {
-  margin: 0,
-  fontSize: 13,
-  lineHeight: 1.5
-};
-var bubbleSummary = {
-  margin: 0,
-  fontSize: 12,
-  lineHeight: 1.5,
-  opacity: 0.7
-};
-var bubbleActions = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 8,
-  marginTop: 8
-};
-var gatePanel = {
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-start",
-  gap: 10,
-  padding: 16,
-  borderRadius: 12,
-  background: "var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04))",
-  border: "1px solid var(--dsw-alias-border, rgba(255,255,255,0.08))"
-};
-var gateCode = {
-  margin: 0,
-  fontSize: 14,
-  letterSpacing: 2,
-  fontFamily: "var(--dsw-font-markdown-code-font-family, monospace)"
-};
-var muted2 = { opacity: 0.7, fontSize: 13, margin: 0 };
-var errText = { color: "var(--dsw-alias-state-error-primary, #e06c75)", fontSize: 13, margin: 0 };
-function desktopBridge() {
-  const api = window.dshDesktop;
-  return api && typeof api.restartHost === "function" ? api : void 0;
-}
-function fmt(template, vars) {
-  return template.replace(/\{(\w+)\}/g, (whole, key) => key in vars ? String(vars[key]) : whole);
-}
-function AppMark({ id }) {
-  if (id === "accounts") {
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 16 16", "aria-hidden": "true", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("circle", { cx: "8", cy: "5.2", r: "2.4", fill: "none", stroke: "currentColor", strokeWidth: "1.3" }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M3.4 13c.6-2.4 2.3-3.6 4.6-3.6s4 1.2 4.6 3.6", fill: "none", stroke: "currentColor", strokeWidth: "1.3", strokeLinecap: "round" })
-    ] });
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 16 16", "aria-hidden": "true", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "1.5", y: "1.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "9.5", y: "1.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "1.5", y: "9.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "9.5", y: "9.5", width: "5", height: "5", rx: "1", fill: "none", stroke: "currentColor", strokeWidth: "1.25" })
-  ] });
-}
-function matches(app, query) {
-  if (query.length === 0) return true;
-  const hay = [app.title, app.summary, app.id, app.spec?.name].filter((value2) => typeof value2 === "string").join(" ").toLocaleLowerCase();
-  return hay.includes(query);
-}
-function LoginGate({ t, auth, onCancel }) {
-  const state = auth.state;
-  const idle = state.phase === "need-login" || state.phase === "denied" || state.phase === "expired" || state.phase === "error";
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: gatePanel, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted2, children: t("plugins.needLogin") }),
-    state.phase === "waiting" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted2, children: t("plugins.waiting") }),
-      typeof state.user_code === "string" && state.user_code ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: gateCode, children: state.user_code }) : null,
-      typeof state.verification_url === "string" && state.verification_url ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", style: pill("primary"), onClick: () => {
-        auth.openUrl(state.verification_url);
-      }, children: t("plugins.open") }) : null
-    ] }) : null,
-    state.phase === "denied" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: errText, children: t("plugins.denied") }) : null,
-    state.phase === "expired" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: errText, children: t("plugins.expired") }) : null,
-    state.phase === "error" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: errText, children: state.detail || t("plugins.error") }) : null,
-    idle ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", style: pill("primary"), onClick: () => {
-      void auth.beginLogin();
-    }, children: t("plugins.login") }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", style: pill("ghost"), onClick: onCancel, children: t("plugins.cancel") })
-  ] });
-}
-function PluginsSection({ t }) {
-  const [view, setView] = (0, import_react4.useState)(null);
-  const [query, setQuery] = (0, import_react4.useState)("");
-  const [busy, setBusy] = (0, import_react4.useState)("");
-  const [error, setError] = (0, import_react4.useState)("");
-  const [pendingRestart, setPendingRestart] = (0, import_react4.useState)(false);
-  const [popover, setPopover] = (0, import_react4.useState)(null);
-  const [gate, setGate] = (0, import_react4.useState)(null);
-  const [notice, setNotice] = (0, import_react4.useState)("");
-  const auth = useOmnimuxAuth();
-  const applyView = (body) => {
-    setView(body && typeof body === "object" ? body : null);
-    if (body && typeof body.error === "string" && body.error) setError(body.error);
-  };
-  const refresh = () => {
-    return getApps().then((result) => {
-      if (!result.ok) {
-        setError(String(result.body.error || `HTTP ${String(result.status)}`));
-        return;
-      }
-      setError(typeof result.body.error === "string" ? result.body.error : "");
-      applyView(result.body);
-    }).catch((caught) => {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    });
-  };
-  (0, import_react4.useEffect)(() => {
-    void refresh();
-  }, []);
-  (0, import_react4.useEffect)(() => {
-    if (popover === null) return void 0;
-    const onPointerDown = (event) => {
-      const target = event.target;
-      if (target instanceof Element && target.closest("[data-omnimux-popover]") !== null) return;
-      setPopover(null);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-    };
-  }, [popover]);
-  (0, import_react4.useEffect)(() => {
-    if (notice === "") return void 0;
-    const timer = window.setTimeout(() => {
-      setNotice("");
-    }, 6e3);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [notice]);
-  const runChange = (key, work) => {
-    setBusy(key);
-    setError("");
-    void work().then((result) => {
-      if (!result.ok) {
-        setError(String(result.body.error || `HTTP ${String(result.status)}`));
-        return;
-      }
-      setPendingRestart(true);
-      notifyTabsChanged();
-      return refresh();
-    }).catch((caught) => {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    }).finally(() => {
-      setBusy("");
-    });
-  };
-  const install2 = (spec) => {
-    if (!spec) return;
-    runChange(spec, () => installApp(spec));
-  };
-  const uninstall = (name2) => {
-    if (!name2) return;
-    runChange(name2, () => uninstallApp(name2));
-  };
-  const restart = () => {
-    const bridge = desktopBridge();
-    if (bridge === void 0) {
-      setError(t("dshPlugins.needDesktop"));
-      return;
-    }
-    setBusy("restart");
-    setError("");
-    void bridge.restartHost().then(() => {
-      setPendingRestart(false);
-    }).catch((caught) => {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    }).finally(() => {
-      setBusy("");
-    });
-  };
-  const readStage = () => document.documentElement.dataset.dshProductStage;
-  const runOpen = (app, isLoggedIn = auth.state.phase === "ready") => {
-    setNotice("");
-    void attemptOpen(app, { pendingRestart, readStage, isLoggedIn }).then((result) => {
-      if (result.kind === "login") {
-        setGate(app);
-        return;
-      }
-      if (result.kind === "restart") setNotice(t("plugins.needRestart"));
-    }).catch(() => {
-      setNotice(t("plugins.needRestart"));
-    });
-  };
-  (0, import_react4.useEffect)(() => {
-    if (gate === null || auth.state.phase !== "ready") return;
-    const app = gate;
-    setGate(null);
-    runOpen(app, true);
-  }, [gate, auth.state.phase]);
-  const handleCardClick = (app) => {
-    if (app.state === "available") {
-      setPopover({ kind: "install", id: String(app.id) });
-      return;
-    }
-    runOpen(app);
-  };
-  const apps = Array.isArray(view?.apps) ? view.apps : [];
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  const filtered = (0, import_react4.useMemo)(
-    () => apps.filter((app) => matches(app, normalizedQuery)),
-    [apps, normalizedQuery]
-  );
-  const softError = typeof view?.error === "string" ? view.error : "";
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: page3, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: toolbar, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-      "input",
-      {
-        type: "search",
-        value: query,
-        placeholder: t("plugins.search"),
-        "aria-label": t("plugins.search"),
-        onChange: (event) => {
-          setQuery(event.currentTarget.value);
-        },
-        style: search
-      }
-    ) }),
-    gate !== null ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(LoginGate, { t, auth, onCancel: () => {
-      setGate(null);
-    } }) : null,
-    view == null && error === "" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted2, children: t("profile.loading") }) : null,
-    apps.length === 0 && view != null ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted2, children: t("plugins.empty") }) : null,
-    apps.length > 0 && filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted2, children: t("plugins.emptySearch") }) : null,
-    filtered.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: grid, children: filtered.map((app) => {
-      const key = String(app.id);
-      const spec = typeof app.install_spec === "string" ? app.install_spec : "";
-      const name2 = typeof app.spec?.name === "string" ? app.spec.name : "";
-      const primary = primaryActionFor(app.state);
-      const overflow = hasOverflowMenu(app.state);
-      const badge = stateBadge(app.state);
-      const appCaps = Array.isArray(app.capabilities) ? app.capabilities : [];
-      const badgeKey = app.state === "update" ? "plugins.update" : app.state === "available" ? "plugins.available" : "plugins.installedShort";
-      return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("article", { style: card2, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-          "div",
-          {
-            role: "button",
-            tabIndex: 0,
-            style: cardBody,
-            onClick: () => {
-              handleCardClick(app);
-            },
-            onKeyDown: (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                handleCardClick(app);
-              }
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: titleRow, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: iconBox, "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(AppMark, { id: app.id }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: titleLine, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { style: title, children: app.title }),
-                  badge ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: badge, children: t(badgeKey) }) : null
-                ] })
-              ] }),
-              app.summary ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: summary, children: app.summary }) : null,
-              appCaps.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: tags, children: appCaps.map((capKey) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: tag, children: t(`plugins.cap.${capKey}`) }, capKey)) }) : null
-            ]
-          }
-        ),
-        overflow ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-          "button",
-          {
-            type: "button",
-            style: moreButton,
-            "aria-label": t("plugins.more"),
-            "aria-haspopup": "menu",
-            "aria-expanded": popover?.kind === "menu" && popover.id === key,
-            disabled: busy !== "",
-            onClick: (event) => {
-              event.stopPropagation();
-              setPopover(popover?.kind === "menu" && popover.id === key ? null : { kind: "menu", id: key });
-            },
-            children: "\u22EF"
-          }
-        ) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: footer, children: primary !== null ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-          "button",
-          {
-            type: "button",
-            style: pill("primary"),
-            disabled: busy !== "" || spec === "",
-            onClick: (event) => {
-              event.stopPropagation();
-              install2(spec);
-            },
-            children: t(primary === "update" ? "plugins.update" : "plugins.install")
-          }
-        ) : null }),
-        popover?.id === key && popover.kind === "menu" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { "data-omnimux-popover": "", role: "menu", style: popover, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-            "button",
-            {
-              type: "button",
-              role: "menuitem",
-              style: menuItem,
-              disabled: busy !== "" || !canOpen(app, pendingRestart),
-              onClick: () => {
-                setPopover(null);
-                runOpen(app);
-              },
-              children: [
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: t("plugins.openApp") }),
-                pendingRestart ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: menuItemHint, children: t("plugins.needRestart") }) : null
-              ]
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-            "button",
-            {
-              type: "button",
-              role: "menuitem",
-              style: menuItemDanger,
-              disabled: busy !== "" || name2 === "",
-              onClick: () => {
-                setPopover({ kind: "remove", id: key });
-              },
-              children: t("plugins.remove")
-            }
-          )
-        ] }) : null,
-        popover?.id === key && popover.kind === "install" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { "data-omnimux-popover": "", role: "dialog", style: popover, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: bubbleText, children: fmt(t("plugins.confirmInstall"), { title: app.title }) }),
-          app.summary ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: bubbleSummary, children: app.summary }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: bubbleActions, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-              "button",
-              {
-                type: "button",
-                style: pill("primary"),
-                disabled: busy !== "" || spec === "",
-                onClick: () => {
-                  setPopover(null);
-                  install2(spec);
-                },
-                children: t("plugins.install")
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", style: pill("ghost"), onClick: () => {
-              setPopover(null);
-            }, children: t("plugins.cancel") })
-          ] })
-        ] }) : null,
-        popover?.id === key && popover.kind === "remove" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { "data-omnimux-popover": "", role: "dialog", style: popover, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: bubbleText, children: fmt(t("plugins.confirmRemove"), { title: app.title }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: bubbleActions, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-              "button",
-              {
-                type: "button",
-                style: pill("danger"),
-                disabled: busy !== "" || name2 === "",
-                onClick: () => {
-                  setPopover(null);
-                  uninstall(name2);
-                },
-                children: t("plugins.remove")
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", style: pill("ghost"), onClick: () => {
-              setPopover(null);
-            }, children: t("plugins.cancel") })
-          ] })
-        ] }) : null
-      ] }, key);
-    }) }) : null,
-    notice !== "" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted2, children: notice }) : null,
-    pendingRestart ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", style: { ...pill("primary"), alignSelf: "flex-start" }, disabled: busy !== "", onClick: restart, children: t("dshPlugins.restart") }) : null,
-    softError !== "" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted2, children: softError }) : null,
-    error !== "" && error !== softError ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: errText, children: error }) : null
-  ] });
-}
 
 // src/client/AppsStage.jsx
 var import_jsx_runtime4 = require("react/jsx-runtime");
-function AppsStage({ t, apps, useSessions }) {
-  const open = (0, import_react5.useSyncExternalStore)(
-    apps ? apps.subscribe : () => () => {
-    },
-    apps ? apps.getSnapshot : () => false
-  );
-  const readSessions = useSessions ?? ((select) => select({}));
-  const currentSession = readSessions((state) => state.current);
-  const lastSession = (0, import_react5.useRef)(currentSession);
-  const [box, setBox] = (0, import_react5.useState)(() => readConversationBox());
-  (0, import_react5.useLayoutEffect)(() => {
-    if (!open) return void 0;
-    const update = () => {
-      setBox(readConversationBox());
-    };
-    update();
-    const scroll = document.querySelector("[data-conversation-scroll]");
-    const target = scroll instanceof HTMLElement ? scroll : document.querySelector('[data-slot="conversation"]')?.parentElement;
-    const observer = typeof ResizeObserver === "function" && target ? new ResizeObserver(update) : null;
-    if (target && observer) observer.observe(target);
-    window.addEventListener("resize", update);
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener("resize", update);
-    };
-  }, [open]);
-  (0, import_react5.useEffect)(() => {
-    if (open && lastSession.current !== currentSession) apps?.set(false);
-    lastSession.current = currentSession;
-  }, [apps, currentSession, open]);
-  (0, import_react5.useEffect)(() => {
-    if (!open || !apps) return void 0;
-    const header = document.querySelector('[data-slot="conversation.session.header"]');
-    if (!(header instanceof HTMLElement)) return void 0;
-    const onPointerDown = () => {
-      apps.set(false);
-    };
-    header.addEventListener("pointerdown", onPointerDown);
-    return () => {
-      header.removeEventListener("pointerdown", onPointerDown);
-    };
-  }, [apps, open]);
-  if (!open || !apps) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
-    "div",
-    {
-      role: "region",
-      "aria-label": t("plugins.title"),
-      style: {
-        position: "fixed",
-        top: box.top,
-        left: box.left,
-        width: box.width,
-        height: box.height,
-        zIndex: 200,
-        pointerEvents: "auto",
-        display: "flex",
-        flexDirection: "column",
-        background: "var(--dsw-alias-bg-primary, var(--dsw-bg, #111))",
-        color: "var(--dsw-alias-label-primary, inherit)",
-        overflow: "auto"
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
-          "div",
-          {
-            style: {
-              flex: "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              minHeight: 32,
-              padding: "12px 20px 12px",
-              WebkitAppRegion: "no-drag"
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-                "h1",
-                {
-                  style: {
-                    margin: 0,
-                    flex: 1,
-                    minWidth: 0,
-                    fontSize: 16,
-                    fontWeight: 600,
-                    lineHeight: "32px"
-                  },
-                  children: t("plugins.title")
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-                "button",
-                {
-                  type: "button",
-                  "aria-label": t("plugins.close"),
-                  onClick: () => {
-                    apps.set(false);
-                  },
-                  style: {
-                    WebkitAppRegion: "no-drag",
-                    border: "none",
-                    background: "transparent",
-                    color: "inherit",
-                    cursor: "pointer",
-                    fontSize: 20,
-                    lineHeight: 1,
-                    padding: 4
-                  },
-                  children: "\xD7"
-                }
-              )
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(PluginsSection, { t }) })
-      ]
-    }
-  );
-}
-
-// src/client/sidebar-entry.js
-var ICON = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg>';
-var STYLES = `
-.omnimux-apps-entry {
-  box-sizing: border-box; display: flex; align-items: center; gap: 6px; position: relative;
-  width: calc(100% - 8px); height: 32px; margin: 0 4px; padding: 0 8px;
-  border: none; border-radius: 8px; background: transparent;
-  color: var(--dsw-alias-label-primary, inherit);
-  font: var(--dsw-font-s-14, inherit); font-size: 14px; line-height: 20px;
-  cursor: pointer; text-align: left;
-}
-.omnimux-apps-entry:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12)); }
-.omnimux-apps-entry[data-active="true"] { background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18)); font-weight: 500; }
-.omnimux-apps-entry-icon { flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
-.omnimux-apps-entry svg { display: block; width: 14px; height: 14px; }
-.omnimux-apps-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
-`;
-function paintLabel(entry, label2) {
-  entry.setAttribute("aria-label", label2);
-  const node = entry.querySelector(".omnimux-apps-entry-label");
-  if (node) node.textContent = label2;
-}
-function mountSidebarEntry(apps, t, locale, register) {
-  const entry = document.createElement("button");
-  entry.type = "button";
-  entry.dataset.dshOmnimuxAppsEntry = "";
-  entry.className = "omnimux-apps-entry";
-  entry.innerHTML = `<span class="omnimux-apps-entry-icon">${ICON}</span><span class="omnimux-apps-entry-label"></span>`;
-  paintLabel(entry, t("plugins.nav"));
-  entry.addEventListener("click", () => {
-    apps.toggle();
-  });
-  const paint = () => {
-    paintLabel(entry, t("plugins.nav"));
-  };
-  const unsubscribeLocale = typeof locale?.subscribe === "function" ? locale.subscribe(paint) : () => {
-  };
-  const syncActive = () => {
-    if (apps.getSnapshot()) entry.dataset.active = "true";
-    else delete entry.dataset.active;
-  };
-  const unsubscribeApps = apps.subscribe(syncActive);
-  syncActive();
-  const unregister = register({
-    id: "omnimux-apps-entry",
-    rank: 1,
-    styles: STYLES,
-    styleId: "omnimux-apps-entry-styles",
-    create: () => entry
-  });
-  return () => {
-    unregister();
-    unsubscribeApps();
-    unsubscribeLocale();
-  };
-}
-
-// src/client/app-tabs.js
-var ICON_ACCOUNTS = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><circle cx="8" cy="5.2" r="2.4"/><path d="M3.4 13c.6-2.4 2.3-3.6 4.6-3.6s4 1.2 4.6 3.6" stroke-linecap="round"/></svg>';
-var ICON_DEFAULT = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg>';
-var STYLES2 = `
-[data-omnimux-app-tabs]{display:flex;flex-direction:column;}
-.omnimux-app-tab {
-  box-sizing: border-box; display: flex; align-items: center; gap: 6px; position: relative;
-  width: calc(100% - 8px); height: 32px; margin: 0 4px; padding: 0 8px;
-  border: none; border-radius: 8px; background: transparent;
-  color: var(--dsw-alias-label-primary, inherit);
-  font: var(--dsw-font-s-14, inherit); font-size: 14px; line-height: 20px;
-  cursor: pointer; text-align: left;
-}
-.omnimux-app-tab:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12)); }
-.omnimux-app-tab[data-active="true"] { background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18)); font-weight: 500; }
-.omnimux-app-tab-icon { flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
-.omnimux-app-tab svg { display: block; width: 14px; height: 14px; }
-.omnimux-app-tab-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
-.omnimux-app-tab-pin { flex: none; font-size: 10px; line-height: 1; }
-.omnimux-app-tab-actions { position: absolute; top: 0; right: 6px; height: 32px; display: flex; align-items: center; gap: 2px; opacity: 0; }
-.omnimux-app-tab:hover .omnimux-app-tab-actions,
-.omnimux-app-tab:focus-within .omnimux-app-tab-actions { opacity: 1; }
-.omnimux-app-tab-action {
-  box-sizing: border-box; display: grid; place-items: center;
-  width: 22px; height: 22px; padding: 0; border: none; border-radius: 6px;
-  background: transparent; color: var(--dsw-alias-label-secondary, inherit);
-  font: inherit; font-size: 12px; line-height: 1; cursor: pointer;
-}
-.omnimux-app-tab-action:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12)); color: var(--dsw-alias-label-primary, inherit); }
-.omnimux-app-tab[data-pinned="true"] .omnimux-app-tab-action[data-kind="pin"] { color: var(--dsw-alias-state-business-primary, #4c8dff); }
-`;
-function tabRowModel(view) {
-  const tabs = view && typeof view === "object" && Array.isArray(view.tabs) ? view.tabs : [];
-  const rows = [];
-  for (const item of tabs) {
-    const tab = item && typeof item === "object" ? (
-      /** @type {Record<string, unknown>} */
-      item
-    ) : {};
-    const id = typeof tab.id === "string" ? tab.id : "";
-    if (id === "") continue;
-    rows.push({
-      id,
-      title: typeof tab.title === "string" && tab.title !== "" ? tab.title : id,
-      pinned: tab.pinned === true,
-      lastOpenedAt: typeof tab.lastOpenedAt === "string" ? tab.lastOpenedAt : ""
-    });
-  }
-  return rows;
-}
-function iconFor(id) {
-  return id === "accounts" ? ICON_ACCOUNTS : ICON_DEFAULT;
-}
-function createTabRow(model) {
-  const row2 = document.createElement("div");
-  row2.className = "omnimux-app-tab";
-  row2.dataset.dshOmnimuxAppTab = model.id;
-  row2.setAttribute("role", "button");
-  row2.setAttribute("tabindex", "0");
-  if (model.pinned) row2.dataset.pinned = "true";
-  row2.innerHTML = `
-    ${model.pinned ? '<span class="omnimux-app-tab-pin" aria-hidden="true">\u{1F4CC}</span>' : ""}
-    <span class="omnimux-app-tab-icon" aria-hidden="true">${iconFor(model.id)}</span>
-    <span class="omnimux-app-tab-label"></span>
-    <span class="omnimux-app-tab-actions">
-      <button type="button" class="omnimux-app-tab-action" data-kind="top">\u2B06</button>
-      <button type="button" class="omnimux-app-tab-action" data-kind="pin">\u{1F4CC}</button>
-      <button type="button" class="omnimux-app-tab-action" data-kind="remove">\u2715</button>
-    </span>`;
-  return row2;
-}
-function paintAction(row2, kind, label2, glyph) {
-  const action = row2.querySelector(`[data-kind="${kind}"]`);
-  if (!(action instanceof HTMLElement)) return;
-  action.title = label2;
-  action.setAttribute("aria-label", label2);
-  action.textContent = glyph;
-}
-function mountAppTabs(t, locale, register) {
-  const container = document.createElement("div");
-  container.dataset.dshOmnimuxAppTabs = "";
-  let rows = [];
-  const modelFor = (id) => rows.find((row2) => row2.id === id);
-  function syncActive() {
-    const stage = document.documentElement.dataset.dshProductStage;
-    for (const row2 of container.children) {
-      const id = row2 instanceof Element ? row2.getAttribute("data-omnimux-app-tab") : null;
-      if (typeof stage === "string" && stage !== "" && id !== null && stage === `omnimux-app-${id}`) {
-        row2.dataset.active = "true";
-      } else {
-        delete row2.dataset.active;
-      }
-    }
-  }
-  function render() {
-    container.replaceChildren();
-    for (const model of rows) {
-      const row2 = createTabRow(model);
-      const label2 = row2.querySelector(".omnimux-app-tab-label");
-      if (label2) label2.textContent = model.title;
-      row2.setAttribute("aria-label", model.title);
-      paintAction(row2, "remove", t("plugins.tab.remove"), "\u2715");
-      paintAction(row2, "pin", model.pinned ? t("plugins.tab.unpin") : t("plugins.tab.pin"), "\u{1F4CC}");
-      paintAction(row2, "top", t("plugins.tab.top"), "\u2B06");
-      container.append(row2);
-    }
-    syncActive();
-  }
-  function refresh() {
-    return getAppTabs().then((result) => {
-      if (!result.ok) return;
-      rows = tabRowModel(result.body);
-      render();
-    }).catch(() => {
-    });
-  }
-  function runPatch(id, body) {
-    void patchAppTab(id, body).then((result) => {
-      if (result.ok) void refresh();
-    }).catch(() => {
-    });
-  }
-  function onClick(event) {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const row2 = target.closest("[data-omnimux-app-tab]");
-    if (!(row2 instanceof Element)) return;
-    const id = row2.getAttribute("data-omnimux-app-tab") ?? "";
-    if (id === "") return;
-    const action = target.closest("[data-omnimux-app-tab-action]");
-    if (action instanceof Element) {
-      const kind = action.getAttribute("data-kind");
-      if (kind === "remove") {
-        void removeAppTab(id).then((result) => {
-          if (result.ok) void refresh();
-        }).catch(() => {
-        });
-        return;
-      }
-      if (kind === "pin") {
-        runPatch(id, { pinned: !(modelFor(id)?.pinned === true) });
-        return;
-      }
-      if (kind === "top") {
-        runPatch(id, { order: "top" });
-        return;
-      }
-      return;
-    }
-    openApp(id);
-  }
-  function onKeyDown(event) {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const row2 = target.closest("[data-omnimux-app-tab]");
-    if (row2 !== target || !(row2 instanceof Element)) return;
-    event.preventDefault();
-    const id = row2.getAttribute("data-omnimux-app-tab") ?? "";
-    if (id !== "") openApp(id);
-  }
-  container.addEventListener("click", onClick);
-  container.addEventListener("keydown", onKeyDown);
-  const onTabsChanged = () => {
-    void refresh();
-  };
-  const onStageChange = () => {
-    syncActive();
-  };
-  window.addEventListener(TABS_CHANGED_EVENT, onTabsChanged);
-  window.addEventListener(PRODUCT_STAGE_EVENT, onStageChange);
-  const unsubscribeLocale = typeof locale?.subscribe === "function" ? locale.subscribe(render) : () => {
-  };
-  const unregister = register({
-    id: "omnimux-app-tabs",
-    rank: 2,
-    styles: STYLES2,
-    styleId: "omnimux-app-tabs-styles",
-    create: () => container
-  });
-  void refresh();
-  return () => {
-    unregister();
-    window.removeEventListener(TABS_CHANGED_EVENT, onTabsChanged);
-    window.removeEventListener(PRODUCT_STAGE_EVENT, onStageChange);
-    unsubscribeLocale();
-    container.remove();
-  };
-}
 
 // src/brand/defaults.js
 var BOOT_WINDOW_KEY = "__OMNIMUX_BRAND__";
@@ -2238,16 +1186,16 @@ function rewriteTitle(document2, productName, restores) {
   }
   document2.title = next;
 }
-function brandedTitle(title2, productName) {
-  if (title2 === OFFICIAL_PRODUCT_TITLE) return productName;
-  if (title2.endsWith(TITLE_SUFFIX)) return `${title2.slice(0, -TITLE_SUFFIX.length)} \u2014 ${productName}`;
-  return title2;
+function brandedTitle(title, productName) {
+  if (title === OFFICIAL_PRODUCT_TITLE) return productName;
+  if (title.endsWith(TITLE_SUFFIX)) return `${title.slice(0, -TITLE_SUFFIX.length)} \u2014 ${productName}`;
+  return title;
 }
-function brandedTitleInverse(title2, productName) {
-  if (title2 === productName) return OFFICIAL_PRODUCT_TITLE;
+function brandedTitleInverse(title, productName) {
+  if (title === productName) return OFFICIAL_PRODUCT_TITLE;
   const suffix = ` \u2014 ${productName}`;
-  if (title2.endsWith(suffix)) return `${title2.slice(0, -suffix.length)}${TITLE_SUFFIX}`;
-  return title2;
+  if (title.endsWith(suffix)) return `${title.slice(0, -suffix.length)}${TITLE_SUFFIX}`;
+  return title;
 }
 function replaceFavicon(document2, logoSvg, restores) {
   const link = document2.querySelector('link[rel="icon"]');
@@ -2460,12 +1408,156 @@ installStageGlobal();
 var SIDEBAR_GLOBAL_KEY = "__omnimuxSidebar";
 var SIDEBAR_GLOBAL = () => typeof window !== "undefined" ? window[SIDEBAR_GLOBAL_KEY] : void 0;
 var ROWS = [];
+var INLINE_ROWS = [];
 var seen = /* @__PURE__ */ new Set();
+var INLINE_STYLES = `
+.omnimux-sidebar-inline-row {
+  display: flex; align-items: stretch; gap: 8px;
+  margin: 0 2px 8px;
+}
+.omnimux-sidebar-inline-row > .omnimux-sidebar-inline-btn {
+  flex: 1 1 0; min-width: 0;
+}
+.omnimux-sidebar-inline-row > .omnimux-sidebar-inline-new-session {
+  flex: 1 1 0; min-width: 0; margin: 0;
+}
+/* \u6536\u8D77\u8F68 56px\u3001\u5B98\u65B9\u52A0\u53F7 36px\u3002\u5E76\u6392\u7B2C\u4E8C\u9897\u4F1A\u6324\u7206\uFF0C\u6539\u6210\u4E00\u4EFD\u52A0\u53F7 + \u83DC\u5355\u3002
+   display:contents \u628A wrapper \u62C6\u6389\uFF0C\u597D\u8BA9\u5B98\u65B9 .collapsed .newSession \u5F53\u5217\u7684\u76F4\u63A5\u5B50\u3002
+   \u4F46\u4E0D\u80FD\u628A\u5C55\u5F00\u65F6\u7684 flex:1 \u4E00\u8D77\u5E26\u8FDB\u7AD6\u5217 \u2014\u2014 \u5426\u5219\u52A0\u53F7\u4F1A\u5403\u6389 regionArea \u7684\u9AD8\u5EA6\uFF0C
+   \u53D8\u6210\u622A\u56FE\u90A3\u79CD\u7AD6\u6761\u3002 */
+[data-sidebar-collapsed] .omnimux-sidebar-inline-row {
+  display: contents;
+}
+[data-sidebar-collapsed] .omnimux-sidebar-inline-btn {
+  display: none !important;
+}
+[data-sidebar-collapsed] .omnimux-sidebar-inline-row > .omnimux-sidebar-inline-new-session {
+  flex: none;
+  align-self: flex-start;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  margin: 0 0 12px;
+}
+.omnimux-sidebar-new-menu {
+  position: fixed; z-index: 400; min-width: 168px; padding: 6px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(128,128,128,.28));
+  border-radius: 10px;
+  /* DSH \u6CA1\u6709 bg-elevated/bg-primary\uFF1B\u83DC\u5355\u6302 body\uFF0C\u5FC5\u987B\u7528\u73B0\u7F51 layer token\u3002 */
+  background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-bg-base, #232324));
+  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+  color: var(--dsw-alias-label-primary, inherit);
+}
+.omnimux-sidebar-new-menu[hidden] { display: none !important; }
+.omnimux-sidebar-new-menu button {
+  display: block; width: 100%; box-sizing: border-box;
+  margin: 0; padding: 8px 10px; border: 0; border-radius: 8px;
+  background: transparent; color: inherit; cursor: pointer;
+  font: var(--dsw-font-s-14, 14px/20px system-ui); text-align: left;
+}
+.omnimux-sidebar-new-menu button:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12));
+}
+`;
 function sidebarRoot() {
   const column = document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]');
   if (!(column instanceof HTMLElement)) return void 0;
   const logoOwner = column.querySelector('[class*="logoRow"]')?.parentElement;
   return logoOwner ?? (column.firstElementChild instanceof HTMLElement ? column.firstElementChild : void 0);
+}
+function railCollapsed() {
+  return Boolean(document.querySelector("[data-sidebar-collapsed]"));
+}
+function sessionLabel(button) {
+  const raw = button?.getAttribute?.("aria-label") || button?.textContent || "";
+  const text = String(raw).trim();
+  if (/new session/i.test(text)) return "New Session";
+  return "\u65B0\u5EFA\u4F1A\u8BDD";
+}
+function projectLabel(button) {
+  const raw = button?.getAttribute?.("aria-label") || button?.textContent || "";
+  const text = String(raw).trim();
+  if (/new project/i.test(text)) return "New Project";
+  if (text) return text;
+  return "\u65B0\u5EFA\u9879\u76EE";
+}
+var skipNextCollapsedClick = false;
+var menuDocCleanup;
+function closeNewMenu() {
+  menuDocCleanup?.();
+  menuDocCleanup = void 0;
+  document.getElementById("omnimux-sidebar-new-menu")?.remove();
+}
+function openNewMenu(anchor, sessionBtn, projectBtn) {
+  closeNewMenu();
+  const menu = document.createElement("div");
+  menu.id = "omnimux-sidebar-new-menu";
+  menu.className = "omnimux-sidebar-new-menu";
+  menu.setAttribute("role", "menu");
+  const sessionItem = document.createElement("button");
+  sessionItem.type = "button";
+  sessionItem.setAttribute("role", "menuitem");
+  sessionItem.textContent = sessionLabel(sessionBtn);
+  sessionItem.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeNewMenu();
+    skipNextCollapsedClick = true;
+    sessionBtn.click();
+  });
+  const projectItem = document.createElement("button");
+  projectItem.type = "button";
+  projectItem.setAttribute("role", "menuitem");
+  projectItem.textContent = projectLabel(projectBtn);
+  projectItem.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeNewMenu();
+    projectBtn.click();
+  });
+  menu.append(sessionItem, projectItem);
+  document.body.append(menu);
+  const rect = anchor.getBoundingClientRect();
+  const left = Math.min(rect.right + 8, Math.max(8, window.innerWidth - 180));
+  const top = Math.min(rect.top, Math.max(8, window.innerHeight - 96));
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+  const onDoc = (event) => {
+    if (menu.contains(event.target) || event.target === anchor) return;
+    closeNewMenu();
+  };
+  const onKey = (event) => {
+    if (event.key !== "Escape") return;
+    closeNewMenu();
+  };
+  document.addEventListener("mousedown", onDoc, true);
+  document.addEventListener("keydown", onKey, true);
+  menuDocCleanup = () => {
+    document.removeEventListener("mousedown", onDoc, true);
+    document.removeEventListener("keydown", onKey, true);
+  };
+}
+function onCollapsedNewSessionClick(event) {
+  if (skipNextCollapsedClick) {
+    skipNextCollapsedClick = false;
+    return;
+  }
+  if (!railCollapsed()) return;
+  const projectBtn = INLINE_ROWS[0]?.element;
+  if (!(projectBtn instanceof HTMLElement)) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const sessionBtn = event.currentTarget;
+  if (!(sessionBtn instanceof HTMLElement)) return;
+  openNewMenu(sessionBtn, sessionBtn, projectBtn);
+}
+function bindCollapsedNewMenu(sessionBtn) {
+  if (!(sessionBtn instanceof HTMLElement)) return;
+  if (sessionBtn.dataset.omnimuxCollapsedMenu === "1") return;
+  sessionBtn.dataset.omnimuxCollapsedMenu = "1";
+  sessionBtn.addEventListener("click", onCollapsedNewSessionClick, true);
 }
 function newSessionButton(root) {
   const nested = root.querySelector('button[class*="newSession"]');
@@ -2493,13 +1585,56 @@ function injectStyles(styleText, styleId) {
   document.head.append(style);
 }
 var waitObserver;
+var collapsedAttrObserver;
+var collapsedHost;
 var retry;
+function collapsedHostNode() {
+  const column = document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]');
+  if (column instanceof HTMLElement) {
+    const marked2 = column.closest("[data-sidebar-collapsed]");
+    if (marked2 instanceof HTMLElement) return marked2;
+    if (column.parentElement instanceof HTMLElement) return column.parentElement;
+    const slot2 = column.closest('[data-slot="root"]');
+    if (slot2 instanceof HTMLElement) return slot2;
+  }
+  const marked = document.querySelector("[data-sidebar-collapsed]");
+  if (marked instanceof HTMLElement) return marked;
+  const slot = document.querySelector('[data-slot="root"]');
+  if (slot instanceof HTMLElement) return slot;
+  return void 0;
+}
+function bindCollapsedAttrObserver() {
+  const host = collapsedHostNode();
+  if (!(host instanceof HTMLElement)) return;
+  if (host === collapsedHost) return;
+  collapsedHost = host;
+  collapsedAttrObserver?.disconnect();
+  collapsedAttrObserver = new MutationObserver(() => {
+    runPlaceAll();
+  });
+  const subtree = host.matches('[data-slot="root"]') && !host.hasAttribute("data-sidebar-collapsed");
+  collapsedAttrObserver.observe(host, {
+    attributes: true,
+    attributeFilter: ["data-sidebar-collapsed"],
+    subtree
+  });
+}
 function runPlaceAll() {
+  bindCollapsedAttrObserver();
   const root = sidebarRoot();
   if (root === void 0) return;
+  placeBelow(root);
+  placeInline(root);
+  if (!railCollapsed()) closeNewMenu();
+}
+function placeBelow(root) {
   const sorted = [...ROWS].sort((a, b) => a.rank - b.rank);
   let anchor = newSessionButton(root);
   if (anchor === void 0) return;
+  const inlineWrap = anchor.closest("[data-omnimux-inline-row]");
+  if (inlineWrap instanceof HTMLElement && inlineWrap.parentElement === root) {
+    anchor = inlineWrap;
+  }
   let slotExternal = true;
   for (const row2 of sorted) {
     if (row2.rank >= 3 && slotExternal) {
@@ -2516,6 +1651,31 @@ function runPlaceAll() {
     anchor = el;
   }
 }
+function placeInline(root) {
+  if (INLINE_ROWS.length === 0) return;
+  const anchor = newSessionButton(root);
+  if (anchor === void 0) return;
+  let wrapper = root.querySelector("[data-omnimux-inline-row]");
+  if (!(wrapper instanceof HTMLElement)) {
+    wrapper = document.createElement("div");
+    wrapper.dataset.omnimuxInlineRow = "";
+    wrapper.className = "omnimux-sidebar-inline-row";
+    anchor.before(wrapper);
+    wrapper.append(anchor);
+    anchor.classList.add("omnimux-sidebar-inline-new-session");
+  }
+  let prev = anchor;
+  for (const row2 of INLINE_ROWS) {
+    const el = row2.element;
+    if (el.parentElement === wrapper && el.previousElementSibling === prev) {
+      prev = el;
+      continue;
+    }
+    wrapper.insertBefore(el, prev.nextElementSibling ?? null);
+    prev = el;
+  }
+  bindCollapsedNewMenu(anchor);
+}
 function createApi() {
   return {
     register(row2) {
@@ -2525,6 +1685,19 @@ function createApi() {
       seen.add(id);
       if (row2.styles) injectStyles(row2.styles, row2.styleId);
       const element = row2.create();
+      if (row2.kind === "inline") {
+        injectStyles(INLINE_STYLES, "omnimux-sidebar-inline-styles");
+        element.classList.add("omnimux-sidebar-inline-btn");
+        INLINE_ROWS.push({ id, element });
+        runPlaceAll();
+        return () => {
+          const i = INLINE_ROWS.findIndex((r) => r.id === id);
+          if (i >= 0) INLINE_ROWS.splice(i, 1);
+          seen.delete(id);
+          element.remove();
+          runPlaceAll();
+        };
+      }
       ROWS.push({ id, rank: row2.rank, element });
       runPlaceAll();
       return () => {
@@ -2542,10 +1715,14 @@ function install() {
   const existing = SIDEBAR_GLOBAL();
   if (existing) return existing;
   const api = createApi();
+  waitObserver?.disconnect();
+  collapsedAttrObserver?.disconnect();
+  collapsedHost = void 0;
   waitObserver = new MutationObserver(() => {
     runPlaceAll();
   });
   waitObserver.observe(document.body, { childList: true, subtree: true });
+  bindCollapsedAttrObserver();
   retry = setInterval(() => {
     runPlaceAll();
   }, 2e3);
@@ -2556,12 +1733,289 @@ function installSidebarGlobal() {
   install();
 }
 
+// src/client/auth-gate.js
+var AUTH_GLOBAL_KEY = "__omnimuxAuth";
+var MAX_INTENTS = 100;
+var impl = { getStatus, runLogin };
+var state = Object.freeze({ phase: "closed" });
+var intents = [];
+var currentLogin = null;
+var latestReason = void 0;
+var intentSeq = 0;
+var listeners = /* @__PURE__ */ new Set();
+function emit() {
+  for (const listener of [...listeners]) listener();
+}
+function setState(next) {
+  state = Object.freeze({ ...next });
+  emit();
+}
+function getSnapshot() {
+  return state;
+}
+function subscribe(listener) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+function makeIntent(opts) {
+  intentSeq += 1;
+  return {
+    id: intentSeq,
+    reason: typeof opts.reason === "string" ? opts.reason : void 0,
+    onSuccess: typeof opts.onSuccess === "function" ? opts.onSuccess : void 0,
+    onCancel: typeof opts.onCancel === "function" ? opts.onCancel : void 0
+  };
+}
+function rejectAll(reason) {
+  const pending = intents;
+  intents = [];
+  for (const intent of pending) {
+    try {
+      if (intent.onCancel) intent.onCancel(reason);
+    } catch {
+    }
+  }
+}
+function resolveAll(profile) {
+  const pending = intents;
+  intents = [];
+  for (const intent of pending) {
+    try {
+      if (intent.onSuccess) intent.onSuccess(profile);
+    } catch {
+    }
+  }
+  setState({ phase: "closed" });
+}
+function beginLogin(reason) {
+  if (currentLogin) {
+    currentLogin.cancel();
+    currentLogin = null;
+  }
+  currentLogin = impl.runLogin({
+    onSuccess: (profile) => {
+      resolveAll(profile);
+    },
+    onState: (phase, detail = {}) => {
+      if (phase === "starting" || phase === "waiting") {
+        if (currentLogin === null) return;
+        setState({ phase, ...detail, reason });
+        return;
+      }
+      if (phase === "denied" || phase === "expired" || phase === "error") {
+        if (currentLogin === null) return;
+        rejectAll(phase);
+        setState({ phase, ...detail, reason });
+        currentLogin = null;
+      }
+    }
+  });
+  currentLogin.start();
+}
+async function checkAndStart(reason) {
+  setState({ phase: "checking" });
+  let status;
+  try {
+    status = await impl.getStatus(false);
+  } catch {
+    status = { ok: false, status: 0, body: { logged_in: false } };
+  }
+  if (status.body?.logged_in) {
+    resolveAll(status.body);
+    return;
+  }
+  beginLogin(reason);
+}
+async function ensureLogin(opts = {}) {
+  const intent = makeIntent(opts);
+  if (state.phase !== "closed") {
+    intents.push(intent);
+    if (state.phase === "denied" || state.phase === "expired" || state.phase === "error") {
+      latestReason = intent.reason ?? latestReason;
+      beginLogin(intent.reason ?? latestReason);
+    }
+    return;
+  }
+  if (intents.length >= MAX_INTENTS) {
+    rejectAll("overflow");
+    return;
+  }
+  intents.push(intent);
+  latestReason = intent.reason ?? latestReason;
+  await checkAndStart(intent.reason ?? latestReason);
+}
+function cancel(reason = "cancelled") {
+  if (currentLogin) {
+    currentLogin.cancel();
+    currentLogin = null;
+  }
+  rejectAll(reason);
+  setState({ phase: "closed" });
+}
+function retry2() {
+  if (state.phase !== "denied" && state.phase !== "expired" && state.phase !== "error") return;
+  beginLogin(latestReason);
+}
+function installAuthGlobal(target, overrides = {}) {
+  if (overrides && (overrides.getStatus || overrides.runLogin)) {
+    impl = {
+      getStatus: overrides.getStatus ?? impl.getStatus,
+      runLogin: overrides.runLogin ?? impl.runLogin
+    };
+  }
+  if (target === void 0 || target === null) return void 0;
+  const existing = target[AUTH_GLOBAL_KEY];
+  if (existing !== void 0) return existing;
+  const api = {
+    getStatus: (verify) => impl.getStatus(verify),
+    ensureLogin,
+    cancel,
+    retry: retry2,
+    subscribe,
+    getSnapshot
+  };
+  Object.defineProperty(target, AUTH_GLOBAL_KEY, { value: api, configurable: true });
+  return api;
+}
+installAuthGlobal(
+  typeof window !== "undefined" ? window : void 0
+);
+
+// src/client/LoginGate.jsx
+var import_react6 = require("react");
+var import_react_dom2 = require("react-dom");
+var import_jsx_runtime5 = require("react/jsx-runtime");
+var tokens2 = {
+  text: "var(--dsw-alias-label-primary, inherit)",
+  textSecondary: "var(--dsw-alias-label-secondary, inherit)",
+  border: "var(--dsw-alias-border-l2, inherit)",
+  card: "var(--dsw-alias-bg-secondary, var(--dsw-alias-bg-base, inherit))",
+  overlay: "var(--dsw-alias-bg-mask-1, transparent)",
+  error: "var(--dsw-alias-label-error, inherit)"
+};
+var GATE_Z_INDEX = 1200;
+var BTN_STYLES = `
+.omnimux-login-gate .omx-gate-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; border-radius: 6px; padding: 6px 14px;
+  font: inherit; font-size: 13px; line-height: 20px; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.omnimux-login-gate .omx-gate-btn:focus-visible {
+  outline: 2px solid var(--dsw-alias-label-primary, inherit); outline-offset: 2px;
+}
+.omnimux-login-gate .omx-gate-btn--primary {
+  background: var(--dsw-alias-button-primary-fill, inherit);
+  color: var(--dsw-alias-label-primary-inverted, inherit);
+}
+.omnimux-login-gate .omx-gate-btn--primary:hover {
+  background: var(--dsw-alias-button-primary-hover, inherit);
+}
+.omnimux-login-gate .omx-gate-btn--ghost {
+  background: transparent; color: var(--dsw-alias-label-secondary, inherit);
+  border-color: var(--dsw-alias-border-l2, inherit);
+}
+.omnimux-login-gate .omx-gate-btn--ghost:hover {
+  color: var(--dsw-alias-label-primary, inherit);
+  background: var(--dsw-alias-interactive-bg-hover, transparent);
+}
+.omnimux-login-gate .omx-gate-btn--ghost:active {
+  background: var(--dsw-alias-interactive-bg-active, transparent);
+}
+`;
+function LoginGate({ t }) {
+  const gate = (0, import_react6.useSyncExternalStore)(subscribe, getSnapshot);
+  if (!gate || gate.phase === "closed") return null;
+  const hint = { checking: t("profile.loading"), starting: t("profile.loading") };
+  const waiting = gate.phase === "waiting";
+  const failed = gate.phase === "denied" || gate.phase === "expired" || gate.phase === "error";
+  const reason = gate.reason || t("auth.gate.reason.generic");
+  const detail = {
+    denied: t("plugins.denied"),
+    expired: t("plugins.expired"),
+    error: t("plugins.error")
+  }[gate.phase];
+  return (0, import_react_dom2.createPortal)(
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+      "div",
+      {
+        className: "omnimux-login-gate",
+        role: "dialog",
+        "aria-modal": "true",
+        onKeyDown: (event) => {
+          if (event.key === "Escape") cancel();
+        },
+        style: {
+          position: "fixed",
+          inset: 0,
+          zIndex: GATE_Z_INDEX,
+          background: tokens2.overlay,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("style", { children: BTN_STYLES }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+            "div",
+            {
+              role: "document",
+              style: {
+                background: tokens2.card,
+                border: `1px solid ${tokens2.border}`,
+                borderRadius: 16,
+                width: "min(440px, 100%)",
+                padding: "20px 24px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+                color: tokens2.text
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h2", { style: { margin: 0, fontSize: 16, fontWeight: 600 }, children: t("auth.gate.title") }),
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: "6px 0 0", fontSize: 13, color: tokens2.textSecondary, lineHeight: 1.5 }, children: reason })
+                ] }),
+                waiting ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_jsx_runtime5.Fragment, { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: {
+                    fontFamily: "var(--dsw-font-markdown-code-font-family, monospace)",
+                    fontSize: 22,
+                    letterSpacing: 3,
+                    textAlign: "center",
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    border: `1px solid ${tokens2.border}`,
+                    color: tokens2.text
+                  }, children: gate.user_code || "\u2014" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: 0, fontSize: 12, color: tokens2.textSecondary, lineHeight: 1.5 }, children: t("auth.gate.resumeHint") })
+                ] }) : null,
+                waiting || gate.phase === "checking" || gate.phase === "starting" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: 0, fontSize: 12, color: tokens2.textSecondary, lineHeight: 1.5 }, children: hint[gate.phase] || t("plugins.waiting") }) : null,
+                failed ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: 0, fontSize: 12, color: tokens2.error, lineHeight: 1.5 }, children: detail }) : null,
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }, children: [
+                  waiting && gate.verification_url ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("button", { type: "button", className: "omx-gate-btn omx-gate-btn--primary", onClick: () => window.open(gate.verification_url, "_blank", "noopener,noreferrer"), children: t("plugins.open") }) : null,
+                  failed ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("button", { type: "button", className: "omx-gate-btn omx-gate-btn--primary", onClick: () => retry2(), children: t("auth.gate.retry") }) : null,
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("button", { type: "button", className: "omx-gate-btn omx-gate-btn--ghost", onClick: () => cancel(), children: t("auth.gate.cancel") })
+                ] })
+              ]
+            }
+          )
+        ]
+      }
+    ),
+    document.body
+  );
+}
+
 // src/client/index.js
 var name = "omnimux";
 var inject = ["slots", "locale"];
 function apply(ctx) {
   installStageGlobal();
   installSidebarGlobal();
+  installAuthGlobal();
   ctx.effect(
     () => startOverlay(document, configFromWindow(window)),
     "omnimux: brand overlay"
@@ -2573,8 +2027,6 @@ function apply(ctx) {
   }, "omnimux: product-stage chrome");
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux: dictionaries");
   const t = ctx.locale.bind(NS);
-  const apps = createAppsStore();
-  const appsFace = () => ({ t, apps });
   ctx.slots.inject("settings.section", () => ctx.slots.register({
     name: "settings.section",
     id: "omnimux-profile",
@@ -2591,15 +2043,13 @@ function apply(ctx) {
     locale: NS,
     inject: () => ({ t })
   }, DshPluginsSection));
-  ctx.effect(() => mountSidebarEntry(apps, t, ctx.locale, SIDEBAR_GLOBAL().register), "omnimux: sidebar apps entry");
-  ctx.effect(() => mountAppTabs(t, ctx.locale, SIDEBAR_GLOBAL().register), "omnimux: sidebar app tabs");
   ctx.slots.inject("shell.overlay", () => ctx.slots.register({
     name: "shell.overlay",
-    id: "omnimux-apps-stage",
-    order: 20,
+    id: "omnimux-auth-gate",
+    order: 30,
     locale: NS,
-    inject: appsFace
-  }, AppsStage));
+    inject: () => ({ t })
+  }, LoginGate));
 }
 
     return module.exports;

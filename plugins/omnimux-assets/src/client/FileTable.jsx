@@ -1,6 +1,16 @@
 import { activateRowKeydown } from './a11y.js'
-import { ChevronRightIcon, FolderIcon } from './icons.jsx'
+import { AlertIcon, ChevronRightIcon, FolderIcon, TypeIcon } from './icons.jsx'
 import { formatBytes, formatRelative } from './format.js'
+
+/** Active row: active-token background + 2px accent bar on the left edge. */
+function activeRowStyle(isActive) {
+  return isActive
+    ? {
+        background: 'var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18))',
+        boxShadow: 'inset 2px 0 0 var(--dsw-alias-bg-interactive-primary, #3b6fbd)',
+      }
+    : {}
+}
 
 const tableStyle = {
   width: '100%',
@@ -50,12 +60,17 @@ const muted = {
  *   onEnterDir: (file: any) => void,
  * }} props
  */
-export function FileTable({ t, mapping, files, onOpenFile, onEnterDir }) {
+export function FileTable({ t, mapping, files, onOpenFile, onEnterDir, activeKey }) {
   if (!mapping) {
     return <p style={muted}>{t('loading')}</p>
   }
   if (mapping.status !== 'ok') {
-    return <p style={muted}>⚠ {t('mapping.invalid')}</p>
+    return (
+      <p style={{ ...muted, display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--dsw-alias-label-warning, #d48806)' }}>
+        <AlertIcon />
+        {t('mapping.invalid')}
+      </p>
+    )
   }
   if (files.length === 0) {
     return <p style={muted}>{t('table.empty')}</p>
@@ -80,7 +95,7 @@ export function FileTable({ t, mapping, files, onOpenFile, onEnterDir }) {
             <tr
               key={String(file.relative_path)}
               className="omnimux-assets-focusable"
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: 'pointer', ...activeRowStyle(!file.is_dir && activeKey === file.relative_path) }}
               tabIndex={0}
               role="button"
               aria-label={String(file.name)}
@@ -89,7 +104,7 @@ export function FileTable({ t, mapping, files, onOpenFile, onEnterDir }) {
             >
               <td style={td} title={String(file.relative_path)}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%' }}>
-                  {file.is_dir ? <FolderIcon /> : null}
+                  {file.is_dir ? <FolderIcon /> : <TypeIcon type={file.type} />}
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{String(file.name)}</span>
                   {file.is_dir ? (
                     <span style={{ display: 'inline-flex', color: 'var(--dsw-alias-label-secondary, rgba(128,128,128,.9))' }}>

@@ -70,7 +70,7 @@ function registerWhenReady(row) {
 export function mountSidebarEntry(stage, t, locale) {
   const entry = document.createElement('button')
   entry.type = 'button'
-  entry.dataset.dshOmnimuxAssetsEntry = ''
+  entry.dataset.omnimuxAssetsEntry = ''
   entry.className = 'omnimux-assets-entry'
   entry.innerHTML = `<span class="omnimux-assets-entry-icon">${ICON}</span><span class="omnimux-assets-entry-label"></span>`
   paintLabel(entry, t('nav'))

@@ -26,6 +26,10 @@ MUST NOT use 13px labels or 16px filled icons on these rows. MUST NOT invent a s
 | `[data-omnimux-app-tabs]` | `omnimux` | Dynamic app tab rows (see below) |
 | `[data-dsh-taskboard-entry]` | `dsh-taskboard-plugin` (fork) | 任务看板 / Taskboard |
 | `[data-omnimux-esc-entry]` | `omnimux-gallery` | 专家·技能·连接器 |
+| `[data-dsh-omnimux-workflow-entry]` | `omnimux-workflow` | 项目库 / Projects（rank 5，原「工作流」改名） |
+| `[data-dsh-omnimux-new-project-entry]` | `omnimux-workflow` | 新建项目 / New Project（展开：`kind:'inline'` 并排「新建会话」。收起：CSS 藏项目按钮，点官方加号弹出「新建会话 / 新建项目」，选中再 click 原按钮。折叠态属性在 AppFrame，不在 html。收起 wrapper 可用 `display:contents`，但官方加号上的 `flex:1` **必须**收回 `flex:none` + 36×36，否则会吃掉会话列表高度变成竖条） |
+| `[data-omnimux-assets-entry]` | `omnimux-assets` | 资产库（rank 4） |
+| `[data-omnimux-products-entry]` | `omnimux-products` | 产品库（rank 6，不重排旧行） |
 
 New extra rows MUST reuse these metrics (copy the CSS block or import the same numbers). A PR that adds a 新会话-below row with a different font-size or icon size is rejected.
 
@@ -61,7 +65,13 @@ These rows are first-level product pages, not session views.
 | Cover | Whole conversation column, including official header and composer. Overlay `z-index` is 200 so session-header utilities cannot steal clicks. |
 | Top chrome | `12px 20px 12px` on every first-level page, same as official conversation header (`padding: 12px 28px 0 20px`). Window-drag is turned off while the page is open, so do not add a 44/56px inset. |
 | Mutual exclusion | Opening one page dispatches `dsh-product-stage` so the others close. Session rows lose `aria-selected` highlight while a product page is open; only the extra-row `data-active` stays on. |
-| Layout chrome | While a product page is open, hide better-sidebar's fixed `toggleCluster` and the official `conversation.session.header`. `shell.overlay` stays click-through when no product page is open so those buttons remain usable. |
-| Session click | Clicking any workspace session row must leave the product page and return to chat. Official workspace treats a click on the already-selected row as a no-op, so product pages must close that case themselves. |
+| Layout chrome | While a product page is open, hide better-sidebar's fixed `toggleCluster`, the official `conversation.session.header`, **and the right-panel host** (`[data-dsh-panel-host]`). Also force `--dsh-sidebar-width` and `--dsh-sidebar-height` to `0` so `#root` is not still squeezed. `shell.overlay` stays click-through when no product page is open so those buttons remain usable. Do not hide the panel host when `data-dsh-product-stage` is absent. |
+| Session click | Clicking **any** workspace session row (`[role="treeitem"]`, selected or not) must leave the product page and return to chat. Official workspace treats a click on the already-selected row as a no-op, so product pages must close that case themselves. Clicks on buttons inside a row (pin / delete) MUST NOT close the page. **新会话** also leaves: official `.newSession` / brand shortcut (`aria-label` 新建会话), the workspace-group plus (`在“x”中新建会话`), and the collapsed menu pick「新建会话」. Official `startSession` **reuses** an existing blank session, so the overlay must close itself — otherwise the click looks dead. 「新建项目」and the collapsed menu pick「新建项目」MUST NOT use this path (project flow releases the stage on success). Collapsed-rail plus that only opens the menu MUST NOT leave until the user picks「新建会话」(coordinator capture swallows that click). |
 
 MUST NOT register these pages as `conversation.view`. That slot is a session-hosted tab (chat / trajectory / team run). A first-level product page that lives there will keep the session header and composer.
+
+Project-session canvas (workflow scheme C) does **not** set `data-dsh-product-stage`. The first-level library page releases the stage before opening the canvas tab, so this chrome MUST NOT hide the right panel for that session.
+
+### Overlay external-store binding
+
+If a `shell.overlay` stage uses React `useSyncExternalStore` against host faces (`ctx.locale`, auth, settings scope), follow [`client-external-store.md`](./client-external-store.md). Passing a class/instance method like `locale.subscribe` bare into the hook drops `this`, crashes the slot entry, and leaves only `data-slot-error="shell.overlay"` — which looks like a blank first-level page after a successful sidebar click.

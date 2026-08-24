@@ -5,7 +5,7 @@ var __export = (target, all) => {
 };
 
 // src/workflow/index.ts
-import { mkdirSync as mkdirSync3 } from "node:fs";
+import { mkdirSync as mkdirSync8 } from "node:fs";
 
 // src/workflow/paths.ts
 import { homedir } from "node:os";
@@ -14771,32 +14771,60 @@ function createWorkspaceStore(opts) {
 import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2 } from "node:fs";
 import { join as join3 } from "node:path";
 import { randomUUID as randomUUID2 } from "node:crypto";
-var MOCK_LATENCY_MS = 1500;
-var PLACEHOLDER_BY_CAPABILITY = {
-  text: "\u3010mock \u751F\u6210\u7ED3\u679C\u3011\u8FD9\u662F dsh-workflow mock \u7F51\u5173\u7684\u6587\u672C\u8F93\u51FA\uFF1BM4 \u63A5\u5165 OmniMux seam \u540E\u4E3A\u771F\u5B9E\u6A21\u578B\u7ED3\u679C\u3002",
-  image: '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="100%" height="100%" fill="#eef2fb"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#4176E6" font-family="sans-serif" font-size="14">mock image</text></svg>'
-};
-function createMockGateway() {
+var DEFAULT_MOCK_MIN_LATENCY_MS = 1e3;
+var DEFAULT_MOCK_MAX_LATENCY_MS = 3e3;
+var MOCK_TEXT_PLACEHOLDER = "\u3010mock \u751F\u6210\u7ED3\u679C\u3011\u8FD9\u662F omnimux-workflow mock \u7F51\u5173\u7684\u6587\u672C\u8F93\u51FA\uFF1BM4 \u63A5\u5165 OmniMux seam \u540E\u4E3A\u771F\u5B9E\u6A21\u578B\u7ED3\u679C\u3002";
+var MOCK_IMAGE_PLACEHOLDER = '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="100%" height="100%" fill="#eef2fb"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#4176E6" font-family="sans-serif" font-size="14">mock image</text></svg>';
+function placeholderFor(capability) {
+  if (capability === "image") return MOCK_IMAGE_PLACEHOLDER;
+  if (capability === "text") return MOCK_TEXT_PLACEHOLDER;
+  return `mock ${capability} artifact`;
+}
+function createMockGateway(opts = {}) {
+  const minLatency = opts.minLatencyMs ?? DEFAULT_MOCK_MIN_LATENCY_MS;
+  const maxLatency = Math.max(opts.maxLatencyMs ?? DEFAULT_MOCK_MAX_LATENCY_MS, minLatency);
   const tasks = /* @__PURE__ */ new Map();
-  async function settle(req) {
-    await new Promise((resolve2) => setTimeout(resolve2, MOCK_LATENCY_MS));
-    if (req.signal?.aborted) {
-      throw new Error("mock task aborted");
-    }
-    mkdirSync2(join3(req.dest, ".."), { recursive: true });
-    writeFileSync2(req.dest, PLACEHOLDER_BY_CAPABILITY[req.capability] ?? "", "utf8");
+  function settle(task, dest, signal) {
+    return new Promise((resolve5, reject) => {
+      const timer = setTimeout(() => {
+        if (signal?.aborted) {
+          reject(new Error("mock task aborted"));
+          return;
+        }
+        if (task.req.mockFail === true) {
+          reject(new Error("mock generation failed (mockFail=true)"));
+          return;
+        }
+        try {
+          mkdirSync2(join3(dest, ".."), { recursive: true });
+          writeFileSync2(dest, placeholderFor(task.req.capability), "utf8");
+          resolve5();
+        } catch (error51) {
+          reject(error51 instanceof Error ? error51 : new Error(String(error51)));
+        }
+      }, task.latencyMs);
+      signal?.addEventListener("abort", () => {
+        clearTimeout(timer);
+        reject(new Error("mock task aborted"));
+      }, { once: true });
+    });
   }
   return {
     async submit(req) {
       const taskId = `mock_${randomUUID2().slice(0, 12)}`;
-      tasks.set(taskId, { req, submittedAt: Date.now() });
+      const latencyMs = minLatency + Math.floor(Math.random() * (maxLatency - minLatency + 1));
+      tasks.set(taskId, { req, submittedAt: Date.now(), latencyMs });
       return { taskId, mode: "submitted" };
     },
     async awaitTask(taskId, dest, signal) {
-      const entry = tasks.get(taskId);
-      if (!entry) throw new Error(`mock gateway: unknown task ${taskId}`);
-      await settle({ ...entry.req, dest, signal });
-      return { url: dest };
+      const task = tasks.get(taskId);
+      if (!task) throw new Error(`mock gateway: unknown task ${taskId}`);
+      await settle(task, dest, signal);
+      tasks.delete(taskId);
+      return {
+        url: dest,
+        ...task.req.capability === "text" ? { text: MOCK_TEXT_PLACEHOLDER } : {}
+      };
     },
     async capabilities() {
       return {
@@ -14819,17 +14847,1296 @@ function createMockGateway() {
   };
 }
 
-// src/workflow/routes/canvasRoutes.ts
-import { createHash as createHash2 } from "node:crypto";
+// src/workflow/seam/omnimuxGateway.ts
+import { mkdirSync as mkdirSync3, writeFileSync as writeFileSync3 } from "node:fs";
+import { dirname } from "node:path";
+import { randomUUID as randomUUID3 } from "node:crypto";
+
+// src/workflow/execution/logger.ts
+function createWorkflowLogger(tag) {
+  const emit = (level, message, meta3) => {
+    const line = `[omnimux-workflow/${tag}] ${message}`;
+    const suffix = meta3 && Object.keys(meta3).length > 0 ? ` ${JSON.stringify(meta3)}` : "";
+    switch (level) {
+      case "debug":
+        if (process.env.OMNIMUX_WORKFLOW_DEBUG === "1") console.debug(line + suffix);
+        break;
+      case "info":
+        console.info(line + suffix);
+        break;
+      case "warn":
+        console.warn(line + suffix);
+        break;
+      default:
+        console.error(line + suffix);
+        break;
+    }
+  };
+  return {
+    debug: (message, meta3) => emit("debug", message, meta3),
+    info: (message, meta3) => emit("info", message, meta3),
+    warn: (message, meta3) => emit("warn", message, meta3),
+    error: (message, meta3) => emit("error", message, meta3)
+  };
+}
+
+// src/workflow/seam/omnimuxGateway.ts
+var LOG_TAG = "OmniMuxSeamClient";
+var logger = createWorkflowLogger(LOG_TAG);
+var SeamGatewayError = class extends Error {
+  code;
+  constructor(code, message) {
+    super(`[omnimux:${code}] ${message}`);
+    this.name = "SeamGatewayError";
+    this.code = code;
+  }
+};
+var SEAM_CONCURRENCY_ENV = "OMNIMUX_WORKFLOW_MAX_SEAM_CONCURRENCY";
+var DEFAULT_SEAM_CONCURRENCY = 2;
+var TEXT_MODEL_IDS = [
+  "claude-opus-5",
+  "gpt-5.6-sol",
+  "grok-4.6",
+  "kimi-k3",
+  "deepseek-v4-pro",
+  "deepseek-v4-flash-vision-exp",
+  "gemini-3.7-flash",
+  "glm-5.3"
+];
+var DEFAULT_VIDEO_MODEL = "seedance-2-0-fast";
+var DEFAULT_IMAGE_MODEL = "gpt-image-2";
+function envString(env, key) {
+  const value = env[key];
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : void 0;
+}
+function labelOf(id) {
+  return { id, label: id };
+}
+function createSemaphore(limit) {
+  let active = 0;
+  const waiters = [];
+  const release = () => {
+    active -= 1;
+    const next = waiters.shift();
+    if (next) {
+      active += 1;
+      next();
+    }
+  };
+  return {
+    acquire() {
+      if (active < limit) {
+        active += 1;
+        return Promise.resolve(release);
+      }
+      return new Promise((resolve5) => {
+        waiters.push(() => resolve5(release));
+      });
+    }
+  };
+}
+function isSeamApi(value) {
+  return typeof value === "object" && value !== null && typeof value.execute === "function";
+}
+function requireMediaSeam(getSeam, capability) {
+  const name2 = capability === "video" ? "videoGenerate" : "imageGenerate";
+  const seam = getSeam(name2);
+  if (!isSeamApi(seam)) {
+    throw new SeamGatewayError(
+      "needs-provider",
+      `\u6267\u884C\u4E2D\u67A2 ${name2} \u63A5\u7F1D\u4E0D\u53EF\u7528\uFF08hub \u672A\u52A0\u8F7D\u6216\u672A\u63D0\u4F9B\u8BE5\u80FD\u529B\uFF09`
+    );
+  }
+  return seam;
+}
+function toSeamError(error51) {
+  if (error51 instanceof SeamGatewayError) return error51;
+  if (error51 instanceof Error && typeof error51.code === "string") {
+    const coded = error51;
+    return new SeamGatewayError(coded.code, coded.message ?? String(error51));
+  }
+  if (error51 instanceof Error) {
+    return new SeamGatewayError("omnimux-request-failed", error51.message);
+  }
+  return new SeamGatewayError("omnimux-request-failed", String(error51));
+}
+function createOmnimuxSeamClient(opts) {
+  const env = opts.env ?? process.env;
+  const rawLimit = Number.parseInt(env[SEAM_CONCURRENCY_ENV] ?? "", 10);
+  const maxConcurrency = opts.maxConcurrency ?? (Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : DEFAULT_SEAM_CONCURRENCY);
+  const semaphore = createSemaphore(maxConcurrency);
+  const tasks = /* @__PURE__ */ new Map();
+  async function guarded(fn) {
+    const release = await semaphore.acquire();
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
+  }
+  return {
+    async submit(req) {
+      if (req.capability === "text") {
+        const taskId = `text_${randomUUID3().slice(0, 12)}`;
+        tasks.set(taskId, {
+          kind: "text",
+          prompt: req.prompt ?? "",
+          model: req.model,
+          image: req.image
+        });
+        return { taskId, mode: "submitted" };
+      }
+      if (req.capability === "audio") {
+        throw new SeamGatewayError(
+          "needs-provider",
+          "\u6267\u884C\u4E2D\u67A2\u6682\u65E0\u97F3\u9891\u751F\u6210\u63A5\u7F1D\uFF08audioGenerate \u672A\u5F00\u653E\uFF09"
+        );
+      }
+      const capability = req.capability === "video" ? "video" : "image";
+      const seam = requireMediaSeam(opts.getSeam, capability);
+      if (!req.prompt || !req.prompt.trim()) {
+        throw new SeamGatewayError("omnimux-invalid-request", "\u751F\u6210\u8282\u70B9\u7F3A\u5C11 prompt");
+      }
+      const request = {
+        prompt: req.prompt,
+        dest: req.dest,
+        wait: false
+      };
+      if (req.image !== void 0) request.image = req.image;
+      if (req.duration !== void 0) request.duration = req.duration;
+      if (req.speech !== void 0) request.speech = req.speech;
+      if (req.audio !== void 0) request.audio = req.audio;
+      if (req.model !== void 0) request.model = req.model;
+      if (req.signal !== void 0) request.signal = req.signal;
+      let result;
+      try {
+        result = await guarded(() => seam.execute(request));
+      } catch (error51) {
+        throw toSeamError(error51);
+      }
+      const hubTaskId = typeof result.taskId === "string" && result.taskId.trim().length > 0 ? result.taskId.trim() : "";
+      if (result.mode === "live") {
+        if (!hubTaskId) {
+          throw new SeamGatewayError(
+            "omnimux-invalid-response",
+            "live \u63D0\u4EA4\u7F3A\u5C11 taskId\uFF0C\u65E0\u6CD5\u767B\u8BB0\u4EFB\u52A1"
+          );
+        }
+        tasks.set(hubTaskId, { kind: "media", capability, hubTaskId });
+        return { taskId: hubTaskId, mode: "live", url: result.url ?? void 0 };
+      }
+      if (!hubTaskId) {
+        throw new SeamGatewayError(
+          "omnimux-invalid-response",
+          "submitted \u63D0\u4EA4\u7F3A\u5C11 taskId\uFF08\u65E0\u6CD5\u8F6E\u8BE2\uFF09"
+        );
+      }
+      tasks.set(hubTaskId, { kind: "media", capability, hubTaskId });
+      return { taskId: hubTaskId, mode: "submitted" };
+    },
+    async awaitTask(taskId, dest, signal) {
+      const record2 = tasks.get(taskId);
+      if (!record2) {
+        throw new SeamGatewayError(
+          "omnimux-invalid-request",
+          `\u672A\u77E5\u4EFB\u52A1 ${taskId}\uFF08\u8FDB\u7A0B\u91CD\u542F\u540E hub \u4EFB\u52A1\u4E0D\u767B\u8BB0\uFF0C\u8282\u70B9\u4F1A\u91CD\u65B0\u63D0\u4EA4\uFF09`
+        );
+      }
+      if (record2.kind === "text") {
+        const seamValue = opts.getSeam("textComplete");
+        if (!isSeamApi(seamValue)) {
+          throw new SeamGatewayError(
+            "needs-provider",
+            "\u6267\u884C\u4E2D\u67A2 textComplete \u63A5\u7F1D\u4E0D\u53EF\u7528\uFF08hub \u672A\u52A0\u8F7D\u6216\u672A\u63D0\u4F9B\u8BE5\u80FD\u529B\uFF09"
+          );
+        }
+        const request2 = { prompt: record2.prompt };
+        if (record2.model !== void 0) request2.model = record2.model;
+        if (record2.image !== void 0) request2.image = record2.image;
+        if (signal !== void 0) request2.signal = signal;
+        let result2;
+        try {
+          result2 = await guarded(() => seamValue.execute(request2));
+        } catch (error51) {
+          throw toSeamError(error51);
+        }
+        const text = typeof result2.text === "string" ? result2.text : "";
+        tasks.delete(taskId);
+        try {
+          mkdirSync3(dirname(dest), { recursive: true });
+          writeFileSync3(dest, text, "utf8");
+        } catch (error51) {
+          logger.warn("failed to persist text artifact", {
+            dest,
+            error: error51 instanceof Error ? error51.message : String(error51)
+          });
+        }
+        return { url: dest, text };
+      }
+      const seam = requireMediaSeam(opts.getSeam, record2.capability);
+      const request = { dest, taskId: record2.hubTaskId };
+      if (signal !== void 0) request.signal = signal;
+      let result;
+      try {
+        result = await guarded(() => seam.execute(request));
+      } catch (error51) {
+        throw toSeamError(error51);
+      }
+      tasks.delete(taskId);
+      return { url: dest };
+    },
+    async capabilities() {
+      const hasVideo = isSeamApi(opts.getSeam("videoGenerate"));
+      const hasImage = isSeamApi(opts.getSeam("imageGenerate"));
+      const hasText = isSeamApi(opts.getSeam("textComplete"));
+      const source = hasVideo || hasImage || hasText ? "omnimux" : "static-stub";
+      const videoId = envString(env, "OMNIMUX_VIDEO_MODEL") ?? DEFAULT_VIDEO_MODEL;
+      const imageId = envString(env, "OMNIMUX_IMAGE_MODEL") ?? DEFAULT_IMAGE_MODEL;
+      return {
+        source,
+        text: hasText || source === "static-stub" ? TEXT_MODEL_IDS.map(labelOf) : [],
+        image: hasImage || source === "static-stub" ? [labelOf(imageId)] : [],
+        video: hasVideo || source === "static-stub" ? [labelOf(videoId)] : [],
+        // No audioGenerate seam exists in the hub (docs/contracts/hub.md).
+        audio: []
+      };
+    },
+    currentMode() {
+      return "omnimux";
+    }
+  };
+}
+
+// src/workflow/seam/gatewaySelection.ts
+var LOG_TAG2 = "gatewaySelection";
+var logger2 = createWorkflowLogger(LOG_TAG2);
+var GATEWAY_MODE_ENV = "OMNIMUX_WORKFLOW_GATEWAY";
+function resolveGatewayMode(env = process.env) {
+  const raw = env[GATEWAY_MODE_ENV];
+  if (raw === "mock" || raw === "omnimux" || raw === "auto") return raw;
+  return "auto";
+}
+function probeSeams(getSeam) {
+  const isApi = (name2) => {
+    const value = getSeam(name2);
+    return typeof value === "object" && value !== null && typeof value.execute === "function";
+  };
+  return {
+    video: isApi("videoGenerate"),
+    image: isApi("imageGenerate"),
+    text: isApi("textComplete")
+  };
+}
+function createAutoSwitchGateway(opts) {
+  const mock = opts.mockGateway ?? createMockGateway();
+  const omnimux = opts.omnimuxGateway ?? createOmnimuxSeamClient({ getSeam: opts.getSeam, env: opts.env });
+  let mode = (() => {
+    const seams = probeSeams(opts.getSeam);
+    return seams.video || seams.image || seams.text ? "omnimux" : "mock";
+  })();
+  const taskOwners = /* @__PURE__ */ new Map();
+  const pick2 = () => {
+    if (mode === "mock") {
+      const seams = probeSeams(opts.getSeam);
+      if (seams.video || seams.image || seams.text) {
+        mode = "omnimux";
+        logger2.info("execution hub seams detected after mount; upgrading gateway", {
+          seams
+        });
+      }
+    }
+    return mode;
+  };
+  const backendOf = () => pick2() === "mock" ? mock : omnimux;
+  return {
+    async submit(req) {
+      const backend = backendOf();
+      const result = await backend.submit(req);
+      taskOwners.set(result.taskId, backend === omnimux ? "omnimux" : "mock");
+      return result;
+    },
+    async awaitTask(taskId, dest, signal) {
+      const owner = taskOwners.get(taskId);
+      const backend = owner === "mock" ? mock : owner === "omnimux" ? omnimux : backendOf();
+      try {
+        return await backend.awaitTask(taskId, dest, signal);
+      } finally {
+        taskOwners.delete(taskId);
+      }
+    },
+    async capabilities() {
+      return backendOf().capabilities();
+    },
+    currentMode() {
+      return mode;
+    }
+  };
+}
+function assembleGateway(opts) {
+  const mode = opts.mode ?? resolveGatewayMode(opts.env);
+  if (mode === "mock") {
+    logger2.info("gateway mode: mock (explicit override)");
+    return { gateway: createMockGateway(), mode, backend: "mock" };
+  }
+  const omnimux = createOmnimuxSeamClient({
+    getSeam: opts.getSeam,
+    env: opts.env,
+    ...opts.seamConcurrency !== void 0 ? { maxConcurrency: opts.seamConcurrency } : {}
+  });
+  if (mode === "omnimux") {
+    logger2.info("gateway mode: omnimux (explicit override; missing seams will fail visibly)");
+    return { gateway: omnimux, mode, backend: "omnimux" };
+  }
+  const seams = probeSeams(opts.getSeam);
+  const backend = seams.video || seams.image || seams.text ? "omnimux" : "mock";
+  logger2.info("gateway mode: auto", { seams, backend });
+  if (backend === "mock") {
+    return {
+      gateway: createAutoSwitchGateway({
+        getSeam: opts.getSeam,
+        omnimuxGateway: omnimux,
+        env: opts.env
+      }),
+      mode,
+      backend
+    };
+  }
+  return { gateway: omnimux, mode, backend };
+}
+
+// src/workflow/execution/ExecutionContext.ts
+import { randomUUID as randomUUID4 } from "node:crypto";
+var LOG_TAG3 = "ExecutionContext";
+var ExecutionStatus = {
+  PENDING: "pending",
+  RUNNING: "running",
+  PAUSED: "paused",
+  COMPLETED: "completed",
+  ERROR: "error",
+  CANCELLED: "cancelled"
+};
+var NodeStatus = {
+  PENDING: "pending",
+  RUNNING: "running",
+  COMPLETED: "completed",
+  ERROR: "error",
+  SKIPPED: "skipped"
+};
+var TypedEventEmitter = class {
+  handlers = /* @__PURE__ */ new Map();
+  on(event, handler) {
+    let set2 = this.handlers.get(event);
+    if (!set2) {
+      set2 = /* @__PURE__ */ new Set();
+      this.handlers.set(event, set2);
+    }
+    set2.add(handler);
+  }
+  off(event, handler) {
+    this.handlers.get(event)?.delete(handler);
+  }
+  emit(event, payload) {
+    const set2 = this.handlers.get(event);
+    if (!set2) return;
+    for (const handler of [...set2]) {
+      try {
+        handler(payload);
+      } catch (error51) {
+        logger3.warn("event handler threw", {
+          event,
+          error: error51 instanceof Error ? error51.message : String(error51)
+        });
+      }
+    }
+  }
+  listenerCount() {
+    let total = 0;
+    for (const set2 of this.handlers.values()) total += set2.size;
+    return total;
+  }
+};
+var logger3 = createWorkflowLogger(LOG_TAG3);
+var ExecutionContext = class _ExecutionContext {
+  id;
+  workflowId;
+  events = new TypedEventEmitter();
+  status = ExecutionStatus.PENDING;
+  variables = /* @__PURE__ */ new Map();
+  /** nodeId -> node output (unknown: executor-defined shape). */
+  nodeOutputs = /* @__PURE__ */ new Map();
+  /** nodeId -> node state snapshot. */
+  nodeStates = /* @__PURE__ */ new Map();
+  /** nodeId -> media assets produced by the node. */
+  mediaAssets = /* @__PURE__ */ new Map();
+  /** Breakpoint node ids (debug pause-before-node). */
+  breakpoints;
+  startedAt = null;
+  completedAt = null;
+  error = null;
+  totalNodes = 0;
+  completedNodes = 0;
+  constructor(opts) {
+    this.id = opts.id ?? randomUUID4();
+    this.workflowId = opts.workflowId;
+    this.breakpoints = opts.breakpoints ?? /* @__PURE__ */ new Set();
+    for (const [key, value] of Object.entries(opts.initialVariables ?? {})) {
+      this.variables.set(key, value);
+    }
+  }
+  // ========================================================================
+  // Execution state machine
+  // ========================================================================
+  start(totalNodes) {
+    this.status = ExecutionStatus.RUNNING;
+    this.startedAt = Date.now();
+    this.totalNodes = totalNodes;
+    this.completedNodes = 0;
+    logger3.info("execution started", {
+      executionId: this.id,
+      workflowId: this.workflowId,
+      totalNodes
+    });
+    this.events.emit("execution_start", {
+      executionId: this.id,
+      workflowId: this.workflowId,
+      totalNodes,
+      startedAt: this.startedAt
+    });
+  }
+  pause(nodeId = null) {
+    this.status = ExecutionStatus.PAUSED;
+    logger3.info("execution paused", {
+      executionId: this.id,
+      pausedAtNode: nodeId,
+      progress: `${this.completedNodes}/${this.totalNodes}`
+    });
+    this.events.emit("execution_paused", {
+      executionId: this.id,
+      pausedAt: Date.now(),
+      pausedAtNode: nodeId
+    });
+  }
+  resume() {
+    if (this.status !== ExecutionStatus.PAUSED) return;
+    this.status = ExecutionStatus.RUNNING;
+    logger3.info("execution resumed", {
+      executionId: this.id,
+      progress: `${this.completedNodes}/${this.totalNodes}`
+    });
+    this.events.emit("execution_resumed", {
+      executionId: this.id,
+      resumedAt: Date.now()
+    });
+  }
+  complete() {
+    this.status = ExecutionStatus.COMPLETED;
+    this.completedAt = Date.now();
+    const durationMs = this.completedAt - (this.startedAt ?? this.completedAt);
+    logger3.info("execution completed", {
+      executionId: this.id,
+      durationMs,
+      completedNodes: this.completedNodes,
+      totalNodes: this.totalNodes
+    });
+    this.events.emit("execution_complete", {
+      executionId: this.id,
+      workflowId: this.workflowId,
+      duration: durationMs,
+      completedNodes: this.completedNodes,
+      totalNodes: this.totalNodes
+    });
+  }
+  fail(error51, nodeId = null) {
+    this.status = ExecutionStatus.ERROR;
+    this.completedAt = Date.now();
+    this.error = error51 instanceof Error ? error51.message : String(error51);
+    const durationMs = this.completedAt - (this.startedAt ?? this.completedAt);
+    logger3.error("execution failed", {
+      executionId: this.id,
+      error: this.error,
+      failedNodeId: nodeId,
+      durationMs
+    });
+    this.events.emit("execution_error", {
+      executionId: this.id,
+      workflowId: this.workflowId,
+      error: this.error,
+      failedNode: nodeId,
+      duration: durationMs
+    });
+  }
+  cancel() {
+    this.status = ExecutionStatus.CANCELLED;
+    this.completedAt = Date.now();
+    const durationMs = this.startedAt !== null ? this.completedAt - this.startedAt : 0;
+    logger3.info("execution cancelled", {
+      executionId: this.id,
+      durationMs,
+      completedNodes: this.completedNodes,
+      totalNodes: this.totalNodes
+    });
+    this.events.emit("execution_cancelled", {
+      executionId: this.id,
+      cancelledAt: this.completedAt
+    });
+  }
+  // ========================================================================
+  // Node state machine
+  // ========================================================================
+  startNode(nodeId, nodeInfo = {}) {
+    const startedAt = Date.now();
+    this.nodeStates.set(nodeId, {
+      status: NodeStatus.RUNNING,
+      startedAt,
+      completedAt: null,
+      error: null
+    });
+    this.events.emit("node_start", {
+      executionId: this.id,
+      nodeId,
+      label: nodeInfo.label,
+      type: nodeInfo.type,
+      startedAt
+    });
+  }
+  reportProgress(nodeId, progress, message = "") {
+    this.events.emit("node_progress", {
+      executionId: this.id,
+      nodeId,
+      progress,
+      message
+    });
+  }
+  completeNode(nodeId, output) {
+    const state = this.nodeStates.get(nodeId) ?? {
+      status: NodeStatus.PENDING,
+      startedAt: null,
+      completedAt: null,
+      error: null
+    };
+    state.status = NodeStatus.COMPLETED;
+    state.completedAt = Date.now();
+    this.nodeStates.set(nodeId, state);
+    this.nodeOutputs.set(nodeId, output);
+    this.completedNodes += 1;
+    const durationMs = state.completedAt - (state.startedAt ?? state.completedAt);
+    const progressPercent = this.totalNodes > 0 ? Math.round(this.completedNodes / this.totalNodes * 100) : 0;
+    this.events.emit("node_complete", {
+      executionId: this.id,
+      nodeId,
+      output,
+      duration: durationMs,
+      progress: progressPercent
+    });
+  }
+  failNode(nodeId, error51) {
+    const state = this.nodeStates.get(nodeId) ?? {
+      status: NodeStatus.PENDING,
+      startedAt: null,
+      completedAt: null,
+      error: null
+    };
+    state.status = NodeStatus.ERROR;
+    state.completedAt = Date.now();
+    state.error = error51 instanceof Error ? error51.message : String(error51);
+    this.nodeStates.set(nodeId, state);
+    const durationMs = state.completedAt - (state.startedAt ?? state.completedAt);
+    logger3.error("node failed", {
+      executionId: this.id,
+      nodeId,
+      error: state.error,
+      durationMs
+    });
+    this.events.emit("node_error", {
+      executionId: this.id,
+      nodeId,
+      error: state.error,
+      duration: durationMs
+    });
+  }
+  skipNode(nodeId, reason = "") {
+    this.nodeStates.set(nodeId, {
+      status: NodeStatus.SKIPPED,
+      startedAt: null,
+      completedAt: null,
+      error: null,
+      skipReason: reason
+    });
+    this.events.emit("node_skipped", {
+      executionId: this.id,
+      nodeId,
+      reason
+    });
+  }
+  // ========================================================================
+  // Variables / outputs
+  // ========================================================================
+  set(key, value) {
+    this.variables.set(key, value);
+  }
+  get(key, defaultValue) {
+    return this.variables.has(key) ? this.variables.get(key) : defaultValue;
+  }
+  getNodeOutput(nodeId) {
+    return this.nodeOutputs.get(nodeId);
+  }
+  // ========================================================================
+  // Media assets
+  // ========================================================================
+  addMediaAsset(nodeId, asset) {
+    const list = this.mediaAssets.get(nodeId) ?? [];
+    list.push({ ...asset, createdAt: Date.now() });
+    this.mediaAssets.set(nodeId, list);
+  }
+  getMediaAssets(nodeId) {
+    return this.mediaAssets.get(nodeId) ?? [];
+  }
+  // ========================================================================
+  // Breakpoints
+  // ========================================================================
+  hasBreakpoint(nodeId) {
+    return this.breakpoints.has(nodeId);
+  }
+  addBreakpoint(nodeId) {
+    this.breakpoints.add(nodeId);
+  }
+  removeBreakpoint(nodeId) {
+    this.breakpoints.delete(nodeId);
+  }
+  // ========================================================================
+  // Serialization (persistence + HTTP snapshots)
+  // ========================================================================
+  toJSON() {
+    return {
+      id: this.id,
+      workflowId: this.workflowId,
+      status: this.status,
+      variables: Object.fromEntries(this.variables),
+      nodeOutputs: Object.fromEntries(this.nodeOutputs),
+      nodeStates: Object.fromEntries(this.nodeStates),
+      mediaAssets: Object.fromEntries(this.mediaAssets),
+      breakpoints: [...this.breakpoints],
+      startedAt: this.startedAt,
+      completedAt: this.completedAt,
+      error: this.error,
+      totalNodes: this.totalNodes,
+      completedNodes: this.completedNodes
+    };
+  }
+  static fromJSON(data) {
+    const ctx = new _ExecutionContext({
+      workflowId: data.workflowId,
+      id: data.id,
+      initialVariables: data.variables,
+      breakpoints: new Set(data.breakpoints)
+    });
+    ctx.status = data.status;
+    for (const [nodeId, output] of Object.entries(data.nodeOutputs)) {
+      ctx.nodeOutputs.set(nodeId, output);
+    }
+    for (const [nodeId, state] of Object.entries(data.nodeStates)) {
+      ctx.nodeStates.set(nodeId, state);
+    }
+    for (const [nodeId, assets] of Object.entries(data.mediaAssets)) {
+      ctx.mediaAssets.set(nodeId, assets);
+    }
+    ctx.startedAt = data.startedAt;
+    ctx.completedAt = data.completedAt;
+    ctx.error = data.error;
+    ctx.totalNodes = data.totalNodes;
+    ctx.completedNodes = data.completedNodes;
+    return ctx;
+  }
+};
+
+// src/workflow/execution/ExecutionScheduler.ts
+var LOG_TAG4 = "ExecutionScheduler";
+var DEFAULT_MAX_PARALLEL = 3;
+var DAG_STATE_DEBOUNCE_MS = 500;
+var COMPLETION_POLL_MS = 100;
+var NodeExecutionError = class extends Error {
+  failedNodeId;
+  constructor(cause, nodeId) {
+    super(cause.message);
+    this.name = "NodeExecutionError";
+    this.failedNodeId = nodeId;
+    this.stack = cause.stack;
+    this.cause = cause;
+  }
+};
+var logger4 = createWorkflowLogger(LOG_TAG4);
+var ExecutionScheduler = class _ExecutionScheduler {
+  nodes;
+  edges;
+  context;
+  maxParallel;
+  nodeExecutor;
+  persistDagState;
+  dependencyGraph;
+  runningNodes = /* @__PURE__ */ new Set();
+  pendingNodes = /* @__PURE__ */ new Set();
+  completedNodes = /* @__PURE__ */ new Set();
+  isPaused = false;
+  isCancelled = false;
+  stepMode = false;
+  stepCount = 0;
+  resumePromise = null;
+  resumeResolve = null;
+  dagStateDirty = false;
+  dagStateFlushTimer = null;
+  constructor(opts) {
+    this.nodes = opts.nodes;
+    this.edges = opts.edges;
+    this.context = opts.context;
+    this.nodeExecutor = opts.nodeExecutor;
+    this.maxParallel = opts.maxParallel ?? DEFAULT_MAX_PARALLEL;
+    this.persistDagState = opts.persistDagState ?? (async () => void 0);
+    this.dependencyGraph = _ExecutionScheduler.buildDependencyGraph(this.nodes, this.edges);
+    this.pendingNodes = new Set(this.nodes.map((node) => node.id));
+    this.completedNodes = /* @__PURE__ */ new Set();
+    this.runningNodes = /* @__PURE__ */ new Set();
+  }
+  /**
+   * Rebuild a scheduler from persisted DAG state (post-restart recovery).
+   * `runningNodes` are NOT trusted: the in-flight executors died with the old
+   * process, so they are re-pended (mirrors the Gxgen recovery rule for nodes
+   * without a resolvable external task).
+   */
+  static fromPersistedState(opts) {
+    const scheduler = new _ExecutionScheduler({
+      nodes: opts.nodes,
+      edges: opts.edges,
+      context: opts.context,
+      nodeExecutor: opts.nodeExecutor,
+      maxParallel: opts.maxParallel,
+      persistDagState: opts.persistDagState
+    });
+    const completed = new Set(opts.dagState.completedNodes ?? []);
+    const running = (opts.dagState.runningNodes ?? []).filter((id) => !completed.has(id));
+    const pending = new Set(opts.dagState.pendingNodes ?? []);
+    scheduler.completedNodes = completed;
+    for (const nodeId of running) {
+      if (!pending.has(nodeId)) pending.add(nodeId);
+    }
+    scheduler.pendingNodes = pending;
+    scheduler.runningNodes = /* @__PURE__ */ new Set();
+    if (opts.context.status === "paused") {
+      scheduler.isPaused = true;
+      scheduler.resumePromise = new Promise((resolve5) => {
+        scheduler.resumeResolve = resolve5;
+      });
+    }
+    logger4.info("scheduler restored from persisted state", {
+      executionId: opts.context.id,
+      pending: scheduler.pendingNodes.size,
+      completed: scheduler.completedNodes.size,
+      rePendedRunning: running.length
+    });
+    return scheduler;
+  }
+  static buildDependencyGraph(nodes, edges) {
+    const graph = /* @__PURE__ */ new Map();
+    for (const node of nodes) {
+      graph.set(node.id, /* @__PURE__ */ new Set());
+    }
+    for (const edge of edges) {
+      graph.get(edge.target)?.add(edge.source);
+    }
+    return graph;
+  }
+  // ========================================================================
+  // Topology
+  // ========================================================================
+  /**
+   * Topological layering (Kahn BFS): each returned group can run in parallel.
+   */
+  getTopologicalGroups() {
+    const groups = [];
+    const inDegree = /* @__PURE__ */ new Map();
+    const adjList = /* @__PURE__ */ new Map();
+    for (const node of this.nodes) {
+      inDegree.set(node.id, 0);
+      adjList.set(node.id, []);
+    }
+    for (const edge of this.edges) {
+      const current = inDegree.get(edge.target);
+      if (current !== void 0) inDegree.set(edge.target, current + 1);
+      adjList.get(edge.source)?.push(edge.target);
+    }
+    let currentLayer = [];
+    for (const [nodeId, degree] of inDegree) {
+      if (degree === 0) currentLayer.push(nodeId);
+    }
+    while (currentLayer.length > 0) {
+      groups.push([...currentLayer]);
+      const nextLayer = [];
+      for (const nodeId of currentLayer) {
+        for (const neighbor of adjList.get(nodeId) ?? []) {
+          const degree = inDegree.get(neighbor);
+          if (degree === void 0) continue;
+          const next = degree - 1;
+          inDegree.set(neighbor, next);
+          if (next === 0) nextLayer.push(neighbor);
+        }
+      }
+      currentLayer = nextLayer;
+    }
+    return groups;
+  }
+  /** True when every dependency of the node has completed. */
+  canExecute(nodeId) {
+    const dependencies = this.dependencyGraph.get(nodeId) ?? /* @__PURE__ */ new Set();
+    for (const depId of dependencies) {
+      if (!this.completedNodes.has(depId)) return false;
+    }
+    return true;
+  }
+  /** Nodes executable right now, capped by the concurrency limit. */
+  getExecutableNodes() {
+    const available = [];
+    const slots = this.maxParallel - this.runningNodes.size;
+    if (slots <= 0) return available;
+    for (const nodeId of this.pendingNodes) {
+      if (this.canExecute(nodeId)) {
+        available.push(nodeId);
+        if (available.length >= slots) break;
+      }
+    }
+    return available;
+  }
+  // ========================================================================
+  // Main entry
+  // ========================================================================
+  async execute(opts = {}) {
+    const isRecovery = opts.isRecovery === true;
+    const totalNodes = this.nodes.length;
+    const topologicalGroups = this.getTopologicalGroups();
+    if (totalNodes === 0) {
+      logger4.warn("no nodes to execute", { executionId: this.context.id });
+      this.context.complete();
+      return;
+    }
+    logger4.info(`${isRecovery ? "resuming" : "starting"} execution`, {
+      executionId: this.context.id,
+      workflowId: this.context.workflowId,
+      totalNodes,
+      maxParallel: this.maxParallel,
+      topologicalLayers: topologicalGroups.length,
+      layerSizes: topologicalGroups.map((group) => group.length),
+      isRecovery
+    });
+    if (!isRecovery) {
+      this.context.start(totalNodes);
+    }
+    this.markDagStateDirty();
+    this.scheduleDagStateFlush();
+    try {
+      await this.executeLoop();
+      this.cancelDagStateFlush();
+      await this.flushDagState();
+      if (this.completedNodes.size === totalNodes) {
+        this.context.complete();
+      } else if (this.isCancelled) {
+        this.context.cancel();
+      } else {
+        const unfinished = [...this.pendingNodes];
+        const failedCount = totalNodes - this.completedNodes.size - unfinished.length;
+        const parts = [];
+        if (failedCount > 0) parts.push(`${failedCount} \u4E2A\u8282\u70B9\u6267\u884C\u5931\u8D25`);
+        if (unfinished.length > 0) parts.push(`${unfinished.length} \u4E2A\u8282\u70B9\u672A\u6267\u884C`);
+        const message = `\u6267\u884C\u4E0D\u5B8C\u6574\uFF0C${parts.join("\uFF0C") || "\u5B58\u5728\u672A\u5B8C\u6210\u8282\u70B9"}`;
+        logger4.error("execution incomplete", {
+          executionId: this.context.id,
+          unfinishedNodes: unfinished,
+          failedCount,
+          completedCount: this.completedNodes.size,
+          totalNodes
+        });
+        this.context.fail(new Error(message));
+      }
+    } catch (error51) {
+      this.cancelDagStateFlush();
+      await this.flushDagState();
+      const failedNodeId = error51 instanceof NodeExecutionError ? error51.failedNodeId : null;
+      logger4.error("execution failed", {
+        executionId: this.context.id,
+        error: error51 instanceof Error ? error51.message : String(error51),
+        failedNodeId
+      });
+      this.context.fail(error51, failedNodeId);
+    }
+  }
+  async executeLoop() {
+    let iteration = 0;
+    while (this.pendingNodes.size > 0 || this.runningNodes.size > 0) {
+      iteration += 1;
+      if (this.isCancelled) {
+        logger4.info("execution loop cancelled", {
+          executionId: this.context.id,
+          iteration,
+          pendingNodes: this.pendingNodes.size,
+          runningNodes: this.runningNodes.size
+        });
+        break;
+      }
+      if (this.isPaused) {
+        await this.waitForResume();
+        if (this.isCancelled) break;
+        continue;
+      }
+      const executableNodes = this.getExecutableNodes();
+      if (executableNodes.length === 0 && this.runningNodes.size === 0) {
+        logger4.warn("execution loop deadlock detected", {
+          executionId: this.context.id,
+          iteration,
+          pendingNodes: [...this.pendingNodes],
+          completedNodes: this.completedNodes.size
+        });
+        break;
+      }
+      const execPromises = executableNodes.map((nodeId) => this.executeNode(nodeId));
+      if (execPromises.length > 0 || this.runningNodes.size > 0) {
+        await Promise.race([
+          ...execPromises,
+          this.waitForAnyCompletion()
+        ]);
+      }
+    }
+    logger4.debug("execution loop finished", {
+      executionId: this.context.id,
+      totalIterations: iteration,
+      completedNodes: this.completedNodes.size,
+      totalNodes: this.nodes.length
+    });
+  }
+  async executeNode(nodeId) {
+    const node = this.nodes.find((candidate) => candidate.id === nodeId);
+    if (!node) {
+      logger4.error("node not found", { executionId: this.context.id, nodeId });
+      return;
+    }
+    if (this.context.hasBreakpoint(nodeId)) {
+      logger4.info("breakpoint hit", {
+        executionId: this.context.id,
+        nodeId,
+        nodeType: node.type
+      });
+      this.pause(nodeId);
+      await this.waitForResume();
+      if (this.isCancelled) return;
+    }
+    this.pendingNodes.delete(nodeId);
+    this.runningNodes.add(nodeId);
+    this.scheduleDagStateFlush();
+    this.context.startNode(nodeId, {
+      label: typeof node.data?.label === "string" ? node.data.label : void 0,
+      type: node.type
+    });
+    const nodeStartTime = Date.now();
+    try {
+      const output = await this.nodeExecutor(node, this.context);
+      this.context.completeNode(nodeId, output);
+      this.runningNodes.delete(nodeId);
+      this.completedNodes.add(nodeId);
+      this.scheduleDagStateFlush();
+      logger4.debug("node execution finished", {
+        executionId: this.context.id,
+        nodeId,
+        nodeType: node.type,
+        durationMs: Date.now() - nodeStartTime
+      });
+      if (this.stepMode && this.stepCount > 0) {
+        this.stepCount -= 1;
+        if (this.stepCount === 0) {
+          logger4.info("stepOver: auto-pausing after node completion", {
+            executionId: this.context.id,
+            nodeId
+          });
+          this.pause(nodeId);
+        }
+      }
+    } catch (error51) {
+      if (this.isCancelled) {
+        this.runningNodes.delete(nodeId);
+        return;
+      }
+      logger4.error("node execution error", {
+        executionId: this.context.id,
+        nodeId,
+        nodeType: node.type,
+        durationMs: Date.now() - nodeStartTime,
+        error: error51 instanceof Error ? error51.message : String(error51)
+      });
+      this.context.failNode(nodeId, error51);
+      this.runningNodes.delete(nodeId);
+      this.markDagStateDirty();
+      this.cancelDagStateFlush();
+      await this.flushDagState();
+      const failStrategy = node.data?.failStrategy;
+      if (failStrategy === "skip") {
+        this.completedNodes.add(nodeId);
+        logger4.warn("node failed with skip strategy, continuing", {
+          executionId: this.context.id,
+          nodeId,
+          error: error51 instanceof Error ? error51.message : String(error51)
+        });
+        return;
+      }
+      throw new NodeExecutionError(
+        error51 instanceof Error ? error51 : new Error(String(error51)),
+        nodeId
+      );
+    }
+  }
+  // ========================================================================
+  // Control: pause / resume / cancel / single-step
+  // ========================================================================
+  pause(pausedAtNode = null) {
+    if (this.isPaused) return;
+    this.isPaused = true;
+    this.resumePromise = new Promise((resolve5) => {
+      this.resumeResolve = resolve5;
+    });
+    logger4.debug("scheduler paused", {
+      executionId: this.context.id,
+      pausedAtNode,
+      runningNodes: [...this.runningNodes],
+      pendingNodes: this.pendingNodes.size
+    });
+    this.markDagStateDirty();
+    this.cancelDagStateFlush();
+    void this.flushDagState().catch((error51) => {
+      logger4.warn("dag state flush on pause failed", {
+        executionId: this.context.id,
+        error: error51 instanceof Error ? error51.message : String(error51)
+      });
+    });
+    this.context.pause(pausedAtNode);
+  }
+  resume() {
+    if (!this.isPaused) return;
+    this.isPaused = false;
+    logger4.debug("scheduler resumed", {
+      executionId: this.context.id,
+      pendingNodes: this.pendingNodes.size,
+      completedNodes: this.completedNodes.size
+    });
+    const resolve5 = this.resumeResolve;
+    this.resumeResolve = null;
+    this.resumePromise = null;
+    resolve5?.();
+    this.context.resume();
+  }
+  cancel() {
+    logger4.info("scheduler cancel requested", {
+      executionId: this.context.id,
+      runningNodes: [...this.runningNodes],
+      pendingNodes: this.pendingNodes.size,
+      completedNodes: this.completedNodes.size
+    });
+    this.isCancelled = true;
+    if (this.isPaused) {
+      this.resume();
+    }
+  }
+  setStepMode(enabled) {
+    this.stepMode = enabled;
+  }
+  /** Execute one node after the current pause, then auto-pause again. */
+  stepOver() {
+    this.stepMode = true;
+    this.stepCount = 1;
+    this.resume();
+  }
+  /** Execute `count` nodes after the current pause, then auto-pause. */
+  stepN(count) {
+    this.stepMode = true;
+    this.stepCount = Math.max(1, count);
+    this.resume();
+  }
+  async waitForResume() {
+    if (this.resumePromise) {
+      await this.resumePromise;
+    }
+  }
+  async waitForAnyCompletion() {
+    if (this.runningNodes.size === 0) return;
+    await new Promise((resolve5) => setTimeout(resolve5, COMPLETION_POLL_MS));
+  }
+  // ========================================================================
+  // DAG state persistence (debounced)
+  // ========================================================================
+  getDagState() {
+    return {
+      pendingNodes: [...this.pendingNodes],
+      completedNodes: [...this.completedNodes],
+      runningNodes: [...this.runningNodes]
+    };
+  }
+  scheduleDagStateFlush() {
+    this.dagStateDirty = true;
+    if (this.dagStateFlushTimer) return;
+    this.dagStateFlushTimer = setTimeout(() => {
+      this.dagStateFlushTimer = null;
+      void this.flushDagState().catch((error51) => {
+        logger4.warn("dag state debounced flush failed", {
+          executionId: this.context.id,
+          error: error51 instanceof Error ? error51.message : String(error51)
+        });
+      });
+    }, DAG_STATE_DEBOUNCE_MS);
+  }
+  cancelDagStateFlush() {
+    if (this.dagStateFlushTimer) {
+      clearTimeout(this.dagStateFlushTimer);
+      this.dagStateFlushTimer = null;
+    }
+  }
+  markDagStateDirty() {
+    this.dagStateDirty = true;
+  }
+  async flushDagState() {
+    if (!this.dagStateDirty) return;
+    this.dagStateDirty = false;
+    await this.persistDagState(this.getDagState());
+  }
+  /** Drop pending debounce timers (plugin unmount; state stays on disk). */
+  dispose() {
+    this.cancelDagStateFlush();
+    void this.flushDagState().catch(() => void 0);
+  }
+  getProgress() {
+    const total = this.nodes.length;
+    return {
+      total,
+      completed: this.completedNodes.size,
+      running: this.runningNodes.size,
+      pending: this.pendingNodes.size,
+      percentage: total > 0 ? Math.round(this.completedNodes.size / total * 100) : 0
+    };
+  }
+  get status() {
+    return this.context.status;
+  }
+};
+
+// src/workflow/execution/executionStore.ts
 import {
-  createReadStream,
   existsSync as existsSync2,
+  mkdirSync as mkdirSync4,
   readFileSync as readFileSync2,
-  realpathSync,
-  statSync
+  readdirSync as readdirSync2,
+  renameSync as renameSync2,
+  rmSync as rmSync2,
+  writeFileSync as writeFileSync4
 } from "node:fs";
-import { dirname, extname, join as join4, normalize, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join as join4 } from "node:path";
+var RECORD_FILE = "execution.json";
+var DAG_STATE_FILE = "dag-state.json";
+function atomicWriteJson2(filePath, value) {
+  mkdirSync4(join4(filePath, ".."), { recursive: true });
+  const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
+  writeFileSync4(tmp, `${JSON.stringify(value, null, 2)}
+`, "utf8");
+  renameSync2(tmp, filePath);
+}
+function readJsonFile(filePath) {
+  if (!existsSync2(filePath)) return null;
+  try {
+    return JSON.parse(readFileSync2(filePath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+function executionDir(executionsDir, executionId) {
+  return join4(executionsDir, executionId);
+}
+function saveExecutionRecord(executionsDir, record2) {
+  atomicWriteJson2(join4(executionDir(executionsDir, record2.id), RECORD_FILE), record2);
+}
+function loadExecutionRecord(executionsDir, executionId) {
+  const raw = readJsonFile(
+    join4(executionDir(executionsDir, executionId), RECORD_FILE)
+  );
+  if (!raw || typeof raw.id !== "string" || !Array.isArray(raw.nodes)) return null;
+  return {
+    schemaVersion: 1,
+    id: raw.id,
+    workspaceId: raw.workspaceId ?? "",
+    status: raw.status ?? ExecutionStatus.PENDING,
+    createdAt: raw.createdAt ?? (/* @__PURE__ */ new Date()).toISOString(),
+    startedAt: raw.startedAt ?? null,
+    completedAt: raw.completedAt ?? null,
+    error: raw.error ?? null,
+    totalNodes: raw.totalNodes ?? raw.nodes.length,
+    completedNodes: raw.completedNodes ?? 0,
+    variables: raw.variables ?? {},
+    nodeStates: raw.nodeStates ?? {},
+    nodeOutputs: raw.nodeOutputs ?? {},
+    mediaAssets: raw.mediaAssets ?? {},
+    breakpoints: raw.breakpoints ?? [],
+    maxParallel: raw.maxParallel ?? 3,
+    nodes: raw.nodes,
+    edges: raw.edges ?? [],
+    progress: raw.progress ?? { total: raw.nodes.length, completed: 0, percentage: 0 },
+    eventLog: Array.isArray(raw.eventLog) ? raw.eventLog : []
+  };
+}
+function saveDagState(executionsDir, executionId, dagState) {
+  atomicWriteJson2(join4(executionDir(executionsDir, executionId), DAG_STATE_FILE), dagState);
+}
+function loadDagState(executionsDir, executionId) {
+  return readJsonFile(
+    join4(executionDir(executionsDir, executionId), DAG_STATE_FILE)
+  );
+}
+function listPersistedExecutionIds(executionsDir) {
+  if (!existsSync2(executionsDir)) return [];
+  const ids = [];
+  for (const entry of readdirSync2(executionsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const record2 = loadExecutionRecord(executionsDir, entry.name);
+    if (record2) ids.push({ id: record2.id, createdAt: record2.createdAt });
+  }
+  ids.sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
+  return ids.map((row) => row.id);
+}
+function buildExecutionRecord(input) {
+  return {
+    schemaVersion: 1,
+    id: input.context.id,
+    workspaceId: input.context.workflowId,
+    status: input.context.status,
+    createdAt: input.createdAt,
+    startedAt: input.context.startedAt,
+    completedAt: input.context.completedAt,
+    error: input.context.error,
+    totalNodes: input.context.totalNodes,
+    completedNodes: input.context.completedNodes,
+    variables: input.context.variables,
+    nodeStates: input.context.nodeStates,
+    nodeOutputs: input.context.nodeOutputs,
+    mediaAssets: input.context.mediaAssets,
+    breakpoints: input.context.breakpoints,
+    maxParallel: input.maxParallel,
+    nodes: input.nodes,
+    edges: input.edges,
+    progress: input.progress,
+    eventLog: input.eventLog
+  };
+}
+
+// src/workflow/execution/nodeExecutors.ts
+import { relative, resolve } from "node:path";
+
+// src/workflow/executors/registry.ts
+var executors = /* @__PURE__ */ new Map();
+function registerExecutor(executor) {
+  executors.set(executor.key, executor);
+}
+function getExecutor(key) {
+  return executors.get(key);
+}
 
 // src/shared/api.ts
 var WORKFLOW_ROUTE_PREFIX = "/omnimux-workflow";
@@ -14846,50 +16153,621 @@ var WORKFLOW_API_ROUTES = {
   /** GET: generation capability catalog (M3/M4 fills real data). */
   capabilities: `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`,
   /** GET: media files under the plugin-owned media dir (traversal-guarded). */
-  media: `${WORKFLOW_ROUTE_PREFIX}/media`
+  media: `${WORKFLOW_ROUTE_PREFIX}/media`,
+  /** GET: execution summaries. POST: create execution {mode, nodeIds?}. */
+  executions: (workspaceId) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions`,
+  /** GET: one execution status snapshot. */
+  execution: (workspaceId, executionId) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}`,
+  /** POST: pause | resume | cancel. */
+  executionAction: (workspaceId, executionId, action) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/${action}`,
+  /** GET: execution SSE event stream (text/event-stream). */
+  executionEvents: (workspaceId, executionId) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/events`
 };
 
+// src/workflow/execution/nodeExecutors.ts
+var LOG_TAG5 = "nodeExecutors";
+var logger5 = createWorkflowLogger(LOG_TAG5);
+function createDispatchingNodeExecutor(opts) {
+  const mediaDir = resolve(opts.mediaRoot, "executions", opts.executionId);
+  const toPublicUrl = (absolutePath) => {
+    const rel = relative(opts.mediaRoot, resolve(absolutePath));
+    const normalized = rel.split("\\").join("/");
+    if (normalized.startsWith("..")) {
+      logger5.warn("artifact path escapes media root", { executionId: opts.executionId, absolutePath });
+      return absolutePath;
+    }
+    return `${WORKFLOW_ROUTE_PREFIX}/media/${normalized}`;
+  };
+  const executor = async (node, context) => {
+    const registryExecutor = getExecutor(node.type);
+    if (!registryExecutor) {
+      throw new Error(`\u8282\u70B9\u7C7B\u578B ${node.type} \u6CA1\u6709\u6CE8\u518C\u6267\u884C\u5668\uFF08registry key: ${node.type}\uFF09`);
+    }
+    const upstreamOutputs = resolveUpstreamOutputs(node, opts.edges, context);
+    const ctx = {
+      upstreamOutputs,
+      signal: opts.abortController.signal,
+      mediaDir,
+      toPublicUrl,
+      reportProgress: (progress, message) => {
+        context.reportProgress(node.id, progress, message ?? "");
+      }
+    };
+    const output = await registryExecutor.execute(
+      { id: node.id, type: node.type, data: node.data ?? {} },
+      ctx
+    );
+    for (const asset of output.mediaAssets ?? []) {
+      context.addMediaAsset(node.id, { ...asset });
+    }
+    return output;
+  };
+  return { executor, mediaDir };
+}
+function resolveUpstreamOutputs(node, edges, context) {
+  const upstream = /* @__PURE__ */ new Map();
+  for (const edge of edges) {
+    if (edge.target !== node.id) continue;
+    const output = context.getNodeOutput(edge.source);
+    if (output === void 0) continue;
+    upstream.set(edge.source, normalizeOutput(output));
+  }
+  return upstream;
+}
+function normalizeOutput(output) {
+  if (output && typeof output === "object" && ("text" in output || "mediaAssets" in output)) {
+    return output;
+  }
+  return { text: typeof output === "string" ? output : JSON.stringify(output) };
+}
+
+// src/workflow/execution/materialGatewayExecutor.ts
+import { join as join5 } from "node:path";
+function readMockFail(nodeData) {
+  return nodeData.mockFail === true;
+}
+function readString(source, key) {
+  const value = source?.[key];
+  return typeof value === "string" && value.trim().length > 0 ? value : void 0;
+}
+function readMaterialType(nodeData) {
+  const value = nodeData.materialType;
+  if (value === "image" || value === "video" || value === "audio") return value;
+  return "text";
+}
+function isGenerativeTool(tool) {
+  return typeof tool === "string" && tool !== "import" && tool !== "text-editor";
+}
+function extFor(capability) {
+  if (capability === "image") return "svg";
+  if (capability === "video") return "mp4";
+  if (capability === "audio") return "mp3";
+  return "txt";
+}
+function collectUpstream(ctx) {
+  for (const output of ctx.upstreamOutputs.values()) {
+    if (output.text && output.text.trim()) {
+      return { text: output.text };
+    }
+  }
+  for (const output of ctx.upstreamOutputs.values()) {
+    const asset = output.mediaAssets?.[0];
+    if (asset) {
+      return { mediaUrl: asset.url, mediaType: asset.type };
+    }
+  }
+  return {};
+}
+function createMaterialGatewayExecutor(opts) {
+  const { gateway } = opts;
+  return {
+    key: "material",
+    async execute(node, ctx) {
+      const data = node.data ?? {};
+      const tool = readString(data, "selectedTool");
+      const upstream = collectUpstream(ctx);
+      if (!isGenerativeTool(tool)) {
+        const nodeMediaUrl = readString(data, "mediaUrl");
+        if (nodeMediaUrl) {
+          const materialType = readMaterialType(data);
+          const type = materialType === "video" ? "video" : materialType === "audio" ? "audio" : "image";
+          return { mediaAssets: [{ type, url: nodeMediaUrl }] };
+        }
+        const text = readString(data, "content") ?? upstream.text;
+        return { text };
+      }
+      const capability = readMaterialType(data);
+      const prompt = readString(data, "prompt") ?? readString(data, "content") ?? upstream.text ?? "";
+      let image;
+      let audio;
+      if (upstream.mediaType === "image") {
+        image = upstream.mediaUrl;
+      } else if (upstream.mediaType === "audio" && capability === "video") {
+        audio = upstream.mediaUrl;
+      } else if (upstream.mediaType === "video") {
+        ctx.reportProgress?.(15, "\u89C6\u9891\u53C2\u8003\u8F93\u5165\u6682\u4E0D\u652F\u6301\uFF08\u7B49\u5F85\u6267\u884C\u4E2D\u67A2\u6269\u5C55\uFF09\uFF0C\u5DF2\u5FFD\u7565");
+      }
+      const dest = join5(ctx.mediaDir, `${node.id}.${extFor(capability)}`);
+      ctx.reportProgress?.(10, "\u5DF2\u63D0\u4EA4\u751F\u6210\u4EFB\u52A1");
+      const submitted = await gateway.submit({
+        capability,
+        prompt,
+        image,
+        audio,
+        duration: typeof data.duration === "number" ? data.duration : void 0,
+        model: readString(data.params, "model"),
+        dest,
+        signal: ctx.signal,
+        // Mock-gateway control flag (deterministic failure injection for M3).
+        mockFail: readMockFail(data)
+      });
+      ctx.reportProgress?.(40, "\u751F\u6210\u4E2D\u2026");
+      const settled = await gateway.awaitTask(submitted.taskId, dest, ctx.signal);
+      ctx.reportProgress?.(90, "\u751F\u6210\u5B8C\u6210");
+      if (capability === "text") {
+        return { text: settled.text ?? `[gateway:${capability}] ${prompt}` };
+      }
+      const url2 = ctx.toPublicUrl ? ctx.toPublicUrl(settled.url) : settled.url;
+      return {
+        mediaAssets: [{ type: capability, url: url2 }]
+      };
+    }
+  };
+}
+
+// src/workflow/execution/ExecutionManager.ts
+var LOG_TAG6 = "ExecutionManager";
+var RECORD_SYNC_INTERVAL_MS = 5e3;
+var EXECUTION_TIMEOUT_MS = 30 * 60 * 1e3;
+var TERMINAL_STATUSES = /* @__PURE__ */ new Set([
+  ExecutionStatus.COMPLETED,
+  ExecutionStatus.ERROR,
+  ExecutionStatus.CANCELLED
+]);
+var logger6 = createWorkflowLogger(LOG_TAG6);
+var EVENT_LOG_LIMIT = 500;
+var ALL_EVENT_NAMES = [
+  "execution_start",
+  "node_start",
+  "node_progress",
+  "node_complete",
+  "node_error",
+  "node_skipped",
+  "execution_paused",
+  "execution_resumed",
+  "execution_complete",
+  "execution_error",
+  "execution_cancelled"
+];
+function createExecutionManager(deps) {
+  const { executionsDir, gateway, mediaDir } = deps;
+  const entries = /* @__PURE__ */ new Map();
+  registerExecutor(createMaterialGatewayExecutor({ gateway }));
+  const persistRecord = (entry) => {
+    try {
+      saveExecutionRecord(executionsDir, buildExecutionRecord({
+        context: entry.context.toJSON(),
+        nodes: entry.nodes,
+        edges: entry.edges,
+        maxParallel: entry.maxParallel,
+        createdAt: entry.createdAt,
+        progress: entry.scheduler.getProgress(),
+        eventLog: entry.eventLog
+      }));
+    } catch (error51) {
+      logger6.warn("failed to persist execution record", {
+        executionId: entry.context.id,
+        error: error51 instanceof Error ? error51.message : String(error51)
+      });
+    }
+  };
+  const persistDagState = (executionId, state) => {
+    saveDagState(executionsDir, executionId, state);
+    return Promise.resolve();
+  };
+  const stopSyncTimer = (entry) => {
+    if (entry.syncTimer) {
+      clearInterval(entry.syncTimer);
+      entry.syncTimer = null;
+    }
+  };
+  const stopTimeoutTimer = (entry) => {
+    if (entry.timeoutTimer) {
+      clearTimeout(entry.timeoutTimer);
+      entry.timeoutTimer = null;
+    }
+  };
+  const setupListeners = (entry) => {
+    const { context } = entry;
+    const onStart = () => {
+      persistRecord(entry);
+      stopSyncTimer(entry);
+      entry.syncTimer = setInterval(() => persistRecord(entry), RECORD_SYNC_INTERVAL_MS);
+    };
+    const onPause = () => {
+      persistRecord(entry);
+    };
+    const onResume = () => {
+      persistRecord(entry);
+    };
+    const onTerminal = () => {
+      stopSyncTimer(entry);
+      persistRecord(entry);
+    };
+    context.events.on("execution_start", onStart);
+    context.events.on("execution_paused", onPause);
+    context.events.on("execution_resumed", onResume);
+    context.events.on("execution_complete", onTerminal);
+    context.events.on("execution_error", onTerminal);
+    context.events.on("execution_cancelled", onTerminal);
+    for (const event of ALL_EVENT_NAMES) {
+      const recorder = (payload) => {
+        entry.eventLog.push({ event, payload });
+        if (entry.eventLog.length > EVENT_LOG_LIMIT) {
+          entry.eventLog.splice(0, entry.eventLog.length - EVENT_LOG_LIMIT);
+        }
+      };
+      context.events.on(event, recorder);
+      entry.disposers.push(() => context.events.off(event, recorder));
+    }
+    entry.disposers.push(
+      () => context.events.off("execution_start", onStart),
+      () => context.events.off("execution_paused", onPause),
+      () => context.events.off("execution_resumed", onResume),
+      () => context.events.off("execution_complete", onTerminal),
+      () => context.events.off("execution_error", onTerminal),
+      () => context.events.off("execution_cancelled", onTerminal)
+    );
+  };
+  const continueLoop = (entry, opts = {}) => {
+    if (entry.loopRunning) return;
+    entry.loopRunning = true;
+    void entry.scheduler.execute({ isRecovery: opts.isRecovery ?? true }).finally(() => {
+      entry.loopRunning = false;
+    });
+  };
+  const startTimeout = (entry) => {
+    entry.timeoutTimer = setTimeout(() => {
+      cleanupExecution(entry.context.id);
+    }, EXECUTION_TIMEOUT_MS);
+  };
+  function createExecution(opts) {
+    const context = new ExecutionContext({
+      workflowId: opts.workspaceId,
+      breakpoints: new Set(opts.breakpoints ?? [])
+    });
+    const abortController = new AbortController();
+    const { executor } = createDispatchingNodeExecutor({
+      gateway,
+      mediaRoot: mediaDir,
+      executionId: context.id,
+      edges: opts.edges,
+      abortController
+    });
+    const scheduler = new ExecutionScheduler({
+      nodes: opts.nodes,
+      edges: opts.edges,
+      context,
+      nodeExecutor: executor,
+      maxParallel: opts.maxParallel,
+      persistDagState: (state) => persistDagState(context.id, state)
+    });
+    const entry = {
+      context,
+      scheduler,
+      abortController,
+      nodes: opts.nodes,
+      edges: opts.edges,
+      maxParallel: opts.maxParallel ?? 3,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      syncTimer: null,
+      timeoutTimer: null,
+      loopRunning: false,
+      isRecovered: false,
+      eventLog: [],
+      disposers: []
+    };
+    entries.set(context.id, entry);
+    logger6.info("execution created", {
+      executionId: context.id,
+      workspaceId: opts.workspaceId,
+      nodeCount: opts.nodes.length,
+      edgeCount: opts.edges.length,
+      maxParallel: entry.maxParallel
+    });
+    persistRecord(entry);
+    setupListeners(entry);
+    startTimeout(entry);
+    continueLoop(entry, { isRecovery: false });
+    return entry;
+  }
+  function getEntry(executionId) {
+    return entries.get(executionId) ?? null;
+  }
+  function listExecutions(workspaceId) {
+    const rows = [];
+    for (const entry of entries.values()) {
+      if (workspaceId && entry.context.workflowId !== workspaceId) continue;
+      rows.push({
+        id: entry.context.id,
+        workspaceId: entry.context.workflowId,
+        status: entry.context.status,
+        createdAt: entry.createdAt,
+        progress: entry.scheduler.getProgress()
+      });
+    }
+    rows.sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
+    return rows;
+  }
+  function snapshotOfEntry(entry) {
+    const json2 = entry.context.toJSON();
+    const progress = entry.scheduler.getProgress();
+    return {
+      id: json2.id,
+      workspaceId: json2.workflowId,
+      status: json2.status,
+      createdAt: entry.createdAt,
+      startedAt: json2.startedAt,
+      completedAt: json2.completedAt,
+      error: json2.error,
+      totalNodes: json2.totalNodes,
+      completedNodes: json2.completedNodes,
+      progress,
+      nodeStates: json2.nodeStates,
+      nodeOutputs: json2.nodeOutputs,
+      mediaAssets: json2.mediaAssets,
+      breakpoints: json2.breakpoints
+    };
+  }
+  function snapshotOfRecord(record2) {
+    return {
+      id: record2.id,
+      workspaceId: record2.workspaceId,
+      status: record2.status,
+      createdAt: record2.createdAt,
+      startedAt: record2.startedAt,
+      completedAt: record2.completedAt,
+      error: record2.error,
+      totalNodes: record2.totalNodes,
+      completedNodes: record2.completedNodes,
+      progress: {
+        total: record2.progress.total,
+        completed: record2.progress.completed,
+        running: 0,
+        pending: Math.max(0, record2.progress.total - record2.progress.completed),
+        percentage: record2.progress.percentage
+      },
+      nodeStates: record2.nodeStates,
+      nodeOutputs: record2.nodeOutputs,
+      mediaAssets: record2.mediaAssets,
+      breakpoints: record2.breakpoints
+    };
+  }
+  function getSnapshot(executionId) {
+    const entry = entries.get(executionId);
+    if (entry) return snapshotOfEntry(entry);
+    const record2 = loadExecutionRecord(executionsDir, executionId);
+    return record2 ? snapshotOfRecord(record2) : null;
+  }
+  async function pauseExecution(executionId) {
+    const entry = entries.get(executionId);
+    if (!entry) return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728" };
+    if (entry.context.status !== ExecutionStatus.RUNNING) {
+      return { ok: false, message: `\u65E0\u6CD5\u6682\u505C ${entry.context.status} \u72B6\u6001\u7684\u6267\u884C` };
+    }
+    entry.scheduler.pause();
+    return { ok: true };
+  }
+  async function resumeExecution(executionId) {
+    let entry = entries.get(executionId) ?? null;
+    if (!entry) {
+      entry = await recoverExecution(executionId);
+      if (!entry) return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728\u6216\u4E0D\u53EF\u6062\u590D" };
+    }
+    const status = entry.context.status;
+    if (status !== ExecutionStatus.PAUSED && status !== ExecutionStatus.RUNNING) {
+      return { ok: false, message: `\u53EA\u80FD\u6062\u590D\u6682\u505C\u72B6\u6001\u7684\u6267\u884C\uFF08\u5F53\u524D ${status}\uFF09` };
+    }
+    entry.scheduler.resume();
+    if (!entry.loopRunning) {
+      continueLoop(entry, { isRecovery: true });
+    }
+    return { ok: true };
+  }
+  async function cancelExecution(executionId) {
+    const entry = entries.get(executionId);
+    if (!entry) return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728" };
+    const canCancelStatuses = [
+      ExecutionStatus.PENDING,
+      ExecutionStatus.RUNNING,
+      ExecutionStatus.PAUSED
+    ];
+    if (!canCancelStatuses.includes(entry.context.status)) {
+      return { ok: false, message: `\u65E0\u6CD5\u53D6\u6D88 ${entry.context.status} \u72B6\u6001\u7684\u6267\u884C` };
+    }
+    entry.scheduler.cancel();
+    entry.abortController.abort();
+    return { ok: true };
+  }
+  async function openEventStream(executionId) {
+    const existing = entries.get(executionId);
+    if (existing) {
+      if (!existing.loopRunning && existing.context.status === ExecutionStatus.RUNNING) {
+        continueLoop(existing, { isRecovery: true });
+      }
+      return { context: existing.context, eventLog: existing.eventLog };
+    }
+    const entry = await recoverExecution(executionId);
+    if (!entry) return null;
+    if (entry.context.status === ExecutionStatus.RUNNING) {
+      continueLoop(entry, { isRecovery: true });
+    }
+    return { context: entry.context, eventLog: entry.eventLog };
+  }
+  async function recoverExecution(executionId) {
+    const existing = entries.get(executionId);
+    if (existing) return existing;
+    const record2 = loadExecutionRecord(executionsDir, executionId);
+    if (!record2) return null;
+    if (TERMINAL_STATUSES.has(record2.status)) return null;
+    if (record2.startedAt !== null && Date.now() - record2.startedAt > EXECUTION_TIMEOUT_MS) {
+      logger6.warn("recovered execution timed out, marking failed", { executionId });
+      saveExecutionRecord(executionsDir, {
+        ...record2,
+        status: ExecutionStatus.ERROR,
+        error: `Execution timed out after restart (>${Math.round(EXECUTION_TIMEOUT_MS / 6e4)}min)`,
+        completedAt: Date.now()
+      });
+      return null;
+    }
+    const dagState = loadDagState(executionsDir, executionId) ?? {};
+    const context = ExecutionContext.fromJSON({
+      id: record2.id,
+      workflowId: record2.workspaceId,
+      status: record2.status,
+      variables: record2.variables,
+      nodeOutputs: record2.nodeOutputs,
+      nodeStates: record2.nodeStates,
+      mediaAssets: record2.mediaAssets,
+      breakpoints: record2.breakpoints,
+      startedAt: record2.startedAt,
+      completedAt: record2.completedAt,
+      error: record2.error,
+      totalNodes: record2.totalNodes,
+      completedNodes: record2.completedNodes
+    });
+    const abortController = new AbortController();
+    const { executor } = createDispatchingNodeExecutor({
+      gateway,
+      mediaRoot: mediaDir,
+      executionId: record2.id,
+      edges: record2.edges,
+      abortController
+    });
+    const scheduler = ExecutionScheduler.fromPersistedState({
+      dagState,
+      nodes: record2.nodes,
+      edges: record2.edges,
+      context,
+      nodeExecutor: executor,
+      maxParallel: record2.maxParallel,
+      persistDagState: (state) => persistDagState(record2.id, state)
+    });
+    for (const nodeId of dagState.runningNodes ?? []) {
+      const state = context.nodeStates.get(nodeId);
+      if (state && state.status === "running") {
+        context.nodeStates.set(nodeId, {
+          status: "pending",
+          startedAt: null,
+          completedAt: null,
+          error: null
+        });
+      }
+    }
+    const entry = {
+      context,
+      scheduler,
+      abortController,
+      nodes: record2.nodes,
+      edges: record2.edges,
+      maxParallel: record2.maxParallel,
+      createdAt: record2.createdAt,
+      syncTimer: null,
+      timeoutTimer: null,
+      loopRunning: false,
+      isRecovered: true,
+      // Restore the persisted replay log (unknown event names dropped) so a
+      // late SSE subscriber still sees pre-crash events after recovery.
+      eventLog: record2.eventLog.filter(
+        (row) => ALL_EVENT_NAMES.includes(row.event)
+      ),
+      disposers: []
+    };
+    entries.set(record2.id, entry);
+    setupListeners(entry);
+    startTimeout(entry);
+    logger6.info("execution recovered", {
+      executionId: record2.id,
+      status: record2.status,
+      pending: scheduler.getProgress().pending,
+      completed: scheduler.getProgress().completed
+    });
+    return entry;
+  }
+  async function recoverAll() {
+    const stats = { recovered: 0, resumed: 0 };
+    for (const executionId of listPersistedExecutionIds(executionsDir)) {
+      try {
+        const entry = await recoverExecution(executionId);
+        if (!entry) continue;
+        stats.recovered += 1;
+        if (entry.context.status === ExecutionStatus.RUNNING) {
+          continueLoop(entry, { isRecovery: true });
+          stats.resumed += 1;
+        }
+      } catch (error51) {
+        logger6.error("recovery failed", {
+          executionId,
+          error: error51 instanceof Error ? error51.message : String(error51)
+        });
+      }
+    }
+    if (stats.recovered > 0) {
+      logger6.info("recovery complete", stats);
+    }
+    return stats;
+  }
+  function cleanupExecution(executionId) {
+    const entry = entries.get(executionId);
+    if (!entry) return;
+    const wasRunning = entry.context.status === ExecutionStatus.RUNNING;
+    if (wasRunning) {
+      entry.scheduler.cancel();
+      entry.abortController.abort();
+    }
+    stopSyncTimer(entry);
+    stopTimeoutTimer(entry);
+    entries.delete(executionId);
+    logger6.info("execution cleaned up", {
+      executionId,
+      wasRunning,
+      finalStatus: entry.context.status
+    });
+  }
+  function disposeAll() {
+    for (const entry of entries.values()) {
+      stopSyncTimer(entry);
+      stopTimeoutTimer(entry);
+      for (const dispose of entry.disposers) dispose();
+      entry.disposers.length = 0;
+      entry.scheduler.dispose();
+      persistRecord(entry);
+    }
+    entries.clear();
+  }
+  return {
+    createExecution,
+    getEntry,
+    listExecutions,
+    getSnapshot,
+    pauseExecution,
+    resumeExecution,
+    cancelExecution,
+    openEventStream,
+    recoverExecution,
+    recoverAll,
+    cleanupExecution,
+    disposeAll
+  };
+}
+
 // src/workflow/routes/canvasRoutes.ts
+import { createReadStream, statSync as statSync3 } from "node:fs";
+import { extname } from "node:path";
+
+// src/http/helpers.ts
 var LOCAL_HOSTS = /* @__PURE__ */ new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
 var MAX_JSON_BODY_BYTES = 1024 * 1024;
-var STATUS_BY_CODE = {
-  "invalid-json": 400,
-  "invalid-id": 400,
-  "invalid-snapshot": 400,
-  "name-required": 400,
-  "name-too-long": 400,
-  "body-too-large": 413,
-  "version_conflict": 409,
-  "workspace-not-found": 404,
-  "not-found": 404,
-  "not-local": 403,
-  "path-denied": 403,
-  "internal": 500
-};
-var MIME_BY_EXT = {
-  ".js": "application/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".webp": "image/webp",
-  ".svg": "image/svg+xml",
-  ".mp4": "video/mp4",
-  ".webm": "video/webm",
-  ".mp3": "audio/mpeg",
-  ".wav": "audio/wav",
-  ".txt": "text/plain; charset=utf-8"
-};
-function resolvePluginRoot() {
-  const here = dirname(fileURLToPath(import.meta.url));
-  const candidates = [join4(here, ".."), join4(here, "..", "..", "..")];
-  for (const candidate of candidates) {
-    if (existsSync2(join4(candidate, "package.json"))) return candidate;
-  }
-  return candidates[0] ?? process.cwd();
-}
-var PLUGIN_ROOT = resolvePluginRoot();
 function sendJson(res, status, body) {
   const text = JSON.stringify(body);
   if (/access_token|sk-[A-Za-z0-9]/.test(text)) {
@@ -14963,9 +16841,990 @@ function jsonBodyProblem(body) {
   }
   return null;
 }
+
+// src/workflow/execution/ExecutionSSE.ts
+var LOG_TAG7 = "ExecutionSSE";
+var SSE_HEARTBEAT_MS = 3e4;
+var SSE_EVENT_NAMES = [
+  "execution_start",
+  "node_start",
+  "node_progress",
+  "node_complete",
+  "node_error",
+  "node_skipped",
+  "execution_paused",
+  "execution_resumed",
+  "execution_complete",
+  "execution_error",
+  "execution_cancelled"
+];
+var HEARTBEAT_EVENT = "heartbeat";
+var logger7 = createWorkflowLogger(LOG_TAG7);
+var ExecutionSSEPublisher = class {
+  res;
+  context;
+  heartbeatMs;
+  connected = true;
+  heartbeatTimer = null;
+  boundHandlers = /* @__PURE__ */ new Map();
+  closeListener;
+  constructor(res, context, opts = {}) {
+    this.res = res;
+    this.context = context;
+    this.heartbeatMs = opts.heartbeatMs ?? SSE_HEARTBEAT_MS;
+    this.closeListener = () => {
+      logger7.info("sse connection closed", { executionId: this.context.id });
+      this.connected = false;
+      this.cleanup();
+    };
+    this.setupStream();
+    this.bindContextEvents();
+    for (const entry of opts.replay ?? []) {
+      this.send(entry.event, entry.payload);
+    }
+  }
+  setupStream() {
+    this.res.writeHead(200, {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no"
+    });
+    this.res.write("retry: 3000\n\n");
+    this.res.on("close", this.closeListener);
+    this.heartbeatTimer = setInterval(() => {
+      this.send(HEARTBEAT_EVENT, { executionId: this.context.id, timestamp: Date.now() });
+    }, this.heartbeatMs);
+  }
+  bindContextEvents() {
+    for (const event of SSE_EVENT_NAMES) {
+      const handler = (payload) => {
+        this.send(event, payload);
+      };
+      this.boundHandlers.set(event, handler);
+      this.context.events.on(event, handler);
+    }
+  }
+  send(eventType, data) {
+    if (!this.connected) return;
+    try {
+      const payload = JSON.stringify(data);
+      this.res.write(`event: ${eventType}
+`);
+      this.res.write(`data: ${payload}
+
+`);
+    } catch (error51) {
+      logger7.error("failed to send sse event", {
+        executionId: this.context.id,
+        eventType,
+        error: error51 instanceof Error ? error51.message : String(error51)
+      });
+    }
+  }
+  close() {
+    this.connected = false;
+    this.cleanup();
+    try {
+      this.res.end();
+    } catch {
+    }
+  }
+  cleanup() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+    for (const [event, handler] of this.boundHandlers) {
+      this.context.events.off(event, handler);
+    }
+    this.boundHandlers.clear();
+    this.res.removeListener("close", this.closeListener);
+  }
+};
+function createSSEPublisher(res, context, opts = {}) {
+  return new ExecutionSSEPublisher(res, context, opts);
+}
+
+// src/projects/library.ts
+import { existsSync as existsSync3, mkdirSync as mkdirSync5 } from "node:fs";
+import { homedir as osHomedir } from "node:os";
+import { join as join6 } from "node:path";
+import { join as posixJoin } from "node:path/posix";
+import { join as win32Join } from "node:path/win32";
+var LIBRARY_BRAND_DIR = "OmniMux";
+var LIBRARY_PROJECTS_DIR = "Projects";
+var VIDEOS_DIR_ENV = "OMNIMUX_VIDEOS_DIR";
+function homeOf(opts) {
+  return opts.homedir ?? osHomedir();
+}
+function envOf(opts) {
+  return opts.env ?? process.env;
+}
+function existsOf(opts) {
+  return opts.exists ?? existsSync3;
+}
+function joinFor(platform, ...parts) {
+  return platform === "win32" ? win32Join(...parts) : posixJoin(...parts);
+}
+function resolveVideosDir(opts = {}) {
+  const override = envOf(opts)[VIDEOS_DIR_ENV];
+  if (typeof override === "string" && override.trim() !== "") {
+    return override.trim();
+  }
+  const home = homeOf(opts);
+  const platform = opts.platform ?? process.platform;
+  if (platform === "darwin") return joinFor(platform, home, "Movies");
+  if (platform === "win32") return joinFor(platform, home, "Videos");
+  const videos = joinFor(platform, home, "Videos");
+  return existsOf(opts)(videos) ? videos : home;
+}
+function defaultProjectLibrary(opts = {}) {
+  const platform = opts.platform ?? process.platform;
+  return joinFor(platform, resolveVideosDir(opts), LIBRARY_BRAND_DIR, LIBRARY_PROJECTS_DIR);
+}
+function ensureLibraryRoot(opts = {}) {
+  const libraryRoot = join6(resolveVideosDir(opts), LIBRARY_BRAND_DIR, LIBRARY_PROJECTS_DIR);
+  mkdirSync5(libraryRoot, { recursive: true });
+  return libraryRoot;
+}
+function displayHomePath(absPath, home = osHomedir()) {
+  if (absPath === home) return "~";
+  const prefix = home.endsWith("/") || home.endsWith("\\") ? home : home + (absPath.includes("\\") ? "\\" : "/");
+  if (absPath.startsWith(prefix) || absPath.startsWith(home + "/") || absPath.startsWith(home + "\\")) {
+    return `~${absPath.slice(home.length)}`;
+  }
+  return absPath;
+}
+
+// src/projects/paths.ts
+import { realpathSync, statSync } from "node:fs";
+import { join as join7, resolve as resolve2, sep } from "node:path";
+var ProjectPathError = class extends Error {
+  code;
+  constructor(code, message) {
+    super(message);
+    this.code = code;
+    this.name = "ProjectPathError";
+  }
+};
+var PROJECT_README_NAME = "\u8BF4\u660E.md";
+function isInsideDir(target, root) {
+  return target === root || target.startsWith(root + sep);
+}
+function isAbsolute(p) {
+  return p.startsWith("/") || /^[A-Za-z]:[\\/]/.test(p);
+}
+function assertExistingDirectory(abs, code, label) {
+  if (typeof abs !== "string" || abs.trim() === "") {
+    throw new ProjectPathError(code, `${label} must be a non-empty string`);
+  }
+  if (!isAbsolute(abs)) {
+    throw new ProjectPathError(code, `${label} must be an absolute path`);
+  }
+  const normalized = resolve2(abs);
+  try {
+    if (!statSync(normalized).isDirectory()) {
+      throw new Error(`${label} is not a directory`);
+    }
+    realpathSync(normalized);
+  } catch (error51) {
+    if (error51 instanceof ProjectPathError) throw error51;
+    throw new ProjectPathError(code, `${label} does not exist or is not a directory`);
+  }
+  return normalized;
+}
+function resolveLibraryPaths(libraryRoot) {
+  const normalized = assertExistingDirectory(libraryRoot, "invalid-library-root", "libraryRoot");
+  return { libraryRoot: normalized };
+}
+function resolveProjectPaths(projectRoot) {
+  const normalized = assertExistingDirectory(projectRoot, "invalid-project-root", "projectRoot");
+  const metaDir = join7(normalized, ".omnimux");
+  if (!isInsideDir(metaDir, normalized)) {
+    throw new ProjectPathError("path-denied", "meta dir escapes project root");
+  }
+  return {
+    projectRoot: normalized,
+    metaDir,
+    projectFile: join7(metaDir, "project.json"),
+    readmeFile: join7(normalized, PROJECT_README_NAME)
+  };
+}
+function assertProjectInsideLibrary(projectRoot, libraryRoot) {
+  const root = resolve2(libraryRoot);
+  const target = resolve2(projectRoot);
+  if (target === root || !isInsideDir(target, root)) {
+    throw new ProjectPathError("path-denied", "project root escapes library root");
+  }
+}
+function assertProjectWriteSafe(target, root) {
+  if (!isInsideDir(target, root)) {
+    throw new ProjectPathError("path-denied", "project path escapes containment root");
+  }
+  try {
+    const realRoot = realpathSync(root);
+    const realTarget = realpathSync(target);
+    if (!isInsideDir(realTarget, realRoot)) {
+      throw new ProjectPathError("path-denied", "project path escapes containment root (symlink)");
+    }
+  } catch (error51) {
+    if (error51 instanceof ProjectPathError) throw error51;
+  }
+}
+
+// src/projects/ProjectStore.ts
+import { randomUUID as randomUUID5 } from "node:crypto";
+import {
+  existsSync as existsSync5,
+  mkdirSync as mkdirSync7,
+  readFileSync as readFileSync3,
+  readdirSync as readdirSync3,
+  renameSync as renameSync3,
+  rmSync as rmSync3,
+  writeFileSync as writeFileSync5
+} from "node:fs";
+import { join as join9 } from "node:path";
+
+// src/projects/folderName.ts
+import { existsSync as existsSync4, mkdirSync as mkdirSync6 } from "node:fs";
+import { join as join8, resolve as resolve3 } from "node:path";
+
+// src/projects/schema.ts
+var PROJECT_SCHEMA_VERSION = 1;
+var MAX_PROJECT_TITLE_LENGTH = 200;
+var projectSchema = external_exports.object({
+  schemaVersion: external_exports.literal(PROJECT_SCHEMA_VERSION),
+  id: external_exports.string().min(1),
+  title: external_exports.string().min(1).max(MAX_PROJECT_TITLE_LENGTH),
+  createdAt: external_exports.string(),
+  updatedAt: external_exports.string(),
+  /** 绑定会话；新建项目时写入，可为 null（尚未建会话的中间态）。 */
+  sessionId: external_exports.string().nullable(),
+  /** 关联画布工作区 id（Phase 0 可先 0～1 个）。 */
+  canvasWorkspaceIds: external_exports.array(external_exports.string())
+});
+var projectSummarySchema = external_exports.object({
+  id: external_exports.string().min(1),
+  title: external_exports.string().min(1).max(MAX_PROJECT_TITLE_LENGTH),
+  updatedAt: external_exports.string(),
+  sessionId: external_exports.string().nullable(),
+  path: external_exports.string().min(1).optional()
+});
+var projectIndexSchema = external_exports.object({
+  schemaVersion: external_exports.literal(PROJECT_SCHEMA_VERSION),
+  projects: external_exports.array(projectSummarySchema)
+});
+function parseProject(raw) {
+  const result = projectSchema.safeParse(raw);
+  return result.success ? result.data : null;
+}
+function parseProjectIndex(raw) {
+  const result = projectIndexSchema.safeParse(raw);
+  return result.success ? result.data : null;
+}
+
+// src/projects/folderName.ts
+var MAX_DIRECTORY_ATTEMPTS = 64;
+function sanitizeFolderName(title) {
+  const trimmed = String(title ?? "").trim();
+  const replaced = trimmed.replace(/[<>:"/\\|?*\u0000-\u001f]/gu, "_").replace(/[. ]+$/u, "");
+  return replaced.replace(/^\.+$/u, "");
+}
+function folderNameAttempt(base, attempt) {
+  if (attempt <= 0) return base;
+  return `${base} (${attempt + 1})`;
+}
+function validateProjectTitle(raw) {
+  if (typeof raw !== "string" || raw.trim() === "") {
+    return { ok: false, error: "title-required" };
+  }
+  const title = raw.trim();
+  if (title.length > MAX_PROJECT_TITLE_LENGTH) {
+    return { ok: false, error: "title-too-long" };
+  }
+  const folderName = sanitizeFolderName(title);
+  if (folderName === "") return { ok: false, error: "title-invalid" };
+  return { ok: true, title, folderName };
+}
+function allocateUniqueProjectFolder(libraryRoot, baseName) {
+  const validated = sanitizeFolderName(baseName);
+  if (validated === "") {
+    throw new ProjectPathError("title-invalid", "folder name is empty after sanitizing");
+  }
+  const root = resolve3(libraryRoot);
+  for (let attempt = 0; attempt < MAX_DIRECTORY_ATTEMPTS; attempt += 1) {
+    const name2 = folderNameAttempt(validated, attempt);
+    const target = join8(root, name2);
+    assertProjectInsideLibrary(target, root);
+    if (existsSync4(target)) continue;
+    try {
+      mkdirSync6(target);
+      return target;
+    } catch (error51) {
+      const code = error51 && typeof error51 === "object" && "code" in error51 ? String(error51.code) : "";
+      if (code === "EEXIST") continue;
+      throw new ProjectPathError(
+        "directory-create-failed",
+        error51 instanceof Error ? error51.message : String(error51)
+      );
+    }
+  }
+  throw new ProjectPathError("directory-create-failed", "could not allocate a unique project folder");
+}
+
+// src/projects/ProjectStore.ts
+var ProjectStoreError = class extends Error {
+  code;
+  constructor(code, message) {
+    super(message);
+    this.code = code;
+    this.name = "ProjectStoreError";
+  }
+};
+function isProjectId(id) {
+  return /^[A-Za-z0-9_-]{1,64}$/.test(id);
+}
+function newProjectId() {
+  return randomUUID5();
+}
+function atomicWriteJson3(filePath, value) {
+  mkdirSync7(join9(filePath, ".."), { recursive: true });
+  const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
+  writeFileSync5(tmp, `${JSON.stringify(value, null, 2)}
+`, "utf8");
+  renameSync3(tmp, filePath);
+}
+function readJsonFile2(filePath) {
+  if (!existsSync5(filePath)) return void 0;
+  let raw;
+  try {
+    raw = readFileSync3(filePath, "utf8");
+  } catch {
+    return void 0;
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return void 0;
+  }
+}
+function defaultReadme(title) {
+  return `# ${title}
+
+\u672C\u5730\u9879\u76EE\u4E0D\u4F1A\u81EA\u52A8\u4E0E\u5176\u4ED6\u8BBE\u5907\u6216\u7528\u6237\u5171\u4EAB\u3002
+`;
+}
+function validateTitle(title) {
+  if (typeof title !== "string" || title.trim() === "") {
+    throw new ProjectStoreError("title-required", "project title is required");
+  }
+  const trimmed = title.trim();
+  if (trimmed.length > MAX_PROJECT_TITLE_LENGTH) {
+    throw new ProjectStoreError("title-too-long", `project title exceeds ${MAX_PROJECT_TITLE_LENGTH} characters`);
+  }
+  return trimmed;
+}
+function toSummary(project, path) {
+  return {
+    id: project.id,
+    title: project.title,
+    updatedAt: project.updatedAt,
+    sessionId: project.sessionId,
+    path
+  };
+}
+function createProjectStore(opts) {
+  const { libraryRoot } = opts;
+  mkdirSync7(libraryRoot, { recursive: true });
+  function scanEntries() {
+    if (!existsSync5(libraryRoot)) return [];
+    const rows = [];
+    for (const entry of readdirSync3(libraryRoot, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const dir = join9(libraryRoot, entry.name);
+      const file2 = join9(dir, ".omnimux", "project.json");
+      const raw = readJsonFile2(file2);
+      if (raw === void 0) continue;
+      const project = parseProject(raw);
+      if (!project) continue;
+      rows.push({ dir, project });
+    }
+    rows.sort((a, b) => {
+      if (a.project.updatedAt !== b.project.updatedAt) {
+        return a.project.updatedAt < b.project.updatedAt ? 1 : -1;
+      }
+      return a.project.id < b.project.id ? 1 : -1;
+    });
+    return rows;
+  }
+  function findById(id) {
+    for (const row of scanEntries()) {
+      if (row.project.id === id) return row;
+    }
+    return null;
+  }
+  function persistProject(dir, project) {
+    const paths = resolveProjectPaths(dir);
+    assertProjectInsideLibrary(paths.projectRoot, libraryRoot);
+    assertProjectWriteSafe(paths.projectFile, paths.projectRoot);
+    atomicWriteJson3(paths.projectFile, project);
+    return { ...project, path: paths.projectRoot };
+  }
+  function requireProject(id) {
+    if (!isProjectId(id)) {
+      throw new ProjectStoreError("invalid-id", `invalid project id ${id}`);
+    }
+    const found = findById(id);
+    if (!found) {
+      throw new ProjectStoreError("project-not-found", `project ${id} not found`);
+    }
+    return found;
+  }
+  return {
+    list() {
+      return scanEntries().map((row) => toSummary(row.project, row.dir));
+    },
+    create(title, createOpts = {}) {
+      const trimmed = validateTitle(title);
+      const givenRoot = typeof createOpts.projectRoot === "string" ? createOpts.projectRoot.trim() : "";
+      const projectRoot = givenRoot !== "" ? givenRoot : allocateUniqueProjectFolder(libraryRoot, sanitizeFolderName(trimmed));
+      const paths = resolveProjectPaths(projectRoot);
+      assertProjectInsideLibrary(paths.projectRoot, libraryRoot);
+      if (existsSync5(paths.projectFile)) {
+        throw new ProjectStoreError("project-exists", `project already seeded at ${paths.projectRoot}`);
+      }
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      const project = {
+        schemaVersion: PROJECT_SCHEMA_VERSION,
+        id: newProjectId(),
+        title: trimmed,
+        createdAt: now,
+        updatedAt: now,
+        sessionId: createOpts.sessionId ?? null,
+        canvasWorkspaceIds: createOpts.canvasWorkspaceIds ?? []
+      };
+      assertProjectWriteSafe(paths.readmeFile, paths.projectRoot);
+      if (!existsSync5(paths.readmeFile)) {
+        writeFileSync5(paths.readmeFile, defaultReadme(trimmed), "utf8");
+      }
+      return persistProject(paths.projectRoot, project);
+    },
+    get(id) {
+      const found = requireProject(id);
+      return { ...found.project, path: found.dir };
+    },
+    rename(id, title) {
+      const current = requireProject(id);
+      const trimmed = validateTitle(title);
+      const next = { ...current.project, title: trimmed, updatedAt: (/* @__PURE__ */ new Date()).toISOString() };
+      return persistProject(current.dir, next);
+    },
+    bindSession(id, sessionId) {
+      const current = requireProject(id);
+      if (typeof sessionId !== "string" || sessionId.trim() === "") {
+        throw new ProjectStoreError("session-required", "sessionId is required");
+      }
+      const next = { ...current.project, sessionId, updatedAt: (/* @__PURE__ */ new Date()).toISOString() };
+      return persistProject(current.dir, next);
+    },
+    remove(id) {
+      const current = requireProject(id);
+      const paths = resolveProjectPaths(current.dir);
+      assertProjectWriteSafe(paths.projectFile, paths.projectRoot);
+      const metaDir = paths.metaDir;
+      if (existsSync5(metaDir)) {
+        rmSync3(metaDir, { recursive: true, force: true });
+      }
+      void PROJECT_README_NAME;
+    }
+  };
+}
+
+// src/projects/routes.ts
+var PROJECT_ROUTE_PREFIX = "/omnimux-workflow/api/projects";
+var PROJECT_LIBRARY_PATH = `${PROJECT_ROUTE_PREFIX}/library`;
+var STATUS_BY_CODE = {
+  "invalid-json": 400,
+  "invalid-cwd": 400,
+  "invalid-library-root": 400,
+  "invalid-project-root": 400,
+  "invalid-id": 400,
+  "title-required": 400,
+  "title-too-long": 400,
+  "title-invalid": 400,
+  "directory-create-failed": 500,
+  "session-required": 400,
+  "body-too-large": 413,
+  "project-not-found": 404,
+  "project-exists": 409,
+  "not-found": 404,
+  "not-local": 403,
+  "path-denied": 403,
+  "internal": 500
+};
+function scopedStore() {
+  const libraryRoot = ensureLibraryRoot();
+  return { libraryRoot, store: createProjectStore({ libraryRoot }) };
+}
+function createProjectDispatcher() {
+  const collectionRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}$`);
+  const libraryRe = new RegExp(`^${PROJECT_LIBRARY_PATH}$`);
+  const itemRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)$`);
+  function owns(path) {
+    return path === PROJECT_ROUTE_PREFIX || path.startsWith(`${PROJECT_ROUTE_PREFIX}/`);
+  }
+  async function dispatch(req) {
+    try {
+      const url2 = new URL(req.url, "http://127.0.0.1");
+      const method = (req.method || "GET").toUpperCase();
+      const path = decodeURIComponent(url2.pathname);
+      if (method === "POST" || method === "PATCH" || method === "DELETE") {
+        try {
+          assertLocalWrite(req);
+        } catch {
+          return { status: 403, body: { error: "not-local", message: "cross-origin write refused" } };
+        }
+      }
+      if (libraryRe.exec(path)) {
+        if (method !== "GET") {
+          return { status: 404, body: { error: "not-found", message: "unknown route" } };
+        }
+        const libraryRoot = ensureLibraryRoot();
+        return {
+          status: 200,
+          body: {
+            libraryRoot,
+            videosDir: resolveVideosDir(),
+            displayPath: displayHomePath(libraryRoot)
+          }
+        };
+      }
+      if (collectionRe.exec(path)) {
+        if (method === "GET") {
+          const { store } = scopedStore();
+          return { status: 200, body: { projects: store.list() } };
+        }
+        if (method === "POST") {
+          const problem = jsonBodyProblem(req.body);
+          if (problem) return problem;
+          const body = req.body;
+          if (body.cwd !== void 0) {
+            return { status: 400, body: { error: "invalid-json", message: "cwd is no longer a project library scope" } };
+          }
+          const { store } = scopedStore();
+          const title = typeof body.title === "string" ? body.title : void 0;
+          const sessionId = typeof body.sessionId === "string" ? body.sessionId : null;
+          const projectRoot = typeof body.projectRoot === "string" && body.projectRoot.trim() !== "" ? body.projectRoot : void 0;
+          return {
+            status: 200,
+            body: { project: store.create(title ?? "", { projectRoot, sessionId }) }
+          };
+        }
+        return { status: 404, body: { error: "not-found", message: "unknown route" } };
+      }
+      const itemMatch = itemRe.exec(path);
+      if (itemMatch) {
+        const id = itemMatch[1] ?? "";
+        if (id === "library") {
+          return { status: 404, body: { error: "not-found", message: "unknown route" } };
+        }
+        const { store } = scopedStore();
+        if (method === "GET") {
+          return { status: 200, body: { project: store.get(id) } };
+        }
+        if (method === "PATCH") {
+          const problem = jsonBodyProblem(req.body);
+          if (problem) return problem;
+          const body = req.body;
+          if (typeof body.title === "string") {
+            return { status: 200, body: { project: store.rename(id, body.title) } };
+          }
+          if (typeof body.sessionId === "string") {
+            return { status: 200, body: { project: store.bindSession(id, body.sessionId) } };
+          }
+          return { status: 400, body: { error: "invalid-json", message: "title or sessionId is required" } };
+        }
+        if (method === "DELETE") {
+          store.remove(id);
+          return { status: 200, body: { ok: true } };
+        }
+        return { status: 404, body: { error: "not-found", message: "unknown route" } };
+      }
+      return { status: 404, body: { error: "not-found", message: "unknown route" } };
+    } catch (error51) {
+      if (error51 instanceof ProjectPathError) {
+        return { status: STATUS_BY_CODE[error51.code] ?? 400, body: { error: error51.code, message: error51.message } };
+      }
+      if (error51 instanceof ProjectStoreError) {
+        return { status: STATUS_BY_CODE[error51.code] ?? 400, body: { error: error51.code, message: error51.message } };
+      }
+      return { status: 500, body: { error: "internal", message: messageOf(error51) } };
+    }
+  }
+  return { owns, dispatch };
+}
+
+// src/workflow/routes/pluginRoot.ts
+import { existsSync as existsSync6 } from "node:fs";
+import { dirname as dirname2, join as join10 } from "node:path";
+import { fileURLToPath } from "node:url";
+function resolvePluginRoot() {
+  const here = dirname2(fileURLToPath(import.meta.url));
+  const candidates = [join10(here, ".."), join10(here, "..", "..", "..")];
+  for (const candidate of candidates) {
+    if (existsSync6(join10(candidate, "package.json"))) return candidate;
+  }
+  return candidates[0] ?? process.cwd();
+}
+
+// src/workflow/routes/staticRoutes.ts
+import { createHash as createHash2 } from "node:crypto";
+import { existsSync as existsSync7, readFileSync as readFileSync4 } from "node:fs";
+import { join as join11 } from "node:path";
+function createStaticRoutes(opts) {
+  const { pluginRoot, gateway } = opts;
+  const capabilitiesPath = `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`;
+  const manifestPath = `${WORKFLOW_ROUTE_PREFIX}/api/manifest`;
+  const canvasJsPath = `${WORKFLOW_ROUTE_PREFIX}/canvas.js`;
+  let cachedCanvasHash = null;
+  function canvasJsHash() {
+    const now = Date.now();
+    if (cachedCanvasHash && now - cachedCanvasHash.at < 5e3) return cachedCanvasHash.hash;
+    const file2 = join11(pluginRoot, "lib", "canvas.js");
+    let hash2 = "missing";
+    if (existsSync7(file2)) {
+      hash2 = createHash2("sha256").update(readFileSync4(file2, "utf8")).digest("hex").slice(0, 16);
+    }
+    cachedCanvasHash = { hash: hash2, at: now };
+    return hash2;
+  }
+  const tryBundle = (method, path) => {
+    if (method === "GET" && path === canvasJsPath) {
+      const file2 = join11(pluginRoot, "lib", "canvas.js");
+      if (!existsSync7(file2)) {
+        return { status: 404, body: { error: "not-found", message: "canvas bundle not built (run npm run build)" } };
+      }
+      return { status: 200, file: file2 };
+    }
+    if (method === "GET" && path === manifestPath) {
+      return { status: 200, body: { canvasHash: canvasJsHash() } };
+    }
+    return null;
+  };
+  const tryCapabilities = async (method, path) => {
+    if (method === "GET" && path === capabilitiesPath) {
+      return { status: 200, body: await gateway.capabilities() };
+    }
+    return null;
+  };
+  return { tryBundle, tryCapabilities };
+}
+
+// src/workflow/routes/dispatch.ts
+var notFound = () => ({
+  status: 404,
+  body: { error: "not-found", message: "unknown route" }
+});
+
+// src/workflow/routes/workspaceRoutes.ts
+function createWorkspaceRoutes(store) {
+  const workspacesPath = `${WORKFLOW_ROUTE_PREFIX}/api/workspaces`;
+  const workspaceRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)$`);
+  const tryHandle = (method, path, req) => {
+    if (path === workspacesPath) {
+      if (method === "GET") {
+        return { status: 200, body: { workspaces: store.list() } };
+      }
+      if (method === "POST") {
+        const problem = jsonBodyProblem(req.body);
+        if (problem) return problem;
+        const body = req.body;
+        const name2 = typeof body.name === "string" ? body.name : void 0;
+        return { status: 200, body: { workspace: store.create(name2) } };
+      }
+      return notFound();
+    }
+    const workspaceMatch = workspaceRouteRe.exec(path);
+    if (workspaceMatch) {
+      const id = workspaceMatch[1] ?? "";
+      if (method === "GET") {
+        return { status: 200, body: { workspace: store.get(id) } };
+      }
+      if (method === "PUT") {
+        const problem = jsonBodyProblem(req.body);
+        if (problem) return problem;
+        const payload = req.body;
+        if (typeof payload.expectedVersion !== "number") {
+          return { status: 400, body: { error: "version-required", message: "expectedVersion is required for saves" } };
+        }
+        const result = store.save(id, payload);
+        return { status: 200, body: { workspace: result.snapshot } };
+      }
+      if (method === "DELETE") {
+        store.remove(id);
+        return { status: 200, body: { ok: true } };
+      }
+      return notFound();
+    }
+    return null;
+  };
+  return { tryHandle };
+}
+
+// src/workflow/execution/subgraph.ts
+var SUPPORTED_EXECUTION_MODES = /* @__PURE__ */ new Set(["full", "subset"]);
+function toExecutionMode(value) {
+  if (value === void 0 || value === null) return "full";
+  if (typeof value !== "string" || !SUPPORTED_EXECUTION_MODES.has(value)) {
+    throw new Error("mode \u5FC5\u987B\u662F full \u6216 subset");
+  }
+  return value;
+}
+function normalizeNodeIds(nodeIds) {
+  if (!Array.isArray(nodeIds)) return [];
+  const unique = /* @__PURE__ */ new Set();
+  for (const nodeId of nodeIds) {
+    if (typeof nodeId !== "string") continue;
+    const trimmed = nodeId.trim();
+    if (trimmed) unique.add(trimmed);
+  }
+  return [...unique];
+}
+function resolveExecutionSubgraph(input) {
+  const { nodes, edges, executionMode } = input;
+  if (executionMode === "full") {
+    return {
+      nodes,
+      edges,
+      nodeIdSet: new Set(nodes.map((node) => node.id))
+    };
+  }
+  const targetNodeIds = normalizeNodeIds(input.nodeIds);
+  if (targetNodeIds.length === 0) {
+    throw new Error("subset \u6A21\u5F0F\u5FC5\u987B\u63D0\u4F9B nodeIds");
+  }
+  const nodeMap = /* @__PURE__ */ new Map();
+  for (const node of nodes) {
+    nodeMap.set(node.id, node);
+  }
+  const invalidNodeIds = targetNodeIds.filter((nodeId) => !nodeMap.has(nodeId));
+  if (invalidNodeIds.length > 0) {
+    throw new Error(`\u5305\u542B\u65E0\u6548\u8282\u70B9 ID: ${invalidNodeIds.join(", ")}`);
+  }
+  const incomingMap = /* @__PURE__ */ new Map();
+  for (const edge of edges) {
+    if (!nodeMap.has(edge.source) || !nodeMap.has(edge.target)) continue;
+    const incoming = incomingMap.get(edge.target) ?? [];
+    incoming.push(edge.source);
+    incomingMap.set(edge.target, incoming);
+  }
+  const closure = /* @__PURE__ */ new Set();
+  const stack = [...targetNodeIds];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current || closure.has(current)) continue;
+    closure.add(current);
+    for (const upstream of incomingMap.get(current) ?? []) {
+      if (!closure.has(upstream)) stack.push(upstream);
+    }
+  }
+  return {
+    nodes: nodes.filter((node) => closure.has(node.id)),
+    edges: edges.filter((edge) => closure.has(edge.source) && closure.has(edge.target)),
+    nodeIdSet: closure
+  };
+}
+
+// src/workflow/routes/executionRoutes.ts
+var STATUS_BY_CODE2 = {
+  "invalid-json": 400,
+  "invalid-id": 400,
+  "invalid-snapshot": 400,
+  "name-required": 400,
+  "name-too-long": 400,
+  "body-too-large": 413,
+  "version_conflict": 409,
+  "workspace-not-found": 404,
+  "not-found": 404,
+  "not-local": 403,
+  "path-denied": 403,
+  "internal": 500
+};
+function createExecutionRoutes(opts) {
+  const { store, executionManager } = opts;
+  const executionsRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions$`);
+  const executionItemRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions/([^/]+)$`);
+  const executionActionRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions/([^/]+)/(pause|resume|cancel)$`);
+  const executionEventsRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions/([^/]+)/events$`);
+  const tryHandle = async (method, path, req) => {
+    const eventsMatch = executionEventsRouteRe.exec(path);
+    if (eventsMatch && method === "GET") {
+      const executionId = eventsMatch[2] ?? "";
+      const stream = await executionManager.openEventStream(executionId);
+      if (!stream) {
+        return { status: 404, body: { error: "execution-not-found", message: `execution ${executionId} not found` } };
+      }
+      return { status: 200, sse: stream };
+    }
+    const actionMatch = executionActionRouteRe.exec(path);
+    if (actionMatch) {
+      if (method !== "POST") return notFound();
+      const executionId = actionMatch[2] ?? "";
+      const action = actionMatch[3] ?? "pause";
+      const result = action === "pause" ? await executionManager.pauseExecution(executionId) : action === "resume" ? await executionManager.resumeExecution(executionId) : await executionManager.cancelExecution(executionId);
+      if (!result.ok) {
+        return { status: 409, body: { error: "invalid-execution-state", message: result.message ?? "\u65E0\u6CD5\u6267\u884C\u8BE5\u64CD\u4F5C" } };
+      }
+      return { status: 200, body: { ok: true } };
+    }
+    const executionMatch = executionItemRouteRe.exec(path);
+    if (executionMatch) {
+      const executionId = executionMatch[2] ?? "";
+      if (method === "GET") {
+        const snapshot = executionManager.getSnapshot(executionId);
+        if (!snapshot) {
+          return { status: 404, body: { error: "execution-not-found", message: `execution ${executionId} not found` } };
+        }
+        return { status: 200, body: { execution: snapshot } };
+      }
+      return notFound();
+    }
+    const executionsMatch = executionsRouteRe.exec(path);
+    if (executionsMatch) {
+      const workspaceId = executionsMatch[1] ?? "";
+      if (method === "GET") {
+        return { status: 200, body: { executions: executionManager.listExecutions(workspaceId) } };
+      }
+      if (method === "POST") {
+        const problem = jsonBodyProblem(req.body);
+        if (problem) return problem;
+        const body = req.body;
+        let mode;
+        try {
+          mode = toExecutionMode(body.mode);
+        } catch (error51) {
+          return { status: 400, body: { error: "invalid-mode", message: messageOf(error51) } };
+        }
+        let snapshot;
+        try {
+          snapshot = store.get(workspaceId);
+        } catch (error51) {
+          if (error51 instanceof WorkflowStoreError) {
+            return {
+              status: STATUS_BY_CODE2[error51.code] ?? 400,
+              body: { error: error51.code, message: error51.message }
+            };
+          }
+          throw error51;
+        }
+        try {
+          const subgraph = resolveExecutionSubgraph({
+            nodes: snapshot.nodes,
+            edges: snapshot.edges,
+            executionMode: mode,
+            nodeIds: normalizeNodeIds(body.nodeIds)
+          });
+          const entry = executionManager.createExecution({
+            workspaceId: snapshot.id,
+            nodes: subgraph.nodes,
+            edges: subgraph.edges,
+            maxParallel: snapshot.settings.maxParallel
+          });
+          return {
+            status: 200,
+            body: {
+              execution: {
+                id: entry.context.id,
+                workspaceId: entry.context.workflowId,
+                status: entry.context.status,
+                totalNodes: subgraph.nodes.length,
+                createdAt: entry.createdAt
+              }
+            }
+          };
+        } catch (error51) {
+          return { status: 400, body: { error: "invalid-subgraph", message: messageOf(error51) } };
+        }
+      }
+      return notFound();
+    }
+    return null;
+  };
+  return { tryHandle };
+}
+
+// src/workflow/routes/mediaRoutes.ts
+import { realpathSync as realpathSync2, statSync as statSync2 } from "node:fs";
+import { join as join12, normalize, resolve as resolve4, sep as sep2 } from "node:path";
+function isInsideDir2(target, root) {
+  return target === root || target.startsWith(root + sep2);
+}
+function createMediaRoutes(mediaDir) {
+  const mediaRoot = resolve4(mediaDir);
+  const mediaApiPath = `${WORKFLOW_ROUTE_PREFIX}/media/`;
+  const tryHandle = (method, path) => {
+    if (!(method === "GET" && path.startsWith(mediaApiPath))) return null;
+    const rel = path.slice(mediaApiPath.length);
+    if (rel.split("/").some((segment) => segment === "..")) {
+      return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
+    }
+    const target = resolve4(join12(mediaRoot, normalize(`/${rel}`)));
+    if (!isInsideDir2(target, mediaRoot)) {
+      return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
+    }
+    let realTarget;
+    try {
+      const realRoot = realpathSync2(mediaRoot);
+      realTarget = realpathSync2(target);
+      if (!isInsideDir2(realTarget, realRoot)) {
+        return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
+      }
+    } catch {
+      return { status: 404, body: { error: "not-found", message: "media file not found" } };
+    }
+    if (!statSync2(realTarget).isFile()) {
+      return { status: 404, body: { error: "not-found", message: "media file not found" } };
+    }
+    return { status: 200, file: realTarget };
+  };
+  return { tryHandle };
+}
+
+// src/workflow/routes/canvasRoutes.ts
+var STATUS_BY_CODE3 = {
+  "invalid-json": 400,
+  "invalid-id": 400,
+  "invalid-snapshot": 400,
+  "name-required": 400,
+  "name-too-long": 400,
+  "body-too-large": 413,
+  "version_conflict": 409,
+  "workspace-not-found": 404,
+  "not-found": 404,
+  "not-local": 403,
+  "path-denied": 403,
+  "internal": 500
+};
+var MIME_BY_EXT = {
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".svg": "image/svg+xml",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".txt": "text/plain; charset=utf-8"
+};
+var PLUGIN_ROOT = resolvePluginRoot();
 function serveFile(res, filePath, fallbackMime) {
   const mime = MIME_BY_EXT[extname(filePath)] ?? fallbackMime;
-  const stat = statSync(filePath);
+  const stat = statSync3(filePath);
   res.writeHead(200, {
     "Content-Type": mime,
     "Content-Length": stat.size,
@@ -14977,30 +17836,13 @@ function serveFile(res, filePath, fallbackMime) {
   });
   stream.pipe(res);
 }
-function isInsideDir(target, root) {
-  return target === root || target.startsWith(root + sep);
-}
 function createWorkflowDispatcher(deps) {
-  const { store, gateway, mediaDir } = deps;
-  const mediaRoot = resolve(mediaDir);
-  const mediaApiPath = `${WORKFLOW_ROUTE_PREFIX}/media/`;
-  const workspaceRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)$`);
-  const capabilitiesPath = `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`;
-  const workspacesPath = `${WORKFLOW_ROUTE_PREFIX}/api/workspaces`;
-  const manifestPath = `${WORKFLOW_ROUTE_PREFIX}/api/manifest`;
-  const canvasJsPath = `${WORKFLOW_ROUTE_PREFIX}/canvas.js`;
-  let cachedCanvasHash = null;
-  function canvasJsHash() {
-    const now = Date.now();
-    if (cachedCanvasHash && now - cachedCanvasHash.at < 5e3) return cachedCanvasHash.hash;
-    const file2 = join4(PLUGIN_ROOT, "lib", "canvas.js");
-    let hash2 = "missing";
-    if (existsSync2(file2)) {
-      hash2 = createHash2("sha256").update(readFileSync2(file2, "utf8")).digest("hex").slice(0, 16);
-    }
-    cachedCanvasHash = { hash: hash2, at: now };
-    return hash2;
-  }
+  const { store, gateway, mediaDir, executionManager } = deps;
+  const projectDispatcher = createProjectDispatcher();
+  const staticRoutes = createStaticRoutes({ pluginRoot: PLUGIN_ROOT, gateway });
+  const workspaceRoutes = createWorkspaceRoutes(store);
+  const executionRoutes = createExecutionRoutes({ store, executionManager });
+  const mediaRoutes = createMediaRoutes(mediaDir);
   function normalizePath(path) {
     if (path === LEGACY_WORKFLOW_ROUTE_PREFIX) return WORKFLOW_ROUTE_PREFIX;
     if (path.startsWith(`${LEGACY_WORKFLOW_ROUTE_PREFIX}/`)) {
@@ -15013,6 +17855,9 @@ function createWorkflowDispatcher(deps) {
       const url2 = new URL(req.url, "http://127.0.0.1");
       const method = (req.method || "GET").toUpperCase();
       const path = normalizePath(decodeURIComponent(url2.pathname));
+      if (projectDispatcher.owns(path)) {
+        return projectDispatcher.dispatch(req);
+      }
       if (method === "POST" || method === "PUT" || method === "DELETE") {
         try {
           assertLocalWrite(req);
@@ -15020,84 +17865,22 @@ function createWorkflowDispatcher(deps) {
           return { status: 403, body: { error: "not-local", message: "cross-origin write refused" } };
         }
       }
-      if (method === "GET" && path === canvasJsPath) {
-        const file2 = join4(PLUGIN_ROOT, "lib", "canvas.js");
-        if (!existsSync2(file2)) {
-          return { status: 404, body: { error: "not-found", message: "canvas bundle not built (run npm run build)" } };
-        }
-        return { status: 200, file: file2 };
-      }
-      if (method === "GET" && path === manifestPath) {
-        return { status: 200, body: { canvasHash: canvasJsHash() } };
-      }
-      if (path === workspacesPath) {
-        if (method === "GET") {
-          return { status: 200, body: { workspaces: store.list() } };
-        }
-        if (method === "POST") {
-          const problem = jsonBodyProblem(req.body);
-          if (problem) return problem;
-          const body = req.body;
-          const name2 = typeof body.name === "string" ? body.name : void 0;
-          return { status: 200, body: { workspace: store.create(name2) } };
-        }
-        return { status: 404, body: { error: "not-found", message: "unknown route" } };
-      }
-      const workspaceMatch = workspaceRouteRe.exec(path);
-      if (workspaceMatch) {
-        const id = workspaceMatch[1] ?? "";
-        if (method === "GET") {
-          return { status: 200, body: { workspace: store.get(id) } };
-        }
-        if (method === "PUT") {
-          const problem = jsonBodyProblem(req.body);
-          if (problem) return problem;
-          const payload = req.body;
-          if (typeof payload.expectedVersion !== "number") {
-            return { status: 400, body: { error: "version-required", message: "expectedVersion is required for saves" } };
-          }
-          const result = store.save(id, payload);
-          return { status: 200, body: { workspace: result.snapshot } };
-        }
-        if (method === "DELETE") {
-          store.remove(id);
-          return { status: 200, body: { ok: true } };
-        }
-        return { status: 404, body: { error: "not-found", message: "unknown route" } };
-      }
-      if (method === "GET" && path === capabilitiesPath) {
-        return { status: 200, body: await gateway.capabilities() };
-      }
-      if (method === "GET" && path.startsWith(mediaApiPath)) {
-        const rel = path.slice(mediaApiPath.length);
-        if (rel.split("/").some((segment) => segment === "..")) {
-          return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
-        }
-        const target = resolve(join4(mediaRoot, normalize(`/${rel}`)));
-        if (!isInsideDir(target, mediaRoot)) {
-          return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
-        }
-        let realTarget;
-        try {
-          const realRoot = realpathSync(mediaRoot);
-          realTarget = realpathSync(target);
-          if (!isInsideDir(realTarget, realRoot)) {
-            return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
-          }
-        } catch {
-          return { status: 404, body: { error: "not-found", message: "media file not found" } };
-        }
-        if (!statSync(realTarget).isFile()) {
-          return { status: 404, body: { error: "not-found", message: "media file not found" } };
-        }
-        return { status: 200, file: realTarget };
-      }
+      const fromBundle = await Promise.resolve(staticRoutes.tryBundle(method, path, req));
+      if (fromBundle) return fromBundle;
+      const fromWorkspace = await Promise.resolve(workspaceRoutes.tryHandle(method, path, req));
+      if (fromWorkspace) return fromWorkspace;
+      const fromExecution = await Promise.resolve(executionRoutes.tryHandle(method, path, req));
+      if (fromExecution) return fromExecution;
+      const fromCapabilities = await Promise.resolve(staticRoutes.tryCapabilities(method, path, req));
+      if (fromCapabilities) return fromCapabilities;
+      const fromMedia = await Promise.resolve(mediaRoutes.tryHandle(method, path, req));
+      if (fromMedia) return fromMedia;
       return { status: 404, body: { error: "not-found", message: "unknown route" } };
     } catch (error51) {
       if (error51 instanceof WorkflowStoreError) {
         const conflict = error51.code === "version_conflict";
         return {
-          status: STATUS_BY_CODE[error51.code] ?? 400,
+          status: STATUS_BY_CODE3[error51.code] ?? 400,
           body: {
             error: error51.code,
             message: error51.message,
@@ -15116,7 +17899,7 @@ function registerWorkflowRoutes(webServer, dispatcher) {
       try {
         const method = (req.method || "GET").toUpperCase();
         let body;
-        if (method === "POST" || method === "PUT") {
+        if (method === "POST" || method === "PUT" || method === "PATCH") {
           body = await readJsonBody(req);
         }
         const result = await dispatcher.dispatch({
@@ -15131,10 +17914,14 @@ function registerWorkflowRoutes(webServer, dispatcher) {
           serveFile(res, result.file, "application/octet-stream");
           return;
         }
+        if ("sse" in result) {
+          createSSEPublisher(res, result.sse.context, { replay: result.sse.eventLog });
+          return;
+        }
         sendJson(res, result.status, result.body ?? {});
       } catch (error51) {
         if (error51 instanceof JsonBodyLimitError) {
-          sendJson(res, STATUS_BY_CODE["body-too-large"] ?? 413, {
+          sendJson(res, STATUS_BY_CODE3["body-too-large"] ?? 413, {
             error: "body-too-large",
             message: `request body exceeds ${String(error51.limit)} bytes`
           });
@@ -15153,14 +17940,373 @@ function registerWorkflowRoutes(webServer, dispatcher) {
   };
 }
 
+// src/workflow/agent/agentTools.ts
+import { join as join13 } from "node:path";
+function objectParams(fields) {
+  const properties = {};
+  const required2 = [];
+  for (const [key, spec] of Object.entries(fields)) {
+    const { required: isRequired, ...rest } = spec;
+    properties[key] = rest;
+    if (isRequired) required2.push(key);
+  }
+  return {
+    type: "object",
+    properties,
+    ...required2.length > 0 ? { required: required2 } : {},
+    additionalProperties: false
+  };
+}
+var jsonOut = {
+  schema: { type: "object", additionalProperties: true },
+  render: (_args, value) => [
+    { type: "text", text: JSON.stringify(value, null, 2) }
+  ]
+};
+var TERMINAL_STATUSES2 = /* @__PURE__ */ new Set(["completed", "error", "cancelled"]);
+var RUN_POLL_INTERVAL_MS = 250;
+var DEFAULT_RUN_WAIT_TIMEOUT_MS = 12e4;
+var TEXT_EXCERPT_CHARS = 240;
+var LIST_EXECUTIONS_LIMIT = 5;
+function errorBody(error51, message) {
+  return { error: error51, message };
+}
+function sleep(ms) {
+  return new Promise((resolve5) => setTimeout(resolve5, ms));
+}
+function readString2(args, key) {
+  const value = args[key];
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : void 0;
+}
+function readBoolean(args, key) {
+  return args[key] === true;
+}
+function mediaUrlToPath(url2, mediaDir) {
+  if (typeof url2 !== "string" || url2.length === 0) return null;
+  const marker = "/media/";
+  const index = url2.indexOf(marker);
+  if (index === -1 || !url2.startsWith("/")) return null;
+  return join13(mediaDir, url2.slice(index + marker.length));
+}
+function summarizeNodes(workspace, nodeIds, snapshot, mediaDir) {
+  const rows = [];
+  for (const node of workspace.nodes) {
+    if (!nodeIds.has(node.id)) continue;
+    const data = node.data ?? {};
+    const state = snapshot.nodeStates[node.id] ?? {};
+    const output = snapshot.nodeOutputs[node.id] ?? {};
+    const assets = Array.isArray(snapshot.mediaAssets[node.id]) ? snapshot.mediaAssets[node.id] : [];
+    const row = {
+      nodeId: node.id,
+      label: typeof data.label === "string" && data.label ? data.label : node.id,
+      type: typeof node.type === "string" ? node.type : "unknown",
+      status: typeof state.status === "string" ? state.status : "pending"
+    };
+    if (typeof state.error === "string" && state.error) row.error = state.error;
+    if (typeof output.text === "string" && output.text) {
+      row.textExcerpt = output.text.length > TEXT_EXCERPT_CHARS ? `${output.text.slice(0, TEXT_EXCERPT_CHARS)}\u2026` : output.text;
+    }
+    if (assets.length > 0) {
+      row.mediaAssets = assets.map((asset) => ({
+        type: asset.type,
+        url: asset.url,
+        path: mediaUrlToPath(asset.url, mediaDir)
+      }));
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+function resolveWorkspace(store, workspaceId, workspaceName) {
+  if (workspaceId) {
+    try {
+      return { snapshot: store.get(workspaceId) };
+    } catch {
+      return errorBody("workspace-not-found", `workspace ${workspaceId} not found`);
+    }
+  }
+  if (workspaceName) {
+    const matches = store.list().filter((row) => row.name === workspaceName);
+    const first = matches[0];
+    if (matches.length === 0 || !first) {
+      return errorBody("workspace-not-found", `no workspace named "${workspaceName}"`);
+    }
+    if (matches.length > 1) {
+      return errorBody(
+        "ambiguous-workspace-name",
+        `multiple workspaces named "${workspaceName}" \u2014 pass workspaceId instead`
+      );
+    }
+    try {
+      return { snapshot: store.get(first.id) };
+    } catch {
+      return errorBody("workspace-not-found", `workspace ${first.id} not found`);
+    }
+  }
+  return errorBody(
+    "invalid-args",
+    "pass workspaceId (preferred, from workflow_list) or workspaceName"
+  );
+}
+async function waitForTerminal(executionManager, executionId, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  for (; ; ) {
+    const snapshot = executionManager.getSnapshot(executionId);
+    if (!snapshot) return { snapshot: null, timedOut: false };
+    if (TERMINAL_STATUSES2.has(snapshot.status)) return { snapshot, timedOut: false };
+    if (Date.now() >= deadline) return { snapshot, timedOut: true };
+    await sleep(RUN_POLL_INTERVAL_MS);
+  }
+}
+function createWorkflowListTool(deps) {
+  const { store, executionManager } = deps;
+  return {
+    name: "workflow_list",
+    description: "List the workflow infinite-canvas workspaces of the omnimux-workflow plugin (id, name, version, nodeCount, updatedAt), newest first. Set includeExecutions=true to also get the 5 most recent executions (current process) with status and progress. Read-only. Use workflow_snapshot to inspect one workspace and workflow_run to execute it.",
+    parameters: objectParams({
+      include_executions: {
+        type: "boolean",
+        description: "Also include the 5 most recent executions (status + progress overview)"
+      }
+    }),
+    output: jsonOut,
+    async execute(args) {
+      const workspaces = store.list();
+      if (!readBoolean(args, "include_executions")) {
+        return { workspaces };
+      }
+      const executions = executionManager.listExecutions().slice(0, LIST_EXECUTIONS_LIMIT);
+      return { workspaces, executions };
+    }
+  };
+}
+function createWorkflowRunTool(deps) {
+  const { store, executionManager, mediaDir } = deps;
+  return {
+    name: "workflow_run",
+    description: 'Run a workflow canvas (node DAG) on the omnimux-workflow execution engine. mode "full" runs every node; mode "subset" runs only the given nodeIds plus their transitive upstream closure. wait=false (default) returns the executionId immediately \u2014 the user can watch live progress on the canvas (per-node badges + SSE). wait=true polls until a terminal status (completed/error/cancelled) or the timeout (default 120s) and returns per-node statuses, text excerpts and media file paths. The canvas performs generation through the OmniMux gateway (real hub seams when available, mock otherwise).',
+    parameters: objectParams({
+      workspace_id: {
+        type: "string",
+        description: "Workspace id (preferred \u2014 from workflow_list), e.g. ws_0123456789ab"
+      },
+      workspace_name: {
+        type: "string",
+        description: "Exact workspace name (fallback when the id is unknown; must be unique)"
+      },
+      mode: {
+        type: "string",
+        enum: ["full", "subset"],
+        description: "Execution scope: full (default) or subset (nodeIds + upstream closure)"
+      },
+      node_ids: {
+        type: "array",
+        items: { type: "string" },
+        description: "Required for subset mode: node ids to execute (upstream nodes are added automatically)"
+      },
+      wait: {
+        type: "boolean",
+        description: "Wait for a terminal status (bounded by timeout_ms) and return the result summary"
+      },
+      timeout_ms: {
+        type: "number",
+        description: "wait=true polling budget in milliseconds (default 120000)"
+      }
+    }),
+    output: jsonOut,
+    async execute(args) {
+      const workspaceId = readString2(args, "workspace_id");
+      const workspaceName = readString2(args, "workspace_name");
+      const resolved = resolveWorkspace(store, workspaceId, workspaceName);
+      if ("error" in resolved) return resolved;
+      const workspace = resolved.snapshot;
+      let mode;
+      try {
+        mode = toExecutionMode(args.mode);
+      } catch (error51) {
+        return errorBody(
+          "invalid-args",
+          error51 instanceof Error ? error51.message : String(error51)
+        );
+      }
+      const nodeIds = normalizeNodeIds(args.node_ids);
+      let subgraph;
+      try {
+        subgraph = resolveExecutionSubgraph({
+          nodes: workspace.nodes,
+          edges: workspace.edges,
+          executionMode: mode,
+          nodeIds
+        });
+      } catch (error51) {
+        return errorBody(
+          "invalid-subgraph",
+          error51 instanceof Error ? error51.message : String(error51)
+        );
+      }
+      if (subgraph.nodes.length === 0) {
+        return errorBody("empty-graph", `workspace ${workspace.id} has no nodes to execute`);
+      }
+      const entry = executionManager.createExecution({
+        workspaceId: workspace.id,
+        nodes: subgraph.nodes,
+        edges: subgraph.edges,
+        maxParallel: workspace.settings.maxParallel
+      });
+      const executionId = entry.context.id;
+      if (!readBoolean(args, "wait")) {
+        return {
+          executionId,
+          workspaceId: workspace.id,
+          workspaceName: workspace.name,
+          mode,
+          totalNodes: subgraph.nodes.length,
+          maxParallel: workspace.settings.maxParallel,
+          status: entry.context.status,
+          hint: "Execution started in the background \u2014 the user can watch live per-node progress on the canvas. Call workflow_snapshot / workflow_list(include_executions=true) or re-run with wait=true to fetch the outcome."
+        };
+      }
+      const timeoutMs = typeof args.timeout_ms === "number" && args.timeout_ms > 0 ? Math.floor(args.timeout_ms) : DEFAULT_RUN_WAIT_TIMEOUT_MS;
+      const { snapshot: final, timedOut } = await waitForTerminal(
+        executionManager,
+        executionId,
+        timeoutMs
+      );
+      if (!final) {
+        return errorBody("execution-not-found", `execution ${executionId} disappeared`);
+      }
+      const durationMs = final.completedAt !== null && final.startedAt !== null ? final.completedAt - final.startedAt : null;
+      return {
+        executionId,
+        workspaceId: workspace.id,
+        workspaceName: workspace.name,
+        mode,
+        totalNodes: subgraph.nodes.length,
+        status: final.status,
+        timedOut,
+        error: final.error,
+        progress: final.progress,
+        ...durationMs !== null ? { durationMs } : {},
+        nodes: summarizeNodes(workspace, subgraph.nodeIdSet, final, mediaDir),
+        ...timedOut ? { hint: `Still not terminal after ${String(timeoutMs)}ms \u2014 the run continues in the background; retry workflow_run or check the canvas.` } : {}
+      };
+    }
+  };
+}
+function createWorkflowSnapshotTool(deps) {
+  const { store } = deps;
+  return {
+    name: "workflow_snapshot",
+    description: "Read the current state of one workflow canvas workspace. Default: a compact summary (name, version, node/edge counts, node type/material breakdown, execution settings). includeNodes=true returns the FULL node and edge structure (positions, prompts, tools, models, connections) so the graph can be analyzed or modification advice given. Read-only. Data lives under $DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json.",
+    parameters: objectParams({
+      workspace_id: {
+        type: "string",
+        required: true,
+        description: "Workspace id (from workflow_list), e.g. ws_0123456789ab"
+      },
+      include_nodes: {
+        type: "boolean",
+        description: "Return the full nodes/edges structure instead of the compact summary"
+      }
+    }),
+    output: jsonOut,
+    async execute(args) {
+      const workspaceId = readString2(args, "workspace_id");
+      if (!workspaceId) {
+        return errorBody("invalid-args", "workspace_id is required");
+      }
+      let workspace;
+      try {
+        workspace = store.get(workspaceId);
+      } catch {
+        return errorBody("workspace-not-found", `workspace ${workspaceId} not found`);
+      }
+      if (readBoolean(args, "include_nodes")) {
+        return { workspace };
+      }
+      const nodeTypeCounts = {};
+      const materialCounts = {};
+      for (const node of workspace.nodes) {
+        const data = node.data ?? {};
+        const type = typeof node.type === "string" ? node.type : "unknown";
+        nodeTypeCounts[type] = (nodeTypeCounts[type] ?? 0) + 1;
+        const material = typeof data.materialType === "string" ? data.materialType : "unknown";
+        materialCounts[material] = (materialCounts[material] ?? 0) + 1;
+      }
+      return {
+        summary: {
+          id: workspace.id,
+          name: workspace.name,
+          version: workspace.version,
+          nodeCount: workspace.nodes.length,
+          edgeCount: workspace.edges.length,
+          nodeTypeCounts,
+          materialCounts,
+          settings: workspace.settings,
+          metadata: workspace.metadata
+        },
+        hint: "Pass include_nodes=true for the full node/edge structure."
+      };
+    }
+  };
+}
+var WORKFLOW_PROMPT = `This workspace may mount the OmniMux workflow canvas (omnimux-workflow): an infinite canvas where the user builds node DAGs (text/image/video/audio material nodes) and executes them through the OmniMux generation gateway.
+workflow_list enumerates the user's canvas workspaces (id, name, nodeCount) and can include recent executions; workflow_snapshot returns one workspace's structure (include_nodes=true gives the full graph \u2014 read it before advising graph changes); workflow_run starts an execution (full or subset with node_ids) and with wait=true returns per-node statuses, text excerpts and generated media file paths.
+When the user mentions a canvas, a workflow, nodes, or asks to run/analyze their graph, use these tools instead of guessing. Executions stream live progress on the canvas (SSE, pause/resume/cancel available there); the Agent can trigger and fetch results while the user watches. Generation goes through the OmniMux hub seams when available (mock gateway offline) \u2014 never invent results: report what the tools return, including per-node errors like [omnimux:<code>].`;
+function registerWorkflowAgentSeats(ctx, deps) {
+  const disposers = [];
+  const tools = ctx.tools;
+  if (tools && typeof tools.register === "function") {
+    const specs = [
+      createWorkflowListTool(deps),
+      createWorkflowRunTool(deps),
+      createWorkflowSnapshotTool(deps)
+    ];
+    for (const spec of specs) {
+      const dispose = tools.register(spec);
+      if (typeof dispose === "function") disposers.push(dispose);
+    }
+  }
+  const systemPrompt = ctx.systemPrompt;
+  if (systemPrompt && typeof systemPrompt.section === "function") {
+    const dispose = systemPrompt.section({
+      name: "workflow:ops",
+      order: 60,
+      text: WORKFLOW_PROMPT
+    });
+    if (typeof dispose === "function") disposers.push(dispose);
+  }
+  return () => {
+    for (const dispose of disposers) dispose();
+  };
+}
+var WORKFLOW_PROMPT_SECTION = { name: "workflow:ops", order: 60 };
+
 // src/workflow/index.ts
 function mountWorkflowHost(ctx, opts = {}) {
   const paths = opts.paths ?? resolveWorkflowPaths();
-  mkdirSync3(paths.workspacesDir, { recursive: true });
-  mkdirSync3(paths.mediaDir, { recursive: true });
+  mkdirSync8(paths.workspacesDir, { recursive: true });
+  mkdirSync8(paths.mediaDir, { recursive: true });
+  mkdirSync8(paths.executionsDir, { recursive: true });
   const store = createWorkspaceStore({ workspacesDir: paths.workspacesDir });
-  const gateway = opts.gateway ?? createMockGateway();
-  const dispatcher = createWorkflowDispatcher({ store, gateway, mediaDir: paths.mediaDir });
+  const gateway = opts.gateway ?? assembleGateway({
+    getSeam: (name2) => ctx.get?.(name2),
+    ...opts.gatewayMode !== void 0 ? { mode: opts.gatewayMode } : {},
+    ...opts.seamConcurrency !== void 0 ? { seamConcurrency: opts.seamConcurrency } : {},
+    env: opts.env ?? process.env
+  }).gateway;
+  const executionManager = createExecutionManager({
+    executionsDir: paths.executionsDir,
+    gateway,
+    mediaDir: paths.mediaDir
+  });
+  const dispatcher = createWorkflowDispatcher({
+    store,
+    gateway,
+    mediaDir: paths.mediaDir,
+    executionManager
+  });
+  void executionManager.recoverAll();
   const disposers = [];
   const mountHttp = (httpCtx) => {
     const webServer = httpCtx.webServer;
@@ -15179,21 +18325,92 @@ function mountWorkflowHost(ctx, opts = {}) {
   } else {
     mountHttp(ctx);
   }
+  if (ctx.tools || ctx.systemPrompt) {
+    const mountAgent = () => {
+      disposers.push(
+        registerWorkflowAgentSeats(ctx, {
+          store,
+          executionManager,
+          mediaDir: paths.mediaDir
+        })
+      );
+    };
+    if (typeof ctx.effect === "function") {
+      ctx.effect(mountAgent, "omnimux-workflow: agent seats");
+    } else {
+      mountAgent();
+    }
+  }
   return () => {
     for (const dispose of disposers) dispose();
     disposers.length = 0;
+    executionManager.disposeAll();
   };
 }
 
 // src/index.ts
 var name = "omnimux-workflow";
-var inject = ["webServer"];
+var inject = ["tools", "systemPrompt"];
 function apply(ctx) {
   mountWorkflowHost(ctx);
 }
 export {
+  DEFAULT_MAX_PARALLEL,
+  DEFAULT_RUN_WAIT_TIMEOUT_MS,
+  DEFAULT_SEAM_CONCURRENCY,
+  ExecutionContext,
+  ExecutionScheduler,
+  ExecutionStatus,
+  GATEWAY_MODE_ENV,
+  MAX_DIRECTORY_ATTEMPTS,
+  MAX_PROJECT_TITLE_LENGTH,
+  NodeExecutionError,
+  NodeStatus,
+  PROJECT_LIBRARY_PATH,
+  PROJECT_README_NAME,
+  PROJECT_ROUTE_PREFIX,
+  PROJECT_SCHEMA_VERSION,
+  ProjectPathError,
+  ProjectStoreError,
+  SEAM_CONCURRENCY_ENV,
+  SeamGatewayError,
+  VIDEOS_DIR_ENV,
+  WORKFLOW_PROMPT_SECTION,
+  allocateUniqueProjectFolder,
   apply,
+  assembleGateway,
+  assertProjectInsideLibrary,
+  assertProjectWriteSafe,
+  createAutoSwitchGateway,
+  createExecutionManager,
+  createMockGateway,
+  createOmnimuxSeamClient,
+  createProjectDispatcher,
+  createProjectStore,
+  createSSEPublisher,
+  defaultProjectLibrary,
+  defaultReadme,
+  displayHomePath,
+  ensureLibraryRoot,
+  folderNameAttempt,
   inject,
+  isInsideDir,
   mountWorkflowHost,
-  name
+  name,
+  normalizeNodeIds,
+  parseProject,
+  parseProjectIndex,
+  probeSeams,
+  projectIndexSchema,
+  projectSchema,
+  projectSummarySchema,
+  registerWorkflowAgentSeats,
+  resolveExecutionSubgraph,
+  resolveGatewayMode,
+  resolveLibraryPaths,
+  resolveProjectPaths,
+  resolveVideosDir,
+  sanitizeFolderName,
+  toExecutionMode,
+  validateProjectTitle
 };

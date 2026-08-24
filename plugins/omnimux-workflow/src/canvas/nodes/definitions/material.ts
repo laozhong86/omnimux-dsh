@@ -30,9 +30,11 @@ export const materialNodeDefinition: NodeDefinition = {
     modelCategory: 'text',
   },
   executorKey: 'material',
+  // palette 是未渲染的注册表扩展点元数据：文案以 i18n key 存放，
+  // 未来消费方（如 Toolbar palette 化）需经 t() 解析。
   palette: {
-    group: '素材',
-    label: '素材节点',
-    icon: '🧱',
+    group: 'palette.group.material',
+    label: 'palette.node.material',
+    icon: 'box',
   },
 };

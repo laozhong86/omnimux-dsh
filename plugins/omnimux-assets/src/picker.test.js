@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { PickerError, pickNativePath } from './picker.js'
+import { PickerError, parsePickedPaths, pickNativePath } from './picker.js'
 
 /** A run stub resolving with the given stdout. */
 function runOk(stdout) {
@@ -23,6 +23,17 @@ function runFail(message, stderr = '') {
     throw error
   }
 }
+
+describe('parsePickedPaths', () => {
+  it('splits one POSIX path per line and drops empty rows', () => {
+    assert.deepEqual(parsePickedPaths('/Users/x/a.png\n/Users/x/b.jpg\n'), [
+      '/Users/x/a.png',
+      '/Users/x/b.jpg',
+    ])
+    assert.deepEqual(parsePickedPaths(''), [])
+    assert.deepEqual(parsePickedPaths('\n\n'), [])
+  })
+})
 
 describe('pickNativePath kind validation', () => {
   it('rejects an unknown kind with picker-invalid-kind before touching the platform', async () => {
@@ -64,7 +75,16 @@ describe('pickNativePath happy path', () => {
       platform: 'darwin',
       run: runOk('/Users/x/Pictures/hero.png\n'),
     })
-    assert.deepEqual(result, { path: '/Users/x/Pictures/hero.png' })
+    assert.deepEqual(result, { path: '/Users/x/Pictures/hero.png', paths: ['/Users/x/Pictures/hero.png'] })
+  })
+
+  it('returns multiple picked files as paths[] without flattening', async () => {
+    const result = await pickNativePath('file', {
+      platform: 'darwin',
+      run: runOk('/Users/x/a.png\n/Users/x/b.jpg\n'),
+    })
+    assert.equal(result.path, '/Users/x/a.png')
+    assert.deepEqual(result.paths, ['/Users/x/a.png', '/Users/x/b.jpg'])
   })
 
   it('returns the picked folder path (macOS choose folder keeps its trailing slash)', async () => {
@@ -75,10 +95,10 @@ describe('pickNativePath happy path', () => {
       platform: 'darwin',
       run: runOk('/Users/x/Projects/assets/\r\n'),
     })
-    assert.deepEqual(result, { path: '/Users/x/Projects/assets/' })
+    assert.deepEqual(result, { path: '/Users/x/Projects/assets/', paths: ['/Users/x/Projects/assets/'] })
   })
 
-  it('builds a choose file / choose folder script with a fixed prompt', async () => {
+  it('builds a choose file / choose folder script with multiple selections', async () => {
     const scripts = []
     const run = async (_command, argv) => {
       scripts.push(argv[1])
@@ -86,33 +106,32 @@ describe('pickNativePath happy path', () => {
     }
     await pickNativePath('file', { platform: 'darwin', run })
     await pickNativePath('directory', { platform: 'darwin', run })
-    assert.match(scripts[0], /choose file with prompt "选择要添加的文件"/)
-    assert.match(scripts[1], /choose folder with prompt "选择要添加的文件夹"/)
-    // The prompt is a constant — no user input is ever interpolated.
+    assert.match(scripts[0], /choose file with prompt "选择要添加的文件" with multiple selections allowed/)
+    assert.match(scripts[1], /choose folder with prompt "选择要添加的文件夹" with multiple selections allowed/)
     assert.ok(!scripts[0].includes('$'))
   })
 
   it('treats empty stdout as a cancellation', async () => {
     const result = await pickNativePath('file', { platform: 'darwin', run: runOk('') })
-    assert.deepEqual(result, { path: null })
+    assert.deepEqual(result, { path: null, paths: [] })
   })
 })
 
 describe('pickNativePath cancellation', () => {
-  it('maps "User canceled" in the message to { path: null }', async () => {
+  it('maps "User canceled" in the message to { path: null, paths: [] }', async () => {
     const result = await pickNativePath('file', {
       platform: 'darwin',
       run: runFail('osascript exited with code 1', 'User canceled.'),
     })
-    assert.deepEqual(result, { path: null })
+    assert.deepEqual(result, { path: null, paths: [] })
   })
 
-  it('maps a -128 exit reference (AppleScript user cancel) to { path: null }', async () => {
+  it('maps a -128 exit reference (AppleScript user cancel) to { path: null, paths: [] }', async () => {
     const result = await pickNativePath('directory', {
       platform: 'darwin',
       run: runFail('osascript exited with code 1', 'execution error: User canceled. (-128)'),
     })
-    assert.deepEqual(result, { path: null })
+    assert.deepEqual(result, { path: null, paths: [] })
   })
 
   it('detects cancellation text case-insensitively in message or stderr', async () => {
@@ -120,7 +139,7 @@ describe('pickNativePath cancellation', () => {
       platform: 'darwin',
       run: runFail('USER CANCELED -128'),
     })
-    assert.deepEqual(result, { path: null })
+    assert.deepEqual(result, { path: null, paths: [] })
   })
 })
 

@@ -18,6 +18,61 @@ export async function accountsRequest(path, opts = {}) {
 }
 
 /**
+ * Wrap any `/omnimux/accounts` write so a 401 pops the hub's unified login
+ * gate, then replays the original call once the user signs in. If the gate is
+ * unavailable (or the user cancels) the original result is returned as-is.
+ * The replay bypasses the guard so a still-401 response cannot re-open the
+ * gate recursively.
+ * @param {(...args: any[]) => Promise<{ ok: boolean, status: number, body: any }>} fn
+ * @returns {(...args: any[]) => Promise<{ ok: boolean, status: number, body: any }>}
+ */
+export function authGuard(fn) {
+  return (...args) => {
+    const run = async () => {
+      const result = await fn(...args)
+      if (result.status !== 401) return result
+      const gate = typeof window !== 'undefined' ? /** @type {any} */ (window).__omnimuxAuth : undefined
+      if (!gate || typeof gate.ensureLogin !== 'function') return result
+      return new Promise((resolve, reject) => {
+        gate.ensureLogin({
+          onSuccess: () => {
+            fn(...args).then(resolve, reject)
+          },
+          onCancel: () => resolve(result),
+        })
+      })
+    }
+    return run()
+  }
+}
+
+/**
+ * Poll for the hub's `window.__omnimuxAuth` global, then invoke `cb(api)` once.
+ * Mirrors the `registerWhenReady` pattern in sidebar-entry.js: the hub client
+ * is evaluated on its own schedule, so this never assumes load order.
+ * @param {(api: any) => void} cb
+ * @returns {() => void} disposer
+ */
+export function whenAuthReady(cb) {
+  if (typeof window === 'undefined') return () => {}
+  let done = false
+  const attempt = () => {
+    if (done) return
+    const api = window.__omnimuxAuth
+    if (!api || typeof api.ensureLogin !== 'function') return
+    done = true
+    clearInterval(timer)
+    cb(api)
+  }
+  const timer = setInterval(attempt, 500)
+  attempt()
+  return () => {
+    done = true
+    clearInterval(timer)
+  }
+}
+
+/**
  * @param {{ platform?: string, group?: string }} [filters]
  */
 export function listAccounts(filters = {}) {
@@ -31,22 +86,19 @@ export function listAccounts(filters = {}) {
 /**
  * @param {string} platform
  */
-export function connectAccount(platform) {
-  return accountsRequest('/omnimux/accounts', { method: 'POST', body: { platform } })
-}
+export const connectAccount = authGuard((platform) =>
+  accountsRequest('/omnimux/accounts', { method: 'POST', body: { platform } }))
 
 /**
  * @param {string} id
  */
-export function disconnectAccount(id) {
-  return accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' })
-}
+export const disconnectAccount = authGuard((id) =>
+  accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' }))
 
 /**
  * Updates Host-local account metadata (group / agent_usable).
  * @param {string} id
  * @param {{ group?: string | null, agent_usable?: boolean }} body
  */
-export function patchAccount(id, body) {
-  return accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: 'PATCH', body })
-}
+export const patchAccount = authGuard((id, body) =>
+  accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: 'PATCH', body }))

@@ -1,45 +1,24 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { FOCUS_CSS } from './a11y.js'
-import { CloseIcon, RefreshIcon } from './icons.jsx'
-import {
-  addMapping,
-  deleteMapping,
-  getState,
-  listArtifacts,
-  listFiles,
-  pickPath,
-  renameMapping,
-  rescanMapping,
-} from './api.js'
-import { MappingNav } from './MappingNav.jsx'
-import { ArtifactNav } from './ArtifactNav.jsx'
-import { FileTable } from './FileTable.jsx'
-import { ArtifactTable } from './ArtifactTable.jsx'
-import { DetailPanel } from './DetailPanel.jsx'
+import { CloseIcon, PlusIcon, RefreshIcon } from './icons.jsx'
+import { createAsset, deleteAsset, getState, pickPath, updateAsset } from './api.js'
+import { AddAssetDialog, ASSET_TYPE_KEYS } from './AddAssetDialog.jsx'
+import { AssetBrowse } from './AssetBrowse.jsx'
+import { AssetGrid } from './AssetGrid.jsx'
+import { AssetDetail } from './AssetDetail.jsx'
 import { ConfirmRemoveDialog } from './ConfirmRemoveDialog.jsx'
 
 const POLL_MS = 5000
 
-/**
- * @param {{ ok: boolean, status: number, body: any }} result
- * @param {(key: string) => string} t
- */
 function messageOf(result, t) {
+  if (result.body?.error === 'name-conflict') return t('error.nameConflict')
   return String(result.body?.message || result.body?.error || `HTTP ${String(result.status)}` || t('error.generic'))
 }
 
-/**
- * @param {unknown} caught
- */
 function errText(caught) {
   return caught instanceof Error ? caught.message : String(caught)
 }
 
-/**
- * Map a failed pick result to a localized hint.
- * @param {{ status: number, body: any }} result
- * @param {(key: string) => string} t
- */
 function pickErrorText(result, t) {
   const code = String(result.body?.error ?? '')
   if (code === 'picker-unsupported') return t('error.pickerUnsupported')
@@ -47,50 +26,32 @@ function pickErrorText(result, t) {
   return messageOf(result, t)
 }
 
+function citeOf(asset) {
+  return asset.cite || `@${asset.type}/${asset.name}`
+}
+
 const chromeButton = {
-  border: '1px solid var(--dsw-alias-border, var(--dsw-border, currentColor))',
+  border: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))',
   background: 'transparent',
   color: 'inherit',
-  borderRadius: 6,
+  borderRadius: 999,
   cursor: 'pointer',
-  fontSize: 12,
+  fontSize: 13,
   lineHeight: '20px',
-  padding: '2px 10px',
+  padding: '6px 12px',
 }
 
 /**
- * Breadcrumb segment: quiet link for ancestors, solid label for the current
- * directory.
- * @param {boolean} isCurrent
- */
-function breadcrumbButton(isCurrent) {
-  return {
-    border: 'none',
-    background: 'transparent',
-    cursor: isCurrent ? 'default' : 'pointer',
-    fontSize: 14,
-    fontWeight: 600,
-    lineHeight: '20px',
-    padding: '0 2px',
-    borderRadius: 4,
-    color: isCurrent
-      ? 'inherit'
-      : 'var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(128,128,128,.9)))',
-  }
-}
-
-/**
- * First-level assets page: top chrome over a left-nav + main layout,
- * revision-polled while open.
+ * Creative asset library first-level page.
  * @param {{
  *   t: (key: string) => string,
- *   stage: { getSnapshot: () => boolean, subscribe: Function, set: Function },
+ *   stage: { getSnapshot: () => boolean, subscribe: Function, set: Function, readBox: Function },
  * }} props
  */
 export function AssetsStage({ t, stage }) {
   const open = useSyncExternalStore(
-    stage ? stage.subscribe : () => () => {},
-    stage ? stage.getSnapshot : () => false,
+    stage ? (cb) => stage.subscribe(cb) : () => () => {},
+    stage ? () => stage.getSnapshot() : () => false,
   )
   const [box, setBox] = useState(() => ({ top: 0, left: 0, width: 0, height: 0 }))
 
@@ -111,65 +72,53 @@ export function AssetsStage({ t, stage }) {
     }
   }, [open])
 
-  const [mappings, setMappings] = useState([])
-  const [allArtifacts, setAllArtifacts] = useState([])
-  const [files, setFiles] = useState([])
-  const [view, setView] = useState({ kind: 'artifacts', type: '', subPath: '' })
+  const [assets, setAssets] = useState([])
+  const [filterType, setFilterType] = useState('')
+  const [query, setQuery] = useState('')
   const [detail, setDetail] = useState(null)
+  const [creating, setCreating] = useState(null)
   const [pendingRemove, setPendingRemove] = useState(null)
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [error, setError] = useState('')
+  const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [revisions, setRevisions] = useState({ mrev: null, arev: null })
+  const [copiedId, setCopiedId] = useState('')
+  const [revisions, setRevisions] = useState({ lrev: null, arev: null })
   const revisionsRef = useRef(revisions)
 
   const refreshState = useCallback((force = false) => {
     const current = revisionsRef.current
-    const useRevs = !force && current.mrev !== null && current.arev !== null
-    return getState(useRevs ? current.mrev : undefined, useRevs ? current.arev : undefined).then((result) => {
+    const useRevs = !force && current.lrev !== null && current.arev !== null
+    return getState(useRevs ? current.lrev : undefined, useRevs ? current.arev : undefined).then((result) => {
       if (!result.ok) {
         setError(messageOf(result, t))
         return
       }
       setError('')
-      const next = { mrev: Number(result.body.mrev) || 0, arev: Number(result.body.arev) || 0 }
+      const next = {
+        lrev: Number(result.body.lrev ?? result.body.mrev) || 0,
+        arev: Number(result.body.arev) || 0,
+      }
       revisionsRef.current = next
       setRevisions(next)
       if (result.body.unchanged) return
-      setMappings(Array.isArray(result.body.mappings) ? result.body.mappings : [])
+      const nextAssets = Array.isArray(result.body.assets) ? result.body.assets : []
+      setAssets(nextAssets)
+      setDetail((current) => {
+        if (!current) return current
+        const fresh = nextAssets.find((row) => row.id === current.id)
+        return fresh ?? current
+      })
+      const live = new Set(nextAssets.map((row) => row.id))
+      setSelectedIds((prev) => {
+        const kept = [...prev].filter((id) => live.has(id))
+        if (kept.length === prev.size) return prev
+        return new Set(kept)
+      })
     }).catch((caught) => {
       setError(errText(caught))
     })
   }, [t])
-
-  const reloadArtifacts = useCallback(() => {
-    return listArtifacts().then((result) => {
-      if (result.ok) setAllArtifacts(Array.isArray(result.body.artifacts) ? result.body.artifacts : [])
-      else setError(messageOf(result, t))
-    }).catch((caught) => {
-      setError(errText(caught))
-    })
-  }, [t])
-
-  const reloadFiles = useCallback(() => {
-    if (view.kind !== 'mapping' || !view.id) {
-      setFiles([])
-      return Promise.resolve()
-    }
-    return listFiles(view.id, view.subPath ?? '').then((result) => {
-      if (!result.ok) {
-        setError(messageOf(result, t))
-        return
-      }
-      setError('')
-      setFiles(Array.isArray(result.body.files) ? result.body.files : [])
-      const mapping = result.body.mapping
-      if (mapping && typeof mapping.id === 'string') {
-        setMappings((prev) => prev.map((row) => (row.id === mapping.id ? { ...row, ...mapping } : row)))
-      }
-    }).catch((caught) => {
-      setError(errText(caught))
-    })
-  }, [t, view.kind, view.id, view.subPath])
 
   useEffect(() => {
     if (!open) return undefined
@@ -178,32 +127,20 @@ export function AssetsStage({ t, stage }) {
 
   useEffect(() => {
     if (!open) return undefined
-    void reloadArtifacts()
-  }, [open, revisions.arev, reloadArtifacts])
-
-  useEffect(() => {
-    if (!open) return undefined
-    void reloadFiles()
-  }, [open, reloadFiles])
-
-  useEffect(() => {
-    if (!open) return undefined
     const timer = setInterval(() => { void refreshState() }, POLL_MS)
     return () => { clearInterval(timer) }
   }, [open, refreshState])
 
-  /**
-   * @param {() => Promise<{ ok: boolean, status: number, body: any }>} work
-   * @param {(result: { ok: boolean, status: number, body: any }) => void} [after]
-   */
   const run = (work, after) => {
     setBusy(true)
     setError('')
     void Promise.resolve(work()).then((result) => {
       if (!result.ok) {
         setError(messageOf(result, t))
+        setFormError(messageOf(result, t))
         return
       }
+      setFormError('')
       if (after) after(result)
       return refreshState(true)
     }).catch((caught) => {
@@ -213,86 +150,43 @@ export function AssetsStage({ t, stage }) {
     })
   }
 
-  /**
-   * Pick-then-add flow: the OS chooser returns a path; the mapping inherits
-   * the basename as its initial display name (rename is one menu away).
-   * @param {'file' | 'directory'} kind
-   */
-  const handleAddPicked = (kind) => {
-    setBusy(true)
-    setError('')
-    void pickPath(kind).then((result) => {
-      if (!result.ok) {
-        setError(pickErrorText(result, t))
-        return
-      }
-      const path = typeof result.body?.path === 'string' ? result.body.path : null
-      if (path === null) return // user cancelled the OS chooser
-      const clean = path.replace(/\/+$/, '')
-      const base = clean.split('/').pop() || clean
-      return run(() => addMapping(clean, base), (addedResult) => {
-        const mapping = addedResult.body?.mapping
-        if (mapping && typeof mapping.id === 'string') {
-          setView({ kind: 'mapping', id: mapping.id, subPath: '' })
-          setDetail(null)
-          setFiles([])
-        }
-      })
-    }).catch((caught) => {
-      setError(errText(caught))
-    }).finally(() => {
-      setBusy(false)
+  const handlePick = async (kind) => {
+    const result = await pickPath(kind)
+    if (!result.ok) {
+      setFormError(pickErrorText(result, t))
+      return []
+    }
+    const paths = Array.isArray(result.body?.paths)
+      ? result.body.paths.filter((path) => typeof path === 'string' && path !== '')
+      : []
+    if (paths.length > 0) return paths
+    return typeof result.body?.path === 'string' && result.body.path !== '' ? [result.body.path] : []
+  }
+
+  const visible = assets.filter((asset) => {
+    if (filterType && asset.type !== filterType) return false
+    if (!query.trim()) return true
+    const hay = `${asset.name}\n${asset.description}\n${(asset.tags || []).join('\n')}`.toLowerCase()
+    return hay.includes(query.trim().toLowerCase())
+  })
+
+  const selectedCount = selectedIds.size
+  const selecting = selectedCount > 0
+
+  const toggleSelect = (asset) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(asset.id)) next.delete(asset.id)
+      else next.add(asset.id)
+      return next
     })
   }
 
-  const handleRename = (id, name) => {
-    run(() => renameMapping(id, name))
-  }
-
-  const handleConfirmRemove = (mapping) => {
-    run(() => deleteMapping(mapping.id), () => {
-      setPendingRemove(null)
-      if (view.kind === 'mapping' && view.id === mapping.id) {
-        setView({ kind: 'artifacts', type: '' })
-        setFiles([])
-        setDetail(null)
-      }
-    })
-  }
-
-  const handleRescan = (id) => {
-    run(() => rescanMapping(id), (result) => {
-      setFiles(Array.isArray(result.body?.files) ? result.body.files : [])
-    })
-  }
-
-  const handleManualRefresh = () => {
-    void refreshState(true)
-    void reloadArtifacts()
-    void reloadFiles()
-  }
-
-  /** Drill one level deeper into the current mapping. */
-  const handleEnterDir = (file) => {
-    if (view.kind !== 'mapping') return
-    const next = view.subPath ? `${view.subPath}/${file.name}` : String(file.name)
-    setView({ ...view, subPath: next })
-    setDetail(null)
-  }
-
-  /** Breadcrumb jump: '' = mapping root. */
-  const handleBreadcrumb = (subPath) => {
-    if (view.kind !== 'mapping') return
-    setView({ ...view, subPath })
-    setDetail(null)
-  }
+  const clearSelection = () => { setSelectedIds(new Set()) }
 
   if (!open || !stage) return null
 
-  const currentMapping = view.kind === 'mapping' ? mappings.find((row) => row.id === view.id) : undefined
-  const visibleArtifacts = view.kind === 'artifacts'
-    ? allArtifacts.filter((row) => !view.type || row.type === view.type)
-    : []
+  const emptyTypeLabel = filterType ? t(`type.${filterType}`) : ''
 
   return (
     <div
@@ -308,205 +202,274 @@ export function AssetsStage({ t, stage }) {
         pointerEvents: 'auto',
         display: 'flex',
         flexDirection: 'column',
-        background: 'var(--dsw-alias-bg-primary, var(--dsw-bg, #111))',
+        background: 'var(--dsw-alias-bg-base, var(--dsw-bg, inherit))',
         color: 'var(--dsw-alias-label-primary, inherit)',
-        overflow: 'auto',
+        overflow: 'hidden',
       }}
     >
       <style>{FOCUS_CSS}</style>
       <div style={{
         flex: 'none',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: 12,
-        minHeight: 32,
         padding: '12px 20px 12px',
         WebkitAppRegion: 'no-drag',
       }}
       >
-        <h1 style={{
-          margin: 0,
-          flex: 1,
-          minWidth: 0,
-          fontSize: 16,
-          fontWeight: 600,
-          lineHeight: '32px',
-        }}
-        >
-          {t('stage.title')}
-        </h1>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 style={{ margin: 0, fontSize: 16, fontWeight: 600, lineHeight: '32px' }}>{t('stage.title')}</h1>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: '20px', color: 'var(--dsw-alias-label-secondary, inherit)' }}>{t('stage.subtitle')}</p>
+        </div>
         <button
           type="button"
-          style={{ ...chromeButton, display: 'inline-flex', alignItems: 'center', gap: 5 }}
-          onClick={handleManualRefresh}
+          style={{ ...chromeButton, display: 'inline-flex', alignItems: 'center', gap: 5, ...(busy ? { opacity: 0.5, cursor: 'default' } : {}) }}
+          disabled={busy}
+          onClick={() => {
+            setBusy(true)
+            void refreshState(true).finally(() => { setBusy(false) })
+          }}
         >
           <RefreshIcon />
-          {t('stage.refresh')}
+          {busy ? t('stage.refreshing') : t('stage.refresh')}
         </button>
         <button
           type="button"
           aria-label={t('stage.close')}
           onClick={() => { stage.set(false) }}
           style={{
-            WebkitAppRegion: 'no-drag',
-            border: 'none',
-            background: 'transparent',
-            color: 'inherit',
-            cursor: 'pointer',
-            width: 28,
-            height: 28,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 6,
-            padding: 0,
+            border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer',
+            width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6,
           }}
         >
           <CloseIcon size={16} />
         </button>
       </div>
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
-        <nav style={{
+
+      <div style={{ flex: 'none', display: 'flex', gap: 8, padding: '0 20px 16px' }}>
+        <button
+          type="button"
+          onClick={() => { setCreating(filterType || 'character'); setFormError('') }}
+          style={{
+            border: 'none',
+            background: 'var(--dsw-alias-button-primary-fill, var(--dsw-alias-label-primary, currentColor))',
+            color: 'var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted, #fff))',
+            borderRadius: 999,
+            padding: '8px 16px',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 13,
+            fontWeight: 500,
+          }}
+        >
+          <PlusIcon />
+          {t('add.button')}
+        </button>
+      </div>
+
+      <div style={{
+        flex: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        flexWrap: 'wrap',
+        padding: '0 20px 12px',
+        borderBottom: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))',
+      }}
+      >
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {[{ key: '', label: t('chip.all') }, ...ASSET_TYPE_KEYS.map((key) => ({ key, label: t(`type.${key}`) }))].map((chip) => {
+            const active = filterType === chip.key
+            return (
+              <button
+                key={chip.key || 'all'}
+                type="button"
+                onClick={() => { setFilterType(chip.key); setDetail(null); clearSelection() }}
+                style={{
+                  border: 'none',
+                  background: active ? 'var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18))' : 'transparent',
+                  color: active ? 'inherit' : 'var(--dsw-alias-label-secondary, inherit)',
+                  borderRadius: 999,
+                  padding: '4px 10px',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: active ? 500 : 400,
+                }}
+              >
+                {chip.label}
+              </button>
+            )
+          })}
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            value={query}
+            placeholder={t('search.placeholder')}
+            onChange={(event) => { setQuery(event.target.value) }}
+            style={{
+              border: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))',
+              borderRadius: 999,
+              padding: '6px 12px',
+              fontSize: 13,
+              minWidth: 180,
+              background: 'transparent',
+              color: 'inherit',
+            }}
+          />
+          <span style={{ fontSize: 12, color: 'var(--dsw-alias-label-tertiary, inherit)' }}>{t('sort.updated')}</span>
+        </div>
+      </div>
+
+      {selecting ? (
+        <div style={{
           flex: 'none',
-          width: 220,
-          overflow: 'auto',
-          padding: '8px 0',
-          borderRight: '1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.25)))',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '8px 20px',
+          borderBottom: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))',
         }}
         >
-          <MappingNav
+          <span style={{ fontSize: 13 }}>{t('select.count').replace('{n}', String(selectedCount))}</span>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={clearSelection}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: 'inherit',
+                cursor: 'pointer',
+                fontSize: 13,
+                padding: '4px 8px',
+              }}
+            >
+              {t('select.clear')}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                const names = assets.filter((row) => selectedIds.has(row.id)).map((row) => row.name)
+                setPendingRemove({ ids: [...selectedIds], names })
+              }}
+              style={{
+                border: 'none',
+                background: 'var(--dsw-alias-state-error-tertiary, var(--dsw-alias-interactive-bg-hover-danger, transparent))',
+                color: 'var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))',
+                borderRadius: 999,
+                padding: '6px 12px',
+                cursor: busy ? 'default' : 'pointer',
+                fontSize: 13,
+                fontWeight: 500,
+                opacity: busy ? 0.5 : 1,
+              }}
+            >
+              {t('select.delete').replace('{n}', String(selectedCount))}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {error !== '' ? (
+        <p style={{ margin: 0, padding: '6px 20px', fontSize: 12, color: 'var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))' }}>{error}</p>
+      ) : null}
+
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
+        <div style={{ flex: 1, minWidth: 0, overflow: 'auto', padding: 16 }}>
+          {detail ? (
+            <AssetBrowse
+              key={detail.id}
+              t={t}
+              asset={detail}
+              onBack={() => { setDetail(null) }}
+            />
+          ) : (
+            <AssetGrid
+              t={t}
+              assets={visible}
+              emptyLabel={filterType ? t('empty.type').replace('{type}', emptyTypeLabel) : t('empty.all')}
+              emptyActionLabel={filterType ? t('empty.addType').replace('{type}', emptyTypeLabel) : t('add.button')}
+              onEmptyAction={() => { setCreating(filterType || 'character'); setFormError('') }}
+              onOpen={(asset) => { setDetail(asset) }}
+              onCopy={(asset) => {
+                const text = citeOf(asset)
+                if (navigator.clipboard?.writeText) void navigator.clipboard.writeText(text)
+                setCopiedId(asset.id)
+                window.setTimeout(() => { setCopiedId('') }, 1500)
+              }}
+              onRemove={(asset) => { setPendingRemove({ ids: [asset.id], names: [asset.name] }) }}
+              copiedId={copiedId}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
+            />
+          )}
+        </div>
+        {detail ? (
+          <AssetDetail
+            key={detail.id}
             t={t}
-            mappings={mappings}
-            activeId={view.kind === 'mapping' ? view.id : ''}
+            asset={detail}
             busy={busy}
-            onSelect={(id) => { setView({ kind: 'mapping', id, subPath: '' }); setDetail(null) }}
-            onAddFile={() => { handleAddPicked('file') }}
-            onAddDir={() => { handleAddPicked('directory') }}
-            onRename={handleRename}
-            onRemove={(mapping) => { setPendingRemove(mapping) }}
+            onClose={() => { setDetail(null) }}
+            onSave={(patch) => {
+              run(() => updateAsset(detail.id, patch), (result) => {
+                setDetail(result.body?.asset ?? { ...detail, ...patch })
+              })
+            }}
           />
-          <ArtifactNav
-            t={t}
-            artifacts={allArtifacts}
-            activeType={view.kind === 'artifacts' ? view.type : null}
-            onSelect={(type) => { setView({ kind: 'artifacts', type }); setDetail(null) }}
-          />
-        </nav>
-        <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{
-            flex: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            flexWrap: 'wrap',
-            padding: '10px 16px',
-            borderBottom: '1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.25)))',
-          }}
-          >
-            {view.kind === 'mapping' && currentMapping
-              ? (
-                <nav aria-label="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', minWidth: 0 }}>
-                  <button
-                    type="button"
-                    style={breadcrumbButton(!(view.subPath))}
-                    onClick={() => { handleBreadcrumb('') }}
-                  >
-                    {currentMapping.display_name}
-                  </button>
-                  {(view.subPath ? view.subPath.split('/') : []).map((segment, index, all) => {
-                    const prefix = all.slice(0, index + 1).join('/')
-                    const isLast = index === all.length - 1
-                    return (
-                      <span key={prefix} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                        <span style={{ color: 'var(--dsw-alias-label-secondary, rgba(128,128,128,.9))', fontSize: 12 }}>/</span>
-                        <button
-                          type="button"
-                          style={breadcrumbButton(isLast)}
-                          onClick={() => { handleBreadcrumb(prefix) }}
-                        >
-                          {segment}
-                        </button>
-                      </span>
-                    )
-                  })}
-                </nav>
-              )
-              : (
-                <h2 style={{ margin: 0, fontSize: 14, fontWeight: 600, lineHeight: '20px' }}>
-                  {view.type ? t(`type.${view.type}`) : t('artifact.all')}
-                </h2>
-              )}
-            {view.kind === 'mapping' && currentMapping && currentMapping.status !== 'ok'
-              ? <span style={{ fontSize: 12, color: 'var(--dsw-alias-label-warning, #d48806)' }}>⚠ {t('mapping.invalid')}</span>
-              : null}
-            {view.kind === 'mapping' && currentMapping
-              ? (
-                <button
-                  type="button"
-                  style={chromeButton}
-                  disabled={busy || currentMapping.status !== 'ok'}
-                  onClick={() => { handleRescan(currentMapping.id) }}
-                >
-                  {t('mapping.rescan')}
-                </button>
-              )
-              : null}
-            {view.kind === 'artifacts'
-              ? (
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {['image', 'video', 'audio', 'document', 'html', 'json'].map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      style={{
-                        ...chromeButton,
-                        ...(view.type === type ? { fontWeight: 600 } : {}),
-                      }}
-                      onClick={() => { setView({ kind: 'artifacts', type: view.type === type ? '' : type }); setDetail(null) }}
-                    >
-                      {t(`type.${type}`)}
-                    </button>
-                  ))}
-                </div>
-              )
-              : null}
-          </div>
-          {error !== '' ? (
-            <p style={{ margin: 0, padding: '6px 16px', fontSize: 12, color: 'var(--dsw-alias-label-danger, #d45656)' }}>
-              {error}
-            </p>
-          ) : null}
-          <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
-            <div style={{ flex: 1, minWidth: 0, overflow: 'auto', padding: '8px 16px' }}>
-              {view.kind === 'mapping'
-                ? (
-                  <FileTable
-                    t={t}
-                    mapping={currentMapping}
-                    files={files}
-                    onOpenFile={(file) => { setDetail({ kind: 'file', file, mapping: currentMapping }) }}
-                    onEnterDir={handleEnterDir}
-                  />
-                )
-                : (
-                  <ArtifactTable
-                    t={t}
-                    artifacts={visibleArtifacts}
-                    onOpen={(artifact) => { setDetail({ kind: 'artifact', artifact }) }}
-                  />
-                )}
-            </div>
-            {detail ? <DetailPanel t={t} detail={detail} onClose={() => { setDetail(null) }} /> : null}
-          </div>
-        </main>
+        ) : null}
       </div>
+
+      {creating ? (
+        <AddAssetDialog
+          t={t}
+          busy={busy}
+          presetType={creating}
+          error={formError}
+          onCancel={() => { setCreating(null); setFormError('') }}
+          onPick={handlePick}
+          onSubmit={(payload) => {
+            run(() => createAsset(payload), (result) => {
+              const asset = result.body?.asset
+              setCreating(null)
+              if (asset?.type) setFilterType(asset.type)
+              if (asset) setDetail(asset)
+            })
+          }}
+        />
+      ) : null}
+
       {pendingRemove ? (
         <ConfirmRemoveDialog
           t={t}
-          name={String(pendingRemove.display_name)}
+          name={String(pendingRemove.names[0] ?? '')}
+          title={pendingRemove.ids.length > 1
+            ? t('select.removeTitle').replace('{n}', String(pendingRemove.ids.length))
+            : undefined}
           busy={busy}
           onCancel={() => { setPendingRemove(null) }}
-          onConfirm={() => { handleConfirmRemove(pendingRemove) }}
+          onConfirm={() => {
+            const ids = pendingRemove.ids
+            run(async () => {
+              let last = { ok: true, status: 200, body: {} }
+              for (const id of ids) {
+                last = await deleteAsset(id)
+                if (!last.ok) return last
+              }
+              return last
+            }, () => {
+              setPendingRemove(null)
+              if (ids.includes(detail?.id)) setDetail(null)
+              setSelectedIds((prev) => {
+                const next = new Set(prev)
+                for (const id of ids) next.delete(id)
+                return next
+              })
+            })
+          }}
         />
       ) : null}
     </div>

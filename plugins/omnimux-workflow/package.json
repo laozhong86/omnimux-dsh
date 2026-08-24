@@ -1,6 +1,6 @@
 {
   "name": "omnimux-workflow",
-  "version": "0.1.1",
+  "version": "1.0.0-rc.1",
   "type": "module",
   "main": "dist/index.js",
   "exports": {
@@ -21,8 +21,13 @@
   "scripts": {
     "build": "node scripts/build-host.mjs && node scripts/build-client.mjs && node scripts/build-canvas.mjs",
     "dev": "node scripts/dev.mjs",
+    "harness": "node scripts/canvas-harness.mjs",
     "typecheck": "node node_modules/typescript/bin/tsc -p tsconfig.canvas.json --noEmit && node node_modules/typescript/bin/tsc -p tsconfig.host.json --noEmit",
-    "test": "node --test src/workflow/*.test.mjs"
+    "test": "node --test \"src/**/*.test.mjs\"",
+    "verify:m5": "node scripts/m5-self-verify.mjs",
+    "perf:baseline": "node scripts/perf-baseline.mjs",
+    "deploy": "node scripts/deploy.mjs",
+    "deploy:restart": "node scripts/deploy.mjs --restart"
   },
   "dsh": {
     "bundle": {
@@ -31,7 +36,8 @@
     "client": {
       "inject": [
         "@deepseek-ai/dsh-client-runtime",
-        "@deepseek-ai/dsh-client-locale"
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-layout"
       ],
       "platform": "web"
     }
@@ -39,6 +45,7 @@
   "dependencies": {
     "@xyflow/react": "12.11.3",
     "antd": "6.6.1",
+    "lucide-react": "1.33.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "uuid": "13.0.0",
@@ -61,5 +68,5 @@
     "zod": "^4.4.3"
   },
   "license": "MIT",
-  "description": "dsh-workflow: workflow infinite canvas plugin for DeepSeek Harness. Node DAG editing, local persistence, execution via OmniMux seams (M1: canvas shell)."
+  "description": "omnimux-workflow: workflow infinite canvas plugin for DeepSeek Harness. Node DAG editing, local persistence, execution via OmniMux seams, agent tools for canvas control."
 }

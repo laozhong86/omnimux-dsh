@@ -35,6 +35,17 @@ export const WORKFLOW_API_ROUTES = {
   capabilities: `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`,
   /** GET: media files under the plugin-owned media dir (traversal-guarded). */
   media: `${WORKFLOW_ROUTE_PREFIX}/media`,
+  /** GET: execution summaries. POST: create execution {mode, nodeIds?}. */
+  executions: (workspaceId: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions`,
+  /** GET: one execution status snapshot. */
+  execution: (workspaceId: string, executionId: string) =>
+    `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}`,
+  /** POST: pause | resume | cancel. */
+  executionAction: (workspaceId: string, executionId: string, action: 'pause' | 'resume' | 'cancel') =>
+    `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/${action}`,
+  /** GET: execution SSE event stream (text/event-stream). */
+  executionEvents: (workspaceId: string, executionId: string) =>
+    `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/events`,
 } as const;
 
 /** GET /api/manifest response. */
@@ -50,4 +61,75 @@ export interface CapabilityCatalog {
   image: Array<{ id: string; label: string }>;
   video: Array<{ id: string; label: string }>;
   audio: Array<{ id: string; label: string }>;
+}
+
+// ============================================================================
+// Execution API DTOs (M3)
+// ============================================================================
+
+/** Execution lifecycle status (host ExecutionContext.ExecutionStatus). */
+export type ExecutionApiStatus =
+  | 'pending'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'error'
+  | 'cancelled';
+
+/** Node execution status (host ExecutionContext.NodeStatus). */
+export type NodeExecutionApiStatus = 'pending' | 'running' | 'completed' | 'error' | 'skipped';
+
+/** POST /executions request body. */
+export interface StartExecutionPayload {
+  /** full = whole graph; subset = nodeIds + transitive upstream closure. */
+  mode?: 'full' | 'subset';
+  /** Required for subset mode. */
+  nodeIds?: string[];
+}
+
+/** POST /executions response. */
+export interface CreateExecutionResponse {
+  execution: {
+    id: string;
+    workspaceId: string;
+    status: ExecutionApiStatus;
+    totalNodes: number;
+    createdAt: string;
+  };
+}
+
+/** GET /executions (list) entry. */
+export interface ExecutionSummaryDto {
+  id: string;
+  workspaceId: string;
+  status: ExecutionApiStatus;
+  createdAt: string;
+  progress: { total: number; completed: number; percentage: number };
+}
+
+/** GET /executions/:id response (status snapshot; SSE missed-event backfill). */
+export interface ExecutionSnapshotDto {
+  id: string;
+  workspaceId: string;
+  status: ExecutionApiStatus;
+  createdAt: string;
+  startedAt: number | null;
+  completedAt: number | null;
+  error: string | null;
+  totalNodes: number;
+  completedNodes: number;
+  progress: {
+    total: number;
+    completed: number;
+    running: number;
+    pending: number;
+    percentage: number;
+  };
+  nodeStates: Record<
+    string,
+    { status: NodeExecutionApiStatus; startedAt: number | null; completedAt: number | null; error: string | null }
+  >;
+  nodeOutputs: Record<string, unknown>;
+  mediaAssets: Record<string, Array<Record<string, unknown>>>;
+  breakpoints: string[];
 }

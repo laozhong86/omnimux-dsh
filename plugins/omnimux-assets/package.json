@@ -1,6 +1,6 @@
 {
   "name": "omnimux-assets",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "main": "src/index.js",
   "exports": {
@@ -43,5 +43,5 @@
     "esbuild": "^0.25.0"
   },
   "license": "MIT",
-  "description": "OmniMux dual-core assets: read-only folder mappings plus content-addressed AI artifact store, as an out-of-tree dsh plugin."
+  "description": "OmniMux creative asset library: named reusable objects (character/scene/style/prop/knowledge/custom) with path-only file refs, plus an artifact store."
 }

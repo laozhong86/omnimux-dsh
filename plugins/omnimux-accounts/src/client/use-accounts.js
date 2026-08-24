@@ -5,6 +5,16 @@ import { disconnectAccount, listAccounts, patchAccount } from './api.js'
 const WATCH_POLL_MS = 5000
 
 /**
+ * Session-lived list cache. Closing the first-level page used to unmount the
+ * overlay (`return null`) and throw this hook away, so every sidebar click
+ * restarted at `loading` and re-fetched. The page now stays mounted after the
+ * first open; this module cache is the second net if the overlay itself is
+ * remounted (slot rebuild / HMR).
+ * @type {{ phase: 'loading' | 'ready' | 'need-login', accounts: Array<Record<string, unknown>> }}
+ */
+const sessionCache = { phase: 'loading', accounts: [] }
+
+/**
  * Data hook for the Accounts app. Owns loading, the 401 → need-login phase
  * transition, optimistic metadata patches with rollback, disconnects, and
  * the connect-flow poller.
@@ -20,11 +30,11 @@ const WATCH_POLL_MS = 5000
  * }}
  */
 export function useAccounts() {
-  const [phase, setPhase] = useState('loading')
-  const [accounts, setAccounts] = useState([])
+  const [phase, setPhase] = useState(sessionCache.phase)
+  const [accounts, setAccounts] = useState(sessionCache.accounts)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState('')
-  const accountsRef = useRef([])
+  const accountsRef = useRef(sessionCache.accounts)
   /** @type {import('react').MutableRefObject<{ stop: () => void } | null>} */
   const watchRef = useRef(null)
 
@@ -36,6 +46,7 @@ export function useAccounts() {
   const commitAccounts = useCallback((next) => {
     const rows = Array.isArray(next) ? next : []
     accountsRef.current = rows
+    sessionCache.accounts = rows
     setAccounts(rows)
   }, [])
 
@@ -44,18 +55,21 @@ export function useAccounts() {
    */
   const applyListResult = useCallback((result) => {
     if (result.status === 401) {
+      sessionCache.phase = 'need-login'
       setPhase('need-login')
       commitAccounts([])
       return true
     }
     if (!result.ok) {
       setError(String((result.body && typeof result.body === 'object' && result.body.error) || `HTTP ${String(result.status)}`))
+      sessionCache.phase = 'ready'
       setPhase('ready')
       return true
     }
     const body = result.body && typeof result.body === 'object' ? /** @type {Record<string, unknown>} */ (result.body) : {}
     setError('')
     commitAccounts(Array.isArray(body.accounts) ? body.accounts : [])
+    sessionCache.phase = 'ready'
     setPhase('ready')
     return true
   }, [commitAccounts])
@@ -63,6 +77,7 @@ export function useAccounts() {
   const refresh = useCallback(() => {
     return listAccounts().then(applyListResult).catch((caught) => {
       setError(caught instanceof Error ? caught.message : String(caught))
+      sessionCache.phase = 'ready'
       setPhase('ready')
       return true
     })
@@ -170,6 +185,7 @@ export function useAccounts() {
     commitAccounts(previous.map((row) => (String(row.id) === key ? optimistic : row)))
     return patchAccount(key, body).then((result) => {
       if (result.status === 401) {
+        sessionCache.phase = 'need-login'
         setPhase('need-login')
         return false
       }
@@ -200,6 +216,7 @@ export function useAccounts() {
     setError('')
     return disconnectAccount(key).then((result) => {
       if (result.status === 401) {
+        sessionCache.phase = 'need-login'
         setPhase('need-login')
         return false
       }

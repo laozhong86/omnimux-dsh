@@ -10,7 +10,7 @@
     "plugins/*"
   ],
   "scripts": {
-    "test": "pnpm --filter dsh-drama test && pnpm --filter dsh-omnimux test && pnpm --filter dsh-omnimux-accounts test",
+    "test": "pnpm --filter dsh-drama test && pnpm --filter omnimux test && pnpm --filter omnimux-accounts test && pnpm --filter omnimux-market test",
     "smoke": "bash scripts/smoke-drama.sh",
     "verify:models": "node scripts/verify-models.mjs",
     "verify:image-live": "node scripts/verify-omnimux-image-live.mjs"

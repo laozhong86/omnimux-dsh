@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
-import { bucketOf, extOf, scanDir, statStatus } from './scanner.js'
+import { bucketOf, extOf, previewMimeOf, scanDir, statStatus } from './scanner.js'
 
 let root
 let dir
@@ -37,6 +37,9 @@ describe('extOf / bucketOf', () => {
     assert.equal(bucketOf('.html'), 'html')
     assert.equal(bucketOf('.json'), 'json')
     assert.equal(bucketOf('.weird'), 'other')
+    assert.equal(previewMimeOf('a.PNG'), 'image/png')
+    assert.equal(previewMimeOf('clip.mp4'), 'video/mp4')
+    assert.equal(previewMimeOf('notes.md'), null)
   })
 })
 

@@ -68,7 +68,7 @@ python3 .agents/skills/omnimux-rc-upgrade/scripts/check-rc-contracts.py
 
 ### 4. 三屏（必做，截图或 GIF）
 
-在 **当前要交付的 App**（打包的 OmniMux.app 或 `omnimux-desktop` `pnpm run dev`）上：
+在 **当前要交付的 App**（打包的 OmniMux.app 或 fork 仓 `omnimux-desktop-fork` `corepack yarn dev`）上：
 
 1. **空会话**：标题旁品牌合理；输入框内无 OmniMux 方标。
 2. **展开侧栏**：左上角有 OmniMux 标 + 名称，不是空白、不是 DeepSeek 字标。

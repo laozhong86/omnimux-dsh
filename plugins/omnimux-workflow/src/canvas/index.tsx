@@ -5,54 +5,49 @@
  * lib/canvas.js with globalName `__omnimuxWorkflowCanvas`. The host React 18
  * CanvasBridge calls mountCanvas(el, props) / unmountCanvas(el).
  *
- * ★ HARD RULE: props crossing this boundary are plain data + callbacks
+ * HARD RULE: props crossing this boundary are plain data + callbacks
  * only — never React elements, refs, context, or component types.
  */
 
 import { createRoot, type Root } from 'react-dom/client';
 import App from './App';
-// esbuild text-loader: both stylesheets arrive as strings and must be
-// injected manually (Vite did this automatically in the spike sandbox).
-// Order matters: xyflow base first, theme overrides second.
-import xyflowCss from '@xyflow/react/dist/style.css';
-import themeCss from './theme/workbench-theme.css';
+import { injectCanvasStyles } from './injectStyles';
 
 export interface CanvasIslandProps {
   onClose?: () => void;
+  /** 宿主语言通道（W1 i18n 骨架）：'zh' | 'en'，未知值回退 zh。 */
+  locale?: 'zh' | 'en';
 }
 
-const roots = new WeakMap<HTMLElement, Root>();
-let stylesInjected = false;
-
-function injectStyles(): void {
-  if (stylesInjected) return;
-  const xyflowId = 'omnimux-workflow-xyflow-base';
-  if (!document.getElementById(xyflowId)) {
-    const style = document.createElement('style');
-    style.id = xyflowId;
-    style.textContent = xyflowCss;
-    document.head.append(style);
-  }
-  if (!document.getElementById('omnimux-workflow-theme')) {
-    const style = document.createElement('style');
-    style.id = 'omnimux-workflow-theme';
-    style.textContent = themeCss;
-    document.head.append(style);
-  }
-  stylesInjected = true;
+interface RootEntry {
+  root: Root;
+  lastProps: CanvasIslandProps;
 }
+
+const roots = new WeakMap<HTMLElement, RootEntry>();
 
 export function mountCanvas(el: HTMLElement, props: CanvasIslandProps): void {
   if (!el || roots.has(el)) return;
-  injectStyles();
+  injectCanvasStyles();
   const root = createRoot(el);
-  roots.set(el, root);
+  roots.set(el, { root, lastProps: props });
   root.render(<App {...props} />);
 }
 
+/**
+ * W4 T4.1: 宿主语言 live 切换通道 —— 同一 root 重 render 新 props
+ * （禁止 unmount/remount：会丢 island 内存中的画布状态）。
+ */
+export function updateCanvas(el: HTMLElement, props: CanvasIslandProps): void {
+  const entry = roots.get(el);
+  if (!entry) return;
+  entry.lastProps = props;
+  entry.root.render(<App {...props} />);
+}
+
 export function unmountCanvas(el: HTMLElement): void {
-  const root = roots.get(el);
-  if (!root) return;
-  root.unmount();
+  const entry = roots.get(el);
+  if (!entry) return;
+  entry.root.unmount();
   roots.delete(el);
 }

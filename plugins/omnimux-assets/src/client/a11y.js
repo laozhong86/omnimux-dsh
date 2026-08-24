@@ -6,8 +6,8 @@
 
 /** Focus ring + row hover rules (injected once by AssetsStage). */
 export const FOCUS_CSS = [
-  '.omnimux-assets-focusable:focus-visible{outline:2px solid var(--dsw-alias-bg-interactive-primary,#3b6fbd);outline-offset:-2px;border-radius:4px;}',
-  'tr.omnimux-assets-focusable:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(128,128,128,.12));}',
+  '.omnimux-assets-focusable:focus-visible{outline:2px solid var(--dsw-alias-label-primary, inherit);outline-offset:2px;border-radius:8px;}',
+  '.omnimux-assets-focusable:hover{border-color:var(--dsw-alias-border-l4, var(--dsw-alias-border-l3, currentColor));}',
 ].join('\n')
 
 /** Enter/Space activates a keyboard-reachable row. */

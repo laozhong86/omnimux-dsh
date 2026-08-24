@@ -50,26 +50,6 @@ export const DEFAULT_MATERIAL_TOOL: Record<MaterialType, MaterialTool> = {
   audio: 'import',
 };
 
-/** 工具中文标签（配置面板 Select 选项文案，M2） */
-export const MATERIAL_TOOL_LABELS: Record<MaterialTool, string> = {
-  'text-editor': '文本编辑',
-  'text-to-text': '文本生成',
-  'link-extract': '链接提取',
-  'audio-transcription': '音频转写',
-  import: '导入素材',
-  'text-to-image': '文生图',
-  'image-to-image': '图生图',
-  'video-generation': '视频生成',
-  'motion-mimicry': '动作模仿',
-  'subtitle-render': '字幕渲染',
-  'digital-human': '数字人',
-  'text-to-audio': '文本转语音',
-  'text-to-music': '文本配乐',
-  'video-to-audio': '视频转音频',
-  'voice-clone': '声音克隆',
-  'audio-extract': '音频提取',
-};
-
 /** 生成型工具的可用画幅选项（params.aspectRatio） */
 export const ASPECT_RATIO_OPTIONS = ['1:1', '4:3', '16:9', '9:16'] as const;
 
@@ -137,24 +117,18 @@ export interface MaterialNodeData {
   duration?: number;
 }
 
-const MATERIAL_TYPE_LABELS: Record<MaterialType, string> = {
-  text: '文本',
-  image: '图片',
-  video: '视频',
-  audio: '音频',
-};
-
-export function getMaterialTypeLabel(materialType: MaterialType): string {
-  return MATERIAL_TYPE_LABELS[materialType];
-}
-
-/** 创建默认的 MaterialNodeData（窄化版） */
+/** 创建默认的 MaterialNodeData（窄化版）。
+ *
+ * label 默认为空串：NodeHeader 在 label 为空时回退到 i18n 字典的
+ * `node.type.<materialType>` 文案，节点类型名可随宿主语言 live 切换；
+ * 用户双击改名后 label 落为持久化用户数据，不再跟随语言。
+ */
 export function createDefaultMaterialNodeData(
   materialType: MaterialType,
   overrides?: Partial<MaterialNodeData>,
 ): MaterialNodeData {
   return {
-    label: MATERIAL_TYPE_LABELS[materialType],
+    label: '',
     materialType,
     status: 'empty',
     selectedTool: DEFAULT_MATERIAL_TOOL[materialType],
