@@ -23,7 +23,7 @@
 | 层 | 目的 | 载体 | profile | 插件形态 | 数据根 |
 |----|------|------|---------|---------|--------|
 | L1 本地开发 | 写代码 + 快速验证 | `node --test`（不开 App） | 不需要 | 源码直读 | 测试临时目录 |
-| L2 预发布测试 | 真实运行集成验证 | 纯 Host + 浏览器 | `omnimux-dev-<task>`（可多实例并行） | **link 源码树** | `~/.dsh-dev`（独立） |
+| L2 预发布测试 | 真实运行集成验证 | 纯 Host + 浏览器 | `omnimux-dev-<task>`（可多实例并行） | **link 源码树** | `~/.dsh-dev/tasks/<task>`（任务隔离；逃生 `OMNIMUX_DEV_LEGACY_HOME=1`） |
 | L3 生产 | 日常使用 | `/Applications/OmniMux.app`（由 `laozhong86/omnimux-desktop-fork` `dist:mac` / `dist:win` 产出） | `omnimux` | **物化副本**（打包时 stage-preset 物化进 preset/plugins/，首启 seed 写入 profile） | `~/.dsh`（真实数据） |
 
 三层零共享：L1 不启动实例；L2/L3 用不同 `$DSH_HOME`（配置、插件、数据全隔离）；L3 插件更新只走工具通道。
@@ -102,17 +102,19 @@ L3 旧壳是 `~/Desktop/Project/omnimux-desktop`（独立 Electron 壳，spawn H
 ## 并行开发矩阵（多插件同时在研）
 
 ```
-omnimux-dev-assets    → link: omnimux-assets   | 其余物化副本
-omnimux-dev-gallery   → link: omnimux-gallery  | 其余物化副本
-生产 omnimux          → 全部物化副本（日常用，绝不被开发污染）
+omnimux-dev-assets    → link: omnimux-assets   | port ∈ 44200-44299 | DSH_HOME=~/.dsh-dev/tasks/assets
+omnimux-dev-products  → link: omnimux-products | 另一 L2 口         | DSH_HOME=~/.dsh-dev/tasks/products
+生产 omnimux          → 全部物化副本（日常用，绝不被开发污染）| App 口 44120-44151
 ```
 
-源码侧可配 git worktree 分任务分支（官方实践），主工作区保持稳定。当前阶段单工作区 + 任务 profile 已够用。
+- L2 端口池 **44200–44299**（`dev-env.sh` 写 patch + `port.txt`）；保留窗 43120–43151 / 44120–44151。
+- 浏览器验收契约：`docs/contracts/plugin-qa.md`。
+- 源码侧可配 git worktree；主工作区 + 多任务 profile 已够用。
 
 ## 数据与排障
 
-- dev 环境需要真实数据时，从生产**只读拷贝**映射注册表等 JSON 到 `~/.dsh-dev/omnimux/` 对应目录；MUST NOT 反向写。
-- dev Host 日志：`<env>/host.log`；停止失败查 `lsof -nP -iTCP -sTCP:LISTEN | grep <pid>`。
+- dev 环境需要真实数据时，从生产**只读拷贝**到该任务 `~/.dsh-dev/tasks/<task>/omnimux/`（或公共种子 `~/.dsh-dev/.credentials.yaml`）；MUST NOT 反向写生产。
+- dev Host 日志：profile 目录 `host.log`；`ls` 打印 port/home；停止失败查 `lsof -nP -iTCP -sTCP:LISTEN`。
 - dev 环境 Host 由 `$DSH_SRC/apps/cli/lib/bin.js` 启动；DSH_SRC 变更需重建克隆 lib。
 
 ## 上游同步合同（fork 桌面壳）

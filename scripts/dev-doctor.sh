@@ -69,27 +69,78 @@ else
 fi
 
 echo
-echo "== 5. dev 环境（必须在 $DEV_HOME 下、在研插件 ≤1） =="
-if [ -d "$DEV_HOME/profiles" ]; then
-  found=0
-  for d in "$DEV_HOME"/profiles/omnimux-dev-*; do
+echo "== 5. dev 环境（任务子根 / 在研 ≤1 / 端口池） =="
+check_dev_profile() {
+  local d="$1"
+  local tag="${2:-}"
+  local name short linked pid running aport home age_days
+  name="$(basename "$d")"
+  short="${name#omnimux-dev-}"
+  linked=$(find "$d/node_modules" -maxdepth 1 -type l 2>/dev/null | wc -l | tr -d ' ')
+  pid=""
+  [ -f "$d/host.pid" ] && pid=$(cat "$d/host.pid")
+  running="stopped"
+  if [ -n "$pid" ]; then
+    if kill -0 "$pid" 2>/dev/null; then
+      running="running"
+    else
+      bad "$name${tag} stale host.pid=$pid → yarn omnimux:dev stop $short 或 rm"
+      running="stale"
+    fi
+  fi
+  if [ "$linked" -le 1 ]; then
+    ok "$name${tag} [$running] link 数 $linked"
+  else
+    bad "$name${tag} link 数 ${linked}（>1，违反在研 ≤1 铁律）→ 修复: yarn omnimux:dev rm $short"
+  fi
+  aport=""
+  [ -f "$d/port.txt" ] && aport=$(tr -d '[:space:]' < "$d/port.txt")
+  if [ "$running" = "running" ]; then
+    if [ -n "$aport" ] && [ "$aport" -ge 44200 ] 2>/dev/null && [ "$aport" -le 44299 ] 2>/dev/null; then
+      ok "$name port $aport ∈ L2 池"
+    elif [ -n "$aport" ] && [ "$aport" -ge 44120 ] 2>/dev/null && [ "$aport" -le 44151 ] 2>/dev/null; then
+      bad "$name running 口 $aport 落在 App 保留窗 → 再 start 迁入 44200-44299"
+    elif [ -n "$aport" ]; then
+      echo "· $name port ${aport}（非池内；动态口可接受，建议下次 start 进池）"
+    else
+      echo "· $name 无 port.txt"
+    fi
+    if [ -f "$d/dsh-home.txt" ]; then
+      home=$(tr -d '[:space:]' < "$d/dsh-home.txt")
+      case "$home" in
+        */tasks/"$short"|*/tasks/"$short"/) ok "$name DSH_HOME 任务子根" ;;
+        "$DEV_HOME"|"$DEV_HOME"/) echo "· $name 仍用共享 DEV_HOME（legacy 或 OMNIMUX_DEV_LEGACY_HOME=1）" ;;
+        *) echo "· $name DSH_HOME=$home" ;;
+      esac
+    else
+      echo "· $name 无 dsh-home.txt（旧环境；再 start 会写入）"
+    fi
+  elif [ "$running" = "stopped" ]; then
+    if [ -d "$d" ]; then
+      age_days=$(( ( $(date +%s) - $(stat -f %m "$d" 2>/dev/null || stat -c %Y "$d") ) / 86400 ))
+      if [ "$age_days" -ge 7 ]; then
+        echo "· $name${tag} stopped 已 ${age_days} 天 → 建议 yarn omnimux:dev rm $short"
+      fi
+    fi
+  fi
+}
+found=0
+if [ -d "$DEV_HOME/tasks" ]; then
+  for d in "$DEV_HOME"/tasks/*/profiles/omnimux-dev-*; do
     [ -d "$d" ] || continue
     found=1
-    linked=$(find "$d/node_modules" -maxdepth 1 -type l 2>/dev/null | wc -l | tr -d ' ')
-    pid=""
-    [ -f "$d/host.pid" ] && pid=$(cat "$d/host.pid")
-    running="stopped"
-    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && running="running"
-    if [ "$linked" -le 1 ]; then
-      ok "$(basename "$d") [$running] link 数 $linked"
-    else
-      bad "$(basename "$d") link 数 $linked（>1，违反在研 ≤1 铁律）→ 修复: yarn omnimux:dev rm $(basename "$d" | sed 's/omnimux-dev-//')"
-    fi
+    check_dev_profile "$d"
   done
-  [ "$found" = 0 ] && echo "· 无 dev 环境（正常，用完即弃）"
-else
-  echo "· 无 dev 环境（正常，用完即弃）"
 fi
+if [ -d "$DEV_HOME/profiles" ]; then
+  for d in "$DEV_HOME"/profiles/omnimux-dev-*; do
+    [ -d "$d" ] || continue
+    case "$d" in *.migrated-*) continue ;; esac
+    found=1
+    check_dev_profile "$d" " [legacy]"
+  done
+fi
+[ "$found" = 0 ] && echo "· 无 dev 环境（正常，用完即弃）"
 
 echo
 echo "== 6. dev 环境 MUST NOT 出现在生产数据根 =="

@@ -1,15 +1,21 @@
 #!/bin/bash
 # dev-env.sh — 预发布/开发环境管理（L2 层）。规范：docs/contracts/dev-pipeline.md
+# QA：docs/contracts/plugin-qa.md
 #
-# 模型：每个开发/测试任务一个独立 profile（omnimux-dev-<name>），独立数据根
-# ~/.dsh-dev，与生产（omnimux profile + ~/.dsh）零共享、互不干扰。
+# 模型：每个开发/测试任务一个独立 profile（omnimux-dev-<name>）。
+# 默认 DSH_HOME=~/.dsh-dev/tasks/<name>（M2），与生产 ~/.dsh 零共享；任务之间数据隔离。
+# 逃生：OMNIMUX_DEV_LEGACY_HOME=1 时回退到共用 ~/.dsh-dev（一迭代过渡）。
 #
 # 铁律：一个 dev profile 里 link 的在研插件不超过 1 个，其余全是物化稳定副本。
+#
+# 端口（M1）：L2 专用池 44200–44299。禁止占用：
+#   43120–43151（DSH Desktop）/ 44120–44151（OmniMux App 默认+重试窗）。
+# start 会写入 cordis.patch.yml 的 webserver.port + port.txt，避免照抄生产 44120。
 #
 # 用法：
 #   ./scripts/dev-env.sh start <name> <plugin>   # 建环境 + Host + 插件 watch（后台）
 #   ./scripts/dev-env.sh stop <name>             # 停 Host + watch
-#   ./scripts/dev-env.sh ls                      # 列出现有 dev 环境
+#   ./scripts/dev-env.sh ls                      # 列出现有dev 环境
 #   ./scripts/dev-env.sh rm <name>               # 停 Host/watch 并删除整个环境
 #   ./scripts/dev-env.sh watch <name> <plugin>   # 只启/换在研插件的 watch（不重启 Host）
 #   ./scripts/dev-env.sh unwatch <name>          # 只停 watch
@@ -26,19 +32,214 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$ROOT/plugins}"
 DSH_SRC="${DSH_SRC:-/Users/x/Desktop/Project/Github/deepseek-harness}"
 DEV_HOME="${DSH_DEV_HOME:-$HOME/.dsh-dev}"
-PROD_PROFILE="${DSH_HOME:-$HOME/.dsh}/profiles/omnimux"
+PROD_HOME="${DSH_HOME:-$HOME/.dsh}"
+PROD_PROFILE="$PROD_HOME/profiles/omnimux"
+L2_PORT_POOL_START="${OMNIMUX_L2_PORT_POOL_START:-44200}"
+L2_PORT_POOL_END="${OMNIMUX_L2_PORT_POOL_END:-44299}"
+LEGACY_HOME="${OMNIMUX_DEV_LEGACY_HOME:-0}"
 
-usage() { sed -n '2,22p' "$0"; exit 1; }
+usage() { sed -n '2,30p' "$0"; exit 1; }
 [ $# -lt 1 ] && usage
 cmd="$1"; name="${2:-}"
 
-profile_dir() { echo "$DEV_HOME/profiles/omnimux-dev-$1"; }
+task_home_for() {
+  local n="$1"
+  if [ "$LEGACY_HOME" = "1" ]; then
+    echo "$DEV_HOME"
+  else
+    echo "$DEV_HOME/tasks/$n"
+  fi
+}
+
+# Resolve profile dir: prefer tasks/<name>/profiles/...；兼容旧 ~/.dsh-dev/profiles/...
+profile_dir() {
+  local n="$1"
+  local neu old
+  neu="$(task_home_for "$n")/profiles/omnimux-dev-$n"
+  old="$DEV_HOME/profiles/omnimux-dev-$n"
+  if [ -d "$neu" ]; then
+    echo "$neu"
+  elif [ -d "$old" ]; then
+    echo "$old"
+  else
+    echo "$neu"
+  fi
+}
+
+legacy_profile_dir() { echo "$DEV_HOME/profiles/omnimux-dev-$1"; }
+
+# 保留窗：Desktop 43120–43151、OmniMux App 44120–44151
+port_reserved() {
+  local p="$1"
+  { [ "$p" -ge 43120 ] && [ "$p" -le 43151 ]; } && return 0
+  { [ "$p" -ge 44120 ] && [ "$p" -le 44151 ]; } && return 0
+  return 1
+}
+
+port_in_use() {
+  lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
+}
+
+# 优先复用 port.txt（若空闲且不在保留窗）；否则扫 L2 池。
+alloc_port() {
+  local pdir="$1"
+  local preferred="" candidate
+  if [ -f "$pdir/port.txt" ]; then
+    preferred="$(tr -d '[:space:]' < "$pdir/port.txt" || true)"
+  fi
+  if [ -n "$preferred" ] && [[ "$preferred" =~ ^[0-9]+$ ]] && ! port_reserved "$preferred"; then
+    if ! port_in_use "$preferred"; then
+      echo "$preferred"
+      return 0
+    fi
+  fi
+  candidate="$L2_PORT_POOL_START"
+  while [ "$candidate" -le "$L2_PORT_POOL_END" ]; do
+    if ! port_reserved "$candidate" && ! port_in_use "$candidate"; then
+      echo "$candidate"
+      return 0
+    fi
+    candidate=$((candidate + 1))
+  done
+  echo "✗ L2 端口池 ${L2_PORT_POOL_START}-${L2_PORT_POOL_END} 已满" >&2
+  return 1
+}
+
+# 幂等改写 webserver.config.port；若无 webserver 块则追加。
+rewrite_patch_port() {
+  local patch="$1"
+  local port="$2"
+  local tmp
+  tmp="$(mktemp)"
+  if [ ! -f "$patch" ]; then
+    printf '%s\n' \
+      '- id: webserver' \
+      '  config:' \
+      '    host: 127.0.0.1' \
+      "    port: ${port}" > "$patch"
+    return 0
+  fi
+  if grep -qE '^[[:space:]]*-[[:space:]]*id:[[:space:]]*webserver[[:space:]]*$' "$patch"; then
+    awk -v port="$port" '
+      BEGIN { in_ws=0; port_done=0 }
+      /^[[:space:]]*-[[:space:]]*id:[[:space:]]*webserver[[:space:]]*$/ { in_ws=1; print; next }
+      in_ws && /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/ {
+        if (!port_done) {
+          print "  config:"
+          print "    host: 127.0.0.1"
+          print "    port: " port
+          port_done=1
+        }
+        in_ws=0
+      }
+      in_ws && /^[[:space:]]*port:[[:space:]]*[0-9]+[[:space:]]*$/ {
+        sub(/[0-9]+[[:space:]]*$/, port)
+        port_done=1
+      }
+      { print }
+      END {
+        if (in_ws && !port_done) {
+          print "  config:"
+          print "    host: 127.0.0.1"
+          print "    port: " port
+        }
+      }
+    ' "$patch" > "$tmp"
+    mv "$tmp" "$patch"
+  else
+    {
+      cat "$patch"
+      printf '\n%s\n' \
+        '- id: webserver' \
+        '  config:' \
+        '    host: 127.0.0.1' \
+        "    port: ${port}"
+    } > "$tmp"
+    mv "$tmp" "$patch"
+  fi
+}
+
+read_assigned_port() {
+  local pdir="$1"
+  if [ -f "$pdir/port.txt" ]; then
+    tr -d '[:space:]' < "$pdir/port.txt"
+    return 0
+  fi
+  if [ -f "$pdir/cordis.patch.yml" ]; then
+    awk '
+      /^[[:space:]]*-[[:space:]]*id:[[:space:]]*webserver[[:space:]]*$/ { in_ws=1; next }
+      in_ws && /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/ { exit }
+      in_ws && /^[[:space:]]*port:[[:space:]]*[0-9]+/ {
+        if (match($0, /[0-9]+/)) { print substr($0, RSTART, RLENGTH); exit }
+      }
+    ' "$pdir/cordis.patch.yml"
+  fi
+}
+
+ensure_task_credentials() {
+  local thome="$1"
+  local seed dest
+  dest="$thome/.credentials.yaml"
+  [ -f "$dest" ] && return 0
+  seed=""
+  if [ -f "$DEV_HOME/.credentials.yaml" ]; then
+    seed="$DEV_HOME/.credentials.yaml"
+  elif [ "${ALLOW_SEED_FROM_PROD:-0}" = "1" ] && [ -f "$PROD_HOME/.credentials.yaml" ]; then
+    seed="$PROD_HOME/.credentials.yaml"
+  fi
+  if [ -n "$seed" ]; then
+    cp "$seed" "$dest"
+    chmod 600 "$dest" 2>/dev/null || true
+    echo "✓ credentials ← ${seed}（任务内副本，非 symlink）"
+  else
+    echo "· 无 credentials 种子（可稍后写入 ${dest}；公共种子路径 $DEV_HOME/.credentials.yaml）"
+  fi
+}
+
+# 旧 profile（~/.dsh-dev/profiles/...）迁到 tasks/<name>/profiles/...
+migrate_legacy_profile_if_needed() {
+  local n="$1"
+  local thome neu old
+  [ "$LEGACY_HOME" = "1" ] && return 0
+  thome="$(task_home_for "$n")"
+  neu="$thome/profiles/omnimux-dev-$n"
+  old="$(legacy_profile_dir "$n")"
+  if [ -d "$neu" ]; then
+    return 0
+  fi
+  if [ ! -d "$old" ]; then
+    return 0
+  fi
+  echo "→ 迁移旧 profile → tasks/${n}/profiles/omnimux-dev-${n}"
+  mkdir -p "$thome/profiles"
+  if cp -Rc "$old" "$neu" 2>/dev/null || cp -R "$old" "$neu"; then
+    mv "$old" "${old}.migrated-$(date +%Y%m%d%H%M%S)"
+    echo "✓ 旧目录已改名 *.migrated-*"
+  else
+    echo "✗ 迁移失败，仍使用旧路径 $old" >&2
+  fi
+}
+
+resolve_runtime_home() {
+  local n="$1"
+  local pdir thome
+  pdir="$(profile_dir "$n")"
+  if [ -f "$pdir/dsh-home.txt" ]; then
+    tr -d '[:space:]' < "$pdir/dsh-home.txt"
+    return 0
+  fi
+  thome="$(task_home_for "$n")"
+  case "$pdir" in
+    "$thome"/profiles/*) echo "$thome" ;;
+    "$DEV_HOME"/profiles/*) echo "$DEV_HOME" ;;
+    *) echo "$thome" ;;
+  esac
+}
 
 stop_watch() {
   local pdir="$1"
   if [ -f "$pdir/watch.pid" ]; then
     kill "$(cat "$pdir/watch.pid")" 2>/dev/null || true
-    # workflow 的 dev.mjs 可能再拉起子进程；尽量清掉同插件的残留 watch
     if [ -f "$pdir/watch.plugin" ]; then
       local plug
       plug="$(cat "$pdir/watch.plugin")"
@@ -59,7 +260,26 @@ start_watch() {
   nohup node "$ROOT/scripts/watch-plugin.mjs" "$plugin" \
     > "$pdir/watch.log" 2>&1 &
   echo $! > "$pdir/watch.pid"
-  echo "✓ watch → $plugin（日志: $pdir/watch.log）"
+  echo "✓ watch → ${plugin}（日志: $pdir/watch.log）"
+}
+
+print_env_line() {
+  local d="$1"
+  local tag="${2:-}"
+  local state=" stopped" wstate="watch:off" linked aport aport_disp home_disp
+  [ -f "$d/host.pid" ] && kill -0 "$(cat "$d/host.pid")" 2>/dev/null && state=" running"
+  if [ -f "$d/watch.pid" ] && kill -0 "$(cat "$d/watch.pid")" 2>/dev/null; then
+    wstate="watch:$(cat "$d/watch.plugin" 2>/dev/null || echo on)"
+  fi
+  linked=$(find "$d/node_modules" -maxdepth 1 -type l 2>/dev/null | xargs -I{} basename {} 2>/dev/null | tr '\n' ' ')
+  aport="$(read_assigned_port "$d")"
+  aport_disp="${aport:-?}"
+  if [ -f "$d/dsh-home.txt" ]; then
+    home_disp="$(tr -d '[:space:]' < "$d/dsh-home.txt")"
+  else
+    home_disp="?"
+  fi
+  echo "$(basename "$d")${tag}  [$state]  port:${aport_disp}  home:${home_disp}  $wstate  link: ${linked:-（无）}"
 }
 
 case "$cmd" in
@@ -67,32 +287,54 @@ case "$cmd" in
     plugin="${3:-}"
     if [ -z "$name" ] || [ -z "$plugin" ]; then usage; fi
     [ -f "$PLUGINS_ROOT/$plugin/package.json" ] || { echo "✗ 插件源码不存在: $PLUGINS_ROOT/$plugin" >&2; exit 1; }
+
+    migrate_legacy_profile_if_needed "$name"
+    TASK_HOME="$(task_home_for "$name")"
+    mkdir -p "$TASK_HOME"
+    if [ "$LEGACY_HOME" != "1" ]; then
+      ensure_task_credentials "$TASK_HOME"
+    fi
     pdir="$(profile_dir "$name")"
+    mkdir -p "$(dirname "$pdir")"
+
     if [ ! -d "$pdir/node_modules" ]; then
       echo "→ 初始化环境 omnimux-dev-${name}（APFS 克隆生产依赖，秒级）"
       mkdir -p "$pdir"
       cp "$PROD_PROFILE/package.json" "$PROD_PROFILE/cordis.patch.yml" "$pdir/"
-      # dev profile 独立 pnpm store（不引用生产 profile 的 .npmrc 配置）
       echo "store-dir=$pdir/.pnpm-store/v10" > "$pdir/.npmrc"
       cp -Rc "$PROD_PROFILE/node_modules" "$pdir/node_modules" 2>/dev/null \
         || cp -R "$PROD_PROFILE/node_modules" "$pdir/node_modules"
+    elif [ ! -f "$pdir/cordis.patch.yml" ]; then
+      cp "$PROD_PROFILE/cordis.patch.yml" "$pdir/"
     fi
-    # 在研插件换 link（其余保持物化副本）
+
+    # 记录本任务 DSH_HOME（Host 启动用）
+    RUNTIME_HOME="$TASK_HOME"
+    if [ "$LEGACY_HOME" = "1" ]; then
+      RUNTIME_HOME="$DEV_HOME"
+    fi
+    echo "$RUNTIME_HOME" > "$pdir/dsh-home.txt"
+
+    assigned_port="$(alloc_port "$pdir")" || exit 1
+    rewrite_patch_port "$pdir/cordis.patch.yml" "$assigned_port"
+    echo "$assigned_port" > "$pdir/port.txt"
+    echo "✓ L2 port → ${assigned_port}（池 ${L2_PORT_POOL_START}-${L2_PORT_POOL_END}；保留窗 43120-43151 / 44120-44151）"
+
     rm -rf "${pdir:?}/node_modules/$plugin"
     ln -s "$PLUGINS_ROOT/$plugin" "$pdir/node_modules/$plugin"
     echo "✓ $plugin → link $PLUGINS_ROOT/$plugin"
-    # 停掉旧实例再启动
+
     [ -f "$pdir/host.pid" ] && kill "$(cat "$pdir/host.pid")" 2>/dev/null || true
     stop_watch "$pdir" >/dev/null 2>&1 || true
     sleep 1
-    # OMNIMUX_PLUGIN_PROFILE：dev profile 用 symlink 装插件，Node 按 realpath 解析
-    # packageRoot 后无法从 node_modules 位置反推 profile（gallery/market 的 paths 逻辑），
-    # 显式注入让连接器等写 profile 的操作落在正确的 dev profile。
-    DSH_HOME="$DEV_HOME" OMNIMUX_PLUGIN_PROFILE="omnimux-dev-$name" nohup node "$DSH_SRC/apps/cli/lib/bin.js" \
+    : > "$pdir/host.log"
+
+    # OMNIMUX_PLUGIN_PROFILE：symlink 装插件时显式注入 profile 名
+    DSH_HOME="$RUNTIME_HOME" OMNIMUX_PLUGIN_PROFILE="omnimux-dev-$name" nohup node "$DSH_SRC/apps/cli/lib/bin.js" \
       --profile "omnimux-dev-$name" --host 127.0.0.1 --port 0 --no-open \
       > "$pdir/host.log" 2>&1 &
     echo $! > "$pdir/host.pid"
-    # 从 Host 日志解析真实端口（lsof 在本机有 Surge 等代理工具时不可信）
+
     port=""
     for _ in $(seq 1 20); do
       sleep 1
@@ -103,20 +345,31 @@ case "$cmd" in
       echo "✗ Host 未在 20s 内监听，日志: $pdir/host.log" >&2
       exit 1
     fi
+    if [ "$port" != "$assigned_port" ]; then
+      echo "⚠ Host 实际听口 ${port} ≠ 分配口 ${assigned_port}；以实际口为准并回写 port.txt" >&2
+      echo "$port" > "$pdir/port.txt"
+      rewrite_patch_port "$pdir/cordis.patch.yml" "$port" || true
+    fi
+    if port_reserved "$port"; then
+      echo "✗ Host 落在保留窗 ${port}（App/Desktop），L2 并行会撞口。查 $pdir/cordis.patch.yml / host.log" >&2
+      exit 1
+    fi
+
     start_watch "$pdir" "$plugin"
     echo "✓ dev 环境已启动: omnimux-dev-$name"
     echo "  URL:   http://127.0.0.1:$port"
+    echo "  port:  $port"
     echo "  link:  $plugin"
     echo "  watch: 已启用（改 client 源码 → 自动重建 → 浏览器 HMR）"
-    echo "  数据:  ${DEV_HOME}（与生产 ~/.dsh 完全隔离）"
+    echo "  数据:  ${RUNTIME_HOME}（生产 ~/.dsh 隔离；任务级子根）"
+    echo "  profile: $pdir"
     ;;
   watch)
     plugin="${3:-}"
     if [ -z "$name" ] || [ -z "$plugin" ]; then usage; fi
     [ -f "$PLUGINS_ROOT/$plugin/package.json" ] || { echo "✗ 插件源码不存在: $PLUGINS_ROOT/$plugin" >&2; exit 1; }
     pdir="$(profile_dir "$name")"
-    [ -d "$pdir" ] || { echo "✗ 环境不存在: omnimux-dev-$name（先 start）" >&2; exit 1; }
-    # 允许只换 watch；若 profile 里还没 link 该插件，补 link
+    [ -d "$pdir" ] || { echo "✗ 环境不存在: omnimux-dev-${name}（先 start）" >&2; exit 1; }
     if [ ! -L "$pdir/node_modules/$plugin" ]; then
       rm -rf "${pdir:?}/node_modules/$plugin"
       ln -s "$PLUGINS_ROOT/$plugin" "$pdir/node_modules/$plugin"
@@ -137,27 +390,50 @@ case "$cmd" in
       && echo "✓ omnimux-dev-$name Host 已停止" || echo "· omnimux-dev-$name Host 未在运行"
     ;;
   ls)
+    found=0
+    if [ -d "$DEV_HOME/tasks" ]; then
+      for d in "$DEV_HOME"/tasks/*/profiles/omnimux-dev-*; do
+        [ -d "$d" ] || continue
+        found=1
+        print_env_line "$d"
+      done
+    fi
     if [ -d "$DEV_HOME/profiles" ]; then
       for d in "$DEV_HOME"/profiles/omnimux-dev-*; do
         [ -d "$d" ] || continue
-        state=" stopped"
-        [ -f "$d/host.pid" ] && kill -0 "$(cat "$d/host.pid")" 2>/dev/null && state=" running"
-        wstate="watch:off"
-        if [ -f "$d/watch.pid" ] && kill -0 "$(cat "$d/watch.pid")" 2>/dev/null; then
-          wstate="watch:$(cat "$d/watch.plugin" 2>/dev/null || echo on)"
-        fi
-        linked=$(find "$d/node_modules" -maxdepth 1 -type l 2>/dev/null | xargs -I{} basename {} 2>/dev/null | tr '\n' ' ')
-        echo "$(basename "$d")  [$state]  $wstate  link: ${linked:-（无）}"
+        # 跳过已迁移残留名
+        case "$d" in
+          *.migrated-*) continue ;;
+        esac
+        found=1
+        print_env_line "$d" "  [legacy]"
       done
-    else
+    fi
+    if [ "$found" = 0 ]; then
       echo "（还没有 dev 环境）"
     fi
     ;;
   rm)
     [ -z "$name" ] && usage
     "$0" stop "$name" || true
-    rm -rf "$(profile_dir "$name")"
-    echo "✓ omnimux-dev-$name 已删除"
+    pdir="$(profile_dir "$name")"
+    thome="$(task_home_for "$name")"
+    if [ "$LEGACY_HOME" = "1" ]; then
+      rm -rf "$pdir"
+      echo "✓ omnimux-dev-$name 已删除（legacy profile）"
+    else
+      # 删整个任务子根（含数据）
+      if [ -d "$thome" ]; then
+        rm -rf "$thome"
+        echo "✓ omnimux-dev-$name 已删除（任务子根 ${thome}）"
+      else
+        rm -rf "$pdir"
+        echo "✓ omnimux-dev-$name 已删除"
+      fi
+      # 清遗留旧路径 / migrated
+      old="$(legacy_profile_dir "$name")"
+      rm -rf "$old" "${old}".migrated-* 2>/dev/null || true
+    fi
     ;;
   *) usage ;;
 esac
