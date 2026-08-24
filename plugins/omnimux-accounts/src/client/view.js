@@ -117,20 +117,40 @@ export function summarize(accounts) {
 }
 
 /**
+ * Resolve a BCP 47 tag for RelativeTimeFormat that matches product UI locale.
+ * Prefer an explicit override, then `html[lang]`, then navigator — never bare
+ * `undefined` (ICU default can disagree with DSH dictionary language).
+ * @param {string} [override]
+ * @returns {string}
+ */
+export function resolveUiLocale(override) {
+  const raw = typeof override === 'string' && override.trim() !== ''
+    ? override.trim()
+    : (typeof document !== 'undefined' && document.documentElement?.lang
+      ? document.documentElement.lang
+      : (typeof navigator !== 'undefined' ? navigator.language : 'en'))
+  const lower = String(raw || 'en').toLowerCase()
+  if (lower === 'zh' || lower.startsWith('zh-')) return 'zh-CN'
+  if (lower === 'en' || lower.startsWith('en-')) return 'en'
+  return raw
+}
+
+/**
  * Relative time via Intl.RelativeTimeFormat ("2 days ago", "in 18 hours").
  * Returns '' for missing / unparseable input.
  * @param {unknown} iso ISO 8601 date string
  * @param {number | Date} [now]
+ * @param {string} [locale] DSH / html lang (`zh`/`en` or BCP 47); defaults via resolveUiLocale
  * @returns {string}
  */
-export function relativeTime(iso, now = Date.now()) {
+export function relativeTime(iso, now = Date.now(), locale) {
   if (typeof iso !== 'string' || iso === '') return ''
   const then = Date.parse(iso)
   if (!Number.isFinite(then)) return ''
   const base = now instanceof Date ? now.getTime() : now
   const diffMs = then - base
   const abs = Math.abs(diffMs)
-  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+  const formatter = new Intl.RelativeTimeFormat(resolveUiLocale(locale), { numeric: 'auto' })
   if (abs < 60 * 1000) return formatter.format(Math.round(diffMs / 1000), 'second')
   if (abs < 60 * 60 * 1000) return formatter.format(Math.round(diffMs / (60 * 1000)), 'minute')
   if (abs < 24 * 60 * 60 * 1000) return formatter.format(Math.round(diffMs / (60 * 60 * 1000)), 'hour')

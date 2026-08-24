@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { filterAccounts, presentStatuses, relativeTime, selectAllState, selectRows, sortAccounts, summarize, uniqueValues } from './view.js'
+import { filterAccounts, presentStatuses, relativeTime, resolveUiLocale, selectAllState, selectRows, sortAccounts, summarize, uniqueValues } from './view.js'
 
 const NOW = Date.parse('2026-08-20T12:00:00Z')
 
@@ -106,24 +106,32 @@ describe('summarize', () => {
 
 describe('relativeTime', () => {
   it('formats past and future times with sensible units', () => {
-    const past = relativeTime('2026-08-18T12:00:00Z', NOW)
+    const past = relativeTime('2026-08-18T12:00:00Z', NOW, 'en')
     assert.match(past, /2 days? ago/)
-    const future = relativeTime('2026-08-21T06:00:00Z', NOW)
+    const future = relativeTime('2026-08-21T06:00:00Z', NOW, 'en')
     assert.match(future, /in 18 hours?/)
-    assert.match(relativeTime('2026-08-20T11:57:00Z', NOW), /3 minutes? ago/)
-    assert.match(relativeTime('2026-08-20T12:00:40Z', NOW), /in 40 seconds?/)
-    assert.match(relativeTime('2026-08-20T12:40:00Z', NOW), /in 40 minutes?/)
+    assert.match(relativeTime('2026-08-20T11:57:00Z', NOW, 'en'), /3 minutes? ago/)
+    assert.match(relativeTime('2026-08-20T12:00:40Z', NOW, 'en'), /in 40 seconds?/)
+    assert.match(relativeTime('2026-08-20T12:40:00Z', NOW, 'en'), /in 40 minutes?/)
+  })
+
+  it('keeps zh relative text when locale is zh (no en/zh mix)', () => {
+    const future = relativeTime('2026-08-21T00:00:00Z', NOW, 'zh')
+    assert.match(future, /小时/)
+    assert.doesNotMatch(future, /in \d+/)
+    assert.equal(resolveUiLocale('zh'), 'zh-CN')
+    assert.equal(resolveUiLocale('en-US'), 'en')
   })
 
   it('returns empty for missing or invalid input', () => {
-    assert.equal(relativeTime(undefined, NOW), '')
-    assert.equal(relativeTime('', NOW), '')
-    assert.equal(relativeTime('not-a-date', NOW), '')
-    assert.equal(relativeTime(12345, NOW), '')
+    assert.equal(relativeTime(undefined, NOW, 'en'), '')
+    assert.equal(relativeTime('', NOW, 'en'), '')
+    assert.equal(relativeTime('not-a-date', NOW, 'en'), '')
+    assert.equal(relativeTime(12345, NOW, 'en'), '')
   })
 
   it('accepts a Date for now', () => {
-    assert.match(relativeTime('2026-08-18T12:00:00Z', new Date(NOW)), /2 days? ago/)
+    assert.match(relativeTime('2026-08-18T12:00:00Z', new Date(NOW), 'en'), /2 days? ago/)
   })
 })
 
