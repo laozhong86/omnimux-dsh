@@ -11,9 +11,11 @@ PROD_PROFILE="$PROD_HOME/profiles/omnimux"
 DEV_HOME="${DSH_DEV_HOME:-$HOME/.dsh-dev}"
 PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-market omnimux-workflow dsh-video omnimux-analytics)
 fails=0
+warns=0
 
 ok()   { echo "✓ $1"; }
 bad()  { echo "✗ $1"; fails=$((fails+1)); }
+warn() { echo "⚠ $1"; warns=$((warns+1)); }
 
 echo "== 1. 生产 profile 插件形态（必须物化副本，禁止 link） =="
 for p in "${PLUGINS[@]}"; do
@@ -171,8 +173,205 @@ for p in "${PLUGINS[@]}"; do
 done
 
 echo
+echo "== 8. 关页保活（stage-guards；只扫白名单 Stage/plaza） =="
+# FAIL 金标（已合入 main）：accounts / products
+# WARN 推进中：assets / plaza-shell（文件缺失则跳过）
+# WARN 债：WorkflowStage / AppsStage
+stage_has_keepalive() {
+  local f="$1"
+  grep -q 'everOpened' "$f" 2>/dev/null || return 1
+  grep -Eq "display:[[:space:]]*open[[:space:]]*\?[[:space:]]*('flex'|\"flex\"|undefined)[[:space:]]*:[[:space:]]*('none'|\"none\")" "$f" 2>/dev/null
+}
+stage_close_unmount() {
+  local f="$1"
+  # 卸树反模式；排除：注释/文档字符串、从未打开早退（!everOpened）
+  local hits
+  hits=$(grep -nE 'if[[:space:]]*\([[:space:]]*!open([[:space:]]*\|\|[[:space:]]*![a-zA-Z_][a-zA-Z0-9_]*)?[[:space:]]*\)[[:space:]]*return[[:space:]]+null' "$f" 2>/dev/null \
+    | grep -Ev '^\s*[0-9]+:\s*(//|\*|/\*)' \
+    | grep -Ev 'never|MUST NOT|禁|禁止|对齐|示例' \
+    | grep -Ev 'everOpened' \
+    || true)
+  [ -n "$hits" ]
+}
+check_stage_keepalive() {
+  local rel="$1"
+  local mode="$2"   # fail | warn
+  local f="$PLUGINS_ROOT/$rel"
+  if [ ! -f "$f" ]; then
+    if [ "$mode" = "fail" ]; then
+      bad "关页金标缺失文件 $rel"
+    else
+      echo "· 关页文件缺失 ${rel}（跳过；待业务 PR）"
+    fi
+    return
+  fi
+  if stage_close_unmount "$f"; then
+    if [ "$mode" = "fail" ]; then
+      bad "$rel 关页卸树反模式（if (!open…) return null）→ 对齐 accounts/products everOpened+display:none"
+    else
+      warn "$rel 关页仍 return null 卸树（契约 MUST，待升 FAIL / backlog）"
+    fi
+  elif stage_has_keepalive "$f"; then
+    ok "$rel 关页保活"
+  else
+    if [ "$mode" = "fail" ]; then
+      bad "$rel 缺 everOpened 或关页 display 隐藏 → 见 docs/contracts/stage-guards.md"
+    else
+      warn "$rel 关页保活未对齐金标（契约 MUST，待升 FAIL / backlog）"
+    fi
+  fi
+}
+for rel in \
+  omnimux-accounts/src/client/AccountsStage.jsx \
+  omnimux-products/src/client/ProductsStage.jsx
+do
+  check_stage_keepalive "$rel" fail
+done
+for rel in \
+  omnimux-assets/src/client/AssetsStage.jsx \
+  omnimux-market/src/client/plaza-shell.js \
+  omnimux-workflow/src/client/WorkflowStage.jsx \
+  omnimux/src/client/AppsStage.jsx
+do
+  check_stage_keepalive "$rel" warn
+done
+
+echo
+echo "== 9. market 写闸（trustedRestartRequest） =="
+market_api="$PLUGINS_ROOT/omnimux-market/src/local-api.ts"
+if [ ! -f "$market_api" ]; then
+  echo "· omnimux-market/src/local-api.ts 缺失（跳过）"
+else
+  if ! grep -q 'trustedRestartRequest' "$market_api"; then
+    bad "market local-api 无 trustedRestartRequest"
+  else
+    # FAIL 金标：pluginRestart
+    if grep -n "method === 'pluginRestart'" "$market_api" | head -1 | cut -d: -f1 | {
+      read -r ln
+      sed -n "${ln},$((ln+15))p" "$market_api" | grep -q 'trustedRestartRequest'
+    }; then
+      ok "market pluginRestart 有 trustedRestartRequest"
+    else
+      bad "market pluginRestart 缺 trustedRestartRequest"
+    fi
+    # WARN：config save（业务 PR 已补闸、main 可能尚未合入）
+    if grep -n "method === 'config'" "$market_api" | head -1 | cut -d: -f1 | {
+      read -r ln
+      sed -n "${ln},$((ln+30))p" "$market_api" | grep -q 'trustedRestartRequest'
+    }; then
+      ok "market config save 有 trustedRestartRequest"
+    else
+      warn "market config save 无 trustedRestartRequest（契约 MUST，待业务 PR 合入后升 FAIL）"
+    fi
+    # WARN：其余写 method（窗口截断到下一 method ===）
+    for m in install uninstall pluginInstall catalogInstall catalogSummon catalogUninstall; do
+      if ! grep -q "method === '$m'" "$market_api"; then
+        echo "· market method=$m 分支不存在（跳过）"
+        continue
+      fi
+      ln=$(grep -n "method === '$m'" "$market_api" | head -1 | cut -d: -f1)
+      next=$(awk -v s="$ln" 'NR>s && /method === '\''/{print NR; exit}' "$market_api")
+      end=${next:-$((ln+40))}
+      [ -n "$next" ] && end=$((next-1))
+      chunk=$(sed -n "${ln},${end}p" "$market_api")
+      if echo "$chunk" | grep -q 'trustedRestartRequest'; then
+        ok "market $m 有 trustedRestartRequest"
+      else
+        warn "market $m 无 trustedRestartRequest（契约 MUST，修码 backlog）"
+      fi
+    done
+  fi
+fi
+
+echo
+echo "== 10. assertLocalWrite 存在性 =="
+check_assert_local() {
+  local rel="$1"
+  local need_def="${2:-0}"
+  local f="$PLUGINS_ROOT/$rel"
+  if [ ! -f "$f" ]; then
+    bad "写闸文件缺失 $rel"
+    return
+  fi
+  if [ "$need_def" = "1" ]; then
+    if grep -qE 'function[[:space:]]+assertLocalWrite|export[[:space:]]+function[[:space:]]+assertLocalWrite' "$f"; then
+      ok "$rel 定义 assertLocalWrite"
+    else
+      bad "$rel 未定义 assertLocalWrite"
+    fi
+    return
+  fi
+  if grep -q 'assertLocalWrite(' "$f"; then
+    ok "$rel 调用 assertLocalWrite"
+  else
+    bad "$rel 无 assertLocalWrite( 调用"
+  fi
+}
+check_assert_local "omnimux/src/apps/origin.js" 1
+check_assert_local "omnimux-products/src/http-routes.js"
+check_assert_local "omnimux-assets/src/http-routes.js"
+check_assert_local "omnimux-workflow/src/http/helpers.ts" 1
+# workflow 路由须引用 helpers 的闸
+if grep -q 'assertLocalWrite(' "$PLUGINS_ROOT/omnimux-workflow/src/workflow/routes/canvasRoutes.ts" 2>/dev/null \
+  || grep -q 'assertLocalWrite(' "$PLUGINS_ROOT/omnimux-workflow/src/projects/routes.ts" 2>/dev/null; then
+  ok "omnimux-workflow 路由调用 assertLocalWrite"
+else
+  bad "omnimux-workflow canvas/projects 路由无 assertLocalWrite( 调用"
+fi
+
+echo
+echo "== 11. 空态 locale 锚点（stage-guards） =="
+# main 上 empty.noMatch / search.fallback 可能尚未合入 → WARN；齐全后可升 FAIL
+for rel in omnimux-products/src/client/locales.js omnimux-assets/src/client/locales.js; do
+  f="$PLUGINS_ROOT/$rel"
+  if [ ! -f "$f" ]; then
+    warn "空态 locale 缺失 ${rel}（跳过）"
+  elif grep -q "empty.noMatch" "$f"; then
+    ok "$rel 含 empty.noMatch"
+  else
+    warn "$rel 缺 empty.noMatch（契约 MUST，待业务 PR）"
+  fi
+done
+market_i18n="$PLUGINS_ROOT/omnimux-market/src/client/i18n.js"
+if [ ! -f "$market_i18n" ]; then
+  echo "· market i18n.js 缺失（跳过；单体 client 尚未拆分到 main）"
+elif grep -q "search.fallback" "$market_i18n"; then
+  ok "market i18n 含 search.fallback（有意语义锚点）"
+else
+  warn "market i18n 缺 search.fallback 锚点（契约 MUST，待业务 PR）"
+fi
+
+echo
+echo "== 12. 垂直禁 hub import（from 'omnimux'） =="
+hub_import_hits=""
+for p in omnimux-accounts omnimux-assets omnimux-products omnimux-market omnimux-workflow omnimux-analytics; do
+  src="$PLUGINS_ROOT/$p/src"
+  [ -d "$src" ] || continue
+  hits=$(grep -RIn --include='*.js' --include='*.jsx' --include='*.ts' --include='*.tsx' \
+    -E "from[[:space:]]+['\"]omnimux['\"]|require\\(['\"]omnimux['\"]\\)" "$src" 2>/dev/null \
+    | grep -vE '\\.(test|spec)\\.(js|jsx|ts|tsx)(:|$)' \
+    | grep -v '/node_modules/' \
+    || true)
+  if [ -n "$hits" ]; then
+    hub_import_hits="${hub_import_hits}${hits}"$'\n'
+  fi
+done
+if [ -n "$hub_import_hits" ]; then
+  echo "$hub_import_hits" | while IFS= read -r line; do
+    [ -n "$line" ] && bad "垂直 import hub: $line"
+  done
+else
+  ok "垂直 src 无 from 'omnimux'"
+fi
+
+echo
 if [ "$fails" -gt 0 ]; then
   echo "✗ $fails 项不合规，按提示修复"
+  [ "$warns" -gt 0 ] && echo "（另有 ⚠ $warns 项已知债）"
   exit 1
 fi
-echo "✓ 全部合规（三层环境：生产物化 / dev link / 数据隔离）"
+if [ "$warns" -gt 0 ]; then
+  echo "✓ 合规，⚠ $warns 项已知债（不阻断；见 docs/contracts/stage-guards.md）"
+  exit 0
+fi
+echo "✓ 全部合规（三层环境 + stage-guards）"
