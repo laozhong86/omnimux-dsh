@@ -162,18 +162,20 @@ Local metadata overlay (`group` / `agent_usable` / `last_used_at`) persists to `
 
 Browser-local JSON + media stream. The browser app is `plugins/omnimux-inspiration`. Cloud calls stay in the hub (`withPat` / `withPatRaw` to `https://omnimux.ai/api/inspiration/v1/...`). Cover URLs in JSON are rewritten from `/api/inspiration/v1/media/` to `/omnimux/inspiration/media/` so `<img>` never talks to the cloud.
 
+Live gateway item fields (production 2026-08-24): `id` `type` `title` `content` `source_url` `cover_key` `media_keys` `hot_score` `is_favorite` `analysis` `tags` `created_at` `updated_at`. The browser reads **`cover_key ?? cover_url`**. List envelopes rewrite `/api/inspiration/v1/media/` onto Host; detail envelopes may return a **bare key** (`seed/cover-04.jpg`) — the client prefixes `/omnimux/inspiration/media/`. `media_keys` is an array (video / slides); v1 UI does not consume it. Tools keep the original gateway JSON (no Host rewrite).
+
 | Method & Path | Body / query | Success |
 |---|---|---|
 | GET `/omnimux/inspiration` | `type` `tag` `tags` `q` `is_favorite` `sort` `page` `page_size` | upstream list envelope, media URLs rewritten |
 | GET `/omnimux/inspiration/status` | — | `{enabled,configured,gateway_ready}` |
 | GET `/omnimux/inspiration/tags` | — | upstream tags envelope |
-| GET `/omnimux/inspiration/{id}` | — | upstream item envelope |
+| GET `/omnimux/inspiration/{id}` | — | upstream item envelope (bare `cover_key` possible) |
 | POST `/omnimux/inspiration` | create body | upstream create envelope |
 | PATCH `/omnimux/inspiration/{id}` | patch body | upstream update envelope |
 | DELETE `/omnimux/inspiration/{id}` | — | upstream delete envelope |
-| GET `/omnimux/inspiration/media/{key}` | Range optional | streamed bytes; PAT injected by Host |
+| GET `/omnimux/inspiration/media/{key}` | Range optional; `If-None-Match` / `If-Modified-Since` | streamed bytes; PAT injected by Host; disk cache under `$DSH_HOME/omnimux/media/inspiration/` (TTL 7d, LRU 512 / 256MB). Cache miss still streams. Disk write failure is silent. |
 
-Writes are same-origin only. Unsigned → 401 `needs-omnimux`. Tools keep the original gateway JSON (no Host rewrite).
+Writes are same-origin only. Unsigned → 401 `needs-omnimux`. JSON list/detail is not cached. Media keys are sanitized (decoded, reject `..` / odd chars) before the gateway call.
 
 ## Credentials
 

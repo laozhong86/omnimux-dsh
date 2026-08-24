@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { authGuard, hostMediaSrc, whenAuthReady } from './api.js'
+import { authGuard, hostMediaSrc, pickCoverSrc, whenAuthReady } from './api.js'
 
 function fakeGate() {
   let ensureArgs = null
@@ -124,5 +124,33 @@ describe('hostMediaSrc', () => {
     assert.equal(hostMediaSrc('/omnimux/inspiration/media/covers/a.jpg'), '/omnimux/inspiration/media/covers/a.jpg')
     assert.equal(hostMediaSrc('https://cdn.example/a.jpg'), 'https://cdn.example/a.jpg')
     assert.equal(hostMediaSrc(''), '')
+  })
+
+  it('prefixes a bare media key (detail envelope)', () => {
+    assert.equal(hostMediaSrc('seed/cover-04.jpg'), '/omnimux/inspiration/media/seed/cover-04.jpg')
+    assert.equal(hostMediaSrc('/seed/cover-04.jpg'), '/omnimux/inspiration/media/seed/cover-04.jpg')
+  })
+
+  it('rejects traversal', () => {
+    assert.equal(hostMediaSrc('../etc/passwd'), '')
+    assert.equal(hostMediaSrc('seed/../../x.jpg'), '')
+  })
+})
+
+describe('pickCoverSrc', () => {
+  it('prefers cover_key over cover_url', () => {
+    assert.equal(
+      pickCoverSrc({ cover_key: 'seed/cover-04.jpg', cover_url: '/api/inspiration/v1/media/covers/a.jpg' }),
+      '/omnimux/inspiration/media/seed/cover-04.jpg',
+    )
+  })
+
+  it('falls back to cover_url and treats missing as empty', () => {
+    assert.equal(
+      pickCoverSrc({ cover_url: '/api/inspiration/v1/media/covers/a.jpg' }),
+      '/omnimux/inspiration/media/covers/a.jpg',
+    )
+    assert.equal(pickCoverSrc({ id: 1 }), '')
+    assert.equal(pickCoverSrc(null), '')
   })
 })

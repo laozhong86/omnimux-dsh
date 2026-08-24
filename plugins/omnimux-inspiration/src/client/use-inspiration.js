@@ -46,7 +46,7 @@ export function useInspiration(filters) {
       sessionCache.phase = 'ready'
       setPhase('ready')
     })
-  }, [apply, filters.type, filters.q, filters.is_favorite, filters.sort])
+  }, [apply, filters])
 
   useEffect(() => {
     void refresh()

@@ -105,10 +105,30 @@ export function inspirationStatus(client) {
 }
 
 /**
+ * Decode + reject traversal / odd characters so encoded `..` cannot
+ * ride through to the gateway. Returns '' when the key is unusable.
+ * @param {unknown} raw
+ */
+export function sanitizeMediaKey(raw) {
+  if (typeof raw !== 'string' || raw === '') return ''
+  let decoded = raw
+  try {
+    decoded = decodeURIComponent(raw)
+  } catch {
+    return ''
+  }
+  if (!decoded || decoded.includes('..') || decoded.includes('\\') || decoded.startsWith('/') || decoded.includes('\0')) {
+    return ''
+  }
+  if (!/^[A-Za-z0-9_./-]+$/.test(decoded)) return ''
+  return decoded
+}
+
+/**
  * @param {string} pathname
  */
 export function mediaKeyFromHostPath(pathname) {
   const prefix = '/omnimux/inspiration/media/'
   if (!pathname.startsWith(prefix)) return ''
-  return pathname.slice(prefix.length)
+  return sanitizeMediaKey(pathname.slice(prefix.length))
 }

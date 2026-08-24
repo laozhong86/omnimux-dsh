@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { hostMediaSrc } from './api.js'
+import { pickCoverSrc } from './api.js'
 import { injectInspirationStyles } from './styles.js'
 import { useInspiration } from './use-inspiration.js'
 
@@ -104,12 +104,12 @@ export function InspirationSection({ t, active = true }) {
           {items.map((row) => {
             const id = String(row.id)
             const title = String(row.title || row.source_url || id)
-            const cover = hostMediaSrc(row.cover_url)
+            const cover = pickCoverSrc(row)
             const source = typeof row.source_url === 'string' ? row.source_url : ''
             return (
               <article key={id} className="omnimux-inspiration-card">
                 {cover
-                  ? <img className="omnimux-inspiration-cover" src={cover} alt="" />
+                  ? <img className="omnimux-inspiration-cover" src={cover} alt="" loading="lazy" decoding="async" />
                   : <div className="omnimux-inspiration-cover-empty">{t('noCover')}</div>}
                 <div className="omnimux-inspiration-body">
                   <h3 className="omnimux-inspiration-title">{title}</h3>
