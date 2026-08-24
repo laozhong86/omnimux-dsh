@@ -9,7 +9,7 @@
 
 | 命令 | 用途 | 底层（勿直调） |
 |------|------|----------------|
-| `yarn omnimux:dev …` | L2 预发布 Host + 统一 watch | `scripts/dev-env.sh` + `scripts/watch-plugin.mjs` |
+| `yarn omnimux:dev …` | L2 预发布 Host + 统一 watch（打印 URL/port/`DSH_HOME=…/tasks/<task>`） | `scripts/dev-env.sh` + `scripts/watch-plugin.mjs` |
 | `yarn omnimux:sync [插件…]` | build + 物化进生产 profile（不自动重启） | `scripts/sync-to-app.sh` → `scripts/sync-stable.sh` |
 | `yarn omnimux:restart` | 手动重启 `/Applications/OmniMux.app` | `pkill` + `open -a OmniMux` |
 | `yarn omnimux:doctor` | 三层环境合规自检 | `scripts/dev-doctor.sh` |
