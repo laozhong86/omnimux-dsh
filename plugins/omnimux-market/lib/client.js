@@ -1,11 +1,533 @@
 window.__ModuleLoader__.load({
   id: "omnimux-market",
   factory: (require) => {
-    const React = require("react");
-    const h = React.createElement;
-    const { useEffect, useState } = React;
+    var module = { exports: {} };
+    var exports = module.exports;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-    const CSS = `
+// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
+var lib_exports = {};
+__export(lib_exports, {
+  Button: () => Button,
+  ConfirmModal: () => ConfirmModal,
+  DropdownSelect: () => DropdownSelect,
+  FilterBar: () => FilterBar,
+  IconButton: () => IconButton,
+  InputField: () => InputField,
+  ModalDialog: () => ModalDialog,
+  SearchField: () => SearchField,
+  Toolbar: () => Toolbar
+});
+function cssClass(value, name) {
+  if (!value) throw new Error(`dsh-ui-kit: missing CSS module class "${name}"`);
+  return value;
+}
+function cx(...parts) {
+  const out = [];
+  for (const part of parts) {
+    if (!part) continue;
+    if (typeof part === "string" || typeof part === "number") {
+      out.push(String(part));
+      continue;
+    }
+    for (const [key, on] of Object.entries(part)) if (on) out.push(key);
+  }
+  return out.join(" ");
+}
+function injectCss(id, css) {
+  if (typeof document === "undefined") return;
+  if (injected.has(id)) return;
+  injected.add(id);
+  const style = document.createElement("style");
+  style.setAttribute("data-dsh-ui-kit", id);
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+function isTypingTarget(target) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  return target.isContentEditable;
+}
+function matchesShortcut(event, shortcut) {
+  const raw = shortcut.trim();
+  if (!raw) return false;
+  const lower = raw.toLowerCase();
+  const wantsMeta = /⌘|cmd|meta/.test(lower);
+  const wantsCtrl = /\bctrl\b|⌃/.test(lower);
+  const wantsAlt = /\balt\b|⌥/.test(lower);
+  const wantsShift = /\bshift\b|⇧/.test(lower);
+  const key = raw.replace(/⌘|⌃|⌥|⇧|cmd|meta|ctrl|alt|shift|\+/gi, "").trim().toLowerCase();
+  if (!key) return false;
+  if (Boolean(event.metaKey) !== wantsMeta) return false;
+  if (Boolean(event.ctrlKey) !== wantsCtrl) return false;
+  if (Boolean(event.altKey) !== wantsAlt) return false;
+  if (Boolean(event.shiftKey) !== wantsShift) return false;
+  return event.key.toLowerCase() === key;
+}
+function DropdownSelect({ value, options, onChange, placeholder = "Select", disabled = false, className, "aria-label": ariaLabel, id, align = "start" }) {
+  const [open, setOpen] = (0, import_react.useState)(false);
+  const generatedId = (0, import_react.useId)();
+  const triggerId = id ?? generatedId;
+  const selected = options.find((option) => option.value === value);
+  const items = (0, import_react.useMemo)(() => options.map((option) => {
+    const item = {
+      id: option.value,
+      label: option.label
+    };
+    if (option.disabled === true) item.disabled = true;
+    if (option.icon !== void 0) item.icon = option.icon;
+    if (option.danger === true) item.danger = true;
+    return item;
+  }), [options]);
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Menu, {
+    open: open && !disabled,
+    portal: true,
+    compact: true,
+    align,
+    selectedId: value,
+    items,
+    onSelect: (next) => {
+      onChange(next);
+      setOpen(false);
+    },
+    onClose: () => {
+      setOpen(false);
+    },
+    className: cx(DropdownSelect_module_css_default.anchor, className),
+    anchor: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+      type: "button",
+      id: triggerId,
+      className: cx(DropdownSelect_module_css_default.trigger, open && DropdownSelect_module_css_default.open),
+      "aria-label": ariaLabel,
+      "aria-haspopup": "listbox",
+      "aria-expanded": open,
+      disabled,
+      onClick: () => {
+        if (!disabled) setOpen((prev) => !prev);
+      },
+      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(DropdownSelect_module_css_default.label, !selected && DropdownSelect_module_css_default.placeholder),
+        children: selected ? selected.label : placeholder
+      }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(DropdownSelect_module_css_default.chevron, open && DropdownSelect_module_css_default.chevronOpen),
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconChevronDownOutline14, { size: 14 })
+      })]
+    })
+  });
+}
+function Toolbar({ left, right, compact = false, className, children, ...rest }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+    ...rest,
+    role: "toolbar",
+    className: cx(Toolbar_module_css_default.bar, compact && Toolbar_module_css_default.compact, className),
+    children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.left,
+      children: left ?? children
+    }), right != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.right,
+      children: right
+    }) : null]
+  });
+}
+function FilterBar({ search, filters, actions, right, className, compact, ...rest }) {
+  const trailing = actions ?? right;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
+    ...rest,
+    left: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.filters,
+      children: filters
+    }) : null] }),
+    ...compact !== void 0 ? { compact } : {},
+    ...className !== void 0 ? { className } : {},
+    ...trailing !== void 0 ? { right: trailing } : {}
+  });
+}
+function ModalDialog({ open, onClose, title, description, children, footer, size = "md", closeLabel = "Close", className, contentClassName }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Modal, {
+    open,
+    onClose,
+    title,
+    closeLabel,
+    className: cx(Dialog_module_css_default.dialog, SIZE_CLASS[size], className),
+    contentClassName: cx(Dialog_module_css_default.body, contentClassName),
+    ...description !== void 0 ? { description } : {},
+    ...footer !== void 0 ? { footer } : {},
+    children
+  });
+}
+function ConfirmModal({ message, children, confirmLabel = "Confirm", cancelLabel = "Cancel", confirmVariant = "primary", confirmLoading = false, onConfirm, onClose, size = "sm", ...rest }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ModalDialog, {
+    ...rest,
+    size,
+    onClose,
+    footer: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+      className: Dialog_module_css_default.footer,
+      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+        variant: "outline",
+        onClick: onClose,
+        disabled: confirmLoading,
+        children: cancelLabel
+      }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+        variant: confirmVariant,
+        loading: confirmLoading,
+        onClick: onConfirm,
+        children: confirmLabel
+      })]
+    }),
+    children: message != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+      className: Dialog_module_css_default.message,
+      children: message
+    }) : children
+  });
+}
+var import_react, import_dsh_client_ui_primitives, import_jsx_runtime, injected, Button_module_css_default, VARIANT_CLASS, SIZE_CLASS$1, Button, IconButton, SearchField_module_css_default, SearchField, InputField_module_css_default, InputField, DropdownSelect_module_css_default, Toolbar_module_css_default, Dialog_module_css_default, SIZE_CLASS;
+var init_lib = __esm({
+  "../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js"() {
+    import_react = require("react");
+    import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
+    import_jsx_runtime = require("react/jsx-runtime");
+    injected = /* @__PURE__ */ new Set();
+    injectCss("Button.module.css", '.dshUk-Button-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-shrink: 0;\n  gap: 6px;\n  box-sizing: border-box;\n  margin: 0;\n  border: 1px solid transparent;\n  border-radius: 8px;\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  line-height: 18px;\n  letter-spacing: 0;\n  white-space: nowrap;\n  color: var(--dsw-alias-label-primary);\n  background: transparent;\n  padding: 0 12px;\n  height: 32px;\n  vertical-align: middle;\n  user-select: none;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    transform 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-Button-button:focus {\n  outline: none;\n}\n\n.dshUk-Button-button:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-Button-button:disabled,\n.dshUk-Button-button[aria-disabled="true"] {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n\n.dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n  transform: scale(0.96);\n}\n\n.dshUk-Button-sm {\n  height: 28px;\n  padding: 0 10px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-Button-xs {\n  height: 24px;\n  padding: 0 8px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  gap: 4px;\n}\n\n.dshUk-Button-iconOnly {\n  padding: 0;\n  width: 32px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-sm {\n  width: 28px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-xs {\n  width: 24px;\n}\n\n.dshUk-Button-primary {\n  background: var(--dsw-alias-button-primary-fill);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-primary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-primary-hover);\n}\n\n.dshUk-Button-secondary {\n  background: var(--dsw-alias-bg-layer-1);\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-secondary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-ghost {\n  background: transparent;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-ghost:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-Button-ghost:active:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-active);\n}\n\n.dshUk-Button-outline {\n  background: transparent;\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-outline:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-danger {\n  background: var(--dsw-alias-state-error-primary);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-danger:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-state-error-secondary);\n}\n\n.dshUk-Button-ghost[aria-pressed="true"],\n.dshUk-Button-secondary[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  box-shadow: inset 0 0 0 1px var(--dsw-alias-button-ghost-active-border);\n}\n\n.dshUk-Button-slot {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n}\n\n.dshUk-Button-xs .dshUk-Button-slot {\n  width: 14px;\n  height: 14px;\n}\n\n.dshUk-Button-spinner {\n  animation: dshUkSpin 0.7s linear infinite;\n}\n\n.dshUk-Button-label {\n  min-width: 0;\n}\n\n.dshUk-Button-loadingLabel {\n  opacity: 0.84;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-Button-button {\n    transition: none;\n  }\n\n  .dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n    transform: none;\n  }\n\n  .dshUk-Button-spinner {\n    animation: none;\n  }\n}\n\n@keyframes dshUkSpin {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}\n');
+    Button_module_css_default = {
+      "button": "dshUk-Button-button",
+      "sm": "dshUk-Button-sm",
+      "xs": "dshUk-Button-xs",
+      "iconOnly": "dshUk-Button-iconOnly",
+      "primary": "dshUk-Button-primary",
+      "secondary": "dshUk-Button-secondary",
+      "ghost": "dshUk-Button-ghost",
+      "outline": "dshUk-Button-outline",
+      "danger": "dshUk-Button-danger",
+      "slot": "dshUk-Button-slot",
+      "spinner": "dshUk-Button-spinner",
+      "label": "dshUk-Button-label",
+      "loadingLabel": "dshUk-Button-loadingLabel"
+    };
+    VARIANT_CLASS = {
+      primary: cssClass(Button_module_css_default.primary, "primary"),
+      secondary: cssClass(Button_module_css_default.secondary, "secondary"),
+      ghost: cssClass(Button_module_css_default.ghost, "ghost"),
+      outline: cssClass(Button_module_css_default.outline, "outline"),
+      danger: cssClass(Button_module_css_default.danger, "danger")
+    };
+    SIZE_CLASS$1 = {
+      default: void 0,
+      sm: cssClass(Button_module_css_default.sm, "sm"),
+      xs: cssClass(Button_module_css_default.xs, "xs")
+    };
+    Button = (0, import_react.forwardRef)(function Button2({ variant = "secondary", size = "default", loading = false, leadingIcon, trailingIcon, type = "button", className, disabled, children, ...rest }, ref) {
+      const isDisabled = Boolean(disabled) || loading;
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+        ...rest,
+        ref,
+        type,
+        className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], className),
+        disabled: isDisabled,
+        "aria-busy": loading || void 0,
+        "aria-disabled": isDisabled || void 0,
+        children: [
+          loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: cx(Button_module_css_default.slot, Button_module_css_default.spinner),
+            "aria-hidden": "true",
+            children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 })
+          }) : leadingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: Button_module_css_default.slot,
+            "aria-hidden": "true",
+            children: leadingIcon
+          }) : null,
+          children != null && children !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: cx(Button_module_css_default.label, loading && Button_module_css_default.loadingLabel),
+            children
+          }) : null,
+          !loading && trailingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: Button_module_css_default.slot,
+            "aria-hidden": "true",
+            children: trailingIcon
+          }) : null
+        ]
+      });
+    });
+    IconButton = (0, import_react.forwardRef)(function IconButton2({ variant = "ghost", size = "default", loading = false, type = "button", className, disabled, children, title, tooltipSide = "bottom", "aria-label": ariaLabel, ...rest }, ref) {
+      const isDisabled = Boolean(disabled) || loading;
+      const tooltip = title ?? ariaLabel;
+      const button = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+        ...rest,
+        ref,
+        type,
+        className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], Button_module_css_default.iconOnly, className),
+        disabled: isDisabled,
+        "aria-label": ariaLabel,
+        "aria-busy": loading || void 0,
+        "aria-disabled": isDisabled || void 0,
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+          className: cx(Button_module_css_default.slot, loading && Button_module_css_default.spinner),
+          "aria-hidden": "true",
+          children: loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 }) : children
+        })
+      });
+      if (!tooltip) return button;
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Tooltip, {
+        label: tooltip,
+        side: tooltipSide,
+        delayMs: 280,
+        disabled: isDisabled,
+        children: button
+      });
+    });
+    injectCss("SearchField.module.css", '.dshUk-SearchField-root {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  min-width: 140px;\n  max-width: 260px;\n  width: 100%;\n  padding: 0 8px 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-SearchField-stretch {\n  flex: 1 1 200px;\n}\n\n.dshUk-SearchField-root:hover:not(.dshUk-SearchField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-SearchField-root:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-SearchField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-icon {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-SearchField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-SearchField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-input::-webkit-search-decoration,\n.dshUk-SearchField-input::-webkit-search-cancel-button,\n.dshUk-SearchField-input::-webkit-search-results-button,\n.dshUk-SearchField-input::-webkit-search-results-decoration {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-input[type="search"] {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-shortcut {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 4px;\n  background: var(--dsw-alias-bg-layer-2);\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 11px;\n  line-height: 16px;\n  font-weight: 500;\n  letter-spacing: 0;\n}\n\n.dshUk-SearchField-clear {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  width: 20px;\n  height: 20px;\n  margin: 0;\n  padding: 0;\n  border: none;\n  border-radius: 6px;\n  background: transparent;\n  color: var(--dsw-alias-label-tertiary);\n  cursor: pointer;\n}\n\n.dshUk-SearchField-clear:hover:not(:disabled) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-clear:focus {\n  outline: none;\n}\n\n.dshUk-SearchField-clear:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 1px;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-SearchField-root {\n    transition: none;\n  }\n}\n');
+    SearchField_module_css_default = {
+      "root": "dshUk-SearchField-root",
+      "stretch": "dshUk-SearchField-stretch",
+      "disabled": "dshUk-SearchField-disabled",
+      "icon": "dshUk-SearchField-icon",
+      "input": "dshUk-SearchField-input",
+      "shortcut": "dshUk-SearchField-shortcut",
+      "clear": "dshUk-SearchField-clear"
+    };
+    SearchField = (0, import_react.forwardRef)(function SearchField2({ value, defaultValue = "", onValueChange, onClear, debounceMs = 200, shortcut, stretch = false, clearLabel = "Clear", className, disabled, id, placeholder = "Search", ...rest }, ref) {
+      const generatedId = (0, import_react.useId)();
+      const inputId = id ?? generatedId;
+      const inputRef = (0, import_react.useRef)(null);
+      const timerRef = (0, import_react.useRef)(null);
+      const controlled = value !== void 0;
+      const [inner, setInner] = (0, import_react.useState)(defaultValue);
+      const current = controlled ? value : inner;
+      const immediate = controlled || debounceMs <= 0;
+      (0, import_react.useEffect)(() => {
+        return () => {
+          if (timerRef.current) clearTimeout(timerRef.current);
+        };
+      }, []);
+      (0, import_react.useEffect)(() => {
+        if (!shortcut || disabled) return;
+        const onKey = (event) => {
+          if (event.defaultPrevented) return;
+          if (isTypingTarget(event.target)) return;
+          if (!matchesShortcut(event, shortcut)) return;
+          event.preventDefault();
+          inputRef.current?.focus();
+          inputRef.current?.select();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => {
+          window.removeEventListener("keydown", onKey);
+        };
+      }, [shortcut, disabled]);
+      function emit(next) {
+        if (immediate) {
+          onValueChange?.(next);
+          return;
+        }
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+          timerRef.current = null;
+          onValueChange?.(next);
+        }, debounceMs);
+      }
+      function apply2(next) {
+        if (!controlled) setInner(next);
+        emit(next);
+      }
+      function onChange(event) {
+        apply2(event.target.value);
+      }
+      function handleClear() {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+        if (!controlled) setInner("");
+        onValueChange?.("");
+        onClear?.();
+        inputRef.current?.focus();
+      }
+      (0, import_react.useImperativeHandle)(ref, () => ({
+        focus: () => {
+          inputRef.current?.focus();
+        },
+        clear: handleClear
+      }));
+      function onKeyDown(event) {
+        rest.onKeyDown?.(event);
+        if (event.defaultPrevented) return;
+        if (event.key === "Escape" && current) {
+          event.preventDefault();
+          handleClear();
+        }
+      }
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+        className: cx(SearchField_module_css_default.root, stretch && SearchField_module_css_default.stretch, disabled && SearchField_module_css_default.disabled, className),
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: SearchField_module_css_default.icon,
+            "aria-hidden": "true",
+            children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconSearchOutline16, { size: 16 })
+          }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+            ...rest,
+            ref: inputRef,
+            id: inputId,
+            type: "search",
+            className: SearchField_module_css_default.input,
+            value: current,
+            disabled,
+            placeholder,
+            autoComplete: "off",
+            spellCheck: false,
+            onChange,
+            onKeyDown
+          }),
+          current ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+            type: "button",
+            className: SearchField_module_css_default.clear,
+            "aria-label": clearLabel,
+            title: clearLabel,
+            disabled,
+            onClick: handleClear,
+            children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseFill14, { size: 14 })
+          }) : shortcut ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
+            className: SearchField_module_css_default.shortcut,
+            children: shortcut
+          }) : null
+        ]
+      });
+    });
+    injectCss("InputField.module.css", ".dshUk-InputField-root {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  min-width: 0;\n}\n\n.dshUk-InputField-label {\n  display: block;\n  font-size: 12px;\n  line-height: 16px;\n  font-weight: 500;\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-InputField-required {\n  margin-left: 2px;\n  color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-control {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-InputField-control:hover:not(.dshUk-InputField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-InputField-control:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-InputField-invalid {\n  border-color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-invalid:focus-within {\n  border-color: var(--dsw-alias-state-error-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-interactive-bg-hover-danger);\n}\n\n.dshUk-InputField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-affix {\n  display: inline-flex;\n  align-items: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-InputField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-InputField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-meta {\n  min-height: 16px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-hint {\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-InputField-error {\n  color: var(--dsw-alias-state-error-primary);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-InputField-control {\n    transition: none;\n  }\n}\n");
+    InputField_module_css_default = {
+      "root": "dshUk-InputField-root",
+      "label": "dshUk-InputField-label",
+      "required": "dshUk-InputField-required",
+      "control": "dshUk-InputField-control",
+      "disabled": "dshUk-InputField-disabled",
+      "invalid": "dshUk-InputField-invalid",
+      "affix": "dshUk-InputField-affix",
+      "input": "dshUk-InputField-input",
+      "meta": "dshUk-InputField-meta",
+      "hint": "dshUk-InputField-hint",
+      "error": "dshUk-InputField-error"
+    };
+    InputField = (0, import_react.forwardRef)(function InputField2({ label, hint, error, prefix, suffix, className, disabled, id, required, ...rest }, ref) {
+      const generatedId = (0, import_react.useId)();
+      const inputId = id ?? generatedId;
+      const hintId = `${inputId}-hint`;
+      const errorId = `${inputId}-error`;
+      const invalid = Boolean(error);
+      const describedBy = [
+        rest["aria-describedby"],
+        hint ? hintId : void 0,
+        invalid ? errorId : void 0
+      ].filter(Boolean).join(" ") || void 0;
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+        className: cx(InputField_module_css_default.root, className),
+        htmlFor: inputId,
+        children: [
+          label != null && label !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+            className: InputField_module_css_default.label,
+            children: [label, required ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+              className: InputField_module_css_default.required,
+              "aria-hidden": "true",
+              children: "*"
+            }) : null]
+          }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+            className: cx(InputField_module_css_default.control, invalid && InputField_module_css_default.invalid, disabled && InputField_module_css_default.disabled),
+            children: [
+              prefix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+                className: InputField_module_css_default.affix,
+                children: prefix
+              }) : null,
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+                ...rest,
+                ref,
+                id: inputId,
+                className: InputField_module_css_default.input,
+                disabled,
+                required,
+                "aria-invalid": invalid || void 0,
+                "aria-describedby": describedBy
+              }),
+              suffix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+                className: InputField_module_css_default.affix,
+                children: suffix
+              }) : null
+            ]
+          }),
+          invalid ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: cx(InputField_module_css_default.meta, InputField_module_css_default.error),
+            id: errorId,
+            role: "alert",
+            children: error
+          }) : hint ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: cx(InputField_module_css_default.meta, InputField_module_css_default.hint),
+            id: hintId,
+            children: hint
+          }) : null
+        ]
+      });
+    });
+    injectCss("DropdownSelect.module.css", ".dshUk-DropdownSelect-anchor {\n  display: inline-flex;\n  flex-shrink: 0;\n  min-width: 0;\n}\n\n.dshUk-DropdownSelect-trigger {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  width: 100%;\n  min-width: 112px;\n  height: 32px;\n  margin: 0;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  text-align: left;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-trigger:hover:not(:disabled) {\n  border-color: var(--dsw-alias-border-l3);\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-DropdownSelect-trigger:focus {\n  outline: none;\n}\n\n.dshUk-DropdownSelect-trigger:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-DropdownSelect-trigger:disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-DropdownSelect-open {\n  border-color: var(--dsw-alias-brand-primary);\n}\n\n.dshUk-DropdownSelect-label {\n  flex: 1;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-DropdownSelect-placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-DropdownSelect-chevron {\n  display: inline-flex;\n  width: 14px;\n  height: 14px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-chevronOpen {\n  transform: rotate(180deg);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-DropdownSelect-trigger,\n  .dshUk-DropdownSelect-chevron {\n    transition: none;\n  }\n}\n");
+    DropdownSelect_module_css_default = {
+      "anchor": "dshUk-DropdownSelect-anchor",
+      "trigger": "dshUk-DropdownSelect-trigger",
+      "open": "dshUk-DropdownSelect-open",
+      "label": "dshUk-DropdownSelect-label",
+      "placeholder": "dshUk-DropdownSelect-placeholder",
+      "chevron": "dshUk-DropdownSelect-chevron",
+      "chevronOpen": "dshUk-DropdownSelect-chevronOpen"
+    };
+    injectCss("Toolbar.module.css", ".dshUk-Toolbar-bar {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  height: 48px;\n  min-height: 44px;\n  max-height: 48px;\n  padding: 0 12px;\n  overflow: hidden;\n  white-space: nowrap;\n}\n\n.dshUk-Toolbar-compact {\n  height: 44px;\n  min-height: 44px;\n}\n\n.dshUk-Toolbar-left,\n.dshUk-Toolbar-right {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  min-width: 0;\n}\n\n.dshUk-Toolbar-left {\n  flex: 1 1 auto;\n  overflow: hidden;\n}\n\n.dshUk-Toolbar-right {\n  flex: 0 0 auto;\n  margin-left: auto;\n}\n\n.dshUk-Toolbar-right > * {\n  flex-shrink: 0;\n}\n\n.dshUk-Toolbar-filters {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  flex: 0 0 auto;\n}\n\n.dshUk-Toolbar-filters > * {\n  flex-shrink: 0;\n}\n");
+    Toolbar_module_css_default = {
+      "bar": "dshUk-Toolbar-bar",
+      "compact": "dshUk-Toolbar-compact",
+      "left": "dshUk-Toolbar-left",
+      "right": "dshUk-Toolbar-right",
+      "filters": "dshUk-Toolbar-filters"
+    };
+    injectCss("Dialog.module.css", ".dshUk-Dialog-dialog {\n  width: min(480px, 100%);\n  max-height: min(80vh, 720px);\n  border-radius: 16px;\n}\n\n.dshUk-Dialog-sm {\n  width: min(380px, 100%);\n}\n\n.dshUk-Dialog-lg {\n  width: min(640px, 100%);\n}\n\n.dshUk-Dialog-body {\n  overflow: auto;\n  max-height: min(56vh, 480px);\n}\n\n.dshUk-Dialog-footer {\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  gap: 8px;\n  width: 100%;\n}\n\n.dshUk-Dialog-message {\n  margin: 0;\n  font-size: 14px;\n  line-height: 22px;\n  color: var(--dsw-alias-label-primary);\n}\n");
+    Dialog_module_css_default = {
+      "dialog": "dshUk-Dialog-dialog",
+      "sm": "dshUk-Dialog-sm",
+      "lg": "dshUk-Dialog-lg",
+      "body": "dshUk-Dialog-body",
+      "footer": "dshUk-Dialog-footer",
+      "message": "dshUk-Dialog-message"
+    };
+    SIZE_CLASS = {
+      sm: cssClass(Dialog_module_css_default.sm, "sm"),
+      md: void 0,
+      lg: cssClass(Dialog_module_css_default.lg, "lg")
+    };
+  }
+});
+
+// client-factory.js
+var React = require("react");
+var h = React.createElement;
+var { useEffect: useEffect2, useState: useState2 } = React;
+var { Button: Button3, FilterBar: FilterBar2, IconButton: IconButton3, InputField: InputField3, SearchField: SearchField3 } = (init_lib(), __toCommonJS(lib_exports));
+var { IconCloseOutline16 } = require("@deepseek-ai/dsh-client-ui-primitives");
+var CSS = `
 .sh-root{font-family:inherit;color:var(--dsw-alias-label-primary,inherit);max-width:920px}
 .sh-hint{color:var(--dsw-alias-label-caption,#6b7280);font-size:12px;line-height:18px;margin:0 0 10px}
 .sh-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -43,8 +565,7 @@ window.__ModuleLoader__.load({
 .sh-overlay{position:fixed;inset:0;z-index:2147483000;background:var(--dsw-alias-bg-mask-3,rgba(15,23,42,.48));display:flex;align-items:center;justify-content:center;padding:24px 16px;box-sizing:border-box}
 .sh-drawer{position:relative;width:min(720px,100%);max-height:min(86vh,840px);margin:0 auto;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary,inherit);border:1px solid var(--dsw-alias-border-l2,#9aa5b5);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 18px 50px rgba(15,23,42,.28)}
 .sh-drawer.sh-skill{width:min(840px,100%);height:min(86vh,860px);max-height:min(86vh,860px)}
-.sh-close{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2,#d1d5db);background:var(--dsw-alias-bg-layer-3,#fff);cursor:pointer;font-size:18px;line-height:1;color:var(--dsw-alias-label-secondary,#4b5563);z-index:2}
-.sh-close:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}
+.sh-close{position:absolute;top:10px;right:10px;z-index:2}
 .sh-head{display:flex;gap:14px;align-items:flex-start;padding:18px 48px 16px 18px;border-bottom:1px solid var(--dsw-alias-border-l2,#e5e7eb)}
 .sh-dicon{width:64px;height:64px;border-radius:12px;display:grid;place-items:center;font-weight:800;background:linear-gradient(135deg,#c7d2fe,#fbcfe8);border:1px solid var(--dsw-alias-border-l2,#e5e7eb);flex-shrink:0;object-fit:cover}
 .sh-head h2{margin:0 0 6px;font-size:18px;line-height:1.35;color:var(--dsw-alias-label-primary,inherit)}
@@ -90,6 +611,7 @@ window.__ModuleLoader__.load({
 .sh-tool{margin:4px 0 8px}
 .sh-fade{animation:sh-in .18s ease}
 .sh-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--dsw-alias-border-l2,#eee)}
+.sh-row-actions{display:flex;align-items:center;gap:8px}
 .sh-row:first-child{border-top:0}
 .sh-cfg-item{list-style:none}
 .sh-cfg{border:1px solid var(--dsw-alias-border-l2,#e5e7eb);background:var(--dsw-alias-bg-layer-3,#fff);border-radius:12px;box-sizing:border-box}
@@ -102,7 +624,7 @@ window.__ModuleLoader__.load({
 .sh-cfg-d{color:var(--dsw-alias-label-tertiary,#6b7280);font-size:13px;line-height:1.5}
 .sh-cfg-ch{color:var(--dsw-alias-label-tertiary,#6b7280);flex:none;width:14px;height:14px;transition:transform .16s;display:block;pointer-events:none}
 .sh-cfg.open .sh-cfg-ch{transform:rotate(180deg)}
-.sh-cfg-b{border-top:1px solid var(--dsw-alias-border-l2,#e5e7eb);margin:0 16px;padding:8px 0 12px}
+.sh-cfg-b{border-top:1px solid var(--dsw-alias-border-l2,#e5e7eb);margin:0 16px;padding:8px 0 12px;display:flex;flex-direction:column;gap:10px}
 .sh-cfg-f{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid var(--dsw-alias-border-l2,#eee)}
 .sh-cfg-f:first-child{border-top:0}
 .sh-cfg-f label{font-size:13px;font-weight:500;color:var(--dsw-alias-label-primary,inherit)}
@@ -118,15 +640,9 @@ window.__ModuleLoader__.load({
 .sh-mkt{display:flex;flex-direction:column;gap:14px;width:100%;max-width:760px;padding-bottom:24px;color:var(--dsw-alias-label-primary,#17191c);font-family:var(--dsw-font-family,inherit)}
 .sh-mkt *{box-sizing:border-box}
 .sh-mkt-filter{flex:none;height:30px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-tertiary,#7b8088);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
-.sh-mkt-search{display:flex;align-items:center;gap:8px}
-.sh-mkt-field{position:relative;flex:1;min-width:0;color:var(--dsw-alias-label-tertiary,#7b8088)}
-.sh-mkt-field svg{position:absolute;top:10px;left:12px;width:16px;height:16px;pointer-events:none}
-.sh-mkt-search input{width:100%;height:36px;border:1px solid var(--dsw-alias-border-l2,#e2e4e8);border-radius:8px;padding:0 12px 0 36px;outline:none;background:var(--dsw-alias-bg-layer-1,#f5f6f8);color:var(--dsw-alias-label-primary,#17191c);font:inherit;font-size:13px}
-.sh-mkt-search input::placeholder{color:var(--dsw-alias-label-tertiary,#7b8088)}
-.sh-mkt-search input:focus-visible{border-color:var(--dsw-alias-state-business-primary,#4d6bfe);box-shadow:0 0 0 2px color-mix(in srgb,var(--dsw-alias-state-business-primary,#4d6bfe) 18%,transparent)}
-.sh-mkt-go,.sh-mkt-install{border:1px solid transparent;border-radius:8px;background:var(--dsw-alias-label-primary,#17191c);color:var(--dsw-alias-bg-layer-3,#fff);font:inherit;font-weight:600;cursor:pointer}
-.sh-mkt-go{flex:none;height:36px;padding:0 16px;font-size:13px}
-.sh-mkt-go:hover,.sh-mkt-install:hover:not(:disabled){opacity:.82}
+.sh-mkt-search{display:block;width:100%}
+.sh-mkt-search [role="toolbar"]{width:100%;padding:0;height:auto;min-height:32px;max-height:none}
+.sh-mkt-search .dshUk-SearchField-root,.sh-mkt-search .dshUk-SearchField-stretch{max-width:none}
 .sh-mkt-filters{display:flex;align-items:center;gap:5px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .sh-mkt-filters::-webkit-scrollbar{display:none}
 .sh-mkt-filter:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}
@@ -175,7 +691,7 @@ window.__ModuleLoader__.load({
 .sh-mkt-more:active{transform:translateY(0.5px)}
 .sh-mkt-more-left{color:var(--dsw-alias-label-tertiary,#7b8088);font-size:12px;font-weight:400;font-variant-numeric:tabular-nums}
 .sh-mkt-more svg{flex:none;width:14px;height:14px}
-@media (max-width:680px){.sh-mkt-grid{grid-template-columns:minmax(0,1fr)}.sh-mkt-search{align-items:stretch;flex-direction:column}.sh-mkt-go{width:100%}}
+@media (max-width:680px){.sh-mkt-grid{grid-template-columns:minmax(0,1fr)}}
 .sh-plaza-wrap{width:100%}
 .sh-plaza-wrap.rail{display:flex;justify-content:center}
 .sh-plaza-trigger{box-sizing:border-box;display:flex;align-items:center;gap:8px;width:calc(100% + 4px);height:42px;margin:4px -2px;padding:0 10px 0 8px;border:0;border-radius:12px;background:transparent;color:var(--dsw-alias-label-primary,inherit);font:inherit;font-size:14px;line-height:22px;cursor:pointer;overflow:hidden}
@@ -191,8 +707,7 @@ window.__ModuleLoader__.load({
 .sh-plaza-tab{height:30px;padding:0;border:0;border-radius:0;background:inherit;color:var(--dsw-alias-label-tertiary,#7b8088);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
 .sh-plaza-tab:hover{color:var(--dsw-alias-label-primary,#17191c)}
 .sh-plaza-tab.on{background:inherit;color:var(--dsw-alias-state-business-primary,#4d6bfe);box-shadow:none}
-.sh-plaza-close{margin-left:auto;width:32px;height:32px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2,#d1d5db);background:var(--dsw-alias-bg-layer-3,#fff);cursor:pointer;font-size:18px;line-height:1;color:var(--dsw-alias-label-secondary,#4b5563)}
-.sh-plaza-close:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}
+.sh-plaza-close{margin-left:auto}
 .sh-plaza-body{flex:1;min-height:0;overflow:auto;padding:18px 20px 32px}
 .sh-plaza-body .sh-mkt{max-width:none;width:100%}
 .sh-plaza-body .sh-cards,.sh-plaza-body .sh-mkt-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
@@ -211,2354 +726,2383 @@ window.__ModuleLoader__.load({
 .sh-plaza-skip:hover{color:var(--dsw-alias-label-secondary,#4b5563)}
 .sh-plaza-status{margin:8px 0 0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary,#4b5563)}
 `;
-
-    const CSS_ID = "omnimux-market-style";
-    function ensureCss() {
-      if (typeof document === "undefined") return () => {};
-      let s = document.getElementById(CSS_ID);
-      if (!s) {
-        s = document.createElement("style");
-        s.id = CSS_ID;
-        document.head.appendChild(s);
-      }
-      s.textContent = CSS;
-      return () => {};
-    }
-
-    const fallbackPortal = (node) => node;
-    let createPortal = fallbackPortal;
-    try {
-      const rd = require("react-dom");
-      if (rd && typeof rd.createPortal === "function") createPortal = rd.createPortal;
-    } catch { /* overlay still works without portal */ }
-
-    function initials(name) {
-      const t = String(name || "").replace(/[a-zA-Z0-9._-]/g, "");
-      return (t.slice(0, 3) || String(name || "SK").slice(0, 2)).toUpperCase();
-    }
-
-    function pluginUrl(path) {
-      const suffix = String(path || "").replace(/^\/+/, "");
-      const base = typeof document !== "undefined" ? document.baseURI : "/";
-      return new URL("./omnimux-market" + (suffix ? "/" + suffix : ""), base).toString();
-    }
-
-    function iconSrc(url) {
-      if (!url) return "";
-      if (url.startsWith("data:")) return url;
-      return pluginUrl("icon?url=" + encodeURIComponent(url));
-    }
-
-    function fmt(n, tr) {
-      const v = Number(n) || 0;
-      const en = tr && tr("locale") === "en";
-      if (en) {
-        if (v >= 1000000) return (v / 1000000).toFixed(v >= 10000000 ? 0 : 1) + "M";
-        if (v >= 10000) return (v / 1000).toFixed(v >= 100000 ? 0 : 1) + "k";
-        return String(v);
-      }
-      if (v >= 10000) return (v / 10000).toFixed(v >= 100000 ? 0 : 1) + " 万";
-      return String(v);
-    }
-
-    function fmtStat(n, tr) {
-      if (n == null || n === "") return "…";
-      return fmt(n, tr);
-    }
-
-    function fmtTime(n, tr) {
-      const t = Number(n);
-      if (!t) return "";
-      const d = new Date(t);
-      if (Number.isNaN(d.getTime())) return "";
-      const loc = tr && tr("locale") === "en" ? "en-US" : "zh-CN";
-      return d.toLocaleDateString(loc, { year: "numeric", month: "short", day: "numeric" });
-    }
-
-    const ZH = {
-      locale: "zh",
-      "cfg.desc": "搜索 API、安装目录与结果数量。",
-      "cfg.updateHint": "当前 {cur} · 最新 {latest}",
-      "cfg.unsaved": "未保存",
-      "cfg.collapse": "收起",
-      "cfg.expand": "展开",
-      "cfg.api": "API 地址",
-      "cfg.dir": "安装目录",
-      "cfg.max": "搜索结果上限",
-      "cfg.discard": "放弃修改",
-      "cfg.save": "保存",
-      "cfg.saving": "保存中",
-      "installed.hint": "已安装 {n} 个技能",
-      "installed.none": "未安装任何技能",
-      "action.detail": "详情",
-      "action.uninstall": "卸载",
-      "action.uninstalling": "卸载中",
-      "action.install": "安装",
-      "action.installing": "安装中",
-      "action.installed": "已安装",
-      "action.openHome": "打开主页",
-      "action.close": "关闭",
-      "badge.installed": "已安装",
-      "search.hint": "共 {n} 个可用技能",
-      "search.fallback": "没有匹配结果，以下是热门技能推荐",
-      "search.empty": "没有结果",
-      "tab.overview": "概述",
-      "tab.versions": "版本历史",
-      "tab.evaluation": "评测报告",
-      "stat.downloads": "下载",
-      "stat.stars": "收藏",
-      "stat.installs": "安装",
-      "meta.downloads": "{n} 下载",
-      "grade.excellent": "优秀",
-      "grade.good": "良好",
-      "grade.fair": "一般",
-      "grade.poor": "待提升",
-      "rate.ai": "AI 评分",
-      "verified": "认证",
-      "verified.account": "认证账号",
-      "eval.none": "该 Skill 暂未进行评测",
-      "eval.grade": "综合评级：{g}",
-      "eval.detail": "评测详情",
-      "dim.trust": "可信任度",
-      "dim.reliability": "可靠性",
-      "dim.adaptability": "适用性",
-      "dim.convention": "规范性",
-      "dim.effectiveness": "有效性",
-      "ver.none": "暂无版本历史",
-      "ver.latest": "最新",
-      "ver.current": "当前已装",
-      "ver.unknownDate": "发布日期未知",
-      "ver.noLog": "无更新说明",
-      "ver.this": "已安装此版本",
-      "ver.install": "安装指定版本",
-      "overview.empty": "暂无简介",
-      "sec.badge": "安全",
-      loading: "加载中…",
-      "toast.installed": "{name} 已安装",
-      "toast.uninstalled": "已卸载 {name}",
-      "cat.office-efficiency": "办公效率",
-      "cat.content-creation": "内容创作",
-      "cat.dev-programming": "开发编程",
-      "cat.data-analysis": "数据分析",
-      "cat.design-media": "设计多媒体",
-      "cat.ai-agent": "AI Agent",
-      "cat.knowledge-management": "知识管理",
-      "cat.business-ops": "商业运营",
-      "cat.education": "教育学习",
-      "cat.professional": "行业专业",
-      "cat.it-ops-security": "IT 运维与安全",
-      "cat.life-service": "生活服务",
-      "mkt.searchPlaceholder": "输入关键词搜索",
-      "mkt.search": "搜索",
-      "mkt.repos": "发现 GitHub MIT 开源的共 {n} 个插件扩展",
-      "mkt.loading": "正在加载 SkillHub…",
-      "mkt.error": "连接失败：{m}",
-      "mkt.empty": "没有匹配的插件。",
-      "mkt.noDesc": "该仓库暂无描述。",
-      "mkt.details": "详情",
-      "mkt.verified": "已验证",
-      "mkt.unsupported": "不可直接安装",
-      "mkt.sending": "正在安装",
-      "mkt.install": "安装",
-      "mkt.installed": "已安装",
-      "mkt.sent": "已安装 {name}，刷新页面或重启服务后生效。",
-      "mkt.progressHint": "首次安装需下载并构建依赖，耗时约 1–3 分钟",
-      "mkt.phaseResolving": "解析依赖",
-      "mkt.phaseDownloading": "下载中",
-      "mkt.phaseLinking": "链接依赖",
-      "mkt.phaseBuilding": "运行构建脚本",
-      "mkt.packagesDone": "已处理 {n} 个包",
-      "mkt.restartBanner": "已安装 {name}，刷新页面或重启服务后生效",
-      "mkt.restartNow": "立即重启",
-      "mkt.restarting": "正在重启…",
-      "mkt.restartFail": "重启失败：{m}",
-      "mkt.restartTimeout": "服务响应超时，请在终端手动重启 dsh web",
-      "mkt.more": "加载更多",
-      "mkt.moreLeft": "还剩 {n} 个",
-      "mkt.catAll": "全部",
-      "plaza.title": "扩展市场",
-      "plaza.skills": "技能",
-      "plaza.plugins": "插件",
-      "plaza.experts": "专家",
-      "plaza.connectors": "连接器",
-      "expert.searchPlaceholder": "搜索专家（姓名 / 领域）",
-      "expert.empty": "没有匹配的专家",
-      "expert.summoning": "正在挂载…",
-      "expert.gestureReady": "专家调度指令 {g} 已生成。请聚焦输入框重试，或直接键入指令发送。",
-      "connector.searchPlaceholder": "搜索连接器",
-      "connector.empty": "没有匹配的连接器",
-      "connector.install": "安装",
-      "connector.installing": "安装中…",
-      "connector.installed": "已安装",
-      "connector.uninstall": "卸载",
-      "connector.restartHint": "连接器安装或卸载后需重启服务生效",
-      "connector.installLater": "当前仅支持浏览连接器，安装与配置功能即将在后续版本开放",
-      "plaza.noSession": "请先打开一个会话",
-      "plaza.back": "返回对话",
-      "plaza.card.hint": "选择适合当前任务的专家角色",
-      "plaza.card.summon": "挂载",
-      "plaza.card.summoning": "正在挂载…",
-      "plaza.card.summoned": "已挂载",
-      "plaza.card.kind.expert": "专家",
-      "plaza.card.kind.team": "专家战队",
-      "plaza.card.skip": "直接开始（不启用专家）",
-      "plaza.card.continue": "已挂载 {name}，正在以该专家模式继续",
-      "plaza.card.sendFail": "已挂载，请按发送继续",
-    };
-    const EN = {
-      locale: "en",
-      "cfg.desc": "Search API, install directory, and result count.",
-      "cfg.updateHint": "Current {cur} · Latest {latest}",
-      "cfg.unsaved": "Unsaved",
-      "cfg.collapse": "Collapse",
-      "cfg.expand": "Expand",
-      "cfg.api": "API URL",
-      "cfg.dir": "Install directory",
-      "cfg.max": "Search result limit",
-      "cfg.discard": "Discard",
-      "cfg.save": "Save",
-      "cfg.saving": "Saving",
-      "installed.hint": "{n} skills installed",
-      "installed.none": "No skills installed",
-      "action.detail": "Details",
-      "action.uninstall": "Uninstall",
-      "action.uninstalling": "Uninstalling",
-      "action.install": "Install",
-      "action.installing": "Installing",
-      "action.installed": "Installed",
-      "action.openHome": "Open homepage",
-      "action.close": "Close",
-      "badge.installed": "Installed",
-      "search.hint": "{n} available skills",
-      "search.fallback": "No matches — showing popular skills instead",
-      "search.empty": "No results",
-      "tab.overview": "Overview",
-      "tab.versions": "Versions",
-      "tab.evaluation": "Evaluation",
-      "stat.downloads": "Downloads",
-      "stat.stars": "Stars",
-      "stat.installs": "Installs",
-      "meta.downloads": "{n} downloads",
-      "grade.excellent": "Excellent",
-      "grade.good": "Good",
-      "grade.fair": "Fair",
-      "grade.poor": "Needs work",
-      "rate.ai": "AI rating",
-      "verified": "Verified",
-      "verified.account": "Verified publisher",
-      "eval.none": "This skill has not been evaluated yet",
-      "eval.grade": "Overall: {g}",
-      "eval.detail": "Evaluation details",
-      "dim.trust": "Trust",
-      "dim.reliability": "Reliability",
-      "dim.adaptability": "Adaptability",
-      "dim.convention": "Convention",
-      "dim.effectiveness": "Effectiveness",
-      "ver.none": "No version history",
-      "ver.latest": "Latest",
-      "ver.current": "Installed",
-      "ver.unknownDate": "Unknown date",
-      "ver.noLog": "No changelog",
-      "ver.this": "This version installed",
-      "ver.install": "Install this version",
-      "overview.empty": "No description",
-      "sec.badge": "Safe",
-      loading: "Loading…",
-      "toast.installed": "{name} installed",
-      "toast.uninstalled": "Uninstalled {name}",
-      "cat.office-efficiency": "Office",
-      "cat.content-creation": "Content",
-      "cat.dev-programming": "Programming",
-      "cat.data-analysis": "Data",
-      "cat.design-media": "Design",
-      "cat.ai-agent": "AI Agent",
-      "cat.knowledge-management": "Knowledge",
-      "cat.business-ops": "Business",
-      "cat.education": "Education",
-      "cat.professional": "Professional",
-      "cat.it-ops-security": "IT & Security",
-      "cat.life-service": "Lifestyle",
-      "mkt.searchPlaceholder": "Enter keywords",
-      "mkt.search": "Search",
-      "mkt.repos": "Found {n} MIT-licensed open-source plugins on GitHub",
-      "mkt.loading": "Loading SkillHub…",
-      "mkt.error": "Connection failed: {m}",
-      "mkt.empty": "No plugins match your filters.",
-      "mkt.noDesc": "This repository has no description yet.",
-      "mkt.details": "Details",
-      "mkt.verified": "Verified",
-      "mkt.unsupported": "Direct Install Unavailable",
-      "mkt.sending": "Installing",
-      "mkt.install": "Install",
-      "mkt.installed": "Installed",
-      "mkt.sent": "Installed {name}. Restart service to apply.",
-      "mkt.progressHint": "Initial installation resolves and builds dependencies (approx. 1–3 min)",
-      "mkt.phaseResolving": "Resolving dependencies",
-      "mkt.phaseDownloading": "Downloading",
-      "mkt.phaseLinking": "Linking",
-      "mkt.phaseBuilding": "Running build scripts",
-      "mkt.packagesDone": "Processed {n} packages",
-      "mkt.restartBanner": "Installed {name} — restart service to apply",
-      "mkt.restartNow": "Restart Now",
-      "mkt.restarting": "Restarting…",
-      "mkt.restartFail": "Restart failed: {m}",
-      "mkt.restartTimeout": "Host startup timed out. Please restart dsh web manually.",
-      "mkt.more": "Load more",
-      "mkt.moreLeft": "{n} remaining",
-      "mkt.catAll": "All",
-      "plaza.title": "Extension Market",
-      "plaza.skills": "Skills",
-      "plaza.plugins": "Plugins",
-      "plaza.experts": "Experts",
-      "plaza.connectors": "Connectors",
-      "expert.searchPlaceholder": "Search experts (name / domain)",
-      "expert.empty": "No matching experts",
-      "expert.summoning": "Attaching…",
-      "expert.gestureReady": "{g} is ready. Focus the input composer to apply, or type the command manually.",
-      "connector.searchPlaceholder": "Search connectors",
-      "connector.empty": "No matching connectors",
-      "connector.install": "Install",
-      "connector.installing": "Installing…",
-      "connector.installed": "Installed",
-      "connector.uninstall": "Uninstall",
-      "connector.restartHint": "Restart service after installing or uninstalling a connector",
-      "connector.installLater": "Connector browsing only. Installation will be available in an upcoming release.",
-      "plaza.noSession": "Open a session first",
-      "plaza.back": "Back to chat",
-      "plaza.card.hint": "Select an expert role suitable for current task",
-      "plaza.card.summon": "Attach",
-      "plaza.card.summoning": "Attaching…",
-      "plaza.card.summoned": "Attached",
-      "plaza.card.kind.expert": "Expert",
-      "plaza.card.kind.team": "Expert Team",
-      "plaza.card.skip": "Continue without Expert",
-      "plaza.card.continue": "Attached {name}; continuing with this expert",
-      "plaza.card.sendFail": "Attached. Press send to continue",
-    };
-
-    const I18nCtx = React.createContext(null);
-
-    function interpolate(template, params) {
-      if (!params) return template;
-      return String(template).replace(/\{(\w+)\}/g, (m, name) => (name in params ? String(params[name]) : m));
-    }
-
-    function browserLang() {
-      const lang = (typeof document !== "undefined" && document.documentElement.lang)
-        || (typeof navigator !== "undefined" && navigator.language)
-        || "zh";
-      return /^en\b/i.test(String(lang)) ? "en" : "zh";
-    }
-
-    function lookup(key, params) {
-      const dict = browserLang() === "en" ? EN : ZH;
-      return interpolate(dict[key] || ZH[key] || key, params);
-    }
-
-    function useTr() {
-      return React.useContext(I18nCtx) || lookup;
-    }
-
-    function I18nProvider({ t, children }) {
-      const fn = typeof t === "function" ? t : lookup;
-      return h(I18nCtx.Provider, { value: fn }, children);
-    }
-
-    function catLabel(item, tr) {
-      const key = item && item.category ? "cat." + item.category : "";
-      const label = key ? tr(key) : "";
-      if (label && label !== key) return label;
-      return (item && (item.categoryLabel || item.category)) || "";
-    }
-
-    const DETAIL_TABS = [
-      { id: "overview", labelKey: "tab.overview" },
-      { id: "versions", labelKey: "tab.versions" },
-      { id: "evaluation", labelKey: "tab.evaluation" },
-    ];
-    const TRACE = [
-      ["trust", "T", "Trust", "可信任度", "#16a34a"],
-      ["reliability", "R", "Reliability", "可靠性", "#2563eb"],
-      ["adaptability", "A", "Adaptability", "适用性", "#d97706"],
-      ["convention", "C", "Convention", "规范性", "#7c3aed"],
-      ["effectiveness", "E", "Effectiveness", "有效性", "#ea580c"],
-    ];
-
-    /** Client L1 soft cache: method+payload → last ok body. Soft TTL ~90s. */
-    const apiCache = new Map();
-    const API_CACHE_TTL_MS = 90_000;
-    const API_CACHE_READ = new Set(["search", "plugins", "pluginCategories", "experts", "connectors"]);
-
-    function apiCacheKey(method, payload) {
-      const { refresh, ...rest } = payload || {};
-      return method + ":" + JSON.stringify(rest || {});
-    }
-
-    function invalidateApiCache(prefix) {
-      for (const key of [...apiCache.keys()]) {
-        if (!prefix || key.startsWith(prefix)) apiCache.delete(key);
-      }
-    }
-
-    async function api(method, payload, opts) {
-      const bodyIn = payload || {};
-      const skipCache = !!(opts && opts.skipCache) || !!bodyIn.refresh || !API_CACHE_READ.has(method);
-      const key = apiCacheKey(method, bodyIn);
-      if (!skipCache) {
-        const hit = apiCache.get(key);
-        if (hit && Date.now() - hit.at < API_CACHE_TTL_MS) return hit.body;
-      }
-      const res = await fetch(pluginUrl(""), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ method, ...bodyIn }),
+var CSS_ID = "omnimux-market-style";
+function ensureCss() {
+  if (typeof document === "undefined") return () => {
+  };
+  let s = document.getElementById(CSS_ID);
+  if (!s) {
+    s = document.createElement("style");
+    s.id = CSS_ID;
+    document.head.appendChild(s);
+  }
+  s.textContent = CSS;
+  return () => {
+  };
+}
+var fallbackPortal = (node) => node;
+var createPortal = fallbackPortal;
+try {
+  const rd = require("react-dom");
+  if (rd && typeof rd.createPortal === "function") createPortal = rd.createPortal;
+} catch {
+}
+function initials(name) {
+  const t = String(name || "").replace(/[a-zA-Z0-9._-]/g, "");
+  return (t.slice(0, 3) || String(name || "SK").slice(0, 2)).toUpperCase();
+}
+function pluginUrl(path) {
+  const suffix = String(path || "").replace(/^\/+/, "");
+  const base = typeof document !== "undefined" ? document.baseURI : "/";
+  return new URL("./omnimux-market" + (suffix ? "/" + suffix : ""), base).toString();
+}
+function iconSrc(url) {
+  if (!url) return "";
+  if (url.startsWith("data:")) return url;
+  return pluginUrl("icon?url=" + encodeURIComponent(url));
+}
+function fmt(n, tr) {
+  const v = Number(n) || 0;
+  const en = tr && tr("locale") === "en";
+  if (en) {
+    if (v >= 1e6) return (v / 1e6).toFixed(v >= 1e7 ? 0 : 1) + "M";
+    if (v >= 1e4) return (v / 1e3).toFixed(v >= 1e5 ? 0 : 1) + "k";
+    return String(v);
+  }
+  if (v >= 1e4) return (v / 1e4).toFixed(v >= 1e5 ? 0 : 1) + " 万";
+  return String(v);
+}
+function fmtStat(n, tr) {
+  if (n == null || n === "") return "…";
+  return fmt(n, tr);
+}
+function fmtTime(n, tr) {
+  const t = Number(n);
+  if (!t) return "";
+  const d = new Date(t);
+  if (Number.isNaN(d.getTime())) return "";
+  const loc = tr && tr("locale") === "en" ? "en-US" : "zh-CN";
+  return d.toLocaleDateString(loc, { year: "numeric", month: "short", day: "numeric" });
+}
+var ZH = {
+  locale: "zh",
+  "cfg.desc": "搜索 API、安装目录与结果数量。",
+  "cfg.updateHint": "当前 {cur} · 最新 {latest}",
+  "cfg.unsaved": "未保存",
+  "cfg.collapse": "收起",
+  "cfg.expand": "展开",
+  "cfg.api": "API 地址",
+  "cfg.dir": "安装目录",
+  "cfg.max": "搜索结果上限",
+  "cfg.discard": "放弃修改",
+  "cfg.save": "保存",
+  "cfg.saving": "保存中",
+  "installed.hint": "已安装 {n} 个技能",
+  "installed.none": "未安装任何技能",
+  "action.detail": "详情",
+  "action.uninstall": "卸载",
+  "action.uninstalling": "卸载中",
+  "action.install": "安装",
+  "action.installing": "安装中",
+  "action.installed": "已安装",
+  "action.openHome": "打开主页",
+  "action.close": "关闭",
+  "badge.installed": "已安装",
+  "search.hint": "共 {n} 个可用技能",
+  "search.fallback": "没有匹配结果，以下是热门技能推荐",
+  "search.empty": "没有结果",
+  "tab.overview": "概述",
+  "tab.versions": "版本历史",
+  "tab.evaluation": "评测报告",
+  "stat.downloads": "下载",
+  "stat.stars": "收藏",
+  "stat.installs": "安装",
+  "meta.downloads": "{n} 下载",
+  "grade.excellent": "优秀",
+  "grade.good": "良好",
+  "grade.fair": "一般",
+  "grade.poor": "待提升",
+  "rate.ai": "AI 评分",
+  "verified": "认证",
+  "verified.account": "认证账号",
+  "eval.none": "该 Skill 暂未进行评测",
+  "eval.grade": "综合评级：{g}",
+  "eval.detail": "评测详情",
+  "dim.trust": "可信任度",
+  "dim.reliability": "可靠性",
+  "dim.adaptability": "适用性",
+  "dim.convention": "规范性",
+  "dim.effectiveness": "有效性",
+  "ver.none": "暂无版本历史",
+  "ver.latest": "最新",
+  "ver.current": "当前已装",
+  "ver.unknownDate": "发布日期未知",
+  "ver.noLog": "无更新说明",
+  "ver.this": "已安装此版本",
+  "ver.install": "安装指定版本",
+  "overview.empty": "暂无简介",
+  "sec.badge": "安全",
+  loading: "加载中…",
+  "toast.installed": "{name} 已安装",
+  "toast.uninstalled": "已卸载 {name}",
+  "cat.office-efficiency": "办公效率",
+  "cat.content-creation": "内容创作",
+  "cat.dev-programming": "开发编程",
+  "cat.data-analysis": "数据分析",
+  "cat.design-media": "设计多媒体",
+  "cat.ai-agent": "AI Agent",
+  "cat.knowledge-management": "知识管理",
+  "cat.business-ops": "商业运营",
+  "cat.education": "教育学习",
+  "cat.professional": "行业专业",
+  "cat.it-ops-security": "IT 运维与安全",
+  "cat.life-service": "生活服务",
+  "mkt.searchPlaceholder": "输入关键词搜索",
+  "mkt.search": "搜索",
+  "mkt.repos": "发现 GitHub MIT 开源的共 {n} 个插件扩展",
+  "mkt.loading": "正在加载 SkillHub…",
+  "mkt.error": "连接失败：{m}",
+  "mkt.empty": "没有匹配的插件。",
+  "mkt.noDesc": "该仓库暂无描述。",
+  "mkt.details": "详情",
+  "mkt.verified": "已验证",
+  "mkt.unsupported": "不可直接安装",
+  "mkt.sending": "正在安装",
+  "mkt.install": "安装",
+  "mkt.installed": "已安装",
+  "mkt.sent": "已安装 {name}，刷新页面或重启服务后生效。",
+  "mkt.progressHint": "首次安装需下载并构建依赖，耗时约 1–3 分钟",
+  "mkt.phaseResolving": "解析依赖",
+  "mkt.phaseDownloading": "下载中",
+  "mkt.phaseLinking": "链接依赖",
+  "mkt.phaseBuilding": "运行构建脚本",
+  "mkt.packagesDone": "已处理 {n} 个包",
+  "mkt.restartBanner": "已安装 {name}，刷新页面或重启服务后生效",
+  "mkt.restartNow": "立即重启",
+  "mkt.restarting": "正在重启…",
+  "mkt.restartFail": "重启失败：{m}",
+  "mkt.restartTimeout": "服务响应超时，请在终端手动重启 dsh web",
+  "mkt.more": "加载更多",
+  "mkt.moreLeft": "还剩 {n} 个",
+  "mkt.catAll": "全部",
+  "plaza.title": "扩展市场",
+  "plaza.skills": "技能",
+  "plaza.plugins": "插件",
+  "plaza.experts": "专家",
+  "plaza.connectors": "连接器",
+  "expert.searchPlaceholder": "搜索专家（姓名 / 领域）",
+  "expert.empty": "没有匹配的专家",
+  "expert.summoning": "正在挂载…",
+  "expert.gestureReady": "专家调度指令 {g} 已生成。请聚焦输入框重试，或直接键入指令发送。",
+  "connector.searchPlaceholder": "搜索连接器",
+  "connector.empty": "没有匹配的连接器",
+  "connector.install": "安装",
+  "connector.installing": "安装中…",
+  "connector.installed": "已安装",
+  "connector.uninstall": "卸载",
+  "connector.restartHint": "连接器安装或卸载后需重启服务生效",
+  "connector.installLater": "当前仅支持浏览连接器，安装与配置功能即将在后续版本开放",
+  "plaza.noSession": "请先打开一个会话",
+  "plaza.back": "返回对话",
+  "plaza.card.hint": "选择适合当前任务的专家角色",
+  "plaza.card.summon": "挂载",
+  "plaza.card.summoning": "正在挂载…",
+  "plaza.card.summoned": "已挂载",
+  "plaza.card.kind.expert": "专家",
+  "plaza.card.kind.team": "专家战队",
+  "plaza.card.skip": "直接开始（不启用专家）",
+  "plaza.card.continue": "已挂载 {name}，正在以该专家模式继续",
+  "plaza.card.sendFail": "已挂载，请按发送继续"
+};
+var EN = {
+  locale: "en",
+  "cfg.desc": "Search API, install directory, and result count.",
+  "cfg.updateHint": "Current {cur} · Latest {latest}",
+  "cfg.unsaved": "Unsaved",
+  "cfg.collapse": "Collapse",
+  "cfg.expand": "Expand",
+  "cfg.api": "API URL",
+  "cfg.dir": "Install directory",
+  "cfg.max": "Search result limit",
+  "cfg.discard": "Discard",
+  "cfg.save": "Save",
+  "cfg.saving": "Saving",
+  "installed.hint": "{n} skills installed",
+  "installed.none": "No skills installed",
+  "action.detail": "Details",
+  "action.uninstall": "Uninstall",
+  "action.uninstalling": "Uninstalling",
+  "action.install": "Install",
+  "action.installing": "Installing",
+  "action.installed": "Installed",
+  "action.openHome": "Open homepage",
+  "action.close": "Close",
+  "badge.installed": "Installed",
+  "search.hint": "{n} available skills",
+  "search.fallback": "No matches — showing popular skills instead",
+  "search.empty": "No results",
+  "tab.overview": "Overview",
+  "tab.versions": "Versions",
+  "tab.evaluation": "Evaluation",
+  "stat.downloads": "Downloads",
+  "stat.stars": "Stars",
+  "stat.installs": "Installs",
+  "meta.downloads": "{n} downloads",
+  "grade.excellent": "Excellent",
+  "grade.good": "Good",
+  "grade.fair": "Fair",
+  "grade.poor": "Needs work",
+  "rate.ai": "AI rating",
+  "verified": "Verified",
+  "verified.account": "Verified publisher",
+  "eval.none": "This skill has not been evaluated yet",
+  "eval.grade": "Overall: {g}",
+  "eval.detail": "Evaluation details",
+  "dim.trust": "Trust",
+  "dim.reliability": "Reliability",
+  "dim.adaptability": "Adaptability",
+  "dim.convention": "Convention",
+  "dim.effectiveness": "Effectiveness",
+  "ver.none": "No version history",
+  "ver.latest": "Latest",
+  "ver.current": "Installed",
+  "ver.unknownDate": "Unknown date",
+  "ver.noLog": "No changelog",
+  "ver.this": "This version installed",
+  "ver.install": "Install this version",
+  "overview.empty": "No description",
+  "sec.badge": "Safe",
+  loading: "Loading…",
+  "toast.installed": "{name} installed",
+  "toast.uninstalled": "Uninstalled {name}",
+  "cat.office-efficiency": "Office",
+  "cat.content-creation": "Content",
+  "cat.dev-programming": "Programming",
+  "cat.data-analysis": "Data",
+  "cat.design-media": "Design",
+  "cat.ai-agent": "AI Agent",
+  "cat.knowledge-management": "Knowledge",
+  "cat.business-ops": "Business",
+  "cat.education": "Education",
+  "cat.professional": "Professional",
+  "cat.it-ops-security": "IT & Security",
+  "cat.life-service": "Lifestyle",
+  "mkt.searchPlaceholder": "Enter keywords",
+  "mkt.search": "Search",
+  "mkt.repos": "Found {n} MIT-licensed open-source plugins on GitHub",
+  "mkt.loading": "Loading SkillHub…",
+  "mkt.error": "Connection failed: {m}",
+  "mkt.empty": "No plugins match your filters.",
+  "mkt.noDesc": "This repository has no description yet.",
+  "mkt.details": "Details",
+  "mkt.verified": "Verified",
+  "mkt.unsupported": "Direct Install Unavailable",
+  "mkt.sending": "Installing",
+  "mkt.install": "Install",
+  "mkt.installed": "Installed",
+  "mkt.sent": "Installed {name}. Restart service to apply.",
+  "mkt.progressHint": "Initial installation resolves and builds dependencies (approx. 1–3 min)",
+  "mkt.phaseResolving": "Resolving dependencies",
+  "mkt.phaseDownloading": "Downloading",
+  "mkt.phaseLinking": "Linking",
+  "mkt.phaseBuilding": "Running build scripts",
+  "mkt.packagesDone": "Processed {n} packages",
+  "mkt.restartBanner": "Installed {name} — restart service to apply",
+  "mkt.restartNow": "Restart Now",
+  "mkt.restarting": "Restarting…",
+  "mkt.restartFail": "Restart failed: {m}",
+  "mkt.restartTimeout": "Host startup timed out. Please restart dsh web manually.",
+  "mkt.more": "Load more",
+  "mkt.moreLeft": "{n} remaining",
+  "mkt.catAll": "All",
+  "plaza.title": "Extension Market",
+  "plaza.skills": "Skills",
+  "plaza.plugins": "Plugins",
+  "plaza.experts": "Experts",
+  "plaza.connectors": "Connectors",
+  "expert.searchPlaceholder": "Search experts (name / domain)",
+  "expert.empty": "No matching experts",
+  "expert.summoning": "Attaching…",
+  "expert.gestureReady": "{g} is ready. Focus the input composer to apply, or type the command manually.",
+  "connector.searchPlaceholder": "Search connectors",
+  "connector.empty": "No matching connectors",
+  "connector.install": "Install",
+  "connector.installing": "Installing…",
+  "connector.installed": "Installed",
+  "connector.uninstall": "Uninstall",
+  "connector.restartHint": "Restart service after installing or uninstalling a connector",
+  "connector.installLater": "Connector browsing only. Installation will be available in an upcoming release.",
+  "plaza.noSession": "Open a session first",
+  "plaza.back": "Back to chat",
+  "plaza.card.hint": "Select an expert role suitable for current task",
+  "plaza.card.summon": "Attach",
+  "plaza.card.summoning": "Attaching…",
+  "plaza.card.summoned": "Attached",
+  "plaza.card.kind.expert": "Expert",
+  "plaza.card.kind.team": "Expert Team",
+  "plaza.card.skip": "Continue without Expert",
+  "plaza.card.continue": "Attached {name}; continuing with this expert",
+  "plaza.card.sendFail": "Attached. Press send to continue"
+};
+var I18nCtx = React.createContext(null);
+function interpolate(template, params) {
+  if (!params) return template;
+  return String(template).replace(/\{(\w+)\}/g, (m, name) => name in params ? String(params[name]) : m);
+}
+function browserLang() {
+  const lang = typeof document !== "undefined" && document.documentElement.lang || typeof navigator !== "undefined" && navigator.language || "zh";
+  return /^en\b/i.test(String(lang)) ? "en" : "zh";
+}
+function lookup(key, params) {
+  const dict = browserLang() === "en" ? EN : ZH;
+  return interpolate(dict[key] || ZH[key] || key, params);
+}
+function useTr() {
+  return React.useContext(I18nCtx) || lookup;
+}
+function I18nProvider({ t, children }) {
+  const fn = typeof t === "function" ? t : lookup;
+  return h(I18nCtx.Provider, { value: fn }, children);
+}
+function catLabel(item, tr) {
+  const key = item && item.category ? "cat." + item.category : "";
+  const label = key ? tr(key) : "";
+  if (label && label !== key) return label;
+  return item && (item.categoryLabel || item.category) || "";
+}
+var DETAIL_TABS = [
+  { id: "overview", labelKey: "tab.overview" },
+  { id: "versions", labelKey: "tab.versions" },
+  { id: "evaluation", labelKey: "tab.evaluation" }
+];
+var TRACE = [
+  ["trust", "T", "Trust", "可信任度", "#16a34a"],
+  ["reliability", "R", "Reliability", "可靠性", "#2563eb"],
+  ["adaptability", "A", "Adaptability", "适用性", "#d97706"],
+  ["convention", "C", "Convention", "规范性", "#7c3aed"],
+  ["effectiveness", "E", "Effectiveness", "有效性", "#ea580c"]
+];
+var apiCache = /* @__PURE__ */ new Map();
+var API_CACHE_TTL_MS = 9e4;
+var API_CACHE_READ = /* @__PURE__ */ new Set(["search", "plugins", "pluginCategories", "experts", "connectors"]);
+function apiCacheKey(method, payload) {
+  const { refresh, ...rest } = payload || {};
+  return method + ":" + JSON.stringify(rest || {});
+}
+function invalidateApiCache(prefix) {
+  for (const key of [...apiCache.keys()]) {
+    if (!prefix || key.startsWith(prefix)) apiCache.delete(key);
+  }
+}
+async function api(method, payload, opts) {
+  const bodyIn = payload || {};
+  const skipCache = !!(opts && opts.skipCache) || !!bodyIn.refresh || !API_CACHE_READ.has(method);
+  const key = apiCacheKey(method, bodyIn);
+  if (!skipCache) {
+    const hit = apiCache.get(key);
+    if (hit && Date.now() - hit.at < API_CACHE_TTL_MS) return hit.body;
+  }
+  const res = await fetch(pluginUrl(""), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ method, ...bodyIn })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body.ok === false) throw new Error(body.error || "HTTP " + res.status);
+  if (API_CACHE_READ.has(method)) apiCache.set(key, { at: Date.now(), body });
+  if (method === "install" || method === "uninstall" || method === "pluginInstall" || method === "catalogInstall" || method === "catalogUninstall" || method === "catalogSummon") {
+    invalidateApiCache("search:");
+    invalidateApiCache("plugins:");
+    invalidateApiCache("experts:");
+    invalidateApiCache("connectors:");
+    invalidateApiCache("pluginCategories:");
+  }
+  return body;
+}
+var plazaKeepAlive = true;
+function Toast({ text, onDone }) {
+  useEffect2(() => {
+    const t = setTimeout(onDone, 1600);
+    return () => clearTimeout(t);
+  }, [text, onDone]);
+  return h("div", { className: "sh-toast" }, text);
+}
+function Icon({ item, className }) {
+  const src = iconSrc(item.iconUrl);
+  if (src) return h("img", { className, src, alt: "" });
+  return h("div", { className }, initials(item.name || item.slug));
+}
+function Cards({ items, onOpen }) {
+  const tr = useTr();
+  if (!items?.length) return h("div", { className: "sh-hint" }, tr("search.empty"));
+  return h(
+    "div",
+    { className: "sh-cards" },
+    items.map((item) => {
+      const meta = [
+        catLabel(item, tr),
+        item.downloads ? tr("meta.downloads", { n: fmt(item.downloads, tr) }) : null,
+        item.version ? "v" + item.version : null
+      ].filter(Boolean).join(" · ");
+      return h(
+        "button",
+        {
+          key: item.slug || item.id,
+          type: "button",
+          className: "sh-card" + (item.installed ? " on" : ""),
+          onClick: () => onOpen(item)
+        },
+        h(Icon, { item, className: "sh-icon" }),
+        h(
+          "div",
+          { className: "sh-meta" },
+          h(
+            "div",
+            { className: "sh-top" },
+            h("div", { className: "sh-title", title: item.name }, item.name),
+            item.installed ? h("span", { className: "sh-badge" }, tr("badge.installed")) : null
+          ),
+          item.description ? h("div", { className: "sh-desc" }, item.description) : null,
+          h("div", { className: "sh-footline" }, meta || item.slug)
+        )
+      );
+    })
+  );
+}
+function TabBar({ tab, onChange }) {
+  const tr = useTr();
+  return h(
+    "div",
+    { className: "sh-tabs", role: "tablist" },
+    DETAIL_TABS.map((it) => h("button", {
+      key: it.id,
+      type: "button",
+      role: "tab",
+      className: "sh-tab" + (tab === it.id ? " on" : ""),
+      "aria-selected": tab === it.id,
+      onClick: () => onChange(it.id)
+    }, tr(it.labelKey)))
+  );
+}
+function normVer(v) {
+  return String(v || "").trim().replace(/^v/i, "");
+}
+function VersionsPane({ data, currentVersion, installed, busy, onInstall }) {
+  const tr = useTr();
+  const items = data?.versions || [];
+  if (!items.length) return h("p", { className: "sh-hint" }, tr("ver.none"));
+  return h("div", null, items.map((v, idx) => {
+    const ver = normVer(v.version);
+    const current = !!installed && !!ver && normVer(currentVersion) === ver;
+    return h(
+      "div",
+      { key: ver || idx, className: "sh-ver-card" },
+      h(
+        "div",
+        { className: "sh-ver-main" },
+        h(
+          "div",
+          { className: "sh-ver-head" },
+          h("b", null, "v" + ver),
+          idx === 0 ? h("span", { className: "sh-tag blue" }, tr("ver.latest")) : null,
+          current ? h("span", { className: "sh-tag green" }, tr("ver.current")) : null
+        ),
+        h("div", { className: "sh-hint", style: { margin: 0 } }, fmtTime(v.createdAt, tr) || tr("ver.unknownDate")),
+        h("p", { className: "sh-ver-log" }, v.changelog || tr("ver.noLog"))
+      ),
+      h(Button3, {
+        type: "button",
+        size: "sm",
+        variant: current ? "outline" : "primary",
+        disabled: !!busy || current || !ver,
+        loading: busy === ver,
+        onClick: () => onInstall(ver)
+      }, current ? tr("ver.this") : tr("ver.install"))
+    );
+  }));
+}
+function radarPoints(values, cx2, cy, r) {
+  return values.map((v, i) => {
+    const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
+    const rr = r * Math.max(0, Math.min(1, Number(v) / 5));
+    return (cx2 + Math.cos(a) * rr).toFixed(1) + "," + (cy + Math.sin(a) * rr).toFixed(1);
+  }).join(" ");
+}
+function DimIcon({ letter, color }) {
+  const svg = { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" };
+  if (letter === "T") return h("svg", svg, h("path", { d: "M12 3l8 4v5c0 5-3.4 8.4-8 9.5C7.4 20.4 4 17 4 12V7l8-4z" }));
+  if (letter === "R") return h("svg", svg, h("path", { d: "M12 21V3M5 10l7-7 7 7" }));
+  if (letter === "A") return h("svg", svg, h("circle", { cx: 12, cy: 12, r: 8 }), h("path", { d: "M12 8v8M8 12h8" }));
+  if (letter === "C") return h("svg", svg, h("path", { d: "M5 4h11a3 3 0 010 6H5z" }), h("path", { d: "M5 10h12a3 3 0 010 6H8" }));
+  return h("svg", svg, h("path", { d: "M13 3L5 14h7l-1 7 8-11h-7l1-7z" }));
+}
+function RadarChart({ scores }) {
+  const cx2 = 90;
+  const cy = 90;
+  const r = 58;
+  const full = TRACE.map(() => 5);
+  return h(
+    "svg",
+    { className: "sh-radar", viewBox: "0 0 180 180", width: 180, height: 180, "aria-hidden": "true" },
+    [1, 2, 3, 4, 5].map((level) => h("polygon", {
+      key: level,
+      points: radarPoints(full.map(() => level), cx2, cy, r),
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: 1
+    })),
+    TRACE.map((d, i) => {
+      const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
+      return h("line", {
+        key: d[0],
+        x1: cx2,
+        y1: cy,
+        x2: +(cx2 + Math.cos(a) * r).toFixed(1),
+        y2: +(cy + Math.sin(a) * r).toFixed(1),
+        stroke: "currentColor",
+        strokeWidth: 1
       });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok || body.ok === false) throw new Error(body.error || "HTTP " + res.status);
-      if (API_CACHE_READ.has(method)) apiCache.set(key, { at: Date.now(), body });
-      if (method === "install" || method === "uninstall" || method === "pluginInstall" || method === "catalogInstall" || method === "catalogUninstall" || method === "catalogSummon") {
-        invalidateApiCache("search:");
-        invalidateApiCache("plugins:");
-        invalidateApiCache("experts:");
-        invalidateApiCache("connectors:");
-        invalidateApiCache("pluginCategories:");
-      }
-      return body;
-    }
-
-    /** Module-level keep-alive flag; refreshed from config on plaza open. Default true. */
-    let plazaKeepAlive = true;
-
-    function Toast({ text, onDone }) {
-      useEffect(() => {
-        const t = setTimeout(onDone, 1600);
-        return () => clearTimeout(t);
-      }, [text, onDone]);
-      return h("div", { className: "sh-toast" }, text);
-    }
-
-    function Icon({ item, className }) {
-      const src = iconSrc(item.iconUrl);
-      if (src) return h("img", { className, src, alt: "" });
-      return h("div", { className }, initials(item.name || item.slug));
-    }
-
-    function Cards({ items, onOpen }) {
-      const tr = useTr();
-      if (!items?.length) return h("div", { className: "sh-hint" }, tr("search.empty"));
+    }),
+    h("polygon", {
+      points: radarPoints(scores, cx2, cy, r),
+      fill: "rgba(37,99,235,.16)",
+      stroke: "#2563eb",
+      strokeWidth: 1.6
+    }),
+    TRACE.map((d, i) => {
+      const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
+      return h("text", {
+        key: "l" + d[0],
+        x: +(cx2 + Math.cos(a) * (r + 16)).toFixed(1),
+        y: +(cy + Math.sin(a) * (r + 16)).toFixed(1),
+        textAnchor: "middle",
+        dominantBaseline: "middle",
+        fontSize: 12,
+        fontWeight: 700,
+        fill: d[4]
+      }, d[1]);
+    })
+  );
+}
+function evalGrade(score, tr) {
+  const n = Number(score);
+  if (!Number.isFinite(n)) return "";
+  const tx = tr || lookup;
+  if (n >= 4.5) return tx("grade.excellent");
+  if (n >= 4) return tx("grade.good");
+  if (n >= 3) return tx("grade.fair");
+  return tx("grade.poor");
+}
+function StarIcon({ filled, size = 12 }) {
+  return h("svg", {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: filled ? "#f59e0b" : "none",
+    stroke: filled ? "#f59e0b" : "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": "true",
+    style: { display: "inline-block", verticalAlign: "middle", opacity: filled ? 1 : 0.35 }
+  }, h("polygon", { points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" }));
+}
+function StarGroup({ score }) {
+  const n = Math.max(0, Math.min(5, Math.round(Number(score) || 0)));
+  return h(
+    "span",
+    { className: "sh-stars", "aria-hidden": "true", style: { display: "inline-flex", gap: 1, verticalAlign: "middle" } },
+    [0, 1, 2, 3, 4].map((i) => h(StarIcon, { key: i, filled: i < n }))
+  );
+}
+function isSafeItem(item) {
+  const reports = [item?.security?.keen, item?.security?.sanbu].filter(Boolean);
+  if (reports.some((r) => r.status === "malicious" || r.status === "suspicious")) return false;
+  if (reports.some((r) => r.status === "benign")) return true;
+  return !!(item?.integrity?.signed || item?.integrity?.contentHash);
+}
+function Marks({ item, detail }) {
+  const tr = useTr();
+  const grade = evalGrade(item.rating, tr);
+  const rate = item.rating != null && Number.isFinite(Number(item.rating));
+  const bluev = detail && item.verified;
+  const safe = detail && isSafeItem(item);
+  if (!rate && !bluev && !safe) return null;
+  return h(
+    "div",
+    { className: "sh-marks" },
+    rate ? h(
+      "span",
+      { className: "sh-rate", title: tr("rate.ai") },
+      h(StarGroup, { score: item.rating }),
+      " " + Number(item.rating).toFixed(1),
+      grade ? " " + grade : "",
+      detail ? " (" + tr("rate.ai") + ")" : ""
+    ) : null,
+    bluev ? h(
+      "span",
+      { className: "sh-bluev", title: item.publisherName || tr("verified.account") },
+      h("i", { "aria-hidden": "true" }, "v"),
+      h("span", null, item.publisherName || tr("verified"))
+    ) : null,
+    safe ? h(
+      "span",
+      { className: "sh-safe", title: tr("sec.badge") },
+      h(ShieldIcon),
+      tr("sec.badge")
+    ) : null
+  );
+}
+function ShieldIcon() {
+  return h(
+    "svg",
+    { className: "sh-sec-ico", viewBox: "0 0 20 20", fill: "none", "aria-hidden": "true" },
+    h("path", {
+      d: "M3.15 2.35 10 .83l6.85 1.52c.38.09.65.42.65.82v8.32c0 1.67-.84 3.23-2.23 4.16L10 19.17l-5.27-3.52C3.34 14.72 2.5 13.16 2.5 11.49V3.17c0-.39.27-.73.65-.82Zm7.68 5.98V4.17L6.67 10h2.5v4.17L13.33 8.33H10.83Z",
+      fill: "url(#shShield)"
+    }),
+    h(
+      "defs",
+      null,
+      h(
+        "linearGradient",
+        { id: "shShield", x1: "10", y1: "0.83", x2: "10", y2: "19.17", gradientUnits: "userSpaceOnUse" },
+        h("stop", { stopColor: "#A6E527" }),
+        h("stop", { offset: "1", stopColor: "#0CBF5B" })
+      )
+    )
+  );
+}
+function EvaluationPane({ data }) {
+  const tr = useTr();
+  const ev = data?.evaluation;
+  if (!ev) return h("p", { className: "sh-hint" }, tr("eval.none"));
+  const scores = TRACE.map((d) => Number(ev.dimensions?.[d[0]]?.score) || 0);
+  const grade = evalGrade(ev.score, tr);
+  return h(
+    "div",
+    null,
+    h(
+      "div",
+      { className: "sh-eval-hero" },
+      h(RadarChart, { scores }),
+      h(
+        "div",
+        null,
+        h("div", { className: "sh-eval-score" }, ev.score != null ? ev.score : "-", h("span", null, " / 5")),
+        grade ? h("div", { className: "sh-eval-tag" }, tr("eval.grade", { g: grade })) : null,
+        ev.userSummary ? h("p", { className: "sh-eval-sum" }, ev.userSummary) : null
+      )
+    ),
+    h("div", { className: "sh-eval-h" }, tr("eval.detail")),
+    TRACE.map((d) => {
+      const dim = ev.dimensions?.[d[0]];
+      const score = dim?.score;
+      const tint = d[4] + "22";
       return h(
         "div",
-        { className: "sh-cards" },
-        items.map((item) => {
-          const meta = [
-            catLabel(item, tr),
-            item.downloads ? tr("meta.downloads", { n: fmt(item.downloads, tr) }) : null,
-            item.version ? "v" + item.version : null,
-          ].filter(Boolean).join(" · ");
-          return h(
+        { key: d[0], className: "sh-eval-item" },
+        h(
+          "div",
+          { className: "sh-eval-top" },
+          h("div", { className: "sh-eval-ico", style: { background: tint } }, h(DimIcon, { letter: d[1], color: d[4] })),
+          h("div", { className: "sh-eval-name" }, d[1] + " · " + d[2] + " " + tr("dim." + d[0])),
+          h("div", { className: "sh-eval-sc" }, (score == null ? "-" : score) + " / 5")
+        ),
+        h("div", { className: "sh-eval-bar" }, h("span", { style: { width: (Number(score) || 0) / 5 * 100 + "%", background: d[4] } })),
+        dim?.userReason ? h("p", { className: "sh-eval-why" }, dim.userReason) : null
+      );
+    })
+  );
+}
+function DetailCard({ item, busy, onClose, onInstalled, onUninstalled }) {
+  const tr = useTr();
+  const [toast, setToast] = useState2("");
+  const [working, setWorking] = useState2("");
+  const [tab, setTab] = useState2("overview");
+  const [view, setView] = useState2(item);
+  const [pane, setPane] = useState2({ loading: false, error: "", data: null });
+  const cacheRef = React.useRef({});
+  const installed = !!view.installed;
+  useEffect2(() => {
+    setView(item);
+  }, [item]);
+  const applyDetail = (d) => {
+    if (!d) return;
+    const card = d.card && typeof d.card === "object" ? d.card : null;
+    setView((cur) => ({
+      ...cur,
+      ...card || {},
+      slug: item.slug,
+      installed: d.installed ?? cur.installed,
+      version: d.version || card?.version || cur.version,
+      pageUrl: card?.pageUrl || cur.pageUrl,
+      rating: card?.rating ?? cur.rating,
+      verified: card?.verified ?? cur.verified,
+      publisherName: card?.publisherName || cur.publisherName,
+      description: card?.description || cur.description,
+      security: card?.security || cur.security,
+      integrity: card?.integrity || cur.integrity
+    }));
+  };
+  useEffect2(() => {
+    let live = true;
+    api("detail", { slug: item.slug }).then((d) => {
+      if (live) applyDetail(d);
+    }).catch(() => {
+    });
+    return () => {
+      live = false;
+    };
+  }, [item.slug]);
+  useEffect2(() => {
+    if (tab === "overview") return;
+    const cached = cacheRef.current[tab];
+    if (cached) {
+      setPane({ loading: false, error: "", data: cached });
+      return;
+    }
+    let live = true;
+    setPane({ loading: true, error: "", data: null });
+    api("skillTab", { slug: item.slug, tab }).then((d) => {
+      if (!live) return;
+      cacheRef.current[tab] = d;
+      setPane({ loading: false, error: "", data: d });
+    }).catch((e) => {
+      if (!live) return;
+      setPane({ loading: false, error: e.message || String(e), data: null });
+    });
+    return () => {
+      live = false;
+    };
+  }, [item.slug, tab]);
+  const run = async (method, extra) => {
+    const ver = extra && extra.version;
+    setWorking(ver || method);
+    try {
+      const result = await api(method, { slug: item.slug, ...extra || {} });
+      if (method === "install") {
+        item.installed = true;
+        if (result.version) item.version = result.version;
+        else if (ver) item.version = ver;
+        setView((cur) => ({ ...cur, installed: true, version: item.version || cur.version }));
+        onInstalled?.(item);
+        const shown = (view.name || item.name) + (item.version ? " v" + String(item.version).replace(/^v/i, "") : "");
+        setToast(tr("toast.installed", { name: shown }));
+        api("detail", { slug: item.slug }).then(applyDetail).catch(() => {
+        });
+      } else {
+        item.installed = false;
+        setView((cur) => ({ ...cur, installed: false }));
+        onUninstalled?.(item);
+        setToast(tr("toast.uninstalled", { name: view.name || item.name }));
+      }
+    } catch (e) {
+      setToast(e.message || String(e));
+    } finally {
+      setWorking("");
+    }
+  };
+  return h(
+    "div",
+    { className: "sh-drawer sh-skill sh-fade", role: "dialog", "aria-modal": "true" },
+    h(
+      "span",
+      { className: "sh-close" },
+      h(IconButton3, {
+        variant: "ghost",
+        "aria-label": tr("action.close"),
+        onClick: onClose
+      }, h(IconCloseOutline16))
+    ),
+    h(
+      "div",
+      { className: "sh-head" },
+      h(Icon, { item: view, className: "sh-dicon" }),
+      h(
+        "div",
+        { style: { minWidth: 0, flex: 1 } },
+        h("h2", null, view.name),
+        view.id ? h("div", { className: "sh-canon" }, view.id) : null,
+        h(Marks, { item: view, detail: true }),
+        h(
+          "div",
+          { className: "sh-tags" },
+          catLabel(view, tr) ? h("span", { className: "sh-tag blue" }, catLabel(view, tr)) : null,
+          view.version ? h("span", { className: "sh-tag" }, "v" + view.version) : null,
+          installed ? h("span", { className: "sh-tag green" }, tr("action.installed")) : null
+        )
+      )
+    ),
+    h(
+      "div",
+      { className: "sh-body" },
+      h(
+        "div",
+        { className: "sh-stats" },
+        h("div", { className: "sh-stat" }, tr("stat.downloads") + " ", h("b", null, fmtStat(view.downloads, tr))),
+        h("div", { className: "sh-stat" }, tr("stat.stars") + " ", h("b", null, fmtStat(view.stars, tr))),
+        h("div", { className: "sh-stat" }, tr("stat.installs") + " ", h("b", null, fmtStat(view.installs, tr)))
+      ),
+      h(TabBar, { tab, onChange: setTab }),
+      h(
+        "div",
+        { className: "sh-pane" },
+        tab === "overview" ? h("p", { className: "sh-overview" }, view.description || tr("overview.empty")) : null,
+        tab !== "overview" && pane.loading ? h("p", { className: "sh-hint" }, tr("loading")) : null,
+        tab !== "overview" && pane.error ? h("p", { className: "sh-err" }, pane.error) : null,
+        tab === "versions" && pane.data ? h(VersionsPane, {
+          data: pane.data,
+          currentVersion: view.version,
+          installed,
+          busy: working,
+          onInstall: (version) => run("install", { version })
+        }) : null,
+        tab === "evaluation" && pane.data ? h(EvaluationPane, { data: pane.data }) : null
+      )
+    ),
+    h(
+      "div",
+      { className: "sh-foot" },
+      view.pageUrl ? h("a", { className: "sh-mini", href: view.pageUrl, target: "_blank", rel: "noreferrer" }, tr("action.openHome")) : null,
+      installed ? h(Button3, {
+        type: "button",
+        size: "sm",
+        variant: "outline",
+        disabled: !!working || busy,
+        loading: working === "uninstall",
+        onClick: () => run("uninstall")
+      }, tr("action.uninstall")) : null,
+      h(Button3, {
+        type: "button",
+        size: "sm",
+        variant: "primary",
+        disabled: installed || !!working || busy,
+        loading: !!(working && working !== "uninstall"),
+        onClick: () => run("install")
+      }, installed ? tr("action.installed") : tr("action.install"))
+    ),
+    toast ? h(Toast, { text: toast, onDone: () => setToast("") }) : null
+  );
+}
+var overlayStack = [];
+function Overlay({ children, onClose }) {
+  useEffect2(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    overlayStack.push(onClose);
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (overlayStack[overlayStack.length - 1] !== onClose) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      const i = overlayStack.lastIndexOf(onClose);
+      if (i >= 0) overlayStack.splice(i, 1);
+      document.body.style.overflow = overlayStack.length ? "hidden" : prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+  const portaled = createPortal !== fallbackPortal;
+  const hostRef = React.useRef(null);
+  useEffect2(() => {
+    if (portaled) return;
+    const el = hostRef.current;
+    if (!el) return;
+    document.body.appendChild(el);
+    return () => {
+      el.remove();
+    };
+  }, [portaled]);
+  const overlay = h("div", { ref: portaled ? void 0 : hostRef, className: "sh-overlay", onClick: (e) => {
+    if (e.target === e.currentTarget) onClose();
+  } }, children);
+  return portaled && typeof document !== "undefined" ? createPortal(overlay, document.body) : overlay;
+}
+function Drawer({ item, onClose, onInstalled, onUninstalled }) {
+  return h(
+    Overlay,
+    { onClose },
+    h(DetailCard, { item, onClose, onInstalled, onUninstalled })
+  );
+}
+function parseToolArgs(props) {
+  const block = props?.block;
+  const raw = (block && "kind" in block ? block.call?.argsRaw : block?.argsRaw) || "";
+  if (!raw || typeof raw !== "string") return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+function contentText(node) {
+  if (!node) return "";
+  if (typeof node === "string") return node;
+  if (Array.isArray(node)) return node.map(contentText).join("\n");
+  if (typeof node === "object") {
+    if (typeof node.text === "string") return node.text;
+    if (node.content) return contentText(node.content);
+  }
+  return "";
+}
+function pickPayload(props) {
+  const found = [];
+  const visit = (node, depth) => {
+    if (!node || depth > 6) return;
+    if (typeof node === "string") {
+      const t = node.trim();
+      if ((t.startsWith("{") || t.startsWith("[")) && t.length > 8) {
+        try {
+          visit(JSON.parse(t), depth + 1);
+        } catch {
+        }
+      }
+      return;
+    }
+    if (typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      for (const x of node) visit(x, depth + 1);
+      return;
+    }
+    if (Array.isArray(node.items)) found.push(node);
+    for (const key of ["block", "meta", "result", "resultView", "view", "data", "value", "payload", "content", "message"]) {
+      if (node[key] != null) visit(node[key], depth + 1);
+    }
+  };
+  visit(props, 0);
+  const block = props?.block;
+  visit(block?.meta, 1);
+  visit(block?.content, 1);
+  visit(block?.resultView, 1);
+  visit(contentText(block?.content), 1);
+  return found.find((x) => Array.isArray(x.items) && x.items.length) || found[0] || null;
+}
+function SearchToolView(props) {
+  useEffect2(() => ensureCss(), []);
+  const payload = pickPayload(props);
+  const args = parseToolArgs(props);
+  const query = String(payload?.query || args.query || "").trim();
+  const fromTool = Array.isArray(payload?.items) && payload.items.length ? payload.items : null;
+  const running = !!(props?.block && !("kind" in props.block));
+  const [items, setItems] = useState2(fromTool || []);
+  const [err, setErr] = useState2("");
+  const [open, setOpen] = useState2(null);
+  useEffect2(() => {
+    if (fromTool) setItems(fromTool);
+  }, [fromTool]);
+  useEffect2(() => {
+    if (fromTool || running) return;
+    let live = true;
+    api("search", { query, queries: args.queries, category: args.category, offset: args.offset, limit: args.limit }).then((d) => {
+      if (live) setItems(d.items || []);
+    }).catch((e) => {
+      if (live) {
+        setItems([]);
+        setErr(e.message || String(e));
+      }
+    });
+    return () => {
+      live = false;
+    };
+  }, [query, running, !!fromTool]);
+  if (running || !items.length) return err ? h("div", { className: "sh-err" }, err) : null;
+  const mark = (item, installed) => {
+    setItems((cur) => cur.map((it) => it.slug === item.slug ? { ...it, installed } : it));
+    setOpen((cur) => cur && cur.slug === item.slug ? { ...cur, installed } : cur);
+  };
+  const tr = typeof props.t === "function" ? props.t : lookup;
+  return h(
+    I18nProvider,
+    { t: tr },
+    h(
+      "div",
+      { className: "sh-root sh-tool" },
+      h("div", { className: "sh-hint" }, tr("search.hint", { n: items.length })),
+      h(Cards, { items, onOpen: setOpen }),
+      open ? h(Drawer, {
+        item: open,
+        onClose: () => setOpen(null),
+        onInstalled: (it) => mark(it, true),
+        onUninstalled: (it) => mark(it, false)
+      }) : null
+    )
+  );
+}
+var plazaSessions = null;
+function currentSessionId(sessions) {
+  try {
+    return sessions?.list?.getSnapshot?.()?.current || "";
+  } catch {
+    return "";
+  }
+}
+function PlazaSearchToolView() {
+  return null;
+}
+function ListToolView(props) {
+  useEffect2(() => ensureCss(), []);
+  const payload = pickPayload(props);
+  const fromTool = Array.isArray(payload?.items) ? payload.items : null;
+  const running = !!(props?.block && !("kind" in props.block));
+  const [items, setItems] = useState2(fromTool || []);
+  const [open, setOpen] = useState2(null);
+  const [toast, setToast] = useState2("");
+  useEffect2(() => {
+    if (fromTool) setItems(fromTool);
+  }, [fromTool]);
+  if (running) return null;
+  const tr = typeof props.t === "function" ? props.t : lookup;
+  const openItem = (it) => setOpen({
+    slug: it.slug,
+    name: it.name,
+    description: it.description,
+    version: it.version,
+    installed: true,
+    pageUrl: "https://skillhub.cn/skills/" + it.slug
+  });
+  return h(
+    I18nProvider,
+    { t: tr },
+    h(
+      "div",
+      { className: "sh-root sh-tool" },
+      h("div", { className: "sh-hint" }, items.length ? tr("installed.hint", { n: items.length }) : tr("installed.none")),
+      items.map((it) => h(
+        "div",
+        { key: it.slug, className: "sh-row" },
+        h(
+          "div",
+          null,
+          h("div", { className: "sh-title" }, it.name),
+          h("div", { className: "sh-slug" }, it.slug + (it.version ? " · v" + it.version : ""))
+        ),
+        h(
+          "div",
+          { className: "sh-row-actions" },
+          h(Button3, { type: "button", size: "sm", variant: "outline", onClick: () => openItem(it) }, tr("action.detail")),
+          h(Button3, {
+            type: "button",
+            size: "sm",
+            variant: "outline",
+            onClick: async () => {
+              try {
+                await api("uninstall", { slug: it.slug });
+                setItems((cur) => cur.filter((x) => x.slug !== it.slug));
+                setToast(tr("toast.uninstalled", { name: it.name }));
+              } catch (e) {
+                setToast(e.message || String(e));
+              }
+            }
+          }, tr("action.uninstall"))
+        )
+      )),
+      open ? h(Drawer, {
+        item: open,
+        onClose: () => setOpen(null),
+        onUninstalled: (it) => setItems((cur) => cur.filter((x) => x.slug !== it.slug))
+      }) : null,
+      toast ? h(Toast, { text: toast, onDone: () => setToast("") }) : null
+    )
+  );
+}
+function ChevronDown({ className }) {
+  return h("svg", {
+    className,
+    width: 14,
+    height: 14,
+    viewBox: "0 0 14 14",
+    fill: "none",
+    xmlns: "http://www.w3.org/2000/svg",
+    "aria-hidden": "true"
+  }, h("path", {
+    d: "M11.8486 5.5L11.4238 5.92383L8.69727 8.65137C8.44157 8.90706 8.21562 9.13382 8.01172 9.29785C7.79912 9.46883 7.55595 9.61756 7.25 9.66602C7.08435 9.69222 6.91565 9.69222 6.75 9.66602C6.44405 9.61756 6.20088 9.46883 5.98828 9.29785C5.78438 9.13382 5.55843 8.90706 5.30273 8.65137L2.57617 5.92383L2.15137 5.5L3 4.65137L3.42383 5.07617L6.15137 7.80273C6.42595 8.07732 6.59876 8.24849 6.74023 8.3623C6.87291 8.46904 6.92272 8.47813 6.9375 8.48047C6.97895 8.48703 7.02105 8.48703 7.0625 8.48047C7.07728 8.47813 7.12709 8.46904 7.25977 8.3623C7.40124 8.24849 7.57405 8.07732 7.84863 7.80273L10.5762 5.07617L11 4.65137L11.8486 5.5Z",
+    fill: "currentColor"
+  }));
+}
+function emptyDraft() {
+  return {
+    apiBase: "https://api.skillhub.cn",
+    skillsDir: "",
+    maxResults: 12,
+    timeoutMs: 2e4,
+    sortBy: "score"
+  };
+}
+function ConfigCard(props) {
+  useEffect2(() => ensureCss(), []);
+  const tr = typeof props.t === "function" ? props.t : lookup;
+  const [open, setOpen] = useState2(false);
+  const [saved, setSaved] = useState2(emptyDraft);
+  const [draft, setDraft] = useState2(emptyDraft);
+  const [saving, setSaving] = useState2(false);
+  const [updateInfo, setUpdateInfo] = useState2(null);
+  const [err, setErr] = useState2("");
+  useEffect2(() => {
+    let live = true;
+    api("config", {}).then((d) => {
+      if (!live) return;
+      const next = {
+        apiBase: d.apiBase || "https://api.skillhub.cn",
+        skillsDir: d.skillsDir || "",
+        maxResults: d.maxResults || 12,
+        timeoutMs: d.timeoutMs || 2e4,
+        sortBy: d.sortBy || "score"
+      };
+      setSaved(next);
+      setDraft(next);
+    }).catch((e) => {
+      if (live) setErr(e.message || String(e));
+    });
+    api("updateCheck", {}).then((d) => {
+      if (live) setUpdateInfo(d);
+    }).catch(() => {
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  const dirty = !!(draft && saved && JSON.stringify(draft) !== JSON.stringify(saved));
+  const save = async () => {
+    if (!draft) return;
+    setSaving(true);
+    setErr("");
+    try {
+      const d = await api("config", { save: true, ...draft });
+      const next = {
+        apiBase: d.apiBase,
+        skillsDir: d.skillsDir,
+        maxResults: d.maxResults,
+        timeoutMs: d.timeoutMs,
+        sortBy: d.sortBy
+      };
+      setSaved(next);
+      setDraft(next);
+    } catch (e) {
+      setErr(e.message || String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+  const versionHint = updateInfo?.latest ? tr("cfg.updateHint", { cur: updateInfo.currentVersion || "-", latest: updateInfo.latest.version || "-" }) : "";
+  return h(
+    I18nProvider,
+    { t: tr },
+    h(
+      "li",
+      { className: "sh-cfg-item" },
+      h(
+        "div",
+        { className: "sh-cfg" + (open ? " open" : "") },
+        h(
+          "div",
+          { className: "sh-cfg-h" },
+          h(
             "button",
             {
-              key: item.slug || item.id,
-              type: "button",
-              className: "sh-card" + (item.installed ? " on" : ""),
-              onClick: () => onOpen(item),
-            },
-            h(Icon, { item, className: "sh-icon" }),
-            h("div", { className: "sh-meta" },
-              h("div", { className: "sh-top" },
-                h("div", { className: "sh-title", title: item.name }, item.name),
-                item.installed ? h("span", { className: "sh-badge" }, tr("badge.installed")) : null,
-              ),
-              item.description ? h("div", { className: "sh-desc" }, item.description) : null,
-              h("div", { className: "sh-footline" }, meta || item.slug),
-            ),
-          );
-        }),
-      );
-    }
-
-    function TabBar({ tab, onChange }) {
-      const tr = useTr();
-      return h("div", { className: "sh-tabs", role: "tablist" },
-        DETAIL_TABS.map((it) => h("button", {
-          key: it.id,
-          type: "button",
-          role: "tab",
-          className: "sh-tab" + (tab === it.id ? " on" : ""),
-          "aria-selected": tab === it.id,
-          onClick: () => onChange(it.id),
-        }, tr(it.labelKey))),
-      );
-    }
-
-    function normVer(v) {
-      return String(v || "").trim().replace(/^v/i, "");
-    }
-
-    function VersionsPane({ data, currentVersion, installed, busy, onInstall }) {
-      const tr = useTr();
-      const items = data?.versions || [];
-      if (!items.length) return h("p", { className: "sh-hint" }, tr("ver.none"));
-      return h("div", null, items.map((v, idx) => {
-        const ver = normVer(v.version);
-        const current = !!installed && !!ver && normVer(currentVersion) === ver;
-        return h("div", { key: ver || idx, className: "sh-ver-card" },
-          h("div", { className: "sh-ver-main" },
-            h("div", { className: "sh-ver-head" },
-              h("b", null, "v" + ver),
-              idx === 0 ? h("span", { className: "sh-tag blue" }, tr("ver.latest")) : null,
-              current ? h("span", { className: "sh-tag green" }, tr("ver.current")) : null,
-            ),
-            h("div", { className: "sh-hint", style: { margin: 0 } }, fmtTime(v.createdAt, tr) || tr("ver.unknownDate")),
-            h("p", { className: "sh-ver-log" }, v.changelog || tr("ver.noLog")),
-          ),
-          h("button", {
-            type: "button",
-            className: "sh-mini" + (current ? "" : " primary"),
-            disabled: !!busy || current || !ver,
-            onClick: () => onInstall(ver),
-          }, current ? tr("ver.this") : (busy === ver ? tr("action.installing") : tr("ver.install"))),
-        );
-      }));
-    }
-
-    function radarPoints(values, cx, cy, r) {
-      return values.map((v, i) => {
-        const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
-        const rr = r * Math.max(0, Math.min(1, Number(v) / 5));
-        return (cx + Math.cos(a) * rr).toFixed(1) + "," + (cy + Math.sin(a) * rr).toFixed(1);
-      }).join(" ");
-    }
-
-    function DimIcon({ letter, color }) {
-      const svg = { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" };
-      if (letter === "T") return h("svg", svg, h("path", { d: "M12 3l8 4v5c0 5-3.4 8.4-8 9.5C7.4 20.4 4 17 4 12V7l8-4z" }));
-      if (letter === "R") return h("svg", svg, h("path", { d: "M12 21V3M5 10l7-7 7 7" }));
-      if (letter === "A") return h("svg", svg, h("circle", { cx: 12, cy: 12, r: 8 }), h("path", { d: "M12 8v8M8 12h8" }));
-      if (letter === "C") return h("svg", svg, h("path", { d: "M5 4h11a3 3 0 010 6H5z" }), h("path", { d: "M5 10h12a3 3 0 010 6H8" }));
-      return h("svg", svg, h("path", { d: "M13 3L5 14h7l-1 7 8-11h-7l1-7z" }));
-    }
-
-    function RadarChart({ scores }) {
-      const cx = 90;
-      const cy = 90;
-      const r = 58;
-      const full = TRACE.map(() => 5);
-      return h("svg", { className: "sh-radar", viewBox: "0 0 180 180", width: 180, height: 180, "aria-hidden": "true" },
-        [1, 2, 3, 4, 5].map((level) => h("polygon", {
-          key: level,
-          points: radarPoints(full.map(() => level), cx, cy, r),
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: 1,
-        })),
-        TRACE.map((d, i) => {
-          const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
-          return h("line", {
-            key: d[0],
-            x1: cx,
-            y1: cy,
-            x2: +(cx + Math.cos(a) * r).toFixed(1),
-            y2: +(cy + Math.sin(a) * r).toFixed(1),
-            stroke: "currentColor",
-            strokeWidth: 1,
-          });
-        }),
-        h("polygon", {
-          points: radarPoints(scores, cx, cy, r),
-          fill: "rgba(37,99,235,.16)",
-          stroke: "#2563eb",
-          strokeWidth: 1.6,
-        }),
-        TRACE.map((d, i) => {
-          const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
-          return h("text", {
-            key: "l" + d[0],
-            x: +(cx + Math.cos(a) * (r + 16)).toFixed(1),
-            y: +(cy + Math.sin(a) * (r + 16)).toFixed(1),
-            textAnchor: "middle",
-            dominantBaseline: "middle",
-            fontSize: 12,
-            fontWeight: 700,
-            fill: d[4],
-          }, d[1]);
-        }),
-      );
-    }
-
-    function evalGrade(score, tr) {
-      const n = Number(score);
-      if (!Number.isFinite(n)) return "";
-      const tx = tr || lookup;
-      if (n >= 4.5) return tx("grade.excellent");
-      if (n >= 4) return tx("grade.good");
-      if (n >= 3) return tx("grade.fair");
-      return tx("grade.poor");
-    }
-
-    function StarIcon({ filled, size = 12 }) {
-      return h("svg", {
-        width: size,
-        height: size,
-        viewBox: "0 0 24 24",
-        fill: filled ? "#f59e0b" : "none",
-        stroke: filled ? "#f59e0b" : "currentColor",
-        strokeWidth: 2,
-        strokeLinecap: "round",
-        strokeLinejoin: "round",
-        "aria-hidden": "true",
-        style: { display: "inline-block", verticalAlign: "middle", opacity: filled ? 1 : 0.35 },
-      }, h("polygon", { points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" }));
-    }
-
-    function StarGroup({ score }) {
-      const n = Math.max(0, Math.min(5, Math.round(Number(score) || 0)));
-      return h("span", { className: "sh-stars", "aria-hidden": "true", style: { display: "inline-flex", gap: 1, verticalAlign: "middle" } },
-        [0, 1, 2, 3, 4].map((i) => h(StarIcon, { key: i, filled: i < n }))
-      );
-    }
-
-    function isSafeItem(item) {
-      const reports = [item?.security?.keen, item?.security?.sanbu].filter(Boolean);
-      if (reports.some((r) => r.status === "malicious" || r.status === "suspicious")) return false;
-      if (reports.some((r) => r.status === "benign")) return true;
-      return !!(item?.integrity?.signed || item?.integrity?.contentHash);
-    }
-
-    function Marks({ item, detail }) {
-      const tr = useTr();
-      const grade = evalGrade(item.rating, tr);
-      const rate = item.rating != null && Number.isFinite(Number(item.rating));
-      const bluev = detail && item.verified;
-      const safe = detail && isSafeItem(item);
-      if (!rate && !bluev && !safe) return null;
-      return h("div", { className: "sh-marks" },
-        rate ? h("span", { className: "sh-rate", title: tr("rate.ai") },
-          h(StarGroup, { score: item.rating }),
-          " " + Number(item.rating).toFixed(1),
-          grade ? " " + grade : "",
-          detail ? " (" + tr("rate.ai") + ")" : "",
-        ) : null,
-        bluev ? h("span", { className: "sh-bluev", title: item.publisherName || tr("verified.account") },
-          h("i", { "aria-hidden": "true" }, "v"),
-          h("span", null, item.publisherName || tr("verified")),
-        ) : null,
-        safe ? h("span", { className: "sh-safe", title: tr("sec.badge") },
-          h(ShieldIcon),
-          tr("sec.badge"),
-        ) : null,
-      );
-    }
-
-    function ShieldIcon() {
-      return h("svg", { className: "sh-sec-ico", viewBox: "0 0 20 20", fill: "none", "aria-hidden": "true" },
-        h("path", {
-          d: "M3.15 2.35 10 .83l6.85 1.52c.38.09.65.42.65.82v8.32c0 1.67-.84 3.23-2.23 4.16L10 19.17l-5.27-3.52C3.34 14.72 2.5 13.16 2.5 11.49V3.17c0-.39.27-.73.65-.82Zm7.68 5.98V4.17L6.67 10h2.5v4.17L13.33 8.33H10.83Z",
-          fill: "url(#shShield)",
-        }),
-        h("defs", null,
-          h("linearGradient", { id: "shShield", x1: "10", y1: "0.83", x2: "10", y2: "19.17", gradientUnits: "userSpaceOnUse" },
-            h("stop", { stopColor: "#A6E527" }),
-            h("stop", { offset: "1", stopColor: "#0CBF5B" }),
-          ),
-        ),
-      );
-    }
-
-    function EvaluationPane({ data }) {
-      const tr = useTr();
-      const ev = data?.evaluation;
-      if (!ev) return h("p", { className: "sh-hint" }, tr("eval.none"));
-      const scores = TRACE.map((d) => Number(ev.dimensions?.[d[0]]?.score) || 0);
-      const grade = evalGrade(ev.score, tr);
-      return h("div", null,
-        h("div", { className: "sh-eval-hero" },
-          h(RadarChart, { scores }),
-          h("div", null,
-            h("div", { className: "sh-eval-score" }, (ev.score != null ? ev.score : "-"), h("span", null, " / 5")),
-            grade ? h("div", { className: "sh-eval-tag" }, tr("eval.grade", { g: grade })) : null,
-            ev.userSummary ? h("p", { className: "sh-eval-sum" }, ev.userSummary) : null,
-          ),
-        ),
-        h("div", { className: "sh-eval-h" }, tr("eval.detail")),
-        TRACE.map((d) => {
-          const dim = ev.dimensions?.[d[0]];
-          const score = dim?.score;
-          const tint = d[4] + "22";
-          return h("div", { key: d[0], className: "sh-eval-item" },
-            h("div", { className: "sh-eval-top" },
-              h("div", { className: "sh-eval-ico", style: { background: tint } }, h(DimIcon, { letter: d[1], color: d[4] })),
-              h("div", { className: "sh-eval-name" }, d[1] + " · " + d[2] + " " + tr("dim." + d[0])),
-              h("div", { className: "sh-eval-sc" }, (score == null ? "-" : score) + " / 5"),
-            ),
-            h("div", { className: "sh-eval-bar" }, h("span", { style: { width: ((Number(score) || 0) / 5 * 100) + "%", background: d[4] } })),
-            dim?.userReason ? h("p", { className: "sh-eval-why" }, dim.userReason) : null,
-          );
-        }),
-      );
-    }
-
-    function DetailCard({ item, busy, onClose, onInstalled, onUninstalled }) {
-      const tr = useTr();
-      const [toast, setToast] = useState("");
-      const [working, setWorking] = useState("");
-      const [tab, setTab] = useState("overview");
-      const [view, setView] = useState(item);
-      const [pane, setPane] = useState({ loading: false, error: "", data: null });
-      const cacheRef = React.useRef({});
-      const installed = !!view.installed;
-      useEffect(() => { setView(item); }, [item]);
-      const applyDetail = (d) => {
-        if (!d) return;
-        const card = d.card && typeof d.card === "object" ? d.card : null;
-        setView((cur) => ({
-          ...cur,
-          ...(card || {}),
-          slug: item.slug,
-          installed: d.installed ?? cur.installed,
-          version: d.version || card?.version || cur.version,
-          pageUrl: card?.pageUrl || cur.pageUrl,
-          rating: card?.rating ?? cur.rating,
-          verified: card?.verified ?? cur.verified,
-          publisherName: card?.publisherName || cur.publisherName,
-          description: card?.description || cur.description,
-          security: card?.security || cur.security,
-          integrity: card?.integrity || cur.integrity,
-        }));
-      };
-      useEffect(() => {
-        let live = true;
-        api("detail", { slug: item.slug })
-          .then((d) => { if (live) applyDetail(d); })
-          .catch(() => {});
-        return () => { live = false; };
-      }, [item.slug]);
-      useEffect(() => {
-        if (tab === "overview") return;
-        const cached = cacheRef.current[tab];
-        if (cached) {
-          setPane({ loading: false, error: "", data: cached });
-          return;
-        }
-        let live = true;
-        setPane({ loading: true, error: "", data: null });
-        api("skillTab", { slug: item.slug, tab })
-          .then((d) => {
-            if (!live) return;
-            cacheRef.current[tab] = d;
-            setPane({ loading: false, error: "", data: d });
-          })
-          .catch((e) => {
-            if (!live) return;
-            setPane({ loading: false, error: e.message || String(e), data: null });
-          });
-        return () => { live = false; };
-      }, [item.slug, tab]);
-      const run = async (method, extra) => {
-        const ver = extra && extra.version;
-        setWorking(ver || method);
-        try {
-          const result = await api(method, { slug: item.slug, ...(extra || {}) });
-          if (method === "install") {
-            item.installed = true;
-            if (result.version) item.version = result.version;
-            else if (ver) item.version = ver;
-            setView((cur) => ({ ...cur, installed: true, version: item.version || cur.version }));
-            onInstalled?.(item);
-            const shown = (view.name || item.name) + (item.version ? " v" + String(item.version).replace(/^v/i, "") : "");
-            setToast(tr("toast.installed", { name: shown }));
-            api("detail", { slug: item.slug }).then(applyDetail).catch(() => {});
-          } else {
-            item.installed = false;
-            setView((cur) => ({ ...cur, installed: false }));
-            onUninstalled?.(item);
-            setToast(tr("toast.uninstalled", { name: view.name || item.name }));
-          }
-        } catch (e) {
-          setToast(e.message || String(e));
-        } finally {
-          setWorking("");
-        }
-      };
-      return h("div", { className: "sh-drawer sh-skill sh-fade", role: "dialog", "aria-modal": "true" },
-        h("button", { type: "button", className: "sh-close", onClick: onClose, "aria-label": tr("action.close") }, "×"),
-        h("div", { className: "sh-head" },
-          h(Icon, { item: view, className: "sh-dicon" }),
-          h("div", { style: { minWidth: 0, flex: 1 } },
-            h("h2", null, view.name),
-            view.id ? h("div", { className: "sh-canon" }, view.id) : null,
-            h(Marks, { item: view, detail: true }),
-            h("div", { className: "sh-tags" },
-              catLabel(view, tr) ? h("span", { className: "sh-tag blue" }, catLabel(view, tr)) : null,
-              view.version ? h("span", { className: "sh-tag" }, "v" + view.version) : null,
-              installed ? h("span", { className: "sh-tag green" }, tr("action.installed")) : null,
-            ),
-          ),
-        ),
-        h("div", { className: "sh-body" },
-          h("div", { className: "sh-stats" },
-            h("div", { className: "sh-stat" }, tr("stat.downloads") + " ", h("b", null, fmtStat(view.downloads, tr))),
-            h("div", { className: "sh-stat" }, tr("stat.stars") + " ", h("b", null, fmtStat(view.stars, tr))),
-            h("div", { className: "sh-stat" }, tr("stat.installs") + " ", h("b", null, fmtStat(view.installs, tr))),
-          ),
-          h(TabBar, { tab, onChange: setTab }),
-          h("div", { className: "sh-pane" },
-            tab === "overview" ? h("p", { className: "sh-overview" }, view.description || tr("overview.empty")) : null,
-            tab !== "overview" && pane.loading ? h("p", { className: "sh-hint" }, tr("loading")) : null,
-            tab !== "overview" && pane.error ? h("p", { className: "sh-err" }, pane.error) : null,
-            tab === "versions" && pane.data ? h(VersionsPane, {
-              data: pane.data,
-              currentVersion: view.version,
-              installed,
-              busy: working,
-              onInstall: (version) => run("install", { version }),
-            }) : null,
-            tab === "evaluation" && pane.data ? h(EvaluationPane, { data: pane.data }) : null,
-          ),
-        ),
-        h("div", { className: "sh-foot" },
-          view.pageUrl ? h("a", { className: "sh-mini", href: view.pageUrl, target: "_blank", rel: "noreferrer" }, tr("action.openHome")) : null,
-          installed ? h("button", { type: "button", className: "sh-mini", disabled: !!working || busy, onClick: () => run("uninstall") }, working === "uninstall" ? tr("action.uninstalling") : tr("action.uninstall")) : null,
-          h("button", {
-            type: "button",
-            className: "sh-mini primary",
-            disabled: installed || !!working || busy,
-            onClick: () => run("install"),
-          }, installed ? tr("action.installed") : (working && working !== "uninstall" ? tr("action.installing") : tr("action.install"))),
-        ),
-        toast ? h(Toast, { text: toast, onDone: () => setToast("") }) : null,
-      );
-    }
-
-    const overlayStack = [];
-    function Overlay({ children, onClose }) {
-      useEffect(() => {
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-        overlayStack.push(onClose);
-        const onKey = (e) => {
-          if (e.key !== "Escape") return;
-          if (overlayStack[overlayStack.length - 1] !== onClose) return;
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          onClose();
-        };
-        window.addEventListener("keydown", onKey);
-        return () => {
-          const i = overlayStack.lastIndexOf(onClose);
-          if (i >= 0) overlayStack.splice(i, 1);
-          document.body.style.overflow = overlayStack.length ? "hidden" : prev;
-          window.removeEventListener("keydown", onKey);
-        };
-      }, [onClose]);
-      const portaled = createPortal !== fallbackPortal;
-      const hostRef = React.useRef(null);
-      useEffect(() => {
-        if (portaled) return;
-        const el = hostRef.current;
-        if (!el) return;
-        document.body.appendChild(el);
-        return () => { el.remove(); };
-      }, [portaled]);
-      const overlay = h("div", { ref: portaled ? undefined : hostRef, className: "sh-overlay", onClick: (e) => { if (e.target === e.currentTarget) onClose(); } }, children);
-      return portaled && typeof document !== "undefined" ? createPortal(overlay, document.body) : overlay;
-    }
-
-    function Drawer({ item, onClose, onInstalled, onUninstalled }) {
-      return h(Overlay, { onClose },
-        h(DetailCard, { item, onClose, onInstalled, onUninstalled }),
-      );
-    }
-
-    function parseToolArgs(props) {
-      const block = props?.block;
-      const raw = (block && "kind" in block ? block.call?.argsRaw : block?.argsRaw) || "";
-      if (!raw || typeof raw !== "string") return {};
-      try { return JSON.parse(raw); } catch { return {}; }
-    }
-
-    function contentText(node) {
-      if (!node) return "";
-      if (typeof node === "string") return node;
-      if (Array.isArray(node)) return node.map(contentText).join("\n");
-      if (typeof node === "object") {
-        if (typeof node.text === "string") return node.text;
-        if (node.content) return contentText(node.content);
-      }
-      return "";
-    }
-
-    function pickPayload(props) {
-      const found = [];
-      const visit = (node, depth) => {
-        if (!node || depth > 6) return;
-        if (typeof node === "string") {
-          const t = node.trim();
-          if ((t.startsWith("{") || t.startsWith("[")) && t.length > 8) {
-            try { visit(JSON.parse(t), depth + 1); } catch { /* ignore */ }
-          }
-          return;
-        }
-        if (typeof node !== "object") return;
-        if (Array.isArray(node)) {
-          for (const x of node) visit(x, depth + 1);
-          return;
-        }
-        if (Array.isArray(node.items)) found.push(node);
-        for (const key of ["block", "meta", "result", "resultView", "view", "data", "value", "payload", "content", "message"]) {
-          if (node[key] != null) visit(node[key], depth + 1);
-        }
-      };
-      visit(props, 0);
-      const block = props?.block;
-      visit(block?.meta, 1);
-      visit(block?.content, 1);
-      visit(block?.resultView, 1);
-      visit(contentText(block?.content), 1);
-      return found.find((x) => Array.isArray(x.items) && x.items.length) || found[0] || null;
-    }
-
-    function SearchToolView(props) {
-      useEffect(() => ensureCss(), []);
-      const payload = pickPayload(props);
-      const args = parseToolArgs(props);
-      const query = String(payload?.query || args.query || "").trim();
-      const fromTool = Array.isArray(payload?.items) && payload.items.length ? payload.items : null;
-      const running = !!(props?.block && !("kind" in props.block));
-      const [items, setItems] = useState(fromTool || []);
-      const [err, setErr] = useState("");
-      const [open, setOpen] = useState(null);
-      useEffect(() => {
-        if (fromTool) setItems(fromTool);
-      }, [fromTool]);
-      useEffect(() => {
-        if (fromTool || running) return;
-        let live = true;
-        api("search", { query, queries: args.queries, category: args.category, offset: args.offset, limit: args.limit })
-          .then((d) => { if (live) setItems(d.items || []); })
-          .catch((e) => { if (live) { setItems([]); setErr(e.message || String(e)); } });
-        return () => { live = false; };
-      }, [query, running, !!fromTool]);
-      if (running || !items.length) return err ? h("div", { className: "sh-err" }, err) : null;
-      const mark = (item, installed) => {
-        setItems((cur) => cur.map((it) => it.slug === item.slug ? { ...it, installed } : it));
-        setOpen((cur) => cur && cur.slug === item.slug ? { ...cur, installed } : cur);
-      };
-      const tr = typeof props.t === "function" ? props.t : lookup;
-      return h(I18nProvider, { t: tr },
-        h("div", { className: "sh-root sh-tool" },
-          h("div", { className: "sh-hint" }, tr("search.hint", { n: items.length })),
-          h(Cards, { items, onOpen: setOpen }),
-          open ? h(Drawer, {
-            item: open,
-            onClose: () => setOpen(null),
-            onInstalled: (it) => mark(it, true),
-            onUninstalled: (it) => mark(it, false),
-          }) : null,
-        ),
-      );
-    }
-
-    let plazaSessions = null;
-
-    function plazaOfferKey(sessionId) {
-      return "omnimux-market:plaza:" + String(sessionId || "");
-    }
-
-    function readPlazaOffer(sessionId) {
-      if (!sessionId || typeof sessionStorage === "undefined") return "";
-      try { return sessionStorage.getItem(plazaOfferKey(sessionId)) || ""; } catch { return ""; }
-    }
-
-    function writePlazaOffer(sessionId, value) {
-      if (!sessionId || typeof sessionStorage === "undefined") return;
-      try { sessionStorage.setItem(plazaOfferKey(sessionId), value); } catch { /* quota */ }
-    }
-
-    function currentSessionId(sessions) {
-      try {
-        return sessions?.list?.getSnapshot?.()?.current || "";
-      } catch {
-        return "";
-      }
-    }
-
-    function blockText(block) {
-      if (!block) return "";
-      if (typeof block === "string") return block;
-      if (typeof block.text === "string") return block.text;
-      if (Array.isArray(block.content)) return block.content.map(blockText).join("");
-      return "";
-    }
-
-    /** 会话最后一条用户原文，截 500。路径：session.getSnapshot().nodes 中 kind=user 的 content[].text */
-    function lastUserExcerpt(face) {
-      try {
-        const snap = typeof face.getSnapshot === "function" ? face.getSnapshot() : null;
-        const nodes = snap?.nodes || snap?.chat?.legacy?.nodes || [];
-        const list = Array.isArray(nodes) ? nodes : [];
-        for (let i = list.length - 1; i >= 0; i--) {
-          const node = list[i];
-          if (!node || node.kind !== "user") continue;
-          const text = (node.content || []).map(blockText).join("").trim();
-          if (text) return text.slice(0, 500);
-        }
-      } catch { /* snapshot 形状因 rc 可能变 */ }
-      return "";
-    }
-
-    function findSendButton() {
-      if (typeof document === "undefined") return null;
-      return document.querySelector(
-        'button[aria-label="发送消息"], button[aria-label="Send message"], button[aria-label="Send"]',
-      );
-    }
-
-    /**
-     * 方案 B：官方 session.prompt(..., "queue")。失败再 insertGesture + 点发送；再失败 toast。
-     * Host 零用户消息。mode 只用 queue，禁用 steer。成功仍 insertGesture。
-     */
-    async function sendPlazaFollowUp({ sessions, skill, excerpt }) {
-      const id = sessions.list.getSnapshot().current;
-      const face = id && sessions.binding(id)?.session;
-      const text = excerpt
-        ? `/${skill} 继续当前任务：${excerpt}`
-        : `/${skill} 继续当前任务`;
-      const gesture = `/${skill}`;
-      const writeGesture = () => {
-        const field = findComposer();
-        if (field instanceof HTMLTextAreaElement || field instanceof HTMLInputElement) {
-          return insertGesture(field, gesture);
-        }
-        return false;
-      };
-      try {
-        if (!face || typeof face.prompt !== "function") throw new Error("no session face");
-        const result = await face.prompt([{ type: "text", text }], "queue");
-        if (result && result.ok === false) throw new Error(result.error?.message || "prompt refused");
-        writeGesture();
-        return { ok: true, via: "prompt" };
-      } catch {
-        const wrote = writeGesture();
-        const send = findSendButton();
-        if (wrote && send instanceof HTMLElement && !send.disabled) {
-          try {
-            send.click();
-            return { ok: true, via: "click" };
-          } catch { /* toast */ }
-        }
-        return { ok: false, via: "toast" };
-      }
-    }
-
-    /**
-     * 对话内专家选择走官方 ask_user_question 输入区选项卡。
-     * 货架卡会跟选项卡叠层，这里故意不渲染。座仍注册，避免 key 丢失。
-     */
-    function PlazaSearchToolView() {
-      return null;
-    }
-
-    function ListToolView(props) {
-      useEffect(() => ensureCss(), []);
-      const payload = pickPayload(props);
-      const fromTool = Array.isArray(payload?.items) ? payload.items : null;
-      const running = !!(props?.block && !("kind" in props.block));
-      const [items, setItems] = useState(fromTool || []);
-      const [open, setOpen] = useState(null);
-      const [toast, setToast] = useState("");
-      useEffect(() => { if (fromTool) setItems(fromTool); }, [fromTool]);
-      if (running) return null;
-      const tr = typeof props.t === "function" ? props.t : lookup;
-      const openItem = (it) => setOpen({
-        slug: it.slug,
-        name: it.name,
-        description: it.description,
-        version: it.version,
-        installed: true,
-        pageUrl: "https://skillhub.cn/skills/" + it.slug,
-      });
-      return h(I18nProvider, { t: tr },
-        h("div", { className: "sh-root sh-tool" },
-          h("div", { className: "sh-hint" }, items.length ? tr("installed.hint", { n: items.length }) : tr("installed.none")),
-          items.map((it) => h("div", { key: it.slug, className: "sh-row" },
-            h("div", null,
-              h("div", { className: "sh-title" }, it.name),
-              h("div", { className: "sh-slug" }, it.slug + (it.version ? " · v" + it.version : "")),
-            ),
-            h("div", null,
-              h("button", { type: "button", className: "sh-mini", onClick: () => openItem(it) }, tr("action.detail")),
-              h("button", {
-                type: "button",
-                className: "sh-mini",
-                onClick: async () => {
-                  try {
-                    await api("uninstall", { slug: it.slug });
-                    setItems((cur) => cur.filter((x) => x.slug !== it.slug));
-                    setToast(tr("toast.uninstalled", { name: it.name }));
-                  } catch (e) {
-                    setToast(e.message || String(e));
-                  }
-                },
-              }, tr("action.uninstall")),
-            ),
-          )),
-          open ? h(Drawer, {
-            item: open,
-            onClose: () => setOpen(null),
-            onUninstalled: (it) => setItems((cur) => cur.filter((x) => x.slug !== it.slug)),
-          }) : null,
-          toast ? h(Toast, { text: toast, onDone: () => setToast("") }) : null,
-        ),
-      );
-    }
-
-    function ChevronDown({ className }) {
-      return h("svg", {
-        className,
-        width: 14,
-        height: 14,
-        viewBox: "0 0 14 14",
-        fill: "none",
-        xmlns: "http://www.w3.org/2000/svg",
-        "aria-hidden": "true",
-      }, h("path", {
-        d: "M11.8486 5.5L11.4238 5.92383L8.69727 8.65137C8.44157 8.90706 8.21562 9.13382 8.01172 9.29785C7.79912 9.46883 7.55595 9.61756 7.25 9.66602C7.08435 9.69222 6.91565 9.69222 6.75 9.66602C6.44405 9.61756 6.20088 9.46883 5.98828 9.29785C5.78438 9.13382 5.55843 8.90706 5.30273 8.65137L2.57617 5.92383L2.15137 5.5L3 4.65137L3.42383 5.07617L6.15137 7.80273C6.42595 8.07732 6.59876 8.24849 6.74023 8.3623C6.87291 8.46904 6.92272 8.47813 6.9375 8.48047C6.97895 8.48703 7.02105 8.48703 7.0625 8.48047C7.07728 8.47813 7.12709 8.46904 7.25977 8.3623C7.40124 8.24849 7.57405 8.07732 7.84863 7.80273L10.5762 5.07617L11 4.65137L11.8486 5.5Z",
-        fill: "currentColor",
-      }));
-    }
-
-    function emptyDraft() {
-      return {
-        apiBase: "https://api.skillhub.cn",
-        skillsDir: "",
-        maxResults: 12,
-        timeoutMs: 20000,
-        sortBy: "score",
-      };
-    }
-
-    function ConfigCard(props) {
-      useEffect(() => ensureCss(), []);
-      const tr = typeof props.t === "function" ? props.t : lookup;
-      const [open, setOpen] = useState(false);
-      const [saved, setSaved] = useState(emptyDraft);
-      const [draft, setDraft] = useState(emptyDraft);
-      const [saving, setSaving] = useState(false);
-      const [updateInfo, setUpdateInfo] = useState(null);
-      const [err, setErr] = useState("");
-      useEffect(() => {
-        let live = true;
-        api("config", {})
-          .then((d) => {
-            if (!live) return;
-            const next = {
-              apiBase: d.apiBase || "https://api.skillhub.cn",
-              skillsDir: d.skillsDir || "",
-              maxResults: d.maxResults || 12,
-              timeoutMs: d.timeoutMs || 20000,
-              sortBy: d.sortBy || "score",
-            };
-            setSaved(next);
-            setDraft(next);
-          })
-          .catch((e) => { if (live) setErr(e.message || String(e)); });
-        api("updateCheck", {})
-          .then((d) => { if (live) setUpdateInfo(d); })
-          .catch(() => {});
-        return () => { live = false; };
-      }, []);
-      const dirty = !!(draft && saved && JSON.stringify(draft) !== JSON.stringify(saved));
-      const save = async () => {
-        if (!draft) return;
-        setSaving(true);
-        setErr("");
-        try {
-          const d = await api("config", { save: true, ...draft });
-          const next = {
-            apiBase: d.apiBase,
-            skillsDir: d.skillsDir,
-            maxResults: d.maxResults,
-            timeoutMs: d.timeoutMs,
-            sortBy: d.sortBy,
-          };
-          setSaved(next);
-          setDraft(next);
-        } catch (e) {
-          setErr(e.message || String(e));
-        } finally {
-          setSaving(false);
-        }
-      };
-      const versionHint = updateInfo?.latest
-        ? tr("cfg.updateHint", { cur: updateInfo.currentVersion || "-", latest: updateInfo.latest.version || "-" })
-        : "";
-      return h(I18nProvider, { t: tr },
-        h("li", { className: "sh-cfg-item" },
-        h("div", { className: "sh-cfg" + (open ? " open" : "") },
-          h("div", { className: "sh-cfg-h" },
-            h("button", {
               type: "button",
               className: "sh-cfg-expand",
               "aria-expanded": open,
-              onClick: () => setOpen((v) => !v),
+              onClick: () => setOpen((v) => !v)
             },
-              h("span", { className: "sh-cfg-t" },
-                h("span", { className: "sh-cfg-n" }, "SkillHub"),
-                h("span", { className: "sh-cfg-d" }, versionHint || tr("cfg.desc")),
-              ),
-              dirty ? h("span", { className: "sh-tag orange" }, tr("cfg.unsaved")) : null,
+            h(
+              "span",
+              { className: "sh-cfg-t" },
+              h("span", { className: "sh-cfg-n" }, "SkillHub"),
+              h("span", { className: "sh-cfg-d" }, versionHint || tr("cfg.desc"))
             ),
-            h("button", {
-              type: "button",
-              className: "sh-cfg-toggle",
-              "aria-label": open ? tr("cfg.collapse") : tr("cfg.expand"),
-              onClick: () => setOpen((v) => !v),
-            }, h(ChevronDown, { className: "sh-cfg-ch" })),
+            dirty ? h("span", { className: "sh-tag orange" }, tr("cfg.unsaved")) : null
           ),
-          open ? h("div", { className: "sh-cfg-b" },
-            h("div", { className: "sh-cfg-f" },
-              h("label", { htmlFor: "sh-api" }, tr("cfg.api")),
-              h("input", {
-                id: "sh-api",
-                type: "text",
-                value: draft.apiBase,
-                onChange: (e) => setDraft({ ...draft, apiBase: e.target.value }),
-              }),
-            ),
-            h("div", { className: "sh-cfg-f" },
-              h("label", { htmlFor: "sh-dir" }, tr("cfg.dir")),
-              h("input", {
-                id: "sh-dir",
-                type: "text",
-                value: draft.skillsDir,
-                onChange: (e) => setDraft({ ...draft, skillsDir: e.target.value }),
-              }),
-            ),
-            h("div", { className: "sh-cfg-f" },
-              h("label", { htmlFor: "sh-max" }, tr("cfg.max")),
-              h("input", {
-                id: "sh-max",
-                type: "number",
-                min: 1,
-                max: 80,
-                value: draft.maxResults,
-                onChange: (e) => setDraft({ ...draft, maxResults: Number(e.target.value) || 12 }),
-              }),
-            ),
-            h("div", { className: "sh-cfg-ft" },
-              err ? h("p", { className: "sh-cfg-err" }, err) : null,
-              h("button", { type: "button", className: "sh-cfg-disc", disabled: !dirty || saving, onClick: () => setDraft(saved) }, tr("cfg.discard")),
-              h("button", { type: "button", className: "sh-cfg-save", disabled: !dirty || saving, onClick: save }, saving ? tr("cfg.saving") : tr("cfg.save")),
-            ),
-          ) : null,
-        ),
-      ));
-    }
-
-    const MARKET_CAT_EN = {
-      "fun-dressup": "Fun dress-up",
-      "web-tools": "Web tools",
-      memory: "Memory",
-      "agent-workflow": "Agent workflow",
-      "model-inference": "Model inference",
-      client: "Client",
-      "admin-security": "Admin & security",
-    };
-    const MARKET_CAT_FALLBACK = [
-      { key: "fun-dressup", displayName: "趣味换装" },
-      { key: "web-tools", displayName: "联网工具" },
-      { key: "memory", displayName: "记忆" },
-      { key: "agent-workflow", displayName: "Agent 工作流" },
-      { key: "model-inference", displayName: "模型推理" },
-      { key: "client", displayName: "客户端" },
-      { key: "admin-security", displayName: "管理安全" },
-    ];
-
-    function pluginLetter(plugin) {
-      const raw = String((plugin && plugin.name) || (plugin && plugin.owner) || "");
-      const ch = raw.match(/[A-Za-z0-9]|[\u4e00-\u9fff]/);
-      return (ch ? ch[0] : "?").toUpperCase();
-    }
-
-    function MarketAvatar({ plugin }) {
-      const [failed, setFailed] = useState(false);
-      const src = !failed && plugin.avatarUrl ? iconSrc(plugin.avatarUrl) : "";
-      if (src) {
-        return h("img", {
-          className: "sh-mkt-avatar",
-          src,
-          alt: "",
-          onError: () => setFailed(true),
-        });
-      }
-      return h("div", {
-        className: "sh-mkt-avatar sh-mkt-avatar-fallback",
-        "aria-hidden": "true",
-      }, pluginLetter(plugin));
-    }
-
-    function SearchIcon() {
-      return h("svg", { viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" },
-        h("circle", { cx: "7", cy: "7", r: "5.25", stroke: "currentColor", strokeWidth: "1.5" }),
-        h("path", { d: "M11 11.5 14 14.5", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }),
-      );
-    }
-
-    function StarIcon() {
-      return h("svg", { width: 12, height: 12, viewBox: "0 0 24 24", fill: "#f59e0b", stroke: "#f59e0b", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
-        h("polygon", { points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" }),
-      );
-    }
-
-    function installMarketPlugin(plugin) {
-      return api("pluginInstall", {
-        owner: plugin.owner,
-        name: plugin.name,
-        fullName: plugin.fullName,
-      });
-    }
-
-    function phaseLabel(phase, tr) {
-      if (phase === "resolving") return tr("mkt.phaseResolving");
-      if (phase === "downloading") return tr("mkt.phaseDownloading");
-      if (phase === "linking") return tr("mkt.phaseLinking");
-      if (phase === "building") return tr("mkt.phaseBuilding");
-      return "";
-    }
-
-    function progressCopy(status, tr) {
-      if (status && status.phase) {
-        const bits = [phaseLabel(status.phase, tr)];
-        if (status.currentPackage) bits.push(status.currentPackage);
-        if (Number(status.done) > 0) bits.push(tr("mkt.packagesDone", { n: status.done }));
-        if (Number(status.seconds) > 0) bits.push(status.seconds + "s");
-        return bits.filter(Boolean).join(" · ");
-      }
-      const line = status && status.lastLine;
-      if (line) return line + (status.seconds ? "  (" + status.seconds + "s)" : "");
-      return tr("mkt.progressHint");
-    }
-
-    function progressPercent(status) {
-      if (!status || !status.active) return null;
-      if (typeof status.size === "number" && status.size > 0 && typeof status.downloaded === "number") {
-        return Math.max(4, Math.min(96, Math.round(status.downloaded / status.size * 100)));
-      }
-      const m = /resolved (\d+), reused (\d+), downloaded (\d+), added (\d+)/.exec(status.lastLine || "");
-      if (m && Number(m[1]) > 0) {
-        const done = Number(m[2]) + Number(m[3]) + Number(m[4]);
-        return Math.max(4, Math.min(96, Math.round(done / Number(m[1]) * 100)));
-      }
-      return null;
-    }
-
-    function Marketplace(props) {
-      useEffect(() => ensureCss(), []);
-      const tr = typeof props.t === "function" ? props.t : lookup;
-      const locale = tr("locale") === "en" ? "en" : "zh";
-      const [query, setQuery] = useState("");
-      const [submitted, setSubmitted] = useState("");
-      const [category, setCategory] = useState("");
-      const [page, setPage] = useState(1);
-      const [items, setItems] = useState([]);
-      const [total, setTotal] = useState(0);
-      const [status, setStatus] = useState("loading");
-      const [err, setErr] = useState("");
-      const [sending, setSending] = useState("");
-      const [feedback, setFeedback] = useState("");
-      const [cats, setCats] = useState(MARKET_CAT_FALLBACK);
-      const [bootId, setBootId] = useState("");
-      const [liveStatus, setLiveStatus] = useState(null);
-      const [pendingRestart, setPendingRestart] = useState("");
-      const [restarting, setRestarting] = useState(false);
-      const install = installMarketPlugin;
-      useEffect(() => {
-        let live = true;
-        api("pluginCategories", {})
-          .then((d) => {
-            if (!live) return;
-            const items = Array.isArray(d.items) ? d.items.filter((it) => it && it.key) : [];
-            if (items.length) setCats(items);
-          })
-          .catch(() => {});
-        api("pluginInstallStatus", {}).then((d) => {
-          if (!live) return;
-          if (d.boot) setBootId(d.boot);
-        }).catch(() => {});
-        api("config", {}).then((d) => {
-          if (!live) return;
-          if (typeof d.plazaKeepAlive === "boolean") plazaKeepAlive = d.plazaKeepAlive;
-        }).catch(() => {});
-        return () => { live = false; };
-      }, []);
-      useEffect(() => {
-        let live = true;
-        const payload = { q: submitted, scope: "verified", category, sort: "stars", page, pageSize: 48 };
-        const key = apiCacheKey("plugins", payload);
-        const cached = apiCache.get(key);
-        const hasFresh = cached && Date.now() - cached.at < API_CACHE_TTL_MS;
-        if (page === 1 && hasFresh) {
-          const d = cached.body;
-          setItems(d.items || []);
-          setTotal(Number(d.total) || 0);
-          setStatus("ready");
-          setErr("");
-        } else if (page === 1) {
-          setStatus("loading");
-        }
-        api("plugins", payload)
-          .then((d) => {
-            if (!live) return;
-            setItems((cur) => page === 1 ? (d.items || []) : cur.concat(d.items || []));
-            setTotal(Number(d.total) || 0);
-            setStatus("ready");
-            setErr("");
-          })
-          .catch((e) => {
-            if (!live) return;
-            if (page === 1 && !hasFresh) {
-              setItems([]);
-              setTotal(0);
-              setStatus("error");
-              setErr(e.message || String(e));
-            }
-          });
-        return () => { live = false; };
-      }, [submitted, category, page]);
-      useEffect(() => {
-        if (!sending && !restarting) return;
-        let live = true;
-        const tick = () => {
-          api("pluginInstallStatus", {}).then((d) => {
-            if (!live) return;
-            setLiveStatus(d);
-            if (d.boot) setBootId((cur) => cur || d.boot);
-          }).catch(() => {});
-        };
-        tick();
-        const timer = setInterval(tick, 800);
-        return () => { live = false; clearInterval(timer); };
-      }, [sending, restarting]);
-      const catLabelFor = (key) => {
-        if (!key) return "";
-        if (locale === "en" && MARKET_CAT_EN[key]) return MARKET_CAT_EN[key];
-        const hit = cats.find((it) => it.key === key);
-        return (hit && hit.displayName) || MARKET_CAT_FALLBACK.find((it) => it.key === key)?.displayName || key;
-      };
-      const detailHref = (plugin) => {
-        const repo = String(plugin.repositoryUrl || "").trim();
-        if (/^https:\/\/github\.com\//i.test(repo)) return repo;
-        return "https://github.com/" + encodeURIComponent(plugin.owner) + "/" + encodeURIComponent(plugin.name);
-      };
-      const pct = sending ? progressPercent(liveStatus) : null;
-      const startRestart = () => {
-        if (restarting) return;
-        setRestarting(true);
-        setFeedback("");
-        const previous = bootId;
-        const deadline = Date.now() + 60000;
-        const awaitNewBoot = () => {
-          const poll = () => {
-            api("pluginInstallStatus", {}).then((d) => {
-              if (typeof d.boot === "string" && previous && d.boot !== previous) {
-                location.reload();
-                return;
-              }
-              retry();
-            }).catch(retry);
-          };
-          const retry = () => {
-            if (Date.now() > deadline) {
-              setRestarting(false);
-              setFeedback(tr("mkt.restartTimeout"));
-              return;
-            }
-            setTimeout(poll, 1500);
-          };
-          poll();
-        };
-        const requestRestart = (left) => {
-          api("pluginRestart", {}).then(() => {
-            awaitNewBoot();
-          }).catch((e) => {
-            const msg = e && e.message ? String(e.message) : String(e);
-            if (/cannot restart while|HTTP 409/.test(msg) && left > 0) {
-              setTimeout(() => requestRestart(left - 1), 1500);
-              return;
-            }
-            if (/Failed to fetch|NetworkError|HTTP 5/i.test(msg)) {
-              awaitNewBoot();
-              return;
-            }
-            setRestarting(false);
-            setFeedback(tr("mkt.restartFail", { m: msg }));
-          });
-        };
-        requestRestart(10);
-      };
-      return h(I18nProvider, { t: tr },
-        h("div", { className: "sh-mkt" },
-          h("form", {
-            className: "sh-mkt-search",
-            onSubmit: (e) => { e.preventDefault(); setSubmitted(query.trim()); setPage(1); },
-          },
-            h("div", { className: "sh-mkt-field" },
-              h(SearchIcon),
-              h("input", {
-                type: "search",
-                value: query,
-                placeholder: tr("mkt.searchPlaceholder"),
-                onChange: (e) => setQuery(e.currentTarget.value),
-              }),
-            ),
-            h("button", { type: "submit", className: "sh-mkt-go" }, tr("mkt.search")),
-          ),
-          h("div", { className: "sh-mkt-filters" },
-            h("button", {
-              type: "button",
-              className: "sh-mkt-filter" + (!category ? " on" : ""),
-              onClick: () => { setCategory(""); setPage(1); },
-            }, tr("mkt.catAll")),
-            cats.map((it) => h("button", {
-              key: it.key,
-              type: "button",
-              className: "sh-mkt-filter" + (category === it.key ? " on" : ""),
-              onClick: () => { setCategory(it.key); setPage(1); },
-            }, catLabelFor(it.key))),
-          ),
-          status === "ready" ? h("div", { className: "sh-mkt-results" },
-            h("p", { className: "sh-mkt-summary" }, tr("mkt.repos", { n: total })),
-          ) : null,
-          sending ? h("div", { className: "sh-mkt-progress" },
-            h("div", { className: "sh-mkt-progress-row" },
-              h("span", { className: "sh-mkt-progress-text" }, progressCopy(liveStatus, tr)),
-              pct != null ? h("span", { className: "sh-mkt-progress-pct" }, pct + "%") : null,
-            ),
-            h("div", { className: "sh-mkt-bar" },
-              h("div", {
-                className: "sh-mkt-bar-fill" + (pct == null ? " wave" : ""),
-                style: pct != null ? { width: pct + "%" } : undefined,
-              }),
-            ),
-          ) : null,
-          pendingRestart && !sending ? h("div", { className: "sh-mkt-banner" },
-            h("span", { className: "sh-mkt-banner-text" }, tr("mkt.restartBanner", { name: pendingRestart })),
-            h("button", {
-              type: "button",
-              className: "sh-mkt-restart",
-              disabled: restarting,
-              onClick: startRestart,
-            }, restarting ? tr("mkt.restarting") : tr("mkt.restartNow")),
-          ) : null,
-          feedback ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, feedback) : null,
-          status === "loading" && page === 1 ? h("p", { className: "sh-mkt-status" }, tr("mkt.loading")) : null,
-          status === "error" ? h("p", { className: "sh-mkt-status" }, tr("mkt.error", { m: err })) : null,
-          status === "ready" && !items.length ? h("p", { className: "sh-mkt-status" }, tr("mkt.empty")) : null,
-          items.length ? h("div", { className: "sh-mkt-grid" },
-            items.map((plugin) => {
-              const id = plugin.fullName || (plugin.owner + "/" + plugin.name);
-              const verified = plugin.installability === "verified";
-              const installed = !!plugin.installed;
-              const busy = !!sending;
-              return h("article", { key: id, className: "sh-mkt-card" + (installed ? " on" : "") },
-                h("div", { className: "sh-mkt-head" },
-                  h(MarketAvatar, { plugin }),
-                  h("div", { className: "sh-mkt-head-main" },
-                    h("div", { className: "sh-mkt-top" },
-                      h("p", { className: "sh-mkt-owner" }, plugin.owner),
-                      h("span", { className: "sh-mkt-badge" + (installed ? " on" : verified ? " ok" : "") },
-                        installed ? tr("mkt.installed") : (verified ? tr("mkt.verified") : tr("mkt.unsupported"))),
-                    ),
-                    h("div", { className: "sh-mkt-name" }, plugin.name),
-                  ),
-                ),
-                h("p", { className: "sh-mkt-desc" }, plugin.description || tr("mkt.noDesc")),
-                h("div", { className: "sh-mkt-meta" },
-                  h("span", null, catLabelFor(plugin.categoryKey) || plugin.categoryKey),
-                  h("span", { style: { display: "inline-flex", alignItems: "center", gap: "3px" } }, h(StarIcon), String(Number(plugin.stars) || 0)),
-                ),
-                h("div", { className: "sh-mkt-actions" },
-                  h("a", { className: "sh-mkt-details", href: detailHref(plugin), target: "_blank", rel: "noreferrer" }, tr("mkt.details")),
-                  h("button", {
-                    type: "button",
-                    className: "sh-mkt-install" + (installed ? " done" : ""),
-                    disabled: !verified || busy || restarting || installed,
-                    onClick: () => {
-                      setSending(id);
-                      setFeedback("");
-                      setPendingRestart("");
-                      setLiveStatus(null);
-                      install(plugin).then(
-                        () => {
-                          setItems((cur) => cur.map((it) => {
-                            const iid = it.fullName || (it.owner + "/" + it.name);
-                            return iid === id ? { ...it, installed: true } : it;
-                          }));
-                          setPendingRestart(plugin.fullName || id);
-                        },
-                        (e) => setFeedback(e.message || String(e)),
-                      ).finally(() => setSending(""));
-                    },
-                  }, !verified ? tr("mkt.unsupported") : installed ? tr("mkt.installed") : (sending === id ? tr("mkt.sending") : tr("mkt.install"))),
-                ),
-              );
-            }),
-          ) : null,
-          status === "ready" && items.length < total ? h("button", {
-            type: "button",
-            className: "sh-mkt-more",
-            onClick: () => setPage((n) => n + 1),
-          },
-            h("span", null, tr("mkt.more")),
-            h("span", { className: "sh-mkt-more-left" }, tr("mkt.moreLeft", { n: Math.max(0, total - items.length) })),
-            h(ChevronDown),
-          ) : null,
-        ),
-      );
-    }
-
-    const SKILL_CAT_KEYS = [
-      "office-efficiency", "content-creation", "dev-programming", "data-analysis",
-      "design-media", "ai-agent", "knowledge-management", "business-ops",
-      "education", "professional", "it-ops-security", "life-service",
-    ];
-
-    function PlazaIcon() {
-      return h("svg", { viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" },
-        h("rect", { x: "1.75", y: "1.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" }),
-        h("rect", { x: "8.75", y: "1.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" }),
-        h("rect", { x: "1.75", y: "8.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" }),
-        h("rect", { x: "8.75", y: "8.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" }),
-      );
-    }
-
-    function SkillPlaza() {
-      const tr = useTr();
-      const pageSize = 48;
-      const [query, setQuery] = useState("");
-      const [submitted, setSubmitted] = useState("");
-      const [category, setCategory] = useState("");
-      const [page, setPage] = useState(1);
-      const [items, setItems] = useState([]);
-      const [total, setTotal] = useState(0);
-      const [hasMore, setHasMore] = useState(false);
-      const [fallback, setFallback] = useState(false);
-      const [status, setStatus] = useState("loading");
-      const [err, setErr] = useState("");
-      const [open, setOpen] = useState(null);
-      const applySearchBody = (d, mode) => {
-        const next = d.items || [];
-        const isFallback = !!d.fallback;
-        setFallback(isFallback);
-        // fallback 热门列表：UI 不用全库 total 冒充命中数，也不继续翻页
-        const nextTotal = isFallback ? next.length : (Number(d.total) || 0);
-        if (mode === "replace") setItems(next);
-        else setItems((cur) => cur.concat(next));
-        setTotal(nextTotal);
-        setHasMore(isFallback ? false : !!d.hasMore);
-        setStatus("ready");
-        setErr("");
-        return next;
-      };
-      useEffect(() => {
-        let live = true;
-        const payload = { query: submitted, category, limit: pageSize, offset: (page - 1) * pageSize };
-        const key = apiCacheKey("search", payload);
-        const cached = apiCache.get(key);
-        const hasFresh = cached && Date.now() - cached.at < API_CACHE_TTL_MS;
-        if (page === 1 && hasFresh) {
-          applySearchBody(cached.body, "replace");
-        } else if (page === 1) {
-          setStatus("loading");
-        }
-        api("search", payload)
-          .then((d) => {
-            if (!live) return;
-            const next = applySearchBody(d, page === 1 ? "replace" : "append");
-            // Lazy ratings: patch cards after search returns (Host no longer awaits).
-            const slugs = next.map((it) => it.slug).filter(Boolean);
-            if (slugs.length) {
-              api("ratings", { slugs }, { skipCache: true }).then((r) => {
-                if (!live || !r || !r.ratings) return;
-                setItems((cur) => cur.map((it) => {
-                  const score = r.ratings[it.slug];
-                  return score != null ? { ...it, rating: score } : it;
-                }));
-              }).catch(() => {});
-            }
-          })
-          .catch((e) => {
-            if (!live) return;
-            if (page === 1 && !hasFresh) {
-              setItems([]);
-              setTotal(0);
-              setHasMore(false);
-              setFallback(false);
-              setStatus("error");
-              setErr(e.message || String(e));
-            }
-          });
-        return () => { live = false; };
-      }, [submitted, category, page]);
-      const mark = (item, installed) => {
-        setItems((cur) => cur.map((it) => it.slug === item.slug ? { ...it, installed } : it));
-        setOpen((cur) => cur && cur.slug === item.slug ? { ...cur, installed } : cur);
-      };
-      const remaining = fallback ? 0 : Math.max(0, total - items.length);
-      const summaryText = fallback
-        ? tr("search.fallback")
-        : tr("search.hint", { n: total || items.length });
-      return h("div", { className: "sh-mkt" },
-        h("form", {
-          className: "sh-mkt-search",
-          onSubmit: (e) => { e.preventDefault(); setPage(1); setSubmitted(query.trim()); },
-        },
-          h("div", { className: "sh-mkt-field" },
-            h(SearchIcon),
-            h("input", {
-              type: "search",
-              value: query,
-              placeholder: tr("mkt.searchPlaceholder"),
-              onChange: (e) => setQuery(e.currentTarget.value),
-            }),
-          ),
-          h("button", { type: "submit", className: "sh-mkt-go" }, tr("mkt.search")),
-        ),
-        h("div", { className: "sh-mkt-filters" },
           h("button", {
             type: "button",
-            className: "sh-mkt-filter" + (!category ? " on" : ""),
-            onClick: () => { setCategory(""); setPage(1); },
-          }, tr("mkt.catAll")),
-          SKILL_CAT_KEYS.map((key) => h("button", {
-            key,
-            type: "button",
-            className: "sh-mkt-filter" + (category === key ? " on" : ""),
-            onClick: () => { setCategory(key); setPage(1); },
-          }, tr("cat." + key))),
+            className: "sh-cfg-toggle",
+            "aria-label": open ? tr("cfg.collapse") : tr("cfg.expand"),
+            onClick: () => setOpen((v) => !v)
+          }, h(ChevronDown, { className: "sh-cfg-ch" }))
         ),
-        status === "ready" ? h("div", { className: "sh-mkt-results" },
-          h("p", { className: "sh-mkt-summary" }, summaryText),
-        ) : null,
-        status === "loading" && page === 1 ? h("p", { className: "sh-mkt-status" }, tr("mkt.loading")) : null,
-        status === "error" ? h("p", { className: "sh-mkt-status" }, tr("mkt.error", { m: err })) : null,
-        status === "ready" && !items.length ? h("p", { className: "sh-mkt-status" }, tr("search.empty")) : null,
-        items.length ? h(Cards, { items, onOpen: setOpen }) : null,
-        status === "ready" && !fallback && (hasMore || remaining > 0) ? h("button", {
+        open ? h(
+          "div",
+          { className: "sh-cfg-b" },
+          h(InputField3, {
+            id: "sh-api",
+            label: tr("cfg.api"),
+            value: draft.apiBase,
+            onChange: (e) => setDraft({ ...draft, apiBase: e.target.value })
+          }),
+          h(InputField3, {
+            id: "sh-dir",
+            label: tr("cfg.dir"),
+            value: draft.skillsDir,
+            onChange: (e) => setDraft({ ...draft, skillsDir: e.target.value })
+          }),
+          h(InputField3, {
+            id: "sh-max",
+            label: tr("cfg.max"),
+            type: "number",
+            min: 1,
+            max: 80,
+            value: draft.maxResults,
+            onChange: (e) => setDraft({ ...draft, maxResults: Number(e.target.value) || 12 })
+          }),
+          h(
+            "div",
+            { className: "sh-cfg-ft" },
+            err ? h("p", { className: "sh-cfg-err" }, err) : null,
+            h(Button3, { type: "button", size: "sm", variant: "outline", disabled: !dirty || saving, onClick: () => setDraft(saved) }, tr("cfg.discard")),
+            h(Button3, { type: "button", size: "sm", variant: "primary", disabled: !dirty, loading: saving, onClick: save }, tr("cfg.save"))
+          )
+        ) : null
+      )
+    )
+  );
+}
+var MARKET_CAT_EN = {
+  "fun-dressup": "Fun dress-up",
+  "web-tools": "Web tools",
+  memory: "Memory",
+  "agent-workflow": "Agent workflow",
+  "model-inference": "Model inference",
+  client: "Client",
+  "admin-security": "Admin & security"
+};
+var MARKET_CAT_FALLBACK = [
+  { key: "fun-dressup", displayName: "趣味换装" },
+  { key: "web-tools", displayName: "联网工具" },
+  { key: "memory", displayName: "记忆" },
+  { key: "agent-workflow", displayName: "Agent 工作流" },
+  { key: "model-inference", displayName: "模型推理" },
+  { key: "client", displayName: "客户端" },
+  { key: "admin-security", displayName: "管理安全" }
+];
+function pluginLetter(plugin) {
+  const raw = String(plugin && plugin.name || plugin && plugin.owner || "");
+  const ch = raw.match(/[A-Za-z0-9]|[\u4e00-\u9fff]/);
+  return (ch ? ch[0] : "?").toUpperCase();
+}
+function MarketAvatar({ plugin }) {
+  const [failed, setFailed] = useState2(false);
+  const src = !failed && plugin.avatarUrl ? iconSrc(plugin.avatarUrl) : "";
+  if (src) {
+    return h("img", {
+      className: "sh-mkt-avatar",
+      src,
+      alt: "",
+      onError: () => setFailed(true)
+    });
+  }
+  return h("div", {
+    className: "sh-mkt-avatar sh-mkt-avatar-fallback",
+    "aria-hidden": "true"
+  }, pluginLetter(plugin));
+}
+function MarketSearchBar({ query, onQuery, placeholder, onSubmit, submitLabel }) {
+  return h(
+    "form",
+    {
+      className: "sh-mkt-search",
+      onSubmit: (e) => {
+        e.preventDefault();
+        if (onSubmit) onSubmit();
+      }
+    },
+    h(FilterBar2, {
+      compact: true,
+      search: h(SearchField3, {
+        stretch: true,
+        value: query,
+        debounceMs: 0,
+        placeholder,
+        onValueChange: onQuery
+      }),
+      actions: h(Button3, { type: "submit", variant: "primary", size: "sm" }, submitLabel)
+    })
+  );
+}
+function StarIcon() {
+  return h(
+    "svg",
+    { width: 12, height: 12, viewBox: "0 0 24 24", fill: "#f59e0b", stroke: "#f59e0b", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
+    h("polygon", { points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" })
+  );
+}
+function installMarketPlugin(plugin) {
+  return api("pluginInstall", {
+    owner: plugin.owner,
+    name: plugin.name,
+    fullName: plugin.fullName
+  });
+}
+function phaseLabel(phase, tr) {
+  if (phase === "resolving") return tr("mkt.phaseResolving");
+  if (phase === "downloading") return tr("mkt.phaseDownloading");
+  if (phase === "linking") return tr("mkt.phaseLinking");
+  if (phase === "building") return tr("mkt.phaseBuilding");
+  return "";
+}
+function progressCopy(status, tr) {
+  if (status && status.phase) {
+    const bits = [phaseLabel(status.phase, tr)];
+    if (status.currentPackage) bits.push(status.currentPackage);
+    if (Number(status.done) > 0) bits.push(tr("mkt.packagesDone", { n: status.done }));
+    if (Number(status.seconds) > 0) bits.push(status.seconds + "s");
+    return bits.filter(Boolean).join(" · ");
+  }
+  const line = status && status.lastLine;
+  if (line) return line + (status.seconds ? "  (" + status.seconds + "s)" : "");
+  return tr("mkt.progressHint");
+}
+function progressPercent(status) {
+  if (!status || !status.active) return null;
+  if (typeof status.size === "number" && status.size > 0 && typeof status.downloaded === "number") {
+    return Math.max(4, Math.min(96, Math.round(status.downloaded / status.size * 100)));
+  }
+  const m = /resolved (\d+), reused (\d+), downloaded (\d+), added (\d+)/.exec(status.lastLine || "");
+  if (m && Number(m[1]) > 0) {
+    const done = Number(m[2]) + Number(m[3]) + Number(m[4]);
+    return Math.max(4, Math.min(96, Math.round(done / Number(m[1]) * 100)));
+  }
+  return null;
+}
+function Marketplace(props) {
+  useEffect2(() => ensureCss(), []);
+  const tr = typeof props.t === "function" ? props.t : lookup;
+  const locale = tr("locale") === "en" ? "en" : "zh";
+  const [query, setQuery] = useState2("");
+  const [submitted, setSubmitted] = useState2("");
+  const [category, setCategory] = useState2("");
+  const [page, setPage] = useState2(1);
+  const [items, setItems] = useState2([]);
+  const [total, setTotal] = useState2(0);
+  const [status, setStatus] = useState2("loading");
+  const [err, setErr] = useState2("");
+  const [sending, setSending] = useState2("");
+  const [feedback, setFeedback] = useState2("");
+  const [cats, setCats] = useState2(MARKET_CAT_FALLBACK);
+  const [bootId, setBootId] = useState2("");
+  const [liveStatus, setLiveStatus] = useState2(null);
+  const [pendingRestart, setPendingRestart] = useState2("");
+  const [restarting, setRestarting] = useState2(false);
+  const install = installMarketPlugin;
+  useEffect2(() => {
+    let live = true;
+    api("pluginCategories", {}).then((d) => {
+      if (!live) return;
+      const items2 = Array.isArray(d.items) ? d.items.filter((it) => it && it.key) : [];
+      if (items2.length) setCats(items2);
+    }).catch(() => {
+    });
+    api("pluginInstallStatus", {}).then((d) => {
+      if (!live) return;
+      if (d.boot) setBootId(d.boot);
+    }).catch(() => {
+    });
+    api("config", {}).then((d) => {
+      if (!live) return;
+      if (typeof d.plazaKeepAlive === "boolean") plazaKeepAlive = d.plazaKeepAlive;
+    }).catch(() => {
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  useEffect2(() => {
+    let live = true;
+    const payload = { q: submitted, scope: "verified", category, sort: "stars", page, pageSize: 48 };
+    const key = apiCacheKey("plugins", payload);
+    const cached = apiCache.get(key);
+    const hasFresh = cached && Date.now() - cached.at < API_CACHE_TTL_MS;
+    if (page === 1 && hasFresh) {
+      const d = cached.body;
+      setItems(d.items || []);
+      setTotal(Number(d.total) || 0);
+      setStatus("ready");
+      setErr("");
+    } else if (page === 1) {
+      setStatus("loading");
+    }
+    api("plugins", payload).then((d) => {
+      if (!live) return;
+      setItems((cur) => page === 1 ? d.items || [] : cur.concat(d.items || []));
+      setTotal(Number(d.total) || 0);
+      setStatus("ready");
+      setErr("");
+    }).catch((e) => {
+      if (!live) return;
+      if (page === 1 && !hasFresh) {
+        setItems([]);
+        setTotal(0);
+        setStatus("error");
+        setErr(e.message || String(e));
+      }
+    });
+    return () => {
+      live = false;
+    };
+  }, [submitted, category, page]);
+  useEffect2(() => {
+    if (!sending && !restarting) return;
+    let live = true;
+    const tick = () => {
+      api("pluginInstallStatus", {}).then((d) => {
+        if (!live) return;
+        setLiveStatus(d);
+        if (d.boot) setBootId((cur) => cur || d.boot);
+      }).catch(() => {
+      });
+    };
+    tick();
+    const timer = setInterval(tick, 800);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, [sending, restarting]);
+  const catLabelFor = (key) => {
+    if (!key) return "";
+    if (locale === "en" && MARKET_CAT_EN[key]) return MARKET_CAT_EN[key];
+    const hit = cats.find((it) => it.key === key);
+    return hit && hit.displayName || MARKET_CAT_FALLBACK.find((it) => it.key === key)?.displayName || key;
+  };
+  const detailHref = (plugin) => {
+    const repo = String(plugin.repositoryUrl || "").trim();
+    if (/^https:\/\/github\.com\//i.test(repo)) return repo;
+    return "https://github.com/" + encodeURIComponent(plugin.owner) + "/" + encodeURIComponent(plugin.name);
+  };
+  const pct = sending ? progressPercent(liveStatus) : null;
+  const startRestart = () => {
+    if (restarting) return;
+    setRestarting(true);
+    setFeedback("");
+    const previous = bootId;
+    const deadline = Date.now() + 6e4;
+    const awaitNewBoot = () => {
+      const poll = () => {
+        api("pluginInstallStatus", {}).then((d) => {
+          if (typeof d.boot === "string" && previous && d.boot !== previous) {
+            location.reload();
+            return;
+          }
+          retry();
+        }).catch(retry);
+      };
+      const retry = () => {
+        if (Date.now() > deadline) {
+          setRestarting(false);
+          setFeedback(tr("mkt.restartTimeout"));
+          return;
+        }
+        setTimeout(poll, 1500);
+      };
+      poll();
+    };
+    const requestRestart = (left) => {
+      api("pluginRestart", {}).then(() => {
+        awaitNewBoot();
+      }).catch((e) => {
+        const msg = e && e.message ? String(e.message) : String(e);
+        if (/cannot restart while|HTTP 409/.test(msg) && left > 0) {
+          setTimeout(() => requestRestart(left - 1), 1500);
+          return;
+        }
+        if (/Failed to fetch|NetworkError|HTTP 5/i.test(msg)) {
+          awaitNewBoot();
+          return;
+        }
+        setRestarting(false);
+        setFeedback(tr("mkt.restartFail", { m: msg }));
+      });
+    };
+    requestRestart(10);
+  };
+  return h(
+    I18nProvider,
+    { t: tr },
+    h(
+      "div",
+      { className: "sh-mkt" },
+      h(MarketSearchBar, {
+        query,
+        onQuery: setQuery,
+        placeholder: tr("mkt.searchPlaceholder"),
+        submitLabel: tr("mkt.search"),
+        onSubmit: () => {
+          setSubmitted(query.trim());
+          setPage(1);
+        }
+      }),
+      h(
+        "div",
+        { className: "sh-mkt-filters" },
+        h(Button3, {
+          type: "button",
+          size: "xs",
+          variant: !category ? "secondary" : "ghost",
+          onClick: () => {
+            setCategory("");
+            setPage(1);
+          }
+        }, tr("mkt.catAll")),
+        cats.map((it) => h(Button3, {
+          key: it.key,
+          type: "button",
+          size: "xs",
+          variant: category === it.key ? "secondary" : "ghost",
+          onClick: () => {
+            setCategory(it.key);
+            setPage(1);
+          }
+        }, catLabelFor(it.key)))
+      ),
+      status === "ready" ? h(
+        "div",
+        { className: "sh-mkt-results" },
+        h("p", { className: "sh-mkt-summary" }, tr("mkt.repos", { n: total }))
+      ) : null,
+      sending ? h(
+        "div",
+        { className: "sh-mkt-progress" },
+        h(
+          "div",
+          { className: "sh-mkt-progress-row" },
+          h("span", { className: "sh-mkt-progress-text" }, progressCopy(liveStatus, tr)),
+          pct != null ? h("span", { className: "sh-mkt-progress-pct" }, pct + "%") : null
+        ),
+        h(
+          "div",
+          { className: "sh-mkt-bar" },
+          h("div", {
+            className: "sh-mkt-bar-fill" + (pct == null ? " wave" : ""),
+            style: pct != null ? { width: pct + "%" } : void 0
+          })
+        )
+      ) : null,
+      pendingRestart && !sending ? h(
+        "div",
+        { className: "sh-mkt-banner" },
+        h("span", { className: "sh-mkt-banner-text" }, tr("mkt.restartBanner", { name: pendingRestart })),
+        h(Button3, {
+          type: "button",
+          size: "sm",
+          variant: "primary",
+          loading: restarting,
+          onClick: startRestart
+        }, tr("mkt.restartNow"))
+      ) : null,
+      feedback ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, feedback) : null,
+      status === "loading" && page === 1 ? h("p", { className: "sh-mkt-status" }, tr("mkt.loading")) : null,
+      status === "error" ? h("p", { className: "sh-mkt-status" }, tr("mkt.error", { m: err })) : null,
+      status === "ready" && !items.length ? h("p", { className: "sh-mkt-status" }, tr("mkt.empty")) : null,
+      items.length ? h(
+        "div",
+        { className: "sh-mkt-grid" },
+        items.map((plugin) => {
+          const id = plugin.fullName || plugin.owner + "/" + plugin.name;
+          const verified = plugin.installability === "verified";
+          const installed = !!plugin.installed;
+          const busy = !!sending;
+          return h(
+            "article",
+            { key: id, className: "sh-mkt-card" + (installed ? " on" : "") },
+            h(
+              "div",
+              { className: "sh-mkt-head" },
+              h(MarketAvatar, { plugin }),
+              h(
+                "div",
+                { className: "sh-mkt-head-main" },
+                h(
+                  "div",
+                  { className: "sh-mkt-top" },
+                  h("p", { className: "sh-mkt-owner" }, plugin.owner),
+                  h(
+                    "span",
+                    { className: "sh-mkt-badge" + (installed ? " on" : verified ? " ok" : "") },
+                    installed ? tr("mkt.installed") : verified ? tr("mkt.verified") : tr("mkt.unsupported")
+                  )
+                ),
+                h("div", { className: "sh-mkt-name" }, plugin.name)
+              )
+            ),
+            h("p", { className: "sh-mkt-desc" }, plugin.description || tr("mkt.noDesc")),
+            h(
+              "div",
+              { className: "sh-mkt-meta" },
+              h("span", null, catLabelFor(plugin.categoryKey) || plugin.categoryKey),
+              h("span", { style: { display: "inline-flex", alignItems: "center", gap: "3px" } }, h(StarIcon), String(Number(plugin.stars) || 0))
+            ),
+            h(
+              "div",
+              { className: "sh-mkt-actions" },
+              h("a", { className: "sh-mkt-details", href: detailHref(plugin), target: "_blank", rel: "noreferrer" }, tr("mkt.details")),
+              h(Button3, {
+                type: "button",
+                size: "sm",
+                variant: installed ? "ghost" : "primary",
+                disabled: !verified || busy || restarting || installed,
+                loading: sending === id,
+                onClick: () => {
+                  setSending(id);
+                  setFeedback("");
+                  setPendingRestart("");
+                  setLiveStatus(null);
+                  install(plugin).then(
+                    () => {
+                      setItems((cur) => cur.map((it) => {
+                        const iid = it.fullName || it.owner + "/" + it.name;
+                        return iid === id ? { ...it, installed: true } : it;
+                      }));
+                      setPendingRestart(plugin.fullName || id);
+                    },
+                    (e) => setFeedback(e.message || String(e))
+                  ).finally(() => setSending(""));
+                }
+              }, !verified ? tr("mkt.unsupported") : installed ? tr("mkt.installed") : tr("mkt.install"))
+            )
+          );
+        })
+      ) : null,
+      status === "ready" && items.length < total ? h(
+        "button",
+        {
           type: "button",
           className: "sh-mkt-more",
-          onClick: () => setPage((n) => n + 1),
+          onClick: () => setPage((n) => n + 1)
         },
-          h("span", null, tr("mkt.more")),
-          remaining ? h("span", { className: "sh-mkt-more-left" }, tr("mkt.moreLeft", { n: remaining })) : null,
-          h(ChevronDown),
-        ) : null,
-        open ? h(Drawer, {
-          item: open,
-          onClose: () => setOpen(null),
-          onInstalled: (it) => mark(it, true),
-          onUninstalled: (it) => mark(it, false),
-        }) : null,
-      );
+        h("span", null, tr("mkt.more")),
+        h("span", { className: "sh-mkt-more-left" }, tr("mkt.moreLeft", { n: Math.max(0, total - items.length) })),
+        h(ChevronDown)
+      ) : null
+    )
+  );
+}
+var SKILL_CAT_KEYS = [
+  "office-efficiency",
+  "content-creation",
+  "dev-programming",
+  "data-analysis",
+  "design-media",
+  "ai-agent",
+  "knowledge-management",
+  "business-ops",
+  "education",
+  "professional",
+  "it-ops-security",
+  "life-service"
+];
+function PlazaIcon() {
+  return h(
+    "svg",
+    { viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" },
+    h("rect", { x: "1.75", y: "1.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" }),
+    h("rect", { x: "8.75", y: "1.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" }),
+    h("rect", { x: "1.75", y: "8.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" }),
+    h("rect", { x: "8.75", y: "8.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" })
+  );
+}
+function SkillPlaza() {
+  const tr = useTr();
+  const pageSize = 48;
+  const [query, setQuery] = useState2("");
+  const [submitted, setSubmitted] = useState2("");
+  const [category, setCategory] = useState2("");
+  const [page, setPage] = useState2(1);
+  const [items, setItems] = useState2([]);
+  const [total, setTotal] = useState2(0);
+  const [hasMore, setHasMore] = useState2(false);
+  const [fallback, setFallback] = useState2(false);
+  const [status, setStatus] = useState2("loading");
+  const [err, setErr] = useState2("");
+  const [open, setOpen] = useState2(null);
+  const applySearchBody = (d, mode) => {
+    const next = d.items || [];
+    const isFallback = !!d.fallback;
+    setFallback(isFallback);
+    const nextTotal = isFallback ? next.length : Number(d.total) || 0;
+    if (mode === "replace") setItems(next);
+    else setItems((cur) => cur.concat(next));
+    setTotal(nextTotal);
+    setHasMore(isFallback ? false : !!d.hasMore);
+    setStatus("ready");
+    setErr("");
+    return next;
+  };
+  useEffect2(() => {
+    let live = true;
+    const payload = { query: submitted, category, limit: pageSize, offset: (page - 1) * pageSize };
+    const key = apiCacheKey("search", payload);
+    const cached = apiCache.get(key);
+    const hasFresh = cached && Date.now() - cached.at < API_CACHE_TTL_MS;
+    if (page === 1 && hasFresh) {
+      applySearchBody(cached.body, "replace");
+    } else if (page === 1) {
+      setStatus("loading");
     }
-
-    /**
-     * 通过 React value tracker 写入输入框（来自 omnimux-gallery，原样移植）。
-     * 直接 `field.value =` 会被受控 composer 忽略，必须走原型上的 value setter。
-     * @param {HTMLTextAreaElement | HTMLInputElement} field
-     * @param {string} gesture
-     * @returns {boolean}
-     */
-    function insertGesture(field, gesture) {
-      const token = gesture.endsWith(" ") ? gesture : gesture + " ";
-      const start = field.selectionStart ?? field.value.length;
-      const end = field.selectionEnd ?? start;
-      const next = field.value.slice(0, start) + token + field.value.slice(end);
-      const proto = typeof HTMLTextAreaElement === "function" && field instanceof HTMLTextAreaElement
-        ? HTMLTextAreaElement.prototype
-        : typeof HTMLInputElement === "function" && field instanceof HTMLInputElement
-          ? HTMLInputElement.prototype
-          : Object.getPrototypeOf(field);
-      const setter = proto ? Object.getOwnPropertyDescriptor(proto, "value")?.set : undefined;
-      if (setter) setter.call(field, next);
-      else field.value = next;
-      const caret = start + token.length;
-      field.setSelectionRange?.(caret, caret);
-      const Input = typeof InputEvent === "function" ? InputEvent : Event;
-      field.dispatchEvent(new Input("input", { bubbles: true, inputType: "insertText", data: token }));
-      field.focus?.();
-      return field.value.includes(token.trim());
-    }
-
-    /** 当前会话的 composer 输入框（选择器来自 omnimux-gallery GalleryStage）。 */
-    function findComposer() {
-      if (typeof document === "undefined") return null;
-      return document.querySelector(
-        "[data-composer-card] textarea, [data-composer-seat] textarea, textarea[data-phase], textarea[placeholder]",
-      );
-    }
-
-    /** 会话是否还是空白（标题/滚动区文本长度启发式，来自 omnimux-gallery GalleryStage）。 */
-    function isBlankSession() {
-      if (typeof document === "undefined") return true;
-      const header = document.querySelector('[data-slot="conversation.session.header"]');
-      const title = (header && header.textContent) || "";
-      if (/新会话|New session|Untitled/i.test(title)) return true;
-      const scroll = document.querySelector("[data-conversation-scroll]");
-      if (!scroll) return true;
-      return (scroll.textContent || "").trim().length < 40;
-    }
-
-    /** 点预设 chip 再点菜单项（来自 omnimux-gallery GalleryStage）。 */
-    function clickPreset(id) {
-      if (typeof document === "undefined") return false;
-      const chip = document.querySelector('button[title*="Agent"], button[title*="预设"]');
-      if (!(chip instanceof HTMLElement)) return false;
-      chip.click();
-      const wanted = id === "expert-mode" ? /专家模式|Expert Mode/ : null;
-      if (!wanted) return false;
-      const items = Array.from(document.querySelectorAll('[role="menuitem"]'));
-      const match = items.find((el) => wanted.test(el.textContent || ""));
-      if (match instanceof HTMLElement) {
-        match.click();
-        return true;
-      }
-      chip.click();
-      return false;
-    }
-
-    /** 专家 tab：全量拉取本地目录（105 条）+ 客户端过滤，点卡片即召唤。 */
-    function ExpertPanel({ onClose }) {
-      const tr = useTr();
-      const [query, setQuery] = useState("");
-      const [category, setCategory] = useState("");
-      const [items, setItems] = useState([]);
-      const [categories, setCategories] = useState([]);
-      const [status, setStatus] = useState("loading");
-      const [err, setErr] = useState("");
-      const [busy, setBusy] = useState("");
-      const [feedback, setFeedback] = useState("");
-      useEffect(() => {
-        let live = true;
-        const key = apiCacheKey("experts", {});
-        const cached = apiCache.get(key);
-        const hasFresh = cached && Date.now() - cached.at < API_CACHE_TTL_MS;
-        if (hasFresh) {
-          const d = cached.body;
-          setItems(Array.isArray(d.items) ? d.items : []);
-          setCategories(Array.isArray(d.categories) ? d.categories : []);
-          setStatus("ready");
-          setErr("");
-        }
-        api("experts", {})
-          .then((d) => {
-            if (!live) return;
-            setItems(Array.isArray(d.items) ? d.items : []);
-            setCategories(Array.isArray(d.categories) ? d.categories : []);
-            setStatus("ready");
-            setErr("");
-          })
-          .catch((e) => {
-            if (!live) return;
-            if (hasFresh) return;
-            setItems([]);
-            setCategories([]);
-            setStatus("error");
-            setErr(e.message || String(e));
-          });
-        return () => { live = false; };
-      }, []);
-      const q = query.trim().toLowerCase();
-      const filtered = items.filter((it) => {
-        if (category && it.category !== category) return false;
-        if (!q) return true;
-        return `${it.name || ""} ${it.description || ""} ${it.id || ""}`.toLowerCase().includes(q);
-      });
-      async function summon(item) {
-        if (busy) return;
-        setBusy(item.id);
-        setFeedback("");
-        try {
-          const blank = isBlankSession();
-          const sessionId = currentSessionId(plazaSessions);
-          const result = await api("catalogSummon", { id: item.id, sessionState: blank ? "blank" : "locked", sessionId });
-          const field = findComposer();
-          const wrote = field instanceof HTMLTextAreaElement || field instanceof HTMLInputElement
-            ? insertGesture(field, result.gesture)
-            : false;
-          if (result.stagePreset === "expert-mode") clickPreset("expert-mode");
-          setItems((cur) => cur.map((it) => it.id === item.id ? { ...it, installed: true } : it));
-          if (!wrote) {
-            setFeedback(tr("expert.gestureReady", { g: result.gesture }));
-          } else {
-            onClose?.();
-          }
-        } catch (e) {
-          setFeedback(e.message || String(e));
-        } finally {
-          setBusy("");
-        }
-      }
-      return h("div", { className: "sh-mkt" },
-        h("form", {
-          className: "sh-mkt-search",
-          onSubmit: (e) => e.preventDefault(),
-        },
-          h("div", { className: "sh-mkt-field" },
-            h(SearchIcon),
-            h("input", {
-              type: "search",
-              value: query,
-              placeholder: tr("expert.searchPlaceholder"),
-              onChange: (e) => setQuery(e.currentTarget.value),
-            }),
-          ),
-          h("button", { type: "submit", className: "sh-mkt-go" }, tr("mkt.search")),
-        ),
-        h("div", { className: "sh-mkt-filters" },
-          h("button", {
-            type: "button",
-            className: "sh-mkt-filter" + (!category ? " on" : ""),
-            onClick: () => setCategory(""),
-          }, tr("mkt.catAll")),
-          categories.map((it) => h("button", {
-            key: it.id,
-            type: "button",
-            className: "sh-mkt-filter" + (category === it.id ? " on" : ""),
-            onClick: () => setCategory(it.id),
-          }, it.title)),
-        ),
-        busy ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, tr("expert.summoning")) : null,
-        feedback ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, feedback) : null,
-        status === "loading" ? h("p", { className: "sh-mkt-status" }, tr("mkt.loading")) : null,
-        status === "error" ? h("p", { className: "sh-mkt-status" }, tr("mkt.error", { m: err })) : null,
-        status === "ready" && !filtered.length ? h("p", { className: "sh-mkt-status" }, tr("expert.empty")) : null,
-        filtered.length ? h(Cards, { items: filtered, onOpen: summon }) : null,
-      );
-    }
-
-    /** 连接器 tab：P0 读 WorkBuddy 本地市场全量展示；安装下一刀再接。 */
-    function ConnectorPanel() {
-      const tr = useTr();
-      const [query, setQuery] = useState("");
-      const [category, setCategory] = useState("");
-      const [items, setItems] = useState([]);
-      const [categories, setCategories] = useState([]);
-      const [status, setStatus] = useState("loading");
-      const [err, setErr] = useState("");
-      const [busy, setBusy] = useState("");
-      const [feedback, setFeedback] = useState("");
-      useEffect(() => {
-        let live = true;
-        const key = apiCacheKey("connectors", {});
-        const cached = apiCache.get(key);
-        const hasFresh = cached && Date.now() - cached.at < API_CACHE_TTL_MS;
-        if (hasFresh) {
-          const d = cached.body;
-          setItems(Array.isArray(d.items) ? d.items : []);
-          setCategories(Array.isArray(d.categories) ? d.categories : []);
-          setStatus("ready");
-          setErr("");
-        }
-        api("connectors", {})
-          .then((d) => {
-            if (!live) return;
-            setItems(Array.isArray(d.items) ? d.items : []);
-            setCategories(Array.isArray(d.categories) ? d.categories : []);
-            setStatus("ready");
-            setErr("");
-          })
-          .catch((e) => {
-            if (!live) return;
-            if (hasFresh) return;
-            setItems([]);
-            setCategories([]);
-            setStatus("error");
-            setErr(e.message || String(e));
-          });
-        return () => { live = false; };
-      }, []);
-      const q = query.trim().toLowerCase();
-      const filtered = items.filter((it) => {
-        if (category && it.category !== category) return false;
-        if (!q) return true;
-        return `${it.name || ""} ${it.description || ""} ${it.id || ""}`.toLowerCase().includes(q);
-      });
-      async function toggle(item) {
-        // P0：市场全量只展示。installable=false 时不写 MCP 行，提示下一刀再接安装。
-        if (item.installable === false || item.sourceKind === "marketplace") {
-          setFeedback(tr("connector.installLater"));
-          return;
-        }
-        if (busy) return;
-        setBusy(item.id);
-        setFeedback("");
-        try {
-          if (item.installed) await api("catalogUninstall", { id: item.id });
-          else await api("catalogInstall", { id: item.id });
-          setItems((cur) => cur.map((it) => it.id === item.id ? { ...it, installed: !item.installed } : it));
-          setFeedback(tr("connector.restartHint"));
-        } catch (e) {
-          setFeedback(e.message || String(e));
-        } finally {
-          setBusy("");
-        }
-      }
-      return h("div", { className: "sh-mkt" },
-        h("form", {
-          className: "sh-mkt-search",
-          onSubmit: (e) => e.preventDefault(),
-        },
-          h("div", { className: "sh-mkt-field" },
-            h(SearchIcon),
-            h("input", {
-              type: "search",
-              value: query,
-              placeholder: tr("connector.searchPlaceholder"),
-              onChange: (e) => setQuery(e.currentTarget.value),
-            }),
-          ),
-          h("button", { type: "submit", className: "sh-mkt-go" }, tr("mkt.search")),
-        ),
-        h("div", { className: "sh-mkt-filters" },
-          h("button", {
-            type: "button",
-            className: "sh-mkt-filter" + (!category ? " on" : ""),
-            onClick: () => setCategory(""),
-          }, tr("mkt.catAll")),
-          categories.map((it) => h("button", {
-            key: it.id,
-            type: "button",
-            className: "sh-mkt-filter" + (category === it.id ? " on" : ""),
-            onClick: () => setCategory(it.id),
-          }, it.title)),
-        ),
-        busy ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, tr("connector.installing")) : null,
-        feedback ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, feedback) : null,
-        status === "loading" ? h("p", { className: "sh-mkt-status" }, tr("mkt.loading")) : null,
-        status === "error" ? h("p", { className: "sh-mkt-status" }, tr("mkt.error", { m: err })) : null,
-        status === "ready" && !filtered.length ? h("p", { className: "sh-mkt-status" }, tr("connector.empty")) : null,
-        filtered.length ? h(Cards, { items: filtered, onOpen: toggle }) : null,
-      );
-    }
-
-    const STAGE_ID = "omnimux-market";
-    const PRODUCT_STAGE_EVENT = "dsh-product-stage";
-
-    function conversationBox() {
-      if (typeof window === "undefined") return null;
-      if (window.__omnimuxStage && typeof window.__omnimuxStage.readBox === "function") {
-        try {
-          const b = window.__omnimuxStage.readBox();
-          if (b && b.width >= 100 && b.height >= 100) return b;
-        } catch {}
-      }
-      let left = 56;
-      try {
-        const sidebar = document.querySelector('[data-slot="sidebar"]') ||
-          document.querySelector('aside') ||
-          document.querySelector('[class*="sidebar"]') ||
-          document.querySelector('[class*="appFrame"] > div:first-child');
-        if (sidebar) {
-          const r = sidebar.getBoundingClientRect();
-          if (r.right > 0 && r.right < window.innerWidth - 100) left = r.right;
-        }
-      } catch {}
-      return {
-        top: 0,
-        left,
-        width: Math.max(100, window.innerWidth - left),
-        height: Math.max(100, window.innerHeight),
-      };
-    }
-
-    function useConversationBox(active) {
-      const [box, setBox] = useState(null);
-      const layout = React.useLayoutEffect || useEffect;
-      layout(() => {
-        if (!active) {
-          setBox(null);
-          return;
-        }
-        const update = () => setBox(conversationBox());
-        update();
-        window.addEventListener("resize", update);
-        window.addEventListener("scroll", update, true);
-        return () => {
-          window.removeEventListener("resize", update);
-          window.removeEventListener("scroll", update, true);
-        };
-      }, [active]);
-      return box;
-    }
-
-    function PlazaView({ t, onClose, box, active }) {
-      useEffect(() => {
-        ensureCss();
-        if (!active) return undefined;
-        const onKey = (e) => {
-          if (e.key !== "Escape") return;
-          e.preventDefault();
-          onClose();
-        };
-        window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
-      }, [onClose, active]);
-      const tr = typeof t === "function" ? t : lookup;
-      const [tab, setTab] = useState("plugins");
-      return h(I18nProvider, { t: tr },
-        h("div", {
-          className: "sh-plaza-page",
-          role: "dialog",
-          "aria-modal": "false",
-          "aria-label": tr("plaza.title"),
-          style: {
-            top: box.top,
-            left: box.left,
-            width: box.width,
-            height: box.height,
-          },
-        },
-          h("div", { className: "sh-plaza-top" },
-            h("div", { className: "sh-plaza-tabs", role: "tablist" },
-              h("button", {
-                type: "button",
-                role: "tab",
-                className: "sh-plaza-tab" + (tab === "plugins" ? " on" : ""),
-                "aria-selected": tab === "plugins",
-                onClick: () => setTab("plugins"),
-              }, tr("plaza.plugins")),
-              h("button", {
-                type: "button",
-                role: "tab",
-                className: "sh-plaza-tab" + (tab === "skills" ? " on" : ""),
-                "aria-selected": tab === "skills",
-                onClick: () => setTab("skills"),
-              }, tr("plaza.skills")),
-              h("button", {
-                type: "button",
-                role: "tab",
-                className: "sh-plaza-tab" + (tab === "experts" ? " on" : ""),
-                "aria-selected": tab === "experts",
-                onClick: () => setTab("experts"),
-              }, tr("plaza.experts")),
-              h("button", {
-                type: "button",
-                role: "tab",
-                className: "sh-plaza-tab" + (tab === "connectors" ? " on" : ""),
-                "aria-selected": tab === "connectors",
-                onClick: () => setTab("connectors"),
-              }, tr("plaza.connectors")),
-            ),
-            h("button", {
-              type: "button",
-              className: "sh-plaza-close",
-              onClick: onClose,
-              "aria-label": tr("plaza.back"),
-              title: tr("plaza.back"),
-            }, "×"),
-          ),
-          h("div", { className: "sh-plaza-body" },
-            tab === "plugins" ? h(Marketplace, { t: tr })
-              : tab === "skills" ? h(SkillPlaza)
-              : tab === "experts" ? h(ExpertPanel, { onClose })
-              : h(ConnectorPanel),
-          ),
-        ),
-      );
-    }
-
-    function sessionListCurrent(sessions) {
-      try {
-        return sessions && sessions.list && typeof sessions.list.getSnapshot === "function"
-          ? sessions.list.getSnapshot().current
-          : undefined;
-      } catch {
-        return undefined;
-      }
-    }
-
-    function PlazaAction({ wide, sessions, t }) {
-      useEffect(() => ensureCss(), []);
-      const tr = typeof t === "function" ? t : lookup;
-      const [open, setOpen] = useState(false);
-      const [everOpened, setEverOpened] = useState(false);
-      const [hint, setHint] = useState("");
-      const close = React.useCallback(() => setOpen(false), []);
-      const box = useConversationBox(open || (everOpened && plazaKeepAlive));
-      if (open && !everOpened) setEverOpened(true);
-
-      useEffect(() => {
-        if (!open) return;
-        api("config", {}).then((d) => {
-          if (typeof d.plazaKeepAlive === "boolean") plazaKeepAlive = d.plazaKeepAlive;
-        }).catch(() => {});
-      }, [open]);
-
-      useEffect(() => {
-        const claim = () => {
-          try {
-            if (window.__omnimuxStage && typeof window.__omnimuxStage.claim === "function") {
-              window.__omnimuxStage.claim(STAGE_ID);
-            } else {
-              window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: STAGE_ID } }));
-              document.documentElement.dataset.dshProductStage = STAGE_ID;
-            }
-          } catch {}
-        };
-        const release = () => {
-          try {
-            if (window.__omnimuxStage && typeof window.__omnimuxStage.release === "function") {
-              window.__omnimuxStage.release(STAGE_ID);
-            } else {
-              if (document.documentElement.dataset.dshProductStage === STAGE_ID) {
-                delete document.documentElement.dataset.dshProductStage;
-              }
-              window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: "" } }));
-            }
-          } catch {}
-        };
-
-        if (open) claim();
-        else release();
-
-        return () => {
-          if (open) release();
-        };
-      }, [open]);
-
-      useEffect(() => {
-        const onStage = (e) => {
-          const id = e instanceof CustomEvent ? e.detail?.id : undefined;
-          if (id && id !== STAGE_ID && open) {
-            close();
-          }
-        };
-        window.addEventListener(PRODUCT_STAGE_EVENT, onStage);
-        return () => window.removeEventListener(PRODUCT_STAGE_EVENT, onStage);
-      }, [open, close]);
-
-      useEffect(() => {
-        if (!open) return;
-        const list = sessions && sessions.list;
-        if (!list || typeof list.subscribe !== "function") return;
-        let last = sessionListCurrent(sessions);
-        return list.subscribe(() => {
-          const now = sessionListCurrent(sessions);
-          if (now === last) return;
-          last = now;
-          close();
+    api("search", payload).then((d) => {
+      if (!live) return;
+      const next = applySearchBody(d, page === 1 ? "replace" : "append");
+      const slugs = next.map((it) => it.slug).filter(Boolean);
+      if (slugs.length) {
+        api("ratings", { slugs }, { skipCache: true }).then((r) => {
+          if (!live || !r || !r.ratings) return;
+          setItems((cur) => cur.map((it) => {
+            const score = r.ratings[it.slug];
+            return score != null ? { ...it, rating: score } : it;
+          }));
+        }).catch(() => {
         });
-      }, [open, sessions, close]);
-
-      useEffect(() => {
-        if (!open) return;
-        const onPointer = (e) => {
-          const node = e.target;
-          if (!node || typeof node.closest !== "function") return;
-          if (node.closest(".sh-plaza-page, .sh-plaza-wrap, .sh-overlay, .sh-mkt, .sh-modal")) return;
-          close();
-        };
-        document.addEventListener("pointerdown", onPointer, true);
-        return () => document.removeEventListener("pointerdown", onPointer, true);
-      }, [open, close]);
-
-      // L0 keep-alive: after first open, keep PlazaView mounted and hide with display:none.
-      const keep = plazaKeepAlive && everOpened;
-      const show = open && box;
-      const panel = typeof document !== "undefined" && box && (keep || show)
-        ? createPortal(
-          h("div", {
-            style: {
-              display: open ? undefined : "none",
-              pointerEvents: open ? "auto" : "none",
-            },
-            "aria-hidden": open ? undefined : "true",
-          }, h(PlazaView, { t: tr, onClose: close, box, active: open })),
-          document.body,
-        )
-        : null;
-
-      return h(I18nProvider, { t: tr },
-        h("div", { className: "sh-plaza-wrap" + (wide ? "" : " rail") },
+      }
+    }).catch((e) => {
+      if (!live) return;
+      if (page === 1 && !hasFresh) {
+        setItems([]);
+        setTotal(0);
+        setHasMore(false);
+        setFallback(false);
+        setStatus("error");
+        setErr(e.message || String(e));
+      }
+    });
+    return () => {
+      live = false;
+    };
+  }, [submitted, category, page]);
+  const mark = (item, installed) => {
+    setItems((cur) => cur.map((it) => it.slug === item.slug ? { ...it, installed } : it));
+    setOpen((cur) => cur && cur.slug === item.slug ? { ...cur, installed } : cur);
+  };
+  const remaining = fallback ? 0 : Math.max(0, total - items.length);
+  const summaryText = fallback ? tr("search.fallback") : tr("search.hint", { n: total || items.length });
+  return h(
+    "div",
+    { className: "sh-mkt" },
+    h(MarketSearchBar, {
+      query,
+      onQuery: setQuery,
+      placeholder: tr("mkt.searchPlaceholder"),
+      submitLabel: tr("mkt.search"),
+      onSubmit: () => {
+        setPage(1);
+        setSubmitted(query.trim());
+      }
+    }),
+    h(
+      "div",
+      { className: "sh-mkt-filters" },
+      h(Button3, {
+        type: "button",
+        size: "xs",
+        variant: !category ? "secondary" : "ghost",
+        onClick: () => {
+          setCategory("");
+          setPage(1);
+        }
+      }, tr("mkt.catAll")),
+      SKILL_CAT_KEYS.map((key) => h(Button3, {
+        key,
+        type: "button",
+        size: "xs",
+        variant: category === key ? "secondary" : "ghost",
+        onClick: () => {
+          setCategory(key);
+          setPage(1);
+        }
+      }, tr("cat." + key)))
+    ),
+    status === "ready" ? h(
+      "div",
+      { className: "sh-mkt-results" },
+      h("p", { className: "sh-mkt-summary" }, summaryText)
+    ) : null,
+    status === "loading" && page === 1 ? h("p", { className: "sh-mkt-status" }, tr("mkt.loading")) : null,
+    status === "error" ? h("p", { className: "sh-mkt-status" }, tr("mkt.error", { m: err })) : null,
+    status === "ready" && !items.length ? h("p", { className: "sh-mkt-status" }, tr("search.empty")) : null,
+    items.length ? h(Cards, { items, onOpen: setOpen }) : null,
+    status === "ready" && !fallback && (hasMore || remaining > 0) ? h(
+      "button",
+      {
+        type: "button",
+        className: "sh-mkt-more",
+        onClick: () => setPage((n) => n + 1)
+      },
+      h("span", null, tr("mkt.more")),
+      remaining ? h("span", { className: "sh-mkt-more-left" }, tr("mkt.moreLeft", { n: remaining })) : null,
+      h(ChevronDown)
+    ) : null,
+    open ? h(Drawer, {
+      item: open,
+      onClose: () => setOpen(null),
+      onInstalled: (it) => mark(it, true),
+      onUninstalled: (it) => mark(it, false)
+    }) : null
+  );
+}
+function insertGesture(field, gesture) {
+  const token = gesture.endsWith(" ") ? gesture : gesture + " ";
+  const start = field.selectionStart ?? field.value.length;
+  const end = field.selectionEnd ?? start;
+  const next = field.value.slice(0, start) + token + field.value.slice(end);
+  const proto = typeof HTMLTextAreaElement === "function" && field instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : typeof HTMLInputElement === "function" && field instanceof HTMLInputElement ? HTMLInputElement.prototype : Object.getPrototypeOf(field);
+  const setter = proto ? Object.getOwnPropertyDescriptor(proto, "value")?.set : void 0;
+  if (setter) setter.call(field, next);
+  else field.value = next;
+  const caret = start + token.length;
+  field.setSelectionRange?.(caret, caret);
+  const Input = typeof InputEvent === "function" ? InputEvent : Event;
+  field.dispatchEvent(new Input("input", { bubbles: true, inputType: "insertText", data: token }));
+  field.focus?.();
+  return field.value.includes(token.trim());
+}
+function findComposer() {
+  if (typeof document === "undefined") return null;
+  return document.querySelector(
+    "[data-composer-card] textarea, [data-composer-seat] textarea, textarea[data-phase], textarea[placeholder]"
+  );
+}
+function isBlankSession() {
+  if (typeof document === "undefined") return true;
+  const header = document.querySelector('[data-slot="conversation.session.header"]');
+  const title = header && header.textContent || "";
+  if (/新会话|New session|Untitled/i.test(title)) return true;
+  const scroll = document.querySelector("[data-conversation-scroll]");
+  if (!scroll) return true;
+  return (scroll.textContent || "").trim().length < 40;
+}
+function clickPreset(id) {
+  if (typeof document === "undefined") return false;
+  const chip = document.querySelector('button[title*="Agent"], button[title*="预设"]');
+  if (!(chip instanceof HTMLElement)) return false;
+  chip.click();
+  const wanted = id === "expert-mode" ? /专家模式|Expert Mode/ : null;
+  if (!wanted) return false;
+  const items = Array.from(document.querySelectorAll('[role="menuitem"]'));
+  const match = items.find((el) => wanted.test(el.textContent || ""));
+  if (match instanceof HTMLElement) {
+    match.click();
+    return true;
+  }
+  chip.click();
+  return false;
+}
+function ExpertPanel({ onClose }) {
+  const tr = useTr();
+  const [query, setQuery] = useState2("");
+  const [category, setCategory] = useState2("");
+  const [items, setItems] = useState2([]);
+  const [categories, setCategories] = useState2([]);
+  const [status, setStatus] = useState2("loading");
+  const [err, setErr] = useState2("");
+  const [busy, setBusy] = useState2("");
+  const [feedback, setFeedback] = useState2("");
+  useEffect2(() => {
+    let live = true;
+    const key = apiCacheKey("experts", {});
+    const cached = apiCache.get(key);
+    const hasFresh = cached && Date.now() - cached.at < API_CACHE_TTL_MS;
+    if (hasFresh) {
+      const d = cached.body;
+      setItems(Array.isArray(d.items) ? d.items : []);
+      setCategories(Array.isArray(d.categories) ? d.categories : []);
+      setStatus("ready");
+      setErr("");
+    }
+    api("experts", {}).then((d) => {
+      if (!live) return;
+      setItems(Array.isArray(d.items) ? d.items : []);
+      setCategories(Array.isArray(d.categories) ? d.categories : []);
+      setStatus("ready");
+      setErr("");
+    }).catch((e) => {
+      if (!live) return;
+      if (hasFresh) return;
+      setItems([]);
+      setCategories([]);
+      setStatus("error");
+      setErr(e.message || String(e));
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  const q = query.trim().toLowerCase();
+  const filtered = items.filter((it) => {
+    if (category && it.category !== category) return false;
+    if (!q) return true;
+    return `${it.name || ""} ${it.description || ""} ${it.id || ""}`.toLowerCase().includes(q);
+  });
+  async function summon(item) {
+    if (busy) return;
+    setBusy(item.id);
+    setFeedback("");
+    try {
+      const blank = isBlankSession();
+      const sessionId = currentSessionId(plazaSessions);
+      const result = await api("catalogSummon", { id: item.id, sessionState: blank ? "blank" : "locked", sessionId });
+      const field = findComposer();
+      const wrote = field instanceof HTMLTextAreaElement || field instanceof HTMLInputElement ? insertGesture(field, result.gesture) : false;
+      if (result.stagePreset === "expert-mode") clickPreset("expert-mode");
+      setItems((cur) => cur.map((it) => it.id === item.id ? { ...it, installed: true } : it));
+      if (!wrote) {
+        setFeedback(tr("expert.gestureReady", { g: result.gesture }));
+      } else {
+        onClose?.();
+      }
+    } catch (e) {
+      setFeedback(e.message || String(e));
+    } finally {
+      setBusy("");
+    }
+  }
+  return h(
+    "div",
+    { className: "sh-mkt" },
+    h(MarketSearchBar, {
+      query,
+      onQuery: setQuery,
+      placeholder: tr("expert.searchPlaceholder"),
+      submitLabel: tr("mkt.search")
+    }),
+    h(
+      "div",
+      { className: "sh-mkt-filters" },
+      h(Button3, {
+        type: "button",
+        size: "xs",
+        variant: !category ? "secondary" : "ghost",
+        onClick: () => setCategory("")
+      }, tr("mkt.catAll")),
+      categories.map((it) => h(Button3, {
+        key: it.id,
+        type: "button",
+        size: "xs",
+        variant: category === it.id ? "secondary" : "ghost",
+        onClick: () => setCategory(it.id)
+      }, it.title))
+    ),
+    busy ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, tr("expert.summoning")) : null,
+    feedback ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, feedback) : null,
+    status === "loading" ? h("p", { className: "sh-mkt-status" }, tr("mkt.loading")) : null,
+    status === "error" ? h("p", { className: "sh-mkt-status" }, tr("mkt.error", { m: err })) : null,
+    status === "ready" && !filtered.length ? h("p", { className: "sh-mkt-status" }, tr("expert.empty")) : null,
+    filtered.length ? h(Cards, { items: filtered, onOpen: summon }) : null
+  );
+}
+function ConnectorPanel() {
+  const tr = useTr();
+  const [query, setQuery] = useState2("");
+  const [category, setCategory] = useState2("");
+  const [items, setItems] = useState2([]);
+  const [categories, setCategories] = useState2([]);
+  const [status, setStatus] = useState2("loading");
+  const [err, setErr] = useState2("");
+  const [busy, setBusy] = useState2("");
+  const [feedback, setFeedback] = useState2("");
+  useEffect2(() => {
+    let live = true;
+    const key = apiCacheKey("connectors", {});
+    const cached = apiCache.get(key);
+    const hasFresh = cached && Date.now() - cached.at < API_CACHE_TTL_MS;
+    if (hasFresh) {
+      const d = cached.body;
+      setItems(Array.isArray(d.items) ? d.items : []);
+      setCategories(Array.isArray(d.categories) ? d.categories : []);
+      setStatus("ready");
+      setErr("");
+    }
+    api("connectors", {}).then((d) => {
+      if (!live) return;
+      setItems(Array.isArray(d.items) ? d.items : []);
+      setCategories(Array.isArray(d.categories) ? d.categories : []);
+      setStatus("ready");
+      setErr("");
+    }).catch((e) => {
+      if (!live) return;
+      if (hasFresh) return;
+      setItems([]);
+      setCategories([]);
+      setStatus("error");
+      setErr(e.message || String(e));
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  const q = query.trim().toLowerCase();
+  const filtered = items.filter((it) => {
+    if (category && it.category !== category) return false;
+    if (!q) return true;
+    return `${it.name || ""} ${it.description || ""} ${it.id || ""}`.toLowerCase().includes(q);
+  });
+  async function toggle(item) {
+    if (item.installable === false || item.sourceKind === "marketplace") {
+      setFeedback(tr("connector.installLater"));
+      return;
+    }
+    if (busy) return;
+    setBusy(item.id);
+    setFeedback("");
+    try {
+      if (item.installed) await api("catalogUninstall", { id: item.id });
+      else await api("catalogInstall", { id: item.id });
+      setItems((cur) => cur.map((it) => it.id === item.id ? { ...it, installed: !item.installed } : it));
+      setFeedback(tr("connector.restartHint"));
+    } catch (e) {
+      setFeedback(e.message || String(e));
+    } finally {
+      setBusy("");
+    }
+  }
+  return h(
+    "div",
+    { className: "sh-mkt" },
+    h(MarketSearchBar, {
+      query,
+      onQuery: setQuery,
+      placeholder: tr("connector.searchPlaceholder"),
+      submitLabel: tr("mkt.search")
+    }),
+    h(
+      "div",
+      { className: "sh-mkt-filters" },
+      h(Button3, {
+        type: "button",
+        size: "xs",
+        variant: !category ? "secondary" : "ghost",
+        onClick: () => setCategory("")
+      }, tr("mkt.catAll")),
+      categories.map((it) => h(Button3, {
+        key: it.id,
+        type: "button",
+        size: "xs",
+        variant: category === it.id ? "secondary" : "ghost",
+        onClick: () => setCategory(it.id)
+      }, it.title))
+    ),
+    busy ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, tr("connector.installing")) : null,
+    feedback ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, feedback) : null,
+    status === "loading" ? h("p", { className: "sh-mkt-status" }, tr("mkt.loading")) : null,
+    status === "error" ? h("p", { className: "sh-mkt-status" }, tr("mkt.error", { m: err })) : null,
+    status === "ready" && !filtered.length ? h("p", { className: "sh-mkt-status" }, tr("connector.empty")) : null,
+    filtered.length ? h(Cards, { items: filtered, onOpen: toggle }) : null
+  );
+}
+var STAGE_ID = "omnimux-market";
+var PRODUCT_STAGE_EVENT = "dsh-product-stage";
+function conversationBox() {
+  if (typeof window === "undefined") return null;
+  if (window.__omnimuxStage && typeof window.__omnimuxStage.readBox === "function") {
+    try {
+      const b = window.__omnimuxStage.readBox();
+      if (b && b.width >= 100 && b.height >= 100) return b;
+    } catch {
+    }
+  }
+  let left = 56;
+  try {
+    const sidebar = document.querySelector('[data-slot="sidebar"]') || document.querySelector("aside") || document.querySelector('[class*="sidebar"]') || document.querySelector('[class*="appFrame"] > div:first-child');
+    if (sidebar) {
+      const r = sidebar.getBoundingClientRect();
+      if (r.right > 0 && r.right < window.innerWidth - 100) left = r.right;
+    }
+  } catch {
+  }
+  return {
+    top: 0,
+    left,
+    width: Math.max(100, window.innerWidth - left),
+    height: Math.max(100, window.innerHeight)
+  };
+}
+function useConversationBox(active) {
+  const [box, setBox] = useState2(null);
+  const layout = React.useLayoutEffect || useEffect2;
+  layout(() => {
+    if (!active) {
+      setBox(null);
+      return;
+    }
+    const update = () => setBox(conversationBox());
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [active]);
+  return box;
+}
+function PlazaView({ t, onClose, box, active }) {
+  useEffect2(() => {
+    ensureCss();
+    if (!active) return void 0;
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, active]);
+  const tr = typeof t === "function" ? t : lookup;
+  const [tab, setTab] = useState2("plugins");
+  return h(
+    I18nProvider,
+    { t: tr },
+    h(
+      "div",
+      {
+        className: "sh-plaza-page",
+        role: "dialog",
+        "aria-modal": "false",
+        "aria-label": tr("plaza.title"),
+        style: {
+          top: box.top,
+          left: box.left,
+          width: box.width,
+          height: box.height
+        }
+      },
+      h(
+        "div",
+        { className: "sh-plaza-top" },
+        h(
+          "div",
+          { className: "sh-plaza-tabs", role: "tablist" },
           h("button", {
             type: "button",
-            className: "sh-plaza-trigger" + (open ? " on" : ""),
-            "aria-label": tr("plaza.title"),
-            "aria-expanded": open,
-            onClick: () => {
-              if (open) {
-                close();
-                setHint("");
-                return;
-              }
-              setOpen(true);
-              setHint("");
-            },
-          },
-            h(PlazaIcon),
-            wide ? h("span", null, tr("plaza.title")) : null,
-          ),
-          hint ? h(Toast, { text: hint, onDone: () => setHint("") }) : null,
-          panel,
+            role: "tab",
+            className: "sh-plaza-tab" + (tab === "plugins" ? " on" : ""),
+            "aria-selected": tab === "plugins",
+            onClick: () => setTab("plugins")
+          }, tr("plaza.plugins")),
+          h("button", {
+            type: "button",
+            role: "tab",
+            className: "sh-plaza-tab" + (tab === "skills" ? " on" : ""),
+            "aria-selected": tab === "skills",
+            onClick: () => setTab("skills")
+          }, tr("plaza.skills")),
+          h("button", {
+            type: "button",
+            role: "tab",
+            className: "sh-plaza-tab" + (tab === "experts" ? " on" : ""),
+            "aria-selected": tab === "experts",
+            onClick: () => setTab("experts")
+          }, tr("plaza.experts")),
+          h("button", {
+            type: "button",
+            role: "tab",
+            className: "sh-plaza-tab" + (tab === "connectors" ? " on" : ""),
+            "aria-selected": tab === "connectors",
+            onClick: () => setTab("connectors")
+          }, tr("plaza.connectors"))
         ),
-      );
-    }
-
-    const inject = ["slots", "sessions"];
-    // rc.6 list slots require `id`; rc.7+ keyed slots require `key`. Pass both.
-    function registerSlot(slots, options, component) {
-      const next = { ...options };
-      if (next.id == null && next.key != null) next.id = String(next.key);
-      if (next.key == null && next.id != null) next.key = next.id;
-      return slots.register(next, component);
-    }
-    function apply(ctx) {
-      const slots = ctx.slots;
-      const sessions = ctx.sessions;
-      plazaSessions = sessions;
-      if (!slots) return;
-      ctx.inject(["locale"], (c) => {
-        if (!c.locale || typeof c.locale.register !== "function") return;
-        c.effect(() => {
-          try {
-            return c.locale.register("omnimux-market", { zh: ZH, en: EN });
-          } catch {
-            return () => {};
+        h(
+          "span",
+          { className: "sh-plaza-close" },
+          h(IconButton3, {
+            variant: "ghost",
+            onClick: onClose,
+            "aria-label": tr("plaza.back"),
+            title: tr("plaza.back")
+          }, h(IconCloseOutline16))
+        )
+      ),
+      h(
+        "div",
+        { className: "sh-plaza-body" },
+        tab === "plugins" ? h(Marketplace, { t: tr }) : tab === "skills" ? h(SkillPlaza) : tab === "experts" ? h(ExpertPanel, { onClose }) : h(ConnectorPanel)
+      )
+    )
+  );
+}
+function sessionListCurrent(sessions) {
+  try {
+    return sessions && sessions.list && typeof sessions.list.getSnapshot === "function" ? sessions.list.getSnapshot().current : void 0;
+  } catch {
+    return void 0;
+  }
+}
+function PlazaAction({ wide, sessions, t }) {
+  useEffect2(() => ensureCss(), []);
+  const tr = typeof t === "function" ? t : lookup;
+  const [open, setOpen] = useState2(false);
+  const [everOpened, setEverOpened] = useState2(false);
+  const [hint, setHint] = useState2("");
+  const close = React.useCallback(() => setOpen(false), []);
+  const box = useConversationBox(open || everOpened && plazaKeepAlive);
+  if (open && !everOpened) setEverOpened(true);
+  useEffect2(() => {
+    if (!open) return;
+    api("config", {}).then((d) => {
+      if (typeof d.plazaKeepAlive === "boolean") plazaKeepAlive = d.plazaKeepAlive;
+    }).catch(() => {
+    });
+  }, [open]);
+  useEffect2(() => {
+    const claim = () => {
+      try {
+        if (window.__omnimuxStage && typeof window.__omnimuxStage.claim === "function") {
+          window.__omnimuxStage.claim(STAGE_ID);
+        } else {
+          window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: STAGE_ID } }));
+          document.documentElement.dataset.dshProductStage = STAGE_ID;
+        }
+      } catch {
+      }
+    };
+    const release = () => {
+      try {
+        if (window.__omnimuxStage && typeof window.__omnimuxStage.release === "function") {
+          window.__omnimuxStage.release(STAGE_ID);
+        } else {
+          if (document.documentElement.dataset.dshProductStage === STAGE_ID) {
+            delete document.documentElement.dataset.dshProductStage;
           }
-        }, "omnimux-market-locale");
-      });
-      ctx.effect(() => ensureCss(), "omnimux-market-style");
-      slots.inject("tool.call.toolview", () => registerSlot(
-        slots,
-        { name: "tool.call.toolview", key: "skillhub_search", locale: "omnimux-market" },
-        SearchToolView,
-      ));
-      slots.inject("tool.call.toolview", () => registerSlot(
-        slots,
-        { name: "tool.call.toolview", key: "plaza_search", locale: "omnimux-market" },
-        PlazaSearchToolView,
-      ));
-      slots.inject("tool.call.toolview", () => registerSlot(
-        slots,
-        { name: "tool.call.toolview", key: "skillhub_list", locale: "omnimux-market" },
-        ListToolView,
-      ));
-      slots.inject("settings.plugin.item", () => registerSlot(
-        slots,
-        { name: "settings.plugin.item", key: "omnimux-market", locale: "omnimux-market" },
-        ConfigCard,
-      ));
-      slots.inject("sidebar.footer.action", () => registerSlot(
-        slots,
-        { name: "sidebar.footer.action", id: "omnimux-market-plaza", order: 8, label: () => lookup("plaza.title"), locale: "omnimux-market" },
-        function PlazaEntry(actionProps) {
-          return h(PlazaAction, { ...actionProps, sessions });
+          window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: "" } }));
+        }
+      } catch {
+      }
+    };
+    if (open) claim();
+    else release();
+    return () => {
+      if (open) release();
+    };
+  }, [open]);
+  useEffect2(() => {
+    const onStage = (e) => {
+      const id = e instanceof CustomEvent ? e.detail?.id : void 0;
+      if (id && id !== STAGE_ID && open) {
+        close();
+      }
+    };
+    window.addEventListener(PRODUCT_STAGE_EVENT, onStage);
+    return () => window.removeEventListener(PRODUCT_STAGE_EVENT, onStage);
+  }, [open, close]);
+  useEffect2(() => {
+    if (!open) return;
+    const list = sessions && sessions.list;
+    if (!list || typeof list.subscribe !== "function") return;
+    let last = sessionListCurrent(sessions);
+    return list.subscribe(() => {
+      const now = sessionListCurrent(sessions);
+      if (now === last) return;
+      last = now;
+      close();
+    });
+  }, [open, sessions, close]);
+  useEffect2(() => {
+    if (!open) return;
+    const onPointer = (e) => {
+      const node = e.target;
+      if (!node || typeof node.closest !== "function") return;
+      if (node.closest(".sh-plaza-page, .sh-plaza-wrap, .sh-overlay, .sh-mkt, .sh-modal")) return;
+      close();
+    };
+    document.addEventListener("pointerdown", onPointer, true);
+    return () => document.removeEventListener("pointerdown", onPointer, true);
+  }, [open, close]);
+  const keep = plazaKeepAlive && everOpened;
+  const show = open && box;
+  const panel = typeof document !== "undefined" && box && (keep || show) ? createPortal(
+    h("div", {
+      style: {
+        display: open ? void 0 : "none",
+        pointerEvents: open ? "auto" : "none"
+      },
+      "aria-hidden": open ? void 0 : "true"
+    }, h(PlazaView, { t: tr, onClose: close, box, active: open })),
+    document.body
+  ) : null;
+  return h(
+    I18nProvider,
+    { t: tr },
+    h(
+      "div",
+      { className: "sh-plaza-wrap" + (wide ? "" : " rail") },
+      h(
+        "button",
+        {
+          type: "button",
+          className: "sh-plaza-trigger" + (open ? " on" : ""),
+          "aria-label": tr("plaza.title"),
+          "aria-expanded": open,
+          onClick: () => {
+            if (open) {
+              close();
+              setHint("");
+              return;
+            }
+            setOpen(true);
+            setHint("");
+          }
         },
-      ));
+        h(PlazaIcon),
+        wide ? h("span", null, tr("plaza.title")) : null
+      ),
+      hint ? h(Toast, { text: hint, onDone: () => setHint("") }) : null,
+      panel
+    )
+  );
+}
+var inject = ["slots", "sessions"];
+function registerSlot(slots, options, component) {
+  const next = { ...options };
+  if (next.id == null && next.key != null) next.id = String(next.key);
+  if (next.key == null && next.id != null) next.key = next.id;
+  return slots.register(next, component);
+}
+function apply(ctx) {
+  const slots = ctx.slots;
+  const sessions = ctx.sessions;
+  plazaSessions = sessions;
+  if (!slots) return;
+  ctx.inject(["locale"], (c) => {
+    if (!c.locale || typeof c.locale.register !== "function") return;
+    c.effect(() => {
+      try {
+        return c.locale.register("omnimux-market", { zh: ZH, en: EN });
+      } catch {
+        return () => {
+        };
+      }
+    }, "omnimux-market-locale");
+  });
+  ctx.effect(() => ensureCss(), "omnimux-market-style");
+  slots.inject("tool.call.toolview", () => registerSlot(
+    slots,
+    { name: "tool.call.toolview", key: "skillhub_search", locale: "omnimux-market" },
+    SearchToolView
+  ));
+  slots.inject("tool.call.toolview", () => registerSlot(
+    slots,
+    { name: "tool.call.toolview", key: "plaza_search", locale: "omnimux-market" },
+    PlazaSearchToolView
+  ));
+  slots.inject("tool.call.toolview", () => registerSlot(
+    slots,
+    { name: "tool.call.toolview", key: "skillhub_list", locale: "omnimux-market" },
+    ListToolView
+  ));
+  slots.inject("settings.plugin.item", () => registerSlot(
+    slots,
+    { name: "settings.plugin.item", key: "omnimux-market", locale: "omnimux-market" },
+    ConfigCard
+  ));
+  slots.inject("sidebar.footer.action", () => registerSlot(
+    slots,
+    { name: "sidebar.footer.action", id: "omnimux-market-plaza", order: 8, label: () => lookup("plaza.title"), locale: "omnimux-market" },
+    function PlazaEntry(actionProps) {
+      return h(PlazaAction, { ...actionProps, sessions });
     }
+  ));
+}
+module.exports = { inject, apply };
 
-    return { inject, apply };
+    return module.exports;
   },
 });

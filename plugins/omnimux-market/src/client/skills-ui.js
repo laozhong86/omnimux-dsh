@@ -81,12 +81,14 @@
             h("div", { className: "sh-hint", style: { margin: 0 } }, fmtTime(v.createdAt, tr) || tr("ver.unknownDate")),
             h("p", { className: "sh-ver-log" }, v.changelog || tr("ver.noLog")),
           ),
-          h("button", {
+          h(Button, {
             type: "button",
-            className: "sh-mini" + (current ? "" : " primary"),
+            size: "sm",
+            variant: current ? "outline" : "primary",
             disabled: !!busy || current || !ver,
+            loading: busy === ver,
             onClick: () => onInstall(ver),
-          }, current ? tr("ver.this") : (busy === ver ? tr("action.installing") : tr("ver.install"))),
+          }, current ? tr("ver.this") : tr("ver.install")),
         );
       }));
     }
@@ -350,7 +352,13 @@
         }
       };
       return h("div", { className: "sh-drawer sh-skill sh-fade", role: "dialog", "aria-modal": "true" },
-        h("button", { type: "button", className: "sh-close", onClick: onClose, "aria-label": tr("action.close") }, "×"),
+        h("span", { className: "sh-close" },
+          h(IconButton, {
+            variant: "ghost",
+            "aria-label": tr("action.close"),
+            onClick: onClose,
+          }, h(IconCloseOutline16)),
+        ),
         h("div", { className: "sh-head" },
           h(Icon, { item: view, className: "sh-dicon" }),
           h("div", { style: { minWidth: 0, flex: 1 } },
@@ -387,13 +395,22 @@
         ),
         h("div", { className: "sh-foot" },
           view.pageUrl ? h("a", { className: "sh-mini", href: view.pageUrl, target: "_blank", rel: "noreferrer" }, tr("action.openHome")) : null,
-          installed ? h("button", { type: "button", className: "sh-mini", disabled: !!working || busy, onClick: () => run("uninstall") }, working === "uninstall" ? tr("action.uninstalling") : tr("action.uninstall")) : null,
-          h("button", {
+          installed ? h(Button, {
             type: "button",
-            className: "sh-mini primary",
+            size: "sm",
+            variant: "outline",
+            disabled: !!working || busy,
+            loading: working === "uninstall",
+            onClick: () => run("uninstall"),
+          }, tr("action.uninstall")) : null,
+          h(Button, {
+            type: "button",
+            size: "sm",
+            variant: "primary",
             disabled: installed || !!working || busy,
+            loading: !!(working && working !== "uninstall"),
             onClick: () => run("install"),
-          }, installed ? tr("action.installed") : (working && working !== "uninstall" ? tr("action.installing") : tr("action.install"))),
+          }, installed ? tr("action.installed") : tr("action.install")),
         ),
         toast ? h(Toast, { text: toast, onDone: () => setToast("") }) : null,
       );

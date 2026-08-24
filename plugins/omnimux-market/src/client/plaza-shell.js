@@ -106,13 +106,14 @@
                 onClick: () => setTab("connectors"),
               }, tr("plaza.connectors")),
             ),
-            h("button", {
-              type: "button",
-              className: "sh-plaza-close",
-              onClick: onClose,
-              "aria-label": tr("plaza.back"),
-              title: tr("plaza.back"),
-            }, "×"),
+            h("span", { className: "sh-plaza-close" },
+              h(IconButton, {
+                variant: "ghost",
+                onClick: onClose,
+                "aria-label": tr("plaza.back"),
+                title: tr("plaza.back"),
+              }, h(IconCloseOutline16)),
+            ),
           ),
           h("div", { className: "sh-plaza-body" },
             tab === "plugins" ? h(Marketplace, { t: tr })

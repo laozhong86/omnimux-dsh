@@ -2,10 +2,12 @@
 /**
  * Pack src/client/*.js fragments into one ModuleLoader blob.
  * Official client loaders only accept a single factory file.
+ * dsh-ui-kit is bundled; react / react-dom / primitives stay external.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import * as esbuild from 'esbuild'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const dir = join(root, 'src', 'client')
@@ -38,12 +40,45 @@ const inner = FRAGMENTS.map((name) => {
   const text = readFileSync(join(dir, name), 'utf8').replace(/\s+$/, '')
   if (!text) throw new Error(`empty fragment ${name}`)
   return text
-}).join('\n\n')
+}).join('\n\n').replace(
+  /\n\s*return \{ inject, apply \};\s*$/,
+  '\nmodule.exports = { inject, apply };\n',
+)
+
+const result = await esbuild.build({
+  absWorkingDir: root,
+  stdin: {
+    contents: inner,
+    resolveDir: root,
+    sourcefile: 'client-factory.js',
+    loader: 'js',
+  },
+  bundle: true,
+  format: 'cjs',
+  platform: 'browser',
+  charset: 'utf8',
+  write: false,
+  logLevel: 'info',
+  external: [
+    'react',
+    'react/jsx-runtime',
+    'react/jsx-dev-runtime',
+    'react-dom',
+    'react-dom/client',
+    '@deepseek-ai/dsh-client-ui-primitives',
+  ],
+})
+
+const code = result.outputFiles[0]?.text
+if (!code) throw new Error('esbuild produced no output')
 
 const wrapped = `window.__ModuleLoader__.load({
   id: "omnimux-market",
   factory: (require) => {
-${inner}
+    var module = { exports: {} };
+    var exports = module.exports;
+${code}
+    return module.exports;
   },
 });
 `

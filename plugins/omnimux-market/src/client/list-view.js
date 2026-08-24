@@ -25,11 +25,12 @@
               h("div", { className: "sh-title" }, it.name),
               h("div", { className: "sh-slug" }, it.slug + (it.version ? " · v" + it.version : "")),
             ),
-            h("div", null,
-              h("button", { type: "button", className: "sh-mini", onClick: () => openItem(it) }, tr("action.detail")),
-              h("button", {
+            h("div", { className: "sh-row-actions" },
+              h(Button, { type: "button", size: "sm", variant: "outline", onClick: () => openItem(it) }, tr("action.detail")),
+              h(Button, {
                 type: "button",
-                className: "sh-mini",
+                size: "sm",
+                variant: "outline",
                 onClick: async () => {
                   try {
                     await api("uninstall", { slug: it.slug });

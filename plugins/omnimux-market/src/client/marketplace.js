@@ -40,13 +40,6 @@
       }, pluginLetter(plugin));
     }
 
-    function SearchIcon() {
-      return h("svg", { viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" },
-        h("circle", { cx: "7", cy: "7", r: "5.25", stroke: "currentColor", strokeWidth: "1.5" }),
-        h("path", { d: "M11 11.5 14 14.5", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round" }),
-      );
-    }
-
     function MarketSearchBar({ query, onQuery, placeholder, onSubmit, submitLabel }) {
       return h("form", {
         className: "sh-mkt-search",
@@ -358,7 +351,7 @@
                         (e) => setFeedback(e.message || String(e)),
                       ).finally(() => setSending(""));
                     },
-                  }, !verified ? tr("mkt.unsupported") : installed ? tr("mkt.installed") : (sending === id ? tr("mkt.sending") : tr("mkt.install"))),
+                  }, !verified ? tr("mkt.unsupported") : installed ? tr("mkt.installed") : tr("mkt.install")),
                 ),
               );
             }),

@@ -9,8 +9,17 @@ const client = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../cl
 test('client bundle is a single ModuleLoader factory', () => {
   assert.match(client, /^window\.__ModuleLoader__\.load\(\{/)
   assert.match(client, /id: "omnimux-market"/)
-  assert.match(client, /return \{ inject, apply \};/)
-  assert.match(client, /\n  \},\n\}\);\n$/)
+  assert.match(client, /return module\.exports/)
+  assert.match(client, /inject/)
+  assert.match(client, /function apply/)
+})
+
+test('client bundle inlines dsh-ui-kit and externalizes host modules', () => {
+  assert.doesNotMatch(client, /require\(["']dsh-ui-kit["']\)/)
+  assert.match(client, /require\(["']react["']\)/)
+  assert.match(client, /require\(["']@deepseek-ai\/dsh-client-ui-primitives["']\)/)
+  assert.match(client, /SearchField|dshUk-SearchField/)
+  assert.match(client, /dshUk-Button/)
 })
 
 test('client bundle keeps public slot keys and keep-alive', () => {
@@ -24,10 +33,10 @@ test('client bundle keeps public slot keys and keep-alive', () => {
     'settings.plugin.item',
     'plazaKeepAlive',
     'everOpened',
-    'display: open ? undefined : "none"',
   ]) {
     assert.ok(client.includes(needle), `missing ${needle}`)
   }
+  assert.match(client, /display:\s*open\s*\?\s*(?:void 0|undefined)\s*:\s*["']none["']/)
 })
 
 test('client bundle recognizes Skills search fallback without library total', () => {
