@@ -3,10 +3,22 @@ import { coverGlyph, isUsableCoverSize, pickCoverSrc, resolveTikTokEmbedUrl } fr
 import { injectInspirationStyles } from './styles.js'
 import { useInspiration } from './use-inspiration.js'
 
-function LoginGate({ t }) {
+function LoginGate({ t, onSuccess }) {
   const login = () => {
     const gate = typeof window !== 'undefined' ? window.__omnimuxAuth : undefined
-    if (gate && typeof gate.ensureLogin === 'function') gate.ensureLogin({})
+    if (gate && typeof gate.ensureLogin === 'function') {
+      // forceVerify: this page only reaches need-login after a Host 401, so the
+      // cached logged_in bit is not trustworthy and must not short-circuit.
+      gate.ensureLogin({
+        reason: t('needLogin'),
+        forceVerify: true,
+        onSuccess: () => {
+          if (typeof onSuccess === 'function') onSuccess()
+        },
+      })
+      return
+    }
+    if (typeof onSuccess === 'function') onSuccess()
   }
   return (
     <div className="omnimux-inspiration-gate">
@@ -252,8 +264,7 @@ export function InspirationSection({ t, active = true }) {
           {Array.from({ length: 8 }, (_, i) => <div key={i} className="omnimux-inspiration-skel" />)}
         </div>
       ) : null}
-
-      {phase === 'need-login' ? <LoginGate t={t} /> : null}
+      {phase === 'need-login' ? <LoginGate t={t} onSuccess={() => { void refresh() }} /> : null}
 
       {phase === 'ready' && error && tiktokItems.length === 0 ? (
         <div className="omnimux-inspiration-error">

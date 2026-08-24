@@ -247,6 +247,7 @@ function authGuard(fn) {
       if (!gate || typeof gate.ensureLogin !== "function") return result;
       return new Promise((resolve, reject) => {
         gate.ensureLogin({
+          forceVerify: true,
           onSuccess: () => {
             fn(...args).then(resolve, reject);
           },
@@ -861,10 +862,20 @@ function useInspiration(filters) {
 
 // src/client/InspirationSection.jsx
 var import_jsx_runtime = require("react/jsx-runtime");
-function LoginGate({ t }) {
+function LoginGate({ t, onSuccess }) {
   const login = () => {
     const gate = typeof window !== "undefined" ? window.__omnimuxAuth : void 0;
-    if (gate && typeof gate.ensureLogin === "function") gate.ensureLogin({});
+    if (gate && typeof gate.ensureLogin === "function") {
+      gate.ensureLogin({
+        reason: t("needLogin"),
+        forceVerify: true,
+        onSuccess: () => {
+          if (typeof onSuccess === "function") onSuccess();
+        }
+      });
+      return;
+    }
+    if (typeof onSuccess === "function") onSuccess();
   };
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-gate", children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "omnimux-inspiration-empty-title", children: t("needLogin") }),
@@ -1054,7 +1065,9 @@ function InspirationSection({ t, active = true }) {
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-count", children: t("count").replace("{n}", String(tiktokItems.length)) })
     ] }),
     phase === "loading" && tiktokItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skeleton", "aria-busy": "true", children: Array.from({ length: 8 }, (_, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skel" }, i)) }) : null,
-    phase === "need-login" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoginGate, { t }) : null,
+    phase === "need-login" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoginGate, { t, onSuccess: () => {
+      void refresh();
+    } }) : null,
     phase === "ready" && error && tiktokItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-error", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "omnimux-inspiration-empty-text", children: error === "disabled" ? t("error.disabled") : error || t("error.generic") }) }) : null,
     phase === "ready" && !error && tiktokItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EmptyState, { t }) : null,
     tiktokItems.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-masonry", children: tiktokItems.map((row) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(

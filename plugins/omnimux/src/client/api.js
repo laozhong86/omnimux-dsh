@@ -95,7 +95,11 @@ export function authGuard(fn) {
       const authGlobal = typeof window !== 'undefined' ? /** @type {any} */ (window).__omnimuxAuth : undefined
       if (!authGlobal || typeof authGlobal.ensureLogin !== 'function') return result
       return new Promise((resolve, reject) => {
+        // forceVerify: a needs-omnimux / 401 means the cached logged_in bit may
+        // already be stale; without verify the gate short-circuits and never
+        // opens the device-code flow.
         authGlobal.ensureLogin({
+          forceVerify: true,
           onSuccess: () => {
             fn(...args).then(resolve, reject)
           },

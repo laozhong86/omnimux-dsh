@@ -29,7 +29,10 @@ export function authGuard(fn) {
       const gate = typeof window !== 'undefined' ? /** @type {any} */ (window).__omnimuxAuth : undefined
       if (!gate || typeof gate.ensureLogin !== 'function') return result
       return new Promise((resolve, reject) => {
+        // forceVerify: a 401 means the cached "logged_in" may already be stale;
+        // without verify the gate short-circuits and the page stays stuck.
         gate.ensureLogin({
+          forceVerify: true,
           onSuccess: () => {
             fn(...args).then(resolve, reject)
           },

@@ -38,14 +38,26 @@ function makeRunLogin() {
   return { fn, captured: () => captured, count: () => count }
 }
 
-/** @returns {{ win: {}, gate: any, run: ReturnType<typeof makeRunLogin> }} */
-function install({ loggedIn = false } = {}) {
+/**
+ * @param {{
+ *   loggedIn?: boolean,
+ *   verifiedLoggedIn?: boolean,
+ * }} [opts]
+ * @returns {{ win: {}, gate: any, run: ReturnType<typeof makeRunLogin>, calls: () => boolean[] }}
+ */
+function install({ loggedIn = false, verifiedLoggedIn } = {}) {
   const win = {}
   const run = makeRunLogin()
-  const getStatus = async () => ({ ok: true, status: 200, body: { logged_in: loggedIn, username: 'ada' } })
+  /** @type {boolean[]} */
+  const verifyFlags = []
+  const getStatus = async (verify = false) => {
+    verifyFlags.push(verify === true)
+    const live = verify === true && verifiedLoggedIn !== undefined ? verifiedLoggedIn : loggedIn
+    return { ok: true, status: 200, body: { logged_in: live, username: 'ada', verified: verify ? live : null } }
+  }
   installAuthGlobal(win, { getStatus, runLogin: run.fn })
   resetAuthGate()
-  return { win, gate: win[AUTH_GLOBAL_KEY], run }
+  return { win, gate: win[AUTH_GLOBAL_KEY], run, calls: () => verifyFlags.slice() }
 }
 
 describe('auth-gate store', () => {
@@ -62,12 +74,40 @@ describe('auth-gate store', () => {
   })
 
   it('short path: already logged in → onSuccess immediately, gate stays closed', async () => {
-    const { gate, run } = install({ loggedIn: true })
+    const { gate, run, calls } = install({ loggedIn: true })
     let resolved = null
     await gate.ensureLogin({ reason: 'x', onSuccess: (p) => { resolved = p } })
     assert.equal(resolved?.username, 'ada')
     assert.equal(getSnapshot().phase, 'closed')
     assert.equal(run.captured(), null, 'no device flow was started')
+    assert.deepEqual(calls(), [false], 'default path stays cached (no verify)')
+  })
+
+  it('forceVerify + stale cache → opens the gate even when cached logged_in', async () => {
+    const { gate, run, calls } = install({ loggedIn: true, verifiedLoggedIn: false })
+    let resolved = null
+    await gate.ensureLogin({
+      reason: 'stale-token',
+      forceVerify: true,
+      onSuccess: (p) => { resolved = p },
+    })
+    assert.equal(resolved, null, 'must not short-circuit on a stale cache')
+    assert.equal(getSnapshot().phase, 'waiting')
+    assert.equal(run.count(), 1, 'device flow must start when verify fails')
+    assert.deepEqual(calls(), [true])
+  })
+
+  it('forceVerify + live session → short path without opening the gate', async () => {
+    const { gate, run, calls } = install({ loggedIn: true, verifiedLoggedIn: true })
+    let resolved = null
+    await gate.ensureLogin({
+      forceVerify: true,
+      onSuccess: (p) => { resolved = p },
+    })
+    assert.equal(resolved?.username, 'ada')
+    assert.equal(getSnapshot().phase, 'closed')
+    assert.equal(run.captured(), null)
+    assert.deepEqual(calls(), [true])
   })
 
   it('not logged in → opens the gate and reaches waiting', async () => {
