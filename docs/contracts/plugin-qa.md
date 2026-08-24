@@ -1,7 +1,7 @@
 # plugin-qa — OmniMux 产品插件浏览器验收契约
 
 > 解决问题：多插件并行开发时，QA 环境抢口、数据串脏、验收口径各写一套。
-> 配套：`dev-pipeline.md`（三层环境）+ `ops-entry.md`（命令入口）+ skill `omnimux-plugin-e2e-test`（操作手册）。
+> 配套：`dev-pipeline.md`（三层环境）+ `ops-entry.md`（命令入口）+ `stage-guards.md`（关页/写闸/空态静态契约）+ skill `omnimux-plugin-e2e-test`（操作手册）。
 
 ## 环境（必须 L2）
 
@@ -19,11 +19,11 @@
 
 | 维度 | 必测要点 |
 |------|----------|
-| 功能 | 入口 → 打开 → 空态 → 增改删 → 搜索 → 引用/复制 → 刷新；UI + 后端双核对 |
+| 功能 | 入口 → 打开 → 空态 → 增改删 → 搜索 → 引用/复制 → 刷新；UI + 后端双核对。空态语义（含 Skills fallback 差异）→ `stage-guards.md` |
 | 异常 | 校验失败、冲突 409、非法 400、跨源写 403、不存在 404 |
 | 交互 | 弹窗开关（× / 遮罩 / Esc）、禁用态、字段切换不丢数据 |
 | 视觉 | DOM computed style / token（`--dsw-alias-*`）；截图供人看，不作唯一断言 |
-| 稳定 | 轮询同步、关页保活（禁 `return null` 卸树当已修口径） |
+| 稳定 | 轮询同步、关页保活（禁 `return null` 卸树当已修口径）。细则 → `stage-guards.md` |
 
 ## 报告模板
 
