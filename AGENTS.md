@@ -43,6 +43,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `plugins/omnimux-accounts/` | Pinned first-level plugin: own sidebar row under 新会话 (rank 3), standalone product page (`shell.overlay`, opened directly via the product stage — not the Apps catalog / `omnimux-app-open`). Host `/omnimux/accounts` only. |
 | `plugins/omnimux-assets/` | 创作资产库：角色/场景/风格包/道具/知识包/自定义。素材只记 `real_path`。Host `/omnimux/assets`，tools `assets_list` / `assets_search` / `assets_get` / `assets_upload`。 |
 | `plugins/omnimux-products/` | 产品库：要卖的货（名称 + 卖点/人群/品牌 + 主图路径引用）。Host `/omnimux/products`，tools `products_list` / `products_search` / `products_get` / `products_read_media` / `products_create` / `products_update`。侧栏 rank 6。 |
+| `plugins/omnimux-inspiration/` | 灵感库一级页（`shell.overlay`，sidebar rank 7）。浏览器只打 Host `/omnimux/inspiration`；云 HTTP 在中枢 `withPat`。 |
 | `plugins/omnimux-gallery/` | 专家·技能·连接器一级页（`shell.overlay`），技能双数据源（本地 + SkillHub 在线源）。 |
 | `plugins/omnimux-workflow/` | 工作流无限画布（拖拽 DAG、Agent 工具查询/执行），生成经 hub seam 提交。数据 `$DSH_HOME/omnimux/workflow/`。 |
 | `docs/contracts/ops-entry.md` | **运维命令唯一入口**：对外只暴露 fork `yarn omnimux:*`；列出内部/废弃脚本边界。禁止插件私有 deploy/sync 体系。 |
@@ -74,7 +75,7 @@ Single source of truth: [design.md](design.md). x.ai brand language via the full
 
 Load `design.md` when the task touches ANY of these:
 
-- Writing or editing any plugin web client UI (stage pages, tables, nav, dialogs, chips, buttons, empty states) in `omnimux-assets`, `omnimux-accounts`, `omnimux-workflow`, `omnimux-products`, or the `omnimux` hub client.
+- Writing or editing any plugin web client UI (stage pages, tables, nav, dialogs, chips, buttons, empty states) in `omnimux-assets`, `omnimux-accounts`, `omnimux-workflow`, `omnimux-products`, `omnimux-inspiration`, or the `omnimux` hub client.
 - Adding or changing any color / typography / spacing / radius / shadow value in client code.
 - Creating a new plugin with a web stage.
 - Implementing or changing light/dark mode behavior.
@@ -97,6 +98,7 @@ Doc index inside `design.md`: §1 x.ai language extraction (colors/typography/sp
 | `dsh-drama` | `yaml`, Node stdlib | OmniMux SDK, `omnimux` internals |
 | `omnimux` | OmniMux HTTP, `aigc-provider-runtime-kit` | `dsh-drama` domain, `series/` paths |
 | `omnimux-accounts` | Node stdlib, Host `/omnimux/accounts` | hub internals, `OMNIMUX_*` secrets |
+| `omnimux-inspiration` | Node stdlib, Host `/omnimux/inspiration` | hub internals, `OMNIMUX_*` secrets |
 
 > `omnimux-theme`（曾规划的 `--omx-*` 岛内共享主题包）**不建**——被全壳桥接 `xai-theme.js` 取代（见 Design system hard rules）。
 

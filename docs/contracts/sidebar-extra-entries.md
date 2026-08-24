@@ -30,6 +30,7 @@ MUST NOT use 13px labels or 16px filled icons on these rows. MUST NOT invent a s
 | `[data-dsh-omnimux-new-project-entry]` | `omnimux-workflow` | 新建项目 / New Project（展开：`kind:'inline'` 并排「新建会话」。收起：CSS 藏项目按钮，点官方加号弹出「新建会话 / 新建项目」，选中再 click 原按钮。折叠态属性在 AppFrame，不在 html。收起 wrapper 可用 `display:contents`，但官方加号上的 `flex:1` **必须**收回 `flex:none` + 36×36，否则会吃掉会话列表高度变成竖条） |
 | `[data-omnimux-assets-entry]` | `omnimux-assets` | 资产库（rank 4） |
 | `[data-omnimux-products-entry]` | `omnimux-products` | 产品库（rank 6，不重排旧行） |
+| `[data-omnimux-inspiration-entry]` | `omnimux-inspiration` | 灵感库（rank 7，不重排旧行） |
 
 New extra rows MUST reuse these metrics (copy the CSS block or import the same numbers). A PR that adds a 新会话-below row with a different font-size or icon size is rejected.
 
