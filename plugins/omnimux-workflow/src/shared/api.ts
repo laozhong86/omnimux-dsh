@@ -56,13 +56,57 @@ export interface BuildManifest {
   canvasHash: string;
 }
 
-/** GET /api/capabilities response (stub shape until M3/M4). */
+export interface ModelParameterOption<T = string | number> {
+  value: T;
+  label: string;
+}
+
+export interface ModelParameterSchema {
+  /** 画幅选项与默认值 */
+  aspectRatio?: {
+    options: Array<ModelParameterOption<string>>;
+    defaultValue: string;
+  };
+  /** 时长选项或范围与默认值 */
+  duration?: {
+    options?: Array<ModelParameterOption<number>>;
+    range?: { min: number; max: number; step?: number };
+    defaultValue: number;
+    unit?: string;
+  };
+  /** 分辨率选项与默认值 */
+  resolution?: {
+    options: Array<ModelParameterOption<string>>;
+    defaultValue: string;
+  };
+  /** 生成质量/模式选项 */
+  quality?: {
+    options: Array<ModelParameterOption<string>>;
+    defaultValue: string;
+  };
+  /** 音效支持 */
+  sound?: {
+    supported: boolean;
+    defaultValue: boolean;
+  };
+}
+
+export interface CapabilityModelItem {
+  id: string;
+  label: string;
+  badge?: string;
+  subtitle?: string;
+  family?: string;
+  parameters?: ModelParameterSchema;
+}
+
+/** GET /api/capabilities response. */
 export interface CapabilityCatalog {
   source: 'static-stub' | 'omnimux';
-  text: Array<{ id: string; label: string }>;
-  image: Array<{ id: string; label: string }>;
-  video: Array<{ id: string; label: string }>;
-  audio: Array<{ id: string; label: string }>;
+  text: Array<CapabilityModelItem>;
+  image: Array<CapabilityModelItem>;
+  video: Array<CapabilityModelItem>;
+  audio: Array<CapabilityModelItem>;
 }
 
 // ============================================================================

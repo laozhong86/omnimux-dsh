@@ -33,13 +33,13 @@ var import_react5 = require("react");
 
 // src/client/locales.js
 var zh = {
-  "nav": "\u9879\u76EE\u5E93",
+  "nav": "\u9879\u76EE",
   "stage.title": "\u5DE5\u4F5C\u6D41\u753B\u5E03",
   "stage.close": "\u5173\u95ED",
   "canvas.loading": "\u6B63\u5728\u52A0\u8F7D\u753B\u5E03\u2026",
   "canvas.loadFailed": "\u753B\u5E03\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002",
   "canvas.retry": "\u91CD\u8BD5",
-  "projects.title": "\u9879\u76EE\u5E93",
+  "projects.title": "\u9879\u76EE",
   "projects.subtitle": "\u7BA1\u7406\u4F60\u7684\u672C\u5730\u5DE5\u4F5C\u6D41\u9879\u76EE",
   "projects.newProject": "\u65B0\u5EFA\u9879\u76EE",
   "projects.close": "\u5173\u95ED",
@@ -107,14 +107,34 @@ var PRODUCT_STAGE_EVENT = "dsh-product-stage";
 var STAGE_ID = "omnimux-workflow";
 function createStageStore(getStage) {
   let open = false;
+  try {
+    open = window.localStorage.getItem("omnimux_active_product_stage") === STAGE_ID;
+  } catch {
+  }
   const listeners = /* @__PURE__ */ new Set();
   function emit() {
     for (const listener of listeners) listener();
+  }
+  if (open) {
+    const restore = () => {
+      try {
+        const stage = getStage();
+        if (stage && typeof stage.claim === "function") {
+          stage.claim(STAGE_ID);
+        }
+      } catch {
+      }
+    };
+    if (typeof queueMicrotask === "function") queueMicrotask(restore);
+    else setTimeout(restore, 0);
   }
   window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : void 0;
     if (id !== STAGE_ID && open) {
       open = false;
+      emit();
+    } else if (id === STAGE_ID && !open) {
+      open = true;
       emit();
     }
   });
@@ -899,6 +919,7 @@ function mountNewProjectEntry(deps, t, locale) {
 
 // src/client/projects/ProjectLibraryPage.jsx
 var import_react2 = require("react");
+var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
 
 // src/client/projects/NewLocalProjectDialog.jsx
 var import_react = require("react");
@@ -1243,15 +1264,35 @@ function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, layout, be
             /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 14, fontWeight: 600, lineHeight: "20px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: project.title }),
             /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 12, lineHeight: "18px", color: "var(--dsw-alias-label-secondary, inherit)", marginTop: 4 }, children: String(project.updatedAt).slice(0, 10) })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" }, onClick: (event) => {
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }, onClick: (event) => {
             event.stopPropagation();
           }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", title: t("projects.rename"), onClick: () => {
-              void handleRename(project);
-            }, style: { border: "none", background: "transparent", color: "inherit", cursor: "pointer", fontSize: 12, padding: 2, opacity: 0.7 }, children: "\u270F\uFE0F" }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", title: t("projects.delete"), onClick: () => {
-              void handleDelete(project);
-            }, style: { border: "none", background: "transparent", color: "inherit", cursor: "pointer", fontSize: 12, padding: 2, opacity: 0.7 }, children: "\u{1F5D1}\uFE0F" })
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+              "button",
+              {
+                type: "button",
+                title: t("projects.rename"),
+                "aria-label": t("projects.rename"),
+                onClick: () => {
+                  void handleRename(project);
+                },
+                style: { border: "none", background: "transparent", color: "inherit", cursor: "pointer", padding: 4, opacity: 0.7, display: "inline-flex", alignItems: "center", justifyContent: "center" },
+                children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives.IconEditOutline16, { size: 14 })
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+              "button",
+              {
+                type: "button",
+                title: t("projects.delete"),
+                "aria-label": t("projects.delete"),
+                onClick: () => {
+                  void handleDelete(project);
+                },
+                style: { border: "none", background: "transparent", color: "inherit", cursor: "pointer", padding: 4, opacity: 0.7, display: "inline-flex", alignItems: "center", justifyContent: "center" },
+                children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives.IconTrashOutline16, { size: 14 })
+              }
+            )
           ] })
         ] }, project.id)) }) }),
         dialogOpen ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
@@ -1330,7 +1371,7 @@ function CanvasBridge({ onClose, t, locale }) {
     } catch {
       setStatus("error");
     }
-  }, [onClose]);
+  }, []);
   (0, import_react3.useEffect)(() => {
     void load();
     return () => {
@@ -1437,8 +1478,8 @@ function CanvasTab({ ctx, t, visible, store, scope }) {
       window.clearTimeout(timer);
     };
   }, [visible, sessionId, store, ctx]);
-  const onClose = () => {
-  };
+  const onClose = (0, import_react4.useCallback)(() => {
+  }, []);
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
     "div",
     {

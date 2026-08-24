@@ -6,20 +6,10 @@
  * 无上游连线时显示占位文案。不接上传（计划 T2.5 明确裁剪）。
  */
 
-import React, { memo, useMemo } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { Music, Paperclip } from 'lucide-react';
-import { useCanvasStore } from '../../../../store/canvasStore';
-import type { MaterialNodeData, MaterialType } from '../../../../types/materialNode';
-import { resolveMediaPreviewUrl, type MediaAssetLike } from '../../../utils/mediaUrl';
+import React, { memo } from 'react';
+import { Music, Paperclip, FileText, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
+import { useUpstreamMedia, type UpstreamMediaItem } from '../../../hooks/useUpstreamMedia';
 import { useT } from '../../../../i18n';
-
-interface UpstreamMedia {
-  nodeId: string;
-  label: string;
-  materialType: MaterialType;
-  url?: string;
-}
 
 export interface ReferenceSlotsProps {
   /** 本节点 id（入边 target） */
@@ -28,24 +18,7 @@ export interface ReferenceSlotsProps {
 
 const ReferenceSlots: React.FC<ReferenceSlotsProps> = ({ nodeId }) => {
   const t = useT();
-  const { nodes, edges } = useCanvasStore(
-    useShallow((state) => ({ nodes: state.nodes, edges: state.edges })),
-  );
-
-  const upstreams = useMemo<UpstreamMedia[]>(() => {
-    const sourceIds = edges.filter((edge) => edge.target === nodeId).map((edge) => edge.source);
-    return sourceIds.flatMap((sourceId) => {
-      const node = nodes.find((n) => n.id === sourceId);
-      if (!node) return [];
-      const data = node.data as unknown as MaterialNodeData;
-      const url = resolveMediaPreviewUrl(
-        data.materialType,
-        data.mediaAssets as MediaAssetLike[] | undefined,
-        data.mediaUrl,
-      );
-      return [{ nodeId: node.id, label: data.label || node.id, materialType: data.materialType, url }];
-    });
-  }, [nodes, edges, nodeId]);
+  const upstreams = useUpstreamMedia(nodeId);
 
   return (
     <div className="wf-ref-slot">
@@ -63,9 +36,13 @@ const ReferenceSlots: React.FC<ReferenceSlotsProps> = ({ nodeId }) => {
                 <img className="wf-ref-slot__thumb" src={upstream.url} alt={upstream.label} />
               ) : upstream.url && upstream.materialType === 'video' ? (
                 <video className="wf-ref-slot__thumb" src={upstream.url} muted />
-              ) : upstream.url && upstream.materialType === 'audio' ? (
+              ) : upstream.materialType === 'audio' ? (
                 <span className="wf-ref-slot__thumb wf-ref-slot__thumb--icon">
                   <Music size={14} />
+                </span>
+              ) : upstream.materialType === 'text' ? (
+                <span className="wf-ref-slot__thumb wf-ref-slot__thumb--icon">
+                  <FileText size={14} />
                 </span>
               ) : (
                 <span className="wf-ref-slot__thumb wf-ref-slot__thumb--pending" />

@@ -156,6 +156,8 @@ export {
   SeamGatewayError,
   SEAM_CONCURRENCY_ENV,
   DEFAULT_SEAM_CONCURRENCY,
+  IMAGE_MODEL_SPECS,
+  VIDEO_MODEL_SPECS,
 } from './workflow/seam/omnimuxGateway';
 export {
   assembleGateway,
