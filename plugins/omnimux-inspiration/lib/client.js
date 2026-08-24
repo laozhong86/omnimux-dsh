@@ -308,131 +308,440 @@ function pickCoverSrc(row) {
   );
   return hostMediaSrc(rec.cover_key ?? rec.cover_url);
 }
+function isUsableCoverSize(width, height) {
+  return Number(width) >= 8 && Number(height) >= 8;
+}
+function coverGlyph(title) {
+  const text = typeof title === "string" ? title.trim() : "";
+  return text.slice(0, 1) || "\u7075";
+}
+var TIKTOK_VIDEO_RE = /tiktok\.com\/@?[^/]+\/video\/(\d{15,25})/i;
+var TIKTOK_V_RE = /tiktok\.com\/v\/(\d{15,25})/i;
+function extractTikTokVideoId(url) {
+  if (typeof url !== "string" || !url.trim()) return null;
+  const m = url.match(TIKTOK_VIDEO_RE) || url.match(TIKTOK_V_RE);
+  if (m && m[1]) return m[1];
+  return null;
+}
+function resolveTikTokEmbedUrl(sourceUrlOrId) {
+  if (!sourceUrlOrId) return null;
+  const raw = String(sourceUrlOrId).trim();
+  if (/^\d{15,25}$/.test(raw)) {
+    return `https://www.tiktok.com/player/v1/${raw}`;
+  }
+  const id = extractTikTokVideoId(raw);
+  return id ? `https://www.tiktok.com/player/v1/${id}` : null;
+}
 
 // src/client/styles.js
 var STYLES2 = `
+/* ==========================================================================
+   OmniMux Inspiration UI \u2014 x.ai \u6781\u7B80\u8BBE\u8BA1\u89C4\u8303\u843D\u5730
+   ========================================================================== */
+
 .omnimux-inspiration-root {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 0 20px 24px;
-  color: var(--dsw-alias-label-primary, var(--dsw-text-primary, inherit));
+  gap: var(--omx-space-lg, 16px);
+  padding: 0 var(--omx-space-xl, 24px) var(--omx-space-2xl, 32px);
+  font-family: var(--omx-font-sans, 'Universal Sans', 'Inter', system-ui, -apple-system, sans-serif);
+  color: var(--omx-color-ink, #ffffff);
+  background: var(--omx-color-canvas, #0a0a0a);
+  min-height: 100%;
 }
 .omnimux-inspiration-root *,
 .omnimux-inspiration-root *::before,
 .omnimux-inspiration-root *::after { box-sizing: border-box; }
+
+/* \u5DE5\u5177\u680F Toolbar: \u53D1\u4E1D\u7EBF\u63CF\u8FB9 + \u80F6\u56CA/\u6781\u7B80\u63A7\u4EF6 */
 .omnimux-inspiration-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--omx-space-sm, 8px);
+  padding-bottom: var(--omx-space-md, 12px);
+  border-bottom: 1px solid var(--omx-color-hairline, #242424);
 }
 .omnimux-inspiration-search {
-  flex: 1 1 220px;
-  min-width: 160px;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.08));
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
-  color: inherit;
-  font: inherit;
+  flex: 1 1 240px;
+  min-width: 180px;
+  height: 34px;
+  padding: 0 var(--omx-space-md, 12px);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: var(--omx-radius-sm, 8px);
+  background: var(--omx-color-canvas-soft, #131313);
+  color: var(--omx-color-ink, #ffffff);
+  font: var(--omx-text-body-sm, 400 14px/20px var(--omx-font-sans));
+  outline: none;
+  transition: border-color var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-search:focus {
+  border-color: var(--omx-color-hairline-strong, #3d3d3d);
+}
+.omnimux-inspiration-search::placeholder {
+  color: var(--omx-color-muted, #7c7c7c);
 }
 .omnimux-inspiration-select {
-  height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.08));
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
-  color: inherit;
-  font: inherit;
+  height: 34px;
+  padding: 0 var(--omx-space-md, 12px);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: var(--omx-radius-sm, 8px);
+  background: var(--omx-color-canvas-soft, #131313);
+  color: var(--omx-color-ink-soft, #ebebeb);
+  font: var(--omx-text-label, 500 13px/16px var(--omx-font-sans));
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-select:hover,
+.omnimux-inspiration-select:focus {
+  border-color: var(--omx-color-hairline-strong, #3d3d3d);
 }
 .omnimux-inspiration-count {
   margin-left: auto;
-  font-size: 12px;
-  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
+  font: var(--omx-text-code, 400 13px/20px var(--omx-font-mono, monospace));
+  color: var(--omx-color-muted, #7c7c7c);
 }
-.omnimux-inspiration-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+
+/* \u7011\u5E03\u6D41 Masonry \u7EAF\u753B\u9762\u5361\u7247\uFF08\u57FA\u4E8E\u6700\u4F73\u5217\u5BBD\u81EA\u9002\u5E94\uFF09 */
+.omnimux-inspiration-masonry {
+  columns: 180px auto;
+  column-gap: var(--omx-space-md, 12px);
+  width: 100%;
 }
-.omnimux-inspiration-card {
-  display: flex;
-  flex-direction: column;
+@media (min-width: 1600px) {
+  .omnimux-inspiration-masonry { columns: 200px 7; }
+}
+@media (min-width: 1280px) and (max-width: 1599px) {
+  .omnimux-inspiration-masonry { columns: 190px 6; }
+}
+@media (min-width: 960px) and (max-width: 1279px) {
+  .omnimux-inspiration-masonry { columns: 180px 5; }
+}
+@media (min-width: 640px) and (max-width: 959px) {
+  .omnimux-inspiration-masonry { columns: 160px 4; }
+}
+@media (max-width: 639px) {
+  .omnimux-inspiration-masonry { columns: 140px 2; }
+}
+
+.omnimux-inspiration-card-pure {
+  position: relative;
+  break-inside: avoid;
+  margin-bottom: var(--omx-space-md, 12px);
+  border-radius: var(--omx-radius-sm, 8px);
   overflow: hidden;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.08));
-  border-radius: 12px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  cursor: pointer;
+  background: var(--omx-color-canvas-soft, #131313);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  transition: transform var(--omx-motion-base, 180ms) var(--omx-motion-ease, cubic-bezier(.2,.4,.6,1)),
+              border-color var(--omx-motion-base, 180ms) var(--omx-motion-ease, cubic-bezier(.2,.4,.6,1));
 }
-.omnimux-inspiration-cover {
+.omnimux-inspiration-card-pure:hover {
+  transform: translateY(-2px);
+  border-color: var(--omx-color-hairline-strong, #3d3d3d);
+}
+.omnimux-inspiration-cover-img {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  height: auto;
   object-fit: cover;
-  background: var(--dsw-alias-bg-tertiary, rgba(255,255,255,0.06));
 }
-.omnimux-inspiration-cover-empty {
+.omnimux-inspiration-cover-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  font-size: 12px;
-  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
-  background: var(--dsw-alias-bg-tertiary, rgba(255,255,255,0.06));
+  aspect-ratio: 9 / 16;
+  font: var(--omx-text-display-sm, 600 32px/38px var(--omx-font-sans));
+  color: var(--omx-color-muted, #7c7c7c);
+  background: var(--omx-color-canvas-raised, #171717);
 }
-.omnimux-inspiration-body { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 6px; }
-.omnimux-inspiration-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-}
-.omnimux-inspiration-meta {
+
+/* Hover \u6D6E\u5C42: \u6781\u7B80\u7EAF\u9ED1\u6E10\u53D8 + \u5E73\u53F0 Chip + \u5C45\u4E2D\u64AD\u653E */
+.omnimux-inspiration-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.65) 100%);
+  opacity: 0;
   display: flex;
-  gap: 8px;
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--omx-space-md, 12px);
+  transition: opacity var(--omx-motion-fast, 120ms) ease;
 }
-.omnimux-inspiration-link {
-  align-self: start;
-  color: inherit;
-  font-size: 12px;
+.omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-overlay {
+  opacity: 1;
 }
+.omnimux-inspiration-badge-platform {
+  align-self: flex-start;
+  padding: var(--omx-space-2xs, 2px) var(--omx-space-sm, 8px);
+  border-radius: var(--omx-radius-pill, 9999px);
+  font: var(--omx-text-label, 500 12px/16px var(--omx-font-sans));
+  font-family: var(--omx-font-mono, monospace);
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #ffffff;
+}
+.omnimux-inspiration-overlay-play {
+  align-self: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--omx-color-primary, #ffffff);
+  color: var(--omx-color-on-primary, #0a0a0a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(0.9);
+  transition: transform var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-card-pure:hover .omnimux-inspiration-overlay-play {
+  transform: scale(1);
+}
+.omnimux-inspiration-overlay-play svg {
+  width: 16px;
+  height: 16px;
+  margin-left: 2px;
+}
+
+/* \u8BE6\u60C5\u5F39\u7A97 Modal\uFF08x.ai \u53D1\u4E1D\u7EBF + \u89C4\u5219\u5206\u680F\uFF09 */
+.omnimux-inspiration-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--omx-color-overlay, rgba(0,0,0,.60));
+  backdrop-filter: blur(16px);
+  z-index: var(--omx-z-modal, 200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--omx-space-xl, 24px);
+  animation: omni-fade-in var(--omx-motion-fast, 120ms) ease;
+}
+@keyframes omni-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.omnimux-inspiration-modal-container {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 980px;
+  height: 80vh;
+  max-height: 660px;
+  border-radius: var(--omx-radius-lg, 16px);
+  overflow: hidden;
+  background: var(--omx-color-canvas-soft, #131313);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  box-shadow: var(--omx-shadow-overlay, 0 8px 24px rgba(0,0,0,.48));
+}
+.omnimux-inspiration-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--omx-color-hairline, #242424);
+  background: var(--omx-color-canvas-soft, #131313);
+  color: var(--omx-color-ink-soft, #ebebeb);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: border-color var(--omx-motion-fast, 120ms) ease,
+              color var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-modal-close:hover {
+  border-color: var(--omx-color-hairline-strong, #3d3d3d);
+  color: var(--omx-color-ink, #ffffff);
+}
+
+/* \u5F39\u7A97\u5DE6\u5217\uFF1A\u89C6\u9891\u64AD\u653E\u533A\uFF089:16 \u5C45\u4E2D\u5305\u88F9\u5BB9\u5668\uFF09 */
+.omnimux-inspiration-modal-left {
+  flex: 1 1 58%;
+  min-width: 300px;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: var(--omx-space-md, 12px);
+}
+.omnimux-inspiration-modal-player-box {
+  position: relative;
+  width: 100%;
+  max-width: 330px;
+  height: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: var(--omx-radius-sm, 8px);
+  overflow: hidden;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.omnimux-inspiration-player-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #000000;
+}
+.omnimux-inspiration-modal-cover-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* \u5F39\u7A97\u53F3\u5217\uFF1A\u7F16\u8F91\u5F0F\u8BE6\u60C5\u4E0E AI \u62C6\u89E3 */
+.omnimux-inspiration-modal-right {
+  flex: 0 0 380px;
+  width: 380px;
+  background: var(--omx-color-canvas, #0a0a0a);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: var(--omx-space-xl, 24px);
+  gap: var(--omx-space-lg, 16px);
+  border-left: 1px solid var(--omx-color-hairline, #242424);
+}
+.omnimux-inspiration-modal-title {
+  margin: 0;
+  font: var(--omx-text-title-sm, 600 18px/28px var(--omx-font-sans));
+  color: var(--omx-color-ink, #ffffff);
+  letter-spacing: -0.2px;
+}
+.omnimux-inspiration-modal-creator {
+  display: flex;
+  align-items: center;
+  gap: var(--omx-space-md, 12px);
+}
+.omnimux-inspiration-modal-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--omx-color-canvas-raised, #171717);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--omx-text-label, 500 13px/16px var(--omx-font-mono));
+  color: var(--omx-color-ink, #ffffff);
+}
+.omnimux-inspiration-modal-handle {
+  font: var(--omx-text-label, 500 13px/16px var(--omx-font-sans));
+  color: var(--omx-color-ink-soft, #ebebeb);
+}
+.omnimux-inspiration-modal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--omx-space-xs, 4px);
+  font: var(--omx-text-label, 500 13px/16px var(--omx-font-sans));
+  color: var(--omx-color-body, #b4b4b4);
+  text-decoration: none;
+  padding: var(--omx-space-xs, 4px) var(--omx-space-sm, 8px);
+  border-radius: var(--omx-radius-pill, 9999px);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  background: var(--omx-color-canvas-soft, #131313);
+  align-self: flex-start;
+  transition: border-color var(--omx-motion-fast, 120ms) ease,
+              color var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-modal-link:hover {
+  border-color: var(--omx-color-hairline-strong, #3d3d3d);
+  color: var(--omx-color-ink, #ffffff);
+}
+.omnimux-inspiration-modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--omx-space-xs, 4px);
+}
+.omnimux-inspiration-modal-tag {
+  padding: var(--omx-space-2xs, 2px) var(--omx-space-sm, 8px);
+  border-radius: var(--omx-radius-pill, 9999px);
+  font: var(--omx-text-code, 400 12px/16px var(--omx-font-mono));
+  border: 1px solid var(--omx-color-hairline, #242424);
+  background: var(--omx-color-canvas-soft, #131313);
+  color: var(--omx-color-muted, #7c7c7c);
+}
+
+/* AI \u7ED3\u6784\u62C6\u89E3: \u6781\u7B80\u7EAF\u5355\u8272\u6846 + \u7B49\u5BBD\u6807\u7B7E */
+.omnimux-inspiration-modal-analysis {
+  display: flex;
+  flex-direction: column;
+  gap: var(--omx-space-md, 12px);
+  padding: var(--omx-space-md, 12px) var(--omx-space-lg, 16px);
+  border-radius: var(--omx-radius-sm, 8px);
+  background: var(--omx-color-canvas-soft, #131313);
+  border: 1px solid var(--omx-color-hairline, #242424);
+}
+.omnimux-inspiration-analysis-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--omx-space-xs, 4px);
+}
+.omnimux-inspiration-analysis-label {
+  font: var(--omx-text-code, 400 11px/14px var(--omx-font-mono));
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--omx-color-muted, #7c7c7c);
+}
+.omnimux-inspiration-analysis-val {
+  font: var(--omx-text-body-sm, 400 13px/18px var(--omx-font-sans));
+  color: var(--omx-color-ink-soft, #ebebeb);
+}
+
+/* \u7A7A\u6001\u4E0E\u9AA8\u67B6\u5C4F */
 .omnimux-inspiration-empty, .omnimux-inspiration-gate, .omnimux-inspiration-error {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--omx-space-sm, 8px);
   min-height: 240px;
   text-align: center;
-  padding: 24px;
+  padding: var(--omx-space-xl, 24px);
 }
-.omnimux-inspiration-empty-title { margin: 0; font-size: 16px; font-weight: 600; }
-.omnimux-inspiration-empty-text { margin: 0; font-size: 13px; color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72)); }
+.omnimux-inspiration-empty-title {
+  margin: 0;
+  font: var(--omx-text-title-sm, 600 18px/28px var(--omx-font-sans));
+  color: var(--omx-color-ink, #ffffff);
+}
+.omnimux-inspiration-empty-text {
+  margin: 0;
+  font: var(--omx-text-body-sm, 400 14px/20px var(--omx-font-sans));
+  color: var(--omx-color-muted, #7c7c7c);
+}
 .omnimux-inspiration-btn {
-  height: 32px;
-  padding: 0 16px;
+  height: 34px;
+  padding: 0 var(--omx-space-lg, 16px);
   border: none;
-  border-radius: 8px;
-  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.18));
-  color: inherit;
+  border-radius: var(--omx-radius-pill, 9999px);
+  background: var(--omx-color-primary, #ffffff);
+  color: var(--omx-color-on-primary, #0a0a0a);
+  font: var(--omx-text-action, 500 14px/20px var(--omx-font-sans));
   cursor: pointer;
-  font: inherit;
+  transition: transform var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-btn:active {
+  transform: scale(0.98);
 }
 .omnimux-inspiration-skeleton {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  columns: 180px auto;
+  column-gap: var(--omx-space-md, 12px);
+  width: 100%;
 }
 .omnimux-inspiration-skel {
-  height: 180px;
-  border-radius: 12px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  break-inside: avoid;
+  margin-bottom: var(--omx-space-md, 12px);
+  height: 240px;
+  border-radius: var(--omx-radius-sm, 8px);
+  background: var(--omx-color-canvas-soft, #131313);
+  border: 1px solid var(--omx-color-hairline, #242424);
 }
 `;
 var STYLE_ID = "omnimux-inspiration-styles";
@@ -474,7 +783,35 @@ function errorMessage(errorBody, status) {
 }
 
 // src/client/use-inspiration.js
-var sessionCache = { phase: "loading", items: [], total: 0 };
+var CACHE_KEY = "omnimux_inspiration_cache_v1";
+function readPersistentCache() {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return { items: [], total: 0 };
+  }
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) return { items: [], total: 0 };
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed.items) && typeof parsed.total === "number") {
+      return { items: parsed.items, total: parsed.total };
+    }
+  } catch {
+  }
+  return { items: [], total: 0 };
+}
+function writePersistentCache(items, total) {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify({ items, total, time: Date.now() }));
+  } catch {
+  }
+}
+var initialCache = readPersistentCache();
+var sessionCache = {
+  phase: initialCache.items.length > 0 ? "ready" : "loading",
+  items: initialCache.items,
+  total: initialCache.total
+};
 function useInspiration(filters) {
   const [phase, setPhase] = (0, import_react.useState)(sessionCache.phase);
   const [items, setItems] = (0, import_react.useState)(sessionCache.items);
@@ -504,6 +841,7 @@ function useInspiration(filters) {
     setPhase("ready");
     setItems(picked.items);
     setTotal(picked.total);
+    writePersistentCache(picked.items, picked.total);
   }, []);
   const refresh = (0, import_react.useCallback)(() => {
     return listInspirationsGuarded(filters).then(apply2).catch((caught) => {
@@ -534,6 +872,119 @@ function LoginGate({ t }) {
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omnimux-inspiration-btn", onClick: login, children: t("login") })
   ] });
 }
+function PureCoverCard({ row, t, onSelect }) {
+  const title = String(row.title || row.source_url || row.id);
+  const cover = pickCoverSrc(row);
+  const [broken, setBroken] = (0, import_react2.useState)(!cover);
+  (0, import_react2.useEffect)(() => {
+    setBroken(!cover);
+  }, [cover]);
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+    "article",
+    {
+      className: "omnimux-inspiration-card-pure",
+      onClick: () => onSelect(row),
+      role: "button",
+      tabIndex: 0,
+      onKeyDown: (e) => {
+        if (e.key === "Enter" || e.key === " ") onSelect(row);
+      },
+      children: [
+        broken ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-cover-fallback", "aria-hidden": "true", children: coverGlyph(title) }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "img",
+          {
+            className: "omnimux-inspiration-cover-img",
+            src: cover,
+            alt: title,
+            loading: "lazy",
+            decoding: "async",
+            onError: () => setBroken(true),
+            onLoad: (event) => {
+              const node = event.currentTarget;
+              if (!isUsableCoverSize(node.naturalWidth, node.naturalHeight)) setBroken(true);
+            }
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-card-overlay", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-badge-platform", children: "TikTok" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-overlay-play", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M8 5v14l11-7z" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {})
+        ] })
+      ]
+    }
+  );
+}
+function InspirationModal({ row, t, onClose }) {
+  if (!row) return null;
+  const title = String(row.title || "TikTok \u7075\u611F");
+  const analysis = row.analysis && typeof row.analysis === "object" ? row.analysis : {};
+  const rawEmbed = analysis.embed_player_url || row.source_url;
+  const embedUrl = resolveTikTokEmbedUrl(rawEmbed) || (row.source_url ? resolveTikTokEmbedUrl(row.source_url) : null);
+  const cover = pickCoverSrc(row);
+  const tags = Array.isArray(row.tags) ? row.tags : [];
+  const creator = analysis.creator || { name: "TikTok Creator", handle: "tiktok" };
+  (0, import_react2.useEffect)(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-modal-container", onClick: (e) => e.stopPropagation(), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "omnimux-inspiration-modal-close", onClick: onClose, "aria-label": "Close", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M18 6L6 18M6 6l12 12" }) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-left", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-player-box", children: embedUrl ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      "iframe",
+      {
+        title,
+        src: embedUrl,
+        className: "omnimux-inspiration-player-frame",
+        allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+        allowFullScreen: true
+      }
+    ) : cover ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", { src: cover, alt: title, className: "omnimux-inspiration-modal-cover-bg" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-cover-fallback", children: coverGlyph(title) }) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-modal-right", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-modal-creator", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "T").charAt(0).toUpperCase() }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-modal-handle", children: [
+          "@",
+          creator.handle || creator.name
+        ] }) })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "omnimux-inspiration-modal-title", children: title }),
+      tags.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-tags", children: tags.map((tag, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "omnimux-inspiration-modal-tag", children: [
+        "#",
+        tag
+      ] }, idx)) }) : null,
+      row.source_url ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+        "a",
+        {
+          className: "omnimux-inspiration-modal-link",
+          href: row.source_url,
+          target: "_blank",
+          rel: "noreferrer",
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("openSource") || "\u67E5\u770B TikTok \u539F\u6587" }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "12", height: "12", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" }) })
+          ]
+        }
+      ) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-modal-analysis", children: [
+        analysis.hook ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-analysis-item", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-analysis-label", children: "Hook \u9EC4\u91D1 3 \u79D2\u94A9\u5B50" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-analysis-val", children: analysis.hook })
+        ] }) : null,
+        Array.isArray(analysis.structure) && analysis.structure.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-analysis-item", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-analysis-label", children: "\u811A\u672C\u7ED3\u6784\u62C6\u89E3" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-analysis-val", children: analysis.structure.join(" \u2192 ") })
+        ] }) : null,
+        analysis.cta ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-analysis-item", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-analysis-label", children: "CTA \u8F6C\u5316\u5F15\u5BFC" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-analysis-val", children: analysis.cta })
+        ] }) : null
+      ] })
+    ] })
+  ] }) });
+}
 function EmptyState({ t }) {
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-empty", children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "omnimux-inspiration-empty-title", children: t("empty.title") }),
@@ -549,6 +1000,7 @@ function InspirationSection({ t, active = true }) {
   const [favorite, setFavorite] = (0, import_react2.useState)("");
   const [query, setQuery] = (0, import_react2.useState)("");
   const [q, setQ] = (0, import_react2.useState)("");
+  const [selectedItem, setSelectedItem] = (0, import_react2.useState)(null);
   const wasActive = (0, import_react2.useRef)(active);
   (0, import_react2.useEffect)(() => {
     const timer = window.setTimeout(() => {
@@ -565,6 +1017,13 @@ function InspirationSection({ t, active = true }) {
     q
   }), [type, sort, favorite, q]);
   const { phase, items, total, error, refresh } = useInspiration(filters);
+  const tiktokItems = (0, import_react2.useMemo)(() => {
+    return items.filter((row) => {
+      const sUrl = typeof row.source_url === "string" ? row.source_url : "";
+      const hasId = Boolean(resolveTikTokEmbedUrl(sUrl));
+      return hasId || sUrl.includes("tiktok.com");
+    });
+  }, [items]);
   (0, import_react2.useEffect)(() => {
     const returning = active && !wasActive.current;
     wasActive.current = active;
@@ -585,14 +1044,6 @@ function InspirationSection({ t, active = true }) {
           }
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", { className: "omnimux-inspiration-select", value: type, "aria-label": t("filter.type"), onChange: (event) => {
-        setType(event.currentTarget.value);
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "", children: t("filter.all") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "video", children: t("type.video") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "image", children: t("type.image") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "link", children: t("type.link") })
-      ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", { className: "omnimux-inspiration-select", value: sort, "aria-label": t("filter.sort"), onChange: (event) => {
         setSort(event.currentTarget.value);
       }, children: [
@@ -600,35 +1051,29 @@ function InspirationSection({ t, active = true }) {
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "new", children: t("sort.new") }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "fav", children: t("sort.fav") })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", { className: "omnimux-inspiration-select", value: favorite, "aria-label": t("filter.favorite"), onChange: (event) => {
-        setFavorite(event.currentTarget.value);
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "", children: t("favorite.off") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "true", children: t("favorite.on") })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-count", children: t("count").replace("{n}", String(total)) })
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-count", children: t("count").replace("{n}", String(tiktokItems.length)) })
     ] }),
-    phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skeleton", "aria-busy": "true", children: Array.from({ length: 6 }, (_, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skel" }, i)) }) : null,
+    phase === "loading" && tiktokItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skeleton", "aria-busy": "true", children: Array.from({ length: 8 }, (_, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skel" }, i)) }) : null,
     phase === "need-login" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoginGate, { t }) : null,
-    phase === "ready" && error ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-error", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "omnimux-inspiration-empty-text", children: error === "disabled" ? t("error.disabled") : error || t("error.generic") }) }) : null,
-    phase === "ready" && !error && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EmptyState, { t }) : null,
-    phase === "ready" && items.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-grid", children: items.map((row) => {
-      const id = String(row.id);
-      const title = String(row.title || row.source_url || id);
-      const cover = pickCoverSrc(row);
-      const source = typeof row.source_url === "string" ? row.source_url : "";
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", { className: "omnimux-inspiration-card", children: [
-        cover ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", { className: "omnimux-inspiration-cover", src: cover, alt: "", loading: "lazy", decoding: "async" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-cover-empty", children: t("noCover") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-body", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-title", children: title }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-meta", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t(`type.${row.type}`) === `type.${row.type}` ? String(row.type || "") : t(`type.${row.type}`) }),
-            row.is_favorite ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("filter.favorite") }) : null
-          ] }),
-          source ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", { className: "omnimux-inspiration-link", href: source, target: "_blank", rel: "noreferrer", children: t("openSource") }) : null
-        ] })
-      ] }, id);
-    }) }) : null
+    phase === "ready" && error && tiktokItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-error", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "omnimux-inspiration-empty-text", children: error === "disabled" ? t("error.disabled") : error || t("error.generic") }) }) : null,
+    phase === "ready" && !error && tiktokItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EmptyState, { t }) : null,
+    tiktokItems.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-masonry", children: tiktokItems.map((row) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      PureCoverCard,
+      {
+        row,
+        t,
+        onSelect: (item) => setSelectedItem(item)
+      },
+      String(row.id)
+    )) }) : null,
+    selectedItem ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      InspirationModal,
+      {
+        row: selectedItem,
+        t,
+        onClose: () => setSelectedItem(null)
+      }
+    ) : null
   ] });
 }
 

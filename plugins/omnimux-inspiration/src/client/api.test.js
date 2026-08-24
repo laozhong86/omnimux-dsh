@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { authGuard, hostMediaSrc, pickCoverSrc, whenAuthReady } from './api.js'
+import {
+  authGuard,
+  coverGlyph,
+  extractTikTokVideoId,
+  hostMediaSrc,
+  isUsableCoverSize,
+  pickCoverSrc,
+  resolveTikTokEmbedUrl,
+  whenAuthReady,
+} from './api.js'
 
 function fakeGate() {
   let ensureArgs = null
@@ -152,5 +161,41 @@ describe('pickCoverSrc', () => {
     )
     assert.equal(pickCoverSrc({ id: 1 }), '')
     assert.equal(pickCoverSrc(null), '')
+  })
+})
+
+describe('isUsableCoverSize', () => {
+  it('rejects 1×1 seed stubs and tiny thumbs', () => {
+    assert.equal(isUsableCoverSize(1, 1), false)
+    assert.equal(isUsableCoverSize(7, 120), false)
+    assert.equal(isUsableCoverSize(320, 200), true)
+  })
+})
+
+describe('coverGlyph', () => {
+  it('takes the first trimmed character', () => {
+    assert.equal(coverGlyph('好物开箱脚本模板：痛点三连'), '好')
+    assert.equal(coverGlyph('  3 步'), '3')
+    assert.equal(coverGlyph(''), '灵')
+  })
+})
+
+describe('extractTikTokVideoId & resolveTikTokEmbedUrl', () => {
+  it('extracts video ID from standard tiktok web URLs', () => {
+    assert.equal(
+      extractTikTokVideoId('https://www.tiktok.com/@futurecompanion/video/7637493208297131277?is_from_webapp=1'),
+      '7637493208297131277',
+    )
+    assert.equal(
+      extractTikTokVideoId('https://www.tiktok.com/@aniston3060/video/7581306324319767838'),
+      '7581306324319767838',
+    )
+    assert.equal(
+      resolveTikTokEmbedUrl('https://www.tiktok.com/@futurecompanion/video/7637493208297131277'),
+      'https://www.tiktok.com/player/v1/7637493208297131277',
+    )
+    assert.equal(resolveTikTokEmbedUrl('7637493208297131277'), 'https://www.tiktok.com/player/v1/7637493208297131277')
+    assert.equal(resolveTikTokEmbedUrl('https://example.com/other'), null)
+    assert.equal(resolveTikTokEmbedUrl(null), null)
   })
 })
