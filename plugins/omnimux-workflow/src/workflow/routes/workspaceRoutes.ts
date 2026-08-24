@@ -10,8 +10,19 @@ import { notFound, type RouteTry, type WorkflowDispatchRequest } from './dispatc
 export function createWorkspaceRoutes(store: WorkspaceStore): { tryHandle: RouteTry } {
   const workspacesPath = `${WORKFLOW_ROUTE_PREFIX}/api/workspaces`;
   const workspaceRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)$`);
+  // PR3: lightweight version probe for external-edit detection (agent tools
+  // bump the version without the open canvas noticing — the island polls
+  // this and rehydrates when it falls behind).
+  const workspaceVersionRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/version$`);
 
   const tryHandle: RouteTry = (method, path, req: WorkflowDispatchRequest) => {
+    const versionMatch = workspaceVersionRouteRe.exec(path);
+    if (versionMatch) {
+      if (method !== 'GET') return notFound();
+      const snapshot = store.get(versionMatch[1] ?? '');
+      return { status: 200, body: { id: snapshot.id, version: snapshot.version } };
+    }
+
     if (path === workspacesPath) {
       if (method === 'GET') {
         return { status: 200, body: { workspaces: store.list() } };

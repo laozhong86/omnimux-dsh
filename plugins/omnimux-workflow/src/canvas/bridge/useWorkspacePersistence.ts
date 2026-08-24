@@ -9,8 +9,10 @@
  *   the save once (local last-write-wins merge — the single-user / two
  *   windows scenario the plan §5.2 describes). A second conflict surfaces
  *   as status 'conflict' for explicit user action.
- * - Selection-only changes are NOT saved (the save signature strips the
- *   transient `selected` flags), so casual clicking never dirties the doc.
+ * - Selection / measure-only changes are NOT saved (signature keeps a
+ *   whitelist of canvas.json fields — strips `selected`, `measured`,
+ *   `dragging`, `positionAbsolute`, `__catalog`, …), so casual clicking
+ *   and first layout measure never dirty the doc.
  * - Best-effort flush on unmount / pagehide.
  *
  * 空图保护（persistPolicy）：
@@ -21,7 +23,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
-import { getWorkspace, saveWorkspace } from './apiClient';
+import { getWorkspace, getWorkspaceVersion, saveWorkspace } from './apiClient';
 import type {
   CanvasWorkspaceSnapshot,
   SerializedCanvasEdge,
@@ -34,9 +36,12 @@ import {
   snapshotGraph,
   type PersistCause,
 } from './persistPolicy';
+import { sanitizeEdges, sanitizeNodes, signatureOf } from './persistSanitize';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 const SAVED_BADGE_MS = 2500;
+/** PR3: external-edit version poll interval (visible tab only). */
+const EXTERNAL_WATCH_INTERVAL_MS = 3000;
 
 export type AutosaveStatus =
   | 'idle'
@@ -52,6 +57,11 @@ export interface PersistenceController {
   isDirty: boolean;
   /** Force an immediate save (flushes the debounce timer). */
   saveNow: () => Promise<void>;
+  /**
+   * 卸载硬闸：清 debounce，同步 `readStoreCapture()`，再 `void performSave`。
+   * 必须在 `resetStore()` 之前调用；PUT 可以异步，capture 必须钉死。
+   */
+  flushPendingSave: () => void;
   /** Conflict recovery: pull the server version and re-save local content. */
   resolveConflict: () => Promise<void>;
   /** Discard local changes and re-hydrate from the server snapshot. */
@@ -71,24 +81,6 @@ export interface UseWorkspacePersistenceOptions {
 interface GraphCapture {
   nodes: SerializedCanvasNode[];
   edges: SerializedCanvasEdge[];
-}
-
-/** Strip transient fields before persistence (island internals + selection). */
-function sanitizeNodes(nodes: SerializedCanvasNode[]): SerializedCanvasNode[] {
-  return nodes.map((node) => {
-    const data = { ...(node.data as Record<string, unknown>) };
-    delete data.__catalog;
-    return { ...node, data, selected: false };
-  });
-}
-
-function sanitizeEdges(edges: SerializedCanvasEdge[]): SerializedCanvasEdge[] {
-  return edges.map((edge) => ({ ...edge, selected: false }));
-}
-
-/** Stable content signature (drives dirty detection). */
-function signatureOf(nodes: SerializedCanvasNode[], edges: SerializedCanvasEdge[]): string {
-  return JSON.stringify({ nodes: sanitizeNodes(nodes), edges: sanitizeEdges(edges) });
 }
 
 function readStoreCapture(): GraphCapture {
@@ -147,10 +139,12 @@ export function useWorkspacePersistence(
   const performSave = useCallback(async (
     capture: GraphCapture,
     cause: PersistCause,
+    force = false,
   ): Promise<void> => {
     const ws = workspaceRef.current;
     if (!ws) return;
-    if (!enabledRef.current) return;
+    // 卸载硬闸（force）必须在 enabled 被打成 false 时仍能发出已钉死的快照
+    if (!force && !enabledRef.current) return;
     if (savingRef.current) {
       // A save is in flight; the trailing store notification re-schedules.
       return;
@@ -178,20 +172,17 @@ export function useWorkspacePersistence(
         expectedVersion: serverVersionRef.current,
       });
 
-      // 409: pull the server version, adopt it, retry once (local
-      // last-write-wins — see plan §5.2 conflict policy).
-      // 重试必须复用 captured 快照，不得再次 getState。
+      // 409: the doc moved on under us (another window, or an agent edit
+      // via the workflow_* write tools). Local last-write-wins retry was
+      // the M2 policy, but it silently clobbers agent edits — PR3 surfaces
+      // the conflict instead; the user picks resolveConflict (push local)
+      // or reloadFromServer (take remote).
       if (result.status === 409) {
-        const latest = await getWorkspace(ws.id);
-        if (latest.ok && latest.body.workspace) {
-          serverVersionRef.current = latest.body.workspace.version;
-          result = await saveWorkspace(ws.id, {
-            name,
-            nodes: sanitizeNodes(nodes),
-            edges: sanitizeEdges(edges),
-            expectedVersion: serverVersionRef.current,
-          });
+        if (typeof result.body.current === 'number') {
+          serverVersionRef.current = result.body.current;
         }
+        setStatus('conflict');
+        return;
       }
 
       if (result.ok && result.body.workspace) {
@@ -315,6 +306,30 @@ export function useWorkspacePersistence(
     await performSave(capture, inferPersistCause(capture.nodes.length, 'autosave'));
   }, [performSave]);
 
+  /**
+   * 必须同步：先读 store 再交给 PUT。调用方保证发生在 resetStore() 之前。
+   */
+  const flushPendingSave = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const ws = workspaceRef.current;
+    if (!ws) return;
+    const capture = readStoreCapture();
+    const cause: PersistCause = 'flush';
+    const decision = decidePersist({
+      lastSavedNodeCount: lastSavedNodeCountRef.current,
+      nextNodes: capture.nodes,
+      nextEdges: capture.edges,
+      cause,
+      lastSavedSignature: lastSavedSigRef.current,
+      nextSignature: signatureOf(capture.nodes, capture.edges),
+    });
+    if (!decision.persist || !decision.snapshot) return;
+    void performSave(decision.snapshot, cause, true);
+  }, [performSave]);
+
   const resolveConflict = useCallback(async () => {
     const capture = readStoreCapture();
     await performSave(capture, inferPersistCause(capture.nodes.length, 'autosave'));
@@ -338,5 +353,46 @@ export function useWorkspacePersistence(
     onSavedRef.current?.(snapshot);
   }, []);
 
-  return { status, isDirty, saveNow, resolveConflict, reloadFromServer };
+  // PR3 external-edit watcher: the agent write tools bump the workspace
+  // version without this window noticing. Poll the lightweight /version
+  // route while the tab is visible; when the server runs ahead, adopt the
+  // server graph if local is clean, otherwise surface the conflict state
+  // (never silently clobber either side).
+  useEffect(() => {
+    if (!enabled) return;
+    let inFlight = false;
+    const tick = async () => {
+      if (inFlight) return;
+      if (!enabledRef.current) return;
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      const ws = workspaceRef.current;
+      if (!ws || savingRef.current) return;
+      inFlight = true;
+      try {
+        const probe = await getWorkspaceVersion(ws.id);
+        if (!probe.ok || typeof probe.body.version !== 'number') return;
+        if (probe.body.version <= serverVersionRef.current) return;
+        const capture = readStoreCapture();
+        const dirty = signatureOf(capture.nodes, capture.edges) !== lastSavedSigRef.current;
+        if (dirty) {
+          // Adopt the server version so future saves don't 409-loop, and let
+          // the user resolve explicitly.
+          serverVersionRef.current = probe.body.version;
+          setStatus('conflict');
+          return;
+        }
+        await reloadFromServer();
+      } catch {
+        // Probe failures are silent — the next tick retries.
+      } finally {
+        inFlight = false;
+      }
+    };
+    const timer = setInterval(() => {
+      void tick();
+    }, EXTERNAL_WATCH_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [enabled, reloadFromServer]);
+
+  return { status, isDirty, saveNow, flushPendingSave, resolveConflict, reloadFromServer };
 }

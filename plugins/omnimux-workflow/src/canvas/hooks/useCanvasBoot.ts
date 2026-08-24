@@ -2,7 +2,7 @@
  * Island boot: ensure a workspace exists, hydrate canvasStore, load the
  * capability catalog. Extracted from App so chrome stays presentational.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 import { t } from '../i18n';
 import {
@@ -13,18 +13,29 @@ import {
 } from '../bridge/apiClient';
 import type { CapabilityCatalog } from '../../shared/api';
 import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes';
+import { getCachedCatalog, setCachedCatalog } from '../editor/hooks/useModelParameterSchema';
 
 export type BootState =
   | { phase: 'loading' }
   | { phase: 'ready'; workspace: CanvasWorkspaceSnapshot }
   | { phase: 'error'; message: string };
 
-export function useCanvasBoot() {
+export interface UseCanvasBootOptions {
+  /**
+   * 卸载硬闸：必须同步读 canvas store（capture），再交给 persist PUT。
+   * 调用发生在 `resetStore()` 之前；inline 回调用 ref 承接，避免进 effect deps。
+   */
+  beforeReset?: () => void;
+}
+
+export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
   const [boot, setBoot] = useState<BootState>({ phase: 'loading' });
-  const [catalog, setCatalog] = useState<CapabilityCatalog | null>(null);
+  const [catalog, setCatalog] = useState<CapabilityCatalog | null>(() => getCachedCatalog());
   const hydrateGraph = useCanvasStore((state) => state.hydrateGraph);
   const resetStore = useCanvasStore((state) => state.resetStore);
   const nodeCount = useCanvasStore((state) => state.nodes.length);
+  const beforeResetRef = useRef(opts.beforeReset);
+  beforeResetRef.current = opts.beforeReset;
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +44,10 @@ export function useCanvasBoot() {
     (async () => {
       try {
         void fetchCapabilities().then((result) => {
-          if (!cancelled && result.ok) setCatalog(result.body);
+          if (!cancelled && result.ok) {
+            setCatalog(result.body);
+            setCachedCatalog(result.body);
+          }
         });
 
         const list = await listWorkspaces();
@@ -62,6 +76,8 @@ export function useCanvasBoot() {
     })();
     return () => {
       cancelled = true;
+      // 先 capture/flush 再清空，避免未 PUT 的新节点被 reset 吃掉
+      beforeResetRef.current?.();
       resetStore();
     };
   }, [hydrateGraph, resetStore]);

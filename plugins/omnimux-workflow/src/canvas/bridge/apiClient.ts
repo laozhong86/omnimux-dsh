@@ -69,6 +69,11 @@ export function getWorkspace(id: string): Promise<ApiResult<{ workspace: CanvasW
   return request<{ workspace: CanvasWorkspaceSnapshot }>(WORKFLOW_API_ROUTES.workspace(encodeURIComponent(id)));
 }
 
+/** PR3: lightweight version probe for external-edit detection. */
+export function getWorkspaceVersion(id: string): Promise<ApiResult<{ id: string; version: number }>> {
+  return request<{ id: string; version: number }>(WORKFLOW_API_ROUTES.workspaceVersion(encodeURIComponent(id)));
+}
+
 export interface SaveResponse {
   workspace?: CanvasWorkspaceSnapshot;
   error?: string;

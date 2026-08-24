@@ -267,3 +267,38 @@ test('capabilities stub served from the mock gateway', async () => {
     rmSync(h.dir, { recursive: true, force: true });
   }
 });
+
+test('PR3: GET /api/workspaces/:id/version tracks saves (canonical prefix)', async () => {
+  const h = makeHarness();
+  try {
+    const created = await h.call({
+      method: 'POST',
+      url: '/omnimux-workflow/api/workspaces',
+      body: { name: '版本探测' },
+      headers: h.localHeaders,
+    });
+    const ws = created.body.workspace;
+
+    const v0 = await h.call({ url: `/omnimux-workflow/api/workspaces/${ws.id}/version`, headers: h.localHeaders });
+    assert.equal(v0.status, 200);
+    assert.deepEqual(v0.body, { id: ws.id, version: 0 });
+
+    const saved = await h.call({
+      method: 'PUT',
+      url: `/omnimux-workflow/api/workspaces/${ws.id}`,
+      body: { expectedVersion: 0, nodes: [], edges: [] },
+      headers: h.localHeaders,
+    });
+    assert.equal(saved.status, 200);
+
+    const v1 = await h.call({ url: `/omnimux-workflow/api/workspaces/${ws.id}/version`, headers: h.localHeaders });
+    assert.equal(v1.body.version, 1);
+
+    // The plain workspace route must not eat the /version suffix.
+    const stillWorkspace = await h.call({ url: `/omnimux-workflow/api/workspaces/${ws.id}`, headers: h.localHeaders });
+    assert.equal(stillWorkspace.body.workspace.id, ws.id);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
