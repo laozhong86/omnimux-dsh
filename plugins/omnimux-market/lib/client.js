@@ -289,17 +289,18 @@ window.__ModuleLoader__.load({
       "cfg.save": "保存",
       "cfg.saving": "保存中",
       "installed.hint": "已安装 {n} 个技能",
-      "installed.none": "还没有安装技能",
+      "installed.none": "未安装任何技能",
       "action.detail": "详情",
       "action.uninstall": "卸载",
       "action.uninstalling": "卸载中",
-      "action.install": "一键安装",
+      "action.install": "安装",
       "action.installing": "安装中",
       "action.installed": "已安装",
       "action.openHome": "打开主页",
       "action.close": "关闭",
-      "badge.installed": "已装",
-      "search.hint": "点击卡片查看详情并安装 · {n} 条",
+      "badge.installed": "已安装",
+      "search.hint": "共 {n} 个可用技能",
+      "search.fallback": "没有匹配结果，以下是热门技能推荐",
       "search.empty": "没有结果",
       "tab.overview": "概述",
       "tab.versions": "版本历史",
@@ -333,7 +334,7 @@ window.__ModuleLoader__.load({
       "overview.empty": "暂无简介",
       "sec.badge": "安全",
       loading: "加载中…",
-      "toast.installed": "✅ {name} 已安装",
+      "toast.installed": "{name} 已安装",
       "toast.uninstalled": "已卸载 {name}",
       "cat.office-efficiency": "办公效率",
       "cat.content-creation": "内容创作",
@@ -347,62 +348,62 @@ window.__ModuleLoader__.load({
       "cat.professional": "行业专业",
       "cat.it-ops-security": "IT 运维与安全",
       "cat.life-service": "生活服务",
-      "mkt.searchPlaceholder": "输入关键词",
+      "mkt.searchPlaceholder": "输入关键词搜索",
       "mkt.search": "搜索",
-      "mkt.repos": "发现 GitHub MIT 开源的共 {n} 个 DeepSeek Harness Plugin",
-      "mkt.loading": "正在读取 SkillHub",
+      "mkt.repos": "发现 GitHub MIT 开源的共 {n} 个插件扩展",
+      "mkt.loading": "正在加载 SkillHub…",
       "mkt.error": "连接失败：{m}",
       "mkt.empty": "没有匹配的插件。",
-      "mkt.noDesc": "这个仓库还没有填写简介。",
+      "mkt.noDesc": "该仓库暂无描述。",
       "mkt.details": "详情",
       "mkt.verified": "已验证",
       "mkt.unsupported": "不可直接安装",
       "mkt.sending": "正在安装",
       "mkt.install": "安装",
       "mkt.installed": "已安装",
-      "mkt.sent": "已安装 {name}，请重启 dsh web。",
-      "mkt.progressHint": "首次安装需要下载与解析依赖，大插件可能要 1–3 分钟",
+      "mkt.sent": "已安装 {name}，刷新页面或重启服务后生效。",
+      "mkt.progressHint": "首次安装需下载并构建依赖，耗时约 1–3 分钟",
       "mkt.phaseResolving": "解析依赖",
       "mkt.phaseDownloading": "下载中",
       "mkt.phaseLinking": "链接依赖",
       "mkt.phaseBuilding": "运行构建脚本",
       "mkt.packagesDone": "已处理 {n} 个包",
-      "mkt.restartBanner": "已安装 {name}，请重启 dsh web 后生效",
+      "mkt.restartBanner": "已安装 {name}，刷新页面或重启服务后生效",
       "mkt.restartNow": "立即重启",
       "mkt.restarting": "正在重启…",
       "mkt.restartFail": "重启失败：{m}",
-      "mkt.restartTimeout": "等待 DeepSeek Harness 启动超时，请手动重启 dsh web",
+      "mkt.restartTimeout": "服务响应超时，请在终端手动重启 dsh web",
       "mkt.more": "加载更多",
       "mkt.moreLeft": "还剩 {n} 个",
       "mkt.catAll": "全部",
-      "plaza.title": "插件市场",
+      "plaza.title": "扩展市场",
       "plaza.skills": "技能",
       "plaza.plugins": "插件",
       "plaza.experts": "专家",
       "plaza.connectors": "连接器",
       "expert.searchPlaceholder": "搜索专家（姓名 / 领域）",
       "expert.empty": "没有匹配的专家",
-      "expert.summoning": "召唤中…",
-      "expert.gestureReady": "{g} 已就绪，但没写进输入框。请点一下输入框后重试，或手动输入该手势。",
+      "expert.summoning": "正在挂载…",
+      "expert.gestureReady": "专家调度指令 {g} 已生成。请聚焦输入框重试，或直接键入指令发送。",
       "connector.searchPlaceholder": "搜索连接器",
       "connector.empty": "没有匹配的连接器",
       "connector.install": "安装",
       "connector.installing": "安装中…",
       "connector.installed": "已安装",
       "connector.uninstall": "卸载",
-      "connector.restartHint": "连接器安装/卸载后需重启 Host 生效",
-      "connector.installLater": "本页暂只展示全量连接器，安装下一刀再接",
+      "connector.restartHint": "连接器安装或卸载后需重启服务生效",
+      "connector.installLater": "当前仅支持浏览连接器，安装与配置功能即将在后续版本开放",
       "plaza.noSession": "请先打开一个会话",
       "plaza.back": "返回对话",
-      "plaza.card.hint": "点一张卡片召唤专家继续当前任务 · {n} 张",
-      "plaza.card.summon": "召唤",
-      "plaza.card.summoning": "召唤中…",
-      "plaza.card.summoned": "已召唤",
+      "plaza.card.hint": "选择适合当前任务的专家角色",
+      "plaza.card.summon": "挂载",
+      "plaza.card.summoning": "正在挂载…",
+      "plaza.card.summoned": "已挂载",
       "plaza.card.kind.expert": "专家",
-      "plaza.card.kind.team": "专家团",
-      "plaza.card.skip": "跳过，不用专家",
-      "plaza.card.continue": "已召唤 {name}，正在用该专家继续",
-      "plaza.card.sendFail": "已召唤，请按发送继续",
+      "plaza.card.kind.team": "专家战队",
+      "plaza.card.skip": "直接开始（不启用专家）",
+      "plaza.card.continue": "已挂载 {name}，正在以该专家模式继续",
+      "plaza.card.sendFail": "已挂载，请按发送继续",
     };
     const EN = {
       locale: "en",
@@ -427,8 +428,9 @@ window.__ModuleLoader__.load({
       "action.installed": "Installed",
       "action.openHome": "Open homepage",
       "action.close": "Close",
-      "badge.installed": "On",
-      "search.hint": "Click a card to view details and install · {n}",
+      "badge.installed": "Installed",
+      "search.hint": "{n} available skills",
+      "search.fallback": "No matches — showing popular skills instead",
       "search.empty": "No results",
       "tab.overview": "Overview",
       "tab.versions": "Versions",
@@ -462,7 +464,7 @@ window.__ModuleLoader__.load({
       "overview.empty": "No description",
       "sec.badge": "Safe",
       loading: "Loading…",
-      "toast.installed": "✅ {name} installed",
+      "toast.installed": "{name} installed",
       "toast.uninstalled": "Uninstalled {name}",
       "cat.office-efficiency": "Office",
       "cat.content-creation": "Content",
@@ -478,60 +480,60 @@ window.__ModuleLoader__.load({
       "cat.life-service": "Lifestyle",
       "mkt.searchPlaceholder": "Enter keywords",
       "mkt.search": "Search",
-      "mkt.repos": "Found {n} MIT-licensed open-source DeepSeek Harness plugins on GitHub",
-      "mkt.loading": "Loading SkillHub",
+      "mkt.repos": "Found {n} MIT-licensed open-source plugins on GitHub",
+      "mkt.loading": "Loading SkillHub…",
       "mkt.error": "Connection failed: {m}",
       "mkt.empty": "No plugins match your filters.",
       "mkt.noDesc": "This repository has no description yet.",
       "mkt.details": "Details",
       "mkt.verified": "Verified",
-      "mkt.unsupported": "Direct install unavailable",
+      "mkt.unsupported": "Direct Install Unavailable",
       "mkt.sending": "Installing",
       "mkt.install": "Install",
       "mkt.installed": "Installed",
-      "mkt.sent": "Installed {name}. Restart dsh web to apply.",
-      "mkt.progressHint": "First installs download and resolve dependencies — large plugins can take 1–3 minutes",
+      "mkt.sent": "Installed {name}. Restart service to apply.",
+      "mkt.progressHint": "Initial installation resolves and builds dependencies (approx. 1–3 min)",
       "mkt.phaseResolving": "Resolving dependencies",
       "mkt.phaseDownloading": "Downloading",
       "mkt.phaseLinking": "Linking",
       "mkt.phaseBuilding": "Running build scripts",
       "mkt.packagesDone": "Processed {n} packages",
-      "mkt.restartBanner": "Installed {name} — restart dsh web to apply",
-      "mkt.restartNow": "Restart now",
+      "mkt.restartBanner": "Installed {name} — restart service to apply",
+      "mkt.restartNow": "Restart Now",
       "mkt.restarting": "Restarting…",
       "mkt.restartFail": "Restart failed: {m}",
-      "mkt.restartTimeout": "Timed out waiting for DeepSeek Harness — restart dsh web yourself",
+      "mkt.restartTimeout": "Host startup timed out. Please restart dsh web manually.",
       "mkt.more": "Load more",
       "mkt.moreLeft": "{n} remaining",
       "mkt.catAll": "All",
-      "plaza.title": "Plugin Market",
+      "plaza.title": "Extension Market",
       "plaza.skills": "Skills",
       "plaza.plugins": "Plugins",
       "plaza.experts": "Experts",
       "plaza.connectors": "Connectors",
       "expert.searchPlaceholder": "Search experts (name / domain)",
       "expert.empty": "No matching experts",
-      "expert.summoning": "Summoning…",
-      "expert.gestureReady": "{g} is ready but was not written into the composer. Click the composer and retry, or type the gesture manually.",
+      "expert.summoning": "Attaching…",
+      "expert.gestureReady": "{g} is ready. Focus the input composer to apply, or type the command manually.",
       "connector.searchPlaceholder": "Search connectors",
       "connector.empty": "No matching connectors",
       "connector.install": "Install",
       "connector.installing": "Installing…",
       "connector.installed": "Installed",
       "connector.uninstall": "Uninstall",
-      "connector.restartHint": "Restart the Host after installing or uninstalling a connector",
-      "connector.installLater": "This tab lists all connectors for now; install comes next",
+      "connector.restartHint": "Restart service after installing or uninstalling a connector",
+      "connector.installLater": "Connector browsing only. Installation will be available in an upcoming release.",
       "plaza.noSession": "Open a session first",
       "plaza.back": "Back to chat",
-      "plaza.card.hint": "Click a card to summon an expert and continue · {n}",
-      "plaza.card.summon": "Summon",
-      "plaza.card.summoning": "Summoning…",
-      "plaza.card.summoned": "Summoned",
+      "plaza.card.hint": "Select an expert role suitable for current task",
+      "plaza.card.summon": "Attach",
+      "plaza.card.summoning": "Attaching…",
+      "plaza.card.summoned": "Attached",
       "plaza.card.kind.expert": "Expert",
-      "plaza.card.kind.team": "Team",
-      "plaza.card.skip": "Skip — no expert",
-      "plaza.card.continue": "Summoned {name}; continuing with this expert",
-      "plaza.card.sendFail": "Summoned. Press send to continue",
+      "plaza.card.kind.team": "Expert Team",
+      "plaza.card.skip": "Continue without Expert",
+      "plaza.card.continue": "Attached {name}; continuing with this expert",
+      "plaza.card.sendFail": "Attached. Press send to continue",
     };
 
     const I18nCtx = React.createContext(null);
@@ -794,9 +796,26 @@ window.__ModuleLoader__.load({
       return tx("grade.poor");
     }
 
-    function starText(score) {
+    function StarIcon({ filled, size = 12 }) {
+      return h("svg", {
+        width: size,
+        height: size,
+        viewBox: "0 0 24 24",
+        fill: filled ? "#f59e0b" : "none",
+        stroke: filled ? "#f59e0b" : "currentColor",
+        strokeWidth: 2,
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        "aria-hidden": "true",
+        style: { display: "inline-block", verticalAlign: "middle", opacity: filled ? 1 : 0.35 },
+      }, h("polygon", { points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" }));
+    }
+
+    function StarGroup({ score }) {
       const n = Math.max(0, Math.min(5, Math.round(Number(score) || 0)));
-      return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n);
+      return h("span", { className: "sh-stars", "aria-hidden": "true", style: { display: "inline-flex", gap: 1, verticalAlign: "middle" } },
+        [0, 1, 2, 3, 4].map((i) => h(StarIcon, { key: i, filled: i < n }))
+      );
     }
 
     function isSafeItem(item) {
@@ -815,8 +834,8 @@ window.__ModuleLoader__.load({
       if (!rate && !bluev && !safe) return null;
       return h("div", { className: "sh-marks" },
         rate ? h("span", { className: "sh-rate", title: tr("rate.ai") },
-          h("span", { className: "sh-stars", "aria-hidden": "true" }, starText(item.rating)),
-          Number(item.rating).toFixed(1),
+          h(StarGroup, { score: item.rating }),
+          " " + Number(item.rating).toFixed(1),
           grade ? " " + grade : "",
           detail ? " (" + tr("rate.ai") + ")" : "",
         ) : null,
@@ -1486,6 +1505,12 @@ window.__ModuleLoader__.load({
       );
     }
 
+    function StarIcon() {
+      return h("svg", { width: 12, height: 12, viewBox: "0 0 24 24", fill: "#f59e0b", stroke: "#f59e0b", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
+        h("polygon", { points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" }),
+      );
+    }
+
     function installMarketPlugin(plugin) {
       return api("pluginInstall", {
         owner: plugin.owner,
@@ -1751,7 +1776,7 @@ window.__ModuleLoader__.load({
                 h("p", { className: "sh-mkt-desc" }, plugin.description || tr("mkt.noDesc")),
                 h("div", { className: "sh-mkt-meta" },
                   h("span", null, catLabelFor(plugin.categoryKey) || plugin.categoryKey),
-                  h("span", null, "★ " + (Number(plugin.stars) || 0)),
+                  h("span", { style: { display: "inline-flex", alignItems: "center", gap: "3px" } }, h(StarIcon), String(Number(plugin.stars) || 0)),
                 ),
                 h("div", { className: "sh-mkt-actions" },
                   h("a", { className: "sh-mkt-details", href: detailHref(plugin), target: "_blank", rel: "noreferrer" }, tr("mkt.details")),
@@ -1818,9 +1843,24 @@ window.__ModuleLoader__.load({
       const [items, setItems] = useState([]);
       const [total, setTotal] = useState(0);
       const [hasMore, setHasMore] = useState(false);
+      const [fallback, setFallback] = useState(false);
       const [status, setStatus] = useState("loading");
       const [err, setErr] = useState("");
       const [open, setOpen] = useState(null);
+      const applySearchBody = (d, mode) => {
+        const next = d.items || [];
+        const isFallback = !!d.fallback;
+        setFallback(isFallback);
+        // fallback 热门列表：UI 不用全库 total 冒充命中数，也不继续翻页
+        const nextTotal = isFallback ? next.length : (Number(d.total) || 0);
+        if (mode === "replace") setItems(next);
+        else setItems((cur) => cur.concat(next));
+        setTotal(nextTotal);
+        setHasMore(isFallback ? false : !!d.hasMore);
+        setStatus("ready");
+        setErr("");
+        return next;
+      };
       useEffect(() => {
         let live = true;
         const payload = { query: submitted, category, limit: pageSize, offset: (page - 1) * pageSize };
@@ -1828,25 +1868,14 @@ window.__ModuleLoader__.load({
         const cached = apiCache.get(key);
         const hasFresh = cached && Date.now() - cached.at < API_CACHE_TTL_MS;
         if (page === 1 && hasFresh) {
-          const d = cached.body;
-          const next = d.items || [];
-          setItems(next);
-          setTotal(Number(d.total) || 0);
-          setHasMore(!!d.hasMore);
-          setStatus("ready");
-          setErr("");
+          applySearchBody(cached.body, "replace");
         } else if (page === 1) {
           setStatus("loading");
         }
         api("search", payload)
           .then((d) => {
             if (!live) return;
-            const next = d.items || [];
-            setItems((cur) => page === 1 ? next : cur.concat(next));
-            setTotal(Number(d.total) || 0);
-            setHasMore(!!d.hasMore);
-            setStatus("ready");
-            setErr("");
+            const next = applySearchBody(d, page === 1 ? "replace" : "append");
             // Lazy ratings: patch cards after search returns (Host no longer awaits).
             const slugs = next.map((it) => it.slug).filter(Boolean);
             if (slugs.length) {
@@ -1865,6 +1894,7 @@ window.__ModuleLoader__.load({
               setItems([]);
               setTotal(0);
               setHasMore(false);
+              setFallback(false);
               setStatus("error");
               setErr(e.message || String(e));
             }
@@ -1875,7 +1905,10 @@ window.__ModuleLoader__.load({
         setItems((cur) => cur.map((it) => it.slug === item.slug ? { ...it, installed } : it));
         setOpen((cur) => cur && cur.slug === item.slug ? { ...cur, installed } : cur);
       };
-      const remaining = Math.max(0, total - items.length);
+      const remaining = fallback ? 0 : Math.max(0, total - items.length);
+      const summaryText = fallback
+        ? tr("search.fallback")
+        : tr("search.hint", { n: total || items.length });
       return h("div", { className: "sh-mkt" },
         h("form", {
           className: "sh-mkt-search",
@@ -1906,13 +1939,13 @@ window.__ModuleLoader__.load({
           }, tr("cat." + key))),
         ),
         status === "ready" ? h("div", { className: "sh-mkt-results" },
-          h("p", { className: "sh-mkt-summary" }, tr("search.hint", { n: total || items.length })),
+          h("p", { className: "sh-mkt-summary" }, summaryText),
         ) : null,
         status === "loading" && page === 1 ? h("p", { className: "sh-mkt-status" }, tr("mkt.loading")) : null,
         status === "error" ? h("p", { className: "sh-mkt-status" }, tr("mkt.error", { m: err })) : null,
         status === "ready" && !items.length ? h("p", { className: "sh-mkt-status" }, tr("search.empty")) : null,
         items.length ? h(Cards, { items, onOpen: setOpen }) : null,
-        status === "ready" && (hasMore || remaining > 0) ? h("button", {
+        status === "ready" && !fallback && (hasMore || remaining > 0) ? h("button", {
           type: "button",
           className: "sh-mkt-more",
           onClick: () => setPage((n) => n + 1),

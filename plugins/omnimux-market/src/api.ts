@@ -92,6 +92,8 @@ export function mapSkill(raw: SkillHubSkillRaw, webBase: string, installed?: Set
     pageUrl: `${webBase.replace(/\/$/, '')}/skills/${encodeURIComponent(slug)}`,
     owner: raw.ownerName || raw.namespace?.handle,
     installed: installed?.has(slug) || false,
+    channel: 'skillhub',
+    installBackend: 'skillhub',
   }
   if (raw.iconUrl) card.iconUrl = String(raw.iconUrl)
   const publisher = raw.publisher

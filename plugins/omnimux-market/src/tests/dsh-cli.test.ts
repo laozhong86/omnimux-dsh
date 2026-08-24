@@ -8,6 +8,7 @@ import {
   cmdCommandLine,
   dshArgv,
   isPrepareBlocked,
+  isSafePluginName,
   isSafePluginTarget,
   nodeExecutable,
   pluginArgsFor,
@@ -15,6 +16,7 @@ import {
   progress,
   publicInstallStatus,
   quoteCmdArg,
+  removeDshPlugin,
   rewritePnpmError,
   runCommand,
   runDshPlugin,
@@ -83,6 +85,32 @@ test('isSafePluginTarget allows github pins and rejects metacharacters', () => {
   assert.equal(isSafePluginTarget('--no-frozen-lockfile'), true)
   assert.equal(isSafePluginTarget('foo;rm'), false)
   assert.equal(isSafePluginTarget('a b'), false)
+})
+
+test('isSafePluginName allows npm names and rejects github/file/path specs', () => {
+  assert.equal(isSafePluginName('omnimux-workflow'), true)
+  assert.equal(isSafePluginName('@scope/pkg'), true)
+  assert.equal(isSafePluginName('github:o/n#abcdef0'), false)
+  assert.equal(isSafePluginName('file:./local'), false)
+  assert.equal(isSafePluginName('link:/tmp/x'), false)
+  assert.equal(isSafePluginName('../evil'), false)
+  assert.equal(isSafePluginName('a b'), false)
+  assert.equal(isSafePluginName(''), false)
+})
+
+test('removeDshPlugin sends remove not add and rejects unsafe names', async () => {
+  const seen: string[][] = []
+  const log = await removeDshPlugin('omnimux-workflow', {
+    runDshPlugin: async (profile, args) => {
+      seen.push([profile, ...args])
+      return 'removed'
+    },
+  })
+  assert.equal(log, 'removed')
+  assert.deepEqual(seen, [['web', 'remove', 'omnimux-workflow']])
+  await assert.rejects(() => removeDshPlugin('github:o/n#abcdef0', { runDshPlugin: async () => 'nope' }), /不安全/)
+  await assert.rejects(() => removeDshPlugin('/tmp/x', { runDshPlugin: async () => 'nope' }), /不安全/)
+  await assert.rejects(() => removeDshPlugin('a b', { runDshPlugin: async () => 'nope' }), /不安全/)
 })
 
 test('quoteCmdArg and cmdCommandLine quote cmd metacharacters', () => {

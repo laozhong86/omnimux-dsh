@@ -11,14 +11,9 @@
 
 import React, { useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import type { MaterialType } from '../../types/materialNode';
 import { useT } from '../../i18n';
 
 export type ContextMenuAction =
-  | 'add-text'
-  | 'add-image'
-  | 'add-video'
-  | 'add-audio'
   | 'copy'
   | 'paste'
   | 'duplicate'
@@ -57,13 +52,6 @@ interface MenuItemSpec {
   shortcut?: string;
   disabled?: boolean;
 }
-
-const ADD_NODE_ITEMS: Array<{ action: ContextMenuAction; type: MaterialType }> = [
-  { action: 'add-text', type: 'text' },
-  { action: 'add-image', type: 'image' },
-  { action: 'add-video', type: 'video' },
-  { action: 'add-audio', type: 'audio' },
-];
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
   x,
@@ -119,18 +107,14 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         { action: 'delete', label: t('menu.delete'), shortcut: 'Del' },
       ];
     }
-    // pane
-    const rows: MenuItemSpec[] = ADD_NODE_ITEMS.map((item) => ({
-      action: item.action,
-      label: t(`menu.add.${item.type}`),
-    }));
-    rows.push(
+    // pane：新建节点统一走左侧 Toolbar / 输出 handle plus 菜单，
+    // 右键菜单只保留编辑动作（S1 菜单归并）。
+    return [
       { action: 'undo', label: t('toolbar.undo'), shortcut: '⌘Z', disabled: !canUndo },
       { action: 'redo', label: t('toolbar.redo'), shortcut: '⇧⌘Z', disabled: !canRedo },
       { action: 'paste', label: t('menu.paste'), shortcut: '⌘V', disabled: !hasClipboard },
       { action: 'select-all', label: t('menu.selectAll'), shortcut: '⌘A' },
-    );
-    return rows;
+    ];
   }, [context, canUndo, canRedo, hasClipboard, hasSelection, t]);
 
   if (!visible) return null;

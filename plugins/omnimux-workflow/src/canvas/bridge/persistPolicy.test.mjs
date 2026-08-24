@@ -199,3 +199,57 @@ test('源码契约：resetStore 标 cause reset；用户删除走 noteUserDelete
   const resetBlock = storeSrc.slice(storeSrc.indexOf('resetStore:'));
   assert.match(resetBlock, /noteGraphReset\(\)/);
 });
+
+test('capture 有节点 → reset 后 store 空 → PUT 用 capture 不是 []', () => {
+  const store = {
+    nodes: [{ id: 'new-1' }],
+    edges: [],
+  };
+  const capture = snapshotGraph(store.nodes, store.edges);
+  // 模拟 resetStore：capture 之后才清空
+  store.nodes = [];
+  store.edges = [];
+  const puts = [];
+  const decision = decidePersist({
+    lastSavedNodeCount: 0,
+    nextNodes: capture.nodes,
+    nextEdges: capture.edges,
+    cause: 'flush',
+    lastSavedSignature: 'empty',
+    nextSignature: 'one-node',
+  });
+  applyPersistDecision(decision, (snap) => puts.push(snap));
+  assert.equal(store.nodes.length, 0);
+  assert.equal(puts.length, 1);
+  assert.notEqual(puts[0].nodes.length, 0);
+  assert.equal(puts[0].nodes[0].id, 'new-1');
+});
+
+test('源码契约：flushPendingSave 同步 capture，boot cleanup 先 beforeReset 再 reset', () => {
+  const persistSrc = readFileSync(join(here, 'useWorkspacePersistence.ts'), 'utf8');
+  const bootSrc = readFileSync(join(here, '../hooks/useCanvasBoot.ts'), 'utf8');
+  const appSrc = readFileSync(join(here, '../App.tsx'), 'utf8');
+
+  assert.match(persistSrc, /flushPendingSave/);
+  const flushStart = persistSrc.indexOf('const flushPendingSave = useCallback');
+  assert.ok(flushStart >= 0, 'missing flushPendingSave');
+  const flushEnd = persistSrc.indexOf('}, [performSave]);', flushStart);
+  const flushBlock = persistSrc.slice(flushStart, flushEnd);
+  const captureIdx = flushBlock.indexOf('readStoreCapture()');
+  const putIdx = flushBlock.indexOf('void performSave(');
+  assert.ok(captureIdx >= 0, 'flushPendingSave 必须同步 readStoreCapture');
+  assert.ok(putIdx > captureIdx, 'PUT 必须用 capture 之后的快照');
+  assert.match(flushBlock, /cause:\s*'flush'|cause: PersistCause = 'flush'/);
+
+  const cleanupStart = bootSrc.indexOf('return () => {');
+  const cleanupBlock = bootSrc.slice(cleanupStart, bootSrc.indexOf('};', cleanupStart));
+  const beforeIdx = cleanupBlock.search(/beforeReset/);
+  const resetIdx = cleanupBlock.indexOf('resetStore()');
+  assert.ok(beforeIdx >= 0, 'cleanup 必须调用 beforeReset');
+  assert.ok(resetIdx > beforeIdx, 'beforeReset 必须出现在 resetStore() 之前');
+
+  assert.match(appSrc, /flushRef/);
+  assert.match(appSrc, /beforeReset:\s*\(\)\s*=>\s*\{/);
+  assert.match(appSrc, /flushRef\.current\(\)/);
+  assert.match(appSrc, /flushRef\.current = persistence\.flushPendingSave/);
+});

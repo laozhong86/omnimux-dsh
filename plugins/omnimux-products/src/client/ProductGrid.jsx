@@ -1,5 +1,21 @@
 import { activateRowKeydown } from './a11y.js'
 import { previewUrl } from './api.js'
+import { CheckIcon } from './icons.jsx'
+
+const checkBase = {
+  position: 'absolute',
+  top: 8,
+  left: 8,
+  width: 22,
+  height: 22,
+  borderRadius: '50%',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 0,
+  cursor: 'pointer',
+  zIndex: 1,
+}
 
 /**
  * @param {{
@@ -7,14 +23,17 @@ import { previewUrl } from './api.js'
  *   products: any[],
  *   emptyLabel: string,
  *   emptyActionLabel?: string,
+ *   showEmptyAction?: boolean,
  *   onEmptyAction?: () => void,
  *   onOpen: (product: any) => void,
  *   onCopy: (product: any) => void,
  *   onRemove: (product: any) => void,
  *   copiedId?: string,
+ *   selectedIds?: Set<string>,
+ *   onToggleSelect?: (product: any) => void,
  * }} props
  */
-export function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmptyAction, onOpen, onCopy, onRemove, copiedId }) {
+export function ProductGrid({ t, products, emptyLabel, emptyActionLabel, showEmptyAction = true, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect }) {
   if (products.length === 0) {
     return (
       <div style={{
@@ -31,7 +50,7 @@ export function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmpty
       }}
       >
         <p style={{ margin: 0 }}>{emptyLabel}</p>
-        {emptyActionLabel && onEmptyAction ? (
+        {emptyActionLabel && onEmptyAction && showEmptyAction ? (
           <button
             type="button"
             onClick={onEmptyAction}
@@ -60,16 +79,20 @@ export function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmpty
         const preview = cover?.kind === 'image' && cover.id
           ? previewUrl(product.id, cover.id)
           : ''
+        const selected = selectedIds?.has(product.id)
         return (
           <article
             key={product.id}
             className="omnimux-products-focusable"
             tabIndex={0}
             role="button"
+            aria-selected={selected ? 'true' : 'false'}
             onClick={() => { onOpen(product) }}
             onKeyDown={activateRowKeydown(() => { onOpen(product) })}
             style={{
-              border: '1px solid var(--dsw-alias-border-l2)',
+              border: selected
+                ? '1px solid var(--dsw-alias-label-primary)'
+                : '1px solid var(--dsw-alias-border-l2)',
               borderRadius: 12,
               overflow: 'hidden',
               cursor: 'pointer',
@@ -98,22 +121,50 @@ export function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmpty
                 />
               ) : null}
               <span style={{ fontSize: 28, fontWeight: 600, lineHeight: 1 }}>{glyph}</span>
-            </div>
-            <div style={{ padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 4, minHeight: 72 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{product.name}</div>
-                <span style={{
-                  flex: 'none',
-                  fontSize: 11,
-                  lineHeight: '16px',
-                  padding: '1px 6px',
-                  borderRadius: 999,
-                  background: 'var(--dsw-alias-bg-module-platform)',
-                  color: 'var(--dsw-alias-label-secondary)',
-                }}
+              <span style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                fontSize: 11,
+                lineHeight: '16px',
+                fontWeight: 500,
+                padding: '2px 8px',
+                borderRadius: 999,
+                background: 'var(--dsw-alias-bg-base)',
+                border: '1px solid var(--dsw-alias-border-l2)',
+                color: 'var(--dsw-alias-label-secondary)',
+                zIndex: 1,
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+              }}
+              >
+                {product.kind === 'digital' ? t('kind.digital') : t('kind.physical')}
+              </span>
+              {onToggleSelect ? (
+                <button
+                  type="button"
+                  className="omnimux-products-check"
+                  data-selected={selected ? 'true' : 'false'}
+                  aria-label={t('select.toggle')}
+                  aria-pressed={selected ? 'true' : 'false'}
+                  onClick={(event) => { event.stopPropagation(); onToggleSelect(product) }}
+                  style={{
+                    ...checkBase,
+                    border: selected ? 'none' : '1px solid var(--dsw-alias-border-l3)',
+                    background: selected
+                      ? 'var(--dsw-alias-button-primary-fill)'
+                      : 'var(--dsw-alias-bg-base)',
+                    color: selected
+                      ? 'var(--dsw-alias-label-primary-foreground)'
+                      : 'inherit',
+                  }}
                 >
-                  {product.kind === 'digital' ? t('kind.digital') : t('kind.physical')}
-                </span>
+                  {selected ? <CheckIcon size={12} /> : null}
+                </button>
+              ) : null}
+            </div>
+            <div style={{ padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ fontSize: 14, fontWeight: 500, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {product.name}
               </div>
               <div style={{
                 fontSize: 12,
@@ -130,22 +181,6 @@ export function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmpty
                     || product.description
                     || '—')
                   : (product.selling_points || product.description || '—')}
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                <button
-                  type="button"
-                  onClick={(event) => { event.stopPropagation(); onCopy(product) }}
-                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 12, color: 'var(--dsw-alias-label-secondary)', padding: 0 }}
-                >
-                  {copiedId === product.id ? t('card.copied') : t('card.copyCite')}
-                </button>
-                <button
-                  type="button"
-                  onClick={(event) => { event.stopPropagation(); onRemove(product) }}
-                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 12, color: 'var(--dsw-alias-label-error)', padding: 0 }}
-                >
-                  {t('remove.confirm')}
-                </button>
               </div>
             </div>
           </article>

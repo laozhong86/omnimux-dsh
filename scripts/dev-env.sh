@@ -276,12 +276,10 @@ resolve_runtime_home() {
 stop_watch() {
   local pdir="$1"
   if [ -f "$pdir/watch.pid" ]; then
-    kill "$(cat "$pdir/watch.pid")" 2>/dev/null || true
-    if [ -f "$pdir/watch.plugin" ]; then
-      local plug
-      plug="$(cat "$pdir/watch.plugin")"
-      pkill -f "watch-plugin.mjs ${plug}$" 2>/dev/null || true
-      pkill -f "${plug}/scripts/dev.mjs" 2>/dev/null || true
+    local wpid
+    wpid="$(cat "$pdir/watch.pid" 2>/dev/null || true)"
+    if [ -n "$wpid" ]; then
+      kill "$wpid" 2>/dev/null || true
     fi
     rm -f "$pdir/watch.pid" "$pdir/watch.plugin"
     echo "✓ watch 已停止"

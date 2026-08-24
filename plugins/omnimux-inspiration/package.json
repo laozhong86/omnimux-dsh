@@ -39,6 +39,9 @@
       "optional": true
     }
   },
+  "dependencies": {
+    "lucide-react": "^1.33.0"
+  },
   "devDependencies": {
     "esbuild": "^0.25.0"
   },

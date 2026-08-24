@@ -20,6 +20,18 @@ export const PROJECT_SCHEMA_VERSION = 1 as const;
 /** 项目标题长度上限（与画布 workspace 的 name 上限一致，M2 QA 惯例）。 */
 export const MAX_PROJECT_TITLE_LENGTH = 200;
 
+/** 创作页数据模型（1 个项目可包含 N 个创作页，每个创作页有独立画布） */
+export const projectPageSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1).max(MAX_PROJECT_TITLE_LENGTH),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  canvasWorkspaceId: z.string().optional(),
+  loadMemory: z.boolean().optional(),
+});
+
+export type ProjectPage = z.infer<typeof projectPageSchema>;
+
 /** project.json 全量字段（不含磁盘路径；path 由扫描派生）。 */
 export const projectSchema = z.object({
   schemaVersion: z.literal(PROJECT_SCHEMA_VERSION),
@@ -29,8 +41,12 @@ export const projectSchema = z.object({
   updatedAt: z.string(),
   /** 绑定会话；新建项目时写入，可为 null（尚未建会话的中间态）。 */
   sessionId: z.string().nullable(),
-  /** 关联画布工作区 id（Phase 0 可先 0～1 个）。 */
+  /** 关联画布工作区 id 列表。 */
   canvasWorkspaceIds: z.array(z.string()),
+  /** 当前激活的创作页 ID */
+  activePageId: z.string().optional(),
+  /** 项目包含的创作页列表 */
+  pages: z.array(projectPageSchema).optional(),
 });
 
 export type Project = z.infer<typeof projectSchema>;
@@ -42,6 +58,8 @@ export const projectSummarySchema = z.object({
   updatedAt: z.string(),
   sessionId: z.string().nullable(),
   path: z.string().min(1).optional(),
+  pages: z.array(projectPageSchema).optional(),
+  activePageId: z.string().optional(),
 });
 
 export type ProjectSummary = z.infer<typeof projectSummarySchema>;

@@ -225,6 +225,27 @@ export interface PluginInstallDeps {
   runDshPlugin: PluginRunner
 }
 
+/**
+ * 不可卸。与 hub `plugins/omnimux/src/plugins/manage.js` PROTECTED_BUNDLES 对齐，
+ * 并加上市场自身。垂直包禁止 import hub，此处复制常量并单测对齐。
+ */
+export const CORE_PROTECTED_BUNDLES = Object.freeze([
+  '@deepseek-ai/dsh-base',
+  '@deepseek-ai/dsh-web-app',
+  'omnimux',
+  'omnimux-market',
+])
+
+export function isProtectedBundle(name: string, extra: readonly string[] = []): boolean {
+  const n = String(name || '').trim()
+  if (!n) return true
+  if ((CORE_PROTECTED_BUNDLES as readonly string[]).includes(n)) return true
+  if (extra.includes(n)) return true
+  const bare = n.includes('/') ? n.slice(n.lastIndexOf('/') + 1) : n
+  if (bare === 'dsh-base' || bare === 'dsh-web-app') return true
+  return false
+}
+
 let installChain = Promise.resolve()
 let installBusy = 0
 
@@ -232,6 +253,7 @@ export function isPluginInstallBusy(): boolean {
   return installBusy > 0
 }
 
+/** Serializes plugin install AND uninstall (HTTP pluginInstall + plugin_* tools). Callers queue; do not 409. */
 export function withPluginInstallLock<T>(fn: () => Promise<T>): Promise<T> {
   const guarded = async (): Promise<T> => {
     installBusy += 1

@@ -7,6 +7,7 @@
  * 全部样式消费官方 --dsw-alias-* token（design.md 硬规则）。
  */
 import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { IconEditOutline16, IconTrashOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { listProjects, renameProject, deleteProject, bindProjectSession } from '../api.js'
 import { NewLocalProjectDialog } from './NewLocalProjectDialog.jsx'
 import { createProjectSession, dismissProductStage, runNewProject } from './newProject.js'
@@ -210,9 +211,25 @@ export function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, lay
                   <div style={{ fontSize: 14, fontWeight: 600, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project.title}</div>
                   <div style={{ fontSize: 12, lineHeight: '18px', color: 'var(--dsw-alias-label-secondary, inherit)', marginTop: 4 }}>{String(project.updatedAt).slice(0, 10)}</div>
                 </div>
-                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }} onClick={(event) => { event.stopPropagation() }}>
-                  <button type="button" title={t('projects.rename')} onClick={() => { void handleRename(project) }} style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', fontSize: 12, padding: 2, opacity: 0.7 }}>✏️</button>
-                  <button type="button" title={t('projects.delete')} onClick={() => { void handleDelete(project) }} style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', fontSize: 12, padding: 2, opacity: 0.7 }}>🗑️</button>
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }} onClick={(event) => { event.stopPropagation() }}>
+                  <button
+                    type="button"
+                    title={t('projects.rename')}
+                    aria-label={t('projects.rename')}
+                    onClick={() => { void handleRename(project) }}
+                    style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 4, opacity: 0.7, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <IconEditOutline16 size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    title={t('projects.delete')}
+                    aria-label={t('projects.delete')}
+                    onClick={() => { void handleDelete(project) }}
+                    style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 4, opacity: 0.7, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <IconTrashOutline16 size={14} />
+                  </button>
                 </div>
               </div>
             ))}

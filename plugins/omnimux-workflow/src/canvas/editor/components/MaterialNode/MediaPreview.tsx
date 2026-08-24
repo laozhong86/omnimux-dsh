@@ -7,7 +7,7 @@
  * 嵌入 GenerationStateContainer 的 completed 分支。
  */
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useCallback } from 'react';
 import type { MaterialType } from '../../../types/materialNode';
 import { resolveMediaPreviewUrl, type MediaAssetLike } from '../../utils/mediaUrl';
 
@@ -19,18 +19,53 @@ export interface MediaPreviewProps {
   mediaAssets?: MediaAssetLike[];
   mediaUrl?: string;
   label?: string;
+  onMediaSizeChange?: (width: number, height: number) => void;
 }
 
-const MediaPreview: React.FC<MediaPreviewProps> = ({ materialType, mediaAssets, mediaUrl, label }) => {
+const MediaPreview: React.FC<MediaPreviewProps> = ({
+  materialType,
+  mediaAssets,
+  mediaUrl,
+  label,
+  onMediaSizeChange,
+}) => {
   const url = useMemo(
     () => resolveMediaPreviewUrl(materialType, mediaAssets, mediaUrl),
     [materialType, mediaAssets, mediaUrl],
   );
+
+  const handleImageLoad = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = e.currentTarget;
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        onMediaSizeChange?.(img.naturalWidth, img.naturalHeight);
+      }
+    },
+    [onMediaSizeChange],
+  );
+
+  const handleVideoMetadata = useCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      const v = e.currentTarget;
+      if (v.videoWidth > 0 && v.videoHeight > 0) {
+        onMediaSizeChange?.(v.videoWidth, v.videoHeight);
+      }
+    },
+    [onMediaSizeChange],
+  );
+
   if (!url) return null;
 
   switch (materialType) {
     case 'image':
-      return <img src={url} alt={label ?? ''} className="wf-media-preview__media wf-media-preview__media--image" />;
+      return (
+        <img
+          src={url}
+          alt={label ?? ''}
+          className="wf-media-preview__media wf-media-preview__media--image"
+          onLoad={handleImageLoad}
+        />
+      );
     case 'video':
       return (
         <video
@@ -38,6 +73,7 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({ materialType, mediaAssets, 
           controls
           preload="metadata"
           className="wf-media-preview__media wf-media-preview__media--video"
+          onLoadedMetadata={handleVideoMetadata}
         />
       );
     case 'audio':

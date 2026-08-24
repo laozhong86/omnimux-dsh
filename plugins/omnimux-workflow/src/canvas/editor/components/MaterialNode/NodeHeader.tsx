@@ -117,7 +117,7 @@ const NodeHeader: React.FC<NodeHeaderProps> = ({ label, materialType, onLabelCha
 
   return (
     <div
-      className="wf-node-header nodrag"
+      className="wf-node-header"
       style={{
         // 标题高度是布局值（不随缩放变化），间距需转换到画布坐标系
         top: -(HEADER_HEIGHT + visualGap * inverseScale),

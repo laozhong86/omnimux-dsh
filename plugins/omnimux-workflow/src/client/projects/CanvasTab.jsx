@@ -2,7 +2,7 @@
  * better-sidebar 画布 tab：宿主 React 18 壳里挂 CanvasBridge（React 19 island）。
  * 第三方 tab 只给 DOM 容器；双 React 树边界仍是 CanvasBridge 的硬规则。
  */
-import { useEffect, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useSyncExternalStore } from 'react'
 import { CanvasBridge } from '../CanvasBridge.jsx'
 import { applyProjectCanvasRatio, getBetterSidebar } from './projectCanvas.js'
 
@@ -28,24 +28,53 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
     let cancelled = false
     let timer = 0
     let attempts = 0
-    const tick = () => {
+    const tick = (force = false) => {
       if (cancelled) return
       // 没有 tab store.reduce 时 apply 只写盘，返回 undefined，必须继续等。
-      const result = applyProjectCanvasRatio(getBetterSidebar(ctx), sessionId, store)
+      const result = applyProjectCanvasRatio(getBetterSidebar(ctx), sessionId, store, {}, force)
       if (result === undefined && attempts < 80) {
         attempts += 1
-        timer = window.setTimeout(tick, 50)
+        timer = window.setTimeout(() => tick(force), 50)
       }
     }
     tick()
+
+    // 监听左侧侧边栏宽度变化（折叠/展开）以及窗口 resize
+    let sidebarObserver = null
+    try {
+      const sidebarEl = typeof document !== 'undefined'
+        ? document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]')
+        : null
+      if (sidebarEl && typeof ResizeObserver === 'function') {
+        sidebarObserver = new ResizeObserver(() => {
+          if (!cancelled) tick(true)
+        })
+        sidebarObserver.observe(sidebarEl)
+      }
+    } catch {
+      // ignore
+    }
+
+    const onResize = () => {
+      if (!cancelled) tick(true)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', onResize)
+    }
+
     return () => {
       cancelled = true
       window.clearTimeout(timer)
+      sidebarObserver?.disconnect?.()
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', onResize)
+      }
     }
   }, [visible, sessionId, store, ctx])
 
   // 关闭走面板自己的 × / tab 关闭，不调 layout.closeDetails。
-  const onClose = () => {}
+  // 必须稳定引用：CanvasBridge 虽已不再因 onClose 卸岛，但仍走 updateCanvas。
+  const onClose = useCallback(() => {}, [])
 
   return (
     <div

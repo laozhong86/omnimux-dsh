@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { IconCloseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { readConversationBox } from './conversation-box.js'
 import { PluginsSection } from './PluginsSection.jsx'
 
@@ -104,12 +105,14 @@ export function AppsStage({ t, apps, useSessions }) {
             background: 'transparent',
             color: 'inherit',
             cursor: 'pointer',
-            fontSize: 20,
-            lineHeight: 1,
             padding: 4,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: 0.75,
           }}
         >
-          ×
+          <IconCloseOutline16 size={16} />
         </button>
       </div>
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>

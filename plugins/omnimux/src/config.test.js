@@ -14,7 +14,7 @@ test('parseHubConfig fills brand and the OmniMux media row', () => {
   assert.equal(parsed.apps.ttlSeconds, 21600)
   assert.equal(parsed.text.defaultProvider, 'omnimux')
   assert.equal(parsed.text.maxTokens, 4096)
-  assert.equal(parsed.text.models.length, 8)
+  assert.equal(parsed.text.models.length, 11)
   assert.equal(parsed.text.models.every((row) => row.enabled), true)
 })
 

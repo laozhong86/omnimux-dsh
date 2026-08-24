@@ -12,15 +12,18 @@
 # below was verified live against api.omnimux.ai/v1/models (94 models) on
 # 2026-08-16; contextWindow values come from api.omnimux.ai/api/pricing and are
 # set only where that catalog documents the number. One OmniMux user token
-# (OMNIMUX_API_KEY) serves every model; all eight speak the OpenAI-compatible
+# (OMNIMUX_API_KEY) serves every model; all eleven speak the OpenAI-compatible
 # `/v1` endpoint. The composer effort pane is driven by per-model
-# `reasoningEfforts` (docs/evidence/omnimux-reasoning-2026-08-20.md): only
-# levels the gateway accepted with HTTP 200 are declared, and the route
-# default is `max`. A literal `off` 400s on most upstreams; rows that can
-# disable thinking map `off` to wire `none`. Rows that still think when the
-# field is omitted or set to `off` do not offer Off. `developer` is refused
-# by this gateway, so the route sets `supportsDeveloperRole: false` — without
-# it, pi-ai would send that role on every reasoning model.
+# `reasoningEfforts` (docs/evidence/omnimux-reasoning-2026-08-20.md plus
+# 2026-08-23 brand-four): only levels the gateway accepted with HTTP 200 are
+# declared, and the route default is `max`. A UI `max` must exist on every
+# row; `gpt-5.5` maps it to wire `xhigh` because literal `max` 400s. A
+# literal `off` 400s on most upstreams; rows that can disable thinking map
+# `off` to wire `none`. Rows that still think when the field is omitted or
+# set to `off` do not offer Off. `developer` is refused by this gateway, so
+# the route sets `supportsDeveloperRole: false` — without it, pi-ai would
+# send that role on every reasoning model. `minimax-m3` is on the live
+# catalog but this key's group 403s it; it stays off the hub list.
 # deepseek-v4-flash-vision-exp is the product default agent model (desktop
 # preset and web profile set agent-default-model to it), so it stays selectable.
 #
@@ -31,7 +34,9 @@
 # rejected `image_url` upstream and stay text-only. claude-opus-5 supports
 # images on the Anthropic `/v1/messages` protocol, but the chat-completions
 # group is currently 403 for this key; it will carry `input` once that group
-# is upgraded. Under-declaring refuses an image before it attaches; declaring
+# is upgraded. claude-opus-4-6, gpt-5.5, and gemini-3.1-pro-preview answered
+# the 64px red prompt on chat-completions. Under-declaring refuses an image
+# before it attaches; declaring
 # image on a model the gateway rejects drops the request mid-turn — the
 # measured matrix, not vendor marketing, is the gate.
 #
@@ -70,6 +75,14 @@
               max: max
             compat:
               requiresReasoningContentOnAssistantMessages: true
+          - id: claude-opus-4-6
+            name: Claude Opus 4.6
+            contextWindow: 1000000
+            input: [text, image]
+            reasoningEfforts:
+              max: max
+            compat:
+              requiresReasoningContentOnAssistantMessages: true
           - id: gpt-5.6-sol
             name: GPT-5.6 Sol
             contextWindow: 1000000
@@ -81,6 +94,17 @@
               high: high
               xhigh: xhigh
               max: max
+          - id: gpt-5.5
+            name: GPT-5.5
+            contextWindow: 1000000
+            input: [text, image]
+            reasoningEfforts:
+              low: low
+              high: high
+              xhigh: xhigh
+              max: xhigh
+            compat:
+              requiresReasoningContentOnAssistantMessages: true
           - id: grok-4.6
             name: Grok 4.6
             contextWindow: 500000
@@ -139,6 +163,11 @@
               low: low
               medium: medium
               high: high
+              max: max
+          - id: gemini-3.1-pro-preview
+            name: Gemini 3.1 Pro Preview
+            input: [text, image]
+            reasoningEfforts:
               max: max
           - id: glm-5.3
             name: GLM-5.3

@@ -35,6 +35,131 @@ const inputBare = {
   width: '100%',
 }
 
+function AssetTypeDropdown({ value, onChange, t }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    const onPointerDown = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) setOpen(false)
+    }
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+      <button
+        type="button"
+        onClick={() => { setOpen((prev) => !prev) }}
+        style={{
+          border: '1px solid var(--dsw-alias-border-l2, rgba(255,255,255,0.12))',
+          background: 'var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.06))',
+          borderRadius: 8,
+          padding: '4px 10px 4px 12px',
+          fontSize: 13,
+          color: 'inherit',
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          transition: 'all 0.15s ease',
+          ...(open ? { borderColor: 'var(--dsw-alias-brand-primary, #3b82f6)', boxShadow: '0 0 0 2px rgba(59,130,246,0.22)' } : {}),
+        }}
+      >
+        <span>{t(`type.${value}`)}</span>
+        <svg
+          viewBox="0 0 16 16"
+          width="12"
+          height="12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.18s ease', opacity: 0.7 }}
+        >
+          <path d="m4 6 4 4 4-4" />
+        </svg>
+      </button>
+      {open ? (
+        <div
+          role="listbox"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            zIndex: 350,
+            minWidth: 140,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            padding: 4,
+            borderRadius: 10,
+            border: '1px solid var(--dsw-alias-border, rgba(255,255,255,0.14))',
+            background: 'var(--dsw-alias-bg-elevated, #1c1c1f)',
+            boxShadow: '0 10px 28px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)',
+            backdropFilter: 'blur(16px)',
+          }}
+        >
+          {ASSET_TYPE_KEYS.map((key) => {
+            const isSelected = key === value
+            return (
+              <button
+                key={key}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                onClick={() => {
+                  onChange(key)
+                  setOpen(false)
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  width: '100%',
+                  padding: '6px 10px',
+                  border: 'none',
+                  borderRadius: 6,
+                  background: isSelected ? 'rgba(59,130,246,0.14)' : 'transparent',
+                  color: isSelected ? '#60a5fa' : 'inherit',
+                  fontSize: 13,
+                  fontWeight: isSelected ? 500 : 400,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+                onMouseEnter={(event) => {
+                  if (!isSelected) event.currentTarget.style.background = 'rgba(255,255,255,0.08)'
+                }}
+                onMouseLeave={(event) => {
+                  if (!isSelected) event.currentTarget.style.background = 'transparent'
+                }}
+              >
+                <span>{t(`type.${key}`)}</span>
+                {isSelected ? (
+                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m3.5 8.5 3 3 6-6" />
+                  </svg>
+                ) : null}
+              </button>
+            )
+          })}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 /**
  * Create-asset sheet: name + type + description + path refs + optional tags.
  * @param {{
@@ -129,22 +254,7 @@ export function AddAssetDialog({ t, busy, presetType = 'character', error, onCan
           </button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 20px 12px' }}>
-          <select
-            value={type}
-            onChange={(event) => { setType(event.target.value) }}
-            style={{
-              border: 'none',
-              background: 'var(--dsw-alias-bg-module-platform, var(--dsw-alias-interactive-bg-hover-solid, inherit))',
-              borderRadius: 8,
-              padding: '4px 8px',
-              fontSize: 13,
-              color: 'inherit',
-            }}
-          >
-            {ASSET_TYPE_KEYS.map((key) => (
-              <option key={key} value={key}>{t(`type.${key}`)}</option>
-            ))}
-          </select>
+          <AssetTypeDropdown value={type} onChange={setType} t={t} />
           <span style={{ color: 'var(--dsw-alias-border-l2, var(--dsw-border, currentColor))' }}>|</span>
           <input
             value={description}

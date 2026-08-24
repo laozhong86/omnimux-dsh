@@ -473,13 +473,28 @@ test('capabilities：seam 可达时返回 omnimux 真实目录（含 env 覆盖�
     const caps = await h.call({ url: '/omnimux-workflow/api/capabilities' });
     assert.equal(caps.body.source, 'omnimux');
     assert.deepEqual(caps.body.video, [{ id: 'custom-video-model', label: 'custom-video-model' }]);
-    assert.deepEqual(caps.body.image, [{ id: 'gpt-image-2', label: 'gpt-image-2' }]);
-    assert.equal(caps.body.text.length, 8);
+    assert.ok(caps.body.image.some((row) => row.id === 'gpt-image-2'));
+    assert.ok(caps.body.image.some((row) => row.id === 'nanobanana-2'));
+    assert.equal(caps.body.text.length, 5);
     assert.ok(caps.body.text.some((row) => row.id === 'gemini-3.7-flash'));
+    assert.ok(caps.body.text.some((row) => row.id === 'claude-opus-4-6'));
     assert.deepEqual(caps.body.audio, []);
   } finally {
     h.dispose();
     rmSync(h.root, { recursive: true, force: true });
+  }
+
+  // Without env override: check default rich video and image models
+  const hDefault = makeHarness({ seamHub: hub });
+  try {
+    const caps = await hDefault.call({ url: '/omnimux-workflow/api/capabilities' });
+    assert.equal(caps.body.source, 'omnimux');
+    assert.ok(caps.body.video.some((row) => row.id === 'kling-o1'));
+    assert.ok(caps.body.video.some((row) => row.id === 'wan-2.6'));
+    assert.ok(caps.body.video.some((row) => row.id === 'veo-3.1-fast'));
+  } finally {
+    hDefault.dispose();
+    rmSync(hDefault.root, { recursive: true, force: true });
   }
 });
 
@@ -624,7 +639,8 @@ test('auto 晚绑定：mount 时无 seam，hub 出现后目录升级为 omnimux'
     holder.seams = hub.seams; // hub mounted later in the session
     const after = await h0call(captured, { url: '/omnimux-workflow/api/capabilities' });
     assert.equal(after.body.source, 'omnimux');
-    assert.ok(after.body.video.some((row) => row.id === 'seedance-2-0-fast'));
+    assert.ok(after.body.video.some((row) => row.id === 'kling-o1'));
+    assert.ok(after.body.video.some((row) => row.id === 'wan-2.6'));
   } finally {
     dispose();
     rmSync(root, { recursive: true, force: true });

@@ -65,7 +65,7 @@ node --test lib/tests/*.test.js   # 宿主 + 客户端逻辑
 node --test src/expert/*.test.js  # 专家 / 连接器目录、装卸、召唤
 ```
 
-源码 `src/`，构建产物 `lib/`（由 `prepare` 生成，不进版本库）；`src/client.js` 为源码即产物（build 时直接拷贝）。改动 Host（`src/*.ts`）需重启 Host；改动客户端刷新浏览器即可。L2：`cd ~/Desktop/Project/omnimux-desktop-fork && yarn omnimux:dev start <name> omnimux-market`。
+源码 `src/`，构建产物 `lib/`（由 `prepare` 生成，不进版本库）。客户端拆在 `src/client/*.js`，`npm run build` 用 `scripts/concat-client.mjs` 拼成单个 ModuleLoader 文件 `lib/client.js`（宿主只认这一份）。改动 Host（`src/*.ts`）需重启 Host；改动客户端刷新浏览器即可。L2：`cd ~/Desktop/Project/omnimux-desktop-fork && yarn omnimux:dev start <name> omnimux-market`。
 
 ## 安全
 

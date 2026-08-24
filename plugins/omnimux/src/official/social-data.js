@@ -1,13 +1,30 @@
 import { OmnimuxError } from '../media/errors.js'
 
-/** First-cut catalog. Model ids match OmniMux social-data L3 pages. */
+/** Complete catalog. Model ids match OmniMux social-data L3 pages. */
 export const SOCIAL_DATA_CATALOG = Object.freeze({
   tiktok: Object.freeze({
     video: 'tiktok-video',
     user: 'tiktok-user',
+    posts: 'tiktok-posts',
+    search: 'tiktok-search',
   }),
   instagram: Object.freeze({
     post: 'instagram-post',
+    user: 'instagram-user',
+    posts: 'instagram-posts',
+    search: 'instagram-search',
+  }),
+  youtube: Object.freeze({
+    video: 'youtube-video',
+    user: 'youtube-user',
+    posts: 'youtube-posts',
+    search: 'youtube-search',
+  }),
+  x: Object.freeze({
+    tweet: 'x-tweet',
+    user: 'x-user',
+    posts: 'x-posts',
+    search: 'x-search',
   }),
 })
 

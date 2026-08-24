@@ -1,5 +1,9 @@
 export type SortBy = 'score' | 'downloads' | 'stars' | 'installs' | 'updated_at'
 
+export type SkillChannel = 'custom' | 'workbuddy' | 'skillhub'
+
+export type SkillInstallBackend = 'catalog' | 'skillhub'
+
 export interface FetchOptions {
   timeoutMs: number
   userAgent: string
@@ -17,6 +21,33 @@ export interface PluginConfig {
   plazaKeepAlive: boolean
   /** Host SkillHub JSON memo TTL in seconds (plugins / skills search). Default 90. */
   plazaCacheTtlSec: number
+  /** plugin_search 上限（1–8）。 */
+  pluginMaxResults: number
+  /** connector_search 上限（1–8）。 */
+  connectorMaxResults: number
+  /** 追加不可卸包；不能覆盖 CORE 四项。 */
+  protectedBundlesExtra: string[]
+  /** 技能聚合默认参与渠。 */
+  aggregateChannels: SkillChannel[]
+  /** WorkBuddy 技能市场扩展目录；空则 env → ~/.workbuddy/skills-marketplace。 */
+  workbuddySkillsMarketplace: string
+  /** 远程 SkillHub 失败时不阻断本地渠。 */
+  aggregateRemoteSoftFail: boolean
+}
+
+export interface MarketToolSpec {
+  name: string
+  description: string
+  parameters: Record<string, { type: string; required?: boolean; description?: string; items?: { type: string } }>
+  output: {
+    schema: { type: 'object'; additionalProperties: true }
+    render: (args: unknown, value: unknown) => Array<{ type: 'text'; text: string }>
+    presentationMeta: (args: unknown, value: unknown) => Record<string, unknown>
+  }
+  presentCall: (args: Record<string, unknown>) => { card: 'generic'; title: string; kind?: string; content: unknown[] }
+  presentResult: (args: unknown, info: { isError?: boolean; meta?: Record<string, unknown> }) => { card: 'generic'; title: string; content: unknown[] }
+  timeoutMs?: number
+  execute: (args: Record<string, unknown>, exec?: unknown) => Promise<unknown>
 }
 
 export type SecurityStatus = 'benign' | 'scanning' | 'suspicious' | 'malicious'
@@ -58,6 +89,9 @@ export interface SkillCard {
   publisherName?: string
   security?: SecurityReports
   integrity?: SkillIntegrity
+  channel: SkillChannel
+  catalogId?: string
+  installBackend?: SkillInstallBackend
 }
 
 export interface SearchResult {
@@ -70,6 +104,10 @@ export interface SearchResult {
   offset: number
   hasMore: boolean
   fallback?: boolean
+  totalApprox?: boolean
+  channelsServed?: SkillChannel[]
+  channelCounts?: Partial<Record<SkillChannel, number>>
+  channelErrors?: Partial<Record<SkillChannel, string>>
 }
 
 export interface InstalledSkill {

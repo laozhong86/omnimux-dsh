@@ -33,19 +33,34 @@ module.exports = __toCommonJS(index_exports);
 // src/client/locales.js
 var zh = {
   "nav": "\u7075\u611F\u5E93",
-  "title": "\u7075\u611F\u5E93",
+  "title": "\u7075\u611F\u7D20\u6750\u5E93",
   "close": "\u5173\u95ED",
-  "loading": "\u6B63\u5728\u8BFB\u53D6\u7075\u611F\u2026",
-  "needLogin": "\u67E5\u770B\u7075\u611F\u5E93\u9700\u8981\u767B\u5F55 OmniMux\u3002",
-  "needLoginHint": "\u53EF\u5728 \u8BBE\u7F6E \u2192 \u4E2A\u4EBA\u8D44\u6599 \u4E2D\u767B\u5F55 OmniMux\u3002",
+  "loading": "\u6B63\u5728\u52A0\u8F7D\u7075\u611F\u2026",
+  "needLogin": "\u767B\u5F55 OmniMux \u4EE5\u67E5\u770B\u4E91\u7AEF\u516C\u5171\u7075\u611F\u5E93\u3002",
+  "needLoginHint": "\u53EF\u5728 \u8BBE\u7F6E \u2192 \u4E2A\u4EBA\u8D44\u6599 \u4E2D\u767B\u5F55 OmniMux\uFF0C\u672C\u5730\u7075\u611F\u5E93\u65E0\u9700\u767B\u5F55\u5373\u53EF\u4F7F\u7528\u3002",
   "login": "\u767B\u5F55",
-  "empty.title": "\u7075\u611F\u5E93\u8FD8\u662F\u7A7A\u7684",
-  "empty.description": "\u7528\u811A\u672C\u6216 Agent \u628A\u94FE\u63A5\u5199\u5165\u5FAE\u670D\u52A1\u540E\uFF0C\u8FD9\u91CC\u4F1A\u51FA\u73B0\u5C01\u9762\u548C\u6807\u9898\u3002",
-  "filter.search": "\u641C\u7D22\u6807\u9898\u6216\u5185\u5BB9",
+  "empty.title": "\u7075\u611F\u7D20\u6750\u5E93\u6682\u65E0\u6570\u636E",
+  "empty.description": "\u70B9\u51FB\u53F3\u4E0A\u89D2\u300C+ \u5BFC\u5165\u793E\u5A92\u7075\u611F\u300D\u6293\u53D6\u793E\u4EA4\u5A92\u4F53\u94FE\u63A5\uFF0C\u6216\u901A\u8FC7 Agent \u5B58\u5165\u3002",
+  "filter.search": "\u641C\u7D22\u6807\u9898\u3001\u6587\u6848\u6216\u6807\u7B7E",
   "filter.type": "\u7C7B\u578B",
   "filter.sort": "\u6392\u5E8F",
   "filter.favorite": "\u6536\u85CF",
   "filter.all": "\u5168\u90E8",
+  "tab.all": "\u5168\u90E8",
+  "tab.local": "\u672C\u5730",
+  "tab.public": "\u4E91\u7AEF",
+  "add.btn": "\u5BFC\u5165\u7075\u611F",
+  "add.dialogTitle": "\u5BFC\u5165\u793E\u5A92\u7075\u611F",
+  "add.urlLabel": "\u793E\u5A92\u94FE\u63A5 (URL)",
+  "add.urlPlaceholder": "\u7C98\u8D34 TikTok\u3001Instagram\u3001YouTube\u3001X (Twitter) \u94FE\u63A5\u2026",
+  "add.platformLabel": "\u8BC6\u522B\u5E73\u53F0",
+  "add.tagsLabel": "\u81EA\u5B9A\u4E49\u6807\u7B7E (\u9017\u53F7\u5206\u9694)",
+  "add.tagsPlaceholder": "\u4F8B\u5982\uFF1A\u6838\u5FC3\u94A9\u5B50, \u7F8E\u5986\u62A4\u80A4, \u75DB\u70B9\u53CD\u8F6C",
+  "add.autoAnalyze": "\u5BFC\u5165\u540E\u81EA\u52A8\u6267\u884C AI \u591A\u7EF4\u5185\u5BB9\u89E3\u6784\u5206\u6790",
+  "add.submit": "\u5F00\u59CB\u6293\u53D6\u5E76\u89E3\u6790",
+  "add.importing": "\u6B63\u5728\u6293\u53D6\u3001\u89E3\u6790\u5E76\u751F\u6210\u62C6\u89E3\u62A5\u544A\u2026",
+  "add.success": "\u5DF2\u6DFB\u52A0\u81F3\u7075\u611F\u5E93",
+  "add.error": "\u6293\u53D6\u6216\u89E3\u6790\u5931\u8D25",
   "type.video": "\u89C6\u9891",
   "type.image": "\u56FE\u7247",
   "type.link": "\u94FE\u63A5",
@@ -56,25 +71,75 @@ var zh = {
   "favorite.off": "\u5168\u90E8",
   "error.generic": "\u8BFB\u53D6\u5931\u8D25",
   "error.disabled": "\u7075\u611F\u5E93\u7F51\u5173\u672A\u5F00\u542F",
-  "openSource": "\u6253\u5F00\u6765\u6E90",
+  "openSource": "\u6253\u5F00\u539F\u5E16",
   "noCover": "\u65E0\u5C01\u9762",
-  "count": "{n} \u6761"
+  "count": "{n} \u9879",
+  "badge.local": "\u672C\u5730",
+  "badge.public": "\u4E91\u7AEF",
+  "detail.title": "\u7075\u611F\u8BE6\u60C5\u4E0E\u591A\u7EF4\u62C6\u89E3",
+  "detail.hook": "\u5F00\u5934\u94A9\u5B50 (0\u20133s Hook) \u4E0E\u4EAE\u70B9",
+  "detail.breakdown": "AI \u591A\u7EF4\u7ED3\u6784\u5316\u62C6\u89E3\u62A5\u544A",
+  "detail.copyMarkdown": "\u590D\u5236\u62C6\u89E3\u62A5\u544A",
+  "detail.copied": "\u5DF2\u590D\u5236",
+  "view.player": "\u4F5C\u54C1",
+  "view.deconstruct": "\u4F5C\u54C1\u89E3\u6790",
+  "status.breakdownReady": "\u4E94\u7EF4\u62C6\u89E3\u5DF2\u5C31\u7EEA",
+  "status.breakdownGenerating": "AI \u62C6\u89E3\u751F\u6210\u4E2D\u2026",
+  "dim.tab.all": "\u5168\u90E8\u7EF4\u5EA6",
+  "dim.tab.hook": "\u26A1 \u9EC4\u91D1 3 \u79D2 Hook",
+  "dim.tab.goal": "\u{1F3AF} \u8F6C\u5316\u76EE\u6807\u4E0E\u5FC3\u7406",
+  "dim.tab.narrative": "\u{1F4D6} \u53D9\u4E8B\u89C6\u89D2\u4E0E\u811A\u672C",
+  "dim.tab.visual": "\u{1F50D} \u753B\u9762\u4E0E\u89C6\u542C\u8282\u594F",
+  "dim.tab.replication": "\u{1F680} \u7206\u6B3E\u590D\u523B\u7B56\u7565",
+  "dim.tab.raw": "\u{1F4D1} Markdown \u539F\u6587",
+  "dim.title.hook": "\u26A1 \u9EC4\u91D1 3 \u79D2 HOOK \u4EAE\u70B9",
+  "dim.title.goal": "\u{1F3AF} \u76EE\u6807\u4E0E\u8F6C\u5316\u5FC3\u7406",
+  "dim.title.narrative": "\u{1F4D6} \u53D9\u4E8B\u89C6\u89D2\u4E0E\u811A\u672C\u7ED3\u6784",
+  "dim.title.visual": "\u{1F50D} \u89C6\u89C9\u4E0E\u89C6\u542C\u8282\u594F\u62C6\u89E3",
+  "dim.title.replication": "\u{1F680} \u7206\u6B3E\u590D\u523B\u4E0E\u521B\u4F5C\u6307\u5F15",
+  "dim.title.raw": "\u{1F4D1} \u5B8C\u6574\u62C6\u89E3\u62A5\u544A (Markdown)",
+  "empty.breakdownTitle": "\u5C1A\u672A\u751F\u6210 AI \u4E94\u7EF4\u62C6\u89E3\u62A5\u544A",
+  "empty.breakdownDesc": "\u8C03\u7528\u89C6\u89C9\u5927\u6A21\u578B\u5BF9\u9EC4\u91D1 3 \u79D2 Hook\u3001\u5FC3\u7406\u8F6C\u5316\u3001\u53D9\u4E8B\u89C6\u89D2\u3001\u955C\u5934\u8282\u594F\u4E0E\u590D\u523B\u6A21\u677F\u8FDB\u884C\u5168\u65B9\u4F4D\u89E3\u6784",
+  "empty.breakdownAnalyzing": "AI \u591A\u6A21\u6001\u5927\u6A21\u578B\u6B63\u5728\u6DF1\u5EA6\u62C6\u89E3\u4E2D\u2026",
+  "action.analyzing": "\u6B63\u5728\u89E3\u6790\u2026",
+  "action.triggerAnalyze": "\u7ACB\u5373\u89E3\u6790",
+  "stat.likes": "\u70B9\u8D5E",
+  "stat.comments": "\u8BC4\u8BBA",
+  "stat.shares": "\u5206\u4EAB",
+  "meta.originalText": "\u539F\u5E16\u6587\u6848",
+  "meta.platform": "\u5E73\u53F0: {platform}",
+  "meta.author": "\u4F5C\u8005: {author}"
 };
 var en = {
   "nav": "Inspiration",
-  "title": "Inspiration",
+  "title": "Inspiration Vault",
   "close": "Close",
   "loading": "Loading inspiration\u2026",
-  "needLogin": "Sign in to OmniMux to see inspiration items.",
-  "needLoginHint": "Sign in under Settings \u2192 Profile.",
+  "needLogin": "Sign in to OmniMux to view public cloud inspiration.",
+  "needLoginHint": "Sign in under Settings \u2192 Profile. Local vault works offline without login.",
   "login": "Sign in",
-  "empty.title": "Inspiration library is empty",
-  "empty.description": "Add links with the CLI or an Agent; covers and titles will show up here.",
-  "filter.search": "Search title or body",
+  "empty.title": "Inspiration vault is empty",
+  "empty.description": 'Click "+ Import Inspiration" above to fetch social links, or save via Agent.',
+  "filter.search": "Search title, content, or tags",
   "filter.type": "Type",
   "filter.sort": "Sort",
   "filter.favorite": "Favorites",
   "filter.all": "All",
+  "tab.all": "All",
+  "tab.local": "Local",
+  "tab.public": "Cloud",
+  "add.btn": "Import Inspiration",
+  "add.dialogTitle": "Import Social Media Inspiration",
+  "add.urlLabel": "Social Media URL",
+  "add.urlPlaceholder": "Paste TikTok, Instagram, YouTube, X (Twitter) URL\u2026",
+  "add.platformLabel": "Detected Platform",
+  "add.tagsLabel": "Custom Tags (comma separated)",
+  "add.tagsPlaceholder": "e.g. Opening Hook, Skincare, Pain Point",
+  "add.autoAnalyze": "Automatically run AI multi-dimensional breakdown",
+  "add.submit": "Fetch and Analyze",
+  "add.importing": "Crawling, parsing, and analyzing\u2026",
+  "add.success": "Saved to library",
+  "add.error": "Failed to fetch or parse",
   "type.video": "Video",
   "type.image": "Image",
   "type.link": "Link",
@@ -85,9 +150,44 @@ var en = {
   "favorite.off": "All",
   "error.generic": "Could not load",
   "error.disabled": "Inspiration gateway is off",
-  "openSource": "Open source",
+  "openSource": "Open Source",
   "noCover": "No cover",
-  "count": "{n} items"
+  "count": "{n} items",
+  "badge.local": "Local",
+  "badge.public": "Cloud",
+  "detail.title": "Inspiration Details & Analysis",
+  "detail.hook": "Opening Hook (0\u20133s) & Highlights",
+  "detail.breakdown": "Multi-Dimensional Content Analysis",
+  "detail.copyMarkdown": "Copy Breakdown Markdown",
+  "detail.copied": "Copied",
+  "view.player": "Media",
+  "view.deconstruct": "Deconstruction",
+  "status.breakdownReady": "5D Breakdown Ready",
+  "status.breakdownGenerating": "AI Generating Breakdown\u2026",
+  "dim.tab.all": "All Dimensions",
+  "dim.tab.hook": "\u26A1 3s Hook",
+  "dim.tab.goal": "\u{1F3AF} Conversion Goal",
+  "dim.tab.narrative": "\u{1F4D6} Narrative & Script",
+  "dim.tab.visual": "\u{1F50D} Visual & Pacing",
+  "dim.tab.replication": "\u{1F680} Viral Strategy",
+  "dim.tab.raw": "\u{1F4D1} Raw Markdown",
+  "dim.title.hook": "\u26A1 3-Second Hook & Highlights",
+  "dim.title.goal": "\u{1F3AF} Goal & Psychology",
+  "dim.title.narrative": "\u{1F4D6} Narrative Structure & Script",
+  "dim.title.visual": "\u{1F50D} Visual & Audio Pacing Breakdown",
+  "dim.title.replication": "\u{1F680} Viral Replication Blueprint",
+  "dim.title.raw": "\u{1F4D1} Full Breakdown Report (Markdown)",
+  "empty.breakdownTitle": "5D AI Breakdown Not Generated",
+  "empty.breakdownDesc": "Use multimodal AI to deconstruct 3s hooks, psychological triggers, pacing, and viral templates",
+  "empty.breakdownAnalyzing": "AI multimodal model is analyzing content in depth\u2026",
+  "action.analyzing": "Analyzing\u2026",
+  "action.triggerAnalyze": "Deconstruct Now",
+  "stat.likes": "Likes",
+  "stat.comments": "Comments",
+  "stat.shares": "Shares",
+  "meta.originalText": "Original Content",
+  "meta.platform": "Platform: {platform}",
+  "meta.author": "Author: {author}"
 };
 var NS = "omnimux-inspiration";
 
@@ -96,14 +196,34 @@ var PRODUCT_STAGE_EVENT = "dsh-product-stage";
 var STAGE_ID = "omnimux-inspiration";
 function createStageStore(getStage) {
   let open = false;
+  try {
+    open = window.localStorage.getItem("omnimux_active_product_stage") === STAGE_ID;
+  } catch {
+  }
   const listeners = /* @__PURE__ */ new Set();
   function emit() {
     for (const listener of listeners) listener();
+  }
+  if (open) {
+    const restore = () => {
+      try {
+        const stage = getStage();
+        if (stage && typeof stage.claim === "function") {
+          stage.claim(STAGE_ID);
+        }
+      } catch {
+      }
+    };
+    if (typeof queueMicrotask === "function") queueMicrotask(restore);
+    else setTimeout(restore, 0);
   }
   window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : void 0;
     if (id !== STAGE_ID && open) {
       open = false;
+      emit();
+    } else if (id === STAGE_ID && !open) {
+      open = true;
       emit();
     }
   });
@@ -215,10 +335,10 @@ function mountSidebarEntry(stage, t, locale) {
 }
 
 // src/client/InspirationStage.jsx
-var import_react3 = require("react");
+var import_react2 = require("react");
 
 // src/client/InspirationSection.jsx
-var import_react2 = require("react");
+var import_react = require("react");
 
 // src/client/api.js
 async function inspirationRequest(path, opts = {}) {
@@ -276,6 +396,20 @@ function whenAuthReady(cb) {
     clearInterval(timer);
   };
 }
+var CACHE_TTL_MS = 12e4;
+var memoryCache = /* @__PURE__ */ new Map();
+function getInspirationCache(key) {
+  const entry = memoryCache.get(key);
+  if (!entry) return null;
+  const isStale = Date.now() - entry.at > CACHE_TTL_MS;
+  return { data: entry.data, isStale };
+}
+function setInspirationCache(key, data) {
+  memoryCache.set(key, { data, at: Date.now() });
+}
+function invalidateInspirationCache() {
+  memoryCache.clear();
+}
 function listInspirations(filters = {}) {
   const query = new URLSearchParams();
   for (const key of ["type", "tag", "tags", "q", "is_favorite", "sort", "page", "page_size"]) {
@@ -290,226 +424,1023 @@ function listInspirations(filters = {}) {
   return inspirationRequest(`/omnimux/inspiration${suffix}`);
 }
 var listInspirationsGuarded = authGuard(listInspirations);
+function listLocalInspirations(filters = {}) {
+  const query = new URLSearchParams();
+  for (const key of ["type", "tag", "tags", "q", "platform", "is_favorite", "sort", "page", "page_size"]) {
+    const value = filters[
+      /** @type {keyof typeof filters} */
+      key
+    ];
+    if (value == null || value === "") continue;
+    query.set(key, String(value));
+  }
+  const suffix = query.toString() ? `?${query}` : "";
+  return inspirationRequest(`/omnimux/inspiration/local${suffix}`);
+}
+async function loadInspirationsAtomic(params) {
+  const { tab = "all", q = "", type = "", sort = "hot", favorite = "0", page = 1, pageSize = 20 } = params;
+  const filterArgs = {
+    q: q.trim() || void 0,
+    type: type || void 0,
+    sort: sort || void 0,
+    is_favorite: favorite === "1" ? "1" : void 0,
+    page,
+    page_size: pageSize
+  };
+  if (tab === "local") {
+    const res = await listLocalInspirations(filterArgs);
+    if (!res.ok) throw new Error(res.body?.error || `HTTP ${res.status}`);
+    const items2 = (res.body?.data?.items || []).map((it) => ({ ...it, is_local: true }));
+    const total2 = Number(res.body?.data?.total) || items2.length;
+    return { items: items2, total: total2, hasMore: items2.length === pageSize && page * pageSize < total2, phase: "ready" };
+  }
+  if (tab === "public") {
+    const res = await listInspirationsGuarded(filterArgs);
+    if (res.status === 401) return { items: [], total: 0, hasMore: false, phase: "need-login" };
+    if (!res.ok) throw new Error(res.body?.error || `HTTP ${res.status}`);
+    const items2 = (res.body?.data?.items || []).map((it) => ({ ...it, is_local: false }));
+    const total2 = Number(res.body?.data?.total) || items2.length;
+    return { items: items2, total: total2, hasMore: items2.length === pageSize && page * pageSize < total2, phase: "ready" };
+  }
+  const [localOutcome, pubOutcome] = await Promise.allSettled([
+    listLocalInspirations(filterArgs),
+    listInspirationsGuarded(filterArgs)
+  ]);
+  let items = [];
+  let total = 0;
+  let needLogin = false;
+  if (localOutcome.status === "fulfilled" && localOutcome.value.ok) {
+    const lItems = (localOutcome.value.body?.data?.items || []).map((it) => ({ ...it, is_local: true }));
+    items.push(...lItems);
+    total += Number(localOutcome.value.body?.data?.total) || lItems.length;
+  }
+  if (pubOutcome.status === "fulfilled") {
+    const pubRes = pubOutcome.value;
+    if (pubRes.status === 401) {
+      needLogin = true;
+    } else if (pubRes.ok) {
+      const pItems = (pubRes.body?.data?.items || []).map((it) => ({ ...it, is_local: false }));
+      items.push(...pItems);
+      total += Number(pubRes.body?.data?.total) || pItems.length;
+    }
+  }
+  return {
+    items,
+    total,
+    hasMore: items.length >= pageSize,
+    phase: needLogin && items.length === 0 ? "need-login" : "ready"
+  };
+}
+function importLocalInspiration(payload) {
+  invalidateInspirationCache();
+  return inspirationRequest("/omnimux/inspiration/local/import-url", {
+    method: "POST",
+    body: payload
+  });
+}
+function triggerAnalyzeInspiration(id) {
+  invalidateInspirationCache();
+  return inspirationRequest(`/omnimux/inspiration/local/${encodeURIComponent(id)}/analyze`, {
+    method: "POST"
+  });
+}
 function hostMediaSrc(url) {
   if (typeof url !== "string" || url === "") return "";
+  if (url.includes("..")) return "";
   if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith("/omnimux/inspiration/local/media/")) return url;
   if (url.startsWith("/omnimux/inspiration/media/")) return url;
   if (url.startsWith("/api/inspiration/v1/media/")) {
     return `/omnimux/inspiration/media/${url.slice("/api/inspiration/v1/media/".length)}`;
   }
-  return url;
+  return `/omnimux/inspiration/media/${url.replace(/^\/+/, "")}`;
+}
+function pickCoverSrc(row) {
+  if (!row || typeof row !== "object") return "";
+  const rec = (
+    /** @type {Record<string, unknown>} */
+    row
+  );
+  return hostMediaSrc(rec.cover_key ?? rec.cover_url);
+}
+function isUsableCoverSize(width, height) {
+  return Number(width) >= 8 && Number(height) >= 8;
+}
+function coverGlyph(title) {
+  const text = typeof title === "string" ? title.trim() : "";
+  return text.slice(0, 1) || "\u7075";
+}
+var TIKTOK_VIDEO_RE = /tiktok\.com\/@?[^/]+\/video\/(\d{15,25})/i;
+var TIKTOK_V_RE = /tiktok\.com\/v\/(\d{15,25})/i;
+function extractTikTokVideoId(url) {
+  if (typeof url !== "string" || !url.trim()) return null;
+  const m = url.match(TIKTOK_VIDEO_RE) || url.match(TIKTOK_V_RE);
+  if (m && m[1]) return m[1];
+  return null;
+}
+function resolveTikTokEmbedUrl(sourceUrlOrId) {
+  if (!sourceUrlOrId) return null;
+  const raw = String(sourceUrlOrId).trim();
+  if (/^\d{15,25}$/.test(raw)) {
+    return `https://www.tiktok.com/player/v1/${raw}`;
+  }
+  const id = extractTikTokVideoId(raw);
+  return id ? `https://www.tiktok.com/player/v1/${id}` : null;
 }
 
 // src/client/styles.js
-var STYLES2 = `
-.omnimux-inspiration-root {
+var INSPIRATION_STYLES_ID = "omnimux-inspiration-styles";
+var INSPIRATION_CSS = `
+/* \u6839\u5BB9\u5668\u4E0E\u5FAE\u5149\u626B\u5149\u5173\u952E\u5E27 */
+.omnimux-inspiration-root,
+.omnimux-inspiration-root *,
+.omnimux-inspiration-modal-backdrop,
+.omnimux-inspiration-modal-backdrop * {
   box-sizing: border-box;
+}
+
+.omnimux-inspiration-root {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 0 20px 24px;
-  color: var(--dsw-alias-label-primary, var(--dsw-text-primary, inherit));
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 16px 24px 32px 24px;
+  gap: 20px;
+  background: var(--omx-color-canvas, #0a0a0a);
+  color: var(--omx-color-ink, #ffffff);
+  font-family: var(--omx-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
 }
-.omnimux-inspiration-root *,
-.omnimux-inspiration-root *::before,
-.omnimux-inspiration-root *::after { box-sizing: border-box; }
+
+@keyframes omni-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* \u9876\u90E8\u5BFC\u822A\u4E0E\u64CD\u4F5C\u680F */
+.omnimux-inspiration-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--omx-color-hairline, #222222);
+}
+
+.omnimux-inspiration-tabs {
+  display: inline-flex;
+  background: var(--omx-color-canvas-soft, #141414);
+  padding: 3px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  border: 1px solid var(--omx-color-hairline, #242424);
+}
+
+.omnimux-inspiration-tab {
+  height: 28px;
+  padding: 0 14px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  border: none;
+  background: transparent;
+  color: var(--omx-color-muted, #888888);
+  font: var(--omx-text-label, 500 13px/16px var(--omx-font-sans));
+  cursor: pointer;
+  transition: color var(--omx-motion-fast, 120ms) ease,
+              background var(--omx-motion-fast, 120ms) ease;
+}
+
+.omnimux-inspiration-tab:hover {
+  color: var(--omx-color-ink-soft, #ebebeb);
+}
+
+.omnimux-inspiration-tab.active {
+  background: var(--omx-color-canvas-raised, #242424);
+  color: var(--omx-color-ink, #ffffff);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.omnimux-inspiration-btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--dsw-alias-button-primary-fill, #ffffff);
+  color: var(--dsw-alias-label-primary-foreground, #000000);
+  font: var(--omx-text-label, 550 13px/16px var(--omx-font-sans));
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: all var(--omx-motion-fast, 120ms) cubic-bezier(0.16, 1, 0.3, 1);
+}
+.omnimux-inspiration-btn-add:hover {
+  background: #ebebeb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.omnimux-inspiration-btn-add:active {
+  transform: translateY(0);
+}
+
+/* \u6781\u7B80\u53D1\u4E1D\u7EBF\u5DE5\u5177\u680F */
 .omnimux-inspiration-toolbar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-}
-.omnimux-inspiration-search {
-  flex: 1 1 220px;
-  min-width: 160px;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.08));
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
-  color: inherit;
-  font: inherit;
-}
-.omnimux-inspiration-select {
-  height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.08));
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
-  color: inherit;
-  font: inherit;
-}
-.omnimux-inspiration-count {
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
-}
-.omnimux-inspiration-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  justify-content: space-between;
   gap: 12px;
-}
-.omnimux-inspiration-card {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.08));
-  border-radius: 12px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
-}
-.omnimux-inspiration-cover {
-  display: block;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
-  background: var(--dsw-alias-bg-tertiary, rgba(255,255,255,0.06));
+  max-width: 100%;
+  flex-wrap: wrap;
 }
-.omnimux-inspiration-cover-empty {
+
+.omnimux-inspiration-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 200px;
+  min-width: 160px;
+  max-width: 360px;
+}
+
+.omnimux-inspiration-search-icon {
+  position: absolute;
+  left: 12px;
+  pointer-events: none;
+  color: var(--omx-color-muted, #7c7c7c);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.omnimux-inspiration-search {
   width: 100%;
-  aspect-ratio: 16 / 10;
-  font-size: 12px;
-  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
-  background: var(--dsw-alias-bg-tertiary, rgba(255,255,255,0.06));
+  height: 32px;
+  background: var(--omx-color-canvas-soft, #141414);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: var(--omx-radius-pill, 9999px);
+  padding: 0 14px 0 34px;
+  color: var(--omx-color-ink, #ffffff);
+  font: var(--omx-text-body-sm, 400 13px/18px var(--omx-font-sans));
+  outline: none;
+  transition: border-color var(--omx-motion-fast, 120ms) ease,
+              background-color var(--omx-motion-fast, 120ms) ease;
 }
-.omnimux-inspiration-body { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 6px; }
-.omnimux-inspiration-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
+.omnimux-inspiration-search:focus {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--omx-color-canvas-raised, #1a1a1a);
 }
-.omnimux-inspiration-meta {
+
+.omnimux-inspiration-filters {
   display: flex;
+  align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.omnimux-inspiration-select {
+  height: 32px;
+  background: var(--omx-color-canvas-soft, #141414);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: var(--omx-radius-pill, 9999px);
+  padding: 0 12px;
+  color: var(--omx-color-ink-soft, #ebebeb);
+  font: var(--omx-text-label, 500 12px/16px var(--omx-font-sans));
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--omx-motion-fast, 120ms) ease,
+              background-color var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-select:hover {
+  border-color: var(--omx-color-hairline-strong, #3d3d3d);
+  background: var(--omx-color-canvas-raised, #1a1a1a);
+}
+.omnimux-inspiration-select:focus {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.omnimux-inspiration-count {
+  font: var(--omx-text-code, 400 12px/16px var(--omx-font-mono));
+  color: var(--omx-color-muted, #7c7c7c);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--omx-radius-pill, 9999px);
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+/* 9:16 \u539F\u5B50\u5316\u626B\u5149\u9AA8\u67B6\u5C4F\u77E9\u9635 */
+.omnimux-inspiration-skeleton {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+}
+@media (min-width: 1600px) {
+  .omnimux-inspiration-skeleton {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 18px;
+  }
+}
+.omnimux-inspiration-skel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: var(--omx-radius-sm, 10px);
+  background: var(--omx-color-canvas-soft, #141414);
+  border: 1px solid var(--omx-color-hairline, #222222);
+  overflow: hidden;
+}
+.omnimux-inspiration-skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%);
+  animation: omni-shimmer 1.4s infinite;
+}
+
+/* \u7EDF\u4E00\u5361\u7247\u7F51\u683C */
+.omnimux-inspiration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  animation: omni-fade-in 160ms ease;
+}
+@media (min-width: 1600px) {
+  .omnimux-inspiration-grid {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 18px;
+  }
+}
+@media (max-width: 640px) {
+  .omnimux-inspiration-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+.omnimux-inspiration-card-pure {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: var(--omx-radius-sm, 10px);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--omx-color-canvas-soft, #131313);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  transition: transform var(--omx-motion-base, 180ms) cubic-bezier(.2,.4,.6,1),
+              border-color var(--omx-motion-base, 180ms) cubic-bezier(.2,.4,.6,1),
+              box-shadow var(--omx-motion-base, 180ms) ease;
+}
+.omnimux-inspiration-card-pure:hover {
+  transform: translateY(-3px);
+  border-color: var(--omx-color-hairline-strong, #4a4a4a);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.omnimux-inspiration-cover-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #181818;
+}
+
+/* Fallback \u5360\u4F4D\u5361\u7247 */
+.omnimux-inspiration-cover-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 9 / 16;
+  background: radial-gradient(circle at 50% 30%, #202020 0%, #111111 100%);
+  padding: 16px;
+  gap: 12px;
+  text-align: center;
+  color: var(--omx-color-muted, #7c7c7c);
+}
+.omnimux-inspiration-fallback-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--omx-color-ink-soft, #ebebeb);
+}
+.omnimux-inspiration-fallback-title {
   font-size: 12px;
   line-height: 16px;
-  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
+  color: var(--omx-color-muted, #888888);
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-all;
 }
-.omnimux-inspiration-link {
-  align-self: start;
-  color: inherit;
+
+/* Hover \u6D6E\u5C42 */
+.omnimux-inspiration-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.75) 100%);
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px;
+  transition: opacity var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-overlay {
+  opacity: 1;
+}
+.omnimux-inspiration-badge-platform {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--omx-font-mono, monospace);
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+.omnimux-inspiration-badge-platform.local {
+  border-color: #10b981;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+}
+.omnimux-inspiration-overlay-play {
+  align-self: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--omx-color-primary, #ffffff);
+  color: var(--omx-color-on-primary, #0a0a0a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(0.9);
+  transition: transform var(--omx-motion-fast, 120ms) ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.omnimux-inspiration-card-pure:hover .omnimux-inspiration-overlay-play {
+  transform: scale(1);
+}
+.omnimux-inspiration-overlay-play svg {
+  width: 18px;
+  height: 18px;
+  margin-left: 2px;
+}
+.omnimux-inspiration-overlay-footer {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* \u8BE6\u60C5\u5F39\u7A97 Modal */
+.omnimux-inspiration-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--omx-color-overlay, rgba(0,0,0,.70));
+  backdrop-filter: blur(16px);
+  z-index: var(--omx-z-modal, 200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--omx-space-xl, 24px);
+  animation: omni-fade-in var(--omx-motion-fast, 120ms) ease;
+}
+@keyframes omni-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.omnimux-inspiration-modal-container {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 1040px;
+  height: 85vh;
+  max-height: 720px;
+  border-radius: var(--omx-radius-lg, 16px);
+  overflow: hidden;
+  background: var(--omx-color-canvas-soft, #131313);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  box-shadow: var(--omx-shadow-overlay, 0 8px 24px rgba(0,0,0,.48));
+}
+.omnimux-inspiration-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--omx-color-hairline, #242424);
+  background: var(--omx-color-canvas-soft, #131313);
+  color: var(--omx-color-ink-soft, #ebebeb);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: border-color var(--omx-motion-fast, 120ms) ease,
+              color var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-modal-close:hover {
+  border-color: var(--omx-color-hairline-strong, #3d3d3d);
+  color: var(--omx-color-ink, #ffffff);
+}
+
+/* \u5F39\u7A97\u5DE6\u5217\uFF1A\u89C6\u9891\u64AD\u653E / \u5185\u5BB9\u62C6\u89E3 \u5207\u6362\u5927\u753B\u5E45\u533A\u57DF */
+.omnimux-inspiration-modal-left {
+  flex: 1 1 58%;
+  min-width: 320px;
+  background: #000000;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* \u5DE6\u4FA7\u9876\u90E8\u6A21\u5F0F\u5207\u6362\u5F00\u5173 Segmented Controls */
+.omnimux-inspiration-preview-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(18, 18, 18, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--omx-color-hairline, #242424);
+  z-index: 10;
+}
+.omnimux-inspiration-switch-group {
+  display: inline-flex;
+  background: #0a0a0a;
+  padding: 3px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  border: 1px solid var(--omx-color-hairline, #242424);
+}
+.omnimux-inspiration-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  border: none;
+  background: transparent;
+  color: var(--omx-color-muted, #7c7c7c);
+  font: var(--omx-text-label, 500 12px/14px var(--omx-font-sans));
+  cursor: pointer;
+  transition: all var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-switch-btn.active {
+  background: var(--omx-color-canvas-raised, #242424);
+  color: var(--omx-color-ink, #ffffff);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.omnimux-inspiration-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  font-size: 11px;
+  font-family: var(--omx-font-mono, monospace);
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--omx-color-ink-soft, #ebebeb);
+}
+.omnimux-inspiration-status-badge.done {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+.omnimux-inspiration-status-badge.pending {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+/* \u64AD\u653E\u5668\u5BB9\u5668 */
+.omnimux-inspiration-preview-player {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: var(--omx-space-md, 12px);
+}
+.omnimux-inspiration-modal-player-box {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  height: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: var(--omx-radius-sm, 8px);
+  overflow: hidden;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.omnimux-inspiration-player-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #000000;
+}
+.omnimux-inspiration-modal-cover-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* AI \u5185\u5BB9\u62C6\u89E3\u5927\u89C6\u7A97 (5 \u7EF4\u5EA6\u6C89\u6D78\u5F0F\u67E5\u770B) */
+.omnimux-inspiration-deconstruct-view {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0d0d0d;
+  overflow: hidden;
+}
+.omnimux-inspiration-dim-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--omx-color-hairline, #222222);
+  background: #111111;
+}
+.omnimux-inspiration-dim-tabs::-webkit-scrollbar {
+  height: 3px;
+}
+.omnimux-inspiration-dim-tab {
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  background: #161616;
+  color: var(--omx-color-muted, #888888);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-dim-tab:hover {
+  color: #ffffff;
+  border-color: #383838;
+}
+.omnimux-inspiration-dim-tab.active {
+  background: #282828;
+  border-color: #555555;
+  color: #ffffff;
+}
+
+.omnimux-inspiration-dim-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.omnimux-inspiration-dim-card {
+  border-radius: var(--omx-radius-sm, 10px);
+  background: #141414;
+  border: 1px solid var(--omx-color-hairline, #242424);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.omnimux-inspiration-dim-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.omnimux-inspiration-dim-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.omnimux-inspiration-dim-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--omx-color-ink-soft, #d1d1d1);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.omnimux-inspiration-dim-code {
+  font-family: var(--omx-font-mono, monospace);
   font-size: 12px;
+  line-height: 1.5;
+  background: #0a0a0a;
+  border: 1px solid #222222;
+  border-radius: 6px;
+  padding: 12px;
+  color: #a3e635;
+  white-space: pre-wrap;
+  overflow-x: auto;
 }
+
+/* \u62C6\u89E3\u4E3A\u7A7A\u6216\u8FDB\u884C\u4E2D\u6001 */
+.omnimux-inspiration-deconstruct-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 30px;
+  text-align: center;
+}
+.omnimux-inspiration-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  background: #ffffff;
+  color: #0a0a0a;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255,255,255,0.18);
+  transition: all 120ms ease;
+}
+.omnimux-inspiration-trigger-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #eaeaea;
+}
+.omnimux-inspiration-trigger-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* \u5F39\u7A97\u53F3\u5217\uFF1A\u6781\u7B80\u53D1\u4E1D\u7EBF\u8BE6\u60C5\u4FE1\u606F\u533A (\u6807\u9898\u4E0E\u63CF\u8FF0\u5728\u4E0B\u65B9) */
+.omnimux-inspiration-modal-right {
+  flex: 0 0 380px;
+  width: 380px;
+  background: var(--omx-color-canvas, #0a0a0a);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 20px 24px;
+  gap: 16px;
+  border-left: 1px solid var(--omx-color-hairline, #242424);
+}
+
+/* \u521B\u4F5C\u8005\u4FE1\u606F\u4E0E\u5E73\u53F0 Badge */
+.omnimux-inspiration-creator-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--omx-color-hairline, #202020);
+}
+.omnimux-inspiration-creator-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.omnimux-inspiration-modal-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--omx-color-canvas-raised, #1c1c1c);
+  border: 1px solid var(--omx-color-hairline, #2a2a2a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--omx-font-mono, monospace);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--omx-color-ink, #ffffff);
+}
+.omnimux-inspiration-modal-handle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.omnimux-inspiration-modal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--omx-color-ink-soft, #d1d1d1);
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  border: 1px solid var(--omx-color-hairline, #262626);
+  background: var(--omx-color-canvas-soft, #141414);
+  transition: all var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-modal-link:hover {
+  border-color: #444444;
+  color: #ffffff;
+}
+
+/* \u6807\u7B7E Tags */
+.omnimux-inspiration-modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.omnimux-inspiration-modal-tag {
+  padding: 2px 8px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  font-family: var(--omx-font-mono, monospace);
+  font-size: 11px;
+  border: 1px solid var(--omx-color-hairline, #242424);
+  background: var(--omx-color-canvas-soft, #141414);
+  color: var(--omx-color-muted, #888888);
+}
+
+/* \u89C6\u9891\u4E92\u52A8\u6570\u636E Stats \u77E9\u9635 */
+.omnimux-inspiration-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #111111;
+  border: 1px solid #222222;
+}
+.omnimux-inspiration-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+.omnimux-inspiration-stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--omx-color-muted, #7c7c7c);
+  font-family: var(--omx-font-mono, monospace);
+}
+.omnimux-inspiration-stat-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* \u6807\u9898\u548C\u539F\u8D34\u63CF\u8FF0\u533A\u5757\uFF08\u7F6E\u4E8E\u4E0B\u65B9\uFF09 */
+.omnimux-inspiration-caption-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: var(--omx-radius-sm, 8px);
+  background: var(--omx-color-canvas-soft, #131313);
+  border: 1px solid var(--omx-color-hairline, #242424);
+}
+.omnimux-inspiration-caption-label {
+  font-size: 11px;
+  font-family: var(--omx-font-mono, monospace);
+  color: var(--omx-color-muted, #7c7c7c);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.omnimux-inspiration-caption-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--omx-color-ink-soft, #ebebeb);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* \u5BFC\u5165\u6A21\u6001\u6846 Import Dialog */
+.omnimux-inspiration-import-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  border-radius: var(--omx-radius-lg, 16px);
+  background: var(--omx-color-canvas-soft, #131313);
+  border: 1px solid var(--omx-color-hairline, #242424);
+  box-shadow: var(--omx-shadow-overlay, 0 8px 24px rgba(0,0,0,.48));
+  overflow: hidden;
+}
+.omnimux-inspiration-import-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--omx-color-hairline, #242424);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.omnimux-inspiration-import-header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.omnimux-inspiration-import-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.omnimux-inspiration-import-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--omx-color-hairline, #242424);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* \u7A7A\u6001\u4E0E\u9519\u8BEF\u63D0\u793A */
 .omnimux-inspiration-empty, .omnimux-inspiration-gate, .omnimux-inspiration-error {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--omx-space-sm, 8px);
   min-height: 240px;
   text-align: center;
-  padding: 24px;
+  padding: var(--omx-space-xl, 24px);
 }
-.omnimux-inspiration-empty-title { margin: 0; font-size: 16px; font-weight: 600; }
-.omnimux-inspiration-empty-text { margin: 0; font-size: 13px; color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72)); }
+.omnimux-inspiration-empty-title {
+  margin: 0;
+  font: var(--omx-text-title-sm, 600 18px/28px var(--omx-font-sans));
+  color: var(--omx-color-ink, #ffffff);
+}
+.omnimux-inspiration-empty-text {
+  margin: 0;
+  font: var(--omx-text-body-sm, 400 14px/20px var(--omx-font-sans));
+  color: var(--omx-color-muted, #7c7c7c);
+}
 .omnimux-inspiration-btn {
-  height: 32px;
-  padding: 0 16px;
+  height: 34px;
+  padding: 0 var(--omx-space-lg, 16px);
   border: none;
-  border-radius: 8px;
-  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.18));
-  color: inherit;
+  border-radius: var(--omx-radius-pill, 9999px);
+  background: var(--omx-color-primary, #ffffff);
+  color: var(--omx-color-on-primary, #0a0a0a);
+  font: var(--omx-text-label, 500 13px/16px var(--omx-font-sans));
   cursor: pointer;
-  font: inherit;
 }
-.omnimux-inspiration-skeleton {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+
+/* \u89E6\u5E95\u6EDA\u52A8\u52A0\u8F7D\u5668 */
+.omnimux-inspiration-scroll-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 0;
+  font-size: 12px;
+  color: var(--omx-color-muted, #7c7c7c);
 }
-.omnimux-inspiration-skel {
-  height: 180px;
-  border-radius: 12px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+.omnimux-inspiration-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.15);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: omni-spin 0.6s linear infinite;
+}
+@keyframes omni-spin {
+  to { transform: rotate(360deg); }
 }
 `;
-var STYLE_ID = "omnimux-inspiration-styles";
 function injectInspirationStyles() {
   if (typeof document === "undefined") return;
-  if (document.getElementById(STYLE_ID)) return;
-  const node = document.createElement("style");
-  node.id = STYLE_ID;
-  node.textContent = STYLES2;
-  document.head.appendChild(node);
-}
-
-// src/client/use-inspiration.js
-var import_react = require("react");
-
-// src/view.js
-function pickList(body) {
-  const root = body && typeof body === "object" ? (
-    /** @type {Record<string, unknown>} */
-    body
-  ) : {};
-  const data = root.data && typeof root.data === "object" ? (
-    /** @type {Record<string, unknown>} */
-    root.data
-  ) : root;
-  const items = Array.isArray(data.items) ? data.items : [];
-  const total = typeof data.total === "number" ? data.total : items.length;
-  return { total, items: items.filter((row) => row && typeof row === "object") };
-}
-function errorMessage(errorBody, status) {
-  const body = errorBody && typeof errorBody === "object" ? (
-    /** @type {Record<string, unknown>} */
-    errorBody
-  ) : {};
-  const code = String(body.code || body.error || "");
-  if (code === "INSPIRATION_DISABLED" || /disabled/i.test(code)) return "disabled";
-  if (code === "INSPIRATION_NOT_CONFIGURED") return "disabled";
-  return String(body.message || body.error || `HTTP ${String(status)}`);
-}
-
-// src/client/use-inspiration.js
-var sessionCache = { phase: "loading", items: [], total: 0 };
-function useInspiration(filters) {
-  const [phase, setPhase] = (0, import_react.useState)(sessionCache.phase);
-  const [items, setItems] = (0, import_react.useState)(sessionCache.items);
-  const [total, setTotal] = (0, import_react.useState)(sessionCache.total);
-  const [error, setError] = (0, import_react.useState)("");
-  const apply2 = (0, import_react.useCallback)((result) => {
-    if (result.status === 401) {
-      sessionCache.phase = "need-login";
-      sessionCache.items = [];
-      sessionCache.total = 0;
-      setPhase("need-login");
-      setItems([]);
-      setTotal(0);
-      return;
-    }
-    if (!result.ok) {
-      setError(errorMessage(result.body, result.status));
-      sessionCache.phase = "ready";
-      setPhase("ready");
-      return;
-    }
-    const picked = pickList(result.body);
-    setError("");
-    sessionCache.phase = "ready";
-    sessionCache.items = picked.items;
-    sessionCache.total = picked.total;
-    setPhase("ready");
-    setItems(picked.items);
-    setTotal(picked.total);
-  }, []);
-  const refresh = (0, import_react.useCallback)(() => {
-    return listInspirationsGuarded(filters).then(apply2).catch((caught) => {
-      setError(caught instanceof Error ? caught.message : String(caught));
-      sessionCache.phase = "ready";
-      setPhase("ready");
-    });
-  }, [apply2, filters.type, filters.q, filters.is_favorite, filters.sort]);
-  (0, import_react.useEffect)(() => {
-    void refresh();
-  }, [refresh]);
-  (0, import_react.useEffect)(() => whenAuthReady(() => {
-    void refresh();
-  }), [refresh]);
-  return { phase, items, total, error, refresh };
+  if (document.getElementById(INSPIRATION_STYLES_ID)) return;
+  const styleNode = document.createElement("style");
+  styleNode.id = INSPIRATION_STYLES_ID;
+  styleNode.textContent = INSPIRATION_CSS;
+  document.head.appendChild(styleNode);
 }
 
 // src/client/InspirationSection.jsx
@@ -525,116 +1456,682 @@ function LoginGate({ t }) {
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omnimux-inspiration-btn", onClick: login, children: t("login") })
   ] });
 }
-function EmptyState({ t }) {
+function PureCoverCard({ row, t, onSelect }) {
+  const title = String(row.title || row.source_url || row.id);
+  const cover = pickCoverSrc(row);
+  const [broken, setBroken] = (0, import_react.useState)(!cover);
+  (0, import_react.useEffect)(() => {
+    setBroken(!cover);
+  }, [cover]);
+  const platform = (row.source_platform || (row.is_local ? "local" : "tiktok")).toUpperCase();
+  const isLocal = Boolean(row.is_local);
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+    "article",
+    {
+      className: "omnimux-inspiration-card-pure",
+      onClick: () => onSelect(row),
+      role: "button",
+      tabIndex: 0,
+      onKeyDown: (e) => {
+        if (e.key === "Enter" || e.key === " ") onSelect(row);
+      },
+      children: [
+        broken ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-cover-fallback", "aria-hidden": "true", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-fallback-icon", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-fallback-title", children: title.replace(/^https?:\/\/(www\.)?/, "") })
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "img",
+          {
+            className: "omnimux-inspiration-cover-img",
+            src: cover,
+            alt: title,
+            loading: "lazy",
+            decoding: "async",
+            onError: () => setBroken(true),
+            onLoad: (event) => {
+              const node = event.currentTarget;
+              if (!isUsableCoverSize(node.naturalWidth, node.naturalHeight)) setBroken(true);
+            }
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-card-overlay", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `omnimux-inspiration-badge-platform ${isLocal ? "local" : ""}`, children: isLocal ? "\u672C\u5730" : platform }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-overlay-play", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M8 5v14l11-7z" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-overlay-footer", children: title.length > 32 ? `${title.slice(0, 32)}\u2026` : title })
+        ] })
+      ]
+    }
+  );
+}
+function InspirationModal({ row, t, onClose, onItemUpdated }) {
+  if (!row) return null;
+  const [item, setItem] = (0, import_react.useState)(row);
+  const [viewMode, setViewMode] = (0, import_react.useState)("player");
+  const [dimTab, setDimTab] = (0, import_react.useState)("all");
+  const [analyzing, setAnalyzing] = (0, import_react.useState)(false);
+  const [analyzeError, setAnalyzeError] = (0, import_react.useState)(null);
+  (0, import_react.useEffect)(() => {
+    setItem(row);
+  }, [row]);
+  const title = String(item.title || "\u7075\u611F\u8BE6\u60C5");
+  const analysis = item.analysis && typeof item.analysis === "object" ? item.analysis : item.deconstruction || {};
+  const rawEmbed = analysis.embed_player_url || item.source_url;
+  const embedUrl = resolveTikTokEmbedUrl(rawEmbed) || (item.source_url ? resolveTikTokEmbedUrl(item.source_url) : null);
+  const cover = pickCoverSrc(item);
+  const tags = Array.isArray(item.tags) ? item.tags : [];
+  const creator = analysis.creator || item.author || { name: "Creator", handle: item.source_platform || "social" };
+  const localVideoUrl = item.local_paths?.video ? `/omnimux/inspiration/local/media/${encodeURIComponent(item.id)}/video.mp4` : null;
+  const hook = analysis.hook_highlight || analysis.hook || analysis["3s_hook"] || "";
+  const targetGoal = analysis.target_goal || analysis.goal || "";
+  const narrative = analysis.narrative_strategy || analysis.narrative || "";
+  const breakdown = analysis.visual_breakdown || analysis.breakdown || analysis.content_breakdown || "";
+  const replication = analysis.replication_action || analysis.replication_guide || "";
+  const rawMarkdown = analysis.markdown || analysis.raw_markdown || (typeof item.deconstruction === "string" ? item.deconstruction : "");
+  const hasDeconstruction = Boolean(hook || targetGoal || narrative || breakdown || replication || rawMarkdown);
+  (0, import_react.useEffect)(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+  const handleTriggerAnalyze = async () => {
+    if (analyzing || !item.id) return;
+    setAnalyzing(true);
+    setAnalyzeError(null);
+    try {
+      const res = await triggerAnalyzeInspiration(item.id);
+      if (res.ok && res.body?.data) {
+        setItem(res.body.data);
+        if (onItemUpdated) onItemUpdated(res.body.data);
+        setViewMode("deconstruct");
+      } else {
+        setAnalyzeError(res.body?.error || "\u89E3\u6790\u670D\u52A1\u6682\u65F6\u4E0D\u53EF\u7528");
+      }
+    } catch (err) {
+      setAnalyzeError(String(err.message || err));
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-modal-container", onClick: (e) => e.stopPropagation(), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "omnimux-inspiration-modal-close", onClick: onClose, "aria-label": "Close", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M18 6L6 18M6 6l12 12" }) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-modal-left", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-preview-switch", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-switch-group", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+            "button",
+            {
+              type: "button",
+              className: `omnimux-inspiration-switch-btn ${viewMode === "player" ? "active" : ""}`,
+              onClick: () => setViewMode("player"),
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("view.player") })
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+            "button",
+            {
+              type: "button",
+              className: `omnimux-inspiration-switch-btn ${viewMode === "deconstruct" ? "active" : ""}`,
+              onClick: () => setViewMode("deconstruct"),
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "2 17 12 22 22 17" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "2 12 12 17 22 12" })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("view.deconstruct") })
+              ]
+            }
+          )
+        ] }),
+        hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "omnimux-inspiration-status-badge done", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "20 6 9 17 4 12" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("status.breakdownReady") })
+        ] }) : analyzing ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "omnimux-inspiration-status-badge pending", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "10px", height: "10px" } }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("status.breakdownGenerating") })
+        ] }) : null
+      ] }),
+      viewMode === "player" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-preview-player", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-player-box", children: embedUrl ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        "iframe",
+        {
+          title,
+          src: embedUrl,
+          className: "omnimux-inspiration-player-frame",
+          allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+          allowFullScreen: true
+        }
+      ) : localVideoUrl ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        "video",
+        {
+          src: localVideoUrl,
+          controls: true,
+          autoPlay: true,
+          className: "omnimux-inspiration-player-frame"
+        }
+      ) : cover ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", { src: cover, alt: title, className: "omnimux-inspiration-modal-cover-bg" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-cover-fallback", children: coverGlyph(title) }) }) }) : null,
+      viewMode === "deconstruct" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-deconstruct-view", children: hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-tabs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "button",
+            {
+              type: "button",
+              className: `omnimux-inspiration-dim-tab ${dimTab === "all" ? "active" : ""}`,
+              onClick: () => setDimTab("all"),
+              children: t("dim.tab.all")
+            }
+          ),
+          hook ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "button",
+            {
+              type: "button",
+              className: `omnimux-inspiration-dim-tab ${dimTab === "hook" ? "active" : ""}`,
+              onClick: () => setDimTab("hook"),
+              children: t("dim.tab.hook")
+            }
+          ) : null,
+          targetGoal ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "button",
+            {
+              type: "button",
+              className: `omnimux-inspiration-dim-tab ${dimTab === "goal" ? "active" : ""}`,
+              onClick: () => setDimTab("goal"),
+              children: t("dim.tab.goal")
+            }
+          ) : null,
+          narrative ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "button",
+            {
+              type: "button",
+              className: `omnimux-inspiration-dim-tab ${dimTab === "narrative" ? "active" : ""}`,
+              onClick: () => setDimTab("narrative"),
+              children: t("dim.tab.narrative")
+            }
+          ) : null,
+          breakdown ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "button",
+            {
+              type: "button",
+              className: `omnimux-inspiration-dim-tab ${dimTab === "visual" ? "active" : ""}`,
+              onClick: () => setDimTab("visual"),
+              children: t("dim.tab.visual")
+            }
+          ) : null,
+          replication ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "button",
+            {
+              type: "button",
+              className: `omnimux-inspiration-dim-tab ${dimTab === "replication" ? "active" : ""}`,
+              onClick: () => setDimTab("replication"),
+              children: t("dim.tab.replication")
+            }
+          ) : null,
+          rawMarkdown ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "button",
+            {
+              type: "button",
+              className: `omnimux-inspiration-dim-tab ${dimTab === "raw" ? "active" : ""}`,
+              onClick: () => setDimTab("raw"),
+              children: t("dim.tab.raw")
+            }
+          ) : null
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-content", children: [
+          (dimTab === "all" || dimTab === "hook") && hook ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.hook") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-body", children: hook })
+          ] }) : null,
+          (dimTab === "all" || dimTab === "goal") && targetGoal ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.goal") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-body", children: targetGoal })
+          ] }) : null,
+          (dimTab === "all" || dimTab === "narrative") && narrative ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.narrative") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-body", children: narrative })
+          ] }) : null,
+          (dimTab === "all" || dimTab === "visual") && breakdown ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.visual") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-body", children: breakdown })
+          ] }) : null,
+          (dimTab === "all" || dimTab === "replication") && replication ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.replication") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-body", children: replication })
+          ] }) : null,
+          dimTab === "raw" && rawMarkdown ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.raw") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("pre", { className: "omnimux-inspiration-dim-code", children: rawMarkdown })
+          ] }) : null
+        ] })
+      ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-deconstruct-empty", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-fallback-icon", style: { width: "56px", height: "56px" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "2 17 12 22 22 17" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "2 12 12 17 22 12" })
+        ] }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { style: { margin: "0 0 6px 0", fontSize: "15px", color: "#ffffff" }, children: analyzing ? t("empty.breakdownAnalyzing") : t("empty.breakdownTitle") }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { margin: 0, fontSize: "12px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("empty.breakdownDesc") })
+        ] }),
+        analyzeError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: "#ef4444", fontSize: "12px" }, children: analyzeError }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "button",
+          {
+            type: "button",
+            className: "omnimux-inspiration-trigger-btn",
+            onClick: handleTriggerAnalyze,
+            disabled: analyzing,
+            children: analyzing ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "12px", height: "12px", borderTopColor: "#000" } }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "\u6B63\u5728\u89E3\u6790\u2026" })
+            ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polygon", { points: "13 2 3 14 12 14 11 22 21 10 12 10 13 2" }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "\u7ACB\u5373\u89E3\u6790" })
+            ] })
+          }
+        )
+      ] }) }) : null
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-modal-right", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-creator-card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-creator-left", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-handle", children: creator.name || creator.handle || "Creator" }),
+            creator.handle ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: "11px", color: "var(--omx-color-muted, #7c7c7c)" }, children: [
+              "@",
+              creator.handle
+            ] }) : null
+          ] })
+        ] }),
+        item.source_url ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+          "a",
+          {
+            href: item.source_url,
+            target: "_blank",
+            rel: "noopener noreferrer",
+            className: "omnimux-inspiration-modal-link",
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("openSource") }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "11", height: "11", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" }) })
+            ]
+          }
+        ) : null
+      ] }),
+      item.stats && Object.keys(item.stats).length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-stats-grid", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u70B9\u8D5E" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.likes ?? item.stats.digg_count ?? "-" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u8BC4\u8BBA" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.comments ?? item.stats.comment_count ?? "-" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u5206\u4EAB" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.shares ?? item.stats.share_count ?? "-" })
+        ] })
+      ] }) : null,
+      tags.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-tags", children: tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "omnimux-inspiration-modal-tag", children: [
+        "#",
+        tag
+      ] }, tag)) }) : null
+    ] })
+  ] }) });
+}
+function ImportDialog({ open, t, onClose, onImported }) {
+  const [url, setUrl] = (0, import_react.useState)("");
+  const [tags, setTags] = (0, import_react.useState)("");
+  const [autoAnalyze, setAutoAnalyze] = (0, import_react.useState)(true);
+  const [loading, setLoading] = (0, import_react.useState)(false);
+  const [error, setError] = (0, import_react.useState)(null);
+  if (!open) return null;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!url.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const tagList = tags.split(/[,，\s]+/).filter(Boolean);
+      const res = await importLocalInspiration({
+        url: url.trim(),
+        tags: tagList,
+        auto_analyze: autoAnalyze
+      });
+      if (res.ok && res.body?.data) {
+        onImported(res.body.data);
+        onClose();
+      } else if (res.status === 409 && res.body?.data) {
+        onImported(res.body.data);
+        onClose();
+      } else {
+        setError(res.body?.error || t("add.error"));
+      }
+    } catch (err) {
+      setError(String(err.message || err));
+    } finally {
+      setLoading(false);
+    }
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-import-modal", onClick: (e) => e.stopPropagation(), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-import-header", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { children: t("add.dialogTitle") }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omnimux-inspiration-modal-close", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M18 6L6 18M6 6l12 12" }) }) })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", { onSubmit: handleSubmit, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-import-body", children: [
+        error ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: "#ef4444", fontSize: "13px" }, children: error }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { style: { display: "block", fontSize: "13px", marginBottom: "6px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("add.urlLabel") }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "input",
+            {
+              type: "url",
+              required: true,
+              className: "omnimux-inspiration-search",
+              style: { width: "100%" },
+              placeholder: t("add.urlPlaceholder"),
+              value: url,
+              onChange: (e) => setUrl(e.target.value)
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { style: { display: "block", fontSize: "13px", marginBottom: "6px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("add.tagsLabel") }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "input",
+            {
+              type: "text",
+              className: "omnimux-inspiration-search",
+              style: { width: "100%" },
+              placeholder: t("add.tagsPlaceholder"),
+              value: tags,
+              onChange: (e) => setTags(e.target.value)
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", { style: { display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "input",
+            {
+              type: "checkbox",
+              checked: autoAnalyze,
+              onChange: (e) => setAutoAnalyze(e.target.checked)
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("add.autoAnalyze") })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-import-footer", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omnimux-inspiration-select", onClick: onClose, disabled: loading, children: t("close") }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "submit", className: "omnimux-inspiration-btn", disabled: loading, children: loading ? t("add.importing") : t("add.submit") })
+      ] })
+    ] })
+  ] }) });
+}
+function EmptyState({ t, onOpenAdd }) {
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-empty", children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "omnimux-inspiration-empty-title", children: t("empty.title") }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "omnimux-inspiration-empty-text", children: t("empty.description") })
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "omnimux-inspiration-empty-text", children: t("empty.description") }),
+    onOpenAdd ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omnimux-inspiration-btn", onClick: onOpenAdd, style: { marginTop: "12px" }, children: t("add.btn") }) : null
   ] });
 }
-function InspirationSection({ t, active = true }) {
-  (0, import_react2.useEffect)(() => {
+function InspirationSection({ t, active }) {
+  const [tab, setTab] = (0, import_react.useState)("all");
+  const [q, setQ] = (0, import_react.useState)("");
+  const [type, setType] = (0, import_react.useState)("");
+  const [sort, setSort] = (0, import_react.useState)("hot");
+  const [favorite, setFavorite] = (0, import_react.useState)("0");
+  const [items, setItems] = (0, import_react.useState)([]);
+  const [page, setPage] = (0, import_react.useState)(1);
+  const [hasMore, setHasMore] = (0, import_react.useState)(false);
+  const [loading, setLoading] = (0, import_react.useState)(true);
+  const [loadingMore, setLoadingMore] = (0, import_react.useState)(false);
+  const [phase, setPhase] = (0, import_react.useState)("loading");
+  const [error, setError] = (0, import_react.useState)(null);
+  const [selectedItem, setSelectedItem] = (0, import_react.useState)(null);
+  const [importOpen, setImportOpen] = (0, import_react.useState)(false);
+  const sentinelRef = (0, import_react.useRef)(null);
+  (0, import_react.useEffect)(() => {
     injectInspirationStyles();
   }, []);
-  const [type, setType] = (0, import_react2.useState)("");
-  const [sort, setSort] = (0, import_react2.useState)("hot");
-  const [favorite, setFavorite] = (0, import_react2.useState)("");
-  const [query, setQuery] = (0, import_react2.useState)("");
-  const [q, setQ] = (0, import_react2.useState)("");
-  const wasActive = (0, import_react2.useRef)(active);
-  (0, import_react2.useEffect)(() => {
-    const timer = window.setTimeout(() => {
-      setQ(query.trim());
-    }, 250);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [query]);
-  const filters = (0, import_react2.useMemo)(() => ({
-    type,
-    sort,
-    is_favorite: favorite,
-    q
-  }), [type, sort, favorite, q]);
-  const { phase, items, total, error, refresh } = useInspiration(filters);
-  (0, import_react2.useEffect)(() => {
-    const returning = active && !wasActive.current;
-    wasActive.current = active;
-    if (returning) void refresh();
-  }, [active, refresh]);
+  const loadData = (0, import_react.useCallback)(async (isNextPage = false) => {
+    const targetPage = isNextPage ? page + 1 : 1;
+    const cacheKey = `insp:${tab}:${q}:${type}:${sort}:${favorite}`;
+    if (!isNextPage) {
+      const cached = getInspirationCache(cacheKey);
+      if (cached) {
+        setItems(cached.data.items);
+        setHasMore(cached.data.hasMore);
+        setPhase(cached.data.phase);
+        setLoading(false);
+        if (!cached.isStale) return;
+      } else {
+        setLoading(true);
+      }
+    } else {
+      setLoadingMore(true);
+    }
+    try {
+      const result = await loadInspirationsAtomic({
+        tab,
+        q,
+        type,
+        sort,
+        favorite,
+        page: targetPage,
+        pageSize: 20
+      });
+      if (isNextPage) {
+        setItems((prev) => [...prev, ...result.items]);
+        setPage(targetPage);
+        setHasMore(result.hasMore);
+      } else {
+        setItems(result.items);
+        setPage(1);
+        setHasMore(result.hasMore);
+        setPhase(result.phase);
+        setInspirationCache(cacheKey, result);
+      }
+      setError(null);
+    } catch (err) {
+      setError(String(err.message || err));
+      if (!isNextPage && items.length === 0) setPhase("ready");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [tab, q, type, sort, favorite, page, items.length]);
+  (0, import_react.useEffect)(() => {
+    if (!active) return;
+    loadData(false);
+  }, [active, tab, q, type, sort, favorite]);
+  (0, import_react.useEffect)(() => {
+    return whenAuthReady(() => {
+      loadData(false);
+    });
+  }, []);
+  (0, import_react.useEffect)(() => {
+    if (!sentinelRef.current || !hasMore || loading || loadingMore) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+        loadData(true);
+      }
+    }, { rootMargin: "200px" });
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, loadData]);
+  const handleImportSuccess = (newItem) => {
+    setItems((prev) => [newItem, ...prev]);
+    setSelectedItem(newItem);
+  };
+  const handleItemUpdated = (updatedItem) => {
+    setItems((prev) => prev.map((it) => it.id === updatedItem.id ? updatedItem : it));
+    setSelectedItem(updatedItem);
+  };
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-root", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-toolbar", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-        "input",
-        {
-          type: "search",
-          className: "omnimux-inspiration-search",
-          value: query,
-          placeholder: t("filter.search"),
-          "aria-label": t("filter.search"),
-          onChange: (event) => {
-            setQuery(event.currentTarget.value);
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-header", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-tabs", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "button",
+          {
+            type: "button",
+            className: `omnimux-inspiration-tab ${tab === "all" ? "active" : ""}`,
+            onClick: () => setTab("all"),
+            children: t("tab.all")
           }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "button",
+          {
+            type: "button",
+            className: `omnimux-inspiration-tab ${tab === "local" ? "active" : ""}`,
+            onClick: () => setTab("local"),
+            children: t("tab.local")
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "button",
+          {
+            type: "button",
+            className: `omnimux-inspiration-tab ${tab === "public" ? "active" : ""}`,
+            onClick: () => setTab("public"),
+            children: t("tab.public")
+          }
+        )
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+        "button",
+        {
+          type: "button",
+          className: "omnimux-inspiration-btn-add",
+          onClick: () => setImportOpen(true),
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("add.btn") })
+          ]
         }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", { className: "omnimux-inspiration-select", value: type, "aria-label": t("filter.type"), onChange: (event) => {
-        setType(event.currentTarget.value);
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "", children: t("filter.all") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "video", children: t("type.video") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "image", children: t("type.image") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "link", children: t("type.link") })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", { className: "omnimux-inspiration-select", value: sort, "aria-label": t("filter.sort"), onChange: (event) => {
-        setSort(event.currentTarget.value);
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "hot", children: t("sort.hot") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "new", children: t("sort.new") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "fav", children: t("sort.fav") })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", { className: "omnimux-inspiration-select", value: favorite, "aria-label": t("filter.favorite"), onChange: (event) => {
-        setFavorite(event.currentTarget.value);
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "", children: t("favorite.off") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "true", children: t("favorite.on") })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-count", children: t("count").replace("{n}", String(total)) })
+      )
     ] }),
-    phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skeleton", "aria-busy": "true", children: Array.from({ length: 6 }, (_, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skel" }, i)) }) : null,
-    phase === "need-login" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoginGate, { t }) : null,
-    phase === "ready" && error ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-error", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "omnimux-inspiration-empty-text", children: error === "disabled" ? t("error.disabled") : error || t("error.generic") }) }) : null,
-    phase === "ready" && !error && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EmptyState, { t }) : null,
-    phase === "ready" && items.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-grid", children: items.map((row) => {
-      const id = String(row.id);
-      const title = String(row.title || row.source_url || id);
-      const cover = hostMediaSrc(row.cover_url);
-      const source = typeof row.source_url === "string" ? row.source_url : "";
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", { className: "omnimux-inspiration-card", children: [
-        cover ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", { className: "omnimux-inspiration-cover", src: cover, alt: "" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-cover-empty", children: t("noCover") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-body", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-title", children: title }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-meta", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t(`type.${row.type}`) === `type.${row.type}` ? String(row.type || "") : t(`type.${row.type}`) }),
-            row.is_favorite ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("filter.favorite") }) : null
-          ] }),
-          source ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", { className: "omnimux-inspiration-link", href: source, target: "_blank", rel: "noreferrer", children: t("openSource") }) : null
-        ] })
-      ] }, id);
-    }) }) : null
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-toolbar", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-search-box", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-search-icon", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "11", cy: "11", r: "8" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" })
+        ] }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "input",
+          {
+            type: "search",
+            className: "omnimux-inspiration-search",
+            placeholder: t("filter.search"),
+            value: q,
+            onChange: (e) => setQ(e.target.value)
+          }
+        )
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-filters", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+          "select",
+          {
+            className: "omnimux-inspiration-select",
+            value: type,
+            onChange: (e) => setType(e.target.value),
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("option", { value: "", children: [
+                t("filter.type"),
+                " (",
+                t("filter.all"),
+                ")"
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "video", children: t("type.video") }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "image", children: t("type.image") }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "link", children: t("type.link") })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+          "select",
+          {
+            className: "omnimux-inspiration-select",
+            value: sort,
+            onChange: (e) => setSort(e.target.value),
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "hot", children: t("sort.hot") }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "new", children: t("sort.new") }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "fav", children: t("sort.fav") })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+          "select",
+          {
+            className: "omnimux-inspiration-select",
+            value: favorite,
+            onChange: (e) => setFavorite(e.target.value),
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "0", children: t("favorite.off") }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "1", children: t("favorite.on") })
+            ]
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-count", children: t("count", { n: items.length }) })
+      ] })
+    ] }),
+    loading && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skeleton", children: Array.from({ length: 8 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skel" }, i)) }) : null,
+    phase === "need-login" && tab === "public" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoginGate, { t }) : null,
+    phase === "ready" && error && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-error", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "omnimux-inspiration-empty-text", children: error === "disabled" ? t("error.disabled") : error || t("error.generic") }) }) : null,
+    !loading && items.length === 0 && (!error || tab === "local") ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EmptyState, { t, onOpenAdd: () => setImportOpen(true) }) : null,
+    items.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-grid", children: items.map((row) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      PureCoverCard,
+      {
+        row,
+        t,
+        onSelect: (item) => setSelectedItem(item)
+      },
+      String(row.id)
+    )) }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { ref: sentinelRef }),
+    loadingMore ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-scroll-loader", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-spinner" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "\u6B63\u5728\u52A0\u8F7D\u66F4\u591A\u7075\u611F\u2026" })
+    ] }) : null,
+    selectedItem ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      InspirationModal,
+      {
+        row: selectedItem,
+        t,
+        onClose: () => setSelectedItem(null),
+        onItemUpdated: handleItemUpdated
+      }
+    ) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      ImportDialog,
+      {
+        open: importOpen,
+        t,
+        onClose: () => setImportOpen(false),
+        onImported: handleImportSuccess
+      }
+    )
   ] });
 }
 
 // src/client/InspirationStage.jsx
 var import_jsx_runtime2 = require("react/jsx-runtime");
 function InspirationStage({ t, stage }) {
-  const open = (0, import_react3.useSyncExternalStore)(
+  const open = (0, import_react2.useSyncExternalStore)(
     stage ? stage.subscribe : () => () => {
     },
     stage ? stage.getSnapshot : () => false
   );
-  const [everOpened, setEverOpened] = (0, import_react3.useState)(false);
-  const [box, setBox] = (0, import_react3.useState)(() => stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 });
+  const [everOpened, setEverOpened] = (0, import_react2.useState)(false);
+  const [box, setBox] = (0, import_react2.useState)(() => stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 });
   if (open && !everOpened) setEverOpened(true);
-  (0, import_react3.useLayoutEffect)(() => {
+  (0, import_react2.useLayoutEffect)(() => {
     if (!open || !stage) return void 0;
     const update = () => {
       setBox(stage.readBox());
@@ -669,7 +2166,8 @@ function InspirationStage({ t, stage }) {
         flexDirection: "column",
         background: "var(--dsw-alias-bg-primary, var(--dsw-bg, #111))",
         color: "var(--dsw-alias-label-primary, inherit)",
-        overflow: "auto"
+        overflow: "hidden",
+        boxSizing: "border-box"
       },
       children: [
         /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
@@ -681,7 +2179,8 @@ function InspirationStage({ t, stage }) {
               alignItems: "center",
               gap: 12,
               minHeight: 32,
-              padding: "12px 20px 12px",
+              padding: "12px 24px",
+              boxSizing: "border-box",
               WebkitAppRegion: "no-drag"
             },
             children: [
@@ -715,7 +2214,13 @@ function InspirationStage({ t, stage }) {
                     cursor: "pointer",
                     fontSize: 20,
                     lineHeight: 1,
-                    padding: 4
+                    padding: 4,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 28,
+                    height: 28,
+                    borderRadius: 6
                   },
                   children: "\xD7"
                 }
@@ -723,7 +2228,7 @@ function InspirationStage({ t, stage }) {
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "auto" }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(InspirationSection, { t, active: open }) })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box" }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(InspirationSection, { t, active: open }) })
       ]
     }
   );

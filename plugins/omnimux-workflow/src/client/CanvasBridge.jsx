@@ -58,11 +58,13 @@ export function CanvasBridge({ onClose, t, locale }) {
   const containerRef = useRef(null)
   const mountedRef = useRef(false)
   const [status, setStatus] = useState('loading') // loading | ready | error
-  // 最新 props 快照：load 完成挂载与 locale live 切换共用（locale 是 island
-  // 边界的纯数据 prop，走 mountCanvas/updateCanvas 下发）。
+  // 最新 props 快照：load 完成挂载与 locale/onClose live 切换共用（island
+  // 边界纯数据 + 回调，一律走 mountCanvas/updateCanvas，禁止因回调换引用卸岛）。
   const propsRef = useRef({ onClose, locale })
   propsRef.current = { onClose, locale }
 
+  // mount 只跑一次。onClose / locale 身份变化不得重跑 load，否则宿主每次
+  // 重渲（点选节点、侧栏同步）都会 unmount→mount，岛闪白、选中丢、拖不动。
   const load = useCallback(async () => {
     setStatus('loading')
     try {
@@ -81,7 +83,7 @@ export function CanvasBridge({ onClose, t, locale }) {
     } catch {
       setStatus('error')
     }
-  }, [onClose])
+  }, [])
 
   useEffect(() => {
     void load()
@@ -95,7 +97,7 @@ export function CanvasBridge({ onClose, t, locale }) {
     }
   }, [load])
 
-  // W4 T4.1：宿主切语言 → island updateCanvas 同 root 重 render
+  // W4 T4.1：宿主切语言 / 关闭回调换人 → island updateCanvas 同 root 重 render
   // （不可 unmount/remount，会丢画布状态）。
   useEffect(() => {
     const api = window[CANVAS_GLOBAL]

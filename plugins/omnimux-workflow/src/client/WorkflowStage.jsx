@@ -3,7 +3,7 @@
  * Chrome (header + close) renders in the host React 18 tree; the canvas
  * body delegates to CanvasBridge which mounts the React 19 island.
  */
-import { useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { useCallback, useLayoutEffect, useState, useSyncExternalStore } from 'react'
 import { CanvasBridge } from './CanvasBridge.jsx'
 
 const chromeButton = {
@@ -41,6 +41,8 @@ export function WorkflowStage({ t, stage, locale }) {
     () => (locale ? locale.getLocale().active : 'zh'),
   )
   const [box, setBox] = useState(() => ({ top: 0, left: 0, width: 0, height: 0 }))
+  // 稳定引用：避免父级重渲时 inline 新箭头把 CanvasBridge 挂载 effect 拖下水。
+  const handleClose = useCallback(() => { stage.set(false) }, [stage])
 
   useLayoutEffect(() => {
     if (!open) return undefined
@@ -120,7 +122,7 @@ export function WorkflowStage({ t, stage, locale }) {
         </button>
       </div>
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-        <CanvasBridge onClose={() => { stage.set(false) }} t={t} locale={activeLocale} />
+        <CanvasBridge onClose={handleClose} t={t} locale={activeLocale} />
       </div>
     </div>
   )

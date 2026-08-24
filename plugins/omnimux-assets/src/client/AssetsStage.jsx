@@ -43,6 +43,7 @@ const chromeButton = {
 
 /**
  * Creative asset library first-level page.
+ * After first open, keep the subtree with display:none — never `if (!open) return null`.
  * @param {{
  *   t: (key: string) => string,
  *   stage: { getSnapshot: () => boolean, subscribe: Function, set: Function, readBox: Function },
@@ -53,10 +54,13 @@ export function AssetsStage({ t, stage }) {
     stage ? (cb) => stage.subscribe(cb) : () => () => {},
     stage ? () => stage.getSnapshot() : () => false,
   )
+  const [everOpened, setEverOpened] = useState(false)
   const [box, setBox] = useState(() => ({ top: 0, left: 0, width: 0, height: 0 }))
 
+  if (open && !everOpened) setEverOpened(true)
+
   useLayoutEffect(() => {
-    if (!open) return undefined
+    if (!open || !stage) return undefined
     const update = () => { setBox(stage.readBox()) }
     update()
     const scroll = document.querySelector('[data-conversation-scroll]')
@@ -70,7 +74,7 @@ export function AssetsStage({ t, stage }) {
       observer?.disconnect()
       window.removeEventListener('resize', update)
     }
-  }, [open])
+  }, [open, stage])
 
   const [assets, setAssets] = useState([])
   const [filterType, setFilterType] = useState('')
@@ -184,14 +188,22 @@ export function AssetsStage({ t, stage }) {
 
   const clearSelection = () => { setSelectedIds(new Set()) }
 
-  if (!open || !stage) return null
+  if (!stage || !everOpened) return null
 
+  const searching = Boolean(query.trim())
   const emptyTypeLabel = filterType ? t(`type.${filterType}`) : ''
+  const emptyLabel = searching
+    ? t('empty.noMatch')
+    : (filterType ? t('empty.type').replace('{type}', emptyTypeLabel) : t('empty.all'))
+  const emptyActionLabel = searching
+    ? undefined
+    : (filterType ? t('empty.addType').replace('{type}', emptyTypeLabel) : t('add.button'))
 
   return (
     <div
       role="region"
       aria-label={t('stage.title')}
+      aria-hidden={open ? undefined : 'true'}
       style={{
         position: 'fixed',
         top: box.top,
@@ -199,8 +211,8 @@ export function AssetsStage({ t, stage }) {
         width: box.width,
         height: box.height,
         zIndex: 200,
-        pointerEvents: 'auto',
-        display: 'flex',
+        pointerEvents: open ? 'auto' : 'none',
+        display: open ? 'flex' : 'none',
         flexDirection: 'column',
         background: 'var(--dsw-alias-bg-base, var(--dsw-bg, inherit))',
         color: 'var(--dsw-alias-label-primary, inherit)',
@@ -390,8 +402,9 @@ export function AssetsStage({ t, stage }) {
             <AssetGrid
               t={t}
               assets={visible}
-              emptyLabel={filterType ? t('empty.type').replace('{type}', emptyTypeLabel) : t('empty.all')}
-              emptyActionLabel={filterType ? t('empty.addType').replace('{type}', emptyTypeLabel) : t('add.button')}
+              emptyLabel={emptyLabel}
+              emptyActionLabel={emptyActionLabel}
+              showEmptyAction={!searching}
               onEmptyAction={() => { setCreating(filterType || 'character'); setFormError('') }}
               onOpen={(asset) => { setDetail(asset) }}
               onCopy={(asset) => {

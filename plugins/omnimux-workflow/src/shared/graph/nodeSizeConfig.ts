@@ -6,9 +6,20 @@
 
 import type { MaterialType } from './materialNode.ts';
 
-type NodeSizeCategory = 'square' | 'widescreen';
+/**
+ * 精准对齐竞品卡片几何体系与比例定义：
+ * 1. 统一卡片基准宽度：350px
+ * 2. 文本节点 (text)：竖版 350x500（7:10 比例，aspectRatio: 0.7，高宽比 1.43），为四项快捷预设/大篇幅脚本提供纵向空间
+ * 3. 图片节点 (image)：正方 350x350（1:1 比例，aspectRatio: 1.0）
+ * 4. 视频节点 (video)：横版 350x280（5:4 / 1.25:1 比例，aspectRatio: 1.25，高宽比 0.80），上部视频预览 + 下部 H3 快捷操作栏
+ * 5. 音频节点 (audio)：扁横版 350x150（7:3 比例，aspectRatio: 2.333）
+ */
 
-interface NodeSizeConfig {
+import type { MaterialType } from './materialNode.ts';
+
+export type NodeSizeCategory = 'portrait' | 'square' | 'video_landscape' | 'audio_compact';
+
+export interface NodeSizeConfig {
   min: { width: number; height: number };
   default: { width: number; height: number };
   max: { width: number; height: number };
@@ -21,43 +32,67 @@ export const CANVAS_ZOOM_CONFIG = {
   defaultZoom: 1,
 } as const;
 
-const SQUARE_SIZE_CONFIG: NodeSizeConfig = {
-  min: { width: 75, height: 75 },
-  default: { width: 325, height: 325 },
-  max: { width: 420, height: 420 },
+/** 文本节点：350x500 竖版（7:10） */
+const TEXT_PORTRAIT_SIZE_CONFIG: NodeSizeConfig = {
+  min: { width: 200, height: 286 },
+  default: { width: 350, height: 500 },
+  max: { width: 450, height: 643 },
+  aspectRatio: 350 / 500, // 0.7
+};
+
+/** 图片节点：350x350 正方版（1:1） */
+const IMAGE_SQUARE_SIZE_CONFIG: NodeSizeConfig = {
+  min: { width: 100, height: 100 },
+  default: { width: 350, height: 350 },
+  max: { width: 450, height: 450 },
   aspectRatio: 1,
 };
 
-const WIDESCREEN_SIZE_CONFIG: NodeSizeConfig = {
-  min: { width: 133, height: 75 },
-  default: { width: 578, height: 325 },
-  max: { width: 746, height: 420 },
-  aspectRatio: 16 / 9,
+/** 视频节点：350x280 饱满横版（5:4 / 1.25:1） */
+const VIDEO_LANDSCAPE_SIZE_CONFIG: NodeSizeConfig = {
+  min: { width: 150, height: 120 },
+  default: { width: 350, height: 280 },
+  max: { width: 500, height: 400 },
+  aspectRatio: 350 / 280, // 1.25
+};
+
+/** 音频节点：350x150 扁横版（7:3） */
+const AUDIO_COMPACT_SIZE_CONFIG: NodeSizeConfig = {
+  min: { width: 200, height: 86 },
+  default: { width: 350, height: 150 },
+  max: { width: 450, height: 193 },
+  aspectRatio: 350 / 150, // 2.3333333333333335
 };
 
 const NODE_SIZE_CONFIGS: Record<NodeSizeCategory, NodeSizeConfig> = {
-  square: SQUARE_SIZE_CONFIG,
-  widescreen: WIDESCREEN_SIZE_CONFIG,
+  portrait: TEXT_PORTRAIT_SIZE_CONFIG,
+  square: IMAGE_SQUARE_SIZE_CONFIG,
+  video_landscape: VIDEO_LANDSCAPE_SIZE_CONFIG,
+  audio_compact: AUDIO_COMPACT_SIZE_CONFIG,
 };
 
 export function getNodeSizeCategory(nodeType: MaterialType): NodeSizeCategory {
   switch (nodeType) {
-    case 'video':
-    case 'audio':
-      return 'widescreen';
     case 'text':
+      return 'portrait';
     case 'image':
+      return 'square';
+    case 'video':
+      return 'video_landscape';
+    case 'audio':
+      return 'audio_compact';
     default:
       return 'square';
   }
 }
 
-function getNodeSizeConfig(nodeType: MaterialType): NodeSizeConfig {
+export function getNodeSizeConfig(nodeType: MaterialType): NodeSizeConfig {
   return NODE_SIZE_CONFIGS[getNodeSizeCategory(nodeType)];
 }
 
 export function calculateNodeHeight(width: number, category: NodeSizeCategory): number {
-  return Math.round(width / NODE_SIZE_CONFIGS[category].aspectRatio);
+  const config = NODE_SIZE_CONFIGS[category] || IMAGE_SQUARE_SIZE_CONFIG;
+  return Math.round(width / config.aspectRatio);
 }
 
 export function getMinimumNodeHeight(nodeType: MaterialType): number {
@@ -66,4 +101,8 @@ export function getMinimumNodeHeight(nodeType: MaterialType): number {
 
 export function getDefaultNodeWidth(nodeType: MaterialType): number {
   return getNodeSizeConfig(nodeType).default.width;
+}
+
+export function getDefaultNodeHeight(nodeType: MaterialType): number {
+  return getNodeSizeConfig(nodeType).default.height;
 }

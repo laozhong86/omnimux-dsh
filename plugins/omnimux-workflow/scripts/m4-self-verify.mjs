@@ -319,7 +319,7 @@ try {
   check('6a. capabilities source=omnimux', caps.body.source === 'omnimux');
   check('6b. env 覆盖生效（OMNIMUX_VIDEO_MODEL）',
     caps.body.video[0]?.id === 'custom-video-model', caps.body.video[0]?.id ?? 'none');
-  check('6c. 文本目录为 hub 白名单 8 行', caps.body.text.length === 8);
+  check('6c. 文本目录为 hub 白名单 11 行', caps.body.text.length === 11);
 
   // ---- 2. 错误路径 + failStrategy=skip ----
   const failHub = createFakeHub({

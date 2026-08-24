@@ -15,6 +15,8 @@ export const DEFAULT_PLUGIN_MAP = Object.freeze({
   video_: 'dsh-video',
   assets_: 'omnimux-assets',
   plaza_: 'omnimux-market',
+  plugin_: 'omnimux-market',
+  connector_: 'omnimux-market',
   workflow_: 'omnimux-workflow',
   skillhub: 'omnimux-market', // matches `skillhub` and `skillhub_*`
   omnimux_: 'omnimux',

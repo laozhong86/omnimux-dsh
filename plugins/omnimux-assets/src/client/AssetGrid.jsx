@@ -22,6 +22,7 @@ const checkBase = {
  *   assets: any[],
  *   emptyLabel: string,
  *   emptyActionLabel?: string,
+ *   showEmptyAction?: boolean,
  *   onEmptyAction?: () => void,
  *   onOpen: (asset: any) => void,
  *   onCopy: (asset: any) => void,
@@ -31,7 +32,7 @@ const checkBase = {
  *   onToggleSelect?: (asset: any) => void,
  * }} props
  */
-export function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect }) {
+export function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAction = true, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect }) {
   if (assets.length === 0) {
     return (
       <div style={{
@@ -48,7 +49,7 @@ export function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, onEmptyActi
       }}
       >
         <p style={{ margin: 0 }}>{emptyLabel}</p>
-        {emptyActionLabel && onEmptyAction ? (
+        {emptyActionLabel && onEmptyAction && showEmptyAction ? (
           <button
             type="button"
             onClick={onEmptyAction}
@@ -108,6 +109,8 @@ export function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, onEmptyActi
               {onToggleSelect ? (
                 <button
                   type="button"
+                  className="omnimux-assets-check"
+                  data-selected={selected ? 'true' : 'false'}
                   aria-label={t('select.toggle')}
                   aria-pressed={selected ? 'true' : 'false'}
                   onClick={(event) => { event.stopPropagation(); onToggleSelect(asset) }}

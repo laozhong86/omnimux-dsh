@@ -36,7 +36,7 @@ export function mountOfficial(ctx, deps) {
     fetcher: deps.fetcher,
     siteBaseUrl: deps.siteBaseUrl,
     apiBaseUrl: (env.OMNIMUX_BASE_URL || 'https://api.omnimux.ai/v1').replace(/\/v1\/?$/, ''),
-    resolveApiKey: () => env.OMNIMUX_API_KEY || env.OMNIMUX_TOKEN,
+    resolveApiKey: deps.resolveApiKey ?? (() => env.OMNIMUX_API_KEY || env.OMNIMUX_TOKEN),
     async resolveAccess() {
       const profile = await deps.identity.require()
       const token = await deps.store.resolve()
@@ -72,10 +72,10 @@ export function mountOfficial(ctx, deps) {
 
   tool(
     'omnimux_social_data',
-    'Fetch OmniMux social data. platform+capability must be a documented pair (tiktok/video, tiktok/user, instagram/post). Uses OMNIMUX_API_KEY. Pass url, id, or query.',
+    'Fetch OmniMux social data. platform+capability must be a documented pair (tiktok/video, tiktok/user, tiktok/posts, tiktok/search, instagram/post, instagram/user, instagram/posts, instagram/search, youtube/video, youtube/user, youtube/posts, youtube/search, x/tweet, x/user, x/posts, x/search). Uses OMNIMUX_API_KEY. Pass url, id, or query.',
     {
-      platform: { type: 'string', required: true, enum: ['tiktok', 'instagram'] },
-      capability: { type: 'string', required: true, enum: ['video', 'user', 'post'] },
+      platform: { type: 'string', required: true, enum: ['tiktok', 'instagram', 'youtube', 'x'] },
+      capability: { type: 'string', required: true, enum: ['video', 'user', 'post', 'posts', 'tweet', 'search'] },
       url: { type: 'string' },
       id: { type: 'string' },
       query: { type: 'string' },

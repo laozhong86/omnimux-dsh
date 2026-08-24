@@ -52,7 +52,8 @@ export function InspirationStage({ t, stage }) {
         flexDirection: 'column',
         background: 'var(--dsw-alias-bg-primary, var(--dsw-bg, #111))',
         color: 'var(--dsw-alias-label-primary, inherit)',
-        overflow: 'auto',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
       <div style={{
@@ -61,7 +62,8 @@ export function InspirationStage({ t, stage }) {
         alignItems: 'center',
         gap: 12,
         minHeight: 32,
-        padding: '12px 20px 12px',
+        padding: '12px 24px',
+        boxSizing: 'border-box',
         WebkitAppRegion: 'no-drag',
       }}
       >
@@ -89,12 +91,18 @@ export function InspirationStage({ t, stage }) {
             fontSize: 20,
             lineHeight: 1,
             padding: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 28,
+            height: 28,
+            borderRadius: 6,
           }}
         >
           ×
         </button>
       </div>
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', boxSizing: 'border-box' }}>
         <InspirationSection t={t} active={open} />
       </div>
     </div>

@@ -19,9 +19,9 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { useReactFlow, type OnConnectEnd, type OnConnectStart } from '@xyflow/react';
-import { message } from 'antd';
 import { useCanvasStore } from '../../store/canvasStore';
 import { useT } from '../../i18n';
+import { toast } from '../../ui';
 import type { MaterialType } from '../../types/materialNode';
 import { validateConnectionDetailed, rejectReasonKey } from '../utils/connectionValidator';
 import { createMaterialNode } from '../utils/nodeFactory';
@@ -106,7 +106,7 @@ export function useConnectionMenu(options?: {
 
       if (outcome.type === 'reject') {
         onRejectRef.current?.(outcome.reason);
-        message.warning(outcome.reason);
+        toast.warning(outcome.reason);
         connectionStartRef.current = null;
         return;
       }

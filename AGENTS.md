@@ -22,7 +22,8 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 - Product truth is `series/` on disk. Session logs and `docs/briefing.md` are not that store.
 - Briefing (`docs/briefing.md`) is project memory, not truth. On conflict, live code, this file, and `docs/contracts/` win.
 - AGPL trees (ArcReel, 墨音) stay isolate-run. MUST NOT merge them here.
-- Dev/test/prod layering MUST follow [docs/contracts/dev-pipeline.md](docs/contracts/dev-pipeline.md): the production profile (`omnimux`) MUST NOT link working trees (materialized copies only, synced via `yarn omnimux:sync` / `scripts/sync-to-app.sh`); dev profiles (`omnimux-dev-*` under `~/.dsh-dev`) MUST link and MUST link at most one in-progress plugin each. MUST NOT hand-rsync/cp into any profile. Day-to-day agent ops run from `/Users/x/Desktop/Project/omnimux-desktop-fork` (`yarn omnimux:dev` / `yarn omnimux:sync` / `yarn omnimux:restart` / `yarn omnimux:stage`).
+- Dev/test/prod layering MUST follow [docs/contracts/dev-pipeline.md](docs/contracts/dev-pipeline.md): the production profile (`omnimux`) MUST NOT link working trees (materialized copies only, synced via `yarn omnimux:sync` / `scripts/sync-to-app.sh`); dev profiles (`omnimux-dev-*` under `~/.dsh-dev`) MUST link and MUST link at most one in-progress plugin each. MUST NOT hand-rsync/cp into any profile. Day-to-day agent ops run from `/Users/x/Desktop/Project/omnimux-desktop-fork` (`yarn omnimux:dev` / `yarn omnimux:sync` / `yarn omnimux:stage`).
+- **Desktop App Isolation Rule**: `/Applications/OmniMux.app` is the production user app; agents MUST NEVER kill/restart it (`pkill -f OmniMux`, `killall OmniMux`, or `yarn omnimux:restart prod` forbidden). When GUI verification is needed, agents MUST use the development app `/Applications/OmniMux Dev.app` (`yarn omnimux:restart dev`, `OMNIMUX_CHANNEL=dev`) or `yarn omnimux:dev start`. Production app restarts are owned by the human user.
 - Git / PR for this tree MUST follow [docs/contracts/plugin-git-pr.md](docs/contracts/plugin-git-pr.md): branch + PR to `laozhong86/omnimux-dsh` base `main`; no direct push to `main`; only the boss merges. Open-PR follow-up uses skill `omnimux-pr-handoff` and local `.workbuddy/pr-board.md`. Do NOT apply the desktop-fork `fork`/`omnimux` topology here.
 
 ## Map
@@ -35,6 +36,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `docs/contracts/hub.md` | Execution-hub terms, I/O, seams, official-only list |
 | `docs/contracts/settings-ui.md` | Where plugin UI sits in official Settings (no first-level plugin nav) |
 | `docs/contracts/sidebar-extra-entries.md` | Extra rows under 新会话 (32px / 14px / 14px) and first-level page top chrome (`12px 20px 12px`, same as session header). Skill: `dsh-plugin-dev`. |
+| `docs/contracts/ui-design-guidelines.md` | **OmniMux UI 交互与视觉规范**：单行工具栏、深色浮层菜单、矢量 SVG 图标、32px 控件高与 8px 圆角体系。客户端改动必读。 |
 | `docs/model-list-ownership.md` | Who owns the OmniMux model list (plugin patch only; user layers set `agent-default-model` only) |
 | `docs/contracts/series.md` | Disk fields + error codes |
 | `docs/contracts/briefing.md` | Briefing create/update/delete. Memory, not truth |

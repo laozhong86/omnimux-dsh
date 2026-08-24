@@ -59,7 +59,7 @@ test('W4 入典代表 key：双语可取且不回退到 key 本身', () => {
     'exec.status.paused',
     'menu.copy',
     'menu.executeSelection',
-    'menu.add.audio',
+    'menu.paste',
     'tool.import',
     'tool.voice-clone',
     'app.autosave.saved',

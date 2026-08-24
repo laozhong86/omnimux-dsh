@@ -17,16 +17,18 @@ const STYLESHEETS: Array<{ id: string; css: string }> = [
   { id: 'omnimux-workflow-components', css: componentsCss },
 ];
 
-let stylesInjected = false;
-
 export function injectCanvasStyles(): void {
-  if (stylesInjected) return;
   for (const { id, css } of STYLESHEETS) {
-    if (document.getElementById(id)) continue;
-    const style = document.createElement('style');
-    style.id = id;
-    style.textContent = css;
-    document.head.append(style);
+    const existing = document.getElementById(id);
+    if (existing instanceof HTMLStyleElement) {
+      if (existing.textContent !== css) {
+        existing.textContent = css;
+      }
+    } else {
+      const style = document.createElement('style');
+      style.id = id;
+      style.textContent = css;
+      document.head.append(style);
+    }
   }
-  stylesInjected = true;
 }

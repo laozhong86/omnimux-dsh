@@ -6,7 +6,9 @@ I/O and the seam list: repo `docs/contracts/hub.md`.
 
 `ctx.provide('videoGenerate' | 'imageGenerate')` then `api.execute({ prompt, dest, … })`. Default waits until the file is on disk (`mode: "live"`). `wait: false` returns `{ mode: "submitted", taskId }`. `{ dest, taskId }` skips submit and only polls then downloads. Tools: `omnimux_video_submit`, `omnimux_image_submit`. Default image model is `gpt-image-2` (`OMNIMUX_IMAGE_MODEL`). The hub resolves `Config.media` (provider → protocol → vendor fields). The hub does not keep a task ledger.
 
-`ctx.provide('textComplete')` then `api.execute({ prompt, model?, image?, … })` runs one `ctx.llm.stream` call on an enabled `Config.text.models` row. Tool: `omnimux_text_complete`. Not a second chat: no parent messages, no tools, image stays on that request. A text-only call must name `model`. An image call may omit it and uses `grok-4.6` (`OMNIMUX_VISION_MODEL`). The eight chat-directory models start enabled.
+`ctx.provide('textComplete')` then `api.execute({ prompt, model?, image?, … })` runs one `ctx.llm.stream` call on an enabled `Config.text.models` row. Tool: `omnimux_text_complete`. Not a second chat: no parent messages, no tools, image stays on that request. A text-only call must name `model`. An image call may omit it and uses `grok-4.6` (`OMNIMUX_VISION_MODEL`). The eleven chat-directory models start enabled.
+
+Official-only page fetch: `omnimux_page_fetch({ url })` POSTs `/v1/reader` with locked model `jina-reader-v1` (`OMNIMUX_API_KEY`). Success is `text/plain` markdown parsed to `{ mode, model, url, title, pageContent }`. Do not reuse the JSON `withSk` client. Verticals must not open this HTTP themselves.
 
 ## Identity (settings)
 

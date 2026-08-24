@@ -437,7 +437,20 @@ function createWordmarkLabel(document, config, ownAttr = true) {
   if (ownAttr) label.setAttribute(BRAND_ATTR, 'wordmark')
   label.setAttribute('aria-hidden', 'true')
   label.textContent = config.wordmarkText
-  label.style.cssText = 'font-size:15px;font-weight:600;letter-spacing:-0.02em;line-height:24px;white-space:nowrap'
+  label.style.cssText = 'font-size:15px;font-weight:600;letter-spacing:-0.02em;line-height:24px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px'
+
+  // 精准识别 DEV 实例：只有通过环境变量显式指定为 dev 时才追加 DEV 标签
+  const isDev = (typeof window !== 'undefined' && (
+    (window.__OMNIMUX_BRAND__ && String(window.__OMNIMUX_BRAND__.wordmarkText).includes('Dev'))
+  )) || (typeof process !== 'undefined' && process.env?.OMNIMUX_CHANNEL === 'dev')
+
+  if (isDev && !config.wordmarkText.includes('DEV')) {
+    const badge = document.createElement('span')
+    badge.textContent = 'DEV'
+    badge.style.cssText = 'font-size:10px;font-weight:700;line-height:1;padding:2px 4px;border-radius:4px;background:#F59E0B;color:#000;vertical-align:middle;display:inline-block'
+    label.append(badge)
+  }
+
   return label
 }
 

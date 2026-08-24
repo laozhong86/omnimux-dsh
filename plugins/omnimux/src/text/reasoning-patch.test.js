@@ -40,8 +40,13 @@ describe('omnimux patch reasoning offer', () => {
       const body = byId.get(id)
       assert.ok(body, `patch is missing chat-directory model ${id}`)
       assert.match(body, /reasoningEfforts:\n/, `${id} has no reasoningEfforts`)
-      assert.match(body, /^\s+max: max$/m, `${id} does not offer max`)
+      assert.match(body, /^\s+max: (max|xhigh)$/m, `${id} does not offer max`)
     }
+  })
+
+  it('maps gpt-5.5 UI max to wire xhigh because literal max 400s', () => {
+    const byId = new Map(blocks.map((row) => [row.id, row.body]))
+    assert.match(byId.get('gpt-5.5') ?? '', /^\s+max: xhigh$/m)
   })
 
   it('maps Off to wire none only on the models that can disable thinking', () => {
@@ -49,7 +54,16 @@ describe('omnimux patch reasoning offer', () => {
     assert.match(byId.get('gpt-5.6-sol') ?? '', /'off': 'none'/)
     assert.match(byId.get('deepseek-v4-pro') ?? '', /'off': 'none'/)
     assert.match(byId.get('deepseek-v4-flash-vision-exp') ?? '', /'off': 'none'/)
-    for (const id of ['claude-opus-5', 'grok-4.6', 'kimi-k3', 'gemini-3.7-flash', 'glm-5.3']) {
+    for (const id of [
+      'claude-opus-5',
+      'claude-opus-4-6',
+      'gpt-5.5',
+      'grok-4.6',
+      'kimi-k3',
+      'gemini-3.7-flash',
+      'gemini-3.1-pro-preview',
+      'glm-5.3',
+    ]) {
       assert.doesNotMatch(byId.get(id) ?? '', /'off':/, `${id} must not offer Off`)
     }
   })

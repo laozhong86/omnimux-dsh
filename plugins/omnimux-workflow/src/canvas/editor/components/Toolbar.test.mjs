@@ -34,7 +34,7 @@ test('所有 button 显式 type="button"，添加按钮点击仍调 onAddNode', 
   for (const attrs of buttons) {
     assert.match(attrs, /\btype="button"/);
   }
-  assert.match(toolbarSrc, /onClick=\{\(\) => onAddNode\(item\.type\)\}/);
+  assert.match(toolbarSrc, /handleSelectNodeType\(item\.type\)/);
 });
 
 test('四个添加按钮有 onContextMenu，不新做工具栏右键菜单', () => {

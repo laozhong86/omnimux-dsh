@@ -80,6 +80,7 @@ export function ProductsStage({ t, stage }) {
   const [editing, setEditing] = useState(null)
   const [editingDirty, setEditingDirty] = useState(false)
   const [pendingRemove, setPendingRemove] = useState(null)
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -104,6 +105,12 @@ export function ProductsStage({ t, stage }) {
       if (result.body.unchanged) return
       const nextProducts = Array.isArray(result.body.products) ? result.body.products : []
       setProducts(nextProducts)
+      const live = new Set(nextProducts.map((row) => row.id))
+      setSelectedIds((prev) => {
+        const kept = [...prev].filter((id) => live.has(id))
+        if (kept.length === prev.size) return prev
+        return new Set(kept)
+      })
       const openEdit = editingRef.current
       if (openEdit) {
         const fresh = nextProducts.find((row) => row.id === openEdit.id)
@@ -165,6 +172,20 @@ export function ProductsStage({ t, stage }) {
     const hay = `${product.name}\n${product.handle}\n${product.selling_points}\n${product.brand}\n${product.sku}\n${product.link}\n${(product.categories || []).join('\n')}`.toLowerCase()
     return hay.includes(query.trim().toLowerCase())
   })
+
+  const selectedCount = selectedIds.size
+  const selecting = selectedCount > 0
+
+  const toggleSelect = (product) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(product.id)) next.delete(product.id)
+      else next.add(product.id)
+      return next
+    })
+  }
+
+  const clearSelection = () => { setSelectedIds(new Set()) }
 
   if (!stage || !everOpened) return null
 
@@ -276,6 +297,57 @@ export function ProductsStage({ t, stage }) {
         <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--dsw-alias-label-tertiary)' }}>{t('sort.updated')}</span>
       </div>
 
+      {selecting ? (
+        <div style={{
+          flex: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '8px 20px',
+          borderBottom: '1px solid var(--dsw-alias-border-l2)',
+        }}
+        >
+          <span style={{ fontSize: 13 }}>{t('select.count').replace('{n}', String(selectedCount))}</span>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={clearSelection}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: 'inherit',
+                cursor: 'pointer',
+                fontSize: 13,
+                padding: '4px 8px',
+              }}
+            >
+              {t('select.clear')}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                const names = products.filter((row) => selectedIds.has(row.id)).map((row) => row.name)
+                setPendingRemove({ ids: [...selectedIds], names })
+              }}
+              style={{
+                border: 'none',
+                background: 'var(--dsw-alias-state-error-tertiary)',
+                color: 'var(--dsw-alias-label-error)',
+                borderRadius: 999,
+                padding: '6px 12px',
+                cursor: busy ? 'default' : 'pointer',
+                fontSize: 13,
+                fontWeight: 500,
+                opacity: busy ? 0.5 : 1,
+              }}
+            >
+              {t('select.delete').replace('{n}', String(selectedCount))}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {error !== '' ? (
         <p style={{ margin: 0, padding: '6px 20px', fontSize: 12, color: 'var(--dsw-alias-label-error)' }}>{error}</p>
       ) : null}
@@ -284,8 +356,9 @@ export function ProductsStage({ t, stage }) {
         <ProductGrid
           t={t}
           products={visible}
-          emptyLabel={t('empty.all')}
+          emptyLabel={query.trim() ? t('empty.noMatch') : t('empty.all')}
           emptyActionLabel={t('add.button')}
+          showEmptyAction={!query.trim()}
           onEmptyAction={() => { setCreating(true); setFormError('') }}
           onOpen={(product) => {
             setCreating(false)
@@ -299,8 +372,10 @@ export function ProductsStage({ t, stage }) {
             setCopiedId(product.id)
             window.setTimeout(() => { setCopiedId('') }, 1500)
           }}
-          onRemove={(product) => { setPendingRemove(product) }}
+          onRemove={(product) => { setPendingRemove({ ids: [product.id], names: [product.name] }) }}
           copiedId={copiedId}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
         />
       </div>
 
@@ -349,17 +424,32 @@ export function ProductsStage({ t, stage }) {
       {pendingRemove ? (
         <ConfirmRemoveDialog
           t={t}
-          name={String(pendingRemove.name ?? '')}
+          name={String(pendingRemove.names[0] ?? '')}
+          title={pendingRemove.ids.length > 1
+            ? t('select.removeTitle').replace('{n}', String(pendingRemove.ids.length))
+            : undefined}
           busy={busy}
           onCancel={() => { setPendingRemove(null) }}
           onConfirm={() => {
-            const id = pendingRemove.id
-            run(() => deleteProduct(id), () => {
+            const ids = pendingRemove.ids
+            run(async () => {
+              let last = { ok: true, status: 200, body: {} }
+              for (const id of ids) {
+                last = await deleteProduct(id)
+                if (!last.ok) return last
+              }
+              return last
+            }, () => {
               setPendingRemove(null)
-              if (editing?.id === id) {
+              if (ids.includes(editing?.id)) {
                 setEditing(null)
                 setEditingDirty(false)
               }
+              setSelectedIds((prev) => {
+                const next = new Set(prev)
+                for (const id of ids) next.delete(id)
+                return next
+              })
             })
           }}
         />

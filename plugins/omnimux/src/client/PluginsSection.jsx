@@ -3,372 +3,35 @@ import { getApps, installApp, uninstallApp } from './api.js'
 import { canOpen, hasOverflowMenu, primaryActionFor } from './app-actions.js'
 import { attemptOpen, notifyTabsChanged } from './open-app-flow.js'
 import { useOmnimuxAuth } from './use-omnimux-auth.js'
-
-const page = {
-  padding: '0 20px 24px',
-  color: 'var(--dsw-alias-label-primary, var(--dsw-text-primary, inherit))',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-}
-
-const toolbar = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'center',
-  gap: 10,
-}
-
-const search = {
-  width: 280,
-  maxWidth: '100%',
-  flex: '0 1 280px',
-  height: 32,
-  borderRadius: 8,
-  border: '1px solid var(--dsw-alias-border, rgba(255,255,255,0.12))',
-  background: 'transparent',
-  color: 'inherit',
-  padding: '0 10px',
-  font: 'inherit',
-  fontSize: 13,
-}
-
-const grid = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-  alignItems: 'stretch',
-  gap: 12,
-}
-
-const card = {
-  position: 'relative',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 12,
-  minHeight: 176,
-  borderRadius: 12,
-  padding: 16,
-  background: 'var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04))',
-  border: '1px solid var(--dsw-alias-border, rgba(255,255,255,0.08))',
-}
-
-const cardBody = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 12,
-  cursor: 'pointer',
-  outline: 'none',
-}
-
-const titleRow = {
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: 10,
-}
-
-const iconBox = {
-  width: 36,
-  height: 36,
-  borderRadius: 10,
-  display: 'grid',
-  placeItems: 'center',
-  background: 'var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.10))',
-  color: 'var(--dsw-alias-label-primary, inherit)',
-  flex: '0 0 auto',
-}
-
-const titleLine = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  minWidth: 0,
-  flex: 1,
-  paddingRight: 34, // reserve space for the top-right ⋯ button so the title / badge never overlap it
-}
-
-const title = {
-  margin: 0,
-  minWidth: 0,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-  fontSize: 15,
-  fontWeight: 600,
-  lineHeight: '22px',
-}
-
-const stateBadge = (state) => {
-  if (state === 'installed') {
-    return {
-      fontSize: 11,
-      lineHeight: '16px',
-      padding: '2px 8px',
-      borderRadius: 999,
-      background: 'color-mix(in srgb, var(--dsw-alias-state-success-primary, #4caf7d) 16%, transparent)',
-      color: 'var(--dsw-alias-state-success-primary, #4caf7d)',
-      whiteSpace: 'nowrap',
-    }
-  }
-  if (state === 'update') {
-    return {
-      fontSize: 11,
-      lineHeight: '16px',
-      padding: '2px 8px',
-      borderRadius: 999,
-      background: 'color-mix(in srgb, var(--dsw-alias-state-business-primary, #4c8dff) 16%, transparent)',
-      color: 'var(--dsw-alias-state-business-primary, #4c8dff)',
-      whiteSpace: 'nowrap',
-    }
-  }
-  if (state === 'available') {
-    return {
-      fontSize: 11,
-      lineHeight: '16px',
-      padding: '2px 8px',
-      borderRadius: 999,
-      background: 'var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08))',
-      color: 'var(--dsw-alias-label-secondary, rgba(255,255,255,0.72))',
-      whiteSpace: 'nowrap',
-    }
-  }
-  return null
-}
-
-const summary = {
-  margin: 0,
-  fontSize: 13,
-  lineHeight: 1.55,
-  opacity: 0.72,
-}
-
-const tags = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 6,
-}
-
-const tag = {
-  fontSize: 11,
-  lineHeight: '16px',
-  padding: '2px 8px',
-  borderRadius: 999,
-  background: 'var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08))',
-  whiteSpace: 'nowrap',
-}
-
-const footer = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-end',
-  gap: 10,
-  marginTop: 'auto',
-}
-
-const pill = (tone) => ({
-  flex: '0 0 auto',
-  border: tone === 'danger' || tone === 'ghost'
-    ? '1px solid var(--dsw-alias-border, rgba(255,255,255,0.16))'
-    : 'none',
-  borderRadius: 8,
-  padding: '4px 10px',
-  font: 'inherit',
-  fontSize: 13,
-  cursor: 'pointer',
-  background: tone === 'danger' || tone === 'ghost'
-    ? 'transparent'
-    : 'var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.12))',
-  color: tone === 'danger'
-    ? 'var(--dsw-alias-state-error-primary, #e06c75)'
-    : 'inherit',
-})
-
-const moreButton = {
-  position: 'absolute',
-  top: 8,
-  right: 8,
-  zIndex: 1,
-  display: 'grid',
-  placeItems: 'center',
-  width: 26,
-  height: 26,
-  padding: 0,
-  border: '1px solid var(--dsw-alias-border, rgba(255,255,255,0.16))',
-  borderRadius: 8,
-  background: 'transparent',
-  color: 'inherit',
-  font: 'inherit',
-  fontSize: 16,
-  lineHeight: 1,
-  cursor: 'pointer',
-}
-
-const popover = {
-  position: 'absolute',
-  top: 40,
-  right: 8,
-  zIndex: 5,
-  minWidth: 200,
-  maxWidth: 260,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 2,
-  padding: 6,
-  borderRadius: 10,
-  background: 'var(--dsw-alias-bg-primary, var(--dsw-bg, #16181d))',
-  border: '1px solid var(--dsw-alias-border, rgba(255,255,255,0.16))',
-  boxShadow: '0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.35))',
-}
-
-const menuItem = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-start',
-  gap: 2,
-  border: 'none',
-  borderRadius: 6,
-  padding: '6px 10px',
-  background: 'transparent',
-  color: 'inherit',
-  font: 'inherit',
-  fontSize: 13,
-  textAlign: 'left',
-  cursor: 'pointer',
-}
-
-const menuItemHint = {
-  fontSize: 11,
-  lineHeight: '16px',
-  opacity: 0.6,
-}
-
-const menuItemDanger = {
-  ...menuItem,
-  color: 'var(--dsw-alias-state-error-primary, #e06c75)',
-}
-
-const bubbleText = {
-  margin: 0,
-  fontSize: 13,
-  lineHeight: 1.5,
-}
-
-const bubbleSummary = {
-  margin: 0,
-  fontSize: 12,
-  lineHeight: 1.5,
-  opacity: 0.7,
-}
-
-const bubbleActions = {
-  display: 'flex',
-  justifyContent: 'flex-end',
-  gap: 8,
-  marginTop: 8,
-}
-
-const gatePanel = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-start',
-  gap: 10,
-  padding: 16,
-  borderRadius: 12,
-  background: 'var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04))',
-  border: '1px solid var(--dsw-alias-border, rgba(255,255,255,0.08))',
-}
-
-const gateCode = {
-  margin: 0,
-  fontSize: 14,
-  letterSpacing: 2,
-  fontFamily: 'var(--dsw-font-markdown-code-font-family, monospace)',
-}
-
-const muted = { opacity: 0.7, fontSize: 13, margin: 0 }
-const errText = { color: 'var(--dsw-alias-state-error-primary, #e06c75)', fontSize: 13, margin: 0 }
-
-function desktopBridge() {
-  const api = window.dshDesktop
-  return api && typeof api.restartHost === 'function' ? api : undefined
-}
-
-/**
- * @param {string} template locale sentence with `{title}` placeholders
- * @param {Record<string, unknown>} vars
- */
-function fmt(template, vars) {
-  return template.replace(/\{(\w+)\}/g, (whole, key) => (key in vars ? String(vars[key]) : whole))
-}
-
-function AppMark({ id }) {
-  if (id === 'accounts') {
-    return (
-      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="5.2" r="2.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
-        <path d="M3.4 13c.6-2.4 2.3-3.6 4.6-3.6s4 1.2 4.6 3.6" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-      </svg>
-    )
-  }
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-      <rect x="1.5" y="1.5" width="5" height="5" rx="1" fill="none" stroke="currentColor" strokeWidth="1.25" />
-      <rect x="9.5" y="1.5" width="5" height="5" rx="1" fill="none" stroke="currentColor" strokeWidth="1.25" />
-      <rect x="1.5" y="9.5" width="5" height="5" rx="1" fill="none" stroke="currentColor" strokeWidth="1.25" />
-      <rect x="9.5" y="9.5" width="5" height="5" rx="1" fill="none" stroke="currentColor" strokeWidth="1.25" />
-    </svg>
-  )
-}
-
-function matches(app, query) {
-  if (query.length === 0) return true
-  const hay = [app.title, app.summary, app.id, app.spec?.name]
-    .filter((value) => typeof value === 'string')
-    .join(' ')
-    .toLocaleLowerCase()
-  return hay.includes(query)
-}
-
-/**
- * Device-login gate shown when opening an identity app while signed out.
- * @param {{
- *   t: (key: string) => string,
- *   auth: ReturnType<typeof useOmnimuxAuth>,
- *   onCancel: () => void,
- * }} props
- */
-function LoginGate({ t, auth, onCancel }) {
-  const state = auth.state
-  const idle = state.phase === 'need-login' || state.phase === 'denied' || state.phase === 'expired' || state.phase === 'error'
-  return (
-    <div style={gatePanel}>
-      <p style={muted}>{t('plugins.needLogin')}</p>
-      {state.phase === 'waiting' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-          <p style={muted}>{t('plugins.waiting')}</p>
-          {typeof state.user_code === 'string' && state.user_code ? (
-            <p style={gateCode}>{state.user_code}</p>
-          ) : null}
-          {typeof state.verification_url === 'string' && state.verification_url ? (
-            <button type="button" style={pill('primary')} onClick={() => { auth.openUrl(state.verification_url) }}>
-              {t('plugins.open')}
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-      {state.phase === 'denied' ? <p style={errText}>{t('plugins.denied')}</p> : null}
-      {state.phase === 'expired' ? <p style={errText}>{t('plugins.expired')}</p> : null}
-      {state.phase === 'error' ? <p style={errText}>{state.detail || t('plugins.error')}</p> : null}
-      {idle ? (
-        <button type="button" style={pill('primary')} onClick={() => { void auth.beginLogin() }}>
-          {t('plugins.login')}
-        </button>
-      ) : null}
-      <button type="button" style={pill('ghost')} onClick={onCancel}>
-        {t('plugins.cancel')}
-      </button>
-    </div>
-  )
-}
+import { AppMark, PluginLoginPanel, desktopBridge, fmt, matches } from './plugin-helpers.jsx'
+import {
+  bubbleActions,
+  bubbleSummary,
+  bubbleText,
+  card,
+  cardBody,
+  errText,
+  footer,
+  grid,
+  iconBox,
+  menuItem,
+  menuItemDanger,
+  menuItemHint,
+  moreButton,
+  muted,
+  page,
+  pill,
+  popoverPanel,
+  search,
+  stateBadge,
+  summary,
+  tag,
+  tags,
+  title,
+  titleLine,
+  titleRow,
+  toolbar,
+} from './plugins-styles.js'
 
 /**
  * @param {{ t: (key: string) => string }} props
@@ -521,7 +184,7 @@ export function PluginsSection({ t }) {
           style={search}
         />
       </div>
-      {gate !== null ? <LoginGate t={t} auth={auth} onCancel={() => { setGate(null) }} /> : null}
+      {gate !== null ? <PluginLoginPanel t={t} auth={auth} onCancel={() => { setGate(null) }} /> : null}
       {view == null && error === '' ? <p style={muted}>{t('profile.loading')}</p> : null}
       {apps.length === 0 && view != null ? <p style={muted}>{t('plugins.empty')}</p> : null}
       {apps.length > 0 && filtered.length === 0 ? <p style={muted}>{t('plugins.emptySearch')}</p> : null}
@@ -601,7 +264,7 @@ export function PluginsSection({ t }) {
                   ) : null}
                 </div>
                 {popover?.id === key && popover.kind === 'menu' ? (
-                  <div data-omnimux-popover="" role="menu" style={popover}>
+                  <div data-omnimux-popover="" role="menu" style={popoverPanel}>
                     <button
                       type="button"
                       role="menuitem"
@@ -627,7 +290,7 @@ export function PluginsSection({ t }) {
                   </div>
                 ) : null}
                 {popover?.id === key && popover.kind === 'install' ? (
-                  <div data-omnimux-popover="" role="dialog" style={popover}>
+                  <div data-omnimux-popover="" role="dialog" style={popoverPanel}>
                     <p style={bubbleText}>{fmt(t('plugins.confirmInstall'), { title: app.title })}</p>
                     {app.summary ? <p style={bubbleSummary}>{app.summary}</p> : null}
                     <div style={bubbleActions}>
@@ -649,7 +312,7 @@ export function PluginsSection({ t }) {
                   </div>
                 ) : null}
                 {popover?.id === key && popover.kind === 'remove' ? (
-                  <div data-omnimux-popover="" role="dialog" style={popover}>
+                  <div data-omnimux-popover="" role="dialog" style={popoverPanel}>
                     <p style={bubbleText}>{fmt(t('plugins.confirmRemove'), { title: app.title })}</p>
                     <div style={bubbleActions}>
                       <button

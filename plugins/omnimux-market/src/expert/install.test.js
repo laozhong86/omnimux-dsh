@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { loadCatalog } from './catalog.js'
-import { formatMcpRow, installItem, removeMcpRow, spliceManaged } from './install.js'
+import { formatMcpRow, installItem, removeMcpRow, spliceManaged, withConnectorPatchLock } from './install.js'
 
 const PACKAGE_ROOT = join(import.meta.dirname, '..', '..')
 
@@ -184,6 +184,20 @@ test('reinstalling after a full uninstall does not accumulate insert headers', (
   assert.match(reinstalled, /id: esc-mcp-cn-tencent-docs/)
   removeMcpRow(env.profileDir, { id: 'cn-tencent-docs' })
   assert.equal(readFileSync(patch, 'utf8'), '[]\n')
+})
+
+test('withConnectorPatchLock serializes concurrent MCP writes', async () => {
+  const env = roots()
+  writeFileSync(join(env.profileDir, 'cordis.patch.yml'), '[]\n')
+  const catalog = loadCatalog()
+  await Promise.all([
+    withConnectorPatchLock(async () => installItem({ catalog, id: 'cn-tencent-docs', ...env })),
+    withConnectorPatchLock(async () => installItem({ catalog, id: 'cn-notion', ...env })),
+  ])
+  const text = readFileSync(join(env.profileDir, 'cordis.patch.yml'), 'utf8')
+  assert.match(text, /id: esc-mcp-cn-tencent-docs/)
+  assert.match(text, /id: esc-mcp-cn-notion/)
+  assert.equal((text.match(/^# --- omnimux-market managed ---$/gm) || []).length, 1)
 })
 
 test('removeMcpRow is a no-op without a patch file or without the managed block', () => {

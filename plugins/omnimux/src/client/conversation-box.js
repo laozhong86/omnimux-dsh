@@ -12,12 +12,16 @@ function sizableBox(node) {
 }
 
 export const PRODUCT_STAGE_EVENT = 'dsh-product-stage'
+export const ACTIVE_STAGE_STORAGE_KEY = 'omnimux_active_product_stage'
 
 /**
  * Open one first-level product page and tell the others to close.
  * @param {string} id
  */
 export function claimProductStage(id) {
+  try {
+    if (id) window.localStorage.setItem(ACTIVE_STAGE_STORAGE_KEY, id)
+  } catch {}
   window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id } }))
   document.documentElement.dataset.dshProductStage = id
   ensureProductStageChrome()
@@ -31,6 +35,10 @@ export function releaseProductStage(id) {
   if (document.documentElement.dataset.dshProductStage === id) {
     delete document.documentElement.dataset.dshProductStage
   }
+  try {
+    const current = window.localStorage.getItem(ACTIVE_STAGE_STORAGE_KEY)
+    if (current === id) window.localStorage.removeItem(ACTIVE_STAGE_STORAGE_KEY)
+  } catch {}
 }
 
 export const PRODUCT_STAGE_CHROME = `
@@ -64,6 +72,9 @@ export function ensureProductStageChrome() {
 function leaveProductStage() {
   if (!document.documentElement.dataset.dshProductStage) return
   delete document.documentElement.dataset.dshProductStage
+  try {
+    window.localStorage.removeItem(ACTIVE_STAGE_STORAGE_KEY)
+  } catch {}
   window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: '' } }))
 }
 

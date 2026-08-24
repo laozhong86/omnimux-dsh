@@ -9,14 +9,17 @@
 
 | 场景 | 命令 | 说明 |
 |------|------|------|
-| 浏览器验收（L2） | `yarn omnimux:dev start <任务名> <插件>` | link 在研插件 + Host + **统一 watch**；改 client 源码 → 重建 → 官方 HMR 自动推浏览器 |
+| 浏览器验收（L2 / Agent 唯一测试入口） | `yarn omnimux:dev start <任务名> <插件>` | 独立端口(442xx) + 独立 `DSH_HOME` + link 在研插件 + Host + **统一 watch**；改 client 源码 → 重建 → 官方 HMR 自动推浏览器 |
 | 换在研插件的 watch | `yarn omnimux:dev watch <任务名> <插件>` | Host 不停，只换 watch 目标 |
-| 验收完推进生产 App（L3） | `yarn omnimux:sync <插件>` | **先 build 再物化**进 `~/.dsh/profiles/omnimux`；**不自动重启** |
-| 手动让 App 加载新插件 | `yarn omnimux:restart` | `pkill` + `open -a OmniMux` |
+| 验收完推进生产 App（L3 / 零重启物化） | `yarn omnimux:sync <插件>` | **先 build 再物化**进 `~/.dsh/profiles/omnimux`；**零副作用，绝不重启任何进程** |
+| 人工让 App 加载新 Host 插件 | `yarn omnimux:restart` | `pkill` + `open -a OmniMux`（**仅限人类**；前端改动无需重启，直接 Cmd+R 刷新） |
 | 环境自检 | `yarn omnimux:doctor` | 生产禁止 link、依赖声明 file: 等 |
 | 发布重打包前 | `yarn omnimux:stage` → `yarn package:dir` / `dist:*` | 物化进 `preset/plugins/`，随安装包分发 |
 
-**铁律提醒**：日常迭代走 `omnimux:sync`；**不要**把 `stage`/`dist:*` 当日常同步。`sync` 默认不重启 App——加载新插件必须再跑 `omnimux:restart`（或手动 kill/open）。
+**铁律提醒**：
+1. **Agent 无法调试 Native 桌面窗口，所有端到端与 UI 测试必须在 L2 独立 Web 实例完成**。
+2. **严禁 Agent 强杀或重启任何桌面 App**（避免多 Agent / 人机并发撞车）。
+3. 日常迭代走 `omnimux:sync` 静态物化；前端 Client 改动直接在客户端/浏览器按 `Cmd+R` 刷新即可生效，无需重启进程。
 
 ## 三层模型
 
@@ -36,7 +39,7 @@
 4. **同步生产副本只走 `yarn omnimux:sync` / `scripts/sync-to-app.sh`（内部再调 `sync-stable.sh`）**；MUST NOT 手动 rsync/cp 进 profile（多源目录铺平事故已发生一次）。`sync` 会先 build 再物化，避免同步到陈旧 `lib/client.js`。
 5. **dev 环境用完即弃**：`yarn omnimux:dev rm <name>`；MUST NOT 把 dev profile 当长期环境养。
 6. **L1 验证优先**：能写进 `node --test` 的验证 MUST NOT 依赖开 App 人工点（官方 testing.zh.md 原则）。
-7. **`omnimux:sync` 默认不重启 App**；加载新插件 MUST 再跑 `yarn omnimux:restart`（或等价 kill/open）。
+7. **`omnimux:sync` 纯静态物化，绝不重启任何进程**；前端 Client 改动通过客户端/浏览器页面刷新（Cmd+R）直接生效，Host 侧改动在应用下次自然启动或人类主动重启后生效。Agent 严禁执行任何 `restart`。
 
 ## 日常流程
 

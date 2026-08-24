@@ -12,6 +12,12 @@ test('withDefaults fills required fields', () => {
     assert.equal(cfg.sortBy, 'score');
     assert.equal(cfg.plazaKeepAlive, true);
     assert.equal(cfg.plazaCacheTtlSec, 90);
+    assert.equal(cfg.pluginMaxResults, 6);
+    assert.equal(cfg.connectorMaxResults, 6);
+    assert.deepEqual(cfg.protectedBundlesExtra, []);
+    assert.deepEqual(cfg.aggregateChannels, ['custom', 'workbuddy', 'skillhub']);
+    assert.equal(cfg.workbuddySkillsMarketplace, '');
+    assert.equal(cfg.aggregateRemoteSoftFail, true);
     assert.equal('cosBase' in cfg, false);
 });
 test('plazaKeepAlive and plazaCacheTtlSec sanitize + assign', () => {
@@ -69,6 +75,16 @@ test('sanitizePatch clamps timeout and maxResults', () => {
     assert.equal(patch.timeoutMs, 120000);
     assert.equal(patch.maxResults, undefined);
     assert.equal(patch.userAgent, 'ua');
+});
+test('sanitizePatch clamps plugin/connector max and extra protected names', () => {
+    const patch = sanitizePatch({
+        pluginMaxResults: 99,
+        connectorMaxResults: 1,
+        protectedBundlesExtra: ['dsh-better-sidebar', 'github:evil', ''],
+    });
+    assert.equal(patch.pluginMaxResults, 8);
+    assert.equal(patch.connectorMaxResults, 1);
+    assert.deepEqual(patch.protectedBundlesExtra, ['dsh-better-sidebar']);
 });
 test('overlay round-trip uses DSH_HOME and drops userAgent', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'skillhub-cfg-'));

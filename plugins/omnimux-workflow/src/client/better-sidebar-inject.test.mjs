@@ -95,7 +95,13 @@ async function loadApply() {
     jsx: 'automatic',
     write: false,
     logLevel: 'silent',
-    external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom'],
+    external: [
+      'react',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+      'react-dom',
+      '@deepseek-ai/dsh-client-ui-primitives',
+    ],
   })
   const code = result.outputFiles[0]?.text
   if (!code) throw new Error('esbuild produced no apply bundle')
@@ -119,6 +125,10 @@ async function loadApply() {
     export const Fragment = 'Fragment'
     export const jsxDEV = (type, props) => ({ type, props })
   `)
+  writeFileSync(join(dir, 'primitives.js'), `
+    export function IconEditOutline16() { return null }
+    export function IconTrashOutline16() { return null }
+  `)
   const rewritten = code
     .replaceAll("from \"react/jsx-runtime\"", "from \"./jsx-runtime.js\"")
     .replaceAll("from 'react/jsx-runtime'", "from './jsx-runtime.js'")
@@ -126,6 +136,8 @@ async function loadApply() {
     .replaceAll("from 'react/jsx-dev-runtime'", "from './jsx-runtime.js'")
     .replaceAll("from \"react\"", "from \"./react.js\"")
     .replaceAll("from 'react'", "from './react.js'")
+    .replaceAll("from \"@deepseek-ai/dsh-client-ui-primitives\"", "from \"./primitives.js\"")
+    .replaceAll("from '@deepseek-ai/dsh-client-ui-primitives'", "from './primitives.js'")
   const file = join(dir, 'apply.mjs')
   writeFileSync(file, rewritten)
   return import(pathToFileURL(file).href)

@@ -69,83 +69,272 @@ export const STYLES = `
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-bottom: 12px;
 }
 .omnimux-accounts-cta {
+  flex-shrink: 0;
   margin-left: auto; /* sit at the right end of the toolbar row, after the filter controls */
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
-  min-width: 120px;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
-  border-radius: 10px;
-  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.18));
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.14));
+  border-radius: 8px;
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
   color: var(--dsw-alias-label-primary, inherit);
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 .omnimux-accounts-cta:hover {
-  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.26));
+  background: var(--dsw-alias-interactive-bg-active, rgba(255,255,255,0.14));
+  border-color: rgba(255,255,255,0.24);
+}
+.omnimux-accounts-cta:active {
+  transform: scale(0.98);
 }
 .omnimux-accounts-cta:disabled {
   cursor: default;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 /* ---------- filter bar ---------- */
 .omnimux-accounts-filterbar {
-  position: sticky;
-  top: 0;
-  z-index: 2;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
   padding: 8px 0;
-  background: var(--dsw-alias-bg-primary, var(--dsw-bg, #111));
+}
+.omnimux-accounts-filter-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 .omnimux-accounts-search {
-  flex: 0 1 240px;
-  min-width: 160px;
+  flex: 1 1 200px;
+  min-width: 140px;
+  max-width: 240px;
   height: 32px;
-  padding: 0 10px;
+  padding: 0 12px;
   border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
   border-radius: 8px;
-  background: transparent;
+  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
   color: inherit;
   font: inherit;
   font-size: 13px;
+  transition: all 0.15s ease;
 }
-.omnimux-accounts-select {
+.omnimux-accounts-search:hover {
+  border-color: rgba(255,255,255,0.22);
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.07));
+}
+.omnimux-accounts-search:focus {
+  outline: none;
+  border-color: var(--dsw-alias-brand-primary, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.22);
+  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.06));
+}
+.omnimux-accounts-search::placeholder {
+  color: var(--dsw-alias-label-tertiary, rgba(255,255,255,0.38));
+}
+
+/* ---------- dropdown select ---------- */
+.omnimux-accounts-dropdown {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.omnimux-accounts-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   height: 32px;
-  padding: 0 8px;
+  padding: 0 10px 0 12px;
   border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
   border-radius: 8px;
-  background: transparent;
-  color: inherit;
+  background-color: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  color: var(--dsw-alias-label-primary, inherit);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.omnimux-accounts-dropdown-trigger:not(:disabled):hover {
+  background-color: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
+  border-color: rgba(255,255,255,0.22);
+}
+.omnimux-accounts-dropdown-trigger--open {
+  background-color: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
+  border-color: var(--dsw-alias-brand-primary, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.22);
+}
+.omnimux-accounts-dropdown-trigger:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.omnimux-accounts-dropdown-label {
+  line-height: 1;
+}
+.omnimux-accounts-dropdown-chevron {
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+}
+.omnimux-accounts-dropdown-trigger:hover .omnimux-accounts-dropdown-chevron {
+  opacity: 0.85;
+}
+.omnimux-accounts-dropdown-trigger--open .omnimux-accounts-dropdown-chevron {
+  transform: rotate(180deg);
+  opacity: 1;
+  stroke: var(--dsw-alias-brand-primary, #3b82f6);
+}
+.omnimux-accounts-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 50;
+  min-width: 100%;
+  width: max-content;
+  max-width: 240px;
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.14));
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-elevated, #1c1c1f);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(16px);
+  animation: omnimux-accounts-menu-pop 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes omnimux-accounts-menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.omnimux-accounts-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.8));
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.omnimux-accounts-dropdown-item:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
+  color: var(--dsw-alias-label-primary, #ffffff);
+}
+.omnimux-accounts-dropdown-item--selected {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--dsw-alias-brand-primary, #60a5fa);
+  font-weight: 500;
+}
+.omnimux-accounts-dropdown-item--selected:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+.omnimux-accounts-dropdown-item-text {
+  flex: 1 1 auto;
+}
+.omnimux-accounts-dropdown-check {
+  flex-shrink: 0;
+  stroke: var(--dsw-alias-brand-primary, #60a5fa);
+}
+
+.omnimux-accounts-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 28px 0 12px;
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
+  border-radius: 8px;
+  background-color: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='12' height='12' fill='none' stroke='rgba(255,255,255,0.45)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  color: var(--dsw-alias-label-primary, inherit);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.omnimux-accounts-select:hover {
+  background-color: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
+  border-color: rgba(255,255,255,0.22);
+}
+.omnimux-accounts-select:focus {
+  outline: none;
+  border-color: var(--dsw-alias-brand-primary, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.22);
+}
+.omnimux-accounts-select option {
+  background-color: #1a1a1c;
+  color: #ededed;
 }
 .omnimux-accounts-select:disabled { cursor: default; opacity: 0.5; }
 .omnimux-accounts-iconbtn {
-  display: inline-grid;
-  place-items: center;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 32px;
   height: 32px;
   padding: 0;
   border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
   border-radius: 8px;
-  background: transparent;
-  color: inherit;
+  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.65));
   font: inherit;
-  font-size: 14px;
-  line-height: 1;
   cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.omnimux-accounts-iconbtn:disabled { cursor: default; opacity: 0.45; }
+.omnimux-accounts-iconbtn:not(:disabled):hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.09));
+  border-color: rgba(255,255,255,0.22);
+  color: var(--dsw-alias-label-primary, #ffffff);
+}
+.omnimux-accounts-iconbtn:not(:disabled):active {
+  transform: scale(0.96);
+}
+.omnimux-accounts-iconbtn[aria-pressed="true"] {
+  background: var(--dsw-alias-interactive-bg-active, rgba(255,255,255,0.14));
+  border-color: var(--dsw-alias-border-active, rgba(255,255,255,0.26));
+  color: var(--dsw-alias-label-primary, #ffffff);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
 }
 .omnimux-accounts-iconbtn:disabled { cursor: default; opacity: 0.45; }
 .omnimux-accounts-iconbtn:not(:disabled):hover {
@@ -555,8 +744,36 @@ export const STYLES = `
   min-width: 0;
 }
 .omnimux-accounts-cellmenu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  vertical-align: middle;
   position: relative;
-  display: inline-block;
+}
+/* Table-only overrides. Default .omnimux-accounts-more / .omnimux-accounts-popover
+   stay absolute so grid cards keep pinning the ⋯ to the card corner. */
+.omnimux-accounts-cellmenu .omnimux-accounts-more {
+  position: static;
+  top: auto;
+  right: auto;
+  z-index: auto;
+  width: 26px;
+  height: 26px;
+}
+.omnimux-accounts-cellmenu .omnimux-accounts-popover {
+  top: calc(100% + 4px);
+  right: 0;
+  left: auto;
+  z-index: 6;
+  min-width: 200px;
+  max-width: min(280px, 70vw);
+}
+.omnimux-accounts-table tbody tr:last-child .omnimux-accounts-cellmenu .omnimux-accounts-popover,
+.omnimux-accounts-table tbody tr:nth-last-child(2) .omnimux-accounts-cellmenu .omnimux-accounts-popover {
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 .omnimux-accounts-bulkbar {
   position: sticky;

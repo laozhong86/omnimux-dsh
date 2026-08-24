@@ -33,141 +33,153 @@ module.exports = __toCommonJS(index_exports);
 // src/client/locales.js
 var zh = {
   "nav": "\u4EA7\u54C1\u5E93",
-  "stage.title": "\u4EA7\u54C1\u5E93",
-  "stage.subtitle": "\u6C89\u6DC0\u8981\u5356\u7684\u8D27\uFF1A\u5356\u70B9\u3001\u4EBA\u7FA4\u3001\u4E3B\u56FE\uFF0C\u5728\u4F1A\u8BDD\u91CC\u7ED9 Agent \u5F15\u7528",
+  "stage.title": "\u5546\u54C1\u4E0E\u4EA7\u54C1\u5E93",
+  "stage.subtitle": "\u7BA1\u7406\u5546\u54C1\u6807\u54C1\uFF08SPU/SKU\uFF09\u4E0E\u6570\u5B57\u4EA7\u54C1\u8D44\u4EA7\uFF0C\u4F9B Agent \u5728\u521B\u4F5C\u4E2D\u7CBE\u51C6\u8C03\u7528",
   "stage.refresh": "\u5237\u65B0",
-  "stage.refreshing": "\u5237\u65B0\u4E2D\u2026",
+  "stage.refreshing": "\u6B63\u5728\u5237\u65B0\u2026",
   "stage.close": "\u5173\u95ED",
   "add.button": "\u6DFB\u52A0\u4EA7\u54C1",
   "add.title": "\u6DFB\u52A0\u4EA7\u54C1",
   "add.namePlaceholder": "\u4EA7\u54C1\u540D\u79F0",
-  "add.sellingPlaceholder": "\u5356\u70B9\uFF08\u600E\u4E48\u5356\uFF09",
-  "add.audiencePlaceholder": "\u4EBA\u7FA4",
+  "add.sellingPlaceholder": "\u6838\u5FC3\u5356\u70B9 (Selling Points)",
+  "add.audiencePlaceholder": "\u76EE\u6807\u53D7\u4F17",
   "add.brandPlaceholder": "\u54C1\u724C",
-  "add.featuresPlaceholder": "\u7279\u70B9",
+  "add.featuresPlaceholder": "\u4EA7\u54C1\u7279\u6027",
   "add.pricePlaceholder": "\u4EF7\u683C",
-  "add.skuPlaceholder": "SKU",
-  "add.promotionPlaceholder": "\u4FC3\u9500",
-  "add.linkPlaceholder": "\u5546\u54C1\u94FE\u63A5\uFF08\u53EA\u5B58\u4E0D\u6293\uFF09",
-  "add.digitalLinkPlaceholder": "\u4EA7\u54C1\u7F51\u7AD9\u94FE\u63A5\uFF08\u53EA\u5B58\u4E0D\u6293\uFF1B\u6293\u9875\u7528 Agent / \u6280\u80FD\uFF09",
-  "add.drop": "\u5C06\u672C\u5730\u4E3B\u56FE\u62D6\u5165\uFF0C\u6216\u70B9\u4E0B\u9762\u6309\u94AE\u9009\u62E9\uFF08\u53EA\u5F15\u7528\u8DEF\u5F84\uFF0C\u4E0D\u62F7\u8D1D\u6587\u4EF6\uFF09",
+  "add.skuPlaceholder": "SKU \u7F16\u7801",
+  "add.promotionPlaceholder": "\u4FC3\u9500\u4FE1\u606F",
+  "add.linkPlaceholder": "\u5546\u54C1\u843D\u5730\u9875\u94FE\u63A5 (\u4EC5\u5B58 URL)",
+  "add.digitalLinkPlaceholder": "\u4EA7\u54C1\u5B98\u7F51\u5730\u5740 (\u4EC5\u5B58 URL\uFF1B\u9875\u9762\u89E3\u6790\u8BF7\u5728\u4F1A\u8BDD\u4E2D\u4F7F\u7528 Agent \u6280\u80FD)",
+  "add.drop": "\u62D6\u62FD\u4E3B\u56FE\u6587\u4EF6\u81F3\u6B64\uFF0C\u6216\u70B9\u51FB\u6D4F\u89C8",
   "add.pickFiles": "\u9009\u62E9\u6587\u4EF6",
-  "add.categories": "\u7C7B\u522B\uFF08\u6700\u591A 5 \u4E2A\uFF09",
-  "add.categoriesPlaceholder": "\u56DE\u8F66\u6DFB\u52A0\u7C7B\u522B",
-  "add.submit": "\u521B\u5EFA\u4EA7\u54C1",
+  "add.categories": "\u5206\u7C7B\u6807\u7B7E\uFF08\u6700\u591A 5 \u4E2A\uFF09",
+  "add.categoriesPlaceholder": "\u56DE\u8F66\u6DFB\u52A0\u5206\u7C7B",
+  "add.submit": "\u6DFB\u52A0\u4EA7\u54C1",
   "add.cancel": "\u53D6\u6D88",
   "add.dirty.reload": "\u91CD\u65B0\u52A0\u8F7D",
-  "add.dirty.keep": "\u7EE7\u7EED\u63D0\u4EA4",
-  "add.dirty.banner": "\u8FD9\u6761\u4EA7\u54C1\u5728\u522B\u5904\u5DF2\u66F4\u65B0\u3002\u8868\u5355\u672A\u8986\u76D6\uFF1B\u53EF\u91CD\u65B0\u52A0\u8F7D\u6216\u7EE7\u7EED\u63D0\u4EA4\uFF08\u540E\u5199\u80DC\uFF09\u3002",
-  "search.placeholder": "\u641C\u7D22\u540D\u79F0 / \u5356\u70B9 / \u54C1\u724C / SKU",
+  "add.dirty.keep": "\u5F3A\u5236\u8986\u76D6",
+  "add.dirty.banner": "\u5F53\u524D\u4EA7\u54C1\u5DF2\u5728\u5176\u4ED6\u7EC8\u7AEF\u66F4\u65B0\u3002\u60A8\u53EF\u4EE5\u91CD\u65B0\u8F7D\u5165\u6700\u65B0\u6570\u636E\uFF0C\u6216\u5F3A\u5236\u8986\u76D6\u63D0\u4EA4\u3002",
+  "search.placeholder": "\u641C\u7D22\u4EA7\u54C1\u540D\u79F0\u3001\u5356\u70B9\u3001\u54C1\u724C\u6216 SKU",
   "sort.updated": "\u6700\u8FD1\u66F4\u65B0",
-  "empty.all": "\u8FD8\u6CA1\u6709\u4EA7\u54C1\u3002\u5148\u6DFB\u52A0\u4E00\u4EF6\u8981\u5356\u7684\u8D27\u3002",
-  "card.copyCite": "\u590D\u5236\u5F15\u7528",
+  "empty.all": "\u6682\u65E0\u4EA7\u54C1\u6570\u636E\u3002\u70B9\u51FB\u300C\u6DFB\u52A0\u4EA7\u54C1\u300D\u5F55\u5165\u9996\u4EF6\u6807\u54C1\u3002",
+  "empty.noMatch": "\u6CA1\u6709\u5339\u914D\u7684\u4EA7\u54C1\u3002\u6362\u4E2A\u5173\u952E\u8BCD\u8BD5\u8BD5\u3002",
+  "card.copyCite": "\u590D\u5236 Agent \u5F15\u7528\u6807\u8BC6",
   "card.copied": "\u5DF2\u590D\u5236",
+  "select.toggle": "\u9009\u62E9\u4EA7\u54C1",
+  "select.count": "\u5DF2\u9009 {n} \u9879",
+  "select.clear": "\u53D6\u6D88\u9009\u62E9",
+  "select.delete": "\u79FB\u9664 {n} \u9879",
+  "select.removeTitle": "\u786E\u8BA4\u4ECE\u4EA7\u54C1\u5E93\u79FB\u9664\u8FD9 {n} \u9879\uFF1F",
   "detail.title": "\u7F16\u8F91\u4EA7\u54C1",
   "detail.name": "\u540D\u79F0",
   "detail.selling": "\u5356\u70B9",
-  "detail.audience": "\u4EBA\u7FA4",
+  "detail.audience": "\u53D7\u4F17",
   "detail.brand": "\u54C1\u724C",
-  "detail.features": "\u7279\u70B9",
+  "detail.features": "\u7279\u6027",
   "detail.price": "\u4EF7\u683C",
   "detail.sku": "SKU",
   "detail.promotion": "\u4FC3\u9500",
   "detail.link": "\u94FE\u63A5",
-  "detail.categories": "\u7C7B\u522B",
+  "detail.categories": "\u5206\u7C7B",
   "detail.media": "\u5A92\u4F53",
   "detail.primary": "\u4E3B\u56FE",
   "detail.save": "\u4FDD\u5B58",
   "detail.close": "\u5173\u95ED",
   "detail.cite": "\u5F15\u7528",
-  "remove.title": "\u79FB\u9664\u300C{name}\u300D\uFF1F",
-  "remove.hint": "\u53EA\u4ECE\u4EA7\u54C1\u5E93\u79FB\u9664\uFF0C\u4E0D\u4F1A\u5220\u9664\u78C1\u76D8\u4E0A\u7684\u539F\u6587\u4EF6\u3002\u4E0D\u53EF\u6062\u590D\u3002",
-  "remove.confirm": "\u79FB\u9664",
+  "remove.title": "\u786E\u8BA4\u4ECE\u4EA7\u54C1\u5E93\u79FB\u9664\u300C{name}\u300D\uFF1F",
+  "remove.hint": "\u4EC5\u4ECE\u4EA7\u54C1\u5E93\u79FB\u9664\u5F15\u7528\uFF0C\u672C\u5730\u78C1\u76D8\u6E90\u6587\u4EF6\u4E0D\u53D7\u5F71\u54CD\u3002",
+  "remove.confirm": "\u786E\u8BA4\u79FB\u9664",
   "remove.cancel": "\u53D6\u6D88",
   "error.generic": "\u8BF7\u6C42\u5931\u8D25",
-  "error.pickerUnsupported": "\u5F53\u524D\u5E73\u53F0\u6682\u4E0D\u652F\u6301\u7CFB\u7EDF\u9009\u62E9\u7A97\uFF0C\u8BF7\u4F7F\u7528 macOS\u3002",
-  "error.pickerFailed": "\u7CFB\u7EDF\u9009\u62E9\u7A97\u6253\u5F00\u5931\u8D25\u3002",
-  "error.nameConflict": "\u5DF2\u6709\u540C\u540D\u4EA7\u54C1\uFF0C\u8BF7\u6362\u4E00\u4E2A\u540D\u79F0\u3002",
+  "error.pickerUnsupported": "\u5F53\u524D\u8FD0\u884C\u73AF\u5883\u4E0D\u652F\u6301\u539F\u751F\u6587\u4EF6\u9009\u62E9\u5668\uFF0C\u8BF7\u5728 macOS \u684C\u9762\u7AEF\u4F7F\u7528\u3002",
+  "error.pickerFailed": "\u7CFB\u7EDF\u9009\u62E9\u7A97\u53E3\u6253\u5F00\u5931\u8D25\u3002",
+  "error.nameConflict": "\u5DF2\u6709\u540C\u540D\u4EA7\u54C1\uFF0C\u8BF7\u4F7F\u7528\u5176\u4ED6\u540D\u79F0\u3002",
   "kind.label": "\u7C7B\u578B",
-  "kind.physical": "\u5B9E\u7269",
-  "kind.digital": "\u6570\u5B57",
-  "strategy.title": "\u54C1\u724C\u6218\u7565",
-  "strategy.hint": "\u53EF\u9009\u3002\u5C55\u5F00\u540E\u624D\u5199\u5165\uFF1B\u5168\u7A7A\u4F1A\u5B58\u6210\u7A7A\u3002",
-  "strategy.hintDigital": "\u6570\u5B57\u8D27\u7528\u624B\u586B\u6218\u7565\u516D\u5757\u3002\u9875\u9762\u4E0D\u6293 URL\uFF1B\u9700\u8981\u5206\u6790\u65F6\u8BA9 Agent \u914D\u5408\u6280\u80FD\u5199\u8FDB\u6765\u3002",
+  "kind.physical": "\u5B9E\u4F53\u5546\u54C1",
+  "kind.digital": "\u6570\u5B57\u4EA7\u54C1",
+  "strategy.title": "\u54C1\u724C\u6218\u7565\u5B9A\u4F4D",
+  "strategy.hint": "\u53EF\u9009\u3002\u5C55\u5F00\u540E\u4FDD\u5B58\uFF1B\u5168\u7A7A\u5219\u4E0D\u5199\u5165\u3002",
+  "strategy.hintDigital": "\u8BF7\u624B\u52A8\u5B8C\u5584\u516D\u5927\u54C1\u724C\u6218\u7565\u6A21\u5757\uFF0C\u6216\u5728\u4F1A\u8BDD\u4E2D\u8C03\u5EA6\u5206\u6790 Agent \u81EA\u52A8\u63D0\u53D6\u586B\u5145\u3002",
   "strategy.expand": "\u5C55\u5F00",
   "strategy.collapse": "\u6536\u8D77",
-  "strategy.basic": "\u54C1\u724C\u57FA\u672C\u4FE1\u606F",
+  "strategy.basic": "\u54C1\u724C\u57FA\u7840\u4FE1\u606F",
   "strategy.companyName": "\u516C\u53F8\u540D\u79F0",
   "strategy.companyWebsite": "\u516C\u53F8\u7F51\u7AD9",
-  "strategy.companyLocale": "\u8BED\u8A00\uFF08\u7A7A\u5219\u4E3A auto\uFF09",
-  "strategy.productName": "\u4EA7\u54C1\u540D\u79F0\uFF08\u6218\u7565\u5185\uFF0C\u4E0D\u4E0E\u9876\u680F\u540C\u6B65\uFF09",
+  "strategy.companyLocale": "\u8BED\u8A00\uFF08\u7559\u7A7A\u4E3A\u81EA\u52A8\uFF09",
+  "strategy.productName": "\u6218\u7565\u4EA7\u54C1\u540D (\u72EC\u7ACB\u5B57\u6BB5)",
   "strategy.productCategory": "\u4EA7\u54C1\u54C1\u7C7B",
-  "strategy.angles": "\u5185\u5BB9\u89D2\u5EA6\uFF08\u6700\u591A 10\uFF09",
+  "strategy.angles": "\u5185\u5BB9\u5207\u5165\u89D2\u5EA6\uFF08\u6700\u591A 10 \u4E2A\uFF09",
   "strategy.addAngle": "\u6DFB\u52A0\u89D2\u5EA6",
   "strategy.angleTitle": "\u89D2\u5EA6\u6807\u9898",
   "strategy.angleDesc": "\u89D2\u5EA6\u8BF4\u660E",
   "strategy.angleAudience": "\u76EE\u6807\u4EBA\u7FA4",
-  "strategy.tone": "\u8BED\u6C14",
+  "strategy.tone": "\u8BED\u8C03\u98CE\u683C",
   "strategy.listHint": "\u6BCF\u884C\u4E00\u6761",
-  "strategy.dos": "\u8981\u8BF4\uFF08dos\uFF09",
-  "strategy.donts": "\u4E0D\u8BF4\uFF08donts\uFF09",
-  "strategy.identity": "\u8EAB\u4EFD\u4E0E\u4EA7\u54C1",
-  "strategy.coreIdentity": "\u6838\u5FC3\u8EAB\u4EFD",
+  "strategy.dos": "\u6838\u5FC3\u6C9F\u901A\u8981\u70B9 (Key Messaging)",
+  "strategy.donts": "\u54C1\u724C\u7981\u5FCC\u7EA2\u7EBF (Constraints)",
+  "strategy.identity": "\u54C1\u724C\u4E0E\u4EA7\u54C1\u8EAB\u4EFD",
+  "strategy.coreIdentity": "\u6838\u5FC3\u5B9A\u4F4D",
   "strategy.offering": "\u4EA7\u54C1\u4F9B\u7ED9",
-  "strategy.advantage": "\u72EC\u7279\u4F18\u52BF",
+  "strategy.advantage": "\u5DEE\u5F02\u5316\u4F18\u52BF",
   "strategy.problems": "\u89E3\u51B3\u7684\u95EE\u9898",
   "strategy.solutions": "\u89E3\u51B3\u65B9\u6848",
-  "strategy.mission": "\u4F7F\u547D\u4E0E\u5B9A\u4F4D",
-  "strategy.missionText": "\u4F7F\u547D",
-  "strategy.diff": "\u5DEE\u5F02\u5316",
-  "strategy.ownableStatement": "\u53EF\u5360\u9886\u5FC3\u667A",
-  "strategy.ownableCategory": "\u54C1\u7C7B",
-  "strategy.ownableNot": "\u4E0D\u662F\u4EC0\u4E48\uFF08\u6BCF\u884C\u4E00\u6761\uFF09",
-  "strategy.market": "\u5E02\u573A\u4E0E\u7ADE\u4E89",
-  "strategy.segments": "\u5BA2\u7FA4\uFF08\u6700\u591A 10\uFF09",
+  "strategy.mission": "\u4F7F\u547D\u4E0E\u613F\u666F",
+  "strategy.missionText": "\u4F7F\u547D\u9648\u8FF0",
+  "strategy.diff": "\u6838\u5FC3\u5DEE\u5F02\u5316",
+  "strategy.ownableStatement": "\u54C1\u724C\u6838\u5FC3\u5FC3\u667A\u5B9A\u4F4D",
+  "strategy.ownableCategory": "\u5F52\u5C5E\u54C1\u7C7B",
+  "strategy.ownableNot": "\u975E\u5B9A\u4F4D\u6392\u9664\u9879 (\u6BCF\u884C\u4E00\u6761)",
+  "strategy.market": "\u5E02\u573A\u4E0E\u7ADE\u4E89\u683C\u5C40",
+  "strategy.segments": "\u76EE\u6807\u5BA2\u7FA4\uFF08\u6700\u591A 10 \u4E2A\uFF09",
   "strategy.addSegment": "\u6DFB\u52A0\u5BA2\u7FA4",
   "strategy.segmentName": "\u5BA2\u7FA4\u540D\u79F0",
-  "strategy.competitors": "\u7ADE\u54C1\uFF08\u6700\u591A 10\uFF09",
+  "strategy.competitors": "\u4E3B\u8981\u7ADE\u54C1\uFF08\u6700\u591A 10 \u4E2A\uFF09",
   "strategy.addCompetitor": "\u6DFB\u52A0\u7ADE\u54C1",
   "strategy.competitorName": "\u7ADE\u54C1\u540D\u79F0",
-  "strategy.competitorWebsite": "\u7ADE\u54C1\u7F51\u7AD9"
+  "strategy.competitorWebsite": "\u7ADE\u54C1\u5B98\u7F51"
 };
 var en = {
   "nav": "Products",
   "stage.title": "Product Library",
-  "stage.subtitle": "Sellable items: selling points, audience, cover \u2014 cite them in chat",
+  "stage.subtitle": "Manage product assets (selling points, audience, covers) for Agent citations in chat",
   "stage.refresh": "Refresh",
   "stage.refreshing": "Refreshing\u2026",
   "stage.close": "Close",
-  "add.button": "Add product",
-  "add.title": "Add product",
+  "add.button": "Add Product",
+  "add.title": "Add Product",
   "add.namePlaceholder": "Product name",
-  "add.sellingPlaceholder": "Selling points",
-  "add.audiencePlaceholder": "Audience",
+  "add.sellingPlaceholder": "Key selling points",
+  "add.audiencePlaceholder": "Target audience",
   "add.brandPlaceholder": "Brand",
   "add.featuresPlaceholder": "Features",
   "add.pricePlaceholder": "Price",
   "add.skuPlaceholder": "SKU",
   "add.promotionPlaceholder": "Promotion",
-  "add.linkPlaceholder": "Store URL (stored, not fetched)",
-  "add.digitalLinkPlaceholder": "Product site URL (stored, not fetched; Agent/skills fill analysis)",
-  "add.drop": "Drop a local cover, or choose files (path refs only \u2014 files are never copied)",
-  "add.pickFiles": "Choose files",
+  "add.linkPlaceholder": "Store URL (URL only)",
+  "add.digitalLinkPlaceholder": "Website URL (URL only; use Agent skills for page extraction)",
+  "add.drop": "Drag and drop cover image here, or browse",
+  "add.pickFiles": "Choose Files",
   "add.categories": "Categories (up to 5)",
-  "add.categoriesPlaceholder": "Press Enter to add",
-  "add.submit": "Create product",
+  "add.categoriesPlaceholder": "Press Enter to add category",
+  "add.submit": "Add Product",
   "add.cancel": "Cancel",
   "add.dirty.reload": "Reload",
-  "add.dirty.keep": "Keep editing",
-  "add.dirty.banner": "This product changed elsewhere. The form was not overwritten; reload or keep submitting (last write wins).",
-  "search.placeholder": "Search name / selling points / brand / SKU",
+  "add.dirty.keep": "Overwrite",
+  "add.dirty.banner": "This product was updated elsewhere. You can reload the latest data or overwrite.",
+  "search.placeholder": "Search name, selling points, brand, or SKU",
   "sort.updated": "Recently updated",
-  "empty.all": "No products yet. Add something you sell.",
-  "card.copyCite": "Copy citation",
+  "empty.all": "No products yet. Add your first product to get started.",
+  "empty.noMatch": "No matching products found.",
+  "card.copyCite": "Copy Reference Handle",
   "card.copied": "Copied",
-  "detail.title": "Edit product",
+  "select.toggle": "Select product",
+  "select.count": "{n} selected",
+  "select.clear": "Clear selection",
+  "select.delete": "Remove {n}",
+  "select.removeTitle": "Remove these {n} items from library?",
+  "detail.title": "Edit Product",
   "detail.name": "Name",
-  "detail.selling": "Selling points",
+  "detail.selling": "Selling Points",
   "detail.audience": "Audience",
   "detail.brand": "Brand",
   "detail.features": "Features",
@@ -181,55 +193,55 @@ var en = {
   "detail.save": "Save",
   "detail.close": "Close",
   "detail.cite": "Citation",
-  "remove.title": "Remove \u201C{name}\u201D?",
-  "remove.hint": "Only removed from the product library \u2014 the original file stays on disk. This cannot be undone.",
+  "remove.title": 'Remove "{name}" from library?',
+  "remove.hint": "Removes reference only. Local source files remain unchanged.",
   "remove.confirm": "Remove",
   "remove.cancel": "Cancel",
   "error.generic": "Request failed",
-  "error.pickerUnsupported": "The system picker is only available on macOS for now.",
-  "error.pickerFailed": "Failed to open the system picker.",
+  "error.pickerUnsupported": "Native file picker is only supported on macOS desktop.",
+  "error.pickerFailed": "Failed to open file picker.",
   "error.nameConflict": "A product with this name already exists.",
   "kind.label": "Kind",
-  "kind.physical": "Physical",
-  "kind.digital": "Digital",
-  "strategy.title": "Brand strategy",
-  "strategy.hint": "Optional. Written only after you expand; an empty form stores null.",
-  "strategy.hintDigital": "Fill the six strategy blocks by hand. This page never fetches URLs; Agent/skills can write analysis.",
+  "kind.physical": "Physical Product",
+  "kind.digital": "Digital Offering",
+  "strategy.title": "Brand Strategy",
+  "strategy.hint": "Optional. Saved upon expansion; empty form stores null.",
+  "strategy.hintDigital": "Manually configure the strategy modules, or dispatch an analysis Agent to generate them.",
   "strategy.expand": "Expand",
   "strategy.collapse": "Collapse",
-  "strategy.basic": "Brand basics",
+  "strategy.basic": "Brand Basics",
   "strategy.companyName": "Company name",
   "strategy.companyWebsite": "Company website",
   "strategy.companyLocale": "Locale (empty \u2192 auto)",
-  "strategy.productName": "Product name (strategy only; not synced with the title)",
+  "strategy.productName": "Product name (strategy only)",
   "strategy.productCategory": "Product category",
   "strategy.angles": "Content angles (up to 10)",
-  "strategy.addAngle": "Add angle",
+  "strategy.addAngle": "Add Angle",
   "strategy.angleTitle": "Angle title",
   "strategy.angleDesc": "Angle description",
   "strategy.angleAudience": "Target audience",
-  "strategy.tone": "Tone of voice",
+  "strategy.tone": "Tone of Voice",
   "strategy.listHint": "One item per line",
-  "strategy.dos": "Do say",
-  "strategy.donts": "Don't say",
-  "strategy.identity": "Identity and product",
-  "strategy.coreIdentity": "Core identity",
+  "strategy.dos": "Key Messaging (Dos)",
+  "strategy.donts": "Messaging Constraints (Don'ts)",
+  "strategy.identity": "Brand & Product Identity",
+  "strategy.coreIdentity": "Core positioning",
   "strategy.offering": "Product offering",
   "strategy.advantage": "Unique advantage",
   "strategy.problems": "Problems solved",
   "strategy.solutions": "Solutions",
-  "strategy.mission": "Mission and positioning",
-  "strategy.missionText": "Mission",
+  "strategy.mission": "Mission & Positioning",
+  "strategy.missionText": "Mission statement",
   "strategy.diff": "Differentiation",
-  "strategy.ownableStatement": "Ownable space",
+  "strategy.ownableStatement": "Core positioning",
   "strategy.ownableCategory": "Category",
-  "strategy.ownableNot": "Is not (one per line)",
-  "strategy.market": "Market and competition",
+  "strategy.ownableNot": "Exclusions (one per line)",
+  "strategy.market": "Market & Competition",
   "strategy.segments": "Customer segments (up to 10)",
-  "strategy.addSegment": "Add segment",
+  "strategy.addSegment": "Add Segment",
   "strategy.segmentName": "Segment name",
   "strategy.competitors": "Competitors (up to 10)",
-  "strategy.addCompetitor": "Add competitor",
+  "strategy.addCompetitor": "Add Competitor",
   "strategy.competitorName": "Competitor name",
   "strategy.competitorWebsite": "Competitor website"
 };
@@ -240,14 +252,34 @@ var PRODUCT_STAGE_EVENT = "dsh-product-stage";
 var STAGE_ID = "omnimux-products";
 function createStageStore(getStage) {
   let open = false;
+  try {
+    open = window.localStorage.getItem("omnimux_active_product_stage") === STAGE_ID;
+  } catch {
+  }
   const listeners = /* @__PURE__ */ new Set();
   function emit() {
     for (const listener of listeners) listener();
+  }
+  if (open) {
+    const restore = () => {
+      try {
+        const stage = getStage();
+        if (stage && typeof stage.claim === "function") {
+          stage.claim(STAGE_ID);
+        }
+      } catch {
+      }
+    };
+    if (typeof queueMicrotask === "function") queueMicrotask(restore);
+    else setTimeout(restore, 0);
   }
   window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : void 0;
     if (id !== STAGE_ID && open) {
       open = false;
+      emit();
+    } else if (id === STAGE_ID && !open) {
+      open = true;
       emit();
     }
   });
@@ -364,7 +396,9 @@ var import_react2 = require("react");
 // src/client/a11y.js
 var FOCUS_CSS = [
   ".omnimux-products-focusable:focus-visible{outline:2px solid var(--dsw-alias-label-primary);outline-offset:2px;border-radius:8px;}",
-  ".omnimux-products-focusable:hover{border-color:var(--dsw-alias-border-l4);}"
+  ".omnimux-products-focusable:hover{border-color:var(--dsw-alias-border-l4);}",
+  ".omnimux-products-check{opacity:0;transition:opacity 0.15s ease;}",
+  '.omnimux-products-focusable:hover .omnimux-products-check,.omnimux-products-focusable:focus-within .omnimux-products-check,.omnimux-products-check[data-selected="true"]{opacity:1;}'
 ].join("\n");
 function activateRowKeydown(trigger) {
   return (event) => {
@@ -473,7 +507,7 @@ var dangerButton = {
   color: "var(--dsw-alias-label-primary-foreground)",
   background: "var(--dsw-alias-label-error)"
 };
-function ConfirmRemoveDialog({ t, name: name2, busy, onCancel, onConfirm }) {
+function ConfirmRemoveDialog({ t, name: name2, title, busy, onCancel, onConfirm }) {
   return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
     "div",
     {
@@ -492,7 +526,7 @@ function ConfirmRemoveDialog({ t, name: name2, busy, onCancel, onConfirm }) {
             if (event.key === "Escape") onCancel();
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { style: heading, children: t("remove.title").replace("{name}", name2) }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { style: heading, children: title || t("remove.title").replace("{name}", name2) }),
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: hint, children: t("remove.hint") }),
             /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: buttons, children: [
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", style: ghostButton, onClick: onCancel, autoFocus: true, children: t("remove.cancel") }),
@@ -545,6 +579,9 @@ function PlusIcon(props) {
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M12 5v14" }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M5 12h14" })
   ] });
+}
+function CheckIcon(props) {
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Icon, { ...props, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "m5 12 5 5 9-10" }) });
 }
 function CloseIcon(props) {
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Icon, { ...props, children: [
@@ -1554,7 +1591,21 @@ function StrategyFields({ t, strategy, patchStrategy, field: field2, labelStyle,
 
 // src/client/ProductGrid.jsx
 var import_jsx_runtime4 = require("react/jsx-runtime");
-function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmptyAction, onOpen, onCopy, onRemove, copiedId }) {
+var checkBase = {
+  position: "absolute",
+  top: 8,
+  left: 8,
+  width: 22,
+  height: 22,
+  borderRadius: "50%",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+  cursor: "pointer",
+  zIndex: 1
+};
+function ProductGrid({ t, products, emptyLabel, emptyActionLabel, showEmptyAction = true, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect }) {
   if (products.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
       "div",
@@ -1573,7 +1624,7 @@ function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmptyAction,
         },
         children: [
           /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: 0 }, children: emptyLabel }),
-          emptyActionLabel && onEmptyAction ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          emptyActionLabel && onEmptyAction && showEmptyAction ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
             "button",
             {
               type: "button",
@@ -1598,12 +1649,14 @@ function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmptyAction,
     const glyph = (product.name || "?").trim().slice(0, 1);
     const cover = product.cover;
     const preview = cover?.kind === "image" && cover.id ? previewUrl(product.id, cover.id) : "";
+    const selected = selectedIds?.has(product.id);
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
       "article",
       {
         className: "omnimux-products-focusable",
         tabIndex: 0,
         role: "button",
+        "aria-selected": selected ? "true" : "false",
         onClick: () => {
           onOpen(product);
         },
@@ -1611,7 +1664,7 @@ function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmptyAction,
           onOpen(product);
         }),
         style: {
-          border: "1px solid var(--dsw-alias-border-l2)",
+          border: selected ? "1px solid var(--dsw-alias-label-primary)" : "1px solid var(--dsw-alias-border-l2)",
           borderRadius: 12,
           overflow: "hidden",
           cursor: "pointer",
@@ -1645,29 +1698,54 @@ function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmptyAction,
                     style: { width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }
                   }
                 ) : null,
-                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 28, fontWeight: 600, lineHeight: 1 }, children: glyph })
+                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 28, fontWeight: 600, lineHeight: 1 }, children: glyph }),
+                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                  "span",
+                  {
+                    style: {
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      fontSize: 11,
+                      lineHeight: "16px",
+                      fontWeight: 500,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: "var(--dsw-alias-bg-base)",
+                      border: "1px solid var(--dsw-alias-border-l2)",
+                      color: "var(--dsw-alias-label-secondary)",
+                      zIndex: 1,
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+                    },
+                    children: product.kind === "digital" ? t("kind.digital") : t("kind.physical")
+                  }
+                ),
+                onToggleSelect ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    className: "omnimux-products-check",
+                    "data-selected": selected ? "true" : "false",
+                    "aria-label": t("select.toggle"),
+                    "aria-pressed": selected ? "true" : "false",
+                    onClick: (event) => {
+                      event.stopPropagation();
+                      onToggleSelect(product);
+                    },
+                    style: {
+                      ...checkBase,
+                      border: selected ? "none" : "1px solid var(--dsw-alias-border-l3)",
+                      background: selected ? "var(--dsw-alias-button-primary-fill)" : "var(--dsw-alias-bg-base)",
+                      color: selected ? "var(--dsw-alias-label-primary-foreground)" : "inherit"
+                    },
+                    children: selected ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CheckIcon, { size: 12 }) : null
+                  }
+                ) : null
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { padding: "10px 12px 12px", display: "flex", flexDirection: "column", gap: 4, minHeight: 72 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6, minWidth: 0 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { fontSize: 14, fontWeight: 500, lineHeight: "20px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }, children: product.name }),
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-                "span",
-                {
-                  style: {
-                    flex: "none",
-                    fontSize: 11,
-                    lineHeight: "16px",
-                    padding: "1px 6px",
-                    borderRadius: 999,
-                    background: "var(--dsw-alias-bg-module-platform)",
-                    color: "var(--dsw-alias-label-secondary)"
-                  },
-                  children: product.kind === "digital" ? t("kind.digital") : t("kind.physical")
-                }
-              )
-            ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { padding: "10px 12px 12px", display: "flex", flexDirection: "column", gap: 4 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { fontSize: 14, fontWeight: 500, lineHeight: "20px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: product.name }),
             /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
               "div",
               {
@@ -1681,33 +1759,7 @@ function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmptyAction,
                 },
                 children: product.kind === "digital" ? product.link || product.brand_strategy?.brand_basic_info?.product?.name || product.description || "\u2014" : product.selling_points || product.description || "\u2014"
               }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { display: "flex", gap: 8, marginTop: 6 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-                "button",
-                {
-                  type: "button",
-                  onClick: (event) => {
-                    event.stopPropagation();
-                    onCopy(product);
-                  },
-                  style: { border: "none", background: "transparent", cursor: "pointer", fontSize: 12, color: "var(--dsw-alias-label-secondary)", padding: 0 },
-                  children: copiedId === product.id ? t("card.copied") : t("card.copyCite")
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-                "button",
-                {
-                  type: "button",
-                  onClick: (event) => {
-                    event.stopPropagation();
-                    onRemove(product);
-                  },
-                  style: { border: "none", background: "transparent", cursor: "pointer", fontSize: 12, color: "var(--dsw-alias-label-error)", padding: 0 },
-                  children: t("remove.confirm")
-                }
-              )
-            ] })
+            )
           ] })
         ]
       },
@@ -1776,6 +1828,7 @@ function ProductsStage({ t, stage }) {
   const [editing, setEditing] = (0, import_react2.useState)(null);
   const [editingDirty, setEditingDirty] = (0, import_react2.useState)(false);
   const [pendingRemove, setPendingRemove] = (0, import_react2.useState)(null);
+  const [selectedIds, setSelectedIds] = (0, import_react2.useState)(() => /* @__PURE__ */ new Set());
   const [error, setError] = (0, import_react2.useState)("");
   const [formError, setFormError] = (0, import_react2.useState)("");
   const [busy, setBusy] = (0, import_react2.useState)(false);
@@ -1799,6 +1852,12 @@ function ProductsStage({ t, stage }) {
       if (result.body.unchanged) return;
       const nextProducts = Array.isArray(result.body.products) ? result.body.products : [];
       setProducts(nextProducts);
+      const live = new Set(nextProducts.map((row) => row.id));
+      setSelectedIds((prev) => {
+        const kept = [...prev].filter((id) => live.has(id));
+        if (kept.length === prev.size) return prev;
+        return new Set(kept);
+      });
       const openEdit = editingRef.current;
       if (openEdit) {
         const fresh = nextProducts.find((row) => row.id === openEdit.id);
@@ -1863,6 +1922,19 @@ ${product.link}
 ${(product.categories || []).join("\n")}`.toLowerCase();
     return hay.includes(query.trim().toLowerCase());
   });
+  const selectedCount = selectedIds.size;
+  const selecting = selectedCount > 0;
+  const toggleSelect = (product) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(product.id)) next.delete(product.id);
+      else next.add(product.id);
+      return next;
+    });
+  };
+  const clearSelection = () => {
+    setSelectedIds(/* @__PURE__ */ new Set());
+  };
   if (!stage || !everOpened) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
     "div",
@@ -2010,14 +2082,72 @@ ${(product.categories || []).join("\n")}`.toLowerCase();
             ]
           }
         ),
+        selecting ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+          "div",
+          {
+            style: {
+              flex: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "8px 20px",
+              borderBottom: "1px solid var(--dsw-alias-border-l2)"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: { fontSize: 13 }, children: t("select.count").replace("{n}", String(selectedCount)) }),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: clearSelection,
+                    style: {
+                      border: "none",
+                      background: "transparent",
+                      color: "inherit",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      padding: "4px 8px"
+                    },
+                    children: t("select.clear")
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    disabled: busy,
+                    onClick: () => {
+                      const names = products.filter((row) => selectedIds.has(row.id)).map((row) => row.name);
+                      setPendingRemove({ ids: [...selectedIds], names });
+                    },
+                    style: {
+                      border: "none",
+                      background: "var(--dsw-alias-state-error-tertiary)",
+                      color: "var(--dsw-alias-label-error)",
+                      borderRadius: 999,
+                      padding: "6px 12px",
+                      cursor: busy ? "default" : "pointer",
+                      fontSize: 13,
+                      fontWeight: 500,
+                      opacity: busy ? 0.5 : 1
+                    },
+                    children: t("select.delete").replace("{n}", String(selectedCount))
+                  }
+                )
+              ] })
+            ]
+          }
+        ) : null,
         error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: 0, padding: "6px 20px", fontSize: 12, color: "var(--dsw-alias-label-error)" }, children: error }) : null,
         /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { flex: 1, minHeight: 0, overflow: "auto", padding: 16 }, children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
           ProductGrid,
           {
             t,
             products: visible,
-            emptyLabel: t("empty.all"),
+            emptyLabel: query.trim() ? t("empty.noMatch") : t("empty.all"),
             emptyActionLabel: t("add.button"),
+            showEmptyAction: !query.trim(),
             onEmptyAction: () => {
               setCreating(true);
               setFormError("");
@@ -2037,9 +2167,11 @@ ${(product.categories || []).join("\n")}`.toLowerCase();
               }, 1500);
             },
             onRemove: (product) => {
-              setPendingRemove(product);
+              setPendingRemove({ ids: [product.id], names: [product.name] });
             },
-            copiedId
+            copiedId,
+            selectedIds,
+            onToggleSelect: toggleSelect
           }
         ) }),
         creating ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
@@ -2095,19 +2227,32 @@ ${(product.categories || []).join("\n")}`.toLowerCase();
           ConfirmRemoveDialog,
           {
             t,
-            name: String(pendingRemove.name ?? ""),
+            name: String(pendingRemove.names[0] ?? ""),
+            title: pendingRemove.ids.length > 1 ? t("select.removeTitle").replace("{n}", String(pendingRemove.ids.length)) : void 0,
             busy,
             onCancel: () => {
               setPendingRemove(null);
             },
             onConfirm: () => {
-              const id = pendingRemove.id;
-              run(() => deleteProduct(id), () => {
+              const ids = pendingRemove.ids;
+              run(async () => {
+                let last = { ok: true, status: 200, body: {} };
+                for (const id of ids) {
+                  last = await deleteProduct(id);
+                  if (!last.ok) return last;
+                }
+                return last;
+              }, () => {
                 setPendingRemove(null);
-                if (editing?.id === id) {
+                if (ids.includes(editing?.id)) {
                   setEditing(null);
                   setEditingDirty(false);
                 }
+                setSelectedIds((prev) => {
+                  const next = new Set(prev);
+                  for (const id of ids) next.delete(id);
+                  return next;
+                });
               });
             }
           }

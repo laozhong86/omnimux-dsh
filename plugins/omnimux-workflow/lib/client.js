@@ -34,34 +34,34 @@ var import_react5 = require("react");
 // src/client/locales.js
 var zh = {
   "nav": "\u9879\u76EE",
-  "stage.title": "\u5DE5\u4F5C\u6D41\u753B\u5E03",
+  "stage.title": "\u5DE5\u4F5C\u6D41\u5DE5\u7A0B",
   "stage.close": "\u5173\u95ED",
   "canvas.loading": "\u6B63\u5728\u52A0\u8F7D\u753B\u5E03\u2026",
   "canvas.loadFailed": "\u753B\u5E03\u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002",
   "canvas.retry": "\u91CD\u8BD5",
-  "projects.title": "\u9879\u76EE",
-  "projects.subtitle": "\u7BA1\u7406\u4F60\u7684\u672C\u5730\u5DE5\u4F5C\u6D41\u9879\u76EE",
+  "projects.title": "\u5DE5\u4F5C\u6D41\u5DE5\u7A0B",
+  "projects.subtitle": "\u7BA1\u7406\u672C\u5730\u5DE5\u4F5C\u6D41\u9879\u76EE",
   "projects.newProject": "\u65B0\u5EFA\u9879\u76EE",
   "projects.close": "\u5173\u95ED",
   "projects.localTab": "\u672C\u5730\u9879\u76EE",
-  "projects.searchPlaceholder": "\u641C\u7D22\u9879\u76EE\u2026",
+  "projects.searchPlaceholder": "\u641C\u7D22\u9879\u76EE\u540D\u79F0\u2026",
   "projects.sortUpdated": "\u6309\u6700\u8FD1\u66F4\u65B0\u6392\u5E8F",
-  "projects.empty": "\u8FD8\u6CA1\u6709\u9879\u76EE\uFF0C\u70B9\u51FB\u300C\u65B0\u5EFA\u9879\u76EE\u300D\u5F00\u59CB\u3002",
+  "projects.empty": "\u6682\u65E0\u5DE5\u4F5C\u6D41\u9879\u76EE\u3002\u70B9\u51FB\u300C\u65B0\u5EFA\u9879\u76EE\u300D\u5F00\u59CB\u6784\u5EFA\u3002",
   "projects.emptySearch": "\u6CA1\u6709\u5339\u914D\u7684\u9879\u76EE\u3002",
-  "projects.noWorkspace": "\u8BF7\u5148\u9009\u62E9\u4E00\u4E2A\u5DE5\u4F5C\u533A\u6587\u4EF6\u5939\u3002",
+  "projects.noWorkspace": "\u8BF7\u5148\u9009\u62E9\u4E00\u4E2A\u5DE5\u4F5C\u533A\u76EE\u5F55\u3002",
   "projects.genericError": "\u64CD\u4F5C\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002",
   "projects.createFailed": "\u521B\u5EFA\u9879\u76EE\u5931\u8D25\uFF1A{error}",
   "projects.rename": "\u91CD\u547D\u540D",
   "projects.delete": "\u5220\u9664",
   "projects.renamePrompt": "\u9879\u76EE\u540D\u79F0",
-  "projects.deleteConfirm": "\u786E\u5B9A\u5220\u9664\u300C{title}\u300D\u5417\uFF1F\u6587\u4EF6\u5939\u4F1A\u4FDD\u7559\u5728\u78C1\u76D8\u4E0A\u3002",
+  "projects.deleteConfirm": "\u786E\u5B9A\u4ECE\u9879\u76EE\u5E93\u5220\u9664\u300C{title}\u300D\u5417\uFF1F\u672C\u5730\u78C1\u76D8\u6587\u4EF6\u5939\u5C06\u4FDD\u7559\u3002",
   "projects.dialog.title": "\u65B0\u5EFA\u672C\u5730\u9879\u76EE",
   "projects.dialog.nameLabel": "\u9879\u76EE\u540D\u79F0",
-  "projects.dialog.namePlaceholder": "\u4F8B\u5982\uFF1A\u5BA3\u4F20\u7247",
-  "projects.dialog.hint": "\u672C\u5730\u9879\u76EE\u4E0D\u4F1A\u81EA\u52A8\u4E0E\u5176\u4ED6\u8BBE\u5907\u6216\u7528\u6237\u5171\u4EAB",
+  "projects.dialog.namePlaceholder": "\u4F8B\u5982\uFF1A\u77ED\u5267\u5BA3\u4F20\u7247\u751F\u6210",
+  "projects.dialog.hint": "\u672C\u5730\u9879\u76EE\u4EC5\u4FDD\u5B58\u5728\u5F53\u524D\u8BBE\u5907\uFF0C\u4E0D\u4F1A\u81EA\u52A8\u540C\u6B65\u6216\u5171\u4EAB\u3002",
   "projects.dialog.cancel": "\u53D6\u6D88",
   "projects.dialog.submit": "\u521B\u5EFA\u9879\u76EE",
-  "details.canvasTab": "\u753B\u5E03",
+  "details.canvasTab": "\u753B\u5E03\u5DE5\u4F5C\u533A",
   "details.toolTab": "\u5DE5\u5177\u8BE6\u60C5",
   "details.close": "\u5173\u95ED",
   "details.toolEmpty": "\u5DE5\u5177\u8BE6\u60C5\u5C06\u5728\u540E\u7EED\u7248\u672C\u4E2D\u63D0\u4F9B\u3002"
@@ -73,30 +73,30 @@ var en = {
   "canvas.loading": "Loading canvas\u2026",
   "canvas.loadFailed": "Failed to load the canvas, please retry.",
   "canvas.retry": "Retry",
-  "projects.title": "Projects",
-  "projects.subtitle": "Manage your local workflow projects",
+  "projects.title": "Workflow Projects",
+  "projects.subtitle": "Manage local workflow projects",
   "projects.newProject": "New Project",
   "projects.close": "Close",
-  "projects.localTab": "Local projects",
+  "projects.localTab": "Local Projects",
   "projects.searchPlaceholder": "Search projects\u2026",
   "projects.sortUpdated": "Sorted by recent update",
-  "projects.empty": 'No projects yet \u2014 click "New Project" to start.',
+  "projects.empty": 'No workflow projects yet. Click "New Project" to start.',
   "projects.emptySearch": "No matching projects.",
   "projects.noWorkspace": "Please select a workspace folder first.",
   "projects.genericError": "Operation failed, please retry.",
-  "projects.createFailed": "Could not create the project: {error}",
+  "projects.createFailed": "Could not create project: {error}",
   "projects.rename": "Rename",
   "projects.delete": "Delete",
   "projects.renamePrompt": "Project title",
-  "projects.deleteConfirm": "Remove \u201C{title}\u201D from the library? The folder stays on disk.",
-  "projects.dialog.title": "New local project",
+  "projects.deleteConfirm": "Remove \u201C{title}\u201D from library? The local folder stays on disk.",
+  "projects.dialog.title": "New Local Project",
   "projects.dialog.nameLabel": "Project name",
-  "projects.dialog.namePlaceholder": "e.g. Promo film",
-  "projects.dialog.hint": "Local projects are not shared with other devices or users",
+  "projects.dialog.namePlaceholder": "e.g. Promo Video Generation",
+  "projects.dialog.hint": "Local projects are stored on this device and not shared.",
   "projects.dialog.cancel": "Cancel",
-  "projects.dialog.submit": "Create project",
-  "details.canvasTab": "Canvas",
-  "details.toolTab": "Tool details",
+  "projects.dialog.submit": "Create Project",
+  "details.canvasTab": "Canvas Workspace",
+  "details.toolTab": "Tool Details",
   "details.close": "Close",
   "details.toolEmpty": "Tool details will be available in a later version."
 };
@@ -349,7 +349,6 @@ function validateProjectTitle(raw) {
 // src/client/projects/projectCanvas.js
 var CANVAS_TAB_ID = "omnimux-workflow:canvas";
 var CANVAS_SENTINEL_PATH = "omnimux-workflow:canvas";
-var PROJECT_CANVAS_RATIO = 0.85;
 var LEGACY_PROJECT_CANVAS_RATIO = 0.7;
 var PROJECT_CANVAS_MIN_PX = 280;
 var SIDEBAR_LAYOUT_STORAGE_PREFIX = "dsh-sidebar:v1";
@@ -455,12 +454,21 @@ function factorySidebarWidthPx(prefs, env = {}) {
   if (!(viewport > 0)) return PROJECT_CANVAS_MIN_PX;
   return Math.max(PROJECT_CANVAS_MIN_PX, Math.round(viewport * percent / 100));
 }
+var PROJECT_CONVERSATION_TARGET_WIDTH_PX = 420;
+var PROJECT_CONVERSATION_MIN_WIDTH_PX = 360;
 function projectCanvasWidthPx(state, env = {}) {
   const viewport = envViewportWidth(env);
   const max = viewport > 0 ? Math.max(PROJECT_CANVAS_MIN_PX, viewport) : PROJECT_CANVAS_MIN_PX;
   const usable = projectCanvasUsableWidthPx(state, env);
-  const raw = usable > 0 ? Math.round(usable * PROJECT_CANVAS_RATIO) : viewport > 0 ? Math.round(viewport * PROJECT_CANVAS_RATIO) : PROJECT_CANVAS_MIN_PX;
-  return Math.min(max, Math.max(PROJECT_CANVAS_MIN_PX, raw));
+  if (usable <= 0) {
+    const raw = viewport > 0 ? Math.max(PROJECT_CANVAS_MIN_PX, viewport - PROJECT_CONVERSATION_TARGET_WIDTH_PX) : PROJECT_CANVAS_MIN_PX;
+    return Math.min(max, raw);
+  }
+  let targetCanvasWidth = usable - PROJECT_CONVERSATION_TARGET_WIDTH_PX;
+  if (targetCanvasWidth < PROJECT_CANVAS_MIN_PX) {
+    targetCanvasWidth = usable - PROJECT_CONVERSATION_MIN_WIDTH_PX;
+  }
+  return Math.min(max, Math.max(PROJECT_CANVAS_MIN_PX, Math.round(targetCanvasWidth)));
 }
 function liveWidth(state) {
   if (typeof state?.width === "number" && Number.isFinite(state.width)) return state.width;
@@ -483,8 +491,9 @@ function legacyProjectCanvasWidthPx(state, env = {}) {
   if (viewport > 0) return Math.round(viewport * LEGACY_PROJECT_CANVAS_RATIO);
   return PROJECT_CANVAS_MIN_PX;
 }
-function shouldApplyProjectCanvasRatio(sessionId, state, prefs, env = {}) {
+function shouldApplyProjectCanvasRatio(sessionId, state, prefs, env = {}, force = false) {
   if (!sessionId || !state) return false;
+  if (force) return true;
   if (APPLIED_RATIO_SESSIONS.has(sessionId)) return false;
   const width = liveWidth(state);
   if (typeof width !== "number") return true;
@@ -504,11 +513,11 @@ function shouldApplyProjectCanvasRatio(sessionId, state, prefs, env = {}) {
   if (conversation > 0 && usable > 0 && conversation / usable < 0.22) return true;
   return false;
 }
-function applyProjectCanvasRatio(service, sessionId, store = null, env = {}) {
+function applyProjectCanvasRatio(service, sessionId, store = null, env = {}, force = false) {
   const snapshot = (typeof store?.getSnapshot === "function" ? store.getSnapshot() : null) || service?.getSnapshot?.();
   const state = snapshot?.state;
   const prefs = typeof store?.getPrefs === "function" ? store.getPrefs() : void 0;
-  if (!shouldApplyProjectCanvasRatio(sessionId, state, prefs, env)) return null;
+  if (!shouldApplyProjectCanvasRatio(sessionId, state, prefs, env, force)) return null;
   const conversation = envConversationWidth(env);
   const viewport = envViewportWidth(env);
   const official = officialSessionSidebarWidth(env);
@@ -1464,18 +1473,39 @@ function CanvasTab({ ctx, t, visible, store, scope }) {
     let cancelled = false;
     let timer = 0;
     let attempts = 0;
-    const tick = () => {
+    const tick = (force = false) => {
       if (cancelled) return;
-      const result = applyProjectCanvasRatio(getBetterSidebar(ctx), sessionId, store);
+      const result = applyProjectCanvasRatio(getBetterSidebar(ctx), sessionId, store, {}, force);
       if (result === void 0 && attempts < 80) {
         attempts += 1;
-        timer = window.setTimeout(tick, 50);
+        timer = window.setTimeout(() => tick(force), 50);
       }
     };
     tick();
+    let sidebarObserver = null;
+    try {
+      const sidebarEl = typeof document !== "undefined" ? document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]') : null;
+      if (sidebarEl && typeof ResizeObserver === "function") {
+        sidebarObserver = new ResizeObserver(() => {
+          if (!cancelled) tick(true);
+        });
+        sidebarObserver.observe(sidebarEl);
+      }
+    } catch {
+    }
+    const onResize = () => {
+      if (!cancelled) tick(true);
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", onResize);
+    }
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
+      sidebarObserver?.disconnect?.();
+      if (typeof window !== "undefined") {
+        window.removeEventListener("resize", onResize);
+      }
     };
   }, [visible, sessionId, store, ctx]);
   const onClose = (0, import_react4.useCallback)(() => {
@@ -1524,6 +1554,45 @@ function apply(ctx) {
     locale: NS,
     inject: stageFace
   }, ProjectLibraryPage));
+  const renderCanvasIcon = (size = 16) => (0, import_react5.createElement)("svg", {
+    width: size,
+    height: size,
+    viewBox: "0 0 16 16",
+    fill: "none",
+    xmlns: "http://www.w3.org/2000/svg"
+  }, [
+    (0, import_react5.createElement)("rect", {
+      key: "frame",
+      x: "1.75",
+      y: "1.75",
+      width: "12.5",
+      height: "12.5",
+      rx: "2.5",
+      stroke: "currentColor",
+      strokeWidth: "1.5"
+    }),
+    (0, import_react5.createElement)("circle", {
+      key: "dot-1",
+      cx: "5.5",
+      cy: "5.5",
+      r: "1.25",
+      fill: "currentColor"
+    }),
+    (0, import_react5.createElement)("circle", {
+      key: "dot-2",
+      cx: "10.5",
+      cy: "10.5",
+      r: "1.25",
+      fill: "currentColor"
+    }),
+    (0, import_react5.createElement)("path", {
+      key: "edge",
+      d: "M6.75 5.5h1.75a2 2 0 0 1 2 2v1.75",
+      stroke: "currentColor",
+      strokeWidth: "1.5",
+      strokeLinecap: "round"
+    })
+  ]);
   const registerCanvas = (sidebar) => {
     if (!sidebar || typeof sidebar.registerTab !== "function") return () => {
     };
@@ -1531,8 +1600,9 @@ function apply(ctx) {
     return sidebar.registerTab({
       id: CANVAS_TAB_ID,
       title: () => t("details.canvasTab"),
+      icon: renderCanvasIcon,
       order: 5,
-      hidden: true,
+      hidden: false,
       single: true,
       component: (props) => (0, import_react5.createElement)(CanvasTab, { ...props, t })
     });

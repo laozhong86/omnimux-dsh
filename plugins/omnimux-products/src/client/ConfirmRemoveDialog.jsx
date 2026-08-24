@@ -67,12 +67,13 @@ const dangerButton = {
  * @param {{
  *   t: (key: string) => string,
  *   name: string,
+ *   title?: string,
  *   busy: boolean,
  *   onCancel: () => void,
  *   onConfirm: () => void,
  * }} props
  */
-export function ConfirmRemoveDialog({ t, name, busy, onCancel, onConfirm }) {
+export function ConfirmRemoveDialog({ t, name, title, busy, onCancel, onConfirm }) {
   return (
     <div
       style={backdrop}
@@ -89,7 +90,7 @@ export function ConfirmRemoveDialog({ t, name, busy, onCancel, onConfirm }) {
           if (event.key === 'Escape') onCancel()
         }}
       >
-        <h2 style={heading}>{t('remove.title').replace('{name}', name)}</h2>
+        <h2 style={heading}>{title || t('remove.title').replace('{name}', name)}</h2>
         <p style={hint}>{t('remove.hint')}</p>
         <div style={buttons}>
           <button type="button" style={ghostButton} onClick={onCancel} autoFocus>

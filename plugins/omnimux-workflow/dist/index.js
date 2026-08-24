@@ -19947,6 +19947,14 @@ import { join as join8, resolve as resolve3 } from "node:path";
 // src/projects/schema.ts
 var PROJECT_SCHEMA_VERSION = 1;
 var MAX_PROJECT_TITLE_LENGTH = 200;
+var projectPageSchema = external_exports.object({
+  id: external_exports.string().min(1),
+  title: external_exports.string().min(1).max(MAX_PROJECT_TITLE_LENGTH),
+  createdAt: external_exports.string(),
+  updatedAt: external_exports.string(),
+  canvasWorkspaceId: external_exports.string().optional(),
+  loadMemory: external_exports.boolean().optional()
+});
 var projectSchema = external_exports.object({
   schemaVersion: external_exports.literal(PROJECT_SCHEMA_VERSION),
   id: external_exports.string().min(1),
@@ -19955,15 +19963,21 @@ var projectSchema = external_exports.object({
   updatedAt: external_exports.string(),
   /** 绑定会话；新建项目时写入，可为 null（尚未建会话的中间态）。 */
   sessionId: external_exports.string().nullable(),
-  /** 关联画布工作区 id（Phase 0 可先 0～1 个）。 */
-  canvasWorkspaceIds: external_exports.array(external_exports.string())
+  /** 关联画布工作区 id 列表。 */
+  canvasWorkspaceIds: external_exports.array(external_exports.string()),
+  /** 当前激活的创作页 ID */
+  activePageId: external_exports.string().optional(),
+  /** 项目包含的创作页列表 */
+  pages: external_exports.array(projectPageSchema).optional()
 });
 var projectSummarySchema = external_exports.object({
   id: external_exports.string().min(1),
   title: external_exports.string().min(1).max(MAX_PROJECT_TITLE_LENGTH),
   updatedAt: external_exports.string(),
   sessionId: external_exports.string().nullable(),
-  path: external_exports.string().min(1).optional()
+  path: external_exports.string().min(1).optional(),
+  pages: external_exports.array(projectPageSchema).optional(),
+  activePageId: external_exports.string().optional()
 });
 var projectIndexSchema = external_exports.object({
   schemaVersion: external_exports.literal(PROJECT_SCHEMA_VERSION),
@@ -20182,6 +20196,65 @@ function createProjectStore(opts) {
       const next = { ...current.project, sessionId, updatedAt: (/* @__PURE__ */ new Date()).toISOString() };
       return persistProject(current.dir, next);
     },
+    addPage(projectId, pageTitle, opts2 = {}) {
+      const current = requireProject(projectId);
+      const trimmed = validateTitle(pageTitle);
+      const now2 = (/* @__PURE__ */ new Date()).toISOString();
+      const pageId = randomUUID5();
+      const newPage = {
+        id: pageId,
+        title: trimmed,
+        createdAt: now2,
+        updatedAt: now2,
+        canvasWorkspaceId: opts2.canvasWorkspaceId,
+        loadMemory: opts2.loadMemory ?? false
+      };
+      const existingPages = current.project.pages ?? [];
+      const nextPages = [...existingPages, newPage];
+      const next = {
+        ...current.project,
+        pages: nextPages,
+        activePageId: pageId,
+        updatedAt: now2
+      };
+      return persistProject(current.dir, next);
+    },
+    removePage(projectId, pageId) {
+      const current = requireProject(projectId);
+      const existingPages = current.project.pages ?? [];
+      const nextPages = existingPages.filter((p) => p.id !== pageId);
+      const nextActiveId = current.project.activePageId === pageId ? nextPages[0]?.id : current.project.activePageId;
+      const next = {
+        ...current.project,
+        pages: nextPages,
+        activePageId: nextActiveId,
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      return persistProject(current.dir, next);
+    },
+    renamePage(projectId, pageId, title) {
+      const current = requireProject(projectId);
+      const trimmed = validateTitle(title);
+      const existingPages = current.project.pages ?? [];
+      const nextPages = existingPages.map(
+        (p) => p.id === pageId ? { ...p, title: trimmed, updatedAt: (/* @__PURE__ */ new Date()).toISOString() } : p
+      );
+      const next = {
+        ...current.project,
+        pages: nextPages,
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      return persistProject(current.dir, next);
+    },
+    setActivePage(projectId, pageId) {
+      const current = requireProject(projectId);
+      const next = {
+        ...current.project,
+        activePageId: pageId,
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      return persistProject(current.dir, next);
+    },
     remove(id2) {
       const current = requireProject(id2);
       const paths = resolveProjectPaths(current.dir);
@@ -20225,6 +20298,8 @@ function createProjectDispatcher() {
   const collectionRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}$`);
   const libraryRe = new RegExp(`^${PROJECT_LIBRARY_PATH}$`);
   const itemRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)$`);
+  const pagesRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)/pages$`);
+  const pageItemRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)/pages/([^/]+)$`);
   function owns(path) {
     return path === PROJECT_ROUTE_PREFIX || path.startsWith(`${PROJECT_ROUTE_PREFIX}/`);
   }
@@ -20274,6 +20349,46 @@ function createProjectDispatcher() {
             status: 200,
             body: { project: store.create(title ?? "", { projectRoot, sessionId }) }
           };
+        }
+        return { status: 404, body: { error: "not-found", message: "unknown route" } };
+      }
+      const pagesMatch = pagesRe.exec(path);
+      if (pagesMatch) {
+        const projectId = pagesMatch[1] ?? "";
+        const { store } = scopedStore();
+        if (method === "POST") {
+          const problem = jsonBodyProblem(req.body);
+          if (problem) return problem;
+          const body = req.body;
+          const title = typeof body.title === "string" ? body.title : "";
+          const canvasWorkspaceId = typeof body.canvasWorkspaceId === "string" ? body.canvasWorkspaceId : void 0;
+          const loadMemory = Boolean(body.loadMemory);
+          return {
+            status: 200,
+            body: { project: store.addPage(projectId, title, { canvasWorkspaceId, loadMemory }) }
+          };
+        }
+        return { status: 404, body: { error: "not-found", message: "unknown route" } };
+      }
+      const pageItemMatch = pageItemRe.exec(path);
+      if (pageItemMatch) {
+        const projectId = pageItemMatch[1] ?? "";
+        const pageId = pageItemMatch[2] ?? "";
+        const { store } = scopedStore();
+        if (method === "PATCH") {
+          const problem = jsonBodyProblem(req.body);
+          if (problem) return problem;
+          const body = req.body;
+          if (typeof body.title === "string") {
+            return { status: 200, body: { project: store.renamePage(projectId, pageId, body.title) } };
+          }
+          if (body.active === true) {
+            return { status: 200, body: { project: store.setActivePage(projectId, pageId) } };
+          }
+          return { status: 400, body: { error: "invalid-json", message: "title or active is required" } };
+        }
+        if (method === "DELETE") {
+          return { status: 200, body: { project: store.removePage(projectId, pageId) } };
         }
         return { status: 404, body: { error: "not-found", message: "unknown route" } };
       }

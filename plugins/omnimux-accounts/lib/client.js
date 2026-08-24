@@ -33,12 +33,12 @@ module.exports = __toCommonJS(index_exports);
 // src/client/locales.js
 var zh = {
   "nav": "\u8D26\u53F7",
-  "title": "\u8D26\u53F7",
-  "loading": "\u6B63\u5728\u8BFB\u53D6\u8D26\u53F7\u2026",
-  "needLogin": "\u67E5\u770B\u5DF2\u7ED1\u5B9A\u8D26\u53F7\u9700\u8981\u767B\u5F55 OmniMux\u3002",
+  "title": "\u8D26\u53F7\u77E9\u9635",
+  "loading": "\u6B63\u5728\u52A0\u8F7D\u8D26\u53F7\u2026",
+  "needLogin": "\u767B\u5F55 OmniMux \u4EE5\u67E5\u770B\u5DF2\u8FDE\u63A5\u8D26\u53F7\u3002",
   "needLoginHint": "\u53EF\u5728 \u8BBE\u7F6E \u2192 \u4E2A\u4EBA\u8D44\u6599 \u4E2D\u767B\u5F55 OmniMux\u3002",
   "login": "\u767B\u5F55",
-  "empty": "\u8FD8\u6CA1\u6709\u7ED1\u5B9A\u7684\u8D26\u53F7\u3002",
+  "empty": "\u6682\u65E0\u5DF2\u8FDE\u63A5\u8D26\u53F7",
   "platform": "\u5E73\u53F0",
   "group": "\u5206\u7EC4",
   "all": "\u5168\u90E8",
@@ -46,10 +46,10 @@ var zh = {
   "disconnect": "\u65AD\u5F00",
   "platformHint": "\u5E73\u53F0\uFF0C\u4F8B\u5982 tiktok",
   "close": "\u5173\u95ED",
-  "overview.connected": "\u5DF2\u8FDE",
-  "overview.needsAttention": "\u5F85\u91CD\u8FDE",
-  "overview.platforms": "\u5E73\u53F0",
-  "overview.total": "\u603B\u8D26\u53F7",
+  "overview.connected": "\u6B63\u5E38\u8FDE\u63A5",
+  "overview.needsAttention": "\u9700\u91CD\u65B0\u6388\u6743",
+  "overview.platforms": "\u5E73\u53F0\u6570",
+  "overview.total": "\u8D26\u53F7\u603B\u6570",
   "filter.search": "\u641C\u7D22\u8D26\u53F7\u3001\u5E73\u53F0\u6216\u5206\u7EC4",
   "filter.status": "\u72B6\u6001",
   "filter.sort": "\u6392\u5E8F",
@@ -61,30 +61,30 @@ var zh = {
   "sort.platform": "\u5E73\u53F0",
   "sort.status": "\u72B6\u6001",
   "sort.lastUsed": "\u6700\u8FD1\u4F7F\u7528",
-  "status.active": "\u6D3B\u8DC3",
+  "status.active": "\u6B63\u5E38",
   "status.expiring": "\u5373\u5C06\u8FC7\u671F",
   "status.expired": "\u5DF2\u8FC7\u671F",
   "status.error": "\u5F02\u5E38",
-  "card.agentUsable": "Agent \u53EF\u7528",
-  "card.agentUsableOn": "Agent \u53EF\u7528\uFF0C\u5DF2\u5F00\u542F",
-  "card.agentUsableOff": "Agent \u53EF\u7528\uFF0C\u5DF2\u5173\u95ED",
+  "card.agentUsable": "Agent \u8BBF\u95EE\u6743\u9650",
+  "card.agentUsableOn": "Agent \u8BBF\u95EE\u6743\u9650\uFF1A\u5DF2\u542F\u7528",
+  "card.agentUsableOff": "Agent \u8BBF\u95EE\u6743\u9650\uFF1A\u5DF2\u7981\u7528",
   "card.lastUsed": "\u6700\u540E\u4F7F\u7528\uFF1A{time}",
   "card.expiresIn": "{time}\u540E\u8FC7\u671F",
   "card.menu": "\u66F4\u591A\u64CD\u4F5C",
-  "card.confirmDisconnect": "\u786E\u5B9A\u65AD\u5F00 {name}\uFF1F\u65AD\u5F00\u540E Agent \u5C06\u65E0\u6CD5\u4F7F\u7528\u8BE5\u8D26\u53F7\u3002",
+  "card.confirmDisconnect": "\u786E\u5B9A\u65AD\u5F00\u8FDE\u63A5 {name}\uFF1F\u65AD\u5F00\u540E Agent \u5C06\u65E0\u6CD5\u4F7F\u7528\u8BE5\u8D26\u53F7\u6267\u884C\u53D1\u5E03\u4EFB\u52A1\u3002",
   "action.cancel": "\u53D6\u6D88",
   "connect.title": "\u8FDE\u63A5\u65B0\u8D26\u53F7",
   "connect.choosePlatform": "\u9009\u62E9\u5E73\u53F0",
   "connect.comingSoon": "\u5373\u5C06\u652F\u6301",
-  "connect.opened": "\u5DF2\u6253\u5F00\u6388\u6743\u9875\uFF0C\u8BF7\u5728\u6D4F\u89C8\u5668\u4E2D\u5B8C\u6210\u6388\u6743\u3002",
+  "connect.opened": "\u6388\u6743\u9875\u9762\u5DF2\u5728\u65B0\u7A97\u53E3\u6253\u5F00\uFF0C\u8BF7\u5728\u6D4F\u89C8\u5668\u4E2D\u5B8C\u6210\u6388\u6743\u3002",
   "connect.reopen": "\u91CD\u65B0\u6253\u5F00\u6388\u6743\u9875",
-  "connect.waiting": "\u7B49\u5F85\u6388\u6743\u4E2D\u2026\u5B8C\u6210\u6388\u6743\u540E\u8FD9\u91CC\u4F1A\u81EA\u52A8\u5237\u65B0\u3002",
-  "connect.done": "\u6211\u5DF2\u5B8C\u6210",
+  "connect.waiting": "\u6B63\u5728\u7B49\u5F85\u6388\u6743\u2026 \u5B8C\u6210\u540E\u5C06\u81EA\u52A8\u540C\u6B65\u72B6\u6001\u3002",
+  "connect.done": "\u5B8C\u6210\u6388\u6743",
   "connect.connected": "\u5DF2\u8FDE\u63A5",
   "connect.failed": "\u8FDE\u63A5\u5931\u8D25",
   "connect.retry": "\u91CD\u8BD5",
-  "empty.title": "\u8FD8\u6CA1\u6709\u8FDE\u63A5\u4EFB\u4F55\u8D26\u53F7",
-  "empty.description": "Agent \u8C03\u7528\u5E73\u53F0 API \u9700\u8981\u5148\u8FDE\u63A5\u8D26\u53F7\u3002",
+  "empty.title": "\u672A\u8FDE\u63A5\u793E\u4EA4\u5E73\u53F0\u8D26\u53F7",
+  "empty.description": "\u8FDE\u63A5\u793E\u4EA4\u5E73\u53F0\u8D26\u53F7\u540E\uFF0CAgent \u5373\u53EF\u81EA\u52A8\u6267\u884C\u591A\u6E20\u9053\u5185\u5BB9\u5206\u53D1\u4E0E\u6570\u636E\u8FFD\u8E2A\u3002",
   "empty.cta": "\u8FDE\u63A5\u7B2C\u4E00\u4E2A\u8D26\u53F7",
   "empty.supportedTitle": "\u5DF2\u652F\u6301",
   "empty.comingTitle": "\u5373\u5C06\u652F\u6301",
@@ -92,8 +92,8 @@ var zh = {
   "bulk.selectAll": "\u5168\u9009",
   "bulk.selectRow": "\u9009\u62E9 {name}",
   "bulk.disconnect": "\u6279\u91CF\u65AD\u5F00",
-  "bulk.agentOn": "\u6279\u91CF\u5F00\u542F Agent",
-  "bulk.agentOff": "\u6279\u91CF\u5173\u95ED Agent",
+  "bulk.agentOn": "\u6279\u91CF\u542F\u7528 Agent \u6743\u9650",
+  "bulk.agentOff": "\u6279\u91CF\u7981\u7528 Agent \u6743\u9650",
   "bulk.clear": "\u53D6\u6D88\u9009\u62E9",
   "bulk.confirmDisconnect": "\u786E\u5B9A\u65AD\u5F00 {count} \u4E2A\u8D26\u53F7\uFF1F\u65AD\u5F00\u540E Agent \u5C06\u65E0\u6CD5\u4F7F\u7528\u8FD9\u4E9B\u8D26\u53F7\u3002",
   "bulk.partialError": "{count} \u4E2A\u8D26\u53F7\u64CD\u4F5C\u5931\u8D25",
@@ -109,23 +109,23 @@ var zh = {
 };
 var en = {
   "nav": "Accounts",
-  "title": "Accounts",
+  "title": "Account Matrix",
   "loading": "Loading accounts\u2026",
-  "needLogin": "Sign in to OmniMux to see connected accounts.",
+  "needLogin": "Sign in to OmniMux to view connected accounts.",
   "needLoginHint": "Sign in under Settings \u2192 Profile.",
   "login": "Sign in",
-  "empty": "No connected accounts yet.",
+  "empty": "No connected accounts",
   "platform": "Platform",
   "group": "Group",
   "all": "All",
-  "connect": "Connect account",
+  "connect": "Connect Account",
   "disconnect": "Disconnect",
   "platformHint": "Platform, e.g. tiktok",
   "close": "Close",
   "overview.connected": "Connected",
-  "overview.needsAttention": "Needs reconnect",
+  "overview.needsAttention": "Action Required",
   "overview.platforms": "Platforms",
-  "overview.total": "Total accounts",
+  "overview.total": "Total Accounts",
   "filter.search": "Search accounts, platforms, or groups",
   "filter.status": "Status",
   "filter.sort": "Sort by",
@@ -141,35 +141,35 @@ var en = {
   "status.expiring": "Expiring soon",
   "status.expired": "Expired",
   "status.error": "Error",
-  "card.agentUsable": "Agent usable",
-  "card.agentUsableOn": "Agent usable, on",
-  "card.agentUsableOff": "Agent usable, off",
+  "card.agentUsable": "Agent Access",
+  "card.agentUsableOn": "Agent Access: Enabled",
+  "card.agentUsableOff": "Agent Access: Disabled",
   "card.lastUsed": "Last used {time}",
   "card.expiresIn": "Expires in {time}",
   "card.menu": "More actions",
-  "card.confirmDisconnect": "Disconnect {name}? Agents will no longer be able to use this account.",
+  "card.confirmDisconnect": "Disconnect {name}? Agents will no longer have access to this account.",
   "action.cancel": "Cancel",
-  "connect.title": "Connect a new account",
-  "connect.choosePlatform": "Choose a platform",
-  "connect.comingSoon": "Coming soon",
-  "connect.opened": "The authorization page has opened in your browser. Please finish there.",
-  "connect.reopen": "Reopen the authorization page",
-  "connect.waiting": "Waiting for authorization\u2026 This refreshes automatically once you finish.",
-  "connect.done": "I've finished",
+  "connect.title": "Connect a New Account",
+  "connect.choosePlatform": "Choose a Platform",
+  "connect.comingSoon": "Coming Soon",
+  "connect.opened": "Authorization page opened. Complete the authorization in your browser.",
+  "connect.reopen": "Reopen Authorization Page",
+  "connect.waiting": "Waiting for authorization\u2026 Status updates automatically upon completion.",
+  "connect.done": "Done",
   "connect.connected": "Connected",
-  "connect.failed": "Couldn't connect",
+  "connect.failed": "Connection Failed",
   "connect.retry": "Retry",
-  "empty.title": "No accounts connected yet",
-  "empty.description": "Agents need a connected account to call platform APIs.",
-  "empty.cta": "Connect your first account",
+  "empty.title": "No Accounts Connected",
+  "empty.description": "Connect accounts to allow Agents to publish content and sync analytics.",
+  "empty.cta": "Connect First Account",
   "empty.supportedTitle": "Supported",
-  "empty.comingTitle": "Coming soon",
+  "empty.comingTitle": "Coming Soon",
   "bulk.selected": "{count} selected",
   "bulk.selectAll": "Select all",
   "bulk.selectRow": "Select {name}",
   "bulk.disconnect": "Disconnect",
-  "bulk.agentOn": "Enable Agent for all",
-  "bulk.agentOff": "Disable Agent for all",
+  "bulk.agentOn": "Batch Enable Agent Access",
+  "bulk.agentOff": "Batch Disable Agent Access",
   "bulk.clear": "Clear selection",
   "bulk.confirmDisconnect": "Disconnect {count} accounts? Agents will no longer be able to use them.",
   "bulk.partialError": "{count} accounts failed",
@@ -190,14 +190,34 @@ var PRODUCT_STAGE_EVENT = "dsh-product-stage";
 var STAGE_ID = "omnimux-accounts";
 function createStageStore(getStage) {
   let open = false;
+  try {
+    open = window.localStorage.getItem("omnimux_active_product_stage") === STAGE_ID;
+  } catch {
+  }
   const listeners = /* @__PURE__ */ new Set();
   function emit() {
     for (const listener of listeners) listener();
+  }
+  if (open) {
+    const restore = () => {
+      try {
+        const stage = getStage();
+        if (stage && typeof stage.claim === "function") {
+          stage.claim(STAGE_ID);
+        }
+      } catch {
+      }
+    };
+    if (typeof queueMicrotask === "function") queueMicrotask(restore);
+    else setTimeout(restore, 0);
   }
   window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : void 0;
     if (id !== STAGE_ID && open) {
       open = false;
+      emit();
+    } else if (id === STAGE_ID && !open) {
+      open = true;
       emit();
     }
   });
@@ -309,10 +329,10 @@ function mountSidebarEntry(stage, t, locale) {
 }
 
 // src/client/AccountsStage.jsx
-var import_react6 = require("react");
+var import_react7 = require("react");
 
 // src/client/AccountsSection.jsx
-var import_react5 = require("react");
+var import_react6 = require("react");
 
 // src/client/account-controls.jsx
 var import_react = require("react");
@@ -1053,15 +1073,125 @@ function EmptyState({ t, onConnect, busy = "" }) {
 }
 
 // src/client/FilterBar.jsx
+var import_react4 = require("react");
 var import_jsx_runtime7 = require("react/jsx-runtime");
+function DropdownSelect({ value, options, ariaLabel, disabled = false, onChange }) {
+  const [open, setOpen] = (0, import_react4.useState)(false);
+  const containerRef = (0, import_react4.useRef)(null);
+  (0, import_react4.useEffect)(() => {
+    if (!open) return void 0;
+    const onPointerDown = (event) => {
+      const target = event.target;
+      if (containerRef.current && !containerRef.current.contains(target)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+  const selectedOption = options.find((opt) => opt.value === value);
+  const displayLabel = selectedOption ? selectedOption.label : options[0]?.label ?? value;
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "omnimux-accounts-dropdown", ref: containerRef, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+      "button",
+      {
+        type: "button",
+        className: `omnimux-accounts-dropdown-trigger ${open ? "omnimux-accounts-dropdown-trigger--open" : ""}`,
+        "aria-label": ariaLabel,
+        "aria-haspopup": "listbox",
+        "aria-expanded": open,
+        disabled,
+        onClick: () => {
+          setOpen((prev) => !prev);
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "omnimux-accounts-dropdown-label", children: displayLabel }),
+          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+            "svg",
+            {
+              className: "omnimux-accounts-dropdown-chevron",
+              viewBox: "0 0 16 16",
+              width: "12",
+              height: "12",
+              fill: "none",
+              stroke: "currentColor",
+              strokeWidth: "1.5",
+              strokeLinecap: "round",
+              strokeLinejoin: "round",
+              "aria-hidden": "true",
+              children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "m4 6 4 4 4-4" })
+            }
+          )
+        ]
+      }
+    ),
+    open ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "omnimux-accounts-dropdown-menu", role: "listbox", "aria-label": ariaLabel, children: options.map((option) => {
+      const isSelected = option.value === value;
+      return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+        "button",
+        {
+          type: "button",
+          role: "option",
+          "aria-selected": isSelected,
+          className: `omnimux-accounts-dropdown-item ${isSelected ? "omnimux-accounts-dropdown-item--selected" : ""}`,
+          onClick: () => {
+            onChange(option.value);
+            setOpen(false);
+          },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "omnimux-accounts-dropdown-item-text", children: option.label }),
+            isSelected ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+              "svg",
+              {
+                className: "omnimux-accounts-dropdown-check",
+                viewBox: "0 0 16 16",
+                width: "12",
+                height: "12",
+                fill: "none",
+                stroke: "currentColor",
+                strokeWidth: "1.8",
+                strokeLinecap: "round",
+                strokeLinejoin: "round",
+                "aria-hidden": "true",
+                children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "m3.5 8.5 3 3 6-6" })
+              }
+            ) : null
+          ]
+        },
+        option.value
+      );
+    }) }) : null
+  ] });
+}
 function FilterBar(props) {
   const { t, query, platform, group, status, sortKey, sortDir, view, platforms, groups, statuses, onFilterChange, onSortChange, onViewChange, busy = "" } = props;
   const disabled = busy !== "";
   const sortOptions = [
-    { key: "display_name", label: t("sort.display_name") },
-    { key: "platform", label: t("sort.platform") },
-    { key: "status", label: t("sort.status") },
-    { key: "last_used_at", label: t("sort.lastUsed") }
+    { value: "display_name", label: t("sort.display_name") },
+    { value: "platform", label: t("sort.platform") },
+    { value: "status", label: t("sort.status") },
+    { value: "last_used_at", label: t("sort.lastUsed") }
+  ];
+  const platformOptions = [
+    { value: "", label: `${t("platform")} \xB7 ${t("all")}` },
+    ...platforms.map((value) => ({ value, label: value }))
+  ];
+  const groupOptions = [
+    { value: "", label: `${t("group")} \xB7 ${t("all")}` },
+    ...groups.map((value) => ({ value, label: value }))
+  ];
+  const statusOptions = [
+    { value: "", label: `${t("filter.status")} \xB7 ${t("all")}` },
+    ...statuses.map((value) => ({ value, label: t(`status.${value}`) }))
   ];
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "omnimux-accounts-filterbar", children: [
     /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
@@ -1078,123 +1208,105 @@ function FilterBar(props) {
         }
       }
     ),
-    platforms.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
-      "select",
+    platforms.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+      DropdownSelect,
       {
-        className: "omnimux-accounts-select",
         value: platform,
-        "aria-label": t("platform"),
+        options: platformOptions,
+        ariaLabel: t("platform"),
         disabled,
-        onChange: (event) => {
-          onFilterChange({ platform: event.currentTarget.value });
-        },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { value: "", children: [
-            t("platform"),
-            " \xB7 ",
-            t("all")
-          ] }),
-          platforms.map((value) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("option", { value, children: value }, value))
-        ]
+        onChange: (nextPlatform) => {
+          onFilterChange({ platform: nextPlatform });
+        }
       }
     ) : null,
-    groups.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
-      "select",
+    groups.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+      DropdownSelect,
       {
-        className: "omnimux-accounts-select",
         value: group,
-        "aria-label": t("group"),
+        options: groupOptions,
+        ariaLabel: t("group"),
         disabled,
-        onChange: (event) => {
-          onFilterChange({ group: event.currentTarget.value });
-        },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { value: "", children: [
-            t("group"),
-            " \xB7 ",
-            t("all")
-          ] }),
-          groups.map((value) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("option", { value, children: value }, value))
-        ]
+        onChange: (nextGroup) => {
+          onFilterChange({ group: nextGroup });
+        }
       }
     ) : null,
-    statuses.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
-      "select",
+    statuses.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+      DropdownSelect,
       {
-        className: "omnimux-accounts-select",
         value: status,
-        "aria-label": t("filter.status"),
+        options: statusOptions,
+        ariaLabel: t("filter.status"),
         disabled,
-        onChange: (event) => {
-          onFilterChange({ status: event.currentTarget.value });
-        },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("option", { value: "", children: [
-            t("filter.status"),
-            " \xB7 ",
-            t("all")
-          ] }),
-          statuses.map((value) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("option", { value, children: t(`status.${value}`) }, value))
-        ]
+        onChange: (nextStatus) => {
+          onFilterChange({ status: nextStatus });
+        }
       }
     ) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
-      "select",
-      {
-        className: "omnimux-accounts-select",
-        value: sortKey,
-        "aria-label": t("filter.sort"),
-        disabled,
-        onChange: (event) => {
-          onSortChange({ key: event.currentTarget.value });
-        },
-        children: sortOptions.map((option) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("option", { value: option.key, children: option.label }, option.key))
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
-      "button",
-      {
-        type: "button",
-        className: "omnimux-accounts-iconbtn",
-        "aria-label": t("filter.direction"),
-        "aria-pressed": sortDir === "desc",
-        disabled,
-        onClick: () => {
-          onSortChange({ dir: sortDir === "asc" ? "desc" : "asc" });
-        },
-        children: sortDir === "asc" ? "\u2191" : "\u2193"
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
-      "button",
-      {
-        type: "button",
-        className: "omnimux-accounts-iconbtn",
-        "aria-label": t("filter.viewGrid"),
-        title: t("filter.viewGrid"),
-        "aria-pressed": view === "grid",
-        disabled,
-        onClick: () => {
-          onViewChange("grid");
-        },
-        children: "\u229E"
-      }
-    ),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
-      "button",
-      {
-        type: "button",
-        className: "omnimux-accounts-iconbtn",
-        "aria-label": t("filter.viewTable"),
-        title: t("filter.viewTable"),
-        "aria-pressed": view === "table",
-        disabled,
-        onClick: () => {
-          onViewChange("table");
-        },
-        children: "\u2263"
-      }
-    )
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "omnimux-accounts-filter-actions", role: "group", "aria-label": t("filter.sort"), children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        DropdownSelect,
+        {
+          value: sortKey,
+          options: sortOptions,
+          ariaLabel: t("filter.sort"),
+          disabled,
+          onChange: (nextKey) => {
+            onSortChange({ key: nextKey });
+          }
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        "button",
+        {
+          type: "button",
+          className: "omnimux-accounts-iconbtn",
+          "aria-label": t("filter.direction"),
+          "aria-pressed": sortDir === "desc",
+          disabled,
+          onClick: () => {
+            onSortChange({ dir: sortDir === "asc" ? "desc" : "asc" });
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("svg", { viewBox: "0 0 16 16", width: "13", height: "13", fill: "none", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: sortDir === "asc" ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "M8 12.5V3.5M4 6.5l4-4 4 4" }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "M8 3.5v9M4 9.5l4 4 4-4" }) })
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        "button",
+        {
+          type: "button",
+          className: "omnimux-accounts-iconbtn",
+          "aria-label": t("filter.viewGrid"),
+          title: t("filter.viewGrid"),
+          "aria-pressed": view === "grid",
+          disabled,
+          onClick: () => {
+            onViewChange("grid");
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("svg", { viewBox: "0 0 16 16", width: "13", height: "13", fill: "none", stroke: "currentColor", strokeWidth: "1.3", "aria-hidden": "true", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: "2.5", y: "2.5", width: "4.5", height: "4.5", rx: "1" }),
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: "9", y: "2.5", width: "4.5", height: "4.5", rx: "1" }),
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: "2.5", y: "9", width: "4.5", height: "4.5", rx: "1" }),
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("rect", { x: "9", y: "9", width: "4.5", height: "4.5", rx: "1" })
+          ] })
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        "button",
+        {
+          type: "button",
+          className: "omnimux-accounts-iconbtn",
+          "aria-label": t("filter.viewTable"),
+          title: t("filter.viewTable"),
+          "aria-pressed": view === "table",
+          disabled,
+          onClick: () => {
+            onViewChange("table");
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("svg", { viewBox: "0 0 16 16", width: "13", height: "13", fill: "none", stroke: "currentColor", strokeWidth: "1.4", strokeLinecap: "round", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("path", { d: "M2.5 4h11M2.5 8h11M2.5 12h11" }) })
+        }
+      )
+    ] })
   ] });
 }
 
@@ -1226,23 +1338,23 @@ function OverviewBar({ t, summary, onFilterClick, busy = "" }) {
 }
 
 // src/client/use-accounts.js
-var import_react4 = require("react");
+var import_react5 = require("react");
 var WATCH_POLL_MS = 5e3;
 var sessionCache = { phase: "loading", accounts: [] };
 function useAccounts() {
-  const [phase, setPhase] = (0, import_react4.useState)(sessionCache.phase);
-  const [accounts, setAccounts] = (0, import_react4.useState)(sessionCache.accounts);
-  const [error, setError] = (0, import_react4.useState)("");
-  const [busy, setBusy] = (0, import_react4.useState)("");
-  const accountsRef = (0, import_react4.useRef)(sessionCache.accounts);
-  const watchRef = (0, import_react4.useRef)(null);
-  const commitAccounts = (0, import_react4.useCallback)((next) => {
+  const [phase, setPhase] = (0, import_react5.useState)(sessionCache.phase);
+  const [accounts, setAccounts] = (0, import_react5.useState)(sessionCache.accounts);
+  const [error, setError] = (0, import_react5.useState)("");
+  const [busy, setBusy] = (0, import_react5.useState)("");
+  const accountsRef = (0, import_react5.useRef)(sessionCache.accounts);
+  const watchRef = (0, import_react5.useRef)(null);
+  const commitAccounts = (0, import_react5.useCallback)((next) => {
     const rows = Array.isArray(next) ? next : [];
     accountsRef.current = rows;
     sessionCache.accounts = rows;
     setAccounts(rows);
   }, []);
-  const applyListResult = (0, import_react4.useCallback)((result) => {
+  const applyListResult = (0, import_react5.useCallback)((result) => {
     if (result.status === 401) {
       sessionCache.phase = "need-login";
       setPhase("need-login");
@@ -1265,7 +1377,7 @@ function useAccounts() {
     setPhase("ready");
     return true;
   }, [commitAccounts]);
-  const refresh = (0, import_react4.useCallback)(() => {
+  const refresh = (0, import_react5.useCallback)(() => {
     return listAccounts().then(applyListResult).catch((caught) => {
       setError(caught instanceof Error ? caught.message : String(caught));
       sessionCache.phase = "ready";
@@ -1273,15 +1385,15 @@ function useAccounts() {
       return true;
     });
   }, [applyListResult]);
-  (0, import_react4.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     void refresh();
   }, [refresh]);
-  const stopWatch = (0, import_react4.useCallback)(() => {
+  const stopWatch = (0, import_react5.useCallback)(() => {
     const watch = watchRef.current;
     watchRef.current = null;
     if (watch) watch.stop();
   }, []);
-  const watchConnect = (0, import_react4.useCallback)((platform, onChange) => {
+  const watchConnect = (0, import_react5.useCallback)((platform, onChange) => {
     stopWatch();
     const key = String(platform || "").toLowerCase();
     const baselineIds = new Set(accountsRef.current.map((row) => String(row.id)));
@@ -1333,10 +1445,10 @@ function useAccounts() {
     }, WATCH_POLL_MS);
     return stop;
   }, [stopWatch]);
-  (0, import_react4.useEffect)(() => () => {
+  (0, import_react5.useEffect)(() => () => {
     stopWatch();
   }, [stopWatch]);
-  const patch = (0, import_react4.useCallback)((id, body) => {
+  const patch = (0, import_react5.useCallback)((id, body) => {
     const key = String(id);
     const previous = accountsRef.current;
     const target = previous.find((row) => String(row.id) === key);
@@ -1377,7 +1489,7 @@ function useAccounts() {
       return false;
     });
   }, [commitAccounts]);
-  const disconnect = (0, import_react4.useCallback)((id) => {
+  const disconnect = (0, import_react5.useCallback)((id) => {
     const key = String(id);
     setBusy(key);
     setError("");
@@ -1466,83 +1578,272 @@ var STYLES2 = `
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-bottom: 12px;
 }
 .omnimux-accounts-cta {
+  flex-shrink: 0;
   margin-left: auto; /* sit at the right end of the toolbar row, after the filter controls */
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
-  min-width: 120px;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
-  border-radius: 10px;
-  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.18));
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.14));
+  border-radius: 8px;
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
   color: var(--dsw-alias-label-primary, inherit);
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 .omnimux-accounts-cta:hover {
-  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.26));
+  background: var(--dsw-alias-interactive-bg-active, rgba(255,255,255,0.14));
+  border-color: rgba(255,255,255,0.24);
+}
+.omnimux-accounts-cta:active {
+  transform: scale(0.98);
 }
 .omnimux-accounts-cta:disabled {
   cursor: default;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 /* ---------- filter bar ---------- */
 .omnimux-accounts-filterbar {
-  position: sticky;
-  top: 0;
-  z-index: 2;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
   padding: 8px 0;
-  background: var(--dsw-alias-bg-primary, var(--dsw-bg, #111));
+}
+.omnimux-accounts-filter-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 .omnimux-accounts-search {
-  flex: 0 1 240px;
-  min-width: 160px;
+  flex: 1 1 200px;
+  min-width: 140px;
+  max-width: 240px;
   height: 32px;
-  padding: 0 10px;
+  padding: 0 12px;
   border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
   border-radius: 8px;
-  background: transparent;
+  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
   color: inherit;
   font: inherit;
   font-size: 13px;
+  transition: all 0.15s ease;
 }
-.omnimux-accounts-select {
+.omnimux-accounts-search:hover {
+  border-color: rgba(255,255,255,0.22);
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.07));
+}
+.omnimux-accounts-search:focus {
+  outline: none;
+  border-color: var(--dsw-alias-brand-primary, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.22);
+  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.06));
+}
+.omnimux-accounts-search::placeholder {
+  color: var(--dsw-alias-label-tertiary, rgba(255,255,255,0.38));
+}
+
+/* ---------- dropdown select ---------- */
+.omnimux-accounts-dropdown {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.omnimux-accounts-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   height: 32px;
-  padding: 0 8px;
+  padding: 0 10px 0 12px;
   border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
   border-radius: 8px;
-  background: transparent;
-  color: inherit;
+  background-color: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  color: var(--dsw-alias-label-primary, inherit);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.omnimux-accounts-dropdown-trigger:not(:disabled):hover {
+  background-color: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
+  border-color: rgba(255,255,255,0.22);
+}
+.omnimux-accounts-dropdown-trigger--open {
+  background-color: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
+  border-color: var(--dsw-alias-brand-primary, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.22);
+}
+.omnimux-accounts-dropdown-trigger:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.omnimux-accounts-dropdown-label {
+  line-height: 1;
+}
+.omnimux-accounts-dropdown-chevron {
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+}
+.omnimux-accounts-dropdown-trigger:hover .omnimux-accounts-dropdown-chevron {
+  opacity: 0.85;
+}
+.omnimux-accounts-dropdown-trigger--open .omnimux-accounts-dropdown-chevron {
+  transform: rotate(180deg);
+  opacity: 1;
+  stroke: var(--dsw-alias-brand-primary, #3b82f6);
+}
+.omnimux-accounts-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 50;
+  min-width: 100%;
+  width: max-content;
+  max-width: 240px;
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.14));
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-elevated, #1c1c1f);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(16px);
+  animation: omnimux-accounts-menu-pop 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes omnimux-accounts-menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.omnimux-accounts-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.8));
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.omnimux-accounts-dropdown-item:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
+  color: var(--dsw-alias-label-primary, #ffffff);
+}
+.omnimux-accounts-dropdown-item--selected {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--dsw-alias-brand-primary, #60a5fa);
+  font-weight: 500;
+}
+.omnimux-accounts-dropdown-item--selected:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+.omnimux-accounts-dropdown-item-text {
+  flex: 1 1 auto;
+}
+.omnimux-accounts-dropdown-check {
+  flex-shrink: 0;
+  stroke: var(--dsw-alias-brand-primary, #60a5fa);
+}
+
+.omnimux-accounts-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 28px 0 12px;
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
+  border-radius: 8px;
+  background-color: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='12' height='12' fill='none' stroke='rgba(255,255,255,0.45)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  color: var(--dsw-alias-label-primary, inherit);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.omnimux-accounts-select:hover {
+  background-color: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
+  border-color: rgba(255,255,255,0.22);
+}
+.omnimux-accounts-select:focus {
+  outline: none;
+  border-color: var(--dsw-alias-brand-primary, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.22);
+}
+.omnimux-accounts-select option {
+  background-color: #1a1a1c;
+  color: #ededed;
 }
 .omnimux-accounts-select:disabled { cursor: default; opacity: 0.5; }
 .omnimux-accounts-iconbtn {
-  display: inline-grid;
-  place-items: center;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 32px;
   height: 32px;
   padding: 0;
   border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
   border-radius: 8px;
-  background: transparent;
-  color: inherit;
+  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.65));
   font: inherit;
-  font-size: 14px;
-  line-height: 1;
   cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.omnimux-accounts-iconbtn:disabled { cursor: default; opacity: 0.45; }
+.omnimux-accounts-iconbtn:not(:disabled):hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.09));
+  border-color: rgba(255,255,255,0.22);
+  color: var(--dsw-alias-label-primary, #ffffff);
+}
+.omnimux-accounts-iconbtn:not(:disabled):active {
+  transform: scale(0.96);
+}
+.omnimux-accounts-iconbtn[aria-pressed="true"] {
+  background: var(--dsw-alias-interactive-bg-active, rgba(255,255,255,0.14));
+  border-color: var(--dsw-alias-border-active, rgba(255,255,255,0.26));
+  color: var(--dsw-alias-label-primary, #ffffff);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
 }
 .omnimux-accounts-iconbtn:disabled { cursor: default; opacity: 0.45; }
 .omnimux-accounts-iconbtn:not(:disabled):hover {
@@ -1952,8 +2253,36 @@ var STYLES2 = `
   min-width: 0;
 }
 .omnimux-accounts-cellmenu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  vertical-align: middle;
   position: relative;
-  display: inline-block;
+}
+/* Table-only overrides. Default .omnimux-accounts-more / .omnimux-accounts-popover
+   stay absolute so grid cards keep pinning the \u22EF to the card corner. */
+.omnimux-accounts-cellmenu .omnimux-accounts-more {
+  position: static;
+  top: auto;
+  right: auto;
+  z-index: auto;
+  width: 26px;
+  height: 26px;
+}
+.omnimux-accounts-cellmenu .omnimux-accounts-popover {
+  top: calc(100% + 4px);
+  right: 0;
+  left: auto;
+  z-index: 6;
+  min-width: 200px;
+  max-width: min(280px, 70vw);
+}
+.omnimux-accounts-table tbody tr:last-child .omnimux-accounts-cellmenu .omnimux-accounts-popover,
+.omnimux-accounts-table tbody tr:nth-last-child(2) .omnimux-accounts-cellmenu .omnimux-accounts-popover {
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 .omnimux-accounts-bulkbar {
   position: sticky;
@@ -2175,28 +2504,28 @@ function readStoredView() {
   }
 }
 function AccountsSection({ t, active = true }) {
-  (0, import_react5.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     injectAccountsStyles();
   }, []);
   const { phase, accounts, error, busy, refresh, watchConnect, patch, disconnect } = useAccounts();
-  const [filters, setFilters] = (0, import_react5.useState)({ query: "", platform: "", group: "", status: "" });
-  const [sortKey, setSortKey] = (0, import_react5.useState)("display_name");
-  const [sortDir, setSortDir] = (0, import_react5.useState)("asc");
-  const [view, setView] = (0, import_react5.useState)(readStoredView);
-  const [modalOpen, setModalOpen] = (0, import_react5.useState)(false);
-  const [notice, setNotice] = (0, import_react5.useState)("");
-  const [selected, setSelected] = (0, import_react5.useState)(() => /* @__PURE__ */ new Set());
-  const [bulkProgress, setBulkProgress] = (0, import_react5.useState)(null);
-  const [confirmBulk, setConfirmBulk] = (0, import_react5.useState)(false);
-  const [sectionError, setSectionError] = (0, import_react5.useState)("");
-  const wasActive = (0, import_react5.useRef)(active);
-  (0, import_react5.useEffect)(() => {
+  const [filters, setFilters] = (0, import_react6.useState)({ query: "", platform: "", group: "", status: "" });
+  const [sortKey, setSortKey] = (0, import_react6.useState)("display_name");
+  const [sortDir, setSortDir] = (0, import_react6.useState)("asc");
+  const [view, setView] = (0, import_react6.useState)(readStoredView);
+  const [modalOpen, setModalOpen] = (0, import_react6.useState)(false);
+  const [notice, setNotice] = (0, import_react6.useState)("");
+  const [selected, setSelected] = (0, import_react6.useState)(() => /* @__PURE__ */ new Set());
+  const [bulkProgress, setBulkProgress] = (0, import_react6.useState)(null);
+  const [confirmBulk, setConfirmBulk] = (0, import_react6.useState)(false);
+  const [sectionError, setSectionError] = (0, import_react6.useState)("");
+  const wasActive = (0, import_react6.useRef)(active);
+  (0, import_react6.useEffect)(() => {
     try {
       window.localStorage.setItem(VIEW_STORAGE_KEY, view);
     } catch {
     }
   }, [view]);
-  (0, import_react5.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     if (notice === "") return void 0;
     const timer = window.setTimeout(() => {
       setNotice("");
@@ -2205,7 +2534,7 @@ function AccountsSection({ t, active = true }) {
       window.clearTimeout(timer);
     };
   }, [notice]);
-  (0, import_react5.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     const returning = active && !wasActive.current;
     wasActive.current = active;
     if (!active) {
@@ -2217,14 +2546,14 @@ function AccountsSection({ t, active = true }) {
     if (returning) void refresh();
     return void 0;
   }, [active, refresh]);
-  (0, import_react5.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     setSelected((current) => {
       const alive = new Set(accounts.map((row) => String(row.id)));
       const next = new Set([...current].filter((id) => alive.has(id)));
       return next.size === current.size ? current : next;
     });
   }, [accounts]);
-  (0, import_react5.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     if (!confirmBulk) return void 0;
     const onPointerDown = (event) => {
       const target = event.target;
@@ -2236,11 +2565,11 @@ function AccountsSection({ t, active = true }) {
       document.removeEventListener("pointerdown", onPointerDown);
     };
   }, [confirmBulk]);
-  const summary = (0, import_react5.useMemo)(() => summarize(accounts), [accounts]);
-  const platforms = (0, import_react5.useMemo)(() => uniqueValues(accounts, "platform"), [accounts]);
-  const groups = (0, import_react5.useMemo)(() => uniqueValues(accounts, "group"), [accounts]);
-  const statuses = (0, import_react5.useMemo)(() => presentStatuses(accounts), [accounts]);
-  const visible = (0, import_react5.useMemo)(
+  const summary = (0, import_react6.useMemo)(() => summarize(accounts), [accounts]);
+  const platforms = (0, import_react6.useMemo)(() => uniqueValues(accounts, "platform"), [accounts]);
+  const groups = (0, import_react6.useMemo)(() => uniqueValues(accounts, "group"), [accounts]);
+  const statuses = (0, import_react6.useMemo)(() => presentStatuses(accounts), [accounts]);
+  const visible = (0, import_react6.useMemo)(
     () => sortAccounts(filterAccounts(accounts, filters), sortKey, sortDir),
     [accounts, filters, sortKey, sortDir]
   );
@@ -2527,15 +2856,15 @@ function AccountsSection({ t, active = true }) {
 // src/client/AccountsStage.jsx
 var import_jsx_runtime10 = require("react/jsx-runtime");
 function AccountsStage({ t, stage }) {
-  const open = (0, import_react6.useSyncExternalStore)(
+  const open = (0, import_react7.useSyncExternalStore)(
     stage ? (onStoreChange) => stage.subscribe(onStoreChange) : () => () => {
     },
     stage ? () => stage.getSnapshot() : () => false
   );
-  const [everOpened, setEverOpened] = (0, import_react6.useState)(false);
-  const [box, setBox] = (0, import_react6.useState)(() => stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 });
+  const [everOpened, setEverOpened] = (0, import_react7.useState)(false);
+  const [box, setBox] = (0, import_react7.useState)(() => stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 });
   if (open && !everOpened) setEverOpened(true);
-  (0, import_react6.useLayoutEffect)(() => {
+  (0, import_react7.useLayoutEffect)(() => {
     if (!open || !stage) return void 0;
     const update = () => {
       setBox(stage.readBox());

@@ -64,7 +64,7 @@ test('search returns before ratings resolve (does not await attachRatings)', asy
       method: 'POST',
       url: '/omnimux-market',
       [Symbol.asyncIterator]: async function* () {
-        yield Buffer.from(JSON.stringify({ method: 'search', query: 'slow', limit: 1 }))
+        yield Buffer.from(JSON.stringify({ method: 'search', query: 'slow', limit: 1, channels: ['skillhub'] }))
       },
     } as unknown as IncomingMessage
     const res = mockRes()

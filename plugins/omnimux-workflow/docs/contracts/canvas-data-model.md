@@ -54,3 +54,7 @@ workspaceId 形如 `ws_<12 hex>`（随机，UUID 派生）。
 保留字段：`label` / `materialType` / `status(empty|ready|generating|completed|failed)` / `content` / `mediaUrl` / `taskId` / `errorMessage` / `generatedContent` / `selectedTool` / `prompt` / `params` / `failStrategy` / 尺寸组（`nodeWidth` / `nodeHeight` / `dimensions` / `aspectRatio` / `duration`）。
 裁掉：预设服务绑定（sceneId/modelOptions/parameterTemplate…）、输入槽位、角色设计、字幕样式。
 island 内部注入键（`__catalog`）保存前剥离，永不落盘。
+
+xyflow 运行时字段（`measured` / `dragging` / `positionAbsolute` / `resizing` / `selected`）也不落盘：
+客户端 `persistSanitize` 白名单消毒（脏签名与 PUT 共用）；Host `WorkspaceStore.save` 落盘 zod `strict.data`（默认 strip）。
+仅选中或首次布局量尺寸不得抬 `version`。

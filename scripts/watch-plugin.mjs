@@ -30,13 +30,34 @@ if (!existsSync(join(pluginDir, 'package.json'))) {
   process.exit(1)
 }
 
+const children = new Set()
+
+function trackChild(child) {
+  children.add(child)
+  child.on('exit', () => children.delete(child))
+  return child
+}
+
+function cleanExit(signal) {
+  for (const child of children) {
+    try {
+      child.kill(signal || 'SIGTERM')
+    } catch {}
+  }
+  process.exit(0)
+}
+
+process.on('SIGINT', () => cleanExit('SIGINT'))
+process.on('SIGTERM', () => cleanExit('SIGTERM'))
+
 function runNode(scriptRel) {
   const child = spawn(process.execPath, [join(pluginDir, scriptRel)], {
     cwd: pluginDir,
     stdio: 'inherit',
   })
+  trackChild(child)
   child.on('exit', (code) => {
-    if (code !== 0) console.error(`[${name}] ${scriptRel} exited ${code}`)
+    if (code !== 0 && code !== null) console.error(`[${name}] ${scriptRel} exited ${code}`)
   })
   return child
 }
@@ -47,8 +68,9 @@ function runNpmBuild() {
     stdio: 'inherit',
     shell: false,
   })
+  trackChild(child)
   child.on('exit', (code) => {
-    if (code !== 0) console.error(`[${name}] npm run build exited ${code}`)
+    if (code !== 0 && code !== null) console.error(`[${name}] npm run build exited ${code}`)
   })
   return child
 }
@@ -66,6 +88,7 @@ function resolveStrategy() {
           cwd: pluginDir,
           stdio: 'inherit',
         })
+        trackChild(child)
         child.on('exit', (code) => process.exit(code ?? 0))
       },
     }

@@ -186,3 +186,7 @@ test('plaza_install rejects the expert path', async () => {
     const { byName } = toolsFor([item({ id: 'exp-demo', title: '产品通', summary: '写 PRD' })]);
     await assert.rejects(() => byName.plaza_install.execute({ id: 'exp-demo' }), /disabled for experts/);
 });
+test('plaza_install description points Agent to connector_install', () => {
+    const { byName } = toolsFor([]);
+    assert.match(byName.plaza_install.description, /connector_install/);
+});
