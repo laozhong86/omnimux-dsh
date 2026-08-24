@@ -3,6 +3,7 @@ import { dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { resolveInspirationPaths } from './paths.js'
 import { getCanonicalItemKey, isSameSocialContent, normalizeUrl } from './url-normalizer.js'
+import { moveToTrash } from './trash.js'
 
 export class InspirationError extends Error {
   /**
@@ -241,15 +242,50 @@ export function createLocalStore(opts = {}) {
     },
 
     /**
+     * Delete single item and move its associated media files to the OS system trash.
      * @param {string} id
      */
-    delete(id) {
+    async delete(id) {
       const items = readAll()
       const index = items.findIndex((item) => item.id === id)
       if (index === -1) throw new InspirationError('not-found', `inspiration ${id} not found`, 404)
       const [removed] = items.splice(index, 1)
+
+      // Move associated local media files to trash
+      if (removed.local_paths) {
+        if (removed.local_paths.video) await moveToTrash(String(removed.local_paths.video))
+        if (removed.local_paths.cover) await moveToTrash(String(removed.local_paths.cover))
+      }
+
       writeAll(items)
       return removed
+    },
+
+    /**
+     * Batch delete multiple items and move all their local media files to trash.
+     * @param {string[]} ids
+     */
+    async deleteBatch(ids) {
+      if (!Array.isArray(ids) || ids.length === 0) return { deleted: [], count: 0 }
+      const idSet = new Set(ids)
+      const items = readAll()
+      const remaining = []
+      const removed = []
+
+      for (const item of items) {
+        if (idSet.has(item.id)) {
+          removed.push(item)
+          if (item.local_paths) {
+            if (item.local_paths.video) await moveToTrash(String(item.local_paths.video))
+            if (item.local_paths.cover) await moveToTrash(String(item.local_paths.cover))
+          }
+        } else {
+          remaining.push(item)
+        }
+      }
+
+      writeAll(remaining)
+      return { deleted: removed.map((it) => it.id), count: removed.length }
     },
 
     tags() {

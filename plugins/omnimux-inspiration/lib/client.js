@@ -108,7 +108,17 @@ var zh = {
   "stat.shares": "\u5206\u4EAB",
   "meta.originalText": "\u539F\u5E16\u6587\u6848",
   "meta.platform": "\u5E73\u53F0: {platform}",
-  "meta.author": "\u4F5C\u8005: {author}"
+  "meta.author": "\u4F5C\u8005: {author}",
+  "select.count": "\u5DF2\u9009 {n} \u9879",
+  "select.selectAll": "\u5168\u9009\u672C\u5730",
+  "select.clear": "\u53D6\u6D88\u9009\u62E9",
+  "select.delete": "\u5220\u9664 ({n})",
+  "select.toggle": "\u9009\u62E9\u6216\u53D6\u6D88\u9009\u62E9\u8BE5\u7075\u611F",
+  "confirmRemove.title": "\u786E\u8BA4\u5220\u9664 {n} \u4E2A\u672C\u5730\u7075\u611F\uFF1F",
+  "confirmRemove.description": "\u9009\u4E2D\u7684\u7075\u611F\u8BB0\u5F55\u5C06\u88AB\u6E05\u9664\uFF0C\u5173\u8054\u7684\u672C\u5730\u89C6\u9891\u53CA\u5C01\u9762\u7D20\u6750\u6587\u4EF6\u5C06\u79FB\u5165\u7CFB\u7EDF\u5E9F\u7EB8\u7BD3\u3002",
+  "confirmRemove.cancel": "\u53D6\u6D88",
+  "confirmRemove.confirm": "\u79FB\u5165\u5E9F\u7EB8\u7BD3",
+  "confirmRemove.deleting": "\u6B63\u5728\u5220\u9664\u2026"
 };
 var en = {
   "nav": "Inspiration",
@@ -187,7 +197,17 @@ var en = {
   "stat.shares": "Shares",
   "meta.originalText": "Original Content",
   "meta.platform": "Platform: {platform}",
-  "meta.author": "Author: {author}"
+  "meta.author": "Author: {author}",
+  "select.count": "{n} selected",
+  "select.selectAll": "Select all local",
+  "select.clear": "Clear selection",
+  "select.delete": "Delete ({n})",
+  "select.toggle": "Toggle item selection",
+  "confirmRemove.title": "Delete {n} local inspirations?",
+  "confirmRemove.description": "Selected inspiration records will be removed, and local video/cover files will be moved to the Trash.",
+  "confirmRemove.cancel": "Cancel",
+  "confirmRemove.confirm": "Move to Trash",
+  "confirmRemove.deleting": "Deleting\u2026"
 };
 var NS = "omnimux-inspiration";
 
@@ -504,6 +524,13 @@ function triggerAnalyzeInspiration(id) {
     method: "POST"
   });
 }
+function batchDeleteLocalInspirations(ids) {
+  invalidateInspirationCache();
+  return inspirationRequest("/omnimux/inspiration/local/batch-delete", {
+    method: "POST",
+    body: { ids }
+  });
+}
 function hostMediaSrc(url) {
   if (typeof url !== "string" || url === "") return "";
   if (url.includes("..")) return "";
@@ -546,6 +573,114 @@ function resolveTikTokEmbedUrl(sourceUrlOrId) {
   }
   const id = extractTikTokVideoId(raw);
   return id ? `https://www.tiktok.com/player/v1/${id}` : null;
+}
+
+// src/client/ConfirmRemoveDialog.jsx
+var import_jsx_runtime = require("react/jsx-runtime");
+var backdrop = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 300,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "rgba(0, 0, 0, 0.65)",
+  backdropFilter: "blur(4px)"
+};
+var dialog = {
+  width: 380,
+  maxWidth: "calc(100vw - 48px)",
+  display: "flex",
+  flexDirection: "column",
+  gap: 12,
+  padding: 20,
+  borderRadius: 16,
+  background: "var(--omx-color-canvas-raised, #161616)",
+  border: "1px solid var(--omx-color-hairline, #282828)",
+  color: "var(--omx-color-ink, #ffffff)",
+  boxShadow: "0 16px 36px rgba(0, 0, 0, 0.6)",
+  boxSizing: "border-box"
+};
+var heading = {
+  margin: 0,
+  fontSize: 16,
+  fontWeight: 600,
+  lineHeight: "24px"
+};
+var hint = {
+  margin: 0,
+  fontSize: 13,
+  lineHeight: "20px",
+  color: "var(--omx-color-muted, #8e8e8e)"
+};
+var buttons = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: 10,
+  marginTop: 6
+};
+var ghostButton = {
+  padding: "6px 14px",
+  fontSize: 13,
+  lineHeight: "20px",
+  borderRadius: 999,
+  cursor: "pointer",
+  border: "1px solid var(--omx-color-hairline-strong, #3a3a3a)",
+  background: "transparent",
+  color: "inherit"
+};
+var dangerButton = {
+  ...ghostButton,
+  fontWeight: 600,
+  border: "none",
+  color: "#ffffff",
+  background: "var(--omx-color-error, #ef4444)"
+};
+function ConfirmRemoveDialog({ t, count, busy, onCancel, onConfirm }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    "div",
+    {
+      style: backdrop,
+      onMouseDown: (event) => {
+        if (event.target === event.currentTarget && !busy) onCancel();
+      },
+      children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+        "div",
+        {
+          role: "alertdialog",
+          "aria-modal": "true",
+          "aria-labelledby": "omnimux-inspiration-remove-title",
+          style: dialog,
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { id: "omnimux-inspiration-remove-title", style: heading, children: t("confirmRemove.title").replace("{n}", String(count)) }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: hint, children: t("confirmRemove.description") }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: buttons, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                "button",
+                {
+                  type: "button",
+                  disabled: busy,
+                  onClick: onCancel,
+                  style: { ...ghostButton, cursor: busy ? "default" : "pointer" },
+                  children: t("confirmRemove.cancel")
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                "button",
+                {
+                  type: "button",
+                  disabled: busy,
+                  onClick: onConfirm,
+                  style: { ...dangerButton, opacity: busy ? 0.6 : 1, cursor: busy ? "default" : "pointer" },
+                  children: busy ? t("confirmRemove.deleting") : t("confirmRemove.confirm")
+                }
+              )
+            ] })
+          ]
+        }
+      )
+    }
+  );
 }
 
 // src/client/styles.js
@@ -785,6 +920,63 @@ var INSPIRATION_CSS = `
   }
 }
 
+/* \u6279\u91CF\u591A\u9009\u64CD\u4F5C\u680F */
+.omnimux-inspiration-selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  padding: 8px 14px;
+  background: var(--omx-color-canvas-raised, #181818);
+  border: 1px solid var(--omx-color-hairline-strong, #333333);
+  border-radius: var(--omx-radius-md, 12px);
+  animation: omni-fade-in 140ms ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.omnimux-inspiration-selection-count {
+  font: var(--omx-text-label, 500 13px/18px var(--omx-font-sans));
+  color: var(--omx-color-ink, #ffffff);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.omnimux-inspiration-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.omnimux-inspiration-btn-ghost {
+  border: none;
+  background: transparent;
+  color: var(--omx-color-muted, #8e8e8e);
+  cursor: pointer;
+  font: var(--omx-text-label, 500 13px/18px var(--omx-font-sans));
+  padding: 4px 10px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  transition: color var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-btn-ghost:hover {
+  color: var(--omx-color-ink, #ffffff);
+  background: rgba(255, 255, 255, 0.06);
+}
+.omnimux-inspiration-btn-danger {
+  border: none;
+  background: var(--omx-color-error, #ef4444);
+  color: #ffffff;
+  border-radius: var(--omx-radius-pill, 9999px);
+  padding: 5px 14px;
+  cursor: pointer;
+  font: var(--omx-text-label, 600 13px/18px var(--omx-font-sans));
+  transition: all var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
 .omnimux-inspiration-card-pure {
   position: relative;
   width: 100%;
@@ -798,10 +990,57 @@ var INSPIRATION_CSS = `
               border-color var(--omx-motion-base, 180ms) cubic-bezier(.2,.4,.6,1),
               box-shadow var(--omx-motion-base, 180ms) ease;
 }
+.omnimux-inspiration-card-pure[aria-selected="true"] {
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
 .omnimux-inspiration-card-pure:hover {
   transform: translateY(-3px);
   border-color: var(--omx-color-hairline-strong, #4a4a4a);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* \u5361\u7247\u5DE6\u4E0A\u89D2\u590D\u9009\u6846 Checkbox */
+.omnimux-inspiration-card-check {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  color: #000000;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity var(--omx-motion-fast, 120ms) ease,
+              transform var(--omx-motion-fast, 120ms) ease,
+              background-color var(--omx-motion-fast, 120ms) ease,
+              border-color var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-check,
+.omnimux-inspiration-card-check[data-selected="true"],
+.omnimux-inspiration-grid.selecting .omnimux-inspiration-card-check {
+  opacity: 1;
+  transform: scale(1);
+}
+.omnimux-inspiration-card-check[data-selected="true"] {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+.omnimux-inspiration-card-check:hover {
+  border-color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.7);
+}
+.omnimux-inspiration-card-check[data-selected="true"]:hover {
+  background: #ebebeb;
+  border-color: #ebebeb;
 }
 .omnimux-inspiration-cover-img {
   display: block;
@@ -1444,19 +1683,19 @@ function injectInspirationStyles() {
 }
 
 // src/client/InspirationSection.jsx
-var import_jsx_runtime = require("react/jsx-runtime");
+var import_jsx_runtime2 = require("react/jsx-runtime");
 function LoginGate({ t }) {
   const login = () => {
     const gate = typeof window !== "undefined" ? window.__omnimuxAuth : void 0;
     if (gate && typeof gate.ensureLogin === "function") gate.ensureLogin({});
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-gate", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "omnimux-inspiration-empty-title", children: t("needLogin") }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "omnimux-inspiration-empty-text", children: t("needLoginHint") }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omnimux-inspiration-btn", onClick: login, children: t("login") })
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-gate", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { className: "omnimux-inspiration-empty-title", children: t("needLogin") }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "omnimux-inspiration-empty-text", children: t("needLoginHint") }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "omnimux-inspiration-btn", onClick: login, children: t("login") })
   ] });
 }
-function PureCoverCard({ row, t, onSelect }) {
+function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }) {
   const title = String(row.title || row.source_url || row.id);
   const cover = pickCoverSrc(row);
   const [broken, setBroken] = (0, import_react.useState)(!cover);
@@ -1465,21 +1704,47 @@ function PureCoverCard({ row, t, onSelect }) {
   }, [cover]);
   const platform = (row.source_platform || (row.is_local ? "local" : "tiktok")).toUpperCase();
   const isLocal = Boolean(row.is_local);
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+  const handleClick = (e) => {
+    if (selecting && isLocal && onToggleSelect) {
+      onToggleSelect(row);
+      return;
+    }
+    onSelect(row);
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
     "article",
     {
       className: "omnimux-inspiration-card-pure",
-      onClick: () => onSelect(row),
+      "aria-selected": selected ? "true" : "false",
+      onClick: handleClick,
       role: "button",
       tabIndex: 0,
       onKeyDown: (e) => {
-        if (e.key === "Enter" || e.key === " ") onSelect(row);
+        if (e.key === "Enter" || e.key === " ") {
+          if (selecting && isLocal && onToggleSelect) onToggleSelect(row);
+          else onSelect(row);
+        }
       },
       children: [
-        broken ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-cover-fallback", "aria-hidden": "true", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-fallback-icon", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-fallback-title", children: title.replace(/^https?:\/\/(www\.)?/, "") })
-        ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        isLocal && onToggleSelect ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+          "button",
+          {
+            type: "button",
+            className: "omnimux-inspiration-card-check",
+            "data-selected": selected ? "true" : "false",
+            "aria-label": t("select.toggle"),
+            "aria-pressed": selected ? "true" : "false",
+            onClick: (e) => {
+              e.stopPropagation();
+              onToggleSelect(row);
+            },
+            children: selected ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3.2", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "20 6 9 17 4 12" }) }) : null
+          }
+        ) : null,
+        broken ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-cover-fallback", "aria-hidden": "true", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-fallback-icon", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-fallback-title", children: title.replace(/^https?:\/\/(www\.)?/, "") })
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
           "img",
           {
             className: "omnimux-inspiration-cover-img",
@@ -1494,10 +1759,10 @@ function PureCoverCard({ row, t, onSelect }) {
             }
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-card-overlay", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `omnimux-inspiration-badge-platform ${isLocal ? "local" : ""}`, children: isLocal ? "\u672C\u5730" : platform }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-overlay-play", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M8 5v14l11-7z" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-overlay-footer", children: title.length > 32 ? `${title.slice(0, 32)}\u2026` : title })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-card-overlay", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: `omnimux-inspiration-badge-platform ${isLocal ? "local" : ""}`, children: isLocal ? "\u672C\u5730" : platform }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-overlay-play", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M8 5v14l11-7z" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-overlay-footer", children: title.length > 32 ? `${title.slice(0, 32)}\u2026` : title })
         ] })
       ]
     }
@@ -1554,49 +1819,49 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
       setAnalyzing(false);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-modal-container", onClick: (e) => e.stopPropagation(), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "omnimux-inspiration-modal-close", onClick: onClose, "aria-label": "Close", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M18 6L6 18M6 6l12 12" }) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-modal-left", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-preview-switch", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-switch-group", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-container", onClick: (e) => e.stopPropagation(), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { className: "omnimux-inspiration-modal-close", onClick: onClose, "aria-label": "Close", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M18 6L6 18M6 6l12 12" }) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-left", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-preview-switch", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-switch-group", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
             "button",
             {
               type: "button",
               className: `omnimux-inspiration-switch-btn ${viewMode === "player" ? "active" : ""}`,
               onClick: () => setViewMode("player"),
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("view.player") })
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("view.player") })
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
             "button",
             {
               type: "button",
               className: `omnimux-inspiration-switch-btn ${viewMode === "deconstruct" ? "active" : ""}`,
               onClick: () => setViewMode("deconstruct"),
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "2 17 12 22 22 17" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "2 12 12 17 22 12" })
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 17 12 22 22 17" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 12 12 17 22 12" })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("view.deconstruct") })
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("view.deconstruct") })
               ]
             }
           )
         ] }),
-        hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "omnimux-inspiration-status-badge done", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "20 6 9 17 4 12" }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("status.breakdownReady") })
-        ] }) : analyzing ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "omnimux-inspiration-status-badge pending", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "10px", height: "10px" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("status.breakdownGenerating") })
+        hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-status-badge done", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "20 6 9 17 4 12" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("status.breakdownReady") })
+        ] }) : analyzing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-status-badge pending", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "10px", height: "10px" } }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("status.breakdownGenerating") })
         ] }) : null
       ] }),
-      viewMode === "player" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-preview-player", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-player-box", children: embedUrl ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      viewMode === "player" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-preview-player", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-player-box", children: embedUrl ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
         "iframe",
         {
           title,
@@ -1605,7 +1870,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
           allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
           allowFullScreen: true
         }
-      ) : localVideoUrl ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      ) : localVideoUrl ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
         "video",
         {
           src: localVideoUrl,
@@ -1613,10 +1878,10 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
           autoPlay: true,
           className: "omnimux-inspiration-player-frame"
         }
-      ) : cover ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", { src: cover, alt: title, className: "omnimux-inspiration-modal-cover-bg" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-cover-fallback", children: coverGlyph(title) }) }) }) : null,
-      viewMode === "deconstruct" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-deconstruct-view", children: hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-tabs", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      ) : cover ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("img", { src: cover, alt: title, className: "omnimux-inspiration-modal-cover-bg" }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-cover-fallback", children: coverGlyph(title) }) }) }) : null,
+      viewMode === "deconstruct" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-deconstruct-view", children: hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-tabs", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "button",
             {
               type: "button",
@@ -1625,7 +1890,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
               children: t("dim.tab.all")
             }
           ),
-          hook ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          hook ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "button",
             {
               type: "button",
@@ -1634,7 +1899,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
               children: t("dim.tab.hook")
             }
           ) : null,
-          targetGoal ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          targetGoal ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "button",
             {
               type: "button",
@@ -1643,7 +1908,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
               children: t("dim.tab.goal")
             }
           ) : null,
-          narrative ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          narrative ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "button",
             {
               type: "button",
@@ -1652,7 +1917,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
               children: t("dim.tab.narrative")
             }
           ) : null,
-          breakdown ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          breakdown ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "button",
             {
               type: "button",
@@ -1661,7 +1926,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
               children: t("dim.tab.visual")
             }
           ) : null,
-          replication ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          replication ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "button",
             {
               type: "button",
@@ -1670,7 +1935,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
               children: t("dim.tab.replication")
             }
           ) : null,
-          rawMarkdown ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          rawMarkdown ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "button",
             {
               type: "button",
@@ -1680,74 +1945,74 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
             }
           ) : null
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-content", children: [
-          (dimTab === "all" || dimTab === "hook") && hook ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.hook") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-body", children: hook })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-content", children: [
+          (dimTab === "all" || dimTab === "hook") && hook ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.hook") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: hook })
           ] }) : null,
-          (dimTab === "all" || dimTab === "goal") && targetGoal ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.goal") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-body", children: targetGoal })
+          (dimTab === "all" || dimTab === "goal") && targetGoal ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.goal") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: targetGoal })
           ] }) : null,
-          (dimTab === "all" || dimTab === "narrative") && narrative ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.narrative") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-body", children: narrative })
+          (dimTab === "all" || dimTab === "narrative") && narrative ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.narrative") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: narrative })
           ] }) : null,
-          (dimTab === "all" || dimTab === "visual") && breakdown ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.visual") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-body", children: breakdown })
+          (dimTab === "all" || dimTab === "visual") && breakdown ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.visual") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: breakdown })
           ] }) : null,
-          (dimTab === "all" || dimTab === "replication") && replication ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.replication") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-body", children: replication })
+          (dimTab === "all" || dimTab === "replication") && replication ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.replication") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: replication })
           ] }) : null,
-          dimTab === "raw" && rawMarkdown ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.raw") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("pre", { className: "omnimux-inspiration-dim-code", children: rawMarkdown })
+          dimTab === "raw" && rawMarkdown ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.raw") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("pre", { className: "omnimux-inspiration-dim-code", children: rawMarkdown })
           ] }) : null
         ] })
-      ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-deconstruct-empty", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-fallback-icon", style: { width: "56px", height: "56px" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "2 17 12 22 22 17" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "2 12 12 17 22 12" })
+      ] }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-deconstruct-empty", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-fallback-icon", style: { width: "56px", height: "56px" }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 17 12 22 22 17" }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 12 12 17 22 12" })
         ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { style: { margin: "0 0 6px 0", fontSize: "15px", color: "#ffffff" }, children: analyzing ? t("empty.breakdownAnalyzing") : t("empty.breakdownTitle") }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { margin: 0, fontSize: "12px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("empty.breakdownDesc") })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { style: { margin: "0 0 6px 0", fontSize: "15px", color: "#ffffff" }, children: analyzing ? t("empty.breakdownAnalyzing") : t("empty.breakdownTitle") }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { margin: 0, fontSize: "12px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("empty.breakdownDesc") })
         ] }),
-        analyzeError ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: "#ef4444", fontSize: "12px" }, children: analyzeError }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        analyzeError ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: "#ef4444", fontSize: "12px" }, children: analyzeError }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
           "button",
           {
             type: "button",
             className: "omnimux-inspiration-trigger-btn",
             onClick: handleTriggerAnalyze,
             disabled: analyzing,
-            children: analyzing ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "12px", height: "12px", borderTopColor: "#000" } }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "\u6B63\u5728\u89E3\u6790\u2026" })
-            ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polygon", { points: "13 2 3 14 12 14 11 22 21 10 12 10 13 2" }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "\u7ACB\u5373\u89E3\u6790" })
+            children: analyzing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "12px", height: "12px", borderTopColor: "#000" } }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: "\u6B63\u5728\u89E3\u6790\u2026" })
+            ] }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "13 2 3 14 12 14 11 22 21 10 12 10 13 2" }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: "\u7ACB\u5373\u89E3\u6790" })
             ] })
           }
         )
       ] }) }) : null
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-modal-right", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-creator-card", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-creator-left", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-handle", children: creator.name || creator.handle || "Creator" }),
-            creator.handle ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: "11px", color: "var(--omx-color-muted, #7c7c7c)" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-right", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-creator-card", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-creator-left", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-handle", children: creator.name || creator.handle || "Creator" }),
+            creator.handle ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { fontSize: "11px", color: "var(--omx-color-muted, #7c7c7c)" }, children: [
               "@",
               creator.handle
             ] }) : null
           ] })
         ] }),
-        item.source_url ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+        item.source_url ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
           "a",
           {
             href: item.source_url,
@@ -1755,27 +2020,27 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
             rel: "noopener noreferrer",
             className: "omnimux-inspiration-modal-link",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("openSource") }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "11", height: "11", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" }) })
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("openSource") }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "11", height: "11", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" }) })
             ]
           }
         ) : null
       ] }),
-      item.stats && Object.keys(item.stats).length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-stats-grid", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u70B9\u8D5E" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.likes ?? item.stats.digg_count ?? "-" })
+      item.stats && Object.keys(item.stats).length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stats-grid", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u70B9\u8D5E" }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.likes ?? item.stats.digg_count ?? "-" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u8BC4\u8BBA" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.comments ?? item.stats.comment_count ?? "-" })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u8BC4\u8BBA" }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.comments ?? item.stats.comment_count ?? "-" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u5206\u4EAB" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.shares ?? item.stats.share_count ?? "-" })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u5206\u4EAB" }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.shares ?? item.stats.share_count ?? "-" })
         ] })
       ] }) : null,
-      tags.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-tags", children: tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "omnimux-inspiration-modal-tag", children: [
+      tags.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-tags", children: tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-modal-tag", children: [
         "#",
         tag
       ] }, tag)) }) : null
@@ -1816,17 +2081,17 @@ function ImportDialog({ open, t, onClose, onImported }) {
       setLoading(false);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-import-modal", onClick: (e) => e.stopPropagation(), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-import-header", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { children: t("add.dialogTitle") }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omnimux-inspiration-modal-close", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M18 6L6 18M6 6l12 12" }) }) })
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-import-modal", onClick: (e) => e.stopPropagation(), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-import-header", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { children: t("add.dialogTitle") }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "omnimux-inspiration-modal-close", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M18 6L6 18M6 6l12 12" }) }) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", { onSubmit: handleSubmit, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-import-body", children: [
-        error ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: "#ef4444", fontSize: "13px" }, children: error }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { style: { display: "block", fontSize: "13px", marginBottom: "6px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("add.urlLabel") }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("form", { onSubmit: handleSubmit, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-import-body", children: [
+        error ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: "#ef4444", fontSize: "13px" }, children: error }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("label", { style: { display: "block", fontSize: "13px", marginBottom: "6px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("add.urlLabel") }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "input",
             {
               type: "url",
@@ -1839,9 +2104,9 @@ function ImportDialog({ open, t, onClose, onImported }) {
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { style: { display: "block", fontSize: "13px", marginBottom: "6px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("add.tagsLabel") }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("label", { style: { display: "block", fontSize: "13px", marginBottom: "6px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("add.tagsLabel") }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "input",
             {
               type: "text",
@@ -1853,8 +2118,8 @@ function ImportDialog({ open, t, onClose, onImported }) {
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", { style: { display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("label", { style: { display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "input",
             {
               type: "checkbox",
@@ -1862,21 +2127,21 @@ function ImportDialog({ open, t, onClose, onImported }) {
               onChange: (e) => setAutoAnalyze(e.target.checked)
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("add.autoAnalyze") })
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("add.autoAnalyze") })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-import-footer", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omnimux-inspiration-select", onClick: onClose, disabled: loading, children: t("close") }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "submit", className: "omnimux-inspiration-btn", disabled: loading, children: loading ? t("add.importing") : t("add.submit") })
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-import-footer", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "omnimux-inspiration-select", onClick: onClose, disabled: loading, children: t("close") }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "submit", className: "omnimux-inspiration-btn", disabled: loading, children: loading ? t("add.importing") : t("add.submit") })
       ] })
     ] })
   ] }) });
 }
 function EmptyState({ t, onOpenAdd }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-empty", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "omnimux-inspiration-empty-title", children: t("empty.title") }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "omnimux-inspiration-empty-text", children: t("empty.description") }),
-    onOpenAdd ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omnimux-inspiration-btn", onClick: onOpenAdd, style: { marginTop: "12px" }, children: t("add.btn") }) : null
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-empty", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { className: "omnimux-inspiration-empty-title", children: t("empty.title") }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "omnimux-inspiration-empty-text", children: t("empty.description") }),
+    onOpenAdd ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "omnimux-inspiration-btn", onClick: onOpenAdd, style: { marginTop: "12px" }, children: t("add.btn") }) : null
   ] });
 }
 function InspirationSection({ t, active }) {
@@ -1894,10 +2159,53 @@ function InspirationSection({ t, active }) {
   const [error, setError] = (0, import_react.useState)(null);
   const [selectedItem, setSelectedItem] = (0, import_react.useState)(null);
   const [importOpen, setImportOpen] = (0, import_react.useState)(false);
+  const [selectedIds, setSelectedIds] = (0, import_react.useState)(() => /* @__PURE__ */ new Set());
+  const [pendingRemove, setPendingRemove] = (0, import_react.useState)(null);
+  const [removing, setRemoving] = (0, import_react.useState)(false);
   const sentinelRef = (0, import_react.useRef)(null);
   (0, import_react.useEffect)(() => {
     injectInspirationStyles();
   }, []);
+  const selectedCount = selectedIds.size;
+  const selecting = selectedCount > 0;
+  const toggleSelect = (0, import_react.useCallback)((row) => {
+    if (!row.is_local) return;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(row.id)) next.delete(row.id);
+      else next.add(row.id);
+      return next;
+    });
+  }, []);
+  const selectAllLocal = (0, import_react.useCallback)(() => {
+    const localIds = items.filter((it) => it.is_local).map((it) => it.id);
+    setSelectedIds(new Set(localIds));
+  }, [items]);
+  const clearSelection = (0, import_react.useCallback)(() => {
+    setSelectedIds(/* @__PURE__ */ new Set());
+  }, []);
+  const handleConfirmBatchRemove = async () => {
+    if (!pendingRemove || !pendingRemove.ids.length) return;
+    setRemoving(true);
+    try {
+      await batchDeleteLocalInspirations(pendingRemove.ids);
+      const removedSet = new Set(pendingRemove.ids);
+      setItems((prev) => prev.filter((it) => !removedSet.has(it.id)));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of removedSet) next.delete(id);
+        return next;
+      });
+      if (selectedItem && removedSet.has(selectedItem.id)) {
+        setSelectedItem(null);
+      }
+      setPendingRemove(null);
+    } catch (err) {
+      console.error("Failed to delete local inspirations:", err);
+    } finally {
+      setRemoving(false);
+    }
+  };
   const loadData = (0, import_react.useCallback)(async (isNextPage = false) => {
     const targetPage = isNextPage ? page + 1 : 1;
     const cacheKey = `insp:${tab}:${q}:${type}:${sort}:${favorite}`;
@@ -1972,10 +2280,10 @@ function InspirationSection({ t, active }) {
     setItems((prev) => prev.map((it) => it.id === updatedItem.id ? updatedItem : it));
     setSelectedItem(updatedItem);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-root", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-header", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-tabs", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-root", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-header", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-tabs", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
           "button",
           {
             type: "button",
@@ -1984,7 +2292,7 @@ function InspirationSection({ t, active }) {
             children: t("tab.all")
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
           "button",
           {
             type: "button",
@@ -1993,7 +2301,7 @@ function InspirationSection({ t, active }) {
             children: t("tab.local")
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
           "button",
           {
             type: "button",
@@ -2003,26 +2311,26 @@ function InspirationSection({ t, active }) {
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
         "button",
         {
           type: "button",
           className: "omnimux-inspiration-btn-add",
           onClick: () => setImportOpen(true),
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: t("add.btn") })
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("add.btn") })
           ]
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-toolbar", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-search-box", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-search-icon", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: "11", cy: "11", r: "8" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" })
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-toolbar", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-search-box", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-search-icon", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("circle", { cx: "11", cy: "11", r: "8" }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" })
         ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
           "input",
           {
             type: "search",
@@ -2033,73 +2341,109 @@ function InspirationSection({ t, active }) {
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-filters", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-filters", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
           "select",
           {
             className: "omnimux-inspiration-select",
             value: type,
             onChange: (e) => setType(e.target.value),
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("option", { value: "", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("option", { value: "", children: [
                 t("filter.type"),
                 " (",
                 t("filter.all"),
                 ")"
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "video", children: t("type.video") }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "image", children: t("type.image") }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "link", children: t("type.link") })
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "video", children: t("type.video") }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "image", children: t("type.image") }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "link", children: t("type.link") })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
           "select",
           {
             className: "omnimux-inspiration-select",
             value: sort,
             onChange: (e) => setSort(e.target.value),
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "hot", children: t("sort.hot") }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "new", children: t("sort.new") }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "fav", children: t("sort.fav") })
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "hot", children: t("sort.hot") }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "new", children: t("sort.new") }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "fav", children: t("sort.fav") })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
           "select",
           {
             className: "omnimux-inspiration-select",
             value: favorite,
             onChange: (e) => setFavorite(e.target.value),
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "0", children: t("favorite.off") }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "1", children: t("favorite.on") })
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "0", children: t("favorite.off") }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "1", children: t("favorite.on") })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "omnimux-inspiration-count", children: t("count", { n: items.length }) })
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-count", children: t("count", { n: items.length }) })
       ] })
     ] }),
-    loading && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skeleton", children: Array.from({ length: 8 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-skel" }, i)) }) : null,
-    phase === "need-login" && tab === "public" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoginGate, { t }) : null,
-    phase === "ready" && error && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-error", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "omnimux-inspiration-empty-text", children: error === "disabled" ? t("error.disabled") : error || t("error.generic") }) }) : null,
-    !loading && items.length === 0 && (!error || tab === "local") ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EmptyState, { t, onOpenAdd: () => setImportOpen(true) }) : null,
-    items.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-grid", children: items.map((row) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    selecting ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-selection-bar", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-selection-count", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("select.count").replace("{n}", String(selectedCount)) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-selection-actions", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+          "button",
+          {
+            type: "button",
+            className: "omnimux-inspiration-btn-ghost",
+            onClick: selectAllLocal,
+            children: t("select.selectAll")
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+          "button",
+          {
+            type: "button",
+            className: "omnimux-inspiration-btn-ghost",
+            onClick: clearSelection,
+            children: t("select.clear")
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+          "button",
+          {
+            type: "button",
+            disabled: removing,
+            className: "omnimux-inspiration-btn-danger",
+            onClick: () => setPendingRemove({ ids: [...selectedIds], count: selectedCount }),
+            children: t("select.delete").replace("{n}", String(selectedCount))
+          }
+        )
+      ] })
+    ] }) : null,
+    loading && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-skeleton", children: Array.from({ length: 8 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-skel" }, i)) }) : null,
+    phase === "need-login" && tab === "public" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(LoginGate, { t }) : null,
+    phase === "ready" && error && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-error", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "omnimux-inspiration-empty-text", children: error === "disabled" ? t("error.disabled") : error || t("error.generic") }) }) : null,
+    !loading && items.length === 0 && (!error || tab === "local") ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(EmptyState, { t, onOpenAdd: () => setImportOpen(true) }) : null,
+    items.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: `omnimux-inspiration-grid ${selecting ? "selecting" : ""}`, children: items.map((row) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
       PureCoverCard,
       {
         row,
         t,
+        selected: selectedIds.has(row.id),
+        selecting,
+        onToggleSelect: toggleSelect,
         onSelect: (item) => setSelectedItem(item)
       },
       String(row.id)
     )) }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { ref: sentinelRef }),
-    loadingMore ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-scroll-loader", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-spinner" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "\u6B63\u5728\u52A0\u8F7D\u66F4\u591A\u7075\u611F\u2026" })
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { ref: sentinelRef }),
+    loadingMore ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-scroll-loader", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-spinner" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: "\u6B63\u5728\u52A0\u8F7D\u66F4\u591A\u7075\u611F\u2026" })
     ] }) : null,
-    selectedItem ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    selectedItem ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
       InspirationModal,
       {
         row: selectedItem,
@@ -2108,7 +2452,17 @@ function InspirationSection({ t, active }) {
         onItemUpdated: handleItemUpdated
       }
     ) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    pendingRemove ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+      ConfirmRemoveDialog,
+      {
+        t,
+        count: pendingRemove.count,
+        busy: removing,
+        onCancel: () => setPendingRemove(null),
+        onConfirm: handleConfirmBatchRemove
+      }
+    ) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
       ImportDialog,
       {
         open: importOpen,
@@ -2121,7 +2475,7 @@ function InspirationSection({ t, active }) {
 }
 
 // src/client/InspirationStage.jsx
-var import_jsx_runtime2 = require("react/jsx-runtime");
+var import_jsx_runtime3 = require("react/jsx-runtime");
 function InspirationStage({ t, stage }) {
   const open = (0, import_react2.useSyncExternalStore)(
     stage ? stage.subscribe : () => () => {
@@ -2148,7 +2502,7 @@ function InspirationStage({ t, stage }) {
     };
   }, [open, stage]);
   if (!stage || !everOpened) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
     "div",
     {
       role: "region",
@@ -2170,7 +2524,7 @@ function InspirationStage({ t, stage }) {
         boxSizing: "border-box"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
           "div",
           {
             style: {
@@ -2184,7 +2538,7 @@ function InspirationStage({ t, stage }) {
               WebkitAppRegion: "no-drag"
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
                 "h1",
                 {
                   style: {
@@ -2198,7 +2552,7 @@ function InspirationStage({ t, stage }) {
                   children: t("title")
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
                 "button",
                 {
                   type: "button",
@@ -2228,7 +2582,7 @@ function InspirationStage({ t, stage }) {
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box" }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(InspirationSection, { t, active: open }) })
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box" }, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(InspirationSection, { t, active: open }) })
       ]
     }
   );

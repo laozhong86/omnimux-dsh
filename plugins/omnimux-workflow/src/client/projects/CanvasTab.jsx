@@ -76,6 +76,9 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
   // 必须稳定引用：CanvasBridge 虽已不再因 onClose 卸岛，但仍走 updateCanvas。
   const onClose = useCallback(() => {}, [])
 
+  // 每个会话 / 项目拥有专属独立的画布工作区 ID，绝不串连其他项目的画布
+  const targetWorkspaceId = sessionId ? `ws_sess_${sessionId}` : undefined
+
   return (
     <div
       data-omnimux-canvas-tab=""
@@ -88,7 +91,7 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
         visibility: visible ? 'visible' : 'hidden',
       }}
     >
-      <CanvasBridge onClose={onClose} t={t} locale={activeLocale} />
+      <CanvasBridge onClose={onClose} t={t} locale={activeLocale} workspaceId={targetWorkspaceId} />
     </div>
   )
 }

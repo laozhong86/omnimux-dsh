@@ -17136,14 +17136,14 @@ function createWorkspaceStore(opts) {
       rows.sort((a, b) => a.updatedAt < b.updatedAt ? 1 : -1);
       return rows;
     },
-    create(name2) {
+    create(name2, explicitId) {
       if (typeof name2 === "string" && name2.trim().length > MAX_WORKSPACE_NAME_LENGTH) {
         throw new WorkflowStoreError(
           "name-too-long",
           `workspace name exceeds ${MAX_WORKSPACE_NAME_LENGTH} characters (got ${name2.trim().length})`
         );
       }
-      const id2 = newWorkspaceId();
+      const id2 = typeof explicitId === "string" && explicitId.trim() !== "" ? explicitId.trim() : newWorkspaceId();
       const now2 = (/* @__PURE__ */ new Date()).toISOString();
       const snapshot = {
         schemaVersion: SNAPSHOT_SCHEMA_VERSION,
@@ -20517,7 +20517,8 @@ function createWorkspaceRoutes(store) {
         if (problem) return problem;
         const body = req.body;
         const name2 = typeof body.name === "string" ? body.name : void 0;
-        return { status: 200, body: { workspace: store.create(name2) } };
+        const id2 = typeof body.id === "string" ? body.id : void 0;
+        return { status: 200, body: { workspace: store.create(name2, id2) } };
       }
       return notFound();
     }

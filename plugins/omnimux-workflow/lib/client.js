@@ -1356,12 +1356,12 @@ function ensureCanvasScript(hash) {
     document.head.append(script);
   });
 }
-function CanvasBridge({ onClose, t, locale }) {
+function CanvasBridge({ onClose, t, locale, workspaceId }) {
   const containerRef = (0, import_react3.useRef)(null);
   const mountedRef = (0, import_react3.useRef)(false);
   const [status, setStatus] = (0, import_react3.useState)("loading");
-  const propsRef = (0, import_react3.useRef)({ onClose, locale });
-  propsRef.current = { onClose, locale };
+  const propsRef = (0, import_react3.useRef)({ onClose, locale, workspaceId });
+  propsRef.current = { onClose, locale, workspaceId };
   const load = (0, import_react3.useCallback)(async () => {
     setStatus("loading");
     try {
@@ -1398,7 +1398,7 @@ function CanvasBridge({ onClose, t, locale }) {
     if (mountedRef.current && el && api && typeof api.updateCanvas === "function") {
       api.updateCanvas(el, propsRef.current);
     }
-  }, [locale, onClose]);
+  }, [locale, onClose, workspaceId]);
   return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { position: "absolute", inset: 0, overflow: "hidden" }, children: [
     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { ref: containerRef, style: { width: "100%", height: "100%" } }),
     status === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
@@ -1510,6 +1510,7 @@ function CanvasTab({ ctx, t, visible, store, scope }) {
   }, [visible, sessionId, store, ctx]);
   const onClose = (0, import_react4.useCallback)(() => {
   }, []);
+  const targetWorkspaceId = sessionId ? `ws_sess_${sessionId}` : void 0;
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
     "div",
     {
@@ -1522,7 +1523,7 @@ function CanvasTab({ ctx, t, visible, store, scope }) {
         overflow: "hidden",
         visibility: visible ? "visible" : "hidden"
       },
-      children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CanvasBridge, { onClose, t, locale: activeLocale })
+      children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CanvasBridge, { onClose, t, locale: activeLocale, workspaceId: targetWorkspaceId })
     }
   );
 }

@@ -239,6 +239,63 @@ export const INSPIRATION_CSS = `
   }
 }
 
+/* 批量多选操作栏 */
+.omnimux-inspiration-selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  padding: 8px 14px;
+  background: var(--omx-color-canvas-raised, #181818);
+  border: 1px solid var(--omx-color-hairline-strong, #333333);
+  border-radius: var(--omx-radius-md, 12px);
+  animation: omni-fade-in 140ms ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.omnimux-inspiration-selection-count {
+  font: var(--omx-text-label, 500 13px/18px var(--omx-font-sans));
+  color: var(--omx-color-ink, #ffffff);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.omnimux-inspiration-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.omnimux-inspiration-btn-ghost {
+  border: none;
+  background: transparent;
+  color: var(--omx-color-muted, #8e8e8e);
+  cursor: pointer;
+  font: var(--omx-text-label, 500 13px/18px var(--omx-font-sans));
+  padding: 4px 10px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  transition: color var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-btn-ghost:hover {
+  color: var(--omx-color-ink, #ffffff);
+  background: rgba(255, 255, 255, 0.06);
+}
+.omnimux-inspiration-btn-danger {
+  border: none;
+  background: var(--omx-color-error, #ef4444);
+  color: #ffffff;
+  border-radius: var(--omx-radius-pill, 9999px);
+  padding: 5px 14px;
+  cursor: pointer;
+  font: var(--omx-text-label, 600 13px/18px var(--omx-font-sans));
+  transition: all var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
 .omnimux-inspiration-card-pure {
   position: relative;
   width: 100%;
@@ -252,10 +309,57 @@ export const INSPIRATION_CSS = `
               border-color var(--omx-motion-base, 180ms) cubic-bezier(.2,.4,.6,1),
               box-shadow var(--omx-motion-base, 180ms) ease;
 }
+.omnimux-inspiration-card-pure[aria-selected="true"] {
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
 .omnimux-inspiration-card-pure:hover {
   transform: translateY(-3px);
   border-color: var(--omx-color-hairline-strong, #4a4a4a);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* 卡片左上角复选框 Checkbox */
+.omnimux-inspiration-card-check {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  color: #000000;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity var(--omx-motion-fast, 120ms) ease,
+              transform var(--omx-motion-fast, 120ms) ease,
+              background-color var(--omx-motion-fast, 120ms) ease,
+              border-color var(--omx-motion-fast, 120ms) ease;
+}
+.omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-check,
+.omnimux-inspiration-card-check[data-selected="true"],
+.omnimux-inspiration-grid.selecting .omnimux-inspiration-card-check {
+  opacity: 1;
+  transform: scale(1);
+}
+.omnimux-inspiration-card-check[data-selected="true"] {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+.omnimux-inspiration-card-check:hover {
+  border-color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.7);
+}
+.omnimux-inspiration-card-check[data-selected="true"]:hover {
+  background: #ebebeb;
+  border-color: #ebebeb;
 }
 .omnimux-inspiration-cover-img {
   display: block;

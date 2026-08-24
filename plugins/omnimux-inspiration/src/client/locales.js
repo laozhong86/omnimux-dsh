@@ -76,6 +76,16 @@ export const zh = {
   'meta.originalText': '原帖文案',
   'meta.platform': '平台: {platform}',
   'meta.author': '作者: {author}',
+  'select.count': '已选 {n} 项',
+  'select.selectAll': '全选本地',
+  'select.clear': '取消选择',
+  'select.delete': '删除 ({n})',
+  'select.toggle': '选择或取消选择该灵感',
+  'confirmRemove.title': '确认删除 {n} 个本地灵感？',
+  'confirmRemove.description': '选中的灵感记录将被清除，关联的本地视频及封面素材文件将移入系统废纸篓。',
+  'confirmRemove.cancel': '取消',
+  'confirmRemove.confirm': '移入废纸篓',
+  'confirmRemove.deleting': '正在删除…',
 }
 
 export const en = {
@@ -156,6 +166,16 @@ export const en = {
   'meta.originalText': 'Original Content',
   'meta.platform': 'Platform: {platform}',
   'meta.author': 'Author: {author}',
+  'select.count': '{n} selected',
+  'select.selectAll': 'Select all local',
+  'select.clear': 'Clear selection',
+  'select.delete': 'Delete ({n})',
+  'select.toggle': 'Toggle item selection',
+  'confirmRemove.title': 'Delete {n} local inspirations?',
+  'confirmRemove.description': 'Selected inspiration records will be removed, and local video/cover files will be moved to the Trash.',
+  'confirmRemove.cancel': 'Cancel',
+  'confirmRemove.confirm': 'Move to Trash',
+  'confirmRemove.deleting': 'Deleting…',
 }
 
 export const NS = 'omnimux-inspiration'

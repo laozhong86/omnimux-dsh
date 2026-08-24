@@ -207,6 +207,29 @@ export function triggerAnalyzeInspiration(id) {
 }
 
 /**
+ * Batch delete multiple local inspirations
+ * @param {string[]} ids
+ */
+export function batchDeleteLocalInspirations(ids) {
+  invalidateInspirationCache()
+  return inspirationRequest('/omnimux/inspiration/local/batch-delete', {
+    method: 'POST',
+    body: { ids },
+  })
+}
+
+/**
+ * Delete single local inspiration
+ * @param {string} id
+ */
+export function deleteLocalInspiration(id) {
+  invalidateInspirationCache()
+  return inspirationRequest(`/omnimux/inspiration/local/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+}
+
+/**
  * Get single local inspiration details
  * @param {string} id
  */

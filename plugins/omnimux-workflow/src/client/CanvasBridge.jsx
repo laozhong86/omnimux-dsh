@@ -52,16 +52,16 @@ function ensureCanvasScript(hash) {
 }
 
 /**
- * @param {{ onClose: () => void, t: (key: string) => string, locale?: string }} props
+ * @param {{ onClose: () => void, t: (key: string) => string, locale?: string, workspaceId?: string }} props
  */
-export function CanvasBridge({ onClose, t, locale }) {
+export function CanvasBridge({ onClose, t, locale, workspaceId }) {
   const containerRef = useRef(null)
   const mountedRef = useRef(false)
   const [status, setStatus] = useState('loading') // loading | ready | error
-  // 最新 props 快照：load 完成挂载与 locale/onClose live 切换共用（island
+  // 最新 props 快照：load 完成挂载与 locale/onClose/workspaceId live 切换共用（island
   // 边界纯数据 + 回调，一律走 mountCanvas/updateCanvas，禁止因回调换引用卸岛）。
-  const propsRef = useRef({ onClose, locale })
-  propsRef.current = { onClose, locale }
+  const propsRef = useRef({ onClose, locale, workspaceId })
+  propsRef.current = { onClose, locale, workspaceId }
 
   // mount 只跑一次。onClose / locale 身份变化不得重跑 load，否则宿主每次
   // 重渲（点选节点、侧栏同步）都会 unmount→mount，岛闪白、选中丢、拖不动。
@@ -97,7 +97,7 @@ export function CanvasBridge({ onClose, t, locale }) {
     }
   }, [load])
 
-  // W4 T4.1：宿主切语言 / 关闭回调换人 → island updateCanvas 同 root 重 render
+  // W4 T4.1：宿主切语言 / 关闭回调换人 / 切换会话与画布 → island updateCanvas 同 root 重 render
   // （不可 unmount/remount，会丢画布状态）。
   useEffect(() => {
     const api = window[CANVAS_GLOBAL]
@@ -105,7 +105,7 @@ export function CanvasBridge({ onClose, t, locale }) {
     if (mountedRef.current && el && api && typeof api.updateCanvas === 'function') {
       api.updateCanvas(el, propsRef.current)
     }
-  }, [locale, onClose])
+  }, [locale, onClose, workspaceId])
 
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>

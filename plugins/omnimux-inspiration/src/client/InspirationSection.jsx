@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import {
+  batchDeleteLocalInspirations,
   coverGlyph,
+  deleteLocalInspiration,
   extractTikTokVideoId,
   getInspirationCache,
   importLocalInspiration,
@@ -12,6 +14,7 @@ import {
   setInspirationCache,
   whenAuthReady,
 } from './api.js'
+import { ConfirmRemoveDialog } from './ConfirmRemoveDialog.jsx'
 import { injectInspirationStyles } from './styles.js'
 
 function LoginGate({ t }) {
@@ -28,7 +31,7 @@ function LoginGate({ t }) {
   )
 }
 
-function PureCoverCard({ row, t, onSelect }) {
+function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }) {
   const title = String(row.title || row.source_url || row.id)
   const cover = pickCoverSrc(row)
   const [broken, setBroken] = useState(!cover)
@@ -37,14 +40,49 @@ function PureCoverCard({ row, t, onSelect }) {
   const platform = (row.source_platform || (row.is_local ? 'local' : 'tiktok')).toUpperCase()
   const isLocal = Boolean(row.is_local)
 
+  const handleClick = (e) => {
+    if (selecting && isLocal && onToggleSelect) {
+      onToggleSelect(row)
+      return
+    }
+    onSelect(row)
+  }
+
   return (
     <article
       className="omnimux-inspiration-card-pure"
-      onClick={() => onSelect(row)}
+      aria-selected={selected ? 'true' : 'false'}
+      onClick={handleClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(row) }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (selecting && isLocal && onToggleSelect) onToggleSelect(row)
+          else onSelect(row)
+        }
+      }}
     >
+      {/* 悬停/多选复选框 Checkbox */}
+      {isLocal && onToggleSelect ? (
+        <button
+          type="button"
+          className="omnimux-inspiration-card-check"
+          data-selected={selected ? 'true' : 'false'}
+          aria-label={t('select.toggle')}
+          aria-pressed={selected ? 'true' : 'false'}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleSelect(row)
+          }}
+        >
+          {selected ? (
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : null}
+        </button>
+      ) : null}
+
       {broken ? (
         <div className="omnimux-inspiration-cover-fallback" aria-hidden="true">
           <div className="omnimux-inspiration-fallback-icon">
@@ -594,11 +632,59 @@ export function InspirationSection({ t, active }) {
 
   const [selectedItem, setSelectedItem] = useState(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [pendingRemove, setPendingRemove] = useState(null)
+  const [removing, setRemoving] = useState(false)
   const sentinelRef = useRef(null)
 
   useEffect(() => {
     injectInspirationStyles()
   }, [])
+
+  const selectedCount = selectedIds.size
+  const selecting = selectedCount > 0
+
+  const toggleSelect = useCallback((row) => {
+    if (!row.is_local) return
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(row.id)) next.delete(row.id)
+      else next.add(row.id)
+      return next
+    })
+  }, [])
+
+  const selectAllLocal = useCallback(() => {
+    const localIds = items.filter((it) => it.is_local).map((it) => it.id)
+    setSelectedIds(new Set(localIds))
+  }, [items])
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set())
+  }, [])
+
+  const handleConfirmBatchRemove = async () => {
+    if (!pendingRemove || !pendingRemove.ids.length) return
+    setRemoving(true)
+    try {
+      await batchDeleteLocalInspirations(pendingRemove.ids)
+      const removedSet = new Set(pendingRemove.ids)
+      setItems((prev) => prev.filter((it) => !removedSet.has(it.id)))
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        for (const id of removedSet) next.delete(id)
+        return next
+      })
+      if (selectedItem && removedSet.has(selectedItem.id)) {
+        setSelectedItem(null)
+      }
+      setPendingRemove(null)
+    } catch (err) {
+      console.error('Failed to delete local inspirations:', err)
+    } finally {
+      setRemoving(false)
+    }
+  }
 
   // SWR Atomic Data Loader
   const loadData = useCallback(async (isNextPage = false) => {
@@ -782,6 +868,39 @@ export function InspirationSection({ t, active }) {
         </div>
       </div>
 
+      {/* 多选批量操作悬浮条 */}
+      {selecting ? (
+        <div className="omnimux-inspiration-selection-bar">
+          <div className="omnimux-inspiration-selection-count">
+            <span>{t('select.count').replace('{n}', String(selectedCount))}</span>
+          </div>
+          <div className="omnimux-inspiration-selection-actions">
+            <button
+              type="button"
+              className="omnimux-inspiration-btn-ghost"
+              onClick={selectAllLocal}
+            >
+              {t('select.selectAll')}
+            </button>
+            <button
+              type="button"
+              className="omnimux-inspiration-btn-ghost"
+              onClick={clearSelection}
+            >
+              {t('select.clear')}
+            </button>
+            <button
+              type="button"
+              disabled={removing}
+              className="omnimux-inspiration-btn-danger"
+              onClick={() => setPendingRemove({ ids: [...selectedIds], count: selectedCount })}
+            >
+              {t('select.delete').replace('{n}', String(selectedCount))}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* 内容展示区：原子化骨架屏 / 登录门 / 空态 / 统一网格 */}
       {loading && items.length === 0 ? (
         <div className="omnimux-inspiration-skeleton">
@@ -806,12 +925,15 @@ export function InspirationSection({ t, active }) {
       ) : null}
 
       {items.length > 0 ? (
-        <div className="omnimux-inspiration-grid">
+        <div className={`omnimux-inspiration-grid ${selecting ? 'selecting' : ''}`}>
           {items.map((row) => (
             <PureCoverCard
               key={String(row.id)}
               row={row}
               t={t}
+              selected={selectedIds.has(row.id)}
+              selecting={selecting}
+              onToggleSelect={toggleSelect}
               onSelect={(item) => setSelectedItem(item)}
             />
           ))}
@@ -834,6 +956,16 @@ export function InspirationSection({ t, active }) {
           t={t}
           onClose={() => setSelectedItem(null)}
           onItemUpdated={handleItemUpdated}
+        />
+      ) : null}
+
+      {pendingRemove ? (
+        <ConfirmRemoveDialog
+          t={t}
+          count={pendingRemove.count}
+          busy={removing}
+          onCancel={() => setPendingRemove(null)}
+          onConfirm={handleConfirmBatchRemove}
         />
       ) : null}
 

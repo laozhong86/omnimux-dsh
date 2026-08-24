@@ -365,7 +365,16 @@ export function createLocalInspirationDispatcher(deps) {
         return { status: 200, body: { data: updated } }
       }
 
-      // 5. Single item operations: GET / PATCH / DELETE
+      // 5. Batch Delete operations: POST / DELETE /omnimux/inspiration/local/batch-delete
+      if ((method === 'POST' || method === 'DELETE') && path === `${LOCAL_PREFIX}/batch-delete`) {
+        const body = req.body || {}
+        const ids = Array.isArray(body.ids) ? body.ids : []
+        if (ids.length === 0) return { status: 400, body: { error: 'ids array is required' } }
+        const result = await store.deleteBatch(ids)
+        return { status: 200, body: { data: result } }
+      }
+
+      // 6. Single item operations: GET / PATCH / DELETE
       if (path.startsWith(`${LOCAL_PREFIX}/`) && path !== LOCAL_PREFIX) {
         const id = decodeURIComponent(path.slice(`${LOCAL_PREFIX}/`.length))
         if (!id || id.includes('/')) return { status: 404, body: { error: 'not found' } }
@@ -383,7 +392,7 @@ export function createLocalInspirationDispatcher(deps) {
         }
 
         if (method === 'DELETE') {
-          const removed = store.delete(id)
+          const removed = await store.delete(id)
           return { status: 200, body: { data: removed } }
         }
       }

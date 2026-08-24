@@ -23,7 +23,7 @@ describe('Local Inspiration Store', () => {
     }
   })
 
-  it('adds, lists, queries, updates and deletes inspirations', () => {
+  it('adds, lists, queries, updates and deletes inspirations', async () => {
     const store = createLocalStore({ paths })
 
     const item1 = store.add({
@@ -66,7 +66,7 @@ describe('Local Inspiration Store', () => {
     assert.equal(store.get(item1.id).is_favorite, false)
 
     // Delete
-    const removed = store.delete(item2.id)
+    const removed = await store.delete(item2.id)
     assert.equal(removed.id, item2.id)
     assert.equal(store.list().total, 1)
   })
