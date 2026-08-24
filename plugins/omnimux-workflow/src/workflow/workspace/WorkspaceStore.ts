@@ -58,7 +58,7 @@ export interface WorkspaceStore {
 }
 
 function isWorkspaceId(id: string): boolean {
-  return /^ws_[a-f0-9]{12}$/.test(id);
+  return /^ws_[a-zA-Z0-9_-]{1,128}$/.test(id);
 }
 
 function newWorkspaceId(): string {

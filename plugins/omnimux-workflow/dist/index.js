@@ -17073,7 +17073,7 @@ var WorkflowStoreError = class extends Error {
   }
 };
 function isWorkspaceId(id2) {
-  return /^ws_[a-f0-9]{12}$/.test(id2);
+  return /^ws_[a-zA-Z0-9_-]{1,128}$/.test(id2);
 }
 function newWorkspaceId() {
   return `ws_${randomUUID().replace(/-/g, "").slice(0, 12)}`;
