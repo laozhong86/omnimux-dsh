@@ -61,6 +61,7 @@ var zh = {
   "search.placeholder": "\u641C\u7D22\u8D44\u4EA7",
   "sort.updated": "\u6700\u8FD1\u66F4\u65B0",
   "empty.all": "\u8FD8\u6CA1\u6709\u521B\u4F5C\u8D44\u4EA7\u3002\u70B9\u300C\u6DFB\u52A0\u8D44\u4EA7\u300D\uFF0C\u5148\u5EFA\u4E00\u4E2A\u89D2\u8272\u6216\u77E5\u8BC6\u5305\u3002",
+  "empty.noMatch": "\u6CA1\u6709\u5339\u914D\u7684\u8D44\u4EA7\u3002\u6362\u4E2A\u5173\u952E\u8BCD\u8BD5\u8BD5\u3002",
   "empty.type": "\u8FD8\u6CA1\u6709{type}\u3002",
   "empty.addType": "\u6DFB\u52A0{type}",
   "card.missing": "\u7D20\u6750\u7F3A\u5931",
@@ -137,6 +138,7 @@ var en = {
   "search.placeholder": "Search assets",
   "sort.updated": "Recently updated",
   "empty.all": "No creative assets yet. Click Add asset to create a character or knowledge pack.",
+  "empty.noMatch": "No matching assets. Try a different keyword.",
   "empty.type": "No {type} yet.",
   "empty.addType": "Add {type}",
   "card.missing": "Files missing",
@@ -463,6 +465,132 @@ var inputBare = {
   font: "inherit",
   width: "100%"
 };
+function AssetTypeDropdown({ value, onChange, t }) {
+  const [open, setOpen] = (0, import_react.useState)(false);
+  const ref = (0, import_react.useRef)(null);
+  (0, import_react.useEffect)(() => {
+    if (!open) return void 0;
+    const onPointerDown = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) setOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { ref, style: { position: "relative", display: "inline-block" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+      "button",
+      {
+        type: "button",
+        onClick: () => {
+          setOpen((prev) => !prev);
+        },
+        style: {
+          border: "1px solid var(--dsw-alias-border-l2, rgba(255,255,255,0.12))",
+          background: "var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.06))",
+          borderRadius: 8,
+          padding: "4px 10px 4px 12px",
+          fontSize: 13,
+          color: "inherit",
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          transition: "all 0.15s ease",
+          ...open ? { borderColor: "var(--dsw-alias-brand-primary, #3b82f6)", boxShadow: "0 0 0 2px rgba(59,130,246,0.22)" } : {}
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t(`type.${value}`) }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+            "svg",
+            {
+              viewBox: "0 0 16 16",
+              width: "12",
+              height: "12",
+              fill: "none",
+              stroke: "currentColor",
+              strokeWidth: "1.5",
+              strokeLinecap: "round",
+              strokeLinejoin: "round",
+              style: { transform: open ? "rotate(180deg)" : "none", transition: "transform 0.18s ease", opacity: 0.7 },
+              children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "m4 6 4 4 4-4" })
+            }
+          )
+        ]
+      }
+    ),
+    open ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+      "div",
+      {
+        role: "listbox",
+        style: {
+          position: "absolute",
+          top: "calc(100% + 4px)",
+          left: 0,
+          zIndex: 350,
+          minWidth: 140,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          padding: 4,
+          borderRadius: 10,
+          border: "1px solid var(--dsw-alias-border, rgba(255,255,255,0.14))",
+          background: "var(--dsw-alias-bg-elevated, #1c1c1f)",
+          boxShadow: "0 10px 28px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)",
+          backdropFilter: "blur(16px)"
+        },
+        children: ASSET_TYPE_KEYS.map((key) => {
+          const isSelected = key === value;
+          return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+            "button",
+            {
+              type: "button",
+              role: "option",
+              "aria-selected": isSelected,
+              onClick: () => {
+                onChange(key);
+                setOpen(false);
+              },
+              style: {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+                width: "100%",
+                padding: "6px 10px",
+                border: "none",
+                borderRadius: 6,
+                background: isSelected ? "rgba(59,130,246,0.14)" : "transparent",
+                color: isSelected ? "#60a5fa" : "inherit",
+                fontSize: 13,
+                fontWeight: isSelected ? 500 : 400,
+                cursor: "pointer",
+                textAlign: "left"
+              },
+              onMouseEnter: (event) => {
+                if (!isSelected) event.currentTarget.style.background = "rgba(255,255,255,0.08)";
+              },
+              onMouseLeave: (event) => {
+                if (!isSelected) event.currentTarget.style.background = "transparent";
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t(`type.${key}`) }),
+                isSelected ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { viewBox: "0 0 16 16", width: "12", height: "12", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "m3.5 8.5 3 3 6-6" }) }) : null
+              ]
+            },
+            key
+          );
+        })
+      }
+    ) : null
+  ] });
+}
 function AddAssetDialog({ t, busy, presetType = "character", error, onCancel, onPick, onSubmit }) {
   const nameRef = (0, import_react.useRef)(null);
   const [name2, setName] = (0, import_react.useState)("");
@@ -553,24 +681,7 @@ function AddAssetDialog({ t, busy, presetType = "character", error, onCancel, on
               )
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "0 20px 12px" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-                "select",
-                {
-                  value: type,
-                  onChange: (event) => {
-                    setType(event.target.value);
-                  },
-                  style: {
-                    border: "none",
-                    background: "var(--dsw-alias-bg-module-platform, var(--dsw-alias-interactive-bg-hover-solid, inherit))",
-                    borderRadius: 8,
-                    padding: "4px 8px",
-                    fontSize: 13,
-                    color: "inherit"
-                  },
-                  children: ASSET_TYPE_KEYS.map((key) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: key, children: t(`type.${key}`) }, key))
-                }
-              ),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(AssetTypeDropdown, { value: type, onChange: setType, t }),
               /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { color: "var(--dsw-alias-border-l2, var(--dsw-border, currentColor))" }, children: "|" }),
               /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                 "input",
@@ -1068,7 +1179,7 @@ var checkBase = {
   cursor: "pointer",
   zIndex: 1
 };
-function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect }) {
+function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAction = true, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect }) {
   if (assets.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
       "div",
@@ -1087,7 +1198,7 @@ function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, onEmptyAction, onO
         },
         children: [
           /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: 0 }, children: emptyLabel }),
-          emptyActionLabel && onEmptyAction ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          emptyActionLabel && onEmptyAction && showEmptyAction ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
             "button",
             {
               type: "button",
@@ -1253,6 +1364,133 @@ function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, onEmptyAction, onO
 // src/client/AssetDetail.jsx
 var import_react3 = require("react");
 var import_jsx_runtime5 = require("react/jsx-runtime");
+function DetailTypeSelect({ value, onChange, t }) {
+  const [open, setOpen] = (0, import_react3.useState)(false);
+  const ref = (0, import_react3.useRef)(null);
+  (0, import_react3.useEffect)(() => {
+    if (!open) return void 0;
+    const onPointerDown = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) setOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { ref, style: { position: "relative", width: "100%" }, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+      "button",
+      {
+        type: "button",
+        onClick: () => {
+          setOpen((prev) => !prev);
+        },
+        style: {
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          border: "1px solid var(--dsw-alias-border-l2, rgba(255,255,255,0.12))",
+          borderRadius: 8,
+          padding: "6px 10px 6px 12px",
+          color: "inherit",
+          background: "var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.04))",
+          fontSize: 13,
+          cursor: "pointer",
+          transition: "all 0.15s ease",
+          ...open ? { borderColor: "var(--dsw-alias-brand-primary, #3b82f6)", boxShadow: "0 0 0 2px rgba(59,130,246,0.22)" } : {}
+        },
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: t(`type.${value}`) }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+            "svg",
+            {
+              viewBox: "0 0 16 16",
+              width: "12",
+              height: "12",
+              fill: "none",
+              stroke: "currentColor",
+              strokeWidth: "1.5",
+              strokeLinecap: "round",
+              strokeLinejoin: "round",
+              style: { transform: open ? "rotate(180deg)" : "none", transition: "transform 0.18s ease", opacity: 0.7 },
+              children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "m4 6 4 4 4-4" })
+            }
+          )
+        ]
+      }
+    ),
+    open ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      "div",
+      {
+        role: "listbox",
+        style: {
+          position: "absolute",
+          top: "calc(100% + 4px)",
+          left: 0,
+          zIndex: 100,
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          padding: 4,
+          borderRadius: 10,
+          border: "1px solid var(--dsw-alias-border, rgba(255,255,255,0.14))",
+          background: "var(--dsw-alias-bg-elevated, #1c1c1f)",
+          boxShadow: "0 10px 28px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)",
+          backdropFilter: "blur(16px)"
+        },
+        children: ASSET_TYPE_KEYS.map((key) => {
+          const isSelected = key === value;
+          return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+            "button",
+            {
+              type: "button",
+              role: "option",
+              "aria-selected": isSelected,
+              onClick: () => {
+                onChange(key);
+                setOpen(false);
+              },
+              style: {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+                width: "100%",
+                padding: "6px 10px",
+                border: "none",
+                borderRadius: 6,
+                background: isSelected ? "rgba(59,130,246,0.14)" : "transparent",
+                color: isSelected ? "#60a5fa" : "inherit",
+                fontSize: 13,
+                fontWeight: isSelected ? 500 : 400,
+                cursor: "pointer",
+                textAlign: "left"
+              },
+              onMouseEnter: (event) => {
+                if (!isSelected) event.currentTarget.style.background = "rgba(255,255,255,0.08)";
+              },
+              onMouseLeave: (event) => {
+                if (!isSelected) event.currentTarget.style.background = "transparent";
+              },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: t(`type.${key}`) }),
+                isSelected ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { viewBox: "0 0 16 16", width: "12", height: "12", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "m3.5 8.5 3 3 6-6" }) }) : null
+              ]
+            },
+            key
+          );
+        })
+      }
+    ) : null
+  ] });
+}
 function AssetDetail({ t, asset, busy, onClose, onSave }) {
   const [name2, setName] = (0, import_react3.useState)(asset.name);
   const [type, setType] = (0, import_react3.useState)(asset.type);
@@ -1299,9 +1537,7 @@ function AssetDetail({ t, asset, busy, onClose, onSave }) {
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("label", { children: [
             /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { fontSize: 11, color: "var(--dsw-alias-label-tertiary, inherit)", marginBottom: 4 }, children: t("detail.type") }),
-            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("select", { value: type, onChange: (event) => {
-              setType(event.target.value);
-            }, style: { width: "100%", border: "1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))", borderRadius: 8, padding: "6px 8px", color: "inherit", background: "inherit" }, children: ASSET_TYPE_KEYS.map((key) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("option", { value: key, children: t(`type.${key}`) }, key)) })
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(DetailTypeSelect, { value: type, onChange: setType, t })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("label", { children: [
             /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { fontSize: 11, color: "var(--dsw-alias-label-tertiary, inherit)", marginBottom: 4 }, children: t("detail.description") }),
@@ -1656,9 +1892,11 @@ function AssetsStage({ t, stage }) {
     },
     stage ? () => stage.getSnapshot() : () => false
   );
+  const [everOpened, setEverOpened] = (0, import_react4.useState)(false);
   const [box, setBox] = (0, import_react4.useState)(() => ({ top: 0, left: 0, width: 0, height: 0 }));
+  if (open && !everOpened) setEverOpened(true);
   (0, import_react4.useLayoutEffect)(() => {
-    if (!open) return void 0;
+    if (!open || !stage) return void 0;
     const update = () => {
       setBox(stage.readBox());
     };
@@ -1672,7 +1910,7 @@ function AssetsStage({ t, stage }) {
       observer?.disconnect();
       window.removeEventListener("resize", update);
     };
-  }, [open]);
+  }, [open, stage]);
   const [assets, setAssets] = (0, import_react4.useState)([]);
   const [filterType, setFilterType] = (0, import_react4.useState)("");
   const [query, setQuery] = (0, import_react4.useState)("");
@@ -1781,13 +2019,17 @@ ${(asset.tags || []).join("\n")}`.toLowerCase();
   const clearSelection = () => {
     setSelectedIds(/* @__PURE__ */ new Set());
   };
-  if (!open || !stage) return null;
+  if (!stage || !everOpened) return null;
+  const searching = Boolean(query.trim());
   const emptyTypeLabel = filterType ? t(`type.${filterType}`) : "";
+  const emptyLabel = searching ? t("empty.noMatch") : filterType ? t("empty.type").replace("{type}", emptyTypeLabel) : t("empty.all");
+  const emptyActionLabel = searching ? void 0 : filterType ? t("empty.addType").replace("{type}", emptyTypeLabel) : t("add.button");
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
     "div",
     {
       role: "region",
       "aria-label": t("stage.title"),
+      "aria-hidden": open ? void 0 : "true",
       style: {
         position: "fixed",
         top: box.top,
@@ -1795,8 +2037,8 @@ ${(asset.tags || []).join("\n")}`.toLowerCase();
         width: box.width,
         height: box.height,
         zIndex: 200,
-        pointerEvents: "auto",
-        display: "flex",
+        pointerEvents: open ? "auto" : "none",
+        display: open ? "flex" : "none",
         flexDirection: "column",
         background: "var(--dsw-alias-bg-base, var(--dsw-bg, inherit))",
         color: "var(--dsw-alias-label-primary, inherit)",
@@ -2029,8 +2271,9 @@ ${(asset.tags || []).join("\n")}`.toLowerCase();
             {
               t,
               assets: visible,
-              emptyLabel: filterType ? t("empty.type").replace("{type}", emptyTypeLabel) : t("empty.all"),
-              emptyActionLabel: filterType ? t("empty.addType").replace("{type}", emptyTypeLabel) : t("add.button"),
+              emptyLabel,
+              emptyActionLabel,
+              showEmptyAction: !searching,
               onEmptyAction: () => {
                 setCreating(filterType || "character");
                 setFormError("");

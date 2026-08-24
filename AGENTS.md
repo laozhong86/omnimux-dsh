@@ -35,6 +35,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `docs/contracts/hub.md` | Execution-hub terms, I/O, seams, official-only list |
 | `docs/contracts/settings-ui.md` | Where plugin UI sits in official Settings (no first-level plugin nav) |
 | `docs/contracts/sidebar-extra-entries.md` | Extra rows under 新会话 (32px / 14px / 14px) and first-level page top chrome (`12px 20px 12px`, same as session header). Skill: `dsh-plugin-dev`. |
+| `docs/contracts/ui-design-guidelines.md` | **OmniMux UI 交互与视觉规范**：单行工具栏、深色浮层菜单、矢量 SVG 图标、32px 控件高与 8px 圆角体系。客户端改动必读。 |
 | `docs/model-list-ownership.md` | Who owns the OmniMux model list (plugin patch only; user layers set `agent-default-model` only) |
 | `docs/contracts/series.md` | Disk fields + error codes |
 | `docs/contracts/briefing.md` | Briefing create/update/delete. Memory, not truth |

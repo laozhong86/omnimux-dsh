@@ -62,6 +62,7 @@ var zh = {
   "search.placeholder": "\u641C\u7D22\u540D\u79F0 / \u5356\u70B9 / \u54C1\u724C / SKU",
   "sort.updated": "\u6700\u8FD1\u66F4\u65B0",
   "empty.all": "\u8FD8\u6CA1\u6709\u4EA7\u54C1\u3002\u5148\u6DFB\u52A0\u4E00\u4EF6\u8981\u5356\u7684\u8D27\u3002",
+  "empty.noMatch": "\u6CA1\u6709\u5339\u914D\u7684\u4EA7\u54C1\u3002\u6362\u4E2A\u5173\u952E\u8BCD\u8BD5\u8BD5\u3002",
   "card.copyCite": "\u590D\u5236\u5F15\u7528",
   "card.copied": "\u5DF2\u590D\u5236",
   "detail.title": "\u7F16\u8F91\u4EA7\u54C1",
@@ -163,6 +164,7 @@ var en = {
   "search.placeholder": "Search name / selling points / brand / SKU",
   "sort.updated": "Recently updated",
   "empty.all": "No products yet. Add something you sell.",
+  "empty.noMatch": "No matching products. Try a different keyword.",
   "card.copyCite": "Copy citation",
   "card.copied": "Copied",
   "detail.title": "Edit product",
@@ -1371,11 +1373,20 @@ function StrategyFields({ t, strategy, patchStrategy, field: field2, labelStyle,
                 next.content_angles[index].priority = Number(event.target.value);
               });
             },
-            style: field2,
+            style: {
+              ...field2,
+              appearance: "none",
+              WebkitAppearance: "none",
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='12' height='12' fill='none' stroke='rgba(255,255,255,0.45)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E")`,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 6px center",
+              paddingRight: 22,
+              cursor: "pointer"
+            },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "1", children: "1" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "2", children: "2" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "3", children: "3" })
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "1", style: { background: "#1c1c1f", color: "#ededed" }, children: "P1" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "2", style: { background: "#1c1c1f", color: "#ededed" }, children: "P2" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "3", style: { background: "#1c1c1f", color: "#ededed" }, children: "P3" })
             ]
           }
         ),
@@ -1554,7 +1565,7 @@ function StrategyFields({ t, strategy, patchStrategy, field: field2, labelStyle,
 
 // src/client/ProductGrid.jsx
 var import_jsx_runtime4 = require("react/jsx-runtime");
-function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmptyAction, onOpen, onCopy, onRemove, copiedId }) {
+function ProductGrid({ t, products, emptyLabel, emptyActionLabel, showEmptyAction = true, onEmptyAction, onOpen, onCopy, onRemove, copiedId }) {
   if (products.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
       "div",
@@ -1573,7 +1584,7 @@ function ProductGrid({ t, products, emptyLabel, emptyActionLabel, onEmptyAction,
         },
         children: [
           /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: 0 }, children: emptyLabel }),
-          emptyActionLabel && onEmptyAction ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          emptyActionLabel && onEmptyAction && showEmptyAction ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
             "button",
             {
               type: "button",
@@ -2016,8 +2027,9 @@ ${(product.categories || []).join("\n")}`.toLowerCase();
           {
             t,
             products: visible,
-            emptyLabel: t("empty.all"),
+            emptyLabel: query.trim() ? t("empty.noMatch") : t("empty.all"),
             emptyActionLabel: t("add.button"),
+            showEmptyAction: !query.trim(),
             onEmptyAction: () => {
               setCreating(true);
               setFormError("");

@@ -591,11 +591,20 @@ function StrategyFields({ t, strategy, patchStrategy, field, labelStyle, miniBtn
             <select
               value={String(angle.priority || 3)}
               onChange={(event) => { patchStrategy((next) => { next.content_angles[index].priority = Number(event.target.value) }) }}
-              style={field}
+              style={{
+                ...field,
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='12' height='12' fill='none' stroke='rgba(255,255,255,0.45)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E\")",
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 6px center',
+                paddingRight: 22,
+                cursor: 'pointer',
+              }}
             >
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
+              <option value="1" style={{ background: '#1c1c1f', color: '#ededed' }}>P1</option>
+              <option value="2" style={{ background: '#1c1c1f', color: '#ededed' }}>P2</option>
+              <option value="3" style={{ background: '#1c1c1f', color: '#ededed' }}>P3</option>
             </select>
             <button type="button" onClick={() => { patchStrategy((next) => { next.content_angles.splice(index, 1) }) }} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit' }}>×</button>
             <textarea rows={2} value={angle.description} placeholder={t('strategy.angleDesc')} onChange={(event) => { patchStrategy((next) => { next.content_angles[index].description = event.target.value }) }} style={{ ...field, gridColumn: '1 / -1', resize: 'vertical' }} />
