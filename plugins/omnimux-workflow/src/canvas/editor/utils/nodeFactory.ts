@@ -1,19 +1,13 @@
 /**
- * Registry-driven node factory — replacement for the Gxgen nodeFactory
- * switch (validated in simplified form by the extraction spike).
- *
- * M1 palette: the single 'material' node type instantiated with four
- * materialType variants. Future node types flow through the registry
- * without touching this module (docs/contracts/adding-a-node.md).
+ * Canvas-side node factory — thin wrapper over the shared React-free
+ * factory (`src/shared/graph/nodeFactory.ts`, PR1). The host agent tools
+ * use the shared factory directly; this module keeps the historical
+ * `WorkflowCreationResult` shape and `appendWithSelectionReset` helper the
+ * editor consumes.
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import { createNode } from '../../nodes/registry';
-import {
-  createDefaultMaterialNodeData,
-  type MaterialType,
-} from '../../types/materialNode';
-import { getDefaultNodeWidth } from './nodeSizeConfig';
+import type { MaterialNodeData, MaterialType } from '../../types/materialNode';
+import { createMaterialNode as createSharedMaterialNode } from '../../../shared/graph/nodeFactory.ts';
 import type { CanvasNode } from './canvasInputMutationGateway';
 
 export interface WorkflowCreationResult {
@@ -21,23 +15,13 @@ export interface WorkflowCreationResult {
   edges: [];
 }
 
-/** Create a material node of the given materialType via the registry. */
+/** Create a material node of the given materialType. */
 export function createMaterialNode(
   materialType: MaterialType,
   position: { x: number; y: number },
+  overrides?: Partial<MaterialNodeData>,
 ): WorkflowCreationResult {
-  const id = uuidv4();
-  const base = createNode('material', position, id);
-  if (!base) return { nodes: [], edges: [] };
-  // label 留空：NodeHeader 回退 i18n 类型名（随宿主语言切换）。
-  const data = createDefaultMaterialNodeData(materialType, {
-    status: 'empty',
-    nodeWidth: getDefaultNodeWidth(materialType),
-  });
-  return {
-    nodes: [{ ...base, data: data as unknown as Record<string, unknown> }],
-    edges: [],
-  };
+  return { nodes: [createSharedMaterialNode(materialType, position, overrides)], edges: [] };
 }
 
 /** 将新节点追加到现有节点列表，同时取消现有节点的选中状态（原样保留） */

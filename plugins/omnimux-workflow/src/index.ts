@@ -106,6 +106,16 @@ export type {
   WorkflowAgentDeps,
 } from './workflow/agent/agentTools';
 
+// PR1 shared graph core + host mutation entry (agent write tools, tests).
+export { mutateWorkspaceGraph } from './workflow/graph/GraphMutator';
+export type {
+  GraphMutationResult,
+  GraphMutationSuccess,
+  GraphMutationError,
+} from './workflow/graph/GraphMutator';
+export { createWorkspaceStore, WorkflowStoreError } from './workflow/workspace/WorkspaceStore';
+export type { WorkspaceStore } from './workflow/workspace/WorkspaceStore';
+
 // M3 execution engine surface (also consumed by node --test suites).
 export {
   ExecutionContext,

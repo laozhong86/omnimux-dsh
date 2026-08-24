@@ -4,6 +4,7 @@
     "lib": ["ES2022"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "moduleDetection": "force",
     "verbatimModuleSyntax": true,
     "noEmit": true,
