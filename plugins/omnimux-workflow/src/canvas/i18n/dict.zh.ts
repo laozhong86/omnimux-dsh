@@ -8,14 +8,9 @@
 const zh = {
   // 节点类型名（NodeHeader fallback label）
   'node.type.text': '文本',
-  'node.type.table': '表格',
   'node.type.image': '图片',
   'node.type.video': '视频',
   'node.type.audio': '音频',
-  'node.type.director3d': '3D 导演台',
-  'node.type.videoEdit': '视频剪辑',
-  'node.type.comfyui': 'ComfyUI 工作流',
-  'badge.new': '新',
   // 节点头
   'node.renameHint': '双击重命名',
   // GenerationStateContainer

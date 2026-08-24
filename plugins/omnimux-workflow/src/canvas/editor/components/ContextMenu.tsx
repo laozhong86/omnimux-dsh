@@ -12,16 +12,12 @@ import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
   AudioLines,
-  Camera,
   ChevronLeft,
   ChevronRight,
-  Film,
   Image as ImageIcon,
   Plus,
-  Table,
   Type,
   Video,
-  Workflow,
 } from 'lucide-react';
 import { useT } from '../../i18n';
 import type { MaterialType } from '../../../types/materialNode';
@@ -59,7 +55,7 @@ interface ContextMenuProps {
 
 const MENU_WIDTH = 210;
 const ADD_MENU_WIDTH = 230;
-const MENU_HEIGHT_ESTIMATE = 340;
+const MENU_HEIGHT_ESTIMATE = 260;
 
 interface MenuItemSpec {
   action: ContextMenuAction | 'open-add-node';
@@ -162,12 +158,6 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         icon: <Type size={18} />,
       },
       {
-        key: 'table',
-        type: 'text',
-        label: t('node.type.table'),
-        icon: <Table size={18} />,
-      },
-      {
         key: 'image',
         type: 'image',
         label: t('node.type.image'),
@@ -188,37 +178,6 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         type: 'audio',
         label: t('node.type.audio'),
         icon: <AudioLines size={18} />,
-      },
-      {
-        key: 'director3d',
-        type: 'video',
-        label: t('node.type.director3d'),
-        icon: <Camera size={18} />,
-        badge: {
-          text: t('badge.new'),
-          variant: 'new',
-        },
-      },
-      {
-        key: 'videoEdit',
-        type: 'video',
-        label: t('node.type.videoEdit'),
-        icon: <Film size={18} />,
-        badge: {
-          text: t('badge.new'),
-          variant: 'new',
-        },
-      },
-      {
-        key: 'comfyui',
-        type: 'image',
-        label: t('node.type.comfyui'),
-        icon: <Workflow size={18} />,
-        badge: {
-          text: t('badge.new'),
-          variant: 'new',
-        },
-        hasSubmenu: true,
       },
     ];
   }, [t]);
