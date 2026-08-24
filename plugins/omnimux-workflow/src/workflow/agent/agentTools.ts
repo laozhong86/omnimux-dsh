@@ -838,6 +838,55 @@ function createWorkflowDisconnectTool(deps: WorkflowAgentDeps): AgentToolSpec {
   };
 }
 
+function createWorkflowExecutionControlTool(deps: WorkflowAgentDeps): AgentToolSpec {
+  const { executionManager } = deps;
+  return {
+    name: 'workflow_execution_control',
+    description:
+      'Control a running workflow execution: pause (halts scheduling, in-flight node finishes), resume (continues; also recovers a persisted paused execution after a restart), or cancel (aborts cooperatively). Use the executionId returned by workflow_run. The open canvas reflects the new state live via SSE. Returns the resulting execution status.',
+    parameters: objectParams({
+      execution_id: {
+        type: 'string',
+        required: true,
+        description: 'Execution id (from workflow_run or workflow_list include_executions=true)',
+      },
+      action: {
+        type: 'string',
+        enum: ['pause', 'resume', 'cancel'],
+        required: true,
+        description: 'Control action',
+      },
+    }),
+    output: jsonOut,
+    async execute(args) {
+      const executionId = readString(args, 'execution_id');
+      const action = readString(args, 'action');
+      if (!executionId) return errorBody('invalid-args', 'execution_id is required');
+      if (action !== 'pause' && action !== 'resume' && action !== 'cancel') {
+        return errorBody('invalid-args', 'action must be pause | resume | cancel');
+      }
+      const control =
+        action === 'pause'
+          ? executionManager.pauseExecution
+          : action === 'resume'
+            ? executionManager.resumeExecution
+            : executionManager.cancelExecution;
+      const result = await control(executionId);
+      if (!result.ok) {
+        return errorBody('execution-control-failed', result.message ?? `cannot ${action} execution ${executionId}`);
+      }
+      const snapshot = executionManager.getSnapshot(executionId);
+      return {
+        executionId,
+        action,
+        ok: true,
+        status: snapshot?.status ?? null,
+        progress: snapshot?.progress ?? null,
+      };
+    },
+  };
+}
+
 // ============================================================================
 // systemPrompt section (workflow:ops)
 // ============================================================================
@@ -845,6 +894,7 @@ function createWorkflowDisconnectTool(deps: WorkflowAgentDeps): AgentToolSpec {
 const WORKFLOW_PROMPT = `This workspace may mount the OmniMux workflow canvas (omnimux-workflow): an infinite canvas where the user builds node DAGs (text/image/video/audio material nodes) and executes them through the OmniMux generation gateway.
 Reading: workflow_list enumerates the user's canvas workspaces (id, name, nodeCount); workflow_snapshot returns one workspace's structure (include_nodes=true gives the full graph — ALWAYS read it before editing: node/edge ids must come from the snapshot, never invent them); workflow_run starts an execution (full or subset with node_ids) and with wait=true returns per-node statuses, text excerpts and generated media file paths.
 Editing: workflow_create makes a new empty canvas; workflow_node_add adds a material node (returns its id); workflow_node_update patches label/prompt/tool/params/position; workflow_node_remove deletes nodes (edges cascade); workflow_connect / workflow_disconnect wire and unwire edges. Write tools fail with a structured error (invalid-args / node-not-found / mutation-rejected with reasonCode like cycle or type_contract) — fix the arguments and retry, do not work around the validation. After each edit the response carries the new workspace version; the open canvas refreshes itself within a few seconds.
+Control: workflow_execution_control pauses / resumes / cancels a live execution by executionId (from workflow_run).
 When the user mentions a canvas, a workflow, nodes, or asks to run/analyze/modify their graph, use these tools instead of guessing. Executions stream live progress on the canvas (SSE, pause/resume/cancel available there). Generation goes through the OmniMux hub seams when available (mock gateway offline) — never invent results: report what the tools return, including per-node errors like [omnimux:<code>].`;
 
 // ============================================================================
@@ -874,6 +924,7 @@ export function registerWorkflowAgentSeats(
       createWorkflowNodeRemoveTool(deps),
       createWorkflowConnectTool(deps),
       createWorkflowDisconnectTool(deps),
+      createWorkflowExecutionControlTool(deps),
     ];
     for (const spec of specs) {
       const dispose = tools.register(spec);

@@ -346,3 +346,107 @@ test('edited graph runs end-to-end (create → add → connect → run wait)', a
     h.cleanup();
   }
 });
+
+test('PR4: workflow_execution_control pause → resume → cancel lifecycle', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'omnimux-exec-control-'));
+  const tools = [];
+  const ctx = {
+    tools: { register(t) { tools.push(t); return () => {}; } },
+    systemPrompt: { section() { return () => {}; } },
+  };
+  const dispose = host.mountWorkflowHost(ctx, {
+    paths: {
+      root: dir,
+      workspacesDir: join(dir, 'workspaces'),
+      executionsDir: join(dir, 'executions'),
+      mediaDir: join(dir, 'media'),
+    },
+    // Slow mock gateway so the execution stays live long enough to pause.
+    gateway: host.createMockGateway({ minLatencyMs: 1500, maxLatencyMs: 2000 }),
+  });
+  const tool = (name) => tools.find((t) => t.name === name);
+  try {
+    const { wsId } = await seed({ tool });
+    // text-editor finishes instantly (no gateway call) — add a generative
+    // image node so the run stays live long enough to control.
+    const image = await tool('workflow_node_add').execute({
+      workspace_id: wsId,
+      material_type: 'image',
+      tool: 'text-to-image',
+    });
+    const started = await tool('workflow_run').execute({
+      workspace_id: wsId,
+      mode: 'subset',
+      node_ids: [image.node.id],
+    });
+    const executionId = started.executionId;
+
+    // Pause is only legal from RUNNING; the scheduler starts async — poll
+    // the executions overview until the run leaves pending.
+    const statusOf = async () => {
+      const list = await tool('workflow_list').execute({ include_executions: true });
+      return list.executions.find((row) => row.id === executionId)?.status ?? '';
+    };
+    {
+      const deadline = Date.now() + 5000;
+      while ((await statusOf()) === 'pending' && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+    }
+
+    const paused = await tool('workflow_execution_control').execute({
+      execution_id: executionId,
+      action: 'pause',
+    });
+    assert.equal(paused.ok, true);
+    assert.equal(paused.status, 'paused');
+
+    const resumed = await tool('workflow_execution_control').execute({
+      execution_id: executionId,
+      action: 'resume',
+    });
+    assert.equal(resumed.ok, true);
+
+    // Cancel while paused: deterministic terminal state (no race with the
+    // slow node completing after resume).
+    await tool('workflow_execution_control').execute({ execution_id: executionId, action: 'pause' });
+    const cancelled = await tool('workflow_execution_control').execute({
+      execution_id: executionId,
+      action: 'cancel',
+    });
+    assert.equal(cancelled.ok, true);
+    // Cancel flips the status asynchronously (scheduler event) — poll the
+    // executions overview until the terminal state lands.
+    let terminal = '';
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline) {
+      const list = await tool('workflow_list').execute({ include_executions: true });
+      terminal = list.executions.find((row) => row.id === executionId)?.status ?? '';
+      if (terminal === 'cancelled') break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.equal(terminal, 'cancelled');
+
+    // Terminal executions reject further control with an envelope.
+    const again = await tool('workflow_execution_control').execute({
+      execution_id: executionId,
+      action: 'cancel',
+    });
+    assert.equal(again.error, 'execution-control-failed');
+
+    const missing = await tool('workflow_execution_control').execute({
+      execution_id: 'no-such-execution',
+      action: 'pause',
+    });
+    assert.equal(missing.error, 'execution-control-failed');
+
+    const badAction = await tool('workflow_execution_control').execute({
+      execution_id: executionId,
+      action: 'yolo',
+    });
+    assert.equal(badAction.error, 'invalid-args');
+  } finally {
+    dispose();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
