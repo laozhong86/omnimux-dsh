@@ -108,3 +108,50 @@ export function pickCoverSrc(row) {
   const rec = /** @type {Record<string, unknown>} */ (row)
   return hostMediaSrc(rec.cover_key ?? rec.cover_url)
 }
+
+/**
+ * Gateway seed covers are 1×1 JPEG stubs. Treat those as empty.
+ * @param {number} width
+ * @param {number} height
+ */
+export function isUsableCoverSize(width, height) {
+  return Number(width) >= 8 && Number(height) >= 8
+}
+
+/**
+ * @param {unknown} title
+ */
+export function coverGlyph(title) {
+  const text = typeof title === 'string' ? title.trim() : ''
+  return text.slice(0, 1) || '灵'
+}
+
+const TIKTOK_VIDEO_RE = /tiktok\.com\/@?[^/]+\/video\/(\d{15,25})/i
+const TIKTOK_V_RE = /tiktok\.com\/v\/(\d{15,25})/i
+
+/**
+ * Extract TikTok video ID from a URL or raw string.
+ * @param {unknown} url
+ * @returns {string | null}
+ */
+export function extractTikTokVideoId(url) {
+  if (typeof url !== 'string' || !url.trim()) return null
+  const m = url.match(TIKTOK_VIDEO_RE) || url.match(TIKTOK_V_RE)
+  if (m && m[1]) return m[1]
+  return null
+}
+
+/**
+ * Construct safe TikTok official embed player URL.
+ * @param {unknown} sourceUrlOrId
+ * @returns {string | null}
+ */
+export function resolveTikTokEmbedUrl(sourceUrlOrId) {
+  if (!sourceUrlOrId) return null
+  const raw = String(sourceUrlOrId).trim()
+  if (/^\d{15,25}$/.test(raw)) {
+    return `https://www.tiktok.com/player/v1/${raw}`
+  }
+  const id = extractTikTokVideoId(raw)
+  return id ? `https://www.tiktok.com/player/v1/${id}` : null
+}
