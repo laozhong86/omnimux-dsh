@@ -47,6 +47,25 @@
       );
     }
 
+    function MarketSearchBar({ query, onQuery, placeholder, onSubmit, submitLabel }) {
+      return h("form", {
+        className: "sh-mkt-search",
+        onSubmit: (e) => { e.preventDefault(); if (onSubmit) onSubmit(); },
+      },
+        h(FilterBar, {
+          compact: true,
+          search: h(SearchField, {
+            stretch: true,
+            value: query,
+            debounceMs: 0,
+            placeholder,
+            onValueChange: onQuery,
+          }),
+          actions: h(Button, { type: "submit", variant: "primary", size: "sm" }, submitLabel),
+        }),
+      );
+    }
+
     function StarIcon() {
       return h("svg", { width: 12, height: 12, viewBox: "0 0 24 24", fill: "#f59e0b", stroke: "#f59e0b", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
         h("polygon", { points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" }),
@@ -241,31 +260,25 @@
       };
       return h(I18nProvider, { t: tr },
         h("div", { className: "sh-mkt" },
-          h("form", {
-            className: "sh-mkt-search",
-            onSubmit: (e) => { e.preventDefault(); setSubmitted(query.trim()); setPage(1); },
-          },
-            h("div", { className: "sh-mkt-field" },
-              h(SearchIcon),
-              h("input", {
-                type: "search",
-                value: query,
-                placeholder: tr("mkt.searchPlaceholder"),
-                onChange: (e) => setQuery(e.currentTarget.value),
-              }),
-            ),
-            h("button", { type: "submit", className: "sh-mkt-go" }, tr("mkt.search")),
-          ),
+          h(MarketSearchBar, {
+            query,
+            onQuery: setQuery,
+            placeholder: tr("mkt.searchPlaceholder"),
+            submitLabel: tr("mkt.search"),
+            onSubmit: () => { setSubmitted(query.trim()); setPage(1); },
+          }),
           h("div", { className: "sh-mkt-filters" },
-            h("button", {
+            h(Button, {
               type: "button",
-              className: "sh-mkt-filter" + (!category ? " on" : ""),
+              size: "xs",
+              variant: !category ? "secondary" : "ghost",
               onClick: () => { setCategory(""); setPage(1); },
             }, tr("mkt.catAll")),
-            cats.map((it) => h("button", {
+            cats.map((it) => h(Button, {
               key: it.key,
               type: "button",
-              className: "sh-mkt-filter" + (category === it.key ? " on" : ""),
+              size: "xs",
+              variant: category === it.key ? "secondary" : "ghost",
               onClick: () => { setCategory(it.key); setPage(1); },
             }, catLabelFor(it.key))),
           ),
@@ -286,12 +299,13 @@
           ) : null,
           pendingRestart && !sending ? h("div", { className: "sh-mkt-banner" },
             h("span", { className: "sh-mkt-banner-text" }, tr("mkt.restartBanner", { name: pendingRestart })),
-            h("button", {
+            h(Button, {
               type: "button",
-              className: "sh-mkt-restart",
-              disabled: restarting,
+              size: "sm",
+              variant: "primary",
+              loading: restarting,
               onClick: startRestart,
-            }, restarting ? tr("mkt.restarting") : tr("mkt.restartNow")),
+            }, tr("mkt.restartNow")),
           ) : null,
           feedback ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, feedback) : null,
           status === "loading" && page === 1 ? h("p", { className: "sh-mkt-status" }, tr("mkt.loading")) : null,
@@ -322,10 +336,12 @@
                 ),
                 h("div", { className: "sh-mkt-actions" },
                   h("a", { className: "sh-mkt-details", href: detailHref(plugin), target: "_blank", rel: "noreferrer" }, tr("mkt.details")),
-                  h("button", {
+                  h(Button, {
                     type: "button",
-                    className: "sh-mkt-install" + (installed ? " done" : ""),
+                    size: "sm",
+                    variant: installed ? "ghost" : "primary",
                     disabled: !verified || busy || restarting || installed,
+                    loading: sending === id,
                     onClick: () => {
                       setSending(id);
                       setFeedback("");

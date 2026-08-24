@@ -185,7 +185,7 @@ window.__ModuleLoader__.load({
 .sh-plaza-wrap.rail .sh-plaza-trigger svg{width:18px;height:18px}
 .sh-plaza-trigger.on,.sh-plaza-trigger[aria-expanded=true]{background:var(--dsw-specific-sidebar-nav-item-active,#ebeef2)}
 .sh-plaza-trigger span{white-space:nowrap;overflow:hidden}
-.sh-plaza-page{position:fixed;z-index:40;box-sizing:border-box;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--dsw-alias-bg-base,#fff);color:var(--dsw-alias-label-primary,#17191c)}
+.sh-plaza-page{position:fixed;z-index:200;box-sizing:border-box;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--dsw-alias-bg-base,#fff);color:var(--dsw-alias-label-primary,#17191c)}
 .sh-plaza-top{display:flex;align-items:center;gap:16px;flex:none;padding:10px 20px;border-bottom:1px solid var(--dsw-alias-border-l2,#e2e4e8);background:var(--dsw-alias-bg-base,#fff)}
 .sh-plaza-tabs{display:flex;align-items:center;gap:16px;padding:0;border:0;background:inherit}
 .sh-plaza-tab{height:30px;padding:0;border:0;border-radius:0;background:inherit;color:var(--dsw-alias-label-tertiary,#7b8088);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
@@ -2243,15 +2243,34 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function conversationRoot() {
-      return typeof document === "undefined" ? null : document.querySelector("[data-phase]");
-    }
+    const STAGE_ID = "omnimux-market";
+    const PRODUCT_STAGE_EVENT = "dsh-product-stage";
 
     function conversationBox() {
-      const el = conversationRoot();
-      if (!el) return null;
-      const r = el.getBoundingClientRect();
-      return { top: r.top, left: r.left, width: r.width, height: r.height };
+      if (typeof window === "undefined") return null;
+      if (window.__omnimuxStage && typeof window.__omnimuxStage.readBox === "function") {
+        try {
+          const b = window.__omnimuxStage.readBox();
+          if (b && b.width >= 100 && b.height >= 100) return b;
+        } catch {}
+      }
+      let left = 56;
+      try {
+        const sidebar = document.querySelector('[data-slot="sidebar"]') ||
+          document.querySelector('aside') ||
+          document.querySelector('[class*="sidebar"]') ||
+          document.querySelector('[class*="appFrame"] > div:first-child');
+        if (sidebar) {
+          const r = sidebar.getBoundingClientRect();
+          if (r.right > 0 && r.right < window.innerWidth - 100) left = r.right;
+        }
+      } catch {}
+      return {
+        top: 0,
+        left,
+        width: Math.max(100, window.innerWidth - left),
+        height: Math.max(100, window.innerHeight),
+      };
     }
 
     function useConversationBox(active) {
@@ -2264,13 +2283,9 @@ window.__ModuleLoader__.load({
         }
         const update = () => setBox(conversationBox());
         update();
-        const root = conversationRoot();
-        const ro = root && typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
-        if (root && ro) ro.observe(root);
         window.addEventListener("resize", update);
         window.addEventListener("scroll", update, true);
         return () => {
-          if (ro) ro.disconnect();
           window.removeEventListener("resize", update);
           window.removeEventListener("scroll", update, true);
         };
@@ -2373,18 +2388,57 @@ window.__ModuleLoader__.load({
       const close = React.useCallback(() => setOpen(false), []);
       const box = useConversationBox(open || (everOpened && plazaKeepAlive));
       if (open && !everOpened) setEverOpened(true);
+
       useEffect(() => {
         if (!open) return;
         api("config", {}).then((d) => {
           if (typeof d.plazaKeepAlive === "boolean") plazaKeepAlive = d.plazaKeepAlive;
         }).catch(() => {});
       }, [open]);
+
       useEffect(() => {
-        if (!open) return;
-        if (conversationRoot()) return;
-        setOpen(false);
-        setHint(tr("plaza.noSession"));
-      }, [open, box, tr]);
+        const claim = () => {
+          try {
+            if (window.__omnimuxStage && typeof window.__omnimuxStage.claim === "function") {
+              window.__omnimuxStage.claim(STAGE_ID);
+            } else {
+              window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: STAGE_ID } }));
+              document.documentElement.dataset.dshProductStage = STAGE_ID;
+            }
+          } catch {}
+        };
+        const release = () => {
+          try {
+            if (window.__omnimuxStage && typeof window.__omnimuxStage.release === "function") {
+              window.__omnimuxStage.release(STAGE_ID);
+            } else {
+              if (document.documentElement.dataset.dshProductStage === STAGE_ID) {
+                delete document.documentElement.dataset.dshProductStage;
+              }
+              window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: "" } }));
+            }
+          } catch {}
+        };
+
+        if (open) claim();
+        else release();
+
+        return () => {
+          if (open) release();
+        };
+      }, [open]);
+
+      useEffect(() => {
+        const onStage = (e) => {
+          const id = e instanceof CustomEvent ? e.detail?.id : undefined;
+          if (id && id !== STAGE_ID && open) {
+            close();
+          }
+        };
+        window.addEventListener(PRODUCT_STAGE_EVENT, onStage);
+        return () => window.removeEventListener(PRODUCT_STAGE_EVENT, onStage);
+      }, [open, close]);
+
       useEffect(() => {
         if (!open) return;
         const list = sessions && sessions.list;
@@ -2397,19 +2451,20 @@ window.__ModuleLoader__.load({
           close();
         });
       }, [open, sessions, close]);
+
       useEffect(() => {
         if (!open) return;
         const onPointer = (e) => {
           const node = e.target;
           if (!node || typeof node.closest !== "function") return;
-          if (node.closest(".sh-plaza-page, .sh-plaza-wrap, .sh-overlay")) return;
+          if (node.closest(".sh-plaza-page, .sh-plaza-wrap, .sh-overlay, .sh-mkt, .sh-modal")) return;
           close();
         };
         document.addEventListener("pointerdown", onPointer, true);
         return () => document.removeEventListener("pointerdown", onPointer, true);
       }, [open, close]);
+
       // L0 keep-alive: after first open, keep PlazaView mounted and hide with display:none.
-      // plazaKeepAlive===false falls back to old unmount-on-close.
       const keep = plazaKeepAlive && everOpened;
       const show = open && box;
       const panel = typeof document !== "undefined" && box && (keep || show)
@@ -2424,6 +2479,7 @@ window.__ModuleLoader__.load({
           document.body,
         )
         : null;
+
       return h(I18nProvider, { t: tr },
         h("div", { className: "sh-plaza-wrap" + (wide ? "" : " rail") },
           h("button", {
@@ -2435,10 +2491,6 @@ window.__ModuleLoader__.load({
               if (open) {
                 close();
                 setHint("");
-                return;
-              }
-              if (!conversationBox()) {
-                setHint(tr("plaza.noSession"));
                 return;
               }
               setOpen(true);

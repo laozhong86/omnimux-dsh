@@ -408,6 +408,29 @@ export const INSPIRATION_CSS = `
   word-break: break-all;
 }
 
+/* 卡片角标 Badge (置于右上角) */
+.omnimux-inspiration-badge-platform {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  padding: 2px 8px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--omx-font-mono, monospace);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+.omnimux-inspiration-badge-platform.local {
+  border-color: #10b981;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.2);
+}
+
 /* Hover 浮层 */
 .omnimux-inspiration-card-overlay {
   position: absolute;
@@ -416,30 +439,12 @@ export const INSPIRATION_CSS = `
   opacity: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 12px;
   transition: opacity var(--omx-motion-fast, 120ms) ease;
 }
 .omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-overlay {
   opacity: 1;
-}
-.omnimux-inspiration-badge-platform {
-  align-self: flex-start;
-  padding: 2px 8px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  font-size: 11px;
-  font-weight: 600;
-  font-family: var(--omx-font-mono, monospace);
-  background: rgba(0,0,0,0.65);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: #ffffff;
-  letter-spacing: 0.5px;
-}
-.omnimux-inspiration-badge-platform.local {
-  border-color: #10b981;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.15);
 }
 .omnimux-inspiration-overlay-play {
   align-self: center;
@@ -489,40 +494,55 @@ export const INSPIRATION_CSS = `
   from { opacity: 0; }
   to { opacity: 1; }
 }
+.omnimux-inspiration-modal-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 1040px;
+  animation: omni-fade-in var(--omx-motion-fast, 120ms) ease;
+}
 .omnimux-inspiration-modal-container {
   position: relative;
   display: flex;
   width: 100%;
-  max-width: 1040px;
   height: 85vh;
   max-height: 720px;
   border-radius: var(--omx-radius-lg, 16px);
   overflow: hidden;
   background: var(--omx-color-canvas-soft, #131313);
   border: 1px solid var(--omx-color-hairline, #242424);
-  box-shadow: var(--omx-shadow-overlay, 0 8px 24px rgba(0,0,0,.48));
+  box-shadow: var(--omx-shadow-overlay, 0 12px 36px rgba(0,0,0,.60));
 }
 .omnimux-inspiration-modal-close {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 32px;
-  height: 32px;
+  top: -10px;
+  right: -48px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: 1px solid var(--omx-color-hairline, #242424);
-  background: var(--omx-color-canvas-soft, #131313);
-  color: var(--omx-color-ink-soft, #ebebeb);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(24, 24, 24, 0.88);
+  backdrop-filter: blur(12px);
+  color: #ffffff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 20;
-  transition: border-color var(--omx-motion-fast, 120ms) ease,
-              color var(--omx-motion-fast, 120ms) ease;
+  z-index: 50;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+  transition: all var(--omx-motion-fast, 120ms) ease;
 }
 .omnimux-inspiration-modal-close:hover {
-  border-color: var(--omx-color-hairline-strong, #3d3d3d);
-  color: var(--omx-color-ink, #ffffff);
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(45, 45, 45, 0.95);
+  transform: scale(1.08);
+}
+@media (max-width: 1160px) {
+  .omnimux-inspiration-modal-close {
+    top: -44px;
+    right: 4px;
+  }
 }
 
 /* 弹窗左列：视频播放 / 内容拆解 切换大画幅区域 */

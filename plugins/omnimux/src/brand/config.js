@@ -23,6 +23,9 @@ export function assertBrandConfig(config) {
   if (config.wordmarkText.trim() === '') {
     throw new Error('omnimux: wordmarkText must be a non-empty string')
   }
+  if (config.heroHeadline.trim() === '') {
+    throw new Error('omnimux: heroHeadline must be a non-empty string')
+  }
   if (!config.logoSvg.includes('<svg')) {
     throw new Error('omnimux: logoSvg must contain an <svg> document')
   }
@@ -47,6 +50,7 @@ export function parseBrandConfig(value) {
     replaceHeroMark: input.replaceHeroMark ?? DEFAULT_CONFIG.replaceHeroMark,
     hidePreviewBadge: input.hidePreviewBadge ?? DEFAULT_CONFIG.hidePreviewBadge,
     rewriteWelcome: input.rewriteWelcome ?? DEFAULT_CONFIG.rewriteWelcome,
+    heroHeadline: input.heroHeadline ?? DEFAULT_CONFIG.heroHeadline,
   })
 }
 

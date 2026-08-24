@@ -1388,6 +1388,8 @@ var WORDMARK_VIEWBOX = "0 0 182 24";
 var NAME_WORDMARK_VIEWBOX = "26 0 156 24";
 var HERO_FISH_MIN_WIDTH = 34;
 var PREVIEW_BADGE_TEXTS = ["\u9884\u89C8\u7248", "Preview"];
+var DEFAULT_HERO_HEADLINE = "\u5C5E\u4E8E\u4F60\u7684AI\u793E\u5A92\u8FD0\u8425\u56E2\u961F";
+var OFFICIAL_HERO_HEADLINES = ["\u63A2\u7D22\u672A\u81F3\u4E4B\u5883", "Into the Unknown"];
 var DEFAULT_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
   <rect width="32" height="32" rx="7" fill="#0A0A0B"/>
   <g transform="translate(4 4) scale(1.5)">
@@ -1405,7 +1407,8 @@ var DEFAULT_CONFIG = Object.freeze({
   wordmarkText: "OmniMux",
   replaceHeroMark: true,
   hidePreviewBadge: true,
-  rewriteWelcome: true
+  rewriteWelcome: true,
+  heroHeadline: DEFAULT_HERO_HEADLINE
 });
 
 // src/brand/overlay.js
@@ -1421,7 +1424,8 @@ function resolveConfig(raw) {
     wordmarkText: raw?.wordmarkText ?? DEFAULT_CONFIG.wordmarkText,
     replaceHeroMark: raw?.replaceHeroMark ?? DEFAULT_CONFIG.replaceHeroMark,
     hidePreviewBadge: raw?.hidePreviewBadge ?? DEFAULT_CONFIG.hidePreviewBadge,
-    rewriteWelcome: raw?.rewriteWelcome ?? DEFAULT_CONFIG.rewriteWelcome
+    rewriteWelcome: raw?.rewriteWelcome ?? DEFAULT_CONFIG.rewriteWelcome,
+    heroHeadline: raw?.heroHeadline ?? DEFAULT_CONFIG.heroHeadline
   };
 }
 function configFromWindow(win) {
@@ -1462,6 +1466,7 @@ function applyOverlay(document2, config, restores) {
   coverBrandMarkFish(document2, config, restores);
   coverRailFish(document2, config, restores);
   coverHeroFish(document2, config, restores);
+  rewriteHeroHeadline(document2, config, restores);
   if (config.hidePreviewBadge) hidePreviewBadges(document2, restores);
   if (config.rewriteWelcome) rewriteWelcomeCopy(document2, config.productName, restores);
 }
@@ -1580,6 +1585,22 @@ function coverHeroFish(document2, config, restores) {
     const width = Number.parseFloat(svg.getAttribute("width") ?? "0");
     if (width < HERO_FISH_MIN_WIDTH) continue;
     replaceInPlace(svg, createMark(document2, config.logoSvg, svg), restores);
+  }
+}
+function rewriteHeroHeadline(document2, config, restores) {
+  const next = config.heroHeadline;
+  if (typeof next !== "string" || next.trim() === "") return;
+  for (const el of document2.querySelectorAll("span,div")) {
+    if (el.childElementCount !== 0) continue;
+    if (el.closest(`[${BRAND_ATTR}]`) !== null) continue;
+    const current = el.textContent?.trim() ?? "";
+    if (!OFFICIAL_HERO_HEADLINES.includes(current)) continue;
+    if (current === next) continue;
+    const original = el.textContent;
+    el.textContent = next;
+    restores.push(() => {
+      el.textContent = original;
+    });
   }
 }
 function replaceInPlace(official, branded, restores) {
@@ -2186,11 +2207,76 @@ function installHubChrome(ctx) {
   return ctx.locale.bind(NS);
 }
 
+// src/client/hero-brand.js
+var HERO_BRAND_SLOT = "conversation.hero.brand.mark";
+var HERO_BRAND_PRIORITY = -10;
+var HERO_BRAND_ID = "omnimux-hero-brand-mark";
+function heroMarkPresentation(size, className) {
+  const px = typeof size === "number" ? size : Number(size);
+  const edge = Number.isFinite(px) && px > 0 ? px : 34;
+  return {
+    width: edge,
+    height: edge,
+    className: typeof className === "string" && className !== "" ? className : void 0
+  };
+}
+function parseLogoSvg(markup) {
+  if (typeof markup !== "string" || !markup.includes("<svg")) {
+    throw new Error("omnimux: hero mark logoSvg must contain an <svg> document");
+  }
+  const viewBox = /viewBox\s*=\s*"([^"]+)"/i.exec(markup)?.[1] ?? "0 0 32 32";
+  const open = markup.search(/<svg\b/i);
+  const innerStart = markup.indexOf(">", open) + 1;
+  const close = markup.toLowerCase().lastIndexOf("</svg>");
+  const inner = (close === -1 ? markup.slice(innerStart) : markup.slice(innerStart, close)).trim();
+  return { viewBox, inner };
+}
+function resolveHeroLogoSvg(win) {
+  const target = win ?? (typeof window === "undefined" ? void 0 : window);
+  if (target) {
+    const svg = configFromWindow(target).logoSvg;
+    if (typeof svg === "string" && svg.includes("<svg")) return svg;
+  }
+  return DEFAULT_CONFIG.logoSvg ?? DEFAULT_LOGO_SVG;
+}
+function installHeroBrandSlot(ctx, component, config) {
+  const replace = config?.replaceHeroMark ?? (typeof window === "undefined" ? DEFAULT_CONFIG.replaceHeroMark : configFromWindow(window).replaceHeroMark);
+  if (!replace) return;
+  if (typeof ctx?.slots?.inject !== "function" || typeof ctx.slots.register !== "function") return;
+  ctx.slots.inject(HERO_BRAND_SLOT, () => ctx.slots.register({
+    name: HERO_BRAND_SLOT,
+    id: HERO_BRAND_ID,
+    priority: HERO_BRAND_PRIORITY
+  }, component));
+}
+
+// src/client/HeroBrandMark.jsx
+var import_jsx_runtime6 = require("react/jsx-runtime");
+function HeroBrandMark({ size, className }) {
+  const { width, height, className: cls } = heroMarkPresentation(size, className);
+  const { viewBox, inner } = parseLogoSvg(resolveHeroLogoSvg());
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+    "svg",
+    {
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox,
+      width,
+      height,
+      className: cls,
+      "aria-hidden": "true",
+      focusable: "false",
+      "data-omnimux-hero-mark": "",
+      dangerouslySetInnerHTML: { __html: inner }
+    }
+  );
+}
+
 // src/client/index.js
 var name = "omnimux";
 var inject = ["slots", "locale"];
 function apply(ctx) {
   const t = installHubChrome(ctx);
+  installHeroBrandSlot(ctx, HeroBrandMark);
   ctx.slots.inject("settings.section", () => ctx.slots.register({
     name: "settings.section",
     id: "omnimux-profile",

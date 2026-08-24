@@ -11,6 +11,7 @@ import {
   FISH_VIEWBOX,
   HERO_FISH_MIN_WIDTH,
   NAME_WORDMARK_VIEWBOX,
+  OFFICIAL_HERO_HEADLINES,
   OFFICIAL_PRODUCT_TITLE,
   PREVIEW_BADGE_TEXTS,
   WORDMARK_VIEWBOX,
@@ -39,6 +40,7 @@ export function resolveConfig(raw) {
     replaceHeroMark: raw?.replaceHeroMark ?? DEFAULT_CONFIG.replaceHeroMark,
     hidePreviewBadge: raw?.hidePreviewBadge ?? DEFAULT_CONFIG.hidePreviewBadge,
     rewriteWelcome: raw?.rewriteWelcome ?? DEFAULT_CONFIG.rewriteWelcome,
+    heroHeadline: raw?.heroHeadline ?? DEFAULT_CONFIG.heroHeadline,
   }
 }
 
@@ -99,6 +101,7 @@ export function applyOverlay(document, config, restores) {
   coverBrandMarkFish(document, config, restores)
   coverRailFish(document, config, restores)
   coverHeroFish(document, config, restores)
+  rewriteHeroHeadline(document, config, restores)
   if (config.hidePreviewBadge) hidePreviewBadges(document, restores)
   if (config.rewriteWelcome) rewriteWelcomeCopy(document, config.productName, restores)
 }
@@ -286,6 +289,29 @@ function coverHeroFish(document, config, restores) {
     // In-flow: the hero stack `.composerHero` is already `position:relative`.
     // An absolute cover keyed to a large parent paints on the input card.
     replaceInPlace(svg, createMark(document, config.logoSvg, svg), restores)
+  }
+}
+
+/**
+ * Replace the official empty-session headline by exact locale match.
+ * Leaves other copy (preview badge, welcome, provider names) alone.
+ * Restores the original text on teardown.
+ * @param {Document} document Browser document.
+ * @param {BrandConfig} config Overlay config.
+ * @param {Array<() => void>} restores Disposer stack.
+ */
+export function rewriteHeroHeadline(document, config, restores) {
+  const next = config.heroHeadline
+  if (typeof next !== 'string' || next.trim() === '') return
+  for (const el of document.querySelectorAll('span,div')) {
+    if (el.childElementCount !== 0) continue
+    if (el.closest(`[${BRAND_ATTR}]`) !== null) continue
+    const current = el.textContent?.trim() ?? ''
+    if (!OFFICIAL_HERO_HEADLINES.includes(current)) continue
+    if (current === next) continue
+    const original = el.textContent
+    el.textContent = next
+    restores.push(() => { el.textContent = original })
   }
 }
 

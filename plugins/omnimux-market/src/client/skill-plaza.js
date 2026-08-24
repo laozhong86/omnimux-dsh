@@ -90,31 +90,25 @@
         ? tr("search.fallback")
         : tr("search.hint", { n: total || items.length });
       return h("div", { className: "sh-mkt" },
-        h("form", {
-          className: "sh-mkt-search",
-          onSubmit: (e) => { e.preventDefault(); setPage(1); setSubmitted(query.trim()); },
-        },
-          h("div", { className: "sh-mkt-field" },
-            h(SearchIcon),
-            h("input", {
-              type: "search",
-              value: query,
-              placeholder: tr("mkt.searchPlaceholder"),
-              onChange: (e) => setQuery(e.currentTarget.value),
-            }),
-          ),
-          h("button", { type: "submit", className: "sh-mkt-go" }, tr("mkt.search")),
-        ),
+        h(MarketSearchBar, {
+          query,
+          onQuery: setQuery,
+          placeholder: tr("mkt.searchPlaceholder"),
+          submitLabel: tr("mkt.search"),
+          onSubmit: () => { setPage(1); setSubmitted(query.trim()); },
+        }),
         h("div", { className: "sh-mkt-filters" },
-          h("button", {
+          h(Button, {
             type: "button",
-            className: "sh-mkt-filter" + (!category ? " on" : ""),
+            size: "xs",
+            variant: !category ? "secondary" : "ghost",
             onClick: () => { setCategory(""); setPage(1); },
           }, tr("mkt.catAll")),
-          SKILL_CAT_KEYS.map((key) => h("button", {
+          SKILL_CAT_KEYS.map((key) => h(Button, {
             key,
             type: "button",
-            className: "sh-mkt-filter" + (category === key ? " on" : ""),
+            size: "xs",
+            variant: category === key ? "secondary" : "ghost",
             onClick: () => { setCategory(key); setPage(1); },
           }, tr("cat." + key))),
         ),

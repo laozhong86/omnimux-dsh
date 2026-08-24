@@ -1,6 +1,7 @@
 import { resolveInspirationPaths } from './paths.js'
 import { createLocalStore } from './local-store.js'
 import { createLocalInspirationDispatcher, readJsonBody, sendJson } from './http-routes.js'
+import { fallbackResolveSocial } from './scraper-fallback.js'
 
 export const name = 'omnimux-inspiration'
 export const inject = ['tools']
@@ -52,17 +53,27 @@ export function apply(ctx) {
     return undefined
   }
 
-  // Social fetcher: exclusively consumes OmniMux central tool omnimux_social_data
+  // Social fetcher: consumes OmniMux tool omnimux_social_data with intelligent resilient fallback
   const socialFetcher = async ({ platform, capability, url }) => {
     const socialDataTool = getTool('omnimux_social_data')
-    if (!socialDataTool || typeof socialDataTool.execute !== 'function') {
-      throw new Error('OmniMux 中枢社媒解析工具 (omnimux_social_data) 未就绪，请检查核心插件是否挂载')
+    if (socialDataTool && typeof socialDataTool.execute === 'function') {
+      try {
+        const res = await socialDataTool.execute({ platform, capability, url })
+        if (res && res.data && (res.data.video_url || res.data.play_url || res.data.video || res.data.cover_url || res.data.title)) {
+          return res
+        }
+      } catch (err) {
+        // Fall through to fallback resolver
+      }
     }
-    const res = await socialDataTool.execute({ platform, capability, url })
-    if (!res || !res.data) {
-      throw new Error('OmniMux 社媒解析接口返回为空')
+
+    // Resilient fallback extraction
+    const fallbackRes = await fallbackResolveSocial({ platform, capability, url })
+    if (fallbackRes && fallbackRes.data) {
+      return fallbackRes
     }
-    return res
+
+    throw new Error('社媒解析未提取到有效视频元数据，请检查链接或网络')
   }
 
   // Video analyze tool: exclusively consumes dsh-video tool video_analyze

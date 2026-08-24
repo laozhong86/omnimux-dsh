@@ -1089,6 +1089,29 @@ var INSPIRATION_CSS = `
   word-break: break-all;
 }
 
+/* \u5361\u7247\u89D2\u6807 Badge (\u7F6E\u4E8E\u53F3\u4E0A\u89D2) */
+.omnimux-inspiration-badge-platform {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  padding: 2px 8px;
+  border-radius: var(--omx-radius-pill, 9999px);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--omx-font-mono, monospace);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+.omnimux-inspiration-badge-platform.local {
+  border-color: #10b981;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.2);
+}
+
 /* Hover \u6D6E\u5C42 */
 .omnimux-inspiration-card-overlay {
   position: absolute;
@@ -1097,30 +1120,12 @@ var INSPIRATION_CSS = `
   opacity: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 12px;
   transition: opacity var(--omx-motion-fast, 120ms) ease;
 }
 .omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-overlay {
   opacity: 1;
-}
-.omnimux-inspiration-badge-platform {
-  align-self: flex-start;
-  padding: 2px 8px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  font-size: 11px;
-  font-weight: 600;
-  font-family: var(--omx-font-mono, monospace);
-  background: rgba(0,0,0,0.65);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: #ffffff;
-  letter-spacing: 0.5px;
-}
-.omnimux-inspiration-badge-platform.local {
-  border-color: #10b981;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.15);
 }
 .omnimux-inspiration-overlay-play {
   align-self: center;
@@ -1170,40 +1175,55 @@ var INSPIRATION_CSS = `
   from { opacity: 0; }
   to { opacity: 1; }
 }
+.omnimux-inspiration-modal-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 1040px;
+  animation: omni-fade-in var(--omx-motion-fast, 120ms) ease;
+}
 .omnimux-inspiration-modal-container {
   position: relative;
   display: flex;
   width: 100%;
-  max-width: 1040px;
   height: 85vh;
   max-height: 720px;
   border-radius: var(--omx-radius-lg, 16px);
   overflow: hidden;
   background: var(--omx-color-canvas-soft, #131313);
   border: 1px solid var(--omx-color-hairline, #242424);
-  box-shadow: var(--omx-shadow-overlay, 0 8px 24px rgba(0,0,0,.48));
+  box-shadow: var(--omx-shadow-overlay, 0 12px 36px rgba(0,0,0,.60));
 }
 .omnimux-inspiration-modal-close {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 32px;
-  height: 32px;
+  top: -10px;
+  right: -48px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: 1px solid var(--omx-color-hairline, #242424);
-  background: var(--omx-color-canvas-soft, #131313);
-  color: var(--omx-color-ink-soft, #ebebeb);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(24, 24, 24, 0.88);
+  backdrop-filter: blur(12px);
+  color: #ffffff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 20;
-  transition: border-color var(--omx-motion-fast, 120ms) ease,
-              color var(--omx-motion-fast, 120ms) ease;
+  z-index: 50;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+  transition: all var(--omx-motion-fast, 120ms) ease;
 }
 .omnimux-inspiration-modal-close:hover {
-  border-color: var(--omx-color-hairline-strong, #3d3d3d);
-  color: var(--omx-color-ink, #ffffff);
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(45, 45, 45, 0.95);
+  transform: scale(1.08);
+}
+@media (max-width: 1160px) {
+  .omnimux-inspiration-modal-close {
+    top: -44px;
+    right: 4px;
+  }
 }
 
 /* \u5F39\u7A97\u5DE6\u5217\uFF1A\u89C6\u9891\u64AD\u653E / \u5185\u5BB9\u62C6\u89E3 \u5207\u6362\u5927\u753B\u5E45\u533A\u57DF */
@@ -1741,6 +1761,7 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
             children: selected ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3.2", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "20 6 9 17 4 12" }) }) : null
           }
         ) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: `omnimux-inspiration-badge-platform ${isLocal ? "local" : ""}`, children: isLocal ? "\u672C\u5730" : platform }),
         broken ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-cover-fallback", "aria-hidden": "true", children: [
           /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-fallback-icon", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }) }),
           /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-fallback-title", children: title.replace(/^https?:\/\/(www\.)?/, "") })
@@ -1760,7 +1781,6 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-card-overlay", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: `omnimux-inspiration-badge-platform ${isLocal ? "local" : ""}`, children: isLocal ? "\u672C\u5730" : platform }),
           /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-overlay-play", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M8 5v14l11-7z" }) }) }),
           /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-overlay-footer", children: title.length > 32 ? `${title.slice(0, 32)}\u2026` : title })
         ] })
@@ -1772,7 +1792,6 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
   if (!row) return null;
   const [item, setItem] = (0, import_react.useState)(row);
   const [viewMode, setViewMode] = (0, import_react.useState)("player");
-  const [dimTab, setDimTab] = (0, import_react.useState)("all");
   const [analyzing, setAnalyzing] = (0, import_react.useState)(false);
   const [analyzeError, setAnalyzeError] = (0, import_react.useState)(null);
   (0, import_react.useEffect)(() => {
@@ -1819,231 +1838,166 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
       setAnalyzing(false);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-container", onClick: (e) => e.stopPropagation(), children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-wrapper", onClick: (e) => e.stopPropagation(), children: [
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { className: "omnimux-inspiration-modal-close", onClick: onClose, "aria-label": "Close", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M18 6L6 18M6 6l12 12" }) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-left", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-preview-switch", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-switch-group", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-            "button",
-            {
-              type: "button",
-              className: `omnimux-inspiration-switch-btn ${viewMode === "player" ? "active" : ""}`,
-              onClick: () => setViewMode("player"),
-              children: [
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("view.player") })
-              ]
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-            "button",
-            {
-              type: "button",
-              className: `omnimux-inspiration-switch-btn ${viewMode === "deconstruct" ? "active" : ""}`,
-              onClick: () => setViewMode("deconstruct"),
-              children: [
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 17 12 22 22 17" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 12 12 17 22 12" })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("view.deconstruct") })
-              ]
-            }
-          )
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-container", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-left", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-preview-switch", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-switch-group", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+              "button",
+              {
+                type: "button",
+                className: `omnimux-inspiration-switch-btn ${viewMode === "player" ? "active" : ""}`,
+                onClick: () => setViewMode("player"),
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("view.player") })
+                ]
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+              "button",
+              {
+                type: "button",
+                className: `omnimux-inspiration-switch-btn ${viewMode === "deconstruct" ? "active" : ""}`,
+                onClick: () => setViewMode("deconstruct"),
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 17 12 22 22 17" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 12 12 17 22 12" })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("view.deconstruct") })
+                ]
+              }
+            )
+          ] }),
+          hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-status-badge done", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "20 6 9 17 4 12" }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("status.breakdownReady") })
+          ] }) : analyzing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-status-badge pending", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "10px", height: "10px" } }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("status.breakdownGenerating") })
+          ] }) : null
         ] }),
-        hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-status-badge done", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "20 6 9 17 4 12" }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("status.breakdownReady") })
-        ] }) : analyzing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-status-badge pending", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "10px", height: "10px" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("status.breakdownGenerating") })
-        ] }) : null
-      ] }),
-      viewMode === "player" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-preview-player", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-player-box", children: embedUrl ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        "iframe",
-        {
-          title,
-          src: embedUrl,
-          className: "omnimux-inspiration-player-frame",
-          allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
-          allowFullScreen: true
-        }
-      ) : localVideoUrl ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        "video",
-        {
-          src: localVideoUrl,
-          controls: true,
-          autoPlay: true,
-          className: "omnimux-inspiration-player-frame"
-        }
-      ) : cover ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("img", { src: cover, alt: title, className: "omnimux-inspiration-modal-cover-bg" }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-cover-fallback", children: coverGlyph(title) }) }) }) : null,
-      viewMode === "deconstruct" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-deconstruct-view", children: hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-tabs", children: [
+        viewMode === "player" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-preview-player", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-player-box", children: embedUrl ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+          "iframe",
+          {
+            title,
+            src: embedUrl,
+            className: "omnimux-inspiration-player-frame",
+            allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+            allowFullScreen: true
+          }
+        ) : localVideoUrl ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+          "video",
+          {
+            src: localVideoUrl,
+            controls: true,
+            autoPlay: true,
+            className: "omnimux-inspiration-player-frame"
+          }
+        ) : cover ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("img", { src: cover, alt: title, className: "omnimux-inspiration-modal-cover-bg" }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-cover-fallback", children: coverGlyph(title) }) }) }) : null,
+        viewMode === "deconstruct" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-deconstruct-view", children: hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-content", children: [
+          hook ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.hook") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: hook })
+          ] }) : null,
+          targetGoal ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.goal") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: targetGoal })
+          ] }) : null,
+          narrative ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.narrative") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: narrative })
+          ] }) : null,
+          breakdown ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.visual") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: breakdown })
+          ] }) : null,
+          replication ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.replication") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: replication })
+          ] }) : null,
+          rawMarkdown && !hook && !targetGoal && !narrative && !breakdown && !replication ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.raw") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("pre", { className: "omnimux-inspiration-dim-code", children: rawMarkdown })
+          ] }) : null
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-deconstruct-empty", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-fallback-icon", style: { width: "56px", height: "56px" }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 17 12 22 22 17" }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 12 12 17 22 12" })
+          ] }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { style: { margin: "0 0 6px 0", fontSize: "15px", color: "#ffffff" }, children: analyzing ? t("empty.breakdownAnalyzing") : t("empty.breakdownTitle") }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { margin: 0, fontSize: "12px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("empty.breakdownDesc") })
+          ] }),
+          analyzeError ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: "#ef4444", fontSize: "12px" }, children: analyzeError }) : null,
           /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "button",
             {
               type: "button",
-              className: `omnimux-inspiration-dim-tab ${dimTab === "all" ? "active" : ""}`,
-              onClick: () => setDimTab("all"),
-              children: t("dim.tab.all")
+              className: "omnimux-inspiration-trigger-btn",
+              onClick: handleTriggerAnalyze,
+              disabled: analyzing,
+              children: analyzing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "12px", height: "12px", borderTopColor: "#000" } }),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: "\u6B63\u5728\u89E3\u6790\u2026" })
+              ] }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "13 2 3 14 12 14 11 22 21 10 12 10 13 2" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: "\u7ACB\u5373\u89E3\u6790" })
+              ] })
             }
-          ),
-          hook ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            "button",
+          )
+        ] }) }) : null
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-right", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-creator-card", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-creator-left", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-handle", children: creator.name || creator.handle || "Creator" }),
+              creator.handle ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { fontSize: "11px", color: "var(--omx-color-muted, #7c7c7c)" }, children: [
+                "@",
+                creator.handle
+              ] }) : null
+            ] })
+          ] }),
+          item.source_url ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+            "a",
             {
-              type: "button",
-              className: `omnimux-inspiration-dim-tab ${dimTab === "hook" ? "active" : ""}`,
-              onClick: () => setDimTab("hook"),
-              children: t("dim.tab.hook")
-            }
-          ) : null,
-          targetGoal ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            "button",
-            {
-              type: "button",
-              className: `omnimux-inspiration-dim-tab ${dimTab === "goal" ? "active" : ""}`,
-              onClick: () => setDimTab("goal"),
-              children: t("dim.tab.goal")
-            }
-          ) : null,
-          narrative ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            "button",
-            {
-              type: "button",
-              className: `omnimux-inspiration-dim-tab ${dimTab === "narrative" ? "active" : ""}`,
-              onClick: () => setDimTab("narrative"),
-              children: t("dim.tab.narrative")
-            }
-          ) : null,
-          breakdown ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            "button",
-            {
-              type: "button",
-              className: `omnimux-inspiration-dim-tab ${dimTab === "visual" ? "active" : ""}`,
-              onClick: () => setDimTab("visual"),
-              children: t("dim.tab.visual")
-            }
-          ) : null,
-          replication ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            "button",
-            {
-              type: "button",
-              className: `omnimux-inspiration-dim-tab ${dimTab === "replication" ? "active" : ""}`,
-              onClick: () => setDimTab("replication"),
-              children: t("dim.tab.replication")
-            }
-          ) : null,
-          rawMarkdown ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            "button",
-            {
-              type: "button",
-              className: `omnimux-inspiration-dim-tab ${dimTab === "raw" ? "active" : ""}`,
-              onClick: () => setDimTab("raw"),
-              children: t("dim.tab.raw")
+              href: item.source_url,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              className: "omnimux-inspiration-modal-link",
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("openSource") }),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "11", height: "11", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" }) })
+              ]
             }
           ) : null
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-content", children: [
-          (dimTab === "all" || dimTab === "hook") && hook ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.hook") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: hook })
-          ] }) : null,
-          (dimTab === "all" || dimTab === "goal") && targetGoal ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.goal") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: targetGoal })
-          ] }) : null,
-          (dimTab === "all" || dimTab === "narrative") && narrative ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.narrative") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: narrative })
-          ] }) : null,
-          (dimTab === "all" || dimTab === "visual") && breakdown ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.visual") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: breakdown })
-          ] }) : null,
-          (dimTab === "all" || dimTab === "replication") && replication ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.replication") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: replication })
-          ] }) : null,
-          dimTab === "raw" && rawMarkdown ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.raw") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("pre", { className: "omnimux-inspiration-dim-code", children: rawMarkdown })
-          ] }) : null
-        ] })
-      ] }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-deconstruct-empty", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-fallback-icon", style: { width: "56px", height: "56px" }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 17 12 22 22 17" }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 12 12 17 22 12" })
-        ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { style: { margin: "0 0 6px 0", fontSize: "15px", color: "#ffffff" }, children: analyzing ? t("empty.breakdownAnalyzing") : t("empty.breakdownTitle") }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { margin: 0, fontSize: "12px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("empty.breakdownDesc") })
-        ] }),
-        analyzeError ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: "#ef4444", fontSize: "12px" }, children: analyzeError }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-          "button",
-          {
-            type: "button",
-            className: "omnimux-inspiration-trigger-btn",
-            onClick: handleTriggerAnalyze,
-            disabled: analyzing,
-            children: analyzing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "12px", height: "12px", borderTopColor: "#000" } }),
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: "\u6B63\u5728\u89E3\u6790\u2026" })
-            ] }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "13 2 3 14 12 14 11 22 21 10 12 10 13 2" }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: "\u7ACB\u5373\u89E3\u6790" })
-            ] })
-          }
-        )
-      ] }) }) : null
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-right", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-creator-card", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-creator-left", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-handle", children: creator.name || creator.handle || "Creator" }),
-            creator.handle ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { fontSize: "11px", color: "var(--omx-color-muted, #7c7c7c)" }, children: [
-              "@",
-              creator.handle
-            ] }) : null
+        item.stats && Object.keys(item.stats).length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stats-grid", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u70B9\u8D5E" }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.likes ?? item.stats.digg_count ?? "-" })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u8BC4\u8BBA" }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.comments ?? item.stats.comment_count ?? "-" })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u5206\u4EAB" }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.shares ?? item.stats.share_count ?? "-" })
           ] })
-        ] }),
-        item.source_url ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-          "a",
-          {
-            href: item.source_url,
-            target: "_blank",
-            rel: "noopener noreferrer",
-            className: "omnimux-inspiration-modal-link",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("openSource") }),
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "11", height: "11", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" }) })
-            ]
-          }
-        ) : null
-      ] }),
-      item.stats && Object.keys(item.stats).length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stats-grid", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u70B9\u8D5E" }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.likes ?? item.stats.digg_count ?? "-" })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u8BC4\u8BBA" }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.comments ?? item.stats.comment_count ?? "-" })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u5206\u4EAB" }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.shares ?? item.stats.share_count ?? "-" })
-        ] })
-      ] }) : null,
-      tags.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-tags", children: tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-modal-tag", children: [
-        "#",
-        tag
-      ] }, tag)) }) : null
+        ] }) : null,
+        tags.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-tags", children: tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-modal-tag", children: [
+          "#",
+          tag
+        ] }, tag)) }) : null
+      ] })
     ] })
   ] }) });
 }

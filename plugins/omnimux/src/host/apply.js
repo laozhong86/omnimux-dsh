@@ -25,7 +25,7 @@ import { hubHomeDir, hubProfileName } from './paths.js'
  *   effect?: (factory: () => () => void, label?: string) => void,
  *   inject?: (deps: string[], callback: (inner: object) => void) => void,
  * }} ctx
- * @param {{ siteBaseUrl?: string, clientName?: string, productName?: string, logoSvg?: string, wordmarkText?: string, replaceHeroMark?: boolean, hidePreviewBadge?: boolean, rewriteWelcome?: boolean, media?: unknown }} [config]
+ * @param {{ siteBaseUrl?: string, clientName?: string, productName?: string, logoSvg?: string, wordmarkText?: string, replaceHeroMark?: boolean, hidePreviewBadge?: boolean, rewriteWelcome?: boolean, heroHeadline?: string, media?: unknown }} [config]
  */
 export function apply(ctx, config = {}) {
   const hub = parseHubConfig(config)

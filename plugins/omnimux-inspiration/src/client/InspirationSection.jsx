@@ -83,6 +83,11 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
         </button>
       ) : null}
 
+      {/* 右上角平台/本地角标 */}
+      <span className={`omnimux-inspiration-badge-platform ${isLocal ? 'local' : ''}`}>
+        {isLocal ? '本地' : platform}
+      </span>
+
       {broken ? (
         <div className="omnimux-inspiration-cover-fallback" aria-hidden="true">
           <div className="omnimux-inspiration-fallback-icon">
@@ -109,9 +114,6 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
         />
       )}
       <div className="omnimux-inspiration-card-overlay">
-        <span className={`omnimux-inspiration-badge-platform ${isLocal ? 'local' : ''}`}>
-          {isLocal ? '本地' : platform}
-        </span>
         <div className="omnimux-inspiration-overlay-play">
           <svg viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 5v14l11-7z" />
@@ -129,7 +131,6 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
   if (!row) return null
   const [item, setItem] = useState(row)
   const [viewMode, setViewMode] = useState('player') // 'player' | 'deconstruct'
-  const [dimTab, setDimTab] = useState('all') // 'all' | 'hook' | 'goal' | 'narrative' | 'visual' | 'replication' | 'raw'
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState(null)
 
@@ -186,15 +187,16 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
 
   return (
     <div className="omnimux-inspiration-modal-backdrop" onClick={onClose}>
-      <div className="omnimux-inspiration-modal-container" onClick={(e) => e.stopPropagation()}>
+      <div className="omnimux-inspiration-modal-wrapper" onClick={(e) => e.stopPropagation()}>
         <button className="omnimux-inspiration-modal-close" onClick={onClose} aria-label="Close">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
 
-        {/* 左侧：大画幅视窗（作品 ↔ 作品解析） */}
-        <div className="omnimux-inspiration-modal-left">
+        <div className="omnimux-inspiration-modal-container">
+          {/* 左侧：大画幅视窗（作品 ↔ 作品解析） */}
+          <div className="omnimux-inspiration-modal-left">
           {/* 模式切换 Header */}
           <div className="omnimux-inspiration-preview-switch">
             <div className="omnimux-inspiration-switch-group">
@@ -271,127 +273,61 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
           {viewMode === 'deconstruct' ? (
             <div className="omnimux-inspiration-deconstruct-view">
               {hasDeconstruction ? (
-                <>
-                  <div className="omnimux-inspiration-dim-tabs">
-                    <button
-                      type="button"
-                      className={`omnimux-inspiration-dim-tab ${dimTab === 'all' ? 'active' : ''}`}
-                      onClick={() => setDimTab('all')}
-                    >
-                      {t('dim.tab.all')}
-                    </button>
-                    {hook ? (
-                      <button
-                        type="button"
-                        className={`omnimux-inspiration-dim-tab ${dimTab === 'hook' ? 'active' : ''}`}
-                        onClick={() => setDimTab('hook')}
-                      >
-                        {t('dim.tab.hook')}
-                      </button>
-                    ) : null}
-                    {targetGoal ? (
-                      <button
-                        type="button"
-                        className={`omnimux-inspiration-dim-tab ${dimTab === 'goal' ? 'active' : ''}`}
-                        onClick={() => setDimTab('goal')}
-                      >
-                        {t('dim.tab.goal')}
-                      </button>
-                    ) : null}
-                    {narrative ? (
-                      <button
-                        type="button"
-                        className={`omnimux-inspiration-dim-tab ${dimTab === 'narrative' ? 'active' : ''}`}
-                        onClick={() => setDimTab('narrative')}
-                      >
-                        {t('dim.tab.narrative')}
-                      </button>
-                    ) : null}
-                    {breakdown ? (
-                      <button
-                        type="button"
-                        className={`omnimux-inspiration-dim-tab ${dimTab === 'visual' ? 'active' : ''}`}
-                        onClick={() => setDimTab('visual')}
-                      >
-                        {t('dim.tab.visual')}
-                      </button>
-                    ) : null}
-                    {replication ? (
-                      <button
-                        type="button"
-                        className={`omnimux-inspiration-dim-tab ${dimTab === 'replication' ? 'active' : ''}`}
-                        onClick={() => setDimTab('replication')}
-                      >
-                        {t('dim.tab.replication')}
-                      </button>
-                    ) : null}
-                    {rawMarkdown ? (
-                      <button
-                        type="button"
-                        className={`omnimux-inspiration-dim-tab ${dimTab === 'raw' ? 'active' : ''}`}
-                        onClick={() => setDimTab('raw')}
-                      >
-                        {t('dim.tab.raw')}
-                      </button>
-                    ) : null}
-                  </div>
-
-                  <div className="omnimux-inspiration-dim-content">
-                    {(dimTab === 'all' || dimTab === 'hook') && hook ? (
-                      <div className="omnimux-inspiration-dim-card">
-                        <div className="omnimux-inspiration-dim-header">
-                          <h3 className="omnimux-inspiration-dim-title">{t('dim.title.hook')}</h3>
-                        </div>
-                        <div className="omnimux-inspiration-dim-body">{hook}</div>
+                <div className="omnimux-inspiration-dim-content">
+                  {hook ? (
+                    <div className="omnimux-inspiration-dim-card">
+                      <div className="omnimux-inspiration-dim-header">
+                        <h3 className="omnimux-inspiration-dim-title">{t('dim.title.hook')}</h3>
                       </div>
-                    ) : null}
+                      <div className="omnimux-inspiration-dim-body">{hook}</div>
+                    </div>
+                  ) : null}
 
-                    {(dimTab === 'all' || dimTab === 'goal') && targetGoal ? (
-                      <div className="omnimux-inspiration-dim-card">
-                        <div className="omnimux-inspiration-dim-header">
-                          <h3 className="omnimux-inspiration-dim-title">{t('dim.title.goal')}</h3>
-                        </div>
-                        <div className="omnimux-inspiration-dim-body">{targetGoal}</div>
+                  {targetGoal ? (
+                    <div className="omnimux-inspiration-dim-card">
+                      <div className="omnimux-inspiration-dim-header">
+                        <h3 className="omnimux-inspiration-dim-title">{t('dim.title.goal')}</h3>
                       </div>
-                    ) : null}
+                      <div className="omnimux-inspiration-dim-body">{targetGoal}</div>
+                    </div>
+                  ) : null}
 
-                    {(dimTab === 'all' || dimTab === 'narrative') && narrative ? (
-                      <div className="omnimux-inspiration-dim-card">
-                        <div className="omnimux-inspiration-dim-header">
-                          <h3 className="omnimux-inspiration-dim-title">{t('dim.title.narrative')}</h3>
-                        </div>
-                        <div className="omnimux-inspiration-dim-body">{narrative}</div>
+                  {narrative ? (
+                    <div className="omnimux-inspiration-dim-card">
+                      <div className="omnimux-inspiration-dim-header">
+                        <h3 className="omnimux-inspiration-dim-title">{t('dim.title.narrative')}</h3>
                       </div>
-                    ) : null}
+                      <div className="omnimux-inspiration-dim-body">{narrative}</div>
+                    </div>
+                  ) : null}
 
-                    {(dimTab === 'all' || dimTab === 'visual') && breakdown ? (
-                      <div className="omnimux-inspiration-dim-card">
-                        <div className="omnimux-inspiration-dim-header">
-                          <h3 className="omnimux-inspiration-dim-title">{t('dim.title.visual')}</h3>
-                        </div>
-                        <div className="omnimux-inspiration-dim-body">{breakdown}</div>
+                  {breakdown ? (
+                    <div className="omnimux-inspiration-dim-card">
+                      <div className="omnimux-inspiration-dim-header">
+                        <h3 className="omnimux-inspiration-dim-title">{t('dim.title.visual')}</h3>
                       </div>
-                    ) : null}
+                      <div className="omnimux-inspiration-dim-body">{breakdown}</div>
+                    </div>
+                  ) : null}
 
-                    {(dimTab === 'all' || dimTab === 'replication') && replication ? (
-                      <div className="omnimux-inspiration-dim-card">
-                        <div className="omnimux-inspiration-dim-header">
-                          <h3 className="omnimux-inspiration-dim-title">{t('dim.title.replication')}</h3>
-                        </div>
-                        <div className="omnimux-inspiration-dim-body">{replication}</div>
+                  {replication ? (
+                    <div className="omnimux-inspiration-dim-card">
+                      <div className="omnimux-inspiration-dim-header">
+                        <h3 className="omnimux-inspiration-dim-title">{t('dim.title.replication')}</h3>
                       </div>
-                    ) : null}
+                      <div className="omnimux-inspiration-dim-body">{replication}</div>
+                    </div>
+                  ) : null}
 
-                    {dimTab === 'raw' && rawMarkdown ? (
-                      <div className="omnimux-inspiration-dim-card">
-                        <div className="omnimux-inspiration-dim-header">
-                          <h3 className="omnimux-inspiration-dim-title">{t('dim.title.raw')}</h3>
-                        </div>
-                        <pre className="omnimux-inspiration-dim-code">{rawMarkdown}</pre>
+                  {rawMarkdown && !hook && !targetGoal && !narrative && !breakdown && !replication ? (
+                    <div className="omnimux-inspiration-dim-card">
+                      <div className="omnimux-inspiration-dim-header">
+                        <h3 className="omnimux-inspiration-dim-title">{t('dim.title.raw')}</h3>
                       </div>
-                    ) : null}
-                  </div>
-                </>
+                      <pre className="omnimux-inspiration-dim-code">{rawMarkdown}</pre>
+                    </div>
+                  ) : null}
+                </div>
               ) : (
                 <div className="omnimux-inspiration-deconstruct-empty">
                   <div className="omnimux-inspiration-fallback-icon" style={{ width: '56px', height: '56px' }}>
@@ -494,6 +430,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
             </div>
           ) : null}
         </div>
+      </div>
       </div>
     </div>
   )

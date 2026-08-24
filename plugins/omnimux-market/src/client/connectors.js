@@ -66,31 +66,24 @@
         }
       }
       return h("div", { className: "sh-mkt" },
-        h("form", {
-          className: "sh-mkt-search",
-          onSubmit: (e) => e.preventDefault(),
-        },
-          h("div", { className: "sh-mkt-field" },
-            h(SearchIcon),
-            h("input", {
-              type: "search",
-              value: query,
-              placeholder: tr("connector.searchPlaceholder"),
-              onChange: (e) => setQuery(e.currentTarget.value),
-            }),
-          ),
-          h("button", { type: "submit", className: "sh-mkt-go" }, tr("mkt.search")),
-        ),
+        h(MarketSearchBar, {
+          query,
+          onQuery: setQuery,
+          placeholder: tr("connector.searchPlaceholder"),
+          submitLabel: tr("mkt.search"),
+        }),
         h("div", { className: "sh-mkt-filters" },
-          h("button", {
+          h(Button, {
             type: "button",
-            className: "sh-mkt-filter" + (!category ? " on" : ""),
+            size: "xs",
+            variant: !category ? "secondary" : "ghost",
             onClick: () => setCategory(""),
           }, tr("mkt.catAll")),
-          categories.map((it) => h("button", {
+          categories.map((it) => h(Button, {
             key: it.id,
             type: "button",
-            className: "sh-mkt-filter" + (category === it.id ? " on" : ""),
+            size: "xs",
+            variant: category === it.id ? "secondary" : "ghost",
             onClick: () => setCategory(it.id),
           }, it.title)),
         ),

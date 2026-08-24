@@ -31,7 +31,7 @@
   ],
   "scripts": {
     "build": "node scripts/build-client.mjs",
-    "test": "node --test src/config.test.js src/media/*.test.js src/auth/*.test.js src/brand/*.test.js src/official/*.test.js src/plugins/*.test.js src/text/*.test.js src/reader/*.test.js src/apps/*.test.js src/avatar/*.test.js src/tools/*.test.js src/host/*.test.js src/client/api.test.js src/client/app-actions.test.js src/client/app-tabs.test.js src/client/apps-store.test.js src/client/apps-stage-box.test.js src/client/settings-placement.test.js src/client/avatar-api.test.js src/client/auth-gate.test.js src/client/login-guard.test.js src/client/sidebar-coordinator.test.js"
+    "test": "node --test src/config.test.js src/media/*.test.js src/auth/*.test.js src/brand/*.test.js src/official/*.test.js src/plugins/*.test.js src/text/*.test.js src/reader/*.test.js src/apps/*.test.js src/avatar/*.test.js src/tools/*.test.js src/host/*.test.js src/client/api.test.js src/client/app-actions.test.js src/client/app-tabs.test.js src/client/apps-store.test.js src/client/apps-stage-box.test.js src/client/settings-placement.test.js src/client/avatar-api.test.js src/client/auth-gate.test.js src/client/login-guard.test.js src/client/sidebar-coordinator.test.js src/client/hero-brand.test.js src/client/HeroBrandMark.test.js"
   },
   "dependencies": {
     "aigc-provider-runtime-kit": "^0.2.0",
@@ -59,7 +59,8 @@
         "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-ui-settings",
         "@deepseek-ai/dsh-client-ui-sidebar",
-        "@deepseek-ai/dsh-client-ui-layout"
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-conversation"
       ],
       "platform": "web"
     }

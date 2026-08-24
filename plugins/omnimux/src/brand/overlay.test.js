@@ -195,6 +195,34 @@ test('hidePreviewBadge hides locale pills without display:none', () => {
   assert.ok(badge?.hasAttribute('data-omnimux-hide'))
 })
 
+test('rewriteHeroHeadline replaces the official Chinese headline exactly', () => {
+  const document = load(`
+    <div class="headline">
+      <span class="headlineText">探索未至之境</span>
+      <span>预览版</span>
+      <p>探索未至之境吧</p>
+    </div>
+  `)
+  applyOverlay(document, DEFAULT_CONFIG, [])
+  assert.equal(document.querySelector('.headlineText')?.textContent, '属于你的AI社媒运营团队')
+  assert.equal([...document.querySelectorAll('span')].find(el => el.textContent === '预览版') != null, true)
+  assert.equal(document.querySelector('p')?.textContent, '探索未至之境吧')
+})
+
+test('rewriteHeroHeadline replaces the official English headline exactly', () => {
+  const document = load('<span class="headlineText">Into the Unknown</span>')
+  applyOverlay(document, resolveConfig({ heroHeadline: 'Your AI social team' }), [])
+  assert.equal(document.querySelector('.headlineText')?.textContent, 'Your AI social team')
+})
+
+test('rewriteHeroHeadline restore on dispose', () => {
+  const document = load('<span class="headlineText">探索未至之境</span>')
+  const stop = startOverlay(document, DEFAULT_CONFIG)
+  assert.equal(document.querySelector('.headlineText')?.textContent, '属于你的AI社媒运营团队')
+  stop()
+  assert.equal(document.querySelector('.headlineText')?.textContent, '探索未至之境')
+})
+
 test('rewriteWelcome rewrites product phrases and dispose restores them', () => {
   const document = load('<p>DeepSeek Harness remains in testing. Join the DSH plugin ecosystem.</p>')
   const stop = startOverlay(document, DEFAULT_CONFIG)

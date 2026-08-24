@@ -10,6 +10,7 @@ test('parseBrandConfig fills OmniMux defaults', () => {
   assert.equal(parsed.replaceHeroMark, true)
   assert.equal(parsed.hidePreviewBadge, true)
   assert.equal(parsed.rewriteWelcome, true)
+  assert.equal(parsed.heroHeadline, DEFAULT_CONFIG.heroHeadline)
   assert.ok(parsed.logoSvg.includes('<svg'))
 })
 
@@ -30,4 +31,16 @@ test('assertBrandConfig rejects an empty product name', () => {
     () => assertBrandConfig({ ...DEFAULT_CONFIG, productName: '   ' }),
     /productName must be a non-empty string/,
   )
+})
+
+test('assertBrandConfig rejects an empty hero headline', () => {
+  assert.throws(
+    () => assertBrandConfig({ ...DEFAULT_CONFIG, heroHeadline: '   ' }),
+    /heroHeadline must be a non-empty string/,
+  )
+})
+
+test('parseBrandConfig keeps an explicit heroHeadline', () => {
+  const parsed = parseBrandConfig({ heroHeadline: '自有主视觉文案' })
+  assert.equal(parsed.heroHeadline, '自有主视觉文案')
 })
