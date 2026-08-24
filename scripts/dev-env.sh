@@ -10,7 +10,8 @@
 #
 # 端口（M1）：L2 专用池 44200–44299。禁止占用：
 #   43120–43151（DSH Desktop）/ 44120–44151（OmniMux App 默认+重试窗）。
-# start 会写入 cordis.patch.yml 的 webserver.port + port.txt，避免照抄生产 44120。
+# start 写入 cordis.patch.yml 的 webserver.port + port.txt，并以 --port <池口> 硬绑，避免照抄生产 44120。
+# 任务名仅允许 [A-Za-z0-9_-]，且任务目录必须落在 ~/.dsh-dev/tasks/<name>/ 下（防 rm 路径穿越）。
 #
 # 用法：
 #   ./scripts/dev-env.sh start <name> <plugin>   # 建环境 + Host + 插件 watch（后台）
@@ -42,13 +43,43 @@ usage() { sed -n '2,30p' "$0"; exit 1; }
 [ $# -lt 1 ] && usage
 cmd="$1"; name="${2:-}"
 
+validate_task_name() {
+  local n="$1"
+  if [[ ! "$n" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$ ]]; then
+    echo "✗ 非法任务名: ${n}（仅允许字母/数字/_/-，1–64 字符，且以字母或数字开头）" >&2
+    exit 1
+  fi
+}
+
 task_home_for() {
   local n="$1"
+  validate_task_name "$n"
   if [ "$LEGACY_HOME" = "1" ]; then
     echo "$DEV_HOME"
   else
     echo "$DEV_HOME/tasks/$n"
   fi
+}
+
+# 防御性守门：解析后的任务目录必须仍在 DEV_HOME（legacy）或 DEV_HOME/tasks 下。
+assert_task_home_safe() {
+  local thome="$1"
+  local root real_root real_thome
+  if [ "$LEGACY_HOME" = "1" ]; then
+    root="$DEV_HOME"
+  else
+    root="$DEV_HOME/tasks"
+  fi
+  mkdir -p "$root" "$thome"
+  real_root="$(cd "$root" && pwd -P)"
+  real_thome="$(cd "$thome" && pwd -P)"
+  case "$real_thome" in
+    "$real_root"|"$real_root"/*) return 0 ;;
+    *)
+      echo "✗ 拒绝越界任务目录: ${thome} → ${real_thome}（必须在 ${root}/ 下）" >&2
+      exit 1
+      ;;
+  esac
 }
 
 # Resolve profile dir: prefer tasks/<name>/profiles/...；兼容旧 ~/.dsh-dev/profiles/...
@@ -80,14 +111,20 @@ port_in_use() {
   lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
 }
 
-# 优先复用 port.txt（若空闲且不在保留窗）；否则扫 L2 池。
+port_in_pool() {
+  local p="$1"
+  [ "$p" -ge "$L2_PORT_POOL_START" ] && [ "$p" -le "$L2_PORT_POOL_END" ]
+}
+
+# 优先复用 port.txt（须在池内、空闲、不在保留窗）；否则扫 L2 池。
 alloc_port() {
   local pdir="$1"
   local preferred="" candidate
   if [ -f "$pdir/port.txt" ]; then
     preferred="$(tr -d '[:space:]' < "$pdir/port.txt" || true)"
   fi
-  if [ -n "$preferred" ] && [[ "$preferred" =~ ^[0-9]+$ ]] && ! port_reserved "$preferred"; then
+  if [ -n "$preferred" ] && [[ "$preferred" =~ ^[0-9]+$ ]] \
+    && port_in_pool "$preferred" && ! port_reserved "$preferred"; then
     if ! port_in_use "$preferred"; then
       echo "$preferred"
       return 0
@@ -95,7 +132,7 @@ alloc_port() {
   fi
   candidate="$L2_PORT_POOL_START"
   while [ "$candidate" -le "$L2_PORT_POOL_END" ]; do
-    if ! port_reserved "$candidate" && ! port_in_use "$candidate"; then
+    if port_in_pool "$candidate" && ! port_reserved "$candidate" && ! port_in_use "$candidate"; then
       echo "$candidate"
       return 0
     fi
@@ -286,10 +323,24 @@ case "$cmd" in
   start)
     plugin="${3:-}"
     if [ -z "$name" ] || [ -z "$plugin" ]; then usage; fi
+    validate_task_name "$name"
     [ -f "$PLUGINS_ROOT/$plugin/package.json" ] || { echo "✗ 插件源码不存在: $PLUGINS_ROOT/$plugin" >&2; exit 1; }
+
+    # 先停再建：避免 migrate 时从 running Host 脚下抽目录
+    pdir="$(profile_dir "$name")"
+    if [ -d "$pdir" ]; then
+      stop_watch "$pdir" >/dev/null 2>&1 || true
+      if [ -f "$pdir/host.pid" ]; then
+        kill "$(cat "$pdir/host.pid")" 2>/dev/null || true
+        rm -f "$pdir/host.pid"
+        echo "· 已停止既有 Host（再 migrate/start）"
+        sleep 1
+      fi
+    fi
 
     migrate_legacy_profile_if_needed "$name"
     TASK_HOME="$(task_home_for "$name")"
+    assert_task_home_safe "$TASK_HOME"
     mkdir -p "$TASK_HOME"
     if [ "$LEGACY_HOME" != "1" ]; then
       ensure_task_credentials "$TASK_HOME"
@@ -324,14 +375,15 @@ case "$cmd" in
     ln -s "$PLUGINS_ROOT/$plugin" "$pdir/node_modules/$plugin"
     echo "✓ $plugin → link $PLUGINS_ROOT/$plugin"
 
-    [ -f "$pdir/host.pid" ] && kill "$(cat "$pdir/host.pid")" 2>/dev/null || true
     stop_watch "$pdir" >/dev/null 2>&1 || true
+    [ -f "$pdir/host.pid" ] && kill "$(cat "$pdir/host.pid")" 2>/dev/null || true
     sleep 1
     : > "$pdir/host.log"
 
     # OMNIMUX_PLUGIN_PROFILE：symlink 装插件时显式注入 profile 名
+    # 硬绑池口，避免 --port 0 与静态 patch 层叠碰巧生效
     DSH_HOME="$RUNTIME_HOME" OMNIMUX_PLUGIN_PROFILE="omnimux-dev-$name" nohup node "$DSH_SRC/apps/cli/lib/bin.js" \
-      --profile "omnimux-dev-$name" --host 127.0.0.1 --port 0 --no-open \
+      --profile "omnimux-dev-$name" --host 127.0.0.1 --port "$assigned_port" --no-open \
       > "$pdir/host.log" 2>&1 &
     echo $! > "$pdir/host.pid"
 
@@ -345,13 +397,16 @@ case "$cmd" in
       echo "✗ Host 未在 20s 内监听，日志: $pdir/host.log" >&2
       exit 1
     fi
-    if [ "$port" != "$assigned_port" ]; then
-      echo "⚠ Host 实际听口 ${port} ≠ 分配口 ${assigned_port}；以实际口为准并回写 port.txt" >&2
-      echo "$port" > "$pdir/port.txt"
-      rewrite_patch_port "$pdir/cordis.patch.yml" "$port" || true
+    if port_reserved "$port" || ! port_in_pool "$port"; then
+      echo "✗ Host 听口 ${port} 不在 L2 池或落在保留窗（期望 ${assigned_port}）。查 $pdir/cordis.patch.yml / host.log" >&2
+      kill "$(cat "$pdir/host.pid")" 2>/dev/null || true
+      rm -f "$pdir/host.pid"
+      exit 1
     fi
-    if port_reserved "$port"; then
-      echo "✗ Host 落在保留窗 ${port}（App/Desktop），L2 并行会撞口。查 $pdir/cordis.patch.yml / host.log" >&2
+    if [ "$port" != "$assigned_port" ]; then
+      echo "✗ Host 实际听口 ${port} ≠ 硬绑口 ${assigned_port}（fail-loud，不回写池外/错口）" >&2
+      kill "$(cat "$pdir/host.pid")" 2>/dev/null || true
+      rm -f "$pdir/host.pid"
       exit 1
     fi
 
@@ -367,6 +422,7 @@ case "$cmd" in
   watch)
     plugin="${3:-}"
     if [ -z "$name" ] || [ -z "$plugin" ]; then usage; fi
+    validate_task_name "$name"
     [ -f "$PLUGINS_ROOT/$plugin/package.json" ] || { echo "✗ 插件源码不存在: $PLUGINS_ROOT/$plugin" >&2; exit 1; }
     pdir="$(profile_dir "$name")"
     [ -d "$pdir" ] || { echo "✗ 环境不存在: omnimux-dev-${name}（先 start）" >&2; exit 1; }
@@ -379,11 +435,13 @@ case "$cmd" in
     ;;
   unwatch)
     [ -z "$name" ] && usage
+    validate_task_name "$name"
     pdir="$(profile_dir "$name")"
     stop_watch "$pdir" || echo "· omnimux-dev-$name 无 watch"
     ;;
   stop)
     [ -z "$name" ] && usage
+    validate_task_name "$name"
     pdir="$(profile_dir "$name")"
     stop_watch "$pdir" >/dev/null 2>&1 || true
     [ -f "$pdir/host.pid" ] && kill "$(cat "$pdir/host.pid")" 2>/dev/null && rm -f "$pdir/host.pid" \
@@ -415,9 +473,11 @@ case "$cmd" in
     ;;
   rm)
     [ -z "$name" ] && usage
+    validate_task_name "$name"
     "$0" stop "$name" || true
     pdir="$(profile_dir "$name")"
     thome="$(task_home_for "$name")"
+    assert_task_home_safe "$thome"
     if [ "$LEGACY_HOME" = "1" ]; then
       rm -rf "$pdir"
       echo "✓ omnimux-dev-$name 已删除（legacy profile）"
