@@ -126,6 +126,7 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `omnimux_text_complete` | hub tool over `textComplete` | same plus required `reason` | same | same |
 | `omnimux_social_data` | official-only tool | `platform` + `capability` + `url`/`id`/`query`; `sk-` | `{ platform, capability, model, data }` | `omnimux-unconfigured`, `omnimux-invalid-request` |
 | `omnimux_accounts_*` / `omnimux_publish_*` | official-only tools | connect / list / presign / create / get post; access token | upstream JSON, secrets stripped | `needs-omnimux` |
+| `omnimux_inspiration_*` | official-only tools | list / get / create / update / delete / tags / status; access token | upstream `{success,data}` envelope, media URLs unchanged | `needs-omnimux` |
 | `videoProcess` | neutral provide（provider: dsh-video） | `{ capability, input, dest, signal? }` | `{ mode: "live", files?: [{ path, kind, meta? }], result? }` | `ffmpeg-missing`, `unknown-capability`, `video-invalid-input`, `video-ffmpeg-failed`, `video-incompatible-streams`, `video-canceled`, `video-timeout`, `video-<capability>-failed` |
 | `video_process` | dsh-video tool over `videoProcess` | same | same | same |
 
@@ -138,6 +139,7 @@ These cannot be swapped for a third-party endpoint. Unconfigured calls throw `ne
 - Identity: device login, `GET /api/user/self`, public profile cache
 - Social data: OmniMux social-data capabilities (`sk-`)
 - Social publish: connect account, list accounts, media presign, create post (`OMNIMUX_ACCESS_TOKEN`)
+- Inspiration library: list / get / create / update / soft-delete / tags / status (`OMNIMUX_ACCESS_TOKEN`)
 
 The hub may wrap those HTTP calls. It must not store an account matrix, posting calendar, warmup roster, or Drama Center upload.
 
@@ -155,6 +157,23 @@ Browser-local write routes (same-origin guard); the browser app is `plugins/omni
 ViewRow = the `pickAccount` whitelist (id/platform/display_name/username/name/group/status/expires_at?/connected_at?/https avatar_url) plus overlay fields `agent_usable?` / `last_used_at?` and a computed `status` (site status normalized; else expires_at-driven: past → `expired`, <24h → `expiring`; else `active`).
 
 Local metadata overlay (`group` / `agent_usable` / `last_used_at`) persists to `$DSH_HOME/omnimux/accounts.json` (dir 0700, file 0600, whole-document rewrite); GET merges it over site rows, DELETE and a lazy GET-time prune reclaim ids the site no longer returns. Tokens never reach the Host — connect is site-side OAuth.
+
+### Inspiration HTTP (Host `/omnimux/inspiration`)
+
+Browser-local JSON + media stream. The browser app is `plugins/omnimux-inspiration`. Cloud calls stay in the hub (`withPat` / `withPatRaw` to `https://omnimux.ai/api/inspiration/v1/...`). Cover URLs in JSON are rewritten from `/api/inspiration/v1/media/` to `/omnimux/inspiration/media/` so `<img>` never talks to the cloud.
+
+| Method & Path | Body / query | Success |
+|---|---|---|
+| GET `/omnimux/inspiration` | `type` `tag` `tags` `q` `is_favorite` `sort` `page` `page_size` | upstream list envelope, media URLs rewritten |
+| GET `/omnimux/inspiration/status` | — | `{enabled,configured,gateway_ready}` |
+| GET `/omnimux/inspiration/tags` | — | upstream tags envelope |
+| GET `/omnimux/inspiration/{id}` | — | upstream item envelope |
+| POST `/omnimux/inspiration` | create body | upstream create envelope |
+| PATCH `/omnimux/inspiration/{id}` | patch body | upstream update envelope |
+| DELETE `/omnimux/inspiration/{id}` | — | upstream delete envelope |
+| GET `/omnimux/inspiration/media/{key}` | Range optional | streamed bytes; PAT injected by Host |
+
+Writes are same-origin only. Unsigned → 401 `needs-omnimux`. Tools keep the original gateway JSON (no Host rewrite).
 
 ## Credentials
 

@@ -13,6 +13,7 @@ import { createIdentity } from './auth/identity.js'
 import { createTokenStore } from './auth/store.js'
 import { parseHubConfig, Config } from './config.js'
 import { createOfficialDispatcher, registerOfficialRoutes } from './official/http-routes.js'
+import { createInspirationDispatcher, registerInspirationRoutes } from './official/inspiration-http.js'
 import { createAccountMetaStore } from './official/account-meta.js'
 import { mountOfficial } from './official/mount.js'
 import { createAvatarStore } from './avatar/store.js'
@@ -213,13 +214,17 @@ export function apply(ctx, config = {}) {
         store: appsStore,
         tabsStore,
       }))
-      const stopOfficial = registerOfficialRoutes(webServer, createOfficialDispatcher({
+      const officialDeps = {
         official: hub.official,
         identity,
         store,
         siteBaseUrl,
+      }
+      const stopOfficial = registerOfficialRoutes(webServer, createOfficialDispatcher({
+        ...officialDeps,
         metaStore: accountMetaStore,
       }))
+      const stopInspiration = registerInspirationRoutes(webServer, createInspirationDispatcher(officialDeps))
       const stopAvatar = registerAvatarRoutes(webServer, createAvatarDispatcher({
         store: avatarStore,
         identity,
@@ -229,6 +234,7 @@ export function apply(ctx, config = {}) {
         stopPlugins()
         stopApps()
         stopOfficial()
+        stopInspiration()
         stopAvatar()
       }
     }

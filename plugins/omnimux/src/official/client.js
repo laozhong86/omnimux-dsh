@@ -77,7 +77,35 @@ export function createOfficialClient(deps) {
     })
   }
 
-  return { withSk, withPat }
+  /**
+   * PAT request that returns the raw Response (for media streams). Never
+   * JSON-parses the body. 401/403 still throw needs-omnimux so the Host
+   * surface can open the login gate.
+   * @param {string} path
+   * @param {{ method?: string, headers?: Record<string, string> }} [opts]
+   */
+  async function withPatRaw(path, opts = {}) {
+    const access = await deps.resolveAccess()
+    if (!access?.token) {
+      throw new OmnimuxError('needs-omnimux', 'sign in to OmniMux or set OMNIMUX_ACCESS_TOKEN')
+    }
+    /** @type {Record<string, string>} */
+    const headers = { authorization: `Bearer ${access.token}` }
+    if (access.userId != null && String(access.userId)) {
+      headers['New-Api-User'] = String(access.userId)
+    }
+    const method = opts.method || 'GET'
+    const response = await fetcher(`${siteBaseUrl}${path}`, {
+      method,
+      headers: { ...headers, ...opts.headers },
+    })
+    if (response.status === 401 || response.status === 403) {
+      throw new OmnimuxError('needs-omnimux', `official request unauthorized (HTTP ${response.status})`)
+    }
+    return response
+  }
+
+  return { withSk, withPat, withPatRaw }
 }
 
 /**

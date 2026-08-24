@@ -1,6 +1,15 @@
 import { OmnimuxError } from '../media/errors.js'
 import { connectAccount, disconnectAccount, listAccounts } from './accounts.js'
 import { createOfficialClient } from './client.js'
+import {
+  createInspiration,
+  deleteInspiration,
+  getInspiration,
+  inspirationStatus,
+  listInspirations,
+  listTags,
+  updateInspiration,
+} from './inspiration.js'
 import { createPost, getPost, presignMedia } from './publish.js'
 import { fetchSocialData } from './social-data.js'
 
@@ -119,5 +128,72 @@ export function mountOfficial(ctx, deps) {
     'Get a social post by id. Requires OmniMux sign-in.',
     { id: { type: 'string', required: true } },
     (args) => getPost(client, args),
+  )
+  tool(
+    'omnimux_inspiration_list',
+    'List inspiration items. Requires OmniMux sign-in. Filters: type, tag, tags, q, is_favorite, sort, page, page_size.',
+    {
+      type: { type: 'string' },
+      tag: { type: 'string' },
+      tags: { type: 'string' },
+      q: { type: 'string' },
+      is_favorite: { type: 'boolean' },
+      sort: { type: 'string', enum: ['hot', 'new', 'fav'] },
+      page: { type: 'number' },
+      page_size: { type: 'number' },
+    },
+    (args) => listInspirations(client, args),
+  )
+  tool(
+    'omnimux_inspiration_get',
+    'Get one inspiration item by id. Requires OmniMux sign-in.',
+    { id: { type: 'string', required: true } },
+    (args) => getInspiration(client, args),
+  )
+  tool(
+    'omnimux_inspiration_create',
+    'Create an inspiration item from a source URL. Duplicate URLs return 409 unless return_existing. Requires OmniMux sign-in.',
+    {
+      source_url: { type: 'string', required: true },
+      type: { type: 'string', enum: ['video', 'image', 'link'] },
+      title: { type: 'string' },
+      content: { type: 'string' },
+      tags: { type: 'array' },
+      is_favorite: { type: 'boolean' },
+      hot_score: { type: 'number' },
+      return_existing: { type: 'boolean' },
+    },
+    (args) => createInspiration(client, args),
+  )
+  tool(
+    'omnimux_inspiration_update',
+    'Patch an inspiration item (title/content/tags/is_favorite/hot_score). Requires OmniMux sign-in.',
+    {
+      id: { type: 'string', required: true },
+      title: { type: 'string' },
+      content: { type: 'string' },
+      tags: { type: 'array' },
+      is_favorite: { type: 'boolean' },
+      hot_score: { type: 'number' },
+    },
+    (args) => updateInspiration(client, args),
+  )
+  tool(
+    'omnimux_inspiration_delete',
+    'Soft-delete an inspiration item by id. Requires OmniMux sign-in.',
+    { id: { type: 'string', required: true } },
+    (args) => deleteInspiration(client, args),
+  )
+  tool(
+    'omnimux_inspiration_tags',
+    'List inspiration tags with counts. Requires OmniMux sign-in.',
+    {},
+    () => listTags(client),
+  )
+  tool(
+    'omnimux_inspiration_status',
+    'Inspiration gateway probe: enabled / configured / gateway_ready. Requires OmniMux sign-in.',
+    {},
+    () => inspirationStatus(client),
   )
 }

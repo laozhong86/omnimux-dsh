@@ -9,7 +9,7 @@ PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-/Users/x/Desktop/Project/dsh-plugin/product
 PROD_HOME="${DSH_HOME:-$HOME/.dsh}"
 PROD_PROFILE="$PROD_HOME/profiles/omnimux"
 DEV_HOME="${DSH_DEV_HOME:-$HOME/.dsh-dev}"
-PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-market omnimux-workflow dsh-video omnimux-analytics)
+PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-market omnimux-workflow omnimux-inspiration dsh-video omnimux-analytics)
 fails=0
 
 ok()   { echo "✓ $1"; }

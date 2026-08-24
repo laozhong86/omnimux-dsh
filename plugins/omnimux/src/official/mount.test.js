@@ -13,6 +13,7 @@ describe('official mount', () => {
     assert.ok(names.includes('omnimux_social_data'))
     assert.ok(names.includes('omnimux_accounts_list'))
     assert.ok(names.includes('omnimux_publish_create'))
+    assert.ok(names.includes('omnimux_inspiration_list'))
   })
 
   it('skips official tools when official.mount is false', () => {
