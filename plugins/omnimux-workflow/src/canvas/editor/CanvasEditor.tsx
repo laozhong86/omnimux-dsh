@@ -208,6 +208,7 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
     handleSelectionContextMenu,
     closeMenu,
     handleMenuAction,
+    handleAddNodeFromMenu,
   } = useCanvasContextMenu({
     screenToFlowPosition,
     setNodes,
@@ -220,6 +221,7 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
     undo,
     redo,
     onExecuteNodeIds,
+    onAddNode: handleAddNode,
   });
 
   // 插入资产到画布作为新节点
@@ -401,6 +403,7 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
         context={menu.context}
         onClose={closeMenu}
         onAction={handleMenuAction}
+        onAddNode={handleAddNodeFromMenu}
         canUndo={canUndo}
         canRedo={canRedo}
         hasClipboard={clipboard.hasClipboard}

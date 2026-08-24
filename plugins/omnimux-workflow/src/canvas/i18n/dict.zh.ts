@@ -8,9 +8,14 @@
 const zh = {
   // 节点类型名（NodeHeader fallback label）
   'node.type.text': '文本',
+  'node.type.table': '表格',
   'node.type.image': '图片',
   'node.type.video': '视频',
   'node.type.audio': '音频',
+  'node.type.director3d': '3D 导演台',
+  'node.type.videoEdit': '视频剪辑',
+  'node.type.comfyui': 'ComfyUI 工作流',
+  'badge.new': '新',
   // 节点头
   'node.renameHint': '双击重命名',
   // GenerationStateContainer
@@ -131,7 +136,8 @@ const zh = {
   'exec.reset': '重置',
   'exec.resetTitle': '清除执行状态',
   // 右键菜单（menu.*；execute-node 复用 panel.runHint，undo/redo 复用 toolbar.*）
-  // S1 菜单归并：新建节点只走 Toolbar / handle plus 菜单，menu.add.* 已下线
+  'menu.addNode': '添加节点',
+  'menu.back': '返回',
   'menu.executeSelection': '执行选中节点（含上游）',
   'menu.copy': '复制',
   'menu.duplicate': '创建副本',

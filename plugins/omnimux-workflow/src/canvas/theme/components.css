@@ -1468,6 +1468,128 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   background: var(--wf-menu-border);
 }
 
+/* ==================== Add Node Drill-down Panel ==================== */
+
+.wf-add-node-menu {
+  min-width: 230px;
+  padding: 8px;
+}
+
+.wf-add-node-menu__container {
+  display: flex;
+  flex-direction: column;
+}
+
+.wf-add-node-menu__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px 8px 2px;
+  border-bottom: 1px solid var(--wf-menu-border, rgba(255, 255, 255, 0.08));
+  margin-bottom: 6px;
+}
+
+.wf-add-node-menu__back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--wf-menu-text-muted, #a1a1aa);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  padding: 0;
+}
+
+.wf-add-node-menu__back-btn:hover {
+  background: var(--wf-menu-surface-hover, rgba(255, 255, 255, 0.1));
+  color: #ffffff;
+}
+
+.wf-add-node-menu__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wf-menu-text, #e4e4e7);
+  letter-spacing: 0.2px;
+}
+
+.wf-add-node-menu__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wf-add-node-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--wf-menu-text, #e4e4e7);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+  text-align: left;
+}
+
+.wf-add-node-menu__item:hover {
+  background: var(--wf-menu-surface-hover, rgba(255, 255, 255, 0.08));
+  color: #ffffff;
+}
+
+.wf-add-node-menu__icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e4e4e7;
+  flex-shrink: 0;
+}
+
+.wf-add-node-menu__label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.wf-add-node-menu__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 6px;
+}
+
+.wf-add-node-menu__badge--primary {
+  background: #5B68F6;
+  color: #ffffff;
+}
+
+.wf-add-node-menu__badge--new {
+  background: #27272a;
+  color: #d4d4d8;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wf-add-node-menu__arrow {
+  color: var(--wf-menu-text-muted, #71717a);
+  margin-left: 2px;
+}
+
 /* ==================== rejection toast ==================== */
 
 .wf-rejected-toast {

@@ -6,9 +6,14 @@ import type { DictKey } from './dict.zh';
 
 const en: Record<DictKey, string> = {
   'node.type.text': 'Text',
+  'node.type.table': 'Table',
   'node.type.image': 'Image',
   'node.type.video': 'Video',
   'node.type.audio': 'Audio',
+  'node.type.director3d': '3D Director',
+  'node.type.videoEdit': 'Video Edit',
+  'node.type.comfyui': 'ComfyUI Workflow',
+  'badge.new': 'NEW',
   'node.renameHint': 'Double-click to rename',
   'node.preparing': 'Preparing...',
   'node.generating': 'Generating...',
@@ -116,6 +121,8 @@ const en: Record<DictKey, string> = {
   'exec.runAllTitle': 'Run the whole workflow (parallel by topological layers)',
   'exec.reset': 'Reset',
   'exec.resetTitle': 'Clear execution state',
+  'menu.addNode': 'Add Node',
+  'menu.back': 'Back',
   'menu.executeSelection': 'Run selected nodes (with upstream)',
   'menu.copy': 'Copy',
   'menu.duplicate': 'Duplicate',
