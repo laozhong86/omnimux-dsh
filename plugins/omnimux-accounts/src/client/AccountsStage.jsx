@@ -14,9 +14,12 @@ import { AccountsSection } from './AccountsSection.jsx'
  * @param {{ t: (key: string) => string, stage: { getSnapshot: () => boolean, subscribe: Function, set: Function, readBox: () => { top: number, left: number, width: number, height: number } } }} props
  */
 export function AccountsStage({ t, stage }) {
+  // Wrap method refs — useSyncExternalStore calls subscribe/getSnapshot bare.
+  // Passing `stage.subscribe` / `stage.getSnapshot` drops `this` and can leave
+  // the Fiber memoized snapshot stuck after store flips (issue #14).
   const open = useSyncExternalStore(
-    stage ? stage.subscribe : () => () => {},
-    stage ? stage.getSnapshot : () => false,
+    stage ? (onStoreChange) => stage.subscribe(onStoreChange) : () => () => {},
+    stage ? () => stage.getSnapshot() : () => false,
   )
   const [everOpened, setEverOpened] = useState(false)
   const [box, setBox] = useState(() => (stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 }))

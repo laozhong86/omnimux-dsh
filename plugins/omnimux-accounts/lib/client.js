@@ -380,14 +380,21 @@ function summarize(accounts) {
     platformCount: platforms.size
   };
 }
-function relativeTime(iso, now = Date.now()) {
+function resolveUiLocale(override) {
+  const raw = typeof override === "string" && override.trim() !== "" ? override.trim() : typeof document !== "undefined" && document.documentElement?.lang ? document.documentElement.lang : typeof navigator !== "undefined" ? navigator.language : "en";
+  const lower = String(raw || "en").toLowerCase();
+  if (lower === "zh" || lower.startsWith("zh-")) return "zh-CN";
+  if (lower === "en" || lower.startsWith("en-")) return "en";
+  return raw;
+}
+function relativeTime(iso, now = Date.now(), locale) {
   if (typeof iso !== "string" || iso === "") return "";
   const then = Date.parse(iso);
   if (!Number.isFinite(then)) return "";
   const base = now instanceof Date ? now.getTime() : now;
   const diffMs = then - base;
   const abs = Math.abs(diffMs);
-  const formatter = new Intl.RelativeTimeFormat(void 0, { numeric: "auto" });
+  const formatter = new Intl.RelativeTimeFormat(resolveUiLocale(locale), { numeric: "auto" });
   if (abs < 60 * 1e3) return formatter.format(Math.round(diffMs / 1e3), "second");
   if (abs < 60 * 60 * 1e3) return formatter.format(Math.round(diffMs / (60 * 1e3)), "minute");
   if (abs < 24 * 60 * 60 * 1e3) return formatter.format(Math.round(diffMs / (60 * 60 * 1e3)), "hour");
@@ -2521,9 +2528,9 @@ function AccountsSection({ t, active = true }) {
 var import_jsx_runtime10 = require("react/jsx-runtime");
 function AccountsStage({ t, stage }) {
   const open = (0, import_react6.useSyncExternalStore)(
-    stage ? stage.subscribe : () => () => {
+    stage ? (onStoreChange) => stage.subscribe(onStoreChange) : () => () => {
     },
-    stage ? stage.getSnapshot : () => false
+    stage ? () => stage.getSnapshot() : () => false
   );
   const [everOpened, setEverOpened] = (0, import_react6.useState)(false);
   const [box, setBox] = (0, import_react6.useState)(() => stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 });
