@@ -31,6 +31,8 @@ export const WORKFLOW_API_ROUTES = {
   workspaces: `${WORKFLOW_ROUTE_PREFIX}/api/workspaces`,
   /** GET/PUT/DELETE one workspace snapshot (PUT uses optimistic lock). */
   workspace: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}`,
+  /** GET: lightweight { id, version } — external-edit polling (PR3). */
+  workspaceVersion: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/version`,
   /** GET: generation capability catalog (M3/M4 fills real data). */
   capabilities: `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`,
   /** GET: media files under the plugin-owned media dir (traversal-guarded). */
