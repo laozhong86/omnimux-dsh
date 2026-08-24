@@ -224,7 +224,10 @@ export function apply(ctx, config = {}) {
         ...officialDeps,
         metaStore: accountMetaStore,
       }))
-      const stopInspiration = registerInspirationRoutes(webServer, createInspirationDispatcher(officialDeps))
+      const stopInspiration = registerInspirationRoutes(webServer, createInspirationDispatcher({
+        ...officialDeps,
+        dataRoot: homeDir,
+      }))
       const stopAvatar = registerAvatarRoutes(webServer, createAvatarDispatcher({
         store: avatarStore,
         identity,

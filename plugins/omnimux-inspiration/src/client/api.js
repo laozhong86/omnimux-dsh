@@ -86,14 +86,25 @@ export function listTags() {
 
 /**
  * Host-rewritten media path for <img src>. Absolute http(s) URLs pass through.
+ * Bare keys (detail envelope) get the Host media prefix.
  * @param {unknown} url
  */
 export function hostMediaSrc(url) {
   if (typeof url !== 'string' || url === '') return ''
+  if (url.includes('..')) return ''
   if (/^https?:\/\//i.test(url)) return url
   if (url.startsWith('/omnimux/inspiration/media/')) return url
   if (url.startsWith('/api/inspiration/v1/media/')) {
     return `/omnimux/inspiration/media/${url.slice('/api/inspiration/v1/media/'.length)}`
   }
-  return url
+  return `/omnimux/inspiration/media/${url.replace(/^\/+/, '')}`
+}
+
+/**
+ * @param {unknown} row
+ */
+export function pickCoverSrc(row) {
+  if (!row || typeof row !== 'object') return ''
+  const rec = /** @type {Record<string, unknown>} */ (row)
+  return hostMediaSrc(rec.cover_key ?? rec.cover_url)
 }

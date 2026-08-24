@@ -292,12 +292,21 @@ function listInspirations(filters = {}) {
 var listInspirationsGuarded = authGuard(listInspirations);
 function hostMediaSrc(url) {
   if (typeof url !== "string" || url === "") return "";
+  if (url.includes("..")) return "";
   if (/^https?:\/\//i.test(url)) return url;
   if (url.startsWith("/omnimux/inspiration/media/")) return url;
   if (url.startsWith("/api/inspiration/v1/media/")) {
     return `/omnimux/inspiration/media/${url.slice("/api/inspiration/v1/media/".length)}`;
   }
-  return url;
+  return `/omnimux/inspiration/media/${url.replace(/^\/+/, "")}`;
+}
+function pickCoverSrc(row) {
+  if (!row || typeof row !== "object") return "";
+  const rec = (
+    /** @type {Record<string, unknown>} */
+    row
+  );
+  return hostMediaSrc(rec.cover_key ?? rec.cover_url);
 }
 
 // src/client/styles.js
@@ -502,7 +511,7 @@ function useInspiration(filters) {
       sessionCache.phase = "ready";
       setPhase("ready");
     });
-  }, [apply2, filters.type, filters.q, filters.is_favorite, filters.sort]);
+  }, [apply2, filters]);
   (0, import_react.useEffect)(() => {
     void refresh();
   }, [refresh]);
@@ -606,10 +615,10 @@ function InspirationSection({ t, active = true }) {
     phase === "ready" && items.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-grid", children: items.map((row) => {
       const id = String(row.id);
       const title = String(row.title || row.source_url || id);
-      const cover = hostMediaSrc(row.cover_url);
+      const cover = pickCoverSrc(row);
       const source = typeof row.source_url === "string" ? row.source_url : "";
       return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", { className: "omnimux-inspiration-card", children: [
-        cover ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", { className: "omnimux-inspiration-cover", src: cover, alt: "" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-cover-empty", children: t("noCover") }),
+        cover ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", { className: "omnimux-inspiration-cover", src: cover, alt: "", loading: "lazy", decoding: "async" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omnimux-inspiration-cover-empty", children: t("noCover") }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-body", children: [
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", { className: "omnimux-inspiration-title", children: title }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omnimux-inspiration-meta", children: [
