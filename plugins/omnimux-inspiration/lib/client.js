@@ -1055,6 +1055,44 @@ function resolveTikTokEmbedUrl(sourceUrlOrId) {
   const id = extractTikTokVideoId(raw);
   return id ? `https://www.tiktok.com/player/v1/${id}` : null;
 }
+function resolveCreatorProfileUrl(creator, sourceUrl = "", platform = "") {
+  if (creator && typeof creator === "object") {
+    const rec = (
+      /** @type {Record<string, unknown>} */
+      creator
+    );
+    if (typeof rec.profile_url === "string" && /^https?:\/\//i.test(rec.profile_url)) {
+      return rec.profile_url;
+    }
+    if (typeof rec.url === "string" && /^https?:\/\//i.test(rec.url)) {
+      return rec.url;
+    }
+  }
+  const rawHandle = typeof creator === "string" ? creator : typeof creator === "object" && creator !== null ? String(
+    /** @type {Record<string, unknown>} */
+    creator.handle || /** @type {Record<string, unknown>} */
+    creator.name || ""
+  ) : "";
+  let handle = rawHandle.replace(/^@+/, "").trim();
+  const sUrl = typeof sourceUrl === "string" ? sourceUrl : "";
+  const plat = typeof platform === "string" ? platform.toLowerCase() : "";
+  if (!handle || handle.toLowerCase() === "creator" || handle.toLowerCase() === "social") {
+    const m = sUrl.match(/@([^/?#]+)/);
+    if (m && m[1]) handle = m[1];
+    else return null;
+  }
+  const sUrlLower = sUrl.toLowerCase();
+  if (sUrlLower.includes("instagram.com") || plat === "instagram") {
+    return `https://www.instagram.com/${handle}`;
+  }
+  if (sUrlLower.includes("youtube.com") || sUrlLower.includes("youtu.be") || plat === "youtube") {
+    return `https://www.youtube.com/@${handle}`;
+  }
+  if (sUrlLower.includes("twitter.com") || sUrlLower.includes("x.com") || plat === "twitter" || plat === "x") {
+    return `https://x.com/${handle}`;
+  }
+  return `https://www.tiktok.com/@${handle}`;
+}
 
 // src/client/ConfirmRemoveDialog.jsx
 var import_jsx_runtime2 = require("react/jsx-runtime");
@@ -1933,6 +1971,32 @@ var INSPIRATION_CSS = `
   display: flex;
   align-items: center;
   gap: 10px;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 120ms ease;
+}
+.omnimux-inspiration-creator-link {
+  padding: 4px 6px;
+  margin: -4px -6px;
+  cursor: pointer;
+}
+.omnimux-inspiration-creator-link:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255, 255, 255, 0.06));
+}
+.omnimux-inspiration-creator-link:hover .omnimux-inspiration-modal-handle {
+  color: var(--dsw-alias-brand-primary, #ffffff);
+}
+.omnimux-inspiration-creator-link:hover .omnimux-inspiration-ext-icon {
+  opacity: 0.8;
+  transform: translate(0, 0);
+}
+.omnimux-inspiration-creator-link:hover .omnimux-inspiration-creator-handle {
+  color: var(--dsw-alias-label-primary-dimmed, #cccccc);
+}
+.omnimux-inspiration-creator-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 .omnimux-inspiration-modal-avatar {
   width: 36px;
@@ -1947,11 +2011,27 @@ var INSPIRATION_CSS = `
   font-size: 13px;
   font-weight: 600;
   color: var(--dsw-alias-label-primary, #ffffff);
+  flex-shrink: 0;
 }
 .omnimux-inspiration-modal-handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
   font-weight: 600;
   color: var(--dsw-alias-label-primary, #ffffff);
+  transition: color 120ms ease;
+}
+.omnimux-inspiration-ext-icon {
+  opacity: 0;
+  transition: opacity 120ms ease, transform 120ms ease;
+  transform: translate(-1px, 1px);
+  color: var(--dsw-alias-label-tertiary, #888888);
+}
+.omnimux-inspiration-creator-handle {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary, #808080);
+  transition: color 120ms ease;
 }
 
 .omnimux-inspiration-modal-link {
@@ -2371,6 +2451,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
   const cover = pickCoverSrc(item);
   const tags = Array.isArray(item.tags) ? item.tags : [];
   const creator = analysis.creator || item.author || { name: "Creator", handle: item.source_platform || "social" };
+  const creatorProfileUrl = resolveCreatorProfileUrl(creator, item.source_url, item.platform || item.source_platform);
   const localVideoUrl = item.local_paths?.video ? `/omnimux/inspiration/local/media/${encodeURIComponent(item.id)}/video.mp4` : null;
   const hook = analysis.hook_highlight || analysis.hook || analysis["3s_hook"] || "";
   const targetGoal = analysis.target_goal || analysis.goal || "";
@@ -2520,13 +2601,35 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-modal-right", children: [
         /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-card", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-left", children: [
+          creatorProfileUrl ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+            "a",
+            {
+              href: creatorProfileUrl,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              className: "omnimux-inspiration-creator-left omnimux-inspiration-creator-link",
+              title: `\u8BBF\u95EE @${creator.handle || creator.name} \u7684\u4E3B\u9875`,
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-info", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-modal-handle", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: creator.name || creator.handle || "Creator" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.2", className: "omnimux-inspiration-ext-icon", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" }) })
+                  ] }),
+                  creator.handle ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-handle", children: [
+                    "@",
+                    creator.handle.replace(/^@+/, "")
+                  ] }) : null
+                ] })
+              ]
+            }
+          ) : /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-left", children: [
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() }),
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-info", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-handle", children: creator.name || creator.handle || "Creator" }),
               creator.handle ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-handle", children: [
                 "@",
-                creator.handle
+                creator.handle.replace(/^@+/, "")
               ] }) : null
             ] })
           ] }),

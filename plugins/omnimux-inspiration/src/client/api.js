@@ -313,3 +313,50 @@ export function resolveTikTokEmbedUrl(sourceUrlOrId) {
   const id = extractTikTokVideoId(raw)
   return id ? `https://www.tiktok.com/player/v1/${id}` : null
 }
+
+/**
+ * Resolve author homepage URL across platforms.
+ * @param {unknown} creator
+ * @param {string} [sourceUrl]
+ * @param {string} [platform]
+ * @returns {string | null}
+ */
+export function resolveCreatorProfileUrl(creator, sourceUrl = '', platform = '') {
+  if (creator && typeof creator === 'object') {
+    const rec = /** @type {Record<string, unknown>} */ (creator)
+    if (typeof rec.profile_url === 'string' && /^https?:\/\//i.test(rec.profile_url)) {
+      return rec.profile_url
+    }
+    if (typeof rec.url === 'string' && /^https?:\/\//i.test(rec.url)) {
+      return rec.url
+    }
+  }
+
+  const rawHandle = typeof creator === 'string'
+    ? creator
+    : (typeof creator === 'object' && creator !== null
+        ? String(/** @type {Record<string, unknown>} */ (creator).handle || /** @type {Record<string, unknown>} */ (creator).name || '')
+        : '')
+
+  let handle = rawHandle.replace(/^@+/, '').trim()
+  const sUrl = typeof sourceUrl === 'string' ? sourceUrl : ''
+  const plat = typeof platform === 'string' ? platform.toLowerCase() : ''
+
+  if (!handle || handle.toLowerCase() === 'creator' || handle.toLowerCase() === 'social') {
+    const m = sUrl.match(/@([^/?#]+)/)
+    if (m && m[1]) handle = m[1]
+    else return null
+  }
+
+  const sUrlLower = sUrl.toLowerCase()
+  if (sUrlLower.includes('instagram.com') || plat === 'instagram') {
+    return `https://www.instagram.com/${handle}`
+  }
+  if (sUrlLower.includes('youtube.com') || sUrlLower.includes('youtu.be') || plat === 'youtube') {
+    return `https://www.youtube.com/@${handle}`
+  }
+  if (sUrlLower.includes('twitter.com') || sUrlLower.includes('x.com') || plat === 'twitter' || plat === 'x') {
+    return `https://x.com/${handle}`
+  }
+  return `https://www.tiktok.com/@${handle}`
+}

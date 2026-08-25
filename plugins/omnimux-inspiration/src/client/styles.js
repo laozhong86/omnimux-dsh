@@ -860,6 +860,32 @@ export const INSPIRATION_CSS = `
   display: flex;
   align-items: center;
   gap: 10px;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 120ms ease;
+}
+.omnimux-inspiration-creator-link {
+  padding: 4px 6px;
+  margin: -4px -6px;
+  cursor: pointer;
+}
+.omnimux-inspiration-creator-link:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255, 255, 255, 0.06));
+}
+.omnimux-inspiration-creator-link:hover .omnimux-inspiration-modal-handle {
+  color: var(--dsw-alias-brand-primary, #ffffff);
+}
+.omnimux-inspiration-creator-link:hover .omnimux-inspiration-ext-icon {
+  opacity: 0.8;
+  transform: translate(0, 0);
+}
+.omnimux-inspiration-creator-link:hover .omnimux-inspiration-creator-handle {
+  color: var(--dsw-alias-label-primary-dimmed, #cccccc);
+}
+.omnimux-inspiration-creator-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 .omnimux-inspiration-modal-avatar {
   width: 36px;
@@ -874,11 +900,27 @@ export const INSPIRATION_CSS = `
   font-size: 13px;
   font-weight: 600;
   color: var(--dsw-alias-label-primary, #ffffff);
+  flex-shrink: 0;
 }
 .omnimux-inspiration-modal-handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
   font-weight: 600;
   color: var(--dsw-alias-label-primary, #ffffff);
+  transition: color 120ms ease;
+}
+.omnimux-inspiration-ext-icon {
+  opacity: 0;
+  transition: opacity 120ms ease, transform 120ms ease;
+  transform: translate(-1px, 1px);
+  color: var(--dsw-alias-label-tertiary, #888888);
+}
+.omnimux-inspiration-creator-handle {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary, #808080);
+  transition: color 120ms ease;
 }
 
 .omnimux-inspiration-modal-link {

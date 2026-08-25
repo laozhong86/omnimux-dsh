@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { authGuard, hostMediaSrc, whenAuthReady } from './api.js'
+import {
+  authGuard,
+  hostMediaSrc,
+  resolveCreatorProfileUrl,
+  resolveTikTokEmbedUrl,
+  whenAuthReady,
+} from './api.js'
 
 function fakeGate() {
   let ensureArgs = null
@@ -124,5 +130,26 @@ describe('hostMediaSrc', () => {
     assert.equal(hostMediaSrc('/omnimux/inspiration/media/covers/a.jpg'), '/omnimux/inspiration/media/covers/a.jpg')
     assert.equal(hostMediaSrc('https://cdn.example/a.jpg'), 'https://cdn.example/a.jpg')
     assert.equal(hostMediaSrc(''), '')
+  })
+})
+
+describe('resolveCreatorProfileUrl', () => {
+  it('resolves explicit profile_url or url on creator object', () => {
+    assert.equal(resolveCreatorProfileUrl({ profile_url: 'https://tiktok.com/@alex' }), 'https://tiktok.com/@alex')
+    assert.equal(resolveCreatorProfileUrl({ url: 'https://instagram.com/alex' }), 'https://instagram.com/alex')
+  })
+
+  it('builds profile URL for TikTok by default or from sourceUrl', () => {
+    assert.equal(resolveCreatorProfileUrl({ handle: 'luckylynndee' }), 'https://www.tiktok.com/@luckylynndee')
+    assert.equal(resolveCreatorProfileUrl({ handle: '@shi.learn' }), 'https://www.tiktok.com/@shi.learn')
+  })
+
+  it('builds platform-specific profile URL for Instagram and YouTube', () => {
+    assert.equal(resolveCreatorProfileUrl({ handle: 'designer' }, 'https://instagram.com/reel/123'), 'https://www.instagram.com/designer')
+    assert.equal(resolveCreatorProfileUrl({ handle: 'tech_channel' }, 'https://youtube.com/watch?v=123'), 'https://www.youtube.com/@tech_channel')
+  })
+
+  it('falls back to source URL @handle when creator handle is generic', () => {
+    assert.equal(resolveCreatorProfileUrl({ handle: 'creator' }, 'https://www.tiktok.com/@mariaqvcpb9/video/123'), 'https://www.tiktok.com/@mariaqvcpb9')
   })
 })

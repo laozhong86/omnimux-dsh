@@ -11,6 +11,7 @@ import {
   isUsableCoverSize,
   loadInspirationsAtomic,
   pickCoverSrc,
+  resolveCreatorProfileUrl,
   resolveTikTokEmbedUrl,
   setInspirationCache,
   whenAuthReady,
@@ -150,6 +151,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
   const cover = pickCoverSrc(item)
   const tags = Array.isArray(item.tags) ? item.tags : []
   const creator = analysis.creator || item.author || { name: 'Creator', handle: item.source_platform || 'social' }
+  const creatorProfileUrl = resolveCreatorProfileUrl(creator, item.source_url, item.platform || item.source_platform)
 
   const localVideoUrl = item.local_paths?.video ? `/omnimux/inspiration/local/media/${encodeURIComponent(item.id)}/video.mp4` : null
 
@@ -366,15 +368,38 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
         <div className="omnimux-inspiration-modal-right">
           {/* 创作者卡片 */}
           <div className="omnimux-inspiration-creator-card">
-            <div className="omnimux-inspiration-creator-left">
-              <div className="omnimux-inspiration-modal-avatar">
-                {(creator.name || creator.handle || 'U').slice(0, 1).toUpperCase()}
+            {creatorProfileUrl ? (
+              <a
+                href={creatorProfileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="omnimux-inspiration-creator-left omnimux-inspiration-creator-link"
+                title={`访问 @${creator.handle || creator.name} 的主页`}
+              >
+                <div className="omnimux-inspiration-modal-avatar">
+                  {(creator.name || creator.handle || 'U').slice(0, 1).toUpperCase()}
+                </div>
+                <div className="omnimux-inspiration-creator-info">
+                  <div className="omnimux-inspiration-modal-handle">
+                    <span>{creator.name || creator.handle || 'Creator'}</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="omnimux-inspiration-ext-icon">
+                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                    </svg>
+                  </div>
+                  {creator.handle ? <div className="omnimux-inspiration-creator-handle">@{creator.handle.replace(/^@+/, '')}</div> : null}
+                </div>
+              </a>
+            ) : (
+              <div className="omnimux-inspiration-creator-left">
+                <div className="omnimux-inspiration-modal-avatar">
+                  {(creator.name || creator.handle || 'U').slice(0, 1).toUpperCase()}
+                </div>
+                <div className="omnimux-inspiration-creator-info">
+                  <div className="omnimux-inspiration-modal-handle">{creator.name || creator.handle || 'Creator'}</div>
+                  {creator.handle ? <div className="omnimux-inspiration-creator-handle">@{creator.handle.replace(/^@+/, '')}</div> : null}
+                </div>
               </div>
-              <div>
-                <div className="omnimux-inspiration-modal-handle">{creator.name || creator.handle || 'Creator'}</div>
-                {creator.handle ? <div className="omnimux-inspiration-creator-handle">@{creator.handle}</div> : null}
-              </div>
-            </div>
+            )}
 
             {item.source_url ? (
               <a
