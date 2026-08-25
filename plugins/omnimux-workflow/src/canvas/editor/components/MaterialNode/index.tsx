@@ -135,11 +135,11 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       if (materialType === 'text') {
         let injected = '';
         if (presetKey === 'script') {
-          injected = '【剧本场景】\n时间：黄昏\n地点：都市街角\n人物：主角（神情凝重）\n对白/动作：低头看表，随后步入阴影之中。';
+          injected = '请创作一个[时长]的[类型]剧本。\n\n主题：[一句话描述]\n\n情绪基调：[温暖/悬疑/搞笑/热血]\n\n特殊要求：[如有]';
         } else if (presetKey === 'planning') {
-          injected = '【短剧策划案】\n主题：逆袭/打脸爽文\n目标受众：都市青年群体\n核心冲突：隐藏身份的继承人在关键时刻力挽狂澜。';
+          injected = '请撰写一份[项目类型]策划案。\n\n项目背景：[简述]\n\n核心目标：[希望达成什么]\n\n目标受众：[人群描述]';
         } else if (presetKey === 'prompt') {
-          injected = '超写实电影质感，8k 分辨率，柔和黄昏光线，赛博朋克都市街道，景深浅，杰作。';
+          injected = '根据以下创意需求，生成一组适用于[目标工具]的高质量提示词。\n\n创意需求：[描述你想要的画面/音乐/视频]\n\n风格偏好：[写实/插画/3D/动漫/其他]';
         } else if (presetKey === 'storyboard') {
           injected = '镜头1：全景，城市天际线鸟瞰（缓慢下推 3s）\n镜头2：中景，主角推门走进咖啡馆（特写手部 2s）\n镜头3：特写，桌上的老式黑白照片（静止 2s）';
         }
