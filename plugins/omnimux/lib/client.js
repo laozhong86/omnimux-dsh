@@ -3,11 +3,9 @@ window.__ModuleLoader__.load({
   factory: (require) => {
     var module = { exports: {} };
     var exports = module.exports;
-var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name2 in all)
@@ -21,14 +19,6 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/client/index.js
@@ -234,7 +224,367 @@ var en = {
 var NS = "omnimux";
 
 // src/client/ProfileSection.jsx
-var import_react3 = require("react");
+var import_react4 = require("react");
+
+// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
+var import_react = require("react");
+var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
+var import_jsx_runtime = require("react/jsx-runtime");
+function cssClass(value, name2) {
+  if (!value) throw new Error(`dsh-ui-kit: missing CSS module class "${name2}"`);
+  return value;
+}
+function cx(...parts) {
+  const out = [];
+  for (const part of parts) {
+    if (!part) continue;
+    if (typeof part === "string" || typeof part === "number") {
+      out.push(String(part));
+      continue;
+    }
+    for (const [key, on] of Object.entries(part)) if (on) out.push(key);
+  }
+  return out.join(" ");
+}
+var injected = /* @__PURE__ */ new Set();
+function injectCss(id, css) {
+  if (typeof document === "undefined") return;
+  if (injected.has(id)) return;
+  injected.add(id);
+  const style = document.createElement("style");
+  style.setAttribute("data-dsh-ui-kit", id);
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+injectCss("Button.module.css", '.dshUk-Button-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-shrink: 0;\n  gap: 6px;\n  box-sizing: border-box;\n  margin: 0;\n  border: 1px solid transparent;\n  border-radius: 8px;\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  line-height: 18px;\n  letter-spacing: 0;\n  white-space: nowrap;\n  color: var(--dsw-alias-label-primary);\n  background: transparent;\n  padding: 0 12px;\n  height: 32px;\n  vertical-align: middle;\n  user-select: none;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    transform 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-Button-button:focus {\n  outline: none;\n}\n\n.dshUk-Button-button:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-Button-button:disabled,\n.dshUk-Button-button[aria-disabled="true"] {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n\n.dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n  transform: scale(0.96);\n}\n\n.dshUk-Button-sm {\n  height: 28px;\n  padding: 0 10px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-Button-xs {\n  height: 24px;\n  padding: 0 8px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  gap: 4px;\n}\n\n.dshUk-Button-iconOnly {\n  padding: 0;\n  width: 32px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-sm {\n  width: 28px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-xs {\n  width: 24px;\n}\n\n.dshUk-Button-primary {\n  background: var(--dsw-alias-button-primary-fill);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-primary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-primary-hover);\n}\n\n.dshUk-Button-secondary {\n  background: var(--dsw-alias-bg-layer-1);\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-secondary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-ghost {\n  background: transparent;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-ghost:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-Button-ghost:active:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-active);\n}\n\n.dshUk-Button-outline {\n  background: transparent;\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-outline:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-danger {\n  background: var(--dsw-alias-state-error-primary);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-danger:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-state-error-secondary);\n}\n\n.dshUk-Button-ghost[aria-pressed="true"],\n.dshUk-Button-secondary[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  box-shadow: inset 0 0 0 1px var(--dsw-alias-button-ghost-active-border);\n}\n\n/* Outline already owns a real 1px border. Keep pressed fill/border as\n * declarations \u2014 do not share the ghost/secondary inset box-shadow or the\n * pressed state would double-stroke. */\n.dshUk-Button-outline[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  border-color: var(--dsw-alias-button-ghost-active-border);\n  color: var(--dsw-alias-label-primary);\n}\n\n/* Hover specificity defense: `.dshUk-Button-outline:hover` (and ghost/secondary hover)\n * would otherwise wash the pressed fill/border back to the idle hover tokens. */\n.dshUk-Button-ghost[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]),\n.dshUk-Button-secondary[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]),\n.dshUk-Button-outline[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-ghost-active-hover);\n}\n\n.dshUk-Button-outline[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]) {\n  border-color: var(--dsw-alias-button-ghost-active-border);\n}\n\n.dshUk-Button-slot {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n}\n\n.dshUk-Button-xs .dshUk-Button-slot {\n  width: 14px;\n  height: 14px;\n}\n\n.dshUk-Button-spinner {\n  animation: dshUkSpin 0.7s linear infinite;\n}\n\n.dshUk-Button-label {\n  min-width: 0;\n}\n\n.dshUk-Button-loadingLabel {\n  opacity: 0.84;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-Button-button {\n    transition: none;\n  }\n\n  .dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n    transform: none;\n  }\n\n  .dshUk-Button-spinner {\n    animation: none;\n  }\n}\n\n@keyframes dshUkSpin {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}\n');
+var Button_module_css_default = {
+  "button": "dshUk-Button-button",
+  "sm": "dshUk-Button-sm",
+  "xs": "dshUk-Button-xs",
+  "iconOnly": "dshUk-Button-iconOnly",
+  "primary": "dshUk-Button-primary",
+  "secondary": "dshUk-Button-secondary",
+  "ghost": "dshUk-Button-ghost",
+  "outline": "dshUk-Button-outline",
+  "danger": "dshUk-Button-danger",
+  "slot": "dshUk-Button-slot",
+  "spinner": "dshUk-Button-spinner",
+  "label": "dshUk-Button-label",
+  "loadingLabel": "dshUk-Button-loadingLabel"
+};
+var VARIANT_CLASS = {
+  primary: cssClass(Button_module_css_default.primary, "primary"),
+  secondary: cssClass(Button_module_css_default.secondary, "secondary"),
+  ghost: cssClass(Button_module_css_default.ghost, "ghost"),
+  outline: cssClass(Button_module_css_default.outline, "outline"),
+  danger: cssClass(Button_module_css_default.danger, "danger")
+};
+var SIZE_CLASS$1 = {
+  default: void 0,
+  sm: cssClass(Button_module_css_default.sm, "sm"),
+  xs: cssClass(Button_module_css_default.xs, "xs")
+};
+var Button = (0, import_react.forwardRef)(function Button2({ variant = "secondary", size = "default", loading = false, leadingIcon, trailingIcon, type = "button", className, disabled, children, ...rest }, ref) {
+  const isDisabled = Boolean(disabled) || loading;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+    ...rest,
+    ref,
+    type,
+    className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], className),
+    disabled: isDisabled,
+    "aria-busy": loading || void 0,
+    "aria-disabled": isDisabled || void 0,
+    children: [
+      loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(Button_module_css_default.slot, Button_module_css_default.spinner),
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 })
+      }) : leadingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: Button_module_css_default.slot,
+        "aria-hidden": "true",
+        children: leadingIcon
+      }) : null,
+      children != null && children !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(Button_module_css_default.label, loading && Button_module_css_default.loadingLabel),
+        children
+      }) : null,
+      !loading && trailingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: Button_module_css_default.slot,
+        "aria-hidden": "true",
+        children: trailingIcon
+      }) : null
+    ]
+  });
+});
+var IconButton = (0, import_react.forwardRef)(function IconButton2({ variant = "ghost", size = "default", loading = false, type = "button", className, disabled, children, title, tooltipSide = "bottom", "aria-label": ariaLabel, ...rest }, ref) {
+  const isDisabled = Boolean(disabled) || loading;
+  const tooltip = title ?? ariaLabel;
+  const button = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+    ...rest,
+    ref,
+    type,
+    className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], Button_module_css_default.iconOnly, className),
+    disabled: isDisabled,
+    "aria-label": ariaLabel,
+    "aria-busy": loading || void 0,
+    "aria-disabled": isDisabled || void 0,
+    children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+      className: cx(Button_module_css_default.slot, loading && Button_module_css_default.spinner),
+      "aria-hidden": "true",
+      children: loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 }) : children
+    })
+  });
+  if (!tooltip) return button;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Tooltip, {
+    label: tooltip,
+    side: tooltipSide,
+    delayMs: 280,
+    disabled: isDisabled,
+    children: button
+  });
+});
+injectCss("SearchField.module.css", '.dshUk-SearchField-root {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  min-width: 140px;\n  max-width: 260px;\n  width: 100%;\n  padding: 0 8px 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-SearchField-stretch {\n  flex: 1 1 200px;\n}\n\n.dshUk-SearchField-root:hover:not(.dshUk-SearchField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-SearchField-root:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-SearchField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-icon {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-SearchField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-SearchField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-input::-webkit-search-decoration,\n.dshUk-SearchField-input::-webkit-search-cancel-button,\n.dshUk-SearchField-input::-webkit-search-results-button,\n.dshUk-SearchField-input::-webkit-search-results-decoration {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-input[type="search"] {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-shortcut {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 4px;\n  background: var(--dsw-alias-bg-layer-2);\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 11px;\n  line-height: 16px;\n  font-weight: 500;\n  letter-spacing: 0;\n}\n\n.dshUk-SearchField-clear {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  width: 20px;\n  height: 20px;\n  margin: 0;\n  padding: 0;\n  border: none;\n  border-radius: 6px;\n  background: transparent;\n  color: var(--dsw-alias-label-tertiary);\n  cursor: pointer;\n}\n\n.dshUk-SearchField-clear:hover:not(:disabled) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-clear:focus {\n  outline: none;\n}\n\n.dshUk-SearchField-clear:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 1px;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-SearchField-root {\n    transition: none;\n  }\n}\n');
+var SearchField_module_css_default = {
+  "root": "dshUk-SearchField-root",
+  "stretch": "dshUk-SearchField-stretch",
+  "disabled": "dshUk-SearchField-disabled",
+  "icon": "dshUk-SearchField-icon",
+  "input": "dshUk-SearchField-input",
+  "shortcut": "dshUk-SearchField-shortcut",
+  "clear": "dshUk-SearchField-clear"
+};
+function isTypingTarget(target) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  return target.isContentEditable;
+}
+function matchesShortcut(event, shortcut) {
+  const raw = shortcut.trim();
+  if (!raw) return false;
+  const lower = raw.toLowerCase();
+  const wantsMeta = /⌘|cmd|meta/.test(lower);
+  const wantsCtrl = /\bctrl\b|⌃/.test(lower);
+  const wantsAlt = /\balt\b|⌥/.test(lower);
+  const wantsShift = /\bshift\b|⇧/.test(lower);
+  const key = raw.replace(/⌘|⌃|⌥|⇧|cmd|meta|ctrl|alt|shift|\+/gi, "").trim().toLowerCase();
+  if (!key) return false;
+  if (Boolean(event.metaKey) !== wantsMeta) return false;
+  if (Boolean(event.ctrlKey) !== wantsCtrl) return false;
+  if (Boolean(event.altKey) !== wantsAlt) return false;
+  if (Boolean(event.shiftKey) !== wantsShift) return false;
+  return event.key.toLowerCase() === key;
+}
+var SearchField = (0, import_react.forwardRef)(function SearchField2({ value, defaultValue = "", onValueChange, onClear, debounceMs = 200, shortcut, stretch = false, clearLabel = "Clear", className, disabled, id, placeholder = "Search", ...rest }, ref) {
+  const generatedId = (0, import_react.useId)();
+  const inputId = id ?? generatedId;
+  const inputRef = (0, import_react.useRef)(null);
+  const timerRef = (0, import_react.useRef)(null);
+  const controlled = value !== void 0;
+  const [inner, setInner] = (0, import_react.useState)(defaultValue);
+  const current = controlled ? value : inner;
+  const immediate = controlled || debounceMs <= 0;
+  (0, import_react.useEffect)(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+  (0, import_react.useEffect)(() => {
+    if (!shortcut || disabled) return;
+    const onKey = (event) => {
+      if (event.defaultPrevented) return;
+      if (isTypingTarget(event.target)) return;
+      if (!matchesShortcut(event, shortcut)) return;
+      event.preventDefault();
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [shortcut, disabled]);
+  function emit2(next) {
+    if (immediate) {
+      onValueChange?.(next);
+      return;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      onValueChange?.(next);
+    }, debounceMs);
+  }
+  function apply2(next) {
+    if (!controlled) setInner(next);
+    emit2(next);
+  }
+  function onChange(event) {
+    apply2(event.target.value);
+  }
+  function handleClear() {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (!controlled) setInner("");
+    onValueChange?.("");
+    onClear?.();
+    inputRef.current?.focus();
+  }
+  (0, import_react.useImperativeHandle)(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    },
+    clear: handleClear
+  }));
+  function onKeyDown(event) {
+    rest.onKeyDown?.(event);
+    if (event.defaultPrevented) return;
+    if (event.key === "Escape" && current) {
+      event.preventDefault();
+      handleClear();
+    }
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+    className: cx(SearchField_module_css_default.root, stretch && SearchField_module_css_default.stretch, disabled && SearchField_module_css_default.disabled, className),
+    children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: SearchField_module_css_default.icon,
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconSearchOutline16, { size: 16 })
+      }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+        ...rest,
+        ref: inputRef,
+        id: inputId,
+        type: "search",
+        className: SearchField_module_css_default.input,
+        value: current,
+        disabled,
+        placeholder,
+        autoComplete: "off",
+        spellCheck: false,
+        onChange,
+        onKeyDown
+      }),
+      current ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+        type: "button",
+        className: SearchField_module_css_default.clear,
+        "aria-label": clearLabel,
+        title: clearLabel,
+        disabled,
+        onClick: handleClear,
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseFill14, { size: 14 })
+      }) : shortcut ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
+        className: SearchField_module_css_default.shortcut,
+        children: shortcut
+      }) : null
+    ]
+  });
+});
+injectCss("InputField.module.css", ".dshUk-InputField-root {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  min-width: 0;\n}\n\n.dshUk-InputField-label {\n  display: block;\n  font-size: 12px;\n  line-height: 16px;\n  font-weight: 500;\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-InputField-required {\n  margin-left: 2px;\n  color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-control {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-InputField-control:hover:not(.dshUk-InputField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-InputField-control:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-InputField-invalid {\n  border-color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-invalid:focus-within {\n  border-color: var(--dsw-alias-state-error-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-interactive-bg-hover-danger);\n}\n\n.dshUk-InputField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-affix {\n  display: inline-flex;\n  align-items: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-InputField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-InputField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-meta {\n  min-height: 16px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-hint {\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-InputField-error {\n  color: var(--dsw-alias-state-error-primary);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-InputField-control {\n    transition: none;\n  }\n}\n");
+var InputField_module_css_default = {
+  "root": "dshUk-InputField-root",
+  "label": "dshUk-InputField-label",
+  "required": "dshUk-InputField-required",
+  "control": "dshUk-InputField-control",
+  "disabled": "dshUk-InputField-disabled",
+  "invalid": "dshUk-InputField-invalid",
+  "affix": "dshUk-InputField-affix",
+  "input": "dshUk-InputField-input",
+  "meta": "dshUk-InputField-meta",
+  "hint": "dshUk-InputField-hint",
+  "error": "dshUk-InputField-error"
+};
+var InputField = (0, import_react.forwardRef)(function InputField2({ label, hint, error, prefix, suffix, className, disabled, id, required, ...rest }, ref) {
+  const generatedId = (0, import_react.useId)();
+  const inputId = id ?? generatedId;
+  const hintId = `${inputId}-hint`;
+  const errorId = `${inputId}-error`;
+  const invalid = Boolean(error);
+  const describedBy = [
+    rest["aria-describedby"],
+    hint ? hintId : void 0,
+    invalid ? errorId : void 0
+  ].filter(Boolean).join(" ") || void 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+    className: cx(InputField_module_css_default.root, className),
+    htmlFor: inputId,
+    children: [
+      label != null && label !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+        className: InputField_module_css_default.label,
+        children: [label, required ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+          className: InputField_module_css_default.required,
+          "aria-hidden": "true",
+          children: "*"
+        }) : null]
+      }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+        className: cx(InputField_module_css_default.control, invalid && InputField_module_css_default.invalid, disabled && InputField_module_css_default.disabled),
+        children: [
+          prefix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: InputField_module_css_default.affix,
+            children: prefix
+          }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+            ...rest,
+            ref,
+            id: inputId,
+            className: InputField_module_css_default.input,
+            disabled,
+            required,
+            "aria-invalid": invalid || void 0,
+            "aria-describedby": describedBy
+          }),
+          suffix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: InputField_module_css_default.affix,
+            children: suffix
+          }) : null
+        ]
+      }),
+      invalid ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(InputField_module_css_default.meta, InputField_module_css_default.error),
+        id: errorId,
+        role: "alert",
+        children: error
+      }) : hint ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(InputField_module_css_default.meta, InputField_module_css_default.hint),
+        id: hintId,
+        children: hint
+      }) : null
+    ]
+  });
+});
+injectCss("DropdownSelect.module.css", ".dshUk-DropdownSelect-anchor {\n  display: inline-flex;\n  flex-shrink: 0;\n  min-width: 0;\n}\n\n.dshUk-DropdownSelect-trigger {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  width: 100%;\n  min-width: 112px;\n  height: 32px;\n  margin: 0;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  text-align: left;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-trigger:hover:not(:disabled) {\n  border-color: var(--dsw-alias-border-l3);\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-DropdownSelect-trigger:focus {\n  outline: none;\n}\n\n.dshUk-DropdownSelect-trigger:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-DropdownSelect-trigger:disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-DropdownSelect-open {\n  border-color: var(--dsw-alias-brand-primary);\n}\n\n.dshUk-DropdownSelect-label {\n  flex: 1;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-DropdownSelect-placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-DropdownSelect-chevron {\n  display: inline-flex;\n  width: 14px;\n  height: 14px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-chevronOpen {\n  transform: rotate(180deg);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-DropdownSelect-trigger,\n  .dshUk-DropdownSelect-chevron {\n    transition: none;\n  }\n}\n");
+injectCss("Toolbar.module.css", ".dshUk-Toolbar-bar {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  height: 48px;\n  min-height: 44px;\n  max-height: 48px;\n  padding: 0 12px;\n  overflow: hidden;\n  white-space: nowrap;\n}\n\n.dshUk-Toolbar-compact {\n  height: 44px;\n  min-height: 44px;\n}\n\n.dshUk-Toolbar-left,\n.dshUk-Toolbar-right {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  min-width: 0;\n}\n\n.dshUk-Toolbar-left {\n  flex: 1 1 auto;\n  overflow: hidden;\n}\n\n.dshUk-Toolbar-right {\n  flex: 0 0 auto;\n  margin-left: auto;\n}\n\n.dshUk-Toolbar-right > * {\n  flex-shrink: 0;\n}\n\n.dshUk-Toolbar-filters {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  flex: 0 0 auto;\n}\n\n.dshUk-Toolbar-filters > * {\n  flex-shrink: 0;\n}\n");
+injectCss("Dialog.module.css", ".dshUk-Dialog-dialog {\n  width: min(480px, 100%);\n  max-height: min(80vh, 720px);\n  border-radius: 16px;\n}\n\n.dshUk-Dialog-sm {\n  width: min(380px, 100%);\n}\n\n.dshUk-Dialog-lg {\n  width: min(640px, 100%);\n}\n\n.dshUk-Dialog-body {\n  overflow: auto;\n  max-height: min(56vh, 480px);\n}\n\n.dshUk-Dialog-footer {\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  gap: 8px;\n  width: 100%;\n}\n\n.dshUk-Dialog-message {\n  margin: 0;\n  font-size: 14px;\n  line-height: 22px;\n  color: var(--dsw-alias-label-primary);\n}\n");
+var Dialog_module_css_default = {
+  "dialog": "dshUk-Dialog-dialog",
+  "sm": "dshUk-Dialog-sm",
+  "lg": "dshUk-Dialog-lg",
+  "body": "dshUk-Dialog-body",
+  "footer": "dshUk-Dialog-footer",
+  "message": "dshUk-Dialog-message"
+};
+var SIZE_CLASS = {
+  sm: cssClass(Dialog_module_css_default.sm, "sm"),
+  md: void 0,
+  lg: cssClass(Dialog_module_css_default.lg, "lg")
+};
+function ModalDialog({ open, onClose, title, description, children, footer, size = "md", closeLabel = "Close", className, contentClassName }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Modal, {
+    open,
+    onClose,
+    title,
+    closeLabel,
+    className: cx(Dialog_module_css_default.dialog, SIZE_CLASS[size], className),
+    contentClassName: cx(Dialog_module_css_default.body, contentClassName),
+    ...description !== void 0 ? { description } : {},
+    ...footer !== void 0 ? { footer } : {},
+    children
+  });
+}
 
 // src/auth/omnimux-auth.js
 var DEFAULT_SITE = "https://omnimux.ai";
@@ -253,7 +603,7 @@ function walletUrl(baseUrl) {
 }
 
 // src/client/use-omnimux-auth.js
-var import_react = require("react");
+var import_react2 = require("react");
 
 // src/client/api-json.js
 async function jsonRequest(path, opts = {}) {
@@ -413,8 +763,8 @@ function runLogin(opts = {}) {
 }
 function useOmnimuxAuth(opts = {}) {
   const verifyOnMount = opts.verifyOnMount === true;
-  const [state2, setState2] = (0, import_react.useState)({ phase: "checking" });
-  (0, import_react.useEffect)(() => {
+  const [state2, setState2] = (0, import_react2.useState)({ phase: "checking" });
+  (0, import_react2.useEffect)(() => {
     let cancelled = false;
     getStatus(verifyOnMount).then((result) => {
       if (cancelled) return;
@@ -427,7 +777,7 @@ function useOmnimuxAuth(opts = {}) {
       cancelled = true;
     };
   }, [verifyOnMount]);
-  (0, import_react.useEffect)(() => {
+  (0, import_react2.useEffect)(() => {
     if (state2.phase !== "waiting" || !state2.flow_id) return void 0;
     let cancelled = false;
     const delay = Math.max(1, Number(state2.interval) || 5) * 1e3;
@@ -479,7 +829,7 @@ function useOmnimuxAuth(opts = {}) {
       setState2({ phase: "need-login" });
     });
   }
-  const recheck = (0, import_react.useCallback)(() => {
+  const recheck = (0, import_react2.useCallback)(() => {
     return getStatus(false).then((result) => {
       if (result.body.logged_in) setState2({ phase: "ready", profile: result.body });
       else setState2({ phase: "need-login" });
@@ -556,98 +906,43 @@ function updateAvatar(patch) {
 }
 
 // src/client/ProfileAvatar.jsx
-var import_react2 = require("react");
-var import_react_dom = require("react-dom");
-
-// src/client/profile-styles.js
-var tokens = {
-  text: "var(--dsw-text-primary, inherit)",
-  textSecondary: "var(--dsw-text-secondary, rgba(127,127,127,.9))",
-  border: "var(--dsw-border, rgba(127,127,127,.35))",
-  card: "var(--dsw-alias-bg-primary, rgba(127,127,127,.08))",
-  hover: "var(--dsw-alias-interactive-bg-hover, rgba(127,127,127,.14))",
-  primaryFill: "var(--dsw-alias-button-primary-fill, #3b82f6)",
-  primaryHover: "var(--dsw-alias-button-primary-hover, #2f6fed)",
-  primaryLabel: "var(--dsw-alias-label-primary-inverted, #fff)",
-  error: "var(--dsw-alias-label-error, #e5534b)",
-  success: "var(--dsw-alias-label-accent, #3fb950)"
-};
-var page = {
-  padding: "20px",
-  color: tokens.text,
-  display: "flex",
-  flexDirection: "column",
-  gap: 14,
-  maxWidth: 520
-};
-var card = {
-  background: tokens.card,
-  border: `1px solid ${tokens.border}`,
-  borderRadius: 10,
-  padding: "14px 16px"
-};
-var label = { fontSize: 13, color: tokens.textSecondary };
-var value = { fontSize: 13, color: tokens.text, wordBreak: "break-all", textAlign: "right" };
-var hoverStyles = `
-.omx-profile .omx-btn { transition: background .15s ease, border-color .15s ease, color .15s ease; font-size: 13px; padding: 6px 14px; border-radius: 6px; cursor: pointer; }
-.omx-profile .omx-btn-primary { background: ${tokens.primaryFill}; color: ${tokens.primaryLabel}; border: 1px solid transparent; }
-.omx-profile .omx-btn-primary:hover { background: ${tokens.primaryHover}; }
-.omx-profile .omx-btn-ghost { background: transparent; color: ${tokens.textSecondary}; border: 1px solid ${tokens.border}; }
-.omx-profile .omx-btn-ghost:hover { color: ${tokens.text}; background: ${tokens.hover}; }
-.omx-profile .omx-btn-danger:hover { color: ${tokens.error}; border-color: ${tokens.error}; background: transparent; }
-.omx-avatar { position: relative; cursor: pointer; flex: 0 0 auto; }
-.omx-avatar-edit { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--dsw-alias-bg-mask-1, rgba(0,0,0,.55)); color: var(--dsw-alias-label-primary-inverted, #fff); font-size: 11px; opacity: 0; transition: opacity .15s ease; pointer-events: none; }
-.omx-avatar:hover .omx-avatar-edit { opacity: 1; }
-`;
-function money(value2) {
-  return typeof value2 === "number" ? `$${value2.toFixed(2)}` : "\u2014";
-}
-
-// src/client/ProfileAvatar.jsx
-var import_jsx_runtime = require("react/jsx-runtime");
+var import_react3 = require("react");
+var import_jsx_runtime2 = require("react/jsx-runtime");
 var HUES = [12, 90, 150, 210, 280, 320];
 function AvatarFace({ uri, initial, size = 44 }) {
-  const inner = uri ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-    "img",
+  const vars = { "--avatar-size": `${size}px` };
+  if (uri) {
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+      "img",
+      {
+        src: uri,
+        width: size,
+        height: size,
+        alt: "",
+        className: "omnimux-profile-avatar-img",
+        style: vars
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    "div",
     {
-      src: uri,
-      width: size,
-      height: size,
-      alt: "",
-      style: { width: size, height: size, borderRadius: "50%", display: "block" }
+      className: "omnimux-profile-avatar-face",
+      "data-large": size > 60 ? "true" : "false",
+      style: vars,
+      children: initial
     }
-  ) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-    width: size,
-    height: size,
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: size > 60 ? 28 : 18,
-    fontWeight: 600,
-    background: tokens.primaryFill,
-    color: tokens.primaryLabel
-  }, children: initial });
-  return inner;
+  );
 }
 function EditableAvatar({ t, uri, initial, onOpen }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "omx-avatar", onClick: onOpen, title: t("avatar.edit"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AvatarFace, { uri, initial }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "omx-avatar-edit", children: t("avatar.edit") })
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-avatar", onClick: onOpen, title: t("avatar.edit"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(AvatarFace, { uri, initial }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-avatar-edit", children: t("avatar.edit") })
   ] });
 }
 function AvatarModal({ t, avatar, initial, busy, error, onApply, onClose }) {
-  const fileRef = (0, import_react2.useRef)(null);
+  const fileRef = (0, import_react3.useRef)(null);
   const activeHue = typeof avatar?.opts?.hue === "number" ? avatar.opts.hue : null;
-  (0, import_react2.useEffect)(() => {
-    function onKey(event) {
-      if (event.key !== "Escape") return;
-      event.stopPropagation();
-      onClose();
-    }
-    document.addEventListener("keydown", onKey, true);
-    return () => document.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
   function pickFile(event) {
     const file = event.target.files && event.target.files[0];
     event.target.value = "";
@@ -659,117 +954,571 @@ function AvatarModal({ t, avatar, initial, busy, error, onApply, onClose }) {
     };
     reader.readAsDataURL(file);
   }
-  return (0, import_react_dom.createPortal)(
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-      "div",
-      {
-        onClick: onClose,
-        style: {
-          position: "fixed",
-          inset: 0,
-          zIndex: 1100,
-          background: "var(--dsw-alias-bg-mask-1, rgba(0,0,0,.45))",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 20
-        },
-        children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "div",
-          {
-            onClick: (event) => event.stopPropagation(),
-            style: {
-              ...card,
-              background: "var(--dsw-alias-bg-secondary, #1f2128)",
-              border: `1px solid ${tokens.border}`,
-              borderRadius: 12,
-              width: 320,
-              padding: "18px 20px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 14
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+    ModalDialog,
+    {
+      open: true,
+      size: "sm",
+      onClose,
+      title: t("avatar.title"),
+      closeLabel: t("avatar.close"),
+      footer: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Button, { variant: "ghost", onClick: onClose, children: t("avatar.close") }),
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-profile-avatar-preview", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(AvatarFace, { uri: avatar?.uri, initial, size: 96 }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-profile-hues", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-profile-hues-label", children: t("avatar.hue") }),
+          HUES.map((hue) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+            IconButton,
+            {
+              size: "xs",
+              variant: "ghost",
+              "aria-label": `${t("avatar.hue")} ${hue}`,
+              "data-active": activeHue === hue ? "true" : "false",
+              className: "omnimux-profile-hue",
+              disabled: busy,
+              onClick: () => {
+                void onApply({ hue });
+              },
+              children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "span",
+                {
+                  className: "omnimux-profile-hue-swatch",
+                  style: { "--hue": String(hue) }
+                }
+              )
             },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 14, fontWeight: 600 }, children: t("avatar.title") }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AvatarFace, { uri: avatar?.uri, initial, size: 96 }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 12, color: tokens.textSecondary }, children: t("avatar.hue") }),
-                HUES.map((hue) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                  "button",
-                  {
-                    type: "button",
-                    "aria-label": `${t("avatar.hue")} ${hue}`,
-                    disabled: busy,
-                    onClick: () => {
-                      void onApply({ hue });
-                    },
-                    style: {
-                      width: 20,
-                      height: 20,
-                      borderRadius: "50%",
-                      padding: 0,
-                      cursor: busy ? "default" : "pointer",
-                      background: `hsl(${hue} 70% 55%)`,
-                      border: activeHue === hue ? `2px solid ${tokens.text}` : `1px solid ${tokens.border}`,
-                      boxSizing: "border-box"
-                    }
-                  },
-                  hue
-                ))
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omx-btn omx-btn-primary", disabled: busy, onClick: () => {
-                  void onApply({ reroll: true });
-                }, children: t("avatar.reroll") }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omx-btn omx-btn-ghost", disabled: busy, onClick: () => fileRef.current?.click(), children: t("avatar.upload") }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                  "input",
-                  {
-                    ref: fileRef,
-                    type: "file",
-                    accept: "image/png,image/jpeg,image/webp,image/gif",
-                    style: { display: "none" },
-                    onChange: pickFile
-                  }
-                ),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                  "button",
-                  {
-                    type: "button",
-                    className: "omx-btn omx-btn-ghost",
-                    disabled: busy || avatar?.using_default !== false,
-                    onClick: () => {
-                      void onApply({ reset: true });
-                    },
-                    children: t("avatar.reset")
-                  }
-                )
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { margin: 0, fontSize: 11, color: tokens.textSecondary }, children: t("avatar.uploadHint") }),
-              error ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { margin: 0, fontSize: 12, color: tokens.error, lineHeight: 1.5 }, children: error }) : null,
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", className: "omx-btn omx-btn-ghost", style: { alignSelf: "flex-end" }, onClick: onClose, children: t("avatar.close") })
-            ]
-          }
-        )
-      }
-    ),
-    document.body
+            hue
+          ))
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-profile-avatar-actions", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Button, { variant: "primary", disabled: busy, onClick: () => {
+            void onApply({ reroll: true });
+          }, children: t("avatar.reroll") }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Button, { variant: "ghost", disabled: busy, onClick: () => fileRef.current?.click(), children: t("avatar.upload") }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+            "input",
+            {
+              ref: fileRef,
+              type: "file",
+              accept: "image/png,image/jpeg,image/webp,image/gif",
+              style: { display: "none" },
+              onChange: pickFile
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+            Button,
+            {
+              variant: "ghost",
+              disabled: busy || avatar?.using_default !== false,
+              onClick: () => {
+                void onApply({ reset: true });
+              },
+              children: t("avatar.reset")
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "omnimux-profile-hint", children: t("avatar.uploadHint") }),
+        error ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "omnimux-profile-error", children: error }) : null
+      ]
+    }
   );
 }
 
+// src/client/styles.js
+var STYLES_ID = "omnimux-hub-styles";
+var HUB_CSS = `
+.omnimux-apps-stage {
+  position: fixed;
+  z-index: 200;
+  top: var(--stage-top);
+  left: var(--stage-left);
+  width: var(--stage-width);
+  height: var(--stage-height);
+  display: flex;
+  flex-direction: column;
+  background: var(--dsw-alias-bg-primary, var(--dsw-bg, #111));
+  color: var(--dsw-alias-label-primary, inherit);
+  overflow: auto;
+  pointer-events: auto;
+}
+.omnimux-apps-stage[data-visible="false"] {
+  display: none;
+  pointer-events: none;
+}
+.omnimux-apps-stage-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+  padding: 12px 20px 12px;
+  -webkit-app-region: no-drag;
+}
+.omnimux-apps-stage-title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 32px;
+}
+.omnimux-apps-stage-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.omnimux-login-gate-code {
+  font-family: var(--dsw-font-markdown-code-font-family, monospace);
+  font-size: 22px;
+  letter-spacing: 3px;
+  text-align: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--dsw-alias-border-l2, inherit);
+  color: var(--dsw-alias-label-primary, inherit);
+}
+.omnimux-login-gate-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary, inherit);
+  line-height: 1.5;
+}
+.omnimux-login-gate-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-label-error, inherit);
+  line-height: 1.5;
+}
+.omnimux-login-gate-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.omnimux-profile {
+  padding: 20px;
+  color: var(--dsw-alias-label-primary, var(--dsw-text-primary, inherit));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 520px;
+}
+.omnimux-profile-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.omnimux-profile-card {
+  background: var(--dsw-alias-bg-primary, rgba(127,127,127,.08));
+  border: 1px solid var(--dsw-alias-border-l2, var(--dsw-border, rgba(127,127,127,.35)));
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.omnimux-profile-card--identity,
+.omnimux-profile-card--quota {
+  display: flex;
+  align-items: center;
+}
+.omnimux-profile-card--identity { gap: 12px; }
+.omnimux-profile-card--quota { gap: 16px; }
+.omnimux-profile-card--details { padding: 4px 16px; }
+.omnimux-profile-card--signed-out {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+.omnimux-profile-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.omnimux-profile-name {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.omnimux-profile-username {
+  font-size: 13px;
+  color: var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(127,127,127,.9)));
+}
+.omnimux-profile-status {
+  margin-left: auto;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(127,127,127,.9)));
+}
+.omnimux-profile-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dsw-alias-label-accent, #3fb950);
+}
+.omnimux-profile-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-label-error, #e5534b);
+  line-height: 1.5;
+}
+.omnimux-profile-quota {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.omnimux-profile-label {
+  font-size: 13px;
+  color: var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(127,127,127,.9)));
+}
+.omnimux-profile-value {
+  font-size: 13px;
+  color: var(--dsw-alias-label-primary, var(--dsw-text-primary, inherit));
+  word-break: break-all;
+  text-align: right;
+}
+.omnimux-profile-quota-amount {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.omnimux-profile-quota-used {
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(127,127,127,.9)));
+}
+.omnimux-profile-quota-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--dsw-alias-border-l2, var(--dsw-border, rgba(127,127,127,.35)));
+  overflow: hidden;
+  margin-top: 2px;
+}
+.omnimux-profile-quota-fill {
+  width: var(--quota-used);
+  height: 100%;
+  border-radius: 2px;
+  background: var(--dsw-alias-button-primary-fill, #3b82f6);
+}
+.omnimux-profile-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--dsw-alias-border-l2, var(--dsw-border, rgba(127,127,127,.35)));
+}
+.omnimux-profile-row[data-last="true"] { border-bottom: none; }
+.omnimux-profile-message {
+  margin: 0;
+  font-size: 13px;
+  color: var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(127,127,127,.9)));
+  line-height: 1.5;
+}
+.omnimux-profile-logout { align-self: flex-start; }
+.omnimux-avatar {
+  position: relative;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.omnimux-avatar-edit {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--dsw-alias-bg-mask-1, rgba(0,0,0,.55));
+  color: var(--dsw-alias-label-primary-inverted, #fff);
+  font-size: 11px;
+  opacity: 0;
+  transition: opacity .15s ease;
+  pointer-events: none;
+}
+.omnimux-avatar:hover .omnimux-avatar-edit { opacity: 1; }
+.omnimux-profile-avatar-face,
+.omnimux-profile-avatar-img {
+  width: var(--avatar-size, 44px);
+  height: var(--avatar-size, 44px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  background: var(--dsw-alias-button-primary-fill, #3b82f6);
+  color: var(--dsw-alias-label-primary-inverted, #fff);
+}
+.omnimux-profile-avatar-img {
+  display: block;
+  object-fit: cover;
+  background: none;
+}
+.omnimux-profile-avatar-face[data-large="true"] { font-size: 28px; }
+.omnimux-profile-avatar-preview { display: flex; justify-content: center; }
+.omnimux-profile-hues {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.omnimux-profile-hues-label {
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(127,127,127,.9)));
+}
+.omnimux-profile-hue-swatch {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: hsl(var(--hue) 70% 55%);
+  box-shadow: inset 0 0 0 1px var(--dsw-alias-border-l2, rgba(127,127,127,.35));
+}
+.omnimux-profile-hue[data-active="true"] .omnimux-profile-hue-swatch {
+  box-shadow: inset 0 0 0 2px var(--dsw-alias-label-primary, inherit);
+}
+.omnimux-profile-avatar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.omnimux-profile-hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary, var(--dsw-text-secondary, rgba(127,127,127,.9)));
+}
+
+.omnimux-plugins {
+  padding: 0 20px 24px;
+  color: var(--dsw-alias-label-primary, var(--dsw-text-primary, inherit));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.omnimux-plugins-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+}
+.omnimux-plugins-search { flex: 0 1 280px; max-width: 280px; }
+.omnimux-plugins-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  align-items: stretch;
+  gap: 12px;
+}
+.omnimux-plugins-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 176px;
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.08));
+}
+.omnimux-plugins-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  outline: none;
+}
+.omnimux-plugins-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.omnimux-plugins-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.10));
+  color: var(--dsw-alias-label-primary, inherit);
+  flex: 0 0 auto;
+}
+.omnimux-plugins-title-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  padding-right: 36px;
+}
+.omnimux-plugins-title {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+}
+.omnimux-plugins-badge {
+  font-size: 11px;
+  line-height: 16px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.omnimux-plugins-badge[data-state="installed"] {
+  background: color-mix(in srgb, var(--dsw-alias-state-success-primary, #4caf7d) 16%, transparent);
+  color: var(--dsw-alias-state-success-primary, #4caf7d);
+}
+.omnimux-plugins-badge[data-state="update"] {
+  background: color-mix(in srgb, var(--dsw-alias-state-business-primary, #4c8dff) 16%, transparent);
+  color: var(--dsw-alias-state-business-primary, #4c8dff);
+}
+.omnimux-plugins-badge[data-state="available"] {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
+  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
+}
+.omnimux-plugins-summary {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  opacity: 0.72;
+}
+.omnimux-plugins-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.omnimux-plugins-tag {
+  font-size: 11px;
+  line-height: 16px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
+  white-space: nowrap;
+}
+.omnimux-plugins-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: auto;
+}
+.omnimux-plugins-more {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
+.omnimux-plugins-popover {
+  position: absolute;
+  top: 40px;
+  right: 8px;
+  z-index: 5;
+  min-width: 200px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-primary, var(--dsw-bg, #16181d));
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.16));
+  box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.35));
+}
+.omnimux-plugins-menu-item {
+  width: 100%;
+  justify-content: flex-start;
+}
+.omnimux-plugins-menu-item-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+}
+.omnimux-plugins-menu-hint {
+  font-size: 11px;
+  line-height: 16px;
+  opacity: 0.6;
+}
+.omnimux-plugins-muted { opacity: 0.7; font-size: 13px; margin: 0; }
+.omnimux-plugins-error {
+  color: var(--dsw-alias-state-error-primary, #e06c75);
+  font-size: 13px;
+  margin: 0;
+}
+.omnimux-plugins-restart { align-self: flex-start; }
+.omnimux-plugins-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.08));
+}
+.omnimux-plugins-gate-code {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 2px;
+  font-family: var(--dsw-font-markdown-code-font-family, monospace);
+}
+.omnimux-plugins-gate-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.omnimux-update-action {
+  flex: none;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  padding-right: 2px;
+}
+.omnimux-update-action-btn {
+  border-radius: 999px;
+  height: 28px;
+}
+.omnimux-update-action-btn[data-status="readyToRestart"] {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--dsw-alias-button-primary-fill, #2563EB) 80%, transparent);
+}
+.omnimux-update-action-icon {
+  display: inline-flex;
+  align-items: center;
+}
+`;
+function injectHubStyles() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(STYLES_ID)) return;
+  const styleNode = document.createElement("style");
+  styleNode.id = STYLES_ID;
+  styleNode.textContent = HUB_CSS;
+  document.head.appendChild(styleNode);
+}
+
 // src/client/ProfileSection.jsx
-var import_jsx_runtime2 = require("react/jsx-runtime");
+var import_jsx_runtime3 = require("react/jsx-runtime");
+function money(value) {
+  return typeof value === "number" ? `$${value.toFixed(2)}` : "\u2014";
+}
 function DetailRow({ name: name2, children, last }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-    gap: 16,
-    padding: "9px 0",
-    borderBottom: last ? "none" : `1px solid ${tokens.border}`
-  }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: label, children: name2 }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: value, children })
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-profile-row", "data-last": last ? "true" : "false", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-profile-label", children: name2 }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-profile-value", children })
   ] });
 }
 function SignedIn({ t, profile, onTopUp, onSignOut }) {
@@ -779,11 +1528,11 @@ function SignedIn({ t, profile, onTopUp, onSignOut }) {
   const used = typeof profile.used_quota_usd === "number" ? profile.used_quota_usd : 0;
   const total = balance + used;
   const usedPct = total > 0 ? Math.min(100, used / total * 100) : 0;
-  const [avatar, setAvatar] = (0, import_react3.useState)(null);
-  const [avatarError, setAvatarError] = (0, import_react3.useState)("");
-  const [busy, setBusy] = (0, import_react3.useState)(false);
-  const [editing, setEditing] = (0, import_react3.useState)(false);
-  (0, import_react3.useEffect)(() => {
+  const [avatar, setAvatar] = (0, import_react4.useState)(null);
+  const [avatarError, setAvatarError] = (0, import_react4.useState)("");
+  const [busy, setBusy] = (0, import_react4.useState)(false);
+  const [editing, setEditing] = (0, import_react4.useState)(false);
+  (0, import_react4.useEffect)(() => {
     let cancelled = false;
     getAvatar().then((result) => {
       if (cancelled) return;
@@ -817,50 +1566,47 @@ function SignedIn({ t, profile, onTopUp, onSignOut }) {
       setBusy(false);
     }
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: page, className: "omx-profile", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("style", { children: hoverStyles }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { style: { margin: 0, fontSize: 16, fontWeight: 600 }, children: t("profile.title") }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { ...card, display: "flex", alignItems: "center", gap: 12 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(EditableAvatar, { t, uri: avatar?.uri, initial, onOpen: () => setEditing(true) }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 15, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: name2 || "\u2014" }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 13, color: tokens.textSecondary }, children: profile.username || "\u2014" })
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-profile", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h2", { className: "omnimux-profile-title", children: t("profile.title") }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-profile-card omnimux-profile-card--identity", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(EditableAvatar, { t, uri: avatar?.uri, initial, onOpen: () => setEditing(true) }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-profile-identity", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-profile-name", children: name2 || "\u2014" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-profile-username", children: profile.username || "\u2014" })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: {
-        marginLeft: "auto",
-        flex: "0 0 auto",
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        fontSize: 12,
-        color: tokens.textSecondary
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { width: 7, height: 7, borderRadius: "50%", background: tokens.success } }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "omnimux-profile-status", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-profile-status-dot" }),
         t("profile.signedIn")
       ] })
     ] }),
-    avatarError && !editing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { margin: 0, fontSize: 12, color: tokens.error, lineHeight: 1.5 }, children: avatarError }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { ...card, display: "flex", alignItems: "center", gap: 16 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 6, flex: "1 1 auto", minWidth: 0 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: label, children: t("profile.quota") }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 22, fontWeight: 600, lineHeight: 1.2 }, children: money(profile.quota_usd) }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { fontSize: 12, color: tokens.textSecondary }, children: [
+    avatarError && !editing ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "omnimux-profile-error", children: avatarError }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-profile-card omnimux-profile-card--quota", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-profile-quota", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-profile-label", children: t("profile.quota") }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-profile-quota-amount", children: money(profile.quota_usd) }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "omnimux-profile-quota-used", children: [
           t("profile.used"),
           " ",
           money(profile.used_quota_usd)
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { height: 4, borderRadius: 2, background: tokens.border, overflow: "hidden", marginTop: 2 }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { width: `${usedPct}%`, height: "100%", borderRadius: 2, background: tokens.primaryFill } }) })
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-profile-quota-track", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          "div",
+          {
+            className: "omnimux-profile-quota-fill",
+            style: { "--quota-used": `${usedPct}%` }
+          }
+        ) })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "omx-btn omx-btn-primary", style: { flex: "0 0 auto" }, onClick: onTopUp, children: t("profile.topUp") })
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Button, { variant: "primary", onClick: onTopUp, children: t("profile.topUp") })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { ...card, padding: "4px 16px" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(DetailRow, { name: t("profile.username"), children: profile.username || "\u2014" }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(DetailRow, { name: t("profile.displayName"), children: profile.display_name || "\u2014" }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(DetailRow, { name: t("profile.group"), children: profile.group || "\u2014" }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(DetailRow, { name: t("profile.site"), last: true, children: profile.base_url || "\u2014" })
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-profile-card omnimux-profile-card--details", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(DetailRow, { name: t("profile.username"), children: profile.username || "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(DetailRow, { name: t("profile.displayName"), children: profile.display_name || "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(DetailRow, { name: t("profile.group"), children: profile.group || "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(DetailRow, { name: t("profile.site"), last: true, children: profile.base_url || "\u2014" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "omx-btn omx-btn-ghost omx-btn-danger", style: { alignSelf: "flex-start" }, onClick: onSignOut, children: t("profile.logout") }),
-    editing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Button, { variant: "outline", className: "omnimux-profile-logout", onClick: onSignOut, children: t("profile.logout") }),
+    editing ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
       AvatarModal,
       {
         t,
@@ -875,10 +1621,13 @@ function SignedIn({ t, profile, onTopUp, onSignOut }) {
   ] });
 }
 function ProfileSection({ t }) {
+  (0, import_react4.useEffect)(() => {
+    injectHubStyles();
+  }, []);
   const { state: state2, signOut, openUrl, recheck } = useOmnimuxAuth({ verifyOnMount: false });
   if (state2.phase === "ready") {
     const profile = state2.profile || {};
-    return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
       SignedIn,
       {
         t,
@@ -914,20 +1663,19 @@ function ProfileSection({ t }) {
     error: t("plugins.error")
   }[state2.phase] || t("profile.signedOut");
   const showLogin = state2.phase !== "checking";
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: page, className: "omx-profile", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("style", { children: hoverStyles }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { style: { margin: 0, fontSize: 16, fontWeight: 600 }, children: t("profile.title") }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { ...card, display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { margin: 0, fontSize: 13, color: tokens.textSecondary, lineHeight: 1.5 }, children: message }),
-      showLogin ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "omx-btn omx-btn-primary", onClick: signIn, children: t("plugins.login") }) : null
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-profile", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h2", { className: "omnimux-profile-title", children: t("profile.title") }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-profile-card omnimux-profile-card--signed-out", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "omnimux-profile-message", children: message }),
+      showLogin ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Button, { variant: "primary", onClick: signIn, children: t("plugins.login") }) : null
     ] })
   ] });
 }
 
 // src/client/DshPluginsSection.jsx
-var import_react4 = require("react");
-var import_jsx_runtime3 = require("react/jsx-runtime");
-var page2 = {
+var import_react5 = require("react");
+var import_jsx_runtime4 = require("react/jsx-runtime");
+var page = {
   padding: "16px 20px",
   color: "var(--dsw-text-primary, inherit)",
   display: "flex",
@@ -938,9 +1686,9 @@ var page2 = {
 var muted = { color: "var(--dsw-text-secondary, inherit)", lineHeight: 1.5, margin: 0 };
 var row = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 };
 function DshPluginsSection({ t }) {
-  const [available, setAvailable] = (0, import_react4.useState)(false);
-  const [plugins, setPlugins] = (0, import_react4.useState)([]);
-  const [error, setError] = (0, import_react4.useState)("");
+  const [available, setAvailable] = (0, import_react5.useState)(false);
+  const [plugins, setPlugins] = (0, import_react5.useState)([]);
+  const [error, setError] = (0, import_react5.useState)("");
   const refresh = () => {
     return fetch("/omnimux/plugins").then(async (response) => {
       let json = {};
@@ -956,29 +1704,28 @@ function DshPluginsSection({ t }) {
       setError(caught instanceof Error ? caught.message : String(caught));
     });
   };
-  (0, import_react4.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     void refresh();
   }, []);
   if (!available && plugins.length === 0 && error === "") {
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: page2, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h2", { style: { margin: 0, fontSize: 16 }, children: t("dshPlugins.title") }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted, children: t("dshPlugins.desktopOnly") })
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: page, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h2", { style: { margin: 0, fontSize: 16 }, children: t("dshPlugins.title") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted, children: t("dshPlugins.desktopOnly") })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: page2, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h2", { style: { margin: 0, fontSize: 16 }, children: t("dshPlugins.title") }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted, children: t("dshPlugins.readonlyHint") }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("ul", { style: { margin: 0, paddingLeft: 18, lineHeight: 1.7 }, children: plugins.map((plugin) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("li", { style: row, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: page, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h2", { style: { margin: 0, fontSize: 16 }, children: t("dshPlugins.title") }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted, children: t("dshPlugins.readonlyHint") }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("ul", { style: { margin: 0, paddingLeft: 18, lineHeight: 1.7 }, children: plugins.map((plugin) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("li", { style: row, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { children: [
       plugin.name,
       plugin.protected ? ` (${t("dshPlugins.protected")})` : ""
     ] }) }, plugin.name)) }),
-    error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: muted, children: error }) : null
+    error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted, children: error }) : null
   ] });
 }
 
 // src/client/LoginGate.jsx
-var import_react5 = require("react");
-var import_react_dom2 = require("react-dom");
+var import_react6 = require("react");
 
 // src/client/auth-gate.js
 var AUTH_GLOBAL_KEY = "__omnimuxAuth";
@@ -1131,47 +1878,12 @@ installAuthGlobal(
 );
 
 // src/client/LoginGate.jsx
-var import_jsx_runtime4 = require("react/jsx-runtime");
-var tokens2 = {
-  text: "var(--dsw-alias-label-primary, inherit)",
-  textSecondary: "var(--dsw-alias-label-secondary, inherit)",
-  border: "var(--dsw-alias-border-l2, inherit)",
-  card: "var(--dsw-alias-bg-secondary, var(--dsw-alias-bg-base, inherit))",
-  overlay: "var(--dsw-alias-bg-mask-1, transparent)",
-  error: "var(--dsw-alias-label-error, inherit)"
-};
-var GATE_Z_INDEX = 1200;
-var BTN_STYLES = `
-.omnimux-login-gate .omx-gate-btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid transparent; border-radius: 6px; padding: 6px 14px;
-  font: inherit; font-size: 13px; line-height: 20px; cursor: pointer;
-  transition: background .15s ease, border-color .15s ease, color .15s ease;
-}
-.omnimux-login-gate .omx-gate-btn:focus-visible {
-  outline: 2px solid var(--dsw-alias-label-primary, inherit); outline-offset: 2px;
-}
-.omnimux-login-gate .omx-gate-btn--primary {
-  background: var(--dsw-alias-button-primary-fill, inherit);
-  color: var(--dsw-alias-label-primary-inverted, inherit);
-}
-.omnimux-login-gate .omx-gate-btn--primary:hover {
-  background: var(--dsw-alias-button-primary-hover, inherit);
-}
-.omnimux-login-gate .omx-gate-btn--ghost {
-  background: transparent; color: var(--dsw-alias-label-secondary, inherit);
-  border-color: var(--dsw-alias-border-l2, inherit);
-}
-.omnimux-login-gate .omx-gate-btn--ghost:hover {
-  color: var(--dsw-alias-label-primary, inherit);
-  background: var(--dsw-alias-interactive-bg-hover, transparent);
-}
-.omnimux-login-gate .omx-gate-btn--ghost:active {
-  background: var(--dsw-alias-interactive-bg-active, transparent);
-}
-`;
+var import_jsx_runtime5 = require("react/jsx-runtime");
 function LoginGate({ t }) {
-  const gate = (0, import_react5.useSyncExternalStore)(subscribe, getSnapshot);
+  (0, import_react6.useEffect)(() => {
+    injectHubStyles();
+  }, []);
+  const gate = (0, import_react6.useSyncExternalStore)(subscribe, getSnapshot);
   if (!gate || gate.phase === "closed") return null;
   const hint = { checking: t("profile.loading"), starting: t("profile.loading") };
   const waiting = gate.phase === "waiting";
@@ -1182,96 +1894,57 @@ function LoginGate({ t }) {
     expired: t("plugins.expired"),
     error: t("plugins.error")
   }[gate.phase];
-  return (0, import_react_dom2.createPortal)(
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
-      "div",
-      {
-        className: "omnimux-login-gate",
-        role: "dialog",
-        "aria-modal": "true",
-        onKeyDown: (event) => {
-          if (event.key === "Escape") cancel();
-        },
-        style: {
-          position: "fixed",
-          inset: 0,
-          zIndex: GATE_Z_INDEX,
-          background: tokens2.overlay,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 20
-        },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("style", { children: BTN_STYLES }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
-            "div",
-            {
-              role: "document",
-              style: {
-                background: tokens2.card,
-                border: `1px solid ${tokens2.border}`,
-                borderRadius: 16,
-                width: "min(440px, 100%)",
-                padding: "20px 24px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 14,
-                color: tokens2.text
-              },
-              children: [
-                /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h2", { style: { margin: 0, fontSize: 16, fontWeight: 600 }, children: t("auth.gate.title") }),
-                  /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: "6px 0 0", fontSize: 13, color: tokens2.textSecondary, lineHeight: 1.5 }, children: reason })
-                ] }),
-                waiting ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: {
-                    fontFamily: "var(--dsw-font-markdown-code-font-family, monospace)",
-                    fontSize: 22,
-                    letterSpacing: 3,
-                    textAlign: "center",
-                    padding: "10px 12px",
-                    borderRadius: 8,
-                    border: `1px solid ${tokens2.border}`,
-                    color: tokens2.text
-                  }, children: gate.user_code || "\u2014" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: 0, fontSize: 12, color: tokens2.textSecondary, lineHeight: 1.5 }, children: t("auth.gate.resumeHint") })
-                ] }) : null,
-                waiting || gate.phase === "checking" || gate.phase === "starting" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: 0, fontSize: 12, color: tokens2.textSecondary, lineHeight: 1.5 }, children: hint[gate.phase] || t("plugins.waiting") }) : null,
-                failed ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: 0, fontSize: 12, color: tokens2.error, lineHeight: 1.5 }, children: detail }) : null,
-                /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }, children: [
-                  waiting && gate.verification_url ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "omx-gate-btn omx-gate-btn--primary", onClick: () => window.open(gate.verification_url, "_blank", "noopener,noreferrer"), children: t("plugins.open") }) : null,
-                  failed ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "omx-gate-btn omx-gate-btn--primary", onClick: () => retry(), children: t("auth.gate.retry") }) : null,
-                  /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("button", { type: "button", className: "omx-gate-btn omx-gate-btn--ghost", onClick: () => cancel(), children: t("auth.gate.cancel") })
-                ] })
-              ]
-            }
-          )
-        ]
-      }
-    ),
-    document.body
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+    ModalDialog,
+    {
+      open: true,
+      size: "sm",
+      onClose: () => {
+        cancel();
+      },
+      title: t("auth.gate.title"),
+      description: reason,
+      closeLabel: t("auth.gate.cancel"),
+      footer: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-login-gate-actions", children: [
+        waiting && gate.verification_url ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+          Button,
+          {
+            variant: "primary",
+            onClick: () => window.open(gate.verification_url, "_blank", "noopener,noreferrer"),
+            children: t("plugins.open")
+          }
+        ) : null,
+        failed ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Button, { variant: "primary", onClick: () => retry(), children: t("auth.gate.retry") }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Button, { variant: "ghost", onClick: () => cancel(), children: t("auth.gate.cancel") })
+      ] }),
+      children: [
+        waiting ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_jsx_runtime5.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-login-gate-code", children: gate.user_code || "\u2014" }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-login-gate-hint", children: t("auth.gate.resumeHint") })
+        ] }) : null,
+        waiting || gate.phase === "checking" || gate.phase === "starting" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-login-gate-hint", children: hint[gate.phase] || t("plugins.waiting") }) : null,
+        failed ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-login-gate-error", children: detail }) : null
+      ]
+    }
   );
 }
 
 // src/client/SidebarUpdateAction.jsx
-var import_react6 = __toESM(require("react"), 1);
-var import_jsx_runtime5 = require("react/jsx-runtime");
-var ICON_DOWNLOAD = /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M8 2v9m0 0l-3-3m3 3l3-3M2 13.5h12" }) });
-var ICON_ROCKET = /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", children: [
-  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M12 2c-3.5 0-6.5 3-7.5 7.5L3 11l2 2 1.5-1.5C11 10.5 14 7.5 14 4V2h-2z" }),
-  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M6.5 9.5L4 12v2h2l2.5-2.5" }),
-  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "10.5", cy: "5.5", r: "1", fill: "currentColor" })
+var import_react7 = require("react");
+var import_jsx_runtime6 = require("react/jsx-runtime");
+var ICON_DOWNLOAD = /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M8 2v9m0 0l-3-3m3 3l3-3M2 13.5h12" }) });
+var ICON_ROCKET = /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", children: [
+  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M12 2c-3.5 0-6.5 3-7.5 7.5L3 11l2 2 1.5-1.5C11 10.5 14 7.5 14 4V2h-2z" }),
+  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M6.5 9.5L4 12v2h2l2.5-2.5" }),
+  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "10.5", cy: "5.5", r: "1", fill: "currentColor" })
 ] });
-var ICON_SPINNER = /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { className: "omnimux-spin-icon", width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", children: [
-  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("style", { children: `@keyframes omnimux-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } .omnimux-spin-icon { animation: omnimux-spin 1s linear infinite; }` }),
-  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M8 2a6 6 0 1 0 6 6" })
-] });
-function SidebarUpdateAction({ wide = true, t = (k, p) => k }) {
-  const [updateState, setUpdateState] = (0, import_react6.useState)({ status: "idle" });
-  const [requesting, setRequesting] = (0, import_react6.useState)(false);
-  const [isHovered, setIsHovered] = (0, import_react6.useState)(false);
-  (0, import_react6.useEffect)(() => {
+function SidebarUpdateAction({ wide = true, t = (k) => k }) {
+  (0, import_react7.useEffect)(() => {
+    injectHubStyles();
+  }, []);
+  const [updateState, setUpdateState] = (0, import_react7.useState)({ status: "idle" });
+  const [requesting, setRequesting] = (0, import_react7.useState)(false);
+  (0, import_react7.useEffect)(() => {
     let active = true;
     async function checkStatus() {
       try {
@@ -1328,55 +2001,29 @@ function SidebarUpdateAction({ wide = true, t = (k, p) => k }) {
   if (!wide) {
     return null;
   }
-  const labelText = isReady ? t("update.status.restart") === "update.status.restart" ? "\u66F4\u65B0\u91CD\u542F" : t("update.status.restart") : isDownloading ? t("update.status.downloading") === "update.status.downloading" ? "\u6B63\u5728\u4E0B\u8F7D" : t("update.status.downloading") : isError ? t("update.status.retry") === "update.status.retry" ? "\u91CD\u8BD5\u66F4\u65B0" : t("update.status.retry") : t("update.status.ready") === "update.status.ready" ? "\u7ACB\u5373\u66F4\u65B0" : t("update.status.ready");
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-    "div",
+  const pick = (key, fallback) => {
+    const value = t(key);
+    return value === key ? fallback : value;
+  };
+  const labelText = isReady ? pick("update.status.restart", "\u66F4\u65B0\u91CD\u542F") : isDownloading ? pick("update.status.downloading", "\u6B63\u5728\u4E0B\u8F7D") : isError ? pick("update.status.retry", "\u91CD\u8BD5\u66F4\u65B0") : pick("update.status.ready", "\u7ACB\u5373\u66F4\u65B0");
+  const versionHint = latestVersion ? pick("update.tooltip.newVersion", `\u65B0\u7248\u672C: v${latestVersion}`).replace("{version}", latestVersion) : void 0;
+  const title = isError ? updateError : versionHint;
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "omnimux-update-action", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+    Button,
     {
-      style: {
-        flex: "none",
-        marginLeft: "auto",
-        display: "inline-flex",
-        alignItems: "center",
-        alignSelf: "center",
-        paddingRight: 2
-      },
-      children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
-        "button",
-        {
-          type: "button",
-          onClick: handleClick,
-          disabled: isDownloading || requesting,
-          onMouseEnter: () => setIsHovered(true),
-          onMouseLeave: () => setIsHovered(false),
-          title: isError ? updateError : latestVersion ? t("update.tooltip.newVersion", { version: latestVersion }) === "update.tooltip.newVersion" ? `\u65B0\u7248\u672C: v${latestVersion}` : t("update.tooltip.newVersion", { version: latestVersion }) : void 0,
-          style: {
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 5,
-            height: 26,
-            padding: "0 9px",
-            borderRadius: 13,
-            border: "none",
-            background: isDownloading ? "rgba(37, 99, 235, 0.25)" : isError ? "#DC2626" : isHovered ? "#1D4ED8" : "#2563EB",
-            color: isDownloading ? "#93C5FD" : "#FFFFFF",
-            fontFamily: "inherit",
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: isDownloading ? "wait" : "pointer",
-            whiteSpace: "nowrap",
-            boxShadow: isReady ? "0 0 10px rgba(37, 99, 235, 0.8)" : "0 1px 3px rgba(0, 0, 0, 0.2)",
-            transition: "all 0.15s ease",
-            userSelect: "none"
-          },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: { display: "inline-flex", alignItems: "center" }, children: isDownloading ? ICON_SPINNER : isReady ? ICON_ROCKET : ICON_DOWNLOAD }),
-            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: labelText })
-          ]
-        }
-      )
+      type: "button",
+      size: "sm",
+      variant: isError ? "danger" : "primary",
+      className: "omnimux-update-action-btn",
+      "data-status": status,
+      onClick: handleClick,
+      disabled: isDownloading || requesting,
+      loading: isDownloading || requesting,
+      title,
+      leadingIcon: isReady ? ICON_ROCKET : ICON_DOWNLOAD,
+      children: labelText
     }
-  );
+  ) });
 }
 
 // src/brand/defaults.js
@@ -1443,7 +2090,7 @@ function computeHeadlineSize(availableWidth, text, options = {}) {
   const minPx = options.minPx ?? DEFAULT_HERO_HEADLINE_MIN_PX;
   const fontFamily = options.fontFamily ?? "sans-serif";
   const fontWeight = options.fontWeight ?? 500;
-  const measure = options.measure ?? ((value2, px) => heuristicMeasure(value2, px));
+  const measure = options.measure ?? ((value, px) => heuristicMeasure(value, px));
   if (typeof text !== "string" || text.length === 0) return maxPx;
   const width = Number(availableWidth);
   if (!Number.isFinite(width) || width <= 0) return maxPx;
@@ -1556,7 +2203,7 @@ function findHeadlineText(document2, config) {
   if (marked) return marked;
   const byClass = document2.querySelector('[class*="headlineText"]');
   if (byClass) return byClass;
-  const wanted = [config.heroHeadline, ...OFFICIAL_HERO_HEADLINES].filter((value2) => typeof value2 === "string" && value2.trim() !== "");
+  const wanted = [config.heroHeadline, ...OFFICIAL_HERO_HEADLINES].filter((value) => typeof value === "string" && value.trim() !== "");
   for (const el of document2.querySelectorAll("span,div")) {
     if (el.childElementCount !== 0) continue;
     const current = el.textContent?.trim() ?? "";
@@ -1916,19 +2563,19 @@ function createWordmark(document2, config) {
   return wrap;
 }
 function createWordmarkLabel(document2, config, ownAttr = true) {
-  const label2 = document2.createElement("span");
-  if (ownAttr) label2.setAttribute(BRAND_ATTR, "wordmark");
-  label2.setAttribute("aria-hidden", "true");
-  label2.textContent = config.wordmarkText;
-  label2.style.cssText = "font-size:15px;font-weight:600;letter-spacing:-0.02em;line-height:24px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px";
+  const label = document2.createElement("span");
+  if (ownAttr) label.setAttribute(BRAND_ATTR, "wordmark");
+  label.setAttribute("aria-hidden", "true");
+  label.textContent = config.wordmarkText;
+  label.style.cssText = "font-size:15px;font-weight:600;letter-spacing:-0.02em;line-height:24px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px";
   const isDev = typeof window !== "undefined" && (window.__OMNIMUX_BRAND__ && String(window.__OMNIMUX_BRAND__.wordmarkText).includes("Dev")) || typeof process !== "undefined" && process.env?.OMNIMUX_CHANNEL === "dev";
   if (isDev && !config.wordmarkText.includes("DEV")) {
     const badge = document2.createElement("span");
     badge.textContent = "DEV";
     badge.style.cssText = "font-size:10px;font-weight:700;line-height:1;padding:2px 4px;border-radius:4px;background:#F59E0B;color:#000;vertical-align:middle;display:inline-block";
-    label2.append(badge);
+    label.append(badge);
   }
-  return label2;
+  return label;
 }
 function createMark(document2, logoSvg, official) {
   const mark = parseSvg(document2, logoSvg);
@@ -2485,11 +3132,11 @@ function installHeroBrandSlot(ctx, component, config) {
 }
 
 // src/client/HeroBrandMark.jsx
-var import_jsx_runtime6 = require("react/jsx-runtime");
+var import_jsx_runtime7 = require("react/jsx-runtime");
 function HeroBrandMark({ size, className }) {
   const { width, height, className: cls } = heroMarkPresentation(size, className);
   const { viewBox, inner } = parseLogoSvg(resolveHeroLogoSvg());
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
     "svg",
     {
       xmlns: "http://www.w3.org/2000/svg",
@@ -2511,6 +3158,12 @@ var inject = ["slots", "locale"];
 function apply(ctx) {
   const t = installHubChrome(ctx);
   installHeroBrandSlot(ctx, HeroBrandMark);
+  ctx.effect?.(() => {
+    injectHubStyles();
+    return () => {
+      document.getElementById(STYLES_ID)?.remove();
+    };
+  }, "omnimux: hub client styles");
   ctx.slots.inject("settings.section", () => ctx.slots.register({
     name: "settings.section",
     id: "omnimux-profile",

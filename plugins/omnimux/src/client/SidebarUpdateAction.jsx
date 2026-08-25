@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Button } from 'dsh-ui-kit'
+import { injectHubStyles } from './styles.js'
 
 const ICON_DOWNLOAD = (
   <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -14,17 +16,10 @@ const ICON_ROCKET = (
   </svg>
 )
 
-const ICON_SPINNER = (
-  <svg className="omnimux-spin-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-    <style>{`@keyframes omnimux-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } .omnimux-spin-icon { animation: omnimux-spin 1s linear infinite; }`}</style>
-    <path d="M8 2a6 6 0 1 0 6 6" />
-  </svg>
-)
-
-export function SidebarUpdateAction({ wide = true, t = (k, p) => k }) {
+export function SidebarUpdateAction({ wide = true, t = (k) => k }) {
+  useEffect(() => { injectHubStyles() }, [])
   const [updateState, setUpdateState] = useState({ status: 'idle' })
   const [requesting, setRequesting] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -95,65 +90,39 @@ export function SidebarUpdateAction({ wide = true, t = (k, p) => k }) {
     return null
   }
 
-  // 展开形态：位于“插件市场”右侧的精致胶囊按钮
-  const labelText = isReady 
-    ? (t('update.status.restart') === 'update.status.restart' ? '更新重启' : t('update.status.restart'))
-    : isDownloading 
-    ? (t('update.status.downloading') === 'update.status.downloading' ? '正在下载' : t('update.status.downloading'))
-    : isError 
-    ? (t('update.status.retry') === 'update.status.retry' ? '重试更新' : t('update.status.retry'))
-    : (t('update.status.ready') === 'update.status.ready' ? '立即更新' : t('update.status.ready'))
+  const pick = (key, fallback) => {
+    const value = t(key)
+    return value === key ? fallback : value
+  }
+  const labelText = isReady
+    ? pick('update.status.restart', '更新重启')
+    : isDownloading
+    ? pick('update.status.downloading', '正在下载')
+    : isError
+    ? pick('update.status.retry', '重试更新')
+    : pick('update.status.ready', '立即更新')
+
+  const versionHint = latestVersion
+    ? pick('update.tooltip.newVersion', `新版本: v${latestVersion}`).replace('{version}', latestVersion)
+    : undefined
+  const title = isError ? updateError : versionHint
 
   return (
-    <div
-      style={{
-        flex: 'none',
-        marginLeft: 'auto',
-        display: 'inline-flex',
-        alignItems: 'center',
-        alignSelf: 'center',
-        paddingRight: 2,
-      }}
-    >
-      <button
+    <div className="omnimux-update-action">
+      <Button
         type="button"
+        size="sm"
+        variant={isError ? 'danger' : 'primary'}
+        className="omnimux-update-action-btn"
+        data-status={status}
         onClick={handleClick}
         disabled={isDownloading || requesting}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        title={isError ? updateError : latestVersion ? (t('update.tooltip.newVersion', { version: latestVersion }) === 'update.tooltip.newVersion' ? `新版本: v${latestVersion}` : t('update.tooltip.newVersion', { version: latestVersion })) : undefined}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 5,
-          height: 26,
-          padding: '0 9px',
-          borderRadius: 13,
-          border: 'none',
-          background: isDownloading
-            ? 'rgba(37, 99, 235, 0.25)'
-            : isError
-            ? '#DC2626'
-            : isHovered
-            ? '#1D4ED8'
-            : '#2563EB',
-          color: isDownloading ? '#93C5FD' : '#FFFFFF',
-          fontFamily: 'inherit',
-          fontSize: 12,
-          fontWeight: 600,
-          cursor: isDownloading ? 'wait' : 'pointer',
-          whiteSpace: 'nowrap',
-          boxShadow: isReady ? '0 0 10px rgba(37, 99, 235, 0.8)' : '0 1px 3px rgba(0, 0, 0, 0.2)',
-          transition: 'all 0.15s ease',
-          userSelect: 'none',
-        }}
+        loading={isDownloading || requesting}
+        title={title}
+        leadingIcon={isReady ? ICON_ROCKET : ICON_DOWNLOAD}
       >
-        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-          {isDownloading ? ICON_SPINNER : isReady ? ICON_ROCKET : ICON_DOWNLOAD}
-        </span>
-        <span>{labelText}</span>
-      </button>
+        {labelText}
+      </Button>
     </div>
   )
 }

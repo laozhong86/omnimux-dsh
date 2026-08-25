@@ -5,6 +5,7 @@ import { DshPluginsSection } from './DshPluginsSection.jsx'
 import { LoginGate } from './LoginGate.jsx'
 import { SidebarUpdateAction } from './SidebarUpdateAction.jsx'
 import { installHubChrome } from './chrome.js'
+import { STYLES_ID, injectHubStyles } from './styles.js'
 import { HeroBrandMark } from './HeroBrandMark.jsx'
 import { installHeroBrandSlot } from './hero-brand.js'
 
@@ -29,6 +30,10 @@ export const inject = ['slots', 'locale']
 export function apply(ctx) {
   const t = installHubChrome(ctx)
   installHeroBrandSlot(ctx, HeroBrandMark)
+  ctx.effect?.(() => {
+    injectHubStyles()
+    return () => { document.getElementById(STYLES_ID)?.remove() }
+  }, 'omnimux: hub client styles')
 
   // Apps shelf temporarily taken down (core-first): the 应用 row, app tabs,
   // and AppsStage overlay stay in the source tree (apps-store.js / app-tabs.js

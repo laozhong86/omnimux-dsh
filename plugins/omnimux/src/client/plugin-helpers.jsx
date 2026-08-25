@@ -1,4 +1,4 @@
-import { errText, gateCode, gatePanel, muted, pill } from './plugins-styles.js'
+import { Button } from 'dsh-ui-kit'
 
 export function desktopBridge() {
   const api = window.dshDesktop
@@ -54,32 +54,32 @@ export function PluginLoginPanel({ t, auth, onCancel }) {
   const state = auth.state
   const idle = state.phase === 'need-login' || state.phase === 'denied' || state.phase === 'expired' || state.phase === 'error'
   return (
-    <div style={gatePanel}>
-      <p style={muted}>{t('plugins.needLogin')}</p>
+    <div className="omnimux-plugins-gate">
+      <p className="omnimux-plugins-muted">{t('plugins.needLogin')}</p>
       {state.phase === 'waiting' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-          <p style={muted}>{t('plugins.waiting')}</p>
+        <div className="omnimux-plugins-gate-waiting">
+          <p className="omnimux-plugins-muted">{t('plugins.waiting')}</p>
           {typeof state.user_code === 'string' && state.user_code ? (
-            <p style={gateCode}>{state.user_code}</p>
+            <p className="omnimux-plugins-gate-code">{state.user_code}</p>
           ) : null}
           {typeof state.verification_url === 'string' && state.verification_url ? (
-            <button type="button" style={pill('primary')} onClick={() => { auth.openUrl(state.verification_url) }}>
+            <Button variant="primary" onClick={() => { auth.openUrl(state.verification_url) }}>
               {t('plugins.open')}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
-      {state.phase === 'denied' ? <p style={errText}>{t('plugins.denied')}</p> : null}
-      {state.phase === 'expired' ? <p style={errText}>{t('plugins.expired')}</p> : null}
-      {state.phase === 'error' ? <p style={errText}>{state.detail || t('plugins.error')}</p> : null}
+      {state.phase === 'denied' ? <p className="omnimux-plugins-error">{t('plugins.denied')}</p> : null}
+      {state.phase === 'expired' ? <p className="omnimux-plugins-error">{t('plugins.expired')}</p> : null}
+      {state.phase === 'error' ? <p className="omnimux-plugins-error">{state.detail || t('plugins.error')}</p> : null}
       {idle ? (
-        <button type="button" style={pill('primary')} onClick={() => { void auth.beginLogin() }}>
+        <Button variant="primary" onClick={() => { void auth.beginLogin() }}>
           {t('plugins.login')}
-        </button>
+        </Button>
       ) : null}
-      <button type="button" style={pill('ghost')} onClick={onCancel}>
+      <Button variant="ghost" onClick={onCancel}>
         {t('plugins.cancel')}
-      </button>
+      </Button>
     </div>
   )
 }

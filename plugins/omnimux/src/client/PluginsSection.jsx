@@ -1,42 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
+import { IconEllipsisOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, ConfirmModal, IconButton, SearchField } from 'dsh-ui-kit'
 import { getApps, installApp, uninstallApp } from './api.js'
 import { canOpen, hasOverflowMenu, primaryActionFor } from './app-actions.js'
 import { attemptOpen, notifyTabsChanged } from './open-app-flow.js'
 import { useOmnimuxAuth } from './use-omnimux-auth.js'
 import { AppMark, PluginLoginPanel, desktopBridge, fmt, matches } from './plugin-helpers.jsx'
-import {
-  bubbleActions,
-  bubbleSummary,
-  bubbleText,
-  card,
-  cardBody,
-  errText,
-  footer,
-  grid,
-  iconBox,
-  menuItem,
-  menuItemDanger,
-  menuItemHint,
-  moreButton,
-  muted,
-  page,
-  pill,
-  popoverPanel,
-  search,
-  stateBadge,
-  summary,
-  tag,
-  tags,
-  title,
-  titleLine,
-  titleRow,
-  toolbar,
-} from './plugins-styles.js'
+import { injectHubStyles } from './styles.js'
 
 /**
  * @param {{ t: (key: string) => string }} props
  */
 export function PluginsSection({ t }) {
+  useEffect(() => { injectHubStyles() }, [])
   const [view, setView] = useState(null)
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState('')
@@ -70,7 +46,7 @@ export function PluginsSection({ t }) {
   }, [])
 
   useEffect(() => {
-    if (popover === null) return undefined
+    if (popover === null || popover.kind !== 'menu') return undefined
     const onPointerDown = (event) => {
       const target = event.target
       if (target instanceof Element && target.closest('[data-omnimux-popover]') !== null) return
@@ -171,32 +147,34 @@ export function PluginsSection({ t }) {
     [apps, normalizedQuery],
   )
   const softError = typeof view?.error === 'string' ? view.error : ''
+  const dialogApp = popover && (popover.kind === 'install' || popover.kind === 'remove')
+    ? apps.find((app) => String(app.id) === popover.id)
+    : null
 
   return (
-    <div style={page}>
-      <div style={toolbar}>
-        <input
-          type="search"
+    <div className="omnimux-plugins">
+      <div className="omnimux-plugins-toolbar">
+        <SearchField
+          className="omnimux-plugins-search"
           value={query}
           placeholder={t('plugins.search')}
           aria-label={t('plugins.search')}
-          onChange={(event) => { setQuery(event.currentTarget.value) }}
-          style={search}
+          debounceMs={0}
+          onValueChange={setQuery}
         />
       </div>
       {gate !== null ? <PluginLoginPanel t={t} auth={auth} onCancel={() => { setGate(null) }} /> : null}
-      {view == null && error === '' ? <p style={muted}>{t('profile.loading')}</p> : null}
-      {apps.length === 0 && view != null ? <p style={muted}>{t('plugins.empty')}</p> : null}
-      {apps.length > 0 && filtered.length === 0 ? <p style={muted}>{t('plugins.emptySearch')}</p> : null}
+      {view == null && error === '' ? <p className="omnimux-plugins-muted">{t('profile.loading')}</p> : null}
+      {apps.length === 0 && view != null ? <p className="omnimux-plugins-muted">{t('plugins.empty')}</p> : null}
+      {apps.length > 0 && filtered.length === 0 ? <p className="omnimux-plugins-muted">{t('plugins.emptySearch')}</p> : null}
       {filtered.length > 0 ? (
-        <div style={grid}>
+        <div className="omnimux-plugins-grid">
           {filtered.map((app) => {
             const key = String(app.id)
             const spec = typeof app.install_spec === 'string' ? app.install_spec : ''
             const name = typeof app.spec?.name === 'string' ? app.spec.name : ''
             const primary = primaryActionFor(app.state)
             const overflow = hasOverflowMenu(app.state)
-            const badge = stateBadge(app.state)
             const appCaps = Array.isArray(app.capabilities) ? app.capabilities : []
             const badgeKey = app.state === 'update'
               ? 'plugins.update'
@@ -204,11 +182,11 @@ export function PluginsSection({ t }) {
                 ? 'plugins.available'
                 : 'plugins.installedShort'
             return (
-              <article key={key} style={card}>
+              <article key={key} className="omnimux-plugins-card">
                 <div
                   role="button"
                   tabIndex={0}
-                  style={cardBody}
+                  className="omnimux-plugins-card-body"
                   onClick={() => { handleCardClick(app) }}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -217,28 +195,31 @@ export function PluginsSection({ t }) {
                     }
                   }}
                 >
-                  <div style={titleRow}>
-                    <span style={iconBox} aria-hidden="true">
+                  <div className="omnimux-plugins-title-row">
+                    <span className="omnimux-plugins-icon" aria-hidden="true">
                       <AppMark id={app.id} />
                     </span>
-                    <div style={titleLine}>
-                      <h3 style={title}>{app.title}</h3>
-                      {badge ? <span style={badge}>{t(badgeKey)}</span> : null}
+                    <div className="omnimux-plugins-title-line">
+                      <h3 className="omnimux-plugins-title">{app.title}</h3>
+                      {app.state ? (
+                        <span className="omnimux-plugins-badge" data-state={app.state}>{t(badgeKey)}</span>
+                      ) : null}
                     </div>
                   </div>
-                  {app.summary ? <p style={summary}>{app.summary}</p> : null}
+                  {app.summary ? <p className="omnimux-plugins-summary">{app.summary}</p> : null}
                   {appCaps.length > 0 ? (
-                    <div style={tags}>
+                    <div className="omnimux-plugins-tags">
                       {appCaps.map((capKey) => (
-                        <span key={capKey} style={tag}>{t(`plugins.cap.${capKey}`)}</span>
+                        <span key={capKey} className="omnimux-plugins-tag">{t(`plugins.cap.${capKey}`)}</span>
                       ))}
                     </div>
                   ) : null}
                 </div>
                 {overflow ? (
-                  <button
-                    type="button"
-                    style={moreButton}
+                  <IconButton
+                    className="omnimux-plugins-more"
+                    variant="ghost"
+                    size="sm"
                     aria-label={t('plugins.more')}
                     aria-haspopup="menu"
                     aria-expanded={popover?.kind === 'menu' && popover.id === key}
@@ -248,88 +229,49 @@ export function PluginsSection({ t }) {
                       setPopover(popover?.kind === 'menu' && popover.id === key ? null : { kind: 'menu', id: key })
                     }}
                   >
-                    ⋯
-                  </button>
+                    <IconEllipsisOutline16 size={16} />
+                  </IconButton>
                 ) : null}
-                <div style={footer}>
+                <div className="omnimux-plugins-footer">
                   {primary !== null ? (
-                    <button
-                      type="button"
-                      style={pill('primary')}
+                    <Button
+                      variant="primary"
+                      size="sm"
                       disabled={busy !== '' || spec === ''}
                       onClick={(event) => { event.stopPropagation(); install(spec) }}
                     >
                       {t(primary === 'update' ? 'plugins.update' : 'plugins.install')}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
                 {popover?.id === key && popover.kind === 'menu' ? (
-                  <div data-omnimux-popover="" role="menu" style={popoverPanel}>
-                    <button
-                      type="button"
+                  <div data-omnimux-popover="" role="menu" className="omnimux-plugins-popover">
+                    <Button
                       role="menuitem"
-                      style={menuItem}
+                      variant="ghost"
+                      size="sm"
+                      className="omnimux-plugins-menu-item"
                       disabled={busy !== '' || !canOpen(app, pendingRestart)}
                       onClick={() => {
                         setPopover(null)
                         runOpen(app)
                       }}
                     >
-                      <span>{t('plugins.openApp')}</span>
-                      {pendingRestart ? <span style={menuItemHint}>{t('plugins.needRestart')}</span> : null}
-                    </button>
-                    <button
-                      type="button"
+                      <span className="omnimux-plugins-menu-item-stack">
+                        <span>{t('plugins.openApp')}</span>
+                        {pendingRestart ? <span className="omnimux-plugins-menu-hint">{t('plugins.needRestart')}</span> : null}
+                      </span>
+                    </Button>
+                    <Button
                       role="menuitem"
-                      style={menuItemDanger}
+                      variant="danger"
+                      size="sm"
+                      className="omnimux-plugins-menu-item"
                       disabled={busy !== '' || name === ''}
                       onClick={() => { setPopover({ kind: 'remove', id: key }) }}
                     >
                       {t('plugins.remove')}
-                    </button>
-                  </div>
-                ) : null}
-                {popover?.id === key && popover.kind === 'install' ? (
-                  <div data-omnimux-popover="" role="dialog" style={popoverPanel}>
-                    <p style={bubbleText}>{fmt(t('plugins.confirmInstall'), { title: app.title })}</p>
-                    {app.summary ? <p style={bubbleSummary}>{app.summary}</p> : null}
-                    <div style={bubbleActions}>
-                      <button
-                        type="button"
-                        style={pill('primary')}
-                        disabled={busy !== '' || spec === ''}
-                        onClick={() => {
-                          setPopover(null)
-                          install(spec)
-                        }}
-                      >
-                        {t('plugins.install')}
-                      </button>
-                      <button type="button" style={pill('ghost')} onClick={() => { setPopover(null) }}>
-                        {t('plugins.cancel')}
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-                {popover?.id === key && popover.kind === 'remove' ? (
-                  <div data-omnimux-popover="" role="dialog" style={popoverPanel}>
-                    <p style={bubbleText}>{fmt(t('plugins.confirmRemove'), { title: app.title })}</p>
-                    <div style={bubbleActions}>
-                      <button
-                        type="button"
-                        style={pill('danger')}
-                        disabled={busy !== '' || name === ''}
-                        onClick={() => {
-                          setPopover(null)
-                          uninstall(name)
-                        }}
-                      >
-                        {t('plugins.remove')}
-                      </button>
-                      <button type="button" style={pill('ghost')} onClick={() => { setPopover(null) }}>
-                        {t('plugins.cancel')}
-                      </button>
-                    </div>
+                    </Button>
                   </div>
                 ) : null}
               </article>
@@ -337,14 +279,53 @@ export function PluginsSection({ t }) {
           })}
         </div>
       ) : null}
-      {notice !== '' ? <p style={muted}>{notice}</p> : null}
+      {notice !== '' ? <p className="omnimux-plugins-muted">{notice}</p> : null}
       {pendingRestart ? (
-        <button type="button" style={{ ...pill('primary'), alignSelf: 'flex-start' }} disabled={busy !== ''} onClick={restart}>
+        <Button
+          variant="primary"
+          className="omnimux-plugins-restart"
+          disabled={busy !== ''}
+          onClick={restart}
+        >
           {t('dshPlugins.restart')}
-        </button>
+        </Button>
       ) : null}
-      {softError !== '' ? <p style={muted}>{softError}</p> : null}
-      {error !== '' && error !== softError ? <p style={errText}>{error}</p> : null}
+      {softError !== '' ? <p className="omnimux-plugins-muted">{softError}</p> : null}
+      {error !== '' && error !== softError ? <p className="omnimux-plugins-error">{error}</p> : null}
+      {dialogApp && popover?.kind === 'install' ? (
+        <ConfirmModal
+          open
+          onClose={() => { setPopover(null) }}
+          title={fmt(t('plugins.confirmInstall'), { title: dialogApp.title })}
+          message={dialogApp.summary || undefined}
+          closeLabel={t('plugins.cancel')}
+          confirmLabel={t('plugins.install')}
+          cancelLabel={t('plugins.cancel')}
+          confirmLoading={busy !== ''}
+          onConfirm={() => {
+            const spec = typeof dialogApp.install_spec === 'string' ? dialogApp.install_spec : ''
+            setPopover(null)
+            install(spec)
+          }}
+        />
+      ) : null}
+      {dialogApp && popover?.kind === 'remove' ? (
+        <ConfirmModal
+          open
+          onClose={() => { setPopover(null) }}
+          title={fmt(t('plugins.confirmRemove'), { title: dialogApp.title })}
+          closeLabel={t('plugins.cancel')}
+          confirmLabel={t('plugins.remove')}
+          cancelLabel={t('plugins.cancel')}
+          confirmVariant="danger"
+          confirmLoading={busy !== ''}
+          onConfirm={() => {
+            const name = typeof dialogApp.spec?.name === 'string' ? dialogApp.spec.name : ''
+            setPopover(null)
+            uninstall(name)
+          }}
+        />
+      ) : null}
     </div>
   )
 }

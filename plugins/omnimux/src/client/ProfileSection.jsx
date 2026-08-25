@@ -1,22 +1,20 @@
 import { useEffect, useState } from 'react'
+import { Button } from 'dsh-ui-kit'
 import { walletUrl } from './quota-failure.js'
 import { useOmnimuxAuth } from './use-omnimux-auth.js'
 import { getAvatar, updateAvatar } from './avatar-api.js'
 import { AvatarModal, EditableAvatar } from './ProfileAvatar.jsx'
-import { card, hoverStyles, label, money, page, tokens, value } from './profile-styles.js'
+import { injectHubStyles } from './styles.js'
+
+function money(value) {
+  return typeof value === 'number' ? `$${value.toFixed(2)}` : '—'
+}
 
 function DetailRow({ name, children, last }) {
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'baseline',
-      gap: 16,
-      padding: '9px 0',
-      borderBottom: last ? 'none' : `1px solid ${tokens.border}`,
-    }}>
-      <span style={label}>{name}</span>
-      <span style={value}>{children}</span>
+    <div className="omnimux-profile-row" data-last={last ? 'true' : 'false'}>
+      <span className="omnimux-profile-label">{name}</span>
+      <span className="omnimux-profile-value">{children}</span>
     </div>
   )
 }
@@ -68,62 +66,54 @@ function SignedIn({ t, profile, onTopUp, onSignOut }) {
   }
 
   return (
-    <div style={page} className="omx-profile">
-      <style>{hoverStyles}</style>
-      <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{t('profile.title')}</h2>
+    <div className="omnimux-profile">
+      <h2 className="omnimux-profile-title">{t('profile.title')}</h2>
 
-      <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="omnimux-profile-card omnimux-profile-card--identity">
         <EditableAvatar t={t} uri={avatar?.uri} initial={initial} onOpen={() => setEditing(true)} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {name || '—'}
-          </span>
-          <span style={{ fontSize: 13, color: tokens.textSecondary }}>{profile.username || '—'}</span>
+        <div className="omnimux-profile-identity">
+          <span className="omnimux-profile-name">{name || '—'}</span>
+          <span className="omnimux-profile-username">{profile.username || '—'}</span>
         </div>
-        <span style={{
-          marginLeft: 'auto',
-          flex: '0 0 auto',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-          fontSize: 12,
-          color: tokens.textSecondary,
-        }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: tokens.success }} />
+        <span className="omnimux-profile-status">
+          <span className="omnimux-profile-status-dot" />
           {t('profile.signedIn')}
         </span>
       </div>
 
       {avatarError && !editing ? (
-        <p style={{ margin: 0, fontSize: 12, color: tokens.error, lineHeight: 1.5 }}>{avatarError}</p>
+        <p className="omnimux-profile-error">{avatarError}</p>
       ) : null}
 
-      <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '1 1 auto', minWidth: 0 }}>
-          <span style={label}>{t('profile.quota')}</span>
-          <span style={{ fontSize: 22, fontWeight: 600, lineHeight: 1.2 }}>{money(profile.quota_usd)}</span>
-          <span style={{ fontSize: 12, color: tokens.textSecondary }}>
+      <div className="omnimux-profile-card omnimux-profile-card--quota">
+        <div className="omnimux-profile-quota">
+          <span className="omnimux-profile-label">{t('profile.quota')}</span>
+          <span className="omnimux-profile-quota-amount">{money(profile.quota_usd)}</span>
+          <span className="omnimux-profile-quota-used">
             {t('profile.used')} {money(profile.used_quota_usd)}
           </span>
-          <div style={{ height: 4, borderRadius: 2, background: tokens.border, overflow: 'hidden', marginTop: 2 }}>
-            <div style={{ width: `${usedPct}%`, height: '100%', borderRadius: 2, background: tokens.primaryFill }} />
+          <div className="omnimux-profile-quota-track">
+            <div
+              className="omnimux-profile-quota-fill"
+              style={{ '--quota-used': `${usedPct}%` }}
+            />
           </div>
         </div>
-        <button type="button" className="omx-btn omx-btn-primary" style={{ flex: '0 0 auto' }} onClick={onTopUp}>
+        <Button variant="primary" onClick={onTopUp}>
           {t('profile.topUp')}
-        </button>
+        </Button>
       </div>
 
-      <div style={{ ...card, padding: '4px 16px' }}>
+      <div className="omnimux-profile-card omnimux-profile-card--details">
         <DetailRow name={t('profile.username')}>{profile.username || '—'}</DetailRow>
         <DetailRow name={t('profile.displayName')}>{profile.display_name || '—'}</DetailRow>
         <DetailRow name={t('profile.group')}>{profile.group || '—'}</DetailRow>
         <DetailRow name={t('profile.site')} last>{profile.base_url || '—'}</DetailRow>
       </div>
 
-      <button type="button" className="omx-btn omx-btn-ghost omx-btn-danger" style={{ alignSelf: 'flex-start' }} onClick={onSignOut}>
+      <Button variant="outline" className="omnimux-profile-logout" onClick={onSignOut}>
         {t('profile.logout')}
-      </button>
+      </Button>
 
       {editing ? (
         <AvatarModal
@@ -144,6 +134,7 @@ function SignedIn({ t, profile, onTopUp, onSignOut }) {
  * @param {{ t: (key: string) => string }} props
  */
 export function ProfileSection({ t }) {
+  useEffect(() => { injectHubStyles() }, [])
   const { state, signOut, openUrl, recheck } = useOmnimuxAuth({ verifyOnMount: false })
 
   if (state.phase === 'ready') {
@@ -184,15 +175,14 @@ export function ProfileSection({ t }) {
   const showLogin = state.phase !== 'checking'
 
   return (
-    <div style={page} className="omx-profile">
-      <style>{hoverStyles}</style>
-      <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{t('profile.title')}</h2>
-      <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
-        <p style={{ margin: 0, fontSize: 13, color: tokens.textSecondary, lineHeight: 1.5 }}>{message}</p>
+    <div className="omnimux-profile">
+      <h2 className="omnimux-profile-title">{t('profile.title')}</h2>
+      <div className="omnimux-profile-card omnimux-profile-card--signed-out">
+        <p className="omnimux-profile-message">{message}</p>
         {showLogin ? (
-          <button type="button" className="omx-btn omx-btn-primary" onClick={signIn}>
+          <Button variant="primary" onClick={signIn}>
             {t('plugins.login')}
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>
