@@ -3,12 +3,6 @@
 
     function conversationBox() {
       if (typeof window === "undefined") return null;
-      if (window.__omnimuxStage && typeof window.__omnimuxStage.readBox === "function") {
-        try {
-          const b = window.__omnimuxStage.readBox();
-          if (b && b.width >= 100 && b.height >= 100) return b;
-        } catch {}
-      }
       let left = 56;
       try {
         const sidebar = document.querySelector('[data-slot="sidebar"]') ||
@@ -22,9 +16,9 @@
       } catch {}
       return {
         top: 0,
-        left,
-        width: Math.max(100, window.innerWidth - left),
-        height: Math.max(100, window.innerHeight),
+        left: Math.round(left),
+        width: Math.max(100, Math.round(window.innerWidth - left)),
+        height: Math.max(100, Math.round(window.innerHeight)),
       };
     }
 
