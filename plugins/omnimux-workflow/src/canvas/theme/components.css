@@ -366,13 +366,6 @@
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.15);
 }
-  border-radius: 999px;
-  background: var(--wb-surface-raised);
-  border: 1px solid var(--wb-border);
-  color: var(--wb-text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-}
 
 /* 文本节点：未聚焦时 textarea 本身可拖（不带 nodrag），
    双击聚焦后才加 nodrag 锁编辑。壳上 padding 仍作备用拖边。 */
@@ -2821,12 +2814,6 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   width: max-content;
   box-sizing: border-box;
   animation: wfCustomSelectFadeIn 120ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 5px;
-  animation: wf-dropdown-in 0.15s ease-out;
-  overflow: hidden;
   user-select: none;
 }
 

@@ -27,6 +27,9 @@ const SCRIPT_ID = 'omnimux-workflow-canvas-island'
  * @returns {Promise<void>}
  */
 function ensureCanvasScript(hash) {
+  if (typeof window !== 'undefined' && window[CANVAS_GLOBAL] && typeof window[CANVAS_GLOBAL].mountCanvas === 'function') {
+    return Promise.resolve()
+  }
   const existing = document.getElementById(SCRIPT_ID)
   if (existing instanceof HTMLScriptElement && existing.dataset.loaded === '1') {
     return Promise.resolve()
@@ -37,10 +40,16 @@ function ensureCanvasScript(hash) {
       script = document.createElement('script')
       script.id = SCRIPT_ID
     } else {
-      // A previous injection is still in flight: piggyback on its events.
-      script.addEventListener('load', () => resolve(), { once: true })
-      script.addEventListener('error', () => reject(new Error('canvas island script failed')), { once: true })
-      return
+      if (script.dataset.loaded === 'error') {
+        script.remove()
+        script = document.createElement('script')
+        script.id = SCRIPT_ID
+      } else {
+        // A previous injection is still in flight: piggyback on its events.
+        script.addEventListener('load', () => resolve(), { once: true })
+        script.addEventListener('error', () => reject(new Error('canvas island script failed')), { once: true })
+        return
+      }
     }
     script.src = `/omnimux-workflow/canvas.js?v=${encodeURIComponent(hash)}`
     script.async = true
@@ -48,7 +57,10 @@ function ensureCanvasScript(hash) {
       script.dataset.loaded = '1'
       resolve()
     }, { once: true })
-    script.addEventListener('error', () => reject(new Error('canvas island script failed')), { once: true })
+    script.addEventListener('error', () => {
+      script.dataset.loaded = 'error'
+      reject(new Error('canvas island script failed'))
+    }, { once: true })
     document.head.append(script)
   })
 }

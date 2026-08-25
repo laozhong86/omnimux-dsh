@@ -1403,13 +1403,6 @@ body[data-ds-dark-theme] .wf-canvas-toolbar__item--primary-add:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.15);
 }
-  border-radius: 999px;
-  background: var(--wb-surface-raised);
-  border: 1px solid var(--wb-border);
-  color: var(--wb-text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-}
 
 /* \u6587\u672C\u8282\u70B9\uFF1A\u672A\u805A\u7126\u65F6 textarea \u672C\u8EAB\u53EF\u62D6\uFF08\u4E0D\u5E26 nodrag\uFF09\uFF0C
    \u53CC\u51FB\u805A\u7126\u540E\u624D\u52A0 nodrag \u9501\u7F16\u8F91\u3002\u58F3\u4E0A padding \u4ECD\u4F5C\u5907\u7528\u62D6\u8FB9\u3002 */
@@ -3858,12 +3851,6 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   width: max-content;
   box-sizing: border-box;
   animation: wfCustomSelectFadeIn 120ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 5px;
-  animation: wf-dropdown-in 0.15s ease-out;
-  overflow: hidden;
   user-select: none;
 }
 
