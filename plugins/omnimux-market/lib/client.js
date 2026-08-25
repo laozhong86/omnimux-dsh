@@ -2824,14 +2824,42 @@ var STAGE_ID = "omnimux-market";
 var PRODUCT_STAGE_EVENT = "dsh-product-stage";
 function conversationBox() {
   if (typeof window === "undefined") return null;
-  let left = 56;
+  let left = 0;
   try {
-    const sidebar = document.querySelector('[data-slot="sidebar"]') || document.querySelector("aside") || document.querySelector('[class*="sidebar"]') || document.querySelector('[class*="appFrame"] > div:first-child');
-    if (sidebar) {
-      const r = sidebar.getBoundingClientRect();
-      if (r.right > 0 && r.right < window.innerWidth - 100) left = r.right;
+    const center = document.querySelector('.dshDesktopCenterSurface, [class*="centerCol"], [class*="CenterCol"], [class*="mainContent"], main');
+    if (center) {
+      const r = center.getBoundingClientRect();
+      if (r.left > 0 && r.left < window.innerWidth - 100) {
+        left = r.left;
+      }
+    }
+    if (!left) {
+      const sidebar = document.querySelector('.dshDesktopSidebarSurface, [class*="sidebarCol"], [class*="SidebarSurface"], [class*="SidebarRoot"]') || document.querySelector(".sh-plaza-wrap")?.closest('.dshDesktopSidebarSurface, [class*="sidebarCol"], [class*="SidebarSurface"], aside, nav');
+      if (sidebar) {
+        const r = sidebar.getBoundingClientRect();
+        if (r.right > 0 && r.right < window.innerWidth - 100) {
+          left = r.right;
+        }
+      }
+    }
+    if (!left) {
+      const btn = document.querySelector(".sh-plaza-trigger");
+      if (btn) {
+        let p = btn.parentElement;
+        while (p && p !== document.body) {
+          const r = p.getBoundingClientRect();
+          if (r.top <= 20 && r.left <= 10 && r.right >= 50 && r.right < window.innerWidth - 100) {
+            left = r.right;
+          }
+          p = p.parentElement;
+        }
+      }
     }
   } catch {
+  }
+  if (!left || left <= 0) {
+    const isCollapsed = document.querySelector('[data-sidebar-collapsed="true"], [data-collapsed="true"]') !== null;
+    left = isCollapsed ? 56 : 280;
   }
   return {
     top: 0,
