@@ -92,11 +92,12 @@ describe('table cellmenu CSS (list-mode ⋯ / popover)', () => {
   })
 })
 
-describe('JSX freeze (AccountTable / AccountCard / AccountMenu)', () => {
+describe('JSX freeze (AccountTable / AccountCard / AccountMenu / Avatar)', () => {
   it('wraps the table-row menu in cellmenu and leaves the card unwrapped', () => {
     const table = readFileSync(join(here, 'AccountTable.jsx'), 'utf8')
     const card = readFileSync(join(here, 'AccountCard.jsx'), 'utf8')
     const controls = readFileSync(join(here, 'account-controls.jsx'), 'utf8')
+    const chips = readFileSync(join(here, 'chips.jsx'), 'utf8')
 
     assert.match(
       table,
@@ -107,6 +108,7 @@ describe('JSX freeze (AccountTable / AccountCard / AccountMenu)', () => {
     assert.match(controls, /className="omnimux-accounts-more"/)
     assert.match(controls, /className="omnimux-accounts-popover"/)
     assert.doesNotMatch(controls, /omnimux-accounts-cellmenu/)
+    assert.match(chips, /referrerPolicy="no-referrer"/)
   })
 })
 
@@ -138,6 +140,41 @@ describe('FilterBar structure contract', () => {
     assert.match(STYLES, /\.omnimux-accounts-filterbar\s*\{/)
     assert.match(STYLES, /\.omnimux-accounts-filter-actions\s*\{/)
     assert.doesNotMatch(STYLES, /\.omnimux-accounts-iconbtn/)
+  })
+})
+
+describe('OverviewBar structure and styling contract', () => {
+  const overviewBar = readFileSync(join(here, 'OverviewBar.jsx'), 'utf8')
+
+  it('renders standard kit Button with stat-head before stat-value', () => {
+    assert.match(overviewBar, /import \{ Button \} from 'dsh-ui-kit'/)
+    assert.match(overviewBar, /<Button\b/)
+    assert.match(overviewBar, /className=\{`omnimux-accounts-stat omnimux-accounts-stat--\$\{stat\.key\}`\}/)
+    assert.match(overviewBar, /aria-pressed=\{stat\.selected\}/)
+    assert.match(overviewBar, /className="omnimux-accounts-stat-head"/)
+    assert.match(overviewBar, /className="omnimux-accounts-stat-value"/)
+  })
+
+  it('defines 12px-radius metric card grid, tabular-nums value, and interactive states', () => {
+    const overviewBody = ruleBody(STYLES, '.omnimux-accounts-overview')
+    assert.equal(decl(overviewBody, 'display'), 'grid')
+    assert.equal(decl(overviewBody, 'gap'), '12px')
+
+    const statBody = ruleBody(STYLES, '.omnimux-accounts-stat')
+    assert.match(decl(statBody, 'display'), /^flex(\s*!important)?$/)
+    assert.match(decl(statBody, 'flex-direction'), /^column(\s*!important)?$/)
+    assert.match(decl(statBody, 'border-radius'), /^12px(\s*!important)?$/)
+    assert.match(decl(statBody, 'padding'), /^12px 16px(\s*!important)?$/)
+
+    const valueBody = ruleBody(STYLES, '.omnimux-accounts-stat-value')
+    assert.equal(decl(valueBody, 'font-size'), '24px')
+    assert.equal(decl(valueBody, 'font-variant-numeric'), 'tabular-nums')
+
+    assert.match(STYLES, /\.omnimux-accounts-stat\[aria-pressed="true"\]\s*\{/)
+    assert.match(STYLES, /\.omnimux-accounts-dot--needsAttention\s*\{/)
+    assert.match(STYLES, /\.omnimux-accounts-dot--platforms\s*\{/)
+    assert.match(STYLES, /\.omnimux-accounts-dot--total\s*\{/)
+    assert.doesNotMatch(STYLES, /\.omnimux-accounts-overview-row\s*\{/)
   })
 })
 

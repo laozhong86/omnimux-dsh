@@ -1,17 +1,20 @@
 {
   "id": "omnimux-analytics",
   "name": "omnimux-analytics",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "tier": "tier-0-hub",
   "entrypoint": "src/index.js",
   "status": "active",
-  "description": "OmniMux 全局工具调用与事件埋点拦截器 (Umami 实例同步)",
-  "tags": ["analytics", "telemetry", "umami", "tracking", "metrics"],
+  "description": "OmniMux 全局工具调用埋点（Umami）与社媒数据分析看板（一级页 Stage）",
+  "tags": ["analytics", "telemetry", "umami", "dashboard", "social", "tracking", "metrics"],
   "capabilities": {
     "tools": [],
     "seamsProvided": [],
     "seamsConsumed": ["identity"],
-    "slots": [],
+    "slots": [
+      { "target": "sidebar.extra", "componentPath": "src/client/sidebar-entry.js" },
+      { "target": "shell.overlay", "componentPath": "src/client/AnalyticsStage.jsx" }
+    ],
     "storageDomains": []
   },
   "dependencies": {

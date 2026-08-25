@@ -14,13 +14,17 @@ import {
   AudioLines,
   ChevronLeft,
   ChevronRight,
+  Film,
   Image as ImageIcon,
   Plus,
+  Table,
   Type,
   Video,
 } from 'lucide-react';
 import { useT } from '../../i18n';
 import type { MaterialType } from '../../../types/materialNode';
+
+export type CanvasAddNodeType = MaterialType | 'table';
 
 export type ContextMenuAction =
   | 'copy'
@@ -45,7 +49,7 @@ interface ContextMenuProps {
   context: ContextMenuContext;
   onClose: () => void;
   onAction: (action: ContextMenuAction, context: ContextMenuContext) => void;
-  onAddNode?: (type: MaterialType) => void;
+  onAddNode?: (type: CanvasAddNodeType) => void;
   canUndo?: boolean;
   canRedo?: boolean;
   /** Whether the in-island clipboard holds nodes (gates paste). */
@@ -67,7 +71,7 @@ interface MenuItemSpec {
 
 interface AddNodeItemSpec {
   key: string;
-  type: MaterialType;
+  type: CanvasAddNodeType;
   label: string;
   icon: ReactNode;
   badge?: {
@@ -178,6 +182,16 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         type: 'audio',
         label: t('node.type.audio'),
         icon: <AudioLines size={18} />,
+      },
+      {
+        key: 'table',
+        type: 'table',
+        label: t('node.type.table'),
+        icon: <Table size={18} />,
+        badge: {
+          text: 'HTable',
+          variant: 'primary',
+        },
       },
     ];
   }, [t]);

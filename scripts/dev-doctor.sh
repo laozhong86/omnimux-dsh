@@ -365,6 +365,22 @@ else
 fi
 
 echo
+echo "== 13. 插件 files 覆盖 Host 相对 import 闭包 =="
+plugin_files_check="$PLUGINS_ROOT/../scripts/check-plugin-files.mjs"
+if [ ! -f "$plugin_files_check" ]; then
+  bad "门禁脚本缺失 scripts/check-plugin-files.mjs"
+else
+  plugin_files_status=0
+  plugin_files_out=$(node "$plugin_files_check" 2>&1) || plugin_files_status=$?
+  echo "$plugin_files_out"
+  if [ "$plugin_files_status" -ne 0 ]; then
+    bad "package.json files 未覆盖 Host 闭包 → 修 files 后 yarn omnimux:sync <plugin>"
+  else
+    ok "全部插件 Host 闭包已列入 npm pack 集合"
+  fi
+fi
+
+echo
 if [ "$fails" -gt 0 ]; then
   echo "✗ $fails 项不合规，按提示修复"
   [ "$warns" -gt 0 ] && echo "（另有 ⚠ $warns 项已知债）"

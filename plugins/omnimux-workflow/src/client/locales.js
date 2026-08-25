@@ -1,5 +1,5 @@
 export const zh = {
-  'nav': '项目',
+  'nav': '创作',
   'stage.title': '工作流工程',
   'stage.close': '关闭',
   'canvas.loading': '正在加载画布…',

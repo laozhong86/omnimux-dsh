@@ -6,6 +6,7 @@ import { createTabsStore } from '../apps/tabs.js'
 import { createIdentity } from '../auth/identity.js'
 import { createTokenStore } from '../auth/store.js'
 import { parseHubConfig } from '../config.js'
+import { createAccountAvatarStore } from '../official/account-avatar.js'
 import { createAccountMetaStore } from '../official/account-meta.js'
 import { mountOfficial } from '../official/mount.js'
 import { mountReader } from '../reader/mount.js'
@@ -53,6 +54,10 @@ export function apply(ctx, config = {}) {
   appsStore.maybeRefresh()
   const avatarStore = createAvatarStore({ home: homeDir })
   const accountMetaStore = createAccountMetaStore({ home: homeDir })
+  const accountAvatarStore = createAccountAvatarStore({
+    home: homeDir,
+    config: hub.official.accountAvatars,
+  })
   const tabsStore = createTabsStore({ home: homeDir })
 
   const mountHttp = (httpCtx) => mountHubHttp(httpCtx, {
@@ -67,6 +72,7 @@ export function apply(ctx, config = {}) {
     appsStore,
     tabsStore,
     accountMetaStore,
+    accountAvatarStore,
     avatarStore,
   })
   if (typeof ctx.inject === 'function') ctx.inject(['webServer'], mountHttp)

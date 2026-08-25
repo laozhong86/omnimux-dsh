@@ -26,6 +26,7 @@ import { injectBrandBoot } from '../brand/inject-index.js'
  *   appsStore: { view: Function },
  *   tabsStore: { remove: Function },
  *   accountMetaStore: object,
+ *   accountAvatarStore?: object,
  *   avatarStore: object,
  * }} deps
  */
@@ -74,6 +75,7 @@ export function mountHubHttp(httpCtx, deps) {
     const stopOfficial = registerOfficialRoutes(webServer, createOfficialDispatcher({
       ...officialDeps,
       metaStore: deps.accountMetaStore,
+      avatarStore: deps.accountAvatarStore,
     }))
     const stopInspiration = registerInspirationRoutes(webServer, createInspirationDispatcher(officialDeps))
     const stopAvatar = registerAvatarRoutes(webServer, createAvatarDispatcher({

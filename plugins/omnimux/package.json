@@ -24,7 +24,7 @@
     "src/client",
     "src/avatar",
     "apps",
-    "assets/logo.svg",
+    "assets",
     "lib/client.js",
     "scripts/build-client.mjs",
     "cordis.patch.yml"

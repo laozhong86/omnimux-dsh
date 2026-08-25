@@ -328,7 +328,7 @@ function mountSidebarEntry(stage, t, locale) {
   syncActive();
   const unregister = registerWhenReady({
     id: "omnimux-assets-entry",
-    rank: 4,
+    rank: 6,
     styles: STYLES,
     styleId: "omnimux-assets-entry-styles",
     create: () => entry
@@ -757,17 +757,39 @@ function Toolbar({ left, right, compact = false, className, children, ...rest })
     }) : null]
   });
 }
-function FilterBar({ search, filters, actions, right, className, compact, ...rest }) {
-  const trailing = actions ?? right;
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
-    ...rest,
-    left: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+function FilterBar({ left, search, filters, actions, right, tools, className, compact, ...rest }) {
+  let leftContent;
+  let rightContent;
+  if (left != null) {
+    leftContent = left;
+    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+      search,
+      tools,
+      actions
+    ] }) : null);
+  } else if (filters != null && search != null && tools == null && actions != null && right == null) {
+    leftContent = /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
       className: Toolbar_module_css_default.filters,
       children: filters
-    }) : null] }),
+    })] });
+    rightContent = actions;
+  } else {
+    leftContent = filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.filters,
+      children: filters
+    }) : null;
+    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+      search,
+      tools,
+      actions
+    ] }) : null);
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
+    ...rest,
+    left: leftContent,
+    right: rightContent,
     ...compact !== void 0 ? { compact } : {},
-    ...className !== void 0 ? { className } : {},
-    ...trailing !== void 0 ? { right: trailing } : {}
+    ...className !== void 0 ? { className } : {}
   });
 }
 injectCss("Dialog.module.css", ".dshUk-Dialog-dialog {\n  width: min(480px, 100%);\n  max-height: min(80vh, 720px);\n  border-radius: 16px;\n}\n\n.dshUk-Dialog-sm {\n  width: min(380px, 100%);\n}\n\n.dshUk-Dialog-lg {\n  width: min(640px, 100%);\n}\n\n.dshUk-Dialog-body {\n  overflow: auto;\n  max-height: min(56vh, 480px);\n}\n\n.dshUk-Dialog-footer {\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  gap: 8px;\n  width: 100%;\n}\n\n.dshUk-Dialog-message {\n  margin: 0;\n  font-size: 14px;\n  line-height: 22px;\n  color: var(--dsw-alias-label-primary);\n}\n");
@@ -1394,12 +1416,12 @@ function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAction = 
   if (viewMode === "list") {
     return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-assets-list-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("table", { className: "omnimux-assets-list-table", children: [
       /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("tr", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: { width: 40 } }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { children: t("detail.name") }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: { width: 100 }, children: t("detail.type") }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { children: t("detail.description") }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: { width: 120 }, children: t("detail.files") }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: { width: 160, textAlign: "right" }, children: "\u64CD\u4F5C" })
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { className: "omnimux-assets-th-check" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { className: "omnimux-assets-th-name", children: t("detail.name") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { className: "omnimux-assets-th-type", children: t("detail.type") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { className: "omnimux-assets-th-desc", children: t("detail.description") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { className: "omnimux-assets-th-files", children: t("detail.files") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { className: "omnimux-assets-th-actions", children: t("card.copyCite") })
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("tbody", { children: assets.map((asset) => {
         const selected = selectedIds?.has(asset.id);
@@ -1413,7 +1435,7 @@ function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAction = 
               onOpen(asset);
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { onClick: (e) => e.stopPropagation(), children: onToggleSelect ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { className: "omnimux-assets-td-check", onClick: (e) => e.stopPropagation(), children: onToggleSelect ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
                 IconButton,
                 {
                   variant: "ghost",
@@ -1426,17 +1448,17 @@ function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAction = 
                   children: selected ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(CheckIcon, { size: 12 }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", {})
                 }
               ) : null }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-assets-list-cell-name", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { className: "omnimux-assets-td-name", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-assets-list-cell-name", children: [
                 /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(FileIcon, { size: 16 }),
                 /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: asset.name })
               ] }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-assets-badge", style: { position: "static" }, children: t(`type.${asset.type}`) }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { style: { color: "var(--dsw-alias-label-secondary)", maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: asset.description || "\u2014" }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("td", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { className: "omnimux-assets-td-type", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-assets-badge omnimux-assets-list-badge", children: t(`type.${asset.type}`) }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { className: "omnimux-assets-td-desc", children: asset.description || "\u2014" }),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("td", { className: "omnimux-assets-td-files", children: [
                 asset.files?.length ? `${asset.files.length} \u4E2A\u7D20\u6750` : "\u65E0\u7D20\u6750",
-                missing ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-assets-missing", style: { position: "static", marginLeft: 6 }, children: t("card.missing") }) : null
+                missing ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-assets-missing omnimux-assets-list-missing", children: t("card.missing") }) : null
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("td", { style: { textAlign: "right" }, onClick: (e) => e.stopPropagation(), children: [
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("td", { className: "omnimux-assets-td-actions", onClick: (e) => e.stopPropagation(), children: [
                 /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
                   Button,
                   {
@@ -1846,28 +1868,9 @@ var ASSETS_CSS = `
   gap: 2px;
   background: var(--dsw-alias-bg-layer-1, transparent);
 }
-.omnimux-assets-view-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: var(--dsw-alias-label-tertiary);
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.15s ease;
-}
-.omnimux-assets-view-btn:hover {
-  color: var(--dsw-alias-label-primary);
-  background: var(--dsw-alias-interactive-bg-hover);
-}
-.omnimux-assets-view-btn[aria-pressed="true"] {
-  color: var(--dsw-alias-label-primary);
-  background: var(--dsw-alias-bg-base, var(--dsw-bg));
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+.omnimux-assets-list-wrap {
+  width: 100%;
+  overflow-x: auto;
 }
 .omnimux-assets-list-table {
   width: 100%;
@@ -1881,6 +1884,21 @@ var ASSETS_CSS = `
   font-weight: 500;
   font-size: 12px;
   border-bottom: 1px solid var(--dsw-alias-border-l2);
+}
+.omnimux-assets-th-check, .omnimux-assets-td-check { width: 40px; text-align: center; }
+.omnimux-assets-th-name { min-width: 160px; }
+.omnimux-assets-th-type, .omnimux-assets-td-type { width: 100px; }
+.omnimux-assets-th-desc { min-width: 200px; }
+.omnimux-assets-th-files, .omnimux-assets-td-files { width: 120px; }
+.omnimux-assets-th-actions, .omnimux-assets-td-actions { width: 160px; text-align: right; }
+.omnimux-assets-list-badge { position: static !important; }
+.omnimux-assets-list-missing { position: static !important; margin-left: 6px; }
+.omnimux-assets-td-desc {
+  color: var(--dsw-alias-label-secondary);
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .omnimux-assets-list-row {
   cursor: pointer;
@@ -2517,10 +2535,10 @@ ${(asset.tags || []).join("\n")}`.toLowerCase();
               ) }),
               /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-view-toggle", children: [
                 /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                  "button",
+                  IconButton,
                   {
-                    type: "button",
-                    className: "omnimux-assets-view-btn",
+                    variant: viewMode === "grid" ? "secondary" : "ghost",
+                    size: "xs",
                     "aria-pressed": viewMode === "grid",
                     "aria-label": t("view.grid"),
                     title: t("view.grid"),
@@ -2529,10 +2547,10 @@ ${(asset.tags || []).join("\n")}`.toLowerCase();
                   }
                 ),
                 /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                  "button",
+                  IconButton,
                   {
-                    type: "button",
-                    className: "omnimux-assets-view-btn",
+                    variant: viewMode === "list" ? "secondary" : "ghost",
+                    size: "xs",
                     "aria-pressed": viewMode === "list",
                     "aria-label": t("view.list"),
                     title: t("view.list"),

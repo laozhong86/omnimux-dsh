@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "node scripts/build-client.mjs",
-    "test": "node --test src/*.test.js"
+    "test": "node --test src/*.test.js src/client-form-dialog.test.js"
   },
   "dsh": {
     "bundle": {

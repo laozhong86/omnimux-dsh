@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-dsh-product-stage>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OmniMux 社媒数据分析看板 · 高保真原型</title>
+  <!-- 引入 Chart.js 用于高保真交互图表渲染 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --dsw-alias-bg-base: #ffffff;
+      --dsw-alias-bg-layer-1: #fbfbfb;
+      --dsw-alias-bg-module-platform: #f7f7f7;
+      --dsw-alias-label-primary: #0a0a0a;
+      --dsw-alias-label-secondary: #4b4b4b;
+      --dsw-alias-label-tertiary: #848484;
+      --dsw-alias-label-primary-inverted: #ffffff;
+      --dsw-alias-label-primary-foreground: #ffffff;
+      --dsw-alias-label-error: #b91c1c;
+      --dsw-alias-label-success: #15803d;
+      --dsw-alias-state-error-primary: #b91c1c;
+      --dsw-alias-state-warn-primary: #b45309;
+      --dsw-alias-border-l1: #eaeaea;
+      --dsw-alias-border-l2: #dbdbdb;
+      --dsw-alias-border-l3: #bfbfbf;
+      --dsw-alias-border-l4: #dbdbdb;
+      --dsw-alias-interactive-bg-hover: rgba(10,10,10,.05);
+      --dsw-alias-interactive-bg-active: rgba(10,10,10,.09);
+      --dsw-alias-button-primary-fill: #0a0a0a;
+      --dsw-alias-button-primary-hover: #242424;
+      --dsw-alias-bg-mask-1: rgba(10,10,10,.40);
+      --dsw-sidebar: #f7f7f7;
+      --dsw-font: "Inter", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --dsw-alias-bg-base: #141414;
+      --dsw-alias-bg-layer-1: #1f1f1f;
+      --dsw-alias-bg-module-platform: #1a1a1a;
+      --dsw-alias-label-primary: #f5f5f5;
+      --dsw-alias-label-secondary: #a3a3a3;
+      --dsw-alias-label-tertiary: #737373;
+      --dsw-alias-label-primary-inverted: #0a0a0a;
+      --dsw-alias-label-primary-foreground: #0a0a0a;
+      --dsw-alias-label-error: #ef4444;
+      --dsw-alias-label-success: #22c55e;
+      --dsw-alias-border-l1: #262626;
+      --dsw-alias-border-l2: #333333;
+      --dsw-alias-border-l3: #404040;
+      --dsw-alias-border-l4: #333333;
+      --dsw-alias-interactive-bg-hover: rgba(255,255,255,.07);
+      --dsw-alias-interactive-bg-active: rgba(255,255,255,.12);
+      --dsw-alias-button-primary-fill: #f5f5f5;
+      --dsw-alias-button-primary-hover: #e5e5e5;
+      --dsw-sidebar: #181818;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: var(--dsw-font);
+      color: var(--dsw-alias-label-primary);
+      background: var(--dsw-alias-bg-base);
+      display: flex;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    button, input, select { font: inherit; }
+
+    /* 整体 App 容器结构 */
+    .app-shell {
+      width: 100%;
+      max-width: 1560px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--dsw-alias-bg-base);
+      border-left: 1px solid var(--dsw-alias-border-l2);
+      border-right: 1px solid var(--dsw-alias-border-l2);
+    }
+
+    /* ==========================================================================
+       Layer 1: 页面头部规范 (Page Header)
+       ========================================================================== */
+    .stage-header {
+      padding: 20px 32px 14px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--dsw-alias-border-l1);
+    }
+    .stage-header-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 4px;
+      letter-spacing: -0.02em;
+    }
+    .stage-header-subtitle {
+      font-size: 13px;
+      color: var(--dsw-alias-label-secondary);
+      margin: 0;
+    }
+    .stage-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .icon-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--dsw-alias-border-l2);
+      background: transparent;
+      color: var(--dsw-alias-label-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .icon-button:hover {
+      background: var(--dsw-alias-interactive-bg-hover);
+      border-color: var(--dsw-alias-border-l3);
+    }
+
+    /* ==========================================================================
+       Layer 2: 标签切页与同步状态行 (Action & Tabs Row)
+       ========================================================================== */
+    .stage-action-row {
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--dsw-alias-border-l1);
+      background: var(--dsw-alias-bg-layer-1);
+    }
+    .segmented-tabs {
+      display: inline-flex;
+      background: var(--dsw-alias-bg-module-platform);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--dsw-alias-border-l2);
+    }
+    .segmented-tab {
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--dsw-alias-label-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .segmented-tab.active {
+      background: var(--dsw-alias-bg-base);
+      color: var(--dsw-alias-label-primary);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .sync-status-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--dsw-alias-label-tertiary);
+    }
+    .sync-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--dsw-alias-border-l2);
+      border-radius: 6px;
+      background: var(--dsw-alias-bg-base);
+      color: var(--dsw-alias-label-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sync-btn:hover {
+      background: var(--dsw-alias-interactive-bg-hover);
+    }
+
+    /* ==========================================================================
+       Layer 3: 44-48px 单行筛选栏规范 (FilterBar)
+       ========================================================================== */
+    .filter-bar {
+      height: 48px;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--dsw-alias-border-l2);
+      background: var(--dsw-alias-bg-base);
+    }
+    .filter-group-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    .filter-select {
+      height: 32px;
+      padding: 0 10px;
+      font-size: 13px;
+      border-radius: 6px;
+      border: 1px solid var(--dsw-alias-border-l2);
+      background: var(--dsw-alias-bg-base);
+      color: var(--dsw-alias-label-primary);
+      cursor: pointer;
+      outline: none;
+    }
+    .filter-select:hover {
+      border-color: var(--dsw-alias-border-l3);
+    }
+    .filter-group-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .search-input {
+      height: 32px;
+      width: 220px;
+      padding: 0 10px 0 28px;
+      font-size: 13px;
+      border-radius: 6px;
+      border: 1px solid var(--dsw-alias-border-l2);
+      background: var(--dsw-alias-bg-base);
+      color: var(--dsw-alias-label-primary);
+    }
+    .search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-icon {
+      position: absolute;
+      left: 8px;
+      width: 14px;
+      height: 14px;
+      color: var(--dsw-alias-label-tertiary);
+      pointer-events: none;
+    }
+
+    /* ==========================================================================
+       Layer 4: 主内容区域 (Main Content Area)
+       ========================================================================== */
+    .main-content {
+      padding: 24px 32px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+    }
+
+    /* 1. 核心 KPI 5 列栅格卡片 */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+    }
+    .kpi-card {
+      background: var(--dsw-alias-bg-layer-1);
+      border: 1px solid var(--dsw-alias-border-l2);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 98px;
+      transition: all 0.15s ease;
+    }
+    .kpi-card:hover {
+      border-color: var(--dsw-alias-border-l3);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .kpi-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--dsw-alias-label-secondary);
+      margin-bottom: 8px;
+    }
+    .kpi-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--dsw-alias-label-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .kpi-badge.up {
+      color: var(--dsw-alias-label-success);
+      background: rgba(21, 128, 61, 0.1);
+    }
+    .best-post-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .best-post-cover {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    .view-link {
+      font-size: 12px;
+      color: #3b82f6;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .view-link:hover {
+      text-decoration: underline;
+    }
+
+    /* 2. 图表格网格容器 (标准双列与单列) */
+    .charts-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .chart-panel {
+      background: var(--dsw-alias-bg-layer-1);
+      border: 1px solid var(--dsw-alias-border-l2);
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0;
+      color: var(--dsw-alias-label-primary);
+    }
+    .panel-subtitle {
+      font-size: 12px;
+      color: var(--dsw-alias-label-tertiary);
+      margin-top: 2px;
+    }
+    .panel-meta {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--dsw-alias-label-primary);
+    }
+    .chart-box {
+      width: 100%;
+      height: 220px;
+      position: relative;
+    }
+
+    /* 3. 复合互动走势大面板 (Engagement Over Time) */
+    .composite-chart-panel {
+      background: var(--dsw-alias-bg-layer-1);
+      border: 1px solid var(--dsw-alias-border-l2);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .metric-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--dsw-alias-border-l1);
+    }
+    .metric-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--dsw-alias-label-secondary);
+      cursor: pointer;
+      user-select: none;
+    }
+    .metric-pill input[type="checkbox"] {
+      cursor: pointer;
+    }
+    .metric-pill .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* 4. 深度洞察图表：热力图 & 粉丝演进 */
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: 44px repeat(24, 1fr);
+      gap: 3px;
+      margin-top: 12px;
+    }
+    .heatmap-label {
+      font-size: 11px;
+      color: var(--dsw-alias-label-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      height: 18px;
+    }
+    .heatmap-cell {
+      height: 18px;
+      border-radius: 2px;
+      background: #ebedf0;
+      transition: all 0.1s ease;
+      cursor: pointer;
+    }
+    .heatmap-cell:hover {
+      outline: 2px solid var(--dsw-alias-label-primary);
+      outline-offset: 1px;
+    }
+    /* 5 级绿度色阶规范 */
+    .heatmap-cell.lvl-0 { background: #ebedf0; }
+    .heatmap-cell.lvl-1 { background: #9be9a8; }
+    .heatmap-cell.lvl-2 { background: #40c463; }
+    .heatmap-cell.lvl-3 { background: #30a14e; }
+    .heatmap-cell.lvl-4 { background: #216e39; }
+
+    .heatmap-legend {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--dsw-alias-label-tertiary);
+      margin-top: 12px;
+    }
+    .best-times-chips {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 12px;
+    }
+    .chip {
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--dsw-alias-bg-module-platform);
+      border: 1px solid var(--dsw-alias-border-l2);
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .chip.highlight {
+      background: rgba(33, 110, 57, 0.12);
+      color: #15803d;
+      border-color: rgba(33, 110, 57, 0.25);
+    }
+
+    /* 5. 聚合与明细表格 */
+    .table-container {
+      background: var(--dsw-alias-bg-layer-1);
+      border: 1px solid var(--dsw-alias-border-l2);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .table-head-bar {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--dsw-alias-border-l1);
+    }
+    .analytics-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    .analytics-table th {
+      background: var(--dsw-alias-bg-module-platform);
+      color: var(--dsw-alias-label-secondary);
+      font-weight: 500;
+      font-size: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--dsw-alias-border-l2);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .analytics-table th:hover {
+      color: var(--dsw-alias-label-primary);
+    }
+    .analytics-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--dsw-alias-border-l1);
+      color: var(--dsw-alias-label-primary);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .analytics-table tr:hover td {
+      background: var(--dsw-alias-interactive-bg-hover);
+    }
+    .er-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(34, 197, 94, 0.1);
+      color: #16a34a;
+      font-weight: 600;
+    }
+
+    /* 辅助与微交互 */
+    .platform-icon-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+    .platform-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .platform-dot.tiktok { background: #000; }
+    .platform-dot.x { background: #1da1f2; }
+
+    /* 响应式适配 */
+    @media (max-width: 1200px) {
+      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+      .charts-grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ==========================================================================
+       Layer 1: 页面头部 (Page Header)
+       ========================================================================== -->
+  <header class="stage-header">
+    <div>
+      <h1 class="stage-header-title">数据分析看板</h1>
+      <p class="stage-header-subtitle">查看跨社媒矩阵的内容发布表现与受众互动指标分析</p>
+    </div>
+    <div class="stage-header-actions">
+      <button class="icon-button" title="切换暗色/亮色模式" onclick="toggleTheme()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
+      <button class="icon-button" title="导出所选周期报表 (CSV)" onclick="alert('已触发导出所选周期数据报表 (CSV)')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      </button>
+      <button class="icon-button" title="刷新大盘数据" onclick="refreshData()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       Layer 2: 动作与切页行 (Action Row / Tabs)
+       ========================================================================== -->
+  <div class="stage-action-row">
+    <div class="segmented-tabs">
+      <button class="segmented-tab active" onclick="switchTab(this, 'posting')">发布效果分析</button>
+      <button class="segmented-tab" onclick="switchTab(this, 'inbox')">私信互动分析</button>
+    </div>
+    <div class="sync-status-badge">
+      <span id="sync-text">上次同步：<strong>14分钟前</strong> · 下次调度：<strong>46分钟后</strong></span>
+      <button class="sync-btn" onclick="triggerSync()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        立即同步
+      </button>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       Layer 3: 单行筛选栏 (FilterBar, 48px)
+       ========================================================================== -->
+  <div class="filter-bar">
+    <div class="filter-group-left">
+      <select class="filter-select" id="platform-select" onchange="applyFilters()">
+        <option value="all">全部平台 (All Platforms)</option>
+        <option value="tiktok">TikTok (12篇)</option>
+        <option value="x">X / Twitter (0篇)</option>
+        <option value="youtube">YouTube (0篇)</option>
+        <option value="instagram">Instagram (0篇)</option>
+      </select>
+
+      <select class="filter-select" id="profile-select" onchange="applyFilters()">
+        <option value="all">全部账号矩阵 (All Profiles)</option>
+        <option value="main">@dsh_drama_center (主账号)</option>
+        <option value="sub">@dsh_short_clips (矩阵2号)</option>
+      </select>
+
+      <select class="filter-select" id="source-select" onchange="applyFilters()">
+        <option value="all">全部发布来源 (All Sources)</option>
+        <option value="manual">手动发布 (Manual)</option>
+        <option value="omnimux">OmniMux 自动同步</option>
+      </select>
+
+      <select class="filter-select" id="time-select" onchange="applyFilters()">
+        <option value="7d">近 7 天</option>
+        <option value="30d" selected>近 30 天</option>
+        <option value="90d">近 90 天</option>
+      </select>
+    </div>
+
+    <div class="filter-group-right">
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" class="search-input" placeholder="搜索帖子标题或 ID..." oninput="handleSearch(this.value)" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       Layer 4: 主内容区域 (Main Content Area)
+       ========================================================================== -->
+  <main class="main-content" id="posting-view">
+
+    <!-- 1. 核心 5 大 KPI 卡片 -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">综合互动率 (ER)</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpi-er">2.26%</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">总触达人数 (Reach)</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpi-reach">1.9K</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">总粉丝量 (Followers)</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpi-followers">635</span>
+          <span class="kpi-badge up">↗ 近30天 +17</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">本周期发帖量 (Posts)</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpi-posts">12</span>
+          <span class="kpi-badge up">↗ 正常更新</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">最佳表现单篇 (Best Post)</div>
+        <div class="best-post-content">
+          <div class="best-post-cover">第1集</div>
+          <div>
+            <div style="font-weight: 700; font-size: 15px;">930 <span style="font-size:12px;font-weight:normal;color:var(--dsw-alias-label-secondary);">播放量</span></div>
+            <a class="view-link" onclick="alert('跳转至最佳单篇帖子详情')">查看详情 ↗</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 基础走势与分布 (2x2 网格) -->
+    <section class="charts-grid-2">
+      <!-- 各平台发帖量 -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">各平台发帖分布</h3>
+            <div class="panel-subtitle">当前周期内发帖量 Top 1 平台</div>
+          </div>
+          <div class="panel-meta">12 <span style="font-size:11px;font-weight:normal;color:var(--dsw-alias-label-tertiary)">篇发帖总计</span></div>
+        </div>
+        <div class="chart-box"><canvas id="chart-posts-platform"></canvas></div>
+      </div>
+
+      <!-- 发帖时间走势 -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">发帖频次时间走势</h3>
+            <div class="panel-subtitle">按周切片发帖量 · 近 30 天</div>
+          </div>
+          <div class="panel-meta">12 <span style="font-size:11px;font-weight:normal;color:var(--dsw-alias-label-tertiary)">篇发帖总计</span></div>
+        </div>
+        <div class="chart-box"><canvas id="chart-posts-time"></canvas></div>
+      </div>
+
+      <!-- 各平台获赞分布 -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">♡ 各平台获赞分布</h3>
+            <div class="panel-subtitle">当前周期内获赞总量 Top 1 平台</div>
+          </div>
+          <div class="panel-meta">34 <span style="font-size:11px;font-weight:normal;color:var(--dsw-alias-label-tertiary)">点赞总计</span></div>
+        </div>
+        <div class="chart-box"><canvas id="chart-likes-platform"></canvas></div>
+      </div>
+
+      <!-- 点赞时间走势 -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">♡ 点赞时间累积走势</h3>
+            <div class="panel-subtitle">按周切片获赞量 · 近 30 天</div>
+          </div>
+          <div class="panel-meta">34 <span style="font-size:11px;font-weight:normal;color:var(--dsw-alias-label-tertiary)">点赞总计</span></div>
+        </div>
+        <div class="chart-box"><canvas id="chart-likes-time"></canvas></div>
+      </div>
+    </section>
+
+    <!-- 3. 复合互动全量走势 (Engagement Over Time) -->
+    <section class="composite-chart-panel">
+      <div class="panel-header">
+        <div>
+          <h3 class="panel-title">多维互动综合走势 (Engagement Over Time)</h3>
+          <div class="panel-subtitle">按周聚合 · 近 30 天全互动指标联动趋势</div>
+        </div>
+      </div>
+      <div class="chart-box" style="height: 260px;"><canvas id="chart-engagement-composite"></canvas></div>
+
+      <!-- 指标图例勾选行 -->
+      <div class="metric-pills">
+        <label class="metric-pill"><input type="checkbox" checked onchange="toggleDataset(0, this.checked)"><span class="dot" style="background:#ef4444;"></span> 点赞数 (Likes): <strong>35</strong></label>
+        <label class="metric-pill"><input type="checkbox" checked onchange="toggleDataset(1, this.checked)"><span class="dot" style="background:#3b82f6;"></span> 评论数 (Comments): <strong>8</strong></label>
+        <label class="metric-pill"><input type="checkbox" checked onchange="toggleDataset(2, this.checked)"><span class="dot" style="background:#10b981;"></span> 分享数 (Shares): <strong>2</strong></label>
+        <label class="metric-pill"><input type="checkbox" onchange="toggleDataset(3, this.checked)"><span class="dot" style="background:#f59e0b;"></span> 收藏数 (Saves): <strong>0</strong></label>
+        <label class="metric-pill"><input type="checkbox" checked onchange="toggleDataset(4, this.checked)"><span class="dot" style="background:#8b5cf6;"></span> 播放/浏览 (Views): <strong>2K</strong> <span style="color:#10b981;font-size:10px;">+199300% ↑</span></label>
+        <label class="metric-pill"><input type="checkbox" onchange="toggleDataset(5, this.checked)"><span class="dot" style="background:#06b6d4;"></span> 曝光量 (Impr.): <strong>0</strong></label>
+        <label class="metric-pill"><input type="checkbox" onchange="toggleDataset(6, this.checked)"><span class="dot" style="background:#64748b;"></span> 触达人数 (Reach): <strong>0</strong></label>
+        <label class="metric-pill"><input type="checkbox" onchange="toggleDataset(7, this.checked)"><span class="dot" style="background:#ec4899;"></span> 链接点击 (Clicks): <strong>0</strong></label>
+        <label class="metric-pill"><input type="checkbox" checked onchange="toggleDataset(8, this.checked)"><span class="dot" style="background:#22c55e;"></span> 互动率 (Eng. Rate): <strong>2.26%</strong></label>
+      </div>
+    </section>
+
+    <!-- 4. 深度洞察图表 (热力图 + 粉丝演进) -->
+    <section class="charts-grid-2">
+      <!-- 7x24h 最佳发布时间热力图 -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">最佳发布时间热力图 (Best Time to Post)</h3>
+            <div class="panel-subtitle">基于历史发布互动表现加权计算的最优排期时段</div>
+          </div>
+          <div class="heatmap-legend">
+            <span>低</span>
+            <span class="heatmap-cell lvl-0" style="width:10px;height:10px;display:inline-block;"></span>
+            <span class="heatmap-cell lvl-1" style="width:10px;height:10px;display:inline-block;"></span>
+            <span class="heatmap-cell lvl-2" style="width:10px;height:10px;display:inline-block;"></span>
+            <span class="heatmap-cell lvl-3" style="width:10px;height:10px;display:inline-block;"></span>
+            <span class="heatmap-cell lvl-4" style="width:10px;height:10px;display:inline-block;"></span>
+            <span>高</span>
+          </div>
+        </div>
+
+        <!-- 7x24 热力网格容器 -->
+        <div id="heatmap-container"></div>
+
+        <div class="best-times-chips">
+          <span style="color:var(--dsw-alias-label-secondary);font-weight:500;">推荐时段：</span>
+          <span class="chip highlight">周日 10:00 · 互动指数 24</span>
+          <span class="chip highlight">周三 20:00 · 互动指数 18</span>
+          <span class="chip highlight">周二 11:00 · 互动指数 13</span>
+        </div>
+      </div>
+
+      <!-- Follower evolution 粉丝演进 -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">粉丝增长演进曲线 (Follower Evolution)</h3>
+            <div class="panel-subtitle">各平台粉丝增长轨迹 · 2 个已授权平台</div>
+          </div>
+          <div class="panel-meta">635 <span style="font-size:11px;font-weight:normal;color:var(--dsw-alias-label-tertiary)">粉丝总量</span></div>
+        </div>
+        <div class="chart-box"><canvas id="chart-follower-evolution"></canvas></div>
+      </div>
+    </section>
+
+    <!-- 5. 聚合与明细表格 (Platform Breakdown & Top Performing Posts) -->
+    <section class="table-container">
+      <div class="table-head-bar">
+        <h3 class="panel-title">各平台表现明细汇总 (Platform Breakdown)</h3>
+      </div>
+      <table class="analytics-table">
+        <thead>
+          <tr>
+            <th>平台 ⇅</th>
+            <th>发帖数 ⇅</th>
+            <th>点赞 ⇅</th>
+            <th>评论 ⇅</th>
+            <th>分享 ⇅</th>
+            <th>收藏 ⇅</th>
+            <th>点击 ⇅</th>
+            <th>播放/浏览 ⇅</th>
+            <th>曝光 ⇅</th>
+            <th>触达 ⇅</th>
+            <th>互动率 (ER) ⇅</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="platform-icon-label"><span class="platform-dot tiktok"></span> TikTok</div></td>
+            <td>12</td>
+            <td>34</td>
+            <td>8</td>
+            <td>2</td>
+            <td>-</td>
+            <td>-</td>
+            <td>1.9K</td>
+            <td>-</td>
+            <td>-</td>
+            <td><span class="er-badge">2.28%</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="table-container">
+      <div class="table-head-bar">
+        <h3 class="panel-title">爆款内容表现排行榜 (Top Performing Posts)</h3>
+      </div>
+      <table class="analytics-table">
+        <thead>
+          <tr>
+            <th>内容摘要 / 发布时间</th>
+            <th>点赞 ⇅</th>
+            <th>评论 ⇅</th>
+            <th>分享 ⇅</th>
+            <th>收藏 ⇅</th>
+            <th>点击 ⇅</th>
+            <th>播放量 ⇅</th>
+            <th>引流涨粉 ⇅</th>
+            <th>曝光 ⇅</th>
+            <th>触达 ⇅</th>
+            <th>互动率 (ER) ⇅</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="platform-dot tiktok"></span>
+                <div>
+                  <div style="font-weight:600;">第1集 正片首发 (Episode 1 Pilot)</div>
+                  <div style="font-size:11px;color:var(--dsw-alias-label-tertiary)">2026年8月2日 10:00</div>
+                </div>
+              </div>
+            </td>
+            <td>17</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>930</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>1.83%</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="platform-dot tiktok"></span>
+                <div>
+                  <div style="font-weight:600;">第2集 精彩高潮切片 (Episode 2 Clip)</div>
+                  <div style="font-size:11px;color:var(--dsw-alias-label-tertiary)">2026年8月2日 18:30</div>
+                </div>
+              </div>
+            </td>
+            <td>10</td>
+            <td>8</td>
+            <td>2</td>
+            <td>-</td>
+            <td>-</td>
+            <td>630</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td><span class="er-badge">3.17%</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="platform-dot tiktok"></span>
+                <div>
+                  <div style="font-weight:600;">悬疑短剧上线前瞻预告 (Teaser)</div>
+                  <div style="font-size:11px;color:var(--dsw-alias-label-tertiary)">2026年7月31日 12:00</div>
+                </div>
+              </div>
+            </td>
+            <td>7</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>325</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>2.15%</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 6. 策略分析模型 (Posting Frequency vs Engagement & Engagement Accumulation) -->
+    <section class="charts-grid-2">
+      <!-- 频次模型 -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">发帖频次与互动率关联模型</h3>
+            <div class="panel-subtitle">不同每周发帖节奏区间的平均互动率表现</div>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="chart-cadence"></canvas></div>
+        <div style="margin-top:12px;font-size:12px;">
+          <span style="color:var(--dsw-alias-label-secondary)">📍 各平台最优发帖节奏：</span>
+          <span class="chip" style="margin-left:6px;"><span class="platform-dot tiktok" style="display:inline-block;"></span> TikTok <strong>11+篇/周 · 互动率 2.2%</strong></span>
+        </div>
+      </div>
+
+      <!-- 互动生命周期累积衰减 -->
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">内容生命周期互动衰减曲线 (Engagement Accumulation)</h3>
+            <div class="panel-subtitle">内容发布后随时间窗口的互动累积百分比</div>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="chart-accumulation"></canvas></div>
+        <div style="margin-top:12px;font-size:12px;display:flex;gap:12px;">
+          <span style="color:var(--dsw-alias-label-secondary)">📍 半数互动在发布后 <strong>2-7天内</strong> 产生</span>
+          <span style="color:var(--dsw-alias-label-secondary)">📍 <strong>80% 互动</strong> 集中在 2-7天长尾期</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Inbox Analytics 占位视图 (Tab 2) -->
+  <main class="main-content" id="inbox-view" style="display:none;">
+    <div class="chart-panel" style="text-align:center;padding:48px 24px;">
+      <h3 class="panel-title">私信与会话分析看板 (Inbox Analytics)</h3>
+      <p class="panel-subtitle" style="margin-top:8px;">包含私信咨询量、首次响应耗时 (TTR)、各平台渠道分布及 7x24h 消息接收热力图</p>
+      <div style="margin-top:20px;">
+        <span class="chip highlight">后端接口 /api/social/v1/inbox-analytics/* 已全量就绪</span>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script>
+  // ==========================================================================
+  // 交互逻辑与图表初始化
+  // ==========================================================================
+
+  function toggleTheme() {
+    const doc = document.documentElement;
+    const current = doc.getAttribute('data-theme');
+    doc.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+  }
+
+  function switchTab(btn, tab) {
+    document.querySelectorAll('.segmented-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    if (tab === 'posting') {
+      document.getElementById('posting-view').style.display = 'flex';
+      document.getElementById('inbox-view').style.display = 'none';
+    } else {
+      document.getElementById('posting-view').style.display = 'none';
+      document.getElementById('inbox-view').style.display = 'block';
+    }
+  }
+
+  function triggerSync() {
+    const txt = document.getElementById('sync-text');
+    txt.innerHTML = '正在从 TikTok 与 X 官方接口拉取最新增量...';
+    setTimeout(() => {
+      txt.innerHTML = '上次同步：<strong>刚刚</strong> · 下次调度：<strong>60分钟后</strong>';
+      alert('已触发从各社媒平台实时增量同步，大盘与明细指标已刷新！');
+    }, 800);
+  }
+
+  function refreshData() {
+    alert('正在重新拉取 /omnimux/analytics/* 大盘数据...');
+  }
+
+  function applyFilters() {
+    const platform = document.getElementById('platform-select').value;
+    console.log('筛选条件变更:', platform);
+  }
+
+  function handleSearch(q) {
+    console.log('搜索关键字:', q);
+  }
+
+  // 渲染 7x24 小时热力图 (中文周与时间)
+  function renderHeatmap() {
+    const container = document.getElementById('heatmap-container');
+    const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    let html = '<div class="heatmap-grid">';
+    
+    // 首行时间标记
+    html += '<div></div>';
+    for (let h = 0; h < 24; h++) {
+      html += `<div style="font-size:9px;color:var(--dsw-alias-label-tertiary);text-align:center;">${h % 3 === 0 ? (h === 0 ? '0点' : h + '点') : ''}</div>`;
+    }
+
+    days.forEach((d, dayIdx) => {
+      html += `<div class="heatmap-label">${d}</div>`;
+      for (let h = 0; h < 24; h++) {
+        let lvl = 0;
+        // 模拟截图中的热力活跃分布
+        if (dayIdx === 0 && (h >= 10 && h <= 12)) lvl = 3;
+        if (dayIdx === 2 && h === 20) lvl = 4;
+        if (dayIdx === 1 && h === 11) lvl = 3;
+        if (dayIdx === 6 && (h >= 9 && h <= 11)) lvl = 3;
+        if (Math.random() > 0.7 && lvl === 0) lvl = Math.floor(Math.random() * 2) + 1;
+        html += `<div class="heatmap-cell lvl-${lvl}" title="${d} ${h}:00 · 互动指数 ${lvl * 6 + 5}"></div>`;
+      }
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  // 初始化所有 Chart.js 图表 (完全中文汉化)
+  let compositeChart;
+
+  function initCharts() {
+    // 1. 各平台发帖分布
+    new Chart(document.getElementById('chart-posts-platform'), {
+      type: 'bar',
+      data: {
+        labels: ['TikTok'],
+        datasets: [{ data: [12], backgroundColor: '#18181b', borderRadius: 4, barThickness: 24 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 12 } } }
+    });
+
+    // 2. 发帖频次时间走势
+    new Chart(document.getElementById('chart-posts-time'), {
+      type: 'bar',
+      data: {
+        labels: ['7月27日', '8月3日', '8月10日', '8月17日', '8月24日'],
+        datasets: [{ data: [6, 6, 0, 0, 0], backgroundColor: '#18181b', borderRadius: 4, barThickness: 18 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 6 } } }
+    });
+
+    // 3. 各平台获赞分布
+    new Chart(document.getElementById('chart-likes-platform'), {
+      type: 'bar',
+      data: {
+        labels: ['TikTok'],
+        datasets: [{ data: [34], backgroundColor: '#18181b', borderRadius: 4, barThickness: 24 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 35 } } }
+    });
+
+    // 4. 点赞时间累积走势
+    new Chart(document.getElementById('chart-likes-time'), {
+      type: 'bar',
+      data: {
+        labels: ['7月27日', '8月3日', '8月10日', '8月17日', '8月24日'],
+        datasets: [{ data: [34, 0, 0, 0, 0], backgroundColor: '#18181b', borderRadius: 4, barThickness: 18 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 35 } } }
+    });
+
+    // 5. 复合互动全量走势 (Engagement Over Time)
+    compositeChart = new Chart(document.getElementById('chart-engagement-composite'), {
+      type: 'line',
+      data: {
+        labels: ['7月27日', '8月3日', '8月10日', '8月17日', '8月24日'],
+        datasets: [
+          { label: '点赞数', data: [17, 16, 1, 0, 0], borderColor: '#ef4444', tension: 0.3, yAxisID: 'y' },
+          { label: '评论数', data: [4, 4, 0, 0, 0], borderColor: '#3b82f6', tension: 0.3, yAxisID: 'y' },
+          { label: '分享数', data: [1, 1, 0, 0, 0], borderColor: '#10b981', tension: 0.3, yAxisID: 'y' },
+          { label: '收藏数', data: [0, 0, 0, 0, 0], borderColor: '#f59e0b', hidden: true },
+          { label: '播放量', data: [1200, 800, 50, 0, 0], borderColor: '#8b5cf6', tension: 0.3, yAxisID: 'y1' },
+          { label: '曝光量', data: [0, 0, 0, 0, 0], borderColor: '#06b6d4', hidden: true },
+          { label: '触达人数', data: [0, 0, 0, 0, 0], borderColor: '#64748b', hidden: true },
+          { label: '链接点击', data: [0, 0, 0, 0, 0], borderColor: '#ec4899', hidden: true },
+          { label: '互动率(%)', data: [2.26, 2.1, 0.5, 0, 0], borderColor: '#22c55e', borderDash: [4,4], tension: 0.3, yAxisID: 'y' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { type: 'linear', display: true, position: 'left', beginAtZero: true },
+          y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, beginAtZero: true }
+        }
+      }
+    });
+
+    // 6. 粉丝增长演进曲线
+    new Chart(document.getElementById('chart-follower-evolution'), {
+      type: 'line',
+      data: {
+        labels: ['8月1日', '8月2日', '8月10日', '8月24日'],
+        datasets: [
+          { label: 'TikTok 粉丝', data: [240, 253, 253, 253], borderColor: '#000', tension: 0.1 },
+          { label: 'X / Twitter 粉丝', data: [148, 148, 148, 148], borderColor: '#1da1f2', tension: 0.1 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // 7. 发帖频次与互动率
+    new Chart(document.getElementById('chart-cadence'), {
+      type: 'line',
+      data: {
+        labels: ['6-10篇/周', '11+篇/周'],
+        datasets: [{ label: 'TikTok 互动率', data: [0.6, 2.2], borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, tension: 0.2 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => v + '%' } } } }
+    });
+
+    // 8. 互动生命周期累积衰减
+    new Chart(document.getElementById('chart-accumulation'), {
+      type: 'line',
+      data: {
+        labels: ['发布时', '0-6小时', '6-12小时', '12-24小时', '1-2天', '2-7天', '7-30天'],
+        datasets: [{ label: '互动累积百分比', data: [0, 42, 43, 43, 50, 100, 100], borderColor: '#18181b', tension: 0.3, fill: false }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { max: 100, ticks: { callback: v => v + '%' } } } }
+    });
+  }
+
+  function toggleDataset(index, isVisible) {
+    if (compositeChart) {
+      compositeChart.setDatasetVisibility(index, isVisible);
+      compositeChart.update();
+    }
+  }
+
+  // 页面加载就绪
+  window.addEventListener('DOMContentLoaded', () => {
+    renderHeatmap();
+    initCharts();
+  });
+</script>
+
+</body>
+</html>

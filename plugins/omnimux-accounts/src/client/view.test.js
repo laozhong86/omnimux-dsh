@@ -47,6 +47,22 @@ describe('filterAccounts', () => {
       ['a', 'b'],
     )
   })
+
+  it('filters by statusGroup (connected -> active+expiring, needsAttention -> expired+error)', () => {
+    assert.deepEqual(
+      filterAccounts(rows, { statusGroup: 'connected' }).map((r) => r.id),
+      ['a', 'b', 'e'],
+    )
+    assert.deepEqual(
+      filterAccounts(rows, { statusGroup: 'needsAttention' }).map((r) => r.id),
+      ['c', 'd'],
+    )
+    // Specific status overrides statusGroup
+    assert.deepEqual(
+      filterAccounts(rows, { statusGroup: 'connected', status: 'expiring' }).map((r) => r.id),
+      ['b'],
+    )
+  })
 })
 
 describe('sortAccounts', () => {

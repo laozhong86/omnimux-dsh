@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, DropdownSelect, IconButton, InputField, ModalDialog } from 'dsh-ui-kit'
+import { Button, DropdownSelect, IconButton, InputField } from 'dsh-ui-kit'
 import { emptyBrandStrategy, isDigitalProduct, isPlainStrategy, normalizeBrandStrategy } from '../brand-strategy.js'
-import { FileIcon } from './icons.jsx'
+import { CloseIcon, FileIcon } from './icons.jsx'
 
 /**
  * @param {unknown} product
@@ -75,6 +75,14 @@ export function ProductFormDialog({ t, mode, busy, error, dirty, initial, onCanc
   useEffect(() => {
     nameRef.current?.focus()
   }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
 
   // Re-hydrate only when the opened product identity / saved revision changes
   // (reload). Poll must not pass a new updated_at while the form is dirty.
@@ -185,24 +193,33 @@ export function ProductFormDialog({ t, mode, busy, error, dirty, initial, onCanc
   }
 
   return (
-    <ModalDialog
-      open
-      onClose={onCancel}
-      title={mode === 'edit' ? t('detail.title') : t('add.title')}
-      closeLabel={t('stage.close')}
-      size="lg"
-      footer={(
-        <Button
-          variant="primary"
-          disabled={!canSubmit}
-          loading={busy}
-          onClick={() => { onSubmit(payload()) }}
+    <div className="omnimux-products-modal-backdrop" onClick={onCancel}>
+      <div
+        className="omnimux-products-modal-wrapper"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="omnimux-products-modal-title"
+        onClick={(event) => { event.stopPropagation() }}
+      >
+        <IconButton
+          className="omnimux-products-modal-close"
+          variant="ghost"
+          size="sm"
+          aria-label={t('stage.close')}
+          onClick={onCancel}
         >
-          {mode === 'edit' ? t('detail.save') : t('add.submit')}
-        </Button>
-      )}
-    >
-      <div className="omnimux-products-form">
+          <CloseIcon size={14} />
+        </IconButton>
+
+        <div className="omnimux-products-modal-container">
+          <div className="omnimux-products-modal-header">
+            <h2 id="omnimux-products-modal-title" className="omnimux-products-modal-title">
+              {mode === 'edit' ? t('detail.title') : t('add.title')}
+            </h2>
+          </div>
+
+          <div className="omnimux-products-modal-body">
+            <div className="omnimux-products-form">
         <div className="omnimux-products-name-row">
           <span className="omnimux-products-at" aria-hidden="true">@</span>
           <InputField
@@ -378,7 +395,21 @@ export function ProductFormDialog({ t, mode, busy, error, dirty, initial, onCanc
         </div>
         {error ? <p className="omnimux-products-error">{error}</p> : null}
       </div>
-    </ModalDialog>
+          </div>
+
+          <div className="omnimux-products-modal-footer">
+            <Button
+              variant="primary"
+              disabled={!canSubmit}
+              loading={busy}
+              onClick={() => { onSubmit(payload()) }}
+            >
+              {mode === 'edit' ? t('detail.save') : t('add.submit')}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

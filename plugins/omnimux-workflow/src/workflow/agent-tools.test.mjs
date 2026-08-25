@@ -151,12 +151,14 @@ function makeHarness({ gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 30 } }
   return { dir, tools, promptSections, dispose, call, tool, seedWorkspace };
 }
 
-test('agent seats register the ten tools + workflow:ops prompt section', () => {
+test('agent seats register the twelve tools + workflow:ops prompt section', () => {
   const h = makeHarness();
   try {
     assert.deepEqual(
       h.tools.map((t) => t.name).sort(),
       [
+        'canvas_get_table_node',
+        'canvas_write_table_node',
         'workflow_connect',
         'workflow_create',
         'workflow_disconnect',

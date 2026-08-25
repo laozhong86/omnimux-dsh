@@ -51,12 +51,15 @@ import { DEFAULT_CANVAS_EDGE_OPTIONS } from './utils/canvasConnectionUtils';
 import { createMaterialNode, appendWithSelectionReset } from './utils/nodeFactory';
 import { buildNodeTypes } from '../nodes/registry';
 import { materialNodeDefinition } from '../nodes/definitions/material';
+import { tableNodeDefinition } from '../nodes/definitions/table';
+import { SpreadsheetStage } from '../components/table-node/stage/SpreadsheetStage';
 import type { CapabilityCatalog } from '../../shared/api';
 
 // Register node definitions once at module load (extension point ①).
 // nodeTypes built outside the component to prevent re-creation (Gxgen rule).
 import { registerNodeDefinition } from '../nodes/registry';
 registerNodeDefinition(materialNodeDefinition);
+registerNodeDefinition(tableNodeDefinition);
 
 const nodeTypes = buildNodeTypes();
 
@@ -176,13 +179,31 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
   // 工具栏添加节点（错位网格摆放，避免节点互相遮挡 Handle —— spike 坑 #2）；
   // 右键菜单可传入显式落点。
   const handleAddNode = useCallback(
-    (type: MaterialType, position?: { x: number; y: number }) => {
+    (type: MaterialType | 'table', position?: { x: number; y: number }) => {
       const index = nodeCreateCounter.current;
       const targetPosition = position ?? {
         x: 120 + (index % 3) * 420,
         y: 120 + Math.floor(index / 3) * 360,
       };
-      const result = createMaterialNode(type, targetPosition);
+
+      if (type === 'table') {
+        const nodeId = `node_tbl_${Date.now()}`;
+        const newTableNode: any = {
+          id: nodeId,
+          type: 'table',
+          position: targetPosition,
+          data: {
+            title: '未命名表格',
+            status: 'idle',
+          },
+          selected: true,
+        };
+        nodeCreateCounter.current += 1;
+        setNodes((current) => appendWithSelectionReset(current, [newTableNode]));
+        return;
+      }
+
+      const result = createMaterialNode(type as MaterialType, targetPosition);
       if (result.nodes.length === 0) return;
       nodeCreateCounter.current += 1;
       setNodes((current) => appendWithSelectionReset(current, result.nodes));
@@ -419,6 +440,9 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
         onSelect={handleConnectionMenuSelect}
         onClose={handleConnectionMenuClose}
       />
+
+      {/* 全屏独立电子表格舞台 */}
+      <SpreadsheetStage />
 
       {lastRejectedReason && (
         <div className="wf-rejected-toast">{lastRejectedReason}</div>

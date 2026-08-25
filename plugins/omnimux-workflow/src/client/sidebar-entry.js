@@ -87,7 +87,7 @@ export function mountSidebarEntry(stage, t, locale) {
 
   const unregister = registerWhenReady({
     id: 'omnimux-workflow-entry',
-    rank: 5,
+    rank: 4,
     styles: STYLES,
     styleId: 'omnimux-workflow-entry-styles',
     create: () => entry,

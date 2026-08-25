@@ -47,6 +47,11 @@ import {
 } from '../../shared/graph/materialNode.ts';
 import type { CanvasInputMutation } from '../../shared/graph/canvasInputMutationGateway.ts';
 
+import {
+  createCanvasWriteTableNodeTool,
+  createCanvasGetTableNodeTool,
+} from './tableTools.ts';
+
 // ============================================================================
 // Seat shapes (cordis tools / systemPrompt, structural typing)
 // ============================================================================
@@ -931,6 +936,8 @@ export function registerWorkflowAgentSeats(
       createWorkflowConnectTool(deps),
       createWorkflowDisconnectTool(deps),
       createWorkflowExecutionControlTool(deps),
+      createCanvasWriteTableNodeTool(deps),
+      createCanvasGetTableNodeTool(deps),
     ];
     for (const spec of specs) {
       const origExecute = spec.execute;

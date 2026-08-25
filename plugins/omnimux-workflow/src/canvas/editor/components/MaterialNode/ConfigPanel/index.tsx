@@ -3,7 +3,7 @@
  *
  * 1:1 还原 4 张设计截图：
  * 1. 音频模式：顶部带 [ 音频生成 ] / [ 音乐生成 ] 子模式切换 Tab
- * 2. Prompt 输入区：带左上角 [+] 参考槽、右上角 [⤢] 全屏放大、动态占位符与右下角字数统计（如 0/7500）
+ * 2. Prompt 输入区：左上角只读参考缩略图（有上游连线时展示）、右上角 [⤢] 全屏放大、动态占位符与右下角字数统计（如 0/7500）
  * 3. 底部参数胶囊栏：
  *    - 文本：[模型选择] | ⚡ 10 | [↑]
  *    - 图片：[模型选择] | 自适应 | × 1 | ⚡ 60 | [↑]
@@ -13,7 +13,6 @@
 
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
-  Plus,
   Maximize2,
   SlidersHorizontal,
   Music,
@@ -34,7 +33,6 @@ import { ModelBrandIcon } from '../../../../ui/ModelBrandIcon';
 import { useUpstreamMedia } from '../../../hooks/useUpstreamMedia';
 import { useModelParameterSchema, getCachedCatalog } from '../../../hooks/useModelParameterSchema';
 import GenerateButton from './GenerateButton';
-import ReferenceSlots from './ReferenceSlots';
 
 export interface ConfigPanelProps {
   nodeId: string;
@@ -125,7 +123,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
   const { materialType, selectedTool, params, prompt } = nodeData;
 
   const [expandedModal, setExpandedModal] = useState(false);
-  const [showRefDrawer, setShowRefDrawer] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const upstreams = useUpstreamMedia(nodeId);
@@ -346,17 +343,16 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       {/* 2. Prompt 输入区容器 */}
       <div className="wf-config-panel__prompt-container">
         <div className="wf-config-panel__prompt-header">
-          {/* 左上角参考素材槽位 */}
-          <div className="wf-config-panel__ref-slots-group">
-            {upstreams.length > 0 ? (
-              upstreams.map((item) => (
+          {/* 左上角参考素材缩略图：只读展示，仅在有上游连线时渲染 */}
+          {upstreams.length > 0 ? (
+            <div className="wf-config-panel__ref-slots-group">
+              {upstreams.map((item) => (
                 <div
                   key={item.nodeId}
                   className={`wf-config-panel__ref-thumb-slot ${
                     item.hasMedia ? 'wf-config-panel__ref-thumb-slot--ready' : ''
                   }`}
                   title={`${item.label} (${item.hasMedia ? '素材已就绪' : '等待素材'})`}
-                  onClick={() => setShowRefDrawer(!showRefDrawer)}
                 >
                   {item.url && item.materialType === 'image' ? (
                     <img
@@ -386,21 +382,11 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                   {/* 状态小圆点 */}
                   {item.hasMedia && <span className="wf-config-panel__ref-thumb-dot" />}
                 </div>
-              ))
-            ) : null}
-
-            {/* [+] 槽位按钮 */}
-            <button
-              type="button"
-              className={`wf-config-panel__ref-btn ${
-                showRefDrawer ? 'wf-config-panel__ref-btn--active' : ''
-              }`}
-              onClick={() => setShowRefDrawer(!showRefDrawer)}
-              title={t('panel.refsTitle')}
-            >
-              <Plus size={14} />
-            </button>
-          </div>
+              ))}
+            </div>
+          ) : (
+            <span />
+          )}
 
           {/* 右上角 [⤢] 放大按钮 */}
           <button
@@ -427,13 +413,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
           {(prompt || '').length} / {maxLimit}
         </div>
       </div>
-
-      {/* 参考槽位（点击 [+] 展开或上游有连线时展示） */}
-      {showRefDrawer && (
-        <div className="wf-config-panel__refs-drawer">
-          <ReferenceSlots nodeId={nodeId} />
-        </div>
-      )}
 
       {/* 3. 底部参数与操作底栏 */}
       <div className="wf-config-panel__bottom-bar">

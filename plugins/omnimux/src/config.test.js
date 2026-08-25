@@ -14,6 +14,10 @@ test('parseHubConfig fills brand and the OmniMux media row', () => {
   assert.equal(parsed.media.providers.omnimux.models.video, 'seedance-2-0-fast')
   assert.equal(parsed.media.providers.omnimux.models.image, 'gpt-image-2')
   assert.equal(parsed.official.mount, true)
+  assert.equal(parsed.official.accountAvatars.enabled, true)
+  assert.equal(parsed.official.accountAvatars.maxBytes, 204800)
+  assert.equal(parsed.official.accountAvatars.fetchTimeoutMs, 8000)
+  assert.equal(parsed.official.accountAvatars.concurrency, 4)
   assert.equal(parsed.apps.remote, false)
   assert.equal(parsed.apps.ttlSeconds, 21600)
   assert.equal(parsed.text.defaultProvider, 'omnimux')
@@ -44,6 +48,14 @@ test('Config Standard Schema rejects a catalog URL on another host', () => {
   })
   assert.ok('issues' in result)
   assert.match(result.issues[0]?.message ?? '', /host must match/)
+})
+
+test('Config Standard Schema rejects an out-of-range accountAvatars.maxBytes', () => {
+  for (const maxBytes of [0, '200k', -1, 1048577, 12.5]) {
+    const result = Config['~standard'].validate({ official: { accountAvatars: { maxBytes } } })
+    assert.ok('issues' in result, `expected issues for maxBytes=${JSON.stringify(maxBytes)}`)
+    assert.match(result.issues[0]?.message ?? '', /accountAvatars\.maxBytes/)
+  }
 })
 
 test('Config Standard Schema rejects a text model outside the chat directory', () => {

@@ -753,17 +753,11 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   border: 1.5px solid var(--wb-border);
   background: var(--wb-surface);
   position: relative;
-  cursor: pointer;
+  cursor: default;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 150ms ease;
-}
-
-.wf-config-panel__ref-thumb-slot:hover {
-  border-color: var(--wb-border-strong);
-  transform: translateY(-1px);
 }
 
 .wf-config-panel__ref-thumb-slot--ready {
@@ -822,27 +816,6 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   border-radius: 50%;
   background: #10b981;
   box-shadow: 0 0 4px #10b981;
-}
-
-.wf-config-panel__ref-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: 1.5px dashed var(--wb-border-strong);
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--wb-text-muted);
-  cursor: pointer;
-  transition: all 150ms ease;
-}
-
-.wf-config-panel__ref-btn:hover,
-.wf-config-panel__ref-btn--active {
-  border-color: var(--wb-accent);
-  color: var(--wb-accent);
-  background: var(--wb-accent-soft);
 }
 
 .wf-config-panel__expand-btn {
@@ -1080,74 +1053,6 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
 .wf-config-panel__duration label {
   font-size: var(--wb-fs-caption);
   color: var(--wb-text-muted);
-}
-
-/* 参考媒体槽位（T2.5：实线槽卡片 + 32px 缩略图） */
-.wf-ref-slot {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--wb-border);
-  background: var(--wb-surface-raised);
-}
-
-.wf-ref-slot__title {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--wb-fs-caption);
-  font-weight: 500;
-  color: var(--wb-text-secondary);
-}
-
-.wf-ref-slot__empty {
-  font-size: var(--wb-fs-caption);
-  line-height: 1.5;
-  color: var(--wb-text-muted);
-}
-
-.wf-ref-slot__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.wf-ref-slot__card {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 8px 3px 3px;
-  border-radius: 8px;
-  border: 1px solid var(--wb-border);
-  background: var(--wb-panel-inner);
-  max-width: 170px;
-}
-
-.wf-ref-slot__thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  object-fit: cover;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--wb-text-muted);
-  background: var(--wb-border);
-}
-
-.wf-ref-slot__thumb--pending {
-  background: var(--wb-border);
-}
-
-.wf-ref-slot__name {
-  font-size: var(--wb-fs-caption);
-  color: var(--wb-text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* 底部 GenerateButton 行 */
@@ -3135,5 +3040,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   padding: 12px 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
+
+
 
 

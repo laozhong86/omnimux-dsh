@@ -298,26 +298,26 @@ export function AssetsStage({ t, stage }) {
               />
             </div>
             <div className="omnimux-assets-view-toggle">
-              <button
-                type="button"
-                className="omnimux-assets-view-btn"
+              <IconButton
+                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                size="xs"
                 aria-pressed={viewMode === 'grid'}
                 aria-label={t('view.grid')}
                 title={t('view.grid')}
                 onClick={() => setViewMode('grid')}
               >
                 <GridIcon size={14} />
-              </button>
-              <button
-                type="button"
-                className="omnimux-assets-view-btn"
+              </IconButton>
+              <IconButton
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                size="xs"
                 aria-pressed={viewMode === 'list'}
                 aria-label={t('view.list')}
                 title={t('view.list')}
                 onClick={() => setViewMode('list')}
               >
                 <ListIcon size={14} />
-              </button>
+              </IconButton>
             </div>
           </div>
         )}

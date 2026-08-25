@@ -78,7 +78,7 @@ export function mountSidebarEntry(stage, t, locale) {
 
   const unregister = registerWhenReady({
     id: 'omnimux-products-entry',
-    rank: 6,
+    rank: 8,
     styles: STYLES,
     styleId: 'omnimux-products-entry-styles',
     create: () => entry,

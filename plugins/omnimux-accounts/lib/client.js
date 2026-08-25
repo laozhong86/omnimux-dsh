@@ -746,17 +746,39 @@ function Toolbar({ left, right, compact = false, className, children, ...rest })
     }) : null]
   });
 }
-function FilterBar({ search, filters, actions, right, className, compact, ...rest }) {
-  const trailing = actions ?? right;
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
-    ...rest,
-    left: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+function FilterBar({ left, search, filters, actions, right, tools, className, compact, ...rest }) {
+  let leftContent;
+  let rightContent;
+  if (left != null) {
+    leftContent = left;
+    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+      search,
+      tools,
+      actions
+    ] }) : null);
+  } else if (filters != null && search != null && tools == null && actions != null && right == null) {
+    leftContent = /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
       className: Toolbar_module_css_default.filters,
       children: filters
-    }) : null] }),
+    })] });
+    rightContent = actions;
+  } else {
+    leftContent = filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.filters,
+      children: filters
+    }) : null;
+    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+      search,
+      tools,
+      actions
+    ] }) : null);
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
+    ...rest,
+    left: leftContent,
+    right: rightContent,
     ...compact !== void 0 ? { compact } : {},
-    ...className !== void 0 ? { className } : {},
-    ...trailing !== void 0 ? { right: trailing } : {}
+    ...className !== void 0 ? { className } : {}
   });
 }
 injectCss("Dialog.module.css", ".dshUk-Dialog-dialog {\n  width: min(480px, 100%);\n  max-height: min(80vh, 720px);\n  border-radius: 16px;\n}\n\n.dshUk-Dialog-sm {\n  width: min(380px, 100%);\n}\n\n.dshUk-Dialog-lg {\n  width: min(640px, 100%);\n}\n\n.dshUk-Dialog-body {\n  overflow: auto;\n  max-height: min(56vh, 480px);\n}\n\n.dshUk-Dialog-footer {\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  gap: 8px;\n  width: 100%;\n}\n\n.dshUk-Dialog-message {\n  margin: 0;\n  font-size: 14px;\n  line-height: 22px;\n  color: var(--dsw-alias-label-primary);\n}\n");
@@ -830,11 +852,20 @@ function filterAccounts(accounts, filters = {}) {
   const platform = String(filters.platform || "").trim().toLocaleLowerCase();
   const group = String(filters.group || "").trim().toLocaleLowerCase();
   const status = String(filters.status || "").trim().toLocaleLowerCase();
+  const statusGroup = String(filters.statusGroup || "").trim().toLocaleLowerCase();
   return (Array.isArray(accounts) ? accounts : []).filter((row) => {
     if (!matchesQuery(row, query)) return false;
     if (platform && String(row.platform || "").toLocaleLowerCase() !== platform) return false;
     if (group && String(row.group || "").toLocaleLowerCase() !== group) return false;
-    if (status && String(row.status || "").toLocaleLowerCase() !== status) return false;
+    if (status) {
+      if (String(row.status || "").toLocaleLowerCase() !== status) return false;
+    } else if (statusGroup === "connected") {
+      const s = String(row.status || "").toLocaleLowerCase();
+      if (s !== "active" && s !== "expiring") return false;
+    } else if (statusGroup === "needsattention") {
+      const s = String(row.status || "").toLocaleLowerCase();
+      if (s !== "expired" && s !== "error") return false;
+    }
     return true;
   });
 }
@@ -1111,6 +1142,7 @@ function Avatar({ account, t }) {
         src: url,
         alt: "",
         loading: "lazy",
+        referrerPolicy: "no-referrer",
         onError: () => {
           setFailed(true);
         }
@@ -1657,29 +1689,64 @@ function FilterBar2(props) {
 
 // src/client/OverviewBar.jsx
 var import_jsx_runtime9 = require("react/jsx-runtime");
-function OverviewBar({ t, summary, onFilterClick, busy = "" }) {
+function OverviewBar({ t, summary, filters = {}, onFilterClick, busy = "" }) {
+  const isTotalSelected = Boolean(
+    !filters.query && !filters.platform && !filters.group && !filters.status && !filters.statusGroup && !filters.overview
+  );
   const stats = [
-    { key: "connected", label: t("overview.connected"), value: summary.connected, filter: { status: "active" } },
-    { key: "needsAttention", label: t("overview.needsAttention"), value: summary.needsAttention, filter: { status: "expired" } },
-    { key: "platforms", label: t("overview.platforms"), value: summary.platformCount, filter: { platform: "" } },
-    { key: "total", label: t("overview.total"), value: summary.total, filter: null }
+    {
+      key: "connected",
+      label: t("overview.connected"),
+      value: summary.connected,
+      tone: "active",
+      selected: filters.statusGroup === "connected",
+      filter: { status: "", statusGroup: "connected", overview: "" }
+    },
+    {
+      key: "needsAttention",
+      label: t("overview.needsAttention"),
+      value: summary.needsAttention,
+      tone: "needsAttention",
+      selected: filters.statusGroup === "needsAttention",
+      filter: { status: "", statusGroup: "needsAttention", overview: "" }
+    },
+    {
+      key: "platforms",
+      label: t("overview.platforms"),
+      value: summary.platformCount,
+      tone: "platforms",
+      selected: filters.overview === "platforms",
+      filter: { platform: "", overview: "platforms" }
+    },
+    {
+      key: "total",
+      label: t("overview.total"),
+      value: summary.total,
+      tone: "total",
+      selected: isTotalSelected,
+      filter: null
+    }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "omnimux-accounts-overview-row", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "omnimux-accounts-overview", children: stats.map((stat) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "omnimux-accounts-overview", role: "group", "aria-label": t("title"), children: stats.map((stat) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
     Button,
     {
-      variant: "ghost",
-      className: "omnimux-accounts-stat",
+      variant: "secondary",
+      className: `omnimux-accounts-stat omnimux-accounts-stat--${stat.key}`,
+      "aria-pressed": stat.selected,
       disabled: busy !== "",
       onClick: () => {
         onFilterClick(stat.filter);
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "omnimux-accounts-stat-value", children: String(stat.value) }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "omnimux-accounts-stat-label", children: stat.label })
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { className: "omnimux-accounts-stat-head", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: `omnimux-accounts-dot omnimux-accounts-dot--${stat.tone}`, "aria-hidden": "true" }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "omnimux-accounts-stat-label", children: stat.label })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "omnimux-accounts-stat-value", children: String(stat.value) })
       ]
     },
     stat.key
-  )) }) });
+  )) });
 }
 
 // src/client/use-accounts.js
@@ -1919,49 +1986,101 @@ var STYLES2 = `
 
 /* ---------- overview bar ---------- */
 .omnimux-accounts-overview {
-  flex: 1 1 auto;
-  min-width: 0; /* allow the auto-fill grid to compute more than one 160px track inside the flex row */
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
   align-items: stretch;
+  margin: 0;
 }
 .omnimux-accounts-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  height: auto;
-  padding: 12px 16px;
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 12px;
-  background: var(--dsw-alias-bg-secondary);
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  min-height: 72px !important;
+  height: auto !important;
+  padding: 12px 16px !important;
+  border: 1px solid var(--dsw-alias-border-l2) !important;
+  border-radius: 12px !important;
+  background: var(--dsw-alias-bg-secondary, var(--dsw-alias-bg-layer-1, rgba(128,128,128,0.04))) !important;
+  color: inherit !important;
+  font: inherit !important;
+  text-align: left !important;
+  white-space: normal !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  box-shadow: none !important;
+  transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 120ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 .omnimux-accounts-stat:hover {
-  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.12));
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.12)) !important;
+  border-color: var(--dsw-alias-border-l3, var(--dsw-alias-border-hover, rgba(255,255,255,0.22))) !important;
 }
 .omnimux-accounts-stat:active {
-  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.18));
+  transform: scale(0.98) !important;
+  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.18)) !important;
 }
-.omnimux-accounts-stat:disabled { cursor: default; opacity: 0.6; }
-.omnimux-accounts-stat-value {
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 28px;
+.omnimux-accounts-stat:focus {
+  outline: none !important;
+}
+.omnimux-accounts-stat:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary, #4c8dff) !important;
+  outline-offset: 2px !important;
+}
+.omnimux-accounts-stat[aria-pressed="true"] {
+  background: var(--dsw-alias-button-ghost-active-fill, rgba(255,255,255,0.14)) !important;
+  border-color: var(--dsw-alias-button-ghost-active-border, rgba(255,255,255,0.26)) !important;
+}
+.omnimux-accounts-stat[aria-pressed="true"]:hover {
+  background: var(--dsw-alias-button-ghost-active-hover, rgba(255,255,255,0.2)) !important;
+  border-color: var(--dsw-alias-button-ghost-active-border, rgba(255,255,255,0.26)) !important;
+}
+.omnimux-accounts-stat:disabled {
+  cursor: default !important;
+  opacity: 0.6 !important;
+  transform: none !important;
+}
+.omnimux-accounts-stat > [class*="Button-label"],
+.omnimux-accounts-stat > span:first-child {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .omnimux-accounts-stat {
+    transition: none !important;
+  }
+  .omnimux-accounts-stat:active {
+    transform: none !important;
+  }
+}
+.omnimux-accounts-stat-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .omnimux-accounts-stat-label {
   font-size: 12px;
   line-height: 16px;
   color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
+  font-weight: 500;
 }
-.omnimux-accounts-overview-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
+.omnimux-accounts-stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 .omnimux-accounts-toolbar {
   display: flex;
@@ -2289,6 +2408,15 @@ var STYLES2 = `
 }
 .omnimux-accounts-dot--expiring {
   background: var(--dsw-alias-state-warning-primary, #d9a13b);
+}
+.omnimux-accounts-dot--needsAttention {
+  background: var(--dsw-alias-state-warn-primary, var(--dsw-alias-state-warning-primary, #b45309));
+}
+.omnimux-accounts-dot--platforms {
+  background: var(--dsw-alias-brand-primary, #4c8dff);
+}
+.omnimux-accounts-dot--total {
+  background: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
 }
 .omnimux-accounts-dot--expired,
 .omnimux-accounts-dot--error {
@@ -2838,7 +2966,7 @@ function AccountsSection({ t, active = true }) {
     injectAccountsStyles();
   }, []);
   const { phase, accounts, error, busy, refresh, watchConnect, patch, disconnect } = useAccounts();
-  const [filters, setFilters] = (0, import_react6.useState)({ query: "", platform: "", group: "", status: "" });
+  const [filters, setFilters] = (0, import_react6.useState)({ query: "", platform: "", group: "", status: "", statusGroup: "", overview: "" });
   const [sortKey, setSortKey] = (0, import_react6.useState)("display_name");
   const [sortDir, setSortDir] = (0, import_react6.useState)("asc");
   const [view, setView] = (0, import_react6.useState)(readStoredView);
@@ -2907,10 +3035,20 @@ function AccountsSection({ t, active = true }) {
   const combinedBusy = bulkRunning || busy !== "" ? bulkRunning ? "bulk" : busy : "";
   const onFilterClick = (filter) => {
     if (filter === null) {
-      setFilters({ query: "", platform: "", group: "", status: "" });
+      setFilters({ query: "", platform: "", group: "", status: "", statusGroup: "", overview: "" });
       return;
     }
-    setFilters((current) => ({ ...current, ...filter }));
+    setFilters((current) => {
+      if (filter.statusGroup !== void 0) {
+        const nextGroup = current.statusGroup === filter.statusGroup ? "" : filter.statusGroup;
+        return { ...current, status: "", statusGroup: nextGroup, overview: "" };
+      }
+      if (filter.overview !== void 0) {
+        const nextOverview = current.overview === filter.overview ? "" : filter.overview;
+        return { ...current, platform: "", overview: nextOverview };
+      }
+      return { ...current, ...filter };
+    });
   };
   const onSortHeader = (key) => {
     if (key === sortKey) {
@@ -3018,7 +3156,7 @@ function AccountsSection({ t, active = true }) {
   }
   const errorText = sectionError !== "" ? sectionError : error;
   return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "omnimux-accounts-root", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(OverviewBar, { t, summary, onFilterClick, busy: combinedBusy }),
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(OverviewBar, { t, summary, filters, onFilterClick, busy: combinedBusy }),
     accounts.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "omnimux-accounts-toolbar", children: [
       /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
         FilterBar2,
@@ -3035,7 +3173,12 @@ function AccountsSection({ t, active = true }) {
           groups,
           statuses,
           onFilterChange: (patchFilters) => {
-            setFilters((current) => ({ ...current, ...patchFilters }));
+            setFilters((current) => ({
+              ...current,
+              ...patchFilters,
+              ...patchFilters.status !== void 0 ? { statusGroup: "", overview: "" } : {},
+              ...patchFilters.platform !== void 0 ? { overview: "" } : {}
+            }));
           },
           onSortChange: (patchSort) => {
             if (patchSort.key !== void 0) setSortKey(patchSort.key);

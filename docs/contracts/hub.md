@@ -130,6 +130,7 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `omnimux_social_data` | official-only tool | `platform` + `capability` + `url`/`id`/`query`; `sk-` | `{ platform, capability, model, data }` | `omnimux-unconfigured`, `omnimux-invalid-request` |
 | `omnimux_page_fetch` | official-only tool | `{ url }` http(s); `sk-`; locked model `jina-reader-v1` | `{ mode: "live", model, url, title, pageContent, truncated? }` | `omnimux-unconfigured`, `needs-omnimux`, `omnimux-invalid-request`, `omnimux-request-failed`, `omnimux-invalid-response` |
 | `omnimux_accounts_*` / `omnimux_publish_*` | official-only tools | connect / list / presign / create / get post; access token | upstream JSON, secrets stripped | `needs-omnimux` |
+| `omnimux_analytics_*` | official-only tools | daily metrics / best time / frequency / decay / followers / posts / sync / inbox; access token | upstream JSON | `needs-omnimux` |
 | `omnimux_inspiration_*` | official-only tools | list / get / create / update / delete / tags / status; access token | upstream `{success,data}` envelope, media URLs unchanged | `needs-omnimux` |
 | `videoProcess` | neutral provide（provider: dsh-video） | `{ capability, input, dest, signal? }` | `{ mode: "live", files?: [{ path, kind, meta? }], result? }` | `ffmpeg-missing`, `unknown-capability`, `video-invalid-input`, `video-ffmpeg-failed`, `video-incompatible-streams`, `video-canceled`, `video-timeout`, `video-<capability>-failed` |
 | `video_process` | dsh-video tool over `videoProcess` | same | same | same |
@@ -154,14 +155,15 @@ Browser-local write routes (same-origin guard); the browser app is `plugins/omni
 
 | Method & Path | Body | Success |
 |---|---|---|
-| GET `/omnimux/accounts` | — | `{accounts: [ViewRow]}`; optional `?platform=&group=` filters |
+| GET `/omnimux/accounts` | — | `{accounts: [ViewRow]}`; optional `?platform=&group=` filters. Cache hit rewrites `avatar_url` to the same-origin byte route; a miss keeps the https URL and fills the cache in the background. |
+| GET `/omnimux/accounts/{id}/avatar` | — | local raster bytes (`image/jpeg\|png\|webp\|gif`); `Cache-Control: private, max-age=86400`; `X-Content-Type-Options: nosniff`. Unsigned → 401; miss / `accountAvatars.enabled=false` → 404; non-GET → 405. Never `sendJson`, never 302 to the CDN. |
 | POST `/omnimux/accounts` | `{platform, redirect_url?}` | `{auth_url}` (site OAuth page; no device-code endpoint exists yet) |
 | PATCH `/omnimux/accounts/{id}` | `{group?: string \| null, agent_usable?: boolean}` | `{account: ViewRow}`; empty-string `group` clears; a missing site row still updates pure metadata |
-| DELETE `/omnimux/accounts/{id}` | — | `{ok: true}` |
+| DELETE `/omnimux/accounts/{id}` | — | `{ok: true}`; also deletes the local avatar file + index row |
 
-ViewRow = the `pickAccount` whitelist (id/platform/display_name/username/name/group/status/expires_at?/connected_at?/https avatar_url) plus overlay fields `agent_usable?` / `last_used_at?` and a computed `status` (site status normalized; else expires_at-driven: past → `expired`, <24h → `expiring`; else `active`).
+ViewRow = the `pickAccount` whitelist (id/platform/display_name/username/name/group/status/expires_at?/connected_at?/avatar_url) plus overlay fields `agent_usable?` / `last_used_at?` and a computed `status` (site status normalized; else expires_at-driven: past → `expired`, <24h → `expiring`; else `active`). `avatar_url` is either `https://…` (cache miss, or `official.accountAvatars.enabled=false`) or the relative path `/omnimux/accounts/{encodeURIComponent(id)}/avatar` after Host rewrite. Absolute same-origin URLs, `http://`, `data:`, `blob:`, and `file:` are dropped. The tool `omnimux_accounts_list` keeps the upstream JSON and does **not** rewrite avatar URLs.
 
-Local metadata overlay (`group` / `agent_usable` / `last_used_at`) persists to `$DSH_HOME/omnimux/accounts.json` (dir 0700, file 0600, whole-document rewrite); GET merges it over site rows, DELETE and a lazy GET-time prune reclaim ids the site no longer returns. Tokens never reach the Host — connect is site-side OAuth.
+Local metadata overlay (`group` / `agent_usable` / `last_used_at`) persists to `$DSH_HOME/omnimux/accounts.json` (dir 0700, file 0600, whole-document rewrite). Local avatar rasters persist to `$DSH_HOME/omnimux/accounts/avatars/` (`index.json` + `{sha256(id)}.{png\|jpg\|webp\|gif}`, dir 0700, files 0600). GET merges overlay over site rows, rewrites a cached avatar_url, and lazily prunes overlay + avatar files whose id the site no longer returns. DELETE removes overlay + avatar. Tokens never reach the Host — connect is site-side OAuth.
 
 ### Inspiration HTTP (Host `/omnimux/inspiration`)
 

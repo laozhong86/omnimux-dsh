@@ -150,17 +150,39 @@ function Toolbar({ left, right, compact = false, className, children, ...rest })
     }) : null]
   });
 }
-function FilterBar({ search, filters, actions, right, className, compact, ...rest }) {
-  const trailing = actions ?? right;
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
-    ...rest,
-    left: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+function FilterBar({ left, search, filters, actions, right, tools, className, compact, ...rest }) {
+  let leftContent;
+  let rightContent;
+  if (left != null) {
+    leftContent = left;
+    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+      search,
+      tools,
+      actions
+    ] }) : null);
+  } else if (filters != null && search != null && tools == null && actions != null && right == null) {
+    leftContent = /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
       className: Toolbar_module_css_default.filters,
       children: filters
-    }) : null] }),
+    })] });
+    rightContent = actions;
+  } else {
+    leftContent = filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.filters,
+      children: filters
+    }) : null;
+    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+      search,
+      tools,
+      actions
+    ] }) : null);
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
+    ...rest,
+    left: leftContent,
+    right: rightContent,
     ...compact !== void 0 ? { compact } : {},
-    ...className !== void 0 ? { className } : {},
-    ...trailing !== void 0 ? { right: trailing } : {}
+    ...className !== void 0 ? { className } : {}
   });
 }
 function ModalDialog({ open, onClose, title, description, children, footer, size = "md", closeLabel = "Close", className, contentClassName }) {

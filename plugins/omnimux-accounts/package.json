@@ -9,11 +9,11 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "src/index.js",
-    "src/client",
+    "src",
     "lib/client.js",
     "scripts/build-client.mjs",
-    "cordis.patch.yml"
+    "cordis.patch.yml",
+    "README.md"
   ],
   "scripts": {
     "build": "node scripts/build-client.mjs",

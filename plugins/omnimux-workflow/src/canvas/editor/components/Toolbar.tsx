@@ -17,6 +17,8 @@ import {
   Video,
   Music,
   Plus,
+  Film,
+  Table,
   MousePointer,
   Hand,
   FolderOpen,
@@ -35,8 +37,10 @@ import {
 
 export type CanvasPointerMode = 'select' | 'pan';
 
+export type CanvasAddNodeType = MaterialType | 'table';
+
 export interface ToolbarProps {
-  onAddNode: (type: MaterialType) => void;
+  onAddNode: (type: CanvasAddNodeType) => void;
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
@@ -51,7 +55,7 @@ export interface ToolbarProps {
 }
 
 const ADD_NODE_ITEMS: Array<{
-  type: MaterialType;
+  type: CanvasAddNodeType;
   Icon: React.ComponentType<{ size?: number }>;
   color: string;
   bg: string;
@@ -60,6 +64,7 @@ const ADD_NODE_ITEMS: Array<{
   { type: 'image', Icon: ImagePlus, color: '#c084fc', bg: 'rgba(168, 85, 247, 0.16)' },
   { type: 'video', Icon: Video, color: '#fb923c', bg: 'rgba(249, 115, 22, 0.16)' },
   { type: 'audio', Icon: Music, color: '#34d399', bg: 'rgba(16, 185, 129, 0.16)' },
+  { type: 'table', Icon: Table, color: '#10b981', bg: 'rgba(16, 185, 129, 0.16)' },
 ];
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -83,7 +88,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   const toggleAdd = onToggleAddMenu || (() => setInternalIsAddMenuOpen((v) => !v));
 
   const handleSelectNodeType = useCallback(
-    (type: MaterialType) => {
+    (type: CanvasAddNodeType) => {
       onAddNode(type);
       if (onToggleAddMenu) {
         onToggleAddMenu();

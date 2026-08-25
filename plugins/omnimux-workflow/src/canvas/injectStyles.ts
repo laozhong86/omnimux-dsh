@@ -10,11 +10,13 @@
 import xyflowCss from '@xyflow/react/dist/style.css';
 import themeCss from './theme/workbench-theme.css';
 import componentsCss from './theme/components.css';
+import tableNodeCss from './theme/table-node.css';
 
 const STYLESHEETS: Array<{ id: string; css: string }> = [
   { id: 'omnimux-workflow-xyflow-base', css: xyflowCss },
   { id: 'omnimux-workflow-theme', css: themeCss },
   { id: 'omnimux-workflow-components', css: componentsCss },
+  { id: 'omnimux-workflow-table-node', css: tableNodeCss },
 ];
 
 export function injectCanvasStyles(): void {

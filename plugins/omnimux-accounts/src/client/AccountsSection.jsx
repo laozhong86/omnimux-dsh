@@ -44,7 +44,7 @@ export function AccountsSection({ t, active = true }) {
 
   const { phase, accounts, error, busy, refresh, watchConnect, patch, disconnect } = useAccounts()
 
-  const [filters, setFilters] = useState({ query: '', platform: '', group: '', status: '' })
+  const [filters, setFilters] = useState({ query: '', platform: '', group: '', status: '', statusGroup: '', overview: '' })
   const [sortKey, setSortKey] = useState('display_name')
   const [sortDir, setSortDir] = useState('asc')
   const [view, setView] = useState(readStoredView)
@@ -122,14 +122,24 @@ export function AccountsSection({ t, active = true }) {
 
   /**
    * Overview stat click → filter patch. `null` clears every filter.
-   * @param {{ status?: string, platform?: string } | null} filter
+   * @param {{ status?: string, statusGroup?: string, platform?: string, overview?: string } | null} filter
    */
   const onFilterClick = (filter) => {
     if (filter === null) {
-      setFilters({ query: '', platform: '', group: '', status: '' })
+      setFilters({ query: '', platform: '', group: '', status: '', statusGroup: '', overview: '' })
       return
     }
-    setFilters((current) => ({ ...current, ...filter }))
+    setFilters((current) => {
+      if (filter.statusGroup !== undefined) {
+        const nextGroup = current.statusGroup === filter.statusGroup ? '' : filter.statusGroup
+        return { ...current, status: '', statusGroup: nextGroup, overview: '' }
+      }
+      if (filter.overview !== undefined) {
+        const nextOverview = current.overview === filter.overview ? '' : filter.overview
+        return { ...current, platform: '', overview: nextOverview }
+      }
+      return { ...current, ...filter }
+    })
   }
 
   /** Table header click: same key flips direction, new key resets to asc. */
@@ -271,7 +281,7 @@ export function AccountsSection({ t, active = true }) {
 
   return (
     <div className="omnimux-accounts-root">
-      <OverviewBar t={t} summary={summary} onFilterClick={onFilterClick} busy={combinedBusy} />
+      <OverviewBar t={t} summary={summary} filters={filters} onFilterClick={onFilterClick} busy={combinedBusy} />
       {accounts.length > 0 ? (
         <div className="omnimux-accounts-toolbar">
           <FilterBar
@@ -286,11 +296,18 @@ export function AccountsSection({ t, active = true }) {
             platforms={platforms}
             groups={groups}
             statuses={statuses}
-            onFilterChange={(patchFilters) => { setFilters((current) => ({ ...current, ...patchFilters })) }}
+            onFilterChange={(patchFilters) => {
+              setFilters((current) => ({
+                ...current,
+                ...patchFilters,
+                ...(patchFilters.status !== undefined ? { statusGroup: '', overview: '' } : {}),
+                ...(patchFilters.platform !== undefined ? { overview: '' } : {}),
+              }))
+            }}
             onSortChange={(patchSort) => {
               if (patchSort.key !== undefined) setSortKey(patchSort.key)
-            if (patchSort.dir !== undefined) setSortDir(patchSort.dir)
-          }}
+              if (patchSort.dir !== undefined) setSortDir(patchSort.dir)
+            }}
           onViewChange={setView}
           busy={combinedBusy}
         />

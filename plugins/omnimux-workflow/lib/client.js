@@ -33,7 +33,7 @@ var import_react6 = require("react");
 
 // src/client/locales.js
 var zh = {
-  "nav": "\u9879\u76EE",
+  "nav": "\u521B\u4F5C",
   "stage.title": "\u5DE5\u4F5C\u6D41\u5DE5\u7A0B",
   "stage.close": "\u5173\u95ED",
   "canvas.loading": "\u6B63\u5728\u52A0\u8F7D\u753B\u5E03\u2026",
@@ -239,7 +239,7 @@ function mountSidebarEntry(stage, t, locale) {
   syncActive();
   const unregister = registerWhenReady({
     id: "omnimux-workflow-entry",
-    rank: 5,
+    rank: 4,
     styles: STYLES,
     styleId: "omnimux-workflow-entry-styles",
     create: () => entry

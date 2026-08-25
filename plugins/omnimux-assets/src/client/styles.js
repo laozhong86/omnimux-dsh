@@ -80,28 +80,9 @@ export const ASSETS_CSS = `
   gap: 2px;
   background: var(--dsw-alias-bg-layer-1, transparent);
 }
-.omnimux-assets-view-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: var(--dsw-alias-label-tertiary);
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.15s ease;
-}
-.omnimux-assets-view-btn:hover {
-  color: var(--dsw-alias-label-primary);
-  background: var(--dsw-alias-interactive-bg-hover);
-}
-.omnimux-assets-view-btn[aria-pressed="true"] {
-  color: var(--dsw-alias-label-primary);
-  background: var(--dsw-alias-bg-base, var(--dsw-bg));
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+.omnimux-assets-list-wrap {
+  width: 100%;
+  overflow-x: auto;
 }
 .omnimux-assets-list-table {
   width: 100%;
@@ -115,6 +96,21 @@ export const ASSETS_CSS = `
   font-weight: 500;
   font-size: 12px;
   border-bottom: 1px solid var(--dsw-alias-border-l2);
+}
+.omnimux-assets-th-check, .omnimux-assets-td-check { width: 40px; text-align: center; }
+.omnimux-assets-th-name { min-width: 160px; }
+.omnimux-assets-th-type, .omnimux-assets-td-type { width: 100px; }
+.omnimux-assets-th-desc { min-width: 200px; }
+.omnimux-assets-th-files, .omnimux-assets-td-files { width: 120px; }
+.omnimux-assets-th-actions, .omnimux-assets-td-actions { width: 160px; text-align: right; }
+.omnimux-assets-list-badge { position: static !important; }
+.omnimux-assets-list-missing { position: static !important; margin-left: 6px; }
+.omnimux-assets-td-desc {
+  color: var(--dsw-alias-label-secondary);
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .omnimux-assets-list-row {
   cursor: pointer;

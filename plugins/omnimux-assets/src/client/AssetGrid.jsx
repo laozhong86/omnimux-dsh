@@ -39,12 +39,12 @@ export function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAc
         <table className="omnimux-assets-list-table">
           <thead>
             <tr>
-              <th style={{ width: 40 }} />
-              <th>{t('detail.name')}</th>
-              <th style={{ width: 100 }}>{t('detail.type')}</th>
-              <th>{t('detail.description')}</th>
-              <th style={{ width: 120 }}>{t('detail.files')}</th>
-              <th style={{ width: 160, textAlign: 'right' }}>操作</th>
+              <th className="omnimux-assets-th-check" />
+              <th className="omnimux-assets-th-name">{t('detail.name')}</th>
+              <th className="omnimux-assets-th-type">{t('detail.type')}</th>
+              <th className="omnimux-assets-th-desc">{t('detail.description')}</th>
+              <th className="omnimux-assets-th-files">{t('detail.files')}</th>
+              <th className="omnimux-assets-th-actions">{t('card.copyCite')}</th>
             </tr>
           </thead>
           <tbody>
@@ -58,7 +58,7 @@ export function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAc
                   aria-selected={selected ? 'true' : 'false'}
                   onClick={() => { onOpen(asset) }}
                 >
-                  <td onClick={(e) => e.stopPropagation()}>
+                  <td className="omnimux-assets-td-check" onClick={(e) => e.stopPropagation()}>
                     {onToggleSelect ? (
                       <IconButton
                         variant="ghost"
@@ -71,25 +71,25 @@ export function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAc
                       </IconButton>
                     ) : null}
                   </td>
-                  <td>
+                  <td className="omnimux-assets-td-name">
                     <div className="omnimux-assets-list-cell-name">
                       <FileIcon size={16} />
                       <span>{asset.name}</span>
                     </div>
                   </td>
-                  <td>
-                    <span className="omnimux-assets-badge" style={{ position: 'static' }}>
+                  <td className="omnimux-assets-td-type">
+                    <span className="omnimux-assets-badge omnimux-assets-list-badge">
                       {t(`type.${asset.type}`)}
                     </span>
                   </td>
-                  <td style={{ color: 'var(--dsw-alias-label-secondary)', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <td className="omnimux-assets-td-desc">
                     {asset.description || '—'}
                   </td>
-                  <td>
+                  <td className="omnimux-assets-td-files">
                     {asset.files?.length ? `${asset.files.length} 个素材` : '无素材'}
-                    {missing ? <span className="omnimux-assets-missing" style={{ position: 'static', marginLeft: 6 }}>{t('card.missing')}</span> : null}
+                    {missing ? <span className="omnimux-assets-missing omnimux-assets-list-missing">{t('card.missing')}</span> : null}
                   </td>
-                  <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                  <td className="omnimux-assets-td-actions" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="ghost"
                       size="xs"

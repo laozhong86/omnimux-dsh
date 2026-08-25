@@ -378,7 +378,7 @@ function mountSidebarEntry(stage, t, locale) {
   syncActive();
   const unregister = registerWhenReady({
     id: "omnimux-products-entry",
-    rank: 6,
+    rank: 8,
     styles: STYLES,
     styleId: "omnimux-products-entry-styles",
     create: () => entry
@@ -807,17 +807,39 @@ function Toolbar({ left, right, compact = false, className, children, ...rest })
     }) : null]
   });
 }
-function FilterBar({ search, filters, actions, right, className, compact, ...rest }) {
-  const trailing = actions ?? right;
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
-    ...rest,
-    left: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+function FilterBar({ left, search, filters, actions, right, tools, className, compact, ...rest }) {
+  let leftContent;
+  let rightContent;
+  if (left != null) {
+    leftContent = left;
+    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+      search,
+      tools,
+      actions
+    ] }) : null);
+  } else if (filters != null && search != null && tools == null && actions != null && right == null) {
+    leftContent = /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
       className: Toolbar_module_css_default.filters,
       children: filters
-    }) : null] }),
+    })] });
+    rightContent = actions;
+  } else {
+    leftContent = filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.filters,
+      children: filters
+    }) : null;
+    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+      search,
+      tools,
+      actions
+    ] }) : null);
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
+    ...rest,
+    left: leftContent,
+    right: rightContent,
     ...compact !== void 0 ? { compact } : {},
-    ...className !== void 0 ? { className } : {},
-    ...trailing !== void 0 ? { right: trailing } : {}
+    ...className !== void 0 ? { className } : {}
   });
 }
 injectCss("Dialog.module.css", ".dshUk-Dialog-dialog {\n  width: min(480px, 100%);\n  max-height: min(80vh, 720px);\n  border-radius: 16px;\n}\n\n.dshUk-Dialog-sm {\n  width: min(380px, 100%);\n}\n\n.dshUk-Dialog-lg {\n  width: min(640px, 100%);\n}\n\n.dshUk-Dialog-body {\n  overflow: auto;\n  max-height: min(56vh, 480px);\n}\n\n.dshUk-Dialog-footer {\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  gap: 8px;\n  width: 100%;\n}\n\n.dshUk-Dialog-message {\n  margin: 0;\n  font-size: 14px;\n  line-height: 22px;\n  color: var(--dsw-alias-label-primary);\n}\n");
@@ -1241,6 +1263,13 @@ function ProductFormDialog({ t, mode, busy, error, dirty, initial, onCancel, onP
     nameRef.current?.focus();
   }, []);
   (0, import_react2.useEffect)(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onCancel();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
+  (0, import_react2.useEffect)(() => {
     if (!initial) return;
     applySnapshot(initial);
   }, [initial?.id, initial?.updated_at]);
@@ -1336,222 +1365,240 @@ function ProductFormDialog({ t, mode, busy, error, dirty, initial, onCancel, onP
     }
     return body;
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-    ModalDialog,
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-modal-backdrop", onClick: onCancel, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+    "div",
     {
-      open: true,
-      onClose: onCancel,
-      title: mode === "edit" ? t("detail.title") : t("add.title"),
-      closeLabel: t("stage.close"),
-      size: "lg",
-      footer: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        Button,
-        {
-          variant: "primary",
-          disabled: !canSubmit,
-          loading: busy,
-          onClick: () => {
-            onSubmit(payload());
-          },
-          children: mode === "edit" ? t("detail.save") : t("add.submit")
-        }
-      ),
-      children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-form", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-name-row", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-at", "aria-hidden": "true", children: "@" }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-            InputField,
-            {
-              ref: nameRef,
-              className: "omnimux-products-name-field",
-              value: name2,
-              placeholder: t("add.namePlaceholder"),
-              disabled: busy,
-              onChange: (event) => {
-                setName(event.target.value);
-              }
-            }
-          )
-        ] }),
-        dirty ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-dirty", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-dirty-text", children: t("add.dirty.banner") }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "xs", onClick: () => {
-            onReload?.();
-          }, children: t("add.dirty.reload") }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-label", children: t("add.dirty.keep") })
-        ] }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-kind-row", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-kind-label", children: t("kind.label") }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-            Button,
-            {
-              variant: "ghost",
-              size: "sm",
-              className: "omnimux-products-kind-chip",
-              "aria-pressed": kind === "physical",
-              onClick: () => {
-                setKind("physical");
-                setStrategyOpen(false);
-              },
-              children: t("kind.physical")
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-            Button,
-            {
-              variant: "ghost",
-              size: "sm",
-              className: "omnimux-products-kind-chip",
-              "aria-pressed": kind === "digital",
-              onClick: () => {
-                setKind("digital");
-                const persisted = isPlainStrategy(initial?.brand_strategy);
-                setStrategyOpen(persisted);
-                if (persisted) setStrategyTouched(true);
-              },
-              children: t("kind.digital")
-            }
-          )
-        ] }),
-        kind === "physical" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-grid-fields", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea omnimux-products-span2", rows: 2, value: selling, placeholder: t("add.sellingPlaceholder"), onChange: (event) => {
-            setSelling(event.target.value);
-          } }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: audience, placeholder: t("add.audiencePlaceholder"), onChange: (event) => {
-            setAudience(event.target.value);
-          } }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: brand, placeholder: t("add.brandPlaceholder"), onChange: (event) => {
-            setBrand(event.target.value);
-          } }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea omnimux-products-span2", rows: 2, value: features, placeholder: t("add.featuresPlaceholder"), onChange: (event) => {
-            setFeatures(event.target.value);
-          } }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: price, placeholder: t("add.pricePlaceholder"), onChange: (event) => {
-            setPrice(event.target.value);
-          } }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: sku, placeholder: t("add.skuPlaceholder"), onChange: (event) => {
-            setSku(event.target.value);
-          } }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: promotion, placeholder: t("add.promotionPlaceholder"), onChange: (event) => {
-            setPromotion(event.target.value);
-          } }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: link, placeholder: t("add.linkPlaceholder"), onChange: (event) => {
-            setLink(event.target.value);
-          } })
-        ] }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: link, placeholder: t("add.digitalLinkPlaceholder"), onChange: (event) => {
-          setLink(event.target.value);
-        } }),
-        kind === "digital" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-strategy", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-strategy-head", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-strategy-title", children: t("strategy.title") }),
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-strategy-hint", children: t("strategy.hintDigital") })
-            ] }),
-            strategyOpen ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "xs", onClick: () => {
-              setStrategyOpen(false);
-            }, children: t("strategy.collapse") }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "xs", onClick: openStrategy, children: t("strategy.expand") })
-          ] }),
-          strategyOpen ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(StrategyFields, { t, strategy, patchStrategy }) : null
-        ] }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
-          "div",
+      className: "omnimux-products-modal-wrapper",
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-labelledby": "omnimux-products-modal-title",
+      onClick: (event) => {
+        event.stopPropagation();
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          IconButton,
           {
-            className: "omnimux-products-drop",
-            onDragOver: (event) => {
-              event.preventDefault();
-            },
-            onDrop: (event) => {
-              event.preventDefault();
-              const dropped = Array.from(event.dataTransfer?.files ?? []);
-              addPaths(dropped.map((file) => typeof file.path === "string" ? file.path : "").filter(Boolean));
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FileIcon, { size: 22 }),
-              t("add.drop"),
-              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "sm", onClick: () => {
-                void onPick("file").then(addPaths);
-              }, children: t("add.pickFiles") })
-            ]
+            className: "omnimux-products-modal-close",
+            variant: "ghost",
+            size: "sm",
+            "aria-label": t("stage.close"),
+            onClick: onCancel,
+            children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CloseIcon, { size: 14 })
           }
         ),
-        media.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("ul", { className: "omnimux-products-filelist", children: media.map((file, index) => {
-          const id = file.id || file.real_path;
-          const primary = coverId ? coverId === file.id : index === 0;
-          return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("li", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FileIcon, { size: 14 }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-filelist-name", children: file.original_name || file.real_path }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-              Button,
-              {
-                variant: "ghost",
-                size: "xs",
-                onClick: () => {
-                  setCoverId(file.id || null);
-                  if (!file.id) {
-                    setMedia((current) => {
-                      const next = [...current];
-                      const [picked] = next.splice(index, 1);
-                      next.unshift(picked);
-                      return next;
-                    });
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-modal-container", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-modal-header", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h2", { id: "omnimux-products-modal-title", className: "omnimux-products-modal-title", children: mode === "edit" ? t("detail.title") : t("add.title") }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-modal-body", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-form", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-name-row", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-at", "aria-hidden": "true", children: "@" }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                InputField,
+                {
+                  ref: nameRef,
+                  className: "omnimux-products-name-field",
+                  value: name2,
+                  placeholder: t("add.namePlaceholder"),
+                  disabled: busy,
+                  onChange: (event) => {
+                    setName(event.target.value);
                   }
+                }
+              )
+            ] }),
+            dirty ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-dirty", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-dirty-text", children: t("add.dirty.banner") }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "xs", onClick: () => {
+                onReload?.();
+              }, children: t("add.dirty.reload") }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-label", children: t("add.dirty.keep") })
+            ] }) : null,
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-kind-row", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-kind-label", children: t("kind.label") }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                Button,
+                {
+                  variant: "ghost",
+                  size: "sm",
+                  className: "omnimux-products-kind-chip",
+                  "aria-pressed": kind === "physical",
+                  onClick: () => {
+                    setKind("physical");
+                    setStrategyOpen(false);
+                  },
+                  children: t("kind.physical")
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                Button,
+                {
+                  variant: "ghost",
+                  size: "sm",
+                  className: "omnimux-products-kind-chip",
+                  "aria-pressed": kind === "digital",
+                  onClick: () => {
+                    setKind("digital");
+                    const persisted = isPlainStrategy(initial?.brand_strategy);
+                    setStrategyOpen(persisted);
+                    if (persisted) setStrategyTouched(true);
+                  },
+                  children: t("kind.digital")
+                }
+              )
+            ] }),
+            kind === "physical" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-grid-fields", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea omnimux-products-span2", rows: 2, value: selling, placeholder: t("add.sellingPlaceholder"), onChange: (event) => {
+                setSelling(event.target.value);
+              } }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: audience, placeholder: t("add.audiencePlaceholder"), onChange: (event) => {
+                setAudience(event.target.value);
+              } }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: brand, placeholder: t("add.brandPlaceholder"), onChange: (event) => {
+                setBrand(event.target.value);
+              } }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea omnimux-products-span2", rows: 2, value: features, placeholder: t("add.featuresPlaceholder"), onChange: (event) => {
+                setFeatures(event.target.value);
+              } }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: price, placeholder: t("add.pricePlaceholder"), onChange: (event) => {
+                setPrice(event.target.value);
+              } }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: sku, placeholder: t("add.skuPlaceholder"), onChange: (event) => {
+                setSku(event.target.value);
+              } }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: promotion, placeholder: t("add.promotionPlaceholder"), onChange: (event) => {
+                setPromotion(event.target.value);
+              } }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: link, placeholder: t("add.linkPlaceholder"), onChange: (event) => {
+                setLink(event.target.value);
+              } })
+            ] }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: link, placeholder: t("add.digitalLinkPlaceholder"), onChange: (event) => {
+              setLink(event.target.value);
+            } }),
+            kind === "digital" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-strategy", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-strategy-head", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-strategy-title", children: t("strategy.title") }),
+                  /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-strategy-hint", children: t("strategy.hintDigital") })
+                ] }),
+                strategyOpen ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "xs", onClick: () => {
+                  setStrategyOpen(false);
+                }, children: t("strategy.collapse") }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "xs", onClick: openStrategy, children: t("strategy.expand") })
+              ] }),
+              strategyOpen ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(StrategyFields, { t, strategy, patchStrategy }) : null
+            ] }) : null,
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+              "div",
+              {
+                className: "omnimux-products-drop",
+                onDragOver: (event) => {
+                  event.preventDefault();
                 },
-                children: t("detail.primary")
+                onDrop: (event) => {
+                  event.preventDefault();
+                  const dropped = Array.from(event.dataTransfer?.files ?? []);
+                  addPaths(dropped.map((file) => typeof file.path === "string" ? file.path : "").filter(Boolean));
+                },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FileIcon, { size: 22 }),
+                  t("add.drop"),
+                  /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "sm", onClick: () => {
+                    void onPick("file").then(addPaths);
+                  }, children: t("add.pickFiles") })
+                ]
               }
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-              IconButton,
-              {
-                variant: "ghost",
-                size: "xs",
-                "aria-label": t("remove.confirm"),
-                onClick: () => {
-                  setMedia((current) => current.filter((_, i) => i !== index));
-                  if (file.id && coverId === file.id) setCoverId(null);
-                },
-                children: "\xD7"
-              }
-            )
-          ] }, id);
-        }) }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-label", children: t("add.categories") }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-tags", children: categories.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { className: "omnimux-products-tag", children: [
-            tag,
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-              IconButton,
-              {
-                variant: "ghost",
-                size: "xs",
-                "aria-label": t("remove.confirm"),
-                onClick: () => {
-                  setCategories(categories.filter((item) => item !== tag));
-                },
-                children: "\xD7"
-              }
-            )
-          ] }, tag)) }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-            InputField,
-            {
-              value: tagDraft,
-              placeholder: t("add.categoriesPlaceholder"),
-              onChange: (event) => {
-                setTagDraft(event.target.value);
-              },
-              onKeyDown: (event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  addTag();
+            media.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("ul", { className: "omnimux-products-filelist", children: media.map((file, index) => {
+              const id = file.id || file.real_path;
+              const primary = coverId ? coverId === file.id : index === 0;
+              return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("li", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FileIcon, { size: 14 }),
+                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-filelist-name", children: file.original_name || file.real_path }),
+                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                  Button,
+                  {
+                    variant: "ghost",
+                    size: "xs",
+                    onClick: () => {
+                      setCoverId(file.id || null);
+                      if (!file.id) {
+                        setMedia((current) => {
+                          const next = [...current];
+                          const [picked] = next.splice(index, 1);
+                          next.unshift(picked);
+                          return next;
+                        });
+                      }
+                    },
+                    children: t("detail.primary")
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                  IconButton,
+                  {
+                    variant: "ghost",
+                    size: "xs",
+                    "aria-label": t("remove.confirm"),
+                    onClick: () => {
+                      setMedia((current) => current.filter((_, i) => i !== index));
+                      if (file.id && coverId === file.id) setCoverId(null);
+                    },
+                    children: "\xD7"
+                  }
+                )
+              ] }, id);
+            }) }) : null,
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-label", children: t("add.categories") }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-tags", children: categories.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { className: "omnimux-products-tag", children: [
+                tag,
+                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                  IconButton,
+                  {
+                    variant: "ghost",
+                    size: "xs",
+                    "aria-label": t("remove.confirm"),
+                    onClick: () => {
+                      setCategories(categories.filter((item) => item !== tag));
+                    },
+                    children: "\xD7"
+                  }
+                )
+              ] }, tag)) }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+                InputField,
+                {
+                  value: tagDraft,
+                  placeholder: t("add.categoriesPlaceholder"),
+                  onChange: (event) => {
+                    setTagDraft(event.target.value);
+                  },
+                  onKeyDown: (event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      addTag();
+                    }
+                  }
                 }
-              }
+              )
+            ] }),
+            error ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-products-error", children: error }) : null
+          ] }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-modal-footer", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+            Button,
+            {
+              variant: "primary",
+              disabled: !canSubmit,
+              loading: busy,
+              onClick: () => {
+                onSubmit(payload());
+              },
+              children: mode === "edit" ? t("detail.save") : t("add.submit")
             }
-          )
-        ] }),
-        error ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-products-error", children: error }) : null
-      ] })
+          ) })
+        ] })
+      ]
     }
-  );
+  ) });
 }
 function StrategyFields({ t, strategy, patchStrategy }) {
   const basic = strategy.brand_basic_info;
@@ -2264,6 +2311,114 @@ var PRODUCTS_CSS = `
   font-size: 12px;
   color: var(--dsw-alias-label-secondary);
   margin: 0;
+}
+
+/* Self-drawn product form modal (outside-corner close, kit controls only) */
+.omnimux-products-modal-backdrop,
+.omnimux-products-modal-backdrop * {
+  box-sizing: border-box;
+}
+.omnimux-products-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.70));
+  backdrop-filter: blur(16px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: omnimux-products-fade-in 120ms ease;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
+@keyframes omnimux-products-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.omnimux-products-modal-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 720px;
+  animation: omnimux-products-fade-in 120ms ease;
+}
+.omnimux-products-modal-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 85vh;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--dsw-alias-bg-module-platform, #131313);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  box-shadow: 0 12px 36px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.60));
+}
+.omnimux-products-modal-close {
+  position: absolute;
+  top: -10px;
+  right: -48px;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px;
+  padding: 0 !important;
+  border-radius: 50%;
+  border: 1px solid var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.22));
+  background: var(--dsw-alias-bg-elevated, rgba(24, 24, 24, 0.88));
+  backdrop-filter: blur(12px);
+  color: var(--dsw-alias-label-primary, #ffffff);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.55));
+  transition: all 120ms ease;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.omnimux-products-modal-close:hover {
+  border-color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.45));
+  background: var(--dsw-alias-bg-layer-2, rgba(45, 45, 45, 0.95));
+  transform: scale(1.08);
+}
+@media (max-width: 1160px) {
+  .omnimux-products-modal-close {
+    top: -44px;
+    right: 4px;
+  }
+}
+.omnimux-products-modal-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #242424);
+}
+.omnimux-products-modal-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--dsw-alias-label-primary, inherit);
+}
+.omnimux-products-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 20px;
+}
+.omnimux-products-modal-footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--dsw-alias-border-l2, #242424);
 }
 `;
 function injectProductsStyles() {

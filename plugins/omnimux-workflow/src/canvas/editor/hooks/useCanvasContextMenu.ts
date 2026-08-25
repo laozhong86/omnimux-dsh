@@ -6,7 +6,7 @@
 import { useCallback, useState } from 'react';
 import type { Node } from '@xyflow/react';
 import { useCanvasStore } from '../../store/canvasStore';
-import type { ContextMenuAction, ContextMenuContext } from '../components/ContextMenu';
+import type { ContextMenuAction, ContextMenuContext, CanvasAddNodeType } from '../components/ContextMenu';
 
 import type { MaterialType } from '../../types/materialNode';
 
@@ -29,7 +29,7 @@ export interface CanvasContextMenuDeps {
   undo: () => void;
   redo: () => void;
   onExecuteNodeIds?: (nodeIds: string[]) => void;
-  onAddNode?: (type: MaterialType, position?: { x: number; y: number }) => void;
+  onAddNode?: (type: CanvasAddNodeType, position?: { x: number; y: number }) => void;
 }
 
 export function useCanvasContextMenu(deps: CanvasContextMenuDeps) {

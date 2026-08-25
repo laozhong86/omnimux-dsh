@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { OmnimuxError } from '../media/errors.js'
-import { createOfficialDispatcher, registerOfficialRoutes } from './http-routes.js'
+import { avatarIdFromPath, createOfficialDispatcher, registerOfficialRoutes } from './http-routes.js'
 import { createAccountMetaStore } from './account-meta.js'
 
 function clientWith(handler) {
@@ -63,6 +63,85 @@ function accountFixture() {
         { id: 'a', platform: 'tiktok', display_name: 'Ada', username: 'ada', group: 'site-group' },
         { id: 'b', platform: 'youtube', display_name: 'Bo', username: 'bo' },
       ],
+    },
+  }
+}
+
+function accountFixtureWithAvatars() {
+  return {
+    data: {
+      accounts: [
+        {
+          id: 'a',
+          platform: 'tiktok',
+          display_name: 'Ada',
+          username: 'ada',
+          group: 'site-group',
+          avatar_url: 'https://cdn.example/a.png',
+        },
+        {
+          id: 'b',
+          platform: 'youtube',
+          display_name: 'Bo',
+          username: 'bo',
+          avatar_url: 'https://cdn.example/b.png',
+        },
+      ],
+    },
+  }
+}
+
+const PNG_BYTES = Buffer.from(
+  '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c63000100000500010d0a2db40000000049454e44ae426082',
+  'hex',
+)
+
+function signedIdentity() {
+  return { require: async () => ({ id: 'user-1' }) }
+}
+
+function unsignedIdentity() {
+  return {
+    async require() {
+      throw new OmnimuxError('needs-omnimux', 'sign in')
+    },
+  }
+}
+
+/** In-memory avatar store that records every call. */
+function fakeAvatarStore({ hits = {}, sources = {} } = {}) {
+  const state = { ...hits }
+  const source = { ...sources }
+  /** @type {Array<{ op: string, id: string, url?: string }>} */
+  const calls = []
+  return {
+    calls,
+    has: (id) => Boolean(state[id]),
+    get: (id) => state[id] || null,
+    sourceUrl: (id) => source[id] || '',
+    localUrlFor: (id) => `/omnimux/accounts/${encodeURIComponent(id)}/avatar`,
+    remove: (id) => {
+      calls.push({ op: 'remove', id })
+      delete state[id]
+      delete source[id]
+    },
+    prune: (validIds) => {
+      calls.push({ op: 'prune', id: String(Array.from(validIds).sort().join(',')) })
+      const valid = new Set(validIds)
+      /** @type {string[]} */
+      const removed = []
+      for (const id of Object.keys(state)) {
+        if (!valid.has(id)) {
+          delete state[id]
+          delete source[id]
+          removed.push(id)
+        }
+      }
+      return removed
+    },
+    putFromUrl: async (id, url) => {
+      calls.push({ op: 'putFromUrl', id, url })
+      return { ok: true }
     },
   }
 }
@@ -324,6 +403,151 @@ describe('official accounts overlay', () => {
   })
 })
 
+describe('official account avatars', () => {
+  it('parses the avatar byte path and rejects traversal', () => {
+    assert.equal(avatarIdFromPath('/omnimux/accounts/acc-1/avatar'), 'acc-1')
+    assert.equal(avatarIdFromPath('/omnimux/accounts/a%2Fb/avatar'), 'a/b')
+    assert.equal(avatarIdFromPath('/omnimux/accounts/a/b/avatar'), '')
+    assert.equal(avatarIdFromPath('/omnimux/accounts/acc-1/avatar/extra'), '')
+    assert.equal(avatarIdFromPath('/omnimux/accounts/avatar'), '')
+    assert.equal(avatarIdFromPath('/omnimux/accounts/../avatar'), '')
+  })
+
+  it('rewrites a cache hit to the same-origin route and prunes stale ids', async () => {
+    const avatars = fakeAvatarStore({
+      hits: {
+        a: { buffer: PNG_BYTES, mimeType: 'image/png', ext: 'png' },
+      },
+      sources: { a: 'https://cdn.example/a.png' },
+    })
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client: clientWith(async () => accountFixtureWithAvatars()),
+      avatarStore: avatars,
+    })
+    const result = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/accounts' })
+    assert.equal(result.status, 200)
+    const a = result.body.accounts.find((row) => row.id === 'a')
+    const b = result.body.accounts.find((row) => row.id === 'b')
+    assert.equal(a.avatar_url, '/omnimux/accounts/a/avatar')
+    assert.equal(b.avatar_url, 'https://cdn.example/b.png')
+    assert.deepEqual(
+      avatars.calls.filter((call) => call.op === 'putFromUrl'),
+      [{ op: 'putFromUrl', id: 'b', url: 'https://cdn.example/b.png' }],
+    )
+    assert.deepEqual(
+      avatars.calls.filter((call) => call.op === 'prune'),
+      [{ op: 'prune', id: 'a,b' }],
+    )
+  })
+
+  it('fills avatars for the unfiltered view so ?platform= does not skip a miss', async () => {
+    const avatars = fakeAvatarStore()
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client: clientWith(async () => accountFixtureWithAvatars()),
+      avatarStore: avatars,
+    })
+    const result = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/accounts?platform=tiktok' })
+    assert.deepEqual(result.body.accounts.map((row) => row.id), ['a'])
+    assert.deepEqual(
+      avatars.calls.filter((call) => call.op === 'putFromUrl'),
+      [
+        { op: 'putFromUrl', id: 'a', url: 'https://cdn.example/a.png' },
+        { op: 'putFromUrl', id: 'b', url: 'https://cdn.example/b.png' },
+      ],
+    )
+  })
+
+  it('does not rewrite or fetch when accountAvatars.enabled is false', async () => {
+    const avatars = fakeAvatarStore({
+      hits: { a: { buffer: PNG_BYTES, mimeType: 'image/png', ext: 'png' } },
+      sources: { a: 'https://cdn.example/a.png' },
+    })
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true, accountAvatars: { enabled: false } },
+      client: clientWith(async () => accountFixtureWithAvatars()),
+      avatarStore: avatars,
+      identity: signedIdentity(),
+    })
+    const listed = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/accounts' })
+    assert.equal(listed.body.accounts[0].avatar_url, 'https://cdn.example/a.png')
+    assert.deepEqual(avatars.calls, [])
+    const bytes = await dispatcher.dispatch({
+      method: 'GET',
+      url: '/omnimux/accounts/a/avatar',
+    })
+    assert.equal(bytes.status, 404)
+  })
+
+  it('returns raster bytes on GET avatar and 404 on a miss', async () => {
+    const avatars = fakeAvatarStore({
+      hits: { a: { buffer: PNG_BYTES, mimeType: 'image/png', ext: 'png' } },
+    })
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client: clientWith(async () => accountFixtureWithAvatars()),
+      avatarStore: avatars,
+      identity: signedIdentity(),
+    })
+    const hit = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/accounts/a/avatar' })
+    assert.equal(hit.status, 200)
+    assert.equal(hit.raw, true)
+    assert.equal(hit.headers['Content-Type'], 'image/png')
+    assert.equal(hit.headers['Cache-Control'], 'private, max-age=86400')
+    assert.equal(hit.headers['X-Content-Type-Options'], 'nosniff')
+    assert.ok(Buffer.isBuffer(hit.body))
+    assert.equal(hit.body[0], 0x89)
+    const miss = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/accounts/b/avatar' })
+    assert.equal(miss.status, 404)
+    assert.equal(miss.raw, undefined)
+  })
+
+  it('returns 401 when unsigned, 405 on a non-GET, and 404 for traversal', async () => {
+    const avatars = fakeAvatarStore({
+      hits: { a: { buffer: PNG_BYTES, mimeType: 'image/png', ext: 'png' } },
+    })
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client: clientWith(async () => accountFixtureWithAvatars()),
+      avatarStore: avatars,
+      identity: unsignedIdentity(),
+    })
+    const unsigned = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/accounts/a/avatar' })
+    assert.equal(unsigned.status, 401)
+    const method = await dispatcher.dispatch({
+      method: 'POST',
+      url: '/omnimux/accounts/a/avatar',
+      origin: LOCAL_ORIGIN,
+    })
+    assert.equal(method.status, 405)
+    const traversal = await dispatcher.dispatch({
+      method: 'GET',
+      url: '/omnimux/accounts/../avatar',
+      identity: signedIdentity(),
+    })
+    assert.equal(traversal.status, 404)
+  })
+
+  it('clears the cached raster on DELETE', async () => {
+    const avatars = fakeAvatarStore({
+      hits: { 'acc-1': { buffer: PNG_BYTES, mimeType: 'image/png', ext: 'png' } },
+    })
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client: clientWith(async () => accountFixture()),
+      avatarStore: avatars,
+    })
+    const removed = await dispatcher.dispatch({
+      method: 'DELETE',
+      url: '/omnimux/accounts/acc-1',
+      origin: LOCAL_ORIGIN,
+    })
+    assert.equal(removed.status, 200)
+    assert.deepEqual(avatars.calls, [{ op: 'remove', id: 'acc-1' }])
+  })
+})
+
 describe('registerOfficialRoutes body parsing', () => {
   /** Minimal async-iterable request stub readJsonBody can consume. */
   function fakeReq(method, url, rawBody) {
@@ -338,11 +562,14 @@ describe('registerOfficialRoutes body parsing', () => {
   }
 
   function fakeRes() {
-    const state = { status: 0, body: '' }
+    const state = { status: 0, body: '', headers: {} }
     return {
       state,
-      writeHead(status) { state.status = status },
-      end(text) { state.body = String(text) },
+      writeHead(status, headers) {
+        state.status = status
+        if (headers) state.headers = headers
+      },
+      end(text) { state.body = text },
     }
   }
 
@@ -391,6 +618,26 @@ describe('registerOfficialRoutes body parsing', () => {
     assert.equal(dispatched, 0, 'the dispatcher never sees a broken body')
   })
 
+  it('writes avatar bytes instead of JSON', async () => {
+    const webServer = fakeWebServer()
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      identity: signedIdentity(),
+      avatarStore: fakeAvatarStore({
+        hits: { a: { buffer: PNG_BYTES, mimeType: 'image/png', ext: 'png' } },
+      }),
+    })
+    registerOfficialRoutes(webServer, dispatcher)
+    const res = fakeRes()
+    await handlerFor(webServer)(fakeReq('GET', '/omnimux/accounts/a/avatar'), res)
+    assert.equal(res.state.status, 200)
+    assert.equal(res.state.headers['Content-Type'], 'image/png')
+    assert.equal(res.state.headers['Cache-Control'], 'private, max-age=86400')
+    assert.ok(Buffer.isBuffer(res.state.body))
+    assert.equal(res.state.body[0], 0x89)
+    assert.notEqual(String(res.state.body)[0], '{')
+  })
+
   it('rejects an invalid JSON POST body with 400', async () => {
     const webServer = fakeWebServer()
     const dispatcher = { async dispatch() { return { status: 200, body: {} } } }
@@ -399,5 +646,28 @@ describe('registerOfficialRoutes body parsing', () => {
     await handlerFor(webServer)(fakeReq('POST', '/omnimux/accounts', '{oops'), res)
     assert.equal(res.state.status, 400)
     assert.equal(JSON.parse(res.state.body).error, 'invalid json')
+  })
+
+  it('dispatches analytics endpoints', async () => {
+    const calls = []
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client: {
+        withPat(path) {
+          calls.push(path)
+          return Promise.resolve({ ok: true, path })
+        },
+      },
+    })
+    const r1 = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/analytics/daily-metrics?platform=tiktok' })
+    assert.equal(r1.status, 200)
+    assert.equal(calls[0], '/api/social/v1/analytics/daily-metrics?platform=tiktok')
+
+    const r2 = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/analytics/best-time-to-post' })
+    assert.equal(r2.status, 200)
+
+    const r3 = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/analytics/inbox/heatmap' })
+    assert.equal(r3.status, 200)
+    assert.equal(calls[2], '/api/social/v1/inbox-analytics/heatmap')
   })
 })

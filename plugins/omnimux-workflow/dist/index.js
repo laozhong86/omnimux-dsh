@@ -3258,10 +3258,10 @@ function mergeDefs(...defs) {
 function cloneDef(schema) {
   return mergeDefs(schema._zod.def);
 }
-function getElementAtPath(obj, path) {
-  if (!path)
+function getElementAtPath(obj, path3) {
+  if (!path3)
     return obj;
-  return path.reduce((acc, key) => acc?.[key], obj);
+  return path3.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -3670,11 +3670,11 @@ function explicitlyAborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path, issues) {
+function prefixIssues(path3, issues) {
   return issues.map((iss) => {
     var _a3;
     (_a3 = iss).path ?? (_a3.path = []);
-    iss.path.unshift(path);
+    iss.path.unshift(path3);
     return iss;
   });
 }
@@ -3821,16 +3821,16 @@ function flattenError(error51, mapper = (issue2) => issue2.message) {
 }
 function formatError(error51, mapper = (issue2) => issue2.message) {
   const fieldErrors = { _errors: [] };
-  const processError = (error52, path = []) => {
+  const processError = (error52, path3 = []) => {
     for (const issue2 of error52.issues) {
       if (issue2.code === "invalid_union" && issue2.errors.length) {
-        issue2.errors.map((issues) => processError({ issues }, [...path, ...issue2.path]));
+        issue2.errors.map((issues) => processError({ issues }, [...path3, ...issue2.path]));
       } else if (issue2.code === "invalid_key") {
-        processError({ issues: issue2.issues }, [...path, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path3, ...issue2.path]);
       } else if (issue2.code === "invalid_element") {
-        processError({ issues: issue2.issues }, [...path, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path3, ...issue2.path]);
       } else {
-        const fullpath = [...path, ...issue2.path];
+        const fullpath = [...path3, ...issue2.path];
         if (fullpath.length === 0) {
           fieldErrors._errors.push(mapper(issue2));
         } else {
@@ -3857,17 +3857,17 @@ function formatError(error51, mapper = (issue2) => issue2.message) {
 }
 function treeifyError(error51, mapper = (issue2) => issue2.message) {
   const result = { errors: [] };
-  const processError = (error52, path = []) => {
+  const processError = (error52, path3 = []) => {
     var _a3, _b;
     for (const issue2 of error52.issues) {
       if (issue2.code === "invalid_union" && issue2.errors.length) {
-        issue2.errors.map((issues) => processError({ issues }, [...path, ...issue2.path]));
+        issue2.errors.map((issues) => processError({ issues }, [...path3, ...issue2.path]));
       } else if (issue2.code === "invalid_key") {
-        processError({ issues: issue2.issues }, [...path, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path3, ...issue2.path]);
       } else if (issue2.code === "invalid_element") {
-        processError({ issues: issue2.issues }, [...path, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path3, ...issue2.path]);
       } else {
-        const fullpath = [...path, ...issue2.path];
+        const fullpath = [...path3, ...issue2.path];
         if (fullpath.length === 0) {
           result.errors.push(mapper(issue2));
           continue;
@@ -3899,8 +3899,8 @@ function treeifyError(error51, mapper = (issue2) => issue2.message) {
 }
 function toDotPath(_path) {
   const segs = [];
-  const path = _path.map((seg) => typeof seg === "object" ? seg.key : seg);
-  for (const seg of path) {
+  const path3 = _path.map((seg) => typeof seg === "object" ? seg.key : seg);
+  for (const seg of path3) {
     if (typeof seg === "number")
       segs.push(`[${seg}]`);
     else if (typeof seg === "symbol")
@@ -16592,13 +16592,13 @@ function resolveRef(ref, ctx) {
   if (!ref.startsWith("#")) {
     throw new Error("External $ref is not supported, only local refs (#/...) are allowed");
   }
-  const path = ref.slice(1).split("/").filter(Boolean);
-  if (path.length === 0) {
+  const path3 = ref.slice(1).split("/").filter(Boolean);
+  if (path3.length === 0) {
     return ctx.rootSchema;
   }
   const defsKey = ctx.version === "draft-2020-12" ? "$defs" : "definitions";
-  if (path[0] === defsKey) {
-    const key = path[1];
+  if (path3[0] === defsKey) {
+    const key = path3[1];
     if (!key || !ctx.defs[key]) {
       throw new Error(`Reference not found: ${ref}`);
     }
@@ -20114,13 +20114,13 @@ function validateTitle(title) {
   }
   return trimmed;
 }
-function toSummary(project, path) {
+function toSummary(project, path3) {
   return {
     id: project.id,
     title: project.title,
     updatedAt: project.updatedAt,
     sessionId: project.sessionId,
-    path
+    path: path3
   };
 }
 function createProjectStore(opts) {
@@ -20321,14 +20321,14 @@ function createProjectDispatcher() {
   const itemRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)$`);
   const pagesRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)/pages$`);
   const pageItemRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)/pages/([^/]+)$`);
-  function owns(path) {
-    return path === PROJECT_ROUTE_PREFIX || path.startsWith(`${PROJECT_ROUTE_PREFIX}/`);
+  function owns(path3) {
+    return path3 === PROJECT_ROUTE_PREFIX || path3.startsWith(`${PROJECT_ROUTE_PREFIX}/`);
   }
   async function dispatch2(req) {
     try {
       const url2 = new URL(req.url, "http://127.0.0.1");
       const method = (req.method || "GET").toUpperCase();
-      const path = decodeURIComponent(url2.pathname);
+      const path3 = decodeURIComponent(url2.pathname);
       if (method === "POST" || method === "PATCH" || method === "DELETE") {
         try {
           assertLocalWrite(req);
@@ -20336,7 +20336,7 @@ function createProjectDispatcher() {
           return { status: 403, body: { error: "not-local", message: "cross-origin write refused" } };
         }
       }
-      if (libraryRe.exec(path)) {
+      if (libraryRe.exec(path3)) {
         if (method !== "GET") {
           return { status: 404, body: { error: "not-found", message: "unknown route" } };
         }
@@ -20350,7 +20350,7 @@ function createProjectDispatcher() {
           }
         };
       }
-      if (collectionRe.exec(path)) {
+      if (collectionRe.exec(path3)) {
         if (method === "GET") {
           const { store } = scopedStore();
           return { status: 200, body: { projects: store.list() } };
@@ -20373,7 +20373,7 @@ function createProjectDispatcher() {
         }
         return { status: 404, body: { error: "not-found", message: "unknown route" } };
       }
-      const pagesMatch = pagesRe.exec(path);
+      const pagesMatch = pagesRe.exec(path3);
       if (pagesMatch) {
         const projectId = pagesMatch[1] ?? "";
         const { store } = scopedStore();
@@ -20391,7 +20391,7 @@ function createProjectDispatcher() {
         }
         return { status: 404, body: { error: "not-found", message: "unknown route" } };
       }
-      const pageItemMatch = pageItemRe.exec(path);
+      const pageItemMatch = pageItemRe.exec(path3);
       if (pageItemMatch) {
         const projectId = pageItemMatch[1] ?? "";
         const pageId = pageItemMatch[2] ?? "";
@@ -20413,7 +20413,7 @@ function createProjectDispatcher() {
         }
         return { status: 404, body: { error: "not-found", message: "unknown route" } };
       }
-      const itemMatch = itemRe.exec(path);
+      const itemMatch = itemRe.exec(path3);
       if (itemMatch) {
         const id2 = itemMatch[1] ?? "";
         if (id2 === "library") {
@@ -20489,21 +20489,21 @@ function createStaticRoutes(opts) {
     cachedCanvasHash = { hash: hash2, at: now2 };
     return hash2;
   }
-  const tryBundle = (method, path) => {
-    if (method === "GET" && path === canvasJsPath) {
+  const tryBundle = (method, path3) => {
+    if (method === "GET" && path3 === canvasJsPath) {
       const file2 = join11(pluginRoot, "lib", "canvas.js");
       if (!existsSync7(file2)) {
         return { status: 404, body: { error: "not-found", message: "canvas bundle not built (run npm run build)" } };
       }
       return { status: 200, file: file2 };
     }
-    if (method === "GET" && path === manifestPath) {
+    if (method === "GET" && path3 === manifestPath) {
       return { status: 200, body: { canvasHash: canvasJsHash() } };
     }
     return null;
   };
-  const tryCapabilities = async (method, path) => {
-    if (method === "GET" && path === capabilitiesPath) {
+  const tryCapabilities = async (method, path3) => {
+    if (method === "GET" && path3 === capabilitiesPath) {
       return { status: 200, body: await gateway.capabilities() };
     }
     return null;
@@ -20522,14 +20522,14 @@ function createWorkspaceRoutes(store) {
   const workspacesPath = `${WORKFLOW_ROUTE_PREFIX}/api/workspaces`;
   const workspaceRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)$`);
   const workspaceVersionRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/version$`);
-  const tryHandle = (method, path, req) => {
-    const versionMatch = workspaceVersionRouteRe.exec(path);
+  const tryHandle = (method, path3, req) => {
+    const versionMatch = workspaceVersionRouteRe.exec(path3);
     if (versionMatch) {
       if (method !== "GET") return notFound();
       const snapshot = store.get(versionMatch[1] ?? "");
       return { status: 200, body: { id: snapshot.id, version: snapshot.version } };
     }
-    if (path === workspacesPath) {
+    if (path3 === workspacesPath) {
       if (method === "GET") {
         return { status: 200, body: { workspaces: store.list() } };
       }
@@ -20543,7 +20543,7 @@ function createWorkspaceRoutes(store) {
       }
       return notFound();
     }
-    const workspaceMatch = workspaceRouteRe.exec(path);
+    const workspaceMatch = workspaceRouteRe.exec(path3);
     if (workspaceMatch) {
       const id2 = workspaceMatch[1] ?? "";
       if (method === "GET") {
@@ -20655,8 +20655,8 @@ function createExecutionRoutes(opts) {
   const executionItemRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions/([^/]+)$`);
   const executionActionRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions/([^/]+)/(pause|resume|cancel)$`);
   const executionEventsRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions/([^/]+)/events$`);
-  const tryHandle = async (method, path, req) => {
-    const eventsMatch = executionEventsRouteRe.exec(path);
+  const tryHandle = async (method, path3, req) => {
+    const eventsMatch = executionEventsRouteRe.exec(path3);
     if (eventsMatch && method === "GET") {
       const executionId = eventsMatch[2] ?? "";
       const stream = await executionManager.openEventStream(executionId);
@@ -20665,7 +20665,7 @@ function createExecutionRoutes(opts) {
       }
       return { status: 200, sse: stream };
     }
-    const actionMatch = executionActionRouteRe.exec(path);
+    const actionMatch = executionActionRouteRe.exec(path3);
     if (actionMatch) {
       if (method !== "POST") return notFound();
       const executionId = actionMatch[2] ?? "";
@@ -20676,7 +20676,7 @@ function createExecutionRoutes(opts) {
       }
       return { status: 200, body: { ok: true } };
     }
-    const executionMatch = executionItemRouteRe.exec(path);
+    const executionMatch = executionItemRouteRe.exec(path3);
     if (executionMatch) {
       const executionId = executionMatch[2] ?? "";
       if (method === "GET") {
@@ -20688,7 +20688,7 @@ function createExecutionRoutes(opts) {
       }
       return notFound();
     }
-    const executionsMatch = executionsRouteRe.exec(path);
+    const executionsMatch = executionsRouteRe.exec(path3);
     if (executionsMatch) {
       const workspaceId = executionsMatch[1] ?? "";
       if (method === "GET") {
@@ -20761,9 +20761,9 @@ function isInsideDir2(target, root2) {
 function createMediaRoutes(mediaDir) {
   const mediaRoot = resolve4(mediaDir);
   const mediaApiPath = `${WORKFLOW_ROUTE_PREFIX}/media/`;
-  const tryHandle = (method, path) => {
-    if (!(method === "GET" && path.startsWith(mediaApiPath))) return null;
-    const rel = path.slice(mediaApiPath.length);
+  const tryHandle = (method, path3) => {
+    if (!(method === "GET" && path3.startsWith(mediaApiPath))) return null;
+    const rel = path3.slice(mediaApiPath.length);
     if (rel.split("/").some((segment) => segment === "..")) {
       return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
     }
@@ -20841,19 +20841,19 @@ function createWorkflowDispatcher(deps) {
   const workspaceRoutes = createWorkspaceRoutes(store);
   const executionRoutes = createExecutionRoutes({ store, executionManager });
   const mediaRoutes = createMediaRoutes(mediaDir);
-  function normalizePath(path) {
-    if (path === LEGACY_WORKFLOW_ROUTE_PREFIX) return WORKFLOW_ROUTE_PREFIX;
-    if (path.startsWith(`${LEGACY_WORKFLOW_ROUTE_PREFIX}/`)) {
-      return WORKFLOW_ROUTE_PREFIX + path.slice(LEGACY_WORKFLOW_ROUTE_PREFIX.length);
+  function normalizePath(path3) {
+    if (path3 === LEGACY_WORKFLOW_ROUTE_PREFIX) return WORKFLOW_ROUTE_PREFIX;
+    if (path3.startsWith(`${LEGACY_WORKFLOW_ROUTE_PREFIX}/`)) {
+      return WORKFLOW_ROUTE_PREFIX + path3.slice(LEGACY_WORKFLOW_ROUTE_PREFIX.length);
     }
-    return path;
+    return path3;
   }
   async function dispatch2(req) {
     try {
       const url2 = new URL(req.url, "http://127.0.0.1");
       const method = (req.method || "GET").toUpperCase();
-      const path = normalizePath(decodeURIComponent(url2.pathname));
-      if (projectDispatcher.owns(path)) {
+      const path3 = normalizePath(decodeURIComponent(url2.pathname));
+      if (projectDispatcher.owns(path3)) {
         return projectDispatcher.dispatch(req);
       }
       if (method === "POST" || method === "PUT" || method === "DELETE") {
@@ -20863,15 +20863,15 @@ function createWorkflowDispatcher(deps) {
           return { status: 403, body: { error: "not-local", message: "cross-origin write refused" } };
         }
       }
-      const fromBundle = await Promise.resolve(staticRoutes.tryBundle(method, path, req));
+      const fromBundle = await Promise.resolve(staticRoutes.tryBundle(method, path3, req));
       if (fromBundle) return fromBundle;
-      const fromWorkspace = await Promise.resolve(workspaceRoutes.tryHandle(method, path, req));
+      const fromWorkspace = await Promise.resolve(workspaceRoutes.tryHandle(method, path3, req));
       if (fromWorkspace) return fromWorkspace;
-      const fromExecution = await Promise.resolve(executionRoutes.tryHandle(method, path, req));
+      const fromExecution = await Promise.resolve(executionRoutes.tryHandle(method, path3, req));
       if (fromExecution) return fromExecution;
-      const fromCapabilities = await Promise.resolve(staticRoutes.tryCapabilities(method, path, req));
+      const fromCapabilities = await Promise.resolve(staticRoutes.tryCapabilities(method, path3, req));
       if (fromCapabilities) return fromCapabilities;
-      const fromMedia = await Promise.resolve(mediaRoutes.tryHandle(method, path, req));
+      const fromMedia = await Promise.resolve(mediaRoutes.tryHandle(method, path3, req));
       if (fromMedia) return fromMedia;
       return { status: 404, body: { error: "not-found", message: "unknown route" } };
     } catch (error51) {
@@ -24813,12 +24813,12 @@ function getSmoothStepPath({ sourceX, sourceY, sourcePosition = Position.Bottom,
     offset,
     stepPosition
   });
-  let path = `M${points[0].x} ${points[0].y}`;
+  let path3 = `M${points[0].x} ${points[0].y}`;
   for (let i = 1; i < points.length - 1; i++) {
-    path += getBend(points[i - 1], points[i], points[i + 1], borderRadius);
+    path3 += getBend(points[i - 1], points[i], points[i + 1], borderRadius);
   }
-  path += `L${points[points.length - 1].x} ${points[points.length - 1].y}`;
-  return [path, labelX, labelY, offsetX, offsetY];
+  path3 += `L${points[points.length - 1].x} ${points[points.length - 1].y}`;
+  return [path3, labelX, labelY, offsetX, offsetY];
 }
 function isNodeInitialized(node) {
   return node && !!(node.internals.handleBounds || node.handles?.length) && !!(node.measured.width || node.width || node.initialWidth);
@@ -28634,8 +28634,8 @@ function EdgeTextComponent({ x, y, label, labelStyle, labelShowBg = true, labelB
 }
 EdgeTextComponent.displayName = "EdgeText";
 var EdgeText = (0, import_react2.memo)(EdgeTextComponent);
-function BaseEdge({ path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, interactionWidth = 20, ...props }) {
-  return (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [(0, import_jsx_runtime.jsx)("path", { ...props, d: path, fill: "none", className: cc(["react-flow__edge-path", props.className]) }), interactionWidth ? (0, import_jsx_runtime.jsx)("path", { d: path, fill: "none", strokeOpacity: 0, strokeWidth: interactionWidth, className: "react-flow__edge-interaction" }) : null, label && isNumeric(labelX) && isNumeric(labelY) ? (0, import_jsx_runtime.jsx)(EdgeText, { x: labelX, y: labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius }) : null] });
+function BaseEdge({ path: path3, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, interactionWidth = 20, ...props }) {
+  return (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [(0, import_jsx_runtime.jsx)("path", { ...props, d: path3, fill: "none", className: cc(["react-flow__edge-path", props.className]) }), interactionWidth ? (0, import_jsx_runtime.jsx)("path", { d: path3, fill: "none", strokeOpacity: 0, strokeWidth: interactionWidth, className: "react-flow__edge-interaction" }) : null, label && isNumeric(labelX) && isNumeric(labelY) ? (0, import_jsx_runtime.jsx)(EdgeText, { x: labelX, y: labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius }) : null] });
 }
 function getControl({ pos, x1, y1, x2, y2 }) {
   if (pos === Position.Left || pos === Position.Right) {
@@ -28678,7 +28678,7 @@ function getSimpleBezierPath({ sourceX, sourceY, sourcePosition = Position.Botto
 }
 function createSimpleBezierEdge(params) {
   return (0, import_react2.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth }) => {
-    const [path, labelX, labelY] = getSimpleBezierPath({
+    const [path3, labelX, labelY] = getSimpleBezierPath({
       sourceX,
       sourceY,
       sourcePosition,
@@ -28687,7 +28687,7 @@ function createSimpleBezierEdge(params) {
       targetPosition
     });
     const _id = params.isInternal ? void 0 : id2;
-    return (0, import_jsx_runtime.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
+    return (0, import_jsx_runtime.jsx)(BaseEdge, { id: _id, path: path3, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
   });
 }
 var SimpleBezierEdge = createSimpleBezierEdge({ isInternal: false });
@@ -28696,7 +28696,7 @@ SimpleBezierEdge.displayName = "SimpleBezierEdge";
 SimpleBezierEdgeInternal.displayName = "SimpleBezierEdgeInternal";
 function createSmoothStepEdge(params) {
   return (0, import_react2.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, sourcePosition = Position.Bottom, targetPosition = Position.Top, markerEnd, markerStart, pathOptions, interactionWidth }) => {
-    const [path, labelX, labelY] = getSmoothStepPath({
+    const [path3, labelX, labelY] = getSmoothStepPath({
       sourceX,
       sourceY,
       sourcePosition,
@@ -28708,7 +28708,7 @@ function createSmoothStepEdge(params) {
       stepPosition: pathOptions?.stepPosition
     });
     const _id = params.isInternal ? void 0 : id2;
-    return (0, import_jsx_runtime.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
+    return (0, import_jsx_runtime.jsx)(BaseEdge, { id: _id, path: path3, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
   });
 }
 var SmoothStepEdge = createSmoothStepEdge({ isInternal: false });
@@ -28727,9 +28727,9 @@ StepEdge.displayName = "StepEdge";
 StepEdgeInternal.displayName = "StepEdgeInternal";
 function createStraightEdge(params) {
   return (0, import_react2.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth }) => {
-    const [path, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY });
+    const [path3, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY });
     const _id = params.isInternal ? void 0 : id2;
-    return (0, import_jsx_runtime.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
+    return (0, import_jsx_runtime.jsx)(BaseEdge, { id: _id, path: path3, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
   });
 }
 var StraightEdge = createStraightEdge({ isInternal: false });
@@ -28738,7 +28738,7 @@ StraightEdge.displayName = "StraightEdge";
 StraightEdgeInternal.displayName = "StraightEdgeInternal";
 function createBezierEdge(params) {
   return (0, import_react2.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, sourcePosition = Position.Bottom, targetPosition = Position.Top, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, pathOptions, interactionWidth }) => {
-    const [path, labelX, labelY] = getBezierPath({
+    const [path3, labelX, labelY] = getBezierPath({
       sourceX,
       sourceY,
       sourcePosition,
@@ -28748,7 +28748,7 @@ function createBezierEdge(params) {
       curvature: pathOptions?.curvature
     });
     const _id = params.isInternal ? void 0 : id2;
-    return (0, import_jsx_runtime.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
+    return (0, import_jsx_runtime.jsx)(BaseEdge, { id: _id, path: path3, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
   });
 }
 var BezierEdge = createBezierEdge({ isInternal: false });
@@ -29047,7 +29047,7 @@ var ConnectionLine = ({ style: style2, type = ConnectionLineType.Bezier, CustomC
   if (CustomComponent) {
     return (0, import_jsx_runtime.jsx)(CustomComponent, { connectionLineType: type, connectionLineStyle: style2, fromNode, fromHandle, fromX: from.x, fromY: from.y, toX: to.x, toY: to.y, fromPosition, toPosition, connectionStatus: getConnectionStatus(isValid), toNode, toHandle, pointer });
   }
-  let path = "";
+  let path3 = "";
   const pathParams = {
     sourceX: from.x,
     sourceY: from.y,
@@ -29058,24 +29058,24 @@ var ConnectionLine = ({ style: style2, type = ConnectionLineType.Bezier, CustomC
   };
   switch (type) {
     case ConnectionLineType.Bezier:
-      [path] = getBezierPath(pathParams);
+      [path3] = getBezierPath(pathParams);
       break;
     case ConnectionLineType.SimpleBezier:
-      [path] = getSimpleBezierPath(pathParams);
+      [path3] = getSimpleBezierPath(pathParams);
       break;
     case ConnectionLineType.Step:
-      [path] = getSmoothStepPath({
+      [path3] = getSmoothStepPath({
         ...pathParams,
         borderRadius: 0
       });
       break;
     case ConnectionLineType.SmoothStep:
-      [path] = getSmoothStepPath(pathParams);
+      [path3] = getSmoothStepPath(pathParams);
       break;
     default:
-      [path] = getStraightPath(pathParams);
+      [path3] = getStraightPath(pathParams);
   }
-  return (0, import_jsx_runtime.jsx)("path", { d: path, fill: "none", className: "react-flow__connection-path", style: style2 });
+  return (0, import_jsx_runtime.jsx)("path", { d: path3, fill: "none", className: "react-flow__connection-path", style: style2 });
 };
 ConnectionLine.displayName = "ConnectionLine";
 var emptyTypes = {};
@@ -30277,6 +30277,276 @@ function createMaterialNode(materialType, position, overrides) {
   };
 }
 
+// src/workflow/agent/tableTools.ts
+import path2 from "node:path";
+
+// src/workflow/storage/TableStorageService.ts
+import fs from "node:fs/promises";
+import path from "node:path";
+
+// src/workflow/storage/AsyncMutex.ts
+var AsyncMutex = class {
+  queue = Promise.resolve();
+  async runExclusive(fn) {
+    let release;
+    const nextTicket = new Promise((resolve5) => {
+      release = resolve5;
+    });
+    const currentTicket = this.queue;
+    this.queue = this.queue.then(() => nextTicket);
+    await currentTicket;
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
+  }
+};
+
+// src/shared/types/htable.ts
+var HTableFieldTypeSchema = external_exports.enum(["text", "number", "attachment"]);
+var HTableColumnSchema = external_exports.object({
+  id: external_exports.string().min(1),
+  title: external_exports.string().min(1),
+  type: HTableFieldTypeSchema,
+  visible: external_exports.boolean().default(true),
+  width: external_exports.number().min(60).max(2e3).default(240)
+});
+var HTableAttachmentSchema = external_exports.object({
+  assetId: external_exports.string(),
+  name: external_exports.string(),
+  kind: external_exports.enum(["image", "video", "audio", "text"]),
+  thumbnailUrl: external_exports.string().optional(),
+  mimeType: external_exports.string().optional(),
+  size: external_exports.number().optional()
+});
+var HTableCellValueSchema = external_exports.union([
+  external_exports.string(),
+  external_exports.number(),
+  external_exports.array(HTableAttachmentSchema),
+  external_exports.null()
+]);
+var HTableRowSchema = external_exports.object({
+  id: external_exports.string().optional(),
+  cells: external_exports.array(HTableCellValueSchema)
+});
+var FilterOperatorSchema = external_exports.enum([
+  "equals",
+  "notEquals",
+  "contains",
+  "notContains",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "empty",
+  "notEmpty"
+]);
+var HTableFilterConditionSchema = external_exports.object({
+  columnIndex: external_exports.number().int().min(0),
+  op: FilterOperatorSchema,
+  value: external_exports.union([external_exports.string(), external_exports.number()]).optional()
+});
+var HTableFilterSchema = external_exports.object({
+  match: external_exports.enum(["all", "any"]).default("all"),
+  conditions: external_exports.array(HTableFilterConditionSchema)
+});
+var HTableRowHeightSchema = external_exports.enum(["low", "medium", "tall", "extraTall"]);
+var HTableDocumentSchema = external_exports.object({
+  version: external_exports.literal(1),
+  title: external_exports.string().default("\u672A\u547D\u540D\u8868\u683C"),
+  columns: external_exports.array(HTableColumnSchema),
+  rows: external_exports.array(HTableRowSchema),
+  filter: HTableFilterSchema.optional(),
+  rowHeight: HTableRowHeightSchema.default("low")
+});
+
+// src/workflow/storage/TableStorageService.ts
+var TableStorageService = class {
+  static fileLocks = /* @__PURE__ */ new Map();
+  static getMutex(tablePath) {
+    if (!this.fileLocks.has(tablePath)) {
+      this.fileLocks.set(tablePath, new AsyncMutex());
+    }
+    return this.fileLocks.get(tablePath);
+  }
+  /**
+   * 安全加载并校验 .htable 表格文件
+   */
+  static async loadTable(tablePath) {
+    const mutex = this.getMutex(tablePath);
+    return await mutex.runExclusive(async () => {
+      const raw = await fs.readFile(tablePath, "utf-8");
+      const json2 = JSON.parse(raw);
+      return HTableDocumentSchema.parse(json2);
+    });
+  }
+  /**
+   * 原子化写入 .htable 文件 (tmp -> rename) 并保证数据符合 Schema 契约
+   */
+  static async saveTable(tablePath, doc) {
+    const mutex = this.getMutex(tablePath);
+    return await mutex.runExclusive(async () => {
+      const validated = HTableDocumentSchema.parse(doc);
+      const content = JSON.stringify(validated, null, 2);
+      const dir = path.dirname(tablePath);
+      await fs.mkdir(dir, { recursive: true });
+      const tempPath = path.join(dir, `.${path.basename(tablePath)}.${Date.now()}.${Math.random().toString(36).substring(2, 7)}.tmp`);
+      await fs.writeFile(tempPath, content, "utf-8");
+      await fs.rename(tempPath, tablePath);
+    });
+  }
+  /**
+   * 检查表格文件是否存在
+   */
+  static async exists(tablePath) {
+    try {
+      await fs.access(tablePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+};
+
+// src/workflow/agent/tableTools.ts
+function jsonOut(args, value) {
+  return [{ type: "text", text: JSON.stringify(value, null, 2) }];
+}
+function readString2(args, key) {
+  const v = args[key];
+  return typeof v === "string" && v.trim() !== "" ? v.trim() : void 0;
+}
+function errorBody(code, message) {
+  return { error: code, message };
+}
+function createCanvasWriteTableNodeTool(deps) {
+  return {
+    name: "canvas_write_table_node",
+    description: "\u5728\u5F53\u524D\u753B\u5E03\u5DE5\u4F5C\u533A\u4E2D\u521B\u5EFA\u6216\u66F4\u65B0\u4E00\u4E2A\u7ED3\u6784\u5316\u6570\u636E\u8868\u8282\u70B9 (.htable)\uFF0C\u652F\u6301\u6279\u91CF\u6570\u636E\u5BFC\u5165\u4E0E\u5206\u955C\u5267\u672C\u8BB0\u5F55\u3002",
+    parameters: {
+      type: "object",
+      properties: {
+        workspace_id: { type: "string", description: "\u5DE5\u4F5C\u533A ID (\u7F3A\u7701\u5219\u4F7F\u7528\u9ED8\u8BA4\u5DE5\u4F5C\u533A)" },
+        node_id: { type: "string", description: "\u5DF2\u6709\u8282\u70B9 ID\uFF0C\u7559\u7A7A\u5219\u5728\u753B\u5E03\u65B0\u5EFA\u8282\u70B9" },
+        title: { type: "string", description: '\u8868\u683C\u6807\u9898 (\u5982 "\u77ED\u5267\u5206\u955C\u8868")' },
+        columns: {
+          type: "array",
+          description: "\u5B57\u6BB5\u5217\u5B9A\u4E49\u5217\u8868",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              title: { type: "string" },
+              type: { type: "string", enum: ["text", "number", "attachment"] },
+              visible: { type: "boolean" },
+              width: { type: "number" }
+            },
+            required: ["title", "type"]
+          }
+        },
+        rows: {
+          type: "array",
+          description: "\u884C\u6570\u636E\u5217\u8868 (\u6BCF\u884C\u7684 cells \u4E0E columns \u4E0B\u6807\u4E00\u4E00\u5BF9\u5E94)",
+          items: {
+            type: "object",
+            properties: {
+              cells: { type: "array" }
+            },
+            required: ["cells"]
+          }
+        },
+        row_height: { type: "string", enum: ["low", "medium", "tall", "extraTall"] },
+        position: {
+          type: "object",
+          properties: {
+            x: { type: "number" },
+            y: { type: "number" }
+          }
+        }
+      },
+      required: ["title", "columns", "rows"]
+    },
+    output: {
+      schema: { type: "object" },
+      render: jsonOut
+    },
+    async execute(args) {
+      const title = readString2(args, "title") || "\u672A\u547D\u540D\u8868\u683C";
+      const rawColumns = Array.isArray(args.columns) ? args.columns : [];
+      const rawRows = Array.isArray(args.rows) ? args.rows : [];
+      const rowHeight = readString2(args, "row_height") || "low";
+      const nodeId = readString2(args, "node_id") || `tbl_${Math.random().toString(36).substring(2, 9)}`;
+      const formattedColumns = rawColumns.map((c, idx) => ({
+        id: c.id || `col_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+        title: c.title || `\u5217 ${idx + 1}`,
+        type: c.type || "text",
+        visible: c.visible !== false,
+        width: c.width || 240
+      }));
+      const formattedRows = rawRows.map((r) => ({
+        cells: Array.isArray(r.cells) ? r.cells : []
+      }));
+      const doc = {
+        version: 1,
+        title,
+        columns: formattedColumns,
+        rows: formattedRows,
+        rowHeight
+      };
+      try {
+        const tableRelPath = `.hilo/tables/${nodeId}.htable`;
+        const fullPath = path2.join(process.cwd(), tableRelPath);
+        await TableStorageService.saveTable(fullPath, doc);
+        return {
+          ok: true,
+          nodeId,
+          tablePath: tableRelPath,
+          title,
+          columnCount: formattedColumns.length,
+          rowCount: formattedRows.length
+        };
+      } catch (err) {
+        return errorBody("table-save-failed", err?.message || "Failed to save table document");
+      }
+    }
+  };
+}
+function createCanvasGetTableNodeTool(deps) {
+  return {
+    name: "canvas_get_table_node",
+    description: "\u8BFB\u53D6\u753B\u5E03\u7ED3\u6784\u5316\u6570\u636E\u8868\u8282\u70B9\u7684\u5B8C\u6574\u6570\u636E\u5185\u5BB9 (.htable)\uFF0C\u8FD4\u56DE\u5B57\u6BB5\u5217\u8868\u4E0E\u884C\u8BB0\u5F55\u6570\u636E\u3002",
+    parameters: {
+      type: "object",
+      properties: {
+        table_path: { type: "string", description: "\u8868\u683C\u76F8\u5BF9\u8DEF\u5F84 (\u5982 .hilo/tables/tbl_xxx.htable)" }
+      },
+      required: ["table_path"]
+    },
+    output: {
+      schema: { type: "object" },
+      render: jsonOut
+    },
+    async execute(args) {
+      const tablePath = readString2(args, "table_path");
+      if (!tablePath) {
+        return errorBody("invalid-args", "table_path is required");
+      }
+      try {
+        const fullPath = path2.join(process.cwd(), tablePath);
+        const doc = await TableStorageService.loadTable(fullPath);
+        return {
+          ok: true,
+          tablePath,
+          document: doc
+        };
+      } catch (err) {
+        return errorBody("table-read-failed", err?.message || "Failed to load table document");
+      }
+    }
+  };
+}
+
 // src/workflow/agent/agentTools.ts
 function objectParams(fields) {
   const properties = {};
@@ -30293,7 +30563,7 @@ function objectParams(fields) {
     additionalProperties: false
   };
 }
-var jsonOut = {
+var jsonOut2 = {
   schema: { type: "object", additionalProperties: true },
   render: (_args, value) => [
     { type: "text", text: JSON.stringify(value, null, 2) }
@@ -30304,7 +30574,7 @@ var RUN_POLL_INTERVAL_MS = 250;
 var DEFAULT_RUN_WAIT_TIMEOUT_MS = 12e4;
 var TEXT_EXCERPT_CHARS = 240;
 var LIST_EXECUTIONS_LIMIT = 5;
-function errorBody(error51, message) {
+function errorBody2(error51, message) {
   return { error: error51, message };
 }
 function sanitizeLosslessJson(val) {
@@ -30314,7 +30584,7 @@ function sanitizeLosslessJson(val) {
 function sleep2(ms) {
   return new Promise((resolve5) => setTimeout(resolve5, ms));
 }
-function readString2(args, key) {
+function readString3(args, key) {
   const value = args[key];
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : void 0;
 }
@@ -30362,17 +30632,17 @@ function resolveWorkspace(store, workspaceId, workspaceName) {
     try {
       return { snapshot: store.get(workspaceId) };
     } catch {
-      return errorBody("workspace-not-found", `workspace ${workspaceId} not found`);
+      return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
     }
   }
   if (workspaceName) {
     const matches = store.list().filter((row) => row.name === workspaceName);
     const first = matches[0];
     if (matches.length === 0 || !first) {
-      return errorBody("workspace-not-found", `no workspace named "${workspaceName}"`);
+      return errorBody2("workspace-not-found", `no workspace named "${workspaceName}"`);
     }
     if (matches.length > 1) {
-      return errorBody(
+      return errorBody2(
         "ambiguous-workspace-name",
         `multiple workspaces named "${workspaceName}" \u2014 pass workspaceId instead`
       );
@@ -30380,10 +30650,10 @@ function resolveWorkspace(store, workspaceId, workspaceName) {
     try {
       return { snapshot: store.get(first.id) };
     } catch {
-      return errorBody("workspace-not-found", `workspace ${first.id} not found`);
+      return errorBody2("workspace-not-found", `workspace ${first.id} not found`);
     }
   }
-  return errorBody(
+  return errorBody2(
     "invalid-args",
     "pass workspaceId (preferred, from workflow_list) or workspaceName"
   );
@@ -30409,7 +30679,7 @@ function createWorkflowListTool(deps) {
         description: "Also include the 5 most recent executions (status + progress overview)"
       }
     }),
-    output: jsonOut,
+    output: jsonOut2,
     async execute(args) {
       const workspaces = store.list();
       if (!readBoolean(args, "include_executions")) {
@@ -30453,10 +30723,10 @@ function createWorkflowRunTool(deps) {
         description: "wait=true polling budget in milliseconds (default 120000)"
       }
     }),
-    output: jsonOut,
+    output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString2(args, "workspace_id");
-      const workspaceName = readString2(args, "workspace_name");
+      const workspaceId = readString3(args, "workspace_id");
+      const workspaceName = readString3(args, "workspace_name");
       const resolved = resolveWorkspace(store, workspaceId, workspaceName);
       if ("error" in resolved) return resolved;
       const workspace = resolved.snapshot;
@@ -30464,7 +30734,7 @@ function createWorkflowRunTool(deps) {
       try {
         mode = toExecutionMode(args.mode);
       } catch (error51) {
-        return errorBody(
+        return errorBody2(
           "invalid-args",
           error51 instanceof Error ? error51.message : String(error51)
         );
@@ -30479,13 +30749,13 @@ function createWorkflowRunTool(deps) {
           nodeIds
         });
       } catch (error51) {
-        return errorBody(
+        return errorBody2(
           "invalid-subgraph",
           error51 instanceof Error ? error51.message : String(error51)
         );
       }
       if (subgraph.nodes.length === 0) {
-        return errorBody("empty-graph", `workspace ${workspace.id} has no nodes to execute`);
+        return errorBody2("empty-graph", `workspace ${workspace.id} has no nodes to execute`);
       }
       const entry = executionManager.createExecution({
         workspaceId: workspace.id,
@@ -30513,7 +30783,7 @@ function createWorkflowRunTool(deps) {
         timeoutMs
       );
       if (!final) {
-        return errorBody("execution-not-found", `execution ${executionId} disappeared`);
+        return errorBody2("execution-not-found", `execution ${executionId} disappeared`);
       }
       const durationMs = final.completedAt !== null && final.startedAt !== null ? final.completedAt - final.startedAt : null;
       return {
@@ -30549,17 +30819,17 @@ function createWorkflowSnapshotTool(deps) {
         description: "Return the full nodes/edges structure instead of the compact summary"
       }
     }),
-    output: jsonOut,
+    output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString2(args, "workspace_id");
+      const workspaceId = readString3(args, "workspace_id");
       if (!workspaceId) {
-        return errorBody("invalid-args", "workspace_id is required");
+        return errorBody2("invalid-args", "workspace_id is required");
       }
       let workspace;
       try {
         workspace = store.get(workspaceId);
       } catch {
-        return errorBody("workspace-not-found", `workspace ${workspaceId} not found`);
+        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
       }
       if (readBoolean(args, "include_nodes")) {
         return { workspace };
@@ -30604,7 +30874,7 @@ function resolveTool(materialType, tool) {
   if (tool === void 0) return { tool: DEFAULT_MATERIAL_TOOL[materialType] };
   const valid = MATERIAL_TOOLS[materialType];
   if (typeof tool !== "string" || !valid.includes(tool)) {
-    return errorBody(
+    return errorBody2(
       "invalid-args",
       `tool must be one of ${valid.join(", ")} for material_type ${materialType} (got ${JSON.stringify(tool)})`
     );
@@ -30634,13 +30904,13 @@ function createWorkflowCreateTool(deps) {
         description: "Workspace name (max 200 chars; default \u672A\u547D\u540D\u5DE5\u4F5C\u6D41)"
       }
     }),
-    output: jsonOut,
+    output: jsonOut2,
     async execute(args) {
       try {
-        const workspace = store.create(readString2(args, "name"));
+        const workspace = store.create(readString3(args, "name"));
         return { workspace };
       } catch (error51) {
-        return errorBody(
+        return errorBody2(
           "invalid-args",
           error51 instanceof Error ? error51.message : String(error51)
         );
@@ -30667,13 +30937,13 @@ function createWorkflowNodeAddTool(deps) {
       label: { type: "string", description: "Display label (empty = localized type name)" },
       prompt: { type: "string", description: "Generation prompt for generative tools" }
     }),
-    output: jsonOut,
+    output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString2(args, "workspace_id");
-      if (!workspaceId) return errorBody("invalid-args", "workspace_id is required");
-      const materialType = readString2(args, "material_type");
+      const workspaceId = readString3(args, "workspace_id");
+      if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
+      const materialType = readString3(args, "material_type");
       if (!materialType || !MATERIAL_TYPE_ENUM.includes(materialType)) {
-        return errorBody("invalid-args", `material_type must be one of ${MATERIAL_TYPE_ENUM.join(", ")}`);
+        return errorBody2("invalid-args", `material_type must be one of ${MATERIAL_TYPE_ENUM.join(", ")}`);
       }
       const toolResolved = resolveTool(materialType, args.tool);
       if ("error" in toolResolved) return toolResolved;
@@ -30681,17 +30951,17 @@ function createWorkflowNodeAddTool(deps) {
       try {
         snapshot = store.get(workspaceId);
       } catch {
-        return errorBody("workspace-not-found", `workspace ${workspaceId} not found`);
+        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
       }
-      const label = readString2(args, "label");
-      const prompt = readString2(args, "prompt");
+      const label = readString3(args, "label");
+      const prompt = readString3(args, "prompt");
       const node = createMaterialNode(materialType, readPosition(args) ?? defaultNodePosition(snapshot), {
         selectedTool: toolResolved.tool,
         ...label !== void 0 ? { label } : {},
         ...prompt !== void 0 ? { prompt } : {}
       });
       const result = mutateWorkspaceGraph(store, workspaceId, { addNodes: [node] });
-      if (!result.ok) return errorBody(result.error, result.message);
+      if (!result.ok) return errorBody2(result.error, result.message);
       return { workspace: workspaceSummary(result.snapshot), node };
     }
   };
@@ -30723,37 +30993,37 @@ function createWorkflowNodeUpdateTool(deps) {
         description: "Fields to patch; at least one required"
       }
     }),
-    output: jsonOut,
+    output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString2(args, "workspace_id");
-      const nodeId = readString2(args, "node_id");
-      if (!workspaceId) return errorBody("invalid-args", "workspace_id is required");
-      if (!nodeId) return errorBody("invalid-args", "node_id is required");
+      const workspaceId = readString3(args, "workspace_id");
+      const nodeId = readString3(args, "node_id");
+      if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
+      if (!nodeId) return errorBody2("invalid-args", "node_id is required");
       const patch = args.patch;
       if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
-        return errorBody("invalid-args", "patch object is required");
+        return errorBody2("invalid-args", "patch object is required");
       }
       const spec = patch;
       let snapshot;
       try {
         snapshot = store.get(workspaceId);
       } catch {
-        return errorBody("workspace-not-found", `workspace ${workspaceId} not found`);
+        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
       }
       const node = snapshot.nodes.find((row) => row.id === nodeId);
-      if (!node) return errorBody("node-not-found", `node ${nodeId} not found in workspace ${workspaceId}`);
+      if (!node) return errorBody2("node-not-found", `node ${nodeId} not found in workspace ${workspaceId}`);
       const materialType = node.data.materialType;
       const data = {};
       if (spec.label !== void 0) data.label = spec.label;
       if (spec.prompt !== void 0) data.prompt = spec.prompt;
       if (spec.params !== void 0) {
         if (!spec.params || typeof spec.params !== "object" || Array.isArray(spec.params)) {
-          return errorBody("invalid-args", "patch.params must be an object");
+          return errorBody2("invalid-args", "patch.params must be an object");
         }
         data.params = spec.params;
       }
       if (spec.tool !== void 0) {
-        if (!materialType) return errorBody("invalid-args", `node ${nodeId} has no material_type; cannot set tool`);
+        if (!materialType) return errorBody2("invalid-args", `node ${nodeId} has no material_type; cannot set tool`);
         const toolResolved = resolveTool(materialType, spec.tool);
         if ("error" in toolResolved) return toolResolved;
         data.selectedTool = toolResolved.tool;
@@ -30761,11 +31031,11 @@ function createWorkflowNodeUpdateTool(deps) {
       const position = spec.position;
       if (position !== void 0) {
         if (!position || typeof position !== "object" || Array.isArray(position) || typeof position.x !== "number" || typeof position.y !== "number") {
-          return errorBody("invalid-args", "patch.position must be {x: number, y: number}");
+          return errorBody2("invalid-args", "patch.position must be {x: number, y: number}");
         }
       }
       if (Object.keys(data).length === 0 && position === void 0) {
-        return errorBody("invalid-args", "patch must contain at least one of label / prompt / tool / params / position");
+        return errorBody2("invalid-args", "patch must contain at least one of label / prompt / tool / params / position");
       }
       const mutation = {
         nodePatches: [{
@@ -30775,7 +31045,7 @@ function createWorkflowNodeUpdateTool(deps) {
         }]
       };
       const result = mutateWorkspaceGraph(store, workspaceId, mutation);
-      if (!result.ok) return errorBody(result.error, result.message);
+      if (!result.ok) return errorBody2(result.error, result.message);
       return {
         workspace: workspaceSummary(result.snapshot),
         node: result.snapshot.nodes.find((row) => row.id === nodeId)
@@ -30792,25 +31062,25 @@ function createWorkflowNodeRemoveTool(deps) {
       workspace_id: { type: "string", required: true, description: "Workspace id" },
       node_ids: { type: "array", required: true, items: { type: "string" }, description: "Node ids to remove" }
     }),
-    output: jsonOut,
+    output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString2(args, "workspace_id");
-      if (!workspaceId) return errorBody("invalid-args", "workspace_id is required");
+      const workspaceId = readString3(args, "workspace_id");
+      if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
       const nodeIds = normalizeNodeIds(args.node_ids);
-      if (nodeIds.length === 0) return errorBody("invalid-args", "node_ids must be a non-empty array");
+      if (nodeIds.length === 0) return errorBody2("invalid-args", "node_ids must be a non-empty array");
       let snapshot;
       try {
         snapshot = store.get(workspaceId);
       } catch {
-        return errorBody("workspace-not-found", `workspace ${workspaceId} not found`);
+        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
       }
       const existing = new Set(snapshot.nodes.map((node) => node.id));
       const toRemove = nodeIds.filter((id2) => existing.has(id2));
       if (toRemove.length === 0) {
-        return errorBody("node-not-found", `none of ${nodeIds.join(", ")} exists in workspace ${workspaceId}`);
+        return errorBody2("node-not-found", `none of ${nodeIds.join(", ")} exists in workspace ${workspaceId}`);
       }
       const result = mutateWorkspaceGraph(store, workspaceId, { removeNodeIds: toRemove });
-      if (!result.ok) return errorBody(result.error, result.message);
+      if (!result.ok) return errorBody2(result.error, result.message);
       return {
         workspace: workspaceSummary(result.snapshot),
         removedNodes: toRemove.length,
@@ -30831,28 +31101,28 @@ function createWorkflowConnectTool(deps) {
       source_handle: { type: "string", description: "Source handle (default out)" },
       target_handle: { type: "string", description: "Target handle (default in)" }
     }),
-    output: jsonOut,
+    output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString2(args, "workspace_id");
-      const source = readString2(args, "source");
-      const target = readString2(args, "target");
+      const workspaceId = readString3(args, "workspace_id");
+      const source = readString3(args, "source");
+      const target = readString3(args, "target");
       if (!workspaceId || !source || !target) {
-        return errorBody("invalid-args", "workspace_id, source and target are required");
+        return errorBody2("invalid-args", "workspace_id, source and target are required");
       }
       try {
         store.get(workspaceId);
       } catch {
-        return errorBody("workspace-not-found", `workspace ${workspaceId} not found`);
+        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
       }
       const result = mutateWorkspaceGraph(store, workspaceId, {
         addEdges: [{
           source,
           target,
-          sourceHandle: readString2(args, "source_handle"),
-          targetHandle: readString2(args, "target_handle")
+          sourceHandle: readString3(args, "source_handle"),
+          targetHandle: readString3(args, "target_handle")
         }]
       });
-      if (!result.ok) return errorBody(result.error, result.message);
+      if (!result.ok) return errorBody2(result.error, result.message);
       const edge = result.snapshot.edges.find(
         (row) => row.source === source && row.target === target
       );
@@ -30871,21 +31141,21 @@ function createWorkflowDisconnectTool(deps) {
       source: { type: "string", description: "With target: remove the edge between these nodes" },
       target: { type: "string", description: "With source: remove the edge between these nodes" }
     }),
-    output: jsonOut,
+    output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString2(args, "workspace_id");
-      if (!workspaceId) return errorBody("invalid-args", "workspace_id is required");
+      const workspaceId = readString3(args, "workspace_id");
+      if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
       const edgeIds = normalizeNodeIds(args.edge_ids);
-      const source = readString2(args, "source");
-      const target = readString2(args, "target");
+      const source = readString3(args, "source");
+      const target = readString3(args, "target");
       if (edgeIds.length === 0 && !(source && target)) {
-        return errorBody("invalid-args", "pass edge_ids or source+target");
+        return errorBody2("invalid-args", "pass edge_ids or source+target");
       }
       let snapshot;
       try {
         snapshot = store.get(workspaceId);
       } catch {
-        return errorBody("workspace-not-found", `workspace ${workspaceId} not found`);
+        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
       }
       const resolved = new Set(edgeIds);
       if (source && target) {
@@ -30896,10 +31166,10 @@ function createWorkflowDisconnectTool(deps) {
       const existing = new Set(snapshot.edges.map((edge) => edge.id));
       const toRemove = [...resolved].filter((id2) => existing.has(id2));
       if (toRemove.length === 0) {
-        return errorBody("edge-not-found", "no matching edges in this workspace");
+        return errorBody2("edge-not-found", "no matching edges in this workspace");
       }
       const result = mutateWorkspaceGraph(store, workspaceId, { removeEdgeIds: toRemove });
-      if (!result.ok) return errorBody(result.error, result.message);
+      if (!result.ok) return errorBody2(result.error, result.message);
       return { workspace: workspaceSummary(result.snapshot), removedEdges: toRemove.length };
     }
   };
@@ -30922,18 +31192,18 @@ function createWorkflowExecutionControlTool(deps) {
         description: "Control action"
       }
     }),
-    output: jsonOut,
+    output: jsonOut2,
     async execute(args) {
-      const executionId = readString2(args, "execution_id");
-      const action = readString2(args, "action");
-      if (!executionId) return errorBody("invalid-args", "execution_id is required");
+      const executionId = readString3(args, "execution_id");
+      const action = readString3(args, "action");
+      if (!executionId) return errorBody2("invalid-args", "execution_id is required");
       if (action !== "pause" && action !== "resume" && action !== "cancel") {
-        return errorBody("invalid-args", "action must be pause | resume | cancel");
+        return errorBody2("invalid-args", "action must be pause | resume | cancel");
       }
       const control = action === "pause" ? executionManager.pauseExecution : action === "resume" ? executionManager.resumeExecution : executionManager.cancelExecution;
       const result = await control(executionId);
       if (!result.ok) {
-        return errorBody("execution-control-failed", result.message ?? `cannot ${action} execution ${executionId}`);
+        return errorBody2("execution-control-failed", result.message ?? `cannot ${action} execution ${executionId}`);
       }
       const snapshot = executionManager.getSnapshot(executionId);
       return {
@@ -30965,7 +31235,9 @@ function registerWorkflowAgentSeats(ctx, deps) {
       createWorkflowNodeRemoveTool(deps),
       createWorkflowConnectTool(deps),
       createWorkflowDisconnectTool(deps),
-      createWorkflowExecutionControlTool(deps)
+      createWorkflowExecutionControlTool(deps),
+      createCanvasWriteTableNodeTool(deps),
+      createCanvasGetTableNodeTool(deps)
     ];
     for (const spec of specs) {
       const origExecute = spec.execute;
