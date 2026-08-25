@@ -2852,7 +2852,7 @@ function InspirationSection({ t, active }) {
               "aria-label": t("filter.type"),
               onChange: setType,
               options: [
-                { value: "", label: `${t("filter.type")} (${t("filter.all")})` },
+                { value: "", label: t("filter.type") },
                 { value: "video", label: t("type.video") },
                 { value: "image", label: t("type.image") },
                 { value: "link", label: t("type.link") }
