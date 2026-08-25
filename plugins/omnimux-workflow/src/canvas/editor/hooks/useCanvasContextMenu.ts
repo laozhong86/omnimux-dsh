@@ -45,6 +45,7 @@ export function useCanvasContextMenu(deps: CanvasContextMenuDeps) {
     undo,
     redo,
     onExecuteNodeIds,
+    onAddNode,
   } = deps;
 
   const [menu, setMenu] = useState<MenuState>({
