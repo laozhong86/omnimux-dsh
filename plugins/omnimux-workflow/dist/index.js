@@ -17841,6 +17841,8 @@ function createOmnimuxSeamClient(opts) {
       };
       if (req.image !== void 0) request.image = req.image;
       if (req.duration !== void 0) request.duration = req.duration;
+      if (req.resolution !== void 0) request.resolution = req.resolution;
+      if (req.aspectRatio !== void 0) request.aspectRatio = req.aspectRatio;
       if (req.speech !== void 0) request.speech = req.speech;
       if (req.audio !== void 0) request.audio = req.audio;
       if (req.model !== void 0) request.model = req.model;
@@ -19084,6 +19086,12 @@ function readString(source, key) {
   const value = source?.[key];
   return typeof value === "string" && value.trim().length > 0 ? value : void 0;
 }
+function readDuration(data) {
+  const fromParams = data.params?.duration;
+  if (typeof fromParams === "number") return fromParams;
+  if (typeof data.duration === "number") return data.duration;
+  return void 0;
+}
 function readMaterialType(nodeData) {
   const value = nodeData.materialType;
   if (value === "image" || value === "video" || value === "audio") return value;
@@ -19148,8 +19156,10 @@ function createMaterialGatewayExecutor(opts) {
         prompt,
         image,
         audio,
-        duration: typeof data.duration === "number" ? data.duration : void 0,
+        duration: readDuration(data),
         model: readString(data.params, "model"),
+        resolution: readString(data.params, "resolution"),
+        aspectRatio: readString(data.params, "aspectRatio"),
         dest,
         signal: ctx.signal,
         // Mock-gateway control flag (deterministic failure injection for M3).
@@ -30286,6 +30296,10 @@ var LIST_EXECUTIONS_LIMIT = 5;
 function errorBody(error51, message) {
   return { error: error51, message };
 }
+function sanitizeLosslessJson(val) {
+  if (val === void 0) return null;
+  return JSON.parse(JSON.stringify(val));
+}
 function sleep2(ms) {
   return new Promise((resolve5) => setTimeout(resolve5, ms));
 }
@@ -30943,7 +30957,15 @@ function registerWorkflowAgentSeats(ctx, deps) {
       createWorkflowExecutionControlTool(deps)
     ];
     for (const spec of specs) {
-      const dispose = tools.register(spec);
+      const origExecute = spec.execute;
+      const wrappedSpec = {
+        ...spec,
+        async execute(args) {
+          const result = await origExecute(args);
+          return sanitizeLosslessJson(result);
+        }
+      };
+      const dispose = tools.register(wrappedSpec);
       if (typeof dispose === "function") disposers.push(dispose);
     }
   }

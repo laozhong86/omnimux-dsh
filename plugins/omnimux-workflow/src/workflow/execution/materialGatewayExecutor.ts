@@ -30,6 +30,13 @@ function readString(source: Record<string, unknown> | undefined, key: string): s
   return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
 }
 
+function readDuration(data: Record<string, unknown>): number | undefined {
+  const fromParams = (data.params as Record<string, unknown> | undefined)?.duration;
+  if (typeof fromParams === 'number') return fromParams;
+  if (typeof data.duration === 'number') return data.duration;
+  return undefined;
+}
+
 function readMaterialType(nodeData: Record<string, unknown>): 'text' | 'image' | 'video' | 'audio' {
   const value = nodeData.materialType;
   if (value === 'image' || value === 'video' || value === 'audio') return value;
@@ -125,8 +132,10 @@ export function createMaterialGatewayExecutor(opts: {
         prompt,
         image,
         audio,
-        duration: typeof data.duration === 'number' ? data.duration : undefined,
+        duration: readDuration(data),
         model: readString(data.params as Record<string, unknown> | undefined, 'model'),
+        resolution: readString(data.params as Record<string, unknown> | undefined, 'resolution'),
+        aspectRatio: readString(data.params as Record<string, unknown> | undefined, 'aspectRatio'),
         dest,
         signal: ctx.signal,
         // Mock-gateway control flag (deterministic failure injection for M3).

@@ -2144,6 +2144,49 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   box-shadow: var(--wb-header-capsule-shadow);
 }
 
+/* 执行控制主按钮（闲态时为纯圆形图标） */
+.wf-header-capsule--exec.wf-header-capsule--idle {
+  padding: 3px;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  justify-content: center;
+}
+
+.wf-header-capsule__btn--run-all {
+  border-radius: 50%;
+  color: var(--wb-text-primary);
+}
+
+.wf-header-capsule__btn--run-all:hover:not(:disabled) {
+  background: var(--wb-dock-item-hover);
+  color: var(--wb-accent);
+}
+
+.wf-header-capsule__status-pill {
+  font-size: var(--wb-fs-caption);
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--wb-bg-elevated);
+  color: var(--wb-text-secondary);
+}
+
+.wf-header-capsule__status-pill--running {
+  background: var(--wb-accent-soft);
+  color: var(--wb-accent);
+}
+
+.wf-header-capsule__status-pill--completed {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.wf-header-capsule__status-pill--error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
 .wf-header-capsule__btn {
   display: inline-flex;
   align-items: center;

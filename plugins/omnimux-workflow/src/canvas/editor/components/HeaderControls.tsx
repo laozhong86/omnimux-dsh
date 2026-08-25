@@ -126,9 +126,13 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
       onPointerDown={stopToolbarNativeEvent}
       onMouseDown={stopToolbarNativeEvent}
     >
-      {/* 1. 执行控制胶囊（主行动点 CTA） */}
+      {/* 1. 执行控制胶囊（主行动点 CTA：闲态为圆形纯图标，执行态展开进度） */}
       {onStartExecution && (
-        <div className="wf-header-capsule wf-header-capsule--exec">
+        <div
+          className={`wf-header-capsule wf-header-capsule--exec ${
+            busy || paused ? 'wf-header-capsule--busy' : terminal ? 'wf-header-capsule--terminal' : 'wf-header-capsule--idle'
+          }`}
+        >
           {busy || paused ? (
             <>
               <span className={`wf-header-capsule__status-pill wf-header-capsule__status-pill--${status}`}>
@@ -168,12 +172,12 @@ const HeaderControls: React.FC<HeaderControlsProps> = ({
           ) : (
             <button
               type="button"
-              className="wf-header-capsule__cta-btn"
+              className="wf-header-capsule__btn wf-header-capsule__btn--run-all"
               onClick={onStartExecution}
-              title={error ? error : t('exec.runAllTitle')}
+              title={error ? error : t('exec.runAll')}
+              aria-label={t('exec.runAll')}
             >
-              <Play size={13} fill="currentColor" />
-              <span>{terminal ? t(STATUS_LABEL_KEYS[status]) : t('exec.runAll')}</span>
+              <Play size={14} fill="currentColor" style={{ marginLeft: 2 }} />
             </button>
           )}
 

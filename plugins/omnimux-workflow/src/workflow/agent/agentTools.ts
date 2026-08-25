@@ -134,6 +134,12 @@ function errorBody(error: string, message: string): { error: string; message: st
   return { error, message };
 }
 
+/** Ensure an agent tool output is 100% strictly lossless JSON (strips undefined fields). */
+function sanitizeLosslessJson(val: unknown): unknown {
+  if (val === undefined) return null;
+  return JSON.parse(JSON.stringify(val));
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -927,7 +933,15 @@ export function registerWorkflowAgentSeats(
       createWorkflowExecutionControlTool(deps),
     ];
     for (const spec of specs) {
-      const dispose = tools.register(spec);
+      const origExecute = spec.execute;
+      const wrappedSpec: AgentToolSpec = {
+        ...spec,
+        async execute(args: Record<string, unknown>) {
+          const result = await origExecute(args);
+          return sanitizeLosslessJson(result);
+        },
+      };
+      const dispose = tools.register(wrappedSpec);
       if (typeof dispose === 'function') disposers.push(dispose as () => void);
     }
   }

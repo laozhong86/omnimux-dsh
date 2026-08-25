@@ -215,6 +215,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     durationOptions,
     defaultDuration,
     isDurationValid,
+    resolutionOptions,
+    defaultResolution,
   } = useModelParameterSchema(materialType, modelValue, catalog);
 
   const updateParam = useCallback(
@@ -246,6 +248,15 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
         if (!isDurationSupported) {
           nextParams.duration = newSchema.duration.defaultValue || newSchema.duration.options[0]?.value || 5;
         }
+      }
+
+      if (params.resolution && newSchema?.resolution?.options) {
+        const isResolutionSupported = newSchema.resolution.options.some((opt) => opt.value === params.resolution);
+        if (!isResolutionSupported) {
+          nextParams.resolution = newSchema.resolution.defaultValue || newSchema.resolution.options[0]?.value;
+        }
+      } else if (params.resolution && newSchema && !newSchema.resolution?.options) {
+        delete nextParams.resolution;
       }
 
       onUpdateNodeData({ params: nextParams });
@@ -295,6 +306,14 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     typeof params.duration === 'number' && isDurationValid(params.duration)
       ? params.duration
       : defaultDuration;
+
+  // 当前有效分辨率（带合法性防御兜底）
+  const isResolutionValid = (value: string | undefined) =>
+    !!value && resolutionOptions.some((opt) => opt.value === value);
+  const resolutionValue =
+    typeof params.resolution === 'string' && isResolutionValid(params.resolution)
+      ? params.resolution
+      : defaultResolution;
 
   return (
     <div className="wf-config-panel">
@@ -468,6 +487,19 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                   popupMatchSelectWidth={false}
                   onChange={(value) => updateParam('duration', value)}
                 />
+                {resolutionOptions.length > 0 && (
+                  <>
+                    <span className="wf-param-pill__dot">·</span>
+                    <CustomSelect
+                      className="wf-param-bar__select wf-param-bar__select--ghost"
+                      variant="ghost"
+                      value={resolutionValue}
+                      options={resolutionOptions}
+                      popupMatchSelectWidth={false}
+                      onChange={(value) => updateParam('resolution', value)}
+                    />
+                  </>
+                )}
               </div>
             </>
           )}
