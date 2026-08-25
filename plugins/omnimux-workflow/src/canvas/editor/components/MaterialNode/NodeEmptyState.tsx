@@ -40,12 +40,15 @@ const NodeEmptyState: React.FC<NodeEmptyStateProps> = ({
 
   if (materialType === 'text') {
     return (
-      <div className="wf-node-empty wf-node-empty--text nodrag" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="wf-node-empty wf-node-empty--text">
         <div className="wf-node-empty__icon-box">
           <FileText size={32} strokeWidth={1.75} className="wf-node-empty__icon" />
         </div>
         <div className="wf-node-empty__try-label">{t('pills.tryLabel')}</div>
-        <div className="wf-node-empty__actions">
+        <div
+          className="wf-node-empty__actions nodrag"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <button
             type="button"
             className="wf-node-empty__pill-btn"
