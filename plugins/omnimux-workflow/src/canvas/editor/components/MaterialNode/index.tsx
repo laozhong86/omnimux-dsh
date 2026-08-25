@@ -92,8 +92,20 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   );
 
   const handleGenerate = useCallback(() => {
+    const currentTool = nodeData.selectedTool;
+    const defaultGenTools: Record<MaterialType, MaterialTool> = {
+      text: 'text-to-text',
+      image: 'text-to-image',
+      video: 'video-generation',
+      audio: 'text-to-audio',
+    };
+    if (!currentTool || currentTool === 'text-editor' || currentTool === 'import') {
+      updateNodeData({
+        selectedTool: defaultGenTools[materialType],
+      });
+    }
     useExecutionStore.getState().startNodeExecution?.(id);
-  }, [id]);
+  }, [id, materialType, nodeData.selectedTool, updateNodeData]);
 
   const t = useT();
   const applyCanvasInputMutation = useCanvasStore((state) => state.applyCanvasInputMutation);

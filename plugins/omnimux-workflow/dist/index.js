@@ -19097,8 +19097,19 @@ function readMaterialType(nodeData) {
   if (value === "image" || value === "video" || value === "audio") return value;
   return "text";
 }
-function isGenerativeTool(tool) {
-  return typeof tool === "string" && tool !== "import" && tool !== "text-editor";
+function isGenerativeTool(tool, data, upstream) {
+  if (typeof tool === "string" && tool !== "import" && tool !== "text-editor") {
+    return true;
+  }
+  const prompt = readString(data, "prompt");
+  if (prompt && prompt.trim().length > 0) {
+    return true;
+  }
+  const model = readString(data.params, "model");
+  if (model && (upstream.text || upstream.mediaUrl || readString(data, "content"))) {
+    return true;
+  }
+  return false;
 }
 function extFor(capability) {
   if (capability === "image") return "svg";
@@ -19128,7 +19139,7 @@ function createMaterialGatewayExecutor(opts) {
       const data = node.data ?? {};
       const tool = readString(data, "selectedTool");
       const upstream = collectUpstream(ctx);
-      if (!isGenerativeTool(tool)) {
+      if (!isGenerativeTool(tool, data, upstream)) {
         const nodeMediaUrl = readString(data, "mediaUrl");
         if (nodeMediaUrl) {
           const materialType = readMaterialType(data);

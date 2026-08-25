@@ -46,10 +46,6 @@ const App: React.FC<CanvasAppProps> = ({ locale, workspaceId }) => {
 
   const workspace = boot.phase === 'ready' ? boot.workspace : null;
 
-  // M3 execution controller: full/subset runs, SSE subscription, node-state
-  // sync, and island-reload restore (re-subscribes a still-live execution).
-  const execution = useExecutionController(workspace ? workspace.id : null);
-
   const handleSaved = useCallback((snapshot: CanvasWorkspaceSnapshot) => {
     setBoot((prev) => (prev.phase === 'ready' ? { phase: 'ready', workspace: snapshot } : prev));
   }, [setBoot]);
@@ -60,6 +56,12 @@ const App: React.FC<CanvasAppProps> = ({ locale, workspaceId }) => {
     enabled: boot.phase === 'ready',
   });
   flushRef.current = persistence.flushPendingSave;
+
+  // M3 execution controller: full/subset runs, SSE subscription, node-state
+  // sync, and island-reload restore (re-subscribes a still-live execution).
+  const execution = useExecutionController(workspace ? workspace.id : null, {
+    onBeforeStart: persistence.saveNow,
+  });
 
   if (boot.phase === 'loading') {
     return (

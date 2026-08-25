@@ -43,8 +43,25 @@ function readMaterialType(nodeData: Record<string, unknown>): 'text' | 'image' |
   return 'text';
 }
 
-function isGenerativeTool(tool: string | undefined): boolean {
-  return typeof tool === 'string' && tool !== 'import' && tool !== 'text-editor';
+function isGenerativeTool(
+  tool: string | undefined,
+  data: Record<string, unknown>,
+  upstream: { text?: string; mediaUrl?: string },
+): boolean {
+  if (typeof tool === 'string' && tool !== 'import' && tool !== 'text-editor') {
+    return true;
+  }
+  // If the node has an explicit prompt, it is intended to generate via model
+  const prompt = readString(data, 'prompt');
+  if (prompt && prompt.trim().length > 0) {
+    return true;
+  }
+  // If the node has an explicit model selected and has upstream input or content
+  const model = readString(data.params as Record<string, unknown> | undefined, 'model');
+  if (model && (upstream.text || upstream.mediaUrl || readString(data, 'content'))) {
+    return true;
+  }
+  return false;
 }
 
 function extFor(capability: 'text' | 'image' | 'video' | 'audio'): string {
@@ -87,7 +104,7 @@ export function createMaterialGatewayExecutor(opts: {
       const upstream = collectUpstream(ctx);
 
       // ---- Non-generative: pass-through (node-owned / upstream content) ----
-      if (!isGenerativeTool(tool)) {
+      if (!isGenerativeTool(tool, data, upstream)) {
         const nodeMediaUrl = readString(data, 'mediaUrl');
         if (nodeMediaUrl) {
           const materialType = readMaterialType(data);
