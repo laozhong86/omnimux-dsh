@@ -109,7 +109,6 @@ const zh = {
   'pills.planningGen': '策划案生成',
   'pills.promptExpand': '提示词生成',
   'pills.storyboard': '分镜脚本',
-  'pills.tryLabel': '试试:',
   // 执行控制条（exec.*）
   'exec.ariaLabel': '执行控制',
   'exec.status.idle': '未执行',
