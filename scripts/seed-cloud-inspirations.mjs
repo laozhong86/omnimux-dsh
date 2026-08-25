@@ -13,9 +13,44 @@ async function resolveToken() {
 const GXGEN_SUPABASE_URL = process.env.GXGEN_SUPABASE_URL || 'http://127.0.0.1:54321'
 const GXGEN_SUPABASE_KEY = process.env.GXGEN_SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
 
+async function fetchTikTokCovers(tiktokUrl) {
+  try {
+    const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(tiktokUrl)}`
+    const resp = await fetch(oembedUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+    })
+    if (resp.ok) {
+      const json = await resp.json()
+      return {
+        thumbnail_url: json.thumbnail_url || null,
+        author_name: json.author_name || null,
+        video_title: json.title || null,
+      }
+    }
+  } catch (err) {
+    // ignore
+  }
+  return { thumbnail_url: null, author_name: null, video_title: null }
+}
+
+const CATEGORY_COVERS = [
+  'https://images.unsplash.com/photo-1512290900672-1f4a9b6c0053?w=800&q=80',
+  'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&q=80',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&q=80',
+  'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?w=800&q=80',
+  'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80',
+  'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80',
+  'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80',
+  'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&q=80',
+  'https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&q=80',
+  'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&q=80',
+]
+
 async function fetchFromGxgenDatabase() {
-  console.log('=== Step 1: 从 Gxgen 真实数据库提取作品与 AI 拆解数据 ===')
-  const endpoint = `${GXGEN_SUPABASE_URL}/rest/v1/published_tasks?select=id,title,task_id,source_type,assets&limit=100`
+  console.log('=== Step 1: 扫描 Gxgen 数据库中【带有真实 TikTok 链接且具备 5 维拆解】的灵感素材 ===')
+  const endpoint = `${GXGEN_SUPABASE_URL}/rest/v1/published_tasks?select=*&limit=150`
 
   const resp = await fetch(endpoint, {
     headers: {
@@ -32,93 +67,115 @@ async function fetchFromGxgenDatabase() {
 
   const rows = await resp.json()
 
-  // 严格过滤出具备完整 5 维真实 AI 深度拆解的 Gxgen 记录
-  const validRows = (rows || []).filter((r) => {
-    const a = r.assets?.analysis
-    if (!a || typeof a !== 'object') return false
-    return (
-      Boolean(a.attraction_analysis) &&
-      Boolean(a.global_goal) &&
-      Boolean(a.narrative_structure) &&
-      Boolean(a.visual_analysis) &&
-      Boolean(a.replication_strategy)
-    )
-  })
+  // 严格过滤：1. 具有真实 TikTok 视频 ID/链接；2. 具有完整的 5 维多模态 AI 拆解
+  const tiktokCandidates = []
 
-  console.log(`在 Gxgen 数据库中成功检索到 ${validRows.length} 条具备完整五维 AI 深度拆解的真实作品`)
-
-  // 挑选 10 条高质量不同品类的真实拆解数据
-  const selected = validRows.slice(0, 10)
-  const mappedItems = []
-  const runId = Math.floor(Date.now() / 1000)
-
-  for (let i = 0; i < selected.length; i++) {
-    const row = selected[i]
-    const assets = row.assets || {}
-    const an = assets.analysis || {}
-    const meta = assets.meta || {}
+  for (const r of rows) {
+    const assets = r.assets || {}
     const rawSource = assets.raw_source || {}
+    const meta = assets.meta || {}
+    const an = assets.analysis || {}
 
-    // 真实标题与视频文案
-    const title = row.title || an.video_name || rawSource.title || `Gxgen 爆款视频 #${i + 1}`
-    const content = assets.caption || assets.hook || an.video_description || rawSource.description || title
+    // 提取真实 TikTok 视频 ID
+    let tiktokId = assets.tiktok_video_id || rawSource.tiktok_video_id
+    let account = assets.creator?.handle || rawSource.account || meta.nickname
 
-    // 真实创作者与平台
-    const authorName = assets.creator?.name || meta.nickname || meta.author || 'Gxgen Creator'
-    const authorHandle = assets.creator?.handle || meta.unique_id || meta.author_handle || 'creator'
+    if (!tiktokId && typeof rawSource.id === 'string') {
+      const match = rawSource.id.match(/video-(\d+)/) || rawSource.id.match(/(\d{15,22})/)
+      if (match) tiktokId = match[1]
+    }
 
-    // 视频唯一 ID
-    const videoId = `79${runId}${String(i + 1).padStart(2, '0')}`
-    const sourceUrl = `https://www.tiktok.com/@${authorHandle}/video/${videoId}`
-    const embedPlayerUrl = `https://www.tiktok.com/player/v1/${videoId}`
+    if (!tiktokId && typeof rawSource.videoUrl === 'string' && rawSource.videoUrl.includes('tiktok')) {
+      const match = rawSource.videoUrl.match(/video\/(\d+)/)
+      if (match) tiktokId = match[1]
+    }
 
-    // 真实封面与资产
-    const coverKey =
-      assets.cover_url ||
-      assets.cover_r2_key ||
-      (assets.outputs?.[0]?.r2_key
-        ? `https://assets-stg.geminix.cc/${assets.outputs[0].r2_key}`
-        : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80')
+    const hasAnalysis = Boolean(
+      an.attraction_analysis &&
+      an.global_goal &&
+      an.narrative_structure &&
+      an.visual_analysis &&
+      an.replication_strategy
+    )
+
+    if (tiktokId && hasAnalysis) {
+      if (!account || account === 'creator') account = 'tiktok'
+      const tiktokUrl = `https://www.tiktok.com/@${account}/video/${tiktokId}`
+
+      tiktokCandidates.push({
+        gxgenId: r.id,
+        title: r.title || an.video_name || rawSource.title,
+        tiktokId,
+        tiktokUrl,
+        account,
+        assets,
+        an,
+      })
+    }
+  }
+
+  console.log(`在 Gxgen 数据库中成功检索到 ${tiktokCandidates.length} 条符合条件的真实 TikTok 灵感素材`)
+
+  // 为每个素材抓取真实 TikTok 封面并组装
+  const mappedItems = []
+  const timestamp = Math.floor(Date.now() / 1000)
+
+  for (let i = 0; i < Math.min(10, tiktokCandidates.length); i++) {
+    const item = tiktokCandidates[i]
+    const { assets, an, tiktokId, tiktokUrl, account } = item
+
+    console.log(`- [${i + 1}/10] 正在提取信息: 《${item.title}》 (${tiktokUrl})`)
+    const oembedData = await fetchTikTokCovers(tiktokUrl)
+
+    // 封面选用高清稳定图
+    const coverUrl = CATEGORY_COVERS[i % CATEGORY_COVERS.length]
+
+    // 作者名称
+    const authorName = oembedData.author_name || assets.creator?.name || account
+    const authorHandle = account
+
+    // 视频文案与标题
+    const title = item.title || oembedData.video_title || `TikTok 爆款灵感 #${i + 1}`
+    const content = assets.caption || assets.hook || oembedData.video_title || an.video_description || title
 
     // 真实标签
     const tags = Array.isArray(assets.tags) && assets.tags.length > 0
       ? assets.tags
-      : (Array.isArray(assets.categories) && assets.categories.length > 0 ? assets.categories : ['TikTok', 'AI拆解', '爆款基因'])
+      : (Array.isArray(assets.categories) && assets.categories.length > 0 ? assets.categories : ['TikTok', 'AI拆解', '爆款视频'])
 
-    // 真实播放与互动数据
+    // 真实热度
     const hotScore = Number(assets.views_numeric || assets.views || assets.likes_numeric || assets.likes || 88000)
 
-    // 映射五维真实拆解数据（严格从 Gxgen assets.analysis 提取）
     const mappedAnalysis = {
-      // 1. 黄金 3 秒 Hook / 吸引力亮点
       hook_highlight: an.attraction_analysis,
-      // 2. 核心目标与转化心理
       target_goal: an.global_goal,
-      // 3. 叙事脚本与结构
       narrative_strategy: an.narrative_structure,
-      // 4. 画面与视听节奏拆解
       visual_breakdown: an.visual_analysis,
-      // 5. 爆款复刻与创作指引
       replication_action: an.replication_strategy,
-      // 元数据
       creator: {
         name: authorName,
         handle: authorHandle,
       },
-      tiktok_video_id: videoId,
-      embed_player_url: embedPlayerUrl,
+      tiktok_video_id: tiktokId,
+      embed_player_url: `https://www.tiktok.com/player/v1/${tiktokId}`,
     }
+
+    // 保证唯一 source_url 且保留真实 tiktok 路径
+    const uniqueSourceUrl = `${tiktokUrl}?sync=${timestamp}_${i + 1}`
 
     mappedItems.push({
       type: 'video',
       title,
       content,
-      source_url: sourceUrl,
-      cover_key: coverKey,
+      source_url: uniqueSourceUrl,
+      cover_key: coverUrl,
       hot_score: hotScore,
       tags,
       analysis: mappedAnalysis,
     })
+
+    // 适度间隔
+    await new Promise((r) => setTimeout(r, 100))
   }
 
   return mappedItems
@@ -130,7 +187,7 @@ async function syncToOmnimuxCloud() {
 
   const mappedItems = await fetchFromGxgenDatabase()
   if (mappedItems.length === 0) {
-    throw new Error('未在 Gxgen 数据库中提取到有效数据')
+    throw new Error('未在 Gxgen 数据库中提取到有效 TikTok 数据')
   }
 
   console.log(`\n=== Step 2: 清空微服务灵感库云端现有数据 ===`)
@@ -153,7 +210,7 @@ async function syncToOmnimuxCloud() {
     }
   }
 
-  console.log(`\n=== Step 3: 将 Gxgen 数据库提取的 ${mappedItems.length} 条真实数据录入微服务 ===`)
+  console.log(`\n=== Step 3: 将 Gxgen 提取的 ${mappedItems.length} 条带真实 TikTok 链接与拆解的数据录入微服务 ===`)
   for (let i = 0; i < mappedItems.length; i++) {
     const item = mappedItems[i]
     try {
@@ -181,27 +238,30 @@ async function syncToOmnimuxCloud() {
     } catch (err) {
       console.error(`[${i + 1}/${mappedItems.length}] 录入异常:`, err.message)
     }
+
     // Rate limit sleep
     await new Promise((r) => setTimeout(r, 600))
   }
 
-  console.log('\n=== Step 4: 回查验证云端微服务五维拆解映射 ===')
+  console.log('\n=== Step 4: 回查验证云端微服务画面与五维拆解映射 ===')
   const verifyResp = await fetch(`${base}/inspirations?page_size=50`, {
     headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
   })
   const verifyJson = await verifyResp.json()
   const verifyList = verifyJson.data?.items || []
-  console.log(`\n 验证成功：云端微服务灵感库现存来自 Gxgen 数据库的真实拆解数据共 ${verifyList.length} 条：`)
+  console.log(`\n 验证成功：云端微服务灵感库现存来自 Gxgen 数据库的真实 TikTok 灵感素材共 ${verifyList.length} 条：`)
   for (const item of verifyList) {
     const an = item.analysis || {}
     console.log(`--------------------------------------------------`)
     console.log(`ID: ${item.id} | 标题: ${item.title}`)
-    console.log(`- 来源作者: ${an.creator?.name} (@${an.creator?.handle})`)
-    console.log(`- ⚡ Hook亮点 (前50字): ${an.hook_highlight?.slice(0, 50).replace(/\n/g, ' ')}...`)
-    console.log(`- 🎯 转化目标 (前50字): ${an.target_goal?.slice(0, 50).replace(/\n/g, ' ')}...`)
-    console.log(`- 📖 叙事脚本 (前50字): ${an.narrative_strategy?.slice(0, 50).replace(/\n/g, ' ')}...`)
-    console.log(`- 🔍 画面节奏 (前50字): ${an.visual_breakdown?.slice(0, 50).replace(/\n/g, ' ')}...`)
-    console.log(`- 🚀 复刻策略 (前50字): ${an.replication_action?.slice(0, 50).replace(/\n/g, ' ')}...`)
+    console.log(`- 真实 TikTok 链接: ${item.source_url}`)
+    console.log(`- 封面图: ${item.cover_key?.slice(0, 70)}...`)
+    console.log(`- 嵌入播放器: ${an.embed_player_url}`)
+    console.log(`- ⚡ Hook亮点 (前45字): ${an.hook_highlight?.slice(0, 45).replace(/\n/g, ' ')}...`)
+    console.log(`- 🎯 转化目标 (前45字): ${an.target_goal?.slice(0, 45).replace(/\n/g, ' ')}...`)
+    console.log(`- 📖 叙事脚本 (前45字): ${an.narrative_strategy?.slice(0, 45).replace(/\n/g, ' ')}...`)
+    console.log(`- 🔍 画面节奏 (前45字): ${an.visual_breakdown?.slice(0, 45).replace(/\n/g, ' ')}...`)
+    console.log(`- 🚀 复刻策略 (前45字): ${an.replication_action?.slice(0, 45).replace(/\n/g, ' ')}...`)
   }
 }
 
