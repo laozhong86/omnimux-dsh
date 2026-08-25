@@ -1996,6 +1996,9 @@ html[data-dsh-product-stage] header{-webkit-app-region:no-drag!important;}
 html[data-dsh-product-stage] [data-slot="conversation.session.header"],
 html[data-dsh-product-stage] [data-slot="conversation"] > header {display:none!important;}
 html[data-dsh-product-stage] [role="treeitem"][aria-selected="true"]{background:transparent!important;}
+html[data-dsh-product-stage] .dshDesktopConversationSurface > *:not([data-slot="shell.overlay"]),
+html[data-dsh-product-stage] [data-slot="conversation.content"],
+html[data-dsh-product-stage] [data-slot="input.trigger"] {visibility:hidden!important;}
 `;
 function ensureProductStageChrome() {
   const existing = document.getElementById("dsh-product-stage-chrome");

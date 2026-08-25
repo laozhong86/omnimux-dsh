@@ -14,10 +14,11 @@ export const INSPIRATION_CSS = `
   height: var(--stage-height);
   display: flex;
   flex-direction: column;
-  background: var(--dsw-alias-bg-primary, var(--dsw-bg));
+  background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-primary, inherit);
   overflow: hidden;
   box-sizing: border-box;
+  pointer-events: auto;
   -webkit-app-region: no-drag;
 }
 .omnimux-inspiration-stage[data-visible="false"] {
