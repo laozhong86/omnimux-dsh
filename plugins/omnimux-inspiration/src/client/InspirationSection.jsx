@@ -813,6 +813,7 @@ export function InspirationSection({ t, active }) {
               value={type}
               aria-label={t('filter.type')}
               onChange={setType}
+              className="omnimux-inspiration-filter-select"
               options={[
                 { value: '', label: t('filter.type') },
                 { value: 'video', label: t('type.video') },
@@ -824,6 +825,7 @@ export function InspirationSection({ t, active }) {
               value={sort}
               aria-label={t('filter.sort')}
               onChange={setSort}
+              className="omnimux-inspiration-filter-select"
               options={[
                 { value: 'hot', label: t('sort.hot') },
                 { value: 'new', label: t('sort.new') },
@@ -834,14 +836,12 @@ export function InspirationSection({ t, active }) {
               value={favorite}
               aria-label={t('filter.favorite')}
               onChange={setFavorite}
+              className="omnimux-inspiration-filter-select"
               options={[
                 { value: '0', label: t('favorite.off') },
                 { value: '1', label: t('favorite.on') },
               ]}
             />
-            <span className="omnimux-inspiration-count">
-              {t('count', { n: items.length })}
-            </span>
           </>
         )}
       />

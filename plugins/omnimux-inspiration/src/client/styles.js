@@ -220,13 +220,16 @@ export const INSPIRATION_CSS = `
   border-color: var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.4));
 }
 
-.omnimux-inspiration-count {
-  font: 400 12px/16px ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--dsw-alias-label-tertiary, #7c7c7c);
-  background: var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.05));
-  border-radius: 9999px;
-  padding: 4px 10px;
-  white-space: nowrap;
+/* 紧凑型筛选器下拉按钮 (缩短宽度) */
+.omnimux-inspiration-filter-select .dshUk-DropdownSelect-trigger,
+.omnimux-inspiration-filter-select > button {
+  min-width: 74px !important;
+  width: auto;
+  padding: 0 10px;
+  gap: 6px;
+}
+.omnimux-inspiration-filter-select .dshUk-DropdownSelect-label {
+  font-size: 13px;
 }
 
 /* 9:16 原子化扫光骨架屏矩阵 */

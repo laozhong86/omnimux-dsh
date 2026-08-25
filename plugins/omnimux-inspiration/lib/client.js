@@ -1331,13 +1331,16 @@ var INSPIRATION_CSS = `
   border-color: var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.4));
 }
 
-.omnimux-inspiration-count {
-  font: 400 12px/16px ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--dsw-alias-label-tertiary, #7c7c7c);
-  background: var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.05));
-  border-radius: 9999px;
-  padding: 4px 10px;
-  white-space: nowrap;
+/* \u7D27\u51D1\u578B\u7B5B\u9009\u5668\u4E0B\u62C9\u6309\u94AE (\u7F29\u77ED\u5BBD\u5EA6) */
+.omnimux-inspiration-filter-select .dshUk-DropdownSelect-trigger,
+.omnimux-inspiration-filter-select > button {
+  min-width: 74px !important;
+  width: auto;
+  padding: 0 10px;
+  gap: 6px;
+}
+.omnimux-inspiration-filter-select .dshUk-DropdownSelect-label {
+  font-size: 13px;
 }
 
 /* 9:16 \u539F\u5B50\u5316\u626B\u5149\u9AA8\u67B6\u5C4F\u77E9\u9635 */
@@ -3024,6 +3027,7 @@ function InspirationSection({ t, active }) {
               value: type,
               "aria-label": t("filter.type"),
               onChange: setType,
+              className: "omnimux-inspiration-filter-select",
               options: [
                 { value: "", label: t("filter.type") },
                 { value: "video", label: t("type.video") },
@@ -3038,6 +3042,7 @@ function InspirationSection({ t, active }) {
               value: sort,
               "aria-label": t("filter.sort"),
               onChange: setSort,
+              className: "omnimux-inspiration-filter-select",
               options: [
                 { value: "hot", label: t("sort.hot") },
                 { value: "new", label: t("sort.new") },
@@ -3051,13 +3056,13 @@ function InspirationSection({ t, active }) {
               value: favorite,
               "aria-label": t("filter.favorite"),
               onChange: setFavorite,
+              className: "omnimux-inspiration-filter-select",
               options: [
                 { value: "0", label: t("favorite.off") },
                 { value: "1", label: t("favorite.on") }
               ]
             }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-inspiration-count", children: t("count", { n: items.length }) })
+          )
         ] })
       }
     ),
