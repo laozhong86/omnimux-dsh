@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { Button, DropdownSelect, FilterBar, IconButton, InputField, ModalDialog, SearchField } from 'dsh-ui-kit'
 import {
   batchDeleteLocalInspirations,
   coverGlyph,
@@ -26,7 +27,7 @@ function LoginGate({ t }) {
     <div className="omnimux-inspiration-gate">
       <h2 className="omnimux-inspiration-empty-title">{t('needLogin')}</h2>
       <p className="omnimux-inspiration-empty-text">{t('needLoginHint')}</p>
-      <button type="button" className="omnimux-inspiration-btn" onClick={login}>{t('login')}</button>
+      <Button variant="primary" onClick={login}>{t('login')}</Button>
     </div>
   )
 }
@@ -64,12 +65,14 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
     >
       {/* 悬停/多选复选框 Checkbox */}
       {isLocal && onToggleSelect ? (
-        <button
-          type="button"
+        <IconButton
+          variant="ghost"
+          size="xs"
           className="omnimux-inspiration-card-check"
           data-selected={selected ? 'true' : 'false'}
           aria-label={t('select.toggle')}
           aria-pressed={selected ? 'true' : 'false'}
+          title=""
           onClick={(e) => {
             e.stopPropagation()
             onToggleSelect(row)
@@ -79,8 +82,8 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
-          ) : null}
-        </button>
+          ) : <span />}
+        </IconButton>
       ) : null}
 
       {/* 右上角平台/本地角标 */}
@@ -188,11 +191,17 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
   return (
     <div className="omnimux-inspiration-modal-backdrop" onClick={onClose}>
       <div className="omnimux-inspiration-modal-wrapper" onClick={(e) => e.stopPropagation()}>
-        <button className="omnimux-inspiration-modal-close" onClick={onClose} aria-label="Close">
+        <IconButton
+          className="omnimux-inspiration-modal-close"
+          variant="ghost"
+          size="sm"
+          aria-label={t('close')}
+          onClick={onClose}
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
-        </button>
+        </IconButton>
 
         <div className="omnimux-inspiration-modal-container">
           {/* 左侧：大画幅视窗（作品 ↔ 作品解析） */}
@@ -200,8 +209,9 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
           {/* 模式切换 Header */}
           <div className="omnimux-inspiration-preview-switch">
             <div className="omnimux-inspiration-switch-group">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 className={`omnimux-inspiration-switch-btn ${viewMode === 'player' ? 'active' : ''}`}
                 onClick={() => setViewMode('player')}
               >
@@ -209,9 +219,10 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
                   <polygon points="5 3 19 12 5 21 5 3" />
                 </svg>
                 <span>{t('view.player')}</span>
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 className={`omnimux-inspiration-switch-btn ${viewMode === 'deconstruct' ? 'active' : ''}`}
                 onClick={() => setViewMode('deconstruct')}
               >
@@ -221,22 +232,8 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
                   <polyline points="2 12 12 17 22 12" />
                 </svg>
                 <span>{t('view.deconstruct')}</span>
-              </button>
+              </Button>
             </div>
-
-            {hasDeconstruction ? (
-              <span className="omnimux-inspiration-status-badge done">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>{t('status.breakdownReady')}</span>
-              </span>
-            ) : analyzing ? (
-              <span className="omnimux-inspiration-status-badge pending">
-                <div className="omnimux-inspiration-spinner" style={{ width: '10px', height: '10px' }} />
-                <span>{t('status.breakdownGenerating')}</span>
-              </span>
-            ) : null}
           </div>
 
           {/* 视窗内容 A：作品播放器 */}
@@ -330,7 +327,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
                 </div>
               ) : (
                 <div className="omnimux-inspiration-deconstruct-empty">
-                  <div className="omnimux-inspiration-fallback-icon" style={{ width: '56px', height: '56px' }}>
+                  <div className="omnimux-inspiration-fallback-icon omnimux-inspiration-fallback-icon--lg">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                       <polygon points="12 2 2 7 12 12 22 7 12 2" />
                       <polyline points="2 17 12 22 22 17" />
@@ -338,36 +335,25 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
                     </svg>
                   </div>
                   <div>
-                    <h3 style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#ffffff' }}>
+                    <h3 className="omnimux-inspiration-empty-breakdown-title">
                       {analyzing ? t('empty.breakdownAnalyzing') : t('empty.breakdownTitle')}
                     </h3>
-                    <p style={{ margin: 0, fontSize: '12px', color: 'var(--omx-color-muted, #7c7c7c)' }}>
+                    <p className="omnimux-inspiration-empty-breakdown-desc">
                       {t('empty.breakdownDesc')}
                     </p>
                   </div>
                   {analyzeError ? (
-                    <div style={{ color: '#ef4444', fontSize: '12px' }}>{analyzeError}</div>
+                    <div className="omnimux-inspiration-error-text">{analyzeError}</div>
                   ) : null}
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
                     className="omnimux-inspiration-trigger-btn"
                     onClick={handleTriggerAnalyze}
+                    loading={analyzing}
                     disabled={analyzing}
                   >
-                    {analyzing ? (
-                      <>
-                        <div className="omnimux-inspiration-spinner" style={{ width: '12px', height: '12px', borderTopColor: '#000' }} />
-                        <span>正在解析…</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                        </svg>
-                        <span>立即解析</span>
-                      </>
-                    )}
-                  </button>
+                    {analyzing ? t('action.analyzing') : t('action.triggerAnalyze')}
+                  </Button>
                 </div>
               )}
             </div>
@@ -384,7 +370,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
               </div>
               <div>
                 <div className="omnimux-inspiration-modal-handle">{creator.name || creator.handle || 'Creator'}</div>
-                {creator.handle ? <div style={{ fontSize: '11px', color: 'var(--omx-color-muted, #7c7c7c)' }}>@{creator.handle}</div> : null}
+                {creator.handle ? <div className="omnimux-inspiration-creator-handle">@{creator.handle}</div> : null}
               </div>
             </div>
 
@@ -475,66 +461,55 @@ function ImportDialog({ open, t, onClose, onImported }) {
   }
 
   return (
-    <div className="omnimux-inspiration-modal-backdrop" onClick={onClose}>
-      <div className="omnimux-inspiration-import-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="omnimux-inspiration-import-header">
-          <h2>{t('add.dialogTitle')}</h2>
-          <button type="button" className="omnimux-inspiration-modal-close" onClick={onClose}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <div className="omnimux-inspiration-import-body">
-            {error ? <div style={{ color: '#ef4444', fontSize: '13px' }}>{error}</div> : null}
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', color: 'var(--omx-color-muted, #7c7c7c)' }}>
-                {t('add.urlLabel')}
-              </label>
-              <input
-                type="url"
-                required
-                className="omnimux-inspiration-search"
-                style={{ width: '100%' }}
-                placeholder={t('add.urlPlaceholder')}
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', color: 'var(--omx-color-muted, #7c7c7c)' }}>
-                {t('add.tagsLabel')}
-              </label>
-              <input
-                type="text"
-                className="omnimux-inspiration-search"
-                style={{ width: '100%' }}
-                placeholder={t('add.tagsPlaceholder')}
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-              />
-            </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={autoAnalyze}
-                onChange={(e) => setAutoAnalyze(e.target.checked)}
-              />
-              <span>{t('add.autoAnalyze')}</span>
-            </label>
-          </div>
-          <div className="omnimux-inspiration-import-footer">
-            <button type="button" className="omnimux-inspiration-select" onClick={onClose} disabled={loading}>
-              {t('close')}
-            </button>
-            <button type="submit" className="omnimux-inspiration-btn" disabled={loading}>
-              {loading ? t('add.importing') : t('add.submit')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <ModalDialog
+      open={open}
+      onClose={onClose}
+      title={t('add.dialogTitle')}
+      closeLabel={t('close')}
+      footer={(
+        <>
+          <Button variant="outline" onClick={onClose} disabled={loading}>{t('close')}</Button>
+          <Button
+            variant="primary"
+            loading={loading}
+            disabled={loading || !url.trim()}
+            onClick={(event) => { void handleSubmit(event) }}
+          >
+            {loading ? t('add.importing') : t('add.submit')}
+          </Button>
+        </>
+      )}
+    >
+      <form className="omnimux-inspiration-import-body" onSubmit={handleSubmit}>
+        {error ? <div className="omnimux-inspiration-error-text" role="alert">{error}</div> : null}
+        <InputField
+          type="url"
+          required
+          label={t('add.urlLabel')}
+          placeholder={t('add.urlPlaceholder')}
+          value={url}
+          disabled={loading}
+          onChange={(e) => setUrl(e.target.value)}
+        />
+        <InputField
+          type="text"
+          label={t('add.tagsLabel')}
+          placeholder={t('add.tagsPlaceholder')}
+          value={tags}
+          disabled={loading}
+          onChange={(e) => setTags(e.target.value)}
+        />
+        <label className="omnimux-inspiration-check">
+          <input
+            type="checkbox"
+            checked={autoAnalyze}
+            onChange={(e) => setAutoAnalyze(e.target.checked)}
+            disabled={loading}
+          />
+          <span>{t('add.autoAnalyze')}</span>
+        </label>
+      </form>
+    </ModalDialog>
   )
 }
 
@@ -544,9 +519,9 @@ function EmptyState({ t, onOpenAdd }) {
       <h2 className="omnimux-inspiration-empty-title">{t('empty.title')}</h2>
       <p className="omnimux-inspiration-empty-text">{t('empty.description')}</p>
       {onOpenAdd ? (
-        <button type="button" className="omnimux-inspiration-btn" onClick={onOpenAdd} style={{ marginTop: '12px' }}>
+        <Button variant="primary" className="omnimux-inspiration-empty-cta" onClick={onOpenAdd}>
           {t('add.btn')}
-        </button>
+        </Button>
       ) : null}
     </div>
   )
@@ -717,93 +692,97 @@ export function InspirationSection({ t, active }) {
       {/* 顶部 Tab 切换与操作 */}
       <div className="omnimux-inspiration-header">
         <div className="omnimux-inspiration-tabs">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             className={`omnimux-inspiration-tab ${tab === 'all' ? 'active' : ''}`}
             onClick={() => setTab('all')}
           >
             {t('tab.all')}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             className={`omnimux-inspiration-tab ${tab === 'local' ? 'active' : ''}`}
             onClick={() => setTab('local')}
           >
             {t('tab.local')}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             className={`omnimux-inspiration-tab ${tab === 'public' ? 'active' : ''}`}
             onClick={() => setTab('public')}
           >
             {t('tab.public')}
-          </button>
+          </Button>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="primary"
           className="omnimux-inspiration-btn-add"
+          leadingIcon={(
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          )}
           onClick={() => setImportOpen(true)}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          <span>{t('add.btn')}</span>
-        </button>
+          {t('add.btn')}
+        </Button>
       </div>
 
-      {/* 极简发丝线工具栏 */}
-      <div className="omnimux-inspiration-toolbar">
-        <div className="omnimux-inspiration-search-box">
-          <div className="omnimux-inspiration-search-icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </div>
-          <input
-            type="search"
-            className="omnimux-inspiration-search"
-            placeholder={t('filter.search')}
+      <FilterBar
+        className="omnimux-inspiration-toolbar"
+        compact
+        search={(
+          <SearchField
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            placeholder={t('filter.search')}
+            aria-label={t('filter.search')}
+            debounceMs={0}
+            stretch
+            onValueChange={setQ}
           />
-        </div>
-
-        <div className="omnimux-inspiration-filters">
-          <select
-            className="omnimux-inspiration-select"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-          >
-            <option value="">{t('filter.type')} ({t('filter.all')})</option>
-            <option value="video">{t('type.video')}</option>
-            <option value="image">{t('type.image')}</option>
-            <option value="link">{t('type.link')}</option>
-          </select>
-          <select
-            className="omnimux-inspiration-select"
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-          >
-            <option value="hot">{t('sort.hot')}</option>
-            <option value="new">{t('sort.new')}</option>
-            <option value="fav">{t('sort.fav')}</option>
-          </select>
-          <select
-            className="omnimux-inspiration-select"
-            value={favorite}
-            onChange={(e) => setFavorite(e.target.value)}
-          >
-            <option value="0">{t('favorite.off')}</option>
-            <option value="1">{t('favorite.on')}</option>
-          </select>
-
-          <span className="omnimux-inspiration-count">
-            {t('count', { n: items.length })}
-          </span>
-        </div>
-      </div>
+        )}
+        filters={(
+          <>
+            <DropdownSelect
+              value={type}
+              aria-label={t('filter.type')}
+              onChange={setType}
+              options={[
+                { value: '', label: `${t('filter.type')} (${t('filter.all')})` },
+                { value: 'video', label: t('type.video') },
+                { value: 'image', label: t('type.image') },
+                { value: 'link', label: t('type.link') },
+              ]}
+            />
+            <DropdownSelect
+              value={sort}
+              aria-label={t('filter.sort')}
+              onChange={setSort}
+              options={[
+                { value: 'hot', label: t('sort.hot') },
+                { value: 'new', label: t('sort.new') },
+                { value: 'fav', label: t('sort.fav') },
+              ]}
+            />
+            <DropdownSelect
+              value={favorite}
+              aria-label={t('filter.favorite')}
+              onChange={setFavorite}
+              options={[
+                { value: '0', label: t('favorite.off') },
+                { value: '1', label: t('favorite.on') },
+              ]}
+            />
+            <span className="omnimux-inspiration-count">
+              {t('count', { n: items.length })}
+            </span>
+          </>
+        )}
+      />
 
       {/* 多选批量操作悬浮条 */}
       {selecting ? (
@@ -812,28 +791,20 @@ export function InspirationSection({ t, active }) {
             <span>{t('select.count').replace('{n}', String(selectedCount))}</span>
           </div>
           <div className="omnimux-inspiration-selection-actions">
-            <button
-              type="button"
-              className="omnimux-inspiration-btn-ghost"
-              onClick={selectAllLocal}
-            >
+            <Button variant="ghost" size="sm" onClick={selectAllLocal}>
               {t('select.selectAll')}
-            </button>
-            <button
-              type="button"
-              className="omnimux-inspiration-btn-ghost"
-              onClick={clearSelection}
-            >
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearSelection}>
               {t('select.clear')}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
               disabled={removing}
-              className="omnimux-inspiration-btn-danger"
               onClick={() => setPendingRemove({ ids: [...selectedIds], count: selectedCount })}
             >
               {t('select.delete').replace('{n}', String(selectedCount))}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

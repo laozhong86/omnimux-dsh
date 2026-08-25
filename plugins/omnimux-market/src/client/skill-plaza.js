@@ -119,8 +119,9 @@
         status === "error" ? h("p", { className: "sh-mkt-status" }, tr("mkt.error", { m: err })) : null,
         status === "ready" && !items.length ? h("p", { className: "sh-mkt-status" }, tr("search.empty")) : null,
         items.length ? h(Cards, { items, onOpen: setOpen }) : null,
-        status === "ready" && !fallback && (hasMore || remaining > 0) ? h("button", {
+        status === "ready" && !fallback && (hasMore || remaining > 0) ? h(Button, {
           type: "button",
+          variant: "outline",
           className: "sh-mkt-more",
           onClick: () => setPage((n) => n + 1),
         },

@@ -391,22 +391,486 @@ function mountSidebarEntry(stage, t, locale) {
 }
 
 // src/client/ProductsStage.jsx
-var import_react2 = require("react");
+var import_react3 = require("react");
 
-// src/client/a11y.js
-var FOCUS_CSS = [
-  ".omnimux-products-focusable:focus-visible{outline:2px solid var(--dsw-alias-label-primary);outline-offset:2px;border-radius:8px;}",
-  ".omnimux-products-focusable:hover{border-color:var(--dsw-alias-border-l4);}",
-  ".omnimux-products-check{opacity:0;transition:opacity 0.15s ease;}",
-  '.omnimux-products-focusable:hover .omnimux-products-check,.omnimux-products-focusable:focus-within .omnimux-products-check,.omnimux-products-check[data-selected="true"]{opacity:1;}'
-].join("\n");
-function activateRowKeydown(trigger) {
-  return (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      trigger();
+// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
+var import_react = require("react");
+var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
+var import_jsx_runtime = require("react/jsx-runtime");
+function cssClass(value, name2) {
+  if (!value) throw new Error(`dsh-ui-kit: missing CSS module class "${name2}"`);
+  return value;
+}
+function cx(...parts) {
+  const out = [];
+  for (const part of parts) {
+    if (!part) continue;
+    if (typeof part === "string" || typeof part === "number") {
+      out.push(String(part));
+      continue;
     }
-  };
+    for (const [key, on] of Object.entries(part)) if (on) out.push(key);
+  }
+  return out.join(" ");
+}
+var injected = /* @__PURE__ */ new Set();
+function injectCss(id, css) {
+  if (typeof document === "undefined") return;
+  if (injected.has(id)) return;
+  injected.add(id);
+  const style = document.createElement("style");
+  style.setAttribute("data-dsh-ui-kit", id);
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+injectCss("Button.module.css", '.dshUk-Button-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-shrink: 0;\n  gap: 6px;\n  box-sizing: border-box;\n  margin: 0;\n  border: 1px solid transparent;\n  border-radius: 8px;\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  line-height: 18px;\n  letter-spacing: 0;\n  white-space: nowrap;\n  color: var(--dsw-alias-label-primary);\n  background: transparent;\n  padding: 0 12px;\n  height: 32px;\n  vertical-align: middle;\n  user-select: none;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    transform 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-Button-button:focus {\n  outline: none;\n}\n\n.dshUk-Button-button:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-Button-button:disabled,\n.dshUk-Button-button[aria-disabled="true"] {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n\n.dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n  transform: scale(0.96);\n}\n\n.dshUk-Button-sm {\n  height: 28px;\n  padding: 0 10px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-Button-xs {\n  height: 24px;\n  padding: 0 8px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  gap: 4px;\n}\n\n.dshUk-Button-iconOnly {\n  padding: 0;\n  width: 32px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-sm {\n  width: 28px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-xs {\n  width: 24px;\n}\n\n.dshUk-Button-primary {\n  background: var(--dsw-alias-button-primary-fill);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-primary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-primary-hover);\n}\n\n.dshUk-Button-secondary {\n  background: var(--dsw-alias-bg-layer-1);\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-secondary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-ghost {\n  background: transparent;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-ghost:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-Button-ghost:active:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-active);\n}\n\n.dshUk-Button-outline {\n  background: transparent;\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-outline:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-danger {\n  background: var(--dsw-alias-state-error-primary);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-danger:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-state-error-secondary);\n}\n\n.dshUk-Button-ghost[aria-pressed="true"],\n.dshUk-Button-secondary[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  box-shadow: inset 0 0 0 1px var(--dsw-alias-button-ghost-active-border);\n}\n\n.dshUk-Button-slot {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n}\n\n.dshUk-Button-xs .dshUk-Button-slot {\n  width: 14px;\n  height: 14px;\n}\n\n.dshUk-Button-spinner {\n  animation: dshUkSpin 0.7s linear infinite;\n}\n\n.dshUk-Button-label {\n  min-width: 0;\n}\n\n.dshUk-Button-loadingLabel {\n  opacity: 0.84;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-Button-button {\n    transition: none;\n  }\n\n  .dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n    transform: none;\n  }\n\n  .dshUk-Button-spinner {\n    animation: none;\n  }\n}\n\n@keyframes dshUkSpin {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}\n');
+var Button_module_css_default = {
+  "button": "dshUk-Button-button",
+  "sm": "dshUk-Button-sm",
+  "xs": "dshUk-Button-xs",
+  "iconOnly": "dshUk-Button-iconOnly",
+  "primary": "dshUk-Button-primary",
+  "secondary": "dshUk-Button-secondary",
+  "ghost": "dshUk-Button-ghost",
+  "outline": "dshUk-Button-outline",
+  "danger": "dshUk-Button-danger",
+  "slot": "dshUk-Button-slot",
+  "spinner": "dshUk-Button-spinner",
+  "label": "dshUk-Button-label",
+  "loadingLabel": "dshUk-Button-loadingLabel"
+};
+var VARIANT_CLASS = {
+  primary: cssClass(Button_module_css_default.primary, "primary"),
+  secondary: cssClass(Button_module_css_default.secondary, "secondary"),
+  ghost: cssClass(Button_module_css_default.ghost, "ghost"),
+  outline: cssClass(Button_module_css_default.outline, "outline"),
+  danger: cssClass(Button_module_css_default.danger, "danger")
+};
+var SIZE_CLASS$1 = {
+  default: void 0,
+  sm: cssClass(Button_module_css_default.sm, "sm"),
+  xs: cssClass(Button_module_css_default.xs, "xs")
+};
+var Button = (0, import_react.forwardRef)(function Button2({ variant = "secondary", size = "default", loading = false, leadingIcon, trailingIcon, type = "button", className, disabled, children, ...rest }, ref) {
+  const isDisabled = Boolean(disabled) || loading;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+    ...rest,
+    ref,
+    type,
+    className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], className),
+    disabled: isDisabled,
+    "aria-busy": loading || void 0,
+    "aria-disabled": isDisabled || void 0,
+    children: [
+      loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(Button_module_css_default.slot, Button_module_css_default.spinner),
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 })
+      }) : leadingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: Button_module_css_default.slot,
+        "aria-hidden": "true",
+        children: leadingIcon
+      }) : null,
+      children != null && children !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(Button_module_css_default.label, loading && Button_module_css_default.loadingLabel),
+        children
+      }) : null,
+      !loading && trailingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: Button_module_css_default.slot,
+        "aria-hidden": "true",
+        children: trailingIcon
+      }) : null
+    ]
+  });
+});
+var IconButton = (0, import_react.forwardRef)(function IconButton2({ variant = "ghost", size = "default", loading = false, type = "button", className, disabled, children, title, tooltipSide = "bottom", "aria-label": ariaLabel, ...rest }, ref) {
+  const isDisabled = Boolean(disabled) || loading;
+  const tooltip = title ?? ariaLabel;
+  const button = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+    ...rest,
+    ref,
+    type,
+    className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], Button_module_css_default.iconOnly, className),
+    disabled: isDisabled,
+    "aria-label": ariaLabel,
+    "aria-busy": loading || void 0,
+    "aria-disabled": isDisabled || void 0,
+    children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+      className: cx(Button_module_css_default.slot, loading && Button_module_css_default.spinner),
+      "aria-hidden": "true",
+      children: loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 }) : children
+    })
+  });
+  if (!tooltip) return button;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Tooltip, {
+    label: tooltip,
+    side: tooltipSide,
+    delayMs: 280,
+    disabled: isDisabled,
+    children: button
+  });
+});
+injectCss("SearchField.module.css", '.dshUk-SearchField-root {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  min-width: 140px;\n  max-width: 260px;\n  width: 100%;\n  padding: 0 8px 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-SearchField-stretch {\n  flex: 1 1 200px;\n}\n\n.dshUk-SearchField-root:hover:not(.dshUk-SearchField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-SearchField-root:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-SearchField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-icon {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-SearchField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-SearchField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-input::-webkit-search-decoration,\n.dshUk-SearchField-input::-webkit-search-cancel-button,\n.dshUk-SearchField-input::-webkit-search-results-button,\n.dshUk-SearchField-input::-webkit-search-results-decoration {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-input[type="search"] {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-shortcut {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 4px;\n  background: var(--dsw-alias-bg-layer-2);\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 11px;\n  line-height: 16px;\n  font-weight: 500;\n  letter-spacing: 0;\n}\n\n.dshUk-SearchField-clear {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  width: 20px;\n  height: 20px;\n  margin: 0;\n  padding: 0;\n  border: none;\n  border-radius: 6px;\n  background: transparent;\n  color: var(--dsw-alias-label-tertiary);\n  cursor: pointer;\n}\n\n.dshUk-SearchField-clear:hover:not(:disabled) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-clear:focus {\n  outline: none;\n}\n\n.dshUk-SearchField-clear:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 1px;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-SearchField-root {\n    transition: none;\n  }\n}\n');
+var SearchField_module_css_default = {
+  "root": "dshUk-SearchField-root",
+  "stretch": "dshUk-SearchField-stretch",
+  "disabled": "dshUk-SearchField-disabled",
+  "icon": "dshUk-SearchField-icon",
+  "input": "dshUk-SearchField-input",
+  "shortcut": "dshUk-SearchField-shortcut",
+  "clear": "dshUk-SearchField-clear"
+};
+function isTypingTarget(target) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  return target.isContentEditable;
+}
+function matchesShortcut(event, shortcut) {
+  const raw = shortcut.trim();
+  if (!raw) return false;
+  const lower = raw.toLowerCase();
+  const wantsMeta = /⌘|cmd|meta/.test(lower);
+  const wantsCtrl = /\bctrl\b|⌃/.test(lower);
+  const wantsAlt = /\balt\b|⌥/.test(lower);
+  const wantsShift = /\bshift\b|⇧/.test(lower);
+  const key = raw.replace(/⌘|⌃|⌥|⇧|cmd|meta|ctrl|alt|shift|\+/gi, "").trim().toLowerCase();
+  if (!key) return false;
+  if (Boolean(event.metaKey) !== wantsMeta) return false;
+  if (Boolean(event.ctrlKey) !== wantsCtrl) return false;
+  if (Boolean(event.altKey) !== wantsAlt) return false;
+  if (Boolean(event.shiftKey) !== wantsShift) return false;
+  return event.key.toLowerCase() === key;
+}
+var SearchField = (0, import_react.forwardRef)(function SearchField2({ value, defaultValue = "", onValueChange, onClear, debounceMs = 200, shortcut, stretch = false, clearLabel = "Clear", className, disabled, id, placeholder = "Search", ...rest }, ref) {
+  const generatedId = (0, import_react.useId)();
+  const inputId = id ?? generatedId;
+  const inputRef = (0, import_react.useRef)(null);
+  const timerRef = (0, import_react.useRef)(null);
+  const controlled = value !== void 0;
+  const [inner, setInner] = (0, import_react.useState)(defaultValue);
+  const current = controlled ? value : inner;
+  const immediate = controlled || debounceMs <= 0;
+  (0, import_react.useEffect)(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+  (0, import_react.useEffect)(() => {
+    if (!shortcut || disabled) return;
+    const onKey = (event) => {
+      if (event.defaultPrevented) return;
+      if (isTypingTarget(event.target)) return;
+      if (!matchesShortcut(event, shortcut)) return;
+      event.preventDefault();
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [shortcut, disabled]);
+  function emit(next) {
+    if (immediate) {
+      onValueChange?.(next);
+      return;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      onValueChange?.(next);
+    }, debounceMs);
+  }
+  function apply2(next) {
+    if (!controlled) setInner(next);
+    emit(next);
+  }
+  function onChange(event) {
+    apply2(event.target.value);
+  }
+  function handleClear() {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (!controlled) setInner("");
+    onValueChange?.("");
+    onClear?.();
+    inputRef.current?.focus();
+  }
+  (0, import_react.useImperativeHandle)(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    },
+    clear: handleClear
+  }));
+  function onKeyDown(event) {
+    rest.onKeyDown?.(event);
+    if (event.defaultPrevented) return;
+    if (event.key === "Escape" && current) {
+      event.preventDefault();
+      handleClear();
+    }
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+    className: cx(SearchField_module_css_default.root, stretch && SearchField_module_css_default.stretch, disabled && SearchField_module_css_default.disabled, className),
+    children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: SearchField_module_css_default.icon,
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconSearchOutline16, { size: 16 })
+      }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+        ...rest,
+        ref: inputRef,
+        id: inputId,
+        type: "search",
+        className: SearchField_module_css_default.input,
+        value: current,
+        disabled,
+        placeholder,
+        autoComplete: "off",
+        spellCheck: false,
+        onChange,
+        onKeyDown
+      }),
+      current ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+        type: "button",
+        className: SearchField_module_css_default.clear,
+        "aria-label": clearLabel,
+        title: clearLabel,
+        disabled,
+        onClick: handleClear,
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseFill14, { size: 14 })
+      }) : shortcut ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
+        className: SearchField_module_css_default.shortcut,
+        children: shortcut
+      }) : null
+    ]
+  });
+});
+injectCss("InputField.module.css", ".dshUk-InputField-root {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  min-width: 0;\n}\n\n.dshUk-InputField-label {\n  display: block;\n  font-size: 12px;\n  line-height: 16px;\n  font-weight: 500;\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-InputField-required {\n  margin-left: 2px;\n  color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-control {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-InputField-control:hover:not(.dshUk-InputField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-InputField-control:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-InputField-invalid {\n  border-color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-invalid:focus-within {\n  border-color: var(--dsw-alias-state-error-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-interactive-bg-hover-danger);\n}\n\n.dshUk-InputField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-affix {\n  display: inline-flex;\n  align-items: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-InputField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-InputField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-meta {\n  min-height: 16px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-hint {\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-InputField-error {\n  color: var(--dsw-alias-state-error-primary);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-InputField-control {\n    transition: none;\n  }\n}\n");
+var InputField_module_css_default = {
+  "root": "dshUk-InputField-root",
+  "label": "dshUk-InputField-label",
+  "required": "dshUk-InputField-required",
+  "control": "dshUk-InputField-control",
+  "disabled": "dshUk-InputField-disabled",
+  "invalid": "dshUk-InputField-invalid",
+  "affix": "dshUk-InputField-affix",
+  "input": "dshUk-InputField-input",
+  "meta": "dshUk-InputField-meta",
+  "hint": "dshUk-InputField-hint",
+  "error": "dshUk-InputField-error"
+};
+var InputField = (0, import_react.forwardRef)(function InputField2({ label, hint, error, prefix, suffix, className, disabled, id, required, ...rest }, ref) {
+  const generatedId = (0, import_react.useId)();
+  const inputId = id ?? generatedId;
+  const hintId = `${inputId}-hint`;
+  const errorId = `${inputId}-error`;
+  const invalid = Boolean(error);
+  const describedBy = [
+    rest["aria-describedby"],
+    hint ? hintId : void 0,
+    invalid ? errorId : void 0
+  ].filter(Boolean).join(" ") || void 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+    className: cx(InputField_module_css_default.root, className),
+    htmlFor: inputId,
+    children: [
+      label != null && label !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+        className: InputField_module_css_default.label,
+        children: [label, required ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+          className: InputField_module_css_default.required,
+          "aria-hidden": "true",
+          children: "*"
+        }) : null]
+      }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+        className: cx(InputField_module_css_default.control, invalid && InputField_module_css_default.invalid, disabled && InputField_module_css_default.disabled),
+        children: [
+          prefix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: InputField_module_css_default.affix,
+            children: prefix
+          }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+            ...rest,
+            ref,
+            id: inputId,
+            className: InputField_module_css_default.input,
+            disabled,
+            required,
+            "aria-invalid": invalid || void 0,
+            "aria-describedby": describedBy
+          }),
+          suffix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: InputField_module_css_default.affix,
+            children: suffix
+          }) : null
+        ]
+      }),
+      invalid ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(InputField_module_css_default.meta, InputField_module_css_default.error),
+        id: errorId,
+        role: "alert",
+        children: error
+      }) : hint ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(InputField_module_css_default.meta, InputField_module_css_default.hint),
+        id: hintId,
+        children: hint
+      }) : null
+    ]
+  });
+});
+injectCss("DropdownSelect.module.css", ".dshUk-DropdownSelect-anchor {\n  display: inline-flex;\n  flex-shrink: 0;\n  min-width: 0;\n}\n\n.dshUk-DropdownSelect-trigger {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  width: 100%;\n  min-width: 112px;\n  height: 32px;\n  margin: 0;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  text-align: left;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-trigger:hover:not(:disabled) {\n  border-color: var(--dsw-alias-border-l3);\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-DropdownSelect-trigger:focus {\n  outline: none;\n}\n\n.dshUk-DropdownSelect-trigger:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-DropdownSelect-trigger:disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-DropdownSelect-open {\n  border-color: var(--dsw-alias-brand-primary);\n}\n\n.dshUk-DropdownSelect-label {\n  flex: 1;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-DropdownSelect-placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-DropdownSelect-chevron {\n  display: inline-flex;\n  width: 14px;\n  height: 14px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-chevronOpen {\n  transform: rotate(180deg);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-DropdownSelect-trigger,\n  .dshUk-DropdownSelect-chevron {\n    transition: none;\n  }\n}\n");
+var DropdownSelect_module_css_default = {
+  "anchor": "dshUk-DropdownSelect-anchor",
+  "trigger": "dshUk-DropdownSelect-trigger",
+  "open": "dshUk-DropdownSelect-open",
+  "label": "dshUk-DropdownSelect-label",
+  "placeholder": "dshUk-DropdownSelect-placeholder",
+  "chevron": "dshUk-DropdownSelect-chevron",
+  "chevronOpen": "dshUk-DropdownSelect-chevronOpen"
+};
+function DropdownSelect({ value, options, onChange, placeholder = "Select", disabled = false, className, "aria-label": ariaLabel, id, align = "start" }) {
+  const [open, setOpen] = (0, import_react.useState)(false);
+  const generatedId = (0, import_react.useId)();
+  const triggerId = id ?? generatedId;
+  const selected = options.find((option) => option.value === value);
+  const items = (0, import_react.useMemo)(() => options.map((option) => {
+    const item = {
+      id: option.value,
+      label: option.label
+    };
+    if (option.disabled === true) item.disabled = true;
+    if (option.icon !== void 0) item.icon = option.icon;
+    if (option.danger === true) item.danger = true;
+    return item;
+  }), [options]);
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Menu, {
+    open: open && !disabled,
+    portal: true,
+    compact: true,
+    align,
+    selectedId: value,
+    items,
+    onSelect: (next) => {
+      onChange(next);
+      setOpen(false);
+    },
+    onClose: () => {
+      setOpen(false);
+    },
+    className: cx(DropdownSelect_module_css_default.anchor, className),
+    anchor: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+      type: "button",
+      id: triggerId,
+      className: cx(DropdownSelect_module_css_default.trigger, open && DropdownSelect_module_css_default.open),
+      "aria-label": ariaLabel,
+      "aria-haspopup": "listbox",
+      "aria-expanded": open,
+      disabled,
+      onClick: () => {
+        if (!disabled) setOpen((prev) => !prev);
+      },
+      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(DropdownSelect_module_css_default.label, !selected && DropdownSelect_module_css_default.placeholder),
+        children: selected ? selected.label : placeholder
+      }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(DropdownSelect_module_css_default.chevron, open && DropdownSelect_module_css_default.chevronOpen),
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconChevronDownOutline14, { size: 14 })
+      })]
+    })
+  });
+}
+injectCss("Toolbar.module.css", ".dshUk-Toolbar-bar {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  height: 48px;\n  min-height: 44px;\n  max-height: 48px;\n  padding: 0 12px;\n  overflow: hidden;\n  white-space: nowrap;\n}\n\n.dshUk-Toolbar-compact {\n  height: 44px;\n  min-height: 44px;\n}\n\n.dshUk-Toolbar-left,\n.dshUk-Toolbar-right {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  min-width: 0;\n}\n\n.dshUk-Toolbar-left {\n  flex: 1 1 auto;\n  overflow: hidden;\n}\n\n.dshUk-Toolbar-right {\n  flex: 0 0 auto;\n  margin-left: auto;\n}\n\n.dshUk-Toolbar-right > * {\n  flex-shrink: 0;\n}\n\n.dshUk-Toolbar-filters {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  flex: 0 0 auto;\n}\n\n.dshUk-Toolbar-filters > * {\n  flex-shrink: 0;\n}\n");
+var Toolbar_module_css_default = {
+  "bar": "dshUk-Toolbar-bar",
+  "compact": "dshUk-Toolbar-compact",
+  "left": "dshUk-Toolbar-left",
+  "right": "dshUk-Toolbar-right",
+  "filters": "dshUk-Toolbar-filters"
+};
+function Toolbar({ left, right, compact = false, className, children, ...rest }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+    ...rest,
+    role: "toolbar",
+    className: cx(Toolbar_module_css_default.bar, compact && Toolbar_module_css_default.compact, className),
+    children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.left,
+      children: left ?? children
+    }), right != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.right,
+      children: right
+    }) : null]
+  });
+}
+function FilterBar({ search, filters, actions, right, className, compact, ...rest }) {
+  const trailing = actions ?? right;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
+    ...rest,
+    left: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.filters,
+      children: filters
+    }) : null] }),
+    ...compact !== void 0 ? { compact } : {},
+    ...className !== void 0 ? { className } : {},
+    ...trailing !== void 0 ? { right: trailing } : {}
+  });
+}
+injectCss("Dialog.module.css", ".dshUk-Dialog-dialog {\n  width: min(480px, 100%);\n  max-height: min(80vh, 720px);\n  border-radius: 16px;\n}\n\n.dshUk-Dialog-sm {\n  width: min(380px, 100%);\n}\n\n.dshUk-Dialog-lg {\n  width: min(640px, 100%);\n}\n\n.dshUk-Dialog-body {\n  overflow: auto;\n  max-height: min(56vh, 480px);\n}\n\n.dshUk-Dialog-footer {\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  gap: 8px;\n  width: 100%;\n}\n\n.dshUk-Dialog-message {\n  margin: 0;\n  font-size: 14px;\n  line-height: 22px;\n  color: var(--dsw-alias-label-primary);\n}\n");
+var Dialog_module_css_default = {
+  "dialog": "dshUk-Dialog-dialog",
+  "sm": "dshUk-Dialog-sm",
+  "lg": "dshUk-Dialog-lg",
+  "body": "dshUk-Dialog-body",
+  "footer": "dshUk-Dialog-footer",
+  "message": "dshUk-Dialog-message"
+};
+var SIZE_CLASS = {
+  sm: cssClass(Dialog_module_css_default.sm, "sm"),
+  md: void 0,
+  lg: cssClass(Dialog_module_css_default.lg, "lg")
+};
+function ModalDialog({ open, onClose, title, description, children, footer, size = "md", closeLabel = "Close", className, contentClassName }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Modal, {
+    open,
+    onClose,
+    title,
+    closeLabel,
+    className: cx(Dialog_module_css_default.dialog, SIZE_CLASS[size], className),
+    contentClassName: cx(Dialog_module_css_default.body, contentClassName),
+    ...description !== void 0 ? { description } : {},
+    ...footer !== void 0 ? { footer } : {},
+    children
+  });
+}
+function ConfirmModal({ message, children, confirmLabel = "Confirm", cancelLabel = "Cancel", confirmVariant = "primary", confirmLoading = false, onConfirm, onClose, size = "sm", ...rest }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ModalDialog, {
+    ...rest,
+    size,
+    onClose,
+    footer: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+      className: Dialog_module_css_default.footer,
+      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+        variant: "outline",
+        onClick: onClose,
+        disabled: confirmLoading,
+        children: cancelLabel
+      }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+        variant: confirmVariant,
+        loading: confirmLoading,
+        onClick: onConfirm,
+        children: confirmLabel
+      })]
+    }),
+    children: message != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+      className: Dialog_module_css_default.message,
+      children: message
+    }) : children
+  });
 }
 
 // src/client/api.js
@@ -449,109 +913,28 @@ function previewUrl(productId, mediaId) {
 }
 
 // src/client/ConfirmRemoveDialog.jsx
-var import_jsx_runtime = require("react/jsx-runtime");
-var backdrop = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 300,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--dsw-alias-bg-mask-1)"
-};
-var dialog = {
-  width: 360,
-  maxWidth: "calc(100vw - 48px)",
-  display: "flex",
-  flexDirection: "column",
-  gap: 10,
-  padding: 20,
-  borderRadius: 16,
-  background: "var(--dsw-alias-bg-base)",
-  border: "1px solid var(--dsw-alias-border-l2)",
-  color: "var(--dsw-alias-label-primary)"
-};
-var heading = {
-  margin: 0,
-  fontSize: 15,
-  fontWeight: 600,
-  lineHeight: "22px",
-  wordBreak: "break-all"
-};
-var hint = {
-  margin: 0,
-  fontSize: 12,
-  lineHeight: "18px",
-  color: "var(--dsw-alias-label-secondary)"
-};
-var buttons = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 8,
-  marginTop: 4
-};
-var ghostButton = {
-  padding: "6px 14px",
-  fontSize: 13,
-  lineHeight: "20px",
-  borderRadius: 999,
-  cursor: "pointer",
-  border: "1px solid var(--dsw-alias-border-l2)",
-  background: "transparent",
-  color: "inherit"
-};
-var dangerButton = {
-  ...ghostButton,
-  fontWeight: 600,
-  border: "none",
-  color: "var(--dsw-alias-label-primary-foreground)",
-  background: "var(--dsw-alias-label-error)"
-};
+var import_jsx_runtime2 = require("react/jsx-runtime");
 function ConfirmRemoveDialog({ t, name: name2, title, busy, onCancel, onConfirm }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-    "div",
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    ConfirmModal,
     {
-      style: backdrop,
-      onMouseDown: (event) => {
-        if (event.target === event.currentTarget) onCancel();
-      },
-      children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "div",
-        {
-          role: "alertdialog",
-          "aria-modal": "true",
-          "aria-label": t("remove.confirm"),
-          style: dialog,
-          onKeyDown: (event) => {
-            if (event.key === "Escape") onCancel();
-          },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { style: heading, children: title || t("remove.title").replace("{name}", name2) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: hint, children: t("remove.hint") }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: buttons, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { type: "button", style: ghostButton, onClick: onCancel, autoFocus: true, children: t("remove.cancel") }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                "button",
-                {
-                  type: "button",
-                  style: { ...dangerButton, ...busy ? { opacity: 0.5, cursor: "default" } : {} },
-                  disabled: busy,
-                  onClick: onConfirm,
-                  children: t("remove.confirm")
-                }
-              )
-            ] })
-          ]
-        }
-      )
+      open: true,
+      onClose: onCancel,
+      title: title || t("remove.title").replace("{name}", name2),
+      message: t("remove.hint"),
+      confirmLabel: t("remove.confirm"),
+      cancelLabel: t("remove.cancel"),
+      confirmVariant: "danger",
+      confirmLoading: busy,
+      onConfirm
     }
   );
 }
 
 // src/client/icons.jsx
-var import_jsx_runtime2 = require("react/jsx-runtime");
+var import_jsx_runtime3 = require("react/jsx-runtime");
 function Icon({ size = 14, children }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
     "svg",
     {
       width: size,
@@ -563,43 +946,43 @@ function Icon({ size = 14, children }) {
       strokeLinecap: "round",
       strokeLinejoin: "round",
       "aria-hidden": "true",
-      style: { flex: "none", display: "inline-block", verticalAlign: "middle" },
+      className: "omnimux-products-icon",
       children
     }
   );
 }
 function FileIcon(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Icon, { ...props, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M14 3v5h5" })
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Icon, { ...props, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M14 3v5h5" })
   ] });
 }
 function PlusIcon(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Icon, { ...props, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M12 5v14" }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M5 12h14" })
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Icon, { ...props, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M12 5v14" }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M5 12h14" })
   ] });
 }
 function CheckIcon(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Icon, { ...props, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "m5 12 5 5 9-10" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Icon, { ...props, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "m5 12 5 5 9-10" }) });
 }
 function CloseIcon(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Icon, { ...props, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M6 6l12 12" }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M18 6 6 18" })
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Icon, { ...props, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M6 6l12 12" }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M18 6 6 18" })
   ] });
 }
 function RefreshIcon(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Icon, { ...props, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M20 11a8 8 0 0 0-14.9-3" }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M4 5v4h4" }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M4 13a8 8 0 0 0 14.9 3" }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M20 19v-4h-4" })
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(Icon, { ...props, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M20 11a8 8 0 0 0-14.9-3" }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M4 5v4h4" }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M4 13a8 8 0 0 0 14.9 3" }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M20 19v-4h-4" })
   ] });
 }
 
 // src/client/ProductFormDialog.jsx
-var import_react = require("react");
+var import_react2 = require("react");
 
 // src/errors.js
 var ProductsError = class extends Error {
@@ -816,55 +1199,7 @@ function normalizeBrandStrategy(value) {
 }
 
 // src/client/ProductFormDialog.jsx
-var import_jsx_runtime3 = require("react/jsx-runtime");
-var overlay = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 320,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--dsw-alias-bg-mask-1)"
-};
-var sheet = {
-  width: 560,
-  maxWidth: "calc(100vw - 48px)",
-  maxHeight: "calc(100vh - 48px)",
-  overflow: "auto",
-  display: "flex",
-  flexDirection: "column",
-  background: "var(--dsw-alias-bg-base)",
-  color: "var(--dsw-alias-label-primary)",
-  borderRadius: 16,
-  border: "1px solid var(--dsw-alias-border-l2)"
-};
-var inputBare = {
-  border: "none",
-  outline: "none",
-  background: "transparent",
-  color: "inherit",
-  font: "inherit",
-  width: "100%"
-};
-var field = {
-  width: "100%",
-  border: "1px solid var(--dsw-alias-border-l2)",
-  borderRadius: 8,
-  padding: "6px 10px",
-  fontSize: 13,
-  color: "inherit",
-  background: "transparent",
-  boxSizing: "border-box"
-};
-var chip = {
-  border: "1px solid var(--dsw-alias-border-l2)",
-  background: "transparent",
-  color: "inherit",
-  borderRadius: 999,
-  padding: "4px 10px",
-  cursor: "pointer",
-  fontSize: 12
-};
+var import_jsx_runtime4 = require("react/jsx-runtime");
 function draftFrom(product) {
   try {
     const next = normalizeBrandStrategy(product?.brand_strategy);
@@ -882,39 +1217,30 @@ function linesOf(list) {
 function listOf(text) {
   return String(text).split("\n").map((row) => row.trim()).filter(Boolean);
 }
-var miniBtn = {
-  border: "1px solid var(--dsw-alias-border-l2)",
-  background: "transparent",
-  color: "inherit",
-  borderRadius: 999,
-  padding: "4px 10px",
-  cursor: "pointer",
-  fontSize: 12
-};
 function ProductFormDialog({ t, mode, busy, error, dirty, initial, onCancel, onPick, onSubmit, onReload }) {
-  const nameRef = (0, import_react.useRef)(null);
+  const nameRef = (0, import_react2.useRef)(null);
   const digitalAtOpen = isDigitalProduct(initial);
-  const [name2, setName] = (0, import_react.useState)(initial?.name ?? "");
-  const [kind, setKind] = (0, import_react.useState)(initial?.kind === "digital" ? "digital" : "physical");
-  const [selling, setSelling] = (0, import_react.useState)(initial?.selling_points ?? "");
-  const [audience, setAudience] = (0, import_react.useState)(initial?.target_audience ?? "");
-  const [brand, setBrand] = (0, import_react.useState)(initial?.brand ?? "");
-  const [features, setFeatures] = (0, import_react.useState)(initial?.features ?? "");
-  const [price, setPrice] = (0, import_react.useState)(initial?.price ?? "");
-  const [sku, setSku] = (0, import_react.useState)(initial?.sku ?? "");
-  const [promotion, setPromotion] = (0, import_react.useState)(initial?.promotion ?? "");
-  const [link, setLink] = (0, import_react.useState)(initial?.link ?? "");
-  const [tagDraft, setTagDraft] = (0, import_react.useState)("");
-  const [categories, setCategories] = (0, import_react.useState)(Array.isArray(initial?.categories) ? [...initial.categories] : []);
-  const [media, setMedia] = (0, import_react.useState)(Array.isArray(initial?.media) ? initial.media.map((row) => ({ ...row })) : []);
-  const [coverId, setCoverId] = (0, import_react.useState)(initial?.cover_media_id ?? null);
-  const [strategyOpen, setStrategyOpen] = (0, import_react.useState)(digitalAtOpen);
-  const [strategyTouched, setStrategyTouched] = (0, import_react.useState)(digitalAtOpen);
-  const [strategy, setStrategy] = (0, import_react.useState)(() => draftFrom(initial));
-  (0, import_react.useEffect)(() => {
+  const [name2, setName] = (0, import_react2.useState)(initial?.name ?? "");
+  const [kind, setKind] = (0, import_react2.useState)(initial?.kind === "digital" ? "digital" : "physical");
+  const [selling, setSelling] = (0, import_react2.useState)(initial?.selling_points ?? "");
+  const [audience, setAudience] = (0, import_react2.useState)(initial?.target_audience ?? "");
+  const [brand, setBrand] = (0, import_react2.useState)(initial?.brand ?? "");
+  const [features, setFeatures] = (0, import_react2.useState)(initial?.features ?? "");
+  const [price, setPrice] = (0, import_react2.useState)(initial?.price ?? "");
+  const [sku, setSku] = (0, import_react2.useState)(initial?.sku ?? "");
+  const [promotion, setPromotion] = (0, import_react2.useState)(initial?.promotion ?? "");
+  const [link, setLink] = (0, import_react2.useState)(initial?.link ?? "");
+  const [tagDraft, setTagDraft] = (0, import_react2.useState)("");
+  const [categories, setCategories] = (0, import_react2.useState)(Array.isArray(initial?.categories) ? [...initial.categories] : []);
+  const [media, setMedia] = (0, import_react2.useState)(Array.isArray(initial?.media) ? initial.media.map((row) => ({ ...row })) : []);
+  const [coverId, setCoverId] = (0, import_react2.useState)(initial?.cover_media_id ?? null);
+  const [strategyOpen, setStrategyOpen] = (0, import_react2.useState)(digitalAtOpen);
+  const [strategyTouched, setStrategyTouched] = (0, import_react2.useState)(digitalAtOpen);
+  const [strategy, setStrategy] = (0, import_react2.useState)(() => draftFrom(initial));
+  (0, import_react2.useEffect)(() => {
     nameRef.current?.focus();
   }, []);
-  (0, import_react.useEffect)(() => {
+  (0, import_react2.useEffect)(() => {
     if (!initial) return;
     applySnapshot(initial);
   }, [initial?.id, initial?.updated_at]);
@@ -1010,528 +1336,430 @@ function ProductFormDialog({ t, mode, busy, error, dirty, initial, onCancel, onP
     }
     return body;
   };
-  const labelStyle = { fontSize: 12, color: "var(--dsw-alias-label-secondary)", margin: "0 0 6px" };
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-    "div",
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+    ModalDialog,
     {
-      style: overlay,
-      onMouseDown: (event) => {
-        if (event.target === event.currentTarget) onCancel();
-      },
-      children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-        "div",
+      open: true,
+      onClose: onCancel,
+      title: mode === "edit" ? t("detail.title") : t("add.title"),
+      closeLabel: t("stage.close"),
+      size: "lg",
+      footer: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        Button,
         {
-          role: "dialog",
-          "aria-modal": "true",
-          "aria-label": mode === "edit" ? t("detail.title") : t("add.title"),
-          style: sheet,
-          onKeyDown: (event) => {
-            if (event.key === "Escape") onCancel();
+          variant: "primary",
+          disabled: !canSubmit,
+          loading: busy,
+          onClick: () => {
+            onSubmit(payload());
           },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "16px 20px 8px" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { color: "var(--dsw-alias-label-tertiary)", fontSize: 18 }, children: "@" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                "input",
-                {
-                  ref: nameRef,
-                  value: name2,
-                  placeholder: t("add.namePlaceholder"),
-                  onChange: (event) => {
-                    setName(event.target.value);
-                  },
-                  style: { ...inputBare, fontSize: 18, fontWeight: 500, lineHeight: "28px" }
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                "button",
-                {
-                  type: "button",
-                  "aria-label": t("stage.close"),
-                  onClick: onCancel,
-                  style: {
-                    border: "none",
-                    background: "transparent",
-                    cursor: "pointer",
-                    width: 28,
-                    height: 28,
-                    borderRadius: 8,
-                    color: "inherit"
-                  },
-                  children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(CloseIcon, { size: 16 })
-                }
-              )
-            ] }),
-            dirty ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-              "div",
-              {
-                style: {
-                  margin: "0 20px 12px",
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  fontSize: 12,
-                  lineHeight: "18px",
-                  background: "var(--dsw-alias-bg-module-platform)",
-                  color: "var(--dsw-alias-label-secondary)",
-                  display: "flex",
-                  gap: 8,
-                  alignItems: "center",
-                  flexWrap: "wrap"
-                },
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { flex: 1, minWidth: 160 }, children: t("add.dirty.banner") }),
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                    "button",
-                    {
-                      type: "button",
-                      onClick: () => {
-                        onReload?.();
-                      },
-                      style: {
-                        border: "1px solid var(--dsw-alias-border-l2)",
-                        background: "transparent",
-                        color: "inherit",
-                        borderRadius: 999,
-                        padding: "4px 10px",
-                        cursor: "pointer",
-                        fontSize: 12
-                      },
-                      children: t("add.dirty.reload")
-                    }
-                  ),
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontSize: 12 }, children: t("add.dirty.keep") })
-                ]
-              }
-            ) : null,
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { padding: "0 20px 12px", display: "flex", gap: 8, alignItems: "center" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontSize: 12, color: "var(--dsw-alias-label-secondary)" }, children: t("kind.label") }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                "button",
-                {
-                  type: "button",
-                  onClick: () => {
-                    setKind("physical");
-                    setStrategyOpen(false);
-                  },
-                  style: {
-                    ...chip,
-                    background: kind === "physical" ? "var(--dsw-alias-bg-module-platform)" : "transparent"
-                  },
-                  children: t("kind.physical")
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                "button",
-                {
-                  type: "button",
-                  onClick: () => {
-                    setKind("digital");
-                    const persisted = isPlainStrategy(initial?.brand_strategy);
-                    setStrategyOpen(persisted);
-                    if (persisted) setStrategyTouched(true);
-                  },
-                  style: {
-                    ...chip,
-                    background: kind === "digital" ? "var(--dsw-alias-bg-module-platform)" : "transparent"
-                  },
-                  children: t("kind.digital")
-                }
-              )
-            ] }),
-            kind === "physical" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { padding: "0 20px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 2, value: selling, placeholder: t("add.sellingPlaceholder"), onChange: (event) => {
-                setSelling(event.target.value);
-              }, style: { ...field, gridColumn: "1 / -1", resize: "vertical" } }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: audience, placeholder: t("add.audiencePlaceholder"), onChange: (event) => {
-                setAudience(event.target.value);
-              }, style: field }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: brand, placeholder: t("add.brandPlaceholder"), onChange: (event) => {
-                setBrand(event.target.value);
-              }, style: field }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 2, value: features, placeholder: t("add.featuresPlaceholder"), onChange: (event) => {
-                setFeatures(event.target.value);
-              }, style: { ...field, gridColumn: "1 / -1", resize: "vertical" } }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: price, placeholder: t("add.pricePlaceholder"), onChange: (event) => {
-                setPrice(event.target.value);
-              }, style: field }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: sku, placeholder: t("add.skuPlaceholder"), onChange: (event) => {
-                setSku(event.target.value);
-              }, style: field }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: promotion, placeholder: t("add.promotionPlaceholder"), onChange: (event) => {
-                setPromotion(event.target.value);
-              }, style: field }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: link, placeholder: t("add.linkPlaceholder"), onChange: (event) => {
-                setLink(event.target.value);
-              }, style: field })
-            ] }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { padding: "0 20px 12px" }, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: link, placeholder: t("add.digitalLinkPlaceholder"), onChange: (event) => {
-              setLink(event.target.value);
-            }, style: field }) }),
-            kind === "digital" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { borderTop: "1px solid var(--dsw-alias-border-l2)", padding: "12px 20px" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 13, fontWeight: 500 }, children: t("strategy.title") }),
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 12, color: "var(--dsw-alias-label-tertiary)", marginTop: 2 }, children: t("strategy.hintDigital") })
-                ] }),
-                strategyOpen ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", onClick: () => {
-                  setStrategyOpen(false);
-                }, style: miniBtn, children: t("strategy.collapse") }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", onClick: openStrategy, style: miniBtn, children: t("strategy.expand") })
-              ] }),
-              strategyOpen ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(StrategyFields, { t, strategy, patchStrategy, field, labelStyle, miniBtn }) : null
-            ] }) : null,
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { borderTop: "1px solid var(--dsw-alias-border-l2)", padding: 16 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-                "div",
-                {
-                  onDragOver: (event) => {
-                    event.preventDefault();
-                  },
-                  onDrop: (event) => {
-                    event.preventDefault();
-                    const dropped = Array.from(event.dataTransfer?.files ?? []);
-                    addPaths(dropped.map((file) => typeof file.path === "string" ? file.path : "").filter(Boolean));
-                  },
-                  style: {
-                    width: "100%",
-                    minHeight: 96,
-                    border: "1px dashed var(--dsw-alias-border-l4)",
-                    borderRadius: 12,
-                    color: "var(--dsw-alias-label-tertiary)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 10,
-                    fontSize: 13,
-                    padding: 16,
-                    boxSizing: "border-box"
-                  },
-                  children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(FileIcon, { size: 22 }),
-                    t("add.drop"),
-                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                      "button",
-                      {
-                        type: "button",
-                        onClick: () => {
-                          void onPick("file").then(addPaths);
-                        },
-                        style: {
-                          border: "1px solid var(--dsw-alias-border-l2)",
-                          background: "transparent",
-                          color: "inherit",
-                          borderRadius: 999,
-                          padding: "6px 12px",
-                          cursor: "pointer",
-                          fontSize: 12
-                        },
-                        children: t("add.pickFiles")
-                      }
-                    )
-                  ]
-                }
-              ),
-              media.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("ul", { style: { margin: "10px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }, children: media.map((file, index) => {
-                const id = file.id || file.real_path;
-                const primary = coverId ? coverId === file.id : index === 0;
-                return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("li", { style: { display: "flex", gap: 8, fontSize: 12, color: "var(--dsw-alias-label-secondary)", alignItems: "center" }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(FileIcon, { size: 14 }),
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: file.original_name || file.real_path }),
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                    "button",
-                    {
-                      type: "button",
-                      onClick: () => {
-                        setCoverId(file.id || null);
-                        if (!file.id) {
-                          setMedia((current) => current.map((row, i) => i === index ? row : row));
-                          setMedia((current) => {
-                            const next = [...current];
-                            const [picked] = next.splice(index, 1);
-                            next.unshift(picked);
-                            return next;
-                          });
-                        }
-                      },
-                      style: {
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        fontSize: 11,
-                        color: primary ? "inherit" : "var(--dsw-alias-label-tertiary)"
-                      },
-                      children: t("detail.primary")
-                    }
-                  ),
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                    "button",
-                    {
-                      type: "button",
-                      onClick: () => {
-                        setMedia((current) => current.filter((_, i) => i !== index));
-                        if (file.id && coverId === file.id) setCoverId(null);
-                      },
-                      style: { border: "none", background: "transparent", cursor: "pointer", color: "inherit" },
-                      children: "\xD7"
-                    }
-                  )
-                ] }, id);
-              }) }) : null
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { borderTop: "1px solid var(--dsw-alias-border-l2)", padding: "10px 16px 16px" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 13, color: "var(--dsw-alias-label-secondary)", marginBottom: 8 }, children: t("add.categories") }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }, children: categories.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { style: { fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--dsw-alias-bg-module-platform)" }, children: [
-                tag,
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: () => {
-                      setCategories(categories.filter((item) => item !== tag));
-                    },
-                    style: { border: "none", background: "transparent", cursor: "pointer", marginLeft: 4 },
-                    children: "\xD7"
-                  }
-                )
-              ] }, tag)) }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                "input",
-                {
-                  value: tagDraft,
-                  placeholder: t("add.categoriesPlaceholder"),
-                  onChange: (event) => {
-                    setTagDraft(event.target.value);
-                  },
-                  onKeyDown: (event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      addTag();
-                    }
-                  },
-                  style: field
-                }
-              ),
-              error ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: { margin: "8px 0 0", fontSize: 12, color: "var(--dsw-alias-label-error)" }, children: error }) : null,
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: 16 }, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                "button",
-                {
-                  type: "button",
-                  disabled: !canSubmit,
-                  onClick: () => {
-                    onSubmit(payload());
-                  },
-                  style: {
-                    border: "none",
-                    background: canSubmit ? "var(--dsw-alias-button-primary-fill)" : "var(--dsw-alias-border-l2)",
-                    color: "var(--dsw-alias-label-primary-foreground)",
-                    borderRadius: 999,
-                    padding: "8px 16px",
-                    fontSize: 14,
-                    fontWeight: 500,
-                    cursor: canSubmit ? "pointer" : "default"
-                  },
-                  children: mode === "edit" ? t("detail.save") : t("add.submit")
-                }
-              ) })
-            ] })
-          ]
+          children: mode === "edit" ? t("detail.save") : t("add.submit")
         }
-      )
+      ),
+      children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-form", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-name-row", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-at", "aria-hidden": "true", children: "@" }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+            InputField,
+            {
+              ref: nameRef,
+              className: "omnimux-products-name-field",
+              value: name2,
+              placeholder: t("add.namePlaceholder"),
+              disabled: busy,
+              onChange: (event) => {
+                setName(event.target.value);
+              }
+            }
+          )
+        ] }),
+        dirty ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-dirty", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-dirty-text", children: t("add.dirty.banner") }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "xs", onClick: () => {
+            onReload?.();
+          }, children: t("add.dirty.reload") }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-label", children: t("add.dirty.keep") })
+        ] }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-kind-row", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-kind-label", children: t("kind.label") }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+            Button,
+            {
+              variant: "ghost",
+              size: "sm",
+              className: "omnimux-products-kind-chip",
+              "aria-pressed": kind === "physical",
+              onClick: () => {
+                setKind("physical");
+                setStrategyOpen(false);
+              },
+              children: t("kind.physical")
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+            Button,
+            {
+              variant: "ghost",
+              size: "sm",
+              className: "omnimux-products-kind-chip",
+              "aria-pressed": kind === "digital",
+              onClick: () => {
+                setKind("digital");
+                const persisted = isPlainStrategy(initial?.brand_strategy);
+                setStrategyOpen(persisted);
+                if (persisted) setStrategyTouched(true);
+              },
+              children: t("kind.digital")
+            }
+          )
+        ] }),
+        kind === "physical" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-grid-fields", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea omnimux-products-span2", rows: 2, value: selling, placeholder: t("add.sellingPlaceholder"), onChange: (event) => {
+            setSelling(event.target.value);
+          } }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: audience, placeholder: t("add.audiencePlaceholder"), onChange: (event) => {
+            setAudience(event.target.value);
+          } }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: brand, placeholder: t("add.brandPlaceholder"), onChange: (event) => {
+            setBrand(event.target.value);
+          } }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea omnimux-products-span2", rows: 2, value: features, placeholder: t("add.featuresPlaceholder"), onChange: (event) => {
+            setFeatures(event.target.value);
+          } }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: price, placeholder: t("add.pricePlaceholder"), onChange: (event) => {
+            setPrice(event.target.value);
+          } }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: sku, placeholder: t("add.skuPlaceholder"), onChange: (event) => {
+            setSku(event.target.value);
+          } }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: promotion, placeholder: t("add.promotionPlaceholder"), onChange: (event) => {
+            setPromotion(event.target.value);
+          } }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: link, placeholder: t("add.linkPlaceholder"), onChange: (event) => {
+            setLink(event.target.value);
+          } })
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: link, placeholder: t("add.digitalLinkPlaceholder"), onChange: (event) => {
+          setLink(event.target.value);
+        } }),
+        kind === "digital" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-strategy", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-strategy-head", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-strategy-title", children: t("strategy.title") }),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-strategy-hint", children: t("strategy.hintDigital") })
+            ] }),
+            strategyOpen ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "xs", onClick: () => {
+              setStrategyOpen(false);
+            }, children: t("strategy.collapse") }) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "xs", onClick: openStrategy, children: t("strategy.expand") })
+          ] }),
+          strategyOpen ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(StrategyFields, { t, strategy, patchStrategy }) : null
+        ] }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+          "div",
+          {
+            className: "omnimux-products-drop",
+            onDragOver: (event) => {
+              event.preventDefault();
+            },
+            onDrop: (event) => {
+              event.preventDefault();
+              const dropped = Array.from(event.dataTransfer?.files ?? []);
+              addPaths(dropped.map((file) => typeof file.path === "string" ? file.path : "").filter(Boolean));
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FileIcon, { size: 22 }),
+              t("add.drop"),
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Button, { variant: "outline", size: "sm", onClick: () => {
+                void onPick("file").then(addPaths);
+              }, children: t("add.pickFiles") })
+            ]
+          }
+        ),
+        media.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("ul", { className: "omnimux-products-filelist", children: media.map((file, index) => {
+          const id = file.id || file.real_path;
+          const primary = coverId ? coverId === file.id : index === 0;
+          return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("li", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(FileIcon, { size: 14 }),
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-filelist-name", children: file.original_name || file.real_path }),
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+              Button,
+              {
+                variant: "ghost",
+                size: "xs",
+                onClick: () => {
+                  setCoverId(file.id || null);
+                  if (!file.id) {
+                    setMedia((current) => {
+                      const next = [...current];
+                      const [picked] = next.splice(index, 1);
+                      next.unshift(picked);
+                      return next;
+                    });
+                  }
+                },
+                children: t("detail.primary")
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+              IconButton,
+              {
+                variant: "ghost",
+                size: "xs",
+                "aria-label": t("remove.confirm"),
+                onClick: () => {
+                  setMedia((current) => current.filter((_, i) => i !== index));
+                  if (file.id && coverId === file.id) setCoverId(null);
+                },
+                children: "\xD7"
+              }
+            )
+          ] }, id);
+        }) }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-label", children: t("add.categories") }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-tags", children: categories.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { className: "omnimux-products-tag", children: [
+            tag,
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+              IconButton,
+              {
+                variant: "ghost",
+                size: "xs",
+                "aria-label": t("remove.confirm"),
+                onClick: () => {
+                  setCategories(categories.filter((item) => item !== tag));
+                },
+                children: "\xD7"
+              }
+            )
+          ] }, tag)) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+            InputField,
+            {
+              value: tagDraft,
+              placeholder: t("add.categoriesPlaceholder"),
+              onChange: (event) => {
+                setTagDraft(event.target.value);
+              },
+              onKeyDown: (event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addTag();
+                }
+              }
+            }
+          )
+        ] }),
+        error ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-products-error", children: error }) : null
+      ] })
     }
   );
 }
-function StrategyFields({ t, strategy, patchStrategy, field: field2, labelStyle, miniBtn: miniBtn2 }) {
+function StrategyFields({ t, strategy, patchStrategy }) {
   const basic = strategy.brand_basic_info;
   const identity = strategy.identity_and_product;
   const mission = strategy.mission_and_positioning;
   const market = strategy.market_and_competition;
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 14, marginTop: 12 }, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 13, fontWeight: 500, marginBottom: 8 }, children: t("strategy.basic") }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: basic.company.name, placeholder: t("strategy.companyName"), onChange: (event) => {
+  const priorityOptions = [
+    { value: "1", label: "1" },
+    { value: "2", label: "2" },
+    { value: "3", label: "3" },
+    { value: "4", label: "4" },
+    { value: "5", label: "5" }
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-form", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("section", { className: "omnimux-products-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-section-title", children: t("strategy.basic") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-grid-fields", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: basic.company.name, placeholder: t("strategy.companyName"), onChange: (event) => {
           patchStrategy((next) => {
             next.brand_basic_info.company.name = event.target.value;
           });
-        }, style: field2 }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: basic.company.website, placeholder: t("strategy.companyWebsite"), onChange: (event) => {
+        } }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: basic.company.website, placeholder: t("strategy.companyWebsite"), onChange: (event) => {
           patchStrategy((next) => {
             next.brand_basic_info.company.website = event.target.value;
           });
-        }, style: field2 }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: basic.company.locale, placeholder: t("strategy.companyLocale"), onChange: (event) => {
+        } }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: basic.company.locale, placeholder: t("strategy.companyLocale"), onChange: (event) => {
           patchStrategy((next) => {
             next.brand_basic_info.company.locale = event.target.value;
           });
-        }, style: field2 }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: basic.product.name, placeholder: t("strategy.productName"), onChange: (event) => {
+        } }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: basic.product.name, placeholder: t("strategy.productName"), onChange: (event) => {
           patchStrategy((next) => {
             next.brand_basic_info.product.name = event.target.value;
           });
-        }, style: field2 }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: basic.product.category, placeholder: t("strategy.productCategory"), onChange: (event) => {
+        } }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { className: "omnimux-products-span2", value: basic.product.category, placeholder: t("strategy.productCategory"), onChange: (event) => {
           patchStrategy((next) => {
             next.brand_basic_info.product.category = event.target.value;
           });
-        }, style: { ...field2, gridColumn: "1 / -1" } })
+        } })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 13, fontWeight: 500 }, children: t("strategy.angles") }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-          "button",
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("section", { className: "omnimux-products-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-section-head", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-section-title", children: t("strategy.angles") }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          Button,
           {
-            type: "button",
+            variant: "outline",
+            size: "xs",
             onClick: () => {
               patchStrategy((next) => {
                 if (next.content_angles.length >= 10) return;
                 next.content_angles.push({ id: "", title: "", description: "", target_audience: "", priority: 3 });
               });
             },
-            style: miniBtn2,
             children: t("strategy.addAngle")
           }
         )
       ] }),
-      strategy.content_angles.map((angle, index) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 72px 28px", gap: 6, marginBottom: 8 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: angle.title, placeholder: t("strategy.angleTitle"), onChange: (event) => {
-          patchStrategy((next) => {
-            next.content_angles[index].title = event.target.value;
-          });
-        }, style: field2 }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-          "select",
-          {
-            value: String(angle.priority || 3),
-            onChange: (event) => {
-              patchStrategy((next) => {
-                next.content_angles[index].priority = Number(event.target.value);
-              });
-            },
-            style: field2,
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "1", children: "1" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "2", children: "2" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("option", { value: "3", children: "3" })
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", onClick: () => {
-          patchStrategy((next) => {
-            next.content_angles.splice(index, 1);
-          });
-        }, style: { border: "none", background: "transparent", cursor: "pointer", color: "inherit" }, children: "\xD7" }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 2, value: angle.description, placeholder: t("strategy.angleDesc"), onChange: (event) => {
+      strategy.content_angles.map((angle, index) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-section", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-angle-row", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: angle.title, placeholder: t("strategy.angleTitle"), onChange: (event) => {
+            patchStrategy((next) => {
+              next.content_angles[index].title = event.target.value;
+            });
+          } }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+            DropdownSelect,
+            {
+              value: String(angle.priority || 3),
+              options: priorityOptions,
+              "aria-label": t("strategy.angleTitle"),
+              onChange: (value) => {
+                patchStrategy((next) => {
+                  next.content_angles[index].priority = Number(value);
+                });
+              }
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+            IconButton,
+            {
+              variant: "ghost",
+              size: "xs",
+              "aria-label": t("remove.confirm"),
+              onClick: () => {
+                patchStrategy((next) => {
+                  next.content_angles.splice(index, 1);
+                });
+              },
+              children: "\xD7"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea", rows: 2, value: angle.description, placeholder: t("strategy.angleDesc"), onChange: (event) => {
           patchStrategy((next) => {
             next.content_angles[index].description = event.target.value;
           });
-        }, style: { ...field2, gridColumn: "1 / -1", resize: "vertical" } }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: angle.target_audience, placeholder: t("strategy.angleAudience"), onChange: (event) => {
+        } }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: angle.target_audience, placeholder: t("strategy.angleAudience"), onChange: (event) => {
           patchStrategy((next) => {
             next.content_angles[index].target_audience = event.target.value;
           });
-        }, style: { ...field2, gridColumn: "1 / -1" } })
+        } })
       ] }, angle.id || `new-${index}`))
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 13, fontWeight: 500, marginBottom: 8 }, children: t("strategy.tone") }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: labelStyle, children: t("strategy.listHint") }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 3, value: linesOf(strategy.tone_and_voice.dos), placeholder: t("strategy.dos"), onChange: (event) => {
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("section", { className: "omnimux-products-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-section-title", children: t("strategy.tone") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-products-label", children: t("strategy.listHint") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea", rows: 3, value: linesOf(strategy.tone_and_voice.dos), placeholder: t("strategy.dos"), onChange: (event) => {
         patchStrategy((next) => {
           next.tone_and_voice.dos = listOf(event.target.value);
         });
-      }, style: { ...field2, resize: "vertical", marginBottom: 8 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 3, value: linesOf(strategy.tone_and_voice.donts), placeholder: t("strategy.donts"), onChange: (event) => {
+      } }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea", rows: 3, value: linesOf(strategy.tone_and_voice.donts), placeholder: t("strategy.donts"), onChange: (event) => {
         patchStrategy((next) => {
           next.tone_and_voice.donts = listOf(event.target.value);
         });
-      }, style: { ...field2, resize: "vertical" } })
+      } })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 13, fontWeight: 500, marginBottom: 8 }, children: t("strategy.identity") }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 2, value: identity.core_identity, placeholder: t("strategy.coreIdentity"), onChange: (event) => {
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("section", { className: "omnimux-products-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-section-title", children: t("strategy.identity") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea", rows: 2, value: identity.core_identity, placeholder: t("strategy.coreIdentity"), onChange: (event) => {
         patchStrategy((next) => {
           next.identity_and_product.core_identity = event.target.value;
         });
-      }, style: { ...field2, resize: "vertical", marginBottom: 8 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: labelStyle, children: t("strategy.listHint") }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 2, value: linesOf(identity.product_offering), placeholder: t("strategy.offering"), onChange: (event) => {
+      } }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-products-label", children: t("strategy.listHint") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea", rows: 2, value: linesOf(identity.product_offering), placeholder: t("strategy.offering"), onChange: (event) => {
         patchStrategy((next) => {
           next.identity_and_product.product_offering = listOf(event.target.value);
         });
-      }, style: { ...field2, resize: "vertical", marginBottom: 8 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 2, value: linesOf(identity.unique_advantage), placeholder: t("strategy.advantage"), onChange: (event) => {
+      } }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea", rows: 2, value: linesOf(identity.unique_advantage), placeholder: t("strategy.advantage"), onChange: (event) => {
         patchStrategy((next) => {
           next.identity_and_product.unique_advantage = listOf(event.target.value);
         });
-      }, style: { ...field2, resize: "vertical", marginBottom: 8 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 2, value: linesOf(identity.problems_solved), placeholder: t("strategy.problems"), onChange: (event) => {
+      } }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea", rows: 2, value: linesOf(identity.problems_solved), placeholder: t("strategy.problems"), onChange: (event) => {
         patchStrategy((next) => {
           next.identity_and_product.problems_solved = listOf(event.target.value);
         });
-      }, style: { ...field2, resize: "vertical", marginBottom: 8 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 2, value: linesOf(identity.solutions), placeholder: t("strategy.solutions"), onChange: (event) => {
+      } }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea", rows: 2, value: linesOf(identity.solutions), placeholder: t("strategy.solutions"), onChange: (event) => {
         patchStrategy((next) => {
           next.identity_and_product.solutions = listOf(event.target.value);
         });
-      }, style: { ...field2, resize: "vertical" } })
+      } })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 13, fontWeight: 500, marginBottom: 8 }, children: t("strategy.mission") }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 2, value: mission.mission, placeholder: t("strategy.missionText"), onChange: (event) => {
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("section", { className: "omnimux-products-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-section-title", children: t("strategy.mission") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea", rows: 2, value: mission.mission, placeholder: t("strategy.missionText"), onChange: (event) => {
         patchStrategy((next) => {
           next.mission_and_positioning.mission = event.target.value;
         });
-      }, style: { ...field2, resize: "vertical", marginBottom: 8 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: labelStyle, children: t("strategy.listHint") }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 2, value: linesOf(mission.differentiation), placeholder: t("strategy.diff"), onChange: (event) => {
+      } }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-products-label", children: t("strategy.listHint") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea", rows: 2, value: linesOf(mission.differentiation), placeholder: t("strategy.diff"), onChange: (event) => {
         patchStrategy((next) => {
           next.mission_and_positioning.differentiation = listOf(event.target.value);
         });
-      }, style: { ...field2, resize: "vertical", marginBottom: 8 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: mission.ownable_space.statement, placeholder: t("strategy.ownableStatement"), onChange: (event) => {
+      } }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: mission.ownable_space.statement, placeholder: t("strategy.ownableStatement"), onChange: (event) => {
         patchStrategy((next) => {
           next.mission_and_positioning.ownable_space.statement = event.target.value;
         });
-      }, style: { ...field2, marginBottom: 8 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: mission.ownable_space.category, placeholder: t("strategy.ownableCategory"), onChange: (event) => {
+      } }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: mission.ownable_space.category, placeholder: t("strategy.ownableCategory"), onChange: (event) => {
         patchStrategy((next) => {
           next.mission_and_positioning.ownable_space.category = event.target.value;
         });
-      }, style: { ...field2, marginBottom: 8 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("textarea", { rows: 2, value: linesOf(mission.ownable_space.is_not), placeholder: t("strategy.ownableNot"), onChange: (event) => {
+      } }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("textarea", { className: "omnimux-products-textarea", rows: 2, value: linesOf(mission.ownable_space.is_not), placeholder: t("strategy.ownableNot"), onChange: (event) => {
         patchStrategy((next) => {
           next.mission_and_positioning.ownable_space.is_not = listOf(event.target.value);
         });
-      }, style: { ...field2, resize: "vertical" } })
+      } })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: 13, fontWeight: 500 }, children: t("strategy.market") }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontSize: 12, color: "var(--dsw-alias-label-secondary)" }, children: t("strategy.segments") }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-          "button",
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("section", { className: "omnimux-products-section", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-section-head", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-products-section-title", children: t("strategy.market") }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-section-head", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-label", children: t("strategy.segments") }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          Button,
           {
-            type: "button",
+            variant: "outline",
+            size: "xs",
             onClick: () => {
               patchStrategy((next) => {
                 if (next.market_and_competition.customer_segments.length >= 10) return;
                 next.market_and_competition.customer_segments.push({ name: "", percentage: 0 });
               });
             },
-            style: miniBtn2,
             children: t("strategy.addSegment")
           }
         )
       ] }),
-      market.customer_segments.map((row, index) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 72px 28px", gap: 6, marginBottom: 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: row.name, placeholder: t("strategy.segmentName"), onChange: (event) => {
+      market.customer_segments.map((row, index) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-seg-row", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: row.name, placeholder: t("strategy.segmentName"), onChange: (event) => {
           patchStrategy((next) => {
             next.market_and_competition.customer_segments[index].name = event.target.value;
           });
-        }, style: field2 }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-          "input",
+        } }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          InputField,
           {
             type: "number",
             min: 0,
@@ -1541,119 +1769,105 @@ function StrategyFields({ t, strategy, patchStrategy, field: field2, labelStyle,
               patchStrategy((next) => {
                 next.market_and_competition.customer_segments[index].percentage = Number(event.target.value);
               });
-            },
-            style: field2
+            }
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", onClick: () => {
-          patchStrategy((next) => {
-            next.market_and_competition.customer_segments.splice(index, 1);
-          });
-        }, style: { border: "none", background: "transparent", cursor: "pointer", color: "inherit" }, children: "\xD7" })
-      ] }, `seg-${index}`)),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", margin: "8px 0 6px" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontSize: 12, color: "var(--dsw-alias-label-secondary)" }, children: t("strategy.competitors") }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-          "button",
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          IconButton,
           {
-            type: "button",
+            variant: "ghost",
+            size: "xs",
+            "aria-label": t("remove.confirm"),
+            onClick: () => {
+              patchStrategy((next) => {
+                next.market_and_competition.customer_segments.splice(index, 1);
+              });
+            },
+            children: "\xD7"
+          }
+        )
+      ] }, `seg-${index}`)),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-section-head", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "omnimux-products-label", children: t("strategy.competitors") }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          Button,
+          {
+            variant: "outline",
+            size: "xs",
             onClick: () => {
               patchStrategy((next) => {
                 if (next.market_and_competition.competitors.length >= 10) return;
                 next.market_and_competition.competitors.push({ name: "", website: "" });
               });
             },
-            style: miniBtn2,
             children: t("strategy.addCompetitor")
           }
         )
       ] }),
-      market.competitors.map((row, index) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 28px", gap: 6, marginBottom: 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: row.name, placeholder: t("strategy.competitorName"), onChange: (event) => {
+      market.competitors.map((row, index) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-products-comp-row", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: row.name, placeholder: t("strategy.competitorName"), onChange: (event) => {
           patchStrategy((next) => {
             next.market_and_competition.competitors[index].name = event.target.value;
           });
-        }, style: field2 }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("input", { value: row.website, placeholder: t("strategy.competitorWebsite"), onChange: (event) => {
+        } }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InputField, { value: row.website, placeholder: t("strategy.competitorWebsite"), onChange: (event) => {
           patchStrategy((next) => {
             next.market_and_competition.competitors[index].website = event.target.value;
           });
-        }, style: field2 }),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", onClick: () => {
-          patchStrategy((next) => {
-            next.market_and_competition.competitors.splice(index, 1);
-          });
-        }, style: { border: "none", background: "transparent", cursor: "pointer", color: "inherit" }, children: "\xD7" })
+        } }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          IconButton,
+          {
+            variant: "ghost",
+            size: "xs",
+            "aria-label": t("remove.confirm"),
+            onClick: () => {
+              patchStrategy((next) => {
+                next.market_and_competition.competitors.splice(index, 1);
+              });
+            },
+            children: "\xD7"
+          }
+        )
       ] }, `comp-${index}`))
     ] })
   ] });
 }
 
+// src/client/a11y.js
+var FOCUS_CSS = [
+  ".omnimux-products-focusable:focus-visible{outline:2px solid var(--dsw-alias-label-primary);outline-offset:2px;border-radius:8px;}",
+  ".omnimux-products-focusable:hover{border-color:var(--dsw-alias-border-l4);}",
+  ".omnimux-products-check{opacity:0;transition:opacity 0.15s ease;}",
+  '.omnimux-products-focusable:hover .omnimux-products-check,.omnimux-products-focusable:focus-within .omnimux-products-check,.omnimux-products-check[data-selected="true"]{opacity:1;}'
+].join("\n");
+function activateRowKeydown(trigger) {
+  return (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      trigger();
+    }
+  };
+}
+
 // src/client/ProductGrid.jsx
-var import_jsx_runtime4 = require("react/jsx-runtime");
-var checkBase = {
-  position: "absolute",
-  top: 8,
-  left: 8,
-  width: 22,
-  height: 22,
-  borderRadius: "50%",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 0,
-  cursor: "pointer",
-  zIndex: 1
-};
+var import_jsx_runtime5 = require("react/jsx-runtime");
 function ProductGrid({ t, products, emptyLabel, emptyActionLabel, showEmptyAction = true, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect }) {
   if (products.length === 0) {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
-      "div",
-      {
-        style: {
-          border: "1px dashed var(--dsw-alias-border-l4)",
-          borderRadius: 12,
-          minHeight: 160,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
-          color: "var(--dsw-alias-label-tertiary)",
-          fontSize: 13
-        },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: { margin: 0 }, children: emptyLabel }),
-          emptyActionLabel && onEmptyAction && showEmptyAction ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-            "button",
-            {
-              type: "button",
-              onClick: onEmptyAction,
-              style: {
-                border: "none",
-                background: "var(--dsw-alias-button-primary-fill)",
-                color: "var(--dsw-alias-label-primary-foreground)",
-                borderRadius: 999,
-                padding: "6px 14px",
-                cursor: "pointer",
-                fontSize: 13
-              },
-              children: emptyActionLabel
-            }
-          ) : null
-        ]
-      }
-    );
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-products-empty", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { children: emptyLabel }),
+      emptyActionLabel && onEmptyAction && showEmptyAction ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Button, { variant: "primary", size: "sm", onClick: onEmptyAction, children: emptyActionLabel }) : null
+    ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }, children: products.map((product) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-products-grid", children: products.map((product) => {
     const glyph = (product.name || "?").trim().slice(0, 1);
     const cover = product.cover;
     const preview = cover?.kind === "image" && cover.id ? previewUrl(product.id, cover.id) : "";
     const selected = selectedIds?.has(product.id);
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
       "article",
       {
-        className: "omnimux-products-focusable",
+        className: "omnimux-products-focusable omnimux-products-card",
         tabIndex: 0,
         role: "button",
         "aria-selected": selected ? "true" : "false",
@@ -1663,103 +1877,42 @@ function ProductGrid({ t, products, emptyLabel, emptyActionLabel, showEmptyActio
         onKeyDown: activateRowKeydown(() => {
           onOpen(product);
         }),
-        style: {
-          border: selected ? "1px solid var(--dsw-alias-label-primary)" : "1px solid var(--dsw-alias-border-l2)",
-          borderRadius: 12,
-          overflow: "hidden",
-          cursor: "pointer",
-          background: "var(--dsw-alias-bg-base)",
-          display: "flex",
-          flexDirection: "column"
-        },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
-            "div",
-            {
-              style: {
-                height: 112,
-                background: "var(--dsw-alias-bg-module-platform)",
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "var(--dsw-alias-label-tertiary)",
-                overflow: "hidden"
-              },
-              children: [
-                preview ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-                  "img",
-                  {
-                    src: preview,
-                    alt: "",
-                    onError: (event) => {
-                      event.currentTarget.style.display = "none";
-                    },
-                    style: { width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }
-                  }
-                ) : null,
-                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { style: { fontSize: 28, fontWeight: 600, lineHeight: 1 }, children: glyph }),
-                /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-                  "span",
-                  {
-                    style: {
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      fontSize: 11,
-                      lineHeight: "16px",
-                      fontWeight: 500,
-                      padding: "2px 8px",
-                      borderRadius: 999,
-                      background: "var(--dsw-alias-bg-base)",
-                      border: "1px solid var(--dsw-alias-border-l2)",
-                      color: "var(--dsw-alias-label-secondary)",
-                      zIndex: 1,
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
-                    },
-                    children: product.kind === "digital" ? t("kind.digital") : t("kind.physical")
-                  }
-                ),
-                onToggleSelect ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-                  "button",
-                  {
-                    type: "button",
-                    className: "omnimux-products-check",
-                    "data-selected": selected ? "true" : "false",
-                    "aria-label": t("select.toggle"),
-                    "aria-pressed": selected ? "true" : "false",
-                    onClick: (event) => {
-                      event.stopPropagation();
-                      onToggleSelect(product);
-                    },
-                    style: {
-                      ...checkBase,
-                      border: selected ? "none" : "1px solid var(--dsw-alias-border-l3)",
-                      background: selected ? "var(--dsw-alias-button-primary-fill)" : "var(--dsw-alias-bg-base)",
-                      color: selected ? "var(--dsw-alias-label-primary-foreground)" : "inherit"
-                    },
-                    children: selected ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CheckIcon, { size: 12 }) : null
-                  }
-                ) : null
-              ]
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: { padding: "10px 12px 12px", display: "flex", flexDirection: "column", gap: 4 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { fontSize: 14, fontWeight: 500, lineHeight: "20px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: product.name }),
-            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-              "div",
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-products-card-thumb", children: [
+            preview ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+              "img",
               {
-                style: {
-                  fontSize: 12,
-                  lineHeight: "18px",
-                  color: "var(--dsw-alias-label-secondary)",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap"
-                },
-                children: product.kind === "digital" ? product.link || product.brand_strategy?.brand_basic_info?.product?.name || product.description || "\u2014" : product.selling_points || product.description || "\u2014"
+                src: preview,
+                alt: "",
+                className: "omnimux-products-card-media",
+                onError: (event) => {
+                  event.currentTarget.dataset.broken = "true";
+                }
               }
-            )
+            ) : null,
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-products-glyph", children: glyph }),
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-products-badge", children: product.kind === "digital" ? t("kind.digital") : t("kind.physical") }),
+            onToggleSelect ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+              IconButton,
+              {
+                variant: "ghost",
+                size: "xs",
+                className: "omnimux-products-check",
+                "data-selected": selected ? "true" : "false",
+                "aria-label": t("select.toggle"),
+                "aria-pressed": selected ? "true" : "false",
+                title: "",
+                onClick: (event) => {
+                  event.stopPropagation();
+                  onToggleSelect(product);
+                },
+                children: selected ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(CheckIcon, { size: 12 }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", {})
+              }
+            ) : null
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-products-card-body", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-products-card-title", children: product.name }),
+            /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-products-card-desc", children: product.kind === "digital" ? product.link || product.brand_strategy?.brand_basic_info?.product?.name || product.description || "\u2014" : product.selling_points || product.description || "\u2014" })
           ] })
         ]
       },
@@ -1768,8 +1921,361 @@ function ProductGrid({ t, products, emptyLabel, emptyActionLabel, showEmptyActio
   }) });
 }
 
+// src/client/styles.js
+var STYLES_ID = "omnimux-products-styles";
+var PRODUCTS_CSS = `
+.omnimux-products-stage {
+  position: fixed;
+  z-index: 200;
+  top: var(--stage-top);
+  left: var(--stage-left);
+  width: var(--stage-width);
+  height: var(--stage-height);
+  display: flex;
+  flex-direction: column;
+  background: var(--dsw-alias-bg-base, var(--dsw-bg));
+  color: var(--dsw-alias-label-primary, inherit);
+  overflow: hidden;
+  -webkit-app-region: no-drag;
+}
+.omnimux-products-stage[data-visible="false"] {
+  display: none;
+  pointer-events: none;
+}
+.omnimux-products-stage-header {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 20px;
+  -webkit-app-region: no-drag;
+}
+.omnimux-products-stage-heading { flex: 1; min-width: 0; }
+.omnimux-products-stage-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 32px;
+}
+.omnimux-products-stage-subtitle {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+}
+.omnimux-products-stage-toolbar {
+  flex: none;
+  padding: 0 20px 12px;
+  height: 44px;
+}
+.omnimux-products-selection {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+}
+.omnimux-products-selection-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.omnimux-products-error {
+  margin: 0;
+  padding: 6px 20px;
+  font-size: 12px;
+  color: var(--dsw-alias-state-error-primary);
+}
+.omnimux-products-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+}
+.omnimux-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.omnimux-products-empty {
+  border: 1px dashed var(--dsw-alias-border-l4);
+  border-radius: 12px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 13px;
+}
+.omnimux-products-empty p { margin: 0; }
+.omnimux-products-card {
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--dsw-alias-bg-base, var(--dsw-bg));
+  display: flex;
+  flex-direction: column;
+}
+.omnimux-products-card[aria-selected="true"] {
+  border-color: var(--dsw-alias-label-primary);
+}
+.omnimux-products-card-thumb {
+  height: 112px;
+  background: var(--dsw-alias-bg-module-platform);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dsw-alias-label-tertiary);
+  overflow: hidden;
+}
+.omnimux-products-card-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+}
+.omnimux-products-card-media[data-broken="true"] { display: none; }
+.omnimux-products-glyph {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+}
+.omnimux-products-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--dsw-alias-bg-base, var(--dsw-bg));
+  border: 1px solid var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-secondary);
+  z-index: 1;
+}
+.omnimux-products-card-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.omnimux-products-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.omnimux-products-card-desc {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.omnimux-products-stage .omnimux-products-card-thumb .omnimux-products-check,
+.omnimux-products-stage .omnimux-products-card-thumb .omnimux-products-check:hover,
+.omnimux-products-stage .omnimux-products-card-thumb .omnimux-products-check:active {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  min-height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  z-index: 1;
+  opacity: 0;
+  transform: none;
+  transition: opacity 0.15s ease;
+  border: 1px solid var(--dsw-alias-border-l3);
+  background: var(--dsw-alias-bg-base, var(--dsw-bg));
+  color: inherit;
+}
+.omnimux-products-stage .omnimux-products-card-thumb .omnimux-products-check[data-selected="true"],
+.omnimux-products-stage .omnimux-products-card-thumb .omnimux-products-check[data-selected="true"]:hover {
+  opacity: 1;
+  border: none;
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-foreground);
+}
+.omnimux-products-icon {
+  flex: none;
+  display: inline-block;
+  vertical-align: middle;
+}
+.omnimux-products-focusable:focus-visible {
+  outline: 2px solid var(--dsw-alias-label-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.omnimux-products-focusable:hover { border-color: var(--dsw-alias-border-l4); }
+.omnimux-products-focusable:hover .omnimux-products-check,
+.omnimux-products-focusable:focus-within .omnimux-products-check { opacity: 1; }
+.omnimux-products-form { display: flex; flex-direction: column; gap: 12px; }
+.omnimux-products-name-row { display: flex; align-items: center; gap: 8px; }
+.omnimux-products-at { color: var(--dsw-alias-label-tertiary); font-size: 18px; }
+.omnimux-products-name-field { flex: 1; min-width: 0; }
+.omnimux-products-dirty {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 18px;
+  background: var(--dsw-alias-bg-module-platform);
+  color: var(--dsw-alias-label-secondary);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.omnimux-products-dirty-text { flex: 1; min-width: 160px; }
+.omnimux-products-kind-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.omnimux-products-kind-label {
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+.omnimux-products-kind-chip[aria-pressed="true"] {
+  background: var(--dsw-alias-bg-module-platform);
+}
+.omnimux-products-grid-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.omnimux-products-span2 { grid-column: 1 / -1; }
+.omnimux-products-textarea {
+  width: 100%;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: inherit;
+  background: transparent;
+  box-sizing: border-box;
+  resize: vertical;
+  font: inherit;
+}
+.omnimux-products-strategy {
+  border-top: 1px solid var(--dsw-alias-border-l2);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.omnimux-products-strategy-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.omnimux-products-strategy-title { font-size: 13px; font-weight: 500; }
+.omnimux-products-strategy-hint {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+  margin-top: 2px;
+}
+.omnimux-products-drop {
+  width: 100%;
+  min-height: 96px;
+  border: 1px dashed var(--dsw-alias-border-l4);
+  border-radius: 12px;
+  color: var(--dsw-alias-label-tertiary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 13px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.omnimux-products-filelist {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.omnimux-products-filelist li {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+  align-items: center;
+}
+.omnimux-products-filelist-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.omnimux-products-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.omnimux-products-tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--dsw-alias-bg-module-platform);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.omnimux-products-section { display: flex; flex-direction: column; gap: 8px; }
+.omnimux-products-section-title { font-size: 13px; font-weight: 500; }
+.omnimux-products-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.omnimux-products-angle-row,
+.omnimux-products-seg-row {
+  display: grid;
+  grid-template-columns: 1fr 96px 28px;
+  gap: 6px;
+}
+.omnimux-products-comp-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 28px;
+  gap: 6px;
+}
+.omnimux-products-label {
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+  margin: 0;
+}
+`;
+function injectProductsStyles() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(STYLES_ID)) return;
+  const styleNode = document.createElement("style");
+  styleNode.id = STYLES_ID;
+  styleNode.textContent = PRODUCTS_CSS;
+  document.head.appendChild(styleNode);
+}
+
 // src/client/ProductsStage.jsx
-var import_jsx_runtime5 = require("react/jsx-runtime");
+var import_jsx_runtime6 = require("react/jsx-runtime");
 var POLL_MS = 5e3;
 function messageOf(result, t) {
   if (result.body?.error === "name-conflict") return t("error.nameConflict");
@@ -1787,26 +2293,19 @@ function pickErrorText(result, t) {
 function citeOf(product) {
   return product.cite || `@\u4EA7\u54C1/${product.name}`;
 }
-var chromeButton = {
-  border: "1px solid var(--dsw-alias-border-l2)",
-  background: "transparent",
-  color: "inherit",
-  borderRadius: 999,
-  cursor: "pointer",
-  fontSize: 13,
-  lineHeight: "20px",
-  padding: "6px 12px"
-};
 function ProductsStage({ t, stage }) {
-  const open = (0, import_react2.useSyncExternalStore)(
+  (0, import_react3.useEffect)(() => {
+    injectProductsStyles();
+  }, []);
+  const open = (0, import_react3.useSyncExternalStore)(
     stage ? (cb) => stage.subscribe(cb) : () => () => {
     },
     stage ? () => stage.getSnapshot() : () => false
   );
-  const [everOpened, setEverOpened] = (0, import_react2.useState)(false);
-  const [box, setBox] = (0, import_react2.useState)(() => ({ top: 0, left: 0, width: 0, height: 0 }));
+  const [everOpened, setEverOpened] = (0, import_react3.useState)(false);
+  const [box, setBox] = (0, import_react3.useState)(() => ({ top: 0, left: 0, width: 0, height: 0 }));
   if (open && !everOpened) setEverOpened(true);
-  (0, import_react2.useLayoutEffect)(() => {
+  (0, import_react3.useLayoutEffect)(() => {
     if (!open || !stage) return void 0;
     const update = () => {
       setBox(stage.readBox());
@@ -1822,22 +2321,22 @@ function ProductsStage({ t, stage }) {
       window.removeEventListener("resize", update);
     };
   }, [open, stage]);
-  const [products, setProducts] = (0, import_react2.useState)([]);
-  const [query, setQuery] = (0, import_react2.useState)("");
-  const [creating, setCreating] = (0, import_react2.useState)(false);
-  const [editing, setEditing] = (0, import_react2.useState)(null);
-  const [editingDirty, setEditingDirty] = (0, import_react2.useState)(false);
-  const [pendingRemove, setPendingRemove] = (0, import_react2.useState)(null);
-  const [selectedIds, setSelectedIds] = (0, import_react2.useState)(() => /* @__PURE__ */ new Set());
-  const [error, setError] = (0, import_react2.useState)("");
-  const [formError, setFormError] = (0, import_react2.useState)("");
-  const [busy, setBusy] = (0, import_react2.useState)(false);
-  const [copiedId, setCopiedId] = (0, import_react2.useState)("");
-  const [revision, setRevision] = (0, import_react2.useState)(null);
-  const revisionRef = (0, import_react2.useRef)(revision);
-  const editingRef = (0, import_react2.useRef)(editing);
+  const [products, setProducts] = (0, import_react3.useState)([]);
+  const [query, setQuery] = (0, import_react3.useState)("");
+  const [creating, setCreating] = (0, import_react3.useState)(false);
+  const [editing, setEditing] = (0, import_react3.useState)(null);
+  const [editingDirty, setEditingDirty] = (0, import_react3.useState)(false);
+  const [pendingRemove, setPendingRemove] = (0, import_react3.useState)(null);
+  const [selectedIds, setSelectedIds] = (0, import_react3.useState)(() => /* @__PURE__ */ new Set());
+  const [error, setError] = (0, import_react3.useState)("");
+  const [formError, setFormError] = (0, import_react3.useState)("");
+  const [busy, setBusy] = (0, import_react3.useState)(false);
+  const [copiedId, setCopiedId] = (0, import_react3.useState)("");
+  const [revision, setRevision] = (0, import_react3.useState)(null);
+  const revisionRef = (0, import_react3.useRef)(revision);
+  const editingRef = (0, import_react3.useRef)(editing);
   editingRef.current = editing;
-  const refreshState = (0, import_react2.useCallback)((force = false) => {
+  const refreshState = (0, import_react3.useCallback)((force = false) => {
     const current = revisionRef.current;
     const usePrev = !force && current !== null;
     return getState(usePrev ? current : void 0).then((result) => {
@@ -1870,11 +2369,11 @@ function ProductsStage({ t, stage }) {
       setError(errText(caught));
     });
   }, [t]);
-  (0, import_react2.useEffect)(() => {
+  (0, import_react3.useEffect)(() => {
     if (!open) return void 0;
     void refreshState(true);
   }, [open, refreshState]);
-  (0, import_react2.useEffect)(() => {
+  (0, import_react3.useEffect)(() => {
     if (!open) return void 0;
     const timer = setInterval(() => {
       void refreshState();
@@ -1936,211 +2435,108 @@ ${(product.categories || []).join("\n")}`.toLowerCase();
     setSelectedIds(/* @__PURE__ */ new Set());
   };
   if (!stage || !everOpened) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
     "div",
     {
       role: "region",
       "aria-label": t("stage.title"),
       "aria-hidden": open ? void 0 : "true",
+      className: "omnimux-products-stage",
+      "data-visible": open ? "true" : "false",
       style: {
-        position: "fixed",
-        top: box.top,
-        left: box.left,
-        width: box.width,
-        height: box.height,
-        zIndex: 200,
-        pointerEvents: open ? "auto" : "none",
-        display: open ? "flex" : "none",
-        flexDirection: "column",
-        background: "var(--dsw-alias-bg-base)",
-        color: "var(--dsw-alias-label-primary)",
-        overflow: "hidden"
+        "--stage-top": `${box.top}px`,
+        "--stage-left": `${box.left}px`,
+        "--stage-width": `${box.width}px`,
+        "--stage-height": `${box.height}px`
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("style", { children: FOCUS_CSS }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
-          "div",
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "omnimux-products-stage-header", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "omnimux-products-stage-heading", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h1", { className: "omnimux-products-stage-title", children: t("stage.title") }),
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "omnimux-products-stage-subtitle", children: t("stage.subtitle") })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+            Button,
+            {
+              variant: "outline",
+              size: "sm",
+              leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(RefreshIcon, {}),
+              disabled: busy,
+              onClick: () => {
+                setBusy(true);
+                void refreshState(true).finally(() => {
+                  setBusy(false);
+                });
+              },
+              children: busy ? t("stage.refreshing") : t("stage.refresh")
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+            IconButton,
+            {
+              "aria-label": t("stage.close"),
+              variant: "ghost",
+              onClick: () => {
+                stage.set(false);
+              },
+              children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(CloseIcon, { size: 16 })
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+          FilterBar,
           {
-            style: {
-              flex: "none",
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 12,
-              padding: "12px 20px 12px",
-              WebkitAppRegion: "no-drag"
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h1", { style: { margin: 0, fontSize: 16, fontWeight: 600, lineHeight: "32px" }, children: t("stage.title") }),
-                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: 0, fontSize: 13, lineHeight: "20px", color: "var(--dsw-alias-label-secondary)" }, children: t("stage.subtitle") })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
-                "button",
-                {
-                  type: "button",
-                  style: { ...chromeButton, display: "inline-flex", alignItems: "center", gap: 5, ...busy ? { opacity: 0.5, cursor: "default" } : {} },
-                  disabled: busy,
-                  onClick: () => {
-                    setBusy(true);
-                    void refreshState(true).finally(() => {
-                      setBusy(false);
-                    });
-                  },
-                  children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(RefreshIcon, {}),
-                    busy ? t("stage.refreshing") : t("stage.refresh")
-                  ]
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-                "button",
-                {
-                  type: "button",
-                  "aria-label": t("stage.close"),
-                  onClick: () => {
-                    stage.set(false);
-                  },
-                  style: {
-                    border: "none",
-                    background: "transparent",
-                    color: "inherit",
-                    cursor: "pointer",
-                    width: 28,
-                    height: 28,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: 6
-                  },
-                  children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(CloseIcon, { size: 16 })
-                }
-              )
-            ]
+            className: "omnimux-products-stage-toolbar",
+            compact: true,
+            search: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+              SearchField,
+              {
+                value: query,
+                placeholder: t("search.placeholder"),
+                "aria-label": t("search.placeholder"),
+                debounceMs: 0,
+                stretch: true,
+                onValueChange: setQuery
+              }
+            ),
+            filters: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "omnimux-products-label", children: t("sort.updated") }),
+            actions: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+              Button,
+              {
+                variant: "primary",
+                leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(PlusIcon, {}),
+                onClick: () => {
+                  setCreating(true);
+                  setFormError("");
+                  setEditing(null);
+                  setEditingDirty(false);
+                },
+                children: t("add.button")
+              }
+            )
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { flex: "none", display: "flex", gap: 8, padding: "0 20px 16px" }, children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
-          "button",
-          {
-            type: "button",
-            onClick: () => {
-              setCreating(true);
-              setFormError("");
-              setEditing(null);
-              setEditingDirty(false);
-            },
-            style: {
-              border: "none",
-              background: "var(--dsw-alias-button-primary-fill)",
-              color: "var(--dsw-alias-label-primary-foreground)",
-              borderRadius: 999,
-              padding: "8px 16px",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 13,
-              fontWeight: 500
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(PlusIcon, {}),
-              t("add.button")
-            ]
-          }
-        ) }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
-          "div",
-          {
-            style: {
-              flex: "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "0 20px 12px",
-              borderBottom: "1px solid var(--dsw-alias-border-l2)"
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-                "input",
-                {
-                  value: query,
-                  placeholder: t("search.placeholder"),
-                  onChange: (event) => {
-                    setQuery(event.target.value);
-                  },
-                  style: {
-                    border: "1px solid var(--dsw-alias-border-l2)",
-                    borderRadius: 999,
-                    padding: "6px 12px",
-                    fontSize: 13,
-                    minWidth: 220,
-                    background: "transparent",
-                    color: "inherit"
-                  }
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: { marginLeft: "auto", fontSize: 12, color: "var(--dsw-alias-label-tertiary)" }, children: t("sort.updated") })
-            ]
-          }
-        ),
-        selecting ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
-          "div",
-          {
-            style: {
-              flex: "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "8px 20px",
-              borderBottom: "1px solid var(--dsw-alias-border-l2)"
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { style: { fontSize: 13 }, children: t("select.count").replace("{n}", String(selectedCount)) }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { style: { marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: clearSelection,
-                    style: {
-                      border: "none",
-                      background: "transparent",
-                      color: "inherit",
-                      cursor: "pointer",
-                      fontSize: 13,
-                      padding: "4px 8px"
-                    },
-                    children: t("select.clear")
-                  }
-                ),
-                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-                  "button",
-                  {
-                    type: "button",
-                    disabled: busy,
-                    onClick: () => {
-                      const names = products.filter((row) => selectedIds.has(row.id)).map((row) => row.name);
-                      setPendingRemove({ ids: [...selectedIds], names });
-                    },
-                    style: {
-                      border: "none",
-                      background: "var(--dsw-alias-state-error-tertiary)",
-                      color: "var(--dsw-alias-label-error)",
-                      borderRadius: 999,
-                      padding: "6px 12px",
-                      cursor: busy ? "default" : "pointer",
-                      fontSize: 13,
-                      fontWeight: 500,
-                      opacity: busy ? 0.5 : 1
-                    },
-                    children: t("select.delete").replace("{n}", String(selectedCount))
-                  }
-                )
-              ] })
-            ]
-          }
-        ) : null,
-        error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { style: { margin: 0, padding: "6px 20px", fontSize: 12, color: "var(--dsw-alias-label-error)" }, children: error }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { style: { flex: 1, minHeight: 0, overflow: "auto", padding: 16 }, children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        selecting ? /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "omnimux-products-selection", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: t("select.count").replace("{n}", String(selectedCount)) }),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "omnimux-products-selection-actions", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Button, { variant: "ghost", size: "sm", onClick: clearSelection, children: t("select.clear") }),
+            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+              Button,
+              {
+                variant: "danger",
+                size: "sm",
+                disabled: busy,
+                onClick: () => {
+                  const names = products.filter((row) => selectedIds.has(row.id)).map((row) => row.name);
+                  setPendingRemove({ ids: [...selectedIds], names });
+                },
+                children: t("select.delete").replace("{n}", String(selectedCount))
+              }
+            )
+          ] })
+        ] }) : null,
+        error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "omnimux-products-error", children: error }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "omnimux-products-body", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
           ProductGrid,
           {
             t,
@@ -2174,7 +2570,7 @@ ${(product.categories || []).join("\n")}`.toLowerCase();
             onToggleSelect: toggleSelect
           }
         ) }),
-        creating ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        creating ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
           ProductFormDialog,
           {
             t,
@@ -2193,7 +2589,7 @@ ${(product.categories || []).join("\n")}`.toLowerCase();
             }
           }
         ) : null,
-        editing ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        editing ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
           ProductFormDialog,
           {
             t,
@@ -2223,7 +2619,7 @@ ${(product.categories || []).join("\n")}`.toLowerCase();
             }
           }
         ) : null,
-        pendingRemove ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        pendingRemove ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
           ConfirmRemoveDialog,
           {
             t,

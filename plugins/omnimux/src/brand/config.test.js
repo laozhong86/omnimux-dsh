@@ -11,6 +11,9 @@ test('parseBrandConfig fills OmniMux defaults', () => {
   assert.equal(parsed.hidePreviewBadge, true)
   assert.equal(parsed.rewriteWelcome, true)
   assert.equal(parsed.heroHeadline, DEFAULT_CONFIG.heroHeadline)
+  assert.equal(parsed.heroHeadlineFit, true)
+  assert.equal(parsed.heroHeadlineMaxPx, 26)
+  assert.equal(parsed.heroHeadlineMinPx, 16)
   assert.ok(parsed.logoSvg.includes('<svg'))
 })
 
@@ -43,4 +46,40 @@ test('assertBrandConfig rejects an empty hero headline', () => {
 test('parseBrandConfig keeps an explicit heroHeadline', () => {
   const parsed = parseBrandConfig({ heroHeadline: '自有主视觉文案' })
   assert.equal(parsed.heroHeadline, '自有主视觉文案')
+})
+
+test('parseBrandConfig keeps explicit headline-fit knobs', () => {
+  const parsed = parseBrandConfig({
+    heroHeadlineFit: false,
+    heroHeadlineMaxPx: 24,
+    heroHeadlineMinPx: 12,
+  })
+  assert.equal(parsed.heroHeadlineFit, false)
+  assert.equal(parsed.heroHeadlineMaxPx, 24)
+  assert.equal(parsed.heroHeadlineMinPx, 12)
+})
+
+test('assertBrandConfig rejects a non-boolean heroHeadlineFit', () => {
+  assert.throws(
+    () => assertBrandConfig({ ...DEFAULT_CONFIG, heroHeadlineFit: 'yes' }),
+    /heroHeadlineFit must be a boolean/,
+  )
+})
+
+test('assertBrandConfig rejects a non-positive headline px', () => {
+  assert.throws(
+    () => assertBrandConfig({ ...DEFAULT_CONFIG, heroHeadlineMaxPx: 0 }),
+    /heroHeadlineMaxPx must be a positive integer/,
+  )
+  assert.throws(
+    () => assertBrandConfig({ ...DEFAULT_CONFIG, heroHeadlineMinPx: 12.5 }),
+    /heroHeadlineMinPx must be a positive integer/,
+  )
+})
+
+test('assertBrandConfig rejects minPx above maxPx', () => {
+  assert.throws(
+    () => assertBrandConfig({ ...DEFAULT_CONFIG, heroHeadlineMinPx: 28, heroHeadlineMaxPx: 26 }),
+    /heroHeadlineMinPx must be <= heroHeadlineMaxPx/,
+  )
 })

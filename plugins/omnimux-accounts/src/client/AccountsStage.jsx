@@ -1,4 +1,6 @@
 import { useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { IconCloseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconButton } from 'dsh-ui-kit'
 import { AccountsSection } from './AccountsSection.jsx'
 
 /**
@@ -50,61 +52,26 @@ export function AccountsStage({ t, stage }) {
       role="region"
       aria-label={t('title')}
       aria-hidden={open ? undefined : 'true'}
+      className="omnimux-accounts-stage"
+      data-visible={open ? 'true' : 'false'}
       style={{
-        position: 'fixed',
-        top: box.top,
-        left: box.left,
-        width: box.width,
-        height: box.height,
-        zIndex: 200,
-        pointerEvents: open ? 'auto' : 'none',
-        display: open ? 'flex' : 'none',
-        flexDirection: 'column',
-        background: 'var(--dsw-alias-bg-primary, var(--dsw-bg, #111))',
-        color: 'var(--dsw-alias-label-primary, inherit)',
-        overflow: 'auto',
+        '--stage-top': `${box.top}px`,
+        '--stage-left': `${box.left}px`,
+        '--stage-width': `${box.width}px`,
+        '--stage-height': `${box.height}px`,
       }}
     >
-      <div style={{
-        flex: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        minHeight: 32,
-        padding: '12px 20px 12px',
-        WebkitAppRegion: 'no-drag',
-      }}
-      >
-        <h1 style={{
-          margin: 0,
-          flex: 1,
-          minWidth: 0,
-          fontSize: 16,
-          fontWeight: 600,
-          lineHeight: '32px',
-        }}
-        >
-          {t('title')}
-        </h1>
-        <button
-          type="button"
+      <div className="omnimux-accounts-stage-header">
+        <h1 className="omnimux-accounts-stage-title">{t('title')}</h1>
+        <IconButton
           aria-label={t('close')}
+          variant="ghost"
           onClick={() => { stage.set(false) }}
-          style={{
-            WebkitAppRegion: 'no-drag',
-            border: 'none',
-            background: 'transparent',
-            color: 'inherit',
-            cursor: 'pointer',
-            fontSize: 20,
-            lineHeight: 1,
-            padding: 4,
-          }}
         >
-          ×
-        </button>
+          <IconCloseOutline16 />
+        </IconButton>
       </div>
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+      <div className="omnimux-accounts-stage-body">
         <AccountsSection t={t} active={open} />
       </div>
     </div>

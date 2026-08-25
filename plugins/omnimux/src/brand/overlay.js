@@ -16,6 +16,7 @@ import {
   PREVIEW_BADGE_TEXTS,
   WORDMARK_VIEWBOX,
 } from './defaults.js'
+import { startHeadlineFit } from './hero-headline-fit.js'
 
 /**
  * @typedef {import('./defaults.js').BrandConfig} BrandConfig
@@ -41,6 +42,9 @@ export function resolveConfig(raw) {
     hidePreviewBadge: raw?.hidePreviewBadge ?? DEFAULT_CONFIG.hidePreviewBadge,
     rewriteWelcome: raw?.rewriteWelcome ?? DEFAULT_CONFIG.rewriteWelcome,
     heroHeadline: raw?.heroHeadline ?? DEFAULT_CONFIG.heroHeadline,
+    heroHeadlineFit: raw?.heroHeadlineFit ?? DEFAULT_CONFIG.heroHeadlineFit,
+    heroHeadlineMaxPx: raw?.heroHeadlineMaxPx ?? DEFAULT_CONFIG.heroHeadlineMaxPx,
+    heroHeadlineMinPx: raw?.heroHeadlineMinPx ?? DEFAULT_CONFIG.heroHeadlineMinPx,
   }
 }
 
@@ -104,6 +108,8 @@ export function applyOverlay(document, config, restores) {
   rewriteHeroHeadline(document, config, restores)
   if (config.hidePreviewBadge) hidePreviewBadges(document, restores)
   if (config.rewriteWelcome) rewriteWelcomeCopy(document, config.productName, restores)
+  // After rewrite / hide so retarget sees the live headline and a collapsed badge.
+  startHeadlineFit(document, config, restores)
 }
 
 /**

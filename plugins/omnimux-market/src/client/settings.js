@@ -82,8 +82,9 @@
         h("li", { className: "sh-cfg-item" },
         h("div", { className: "sh-cfg" + (open ? " open" : "") },
           h("div", { className: "sh-cfg-h" },
-            h("button", {
+            h(Button, {
               type: "button",
+              variant: "ghost",
               className: "sh-cfg-expand",
               "aria-expanded": open,
               onClick: () => setOpen((v) => !v),
@@ -94,8 +95,10 @@
               ),
               dirty ? h("span", { className: "sh-tag orange" }, tr("cfg.unsaved")) : null,
             ),
-            h("button", {
+            h(IconButton, {
               type: "button",
+              variant: "ghost",
+              size: "sm",
               className: "sh-cfg-toggle",
               "aria-label": open ? tr("cfg.collapse") : tr("cfg.expand"),
               onClick: () => setOpen((v) => !v),

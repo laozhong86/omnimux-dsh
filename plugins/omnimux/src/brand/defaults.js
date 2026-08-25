@@ -33,6 +33,21 @@ export const DEFAULT_HERO_HEADLINE = '属于你的AI社媒运营团队'
 /** Official empty-session headlines in the two shipped GUI locales. Exact match only. */
 export const OFFICIAL_HERO_HEADLINES = ['探索未至之境', 'Into the Unknown']
 
+/** Official hero title size (figma 34:10411: 26/32 wt500). */
+export const DEFAULT_HERO_HEADLINE_MAX_PX = 26
+
+/** Floor when the session column is too narrow to hold the headline on one line. */
+export const DEFAULT_HERO_HEADLINE_MIN_PX = 16
+
+/** Official hero title line-height at {@link DEFAULT_HERO_HEADLINE_MAX_PX}. */
+export const DEFAULT_HERO_HEADLINE_LEADING_PX = 32
+
+/** Fish column width in the official `.headline` grid (`grid-template-columns: 34px auto auto`). */
+export const HERO_HEADLINE_FISH_PX = 34
+
+/** `column-gap` on the official `.headline` grid. */
+export const HERO_HEADLINE_GAP_PX = 10
+
 /** Bundled OmniMux mark; same document as `assets/logo.svg`. */
 export const DEFAULT_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
   <rect width="32" height="32" rx="7" fill="#0A0A0B"/>
@@ -56,6 +71,9 @@ export const DEFAULT_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox
  * @property {boolean} hidePreviewBadge When true, hide the hero 预览版 / Preview pill.
  * @property {boolean} rewriteWelcome When true, rewrite DeepSeek Harness / DSH phrases in welcome copy.
  * @property {string} heroHeadline Empty-session headline replacing the official 探索未至之境 / Into the Unknown.
+ * @property {boolean} heroHeadlineFit When true, shrink the hero headline to one line in a narrow session column.
+ * @property {number} heroHeadlineMaxPx Wide-column headline font-size in CSS px (official 26).
+ * @property {number} heroHeadlineMinPx Narrow-column floor in CSS px.
  */
 
 /** Schema defaults used when the index tap is absent. */
@@ -67,4 +85,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   hidePreviewBadge: true,
   rewriteWelcome: true,
   heroHeadline: DEFAULT_HERO_HEADLINE,
+  heroHeadlineFit: true,
+  heroHeadlineMaxPx: DEFAULT_HERO_HEADLINE_MAX_PX,
+  heroHeadlineMinPx: DEFAULT_HERO_HEADLINE_MIN_PX,
 })

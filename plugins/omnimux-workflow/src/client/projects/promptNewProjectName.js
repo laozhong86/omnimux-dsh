@@ -98,7 +98,7 @@ export function promptNewProjectName(t, opts = {}) {
     hint.textContent = t('projects.dialog.hint')
     css(hint, { margin: '0', fontSize: '12px', lineHeight: '18px', color: 'var(--dsw-alias-label-tertiary)' })
     const errorEl = document.createElement('p')
-    css(errorEl, { margin: '0', fontSize: '12px', color: 'var(--dsw-alias-label-error, #c00)', display: 'none' })
+    css(errorEl, { margin: '0', fontSize: '12px', color: 'var(--dsw-alias-state-error-primary, var(--dsw-alias-label-error))', display: 'none' })
     body.append(label, input, hint, errorEl)
 
     const footer = document.createElement('div')

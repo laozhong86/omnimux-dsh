@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { IconCloseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, InputField, ModalDialog } from 'dsh-ui-kit'
 import { importLocalInspiration } from './api.js'
 
 function detectPlatform(url) {
@@ -54,82 +54,66 @@ export function InspirationImportDialog({ t, onClose, onSuccess }) {
   }
 
   return (
-    <div className="omnimux-inspiration-modal-overlay" onClick={onClose}>
-      <div className="omnimux-inspiration-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="omnimux-inspiration-modal-header">
-          <h2>{t('add.dialogTitle')}</h2>
-          <button
-            type="button"
-            className="omnimux-inspiration-btn-secondary"
-            style={{ padding: 4, height: 'auto', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-            onClick={onClose}
-            aria-label={t('close')}
+    <ModalDialog
+      open
+      onClose={onClose}
+      title={t('add.dialogTitle')}
+      closeLabel={t('close')}
+      footer={(
+        <>
+          <Button variant="outline" onClick={onClose} disabled={loading}>{t('close')}</Button>
+          <Button
+            variant="primary"
+            loading={loading}
+            disabled={loading || !url.trim()}
+            onClick={(event) => { void handleSubmit(event) }}
           >
-            <IconCloseOutline16 size={16} />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <div className="omnimux-inspiration-modal-body">
-            {error ? <div style={{ color: '#ef4444', fontSize: 13 }}>{error}</div> : null}
-            {success ? <div style={{ color: '#10b981', fontSize: 13 }}>{t('add.success')}</div> : null}
+            {loading ? t('add.importing') : t('add.submit')}
+          </Button>
+        </>
+      )}
+    >
+      <form className="omnimux-inspiration-import-body" onSubmit={handleSubmit}>
+        {error ? <div className="omnimux-inspiration-error-text" role="alert">{error}</div> : null}
+        {success ? <div className="omnimux-inspiration-success-text">{t('add.success')}</div> : null}
 
-            <div className="omnimux-inspiration-field">
-              <label>{t('add.urlLabel')}</label>
-              <input
-                type="url"
-                required
-                className="omnimux-inspiration-input"
-                placeholder={t('add.urlPlaceholder')}
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                disabled={loading}
-              />
-            </div>
+        <InputField
+          type="url"
+          required
+          label={t('add.urlLabel')}
+          placeholder={t('add.urlPlaceholder')}
+          value={url}
+          disabled={loading}
+          onChange={(e) => setUrl(e.target.value)}
+        />
 
-            {platformName ? (
-              <div className="omnimux-inspiration-field">
-                <label>{t('add.platformLabel')}</label>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--dsw-alias-accent, #3b82f6)' }}>
-                  {platformName}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="omnimux-inspiration-field">
-              <label>{t('add.tagsLabel')}</label>
-              <input
-                type="text"
-                className="omnimux-inspiration-input"
-                placeholder={t('add.tagsPlaceholder')}
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-              <input
-                type="checkbox"
-                id="autoAnalyzeCheck"
-                checked={autoAnalyze}
-                onChange={(e) => setAutoAnalyze(e.target.checked)}
-                disabled={loading}
-              />
-              <label htmlFor="autoAnalyzeCheck" style={{ fontSize: 13, cursor: 'pointer' }}>
-                {t('add.autoAnalyze')}
-              </label>
-            </div>
+        {platformName ? (
+          <div className="omnimux-inspiration-field">
+            <span className="omnimux-inspiration-field-label">{t('add.platformLabel')}</span>
+            <div className="omnimux-inspiration-platform-name">{platformName}</div>
           </div>
-          <div className="omnimux-inspiration-modal-footer">
-            <button type="button" className="omnimux-inspiration-btn-secondary" onClick={onClose} disabled={loading}>
-              {t('close')}
-            </button>
-            <button type="submit" className="omnimux-inspiration-btn" disabled={loading || !url.trim()}>
-              {loading ? t('add.importing') : t('add.submit')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        ) : null}
+
+        <InputField
+          type="text"
+          label={t('add.tagsLabel')}
+          placeholder={t('add.tagsPlaceholder')}
+          value={tags}
+          disabled={loading}
+          onChange={(e) => setTags(e.target.value)}
+        />
+
+        <label className="omnimux-inspiration-check">
+          <input
+            type="checkbox"
+            id="autoAnalyzeCheck"
+            checked={autoAnalyze}
+            onChange={(e) => setAutoAnalyze(e.target.checked)}
+            disabled={loading}
+          />
+          <span>{t('add.autoAnalyze')}</span>
+        </label>
+      </form>
+    </ModalDialog>
   )
 }

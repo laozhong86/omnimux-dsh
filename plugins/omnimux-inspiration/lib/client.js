@@ -355,10 +355,491 @@ function mountSidebarEntry(stage, t, locale) {
 }
 
 // src/client/InspirationStage.jsx
-var import_react2 = require("react");
+var import_react3 = require("react");
+var import_dsh_client_ui_primitives2 = require("@deepseek-ai/dsh-client-ui-primitives");
+
+// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
+var import_react = require("react");
+var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
+var import_jsx_runtime = require("react/jsx-runtime");
+function cssClass(value, name2) {
+  if (!value) throw new Error(`dsh-ui-kit: missing CSS module class "${name2}"`);
+  return value;
+}
+function cx(...parts) {
+  const out = [];
+  for (const part of parts) {
+    if (!part) continue;
+    if (typeof part === "string" || typeof part === "number") {
+      out.push(String(part));
+      continue;
+    }
+    for (const [key, on] of Object.entries(part)) if (on) out.push(key);
+  }
+  return out.join(" ");
+}
+var injected = /* @__PURE__ */ new Set();
+function injectCss(id, css) {
+  if (typeof document === "undefined") return;
+  if (injected.has(id)) return;
+  injected.add(id);
+  const style = document.createElement("style");
+  style.setAttribute("data-dsh-ui-kit", id);
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+injectCss("Button.module.css", '.dshUk-Button-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-shrink: 0;\n  gap: 6px;\n  box-sizing: border-box;\n  margin: 0;\n  border: 1px solid transparent;\n  border-radius: 8px;\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  line-height: 18px;\n  letter-spacing: 0;\n  white-space: nowrap;\n  color: var(--dsw-alias-label-primary);\n  background: transparent;\n  padding: 0 12px;\n  height: 32px;\n  vertical-align: middle;\n  user-select: none;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    transform 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-Button-button:focus {\n  outline: none;\n}\n\n.dshUk-Button-button:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-Button-button:disabled,\n.dshUk-Button-button[aria-disabled="true"] {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n\n.dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n  transform: scale(0.96);\n}\n\n.dshUk-Button-sm {\n  height: 28px;\n  padding: 0 10px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-Button-xs {\n  height: 24px;\n  padding: 0 8px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  gap: 4px;\n}\n\n.dshUk-Button-iconOnly {\n  padding: 0;\n  width: 32px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-sm {\n  width: 28px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-xs {\n  width: 24px;\n}\n\n.dshUk-Button-primary {\n  background: var(--dsw-alias-button-primary-fill);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-primary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-primary-hover);\n}\n\n.dshUk-Button-secondary {\n  background: var(--dsw-alias-bg-layer-1);\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-secondary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-ghost {\n  background: transparent;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-ghost:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-Button-ghost:active:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-active);\n}\n\n.dshUk-Button-outline {\n  background: transparent;\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-outline:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-danger {\n  background: var(--dsw-alias-state-error-primary);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-danger:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-state-error-secondary);\n}\n\n.dshUk-Button-ghost[aria-pressed="true"],\n.dshUk-Button-secondary[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  box-shadow: inset 0 0 0 1px var(--dsw-alias-button-ghost-active-border);\n}\n\n.dshUk-Button-slot {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n}\n\n.dshUk-Button-xs .dshUk-Button-slot {\n  width: 14px;\n  height: 14px;\n}\n\n.dshUk-Button-spinner {\n  animation: dshUkSpin 0.7s linear infinite;\n}\n\n.dshUk-Button-label {\n  min-width: 0;\n}\n\n.dshUk-Button-loadingLabel {\n  opacity: 0.84;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-Button-button {\n    transition: none;\n  }\n\n  .dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n    transform: none;\n  }\n\n  .dshUk-Button-spinner {\n    animation: none;\n  }\n}\n\n@keyframes dshUkSpin {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}\n');
+var Button_module_css_default = {
+  "button": "dshUk-Button-button",
+  "sm": "dshUk-Button-sm",
+  "xs": "dshUk-Button-xs",
+  "iconOnly": "dshUk-Button-iconOnly",
+  "primary": "dshUk-Button-primary",
+  "secondary": "dshUk-Button-secondary",
+  "ghost": "dshUk-Button-ghost",
+  "outline": "dshUk-Button-outline",
+  "danger": "dshUk-Button-danger",
+  "slot": "dshUk-Button-slot",
+  "spinner": "dshUk-Button-spinner",
+  "label": "dshUk-Button-label",
+  "loadingLabel": "dshUk-Button-loadingLabel"
+};
+var VARIANT_CLASS = {
+  primary: cssClass(Button_module_css_default.primary, "primary"),
+  secondary: cssClass(Button_module_css_default.secondary, "secondary"),
+  ghost: cssClass(Button_module_css_default.ghost, "ghost"),
+  outline: cssClass(Button_module_css_default.outline, "outline"),
+  danger: cssClass(Button_module_css_default.danger, "danger")
+};
+var SIZE_CLASS$1 = {
+  default: void 0,
+  sm: cssClass(Button_module_css_default.sm, "sm"),
+  xs: cssClass(Button_module_css_default.xs, "xs")
+};
+var Button = (0, import_react.forwardRef)(function Button2({ variant = "secondary", size = "default", loading = false, leadingIcon, trailingIcon, type = "button", className, disabled, children, ...rest }, ref) {
+  const isDisabled = Boolean(disabled) || loading;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+    ...rest,
+    ref,
+    type,
+    className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], className),
+    disabled: isDisabled,
+    "aria-busy": loading || void 0,
+    "aria-disabled": isDisabled || void 0,
+    children: [
+      loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(Button_module_css_default.slot, Button_module_css_default.spinner),
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 })
+      }) : leadingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: Button_module_css_default.slot,
+        "aria-hidden": "true",
+        children: leadingIcon
+      }) : null,
+      children != null && children !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(Button_module_css_default.label, loading && Button_module_css_default.loadingLabel),
+        children
+      }) : null,
+      !loading && trailingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: Button_module_css_default.slot,
+        "aria-hidden": "true",
+        children: trailingIcon
+      }) : null
+    ]
+  });
+});
+var IconButton = (0, import_react.forwardRef)(function IconButton2({ variant = "ghost", size = "default", loading = false, type = "button", className, disabled, children, title, tooltipSide = "bottom", "aria-label": ariaLabel, ...rest }, ref) {
+  const isDisabled = Boolean(disabled) || loading;
+  const tooltip = title ?? ariaLabel;
+  const button = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+    ...rest,
+    ref,
+    type,
+    className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], Button_module_css_default.iconOnly, className),
+    disabled: isDisabled,
+    "aria-label": ariaLabel,
+    "aria-busy": loading || void 0,
+    "aria-disabled": isDisabled || void 0,
+    children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+      className: cx(Button_module_css_default.slot, loading && Button_module_css_default.spinner),
+      "aria-hidden": "true",
+      children: loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 }) : children
+    })
+  });
+  if (!tooltip) return button;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Tooltip, {
+    label: tooltip,
+    side: tooltipSide,
+    delayMs: 280,
+    disabled: isDisabled,
+    children: button
+  });
+});
+injectCss("SearchField.module.css", '.dshUk-SearchField-root {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  min-width: 140px;\n  max-width: 260px;\n  width: 100%;\n  padding: 0 8px 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-SearchField-stretch {\n  flex: 1 1 200px;\n}\n\n.dshUk-SearchField-root:hover:not(.dshUk-SearchField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-SearchField-root:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-SearchField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-icon {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-SearchField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-SearchField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-input::-webkit-search-decoration,\n.dshUk-SearchField-input::-webkit-search-cancel-button,\n.dshUk-SearchField-input::-webkit-search-results-button,\n.dshUk-SearchField-input::-webkit-search-results-decoration {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-input[type="search"] {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-shortcut {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 4px;\n  background: var(--dsw-alias-bg-layer-2);\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 11px;\n  line-height: 16px;\n  font-weight: 500;\n  letter-spacing: 0;\n}\n\n.dshUk-SearchField-clear {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  width: 20px;\n  height: 20px;\n  margin: 0;\n  padding: 0;\n  border: none;\n  border-radius: 6px;\n  background: transparent;\n  color: var(--dsw-alias-label-tertiary);\n  cursor: pointer;\n}\n\n.dshUk-SearchField-clear:hover:not(:disabled) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-clear:focus {\n  outline: none;\n}\n\n.dshUk-SearchField-clear:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 1px;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-SearchField-root {\n    transition: none;\n  }\n}\n');
+var SearchField_module_css_default = {
+  "root": "dshUk-SearchField-root",
+  "stretch": "dshUk-SearchField-stretch",
+  "disabled": "dshUk-SearchField-disabled",
+  "icon": "dshUk-SearchField-icon",
+  "input": "dshUk-SearchField-input",
+  "shortcut": "dshUk-SearchField-shortcut",
+  "clear": "dshUk-SearchField-clear"
+};
+function isTypingTarget(target) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  return target.isContentEditable;
+}
+function matchesShortcut(event, shortcut) {
+  const raw = shortcut.trim();
+  if (!raw) return false;
+  const lower = raw.toLowerCase();
+  const wantsMeta = /⌘|cmd|meta/.test(lower);
+  const wantsCtrl = /\bctrl\b|⌃/.test(lower);
+  const wantsAlt = /\balt\b|⌥/.test(lower);
+  const wantsShift = /\bshift\b|⇧/.test(lower);
+  const key = raw.replace(/⌘|⌃|⌥|⇧|cmd|meta|ctrl|alt|shift|\+/gi, "").trim().toLowerCase();
+  if (!key) return false;
+  if (Boolean(event.metaKey) !== wantsMeta) return false;
+  if (Boolean(event.ctrlKey) !== wantsCtrl) return false;
+  if (Boolean(event.altKey) !== wantsAlt) return false;
+  if (Boolean(event.shiftKey) !== wantsShift) return false;
+  return event.key.toLowerCase() === key;
+}
+var SearchField = (0, import_react.forwardRef)(function SearchField2({ value, defaultValue = "", onValueChange, onClear, debounceMs = 200, shortcut, stretch = false, clearLabel = "Clear", className, disabled, id, placeholder = "Search", ...rest }, ref) {
+  const generatedId = (0, import_react.useId)();
+  const inputId = id ?? generatedId;
+  const inputRef = (0, import_react.useRef)(null);
+  const timerRef = (0, import_react.useRef)(null);
+  const controlled = value !== void 0;
+  const [inner, setInner] = (0, import_react.useState)(defaultValue);
+  const current = controlled ? value : inner;
+  const immediate = controlled || debounceMs <= 0;
+  (0, import_react.useEffect)(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+  (0, import_react.useEffect)(() => {
+    if (!shortcut || disabled) return;
+    const onKey = (event) => {
+      if (event.defaultPrevented) return;
+      if (isTypingTarget(event.target)) return;
+      if (!matchesShortcut(event, shortcut)) return;
+      event.preventDefault();
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [shortcut, disabled]);
+  function emit(next) {
+    if (immediate) {
+      onValueChange?.(next);
+      return;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      onValueChange?.(next);
+    }, debounceMs);
+  }
+  function apply2(next) {
+    if (!controlled) setInner(next);
+    emit(next);
+  }
+  function onChange(event) {
+    apply2(event.target.value);
+  }
+  function handleClear() {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (!controlled) setInner("");
+    onValueChange?.("");
+    onClear?.();
+    inputRef.current?.focus();
+  }
+  (0, import_react.useImperativeHandle)(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    },
+    clear: handleClear
+  }));
+  function onKeyDown(event) {
+    rest.onKeyDown?.(event);
+    if (event.defaultPrevented) return;
+    if (event.key === "Escape" && current) {
+      event.preventDefault();
+      handleClear();
+    }
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+    className: cx(SearchField_module_css_default.root, stretch && SearchField_module_css_default.stretch, disabled && SearchField_module_css_default.disabled, className),
+    children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: SearchField_module_css_default.icon,
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconSearchOutline16, { size: 16 })
+      }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+        ...rest,
+        ref: inputRef,
+        id: inputId,
+        type: "search",
+        className: SearchField_module_css_default.input,
+        value: current,
+        disabled,
+        placeholder,
+        autoComplete: "off",
+        spellCheck: false,
+        onChange,
+        onKeyDown
+      }),
+      current ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+        type: "button",
+        className: SearchField_module_css_default.clear,
+        "aria-label": clearLabel,
+        title: clearLabel,
+        disabled,
+        onClick: handleClear,
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseFill14, { size: 14 })
+      }) : shortcut ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
+        className: SearchField_module_css_default.shortcut,
+        children: shortcut
+      }) : null
+    ]
+  });
+});
+injectCss("InputField.module.css", ".dshUk-InputField-root {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  min-width: 0;\n}\n\n.dshUk-InputField-label {\n  display: block;\n  font-size: 12px;\n  line-height: 16px;\n  font-weight: 500;\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-InputField-required {\n  margin-left: 2px;\n  color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-control {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-InputField-control:hover:not(.dshUk-InputField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-InputField-control:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-InputField-invalid {\n  border-color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-invalid:focus-within {\n  border-color: var(--dsw-alias-state-error-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-interactive-bg-hover-danger);\n}\n\n.dshUk-InputField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-affix {\n  display: inline-flex;\n  align-items: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-InputField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-InputField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-meta {\n  min-height: 16px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-hint {\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-InputField-error {\n  color: var(--dsw-alias-state-error-primary);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-InputField-control {\n    transition: none;\n  }\n}\n");
+var InputField_module_css_default = {
+  "root": "dshUk-InputField-root",
+  "label": "dshUk-InputField-label",
+  "required": "dshUk-InputField-required",
+  "control": "dshUk-InputField-control",
+  "disabled": "dshUk-InputField-disabled",
+  "invalid": "dshUk-InputField-invalid",
+  "affix": "dshUk-InputField-affix",
+  "input": "dshUk-InputField-input",
+  "meta": "dshUk-InputField-meta",
+  "hint": "dshUk-InputField-hint",
+  "error": "dshUk-InputField-error"
+};
+var InputField = (0, import_react.forwardRef)(function InputField2({ label, hint, error, prefix, suffix, className, disabled, id, required, ...rest }, ref) {
+  const generatedId = (0, import_react.useId)();
+  const inputId = id ?? generatedId;
+  const hintId = `${inputId}-hint`;
+  const errorId = `${inputId}-error`;
+  const invalid = Boolean(error);
+  const describedBy = [
+    rest["aria-describedby"],
+    hint ? hintId : void 0,
+    invalid ? errorId : void 0
+  ].filter(Boolean).join(" ") || void 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+    className: cx(InputField_module_css_default.root, className),
+    htmlFor: inputId,
+    children: [
+      label != null && label !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+        className: InputField_module_css_default.label,
+        children: [label, required ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+          className: InputField_module_css_default.required,
+          "aria-hidden": "true",
+          children: "*"
+        }) : null]
+      }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+        className: cx(InputField_module_css_default.control, invalid && InputField_module_css_default.invalid, disabled && InputField_module_css_default.disabled),
+        children: [
+          prefix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: InputField_module_css_default.affix,
+            children: prefix
+          }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+            ...rest,
+            ref,
+            id: inputId,
+            className: InputField_module_css_default.input,
+            disabled,
+            required,
+            "aria-invalid": invalid || void 0,
+            "aria-describedby": describedBy
+          }),
+          suffix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: InputField_module_css_default.affix,
+            children: suffix
+          }) : null
+        ]
+      }),
+      invalid ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(InputField_module_css_default.meta, InputField_module_css_default.error),
+        id: errorId,
+        role: "alert",
+        children: error
+      }) : hint ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(InputField_module_css_default.meta, InputField_module_css_default.hint),
+        id: hintId,
+        children: hint
+      }) : null
+    ]
+  });
+});
+injectCss("DropdownSelect.module.css", ".dshUk-DropdownSelect-anchor {\n  display: inline-flex;\n  flex-shrink: 0;\n  min-width: 0;\n}\n\n.dshUk-DropdownSelect-trigger {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  width: 100%;\n  min-width: 112px;\n  height: 32px;\n  margin: 0;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  text-align: left;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-trigger:hover:not(:disabled) {\n  border-color: var(--dsw-alias-border-l3);\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-DropdownSelect-trigger:focus {\n  outline: none;\n}\n\n.dshUk-DropdownSelect-trigger:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-DropdownSelect-trigger:disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-DropdownSelect-open {\n  border-color: var(--dsw-alias-brand-primary);\n}\n\n.dshUk-DropdownSelect-label {\n  flex: 1;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-DropdownSelect-placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-DropdownSelect-chevron {\n  display: inline-flex;\n  width: 14px;\n  height: 14px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-chevronOpen {\n  transform: rotate(180deg);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-DropdownSelect-trigger,\n  .dshUk-DropdownSelect-chevron {\n    transition: none;\n  }\n}\n");
+var DropdownSelect_module_css_default = {
+  "anchor": "dshUk-DropdownSelect-anchor",
+  "trigger": "dshUk-DropdownSelect-trigger",
+  "open": "dshUk-DropdownSelect-open",
+  "label": "dshUk-DropdownSelect-label",
+  "placeholder": "dshUk-DropdownSelect-placeholder",
+  "chevron": "dshUk-DropdownSelect-chevron",
+  "chevronOpen": "dshUk-DropdownSelect-chevronOpen"
+};
+function DropdownSelect({ value, options, onChange, placeholder = "Select", disabled = false, className, "aria-label": ariaLabel, id, align = "start" }) {
+  const [open, setOpen] = (0, import_react.useState)(false);
+  const generatedId = (0, import_react.useId)();
+  const triggerId = id ?? generatedId;
+  const selected = options.find((option) => option.value === value);
+  const items = (0, import_react.useMemo)(() => options.map((option) => {
+    const item = {
+      id: option.value,
+      label: option.label
+    };
+    if (option.disabled === true) item.disabled = true;
+    if (option.icon !== void 0) item.icon = option.icon;
+    if (option.danger === true) item.danger = true;
+    return item;
+  }), [options]);
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Menu, {
+    open: open && !disabled,
+    portal: true,
+    compact: true,
+    align,
+    selectedId: value,
+    items,
+    onSelect: (next) => {
+      onChange(next);
+      setOpen(false);
+    },
+    onClose: () => {
+      setOpen(false);
+    },
+    className: cx(DropdownSelect_module_css_default.anchor, className),
+    anchor: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+      type: "button",
+      id: triggerId,
+      className: cx(DropdownSelect_module_css_default.trigger, open && DropdownSelect_module_css_default.open),
+      "aria-label": ariaLabel,
+      "aria-haspopup": "listbox",
+      "aria-expanded": open,
+      disabled,
+      onClick: () => {
+        if (!disabled) setOpen((prev) => !prev);
+      },
+      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(DropdownSelect_module_css_default.label, !selected && DropdownSelect_module_css_default.placeholder),
+        children: selected ? selected.label : placeholder
+      }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(DropdownSelect_module_css_default.chevron, open && DropdownSelect_module_css_default.chevronOpen),
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconChevronDownOutline14, { size: 14 })
+      })]
+    })
+  });
+}
+injectCss("Toolbar.module.css", ".dshUk-Toolbar-bar {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  height: 48px;\n  min-height: 44px;\n  max-height: 48px;\n  padding: 0 12px;\n  overflow: hidden;\n  white-space: nowrap;\n}\n\n.dshUk-Toolbar-compact {\n  height: 44px;\n  min-height: 44px;\n}\n\n.dshUk-Toolbar-left,\n.dshUk-Toolbar-right {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  min-width: 0;\n}\n\n.dshUk-Toolbar-left {\n  flex: 1 1 auto;\n  overflow: hidden;\n}\n\n.dshUk-Toolbar-right {\n  flex: 0 0 auto;\n  margin-left: auto;\n}\n\n.dshUk-Toolbar-right > * {\n  flex-shrink: 0;\n}\n\n.dshUk-Toolbar-filters {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  flex: 0 0 auto;\n}\n\n.dshUk-Toolbar-filters > * {\n  flex-shrink: 0;\n}\n");
+var Toolbar_module_css_default = {
+  "bar": "dshUk-Toolbar-bar",
+  "compact": "dshUk-Toolbar-compact",
+  "left": "dshUk-Toolbar-left",
+  "right": "dshUk-Toolbar-right",
+  "filters": "dshUk-Toolbar-filters"
+};
+function Toolbar({ left, right, compact = false, className, children, ...rest }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+    ...rest,
+    role: "toolbar",
+    className: cx(Toolbar_module_css_default.bar, compact && Toolbar_module_css_default.compact, className),
+    children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.left,
+      children: left ?? children
+    }), right != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.right,
+      children: right
+    }) : null]
+  });
+}
+function FilterBar({ search, filters, actions, right, className, compact, ...rest }) {
+  const trailing = actions ?? right;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
+    ...rest,
+    left: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.filters,
+      children: filters
+    }) : null] }),
+    ...compact !== void 0 ? { compact } : {},
+    ...className !== void 0 ? { className } : {},
+    ...trailing !== void 0 ? { right: trailing } : {}
+  });
+}
+injectCss("Dialog.module.css", ".dshUk-Dialog-dialog {\n  width: min(480px, 100%);\n  max-height: min(80vh, 720px);\n  border-radius: 16px;\n}\n\n.dshUk-Dialog-sm {\n  width: min(380px, 100%);\n}\n\n.dshUk-Dialog-lg {\n  width: min(640px, 100%);\n}\n\n.dshUk-Dialog-body {\n  overflow: auto;\n  max-height: min(56vh, 480px);\n}\n\n.dshUk-Dialog-footer {\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  gap: 8px;\n  width: 100%;\n}\n\n.dshUk-Dialog-message {\n  margin: 0;\n  font-size: 14px;\n  line-height: 22px;\n  color: var(--dsw-alias-label-primary);\n}\n");
+var Dialog_module_css_default = {
+  "dialog": "dshUk-Dialog-dialog",
+  "sm": "dshUk-Dialog-sm",
+  "lg": "dshUk-Dialog-lg",
+  "body": "dshUk-Dialog-body",
+  "footer": "dshUk-Dialog-footer",
+  "message": "dshUk-Dialog-message"
+};
+var SIZE_CLASS = {
+  sm: cssClass(Dialog_module_css_default.sm, "sm"),
+  md: void 0,
+  lg: cssClass(Dialog_module_css_default.lg, "lg")
+};
+function ModalDialog({ open, onClose, title, description, children, footer, size = "md", closeLabel = "Close", className, contentClassName }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Modal, {
+    open,
+    onClose,
+    title,
+    closeLabel,
+    className: cx(Dialog_module_css_default.dialog, SIZE_CLASS[size], className),
+    contentClassName: cx(Dialog_module_css_default.body, contentClassName),
+    ...description !== void 0 ? { description } : {},
+    ...footer !== void 0 ? { footer } : {},
+    children
+  });
+}
+function ConfirmModal({ message, children, confirmLabel = "Confirm", cancelLabel = "Cancel", confirmVariant = "primary", confirmLoading = false, onConfirm, onClose, size = "sm", ...rest }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ModalDialog, {
+    ...rest,
+    size,
+    onClose,
+    footer: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+      className: Dialog_module_css_default.footer,
+      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+        variant: "outline",
+        onClick: onClose,
+        disabled: confirmLoading,
+        children: cancelLabel
+      }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+        variant: confirmVariant,
+        loading: confirmLoading,
+        onClick: onConfirm,
+        children: confirmLabel
+      })]
+    }),
+    children: message != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+      className: Dialog_module_css_default.message,
+      children: message
+    }) : children
+  });
+}
 
 // src/client/InspirationSection.jsx
-var import_react = require("react");
+var import_react2 = require("react");
 
 // src/client/api.js
 async function inspirationRequest(path, opts = {}) {
@@ -576,109 +1057,20 @@ function resolveTikTokEmbedUrl(sourceUrlOrId) {
 }
 
 // src/client/ConfirmRemoveDialog.jsx
-var import_jsx_runtime = require("react/jsx-runtime");
-var backdrop = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 300,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "rgba(0, 0, 0, 0.65)",
-  backdropFilter: "blur(4px)"
-};
-var dialog = {
-  width: 380,
-  maxWidth: "calc(100vw - 48px)",
-  display: "flex",
-  flexDirection: "column",
-  gap: 12,
-  padding: 20,
-  borderRadius: 16,
-  background: "var(--omx-color-canvas-raised, #161616)",
-  border: "1px solid var(--omx-color-hairline, #282828)",
-  color: "var(--omx-color-ink, #ffffff)",
-  boxShadow: "0 16px 36px rgba(0, 0, 0, 0.6)",
-  boxSizing: "border-box"
-};
-var heading = {
-  margin: 0,
-  fontSize: 16,
-  fontWeight: 600,
-  lineHeight: "24px"
-};
-var hint = {
-  margin: 0,
-  fontSize: 13,
-  lineHeight: "20px",
-  color: "var(--omx-color-muted, #8e8e8e)"
-};
-var buttons = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 10,
-  marginTop: 6
-};
-var ghostButton = {
-  padding: "6px 14px",
-  fontSize: 13,
-  lineHeight: "20px",
-  borderRadius: 999,
-  cursor: "pointer",
-  border: "1px solid var(--omx-color-hairline-strong, #3a3a3a)",
-  background: "transparent",
-  color: "inherit"
-};
-var dangerButton = {
-  ...ghostButton,
-  fontWeight: 600,
-  border: "none",
-  color: "#ffffff",
-  background: "var(--omx-color-error, #ef4444)"
-};
+var import_jsx_runtime2 = require("react/jsx-runtime");
 function ConfirmRemoveDialog({ t, count, busy, onCancel, onConfirm }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-    "div",
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    ConfirmModal,
     {
-      style: backdrop,
-      onMouseDown: (event) => {
-        if (event.target === event.currentTarget && !busy) onCancel();
-      },
-      children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "div",
-        {
-          role: "alertdialog",
-          "aria-modal": "true",
-          "aria-labelledby": "omnimux-inspiration-remove-title",
-          style: dialog,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { id: "omnimux-inspiration-remove-title", style: heading, children: t("confirmRemove.title").replace("{n}", String(count)) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: hint, children: t("confirmRemove.description") }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: buttons, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                "button",
-                {
-                  type: "button",
-                  disabled: busy,
-                  onClick: onCancel,
-                  style: { ...ghostButton, cursor: busy ? "default" : "pointer" },
-                  children: t("confirmRemove.cancel")
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                "button",
-                {
-                  type: "button",
-                  disabled: busy,
-                  onClick: onConfirm,
-                  style: { ...dangerButton, opacity: busy ? 0.6 : 1, cursor: busy ? "default" : "pointer" },
-                  children: busy ? t("confirmRemove.deleting") : t("confirmRemove.confirm")
-                }
-              )
-            ] })
-          ]
-        }
-      )
+      open: true,
+      onClose: onCancel,
+      title: t("confirmRemove.title").replace("{n}", String(count)),
+      message: t("confirmRemove.description"),
+      confirmLabel: busy ? t("confirmRemove.deleting") : t("confirmRemove.confirm"),
+      cancelLabel: t("confirmRemove.cancel"),
+      confirmVariant: "danger",
+      confirmLoading: busy,
+      onConfirm
     }
   );
 }
@@ -686,6 +1078,52 @@ function ConfirmRemoveDialog({ t, count, busy, onCancel, onConfirm }) {
 // src/client/styles.js
 var INSPIRATION_STYLES_ID = "omnimux-inspiration-styles";
 var INSPIRATION_CSS = `
+.omnimux-inspiration-stage {
+  position: fixed;
+  z-index: 200;
+  top: var(--stage-top);
+  left: var(--stage-left);
+  width: var(--stage-width);
+  height: var(--stage-height);
+  display: flex;
+  flex-direction: column;
+  background: var(--dsw-alias-bg-primary, var(--dsw-bg));
+  color: var(--dsw-alias-label-primary, inherit);
+  overflow: hidden;
+  box-sizing: border-box;
+  -webkit-app-region: no-drag;
+}
+.omnimux-inspiration-stage[data-visible="false"] {
+  display: none;
+  pointer-events: none;
+}
+.omnimux-inspiration-stage-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+  padding: 12px 20px;
+  box-sizing: border-box;
+  -webkit-app-region: no-drag;
+}
+.omnimux-inspiration-stage-title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 32px;
+}
+.omnimux-inspiration-stage-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
 /* \u6839\u5BB9\u5668\u4E0E\u5FAE\u5149\u626B\u5149\u5173\u952E\u5E27 */
 .omnimux-inspiration-root,
 .omnimux-inspiration-root *,
@@ -704,9 +1142,9 @@ var INSPIRATION_CSS = `
   overflow-y: auto;
   padding: 16px 24px 32px 24px;
   gap: 20px;
-  background: var(--omx-color-canvas, #0a0a0a);
-  color: var(--omx-color-ink, #ffffff);
-  font-family: var(--omx-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  background: var(--dsw-alias-bg-primary, var(--dsw-bg));
+  color: var(--dsw-alias-label-primary, inherit);
+  font-family: inherit;
 }
 
 @keyframes omni-shimmer {
@@ -723,38 +1161,38 @@ var INSPIRATION_CSS = `
   width: 100%;
   max-width: 100%;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--omx-color-hairline, #222222);
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #222222);
 }
 
 .omnimux-inspiration-tabs {
   display: inline-flex;
-  background: var(--omx-color-canvas-soft, #141414);
+  background: var(--dsw-alias-bg-module-platform, #141414);
   padding: 3px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: 9999px;
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
 }
 
 .omnimux-inspiration-tab {
   height: 28px;
   padding: 0 14px;
-  border-radius: var(--omx-radius-pill, 9999px);
+  border-radius: 9999px;
   border: none;
   background: transparent;
-  color: var(--omx-color-muted, #888888);
-  font: var(--omx-text-label, 500 13px/16px var(--omx-font-sans));
+  color: var(--dsw-alias-label-tertiary, #888888);
+  font: 500 13px/16px inherit;
   cursor: pointer;
-  transition: color var(--omx-motion-fast, 120ms) ease,
-              background var(--omx-motion-fast, 120ms) ease;
+  transition: color 120ms ease,
+              background 120ms ease;
 }
 
 .omnimux-inspiration-tab:hover {
-  color: var(--omx-color-ink-soft, #ebebeb);
+  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
 }
 
 .omnimux-inspiration-tab.active {
-  background: var(--omx-color-canvas-raised, #242424);
-  color: var(--omx-color-ink, #ffffff);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  background: var(--dsw-alias-bg-layer-1, #242424);
+  color: var(--dsw-alias-label-primary, #ffffff);
+  box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.4));
 }
 
 .omnimux-inspiration-btn-add {
@@ -763,19 +1201,19 @@ var INSPIRATION_CSS = `
   gap: 6px;
   height: 32px;
   padding: 0 16px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  border: 1px solid var(--dsw-alias-border, rgba(255, 255, 255, 0.15));
   background: var(--dsw-alias-button-primary-fill, #ffffff);
   color: var(--dsw-alias-label-primary-foreground, #000000);
-  font: var(--omx-text-label, 550 13px/16px var(--omx-font-sans));
+  font: 550 13px/16px inherit;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-  transition: all var(--omx-motion-fast, 120ms) cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 4px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.2));
+  transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .omnimux-inspiration-btn-add:hover {
-  background: #ebebeb;
+  background: var(--dsw-alias-button-primary-hover, #ebebeb);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 8px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.35));
 }
 .omnimux-inspiration-btn-add:active {
   transform: translateY(0);
@@ -783,13 +1221,9 @@ var INSPIRATION_CSS = `
 
 /* \u6781\u7B80\u53D1\u4E1D\u7EBF\u5DE5\u5177\u680F */
 .omnimux-inspiration-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   width: 100%;
   max-width: 100%;
-  flex-wrap: wrap;
+  padding: 0;
 }
 
 .omnimux-inspiration-search-box {
@@ -805,7 +1239,7 @@ var INSPIRATION_CSS = `
   position: absolute;
   left: 12px;
   pointer-events: none;
-  color: var(--omx-color-muted, #7c7c7c);
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -814,19 +1248,19 @@ var INSPIRATION_CSS = `
 .omnimux-inspiration-search {
   width: 100%;
   height: 32px;
-  background: var(--omx-color-canvas-soft, #141414);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  border-radius: var(--omx-radius-pill, 9999px);
+  background: var(--dsw-alias-bg-module-platform, #141414);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  border-radius: 9999px;
   padding: 0 14px 0 34px;
-  color: var(--omx-color-ink, #ffffff);
-  font: var(--omx-text-body-sm, 400 13px/18px var(--omx-font-sans));
+  color: var(--dsw-alias-label-primary, #ffffff);
+  font: 400 13px/18px inherit;
   outline: none;
-  transition: border-color var(--omx-motion-fast, 120ms) ease,
-              background-color var(--omx-motion-fast, 120ms) ease;
+  transition: border-color 120ms ease,
+              background-color 120ms ease;
 }
 .omnimux-inspiration-search:focus {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: var(--omx-color-canvas-raised, #1a1a1a);
+  border-color: var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.4));
+  background: var(--dsw-alias-bg-layer-1, #1a1a1a);
 }
 
 .omnimux-inspiration-filters {
@@ -839,30 +1273,30 @@ var INSPIRATION_CSS = `
 
 .omnimux-inspiration-select {
   height: 32px;
-  background: var(--omx-color-canvas-soft, #141414);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  border-radius: var(--omx-radius-pill, 9999px);
+  background: var(--dsw-alias-bg-module-platform, #141414);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  border-radius: 9999px;
   padding: 0 12px;
-  color: var(--omx-color-ink-soft, #ebebeb);
-  font: var(--omx-text-label, 500 12px/16px var(--omx-font-sans));
+  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
+  font: 500 12px/16px inherit;
   cursor: pointer;
   outline: none;
-  transition: border-color var(--omx-motion-fast, 120ms) ease,
-              background-color var(--omx-motion-fast, 120ms) ease;
+  transition: border-color 120ms ease,
+              background-color 120ms ease;
 }
 .omnimux-inspiration-select:hover {
-  border-color: var(--omx-color-hairline-strong, #3d3d3d);
-  background: var(--omx-color-canvas-raised, #1a1a1a);
+  border-color: var(--dsw-alias-border-l4, #3d3d3d);
+  background: var(--dsw-alias-bg-layer-1, #1a1a1a);
 }
 .omnimux-inspiration-select:focus {
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.4));
 }
 
 .omnimux-inspiration-count {
-  font: var(--omx-text-code, 400 12px/16px var(--omx-font-mono));
-  color: var(--omx-color-muted, #7c7c7c);
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: var(--omx-radius-pill, 9999px);
+  font: 400 12px/16px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
+  background: var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.05));
+  border-radius: 9999px;
   padding: 4px 10px;
   white-space: nowrap;
 }
@@ -885,16 +1319,16 @@ var INSPIRATION_CSS = `
   position: relative;
   width: 100%;
   aspect-ratio: 9 / 16;
-  border-radius: var(--omx-radius-sm, 10px);
-  background: var(--omx-color-canvas-soft, #141414);
-  border: 1px solid var(--omx-color-hairline, #222222);
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-module-platform, #141414);
+  border: 1px solid var(--dsw-alias-border-l2, #222222);
   overflow: hidden;
 }
 .omnimux-inspiration-skel::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.04)) 50%, transparent 100%);
   animation: omni-shimmer 1.4s infinite;
 }
 
@@ -929,15 +1363,15 @@ var INSPIRATION_CSS = `
   width: 100%;
   max-width: 100%;
   padding: 8px 14px;
-  background: var(--omx-color-canvas-raised, #181818);
-  border: 1px solid var(--omx-color-hairline-strong, #333333);
-  border-radius: var(--omx-radius-md, 12px);
+  background: var(--dsw-alias-bg-layer-1, #181818);
+  border: 1px solid var(--dsw-alias-border-l4, #333333);
+  border-radius: 12px;
   animation: omni-fade-in 140ms ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.4));
 }
 .omnimux-inspiration-selection-count {
-  font: var(--omx-text-label, 500 13px/18px var(--omx-font-sans));
-  color: var(--omx-color-ink, #ffffff);
+  font: 500 13px/18px inherit;
+  color: var(--dsw-alias-label-primary, #ffffff);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -951,29 +1385,29 @@ var INSPIRATION_CSS = `
 .omnimux-inspiration-btn-ghost {
   border: none;
   background: transparent;
-  color: var(--omx-color-muted, #8e8e8e);
+  color: var(--dsw-alias-label-tertiary, #8e8e8e);
   cursor: pointer;
-  font: var(--omx-text-label, 500 13px/18px var(--omx-font-sans));
+  font: 500 13px/18px inherit;
   padding: 4px 10px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  transition: color var(--omx-motion-fast, 120ms) ease;
+  border-radius: 9999px;
+  transition: color 120ms ease;
 }
 .omnimux-inspiration-btn-ghost:hover {
-  color: var(--omx-color-ink, #ffffff);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--dsw-alias-label-primary, #ffffff);
+  background: var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.06));
 }
 .omnimux-inspiration-btn-danger {
   border: none;
-  background: var(--omx-color-error, #ef4444);
-  color: #ffffff;
-  border-radius: var(--omx-radius-pill, 9999px);
+  background: var(--dsw-alias-state-error-primary, #ef4444);
+  color: var(--dsw-alias-label-primary, #ffffff);
+  border-radius: 9999px;
   padding: 5px 14px;
   cursor: pointer;
-  font: var(--omx-text-label, 600 13px/18px var(--omx-font-sans));
-  transition: all var(--omx-motion-fast, 120ms) ease;
+  font: 600 13px/18px inherit;
+  transition: all 120ms ease;
 }
 .omnimux-inspiration-btn-danger:hover {
-  background: #dc2626;
+  background: var(--dsw-alias-state-error-primary, #dc2626);
   transform: translateY(-1px);
 }
 
@@ -981,73 +1415,77 @@ var INSPIRATION_CSS = `
   position: relative;
   width: 100%;
   aspect-ratio: 9 / 16;
-  border-radius: var(--omx-radius-sm, 10px);
+  border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
-  background: var(--omx-color-canvas-soft, #131313);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  transition: transform var(--omx-motion-base, 180ms) cubic-bezier(.2,.4,.6,1),
-              border-color var(--omx-motion-base, 180ms) cubic-bezier(.2,.4,.6,1),
-              box-shadow var(--omx-motion-base, 180ms) ease;
+  background: var(--dsw-alias-bg-module-platform, #131313);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  transition: transform 180ms cubic-bezier(.2,.4,.6,1),
+              border-color 180ms cubic-bezier(.2,.4,.6,1),
+              box-shadow 180ms ease;
 }
 .omnimux-inspiration-card-pure[aria-selected="true"] {
-  border-color: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7), 0 8px 24px rgba(0, 0, 0, 0.5);
+  border-color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.7));
+  box-shadow: 0 0 0 1px var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.7)), 0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.5));
 }
 .omnimux-inspiration-card-pure:hover {
   transform: translateY(-3px);
-  border-color: var(--omx-color-hairline-strong, #4a4a4a);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  border-color: var(--dsw-alias-border-l4, #4a4a4a);
+  box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.45));
 }
 
 /* \u5361\u7247\u5DE6\u4E0A\u89D2\u590D\u9009\u6846 Checkbox */
-.omnimux-inspiration-card-check {
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check,
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check:hover,
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check:active {
   position: absolute;
   top: 8px;
   left: 8px;
   width: 22px;
+  min-width: 22px;
   height: 22px;
+  min-height: 22px;
   border-radius: 6px;
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
-  background: rgba(0, 0, 0, 0.5);
+  border: 1.5px solid var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.4));
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.5));
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 5;
-  color: #000000;
+  color: var(--dsw-alias-bg-base, #000000);
   opacity: 0;
   transform: scale(0.9);
-  transition: opacity var(--omx-motion-fast, 120ms) ease,
-              transform var(--omx-motion-fast, 120ms) ease,
-              background-color var(--omx-motion-fast, 120ms) ease,
-              border-color var(--omx-motion-fast, 120ms) ease;
+  transition: opacity 120ms ease,
+              transform 120ms ease,
+              background-color 120ms ease,
+              border-color 120ms ease;
 }
-.omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-check,
-.omnimux-inspiration-card-check[data-selected="true"],
-.omnimux-inspiration-grid.selecting .omnimux-inspiration-card-check {
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-check,
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check[data-selected="true"],
+.omnimux-inspiration-stage .omnimux-inspiration-grid.selecting .omnimux-inspiration-card-check {
   opacity: 1;
   transform: scale(1);
 }
-.omnimux-inspiration-card-check[data-selected="true"] {
-  background: #ffffff;
-  border-color: #ffffff;
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check[data-selected="true"] {
+  background: var(--dsw-alias-label-primary, #ffffff);
+  border-color: var(--dsw-alias-label-primary, #ffffff);
 }
-.omnimux-inspiration-card-check:hover {
-  border-color: rgba(255, 255, 255, 0.85);
-  background: rgba(0, 0, 0, 0.7);
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check:hover {
+  border-color: var(--dsw-alias-label-primary, rgba(255, 255, 255, 0.85));
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.7));
 }
-.omnimux-inspiration-card-check[data-selected="true"]:hover {
-  background: #ebebeb;
-  border-color: #ebebeb;
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check[data-selected="true"]:hover {
+  background: var(--dsw-alias-button-primary-hover, #ebebeb);
+  border-color: var(--dsw-alias-button-primary-hover, #ebebeb);
 }
 .omnimux-inspiration-cover-img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: #181818;
+  background: var(--dsw-alias-bg-layer-1, #181818);
 }
 
 /* Fallback \u5360\u4F4D\u5361\u7247 */
@@ -1059,27 +1497,27 @@ var INSPIRATION_CSS = `
   width: 100%;
   height: 100%;
   aspect-ratio: 9 / 16;
-  background: radial-gradient(circle at 50% 30%, #202020 0%, #111111 100%);
+  background: radial-gradient(circle at 50% 30%, var(--dsw-alias-bg-layer-2, #202020) 0%, var(--dsw-alias-bg-base, #111111) 100%);
   padding: 16px;
   gap: 12px;
   text-align: center;
-  color: var(--omx-color-muted, #7c7c7c);
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
 }
 .omnimux-inspiration-fallback-icon {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--omx-color-hairline, #242424);
+  background: var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--omx-color-ink-soft, #ebebeb);
+  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
 }
 .omnimux-inspiration-fallback-title {
   font-size: 12px;
   line-height: 16px;
-  color: var(--omx-color-muted, #888888);
+  color: var(--dsw-alias-label-tertiary, #888888);
   max-width: 90%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1096,33 +1534,33 @@ var INSPIRATION_CSS = `
   right: 8px;
   z-index: 4;
   padding: 2px 8px;
-  border-radius: var(--omx-radius-pill, 9999px);
+  border-radius: 9999px;
   font-size: 11px;
   font-weight: 600;
-  font-family: var(--omx-font-mono, monospace);
-  background: rgba(0, 0, 0, 0.65);
+  font-family: monospace;
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.65));
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  border: 1px solid var(--dsw-alias-border, rgba(255, 255, 255, 0.15));
+  color: var(--dsw-alias-label-primary, #ffffff);
   letter-spacing: 0.5px;
 }
 .omnimux-inspiration-badge-platform.local {
-  border-color: #10b981;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--dsw-alias-state-success-primary, #10b981);
+  color: var(--dsw-alias-state-success-primary, #10b981);
+  background: var(--dsw-alias-state-success-tertiary, rgba(16, 185, 129, 0.2));
 }
 
 /* Hover \u6D6E\u5C42 */
 .omnimux-inspiration-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.75) 100%);
+  background: linear-gradient(180deg, var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.3)) 0%, var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.1)) 40%, var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.75)) 100%);
   opacity: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   padding: 12px;
-  transition: opacity var(--omx-motion-fast, 120ms) ease;
+  transition: opacity 120ms ease;
 }
 .omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-overlay {
   opacity: 1;
@@ -1132,14 +1570,14 @@ var INSPIRATION_CSS = `
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--omx-color-primary, #ffffff);
-  color: var(--omx-color-on-primary, #0a0a0a);
+  background: var(--dsw-alias-button-primary-fill, #ffffff);
+  color: var(--dsw-alias-label-primary-foreground, #0a0a0a);
   display: flex;
   align-items: center;
   justify-content: center;
   transform: scale(0.9);
-  transition: transform var(--omx-motion-fast, 120ms) ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: transform 120ms ease;
+  box-shadow: 0 4px 12px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.4));
 }
 .omnimux-inspiration-card-pure:hover .omnimux-inspiration-overlay-play {
   transform: scale(1);
@@ -1151,25 +1589,25 @@ var INSPIRATION_CSS = `
 }
 .omnimux-inspiration-overlay-footer {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--dsw-alias-label-primary, rgba(255, 255, 255, 0.85));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  text-shadow: 0 1px 2px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.8));
 }
 
 /* \u8BE6\u60C5\u5F39\u7A97 Modal */
 .omnimux-inspiration-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: var(--omx-color-overlay, rgba(0,0,0,.70));
+  background: var(--dsw-alias-bg-mask-1, rgba(0,0,0,.70));
   backdrop-filter: blur(16px);
-  z-index: var(--omx-z-modal, 200);
+  z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--omx-space-xl, 24px);
-  animation: omni-fade-in var(--omx-motion-fast, 120ms) ease;
+  padding: 24px;
+  animation: omni-fade-in 120ms ease;
 }
 @keyframes omni-fade-in {
   from { opacity: 0; }
@@ -1181,7 +1619,7 @@ var INSPIRATION_CSS = `
   justify-content: center;
   width: 100%;
   max-width: 1040px;
-  animation: omni-fade-in var(--omx-motion-fast, 120ms) ease;
+  animation: omni-fade-in 120ms ease;
 }
 .omnimux-inspiration-modal-container {
   position: relative;
@@ -1189,11 +1627,11 @@ var INSPIRATION_CSS = `
   width: 100%;
   height: 85vh;
   max-height: 720px;
-  border-radius: var(--omx-radius-lg, 16px);
+  border-radius: 16px;
   overflow: hidden;
-  background: var(--omx-color-canvas-soft, #131313);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  box-shadow: var(--omx-shadow-overlay, 0 12px 36px rgba(0,0,0,.60));
+  background: var(--dsw-alias-bg-module-platform, #131313);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  box-shadow: 0 12px 36px var(--dsw-alias-bg-mask-1, rgba(0,0,0,.60));
 }
 .omnimux-inspiration-modal-close {
   position: absolute;
@@ -1202,21 +1640,21 @@ var INSPIRATION_CSS = `
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(24, 24, 24, 0.88);
+  border: 1px solid var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.22));
+  background: var(--dsw-alias-bg-elevated, rgba(24, 24, 24, 0.88));
   backdrop-filter: blur(12px);
-  color: #ffffff;
+  color: var(--dsw-alias-label-primary, #ffffff);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 50;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
-  transition: all var(--omx-motion-fast, 120ms) ease;
+  box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.55));
+  transition: all 120ms ease;
 }
 .omnimux-inspiration-modal-close:hover {
-  border-color: rgba(255, 255, 255, 0.45);
-  background: rgba(45, 45, 45, 0.95);
+  border-color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.45));
+  background: var(--dsw-alias-bg-layer-2, rgba(45, 45, 45, 0.95));
   transform: scale(1.08);
 }
 @media (max-width: 1160px) {
@@ -1230,7 +1668,7 @@ var INSPIRATION_CSS = `
 .omnimux-inspiration-modal-left {
   flex: 1 1 58%;
   min-width: 320px;
-  background: #000000;
+  background: var(--dsw-alias-bg-base, #000000);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -1243,17 +1681,17 @@ var INSPIRATION_CSS = `
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: rgba(18, 18, 18, 0.85);
+  background: var(--dsw-alias-bg-elevated, rgba(18, 18, 18, 0.85));
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--omx-color-hairline, #242424);
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #242424);
   z-index: 10;
 }
 .omnimux-inspiration-switch-group {
   display: inline-flex;
-  background: #0a0a0a;
+  background: var(--dsw-alias-bg-base, #0a0a0a);
   padding: 3px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: 9999px;
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
 }
 .omnimux-inspiration-switch-btn {
   display: inline-flex;
@@ -1261,41 +1699,41 @@ var INSPIRATION_CSS = `
   gap: 6px;
   height: 26px;
   padding: 0 12px;
-  border-radius: var(--omx-radius-pill, 9999px);
+  border-radius: 9999px;
   border: none;
   background: transparent;
-  color: var(--omx-color-muted, #7c7c7c);
-  font: var(--omx-text-label, 500 12px/14px var(--omx-font-sans));
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
+  font: 500 12px/14px inherit;
   cursor: pointer;
-  transition: all var(--omx-motion-fast, 120ms) ease;
+  transition: all 120ms ease;
 }
 .omnimux-inspiration-switch-btn.active {
-  background: var(--omx-color-canvas-raised, #242424);
-  color: var(--omx-color-ink, #ffffff);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  background: var(--dsw-alias-bg-layer-1, #242424);
+  color: var(--dsw-alias-label-primary, #ffffff);
+  box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.5));
 }
 .omnimux-inspiration-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  border-radius: var(--omx-radius-pill, 9999px);
+  border-radius: 9999px;
   font-size: 11px;
-  font-family: var(--omx-font-mono, monospace);
+  font-family: monospace;
   font-weight: 500;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--omx-color-ink-soft, #ebebeb);
+  background: var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--dsw-alias-border, rgba(255, 255, 255, 0.1));
+  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
 }
 .omnimux-inspiration-status-badge.done {
-  border-color: rgba(16, 185, 129, 0.4);
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
+  border-color: var(--dsw-alias-state-success-tertiary, rgba(16, 185, 129, 0.4));
+  background: var(--dsw-alias-state-success-tertiary, rgba(16, 185, 129, 0.12));
+  color: var(--dsw-alias-state-success-primary, #10b981);
 }
 .omnimux-inspiration-status-badge.pending {
-  border-color: rgba(245, 158, 11, 0.4);
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
+  border-color: var(--dsw-alias-state-warning-tertiary, rgba(245, 158, 11, 0.4));
+  background: var(--dsw-alias-state-warning-tertiary, rgba(245, 158, 11, 0.12));
+  color: var(--dsw-alias-state-warning-primary, #f59e0b);
 }
 
 /* \u64AD\u653E\u5668\u5BB9\u5668 */
@@ -1307,7 +1745,7 @@ var INSPIRATION_CSS = `
   justify-content: center;
   position: relative;
   overflow: hidden;
-  padding: var(--omx-space-md, 12px);
+  padding: 12px;
 }
 .omnimux-inspiration-modal-player-box {
   position: relative;
@@ -1315,9 +1753,9 @@ var INSPIRATION_CSS = `
   max-width: 320px;
   height: 100%;
   aspect-ratio: 9 / 16;
-  border-radius: var(--omx-radius-sm, 8px);
+  border-radius: 8px;
   overflow: hidden;
-  background: #000000;
+  background: var(--dsw-alias-bg-base, #000000);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1326,7 +1764,7 @@ var INSPIRATION_CSS = `
   width: 100%;
   height: 100%;
   border: none;
-  background: #000000;
+  background: var(--dsw-alias-bg-base, #000000);
 }
 .omnimux-inspiration-modal-cover-bg {
   width: 100%;
@@ -1340,7 +1778,7 @@ var INSPIRATION_CSS = `
   width: 100%;
   display: flex;
   flex-direction: column;
-  background: #0d0d0d;
+  background: var(--dsw-alias-bg-base, #0d0d0d);
   overflow: hidden;
 }
 .omnimux-inspiration-dim-tabs {
@@ -1349,8 +1787,8 @@ var INSPIRATION_CSS = `
   gap: 6px;
   padding: 10px 16px;
   overflow-x: auto;
-  border-bottom: 1px solid var(--omx-color-hairline, #222222);
-  background: #111111;
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #222222);
+  background: var(--dsw-alias-bg-base, #111111);
 }
 .omnimux-inspiration-dim-tabs::-webkit-scrollbar {
   height: 3px;
@@ -1358,23 +1796,23 @@ var INSPIRATION_CSS = `
 .omnimux-inspiration-dim-tab {
   white-space: nowrap;
   padding: 5px 10px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  background: #161616;
-  color: var(--omx-color-muted, #888888);
+  border-radius: 9999px;
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  background: var(--dsw-alias-bg-layer-1, #161616);
+  color: var(--dsw-alias-label-tertiary, #888888);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--omx-motion-fast, 120ms) ease;
+  transition: all 120ms ease;
 }
 .omnimux-inspiration-dim-tab:hover {
-  color: #ffffff;
-  border-color: #383838;
+  color: var(--dsw-alias-label-primary, #ffffff);
+  border-color: var(--dsw-alias-border-l3, #383838);
 }
 .omnimux-inspiration-dim-tab.active {
-  background: #282828;
-  border-color: #555555;
-  color: #ffffff;
+  background: var(--dsw-alias-bg-layer-2, #282828);
+  border-color: var(--dsw-alias-border-l4, #555555);
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 
 .omnimux-inspiration-dim-content {
@@ -1387,9 +1825,9 @@ var INSPIRATION_CSS = `
 }
 
 .omnimux-inspiration-dim-card {
-  border-radius: var(--omx-radius-sm, 10px);
-  background: #141414;
-  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1, #141414);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -1404,7 +1842,7 @@ var INSPIRATION_CSS = `
   margin: 0;
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--dsw-alias-label-primary, #ffffff);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1412,19 +1850,19 @@ var INSPIRATION_CSS = `
 .omnimux-inspiration-dim-body {
   font-size: 13px;
   line-height: 1.6;
-  color: var(--omx-color-ink-soft, #d1d1d1);
+  color: var(--dsw-alias-label-primary-dimmed, #d1d1d1);
   white-space: pre-wrap;
   word-break: break-word;
 }
 .omnimux-inspiration-dim-code {
-  font-family: var(--omx-font-mono, monospace);
+  font-family: monospace;
   font-size: 12px;
   line-height: 1.5;
-  background: #0a0a0a;
-  border: 1px solid #222222;
+  background: var(--dsw-alias-bg-base, #0a0a0a);
+  border: 1px solid var(--dsw-alias-border-l2, #222222);
   border-radius: 6px;
   padding: 12px;
-  color: #a3e635;
+  color: var(--dsw-alias-state-success-primary, #a3e635);
   white-space: pre-wrap;
   overflow-x: auto;
 }
@@ -1445,19 +1883,19 @@ var INSPIRATION_CSS = `
   align-items: center;
   gap: 8px;
   padding: 8px 18px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  background: #ffffff;
-  color: #0a0a0a;
+  border-radius: 9999px;
+  background: var(--dsw-alias-label-primary, #ffffff);
+  color: var(--dsw-alias-bg-base, #0a0a0a);
   border: none;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(255,255,255,0.18);
+  box-shadow: 0 4px 14px var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.18));
   transition: all 120ms ease;
 }
 .omnimux-inspiration-trigger-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #eaeaea;
+  background: var(--dsw-alias-button-primary-hover, #eaeaea);
 }
 .omnimux-inspiration-trigger-btn:disabled {
   opacity: 0.6;
@@ -1468,13 +1906,13 @@ var INSPIRATION_CSS = `
 .omnimux-inspiration-modal-right {
   flex: 0 0 380px;
   width: 380px;
-  background: var(--omx-color-canvas, #0a0a0a);
+  background: var(--dsw-alias-bg-base, #0a0a0a);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   padding: 20px 24px;
   gap: 16px;
-  border-left: 1px solid var(--omx-color-hairline, #242424);
+  border-left: 1px solid var(--dsw-alias-border-l2, #242424);
 }
 
 /* \u521B\u4F5C\u8005\u4FE1\u606F\u4E0E\u5E73\u53F0 Badge */
@@ -1483,7 +1921,7 @@ var INSPIRATION_CSS = `
   align-items: center;
   justify-content: space-between;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--omx-color-hairline, #202020);
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #202020);
 }
 .omnimux-inspiration-creator-left {
   display: flex;
@@ -1494,20 +1932,20 @@ var INSPIRATION_CSS = `
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--omx-color-canvas-raised, #1c1c1c);
-  border: 1px solid var(--omx-color-hairline, #2a2a2a);
+  background: var(--dsw-alias-bg-layer-1, #1c1c1c);
+  border: 1px solid var(--dsw-alias-border-l2, #2a2a2a);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--omx-font-mono, monospace);
+  font-family: monospace;
   font-size: 13px;
   font-weight: 600;
-  color: var(--omx-color-ink, #ffffff);
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 .omnimux-inspiration-modal-handle {
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 
 .omnimux-inspiration-modal-link {
@@ -1516,17 +1954,17 @@ var INSPIRATION_CSS = `
   gap: 4px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--omx-color-ink-soft, #d1d1d1);
+  color: var(--dsw-alias-label-primary-dimmed, #d1d1d1);
   text-decoration: none;
   padding: 4px 10px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  border: 1px solid var(--omx-color-hairline, #262626);
-  background: var(--omx-color-canvas-soft, #141414);
-  transition: all var(--omx-motion-fast, 120ms) ease;
+  border-radius: 9999px;
+  border: 1px solid var(--dsw-alias-border-l2, #262626);
+  background: var(--dsw-alias-bg-module-platform, #141414);
+  transition: all 120ms ease;
 }
 .omnimux-inspiration-modal-link:hover {
-  border-color: #444444;
-  color: #ffffff;
+  border-color: var(--dsw-alias-border-l3, #444444);
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 
 /* \u6807\u7B7E Tags */
@@ -1537,12 +1975,12 @@ var INSPIRATION_CSS = `
 }
 .omnimux-inspiration-modal-tag {
   padding: 2px 8px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  font-family: var(--omx-font-mono, monospace);
+  border-radius: 9999px;
+  font-family: monospace;
   font-size: 11px;
-  border: 1px solid var(--omx-color-hairline, #242424);
-  background: var(--omx-color-canvas-soft, #141414);
-  color: var(--omx-color-muted, #888888);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  background: var(--dsw-alias-bg-module-platform, #141414);
+  color: var(--dsw-alias-label-tertiary, #888888);
 }
 
 /* \u89C6\u9891\u4E92\u52A8\u6570\u636E Stats \u77E9\u9635 */
@@ -1552,8 +1990,8 @@ var INSPIRATION_CSS = `
   gap: 8px;
   padding: 12px;
   border-radius: 8px;
-  background: #111111;
-  border: 1px solid #222222;
+  background: var(--dsw-alias-bg-base, #111111);
+  border: 1px solid var(--dsw-alias-border-l2, #222222);
 }
 .omnimux-inspiration-stat-item {
   display: flex;
@@ -1565,13 +2003,13 @@ var INSPIRATION_CSS = `
 .omnimux-inspiration-stat-label {
   font-size: 10px;
   text-transform: uppercase;
-  color: var(--omx-color-muted, #7c7c7c);
-  font-family: var(--omx-font-mono, monospace);
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
+  font-family: monospace;
 }
 .omnimux-inspiration-stat-val {
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 
 /* \u6807\u9898\u548C\u539F\u8D34\u63CF\u8FF0\u533A\u5757\uFF08\u7F6E\u4E8E\u4E0B\u65B9\uFF09 */
@@ -1580,14 +2018,14 @@ var INSPIRATION_CSS = `
   flex-direction: column;
   gap: 8px;
   padding: 14px;
-  border-radius: var(--omx-radius-sm, 8px);
-  background: var(--omx-color-canvas-soft, #131313);
-  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-module-platform, #131313);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
 }
 .omnimux-inspiration-caption-label {
   font-size: 11px;
-  font-family: var(--omx-font-mono, monospace);
-  color: var(--omx-color-muted, #7c7c7c);
+  font-family: monospace;
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1595,7 +2033,7 @@ var INSPIRATION_CSS = `
   margin: 0;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--omx-color-ink-soft, #ebebeb);
+  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
   word-break: break-word;
   white-space: pre-wrap;
 }
@@ -1607,15 +2045,15 @@ var INSPIRATION_CSS = `
   flex-direction: column;
   width: 100%;
   max-width: 480px;
-  border-radius: var(--omx-radius-lg, 16px);
-  background: var(--omx-color-canvas-soft, #131313);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  box-shadow: var(--omx-shadow-overlay, 0 8px 24px rgba(0,0,0,.48));
+  border-radius: 16px;
+  background: var(--dsw-alias-bg-module-platform, #131313);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0,0,0,.48));
   overflow: hidden;
 }
 .omnimux-inspiration-import-header {
   padding: 16px 20px;
-  border-bottom: 1px solid var(--omx-color-hairline, #242424);
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #242424);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1633,7 +2071,7 @@ var INSPIRATION_CSS = `
 }
 .omnimux-inspiration-import-footer {
   padding: 14px 20px;
-  border-top: 1px solid var(--omx-color-hairline, #242424);
+  border-top: 1px solid var(--dsw-alias-border-l2, #242424);
   display: flex;
   justify-content: flex-end;
   gap: 10px;
@@ -1645,29 +2083,127 @@ var INSPIRATION_CSS = `
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--omx-space-sm, 8px);
+  gap: 8px;
   min-height: 240px;
   text-align: center;
-  padding: var(--omx-space-xl, 24px);
+  padding: 24px;
 }
 .omnimux-inspiration-empty-title {
   margin: 0;
-  font: var(--omx-text-title-sm, 600 18px/28px var(--omx-font-sans));
-  color: var(--omx-color-ink, #ffffff);
+  font: 600 18px/28px inherit;
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 .omnimux-inspiration-empty-text {
   margin: 0;
-  font: var(--omx-text-body-sm, 400 14px/20px var(--omx-font-sans));
-  color: var(--omx-color-muted, #7c7c7c);
+  font: 400 14px/20px inherit;
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
+}
+.omnimux-inspiration-spinner--sm { width: 10px; height: 10px; }
+.omnimux-inspiration-empty-cta { margin-top: 12px; }
+.omnimux-inspiration-error-text {
+  color: var(--dsw-alias-state-error-primary);
+  font-size: 13px;
+}
+.omnimux-inspiration-success-text {
+  color: var(--dsw-alias-state-success-primary);
+  font-size: 13px;
+}
+.omnimux-inspiration-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.omnimux-inspiration-import-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.omnimux-inspiration-fallback-icon--lg { width: 56px; height: 56px; }
+.omnimux-inspiration-empty-breakdown-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  color: var(--dsw-alias-label-primary);
+}
+.omnimux-inspiration-empty-breakdown-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+.omnimux-inspiration-creator-handle {
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}
+.omnimux-inspiration-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.omnimux-inspiration-detail-media,
+.omnimux-inspiration-detail-cover {
+  width: 100%;
+  max-height: 320px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: var(--dsw-alias-bg-module-platform);
+}
+.omnimux-inspiration-hook-card {
+  background: var(--dsw-alias-bg-module-platform);
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  padding: 12px;
+}
+.omnimux-inspiration-hook-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--dsw-alias-brand-primary);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.omnimux-inspiration-hook-body { font-size: 13px; line-height: 1.5; }
+.omnimux-inspiration-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.omnimux-inspiration-field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+.omnimux-inspiration-content-box {
+  font-size: 13px;
+  line-height: 1.5;
+  background: var(--dsw-alias-bg-module-platform);
+  padding: 10px;
+  border-radius: 6px;
+}
+.omnimux-inspiration-meta-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+.omnimux-inspiration-source-link { color: var(--dsw-alias-brand-primary); }
+.omnimux-inspiration-platform-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dsw-alias-brand-primary);
 }
 .omnimux-inspiration-btn {
   height: 34px;
-  padding: 0 var(--omx-space-lg, 16px);
+  padding: 0 16px;
   border: none;
-  border-radius: var(--omx-radius-pill, 9999px);
-  background: var(--omx-color-primary, #ffffff);
-  color: var(--omx-color-on-primary, #0a0a0a);
-  font: var(--omx-text-label, 500 13px/16px var(--omx-font-sans));
+  border-radius: 9999px;
+  background: var(--dsw-alias-button-primary-fill, #ffffff);
+  color: var(--dsw-alias-label-primary-foreground, #0a0a0a);
+  font: 500 13px/16px inherit;
   cursor: pointer;
 }
 
@@ -1679,13 +2215,13 @@ var INSPIRATION_CSS = `
   gap: 10px;
   padding: 16px 0;
   font-size: 12px;
-  color: var(--omx-color-muted, #7c7c7c);
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
 }
 .omnimux-inspiration-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255,255,255,0.15);
-  border-top-color: #ffffff;
+  border: 2px solid var(--dsw-alias-border, rgba(255,255,255,0.15));
+  border-top-color: var(--dsw-alias-label-primary, #ffffff);
   border-radius: 50%;
   animation: omni-spin 0.6s linear infinite;
 }
@@ -1703,23 +2239,23 @@ function injectInspirationStyles() {
 }
 
 // src/client/InspirationSection.jsx
-var import_jsx_runtime2 = require("react/jsx-runtime");
+var import_jsx_runtime3 = require("react/jsx-runtime");
 function LoginGate({ t }) {
   const login = () => {
     const gate = typeof window !== "undefined" ? window.__omnimuxAuth : void 0;
     if (gate && typeof gate.ensureLogin === "function") gate.ensureLogin({});
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-gate", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { className: "omnimux-inspiration-empty-title", children: t("needLogin") }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "omnimux-inspiration-empty-text", children: t("needLoginHint") }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "omnimux-inspiration-btn", onClick: login, children: t("login") })
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-gate", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h2", { className: "omnimux-inspiration-empty-title", children: t("needLogin") }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "omnimux-inspiration-empty-text", children: t("needLoginHint") }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Button, { variant: "primary", onClick: login, children: t("login") })
   ] });
 }
 function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }) {
   const title = String(row.title || row.source_url || row.id);
   const cover = pickCoverSrc(row);
-  const [broken, setBroken] = (0, import_react.useState)(!cover);
-  (0, import_react.useEffect)(() => {
+  const [broken, setBroken] = (0, import_react2.useState)(!cover);
+  (0, import_react2.useEffect)(() => {
     setBroken(!cover);
   }, [cover]);
   const platform = (row.source_platform || (row.is_local ? "local" : "tiktok")).toUpperCase();
@@ -1731,7 +2267,7 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
     }
     onSelect(row);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
     "article",
     {
       className: "omnimux-inspiration-card-pure",
@@ -1746,26 +2282,28 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
         }
       },
       children: [
-        isLocal && onToggleSelect ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-          "button",
+        isLocal && onToggleSelect ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          IconButton,
           {
-            type: "button",
+            variant: "ghost",
+            size: "xs",
             className: "omnimux-inspiration-card-check",
             "data-selected": selected ? "true" : "false",
             "aria-label": t("select.toggle"),
             "aria-pressed": selected ? "true" : "false",
+            title: "",
             onClick: (e) => {
               e.stopPropagation();
               onToggleSelect(row);
             },
-            children: selected ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3.2", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "20 6 9 17 4 12" }) }) : null
+            children: selected ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3.2", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polyline", { points: "20 6 9 17 4 12" }) }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", {})
           }
         ) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: `omnimux-inspiration-badge-platform ${isLocal ? "local" : ""}`, children: isLocal ? "\u672C\u5730" : platform }),
-        broken ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-cover-fallback", "aria-hidden": "true", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-fallback-icon", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-fallback-title", children: title.replace(/^https?:\/\/(www\.)?/, "") })
-        ] }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: `omnimux-inspiration-badge-platform ${isLocal ? "local" : ""}`, children: isLocal ? "\u672C\u5730" : platform }),
+        broken ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-cover-fallback", "aria-hidden": "true", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-fallback-icon", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-fallback-title", children: title.replace(/^https?:\/\/(www\.)?/, "") })
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           "img",
           {
             className: "omnimux-inspiration-cover-img",
@@ -1780,9 +2318,9 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
             }
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-card-overlay", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-overlay-play", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M8 5v14l11-7z" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-overlay-footer", children: title.length > 32 ? `${title.slice(0, 32)}\u2026` : title })
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-card-overlay", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-overlay-play", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M8 5v14l11-7z" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-overlay-footer", children: title.length > 32 ? `${title.slice(0, 32)}\u2026` : title })
         ] })
       ]
     }
@@ -1790,11 +2328,11 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
 }
 function InspirationModal({ row, t, onClose, onItemUpdated }) {
   if (!row) return null;
-  const [item, setItem] = (0, import_react.useState)(row);
-  const [viewMode, setViewMode] = (0, import_react.useState)("player");
-  const [analyzing, setAnalyzing] = (0, import_react.useState)(false);
-  const [analyzeError, setAnalyzeError] = (0, import_react.useState)(null);
-  (0, import_react.useEffect)(() => {
+  const [item, setItem] = (0, import_react2.useState)(row);
+  const [viewMode, setViewMode] = (0, import_react2.useState)("player");
+  const [analyzing, setAnalyzing] = (0, import_react2.useState)(false);
+  const [analyzeError, setAnalyzeError] = (0, import_react2.useState)(null);
+  (0, import_react2.useEffect)(() => {
     setItem(row);
   }, [row]);
   const title = String(item.title || "\u7075\u611F\u8BE6\u60C5");
@@ -1812,7 +2350,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
   const replication = analysis.replication_action || analysis.replication_guide || "";
   const rawMarkdown = analysis.markdown || analysis.raw_markdown || (typeof item.deconstruction === "string" ? item.deconstruction : "");
   const hasDeconstruction = Boolean(hook || targetGoal || narrative || breakdown || replication || rawMarkdown);
-  (0, import_react.useEffect)(() => {
+  (0, import_react2.useEffect)(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") onClose();
     };
@@ -1838,50 +2376,53 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
       setAnalyzing(false);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-wrapper", onClick: (e) => e.stopPropagation(), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { className: "omnimux-inspiration-modal-close", onClick: onClose, "aria-label": "Close", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M18 6L6 18M6 6l12 12" }) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-container", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-left", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-preview-switch", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-switch-group", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-              "button",
-              {
-                type: "button",
-                className: `omnimux-inspiration-switch-btn ${viewMode === "player" ? "active" : ""}`,
-                onClick: () => setViewMode("player"),
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("view.player") })
-                ]
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-              "button",
-              {
-                type: "button",
-                className: `omnimux-inspiration-switch-btn ${viewMode === "deconstruct" ? "active" : ""}`,
-                onClick: () => setViewMode("deconstruct"),
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 17 12 22 22 17" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 12 12 17 22 12" })
-                  ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("view.deconstruct") })
-                ]
-              }
-            )
-          ] }),
-          hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-status-badge done", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "10", height: "10", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "20 6 9 17 4 12" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("status.breakdownReady") })
-          ] }) : analyzing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-status-badge pending", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "10px", height: "10px" } }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("status.breakdownGenerating") })
-          ] }) : null
-        ] }),
-        viewMode === "player" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-preview-player", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-player-box", children: embedUrl ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-modal-wrapper", onClick: (e) => e.stopPropagation(), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      IconButton,
+      {
+        className: "omnimux-inspiration-modal-close",
+        variant: "ghost",
+        size: "sm",
+        "aria-label": t("close"),
+        onClick: onClose,
+        children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M18 6L6 18M6 6l12 12" }) })
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-modal-container", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-modal-left", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-preview-switch", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-switch-group", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+            Button,
+            {
+              variant: "ghost",
+              size: "sm",
+              className: `omnimux-inspiration-switch-btn ${viewMode === "player" ? "active" : ""}`,
+              onClick: () => setViewMode("player"),
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: t("view.player") })
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+            Button,
+            {
+              variant: "ghost",
+              size: "sm",
+              className: `omnimux-inspiration-switch-btn ${viewMode === "deconstruct" ? "active" : ""}`,
+              onClick: () => setViewMode("deconstruct"),
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polyline", { points: "2 17 12 22 22 17" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polyline", { points: "2 12 12 17 22 12" })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: t("view.deconstruct") })
+              ]
+            }
+          )
+        ] }) }),
+        viewMode === "player" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-preview-player", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-player-box", children: embedUrl ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           "iframe",
           {
             title,
@@ -1890,7 +2431,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
             allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
             allowFullScreen: true
           }
-        ) : localVideoUrl ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        ) : localVideoUrl ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           "video",
           {
             src: localVideoUrl,
@@ -1898,74 +2439,69 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
             autoPlay: true,
             className: "omnimux-inspiration-player-frame"
           }
-        ) : cover ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("img", { src: cover, alt: title, className: "omnimux-inspiration-modal-cover-bg" }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-cover-fallback", children: coverGlyph(title) }) }) }) : null,
-        viewMode === "deconstruct" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-deconstruct-view", children: hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-content", children: [
-          hook ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.hook") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: hook })
+        ) : cover ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("img", { src: cover, alt: title, className: "omnimux-inspiration-modal-cover-bg" }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-cover-fallback", children: coverGlyph(title) }) }) }) : null,
+        viewMode === "deconstruct" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-deconstruct-view", children: hasDeconstruction ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-dim-content", children: [
+          hook ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.hook") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-dim-body", children: hook })
           ] }) : null,
-          targetGoal ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.goal") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: targetGoal })
+          targetGoal ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.goal") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-dim-body", children: targetGoal })
           ] }) : null,
-          narrative ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.narrative") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: narrative })
+          narrative ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.narrative") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-dim-body", children: narrative })
           ] }) : null,
-          breakdown ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.visual") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: breakdown })
+          breakdown ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.visual") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-dim-body", children: breakdown })
           ] }) : null,
-          replication ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.replication") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-body", children: replication })
+          replication ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.replication") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-dim-body", children: replication })
           ] }) : null,
-          rawMarkdown && !hook && !targetGoal && !narrative && !breakdown && !replication ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.raw") }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("pre", { className: "omnimux-inspiration-dim-code", children: rawMarkdown })
+          rawMarkdown && !hook && !targetGoal && !narrative && !breakdown && !replication ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-dim-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-dim-header", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "omnimux-inspiration-dim-title", children: t("dim.title.raw") }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("pre", { className: "omnimux-inspiration-dim-code", children: rawMarkdown })
           ] }) : null
-        ] }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-deconstruct-empty", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-fallback-icon", style: { width: "56px", height: "56px" }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 17 12 22 22 17" }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "2 12 12 17 22 12" })
+        ] }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-deconstruct-empty", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-fallback-icon omnimux-inspiration-fallback-icon--lg", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polyline", { points: "2 17 12 22 22 17" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polyline", { points: "2 12 12 17 22 12" })
           ] }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h3", { style: { margin: "0 0 6px 0", fontSize: "15px", color: "#ffffff" }, children: analyzing ? t("empty.breakdownAnalyzing") : t("empty.breakdownTitle") }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { margin: 0, fontSize: "12px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("empty.breakdownDesc") })
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { className: "omnimux-inspiration-empty-breakdown-title", children: analyzing ? t("empty.breakdownAnalyzing") : t("empty.breakdownTitle") }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "omnimux-inspiration-empty-breakdown-desc", children: t("empty.breakdownDesc") })
           ] }),
-          analyzeError ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: "#ef4444", fontSize: "12px" }, children: analyzeError }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            "button",
+          analyzeError ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-error-text", children: analyzeError }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+            Button,
             {
-              type: "button",
+              variant: "primary",
               className: "omnimux-inspiration-trigger-btn",
               onClick: handleTriggerAnalyze,
+              loading: analyzing,
               disabled: analyzing,
-              children: analyzing ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-spinner", style: { width: "12px", height: "12px", borderTopColor: "#000" } }),
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: "\u6B63\u5728\u89E3\u6790\u2026" })
-              ] }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polygon", { points: "13 2 3 14 12 14 11 22 21 10 12 10 13 2" }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: "\u7ACB\u5373\u89E3\u6790" })
-              ] })
+              children: analyzing ? t("action.analyzing") : t("action.triggerAnalyze")
             }
           )
         ] }) }) : null
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-modal-right", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-creator-card", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-creator-left", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-handle", children: creator.name || creator.handle || "Creator" }),
-              creator.handle ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { fontSize: "11px", color: "var(--omx-color-muted, #7c7c7c)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-modal-right", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-card", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-left", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-handle", children: creator.name || creator.handle || "Creator" }),
+              creator.handle ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-handle", children: [
                 "@",
                 creator.handle
               ] }) : null
             ] })
           ] }),
-          item.source_url ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+          item.source_url ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
             "a",
             {
               href: item.source_url,
@@ -1973,27 +2509,27 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
               rel: "noopener noreferrer",
               className: "omnimux-inspiration-modal-link",
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("openSource") }),
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "11", height: "11", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" }) })
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: t("openSource") }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "11", height: "11", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" }) })
               ]
             }
           ) : null
         ] }),
-        item.stats && Object.keys(item.stats).length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stats-grid", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u70B9\u8D5E" }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.likes ?? item.stats.digg_count ?? "-" })
+        item.stats && Object.keys(item.stats).length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-stats-grid", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u70B9\u8D5E" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.likes ?? item.stats.digg_count ?? "-" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u8BC4\u8BBA" }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.comments ?? item.stats.comment_count ?? "-" })
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u8BC4\u8BBA" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.comments ?? item.stats.comment_count ?? "-" })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u5206\u4EAB" }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.shares ?? item.stats.share_count ?? "-" })
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-stat-item", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-inspiration-stat-label", children: "\u5206\u4EAB" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-inspiration-stat-val", children: item.stats.shares ?? item.stats.share_count ?? "-" })
           ] })
         ] }) : null,
-        tags.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-tags", children: tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { className: "omnimux-inspiration-modal-tag", children: [
+        tags.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-tags", children: tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "omnimux-inspiration-modal-tag", children: [
           "#",
           tag
         ] }, tag)) }) : null
@@ -2002,11 +2538,11 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
   ] }) });
 }
 function ImportDialog({ open, t, onClose, onImported }) {
-  const [url, setUrl] = (0, import_react.useState)("");
-  const [tags, setTags] = (0, import_react.useState)("");
-  const [autoAnalyze, setAutoAnalyze] = (0, import_react.useState)(true);
-  const [loading, setLoading] = (0, import_react.useState)(false);
-  const [error, setError] = (0, import_react.useState)(null);
+  const [url, setUrl] = (0, import_react2.useState)("");
+  const [tags, setTags] = (0, import_react2.useState)("");
+  const [autoAnalyze, setAutoAnalyze] = (0, import_react2.useState)(true);
+  const [loading, setLoading] = (0, import_react2.useState)(false);
+  const [error, setError] = (0, import_react2.useState)(null);
   if (!open) return null;
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -2035,94 +2571,101 @@ function ImportDialog({ open, t, onClose, onImported }) {
       setLoading(false);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-modal-backdrop", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-import-modal", onClick: (e) => e.stopPropagation(), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-import-header", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { children: t("add.dialogTitle") }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "omnimux-inspiration-modal-close", onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M18 6L6 18M6 6l12 12" }) }) })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("form", { onSubmit: handleSubmit, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-import-body", children: [
-        error ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: "#ef4444", fontSize: "13px" }, children: error }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("label", { style: { display: "block", fontSize: "13px", marginBottom: "6px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("add.urlLabel") }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            "input",
-            {
-              type: "url",
-              required: true,
-              className: "omnimux-inspiration-search",
-              style: { width: "100%" },
-              placeholder: t("add.urlPlaceholder"),
-              value: url,
-              onChange: (e) => setUrl(e.target.value)
-            }
-          )
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("label", { style: { display: "block", fontSize: "13px", marginBottom: "6px", color: "var(--omx-color-muted, #7c7c7c)" }, children: t("add.tagsLabel") }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            "input",
-            {
-              type: "text",
-              className: "omnimux-inspiration-search",
-              style: { width: "100%" },
-              placeholder: t("add.tagsPlaceholder"),
-              value: tags,
-              onChange: (e) => setTags(e.target.value)
-            }
-          )
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("label", { style: { display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+    ModalDialog,
+    {
+      open,
+      onClose,
+      title: t("add.dialogTitle"),
+      closeLabel: t("close"),
+      footer: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Button, { variant: "outline", onClick: onClose, disabled: loading, children: t("close") }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          Button,
+          {
+            variant: "primary",
+            loading,
+            disabled: loading || !url.trim(),
+            onClick: (event) => {
+              void handleSubmit(event);
+            },
+            children: loading ? t("add.importing") : t("add.submit")
+          }
+        )
+      ] }),
+      children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("form", { className: "omnimux-inspiration-import-body", onSubmit: handleSubmit, children: [
+        error ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-error-text", role: "alert", children: error }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          InputField,
+          {
+            type: "url",
+            required: true,
+            label: t("add.urlLabel"),
+            placeholder: t("add.urlPlaceholder"),
+            value: url,
+            disabled: loading,
+            onChange: (e) => setUrl(e.target.value)
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          InputField,
+          {
+            type: "text",
+            label: t("add.tagsLabel"),
+            placeholder: t("add.tagsPlaceholder"),
+            value: tags,
+            disabled: loading,
+            onChange: (e) => setTags(e.target.value)
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("label", { className: "omnimux-inspiration-check", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
             "input",
             {
               type: "checkbox",
               checked: autoAnalyze,
-              onChange: (e) => setAutoAnalyze(e.target.checked)
+              onChange: (e) => setAutoAnalyze(e.target.checked),
+              disabled: loading
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("add.autoAnalyze") })
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: t("add.autoAnalyze") })
         ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-import-footer", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "omnimux-inspiration-select", onClick: onClose, disabled: loading, children: t("close") }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "submit", className: "omnimux-inspiration-btn", disabled: loading, children: loading ? t("add.importing") : t("add.submit") })
       ] })
-    ] })
-  ] }) });
+    }
+  );
 }
 function EmptyState({ t, onOpenAdd }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-empty", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h2", { className: "omnimux-inspiration-empty-title", children: t("empty.title") }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "omnimux-inspiration-empty-text", children: t("empty.description") }),
-    onOpenAdd ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("button", { type: "button", className: "omnimux-inspiration-btn", onClick: onOpenAdd, style: { marginTop: "12px" }, children: t("add.btn") }) : null
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-empty", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h2", { className: "omnimux-inspiration-empty-title", children: t("empty.title") }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "omnimux-inspiration-empty-text", children: t("empty.description") }),
+    onOpenAdd ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Button, { variant: "primary", className: "omnimux-inspiration-empty-cta", onClick: onOpenAdd, children: t("add.btn") }) : null
   ] });
 }
 function InspirationSection({ t, active }) {
-  const [tab, setTab] = (0, import_react.useState)("all");
-  const [q, setQ] = (0, import_react.useState)("");
-  const [type, setType] = (0, import_react.useState)("");
-  const [sort, setSort] = (0, import_react.useState)("hot");
-  const [favorite, setFavorite] = (0, import_react.useState)("0");
-  const [items, setItems] = (0, import_react.useState)([]);
-  const [page, setPage] = (0, import_react.useState)(1);
-  const [hasMore, setHasMore] = (0, import_react.useState)(false);
-  const [loading, setLoading] = (0, import_react.useState)(true);
-  const [loadingMore, setLoadingMore] = (0, import_react.useState)(false);
-  const [phase, setPhase] = (0, import_react.useState)("loading");
-  const [error, setError] = (0, import_react.useState)(null);
-  const [selectedItem, setSelectedItem] = (0, import_react.useState)(null);
-  const [importOpen, setImportOpen] = (0, import_react.useState)(false);
-  const [selectedIds, setSelectedIds] = (0, import_react.useState)(() => /* @__PURE__ */ new Set());
-  const [pendingRemove, setPendingRemove] = (0, import_react.useState)(null);
-  const [removing, setRemoving] = (0, import_react.useState)(false);
-  const sentinelRef = (0, import_react.useRef)(null);
-  (0, import_react.useEffect)(() => {
+  const [tab, setTab] = (0, import_react2.useState)("all");
+  const [q, setQ] = (0, import_react2.useState)("");
+  const [type, setType] = (0, import_react2.useState)("");
+  const [sort, setSort] = (0, import_react2.useState)("hot");
+  const [favorite, setFavorite] = (0, import_react2.useState)("0");
+  const [items, setItems] = (0, import_react2.useState)([]);
+  const [page, setPage] = (0, import_react2.useState)(1);
+  const [hasMore, setHasMore] = (0, import_react2.useState)(false);
+  const [loading, setLoading] = (0, import_react2.useState)(true);
+  const [loadingMore, setLoadingMore] = (0, import_react2.useState)(false);
+  const [phase, setPhase] = (0, import_react2.useState)("loading");
+  const [error, setError] = (0, import_react2.useState)(null);
+  const [selectedItem, setSelectedItem] = (0, import_react2.useState)(null);
+  const [importOpen, setImportOpen] = (0, import_react2.useState)(false);
+  const [selectedIds, setSelectedIds] = (0, import_react2.useState)(() => /* @__PURE__ */ new Set());
+  const [pendingRemove, setPendingRemove] = (0, import_react2.useState)(null);
+  const [removing, setRemoving] = (0, import_react2.useState)(false);
+  const sentinelRef = (0, import_react2.useRef)(null);
+  (0, import_react2.useEffect)(() => {
     injectInspirationStyles();
   }, []);
   const selectedCount = selectedIds.size;
   const selecting = selectedCount > 0;
-  const toggleSelect = (0, import_react.useCallback)((row) => {
+  const toggleSelect = (0, import_react2.useCallback)((row) => {
     if (!row.is_local) return;
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -2131,11 +2674,11 @@ function InspirationSection({ t, active }) {
       return next;
     });
   }, []);
-  const selectAllLocal = (0, import_react.useCallback)(() => {
+  const selectAllLocal = (0, import_react2.useCallback)(() => {
     const localIds = items.filter((it) => it.is_local).map((it) => it.id);
     setSelectedIds(new Set(localIds));
   }, [items]);
-  const clearSelection = (0, import_react.useCallback)(() => {
+  const clearSelection = (0, import_react2.useCallback)(() => {
     setSelectedIds(/* @__PURE__ */ new Set());
   }, []);
   const handleConfirmBatchRemove = async () => {
@@ -2160,7 +2703,7 @@ function InspirationSection({ t, active }) {
       setRemoving(false);
     }
   };
-  const loadData = (0, import_react.useCallback)(async (isNextPage = false) => {
+  const loadData = (0, import_react2.useCallback)(async (isNextPage = false) => {
     const targetPage = isNextPage ? page + 1 : 1;
     const cacheKey = `insp:${tab}:${q}:${type}:${sort}:${favorite}`;
     if (!isNextPage) {
@@ -2207,16 +2750,16 @@ function InspirationSection({ t, active }) {
       setLoadingMore(false);
     }
   }, [tab, q, type, sort, favorite, page, items.length]);
-  (0, import_react.useEffect)(() => {
+  (0, import_react2.useEffect)(() => {
     if (!active) return;
     loadData(false);
   }, [active, tab, q, type, sort, favorite]);
-  (0, import_react.useEffect)(() => {
+  (0, import_react2.useEffect)(() => {
     return whenAuthReady(() => {
       loadData(false);
     });
   }, []);
-  (0, import_react.useEffect)(() => {
+  (0, import_react2.useEffect)(() => {
     if (!sentinelRef.current || !hasMore || loading || loadingMore) return;
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
@@ -2234,153 +2777,133 @@ function InspirationSection({ t, active }) {
     setItems((prev) => prev.map((it) => it.id === updatedItem.id ? updatedItem : it));
     setSelectedItem(updatedItem);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-root", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-header", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-tabs", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-          "button",
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-root", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-header", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-tabs", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          Button,
           {
-            type: "button",
+            variant: "ghost",
+            size: "sm",
             className: `omnimux-inspiration-tab ${tab === "all" ? "active" : ""}`,
             onClick: () => setTab("all"),
             children: t("tab.all")
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-          "button",
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          Button,
           {
-            type: "button",
+            variant: "ghost",
+            size: "sm",
             className: `omnimux-inspiration-tab ${tab === "local" ? "active" : ""}`,
             onClick: () => setTab("local"),
             children: t("tab.local")
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-          "button",
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          Button,
           {
-            type: "button",
+            variant: "ghost",
+            size: "sm",
             className: `omnimux-inspiration-tab ${tab === "public" ? "active" : ""}`,
             onClick: () => setTab("public"),
             children: t("tab.public")
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-        "button",
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        Button,
         {
-          type: "button",
+          variant: "primary",
           className: "omnimux-inspiration-btn-add",
+          leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
           onClick: () => setImportOpen(true),
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("add.btn") })
-          ]
+          children: t("add.btn")
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-toolbar", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-search-box", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-search-icon", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("circle", { cx: "11", cy: "11", r: "8" }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" })
-        ] }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-          "input",
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      FilterBar,
+      {
+        className: "omnimux-inspiration-toolbar",
+        compact: true,
+        search: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          SearchField,
           {
-            type: "search",
-            className: "omnimux-inspiration-search",
-            placeholder: t("filter.search"),
             value: q,
-            onChange: (e) => setQ(e.target.value)
-          }
-        )
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-filters", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-          "select",
-          {
-            className: "omnimux-inspiration-select",
-            value: type,
-            onChange: (e) => setType(e.target.value),
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("option", { value: "", children: [
-                t("filter.type"),
-                " (",
-                t("filter.all"),
-                ")"
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "video", children: t("type.video") }),
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "image", children: t("type.image") }),
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "link", children: t("type.link") })
-            ]
+            placeholder: t("filter.search"),
+            "aria-label": t("filter.search"),
+            debounceMs: 0,
+            stretch: true,
+            onValueChange: setQ
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-          "select",
+        filters: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+            DropdownSelect,
+            {
+              value: type,
+              "aria-label": t("filter.type"),
+              onChange: setType,
+              options: [
+                { value: "", label: `${t("filter.type")} (${t("filter.all")})` },
+                { value: "video", label: t("type.video") },
+                { value: "image", label: t("type.image") },
+                { value: "link", label: t("type.link") }
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+            DropdownSelect,
+            {
+              value: sort,
+              "aria-label": t("filter.sort"),
+              onChange: setSort,
+              options: [
+                { value: "hot", label: t("sort.hot") },
+                { value: "new", label: t("sort.new") },
+                { value: "fav", label: t("sort.fav") }
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+            DropdownSelect,
+            {
+              value: favorite,
+              "aria-label": t("filter.favorite"),
+              onChange: setFavorite,
+              options: [
+                { value: "0", label: t("favorite.off") },
+                { value: "1", label: t("favorite.on") }
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-inspiration-count", children: t("count", { n: items.length }) })
+        ] })
+      }
+    ),
+    selecting ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-selection-bar", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-selection-count", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: t("select.count").replace("{n}", String(selectedCount)) }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-selection-actions", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Button, { variant: "ghost", size: "sm", onClick: selectAllLocal, children: t("select.selectAll") }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Button, { variant: "ghost", size: "sm", onClick: clearSelection, children: t("select.clear") }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          Button,
           {
-            className: "omnimux-inspiration-select",
-            value: sort,
-            onChange: (e) => setSort(e.target.value),
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "hot", children: t("sort.hot") }),
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "new", children: t("sort.new") }),
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "fav", children: t("sort.fav") })
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-          "select",
-          {
-            className: "omnimux-inspiration-select",
-            value: favorite,
-            onChange: (e) => setFavorite(e.target.value),
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "0", children: t("favorite.off") }),
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("option", { value: "1", children: t("favorite.on") })
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-inspiration-count", children: t("count", { n: items.length }) })
-      ] })
-    ] }),
-    selecting ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-selection-bar", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-selection-count", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: t("select.count").replace("{n}", String(selectedCount)) }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-selection-actions", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-          "button",
-          {
-            type: "button",
-            className: "omnimux-inspiration-btn-ghost",
-            onClick: selectAllLocal,
-            children: t("select.selectAll")
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-          "button",
-          {
-            type: "button",
-            className: "omnimux-inspiration-btn-ghost",
-            onClick: clearSelection,
-            children: t("select.clear")
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-          "button",
-          {
-            type: "button",
+            variant: "danger",
+            size: "sm",
             disabled: removing,
-            className: "omnimux-inspiration-btn-danger",
             onClick: () => setPendingRemove({ ids: [...selectedIds], count: selectedCount }),
             children: t("select.delete").replace("{n}", String(selectedCount))
           }
         )
       ] })
     ] }) : null,
-    loading && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-skeleton", children: Array.from({ length: 8 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-skel" }, i)) }) : null,
-    phase === "need-login" && tab === "public" ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(LoginGate, { t }) : null,
-    phase === "ready" && error && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-error", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "omnimux-inspiration-empty-text", children: error === "disabled" ? t("error.disabled") : error || t("error.generic") }) }) : null,
-    !loading && items.length === 0 && (!error || tab === "local") ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(EmptyState, { t, onOpenAdd: () => setImportOpen(true) }) : null,
-    items.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: `omnimux-inspiration-grid ${selecting ? "selecting" : ""}`, children: items.map((row) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    loading && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-skeleton", children: Array.from({ length: 8 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-skel" }, i)) }) : null,
+    phase === "need-login" && tab === "public" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(LoginGate, { t }) : null,
+    phase === "ready" && error && items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-error", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "omnimux-inspiration-empty-text", children: error === "disabled" ? t("error.disabled") : error || t("error.generic") }) }) : null,
+    !loading && items.length === 0 && (!error || tab === "local") ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(EmptyState, { t, onOpenAdd: () => setImportOpen(true) }) : null,
+    items.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: `omnimux-inspiration-grid ${selecting ? "selecting" : ""}`, children: items.map((row) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
       PureCoverCard,
       {
         row,
@@ -2392,12 +2915,12 @@ function InspirationSection({ t, active }) {
       },
       String(row.id)
     )) }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { ref: sentinelRef }),
-    loadingMore ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-inspiration-scroll-loader", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "omnimux-inspiration-spinner" }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { children: "\u6B63\u5728\u52A0\u8F7D\u66F4\u591A\u7075\u611F\u2026" })
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { ref: sentinelRef }),
+    loadingMore ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-scroll-loader", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-spinner" }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "\u6B63\u5728\u52A0\u8F7D\u66F4\u591A\u7075\u611F\u2026" })
     ] }) : null,
-    selectedItem ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    selectedItem ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
       InspirationModal,
       {
         row: selectedItem,
@@ -2406,7 +2929,7 @@ function InspirationSection({ t, active }) {
         onItemUpdated: handleItemUpdated
       }
     ) : null,
-    pendingRemove ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    pendingRemove ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
       ConfirmRemoveDialog,
       {
         t,
@@ -2416,7 +2939,7 @@ function InspirationSection({ t, active }) {
         onConfirm: handleConfirmBatchRemove
       }
     ) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
       ImportDialog,
       {
         open: importOpen,
@@ -2429,17 +2952,17 @@ function InspirationSection({ t, active }) {
 }
 
 // src/client/InspirationStage.jsx
-var import_jsx_runtime3 = require("react/jsx-runtime");
+var import_jsx_runtime4 = require("react/jsx-runtime");
 function InspirationStage({ t, stage }) {
-  const open = (0, import_react2.useSyncExternalStore)(
+  const open = (0, import_react3.useSyncExternalStore)(
     stage ? stage.subscribe : () => () => {
     },
     stage ? stage.getSnapshot : () => false
   );
-  const [everOpened, setEverOpened] = (0, import_react2.useState)(false);
-  const [box, setBox] = (0, import_react2.useState)(() => stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 });
+  const [everOpened, setEverOpened] = (0, import_react3.useState)(false);
+  const [box, setBox] = (0, import_react3.useState)(() => stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 });
   if (open && !everOpened) setEverOpened(true);
-  (0, import_react2.useLayoutEffect)(() => {
+  (0, import_react3.useLayoutEffect)(() => {
     if (!open || !stage) return void 0;
     const update = () => {
       setBox(stage.readBox());
@@ -2456,87 +2979,36 @@ function InspirationStage({ t, stage }) {
     };
   }, [open, stage]);
   if (!stage || !everOpened) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
     "div",
     {
       role: "region",
       "aria-label": t("title"),
       "aria-hidden": open ? void 0 : "true",
+      className: "omnimux-inspiration-stage",
+      "data-visible": open ? "true" : "false",
       style: {
-        position: "fixed",
-        top: box.top,
-        left: box.left,
-        width: box.width,
-        height: box.height,
-        zIndex: 200,
-        pointerEvents: open ? "auto" : "none",
-        display: open ? "flex" : "none",
-        flexDirection: "column",
-        background: "var(--dsw-alias-bg-primary, var(--dsw-bg, #111))",
-        color: "var(--dsw-alias-label-primary, inherit)",
-        overflow: "hidden",
-        boxSizing: "border-box"
+        "--stage-top": `${box.top}px`,
+        "--stage-left": `${box.left}px`,
+        "--stage-width": `${box.width}px`,
+        "--stage-height": `${box.height}px`
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
-          "div",
-          {
-            style: {
-              flex: "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              minHeight: 32,
-              padding: "12px 24px",
-              boxSizing: "border-box",
-              WebkitAppRegion: "no-drag"
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                "h1",
-                {
-                  style: {
-                    margin: 0,
-                    flex: 1,
-                    minWidth: 0,
-                    fontSize: 16,
-                    fontWeight: 600,
-                    lineHeight: "32px"
-                  },
-                  children: t("title")
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-                "button",
-                {
-                  type: "button",
-                  "aria-label": t("close"),
-                  onClick: () => {
-                    stage.set(false);
-                  },
-                  style: {
-                    WebkitAppRegion: "no-drag",
-                    border: "none",
-                    background: "transparent",
-                    color: "inherit",
-                    cursor: "pointer",
-                    fontSize: 20,
-                    lineHeight: 1,
-                    padding: 4,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 28,
-                    height: 28,
-                    borderRadius: 6
-                  },
-                  children: "\xD7"
-                }
-              )
-            ]
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box" }, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(InspirationSection, { t, active: open }) })
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-inspiration-stage-header", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h1", { className: "omnimux-inspiration-stage-title", children: t("title") }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+            IconButton,
+            {
+              "aria-label": t("close"),
+              variant: "ghost",
+              onClick: () => {
+                stage.set(false);
+              },
+              children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_dsh_client_ui_primitives2.IconCloseOutline16, {})
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-inspiration-stage-body", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(InspirationSection, { t, active: open }) })
       ]
     }
   );

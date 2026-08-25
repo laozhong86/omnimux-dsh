@@ -29,10 +29,13 @@ test('client bundle keeps public slot keys and keep-alive', () => {
         'settings.plugin.item',
         'plazaKeepAlive',
         'everOpened',
+        'sh-plaza-view',
+        'data-active',
     ]) {
         assert.ok(client.includes(needle), `missing ${needle}`);
     }
-    assert.match(client, /display:\s*open\s*\?\s*(?:void 0|undefined)\s*:\s*["']none["']/);
+    assert.match(client, /"data-active":\s*open\s*\?\s*["']true["']\s*:\s*["']false["']/);
+    assert.match(client, /\.sh-plaza-view\[data-active=["']false["']\]\{display:none/);
 });
 test('client bundle recognizes Skills search fallback without library total', () => {
     for (const needle of [

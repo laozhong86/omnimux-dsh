@@ -19,7 +19,7 @@ function Icon({ size = 14, children }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      style={{ flex: 'none', display: 'inline-block', verticalAlign: 'middle' }}
+      className="omnimux-assets-icon"
     >
       {children}
     </svg>

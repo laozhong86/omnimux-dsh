@@ -25,10 +25,11 @@
             item.version ? "v" + item.version : null,
           ].filter(Boolean).join(" · ");
           return h(
-            "button",
+            Button,
             {
               key: item.slug || item.id,
               type: "button",
+              variant: "ghost",
               className: "sh-card" + (item.installed ? " on" : ""),
               onClick: () => onOpen(item),
             },
@@ -49,10 +50,12 @@
     function TabBar({ tab, onChange }) {
       const tr = useTr();
       return h("div", { className: "sh-tabs", role: "tablist" },
-        DETAIL_TABS.map((it) => h("button", {
+        DETAIL_TABS.map((it) => h(Button, {
           key: it.id,
           type: "button",
           role: "tab",
+          variant: "ghost",
+          size: "sm",
           className: "sh-tab" + (tab === it.id ? " on" : ""),
           "aria-selected": tab === it.id,
           onClick: () => onChange(it.id),
@@ -78,7 +81,7 @@
               idx === 0 ? h("span", { className: "sh-tag blue" }, tr("ver.latest")) : null,
               current ? h("span", { className: "sh-tag green" }, tr("ver.current")) : null,
             ),
-            h("div", { className: "sh-hint", style: { margin: 0 } }, fmtTime(v.createdAt, tr) || tr("ver.unknownDate")),
+            h("div", { className: "sh-hint" }, fmtTime(v.createdAt, tr) || tr("ver.unknownDate")),
             h("p", { className: "sh-ver-log" }, v.changelog || tr("ver.noLog")),
           ),
           h(Button, {
@@ -101,8 +104,8 @@
       }).join(" ");
     }
 
-    function DimIcon({ letter, color }) {
-      const svg = { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" };
+    function DimIcon({ letter }) {
+      const svg = { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" };
       if (letter === "T") return h("svg", svg, h("path", { d: "M12 3l8 4v5c0 5-3.4 8.4-8 9.5C7.4 20.4 4 17 4 12V7l8-4z" }));
       if (letter === "R") return h("svg", svg, h("path", { d: "M12 21V3M5 10l7-7 7 7" }));
       if (letter === "A") return h("svg", svg, h("circle", { cx: 12, cy: 12, r: 8 }), h("path", { d: "M12 8v8M8 12h8" }));
@@ -137,8 +140,8 @@
         }),
         h("polygon", {
           points: radarPoints(scores, cx, cy, r),
-          fill: "rgba(37,99,235,.16)",
-          stroke: "#2563eb",
+          fill: "color-mix(in srgb, var(--dsw-alias-state-business-primary, #2563eb) 16%, transparent)",
+          stroke: "var(--dsw-alias-state-business-primary, #2563eb)",
           strokeWidth: 1.6,
         }),
         TRACE.map((d, i) => {
@@ -169,22 +172,22 @@
 
     function StarIcon({ filled, size = 12 }) {
       return h("svg", {
+        className: "sh-star-ico" + (filled ? " on" : ""),
         width: size,
         height: size,
         viewBox: "0 0 24 24",
-        fill: filled ? "#f59e0b" : "none",
-        stroke: filled ? "#f59e0b" : "currentColor",
+        fill: filled ? "currentColor" : "none",
+        stroke: "currentColor",
         strokeWidth: 2,
         strokeLinecap: "round",
         strokeLinejoin: "round",
         "aria-hidden": "true",
-        style: { display: "inline-block", verticalAlign: "middle", opacity: filled ? 1 : 0.35 },
       }, h("polygon", { points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" }));
     }
 
     function StarGroup({ score }) {
       const n = Math.max(0, Math.min(5, Math.round(Number(score) || 0)));
-      return h("span", { className: "sh-stars", "aria-hidden": "true", style: { display: "inline-flex", gap: 1, verticalAlign: "middle" } },
+      return h("span", { className: "sh-stars", "aria-hidden": "true" },
         [0, 1, 2, 3, 4].map((i) => h(StarIcon, { key: i, filled: i < n }))
       );
     }
@@ -229,8 +232,8 @@
         }),
         h("defs", null,
           h("linearGradient", { id: "shShield", x1: "10", y1: "0.83", x2: "10", y2: "19.17", gradientUnits: "userSpaceOnUse" },
-            h("stop", { stopColor: "#A6E527" }),
-            h("stop", { offset: "1", stopColor: "#0CBF5B" }),
+            h("stop", { stopColor: "var(--dsw-alias-state-success-secondary, #A6E527)" }),
+            h("stop", { offset: "1", stopColor: "var(--dsw-alias-state-success-primary, #0CBF5B)" }),
           ),
         ),
       );
@@ -255,14 +258,17 @@
         TRACE.map((d) => {
           const dim = ev.dimensions?.[d[0]];
           const score = dim?.score;
-          const tint = d[4] + "22";
-          return h("div", { key: d[0], className: "sh-eval-item" },
+          const barStyle = {
+            "--bar-pct": ((Number(score) || 0) / 5 * 100) + "%",
+            "--bar-tint": d[4],
+          };
+          return h("div", { key: d[0], className: "sh-eval-item", style: barStyle },
             h("div", { className: "sh-eval-top" },
-              h("div", { className: "sh-eval-ico", style: { background: tint } }, h(DimIcon, { letter: d[1], color: d[4] })),
+              h("div", { className: "sh-eval-ico" }, h(DimIcon, { letter: d[1] })),
               h("div", { className: "sh-eval-name" }, d[1] + " · " + d[2] + " " + tr("dim." + d[0])),
               h("div", { className: "sh-eval-sc" }, (score == null ? "-" : score) + " / 5"),
             ),
-            h("div", { className: "sh-eval-bar" }, h("span", { style: { width: ((Number(score) || 0) / 5 * 100) + "%", background: d[4] } })),
+            h("div", { className: "sh-eval-bar" }, h("span")),
             dim?.userReason ? h("p", { className: "sh-eval-why" }, dim.userReason) : null,
           );
         }),
@@ -361,7 +367,7 @@
         ),
         h("div", { className: "sh-head" },
           h(Icon, { item: view, className: "sh-dicon" }),
-          h("div", { style: { minWidth: 0, flex: 1 } },
+          h("div", { className: "sh-head-copy" },
             h("h2", null, view.name),
             view.id ? h("div", { className: "sh-canon" }, view.id) : null,
             h(Marks, { item: view, detail: true }),

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Button, ConfirmModal } from 'dsh-ui-kit'
 import { AccountCard } from './AccountCard.jsx'
 import { AccountTable } from './AccountTable.jsx'
 import { ConnectModal } from './ConnectModal.jsx'
@@ -259,9 +260,9 @@ export function AccountsSection({ t, active = true }) {
       <div className="omnimux-accounts-root">
         <p className="omnimux-accounts-muted">{t('needLogin')}</p>
         <p className="omnimux-accounts-muted">{t('needLoginHint')}</p>
-        <button type="button" className="omnimux-accounts-cta" onClick={signIn}>
+        <Button variant="primary" onClick={signIn}>
           {t('login')}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -293,14 +294,14 @@ export function AccountsSection({ t, active = true }) {
           onViewChange={setView}
           busy={combinedBusy}
         />
-          <button
-            type="button"
+          <Button
+            variant="primary"
             className="omnimux-accounts-cta"
-            disabled={combinedBusy}
+            disabled={combinedBusy !== ''}
             onClick={openConnect}
           >
             + {t('connect')}
-          </button>
+          </Button>
         </div>
       ) : null}
       {selected.size > 0 ? (
@@ -313,58 +314,49 @@ export function AccountsSection({ t, active = true }) {
               {String(bulkProgress.done)}/{String(bulkProgress.total)}
             </span>
           ) : null}
-          <button
-            type="button"
-            className="omnimux-accounts-btn omnimux-accounts-btn--danger"
+          <Button
+            variant="danger"
+            size="sm"
             disabled={combinedBusy !== ''}
             onClick={() => { setConfirmBulk(true) }}
           >
             {t('bulk.disconnect')}
-          </button>
-          <button
-            type="button"
-            className="omnimux-accounts-btn"
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             disabled={combinedBusy !== ''}
             onClick={() => { void bulkAgent(true) }}
           >
             {t('bulk.agentOn')}
-          </button>
-          <button
-            type="button"
-            className="omnimux-accounts-btn"
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             disabled={combinedBusy !== ''}
             onClick={() => { void bulkAgent(false) }}
           >
             {t('bulk.agentOff')}
-          </button>
-          <button
-            type="button"
-            className="omnimux-accounts-btn"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             disabled={combinedBusy !== ''}
             onClick={() => { setSelected(new Set()) }}
           >
             {t('bulk.clear')}
-          </button>
-          {confirmBulk ? (
-            <div data-omnimux-accounts-popover="" role="dialog" className="omnimux-accounts-popover">
-              <p className="omnimux-accounts-popover-text">
-                {fmt(t('bulk.confirmDisconnect'), { count: selected.size })}
-              </p>
-              <div className="omnimux-accounts-popover-actions">
-                <button
-                  type="button"
-                  className="omnimux-accounts-btn omnimux-accounts-btn--danger"
-                  disabled={combinedBusy !== ''}
-                  onClick={() => { void bulkDisconnect() }}
-                >
-                  {t('disconnect')}
-                </button>
-                <button type="button" className="omnimux-accounts-btn" onClick={() => { setConfirmBulk(false) }}>
-                  {t('action.cancel')}
-                </button>
-              </div>
-            </div>
-          ) : null}
+          </Button>
+          <ConfirmModal
+            open={confirmBulk}
+            onClose={() => { setConfirmBulk(false) }}
+            title={t('bulk.disconnect')}
+            message={fmt(t('bulk.confirmDisconnect'), { count: selected.size })}
+            confirmLabel={t('disconnect')}
+            cancelLabel={t('action.cancel')}
+            confirmVariant="danger"
+            confirmLoading={combinedBusy !== ''}
+            onConfirm={() => { void bulkDisconnect() }}
+          />
         </div>
       ) : null}
       {errorText !== '' ? <p className="omnimux-accounts-error" role="alert">{errorText}</p> : null}

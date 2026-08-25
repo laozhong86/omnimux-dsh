@@ -37,9 +37,18 @@ importers:
 
   plugins/omnimux-accounts:
     dependencies:
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: '>=0.1.0-rc.6'
+        version: 0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1))
+      dsh-ui-kit:
+        specifier: file:../../../../personal/dsh-ui-kit
+        version: file:../../personal/dsh-ui-kit(@deepseek-ai/dsh-client-ui-primitives@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.2.0
         version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
     devDependencies:
       esbuild:
         specifier: ^0.25.0
@@ -49,9 +58,18 @@ importers:
 
   plugins/omnimux-assets:
     dependencies:
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: '>=0.1.0-rc.6'
+        version: 0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1))
+      dsh-ui-kit:
+        specifier: file:../../../../personal/dsh-ui-kit
+        version: file:../../personal/dsh-ui-kit(@deepseek-ai/dsh-client-ui-primitives@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.2.0
         version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
     devDependencies:
       esbuild:
         specifier: ^0.25.0
@@ -59,12 +77,21 @@ importers:
 
   plugins/omnimux-inspiration:
     dependencies:
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: '>=0.1.0-rc.6'
+        version: 0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1))
+      dsh-ui-kit:
+        specifier: file:../../../../personal/dsh-ui-kit
+        version: file:../../personal/dsh-ui-kit(@deepseek-ai/dsh-client-ui-primitives@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       lucide-react:
         specifier: ^1.33.0
         version: 1.33.0(react@18.3.1)
       react:
         specifier: ^18.2.0
         version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
     devDependencies:
       esbuild:
         specifier: ^0.25.0
@@ -106,9 +133,18 @@ importers:
 
   plugins/omnimux-products:
     dependencies:
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: '>=0.1.0-rc.6'
+        version: 0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1))
+      dsh-ui-kit:
+        specifier: file:../../../../personal/dsh-ui-kit
+        version: file:../../personal/dsh-ui-kit(@deepseek-ai/dsh-client-ui-primitives@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.2.0
         version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
     devDependencies:
       esbuild:
         specifier: ^0.25.0
@@ -116,9 +152,15 @@ importers:
 
   plugins/omnimux-workflow:
     dependencies:
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: '>=0.1.0-rc.6'
+        version: 0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1))
       '@xyflow/react':
         specifier: 12.11.3
         version: 12.11.3(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      dsh-ui-kit:
+        specifier: file:../../../../personal/dsh-ui-kit
+        version: file:../../personal/dsh-ui-kit(@deepseek-ai/dsh-client-ui-primitives@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       lucide-react:
         specifier: 1.33.0
         version: 1.33.0(react@19.2.8)
@@ -1854,6 +1896,12 @@ snapshots:
       '@deepseek-ai/dsh-client-ui-primitives': 0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1))
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  dsh-ui-kit@file:../../personal/dsh-ui-kit(@deepseek-ai/dsh-client-ui-primitives@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)))(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+    dependencies:
+      '@deepseek-ai/dsh-client-ui-primitives': 0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1))
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
 
   entities@8.0.0: {}
 

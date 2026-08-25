@@ -60,7 +60,18 @@
     }
 
     function StarIcon() {
-      return h("svg", { width: 12, height: 12, viewBox: "0 0 24 24", fill: "#f59e0b", stroke: "#f59e0b", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
+      return h("svg", {
+        className: "sh-star-ico",
+        width: 12,
+        height: 12,
+        viewBox: "0 0 24 24",
+        fill: "currentColor",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        "aria-hidden": "true",
+      },
         h("polygon", { points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" }),
       );
     }
@@ -286,7 +297,7 @@
             h("div", { className: "sh-mkt-bar" },
               h("div", {
                 className: "sh-mkt-bar-fill" + (pct == null ? " wave" : ""),
-                style: pct != null ? { width: pct + "%" } : undefined,
+                style: pct != null ? { "--bar-pct": pct + "%" } : undefined,
               }),
             ),
           ) : null,
@@ -300,7 +311,7 @@
               onClick: startRestart,
             }, tr("mkt.restartNow")),
           ) : null,
-          feedback ? h("p", { className: "sh-mkt-status", style: { padding: "0 2px", textAlign: "left" } }, feedback) : null,
+          feedback ? h("p", { className: "sh-mkt-status left" }, feedback) : null,
           status === "loading" && page === 1 ? h("p", { className: "sh-mkt-status" }, tr("mkt.loading")) : null,
           status === "error" ? h("p", { className: "sh-mkt-status" }, tr("mkt.error", { m: err })) : null,
           status === "ready" && !items.length ? h("p", { className: "sh-mkt-status" }, tr("mkt.empty")) : null,
@@ -325,7 +336,7 @@
                 h("p", { className: "sh-mkt-desc" }, plugin.description || tr("mkt.noDesc")),
                 h("div", { className: "sh-mkt-meta" },
                   h("span", null, catLabelFor(plugin.categoryKey) || plugin.categoryKey),
-                  h("span", { style: { display: "inline-flex", alignItems: "center", gap: "3px" } }, h(StarIcon), String(Number(plugin.stars) || 0)),
+                  h("span", { className: "sh-mkt-stars" }, h(StarIcon), String(Number(plugin.stars) || 0)),
                 ),
                 h("div", { className: "sh-mkt-actions" },
                   h("a", { className: "sh-mkt-details", href: detailHref(plugin), target: "_blank", rel: "noreferrer" }, tr("mkt.details")),
@@ -356,8 +367,9 @@
               );
             }),
           ) : null,
-          status === "ready" && items.length < total ? h("button", {
+          status === "ready" && items.length < total ? h(Button, {
             type: "button",
+            variant: "outline",
             className: "sh-mkt-more",
             onClick: () => setPage((n) => n + 1),
           },

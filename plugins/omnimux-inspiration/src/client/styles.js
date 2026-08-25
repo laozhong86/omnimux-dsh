@@ -5,6 +5,52 @@
 export const INSPIRATION_STYLES_ID = 'omnimux-inspiration-styles'
 
 export const INSPIRATION_CSS = `
+.omnimux-inspiration-stage {
+  position: fixed;
+  z-index: 200;
+  top: var(--stage-top);
+  left: var(--stage-left);
+  width: var(--stage-width);
+  height: var(--stage-height);
+  display: flex;
+  flex-direction: column;
+  background: var(--dsw-alias-bg-primary, var(--dsw-bg));
+  color: var(--dsw-alias-label-primary, inherit);
+  overflow: hidden;
+  box-sizing: border-box;
+  -webkit-app-region: no-drag;
+}
+.omnimux-inspiration-stage[data-visible="false"] {
+  display: none;
+  pointer-events: none;
+}
+.omnimux-inspiration-stage-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+  padding: 12px 20px;
+  box-sizing: border-box;
+  -webkit-app-region: no-drag;
+}
+.omnimux-inspiration-stage-title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 32px;
+}
+.omnimux-inspiration-stage-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
 /* 根容器与微光扫光关键帧 */
 .omnimux-inspiration-root,
 .omnimux-inspiration-root *,
@@ -23,9 +69,9 @@ export const INSPIRATION_CSS = `
   overflow-y: auto;
   padding: 16px 24px 32px 24px;
   gap: 20px;
-  background: var(--omx-color-canvas, #0a0a0a);
-  color: var(--omx-color-ink, #ffffff);
-  font-family: var(--omx-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  background: var(--dsw-alias-bg-primary, var(--dsw-bg));
+  color: var(--dsw-alias-label-primary, inherit);
+  font-family: inherit;
 }
 
 @keyframes omni-shimmer {
@@ -42,38 +88,38 @@ export const INSPIRATION_CSS = `
   width: 100%;
   max-width: 100%;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--omx-color-hairline, #222222);
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #222222);
 }
 
 .omnimux-inspiration-tabs {
   display: inline-flex;
-  background: var(--omx-color-canvas-soft, #141414);
+  background: var(--dsw-alias-bg-module-platform, #141414);
   padding: 3px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: 9999px;
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
 }
 
 .omnimux-inspiration-tab {
   height: 28px;
   padding: 0 14px;
-  border-radius: var(--omx-radius-pill, 9999px);
+  border-radius: 9999px;
   border: none;
   background: transparent;
-  color: var(--omx-color-muted, #888888);
-  font: var(--omx-text-label, 500 13px/16px var(--omx-font-sans));
+  color: var(--dsw-alias-label-tertiary, #888888);
+  font: 500 13px/16px inherit;
   cursor: pointer;
-  transition: color var(--omx-motion-fast, 120ms) ease,
-              background var(--omx-motion-fast, 120ms) ease;
+  transition: color 120ms ease,
+              background 120ms ease;
 }
 
 .omnimux-inspiration-tab:hover {
-  color: var(--omx-color-ink-soft, #ebebeb);
+  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
 }
 
 .omnimux-inspiration-tab.active {
-  background: var(--omx-color-canvas-raised, #242424);
-  color: var(--omx-color-ink, #ffffff);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  background: var(--dsw-alias-bg-layer-1, #242424);
+  color: var(--dsw-alias-label-primary, #ffffff);
+  box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.4));
 }
 
 .omnimux-inspiration-btn-add {
@@ -82,19 +128,19 @@ export const INSPIRATION_CSS = `
   gap: 6px;
   height: 32px;
   padding: 0 16px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  border: 1px solid var(--dsw-alias-border, rgba(255, 255, 255, 0.15));
   background: var(--dsw-alias-button-primary-fill, #ffffff);
   color: var(--dsw-alias-label-primary-foreground, #000000);
-  font: var(--omx-text-label, 550 13px/16px var(--omx-font-sans));
+  font: 550 13px/16px inherit;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-  transition: all var(--omx-motion-fast, 120ms) cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 4px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.2));
+  transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .omnimux-inspiration-btn-add:hover {
-  background: #ebebeb;
+  background: var(--dsw-alias-button-primary-hover, #ebebeb);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 8px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.35));
 }
 .omnimux-inspiration-btn-add:active {
   transform: translateY(0);
@@ -102,13 +148,9 @@ export const INSPIRATION_CSS = `
 
 /* 极简发丝线工具栏 */
 .omnimux-inspiration-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   width: 100%;
   max-width: 100%;
-  flex-wrap: wrap;
+  padding: 0;
 }
 
 .omnimux-inspiration-search-box {
@@ -124,7 +166,7 @@ export const INSPIRATION_CSS = `
   position: absolute;
   left: 12px;
   pointer-events: none;
-  color: var(--omx-color-muted, #7c7c7c);
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -133,19 +175,19 @@ export const INSPIRATION_CSS = `
 .omnimux-inspiration-search {
   width: 100%;
   height: 32px;
-  background: var(--omx-color-canvas-soft, #141414);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  border-radius: var(--omx-radius-pill, 9999px);
+  background: var(--dsw-alias-bg-module-platform, #141414);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  border-radius: 9999px;
   padding: 0 14px 0 34px;
-  color: var(--omx-color-ink, #ffffff);
-  font: var(--omx-text-body-sm, 400 13px/18px var(--omx-font-sans));
+  color: var(--dsw-alias-label-primary, #ffffff);
+  font: 400 13px/18px inherit;
   outline: none;
-  transition: border-color var(--omx-motion-fast, 120ms) ease,
-              background-color var(--omx-motion-fast, 120ms) ease;
+  transition: border-color 120ms ease,
+              background-color 120ms ease;
 }
 .omnimux-inspiration-search:focus {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: var(--omx-color-canvas-raised, #1a1a1a);
+  border-color: var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.4));
+  background: var(--dsw-alias-bg-layer-1, #1a1a1a);
 }
 
 .omnimux-inspiration-filters {
@@ -158,30 +200,30 @@ export const INSPIRATION_CSS = `
 
 .omnimux-inspiration-select {
   height: 32px;
-  background: var(--omx-color-canvas-soft, #141414);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  border-radius: var(--omx-radius-pill, 9999px);
+  background: var(--dsw-alias-bg-module-platform, #141414);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  border-radius: 9999px;
   padding: 0 12px;
-  color: var(--omx-color-ink-soft, #ebebeb);
-  font: var(--omx-text-label, 500 12px/16px var(--omx-font-sans));
+  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
+  font: 500 12px/16px inherit;
   cursor: pointer;
   outline: none;
-  transition: border-color var(--omx-motion-fast, 120ms) ease,
-              background-color var(--omx-motion-fast, 120ms) ease;
+  transition: border-color 120ms ease,
+              background-color 120ms ease;
 }
 .omnimux-inspiration-select:hover {
-  border-color: var(--omx-color-hairline-strong, #3d3d3d);
-  background: var(--omx-color-canvas-raised, #1a1a1a);
+  border-color: var(--dsw-alias-border-l4, #3d3d3d);
+  background: var(--dsw-alias-bg-layer-1, #1a1a1a);
 }
 .omnimux-inspiration-select:focus {
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.4));
 }
 
 .omnimux-inspiration-count {
-  font: var(--omx-text-code, 400 12px/16px var(--omx-font-mono));
-  color: var(--omx-color-muted, #7c7c7c);
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: var(--omx-radius-pill, 9999px);
+  font: 400 12px/16px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
+  background: var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.05));
+  border-radius: 9999px;
   padding: 4px 10px;
   white-space: nowrap;
 }
@@ -204,16 +246,16 @@ export const INSPIRATION_CSS = `
   position: relative;
   width: 100%;
   aspect-ratio: 9 / 16;
-  border-radius: var(--omx-radius-sm, 10px);
-  background: var(--omx-color-canvas-soft, #141414);
-  border: 1px solid var(--omx-color-hairline, #222222);
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-module-platform, #141414);
+  border: 1px solid var(--dsw-alias-border-l2, #222222);
   overflow: hidden;
 }
 .omnimux-inspiration-skel::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.04)) 50%, transparent 100%);
   animation: omni-shimmer 1.4s infinite;
 }
 
@@ -248,15 +290,15 @@ export const INSPIRATION_CSS = `
   width: 100%;
   max-width: 100%;
   padding: 8px 14px;
-  background: var(--omx-color-canvas-raised, #181818);
-  border: 1px solid var(--omx-color-hairline-strong, #333333);
-  border-radius: var(--omx-radius-md, 12px);
+  background: var(--dsw-alias-bg-layer-1, #181818);
+  border: 1px solid var(--dsw-alias-border-l4, #333333);
+  border-radius: 12px;
   animation: omni-fade-in 140ms ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.4));
 }
 .omnimux-inspiration-selection-count {
-  font: var(--omx-text-label, 500 13px/18px var(--omx-font-sans));
-  color: var(--omx-color-ink, #ffffff);
+  font: 500 13px/18px inherit;
+  color: var(--dsw-alias-label-primary, #ffffff);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -270,29 +312,29 @@ export const INSPIRATION_CSS = `
 .omnimux-inspiration-btn-ghost {
   border: none;
   background: transparent;
-  color: var(--omx-color-muted, #8e8e8e);
+  color: var(--dsw-alias-label-tertiary, #8e8e8e);
   cursor: pointer;
-  font: var(--omx-text-label, 500 13px/18px var(--omx-font-sans));
+  font: 500 13px/18px inherit;
   padding: 4px 10px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  transition: color var(--omx-motion-fast, 120ms) ease;
+  border-radius: 9999px;
+  transition: color 120ms ease;
 }
 .omnimux-inspiration-btn-ghost:hover {
-  color: var(--omx-color-ink, #ffffff);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--dsw-alias-label-primary, #ffffff);
+  background: var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.06));
 }
 .omnimux-inspiration-btn-danger {
   border: none;
-  background: var(--omx-color-error, #ef4444);
-  color: #ffffff;
-  border-radius: var(--omx-radius-pill, 9999px);
+  background: var(--dsw-alias-state-error-primary, #ef4444);
+  color: var(--dsw-alias-label-primary, #ffffff);
+  border-radius: 9999px;
   padding: 5px 14px;
   cursor: pointer;
-  font: var(--omx-text-label, 600 13px/18px var(--omx-font-sans));
-  transition: all var(--omx-motion-fast, 120ms) ease;
+  font: 600 13px/18px inherit;
+  transition: all 120ms ease;
 }
 .omnimux-inspiration-btn-danger:hover {
-  background: #dc2626;
+  background: var(--dsw-alias-state-error-primary, #dc2626);
   transform: translateY(-1px);
 }
 
@@ -300,73 +342,77 @@ export const INSPIRATION_CSS = `
   position: relative;
   width: 100%;
   aspect-ratio: 9 / 16;
-  border-radius: var(--omx-radius-sm, 10px);
+  border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
-  background: var(--omx-color-canvas-soft, #131313);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  transition: transform var(--omx-motion-base, 180ms) cubic-bezier(.2,.4,.6,1),
-              border-color var(--omx-motion-base, 180ms) cubic-bezier(.2,.4,.6,1),
-              box-shadow var(--omx-motion-base, 180ms) ease;
+  background: var(--dsw-alias-bg-module-platform, #131313);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  transition: transform 180ms cubic-bezier(.2,.4,.6,1),
+              border-color 180ms cubic-bezier(.2,.4,.6,1),
+              box-shadow 180ms ease;
 }
 .omnimux-inspiration-card-pure[aria-selected="true"] {
-  border-color: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7), 0 8px 24px rgba(0, 0, 0, 0.5);
+  border-color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.7));
+  box-shadow: 0 0 0 1px var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.7)), 0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.5));
 }
 .omnimux-inspiration-card-pure:hover {
   transform: translateY(-3px);
-  border-color: var(--omx-color-hairline-strong, #4a4a4a);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  border-color: var(--dsw-alias-border-l4, #4a4a4a);
+  box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.45));
 }
 
 /* 卡片左上角复选框 Checkbox */
-.omnimux-inspiration-card-check {
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check,
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check:hover,
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check:active {
   position: absolute;
   top: 8px;
   left: 8px;
   width: 22px;
+  min-width: 22px;
   height: 22px;
+  min-height: 22px;
   border-radius: 6px;
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
-  background: rgba(0, 0, 0, 0.5);
+  border: 1.5px solid var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.4));
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.5));
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 5;
-  color: #000000;
+  color: var(--dsw-alias-bg-base, #000000);
   opacity: 0;
   transform: scale(0.9);
-  transition: opacity var(--omx-motion-fast, 120ms) ease,
-              transform var(--omx-motion-fast, 120ms) ease,
-              background-color var(--omx-motion-fast, 120ms) ease,
-              border-color var(--omx-motion-fast, 120ms) ease;
+  transition: opacity 120ms ease,
+              transform 120ms ease,
+              background-color 120ms ease,
+              border-color 120ms ease;
 }
-.omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-check,
-.omnimux-inspiration-card-check[data-selected="true"],
-.omnimux-inspiration-grid.selecting .omnimux-inspiration-card-check {
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-check,
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check[data-selected="true"],
+.omnimux-inspiration-stage .omnimux-inspiration-grid.selecting .omnimux-inspiration-card-check {
   opacity: 1;
   transform: scale(1);
 }
-.omnimux-inspiration-card-check[data-selected="true"] {
-  background: #ffffff;
-  border-color: #ffffff;
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check[data-selected="true"] {
+  background: var(--dsw-alias-label-primary, #ffffff);
+  border-color: var(--dsw-alias-label-primary, #ffffff);
 }
-.omnimux-inspiration-card-check:hover {
-  border-color: rgba(255, 255, 255, 0.85);
-  background: rgba(0, 0, 0, 0.7);
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check:hover {
+  border-color: var(--dsw-alias-label-primary, rgba(255, 255, 255, 0.85));
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.7));
 }
-.omnimux-inspiration-card-check[data-selected="true"]:hover {
-  background: #ebebeb;
-  border-color: #ebebeb;
+.omnimux-inspiration-stage .omnimux-inspiration-card-pure .omnimux-inspiration-card-check[data-selected="true"]:hover {
+  background: var(--dsw-alias-button-primary-hover, #ebebeb);
+  border-color: var(--dsw-alias-button-primary-hover, #ebebeb);
 }
 .omnimux-inspiration-cover-img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: #181818;
+  background: var(--dsw-alias-bg-layer-1, #181818);
 }
 
 /* Fallback 占位卡片 */
@@ -378,27 +424,27 @@ export const INSPIRATION_CSS = `
   width: 100%;
   height: 100%;
   aspect-ratio: 9 / 16;
-  background: radial-gradient(circle at 50% 30%, #202020 0%, #111111 100%);
+  background: radial-gradient(circle at 50% 30%, var(--dsw-alias-bg-layer-2, #202020) 0%, var(--dsw-alias-bg-base, #111111) 100%);
   padding: 16px;
   gap: 12px;
   text-align: center;
-  color: var(--omx-color-muted, #7c7c7c);
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
 }
 .omnimux-inspiration-fallback-icon {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--omx-color-hairline, #242424);
+  background: var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--omx-color-ink-soft, #ebebeb);
+  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
 }
 .omnimux-inspiration-fallback-title {
   font-size: 12px;
   line-height: 16px;
-  color: var(--omx-color-muted, #888888);
+  color: var(--dsw-alias-label-tertiary, #888888);
   max-width: 90%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -415,33 +461,33 @@ export const INSPIRATION_CSS = `
   right: 8px;
   z-index: 4;
   padding: 2px 8px;
-  border-radius: var(--omx-radius-pill, 9999px);
+  border-radius: 9999px;
   font-size: 11px;
   font-weight: 600;
-  font-family: var(--omx-font-mono, monospace);
-  background: rgba(0, 0, 0, 0.65);
+  font-family: monospace;
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.65));
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  border: 1px solid var(--dsw-alias-border, rgba(255, 255, 255, 0.15));
+  color: var(--dsw-alias-label-primary, #ffffff);
   letter-spacing: 0.5px;
 }
 .omnimux-inspiration-badge-platform.local {
-  border-color: #10b981;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--dsw-alias-state-success-primary, #10b981);
+  color: var(--dsw-alias-state-success-primary, #10b981);
+  background: var(--dsw-alias-state-success-tertiary, rgba(16, 185, 129, 0.2));
 }
 
 /* Hover 浮层 */
 .omnimux-inspiration-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.75) 100%);
+  background: linear-gradient(180deg, var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.3)) 0%, var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.1)) 40%, var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.75)) 100%);
   opacity: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   padding: 12px;
-  transition: opacity var(--omx-motion-fast, 120ms) ease;
+  transition: opacity 120ms ease;
 }
 .omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-overlay {
   opacity: 1;
@@ -451,14 +497,14 @@ export const INSPIRATION_CSS = `
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--omx-color-primary, #ffffff);
-  color: var(--omx-color-on-primary, #0a0a0a);
+  background: var(--dsw-alias-button-primary-fill, #ffffff);
+  color: var(--dsw-alias-label-primary-foreground, #0a0a0a);
   display: flex;
   align-items: center;
   justify-content: center;
   transform: scale(0.9);
-  transition: transform var(--omx-motion-fast, 120ms) ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: transform 120ms ease;
+  box-shadow: 0 4px 12px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.4));
 }
 .omnimux-inspiration-card-pure:hover .omnimux-inspiration-overlay-play {
   transform: scale(1);
@@ -470,25 +516,25 @@ export const INSPIRATION_CSS = `
 }
 .omnimux-inspiration-overlay-footer {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--dsw-alias-label-primary, rgba(255, 255, 255, 0.85));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  text-shadow: 0 1px 2px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.8));
 }
 
 /* 详情弹窗 Modal */
 .omnimux-inspiration-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: var(--omx-color-overlay, rgba(0,0,0,.70));
+  background: var(--dsw-alias-bg-mask-1, rgba(0,0,0,.70));
   backdrop-filter: blur(16px);
-  z-index: var(--omx-z-modal, 200);
+  z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--omx-space-xl, 24px);
-  animation: omni-fade-in var(--omx-motion-fast, 120ms) ease;
+  padding: 24px;
+  animation: omni-fade-in 120ms ease;
 }
 @keyframes omni-fade-in {
   from { opacity: 0; }
@@ -500,7 +546,7 @@ export const INSPIRATION_CSS = `
   justify-content: center;
   width: 100%;
   max-width: 1040px;
-  animation: omni-fade-in var(--omx-motion-fast, 120ms) ease;
+  animation: omni-fade-in 120ms ease;
 }
 .omnimux-inspiration-modal-container {
   position: relative;
@@ -508,11 +554,11 @@ export const INSPIRATION_CSS = `
   width: 100%;
   height: 85vh;
   max-height: 720px;
-  border-radius: var(--omx-radius-lg, 16px);
+  border-radius: 16px;
   overflow: hidden;
-  background: var(--omx-color-canvas-soft, #131313);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  box-shadow: var(--omx-shadow-overlay, 0 12px 36px rgba(0,0,0,.60));
+  background: var(--dsw-alias-bg-module-platform, #131313);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  box-shadow: 0 12px 36px var(--dsw-alias-bg-mask-1, rgba(0,0,0,.60));
 }
 .omnimux-inspiration-modal-close {
   position: absolute;
@@ -521,21 +567,21 @@ export const INSPIRATION_CSS = `
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(24, 24, 24, 0.88);
+  border: 1px solid var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.22));
+  background: var(--dsw-alias-bg-elevated, rgba(24, 24, 24, 0.88));
   backdrop-filter: blur(12px);
-  color: #ffffff;
+  color: var(--dsw-alias-label-primary, #ffffff);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 50;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
-  transition: all var(--omx-motion-fast, 120ms) ease;
+  box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.55));
+  transition: all 120ms ease;
 }
 .omnimux-inspiration-modal-close:hover {
-  border-color: rgba(255, 255, 255, 0.45);
-  background: rgba(45, 45, 45, 0.95);
+  border-color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.45));
+  background: var(--dsw-alias-bg-layer-2, rgba(45, 45, 45, 0.95));
   transform: scale(1.08);
 }
 @media (max-width: 1160px) {
@@ -549,7 +595,7 @@ export const INSPIRATION_CSS = `
 .omnimux-inspiration-modal-left {
   flex: 1 1 58%;
   min-width: 320px;
-  background: #000000;
+  background: var(--dsw-alias-bg-base, #000000);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -562,17 +608,17 @@ export const INSPIRATION_CSS = `
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: rgba(18, 18, 18, 0.85);
+  background: var(--dsw-alias-bg-elevated, rgba(18, 18, 18, 0.85));
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--omx-color-hairline, #242424);
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #242424);
   z-index: 10;
 }
 .omnimux-inspiration-switch-group {
   display: inline-flex;
-  background: #0a0a0a;
+  background: var(--dsw-alias-bg-base, #0a0a0a);
   padding: 3px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: 9999px;
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
 }
 .omnimux-inspiration-switch-btn {
   display: inline-flex;
@@ -580,41 +626,41 @@ export const INSPIRATION_CSS = `
   gap: 6px;
   height: 26px;
   padding: 0 12px;
-  border-radius: var(--omx-radius-pill, 9999px);
+  border-radius: 9999px;
   border: none;
   background: transparent;
-  color: var(--omx-color-muted, #7c7c7c);
-  font: var(--omx-text-label, 500 12px/14px var(--omx-font-sans));
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
+  font: 500 12px/14px inherit;
   cursor: pointer;
-  transition: all var(--omx-motion-fast, 120ms) ease;
+  transition: all 120ms ease;
 }
 .omnimux-inspiration-switch-btn.active {
-  background: var(--omx-color-canvas-raised, #242424);
-  color: var(--omx-color-ink, #ffffff);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  background: var(--dsw-alias-bg-layer-1, #242424);
+  color: var(--dsw-alias-label-primary, #ffffff);
+  box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.5));
 }
 .omnimux-inspiration-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  border-radius: var(--omx-radius-pill, 9999px);
+  border-radius: 9999px;
   font-size: 11px;
-  font-family: var(--omx-font-mono, monospace);
+  font-family: monospace;
   font-weight: 500;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--omx-color-ink-soft, #ebebeb);
+  background: var(--dsw-alias-bg-secondary, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--dsw-alias-border, rgba(255, 255, 255, 0.1));
+  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
 }
 .omnimux-inspiration-status-badge.done {
-  border-color: rgba(16, 185, 129, 0.4);
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
+  border-color: var(--dsw-alias-state-success-tertiary, rgba(16, 185, 129, 0.4));
+  background: var(--dsw-alias-state-success-tertiary, rgba(16, 185, 129, 0.12));
+  color: var(--dsw-alias-state-success-primary, #10b981);
 }
 .omnimux-inspiration-status-badge.pending {
-  border-color: rgba(245, 158, 11, 0.4);
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
+  border-color: var(--dsw-alias-state-warning-tertiary, rgba(245, 158, 11, 0.4));
+  background: var(--dsw-alias-state-warning-tertiary, rgba(245, 158, 11, 0.12));
+  color: var(--dsw-alias-state-warning-primary, #f59e0b);
 }
 
 /* 播放器容器 */
@@ -626,7 +672,7 @@ export const INSPIRATION_CSS = `
   justify-content: center;
   position: relative;
   overflow: hidden;
-  padding: var(--omx-space-md, 12px);
+  padding: 12px;
 }
 .omnimux-inspiration-modal-player-box {
   position: relative;
@@ -634,9 +680,9 @@ export const INSPIRATION_CSS = `
   max-width: 320px;
   height: 100%;
   aspect-ratio: 9 / 16;
-  border-radius: var(--omx-radius-sm, 8px);
+  border-radius: 8px;
   overflow: hidden;
-  background: #000000;
+  background: var(--dsw-alias-bg-base, #000000);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -645,7 +691,7 @@ export const INSPIRATION_CSS = `
   width: 100%;
   height: 100%;
   border: none;
-  background: #000000;
+  background: var(--dsw-alias-bg-base, #000000);
 }
 .omnimux-inspiration-modal-cover-bg {
   width: 100%;
@@ -659,7 +705,7 @@ export const INSPIRATION_CSS = `
   width: 100%;
   display: flex;
   flex-direction: column;
-  background: #0d0d0d;
+  background: var(--dsw-alias-bg-base, #0d0d0d);
   overflow: hidden;
 }
 .omnimux-inspiration-dim-tabs {
@@ -668,8 +714,8 @@ export const INSPIRATION_CSS = `
   gap: 6px;
   padding: 10px 16px;
   overflow-x: auto;
-  border-bottom: 1px solid var(--omx-color-hairline, #222222);
-  background: #111111;
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #222222);
+  background: var(--dsw-alias-bg-base, #111111);
 }
 .omnimux-inspiration-dim-tabs::-webkit-scrollbar {
   height: 3px;
@@ -677,23 +723,23 @@ export const INSPIRATION_CSS = `
 .omnimux-inspiration-dim-tab {
   white-space: nowrap;
   padding: 5px 10px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  background: #161616;
-  color: var(--omx-color-muted, #888888);
+  border-radius: 9999px;
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  background: var(--dsw-alias-bg-layer-1, #161616);
+  color: var(--dsw-alias-label-tertiary, #888888);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--omx-motion-fast, 120ms) ease;
+  transition: all 120ms ease;
 }
 .omnimux-inspiration-dim-tab:hover {
-  color: #ffffff;
-  border-color: #383838;
+  color: var(--dsw-alias-label-primary, #ffffff);
+  border-color: var(--dsw-alias-border-l3, #383838);
 }
 .omnimux-inspiration-dim-tab.active {
-  background: #282828;
-  border-color: #555555;
-  color: #ffffff;
+  background: var(--dsw-alias-bg-layer-2, #282828);
+  border-color: var(--dsw-alias-border-l4, #555555);
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 
 .omnimux-inspiration-dim-content {
@@ -706,9 +752,9 @@ export const INSPIRATION_CSS = `
 }
 
 .omnimux-inspiration-dim-card {
-  border-radius: var(--omx-radius-sm, 10px);
-  background: #141414;
-  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1, #141414);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -723,7 +769,7 @@ export const INSPIRATION_CSS = `
   margin: 0;
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--dsw-alias-label-primary, #ffffff);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -731,19 +777,19 @@ export const INSPIRATION_CSS = `
 .omnimux-inspiration-dim-body {
   font-size: 13px;
   line-height: 1.6;
-  color: var(--omx-color-ink-soft, #d1d1d1);
+  color: var(--dsw-alias-label-primary-dimmed, #d1d1d1);
   white-space: pre-wrap;
   word-break: break-word;
 }
 .omnimux-inspiration-dim-code {
-  font-family: var(--omx-font-mono, monospace);
+  font-family: monospace;
   font-size: 12px;
   line-height: 1.5;
-  background: #0a0a0a;
-  border: 1px solid #222222;
+  background: var(--dsw-alias-bg-base, #0a0a0a);
+  border: 1px solid var(--dsw-alias-border-l2, #222222);
   border-radius: 6px;
   padding: 12px;
-  color: #a3e635;
+  color: var(--dsw-alias-state-success-primary, #a3e635);
   white-space: pre-wrap;
   overflow-x: auto;
 }
@@ -764,19 +810,19 @@ export const INSPIRATION_CSS = `
   align-items: center;
   gap: 8px;
   padding: 8px 18px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  background: #ffffff;
-  color: #0a0a0a;
+  border-radius: 9999px;
+  background: var(--dsw-alias-label-primary, #ffffff);
+  color: var(--dsw-alias-bg-base, #0a0a0a);
   border: none;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(255,255,255,0.18);
+  box-shadow: 0 4px 14px var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.18));
   transition: all 120ms ease;
 }
 .omnimux-inspiration-trigger-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #eaeaea;
+  background: var(--dsw-alias-button-primary-hover, #eaeaea);
 }
 .omnimux-inspiration-trigger-btn:disabled {
   opacity: 0.6;
@@ -787,13 +833,13 @@ export const INSPIRATION_CSS = `
 .omnimux-inspiration-modal-right {
   flex: 0 0 380px;
   width: 380px;
-  background: var(--omx-color-canvas, #0a0a0a);
+  background: var(--dsw-alias-bg-base, #0a0a0a);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   padding: 20px 24px;
   gap: 16px;
-  border-left: 1px solid var(--omx-color-hairline, #242424);
+  border-left: 1px solid var(--dsw-alias-border-l2, #242424);
 }
 
 /* 创作者信息与平台 Badge */
@@ -802,7 +848,7 @@ export const INSPIRATION_CSS = `
   align-items: center;
   justify-content: space-between;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--omx-color-hairline, #202020);
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #202020);
 }
 .omnimux-inspiration-creator-left {
   display: flex;
@@ -813,20 +859,20 @@ export const INSPIRATION_CSS = `
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--omx-color-canvas-raised, #1c1c1c);
-  border: 1px solid var(--omx-color-hairline, #2a2a2a);
+  background: var(--dsw-alias-bg-layer-1, #1c1c1c);
+  border: 1px solid var(--dsw-alias-border-l2, #2a2a2a);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--omx-font-mono, monospace);
+  font-family: monospace;
   font-size: 13px;
   font-weight: 600;
-  color: var(--omx-color-ink, #ffffff);
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 .omnimux-inspiration-modal-handle {
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 
 .omnimux-inspiration-modal-link {
@@ -835,17 +881,17 @@ export const INSPIRATION_CSS = `
   gap: 4px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--omx-color-ink-soft, #d1d1d1);
+  color: var(--dsw-alias-label-primary-dimmed, #d1d1d1);
   text-decoration: none;
   padding: 4px 10px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  border: 1px solid var(--omx-color-hairline, #262626);
-  background: var(--omx-color-canvas-soft, #141414);
-  transition: all var(--omx-motion-fast, 120ms) ease;
+  border-radius: 9999px;
+  border: 1px solid var(--dsw-alias-border-l2, #262626);
+  background: var(--dsw-alias-bg-module-platform, #141414);
+  transition: all 120ms ease;
 }
 .omnimux-inspiration-modal-link:hover {
-  border-color: #444444;
-  color: #ffffff;
+  border-color: var(--dsw-alias-border-l3, #444444);
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 
 /* 标签 Tags */
@@ -856,12 +902,12 @@ export const INSPIRATION_CSS = `
 }
 .omnimux-inspiration-modal-tag {
   padding: 2px 8px;
-  border-radius: var(--omx-radius-pill, 9999px);
-  font-family: var(--omx-font-mono, monospace);
+  border-radius: 9999px;
+  font-family: monospace;
   font-size: 11px;
-  border: 1px solid var(--omx-color-hairline, #242424);
-  background: var(--omx-color-canvas-soft, #141414);
-  color: var(--omx-color-muted, #888888);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  background: var(--dsw-alias-bg-module-platform, #141414);
+  color: var(--dsw-alias-label-tertiary, #888888);
 }
 
 /* 视频互动数据 Stats 矩阵 */
@@ -871,8 +917,8 @@ export const INSPIRATION_CSS = `
   gap: 8px;
   padding: 12px;
   border-radius: 8px;
-  background: #111111;
-  border: 1px solid #222222;
+  background: var(--dsw-alias-bg-base, #111111);
+  border: 1px solid var(--dsw-alias-border-l2, #222222);
 }
 .omnimux-inspiration-stat-item {
   display: flex;
@@ -884,13 +930,13 @@ export const INSPIRATION_CSS = `
 .omnimux-inspiration-stat-label {
   font-size: 10px;
   text-transform: uppercase;
-  color: var(--omx-color-muted, #7c7c7c);
-  font-family: var(--omx-font-mono, monospace);
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
+  font-family: monospace;
 }
 .omnimux-inspiration-stat-val {
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 
 /* 标题和原贴描述区块（置于下方） */
@@ -899,14 +945,14 @@ export const INSPIRATION_CSS = `
   flex-direction: column;
   gap: 8px;
   padding: 14px;
-  border-radius: var(--omx-radius-sm, 8px);
-  background: var(--omx-color-canvas-soft, #131313);
-  border: 1px solid var(--omx-color-hairline, #242424);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-module-platform, #131313);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
 }
 .omnimux-inspiration-caption-label {
   font-size: 11px;
-  font-family: var(--omx-font-mono, monospace);
-  color: var(--omx-color-muted, #7c7c7c);
+  font-family: monospace;
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -914,7 +960,7 @@ export const INSPIRATION_CSS = `
   margin: 0;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--omx-color-ink-soft, #ebebeb);
+  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
   word-break: break-word;
   white-space: pre-wrap;
 }
@@ -926,15 +972,15 @@ export const INSPIRATION_CSS = `
   flex-direction: column;
   width: 100%;
   max-width: 480px;
-  border-radius: var(--omx-radius-lg, 16px);
-  background: var(--omx-color-canvas-soft, #131313);
-  border: 1px solid var(--omx-color-hairline, #242424);
-  box-shadow: var(--omx-shadow-overlay, 0 8px 24px rgba(0,0,0,.48));
+  border-radius: 16px;
+  background: var(--dsw-alias-bg-module-platform, #131313);
+  border: 1px solid var(--dsw-alias-border-l2, #242424);
+  box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0,0,0,.48));
   overflow: hidden;
 }
 .omnimux-inspiration-import-header {
   padding: 16px 20px;
-  border-bottom: 1px solid var(--omx-color-hairline, #242424);
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #242424);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -952,7 +998,7 @@ export const INSPIRATION_CSS = `
 }
 .omnimux-inspiration-import-footer {
   padding: 14px 20px;
-  border-top: 1px solid var(--omx-color-hairline, #242424);
+  border-top: 1px solid var(--dsw-alias-border-l2, #242424);
   display: flex;
   justify-content: flex-end;
   gap: 10px;
@@ -964,29 +1010,127 @@ export const INSPIRATION_CSS = `
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--omx-space-sm, 8px);
+  gap: 8px;
   min-height: 240px;
   text-align: center;
-  padding: var(--omx-space-xl, 24px);
+  padding: 24px;
 }
 .omnimux-inspiration-empty-title {
   margin: 0;
-  font: var(--omx-text-title-sm, 600 18px/28px var(--omx-font-sans));
-  color: var(--omx-color-ink, #ffffff);
+  font: 600 18px/28px inherit;
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 .omnimux-inspiration-empty-text {
   margin: 0;
-  font: var(--omx-text-body-sm, 400 14px/20px var(--omx-font-sans));
-  color: var(--omx-color-muted, #7c7c7c);
+  font: 400 14px/20px inherit;
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
+}
+.omnimux-inspiration-spinner--sm { width: 10px; height: 10px; }
+.omnimux-inspiration-empty-cta { margin-top: 12px; }
+.omnimux-inspiration-error-text {
+  color: var(--dsw-alias-state-error-primary);
+  font-size: 13px;
+}
+.omnimux-inspiration-success-text {
+  color: var(--dsw-alias-state-success-primary);
+  font-size: 13px;
+}
+.omnimux-inspiration-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.omnimux-inspiration-import-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.omnimux-inspiration-fallback-icon--lg { width: 56px; height: 56px; }
+.omnimux-inspiration-empty-breakdown-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  color: var(--dsw-alias-label-primary);
+}
+.omnimux-inspiration-empty-breakdown-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+.omnimux-inspiration-creator-handle {
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}
+.omnimux-inspiration-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.omnimux-inspiration-detail-media,
+.omnimux-inspiration-detail-cover {
+  width: 100%;
+  max-height: 320px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: var(--dsw-alias-bg-module-platform);
+}
+.omnimux-inspiration-hook-card {
+  background: var(--dsw-alias-bg-module-platform);
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  padding: 12px;
+}
+.omnimux-inspiration-hook-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--dsw-alias-brand-primary);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.omnimux-inspiration-hook-body { font-size: 13px; line-height: 1.5; }
+.omnimux-inspiration-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.omnimux-inspiration-field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+.omnimux-inspiration-content-box {
+  font-size: 13px;
+  line-height: 1.5;
+  background: var(--dsw-alias-bg-module-platform);
+  padding: 10px;
+  border-radius: 6px;
+}
+.omnimux-inspiration-meta-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+.omnimux-inspiration-source-link { color: var(--dsw-alias-brand-primary); }
+.omnimux-inspiration-platform-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dsw-alias-brand-primary);
 }
 .omnimux-inspiration-btn {
   height: 34px;
-  padding: 0 var(--omx-space-lg, 16px);
+  padding: 0 16px;
   border: none;
-  border-radius: var(--omx-radius-pill, 9999px);
-  background: var(--omx-color-primary, #ffffff);
-  color: var(--omx-color-on-primary, #0a0a0a);
-  font: var(--omx-text-label, 500 13px/16px var(--omx-font-sans));
+  border-radius: 9999px;
+  background: var(--dsw-alias-button-primary-fill, #ffffff);
+  color: var(--dsw-alias-label-primary-foreground, #0a0a0a);
+  font: 500 13px/16px inherit;
   cursor: pointer;
 }
 
@@ -998,13 +1142,13 @@ export const INSPIRATION_CSS = `
   gap: 10px;
   padding: 16px 0;
   font-size: 12px;
-  color: var(--omx-color-muted, #7c7c7c);
+  color: var(--dsw-alias-label-tertiary, #7c7c7c);
 }
 .omnimux-inspiration-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255,255,255,0.15);
-  border-top-color: #ffffff;
+  border: 2px solid var(--dsw-alias-border, rgba(255,255,255,0.15));
+  border-top-color: var(--dsw-alias-label-primary, #ffffff);
   border-radius: 50%;
   animation: omni-spin 0.6s linear infinite;
 }

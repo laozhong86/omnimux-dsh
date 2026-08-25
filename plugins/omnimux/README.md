@@ -36,6 +36,6 @@ Official Apps rows come from `apps/catalog.json` (floor) plus an optional Host G
 
 ## Product chrome
 
-The host half embeds overlay config in the Web index (`window.__OMNIMUX_BRAND__`). The browser half covers official whale / wordmark / tab title / favicon without detaching React nodes. Empty-session hero mark prefers the official `conversation.hero.brand.mark` slot (`priority: -10`); `coverHeroFish` remains the DOM fallback. Config fields (all optional): `productName`, `logoSvg`, `wordmarkText`, `replaceHeroMark`, `hidePreviewBadge`, `rewriteWelcome`, `heroHeadline`. Defaults are OmniMux (`heroHeadline` = `属于你的AI社媒运营团队`).
+The host half embeds overlay config in the Web index (`window.__OMNIMUX_BRAND__`). The browser half covers official whale / wordmark / tab title / favicon without detaching React nodes. Empty-session hero mark prefers the official `conversation.hero.brand.mark` slot (`priority: -10`); `coverHeroFish` remains the DOM fallback. Config fields (all optional): `productName`, `logoSvg`, `wordmarkText`, `replaceHeroMark`, `hidePreviewBadge`, `rewriteWelcome`, `heroHeadline`, `heroHeadlineFit`, `heroHeadlineMaxPx`, `heroHeadlineMinPx`. Defaults are OmniMux (`heroHeadline` = `属于你的AI社媒运营团队`; headline fit on, 26px→16px) so a narrow session column does not wrap a trailing CJK glyph.
 
 Do not export a `sk-` as `OMNIMUX_ACCESS_TOKEN`. Do not put `series/` or Drama Center logic here. Do not split chrome into a sibling plugin.

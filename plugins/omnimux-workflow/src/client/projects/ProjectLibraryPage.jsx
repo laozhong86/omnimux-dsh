@@ -4,25 +4,21 @@
  * 点项目 → 打开绑定会话 + 项目画布 tab（better-sidebar，不走官方 details）。
  *
  * 顶栏 chrome 遵循 sidebar-extra-entries.md 一级页规范（12px 20px 12px）。
- * 全部样式消费官方 --dsw-alias-* token（design.md 硬规则）。
+ * 控件消费 dsh-ui-kit；颜色 100% --dsw-alias-* token。
  */
 import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
-import { IconEditOutline16, IconTrashOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import {
+  IconCloseOutline16,
+  IconEditOutline16,
+  IconPlusOutline16,
+  IconTrashOutline16,
+} from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, ConfirmModal, FilterBar, IconButton, SearchField } from 'dsh-ui-kit'
 import { listProjects, renameProject, deleteProject, bindProjectSession } from '../api.js'
+import { injectWorkflowStyles } from '../styles.js'
 import { NewLocalProjectDialog } from './NewLocalProjectDialog.jsx'
 import { createProjectSession, dismissProductStage, runNewProject } from './newProject.js'
 import { activateProjectCanvas } from './projectCanvas.js'
-
-const chromeButton = {
-  border: '1px solid var(--dsw-alias-border, currentColor)',
-  background: 'transparent',
-  color: 'inherit',
-  borderRadius: 8,
-  cursor: 'pointer',
-  fontSize: 13,
-  lineHeight: '20px',
-  padding: '5px 12px',
-}
 
 function errText(result, t) {
   const code = String(result?.body?.error ?? '')
@@ -42,19 +38,24 @@ function errText(result, t) {
  * }} props
  */
 export function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, layout, betterSidebar }) {
+  useEffect(() => { injectWorkflowStyles() }, [])
   const open = useSyncExternalStore(
-    stage ? stage.subscribe : () => () => {},
-    stage ? stage.getSnapshot : () => false,
+    stage ? (onStoreChange) => stage.subscribe(onStoreChange) : () => () => {},
+    stage ? () => stage.getSnapshot() : () => false,
   )
+  const [everOpened, setEverOpened] = useState(false)
   const [box, setBox] = useState(() => ({ top: 0, left: 0, width: 0, height: 0 }))
   const [projects, setProjects] = useState([])
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState(null)
+
+  if (open && !everOpened) setEverOpened(true)
 
   useLayoutEffect(() => {
-    if (!open) return undefined
+    if (!open || !stage) return undefined
     const update = () => { setBox(stage.readBox()) }
     update()
     const scroll = document.querySelector('[data-conversation-scroll]')
@@ -113,10 +114,17 @@ export function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, lay
     setDialogOpen(true)
   }, [])
 
-  const handleDialogSubmit = useCallback(async (title) => {
+  const handleDialogSubmit = useCallback(async (payload) => {
+    const title = typeof payload === 'string' ? payload : payload?.title
+    const projectRoot = typeof payload === 'object' && payload && typeof payload.projectRoot === 'string'
+      ? payload.projectRoot
+      : undefined
     setBusy(true)
     setError('')
-    const result = await runNewProject({ sessions, workspaces, layout, betterSidebar, t, stage }, { title })
+    const result = await runNewProject(
+      { sessions, workspaces, layout, betterSidebar, t, stage },
+      { title, ...(projectRoot ? { projectRoot } : {}) },
+    )
     setBusy(false)
     if (!result.ok) {
       setError(result.error === 'no-workspace' ? t('projects.noWorkspace') : (result.error || t('projects.genericError')))
@@ -137,18 +145,20 @@ export function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, lay
     void refresh()
   }, [t, refresh])
 
-  const handleDelete = useCallback(async (project) => {
-    if (!window.confirm(t('projects.deleteConfirm').replace('{title}', project.title))) return
-    const result = await deleteProject(project.id)
+  const confirmDelete = useCallback(async () => {
+    if (!pendingDelete) return
+    const result = await deleteProject(pendingDelete.id)
     if (!result.ok) {
       setError(errText(result, t))
+      setPendingDelete(null)
       return
     }
     setError('')
+    setPendingDelete(null)
     void refresh()
-  }, [t, refresh])
+  }, [pendingDelete, t, refresh])
 
-  if (!open || !stage) return null
+  if (!stage || !everOpened) return null
 
   const visible = projects.filter((project) => {
     if (!query.trim()) return true
@@ -159,77 +169,111 @@ export function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, lay
     <div
       role="region"
       aria-label={t('projects.title')}
+      aria-hidden={open ? undefined : 'true'}
+      className="omnimux-workflow-stage"
+      data-visible={open ? 'true' : 'false'}
       style={{
-        position: 'fixed', top: box.top, left: box.left, width: box.width, height: box.height,
-        zIndex: 200, pointerEvents: 'auto', display: 'flex', flexDirection: 'column',
-        background: 'var(--dsw-alias-bg-primary, var(--dsw-bg, #111))',
-        color: 'var(--dsw-alias-label-primary, inherit)', overflow: 'hidden',
+        '--stage-top': `${box.top}px`,
+        '--stage-left': `${box.left}px`,
+        '--stage-width': `${box.width}px`,
+        '--stage-height': `${box.height}px`,
       }}
     >
-      <div style={{ flex: 'none', display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 20px 12px', WebkitAppRegion: 'no-drag' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 style={{ margin: 0, fontSize: 16, fontWeight: 600, lineHeight: '32px' }}>{t('projects.title')}</h1>
-          <p style={{ margin: 0, fontSize: 13, lineHeight: '20px', color: 'var(--dsw-alias-label-secondary, inherit)' }}>{t('projects.subtitle')}</p>
+      <div className="omnimux-workflow-stage-header">
+        <div className="omnimux-workflow-stage-heading">
+          <h1 className="omnimux-workflow-stage-title">{t('projects.title')}</h1>
+          <p className="omnimux-workflow-stage-subtitle">{t('projects.subtitle')}</p>
         </div>
-        <button type="button" style={{ ...chromeButton, display: 'inline-flex', alignItems: 'center', gap: 6, ...(busy ? { opacity: 0.5, cursor: 'default' } : {}) }} disabled={busy} onClick={handleNew}>
-          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+        <Button
+          variant="primary"
+          size="sm"
+          leadingIcon={<IconPlusOutline16 />}
+          disabled={busy}
+          onClick={handleNew}
+        >
           {t('projects.newProject')}
-        </button>
-        <button type="button" aria-label={t('projects.close')} onClick={() => { stage.set(false) }} style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
+        </Button>
+        <IconButton
+          aria-label={t('projects.close')}
+          variant="ghost"
+          onClick={() => { stage.set(false) }}
+        >
+          <IconCloseOutline16 />
+        </IconButton>
       </div>
 
-      <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px 12px', borderBottom: '1px solid var(--dsw-alias-border, rgba(128,128,128,.2))' }}>
-        <span style={{ fontSize: 13, fontWeight: 500, lineHeight: '20px', padding: '4px 12px', borderRadius: 999, background: 'var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18))' }}>{t('projects.localTab')}</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
+      <FilterBar
+        className="omnimux-workflow-stage-toolbar"
+        compact
+        search={(
+          <SearchField
             value={query}
             placeholder={t('projects.searchPlaceholder')}
-            onChange={(event) => { setQuery(event.target.value) }}
-            style={{ border: '1px solid var(--dsw-alias-border, rgba(128,128,128,.3))', borderRadius: 8, padding: '6px 12px', fontSize: 13, minWidth: 180, background: 'transparent', color: 'inherit' }}
+            aria-label={t('projects.searchPlaceholder')}
+            debounceMs={0}
+            stretch
+            onValueChange={setQuery}
           />
-          <span style={{ fontSize: 12, color: 'var(--dsw-alias-label-secondary, inherit)' }}>{t('projects.sortUpdated')}</span>
-        </div>
-      </div>
+        )}
+        filters={(
+          <>
+            <span className="omnimux-workflow-chip">{t('projects.localTab')}</span>
+            <span className="omnimux-workflow-muted">{t('projects.sortUpdated')}</span>
+          </>
+        )}
+      />
 
-      {error !== '' ? (
-        <p style={{ margin: 0, padding: '6px 20px', fontSize: 12, color: 'var(--dsw-alias-label-secondary, inherit)' }}>{error}</p>
+      {error !== '' && !dialogOpen ? (
+        <p className="omnimux-workflow-error">{error}</p>
       ) : null}
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 20 }}>
+      <div className="omnimux-workflow-body">
         {visible.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, height: '100%', color: 'var(--dsw-alias-label-secondary, inherit)', fontSize: 13 }}>
-            <span>{query.trim() ? t('projects.emptySearch') : t('projects.empty')}</span>
+          <div className="omnimux-workflow-empty">
+            <p>{query.trim() ? t('projects.emptySearch') : t('projects.empty')}</p>
             {!query.trim() ? (
-              <button type="button" style={chromeButton} onClick={handleNew}>{t('projects.newProject')}</button>
+              <Button variant="primary" size="sm" disabled={busy} onClick={handleNew}>
+                {t('projects.newProject')}
+              </Button>
             ) : null}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+          <div className="omnimux-workflow-grid">
             {visible.map((project) => (
-              <div key={project.id} role="button" tabIndex={0} onClick={() => { void openProject(project) }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') void openProject(project) }} style={{ border: '1px solid var(--dsw-alias-border, rgba(128,128,128,.2))', borderRadius: 12, padding: 14, cursor: 'pointer', background: 'transparent', minHeight: 96, display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'left' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project.title}</div>
-                  <div style={{ fontSize: 12, lineHeight: '18px', color: 'var(--dsw-alias-label-secondary, inherit)', marginTop: 4 }}>{String(project.updatedAt).slice(0, 10)}</div>
+              <div
+                key={project.id}
+                role="button"
+                tabIndex={0}
+                className="omnimux-workflow-card"
+                onClick={() => { void openProject(project) }}
+                onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') void openProject(project) }}
+              >
+                <div className="omnimux-workflow-card-main">
+                  <div className="omnimux-workflow-card-title">{project.title}</div>
+                  <div className="omnimux-workflow-card-meta">{String(project.updatedAt).slice(0, 10)}</div>
                 </div>
-                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }} onClick={(event) => { event.stopPropagation() }}>
-                  <button
-                    type="button"
+                <div
+                  className="omnimux-workflow-card-actions"
+                  onClick={(event) => { event.stopPropagation() }}
+                >
+                  <IconButton
+                    variant="ghost"
+                    size="xs"
                     title={t('projects.rename')}
                     aria-label={t('projects.rename')}
                     onClick={() => { void handleRename(project) }}
-                    style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 4, opacity: 0.7, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <IconEditOutline16 size={14} />
-                  </button>
-                  <button
-                    type="button"
+                  </IconButton>
+                  <IconButton
+                    variant="ghost"
+                    size="xs"
                     title={t('projects.delete')}
                     aria-label={t('projects.delete')}
-                    onClick={() => { void handleDelete(project) }}
-                    style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 4, opacity: 0.7, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                    onClick={() => { setPendingDelete(project) }}
                   >
                     <IconTrashOutline16 size={14} />
-                  </button>
+                  </IconButton>
                 </div>
               </div>
             ))}
@@ -242,7 +286,19 @@ export function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, lay
           busy={busy}
           error={error}
           onCancel={() => { if (!busy) setDialogOpen(false) }}
-          onSubmit={(title) => { void handleDialogSubmit(title) }}
+          onSubmit={(payload) => { void handleDialogSubmit(payload) }}
+        />
+      ) : null}
+      {pendingDelete ? (
+        <ConfirmModal
+          open
+          onClose={() => { setPendingDelete(null) }}
+          title={t('projects.delete')}
+          message={t('projects.deleteConfirm').replace('{title}', pendingDelete.title)}
+          confirmLabel={t('projects.delete')}
+          cancelLabel={t('projects.dialog.cancel')}
+          confirmVariant="danger"
+          onConfirm={() => { void confirmDelete() }}
         />
       ) : null}
     </div>

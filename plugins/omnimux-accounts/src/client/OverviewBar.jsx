@@ -1,3 +1,5 @@
+import { Button } from 'dsh-ui-kit'
+
 /**
  * Overview strip: four clickable stat numbers (connected / needs attention /
  * platforms / total). The "+ Connect" CTA is rendered separately by
@@ -21,16 +23,16 @@ export function OverviewBar({ t, summary, onFilterClick, busy = '' }) {
     <div className="omnimux-accounts-overview-row">
       <div className="omnimux-accounts-overview">
         {stats.map((stat) => (
-          <button
+          <Button
             key={stat.key}
-            type="button"
+            variant="ghost"
             className="omnimux-accounts-stat"
             disabled={busy !== ''}
             onClick={() => { onFilterClick(stat.filter) }}
           >
             <span className="omnimux-accounts-stat-value">{String(stat.value)}</span>
             <span className="omnimux-accounts-stat-label">{stat.label}</span>
-          </button>
+          </Button>
         ))}
       </div>
     </div>

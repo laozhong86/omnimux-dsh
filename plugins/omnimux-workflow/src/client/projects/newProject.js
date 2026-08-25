@@ -72,15 +72,16 @@ function errorText(value) {
  *   t: (key: string) => string,
  *   stage?: { set?: (open: boolean) => void },
  * }} ctx
- * @param {{ title: string }} [opts] 标题必填（弹窗在入口层收，取消则不调用本函数）
+ * @param {{ title: string, projectRoot?: string }} [opts] 标题必填（弹窗在入口层收，取消则不调用本函数）；projectRoot 可选，留空则 Host 写入默认库
  * @returns {Promise<{ ok: boolean, project?: object, error?: string }>}
  */
 export async function runNewProject(ctx, opts = {}) {
   const title = typeof opts.title === 'string' ? opts.title : ''
+  const givenRoot = typeof opts.projectRoot === 'string' ? opts.projectRoot.trim() : ''
   const validated = validateProjectTitle(title)
   if (!validated.ok) return { ok: false, error: validated.error }
 
-  const seeded = await createProject(validated.title, null)
+  const seeded = await createProject(validated.title, null, givenRoot !== '' ? givenRoot : undefined)
   if (!seeded.ok || !seeded.body?.project) {
     return { ok: false, error: errorText(seeded.body?.error || seeded.body?.message || seeded.status) }
   }

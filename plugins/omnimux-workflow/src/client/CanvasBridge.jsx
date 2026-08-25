@@ -14,7 +14,9 @@
  * injected at most once per hash per document.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Button } from 'dsh-ui-kit'
 import { fetchCanvasHash } from './api.js'
+import { injectWorkflowStyles } from './styles.js'
 
 const CANVAS_GLOBAL = '__omnimuxWorkflowCanvas'
 const SCRIPT_ID = 'omnimux-workflow-canvas-island'
@@ -55,6 +57,7 @@ function ensureCanvasScript(hash) {
  * @param {{ onClose: () => void, t: (key: string) => string, locale?: string, workspaceId?: string }} props
  */
 export function CanvasBridge({ onClose, t, locale, workspaceId }) {
+  useEffect(() => { injectWorkflowStyles() }, [])
   const containerRef = useRef(null)
   const mountedRef = useRef(false)
   const [status, setStatus] = useState('loading') // loading | ready | error
@@ -108,36 +111,19 @@ export function CanvasBridge({ onClose, t, locale, workspaceId }) {
   }, [locale, onClose, workspaceId])
 
   return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+    <div className="omnimux-workflow-canvas-host">
+      <div ref={containerRef} className="omnimux-workflow-canvas-root" />
       {status === 'loading' ? (
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 13, color: 'var(--dsw-alias-label-secondary, inherit)',
-        }}
-        >
+        <div className="omnimux-workflow-canvas-status">
           {t('canvas.loading')}
         </div>
       ) : null}
       {status === 'error' ? (
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 13,
-          color: 'var(--dsw-alias-label-secondary, inherit)',
-        }}
-        >
+        <div className="omnimux-workflow-canvas-status">
           <span>{t('canvas.loadFailed')}</span>
-          <button
-            type="button"
-            onClick={() => { void load() }}
-            style={{
-              border: '1px solid var(--dsw-alias-border, currentColor)', background: 'transparent',
-              color: 'inherit', borderRadius: 6, cursor: 'pointer', fontSize: 12,
-              lineHeight: '20px', padding: '2px 10px',
-            }}
-          >
+          <Button variant="outline" size="sm" onClick={() => { void load() }}>
             {t('canvas.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>

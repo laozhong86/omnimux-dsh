@@ -69,38 +69,46 @@
           "aria-modal": "false",
           "aria-label": tr("plaza.title"),
           style: {
-            top: box.top,
-            left: box.left,
-            width: box.width,
-            height: box.height,
+            "--stage-top": box.top + "px",
+            "--stage-left": box.left + "px",
+            "--stage-width": box.width + "px",
+            "--stage-height": box.height + "px",
           },
         },
           h("div", { className: "sh-plaza-top" },
             h("div", { className: "sh-plaza-tabs", role: "tablist" },
-              h("button", {
+              h(Button, {
                 type: "button",
                 role: "tab",
+                variant: "ghost",
+                size: "sm",
                 className: "sh-plaza-tab" + (tab === "plugins" ? " on" : ""),
                 "aria-selected": tab === "plugins",
                 onClick: () => setTab("plugins"),
               }, tr("plaza.plugins")),
-              h("button", {
+              h(Button, {
                 type: "button",
                 role: "tab",
+                variant: "ghost",
+                size: "sm",
                 className: "sh-plaza-tab" + (tab === "skills" ? " on" : ""),
                 "aria-selected": tab === "skills",
                 onClick: () => setTab("skills"),
               }, tr("plaza.skills")),
-              h("button", {
+              h(Button, {
                 type: "button",
                 role: "tab",
+                variant: "ghost",
+                size: "sm",
                 className: "sh-plaza-tab" + (tab === "experts" ? " on" : ""),
                 "aria-selected": tab === "experts",
                 onClick: () => setTab("experts"),
               }, tr("plaza.experts")),
-              h("button", {
+              h(Button, {
                 type: "button",
                 role: "tab",
+                variant: "ghost",
+                size: "sm",
                 className: "sh-plaza-tab" + (tab === "connectors" ? " on" : ""),
                 "aria-selected": tab === "connectors",
                 onClick: () => setTab("connectors"),
@@ -220,16 +228,14 @@
         return () => document.removeEventListener("pointerdown", onPointer, true);
       }, [open, close]);
 
-      // L0 keep-alive: after first open, keep PlazaView mounted and hide with display:none.
+      // L0 keep-alive: after first open, keep PlazaView mounted and hide via data-active.
       const keep = plazaKeepAlive && everOpened;
       const show = open && box;
       const panel = typeof document !== "undefined" && box && (keep || show)
         ? createPortal(
           h("div", {
-            style: {
-              display: open ? undefined : "none",
-              pointerEvents: open ? "auto" : "none",
-            },
+            className: "sh-plaza-view",
+            "data-active": open ? "true" : "false",
             "aria-hidden": open ? undefined : "true",
           }, h(PlazaView, { t: tr, onClose: close, box, active: open })),
           document.body,
@@ -238,11 +244,13 @@
 
       return h(I18nProvider, { t: tr },
         h("div", { className: "sh-plaza-wrap" + (wide ? "" : " rail") },
-          h("button", {
+          h(Button, {
             type: "button",
+            variant: "ghost",
             className: "sh-plaza-trigger" + (open ? " on" : ""),
             "aria-label": tr("plaza.title"),
             "aria-expanded": open,
+            leadingIcon: h(PlazaIcon),
             onClick: () => {
               if (open) {
                 close();
@@ -252,10 +260,7 @@
               setOpen(true);
               setHint("");
             },
-          },
-            h(PlazaIcon),
-            wide ? h("span", null, tr("plaza.title")) : null,
-          ),
+          }, wide ? tr("plaza.title") : null),
           hint ? h(Toast, { text: hint, onDone: () => setHint("") }) : null,
           panel,
         ),

@@ -1,7 +1,11 @@
 import { JSDOM } from 'jsdom'
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
-import { DEFAULT_CONFIG, DEFAULT_LOGO_SVG, FISH_VIEWBOX, NAME_WORDMARK_VIEWBOX, WORDMARK_VIEWBOX } from './defaults.js'
+import { DEFAULT_CONFIG, DEFAULT_HERO_HEADLINE, DEFAULT_LOGO_SVG, FISH_VIEWBOX, NAME_WORDMARK_VIEWBOX, WORDMARK_VIEWBOX } from './defaults.js'
+import {
+  HERO_HEADLINE_ATTR,
+  HERO_HEADLINE_FIT_STYLE_ID,
+} from './hero-headline-fit.js'
 import {
   applyOverlay,
   brandedTitle,
@@ -182,7 +186,7 @@ test('orphan covers are removed after the official svg unmounts', () => {
   assert.equal(document.querySelector('[data-omnimux-brand="fish"]'), null)
 })
 
-test('hidePreviewBadge hides locale pills without display:none', () => {
+test('hidePreviewBadge marks locale pills for the headline-fit hide rule', () => {
   const document = load(`
     <div>
       <span class="fishHitbox">${officialSvg(FISH_VIEWBOX, '34')}</span>
@@ -239,6 +243,70 @@ test('replaces the official sidebar fallback brand text and restores it', () => 
   assert.equal(document.querySelector('.fallbackBrandName')?.textContent, 'OmniMux')
   stop()
   assert.equal(document.querySelector('.fallbackBrandName')?.textContent, 'DSH Local Build')
+})
+
+test('resolveConfig fills headline-fit defaults', () => {
+  const resolved = resolveConfig({})
+  assert.equal(resolved.heroHeadlineFit, true)
+  assert.equal(resolved.heroHeadlineMaxPx, 26)
+  assert.equal(resolved.heroHeadlineMinPx, 16)
+})
+
+test('applyOverlay starts headline fit after rewriting the hero title', () => {
+  const document = load(`
+    <div class="headline">
+      <span class="headlineText">探索未至之境</span>
+      <span>预览版</span>
+    </div>
+  `)
+  applyOverlay(document, DEFAULT_CONFIG, [])
+  const title = document.querySelector('.headlineText')
+  assert.equal(title?.textContent, DEFAULT_HERO_HEADLINE)
+  assert.ok(title?.hasAttribute(HERO_HEADLINE_ATTR))
+  const css = document.getElementById(HERO_HEADLINE_FIT_STYLE_ID)?.textContent ?? ''
+  assert.match(css, /white-space:nowrap !important/)
+  assert.match(css, /\[data-omnimux-hide\]\{display:none !important\}/)
+  const badge = [...document.querySelectorAll('span')].find(el => el.textContent === '预览版')
+  assert.ok(badge?.hasAttribute('data-omnimux-hide'))
+})
+
+test('applyOverlay retargets headline fit after the title remounts', () => {
+  const document = load(`
+    <div class="headline">
+      <span class="headlineText">探索未至之境</span>
+    </div>
+  `)
+  const restores = []
+  applyOverlay(document, DEFAULT_CONFIG, restores)
+  const first = document.querySelector('.headlineText')
+  first.remove()
+  const next = document.createElement('span')
+  next.className = 'headlineText'
+  next.textContent = '探索未至之境'
+  document.querySelector('.headline').append(next)
+  applyOverlay(document, DEFAULT_CONFIG, restores)
+  assert.equal(next.textContent, DEFAULT_HERO_HEADLINE)
+  assert.equal(next.hasAttribute(HERO_HEADLINE_ATTR), true)
+  assert.equal(first.hasAttribute(HERO_HEADLINE_ATTR), false)
+  assert.equal(document.querySelectorAll(`#${HERO_HEADLINE_FIT_STYLE_ID}`).length, 1)
+})
+
+test('heroHeadlineFit false skips the fitter after rewrite', () => {
+  const document = load('<span class="headlineText">探索未至之境</span>')
+  applyOverlay(document, resolveConfig({ heroHeadlineFit: false }), [])
+  assert.equal(document.querySelector('.headlineText')?.textContent, DEFAULT_HERO_HEADLINE)
+  assert.equal(document.getElementById(HERO_HEADLINE_FIT_STYLE_ID), null)
+  assert.equal(document.querySelector(`[${HERO_HEADLINE_ATTR}]`), null)
+})
+
+test('startOverlay dispose removes the headline-fit stylesheet', () => {
+  const document = load('<span class="headlineText">探索未至之境</span>')
+  const stop = startOverlay(document, DEFAULT_CONFIG)
+  assert.ok(document.getElementById(HERO_HEADLINE_FIT_STYLE_ID))
+  stop()
+  assert.equal(document.getElementById(HERO_HEADLINE_FIT_STYLE_ID), null)
+  assert.equal(document.querySelector(`[${HERO_HEADLINE_ATTR}]`), null)
+  assert.equal(document.querySelector('.headlineText')?.textContent, '探索未至之境')
 })
 
 test('dispose restores official chrome', () => {

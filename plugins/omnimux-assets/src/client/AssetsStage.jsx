@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { FOCUS_CSS } from './a11y.js'
+import { Button, FilterBar, IconButton, SearchField } from 'dsh-ui-kit'
 import { CloseIcon, PlusIcon, RefreshIcon } from './icons.jsx'
 import { createAsset, deleteAsset, getState, pickPath, updateAsset } from './api.js'
 import { AddAssetDialog, ASSET_TYPE_KEYS } from './AddAssetDialog.jsx'
@@ -7,6 +7,7 @@ import { AssetBrowse } from './AssetBrowse.jsx'
 import { AssetGrid } from './AssetGrid.jsx'
 import { AssetDetail } from './AssetDetail.jsx'
 import { ConfirmRemoveDialog } from './ConfirmRemoveDialog.jsx'
+import { injectAssetsStyles } from './styles.js'
 
 const POLL_MS = 5000
 
@@ -30,17 +31,6 @@ function citeOf(asset) {
   return asset.cite || `@${asset.type}/${asset.name}`
 }
 
-const chromeButton = {
-  border: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))',
-  background: 'transparent',
-  color: 'inherit',
-  borderRadius: 999,
-  cursor: 'pointer',
-  fontSize: 13,
-  lineHeight: '20px',
-  padding: '6px 12px',
-}
-
 /**
  * Creative asset library first-level page.
  * After first open, keep the subtree with display:none — never `if (!open) return null`.
@@ -50,6 +40,7 @@ const chromeButton = {
  * }} props
  */
 export function AssetsStage({ t, stage }) {
+  useEffect(() => { injectAssetsStyles() }, [])
   const open = useSyncExternalStore(
     stage ? (cb) => stage.subscribe(cb) : () => () => {},
     stage ? () => stage.getSnapshot() : () => false,
@@ -204,193 +195,107 @@ export function AssetsStage({ t, stage }) {
       role="region"
       aria-label={t('stage.title')}
       aria-hidden={open ? undefined : 'true'}
+      className="omnimux-assets-stage"
+      data-visible={open ? 'true' : 'false'}
       style={{
-        position: 'fixed',
-        top: box.top,
-        left: box.left,
-        width: box.width,
-        height: box.height,
-        zIndex: 200,
-        pointerEvents: open ? 'auto' : 'none',
-        display: open ? 'flex' : 'none',
-        flexDirection: 'column',
-        background: 'var(--dsw-alias-bg-base, var(--dsw-bg, inherit))',
-        color: 'var(--dsw-alias-label-primary, inherit)',
-        overflow: 'hidden',
+        '--stage-top': `${box.top}px`,
+        '--stage-left': `${box.left}px`,
+        '--stage-width': `${box.width}px`,
+        '--stage-height': `${box.height}px`,
       }}
     >
-      <style>{FOCUS_CSS}</style>
-      <div style={{
-        flex: 'none',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 12,
-        padding: '12px 20px 12px',
-        WebkitAppRegion: 'no-drag',
-      }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 style={{ margin: 0, fontSize: 16, fontWeight: 600, lineHeight: '32px' }}>{t('stage.title')}</h1>
-          <p style={{ margin: 0, fontSize: 13, lineHeight: '20px', color: 'var(--dsw-alias-label-secondary, inherit)' }}>{t('stage.subtitle')}</p>
+      <div className="omnimux-assets-stage-header">
+        <div className="omnimux-assets-stage-heading">
+          <h1 className="omnimux-assets-stage-title">{t('stage.title')}</h1>
+          <p className="omnimux-assets-stage-subtitle">{t('stage.subtitle')}</p>
         </div>
-        <button
-          type="button"
-          style={{ ...chromeButton, display: 'inline-flex', alignItems: 'center', gap: 5, ...(busy ? { opacity: 0.5, cursor: 'default' } : {}) }}
+        <Button
+          variant="outline"
+          size="sm"
+          leadingIcon={<RefreshIcon />}
           disabled={busy}
           onClick={() => {
             setBusy(true)
             void refreshState(true).finally(() => { setBusy(false) })
           }}
         >
-          <RefreshIcon />
           {busy ? t('stage.refreshing') : t('stage.refresh')}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <IconButton
           aria-label={t('stage.close')}
+          variant="ghost"
           onClick={() => { stage.set(false) }}
-          style={{
-            border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer',
-            width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6,
-          }}
         >
           <CloseIcon size={16} />
-        </button>
+        </IconButton>
       </div>
 
-      <div style={{ flex: 'none', display: 'flex', gap: 8, padding: '0 20px 16px' }}>
-        <button
-          type="button"
-          onClick={() => { setCreating(filterType || 'character'); setFormError('') }}
-          style={{
-            border: 'none',
-            background: 'var(--dsw-alias-button-primary-fill, var(--dsw-alias-label-primary, currentColor))',
-            color: 'var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted, #fff))',
-            borderRadius: 999,
-            padding: '8px 16px',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 13,
-            fontWeight: 500,
-          }}
-        >
-          <PlusIcon />
-          {t('add.button')}
-        </button>
-      </div>
-
-      <div style={{
-        flex: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        flexWrap: 'wrap',
-        padding: '0 20px 12px',
-        borderBottom: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))',
-      }}
-      >
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          {[{ key: '', label: t('chip.all') }, ...ASSET_TYPE_KEYS.map((key) => ({ key, label: t(`type.${key}`) }))].map((chip) => {
-            const active = filterType === chip.key
-            return (
-              <button
-                key={chip.key || 'all'}
-                type="button"
-                onClick={() => { setFilterType(chip.key); setDetail(null); clearSelection() }}
-                style={{
-                  border: 'none',
-                  background: active ? 'var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18))' : 'transparent',
-                  color: active ? 'inherit' : 'var(--dsw-alias-label-secondary, inherit)',
-                  borderRadius: 999,
-                  padding: '4px 10px',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: active ? 500 : 400,
-                }}
-              >
-                {chip.label}
-              </button>
-            )
-          })}
-        </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
+      <FilterBar
+        className="omnimux-assets-stage-toolbar"
+        compact
+        search={(
+          <SearchField
             value={query}
             placeholder={t('search.placeholder')}
-            onChange={(event) => { setQuery(event.target.value) }}
-            style={{
-              border: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))',
-              borderRadius: 999,
-              padding: '6px 12px',
-              fontSize: 13,
-              minWidth: 180,
-              background: 'transparent',
-              color: 'inherit',
-            }}
+            aria-label={t('search.placeholder')}
+            debounceMs={0}
+            stretch
+            onValueChange={setQuery}
           />
-          <span style={{ fontSize: 12, color: 'var(--dsw-alias-label-tertiary, inherit)' }}>{t('sort.updated')}</span>
-        </div>
-      </div>
+        )}
+        filters={(
+          <>
+            {[{ key: '', label: t('chip.all') }, ...ASSET_TYPE_KEYS.map((key) => ({ key, label: t(`type.${key}`) }))].map((chip) => (
+              <Button
+                key={chip.key || 'all'}
+                variant={filterType === chip.key ? 'secondary' : 'ghost'}
+                size="sm"
+                aria-pressed={filterType === chip.key}
+                onClick={() => { setFilterType(chip.key); setDetail(null); clearSelection() }}
+              >
+                {chip.label}
+              </Button>
+            ))}
+            <span className="omnimux-assets-muted">{t('sort.updated')}</span>
+          </>
+        )}
+        actions={(
+          <Button
+            variant="primary"
+            leadingIcon={<PlusIcon />}
+            onClick={() => { setCreating(filterType || 'character'); setFormError('') }}
+          >
+            {t('add.button')}
+          </Button>
+        )}
+      />
 
       {selecting ? (
-        <div style={{
-          flex: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '8px 20px',
-          borderBottom: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))',
-        }}
-        >
-          <span style={{ fontSize: 13 }}>{t('select.count').replace('{n}', String(selectedCount))}</span>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button
-              type="button"
-              onClick={clearSelection}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                color: 'inherit',
-                cursor: 'pointer',
-                fontSize: 13,
-                padding: '4px 8px',
-              }}
-            >
+        <div className="omnimux-assets-selection">
+          <span>{t('select.count').replace('{n}', String(selectedCount))}</span>
+          <div className="omnimux-assets-selection-actions">
+            <Button variant="ghost" size="sm" onClick={clearSelection}>
               {t('select.clear')}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
               disabled={busy}
               onClick={() => {
                 const names = assets.filter((row) => selectedIds.has(row.id)).map((row) => row.name)
                 setPendingRemove({ ids: [...selectedIds], names })
               }}
-              style={{
-                border: 'none',
-                background: 'var(--dsw-alias-state-error-tertiary, var(--dsw-alias-interactive-bg-hover-danger, transparent))',
-                color: 'var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))',
-                borderRadius: 999,
-                padding: '6px 12px',
-                cursor: busy ? 'default' : 'pointer',
-                fontSize: 13,
-                fontWeight: 500,
-                opacity: busy ? 0.5 : 1,
-              }}
             >
               {t('select.delete').replace('{n}', String(selectedCount))}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
 
-      {error !== '' ? (
-        <p style={{ margin: 0, padding: '6px 20px', fontSize: 12, color: 'var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))' }}>{error}</p>
-      ) : null}
+      {error !== '' ? <p className="omnimux-assets-error">{error}</p> : null}
 
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
-        <div style={{ flex: 1, minWidth: 0, overflow: 'auto', padding: 16 }}>
+      <div className="omnimux-assets-body">
+        <div className="omnimux-assets-main">
           {detail ? (
             <AssetBrowse
               key={detail.id}

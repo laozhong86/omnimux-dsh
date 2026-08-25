@@ -1390,6 +1390,11 @@ var HERO_FISH_MIN_WIDTH = 34;
 var PREVIEW_BADGE_TEXTS = ["\u9884\u89C8\u7248", "Preview"];
 var DEFAULT_HERO_HEADLINE = "\u5C5E\u4E8E\u4F60\u7684AI\u793E\u5A92\u8FD0\u8425\u56E2\u961F";
 var OFFICIAL_HERO_HEADLINES = ["\u63A2\u7D22\u672A\u81F3\u4E4B\u5883", "Into the Unknown"];
+var DEFAULT_HERO_HEADLINE_MAX_PX = 26;
+var DEFAULT_HERO_HEADLINE_MIN_PX = 16;
+var DEFAULT_HERO_HEADLINE_LEADING_PX = 32;
+var HERO_HEADLINE_FISH_PX = 34;
+var HERO_HEADLINE_GAP_PX = 10;
 var DEFAULT_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
   <rect width="32" height="32" rx="7" fill="#0A0A0B"/>
   <g transform="translate(4 4) scale(1.5)">
@@ -1408,13 +1413,235 @@ var DEFAULT_CONFIG = Object.freeze({
   replaceHeroMark: true,
   hidePreviewBadge: true,
   rewriteWelcome: true,
-  heroHeadline: DEFAULT_HERO_HEADLINE
+  heroHeadline: DEFAULT_HERO_HEADLINE,
+  heroHeadlineFit: true,
+  heroHeadlineMaxPx: DEFAULT_HERO_HEADLINE_MAX_PX,
+  heroHeadlineMinPx: DEFAULT_HERO_HEADLINE_MIN_PX
 });
+
+// src/brand/hero-headline-fit.js
+var HERO_HEADLINE_FIT_STYLE_ID = "omnimux-hero-headline-fit";
+var HERO_HEADLINE_ATTR = "data-omnimux-hero-headline";
+var HERO_HEADLINE_SIZE_VAR = "--omnimux-hero-headline-size";
+var HERO_HEADLINE_LEADING_VAR = "--omnimux-hero-headline-leading";
+var HIDE_ATTR = "data-omnimux-hide";
+var ASCII_WIDTH_RATIO = 0.55;
+function headlineLeadingPx(sizePx, maxPx = DEFAULT_HERO_HEADLINE_MAX_PX, leadingPx = DEFAULT_HERO_HEADLINE_LEADING_PX) {
+  if (sizePx >= maxPx) return leadingPx;
+  return Math.max(1, Math.round(sizePx * leadingPx / maxPx));
+}
+function heuristicMeasure(text, px) {
+  let width = 0;
+  for (const ch of text) {
+    const code = ch.codePointAt(0) ?? 0;
+    width += code > 255 ? px : px * ASCII_WIDTH_RATIO;
+  }
+  return width;
+}
+function computeHeadlineSize(availableWidth, text, options = {}) {
+  const maxPx = options.maxPx ?? DEFAULT_HERO_HEADLINE_MAX_PX;
+  const minPx = options.minPx ?? DEFAULT_HERO_HEADLINE_MIN_PX;
+  const fontFamily = options.fontFamily ?? "sans-serif";
+  const fontWeight = options.fontWeight ?? 500;
+  const measure = options.measure ?? ((value2, px) => heuristicMeasure(value2, px));
+  if (typeof text !== "string" || text.length === 0) return maxPx;
+  const width = Number(availableWidth);
+  if (!Number.isFinite(width) || width <= 0) return maxPx;
+  const fits = (px) => measure(text, px, fontFamily, fontWeight) <= width;
+  if (fits(maxPx)) return maxPx;
+  if (!fits(minPx)) return minPx;
+  let lo = minPx;
+  let hi = maxPx;
+  let best = minPx;
+  while (lo <= hi) {
+    const mid = lo + hi >> 1;
+    if (fits(mid)) {
+      best = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return best;
+}
+function startHeadlineFit(document2, config, restores) {
+  if (config?.heroHeadlineFit === false) {
+    return { retarget() {
+    }, dispose() {
+    } };
+  }
+  const existing = fitters.get(document2);
+  if (existing) {
+    existing.retarget();
+    return existing;
+  }
+  const view = document2.defaultView;
+  const maxPx = config.heroHeadlineMaxPx ?? DEFAULT_CONFIG.heroHeadlineMaxPx;
+  const minPx = config.heroHeadlineMinPx ?? DEFAULT_CONFIG.heroHeadlineMinPx;
+  const measure = createMeasure(document2);
+  let disposed = false;
+  let observer = null;
+  let observed = null;
+  let marked = null;
+  ensureFitStyle(document2);
+  const fitNow = () => {
+    if (disposed) return;
+    const grid = observed ?? marked?.parentElement ?? null;
+    const text = (marked?.textContent ?? config.heroHeadline ?? "").trim();
+    const available = view && grid instanceof view.Element ? textAvailableWidth(grid, view) : 0;
+    const font = readFont(marked, view);
+    const size = computeHeadlineSize(available, text, {
+      maxPx,
+      minPx,
+      fontFamily: font.family,
+      fontWeight: font.weight,
+      measure
+    });
+    writeVars(document2, size, maxPx);
+  };
+  const retarget = () => {
+    if (disposed) return;
+    const next = findHeadlineText(document2, config);
+    if (marked && marked !== next) marked.removeAttribute(HERO_HEADLINE_ATTR);
+    marked = next;
+    if (marked && !marked.hasAttribute(HERO_HEADLINE_ATTR)) {
+      marked.setAttribute(HERO_HEADLINE_ATTR, "");
+    }
+    const grid = marked?.parentElement ?? findHeadlineGrid(document2);
+    if (observer && observed && observed !== grid) observer.unobserve(observed);
+    observed = grid;
+    if (observer && observed) observer.observe(observed);
+    fitNow();
+  };
+  const dispose = () => {
+    if (disposed) return;
+    disposed = true;
+    observer?.disconnect();
+    observer = null;
+    observed = null;
+    if (marked?.hasAttribute(HERO_HEADLINE_ATTR)) marked.removeAttribute(HERO_HEADLINE_ATTR);
+    marked = null;
+    document2.documentElement.style.removeProperty(HERO_HEADLINE_SIZE_VAR);
+    document2.documentElement.style.removeProperty(HERO_HEADLINE_LEADING_VAR);
+    document2.getElementById(HERO_HEADLINE_FIT_STYLE_ID)?.remove();
+    fitters.delete(document2);
+  };
+  if (view && typeof view.ResizeObserver === "function") {
+    observer = new view.ResizeObserver(fitNow);
+  }
+  retarget();
+  const fitter = { retarget, dispose };
+  fitters.set(document2, fitter);
+  restores.push(dispose);
+  return fitter;
+}
+var fitters = /* @__PURE__ */ new WeakMap();
+function ensureFitStyle(document2) {
+  if (document2.getElementById(HERO_HEADLINE_FIT_STYLE_ID) !== null) return;
+  const style = document2.createElement("style");
+  style.id = HERO_HEADLINE_FIT_STYLE_ID;
+  style.textContent = [
+    `[${HERO_HEADLINE_ATTR}]{white-space:nowrap !important;font-size:var(${HERO_HEADLINE_SIZE_VAR}, ${DEFAULT_HERO_HEADLINE_MAX_PX}px) !important;line-height:var(${HERO_HEADLINE_LEADING_VAR}, ${DEFAULT_HERO_HEADLINE_LEADING_PX}px) !important}`,
+    `[${HIDE_ATTR}]{display:none !important}`
+  ].join("");
+  document2.head.append(style);
+}
+function writeVars(document2, sizePx, maxPx) {
+  const leading = headlineLeadingPx(sizePx, maxPx);
+  document2.documentElement.style.setProperty(HERO_HEADLINE_SIZE_VAR, `${sizePx}px`);
+  document2.documentElement.style.setProperty(HERO_HEADLINE_LEADING_VAR, `${leading}px`);
+}
+function findHeadlineText(document2, config) {
+  const marked = document2.querySelector(`[${HERO_HEADLINE_ATTR}]`);
+  if (marked) return marked;
+  const byClass = document2.querySelector('[class*="headlineText"]');
+  if (byClass) return byClass;
+  const wanted = [config.heroHeadline, ...OFFICIAL_HERO_HEADLINES].filter((value2) => typeof value2 === "string" && value2.trim() !== "");
+  for (const el of document2.querySelectorAll("span,div")) {
+    if (el.childElementCount !== 0) continue;
+    const current = el.textContent?.trim() ?? "";
+    if (wanted.includes(current)) return el;
+  }
+  return null;
+}
+function findHeadlineGrid(document2) {
+  const text = document2.querySelector(`[${HERO_HEADLINE_ATTR}], [class*="headlineText"]`);
+  if (text?.parentElement) return text.parentElement;
+  for (const el of document2.querySelectorAll('[class*="headline"]')) {
+    const cls = typeof el.className === "string" ? el.className : "";
+    if (cls.includes("headlineText")) continue;
+    return el;
+  }
+  return null;
+}
+function textAvailableWidth(grid, view) {
+  const width = Number(grid.clientWidth);
+  if (!Number.isFinite(width) || width <= 0) return 0;
+  let used = HERO_HEADLINE_FISH_PX + HERO_HEADLINE_GAP_PX;
+  for (const child of grid.children) {
+    if (isHeadlineTextNode(child)) continue;
+    if (child.hasAttribute(HIDE_ATTR)) continue;
+    const style = typeof view.getComputedStyle === "function" ? view.getComputedStyle(child) : null;
+    if (style && (style.display === "none" || style.visibility === "hidden")) continue;
+    const className = typeof child.className === "string" ? child.className : "";
+    if (className.includes("fishHitbox") || className.includes("fish")) {
+      const fishWidth = rectWidth(child);
+      if (fishWidth > 0) used += fishWidth - HERO_HEADLINE_FISH_PX;
+      continue;
+    }
+    const extra = rectWidth(child);
+    if (extra > 0) used += extra + HERO_HEADLINE_GAP_PX;
+  }
+  return Math.max(0, width - used);
+}
+function isHeadlineTextNode(node) {
+  if (node.hasAttribute(HERO_HEADLINE_ATTR)) return true;
+  const className = typeof node.className === "string" ? node.className : "";
+  return className.includes("headlineText");
+}
+function rectWidth(node) {
+  if (typeof node.getBoundingClientRect !== "function") return 0;
+  const width = node.getBoundingClientRect().width;
+  return Number.isFinite(width) && width > 0 ? width : 0;
+}
+function readFont(node, view) {
+  const style = node && view && typeof view.getComputedStyle === "function" ? view.getComputedStyle(node) : null;
+  return {
+    family: style?.fontFamily || "sans-serif",
+    weight: style?.fontWeight || 500
+  };
+}
+function createMeasure(document2) {
+  const ctx = real2dContext(document2);
+  return (text, px, fontFamily, fontWeight) => {
+    if (ctx && typeof ctx.measureText === "function") {
+      try {
+        ctx.font = `${fontWeight} ${px}px ${fontFamily}`;
+        const width = ctx.measureText(text).width;
+        if (Number.isFinite(width) && width > 0) return width;
+      } catch {
+      }
+    }
+    return heuristicMeasure(text, px);
+  };
+}
+function real2dContext(document2) {
+  const view = document2.defaultView;
+  if (!view || /jsdom/i.test(view.navigator?.userAgent ?? "")) return null;
+  try {
+    const canvas = document2.createElement("canvas");
+    if (typeof canvas.getContext !== "function") return null;
+    const ctx = canvas.getContext("2d");
+    return ctx && typeof ctx.measureText === "function" ? ctx : null;
+  } catch {
+    return null;
+  }
+}
 
 // src/brand/overlay.js
 var BRAND_ATTR = "data-omnimux-brand";
 var COVER_ATTR = "data-omnimux-covered";
-var HIDE_ATTR = "data-omnimux-hide";
+var HIDE_ATTR2 = "data-omnimux-hide";
 var STYLE_ID = "omnimux-brand-overlay";
 var TITLE_SUFFIX = ` \u2014 ${OFFICIAL_PRODUCT_TITLE}`;
 function resolveConfig(raw) {
@@ -1425,7 +1652,10 @@ function resolveConfig(raw) {
     replaceHeroMark: raw?.replaceHeroMark ?? DEFAULT_CONFIG.replaceHeroMark,
     hidePreviewBadge: raw?.hidePreviewBadge ?? DEFAULT_CONFIG.hidePreviewBadge,
     rewriteWelcome: raw?.rewriteWelcome ?? DEFAULT_CONFIG.rewriteWelcome,
-    heroHeadline: raw?.heroHeadline ?? DEFAULT_CONFIG.heroHeadline
+    heroHeadline: raw?.heroHeadline ?? DEFAULT_CONFIG.heroHeadline,
+    heroHeadlineFit: raw?.heroHeadlineFit ?? DEFAULT_CONFIG.heroHeadlineFit,
+    heroHeadlineMaxPx: raw?.heroHeadlineMaxPx ?? DEFAULT_CONFIG.heroHeadlineMaxPx,
+    heroHeadlineMinPx: raw?.heroHeadlineMinPx ?? DEFAULT_CONFIG.heroHeadlineMinPx
   };
 }
 function configFromWindow(win) {
@@ -1469,6 +1699,7 @@ function applyOverlay(document2, config, restores) {
   rewriteHeroHeadline(document2, config, restores);
   if (config.hidePreviewBadge) hidePreviewBadges(document2, restores);
   if (config.rewriteWelcome) rewriteWelcomeCopy(document2, config.productName, restores);
+  startHeadlineFit(document2, config, restores);
 }
 function ensureStyle(document2, restores) {
   if (document2.getElementById(STYLE_ID) !== null) return;
@@ -1476,7 +1707,7 @@ function ensureStyle(document2, restores) {
   style.id = STYLE_ID;
   style.textContent = [
     `svg[${COVER_ATTR}]{opacity:0 !important}`,
-    `[${HIDE_ATTR}]{visibility:hidden !important}`,
+    `[${HIDE_ATTR2}]{visibility:hidden !important}`,
     `button:hover>[${BRAND_ATTR}="fish"]{visibility:hidden !important;opacity:0 !important}`
   ].join("");
   document2.head.append(style);
@@ -1631,10 +1862,10 @@ function hidePreviewBadges(document2, restores) {
     }
   }
   for (const badge of badges) {
-    if (badge.hasAttribute(HIDE_ATTR)) continue;
-    badge.setAttribute(HIDE_ATTR, "");
+    if (badge.hasAttribute(HIDE_ATTR2)) continue;
+    badge.setAttribute(HIDE_ATTR2, "");
     restores.push(() => {
-      badge.removeAttribute(HIDE_ATTR);
+      badge.removeAttribute(HIDE_ATTR2);
     });
   }
 }

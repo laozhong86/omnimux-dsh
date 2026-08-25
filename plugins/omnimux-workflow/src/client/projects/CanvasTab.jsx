@@ -4,6 +4,7 @@
  */
 import { useCallback, useEffect, useSyncExternalStore } from 'react'
 import { CanvasBridge } from '../CanvasBridge.jsx'
+import { injectWorkflowStyles } from '../styles.js'
 import { applyProjectCanvasRatio, getBetterSidebar } from './projectCanvas.js'
 
 /**
@@ -16,6 +17,7 @@ import { applyProjectCanvasRatio, getBetterSidebar } from './projectCanvas.js'
  * }} props
  */
 export function CanvasTab({ ctx, t, visible, store, scope }) {
+  useEffect(() => { injectWorkflowStyles() }, [])
   const locale = ctx?.locale
   const activeLocale = useSyncExternalStore(
     locale ? (onStoreChange) => locale.subscribe(onStoreChange) : () => () => {},
@@ -82,14 +84,8 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
   return (
     <div
       data-omnimux-canvas-tab=""
-      style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        minHeight: 0,
-        overflow: 'hidden',
-        visibility: visible ? 'visible' : 'hidden',
-      }}
+      className="omnimux-workflow-canvas-tab"
+      data-visible={visible ? 'true' : 'false'}
     >
       <CanvasBridge onClose={onClose} t={t} locale={activeLocale} workspaceId={targetWorkspaceId} />
     </div>
