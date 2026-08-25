@@ -2018,28 +2018,49 @@ var INSPIRATION_CSS = `
   color: var(--dsw-alias-label-primary, #ffffff);
 }
 
-/* \u6807\u9898\u548C\u539F\u8D34\u63CF\u8FF0\u533A\u5757\uFF08\u7F6E\u4E8E\u4E0B\u65B9\uFF09 */
+/* \u6807\u9898\u548C\u539F\u8D34\u63CF\u8FF0\u533A\u5757\uFF08\u7F6E\u4E8E\u53F3\u4FA7\u9762\u677F\uFF09 */
 .omnimux-inspiration-caption-block {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px;
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-module-platform, #131313);
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1, #141414);
   border: 1px solid var(--dsw-alias-border-l2, #242424);
+}
+.omnimux-inspiration-modal-title-text {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--dsw-alias-label-primary, #ffffff);
+  word-break: break-word;
+}
+.omnimux-inspiration-caption-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .omnimux-inspiration-caption-label {
   font-size: 11px;
+  font-weight: 600;
   font-family: monospace;
-  color: var(--dsw-alias-label-tertiary, #7c7c7c);
+  color: var(--dsw-alias-label-tertiary, #888888);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 .omnimux-inspiration-caption-text {
   margin: 0;
   font-size: 13px;
-  line-height: 1.5;
-  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
+  line-height: 1.55;
+  color: var(--dsw-alias-label-primary-dimmed, #d4d4d4);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.omnimux-inspiration-summary-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--dsw-alias-label-tertiary, #a3a3a3);
   word-break: break-word;
   white-space: pre-wrap;
 }
@@ -2341,8 +2362,10 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
   (0, import_react2.useEffect)(() => {
     setItem(row);
   }, [row]);
-  const title = String(item.title || "\u7075\u611F\u8BE6\u60C5");
   const analysis = item.analysis && typeof item.analysis === "object" ? item.analysis : item.deconstruction || {};
+  const title = String(item.title || analysis.video_name || "\u7075\u611F\u8BE6\u60C5");
+  const caption = typeof item.content === "string" ? item.content : item.caption || item.description || "";
+  const videoDescription = typeof analysis.video_description === "string" ? analysis.video_description : "";
   const rawEmbed = analysis.embed_player_url || item.source_url;
   const embedUrl = resolveTikTokEmbedUrl(rawEmbed) || (item.source_url ? resolveTikTokEmbedUrl(item.source_url) : null);
   const cover = pickCoverSrc(item);
@@ -2538,7 +2561,18 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
         tags.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-tags", children: tags.map((tag) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "omnimux-inspiration-modal-tag", children: [
           "#",
           tag
-        ] }, tag)) }) : null
+        ] }, tag)) }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-caption-block", children: [
+          title ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-title-text", children: title }) : null,
+          caption ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-caption-section", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-inspiration-caption-label", children: t("meta.originalText") }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "omnimux-inspiration-caption-text", children: caption })
+          ] }) : null,
+          videoDescription && videoDescription !== caption ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-caption-section", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-inspiration-caption-label", children: "\u89C6\u9891\u6982\u8981" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "omnimux-inspiration-summary-text", children: videoDescription })
+          ] }) : null
+        ] })
       ] })
     ] })
   ] }) });

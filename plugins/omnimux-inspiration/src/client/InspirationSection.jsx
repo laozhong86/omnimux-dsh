@@ -141,8 +141,10 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
     setItem(row)
   }, [row])
 
-  const title = String(item.title || '灵感详情')
   const analysis = item.analysis && typeof item.analysis === 'object' ? item.analysis : (item.deconstruction || {})
+  const title = String(item.title || analysis.video_name || '灵感详情')
+  const caption = typeof item.content === 'string' ? item.content : (item.caption || item.description || '')
+  const videoDescription = typeof analysis.video_description === 'string' ? analysis.video_description : ''
   const rawEmbed = analysis.embed_player_url || item.source_url
   const embedUrl = resolveTikTokEmbedUrl(rawEmbed) || (item.source_url ? resolveTikTokEmbedUrl(item.source_url) : null)
   const cover = pickCoverSrc(item)
@@ -415,6 +417,25 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
               ))}
             </div>
           ) : null}
+
+          {/* 作品标题与原贴文案 / 描述 */}
+          <div className="omnimux-inspiration-caption-block">
+            {title ? (
+              <div className="omnimux-inspiration-modal-title-text">{title}</div>
+            ) : null}
+            {caption ? (
+              <div className="omnimux-inspiration-caption-section">
+                <span className="omnimux-inspiration-caption-label">{t('meta.originalText')}</span>
+                <p className="omnimux-inspiration-caption-text">{caption}</p>
+              </div>
+            ) : null}
+            {videoDescription && videoDescription !== caption ? (
+              <div className="omnimux-inspiration-caption-section">
+                <span className="omnimux-inspiration-caption-label">视频概要</span>
+                <p className="omnimux-inspiration-summary-text">{videoDescription}</p>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
       </div>

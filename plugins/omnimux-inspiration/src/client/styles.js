@@ -945,28 +945,49 @@ export const INSPIRATION_CSS = `
   color: var(--dsw-alias-label-primary, #ffffff);
 }
 
-/* 标题和原贴描述区块（置于下方） */
+/* 标题和原贴描述区块（置于右侧面板） */
 .omnimux-inspiration-caption-block {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px;
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-module-platform, #131313);
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1, #141414);
   border: 1px solid var(--dsw-alias-border-l2, #242424);
+}
+.omnimux-inspiration-modal-title-text {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--dsw-alias-label-primary, #ffffff);
+  word-break: break-word;
+}
+.omnimux-inspiration-caption-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .omnimux-inspiration-caption-label {
   font-size: 11px;
+  font-weight: 600;
   font-family: monospace;
-  color: var(--dsw-alias-label-tertiary, #7c7c7c);
+  color: var(--dsw-alias-label-tertiary, #888888);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 .omnimux-inspiration-caption-text {
   margin: 0;
   font-size: 13px;
-  line-height: 1.5;
-  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
+  line-height: 1.55;
+  color: var(--dsw-alias-label-primary-dimmed, #d4d4d4);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.omnimux-inspiration-summary-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--dsw-alias-label-tertiary, #a3a3a3);
   word-break: break-word;
   white-space: pre-wrap;
 }
