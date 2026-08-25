@@ -377,7 +377,15 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
                 title={`访问 @${creator.handle || creator.name} 的主页`}
               >
                 <div className="omnimux-inspiration-modal-avatar">
-                  {(creator.name || creator.handle || 'U').slice(0, 1).toUpperCase()}
+                  {creator.avatar ? (
+                    <img
+                      src={creator.avatar}
+                      alt={creator.name || creator.handle}
+                      className="omnimux-inspiration-avatar-img"
+                      onError={(e) => { e.currentTarget.style.display = 'none' }}
+                    />
+                  ) : null}
+                  <span>{(creator.name || creator.handle || 'U').slice(0, 1).toUpperCase()}</span>
                 </div>
                 <div className="omnimux-inspiration-creator-info">
                   <div className="omnimux-inspiration-modal-handle">
@@ -392,7 +400,15 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
             ) : (
               <div className="omnimux-inspiration-creator-left">
                 <div className="omnimux-inspiration-modal-avatar">
-                  {(creator.name || creator.handle || 'U').slice(0, 1).toUpperCase()}
+                  {creator.avatar ? (
+                    <img
+                      src={creator.avatar}
+                      alt={creator.name || creator.handle}
+                      className="omnimux-inspiration-avatar-img"
+                      onError={(e) => { e.currentTarget.style.display = 'none' }}
+                    />
+                  ) : null}
+                  <span>{(creator.name || creator.handle || 'U').slice(0, 1).toUpperCase()}</span>
                 </div>
                 <div className="omnimux-inspiration-creator-info">
                   <div className="omnimux-inspiration-modal-handle">{creator.name || creator.handle || 'Creator'}</div>

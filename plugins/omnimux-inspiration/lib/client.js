@@ -1999,6 +1999,7 @@ var INSPIRATION_CSS = `
   gap: 1px;
 }
 .omnimux-inspiration-modal-avatar {
+  position: relative;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -2012,6 +2013,15 @@ var INSPIRATION_CSS = `
   font-weight: 600;
   color: var(--dsw-alias-label-primary, #ffffff);
   flex-shrink: 0;
+  overflow: hidden;
+}
+.omnimux-inspiration-avatar-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 .omnimux-inspiration-modal-handle {
   display: inline-flex;
@@ -2610,7 +2620,20 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
               className: "omnimux-inspiration-creator-left omnimux-inspiration-creator-link",
               title: `\u8BBF\u95EE @${creator.handle || creator.name} \u7684\u4E3B\u9875`,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-modal-avatar", children: [
+                  creator.avatar ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+                    "img",
+                    {
+                      src: creator.avatar,
+                      alt: creator.name || creator.handle,
+                      className: "omnimux-inspiration-avatar-img",
+                      onError: (e) => {
+                        e.currentTarget.style.display = "none";
+                      }
+                    }
+                  ) : null,
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() })
+                ] }),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-info", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-modal-handle", children: [
                     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: creator.name || creator.handle || "Creator" }),
@@ -2624,7 +2647,20 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
               ]
             }
           ) : /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-left", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-avatar", children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-modal-avatar", children: [
+              creator.avatar ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+                "img",
+                {
+                  src: creator.avatar,
+                  alt: creator.name || creator.handle,
+                  className: "omnimux-inspiration-avatar-img",
+                  onError: (e) => {
+                    e.currentTarget.style.display = "none";
+                  }
+                }
+              ) : null,
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: (creator.name || creator.handle || "U").slice(0, 1).toUpperCase() })
+            ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-info", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-modal-handle", children: creator.name || creator.handle || "Creator" }),
               creator.handle ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-creator-handle", children: [

@@ -888,6 +888,7 @@ export const INSPIRATION_CSS = `
   gap: 1px;
 }
 .omnimux-inspiration-modal-avatar {
+  position: relative;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -901,6 +902,15 @@ export const INSPIRATION_CSS = `
   font-weight: 600;
   color: var(--dsw-alias-label-primary, #ffffff);
   flex-shrink: 0;
+  overflow: hidden;
+}
+.omnimux-inspiration-avatar-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 .omnimux-inspiration-modal-handle {
   display: inline-flex;
