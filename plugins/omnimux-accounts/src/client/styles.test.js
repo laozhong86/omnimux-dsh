@@ -109,3 +109,53 @@ describe('JSX freeze (AccountTable / AccountCard / AccountMenu)', () => {
     assert.doesNotMatch(controls, /omnimux-accounts-cellmenu/)
   })
 })
+
+describe('FilterBar structure contract', () => {
+  const filterBar = readFileSync(join(here, 'FilterBar.jsx'), 'utf8')
+
+  it('composes kit FilterBar / SearchField / DropdownSelect / IconButton', () => {
+    assert.match(
+      filterBar,
+      /import \{ FilterBar as KitFilterBar, SearchField, DropdownSelect, IconButton \} from 'dsh-ui-kit'/,
+    )
+    assert.match(filterBar, /<KitFilterBar\b/)
+    assert.match(filterBar, /<SearchField\b/)
+    assert.match(filterBar, /<DropdownSelect\b/)
+    assert.match(filterBar, /<IconButton\b/)
+  })
+
+  it('toggles sort/view with outline IconButton + aria-pressed, no local iconbtn class', () => {
+    assert.match(filterBar, /variant="outline"/)
+    assert.match(filterBar, /aria-pressed=\{sortDir === 'desc'\}/)
+    assert.match(filterBar, /aria-pressed=\{view === 'grid'\}/)
+    assert.match(filterBar, /aria-pressed=\{view === 'table'\}/)
+    assert.doesNotMatch(filterBar, /omnimux-accounts-iconbtn/)
+    assert.doesNotMatch(filterBar, /<button\b/)
+  })
+
+  it('keeps filter-actions layout class and drops dead iconbtn CSS', () => {
+    assert.match(filterBar, /className="omnimux-accounts-filter-actions"/)
+    assert.match(STYLES, /\.omnimux-accounts-filterbar\s*\{/)
+    assert.match(STYLES, /\.omnimux-accounts-filter-actions\s*\{/)
+    assert.doesNotMatch(STYLES, /\.omnimux-accounts-iconbtn/)
+  })
+})
+
+describe('client bundle freeze (outline pressed tokens, no dead iconbtn)', () => {
+  const bundle = readFileSync(join(here, '../../lib/client.js'), 'utf8')
+
+  it('embeds hashed outline pressed + hover-defense rules with kit tokens', () => {
+    assert.match(bundle, /\.dshUk-Button-outline\[aria-pressed="true"\]/)
+    assert.match(bundle, /var\(--dsw-alias-button-ghost-active-fill\)/)
+    assert.match(bundle, /var\(--dsw-alias-button-ghost-active-border\)/)
+    assert.match(bundle, /var\(--dsw-alias-button-ghost-active-hover\)/)
+    assert.match(
+      bundle,
+      /\.dshUk-Button-outline\[aria-pressed="true"\]:hover:not\(:disabled\):not\(\[aria-disabled="true"\]\)/,
+    )
+  })
+
+  it('does not ship leftover .omnimux-accounts-iconbtn rules', () => {
+    assert.doesNotMatch(bundle, /\.omnimux-accounts-iconbtn/)
+  })
+})

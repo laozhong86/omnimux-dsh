@@ -319,44 +319,6 @@ export const STYLES = `
   color: var(--dsw-alias-label-primary, #ededed);
 }
 .omnimux-accounts-select:disabled { cursor: default; opacity: 0.5; }
-.omnimux-accounts-iconbtn {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
-  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.65));
-  font: inherit;
-  cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.omnimux-accounts-iconbtn:disabled { cursor: default; opacity: 0.45; }
-.omnimux-accounts-iconbtn:not(:disabled):hover {
-  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.09));
-  border-color: var(--dsw-alias-border-hover, rgba(255,255,255,0.22));
-  color: var(--dsw-alias-label-primary, #ffffff);
-}
-.omnimux-accounts-iconbtn:not(:disabled):active {
-  transform: scale(0.96);
-}
-.omnimux-accounts-iconbtn[aria-pressed="true"] {
-  background: var(--dsw-alias-interactive-bg-active, rgba(255,255,255,0.14));
-  border-color: var(--dsw-alias-border-active, rgba(255,255,255,0.26));
-  color: var(--dsw-alias-label-primary, #ffffff);
-  box-shadow: inset 0 1px 0 var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
-}
-.omnimux-accounts-iconbtn:disabled { cursor: default; opacity: 0.45; }
-.omnimux-accounts-iconbtn:not(:disabled):hover {
-  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.12));
-}
-.omnimux-accounts-iconbtn[aria-pressed="true"] {
-  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.18));
-}
 
 /* ---------- card grid ---------- */
 .omnimux-accounts-grid {

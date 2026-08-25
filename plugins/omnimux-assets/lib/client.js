@@ -33,13 +33,15 @@ module.exports = __toCommonJS(index_exports);
 // src/client/locales.js
 var zh = {
   "nav": "\u8D44\u4EA7\u5E93",
-  "stage.title": "\u521B\u4F5C\u8D44\u4EA7\u5E93",
-  "stage.subtitle": "\u96C6\u4E2D\u7BA1\u7406\u53EF\u590D\u7528\u7684\u89D2\u8272\u3001\u573A\u666F\u9884\u8BBE\u3001\u89C6\u89C9\u98CE\u683C\u4E0E\u77E5\u8BC6\u5E93\uFF0C\u4F9B Agent \u5168\u5C40\u8C03\u7528",
+  "stage.title": "\u8D44\u4EA7\u4E2D\u5FC3",
+  "stage.subtitle": "\u6C89\u6DC0\u53EF\u590D\u7528\u7684\u89D2\u8272\u3001\u573A\u666F\u3001\u98CE\u683C\u5305\u3001\u9053\u5177\u7B49\u7D20\u6750\uFF0C\u5728\u65B0\u7684\u521B\u4F5C\u9875\u7A7A\u95F4\u4E2D\u5FEB\u901F\u8C03\u7528",
   "stage.refresh": "\u5237\u65B0",
   "stage.refreshing": "\u6B63\u5728\u5237\u65B0\u2026",
   "stage.close": "\u5173\u95ED",
   "loading": "\u6B63\u5728\u52A0\u8F7D\u8D44\u4EA7\u5E93\u2026",
   "add.button": "\u6DFB\u52A0\u8D44\u4EA7",
+  "import.button": "\u5BFC\u5165\u8D44\u4EA7\u5305",
+  "import.notice": "\u5BFC\u5165\u8D44\u4EA7\u5305\u529F\u80FD\u5373\u5C06\u4E0A\u7EBF",
   "add.title": "\u6DFB\u52A0\u8D44\u4EA7",
   "add.namePlaceholder": "\u8D44\u4EA7\u540D\u79F0",
   "add.descriptionPlaceholder": "\u8F93\u5165\u8D44\u4EA7\u7279\u5F81\u63CF\u8FF0\uFF0C\u4FBF\u4E8E Agent \u7CBE\u51C6\u68C0\u7D22\u4E0E\u590D\u7528\u2026",
@@ -51,21 +53,24 @@ var zh = {
   "add.tagsPlaceholder": "\u56DE\u8F66\u6DFB\u52A0\u6807\u7B7E",
   "add.submit": "\u6DFB\u52A0\u8D44\u4EA7",
   "add.cancel": "\u53D6\u6D88",
-  "chip.all": "\u5168\u90E8",
+  "chip.all": "\u6240\u6709\u7C7B\u578B",
   "type.character": "\u89D2\u8272",
   "type.scene": "\u573A\u666F",
   "type.style": "\u98CE\u683C\u5305",
   "type.prop": "\u9053\u5177",
   "type.knowledge": "\u77E5\u8BC6\u5305",
-  "type.custom": "\u672A\u5206\u7C7B",
-  "search.placeholder": "\u641C\u7D22\u8D44\u4EA7\u540D\u79F0\u6216\u6807\u7B7E",
+  "type.custom": "\u81EA\u5B9A\u4E49",
+  "search.placeholder": "\u641C\u7D22\u8D44\u4EA7",
   "sort.updated": "\u6700\u8FD1\u66F4\u65B0",
+  "sort.name": "\u6309\u540D\u79F0",
+  "view.grid": "\u7F51\u683C\u89C6\u56FE",
+  "view.list": "\u5217\u8868\u89C6\u56FE",
   "empty.all": "\u6682\u65E0\u521B\u4F5C\u8D44\u4EA7\u3002\u70B9\u51FB\u300C\u6DFB\u52A0\u8D44\u4EA7\u300D\u5F00\u59CB\u6784\u5EFA\u8D44\u4EA7\u5E93\u3002",
   "empty.noMatch": "\u6CA1\u6709\u5339\u914D\u7684\u8D44\u4EA7\u3002\u6362\u4E2A\u5173\u952E\u8BCD\u8BD5\u8BD5\u3002",
   "empty.type": "\u6682\u65E0{type}\u8D44\u4EA7\u3002",
   "empty.addType": "\u6DFB\u52A0{type}",
   "card.missing": "\u7D20\u6750\u7F3A\u5931",
-  "card.copyCite": "\u590D\u5236 Agent \u5F15\u7528\u6807\u8BC6",
+  "card.copyCite": "\u590D\u5236\u5F15\u7528",
   "card.copied": "\u5DF2\u590D\u5236",
   "card.open": "\u6253\u5F00\u539F\u8DEF\u5F84",
   "select.count": "\u5DF2\u9009 {n} \u9879",
@@ -110,13 +115,15 @@ var zh = {
 };
 var en = {
   "nav": "Assets",
-  "stage.title": "Creative Asset Library",
-  "stage.subtitle": "Manage reusable characters, scenes, style packs, and knowledge for Agent creation",
+  "stage.title": "Asset Center",
+  "stage.subtitle": "Manage reusable characters, scenes, style packs, and props for rapid creation",
   "stage.refresh": "Refresh",
   "stage.refreshing": "Refreshing\u2026",
   "stage.close": "Close",
   "loading": "Loading asset library\u2026",
   "add.button": "Add Asset",
+  "import.button": "Import Asset Pack",
+  "import.notice": "Import asset pack coming soon",
   "add.title": "Add Asset",
   "add.namePlaceholder": "Asset name",
   "add.descriptionPlaceholder": "Describe asset characteristics for precise Agent retrieval\u2026",
@@ -128,21 +135,24 @@ var en = {
   "add.tagsPlaceholder": "Press Enter to add tag",
   "add.submit": "Add Asset",
   "add.cancel": "Cancel",
-  "chip.all": "All",
+  "chip.all": "All Types",
   "type.character": "Character",
   "type.scene": "Scene",
   "type.style": "Style Pack",
   "type.prop": "Prop",
   "type.knowledge": "Knowledge",
-  "type.custom": "Uncategorized",
-  "search.placeholder": "Search assets or tags",
-  "sort.updated": "Recently updated",
+  "type.custom": "Custom",
+  "search.placeholder": "Search assets",
+  "sort.updated": "Recently Updated",
+  "sort.name": "By Name",
+  "view.grid": "Grid View",
+  "view.list": "List View",
   "empty.all": 'No creative assets yet. Click "Add Asset" to get started.',
   "empty.noMatch": "No matching assets found.",
   "empty.type": "No {type} assets yet.",
   "empty.addType": "Add {type}",
   "card.missing": "Files missing",
-  "card.copyCite": "Copy Reference Handle",
+  "card.copyCite": "Copy Reference",
   "card.copied": "Copied",
   "card.open": "Reveal Original",
   "select.count": "{n} selected",
@@ -363,7 +373,7 @@ function injectCss(id, css) {
   style.textContent = css;
   document.head.appendChild(style);
 }
-injectCss("Button.module.css", '.dshUk-Button-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-shrink: 0;\n  gap: 6px;\n  box-sizing: border-box;\n  margin: 0;\n  border: 1px solid transparent;\n  border-radius: 8px;\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  line-height: 18px;\n  letter-spacing: 0;\n  white-space: nowrap;\n  color: var(--dsw-alias-label-primary);\n  background: transparent;\n  padding: 0 12px;\n  height: 32px;\n  vertical-align: middle;\n  user-select: none;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    transform 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-Button-button:focus {\n  outline: none;\n}\n\n.dshUk-Button-button:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-Button-button:disabled,\n.dshUk-Button-button[aria-disabled="true"] {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n\n.dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n  transform: scale(0.96);\n}\n\n.dshUk-Button-sm {\n  height: 28px;\n  padding: 0 10px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-Button-xs {\n  height: 24px;\n  padding: 0 8px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  gap: 4px;\n}\n\n.dshUk-Button-iconOnly {\n  padding: 0;\n  width: 32px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-sm {\n  width: 28px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-xs {\n  width: 24px;\n}\n\n.dshUk-Button-primary {\n  background: var(--dsw-alias-button-primary-fill);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-primary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-primary-hover);\n}\n\n.dshUk-Button-secondary {\n  background: var(--dsw-alias-bg-layer-1);\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-secondary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-ghost {\n  background: transparent;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-ghost:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-Button-ghost:active:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-active);\n}\n\n.dshUk-Button-outline {\n  background: transparent;\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-outline:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-danger {\n  background: var(--dsw-alias-state-error-primary);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-danger:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-state-error-secondary);\n}\n\n.dshUk-Button-ghost[aria-pressed="true"],\n.dshUk-Button-secondary[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  box-shadow: inset 0 0 0 1px var(--dsw-alias-button-ghost-active-border);\n}\n\n.dshUk-Button-slot {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n}\n\n.dshUk-Button-xs .dshUk-Button-slot {\n  width: 14px;\n  height: 14px;\n}\n\n.dshUk-Button-spinner {\n  animation: dshUkSpin 0.7s linear infinite;\n}\n\n.dshUk-Button-label {\n  min-width: 0;\n}\n\n.dshUk-Button-loadingLabel {\n  opacity: 0.84;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-Button-button {\n    transition: none;\n  }\n\n  .dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n    transform: none;\n  }\n\n  .dshUk-Button-spinner {\n    animation: none;\n  }\n}\n\n@keyframes dshUkSpin {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}\n');
+injectCss("Button.module.css", '.dshUk-Button-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-shrink: 0;\n  gap: 6px;\n  box-sizing: border-box;\n  margin: 0;\n  border: 1px solid transparent;\n  border-radius: 8px;\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  line-height: 18px;\n  letter-spacing: 0;\n  white-space: nowrap;\n  color: var(--dsw-alias-label-primary);\n  background: transparent;\n  padding: 0 12px;\n  height: 32px;\n  vertical-align: middle;\n  user-select: none;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    transform 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-Button-button:focus {\n  outline: none;\n}\n\n.dshUk-Button-button:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-Button-button:disabled,\n.dshUk-Button-button[aria-disabled="true"] {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n\n.dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n  transform: scale(0.96);\n}\n\n.dshUk-Button-sm {\n  height: 28px;\n  padding: 0 10px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-Button-xs {\n  height: 24px;\n  padding: 0 8px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  gap: 4px;\n}\n\n.dshUk-Button-iconOnly {\n  padding: 0;\n  width: 32px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-sm {\n  width: 28px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-xs {\n  width: 24px;\n}\n\n.dshUk-Button-primary {\n  background: var(--dsw-alias-button-primary-fill);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-primary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-primary-hover);\n}\n\n.dshUk-Button-secondary {\n  background: var(--dsw-alias-bg-layer-1);\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-secondary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-ghost {\n  background: transparent;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-ghost:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-Button-ghost:active:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-active);\n}\n\n.dshUk-Button-outline {\n  background: transparent;\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-outline:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-danger {\n  background: var(--dsw-alias-state-error-primary);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-danger:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-state-error-secondary);\n}\n\n.dshUk-Button-ghost[aria-pressed="true"],\n.dshUk-Button-secondary[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  box-shadow: inset 0 0 0 1px var(--dsw-alias-button-ghost-active-border);\n}\n\n/* Outline already owns a real 1px border. Keep pressed fill/border as\n * declarations \u2014 do not share the ghost/secondary inset box-shadow or the\n * pressed state would double-stroke. */\n.dshUk-Button-outline[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  border-color: var(--dsw-alias-button-ghost-active-border);\n  color: var(--dsw-alias-label-primary);\n}\n\n/* Hover specificity defense: `.dshUk-Button-outline:hover` (and ghost/secondary hover)\n * would otherwise wash the pressed fill/border back to the idle hover tokens. */\n.dshUk-Button-ghost[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]),\n.dshUk-Button-secondary[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]),\n.dshUk-Button-outline[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-ghost-active-hover);\n}\n\n.dshUk-Button-outline[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]) {\n  border-color: var(--dsw-alias-button-ghost-active-border);\n}\n\n.dshUk-Button-slot {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n}\n\n.dshUk-Button-xs .dshUk-Button-slot {\n  width: 14px;\n  height: 14px;\n}\n\n.dshUk-Button-spinner {\n  animation: dshUkSpin 0.7s linear infinite;\n}\n\n.dshUk-Button-label {\n  min-width: 0;\n}\n\n.dshUk-Button-loadingLabel {\n  opacity: 0.84;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-Button-button {\n    transition: none;\n  }\n\n  .dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n    transform: none;\n  }\n\n  .dshUk-Button-spinner {\n    animation: none;\n  }\n}\n\n@keyframes dshUkSpin {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}\n');
 var Button_module_css_default = {
   "button": "dshUk-Button-button",
   "sm": "dshUk-Button-sm",
@@ -865,6 +875,31 @@ function RefreshIcon(props) {
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M20 19v-4h-4" })
   ] });
 }
+function ImportIcon(props) {
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Icon, { ...props, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("polyline", { points: "17 8 12 3 7 8" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: "12", y1: "3", x2: "12", y2: "15" })
+  ] });
+}
+function GridIcon(props) {
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Icon, { ...props, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1" })
+  ] });
+}
+function ListIcon(props) {
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(Icon, { ...props, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: "8", y1: "6", x2: "21", y2: "6" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: "8", y1: "12", x2: "21", y2: "12" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: "8", y1: "18", x2: "21", y2: "18" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: "3", y1: "6", x2: "3.01", y2: "6" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: "3", y1: "12", x2: "3.01", y2: "12" }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: "3", y1: "18", x2: "3.01", y2: "18" })
+  ] });
+}
 
 // src/client/api.js
 async function assetsRequest(path, opts = {}) {
@@ -1349,12 +1384,88 @@ function MediaCard({ t, title, kind, src, onOpen }) {
 
 // src/client/AssetGrid.jsx
 var import_jsx_runtime5 = require("react/jsx-runtime");
-function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAction = true, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect }) {
+function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAction = true, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect, viewMode = "grid" }) {
   if (assets.length === 0) {
     return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-assets-empty", children: [
       /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { children: emptyLabel }),
       emptyActionLabel && onEmptyAction && showEmptyAction ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Button, { variant: "primary", size: "sm", onClick: onEmptyAction, children: emptyActionLabel }) : null
     ] });
+  }
+  if (viewMode === "list") {
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-assets-list-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("table", { className: "omnimux-assets-list-table", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("tr", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: { width: 40 } }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { children: t("detail.name") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: { width: 100 }, children: t("detail.type") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { children: t("detail.description") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: { width: 120 }, children: t("detail.files") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("th", { style: { width: 160, textAlign: "right" }, children: "\u64CD\u4F5C" })
+      ] }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("tbody", { children: assets.map((asset) => {
+        const selected = selectedIds?.has(asset.id);
+        const missing = Number(asset.missing_file_count) > 0 && (!asset.files || asset.files.length === 0);
+        return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+          "tr",
+          {
+            className: "omnimux-assets-list-row",
+            "aria-selected": selected ? "true" : "false",
+            onClick: () => {
+              onOpen(asset);
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { onClick: (e) => e.stopPropagation(), children: onToggleSelect ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                IconButton,
+                {
+                  variant: "ghost",
+                  size: "xs",
+                  "aria-label": t("select.toggle"),
+                  "aria-pressed": selected ? "true" : "false",
+                  onClick: () => {
+                    onToggleSelect(asset);
+                  },
+                  children: selected ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(CheckIcon, { size: 12 }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", {})
+                }
+              ) : null }),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-assets-list-cell-name", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(FileIcon, { size: 16 }),
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: asset.name })
+              ] }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-assets-badge", style: { position: "static" }, children: t(`type.${asset.type}`) }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("td", { style: { color: "var(--dsw-alias-label-secondary)", maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: asset.description || "\u2014" }),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("td", { children: [
+                asset.files?.length ? `${asset.files.length} \u4E2A\u7D20\u6750` : "\u65E0\u7D20\u6750",
+                missing ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-assets-missing", style: { position: "static", marginLeft: 6 }, children: t("card.missing") }) : null
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("td", { style: { textAlign: "right" }, onClick: (e) => e.stopPropagation(), children: [
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                  Button,
+                  {
+                    variant: "ghost",
+                    size: "xs",
+                    onClick: () => {
+                      onCopy(asset);
+                    },
+                    children: copiedId === asset.id ? t("card.copied") : t("card.copyCite")
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                  Button,
+                  {
+                    variant: "ghost",
+                    size: "xs",
+                    onClick: () => {
+                      onRemove(asset);
+                    },
+                    children: t("mapping.remove")
+                  }
+                )
+              ] })
+            ]
+          },
+          asset.id
+        );
+      }) })
+    ] }) });
   }
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-assets-grid", children: assets.map((asset) => {
     const missing = Number(asset.missing_file_count) > 0 && (!asset.files || asset.files.length === 0);
@@ -1668,6 +1779,7 @@ var ASSETS_CSS = `
   background: var(--dsw-alias-bg-base, var(--dsw-bg));
   color: var(--dsw-alias-label-primary, inherit);
   overflow: hidden;
+  pointer-events: auto;
   -webkit-app-region: no-drag;
 }
 .omnimux-assets-stage[data-visible="false"] {
@@ -1679,26 +1791,117 @@ var ASSETS_CSS = `
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 12px 20px;
+  padding: 16px 20px 8px;
   -webkit-app-region: no-drag;
 }
 .omnimux-assets-stage-heading { flex: 1; min-width: 0; }
 .omnimux-assets-stage-title {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 32px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 30px;
+  letter-spacing: -0.01em;
 }
 .omnimux-assets-stage-subtitle {
-  margin: 0;
+  margin: 4px 0 0;
   font-size: 13px;
   line-height: 20px;
   color: var(--dsw-alias-label-secondary);
+}
+.omnimux-assets-stage-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.omnimux-assets-action-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px 14px;
 }
 .omnimux-assets-stage-toolbar {
   flex: none;
   padding: 0 20px 12px;
   height: 44px;
+}
+.omnimux-assets-tools-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.omnimux-assets-search-wrap {
+  width: 220px;
+}
+.omnimux-assets-sort-wrap {
+  width: 120px;
+}
+.omnimux-assets-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+  background: var(--dsw-alias-bg-layer-1, transparent);
+}
+.omnimux-assets-view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+.omnimux-assets-view-btn:hover {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+.omnimux-assets-view-btn[aria-pressed="true"] {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-bg-base, var(--dsw-bg));
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.omnimux-assets-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.omnimux-assets-list-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--dsw-alias-label-tertiary);
+  font-weight: 500;
+  font-size: 12px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+}
+.omnimux-assets-list-row {
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+.omnimux-assets-list-row:hover {
+  background-color: var(--dsw-alias-interactive-bg-hover);
+}
+.omnimux-assets-list-row[aria-selected="true"] {
+  background-color: var(--dsw-alias-bg-module-platform);
+}
+.omnimux-assets-list-row td {
+  padding: 10px 12px;
+  vertical-align: middle;
+}
+.omnimux-assets-list-cell-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
 }
 .omnimux-assets-selection {
   flex: none;
@@ -2074,6 +2277,8 @@ function AssetsStage({ t, stage }) {
   const [assets, setAssets] = (0, import_react5.useState)([]);
   const [filterType, setFilterType] = (0, import_react5.useState)("");
   const [query, setQuery] = (0, import_react5.useState)("");
+  const [sortKey, setSortKey] = (0, import_react5.useState)("updated_at");
+  const [viewMode, setViewMode] = (0, import_react5.useState)("grid");
   const [detail, setDetail] = (0, import_react5.useState)(null);
   const [creating, setCreating] = (0, import_react5.useState)(null);
   const [pendingRemove, setPendingRemove] = (0, import_react5.useState)(null);
@@ -2165,6 +2370,11 @@ function AssetsStage({ t, stage }) {
 ${asset.description}
 ${(asset.tags || []).join("\n")}`.toLowerCase();
     return hay.includes(query.trim().toLowerCase());
+  }).sort((a, b) => {
+    if (sortKey === "name") {
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    }
+    return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
   });
   const selectedCount = selectedIds.size;
   const selecting = selectedCount > 0;
@@ -2204,31 +2414,61 @@ ${(asset.tags || []).join("\n")}`.toLowerCase();
             /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("h1", { className: "omnimux-assets-stage-title", children: t("stage.title") }),
             /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("p", { className: "omnimux-assets-stage-subtitle", children: t("stage.subtitle") })
           ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-stage-controls", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+              IconButton,
+              {
+                variant: "ghost",
+                size: "sm",
+                "aria-label": t("stage.refresh"),
+                title: t("stage.refresh"),
+                disabled: busy,
+                onClick: () => {
+                  setBusy(true);
+                  void refreshState(true).finally(() => {
+                    setBusy(false);
+                  });
+                },
+                children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(RefreshIcon, { size: 16 })
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+              IconButton,
+              {
+                "aria-label": t("stage.close"),
+                variant: "ghost",
+                size: "sm",
+                onClick: () => {
+                  stage.set(false);
+                },
+                children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(CloseIcon, { size: 16 })
+              }
+            )
+          ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-action-row", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+            Button,
+            {
+              variant: "primary",
+              leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(PlusIcon, {}),
+              onClick: () => {
+                setCreating(filterType || "character");
+                setFormError("");
+              },
+              children: t("add.button")
+            }
+          ),
           /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
             Button,
             {
               variant: "outline",
-              size: "sm",
-              leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(RefreshIcon, {}),
-              disabled: busy,
+              leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(ImportIcon, {}),
               onClick: () => {
-                setBusy(true);
-                void refreshState(true).finally(() => {
-                  setBusy(false);
-                });
+                setError(t("import.notice"));
+                setTimeout(() => setError(""), 3e3);
               },
-              children: busy ? t("stage.refreshing") : t("stage.refresh")
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-            IconButton,
-            {
-              "aria-label": t("stage.close"),
-              variant: "ghost",
-              onClick: () => {
-                stage.set(false);
-              },
-              children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(CloseIcon, { size: 16 })
+              children: t("import.button")
             }
           )
         ] }),
@@ -2237,47 +2477,71 @@ ${(asset.tags || []).join("\n")}`.toLowerCase();
           {
             className: "omnimux-assets-stage-toolbar",
             compact: true,
-            search: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-              SearchField,
-              {
-                value: query,
-                placeholder: t("search.placeholder"),
-                "aria-label": t("search.placeholder"),
-                debounceMs: 0,
-                stretch: true,
-                onValueChange: setQuery
-              }
-            ),
-            filters: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
-              [{ key: "", label: t("chip.all") }, ...ASSET_TYPE_KEYS.map((key) => ({ key, label: t(`type.${key}`) }))].map((chip) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                Button,
-                {
-                  variant: filterType === chip.key ? "secondary" : "ghost",
-                  size: "sm",
-                  "aria-pressed": filterType === chip.key,
-                  onClick: () => {
-                    setFilterType(chip.key);
-                    setDetail(null);
-                    clearSelection();
-                  },
-                  children: chip.label
-                },
-                chip.key || "all"
-              )),
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "omnimux-assets-muted", children: t("sort.updated") })
-            ] }),
-            actions: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+            filters: [{ key: "", label: t("chip.all") }, ...ASSET_TYPE_KEYS.map((key) => ({ key, label: t(`type.${key}`) }))].map((chip) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
               Button,
               {
-                variant: "primary",
-                leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(PlusIcon, {}),
+                variant: filterType === chip.key ? "secondary" : "ghost",
+                size: "sm",
+                "aria-pressed": filterType === chip.key,
                 onClick: () => {
-                  setCreating(filterType || "character");
-                  setFormError("");
+                  setFilterType(chip.key);
+                  setDetail(null);
+                  clearSelection();
                 },
-                children: t("add.button")
-              }
-            )
+                children: chip.label
+              },
+              chip.key || "all"
+            )),
+            tools: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-tools-cluster", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-assets-search-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+                SearchField,
+                {
+                  value: query,
+                  placeholder: t("search.placeholder"),
+                  "aria-label": t("search.placeholder"),
+                  debounceMs: 0,
+                  stretch: true,
+                  onValueChange: setQuery
+                }
+              ) }),
+              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-assets-sort-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+                DropdownSelect,
+                {
+                  value: sortKey,
+                  options: [
+                    { value: "updated_at", label: t("sort.updated") },
+                    { value: "name", label: t("sort.name") }
+                  ],
+                  onChange: setSortKey
+                }
+              ) }),
+              /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-view-toggle", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    className: "omnimux-assets-view-btn",
+                    "aria-pressed": viewMode === "grid",
+                    "aria-label": t("view.grid"),
+                    title: t("view.grid"),
+                    onClick: () => setViewMode("grid"),
+                    children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(GridIcon, { size: 14 })
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+                  "button",
+                  {
+                    type: "button",
+                    className: "omnimux-assets-view-btn",
+                    "aria-pressed": viewMode === "list",
+                    "aria-label": t("view.list"),
+                    title: t("view.list"),
+                    onClick: () => setViewMode("list"),
+                    children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(ListIcon, { size: 14 })
+                  }
+                )
+              ] })
+            ] })
           }
         ),
         selecting ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-selection", children: [
@@ -2316,6 +2580,7 @@ ${(asset.tags || []).join("\n")}`.toLowerCase();
             {
               t,
               assets: visible,
+              viewMode,
               emptyLabel,
               emptyActionLabel,
               showEmptyAction: !searching,

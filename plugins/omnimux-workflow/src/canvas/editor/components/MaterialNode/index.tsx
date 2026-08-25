@@ -149,21 +149,9 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           status: injected.trim() ? 'ready' : 'empty',
           generatedContent: undefined,
         });
-      } else if (materialType === 'video') {
-        if (presetKey === 'omni-ref') {
-          updateNodeData({
-            prompt: '赛博朋克主角在雨夜奔跑，手部特写与运镜保持流畅一致',
-            params: { ...nodeData.params, mode: 'omni-ref' },
-          });
-        } else if (presetKey === 'first-last-frame') {
-          updateNodeData({
-            prompt: '从初始静止镜头平滑运镜过渡到人物转身特写',
-            params: { ...nodeData.params, mode: 'first-last-frame' },
-          });
-        }
       }
     },
-    [materialType, nodeData.params, updateNodeData],
+    [materialType, updateNodeData],
   );
 
   // 本地文件导入

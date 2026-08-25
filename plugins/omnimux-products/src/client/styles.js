@@ -13,6 +13,7 @@ export const PRODUCTS_CSS = `
   background: var(--dsw-alias-bg-base, var(--dsw-bg));
   color: var(--dsw-alias-label-primary, inherit);
   overflow: hidden;
+  pointer-events: auto;
   -webkit-app-region: no-drag;
 }
 .omnimux-products-stage[data-visible="false"] {

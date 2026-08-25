@@ -553,6 +553,7 @@ export const INSPIRATION_CSS = `
   position: relative;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
   width: 100%;
   max-width: 1040px;
   animation: omni-fade-in 120ms ease;
@@ -573,8 +574,10 @@ export const INSPIRATION_CSS = `
   position: absolute;
   top: -10px;
   right: -48px;
-  width: 36px;
-  height: 36px;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px;
+  padding: 0 !important;
   border-radius: 50%;
   border: 1px solid var(--dsw-alias-border-hover, rgba(255, 255, 255, 0.22));
   background: var(--dsw-alias-bg-elevated, rgba(24, 24, 24, 0.88));
@@ -587,6 +590,8 @@ export const INSPIRATION_CSS = `
   z-index: 50;
   box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.55));
   transition: all 120ms ease;
+  flex-shrink: 0;
+  align-self: flex-start;
 }
 .omnimux-inspiration-modal-close:hover {
   border-color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.45));

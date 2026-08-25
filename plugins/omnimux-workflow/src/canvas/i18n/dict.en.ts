@@ -96,8 +96,6 @@ const en: Record<DictKey, string> = {
   'pills.planningGen': 'Plan Gen',
   'pills.promptExpand': 'Prompt Gen',
   'pills.storyboard': 'Storyboard',
-  'pills.omniReference': 'Omni Reference',
-  'pills.firstLastFrame': 'First & Last Frame',
   'exec.ariaLabel': 'Execution controls',
   'exec.status.idle': 'Idle',
   'exec.status.pending': 'Starting...',

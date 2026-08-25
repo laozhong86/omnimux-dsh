@@ -102,26 +102,6 @@ const NodeEmptyState: React.FC<NodeEmptyStateProps> = ({
         <div className="wf-node-empty__icon-box">
           <Play size={44} strokeWidth={1.5} className="wf-node-empty__icon" />
         </div>
-        <div className="wf-node-empty__video-dock nodrag" onMouseDown={(e) => e.stopPropagation()}>
-          <div className="wf-node-empty__video-actions">
-            <button
-              type="button"
-              className="wf-node-empty__video-pill-btn"
-              onClick={() => onApplyPreset?.('omni-ref')}
-            >
-              <Wand2 size={14} className="wf-node-empty__pill-icon" />
-              <span>{t('pills.omniReference')}</span>
-            </button>
-            <button
-              type="button"
-              className="wf-node-empty__video-pill-btn"
-              onClick={() => onApplyPreset?.('first-last-frame')}
-            >
-              <Film size={14} className="wf-node-empty__pill-icon" />
-              <span>{t('pills.firstLastFrame')}</span>
-            </button>
-          </div>
-        </div>
       </div>
     );
   }

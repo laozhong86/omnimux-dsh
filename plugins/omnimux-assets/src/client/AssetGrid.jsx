@@ -16,9 +16,10 @@ import { CheckIcon, FileIcon } from './icons.jsx'
  *   copiedId?: string,
  *   selectedIds?: Set<string>,
  *   onToggleSelect?: (asset: any) => void,
+ *   viewMode?: 'grid' | 'list',
  * }} props
  */
-export function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAction = true, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect }) {
+export function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAction = true, onEmptyAction, onOpen, onCopy, onRemove, copiedId, selectedIds, onToggleSelect, viewMode = 'grid' }) {
   if (assets.length === 0) {
     return (
       <div className="omnimux-assets-empty">
@@ -28,6 +29,87 @@ export function AssetGrid({ t, assets, emptyLabel, emptyActionLabel, showEmptyAc
             {emptyActionLabel}
           </Button>
         ) : null}
+      </div>
+    )
+  }
+
+  if (viewMode === 'list') {
+    return (
+      <div className="omnimux-assets-list-wrap">
+        <table className="omnimux-assets-list-table">
+          <thead>
+            <tr>
+              <th style={{ width: 40 }} />
+              <th>{t('detail.name')}</th>
+              <th style={{ width: 100 }}>{t('detail.type')}</th>
+              <th>{t('detail.description')}</th>
+              <th style={{ width: 120 }}>{t('detail.files')}</th>
+              <th style={{ width: 160, textAlign: 'right' }}>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {assets.map((asset) => {
+              const selected = selectedIds?.has(asset.id)
+              const missing = Number(asset.missing_file_count) > 0 && (!asset.files || asset.files.length === 0)
+              return (
+                <tr
+                  key={asset.id}
+                  className="omnimux-assets-list-row"
+                  aria-selected={selected ? 'true' : 'false'}
+                  onClick={() => { onOpen(asset) }}
+                >
+                  <td onClick={(e) => e.stopPropagation()}>
+                    {onToggleSelect ? (
+                      <IconButton
+                        variant="ghost"
+                        size="xs"
+                        aria-label={t('select.toggle')}
+                        aria-pressed={selected ? 'true' : 'false'}
+                        onClick={() => { onToggleSelect(asset) }}
+                      >
+                        {selected ? <CheckIcon size={12} /> : <span />}
+                      </IconButton>
+                    ) : null}
+                  </td>
+                  <td>
+                    <div className="omnimux-assets-list-cell-name">
+                      <FileIcon size={16} />
+                      <span>{asset.name}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className="omnimux-assets-badge" style={{ position: 'static' }}>
+                      {t(`type.${asset.type}`)}
+                    </span>
+                  </td>
+                  <td style={{ color: 'var(--dsw-alias-label-secondary)', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {asset.description || '—'}
+                  </td>
+                  <td>
+                    {asset.files?.length ? `${asset.files.length} 个素材` : '无素材'}
+                    {missing ? <span className="omnimux-assets-missing" style={{ position: 'static', marginLeft: 6 }}>{t('card.missing')}</span> : null}
+                  </td>
+                  <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => { onCopy(asset) }}
+                    >
+                      {copiedId === asset.id ? t('card.copied') : t('card.copyCite')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => { onRemove(asset) }}
+                    >
+                      {t('mapping.remove')}
+                    </Button>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     )
   }

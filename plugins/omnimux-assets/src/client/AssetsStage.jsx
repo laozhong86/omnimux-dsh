@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { Button, FilterBar, IconButton, SearchField } from 'dsh-ui-kit'
-import { CloseIcon, PlusIcon, RefreshIcon } from './icons.jsx'
+import { Button, DropdownSelect, FilterBar, IconButton, SearchField } from 'dsh-ui-kit'
+import { CloseIcon, GridIcon, ImportIcon, ListIcon, PlusIcon, RefreshIcon } from './icons.jsx'
 import { createAsset, deleteAsset, getState, pickPath, updateAsset } from './api.js'
 import { AddAssetDialog, ASSET_TYPE_KEYS } from './AddAssetDialog.jsx'
 import { AssetBrowse } from './AssetBrowse.jsx'
@@ -70,6 +70,8 @@ export function AssetsStage({ t, stage }) {
   const [assets, setAssets] = useState([])
   const [filterType, setFilterType] = useState('')
   const [query, setQuery] = useState('')
+  const [sortKey, setSortKey] = useState('updated_at')
+  const [viewMode, setViewMode] = useState('grid')
   const [detail, setDetail] = useState(null)
   const [creating, setCreating] = useState(null)
   const [pendingRemove, setPendingRemove] = useState(null)
@@ -163,6 +165,11 @@ export function AssetsStage({ t, stage }) {
     if (!query.trim()) return true
     const hay = `${asset.name}\n${asset.description}\n${(asset.tags || []).join('\n')}`.toLowerCase()
     return hay.includes(query.trim().toLowerCase())
+  }).sort((a, b) => {
+    if (sortKey === 'name') {
+      return String(a.name || '').localeCompare(String(b.name || ''))
+    }
+    return String(b.updated_at || '').localeCompare(String(a.updated_at || ''))
   })
 
   const selectedCount = selectedIds.size
@@ -209,64 +216,110 @@ export function AssetsStage({ t, stage }) {
           <h1 className="omnimux-assets-stage-title">{t('stage.title')}</h1>
           <p className="omnimux-assets-stage-subtitle">{t('stage.subtitle')}</p>
         </div>
+        <div className="omnimux-assets-stage-controls">
+          <IconButton
+            variant="ghost"
+            size="sm"
+            aria-label={t('stage.refresh')}
+            title={t('stage.refresh')}
+            disabled={busy}
+            onClick={() => {
+              setBusy(true)
+              void refreshState(true).finally(() => { setBusy(false) })
+            }}
+          >
+            <RefreshIcon size={16} />
+          </IconButton>
+          <IconButton
+            aria-label={t('stage.close')}
+            variant="ghost"
+            size="sm"
+            onClick={() => { stage.set(false) }}
+          >
+            <CloseIcon size={16} />
+          </IconButton>
+        </div>
+      </div>
+
+      <div className="omnimux-assets-action-row">
+        <Button
+          variant="primary"
+          leadingIcon={<PlusIcon />}
+          onClick={() => { setCreating(filterType || 'character'); setFormError('') }}
+        >
+          {t('add.button')}
+        </Button>
         <Button
           variant="outline"
-          size="sm"
-          leadingIcon={<RefreshIcon />}
-          disabled={busy}
+          leadingIcon={<ImportIcon />}
           onClick={() => {
-            setBusy(true)
-            void refreshState(true).finally(() => { setBusy(false) })
+            setError(t('import.notice'))
+            setTimeout(() => setError(''), 3000)
           }}
         >
-          {busy ? t('stage.refreshing') : t('stage.refresh')}
+          {t('import.button')}
         </Button>
-        <IconButton
-          aria-label={t('stage.close')}
-          variant="ghost"
-          onClick={() => { stage.set(false) }}
-        >
-          <CloseIcon size={16} />
-        </IconButton>
       </div>
 
       <FilterBar
         className="omnimux-assets-stage-toolbar"
         compact
-        search={(
-          <SearchField
-            value={query}
-            placeholder={t('search.placeholder')}
-            aria-label={t('search.placeholder')}
-            debounceMs={0}
-            stretch
-            onValueChange={setQuery}
-          />
-        )}
-        filters={(
-          <>
-            {[{ key: '', label: t('chip.all') }, ...ASSET_TYPE_KEYS.map((key) => ({ key, label: t(`type.${key}`) }))].map((chip) => (
-              <Button
-                key={chip.key || 'all'}
-                variant={filterType === chip.key ? 'secondary' : 'ghost'}
-                size="sm"
-                aria-pressed={filterType === chip.key}
-                onClick={() => { setFilterType(chip.key); setDetail(null); clearSelection() }}
-              >
-                {chip.label}
-              </Button>
-            ))}
-            <span className="omnimux-assets-muted">{t('sort.updated')}</span>
-          </>
-        )}
-        actions={(
+        filters={[{ key: '', label: t('chip.all') }, ...ASSET_TYPE_KEYS.map((key) => ({ key, label: t(`type.${key}`) }))].map((chip) => (
           <Button
-            variant="primary"
-            leadingIcon={<PlusIcon />}
-            onClick={() => { setCreating(filterType || 'character'); setFormError('') }}
+            key={chip.key || 'all'}
+            variant={filterType === chip.key ? 'secondary' : 'ghost'}
+            size="sm"
+            aria-pressed={filterType === chip.key}
+            onClick={() => { setFilterType(chip.key); setDetail(null); clearSelection() }}
           >
-            {t('add.button')}
+            {chip.label}
           </Button>
+        ))}
+        tools={(
+          <div className="omnimux-assets-tools-cluster">
+            <div className="omnimux-assets-search-wrap">
+              <SearchField
+                value={query}
+                placeholder={t('search.placeholder')}
+                aria-label={t('search.placeholder')}
+                debounceMs={0}
+                stretch
+                onValueChange={setQuery}
+              />
+            </div>
+            <div className="omnimux-assets-sort-wrap">
+              <DropdownSelect
+                value={sortKey}
+                options={[
+                  { value: 'updated_at', label: t('sort.updated') },
+                  { value: 'name', label: t('sort.name') },
+                ]}
+                onChange={setSortKey}
+              />
+            </div>
+            <div className="omnimux-assets-view-toggle">
+              <button
+                type="button"
+                className="omnimux-assets-view-btn"
+                aria-pressed={viewMode === 'grid'}
+                aria-label={t('view.grid')}
+                title={t('view.grid')}
+                onClick={() => setViewMode('grid')}
+              >
+                <GridIcon size={14} />
+              </button>
+              <button
+                type="button"
+                className="omnimux-assets-view-btn"
+                aria-pressed={viewMode === 'list'}
+                aria-label={t('view.list')}
+                title={t('view.list')}
+                onClick={() => setViewMode('list')}
+              >
+                <ListIcon size={14} />
+              </button>
+            </div>
+          </div>
         )}
       />
 
@@ -307,6 +360,7 @@ export function AssetsStage({ t, stage }) {
             <AssetGrid
               t={t}
               assets={visible}
+              viewMode={viewMode}
               emptyLabel={emptyLabel}
               emptyActionLabel={emptyActionLabel}
               showEmptyAction={!searching}
