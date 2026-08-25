@@ -2144,23 +2144,45 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   box-shadow: var(--wb-header-capsule-shadow);
 }
 
-/* 执行控制主按钮（闲态时为纯圆形图标） */
-.wf-header-capsule--exec.wf-header-capsule--idle {
-  padding: 3px;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
+/* 独立纯圆形执行按钮（闲态：单层圆钮，完全杜绝嵌套方角） */
+.wf-header-capsule--exec-standalone {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--wb-border);
+  border-radius: 50% !important;
+  background: var(--wb-header-capsule-bg);
+  backdrop-filter: var(--wb-dock-blur);
+  box-shadow: var(--wb-header-capsule-shadow);
+  color: var(--wb-text-primary);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.wf-header-capsule--exec-standalone:hover:not(:disabled) {
+  background: var(--wb-dock-item-hover);
+  border-color: var(--wb-border-strong, rgba(255, 255, 255, 0.2));
+  color: var(--wb-accent, #3b82f6);
+  border-radius: 50% !important;
+}
+
+.wf-header-capsule--exec-standalone:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .wf-header-capsule__btn--run-all {
-  border-radius: 50%;
+  border-radius: 50% !important;
   color: var(--wb-text-primary);
 }
 
 .wf-header-capsule__btn--run-all:hover:not(:disabled) {
   background: var(--wb-dock-item-hover);
   color: var(--wb-accent);
+  border-radius: 50% !important;
 }
 
 .wf-header-capsule__status-pill {
