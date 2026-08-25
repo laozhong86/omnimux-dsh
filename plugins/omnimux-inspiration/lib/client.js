@@ -1562,30 +1562,33 @@ var INSPIRATION_CSS = `
   justify-content: flex-end;
   padding: 12px;
   transition: opacity 120ms ease;
+  pointer-events: none;
 }
 .omnimux-inspiration-card-pure:hover .omnimux-inspiration-card-overlay {
   opacity: 1;
 }
 .omnimux-inspiration-overlay-play {
-  align-self: center;
-  width: 44px;
-  height: 44px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: var(--dsw-alias-button-primary-fill, #ffffff);
   color: var(--dsw-alias-label-primary-foreground, #0a0a0a);
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: scale(0.9);
   transition: transform 120ms ease;
-  box-shadow: 0 4px 12px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.4));
+  box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.45));
 }
 .omnimux-inspiration-card-pure:hover .omnimux-inspiration-overlay-play {
-  transform: scale(1);
+  transform: translate(-50%, -50%) scale(1);
 }
 .omnimux-inspiration-overlay-play svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   margin-left: 2px;
 }
 .omnimux-inspiration-overlay-footer {
@@ -1595,6 +1598,8 @@ var INSPIRATION_CSS = `
   text-overflow: ellipsis;
   white-space: nowrap;
   text-shadow: 0 1px 2px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.8));
+  position: relative;
+  z-index: 1;
 }
 
 /* \u8BE6\u60C5\u5F39\u7A97 Modal */
