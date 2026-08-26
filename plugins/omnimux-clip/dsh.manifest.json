@@ -1,0 +1,39 @@
+{
+  "id": "omnimux-clip",
+  "name": "omnimux-clip",
+  "version": "0.1.0",
+  "tier": "tier-1-app",
+  "entrypoint": "src/index.js",
+  "status": "active",
+  "description": "OmniMux Clip / AI 剪辑工坊：独立多轨剪辑 overlay，与画布只交换 JSON。",
+  "tags": ["clip", "nle", "timeline", "video-editor", "overlay"],
+  "skills": ["skills/clip-craft/SKILL.md"],
+  "capabilities": {
+    "tools": [
+      { "name": "clip_get", "summary": "读取剪辑工程时间轴与轨道信息（summary/tracks/clips/full）", "category": "clip", "isWriteOperation": false, "requiresAuth": false },
+      { "name": "clip_edit", "summary": "批处理原子剪辑操作，一次调用等于一个 Undo 步", "category": "clip", "isWriteOperation": true, "requiresAuth": false },
+      { "name": "clip_view", "summary": "控制播放与播放头定位（不属于 Undo）", "category": "clip", "isWriteOperation": false, "requiresAuth": false },
+      { "name": "clip_snapshot", "summary": "截取指定时间点的合成帧供视觉自检", "category": "clip", "isWriteOperation": false, "requiresAuth": false },
+      { "name": "clip_diagnostics", "summary": "检查时间轴黑场缝隙、片段重叠与缺失素材", "category": "clip", "isWriteOperation": false, "requiresAuth": false },
+      { "name": "clip_export", "summary": "触发工程成片导出为 MP4", "category": "clip", "isWriteOperation": true, "requiresAuth": false }
+    ],
+    "seamsProvided": [
+      {
+        "name": "clipEditor",
+        "interfaceDoc": "src/seam/types.js"
+      }
+    ],
+    "seamsConsumed": ["mediaSeam"],
+    "slots": [
+      {
+        "target": "shell.overlay",
+        "componentPath": "src/client/ClipOverlay.jsx"
+      }
+    ],
+    "storageDomains": ["$DSH_HOME/omnimux/clip/"]
+  },
+  "dependencies": {
+    "requiredPlugins": ["omnimux"],
+    "systemBinaries": []
+  }
+}
