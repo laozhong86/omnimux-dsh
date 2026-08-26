@@ -688,7 +688,7 @@ var CSS = `
 .sh-mkt-stars{display:inline-flex;align-items:center;gap:3px}
 .sh-mkt-stars .sh-star-ico{opacity:1}
 .sh-mkt-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.sh-mkt-owner{min-width:0;overflow:hidden;margin:0;color:var(--dsw-alias-label-tertiary,#7b8088);font-family:var(--ds-font-family-code,ui-monospace,monospace);font-size:11px;line-height:14px;text-overflow:ellipsis;white-space:nowrap}
+.sh-mkt-owner{min-width:0;overflow:hidden;margin:0;color:var(--dsw-alias-label-tertiary,#7b8088);font-family:var(--dsw-font-code,ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace);font-size:11px;line-height:14px;text-overflow:ellipsis;white-space:nowrap}
 .sh-mkt-badge{flex:none;min-height:18px;display:inline-flex;align-items:center;border-radius:5px;padding:1px 6px;background:var(--dsw-alias-bg-layer-1,#f5f6f8);color:var(--dsw-alias-label-tertiary,#7b8088);font-size:11px;line-height:16px}
 .sh-mkt-badge.ok{background:color-mix(in srgb,var(--dsw-alias-state-success-primary,#279c62) 10%,transparent);color:var(--dsw-alias-state-success-primary,#279c62)}
 .sh-mkt-badge.on{background:color-mix(in srgb,var(--dsw-alias-state-business-primary,#4d6bfe) 12%,transparent);color:var(--dsw-alias-state-business-primary,#4d6bfe)}
