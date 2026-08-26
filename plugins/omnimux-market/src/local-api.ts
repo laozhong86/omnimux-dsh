@@ -21,11 +21,33 @@ import type { PluginConfig, SkillCard } from './types.js'
 
 let restarting = false
 
+export const MUTATING_METHODS = new Set([
+  'install',
+  'uninstall',
+  'pluginInstall',
+  'pluginUninstall',
+  'pluginRestart',
+  'catalogInstall',
+  'catalogSummon',
+  'catalogUninstall',
+])
+
 export async function handleApi(req: IncomingMessage, res: ServerResponse, cfg: PluginConfig): Promise<void> {
   try {
     const url = new URL(req.url || '/', 'http://127.0.0.1')
     const body = req.method === 'POST' ? await readBody(req) : {}
     const method = String(body.method || url.searchParams.get('method') || 'search')
+
+    // 严格 HTTP Method 与写操作来源防伪隔离 (Issue #33)
+    const isMutating = MUTATING_METHODS.has(method) || (method === 'config' && Boolean(body.save))
+    if (isMutating) {
+      if (req.method !== 'POST') {
+        return sendJson(res, 405, { ok: false, error: 'Method Not Allowed: mutating operations require POST' })
+      }
+      if (!trustedRestartRequest(req)) {
+        return sendJson(res, 403, { ok: false, error: 'Forbidden: mutating operations are limited to same-origin requests' })
+      }
+    }
     if (method === 'search') {
       const query = String(body.query || url.searchParams.get('query') || '').trim()
       const category = parseCategory(body.category || url.searchParams.get('category'))
@@ -60,6 +82,7 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, cfg: 
       return sendJson(res, 200, { ok: true, ratings })
     }
     if (method === 'install') {
+      if (!trustedRestartRequest(req)) return sendJson(res, 403, { ok: false, error: 'install is limited to same-origin requests' })
       const slug = String(body.slug || url.searchParams.get('slug') || '').trim()
       if (!slug) return sendJson(res, 400, { ok: false, error: '缺少 slug' })
       const version = String(body.version || url.searchParams.get('version') || '').trim()
@@ -71,6 +94,7 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, cfg: 
       return sendJson(res, 200, { ok: true, skillsDir: cfg.skillsDir, items })
     }
     if (method === 'uninstall') {
+      if (!trustedRestartRequest(req)) return sendJson(res, 403, { ok: false, error: 'uninstall is limited to same-origin requests' })
       const slug = String(body.slug || url.searchParams.get('slug') || '').trim()
       if (!slug) return sendJson(res, 400, { ok: false, error: '缺少 slug' })
       const result = await uninstallSkill(slug, cfg.skillsDir)
@@ -112,6 +136,7 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, cfg: 
       return sendJson(res, 200, { ok: true, ...result })
     }
     if (method === 'pluginInstall') {
+      if (!trustedRestartRequest(req)) return sendJson(res, 403, { ok: false, error: 'pluginInstall is limited to same-origin requests' })
       const result = await withPluginInstallLock(() => installMarketPlugin(
         {
           owner: body.owner ?? url.searchParams.get('owner'),
@@ -183,6 +208,7 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, cfg: 
       return sendJson(res, 200, { ok: true, items, categories, source: 'workbuddy-marketplace' })
     }
     if (method === 'catalogInstall') {
+      if (!trustedRestartRequest(req)) return sendJson(res, 403, { ok: false, error: 'catalogInstall is limited to same-origin requests' })
       const id = String(body.id || url.searchParams.get('id') || '').trim()
       if (!id) return sendJson(res, 400, { ok: false, error: '缺少 id' })
       const result = await withConnectorPatchLock(() => Promise.resolve(
@@ -191,6 +217,7 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, cfg: 
       return sendJson(res, 200, { ok: true, ...result })
     }
     if (method === 'catalogSummon') {
+      if (!trustedRestartRequest(req)) return sendJson(res, 403, { ok: false, error: 'catalogSummon is limited to same-origin requests' })
       const id = String(body.id || url.searchParams.get('id') || '').trim()
       if (!id) return sendJson(res, 400, { ok: false, error: '缺少 id' })
       const sessionState = body.sessionState === 'blank' ? 'blank' : 'locked'
@@ -211,6 +238,7 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, cfg: 
       return sendJson(res, 200, { ok: true, ...result, attached, sessionId: attached ? sessionId : '' })
     }
     if (method === 'catalogUninstall') {
+      if (!trustedRestartRequest(req)) return sendJson(res, 403, { ok: false, error: 'catalogUninstall is limited to same-origin requests' })
       const id = String(body.id || url.searchParams.get('id') || '').trim()
       if (!id) return sendJson(res, 400, { ok: false, error: '缺少 id' })
       const item = findItem(loadCatalog(), id)

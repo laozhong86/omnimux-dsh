@@ -61,6 +61,9 @@ export function servingPort(request: Pick<IncomingMessage, 'headers'>): number |
 }
 
 export function trustedRestartRequest(request: Pick<IncomingMessage, 'headers' | 'socket'>): boolean {
+  const fetchSite = headerString(request.headers['sec-fetch-site'])
+  if (fetchSite === 'cross-site') return false
+
   const origin = headerString(request.headers.origin)
   if (origin === undefined) return false
   let from: string
