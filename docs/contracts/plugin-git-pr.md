@@ -21,9 +21,9 @@
 2. **产品 PR 只打本仓**：`gh -R laozhong86/omnimux-dsh …`，base=`main`。禁止对上游 harness / desktop 开插件特性 PR。
 3. **合入权永远属于老板**。agent 不得 `gh pr merge`，除非老板当轮明文授权。
 4. **默认一插件一 PR**。跨插件改动（例如 hub + accounts 同改）须在 PR 描述写明理由；大跨包先问老板。
-5. **提交信息**用 conventional commits（例：`feat(market): …`、`fix(workflow): …`、`docs(contracts): …`）。
-6. **未验收不得标完成**。本地测绿 / sync 成功 ≠ 合入；缺浏览器或窗口证据时，board 写「未验收」。
-7. **禁止提交密钥**。credentials / token / `.env` 不进仓。
+5. **提交信息**用 conventional commits（例：`feat(market): …`、`fix(workflow): …`、`docs(contracts): …`）。`feat` / `fix` / `docs` 是 commit type，**不是**分支前缀。scope 用插件目录名或 `contracts` / `scripts`。禁止 `WIP`、`update`、`temp commit`、`fix bug` 这类标题。特性改动与纯格式化拆开。
+6. **未验收不得标完成**。本地测绿 / sync 成功 ≠ 合入；缺浏览器或窗口证据时，board 写「未验收」。验证命令见下方「本地验证」。
+7. **禁止提交密钥**。credentials / token / `.env` / 私钥不进仓。安全修复的分支名、commit、PR 标题、测试名只写代码现在做什么（例如校验请求体大小），不写攻击类别词。
 8. **跟 PR 细节交棒** `omnimux-pr-handoff`；跟踪写入本仓 `.workbuddy/pr-board.md`。**禁止**单文件 `memory/pr-tracking.md` 覆盖多 PR。
 9. **插件进 App** 仍走桌面壳 `yarn omnimux:*`（见 `ops-entry.md`）。本合同不管 sync / restart。
 
@@ -37,7 +37,7 @@
 | PR base | `main` |
 | 回收 | PR 合入或放弃后删远程支；更新 board |
 
-当前阶段**不强制** git worktree。多会话并行写同一插件前，先在 board / 口头协调；冲突频发后再升级 worktree。
+当前阶段**不强制** git worktree。多会话并行写同一插件前，先在 board / 口头协调；冲突频发后再升级 worktree。若使用：sibling 目录名为 `omnimux-dsh-wt-<topic>`（现网如 `omnimux-dsh-wt-inspiration`）。禁止 `worktree remove` 不是自己建的树。
 
 ## 本机 board（不进 git）
 
@@ -53,7 +53,7 @@
 cd /Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh
 git fetch origin
 git switch -c agent/<plugin>-<topic> origin/main
-# 实现 + 本地验证（包内 test / 必要 sync 证据）
+# 实现 + 本地验证（见下方白名单；sync 不是验收）
 git add -p
 git commit -m "feat(<plugin>): ..."
 git push -u origin HEAD
@@ -62,6 +62,25 @@ gh -R laozhong86/omnimux-dsh pr create --base main --fill
 # 跟 CI/review：交棒 omnimux-pr-handoff
 # 老板合入后：删远程支 + 更新 board
 ```
+
+## 本地验证
+
+按影响面选**已存在**的命令。没有的命令不要跑、不要写进 hook。没执行过的命令不得声称通过。
+
+| 改动面 | 命令 | 通过标准 |
+|---|---|---|
+| 插件 `dsh.manifest.json` / 工具名 / 入口 | 在 `dsh-plugin` 根：`node scripts/registry-tool.mjs verify`，必要时 `build` | 声明的工具与入口在代码里存在 |
+| 生产 profile 是否误 link | `node scripts/omnimux.mjs doctor` | 生产 profile 无工作区 symlink |
+| 某插件 `src/`（`.js` `.jsx` `.mjs` `.ts` `.tsx`） | **该包** `pnpm --filter <pkg> test`（包内 `node --test`） | 非 skip 用例实际执行。有代码 diff 且 0 tests = 失败 |
+| 仅已声明 `typecheck` 的 ts 包 | 该包 `pnpm --filter <pkg> typecheck` | 无该 script 的 JS 包不要假装跑 |
+| UI / Host / 一级页 | `node scripts/omnimux.mjs dev start <task> <plugin>`（L2，44200–44299） | 证据 = URL + 截图或 DOM。无浏览器证据 → board「未验收」 |
+| L2 通过后物化 | `node scripts/omnimux.mjs sync <plugin>` | 静态复制。**不等于验收** |
+
+根目录 `pnpm test` 目前只 filter：`dsh-drama`、`omnimux`、`omnimux-accounts`、`omnimux-inspiration`、`omnimux-market`。改 `assets` / `products` / `workflow` / `clip` / `analytics` / `dsh-video` 必须跑 **该包** test，不能用根 `pnpm test` 代替。
+
+**skip ≠ pass。** `smoke` / `verify:image-live` / `verify:models` 网关段在无 `dsh` 或无 key 时会 skip 并以 0 退出。PR 必须写明 skip。
+
+**禁止当作本仓验证命令：** 根 `pnpm lint`、根 `pnpm typecheck`、`pnpm run lint:docs`、`vitest related`、`pnpm test:affected`、`diff-cover`、`cargo test`、`go test`、Playwright 多 OS、Knip、Trivy。不要在外层 `dsh-plugin/` 装 Husky / commitlint / `.github/workflows`。
 
 ## force-with-lease 闸门
 
@@ -95,3 +114,6 @@ gh -R laozhong86/omnimux-dsh pr create --base main --fill
 - 用桌面壳的 `fork` remote / base=`omnimux` 套到本仓
 - 市场版 github-pr-manager 单文件覆盖跟踪
 - 把 sync 纪律和 Git PR 揉成一个巨无霸文档
+- 在外层 `dsh-plugin/` `git init`、装 Husky、加 GitHub Actions
+- 把 `--force-with-lease` 写成默认动作
+- 用 `feat/` / `fix/` / `refactor/` 当分支前缀
