@@ -751,35 +751,8 @@ export function InspirationSection({ t, active }) {
 
   return (
     <div className="omnimux-inspiration-root">
-      {/* 顶部 Tab 切换与操作 */}
-      <div className="omnimux-inspiration-header">
-        <div className="omnimux-inspiration-tabs">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`omnimux-inspiration-tab ${tab === 'all' ? 'active' : ''}`}
-            onClick={() => setTab('all')}
-          >
-            {t('tab.all')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`omnimux-inspiration-tab ${tab === 'local' ? 'active' : ''}`}
-            onClick={() => setTab('local')}
-          >
-            {t('tab.local')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`omnimux-inspiration-tab ${tab === 'public' ? 'active' : ''}`}
-            onClick={() => setTab('public')}
-          >
-            {t('tab.public')}
-          </Button>
-        </div>
-
+      {/* Layer 2: Action Row */}
+      <div className="omnimux-inspiration-action-row">
         <Button
           variant="primary"
           className="omnimux-inspiration-btn-add"
@@ -794,9 +767,25 @@ export function InspirationSection({ t, active }) {
         </Button>
       </div>
 
+      {/* Layer 3: FilterBar */}
       <FilterBar
         className="omnimux-inspiration-toolbar"
         compact
+        filters={[
+          { key: 'all', label: t('tab.all') },
+          { key: 'local', label: t('tab.local') },
+          { key: 'public', label: t('tab.public') },
+        ].map((tabItem) => (
+          <Button
+            key={tabItem.key}
+            variant={tab === tabItem.key ? 'secondary' : 'ghost'}
+            size="sm"
+            aria-pressed={tab === tabItem.key}
+            onClick={() => setTab(tabItem.key)}
+          >
+            {tabItem.label}
+          </Button>
+        ))}
         search={(
           <SearchField
             value={q}
@@ -807,7 +796,7 @@ export function InspirationSection({ t, active }) {
             onValueChange={setQ}
           />
         )}
-        filters={(
+        tools={(
           <>
             <DropdownSelect
               value={type}
