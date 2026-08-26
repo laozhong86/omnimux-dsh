@@ -36,6 +36,7 @@
     "test": "pnpm --filter dsh-drama test && pnpm --filter omnimux test && pnpm --filter omnimux-accounts test && pnpm --filter omnimux-inspiration test && pnpm --filter omnimux-market test",
     "test:all": "pnpm -r test",
     "test:ui": "node scripts/scan-ui-gates.mjs",
+    "test:e2e-mock": "OMNIMUX_MOCK_MODE=replay node scripts/mock-sidecar.test.mjs",
     "test:dx": "node scripts/test-dx-pipeline.mjs",
     "smoke": "bash scripts/smoke-drama.sh",
     "accept:apps": "bash scripts/accept-apps-install.sh",
