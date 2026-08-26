@@ -2,20 +2,14 @@
  * WorkflowStage — first-level workflow canvas page on the shell.overlay seat.
  * Chrome (header + close) renders in the host React 18 tree; the canvas
  * body delegates to CanvasBridge which mounts the React 19 island.
+ *
+ * 舞台定位走 --stage-* 变量 + [data-visible="false"]；控件消费 dsh-ui-kit。
  */
-import { useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { IconCloseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconButton } from 'dsh-ui-kit'
 import { CanvasBridge } from './CanvasBridge.jsx'
-
-const chromeButton = {
-  border: '1px solid var(--dsw-alias-border, var(--dsw-border, currentColor))',
-  background: 'transparent',
-  color: 'inherit',
-  borderRadius: 6,
-  cursor: 'pointer',
-  fontSize: 12,
-  lineHeight: '20px',
-  padding: '2px 10px',
-}
+import { injectWorkflowStyles } from './styles.js'
 
 /**
  * @param {{
@@ -25,9 +19,10 @@ const chromeButton = {
  * }} props
  */
 export function WorkflowStage({ t, stage, locale }) {
+  useEffect(() => { injectWorkflowStyles() }, [])
   const open = useSyncExternalStore(
-    stage ? stage.subscribe : () => () => {},
-    stage ? stage.getSnapshot : () => false,
+    stage ? (onStoreChange) => stage.subscribe(onStoreChange) : () => () => {},
+    stage ? () => stage.getSnapshot() : () => false,
   )
   // W4 T4.1：宿主语言 live 订阅（'zh'|'en'），下发给 CanvasBridge → island。
   // locale.subscribe 是 LocaleRuntime 的实例方法（内部读 this.listeners）。
@@ -40,10 +35,15 @@ export function WorkflowStage({ t, stage, locale }) {
       : () => () => {},
     () => (locale ? locale.getLocale().active : 'zh'),
   )
+  const [everOpened, setEverOpened] = useState(false)
   const [box, setBox] = useState(() => ({ top: 0, left: 0, width: 0, height: 0 }))
+  // 稳定引用：避免父级重渲时 inline 新箭头把 CanvasBridge 挂载 effect 拖下水。
+  const handleClose = useCallback(() => { stage.set(false) }, [stage])
+
+  if (open && !everOpened) setEverOpened(true)
 
   useLayoutEffect(() => {
-    if (!open) return undefined
+    if (!open || !stage) return undefined
     const update = () => { setBox(stage.readBox()) }
     update()
     const scroll = document.querySelector('[data-conversation-scroll]')
@@ -57,70 +57,38 @@ export function WorkflowStage({ t, stage, locale }) {
       observer?.disconnect()
       window.removeEventListener('resize', update)
     }
-  }, [open])
+  }, [open, stage])
 
-  if (!open || !stage) return null
+  if (!stage || !everOpened) return null
 
   return (
     <div
       role="region"
       aria-label={t('stage.title')}
+      aria-hidden={open ? undefined : 'true'}
+      className="omnimux-workflow-stage"
+      data-visible={open ? 'true' : 'false'}
       style={{
-        position: 'fixed',
-        top: box.top,
-        left: box.left,
-        width: box.width,
-        height: box.height,
-        zIndex: 200,
-        pointerEvents: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--dsw-alias-bg-primary, var(--dsw-bg, #111))',
-        color: 'var(--dsw-alias-label-primary, inherit)',
-        overflow: 'hidden',
+        '--stage-top': `${box.top}px`,
+        '--stage-left': `${box.left}px`,
+        '--stage-width': `${box.width}px`,
+        '--stage-height': `${box.height}px`,
       }}
     >
-      <div style={{
-        flex: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        minHeight: 32,
-        padding: '12px 20px',
-        WebkitAppRegion: 'no-drag',
-      }}
-      >
-        <h1 style={{
-          margin: 0,
-          flex: 1,
-          minWidth: 0,
-          fontSize: 16,
-          fontWeight: 600,
-          lineHeight: '32px',
-        }}
-        >
-          {t('stage.title')}
-        </h1>
-        <button
-          type="button"
+      <div className="omnimux-workflow-stage-header">
+        <div className="omnimux-workflow-stage-heading">
+          <h1 className="omnimux-workflow-stage-title">{t('stage.title')}</h1>
+        </div>
+        <IconButton
           aria-label={t('stage.close')}
-          onClick={() => { stage.set(false) }}
-          style={{
-            WebkitAppRegion: 'no-drag',
-            border: 'none',
-            background: 'transparent',
-            color: 'inherit',
-            cursor: 'pointer',
-            fontSize: 20,
-            lineHeight: 1,
-            padding: 4,
-          }}
+          variant="ghost"
+          onClick={handleClose}
         >
-          ×
-        </button>
+          <IconCloseOutline16 />
+        </IconButton>
       </div>
-      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-        <CanvasBridge onClose={() => { stage.set(false) }} t={t} locale={activeLocale} />
+      <div className="omnimux-workflow-canvas-body">
+        <CanvasBridge onClose={handleClose} t={t} locale={activeLocale} />
       </div>
     </div>
   )

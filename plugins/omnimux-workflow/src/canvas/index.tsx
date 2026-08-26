@@ -17,6 +17,8 @@ export interface CanvasIslandProps {
   onClose?: () => void;
   /** 宿主语言通道（W1 i18n 骨架）：'zh' | 'en'，未知值回退 zh。 */
   locale?: 'zh' | 'en';
+  /** 专属工作区/画布 ID */
+  workspaceId?: string;
 }
 
 interface RootEntry {

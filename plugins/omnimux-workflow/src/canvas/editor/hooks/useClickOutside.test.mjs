@@ -27,6 +27,7 @@ function fakeContainer(containsResult) {
 test('exclude 白名单：默认包含 antd Select 下拉与 Slider 滑块（计划 §9 坑#4）', () => {
   assert.ok(DEFAULT_FLOATING_LAYER_EXCLUDE_SELECTORS.includes('.ant-select-dropdown'));
   assert.ok(DEFAULT_FLOATING_LAYER_EXCLUDE_SELECTORS.includes('.ant-slider-thumb'));
+  assert.ok(DEFAULT_FLOATING_LAYER_EXCLUDE_SELECTORS.includes('.wf-modal-overlay'));
 });
 
 test('点击面板自身内部 → 不关闭', () => {

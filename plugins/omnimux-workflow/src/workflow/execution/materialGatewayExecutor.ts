@@ -30,14 +30,38 @@ function readString(source: Record<string, unknown> | undefined, key: string): s
   return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
 }
 
+function readDuration(data: Record<string, unknown>): number | undefined {
+  const fromParams = (data.params as Record<string, unknown> | undefined)?.duration;
+  if (typeof fromParams === 'number') return fromParams;
+  if (typeof data.duration === 'number') return data.duration;
+  return undefined;
+}
+
 function readMaterialType(nodeData: Record<string, unknown>): 'text' | 'image' | 'video' | 'audio' {
   const value = nodeData.materialType;
   if (value === 'image' || value === 'video' || value === 'audio') return value;
   return 'text';
 }
 
-function isGenerativeTool(tool: string | undefined): boolean {
-  return typeof tool === 'string' && tool !== 'import' && tool !== 'text-editor';
+function isGenerativeTool(
+  tool: string | undefined,
+  data: Record<string, unknown>,
+  upstream: { text?: string; mediaUrl?: string },
+): boolean {
+  if (typeof tool === 'string' && tool !== 'import' && tool !== 'text-editor') {
+    return true;
+  }
+  // If the node has an explicit prompt, it is intended to generate via model
+  const prompt = readString(data, 'prompt');
+  if (prompt && prompt.trim().length > 0) {
+    return true;
+  }
+  // If the node has an explicit model selected and has upstream input or content
+  const model = readString(data.params as Record<string, unknown> | undefined, 'model');
+  if (model && (upstream.text || upstream.mediaUrl || readString(data, 'content'))) {
+    return true;
+  }
+  return false;
 }
 
 function extFor(capability: 'text' | 'image' | 'video' | 'audio'): string {
@@ -80,7 +104,7 @@ export function createMaterialGatewayExecutor(opts: {
       const upstream = collectUpstream(ctx);
 
       // ---- Non-generative: pass-through (node-owned / upstream content) ----
-      if (!isGenerativeTool(tool)) {
+      if (!isGenerativeTool(tool, data, upstream)) {
         const nodeMediaUrl = readString(data, 'mediaUrl');
         if (nodeMediaUrl) {
           const materialType = readMaterialType(data);
@@ -125,8 +149,10 @@ export function createMaterialGatewayExecutor(opts: {
         prompt,
         image,
         audio,
-        duration: typeof data.duration === 'number' ? data.duration : undefined,
+        duration: readDuration(data),
         model: readString(data.params as Record<string, unknown> | undefined, 'model'),
+        resolution: readString(data.params as Record<string, unknown> | undefined, 'resolution'),
+        aspectRatio: readString(data.params as Record<string, unknown> | undefined, 'aspectRatio'),
         dest,
         signal: ctx.signal,
         // Mock-gateway control flag (deterministic failure injection for M3).

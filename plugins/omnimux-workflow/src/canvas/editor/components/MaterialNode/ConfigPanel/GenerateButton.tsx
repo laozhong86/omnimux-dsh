@@ -22,12 +22,21 @@ export interface GenerateButtonProps {
 const GenerateButton: React.FC<GenerateButtonProps> = ({ onClick, disabled, isGenerating }) => {
   const t = useT();
   return (
-    <div className={`wf-generate-btn ${disabled ? 'wf-generate-btn--disabled' : ''}`}>
+    <div
+      className={`wf-generate-btn ${disabled ? 'wf-generate-btn--disabled' : ''}`}
+      onClick={disabled || isGenerating ? undefined : onClick}
+      style={{ cursor: disabled || isGenerating ? 'default' : 'pointer' }}
+      role="button"
+      tabIndex={0}
+    >
       <span className="wf-generate-btn__label">{t('panel.generate')}</span>
       <button
         type="button"
-        onClick={onClick}
-        disabled={disabled}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!disabled && !isGenerating) onClick();
+        }}
+        disabled={disabled || isGenerating}
         className="wf-generate-btn__send"
         aria-label={t('panel.generate')}
         title={t('panel.generate')}

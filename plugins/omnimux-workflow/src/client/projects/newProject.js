@@ -72,15 +72,16 @@ function errorText(value) {
  *   t: (key: string) => string,
  *   stage?: { set?: (open: boolean) => void },
  * }} ctx
- * @param {{ title: string }} [opts] 标题必填（弹窗在入口层收，取消则不调用本函数）
+ * @param {{ title: string, projectRoot?: string }} [opts] 标题必填（弹窗在入口层收，取消则不调用本函数）；projectRoot 可选，留空则 Host 写入默认库
  * @returns {Promise<{ ok: boolean, project?: object, error?: string }>}
  */
 export async function runNewProject(ctx, opts = {}) {
   const title = typeof opts.title === 'string' ? opts.title : ''
+  const givenRoot = typeof opts.projectRoot === 'string' ? opts.projectRoot.trim() : ''
   const validated = validateProjectTitle(title)
   if (!validated.ok) return { ok: false, error: validated.error }
 
-  const seeded = await createProject(validated.title, null)
+  const seeded = await createProject(validated.title, null, givenRoot !== '' ? givenRoot : undefined)
   if (!seeded.ok || !seeded.body?.project) {
     return { ok: false, error: errorText(seeded.body?.error || seeded.body?.message || seeded.status) }
   }
@@ -100,5 +101,49 @@ export async function runNewProject(ctx, opts = {}) {
     return { ok: true, project: { ...project, sessionId: session.sessionId, path: projectRoot } }
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
+  }
+}
+
+/**
+ * 在同一个窗口中新建会话（清空上下文）：
+ * 基于 DSH 原生机制调用 sessions.create({ workspaceId }) + sessions.open(newSessionId)，
+ * 0 历史 Token 消耗，不重开桌面窗口，保持当前工作区与右侧画布连接。
+ *
+ * @param {{
+ *   sessions: { create: (opts: { workspaceId: string }) => Promise<string>, open: (id: string) => void },
+ *   workspaces: { create: Function, list?: object },
+ *   betterSidebar?: object,
+ *   layout?: { closeDetails?: () => void },
+ *   t?: (key: string) => string,
+ * }} ctx
+ * @param {{ workspaceId?: string, cwd?: string, pageId?: string }} opts
+ */
+export async function runResetSession(ctx, opts = {}) {
+  try {
+    const cwd = opts.cwd || '';
+    let workspaceId = opts.workspaceId;
+    if (!workspaceId && cwd && ctx.workspaces) {
+      workspaceId = resolveWorkspaceForCwd(cwd, ctx.workspaces);
+    }
+    if (!workspaceId && cwd && ctx.workspaces?.create) {
+      const created = await ctx.workspaces.create({ path: cwd });
+      workspaceId = created?.workspaceId !== undefined && created?.workspaceId !== null
+        ? String(created.workspaceId)
+        : resolveWorkspaceForCwd(cwd, ctx.workspaces);
+    }
+    if (!workspaceId) {
+      return { ok: false, error: 'no-workspace' };
+    }
+
+    // 1. 调用 DSH 原生 API 在当前 workspace 创建全新的空白会话
+    const newSessionId = await ctx.sessions.create({ workspaceId });
+    // 2. 在当前窗口无缝切换打开（无需重开窗口）
+    ctx.sessions.open(newSessionId);
+    // 3. 保持右侧栏画布无缝连接并刷新比例
+    await activateProjectCanvas(ctx, { sessionId: newSessionId, cwd, pageId: opts.pageId });
+
+    return { ok: true, sessionId: newSessionId };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
 }

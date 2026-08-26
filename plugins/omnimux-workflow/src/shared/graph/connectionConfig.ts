@@ -90,6 +90,15 @@ export function getNodeOutputInfo(node: { type?: string; data?: Record<string, u
     return { nodeType, materialType, hasOutput };
   }
 
+  if (nodeType === 'video_composition') {
+    const videoUrl = typeof data.outputVideoUrl === 'string' ? data.outputVideoUrl : '';
+    return {
+      nodeType,
+      materialType: 'video',
+      hasOutput: Boolean(videoUrl) || data.status === 'completed',
+    };
+  }
+
   // 未知类型，默认允许连接
   return { nodeType, hasOutput: true };
 }
@@ -121,6 +130,10 @@ function getNodeInputRequirements(node: { type?: string; data?: Record<string, u
     }
 
     return { nodeType, selectedTool, acceptedTypes: [...acceptedTypesSet] };
+  }
+
+  if (nodeType === 'video_composition') {
+    return { nodeType, acceptedTypes: ['text', 'image', 'video', 'audio'] };
   }
 
   // 未知类型，默认接受所有类型

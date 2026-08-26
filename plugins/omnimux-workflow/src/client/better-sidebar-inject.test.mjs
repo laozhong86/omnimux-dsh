@@ -62,6 +62,9 @@ function stubDom() {
     },
   }
   const fakeDocument = {
+    head: { appendChild() {} },
+    getElementById() { return null },
+    querySelector() { return null },
     createElement() {
       return {
         type: '',
@@ -69,6 +72,7 @@ function stubDom() {
         className: '',
         innerHTML: '',
         style: {},
+        textContent: '',
         addEventListener() {},
         setAttribute() {},
         querySelector() { return { textContent: '' } },
@@ -95,7 +99,13 @@ async function loadApply() {
     jsx: 'automatic',
     write: false,
     logLevel: 'silent',
-    external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom'],
+    external: [
+      'react',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+      'react-dom',
+      '@deepseek-ai/dsh-client-ui-primitives',
+    ],
   })
   const code = result.outputFiles[0]?.text
   if (!code) throw new Error('esbuild produced no apply bundle')
@@ -109,15 +119,34 @@ async function loadApply() {
     export function useCallback(fn) { return fn }
     export function useRef(init) { return { current: init } }
     export function useMemo(fn) { return fn() }
+    export function useId() { return 'id' }
+    export function useImperativeHandle() {}
     export function useSyncExternalStore(_sub, getSnapshot) { return getSnapshot() }
+    export function forwardRef(fn) { return fn }
     export const Fragment = 'Fragment'
-    export default { createElement, useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo, useSyncExternalStore, Fragment }
+    export default {
+      createElement, useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo,
+      useId, useImperativeHandle, useSyncExternalStore, forwardRef, Fragment,
+    }
   `)
   writeFileSync(join(dir, 'jsx-runtime.js'), `
     export const jsx = (type, props) => ({ type, props })
     export const jsxs = (type, props) => ({ type, props })
     export const Fragment = 'Fragment'
     export const jsxDEV = (type, props) => ({ type, props })
+  `)
+  writeFileSync(join(dir, 'primitives.js'), `
+    export function IconEditOutline16() { return null }
+    export function IconTrashOutline16() { return null }
+    export function IconCloseOutline16() { return null }
+    export function IconPlusOutline16() { return null }
+    export function IconLoadingOutline16() { return null }
+    export function IconSearchOutline16() { return null }
+    export function IconCloseFill14() { return null }
+    export function IconChevronDownOutline14() { return null }
+    export function Tooltip({ children }) { return children }
+    export function Modal({ children }) { return children }
+    export function Menu({ children }) { return children }
   `)
   const rewritten = code
     .replaceAll("from \"react/jsx-runtime\"", "from \"./jsx-runtime.js\"")
@@ -126,6 +155,8 @@ async function loadApply() {
     .replaceAll("from 'react/jsx-dev-runtime'", "from './jsx-runtime.js'")
     .replaceAll("from \"react\"", "from \"./react.js\"")
     .replaceAll("from 'react'", "from './react.js'")
+    .replaceAll("from \"@deepseek-ai/dsh-client-ui-primitives\"", "from \"./primitives.js\"")
+    .replaceAll("from '@deepseek-ai/dsh-client-ui-primitives'", "from './primitives.js'")
   const file = join(dir, 'apply.mjs')
   writeFileSync(file, rewritten)
   return import(pathToFileURL(file).href)

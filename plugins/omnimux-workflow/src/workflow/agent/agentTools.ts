@@ -47,6 +47,11 @@ import {
 } from '../../shared/graph/materialNode.ts';
 import type { CanvasInputMutation } from '../../shared/graph/canvasInputMutationGateway.ts';
 
+import {
+  createCanvasWriteTableNodeTool,
+  createCanvasGetTableNodeTool,
+} from './tableTools.ts';
+
 // ============================================================================
 // Seat shapes (cordis tools / systemPrompt, structural typing)
 // ============================================================================
@@ -132,6 +137,12 @@ const LIST_EXECUTIONS_LIMIT = 5;
 
 function errorBody(error: string, message: string): { error: string; message: string } {
   return { error, message };
+}
+
+/** Ensure an agent tool output is 100% strictly lossless JSON (strips undefined fields). */
+function sanitizeLosslessJson(val: unknown): unknown {
+  if (val === undefined) return null;
+  return JSON.parse(JSON.stringify(val));
 }
 
 function sleep(ms: number): Promise<void> {
@@ -925,9 +936,19 @@ export function registerWorkflowAgentSeats(
       createWorkflowConnectTool(deps),
       createWorkflowDisconnectTool(deps),
       createWorkflowExecutionControlTool(deps),
+      createCanvasWriteTableNodeTool(deps),
+      createCanvasGetTableNodeTool(deps),
     ];
     for (const spec of specs) {
-      const dispose = tools.register(spec);
+      const origExecute = spec.execute;
+      const wrappedSpec: AgentToolSpec = {
+        ...spec,
+        async execute(args: Record<string, unknown>) {
+          const result = await origExecute(args);
+          return sanitizeLosslessJson(result);
+        },
+      };
+      const dispose = tools.register(wrappedSpec);
       if (typeof dispose === 'function') disposers.push(dispose as () => void);
     }
   }

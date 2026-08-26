@@ -17,7 +17,7 @@ const STYLES = `
   font-size: 14px; font-weight: 500; line-height: 22px; cursor: pointer;
   overflow: hidden; white-space: nowrap;
 }
-.omnimux-new-project-entry:hover { background: var(--dsw-alias-button-floating-hover, rgba(128,128,128,.12)); }
+.omnimux-new-project-entry:hover { background: var(--dsw-alias-button-floating-hover); }
 .omnimux-new-project-entry-icon { flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
 .omnimux-new-project-entry svg { display: block; width: 14px; height: 14px; }
 .omnimux-new-project-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

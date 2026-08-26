@@ -1,0 +1,138 @@
+/**
+ * 持久化消毒契约：选中 / measure / dragging 不得脏签名，也不得落盘。
+ */
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { sanitizeEdges, sanitizeNodes, signatureOf } from './persistSanitize.ts';
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+test('仅 selected 变化 → 签名不变', () => {
+  const base = [
+    {
+      id: 'n1',
+      type: 'material',
+      position: { x: 10, y: 20 },
+      data: { label: 'a', materialType: 'text' },
+      selected: false,
+    },
+  ];
+  const picked = [{ ...base[0], selected: true }];
+  assert.equal(signatureOf(base, []), signatureOf(picked, []));
+});
+
+test('仅 measured / dragging / positionAbsolute 变化 → 签名不变', () => {
+  const clean = [
+    {
+      id: 'n1',
+      type: 'material',
+      position: { x: 120, y: 120 },
+      data: { label: '', materialType: 'text', nodeWidth: 325 },
+    },
+  ];
+  const measured = [
+    {
+      ...clean[0],
+      measured: { width: 325, height: 242 },
+      dragging: true,
+      positionAbsolute: { x: 120, y: 120 },
+      resizing: false,
+    },
+  ];
+  assert.equal(signatureOf(clean, []), signatureOf(measured, []));
+});
+
+test('sanitizeNodes 白名单：丢掉 measured/dragging，selected 强制 false，剥 __catalog', () => {
+  const [out] = sanitizeNodes([
+    {
+      id: 'n1',
+      type: 'material',
+      position: { x: 1, y: 2 },
+      data: { label: 'x', __catalog: { tools: [] } },
+      selected: true,
+      measured: { width: 100, height: 80 },
+      dragging: true,
+      positionAbsolute: { x: 1, y: 2 },
+      width: 100,
+      parentId: 'g1',
+    },
+  ]);
+  assert.equal(out.selected, false);
+  assert.equal(out.width, 100);
+  assert.equal(out.parentId, 'g1');
+  assert.equal('measured' in out, false);
+  assert.equal('dragging' in out, false);
+  assert.equal('positionAbsolute' in out, false);
+  assert.equal('__catalog' in out.data, false);
+  assert.equal(out.data.label, 'x');
+});
+
+test('sanitizeEdges 丢掉 selected，保留连接字段', () => {
+  const [out] = sanitizeEdges([
+    {
+      id: 'e1',
+      source: 'a',
+      target: 'b',
+      sourceHandle: 'out',
+      targetHandle: 'in',
+      type: 'animated',
+      selected: true,
+      animated: true,
+    },
+  ]);
+  assert.equal(out.source, 'a');
+  assert.equal(out.target, 'b');
+  assert.equal(out.type, 'animated');
+  assert.equal(out.animated, true);
+  assert.equal('selected' in out, false);
+});
+
+test('真位移 / 改 data 会变脏', () => {
+  const a = signatureOf(
+    [{ id: 'n1', type: 'material', position: { x: 0, y: 0 }, data: { label: '' } }],
+    [],
+  );
+  const moved = signatureOf(
+    [{ id: 'n1', type: 'material', position: { x: 40, y: 0 }, data: { label: '' } }],
+    [],
+  );
+  const edited = signatureOf(
+    [{ id: 'n1', type: 'material', position: { x: 0, y: 0 }, data: { label: 'hi' } }],
+    [],
+  );
+  assert.notEqual(a, moved);
+  assert.notEqual(a, edited);
+});
+
+test('源码契约：persistence 用 persistSanitize，不再本地展开 {...node}', () => {
+  const persistSrc = readFileSync(join(here, 'useWorkspacePersistence.ts'), 'utf8');
+  assert.match(persistSrc, /from '\.\/persistSanitize'/);
+  assert.match(persistSrc, /sanitizeNodes|signatureOf/);
+  assert.equal(
+    /function sanitizeNodes\(/.test(persistSrc),
+    false,
+    'sanitizeNodes 应迁到 persistSanitize.ts',
+  );
+  assert.equal(
+    /\{\s*\.\.\.node,\s*data,\s*selected:\s*false\s*\}/.test(persistSrc),
+    false,
+    '禁止展开 node 把 measured 带回签名',
+  );
+});
+
+test('源码契约：WorkspaceStore 落盘 zod cleaned，不是原始 next', () => {
+  const storeSrc = readFileSync(
+    join(here, '../../workflow/workspace/WorkspaceStore.ts'),
+    'utf8',
+  );
+  assert.match(storeSrc, /const cleaned = strict\.data/);
+  assert.match(storeSrc, /atomicWriteJson\(fileOf\(id\), cleaned\)/);
+  assert.equal(
+    /atomicWriteJson\(fileOf\(id\), next\)/.test(storeSrc),
+    false,
+    '不得把未 strip 的 next 写盘',
+  );
+});

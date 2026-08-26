@@ -21,6 +21,8 @@ export type BootState =
   | { phase: 'error'; message: string };
 
 export interface UseCanvasBootOptions {
+  /** 指定要加载的目标工作区/画布 ID（会话或创作页专属） */
+  workspaceId?: string;
   /**
    * 卸载硬闸：必须同步读 canvas store（capture），再交给 persist PUT。
    * 调用发生在 `resetStore()` 之前；inline 回调用 ref 承接，避免进 effect deps。
@@ -29,6 +31,7 @@ export interface UseCanvasBootOptions {
 }
 
 export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
+  const targetWorkspaceId = opts.workspaceId;
   const [boot, setBoot] = useState<BootState>({ phase: 'loading' });
   const [catalog, setCatalog] = useState<CapabilityCatalog | null>(() => getCachedCatalog());
   const hydrateGraph = useCanvasStore((state) => state.hydrateGraph);
@@ -50,6 +53,27 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
           }
         });
 
+        // 1. 如果传入了特定会话/创作页的 workspaceId，优先加载或新建该专属画布
+        if (targetWorkspaceId) {
+          const loaded = await getWorkspace(targetWorkspaceId);
+          if (cancelled) return;
+          if (loaded.ok && loaded.body.workspace) {
+            hydrateGraph(loaded.body.workspace.nodes, loaded.body.workspace.edges);
+            setBoot({ phase: 'ready', workspace: loaded.body.workspace });
+            return;
+          }
+          // 专属工作区尚不存在，创建属于该 ID 的纯净新工作区
+          const created = await createWorkspace('工作流', targetWorkspaceId);
+          if (cancelled) return;
+          if (!created.ok || !created.body.workspace) {
+            throw new Error(created.body.message ?? t('error.createWorkspaceFailed'));
+          }
+          hydrateGraph(created.body.workspace.nodes, created.body.workspace.edges);
+          setBoot({ phase: 'ready', workspace: created.body.workspace });
+          return;
+        }
+
+        // 2. 兜底策略（仅在没有指定 workspaceId 时回退）
         const list = await listWorkspaces();
         if (cancelled) return;
         let workspaceId: string | undefined = list.body.workspaces?.[0]?.id;
@@ -80,7 +104,7 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
       beforeResetRef.current?.();
       resetStore();
     };
-  }, [hydrateGraph, resetStore]);
+  }, [targetWorkspaceId, hydrateGraph, resetStore]);
 
   return { boot, setBoot, catalog, nodeCount };
 }

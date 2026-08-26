@@ -37,14 +37,15 @@
       "inject": [
         "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-ui-layout"
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-primitives"
       ],
       "platform": "web"
     }
   },
   "dependencies": {
     "@xyflow/react": "12.11.3",
-    "antd": "6.6.1",
+    "dsh-ui-kit": "file:../../../../personal/dsh-ui-kit",
     "lucide-react": "1.33.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -52,10 +53,15 @@
     "zustand": "5.0.15"
   },
   "peerDependencies": {
-    "react": "^18.2.0 || ^19.2.8"
+    "@deepseek-ai/dsh-client-ui-primitives": ">=0.1.0-rc.6",
+    "react": "^18.2.0 || ^19.2.8",
+    "react-dom": "^18.2.0 || ^19.2.8"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "react-dom": {
       "optional": true
     }
   },

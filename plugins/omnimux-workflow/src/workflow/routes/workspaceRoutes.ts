@@ -30,9 +30,10 @@ export function createWorkspaceRoutes(store: WorkspaceStore): { tryHandle: Route
       if (method === 'POST') {
         const problem = jsonBodyProblem(req.body);
         if (problem) return problem;
-        const body = req.body as { name?: unknown };
+        const body = req.body as { name?: unknown; id?: unknown };
         const name = typeof body.name === 'string' ? body.name : undefined;
-        return { status: 200, body: { workspace: store.create(name) } };
+        const id = typeof body.id === 'string' ? body.id : undefined;
+        return { status: 200, body: { workspace: store.create(name, id) } };
       }
       return notFound();
     }

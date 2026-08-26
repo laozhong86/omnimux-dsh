@@ -113,12 +113,12 @@ describe('projectCanvas isolation', () => {
 
   it('projectCanvasWidthPx uses conversation+sidebar, not the full window', () => {
     assert.equal(PROJECT_CANVAS_RATIO, 0.85)
-    // 1600 / 无官方 / 对话 600 / panel 400 → usable 1000 → 850
-    assert.equal(projectCanvasWidthPx({ width: 400, panelOpen: true }, { conversationWidth: 600, viewportWidth: 1600 }), 850)
+    // 1600 / 无官方 / 对话 600 / panel 400 → usable 1000 → 1000 - 420 = 580
+    assert.equal(projectCanvasWidthPx({ width: 400, panelOpen: true }, { conversationWidth: 600, viewportWidth: 1600 }), 580)
     assert.equal(legacyProjectCanvasWidthPx({ width: 400, panelOpen: true }, { conversationWidth: 600, viewportWidth: 1600 }), 700)
-    assert.equal(projectCanvasWidthPx({ width: 400, panelOpen: false }, { conversationWidth: 1000, viewportWidth: 1600 }), 850)
-    // 1000 / 无官方 / 对话 0 → 视口 × 0.85
-    assert.equal(projectCanvasWidthPx({ width: 400 }, { conversationWidth: 0, viewportWidth: 1000 }), 850)
+    assert.equal(projectCanvasWidthPx({ width: 400, panelOpen: false }, { conversationWidth: 1000, viewportWidth: 1600 }), 580)
+    // 1000 / 无官方 / 对话 0 → 1000 - 420 = 580
+    assert.equal(projectCanvasWidthPx({ width: 400 }, { conversationWidth: 0, viewportWidth: 1000 }), 580)
     assert.equal(projectCanvasWidthPx({ width: 100 }, { conversationWidth: 0, viewportWidth: 0 }), PROJECT_CANVAS_MIN_PX)
   })
 
@@ -127,7 +127,7 @@ describe('projectCanvas isolation', () => {
     assert.equal(projectCanvasWidthPx(
       { width: 811, panelOpen: true },
       { conversationWidth: 189, viewportWidth: 1280, officialSidebarWidth: 280 },
-    ), 850)
+    ), 580)
   })
 
   it('factorySidebarWidthPx matches better-sidebar 35% default', () => {
@@ -233,11 +233,11 @@ describe('projectCanvas isolation', () => {
       store,
       { conversationWidth: 600, viewportWidth: 1600 },
     )
-    assert.equal(next, 986)
-    assert.deepEqual(reduced, [986])
+    assert.equal(next, 740)
+    assert.deepEqual(reduced, [740])
   })
 
-  it('applyProjectCanvasRatio writes 850 over leftover crush 811', () => {
+  it('applyProjectCanvasRatio writes 580 over leftover crush 811', () => {
     resetProjectCanvasRatioMemory()
     const reduced = []
     const store = {
@@ -256,8 +256,8 @@ describe('projectCanvas isolation', () => {
       store,
       { conversationWidth: 189, viewportWidth: 1280, officialSidebarWidth: 280 },
     )
-    assert.equal(next, 850)
-    assert.deepEqual(reduced, [850])
+    assert.equal(next, 580)
+    assert.deepEqual(reduced, [580])
   })
 
   it('applyProjectCanvasRatio waits when the conversation column is not measured yet', () => {
@@ -319,9 +319,9 @@ describe('projectCanvas isolation', () => {
       getSnapshot: service.getSnapshot,
       reduce(fn) { reduced.push(fn({ width: 560, panelOpen: true }).width) },
     }
-    // 视口 − 官方栏 = 1320，15:85 → 1122（不是对话列 600 + 工厂 560 的旧尺子）
-    assert.equal(applyProjectCanvasRatio(service, 'sess-nostore', store, env), 1122)
-    assert.deepEqual(reduced, [1122])
+    // 视口 − 官方栏 = 1320，1320 - 420 → 900（保持会话列 420 舒适宽）
+    assert.equal(applyProjectCanvasRatio(service, 'sess-nostore', store, env), 900)
+    assert.deepEqual(reduced, [900])
   })
 
   it('applyProjectCanvasRatio waits when live is already legacy 70% but store.reduce is missing', () => {
@@ -335,7 +335,7 @@ describe('projectCanvas isolation', () => {
     assert.equal(applyProjectCanvasRatio(service, 'sess-disk', null, env), undefined)
   })
 
-  it('applyProjectCanvasRatio writes 15:85 when official rail is collapsed leftover 1:1', () => {
+  it('applyProjectCanvasRatio writes adaptive canvas width when official rail is collapsed leftover 1:1', () => {
     resetProjectCanvasRatioMemory()
     const reduced = []
     const store = {
@@ -358,9 +358,9 @@ describe('projectCanvas isolation', () => {
     assert.equal(projectCanvasWidthPx(
       { width: 640, panelOpen: true },
       { conversationWidth: 1240, viewportWidth: 1280, officialSidebarWidth: 36 },
-    ), 1057)
-    assert.equal(next, 1057)
-    assert.deepEqual(reduced, [1057])
+    ), 824)
+    assert.equal(next, 824)
+    assert.deepEqual(reduced, [824])
   })
 
   it('applyProjectCanvasRatio still skips a real user drag', () => {

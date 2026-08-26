@@ -1,24 +1,32 @@
 /**
- * Canvas context menu — M2 base version, ported in shape from Gxgen
- * `components/ContextMenu.tsx` + `hooks/useCanvasMenu.ts` (group/asset/
- * timeline actions cut). Basic set: add node / delete / copy (+ undo/redo,
- * paste, select-all on the pane).
+ * Canvas context menu — M2 base version with Add Node drill-down panel.
+ * Ported in shape from Gxgen components/ContextMenu.tsx + hooks/useCanvasMenu.ts.
  *
  * Rendered through a portal on document.body; its own token block mirrors
  * the island --wb-* layer so it follows the host theme outside the island
  * subtree.
  */
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import type { MaterialType } from '../../types/materialNode';
+import {
+  AudioLines,
+  ChevronLeft,
+  ChevronRight,
+  Film,
+  Image as ImageIcon,
+  Plus,
+  Table,
+  Type,
+  Video,
+} from 'lucide-react';
 import { useT } from '../../i18n';
+import type { MaterialType } from '../../types/materialNode';
+
+export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition';
 
 export type ContextMenuAction =
-  | 'add-text'
-  | 'add-image'
-  | 'add-video'
-  | 'add-audio'
   | 'copy'
   | 'paste'
   | 'duplicate'
@@ -41,6 +49,7 @@ interface ContextMenuProps {
   context: ContextMenuContext;
   onClose: () => void;
   onAction: (action: ContextMenuAction, context: ContextMenuContext) => void;
+  onAddNode?: (type: CanvasAddNodeType) => void;
   canUndo?: boolean;
   canRedo?: boolean;
   /** Whether the in-island clipboard holds nodes (gates paste). */
@@ -48,22 +57,29 @@ interface ContextMenuProps {
   hasSelection?: boolean;
 }
 
-const MENU_WIDTH = 190;
+const MENU_WIDTH = 210;
+const ADD_MENU_WIDTH = 230;
 const MENU_HEIGHT_ESTIMATE = 260;
 
 interface MenuItemSpec {
-  action: ContextMenuAction;
+  action: ContextMenuAction | 'open-add-node';
   label: string;
   shortcut?: string;
   disabled?: boolean;
+  icon?: ReactNode;
 }
 
-const ADD_NODE_ITEMS: Array<{ action: ContextMenuAction; type: MaterialType }> = [
-  { action: 'add-text', type: 'text' },
-  { action: 'add-image', type: 'image' },
-  { action: 'add-video', type: 'video' },
-  { action: 'add-audio', type: 'audio' },
-];
+interface AddNodeItemSpec {
+  key: string;
+  type: CanvasAddNodeType;
+  label: string;
+  icon: ReactNode;
+  badge?: {
+    text: string;
+    variant: 'primary' | 'new';
+  };
+  hasSubmenu?: boolean;
+}
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
   x,
@@ -72,13 +88,22 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   context,
   onClose,
   onAction,
+  onAddNode,
   canUndo = false,
   canRedo = false,
   hasClipboard = false,
   hasSelection = false,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<'main' | 'add-node'>('main');
   const t = useT();
+
+  // Reset view to 'main' whenever menu visibility toggles
+  useEffect(() => {
+    if (visible) {
+      setView('main');
+    }
+  }, [visible]);
 
   // Close on outside mousedown and on Escape.
   useEffect(() => {
@@ -111,7 +136,6 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     }
     if (context.type === 'selection') {
       return [
-        // 组执行入口（M4）：选中子集 + 传递上游闭包 = subset 执行。
         { action: 'execute-selection', label: t('menu.executeSelection') },
         { action: 'copy', label: t('menu.copy'), shortcut: '⌘C', disabled: !hasSelection },
         { action: 'duplicate', label: t('menu.duplicate'), shortcut: '⌘D', disabled: !hasSelection },
@@ -119,58 +143,163 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         { action: 'delete', label: t('menu.delete'), shortcut: 'Del' },
       ];
     }
-    // pane
-    const rows: MenuItemSpec[] = ADD_NODE_ITEMS.map((item) => ({
-      action: item.action,
-      label: t(`menu.add.${item.type}`),
-    }));
-    rows.push(
+    // pane: 允许快速「添加节点」展开面板 + 常规编辑动作
+    return [
+      { action: 'open-add-node', label: t('menu.addNode'), icon: <Plus size={15} /> },
       { action: 'undo', label: t('toolbar.undo'), shortcut: '⌘Z', disabled: !canUndo },
       { action: 'redo', label: t('toolbar.redo'), shortcut: '⇧⌘Z', disabled: !canRedo },
       { action: 'paste', label: t('menu.paste'), shortcut: '⌘V', disabled: !hasClipboard },
       { action: 'select-all', label: t('menu.selectAll'), shortcut: '⌘A' },
-    );
-    return rows;
+    ];
   }, [context, canUndo, canRedo, hasClipboard, hasSelection, t]);
+
+  const addNodeItems = useMemo((): AddNodeItemSpec[] => {
+    return [
+      {
+        key: 'text',
+        type: 'text',
+        label: t('node.type.text'),
+        icon: <Type size={18} />,
+      },
+      {
+        key: 'image',
+        type: 'image',
+        label: t('node.type.image'),
+        icon: <ImageIcon size={18} />,
+      },
+      {
+        key: 'video',
+        type: 'video',
+        label: t('node.type.video'),
+        icon: <Video size={18} />,
+        badge: {
+          text: 'MiniMax H3',
+          variant: 'primary',
+        },
+      },
+      {
+        key: 'audio',
+        type: 'audio',
+        label: t('node.type.audio'),
+        icon: <AudioLines size={18} />,
+      },
+      {
+        key: 'table',
+        type: 'table',
+        label: t('node.type.table'),
+        icon: <Table size={18} />,
+        badge: {
+          text: 'HTable',
+          variant: 'primary',
+        },
+      },
+      {
+        key: 'video_composition',
+        type: 'video_composition',
+        label: t('node.type.video_composition'),
+        icon: <Film size={18} />,
+        badge: {
+          text: 'Clip',
+          variant: 'new',
+        },
+      },
+    ];
+  }, [t]);
 
   if (!visible) return null;
 
-  // Keep the menu inside the viewport.
-  const left = Math.min(x, window.innerWidth - MENU_WIDTH - 8);
+  const currentWidth = view === 'add-node' ? ADD_MENU_WIDTH : MENU_WIDTH;
+  const left = Math.min(x, window.innerWidth - currentWidth - 8);
   const top = Math.min(y, window.innerHeight - MENU_HEIGHT_ESTIMATE - 8);
 
   return createPortal(
     <div
       ref={menuRef}
-      className="wf-context-menu"
+      className={`wf-context-menu ${view === 'add-node' ? 'wf-add-node-menu' : ''}`}
       style={{ left, top }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {items.map((item, index) => (
-        <React.Fragment key={item.action}>
-          {/* separators around the undo/redo/paste block on pane menus */}
-          {context.type === 'pane' && item.action === 'undo' ? (
-            <div className="wf-context-menu__separator" />
-          ) : null}
-          {context.type !== 'pane' && item.action === 'paste' ? (
-            <div className="wf-context-menu__separator" />
-          ) : null}
-          <button
-            type="button"
-            className={`wf-context-menu__item${item.disabled ? ' wf-context-menu__item--disabled' : ''}`}
-            disabled={item.disabled}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAction(item.action, context);
-            }}
-          >
-            <span className="wf-context-menu__label">{item.label}</span>
-            {item.shortcut ? (
-              <span className="wf-context-menu__shortcut">{item.shortcut}</span>
+      {view === 'main' ? (
+        items.map((item) => (
+          <React.Fragment key={item.action}>
+            {context.type === 'pane' && item.action === 'undo' ? (
+              <div className="wf-context-menu__separator" />
             ) : null}
-          </button>
-        </React.Fragment>
-      ))}
+            {context.type !== 'pane' && item.action === 'paste' ? (
+              <div className="wf-context-menu__separator" />
+            ) : null}
+            <button
+              type="button"
+              className={`wf-context-menu__item${item.disabled ? ' wf-context-menu__item--disabled' : ''}`}
+              disabled={item.disabled}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (item.action === 'open-add-node') {
+                  setView('add-node');
+                } else {
+                  onAction(item.action as ContextMenuAction, context);
+                }
+              }}
+            >
+              {item.icon ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', marginRight: 6, opacity: 0.85 }}>
+                  {item.icon}
+                </span>
+              ) : null}
+              <span className="wf-context-menu__label">{item.label}</span>
+              {item.action === 'open-add-node' ? (
+                <ChevronRight size={14} className="wf-add-node-menu__arrow" />
+              ) : item.shortcut ? (
+                <span className="wf-context-menu__shortcut">{item.shortcut}</span>
+              ) : null}
+            </button>
+          </React.Fragment>
+        ))
+      ) : (
+        <div className="wf-add-node-menu__container">
+          <div className="wf-add-node-menu__header">
+            <button
+              type="button"
+              className="wf-add-node-menu__back-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setView('main');
+              }}
+              title={t('menu.back')}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="wf-add-node-menu__title">{t('menu.addNode')}</span>
+          </div>
+          <div className="wf-add-node-menu__list">
+            {addNodeItems.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                className="wf-add-node-menu__item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddNode?.(item.type);
+                  onClose();
+                }}
+              >
+                <div className="wf-add-node-menu__icon-box">{item.icon}</div>
+                <span className="wf-add-node-menu__label">{item.label}</span>
+                {item.badge ? (
+                  <span
+                    className={`wf-add-node-menu__badge wf-add-node-menu__badge--${item.badge.variant}`}
+                  >
+                    {item.badge.text}
+                  </span>
+                ) : null}
+                {item.hasSubmenu ? (
+                  <ChevronRight size={14} className="wf-add-node-menu__arrow" />
+                ) : null}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>,
     document.body,
   );

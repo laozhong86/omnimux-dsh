@@ -96,3 +96,26 @@ export function deleteProject(id) {
     method: 'DELETE',
   })
 }
+
+/** 新建创作页 */
+export function createProjectPage(projectId, title, opts = {}) {
+  return workflowRequest(`/omnimux-workflow/api/projects/${projectId}/pages`, {
+    method: 'POST',
+    body: { title, ...opts },
+  })
+}
+
+/** 更新创作页（重命名或激活） */
+export function updateProjectPage(projectId, pageId, updates = {}) {
+  return workflowRequest(`/omnimux-workflow/api/projects/${projectId}/pages/${pageId}`, {
+    method: 'PATCH',
+    body: updates,
+  })
+}
+
+/** 删除创作页 */
+export function deleteProjectPage(projectId, pageId) {
+  return workflowRequest(`/omnimux-workflow/api/projects/${projectId}/pages/${pageId}`, {
+    method: 'DELETE',
+  })
+}

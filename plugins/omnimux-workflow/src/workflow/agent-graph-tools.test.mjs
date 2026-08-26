@@ -209,6 +209,8 @@ test('connect/disconnect: valid edge, duplicate rejection, type_contract', async
     assert.equal(linked.error, undefined);
     assert.equal(linked.workspace.edgeCount, 1);
     assert.equal(linked.edge.source, textNode.id);
+    // DSH lossless JSON check: no undefined values on edge object
+    assert.equal(Object.prototype.hasOwnProperty.call(linked.edge, 'sourceHandle'), false);
 
     const dup = await h.tool('workflow_connect').execute({
       workspace_id: wsId,

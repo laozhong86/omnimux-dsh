@@ -1,24 +1,27 @@
 /**
- * MaterialNode — 重构为目录（W1 T1.4），视觉对齐 Gxgen 节点卡片。
+ * MaterialNode — 统一素材节点（Unified Material Node）。
  *
- * 子组件：NodeHeader（反缩放标题 + lucide 图标）/ StatusBadge /
- * MediaPreview（真媒体预览）+ GenerationStateContainer（三态交叉淡入）。
- * W2：配置面板迁入 ConfigPanel/（ConfigPanelShell 内联浮层 + Gxgen 式内容）。
- *
- * 不可动资产（保留）：updateNodeData / __catalog 注入 /
- * executionStore.startNodeExecution 数据链与 panelVisible 语义。
+ * 核心交互：
+ * 1. 顶部操作胶囊（FloatingTopPill）：导入图片/视频/音频、文本编辑/复制/结构化拆分
+ * 2. 空态引导模板（NodeEmptyState）：四类素材各具特色的空态与快捷 Prompt 预设
+ * 3. 拖拽即导入：支持拖拽本地媒体文件直接投喂到卡片
+ * 4. 底部配置底栏（ConfigPanel）：统一展开 Prompt、模型、参数与生成
  */
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { type NodeProps, useReactFlow } from '@xyflow/react';
-import type { MaterialNodeData } from '../../../types/materialNode';
+import type { MaterialNodeData, MaterialType, MaterialTool } from '../../../types/materialNode';
 import CanvasNodeHandle, { type CanvasNodeHandleSelectMeta } from '../CanvasNodeHandle';
 import GenerationStateContainer from '../GenerationStateContainer';
 import NodeHeader from './NodeHeader';
 import StatusBadge from './StatusBadge';
 import MediaPreview, { resolveMediaPreviewUrl, type MediaAssetLike } from './MediaPreview';
+import NodeEmptyState from './NodeEmptyState';
+import FloatingTopPill from './FloatingTopPill';
 import ConfigPanelShell from './ConfigPanel/ConfigPanelShell';
 import ConfigPanel from './ConfigPanel';
+import ResourcePickerModal from '../ResourcePickerModal';
+import { useResourcePicker } from '../../hooks/useResourcePicker';
 import {
   getDefaultNodeWidth,
   getNodeSizeCategory,
@@ -45,25 +48,26 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     generatedContent,
     errorMessage,
   } = nodeData;
-  // M3 execution fields (SSE-written; unknown via the index signature).
+
   const executionStatus = nodeData.executionStatus as NodeExecutionApiStatus | undefined;
   const executionError = nodeData.executionError as string | undefined;
   const mediaAssets = nodeData.mediaAssets as MediaAssetLike[] | undefined;
   const catalog = (data as { __catalog?: CapabilityCatalog }).__catalog ?? null;
 
   const [isHovered, setIsHovered] = useState(false);
-  // 配置面板开合：选中节点时展开，关闭后本次选中周期内保持收起
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [panelDismissed, setPanelDismissed] = useState(false);
+  const [textEditing, setTextEditing] = useState(false);
+  const [mediaAspectHeight, setMediaAspectHeight] = useState<number | null>(null);
 
   const { setNodes } = useReactFlow();
 
-  // 全图/其他节点执行中时，禁用单节点执行入口
   const execBusy = useExecutionStore((state) => state.status === 'pending' || state.status === 'running');
 
-  // 节点尺寸计算（走 nodeSizeConfig，同 Gxgen）
   const nodeWidth = nodeData.nodeWidth ?? getDefaultNodeWidth(materialType);
   const sizeCategory = getNodeSizeCategory(materialType);
-  const nodeHeight = nodeData.nodeHeight ?? calculateNodeHeight(nodeWidth, sizeCategory);
+  const defaultCalculatedHeight = calculateNodeHeight(nodeWidth, sizeCategory);
+  const nodeHeight = mediaAspectHeight ?? nodeData.nodeHeight ?? defaultCalculatedHeight;
 
   const updateNodeData = useCallback(
     (updates: Partial<MaterialNodeData>) => {
@@ -74,17 +78,41 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     [id, setNodes],
   );
 
-  // M3: single-node execution = subset run (node + upstream closure) via the
-  // execution controller bridge (no more M1 stub timer).
-  const handleGenerate = useCallback(() => {
-    useExecutionStore.getState().startNodeExecution?.(id);
-  }, [id]);
+  // 媒体素材宽高自适应计算
+  const handleMediaSizeChange = useCallback(
+    (naturalWidth: number, naturalHeight: number) => {
+      if (naturalWidth > 0 && naturalHeight > 0) {
+        const aspect = naturalWidth / naturalHeight;
+        const targetHeight = Math.max(80, Math.min(800, Math.round(nodeWidth / aspect)));
+        setMediaAspectHeight(targetHeight);
+        if (nodeData.nodeHeight !== targetHeight) {
+          updateNodeData({ nodeHeight: targetHeight });
+        }
+      }
+    },
+    [nodeData.nodeHeight, nodeWidth, updateNodeData],
+  );
 
-  // W3 T3.4：输出 Handle 的 plus 点击菜单——选项由连接矩阵派生，
-  // label/desc 经 i18n 字典解析；选中后在落点建下游节点并连线
-  // （走 applyCanvasInputMutation，保证 undo/redo 链）。
+  const handleGenerate = useCallback(() => {
+    const currentTool = nodeData.selectedTool;
+    const defaultGenTools: Record<MaterialType, MaterialTool> = {
+      text: 'text-to-text',
+      image: 'text-to-image',
+      video: 'video-generation',
+      audio: 'text-to-audio',
+    };
+    if (!currentTool || currentTool === 'text-editor' || currentTool === 'import') {
+      updateNodeData({
+        selectedTool: defaultGenTools[materialType],
+      });
+    }
+    useExecutionStore.getState().startNodeExecution?.(id);
+  }, [id, materialType, nodeData.selectedTool, updateNodeData]);
+
   const t = useT();
   const applyCanvasInputMutation = useCanvasStore((state) => state.applyCanvasInputMutation);
+  const resourcePicker = useResourcePicker(id);
+
   const outputMenuOptions = useMemo(
     () =>
       getOutputOptionSpecs(materialType).map((spec) => ({
@@ -95,6 +123,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       })),
     [materialType, t],
   );
+
   const handleOutputMenuSelect = useCallback(
     (key: string, meta?: CanvasNodeHandleSelectMeta) => {
       const parsed = parseOutputOptionKey(key);
@@ -115,23 +144,117 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const effectiveTextContent = (generatedContent || content || '') as string;
 
-  // 取消选中时重置面板收起标记，再次选中可重新展开
+  // 预设注入
+  const handleApplyPreset = useCallback(
+    (presetKey: string) => {
+      if (materialType === 'text') {
+        let injected = '';
+        if (presetKey === 'script') {
+          injected = '请创作一个[时长]的[类型]剧本。\n\n主题：[一句话描述]\n\n情绪基调：[温暖/悬疑/搞笑/热血]\n\n特殊要求：[如有]';
+        } else if (presetKey === 'planning') {
+          injected = '请撰写一份[项目类型]策划案。\n\n项目背景：[简述]\n\n核心目标：[希望达成什么]\n\n目标受众：[人群描述]';
+        } else if (presetKey === 'prompt') {
+          injected = '根据以下创意需求，生成一组适用于[目标工具]的高质量提示词。\n\n创意需求：[描述你想要的画面/音乐/视频]\n\n风格偏好：[写实/插画/3D/动漫/其他]';
+        } else if (presetKey === 'storyboard') {
+          injected = '镜头1：全景，城市天际线鸟瞰（缓慢下推 3s）\n镜头2：中景，主角推门走进咖啡馆（特写手部 2s）\n镜头3：特写，桌上的老式黑白照片（静止 2s）';
+        }
+        updateNodeData({
+          content: injected,
+          prompt: injected,
+          status: injected.trim() ? 'ready' : 'empty',
+          generatedContent: undefined,
+        });
+      }
+    },
+    [materialType, updateNodeData],
+  );
+
+  // 本地文件导入
+  const handleImportFile = useCallback(
+    (file: File) => {
+      const url = URL.createObjectURL(file);
+      if (file.type.startsWith('image/')) {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => {
+          if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+            handleMediaSizeChange(img.naturalWidth, img.naturalHeight);
+          }
+        };
+      } else if (file.type.startsWith('video/')) {
+        const v = document.createElement('video');
+        v.src = url;
+        v.onloadedmetadata = () => {
+          if (v.videoWidth > 0 && v.videoHeight > 0) {
+            handleMediaSizeChange(v.videoWidth, v.videoHeight);
+          }
+        };
+      }
+      updateNodeData({
+        mediaUrl: url,
+        status: 'ready',
+        content: file.name,
+      });
+    },
+    [handleMediaSizeChange, updateNodeData],
+  );
+
+  // 拖拽文件进入
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOver(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file) {
+        handleImportFile(file);
+      }
+    },
+    [handleImportFile],
+  );
+
+  // 文本快捷操作
+  const handleCopyText = useCallback(() => {
+    if (effectiveTextContent) {
+      navigator.clipboard.writeText(effectiveTextContent).catch(() => {});
+    }
+  }, [effectiveTextContent]);
+
+  const handleSplitText = useCallback(() => {
+    if (!effectiveTextContent) return;
+    const lines = effectiveTextContent.split('\n\n').filter((l) => l.trim().length > 0);
+    if (lines.length > 1) {
+      updateNodeData({ content: lines.join('\n---\n') });
+    }
+  }, [effectiveTextContent, updateNodeData]);
+
   useEffect(() => {
-    if (!selected) setPanelDismissed(false);
+    if (!selected) {
+      setPanelDismissed(false);
+      setTextEditing(false);
+    }
   }, [selected]);
 
-  // panelVisible 语义不变：选中 且 未收起 且 非执行中（W2 抽为纯函数）
   const panelVisible = isConfigPanelVisible(selected, panelDismissed, executionStatus);
-
-  // 媒体预览 URL（mediaAssets 优先，回退 mediaUrl）
   const previewUrl = resolveMediaPreviewUrl(materialType, mediaAssets, mediaUrl);
-
-  // 节点执行态 → GSC 状态（null = 空态，走空素材占位）
   const generationStatus = mapNodeToGenerationStatus(executionStatus, status, Boolean(previewUrl));
 
-  // 加载态宽高比：视频 16:9、音频紧凑、图片 1:1（Gxgen 统一加载卡片）
   const loadingAspectRatio =
     materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'square';
+
+  const showFloatingPill = isHovered || selected;
 
   return (
     <div
@@ -140,10 +263,22 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 输入 Handle（plain：纯锚点，无 plus 菜单） */}
-      <CanvasNodeHandle side="left" nodeHovered={isHovered} variant="plain" />
+      {/* 顶部悬浮胶囊栏 */}
+      {showFloatingPill && (
+        <FloatingTopPill
+          materialType={materialType}
+          selected={selected}
+          onOpenResourcePicker={() => resourcePicker.openPicker('local')}
+          onStartTextEdit={() => setTextEditing(true)}
+          onCopyText={handleCopyText}
+          onSplitText={handleSplitText}
+        />
+      )}
 
-      {/* 节点标题（卡片外部，反缩放恒定尺寸）+ 执行徽标 */}
+      {/* 输入 Handle */}
+      <CanvasNodeHandle side="left" nodeHovered={isHovered} />
+
+      {/* 节点标题 */}
       <NodeHeader
         label={label}
         materialType={materialType}
@@ -152,23 +287,67 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       />
 
       {/* 主内容卡片 */}
-      <div className="wf-material-node__card" style={{ minHeight: Math.min(nodeHeight, 240) }}>
-        {/* 文本节点渲染器 */}
-        {materialType === 'text' && (
-          <textarea
-            className="wf-material-node__text-editor nodrag"
-            value={effectiveTextContent}
-            placeholder={t('node.textPlaceholder')}
-            onChange={(e) => updateNodeData({
-              content: e.target.value,
-              status: e.target.value.trim() ? 'ready' : 'empty',
-              generatedContent: undefined,
-            })}
-          />
+      <div
+        className={`wf-material-node__card ${
+          isDraggingOver ? 'wf-material-node__card--dragover' : ''
+        }`}
+        style={{
+          width: nodeWidth,
+          height: nodeHeight,
+        }}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {/* 四角缩放定位点 */}
+        {selected && (
+          <>
+            <span className="wf-node-corner wf-node-corner--tl" />
+            <span className="wf-node-corner wf-node-corner--tr" />
+            <span className="wf-node-corner wf-node-corner--bl" />
+            <span className="wf-node-corner wf-node-corner--br" />
+          </>
         )}
 
-        {/* 媒体节点：GenerationStateContainer 三态（生成中点阵扫光 →
-            完成交叉淡入 → 失败重试），completed 分支接真媒体预览 */}
+        {/* 1. 文本节点渲染 */}
+        {materialType === 'text' && (
+          <div className="wf-material-node__text-shell" style={{ padding: '12px 14px' }}>
+            {effectiveTextContent || textEditing ? (
+              <textarea
+                className={`wf-material-node__text-editor nowheel${textEditing ? ' nodrag' : ''}`}
+                readOnly={!textEditing}
+                value={effectiveTextContent}
+                placeholder={t('node.textPlaceholder')}
+                autoFocus={textEditing}
+                onMouseDown={(e) => {
+                  if (!textEditing) e.preventDefault();
+                }}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  setTextEditing(true);
+                  e.currentTarget.focus();
+                }}
+                onFocus={() => setTextEditing(true)}
+                onBlur={() => setTextEditing(false)}
+                onChange={(e) =>
+                  updateNodeData({
+                    content: e.target.value,
+                    status: e.target.value.trim() ? 'ready' : 'empty',
+                    generatedContent: undefined,
+                  })
+                }
+              />
+            ) : (
+              <NodeEmptyState
+                materialType="text"
+                onStartEdit={() => setTextEditing(true)}
+                onApplyPreset={handleApplyPreset}
+              />
+            )}
+          </div>
+        )}
+
+        {/* 2. 媒体节点渲染 */}
         {materialType !== 'text' &&
           (generationStatus ? (
             <div className="wf-material-node__media">
@@ -185,29 +364,32 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                     mediaAssets={mediaAssets}
                     mediaUrl={mediaUrl}
                     label={label}
+                    onMediaSizeChange={handleMediaSizeChange}
                   />
                 ) : (
-                  <div className="wf-material-node__media-empty">
-                    {t('node.emptyMedia')}
-                  </div>
+                  <NodeEmptyState
+                    materialType={materialType}
+                    onApplyPreset={handleApplyPreset}
+                  />
                 )}
               </GenerationStateContainer>
             </div>
           ) : (
             <div className="wf-material-node__media">
-              <div className="wf-material-node__media-empty">
-                {t('node.emptyMedia')}
-              </div>
+              <NodeEmptyState
+                materialType={materialType}
+                onApplyPreset={handleApplyPreset}
+              />
             </div>
           ))}
 
-        {/* 文本节点错误条（媒体节点错误由 GSC failed 分支承担） */}
+        {/* 文本节点错误提示 */}
         {materialType === 'text' && (errorMessage || executionError) && (
           <div className="wf-material-node__error">{executionError ?? errorMessage}</div>
         )}
       </div>
 
-      {/* 配置面板：内联浮层（反缩放恒定尺寸，clickOutside 关闭） */}
+      {/* 配置面板 */}
       {panelVisible && (
         <ConfigPanelShell onClose={() => setPanelDismissed(true)}>
           <ConfigPanel
@@ -217,16 +399,25 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             onUpdateNodeData={updateNodeData}
             onGenerate={handleGenerate}
             execBusy={execBusy}
+            onOpenResourcePicker={() => resourcePicker.openPicker('canvas')}
           />
         </ConfigPanelShell>
       )}
 
-      {/* 输出 Handle（plus：hover 回弹按钮 + 点击弹输出动作菜单） */}
+      {/* 输出 Handle */}
       <CanvasNodeHandle
         side="right"
         nodeHovered={isHovered}
         options={outputMenuOptions}
         onSelect={handleOutputMenuSelect}
+      />
+
+      <ResourcePickerModal
+        open={resourcePicker.open}
+        nodeId={id}
+        initialTab={resourcePicker.initialTab}
+        onCancel={resourcePicker.closePicker}
+        onCommit={resourcePicker.commit}
       />
     </div>
   );

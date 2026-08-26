@@ -18,6 +18,10 @@ export interface SubmitRequest {
   image?: string;
   /** Video duration hint in seconds. */
   duration?: number;
+  /** Media resolution hint (e.g. '720P' | '1080P' | '4K'). */
+  resolution?: string;
+  /** Aspect ratio hint (e.g. '16:9' | '9:16' | '1:1'). */
+  aspectRatio?: string;
   /** Speech audio for talking-head, or background audio. */
   speech?: string;
   audio?: string;

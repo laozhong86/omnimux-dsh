@@ -1,9 +1,7 @@
 /**
  * W3 visual rework, ported from Gxgen
  * `apps/web/src/pages/CanvasEditor/components/CanvasNodeHandle.tsx`
- * (384 lines). Cuts: magnetic pull offsets (:92-131) and the
- * canNodeAcceptIncomingConnection gate (every material node accepts input
- * in the plugin's type matrix).
+ * (384 lines). Magnetic pull offsets ported via `handleMagnet.ts`.
  *
  * SPIKE pit #3 / plan pit #1 (red line): the Handle body is a 1px
  * transparent hitbox that stays pointer-interactive AT ALL TIMES — it is
@@ -25,6 +23,7 @@ import { useT } from '../../i18n';
 import CanvasNodeActionMenu, {
   type CanvasNodeActionMenuOption,
 } from './CanvasNodeActionMenu';
+import { clampHandleMagnetOffset } from './handleMagnet';
 
 export interface CanvasNodeHandleSelectMeta {
   screenPosition: { x: number; y: number };
@@ -62,6 +61,7 @@ const CanvasNodeHandle: React.FC<CanvasNodeHandleProps> = ({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const interactionSurfaceRef = useRef<HTMLDivElement>(null);
+  const plusShellRef = useRef<HTMLDivElement>(null);
   const pointerGestureRef = useRef<PointerGestureState>({
     pointerId: null,
     startX: 0,
@@ -75,10 +75,50 @@ const CanvasNodeHandle: React.FC<CanvasNodeHandleProps> = ({
   const connectionInProgress = useConnection((connection) => connection.inProgress);
   const { screenToFlowPosition } = useReactFlow();
 
+  const resetShellOffset = useCallback(() => {
+    if (!plusShellRef.current) return;
+    plusShellRef.current.style.setProperty('--wf-handle-offset-x', '0px');
+    plusShellRef.current.style.setProperty('--wf-handle-offset-y', '0px');
+  }, []);
+
+  // 磁吸跟随：鼠标在 hit-area 内移动时，加号沿鼠标方向做受限偏移（Gxgen :98-131）
+  useEffect(() => {
+    if (variant !== 'plus') {
+      resetShellOffset();
+      return;
+    }
+
+    const surface = interactionSurfaceRef.current;
+    const shell = plusShellRef.current;
+    if (!surface || !shell) return;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (dropdownOpen) return;
+
+      const rect = surface.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const { x: offsetX, y: offsetY } = clampHandleMagnetOffset(
+        side,
+        event.clientX - centerX,
+        event.clientY - centerY,
+      );
+
+      shell.style.setProperty('--wf-handle-offset-x', `${offsetX}px`);
+      shell.style.setProperty('--wf-handle-offset-y', `${offsetY}px`);
+    };
+
+    surface.addEventListener('pointermove', handlePointerMove);
+    return () => {
+      surface.removeEventListener('pointermove', handlePointerMove);
+    };
+  }, [dropdownOpen, resetShellOffset, side, variant]);
+
   // Menu anchors to the interaction surface; keep it glued on viewport
   // changes while open (Gxgen :133-158).
   useEffect(() => {
     if (!dropdownOpen) {
+      resetShellOffset();
       setMenuPosition(null);
       return;
     }
@@ -101,7 +141,7 @@ const CanvasNodeHandle: React.FC<CanvasNodeHandleProps> = ({
       window.removeEventListener('resize', updateMenuPosition);
       window.removeEventListener('scroll', updateMenuPosition, true);
     };
-  }, [dropdownOpen, isLeft]);
+  }, [dropdownOpen, isLeft, resetShellOffset]);
 
   const handleSurfaceEnter = useCallback(() => {
     setIsSurfaceHovered(true);
@@ -109,7 +149,8 @@ const CanvasNodeHandle: React.FC<CanvasNodeHandleProps> = ({
 
   const handleSurfaceLeave = useCallback(() => {
     setIsSurfaceHovered(false);
-  }, []);
+    resetShellOffset();
+  }, [resetShellOffset]);
 
   const releasePointerCapture = useCallback((pointerId: number | null) => {
     const surface = interactionSurfaceRef.current;
@@ -262,7 +303,7 @@ const CanvasNodeHandle: React.FC<CanvasNodeHandleProps> = ({
           onPointerCancel={handlePlusPointerCancel}
           onClick={handlePlusClick}
         >
-          <div className="wf-handle__plus">
+          <div ref={plusShellRef} className="wf-handle__plus">
             <div className="wf-handle__plus-button">
               <Plus size={24} strokeWidth={2.5} />
             </div>

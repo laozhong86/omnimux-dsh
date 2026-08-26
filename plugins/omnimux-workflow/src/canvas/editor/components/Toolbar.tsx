@@ -1,95 +1,249 @@
 /**
- * Simplified port of Gxgen Toolbar: palette-driven node creation + M2
- * undo/redo buttons. Palette entries come from the node registry
- * (extension point ①).
+ * Modernized Floating Dock Toolbar (aligned with modern AI video/workflow canvases):
  *
- * W1: emoji 图标替换为 lucide-react（T1.1 决策 ②）。
+ * 1. Centered bottom floating capsule dock (.wf-canvas-toolbar nodrag nopan).
+ * 2. Primary (+) button (Hotkey N) opening modern node creation popover menu.
+ * 3. Pointer mode selector: Select (V) / Pan (H).
+ * 4. Project Assets (📁) drawer trigger (Hotkey A).
+ * 5. Undo / Redo controls + Hotkey help (?) modal.
  *
- * 工具栏是 ReactFlow sibling（非岛内节点），xyflow 的 panOnDrag /
- * selectionOnDrag 会把落在 SPAN.wf-canvas-toolbar__icon 上的 pointer
- * 后续 mousedown 抢走，导致没有 click。根节点必须带 nodrag nopan，
- * 并在 pointer/mouse down 上 stopPropagation。
+ * Maintains .nodrag .nopan and pointer event guards to prevent xyflow mouse capture.
  */
 
-import { memo } from 'react';
-import { FileText, ImagePlus, Video, Music, Undo2, Redo2 } from 'lucide-react';
+import { memo, useState, useCallback } from 'react';
+import {
+  FileText,
+  ImagePlus,
+  Video,
+  Music,
+  Plus,
+  Film,
+  Table,
+  MousePointer,
+  Hand,
+  FolderOpen,
+  HelpCircle,
+  Undo2,
+  Redo2,
+  ChevronUp,
+} from 'lucide-react';
 import type { MaterialType } from '../../types/materialNode';
 import { useT } from '../../i18n';
+import { CustomDropdown, type DropdownMenuItem } from '../../ui';
 import {
   preventToolbarAddContextMenu,
   stopToolbarNativeEvent,
 } from './toolbarPointerGuard';
 
+export type CanvasPointerMode = 'select' | 'pan';
+
+export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition';
+
 export interface ToolbarProps {
-  onAddNode: (type: MaterialType) => void;
+  onAddNode: (type: CanvasAddNodeType) => void;
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
+  pointerMode?: CanvasPointerMode;
+  onPointerModeChange?: (mode: CanvasPointerMode) => void;
+  onOpenAssets?: () => void;
+  onOpenHelp?: () => void;
+  isAddMenuOpen?: boolean;
+  onToggleAddMenu?: () => void;
+  isAssetsOpen?: boolean;
 }
 
-const TOOLBAR_ITEMS: Array<{
-  type: MaterialType;
+const ADD_NODE_ITEMS: Array<{
+  type: CanvasAddNodeType;
   Icon: React.ComponentType<{ size?: number }>;
+  color: string;
+  bg: string;
 }> = [
-  { type: 'text', Icon: FileText },
-  { type: 'image', Icon: ImagePlus },
-  { type: 'video', Icon: Video },
-  { type: 'audio', Icon: Music },
+  { type: 'text', Icon: FileText, color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.16)' },
+  { type: 'image', Icon: ImagePlus, color: '#c084fc', bg: 'rgba(168, 85, 247, 0.16)' },
+  { type: 'video', Icon: Video, color: '#fb923c', bg: 'rgba(249, 115, 22, 0.16)' },
+  { type: 'audio', Icon: Music, color: '#34d399', bg: 'rgba(16, 185, 129, 0.16)' },
+  { type: 'table', Icon: Table, color: '#10b981', bg: 'rgba(16, 185, 129, 0.16)' },
+  { type: 'video_composition', Icon: Film, color: '#f472b6', bg: 'rgba(244, 114, 182, 0.16)' },
 ];
 
-const Toolbar: React.FC<ToolbarProps> = ({ onAddNode, onUndo, onRedo, canUndo = false, canRedo = false }) => {
+const Toolbar: React.FC<ToolbarProps> = ({
+  onAddNode,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
+  pointerMode = 'select',
+  onPointerModeChange,
+  onOpenAssets,
+  onOpenHelp,
+  isAddMenuOpen: externalIsAddMenuOpen,
+  onToggleAddMenu,
+  isAssetsOpen = false,
+}) => {
   const t = useT();
+  const [internalIsAddMenuOpen, setInternalIsAddMenuOpen] = useState(false);
+
+  const isAddOpen = externalIsAddMenuOpen !== undefined ? externalIsAddMenuOpen : internalIsAddMenuOpen;
+  const toggleAdd = onToggleAddMenu || (() => setInternalIsAddMenuOpen((v) => !v));
+
+  const handleSelectNodeType = useCallback(
+    (type: CanvasAddNodeType) => {
+      onAddNode(type);
+      if (onToggleAddMenu) {
+        onToggleAddMenu();
+      } else {
+        setInternalIsAddMenuOpen(false);
+      }
+    },
+    [onAddNode, onToggleAddMenu],
+  );
+
+  const pointerMenuItems: DropdownMenuItem[] = [
+    {
+      key: 'select',
+      icon: <MousePointer size={15} />,
+      label: t('toolbar.selectMode'),
+      onClick: () => onPointerModeChange?.('select'),
+    },
+    {
+      key: 'pan',
+      icon: <Hand size={15} />,
+      label: t('toolbar.panMode'),
+      onClick: () => onPointerModeChange?.('pan'),
+    },
+  ];
+
   return (
     <div
       className="wf-canvas-toolbar nodrag nopan"
       onPointerDown={stopToolbarNativeEvent}
       onMouseDown={stopToolbarNativeEvent}
     >
-      {TOOLBAR_ITEMS.map((item) => (
+      {/* 核心 (+) 按钮与浮层菜单 */}
+      <div style={{ position: 'relative' }}>
         <button
-          key={item.type}
           type="button"
-          className="wf-canvas-toolbar__item"
-          onClick={() => onAddNode(item.type)}
+          className={`wf-canvas-toolbar__item wf-canvas-toolbar__item--primary-add ${isAddOpen ? 'wf-canvas-toolbar__item--primary-add-open' : ''}`}
+          onClick={toggleAdd}
           onContextMenu={preventToolbarAddContextMenu}
-          title={t(`toolbar.add.${item.type}`)}
+          title={t('toolbar.addNode')}
         >
           <span className="wf-canvas-toolbar__icon">
-            <item.Icon size={18} />
+            <Plus size={20} />
           </span>
-          <span className="wf-canvas-toolbar__label">{t(`node.type.${item.type}`)}</span>
         </button>
-      ))}
-      {(onUndo || onRedo) && <div className="wf-canvas-toolbar__divider" />}
-      {onUndo ? (
+
+        {isAddOpen && (
+          <div className="wf-dock-add-popover">
+            {ADD_NODE_ITEMS.map((item) => (
+              <button
+                key={item.type}
+                type="button"
+                className="wf-dock-add-popover__item"
+                onClick={() => handleSelectNodeType(item.type)}
+                onContextMenu={preventToolbarAddContextMenu}
+              >
+                <div
+                  className="wf-dock-add-popover__icon"
+                  style={{ background: item.bg, color: item.color }}
+                >
+                  <item.Icon size={18} />
+                </div>
+                <div className="wf-dock-add-popover__content">
+                  <span className="wf-dock-add-popover__label">{t(`node.type.${item.type}`)}</span>
+                  <span className="wf-dock-add-popover__desc">{t(`toolbar.add.${item.type}Desc`)}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="wf-canvas-toolbar__divider" />
+
+      {/* 指针模式选择 (V/H) */}
+      <CustomDropdown
+        items={pointerMenuItems}
+        selectedKeys={[pointerMode]}
+        placement="topCenter"
+      >
         <button
           type="button"
           className="wf-canvas-toolbar__item"
+          title={pointerMode === 'select' ? t('toolbar.selectMode') : t('toolbar.panMode')}
+        >
+          <span className="wf-canvas-toolbar__icon">
+            {pointerMode === 'select' ? <MousePointer size={16} /> : <Hand size={16} />}
+          </span>
+          <ChevronUp size={12} style={{ opacity: 0.6, marginLeft: 2 }} />
+        </button>
+      </CustomDropdown>
+
+      {/* 项目资产库入口 */}
+      <button
+        type="button"
+        className={`wf-canvas-toolbar__item wf-canvas-toolbar__item--icon-only ${isAssetsOpen ? 'wf-canvas-toolbar__item--active' : ''}`}
+        onClick={onOpenAssets}
+        title={t('toolbar.assets')}
+      >
+        <span className="wf-canvas-toolbar__icon">
+          <FolderOpen size={17} />
+        </span>
+        <span className="wf-canvas-toolbar__label">{t('toolbar.assets')}</span>
+      </button>
+
+      {/* 撤销 / 重做 */}
+      {(onUndo || onRedo) && <div className="wf-canvas-toolbar__divider" />}
+
+      {onUndo && (
+        <button
+          type="button"
+          className="wf-canvas-toolbar__item wf-canvas-toolbar__item--icon-only"
           onClick={() => onUndo()}
           disabled={!canUndo}
           title={t('toolbar.undoTitle')}
         >
           <span className="wf-canvas-toolbar__icon">
-            <Undo2 size={18} />
+            <Undo2 size={16} />
           </span>
           <span className="wf-canvas-toolbar__label">{t('toolbar.undo')}</span>
         </button>
-      ) : null}
-      {onRedo ? (
+      )}
+
+      {onRedo && (
         <button
           type="button"
-          className="wf-canvas-toolbar__item"
+          className="wf-canvas-toolbar__item wf-canvas-toolbar__item--icon-only"
           onClick={() => onRedo()}
           disabled={!canRedo}
           title={t('toolbar.redoTitle')}
         >
           <span className="wf-canvas-toolbar__icon">
-            <Redo2 size={18} />
+            <Redo2 size={16} />
           </span>
           <span className="wf-canvas-toolbar__label">{t('toolbar.redo')}</span>
         </button>
-      ) : null}
+      )}
+
+      {/* 帮助 */}
+      {onOpenHelp && (
+        <>
+          <div className="wf-canvas-toolbar__divider" />
+          <button
+            type="button"
+            className="wf-canvas-toolbar__item wf-canvas-toolbar__item--icon-only"
+            onClick={onOpenHelp}
+            title={t('toolbar.help')}
+          >
+            <span className="wf-canvas-toolbar__icon">
+              <HelpCircle size={16} />
+            </span>
+            <span className="wf-canvas-toolbar__label">{t('toolbar.help')}</span>
+          </button>
+        </>
+      )}
     </div>
   );
 };
