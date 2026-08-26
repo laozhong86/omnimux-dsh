@@ -64,6 +64,11 @@ function writeNodeData(nodeId: string, patch: Record<string, unknown>): void {
   );
 }
 
+export interface ExecutionControllerOptions {
+  /** Optional pre-flight hook (e.g. flush canvas persistence before creating run). */
+  onBeforeStart?: () => Promise<void> | void;
+}
+
 export interface ExecutionController {
   startExecution: (opts?: { mode?: 'full' | 'subset'; nodeIds?: string[] }) => Promise<void>;
   pause: () => Promise<void>;
@@ -72,10 +77,15 @@ export interface ExecutionController {
   reset: () => void;
 }
 
-export function useExecutionController(workspaceId: string | null): ExecutionController {
+export function useExecutionController(
+  workspaceId: string | null,
+  opts?: ExecutionControllerOptions,
+): ExecutionController {
   const eventSourceRef = useRef<EventSource | null>( null);
   const workspaceIdRef = useRef<string | null>(workspaceId);
   workspaceIdRef.current = workspaceId;
+  const onBeforeStartRef = useRef(opts?.onBeforeStart);
+  onBeforeStartRef.current = opts?.onBeforeStart;
 
   const closeStream = useCallback(() => {
     if (eventSourceRef.current) {
@@ -283,6 +293,15 @@ export function useExecutionController(workspaceId: string | null): ExecutionCon
       closeStream();
       useExecutionStore.getState().resetExecution();
       useExecutionStore.getState().setExecution({ status: 'pending' });
+
+      // 执行前触发外部保存钩子，确保后端拿到最新的 Prompt/模型参数
+      if (onBeforeStartRef.current) {
+        try {
+          await onBeforeStartRef.current();
+        } catch {
+          // ignore
+        }
+      }
 
       const result = await createExecution(workspace, {
         mode: opts.mode ?? 'full',

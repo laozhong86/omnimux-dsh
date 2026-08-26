@@ -6,8 +6,7 @@
 import { useCallback, useState } from 'react';
 import type { Node } from '@xyflow/react';
 import { useCanvasStore } from '../../store/canvasStore';
-import type { MaterialType } from '../../types/materialNode';
-import type { ContextMenuAction, ContextMenuContext } from '../components/ContextMenu';
+import type { ContextMenuAction, ContextMenuContext, CanvasAddNodeType } from '../components/ContextMenu';
 
 export interface MenuState {
   x: number;
@@ -18,7 +17,6 @@ export interface MenuState {
 
 export interface CanvasContextMenuDeps {
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
-  handleAddNode: (type: MaterialType, position?: { x: number; y: number }) => void;
   setNodes: (updater: (current: ReturnType<typeof useCanvasStore.getState>['nodes']) => ReturnType<typeof useCanvasStore.getState>['nodes']) => void;
   copySelectedNodes: () => void;
   pasteNodes: (targetPosition?: { x: number; y: number }) => void;
@@ -29,12 +27,12 @@ export interface CanvasContextMenuDeps {
   undo: () => void;
   redo: () => void;
   onExecuteNodeIds?: (nodeIds: string[]) => void;
+  onAddNode?: (type: CanvasAddNodeType, position?: { x: number; y: number }) => void;
 }
 
 export function useCanvasContextMenu(deps: CanvasContextMenuDeps) {
   const {
     screenToFlowPosition,
-    handleAddNode,
     setNodes,
     copySelectedNodes,
     pasteNodes,
@@ -45,6 +43,7 @@ export function useCanvasContextMenu(deps: CanvasContextMenuDeps) {
     undo,
     redo,
     onExecuteNodeIds,
+    onAddNode,
   } = deps;
 
   const [menu, setMenu] = useState<MenuState>({
@@ -100,18 +99,6 @@ export function useCanvasContextMenu(deps: CanvasContextMenuDeps) {
     (action: ContextMenuAction, context: ContextMenuContext) => {
       const flowPosition = screenToFlowPosition({ x: menu.x, y: menu.y });
       switch (action) {
-        case 'add-text':
-          handleAddNode('text', flowPosition);
-          break;
-        case 'add-image':
-          handleAddNode('image', flowPosition);
-          break;
-        case 'add-video':
-          handleAddNode('video', flowPosition);
-          break;
-        case 'add-audio':
-          handleAddNode('audio', flowPosition);
-          break;
         case 'copy': {
           if (context.type === 'node') {
             const state = useCanvasStore.getState();
@@ -176,7 +163,6 @@ export function useCanvasContextMenu(deps: CanvasContextMenuDeps) {
       menu.x,
       menu.y,
       screenToFlowPosition,
-      handleAddNode,
       clearSelection,
       setNodes,
       copySelectedNodes,
@@ -191,6 +177,15 @@ export function useCanvasContextMenu(deps: CanvasContextMenuDeps) {
     ],
   );
 
+  const handleAddNodeFromMenu = useCallback(
+    (type: CanvasAddNodeType) => {
+      const flowPosition = screenToFlowPosition({ x: menu.x, y: menu.y });
+      onAddNode?.(type, flowPosition);
+      closeMenu();
+    },
+    [menu.x, menu.y, screenToFlowPosition, onAddNode, closeMenu],
+  );
+
   return {
     menu,
     handleNodeContextMenu,
@@ -198,5 +193,6 @@ export function useCanvasContextMenu(deps: CanvasContextMenuDeps) {
     handleSelectionContextMenu,
     closeMenu,
     handleMenuAction,
+    handleAddNodeFromMenu,
   };
 }

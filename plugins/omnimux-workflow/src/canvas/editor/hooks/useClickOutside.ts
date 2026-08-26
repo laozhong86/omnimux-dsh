@@ -11,8 +11,12 @@
 
 import { useEffect, type RefObject } from 'react';
 
-/** 浮层默认排除选择器：面板自身由 refs 覆盖，这里只列 antd 弹出层 */
+/** 浮层默认排除选择器：面板自身由 refs 覆盖，这里列出外部弹出层白名单 */
 export const DEFAULT_FLOATING_LAYER_EXCLUDE_SELECTORS = [
+  '.wf-custom-select-dropdown',
+  '.wf-custom-dropdown-menu',
+  '.wf-custom-slider',
+  '.wf-modal-overlay',
   '.ant-select-dropdown',
   '.ant-slider-thumb',
 ] as const;

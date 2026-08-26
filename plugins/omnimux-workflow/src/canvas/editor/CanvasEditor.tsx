@@ -30,11 +30,14 @@ import {
 // NOTE: '@xyflow/react/dist/style.css' is injected by src/canvas/index.tsx
 // (esbuild text-loader turns CSS imports into strings — they need manual
 // <style> injection; see the island entry for the shared injector).
-import { message } from 'antd';
+import { toast } from '../ui';
 import { useCanvasStore, useGraphStore, useCanUndo, useCanRedo } from '../store/canvasStore';
 import type { MaterialType } from '../types/materialNode';
 import AnimatedEdge from './components/AnimatedEdge';
-import Toolbar from './components/Toolbar';
+import Toolbar, { type CanvasPointerMode } from './components/Toolbar';
+import HeaderControls from './components/HeaderControls';
+import AssetsDrawer from './components/AssetsDrawer';
+import ShortcutsModal from './components/ShortcutsModal';
 import CanvasNodeActionMenu from './components/CanvasNodeActionMenu';
 import ContextMenu from './components/ContextMenu';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -46,14 +49,18 @@ import { CANVAS_ZOOM_CONFIG } from './utils/nodeSizeConfig';
 import { validateConnection, rejectReasonKey } from './utils/connectionValidator';
 import { DEFAULT_CANVAS_EDGE_OPTIONS } from './utils/canvasConnectionUtils';
 import { createMaterialNode, appendWithSelectionReset } from './utils/nodeFactory';
-import { buildNodeTypes } from '../nodes/registry';
+import { buildNodeTypes, createNode, registerNodeDefinition } from '../nodes/registry';
 import { materialNodeDefinition } from '../nodes/definitions/material';
+import { tableNodeDefinition } from '../nodes/definitions/table';
+import { videoCompositionNodeDefinition } from '../nodes/definitions/videoComposition';
+import { SpreadsheetStage } from '../components/table-node/stage/SpreadsheetStage';
 import type { CapabilityCatalog } from '../../shared/api';
 
 // Register node definitions once at module load (extension point ①).
 // nodeTypes built outside the component to prevent re-creation (Gxgen rule).
-import { registerNodeDefinition } from '../nodes/registry';
 registerNodeDefinition(materialNodeDefinition);
+registerNodeDefinition(tableNodeDefinition);
+registerNodeDefinition(videoCompositionNodeDefinition);
 
 const nodeTypes = buildNodeTypes();
 
@@ -73,10 +80,23 @@ interface CanvasEditorProps {
    * （subset 模式：nodeIds + 传递上游闭包，由 host 解析）。
    */
   onExecuteNodeIds?: (nodeIds: string[]) => void;
+  onStartExecution?: () => void;
+  onPauseExecution?: () => void;
+  onResumeExecution?: () => void;
+  onCancelExecution?: () => void;
+  onResetExecution?: () => void;
 }
 
-const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNodeIds }) => {
-  const { screenToFlowPosition } = useReactFlow();
+const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
+  catalog,
+  onExecuteNodeIds,
+  onStartExecution,
+  onPauseExecution,
+  onResumeExecution,
+  onCancelExecution,
+  onResetExecution,
+}) => {
+  const { screenToFlowPosition, fitView, zoomTo } = useReactFlow();
   const { nodes, edges, onNodesChange, onEdgesChange } = useGraphStore();
   const applyCanvasInputMutation = useCanvasStore((state) => state.applyCanvasInputMutation);
   const setNodes = useCanvasStore((state) => state.setNodes);
@@ -87,6 +107,12 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNo
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
   const [lastRejectedReason, setLastRejectedReason] = useState<string | null>(null);
+  const [isMinimapOpen, setIsMinimapOpen] = useState(false);
+  const [isAssetsOpen, setIsAssetsOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [assetsCategoryIndex, setAssetsCategoryIndex] = useState<number | undefined>(undefined);
+  const [pointerMode, setPointerMode] = useState<CanvasPointerMode>('select');
   const nodeCreateCounter = useRef(0);
 
   const hasSelection = useMemo(() => nodes.some((node) => node.selected), [nodes]);
@@ -134,7 +160,7 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNo
       if (plan.status === 'rejected') {
         const reasonText = t(rejectReasonKey(plan.reasonCode));
         setLastRejectedReason(reasonText);
-        message.warning(reasonText);
+        toast.warning(reasonText);
       } else {
         setLastRejectedReason(null);
       }
@@ -154,13 +180,22 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNo
   // 工具栏添加节点（错位网格摆放，避免节点互相遮挡 Handle —— spike 坑 #2）；
   // 右键菜单可传入显式落点。
   const handleAddNode = useCallback(
-    (type: MaterialType, position?: { x: number; y: number }) => {
+    (type: MaterialType | 'table' | 'video_composition', position?: { x: number; y: number }) => {
       const index = nodeCreateCounter.current;
       const targetPosition = position ?? {
         x: 120 + (index % 3) * 420,
         y: 120 + Math.floor(index / 3) * 360,
       };
-      const result = createMaterialNode(type, targetPosition);
+
+      if (type === 'table' || type === 'video_composition') {
+        const created = createNode(type, targetPosition, `node_${type}_${Date.now()}`);
+        if (!created) return;
+        nodeCreateCounter.current += 1;
+        setNodes((current) => appendWithSelectionReset(current, [{ ...created, selected: true } as never]));
+        return;
+      }
+
+      const result = createMaterialNode(type as MaterialType, targetPosition);
       if (result.nodes.length === 0) return;
       nodeCreateCounter.current += 1;
       setNodes((current) => appendWithSelectionReset(current, result.nodes));
@@ -186,9 +221,9 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNo
     handleSelectionContextMenu,
     closeMenu,
     handleMenuAction,
+    handleAddNodeFromMenu,
   } = useCanvasContextMenu({
     screenToFlowPosition,
-    handleAddNode,
     setNodes,
     copySelectedNodes: clipboard.copySelectedNodes,
     pasteNodes: clipboard.pasteNodes,
@@ -199,9 +234,39 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNo
     undo,
     redo,
     onExecuteNodeIds,
+    onAddNode: handleAddNode,
   });
 
-  // 键盘快捷键基础集：复制/粘贴/删除/全选（+撤销重做/取消选中/副本）
+  // 插入资产到画布作为新节点
+  const handleInsertAsset = useCallback(
+    (asset: { name: string; type: string; path: string; previewUrl?: string }) => {
+      const targetType: MaterialType =
+        asset.type === 'video' ? 'video' : asset.type === 'image' ? 'image' : 'text';
+      const count = nodeCreateCounter.current++;
+      const position = {
+        x: 200 + (count % 4) * 50,
+        y: 200 + (count % 4) * 40,
+      };
+
+      const result = createMaterialNode(targetType, position, {
+        title: asset.name,
+        content: asset.path,
+        previewUrl: asset.previewUrl,
+        status: 'ready',
+      });
+      const newNode = result.nodes[0];
+      if (!newNode) return;
+
+      applyCanvasInputMutation({
+        addNodes: [newNode],
+      });
+      setSelectedElement('node', newNode.id);
+      toast.success(t('toolbar.assets') + ': ' + asset.name);
+    },
+    [applyCanvasInputMutation, setSelectedElement, t],
+  );
+
+  // 键盘快捷键全集
   useKeyboardShortcuts({
     onCopy: clipboard.copySelectedNodes,
     onPaste: () => clipboard.pasteNodes(),
@@ -212,6 +277,17 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNo
     onUndo: undo,
     onRedo: redo,
     hasSelection,
+    onToggleAssets: () => setIsAssetsOpen((prev) => !prev),
+    onToggleShortcuts: () => setIsShortcutsOpen((prev) => !prev),
+    onToggleMinimap: () => setIsMinimapOpen((prev) => !prev),
+    onToggleAddMenu: () => setIsAddMenuOpen((prev) => !prev),
+    onSetPointerMode: (mode) => setPointerMode(mode),
+    onFitView: () => fitView(FIT_VIEW_OPTIONS),
+    onResetZoom: () => zoomTo(1),
+    onCategoryKey: (catIdx) => {
+      setIsAssetsOpen(true);
+      setAssetsCategoryIndex(catIdx);
+    },
   });
 
   const handleNodeClick = useCallback(
@@ -225,6 +301,19 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNo
     setSelectedElement('none', null);
     closeMenu();
   }, [setSelectedElement, closeMenu]);
+
+  // 整理对齐节点
+  const handleAlignGrid = useCallback(() => {
+    setNodes((current) =>
+      current.map((node, i) => ({
+        ...node,
+        position: {
+          x: 120 + (i % 3) * 440,
+          y: 120 + Math.floor(i / 3) * 360,
+        },
+      })),
+    );
+  }, [setNodes]);
 
   return (
     <div className="wf-canvas-editor" style={{ position: 'relative', height: '100%' }}>
@@ -252,12 +341,12 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNo
         maxZoom={CANVAS_ZOOM_CONFIG.maxZoom}
         selectionKeyCode={null}
         multiSelectionKeyCode="Meta"
-        panOnDrag={PAN_ON_DRAG}
+        panOnDrag={pointerMode === 'pan' ? true : PAN_ON_DRAG}
         panOnScroll
         panOnScrollMode={PanOnScrollMode.Free}
         zoomOnScroll
         zoomOnPinch
-        selectionOnDrag
+        selectionOnDrag={pointerMode === 'select'}
         selectionMode={SelectionMode.Partial}
         defaultEdgeOptions={DEFAULT_CANVAS_EDGE_OPTIONS}
         connectOnClick={false}
@@ -268,16 +357,56 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNo
         onlyRenderVisibleElements
       >
         <Background color="var(--wb-grid-dot, #C9CBD6)" gap={48} size={3.5} variant={BackgroundVariant.Dots} />
-        <Controls />
-        <MiniMap pannable zoomable />
       </ReactFlow>
 
+      {/* 顶部右侧控制栏胶囊 */}
+      <HeaderControls
+        isMinimapOpen={isMinimapOpen}
+        onToggleMinimap={() => setIsMinimapOpen((prev) => !prev)}
+        onAlignGrid={handleAlignGrid}
+        onStartExecution={onStartExecution}
+        onPauseExecution={onPauseExecution}
+        onResumeExecution={onResumeExecution}
+        onCancelExecution={onCancelExecution}
+        onResetExecution={onResetExecution}
+      />
+
+      {/* 浮动小地图 Popover */}
+      {isMinimapOpen && (
+        <div className="wf-minimap-popover nodrag nopan">
+          <MiniMap pannable zoomable />
+        </div>
+      )}
+
+      {/* 底部悬浮控制坞 */}
       <Toolbar
         onAddNode={handleAddNode}
         onUndo={undo}
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        pointerMode={pointerMode}
+        onPointerModeChange={setPointerMode}
+        onToggleAssets={() => setIsAssetsOpen((prev) => !prev)}
+        onToggleShortcuts={() => setIsShortcutsOpen((prev) => !prev)}
+        isAssetsOpen={isAssetsOpen}
+        isShortcutsOpen={isShortcutsOpen}
+        isAddMenuOpen={isAddMenuOpen}
+        onToggleAddMenu={() => setIsAddMenuOpen((prev) => !prev)}
+      />
+
+      {/* 项目资产抽屉 */}
+      <AssetsDrawer
+        isOpen={isAssetsOpen}
+        onClose={() => setIsAssetsOpen(false)}
+        onInsertAsset={handleInsertAsset}
+        selectedCategoryIndex={assetsCategoryIndex}
+      />
+
+      {/* 快捷键帮助浮窗 */}
+      <ShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
       />
 
       <ContextMenu
@@ -287,6 +416,7 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNo
         context={menu.context}
         onClose={closeMenu}
         onAction={handleMenuAction}
+        onAddNode={handleAddNodeFromMenu}
         canUndo={canUndo}
         canRedo={canRedo}
         hasClipboard={clipboard.hasClipboard}
@@ -302,6 +432,9 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({ catalog, onExecuteNo
         onSelect={handleConnectionMenuSelect}
         onClose={handleConnectionMenuClose}
       />
+
+      {/* 全屏独立电子表格舞台 */}
+      <SpreadsheetStage />
 
       {lastRejectedReason && (
         <div className="wf-rejected-toast">{lastRejectedReason}</div>

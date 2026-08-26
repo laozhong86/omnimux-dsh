@@ -78,6 +78,8 @@ export function createProjectDispatcher(): ProjectDispatcher {
   const collectionRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}$`);
   const libraryRe = new RegExp(`^${PROJECT_LIBRARY_PATH}$`);
   const itemRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)$`);
+  const pagesRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)/pages$`);
+  const pageItemRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)/pages/([^/]+)$`);
 
   function owns(path: string): boolean {
     return path === PROJECT_ROUTE_PREFIX || path.startsWith(`${PROJECT_ROUTE_PREFIX}/`);
@@ -134,6 +136,50 @@ export function createProjectDispatcher(): ProjectDispatcher {
             status: 200,
             body: { project: store.create(title ?? '', { projectRoot, sessionId }) },
           };
+        }
+        return { status: 404, body: { error: 'not-found', message: 'unknown route' } };
+      }
+
+      // 创作页集合路由 POST /api/projects/:id/pages
+      const pagesMatch = pagesRe.exec(path);
+      if (pagesMatch) {
+        const projectId = pagesMatch[1] ?? '';
+        const { store } = scopedStore();
+        if (method === 'POST') {
+          const problem = jsonBodyProblem(req.body);
+          if (problem) return problem;
+          const body = req.body as { title?: unknown; canvasWorkspaceId?: unknown; loadMemory?: unknown };
+          const title = typeof body.title === 'string' ? body.title : '';
+          const canvasWorkspaceId = typeof body.canvasWorkspaceId === 'string' ? body.canvasWorkspaceId : undefined;
+          const loadMemory = Boolean(body.loadMemory);
+          return {
+            status: 200,
+            body: { project: store.addPage(projectId, title, { canvasWorkspaceId, loadMemory }) },
+          };
+        }
+        return { status: 404, body: { error: 'not-found', message: 'unknown route' } };
+      }
+
+      // 创作页单项路由 PATCH/DELETE /api/projects/:id/pages/:pageId
+      const pageItemMatch = pageItemRe.exec(path);
+      if (pageItemMatch) {
+        const projectId = pageItemMatch[1] ?? '';
+        const pageId = pageItemMatch[2] ?? '';
+        const { store } = scopedStore();
+        if (method === 'PATCH') {
+          const problem = jsonBodyProblem(req.body);
+          if (problem) return problem;
+          const body = req.body as { title?: unknown; active?: unknown };
+          if (typeof body.title === 'string') {
+            return { status: 200, body: { project: store.renamePage(projectId, pageId, body.title) } };
+          }
+          if (body.active === true) {
+            return { status: 200, body: { project: store.setActivePage(projectId, pageId) } };
+          }
+          return { status: 400, body: { error: 'invalid-json', message: 'title or active is required' } };
+        }
+        if (method === 'DELETE') {
+          return { status: 200, body: { project: store.removePage(projectId, pageId) } };
         }
         return { status: 404, body: { error: 'not-found', message: 'unknown route' } };
       }

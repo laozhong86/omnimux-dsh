@@ -1,13 +1,8 @@
 /**
- * ConfigPanelShell — W2 T2.1，移植自 Gxgen
- * apps/web/src/pages/CanvasEditor/components/MaterialNode/components/ConfigPanel/ConfigPanelShell.tsx(87)。
+ * ConfigPanelShell — 单层一体化浮层外壳。
  *
- * 内联浮层外壳：absolute 于卡片下方 12px、left 50% 居中、反向缩放
- * scale(1/zoom)（xyflow useViewport 倍率 —— 禁止抄 Gxgen 的 scale(100/zoom)，
- * 计划 §9 坑#5）、transformOrigin top center、nodrag nowheel。
- *
- * 与 Gxgen 差异：背景/阴影全走 --wb-* token（暗色 token 翻转，
- * 不用 JS isDark 分支）；宽 480（窄化 Gxgen 640）。
+ * 精简掉原本多余的双层嵌套（outer + inner），改为纯粹的单层卡片。
+ * 定位与反缩放：absolute 于卡片下方 12px、left 50% 居中、scale(1/zoom)。
  */
 
 import React, { memo, useMemo, useRef } from 'react';
@@ -33,7 +28,7 @@ const ConfigPanelShell: React.FC<ConfigPanelShellProps> = ({
   const { zoom } = useViewport();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // 反向缩放：抵消画布缩放，面板屏幕尺寸恒定（同 NodeHeader）
+  // 反向缩放：抵消画布缩放，面板屏幕尺寸恒定
   const counterScale = useMemo(() => inverseScaleForZoom(zoom), [zoom]);
 
   useClickOutside({ refs: panelRef, onClose });
@@ -45,7 +40,6 @@ const ConfigPanelShell: React.FC<ConfigPanelShellProps> = ({
       style={{
         width,
         top: 'calc(100% + 12px)',
-        // 居中：left 50% 后用 margin 偏移自身宽度的一半（不受 scale 影响）
         left: '50%',
         marginLeft: -width / 2,
         transform: `scale(${counterScale})`,
@@ -53,11 +47,7 @@ const ConfigPanelShell: React.FC<ConfigPanelShellProps> = ({
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="wf-panel-shell__outer">
-        <div className="wf-panel-shell__inner">
-          <div className="wf-panel-shell__body">{children}</div>
-        </div>
-      </div>
+      <div className="wf-panel-shell__card">{children}</div>
     </div>
   );
 };

@@ -21,8 +21,8 @@ const STYLES = `
   font: var(--dsw-font-s-14, inherit); font-size: 14px; line-height: 20px;
   cursor: pointer; text-align: left;
 }
-.omnimux-workflow-entry:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12)); }
-.omnimux-workflow-entry[data-active="true"] { background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18)); font-weight: 500; }
+.omnimux-workflow-entry:hover { background: var(--dsw-alias-interactive-bg-hover); }
+.omnimux-workflow-entry[data-active="true"] { background: var(--dsw-alias-interactive-bg-active); font-weight: 500; }
 .omnimux-workflow-entry-icon { flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
 .omnimux-workflow-entry svg { display: block; width: 14px; height: 14px; }
 .omnimux-workflow-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
@@ -87,7 +87,7 @@ export function mountSidebarEntry(stage, t, locale) {
 
   const unregister = registerWhenReady({
     id: 'omnimux-workflow-entry',
-    rank: 5,
+    rank: 4,
     styles: STYLES,
     styleId: 'omnimux-workflow-entry-styles',
     create: () => entry,

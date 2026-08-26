@@ -10,23 +10,27 @@
 import xyflowCss from '@xyflow/react/dist/style.css';
 import themeCss from './theme/workbench-theme.css';
 import componentsCss from './theme/components.css';
+import tableNodeCss from './theme/table-node.css';
 
 const STYLESHEETS: Array<{ id: string; css: string }> = [
   { id: 'omnimux-workflow-xyflow-base', css: xyflowCss },
   { id: 'omnimux-workflow-theme', css: themeCss },
   { id: 'omnimux-workflow-components', css: componentsCss },
+  { id: 'omnimux-workflow-table-node', css: tableNodeCss },
 ];
 
-let stylesInjected = false;
-
 export function injectCanvasStyles(): void {
-  if (stylesInjected) return;
   for (const { id, css } of STYLESHEETS) {
-    if (document.getElementById(id)) continue;
-    const style = document.createElement('style');
-    style.id = id;
-    style.textContent = css;
-    document.head.append(style);
+    const existing = document.getElementById(id);
+    if (existing instanceof HTMLStyleElement) {
+      if (existing.textContent !== css) {
+        existing.textContent = css;
+      }
+    } else {
+      const style = document.createElement('style');
+      style.id = id;
+      style.textContent = css;
+      document.head.append(style);
+    }
   }
-  stylesInjected = true;
 }

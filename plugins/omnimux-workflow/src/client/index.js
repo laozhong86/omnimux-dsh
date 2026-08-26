@@ -1,4 +1,4 @@
-/** Client half: locale dictionaries, sidebar「项目库」row + 「新建项目」inline
+/** Client half: locale dictionaries, sidebar「项目」row + 「新建项目」inline
  *  button, the project library first-level page (shell.overlay), and the
  *  project-session canvas tab on dsh-better-sidebar. */
 import { createElement } from 'react'
@@ -30,7 +30,7 @@ export function apply(ctx) {
   const t = ctx.locale.bind(NS)
   const stage = createStageStore(() => window.__omnimuxStage)
 
-  // 侧栏：项目库 row（rank 5）+ 新建项目 inline 并排按钮（kind:'inline'）。
+  // 侧栏：项目 row（rank 5）+ 新建项目 inline 并排按钮（kind:'inline'）。
   ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), 'omnimux-workflow: sidebar entry')
   // 不要把未 inject 的 betterSidebar 塞进闭包：Cordis Proxy 会直接 throw。
   // 画布服务走 bindBetterSidebar（下面 inject 回调里绑），activateProjectCanvas 会等。
@@ -39,7 +39,7 @@ export function apply(ctx) {
     'omnimux-workflow: new-project entry',
   )
 
-  // 一级页：项目库列表页（shell.overlay）。依赖 face 透传 sessions/workspaces/layout。
+  // 一级页：项目列表页（shell.overlay）。依赖 face 透传 sessions/workspaces/layout。
   const stageFace = () => ({
     t,
     stage,
@@ -59,14 +59,55 @@ export function apply(ctx) {
   // 画布挂到 dsh-better-sidebar，不 shadow 官方 details。
   // betterSidebar 由第三方插件 provide；未装时降级（项目仍可建，只是没有宽栏画布）。
   // 可选依赖只能走 ctx.inject：顶层读未声明服务会炸整个 loader。
+  const renderCanvasIcon = (size = 16) => createElement('svg', {
+    width: size,
+    height: size,
+    viewBox: '0 0 16 16',
+    fill: 'none',
+    xmlns: 'http://www.w3.org/2000/svg',
+  }, [
+    createElement('rect', {
+      key: 'frame',
+      x: '1.75',
+      y: '1.75',
+      width: '12.5',
+      height: '12.5',
+      rx: '2.5',
+      stroke: 'currentColor',
+      strokeWidth: '1.5',
+    }),
+    createElement('circle', {
+      key: 'dot-1',
+      cx: '5.5',
+      cy: '5.5',
+      r: '1.25',
+      fill: 'currentColor',
+    }),
+    createElement('circle', {
+      key: 'dot-2',
+      cx: '10.5',
+      cy: '10.5',
+      r: '1.25',
+      fill: 'currentColor',
+    }),
+    createElement('path', {
+      key: 'edge',
+      d: 'M6.75 5.5h1.75a2 2 0 0 1 2 2v1.75',
+      stroke: 'currentColor',
+      strokeWidth: '1.5',
+      strokeLinecap: 'round',
+    }),
+  ])
+
   const registerCanvas = (sidebar) => {
     if (!sidebar || typeof sidebar.registerTab !== 'function') return () => {}
     bindBetterSidebar(sidebar)
     return sidebar.registerTab({
       id: CANVAS_TAB_ID,
       title: () => t('details.canvasTab'),
+      icon: renderCanvasIcon,
       order: 5,
-      hidden: true,
+      hidden: false,
       single: true,
       component: (props) => createElement(CanvasTab, { ...props, t }),
     })

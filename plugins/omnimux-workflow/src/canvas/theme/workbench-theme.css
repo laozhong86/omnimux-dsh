@@ -13,7 +13,12 @@
   --wb-accent: var(--dsw-static-deepseek-500, #4176E6);
   --wb-accent-hover: var(--dsw-static-deepseek-400, #679EFE);
   --wb-accent-soft: color-mix(in srgb, var(--wb-accent) 12%, transparent);
-  --wb-success: #C8F135; /* OmniMux lime */
+  /* 品牌色只做品牌强调，不做状态色（荧光绿白底对比度不达标） */
+  --wb-brand-lime: #C8F135; /* OmniMux lime */
+  /* 语义状态色：AA 达标（白底 ≥ 4.5:1） */
+  --wb-success: #2e9e5b;
+  --wb-success-soft: color-mix(in srgb, var(--wb-success) 12%, transparent);
+  --wb-warning: #b8860b;
   --wb-danger: #ef4444;
 
   /* surfaces */
@@ -37,10 +42,26 @@
   --wb-node-text-strong: var(--wb-text-secondary);
   --wb-node-text-muted: var(--wb-text-muted);
   --wb-node-ring: var(--wb-accent);
-  --wb-node-radius: 16px;
+  --wb-node-radius: 20px;
   --wb-danger-soft: color-mix(in srgb, var(--wb-danger) 12%, transparent);
   --wb-beam-start: var(--wb-accent);
   --wb-beam-end: var(--wb-accent-hover);
+
+  /* Modern Floating Dock & Capsule Header tokens */
+  --wb-dock-bg: rgba(255, 255, 255, 0.88);
+  --wb-dock-blur: blur(16px);
+  --wb-dock-shadow: 0 16px 36px -4px rgba(15, 20, 32, 0.12), 0 0 0 1px rgba(15, 20, 32, 0.06);
+  --wb-dock-radius: 28px;
+  --wb-dock-item-hover: rgba(0, 0, 0, 0.05);
+
+  --wb-header-capsule-bg: rgba(255, 255, 255, 0.92);
+  --wb-header-capsule-shadow: 0 8px 24px -2px rgba(15, 20, 32, 0.08), 0 0 0 1px rgba(15, 20, 32, 0.05);
+  --wb-header-radius: 18px;
+
+  --wb-pill-bg: var(--dsw-alias-bg-secondary, #F4F5F8);
+  --wb-pill-hover: var(--dsw-alias-bg-tertiary, #E8EAEE);
+  --wb-pill-radius: 12px;
+  --wb-pill-text: var(--wb-text-secondary);
 
   /* config panel shell tokens (W2; 来源 Gxgen ConfigPanelShell.tsx:19-22,45-46) */
   --wb-panel-outer: var(--dsw-alias-bg-secondary, #f5f5f5);
@@ -51,13 +72,25 @@
     rgba(0, 0, 0, 0.04) 0 20px 25px -5px,
     rgba(0, 0, 0, 0.04) 0 20px 32px -12px;
 
+  /* elevation tokens — 卡片 / 浮层两档，散写阴影收敛到这里 */
+  --wb-shadow-card: 0 8px 24px rgba(15, 20, 32, 0.06);
+  --wb-shadow-card-hover: 0 12px 32px rgba(15, 20, 32, 0.1);
+  --wb-shadow-pop: 0 12px 32px rgba(15, 20, 32, 0.16);
+
+  /* typography tokens — 4 档字号阶梯 + 单点字体栈 */
+  --wb-fs-caption: 11px;
+  --wb-fs-body: 13px;
+  --wb-fs-title: 14px;
+  --wb-fs-icon: 18px;
+  --wb-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+
   height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--wb-bg);
   color: var(--wb-text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-family: var(--wb-font-family);
 }
 
 /* Dark-theme following: --dsw-alias-* tokens already flip with
@@ -74,6 +107,22 @@ body[data-ds-dark-theme] .wf-canvas-root {
   --wb-text-secondary: #a1a1aa;
   --wb-text-muted: #71717a;
   --wb-grid-dot: #2e2e33;
+  /* 语义色暗色翻转（对比度 ≥ 4.5:1） */
+  --wb-success: #4cc38a;
+  --wb-warning: #e5c07b;
+  /* 阴影暗色翻转 */
+  --wb-shadow-card: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --wb-shadow-card-hover: 0 12px 32px rgba(0, 0, 0, 0.36);
+  --wb-shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.4);
+
+  /* floating dock & header dark */
+  --wb-dock-bg: rgba(26, 27, 30, 0.88);
+  --wb-dock-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --wb-dock-item-hover: rgba(255, 255, 255, 0.08);
+  --wb-header-capsule-bg: rgba(26, 27, 30, 0.92);
+  --wb-header-capsule-shadow: 0 8px 24px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --wb-pill-bg: #232328;
+  --wb-pill-hover: #2c2c33;
   /* panel shell dark fallbacks（宿主 --dsw-alias-* 自身翻转是主路径） */
   --wb-panel-outer: var(--dsw-alias-bg-secondary, #1a1a24);
   --wb-panel-inner: var(--dsw-alias-bg-primary, #1f1f2b);
@@ -99,13 +148,8 @@ body[data-ds-dark-theme] .wf-canvas-root {
 }
 
 .wf-canvas-header__title {
-  font-size: 14px;
+  font-size: var(--wb-fs-title);
   font-weight: 600;
-}
-
-.wf-canvas-header__status {
-  font-size: 12px;
-  color: var(--wb-text-muted);
 }
 
 .wf-canvas-header__spacer {
@@ -113,7 +157,7 @@ body[data-ds-dark-theme] .wf-canvas-root {
 }
 
 .wf-canvas-header__button {
-  font-size: 12px;
+  font-size: var(--wb-fs-caption);
   padding: 5px 12px;
   border-radius: 8px;
   border: 1px solid var(--wb-accent);
@@ -184,7 +228,7 @@ body[data-ds-dark-theme] .wf-canvas-root {
 }
 
 .wf-canvas-root .react-flow__controls {
-  box-shadow: 0 4px 16px rgba(15, 20, 32, 0.1);
+  box-shadow: var(--wb-shadow-card-hover);
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--wb-border);
@@ -225,33 +269,38 @@ body[data-ds-dark-theme] .wf-canvas-root {
   border: 1px dashed var(--wb-accent);
 }
 
-/* ==================== toolbar ==================== */
+/* ==================== toolbar / bottom floating dock ==================== */
 
 .wf-canvas-toolbar {
   position: absolute;
-  left: 16px;
-  top: 16px;
-  z-index: 10;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 20;
   pointer-events: auto;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 6px;
-  padding: 8px;
-  background: var(--wb-surface);
+  padding: 6px 12px;
+  background: var(--wb-dock-bg);
+  backdrop-filter: var(--wb-dock-blur);
   border: 1px solid var(--wb-border);
-  border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(15, 20, 32, 0.08);
+  border-radius: var(--wb-dock-radius);
+  box-shadow: var(--wb-dock-shadow);
+  user-select: none;
 }
 
 .wf-canvas-toolbar__item {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 2px;
-  width: 60px;
-  padding: 8px 4px;
+  justify-content: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 10px;
   border: none;
-  border-radius: 10px;
+  border-radius: 18px;
   background: transparent;
   cursor: pointer;
   color: var(--wb-text-secondary);
@@ -259,15 +308,73 @@ body[data-ds-dark-theme] .wf-canvas-root {
 }
 
 .wf-canvas-toolbar__item:hover {
-  background: var(--wb-accent-soft);
-  color: var(--wb-accent);
+  background: var(--wb-dock-item-hover);
+  color: var(--wb-text-primary);
+}
+
+.wf-canvas-toolbar__item--active {
+  background: var(--wb-dock-item-hover);
+  color: var(--wb-text-primary);
+  font-weight: 500;
+}
+
+.wf-canvas-toolbar__item--primary-add {
+  background: #18191c;
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.wf-canvas-toolbar__item--primary-add:hover {
+  background: #2b2d33;
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+body[data-ds-dark-theme] .wf-canvas-toolbar__item--primary-add {
+  background: #ffffff;
+  color: #18191c;
+}
+
+body[data-ds-dark-theme] .wf-canvas-toolbar__item--primary-add:hover {
+  background: #e4e4e7;
+  color: #18191c;
 }
 
 .wf-canvas-toolbar__icon {
-  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .wf-canvas-toolbar__label {
-  font-size: 11px;
+  font-size: var(--wb-fs-body);
+}
+
+.wf-canvas-toolbar__divider {
+  width: 1px;
+  height: 20px;
+  background: var(--wb-border-strong);
+  margin: 0 2px;
+}
+
+.wf-canvas-toolbar__item--icon-only {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wf-canvas-toolbar__item--icon-only .wf-canvas-toolbar__label {
+  display: none;
 }
 

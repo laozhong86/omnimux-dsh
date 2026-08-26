@@ -59,9 +59,18 @@ const ICON_MAP: Record<string, ReactNode> = {
   VideoGen: <Video size={ICON_SIZE} />,
 };
 
-function renderIcon(icon?: string): ReactNode {
-  if (!icon) return null;
-  return ICON_MAP[icon] ?? <Sparkles size={ICON_SIZE} />;
+const ICON_STYLE_MAP: Record<string, { color: string; bg: string }> = {
+  TextGen: { color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.16)' },
+  ImageGen: { color: '#c084fc', bg: 'rgba(168, 85, 247, 0.16)' },
+  VideoGen: { color: '#fb923c', bg: 'rgba(249, 115, 22, 0.16)' },
+  AudioLines: { color: '#34d399', bg: 'rgba(16, 185, 129, 0.16)' },
+  Mic: { color: '#34d399', bg: 'rgba(16, 185, 129, 0.16)' },
+  PersonStanding: { color: '#f43f5e', bg: 'rgba(244, 63, 94, 0.16)' },
+};
+
+function getIconTheme(icon?: string): { color: string; bg: string } {
+  if (!icon) return { color: '#e4e4e7', bg: 'rgba(255, 255, 255, 0.06)' };
+  return ICON_STYLE_MAP[icon] ?? { color: '#e4e4e7', bg: 'rgba(255, 255, 255, 0.06)' };
 }
 
 function clampHorizontalPosition(x: number, align: 'start' | 'end') {
@@ -141,7 +150,15 @@ const CanvasNodeActionMenu: React.FC<CanvasNodeActionMenuProps> = ({
         >
           <div className="wf-action-menu__item-inner">
             {option.icon ? (
-              <span className="wf-action-menu__item-icon">{renderIcon(option.icon)}</span>
+              <span
+                className="wf-action-menu__item-icon"
+                style={{
+                  background: getIconTheme(option.icon).bg,
+                  color: getIconTheme(option.icon).color,
+                }}
+              >
+                {ICON_MAP[option.icon] ?? <Sparkles size={ICON_SIZE} />}
+              </span>
             ) : null}
             <div className="wf-action-menu__item-text">
               <span className="wf-action-menu__item-label">{option.label}</span>

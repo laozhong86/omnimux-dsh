@@ -33,6 +33,7 @@ import {
   PROJECT_SCHEMA_VERSION,
   parseProject,
   type Project,
+  type ProjectPage,
   type ProjectSummary,
 } from './schema';
 
@@ -60,6 +61,10 @@ export interface ProjectStore {
   get(id: string): ProjectRecord;
   rename(id: string, title: string): ProjectRecord;
   bindSession(id: string, sessionId: string): ProjectRecord;
+  addPage(projectId: string, pageTitle: string, opts?: { canvasWorkspaceId?: string; loadMemory?: boolean }): ProjectRecord;
+  removePage(projectId: string, pageId: string): ProjectRecord;
+  renamePage(projectId: string, pageId: string, title: string): ProjectRecord;
+  setActivePage(projectId: string, pageId: string): ProjectRecord;
   /** 摘除元数据，保留用户文件夹。 */
   remove(id: string): void;
 }
@@ -222,6 +227,72 @@ export function createProjectStore(opts: { libraryRoot: string }): ProjectStore 
         throw new ProjectStoreError('session-required', 'sessionId is required');
       }
       const next: Project = { ...current.project, sessionId, updatedAt: new Date().toISOString() };
+      return persistProject(current.dir, next);
+    },
+
+    addPage(projectId: string, pageTitle: string, opts = {}): ProjectRecord {
+      const current = requireProject(projectId);
+      const trimmed = validateTitle(pageTitle);
+      const now = new Date().toISOString();
+      const pageId = randomUUID();
+      const newPage: ProjectPage = {
+        id: pageId,
+        title: trimmed,
+        createdAt: now,
+        updatedAt: now,
+        canvasWorkspaceId: opts.canvasWorkspaceId,
+        loadMemory: opts.loadMemory ?? false,
+      };
+      const existingPages = current.project.pages ?? [];
+      const nextPages = [...existingPages, newPage];
+      const next: Project = {
+        ...current.project,
+        pages: nextPages,
+        activePageId: pageId,
+        updatedAt: now,
+      };
+      return persistProject(current.dir, next);
+    },
+
+    removePage(projectId: string, pageId: string): ProjectRecord {
+      const current = requireProject(projectId);
+      const existingPages = current.project.pages ?? [];
+      const nextPages = existingPages.filter((p) => p.id !== pageId);
+      const nextActiveId =
+        current.project.activePageId === pageId
+          ? nextPages[0]?.id
+          : current.project.activePageId;
+      const next: Project = {
+        ...current.project,
+        pages: nextPages,
+        activePageId: nextActiveId,
+        updatedAt: new Date().toISOString(),
+      };
+      return persistProject(current.dir, next);
+    },
+
+    renamePage(projectId: string, pageId: string, title: string): ProjectRecord {
+      const current = requireProject(projectId);
+      const trimmed = validateTitle(title);
+      const existingPages = current.project.pages ?? [];
+      const nextPages = existingPages.map((p) =>
+        p.id === pageId ? { ...p, title: trimmed, updatedAt: new Date().toISOString() } : p,
+      );
+      const next: Project = {
+        ...current.project,
+        pages: nextPages,
+        updatedAt: new Date().toISOString(),
+      };
+      return persistProject(current.dir, next);
+    },
+
+    setActivePage(projectId: string, pageId: string): ProjectRecord {
+      const current = requireProject(projectId);
+      const next: Project = {
+        ...current.project,
+        activePageId: pageId,
+        updatedAt: new Date().toISOString(),
+      };
       return persistProject(current.dir, next);
     },
 

@@ -58,10 +58,10 @@ export function listWorkspaces(): Promise<ApiResult<{ workspaces: WorkspaceSumma
   return request<{ workspaces: WorkspaceSummary[] }>(WORKFLOW_API_ROUTES.workspaces);
 }
 
-export function createWorkspace(name?: string): Promise<ApiResult<{ workspace: CanvasWorkspaceSnapshot }>> {
+export function createWorkspace(name?: string, id?: string): Promise<ApiResult<{ workspace: CanvasWorkspaceSnapshot }>> {
   return request<{ workspace: CanvasWorkspaceSnapshot }>(WORKFLOW_API_ROUTES.workspaces, {
     method: 'POST',
-    body: { name },
+    body: { name, id },
   });
 }
 

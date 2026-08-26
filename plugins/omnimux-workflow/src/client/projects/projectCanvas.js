@@ -188,9 +188,16 @@ export function factorySidebarWidthPx(prefs, env = {}) {
   return Math.max(PROJECT_CANVAS_MIN_PX, Math.round(viewport * percent / 100))
 }
 
+/** 会话输入窗口标准舒适宽度（保证标题单行舒展、输入框与模式胶囊无畸变）。 */
+export const PROJECT_CONVERSATION_TARGET_WIDTH_PX = 420
+/** 会话输入窗口最小保底宽度。 */
+export const PROJECT_CONVERSATION_MIN_WIDTH_PX = 360
+
 /**
- * 对话:画布 = 15:85。分母是「视口 − 官方会话栏」，不是 leftover overlay，也不是整窗。
- * 窄屏保证画布 ≥ 280px。
+ * 画布宽度自适应计算：
+ * 保持会话输入窗口处于恒定舒适宽度（约 420px），
+ * 当左侧工作区侧边栏展开或收起时，由右侧画布去自适应扩展或收缩，
+ * 避免中间会话窗口被挤压变形。
  *
  * @param {{ width?: number, panelOpen?: boolean } | null | undefined} state
  * @param {{ conversationWidth?: number, viewportWidth?: number, officialSidebarWidth?: number }} [env]
@@ -200,10 +207,17 @@ export function projectCanvasWidthPx(state, env = {}) {
   const viewport = envViewportWidth(env)
   const max = viewport > 0 ? Math.max(PROJECT_CANVAS_MIN_PX, viewport) : PROJECT_CANVAS_MIN_PX
   const usable = projectCanvasUsableWidthPx(state, env)
-  const raw = usable > 0
-    ? Math.round(usable * PROJECT_CANVAS_RATIO)
-    : (viewport > 0 ? Math.round(viewport * PROJECT_CANVAS_RATIO) : PROJECT_CANVAS_MIN_PX)
-  return Math.min(max, Math.max(PROJECT_CANVAS_MIN_PX, raw))
+  if (usable <= 0) {
+    const raw = viewport > 0 ? Math.max(PROJECT_CANVAS_MIN_PX, viewport - PROJECT_CONVERSATION_TARGET_WIDTH_PX) : PROJECT_CANVAS_MIN_PX
+    return Math.min(max, raw)
+  }
+
+  // 保证会话窗口恒定在舒适宽度（420px），多余的所有视口宽度全部归右侧画布自适应扩展
+  let targetCanvasWidth = usable - PROJECT_CONVERSATION_TARGET_WIDTH_PX
+  if (targetCanvasWidth < PROJECT_CANVAS_MIN_PX) {
+    targetCanvasWidth = usable - PROJECT_CONVERSATION_MIN_WIDTH_PX
+  }
+  return Math.min(max, Math.max(PROJECT_CANVAS_MIN_PX, Math.round(targetCanvasWidth)))
 }
 
 function liveWidth(state) {
@@ -261,8 +275,9 @@ export function legacyProjectCanvasWidthPx(state, env = {}) {
  * @param {{ conversationWidth?: number, viewportWidth?: number, officialSidebarWidth?: number }} [env]
  * @returns {boolean}
  */
-export function shouldApplyProjectCanvasRatio(sessionId, state, prefs, env = {}) {
+export function shouldApplyProjectCanvasRatio(sessionId, state, prefs, env = {}, force = false) {
   if (!sessionId || !state) return false
+  if (force) return true
   if (APPLIED_RATIO_SESSIONS.has(sessionId)) return false
   const width = liveWidth(state)
   if (typeof width !== 'number') return true
@@ -300,14 +315,15 @@ export function shouldApplyProjectCanvasRatio(sessionId, state, prefs, env = {})
  * @param {string | undefined} sessionId
  * @param {{ reduce?: Function, getSnapshot?: Function, getPrefs?: Function } | null} [store]
  * @param {{ conversationWidth?: number, viewportWidth?: number, officialSidebarWidth?: number }} [env]
+ * @param {boolean} [force]
  * @returns {number | null | undefined}
  */
-export function applyProjectCanvasRatio(service, sessionId, store = null, env = {}) {
+export function applyProjectCanvasRatio(service, sessionId, store = null, env = {}, force = false) {
   const snapshot = (typeof store?.getSnapshot === 'function' ? store.getSnapshot() : null)
     || service?.getSnapshot?.()
   const state = snapshot?.state
   const prefs = typeof store?.getPrefs === 'function' ? store.getPrefs() : undefined
-  if (!shouldApplyProjectCanvasRatio(sessionId, state, prefs, env)) return null
+  if (!shouldApplyProjectCanvasRatio(sessionId, state, prefs, env, force)) return null
   const conversation = envConversationWidth(env)
   const viewport = envViewportWidth(env)
   const official = officialSessionSidebarWidth(env)

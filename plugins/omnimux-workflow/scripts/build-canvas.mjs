@@ -49,9 +49,16 @@ const result = await esbuild.build({
 const code = result.outputFiles[0]?.text
 if (!code) throw new Error('esbuild produced no output')
 
-mkdirSync(dirname(outFile), { recursive: true })
-writeFileSync(outFile, code)
-console.log(`wrote ${outFile} (${code.length} bytes)`)
+// `--harness` is a visual-acceptance watcher. It MUST NOT rewrite the
+// production island at lib/canvas.js, or a concurrent L3 sync will drift
+// the moment any src/canvas file changes.
+if (!withHarness) {
+  mkdirSync(dirname(outFile), { recursive: true })
+  writeFileSync(outFile, code)
+  console.log(`wrote ${outFile} (${code.length} bytes)`)
+} else {
+  console.log(`skipped ${outFile} (--harness does not write production bundle)`)
+}
 
 if (withHarness) {
   const harnessOut = join(root, 'dist-harness', 'canvas-harness.js')

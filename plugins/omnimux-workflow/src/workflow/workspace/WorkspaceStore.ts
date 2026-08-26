@@ -51,14 +51,14 @@ export interface WorkspaceSaveResult {
 
 export interface WorkspaceStore {
   list(): WorkspaceSummary[];
-  create(name: string | undefined): CanvasWorkspaceSnapshot;
+  create(name: string | undefined, id?: string): CanvasWorkspaceSnapshot;
   get(id: string): CanvasWorkspaceSnapshot;
   save(id: string, payload: SaveCanvasWorkspacePayload): WorkspaceSaveResult;
   remove(id: string): void;
 }
 
 function isWorkspaceId(id: string): boolean {
-  return /^ws_[a-f0-9]{12}$/.test(id);
+  return /^ws_[a-zA-Z0-9_-]{1,128}$/.test(id);
 }
 
 function newWorkspaceId(): string {
@@ -130,7 +130,7 @@ export function createWorkspaceStore(opts: {
       return rows;
     },
 
-    create(name: string | undefined): CanvasWorkspaceSnapshot {
+    create(name: string | undefined, explicitId?: string): CanvasWorkspaceSnapshot {
       // M2 QA fix #1: validate BEFORE writing anything to disk. Without this
       // a >200-char name was persisted by create() but rejected by the read
       // side (workspaceSnapshotSchema), leaving an unreadable "zombie"
@@ -141,7 +141,7 @@ export function createWorkspaceStore(opts: {
           `workspace name exceeds ${MAX_WORKSPACE_NAME_LENGTH} characters (got ${name.trim().length})`,
         );
       }
-      const id = newWorkspaceId();
+      const id = (typeof explicitId === 'string' && explicitId.trim() !== '') ? explicitId.trim() : newWorkspaceId();
       const now = new Date().toISOString();
       const snapshot: CanvasWorkspaceSnapshot = {
         schemaVersion: SNAPSHOT_SCHEMA_VERSION,
@@ -208,8 +208,11 @@ export function createWorkspaceStore(opts: {
         );
       }
 
-      atomicWriteJson(fileOf(id), next);
-      return { snapshot: next };
+      // 必须落盘 zod 清洗结果：默认 strip 未知字段，避免客户端误带
+      // measured/dragging/positionAbsolute 等瞬时键常驻 canvas.json。
+      const cleaned = strict.data as CanvasWorkspaceSnapshot;
+      atomicWriteJson(fileOf(id), cleaned);
+      return { snapshot: cleaned };
     },
 
     remove(id: string): void {

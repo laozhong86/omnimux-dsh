@@ -681,6 +681,8 @@ export function createOmnimuxSeamClient(
       };
       if (req.image !== undefined) request.image = req.image;
       if (req.duration !== undefined) request.duration = req.duration;
+      if (req.resolution !== undefined) request.resolution = req.resolution;
+      if (req.aspectRatio !== undefined) request.aspectRatio = req.aspectRatio;
       if (req.speech !== undefined) request.speech = req.speech;
       if (req.audio !== undefined) request.audio = req.audio;
       if (req.model !== undefined) request.model = req.model;
