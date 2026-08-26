@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dsh.local/schemas/dsh-plugin.schema.json",
+  "title": "DSH Plugin Registry & Manifest Schema",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "updatedAt",
+    "topology",
+    "plugins"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    },
+    "updatedAt": {
+      "type": "string"
+    },
+    "topology": {
+      "type": "object",
+      "required": ["tiers", "summary"],
+      "properties": {
+        "tiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["tierId", "name", "rootDirectory", "description"],
+            "properties": {
+              "tierId": {
+                "type": "string",
+                "enum": [
+                  "tier-0-hub",
+                  "tier-1-app",
+                  "tier-2-vertical",
+                  "tier-3-personal",
+                  "tier-4-archived"
+                ]
+              },
+              "name": { "type": "string" },
+              "rootDirectory": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "required": ["totalPlugins", "totalTools", "totalSeams"],
+          "properties": {
+            "totalPlugins": { "type": "integer" },
+            "totalTools": { "type": "integer" },
+            "totalSeams": { "type": "integer" }
+          }
+        }
+      }
+    },
+    "plugins": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pluginEntry"
+      }
+    }
+  },
+  "$defs": {
+    "pluginEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "version",
+        "tier",
+        "path",
+        "entrypoint",
+        "status",
+        "description",
+        "tags",
+        "capabilities"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "tier": {
+          "type": "string",
+          "enum": [
+            "tier-0-hub",
+            "tier-1-app",
+            "tier-2-vertical",
+            "tier-3-personal",
+            "tier-4-archived"
+          ]
+        },
+        "path": { "type": "string" },
+        "entrypoint": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["active", "beta", "experimental", "deprecated", "archived"]
+        },
+        "description": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "capabilities": {
+          "type": "object",
+          "required": [
+            "tools",
+            "seamsProvided",
+            "seamsConsumed",
+            "slots",
+            "storageDomains"
+          ],
+          "properties": {
+            "tools": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "summary", "category"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_]+$"
+                  },
+                  "summary": { "type": "string" },
+                  "category": { "type": "string" },
+                  "isWriteOperation": { "type": "boolean" },
+                  "requiresAuth": { "type": "boolean" }
+                }
+              }
+            },
+            "seamsProvided": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "interfaceDoc"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "interfaceDoc": { "type": "string" }
+                }
+              }
+            },
+            "seamsConsumed": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "slots": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["target", "componentPath"],
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "enum": [
+                      "shell.overlay",
+                      "sidebar.extra",
+                      "brand.chrome",
+                      "settings.plugin.item"
+                    ]
+                  },
+                  "componentPath": { "type": "string" }
+                }
+              }
+            },
+            "storageDomains": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "dependencies": {
+          "type": "object",
+          "properties": {
+            "requiredPlugins": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "systemBinaries": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
