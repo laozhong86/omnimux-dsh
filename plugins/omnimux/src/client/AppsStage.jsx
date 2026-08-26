@@ -17,8 +17,8 @@ export { readConversationBox } from './conversation-box.js'
 export function AppsStage({ t, apps, useSessions }) {
   useEffect(() => { injectHubStyles() }, [])
   const open = useSyncExternalStore(
-    apps ? apps.subscribe : () => () => {},
-    apps ? apps.getSnapshot : () => false,
+    apps ? (onStoreChange) => apps.subscribe(onStoreChange) : () => () => {},
+    apps ? () => apps.getSnapshot() : () => false,
   )
   const readSessions = useSessions ?? ((select) => select({}))
   const currentSession = readSessions((state) => state.current)
@@ -69,6 +69,7 @@ export function AppsStage({ t, apps, useSessions }) {
       className="omnimux-apps-stage"
       data-visible={open ? 'true' : 'false'}
       style={{
+        display: open ? undefined : 'none',
         '--stage-top': `${box.top}px`,
         '--stage-left': `${box.left}px`,
         '--stage-width': `${box.width}px`,

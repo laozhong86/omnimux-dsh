@@ -69,6 +69,7 @@ export function WorkflowStage({ t, stage, locale }) {
       className="omnimux-workflow-stage"
       data-visible={open ? 'true' : 'false'}
       style={{
+        display: open ? undefined : 'none',
         '--stage-top': `${box.top}px`,
         '--stage-left': `${box.left}px`,
         '--stage-width': `${box.width}px`,

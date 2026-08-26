@@ -175,7 +175,7 @@
       const [everOpened, setEverOpened] = useState(false);
       const [hint, setHint] = useState("");
       const close = React.useCallback(() => setOpen(false), []);
-      const box = useConversationBox(open || (everOpened && plazaKeepAlive));
+      const box = useConversationBox(open || everOpened);
       if (open && !everOpened) setEverOpened(true);
 
       useEffect(() => {
@@ -253,8 +253,8 @@
         return () => document.removeEventListener("pointerdown", onPointer, true);
       }, [open, close]);
 
-      // L0 keep-alive: after first open, keep PlazaView mounted and hide via data-active.
-      const keep = plazaKeepAlive && everOpened;
+      // L0 keep-alive: after first open, keep PlazaView permanently mounted and hide via display:none.
+      const keep = everOpened;
       const show = open && box;
       const panel = typeof document !== "undefined" && box && (keep || show)
         ? createPortal(
@@ -262,6 +262,9 @@
             className: "sh-plaza-view",
             "data-active": open ? "true" : "false",
             "aria-hidden": open ? undefined : "true",
+            style: {
+              display: open ? undefined : "none",
+            },
           }, h(PlazaView, { t: tr, onClose: close, box, active: open })),
           document.body,
         )
