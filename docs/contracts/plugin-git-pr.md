@@ -17,12 +17,13 @@
 
 ## 硬规则
 
-1. **禁止直接推 `main`**。日常改动走特性分支 + PR。
-2. **产品 PR 只打本仓**：`gh -R laozhong86/omnimux-dsh …`，base=`main`。禁止对上游 harness / desktop 开插件特性 PR。
-4. **强制 Worktree 物理隔离**。多 Agent 并行开发时，**严禁**在主仓库目录直接切分支或修改代码。每个新特性任务必须通过 `git worktree` 建立独立目录（`../omnimux-dsh-wt-<topic>`）进行开发，主目录永远停留在干净的 `main` 分支。
+1. **No Issue, No Code（必须先立项建单）**。所有需求、重构、Bug 修复必须在 GitHub 创建 Issue（参照 `docs/contracts/agent-issue-lifecycle.md`），获得 Issue ID 后方可开始后续工作。严禁跳过 Issue 直接切支编码。
+2. **禁止直接推 `main`**。日常改动走特性分支 + PR。
+3. **产品 PR 只打本仓**：`gh -R laozhong86/omnimux-dsh …`，base=`main`。禁止对上游 harness / desktop 开插件特性 PR。
+4. **强制 Worktree 物理隔离**。多 Agent 并行开发时，**严禁**在主仓库目录直接切分支或修改代码。每个新特性任务必须通过 `git worktree` 建立独立目录（`../omnimux-dsh-wt-<topic>-<issue-id>`）进行开发，主目录永远停留在干净的 `main` 分支。
 5. **合入权永远属于老板**。agent 不得 `gh pr merge`，除非老板当轮明文授权。
-6. **默认一插件一 PR**。跨插件改动（例如 hub + accounts 同改）须在 PR 描述写明理由；大跨包先问老板。
-7. **提交信息**用 conventional commits（例：`feat(market): …`、`fix(workflow): …`、`docs(contracts): …`）。`feat` / `fix` / `docs` 是 commit type，**不是**分支前缀。scope 用插件目录名或 `contracts` / `scripts`。禁止 `WIP`、`update`、`temp commit`、`fix bug` 这类标题。特性改动与纯格式化拆开。
+6. **默认一插件一 PR**。跨插件改动（例如 hub + accounts 同改）须在 PR 描述写明理由；大跨包先问老板。PR 必须显式声明 `Closes #<issue-id>`。
+7. **提交信息**用 conventional commits（例：`feat(market): … (#<issue-id>)`、`fix(workflow): … (#<issue-id>)`）。`feat` / `fix` / `docs` 是 commit type，**不是**分支前缀。scope 用插件目录名或 `contracts` / `scripts`。禁止 `WIP`、`update`、`temp commit`、`fix bug` 这类标题。特性改动与纯格式化拆开。
 8. **未验收不得标完成**。本地测绿 / sync 成功 ≠ 合入；缺浏览器或窗口证据时，board 写「未验收」。验证命令见下方「本地验证」。
 9. **禁止提交密钥**。credentials / token / `.env` / 私钥不进仓。安全修复的分支名、commit、PR 标题、测试名只写代码现在做什么（例如校验请求体大小），不写攻击类别词。
 10. **跟 PR 细节交棒** `omnimux-pr-handoff`；跟踪写入本仓 `.workbuddy/pr-board.md`。**禁止**单文件 `memory/pr-tracking.md` 覆盖多 PR。
@@ -32,15 +33,15 @@
 
 | 项 | 约定 |
 |---|---|
-| 分支名 | `agent/<plugin>-<topic>`（例：`agent/market-plaza-keepalive`） |
-| 跨插件（已批准） | `agent/cross-<topic>` |
+| 分支名 | `agent/<plugin>-<topic>-issue-<ID>`（例：`agent/market-plaza-keepalive-issue-42`） |
+| 跨插件（已批准） | `agent/cross-<topic>-issue-<ID>` |
 | 推送远端 | `origin` |
 | PR base | `main` |
-| Worktree 目录 | `../omnimux-dsh-wt-<topic>`（例：`../omnimux-dsh-wt-clip`） |
+| Worktree 目录 | `../omnimux-dsh-wt-<topic>-<ID>`（例：`../omnimux-dsh-wt-clip-42`） |
 | 生命周期工具 | `./scripts/git-wt.sh`（命令：`start`、`clean`、`list`、`doctor`） |
 | 回收 | PR 合入或放弃后删远程支与对应 Worktree；更新 board |
 
-多会话并行开发时，必须使用 `./scripts/git-wt.sh start <plugin> <topic>` 派生出独立兄弟目录，所有编码、构建与单测均在各自的 Worktree 中完成，禁止在主目录切支或写临时代码。
+多会话并行开发时，必须使用 `./scripts/git-wt.sh start <plugin> <topic> <issue_id>` 派生出独立兄弟目录，所有编码、构建与单测均在各自的 Worktree 中完成，禁止在主目录切支或写临时代码。
 
 ## 本机 board（不进 git）
 
