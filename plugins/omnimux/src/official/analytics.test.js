@@ -70,7 +70,7 @@ describe('analytics client lane', () => {
     const client = fakeClient()
     await getPostAnalytics(client, { sortBy: 'engagement', sortOrder: 'desc', limit: 50 })
     assert.equal(client.calls.length, 1)
-    assert.equal(client.calls[0].path, '/api/social/v1/analytics?sortBy=engagement&sortOrder=desc&limit=50')
+    assert.equal(client.calls[0].path, '/api/social/v1/analytics/posts?sortBy=engagement&sortOrder=desc&limit=50')
   })
 
   it('calls syncExternalPosts with POST body', async () => {

@@ -696,7 +696,7 @@ describe('registerOfficialRoutes body parsing', () => {
               }],
             }
           }
-          if (String(path).startsWith('/api/social/v1/analytics?') || String(path) === '/api/social/v1/analytics') {
+          if (String(path).startsWith('/api/social/v1/analytics/posts')) {
             return {
               posts: [{
                 postId: 'live_ep1',

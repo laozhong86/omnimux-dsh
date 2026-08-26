@@ -69,7 +69,10 @@ export function getFollowerStats(client, query = {}) {
  * @param {Record<string, unknown>} [query]
  */
 export function getPostAnalytics(client, query = {}) {
-  return client.withPat(`${API}${analyticsQueryString(query)}`)
+  // OmniMux gateway rejects the Zernio collection root GET /analytics as
+  // "Invalid URL". Posts list lives at the /posts suffix, same pattern as
+  // daily-metrics / best-time-to-post.
+  return client.withPat(`${API}/posts${analyticsQueryString(query)}`)
 }
 
 /**
