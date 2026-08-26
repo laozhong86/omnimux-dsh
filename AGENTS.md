@@ -23,7 +23,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 - Briefing (`docs/briefing.md`) is project memory, not truth. On conflict, live code, this file, and `docs/contracts/` win.
 - AGPL trees (ArcReel, 墨音) stay isolate-run. MUST NOT merge them here.
 - Dev/test/prod layering MUST follow [docs/contracts/dev-pipeline.md](docs/contracts/dev-pipeline.md): the production profile (`omnimux`) MUST NOT link working trees (materialized copies only, synced via `yarn omnimux:sync` / `scripts/sync-to-app.sh`); dev profiles (`omnimux-dev-*` under `~/.dsh-dev`) MUST link and MUST link at most one in-progress plugin each. MUST NOT hand-rsync/cp into any profile. Day-to-day agent ops run from `/Users/x/Desktop/Project/omnimux-desktop-fork` (`yarn omnimux:dev` / `yarn omnimux:sync` / `yarn omnimux:restart` / `yarn omnimux:stage`).
-- Git / PR for this tree MUST follow [docs/contracts/plugin-git-pr.md](docs/contracts/plugin-git-pr.md): branch + PR to `laozhong86/omnimux-dsh` base `main`; no direct push to `main`; only the boss merges. Open-PR follow-up uses skill `omnimux-pr-handoff` and local `.workbuddy/pr-board.md`. Do NOT apply the desktop-fork `fork`/`omnimux` topology here.
+- Git / PR for this tree MUST follow [docs/contracts/plugin-git-pr.md](docs/contracts/plugin-git-pr.md): branch + PR to `laozhong86/omnimux-dsh` base `main`; no direct push to `main`; only the boss merges. Multi-agent parallel tasks MUST use isolated worktrees (`./scripts/git-wt.sh start <plugin> <topic>`) to avoid file collision and dirty workspace contamination; the main workspace must stay pure on `main`. Open-PR follow-up uses skill `omnimux-pr-handoff` and local `.workbuddy/pr-board.md`. Do NOT apply the desktop-fork `fork`/`omnimux` topology here.
 
 ## Map
 

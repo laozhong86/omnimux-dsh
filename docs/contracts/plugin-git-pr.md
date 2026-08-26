@@ -19,15 +19,16 @@
 
 1. **禁止直接推 `main`**。日常改动走特性分支 + PR。
 2. **产品 PR 只打本仓**：`gh -R laozhong86/omnimux-dsh …`，base=`main`。禁止对上游 harness / desktop 开插件特性 PR。
-3. **合入权永远属于老板**。agent 不得 `gh pr merge`，除非老板当轮明文授权。
-4. **默认一插件一 PR**。跨插件改动（例如 hub + accounts 同改）须在 PR 描述写明理由；大跨包先问老板。
-5. **提交信息**用 conventional commits（例：`feat(market): …`、`fix(workflow): …`、`docs(contracts): …`）。`feat` / `fix` / `docs` 是 commit type，**不是**分支前缀。scope 用插件目录名或 `contracts` / `scripts`。禁止 `WIP`、`update`、`temp commit`、`fix bug` 这类标题。特性改动与纯格式化拆开。
-6. **未验收不得标完成**。本地测绿 / sync 成功 ≠ 合入；缺浏览器或窗口证据时，board 写「未验收」。验证命令见下方「本地验证」。
-7. **禁止提交密钥**。credentials / token / `.env` / 私钥不进仓。安全修复的分支名、commit、PR 标题、测试名只写代码现在做什么（例如校验请求体大小），不写攻击类别词。
-8. **跟 PR 细节交棒** `omnimux-pr-handoff`；跟踪写入本仓 `.workbuddy/pr-board.md`。**禁止**单文件 `memory/pr-tracking.md` 覆盖多 PR。
-9. **插件进 App** 仍走桌面壳 `yarn omnimux:*`（见 `ops-entry.md`）。本合同不管 sync / restart。
+4. **强制 Worktree 物理隔离**。多 Agent 并行开发时，**严禁**在主仓库目录直接切分支或修改代码。每个新特性任务必须通过 `git worktree` 建立独立目录（`../omnimux-dsh-wt-<topic>`）进行开发，主目录永远停留在干净的 `main` 分支。
+5. **合入权永远属于老板**。agent 不得 `gh pr merge`，除非老板当轮明文授权。
+6. **默认一插件一 PR**。跨插件改动（例如 hub + accounts 同改）须在 PR 描述写明理由；大跨包先问老板。
+7. **提交信息**用 conventional commits（例：`feat(market): …`、`fix(workflow): …`、`docs(contracts): …`）。`feat` / `fix` / `docs` 是 commit type，**不是**分支前缀。scope 用插件目录名或 `contracts` / `scripts`。禁止 `WIP`、`update`、`temp commit`、`fix bug` 这类标题。特性改动与纯格式化拆开。
+8. **未验收不得标完成**。本地测绿 / sync 成功 ≠ 合入；缺浏览器或窗口证据时，board 写「未验收」。验证命令见下方「本地验证」。
+9. **禁止提交密钥**。credentials / token / `.env` / 私钥不进仓。安全修复的分支名、commit、PR 标题、测试名只写代码现在做什么（例如校验请求体大小），不写攻击类别词。
+10. **跟 PR 细节交棒** `omnimux-pr-handoff`；跟踪写入本仓 `.workbuddy/pr-board.md`。**禁止**单文件 `memory/pr-tracking.md` 覆盖多 PR。
+11. **插件进 App** 仍走桌面壳 `yarn omnimux:*`（见 `ops-entry.md`）。本合同不管 sync / restart。
 
-## 分支约定
+## 分支与 Worktree 约定
 
 | 项 | 约定 |
 |---|---|
@@ -35,9 +36,11 @@
 | 跨插件（已批准） | `agent/cross-<topic>` |
 | 推送远端 | `origin` |
 | PR base | `main` |
-| 回收 | PR 合入或放弃后删远程支；更新 board |
+| Worktree 目录 | `../omnimux-dsh-wt-<topic>`（例：`../omnimux-dsh-wt-clip`） |
+| 生命周期工具 | `./scripts/git-wt.sh`（命令：`start`、`clean`、`list`、`doctor`） |
+| 回收 | PR 合入或放弃后删远程支与对应 Worktree；更新 board |
 
-当前阶段**不强制** git worktree。多会话并行写同一插件前，先在 board / 口头协调；冲突频发后再升级 worktree。若使用：sibling 目录名为 `omnimux-dsh-wt-<topic>`（现网如 `omnimux-dsh-wt-inspiration`）。禁止 `worktree remove` 不是自己建的树。
+多会话并行开发时，必须使用 `./scripts/git-wt.sh start <plugin> <topic>` 派生出独立兄弟目录，所有编码、构建与单测均在各自的 Worktree 中完成，禁止在主目录切支或写临时代码。
 
 ## 本机 board（不进 git）
 
@@ -47,20 +50,31 @@
 
 状态机建议：`draft` / `ci-red` / `changes-requested` / `ready-for-boss` / `merged` / `abandoned`。
 
-## Agent 最短 SOP
+## Agent 标准 Worktree 最短 SOP
 
 ```sh
 cd /Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh
-git fetch origin
-git switch -c agent/<plugin>-<topic> origin/main
-# 实现 + 本地验证（见下方白名单；sync 不是验收）
-git add -p
+
+# 1. 创建独立工作区（自动从 origin/main 切支）
+./scripts/git-wt.sh start <plugin> <topic>
+
+# 2. 进入专属 Worktree 独立实现与验证
+cd ../omnimux-dsh-wt-<topic>
+pnpm --filter <plugin-pkg> test
+
+# 3. 提交并推送到远端
+git add plugins/<plugin-pkg>/
 git commit -m "feat(<plugin>): ..."
 git push -u origin HEAD
+
+# 4. 创建 PR
 gh -R laozhong86/omnimux-dsh pr create --base main --fill
-# 更新 .workbuddy/pr-board.md
-# 跟 CI/review：交棒 omnimux-pr-handoff
-# 老板合入后：删远程支 + 更新 board
+# 更新主仓 .workbuddy/pr-board.md
+
+# 5. 老板合入后在主仓收尾销毁 Worktree
+cd /Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh
+git pull origin main
+./scripts/git-wt.sh clean <topic>
 ```
 
 ## 本地验证
