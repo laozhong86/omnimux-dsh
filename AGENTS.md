@@ -2,6 +2,12 @@
 
 OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This product tree lives at `/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh`. Hub is `omnimux`. First vertical is short-drama (`dsh-drama`), the first social-ops automation solution. Coding agents edit this tree. The product agent is `dsh --profile drama`.
 
+## Agent Execution & CWD Invariants (Agent 行为与路径硬约束)
+
+- **Git & CWD 锚定**：当前工作区 `./`（`/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh` 或派生的 worktree）**就是 Git 仓库根目录**。
+- **禁止工作目录越级**：外层 `dsh-plugin` **不是** Git 仓库。**严禁**执行 `cd ..` 或给 bash 工具传入外层 `workdir`。
+- **脚本入口统一**：优先使用 `package.json` 中的 `pnpm <script>`（如 `pnpm wt ...`、`pnpm test`、`pnpm doctor`、`pnpm smoke`），禁止猜测父级脚本路径。
+
 ## Hard bounds
 
 - MUST NOT treat a sibling official `deepseek-harness/packages/` tree as product source. MUST NOT open feature PRs upstream. Ship `dsh-plugin` packages and `dsh plugin add`.

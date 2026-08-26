@@ -13,6 +13,8 @@
     "dev": "node scripts/omnimux.mjs dev",
     "sync": "node scripts/omnimux.mjs sync",
     "doctor": "node scripts/omnimux.mjs doctor",
+    "dev:doctor": "bash scripts/dev-doctor.sh",
+    "dev:env": "bash scripts/dev-env.sh",
     "build:all": "node scripts/omnimux.mjs build:all",
     "lint:i18n": "node scripts/omnimux.mjs lint:i18n",
     "registry": "node scripts/omnimux.mjs registry",
@@ -21,9 +23,18 @@
     "stage": "node scripts/omnimux.mjs stage",
     "package:dev": "node scripts/omnimux.mjs package:dev",
     "omnimux": "node scripts/omnimux.mjs",
+    "wt": "bash scripts/git-wt.sh",
+    "wt:start": "bash scripts/git-wt.sh start",
+    "wt:clean": "bash scripts/git-wt.sh clean",
+    "wt:list": "bash scripts/git-wt.sh list",
+    "wt:doctor": "bash scripts/git-wt.sh doctor",
     "test": "pnpm --filter dsh-drama test && pnpm --filter omnimux test && pnpm --filter omnimux-accounts test && pnpm --filter omnimux-inspiration test && pnpm --filter omnimux-market test",
+    "test:all": "pnpm -r test",
+    "test:dx": "node scripts/test-dx-pipeline.mjs",
     "smoke": "bash scripts/smoke-drama.sh",
+    "accept:apps": "bash scripts/accept-apps-install.sh",
     "verify:models": "node scripts/verify-models.mjs",
-    "verify:image-live": "node scripts/verify-omnimux-image-live.mjs"
+    "verify:image-live": "node scripts/verify-omnimux-image-live.mjs",
+    "verify:all": "pnpm test && pnpm registry:verify && pnpm doctor"
   }
 }
