@@ -19,8 +19,8 @@ fi
 
 PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh/plugins}"
 PROFILE="${DSH_HOME:-$HOME/.dsh}/profiles/omnimux"
-# 产品树垂直（含产品库 / 插件市场）+ dsh-video + omnimux-analytics（埋点）
-ALL_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-gallery omnimux-workflow omnimux-market omnimux-inspiration dsh-video omnimux-analytics)
+# 产品树垂直（含产品库 / 插件市场 / 剪辑）+ dsh-video + omnimux-analytics（埋点）
+ALL_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip dsh-video omnimux-analytics)
 
 if [ $# -gt 0 ]; then
   PLUGINS=("$@")
