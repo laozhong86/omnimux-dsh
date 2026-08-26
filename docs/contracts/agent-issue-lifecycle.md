@@ -1,3 +1,14 @@
+---
+title: "agent-issue-lifecycle — OmniMux Agent 专属 GitHub Issue 驱动开发合同"
+id: "contract-agent-issue-lifecycle"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux"
+---
+
 # agent-issue-lifecycle — OmniMux Agent 专属 GitHub Issue 驱动开发合同
 
 > **真源与目的**：定义 `laozhong86/omnimux-dsh` 中所有 AI Agent 协同开发时的 GitHub Issue 生命周期规范。
@@ -36,9 +47,11 @@
 |---|---|---|---|
 | **状态 (Status)** | `status:triage` | `#EDEDED` | 需求已提交，待许清楚定界与查重 |
 | | `status:planning` | `#D4C5F9` | 架构设计中，高见远正在设计扩展点与契约 |
+| | `status:ready-to-run` | `#A2EEEF` | 确认实施 / 预授权无人值守，一键触发全自动流水线 |
 | | `status:in-progress` | `#FBCA04` | 编码开发中，林深在专属 Worktree 中实现 |
 | | `status:qa-review` | `#0E8A16` | 编码完成已提 PR，严过关执行五维验收 |
-| | `status:ready-for-boss` | `#1D76DB` | QA 验收通过，等待老板审查与合入 |
+| | `status:ready-for-boss` | `#1D76DB` | QA 验收通过，等待老板审查与合入（人工通道） |
+| | `status:auto-merged` | `#6F42C1` | 预授权全自动合入并同步完成（无人值守通道） |
 | **轨道 (Track)** | `track:A-dynamic` | `#BFD4F2` | Track A: 动态轻量插件 |
 | | `track:B-stage` | `#5319E7` | Track B: OmniMux 一级 Stage 插件 |
 | | `track:C-service` | `#1D76DB` | Track C: 标准服务与通用工具包 |
@@ -56,11 +69,15 @@ stateDiagram-v2
     [*] --> status_triage: 许清楚/齐活林建单
     status_triage --> status_planning: 需求确认 & 查重无误
     status_triage --> closed: 社区已有成熟插件 / 废弃
-    status_planning --> status_in_progress: 高见远技术方案评定
+    status_planning --> status_ready_to_run: 方案敲定 / 确认实施 (预授权触发)
+    status_planning --> status_in_progress: 人工通道直接指派开发
+    status_ready_to_run --> status_in_progress: 自动流水线锁单开工 (pnpm auto:run)
     status_in_progress --> status_qa_review: 林深编码单测完成 & 发起 PR
-    status_qa_review --> status_in_progress: 严过关打回 (qa:changes-requested)
-    status_qa_review --> status_ready_for_boss: 严过关放行 (qa:pass)
+    status_qa_review --> status_in_progress: 严过关打回 (qa:changes-requested / 自动自愈修复)
+    status_qa_review --> status_ready_for_boss: 严过关放行 (qa:pass，人工审核通道)
+    status_qa_review --> status_auto_merged: 严过关放行 (qa:pass，无人值守预授权通道 -> gh pr merge --auto)
     status_ready_for_boss --> closed: 老板点击 Merge -> 自动关联关闭
+    status_auto_merged --> closed: 自动 Squash 合入 + 同步物化 -> 自动关闭
 ```
 
 ---
@@ -114,11 +131,13 @@ stateDiagram-v2
   gh pr edit <PR_ID> -R laozhong86/omnimux-dsh --add-label "qa:pass,status:ready-for-boss" --remove-label "status:qa-review"
   ```
 
-### 5. 老板合入与闭环收尾
-- 老板审查通过并执行 Merge。
-- GitHub 自动关闭关联的 Issue `#42`。
-- 齐活林在主仓更新 `.workbuddy/pr-board.md` 并清理 Worktree：
+### 5. 老板合入与闭环收尾（或预授权无人值守自动合入）
+- **人工合入通道**：老板审查通过并执行 Merge，GitHub 自动关闭关联的 Issue `#42`。
+- **无人值守预授权通道（`pnpm auto:run 42`）**：五维 QA 门禁 `qa:pass` 且 CI 通过后，流水线代行执行 `gh pr merge <PR_ID> --squash --auto --delete-branch`，自动关联关闭 Issue `#42`。
+- 齐活林在主仓更新 `.workbuddy/pr-board.md` 并清理 Worktree，随后自动触发生产物化：
   ```bash
   git pull origin main
-  ./scripts/git-wt.sh clean <topic>-42
+  ./scripts/git-wt.sh clean <topic> 42
+  yarn omnimux:sync <plugin>
+  ```
   ```
