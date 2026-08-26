@@ -23,6 +23,7 @@ export function createMediaCache(dataRoot, opts = {}) {
   const maxEntries = typeof opts.maxEntries === 'number' && opts.maxEntries > 0 ? opts.maxEntries : MAX_ENTRIES
   const maxBytes = typeof opts.maxBytes === 'number' && opts.maxBytes > 0 ? opts.maxBytes : MAX_BYTES
   const ttlMs = typeof opts.ttlMs === 'number' && opts.ttlMs > 0 ? opts.ttlMs : TTL_MS
+  let lastFetchedAt = 0
 
   /**
    * @param {string} key
@@ -84,7 +85,9 @@ export function createMediaCache(dataRoot, opts = {}) {
     try {
       mkdirSync(root, { recursive: true, mode: 0o700 })
       const loc = paths(key)
-      const fetchedAt = Date.now()
+      let fetchedAt = Date.now()
+      if (fetchedAt <= lastFetchedAt) fetchedAt = lastFetchedAt + 1
+      lastFetchedAt = fetchedAt
       const meta = {
         mime: entry.mime || 'application/octet-stream',
         etag: entry.etag || `"${cacheId(key)}"`,
