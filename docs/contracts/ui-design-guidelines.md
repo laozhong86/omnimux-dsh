@@ -2,6 +2,7 @@
 
 > 适用于所有 OmniMux 系列插件客户端界面（一级独立页、侧边栏入口、弹窗 Dialog、设置面板、卡片与工具栏）。
 > 目的：杜绝系统原生控件割裂感、排版换行凌乱、字符图标简陋与圆角混乱，保证全栈深色沉浸式质感。
+> 文案与命名标准必须同步遵循：《OmniMux 全局 UI 命名与微文案规范》（`docs/contracts/ui-copywriting-and-naming-standards.md`）。
 
 ---
 
@@ -10,9 +11,9 @@
 1. **严禁裸用原生 `<select>`**：
    - WebKit / macOS Electron 下原生 `<select>` 会弹出系统蓝白相间的原生菜单，破坏暗黑质感。
    - **必须**使用定制 React Popover Dropdown（如 `omnimux-accounts` 的 `DropdownSelect`）或使用 `appearance: none; -webkit-appearance: none;` + 细线定制 SVG Chevron + 暗黑 option 面板。
-2. **严禁使用文本字符充当图标**：
-   - 严禁在按钮中使用 `↑`、`↓`、`⊞`、`≣`、`×`、`✏️`、`🗑️` 等原生 emoji 或字符。
-   - **必须**使用统一规范的矢量 SVG 图标（`viewBox="0 0 16 16"`，`width/height="12~14"`，`stroke="currentColor"`，`stroke-width="1.3~1.5"`，`stroke-linecap="round"`）。
+2. **严禁使用文本字符与 Emoji 充当图标**：
+   - 严禁在按钮或界面标签中使用 `↑`、`↓`、`⊞`、`≣`、`×`、`✏️`、`🗑️`、`🎯`、`🎬`、`⏱️`、`⚡`、`✅` 等原生 emoji 或字符。
+   - **必须**遵循《OmniMux 图标组件选型与迁移规范》（`docs/contracts/icon-design-standards.md`），优先使用 `@deepseek-ai/dsh-client-ui-primitives` 原生图标组件，缺省时使用 `lucide-react` 矢量 SVG 组件。
 3. **工具栏单行流（Single-row Toolbar）**：
    - 搜索与筛选工具栏一律声明 `flex-wrap: nowrap;`，严禁在宽屏下被子元素撑成两行。
    - 搜索框自适应拉伸（`flex: 1 1 200px; min-width: 140px; max-width: 260px;`）。
@@ -73,6 +74,11 @@
 - 阴影：`0 10px 28px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)`
 - 进场动效：`animation: omx-pop 0.12s cubic-bezier(0.16, 1, 0.3, 1)`（Y 轴位移 `-4px` → `0`，透明度 `0` → `1`）
 - 交互保障：绑定全局 `pointerdown`（点击外部收起）与 `keydown Escape`。
+
+#### 2.1.2 触发器与选项文案黄金契约（Mac/Linear 范式）
+- **触发器文案**：默认全量态显示为维度名（如 `[ 平台 ▾ ]`）或名值对（`[ 平台: 全部 ▾ ]`），过滤态显示具体值（`[ TikTok ▾ ]`）。严禁多个下拉默认态裸露为 `[ 全部 ▾ ]`。
+- **下拉首项**：首项（重置项）文案**唯一强制为 `全部` (All)**，严禁拼接维度名为 `全部平台`、`全部账号`、`全部发布来源`。
+- **维度命名**：必须使用纯实体名词（`平台`、`账号`、`发布方式`、`时间跨度`、`状态`），禁止冗余定语。
 
 ### 2.2 图标操作按钮（Icon Buttons）
 

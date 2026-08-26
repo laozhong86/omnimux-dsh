@@ -2,48 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { listInspirationsGuarded, whenAuthReady } from './api.js'
 import { errorMessage, pickList } from '../view.js'
 
-const CACHE_KEY = 'omnimux_inspiration_cache_v1'
-
-/**
- * Read persistent cache from localStorage if available
- */
-function readPersistentCache() {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return { items: [], total: 0 }
-  }
-  try {
-    const raw = window.localStorage.getItem(CACHE_KEY)
-    if (!raw) return { items: [], total: 0 }
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed.items) && typeof parsed.total === 'number') {
-      return { items: parsed.items, total: parsed.total }
-    }
-  } catch {
-    // ignore corrupted cache
-  }
-  return { items: [], total: 0 }
-}
-
-/**
- * Write cache to localStorage
- */
-function writePersistentCache(items, total) {
-  if (typeof window === 'undefined' || !window.localStorage) return
-  try {
-    window.localStorage.setItem(CACHE_KEY, JSON.stringify({ items, total, time: Date.now() }))
-  } catch {
-    // ignore quota errors
-  }
-}
-
-const initialCache = readPersistentCache()
-
 /** @type {{ phase: 'loading' | 'ready' | 'need-login', items: Array<Record<string, unknown>>, total: number }} */
-const sessionCache = {
-  phase: initialCache.items.length > 0 ? 'ready' : 'loading',
-  items: initialCache.items,
-  total: initialCache.total,
-}
+const sessionCache = { phase: 'loading', items: [], total: 0 }
 
 /**
  * @param {{ type?: string, q?: string, is_favorite?: string, sort?: string }} filters
@@ -78,7 +38,6 @@ export function useInspiration(filters) {
     setPhase('ready')
     setItems(picked.items)
     setTotal(picked.total)
-    writePersistentCache(picked.items, picked.total)
   }, [])
 
   const refresh = useCallback(() => {
@@ -87,7 +46,7 @@ export function useInspiration(filters) {
       sessionCache.phase = 'ready'
       setPhase('ready')
     })
-  }, [apply, filters])
+  }, [apply, filters.type, filters.q, filters.is_favorite, filters.sort])
 
   useEffect(() => {
     void refresh()

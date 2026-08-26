@@ -6,16 +6,33 @@ const STAGE_ID = 'omnimux-apps'
 
 export function createAppsStore() {
   let open = false
+  try {
+    open = window.localStorage.getItem('omnimux_active_product_stage') === STAGE_ID
+  } catch {}
+
   const listeners = new Set()
 
   function emit() {
     for (const listener of listeners) listener()
   }
 
+  if (open) {
+    const restore = () => {
+      try {
+        claimProductStage(STAGE_ID)
+      } catch {}
+    }
+    if (typeof queueMicrotask === 'function') queueMicrotask(restore)
+    else setTimeout(restore, 0)
+  }
+
   window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : undefined
     if (id !== STAGE_ID && open) {
       open = false
+      emit()
+    } else if (id === STAGE_ID && !open) {
+      open = true
       emit()
     }
   })

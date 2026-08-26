@@ -20,7 +20,7 @@ SKIP_BUILD=0
 PLUGINS=()
 
 # 与 sync-stable.sh 默认同步集合对齐（含 omnimux-market）
-DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-gallery omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip dsh-video omnimux-analytics)
+DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-gallery omnimux-workflow omnimux-market omnimux-inspiration dsh-video omnimux-analytics)
 
 usage() {
   sed -n '2,16p' "$0"
@@ -49,7 +49,7 @@ build_one() {
   fi
 
   case "$name" in
-    omnimux|omnimux-accounts|omnimux-assets|omnimux-products|omnimux-gallery|omnimux-inspiration|omnimux-clip)
+    omnimux|omnimux-accounts|omnimux-assets|omnimux-products|omnimux-gallery|omnimux-inspiration)
       echo "→ build $name (client)"
       (cd "$dir" && node scripts/build-client.mjs)
       ;;

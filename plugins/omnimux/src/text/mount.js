@@ -1,0 +1,78 @@
+import { OmnimuxError } from '../media/errors.js'
+import { objectParams } from '../tools/schema.js'
+import { enabledTextModels } from './catalog.js'
+import { executeOmnimuxText } from './execute.js'
+
+/**
+ * @param {{
+ *   tools: { register: (tool: object) => unknown },
+ *   provide?: (name: string, value: unknown) => void,
+ *   get?: (name: string) => unknown,
+ * }} ctx
+ * @param {{ text: object }} hub
+ * @param {object} jsonOut
+ * @param {(error: unknown) => never} onError
+ */
+export function mountTextComplete(ctx, hub, jsonOut, onError) {
+  const enabled = enabledTextModels(hub.text)
+  const modelIds = enabled.map((row) => row.id)
+  const api = {
+    /**
+     * @param {{ prompt: string, model?: string, image?: string, video?: string, system?: string, maxTokens?: number, signal?: AbortSignal }} req
+     */
+    execute(req) {
+      return executeOmnimuxText({
+        ...req,
+        text: hub.text,
+        llm: ctx.get?.('llm'),
+        attachments: ctx.get?.('attachments'),
+        env: process.env,
+      })
+    },
+  }
+  ctx.provide('textComplete', api)
+  ctx.tools.register({
+    name: 'omnimux_text_complete',
+    description:
+      'Run one one-shot completion on an enabled OmniMux whitelist model. Not a second chat: the expert does not see this conversation and receives no tools. Call only when the current model cannot do the work, or the user / contract names that model. Omit model to use the configured default (gemini-3.7-flash). Pass image (absolute path, URL, or data URI) for vision on models that accept image input; pass video (absolute path or data URI) for native video on models that accept video (today gemini-3.7-flash) — image and video are mutually exclusive. Video bypasses the harness image store and packs as image_url(data:video). claude-opus-5 is listed but its chat-completions group is temporarily 403. Do not use this to continue the conversation.',
+    parameters: objectParams({
+      model: {
+        type: 'string',
+        ...(modelIds.length > 0 ? { enum: modelIds } : {}),
+        description: 'Whitelist model id. Omit to use the configured default (gemini-3.7-flash).',
+      },
+      prompt: { type: 'string', required: true, description: 'Self-contained prompt. The expert cannot see the parent chat.' },
+      image: { type: 'string', description: 'Absolute path, http(s) URL, or data URI. Model must accept image input. Mutually exclusive with video.' },
+      video: { type: 'string', description: 'Absolute path (.mp4/.webm/.mov) or data:video URI. Model must accept video input. Mutually exclusive with image.' },
+      reason: { type: 'string', required: true, description: 'Which missing capability, or which user / contract line authorizes this call.' },
+      system: { type: 'string', description: 'Optional system text for this one request only.' },
+      max_tokens: { type: 'number', description: 'Optional output cap. Defaults to Config.text.maxTokens.' },
+    }),
+    output: jsonOut,
+    async execute(args, exec) {
+      const reason = typeof args.reason === 'string' ? args.reason.trim() : ''
+      if (!reason) {
+        throw new OmnimuxError('omnimux-invalid-request', 'reason is required')
+      }
+      try {
+        return await executeOmnimuxText({
+          prompt: args.prompt,
+          model: args.model,
+          image: args.image,
+          video: args.video,
+          system: args.system,
+          maxTokens: args.max_tokens,
+          signal: exec?.signal,
+          sessionId: exec?.agent?.session?.id,
+          text: hub.text,
+          llm: ctx.get?.('llm'),
+          attachments: ctx.get?.('attachments'),
+          env: process.env,
+        })
+      } catch (error) {
+        if (error instanceof OmnimuxError) throw error
+        return onError(error)
+      }
+    },
+  })
+}

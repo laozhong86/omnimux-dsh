@@ -56,8 +56,10 @@ it that way: user layers set `agent-default-model` only.
   think when the field is omitted do not offer Off. The route also sets
   `supportsDeveloperRole: false` because this gateway rejects the
   `developer` role pi-ai would otherwise send on a reasoning model.
-  `verify:models` fails if a patch row omits `reasoningEfforts.max` or if
-  the route default is not `max`.
+  `verify:models` fails if a patch row omits the `reasoningEfforts.max`
+  key or if the route default is not `max`. The UI `max` value is usually
+  wire `max`; `gpt-5.5` maps it to `xhigh` because the wire enum has no
+  literal `max` (`docs/evidence/omnimux-brand-four-2026-08-23.md`).
 - The one-shot expert whitelist (`plugins/omnimux/src/text/catalog.js`
   `CHAT_MODELS`) is a subset of this patch list, and its `input` matrix must
   agree with the patch. `verify:models` fails on any mismatch or if a

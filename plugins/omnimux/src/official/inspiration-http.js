@@ -15,7 +15,6 @@ import {
   rewriteMediaUrlsForHost,
   updateInspiration,
 } from './inspiration.js'
-import { cacheResponseHeaders, createMediaCache, matchesCondition } from './inspiration-cache.js'
 
 const PREFIX = '/omnimux/inspiration'
 const SITE_MEDIA = '/api/inspiration/v1/media/'
@@ -44,7 +43,6 @@ function mapError(error) {
  *   identity?: { require: Function },
  *   store?: { resolve: () => Promise<string | undefined> },
  *   siteBaseUrl?: string,
- *   dataRoot?: string,
  *   env?: NodeJS.ProcessEnv,
  *   fetcher?: typeof fetch,
  *   client?: { withPat: Function, withPatRaw?: Function },
@@ -54,7 +52,6 @@ export function createInspirationDispatcher(deps = {}) {
   const env = deps.env ?? process.env
   const official = deps.official ?? parseOfficialConfig(undefined)
   const siteBaseUrl = resolveSiteBaseUrl(deps.siteBaseUrl || env.OMNIMUX_SITE_URL || DEFAULT_SITE)
-  const mediaCache = createMediaCache(deps.dataRoot)
   const client = deps.client ?? createOfficialClient({
     fetcher: deps.fetcher,
     siteBaseUrl,
@@ -137,7 +134,7 @@ export function createInspirationDispatcher(deps = {}) {
     }
     const url = new URL(req.url || PREFIX, 'http://127.0.0.1')
     const key = mediaKeyFromHostPath(url.pathname)
-    if (!key) {
+    if (!key || key.includes('..')) {
       sendJson(res, 400, { error: 'invalid media key' })
       return
     }
@@ -149,73 +146,19 @@ export function createInspirationDispatcher(deps = {}) {
       sendJson(res, 502, { error: 'media stream unavailable' })
       return
     }
-    const ifNoneMatch = header(req, 'if-none-match')
-    const ifModifiedSince = header(req, 'if-modified-since')
-    const range = header(req, 'range')
-    const cached = range ? null : mediaCache.read(key)
-    if (cached && matchesCondition(cached, ifNoneMatch, ifModifiedSince)) {
-      res.writeHead(304, cacheResponseHeaders(cached))
-      res.end()
-      return
-    }
-    if (cached) {
-      mediaCache.touch(key)
-      res.writeHead(200, {
-        ...cacheResponseHeaders(cached),
-        'content-type': cached.mime,
-        'content-length': String(cached.length),
-      })
-      res.end(cached.body)
-      return
-    }
     try {
-      /** @type {Record<string, string>} */
-      const upHeaders = {}
-      if (range) upHeaders.range = range
-      const meta = mediaCache.readMeta(key)
-      const cachedEtag = typeof meta?.etag === 'string' ? meta.etag : ''
-      const cachedModified = typeof meta?.lastModified === 'string' ? meta.lastModified : ''
-      if (!range && cachedEtag) upHeaders['if-none-match'] = cachedEtag
-      else if (!range && cachedModified) upHeaders['if-modified-since'] = cachedModified
+      const range = header(req, 'range')
       const upstream = await client.withPatRaw(
         `${SITE_MEDIA}${key}${url.search}`,
-        { headers: upHeaders },
+        { headers: range ? { range } : {} },
       )
-      if ((upstream.status === 304) && !range) {
-        const hit = mediaCache.read(key, { allowStale: true })
-        if (hit) {
-          mediaCache.touch(key)
-          res.writeHead(200, {
-            ...cacheResponseHeaders(hit),
-            'content-type': hit.mime,
-            'content-length': String(hit.length),
-          })
-          res.end(hit.body)
-          return
-        }
-      }
       /** @type {Record<string, string>} */
       const outHeaders = {}
       for (const name of ['content-type', 'content-length', 'content-range', 'accept-ranges', 'cache-control', 'etag', 'last-modified']) {
         const value = typeof upstream.headers?.get === 'function' ? upstream.headers.get(name) : undefined
         if (value) outHeaders[name] = value
       }
-      if (!outHeaders['cache-control']) outHeaders['cache-control'] = 'public, max-age=3600'
-      const status = upstream.status || 200
-      if (status >= 200 && status < 300 && !range && typeof upstream.arrayBuffer === 'function') {
-        const body = Buffer.from(await upstream.arrayBuffer())
-        mediaCache.write(key, {
-          body,
-          mime: outHeaders['content-type'] || 'application/octet-stream',
-          etag: outHeaders.etag,
-          lastModified: outHeaders['last-modified'],
-        })
-        if (!outHeaders['content-length']) outHeaders['content-length'] = String(body.length)
-        res.writeHead(status, outHeaders)
-        res.end(body)
-        return
-      }
-      res.writeHead(status, outHeaders)
+      res.writeHead(upstream.status || 200, outHeaders)
       if (upstream.body && typeof upstream.body.getReader === 'function') {
         const { Readable } = await import('node:stream')
         Readable.fromWeb(/** @type {any} */ (upstream.body)).pipe(res)

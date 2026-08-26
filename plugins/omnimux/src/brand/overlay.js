@@ -11,10 +11,12 @@ import {
   FISH_VIEWBOX,
   HERO_FISH_MIN_WIDTH,
   NAME_WORDMARK_VIEWBOX,
+  OFFICIAL_HERO_HEADLINES,
   OFFICIAL_PRODUCT_TITLE,
   PREVIEW_BADGE_TEXTS,
   WORDMARK_VIEWBOX,
 } from './defaults.js'
+import { startHeadlineFit } from './hero-headline-fit.js'
 
 /**
  * @typedef {import('./defaults.js').BrandConfig} BrandConfig
@@ -39,6 +41,10 @@ export function resolveConfig(raw) {
     replaceHeroMark: raw?.replaceHeroMark ?? DEFAULT_CONFIG.replaceHeroMark,
     hidePreviewBadge: raw?.hidePreviewBadge ?? DEFAULT_CONFIG.hidePreviewBadge,
     rewriteWelcome: raw?.rewriteWelcome ?? DEFAULT_CONFIG.rewriteWelcome,
+    heroHeadline: raw?.heroHeadline ?? DEFAULT_CONFIG.heroHeadline,
+    heroHeadlineFit: raw?.heroHeadlineFit ?? DEFAULT_CONFIG.heroHeadlineFit,
+    heroHeadlineMaxPx: raw?.heroHeadlineMaxPx ?? DEFAULT_CONFIG.heroHeadlineMaxPx,
+    heroHeadlineMinPx: raw?.heroHeadlineMinPx ?? DEFAULT_CONFIG.heroHeadlineMinPx,
   }
 }
 
@@ -99,8 +105,11 @@ export function applyOverlay(document, config, restores) {
   coverBrandMarkFish(document, config, restores)
   coverRailFish(document, config, restores)
   coverHeroFish(document, config, restores)
+  rewriteHeroHeadline(document, config, restores)
   if (config.hidePreviewBadge) hidePreviewBadges(document, restores)
   if (config.rewriteWelcome) rewriteWelcomeCopy(document, config.productName, restores)
+  // After rewrite / hide so retarget sees the live headline and a collapsed badge.
+  startHeadlineFit(document, config, restores)
 }
 
 /**
@@ -290,6 +299,29 @@ function coverHeroFish(document, config, restores) {
 }
 
 /**
+ * Replace the official empty-session headline by exact locale match.
+ * Leaves other copy (preview badge, welcome, provider names) alone.
+ * Restores the original text on teardown.
+ * @param {Document} document Browser document.
+ * @param {BrandConfig} config Overlay config.
+ * @param {Array<() => void>} restores Disposer stack.
+ */
+export function rewriteHeroHeadline(document, config, restores) {
+  const next = config.heroHeadline
+  if (typeof next !== 'string' || next.trim() === '') return
+  for (const el of document.querySelectorAll('span,div')) {
+    if (el.childElementCount !== 0) continue
+    if (el.closest(`[${BRAND_ATTR}]`) !== null) continue
+    const current = el.textContent?.trim() ?? ''
+    if (!OFFICIAL_HERO_HEADLINES.includes(current)) continue
+    if (current === next) continue
+    const original = el.textContent
+    el.textContent = next
+    restores.push(() => { el.textContent = original })
+  }
+}
+
+/**
  * Hide the official SVG and insert the branded mark as the next in-flow sibling.
  * @param {Element} official Official SVG.
  * @param {HTMLElement | SVGElement} branded Overlay node we own.
@@ -437,7 +469,20 @@ function createWordmarkLabel(document, config, ownAttr = true) {
   if (ownAttr) label.setAttribute(BRAND_ATTR, 'wordmark')
   label.setAttribute('aria-hidden', 'true')
   label.textContent = config.wordmarkText
-  label.style.cssText = 'font-size:15px;font-weight:600;letter-spacing:-0.02em;line-height:24px;white-space:nowrap'
+  label.style.cssText = 'font-size:15px;font-weight:600;letter-spacing:-0.02em;line-height:24px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px'
+
+  // 精准识别 DEV 实例：只有通过环境变量显式指定为 dev 时才追加 DEV 标签
+  const isDev = (typeof window !== 'undefined' && (
+    (window.__OMNIMUX_BRAND__ && String(window.__OMNIMUX_BRAND__.wordmarkText).includes('Dev'))
+  )) || (typeof process !== 'undefined' && process.env?.OMNIMUX_CHANNEL === 'dev')
+
+  if (isDev && !config.wordmarkText.includes('DEV')) {
+    const badge = document.createElement('span')
+    badge.textContent = 'DEV'
+    badge.style.cssText = 'font-size:10px;font-weight:700;line-height:1;padding:2px 4px;border-radius:4px;background:#F59E0B;color:#000;vertical-align:middle;display:inline-block'
+    label.append(badge)
+  }
+
   return label
 }
 

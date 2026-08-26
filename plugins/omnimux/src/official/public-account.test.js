@@ -25,6 +25,30 @@ describe('pickAccount', () => {
     assert.equal('avatar_url' in picked, false)
   })
 
+  it('keeps a same-origin relative avatar whose id matches the row', () => {
+    const picked = pickAccount({ id: 'acc-1', avatar_url: '/omnimux/accounts/acc-1/avatar' })
+    assert.equal(picked.avatar_url, '/omnimux/accounts/acc-1/avatar')
+    const encoded = pickAccount({ id: 'a/b', avatar_url: '/omnimux/accounts/a%2Fb/avatar' })
+    assert.equal(encoded.avatar_url, '/omnimux/accounts/a%2Fb/avatar')
+  })
+
+  it('drops relative avatars that point at another id, and every non-https scheme', () => {
+    assert.equal('avatar_url' in pickAccount({ id: 'acc-1', avatar_url: '/omnimux/accounts/acc-2/avatar' }), false)
+    assert.equal('avatar_url' in pickAccount({ id: 'acc-1', avatar_url: '/omnimux/accounts/acc-1/avatar/extra' }), false)
+    assert.equal('avatar_url' in pickAccount({ id: 'acc-1', avatar_url: 'data:image/png;base64,abc' }), false)
+    assert.equal('avatar_url' in pickAccount({ id: 'acc-1', avatar_url: 'blob:https://cdn.example/a' }), false)
+    assert.equal('avatar_url' in pickAccount({ id: 'acc-1', avatar_url: 'file:///tmp/a.png' }), false)
+    assert.equal(
+      'avatar_url' in pickAccount({ id: 'acc-1', avatar_url: 'http://127.0.0.1/omnimux/accounts/acc-1/avatar' }),
+      false,
+    )
+    assert.equal(
+      'avatar_url' in pickAccount({ id: 'acc-1', avatar_url: 'https://evil.example/omnimux/accounts/acc-1/avatar' }),
+      true,
+      'https CDN URLs still pass; Host rewrite is what switches them to relative',
+    )
+  })
+
   it('passes through optional timing fields when the site sends them', () => {
     const picked = pickAccount({
       id: 'a',

@@ -15,10 +15,10 @@
 | 总目标 | 把 Gxgen 工作流能力完整迁入 OmniMux 插件体系 |
 | **推进顺序** | **① 项目壳 → ② 单项目主界面 UI/交互完全同步 → ③ 多项目/模板管理** |
 | Phase 0 语义 | 「项目」= **一个本地作品文件夹**；该文件夹 **就是** dsh 工作区（会话 cwd）。不是画布 `WorkspaceStore`，也不是「父工作区里藏一堆 json」 |
-| 项目文件落盘 | **默认库** `<videos>/OmniMux/Projects/<可读名>/`（对齐 MiniMax 视频已知文件夹策略，品牌名用 OmniMux）。项目库扫这个库，不再跟「当前会话 cwd」走 |
-| **侧栏结构** | 「工作流」入口**改名为「项目库」**；「新建项目」与「新建会话」同级；新建项目会**弹名称窗 → 建文件夹 → 登记工作区 → 新建会话 → 默认打开画布** |
+| 项目文件落盘 | **默认库** `<videos>/OmniMux/Projects/<可读名>/`（对齐 MiniMax 视频已知文件夹策略，品牌名用 OmniMux）。项目列表扫这个库，不再跟「当前会话 cwd」走 |
+| **侧栏结构** | 「工作流」入口**现文案「项目」**（曾用「项目库」）；「新建项目」与「新建会话」同级；新建项目会**弹名称窗 → 建文件夹 → 登记工作区 → 新建会话 → 默认打开画布** |
 | **新建本地项目规格** | `docs/superpowers/specs/2026-08-23-omnimux-local-project.md`（2026-08-23 拍板） |
-| **页面结构** | 项目库 = **入口页**（默认进项目列表）；点项目 → **详情页**（中间会话对话 + 右侧栏画布 tab） |
+| **页面结构** | 「项目」一级页 = **入口页**（默认进项目列表）；点项目 → **详情页**（中间会话对话 + 右侧栏画布 tab） |
 | 入口页范围 | **只保留核心**：标题+副标题、`+新建项目`、本地项目 tab、搜索、最近更新排序、项目卡片（封面/标题/日期） |
 | 入口页裁剪 | 「查看教程」「共创项目」及云共享/引导壳 = **不做** |
 
@@ -28,8 +28,8 @@
 
 | 维度 | 调整前 | 调整后 |
 |---|---|---|
-| 侧栏入口文案 | 「工作流」 | 「项目库」 |
-| 默认落点 | 全屏 `shell.overlay` 画布 | 项目库列表页（入口页） |
+| 侧栏入口文案 | 「工作流」 | 「项目」（2026-08-23 由「项目库」再缩短） |
+| 默认落点 | 全屏 `shell.overlay` 画布 | 「项目」列表页（入口页） |
 | 点项目后 | —（单项目直进） | 详情页：中间会话 + 右侧栏画布 tab |
 | 新建项目 | 复用当前 cwd 写隐藏 json | **弹「新建本地项目」** → 默认库建文件夹 → `workspaces.create({ path })` → 新会话 + **默认打开画布 15:85** |
 | 画布位置 | 全屏 overlay | **`dsh-better-sidebar` 画布 tab**（见 §2.1 落法 C；官方 details 不接管） |
@@ -41,7 +41,7 @@ dsh 宿主是 `sidebar | conversation | details` 三栏（`deepseek-harness/pack
 
 | 座位 | 类型 | 现状 | 画布可用性 |
 |---|---|---|---|
-| `sidebar` | 列表槽 | 新会话/工作区/应用 | 「项目库」入口落这里 |
+| `sidebar` | 列表槽 | 新会话/工作区/应用 | 「项目」入口落这里 |
 | `conversation` | 单占有 | 会话区，含 `conversation.view` tab 环（chat/trajectory/waterfall） | 中间对话区 |
 | `details` | **单占有** | 被官方「工具详情」面板占用（宽 300–520px，`ctx.layout` 管开关） | **画布右侧 tab 的候选落点，但无原生 tab 环** |
 | `shell.overlay` | 列表槽 | 当前工作流全屏页 | 项目库列表页可复用 |
@@ -57,7 +57,7 @@ dsh 宿主是 `sidebar | conversation | details` 三栏（`deepseek-harness/pack
 | 中文名 | 代码/路径语义 | 是什么 | 不是什么 |
 |---|---|---|---|
 | **dsh 工作区文件夹** | 官方会话所选 cwd / `workspaces.items[].path` | 对新建项目：**等于**该项目文件夹 | 不是「许多项目共用的父沙盒」 |
-| **OmniMux 项目** | `<videos>/OmniMux/Projects/<可读名>/` | 作品包；侧栏「项目库」条目；绑定 1 个工作区 + 1 个会话 | 不是画布 `WorkspaceStore`；不是旧的 `cwd/.omnimux/projects/<id>` |
+| **OmniMux 项目** | `<videos>/OmniMux/Projects/<可读名>/` | 作品包；侧栏「项目」条目；绑定 1 个工作区 + 1 个会话 | 不是画布 `WorkspaceStore`；不是旧的 `cwd/.omnimux/projects/<id>` |
 | **画布工作区** | `WorkspaceStore` / `workspaces/<id>/canvas.json` | 一张无限画布文档（nodes/edges/…） | 历史命名易混；文档里写「画布工作区」，UI 文案尽量说「画布」 |
 | **Gxgen Project** | `projects/:projectId` | Gxgen 产品壳命名空间 | 对齐时只学交互/职责，不照搬云 API |
 
@@ -73,8 +73,8 @@ dsh 宿主是 `sidebar | conversation | details` 三栏（`deepseek-harness/pack
 
 | 维度 | 内容 |
 |---|---|
-| 核心 UI | 侧栏「新建项目」「项目库」；项目库列表页（卡片/空态）；打开项目后的会话落点 |
-| 关键交互 | 新建 → **弹窗收名称** → 默认库建可读文件夹 → `workspaces.create({ path })` 进账本 → `sessions.create({ workspaceId })` → 默认开画布 15:85；点项目库条目 → 打开绑定会话；删除/重命名（最小 CRUD） |
+| 核心 UI | 侧栏「新建项目」「项目」；项目列表页（卡片/空态）；打开项目后的会话落点 |
+| 关键交互 | 新建 → **弹窗收名称** → 默认库建可读文件夹 → `workspaces.create({ path })` 进账本 → `sessions.create({ workspaceId })` → 默认开画布 15:85；点「项目」条目 → 打开绑定会话；删除/重命名（最小 CRUD） |
 | 数据 | 默认库目录下一层项目文件夹；每项目 `.omnimux/project.json`；`projectId` ↔ `workspace.path` ↔ `sessionId` |
 | Gxgen 参照 | `Projects/ProjectEntry.tsx`、`openProjectConversation.ts`、`ProjectWorkflow.tsx`（学「进项目必有会话/工作台」节奏，不抄云存储） |
 | OmniMux 现状 | ❌ 无；仅有侧栏「工作流」一级页直进画布（`sidebar-entry` rank 5） |
@@ -180,9 +180,9 @@ Timeline / ExportModal / Text overlay·样式轨 / VideoComposition / 积分门�
 
 **完成定义（DoD）**
 
-1. 侧栏在「新建会话」旁（同级视觉规范，见 `sidebar-extra-entries.md`）出现 **新建项目**；原「工作流」入口**改名为「项目库」**。  
-2. 点「新建项目」：弹「新建本地项目」收名称 → 在默认库建可读文件夹 → `workspaces.create({ path })` 进账本 → `sessions.create({ workspaceId })` → **默认打开画布 15:85** → 项目出现在项目库。禁止复用当前 cwd、禁止 `connectWorkspace`。  
-3. 点「项目库」默认进入**项目列表页**（不是直接进画布）；点项目 → 进详情（会话 + 画布）。列表扫描默认库，不是「当前会话 cwd 下的隐藏 index」。  
+1. 侧栏在「新建会话」旁（同级视觉规范，见 `sidebar-extra-entries.md`）出现 **新建项目**；原「工作流」入口**现文案「项目」**（曾用「项目库」）。  
+2. 点「新建项目」：弹「新建本地项目」收名称 → 在默认库建可读文件夹 → `workspaces.create({ path })` 进账本 → `sessions.create({ workspaceId })` → **默认打开画布 15:85** → 项目出现在「项目」列表。禁止复用当前 cwd、禁止 `connectWorkspace`。  
+3. 点「项目」默认进入**项目列表页**（不是直接进画布）；点项目 → 进详情（会话 + 画布）。列表扫描默认库，不是「当前会话 cwd 下的隐藏 index」。  
 4. **一个项目 = 一个 dsh 工作区文件夹**；会话 cwd 等于项目根。  
 5. 从项目进画布最短路径可用（**Phase 0 即右侧宽栏画布**：`dsh-better-sidebar` 画布 tab + 中间会话并存；官方 details 不接管）。  
 6. 契约文档 + 进度矩阵更新；浏览器/真实 App 冒烟通过。
@@ -193,15 +193,15 @@ Timeline / ExportModal / Text overlay·样式轨 / VideoComposition / 积分门�
 |---|---|
 | 0.1 | 契约：本地项目文件格式、默认库路径、与 sessionId 绑定（本蓝图 §5 + `2026-08-23-omnimux-local-project.md`） |
 | 0.2 | Host：默认库扫描 + 项目根内 `.omnimux/project.json`；新建走 Host mkdir（`POST {title}`）+ `workspaces.create({ path })` |
-| 0.3 | 侧栏：新建项目 + 项目库（走 `__omnimuxSidebar`，禁止自挂 observer）；「工作流」文案改「项目库」 |
-| 0.4 | 项目库页（一级页）最小列表 + 空态 + 打开（点项目 → 会话 + 画布） |
+| 0.3 | 侧栏：新建项目 + 项目（走 `__omnimuxSidebar`，禁止自挂 observer）；入口文案现为「项目」 |
+| 0.4 | 「项目」页（一级页）最小列表 + 空态 + 打开（点项目 → 会话 + 画布） |
 | 0.5 | 新建弹窗 → 建文件夹 → 登记工作区 → 建会话 → 默认开画布 15:85 联调 |
 | 0.6 | **右侧画布**：`dsh-better-sidebar.registerTab` 画布 tab；项目会话关空 Files 种子；官方 details `closeDetails`；中间会话区与右画布并存 |
 | 0.7 | **侧栏「新项目」并排「新会话」**：hub `sidebar-coordinator` 扩展「并排按钮」注册类型 |
 
 **归属（已拍板 2026-08-22）**：**先写进 `omnimux-workflow`**，Phase 0 跑通后再拆独立插件。侧栏仍必须走 `__omnimuxSidebar`；模块边界在插件内先用目录切开（如 `src/projects/`），方便日后整体搬家。
 
-**结构性调整（已拍板 2026-08-22）**：`工作流` → `项目库`（入口页 = 项目列表，只留核心）；详情页 = 中间会话 + 右侧画布 tab。画布落位 = §2.1 **方案 C**（2026-08-22 晚改拍板）：挂 `dsh-better-sidebar` 画布 tab，按会话与 Files 隔离；官方 details 不再 shadow。
+**结构性调整（已拍板 2026-08-22；文案 2026-08-23 再缩短）**：`工作流` → `项目库` → `项目`（入口页 = 项目列表，只留核心）；详情页 = 中间会话 + 右侧画布 tab。画布落位 = §2.1 **方案 C**（2026-08-22 晚改拍板）：挂 `dsh-better-sidebar` 画布 tab，按会话与 Files 隔离；官方 details 不再 shadow。
 ### Phase 1 — 单项目主界面 UI/交互完全同步
 
 在**已打开的一个项目上下文**内，L2–L7 与 Gxgen 主界面观感/交互对齐（完整迁移目标下的主界面同步）。  
@@ -229,12 +229,12 @@ L1 完整库页、L8 模板/变体/分享、跨更多管理能力。不阻塞 Ph
 | P0-01 | 术语与蓝图真源 | 0 | **已对齐** | 本文件 2026-08-22；2026-08-23 改「项目=独立文件夹=工作区」 |
 | P0-02 | 本地项目文件格式契约 | 0 | **可验收** | `src/projects/` 改冻：项目根=`<videos>/OmniMux/Projects/<名>/`；扫描为真相，index.json 停主路径。schemaVersion 仍 1。单测 133 绿；未 App 冒烟。**不得标已对齐** |
 | P0-03 | 侧栏「新建项目」 | 0 | **可验收** | 三入口先弹窗再 `runNewProject`（侧栏 inline + 折叠加号 click 原按钮 + 项目库页） |
-| P0-04 | 侧栏「项目库」 | 0 | **可验收** | `sidebar-entry.js` rank 5 label 改「项目库」（locales `nav`）；一级页 metrics 同 sidebar-extra-entries.md |
+| P0-04 | 侧栏「项目」 | 0 | **可验收** | `sidebar-entry.js` rank 5 label 现为「项目」（locales `nav`，2026-08-23 由「项目库」缩短）；一级页 metrics 同 sidebar-extra-entries.md |
 | P0-05 | 新建→写文件→建会话 | 0 | **可验收** | `runNewProject`：POST `{title}`（Host mkdir + 说明.md + project.json）→ `workspaces.create({ path })` → `sessions.create({ workspaceId })` → 关一级页 overlay → open → 画布 15:85。禁止客户端 createDirectory / connectWorkspace / create({ cwd })。**不得标已对齐**（App 冒烟前） |
 | P0-06 | 项目库列表/打开/删改最小集 | 0 | **可验收** | `ProjectLibraryPage.jsx` 列表/空态/搜索/排序/打开/重命名/删除；`ProjectStore` rename/remove 单测绿 |
 | P0-07 | 项目→画布最短路径 | 0 | **实现中** | `openProject` / `runNewProject` → `activateProjectCanvas`（关 details + 关空 Files 种子 + 开画布 tab） |
 | P0-08 | 插件归属（hub vs 独立） | 0 | **已对齐** | 先写进 `omnimux-workflow`，Phase 0 稳定后再拆独立插件 |
-| P0-09 | 「工作流」改「项目库」+ 项目列表入口页 | 0 | **可验收** | locales `nav` 改「项目库」；`shell.overlay` 换 `ProjectLibraryPage`（只留核心，砍教程/共创） |
+| P0-09 | 「工作流」改「项目」+ 项目列表入口页 | 0 | **可验收** | locales `nav`/`projects.title` 现为「项目」（2026-08-23）；`shell.overlay` 换 `ProjectLibraryPage`（只留核心，砍教程/共创） |
 | P0-10 | 画布右栏 tab 落法 | 0 | **实现中** | **改拍板方案 C**：`registerTab('omnimux-workflow:canvas')` 进 `dsh-better-sidebar`；撤销 details shadow（删 `ProjectDetailsPanel`）。App 冒烟待 sync+restart |
 | P0-11 | 侧栏「新项目」并排「新会话」 | 0 | **可验收** | 展开：inline 并排。收起轨 56px：隐藏项目按钮，官方加号弹出「新建会话 / 新建项目」（点菜单再 click 原按钮）。折叠态 observer 绑 AppFrame `data-sidebar-collapsed`（不是 html）。单测 4/4；已 `omnimux:sync omnimux`，未重启 |
 | P0-12 | 工具详情回退策略 | 0 | **可验收** | 方案 C：普通会话官方 details 原样；项目会话 `closeDetails`，工具详情完整回退仍留 Phase 0.5 |
@@ -341,3 +341,4 @@ L1 完整库页、L8 模板/变体/分享、跨更多管理能力。不阻塞 Ph
 | 2026-08-23 | **排障**：现网创建后不跳会话——根因是客户端 `createDirectory` 在 native picker 下失败、弹窗吞错。改 Host mkdir + POST `{title}`；关一级页清 `data-dsh-product-stage`。冒烟前矩阵仍「可验收」 |
 | 2026-08-23 | P0-13 排障：现网新建项目画布 ~1:1。不是官方 520。无 store.reduce 写盘当成功 + leftover 50% 误判拖过 + 折叠栏 overlap 死等。必须 live reduce 刷 CSS。质检 PASS（138）。窗口复测前不得标已对齐 |
 | 2026-08-23 | P0-13 观测拍板 15:85：会话列太宽减半。`PROJECT_CANVAS_RATIO=0.85`；旧 70% 当磁铁避免刚写的 3:7 被当拖过。139 绿。已 sync **未重启** |
+| 2026-08-23 | 侧栏/一级页展示名「项目库」→「项目」（仅文案；包名仍 `omnimux-workflow`）。`locales` `nav`/`projects.title` + 契约 occupants/矩阵已跟。已 `yarn omnimux:sync omnimux-workflow`，**未重启** |

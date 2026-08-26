@@ -29,10 +29,7 @@ export function authGuard(fn) {
       const gate = typeof window !== 'undefined' ? /** @type {any} */ (window).__omnimuxAuth : undefined
       if (!gate || typeof gate.ensureLogin !== 'function') return result
       return new Promise((resolve, reject) => {
-        // forceVerify: a 401 means the cached "logged_in" may already be stale;
-        // without verify the gate short-circuits and the page stays stuck.
         gate.ensureLogin({
-          forceVerify: true,
           onSuccess: () => {
             fn(...args).then(resolve, reject)
           },
@@ -68,6 +65,27 @@ export function whenAuthReady(cb) {
 }
 
 /**
+ * SWR L1 in-memory cache pool (TTL = 2 min)
+ */
+const CACHE_TTL_MS = 120_000
+const memoryCache = new Map()
+
+export function getInspirationCache(key) {
+  const entry = memoryCache.get(key)
+  if (!entry) return null
+  const isStale = Date.now() - entry.at > CACHE_TTL_MS
+  return { data: entry.data, isStale }
+}
+
+export function setInspirationCache(key, data) {
+  memoryCache.set(key, { data, at: Date.now() })
+}
+
+export function invalidateInspirationCache() {
+  memoryCache.clear()
+}
+
+/**
  * @param {{ type?: string, tag?: string, tags?: string, q?: string, is_favorite?: string, sort?: string, page?: number, page_size?: number }} [filters]
  */
 export function listInspirations(filters = {}) {
@@ -83,6 +101,142 @@ export function listInspirations(filters = {}) {
 
 export const listInspirationsGuarded = authGuard(listInspirations)
 
+/**
+ * Local library calls
+ * @param {{ type?: string, tag?: string, tags?: string, q?: string, platform?: string, is_favorite?: string, sort?: string, page?: number, page_size?: number }} [filters]
+ */
+export function listLocalInspirations(filters = {}) {
+  const query = new URLSearchParams()
+  for (const key of ['type', 'tag', 'tags', 'q', 'platform', 'is_favorite', 'sort', 'page', 'page_size']) {
+    const value = filters[/** @type {keyof typeof filters} */ (key)]
+    if (value == null || value === '') continue
+    query.set(key, String(value))
+  }
+  const suffix = query.toString() ? `?${query}` : ''
+  return inspirationRequest(`/omnimux/inspiration/local${suffix}`)
+}
+
+/**
+ * Atomic multi-source loader with SWR cache support
+ * @param {{ tab: string, q?: string, type?: string, sort?: string, favorite?: string, page?: number, pageSize?: number }} params
+ */
+export async function loadInspirationsAtomic(params) {
+  const { tab = 'all', q = '', type = '', sort = 'hot', favorite = '0', page = 1, pageSize = 20 } = params
+  const filterArgs = {
+    q: q.trim() || undefined,
+    type: type || undefined,
+    sort: sort || undefined,
+    is_favorite: favorite === '1' ? '1' : undefined,
+    page,
+    page_size: pageSize,
+  }
+
+  if (tab === 'local') {
+    const res = await listLocalInspirations(filterArgs)
+    if (!res.ok) throw new Error(res.body?.error || `HTTP ${res.status}`)
+    const items = (res.body?.data?.items || []).map((it) => ({ ...it, is_local: true }))
+    const total = Number(res.body?.data?.total) || items.length
+    return { items, total, hasMore: items.length === pageSize && page * pageSize < total, phase: 'ready' }
+  }
+
+  if (tab === 'public') {
+    const res = await listInspirationsGuarded(filterArgs)
+    if (res.status === 401) return { items: [], total: 0, hasMore: false, phase: 'need-login' }
+    if (!res.ok) throw new Error(res.body?.error || `HTTP ${res.status}`)
+    const items = (res.body?.data?.items || []).map((it) => ({ ...it, is_local: false }))
+    const total = Number(res.body?.data?.total) || items.length
+    return { items, total, hasMore: items.length === pageSize && page * pageSize < total, phase: 'ready' }
+  }
+
+  // tab === 'all': Fetch both simultaneously and merge atomically
+  const [localOutcome, pubOutcome] = await Promise.allSettled([
+    listLocalInspirations(filterArgs),
+    listInspirationsGuarded(filterArgs),
+  ])
+
+  let items = []
+  let total = 0
+  let needLogin = false
+
+  if (localOutcome.status === 'fulfilled' && localOutcome.value.ok) {
+    const lItems = (localOutcome.value.body?.data?.items || []).map((it) => ({ ...it, is_local: true }))
+    items.push(...lItems)
+    total += Number(localOutcome.value.body?.data?.total) || lItems.length
+  }
+
+  if (pubOutcome.status === 'fulfilled') {
+    const pubRes = pubOutcome.value
+    if (pubRes.status === 401) {
+      needLogin = true
+    } else if (pubRes.ok) {
+      const pItems = (pubRes.body?.data?.items || []).map((it) => ({ ...it, is_local: false }))
+      items.push(...pItems)
+      total += Number(pubRes.body?.data?.total) || pItems.length
+    }
+  }
+
+  return {
+    items,
+    total,
+    hasMore: items.length >= pageSize,
+    phase: needLogin && items.length === 0 ? 'need-login' : 'ready',
+  }
+}
+
+/**
+ * Import and deconstruct URL to local vault
+ * @param {{ url: string, tags?: string[], auto_analyze?: boolean }} payload
+ */
+export function importLocalInspiration(payload) {
+  invalidateInspirationCache()
+  return inspirationRequest('/omnimux/inspiration/local/import-url', {
+    method: 'POST',
+    body: payload,
+  })
+}
+
+/**
+ * Trigger or re-run AI deconstruction on an existing local inspiration item
+ * @param {string} id
+ */
+export function triggerAnalyzeInspiration(id) {
+  invalidateInspirationCache()
+  return inspirationRequest(`/omnimux/inspiration/local/${encodeURIComponent(id)}/analyze`, {
+    method: 'POST',
+  })
+}
+
+/**
+ * Batch delete multiple local inspirations
+ * @param {string[]} ids
+ */
+export function batchDeleteLocalInspirations(ids) {
+  invalidateInspirationCache()
+  return inspirationRequest('/omnimux/inspiration/local/batch-delete', {
+    method: 'POST',
+    body: { ids },
+  })
+}
+
+/**
+ * Delete single local inspiration
+ * @param {string} id
+ */
+export function deleteLocalInspiration(id) {
+  invalidateInspirationCache()
+  return inspirationRequest(`/omnimux/inspiration/local/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+}
+
+/**
+ * Get single local inspiration details
+ * @param {string} id
+ */
+export function getLocalInspiration(id) {
+  return inspirationRequest(`/omnimux/inspiration/local/${encodeURIComponent(id)}`)
+}
+
 export function listTags() {
   return inspirationRequest('/omnimux/inspiration/tags')
 }
@@ -96,6 +250,7 @@ export function hostMediaSrc(url) {
   if (typeof url !== 'string' || url === '') return ''
   if (url.includes('..')) return ''
   if (/^https?:\/\//i.test(url)) return url
+  if (url.startsWith('/omnimux/inspiration/local/media/')) return url
   if (url.startsWith('/omnimux/inspiration/media/')) return url
   if (url.startsWith('/api/inspiration/v1/media/')) {
     return `/omnimux/inspiration/media/${url.slice('/api/inspiration/v1/media/'.length)}`
@@ -157,4 +312,51 @@ export function resolveTikTokEmbedUrl(sourceUrlOrId) {
   }
   const id = extractTikTokVideoId(raw)
   return id ? `https://www.tiktok.com/player/v1/${id}` : null
+}
+
+/**
+ * Resolve author homepage URL across platforms.
+ * @param {unknown} creator
+ * @param {string} [sourceUrl]
+ * @param {string} [platform]
+ * @returns {string | null}
+ */
+export function resolveCreatorProfileUrl(creator, sourceUrl = '', platform = '') {
+  if (creator && typeof creator === 'object') {
+    const rec = /** @type {Record<string, unknown>} */ (creator)
+    if (typeof rec.profile_url === 'string' && /^https?:\/\//i.test(rec.profile_url)) {
+      return rec.profile_url
+    }
+    if (typeof rec.url === 'string' && /^https?:\/\//i.test(rec.url)) {
+      return rec.url
+    }
+  }
+
+  const rawHandle = typeof creator === 'string'
+    ? creator
+    : (typeof creator === 'object' && creator !== null
+        ? String(/** @type {Record<string, unknown>} */ (creator).handle || /** @type {Record<string, unknown>} */ (creator).name || '')
+        : '')
+
+  let handle = rawHandle.replace(/^@+/, '').trim()
+  const sUrl = typeof sourceUrl === 'string' ? sourceUrl : ''
+  const plat = typeof platform === 'string' ? platform.toLowerCase() : ''
+
+  if (!handle || handle.toLowerCase() === 'creator' || handle.toLowerCase() === 'social') {
+    const m = sUrl.match(/@([^/?#]+)/)
+    if (m && m[1]) handle = m[1]
+    else return null
+  }
+
+  const sUrlLower = sUrl.toLowerCase()
+  if (sUrlLower.includes('instagram.com') || plat === 'instagram') {
+    return `https://www.instagram.com/${handle}`
+  }
+  if (sUrlLower.includes('youtube.com') || sUrlLower.includes('youtu.be') || plat === 'youtube') {
+    return `https://www.youtube.com/@${handle}`
+  }
+  if (sUrlLower.includes('twitter.com') || sUrlLower.includes('x.com') || plat === 'twitter' || plat === 'x') {
+    return `https://x.com/${handle}`
+  }
+  return `https://www.tiktok.com/@${handle}`
 }

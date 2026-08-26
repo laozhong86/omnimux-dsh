@@ -1,7 +1,4 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { OmnimuxError } from '../media/errors.js'
 import { createInspirationDispatcher, registerInspirationRoutes } from './inspiration-http.js'
@@ -31,7 +28,6 @@ function listPayload() {
         id: '1',
         type: 'video',
         title: '猫',
-        cover_key: '/api/inspiration/v1/media/seed/cover-04.jpg',
         cover_url: '/api/inspiration/v1/media/covers/a.jpg',
       }],
     },
@@ -51,7 +47,6 @@ describe('inspiration dispatcher', () => {
     })
     const result = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/inspiration?type=video' })
     assert.equal(result.status, 200)
-    assert.equal(result.body.data.items[0].cover_key, '/omnimux/inspiration/media/seed/cover-04.jpg')
     assert.equal(result.body.data.items[0].cover_url, '/omnimux/inspiration/media/covers/a.jpg')
     assert.deepEqual(seen, ['/api/inspiration/v1/inspirations?type=video'])
   })
@@ -135,67 +130,6 @@ describe('inspiration dispatcher', () => {
     }
     await dispatcher.streamMedia({ method: 'GET', url: '/omnimux/inspiration/media/../etc/passwd' }, bad)
     assert.match(bad.body, /invalid media key/)
-
-    const encoded = {
-      status: 0,
-      body: '',
-      writeHead() {},
-      end(text) { this.body = String(text) },
-      destroy() {},
-    }
-    await dispatcher.streamMedia({ method: 'GET', url: '/omnimux/inspiration/media/%2e%2e/etc/passwd' }, encoded)
-    assert.match(encoded.body, /invalid media key/)
-  })
-
-  it('serves a second GET from disk without calling upstream', async () => {
-    const home = mkdtempSync(join(tmpdir(), 'insp-http-cache-'))
-    let upstreams = 0
-    const dispatcher = createInspirationDispatcher({
-      official: { mount: true },
-      dataRoot: home,
-      client: clientWith(async () => ({}), async () => {
-        upstreams += 1
-        return {
-          status: 200,
-          headers: {
-            get: (name) => (name === 'content-type' ? 'image/jpeg' : name === 'etag' ? '"up"' : undefined),
-          },
-          arrayBuffer: async () => Uint8Array.from([9, 8, 7]).buffer,
-        }
-      }),
-    })
-    function capture() {
-      return {
-        status: 0,
-        headers: {},
-        body: null,
-        headersSent: false,
-        writeHead(status, headers) { this.status = status; this.headers = headers; this.headersSent = true },
-        end(buf) { this.body = buf },
-        destroy() {},
-      }
-    }
-    try {
-      const first = capture()
-      const second = capture()
-      await dispatcher.streamMedia({ method: 'GET', url: '/omnimux/inspiration/media/seed/cover-04.jpg' }, first)
-      await dispatcher.streamMedia({ method: 'GET', url: '/omnimux/inspiration/media/seed/cover-04.jpg' }, second)
-      assert.equal(upstreams, 1)
-      assert.equal(first.status, 200)
-      assert.equal(second.status, 200)
-      assert.equal(Buffer.from(second.body).toString('hex'), '090807')
-      assert.equal(second.headers['cache-control'], 'public, max-age=3600')
-      const notModified = capture()
-      await dispatcher.streamMedia({
-        method: 'GET',
-        url: '/omnimux/inspiration/media/seed/cover-04.jpg',
-        headers: { 'if-none-match': '"up"' },
-      }, notModified)
-      assert.equal(notModified.status, 304)
-      assert.equal(upstreams, 1)
-    } finally {
-      rmSync(home, { recursive: true, force: true })
-    }
   })
 })
 

@@ -93,7 +93,7 @@ media:
 
 `textComplete` is a one-shot expert call, not a second chat. It does not inherit parent messages, does not pass tools, and does not write the image/video into the parent session. Authorization is the enabled whitelist plus the tool's required `reason`. The hub does not prompt the user.
 
-The callable set is `Config.text.models`. Every `id` must already be a `cordis.patch.yml` `omnimux` chat model. `enabled: false` hides that row from the tool. Omitted `models` uses the eight chat-directory defaults, all enabled. `defaultModel` is what an omitted `model` resolves to on text-only, image, and video requests; `OMNIMUX_TEXT_DEFAULT_MODEL` overlays it. Image / video are not separate seams: a request with `image` must land on a row whose measured `input` includes `image` (gpt-5.6-sol, grok-4.6, kimi-k3, deepseek-v4-flash-vision-exp, gemini-3.7-flash — evidence: `docs/evidence/omnimux-modality-2026-08-18.md`); a request with `video` must land on a row whose `input` includes `video` (**today only `gemini-3.7-flash`**, evidence: 2026-08-22 spike — pack as `image_url` + `data:video/…`, never `video_url`). `image` and `video` are mutually exclusive. deepseek-v4-pro and glm-5.3 stay text-only; claude-opus-5 is listed but its chat-completions group is temporarily 403.
+The callable set is `Config.text.models`. Every `id` must already be a `cordis.patch.yml` `omnimux` chat model. `enabled: false` hides that row from the tool. Omitted `models` uses the eleven chat-directory defaults, all enabled. `defaultModel` is what an omitted `model` resolves to on text-only, image, and video requests; `OMNIMUX_TEXT_DEFAULT_MODEL` overlays it. Image / video are not separate seams: a request with `image` must land on a row whose measured `input` includes `image` (gpt-5.6-sol, gpt-5.5, grok-4.6, kimi-k3, deepseek-v4-flash-vision-exp, gemini-3.7-flash, gemini-3.1-pro-preview, claude-opus-4-6 — evidence: `docs/evidence/omnimux-modality-2026-08-18.md` plus `docs/evidence/omnimux-brand-four-2026-08-23.md`); a request with `video` must land on a row whose `input` includes `video` (**today only `gemini-3.7-flash`**, evidence: 2026-08-22 spike — pack as `image_url` + `data:video/…`, never `video_url`). `image` and `video` are mutually exclusive. deepseek-v4-pro and glm-5.3 stay text-only; claude-opus-5 is listed but its chat-completions group is temporarily 403. `minimax-m3` is on the live catalog but this key's group 403s it, so it is not in the directory.
 
 ```text
 text:
@@ -101,14 +101,17 @@ text:
   defaultModel: gemini-3.7-flash
   maxTokens: 4096
   models:
-    - { id: claude-opus-5,     brand: anthropic, role: flagship, enabled: true }
-    - { id: gpt-5.6-sol,       brand: openai,    role: flagship, enabled: true }
-    - { id: grok-4.6,          brand: xai,       role: flagship, enabled: true }
-    - { id: kimi-k3,           brand: moonshot,  role: flagship, enabled: true }
-    - { id: deepseek-v4-pro,   brand: deepseek,  role: flagship, enabled: true }
-    - { id: deepseek-v4-flash, brand: deepseek,  role: classic,  enabled: true }
-    - { id: gemini-3.7-flash,  brand: google,    role: flagship, enabled: true }
-    - { id: glm-5.3,           brand: zhipu,     role: flagship, enabled: true }
+    - { id: claude-opus-5,            brand: anthropic, role: flagship, enabled: true }
+    - { id: claude-opus-4-6,          brand: anthropic, role: flagship, enabled: true }
+    - { id: gpt-5.6-sol,              brand: openai,    role: flagship, enabled: true }
+    - { id: gpt-5.5,                  brand: openai,    role: flagship, enabled: true }
+    - { id: grok-4.6,                 brand: xai,       role: flagship, enabled: true }
+    - { id: kimi-k3,                  brand: moonshot,  role: flagship, enabled: true }
+    - { id: deepseek-v4-pro,          brand: deepseek,  role: flagship, enabled: true }
+    - { id: deepseek-v4-flash-vision-exp, brand: deepseek, role: classic, enabled: true }
+    - { id: gemini-3.7-flash,         brand: google,    role: flagship, enabled: true }
+    - { id: gemini-3.1-pro-preview,   brand: google,    role: flagship, enabled: true }
+    - { id: glm-5.3,                  brand: zhipu,     role: flagship, enabled: true }
 ```
 
 A request may name `model` or omit it for `defaultModel`. The image is an absolute path, `http(s)` URL, or data URI (still via `ctx.llm.stream` + `ctx.attachments`). The video is an absolute path (`.mp4` / `.webm` / `.mov`) or `data:video/…` URI; video **bypasses** `ctx.llm` / attachments and uses hub chat completions with `OMNIMUX_API_KEY` / `OMNIMUX_TOKEN` (+ optional `OMNIMUX_BASE_URL`). Missing `ctx.llm` on text/image, or (when `image` is set) `ctx.attachments`, throws `needs-provider`. Missing key on video throws `omnimux-unconfigured`.
@@ -125,7 +128,9 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `textComplete` | neutral provide | `{ prompt, model?, image?, video?, system?, maxTokens?, signal? }` | `{ mode: "live", model, text }` | `needs-provider`, `omnimux-unconfigured` (video), `unknown-model`, `omnimux-invalid-request`, stream / HTTP errors |
 | `omnimux_text_complete` | hub tool over `textComplete` | same plus required `reason` | same | same |
 | `omnimux_social_data` | official-only tool | `platform` + `capability` + `url`/`id`/`query`; `sk-` | `{ platform, capability, model, data }` | `omnimux-unconfigured`, `omnimux-invalid-request` |
+| `omnimux_page_fetch` | official-only tool | `{ url }` http(s); `sk-`; locked model `jina-reader-v1` | `{ mode: "live", model, url, title, pageContent, truncated? }` | `omnimux-unconfigured`, `needs-omnimux`, `omnimux-invalid-request`, `omnimux-request-failed`, `omnimux-invalid-response` |
 | `omnimux_accounts_*` / `omnimux_publish_*` | official-only tools | connect / list / presign / create / get post; access token | upstream JSON, secrets stripped | `needs-omnimux` |
+| `omnimux_analytics_*` | official-only tools | daily metrics / best time / frequency / decay / followers / posts / sync / inbox; access token | upstream JSON | `needs-omnimux` |
 | `omnimux_inspiration_*` | official-only tools | list / get / create / update / delete / tags / status; access token | upstream `{success,data}` envelope, media URLs unchanged | `needs-omnimux` |
 | `videoProcess` | neutral provide（provider: dsh-video） | `{ capability, input, dest, signal? }` | `{ mode: "live", files?: [{ path, kind, meta? }], result? }` | `ffmpeg-missing`, `unknown-capability`, `video-invalid-input`, `video-ffmpeg-failed`, `video-incompatible-streams`, `video-canceled`, `video-timeout`, `video-<capability>-failed` |
 | `video_process` | dsh-video tool over `videoProcess` | same | same | same |
@@ -138,6 +143,7 @@ These cannot be swapped for a third-party endpoint. Unconfigured calls throw `ne
 
 - Identity: device login, `GET /api/user/self`, public profile cache
 - Social data: OmniMux social-data capabilities (`sk-`)
+- Page fetch: OmniMux `POST /v1/reader` (`sk-`, model `jina-reader-v1`). Success is `text/plain` markdown, not chat JSON. Do **not** reuse `createOfficialClient.withSk` (that path always `response.json()`).
 - Social publish: connect account, list accounts, media presign, create post (`OMNIMUX_ACCESS_TOKEN`)
 - Inspiration library: list / get / create / update / soft-delete / tags / status (`OMNIMUX_ACCESS_TOKEN`)
 
@@ -149,40 +155,39 @@ Browser-local write routes (same-origin guard); the browser app is `plugins/omni
 
 | Method & Path | Body | Success |
 |---|---|---|
-| GET `/omnimux/accounts` | — | `{accounts: [ViewRow]}`; optional `?platform=&group=` filters |
+| GET `/omnimux/accounts` | — | `{accounts: [ViewRow]}`; optional `?platform=&group=` filters. Cache hit rewrites `avatar_url` to the same-origin byte route; a miss keeps the https URL and fills the cache in the background. |
+| GET `/omnimux/accounts/{id}/avatar` | — | local raster bytes (`image/jpeg\|png\|webp\|gif`); `Cache-Control: private, max-age=86400`; `X-Content-Type-Options: nosniff`. Unsigned → 401; miss / `accountAvatars.enabled=false` → 404; non-GET → 405. Never `sendJson`, never 302 to the CDN. |
 | POST `/omnimux/accounts` | `{platform, redirect_url?}` | `{auth_url}` (site OAuth page; no device-code endpoint exists yet) |
 | PATCH `/omnimux/accounts/{id}` | `{group?: string \| null, agent_usable?: boolean}` | `{account: ViewRow}`; empty-string `group` clears; a missing site row still updates pure metadata |
-| DELETE `/omnimux/accounts/{id}` | — | `{ok: true}` |
+| DELETE `/omnimux/accounts/{id}` | — | `{ok: true}`; also deletes the local avatar file + index row |
 
-ViewRow = the `pickAccount` whitelist (id/platform/display_name/username/name/group/status/expires_at?/connected_at?/https avatar_url) plus overlay fields `agent_usable?` / `last_used_at?` and a computed `status` (site status normalized; else expires_at-driven: past → `expired`, <24h → `expiring`; else `active`).
+ViewRow = the `pickAccount` whitelist (id/platform/display_name/username/name/group/status/expires_at?/connected_at?/avatar_url) plus overlay fields `agent_usable?` / `last_used_at?` and a computed `status` (site status normalized; else expires_at-driven: past → `expired`, <24h → `expiring`; else `active`). `avatar_url` is either `https://…` (cache miss, or `official.accountAvatars.enabled=false`) or the relative path `/omnimux/accounts/{encodeURIComponent(id)}/avatar` after Host rewrite. Absolute same-origin URLs, `http://`, `data:`, `blob:`, and `file:` are dropped. The tool `omnimux_accounts_list` keeps the upstream JSON and does **not** rewrite avatar URLs.
 
-Local metadata overlay (`group` / `agent_usable` / `last_used_at`) persists to `$DSH_HOME/omnimux/accounts.json` (dir 0700, file 0600, whole-document rewrite); GET merges it over site rows, DELETE and a lazy GET-time prune reclaim ids the site no longer returns. Tokens never reach the Host — connect is site-side OAuth.
+Local metadata overlay (`group` / `agent_usable` / `last_used_at`) persists to `$DSH_HOME/omnimux/accounts.json` (dir 0700, file 0600, whole-document rewrite). Local avatar rasters persist to `$DSH_HOME/omnimux/accounts/avatars/` (`index.json` + `{sha256(id)}.{png\|jpg\|webp\|gif}`, dir 0700, files 0600). GET merges overlay over site rows, rewrites a cached avatar_url, and lazily prunes overlay + avatar files whose id the site no longer returns. DELETE removes overlay + avatar. Tokens never reach the Host — connect is site-side OAuth.
 
 ### Inspiration HTTP (Host `/omnimux/inspiration`)
 
 Browser-local JSON + media stream. The browser app is `plugins/omnimux-inspiration`. Cloud calls stay in the hub (`withPat` / `withPatRaw` to `https://omnimux.ai/api/inspiration/v1/...`). Cover URLs in JSON are rewritten from `/api/inspiration/v1/media/` to `/omnimux/inspiration/media/` so `<img>` never talks to the cloud.
-
-Live gateway item fields (production 2026-08-24): `id` `type` `title` `content` `source_url` `cover_key` `media_keys` `hot_score` `is_favorite` `analysis` `tags` `created_at` `updated_at`. The browser reads **`cover_key ?? cover_url`**. List envelopes rewrite `/api/inspiration/v1/media/` onto Host; detail envelopes may return a **bare key** (`seed/cover-04.jpg`) — the client prefixes `/omnimux/inspiration/media/`. `media_keys` is an array (video / slides); v1 UI does not consume it. Tools keep the original gateway JSON (no Host rewrite).
 
 | Method & Path | Body / query | Success |
 |---|---|---|
 | GET `/omnimux/inspiration` | `type` `tag` `tags` `q` `is_favorite` `sort` `page` `page_size` | upstream list envelope, media URLs rewritten |
 | GET `/omnimux/inspiration/status` | — | `{enabled,configured,gateway_ready}` |
 | GET `/omnimux/inspiration/tags` | — | upstream tags envelope |
-| GET `/omnimux/inspiration/{id}` | — | upstream item envelope (bare `cover_key` possible) |
+| GET `/omnimux/inspiration/{id}` | — | upstream item envelope |
 | POST `/omnimux/inspiration` | create body | upstream create envelope |
 | PATCH `/omnimux/inspiration/{id}` | patch body | upstream update envelope |
 | DELETE `/omnimux/inspiration/{id}` | — | upstream delete envelope |
-| GET `/omnimux/inspiration/media/{key}` | Range optional; `If-None-Match` / `If-Modified-Since` | streamed bytes; PAT injected by Host; disk cache under `$DSH_HOME/omnimux/media/inspiration/` (TTL 7d, LRU 512 / 256MB). Cache miss still streams. Disk write failure is silent. |
+| GET `/omnimux/inspiration/media/{key}` | Range optional | streamed bytes; PAT injected by Host |
 
-Writes are same-origin only. Unsigned → 401 `needs-omnimux`. JSON list/detail is not cached. Media keys are sanitized (decoded, reject `..` / odd chars) before the gateway call.
+Writes are same-origin only. Unsigned → 401 `needs-omnimux`. Tools keep the original gateway JSON (no Host rewrite).
 
 ## Credentials
 
 | Secret | Who uses it | Browser |
 |---|---|---|
 | `OMNIMUX_ACCESS_TOKEN` | identity + social publish | never |
-| `OMNIMUX_API_KEY` / `OMNIMUX_TOKEN` | chat route, media, text complete, social data | never |
+| `OMNIMUX_API_KEY` / `OMNIMUX_TOKEN` | chat route, media, text complete, social data, page fetch | never. Chat (`llm-pi-ai`) and `omnimux_page_fetch` resolve the ref from `$DSH_HOME/.credentials.yaml` when the process env is empty. |
 | `DEEPSEEK_API_KEY` | agent `web_search` (`web-search-deepseek` provider), written via the official credentials domain | never |
 
 Do not export a `sk-` as `OMNIMUX_ACCESS_TOKEN`.
@@ -198,6 +203,7 @@ config.js              plugin Config (brand + media + apps + text)
   auth/                  device login, token store, provide('identity'), /omnimux/auth/*
   apps/                  official catalog parse, cache, resolve, /omnimux/apps
   text/                  textComplete whitelist + one-shot execute
+  reader/                omnimux_page_fetch → POST /v1/reader (text/plain)
   llm/                   omnimux chat route / future adapter only
   media/
     route.js             resolve provider + protocol + model

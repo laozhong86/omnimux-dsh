@@ -53,8 +53,30 @@ export function pickAccount(raw) {
   }
   if (typeof row.id === 'number') out.id = String(row.id)
   const avatar = row.avatar_url
-  if (typeof avatar === 'string' && /^https:\/\//i.test(avatar)) out.avatar_url = avatar
+  if (typeof avatar === 'string' && isAllowedAvatarUrl(avatar, out.id)) out.avatar_url = avatar
   return out
+}
+
+/**
+ * Same-origin cached avatar path the Host GET-list rewrite emits.
+ * Absolute URLs (even with this path) are rejected so `http://evil/...` cannot sneak through.
+ * @param {unknown} id
+ */
+export function localAvatarUrl(id) {
+  if (id == null) return ''
+  const text = String(id)
+  if (text === '') return ''
+  return `/omnimux/accounts/${encodeURIComponent(text)}/avatar`
+}
+
+/**
+ * @param {string} avatar
+ * @param {unknown} id
+ */
+function isAllowedAvatarUrl(avatar, id) {
+  if (/^https:\/\//i.test(avatar)) return true
+  const expected = localAvatarUrl(id)
+  return expected !== '' && avatar === expected
 }
 
 /**

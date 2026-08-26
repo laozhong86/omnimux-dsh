@@ -30,13 +30,42 @@ if (!existsSync(join(pluginDir, 'package.json'))) {
   process.exit(1)
 }
 
+const children = new Set()
+
+function trackChild(child) {
+  children.add(child)
+  child.on('exit', () => children.delete(child))
+  return child
+}
+
+function cleanExit(signal) {
+  for (const child of children) {
+    try {
+      if (child.pid) {
+        // 杀掉整个子进程组，避免 esbuild/npm 等孙进程残留为僵尸
+        try {
+          process.kill(-child.pid, signal || 'SIGTERM')
+        } catch {
+          child.kill(signal || 'SIGTERM')
+        }
+      }
+    } catch {}
+  }
+  process.exit(0)
+}
+
+process.on('SIGINT', () => cleanExit('SIGINT'))
+process.on('SIGTERM', () => cleanExit('SIGTERM'))
+
 function runNode(scriptRel) {
   const child = spawn(process.execPath, [join(pluginDir, scriptRel)], {
     cwd: pluginDir,
     stdio: 'inherit',
+    detached: true,
   })
+  trackChild(child)
   child.on('exit', (code) => {
-    if (code !== 0) console.error(`[${name}] ${scriptRel} exited ${code}`)
+    if (code !== 0 && code !== null) console.error(`[${name}] ${scriptRel} exited ${code}`)
   })
   return child
 }
@@ -46,9 +75,11 @@ function runNpmBuild() {
     cwd: pluginDir,
     stdio: 'inherit',
     shell: false,
+    detached: true,
   })
+  trackChild(child)
   child.on('exit', (code) => {
-    if (code !== 0) console.error(`[${name}] npm run build exited ${code}`)
+    if (code !== 0 && code !== null) console.error(`[${name}] npm run build exited ${code}`)
   })
   return child
 }
@@ -61,12 +92,19 @@ function resolveStrategy() {
       dirs: [],
       rebuild: () => {},
       start: () => {
-        console.log(`[${name}] 复用 scripts/dev.mjs`)
-        const child = spawn(process.execPath, [join(pluginDir, 'scripts/dev.mjs')], {
-          cwd: pluginDir,
-          stdio: 'inherit',
-        })
-        child.on('exit', (code) => process.exit(code ?? 0))
+        console.log(`[${name}] 复用 scripts/dev.mjs (独立托管，退出不拖死父进程)`)
+        const runWorkflowWatcher = () => {
+          const child = spawn(process.execPath, [join(pluginDir, 'scripts/dev.mjs')], {
+            cwd: pluginDir,
+            stdio: 'inherit',
+            detached: true,
+          })
+          trackChild(child)
+          child.on('exit', (code) => {
+            console.error(`[${name}] scripts/dev.mjs exited ${code}，父 watcher 保持待命`)
+          })
+        }
+        runWorkflowWatcher()
       },
     }
   }

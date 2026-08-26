@@ -18,6 +18,7 @@
 #   ./scripts/dev-env.sh stop <name>             # 停 Host + watch
 #   ./scripts/dev-env.sh ls                      # 列出现有dev 环境
 #   ./scripts/dev-env.sh rm <name>               # 停 Host/watch 并删除整个环境
+#   ./scripts/dev-env.sh restart-host <name>     # 仅重启 L2 Host 进程（同端口/同 profile/保数据，不丢开发上下文）
 #   ./scripts/dev-env.sh watch <name> <plugin>   # 只启/换在研插件的 watch（不重启 Host）
 #   ./scripts/dev-env.sh unwatch <name>          # 只停 watch
 #
@@ -276,12 +277,10 @@ resolve_runtime_home() {
 stop_watch() {
   local pdir="$1"
   if [ -f "$pdir/watch.pid" ]; then
-    kill "$(cat "$pdir/watch.pid")" 2>/dev/null || true
-    if [ -f "$pdir/watch.plugin" ]; then
-      local plug
-      plug="$(cat "$pdir/watch.plugin")"
-      pkill -f "watch-plugin.mjs ${plug}$" 2>/dev/null || true
-      pkill -f "${plug}/scripts/dev.mjs" 2>/dev/null || true
+    local wpid
+    wpid="$(cat "$pdir/watch.pid" 2>/dev/null || true)"
+    if [ -n "$wpid" ]; then
+      kill "$wpid" 2>/dev/null || true
     fi
     rm -f "$pdir/watch.pid" "$pdir/watch.plugin"
     echo "✓ watch 已停止"
@@ -432,6 +431,102 @@ case "$cmd" in
       echo "✓ $plugin → link $PLUGINS_ROOT/$plugin"
     fi
     start_watch "$pdir" "$plugin"
+    ;;
+  restart-host)
+    [ -z "$name" ] && usage
+    validate_task_name "$name"
+    pdir="$(profile_dir "$name")"
+    [ -d "$pdir" ] || { echo "✗ 环境不存在: omnimux-dev-${name}（先 start）" >&2; exit 1; }
+
+    # 1. 建立排他锁，防止同名任务并发重启竞争
+    LOCK_FILE="$pdir/restart.lock"
+    exec 200>"$LOCK_FILE"
+    if ! flock -n 200 2>/dev/null; then
+      # macOS flock 降级兼容：如果系统无 flock 命令，使用 mkdir 简单原子锁
+      LOCK_DIR="$pdir/restart.lock.d"
+      if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+        echo "✗ 当前任务正在被另一个进程重启中，操作已拒绝" >&2
+        exit 1
+      fi
+      trap 'rm -rf "$LOCK_DIR"' EXIT
+    fi
+
+    echo "→ 开始原地重启 Host: omnimux-dev-$name"
+
+    # 2. 严格 PID 校验与优雅停机
+    if [ -f "$pdir/host.pid" ]; then
+      old_pid="$(cat "$pdir/host.pid" 2>/dev/null || true)"
+      if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
+        # 提取真实 cmdline 进行身份断言
+        cmdline="$(ps -p "$old_pid" -o command= 2>/dev/null || true)"
+        if [[ "$cmdline" =~ /Applications/OmniMux ]]; then
+          echo "✗ 安全守卫拦截：目标 PID $old_pid 包含桌面应用路径，严禁杀死生产进程！" >&2
+          exit 1
+        fi
+        if [[ ! "$cmdline" =~ "bin.js" ]] || [[ ! "$cmdline" =~ "omnimux-dev-$name" ]]; then
+          echo "✗ PID 身份校验失败：PID $old_pid 不属于任务 omnimux-dev-$name，跳过强杀以防误伤" >&2
+        else
+          echo "· 向旧 Host (PID: $old_pid) 发送 SIGTERM..."
+          # 优先杀整个进程组
+          kill -TERM -"$old_pid" 2>/dev/null || kill -TERM "$old_pid" 2>/dev/null || true
+          
+          # 等待优雅排水 (最多 5 秒)
+          stopped=0
+          for _ in $(seq 1 10); do
+            if ! kill -0 "$old_pid" 2>/dev/null; then
+              stopped=1
+              break
+            fi
+            sleep 0.5
+          done
+          
+          if [ "$stopped" = 0 ]; then
+            echo "· 优雅停机超时，强制终止进程组..."
+            kill -KILL -"$old_pid" 2>/dev/null || kill -KILL "$old_pid" 2>/dev/null || true
+            sleep 0.5
+          fi
+        fi
+      fi
+      rm -f "$pdir/host.pid"
+    fi
+
+    # 3. 恢复配置并原地拉起
+    assigned_port="$(read_assigned_port "$pdir")"
+    if [ -z "$assigned_port" ] || [ "$assigned_port" = "?" ]; then
+      assigned_port="$(alloc_port "$pdir")" || exit 1
+      echo "$assigned_port" > "$pdir/port.txt"
+    fi
+
+    RUNTIME_HOME="$(resolve_runtime_home "$name")"
+
+    # 日志保留并追加审计记录
+    echo "--- [$(date '+%Y-%m-%d %H:%M:%S')] dev restart-host triggered ---" >> "$pdir/host.log"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') task=$name port=$assigned_port old_pid=${old_pid:-none}" >> "$pdir/restart-host.log"
+
+    DSH_HOME="$RUNTIME_HOME" OMNIMUX_PLUGIN_PROFILE="omnimux-dev-$name" nohup node "$DSH_SRC/apps/cli/lib/bin.js" \
+      --profile "omnimux-dev-$name" --host 127.0.0.1 --port "$assigned_port" --no-open \
+      >> "$pdir/host.log" 2>&1 &
+    new_pid=$!
+    echo "$new_pid" > "$pdir/host.pid"
+
+    # 4. 监听端口探测
+    port=""
+    for _ in $(seq 1 20); do
+      sleep 1
+      port=$(grep -oE 'http://127\.0\.0\.1:[0-9]+' "$pdir/host.log" 2>/dev/null | tail -1 | grep -oE '[0-9]+$' || true)
+      [ -n "$port" ] && break
+    done
+
+    if [ -z "$port" ]; then
+      echo "✗ Host 原地重启后未在 20s 内成功监听，请检查日志: $pdir/host.log" >&2
+      exit 1
+    fi
+
+    echo "✓ Host 已原地冷重启完成: omnimux-dev-$name"
+    echo "  URL:     http://127.0.0.1:$port"
+    echo "  PID:     $new_pid (原: ${old_pid:-none})"
+    echo "  port:    $port (保持不变)"
+    echo "  提示:    前端页面只需刷新 (F5/Cmd+R) 即可重新连接"
     ;;
   unwatch)
     [ -z "$name" ] && usage

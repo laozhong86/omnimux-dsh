@@ -82,6 +82,24 @@ export function createAuthDispatcher(deps) {
       }
     }
 
+    if (method === 'GET' && (path === '/omnimux/api/brands' || path === '/omnimux/brands')) {
+      const { getAllBrands } = await import('../brand/model-brands.js')
+      return {
+        status: 200,
+        body: {
+          brands: getAllBrands(),
+        },
+      }
+    }
+
+    if (method === 'GET' && (path === '/omnimux/api/inspiration/cards' || path === '/omnimux/api/minimax/showcase')) {
+      const cards = await import('../../assets/minimax-showcase/creation-cards.json', { with: { type: 'json' } })
+      return {
+        status: 200,
+        body: cards.default || cards,
+      }
+    }
+
     if (method === 'GET' && path === '/omnimux/auth/status') {
       const loaded = await identity.load({ verify: url.searchParams.get('verify') === '1' })
       const status = loaded.kind === 'token_invalid' ? 401 : loaded.kind === 'self_failed' ? 502 : 200
