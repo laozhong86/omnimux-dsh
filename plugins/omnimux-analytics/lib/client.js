@@ -372,7 +372,7 @@ function createStageStore(getStage) {
 }
 
 // src/client/sidebar-entry.js
-var ICON = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M2.5 12.5V9M6.5 12.5V5.5M10.5 12.5V7.5M13.5 12.5V3.5" stroke-linecap="round"/><path d="M2.5 13.5h11" stroke-linecap="round"/></svg>';
+var ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7v-7zm4 3h2v4h-2v-4zm4 5h2v-2h-2v2z"/></svg>';
 var STYLES = `
 .omnimux-analytics-entry {
   box-sizing: border-box; display: flex; align-items: center; gap: 6px; position: relative;
