@@ -107,6 +107,34 @@ test('uninstall refuses directory without SKILL.md', async () => {
   await rm(dir, { recursive: true, force: true })
 })
 
+test('installSkill routes catalog slugs to local installItem', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'skillhub-cat-'))
+  const prev = process.env.DSH_HOME
+  process.env.DSH_HOME = dir
+  try {
+    const skillsDir = join(dir, 'skills')
+    const result = await installSkill('esc-demo-note', testCfg(skillsDir), {
+      fetchBytes: async () => {
+        throw new Error('should not download zip for catalog skills')
+      },
+    })
+    assert.equal(result.slug, 'esc-demo-note')
+    const skillMd = await readFile(join(skillsDir, 'esc-demo-note', 'SKILL.md'), 'utf8')
+    assert.match(skillMd, /SKILL|演示|esc-demo/i)
+    const byId = await installSkill('ignored', testCfg(skillsDir), {
+      fetchBytes: async () => {
+        throw new Error('should not download zip for catalogId')
+      },
+    }, undefined, undefined, 'esc-demo-skill')
+    assert.equal(byId.slug, 'esc-demo-note')
+  }
+  finally {
+    if (prev === undefined) delete process.env.DSH_HOME
+    else process.env.DSH_HOME = prev
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
 test('install uses zip download API', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'skillhub-test-'))
   const cfg = testCfg(dir)

@@ -42,9 +42,9 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "rm -rf lib && tsc -p tsconfig.json && mkdir -p lib/tests/fixtures && cp src/client.js lib/client.js && cp src/tests/fixtures/* lib/tests/fixtures/",
+    "build": "rm -rf lib && tsc -p tsconfig.json && mkdir -p lib/tests/fixtures && node scripts/concat-client.mjs && cp src/tests/fixtures/* lib/tests/fixtures/",
     "prepare": "npm run build",
-    "test": "npm run build && node --test lib/tests/*.test.js src/expert/*.test.js",
+    "test": "npm run build && node --test --test-concurrency=1 lib/tests/*.test.js src/expert/*.test.js",
     "test:coverage": "npm run build && node --test --experimental-test-coverage --test-coverage-include=lib/api.js --test-coverage-include=lib/categories.js --test-coverage-include=lib/config-store.js --test-coverage-include=lib/dsh-cli.js --test-coverage-include=lib/http.js --test-coverage-include=lib/install.js --test-coverage-include=lib/ndjson.js --test-coverage-include=lib/plugin-market.js --test-coverage-include=lib/restart.js --test-coverage-include=lib/skill-detail.js --test-coverage-include=lib/self-update.js --test-coverage-include=lib/unzip.js --test-coverage-lines=95 --test-coverage-functions=85 --test-coverage-branches=70 lib/tests/*.test.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
@@ -57,21 +57,31 @@
       "inject": [
         "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-ui-slots",
-        "@deepseek-ai/dsh-client-ui-settings"
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-primitives"
       ]
     }
   },
+  "dependencies": {
+    "dsh-ui-kit": "file:../../../../personal/dsh-ui-kit"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-client-ui-primitives": ">=0.1.0-rc.6",
     "@deepseek-ai/dsh-tools": "*",
     "@deepseek-ai/schemastery": "*",
-    "react": "^18.2.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-client-ui-primitives": "0.1.0-rc.8",
     "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
     "@deepseek-ai/schemastery": "^3.18.1",
     "@types/node": "^24.3.0",
+    "esbuild": "^0.25.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "typescript": "^5.9.2"
   }
 }

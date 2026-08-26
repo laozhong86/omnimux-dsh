@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-20T09:33:50.526Z",
+  "generated_at": "2026-08-24T18:30:00.000Z",
   "tabs": [
     "experts",
     "skills",
@@ -3869,6 +3869,2004 @@
       "source": {
         "type": "bundled",
         "path": "catalog/skills/esc-demo-note/SKILL.md"
+      }
+    },
+    {
+      "id": "sk-omx-3d-animation-short-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "3D动画短片",
+      "subtitle": "",
+      "summary": "根据故事创意完成角色场景设定、镜头规划、分镜生成与视频合成，输出风格统一的3D动画短片。",
+      "category": "sk-visual",
+      "tags": [
+        "动画"
+      ],
+      "skill": "3d-animation-short-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/3d-animation-short-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-ad-creative",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "广告创意",
+      "subtitle": "",
+      "summary": "跨 Google/Meta/LinkedIn/TikTok/X 大规模生成、迭代广告文案，按角度组织并校验字符上限。",
+      "category": "sk-marketing",
+      "tags": [
+        "商业广告"
+      ],
+      "skill": "ad-creative",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/ad-creative",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-anime-design",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "二次元设计",
+      "subtitle": "",
+      "summary": "14种二次元画风且锁定角色一致",
+      "category": "sk-visual",
+      "tags": [
+        "动画"
+      ],
+      "skill": "anime-design",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/anime-design",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-anime-game-pv",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "二次元漫画 / 游戏 PV",
+      "subtitle": "",
+      "summary": "为二次元游戏、日漫、韩漫或原创漫画角色制作 15 秒以内的单条完整 PV，覆盖角色宣传、角色/群像剧情预告、角色觉醒、战斗预告、世界观展示及抽卡/活动宣传。适用于“漫画 PV、二次元剧情 PV、角色 PV、anime PV、二次元游戏 PV”等二维动漫或漫画角色成片任务；即使用户泛称“影视 PV、概念预告、先导预告”，只要主体仍是二维角色、群像或游戏世...",
+      "category": "sk-marketing",
+      "tags": [
+        "OmniMux",
+        "多模态"
+      ],
+      "skill": "anime-game-pv",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/anime-game-pv",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-anime-pv-maker",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "二次元PV",
+      "subtitle": "",
+      "summary": "将短音频与视觉参考转化为节奏同步的二次元PV创作方案并输出完整成片",
+      "category": "sk-visual",
+      "tags": [
+        "动画",
+        "音频音乐"
+      ],
+      "skill": "anime-pv-maker",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/anime-pv-maker",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-anime-style-forge",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "二次元风格锻造",
+      "subtitle": "",
+      "summary": "把角色锻造为目标二次元画风",
+      "category": "sk-visual",
+      "tags": [
+        "动画"
+      ],
+      "skill": "anime-style-forge",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/anime-style-forge",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-asmr-ambient",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "助眠音频",
+      "subtitle": "",
+      "summary": "生成助眠冥想与ASMR音频",
+      "category": "sk-office",
+      "tags": [
+        "音频音乐"
+      ],
+      "skill": "asmr-ambient",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/asmr-ambient",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-audiobook",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "有声书",
+      "subtitle": "",
+      "summary": "把书籍转化为多角色有声书",
+      "category": "sk-office",
+      "tags": [
+        "音频音乐"
+      ],
+      "skill": "audiobook",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/audiobook",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-backrooms-dreamcore",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "后室梦核",
+      "subtitle": "",
+      "summary": "生成专属后室空间",
+      "category": "sk-visual",
+      "tags": [
+        "创意实验"
+      ],
+      "skill": "backrooms-dreamcore",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/backrooms-dreamcore",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-beat-sync-editor",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "音乐卡点",
+      "subtitle": "",
+      "summary": "按情绪与节拍自动卡点剪辑",
+      "category": "sk-office",
+      "tags": [
+        "音频音乐"
+      ],
+      "skill": "beat-sync-editor",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/beat-sync-editor",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-brand-ad",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "品牌广告统一入口",
+      "subtitle": "",
+      "summary": "单条轻量品牌官方广告与产品 Hero 短片的端到端制作入口，目标成片必须确认在 15 秒以内。仅当用户明确要以品牌官方或产品主角作为表达者和信任来源，制作品牌视觉过程、产品材质与工艺短片、官网/App 轻量品牌展示、未来系统蒙太奇或产品主角广告时使用。覆盖品牌事实与资产来源核验、内部路线选择、可选风格 Research、Brand Direction ...",
+      "category": "sk-marketing",
+      "tags": [
+        "OmniMux",
+        "多模态"
+      ],
+      "skill": "brand-ad",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/brand-ad",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-brand-font-effect-editor",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "品牌字效迁移编辑器",
+      "subtitle": "",
+      "summary": "识别并迁移品牌字效",
+      "category": "sk-visual",
+      "tags": [
+        "商业广告"
+      ],
+      "skill": "brand-font-effect-editor",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/brand-font-effect-editor",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-brand-promo-video-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "品牌宣传短片生成器",
+      "subtitle": "",
+      "summary": "基于品牌素材与推广目标，完成事实核验、创意方向、分镜和音画合成，输出可展示的品牌宣传短片。",
+      "category": "sk-marketing",
+      "tags": [
+        "商业广告"
+      ],
+      "skill": "brand-promo-video-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/brand-promo-video-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-brand-stream-mg",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "品牌流线 MG 动效",
+      "subtitle": "",
+      "summary": "基于Logo与主题生成IP领航的品牌流线MG动效视频，适合新品发布预热与社媒传播。",
+      "category": "sk-marketing",
+      "tags": [
+        "商业广告"
+      ],
+      "skill": "brand-stream-mg",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/brand-stream-mg",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-character-scene-storyboard",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "角色场景分镜板",
+      "subtitle": "",
+      "summary": "由参考图与剧本生成综合设定图",
+      "category": "sk-writing",
+      "tags": [
+        "短剧漫剧",
+        "动画"
+      ],
+      "skill": "character-scene-storyboard",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/character-scene-storyboard",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-chinese-style-short-drama-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "国风短剧成片生成器",
+      "subtitle": "",
+      "summary": "国风短剧全流程成片",
+      "category": "sk-writing",
+      "tags": [
+        "短剧漫剧"
+      ],
+      "skill": "chinese-style-short-drama-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/chinese-style-short-drama-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-cinematic-motion-language",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "电影运动语言",
+      "subtitle": "",
+      "summary": "电影视频 prompt 的五支柱词汇：相机、物理、空间、序列、负空间。",
+      "category": "sk-visual",
+      "tags": [
+        "短剧漫剧"
+      ],
+      "skill": "cinematic-motion-language",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/cinematic-motion-language",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-cinematic-scenes",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "电影场景生成",
+      "subtitle": "",
+      "summary": "从一张参考图生成电影感机位与插入，胶片美学、动机光。",
+      "category": "sk-visual",
+      "tags": [
+        "短剧漫剧"
+      ],
+      "skill": "cinematic-scenes",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/cinematic-scenes",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-cinematic-title-sequence",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "Cinematic Title Sequence",
+      "subtitle": "",
+      "summary": "MiniMax H3 电影或剧集片头与单条影视概念预告的端到端制作入口。仅当用户明确要交付片头标题序列、卡司或演员姓名序列、Opening Title、Opening Credits、Title Sequence，或要用影片世界、人物行动、关系、悬念或冲突推进，并以片名、卡司或预告落板收束的一次生成 15 秒 film teaser、narrative...",
+      "category": "sk-visual",
+      "tags": [
+        "OmniMux",
+        "多模态"
+      ],
+      "skill": "cinematic-title-sequence",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/cinematic-title-sequence",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-clip-export",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "剪映导出",
+      "subtitle": "",
+      "summary": "把视频推送到剪映或CapCut草稿",
+      "category": "sk-visual",
+      "tags": [
+        "平台工具"
+      ],
+      "skill": "clip-export",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/clip-export",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-co-op-game-intro-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "双人游戏开场视频生成器",
+      "subtitle": "",
+      "summary": "根据玩家名称、视觉风格和角色参考图，经首图确认后生成双人游戏菜单开场视频。",
+      "category": "sk-visual",
+      "tags": [
+        "动画"
+      ],
+      "skill": "co-op-game-intro-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/co-op-game-intro-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-content-strategy",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "内容策略",
+      "subtitle": "",
+      "summary": "内容策略师帮你选题：搜索传播分类、购买阶段、四维打分。",
+      "category": "sk-visual",
+      "tags": [
+        "商业广告",
+        "电商"
+      ],
+      "skill": "content-strategy",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/content-strategy",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-cool-music-video",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "Cool music video",
+      "subtitle": "",
+      "summary": "单条 15 秒以内、16:9 的复古潮流拼贴、说唱或时尚表演型音乐短片制作入口。用户明确要求 15 秒以内的 MV、音乐视频、说唱表演、时尚表演或音乐节奏主导短片时使用；覆盖范围确认、人物与音乐来源选择、8–10 个镜头和连续空间设计、动态文字、音乐结构、5200–6800 字 MiniMax H3 完整提示词及单条成片派发。用户不需要说出具体风格术语...",
+      "category": "sk-office",
+      "tags": [
+        "OmniMux",
+        "多模态"
+      ],
+      "skill": "cool-music-video",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/cool-music-video",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-coordinate-camera-control-designer",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "坐标运镜分镜设计师",
+      "subtitle": "",
+      "summary": "坐标化运镜与分镜规划",
+      "category": "sk-visual",
+      "tags": [
+        "商业广告",
+        "动画"
+      ],
+      "skill": "coordinate-camera-control-designer",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/coordinate-camera-control-designer",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-detail-page-skill-course",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "技能课详情页",
+      "subtitle": "",
+      "summary": "设计 6 层漏斗的技能教学课程详情页",
+      "category": "sk-commerce",
+      "tags": [
+        "教育"
+      ],
+      "skill": "detail-page-skill-course",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/detail-page-skill-course",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-digital-product-promo-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "数字产品宣传片生成",
+      "subtitle": "",
+      "summary": "把真实产品页面、前端项目与用户动效参考转成可审片的电影感宣传片，准确呈现界面、运镜、节奏和声音。",
+      "category": "sk-marketing",
+      "tags": [
+        "商业广告"
+      ],
+      "skill": "digital-product-promo-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/digital-product-promo-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-documentary",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "纪录片",
+      "subtitle": "",
+      "summary": "生成带旁白的纪录片视频",
+      "category": "sk-writing",
+      "tags": [
+        "教育"
+      ],
+      "skill": "documentary",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/documentary",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-dodge-game-video-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "躲避游戏视频生成器",
+      "subtitle": "",
+      "summary": "从单张角色照片提取主体特征，生成四向躲闪关键帧与十秒手绘反应游戏视频。",
+      "category": "sk-visual",
+      "tags": [
+        "创意实验"
+      ],
+      "skill": "dodge-game-video-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/dodge-game-video-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-dot-matrix-brand-wordmark-motion",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "点阵品牌字形动效",
+      "subtitle": "",
+      "summary": "根据用户提供的品牌 Logo、品牌名与标语生成点阵品牌字形动效，输出横版品牌图、改写后的动效提示词与点阵品牌字形动效视频。",
+      "category": "sk-visual",
+      "tags": [
+        "商业广告"
+      ],
+      "skill": "dot-matrix-brand-wordmark-motion",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/dot-matrix-brand-wordmark-motion",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-drama-soundtrack",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "影视配乐",
+      "subtitle": "",
+      "summary": "创作角色主题曲与场景配乐",
+      "category": "sk-visual",
+      "tags": [
+        "音频音乐"
+      ],
+      "skill": "drama-soundtrack",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/drama-soundtrack",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-dynamic-poster",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "动态海报",
+      "subtitle": "",
+      "summary": "用产品素材生成超现实动态海报",
+      "category": "sk-visual",
+      "tags": [
+        "商业广告"
+      ],
+      "skill": "dynamic-poster",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/dynamic-poster",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-ecommerce-design",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "电商图设计",
+      "subtitle": "",
+      "summary": "覆盖14品类的电商图设计",
+      "category": "sk-commerce",
+      "tags": [
+        "电商"
+      ],
+      "skill": "ecommerce-design",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/ecommerce-design",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-ecommerce-image",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "电商商品图",
+      "subtitle": "",
+      "summary": "从实拍图生成平台合规的电商组图",
+      "category": "sk-commerce",
+      "tags": [
+        "电商"
+      ],
+      "skill": "ecommerce-image",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/ecommerce-image",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-education-studio",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "教育内容工作室",
+      "subtitle": "",
+      "summary": "教育内容与教育视频的一体化创作入口。仅当用户明确要解决教学、学习或评量问题，明确要制作课程、知识讲解、培训、科普、教案、课件、讲义、练习、测验或教学视频，或明确要把课堂、课程、教材、试题等教育素材加工成可教学、可学习或可评量的内容时使用。支持学习目标与路径设计、讲解和例题、课堂活动、题组与答案解析、课件与讲义结构，以及教育视频从 Brief、逐字旁白、...",
+      "category": "sk-visual",
+      "tags": [
+        "教育视频",
+        "教学视频",
+        "动态讲题"
+      ],
+      "skill": "education-studio",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/education-studio",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-face-warp",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "人像拼图",
+      "subtitle": "",
+      "summary": "拆分参考人脸以通过审核",
+      "category": "sk-visual",
+      "tags": [
+        "短剧漫剧"
+      ],
+      "skill": "face-warp",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/face-warp",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-film-assets",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "影视资产",
+      "subtitle": "",
+      "summary": "批量生成多视角资产参考图",
+      "category": "sk-visual",
+      "tags": [
+        "短剧漫剧",
+        "动画"
+      ],
+      "skill": "film-assets",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/film-assets",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-film-reference-prompt-writer",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "电影质感提示词大师",
+      "subtitle": "",
+      "summary": "从电影名称、剧照或截图提炼可复用的视觉与镜头规则，生成可直接执行的图像或视频提示词。",
+      "category": "sk-visual",
+      "tags": [
+        "专业影视"
+      ],
+      "skill": "film-reference-prompt-writer",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/film-reference-prompt-writer",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-film-shot",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "影视镜头与角色卡",
+      "subtitle": "",
+      "summary": "提供8种风格的电影感分镜设计",
+      "category": "sk-visual",
+      "tags": [
+        "短剧漫剧",
+        "动画"
+      ],
+      "skill": "film-shot",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/film-shot",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-film-style-picker",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "影视风格选择器",
+      "subtitle": "",
+      "summary": "选定影视类别与导演获取参考图",
+      "category": "sk-visual",
+      "tags": [
+        "短剧漫剧"
+      ],
+      "skill": "film-style-picker",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/film-style-picker",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-fpv-tour-video-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "第一视角 FPV 穿越生成",
+      "subtitle": "",
+      "summary": "先确认时长和画幅，再按场景空间决定路线几何，生成连续沉浸的第一人称 FPV 一镜到底穿越视频。",
+      "category": "sk-visual",
+      "tags": [
+        "专业影视"
+      ],
+      "skill": "fpv-tour-video-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/fpv-tour-video-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-frontend-slides",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "前端幻灯",
+      "subtitle": "",
+      "summary": "从零、笔记或 PPT 生成带动效 HTML 幻灯片，含风格预览与 PDF 导出。",
+      "category": "sk-dev",
+      "tags": [
+        "教育"
+      ],
+      "skill": "frontend-slides",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/frontend-slides",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-h3-prompt-expert",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "H3 提示词专家",
+      "subtitle": "",
+      "summary": "判断视频需求与参考素材，将零散输入整理成可控的多模态视频生成指令。",
+      "category": "sk-visual",
+      "tags": [
+        "平台工具"
+      ],
+      "skill": "h3-prompt-expert",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/h3-prompt-expert",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-h3-visual-design",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "H3 Visual Design",
+      "subtitle": "",
+      "summary": "MiniMax H3 单点动态视觉设计与包装入口。仅当两个条件同时成立时使用：用户明确要制作或加工一条短视频，并且在文字请求或同一任务已确认的上下文中明确提出至少一种可见的动态技法。支持三类专业工作流：字体、Logo、标题、口播字幕或图形的动态版式与空间包装；追踪框、拓扑线、数字 ID、局部负片等跟随主体运动的 TouchDesigner / TD /...",
+      "category": "sk-writing",
+      "tags": [
+        "OmniMux",
+        "多模态"
+      ],
+      "skill": "h3-visual-design",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/h3-visual-design",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-handdrawn-live-video-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "手绘实拍融合视频生成器",
+      "subtitle": "",
+      "summary": "基于场景创意，生成手绘动画与实拍接触变形的15秒视频，适用于创意短片制作。",
+      "category": "sk-visual",
+      "tags": [
+        "创意实验",
+        "动画"
+      ],
+      "skill": "handdrawn-live-video-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/handdrawn-live-video-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-image-paint-edit",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "图片涂抹编辑",
+      "subtitle": "",
+      "summary": "涂抹标记图片区域进行重绘",
+      "category": "sk-visual",
+      "tags": [
+        "商业广告",
+        "电商"
+      ],
+      "skill": "image-paint-edit",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/image-paint-edit",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-image-remix",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "图片重混",
+      "subtitle": "",
+      "summary": "复刻参考图氛围生成新图",
+      "category": "sk-visual",
+      "tags": [
+        "电商"
+      ],
+      "skill": "image-remix",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/image-remix",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-ip-toy-grid-motion",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "IP潮玩六宫格动态海报",
+      "subtitle": "",
+      "summary": "基于用户上传的角色形象，生成3D潮玩六宫格竖版动态视频，适合IP提案与社媒展示。",
+      "category": "sk-marketing",
+      "tags": [
+        "创意实验"
+      ],
+      "skill": "ip-toy-grid-motion",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/ip-toy-grid-motion",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-kling3-prompt-expert",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "可灵3提示词专家",
+      "subtitle": "",
+      "summary": "可灵3视频提示词专家，9字段公式+角色场景锁定。",
+      "category": "sk-visual",
+      "tags": [
+        "短剧漫剧",
+        "动画",
+        "商业广告"
+      ],
+      "skill": "kling3-prompt-expert",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/kling3-prompt-expert",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-koc-video",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "KOC / UGC 视频",
+      "subtitle": "",
+      "summary": "生成 creator-native 社交内容：产品/服务种草、创作者口播、专家分享、客户证言、 无脸 POV、手部实测、数字人/虚拟角色和账号栏目。适用于抖音、小红书、TikTok、Reels 等平台中服务于代入、互动、关注、咨询或转化的内容；产品与真人都不是前提。 不适用于品牌大片、TVC、连续剧情、新闻/知识解说或没有受众行动目标的普通视频。",
+      "category": "sk-marketing",
+      "tags": [
+        "OmniMux",
+        "多模态"
+      ],
+      "skill": "koc-video",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/koc-video",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-line-doodle-explainer-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "线条图解科普视频生成",
+      "subtitle": "",
+      "summary": "根据知识主题或教材内容，生成线条小人图解科普视频方案与成片素材，适用于知识讲解短视频。",
+      "category": "sk-visual",
+      "tags": [
+        "教育"
+      ],
+      "skill": "line-doodle-explainer-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/line-doodle-explainer-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-lip-product-ad-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "唇部彩妆广告生成",
+      "subtitle": "",
+      "summary": "按固定顺序生成横屏30秒唇部彩妆TVC，先完成模特图、3×3静物图和脚本文件再生成视频，并强化自然的人物与产品、道具互动。",
+      "category": "sk-commerce",
+      "tags": [
+        "创意实验"
+      ],
+      "skill": "lip-product-ad-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/lip-product-ad-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-live-sketch-motion",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "实景动态手绘显影",
+      "subtitle": "",
+      "summary": "让真实照片先自然动起来，再由笔尖把运动主体显影成手绘短片，保留实景空间与生命感。",
+      "category": "sk-visual",
+      "tags": [
+        "创意实验"
+      ],
+      "skill": "live-sketch-motion",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/live-sketch-motion",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-mg-voiceover-animation-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "MG 口播动画生成器",
+      "subtitle": "",
+      "summary": "基于口播、产品素材或主题需求，生成 H3 提示词并产出 MG 动画，适用于讲解与演示场景。",
+      "category": "sk-office",
+      "tags": [
+        "教育"
+      ],
+      "skill": "mg-voiceover-animation-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/mg-voiceover-animation-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-micro-expression-video-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "人物微表情视频生成",
+      "subtitle": "",
+      "summary": "根据角色图、剧本或情绪短语设计分时微表情提示词，用于塑造自然可信的角色表演。",
+      "category": "sk-writing",
+      "tags": [
+        "专业影视"
+      ],
+      "skill": "micro-expression-video-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/micro-expression-video-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-minecraft-pixel-art",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "像素方块画",
+      "subtitle": "",
+      "summary": "把图片转换为Minecraft像素方块画",
+      "category": "sk-visual",
+      "tags": [
+        "创意实验"
+      ],
+      "skill": "minecraft-pixel-art",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/minecraft-pixel-art",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-minimalist-product-ad-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "极简产品广告生成器",
+      "subtitle": "",
+      "summary": "基于产品图片和广告需求，完成卖点提炼、英文文案与节拍分镜设计，输出极简产品广告短片，适用于电商推广与新品发布。",
+      "category": "sk-commerce",
+      "tags": [
+        "商业广告",
+        "电商"
+      ],
+      "skill": "minimalist-product-ad-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/minimalist-product-ad-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-multi-shot",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "多角度",
+      "subtitle": "",
+      "summary": "用新相机视角重新渲染图片",
+      "category": "sk-visual",
+      "tags": [
+        "动画"
+      ],
+      "skill": "multi-shot",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/multi-shot",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-music-video-subtitle-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "音乐MV动态字幕生成器",
+      "subtitle": "",
+      "summary": "基于音乐和歌词完成节奏拆解、镜头设计与动态字幕方案，适用于人工智能音乐视频创作。",
+      "category": "sk-writing",
+      "tags": [
+        "音频音乐",
+        "创意实验"
+      ],
+      "skill": "music-video-subtitle-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/music-video-subtitle-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-mv-creator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "MV创作",
+      "subtitle": "",
+      "summary": "把歌词转化为MV分镜与成片",
+      "category": "sk-office",
+      "tags": [
+        "动画",
+        "创意实验"
+      ],
+      "skill": "mv-creator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/mv-creator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-n-storyboard",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "多宫格分镜",
+      "subtitle": "",
+      "summary": "由故事生成多宫格分镜整图",
+      "category": "sk-writing",
+      "tags": [
+        "短剧漫剧",
+        "动画"
+      ],
+      "skill": "n-storyboard",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/n-storyboard",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-native-ad-mockup",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "原生广告样机",
+      "subtitle": "",
+      "summary": "为产品生成手机原生软广样机。",
+      "category": "sk-marketing",
+      "tags": [
+        "商业广告"
+      ],
+      "skill": "native-ad-mockup",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/native-ad-mockup",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-niulai-movie-style",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "牛来电影风格",
+      "subtitle": "",
+      "summary": "引导用户上传照片，生成故意失败的原始低模图像，并可继续延展成笨拙运镜短视频。",
+      "category": "sk-visual",
+      "tags": [
+        "动画"
+      ],
+      "skill": "niulai-movie-style",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/niulai-movie-style",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-paper-collage-explainer-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "纸拼贴讲解动画",
+      "subtitle": "",
+      "summary": "将文案、故事节点或抽象概念转成可确认的纸拼贴讲解动画，并保留触感音效。",
+      "category": "sk-visual",
+      "tags": [
+        "教育",
+        "动画",
+        "创意实验"
+      ],
+      "skill": "paper-collage-explainer-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/paper-collage-explainer-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-papercraft-stop-motion-explainer",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "纸艺定格科普视频生成器",
+      "subtitle": "",
+      "summary": "根据知识主题，完成纸偶、分层布景、分镜与提示词设计，输出可执行的纸艺定格科普视频创作包。",
+      "category": "sk-visual",
+      "tags": [
+        "教育",
+        "动画",
+        "创意实验"
+      ],
+      "skill": "papercraft-stop-motion-explainer",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/papercraft-stop-motion-explainer",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-podcast-marketing",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "播客营销",
+      "subtitle": "",
+      "summary": "播客全流程：策略、嘉宾外联、SEO shownote、增长与变现。",
+      "category": "sk-marketing",
+      "tags": [
+        "商业广告"
+      ],
+      "skill": "podcast-marketing",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/podcast-marketing",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-podcast-studio",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "播客工作室",
+      "subtitle": "",
+      "summary": "把书面内容改写成播客脚本，附带朗读时长、音乐 cue 和音效指令。",
+      "category": "sk-office",
+      "tags": [
+        "音频音乐"
+      ],
+      "skill": "podcast-studio",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/podcast-studio",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-podcast-to-content-suite",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "播客套件",
+      "subtitle": "",
+      "summary": "把播客转录稿转成完整内容营销套件——博客、社交、newsletter、show notes 等。",
+      "category": "sk-marketing",
+      "tags": [
+        "音频音乐"
+      ],
+      "skill": "podcast-to-content-suite",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/podcast-to-content-suite",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-poster-design",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "海报设计",
+      "subtitle": "",
+      "summary": "覆盖12子类的静态海报设计",
+      "category": "sk-visual",
+      "tags": [
+        "商业广告",
+        "电商"
+      ],
+      "skill": "poster-design",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/poster-design",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-poster-motion-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "海报动态生成器",
+      "subtitle": "",
+      "summary": "将上传海报转为一镜到底动态视频，保留文字清晰、主体关系与最终版式，适合社媒传播。",
+      "category": "sk-marketing",
+      "tags": [
+        "创意实验"
+      ],
+      "skill": "poster-motion-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/poster-motion-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-pov-short-film-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "第一视角短片生成",
+      "subtitle": "",
+      "summary": "将创意、剧本或参考素材规划为严格主角眼睛视角的沉浸式短片制作方案。",
+      "category": "sk-writing",
+      "tags": [
+        "短剧漫剧"
+      ],
+      "skill": "pov-short-film-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/pov-short-film-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-product-photography-brief",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "产品摄影Brief",
+      "subtitle": "",
+      "summary": "生成投产级产品摄影 brief，含模型路由、画幅与可粘贴 prompt。",
+      "category": "sk-commerce",
+      "tags": [
+        "商业广告",
+        "电商"
+      ],
+      "skill": "product-photography-brief",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/product-photography-brief",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-promo-video",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "宣传视频",
+      "subtitle": "",
+      "summary": "把产品简介转化为宣传视频",
+      "category": "sk-marketing",
+      "tags": [
+        "商业广告"
+      ],
+      "skill": "promo-video",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/promo-video",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-rap-avatar-mv",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "格莱美说唱MV速成",
+      "subtitle": "",
+      "summary": "零基础复刻杰克小兔同款“格莱美”MV",
+      "category": "sk-office",
+      "tags": [
+        "音频音乐"
+      ],
+      "skill": "rap-avatar-mv",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/rap-avatar-mv",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-relight",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "光影工作室",
+      "subtitle": "",
+      "summary": "智能调整光线方向、强度与色彩",
+      "category": "sk-visual",
+      "tags": [
+        "商业广告",
+        "电商"
+      ],
+      "skill": "relight",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/relight",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-short-drama-multilingual-dubbing",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "短剧多语言出海配音",
+      "subtitle": "",
+      "summary": "分离人声与背景音并逐句复刻音色和节奏，输出目标语言配音视频与字幕文件。",
+      "category": "sk-writing",
+      "tags": [
+        "音频音乐",
+        "创意实验"
+      ],
+      "skill": "short-drama-multilingual-dubbing",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/short-drama-multilingual-dubbing",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-short-drama-screenwriter",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "短剧编剧助手",
+      "subtitle": "",
+      "summary": "按选题撰写完整短剧剧本",
+      "category": "sk-writing",
+      "tags": [
+        "短剧漫剧"
+      ],
+      "skill": "short-drama-screenwriter",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/short-drama-screenwriter",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-short-drama-series-writer",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "微短剧剧集编剧",
+      "subtitle": "",
+      "summary": "一键短剧全流程剧本",
+      "category": "sk-writing",
+      "tags": [
+        "短剧漫剧"
+      ],
+      "skill": "short-drama-series-writer",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/short-drama-series-writer",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-silkscreen-decorative-illustration-short",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "丝印装饰插画风格短片",
+      "subtitle": "",
+      "summary": "将丝印装饰插画主题转成同步音效短片，并可追加同等时长的器乐BGM版，适合奢华叙事广告。",
+      "category": "sk-marketing",
+      "tags": [
+        "创意实验",
+        "商业广告"
+      ],
+      "skill": "silkscreen-decorative-illustration-short",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/silkscreen-decorative-illustration-short",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-skill-creator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "技能创建",
+      "subtitle": "",
+      "summary": "创建双语可复用Skill",
+      "category": "sk-visual",
+      "tags": [
+        "平台工具"
+      ],
+      "skill": "skill-creator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/skill-creator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-skill-reviewer",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "技能审查",
+      "subtitle": "",
+      "summary": "审查Skill的质量与结构",
+      "category": "sk-dev",
+      "tags": [
+        "平台工具"
+      ],
+      "skill": "skill-reviewer",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/skill-reviewer",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-social-caption",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "社媒文案",
+      "subtitle": "",
+      "summary": "为 FB、IG、TikTok、Pinterest、YouTube 写原生文案，hook + payoff + CTA 按各平台规则。",
+      "category": "sk-marketing",
+      "tags": [
+        "商业广告",
+        "电商"
+      ],
+      "skill": "social-caption",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/social-caption",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-sports-podcast-outline",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "体育播客大纲",
+      "subtitle": "",
+      "summary": "起草体育播客大纲，含时间轴、辩论点、观点、广告位、嘉宾问题。",
+      "category": "sk-marketing",
+      "tags": [
+        "音频音乐"
+      ],
+      "skill": "sports-podcast-outline",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/sports-podcast-outline",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-storyboard",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "分镜板",
+      "subtitle": "",
+      "summary": "把剧本拆为N宫格分镜故事板",
+      "category": "sk-writing",
+      "tags": [
+        "短剧漫剧",
+        "动画"
+      ],
+      "skill": "storyboard",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/storyboard",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-storyboard-generation",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "分镜板生成",
+      "subtitle": "",
+      "summary": "生成演示幻灯片与电影分镜，边界严格、含时间线与机位叠加。",
+      "category": "sk-writing",
+      "tags": [
+        "短剧漫剧",
+        "动画"
+      ],
+      "skill": "storyboard-generation",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/storyboard-generation",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-subtitle-correction",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "字幕修正",
+      "subtitle": "",
+      "summary": "修正 SRT 字幕语音识别错误，严格保留时间轴和编号。",
+      "category": "sk-writing",
+      "tags": [
+        "平台工具"
+      ],
+      "skill": "subtitle-correction",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/subtitle-correction",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-surreal-spot",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "超现实广告",
+      "subtitle": "",
+      "summary": "生成超现实TVC概念视频",
+      "category": "sk-marketing",
+      "tags": [
+        "商业广告"
+      ],
+      "skill": "surreal-spot",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/surreal-spot",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-suspense-title-sequence-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "悬疑电影片头生成",
+      "subtitle": "",
+      "summary": "根据电影设定与参考素材锚定关键帧和英文署名，生成十五秒复古悬疑美学片头成片。",
+      "category": "sk-visual",
+      "tags": [
+        "创意实验"
+      ],
+      "skill": "suspense-title-sequence-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/suspense-title-sequence-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-sword-dance",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "武侠舞剑",
+      "subtitle": "",
+      "summary": "生成国风武侠舞剑短片",
+      "category": "sk-visual",
+      "tags": [
+        "短剧漫剧"
+      ],
+      "skill": "sword-dance",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/sword-dance",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-transcript-broll-planner",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "口播视频B-roll规划器",
+      "subtitle": "",
+      "summary": "把口播逐字稿按语义拆成可审片的 B-roll 镜头方案，并在用户确认后生成已批准的视频素材。",
+      "category": "sk-writing",
+      "tags": [
+        "专业影视"
+      ],
+      "skill": "transcript-broll-planner",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/transcript-broll-planner",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-ugc-ad-production",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "UGC 广告",
+      "subtitle": "",
+      "summary": "AI UGC 广告全流程：脚本 + creator 面孔 + 15 秒竖版视频。",
+      "category": "sk-marketing",
+      "tags": [
+        "电商"
+      ],
+      "skill": "ugc-ad-production",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/ugc-ad-production",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-ui-motion",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "UI Motion",
+      "subtitle": "",
+      "summary": "基于真实品牌视觉制作 UI motion graphics、App 界面动画、SaaS 首屏动效或产品界面演示的端到端入口。仅当用户明确要交付 UI 动效或界面演示，或明确要求 UI 状态变化、界面交互、卡片展开与重组、光标操作、图标响应或界面元素连续变形，并且这些 UI 行为是核心结果时使用。覆盖品牌视觉分析、brand profile、灵感与 mo...",
+      "category": "sk-visual",
+      "tags": [
+        "OmniMux",
+        "多模态"
+      ],
+      "skill": "ui-motion",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/ui-motion",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-video-deconstruct",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "视频拆解与复刻",
+      "subtitle": "",
+      "summary": "拆解用户提供的视频、关键帧或详细视频描述，将可验证的镜头、运动、声音和连续性证据编译为可复刻的最终视频 Prompt 与编辑计划。适用于“用 H3 复刻这个视频”“逐镜拆解并反推提示词”“保持原片结构做一版”、recreate this video、reverse engineer this video prompt、shot-by-shot vide...",
+      "category": "sk-visual",
+      "tags": [
+        "OmniMux",
+        "多模态"
+      ],
+      "skill": "video-deconstruct",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/video-deconstruct",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-video-deconstruct-analyzer",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "视频拆解分析师",
+      "subtitle": "",
+      "summary": "高密度拆解AI视频",
+      "category": "sk-visual",
+      "tags": [
+        "短剧漫剧",
+        "商业广告",
+        "动画"
+      ],
+      "skill": "video-deconstruct-analyzer",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/video-deconstruct-analyzer",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-video-prompting",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "提示词专家",
+      "subtitle": "",
+      "summary": "撰写或优化AI视频图像提示词",
+      "category": "sk-visual",
+      "tags": [
+        "平台工具"
+      ],
+      "skill": "video-prompting",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/video-prompting",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-video-transcript",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "视频转录",
+      "subtitle": "",
+      "summary": "将音视频转为带时间戳逐字稿。",
+      "category": "sk-writing",
+      "tags": [
+        "教育"
+      ],
+      "skill": "video-transcript",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/video-transcript",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-vinyl-print-graphics",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "刻绘丝印图",
+      "subtitle": "",
+      "summary": "生成扁平矢量风图形，直接进 vinyl plotter、HTV 和手工丝网印刷不散架。",
+      "category": "sk-visual",
+      "tags": [
+        "电商"
+      ],
+      "skill": "vinyl-print-graphics",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/vinyl-print-graphics",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-voice-clone",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "音色克隆",
+      "subtitle": "",
+      "summary": "从参考音频克隆音色含合规校验",
+      "category": "sk-office",
+      "tags": [
+        "音频音乐"
+      ],
+      "skill": "voice-clone",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/voice-clone",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-voice-design",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "声音设计",
+      "subtitle": "",
+      "summary": "用文字描述设计并试听自定义音色",
+      "category": "sk-office",
+      "tags": [
+        "音频音乐"
+      ],
+      "skill": "voice-design",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/voice-design",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-voiceover-direction",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "配音导演",
+      "subtitle": "",
+      "summary": "配音导演全流程：brief、脚本、选角、现场、补录反馈——讲意图不讲抑扬。",
+      "category": "sk-office",
+      "tags": [
+        "短剧漫剧"
+      ],
+      "skill": "voiceover-direction",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/voiceover-direction",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-vox-style-video-generator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "Vox风格视频生成",
+      "subtitle": "",
+      "summary": "根据主题、文章或报告生成带字幕、旁白与背景音乐的拼贴风格科普动画成片。",
+      "category": "sk-writing",
+      "tags": [
+        "教育",
+        "创意实验"
+      ],
+      "skill": "vox-style-video-generator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/vox-style-video-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-writing-fragments",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "写作碎片",
+      "subtitle": "",
+      "summary": "拷问式访谈挖出写作碎片,追加到 markdown 文件作为成文原料。",
+      "category": "sk-writing",
+      "tags": [
+        "创意实验"
+      ],
+      "skill": "writing-fragments",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/writing-fragments",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-youtube-creator",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "YouTube创作",
+      "subtitle": "",
+      "summary": "生成YouTube脚本与封面",
+      "category": "sk-visual",
+      "tags": [
+        "商业广告",
+        "电商"
+      ],
+      "skill": "youtube-creator",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/youtube-creator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-zodiac-world",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "12生肖英语",
+      "subtitle": "",
+      "summary": "打造 12 生肖英语启蒙 IP 剧集（故事+儿歌视频）",
+      "category": "sk-visual",
+      "tags": [
+        "教育",
+        "创意实验"
+      ],
+      "skill": "zodiac-world",
+      "source": {
+        "type": "git",
+        "repo": "infometa/OmniMux-skills",
+        "path": "skills/zodiac-world",
+        "ref": "main"
       }
     }
   ]

@@ -4,6 +4,28 @@ import { dirname, join } from 'node:path'
 import { invalidateCatalogMemos, isInstalled } from './catalog.js'
 import { MCP_BEGIN, MCP_END, mcpRowPattern, mcpRowId, skillDir } from './paths.js'
 
+let connectorChain = Promise.resolve()
+let connectorBusy = 0
+
+export function isConnectorPatchBusy() {
+  return connectorBusy > 0
+}
+
+/** Serializes Agent connector_* and HTTP catalogInstall/catalogUninstall MCP patch writes. Callers queue. */
+export function withConnectorPatchLock(fn) {
+  const guarded = async () => {
+    connectorBusy += 1
+    try {
+      return await fn()
+    } finally {
+      connectorBusy -= 1
+    }
+  }
+  const run = connectorChain.then(guarded, guarded)
+  connectorChain = run.then(() => undefined, () => undefined)
+  return run
+}
+
 /**
  * @param {ReturnType<typeof decorateCatalog> extends infer T ? any : never} catalog
  * @param {string} id
@@ -52,8 +74,17 @@ export function installItem(opts) {
 
 const LOCAL_WB = process.env.WORKBUDDYSKILLS_ROOT || '/Users/x/Desktop/Project/Github/workbuddyskills'
 
+function resolveLocalRepo(repo) {
+  const repoName = repo ? String(repo).split('/').pop() : ''
+  if (repoName) {
+    const candidate = join('/Users/x/Desktop/Project/Github', repoName)
+    if (existsSync(candidate)) return candidate
+  }
+  return LOCAL_WB
+}
+
 /**
- * Copy one archive directory. Prefer the local workbuddyskills clone.
+ * Copy one archive directory. Prefer local clone when present, otherwise fetch sparse git tree.
  * @param {string} home
  * @param {{ skill?: string, title?: string, summary?: string, source: { type: string, repo?: string, path?: string, ref?: string } }} item
  */
@@ -62,7 +93,8 @@ export function installGitBundle(home, item) {
   const destDir = skillDir(home, item.skill)
   if (existsSync(join(destDir, 'SKILL.md'))) return
   const sub = item.source.path
-  const local = join(LOCAL_WB, sub)
+  const localBase = resolveLocalRepo(item.source.repo)
+  const local = join(localBase, sub)
   const from = existsSync(local) ? local : fetchGitTree(home, item)
   if (!existsSync(from)) throw new Error(`git bundle missing: ${sub}`)
   mkdirSync(dirname(destDir), { recursive: true })

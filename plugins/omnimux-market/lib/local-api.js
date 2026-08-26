@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
-import { clamp, fetchSkillCard, parseSlug, searchSkills } from './api.js';
+import { clamp, fetchSkillCard, parseSlug } from './api.js';
 import { parseCategory } from './categories.js';
 import { assignConfig, dshHome, publicConfig, sanitizePatch, sanitizeSortBy, writeOverlay } from './config-store.js';
 import { configureHttpJsonCache } from './http.js';
 import { BOOT_ID, progress, publicInstallStatus } from './dsh-cli.js';
 import { decorateCatalog, loadCatalog } from './expert/catalog.js';
-import { findItem, installItem, removeMcpRow } from './expert/install.js';
+import { findItem, installItem, removeMcpRow, withConnectorPatchLock } from './expert/install.js';
 import { packageRoot, profileDir } from './expert/paths.js';
 import { summonItem } from './expert/summon.js';
 import { writeSessionExpert } from './session-attach.js';
@@ -15,6 +15,7 @@ import { listMarketplaceConnectors, resolveMarketplaceIconFile } from './marketp
 import { installMarketPlugin, isPluginInstallBusy, listPluginCategories, listPlugins, withPluginInstallLock } from './plugin-market.js';
 import { scheduleRestart, servingPort, trustedRestartRequest } from './restart.js';
 import { fetchEvalScore, fetchSkillTab } from './skill-detail.js';
+import { aggregateSkillSearch } from './skill-aggregate.js';
 let restarting = false;
 export async function handleApi(req, res, cfg) {
     try {
@@ -28,7 +29,7 @@ export async function handleApi(req, res, cfg) {
             const limit = Number.isFinite(explicit) && explicit > 0 ? clamp(explicit, 1, 80) : cfg.maxResults;
             const offset = Math.max(0, Math.floor(Number(body.offset) || 0));
             const installed = await installedSlugs(cfg.skillsDir);
-            const result = await searchSkills(query, {
+            const result = await aggregateSkillSearch(query, {
                 cfg,
                 queries: body.queries,
                 category,
@@ -36,6 +37,7 @@ export async function handleApi(req, res, cfg) {
                 limit,
                 offset,
                 installed,
+                channels: body.channels,
             });
             // P0：评分惰性 SWR —— 不 await，不挡 search 返回。失败静默。
             void attachRatings(result.items, cfg).catch(() => { });
@@ -60,7 +62,7 @@ export async function handleApi(req, res, cfg) {
             if (!slug)
                 return sendJson(res, 400, { ok: false, error: '缺少 slug' });
             const version = String(body.version || url.searchParams.get('version') || '').trim();
-            const result = await installSkill(slug, cfg, undefined, undefined, version || undefined);
+            const result = await installSkill(slug, cfg, undefined, undefined, version || undefined, body.catalogId ? String(body.catalogId) : undefined);
             return sendJson(res, 200, { ok: true, ...result });
         }
         if (method === 'list') {
@@ -76,6 +78,10 @@ export async function handleApi(req, res, cfg) {
         }
         if (method === 'config') {
             if (body.save) {
+                // 与 pluginRestart 同闸：跨站 / 无 Origin 的 save 不得改 Host 配置
+                if (!trustedRestartRequest(req)) {
+                    return sendJson(res, 403, { ok: false, error: 'config save is limited to same-origin requests' });
+                }
                 assignConfig(cfg, sanitizePatch(body));
                 writeOverlay(cfg);
                 configureHttpJsonCache({ ttlMs: Math.max(15, cfg.plazaCacheTtlSec) * 1000 });
@@ -183,7 +189,7 @@ export async function handleApi(req, res, cfg) {
             const id = String(body.id || url.searchParams.get('id') || '').trim();
             if (!id)
                 return sendJson(res, 400, { ok: false, error: '缺少 id' });
-            const result = installItem({ catalog: loadCatalog(), id, ...expertRoots() });
+            const result = await withConnectorPatchLock(() => Promise.resolve(installItem({ catalog: loadCatalog(), id, ...expertRoots() })));
             return sendJson(res, 200, { ok: true, ...result });
         }
         if (method === 'catalogSummon') {
@@ -217,7 +223,9 @@ export async function handleApi(req, res, cfg) {
             // 本期只支持连接器卸载（删托管段 MCP 行）；专家/技能卸载留给后续版本
             if (item.kind !== 'connector')
                 return sendJson(res, 400, { ok: false, error: `item ${id} is not a connector` });
-            removeMcpRow(expertRoots().profileDir, item);
+            await withConnectorPatchLock(async () => {
+                removeMcpRow(expertRoots().profileDir, item);
+            });
             return sendJson(res, 200, { ok: true, id, installed: false, kind: 'connector' });
         }
         sendJson(res, 400, { ok: false, error: 'unknown method' });

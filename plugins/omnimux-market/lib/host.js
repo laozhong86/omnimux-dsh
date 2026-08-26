@@ -1,14 +1,22 @@
 import { defineTool } from '@deepseek-ai/dsh-tools';
 import Schema from '@deepseek-ai/schemastery';
-import { clamp, searchSkills } from './api.js';
+import { clamp } from './api.js';
 import { CATEGORY_KEYS, categoryLabel, parseCategory } from './categories.js';
+import { CONNECTOR_PROMPT_LINES, createConnectorTools } from './connector-tools.js';
 import { assignConfig, dshHome, readOverlay, sanitizeSortBy, withDefaults } from './config-store.js';
-import { loadCatalog } from './expert/catalog.js';
+import { removeDshPlugin } from './dsh-cli.js';
+import { decorateCatalog, loadCatalog } from './expert/catalog.js';
+import { findItem, installItem, removeMcpRow, withConnectorPatchLock } from './expert/install.js';
 import { packageRoot, profileDir } from './expert/paths.js';
 import { configureHttpJsonCache } from './http.js';
 import { installSkill, installedSlugs, listInstalled, uninstallSkill } from './install.js';
+import { aggregateSkillSearch } from './skill-aggregate.js';
 import { handleApi, handleIcon } from './local-api.js';
+import { cloneJson, renderInstall, renderList, renderSearch } from './host-render.js';
+import { listMarketplaceConnectors } from './marketplace-connectors.js';
 import { createPlazaTools, PLAZA_PROMPT_LINES } from './plaza-tools.js';
+import { PLUGIN_PROMPT_LINES, createPluginTools } from './plugin-tools.js';
+import { installMarketPlugin, isProtectedBundle, listPlugins, readInstalledPlugins, withPluginInstallLock, } from './plugin-market.js';
 import { renderAttachedExpertSection, sessionIdFromExec } from './session-attach.js';
 export const name = 'omnimux-market';
 export const inject = ['tools'];
@@ -22,6 +30,12 @@ export const Config = Schema.object({
     sortBy: Schema.union(['score', 'downloads', 'stars', 'installs', 'updated_at']).default('score').description('默认排序'),
     plazaKeepAlive: Schema.boolean().default(true).description('广场关页保活（display:none）；false 回退旧 unmount'),
     plazaCacheTtlSec: Schema.number().default(90).description('SkillHub JSON Host memo TTL（秒）'),
+    pluginMaxResults: Schema.number().min(1).max(8).default(6).description('plugin_search 上限（1–8）'),
+    connectorMaxResults: Schema.number().min(1).max(8).default(6).description('connector_search 上限（1–8）'),
+    protectedBundlesExtra: Schema.array(Schema.string()).default([]).description('追加不可卸包名；不能覆盖核心四项'),
+    aggregateChannels: Schema.array(Schema.union(['custom', 'workbuddy', 'skillhub'])).default(['custom', 'workbuddy', 'skillhub']).description('技能搜索默认聚合渠道'),
+    workbuddySkillsMarketplace: Schema.string().default('').description('WorkBuddy 技能市场扩展目录；空则探测 ~/.workbuddy/skills-marketplace'),
+    aggregateRemoteSoftFail: Schema.boolean().default(true).description('远程 SkillHub 失败时不阻断本地渠道'),
 });
 export function apply(ctx, config) {
     const cfg = withDefaults(config);
@@ -29,7 +43,7 @@ export function apply(ctx, config) {
     configureHttpJsonCache({ ttlMs: Math.max(15, cfg.plazaCacheTtlSec) * 1000 });
     ctx.tools.register(defineTool({
         name: 'skillhub_search',
-        description: 'Search SkillHub and show clickable skill cards. ALWAYS call this instead of web_search, skill-catalog, load_skill, or bash when the user wants to find/recommend/browse skills. Call EXACTLY ONCE per user message. You extract the search topic: pass a real keyword (PDF, 周报), not the user\'s whole sentence. Omit query to browse popular skills. For 还有吗, reuse the previous query with offset = cards already shown. After cards appear, reply with AT MOST one short sentence.',
+        description: 'Search skills across OmniMux custom catalog, WorkBuddy local market, and SkillHub remote; show clickable cards. ALWAYS call this instead of web_search, skill-catalog, load_skill, or bash when the user wants to find/recommend/browse skills. Call EXACTLY ONCE per user message. You extract the search topic: pass a real keyword (PDF, 周报, face-warp), not the user\'s whole sentence. Omit query to browse popular skills. For 还有吗, reuse the previous query with offset = cards already shown. After cards appear, reply with AT MOST one short sentence.',
         parameters: {
             query: { type: 'string', description: 'Main keyword, e.g. PDF or 周报. Optional when category is set.' },
             queries: {
@@ -44,6 +58,11 @@ export function apply(ctx, config) {
             sortBy: { type: 'string', description: 'score, downloads, stars, installs, updated_at. Default score.' },
             limit: { type: 'number', description: 'Cards in this batch. Default from config.' },
             offset: { type: 'number', description: 'Skip this many already-shown cards when the user wants more.' },
+            channels: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Optional subset: custom, workbuddy, skillhub. Default all three.',
+            },
         },
         output: {
             schema: { type: 'object', additionalProperties: true },
@@ -52,13 +71,13 @@ export function apply(ctx, config) {
         },
         presentCall: (args) => ({
             card: 'generic',
-            title: `SkillHub · ${String(args.query || args.category || '浏览')}`,
+            title: `技能检索 · ${String(args.query || args.category || '浏览')}`,
             kind: 'search',
             content: [],
         }),
         presentResult: (_args, { isError, meta }) => ({
             card: 'generic',
-            title: isError ? 'SkillHub 搜索失败' : `SkillHub · ${meta?.items?.length ?? 0} 条`,
+            title: isError ? '技能搜索失败' : `技能 · ${meta?.items?.length ?? 0} 条`,
             content: [],
         }),
         timeoutMs: cfg.timeoutMs + 5000,
@@ -70,7 +89,7 @@ export function apply(ctx, config) {
             const limit = Number.isFinite(explicit) && explicit > 0 ? clamp(explicit, 1, 80) : cfg.maxResults;
             const offset = Math.max(0, Math.floor(Number(args.offset) || 0));
             const sortBy = sanitizeSortBy(args.sortBy, query ? cfg.sortBy : 'downloads');
-            return cloneJson(await searchSkills(query, {
+            return cloneJson(await aggregateSkillSearch(query, {
                 cfg,
                 queries: args.queries,
                 category,
@@ -78,15 +97,17 @@ export function apply(ctx, config) {
                 limit,
                 offset,
                 installed,
+                channels: args.channels,
                 signal: exec.signal,
             }));
         },
     }));
     ctx.tools.register(defineTool({
         name: 'skillhub_install',
-        description: 'Install a SkillHub skill into the configured skills directory after the user chooses one. Pass the slug from skillhub_search. Do not print CLI commands. After success, say the skill is installed.',
+        description: 'Install a skill into the configured skills directory after the user chooses one. Pass the slug from skillhub_search (custom/WorkBuddy cards install from local catalog; SkillHub cards download remotely). Do not print CLI commands. After success, say the skill is installed.',
         parameters: {
-            slug: { type: 'string', required: true, description: 'Skill slug from search, e.g. pdf-ocr-md' },
+            slug: { type: 'string', required: true, description: 'Skill slug from search, e.g. pdf-ocr-md or face-warp' },
+            catalogId: { type: 'string', description: 'Optional catalog id from search, e.g. sk-omx-face-warp' },
             version: { type: 'string', description: 'Optional exact version such as 1.0.0. Default is latest.' },
         },
         output: {
@@ -102,7 +123,7 @@ export function apply(ctx, config) {
         }),
         timeoutMs: cfg.timeoutMs + 15000,
         async execute(args, exec) {
-            return cloneJson(await installSkill(String(args.slug || ''), cfg, undefined, exec.signal, args.version ? String(args.version) : undefined));
+            return cloneJson(await installSkill(String(args.slug || ''), cfg, undefined, exec.signal, args.version ? String(args.version) : undefined, args.catalogId ? String(args.catalogId) : undefined));
         },
     }));
     ctx.tools.register(defineTool({
@@ -147,6 +168,8 @@ export function apply(ctx, config) {
         },
     }));
     registerPlazaTools(ctx);
+    registerPluginTools(ctx, cfg);
+    registerConnectorTools(ctx, cfg);
     ctx.inject(['systemPrompt'], (c) => {
         const prompt = c.systemPrompt;
         prompt.section({
@@ -163,15 +186,25 @@ export function apply(ctx, config) {
             name: 'tool:skillhub',
             order: 210,
             text: [
-                'Finding / recommending / browsing Agent Skills or SkillHub skills: you MUST call skillhub_search. Never web_search, skill-catalog, load_skill, bash, or SKILL.md dump. Never print skillhub install, curl, or sh -c.',
+                'Finding / recommending / browsing Agent Skills or SkillHub skills: you MUST call skillhub_search. It aggregates OmniMux custom catalog, WorkBuddy local market, and SkillHub remote. Never web_search, skill-catalog, load_skill, bash, or SKILL.md dump. Never print skillhub install, curl, or sh -c.',
                 'Experts and expert teams live in the plaza: use plaza_search. Do not call plaza_search and skillhub_search in the same user message.',
                 'You decide the keyword. Extract a real topic from the user; do not paste their whole sentence as query. No topic / just 好玩 有趣 推荐 → omit query to browse. 还有吗 → same previous query + offset. One call per user message.',
                 'Do not say 点卡片查看 unless skillhub_search has already returned cards in this turn.',
                 'After cards appear, reply with AT MOST one short sentence. Do NOT list skills or write essays.',
-                'Install only after the user chooses a card: skillhub_install with that slug. Then one short sentence.',
+                'Install only after the user chooses a card: skillhub_install with that slug (and catalogId when present). Then one short sentence.',
                 `Categories: ${CATEGORY_KEYS.map((k) => `${k}=${categoryLabel(k)}`).join(', ')}.`,
                 'For installed skills, call skillhub_list / skillhub_uninstall.',
             ].join(' '),
+        });
+        prompt.section({
+            name: 'tool:plugins',
+            order: 211,
+            text: PLUGIN_PROMPT_LINES.join(' '),
+        });
+        prompt.section({
+            name: 'tool:connectors',
+            order: 212,
+            text: CONNECTOR_PROMPT_LINES.join(' '),
         });
     });
     ctx.inject(['webServer'], (c) => {
@@ -186,53 +219,52 @@ export function apply(ctx, config) {
         settings.register('omnimux-market', Config, { base: config });
     });
 }
-function cloneJson(value) {
-    return JSON.parse(JSON.stringify(value));
-}
-/** 专家广场工具：实现见 plaza-tools.ts，host 只负责注册。 */
-function registerPlazaTools(ctx) {
-    const plazaRoots = () => {
-        const home = dshHome();
-        return { home, profileDir: profileDir(home), packageRoot: packageRoot() };
-    };
-    for (const tool of createPlazaTools(plazaRoots, () => loadCatalog())) {
-        const spec = {
+function registerMarketTools(ctx, specs) {
+    for (const tool of specs) {
+        ctx.tools.register(defineTool({
             name: tool.name,
             description: tool.description,
             parameters: tool.parameters,
             output: tool.output,
             presentCall: tool.presentCall,
             presentResult: tool.presentResult,
-            timeoutMs: 20000,
+            timeoutMs: tool.timeoutMs ?? 20_000,
             async execute(args, exec) {
                 return cloneJson(await tool.execute(args, exec));
             },
-        };
-        ctx.tools.register(defineTool(spec));
+        }));
     }
 }
-export function renderSearch(result) {
-    if (!result.items?.length)
-        return '没有找到相关技能。对用户只说一句：没找到，可以换个词再搜。不要写长文。';
-    const lines = result.items.map((it, i) => `${i + 1}. ${it.name}${it.installed ? '（已安装）' : ''} · ${it.slug}`);
-    const start = result.offset || 0;
-    const shown = start + result.items.length;
-    const more = result.hasMore
-        ? `用户若问还有吗，立刻再调用 skillhub_search 一次，query 仍为「${result.query}」，offset=${shown}。`
-        : '已经全部列出。';
-    const note = result.fallback ? '本次是热门浏览（原关键词没有结果或没有更多）。' : '';
-    return [
-        `卡片已展示 ${result.items.length} 条（内部序号，禁止复述给用户）：`,
-        lines.join('\n'),
-        `${note}对用户最多回一句短话。禁止清单和长文。不要再调用 skillhub_search。${more}`,
-    ].join('\n');
+function marketRoots() {
+    const home = dshHome();
+    return { home, profileDir: profileDir(home), packageRoot: packageRoot() };
 }
-export function renderInstall(result) {
-    return `✅ ${result.name} 已安装到 ${result.path}。新对话即可被 skill 工具发现。不要打印安装命令。`;
+/** 专家广场工具：实现见 plaza-tools.ts，host 只负责注册。 */
+function registerPlazaTools(ctx) {
+    registerMarketTools(ctx, createPlazaTools(marketRoots, () => loadCatalog()));
 }
-export function renderList(result) {
-    if (!result.items?.length)
-        return `还没有安装技能。目录：${result.skillsDir}`;
-    const lines = result.items.map((it, i) => `${i + 1}. ${it.name} (${it.slug})${it.version ? ` v${it.version}` : ''}`);
-    return `已安装 ${result.items.length} 个技能（${result.skillsDir}）：\n${lines.join('\n')}`;
+function registerPluginTools(ctx, cfg) {
+    registerMarketTools(ctx, createPluginTools({
+        cfg: () => cfg,
+        lock: withPluginInstallLock,
+        listPlugins,
+        installMarketPlugin,
+        removeDshPlugin,
+        readInstalled: () => readInstalledPlugins(),
+        isProtected: (name) => isProtectedBundle(name, cfg.protectedBundlesExtra),
+    }));
 }
+function registerConnectorTools(ctx, cfg) {
+    registerMarketTools(ctx, createConnectorTools({
+        roots: marketRoots,
+        loadCatalog: () => decorateCatalog(loadCatalog(), marketRoots()),
+        listMarketplace: () => listMarketplaceConnectors(),
+        installItem,
+        removeMcpRow,
+        findItem,
+        lock: withConnectorPatchLock,
+    }, () => ({ maxResults: cfg.connectorMaxResults })));
+}
+export { CORE_PROTECTED_BUNDLES, isProtectedBundle } from './plugin-market.js';
+export { INSTALL_TIMEOUT_MS } from './dsh-cli.js';
+export { cloneJson, renderConnectorInstall, renderConnectorList, renderConnectorSearch, renderConnectorUninstall, renderInstall, renderList, renderPluginInstall, renderPluginList, renderPluginSearch, renderPluginUninstall, renderSearch, } from './host-render.js';
