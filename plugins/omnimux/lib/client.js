@@ -1814,11 +1814,11 @@ function beginLogin(reason) {
   });
   currentLogin.start();
 }
-async function checkAndStart(reason) {
+async function checkAndStart(reason, forceVerify = false) {
   setState({ phase: "checking" });
   let status;
   try {
-    status = await impl.getStatus(false);
+    status = await impl.getStatus(forceVerify === true);
   } catch {
     status = { ok: false, status: 0, body: { logged_in: false } };
   }
@@ -1830,6 +1830,7 @@ async function checkAndStart(reason) {
 }
 async function ensureLogin(opts = {}) {
   const intent = makeIntent(opts);
+  const forceVerify = opts.forceVerify === true;
   if (state.phase !== "closed") {
     intents.push(intent);
     if (state.phase === "denied" || state.phase === "expired" || state.phase === "error") {
@@ -1844,7 +1845,7 @@ async function ensureLogin(opts = {}) {
   }
   intents.push(intent);
   latestReason = intent.reason ?? latestReason;
-  await checkAndStart(intent.reason ?? latestReason);
+  await checkAndStart(intent.reason ?? latestReason, forceVerify);
 }
 function cancel(reason = "cancelled") {
   if (currentLogin) {

@@ -52,6 +52,7 @@ describe('authGuard', () => {
       assert.equal(calls, 2, 'the original call is replayed once')
       assert.deepEqual(result, { ok: true, status: 200, body: { accounts: [{ id: 1 }] } })
       assert.equal(ensureArgs !== null, true)
+      assert.equal(ensureArgs.forceVerify, true, '401 path must force-verify stale cache')
     } finally {
       globalThis.window = previousWindow
     }

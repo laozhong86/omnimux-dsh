@@ -78,6 +78,7 @@ describe('inspiration api authGuard', () => {
       assert.equal(calls, 2)
       assert.equal(result.status, 200)
       assert.equal(gate.args() !== null, true)
+      assert.equal(gate.args().forceVerify, true, '401 path must force-verify stale cache')
     })
   })
 
