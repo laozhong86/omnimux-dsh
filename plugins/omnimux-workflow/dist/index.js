@@ -31303,6 +31303,142 @@ function registerWorkflowAgentSeats(ctx, deps) {
 }
 var WORKFLOW_PROMPT_SECTION = { name: "workflow:ops", order: 60 };
 
+// src/workflow/execution/fingerprintCache.ts
+import { createHash as createHash3 } from "node:crypto";
+function canonicalJson(obj) {
+  if (obj === null || typeof obj !== "object") {
+    return JSON.stringify(obj);
+  }
+  if (Array.isArray(obj)) {
+    return `[${obj.map(canonicalJson).join(",")}]`;
+  }
+  const keys = Object.keys(obj).sort();
+  const pairs = keys.filter((k) => k !== "timestamp" && k !== "lastRun" && k !== "_ephemeral").map((k) => `${JSON.stringify(k)}:${canonicalJson(obj[k])}`);
+  return `{${pairs.join(",")}}`;
+}
+function computeNodeFingerprint(node, upstreamFingerprints = []) {
+  const hash2 = createHash3("sha256");
+  hash2.update(`type:${node.type}
+`);
+  hash2.update(`data:${canonicalJson(node.data || {})}
+`);
+  const sortedUpstream = [...upstreamFingerprints].sort();
+  hash2.update(`upstream:${sortedUpstream.join(",")}`);
+  return hash2.digest("hex");
+}
+var NodeResultCache = class {
+  cache = /* @__PURE__ */ new Map();
+  maxEntries;
+  constructor(maxEntries = 1e3) {
+    this.maxEntries = maxEntries;
+  }
+  get(fingerprint) {
+    const hit = this.cache.get(fingerprint);
+    if (!hit) return null;
+    return hit;
+  }
+  set(fingerprint, output, nodeType = "unknown") {
+    if (this.cache.size >= this.maxEntries) {
+      const oldestKey = this.cache.keys().next().value;
+      if (oldestKey) this.cache.delete(oldestKey);
+    }
+    this.cache.set(fingerprint, {
+      fingerprint,
+      output,
+      cachedAt: Date.now(),
+      nodeType
+    });
+  }
+  has(fingerprint) {
+    return this.cache.has(fingerprint);
+  }
+  delete(fingerprint) {
+    return this.cache.delete(fingerprint);
+  }
+  clear() {
+    this.cache.clear();
+  }
+  get size() {
+    return this.cache.size;
+  }
+};
+var globalNodeCache = new NodeResultCache();
+
+// src/workflow/execution/stepCheckpoint.ts
+var CheckpointManager = class {
+  checkpoints = /* @__PURE__ */ new Map();
+  createCheckpoint(workflowId, executionId, nodeIds) {
+    const checkpointId = `ckpt_${executionId}_${Date.now()}`;
+    const steps = {};
+    nodeIds.forEach((nodeId, idx) => {
+      steps[nodeId] = {
+        nodeId,
+        stepIndex: idx,
+        status: "pending",
+        fingerprint: ""
+      };
+    });
+    const cp = {
+      checkpointId,
+      workflowId,
+      executionId,
+      totalSteps: nodeIds.length,
+      completedSteps: 0,
+      steps,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    this.checkpoints.set(checkpointId, cp);
+    return cp;
+  }
+  getCheckpoint(checkpointId) {
+    return this.checkpoints.get(checkpointId) ?? null;
+  }
+  markStepRunning(checkpointId, nodeId, fingerprint = "") {
+    const cp = this.checkpoints.get(checkpointId);
+    if (!cp || !cp.steps[nodeId]) return;
+    cp.steps[nodeId].status = "running";
+    if (fingerprint) cp.steps[nodeId].fingerprint = fingerprint;
+    cp.updatedAt = Date.now();
+  }
+  markStepCompleted(checkpointId, nodeId, output, fingerprint, durationMs = 0) {
+    const cp = this.checkpoints.get(checkpointId);
+    if (!cp || !cp.steps[nodeId]) return;
+    const step = cp.steps[nodeId];
+    step.status = "completed";
+    step.output = output;
+    step.fingerprint = fingerprint;
+    step.durationMs = durationMs;
+    step.completedAt = Date.now();
+    if (fingerprint) {
+      globalNodeCache.set(fingerprint, output);
+    }
+    cp.completedSteps = Object.values(cp.steps).filter((s) => s.status === "completed").length;
+    cp.updatedAt = Date.now();
+  }
+  markStepFailed(checkpointId, nodeId, error51, fingerprint = "") {
+    const cp = this.checkpoints.get(checkpointId);
+    if (!cp || !cp.steps[nodeId]) return;
+    const step = cp.steps[nodeId];
+    step.status = "failed";
+    step.error = error51;
+    if (fingerprint) step.fingerprint = fingerprint;
+    cp.updatedAt = Date.now();
+  }
+  isStepCompleted(checkpointId, nodeId) {
+    const cp = this.checkpoints.get(checkpointId);
+    return cp?.steps[nodeId]?.status === "completed";
+  }
+  getStepOutput(checkpointId, nodeId) {
+    const cp = this.checkpoints.get(checkpointId);
+    return cp?.steps[nodeId]?.output;
+  }
+  clear() {
+    this.checkpoints.clear();
+  }
+};
+var globalCheckpointManager = new CheckpointManager();
+
 // src/workflow/index.ts
 function mountWorkflowHost(ctx, opts = {}) {
   const paths = opts.paths ?? resolveWorkflowPaths();
@@ -31376,6 +31512,7 @@ function apply(ctx) {
   mountWorkflowHost(ctx);
 }
 export {
+  CheckpointManager,
   DEFAULT_MAX_PARALLEL,
   DEFAULT_RUN_WAIT_TIMEOUT_MS,
   DEFAULT_SEAM_CONCURRENCY,
@@ -31387,6 +31524,7 @@ export {
   MAX_DIRECTORY_ATTEMPTS,
   MAX_PROJECT_TITLE_LENGTH,
   NodeExecutionError,
+  NodeResultCache,
   NodeStatus,
   PROJECT_LIBRARY_PATH,
   PROJECT_README_NAME,
@@ -31405,6 +31543,8 @@ export {
   assembleGateway,
   assertProjectInsideLibrary,
   assertProjectWriteSafe,
+  canonicalJson,
+  computeNodeFingerprint,
   createAutoSwitchGateway,
   createExecutionManager,
   createMockGateway,
@@ -31418,6 +31558,8 @@ export {
   displayHomePath,
   ensureLibraryRoot,
   folderNameAttempt,
+  globalCheckpointManager,
+  globalNodeCache,
   inject,
   isInsideDir,
   mountWorkflowHost,

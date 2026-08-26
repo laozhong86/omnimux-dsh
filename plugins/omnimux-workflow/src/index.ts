@@ -166,8 +166,17 @@ export {
   resolveGatewayMode,
   GATEWAY_MODE_ENV,
 } from './workflow/seam/gatewaySelection';
+export {
+  canonicalJson,
+  computeNodeFingerprint,
+  NodeResultCache,
+  globalNodeCache,
+} from './workflow/execution/fingerprintCache';
+export {
+  CheckpointManager,
+  globalCheckpointManager,
+} from './workflow/execution/stepCheckpoint';
 export type {
-  GatewayMode,
-  SeamAvailability,
-  AutoSwitchGateway,
-} from './workflow/seam/gatewaySelection';
+  StepCheckpointRecord,
+  WorkflowCheckpoint,
+} from './workflow/execution/stepCheckpoint';

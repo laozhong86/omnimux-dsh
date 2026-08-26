@@ -145,3 +145,5 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
 }
 
 export { resolveWorkflowPaths };
+export * from './execution/fingerprintCache';
+export * from './execution/stepCheckpoint';
