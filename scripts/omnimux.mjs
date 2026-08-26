@@ -118,12 +118,16 @@ function printHelp() {
   dev restart-host <task>         【推荐】仅原地重启指定 L2 环境的 Host 进程（2秒同端口冷重启，Agent 允许调用）
   build:all                       并发全量构建产品插件
   lint:i18n                       全量文案/禁词与多语言门禁检查
+  doc:lint                        开发文档工程实践合规与死链校验
+  doc:index                       自动生成与更新全量文档索引矩阵
   registry [build|verify|query]   编译与校验插件 Manifest 及能力注册表
   doctor                          多层开发环境自检
   restart dev                     【人类专用】手动重启开发版应用 (/Applications/OmniMux Dev.app)
   restart prod                    【人类专用】手动重启正式版应用 (/Applications/OmniMux.app)
   stage                           物化全量预设插件到 desktop 仓库
   package:dev                     编译打包并安装 OmniMux Dev 开发版 App
+  qa:gate                         严过关五维自动化质检门禁
+  auto:run <issue_id>             全流程无人值守自动化闭环执行
   help                            显示本帮助
 
 示例:
@@ -147,6 +151,12 @@ switch (cmd) {
   case 'lint:i18n':
     runNodeScript('scripts/i18n-lint.mjs', rest)
     break
+  case 'doc:lint':
+    runNodeScript('scripts/doc-lint.mjs', rest)
+    break
+  case 'doc:index':
+    runNodeScript('scripts/doc-index-gen.mjs', rest)
+    break
   case 'registry':
     runNodeScript('scripts/registry-tool.mjs', rest)
     break
@@ -164,6 +174,12 @@ switch (cmd) {
     break
   case 'package:dev':
     runForkCommand('package:dir:dev', [], { OMNIMUX_CHANNEL: 'dev' })
+    break
+  case 'qa:gate':
+    runNodeScript('scripts/auto-qa-gate.mjs', rest)
+    break
+  case 'auto:run':
+    runNodeScript('scripts/auto-pipeline.mjs', rest)
     break
   case 'help':
   case '--help':

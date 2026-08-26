@@ -140,14 +140,17 @@ export function createMediaCache(dataRoot, opts = {}) {
       } catch {
         fetchedAt = 0
       }
+      let mtimeMs = 0
       try {
-        bytes = statSync(join(root, `${id}.bin`)).size
+        const st = statSync(join(root, `${id}.bin`))
+        bytes = st.size
+        mtimeMs = st.mtimeMs || 0
       } catch {
         bytes = 0
       }
-      rows.push({ id, fetchedAt, bytes })
+      rows.push({ id, fetchedAt, mtimeMs, bytes })
     }
-    rows.sort((a, b) => a.fetchedAt - b.fetchedAt)
+    rows.sort((a, b) => (a.fetchedAt - b.fetchedAt) || (a.mtimeMs - b.mtimeMs))
     let total = rows.reduce((sum, row) => sum + row.bytes, 0)
     while (rows.length > maxEntries || total > maxBytes) {
       const oldest = rows.shift()

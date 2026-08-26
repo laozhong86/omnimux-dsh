@@ -1,3 +1,14 @@
+---
+title: "plugin-git-pr — OmniMux 插件仓 Git / PR 合同"
+id: "contract-plugin-git-pr"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-24"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # plugin-git-pr — OmniMux 插件仓 Git / PR 合同
 
 > 目的：给 `laozhong86/omnimux-dsh` 补提交 / 分支 / PR / 合入纪律。
@@ -21,7 +32,7 @@
 2. **禁止直接推 `main`**。日常改动走特性分支 + PR。
 3. **产品 PR 只打本仓**：`gh -R laozhong86/omnimux-dsh …`，base=`main`。禁止对上游 harness / desktop 开插件特性 PR。
 4. **强制 Worktree 物理隔离**。多 Agent 并行开发时，**严禁**在主仓库目录直接切分支或修改代码。每个新特性任务必须通过 `git worktree` 建立独立目录（`../omnimux-dsh-wt-<topic>-<issue-id>`）进行开发，主目录永远停留在干净的 `main` 分支。
-5. **合入权永远属于老板**。agent 不得 `gh pr merge`，除非老板当轮明文授权。
+5. **合入权与预授权自动化通道**。默认合入权属于老板；但在全自动无人值守流水线（`pnpm auto:run <issue_id>`）中，当且仅当前置已确认实施立项、5D 自动化质检门禁 `qa:pass` 且测试全绿时，流水线被赋予预授权代行 `gh pr merge --squash --auto --delete-branch`，并在合入后自动清理 Worktree 与静态物化。
 6. **默认一插件一 PR**。跨插件改动（例如 hub + accounts 同改）须在 PR 描述写明理由；大跨包先问老板。PR 必须显式声明 `Closes #<issue-id>`。
 7. **提交信息**用 conventional commits（例：`feat(market): … (#<issue-id>)`、`fix(workflow): … (#<issue-id>)`）。`feat` / `fix` / `docs` 是 commit type，**不是**分支前缀。scope 用插件目录名或 `contracts` / `scripts`。禁止 `WIP`、`update`、`temp commit`、`fix bug` 这类标题。特性改动与纯格式化拆开。
 8. **未验收不得标完成**。本地测绿 / sync 成功 ≠ 合入；缺浏览器或窗口证据时，board 写「未验收」。验证命令见下方「本地验证」。

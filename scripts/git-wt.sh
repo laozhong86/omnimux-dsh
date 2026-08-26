@@ -10,10 +10,11 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
   cat <<'EOF'
-OmniMux 多 Agent Worktree 隔离与管理工具 (支持 GitHub Issue 绑定)
+OmniMux 多 Agent Worktree 隔离与管理工具 (支持 GitHub Issue 绑定与自动解析)
 
 用法:
   ./scripts/git-wt.sh start <plugin> <topic> [issue_id]   从 origin/main 切出专属 Worktree
+  ./scripts/git-wt.sh auto-start <issue_id>               根据 Issue ID 自动解析创建 Worktree
   ./scripts/git-wt.sh clean <topic> [issue_id]            PR 合入后安全销毁 Worktree 及本地分支
   ./scripts/git-wt.sh list                                列出当前全部活跃的 Worktree 与对应分支
   ./scripts/git-wt.sh doctor                              检查主目录纯净度与 Worktree 隔离状态
@@ -21,12 +22,49 @@ OmniMux 多 Agent Worktree 隔离与管理工具 (支持 GitHub Issue 绑定)
 示例:
   # 推荐: 绑定 GitHub Issue ID
   ./scripts/git-wt.sh start workflow table-node 42
+  ./scripts/git-wt.sh auto-start 42
   ./scripts/git-wt.sh clean table-node 42
 
   # 兼容: 无 Issue ID 形式
   ./scripts/git-wt.sh start clip timeline-tools
   ./scripts/git-wt.sh clean timeline-tools
 EOF
+}
+
+cmd_auto_start() {
+  local raw_issue="$1"
+  if [ -z "$raw_issue" ]; then
+    echo "❌ 错误: 必须提供 <issue_id>"
+    echo "示例: ./scripts/git-wt.sh auto-start 42"
+    exit 1
+  fi
+  local clean_issue=$(echo "$raw_issue" | sed 's/^[^0-9]*//g')
+
+  echo "==> 正在查询 GitHub Issue #${clean_issue} 元数据..."
+  local issue_json=""
+  if command -v gh >/dev/null 2>&1; then
+    issue_json=$(gh issue view "$clean_issue" -R laozhong86/omnimux-dsh --json title,labels 2>/dev/null || true)
+  fi
+
+  local plugin="common"
+  local topic="task"
+
+  if [ -n "$issue_json" ]; then
+    # 解析 title 形如 feat(workflow): xxx 或 scope 标签
+    local extracted_plugin=$(echo "$issue_json" | grep -oE 'feat\([^)]+\)|fix\([^)]+\)|scope:[a-zA-Z0-9_-]+' | head -1 | sed -E 's/(feat\(|fix\(|scope:)//;s/\)//' || true)
+    if [ -n "$extracted_plugin" ]; then
+      plugin="$extracted_plugin"
+    fi
+    local title=$(echo "$issue_json" | grep -oE '"title":"[^"]+"' | head -1 | cut -d: -f2 | tr -d '"')
+    if [ -n "$title" ]; then
+      topic=$(echo "$title" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-' | sed 's/^-\+//;s/-\+$//' | cut -c1-20)
+    fi
+  fi
+
+  [ -z "$topic" ] && topic="issue-${clean_issue}"
+
+  echo "==> 自动解析结果: Plugin=[$plugin], Topic=[$topic], Issue=[#$clean_issue]"
+  cmd_start "$plugin" "$topic" "$clean_issue"
 }
 
 cmd_start() {
@@ -149,6 +187,10 @@ case "$1" in
   start)
     shift
     cmd_start "$@"
+    ;;
+  auto-start)
+    shift
+    cmd_auto_start "$@"
     ;;
   clean)
     shift
