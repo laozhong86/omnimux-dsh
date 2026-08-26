@@ -20,7 +20,7 @@ SKIP_BUILD=0
 PLUGINS=()
 
 # 与 sync-stable.sh 默认同步集合对齐（含 omnimux-market）
-DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-gallery omnimux-workflow omnimux-market omnimux-inspiration dsh-video omnimux-analytics)
+DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-gallery omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip dsh-video omnimux-analytics)
 
 usage() {
   sed -n '2,16p' "$0"
@@ -49,7 +49,7 @@ build_one() {
   fi
 
   case "$name" in
-    omnimux|omnimux-accounts|omnimux-assets|omnimux-products|omnimux-gallery|omnimux-inspiration)
+    omnimux|omnimux-accounts|omnimux-assets|omnimux-products|omnimux-gallery|omnimux-inspiration|omnimux-clip)
       echo "→ build $name (client)"
       (cd "$dir" && node scripts/build-client.mjs)
       ;;
@@ -58,7 +58,7 @@ build_one() {
       (cd "$dir" && node scripts/build-host.mjs && node scripts/build-client.mjs && node scripts/build-canvas.mjs)
       ;;
     omnimux-market)
-      echo "→ build $name (tsc + client copy)"
+      echo "→ build $name (tsc + concat-client)"
       (cd "$dir" && npm run build --silent)
       ;;
     dsh-video|omnimux-analytics|dsh-drama)
@@ -93,9 +93,9 @@ OMNIMUX_SYNC_VIA=sync-to-app "$ROOT/scripts/sync-stable.sh" "${PLUGINS[@]}"
 
 cat <<EOF
 
-✓ 已物化。App 不会自动重启。
-  要加载新插件，请手动执行：
-    pkill -f 'OmniMux.app' || true; open -a OmniMux
-  或：
-    yarn omnimux:restart
+✓ 已物化进生产 profile（零副作用，未重启任何进程）。
+  【多 Agent 并发与生效规则】
+  - 前端 Client 修改：在浏览器或已打开的客户端窗口中刷新（Cmd+R）即可加载最新 bundle。
+  - 后端 Host/插件扩展修改：产物已静默就绪，在应用下次自然启动或用户闲时手动重启后生效。
+  - 【安全红线】Agent 严禁强杀或重启任何桌面 App（测试验证一律在 L2 独立隔离环境内闭环）。
 EOF
