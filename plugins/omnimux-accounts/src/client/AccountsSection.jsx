@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Button, ConfirmModal } from 'dsh-ui-kit'
 import { AccountCard } from './AccountCard.jsx'
 import { AccountTable } from './AccountTable.jsx'
 import { ConnectModal } from './ConnectModal.jsx'
@@ -43,7 +44,7 @@ export function AccountsSection({ t, active = true }) {
 
   const { phase, accounts, error, busy, refresh, watchConnect, patch, disconnect } = useAccounts()
 
-  const [filters, setFilters] = useState({ query: '', platform: '', group: '', status: '' })
+  const [filters, setFilters] = useState({ query: '', platform: '', group: '', status: '', statusGroup: '', overview: '' })
   const [sortKey, setSortKey] = useState('display_name')
   const [sortDir, setSortDir] = useState('asc')
   const [view, setView] = useState(readStoredView)
@@ -121,14 +122,24 @@ export function AccountsSection({ t, active = true }) {
 
   /**
    * Overview stat click → filter patch. `null` clears every filter.
-   * @param {{ status?: string, platform?: string } | null} filter
+   * @param {{ status?: string, statusGroup?: string, platform?: string, overview?: string } | null} filter
    */
   const onFilterClick = (filter) => {
     if (filter === null) {
-      setFilters({ query: '', platform: '', group: '', status: '' })
+      setFilters({ query: '', platform: '', group: '', status: '', statusGroup: '', overview: '' })
       return
     }
-    setFilters((current) => ({ ...current, ...filter }))
+    setFilters((current) => {
+      if (filter.statusGroup !== undefined) {
+        const nextGroup = current.statusGroup === filter.statusGroup ? '' : filter.statusGroup
+        return { ...current, status: '', statusGroup: nextGroup, overview: '' }
+      }
+      if (filter.overview !== undefined) {
+        const nextOverview = current.overview === filter.overview ? '' : filter.overview
+        return { ...current, platform: '', overview: nextOverview }
+      }
+      return { ...current, ...filter }
+    })
   }
 
   /** Table header click: same key flips direction, new key resets to asc. */
@@ -259,9 +270,9 @@ export function AccountsSection({ t, active = true }) {
       <div className="omnimux-accounts-root">
         <p className="omnimux-accounts-muted">{t('needLogin')}</p>
         <p className="omnimux-accounts-muted">{t('needLoginHint')}</p>
-        <button type="button" className="omnimux-accounts-cta" onClick={signIn}>
+        <Button variant="primary" onClick={signIn}>
           {t('login')}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -270,7 +281,7 @@ export function AccountsSection({ t, active = true }) {
 
   return (
     <div className="omnimux-accounts-root">
-      <OverviewBar t={t} summary={summary} onFilterClick={onFilterClick} busy={combinedBusy} />
+      <OverviewBar t={t} summary={summary} filters={filters} onFilterClick={onFilterClick} busy={combinedBusy} />
       {accounts.length > 0 ? (
         <div className="omnimux-accounts-toolbar">
           <FilterBar
@@ -285,22 +296,29 @@ export function AccountsSection({ t, active = true }) {
             platforms={platforms}
             groups={groups}
             statuses={statuses}
-            onFilterChange={(patchFilters) => { setFilters((current) => ({ ...current, ...patchFilters })) }}
+            onFilterChange={(patchFilters) => {
+              setFilters((current) => ({
+                ...current,
+                ...patchFilters,
+                ...(patchFilters.status !== undefined ? { statusGroup: '', overview: '' } : {}),
+                ...(patchFilters.platform !== undefined ? { overview: '' } : {}),
+              }))
+            }}
             onSortChange={(patchSort) => {
               if (patchSort.key !== undefined) setSortKey(patchSort.key)
-            if (patchSort.dir !== undefined) setSortDir(patchSort.dir)
-          }}
+              if (patchSort.dir !== undefined) setSortDir(patchSort.dir)
+            }}
           onViewChange={setView}
           busy={combinedBusy}
         />
-          <button
-            type="button"
+          <Button
+            variant="primary"
             className="omnimux-accounts-cta"
-            disabled={combinedBusy}
+            disabled={combinedBusy !== ''}
             onClick={openConnect}
           >
             + {t('connect')}
-          </button>
+          </Button>
         </div>
       ) : null}
       {selected.size > 0 ? (
@@ -313,58 +331,49 @@ export function AccountsSection({ t, active = true }) {
               {String(bulkProgress.done)}/{String(bulkProgress.total)}
             </span>
           ) : null}
-          <button
-            type="button"
-            className="omnimux-accounts-btn omnimux-accounts-btn--danger"
+          <Button
+            variant="danger"
+            size="sm"
             disabled={combinedBusy !== ''}
             onClick={() => { setConfirmBulk(true) }}
           >
             {t('bulk.disconnect')}
-          </button>
-          <button
-            type="button"
-            className="omnimux-accounts-btn"
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             disabled={combinedBusy !== ''}
             onClick={() => { void bulkAgent(true) }}
           >
             {t('bulk.agentOn')}
-          </button>
-          <button
-            type="button"
-            className="omnimux-accounts-btn"
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             disabled={combinedBusy !== ''}
             onClick={() => { void bulkAgent(false) }}
           >
             {t('bulk.agentOff')}
-          </button>
-          <button
-            type="button"
-            className="omnimux-accounts-btn"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             disabled={combinedBusy !== ''}
             onClick={() => { setSelected(new Set()) }}
           >
             {t('bulk.clear')}
-          </button>
-          {confirmBulk ? (
-            <div data-omnimux-accounts-popover="" role="dialog" className="omnimux-accounts-popover">
-              <p className="omnimux-accounts-popover-text">
-                {fmt(t('bulk.confirmDisconnect'), { count: selected.size })}
-              </p>
-              <div className="omnimux-accounts-popover-actions">
-                <button
-                  type="button"
-                  className="omnimux-accounts-btn omnimux-accounts-btn--danger"
-                  disabled={combinedBusy !== ''}
-                  onClick={() => { void bulkDisconnect() }}
-                >
-                  {t('disconnect')}
-                </button>
-                <button type="button" className="omnimux-accounts-btn" onClick={() => { setConfirmBulk(false) }}>
-                  {t('action.cancel')}
-                </button>
-              </div>
-            </div>
-          ) : null}
+          </Button>
+          <ConfirmModal
+            open={confirmBulk}
+            onClose={() => { setConfirmBulk(false) }}
+            title={t('bulk.disconnect')}
+            message={fmt(t('bulk.confirmDisconnect'), { count: selected.size })}
+            confirmLabel={t('disconnect')}
+            cancelLabel={t('action.cancel')}
+            confirmVariant="danger"
+            confirmLoading={combinedBusy !== ''}
+            onConfirm={() => { void bulkDisconnect() }}
+          />
         </div>
       ) : null}
       {errorText !== '' ? <p className="omnimux-accounts-error" role="alert">{errorText}</p> : null}

@@ -70,6 +70,7 @@ export function Avatar({ account, t }) {
         src={url}
         alt=""
         loading="lazy"
+        referrerPolicy="no-referrer"
         onError={() => { setFailed(true) }}
       />
     )

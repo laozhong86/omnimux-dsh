@@ -12,16 +12,36 @@ const STAGE_ID = 'omnimux-accounts'
 
 export function createStageStore(getStage) {
   let open = false
+  try {
+    open = window.localStorage.getItem('omnimux_active_product_stage') === STAGE_ID
+  } catch {}
+
   const listeners = new Set()
 
   function emit() {
     for (const listener of listeners) listener()
   }
 
+  if (open) {
+    const restore = () => {
+      try {
+        const stage = getStage()
+        if (stage && typeof stage.claim === 'function') {
+          stage.claim(STAGE_ID)
+        }
+      } catch {}
+    }
+    if (typeof queueMicrotask === 'function') queueMicrotask(restore)
+    else setTimeout(restore, 0)
+  }
+
   window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : undefined
     if (id !== STAGE_ID && open) {
       open = false
+      emit()
+    } else if (id === STAGE_ID && !open) {
+      open = true
       emit()
     }
   })

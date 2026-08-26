@@ -1,7 +1,8 @@
 /**
  * Platform registry for the Accounts app. The list is a frontend constant for
  * now (design §7 待明确): when the site grows a platform-directory endpoint this
- * is the single point to swap. Official brand colors are literal values; the
+ * is the single point to swap. Official brand colors go through
+ * `var(--dsw-platform-*, #hex)` so the theme can override them; the
  * neutral entries stay on dsw alias tokens.
  *
  * tone:
@@ -19,10 +20,10 @@ const NEUTRAL_COLOR = 'var(--dsw-alias-label-secondary, rgba(255,255,255,0.72))'
 
 /** @type {Record<string, PlatformInfo>} */
 const REGISTRY = {
-  tiktok: { id: 'tiktok', color: '#2C2C2A', tone: 'solid', coming: false },
-  instagram: { id: 'instagram', color: '#E1306C', tone: 'accent', coming: false },
-  youtube: { id: 'youtube', color: '#FF0000', tone: 'accent', coming: false },
-  x: { id: 'x', color: '#2C2C2A', tone: 'solid', coming: true },
+  tiktok: { id: 'tiktok', color: 'var(--dsw-platform-tiktok, #2C2C2A)', tone: 'solid', coming: false },
+  instagram: { id: 'instagram', color: 'var(--dsw-platform-instagram, #E1306C)', tone: 'accent', coming: false },
+  youtube: { id: 'youtube', color: 'var(--dsw-platform-youtube, #FF0000)', tone: 'accent', coming: false },
+  x: { id: 'x', color: 'var(--dsw-platform-x, #2C2C2A)', tone: 'solid', coming: true },
   xiaohongshu: { id: 'xiaohongshu', color: NEUTRAL_COLOR, tone: 'accent', coming: true },
   douyin: { id: 'douyin', color: NEUTRAL_COLOR, tone: 'accent', coming: true },
   facebook: { id: 'facebook', color: NEUTRAL_COLOR, tone: 'accent', coming: true },

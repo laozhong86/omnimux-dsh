@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { FOCUS_CSS } from './a11y.js'
+import { Button, FilterBar, IconButton, SearchField } from 'dsh-ui-kit'
 import { createProduct, deleteProduct, getState, pickPath, updateProduct } from './api.js'
 import { ConfirmRemoveDialog } from './ConfirmRemoveDialog.jsx'
 import { CloseIcon, PlusIcon, RefreshIcon } from './icons.jsx'
 import { ProductFormDialog } from './ProductFormDialog.jsx'
 import { ProductGrid } from './ProductGrid.jsx'
+import { injectProductsStyles } from './styles.js'
 
 const POLL_MS = 5000
 
@@ -28,17 +29,6 @@ function citeOf(product) {
   return product.cite || `@产品/${product.name}`
 }
 
-const chromeButton = {
-  border: '1px solid var(--dsw-alias-border-l2)',
-  background: 'transparent',
-  color: 'inherit',
-  borderRadius: 999,
-  cursor: 'pointer',
-  fontSize: 13,
-  lineHeight: '20px',
-  padding: '6px 12px',
-}
-
 /**
  * Product library first-level page.
  * After first open, keep the subtree with display:none — never `if (!open) return null`.
@@ -48,6 +38,7 @@ const chromeButton = {
  * }} props
  */
 export function ProductsStage({ t, stage }) {
+  useEffect(() => { injectProductsStyles() }, [])
   const open = useSyncExternalStore(
     stage ? (cb) => stage.subscribe(cb) : () => () => {},
     stage ? () => stage.getSnapshot() : () => false,
@@ -80,6 +71,7 @@ export function ProductsStage({ t, stage }) {
   const [editing, setEditing] = useState(null)
   const [editingDirty, setEditingDirty] = useState(false)
   const [pendingRemove, setPendingRemove] = useState(null)
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -104,6 +96,12 @@ export function ProductsStage({ t, stage }) {
       if (result.body.unchanged) return
       const nextProducts = Array.isArray(result.body.products) ? result.body.products : []
       setProducts(nextProducts)
+      const live = new Set(nextProducts.map((row) => row.id))
+      setSelectedIds((prev) => {
+        const kept = [...prev].filter((id) => live.has(id))
+        if (kept.length === prev.size) return prev
+        return new Set(kept)
+      })
       const openEdit = editingRef.current
       if (openEdit) {
         const fresh = nextProducts.find((row) => row.id === openEdit.id)
@@ -166,6 +164,20 @@ export function ProductsStage({ t, stage }) {
     return hay.includes(query.trim().toLowerCase())
   })
 
+  const selectedCount = selectedIds.size
+  const selecting = selectedCount > 0
+
+  const toggleSelect = (product) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(product.id)) next.delete(product.id)
+      else next.add(product.id)
+      return next
+    })
+  }
+
+  const clearSelection = () => { setSelectedIds(new Set()) }
+
   if (!stage || !everOpened) return null
 
   return (
@@ -173,119 +185,97 @@ export function ProductsStage({ t, stage }) {
       role="region"
       aria-label={t('stage.title')}
       aria-hidden={open ? undefined : 'true'}
+      className="omnimux-products-stage"
+      data-visible={open ? 'true' : 'false'}
       style={{
-        position: 'fixed',
-        top: box.top,
-        left: box.left,
-        width: box.width,
-        height: box.height,
-        zIndex: 200,
-        pointerEvents: open ? 'auto' : 'none',
-        display: open ? 'flex' : 'none',
-        flexDirection: 'column',
-        background: 'var(--dsw-alias-bg-base)',
-        color: 'var(--dsw-alias-label-primary)',
-        overflow: 'hidden',
+        '--stage-top': `${box.top}px`,
+        '--stage-left': `${box.left}px`,
+        '--stage-width': `${box.width}px`,
+        '--stage-height': `${box.height}px`,
       }}
     >
-      <style>{FOCUS_CSS}</style>
-      <div style={{
-        flex: 'none',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 12,
-        padding: '12px 20px 12px',
-        WebkitAppRegion: 'no-drag',
-      }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 style={{ margin: 0, fontSize: 16, fontWeight: 600, lineHeight: '32px' }}>{t('stage.title')}</h1>
-          <p style={{ margin: 0, fontSize: 13, lineHeight: '20px', color: 'var(--dsw-alias-label-secondary)' }}>{t('stage.subtitle')}</p>
+      <div className="omnimux-products-stage-header">
+        <div className="omnimux-products-stage-heading">
+          <h1 className="omnimux-products-stage-title">{t('stage.title')}</h1>
+          <p className="omnimux-products-stage-subtitle">{t('stage.subtitle')}</p>
         </div>
-        <button
-          type="button"
-          style={{ ...chromeButton, display: 'inline-flex', alignItems: 'center', gap: 5, ...(busy ? { opacity: 0.5, cursor: 'default' } : {}) }}
+        <Button
+          variant="outline"
+          size="sm"
+          leadingIcon={<RefreshIcon />}
           disabled={busy}
           onClick={() => {
             setBusy(true)
             void refreshState(true).finally(() => { setBusy(false) })
           }}
         >
-          <RefreshIcon />
           {busy ? t('stage.refreshing') : t('stage.refresh')}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <IconButton
           aria-label={t('stage.close')}
+          variant="ghost"
           onClick={() => { stage.set(false) }}
-          style={{
-            border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer',
-            width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6,
-          }}
         >
           <CloseIcon size={16} />
-        </button>
+        </IconButton>
       </div>
 
-      <div style={{ flex: 'none', display: 'flex', gap: 8, padding: '0 20px 16px' }}>
-        <button
-          type="button"
-          onClick={() => { setCreating(true); setFormError(''); setEditing(null); setEditingDirty(false) }}
-          style={{
-            border: 'none',
-            background: 'var(--dsw-alias-button-primary-fill)',
-            color: 'var(--dsw-alias-label-primary-foreground)',
-            borderRadius: 999,
-            padding: '8px 16px',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 13,
-            fontWeight: 500,
-          }}
-        >
-          <PlusIcon />
-          {t('add.button')}
-        </button>
-      </div>
+      <FilterBar
+        className="omnimux-products-stage-toolbar"
+        compact
+        search={(
+          <SearchField
+            value={query}
+            placeholder={t('search.placeholder')}
+            aria-label={t('search.placeholder')}
+            debounceMs={0}
+            stretch
+            onValueChange={setQuery}
+          />
+        )}
+        filters={<span className="omnimux-products-label">{t('sort.updated')}</span>}
+        actions={(
+          <Button
+            variant="primary"
+            leadingIcon={<PlusIcon />}
+            onClick={() => { setCreating(true); setFormError(''); setEditing(null); setEditingDirty(false) }}
+          >
+            {t('add.button')}
+          </Button>
+        )}
+      />
 
-      <div style={{
-        flex: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '0 20px 12px',
-        borderBottom: '1px solid var(--dsw-alias-border-l2)',
-      }}
-      >
-        <input
-          value={query}
-          placeholder={t('search.placeholder')}
-          onChange={(event) => { setQuery(event.target.value) }}
-          style={{
-            border: '1px solid var(--dsw-alias-border-l2)',
-            borderRadius: 999,
-            padding: '6px 12px',
-            fontSize: 13,
-            minWidth: 220,
-            background: 'transparent',
-            color: 'inherit',
-          }}
-        />
-        <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--dsw-alias-label-tertiary)' }}>{t('sort.updated')}</span>
-      </div>
-
-      {error !== '' ? (
-        <p style={{ margin: 0, padding: '6px 20px', fontSize: 12, color: 'var(--dsw-alias-label-error)' }}>{error}</p>
+      {selecting ? (
+        <div className="omnimux-products-selection">
+          <span>{t('select.count').replace('{n}', String(selectedCount))}</span>
+          <div className="omnimux-products-selection-actions">
+            <Button variant="ghost" size="sm" onClick={clearSelection}>
+              {t('select.clear')}
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={busy}
+              onClick={() => {
+                const names = products.filter((row) => selectedIds.has(row.id)).map((row) => row.name)
+                setPendingRemove({ ids: [...selectedIds], names })
+              }}
+            >
+              {t('select.delete').replace('{n}', String(selectedCount))}
+            </Button>
+          </div>
+        </div>
       ) : null}
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 16 }}>
+      {error !== '' ? <p className="omnimux-products-error">{error}</p> : null}
+
+      <div className="omnimux-products-body">
         <ProductGrid
           t={t}
           products={visible}
-          emptyLabel={t('empty.all')}
+          emptyLabel={query.trim() ? t('empty.noMatch') : t('empty.all')}
           emptyActionLabel={t('add.button')}
+          showEmptyAction={!query.trim()}
           onEmptyAction={() => { setCreating(true); setFormError('') }}
           onOpen={(product) => {
             setCreating(false)
@@ -299,8 +289,10 @@ export function ProductsStage({ t, stage }) {
             setCopiedId(product.id)
             window.setTimeout(() => { setCopiedId('') }, 1500)
           }}
-          onRemove={(product) => { setPendingRemove(product) }}
+          onRemove={(product) => { setPendingRemove({ ids: [product.id], names: [product.name] }) }}
           copiedId={copiedId}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
         />
       </div>
 
@@ -349,17 +341,32 @@ export function ProductsStage({ t, stage }) {
       {pendingRemove ? (
         <ConfirmRemoveDialog
           t={t}
-          name={String(pendingRemove.name ?? '')}
+          name={String(pendingRemove.names[0] ?? '')}
+          title={pendingRemove.ids.length > 1
+            ? t('select.removeTitle').replace('{n}', String(pendingRemove.ids.length))
+            : undefined}
           busy={busy}
           onCancel={() => { setPendingRemove(null) }}
           onConfirm={() => {
-            const id = pendingRemove.id
-            run(() => deleteProduct(id), () => {
+            const ids = pendingRemove.ids
+            run(async () => {
+              let last = { ok: true, status: 200, body: {} }
+              for (const id of ids) {
+                last = await deleteProduct(id)
+                if (!last.ok) return last
+              }
+              return last
+            }, () => {
               setPendingRemove(null)
-              if (editing?.id === id) {
+              if (ids.includes(editing?.id)) {
                 setEditing(null)
                 setEditingDirty(false)
               }
+              setSelectedIds((prev) => {
+                const next = new Set(prev)
+                for (const id of ids) next.delete(id)
+                return next
+              })
             })
           }}
         />

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Button, ModalDialog } from 'dsh-ui-kit'
 import { connectAccount } from './api.js'
 import { PlatformChip } from './chips.jsx'
 import { COMING_PLATFORMS, SUPPORTED_PLATFORMS } from './platforms.js'
@@ -30,21 +31,10 @@ export function ConnectModal({ t, watchConnect, onClose, onConnected }) {
   /** @type {import('react').MutableRefObject<(() => void) | null>} */
   const stopRef = useRef(null)
 
-  // Focus the first supported platform and arm the Esc handler.
   useEffect(() => {
     firstPlatformRef.current?.focus()
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        handleClose()
-      }
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => { document.removeEventListener('keydown', onKeyDown) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleClose is stable enough for the mount-only listener
   }, [])
 
-  // Unmount safety net: stop a poll the exit paths did not stop.
   useEffect(() => () => {
     const stop = stopRef.current
     stopRef.current = null
@@ -70,7 +60,6 @@ export function ConnectModal({ t, watchConnect, onClose, onConnected }) {
     try {
       const result = await connectAccount(id)
       if (result.status === 401) {
-        // Unsigned: closing lets the section's refresh flip to need-login.
         handleClose()
         return
       }
@@ -94,108 +83,87 @@ export function ConnectModal({ t, watchConnect, onClose, onConnected }) {
     }
   }
 
+  const footer = phase === 'waiting'
+    ? (
+      <>
+        <Button variant="outline" onClick={handleClose}>{t('action.cancel')}</Button>
+        <Button variant="primary" onClick={handleClose}>{t('connect.done')}</Button>
+      </>
+    )
+    : phase === 'error'
+      ? (
+        <>
+          <Button variant="outline" onClick={handleClose}>{t('action.cancel')}</Button>
+          {platform !== '' ? (
+            <Button variant="primary" onClick={() => { void startConnect(platform) }}>
+              {t('connect.retry')}
+            </Button>
+          ) : null}
+        </>
+      )
+      : undefined
+
   return (
-    <div className="omnimux-accounts-modal-overlay">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('connect.title')}
-        className="omnimux-accounts-modal"
-      >
-        <div className="omnimux-accounts-modal-head">
-          <h2 className="omnimux-accounts-modal-title">{t('connect.title')}</h2>
-          <button
-            type="button"
-            className="omnimux-accounts-modal-close"
-            aria-label={t('close')}
-            onClick={handleClose}
-          >
-            ×
-          </button>
+    <ModalDialog
+      open
+      onClose={handleClose}
+      title={t('connect.title')}
+      closeLabel={t('close')}
+      size="lg"
+      footer={footer}
+    >
+      {phase === 'select' || phase === 'opening' ? (
+        <div className="omnimux-accounts-modal-body">
+          <p className="omnimux-accounts-muted">{t('connect.choosePlatform')}</p>
+          <div className="omnimux-accounts-platform-grid">
+            {SUPPORTED_PLATFORMS.map((id, index) => (
+              <Button
+                key={id}
+                ref={index === 0 ? firstPlatformRef : undefined}
+                className="omnimux-accounts-platform-btn"
+                disabled={phase === 'opening'}
+                onClick={() => { void startConnect(id) }}
+              >
+                <PlatformChip platform={id} t={t} />
+                <span className="omnimux-accounts-platform-name">
+                  {localeText(t, `platform.${id}`, id)}
+                </span>
+              </Button>
+            ))}
+            {COMING_PLATFORMS.map((id) => (
+              <div key={id} className="omnimux-accounts-platform-btn omnimux-accounts-platform-btn--coming">
+                <PlatformChip platform={id} t={t} />
+                <span className="omnimux-accounts-platform-name">
+                  {localeText(t, `platform.${id}`, id)}
+                </span>
+                <span className="omnimux-accounts-platform-soon">{t('connect.comingSoon')}</span>
+              </div>
+            ))}
+          </div>
         </div>
+      ) : null}
 
-        {phase === 'select' || phase === 'opening' ? (
-          <div className="omnimux-accounts-modal-body">
-            <p className="omnimux-accounts-muted">{t('connect.choosePlatform')}</p>
-            <div className="omnimux-accounts-platform-grid">
-              {SUPPORTED_PLATFORMS.map((id, index) => (
-                <button
-                  key={id}
-                  type="button"
-                  ref={index === 0 ? firstPlatformRef : undefined}
-                  className="omnimux-accounts-platform-btn"
-                  disabled={phase === 'opening'}
-                  onClick={() => { void startConnect(id) }}
-                >
-                  <PlatformChip platform={id} t={t} />
-                  <span className="omnimux-accounts-platform-name">
-                    {localeText(t, `platform.${id}`, id)}
-                  </span>
-                </button>
-              ))}
-              {COMING_PLATFORMS.map((id) => (
-                <div key={id} className="omnimux-accounts-platform-btn omnimux-accounts-platform-btn--coming">
-                  <PlatformChip platform={id} t={t} />
-                  <span className="omnimux-accounts-platform-name">
-                    {localeText(t, `platform.${id}`, id)}
-                  </span>
-                  <span className="omnimux-accounts-platform-soon">{t('connect.comingSoon')}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
+      {phase === 'waiting' ? (
+        <div className="omnimux-accounts-modal-body">
+          <p className="omnimux-accounts-modal-text">{t('connect.opened')}</p>
+          {authUrl !== '' ? (
+            <Button
+              variant="ghost"
+              className="omnimux-accounts-modal-link"
+              onClick={() => { window.open(authUrl, '_blank', 'noopener,noreferrer') }}
+            >
+              {t('connect.reopen')}
+            </Button>
+          ) : null}
+          <p className="omnimux-accounts-muted">{t('connect.waiting')}</p>
+        </div>
+      ) : null}
 
-        {phase === 'waiting' ? (
-          <div className="omnimux-accounts-modal-body">
-            <p className="omnimux-accounts-modal-text">{t('connect.opened')}</p>
-            {authUrl !== '' ? (
-              <button
-                type="button"
-                className="omnimux-accounts-btn omnimux-accounts-modal-link"
-                onClick={() => { window.open(authUrl, '_blank', 'noopener,noreferrer') }}
-              >
-                {t('connect.reopen')}
-              </button>
-            ) : null}
-            <p className="omnimux-accounts-muted">{t('connect.waiting')}</p>
-            <div className="omnimux-accounts-modal-actions">
-              <button type="button" className="omnimux-accounts-btn" onClick={handleClose}>
-                {t('action.cancel')}
-              </button>
-              <button
-                type="button"
-                className="omnimux-accounts-btn omnimux-accounts-btn--primary"
-                onClick={handleClose}
-              >
-                {t('connect.done')}
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        {phase === 'error' ? (
-          <div className="omnimux-accounts-modal-body">
-            <p className="omnimux-accounts-error" role="alert">
-              {t('connect.failed')}{error !== '' ? `：${error}` : ''}
-            </p>
-            <div className="omnimux-accounts-modal-actions">
-              <button type="button" className="omnimux-accounts-btn" onClick={handleClose}>
-                {t('action.cancel')}
-              </button>
-              {platform !== '' ? (
-                <button
-                  type="button"
-                  className="omnimux-accounts-btn omnimux-accounts-btn--primary"
-                  onClick={() => { void startConnect(platform) }}
-                >
-                  {t('connect.retry')}
-                </button>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </div>
+      {phase === 'error' ? (
+        <p className="omnimux-accounts-error" role="alert">
+          {t('connect.failed')}{error !== '' ? `：${error}` : ''}
+        </p>
+      ) : null}
+    </ModalDialog>
   )
 }

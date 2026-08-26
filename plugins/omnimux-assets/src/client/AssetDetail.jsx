@@ -1,134 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-import { CloseIcon, FileIcon, FolderIcon } from './icons.jsx'
+import { useEffect, useState } from 'react'
+import { Button, DropdownSelect, IconButton, InputField } from 'dsh-ui-kit'
+import { activateRowKeydown } from './a11y.js'
 import { listAssetFiles } from './api.js'
 import { ASSET_TYPE_KEYS } from './AddAssetDialog.jsx'
-import { activateRowKeydown } from './a11y.js'
-
-function DetailTypeSelect({ value, onChange, t }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    if (!open) return undefined
-    const onPointerDown = (event) => {
-      if (ref.current && !ref.current.contains(event.target)) setOpen(false)
-    }
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
-
-  return (
-    <div ref={ref} style={{ position: 'relative', width: '100%' }}>
-      <button
-        type="button"
-        onClick={() => { setOpen((prev) => !prev) }}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          border: '1px solid var(--dsw-alias-border-l2, rgba(255,255,255,0.12))',
-          borderRadius: 8,
-          padding: '6px 10px 6px 12px',
-          color: 'inherit',
-          background: 'var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.04))',
-          fontSize: 13,
-          cursor: 'pointer',
-          transition: 'all 0.15s ease',
-          ...(open ? { borderColor: 'var(--dsw-alias-brand-primary, #3b82f6)', boxShadow: '0 0 0 2px rgba(59,130,246,0.22)' } : {}),
-        }}
-      >
-        <span>{t(`type.${value}`)}</span>
-        <svg
-          viewBox="0 0 16 16"
-          width="12"
-          height="12"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.18s ease', opacity: 0.7 }}
-        >
-          <path d="m4 6 4 4 4-4" />
-        </svg>
-      </button>
-      {open ? (
-        <div
-          role="listbox"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 4px)',
-            left: 0,
-            zIndex: 100,
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-            padding: 4,
-            borderRadius: 10,
-            border: '1px solid var(--dsw-alias-border, rgba(255,255,255,0.14))',
-            background: 'var(--dsw-alias-bg-elevated, #1c1c1f)',
-            boxShadow: '0 10px 28px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)',
-            backdropFilter: 'blur(16px)',
-          }}
-        >
-          {ASSET_TYPE_KEYS.map((key) => {
-            const isSelected = key === value
-            return (
-              <button
-                key={key}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => {
-                  onChange(key)
-                  setOpen(false)
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 8,
-                  width: '100%',
-                  padding: '6px 10px',
-                  border: 'none',
-                  borderRadius: 6,
-                  background: isSelected ? 'rgba(59,130,246,0.14)' : 'transparent',
-                  color: isSelected ? '#60a5fa' : 'inherit',
-                  fontSize: 13,
-                  fontWeight: isSelected ? 500 : 400,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-                onMouseEnter={(event) => {
-                  if (!isSelected) event.currentTarget.style.background = 'rgba(255,255,255,0.08)'
-                }}
-                onMouseLeave={(event) => {
-                  if (!isSelected) event.currentTarget.style.background = 'transparent'
-                }}
-              >
-                <span>{t(`type.${key}`)}</span>
-                {isSelected ? (
-                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m3.5 8.5 3 3 6-6" />
-                  </svg>
-                ) : null}
-              </button>
-            )
-          })}
-        </div>
-      ) : null}
-    </div>
-  )
-}
+import { CloseIcon, FileIcon, FolderIcon } from './icons.jsx'
 
 /**
  * @param {{
@@ -153,46 +28,43 @@ export function AssetDetail({ t, asset, busy, onClose, onSave }) {
   }, [asset.id, asset.name, asset.type, asset.description])
 
   return (
-    <aside style={{
-      flex: 'none',
-      width: 320,
-      overflow: 'auto',
-      borderLeft: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))',
-      background: 'var(--dsw-alias-bg-base, var(--dsw-bg, inherit))',
-      display: 'flex',
-      flexDirection: 'column',
-    }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))' }}>
-        <h2 style={{ margin: 0, flex: 1, fontSize: 13, fontWeight: 600 }}>{t('detail.title')}</h2>
-        <button
-          type="button"
-          aria-label={t('detail.close')}
-          onClick={onClose}
-          style={{ border: 'none', background: 'transparent', cursor: 'pointer', width: 24, height: 24 }}
-        >
+    <aside className="omnimux-assets-detail">
+      <div className="omnimux-assets-detail-header">
+        <h2 className="omnimux-assets-detail-title">{t('detail.title')}</h2>
+        <IconButton variant="ghost" size="sm" aria-label={t('detail.close')} onClick={onClose}>
           <CloseIcon size={16} />
-        </button>
+        </IconButton>
       </div>
-      <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13 }}>
+      <div className="omnimux-assets-detail-body">
+        <InputField
+          label={t('detail.name')}
+          value={name}
+          disabled={busy}
+          onChange={(event) => { setName(event.target.value) }}
+        />
+        <DropdownSelect
+          value={type}
+          aria-label={t('detail.type')}
+          disabled={busy}
+          options={ASSET_TYPE_KEYS.map((key) => ({ value: key, label: t(`type.${key}`) }))}
+          onChange={setType}
+        />
         <label>
-          <div style={{ fontSize: 11, color: 'var(--dsw-alias-label-tertiary, inherit)', marginBottom: 4 }}>{t('detail.name')}</div>
-          <input value={name} onChange={(event) => { setName(event.target.value) }} style={{ width: '100%', border: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))', borderRadius: 8, padding: '6px 8px', color: 'inherit', background: 'inherit' }} />
-        </label>
-        <label>
-          <div style={{ fontSize: 11, color: 'var(--dsw-alias-label-tertiary, inherit)', marginBottom: 4 }}>{t('detail.type')}</div>
-          <DetailTypeSelect value={type} onChange={setType} t={t} />
-        </label>
-        <label>
-          <div style={{ fontSize: 11, color: 'var(--dsw-alias-label-tertiary, inherit)', marginBottom: 4 }}>{t('detail.description')}</div>
-          <textarea value={description} onChange={(event) => { setDescription(event.target.value) }} rows={6} style={{ width: '100%', border: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))', borderRadius: 8, padding: '6px 8px', resize: 'vertical', color: 'inherit', background: 'inherit' }} />
+          <div className="omnimux-assets-muted">{t('detail.description')}</div>
+          <textarea
+            className="omnimux-assets-textarea"
+            value={description}
+            rows={6}
+            disabled={busy}
+            onChange={(event) => { setDescription(event.target.value) }}
+          />
         </label>
         <div>
-          <div style={{ fontSize: 11, color: 'var(--dsw-alias-label-tertiary, inherit)', marginBottom: 4 }}>{t('detail.cite')}</div>
-          <code style={{ fontSize: 12 }}>{asset.cite || `@${asset.type}/${asset.name}`}</code>
+          <div className="omnimux-assets-muted">{t('detail.cite')}</div>
+          <code className="omnimux-assets-cite">{asset.cite || `@${asset.type}/${asset.name}`}</code>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: 'var(--dsw-alias-label-tertiary, inherit)', marginBottom: 4 }}>{t('detail.files')}</div>
+          <div className="omnimux-assets-muted">{t('detail.files')}</div>
           {browse ? (
             <FolderBrowse
               t={t}
@@ -204,21 +76,14 @@ export function AssetDetail({ t, asset, busy, onClose, onSave }) {
             <TopFileList t={t} files={asset.files || []} onOpenFolder={(file) => { setBrowse({ file }) }} />
           )}
         </div>
-        <button
-          type="button"
+        <Button
+          variant="primary"
           disabled={busy || name.trim() === ''}
+          loading={busy}
           onClick={() => { onSave({ name: name.trim(), type, description }) }}
-          style={{
-            border: 'none',
-            background: 'var(--dsw-alias-button-primary-fill, var(--dsw-alias-label-primary, currentColor))',
-            color: 'var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted, #fff))',
-            borderRadius: 999,
-            padding: '8px 14px',
-            cursor: 'pointer',
-          }}
         >
           {t('detail.save')}
-        </button>
+        </Button>
       </div>
     </aside>
   )
@@ -230,43 +95,31 @@ function isDirectoryRef(file) {
 
 function TopFileList({ t, files, onOpenFolder }) {
   if (files.length === 0) {
-    return <p style={{ margin: 0, color: 'var(--dsw-alias-label-tertiary, inherit)' }}>—</p>
+    return <p className="omnimux-assets-muted">—</p>
   }
   return (
-    <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <ul className="omnimux-assets-filelist">
       {files.map((file) => {
         const folder = isDirectoryRef(file)
         const activate = folder ? () => { onOpenFolder(file) } : undefined
         return (
           <li key={file.id}>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xs"
               className="omnimux-assets-focusable"
               disabled={!folder}
               onClick={activate}
               onKeyDown={folder ? activateRowKeydown(activate) : undefined}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                textAlign: 'left',
-                border: 'none',
-                background: 'transparent',
-                color: 'inherit',
-                cursor: folder ? 'pointer' : 'default',
-                padding: '4px 0',
-                fontSize: 12,
-              }}
             >
               {folder ? <FolderIcon size={14} /> : <FileIcon size={14} />}
-              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className="omnimux-assets-filelist-name">
                 {file.original_name || file.real_path}
               </span>
-              <span style={{ color: 'var(--dsw-alias-label-tertiary, inherit)', fontSize: 11 }}>
+              <span className="omnimux-assets-folder-badge">
                 {folder ? t('detail.browse') : t('detail.file')}
               </span>
-            </button>
+            </Button>
           </li>
         )
       })}
@@ -307,52 +160,36 @@ function FolderBrowse({ t, assetId, file, onBack }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginBottom: 8, fontSize: 12 }}>
-        <button
-          type="button"
+      <div className="omnimux-assets-crumbs">
+        <Button
+          variant="outline"
+          size="xs"
           onClick={() => {
             if (path === '') onBack()
             else setPath(crumbs.slice(0, -1).join('/'))
           }}
-          style={{
-            border: '1px solid var(--dsw-alias-border-l2, var(--dsw-border, currentColor))',
-            background: 'transparent',
-            color: 'inherit',
-            borderRadius: 999,
-            padding: '2px 8px',
-            cursor: 'pointer',
-            fontSize: 12,
-          }}
         >
           {t('detail.back')}
-        </button>
-        <button
-          type="button"
-          onClick={() => { setPath('') }}
-          style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 0 }}
-        >
+        </Button>
+        <Button variant="ghost" size="xs" onClick={() => { setPath('') }}>
           {file.original_name || t('detail.root')}
-        </button>
+        </Button>
         {crumbs.map((crumb, index) => (
-          <span key={`${crumb}-${index}`} style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ color: 'var(--dsw-alias-label-tertiary, inherit)' }}>/</span>
-            <button
-              type="button"
-              onClick={() => { setPath(crumbs.slice(0, index + 1).join('/')) }}
-              style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 0 }}
-            >
+          <span key={`${crumb}-${index}`} className="omnimux-assets-crumb">
+            <span className="omnimux-assets-crumb-sep">/</span>
+            <Button variant="ghost" size="xs" onClick={() => { setPath(crumbs.slice(0, index + 1).join('/')) }}>
               {crumb}
-            </button>
+            </Button>
           </span>
         ))}
       </div>
-      {loading ? <p style={{ margin: 0, color: 'var(--dsw-alias-label-tertiary, inherit)' }}>{t('loading')}</p> : null}
-      {error ? <p style={{ margin: 0, color: 'var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit))' }}>{error}</p> : null}
+      {loading ? <p className="omnimux-assets-muted">{t('loading')}</p> : null}
+      {error ? <p className="omnimux-assets-error">{error}</p> : null}
       {!loading && !error && entries.length === 0 ? (
-        <p style={{ margin: 0, color: 'var(--dsw-alias-label-tertiary, inherit)' }}>{t('detail.emptyFolder')}</p>
+        <p className="omnimux-assets-muted">{t('detail.emptyFolder')}</p>
       ) : null}
       {!loading && entries.length > 0 ? (
-        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <ul className="omnimux-assets-filelist">
           {entries.map((entry) => {
             const folder = Boolean(entry.is_dir)
             const activate = folder
@@ -360,31 +197,17 @@ function FolderBrowse({ t, assetId, file, onBack }) {
               : undefined
             return (
               <li key={String(entry.relative_path || entry.name)}>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="xs"
                   className="omnimux-assets-focusable"
                   disabled={!folder}
                   onClick={activate}
                   onKeyDown={folder ? activateRowKeydown(activate) : undefined}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    textAlign: 'left',
-                    border: 'none',
-                    background: 'transparent',
-                    color: 'inherit',
-                    cursor: folder ? 'pointer' : 'default',
-                    padding: '4px 0',
-                    fontSize: 12,
-                  }}
                 >
                   {folder ? <FolderIcon size={14} /> : <FileIcon size={14} />}
-                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {entry.name}
-                  </span>
-                </button>
+                  <span className="omnimux-assets-filelist-name">{entry.name}</span>
+                </Button>
               </li>
             )
           })}

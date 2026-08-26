@@ -5,6 +5,8 @@
  * Account rows come from the hub as ViewRows:
  * { id, platform?, display_name?, username?, name?, group?, status?,
  *   avatar_url?, agent_usable?, last_used_at?, expires_at?, connected_at? }
+ * `avatar_url` is either an https CDN URL (cache miss) or the same-origin
+ * relative path `/omnimux/accounts/{id}/avatar` after Host rewrite.
  * Every field is optional beyond id; rendering stays field-driven.
  */
 
@@ -25,11 +27,11 @@ function matchesQuery(row, query) {
 }
 
 /**
- * Filters accounts by free-text query plus exact platform / group / status.
+ * Filters accounts by free-text query plus exact platform / group / status / statusGroup.
  * Missing filters are skipped; comparisons are case-insensitive where the
- * underlying values are strings.
+ * underlying values are strings. Specific `status` takes precedence over `statusGroup`.
  * @param {Array<Record<string, unknown>>} accounts
- * @param {{ query?: string, platform?: string, group?: string, status?: string }} filters
+ * @param {{ query?: string, platform?: string, group?: string, status?: string, statusGroup?: string }} filters
  * @returns {Array<Record<string, unknown>>}
  */
 export function filterAccounts(accounts, filters = {}) {
@@ -37,11 +39,20 @@ export function filterAccounts(accounts, filters = {}) {
   const platform = String(filters.platform || '').trim().toLocaleLowerCase()
   const group = String(filters.group || '').trim().toLocaleLowerCase()
   const status = String(filters.status || '').trim().toLocaleLowerCase()
+  const statusGroup = String(filters.statusGroup || '').trim().toLocaleLowerCase()
   return (Array.isArray(accounts) ? accounts : []).filter((row) => {
     if (!matchesQuery(row, query)) return false
     if (platform && String(row.platform || '').toLocaleLowerCase() !== platform) return false
     if (group && String(row.group || '').toLocaleLowerCase() !== group) return false
-    if (status && String(row.status || '').toLocaleLowerCase() !== status) return false
+    if (status) {
+      if (String(row.status || '').toLocaleLowerCase() !== status) return false
+    } else if (statusGroup === 'connected') {
+      const s = String(row.status || '').toLocaleLowerCase()
+      if (s !== 'active' && s !== 'expiring') return false
+    } else if (statusGroup === 'needsattention') {
+      const s = String(row.status || '').toLocaleLowerCase()
+      if (s !== 'expired' && s !== 'error') return false
+    }
     return true
   })
 }

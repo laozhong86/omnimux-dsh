@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Button, IconButton } from 'dsh-ui-kit'
 import { fmt } from './view.js'
 
 /**
@@ -18,17 +19,19 @@ import { fmt } from './view.js'
  */
 export function AgentSwitch({ t, checked, disabled = false, onToggle }) {
   return (
-    <button
-      type="button"
+    <IconButton
+      variant="ghost"
+      size="xs"
       role="switch"
       className="omnimux-accounts-switch"
       aria-checked={String(checked)}
       aria-label={checked ? t('card.agentUsableOn') : t('card.agentUsableOff')}
+      title=""
       disabled={disabled}
       onClick={() => { onToggle(!checked) }}
     >
       <span className="omnimux-accounts-switch-knob" />
-    </button>
+    </IconButton>
   )
 }
 
@@ -47,7 +50,6 @@ export function AgentSwitch({ t, checked, disabled = false, onToggle }) {
 export function AccountMenu({ t, name, disabled = false, onDisconnect }) {
   const [popover, setPopover] = useState(null) // null | 'menu' | 'confirm'
 
-  // Close on any outside pointer press.
   useEffect(() => {
     if (popover === null) return undefined
     const onPointerDown = (event) => {
@@ -61,8 +63,9 @@ export function AccountMenu({ t, name, disabled = false, onDisconnect }) {
 
   return (
     <>
-      <button
-        type="button"
+      <IconButton
+        variant="ghost"
+        size="sm"
         className="omnimux-accounts-more"
         aria-label={t('card.menu')}
         aria-haspopup="menu"
@@ -74,27 +77,28 @@ export function AccountMenu({ t, name, disabled = false, onDisconnect }) {
         }}
       >
         ⋯
-      </button>
+      </IconButton>
       {popover === 'menu' ? (
         <div data-omnimux-accounts-popover="" role="menu" className="omnimux-accounts-popover">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             role="menuitem"
             className="omnimux-accounts-menuitem omnimux-accounts-menuitem--danger"
             disabled={disabled}
             onClick={() => { setPopover('confirm') }}
           >
             {t('disconnect')}
-          </button>
+          </Button>
         </div>
       ) : null}
       {popover === 'confirm' ? (
         <div data-omnimux-accounts-popover="" role="dialog" className="omnimux-accounts-popover">
           <p className="omnimux-accounts-popover-text">{fmt(t('card.confirmDisconnect'), { name })}</p>
           <div className="omnimux-accounts-popover-actions">
-            <button
-              type="button"
-              className="omnimux-accounts-btn omnimux-accounts-btn--danger"
+            <Button
+              variant="danger"
+              size="sm"
               disabled={disabled}
               onClick={() => {
                 setPopover(null)
@@ -102,10 +106,10 @@ export function AccountMenu({ t, name, disabled = false, onDisconnect }) {
               }}
             >
               {t('disconnect')}
-            </button>
-            <button type="button" className="omnimux-accounts-btn" onClick={() => { setPopover(null) }}>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => { setPopover(null) }}>
               {t('action.cancel')}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

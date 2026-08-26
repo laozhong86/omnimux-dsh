@@ -8,6 +8,49 @@
  */
 
 export const STYLES = `
+.omnimux-accounts-stage {
+  position: fixed;
+  z-index: 200;
+  top: var(--stage-top);
+  left: var(--stage-left);
+  width: var(--stage-width);
+  height: var(--stage-height);
+  display: flex;
+  flex-direction: column;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary, inherit);
+  overflow: auto;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
+.omnimux-accounts-stage[data-visible="false"] {
+  display: none;
+  pointer-events: none;
+}
+.omnimux-accounts-stage-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+  padding: 12px 20px;
+  -webkit-app-region: no-drag;
+}
+.omnimux-accounts-stage-title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 32px;
+}
+.omnimux-accounts-stage-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
 .omnimux-accounts-root {
   box-sizing: border-box;
   display: flex;
@@ -22,48 +65,101 @@ export const STYLES = `
 
 /* ---------- overview bar ---------- */
 .omnimux-accounts-overview {
-  flex: 1 1 auto;
-  min-width: 0; /* allow the auto-fill grid to compute more than one 160px track inside the flex row */
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
   align-items: stretch;
+  margin: 0;
 }
 .omnimux-accounts-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 16px;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.08));
-  border-radius: 12px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  min-height: 72px !important;
+  height: auto !important;
+  padding: 12px 16px !important;
+  border: 1px solid var(--dsw-alias-border-l2) !important;
+  border-radius: 12px !important;
+  background: var(--dsw-alias-bg-secondary, var(--dsw-alias-bg-layer-1, rgba(128,128,128,0.04))) !important;
+  color: inherit !important;
+  font: inherit !important;
+  text-align: left !important;
+  white-space: normal !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  box-shadow: none !important;
+  transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 120ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 .omnimux-accounts-stat:hover {
-  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.12));
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.12)) !important;
+  border-color: var(--dsw-alias-border-l3, var(--dsw-alias-border-hover, rgba(255,255,255,0.22))) !important;
 }
 .omnimux-accounts-stat:active {
-  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.18));
+  transform: scale(0.98) !important;
+  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.18)) !important;
 }
-.omnimux-accounts-stat:disabled { cursor: default; opacity: 0.6; }
-.omnimux-accounts-stat-value {
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 28px;
+.omnimux-accounts-stat:focus {
+  outline: none !important;
+}
+.omnimux-accounts-stat:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary, #4c8dff) !important;
+  outline-offset: 2px !important;
+}
+.omnimux-accounts-stat[aria-pressed="true"] {
+  background: var(--dsw-alias-button-ghost-active-fill, rgba(255,255,255,0.14)) !important;
+  border-color: var(--dsw-alias-button-ghost-active-border, rgba(255,255,255,0.26)) !important;
+}
+.omnimux-accounts-stat[aria-pressed="true"]:hover {
+  background: var(--dsw-alias-button-ghost-active-hover, rgba(255,255,255,0.2)) !important;
+  border-color: var(--dsw-alias-button-ghost-active-border, rgba(255,255,255,0.26)) !important;
+}
+.omnimux-accounts-stat:disabled {
+  cursor: default !important;
+  opacity: 0.6 !important;
+  transform: none !important;
+}
+.omnimux-accounts-stat > [class*="Button-label"],
+.omnimux-accounts-stat > span:first-child {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .omnimux-accounts-stat {
+    transition: none !important;
+  }
+  .omnimux-accounts-stat:active {
+    transform: none !important;
+  }
+}
+.omnimux-accounts-stat-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .omnimux-accounts-stat-label {
   font-size: 12px;
   line-height: 16px;
   color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
+  font-weight: 500;
 }
-.omnimux-accounts-overview-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
+.omnimux-accounts-stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+  color: var(--dsw-alias-label-primary, #ffffff);
 }
 .omnimux-accounts-toolbar {
   display: flex;
@@ -74,44 +170,14 @@ export const STYLES = `
 }
 .omnimux-accounts-cta {
   flex-shrink: 0;
-  margin-left: auto; /* sit at the right end of the toolbar row, after the filter controls */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 14px;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.14));
-  border-radius: 8px;
-  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
-  color: var(--dsw-alias-label-primary, inherit);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  margin-left: auto;
 }
-.omnimux-accounts-cta:hover {
-  background: var(--dsw-alias-interactive-bg-active, rgba(255,255,255,0.14));
-  border-color: rgba(255,255,255,0.24);
-}
-.omnimux-accounts-cta:active {
-  transform: scale(0.98);
-}
-.omnimux-accounts-cta:disabled {
-  cursor: default;
-  opacity: 0.5;
-}
-
 /* ---------- filter bar ---------- */
 .omnimux-accounts-filterbar {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 8px;
   flex: 1 1 auto;
   min-width: 0;
-  padding: 8px 0;
+  padding: 0;
+  height: 44px;
 }
 .omnimux-accounts-filter-actions {
   display: inline-flex;
@@ -135,13 +201,13 @@ export const STYLES = `
   transition: all 0.15s ease;
 }
 .omnimux-accounts-search:hover {
-  border-color: rgba(255,255,255,0.22);
+  border-color: var(--dsw-alias-border-hover, rgba(255,255,255,0.22));
   background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.07));
 }
 .omnimux-accounts-search:focus {
   outline: none;
   border-color: var(--dsw-alias-brand-primary, #3b82f6);
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.22);
+  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary, rgba(59,130,246,0.22));
   background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.06));
 }
 .omnimux-accounts-search::placeholder {
@@ -173,12 +239,12 @@ export const STYLES = `
 }
 .omnimux-accounts-dropdown-trigger:not(:disabled):hover {
   background-color: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
-  border-color: rgba(255,255,255,0.22);
+  border-color: var(--dsw-alias-border-hover, rgba(255,255,255,0.22));
 }
 .omnimux-accounts-dropdown-trigger--open {
   background-color: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
   border-color: var(--dsw-alias-brand-primary, #3b82f6);
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.22);
+  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary, rgba(59,130,246,0.22));
 }
 .omnimux-accounts-dropdown-trigger:disabled {
   cursor: default;
@@ -217,7 +283,7 @@ export const STYLES = `
   border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.14));
   border-radius: 10px;
   background: var(--dsw-alias-bg-elevated, #1c1c1f);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 28px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.5)), 0 2px 8px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.3));
   backdrop-filter: blur(16px);
   animation: omnimux-accounts-menu-pop 0.12s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -256,13 +322,13 @@ export const STYLES = `
   color: var(--dsw-alias-label-primary, #ffffff);
 }
 .omnimux-accounts-dropdown-item--selected {
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--dsw-alias-state-business-tertiary, rgba(59, 130, 246, 0.12));
   color: var(--dsw-alias-brand-primary, #60a5fa);
   font-weight: 500;
 }
 .omnimux-accounts-dropdown-item--selected:hover {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
+  background: var(--dsw-alias-state-business-tertiary, rgba(59, 130, 246, 0.2));
+  color: var(--dsw-alias-brand-primary, #93c5fd);
 }
 .omnimux-accounts-dropdown-item-text {
   flex: 1 1 auto;
@@ -293,56 +359,18 @@ export const STYLES = `
 }
 .omnimux-accounts-select:hover {
   background-color: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.08));
-  border-color: rgba(255,255,255,0.22);
+  border-color: var(--dsw-alias-border-hover, rgba(255,255,255,0.22));
 }
 .omnimux-accounts-select:focus {
   outline: none;
   border-color: var(--dsw-alias-brand-primary, #3b82f6);
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.22);
+  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary, rgba(59,130,246,0.22));
 }
 .omnimux-accounts-select option {
-  background-color: #1a1a1c;
-  color: #ededed;
+  background-color: var(--dsw-alias-bg-elevated, #1a1a1c);
+  color: var(--dsw-alias-label-primary, #ededed);
 }
 .omnimux-accounts-select:disabled { cursor: default; opacity: 0.5; }
-.omnimux-accounts-iconbtn {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
-  color: var(--dsw-alias-label-secondary, rgba(255,255,255,0.65));
-  font: inherit;
-  cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.omnimux-accounts-iconbtn:disabled { cursor: default; opacity: 0.45; }
-.omnimux-accounts-iconbtn:not(:disabled):hover {
-  background: var(--dsw-alias-interactive-bg-hover, rgba(255,255,255,0.09));
-  border-color: rgba(255,255,255,0.22);
-  color: var(--dsw-alias-label-primary, #ffffff);
-}
-.omnimux-accounts-iconbtn:not(:disabled):active {
-  transform: scale(0.96);
-}
-.omnimux-accounts-iconbtn[aria-pressed="true"] {
-  background: var(--dsw-alias-interactive-bg-active, rgba(255,255,255,0.14));
-  border-color: var(--dsw-alias-border-active, rgba(255,255,255,0.26));
-  color: var(--dsw-alias-label-primary, #ffffff);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
-}
-.omnimux-accounts-iconbtn:disabled { cursor: default; opacity: 0.45; }
-.omnimux-accounts-iconbtn:not(:disabled):hover {
-  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.12));
-}
-.omnimux-accounts-iconbtn[aria-pressed="true"] {
-  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,0.18));
-}
 
 /* ---------- card grid ---------- */
 .omnimux-accounts-grid {
@@ -434,8 +462,8 @@ export const STYLES = `
   white-space: nowrap;
 }
 .omnimux-accounts-chip--solid {
-  background: #2C2C2A;
-  color: #fff;
+  background: var(--dsw-alias-bg-module-platform);
+  color: var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted));
 }
 .omnimux-accounts-chip--accent {
   background: color-mix(in srgb, var(--dsw-accounts-platform-color, rgba(128,128,128,1)) 16%, transparent);
@@ -459,6 +487,15 @@ export const STYLES = `
 }
 .omnimux-accounts-dot--expiring {
   background: var(--dsw-alias-state-warning-primary, #d9a13b);
+}
+.omnimux-accounts-dot--needsAttention {
+  background: var(--dsw-alias-state-warn-primary, var(--dsw-alias-state-warning-primary, #b45309));
+}
+.omnimux-accounts-dot--platforms {
+  background: var(--dsw-alias-brand-primary, #4c8dff);
+}
+.omnimux-accounts-dot--total {
+  background: var(--dsw-alias-label-secondary, rgba(255,255,255,0.72));
 }
 .omnimux-accounts-dot--expired,
 .omnimux-accounts-dot--error {
@@ -488,21 +525,28 @@ export const STYLES = `
   gap: 8px;
   margin-top: auto;
 }
-.omnimux-accounts-switch {
+.omnimux-accounts-stage .omnimux-accounts-switch,
+.omnimux-accounts-stage .omnimux-accounts-switch:hover,
+.omnimux-accounts-stage .omnimux-accounts-switch:active {
   position: relative;
   width: 36px;
+  min-width: 36px;
   height: 20px;
+  min-height: 20px;
   padding: 0;
   border: none;
   border-radius: 999px;
   background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.30));
   cursor: pointer;
+  transform: none;
   transition: background 0.15s ease;
+  overflow: visible;
 }
-.omnimux-accounts-switch[aria-checked="true"] {
+.omnimux-accounts-stage .omnimux-accounts-switch[aria-checked="true"],
+.omnimux-accounts-stage .omnimux-accounts-switch[aria-checked="true"]:hover {
   background: var(--dsw-alias-state-success-primary, #4caf7d);
 }
-.omnimux-accounts-switch:disabled { cursor: default; opacity: 0.5; }
+.omnimux-accounts-stage .omnimux-accounts-switch:disabled { cursor: default; opacity: 0.5; }
 .omnimux-accounts-switch-knob {
   position: absolute;
   top: 2px;
@@ -510,10 +554,11 @@ export const STYLES = `
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted));
   transition: transform 0.15s ease;
+  pointer-events: none;
 }
-.omnimux-accounts-switch[aria-checked="true"] .omnimux-accounts-switch-knob {
+.omnimux-accounts-stage .omnimux-accounts-switch[aria-checked="true"] .omnimux-accounts-switch-knob {
   transform: translateX(16px);
 }
 .omnimux-accounts-switch-label {
@@ -559,7 +604,7 @@ export const STYLES = `
   border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.16));
   border-radius: 10px;
   background: var(--dsw-alias-bg-primary, var(--dsw-bg, #16181d));
-  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.35));
 }
 .omnimux-accounts-menuitem {
   display: flex;
@@ -744,8 +789,36 @@ export const STYLES = `
   min-width: 0;
 }
 .omnimux-accounts-cellmenu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  vertical-align: middle;
   position: relative;
-  display: inline-block;
+}
+/* Table-only overrides. Default .omnimux-accounts-more / .omnimux-accounts-popover
+   stay absolute so grid cards keep pinning the ⋯ to the card corner. */
+.omnimux-accounts-cellmenu .omnimux-accounts-more {
+  position: static;
+  top: auto;
+  right: auto;
+  z-index: auto;
+  width: 26px;
+  height: 26px;
+}
+.omnimux-accounts-cellmenu .omnimux-accounts-popover {
+  top: calc(100% + 4px);
+  right: 0;
+  left: auto;
+  z-index: 6;
+  min-width: 200px;
+  max-width: min(280px, 70vw);
+}
+.omnimux-accounts-table tbody tr:last-child .omnimux-accounts-cellmenu .omnimux-accounts-popover,
+.omnimux-accounts-table tbody tr:nth-last-child(2) .omnimux-accounts-cellmenu .omnimux-accounts-popover {
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 .omnimux-accounts-bulkbar {
   position: sticky;
@@ -759,7 +832,7 @@ export const STYLES = `
   border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.16));
   border-radius: 10px;
   background: var(--dsw-alias-bg-primary, var(--dsw-bg, #16181d));
-  box-shadow: 0 -4px 16px rgba(0,0,0,0.25);
+  box-shadow: 0 -4px 16px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.25));
 }
 .omnimux-accounts-bulkbar .omnimux-accounts-popover {
   top: auto;
@@ -791,7 +864,7 @@ export const STYLES = `
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(0,0,0,0.55);
+  background: var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.55));
 }
 .omnimux-accounts-modal {
   width: min(480px, 100%);
@@ -802,7 +875,7 @@ export const STYLES = `
   border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.16));
   border-radius: 12px;
   background: var(--dsw-alias-bg-primary, var(--dsw-bg, #16181d));
-  box-shadow: 0 16px 48px rgba(0,0,0,0.45);
+  box-shadow: 0 16px 48px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.45));
 }
 .omnimux-accounts-modal-head {
   display: flex;
@@ -866,14 +939,15 @@ export const STYLES = `
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
+  height: auto;
   padding: 14px;
-  border: 1px solid var(--dsw-alias-border, rgba(255,255,255,0.12));
+  border: 1px solid var(--dsw-alias-border-l2);
   border-radius: 12px;
-  background: var(--dsw-alias-bg-secondary, rgba(255,255,255,0.04));
+  background: var(--dsw-alias-bg-secondary);
   color: inherit;
-  font: inherit;
   cursor: pointer;
   text-align: left;
+  white-space: normal;
 }
 .omnimux-accounts-platform-btn:not(:disabled):hover {
   background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.12));

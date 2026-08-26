@@ -10,7 +10,7 @@ function Icon({ size = 14, children }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      style={{ flex: 'none', display: 'inline-block', verticalAlign: 'middle' }}
+      className="omnimux-products-icon"
     >
       {children}
     </svg>
@@ -31,6 +31,14 @@ export function PlusIcon(props) {
     <Icon {...props}>
       <path d="M12 5v14" />
       <path d="M5 12h14" />
+    </Icon>
+  )
+}
+
+export function CheckIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="m5 12 5 5 9-10" />
     </Icon>
   )
 }
