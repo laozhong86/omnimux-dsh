@@ -13,16 +13,22 @@ import { OmnimuxError } from '../media/errors.js'
  * mp4 understanding. deepseek-v4-pro and glm-5.3 rejected `image_url`
  * upstream and stay text-only. claude-opus-5 supports images on the
  * Anthropic `/v1/messages` protocol but the chat-completions group is
- * currently 403 for this key; it stays text-only here.
+ * currently 403 for this key; it stays text-only here. claude-opus-4-6,
+ * gpt-5.5, and gemini-3.1-pro-preview answered the red-image prompt on
+ * chat-completions (docs/evidence/omnimux-brand-four-2026-08-23.md).
+ * minimax-m3 is catalogued but this key's group 403s it, so it stays off.
  */
 export const CHAT_MODELS = Object.freeze([
   Object.freeze({ id: 'claude-opus-5', brand: 'anthropic', role: 'flagship', input: Object.freeze(['text']) }),
+  Object.freeze({ id: 'claude-opus-4-6', brand: 'anthropic', role: 'flagship', input: Object.freeze(['text', 'image']) }),
   Object.freeze({ id: 'gpt-5.6-sol', brand: 'openai', role: 'flagship', input: Object.freeze(['text', 'image']) }),
+  Object.freeze({ id: 'gpt-5.5', brand: 'openai', role: 'flagship', input: Object.freeze(['text', 'image']) }),
   Object.freeze({ id: 'grok-4.6', brand: 'xai', role: 'flagship', input: Object.freeze(['text', 'image']) }),
   Object.freeze({ id: 'kimi-k3', brand: 'moonshot', role: 'flagship', input: Object.freeze(['text', 'image']) }),
   Object.freeze({ id: 'deepseek-v4-pro', brand: 'deepseek', role: 'flagship', input: Object.freeze(['text']) }),
   Object.freeze({ id: 'deepseek-v4-flash-vision-exp', brand: 'deepseek', role: 'classic', input: Object.freeze(['text', 'image']) }),
   Object.freeze({ id: 'gemini-3.7-flash', brand: 'google', role: 'flagship', input: Object.freeze(['text', 'image', 'video']) }),
+  Object.freeze({ id: 'gemini-3.1-pro-preview', brand: 'google', role: 'flagship', input: Object.freeze(['text', 'image']) }),
   Object.freeze({ id: 'glm-5.3', brand: 'zhipu', role: 'flagship', input: Object.freeze(['text']) }),
 ])
 

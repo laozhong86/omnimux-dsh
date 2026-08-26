@@ -14,6 +14,14 @@ describe('official mount', () => {
     assert.ok(names.includes('omnimux_accounts_list'))
     assert.ok(names.includes('omnimux_publish_create'))
     assert.ok(names.includes('omnimux_inspiration_list'))
+    assert.ok(names.includes('omnimux_analytics_daily_metrics'))
+    assert.ok(names.includes('omnimux_analytics_best_time'))
+    assert.ok(names.includes('omnimux_analytics_frequency'))
+    assert.ok(names.includes('omnimux_analytics_content_decay'))
+    assert.ok(names.includes('omnimux_analytics_follower_stats'))
+    assert.ok(names.includes('omnimux_analytics_posts'))
+    assert.ok(names.includes('omnimux_analytics_sync_external'))
+    assert.ok(names.includes('omnimux_analytics_inbox'))
   })
 
   it('skips official tools when official.mount is false', () => {

@@ -12,12 +12,16 @@ function sizableBox(node) {
 }
 
 export const PRODUCT_STAGE_EVENT = 'dsh-product-stage'
+export const ACTIVE_STAGE_STORAGE_KEY = 'omnimux_active_product_stage'
 
 /**
  * Open one first-level product page and tell the others to close.
  * @param {string} id
  */
 export function claimProductStage(id) {
+  try {
+    if (id) window.localStorage.setItem(ACTIVE_STAGE_STORAGE_KEY, id)
+  } catch {}
   window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id } }))
   document.documentElement.dataset.dshProductStage = id
   ensureProductStageChrome()
@@ -31,6 +35,10 @@ export function releaseProductStage(id) {
   if (document.documentElement.dataset.dshProductStage === id) {
     delete document.documentElement.dataset.dshProductStage
   }
+  try {
+    const current = window.localStorage.getItem(ACTIVE_STAGE_STORAGE_KEY)
+    if (current === id) window.localStorage.removeItem(ACTIVE_STAGE_STORAGE_KEY)
+  } catch {}
 }
 
 export const PRODUCT_STAGE_CHROME = `
@@ -45,6 +53,9 @@ html[data-dsh-product-stage] header{-webkit-app-region:no-drag!important;}
 html[data-dsh-product-stage] [data-slot="conversation.session.header"],
 html[data-dsh-product-stage] [data-slot="conversation"] > header {display:none!important;}
 html[data-dsh-product-stage] [role="treeitem"][aria-selected="true"]{background:transparent!important;}
+html[data-dsh-product-stage] .dshDesktopConversationSurface > *:not([data-slot="shell.overlay"]),
+html[data-dsh-product-stage] [data-slot="conversation.content"],
+html[data-dsh-product-stage] [data-slot="input.trigger"] {visibility:hidden!important;}
 `
 
 export function ensureProductStageChrome() {
@@ -64,6 +75,9 @@ export function ensureProductStageChrome() {
 function leaveProductStage() {
   if (!document.documentElement.dataset.dshProductStage) return
   delete document.documentElement.dataset.dshProductStage
+  try {
+    window.localStorage.removeItem(ACTIVE_STAGE_STORAGE_KEY)
+  } catch {}
   window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: '' } }))
 }
 

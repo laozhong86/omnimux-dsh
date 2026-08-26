@@ -3,10 +3,29 @@ import { DEFAULT_SITE, resolveSiteBaseUrl } from '../auth/omnimux-auth.js'
 import { assertLocalWrite } from '../apps/origin.js'
 import { OmnimuxError } from '../media/errors.js'
 import { connectAccount, disconnectAccount, listAccounts } from './accounts.js'
+import {
+  getDailyMetrics,
+  getBestTimeToPost,
+  getPostingFrequency,
+  getContentDecay,
+  getFollowerStats,
+  getPostAnalytics,
+  syncExternalPosts,
+  getInboxAnalytics,
+} from './analytics.js'
+import {
+  aggregateFollowers,
+  aggregateInsights,
+  aggregateOverview,
+  aggregatePosts,
+  aggregateSync,
+} from './analytics-aggregate.js'
 import { createOfficialClient } from './client.js'
-import { parseOfficialConfig } from './config.js'
-import { computeStatus, filterRows, pickAccountsView, pickConnectView } from './public-account.js'
+import { DEFAULT_ACCOUNT_AVATARS, parseOfficialConfig } from './config.js'
+import { computeStatus, filterRows, localAvatarUrl, pickAccountsView, pickConnectView } from './public-account.js'
 import { mergeMeta } from './account-meta.js'
+
+const ACCOUNTS_PREFIX = '/omnimux/accounts/'
 
 /** In-memory no-op store so a dispatcher assembled without one still works. */
 function emptyMetaStore() {
@@ -15,6 +34,53 @@ function emptyMetaStore() {
     update: (_id, patch) => ({ ...(patch && typeof patch === 'object' ? patch : {}) }),
     remove: () => {},
     prune: () => [],
+  }
+}
+
+/** Same idea as emptyMetaStore: HTTP still runs when Host did not wire a cache. */
+function emptyAvatarStore() {
+  return {
+    has: () => false,
+    get: () => null,
+    sourceUrl: () => '',
+    localUrlFor: (id) => localAvatarUrl(id),
+    remove: () => {},
+    prune: () => [],
+    putFromUrl: async () => ({ ok: false, reason: 'noop' }),
+  }
+}
+
+/**
+ * @param {unknown} value
+ */
+function resolveAvatarConfig(value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value)
+    ? /** @type {Record<string, unknown>} */ (value)
+    : {}
+  const concurrency = typeof source.concurrency === 'number' && Number.isInteger(source.concurrency) && source.concurrency >= 1
+    ? source.concurrency
+    : DEFAULT_ACCOUNT_AVATARS.concurrency
+  return {
+    enabled: source.enabled !== false,
+    concurrency,
+  }
+}
+
+/**
+ * Pathname → account id for `GET /omnimux/accounts/{id}/avatar`.
+ * `{id}` may contain `%2F`; a raw `/` means this is not the avatar route.
+ * @param {string} pathname
+ */
+export function avatarIdFromPath(pathname) {
+  if (!pathname.startsWith(ACCOUNTS_PREFIX) || !pathname.endsWith('/avatar')) return ''
+  const raw = pathname.slice(ACCOUNTS_PREFIX.length, -'/avatar'.length)
+  if (!raw || raw.includes('/') || raw === '..') return ''
+  try {
+    const decoded = decodeURIComponent(raw)
+    if (decoded === '..') return ''
+    return decoded
+  } catch {
+    return ''
   }
 }
 
@@ -58,7 +124,7 @@ function parseMetaPatch(body) {
 
 /**
  * @param {{
- *   official?: { mount: boolean },
+ *   official?: { mount: boolean, accountAvatars?: { enabled?: boolean, concurrency?: number } },
  *   identity?: { require: Function },
  *   store?: { resolve: () => Promise<string | undefined> },
  *   siteBaseUrl?: string,
@@ -66,6 +132,15 @@ function parseMetaPatch(body) {
  *   fetcher?: typeof fetch,
  *   client?: { withPat: Function },
  *   metaStore?: { read: Function, update: Function, remove: Function, prune: Function },
+ *   avatarStore?: {
+ *     has: Function,
+ *     get: Function,
+ *     sourceUrl?: Function,
+ *     localUrlFor: Function,
+ *     remove: Function,
+ *     prune: Function,
+ *     putFromUrl: Function,
+ *   },
  * }} [deps]
  */
 export function createOfficialDispatcher(deps = {}) {
@@ -73,6 +148,8 @@ export function createOfficialDispatcher(deps = {}) {
   const official = deps.official ?? parseOfficialConfig(undefined)
   const siteBaseUrl = resolveSiteBaseUrl(deps.siteBaseUrl || env.OMNIMUX_SITE_URL || DEFAULT_SITE)
   const metaStore = deps.metaStore ?? emptyMetaStore()
+  const avatarStore = deps.avatarStore ?? emptyAvatarStore()
+  const avatarCfg = resolveAvatarConfig(official.accountAvatars)
   const client = deps.client ?? createOfficialClient({
     fetcher: deps.fetcher,
     siteBaseUrl,
@@ -91,6 +168,61 @@ export function createOfficialDispatcher(deps = {}) {
     },
   })
 
+  /** @type {Set<string>} */
+  const inflight = new Set()
+  /** @type {Array<{ id: string, url: string }>} */
+  const fillQueue = []
+  let fillActive = 0
+
+  /**
+   * Fire-and-forget CDN fetch. Failures never surface on GET list.
+   * @param {string} id
+   * @param {string} url
+   */
+  function enqueueFill(id, url) {
+    if (!avatarCfg.enabled) return
+    if (typeof avatarStore.putFromUrl !== 'function') return
+    if (inflight.has(id)) return
+    inflight.add(id)
+    fillQueue.push({ id, url })
+    pumpFill()
+  }
+
+  function pumpFill() {
+    while (fillActive < avatarCfg.concurrency && fillQueue.length > 0) {
+      const job = fillQueue.shift()
+      if (!job) break
+      fillActive += 1
+      Promise.resolve(avatarStore.putFromUrl(job.id, job.url))
+        .catch(() => {})
+        .finally(() => {
+          inflight.delete(job.id)
+          fillActive -= 1
+          pumpFill()
+        })
+    }
+  }
+
+  /**
+   * Rewrite cached rows to the same-origin byte route and enqueue misses.
+   * Runs on the unfiltered view so `?platform=` does not skip cache fills.
+   * @param {Array<Record<string, unknown>>} rows
+   */
+  function rewriteAvatars(rows) {
+    if (!avatarCfg.enabled) return
+    for (const row of rows) {
+      const id = String(row.id)
+      const remote = typeof row.avatar_url === 'string' ? row.avatar_url : ''
+      const cachedUrl = typeof avatarStore.sourceUrl === 'function' ? String(avatarStore.sourceUrl(id) || '') : ''
+      if (avatarStore.has(id) && (cachedUrl === '' || remote === '' || cachedUrl === remote)) {
+        row.avatar_url = avatarStore.localUrlFor(id)
+      } else if (/^https:\/\//i.test(remote)) {
+        enqueueFill(id, remote)
+      }
+    }
+    avatarStore.prune(rows.map((row) => String(row.id)))
+  }
+
   /**
    * @param {{ method: string, url: string, body?: unknown, origin?: string, referer?: string, secFetchSite?: string }} req
    */
@@ -99,6 +231,36 @@ export function createOfficialDispatcher(deps = {}) {
     const url = new URL(req.url, 'http://127.0.0.1')
     const method = req.method.toUpperCase()
     const path = url.pathname
+    const avatarId = avatarIdFromPath(path)
+    const looksLikeAvatar = path.startsWith(ACCOUNTS_PREFIX) && path.endsWith('/avatar')
+    if (looksLikeAvatar) {
+      if (method !== 'GET') return { status: 405, body: { error: 'method not allowed' } }
+      if (!avatarCfg.enabled || !avatarId) return { status: 404, body: { error: 'not found' } }
+      try {
+        if (!deps.identity || typeof deps.identity.require !== 'function') {
+          throw new OmnimuxError('needs-omnimux', 'sign in to OmniMux or set OMNIMUX_ACCESS_TOKEN')
+        }
+        await deps.identity.require()
+      } catch (error) {
+        if (error instanceof OmnimuxError && error.code === 'needs-omnimux') {
+          return { status: 401, body: { error: error.message } }
+        }
+        return { status: 502, body: { error: error instanceof Error ? error.message : String(error) } }
+      }
+      const hit = avatarStore.get(avatarId)
+      if (!hit || !Buffer.isBuffer(hit.buffer)) return { status: 404, body: { error: 'not found' } }
+      return {
+        status: 200,
+        raw: true,
+        body: hit.buffer,
+        headers: {
+          'Content-Type': hit.mimeType,
+          'Cache-Control': 'private, max-age=86400',
+          'X-Content-Type-Options': 'nosniff',
+          'Content-Length': String(hit.buffer.length),
+        },
+      }
+    }
     if (method !== 'GET') {
       try {
         assertLocalWrite(req)
@@ -111,6 +273,7 @@ export function createOfficialDispatcher(deps = {}) {
         const raw = await listAccounts(client)
         const meta = metaStore.read()
         const view = pickAccountsView(raw, { meta, now: Date.now() })
+        rewriteAvatars(view.accounts)
         // Lazy cleanup: overlay rows whose id the site no longer returns are
         // dropped so the local document cannot accumulate dead ids.
         metaStore.prune(view.accounts.map((row) => String(row.id)))
@@ -138,9 +301,9 @@ export function createOfficialDispatcher(deps = {}) {
         })
         return { status: 200, body: pickConnectView(raw) }
       }
-      if (method === 'PATCH' && path.startsWith('/omnimux/accounts/')) {
-        const id = decodeURIComponent(path.slice('/omnimux/accounts/'.length))
-        if (!id) return { status: 400, body: { error: 'id is required' } }
+      if (method === 'PATCH' && path.startsWith(ACCOUNTS_PREFIX)) {
+        const id = decodeURIComponent(path.slice(ACCOUNTS_PREFIX.length))
+        if (!id || id.includes('/')) return { status: 400, body: { error: 'id is required' } }
         const parsed = parseMetaPatch(req.body)
         if ('error' in parsed) return { status: 400, body: { error: parsed.error } }
         const raw = await listAccounts(client)
@@ -159,12 +322,97 @@ export function createOfficialDispatcher(deps = {}) {
         if (typeof meta.last_used_at === 'string' && meta.last_used_at !== '') account.last_used_at = meta.last_used_at
         return { status: 200, body: { account } }
       }
-      if (method === 'DELETE' && path.startsWith('/omnimux/accounts/')) {
-        const id = decodeURIComponent(path.slice('/omnimux/accounts/'.length))
-        if (!id) return { status: 400, body: { error: 'id is required' } }
+      if (method === 'DELETE' && path.startsWith(ACCOUNTS_PREFIX)) {
+        const id = decodeURIComponent(path.slice(ACCOUNTS_PREFIX.length))
+        if (!id || id.includes('/')) return { status: 400, body: { error: 'id is required' } }
         await disconnectAccount(client, { id })
         metaStore.remove(id)
+        avatarStore.remove(id)
         return { status: 200, body: { ok: true } }
+      }
+
+      // --- Analytics dashboard facade (UI view model) ---
+      if (method === 'GET' && path === '/omnimux/analytics/overview') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await aggregateOverview(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path === '/omnimux/analytics/insights') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await aggregateInsights(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path === '/omnimux/analytics/followers') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await aggregateFollowers(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'POST' && path === '/omnimux/analytics/sync') {
+        const body = req.body && typeof req.body === 'object' ? /** @type {Record<string, unknown>} */ (req.body) : {}
+        const data = await aggregateSync(client, body)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path === '/omnimux/analytics/sync') {
+        const now = Date.now()
+        return {
+          status: 200,
+          body: {
+            syncStatus: {
+              lastSyncedAt: now,
+              nextSyncAt: now + 3_600_000,
+              syncIntervalMs: 3_600_000,
+              syncing: false,
+              lastError: null,
+            },
+          },
+        }
+      }
+
+      // --- Analytics raw PAT passthrough (Agent / debug) ---
+      if (method === 'GET' && path === '/omnimux/analytics/daily-metrics') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await getDailyMetrics(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path === '/omnimux/analytics/best-time-to-post') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await getBestTimeToPost(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path === '/omnimux/analytics/posting-frequency') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await getPostingFrequency(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path === '/omnimux/analytics/content-decay') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await getContentDecay(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path === '/omnimux/analytics/follower-stats') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await getFollowerStats(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path === '/omnimux/analytics/posts') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        if (query.timeRange) {
+          const data = await aggregatePosts(client, query)
+          return { status: 200, body: data }
+        }
+        const data = await getPostAnalytics(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'POST' && path === '/omnimux/analytics/sync-external-posts') {
+        const body = req.body && typeof req.body === 'object' ? /** @type {Record<string, unknown>} */ (req.body) : {}
+        const data = await syncExternalPosts(client, body)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path.startsWith('/omnimux/analytics/inbox/')) {
+        const capability = path.slice('/omnimux/analytics/inbox/'.length)
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await getInboxAnalytics(client, capability, query)
+        return { status: 200, body: data }
       }
     } catch (error) {
       if (error instanceof OmnimuxError && error.code === 'needs-omnimux') {
@@ -183,7 +431,7 @@ export function createOfficialDispatcher(deps = {}) {
  * @param {ReturnType<typeof createOfficialDispatcher>} dispatcher
  */
 export function registerOfficialRoutes(webServer, dispatcher) {
-  const dispose = webServer.register({
+  const disposeAccounts = webServer.register({
     kind: 'prefix',
     path: '/omnimux/accounts',
     async handler(req, res) {
@@ -202,14 +450,47 @@ export function registerOfficialRoutes(webServer, dispatcher) {
           referer: header(req, 'referer'),
           secFetchSite: header(req, 'sec-fetch-site'),
         })
+        if (result.raw) {
+          res.writeHead(result.status, result.headers || { 'Content-Type': 'application/octet-stream' })
+          res.end(result.body)
+          return
+        }
         sendJson(res, result.status, result.body)
       } catch {
         sendJson(res, 500, { error: 'internal error' })
       }
     },
   })
+
+  const disposeAnalytics = webServer.register({
+    kind: 'prefix',
+    path: '/omnimux/analytics',
+    async handler(req, res) {
+      try {
+        const wantsBody = req.method === 'POST' || req.method === 'PATCH'
+        const body = wantsBody ? await readJsonBody(req) : undefined
+        if (wantsBody && body === null) {
+          sendJson(res, 400, { error: 'invalid json' })
+          return
+        }
+        const result = await dispatcher.dispatch({
+          method: req.method || 'GET',
+          url: req.url || '/omnimux/analytics',
+          body,
+          origin: header(req, 'origin'),
+          referer: header(req, 'referer'),
+          secFetchSite: header(req, 'sec-fetch-site'),
+        })
+        sendJson(res, result.status, result.body)
+      } catch {
+        sendJson(res, 500, { error: 'internal error' })
+      }
+    },
+  })
+
   return () => {
-    dispose()
+    disposeAccounts()
+    disposeAnalytics()
   }
 }
 

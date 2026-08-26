@@ -18,8 +18,7 @@
  * expired | error`.
  *
  *  - `closed`: no gate. `ensureLogin` may open one.
- *  - `checking`: a status read is in flight (cached by default; verify when
- *    `ensureLogin({ forceVerify: true })`).
+ *  - `checking`: a status (non-verify) read is in flight.
  *  - `starting`: device login started, awaiting the auth page.
  *  - `waiting`: device code shown, polling for completion.
  *  - `denied` / `expired` / `error`: the flow ended in a terminal failure.
@@ -170,19 +169,12 @@ function beginLogin(reason) {
   currentLogin.start()
 }
 
-/**
- * @param {string | undefined} reason
- * @param {boolean} [forceVerify]
- */
-async function checkAndStart(reason, forceVerify = false) {
+async function checkAndStart(reason) {
   setState({ phase: 'checking' })
   /** @type {{ ok: boolean, status: number, body: { logged_in?: boolean } }} */
   let status
   try {
-    // Default stays cached (design: click-time, no forced verify).
-    // Callers that just ate a Host/gateway 401 pass forceVerify so a stale
-    // `logged_in` cache cannot short-circuit the device-code gate.
-    status = await impl.getStatus(forceVerify === true)
+    status = await impl.getStatus(false)
   } catch {
     status = { ok: false, status: 0, body: { logged_in: false } }
   }
@@ -197,17 +189,11 @@ async function checkAndStart(reason, forceVerify = false) {
 /**
  * Open / reuse the unified login gate for one intent.
  *
- * @param {{
- *   reason?: string,
- *   forceVerify?: boolean,
- *   onSuccess?: (profile: any) => void,
- *   onCancel?: (reason?: any) => void,
- * }} [opts]
+ * @param {{ reason?: string, onSuccess?: (profile: any) => void, onCancel?: (reason?: any) => void }} [opts]
  * @returns {Promise<void>}
  */
 export async function ensureLogin(opts = {}) {
   const intent = makeIntent(opts)
-  const forceVerify = opts.forceVerify === true
   if (state.phase !== 'closed') {
     // Single-gate guarantee: an already-open/terminal gate is reused. Only
     // if it is a terminal failure do we restart the handshake so the gate
@@ -226,7 +212,7 @@ export async function ensureLogin(opts = {}) {
   }
   intents.push(intent)
   latestReason = intent.reason ?? latestReason
-  await checkAndStart(intent.reason ?? latestReason, forceVerify)
+  await checkAndStart(intent.reason ?? latestReason)
 }
 
 /**

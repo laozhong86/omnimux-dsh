@@ -10,15 +10,18 @@ import {
 } from './catalog.js'
 
 describe('text whitelist', () => {
-  it('defaults to the eight chat-directory models, all enabled', () => {
+  it('defaults to the eleven chat-directory models, all enabled', () => {
     const parsed = parseTextConfig(undefined)
     assert.equal(parsed.defaultProvider, 'omnimux')
     assert.equal(parsed.defaultModel, 'gemini-3.7-flash')
     assert.equal(parsed.maxTokens, 4096)
     assert.deepEqual(parsed.models.map((row) => row.id), [...CHAT_MODEL_IDS])
-    assert.equal(enabledTextModels(parsed).length, 8)
+    assert.equal(enabledTextModels(parsed).length, 11)
     assert.equal(parsed.models.find((row) => row.id === 'deepseek-v4-flash-vision-exp')?.role, 'classic')
     assert.equal(parsed.models.find((row) => row.id === 'grok-4.6')?.brand, 'xai')
+    assert.equal(parsed.models.find((row) => row.id === 'gpt-5.5')?.brand, 'openai')
+    assert.equal(parsed.models.find((row) => row.id === 'claude-opus-4-6')?.brand, 'anthropic')
+    assert.equal(parsed.models.find((row) => row.id === 'gemini-3.1-pro-preview')?.brand, 'google')
   })
 
   it('rejects an id outside the chat directory', () => {
@@ -120,8 +123,8 @@ describe('text whitelist', () => {
   })
 
   it('keeps the default table frozen identity for omitted config', () => {
-    assert.equal(DEFAULT_TEXT.models.length, 8)
-    assert.equal(DEFAULT_TEXT.models[2].id, 'grok-4.6')
+    assert.equal(DEFAULT_TEXT.models.length, 11)
+    assert.equal(DEFAULT_TEXT.models.find((row) => row.id === 'grok-4.6')?.id, 'grok-4.6')
     assert.equal(DEFAULT_TEXT.defaultModel, 'gemini-3.7-flash')
   })
 })

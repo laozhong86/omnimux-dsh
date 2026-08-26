@@ -125,5 +125,10 @@ function pickErrorMessage(json) {
   if (!json || typeof json !== 'object') return ''
   const row = /** @type {Record<string, unknown>} */ (json)
   const data = row.data && typeof row.data === 'object' ? /** @type {Record<string, unknown>} */ (row.data) : {}
-  return String(row.error || row.message || data.error || data.message || '')
+  const errVal = row.error || row.message || data.error || data.message
+  if (errVal && typeof errVal === 'object') {
+    const errObj = /** @type {Record<string, unknown>} */ (errVal)
+    return String(errObj.message || errObj.code || errObj.type || JSON.stringify(errVal))
+  }
+  return String(errVal || '')
 }

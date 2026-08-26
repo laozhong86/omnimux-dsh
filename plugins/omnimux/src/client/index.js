@@ -1,20 +1,13 @@
 /** Registers OmniMux profile in Settings and Apps under 新会话. */
-import { NS, en, zh } from './locales.js'
-import { createAppsStore } from './apps-store.js'
+import { NS } from './locales.js'
 import { ProfileSection } from './ProfileSection.jsx'
 import { DshPluginsSection } from './DshPluginsSection.jsx'
-import { AppsStage } from './AppsStage.jsx'
-import { mountSidebarEntry } from './sidebar-entry.js'
-import { mountAppTabs } from './app-tabs.js'
-import { configFromWindow, startOverlay } from '../brand/overlay.js'
-import { ensureProductStageChrome } from './conversation-box.js'
-import { installStageGlobal } from './stage.js'
-import { installSidebarGlobal, SIDEBAR_GLOBAL } from './sidebar-coordinator.js'
-// x.ai 全壳 overrideTokens 已临时关闭：发送钮在暗色下变成白底白箭头。
-// 恢复时：重新 import applyXaiShellTheme，并把 'theme' 加回 inject + package.json dsh.client.inject。
-// import { applyXaiShellTheme } from './xai-theme.js'
-import { installAuthGlobal } from './auth-gate.js'
 import { LoginGate } from './LoginGate.jsx'
+import { SidebarUpdateAction } from './SidebarUpdateAction.jsx'
+import { installHubChrome } from './chrome.js'
+import { STYLES_ID, injectHubStyles } from './styles.js'
+import { HeroBrandMark } from './HeroBrandMark.jsx'
+import { installHeroBrandSlot } from './hero-brand.js'
 
 export const name = 'omnimux'
 export const inject = ['slots', 'locale']
@@ -35,20 +28,12 @@ export const inject = ['slots', 'locale']
  * }} ctx
  */
 export function apply(ctx) {
-  installStageGlobal()
-  installSidebarGlobal()
-  installAuthGlobal()
-  ctx.effect(
-    () => startOverlay(document, configFromWindow(window)),
-    'omnimux: brand overlay',
-  )
-  ctx.effect(() => {
-    ensureProductStageChrome()
-    return () => {}
-  }, 'omnimux: product-stage chrome')
-  // 临时关闭：ctx.effect(() => applyXaiShellTheme(ctx), 'omnimux: xai shell theme')
-  ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'omnimux: dictionaries')
-  const t = ctx.locale.bind(NS)
+  const t = installHubChrome(ctx)
+  installHeroBrandSlot(ctx, HeroBrandMark)
+  ctx.effect?.(() => {
+    injectHubStyles()
+    return () => { document.getElementById(STYLES_ID)?.remove() }
+  }, 'omnimux: hub client styles')
 
   // Apps shelf temporarily taken down (core-first): the 应用 row, app tabs,
   // and AppsStage overlay stay in the source tree (apps-store.js / app-tabs.js
@@ -56,8 +41,6 @@ export function apply(ctx) {
   // restoring the three mounts below. Pinned vertical plugins (账号 / 资产库 /
   // 专家·技能·连接器 / 工作流) open directly via the product stage and do not
   // depend on the catalog or the omnimux-app-open event.
-  // const apps = createAppsStore()
-  // const appsFace = () => ({ t, apps })
   ctx.slots.inject('settings.section', () => ctx.slots.register({
     name: 'settings.section',
     id: 'omnimux-profile',
@@ -85,6 +68,15 @@ export function apply(ctx) {
     locale: NS,
     inject: () => ({ t }),
   }, LoginGate))
+
+  // 官方侧边栏底部槽位：设置正上方的更新交互栏
+  ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+    name: 'sidebar.footer.action',
+    id: 'omnimux-desktop-updater',
+    order: 10,
+    locale: NS,
+    inject: () => ({ t }),
+  }, SidebarUpdateAction))
   // ctx.effect(() => mountSidebarEntry(apps, t, ctx.locale, SIDEBAR_GLOBAL().register), 'omnimux: sidebar apps entry')
   // ctx.effect(() => mountAppTabs(t, ctx.locale, SIDEBAR_GLOBAL().register), 'omnimux: sidebar app tabs')
   // ctx.slots.inject('shell.overlay', () => ctx.slots.register({

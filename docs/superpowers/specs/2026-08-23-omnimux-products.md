@@ -169,7 +169,7 @@ tools: 接受 id 或 handle
  ├─ app tabs             rank 2  omnimux
  ├─ 账号                 rank 3  omnimux-accounts
  ├─ 资产库               rank 4  omnimux-assets
- ├─ 项目库               rank 5  omnimux-workflow
+ ├─ 项目                 rank 5  omnimux-workflow
  └─ 产品库               rank 6  omnimux-products   ← 新增，不插队
 ```
 

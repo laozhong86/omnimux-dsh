@@ -1,5 +1,15 @@
 import { OmnimuxError } from '../media/errors.js'
 import { connectAccount, disconnectAccount, listAccounts } from './accounts.js'
+import {
+  getDailyMetrics,
+  getBestTimeToPost,
+  getPostingFrequency,
+  getContentDecay,
+  getFollowerStats,
+  getPostAnalytics,
+  syncExternalPosts,
+  getInboxAnalytics,
+} from './analytics.js'
 import { createOfficialClient } from './client.js'
 import {
   createInspiration,
@@ -36,7 +46,7 @@ export function mountOfficial(ctx, deps) {
     fetcher: deps.fetcher,
     siteBaseUrl: deps.siteBaseUrl,
     apiBaseUrl: (env.OMNIMUX_BASE_URL || 'https://api.omnimux.ai/v1').replace(/\/v1\/?$/, ''),
-    resolveApiKey: () => env.OMNIMUX_API_KEY || env.OMNIMUX_TOKEN,
+    resolveApiKey: deps.resolveApiKey ?? (() => env.OMNIMUX_API_KEY || env.OMNIMUX_TOKEN),
     async resolveAccess() {
       const profile = await deps.identity.require()
       const token = await deps.store.resolve()
@@ -72,10 +82,10 @@ export function mountOfficial(ctx, deps) {
 
   tool(
     'omnimux_social_data',
-    'Fetch OmniMux social data. platform+capability must be a documented pair (tiktok/video, tiktok/user, instagram/post). Uses OMNIMUX_API_KEY. Pass url, id, or query.',
+    'Fetch OmniMux social data. platform+capability must be a documented pair (tiktok/video, tiktok/user, tiktok/posts, tiktok/search, instagram/post, instagram/user, instagram/posts, instagram/search, youtube/video, youtube/user, youtube/posts, youtube/search, x/tweet, x/user, x/posts, x/search). Uses OMNIMUX_API_KEY. Pass url, id, or query.',
     {
-      platform: { type: 'string', required: true, enum: ['tiktok', 'instagram'] },
-      capability: { type: 'string', required: true, enum: ['video', 'user', 'post'] },
+      platform: { type: 'string', required: true, enum: ['tiktok', 'instagram', 'youtube', 'x'] },
+      capability: { type: 'string', required: true, enum: ['video', 'user', 'post', 'posts', 'tweet', 'search'] },
       url: { type: 'string' },
       id: { type: 'string' },
       query: { type: 'string' },
@@ -195,5 +205,100 @@ export function mountOfficial(ctx, deps) {
     'Inspiration gateway probe: enabled / configured / gateway_ready. Requires OmniMux sign-in.',
     {},
     () => inspirationStatus(client),
+  )
+
+  tool(
+    'omnimux_analytics_daily_metrics',
+    'Fetch daily aggregated social analytics metrics and per-platform breakdown. Requires OmniMux sign-in.',
+    {
+      fromDate: { type: 'string' },
+      toDate: { type: 'string' },
+      profileId: { type: 'string' },
+      platform: { type: 'string' },
+      accountIds: { type: 'string' },
+    },
+    (args) => getDailyMetrics(client, args),
+  )
+
+  tool(
+    'omnimux_analytics_best_time',
+    'Fetch 7x24h best times to post based on historical engagement. Requires OmniMux sign-in.',
+    {
+      platform: { type: 'string' },
+      accountId: { type: 'string' },
+      profileId: { type: 'string' },
+    },
+    (args) => getBestTimeToPost(client, args),
+  )
+
+  tool(
+    'omnimux_analytics_frequency',
+    'Fetch correlation between posting frequency and engagement rate. Requires OmniMux sign-in.',
+    {
+      platform: { type: 'string' },
+      profileId: { type: 'string' },
+    },
+    (args) => getPostingFrequency(client, args),
+  )
+
+  tool(
+    'omnimux_analytics_content_decay',
+    'Fetch how engagement accumulates over time post-publishing (decay curve). Requires OmniMux sign-in.',
+    {
+      platform: { type: 'string' },
+      profileId: { type: 'string' },
+    },
+    (args) => getContentDecay(client, args),
+  )
+
+  tool(
+    'omnimux_analytics_follower_stats',
+    'Fetch follower count history and growth for connected accounts. Requires OmniMux sign-in.',
+    {
+      profileId: { type: 'string' },
+      accountIds: { type: 'string' },
+      days: { type: 'number' },
+    },
+    (args) => getFollowerStats(client, args),
+  )
+
+  tool(
+    'omnimux_analytics_posts',
+    'Fetch post analytics list or single post detail with sorting and pagination. Requires OmniMux sign-in.',
+    {
+      postId: { type: 'string' },
+      sortBy: { type: 'string' },
+      sortOrder: { type: 'string', enum: ['asc', 'desc'] },
+      platform: { type: 'string' },
+      limit: { type: 'number' },
+      page: { type: 'number' },
+    },
+    (args) => getPostAnalytics(client, args),
+  )
+
+  tool(
+    'omnimux_analytics_sync_external',
+    'Trigger on-demand sync for external posts published directly on platform. Requires OmniMux sign-in.',
+    {
+      accountId: { type: 'string', required: true },
+      url: { type: 'string' },
+    },
+    (args) => syncExternalPosts(client, args),
+  )
+
+  tool(
+    'omnimux_analytics_inbox',
+    'Fetch inbox and conversation analytics (volume, response-time, heatmap, source-breakdown). Requires OmniMux sign-in.',
+    {
+      capability: { type: 'string', required: true, enum: ['volume', 'response-time', 'heatmap', 'source-breakdown'] },
+      fromDate: { type: 'string' },
+      toDate: { type: 'string' },
+      profileId: { type: 'string' },
+      accountId: { type: 'string' },
+    },
+    (args) => {
+      const { capability, ...query } = args
+      return getInboxAnalytics(client, String(capability), query)
+    },
   )
 }

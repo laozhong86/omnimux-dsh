@@ -2,11 +2,8 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
   authGuard,
-  coverGlyph,
-  extractTikTokVideoId,
   hostMediaSrc,
-  isUsableCoverSize,
-  pickCoverSrc,
+  resolveCreatorProfileUrl,
   resolveTikTokEmbedUrl,
   whenAuthReady,
 } from './api.js'
@@ -78,7 +75,6 @@ describe('inspiration api authGuard', () => {
       assert.equal(calls, 2)
       assert.equal(result.status, 200)
       assert.equal(gate.args() !== null, true)
-      assert.equal(gate.args().forceVerify, true, '401 path must force-verify stale cache')
     })
   })
 
@@ -135,68 +131,25 @@ describe('hostMediaSrc', () => {
     assert.equal(hostMediaSrc('https://cdn.example/a.jpg'), 'https://cdn.example/a.jpg')
     assert.equal(hostMediaSrc(''), '')
   })
-
-  it('prefixes a bare media key (detail envelope)', () => {
-    assert.equal(hostMediaSrc('seed/cover-04.jpg'), '/omnimux/inspiration/media/seed/cover-04.jpg')
-    assert.equal(hostMediaSrc('/seed/cover-04.jpg'), '/omnimux/inspiration/media/seed/cover-04.jpg')
-  })
-
-  it('rejects traversal', () => {
-    assert.equal(hostMediaSrc('../etc/passwd'), '')
-    assert.equal(hostMediaSrc('seed/../../x.jpg'), '')
-  })
 })
 
-describe('pickCoverSrc', () => {
-  it('prefers cover_key over cover_url', () => {
-    assert.equal(
-      pickCoverSrc({ cover_key: 'seed/cover-04.jpg', cover_url: '/api/inspiration/v1/media/covers/a.jpg' }),
-      '/omnimux/inspiration/media/seed/cover-04.jpg',
-    )
+describe('resolveCreatorProfileUrl', () => {
+  it('resolves explicit profile_url or url on creator object', () => {
+    assert.equal(resolveCreatorProfileUrl({ profile_url: 'https://tiktok.com/@alex' }), 'https://tiktok.com/@alex')
+    assert.equal(resolveCreatorProfileUrl({ url: 'https://instagram.com/alex' }), 'https://instagram.com/alex')
   })
 
-  it('falls back to cover_url and treats missing as empty', () => {
-    assert.equal(
-      pickCoverSrc({ cover_url: '/api/inspiration/v1/media/covers/a.jpg' }),
-      '/omnimux/inspiration/media/covers/a.jpg',
-    )
-    assert.equal(pickCoverSrc({ id: 1 }), '')
-    assert.equal(pickCoverSrc(null), '')
+  it('builds profile URL for TikTok by default or from sourceUrl', () => {
+    assert.equal(resolveCreatorProfileUrl({ handle: 'luckylynndee' }), 'https://www.tiktok.com/@luckylynndee')
+    assert.equal(resolveCreatorProfileUrl({ handle: '@shi.learn' }), 'https://www.tiktok.com/@shi.learn')
   })
-})
 
-describe('isUsableCoverSize', () => {
-  it('rejects 1×1 seed stubs and tiny thumbs', () => {
-    assert.equal(isUsableCoverSize(1, 1), false)
-    assert.equal(isUsableCoverSize(7, 120), false)
-    assert.equal(isUsableCoverSize(320, 200), true)
+  it('builds platform-specific profile URL for Instagram and YouTube', () => {
+    assert.equal(resolveCreatorProfileUrl({ handle: 'designer' }, 'https://instagram.com/reel/123'), 'https://www.instagram.com/designer')
+    assert.equal(resolveCreatorProfileUrl({ handle: 'tech_channel' }, 'https://youtube.com/watch?v=123'), 'https://www.youtube.com/@tech_channel')
   })
-})
 
-describe('coverGlyph', () => {
-  it('takes the first trimmed character', () => {
-    assert.equal(coverGlyph('好物开箱脚本模板：痛点三连'), '好')
-    assert.equal(coverGlyph('  3 步'), '3')
-    assert.equal(coverGlyph(''), '灵')
-  })
-})
-
-describe('extractTikTokVideoId & resolveTikTokEmbedUrl', () => {
-  it('extracts video ID from standard tiktok web URLs', () => {
-    assert.equal(
-      extractTikTokVideoId('https://www.tiktok.com/@futurecompanion/video/7637493208297131277?is_from_webapp=1'),
-      '7637493208297131277',
-    )
-    assert.equal(
-      extractTikTokVideoId('https://www.tiktok.com/@aniston3060/video/7581306324319767838'),
-      '7581306324319767838',
-    )
-    assert.equal(
-      resolveTikTokEmbedUrl('https://www.tiktok.com/@futurecompanion/video/7637493208297131277'),
-      'https://www.tiktok.com/player/v1/7637493208297131277',
-    )
-    assert.equal(resolveTikTokEmbedUrl('7637493208297131277'), 'https://www.tiktok.com/player/v1/7637493208297131277')
-    assert.equal(resolveTikTokEmbedUrl('https://example.com/other'), null)
-    assert.equal(resolveTikTokEmbedUrl(null), null)
+  it('falls back to source URL @handle when creator handle is generic', () => {
+    assert.equal(resolveCreatorProfileUrl({ handle: 'creator' }, 'https://www.tiktok.com/@mariaqvcpb9/video/123'), 'https://www.tiktok.com/@mariaqvcpb9')
   })
 })

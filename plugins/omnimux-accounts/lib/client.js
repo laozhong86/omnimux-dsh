@@ -2839,6 +2839,7 @@ function AccountsStage({ t, stage }) {
       role: "region",
       "aria-label": t("title"),
       "aria-hidden": open ? void 0 : "true",
+      "data-visible": open ? "true" : "false",
       style: {
         position: "fixed",
         top: box.top,

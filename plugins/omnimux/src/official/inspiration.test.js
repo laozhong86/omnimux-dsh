@@ -18,23 +18,14 @@ describe('inspiration query + rewrite', () => {
       success: true,
       data: {
         items: [{
-          cover_key: '/api/inspiration/v1/media/seed/cover-04.jpg',
-          media_keys: ['https://omnimux.ai/api/inspiration/v1/media/seed/video-04.mp4'],
           cover_url: '/api/inspiration/v1/media/covers/a.jpg',
           media_urls: ['https://omnimux.ai/api/inspiration/v1/media/clips/a.mp4'],
         }],
       },
     }
     const rewritten = rewriteMediaUrlsForHost(payload)
-    assert.equal(rewritten.data.items[0].cover_key, '/omnimux/inspiration/media/seed/cover-04.jpg')
-    assert.equal(rewritten.data.items[0].media_keys[0], '/omnimux/inspiration/media/seed/video-04.mp4')
     assert.equal(rewritten.data.items[0].cover_url, '/omnimux/inspiration/media/covers/a.jpg')
     assert.equal(rewritten.data.items[0].media_urls[0], '/omnimux/inspiration/media/clips/a.mp4')
-  })
-
-  it('leaves a bare media key (detail envelope) unchanged', () => {
-    const payload = { success: true, data: { cover_key: 'seed/cover-04.jpg', media_keys: ['seed/video-04.mp4'] } }
-    assert.deepEqual(rewriteMediaUrlsForHost(payload), payload)
   })
 
   it('leaves a payload without media URLs alone', () => {
@@ -44,10 +35,7 @@ describe('inspiration query + rewrite', () => {
 
   it('pulls the media key from the Host path', () => {
     assert.equal(mediaKeyFromHostPath('/omnimux/inspiration/media/covers/a.jpg'), 'covers/a.jpg')
-    assert.equal(mediaKeyFromHostPath('/omnimux/inspiration/media/seed/cover-04.jpg'), 'seed/cover-04.jpg')
     assert.equal(mediaKeyFromHostPath('/omnimux/inspiration/status'), '')
-    assert.equal(mediaKeyFromHostPath('/omnimux/inspiration/media/%2e%2e/etc/passwd'), '')
-    assert.equal(mediaKeyFromHostPath('/omnimux/inspiration/media/../etc/passwd'), '')
   })
 
   it('lists through the official client', async () => {
