@@ -2600,6 +2600,7 @@ ${(product.categories || []).join("\n")}`.toLowerCase();
       className: "omnimux-products-stage",
       "data-visible": open ? "true" : "false",
       style: {
+        display: open ? void 0 : "none",
         "--stage-top": `${box.top}px`,
         "--stage-left": `${box.left}px`,
         "--stage-width": `${box.width}px`,
