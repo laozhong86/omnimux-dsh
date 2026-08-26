@@ -45,25 +45,25 @@ export function DshPluginsSection({ t }) {
 
   if (!available && plugins.length === 0 && error === '') {
     return (
-      <div style={page}>
-        <h2 style={{ margin: 0, fontSize: 16 }}>{t('dshPlugins.title')}</h2>
-        <p style={muted}>{t('dshPlugins.desktopOnly')}</p>
+      <div className="omnimux-dsh-plugins-page">
+        <h2 className="omnimux-dsh-plugins-title">{t('dshPlugins.title')}</h2>
+        <p className="omnimux-dsh-plugins-muted">{t('dshPlugins.desktopOnly')}</p>
       </div>
     )
   }
 
   return (
-    <div style={page}>
-      <h2 style={{ margin: 0, fontSize: 16 }}>{t('dshPlugins.title')}</h2>
-      <p style={muted}>{t('dshPlugins.readonlyHint')}</p>
-      <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
+    <div className="omnimux-dsh-plugins-page">
+      <h2 className="omnimux-dsh-plugins-title">{t('dshPlugins.title')}</h2>
+      <p className="omnimux-dsh-plugins-muted">{t('dshPlugins.readonlyHint')}</p>
+      <ul className="omnimux-dsh-plugins-list">
         {plugins.map((plugin) => (
-          <li key={plugin.name} style={row}>
+          <li key={plugin.name} className="omnimux-dsh-plugins-row">
             <span>{plugin.name}{plugin.protected ? ` (${t('dshPlugins.protected')})` : ''}</span>
           </li>
         ))}
       </ul>
-      {error !== '' ? <p style={muted}>{error}</p> : null}
+      {error !== '' ? <p className="omnimux-dsh-plugins-muted">{error}</p> : null}
     </div>
   )
 }
