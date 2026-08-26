@@ -10,6 +10,12 @@ import {
   upsertShot,
 } from './domain.js'
 
+export {
+  compileContinuityPrompt,
+  DEFAULT_NEGATIVE_TOKENS,
+  normalizeCharacterToken,
+  normalizeSceneToken,
+} from './continuity.js'
 export const name = 'dsh-drama'
 export const inject = ['tools', 'systemPrompt']
 
