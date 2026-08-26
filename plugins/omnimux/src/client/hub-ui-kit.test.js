@@ -20,7 +20,7 @@ function assertOnlyCustomProperties(source, file) {
     for (const part of compact.split(',')) {
       const trimmed = part.trim()
       if (!trimmed) continue
-      if (/^display\s*:\s*['"]none['"]/.test(trimmed)) continue
+      if (/^display\s*:\s*(open\s*\?\s*undefined\s*:\s*['"]none['"]|['"]none['"])/.test(trimmed)) continue
       assert.match(
         trimmed,
         /^['"]?--[A-Za-z0-9-]+['"]?\s*:/,

@@ -3016,7 +3016,7 @@ function PlazaAction({ wide, sessions, t }) {
   const [everOpened, setEverOpened] = useState2(false);
   const [hint, setHint] = useState2("");
   const close = React.useCallback(() => setOpen(false), []);
-  const box = useConversationBox(open || everOpened && plazaKeepAlive);
+  const box = useConversationBox(open || everOpened);
   if (open && !everOpened) setEverOpened(true);
   useEffect2(() => {
     if (!open) return;
@@ -3089,13 +3089,16 @@ function PlazaAction({ wide, sessions, t }) {
     document.addEventListener("pointerdown", onPointer, true);
     return () => document.removeEventListener("pointerdown", onPointer, true);
   }, [open, close]);
-  const keep = plazaKeepAlive && everOpened;
+  const keep = everOpened;
   const show = open && box;
   const panel = typeof document !== "undefined" && box && (keep || show) ? createPortal(
     h("div", {
       className: "sh-plaza-view",
       "data-active": open ? "true" : "false",
-      "aria-hidden": open ? void 0 : "true"
+      "aria-hidden": open ? void 0 : "true",
+      style: {
+        display: open ? void 0 : "none"
+      }
     }, h(PlazaView, { t: tr, onClose: close, box, active: open })),
     document.body
   ) : null;

@@ -265,17 +265,13 @@ check_stage_keepalive() {
 }
 for rel in \
   omnimux-accounts/src/client/AccountsStage.jsx \
-  omnimux-products/src/client/ProductsStage.jsx
-do
-  check_stage_keepalive "$rel" fail
-done
-for rel in \
+  omnimux-products/src/client/ProductsStage.jsx \
   omnimux-assets/src/client/AssetsStage.jsx \
   omnimux-market/src/client/plaza-shell.js \
   omnimux-workflow/src/client/WorkflowStage.jsx \
   omnimux/src/client/AppsStage.jsx
 do
-  check_stage_keepalive "$rel" warn
+  check_stage_keepalive "$rel" fail
 done
 
 echo
