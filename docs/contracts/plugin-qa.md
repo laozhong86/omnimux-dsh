@@ -1,3 +1,14 @@
+---
+title: "plugin-qa — OmniMux 产品插件浏览器验收契约"
+id: "contract-plugin-qa"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux"
+---
+
 # plugin-qa — OmniMux 产品插件浏览器验收契约
 
 > 解决问题：多插件并行开发时，QA 环境抢口、数据串脏、验收口径各写一套。

@@ -1,3 +1,14 @@
+---
+title: "OmniMux 图标组件选型与迁移规范 (Icon Standards Contract)"
+id: "contract-icon-design-standards"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux"
+---
+
 # OmniMux 图标组件选型与迁移规范 (Icon Standards Contract)
 
 > **生效范围**：OmniMux 产品矩阵（`product/omnimux-dsh/plugins/*`）以及所有官方/三方扩展客户端界面。  

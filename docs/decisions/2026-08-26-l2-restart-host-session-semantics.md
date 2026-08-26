@@ -1,3 +1,14 @@
+---
+title: "决策：L2 restart-host 保端口与磁盘，不保浏览器会话"
+id: "decision-l2-restart-host-session-semantics"
+type: "decision"
+status: "accepted"
+authority: "L2"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux"
+---
+
 # 决策：L2 `restart-host` 保端口与磁盘，不保浏览器会话
 
 日期：2026-08-26。

@@ -1,3 +1,14 @@
+---
+title: "Settings plugin surfaces moved off the first-level nav"
+id: "log-settings-plugins-tab"
+type: "log"
+status: "accepted"
+authority: "L3"
+date: "2026-08-18"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-accounts"
+---
+
 # Settings plugin surfaces moved off the first-level nav
 
 - **日期:** 2026-08-18

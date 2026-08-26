@@ -1,3 +1,14 @@
+---
+title: "Briefing"
+id: "log-briefing"
+type: "log"
+status: "living"
+authority: "L3"
+date: "2026-08-15"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # Briefing
 
 > Memory, not truth. Rank: code > AGENTS.md > contracts > CONTEXT.md > ADRs > this file.

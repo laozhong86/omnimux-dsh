@@ -1,3 +1,14 @@
+---
+title: "开发日志：OmniMux 应用市场 MVP"
+id: "log-app-marketplace-mvp"
+type: "log"
+status: "accepted"
+authority: "L3"
+date: "2026-08-15"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # 开发日志：OmniMux 应用市场 MVP
 
 - **日期:** 2026-08-15

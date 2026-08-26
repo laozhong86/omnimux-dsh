@@ -1,3 +1,14 @@
+---
+title: "Apps card actions, sidebar app tabs, and the Accounts app stage"
+id: "log-apps-card-tabs-account-page"
+type: "log"
+status: "accepted"
+authority: "L3"
+date: "2026-08-20"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # Apps card actions, sidebar app tabs, and the Accounts app stage
 
 - **日期:** 2026-08-20

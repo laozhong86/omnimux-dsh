@@ -1,3 +1,14 @@
+---
+title: "PRD：dsh-video 视频能力插件（自包含本地执行 + 理解层）"
+id: "contract-dsh-video-plugin"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-22"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # PRD：dsh-video 视频能力插件（自包含本地执行 + 理解层）
 
 状态：**Revised v2.1（2026-08-22：增补视频理解两工具；处理层仍为本机 ffmpeg）**  

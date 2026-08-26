@@ -1,3 +1,14 @@
+---
+title: "Settings UI placement"
+id: "contract-settings-ui"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-accounts"
+---
+
 # Settings UI placement
 
 Normative seat for OmniMux plugin UI in the official Web Settings panel. Live slot names come from the harness Slot Catalog (`packages/extensions/cordis-client-runner/src/client/slot-catalog.ts`). This file is the product rule; official docs win on slot existence.

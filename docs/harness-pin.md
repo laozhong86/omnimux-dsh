@@ -1,3 +1,14 @@
+---
+title: "Official harness pin"
+id: "core-harness-pin"
+type: "core"
+status: "living"
+authority: "L1"
+date: "2026-08-22"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # Official harness pin
 
 Current upstream this product builds against. Not a fork record.

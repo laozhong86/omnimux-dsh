@@ -1,3 +1,14 @@
+---
+title: "决策：运维命令权威入口仍是 fork yarn omnimux:"
+id: "decision-ops-entry-authority"
+type: "decision"
+status: "accepted"
+authority: "L2"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux"
+---
+
 # 决策：运维命令权威入口仍是 fork `yarn omnimux:*`
 
 日期：2026-08-26。

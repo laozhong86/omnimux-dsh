@@ -1,3 +1,14 @@
+---
+title: "决策：消费官方 dsh，不整仓 fork"
+id: "decision-harness-consume-not-fork"
+type: "decision"
+status: "accepted"
+authority: "L2"
+date: "2026-08-16"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux"
+---
+
 # 决策：消费官方 dsh，不整仓 fork
 
 日期：2026-08-16。

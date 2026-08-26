@@ -1,3 +1,14 @@
+---
+title: "Apps catalog"
+id: "contract-apps-catalog"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-17"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-accounts"
+---
+
 # Apps catalog
 
 Normative local + remote JSON catalog for the Apps shelf. Status of the live UI is [capabilities.md](../capabilities.md). This file replaces the 08-15 assumption that the catalog must be an OmniMux application table.

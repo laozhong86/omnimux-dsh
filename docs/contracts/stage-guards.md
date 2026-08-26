@@ -1,3 +1,14 @@
+---
+title: "stage-guards — 一级 Stage / 本地写闸 / 空态静态契约"
+id: "contract-stage-guards"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-accounts"
+---
+
 # stage-guards — 一级 Stage / 本地写闸 / 空态静态契约
 
 > 解决问题：E2E 反复踩「关页卸树丢状态」「写路由无同域闸」「空态文案混用」。

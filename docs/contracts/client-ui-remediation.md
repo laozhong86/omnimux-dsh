@@ -1,3 +1,14 @@
+---
+title: "Client UI 形态定界与 4 层整改合同"
+id: "contract-client-ui-remediation"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-accounts"
+---
+
 # Client UI 形态定界与 4 层整改合同
 
 > **规范级别**：**强制 (MANDATORY)** —— 本文件是严过关《全量插件 Client UI 规范与 4 层布局硬合规审计》（整体合规率 35%，FAIL）的架构落地真源。

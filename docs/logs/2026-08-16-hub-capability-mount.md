@@ -1,3 +1,14 @@
+---
+title: "中枢其余能力挂接计划"
+id: "log-hub-capability-mount"
+type: "log"
+status: "accepted"
+authority: "L3"
+date: "2026-08-16"
+authors: ["x", "agent-architect"]
+subsystem: "global"
+---
+
 # 中枢其余能力挂接计划
 
 - **日期:** 2026-08-16

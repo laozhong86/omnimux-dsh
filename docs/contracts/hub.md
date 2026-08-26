@@ -1,3 +1,14 @@
+---
+title: "Execution hub"
+id: "contract-hub"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-16"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # Execution hub
 
 Normative I/O for `omnimux` and every vertical. Status of a live surface is [capabilities.md](../capabilities.md). Rationale: [2026-08-16 hub I/O and facilities](../decisions/2026-08-16-hub-io-and-facilities.md).

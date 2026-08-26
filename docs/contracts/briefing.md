@@ -1,3 +1,14 @@
+---
+title: "Briefing contract"
+id: "contract-briefing"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # Briefing contract
 
 Project briefing process. Memory, not truth.

@@ -1,3 +1,14 @@
+---
+title: "Client external store（useSyncExternalStore）"
+id: "contract-client-external-store"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-22"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-workflow"
+---
+
 # Client external store（useSyncExternalStore）
 
 Normative rule for first-level product pages that subscribe to Cordis / Locale faces via React `useSyncExternalStore`.

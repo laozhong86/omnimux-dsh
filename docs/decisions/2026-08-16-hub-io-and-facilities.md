@@ -1,3 +1,14 @@
+---
+title: "决策：执行中枢 I/O 与落地设施"
+id: "decision-hub-io-and-facilities"
+type: "decision"
+status: "accepted"
+authority: "L2"
+date: "2026-08-16"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux"
+---
+
 # 决策：执行中枢 I/O 与落地设施
 
 日期：2026-08-16。
