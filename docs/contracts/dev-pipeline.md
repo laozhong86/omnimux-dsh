@@ -1,3 +1,14 @@
+---
+title: "dev-pipeline — 开发 / 预发布 / 生产三层环境契约"
+id: "contract-dev-pipeline"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-21"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-assets"
+---
+
 # dev-pipeline — 开发 / 预发布 / 生产三层环境契约
 
 > 解决问题：link 模式下"修改中的代码"污染"正在使用的 App"；多插件并行开发共用单环境必然冲突。

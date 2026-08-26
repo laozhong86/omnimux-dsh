@@ -1,3 +1,14 @@
+---
+title: "ops-entry — 插件运维命令唯一入口"
+id: "contract-ops-entry"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-workflow"
+---
+
 # ops-entry — 插件运维命令唯一入口
 
 > 解决问题：各插件 / 产品树脚本各自一派（`deploy.mjs`、直调 `sync-stable.sh`、文档写旧路径），Agent 不知道走哪条。

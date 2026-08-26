@@ -1,3 +1,14 @@
+---
+title: "决策：中枢拥有全部 OmniMux 核心能力"
+id: "decision-hub-owns-core"
+type: "decision"
+status: "accepted"
+authority: "L2"
+date: "2026-08-16"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # 决策：中枢拥有全部 OmniMux 核心能力
 
 日期：2026-08-16。

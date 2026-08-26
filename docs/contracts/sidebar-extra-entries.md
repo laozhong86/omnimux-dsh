@@ -1,3 +1,14 @@
+---
+title: "Sidebar extra entries (under 新会话)"
+id: "contract-sidebar-extra-entries"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-assets"
+---
+
 # Sidebar extra entries (under 新会话)
 
 Normative look for any extra row injected under the official **新会话** button. Official workspace session rows win on size; this file is the product rule so new plugins do not invent a smaller row.

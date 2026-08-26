@@ -1,3 +1,14 @@
+---
+title: "series/ contract"
+id: "contract-series"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # `series/` contract
 
 Product store. Session logs are not this store.

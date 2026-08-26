@@ -1,3 +1,14 @@
+---
+title: "OmniMux 全局 UI 命名与微文案规范 (UI Copywriting & Naming Standards)"
+id: "contract-ui-copywriting-and-naming-standards"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux"
+---
+
 # OmniMux 全局 UI 命名与微文案规范 (UI Copywriting & Naming Standards)
 
 > **设计基准**：严格对齐 Apple macOS HIG、Linear、GitHub Filters 与 Vercel 的核心设计哲学。  

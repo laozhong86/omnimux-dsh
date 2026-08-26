@@ -37,12 +37,14 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 |---|---|
 | `CONTEXT.md` | Terms, two-agent split, shot statuses |
 | `design.md` | Plugin-series UI design system (x.ai brand): x.ai palette, token rules, full-shell bridge (adopted), light/dark strategy, component classes. The `--omx-*` island migration plan is superseded (see "Design system" below + decision [2026-08-21-xai-full-shell-theme](docs/decisions/2026-08-21-xai-full-shell-theme.md)). MUST load before any client-UI work. |
+| `docs/README.md` | **全局文档导航门户**：四层权威金字塔与全量文档索引矩阵 |
 | `docs/capabilities.md` | Real / stub / absent |
+| `docs/contracts/docs-governance-standard.md` | **开发文档工程实践管理规范**：四层金字塔、元数据标准、生命周期与 CI 门禁 |
 | `docs/contracts/hub.md` | Execution-hub terms, I/O, seams, official-only list |
 | `docs/contracts/settings-ui.md` | Where plugin UI sits in official Settings (no first-level plugin nav) |
 | `docs/contracts/sidebar-extra-entries.md` | Extra rows under 新会话 (32px / 14px / 14px) and first-level page top chrome (`12px 20px 12px`, same as session header). Skill: `dsh-plugin-dev`. |
 | `docs/contracts/ui-design-guidelines.md` | **OmniMux UI 交互与视觉规范**：单行工具栏、深色浮层菜单、矢量 SVG 图标、32px 控件高与 8px 圆角体系。客户端改动必读。 |
-| `docs/model-list-ownership.md` | Who owns the OmniMux model list (plugin patch only; user layers set `agent-default-model` only) |
+| `docs/contracts/model-list-ownership.md` | Who owns the OmniMux model list (plugin patch only; user layers set `agent-default-model` only) |
 | `docs/contracts/series.md` | Disk fields + error codes |
 | `docs/contracts/briefing.md` | Briefing create/update/delete. Memory, not truth |
 | `docs/briefing.md` | Agent–human project briefing log |
@@ -65,7 +67,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `.agents/skills/short-drama-router/` | Study index for other repos |
 | `.agents/skills/tiktok-drama-center/` | Human Drama Center SOP |
 | skill `dsh-plugin-dev` | Edit this tree (hub / first-level pages / top chrome). Not `dsh-plugin-guide`. |
-| `docs/handoff-audit.md` | Stale-scaffold correction. Read if you still think `packages/drama-*` or phase letters are live. |
+| `docs/archive/2026-08-14-handoff-audit.md` | Stale-scaffold correction (Archived). Read if you still think `packages/drama-*` or phase letters are live. |
 | `docs/decisions/2026-08-14-execution-hub.md` | Hub vs vertical split. Live seam is `videoGenerate`. |
 | `docs/decisions/2026-08-16-hub-io-and-facilities.md` | Hub I/O wording + facility phases |
 | `docs/decisions/2026-08-16-harness-consume-not-fork.md` | Consume official dsh; no full-repo fork |

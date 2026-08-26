@@ -1,3 +1,14 @@
+---
+title: "OmniMux 全局插件一级页 UI 布局结构方法论与开发规范"
+id: "contract-first-level-page-layout"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-assets"
+---
+
 # OmniMux 全局插件一级页 UI 布局结构方法论与开发规范
 
 > **规范级别**：**强制 (MANDATORY)** —— 所有 OmniMux 插件一级页（`shell.overlay` 页面，包括项目库、资产中心、Skill 市场、商品中心、账号矩阵、工作流中心等）必须严格遵循此方法论。  

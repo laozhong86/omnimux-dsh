@@ -1,3 +1,14 @@
+---
+title: "OmniMux UI Design & Interaction Guidelines"
+id: "contract-ui-design-guidelines"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-accounts"
+---
+
 # OmniMux UI Design & Interaction Guidelines
 
 > 适用于所有 OmniMux 系列插件客户端界面（一级独立页、侧边栏入口、弹窗 Dialog、设置面板、卡片与工具栏）。

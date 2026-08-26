@@ -1,3 +1,14 @@
+---
+title: "决策：执行中枢与领域插件"
+id: "decision-execution-hub"
+type: "decision"
+status: "accepted"
+authority: "L2"
+date: "2026-08-14"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # 决策：执行中枢与领域插件
 
 日期：2026-08-14。  

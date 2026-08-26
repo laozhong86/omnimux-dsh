@@ -1,3 +1,14 @@
+---
+title: "决策：全壳 x.ai 品牌染色（overrideTokens 渲染官方 --dsw-）"
+id: "decision-xai-full-shell-theme"
+type: "decision"
+status: "accepted"
+authority: "L2"
+date: "2026-08-21"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux"
+---
+
 # 决策：全壳 x.ai 品牌染色（overrideTokens 渲染官方 `--dsw-*`）
 
 日期：2026-08-21。

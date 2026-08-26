@@ -1,3 +1,14 @@
+---
+title: "Gxgen 微服务 → OmniMux 能力插件"
+id: "decision-gxgen-capability-plugin"
+type: "decision"
+status: "accepted"
+authority: "L2"
+date: "2026-08-21"
+authors: ["x", "agent-architect"]
+subsystem: "dsh-drama"
+---
+
 # Gxgen 微服务 → OmniMux 能力插件
 
 ## Status

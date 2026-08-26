@@ -1,3 +1,16 @@
+---
+title: "系统能力矩阵与真假源清单"
+id: "core-capabilities"
+type: "core"
+status: "living"
+authority: "L1"
+date: "2026-08-14"
+updated: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "global"
+tags: ["capabilities", "matrix", "truth", "seams"]
+---
+
 # Capabilities
 
 Honest surface for both coding agents and the product agent. If a row is stub or absent, do not tell the user it works. **unproven** = 代码已写、仅 mock 测试通过、未对真实 OmniMux 跑通，不得对用户宣称可用。 Hub vs vertical I/O: [contracts/hub.md](contracts/hub.md).
@@ -9,14 +22,14 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | `drama_project_status` | **real** | reads `series/` |
 | `drama_init_project` | **real** | creates empty `series/` |
 | `drama_upsert_series` / `drama_upsert_shot` / `drama_confirm_bible` | **real** | writes yaml/json |
-| `drama_generate_shot` | **real + stub** | live: [docs/evidence/e2e-dsh-2026-08-15.md](evidence/e2e-dsh-2026-08-15.md) (`mode: "live"`, task `task_7iQMXxX3tL6EBiPUmi9NYiigZL1rtMzx`, 1732475-byte mp4). Default sync; `background` optional. Writes `job_id` on submit; `generating` + `job_id` resumes. No seam → stub or `needs-provider`. |
+| `drama_generate_shot` | **real + stub** | live: [docs/evidence/2026-08-15-e2e-dsh.md](evidence/2026-08-15-e2e-dsh.md) (`mode: "live"`, task `task_7iQMXxX3tL6EBiPUmi9NYiigZL1rtMzx`, 1732475-byte mp4). Default sync; `background` optional. Writes `job_id` on submit; `generating` + `job_id` resumes. No seam → stub or `needs-provider`. |
 | Third-party compatible endpoint via `OMNIMUX_BASE_URL` env | **unproven** | 仅 OpenAI-video 兼容形；只有 OmniMux 本身经真实任务验证过 |
-| `omnimux_video_submit` | **real** | [docs/evidence/omnimux-video-2026-08-14.md](evidence/omnimux-video-2026-08-14.md). Routed through `Config.media` (`omnimux` + `openai-media`) |
+| `omnimux_video_submit` | **real** | [docs/evidence/2026-08-14-omnimux-video.md](evidence/2026-08-14-omnimux-video.md). Routed through `Config.media` (`omnimux` + `openai-media`) |
 | Media provider route table | **real** (keyless) | `src/media/route.js`. Unknown provider/protocol fail at resolve. One live vendor row: OmniMux |
-| `textComplete` / `omnimux_text_complete` | **unproven** | One-shot `ctx.llm.stream` over the enabled `Config.text.models` whitelist. Default model `gemini-3.7-flash` (`OMNIMUX_TEXT_DEFAULT_MODEL` overlays). Image-capable set measured live: [docs/evidence/omnimux-modality-2026-08-18.md](evidence/omnimux-modality-2026-08-18.md). Image stays on that request; not a second chat |
+| `textComplete` / `omnimux_text_complete` | **unproven** | One-shot `ctx.llm.stream` over the enabled `Config.text.models` whitelist. Default model `gemini-3.7-flash` (`OMNIMUX_TEXT_DEFAULT_MODEL` overlays). Image-capable set measured live: [docs/evidence/2026-08-18-omnimux-modality.md](evidence/2026-08-18-omnimux-modality.md). Image stays on that request; not a second chat |
 | OmniMux chat as default dsh model | **absent** | no adapter; Settings custom provider still works |
 | `identity` provide for other plugins | **real** (keyless) | `ctx.get('identity').status` / `require`. PAT never in the payload. HTTP `/omnimux/auth/*` still for the browser. |
-| `imageGenerate` / `omnimux_image_submit` | **real** | Default `gpt-image-2`. Live: [docs/evidence/omnimux-image-2026-08-16.md](evidence/omnimux-image-2026-08-16.md). Also live: `grok-imagine-image`. `nano_banana_2` excluded (tokens-flow 403) |
+| `imageGenerate` / `omnimux_image_submit` | **real** | Default `gpt-image-2`. Live: [docs/evidence/2026-08-16-omnimux-image.md](evidence/2026-08-16-omnimux-image.md). Also live: `grok-imagine-image`. `nano_banana_2` excluded (tokens-flow 403) |
 | `needs-omnimux` error | **real** (keyless) | `identity.require()` throws `needs-omnimux` when unsigned. Official-only tools throw the same code when unsigned |
 | `omnimux_social_data` | **unproven** | First cut: tiktok/video, tiktok/user, instagram/post via `/v1/chat/completions`. Keyless only |
 | Analytics tools / routes | **unproven** | `omnimux_analytics_*` (`daily_metrics`, `best_time`, `frequency`, `content_decay`, `follower_stats`, `posts`, `sync_external`, `inbox`) + Host `/omnimux/analytics/*` wrap `/api/social/v1/analytics/*`. Unauthenticated → `needs-omnimux` |

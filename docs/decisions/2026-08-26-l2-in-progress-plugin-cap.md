@@ -1,3 +1,14 @@
+---
+title: "决策：L2 在研插件仍保持「每个 profile link ≤ 1」"
+id: "decision-l2-in-progress-plugin-cap"
+type: "decision"
+status: "accepted"
+authority: "L2"
+date: "2026-08-26"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-assets"
+---
+
 # 决策：L2 在研插件仍保持「每个 profile link ≤ 1」
 
 日期：2026-08-26。

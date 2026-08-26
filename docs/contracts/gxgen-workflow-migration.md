@@ -1,3 +1,14 @@
+---
+title: "Gxgen → OmniMux 工作流迁移蓝图（代理必读）"
+id: "contract-gxgen-workflow-migration"
+type: "contract"
+status: "living"
+authority: "L1"
+date: "2026-08-22"
+authors: ["x", "agent-architect"]
+subsystem: "omnimux-workflow"
+---
+
 # Gxgen → OmniMux 工作流迁移蓝图（代理必读）
 
 > **真源**：本文件。新会话动手前必读；改进度只改文末「进度矩阵」+ 当日 memory 一句。  

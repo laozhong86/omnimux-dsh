@@ -1,3 +1,14 @@
+---
+title: "DeepSeek 搜索密钥：走官方配置面，不加产品设置入口"
+id: "log-deepseek-search-key"
+type: "log"
+status: "accepted"
+authority: "L3"
+date: "2026-08-16"
+authors: ["x", "agent-architect"]
+subsystem: "global"
+---
+
 # DeepSeek 搜索密钥：走官方配置面，不加产品设置入口
 
 - **日期:** 2026-08-16
