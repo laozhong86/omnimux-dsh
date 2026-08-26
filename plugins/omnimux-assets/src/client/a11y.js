@@ -8,6 +8,8 @@
 export const FOCUS_CSS = [
   '.omnimux-assets-focusable:focus-visible{outline:2px solid var(--dsw-alias-label-primary, inherit);outline-offset:2px;border-radius:8px;}',
   '.omnimux-assets-focusable:hover{border-color:var(--dsw-alias-border-l4, var(--dsw-alias-border-l3, currentColor));}',
+  '.omnimux-assets-check{opacity:0;transition:opacity 0.15s ease;}',
+  '.omnimux-assets-focusable:hover .omnimux-assets-check,.omnimux-assets-focusable:focus-within .omnimux-assets-check,.omnimux-assets-check[data-selected="true"]{opacity:1;}',
 ].join('\n')
 
 /** Enter/Space activates a keyboard-reachable row. */

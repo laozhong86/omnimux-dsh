@@ -1,3 +1,4 @@
+import { Button } from 'dsh-ui-kit'
 import { PlatformChip } from './chips.jsx'
 import { COMING_PLATFORMS, SUPPORTED_PLATFORMS } from './platforms.js'
 
@@ -39,14 +40,9 @@ export function EmptyState({ t, onConnect, busy = '' }) {
       </svg>
       <h2 className="omnimux-accounts-empty-title">{t('empty.title')}</h2>
       <p className="omnimux-accounts-empty-text">{t('empty.description')}</p>
-      <button
-        type="button"
-        className="omnimux-accounts-btn omnimux-accounts-btn--primary"
-        disabled={busy !== ''}
-        onClick={onConnect}
-      >
+      <Button variant="primary" disabled={busy !== ''} onClick={onConnect}>
         {t('empty.cta')}
-      </button>
+      </Button>
       <div className="omnimux-accounts-empty-platforms">
         <div className="omnimux-accounts-empty-group">
           <p className="omnimux-accounts-empty-grouptitle">{t('empty.supportedTitle')}</p>

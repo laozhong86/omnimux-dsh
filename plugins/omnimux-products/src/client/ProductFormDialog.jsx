@@ -1,59 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { Button, DropdownSelect, IconButton, InputField } from 'dsh-ui-kit'
 import { emptyBrandStrategy, isDigitalProduct, isPlainStrategy, normalizeBrandStrategy } from '../brand-strategy.js'
 import { CloseIcon, FileIcon } from './icons.jsx'
-
-const overlay = {
-  position: 'fixed',
-  inset: 0,
-  zIndex: 320,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: 'var(--dsw-alias-bg-mask-1)',
-}
-
-const sheet = {
-  width: 560,
-  maxWidth: 'calc(100vw - 48px)',
-  maxHeight: 'calc(100vh - 48px)',
-  overflow: 'auto',
-  display: 'flex',
-  flexDirection: 'column',
-  background: 'var(--dsw-alias-bg-base)',
-  color: 'var(--dsw-alias-label-primary)',
-  borderRadius: 16,
-  border: '1px solid var(--dsw-alias-border-l2)',
-}
-
-const inputBare = {
-  border: 'none',
-  outline: 'none',
-  background: 'transparent',
-  color: 'inherit',
-  font: 'inherit',
-  width: '100%',
-}
-
-const field = {
-  width: '100%',
-  border: '1px solid var(--dsw-alias-border-l2)',
-  borderRadius: 8,
-  padding: '6px 10px',
-  fontSize: 13,
-  color: 'inherit',
-  background: 'transparent',
-  boxSizing: 'border-box',
-}
-
-const chip = {
-  border: '1px solid var(--dsw-alias-border-l2)',
-  background: 'transparent',
-  color: 'inherit',
-  borderRadius: 999,
-  padding: '4px 10px',
-  cursor: 'pointer',
-  fontSize: 12,
-}
 
 /**
  * @param {unknown} product
@@ -86,16 +34,6 @@ function linesOf(list) {
  */
 function listOf(text) {
   return String(text).split('\n').map((row) => row.trim()).filter(Boolean)
-}
-
-const miniBtn = {
-  border: '1px solid var(--dsw-alias-border-l2)',
-  background: 'transparent',
-  color: 'inherit',
-  borderRadius: 999,
-  padding: '4px 10px',
-  cursor: 'pointer',
-  fontSize: 12,
 }
 
 /**
@@ -137,6 +75,14 @@ export function ProductFormDialog({ t, mode, busy, error, dirty, initial, onCanc
   useEffect(() => {
     nameRef.current?.focus()
   }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
 
   // Re-hydrate only when the opened product identity / saved revision changes
   // (reload). Poll must not pass a new updated_at while the form is dirty.
@@ -246,261 +192,196 @@ export function ProductFormDialog({ t, mode, busy, error, dirty, initial, onCanc
     return body
   }
 
-  const labelStyle = { fontSize: 12, color: 'var(--dsw-alias-label-secondary)', margin: '0 0 6px' }
-
   return (
-    <div
-      style={overlay}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onCancel()
-      }}
-    >
+    <div className="omnimux-products-modal-backdrop" onClick={onCancel}>
       <div
+        className="omnimux-products-modal-wrapper"
         role="dialog"
         aria-modal="true"
-        aria-label={mode === 'edit' ? t('detail.title') : t('add.title')}
-        style={sheet}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') onCancel()
-        }}
+        aria-labelledby="omnimux-products-modal-title"
+        onClick={(event) => { event.stopPropagation() }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px 8px' }}>
-          <span style={{ color: 'var(--dsw-alias-label-tertiary)', fontSize: 18 }}>@</span>
-          <input
+        <IconButton
+          className="omnimux-products-modal-close"
+          variant="ghost"
+          size="sm"
+          aria-label={t('stage.close')}
+          onClick={onCancel}
+        >
+          <CloseIcon size={14} />
+        </IconButton>
+
+        <div className="omnimux-products-modal-container">
+          <div className="omnimux-products-modal-header">
+            <h2 id="omnimux-products-modal-title" className="omnimux-products-modal-title">
+              {mode === 'edit' ? t('detail.title') : t('add.title')}
+            </h2>
+          </div>
+
+          <div className="omnimux-products-modal-body">
+            <div className="omnimux-products-form">
+        <div className="omnimux-products-name-row">
+          <span className="omnimux-products-at" aria-hidden="true">@</span>
+          <InputField
             ref={nameRef}
+            className="omnimux-products-name-field"
             value={name}
             placeholder={t('add.namePlaceholder')}
+            disabled={busy}
             onChange={(event) => { setName(event.target.value) }}
-            style={{ ...inputBare, fontSize: 18, fontWeight: 500, lineHeight: '28px' }}
           />
-          <button
-            type="button"
-            aria-label={t('stage.close')}
-            onClick={onCancel}
-            style={{
-              border: 'none', background: 'transparent', cursor: 'pointer',
-              width: 28, height: 28, borderRadius: 8, color: 'inherit',
-            }}
-          >
-            <CloseIcon size={16} />
-          </button>
         </div>
 
         {dirty ? (
-          <div style={{
-            margin: '0 20px 12px',
-            padding: '8px 12px',
-            borderRadius: 8,
-            fontSize: 12,
-            lineHeight: '18px',
-            background: 'var(--dsw-alias-bg-module-platform)',
-            color: 'var(--dsw-alias-label-secondary)',
-            display: 'flex',
-            gap: 8,
-            alignItems: 'center',
-            flexWrap: 'wrap',
-          }}
-          >
-            <span style={{ flex: 1, minWidth: 160 }}>{t('add.dirty.banner')}</span>
-            <button
-              type="button"
-              onClick={() => { onReload?.() }}
-              style={{
-                border: '1px solid var(--dsw-alias-border-l2)',
-                background: 'transparent',
-                color: 'inherit',
-                borderRadius: 999,
-                padding: '4px 10px',
-                cursor: 'pointer',
-                fontSize: 12,
-              }}
-            >
+          <div className="omnimux-products-dirty">
+            <span className="omnimux-products-dirty-text">{t('add.dirty.banner')}</span>
+            <Button variant="outline" size="xs" onClick={() => { onReload?.() }}>
               {t('add.dirty.reload')}
-            </button>
-            <span style={{ fontSize: 12 }}>{t('add.dirty.keep')}</span>
+            </Button>
+            <span className="omnimux-products-label">{t('add.dirty.keep')}</span>
           </div>
         ) : null}
 
-        <div style={{ padding: '0 20px 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>{t('kind.label')}</span>
-          <button
-            type="button"
+        <div className="omnimux-products-kind-row">
+          <span className="omnimux-products-kind-label">{t('kind.label')}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="omnimux-products-kind-chip"
+            aria-pressed={kind === 'physical'}
             onClick={() => {
               setKind('physical')
               setStrategyOpen(false)
             }}
-            style={{
-              ...chip,
-              background: kind === 'physical' ? 'var(--dsw-alias-bg-module-platform)' : 'transparent',
-            }}
           >
             {t('kind.physical')}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="omnimux-products-kind-chip"
+            aria-pressed={kind === 'digital'}
             onClick={() => {
               setKind('digital')
               const persisted = isPlainStrategy(initial?.brand_strategy)
               setStrategyOpen(persisted)
               if (persisted) setStrategyTouched(true)
             }}
-            style={{
-              ...chip,
-              background: kind === 'digital' ? 'var(--dsw-alias-bg-module-platform)' : 'transparent',
-            }}
           >
             {t('kind.digital')}
-          </button>
+          </Button>
         </div>
 
         {kind === 'physical' ? (
-          <div style={{ padding: '0 20px 12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <textarea rows={2} value={selling} placeholder={t('add.sellingPlaceholder')} onChange={(event) => { setSelling(event.target.value) }} style={{ ...field, gridColumn: '1 / -1', resize: 'vertical' }} />
-            <input value={audience} placeholder={t('add.audiencePlaceholder')} onChange={(event) => { setAudience(event.target.value) }} style={field} />
-            <input value={brand} placeholder={t('add.brandPlaceholder')} onChange={(event) => { setBrand(event.target.value) }} style={field} />
-            <textarea rows={2} value={features} placeholder={t('add.featuresPlaceholder')} onChange={(event) => { setFeatures(event.target.value) }} style={{ ...field, gridColumn: '1 / -1', resize: 'vertical' }} />
-            <input value={price} placeholder={t('add.pricePlaceholder')} onChange={(event) => { setPrice(event.target.value) }} style={field} />
-            <input value={sku} placeholder={t('add.skuPlaceholder')} onChange={(event) => { setSku(event.target.value) }} style={field} />
-            <input value={promotion} placeholder={t('add.promotionPlaceholder')} onChange={(event) => { setPromotion(event.target.value) }} style={field} />
-            <input value={link} placeholder={t('add.linkPlaceholder')} onChange={(event) => { setLink(event.target.value) }} style={field} />
+          <div className="omnimux-products-grid-fields">
+            <textarea className="omnimux-products-textarea omnimux-products-span2" rows={2} value={selling} placeholder={t('add.sellingPlaceholder')} onChange={(event) => { setSelling(event.target.value) }} />
+            <InputField value={audience} placeholder={t('add.audiencePlaceholder')} onChange={(event) => { setAudience(event.target.value) }} />
+            <InputField value={brand} placeholder={t('add.brandPlaceholder')} onChange={(event) => { setBrand(event.target.value) }} />
+            <textarea className="omnimux-products-textarea omnimux-products-span2" rows={2} value={features} placeholder={t('add.featuresPlaceholder')} onChange={(event) => { setFeatures(event.target.value) }} />
+            <InputField value={price} placeholder={t('add.pricePlaceholder')} onChange={(event) => { setPrice(event.target.value) }} />
+            <InputField value={sku} placeholder={t('add.skuPlaceholder')} onChange={(event) => { setSku(event.target.value) }} />
+            <InputField value={promotion} placeholder={t('add.promotionPlaceholder')} onChange={(event) => { setPromotion(event.target.value) }} />
+            <InputField value={link} placeholder={t('add.linkPlaceholder')} onChange={(event) => { setLink(event.target.value) }} />
           </div>
         ) : (
-          <div style={{ padding: '0 20px 12px' }}>
-            <input value={link} placeholder={t('add.digitalLinkPlaceholder')} onChange={(event) => { setLink(event.target.value) }} style={field} />
-          </div>
+          <InputField value={link} placeholder={t('add.digitalLinkPlaceholder')} onChange={(event) => { setLink(event.target.value) }} />
         )}
 
         {kind === 'digital' ? (
-          <div style={{ borderTop: '1px solid var(--dsw-alias-border-l2)', padding: '12px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div className="omnimux-products-strategy">
+            <div className="omnimux-products-strategy-head">
               <div>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>{t('strategy.title')}</div>
-                <div style={{ fontSize: 12, color: 'var(--dsw-alias-label-tertiary)', marginTop: 2 }}>
-                  {t('strategy.hintDigital')}
-                </div>
+                <div className="omnimux-products-strategy-title">{t('strategy.title')}</div>
+                <div className="omnimux-products-strategy-hint">{t('strategy.hintDigital')}</div>
               </div>
               {strategyOpen ? (
-                <button type="button" onClick={() => { setStrategyOpen(false) }} style={miniBtn}>{t('strategy.collapse')}</button>
+                <Button variant="outline" size="xs" onClick={() => { setStrategyOpen(false) }}>{t('strategy.collapse')}</Button>
               ) : (
-                <button type="button" onClick={openStrategy} style={miniBtn}>{t('strategy.expand')}</button>
+                <Button variant="outline" size="xs" onClick={openStrategy}>{t('strategy.expand')}</Button>
               )}
             </div>
-
-            {strategyOpen ? (
-              <StrategyFields t={t} strategy={strategy} patchStrategy={patchStrategy} field={field} labelStyle={labelStyle} miniBtn={miniBtn} />
-            ) : null}
+            {strategyOpen ? <StrategyFields t={t} strategy={strategy} patchStrategy={patchStrategy} /> : null}
           </div>
         ) : null}
 
-        <div style={{ borderTop: '1px solid var(--dsw-alias-border-l2)', padding: 16 }}>
-          <div
-            onDragOver={(event) => { event.preventDefault() }}
-            onDrop={(event) => {
-              event.preventDefault()
-              const dropped = Array.from(event.dataTransfer?.files ?? [])
-              addPaths(dropped.map((file) => (typeof file.path === 'string' ? file.path : '')).filter(Boolean))
-            }}
-            style={{
-              width: '100%',
-              minHeight: 96,
-              border: '1px dashed var(--dsw-alias-border-l4)',
-              borderRadius: 12,
-              color: 'var(--dsw-alias-label-tertiary)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              fontSize: 13,
-              padding: 16,
-              boxSizing: 'border-box',
-            }}
-          >
-            <FileIcon size={22} />
-            {t('add.drop')}
-            <button
-              type="button"
-              onClick={() => { void onPick('file').then(addPaths) }}
-              style={{
-                border: '1px solid var(--dsw-alias-border-l2)',
-                background: 'transparent',
-                color: 'inherit',
-                borderRadius: 999,
-                padding: '6px 12px',
-                cursor: 'pointer',
-                fontSize: 12,
-              }}
-            >
-              {t('add.pickFiles')}
-            </button>
-          </div>
-          {media.length > 0 ? (
-            <ul style={{ margin: '10px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {media.map((file, index) => {
-                const id = file.id || file.real_path
-                const primary = coverId ? coverId === file.id : index === 0
-                return (
-                  <li key={id} style={{ display: 'flex', gap: 8, fontSize: 12, color: 'var(--dsw-alias-label-secondary)', alignItems: 'center' }}>
-                    <FileIcon size={14} />
-                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {file.original_name || file.real_path}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => { setCoverId(file.id || null); if (!file.id) {
-                        setMedia((current) => current.map((row, i) => i === index ? row : row))
-                        // path-only rows: first item is cover after reorder
+        <div
+          className="omnimux-products-drop"
+          onDragOver={(event) => { event.preventDefault() }}
+          onDrop={(event) => {
+            event.preventDefault()
+            const dropped = Array.from(event.dataTransfer?.files ?? [])
+            addPaths(dropped.map((file) => (typeof file.path === 'string' ? file.path : '')).filter(Boolean))
+          }}
+        >
+          <FileIcon size={22} />
+          {t('add.drop')}
+          <Button variant="outline" size="sm" onClick={() => { void onPick('file').then(addPaths) }}>
+            {t('add.pickFiles')}
+          </Button>
+        </div>
+        {media.length > 0 ? (
+          <ul className="omnimux-products-filelist">
+            {media.map((file, index) => {
+              const id = file.id || file.real_path
+              const primary = coverId ? coverId === file.id : index === 0
+              return (
+                <li key={id}>
+                  <FileIcon size={14} />
+                  <span className="omnimux-products-filelist-name">
+                    {file.original_name || file.real_path}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => {
+                      setCoverId(file.id || null)
+                      if (!file.id) {
                         setMedia((current) => {
                           const next = [...current]
                           const [picked] = next.splice(index, 1)
                           next.unshift(picked)
                           return next
                         })
-                      } }}
-                      style={{
-                        border: 'none',
-                        background: 'transparent',
-                        cursor: 'pointer',
-                        fontSize: 11,
-                        color: primary ? 'inherit' : 'var(--dsw-alias-label-tertiary)',
-                      }}
-                    >
-                      {t('detail.primary')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMedia((current) => current.filter((_, i) => i !== index))
-                        if (file.id && coverId === file.id) setCoverId(null)
-                      }}
-                      style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit' }}
-                    >
-                      ×
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          ) : null}
-        </div>
+                      }
+                    }}
+                  >
+                    {t('detail.primary')}
+                  </Button>
+                  <IconButton
+                    variant="ghost"
+                    size="xs"
+                    aria-label={t('remove.confirm')}
+                    onClick={() => {
+                      setMedia((current) => current.filter((_, i) => i !== index))
+                      if (file.id && coverId === file.id) setCoverId(null)
+                    }}
+                  >
+                    ×
+                  </IconButton>
+                </li>
+              )
+            })}
+          </ul>
+        ) : null}
 
-        <div style={{ borderTop: '1px solid var(--dsw-alias-border-l2)', padding: '10px 16px 16px' }}>
-          <div style={{ fontSize: 13, color: 'var(--dsw-alias-label-secondary)', marginBottom: 8 }}>{t('add.categories')}</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+        <div>
+          <div className="omnimux-products-label">{t('add.categories')}</div>
+          <div className="omnimux-products-tags">
             {categories.map((tag) => (
-              <span key={tag} style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: 'var(--dsw-alias-bg-module-platform)' }}>
+              <span key={tag} className="omnimux-products-tag">
                 {tag}
-                <button
-                  type="button"
+                <IconButton
+                  variant="ghost"
+                  size="xs"
+                  aria-label={t('remove.confirm')}
                   onClick={() => { setCategories(categories.filter((item) => item !== tag)) }}
-                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', marginLeft: 4 }}
                 >
                   ×
-                </button>
+                </IconButton>
               </span>
             ))}
           </div>
-          <input
+          <InputField
             value={tagDraft}
             placeholder={t('add.categoriesPlaceholder')}
             onChange={(event) => { setTagDraft(event.target.value) }}
@@ -510,29 +391,21 @@ export function ProductFormDialog({ t, mode, busy, error, dirty, initial, onCanc
                 addTag()
               }
             }}
-            style={field}
           />
-          {error ? (
-            <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--dsw-alias-label-error)' }}>{error}</p>
-          ) : null}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-            <button
-              type="button"
+        </div>
+        {error ? <p className="omnimux-products-error">{error}</p> : null}
+      </div>
+          </div>
+
+          <div className="omnimux-products-modal-footer">
+            <Button
+              variant="primary"
               disabled={!canSubmit}
+              loading={busy}
               onClick={() => { onSubmit(payload()) }}
-              style={{
-                border: 'none',
-                background: canSubmit ? 'var(--dsw-alias-button-primary-fill)' : 'var(--dsw-alias-border-l2)',
-                color: 'var(--dsw-alias-label-primary-foreground)',
-                borderRadius: 999,
-                padding: '8px 16px',
-                fontSize: 14,
-                fontWeight: 500,
-                cursor: canSubmit ? 'pointer' : 'default',
-              }}
             >
               {mode === 'edit' ? t('detail.save') : t('add.submit')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -545,154 +418,168 @@ export function ProductFormDialog({ t, mode, busy, error, dirty, initial, onCanc
  *   t: (key: string) => string,
  *   strategy: ReturnType<typeof emptyBrandStrategy>,
  *   patchStrategy: (fn: (next: any) => void) => void,
- *   field: object,
- *   labelStyle: object,
- *   miniBtn: object,
  * }} props
  */
-function StrategyFields({ t, strategy, patchStrategy, field, labelStyle, miniBtn }) {
+function StrategyFields({ t, strategy, patchStrategy }) {
   const basic = strategy.brand_basic_info
   const identity = strategy.identity_and_product
   const mission = strategy.mission_and_positioning
   const market = strategy.market_and_competition
+  const priorityOptions = [
+    { value: '1', label: '1' },
+    { value: '2', label: '2' },
+    { value: '3', label: '3' },
+    { value: '4', label: '4' },
+    { value: '5', label: '5' },
+  ]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
-      <section>
-        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>{t('strategy.basic')}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <input value={basic.company.name} placeholder={t('strategy.companyName')} onChange={(event) => { patchStrategy((next) => { next.brand_basic_info.company.name = event.target.value }) }} style={field} />
-          <input value={basic.company.website} placeholder={t('strategy.companyWebsite')} onChange={(event) => { patchStrategy((next) => { next.brand_basic_info.company.website = event.target.value }) }} style={field} />
-          <input value={basic.company.locale} placeholder={t('strategy.companyLocale')} onChange={(event) => { patchStrategy((next) => { next.brand_basic_info.company.locale = event.target.value }) }} style={field} />
-          <input value={basic.product.name} placeholder={t('strategy.productName')} onChange={(event) => { patchStrategy((next) => { next.brand_basic_info.product.name = event.target.value }) }} style={field} />
-          <input value={basic.product.category} placeholder={t('strategy.productCategory')} onChange={(event) => { patchStrategy((next) => { next.brand_basic_info.product.category = event.target.value }) }} style={{ ...field, gridColumn: '1 / -1' }} />
+    <div className="omnimux-products-form">
+      <section className="omnimux-products-section">
+        <div className="omnimux-products-section-title">{t('strategy.basic')}</div>
+        <div className="omnimux-products-grid-fields">
+          <InputField value={basic.company.name} placeholder={t('strategy.companyName')} onChange={(event) => { patchStrategy((next) => { next.brand_basic_info.company.name = event.target.value }) }} />
+          <InputField value={basic.company.website} placeholder={t('strategy.companyWebsite')} onChange={(event) => { patchStrategy((next) => { next.brand_basic_info.company.website = event.target.value }) }} />
+          <InputField value={basic.company.locale} placeholder={t('strategy.companyLocale')} onChange={(event) => { patchStrategy((next) => { next.brand_basic_info.company.locale = event.target.value }) }} />
+          <InputField value={basic.product.name} placeholder={t('strategy.productName')} onChange={(event) => { patchStrategy((next) => { next.brand_basic_info.product.name = event.target.value }) }} />
+          <InputField className="omnimux-products-span2" value={basic.product.category} placeholder={t('strategy.productCategory')} onChange={(event) => { patchStrategy((next) => { next.brand_basic_info.product.category = event.target.value }) }} />
         </div>
       </section>
 
-      <section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <div style={{ fontSize: 13, fontWeight: 500 }}>{t('strategy.angles')}</div>
-          <button
-            type="button"
+      <section className="omnimux-products-section">
+        <div className="omnimux-products-section-head">
+          <div className="omnimux-products-section-title">{t('strategy.angles')}</div>
+          <Button
+            variant="outline"
+            size="xs"
             onClick={() => {
               patchStrategy((next) => {
                 if (next.content_angles.length >= 10) return
                 next.content_angles.push({ id: '', title: '', description: '', target_audience: '', priority: 3 })
               })
             }}
-            style={miniBtn}
           >
             {t('strategy.addAngle')}
-          </button>
+          </Button>
         </div>
         {strategy.content_angles.map((angle, index) => (
-          <div key={angle.id || `new-${index}`} style={{ display: 'grid', gridTemplateColumns: '1fr 72px 28px', gap: 6, marginBottom: 8 }}>
-            <input value={angle.title} placeholder={t('strategy.angleTitle')} onChange={(event) => { patchStrategy((next) => { next.content_angles[index].title = event.target.value }) }} style={field} />
-            <select
-              value={String(angle.priority || 3)}
-              onChange={(event) => { patchStrategy((next) => { next.content_angles[index].priority = Number(event.target.value) }) }}
-              style={{
-                ...field,
-                appearance: 'none',
-                WebkitAppearance: 'none',
-                backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='12' height='12' fill='none' stroke='rgba(255,255,255,0.45)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E\")",
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 6px center',
-                paddingRight: 22,
-                cursor: 'pointer',
-              }}
-            >
-              <option value="1" style={{ background: '#1c1c1f', color: '#ededed' }}>P1</option>
-              <option value="2" style={{ background: '#1c1c1f', color: '#ededed' }}>P2</option>
-              <option value="3" style={{ background: '#1c1c1f', color: '#ededed' }}>P3</option>
-            </select>
-            <button type="button" onClick={() => { patchStrategy((next) => { next.content_angles.splice(index, 1) }) }} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit' }}>×</button>
-            <textarea rows={2} value={angle.description} placeholder={t('strategy.angleDesc')} onChange={(event) => { patchStrategy((next) => { next.content_angles[index].description = event.target.value }) }} style={{ ...field, gridColumn: '1 / -1', resize: 'vertical' }} />
-            <input value={angle.target_audience} placeholder={t('strategy.angleAudience')} onChange={(event) => { patchStrategy((next) => { next.content_angles[index].target_audience = event.target.value }) }} style={{ ...field, gridColumn: '1 / -1' }} />
+          <div key={angle.id || `new-${index}`} className="omnimux-products-section">
+            <div className="omnimux-products-angle-row">
+              <InputField value={angle.title} placeholder={t('strategy.angleTitle')} onChange={(event) => { patchStrategy((next) => { next.content_angles[index].title = event.target.value }) }} />
+              <DropdownSelect
+                value={String(angle.priority || 3)}
+                options={priorityOptions}
+                aria-label={t('strategy.angleTitle')}
+                onChange={(value) => { patchStrategy((next) => { next.content_angles[index].priority = Number(value) }) }}
+              />
+              <IconButton
+                variant="ghost"
+                size="xs"
+                aria-label={t('remove.confirm')}
+                onClick={() => { patchStrategy((next) => { next.content_angles.splice(index, 1) }) }}
+              >
+                ×
+              </IconButton>
+            </div>
+            <textarea className="omnimux-products-textarea" rows={2} value={angle.description} placeholder={t('strategy.angleDesc')} onChange={(event) => { patchStrategy((next) => { next.content_angles[index].description = event.target.value }) }} />
+            <InputField value={angle.target_audience} placeholder={t('strategy.angleAudience')} onChange={(event) => { patchStrategy((next) => { next.content_angles[index].target_audience = event.target.value }) }} />
           </div>
         ))}
       </section>
 
-      <section>
-        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>{t('strategy.tone')}</div>
-        <p style={labelStyle}>{t('strategy.listHint')}</p>
-        <textarea rows={3} value={linesOf(strategy.tone_and_voice.dos)} placeholder={t('strategy.dos')} onChange={(event) => { patchStrategy((next) => { next.tone_and_voice.dos = listOf(event.target.value) }) }} style={{ ...field, resize: 'vertical', marginBottom: 8 }} />
-        <textarea rows={3} value={linesOf(strategy.tone_and_voice.donts)} placeholder={t('strategy.donts')} onChange={(event) => { patchStrategy((next) => { next.tone_and_voice.donts = listOf(event.target.value) }) }} style={{ ...field, resize: 'vertical' }} />
+      <section className="omnimux-products-section">
+        <div className="omnimux-products-section-title">{t('strategy.tone')}</div>
+        <p className="omnimux-products-label">{t('strategy.listHint')}</p>
+        <textarea className="omnimux-products-textarea" rows={3} value={linesOf(strategy.tone_and_voice.dos)} placeholder={t('strategy.dos')} onChange={(event) => { patchStrategy((next) => { next.tone_and_voice.dos = listOf(event.target.value) }) }} />
+        <textarea className="omnimux-products-textarea" rows={3} value={linesOf(strategy.tone_and_voice.donts)} placeholder={t('strategy.donts')} onChange={(event) => { patchStrategy((next) => { next.tone_and_voice.donts = listOf(event.target.value) }) }} />
       </section>
 
-      <section>
-        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>{t('strategy.identity')}</div>
-        <textarea rows={2} value={identity.core_identity} placeholder={t('strategy.coreIdentity')} onChange={(event) => { patchStrategy((next) => { next.identity_and_product.core_identity = event.target.value }) }} style={{ ...field, resize: 'vertical', marginBottom: 8 }} />
-        <p style={labelStyle}>{t('strategy.listHint')}</p>
-        <textarea rows={2} value={linesOf(identity.product_offering)} placeholder={t('strategy.offering')} onChange={(event) => { patchStrategy((next) => { next.identity_and_product.product_offering = listOf(event.target.value) }) }} style={{ ...field, resize: 'vertical', marginBottom: 8 }} />
-        <textarea rows={2} value={linesOf(identity.unique_advantage)} placeholder={t('strategy.advantage')} onChange={(event) => { patchStrategy((next) => { next.identity_and_product.unique_advantage = listOf(event.target.value) }) }} style={{ ...field, resize: 'vertical', marginBottom: 8 }} />
-        <textarea rows={2} value={linesOf(identity.problems_solved)} placeholder={t('strategy.problems')} onChange={(event) => { patchStrategy((next) => { next.identity_and_product.problems_solved = listOf(event.target.value) }) }} style={{ ...field, resize: 'vertical', marginBottom: 8 }} />
-        <textarea rows={2} value={linesOf(identity.solutions)} placeholder={t('strategy.solutions')} onChange={(event) => { patchStrategy((next) => { next.identity_and_product.solutions = listOf(event.target.value) }) }} style={{ ...field, resize: 'vertical' }} />
+      <section className="omnimux-products-section">
+        <div className="omnimux-products-section-title">{t('strategy.identity')}</div>
+        <textarea className="omnimux-products-textarea" rows={2} value={identity.core_identity} placeholder={t('strategy.coreIdentity')} onChange={(event) => { patchStrategy((next) => { next.identity_and_product.core_identity = event.target.value }) }} />
+        <p className="omnimux-products-label">{t('strategy.listHint')}</p>
+        <textarea className="omnimux-products-textarea" rows={2} value={linesOf(identity.product_offering)} placeholder={t('strategy.offering')} onChange={(event) => { patchStrategy((next) => { next.identity_and_product.product_offering = listOf(event.target.value) }) }} />
+        <textarea className="omnimux-products-textarea" rows={2} value={linesOf(identity.unique_advantage)} placeholder={t('strategy.advantage')} onChange={(event) => { patchStrategy((next) => { next.identity_and_product.unique_advantage = listOf(event.target.value) }) }} />
+        <textarea className="omnimux-products-textarea" rows={2} value={linesOf(identity.problems_solved)} placeholder={t('strategy.problems')} onChange={(event) => { patchStrategy((next) => { next.identity_and_product.problems_solved = listOf(event.target.value) }) }} />
+        <textarea className="omnimux-products-textarea" rows={2} value={linesOf(identity.solutions)} placeholder={t('strategy.solutions')} onChange={(event) => { patchStrategy((next) => { next.identity_and_product.solutions = listOf(event.target.value) }) }} />
       </section>
 
-      <section>
-        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>{t('strategy.mission')}</div>
-        <textarea rows={2} value={mission.mission} placeholder={t('strategy.missionText')} onChange={(event) => { patchStrategy((next) => { next.mission_and_positioning.mission = event.target.value }) }} style={{ ...field, resize: 'vertical', marginBottom: 8 }} />
-        <p style={labelStyle}>{t('strategy.listHint')}</p>
-        <textarea rows={2} value={linesOf(mission.differentiation)} placeholder={t('strategy.diff')} onChange={(event) => { patchStrategy((next) => { next.mission_and_positioning.differentiation = listOf(event.target.value) }) }} style={{ ...field, resize: 'vertical', marginBottom: 8 }} />
-        <input value={mission.ownable_space.statement} placeholder={t('strategy.ownableStatement')} onChange={(event) => { patchStrategy((next) => { next.mission_and_positioning.ownable_space.statement = event.target.value }) }} style={{ ...field, marginBottom: 8 }} />
-        <input value={mission.ownable_space.category} placeholder={t('strategy.ownableCategory')} onChange={(event) => { patchStrategy((next) => { next.mission_and_positioning.ownable_space.category = event.target.value }) }} style={{ ...field, marginBottom: 8 }} />
-        <textarea rows={2} value={linesOf(mission.ownable_space.is_not)} placeholder={t('strategy.ownableNot')} onChange={(event) => { patchStrategy((next) => { next.mission_and_positioning.ownable_space.is_not = listOf(event.target.value) }) }} style={{ ...field, resize: 'vertical' }} />
+      <section className="omnimux-products-section">
+        <div className="omnimux-products-section-title">{t('strategy.mission')}</div>
+        <textarea className="omnimux-products-textarea" rows={2} value={mission.mission} placeholder={t('strategy.missionText')} onChange={(event) => { patchStrategy((next) => { next.mission_and_positioning.mission = event.target.value }) }} />
+        <p className="omnimux-products-label">{t('strategy.listHint')}</p>
+        <textarea className="omnimux-products-textarea" rows={2} value={linesOf(mission.differentiation)} placeholder={t('strategy.diff')} onChange={(event) => { patchStrategy((next) => { next.mission_and_positioning.differentiation = listOf(event.target.value) }) }} />
+        <InputField value={mission.ownable_space.statement} placeholder={t('strategy.ownableStatement')} onChange={(event) => { patchStrategy((next) => { next.mission_and_positioning.ownable_space.statement = event.target.value }) }} />
+        <InputField value={mission.ownable_space.category} placeholder={t('strategy.ownableCategory')} onChange={(event) => { patchStrategy((next) => { next.mission_and_positioning.ownable_space.category = event.target.value }) }} />
+        <textarea className="omnimux-products-textarea" rows={2} value={linesOf(mission.ownable_space.is_not)} placeholder={t('strategy.ownableNot')} onChange={(event) => { patchStrategy((next) => { next.mission_and_positioning.ownable_space.is_not = listOf(event.target.value) }) }} />
       </section>
 
-      <section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <div style={{ fontSize: 13, fontWeight: 500 }}>{t('strategy.market')}</div>
+      <section className="omnimux-products-section">
+        <div className="omnimux-products-section-head">
+          <div className="omnimux-products-section-title">{t('strategy.market')}</div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <span style={{ fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>{t('strategy.segments')}</span>
-          <button
-            type="button"
+        <div className="omnimux-products-section-head">
+          <span className="omnimux-products-label">{t('strategy.segments')}</span>
+          <Button
+            variant="outline"
+            size="xs"
             onClick={() => {
               patchStrategy((next) => {
                 if (next.market_and_competition.customer_segments.length >= 10) return
                 next.market_and_competition.customer_segments.push({ name: '', percentage: 0 })
               })
             }}
-            style={miniBtn}
           >
             {t('strategy.addSegment')}
-          </button>
+          </Button>
         </div>
         {market.customer_segments.map((row, index) => (
-          <div key={`seg-${index}`} style={{ display: 'grid', gridTemplateColumns: '1fr 72px 28px', gap: 6, marginBottom: 6 }}>
-            <input value={row.name} placeholder={t('strategy.segmentName')} onChange={(event) => { patchStrategy((next) => { next.market_and_competition.customer_segments[index].name = event.target.value }) }} style={field} />
-            <input
+          <div key={`seg-${index}`} className="omnimux-products-seg-row">
+            <InputField value={row.name} placeholder={t('strategy.segmentName')} onChange={(event) => { patchStrategy((next) => { next.market_and_competition.customer_segments[index].name = event.target.value }) }} />
+            <InputField
               type="number"
               min={0}
               max={100}
               value={row.percentage}
               onChange={(event) => { patchStrategy((next) => { next.market_and_competition.customer_segments[index].percentage = Number(event.target.value) }) }}
-              style={field}
             />
-            <button type="button" onClick={() => { patchStrategy((next) => { next.market_and_competition.customer_segments.splice(index, 1) }) }} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit' }}>×</button>
+            <IconButton
+              variant="ghost"
+              size="xs"
+              aria-label={t('remove.confirm')}
+              onClick={() => { patchStrategy((next) => { next.market_and_competition.customer_segments.splice(index, 1) }) }}
+            >
+              ×
+            </IconButton>
           </div>
         ))}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 6px' }}>
-          <span style={{ fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>{t('strategy.competitors')}</span>
-          <button
-            type="button"
+        <div className="omnimux-products-section-head">
+          <span className="omnimux-products-label">{t('strategy.competitors')}</span>
+          <Button
+            variant="outline"
+            size="xs"
             onClick={() => {
               patchStrategy((next) => {
                 if (next.market_and_competition.competitors.length >= 10) return
                 next.market_and_competition.competitors.push({ name: '', website: '' })
               })
             }}
-            style={miniBtn}
           >
             {t('strategy.addCompetitor')}
-          </button>
+          </Button>
         </div>
         {market.competitors.map((row, index) => (
-          <div key={`comp-${index}`} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px', gap: 6, marginBottom: 6 }}>
-            <input value={row.name} placeholder={t('strategy.competitorName')} onChange={(event) => { patchStrategy((next) => { next.market_and_competition.competitors[index].name = event.target.value }) }} style={field} />
-            <input value={row.website} placeholder={t('strategy.competitorWebsite')} onChange={(event) => { patchStrategy((next) => { next.market_and_competition.competitors[index].website = event.target.value }) }} style={field} />
-            <button type="button" onClick={() => { patchStrategy((next) => { next.market_and_competition.competitors.splice(index, 1) }) }} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit' }}>×</button>
+          <div key={`comp-${index}`} className="omnimux-products-comp-row">
+            <InputField value={row.name} placeholder={t('strategy.competitorName')} onChange={(event) => { patchStrategy((next) => { next.market_and_competition.competitors[index].name = event.target.value }) }} />
+            <InputField value={row.website} placeholder={t('strategy.competitorWebsite')} onChange={(event) => { patchStrategy((next) => { next.market_and_competition.competitors[index].website = event.target.value }) }} />
+            <IconButton
+              variant="ghost"
+              size="xs"
+              aria-label={t('remove.confirm')}
+              onClick={() => { patchStrategy((next) => { next.market_and_competition.competitors.splice(index, 1) }) }}
+            >
+              ×
+            </IconButton>
           </div>
         ))}
       </section>

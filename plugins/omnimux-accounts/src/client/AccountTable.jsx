@@ -1,3 +1,4 @@
+import { Button } from 'dsh-ui-kit'
 import { AccountMenu, AgentSwitch } from './account-controls.jsx'
 import { Avatar, GroupChip, PlatformChip, StatusDot } from './chips.jsx'
 import { fmt, localeText, relativeTime, selectAllState } from './view.js'
@@ -68,8 +69,9 @@ export function AccountTable(props) {
                 aria-sort={column.sortKey && sortKey === column.sortKey ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
               >
                 {column.sortKey ? (
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="xs"
                     className="omnimux-accounts-sortbtn"
                     disabled={disabled}
                     onClick={() => { onSortHeader(column.sortKey) }}
@@ -78,7 +80,7 @@ export function AccountTable(props) {
                     <span className="omnimux-accounts-sortmark" aria-hidden="true">
                       {sortKey === column.sortKey ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
                     </span>
-                  </button>
+                  </Button>
                 ) : (
                   <span className="omnimux-accounts-thtext">{t(column.labelKey)}</span>
                 )}
