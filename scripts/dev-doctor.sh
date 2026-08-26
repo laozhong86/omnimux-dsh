@@ -5,7 +5,8 @@
 # 输出每项 ✓/✗ 与修复提示；任一 ✗ 时退出码 1。
 set -uo pipefail
 
-PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh/plugins}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$SCRIPT_DIR/../plugins}"
 PROD_HOME="${DSH_HOME:-$HOME/.dsh}"
 PROD_PROFILE="$PROD_HOME/profiles/omnimux"
 DEV_HOME="${DSH_DEV_HOME:-$HOME/.dsh-dev}"
@@ -418,6 +419,22 @@ else
     bad "package.json files 未覆盖 Host 闭包 → 修 files 后 yarn omnimux:sync <plugin>"
   else
     ok "全部插件 Host 闭包已列入 npm pack 集合"
+  fi
+fi
+
+echo
+echo "== 14. UI01~UI06 静态扫描门禁 (docs/contracts/ui-design-guidelines.md) =="
+ui_scanner="$PLUGINS_ROOT/../scripts/scan-ui-gates.mjs"
+if [ ! -f "$ui_scanner" ]; then
+  bad "UI 门禁扫描脚本缺失 scripts/scan-ui-gates.mjs"
+else
+  ui_scan_status=0
+  ui_scan_out=$(node "$ui_scanner" 2>&1) || ui_scan_status=$?
+  echo "$ui_scan_out"
+  if [ "$ui_scan_status" -ne 0 ]; then
+    warn "UI 规范扫描发现待整改项（见上方日志；随 Issue #17/#18/#19 逐步收敛）"
+  else
+    ok "UI01~UI06 静态扫描通过（0 违规拦截）"
   fi
 fi
 
