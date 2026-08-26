@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # OmniMux DSH Plugin - Multi-Agent Worktree & Branch Lifecycle Manager
-# Contract: docs/contracts/plugin-git-pr.md
+# Contracts: docs/contracts/plugin-git-pr.md, docs/contracts/agent-issue-lifecycle.md
 # ==============================================================================
 set -e
 
@@ -10,17 +10,21 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
   cat <<'EOF'
-OmniMux 多 Agent Worktree 隔离与管理工具
+OmniMux 多 Agent Worktree 隔离与管理工具 (支持 GitHub Issue 绑定)
 
 用法:
-  ./scripts/git-wt.sh start <plugin> <topic>   从 origin/main 切出干净的专属 Worktree
-  ./scripts/git-wt.sh clean <topic>            PR 合入后安全销毁 Worktree 及本地特性分支
-  ./scripts/git-wt.sh list                     列出当前全部活跃的 Worktree 与对应分支
-  ./scripts/git-wt.sh doctor                   检查主目录纯净度与 Worktree 隔离状态
+  ./scripts/git-wt.sh start <plugin> <topic> [issue_id]   从 origin/main 切出专属 Worktree
+  ./scripts/git-wt.sh clean <topic> [issue_id]            PR 合入后安全销毁 Worktree 及本地分支
+  ./scripts/git-wt.sh list                                列出当前全部活跃的 Worktree 与对应分支
+  ./scripts/git-wt.sh doctor                              检查主目录纯净度与 Worktree 隔离状态
 
 示例:
+  # 推荐: 绑定 GitHub Issue ID
+  ./scripts/git-wt.sh start workflow table-node 42
+  ./scripts/git-wt.sh clean table-node 42
+
+  # 兼容: 无 Issue ID 形式
   ./scripts/git-wt.sh start clip timeline-tools
-  ./scripts/git-wt.sh start workflow table-node
   ./scripts/git-wt.sh clean timeline-tools
 EOF
 }
@@ -28,16 +32,27 @@ EOF
 cmd_start() {
   local plugin="$1"
   local topic="$2"
+  local raw_issue="$3"
 
   if [ -z "$plugin" ] || [ -z "$topic" ]; then
     echo "❌ 错误: 必须提供 <plugin> 和 <topic>"
-    echo "示例: ./scripts/git-wt.sh start clip timeline-tools"
+    echo "示例: ./scripts/git-wt.sh start workflow table-node 42"
     exit 1
   fi
 
-  # 规范化命名
+  local clean_issue=""
   local branch="agent/${plugin}-${topic}"
-  local wt_dir="$(cd "$REPO_ROOT/.." && pwd)/omnimux-dsh-wt-${topic}"
+  local wt_suffix="${topic}"
+
+  if [ -n "$raw_issue" ]; then
+    clean_issue=$(echo "$raw_issue" | sed 's/^[^0-9]*//g')
+    if [ -n "$clean_issue" ]; then
+      branch="agent/${plugin}-${topic}-issue-${clean_issue}"
+      wt_suffix="${topic}-${clean_issue}"
+    fi
+  fi
+
+  local wt_dir="$(cd "$REPO_ROOT/.." && pwd)/omnimux-dsh-wt-${wt_suffix}"
 
   if [ -d "$wt_dir" ]; then
     echo "⚠️  Worktree 目录已存在: $wt_dir"
@@ -59,14 +74,23 @@ cmd_start() {
 
 cmd_clean() {
   local topic="$1"
+  local raw_issue="$2"
 
   if [ -z "$topic" ]; then
     echo "❌ 错误: 必须提供 <topic>"
-    echo "示例: ./scripts/git-wt.sh clean timeline-tools"
+    echo "示例: ./scripts/git-wt.sh clean table-node 42"
     exit 1
   fi
 
-  local wt_dir="$(cd "$REPO_ROOT/.." && pwd)/omnimux-dsh-wt-${topic}"
+  local wt_suffix="${topic}"
+  if [ -n "$raw_issue" ]; then
+    local clean_issue=$(echo "$raw_issue" | sed 's/^[^0-9]*//g')
+    if [ -n "$clean_issue" ]; then
+      wt_suffix="${topic}-${clean_issue}"
+    fi
+  fi
+
+  local wt_dir="$(cd "$REPO_ROOT/.." && pwd)/omnimux-dsh-wt-${wt_suffix}"
 
   echo "==> 1. 移除 Worktree 目录..."
   if [ -d "$wt_dir" ]; then
@@ -80,8 +104,8 @@ cmd_clean() {
   echo "==> 2. 同步远程并清理本地跟踪分支..."
   git -C "$REPO_ROOT" fetch origin --prune
 
-  # 匹配可能的分支名
-  local branches=$(git -C "$REPO_ROOT" branch --list "agent/*-${topic}")
+  # 匹配可能的分支名 (带 issue 或不带 issue)
+  local branches=$(git -C "$REPO_ROOT" branch --list "agent/*-${topic}*" "agent/*-${wt_suffix}")
   if [ -n "$branches" ]; then
     for b in $branches; do
       local clean_b=$(echo "$b" | tr -d ' *+')
@@ -90,7 +114,7 @@ cmd_clean() {
     done
   fi
 
-  echo "✅ Topic [$topic] 对应的 Worktree 与分支清理完成。"
+  echo "✅ Topic [${wt_suffix}] 对应的 Worktree 与分支清理完成。"
 }
 
 cmd_list() {

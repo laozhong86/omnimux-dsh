@@ -15,6 +15,7 @@ describe('scripts/git-wt.sh worktree helper', () => {
     assert.ok(content.startsWith('#!/usr/bin/env bash'), 'must have bash shebang')
     assert.ok(content.includes('agent/${plugin}-${topic}'), 'follows branch naming contract')
     assert.ok(content.includes('omnimux-dsh-wt-'), 'follows sibling directory naming contract')
+    assert.ok(content.includes('clean_issue'), 'supports Issue ID binding')
   })
 
   it('prints usage on invalid / empty arguments', () => {
@@ -23,8 +24,8 @@ describe('scripts/git-wt.sh worktree helper', () => {
       assert.fail('should fail on empty args')
     } catch (err) {
       assert.ok(err.stdout.includes('OmniMux 多 Agent Worktree 隔离与管理工具'))
-      assert.ok(err.stdout.includes('start <plugin> <topic>'))
-      assert.ok(err.stdout.includes('clean <topic>'))
+      assert.ok(err.stdout.includes('start <plugin> <topic> [issue_id]'))
+      assert.ok(err.stdout.includes('clean <topic> [issue_id]'))
     }
   })
 
