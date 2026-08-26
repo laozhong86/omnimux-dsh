@@ -8,6 +8,7 @@ import { accessSync, constants, mkdirSync, readFileSync, readdirSync, realpathSy
 import { basename, dirname, resolve, sep } from 'node:path'
 import { bucketOf, extOf, previewMimeOf, scanDir, scanFile, statStatus } from './scanner.js'
 import { AssetsError, newRecordId } from './mappings.js'
+import { formatAssetUri, isAssetUri, parseAssetUri, resolveAssetUri, toAssetUri } from './protocol.js'
 
 const DEFAULT_FS = { accessSync, constants, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, statSync, writeFileSync }
 
@@ -156,6 +157,7 @@ function viewOf(asset, fs) {
     if (!live) continue
     visibleFiles.push({
       id: file.id,
+      uri: toAssetUri(file.real_path, { scope: asset.type }),
       ...live,
     })
   }
@@ -165,6 +167,7 @@ function viewOf(asset, fs) {
     ?? null
   return {
     ...asset,
+    uri: formatAssetUri(asset.type, asset.handle || asset.id),
     files: visibleFiles,
     cover_file_id: cover ? cover.id : null,
     cover: cover,
@@ -359,7 +362,21 @@ export function createLibraryStore(opts = {}) {
    */
   function get(idOrHandle) {
     const key = str(idOrHandle)
-    const found = state.assets.find((asset) => asset.id === key || asset.handle === key)
+    let parsedKey = key
+    if (isAssetUri(key)) {
+      const parsed = parseAssetUri(key)
+      if (parsed) {
+        parsedKey = parsed.path || parsed.scope
+      }
+    }
+    const found = state.assets.find((asset) => (
+      asset.id === key ||
+      asset.handle === key ||
+      asset.id === parsedKey ||
+      asset.handle === parsedKey ||
+      formatAssetUri(asset.type, asset.handle) === key ||
+      formatAssetUri(asset.type, asset.id) === key
+    ))
     return found ? { ...found, files: found.files.map((file) => ({ ...file })) } : null
   }
 

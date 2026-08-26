@@ -3,6 +3,9 @@ import { createArtifactStore } from './artifacts.js'
 import { createLibraryStore } from './library.js'
 import { createMappingStore, AssetsError } from './mappings.js'
 import { resolveAssetsPaths } from './paths.js'
+import { formatAssetUri, isAssetUri, parseAssetUri, resolveAssetUri, toAssetUri } from './protocol.js'
+
+export { formatAssetUri, isAssetUri, parseAssetUri, resolveAssetUri, toAssetUri }
 
 export const name = 'omnimux-assets'
 export const inject = ['tools', 'systemPrompt']
@@ -162,7 +165,8 @@ export function apply(ctx) {
     }),
     output: jsonOut,
     async execute(args) {
-      const artifact = artifacts.report(args.path, {
+      const diskPath = resolveAssetUri(args.path)
+      const artifact = artifacts.report(diskPath, {
         agent: args.agent,
         run_id: args.run_id,
         model: args.model,
