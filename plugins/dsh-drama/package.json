@@ -5,11 +5,12 @@
   "main": "src/index.js",
   "files": [
     "src/domain.js",
+    "src/continuity.js",
     "src/index.js",
     "cordis.patch.yml"
   ],
   "scripts": {
-    "test": "node --test src/domain.test.js src/generate-mode.test.js"
+    "test": "node --test src/*.test.js"
   },
   "dsh": {
     "bundle": {
