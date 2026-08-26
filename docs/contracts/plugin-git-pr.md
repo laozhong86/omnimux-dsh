@@ -55,16 +55,17 @@
 ```sh
 cd /Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh
 
-# 1. 创建独立工作区（自动从 origin/main 切支）
-./scripts/git-wt.sh start <plugin> <topic>
+# 1. 创建独立工作区（自动从 origin/main 切支，可使用 npm scripts 别名 pnpm wt:start）
+pnpm wt:start <plugin> <topic> <issue-id>
+# 或原生脚本: ./scripts/git-wt.sh start <plugin> <topic> <issue-id>
 
 # 2. 进入专属 Worktree 独立实现与验证
-cd ../omnimux-dsh-wt-<topic>
+cd ../omnimux-dsh-wt-<topic>-<issue-id>
 pnpm --filter <plugin-pkg> test
 
 # 3. 提交并推送到远端
 git add plugins/<plugin-pkg>/
-git commit -m "feat(<plugin>): ..."
+git commit -m "feat(<plugin>): ... (#<issue-id>)"
 git push -u origin HEAD
 
 # 4. 创建 PR
@@ -74,7 +75,7 @@ gh -R laozhong86/omnimux-dsh pr create --base main --fill
 # 5. 老板合入后在主仓收尾销毁 Worktree
 cd /Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh
 git pull origin main
-./scripts/git-wt.sh clean <topic>
+pnpm wt:clean <topic> <issue-id>
 ```
 
 ## 本地验证
