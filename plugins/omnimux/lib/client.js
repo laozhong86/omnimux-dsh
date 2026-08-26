@@ -650,13 +650,13 @@ var PUBLIC_KEYS = [
   "error"
 ];
 function pickPublic(raw) {
-  const row2 = raw && typeof raw === "object" ? (
+  const row = raw && typeof raw === "object" ? (
     /** @type {Record<string, unknown>} */
     raw
   ) : {};
   const out = {};
   for (const key of PUBLIC_KEYS) {
-    if (key in row2) out[key] = row2[key];
+    if (key in row) out[key] = row[key];
   }
   return out;
 }
@@ -846,13 +846,13 @@ function useOmnimuxAuth(opts = {}) {
 var AVATAR_KEYS = ["uri", "name", "opts", "using_default"];
 var AVATAR_OPTS_KEYS = ["seed", "hue", "tone", "background"];
 function pickAvatar(raw) {
-  const row2 = raw && typeof raw === "object" ? (
+  const row = raw && typeof raw === "object" ? (
     /** @type {Record<string, unknown>} */
     raw
   ) : {};
-  const avatar = row2.avatar && typeof row2.avatar === "object" ? (
+  const avatar = row.avatar && typeof row.avatar === "object" ? (
     /** @type {Record<string, unknown>} */
-    row2.avatar
+    row.avatar
   ) : {};
   const out = {};
   for (const key of AVATAR_KEYS) {
@@ -869,7 +869,7 @@ function pickAvatar(raw) {
     }
     out.opts = picked;
   }
-  if (typeof row2.error === "string") out.error = row2.error;
+  if (typeof row.error === "string") out.error = row.error;
   return out;
 }
 async function avatarRequest(path, opts = {}) {
@@ -1675,16 +1675,6 @@ function ProfileSection({ t }) {
 // src/client/DshPluginsSection.jsx
 var import_react5 = require("react");
 var import_jsx_runtime4 = require("react/jsx-runtime");
-var page = {
-  padding: "16px 20px",
-  color: "var(--dsw-text-primary, inherit)",
-  display: "flex",
-  flexDirection: "column",
-  gap: 12,
-  maxWidth: 560
-};
-var muted = { color: "var(--dsw-text-secondary, inherit)", lineHeight: 1.5, margin: 0 };
-var row = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 };
 function DshPluginsSection({ t }) {
   const [available, setAvailable] = (0, import_react5.useState)(false);
   const [plugins, setPlugins] = (0, import_react5.useState)([]);
@@ -1708,19 +1698,19 @@ function DshPluginsSection({ t }) {
     void refresh();
   }, []);
   if (!available && plugins.length === 0 && error === "") {
-    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: page, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h2", { style: { margin: 0, fontSize: 16 }, children: t("dshPlugins.title") }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted, children: t("dshPlugins.desktopOnly") })
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-dsh-plugins-page", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h2", { className: "omnimux-dsh-plugins-title", children: t("dshPlugins.title") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-dsh-plugins-muted", children: t("dshPlugins.desktopOnly") })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { style: page, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h2", { style: { margin: 0, fontSize: 16 }, children: t("dshPlugins.title") }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted, children: t("dshPlugins.readonlyHint") }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("ul", { style: { margin: 0, paddingLeft: 18, lineHeight: 1.7 }, children: plugins.map((plugin) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("li", { style: row, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-dsh-plugins-page", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h2", { className: "omnimux-dsh-plugins-title", children: t("dshPlugins.title") }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-dsh-plugins-muted", children: t("dshPlugins.readonlyHint") }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("ul", { className: "omnimux-dsh-plugins-list", children: plugins.map((plugin) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("li", { className: "omnimux-dsh-plugins-row", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { children: [
       plugin.name,
       plugin.protected ? ` (${t("dshPlugins.protected")})` : ""
     ] }) }, plugin.name)) }),
-    error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { style: muted, children: error }) : null
+    error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-dsh-plugins-muted", children: error }) : null
   ] });
 }
 
@@ -2669,8 +2659,8 @@ function leaveProductStage() {
   window.dispatchEvent(new CustomEvent(PRODUCT_STAGE_EVENT, { detail: { id: "" } }));
 }
 function sessionRowPlainClick(target) {
-  const row2 = target.closest('[role="treeitem"]');
-  if (!(row2 instanceof HTMLElement)) return false;
+  const row = target.closest('[role="treeitem"]');
+  if (!(row instanceof HTMLElement)) return false;
   if (target.closest("button") !== null) return false;
   return true;
 }
@@ -2973,13 +2963,13 @@ function placeBelow(root) {
     anchor = inlineWrap;
   }
   let slotExternal = true;
-  for (const row2 of sorted) {
-    if (row2.rank >= 3 && slotExternal) {
+  for (const row of sorted) {
+    if (row.rank >= 3 && slotExternal) {
       const ext = externalAnchor(root);
       if (ext instanceof HTMLElement) anchor = ext;
       slotExternal = false;
     }
-    const el = row2.element;
+    const el = row.element;
     if (el.parentElement === root && el.previousElementSibling === anchor) {
       anchor = el;
       continue;
@@ -3002,8 +2992,8 @@ function placeInline(root) {
     anchor.classList.add("omnimux-sidebar-inline-new-session");
   }
   let prev = anchor;
-  for (const row2 of INLINE_ROWS) {
-    const el = row2.element;
+  for (const row of INLINE_ROWS) {
+    const el = row.element;
     if (el.parentElement === wrapper && el.previousElementSibling === prev) {
       prev = el;
       continue;
@@ -3015,14 +3005,14 @@ function placeInline(root) {
 }
 function createApi() {
   return {
-    register(row2) {
-      const id = row2.id;
+    register(row) {
+      const id = row.id;
       if (seen.has(id)) return () => {
       };
       seen.add(id);
-      if (row2.styles) injectStyles(row2.styles, row2.styleId);
-      const element = row2.create();
-      if (row2.kind === "inline") {
+      if (row.styles) injectStyles(row.styles, row.styleId);
+      const element = row.create();
+      if (row.kind === "inline") {
         injectStyles(INLINE_STYLES, "omnimux-sidebar-inline-styles");
         element.classList.add("omnimux-sidebar-inline-btn");
         INLINE_ROWS.push({ id, element });
@@ -3035,7 +3025,7 @@ function createApi() {
           runPlaceAll();
         };
       }
-      ROWS.push({ id, rank: row2.rank, element });
+      ROWS.push({ id, rank: row.rank, element });
       runPlaceAll();
       return () => {
         const i = ROWS.findIndex((r) => r.id === id);
