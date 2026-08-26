@@ -9,7 +9,7 @@ PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-/Users/x/Desktop/Project/dsh-plugin/product
 PROD_HOME="${DSH_HOME:-$HOME/.dsh}"
 PROD_PROFILE="$PROD_HOME/profiles/omnimux"
 DEV_HOME="${DSH_DEV_HOME:-$HOME/.dsh-dev}"
-PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-market omnimux-workflow omnimux-inspiration dsh-video omnimux-analytics)
+PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-market omnimux-workflow omnimux-inspiration omnimux-clip dsh-video omnimux-analytics)
 fails=0
 warns=0
 
@@ -91,7 +91,24 @@ check_dev_profile() {
     fi
   fi
   if [ "$linked" -le 1 ]; then
-    ok "$name${tag} [$running] link 数 $linked"
+    # 进一步校验这唯一一条 link 的真实目标路径是否合法存在
+    if [ "$linked" -eq 1 ]; then
+      local single_link
+      single_link=$(find "$d/node_modules" -maxdepth 1 -type l 2>/dev/null | head -1)
+      if [ -n "$single_link" ]; then
+        local target
+        target=$(readlink "$single_link" 2>/dev/null || true)
+        if [ ! -e "$single_link" ]; then
+          bad "$name${tag} 软链悬空失效: $(basename "$single_link") -> $target"
+        elif [[ "$target" != "$PLUGINS_ROOT/"* ]] && [[ "$target" != *"dsh-plugin/"* ]]; then
+          warn "$name${tag} 软链目标位于非标准插件源: $target"
+        else
+          ok "$name${tag} [$running] link: $(basename "$single_link") -> $target"
+        fi
+      fi
+    else
+      ok "$name${tag} [$running] link 数 0 (纯物化)"
+    fi
   else
     bad "$name${tag} link 数 ${linked}（>1，违反在研 ≤1 铁律）→ 修复: yarn omnimux:dev rm $short"
   fi
@@ -143,6 +160,30 @@ if [ -d "$DEV_HOME/profiles" ]; then
   done
 fi
 [ "$found" = 0 ] && echo "· 无 dev 环境（正常，用完即弃）"
+
+# 孤儿端口扫描 (44200~44299)：发现未记录在任务中的 LISTEN 端口仅报警，严禁擅自杀死
+if command -v lsof >/dev/null 2>&1; then
+  orphan_ports=$(lsof -nP -iTCP:44200-44299 -sTCP:LISTEN 2>/dev/null | awk 'NR>1 {print $2, $9}' | while read -r pid addr; do
+    port=$(echo "$addr" | awk -F: '{print $NF}')
+    # 检查该 port 是否属于某个活跃 profile
+    matched=0
+    if [ -d "$DEV_HOME/tasks" ]; then
+      for pf in "$DEV_HOME"/tasks/*/profiles/omnimux-dev-*/port.txt; do
+        [ -f "$pf" ] || continue
+        if [ "$(tr -d '[:space:]' < "$pf")" = "$port" ]; then
+          matched=1; break
+        fi
+      done
+    fi
+    if [ "$matched" = 0 ]; then
+      echo "$port (PID: $pid)"
+    fi
+  done || true)
+
+  if [ -n "$orphan_ports" ]; then
+    warn "发现 L2 端口池孤儿监听进程（未匹配任何活跃 task）: $orphan_ports → 建议人工核对或 lsof 确认"
+  fi
+fi
 
 echo
 echo "== 6. dev 环境 MUST NOT 出现在生产数据根 =="

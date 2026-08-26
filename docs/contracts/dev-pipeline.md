@@ -10,6 +10,7 @@
 | 场景 | 命令 | 说明 |
 |------|------|------|
 | 浏览器验收（L2 / Agent 唯一测试入口） | `yarn omnimux:dev start <任务名> <插件>` | 独立端口(442xx) + 独立 `DSH_HOME` + link 在研插件 + Host + **统一 watch**；改 client 源码 → 重建 → 官方 HMR 自动推浏览器 |
+| 原地重启 L2 Host | `yarn omnimux:dev restart-host <任务名>` | 修改后端 Tool / Service 时同端口冷重启 Host（保端口与数据，Agent 可用） |
 | 换在研插件的 watch | `yarn omnimux:dev watch <任务名> <插件>` | Host 不停，只换 watch 目标 |
 | 验收完推进生产 App（L3 / 零重启物化） | `yarn omnimux:sync <插件>` | **先 build 再物化**进 `~/.dsh/profiles/omnimux`；**零副作用，绝不重启任何进程** |
 | 人工让 App 加载新 Host 插件 | `yarn omnimux:restart` | `pkill` + `open -a OmniMux`（**仅限人类**；前端改动无需重启，直接 Cmd+R 刷新） |

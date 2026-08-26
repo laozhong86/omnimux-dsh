@@ -10,6 +10,7 @@
 | 命令 | 用途 | 底层（勿直调） |
 |------|------|----------------|
 | `yarn omnimux:dev …` | L2 预发布 Host + 统一 watch（打印 URL/port/`DSH_HOME=…/tasks/<task>`，**Agent 唯一测试入口**） | `scripts/dev-env.sh` + `scripts/watch-plugin.mjs` |
+| `yarn omnimux:dev restart-host <task>` | 原地冷重启 L2 Host（保端口/保数据，Agent 可用） | `scripts/dev-env.sh restart-host` |
 | `yarn omnimux:sync [插件…]` | build + 物化进生产 profile（**零副作用静态落盘，不重启进程**） | `scripts/sync-to-app.sh` → `scripts/sync-stable.sh` |
 | `yarn omnimux:restart dev` | 重启开发版应用 `/Applications/OmniMux Dev.app`（**仅限人类**，Agent 严禁以防撞车） | `pkill -f 'OmniMux Dev'` + `open -a 'OmniMux Dev'` |
 | `yarn omnimux:restart prod` | 手动重启生产版应用 `/Applications/OmniMux.app`（**仅限人类**，Agent 严禁） | `pkill -f OmniMux` + `open -a OmniMux` |
