@@ -2987,55 +2987,36 @@ function InspirationSection({ t, active }) {
     setSelectedItem(updatedItem);
   };
   return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-root", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-header", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-tabs", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            className: `omnimux-inspiration-tab ${tab === "all" ? "active" : ""}`,
-            onClick: () => setTab("all"),
-            children: t("tab.all")
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            className: `omnimux-inspiration-tab ${tab === "local" ? "active" : ""}`,
-            onClick: () => setTab("local"),
-            children: t("tab.local")
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            className: `omnimux-inspiration-tab ${tab === "public" ? "active" : ""}`,
-            onClick: () => setTab("public"),
-            children: t("tab.public")
-          }
-        )
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-        Button,
-        {
-          variant: "primary",
-          className: "omnimux-inspiration-btn-add",
-          leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
-          onClick: () => setImportOpen(true),
-          children: t("add.btn")
-        }
-      )
-    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-action-row", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      Button,
+      {
+        variant: "primary",
+        className: "omnimux-inspiration-btn-add",
+        leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M12 5v14M5 12h14" }) }),
+        onClick: () => setImportOpen(true),
+        children: t("add.btn")
+      }
+    ) }),
     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
       FilterBar,
       {
         className: "omnimux-inspiration-toolbar",
         compact: true,
+        filters: [
+          { key: "all", label: t("tab.all") },
+          { key: "local", label: t("tab.local") },
+          { key: "public", label: t("tab.public") }
+        ].map((tabItem) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          Button,
+          {
+            variant: tab === tabItem.key ? "secondary" : "ghost",
+            size: "sm",
+            "aria-pressed": tab === tabItem.key,
+            onClick: () => setTab(tabItem.key),
+            children: tabItem.label
+          },
+          tabItem.key
+        )),
         search: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           SearchField,
           {
@@ -3047,7 +3028,7 @@ function InspirationSection({ t, active }) {
             onValueChange: setQ
           }
         ),
-        filters: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+        tools: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
             DropdownSelect,
             {

@@ -1753,7 +1753,7 @@ async function persistExport(projectId, result, { schema } = {}) {
 // src/client/components/TopHeader.jsx
 var import_dsh_client_ui_primitives2 = require("@deepseek-ai/dsh-client-ui-primitives");
 
-// node_modules/.pnpm/dsh-ui-kit@file+..+..+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0_c20a28005c8f0dbb66f7651fbedb1e05/node_modules/dsh-ui-kit/lib/index.js
+// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
 var import_react2 = require("react");
 var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
 var import_jsx_runtime = require("react/jsx-runtime");
