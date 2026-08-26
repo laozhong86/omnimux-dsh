@@ -11,6 +11,8 @@ test('maps every product plugin tool prefix', () => {
   assert.equal(resolvePlugin('plaza_search', DEFAULT_PLUGIN_MAP), 'omnimux-market')
   assert.equal(resolvePlugin('plaza_summon', DEFAULT_PLUGIN_MAP), 'omnimux-market')
   assert.equal(resolvePlugin('plaza_install', DEFAULT_PLUGIN_MAP), 'omnimux-market')
+  assert.equal(resolvePlugin('plugin_uninstall', DEFAULT_PLUGIN_MAP), 'omnimux-market')
+  assert.equal(resolvePlugin('connector_install', DEFAULT_PLUGIN_MAP), 'omnimux-market')
   assert.equal(resolvePlugin('esc_search', DEFAULT_PLUGIN_MAP), 'other')
   assert.equal(resolvePlugin('workflow_run', DEFAULT_PLUGIN_MAP), 'omnimux-workflow')
   assert.equal(resolvePlugin('workflow_list', DEFAULT_PLUGIN_MAP), 'omnimux-workflow')
@@ -20,6 +22,14 @@ test('maps every product plugin tool prefix', () => {
 test('plaza_ prefix maps to omnimux-market, not gallery', () => {
   assert.equal(resolvePlugin('plaza_search', DEFAULT_PLUGIN_MAP), 'omnimux-market')
   assert.equal(resolvePlugin('plaza_summon', DEFAULT_PLUGIN_MAP), 'omnimux-market')
+})
+
+test('plugin_ and connector_ prefixes map to omnimux-market', () => {
+  assert.equal(resolvePlugin('plugin_search', DEFAULT_PLUGIN_MAP), 'omnimux-market')
+  assert.equal(resolvePlugin('plugin_uninstall', DEFAULT_PLUGIN_MAP), 'omnimux-market')
+  assert.equal(resolvePlugin('connector_install', DEFAULT_PLUGIN_MAP), 'omnimux-market')
+  assert.equal(resolvePlugin('connector_list', DEFAULT_PLUGIN_MAP), 'omnimux-market')
+  assert.equal(resolvePlugin('esc_search', DEFAULT_PLUGIN_MAP), 'other')
 })
 
 test('skillhub prefix matches both bare and underscored tool names', () => {
