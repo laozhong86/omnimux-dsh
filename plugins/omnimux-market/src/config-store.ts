@@ -1,9 +1,11 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
-import type { PluginConfig, SortBy } from './types.js'
+import type { PluginConfig, SkillChannel, SortBy } from './types.js'
 
 const SORTS: SortBy[] = ['score', 'downloads', 'stars', 'installs', 'updated_at']
+const CHANNELS: SkillChannel[] = ['custom', 'workbuddy', 'skillhub']
+const DEFAULT_CHANNELS: SkillChannel[] = ['custom', 'workbuddy', 'skillhub']
 
 export function dshHome(): string {
   return process.env.DSH_HOME || join(homedir(), '.dsh')
@@ -32,6 +34,12 @@ export function publicConfig(cfg: PluginConfig): Omit<PluginConfig, 'userAgent'>
     sortBy: cfg.sortBy,
     plazaKeepAlive: cfg.plazaKeepAlive,
     plazaCacheTtlSec: cfg.plazaCacheTtlSec,
+    pluginMaxResults: cfg.pluginMaxResults,
+    connectorMaxResults: cfg.connectorMaxResults,
+    protectedBundlesExtra: [...cfg.protectedBundlesExtra],
+    aggregateChannels: [...cfg.aggregateChannels],
+    workbuddySkillsMarketplace: cfg.workbuddySkillsMarketplace,
+    aggregateRemoteSoftFail: cfg.aggregateRemoteSoftFail,
   }
 }
 
@@ -66,7 +74,33 @@ export function sanitizePatch(raw: Record<string, unknown>): Partial<PluginConfi
   else if (raw.plazaKeepAlive === 'true' || raw.plazaKeepAlive === 1) out.plazaKeepAlive = true
   const ttl = Number(raw.plazaCacheTtlSec)
   if (Number.isFinite(ttl) && ttl >= 15) out.plazaCacheTtlSec = Math.min(Math.floor(ttl), 600)
+  const pluginMax = Number(raw.pluginMaxResults)
+  if (Number.isFinite(pluginMax) && pluginMax >= 1) out.pluginMaxResults = Math.min(Math.floor(pluginMax), 8)
+  const connectorMax = Number(raw.connectorMaxResults)
+  if (Number.isFinite(connectorMax) && connectorMax >= 1) out.connectorMaxResults = Math.min(Math.floor(connectorMax), 8)
+  if (Array.isArray(raw.protectedBundlesExtra)) {
+    out.protectedBundlesExtra = raw.protectedBundlesExtra
+      .map((n) => String(n || '').trim())
+      .filter((n) => n && /^(@[A-Za-z0-9-~][A-Za-z0-9-._~]*\/)?[A-Za-z0-9-~][A-Za-z0-9-._~]*$/.test(n))
+  }
+  const channels = parseAggregateChannels(raw.aggregateChannels)
+  if (channels) out.aggregateChannels = channels
+  if (typeof raw.workbuddySkillsMarketplace === 'string') out.workbuddySkillsMarketplace = raw.workbuddySkillsMarketplace.trim()
+  if (typeof raw.aggregateRemoteSoftFail === 'boolean') out.aggregateRemoteSoftFail = raw.aggregateRemoteSoftFail
+  else if (raw.aggregateRemoteSoftFail === 'false' || raw.aggregateRemoteSoftFail === 0) out.aggregateRemoteSoftFail = false
+  else if (raw.aggregateRemoteSoftFail === 'true' || raw.aggregateRemoteSoftFail === 1) out.aggregateRemoteSoftFail = true
   return out
+}
+
+export function parseAggregateChannels(raw: unknown): SkillChannel[] | undefined {
+  if (!Array.isArray(raw)) return undefined
+  const out: SkillChannel[] = []
+  for (const row of raw) {
+    const value = String(row || '').trim() as SkillChannel
+    if (!CHANNELS.includes(value) || out.includes(value)) continue
+    out.push(value)
+  }
+  return out.length ? out : undefined
 }
 
 export function assignConfig(live: PluginConfig, patch: Partial<PluginConfig>): PluginConfig {
@@ -79,6 +113,12 @@ export function assignConfig(live: PluginConfig, patch: Partial<PluginConfig>): 
   if (patch.sortBy) live.sortBy = patch.sortBy
   if (patch.plazaKeepAlive != null) live.plazaKeepAlive = patch.plazaKeepAlive
   if (patch.plazaCacheTtlSec != null) live.plazaCacheTtlSec = patch.plazaCacheTtlSec
+  if (patch.pluginMaxResults != null) live.pluginMaxResults = patch.pluginMaxResults
+  if (patch.connectorMaxResults != null) live.connectorMaxResults = patch.connectorMaxResults
+  if (patch.protectedBundlesExtra) live.protectedBundlesExtra = [...patch.protectedBundlesExtra]
+  if (patch.aggregateChannels) live.aggregateChannels = [...patch.aggregateChannels]
+  if (patch.workbuddySkillsMarketplace != null) live.workbuddySkillsMarketplace = patch.workbuddySkillsMarketplace
+  if (patch.aggregateRemoteSoftFail != null) live.aggregateRemoteSoftFail = patch.aggregateRemoteSoftFail
   return live
 }
 
@@ -95,5 +135,19 @@ export function withDefaults(config: Partial<PluginConfig>): PluginConfig {
     plazaCacheTtlSec: Number.isFinite(Number(config.plazaCacheTtlSec)) && Number(config.plazaCacheTtlSec) >= 15
       ? Math.min(Math.floor(Number(config.plazaCacheTtlSec)), 600)
       : 90,
+    pluginMaxResults: clampMarketLimit(config.pluginMaxResults, 6),
+    connectorMaxResults: clampMarketLimit(config.connectorMaxResults, 6),
+    protectedBundlesExtra: Array.isArray(config.protectedBundlesExtra)
+      ? config.protectedBundlesExtra.map((n) => String(n || '').trim()).filter(Boolean)
+      : [],
+    aggregateChannels: parseAggregateChannels(config.aggregateChannels) || [...DEFAULT_CHANNELS],
+    workbuddySkillsMarketplace: typeof config.workbuddySkillsMarketplace === 'string' ? config.workbuddySkillsMarketplace : '',
+    aggregateRemoteSoftFail: config.aggregateRemoteSoftFail !== false,
   }
+}
+
+function clampMarketLimit(raw: unknown, fallback: number): number {
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n < 1) return fallback
+  return Math.min(Math.floor(n), 8)
 }

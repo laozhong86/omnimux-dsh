@@ -75,6 +75,18 @@ export function isSafePluginTarget(target: string): boolean {
   return TARGET_RE.test(target)
 }
 
+/** Profile `package.json` 依赖键。拒绝 github: / file: / link: / 路径。 */
+const PLUGIN_NAME_RE = /^(@[A-Za-z0-9-~][A-Za-z0-9-._~]*\/)?[A-Za-z0-9-~][A-Za-z0-9-._~]*$/
+
+export function isSafePluginName(name: string): boolean {
+  const n = String(name || '').trim()
+  if (!n) return false
+  if (/^(file|link|git\+|github|http|https):/i.test(n)) return false
+  if (n.startsWith('.') || n.includes('\\') || n.includes(' ')) return false
+  if (n.includes('/') && !n.startsWith('@')) return false
+  return PLUGIN_NAME_RE.test(n)
+}
+
 export function quoteCmdArg(arg: string): string {
   if (!CMD_METACHARS.test(arg)) return arg
   return `"${arg.replace(/"/g, '""')}"`
@@ -230,6 +242,24 @@ export async function runDshPlugin(
   }
 }
 
+export async function removeDshPlugin(
+  name: string,
+  deps: {
+    runDshPlugin?: PluginRunner
+  } = {},
+): Promise<string> {
+  const n = String(name || '').trim()
+  if (!isSafePluginTarget(n) || !isSafePluginName(n)) {
+    throw new Error(`拒绝不安全的卸载目标: ${name}`)
+  }
+  const run = deps.runDshPlugin ?? runDshPlugin
+  try {
+    return await run(WEB_PROFILE, ['remove', n])
+  } catch (err) {
+    throw rewritePnpmError(err)
+  }
+}
+
 export async function addDshPlugin(
   source: string,
   deps: {
@@ -274,7 +304,7 @@ export function runCommand(
   return new Promise((resolvePromise, reject) => {
     const child = spawnShim(command, args, {
       cwd: options.cwd,
-      env: { ...process.env, ...options.env, CI: 'true' },
+      env: { ...process.env, ...options.env, CI: 'true', ELECTRON_RUN_AS_NODE: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],
       viaShell: options.viaShell === true,
       detached: options.detached === true && process.platform !== 'win32',
@@ -290,28 +320,30 @@ export function runCommand(
       else resolvePromise(out)
     }
     const timer = setTimeout(() => {
-      killChild(child)
+      killChild(child, options.detached === true)
       finish(new Error(`命令超时 ${options.timeoutMs}ms`))
     }, options.timeoutMs)
     const onAbort = () => {
-      killChild(child)
+      killChild(child, options.detached === true)
       finish(new Error('命令已取消'))
     }
     options.signal?.addEventListener('abort', onAbort, { once: true })
-    child.stdout?.on('data', (chunk: Buffer) => {
-      const text = chunk.toString()
+    child.stdout?.setEncoding('utf8')
+    child.stdout?.on('data', (text: string) => {
       out = (out + text).slice(-256 * 1024)
       options.onChunk?.(text)
     })
-    child.stderr?.on('data', (chunk: Buffer) => {
-      const text = chunk.toString()
+    child.stderr?.setEncoding('utf8')
+    child.stderr?.on('data', (text: string) => {
       out = (out + text).slice(-256 * 1024)
       options.onChunk?.(text)
     })
     child.on('error', (err) => finish(err))
     child.on('close', (code) => {
-      if (code === 0) finish()
-      else finish(new Error(`命令失败 (exit ${code}): ${out.trim().slice(-800) || 'no output'}`))
+      setImmediate(() => {
+        if (code === 0) finish()
+        else finish(new Error(`命令失败 (exit ${code}): ${out.trim().slice(-800) || 'no output'}`))
+      })
     })
   })
 }
@@ -331,8 +363,8 @@ function spawnShim(file: string, args: readonly string[], options: SpawnShimOpti
   })
 }
 
-function killChild(child: ChildProcess): void {
-  if (process.platform !== 'win32' && child.pid !== undefined) {
+function killChild(child: ChildProcess, detached: boolean = false): void {
+  if (detached && process.platform !== 'win32' && child.pid !== undefined) {
     try {
       process.kill(-child.pid, 'SIGTERM')
       return

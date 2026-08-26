@@ -1,7 +1,12 @@
-import { mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fetchOpts, parseSlug } from './api.js'
+import { dshHome } from './config-store.js'
+import { loadCatalog } from './expert/catalog.js'
+import { installItem } from './expert/install.js'
+import { packageRoot, profileDir } from './expert/paths.js'
 import { fetchBytes } from './http.js'
+import { catalogSkillSlug, findCatalogSkill } from './skill-aggregate.js'
 import { unzipToFiles } from './unzip.js'
 import type { InstalledSkill, InstallResult, PluginConfig } from './types.js'
 
@@ -35,7 +40,17 @@ export function parseVersion(raw: unknown): string {
   return v
 }
 
-export async function installSkill(slug: string, cfg: PluginConfig, deps: InstallDeps = defaultDeps, signal?: AbortSignal, version?: string): Promise<InstallResult> {
+export async function installSkill(slug: string, cfg: PluginConfig, deps: InstallDeps = defaultDeps, signal?: AbortSignal, version?: string, catalogId?: string): Promise<InstallResult> {
+  const raw = String(slug || '')
+  let lookup = raw
+  try {
+    lookup = parseSlug(raw)
+  }
+  catch {
+    lookup = raw.trim().toLowerCase()
+  }
+  const catalogItem = findCatalogSkill(lookup, catalogId)
+  if (catalogItem) return installFromCatalog(catalogItem, cfg)
   const id = parseSlug(slug)
   const requested = parseVersion(version)
   const files = await downloadSkillFiles(id, cfg, deps, signal, requested)
@@ -64,6 +79,52 @@ export async function installSkill(slug: string, cfg: PluginConfig, deps: Instal
     path: target,
     files: Object.keys(files).length,
   }
+}
+
+async function installFromCatalog(item: { id: string; title?: string; skill?: string }, cfg: PluginConfig): Promise<InstallResult> {
+  const home = dshHome()
+  const slug = catalogSkillSlug(item)
+  installItem({
+    catalog: loadCatalog(),
+    id: item.id,
+    home,
+    profileDir: profileDir(home),
+    packageRoot: packageRoot(),
+  })
+  const catalogDest = join(home, 'skills', slug)
+  const target = skillDir(cfg.skillsDir, slug)
+  if (resolve(catalogDest) !== resolve(target)) {
+    await mkdir(cfg.skillsDir, { recursive: true })
+    await rm(target, { recursive: true, force: true })
+    await cp(catalogDest, target, { recursive: true })
+  }
+  let skillMd = ''
+  try {
+    skillMd = await readFile(join(target, 'SKILL.md'), 'utf8')
+  }
+  catch {
+    throw new Error(`技能 ${slug} 缺少 SKILL.md`)
+  }
+  const meta = parseFrontmatter(skillMd)
+  return {
+    slug,
+    name: meta.name || item.title || slug,
+    version: meta.version || '',
+    path: target,
+    files: await countFiles(target),
+  }
+}
+
+async function countFiles(dir: string): Promise<number> {
+  let n = 0
+  const entries = await readdir(dir, { withFileTypes: true })
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue
+    const path = join(dir, entry.name)
+    if (entry.isDirectory()) n += await countFiles(path)
+    else n += 1
+  }
+  return n
 }
 
 async function downloadSkillFiles(slug: string, cfg: PluginConfig, deps: InstallDeps = defaultDeps, signal?: AbortSignal, version?: string): Promise<Record<string, Buffer>> {

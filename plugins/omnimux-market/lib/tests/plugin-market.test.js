@@ -4,7 +4,24 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { withDefaults } from '../config-store.js';
-import { buildPluginsUrl, fetchInstallPlan, fallbackPluginCategories, installMarketPlugin, installPlanUrl, listPluginCategories, listPlugins, mapMarketPlugin, mapPluginCategory, parsePluginCategory, parsePluginRef, pluginCategoriesUrl, resolveInstallSource, sanitizePluginAvatarUrl, sanitizePluginScope, sanitizePluginSort, githubRepoFromSpec, isMarketPluginInstalled, isPluginInstallBusy, readInstalledPlugins, withPluginInstallLock, } from '../plugin-market.js';
+import { buildPluginsUrl, CORE_PROTECTED_BUNDLES, fetchInstallPlan, fallbackPluginCategories, installMarketPlugin, installPlanUrl, isProtectedBundle, listPluginCategories, listPlugins, mapMarketPlugin, mapPluginCategory, parsePluginCategory, parsePluginRef, pluginCategoriesUrl, resolveInstallSource, sanitizePluginAvatarUrl, sanitizePluginScope, sanitizePluginSort, githubRepoFromSpec, isMarketPluginInstalled, isPluginInstallBusy, readInstalledPlugins, withPluginInstallLock, } from '../plugin-market.js';
+test('isProtectedBundle covers hub core plus omnimux-market and aliases', () => {
+    assert.deepEqual([...CORE_PROTECTED_BUNDLES], [
+        '@deepseek-ai/dsh-base',
+        '@deepseek-ai/dsh-web-app',
+        'omnimux',
+        'omnimux-market',
+    ]);
+    assert.equal(isProtectedBundle('@deepseek-ai/dsh-base'), true);
+    assert.equal(isProtectedBundle('@deepseek-ai/dsh-web-app'), true);
+    assert.equal(isProtectedBundle('omnimux'), true);
+    assert.equal(isProtectedBundle('omnimux-market'), true);
+    assert.equal(isProtectedBundle('dsh-base'), true);
+    assert.equal(isProtectedBundle('dsh-web-app'), true);
+    assert.equal(isProtectedBundle('dsh-better-sidebar'), false);
+    assert.equal(isProtectedBundle(''), true);
+    assert.equal(isProtectedBundle('dsh-better-sidebar', ['dsh-better-sidebar']), true);
+});
 test('parsePluginRef accepts GitHub owner/name', () => {
     assert.deepEqual(parsePluginRef('cocofhu', 'skillhub'), { owner: 'cocofhu', name: 'skillhub', fullName: 'cocofhu/skillhub' });
     assert.throws(() => parsePluginRef('../x', 'n'), /无效插件 owner/);

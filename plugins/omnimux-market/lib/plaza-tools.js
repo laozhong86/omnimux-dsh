@@ -233,7 +233,7 @@ export function createPlazaTools(roots, loadCatalog) {
             presentCall: (args) => ({ card: 'generic', title: `召唤 · ${args.id}`, content: [] }),
             presentResult: (_args, { isError, meta }) => ({
                 card: 'generic',
-                title: isError ? '召唤失败' : `召唤 · ${meta?.gesture || ''}`,
+                title: isError ? '召唤失败' : `召唤 · ${String(meta?.gesture || '')}`,
                 content: [],
             }),
             async execute(args, exec) {
@@ -282,7 +282,7 @@ export function createPlazaTools(roots, loadCatalog) {
         },
         {
             name: 'plaza_install',
-            description: 'Install a plaza catalog item by id without summoning. Reserved for connectors / skill packs. Expert path is disabled — for experts and teams use plaza_summon (install is included).',
+            description: 'Install a plaza catalog item by id without summoning. Internal/compat path. Agent should install connectors with connector_install. Reserved for connectors / skill packs. Expert path is disabled — for experts and teams use plaza_summon (install is included).',
             parameters: {
                 id: { type: 'string', required: true, description: 'Catalog id. Do not pass expert/team ids.' },
             },
@@ -297,7 +297,7 @@ export function createPlazaTools(roots, loadCatalog) {
             presentCall: (args) => ({ card: 'generic', title: `安装 · ${args.id}`, content: [] }),
             presentResult: (_args, { isError, meta }) => ({
                 card: 'generic',
-                title: isError ? '安装失败' : `已安装 · ${meta?.id || ''}`,
+                title: isError ? '安装失败' : `已安装 · ${String(meta?.id || '')}`,
                 content: [],
             }),
             async execute(args) {

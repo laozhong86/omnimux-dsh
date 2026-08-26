@@ -2,6 +2,7 @@ import { decorateCatalog } from './expert/catalog.js'
 import { findItem, installItem } from './expert/install.js'
 import { summonItem } from './expert/summon.js'
 import { readSessionExpert, sessionIdFromExec, writeSessionExpert } from './session-attach.js'
+import type { MarketToolSpec } from './types.js'
 
 /** Host / 测试共用的 DSH 根目录。 */
 export interface PlazaRoots {
@@ -185,7 +186,7 @@ function renderPlazaSummon(value: { id?: string, gesture?: string, skill?: strin
 /**
  * 组装 plaza_* 工具（不含注册）。广场逻辑集中在本文件，host 只负责 defineTool + prompt 段。
  */
-export function createPlazaTools(roots: () => PlazaRoots, loadCatalog: () => CatalogDoc) {
+export function createPlazaTools(roots: () => PlazaRoots, loadCatalog: () => CatalogDoc): MarketToolSpec[] {
   return [
     {
       name: 'plaza_search',
@@ -207,9 +208,9 @@ export function createPlazaTools(roots: () => PlazaRoots, loadCatalog: () => Cat
         kind: 'search',
         content: [],
       }),
-      presentResult: (_args: unknown, { isError, meta }: { isError?: boolean, meta?: { items?: unknown[] } }) => ({
+      presentResult: (_args: unknown, { isError, meta }: { isError?: boolean; meta?: Record<string, unknown> }) => ({
         card: 'generic',
-        title: isError ? '广场搜索失败' : `广场 · ${meta?.items?.length ?? 0} 条`,
+        title: isError ? '广场搜索失败' : `广场 · ${(meta as { items?: unknown[] } | undefined)?.items?.length ?? 0} 条`,
         content: [],
       }),
       async execute(args: Record<string, unknown>, exec?: unknown) {
@@ -253,9 +254,9 @@ export function createPlazaTools(roots: () => PlazaRoots, loadCatalog: () => Cat
         presentationMeta: (_args: unknown, value: unknown) => ({ kind: 'plaza-summon', ...(value as object) }),
       },
       presentCall: (args: Record<string, unknown>) => ({ card: 'generic', title: `召唤 · ${args.id}`, content: [] }),
-      presentResult: (_args: unknown, { isError, meta }: { isError?: boolean, meta?: { gesture?: string } }) => ({
+      presentResult: (_args: unknown, { isError, meta }: { isError?: boolean; meta?: Record<string, unknown> }) => ({
         card: 'generic',
-        title: isError ? '召唤失败' : `召唤 · ${meta?.gesture || ''}`,
+        title: isError ? '召唤失败' : `召唤 · ${String(meta?.gesture || '')}`,
         content: [],
       }),
       async execute(args: Record<string, unknown>, exec?: unknown) {
@@ -301,7 +302,7 @@ export function createPlazaTools(roots: () => PlazaRoots, loadCatalog: () => Cat
     {
       name: 'plaza_install',
       description:
-        'Install a plaza catalog item by id without summoning. Reserved for connectors / skill packs. Expert path is disabled — for experts and teams use plaza_summon (install is included).',
+        'Install a plaza catalog item by id without summoning. Internal/compat path. Agent should install connectors with connector_install. Reserved for connectors / skill packs. Expert path is disabled — for experts and teams use plaza_summon (install is included).',
       parameters: {
         id: { type: 'string', required: true, description: 'Catalog id. Do not pass expert/team ids.' },
       },
@@ -314,9 +315,9 @@ export function createPlazaTools(roots: () => PlazaRoots, loadCatalog: () => Cat
         presentationMeta: (_args: unknown, value: unknown) => ({ kind: 'plaza-install', ...(value as object) }),
       },
       presentCall: (args: Record<string, unknown>) => ({ card: 'generic', title: `安装 · ${args.id}`, content: [] }),
-      presentResult: (_args: unknown, { isError, meta }: { isError?: boolean, meta?: { id?: string } }) => ({
+      presentResult: (_args: unknown, { isError, meta }: { isError?: boolean; meta?: Record<string, unknown> }) => ({
         card: 'generic',
-        title: isError ? '安装失败' : `已安装 · ${meta?.id || ''}`,
+        title: isError ? '安装失败' : `已安装 · ${String(meta?.id || '')}`,
         content: [],
       }),
       async execute(args: Record<string, unknown>) {
