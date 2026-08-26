@@ -9,14 +9,15 @@ export const tableNodeDefinition: NodeDefinition = {
     { side: 'out', acceptedTypes: ['text', 'image', 'video', 'audio'] },
   ],
   defaultData: () => ({
-    title: '未命名表格',
+    label: '表格',
+    title: '表格',
     path: '',
     columnCount: 1,
     rowCount: 0,
   }),
   palette: {
     group: 'palette.group.data',
-    label: '结构化数据表',
+    label: '表格',
     icon: 'table',
   },
 };

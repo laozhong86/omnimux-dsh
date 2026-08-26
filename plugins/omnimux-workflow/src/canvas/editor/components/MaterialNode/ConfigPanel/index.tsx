@@ -14,6 +14,7 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
   Maximize2,
+  Plus,
   SlidersHorizontal,
   Music,
   Mic,
@@ -42,6 +43,7 @@ export interface ConfigPanelProps {
   onGenerate: () => void;
   /** 全图/其他节点执行中（禁用执行入口） */
   execBusy: boolean;
+  onOpenResourcePicker?: () => void;
 }
 
 function getModelVisuals(id: string) {
@@ -118,6 +120,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
   onUpdateNodeData,
   onGenerate,
   execBusy,
+  onOpenResourcePicker,
 }) => {
   const t = useT();
   const { materialType, selectedTool, params, prompt } = nodeData;
@@ -344,7 +347,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       <div className="wf-config-panel__prompt-container">
         <div className="wf-config-panel__prompt-header">
           {/* 左上角参考素材缩略图：只读展示，仅在有上游连线时渲染 */}
-          {upstreams.length > 0 ? (
+          {upstreams.length > 0 || onOpenResourcePicker ? (
             <div className="wf-config-panel__ref-slots-group">
               {upstreams.map((item) => (
                 <div
@@ -383,6 +386,16 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                   {item.hasMedia && <span className="wf-config-panel__ref-thumb-dot" />}
                 </div>
               ))}
+              {onOpenResourcePicker ? (
+                <button
+                  type="button"
+                  className="wf-config-panel__add-ref-btn"
+                  onClick={onOpenResourcePicker}
+                  title={t('picker.addRef')}
+                >
+                  <Plus size={14} />
+                </button>
+              ) : null}
             </div>
           ) : (
             <span />

@@ -670,4 +670,71 @@ describe('registerOfficialRoutes body parsing', () => {
     assert.equal(r3.status, 200)
     assert.equal(calls[2], '/api/social/v1/inbox-analytics/heatmap')
   })
+
+  it('aggregates overview onto the dashboard view model', async () => {
+    const calls = []
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client: {
+        async withPat(path) {
+          calls.push(path)
+          if (path === '/api/social/v1/accounts') {
+            return { accounts: [{ id: 'acc_tt_01', platform: 'tiktok', username: 'dsh_drama' }] }
+          }
+          if (String(path).startsWith('/api/social/v1/analytics/daily-metrics')) {
+            return {
+              dailyData: [{
+                date: '2026-08-02',
+                postCount: 2,
+                platforms: { tiktok: 2 },
+                metrics: { likes: 17, comments: 0, shares: 0, views: 930 },
+              }],
+              platformBreakdown: [{
+                platform: 'tiktok',
+                postCount: 2,
+                metrics: { likes: 17, views: 930, er: 1.83 },
+              }],
+            }
+          }
+          if (String(path).startsWith('/api/social/v1/analytics?') || String(path) === '/api/social/v1/analytics') {
+            return {
+              posts: [{
+                postId: 'live_ep1',
+                platform: 'tiktok',
+                content: 'Live episode',
+                publishedAt: '2026-08-02T10:00:00Z',
+                analytics: { likes: 17, views: 930, engagementRate: 1.83 },
+              }],
+            }
+          }
+          return { ok: true, path }
+        },
+      },
+    })
+    const result = await dispatcher.dispatch({
+      method: 'GET',
+      url: '/omnimux/analytics/overview?timeRange=30d&platform=tiktok',
+    })
+    assert.equal(result.status, 200)
+    assert.equal(result.body.kpi.bestPost.postId, 'live_ep1')
+    assert.equal(result.body.kpi.bestPost.views, 930)
+    assert.equal(result.body.kpi.engagementRate.value, 0.01828)
+    assert.equal(result.body.meta.boundAccountCount, 1)
+    assert.equal(result.body.meta.filterAccounts[0].id, 'acc_tt_01')
+    assert.ok(calls.some((path) => path === '/api/social/v1/accounts'))
+    assert.ok(calls.some((path) => String(path).includes('/api/social/v1/analytics/daily-metrics')))
+  })
+
+  it('returns 401 from aggregated overview when the hub is unsigned', async () => {
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client: {
+        async withPat() {
+          throw new OmnimuxError('needs-omnimux', 'sign in to OmniMux or set OMNIMUX_ACCESS_TOKEN')
+        },
+      },
+    })
+    const result = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/analytics/overview?timeRange=30d' })
+    assert.equal(result.status, 401)
+  })
 })

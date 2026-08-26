@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTableStore } from '../../../store/tableStore';
 import { StageTopbar } from './StageTopbar';
 import { VirtualDataGrid } from './VirtualDataGrid';
@@ -19,11 +20,11 @@ export const SpreadsheetStage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isStageOpen, closeStage]);
 
-  if (!isStageOpen) return null;
+  if (!isStageOpen || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
-      className="wf-stage-overlay"
+      className="wf-stage-overlay wf-canvas-root"
       onClick={() => setActivePopover(null)}
     >
       {/* 顶部工具条 */}
@@ -34,6 +35,7 @@ export const SpreadsheetStage: React.FC = () => {
 
       {/* 【添加列 / 编辑列】模态弹窗 */}
       <ModalColumnEditor />
-    </div>
+    </div>,
+    document.body,
   );
 };

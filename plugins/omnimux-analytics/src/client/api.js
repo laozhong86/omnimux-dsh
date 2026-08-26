@@ -1,10 +1,9 @@
 /**
- * Analytics dashboard fetch. Phase 3 consumes the local mock fixture by
- * default (`USE_MOCK=true`). Field names match the future Host aggregation
- * (`GET /omnimux/analytics/overview` + insights + followers + posts) so
- * flipping the switch does not rename anything.
+ * Analytics dashboard fetch. Live Host aggregation is the default.
+ * Field names match `GET /omnimux/analytics/overview` + insights + followers
+ * + posts so the mock fixture stays isomorphic.
  */
-import { USE_MOCK } from './defaults.js'
+import { resolveUseMock } from './defaults.js'
 import { applyDashboardQuery, materializeFixture } from './query.js'
 import fixture from './mock/dashboard-fixture.json' with { type: 'json' }
 import emptyStates from './mock/empty-states.json' with { type: 'json' }
@@ -87,17 +86,54 @@ export async function fetchDashboardMock(query = {}, opts = {}) {
   return applyDashboardQuery(materialized, query)
 }
 
-/**
- * Live Host fetch. Kept behind USE_MOCK; same field names as the mock.
- * @param {Record<string, string>} query
- */
-export async function fetchDashboardLive(query) {
+function hostQuery(query) {
   const params = {
     platform: query.platform ?? 'all',
     profileId: query.profileId ?? 'all',
-    source: query.source ?? 'all',
     timeRange: query.timeRange ?? '30d',
   }
+  if (query.source && query.source !== 'all') params.source = query.source
+  return params
+}
+
+function throwHttp(result) {
+  const error = new Error(String(result.body?.error || `HTTP ${result.status}`))
+  error.status = result.status
+  throw error
+}
+
+function emptyBlock(kind) {
+  if (kind === 'heatmap') {
+    return {
+      cells: Array.from({ length: 168 }, (_, i) => ({
+        dayOfWeek: Math.floor(i / 24),
+        hour: i % 24,
+        score: 0,
+        level: 0,
+        postCount: 0,
+      })),
+      maxScore: 0,
+      recommended: [],
+      dayLabelsZh: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      dayLabelsEn: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    }
+  }
+  if (kind === 'strategy') {
+    return {
+      cadence: { brackets: ['1-5/wk', '6-10/wk', '11+/wk'], series: [], optimal: [] },
+      accumulation: { windows: [], milestones: {} },
+    }
+  }
+  return { totalFollowers: null, platforms: [], timeline: [] }
+}
+
+/**
+ * Live Host fetch. Same field names as the mock fixture.
+ * Overview is required; insights / followers / posts degrade to empty blocks.
+ * @param {Record<string, string>} query
+ */
+export async function fetchDashboardLive(query) {
+  const params = hostQuery(query)
   const guarded = authGuard(analyticsRequest)
   const [overview, insights, followers, posts] = await Promise.all([
     guarded(HOST_PATHS.overview, { query: params }),
@@ -105,20 +141,98 @@ export async function fetchDashboardLive(query) {
     guarded(HOST_PATHS.followers, { query: params }),
     guarded(HOST_PATHS.posts, { query: params }),
   ])
-  const firstFail = [overview, insights, followers, posts].find((r) => !r.ok)
-  if (firstFail) {
-    const error = new Error(String(firstFail.body?.error || `HTTP ${firstFail.status}`))
-    error.status = firstFail.status
-    throw error
+  if (!overview.ok) {
+    const unauthorized = overview.status === 401
+    return applyDashboardQuery({
+      meta: { boundAccountCount: 0, authorizedPlatforms: [], filterAccounts: [], reachApprox: false },
+      syncStatus: {
+        lastSyncedAt: null,
+        nextSyncAt: null,
+        syncIntervalMs: 3_600_000,
+        syncing: false,
+        lastError: String(overview.body?.error || `HTTP ${overview.status}`),
+      },
+      kpi: {
+        engagementRate: { value: null },
+        totalReach: { value: null },
+        totalFollowers: { value: null },
+        followerDiff: { value: null },
+        postsCount: { value: null },
+        postsHealth: 'none',
+        bestPost: null,
+      },
+      basicCharts: { postsPerPlatform: { labels: [], platformIds: [], values: [], total: 0 }, postsOverTime: { grain: 'week', total: 0, buckets: [] }, likesPerPlatform: { labels: [], platformIds: [], values: [], total: 0 }, likesOverTime: { grain: 'week', total: 0, buckets: [] } },
+      engagementOverTime: { grain: 'week', buckets: [], labels: [], totals: {}, deltas: {}, series: [] },
+      heatmap: emptyBlock('heatmap'),
+      followerEvolution: emptyBlock('followers'),
+      platformBreakdown: [],
+      topPosts: [],
+      strategy: emptyBlock('strategy'),
+      emptyState: unauthorized
+        ? { code: 'unauthorized', action: 'login' }
+        : { code: 'fetch_failed', action: 'retry' },
+    }, query)
   }
+  const kpi = { ...(overview.body?.kpi || {}) }
+  if (followers.ok && followers.body?.kpiPatch) Object.assign(kpi, followers.body.kpiPatch)
   const payload = {
     ...overview.body,
-    heatmap: insights.body?.heatmap ?? overview.body?.heatmap,
-    strategy: insights.body?.strategy ?? overview.body?.strategy,
-    followerEvolution: followers.body?.followerEvolution ?? overview.body?.followerEvolution,
-    topPosts: posts.body?.topPosts ?? overview.body?.topPosts,
+    kpi,
+    heatmap: insights.ok ? (insights.body?.heatmap ?? overview.body?.heatmap) : emptyBlock('heatmap'),
+    strategy: insights.ok ? (insights.body?.strategy ?? overview.body?.strategy) : emptyBlock('strategy'),
+    followerEvolution: followers.ok
+      ? (followers.body?.followerEvolution ?? overview.body?.followerEvolution)
+      : emptyBlock('followers'),
+    topPosts: posts.ok
+      ? (posts.body?.topPosts ?? overview.body?.topPosts)
+      : (overview.body?.topPosts ?? []),
+  }
+  const BLOCK_LABEL = {
+    insights: '热力图 / 策略分析',
+    followers: '粉丝演进',
+    posts: '爆款排行',
+    overview: '核心指标',
+  }
+  const failed = [
+    !insights.ok && { key: 'insights', status: insights.status, error: insights.body?.error },
+    !followers.ok && { key: 'followers', status: followers.status, error: followers.body?.error },
+    !posts.ok && { key: 'posts', status: posts.status, error: posts.body?.error },
+  ].filter(Boolean)
+  if (failed.length) {
+    const names = failed.map((row) => BLOCK_LABEL[row.key] || row.key).join('、')
+    const detail = `未拉到：${names}（${failed.map((row) => `${row.key} ${row.status}${row.error ? ` ${row.error}` : ''}`).join('；')}）`
+    const unauthorized = failed.some((row) => row.status === 401)
+    if (!payload.emptyState || payload.emptyState.code === 'network_error') {
+      payload.emptyState = {
+        code: unauthorized ? 'unauthorized' : 'network_error',
+        action: unauthorized ? 'login' : 'retry',
+        detail: payload.emptyState?.detail ? `${payload.emptyState.detail}；${detail}` : detail,
+      }
+    }
+    payload.syncStatus = {
+      ...(payload.syncStatus || {}),
+      lastError: detail,
+    }
   }
   return applyDashboardQuery(payload, query)
+}
+
+/**
+ * Bound accounts for the FilterBar. Browser-safe Host list — never the hub client.
+ */
+export async function fetchAccounts() {
+  const result = await authGuard(analyticsRequest)('/omnimux/accounts')
+  if (!result.ok) throwHttp(result)
+  const accounts = Array.isArray(result.body?.accounts) ? result.body.accounts : []
+  return accounts.map((row) => ({
+    id: String(row.id),
+    label: row.username
+      ? `${String(row.username).startsWith('@') ? row.username : `@${row.username}`}${row.platform ? `（${row.platform}）` : ''}`
+      : String(row.display_name || row.name || row.id),
+    platform: row.platform || '',
+    status: row.status || 'active',
+    expired: row.status === 'expired' || row.status === 'error',
+  }))
 }
 
 /**
@@ -126,7 +240,7 @@ export async function fetchDashboardLive(query) {
  * @param {{ now?: number, variant?: string, useMock?: boolean }} [opts]
  */
 export async function fetchDashboard(query = {}, opts = {}) {
-  const useMock = opts.useMock ?? USE_MOCK
+  const useMock = resolveUseMock(opts.useMock)
   if (useMock) return fetchDashboardMock(query, opts)
   return fetchDashboardLive(query)
 }
@@ -138,7 +252,7 @@ export async function fetchDashboard(query = {}, opts = {}) {
  * @param {{ now?: number, useMock?: boolean }} [opts]
  */
 export async function syncNow(query = {}, opts = {}) {
-  const useMock = opts.useMock ?? USE_MOCK
+  const useMock = resolveUseMock(opts.useMock)
   if (useMock) {
     await wait(SYNC_LATENCY_MS)
     const payload = await fetchDashboardMock(query, { now: opts.now ?? Date.now() })

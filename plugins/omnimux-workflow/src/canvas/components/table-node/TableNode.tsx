@@ -1,75 +1,162 @@
-import React, { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import React, { memo, useState, useCallback, useMemo } from 'react';
+import { useViewport, type NodeProps } from '@xyflow/react';
+import {
+  Table,
+  Plus,
+  Maximize2,
+  FileSpreadsheet,
+  Layers,
+} from 'lucide-react';
 import { useTableStore } from '../../store/tableStore';
+import NodeHeader from '../../editor/components/MaterialNode/NodeHeader';
+import CanvasNodeHandle from '../../editor/components/CanvasNodeHandle';
+import { inverseScaleForZoom } from '../../editor/utils/nodeVisualMath';
 
-export const TableNode: React.FC<NodeProps> = memo(({ id, selected }) => {
+const DEFAULT_TABLE_NODE_WIDTH = 380;
+const DEFAULT_TABLE_NODE_HEIGHT = 280;
+
+export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
   const { document, openStage, addRow } = useTableStore();
+  const [isHovered, setIsHovered] = useState(false);
+  const { zoom } = useViewport();
+  const inverseScale = useMemo(() => inverseScaleForZoom(zoom), [zoom]);
+
   const rows = document.rows || [];
   const firstCol = document.columns[0];
+  const nodeTitle = (data as any)?.label || document.title || '表格';
+
+  const showFloatingPill = isHovered || selected;
 
   return (
-    <div className="wf-table-node">
-      {/* 节点左上方外挂标题 */}
-      <div className="wf-table-node__header">
-        <svg className="wf-table-node__header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <path d="M3 9h18M3 15h18M9 3v18" />
-        </svg>
-        <span>{document.title || '未命名表格'}</span>
-      </div>
-
-      {/* 节点顶部中央悬浮操作条 */}
-      <div className="wf-table-node__actions">
-        <button
-          type="button"
-          className="wf-table-node__action-btn"
-          title="添加数据行"
-          onClick={(e) => {
-            e.stopPropagation();
-            addRow();
+    <div
+      className={`wf-material-node ${selected ? 'wf-material-node--selected' : ''}`}
+      style={{ width: DEFAULT_TABLE_NODE_WIDTH }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* 顶部悬浮胶囊栏 (统一风格) */}
+      {showFloatingPill && (
+        <div
+          className="wf-floating-top-pill"
+          style={{
+            top: -38 * inverseScale,
+            transform: `translateX(-50%) scale(${inverseScale})`,
+            transformOrigin: 'bottom center',
           }}
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="4" y="4" width="16" height="16" rx="2" />
-            <path d="M9 12h6M12 9v6" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          className="wf-table-node__action-btn"
-          title="全屏独立编辑表格"
-          onClick={(e) => {
-            e.stopPropagation();
-            openStage();
-          }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-          </svg>
-        </button>
-      </div>
+          <div className="wf-floating-top-pill__group">
+            <button
+              type="button"
+              className="wf-floating-top-pill__btn"
+              title="添加数据行"
+              onClick={(e) => {
+                e.stopPropagation();
+                addRow();
+              }}
+            >
+              <Plus size={14} />
+              <span>添加行</span>
+            </button>
+            <button
+              type="button"
+              className="wf-floating-top-pill__btn"
+              title="全屏表格编辑"
+              onClick={(e) => {
+                e.stopPropagation();
+                openStage();
+              }}
+            >
+              <Maximize2 size={13} />
+              <span>全屏编辑</span>
+            </button>
+          </div>
+        </div>
+      )}
 
-      {/* 节点主卡片 */}
+      {/* 左侧输入 Handle */}
+      <CanvasNodeHandle side="left" nodeHovered={isHovered} />
+
+      {/* 统一节点标题栏 */}
+      <NodeHeader
+        label={nodeTitle}
+        materialType="table"
+      />
+
+      {/* 统一材质主卡片 */}
       <div
-        className={`wf-table-node__card ${selected ? 'wf-table-node__card--selected' : ''}`}
+        className="wf-material-node__card"
+        style={{
+          width: DEFAULT_TABLE_NODE_WIDTH,
+          height: DEFAULT_TABLE_NODE_HEIGHT,
+        }}
         onDoubleClick={() => openStage()}
       >
-        {/* 卡片表头预览 */}
-        <div className="wf-table-node__card-head">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--wb-text-secondary)' }}>
-            <path d="M4 6h16M4 12h10M4 18h16" />
-          </svg>
-          <span>{firstCol?.title || '文本'}</span>
-        </div>
+        {/* 四角缩放定位点 (统一风格) */}
+        {selected && (
+          <>
+            <span className="wf-node-corner wf-node-corner--tl" />
+            <span className="wf-node-corner wf-node-corner--tr" />
+            <span className="wf-node-corner wf-node-corner--bl" />
+            <span className="wf-node-corner wf-node-corner--br" />
+          </>
+        )}
 
-        {/* 卡片内容体 */}
-        <div className="wf-table-node__card-body">
-          {rows.length === 0 ? (
-            <div className="wf-table-node__empty-state">
-              暂无数据 — 点击下方 + 添加一行
+        {/* 空态或内容展示 */}
+        {rows.length === 0 ? (
+          <div className="wf-node-empty wf-node-empty--text" style={{ padding: '24px 16px', height: '100%', boxSizing: 'border-box' }}>
+            <div className="wf-node-empty__icon-box">
+              <Table size={32} strokeWidth={1.75} className="wf-node-empty__icon" />
             </div>
-          ) : (
-            <div className="wf-table-node__preview-list">
+            <div className="wf-node-empty__try-label">试试:</div>
+            <div
+              className="wf-node-empty__actions nodrag"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="wf-node-empty__pill-btn"
+                onClick={() => addRow()}
+              >
+                <Plus size={14} className="wf-node-empty__pill-icon" />
+                <span>添加首行数据</span>
+              </button>
+              <button
+                type="button"
+                className="wf-node-empty__pill-btn"
+                onClick={() => openStage()}
+              >
+                <Maximize2 size={13} className="wf-node-empty__pill-icon" />
+                <span>双击全屏编辑表格</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* 卡片表头 */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 14px',
+                borderBottom: '1px solid var(--wb-border)',
+                background: 'color-mix(in srgb, var(--wb-surface) 60%, transparent)',
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'var(--wb-text-secondary)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <FileSpreadsheet size={14} />
+                <span>{firstCol?.title || '文本'}</span>
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--wb-text-muted)', fontFamily: 'monospace' }}>
+                共 {rows.length} 行
+              </span>
+            </div>
+
+            {/* 记录预览列表 */}
+            <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto' }}>
               {rows.slice(0, 3).map((r, idx) => {
                 const cellVal = r.cells[0];
                 const previewText =
@@ -82,8 +169,21 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, selected }) => {
                     : '（空记录）';
 
                 return (
-                  <div key={idx} className="wf-table-node__preview-item">
-                    <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 420 }}>
+                  <div
+                    key={idx}
+                    style={{
+                      padding: '8px 12px',
+                      background: 'color-mix(in srgb, var(--wb-surface) 40%, transparent)',
+                      border: '1px solid var(--wb-border)',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      color: 'var(--wb-text-primary)',
+                    }}
+                  >
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 280 }}>
                       {previewText}
                     </span>
                     <span style={{ color: 'var(--wb-text-muted)', fontFamily: 'monospace', fontSize: 11 }}>
@@ -94,33 +194,17 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, selected }) => {
               })}
 
               {rows.length > 3 && (
-                <div style={{ fontSize: 11, color: 'var(--wb-text-muted)', textAlign: 'center', marginTop: 4 }}>
-                  ... 共 {rows.length} 条记录
+                <div style={{ fontSize: 11, color: 'var(--wb-text-muted)', textAlign: 'center', marginTop: 2 }}>
+                  ... 更多记录双击卡片查看
                 </div>
               )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* 4 处微调角标 */}
-      <div className="wf-table-node__corner-handle wf-table-node__corner-handle--nw" />
-      <div className="wf-table-node__corner-handle wf-table-node__corner-handle--ne" />
-      <div className="wf-table-node__corner-handle wf-table-node__corner-handle--sw" />
-      <div className="wf-table-node__corner-handle wf-table-node__corner-handle--se" />
-
-      {/* 右侧 DAG 批处理衍生端口 (+) */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="table-batch-out"
-        className="!w-8 !h-8 !bg-white !border-2 !border-slate-300 hover:!border-blue-600 !rounded-full !shadow-sm !flex !items-center !justify-center !text-slate-600 hover:!text-blue-600 !transition-transform hover:!scale-110 !-right-10 !top-1/2 !-translate-y-1/2"
-      >
-        <svg width="15" height="15" pointerEvents="none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-      </Handle>
+      {/* 右侧输出 Handle (统一端口，支持 DAG 批处理衍生) */}
+      <CanvasNodeHandle side="right" nodeHovered={isHovered} />
     </div>
   );
 });

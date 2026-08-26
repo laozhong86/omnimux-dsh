@@ -8,7 +8,7 @@ export const PLATFORM_LABEL = {
 }
 
 export const PROFILE_OPTIONS = [
-  { value: 'all', labelKey: 'filter.account.all' },
+  { value: 'all', labelKey: 'filter.all' },
   { value: 'main', labelKey: 'filter.account.main' },
   { value: 'sub', labelKey: 'filter.account.sub' },
 ]

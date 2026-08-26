@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "build": "node scripts/build-client.mjs",
-    "test": "node --test src/*.test.js src/client/*.test.js"
+    "test": "OMNIMUX_ANALYTICS_MOCK=1 node --test src/*.test.js src/client/*.test.js"
   },
   "dsh": {
     "bundle": {

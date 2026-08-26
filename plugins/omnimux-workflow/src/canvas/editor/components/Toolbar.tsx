@@ -37,7 +37,7 @@ import {
 
 export type CanvasPointerMode = 'select' | 'pan';
 
-export type CanvasAddNodeType = MaterialType | 'table';
+export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition';
 
 export interface ToolbarProps {
   onAddNode: (type: CanvasAddNodeType) => void;
@@ -65,6 +65,7 @@ const ADD_NODE_ITEMS: Array<{
   { type: 'video', Icon: Video, color: '#fb923c', bg: 'rgba(249, 115, 22, 0.16)' },
   { type: 'audio', Icon: Music, color: '#34d399', bg: 'rgba(16, 185, 129, 0.16)' },
   { type: 'table', Icon: Table, color: '#10b981', bg: 'rgba(16, 185, 129, 0.16)' },
+  { type: 'video_composition', Icon: Film, color: '#f472b6', bg: 'rgba(244, 114, 182, 0.16)' },
 ];
 
 const Toolbar: React.FC<ToolbarProps> = ({

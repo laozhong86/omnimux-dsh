@@ -160,6 +160,16 @@ export const ANALYTICS_CSS = `
 .omnimux-analytics-banner[data-code="network_error"] {
   border-color: var(--dsw-alias-state-warn-primary, #b45309);
 }
+.omnimux-analytics-banner-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.omnimux-analytics-banner-detail {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary, rgba(128,128,128,.7));
+}
 
 .omnimux-analytics-kpi-grid {
   display: grid;
@@ -228,10 +238,16 @@ export const ANALYTICS_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   font-size: 10px;
   font-weight: 700;
   color: var(--dsw-alias-label-primary-inverted, #fff);
   background: var(--dsw-alias-brand-primary, #6366f1);
+}
+.omnimux-analytics-best-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .omnimux-analytics-best-views {
   margin: 0;

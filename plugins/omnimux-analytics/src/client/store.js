@@ -68,11 +68,12 @@ function getSnapshot() {
  */
 function commitPayload(payload, query) {
   const applied = applyDashboardQuery(payload, query)
-  cache.set(cacheKey(query), { at: Date.now(), payload })
-  const empty = applied.emptyState && applied.emptyState.code === 'no_accounts'
+  const code = applied.emptyState && applied.emptyState.code
+  const empty = code === 'no_accounts' || code === 'unauthorized' || code === 'fetch_failed'
+  if (!empty) cache.set(cacheKey(query), { at: Date.now(), payload })
   setState({
     payload: applied,
-    snapshot: payload,
+    snapshot: empty ? state.snapshot : payload,
     phase: empty ? 'empty' : 'ready',
     lastError: payload.syncStatus?.lastError ?? null,
     syncing: Boolean(payload.syncStatus?.syncing),

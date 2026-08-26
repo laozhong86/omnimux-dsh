@@ -32,7 +32,11 @@ function BestPostCard({ t, post }) {
     <article className="omnimux-analytics-kpi omnimux-analytics-kpi-best">
       <h3 className="omnimux-analytics-kpi-title">{t('kpi.bestPost')}</h3>
       <div className="omnimux-analytics-best">
-        <div className="omnimux-analytics-best-cover" aria-hidden="true">{post.coverLabel || t('kpi.coverFallback')}</div>
+        <div className="omnimux-analytics-best-cover" aria-hidden="true">
+          {post.coverUrl
+            ? <img src={post.coverUrl} alt="" />
+            : (post.coverLabel || t('kpi.coverFallback'))}
+        </div>
         <div className="omnimux-analytics-best-copy">
           <p className="omnimux-analytics-best-views">
             <strong>{formatCount(post.views)}</strong>

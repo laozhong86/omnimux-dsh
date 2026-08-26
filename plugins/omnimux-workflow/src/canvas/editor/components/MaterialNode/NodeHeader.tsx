@@ -9,7 +9,7 @@
 
 import React, { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { useViewport } from '@xyflow/react';
-import { FileText, ImagePlus, Video, Music } from 'lucide-react';
+import { FileText, ImagePlus, Video, Music, Table } from 'lucide-react';
 import type { MaterialType } from '../../../types/materialNode';
 import { useT } from '../../../i18n';
 import { inverseScaleForZoom } from '../../utils/nodeVisualMath';
@@ -21,18 +21,19 @@ const HEADER_HEIGHT = 24;
 const MAX_LABEL_LENGTH = 30;
 
 /** 素材类型 → lucide 图标（替换 M1-M5 的 emoji 表） */
-const MATERIAL_TYPE_ICON_COMPONENTS: Record<MaterialType, React.ComponentType<{ size?: number }>> = {
+const MATERIAL_TYPE_ICON_COMPONENTS: Record<MaterialType | 'table', React.ComponentType<{ size?: number }>> = {
   text: FileText,
   image: ImagePlus,
   video: Video,
   audio: Music,
+  table: Table,
 };
 
 export interface NodeHeaderProps {
   /** 节点标签（用户可编辑） */
   label?: string;
   /** 素材类型 */
-  materialType: MaterialType;
+  materialType: MaterialType | 'table';
   /** 标签变化回调（接 updateNodeData） */
   onLabelChange?: (newLabel: string) => void;
   /** 头部右侧附加内容（执行状态徽标） */

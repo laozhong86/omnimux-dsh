@@ -67,8 +67,11 @@ describe('authGuard', () => {
 })
 
 describe('HOST_PATHS', () => {
-  it('keeps the Phase-1 Host route names so the mock can flip without renaming', () => {
+  it('keeps the Host route names so the mock can flip without renaming', () => {
     assert.equal(HOST_PATHS.overview, '/omnimux/analytics/overview')
+    assert.equal(HOST_PATHS.insights, '/omnimux/analytics/insights')
+    assert.equal(HOST_PATHS.followers, '/omnimux/analytics/followers')
+    assert.equal(HOST_PATHS.posts, '/omnimux/analytics/posts')
     assert.equal(HOST_PATHS.sync, '/omnimux/analytics/sync')
   })
 })

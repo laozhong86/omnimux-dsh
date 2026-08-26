@@ -1,0 +1,31 @@
+{
+  "id": "omnimux-clip",
+  "name": "omnimux-clip",
+  "version": "0.1.0",
+  "tier": "tier-1-app",
+  "entrypoint": "src/index.js",
+  "status": "active",
+  "description": "OmniMux Clip / AI 剪辑工坊：独立多轨剪辑 overlay，与画布只交换 JSON。",
+  "tags": ["clip", "nle", "timeline", "video-editor", "overlay"],
+  "capabilities": {
+    "tools": [],
+    "seamsProvided": [
+      {
+        "name": "clipEditor",
+        "interfaceDoc": "src/seam/types.js"
+      }
+    ],
+    "seamsConsumed": ["mediaSeam"],
+    "slots": [
+      {
+        "target": "shell.overlay",
+        "componentPath": "src/client/ClipOverlay.jsx"
+      }
+    ],
+    "storageDomains": ["$DSH_HOME/omnimux/clip/"]
+  },
+  "dependencies": {
+    "requiredPlugins": ["omnimux"],
+    "systemBinaries": []
+  }
+}

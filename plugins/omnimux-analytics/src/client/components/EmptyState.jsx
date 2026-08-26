@@ -23,7 +23,7 @@ export function EmptyState({ t, hint, onAction }) {
         </g>
       </svg>
       <h2 className="omnimux-analytics-empty-title">{t(`empty.${code}.title`)}</h2>
-      <p className="omnimux-analytics-empty-text">{t(`empty.${code}.description`)}</p>
+      <p className="omnimux-analytics-empty-text">{hint?.detail || t(`empty.${code}.description`)}</p>
       {hint?.action && onAction ? (
         <Button variant="primary" onClick={() => onAction(hint.action)}>
           {actionLabel(t, hint)}
@@ -55,7 +55,10 @@ export function Banner({ t, hint, onAction }) {
   if (!hint?.code) return null
   return (
     <div className="omnimux-analytics-banner" data-code={hint.code} role="status">
-      <span>{t(`empty.${hint.code}.title`)}</span>
+      <div className="omnimux-analytics-banner-copy">
+        <span>{t(`empty.${hint.code}.title`)}</span>
+        {hint.detail ? <span className="omnimux-analytics-banner-detail">{hint.detail}</span> : null}
+      </div>
       {hint.action && onAction ? (
         <Button variant="outline" size="sm" onClick={() => onAction(hint.action)}>
           {actionLabel(t, hint)}

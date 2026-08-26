@@ -2,13 +2,13 @@
  * FloatingTopPill — 悬浮在材质卡片上方的胶囊操作栏。
  *
  * 视觉对齐设计参考：
- * - 图片/视频/音频：[ ⇪ 导入图片/视频/音频 ] 胶囊，点击拉起本地文件选择，同时支持拖拽。
+ * - 图片/视频/音频：[ ⇪ 导入图片/视频/音频 ] 胶囊，点击打开选择资源弹窗（默认本地上传 Tab）。
  * - 文本：[ ✎ 文本编辑 ] [ ❐ 复制 ] [ ≡+ 结构化拆分 ] 三联操作胶囊。
  *
  * 交互：反向缩放保持恒定像素，防止画布缩放时过小或失真。
  */
 
-import React, { memo, useRef, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { useViewport } from '@xyflow/react';
 import {
   Upload,
@@ -24,7 +24,7 @@ import { inverseScaleForZoom } from '../../utils/nodeVisualMath';
 export interface FloatingTopPillProps {
   materialType: MaterialType;
   selected?: boolean;
-  onImportFile?: (file: File) => void;
+  onOpenResourcePicker?: () => void;
   onStartTextEdit?: () => void;
   onCopyText?: () => void;
   onSplitText?: () => void;
@@ -33,29 +33,16 @@ export interface FloatingTopPillProps {
 const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
   materialType,
   selected,
-  onImportFile,
+  onOpenResourcePicker,
   onStartTextEdit,
   onCopyText,
   onSplitText,
 }) => {
   const t = useT();
   const { zoom } = useViewport();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = React.useState(false);
 
   const inverseScale = useMemo(() => inverseScaleForZoom(zoom), [zoom]);
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file && onImportFile) {
-        onImportFile(file);
-      }
-      // 重置 input 以便重复选相同文件
-      e.target.value = '';
-    },
-    [onImportFile],
-  );
 
   const handleCopy = useCallback(() => {
     if (onCopyText) {
@@ -64,19 +51,6 @@ const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
       setTimeout(() => setCopied(false), 1500);
     }
   }, [onCopyText]);
-
-  const acceptType = useMemo(() => {
-    switch (materialType) {
-      case 'image':
-        return 'image/*';
-      case 'video':
-        return 'video/*';
-      case 'audio':
-        return 'audio/*';
-      default:
-        return '*/*';
-    }
-  }, [materialType]);
 
   const importLabel = useMemo(() => {
     switch (materialType) {
@@ -140,17 +114,10 @@ const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
         </div>
       ) : (
         <div className="wf-floating-top-pill__single">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={acceptType}
-            style={{ display: 'none' }}
-            onChange={handleFileChange}
-          />
           <button
             type="button"
             className="wf-floating-top-pill__btn"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={onOpenResourcePicker}
           >
             <Upload size={13} className="wf-floating-top-pill__icon" />
             <span>{importLabel}</span>

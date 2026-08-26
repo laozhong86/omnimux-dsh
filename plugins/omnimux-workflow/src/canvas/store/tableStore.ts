@@ -70,7 +70,7 @@ function cloneDoc(doc: HTableDocument): HTableDocument {
 
 const defaultInitialDocument: HTableDocument = {
   version: 1,
-  title: '未命名表格',
+  title: '表格',
   rowHeight: 'low',
   columns: [
     { id: 'col_text', title: '文本', type: 'text', visible: true, width: 280 },

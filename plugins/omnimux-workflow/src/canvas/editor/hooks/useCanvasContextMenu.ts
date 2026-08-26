@@ -8,8 +8,6 @@ import type { Node } from '@xyflow/react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { ContextMenuAction, ContextMenuContext, CanvasAddNodeType } from '../components/ContextMenu';
 
-import type { MaterialType } from '../../types/materialNode';
-
 export interface MenuState {
   x: number;
   y: number;
@@ -180,7 +178,7 @@ export function useCanvasContextMenu(deps: CanvasContextMenuDeps) {
   );
 
   const handleAddNodeFromMenu = useCallback(
-    (type: MaterialType) => {
+    (type: CanvasAddNodeType) => {
       const flowPosition = screenToFlowPosition({ x: menu.x, y: menu.y });
       onAddNode?.(type, flowPosition);
       closeMenu();

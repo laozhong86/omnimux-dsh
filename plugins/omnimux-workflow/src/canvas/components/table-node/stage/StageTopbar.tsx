@@ -1,4 +1,13 @@
 import React from 'react';
+import {
+  Table,
+  Settings2,
+  Filter,
+  AlignJustify,
+  Undo2,
+  Redo2,
+  X,
+} from 'lucide-react';
 import { useTableStore } from '../../../store/tableStore';
 import { PopoverFieldConfig } from './popovers/PopoverFieldConfig';
 import { PopoverFilterBuilder } from './popovers/PopoverFilterBuilder';
@@ -35,17 +44,21 @@ export const StageTopbar: React.FC = () => {
         setActivePopover(null);
       }}
     >
-      {/* 左侧：单一内联可编辑表名 */}
+      {/* 左侧：表格标识与可编辑表名（精炼清晰，无冗余返回按键） */}
       <div className="wf-stage-topbar__left">
-        <input
-          type="text"
-          className="wf-stage-title-input"
-          value={document.title || '未命名表格'}
-          onChange={(e) => setTitle(e.target.value)}
-        />
+        <div className="wf-stage-title-group">
+          <Table size={16} className="wf-stage-title-icon" />
+          <input
+            type="text"
+            className="wf-stage-title-input"
+            value={document.title || '表格'}
+            placeholder="输入表格名称..."
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
       </div>
 
-      {/* 右侧：三大配置按钮与操作群 */}
+      {/* 右侧：纯业务配置按钮与操作群 + 顶层关闭按钮 */}
       <div className="wf-stage-topbar__right">
         {/* 1. 【字段配置】按钮 + 锚定面板 */}
         <div className="wf-stage-btn-wrapper">
@@ -57,11 +70,7 @@ export const StageTopbar: React.FC = () => {
               setActivePopover(isFieldConfigOpen ? null : 'field-config');
             }}
           >
-            {/* 齿轮图标 */}
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
+            <Settings2 size={15} />
             <span>字段配置</span>
           </button>
 
@@ -78,10 +87,7 @@ export const StageTopbar: React.FC = () => {
               setActivePopover(isFilterOpen ? null : 'filter');
             }}
           >
-            {/* 漏斗图标 */}
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
+            <Filter size={15} />
             <span>筛选</span>
 
             {/* 蓝色小圆点徽标 */}
@@ -101,15 +107,7 @@ export const StageTopbar: React.FC = () => {
               setActivePopover(isRowHeightOpen ? null : 'row-height');
             }}
           >
-            {/* 三↕ 行高图标 */}
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="4" y1="6" x2="14" y2="6" />
-              <line x1="4" y1="12" x2="10" y2="12" />
-              <line x1="4" y1="18" x2="14" y2="18" />
-              <polyline points="18 4 21 7 18 10" />
-              <line x1="21" y1="7" x2="21" y2="17" />
-              <polyline points="18 14 21 17 18 20" />
-            </svg>
+            <AlignJustify size={15} />
             <span>行高</span>
           </button>
 
@@ -126,10 +124,7 @@ export const StageTopbar: React.FC = () => {
           title="撤销 (Cmd+Z)"
           onClick={undo}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 7v6h6" />
-            <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-          </svg>
+          <Undo2 size={16} />
         </button>
 
         {/* 5. 重做 (Cmd+Shift+Z) */}
@@ -140,25 +135,22 @@ export const StageTopbar: React.FC = () => {
           title="重做 (Cmd+Shift+Z)"
           onClick={redo}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 7v6h-6" />
-            <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
-          </svg>
+          <Redo2 size={16} />
         </button>
 
         <div className="wf-stage-divider" />
 
-        {/* 6. 关闭 (Esc) */}
+        {/* 6. 右上角关闭按钮 (Esc) */}
         <button
           type="button"
-          className="wf-stage-icon-btn"
-          title="关闭 (Esc)"
-          onClick={closeStage}
+          className="wf-stage-icon-btn wf-stage-close-btn"
+          title="关闭全屏编辑 (Esc)"
+          onClick={(e) => {
+            e.stopPropagation();
+            closeStage();
+          }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <X size={16} />
         </button>
       </div>
     </header>

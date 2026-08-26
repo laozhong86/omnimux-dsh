@@ -1,7 +1,7 @@
 import { DEFAULT_QUERY } from './defaults.js'
 import { filterTopPosts } from './sort.js'
 
-export const FETCH_KEYS = /** @type {const} */ (['platform', 'profileId', 'source', 'timeRange'])
+export const FETCH_KEYS = /** @type {const} */ (['platform', 'profileId', 'timeRange'])
 
 /**
  * Cache key ignores searchQuery (client-side title/id filter) and tab
@@ -13,7 +13,6 @@ export function cacheKey(query) {
   return JSON.stringify({
     platform: q.platform,
     profileId: q.profileId,
-    source: q.source,
     timeRange: q.timeRange,
   })
 }
@@ -48,8 +47,8 @@ export function materializeFixture(raw, now = Date.now()) {
 
 /**
  * Apply the current filter query onto a dashboard payload. Search only
- * touches `topPosts`. A concrete platform drops other rows from the
- * breakdown / ranking tables; KPI totals stay as the host sent them.
+ * touches `topPosts` client-side. Platform / account / range are Host
+ * concerns — do not slice KPI or charts here.
  * @param {Record<string, unknown>} payload
  * @param {Partial<typeof DEFAULT_QUERY>} query
  */
@@ -59,12 +58,6 @@ export function applyDashboardQuery(payload, query) {
   next.filtersEcho = q
   if (Array.isArray(next.topPosts)) {
     next.topPosts = filterTopPosts(next.topPosts, q.searchQuery)
-    if (q.platform !== 'all') {
-      next.topPosts = next.topPosts.filter((row) => row.platform === q.platform)
-    }
-  }
-  if (q.platform !== 'all' && Array.isArray(next.platformBreakdown)) {
-    next.platformBreakdown = next.platformBreakdown.filter((row) => row.platform === q.platform)
   }
   return next
 }

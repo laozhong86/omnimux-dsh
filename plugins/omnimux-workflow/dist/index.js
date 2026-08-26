@@ -19190,6 +19190,30 @@ function createMaterialGatewayExecutor(opts) {
   };
 }
 
+// src/workflow/execution/videoCompositionExecutor.ts
+function createVideoCompositionExecutor() {
+  return {
+    key: "video_composition",
+    async execute(node) {
+      const data = node.data ?? {};
+      const videoUrl = typeof data.outputVideoUrl === "string" && data.outputVideoUrl.trim() || typeof data.outputVideoPath === "string" && data.outputVideoPath.trim() || "";
+      if (!videoUrl) {
+        throw new Error("needs-clip-export: \u8BF7\u5148\u5728\u526A\u8F91\u5DE5\u574A\u5BFC\u51FA\u6210\u7247");
+      }
+      const thumbnail = typeof data.thumbnailUrl === "string" && data.thumbnailUrl.trim() || typeof data.outputThumbnailUrl === "string" && data.outputThumbnailUrl.trim() || void 0;
+      return {
+        mediaAssets: [
+          {
+            type: "video",
+            url: videoUrl,
+            thumbnail
+          }
+        ]
+      };
+    }
+  };
+}
+
 // src/workflow/execution/ExecutionManager.ts
 var LOG_TAG6 = "ExecutionManager";
 var RECORD_SYNC_INTERVAL_MS = 5e3;
@@ -19218,6 +19242,7 @@ function createExecutionManager(deps) {
   const { executionsDir, gateway, mediaDir } = deps;
   const entries = /* @__PURE__ */ new Map();
   registerExecutor(createMaterialGatewayExecutor({ gateway }));
+  registerExecutor(createVideoCompositionExecutor());
   const persistRecord = (entry) => {
     try {
       saveExecutionRecord(executionsDir, buildExecutionRecord({
@@ -30029,6 +30054,14 @@ function getNodeOutputInfo(node) {
     }
     return { nodeType, materialType, hasOutput };
   }
+  if (nodeType === "video_composition") {
+    const videoUrl = typeof data.outputVideoUrl === "string" ? data.outputVideoUrl : "";
+    return {
+      nodeType,
+      materialType: "video",
+      hasOutput: Boolean(videoUrl) || data.status === "completed"
+    };
+  }
   return { nodeType, hasOutput: true };
 }
 function getNodeInputRequirements(node) {
@@ -30050,6 +30083,9 @@ function getNodeInputRequirements(node) {
       }
     }
     return { nodeType, selectedTool, acceptedTypes: [...acceptedTypesSet] };
+  }
+  if (nodeType === "video_composition") {
+    return { nodeType, acceptedTypes: ["text", "image", "video", "audio"] };
   }
   return { nodeType, acceptedTypes: ["text", "image", "video", "audio"] };
 }

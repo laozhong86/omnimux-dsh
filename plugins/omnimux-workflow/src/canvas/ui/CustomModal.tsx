@@ -13,6 +13,8 @@ export interface CustomModalProps {
   title?: React.ReactNode;
   footer?: React.ReactNode;
   width?: number | string;
+  className?: string;
+  bodyClassName?: string;
   children: React.ReactNode;
 }
 
@@ -22,6 +24,8 @@ export const CustomModal: React.FC<CustomModalProps> = ({
   title,
   footer,
   width = 640,
+  className,
+  bodyClassName,
   children,
 }) => {
   useEffect(() => {
@@ -40,9 +44,9 @@ export const CustomModal: React.FC<CustomModalProps> = ({
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div className="wf-modal-overlay" onClick={onCancel}>
+    <div className="wf-modal-overlay wf-canvas-root" onClick={onCancel}>
       <div
-        className="wf-modal-card"
+        className={['wf-modal-card', className].filter(Boolean).join(' ')}
         style={{ width }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -58,7 +62,7 @@ export const CustomModal: React.FC<CustomModalProps> = ({
           </button>
         </div>
 
-        <div className="wf-modal-body">{children}</div>
+        <div className={['wf-modal-body', bodyClassName].filter(Boolean).join(' ')}>{children}</div>
 
         {footer ? <div className="wf-modal-footer">{footer}</div> : null}
       </div>

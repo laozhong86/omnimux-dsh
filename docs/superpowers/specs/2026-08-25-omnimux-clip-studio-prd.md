@@ -1,10 +1,10 @@
 # PRD：OmniMux 独立视频剪辑插件（OmniMux Clip Studio）及画布解耦集成规格书
 
 > **文档状态**：已定稿 (Ready for Architecture & Engineering)  
-> **版本**：v1.0.0  
+> **版本**：v1.1.0（架构去冗余：确定成片由 `omnimux-clip` 内置纯前端 WebCodecs/WebGPU 自包含导出，零 FFmpeg 强依赖）  
 > **编写人**：齐活林（DSH 插件交付总监）  
 > **参考对标**：MiniMax Design (`clip-studio` / OpenReel Video 架构)  
-> **目标插件**：`product/omnimux-dsh/plugins/dsh-clip` (或 `omnimux-clip`) 与 `omnimux-workflow` 画布集成
+> **目标插件**：id / 目录 **`omnimux-clip`**（kebab-case）→ `product/omnimux-dsh/plugins/omnimux-clip/`；与 `omnimux-workflow` 画布集成。**禁止** `dsh-clip` / `OmniMux-clip`。
 
 ---
 
@@ -19,7 +19,7 @@
 在 MiniMax Design 中，剪辑器作为独立插件（`bundled-plugins/clip-studio`，基于 MIT 开源的 **OpenReel Video**）存在，画布上的 `video_composition` 节点仅作为**轻量级启动代理卡片（Launcher Card）**。宿主通过标准数据通道（Input/Output Schema）与剪辑器进行双向数据流转。
 
 ### 1.3 产品目标
-1. **独立插件化**：新建 `dsh-clip`（AI 剪辑工坊）独立插件，剥离并沉淀完整的 WebCodecs + WebGPU + Canvas 多轨时间轴剪辑能力。
+1. **独立插件化**：新建 T1 平台插件 `omnimux-clip`（显示名：OmniMux Clip / AI 剪辑工坊），剥离并沉淀完整的 WebCodecs + WebGPU + Canvas 多轨时间轴剪辑能力。
 2. **画布彻底解耦**：移除 `omnimux-workflow` 内所有旧剪辑实现，将 `video_composition` 节点改造为轻量级代理，支持“双击/点击打开剪辑器”。
 3. **双向数据流闭环**：
    - **输入**：画布将上游生成节点（图片/视频/TTS 音频/分镜提示词）聚合为剪辑初始化工程（`ClipEditorOpenPayload`）；
@@ -42,7 +42,7 @@
                                                      │ (ClipBridge Seam)
                                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                 独立插件：dsh-clip / omnimux-clip (OpenReel 引擎)            │
+│                 独立插件：omnimux-clip / omnimux-clip (OpenReel 引擎)            │
 │                                                                             │
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
 │   │                      Client UI 视图层 (React)                       │   │
@@ -106,7 +106,7 @@
 
 ---
 
-### 3.2 独立剪辑插件功能规格 (`dsh-clip`)
+### 3.2 独立剪辑插件功能规格 (`omnimux-clip`)
 
 #### A. 视听与多轨编辑（OpenReel 核心能力）
 1. **多轨道支持**：
@@ -125,8 +125,8 @@
 #### B. 顶部操作栏与返回机制
 - **「保存并返回画布」**：将当前时间轴的最新 `TimelineSchema` 与封面截图保存并写回画布节点，关闭全屏剪辑器回到画布。
 - **「导出视频」**：
-  - 模式 1（纯前端快速导出）：基于 WebCodecs + WebGPU 客户端硬件编码导出 MP4；
-  - 模式 2（高品质工程导出）：将 Schema 提交给本地 `dsh-video`（FFmpeg 后端）进行无损排版与滤镜渲染，完成后回填视频路径。
+  - **纯前端硬件加速极速导出**：基于 WebCodecs (`VideoEncoder`/`AudioEncoder`) + WebGPU/Canvas + `mediabunny` 离屏逐帧渲染合成，直接在客户端本地生成高画质 MP4 文件，落盘并回写画布。
+  - **优势**：100% 像素级所见即所得，花字特效、字幕排版、着色器转场零失真，且无需安装任何外部 FFmpeg 二进制。
 
 ---
 
@@ -194,8 +194,8 @@ export interface SaveClipEditorPayload {
 ```
 /Users/x/Desktop/Project/dsh-plugin/
 ├── product/omnimux-dsh/plugins/
-│   ├── dsh-clip/                     <-- [新建] 独立视频剪辑插件
-│   │   ├── dsh.manifest.json         <-- 声明 id: "dsh-clip", 包含 project.* tools
+│   ├── omnimux-clip/                     <-- [新建] 独立视频剪辑插件
+│   │   ├── dsh.manifest.json         <-- 声明 id: "omnimux-clip"（kebab-case），tools 为 clip_*
 │   │   ├── package.json
 │   │   ├── LICENSE (MIT - OpenReel)
 │   │   ├── src/
@@ -206,7 +206,7 @@ export interface SaveClipEditorPayload {
 │   │   │   │   ├── components/       <-- Stage, Timeline, Track, Inspector
 │   │   │   │   └── ClipStudioModal.tsx <-- 全屏/模态容器
 │   │   │   └── seam/                 <-- 跨插件桥接协议
-│   │   └── skills/                   <-- Agent 剪辑专家 Skill (plugin.clip-studio.craft)
+│   │   └── skills/                   <-- Agent 剪辑专家 Skill (plugin.omnimux-clip.craft)
 │   │
 │   ├── omnimux-workflow/             <-- [改造] 画布插件
 │   │   └── src/canvas/nodes/definitions/
@@ -222,6 +222,6 @@ export interface SaveClipEditorPayload {
 | 阶段 | 责任人 | 核心任务 |
 | :--- | :--- | :--- |
 | **Phase 1: 协议与依赖解耦** | **齐活林 / 许清楚** | • 审核 PRD 规格书并冻结数据契约<br>• 清理 `omnimux-workflow` 中旧有的冗余剪辑代码与未使用的 store |
-| **Phase 2: 独立插件脚手架与引擎移植** | **高见远 / 林深** | • 搭建 `dsh-clip` 插件结构并配置 `dsh.manifest.json`<br>• 引入 OpenReel 的 WebCodecs、WebGPU/Canvas 渲染器与多轨 Zustand 状态机<br>• 实现与 `dsh-video`（FFmpeg）后端的渲染桥接 |
+| **Phase 2: 独立插件脚手架与引擎移植** | **高见远 / 林深** | • 搭建 `omnimux-clip` 插件结构并配置 `dsh.manifest.json`<br>• 引入 OpenReel 的 WebCodecs、WebGPU/Canvas 渲染器与多轨 Zustand 状态机<br>• 实现与 `dsh-video`（FFmpeg）后端的渲染桥接 |
 | **Phase 3: 画布代理节点联调与双向通信** | **林深** | • 改造 `videoComposition.tsx` 代理卡片<br>• 联调数据通路：连线素材 → 初始化工程 → 剪辑器交互 → 结果写回画布 |
 | **Phase 4: 合规审计、L2 隔离验证与交付** | **严过关** | • 审计 MIT 开源协议与 THIRD_PARTY_NOTICES<br>• 在 L2 Web 隔离实例上验证 4K 播放流畅度、内存回收与 Undo/Redo 稳定性<br>• 执行 `omnimux.mjs sync` 完成零重启热生效交付 |

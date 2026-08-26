@@ -22,9 +22,9 @@ import {
   Video,
 } from 'lucide-react';
 import { useT } from '../../i18n';
-import type { MaterialType } from '../../../types/materialNode';
+import type { MaterialType } from '../../types/materialNode';
 
-export type CanvasAddNodeType = MaterialType | 'table';
+export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition';
 
 export type ContextMenuAction =
   | 'copy'
@@ -191,6 +191,16 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         badge: {
           text: 'HTable',
           variant: 'primary',
+        },
+      },
+      {
+        key: 'video_composition',
+        type: 'video_composition',
+        label: t('node.type.video_composition'),
+        icon: <Film size={18} />,
+        badge: {
+          text: 'Clip',
+          variant: 'new',
         },
       },
     ];

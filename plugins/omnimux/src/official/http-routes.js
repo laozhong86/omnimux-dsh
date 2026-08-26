@@ -13,6 +13,13 @@ import {
   syncExternalPosts,
   getInboxAnalytics,
 } from './analytics.js'
+import {
+  aggregateFollowers,
+  aggregateInsights,
+  aggregateOverview,
+  aggregatePosts,
+  aggregateSync,
+} from './analytics-aggregate.js'
 import { createOfficialClient } from './client.js'
 import { DEFAULT_ACCOUNT_AVATARS, parseOfficialConfig } from './config.js'
 import { computeStatus, filterRows, localAvatarUrl, pickAccountsView, pickConnectView } from './public-account.js'
@@ -324,7 +331,44 @@ export function createOfficialDispatcher(deps = {}) {
         return { status: 200, body: { ok: true } }
       }
 
-      // --- Analytics Routes ---
+      // --- Analytics dashboard facade (UI view model) ---
+      if (method === 'GET' && path === '/omnimux/analytics/overview') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await aggregateOverview(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path === '/omnimux/analytics/insights') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await aggregateInsights(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path === '/omnimux/analytics/followers') {
+        const query = Object.fromEntries(url.searchParams.entries())
+        const data = await aggregateFollowers(client, query)
+        return { status: 200, body: data }
+      }
+      if (method === 'POST' && path === '/omnimux/analytics/sync') {
+        const body = req.body && typeof req.body === 'object' ? /** @type {Record<string, unknown>} */ (req.body) : {}
+        const data = await aggregateSync(client, body)
+        return { status: 200, body: data }
+      }
+      if (method === 'GET' && path === '/omnimux/analytics/sync') {
+        const now = Date.now()
+        return {
+          status: 200,
+          body: {
+            syncStatus: {
+              lastSyncedAt: now,
+              nextSyncAt: now + 3_600_000,
+              syncIntervalMs: 3_600_000,
+              syncing: false,
+              lastError: null,
+            },
+          },
+        }
+      }
+
+      // --- Analytics raw PAT passthrough (Agent / debug) ---
       if (method === 'GET' && path === '/omnimux/analytics/daily-metrics') {
         const query = Object.fromEntries(url.searchParams.entries())
         const data = await getDailyMetrics(client, query)
@@ -352,6 +396,10 @@ export function createOfficialDispatcher(deps = {}) {
       }
       if (method === 'GET' && path === '/omnimux/analytics/posts') {
         const query = Object.fromEntries(url.searchParams.entries())
+        if (query.timeRange) {
+          const data = await aggregatePosts(client, query)
+          return { status: 200, body: data }
+        }
         const data = await getPostAnalytics(client, query)
         return { status: 200, body: data }
       }

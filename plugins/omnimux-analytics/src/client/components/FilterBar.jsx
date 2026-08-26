@@ -3,13 +3,30 @@ import { PLATFORMS, PROFILE_OPTIONS, RANGE_OPTIONS, SOURCE_OPTIONS } from '../co
 
 /**
  * Layer 3: 48px single-row cascade — platform, account, source, range + 220px search.
+ * Account options come from Host `meta.filterAccounts` when live.
  */
-export function FilterBar({ t, query, onChange, disabled }) {
+export function FilterBar({ t, query, onChange, disabled, accounts }) {
   const platformOptions = [
-    { value: 'all', label: t('filter.platform.all') },
+    { value: 'all', label: t('filter.all') },
     ...PLATFORMS.map((id) => ({ value: id, label: t(`platform.${id}`) })),
   ]
-  const profileOptions = PROFILE_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }))
+  const hasLive = Array.isArray(accounts)
+  const liveAccounts = hasLive ? accounts : []
+  const profileOptions = [
+    { value: 'all', label: t('filter.all') },
+    ...(hasLive
+      ? liveAccounts.map((row) => ({
+          value: row.id,
+          label: row.expired ? `${row.label} ⚠` : row.label,
+        }))
+      : PROFILE_OPTIONS.filter((opt) => opt.value !== 'all').map((opt) => ({
+          value: opt.value,
+          label: t(opt.labelKey),
+        }))),
+  ]
+  if (query.profileId && query.profileId !== 'all' && !profileOptions.some((opt) => opt.value === query.profileId)) {
+    profileOptions.push({ value: query.profileId, label: query.profileId })
+  }
   const sourceOptions = SOURCE_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }))
   const rangeOptions = RANGE_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }))
 
@@ -20,21 +37,24 @@ export function FilterBar({ t, query, onChange, disabled }) {
         filters={(
           <>
             <DropdownSelect
-              value={query.platform}
+              value={query.platform === 'all' ? undefined : query.platform}
+              placeholder={t('filter.platform')}
               options={platformOptions}
               aria-label={t('filter.platform')}
               disabled={disabled}
               onChange={(platform) => onChange({ platform })}
             />
             <DropdownSelect
-              value={query.profileId}
+              value={query.profileId === 'all' ? undefined : query.profileId}
+              placeholder={t('filter.account')}
               options={profileOptions}
               aria-label={t('filter.account')}
               disabled={disabled}
               onChange={(profileId) => onChange({ profileId })}
             />
             <DropdownSelect
-              value={query.source}
+              value={query.source === 'all' ? undefined : query.source}
+              placeholder={t('filter.source')}
               options={sourceOptions}
               aria-label={t('filter.source')}
               disabled={disabled}
@@ -42,6 +62,7 @@ export function FilterBar({ t, query, onChange, disabled }) {
             />
             <DropdownSelect
               value={query.timeRange}
+              placeholder={t('filter.timeRange')}
               options={rangeOptions}
               aria-label={t('filter.timeRange')}
               disabled={disabled}

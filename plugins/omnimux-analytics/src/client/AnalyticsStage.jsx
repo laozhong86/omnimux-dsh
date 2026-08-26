@@ -91,7 +91,6 @@ export function AnalyticsStage({ t, stage }) {
   const handleTheme = () => {
     const next = store.theme === 'dark' ? 'light' : 'dark'
     store.setTheme(next)
-    try { document.documentElement.setAttribute('data-theme', next) } catch {}
   }
 
   const handleExport = () => {
@@ -103,7 +102,7 @@ export function AnalyticsStage({ t, stage }) {
 
   const payload = store.payload
   const empty = payload?.emptyState
-  const blockingEmpty = empty?.code === 'no_accounts' || empty?.code === 'unauthorized'
+  const blockingEmpty = empty?.code === 'no_accounts' || empty?.code === 'unauthorized' || empty?.code === 'fetch_failed'
   const locale = readLocale()
 
   return (
@@ -142,6 +141,7 @@ export function AnalyticsStage({ t, stage }) {
       <FilterBar
         t={t}
         query={store.query}
+        accounts={payload?.meta?.filterAccounts}
         disabled={store.syncing}
         onChange={(patch) => store.setQuery(patch)}
       />
@@ -153,12 +153,12 @@ export function AnalyticsStage({ t, stage }) {
         ) : blockingEmpty ? (
           <EmptyState t={t} hint={empty} onAction={handleAction} />
         ) : !payload ? (
-          <EmptyState t={t} hint={{ code: 'network_error', action: 'retry' }} onAction={handleAction} />
+          <EmptyState t={t} hint={{ code: 'fetch_failed', action: 'retry' }} onAction={handleAction} />
         ) : (
           <>
             {empty && empty.code !== 'no_accounts' ? <Banner t={t} hint={empty} onAction={handleAction} /> : null}
             {store.lastError && empty?.code !== 'network_error' ? (
-              <Banner t={t} hint={{ code: 'network_error', action: 'retry' }} onAction={handleAction} />
+              <Banner t={t} hint={{ code: 'network_error', action: 'retry', detail: store.lastError }} onAction={handleAction} />
             ) : null}
             <KpiGrid t={t} kpi={payload.kpi} timeRange={store.query.timeRange} />
             <BasicCharts t={t} basicCharts={payload.basicCharts} timeRange={store.query.timeRange} />

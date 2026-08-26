@@ -57,12 +57,10 @@ var zh = {
   "sync.minutesLater": "{n}\u5206\u949F\u540E",
   "filter.platform": "\u5E73\u53F0",
   "filter.account": "\u8D26\u53F7",
-  "filter.source": "\u6765\u6E90",
+  "filter.source": "\u53D1\u5E03\u65B9\u5F0F",
   "filter.timeRange": "\u65F6\u95F4\u8DE8\u5EA6",
   "filter.search": "\u641C\u7D22\u5E16\u5B50\u6807\u9898\u6216 ID",
   "filter.all": "\u5168\u90E8",
-  "filter.platform.all": "\u5168\u90E8\u5E73\u53F0",
-  "filter.account.all": "\u5168\u90E8\u8D26\u53F7\u77E9\u9635",
   "filter.account.main": "@dsh_drama_center\uFF08\u4E3B\u8D26\u53F7\uFF09",
   "filter.account.sub": "@dsh_short_clips\uFF08\u77E9\u9635 2 \u53F7\uFF09",
   "filter.source.manual": "\u624B\u52A8",
@@ -148,8 +146,10 @@ var zh = {
   "empty.auth_expired.title": "\u90E8\u5206\u8D26\u53F7\u6388\u6743\u5DF2\u8FC7\u671F",
   "empty.auth_expired.description": "\u8FC7\u671F\u8D26\u53F7\u7684\u6307\u6807\u53EF\u80FD\u4E0D\u5B8C\u6574\uFF0C\u8BF7\u524D\u5F80\u8D26\u53F7\u4E2D\u5FC3\u91CD\u65B0\u6388\u6743\u3002",
   "empty.auth_expired.action": "\u524D\u5F80\u91CD\u65B0\u6388\u6743",
-  "empty.network_error.title": "\u6570\u636E\u540C\u6B65\u5931\u8D25\uFF0C\u5DF2\u4FDD\u7559\u4E0A\u6B21\u5FEB\u7167",
-  "empty.network_error.description": "\u7F51\u7EDC\u6216\u4E0A\u6E38\u6682\u65F6\u4E0D\u53EF\u7528\u3002\u5927\u76D8\u4ECD\u663E\u793A\u4E0A\u4E00\u6B21\u6210\u529F\u7ED3\u679C\u3002",
+  "empty.network_error.title": "\u90E8\u5206\u6307\u6807\u540C\u6B65\u5931\u8D25",
+  "empty.network_error.description": "\u4E91\u7AEF\u90E8\u5206\u63A5\u53E3\u6682\u65F6\u4E0D\u53EF\u7528\u3002\u5DF2\u663E\u793A\u80FD\u62FF\u5230\u7684\u6570\u636E\uFF0C\u53EF\u70B9\u91CD\u8BD5\u3002",
+  "empty.fetch_failed.title": "\u6682\u65F6\u65E0\u6CD5\u52A0\u8F7D\u6570\u636E\u5206\u6790",
+  "empty.fetch_failed.description": "\u4E2D\u67A2\u672A\u80FD\u62C9\u5230\u6307\u6807\u3002\u53EF\u70B9\u91CD\u8BD5\uFF1B\u82E5\u521A\u66F4\u65B0\u8FC7\u540E\u7AEF\u8DEF\u7531\uFF0C\u9700\u8981\u91CD\u542F OmniMux \u540E\u624D\u4F1A\u751F\u6548\u3002",
   "login": "\u767B\u5F55",
   "retry": "\u91CD\u8BD5"
 };
@@ -178,12 +178,10 @@ var en = {
   "sync.minutesLater": "in {n} min",
   "filter.platform": "Platform",
   "filter.account": "Account",
-  "filter.source": "Source",
+  "filter.source": "Publish Method",
   "filter.timeRange": "Range",
   "filter.search": "Search post title or ID",
   "filter.all": "All",
-  "filter.platform.all": "All platforms",
-  "filter.account.all": "All profiles",
   "filter.account.main": "@dsh_drama_center (primary)",
   "filter.account.sub": "@dsh_short_clips (matrix #2)",
   "filter.source.manual": "Manual",
@@ -269,8 +267,10 @@ var en = {
   "empty.auth_expired.title": "Some accounts need reauthorization",
   "empty.auth_expired.description": "Expired accounts may report incomplete metrics.",
   "empty.auth_expired.action": "Reauthorize",
-  "empty.network_error.title": "Sync failed; keeping the last snapshot",
-  "empty.network_error.description": "The board still shows the last successful result.",
+  "empty.network_error.title": "Some metrics failed to sync",
+  "empty.network_error.description": "A cloud endpoint is temporarily unavailable. Showing whatever loaded; retry to fill the rest.",
+  "empty.fetch_failed.title": "Could not load analytics",
+  "empty.fetch_failed.description": "The hub could not fetch metrics. Retry, or restart OmniMux if the analytics routes were just updated.",
   "login": "Sign in",
   "retry": "Retry"
 };
@@ -280,9 +280,22 @@ var STAGE_ID = "omnimux-analytics";
 var SLOT_ID = "omnimux-analytics-stage";
 var SIDEBAR_RANK = 4.5;
 var OVERLAY_ORDER = 22;
-var USE_MOCK = true;
+var USE_MOCK = false;
 var CACHE_TTL_MS = 5e3;
 var FILTER_DEBOUNCE_MS = 300;
+function resolveUseMock(explicit) {
+  if (typeof explicit === "boolean") return explicit;
+  if (typeof process !== "undefined" && process.env?.OMNIMUX_ANALYTICS_MOCK === "1") return true;
+  if (typeof window !== "undefined") {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("analytics_mock") === "1") return true;
+      if (window.localStorage?.getItem("omnimux-analytics-mock") === "1") return true;
+    } catch {
+    }
+  }
+  return USE_MOCK;
+}
 var DEFAULT_QUERY = Object.freeze({
   tab: "posting",
   platform: "all",
@@ -592,6 +605,16 @@ var ANALYTICS_CSS = `
 .omnimux-analytics-banner[data-code="network_error"] {
   border-color: var(--dsw-alias-state-warn-primary, #b45309);
 }
+.omnimux-analytics-banner-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.omnimux-analytics-banner-detail {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary, rgba(128,128,128,.7));
+}
 
 .omnimux-analytics-kpi-grid {
   display: grid;
@@ -660,10 +683,16 @@ var ANALYTICS_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   font-size: 10px;
   font-weight: 700;
   color: var(--dsw-alias-label-primary-inverted, #fff);
   background: var(--dsw-alias-brand-primary, #6366f1);
+}
+.omnimux-analytics-best-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .omnimux-analytics-best-views {
   margin: 0;
@@ -1099,14 +1128,13 @@ function filterTopPosts(posts, searchQuery) {
 // src/client/query.js
 var FETCH_KEYS = (
   /** @type {const} */
-  ["platform", "profileId", "source", "timeRange"]
+  ["platform", "profileId", "timeRange"]
 );
 function cacheKey(query) {
   const q = { ...DEFAULT_QUERY, ...query };
   return JSON.stringify({
     platform: q.platform,
     profileId: q.profileId,
-    source: q.source,
     timeRange: q.timeRange
   });
 }
@@ -1133,12 +1161,6 @@ function applyDashboardQuery(payload, query) {
   next.filtersEcho = q;
   if (Array.isArray(next.topPosts)) {
     next.topPosts = filterTopPosts(next.topPosts, q.searchQuery);
-    if (q.platform !== "all") {
-      next.topPosts = next.topPosts.filter((row) => row.platform === q.platform);
-    }
-  }
-  if (q.platform !== "all" && Array.isArray(next.platformBreakdown)) {
-    next.platformBreakdown = next.platformBreakdown.filter((row) => row.platform === q.platform);
   }
   return next;
 }
@@ -3115,13 +3137,41 @@ async function fetchDashboardMock(query = {}, opts = {}) {
   const materialized = materializeFixture(raw, opts.now ?? Date.now());
   return applyDashboardQuery(materialized, query);
 }
-async function fetchDashboardLive(query) {
+function hostQuery(query) {
   const params = {
     platform: query.platform ?? "all",
     profileId: query.profileId ?? "all",
-    source: query.source ?? "all",
     timeRange: query.timeRange ?? "30d"
   };
+  if (query.source && query.source !== "all") params.source = query.source;
+  return params;
+}
+function emptyBlock(kind) {
+  if (kind === "heatmap") {
+    return {
+      cells: Array.from({ length: 168 }, (_, i) => ({
+        dayOfWeek: Math.floor(i / 24),
+        hour: i % 24,
+        score: 0,
+        level: 0,
+        postCount: 0
+      })),
+      maxScore: 0,
+      recommended: [],
+      dayLabelsZh: ["\u5468\u4E00", "\u5468\u4E8C", "\u5468\u4E09", "\u5468\u56DB", "\u5468\u4E94", "\u5468\u516D", "\u5468\u65E5"],
+      dayLabelsEn: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    };
+  }
+  if (kind === "strategy") {
+    return {
+      cadence: { brackets: ["1-5/wk", "6-10/wk", "11+/wk"], series: [], optimal: [] },
+      accumulation: { windows: [], milestones: {} }
+    };
+  }
+  return { totalFollowers: null, platforms: [], timeline: [] };
+}
+async function fetchDashboardLive(query) {
+  const params = hostQuery(query);
   const guarded = authGuard(analyticsRequest);
   const [overview, insights, followers, posts] = await Promise.all([
     guarded(HOST_PATHS.overview, { query: params }),
@@ -3129,28 +3179,82 @@ async function fetchDashboardLive(query) {
     guarded(HOST_PATHS.followers, { query: params }),
     guarded(HOST_PATHS.posts, { query: params })
   ]);
-  const firstFail = [overview, insights, followers, posts].find((r) => !r.ok);
-  if (firstFail) {
-    const error = new Error(String(firstFail.body?.error || `HTTP ${firstFail.status}`));
-    error.status = firstFail.status;
-    throw error;
+  if (!overview.ok) {
+    const unauthorized = overview.status === 401;
+    return applyDashboardQuery({
+      meta: { boundAccountCount: 0, authorizedPlatforms: [], filterAccounts: [], reachApprox: false },
+      syncStatus: {
+        lastSyncedAt: null,
+        nextSyncAt: null,
+        syncIntervalMs: 36e5,
+        syncing: false,
+        lastError: String(overview.body?.error || `HTTP ${overview.status}`)
+      },
+      kpi: {
+        engagementRate: { value: null },
+        totalReach: { value: null },
+        totalFollowers: { value: null },
+        followerDiff: { value: null },
+        postsCount: { value: null },
+        postsHealth: "none",
+        bestPost: null
+      },
+      basicCharts: { postsPerPlatform: { labels: [], platformIds: [], values: [], total: 0 }, postsOverTime: { grain: "week", total: 0, buckets: [] }, likesPerPlatform: { labels: [], platformIds: [], values: [], total: 0 }, likesOverTime: { grain: "week", total: 0, buckets: [] } },
+      engagementOverTime: { grain: "week", buckets: [], labels: [], totals: {}, deltas: {}, series: [] },
+      heatmap: emptyBlock("heatmap"),
+      followerEvolution: emptyBlock("followers"),
+      platformBreakdown: [],
+      topPosts: [],
+      strategy: emptyBlock("strategy"),
+      emptyState: unauthorized ? { code: "unauthorized", action: "login" } : { code: "fetch_failed", action: "retry" }
+    }, query);
   }
+  const kpi = { ...overview.body?.kpi || {} };
+  if (followers.ok && followers.body?.kpiPatch) Object.assign(kpi, followers.body.kpiPatch);
   const payload = {
     ...overview.body,
-    heatmap: insights.body?.heatmap ?? overview.body?.heatmap,
-    strategy: insights.body?.strategy ?? overview.body?.strategy,
-    followerEvolution: followers.body?.followerEvolution ?? overview.body?.followerEvolution,
-    topPosts: posts.body?.topPosts ?? overview.body?.topPosts
+    kpi,
+    heatmap: insights.ok ? insights.body?.heatmap ?? overview.body?.heatmap : emptyBlock("heatmap"),
+    strategy: insights.ok ? insights.body?.strategy ?? overview.body?.strategy : emptyBlock("strategy"),
+    followerEvolution: followers.ok ? followers.body?.followerEvolution ?? overview.body?.followerEvolution : emptyBlock("followers"),
+    topPosts: posts.ok ? posts.body?.topPosts ?? overview.body?.topPosts : overview.body?.topPosts ?? []
   };
+  const BLOCK_LABEL = {
+    insights: "\u70ED\u529B\u56FE / \u7B56\u7565\u5206\u6790",
+    followers: "\u7C89\u4E1D\u6F14\u8FDB",
+    posts: "\u7206\u6B3E\u6392\u884C",
+    overview: "\u6838\u5FC3\u6307\u6807"
+  };
+  const failed = [
+    !insights.ok && { key: "insights", status: insights.status, error: insights.body?.error },
+    !followers.ok && { key: "followers", status: followers.status, error: followers.body?.error },
+    !posts.ok && { key: "posts", status: posts.status, error: posts.body?.error }
+  ].filter(Boolean);
+  if (failed.length) {
+    const names = failed.map((row) => BLOCK_LABEL[row.key] || row.key).join("\u3001");
+    const detail = `\u672A\u62C9\u5230\uFF1A${names}\uFF08${failed.map((row) => `${row.key} ${row.status}${row.error ? ` ${row.error}` : ""}`).join("\uFF1B")}\uFF09`;
+    const unauthorized = failed.some((row) => row.status === 401);
+    if (!payload.emptyState || payload.emptyState.code === "network_error") {
+      payload.emptyState = {
+        code: unauthorized ? "unauthorized" : "network_error",
+        action: unauthorized ? "login" : "retry",
+        detail: payload.emptyState?.detail ? `${payload.emptyState.detail}\uFF1B${detail}` : detail
+      };
+    }
+    payload.syncStatus = {
+      ...payload.syncStatus || {},
+      lastError: detail
+    };
+  }
   return applyDashboardQuery(payload, query);
 }
 async function fetchDashboard(query = {}, opts = {}) {
-  const useMock = opts.useMock ?? USE_MOCK;
+  const useMock = resolveUseMock(opts.useMock);
   if (useMock) return fetchDashboardMock(query, opts);
   return fetchDashboardLive(query);
 }
 async function syncNow(query = {}, opts = {}) {
-  const useMock = opts.useMock ?? USE_MOCK;
+  const useMock = resolveUseMock(opts.useMock);
   if (useMock) {
     await wait(SYNC_LATENCY_MS);
     const payload = await fetchDashboardMock(query, { now: opts.now ?? Date.now() });
@@ -3206,11 +3310,12 @@ function getSnapshot() {
 }
 function commitPayload(payload, query) {
   const applied = applyDashboardQuery(payload, query);
-  cache.set(cacheKey(query), { at: Date.now(), payload });
-  const empty = applied.emptyState && applied.emptyState.code === "no_accounts";
+  const code = applied.emptyState && applied.emptyState.code;
+  const empty = code === "no_accounts" || code === "unauthorized" || code === "fetch_failed";
+  if (!empty) cache.set(cacheKey(query), { at: Date.now(), payload });
   setState({
     payload: applied,
-    snapshot: payload,
+    snapshot: empty ? state.snapshot : payload,
     phase: empty ? "empty" : "ready",
     lastError: payload.syncStatus?.lastError ?? null,
     syncing: Boolean(payload.syncStatus?.syncing)
@@ -4020,7 +4125,7 @@ var PLATFORM_LABEL = {
   instagram: "Instagram"
 };
 var PROFILE_OPTIONS = [
-  { value: "all", labelKey: "filter.account.all" },
+  { value: "all", labelKey: "filter.all" },
   { value: "main", labelKey: "filter.account.main" },
   { value: "sub", labelKey: "filter.account.sub" }
 ];
@@ -4068,12 +4173,26 @@ var CADENCE_BRACKET_LABEL = {
 
 // src/client/components/FilterBar.jsx
 var import_jsx_runtime4 = require("react/jsx-runtime");
-function FilterBar2({ t, query, onChange, disabled }) {
+function FilterBar2({ t, query, onChange, disabled, accounts }) {
   const platformOptions = [
-    { value: "all", label: t("filter.platform.all") },
+    { value: "all", label: t("filter.all") },
     ...PLATFORMS.map((id) => ({ value: id, label: t(`platform.${id}`) }))
   ];
-  const profileOptions = PROFILE_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }));
+  const hasLive = Array.isArray(accounts);
+  const liveAccounts = hasLive ? accounts : [];
+  const profileOptions = [
+    { value: "all", label: t("filter.all") },
+    ...hasLive ? liveAccounts.map((row) => ({
+      value: row.id,
+      label: row.expired ? `${row.label} \u26A0` : row.label
+    })) : PROFILE_OPTIONS.filter((opt) => opt.value !== "all").map((opt) => ({
+      value: opt.value,
+      label: t(opt.labelKey)
+    }))
+  ];
+  if (query.profileId && query.profileId !== "all" && !profileOptions.some((opt) => opt.value === query.profileId)) {
+    profileOptions.push({ value: query.profileId, label: query.profileId });
+  }
   const sourceOptions = SOURCE_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }));
   const rangeOptions = RANGE_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }));
   return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-analytics-stage-filter", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
@@ -4084,7 +4203,8 @@ function FilterBar2({ t, query, onChange, disabled }) {
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
           DropdownSelect,
           {
-            value: query.platform,
+            value: query.platform === "all" ? void 0 : query.platform,
+            placeholder: t("filter.platform"),
             options: platformOptions,
             "aria-label": t("filter.platform"),
             disabled,
@@ -4094,7 +4214,8 @@ function FilterBar2({ t, query, onChange, disabled }) {
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
           DropdownSelect,
           {
-            value: query.profileId,
+            value: query.profileId === "all" ? void 0 : query.profileId,
+            placeholder: t("filter.account"),
             options: profileOptions,
             "aria-label": t("filter.account"),
             disabled,
@@ -4104,7 +4225,8 @@ function FilterBar2({ t, query, onChange, disabled }) {
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
           DropdownSelect,
           {
-            value: query.source,
+            value: query.source === "all" ? void 0 : query.source,
+            placeholder: t("filter.source"),
             options: sourceOptions,
             "aria-label": t("filter.source"),
             disabled,
@@ -4115,6 +4237,7 @@ function FilterBar2({ t, query, onChange, disabled }) {
           DropdownSelect,
           {
             value: query.timeRange,
+            placeholder: t("filter.timeRange"),
             options: rangeOptions,
             "aria-label": t("filter.timeRange"),
             disabled,
@@ -4167,7 +4290,7 @@ function BestPostCard({ t, post }) {
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("article", { className: "omnimux-analytics-kpi omnimux-analytics-kpi-best", children: [
     /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.bestPost") }),
     /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-analytics-best", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-analytics-best-cover", "aria-hidden": "true", children: post.coverLabel || t("kpi.coverFallback") }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-analytics-best-cover", "aria-hidden": "true", children: post.coverUrl ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("img", { src: post.coverUrl, alt: "" }) : post.coverLabel || t("kpi.coverFallback") }),
       /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-analytics-best-copy", children: [
         /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("p", { className: "omnimux-analytics-best-views", children: [
           /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("strong", { children: formatCount(post.views) }),
@@ -4841,7 +4964,7 @@ function EmptyState({ t, hint, onAction }) {
       /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("circle", { cx: "40", cy: "40", r: "4", fill: "currentColor", stroke: "none", opacity: "0.7" })
     ] }) }),
     /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("h2", { className: "omnimux-analytics-empty-title", children: t(`empty.${code}.title`) }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "omnimux-analytics-empty-text", children: t(`empty.${code}.description`) }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "omnimux-analytics-empty-text", children: hint?.detail || t(`empty.${code}.description`) }),
     hint?.action && onAction ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(Button, { variant: "primary", onClick: () => onAction(hint.action), children: actionLabel(t, hint) }) : null
   ] });
 }
@@ -4858,7 +4981,10 @@ function InboxPlaceholder({ t }) {
 function Banner({ t, hint, onAction }) {
   if (!hint?.code) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "omnimux-analytics-banner", "data-code": hint.code, role: "status", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: t(`empty.${hint.code}.title`) }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "omnimux-analytics-banner-copy", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: t(`empty.${hint.code}.title`) }),
+      hint.detail ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "omnimux-analytics-banner-detail", children: hint.detail }) : null
+    ] }),
     hint.action && onAction ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(Button, { variant: "outline", size: "sm", onClick: () => onAction(hint.action), children: actionLabel(t, hint) }) : null
   ] });
 }
@@ -4931,10 +5057,6 @@ function AnalyticsStage({ t, stage }) {
   const handleTheme = () => {
     const next = store.theme === "dark" ? "light" : "dark";
     store.setTheme(next);
-    try {
-      document.documentElement.setAttribute("data-theme", next);
-    } catch {
-    }
   };
   const handleExport = () => {
     const csv = buildDashboardCsv(store.payload);
@@ -4943,7 +5065,7 @@ function AnalyticsStage({ t, stage }) {
   if (!stage || !everOpened) return null;
   const payload = store.payload;
   const empty = payload?.emptyState;
-  const blockingEmpty = empty?.code === "no_accounts" || empty?.code === "unauthorized";
+  const blockingEmpty = empty?.code === "no_accounts" || empty?.code === "unauthorized" || empty?.code === "fetch_failed";
   const locale = readLocale();
   return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
     "div",
@@ -4996,13 +5118,14 @@ function AnalyticsStage({ t, stage }) {
           {
             t,
             query: store.query,
+            accounts: payload?.meta?.filterAccounts,
             disabled: store.syncing,
             onChange: (patch) => store.setQuery(patch)
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "omnimux-analytics-stage-body", children: store.phase === "loading" && !payload ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(LoadingState, { t }) : store.query.tab === "inbox" ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(InboxPlaceholder, { t }) : blockingEmpty ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EmptyState, { t, hint: empty, onAction: handleAction }) : !payload ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EmptyState, { t, hint: { code: "network_error", action: "retry" }, onAction: handleAction }) : /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_jsx_runtime15.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "omnimux-analytics-stage-body", children: store.phase === "loading" && !payload ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(LoadingState, { t }) : store.query.tab === "inbox" ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(InboxPlaceholder, { t }) : blockingEmpty ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EmptyState, { t, hint: empty, onAction: handleAction }) : !payload ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EmptyState, { t, hint: { code: "fetch_failed", action: "retry" }, onAction: handleAction }) : /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_jsx_runtime15.Fragment, { children: [
           empty && empty.code !== "no_accounts" ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Banner, { t, hint: empty, onAction: handleAction }) : null,
-          store.lastError && empty?.code !== "network_error" ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Banner, { t, hint: { code: "network_error", action: "retry" }, onAction: handleAction }) : null,
+          store.lastError && empty?.code !== "network_error" ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Banner, { t, hint: { code: "network_error", action: "retry", detail: store.lastError }, onAction: handleAction }) : null,
           /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(KpiGrid, { t, kpi: payload.kpi, timeRange: store.query.timeRange }),
           /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(BasicCharts, { t, basicCharts: payload.basicCharts, timeRange: store.query.timeRange }),
           /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EngagementChart, { t, block: payload.engagementOverTime, locale }),

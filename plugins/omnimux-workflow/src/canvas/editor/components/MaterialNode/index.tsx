@@ -10,7 +10,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { type NodeProps, useReactFlow } from '@xyflow/react';
-import type { MaterialNodeData } from '../../../types/materialNode';
+import type { MaterialNodeData, MaterialType, MaterialTool } from '../../../types/materialNode';
 import CanvasNodeHandle, { type CanvasNodeHandleSelectMeta } from '../CanvasNodeHandle';
 import GenerationStateContainer from '../GenerationStateContainer';
 import NodeHeader from './NodeHeader';
@@ -20,6 +20,8 @@ import NodeEmptyState from './NodeEmptyState';
 import FloatingTopPill from './FloatingTopPill';
 import ConfigPanelShell from './ConfigPanel/ConfigPanelShell';
 import ConfigPanel from './ConfigPanel';
+import ResourcePickerModal from '../ResourcePickerModal';
+import { useResourcePicker } from '../../hooks/useResourcePicker';
 import {
   getDefaultNodeWidth,
   getNodeSizeCategory,
@@ -109,6 +111,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const t = useT();
   const applyCanvasInputMutation = useCanvasStore((state) => state.applyCanvasInputMutation);
+  const resourcePicker = useResourcePicker(id);
 
   const outputMenuOptions = useMemo(
     () =>
@@ -265,7 +268,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         <FloatingTopPill
           materialType={materialType}
           selected={selected}
-          onImportFile={handleImportFile}
+          onOpenResourcePicker={() => resourcePicker.openPicker('local')}
           onStartTextEdit={() => setTextEditing(true)}
           onCopyText={handleCopyText}
           onSplitText={handleSplitText}
@@ -396,6 +399,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             onUpdateNodeData={updateNodeData}
             onGenerate={handleGenerate}
             execBusy={execBusy}
+            onOpenResourcePicker={() => resourcePicker.openPicker('canvas')}
           />
         </ConfigPanelShell>
       )}
@@ -406,6 +410,14 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         nodeHovered={isHovered}
         options={outputMenuOptions}
         onSelect={handleOutputMenuSelect}
+      />
+
+      <ResourcePickerModal
+        open={resourcePicker.open}
+        nodeId={id}
+        initialTab={resourcePicker.initialTab}
+        onCancel={resourcePicker.closePicker}
+        onCommit={resourcePicker.commit}
       />
     </div>
   );

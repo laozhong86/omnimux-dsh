@@ -32,6 +32,7 @@ import {
 } from './executionStore';
 import { createDispatchingNodeExecutor } from './nodeExecutors';
 import { createMaterialGatewayExecutor } from './materialGatewayExecutor';
+import { createVideoCompositionExecutor } from './videoCompositionExecutor';
 import { registerExecutor } from '../executors/registry';
 import type { GenerationGateway } from '../seam/gateway';
 import { createWorkflowLogger } from './logger';
@@ -146,6 +147,7 @@ export function createExecutionManager(deps: ExecutionManagerDeps) {
   // Extension point ② wiring: register the gateway-backed material executor
   // (replaces nothing else — further node types register the same way).
   registerExecutor(createMaterialGatewayExecutor({ gateway }));
+  registerExecutor(createVideoCompositionExecutor());
 
   // ========================================================================
   // Persistence helpers

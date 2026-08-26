@@ -13,6 +13,10 @@ describe('cacheKey', () => {
       cacheKey({ platform: 'tiktok', timeRange: '30d' }),
       cacheKey({ platform: 'all', timeRange: '30d' }),
     )
+    assert.equal(
+      cacheKey({ platform: 'all', timeRange: '30d', source: 'manual' }),
+      cacheKey({ platform: 'all', timeRange: '30d', source: 'omnimux' }),
+    )
   })
 })
 
@@ -45,10 +49,11 @@ describe('applyDashboardQuery', () => {
     assert.equal(next.filtersEcho.searchQuery, 'teaser')
   })
 
-  it('drops other platforms from breakdown when a platform is selected', () => {
+  it('does not slice KPI or platform tables client-side (Host owns that filter)', () => {
     const next = applyDashboardQuery(fixture, { platform: 'youtube' })
-    assert.equal(next.platformBreakdown.length, 0)
-    assert.equal(next.topPosts.length, 0)
+    assert.equal(next.platformBreakdown.length, fixture.platformBreakdown.length)
+    assert.equal(next.topPosts.length, fixture.topPosts.length)
+    assert.equal(next.kpi.postsCount.value, 12)
   })
 })
 
