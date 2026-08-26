@@ -5,7 +5,8 @@
 # 输出每项 ✓/✗ 与修复提示；任一 ✗ 时退出码 1。
 set -uo pipefail
 
-PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh/plugins}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$SCRIPT_DIR/../plugins}"
 PROD_HOME="${DSH_HOME:-$HOME/.dsh}"
 PROD_PROFILE="$PROD_HOME/profiles/omnimux"
 DEV_HOME="${DSH_DEV_HOME:-$HOME/.dsh-dev}"

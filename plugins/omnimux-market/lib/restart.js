@@ -61,6 +61,9 @@ export function servingPort(request) {
     return Number.isInteger(port) && port > 0 && port < 65536 ? port : null;
 }
 export function trustedRestartRequest(request) {
+    const fetchSite = headerString(request.headers['sec-fetch-site']);
+    if (fetchSite === 'cross-site')
+        return false;
     const origin = headerString(request.headers.origin);
     if (origin === undefined)
         return false;
