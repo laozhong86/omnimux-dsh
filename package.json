@@ -10,6 +10,17 @@
     "plugins/*"
   ],
   "scripts": {
+    "dev": "node scripts/omnimux.mjs dev",
+    "sync": "node scripts/omnimux.mjs sync",
+    "doctor": "node scripts/omnimux.mjs doctor",
+    "build:all": "node scripts/omnimux.mjs build:all",
+    "lint:i18n": "node scripts/omnimux.mjs lint:i18n",
+    "registry": "node scripts/omnimux.mjs registry",
+    "registry:build": "node scripts/registry-tool.mjs build",
+    "registry:verify": "node scripts/registry-tool.mjs verify",
+    "stage": "node scripts/omnimux.mjs stage",
+    "package:dev": "node scripts/omnimux.mjs package:dev",
+    "omnimux": "node scripts/omnimux.mjs",
     "test": "pnpm --filter dsh-drama test && pnpm --filter omnimux test && pnpm --filter omnimux-accounts test && pnpm --filter omnimux-inspiration test && pnpm --filter omnimux-market test",
     "smoke": "bash scripts/smoke-drama.sh",
     "verify:models": "node scripts/verify-models.mjs",
