@@ -20,7 +20,7 @@ SKIP_BUILD=0
 PLUGINS=()
 
 # 与 sync-stable.sh 默认同步集合对齐（含 omnimux-market 与 omnimux-clip）
-DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics)
+DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics dsh-publish)
 
 usage() {
   sed -n '2,16p' "$0"

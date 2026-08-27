@@ -5,7 +5,7 @@ type: "core"
 status: "living"
 authority: "L1"
 date: "2026-08-14"
-updated: "2026-08-26"
+updated: "2026-08-27"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 tags: ["capabilities", "matrix", "truth", "seams"]
@@ -35,6 +35,7 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | Analytics tools / routes | **unproven** | `omnimux_analytics_*` (`daily_metrics`, `best_time`, `frequency`, `content_decay`, `follower_stats`, `posts`, `sync_external`, `inbox`) + Host `/omnimux/analytics/*` wrap `/api/social/v1/analytics/*`. Unauthenticated → `needs-omnimux` |
 | `omnimux_page_fetch` | **real** (unit + live HTTP + L2 Agent session) | Hub `src/reader/*`. Live 2026-08-23 HTTP probe + 2026-08-24 ego L2: Agent called `omnimux_page_fetch` → `mode live` / `jina-reader-v1` / `Title: Example Domain`; `ftp://` → `url must be http(s)`; products URL-create fetched then `products_create` (`prd_fb7ab277`). Tool `response.text()`, never `withSk` JSON. Resolves `OMNIMUX_API_KEY` from env then `$DSH_HOME/.credentials.yaml`. App window QA still needs a new session after reopen |
 | Accounts / publish tools | **unproven** | `omnimux_accounts_*` + `omnimux_publish_*` wrap `/api/social/v1`. Unauthenticated → `needs-omnimux` |
+| dsh-publish publish center (plugin) | **unproven** | Migrated from personal tree (PR #80). Host `/dsh-publish` + 9 `publish_*` agent tools (drafts, assign accounts, submit per-account subtask ledger, refresh/retry) + client stage. Keyless unit tests 175 pass; execution rides hub `omnimux_publish_*` official channel only — no live OmniMux publish claimed |
 | Apps hub capability list | **real** (keyless) | Host `GET /omnimux/capabilities`. Apps overlay does not render this list |
 | Custom provider in Settings (manual) | **upstream** | dsh Web → Add a custom provider → `https://api.omnimux.ai/v1` |
 | Drama Center login / upload / payout | **docs only** | skill `tiktok-drama-center`; no tool |

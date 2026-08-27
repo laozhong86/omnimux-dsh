@@ -42,6 +42,7 @@ MUST NOT use 13px labels or 16px filled icons on these rows. MUST NOT invent a s
 | `[data-omnimux-assets-entry]` | `omnimux-assets` | 资产库（rank 4） |
 | `[data-omnimux-products-entry]` | `omnimux-products` | 产品库（rank 6，不重排旧行） |
 | `[data-omnimux-inspiration-entry]` | `omnimux-inspiration` | 灵感库（rank 7，不重排旧行） |
+| `[data-omnimux-publish-entry]` | `dsh-publish` | 发布（rank 9，尾部追加，不重排旧行；styleId `dsh-publish-entry-styles`） |
 
 New extra rows MUST reuse these metrics (copy the CSS block or import the same numbers). A PR that adds a 新会话-below row with a different font-size or icon size is rejected.
 

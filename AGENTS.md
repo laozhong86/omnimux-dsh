@@ -57,6 +57,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `plugins/omnimux-gallery/` | 专家·技能·连接器一级页（`shell.overlay`），技能双数据源（本地 + SkillHub 在线源）。 |
 | `plugins/omnimux-workflow/` | 工作流无限画布（拖拽 DAG、Agent 工具查询/执行），生成经 hub seam 提交。数据 `$DSH_HOME/omnimux/workflow/`。 |
 | `plugins/omnimux-clip/` | AI 剪辑工坊（`shell.overlay`）：基于 OpenReel Video (MIT) 核心引擎 vendorize，与画布通过 plain JSON 事件交互。 |
+| `plugins/dsh-publish/` | 账号发布中心（`shell.overlay`，sidebar rank 9）：草稿→多账号分发→per-account 子任务台账。Host `/dsh-publish`，tools `publish_*` 9 个；执行只走中枢 `omnimux_publish_*` 官方通道，不直连平台、不存 secret。 |
 | `docs/contracts/openreel-vendor-contract.md` | **OpenReel 引入与反自研工程契约**：能力归属红线（禁止自研 NLE 内核）、Vendorize 目录规则与 QA 门禁。 |
 | `docs/contracts/ops-entry.md` | **运维命令唯一入口**：对外只暴露 fork `yarn omnimux:*`；列出内部/废弃脚本边界。禁止插件私有 deploy/sync 体系。 |
 | `docs/contracts/plugin-git-pr.md` | **插件仓 Git/PR 合同**：`origin`/`main`、一插件一 PR、合入永远老板；board 在 `.workbuddy/pr-board.md`。Skill：`omnimux-plugin-pr` + `omnimux-pr-handoff`。 |
