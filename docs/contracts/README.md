@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L1"
 date: "2026-08-26"
-updated: "2026-08-26"
+updated: "2026-08-27"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -27,7 +27,7 @@ subsystem: "global"
 | `living` | [docs-governance-standard.md](docs-governance-standard.md) | 开发文档工程实践管理规范 | `global` | 2026-08-26 | 在 OmniMux-DSH 多智能体（Multi-Agent）与人类工程师协同的工程研发体系中，文档不仅是人类的知识沉淀与备忘录，更是 Agent 执行任务时的**行为护栏（Guardrails）与最 |
 | `living` | [first-level-page-layout.md](first-level-page-layout.md) | OmniMux 全局插件一级页 UI 布局结构方法论与开发规范 | `omnimux-assets` | 2026-08-26 | 通过对比 **「项目库」**、**「资产中心」**、**「Skill 市场」**，可以提炼出 5 个高度一致的 UI 骨架共同点： |
 | `living` | [icon-design-standards.md](icon-design-standards.md) | OmniMux 图标组件选型与迁移规范 (Icon Standards Contract) | `omnimux` | 2026-08-26 | 在所有 OmniMux 插件 UI 开发中，图标引入严格遵循 **两级降级选型机制**： |
-| `living` | [openreel-vendor-contract.md](openreel-vendor-contract.md) | openreel-vendor-contract — OpenReel Video 引擎引入与反自研工程契约 | `omnimux-clip` | 2026-08-27 | 明确 OpenReel 原生能力（多轨/逐帧解码/波形/磁吸/硬件导出）严禁自研，强制 Vendorize 引入与 QA 门禁。 |
+| `living` | [openreel-vendor-contract.md](openreel-vendor-contract.md) | openreel-vendor-contract — OpenReel 完整微应用引入与反自研契约 | `omnimux-clip` | 2026-08-27 | 完整套用官方 GUI+管线；禁止 Headless 拆分与自研四宫格；P1 侧边栏 Tab；DSW token 映射。 |
 | `living` | [ops-entry.md](ops-entry.md) | ops-entry — 插件运维命令唯一入口 | `omnimux-workflow` | 2026-08-26 | 工作目录：`~/Desktop/Project/omnimux-desktop-fork` |
 | `living` | [plugin-qa.md](plugin-qa.md) | plugin-qa — OmniMux 产品插件浏览器验收契约 | `omnimux` | 2026-08-26 | \| 项 \| 要求 \| |
 | `living` | [series.md](series.md) | series/ contract | `omnimux-drama` | 2026-08-26 | Product store. Session logs are not this store. |

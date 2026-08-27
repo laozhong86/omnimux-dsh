@@ -15,7 +15,7 @@ subsystem: "omnimux-assets"
 > 日期：2026-08-22  
 > 插件：`omnimux-assets` v0.1.1 → v0.2  
 > 参考：老板截图 1（添加资产弹窗）+ 截图 2（资产中心列表）  
-> 设计令牌：`product/omnimux-dsh/design.md`（x.ai 白纸黑字，`--omx-*`）
+> 设计令牌：`product/omnimux-dsh/design.md`（DSH 原生 `--dsw-*` Token）
 
 ---
 
