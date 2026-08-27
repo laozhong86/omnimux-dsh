@@ -67,8 +67,8 @@ describe('hero mark helpers', () => {
 
   it('parses the bundled logo into viewBox plus inner markup', () => {
     const parsed = parseLogoSvg(DEFAULT_LOGO_SVG)
-    assert.equal(parsed.viewBox, '0 0 32 32')
-    assert.match(parsed.inner, /<rect width="32"/)
+    assert.equal(parsed.viewBox, '0 0 1254 1254')
+    assert.match(parsed.inner, /<rect width="1254"/)
     assert.doesNotMatch(parsed.inner, /<\/svg>/i)
   })
 
