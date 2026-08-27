@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
@@ -19,7 +19,8 @@ function jsonResponse(status, json) {
 describe('auth http dispatcher', () => {
   it('starts a flow without leaking the device code and stores the PAT on success', async () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-http-'))
-    const store = createTokenStore({ homeDir })
+    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-http-cfg-'))
+    const store = createTokenStore({ homeDir, configDir })
     const pending = createPendingStore()
     /** @type {string[]} */
     const urls = []
@@ -77,6 +78,7 @@ describe('auth http dispatcher', () => {
       assert.equal(pendingPoll.body.quota_usd, 1)
       assert.equal(/pat-live|SECRET-DEVICE|hidden@x|access_token/.test(JSON.stringify(pendingPoll.body)), false)
       assert.equal(await store.resolve(), 'pat-live')
+      assert.equal(existsSync(join(configDir, 'secrets.json')), true)
 
       const status = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/auth/status' })
       assert.equal(status.body.logged_in, true)
@@ -88,21 +90,29 @@ describe('auth http dispatcher', () => {
       assert.equal(await store.resolve(), undefined)
     } finally {
       rmSync(homeDir, { recursive: true, force: true })
+      rmSync(configDir, { recursive: true, force: true })
     }
   })
 
   it('lists hub capabilities without secrets', async () => {
+    const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-cap-'))
+    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-cap-cfg-'))
     const dispatcher = createAuthDispatcher({
-      store: createTokenStore({ homeDir: mkdtempSync(join(tmpdir(), 'omnimux-cap-')) }),
+      store: createTokenStore({ homeDir, configDir }),
       pending: createPendingStore(),
       siteBaseUrl: 'https://omnimux.ai',
       capabilities: { identity: true, videoGenerate: true, imageGenerate: true, textComplete: true, official: true },
     })
-    const result = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/capabilities' })
-    assert.equal(result.status, 200)
-    assert.equal(result.body.identity, true)
-    assert.equal(result.body.official, true)
-    assert.equal(/access_token|sk-/.test(JSON.stringify(result.body)), false)
+    try {
+      const result = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/capabilities' })
+      assert.equal(result.status, 200)
+      assert.equal(result.body.identity, true)
+      assert.equal(result.body.official, true)
+      assert.equal(/access_token|sk-/.test(JSON.stringify(result.body)), false)
+    } finally {
+      rmSync(homeDir, { recursive: true, force: true })
+      rmSync(configDir, { recursive: true, force: true })
+    }
   })
 
   it('sendJson refuses a body that contains a token', () => {
