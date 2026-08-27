@@ -3,6 +3,7 @@ import {
   OMNIMUX_CLIP_OPEN,
   OMNIMUX_CLIP_PROGRESS,
   OMNIMUX_CLIP_SAVE,
+  OMNIMUX_CLIP_RELOAD,
   dispatchClipEvent,
   isCloseClipEditorPayload,
   isOpenClipEditorPayload,
@@ -14,7 +15,7 @@ import {
  * JSON-only window hub for omnimux-clip.
  *
  * Canvas / sidebar / agent dispatch `omnimux-clip-open`. The overlay
- * listens, then replies with save / close / progress. Nothing in this
+ * listens, then replies with save / close / progress / reload. Nothing in this
  * module holds a React element, ref, or context.
  *
  * @param {{
@@ -23,6 +24,7 @@ import {
  *   onSave?: (payload: object, event: Event) => void,
  *   onClose?: (payload: object, event: Event) => void,
  *   onProgress?: (payload: object, event: Event) => void,
+ *   onReload?: (payload: object, event: Event) => void,
  * }} [opts]
  */
 export function createClipBridge(opts = {}) {
@@ -40,7 +42,7 @@ export function createClipBridge(opts = {}) {
     /** @type {EventListener} */
     const listener = (event) => {
       const detail = event instanceof CustomEvent ? event.detail : undefined
-      if (!guard(detail)) return
+      if (guard && !guard(detail)) return
       handler(detail, event)
     }
     target.addEventListener(type, listener)
@@ -51,6 +53,7 @@ export function createClipBridge(opts = {}) {
   bind(OMNIMUX_CLIP_SAVE, isSaveClipEditorPayload, opts.onSave)
   bind(OMNIMUX_CLIP_CLOSE, isCloseClipEditorPayload, opts.onClose)
   bind(OMNIMUX_CLIP_PROGRESS, isProgressClipEditorPayload, opts.onProgress)
+  bind(OMNIMUX_CLIP_RELOAD, () => true, opts.onReload)
 
   return {
     target,
@@ -77,6 +80,12 @@ export function createClipBridge(opts = {}) {
      */
     progress(payload) {
       return dispatchClipEvent(OMNIMUX_CLIP_PROGRESS, payload, { target })
+    },
+    /**
+     * @param {object} payload
+     */
+    reload(payload) {
+      return dispatchClipEvent(OMNIMUX_CLIP_RELOAD, payload, { target })
     },
     dispose() {
       for (const [type, listener] of bindings) {

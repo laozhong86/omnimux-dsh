@@ -127,6 +127,11 @@ export function createClipDispatcher(deps) {
         return { status: 200, body: { clip: true, version: CLIP_VERSION } }
       }
 
+      if (method === 'GET' && (path === `${CLIP_API_PREFIX}/projects` || path === '/projects')) {
+        const items = store.list()
+        return { status: 200, body: { projects: items } }
+      }
+
       const projectMatch = path.match(/^(?:\/omnimux-clip\/api)?\/projects\/([^/]+)(?:\/(save-export))?$/)
       if (!projectMatch) {
         return { status: 404, body: { error: 'not-found', message: 'unknown route' } }

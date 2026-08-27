@@ -8,7 +8,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { type NodeProps } from '@xyflow/react';
-import { Download, Film, Layers, Pencil } from 'lucide-react';
+import { Download, Film, Layers, Pencil, Play } from 'lucide-react';
 import CanvasNodeHandle from '../../editor/components/CanvasNodeHandle';
 import { useCanvasStore } from '../../store/canvasStore';
 import { toast } from '../../ui';
@@ -130,6 +130,7 @@ export function createDefaultVideoCompositionData(): VideoCompositionNodeData {
     label: '视频合成',
     status: 'idle',
     schemaVersion: '1.0',
+    projectId: `clip_node_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
   };
 }
 
@@ -138,6 +139,7 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const setNodes = useCanvasStore((state) => state.setNodes);
   const t = useT();
   const [hovered, setHovered] = useState(false);
+  const [isPlayingInline, setIsPlayingInline] = useState(false);
 
   const status: VideoCompositionStatus = nodeData.status ?? 'idle';
   const hasOutput = Boolean(nodeData.outputVideoUrl);
@@ -287,9 +289,38 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         {hasOutput ? (
           <div className="wf-clip-launcher__result">
-            <div className="wf-clip-launcher__preview">
-              {thumbnail ? (
-                <img src={thumbnail} alt="" className="wf-clip-launcher__thumb" />
+            <div
+              className="wf-clip-launcher__preview nodrag nopan"
+              style={{ position: 'relative', cursor: 'pointer' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsPlayingInline(!isPlayingInline);
+              }}
+            >
+              {isPlayingInline && nodeData.outputVideoUrl ? (
+                <video
+                  src={nodeData.outputVideoUrl}
+                  controls
+                  autoPlay
+                  className="wf-clip-launcher__thumb"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              ) : thumbnail ? (
+                <>
+                  <img src={thumbnail} alt="" className="wf-clip-launcher__thumb" />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'rgba(0,0,0,0.3)',
+                    }}
+                  >
+                    <Play size={28} color="#fff" fill="#fff" />
+                  </div>
+                </>
               ) : (
                 <div className="wf-clip-launcher__thumb-fallback">
                   <Film size={36} />
