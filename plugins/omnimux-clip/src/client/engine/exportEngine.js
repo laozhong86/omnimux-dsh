@@ -6,11 +6,13 @@
 
 import { exportTimelineWithWebCodecs } from './openreel/index.js'
 import { stripRuntimeUrls } from '../store/timelineTypes.js'
+import { normalizeSchemaTextColors } from '../theme/colors.js'
 
 export const CLIP_API_PREFIX = '/omnimux-clip/api'
 
 export async function exportTimeline(schema, opts = {}) {
-  const encoded = await exportTimelineWithWebCodecs(schema, opts)
+  // Token 适配：成片导出与预览同规则，var 链在进入引擎前落为具体色。
+  const encoded = await exportTimelineWithWebCodecs(normalizeSchemaTextColors(schema), opts)
   return {
     bytes: encoded.mp4Blob,
     base64: encoded.base64,

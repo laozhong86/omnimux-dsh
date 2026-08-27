@@ -3,10 +3,10 @@ import { formatCount } from '../format.js'
 import { ChartPanel, LineChart } from './SvgChart.jsx'
 
 const PLATFORM_COLOR = {
-  tiktok: 'var(--omnimux-analytics-platform-tiktok, #0a0a0a)',
-  twitter: 'var(--omnimux-analytics-platform-twitter, #1d9bf0)',
-  youtube: 'var(--omnimux-analytics-platform-youtube, #ff0000)',
-  instagram: 'var(--omnimux-analytics-platform-instagram, #e1306c)',
+  tiktok: 'var(--omnimux-analytics-platform-tiktok, var(--dsw-alias-label-primary, #0a0a0a))',
+  twitter: 'var(--omnimux-analytics-platform-twitter, var(--dsw-alias-brand-twitter, #1d9bf0))',
+  youtube: 'var(--omnimux-analytics-platform-youtube, var(--dsw-alias-brand-youtube, #ff0000))',
+  instagram: 'var(--omnimux-analytics-platform-instagram, var(--dsw-alias-brand-instagram, #e1306c))',
 }
 
 /**
