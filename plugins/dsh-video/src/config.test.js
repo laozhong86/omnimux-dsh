@@ -4,7 +4,7 @@ import { parseVideoConfig, Config } from './config.js'
 
 test('parseVideoConfig defaults', () => {
   const expected = {
-    video: { ffmpegPath: '', maxConcurrent: 2 },
+    video: { ffmpegPath: '', maxConcurrent: 2, pythonPath: '', modelsDir: '' },
     understand: {
       defaultModel: 'gemini-3.7-flash',
       maxTokens: 8000,
@@ -18,21 +18,42 @@ test('parseVideoConfig defaults', () => {
   assert.deepEqual(parseVideoConfig({ video: {} }), expected)
 })
 
-test('parseVideoConfig reads video.ffmpegPath and maxConcurrent', () => {
-  const out = parseVideoConfig({ video: { ffmpegPath: '/opt/ffmpeg/bin', maxConcurrent: 4 } })
+test('parseVideoConfig reads video.ffmpegPath, pythonPath, modelsDir and maxConcurrent', () => {
+  const out = parseVideoConfig({
+    video: {
+      ffmpegPath: '/opt/ffmpeg/bin',
+      pythonPath: '/opt/homebrew/bin/python3',
+      modelsDir: '/tmp/models',
+      maxConcurrent: 4,
+    },
+  })
   assert.equal(out.video.ffmpegPath, '/opt/ffmpeg/bin')
+  assert.equal(out.video.pythonPath, '/opt/homebrew/bin/python3')
+  assert.equal(out.video.modelsDir, '/tmp/models')
   assert.equal(out.video.maxConcurrent, 4)
 })
 
-test('parseVideoConfig env DSH_VIDEO_FFMPEG_PATH overrides config', () => {
-  const prev = process.env.DSH_VIDEO_FFMPEG_PATH
+test('parseVideoConfig env overrides (FFMPEG, PYTHON, MODELS_DIR)', () => {
+  const prevF = process.env.DSH_VIDEO_FFMPEG_PATH
+  const prevP = process.env.DSH_VIDEO_PYTHON_PATH
+  const prevM = process.env.DSH_VIDEO_MODELS_DIR
   try {
     process.env.DSH_VIDEO_FFMPEG_PATH = '/env/ffmpeg'
-    const out = parseVideoConfig({ video: { ffmpegPath: '/cfg/ffmpeg' } })
+    process.env.DSH_VIDEO_PYTHON_PATH = '/env/python3'
+    process.env.DSH_VIDEO_MODELS_DIR = '/env/models'
+    const out = parseVideoConfig({
+      video: { ffmpegPath: '/cfg/ffmpeg', pythonPath: '/cfg/python', modelsDir: '/cfg/models' },
+    })
     assert.equal(out.video.ffmpegPath, '/env/ffmpeg')
+    assert.equal(out.video.pythonPath, '/env/python3')
+    assert.equal(out.video.modelsDir, '/env/models')
   } finally {
-    if (prev === undefined) delete process.env.DSH_VIDEO_FFMPEG_PATH
-    else process.env.DSH_VIDEO_FFMPEG_PATH = prev
+    if (prevF === undefined) delete process.env.DSH_VIDEO_FFMPEG_PATH
+    else process.env.DSH_VIDEO_FFMPEG_PATH = prevF
+    if (prevP === undefined) delete process.env.DSH_VIDEO_PYTHON_PATH
+    else process.env.DSH_VIDEO_PYTHON_PATH = prevP
+    if (prevM === undefined) delete process.env.DSH_VIDEO_MODELS_DIR
+    else process.env.DSH_VIDEO_MODELS_DIR = prevM
   }
 })
 

@@ -92,6 +92,8 @@ export async function executeVideoProcess({ capability, input, dest, signal, bin
     bin,
     binVersion: bin.version,
     signal,
+    procs,
+    videoConfig,
     addFile(path) { written.add(String(path)) },
     runFfmpeg(args, opts = {}) {
       return spawnFfmpeg({ bin, args, timeoutMs: opts.timeoutMs ?? cap.timeoutMs, signal, procs, loglevel: opts.loglevel })

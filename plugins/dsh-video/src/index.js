@@ -43,11 +43,16 @@ const jsonOut = {
 }
 
 const PROCESS_DESCRIPTION =
-  'Local ffmpeg video processing. capability selects one of 11 operations; input carries that capability\'s fields; dest is the output file (single) or directory (multi). ' +
+  'Local ffmpeg video processing. capability selects one of 12 operations; input carries that capability\'s fields; dest is the output file (single) or directory (multi). ' +
   'Input values are local absolute paths or http(s) URLs. Multi-source work (2+ clips/images) → video_merge / video_export / slideshow_export. ' +
-  'Burning subtitles → video_export with input.subtitles. Probing a file → media_metadata. ' +
+  'Burning subtitles → video_export with input.subtitles. Probing a file → media_metadata. Depth map video → video_depth. ' +
   'For content understanding (五维拆解 / I2V reverse prompt) use video_analyze or video_reverse_prompt — not this tool. ' +
   'Throws on failure (ffmpeg-missing / video-invalid-input / video-ffmpeg-failed / video-incompatible-streams / video-canceled / video-timeout / video-<capability>-failed).'
+
+const DEPTH_DESCRIPTION =
+  'Generate a grayscale monocular depth-map video (Depth Anything V2 Small ONNX). ' +
+  'Default convention: near=white, far=black. Optional invert / side-by-side preview. Keeps original audio by default. ' +
+  'Uses local onnxruntime (CoreML/CUDA/CPU). Not a style-transfer / anime stylize tool.'
 
 const ANALYZE_DESCRIPTION =
   'Understand a local short video into a Chinese five-dimension breakdown markdown (目标/影响力/叙事/画面/复刻策略). ' +
@@ -113,7 +118,8 @@ export function apply(ctx, config = {}) {
           'video_inline_analysis_prepare: { videoUrl, maxRequestBytes?, maxSourceBytes? }. ' +
           'video_scene_detect: { videoUrl, threshold?, extractFrames? }. ' +
           'slideshow_export: { imageUrls[], durationPerImage?, aspectRatio?, resolution?, transitionType?, frameRate?, audioUrl?, audioVolume? }. ' +
-          'video_export: { clips:[{url,type?,duration?,start?,volume?}], resolution?, aspectRatio?, width?, height?, frameRate?, subtitles?, timeline? }.',
+          'video_export: { clips:[{url,type?,duration?,start?,volume?}], resolution?, aspectRatio?, width?, height?, frameRate?, subtitles?, timeline? }. ' +
+          'video_depth: { videoUrl, maxEdge?, invert?, sideBySide?, keepAudio?, startSeconds?, durationSeconds?, provider?, fps? }.',
       },
       dest: {
         type: 'string',
@@ -127,6 +133,75 @@ export function apply(ctx, config = {}) {
       return processApi.execute({
         capability: args.capability,
         input: args.input,
+        dest: args.dest,
+        signal: exec?.signal,
+      })
+    },
+  })
+
+  ctx.tools.register({
+    name: 'video_depth',
+    description: DEPTH_DESCRIPTION,
+    parameters: objectParams({
+      video: {
+        type: 'string',
+        required: true,
+        description: 'Local absolute path or http(s) URL of the source video.',
+      },
+      dest: {
+        type: 'string',
+        required: true,
+        description: 'Absolute output .mp4 path for the grayscale depth video.',
+      },
+      max_edge: {
+        type: 'number',
+        description: 'Long-edge resize before inference (default 518; 0 keeps source rounded to multiples of 14).',
+      },
+      invert: {
+        type: 'boolean',
+        description: 'Invert polarity (default false = near white / far black).',
+      },
+      side_by_side: {
+        type: 'boolean',
+        description: 'If true, output left=original / right=depth preview.',
+      },
+      keep_audio: {
+        type: 'boolean',
+        description: 'Keep original audio track (default true).',
+      },
+      start_seconds: {
+        type: 'number',
+        description: 'Optional trim start in seconds.',
+      },
+      duration_seconds: {
+        type: 'number',
+        description: 'Optional trim duration in seconds.',
+      },
+      provider: {
+        type: 'string',
+        enum: ['auto', 'coreml', 'cuda', 'cpu'],
+        description: 'ONNX execution provider preference (default auto).',
+      },
+      fps: {
+        type: 'number',
+        description: 'Optional output FPS override.',
+      },
+    }),
+    output: jsonOut,
+    async execute(args, exec) {
+      return processApi.execute({
+        capability: 'video_depth',
+        input: {
+          videoUrl: args.video,
+          maxEdge: args.max_edge,
+          invert: args.invert,
+          sideBySide: args.side_by_side,
+          keepAudio: args.keep_audio,
+          startSeconds: args.start_seconds,
+          durationSeconds: args.duration_seconds,
+          provider: args.provider,
+          fps: args.fps,
+        },
         dest: args.dest,
         signal: exec?.signal,
       })

@@ -215,6 +215,39 @@ async function hasFilter(name) {
   }
 }
 
+maybe('smoke: video_depth produces grayscale depth output with audio', async () => {
+  const dest = join(dir, 'depth.mp4')
+  const out = await executeVideoProcess({
+    capability: 'video_depth',
+    input: {
+      videoUrl: join(dir, 'fixture.mp4'),
+      maxEdge: 308,
+      keepAudio: true,
+      durationSeconds: 0.5,
+      provider: 'cpu',
+    },
+    dest,
+    bin,
+    acquire,
+    procs: new Set(),
+    videoConfig: { video: { ffmpegPath: '', maxConcurrent: 1, pythonPath: '', modelsDir: '' } },
+  })
+  assert.equal(out.mode, 'live')
+  assert.equal(out.files[0].path, dest)
+  const st = await stat(dest)
+  assert.ok(st.size > 1000)
+  const probeStdout = await runFprobe([
+    '-show_entries', 'stream=codec_type,width,height',
+    '-of', 'json',
+    dest,
+  ])
+  const info = JSON.parse(probeStdout || '{}')
+  const hasVideo = (info.streams || []).some((s) => s.codec_type === 'video')
+  const hasAudio = (info.streams || []).some((s) => s.codec_type === 'audio')
+  assert.equal(hasVideo, true)
+  assert.equal(hasAudio, true)
+})
+
 maybe('smoke: bogus ffmpegPath → ffmpeg-missing', async () => {
   const missing = resolveBin({ ffmpegPath: '/nonexistent/ffmpeg-xyz' })
   assert.equal(missing.missing, true)

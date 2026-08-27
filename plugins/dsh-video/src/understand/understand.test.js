@@ -199,7 +199,7 @@ describe('video_reverse_prompt', () => {
 })
 
 describe('tool registration', () => {
-  it('registers process + understand tools and does not mix understand into slug enum', () => {
+  it('registers process + understand + depth tools and does not mix understand into slug enum', () => {
     const tools = {}
     apply({
       tools: { register(tool) { tools[tool.name] = tool } },
@@ -209,7 +209,9 @@ describe('tool registration', () => {
     assert.ok(tools.video_process)
     assert.ok(tools.video_analyze)
     assert.ok(tools.video_reverse_prompt)
+    assert.ok(tools.video_depth)
     assert.equal(tools.video_process.parameters.properties.capability.enum.includes('video_analyze'), false)
+    assert.ok(tools.video_process.parameters.properties.capability.enum.includes('video_depth'))
     assert.ok(tools.video_reverse_prompt.parameters.properties.identity_mode.enum.includes('A'))
   })
 })

@@ -8,6 +8,7 @@ import * as inline from './capabilities/inline.js'
 import * as scene from './capabilities/scene.js'
 import * as slideshow from './capabilities/slideshow.js'
 import * as videoExport from './capabilities/export.js'
+import * as depth from './capabilities/depth.js'
 import { executeVideoProcess } from './job.js'
 
 /**
@@ -26,6 +27,7 @@ export const CAPABILITIES = {
   video_scene_detect: scene,
   slideshow_export: slideshow,
   video_export: videoExport,
+  video_depth: depth,
 }
 
 export const SLUGS = Object.keys(CAPABILITIES)

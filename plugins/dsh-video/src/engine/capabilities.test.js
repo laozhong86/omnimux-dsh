@@ -14,6 +14,7 @@ import * as inline from './capabilities/inline.js'
 import * as scene from './capabilities/scene.js'
 import * as slideshow from './capabilities/slideshow.js'
 import * as videoExport from './capabilities/export.js'
+import * as depth from './capabilities/depth.js'
 import { normalizeSubtitleSegments, autoSplit } from './capabilities/export-ass.js'
 import { buildAss, assTimestamp } from './ass.js'
 
@@ -506,13 +507,100 @@ test('ass: buildAss produces a dialogue with escaped text', () => {
 })
 
 // ---------------------------------------------------------------------------
+// video_depth
+// ---------------------------------------------------------------------------
+
+test('depth: validate requires videoUrl and checks params', () => {
+  assert.throws(() => depth.validate({}), (e) => e instanceof VideoError && e.code === 'video-invalid-input')
+  assert.throws(() => depth.validate({ videoUrl: '' }), VideoError)
+  assert.throws(() => depth.validate({ videoUrl: '/a.mp4', maxEdge: -1 }), VideoError)
+  assert.throws(() => depth.validate({ videoUrl: '/a.mp4', fps: 0 }), VideoError)
+  assert.throws(() => depth.validate({ videoUrl: '/a.mp4', startSeconds: -1 }), VideoError)
+  assert.throws(() => depth.validate({ videoUrl: '/a.mp4', durationSeconds: 0 }), VideoError)
+  assert.throws(() => depth.validate({ videoUrl: '/a.mp4', provider: 'quantum' }), VideoError)
+  depth.validate({ videoUrl: '/a.mp4' })
+  depth.validate({
+    videoUrl: '/a.mp4',
+    maxEdge: 518,
+    invert: true,
+    sideBySide: true,
+    keepAudio: false,
+    provider: 'coreml',
+    startSeconds: 0,
+    durationSeconds: 2,
+  })
+})
+
+test('depth: buildDepthCliArgs maps flags correctly', () => {
+  const args = depth.buildDepthCliArgs(
+    {
+      maxEdge: 518,
+      fps: 24,
+      startSeconds: 1,
+      durationSeconds: 3,
+      provider: 'cpu',
+      invert: true,
+      sideBySide: true,
+    },
+    {
+      scriptPath: '/opt/depth_engine.py',
+      inputPath: '/in.mp4',
+      outputPath: '/out.mp4',
+      modelsDir: '/models',
+    },
+  )
+  assert.deepEqual(args, [
+    '/opt/depth_engine.py',
+    '--input', '/in.mp4',
+    '--output', '/out.mp4',
+    '--max-edge', '518',
+    '--fps', '24',
+    '--start', '1',
+    '--duration', '3',
+    '--provider', 'cpu',
+    '--invert',
+    '--side-by-side',
+    '--models-dir', '/models',
+  ])
+})
+
+test('depth: buildAudioExtractArgs and buildMuxArgs', () => {
+  const audioArgs = depth.buildAudioExtractArgs('/in.mp4', '/a.m4a', { startSeconds: 1, durationSeconds: 2 })
+  assert.deepEqual(audioArgs, ['-ss', '1', '-i', '/in.mp4', '-t', '2', '-vn', '-c:a', 'aac', '-b:a', '192k', '/a.m4a'])
+  const mux = depth.buildMuxArgs({ videoPath: '/v.mp4', audioPath: '/a.m4a', dest: '/o.mp4', keepAudio: true })
+  assert.ok(mux.includes('-map'))
+  assert.ok(mux.includes('/o.mp4'))
+})
+
+test('depth: execute runs probe, audio extract, python depth and muxing', async () => {
+  const calls = { ffmpeg: [], python: [] }
+  const out = await depth.execute(
+    { videoUrl: '/src.mp4', maxEdge: 518, keepAudio: true },
+    {
+      dest: '/out.mp4',
+      tmpDir: '/tmp/x',
+      addFile() {},
+      materialize: async () => '/src.local.mp4',
+      runFprobe: async () => JSON.stringify({ streams: [{ codec_type: 'video' }, { codec_type: 'audio' }] }),
+      runFfmpeg: async (a) => { calls.ffmpeg.push(a) },
+      runPython: async (a) => { calls.python.push(a) },
+      videoConfig: { video: { pythonPath: 'python3', modelsDir: '/models' } },
+    },
+  )
+  assert.equal(out.files[0].path, '/out.mp4')
+  assert.equal(out.result.model, 'depth-anything-v2-small')
+  assert.equal(calls.python.length, 1)
+  assert.ok(calls.ffmpeg.length >= 1)
+})
+
+// ---------------------------------------------------------------------------
 // registry
 // ---------------------------------------------------------------------------
 
-test('registry: exactly 11 slugs', async () => {
+test('registry: exactly 12 slugs', async () => {
   const { SLUGS } = await import('./video.js')
-  assert.equal(SLUGS.length, 11)
-  for (const s of ['media_metadata', 'video_trim', 'video_merge', 'video_split', 'audio_extract', 'audio_prepare', 'video_thumbnail_extract', 'video_inline_analysis_prepare', 'video_scene_detect', 'slideshow_export', 'video_export']) {
+  assert.equal(SLUGS.length, 12)
+  for (const s of ['media_metadata', 'video_trim', 'video_merge', 'video_split', 'audio_extract', 'audio_prepare', 'video_thumbnail_extract', 'video_inline_analysis_prepare', 'video_scene_detect', 'slideshow_export', 'video_export', 'video_depth']) {
     assert.ok(SLUGS.includes(s), `missing ${s}`)
   }
 })

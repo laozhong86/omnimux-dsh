@@ -1,8 +1,8 @@
 # dsh-video
 
-自包含的本地 ffmpeg 视频处理插件（OmniMux 插件套件成员）。通过 `video_process` 工具和一个 neutral seam `videoProcess` 暴露 11 项视频后处理能力：剪辑、合并、拆分、音频提取/重编码、缩略图、压缩、分镜、图文成片、字幕烧录导出。
+自包含的本地 ffmpeg 视频处理插件（OmniMux 插件套件成员）。通过 `video_process` 工具和一个 neutral seam `videoProcess` 暴露 12 项视频后处理能力：剪辑、合并、拆分、音频提取/重编码、缩略图、压缩、分镜、图文成片、字幕烧录导出、**黑白深度图视频**。
 
-无 Docker、无 Gxgen 引擎、无云端、无 HTTP 桥接——纯本地 `ffmpeg` / `ffprobe` 子进程，装好即用。
+无 Docker、无 Gxgen 引擎、无云端、无 HTTP 桥接——纯本地 `ffmpeg` / `ffprobe` / ONNX Runtime 子进程，装好即用。
 
 ## 前置
 
@@ -12,9 +12,17 @@
 brew install ffmpeg
 ```
 
+深度图（`video_depth`）额外需要：
+
+```sh
+pip install onnxruntime opencv-python
+```
+
+首次运行会把 Depth Anything V2 Small ONNX 下载到 `$DSH_HOME/models/depth/`（或 `~/.dsh/models/depth/`）。
+
 ffmpeg 缺失不会阻止插件加载；工具/seam 调用时会抛 `ffmpeg-missing` 并给出安装指引。
 
-## 11 个能力 slug
+## 12 个能力 slug
 
 | slug | destKind | 默认超时 | 输入要点 |
 |---|---|---|---|
@@ -29,6 +37,7 @@ ffmpeg 缺失不会阻止插件加载；工具/seam 调用时会抛 `ffmpeg-miss
 | `video_scene_detect` | multi | 300s | `videoUrl` + `threshold` |
 | `slideshow_export` | single | 1200s | `imageUrls[]` + 转场/背景乐 |
 | `video_export` | single | 1200s | `clips[]` + `subtitles` / 分辨率 / 画幅 |
+| `video_depth` | single | 1800s | `videoUrl` + `maxEdge?` / `invert?` / `sideBySide?` / `keepAudio?` |
 
 ## 聊天例子
 
@@ -37,10 +46,11 @@ ffmpeg 缺失不会阻止插件加载；工具/seam 调用时会抛 `ffmpeg-miss
 把 a.mp4 和 b.mp4 合并 → video_process(video_merge, videoUrls, dest)
 把这 4 张图做成 9:16 轮播配背景乐 → video_process(slideshow_export, ...)
 给这条片烧中文字幕，导出 9:16 720p → video_process(video_export, clips[] + subtitles, dest)
+把舞蹈视频转成黑白深度图 → video_depth(video, dest) 或 video_process(video_depth, ...)
 ```
 
 工具的 `input` 字段值为本地绝对路径或 `http(s)` URL 皆可：
-- **单输入**能力（trim / metadata / extract / thumb / split / inline）可直接把 URL 交给 ffmpeg；
+- **单输入**能力（trim / metadata / extract / thumb / split / inline / depth）可直接把 URL 交给 ffmpeg；
 - **多输入**能力（merge / slideshow / export）需要 seekable 本地文件，URL 会自动物化到临时目录。
 
 ## seam 例子
@@ -54,6 +64,12 @@ const out = await video.execute({
   signal, // AbortSignal，可选
 })
 // out => { mode: 'live', files: [{ path, kind: 'video', meta }], result? }
+
+const depth = await video.execute({
+  capability: 'video_depth',
+  input: { videoUrl: '/tmp/dance.mp4', maxEdge: 518, keepAudio: true },
+  dest: '/tmp/dance_depth.mp4',
+})
 ```
 
 ## Config / env
@@ -64,10 +80,13 @@ Standard Schema `Config`（从 `src/config.js` re-export）：
 Config.video = {
   ffmpegPath: '',       // 空 = 走 PATH
   maxConcurrent: 2,     // 并发子进程上限，超出排队
+  pythonPath: '',       // 空 = python3；深度估计引擎解释器
+  modelsDir: '',        // 空 = $DSH_HOME/models/depth 或 ~/.dsh/models/depth
 }
 ```
 
 - 环境变量 `DSH_VIDEO_FFMPEG_PATH` 非空则覆盖 `Config.video.ffmpegPath`。
+- 环境变量 `DSH_VIDEO_PYTHON_PATH` / `DSH_VIDEO_MODELS_DIR` 覆盖 python / 模型目录。
 - `maxConcurrent` 必须是 `整数 >= 1`，否则 Config validate 报 issue。
 
 ## 错误码
@@ -75,9 +94,10 @@ Config.video = {
 | 码 | 含义 |
 |---|---|
 | `ffmpeg-missing` | 未找到 ffmpeg / ffprobe（含 brew 指引） |
-| `unknown-capability` | slug 不在 11 项清单内，message 附清单 |
+| `unknown-capability` | slug 不在 12 项清单内，message 附清单 |
 | `video-invalid-input` | 主输入字段缺失 / 非法 |
 | `video-ffmpeg-failed` | ffmpeg / ffprobe 非零退出，附截断 stderr 尾部 |
+| `video-depth-failed` | 深度估计 Python/ONNX 推理失败 |
 | `video-incompatible-streams` | merge 各路视频流编码/尺寸/pix_fmt 不一致（fail-fast，提示先统一转码） |
 | `video-canceled` | 调用方 signal abort，进程已杀、半成品清理 |
 | `video-timeout` | 超过能力默认超时，已杀进程、半成品清理 |

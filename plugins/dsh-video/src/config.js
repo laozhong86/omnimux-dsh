@@ -7,7 +7,7 @@
  *
  * @param {unknown} value
  * @returns {{
- *   video: { ffmpegPath: string, maxConcurrent: number },
+ *   video: { ffmpegPath: string, maxConcurrent: number, pythonPath: string, modelsDir: string },
  *   understand: {
  *     defaultModel: string,
  *     maxTokens: number,
@@ -31,6 +31,14 @@ export function parseVideoConfig(value) {
   let ffmpegPath = typeof video.ffmpegPath === 'string' ? video.ffmpegPath : ''
   const envPath = process.env.DSH_VIDEO_FFMPEG_PATH
   if (typeof envPath === 'string' && envPath.trim() !== '') ffmpegPath = envPath
+
+  let pythonPath = typeof video.pythonPath === 'string' ? video.pythonPath : ''
+  const envPython = process.env.DSH_VIDEO_PYTHON_PATH
+  if (typeof envPython === 'string' && envPython.trim() !== '') pythonPath = envPython
+
+  let modelsDir = typeof video.modelsDir === 'string' ? video.modelsDir : ''
+  const envModels = process.env.DSH_VIDEO_MODELS_DIR
+  if (typeof envModels === 'string' && envModels.trim() !== '') modelsDir = envModels
 
   let maxConcurrent = video.maxConcurrent === undefined || video.maxConcurrent === null ? 2 : video.maxConcurrent
   const n = Number(maxConcurrent)
@@ -58,7 +66,7 @@ export function parseVideoConfig(value) {
 
   // Unknown top-level fields are ignored.
   return {
-    video: { ffmpegPath, maxConcurrent: n },
+    video: { ffmpegPath, maxConcurrent: n, pythonPath, modelsDir },
     understand: {
       defaultModel,
       maxTokens,
