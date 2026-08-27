@@ -45,4 +45,24 @@ describe('cordis entry inject contracts', () => {
       )
     }
   })
+
+  it('compiled lib/client.js matches source inject declarations (bundle drift guard)', () => {
+    const bundle = readFileSync(join(here, '../lib/client.js'), 'utf8')
+    // Every service the source declares must appear in the compiled bundle's
+    // own `var inject = [...]` — catches shipping a stale build.
+    const srcInject = /export const inject = \[([^\]]+)\]/.exec(readSource('client/index.js'))
+    assert.ok(srcInject, 'client/index.js must declare an inject array')
+    for (const raw of srcInject[1].split(',')) {
+      const svc = raw.trim().replace(/^['"]|['"]$/g, '')
+      if (!svc) continue
+      assert.ok(
+        new RegExp(`inject = \\[[^\\]]*['"]${svc}['"` + ']').test(bundle),
+        `lib/client.js is stale: missing declared inject "${svc}". Rebuild via node scripts/build-client.mjs`,
+      )
+    }
+    // If the compiled apply reads ctx.locale, the declaration is mandatory.
+    if (/ctx\.locale\b/.test(bundle)) {
+      assert.match(bundle, /inject = \["slots", "locale"\]/)
+    }
+  })
 })
