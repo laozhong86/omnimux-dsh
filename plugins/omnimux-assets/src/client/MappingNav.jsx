@@ -96,7 +96,7 @@ const dropdown = {
   borderRadius: 8,
   background: 'var(--dsw-alias-bg-elevated, var(--dsw-bg, #1c1c1c))',
   border: '1px solid var(--dsw-alias-border, var(--dsw-border, rgba(128,128,128,.35)))',
-  boxShadow: '0 4px 16px rgba(0,0,0,.24)',
+  boxShadow: '0 4px 16px var(--dsw-alias-bg-mask-1, rgba(0,0,0,.24))',
 }
 
 const headerDropdown = {

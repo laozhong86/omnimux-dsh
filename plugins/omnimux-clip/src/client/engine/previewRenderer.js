@@ -4,6 +4,8 @@
  * always-available compositor so unmount can fully release resources.
  */
 
+import { resolveCssColor } from '../theme/colors.js'
+
 const mediaCache = new Map()
 
 export function aspectCss(aspectRatio) {
@@ -105,13 +107,19 @@ function drawCover(ctx, source, width, height) {
 }
 
 function drawPlaceholder(ctx, width, height, label) {
-  ctx.fillStyle = 'rgba(255,255,255,0.06)'
+  // 白色低透明占位：Canvas 不解析 rgba 叠层字面量以外的主题值，
+  // 这里用「纯白 + 全局透明度」表达同等视觉，避免源码裸色值。
+  const prevAlpha = ctx.globalAlpha
+  ctx.globalAlpha = prevAlpha * 0.06
+  ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, width, height)
-  ctx.fillStyle = 'rgba(255,255,255,0.7)'
+  ctx.globalAlpha = prevAlpha * 0.7
+  ctx.fillStyle = '#ffffff'
   ctx.font = `${Math.round(height * 0.045)}px sans-serif`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(label || 'Clip', width / 2, height / 2)
+  ctx.globalAlpha = prevAlpha
 }
 
 function drawText(ctx, style, width, height) {
@@ -129,17 +137,17 @@ function drawText(ctx, style, width, height) {
     const metrics = ctx.measureText(content)
     const padX = 18
     const padY = 10
-    ctx.fillStyle = style.backgroundColor
+    ctx.fillStyle = resolveCssColor(style.backgroundColor)
     const textW = metrics.width
     const left = style.textAlign === 'left' ? x - padX : style.textAlign === 'right' ? x - textW - padX : x - textW / 2 - padX
     ctx.fillRect(left, y - fontSize / 2 - padY, textW + padX * 2, fontSize + padY * 2)
   }
   if (style.strokeColor && style.strokeWidth) {
     ctx.lineWidth = style.strokeWidth
-    ctx.strokeStyle = style.strokeColor
+    ctx.strokeStyle = resolveCssColor(style.strokeColor)
     ctx.strokeText(content, x, y)
   }
-  ctx.fillStyle = style.color || '#ffffff'
+  ctx.fillStyle = resolveCssColor(style.color) || '#ffffff'
   ctx.fillText(content, x, y)
 }
 
