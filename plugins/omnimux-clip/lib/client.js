@@ -134,15 +134,16 @@ __export(index_exports, {
 module.exports = __toCommonJS(index_exports);
 
 // src/client/ClipOverlay.jsx
-var import_react5 = require("react");
+var import_react6 = require("react");
 
 // src/client/clip-events.js
 var OMNIMUX_CLIP_OPEN = "omnimux-clip-open";
 var OMNIMUX_CLIP_SAVE = "omnimux-clip-save";
 var OMNIMUX_CLIP_CLOSE = "omnimux-clip-close";
 var OMNIMUX_CLIP_PROGRESS = "omnimux-clip-progress";
+var OMNIMUX_CLIP_RELOAD = "omnimux-clip-reload";
 var CLIP_EVENT_MAX_BYTES = 1024 * 1024;
-var OPEN_SOURCES = /* @__PURE__ */ new Set(["canvas", "sidebar", "agent"]);
+var OPEN_SOURCES = /* @__PURE__ */ new Set(["canvas", "sidebar", "agent", "url"]);
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -215,7 +216,7 @@ function createClipBridge(opts = {}) {
     if (typeof handler !== "function") return;
     const listener = (event) => {
       const detail = event instanceof CustomEvent ? event.detail : void 0;
-      if (!guard(detail)) return;
+      if (guard && !guard(detail)) return;
       handler(detail, event);
     };
     target.addEventListener(type, listener);
@@ -225,6 +226,7 @@ function createClipBridge(opts = {}) {
   bind(OMNIMUX_CLIP_SAVE, isSaveClipEditorPayload, opts.onSave);
   bind(OMNIMUX_CLIP_CLOSE, isCloseClipEditorPayload, opts.onClose);
   bind(OMNIMUX_CLIP_PROGRESS, isProgressClipEditorPayload, opts.onProgress);
+  bind(OMNIMUX_CLIP_RELOAD, () => true, opts.onReload);
   return {
     target,
     /**
@@ -250,6 +252,12 @@ function createClipBridge(opts = {}) {
      */
     progress(payload) {
       return dispatchClipEvent(OMNIMUX_CLIP_PROGRESS, payload, { target });
+    },
+    /**
+     * @param {object} payload
+     */
+    reload(payload) {
+      return dispatchClipEvent(OMNIMUX_CLIP_RELOAD, payload, { target });
     },
     dispose() {
       for (const [type, listener] of bindings) {
@@ -2012,6 +2020,7 @@ function disposePreviewResources() {
 }
 
 // src/client/components/TopHeader.jsx
+var import_react3 = require("react");
 var import_dsh_client_ui_primitives2 = require("@deepseek-ai/dsh-client-ui-primitives");
 
 // ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
@@ -2448,13 +2457,49 @@ var ZOOM_OPTIONS = [
   { value: "2", label: "200%" },
   { value: "4", label: "400%" }
 ];
-function TopHeader({ onSave, onClose, onExport, exporting }) {
+function TopHeader({
+  source = "canvas",
+  onSave,
+  onClose,
+  onExport,
+  onSwitchProject,
+  onNewProject,
+  exporting,
+  saveNotice = ""
+}) {
   const projectName = useTimelineStore((s) => s.projectName);
+  const currentProjectId = useTimelineStore((s) => s.schema.projectId);
   const aspectRatio = useTimelineStore((s) => s.schema.canvasConfig.aspectRatio);
   const zoomLevel = useTimelineStore((s) => s.zoomLevel);
   const canUndo = useTimelineStore((s) => s.past.length > 0);
   const canRedo = useTimelineStore((s) => s.future.length > 0);
   const durationMs = useTimelineStore((s) => s.schema.canvasConfig.durationMs);
+  const [projectOptions, setProjectOptions] = (0, import_react3.useState)([]);
+  (0, import_react3.useEffect)(() => {
+    fetch(`${CLIP_API_PREFIX}/projects`).then((r) => r.json()).then((data) => {
+      if (Array.isArray(data?.projects)) {
+        const opts = [
+          { value: "__current__", label: `\u5F53\u524D: ${projectName || currentProjectId}` },
+          { value: "__new__", label: "\u2795 \u65B0\u5EFA\u7A7A\u767D\u5DE5\u7A0B" },
+          ...data.projects.map((p) => ({
+            value: p.id,
+            label: `\u{1F4C1} ${p.projectName || p.id} (${formatTimecode(p.durationMs).slice(0, 5)})`
+          }))
+        ];
+        setProjectOptions(opts);
+      }
+    }).catch(() => {
+    });
+  }, [currentProjectId, projectName]);
+  function handleProjectSelect(value) {
+    if (!value || value === "__current__") return;
+    if (value === "__new__") {
+      if (typeof onNewProject === "function") onNewProject();
+    } else if (typeof onSwitchProject === "function") {
+      onSwitchProject(value);
+    }
+  }
+  const isCanvasMode = source === "canvas";
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("header", { className: "omnimux-clip-overlay-header", children: [
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-clip-overlay-heading omnimux-clip-overlay-heading--editor", children: [
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
@@ -2465,9 +2510,22 @@ function TopHeader({ onSave, onClose, onExport, exporting }) {
           onChange: (event) => timelineStore.setProjectName(event.target.value)
         }
       ),
+      projectOptions.length > 1 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        DropdownSelect,
+        {
+          "aria-label": "\u5207\u6362\u5DE5\u7A0B",
+          value: "__current__",
+          options: projectOptions,
+          onChange: handleProjectSelect
+        }
+      ) : null,
       /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("p", { className: "omnimux-clip-overlay-subtitle", children: [
         "\u591A\u8F68\u526A\u8F91 \xB7 ",
-        formatTimecode(durationMs)
+        formatTimecode(durationMs),
+        saveNotice ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { marginLeft: 8, color: "#34d399" }, children: [
+          "\u2713 ",
+          saveNotice
+        ] }) : null
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-clip-overlay-actions", children: [
@@ -2513,7 +2571,7 @@ function TopHeader({ onSave, onClose, onExport, exporting }) {
           onChange: (value) => timelineStore.setZoom(Number(value))
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Button, { variant: "outline", size: "sm", onClick: onSave, children: "\u4FDD\u5B58\u5E76\u8FD4\u56DE\u753B\u5E03" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Button, { variant: "outline", size: "sm", onClick: onSave, children: isCanvasMode ? "\u4FDD\u5B58\u5E76\u8FD4\u56DE\u753B\u5E03" : "\u{1F4BE} \u4FDD\u5B58\u5DE5\u7A0B" }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Button, { variant: "primary", size: "sm", loading: exporting, onClick: onExport, children: "\u5BFC\u51FA\u6210\u7247" }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
         IconButton,
@@ -2601,17 +2659,17 @@ function LeftSidebar() {
 }
 
 // src/client/components/CenterStage.jsx
-var import_react3 = require("react");
+var import_react4 = require("react");
 var import_dsh_client_ui_primitives3 = require("@deepseek-ai/dsh-client-ui-primitives");
 var import_jsx_runtime4 = require("react/jsx-runtime");
 function CenterStage() {
-  const canvasRef = (0, import_react3.useRef)(null);
+  const canvasRef = (0, import_react4.useRef)(null);
   const playheadMs = useTimelineStore((s) => s.playheadMs);
   const isPlaying = useTimelineStore((s) => s.isPlaying);
   const schema = useTimelineStore((s) => s.schema);
   const durationMs = schema.canvasConfig.durationMs || 0;
   const aspectRatio = schema.canvasConfig.aspectRatio || "16:9";
-  (0, import_react3.useEffect)(() => {
+  (0, import_react4.useEffect)(() => {
     const canvas = canvasRef.current;
     if (!canvas) return void 0;
     const ctx = canvas.getContext("2d");
@@ -2625,7 +2683,7 @@ function CenterStage() {
     });
     return void 0;
   }, [playheadMs, schema]);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react4.useEffect)(() => {
     if (!isPlaying) return void 0;
     let frameId = 0;
     let last = performance.now();
@@ -2869,7 +2927,7 @@ function toHex(color) {
 }
 
 // src/client/components/BottomTimeline.jsx
-var import_react4 = require("react");
+var import_react5 = require("react");
 var import_jsx_runtime6 = require("react/jsx-runtime");
 var TRACK_HEIGHT = 48;
 var MIN_CLIP_MS = 120;
@@ -2883,8 +2941,8 @@ function ticks(durationMs, zoom) {
   return out;
 }
 function ClipWaveform({ sourceUrl, widthPx, heightPx }) {
-  const canvasRef = (0, import_react4.useRef)(null);
-  (0, import_react4.useEffect)(() => {
+  const canvasRef = (0, import_react5.useRef)(null);
+  (0, import_react5.useEffect)(() => {
     if (!sourceUrl || !canvasRef.current) return;
     const canvas = canvasRef.current;
     canvas.width = Math.max(10, Math.round(widthPx));
@@ -2919,12 +2977,12 @@ function BottomTimeline() {
   const playheadMs = useTimelineStore((s) => s.playheadMs);
   const zoomLevel = useTimelineStore((s) => s.zoomLevel);
   const selectedClipId = useTimelineStore((s) => s.selectedClipId);
-  const bodyRef = (0, import_react4.useRef)(null);
-  const [menu, setMenu] = (0, import_react4.useState)(null);
-  const [snapGuide, setSnapGuide] = (0, import_react4.useState)(null);
+  const bodyRef = (0, import_react5.useRef)(null);
+  const [menu, setMenu] = (0, import_react5.useState)(null);
+  const [snapGuide, setSnapGuide] = (0, import_react5.useState)(null);
   const scale = pxPerMs(zoomLevel);
   const widthPx = Math.max(640, durationMs * scale);
-  const marks = (0, import_react4.useMemo)(() => ticks(durationMs, zoomLevel), [durationMs, zoomLevel]);
+  const marks = (0, import_react5.useMemo)(() => ticks(durationMs, zoomLevel), [durationMs, zoomLevel]);
   function timeFromEvent(event) {
     const scroller = bodyRef.current;
     if (!scroller) return 0;
@@ -3214,36 +3272,84 @@ function markClipReady(ready) {
   window.__omnimuxClipReady = ready;
 }
 function ClipOverlay({ t, target }) {
-  const [payload, setPayload] = (0, import_react5.useState)(null);
-  const [exportState, setExportState] = (0, import_react5.useState)({
+  const [payload, setPayload] = (0, import_react6.useState)(null);
+  const [saveNotice, setSaveNotice] = (0, import_react6.useState)("");
+  const [exportState, setExportState] = (0, import_react6.useState)({
     open: false,
     progress: 0,
     status: "",
     error: ""
   });
-  const abortRef = (0, import_react5.useRef)(null);
-  (0, import_react5.useEffect)(() => {
+  const abortRef = (0, import_react6.useRef)(null);
+  (0, import_react6.useEffect)(() => {
     injectClipOverlayStyles();
     markClipReady(true);
+    function checkUrlRoute() {
+      if (typeof window === "undefined") return;
+      const search = new URLSearchParams(window.location.search);
+      const hash = (window.location.hash || "").toLowerCase();
+      const isClipSearch = search.has("clip") || search.get("stage") === "clip";
+      const isClipHash = hash === "#clip" || hash.startsWith("#/clip") || hash.startsWith("#clip=");
+      if (isClipSearch || isClipHash) {
+        const rawProj = search.get("project") || search.get("projectId") || (hash.startsWith("#/clip/") ? hash.slice(7) : "");
+        const projectId = rawProj.trim() || `clip_standalone_${Date.now()}`;
+        fetch(`${CLIP_API_PREFIX}/projects/${encodeURIComponent(projectId)}`).then((r) => r.ok ? r.json() : null).then((data) => {
+          const openPayload = {
+            source: "url",
+            projectId,
+            nodeTitle: data?.schema?.projectId || projectId,
+            draftSchema: data?.schema
+          };
+          timelineStore.hydrateFromPayload(openPayload);
+          setPayload(openPayload);
+        }).catch(() => {
+          const openPayload = {
+            source: "url",
+            projectId,
+            nodeTitle: projectId
+          };
+          timelineStore.hydrateFromPayload(openPayload);
+          setPayload(openPayload);
+        });
+      }
+    }
+    checkUrlRoute();
+    window.addEventListener("hashchange", checkUrlRoute);
     return () => {
       markClipReady(false);
       disposePreviewResources();
       abortRef.current?.abort();
       timelineStore.reset();
+      window.removeEventListener("hashchange", checkUrlRoute);
     };
   }, []);
-  (0, import_react5.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     const bridge = createClipBridge({
       target,
       onOpen: (next) => {
         timelineStore.hydrateFromPayload(next);
         setPayload(next);
+      },
+      onReload: (data) => {
+        const state = timelineStore.getState();
+        if (data?.projectId && data.projectId !== state.schema.projectId) return;
+        fetch(`${CLIP_API_PREFIX}/projects/${encodeURIComponent(state.schema.projectId)}`).then((r) => r.ok ? r.json() : null).then((fresh) => {
+          if (fresh?.schema) {
+            timelineStore.hydrateFromPayload({
+              ...payload,
+              draftSchema: fresh.schema
+            });
+            setSaveNotice("\u5DF2\u4ECE\u540E\u53F0\u540C\u6B65\u6700\u65B0\u65F6\u95F4\u8F74");
+            setTimeout(() => setSaveNotice(""), 2500);
+          }
+        }).catch(() => {
+        });
       }
     });
     return () => {
       bridge.dispose();
     };
-  }, [target]);
+  }, [payload, target]);
   if (!payload) return null;
   const label = (key, fallback) => {
     if (typeof t === "function") {
@@ -3256,6 +3362,7 @@ function ClipOverlay({ t, target }) {
     return fallback;
   };
   const nodeId = typeof payload.nodeId === "string" ? payload.nodeId : void 0;
+  const source = payload.source || "canvas";
   function currentSavePayload(extra = {}) {
     const state = timelineStore.getState();
     return {
@@ -3274,13 +3381,58 @@ function ClipOverlay({ t, target }) {
     timelineStore.reset();
     setPayload(null);
   }
-  function handleSave() {
-    const bridge = createClipBridge({ target });
-    bridge.save(currentSavePayload());
-    bridge.dispose();
-    disposePreviewResources();
-    timelineStore.reset();
-    setPayload(null);
+  async function handleSave() {
+    const state = timelineStore.getState();
+    const saveObj = currentSavePayload();
+    if (source === "canvas") {
+      const bridge = createClipBridge({ target });
+      bridge.save(saveObj);
+      bridge.dispose();
+      disposePreviewResources();
+      timelineStore.reset();
+      setPayload(null);
+    } else {
+      try {
+        await fetch(`${CLIP_API_PREFIX}/projects/${encodeURIComponent(state.schema.projectId)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schema: saveObj.schema })
+        });
+        setSaveNotice("\u5DF2\u4FDD\u5B58");
+        setTimeout(() => setSaveNotice(""), 2500);
+      } catch {
+        setSaveNotice("\u4FDD\u5B58\u5931\u8D25");
+        setTimeout(() => setSaveNotice(""), 2500);
+      }
+    }
+  }
+  function handleSwitchProject(newProjectId) {
+    if (!newProjectId) return;
+    fetch(`${CLIP_API_PREFIX}/projects/${encodeURIComponent(newProjectId)}`).then((r) => r.ok ? r.json() : null).then((data) => {
+      const nextPayload = {
+        source,
+        projectId: newProjectId,
+        nodeTitle: data?.schema?.projectId || newProjectId,
+        draftSchema: data?.schema
+      };
+      timelineStore.hydrateFromPayload(nextPayload);
+      setPayload(nextPayload);
+      setSaveNotice("\u5DF2\u5207\u6362\u5DE5\u7A0B");
+      setTimeout(() => setSaveNotice(""), 2e3);
+    }).catch(() => {
+    });
+  }
+  function handleNewProject() {
+    const newProjectId = `clip_standalone_${Date.now()}`;
+    const nextPayload = {
+      source,
+      projectId: newProjectId,
+      nodeTitle: "\u672A\u547D\u540D\u5DE5\u7A0B"
+    };
+    timelineStore.hydrateFromPayload(nextPayload);
+    setPayload(nextPayload);
+    setSaveNotice("\u5DF2\u521B\u5EFA\u65B0\u5DE5\u7A0B");
+    setTimeout(() => setSaveNotice(""), 2e3);
   }
   async function handleExport() {
     const state = timelineStore.getState();
@@ -3321,9 +3473,14 @@ function ClipOverlay({ t, target }) {
       bridge.progress({ nodeId, status: "completed", renderProgress: 100 });
       bridge.dispose();
       setExportState({ open: false, progress: 1, status: "\u5B8C\u6210", error: "" });
-      disposePreviewResources();
-      timelineStore.reset();
-      setPayload(null);
+      if (source === "canvas") {
+        disposePreviewResources();
+        timelineStore.reset();
+        setPayload(null);
+      } else {
+        setSaveNotice("\u6210\u7247\u5DF2\u5BFC\u51FA\u81F3\u672C\u5730");
+        setTimeout(() => setSaveNotice(""), 3e3);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (message === "canceled") {
@@ -3358,9 +3515,13 @@ function ClipOverlay({ t, target }) {
         /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
           TopHeader,
           {
+            source,
             onSave: handleSave,
             onClose: handleClose,
             onExport: handleExport,
+            onSwitchProject: handleSwitchProject,
+            onNewProject: handleNewProject,
+            saveNotice,
             exporting: exportState.open && !exportState.error
           }
         ),

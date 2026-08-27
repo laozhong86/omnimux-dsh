@@ -1,9 +1,9 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { ClipDomainError } from '../errors.js'
 import { ensureClipDirs, projectJsonPath } from '../paths.js'
 import { createEmptySchema, structuredCloneSafe } from '../client/store/timelineTypes.js'
 
-const DEFAULT_FS = { existsSync, readFileSync, writeFileSync }
+const DEFAULT_FS = { existsSync, readdirSync, readFileSync, writeFileSync }
 const HISTORY_LIMIT = 80
 
 /**
@@ -153,5 +153,44 @@ export function createProjectStore(deps) {
     })
   }
 
-  return { load, save, create, exists, patchPlayback, paths }
+  /**
+   * List all stored projects sorted by updatedAt desc.
+   * @param {{ limit?: number }} [opts]
+   */
+  function list(opts = {}) {
+    const limit = Math.max(1, Math.min(100, opts.limit || 50))
+    if (!fs.existsSync(paths.projectsDir)) return []
+    try {
+      const files = fs.readdirSync(paths.projectsDir)
+      const listItems = []
+      for (const file of files) {
+        if (!file.endsWith('.json')) continue
+        const id = file.slice(0, -5)
+        try {
+          const envelope = load(id)
+          const tracks = Array.isArray(envelope.schema?.tracks) ? envelope.schema.tracks : []
+          let totalClips = 0
+          for (const tr of tracks) {
+            if (Array.isArray(tr.clips)) totalClips += tr.clips.length
+          }
+          listItems.push({
+            id,
+            projectName: envelope.schema?.projectId || id,
+            updatedAt: envelope.updatedAt || 0,
+            durationMs: envelope.schema?.canvasConfig?.durationMs || 0,
+            aspectRatio: envelope.schema?.canvasConfig?.aspectRatio || '16:9',
+            trackCount: tracks.length,
+            clipCount: totalClips,
+          })
+        } catch {
+          // ignore corrupted files
+        }
+      }
+      return listItems.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, limit)
+    } catch {
+      return []
+    }
+  }
+
+  return { load, save, create, exists, patchPlayback, list, paths }
 }

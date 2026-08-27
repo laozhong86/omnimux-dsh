@@ -7,12 +7,73 @@ import { DEFAULT_CANVAS_CONFIG, DEFAULT_TEXT_STYLE, structuredCloneSafe } from '
 
 /**
  * Convert an OpenClipEditorPayload or partial schema into a normalized TimelineSchema.
+ * Intelligently merges upstream inputs:
+ * - If draftSchema already exists, preserves all edited tracks/clips/settings, and incrementally adds
+ *   new upstream media into the media pool so they are immediately available in the left sidebar.
+ * - If no draftSchema exists, creates a fresh schema and auto-places upstream inputs on tracks.
+ *
  * @param {object} payload
  * @returns {object} normalized TimelineSchema
  */
 export function adaptPayloadToOpenReelSchema(payload) {
+  const inputs = payload?.upstreamInputs || {}
+
   if (payload?.draftSchema && Array.isArray(payload.draftSchema.tracks)) {
-    return structuredCloneSafe(payload.draftSchema)
+    const schema = structuredCloneSafe(payload.draftSchema)
+    if (!Array.isArray(schema.media)) schema.media = []
+
+    const existingPaths = new Set(schema.media.map((m) => m.path || m.url).filter(Boolean))
+    let nextMediaIndex = schema.media.length + 1
+
+    // Incrementally add any new upstream videos
+    for (const item of inputs.videos || []) {
+      const path = item.path || item.url || ''
+      if (path && !existingPaths.has(path)) {
+        existingPaths.add(path)
+        schema.media.push({
+          id: `media_v_${nextMediaIndex++}`,
+          name: item.name || `视频 ${nextMediaIndex - 1}`,
+          type: 'video',
+          durationMs: Math.max(500, item.durationMs || 4000),
+          path,
+        })
+      }
+    }
+
+    // Incrementally add any new upstream images
+    for (const item of inputs.images || []) {
+      const path = item.path || item.url || ''
+      if (path && !existingPaths.has(path)) {
+        existingPaths.add(path)
+        schema.media.push({
+          id: `media_img_${nextMediaIndex++}`,
+          name: item.name || `图片 ${nextMediaIndex - 1}`,
+          type: 'image',
+          durationMs: Math.max(500, item.displayDurationMs || 3000),
+          path,
+        })
+      }
+    }
+
+    // Incrementally add any new upstream audios
+    for (const item of inputs.audios || []) {
+      const path = item.path || item.url || ''
+      if (path && !existingPaths.has(path)) {
+        existingPaths.add(path)
+        schema.media.push({
+          id: `media_a_${nextMediaIndex++}`,
+          name: item.name || `音频 ${nextMediaIndex - 1}`,
+          type: 'audio',
+          durationMs: Math.max(500, item.durationMs || 5000),
+          path,
+        })
+      }
+    }
+
+    if (payload.projectId && !schema.projectId) {
+      schema.projectId = payload.projectId
+    }
+    return schema
   }
 
   const projectId = payload?.projectId || `clip_${Date.now()}`
@@ -55,7 +116,6 @@ export function adaptPayloadToOpenReelSchema(payload) {
   ]
 
   const mediaList = []
-  const inputs = payload?.upstreamInputs || {}
   let videoCursorMs = 0
   let clipCounter = 1
 
