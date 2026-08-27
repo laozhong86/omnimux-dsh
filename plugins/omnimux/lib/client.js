@@ -226,7 +226,7 @@ var NS = "omnimux";
 // src/client/ProfileSection.jsx
 var import_react4 = require("react");
 
-// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
+// ../../../omnimux-dsh/node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
 var import_react = require("react");
 var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
 var import_jsx_runtime = require("react/jsx-runtime");
@@ -2734,7 +2734,7 @@ function releaseProductStage(id) {
 var PRODUCT_STAGE_CHROME = `
 [data-slot="shell.overlay"]{pointer-events:none!important;}
 [data-slot="shell.overlay"] > *{pointer-events:auto!important;}
-html:not([data-dsh-product-stage]) [class*="-stage"]{display:none!important;pointer-events:none!important;}
+html:not([data-dsh-product-stage]) [class$="-stage"]{display:none!important;pointer-events:none!important;}
 ${STAGE_MUTUAL_EXCLUSION_RULES}
 html:not([data-dsh-product-stage]) [class*="toggleCluster"],
 html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}

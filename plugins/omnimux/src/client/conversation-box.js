@@ -61,10 +61,14 @@ export function releaseProductStage(id) {
   } catch {}
 }
 
+// First-level stage roots end in `-stage`. A `*=`-fragment match would also
+// hide BEM internals and the vendored OpenReel studio classes (e.g.
+// `bg-stage-bg`) whenever no product stage is active — the clip editor opened
+// from the workflow canvas tab (#84).
 export const PRODUCT_STAGE_CHROME = `
 [data-slot="shell.overlay"]{pointer-events:none!important;}
 [data-slot="shell.overlay"] > *{pointer-events:auto!important;}
-html:not([data-dsh-product-stage]) [class*="-stage"]{display:none!important;pointer-events:none!important;}
+html:not([data-dsh-product-stage]) [class$="-stage"]{display:none!important;pointer-events:none!important;}
 ${STAGE_MUTUAL_EXCLUSION_RULES}
 html:not([data-dsh-product-stage]) [class*="toggleCluster"],
 html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}

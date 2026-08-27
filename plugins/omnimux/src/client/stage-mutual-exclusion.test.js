@@ -87,6 +87,23 @@ describe('Stage Mutual Exclusion & Host Chrome Rules', () => {
     )
   })
 
+  it('keeps BEM internals and vendored -stage fragments visible when no stage is active', () => {
+    setup()
+    ensureProductStageChrome()
+
+    const chrome = document.getElementById('dsh-product-stage-chrome')?.textContent ?? ''
+    assert.match(
+      chrome,
+      /html:not\(\[data-dsh-product-stage\]\) \[class\$="-stage"\]\{display:none/,
+      'the idle rule must match only first-level roots ending in -stage',
+    )
+    assert.doesNotMatch(
+      chrome,
+      /html:not\(\[data-dsh-product-stage\]\) \[class\*="-stage"\]\{display:none/,
+      'a fragment-wide idle rule would hide BEM internals and the vendored OpenReel studio classes (e.g. bg-stage-bg) opened from the canvas tab (#84)',
+    )
+  })
+
   it('updates html dataset when claiming and releasing product stage', () => {
     setup()
     ensureProductStageChrome()

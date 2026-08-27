@@ -113,7 +113,7 @@ function StudioCreateForm({ t, onCreated }) {
           onChange={(e) => setPreset(e.target.value)}
         >
           {PRESET_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value} style={{ background: '#1e1e1e', color: '#fff' }}>
+            <option key={opt.value} value={opt.value} style={{ background: 'var(--dsw-alias-bg-layer-2, #1e1e1e)', color: 'var(--dsw-alias-label-primary, #fff)' }}>
               {opt.label}
             </option>
           ))}
@@ -130,7 +130,7 @@ function StudioCreateForm({ t, onCreated }) {
           onChange={(e) => setFps(e.target.value)}
         >
           {FPS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value} style={{ background: '#1e1e1e', color: '#fff' }}>
+            <option key={opt.value} value={opt.value} style={{ background: 'var(--dsw-alias-bg-layer-2, #1e1e1e)', color: 'var(--dsw-alias-label-primary, #fff)' }}>
               {opt.label}
             </option>
           ))}
