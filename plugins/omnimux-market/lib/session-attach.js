@@ -68,6 +68,18 @@ export function loadSkillBody(home, skill) {
     }
 }
 /**
+ * DSH systemPrompt.section interpolates any `{{...}}` as a template variable reference.
+ * External skill/expert instructions often include `{{...}}` in code snippets (GitHub Actions,
+ * Prometheus alerts, Jinja/Vue templates, etc.). Inserting a zero-width space between double
+ * braces prevents DSH from parsing them as variable interpolations while preserving the exact
+ * visual text for the model.
+ */
+export function escapePromptVariables(text) {
+    if (!text || (!text.includes('{{') && !text.includes('}}')))
+        return text;
+    return text.replace(/\{(?=\{)/g, '{\u200B').replace(/\}(?=\})/g, '}\u200B');
+}
+/**
  * 每步系统提示用的身份段。挂上后跨轮、重启、压缩后都从落盘重读。
  * 空串表示本会话未挂专家，组装时会被丢掉。
  */
@@ -79,7 +91,7 @@ export function renderAttachedExpertSection(home, sessionId) {
     const truncated = body.length > MAX_SKILL_CHARS;
     const skillText = truncated ? `${body.slice(0, MAX_SKILL_CHARS)}\n\n…(instructions truncated; call the skill tool with "${attach.skill}" for the rest)` : body;
     const kindLabel = attach.kind === 'team' ? '专家团' : '专家';
-    return [
+    const raw = [
         `This session has a persistent attached plaza ${kindLabel}: 「${attach.title}」 (catalog id ${attach.id}, skill ${attach.skill}).`,
         'Stay in this role for the rest of the session. Do not plaza_search or recommend a different expert unless the user explicitly asks to switch.',
         'The slash gesture only injects a skill for one step. This attachment is the durable identity: reload it from here even if later user messages omit /skill.',
@@ -87,6 +99,7 @@ export function renderAttachedExpertSection(home, sessionId) {
             ? `Follow these expert instructions:\n\n${skillText}`
             : `Expert skill "${attach.skill}" is installed. Call the skill tool with that exact name before acting, then stay in character.`,
     ].join('\n');
+    return escapePromptVariables(raw);
 }
 /** 从工具 exec 抠会话 id；测例可以不传。 */
 export function sessionIdFromExec(exec) {
