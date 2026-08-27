@@ -32,9 +32,16 @@
     "wt:list": "bash scripts/git-wt.sh list",
     "wt:doctor": "bash scripts/git-wt.sh doctor",
     "qa:gate": "node scripts/auto-qa-gate.mjs",
+    "note:lint": "node scripts/verify-agent-note-format.mjs",
+    "doc:pairing": "node scripts/verify-bilingual-docs.mjs",
+    "doc:pairing:write": "node scripts/verify-bilingual-docs.mjs --write",
+    "archived:verify": "node scripts/verify-archived-agent-notes.mjs",
+    "archived:seal": "node scripts/verify-archived-agent-notes.mjs --write",
+    "check:boundaries": "node scripts/verify-plugin-boundaries.mjs",
+    "test:gates": "node --test scripts/verify-ci-gates.test.mjs",
     "auto:run": "node scripts/auto-pipeline.mjs",
-    "test": "pnpm --filter dsh-drama test && pnpm --filter omnimux test && pnpm --filter omnimux-accounts test && pnpm --filter omnimux-inspiration test && pnpm --filter omnimux-market test",
-    "test:all": "pnpm -r test",
+    "test": "pnpm --filter dsh-drama test && pnpm --filter omnimux test && pnpm --filter omnimux-accounts test && pnpm --filter omnimux-inspiration test && pnpm --filter omnimux-market test && pnpm test:gates",
+    "test:all": "pnpm -r test && pnpm test:gates",
     "test:ui": "node scripts/scan-ui-gates.mjs",
     "test:e2e-mock": "OMNIMUX_MOCK_MODE=replay node scripts/mock-sidecar.test.mjs",
     "test:dx": "node scripts/test-dx-pipeline.mjs",
@@ -42,6 +49,7 @@
     "accept:apps": "bash scripts/accept-apps-install.sh",
     "verify:models": "node scripts/verify-models.mjs",
     "verify:image-live": "node scripts/verify-omnimux-image-live.mjs",
-    "verify:all": "pnpm test && pnpm registry:verify && pnpm doctor"
+    "verify:gates": "pnpm note:lint && pnpm doc:pairing && pnpm archived:verify && pnpm check:boundaries && pnpm test:gates",
+    "verify:all": "pnpm verify:gates && pnpm test && pnpm registry:verify && pnpm doctor"
   }
 }
