@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L2"
 date: "2026-08-26"
-updated: "2026-08-26"
+updated: "2026-08-27"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -21,11 +21,12 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `accepted` | [2026-08-27-adopt-dsh-native-ui-system.md](2026-08-27-adopt-dsh-native-ui-system.md) | 决策：全面适配 DeepSeek Harness 原生 UI 规范，彻底废除外部主题覆盖层 | `omnimux` | 2026-08-27 | 100% 消费官方 `--dsw-alias-*` / `--dsw-specific-*` tokens，严禁 `overrideTokens` 全壳染色与外部调色盘覆写，回归官方原生视觉与交互体系。 |
 | `accepted` | [2026-08-26-l2-in-progress-plugin-cap.md](2026-08-26-l2-in-progress-plugin-cap.md) | 决策：L2 在研插件仍保持「每个 profile link ≤ 1」 | `omnimux-assets` | 2026-08-26 | 日期：2026-08-26。 |
 | `accepted` | [2026-08-26-l2-restart-host-session-semantics.md](2026-08-26-l2-restart-host-session-semantics.md) | 决策：L2 restart-host 保端口与磁盘，不保浏览器会话 | `omnimux` | 2026-08-26 | 日期：2026-08-26。 |
 | `accepted` | [2026-08-26-ops-entry-authority.md](2026-08-26-ops-entry-authority.md) | 决策：运维命令权威入口仍是 fork yarn omnimux: | `omnimux` | 2026-08-26 | 日期：2026-08-26。 |
-| `accepted` | [2026-08-21-gxgen-capability-plugin.md](2026-08-21-gxgen-capability-plugin.md) | Gxgen 微服务 → OmniMux 能力插件 | `omnimux-drama` | 2026-08-21 | **Superseded（2026-08-21 下午方向变更）**：引擎客户端方案废除——用户明确要求本地化自包含，不可能依赖本地 Docker 引擎或云端。Gxgen video-engine 降级 |
-| `accepted` | [2026-08-21-xai-full-shell-theme.md](2026-08-21-xai-full-shell-theme.md) | 决策：全壳 x.ai 品牌染色（overrideTokens 渲染官方 --dsw-） | `omnimux` | 2026-08-21 | 日期：2026-08-21。 |
+| `superseded` | [2026-08-21-gxgen-capability-plugin.md](2026-08-21-gxgen-capability-plugin.md) | Gxgen 微服务 → OmniMux 能力插件 | `omnimux-drama` | 2026-08-21 | **Superseded（2026-08-21 下午方向变更）**：引擎客户端方案废除——用户明确要求本地化自包含，不可能依赖本地 Docker 引擎或云端。Gxgen video-engine 降级 |
+| `superseded` | [2026-08-21-xai-full-shell-theme.md](2026-08-21-xai-full-shell-theme.md) | 决策：全壳 x.ai 品牌染色（overrideTokens 渲染官方 --dsw-） | `omnimux` | 2026-08-21 | **Superseded（2026-08-27 决议废除）**：由于破坏宿主官方交互、降低对比度、增加维护负担等问题，已被 2026-08-27 决议废弃。现全面回归官方原生 `--dsw-*`。 |
 | `accepted` | [2026-08-16-harness-consume-not-fork.md](2026-08-16-harness-consume-not-fork.md) | 决策：消费官方 dsh，不整仓 fork | `omnimux` | 2026-08-16 | 日期：2026-08-16。 |
 | `accepted` | [2026-08-16-hub-io-and-facilities.md](2026-08-16-hub-io-and-facilities.md) | 决策：执行中枢 I/O 与落地设施 | `omnimux` | 2026-08-16 | 日期：2026-08-16。 |
 | `accepted` | [2026-08-16-hub-owns-core.md](2026-08-16-hub-owns-core.md) | 决策：中枢拥有全部 OmniMux 核心能力 | `omnimux-drama` | 2026-08-16 | 日期：2026-08-16。 |

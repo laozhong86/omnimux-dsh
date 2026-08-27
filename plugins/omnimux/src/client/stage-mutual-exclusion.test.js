@@ -62,12 +62,46 @@ describe('Stage Mutual Exclusion & Host Chrome Rules', () => {
 
   it('injects host-level mutual exclusion CSS for each stage', () => {
     for (const [id, className] of Object.entries(STAGE_CSS_CLASS_MAP)) {
-      const expectedRule = `html[data-dsh-product-stage="${id}"] [class$="-stage"]:not(.${className})`
+      const expectedRule = `html[data-dsh-product-stage="${id}"] [data-slot="shell.overlay"] > [class*="-stage"]:not(.${className})`
       assert.ok(
         PRODUCT_STAGE_CHROME.includes(expectedRule),
-        `PRODUCT_STAGE_CHROME must contain mutual exclusion rule for ${id} targeting ${className}`,
+        `PRODUCT_STAGE_CHROME must contain sibling-scoped mutual exclusion rule for ${id} targeting ${className}`,
       )
     }
+  })
+
+  it('scopes mutual exclusion to sibling stage roots, not descendants', () => {
+    setup()
+    ensureProductStageChrome()
+
+    const chrome = document.getElementById('dsh-product-stage-chrome')?.textContent ?? ''
+    assert.match(
+      chrome,
+      /\[data-slot="shell\.overlay"\] > \[class\*="-stage"\]:not\(\.omnimux-accounts-stage\)/,
+      'the active-stage rule must select sibling roots through the overlay slot',
+    )
+    assert.doesNotMatch(
+      chrome,
+      /html\[data-dsh-product-stage="omnimux-accounts"\]\s+\[class\*="-stage"\]\s*:not\(\.omnimux-accounts-stage\)/,
+      'a descendant-wide selector hides stage headers and bodies inside the active page',
+    )
+  })
+
+  it('keeps BEM internals and vendored -stage fragments visible when no stage is active', () => {
+    setup()
+    ensureProductStageChrome()
+
+    const chrome = document.getElementById('dsh-product-stage-chrome')?.textContent ?? ''
+    assert.match(
+      chrome,
+      /html:not\(\[data-dsh-product-stage\]\) \[class\$="-stage"\]\{display:none/,
+      'the idle rule must match only first-level roots ending in -stage',
+    )
+    assert.doesNotMatch(
+      chrome,
+      /html:not\(\[data-dsh-product-stage\]\) \[class\*="-stage"\]\{display:none/,
+      'a fragment-wide idle rule would hide BEM internals and the vendored OpenReel studio classes (e.g. bg-stage-bg) opened from the canvas tab (#84)',
+    )
   })
 
   it('updates html dataset when claiming and releasing product stage', () => {

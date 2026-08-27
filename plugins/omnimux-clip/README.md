@@ -1,6 +1,6 @@
 # omnimux-clip
 
-OmniMux Clip / AI 剪辑工坊。独立 `shell.overlay` 剪辑工作台；与画布只交换 JSON（`omnimux-clip-*` CustomEvent + Host HTTP `/omnimux-clip/api`）。
+OmniMux Clip / 视频剪辑。P1 主座是 `dsh-better-sidebar` Tab（`omnimux-clip:studio`），完整套用官方 OpenReel GUI + WebCodecs 管线（`src/client/openreel/`）。与画布只交换 JSON（Phase 3：`omnimux-clip-*` CustomEvent + Host HTTP `/omnimux-clip/api`）。
 
 Agent 面：`clip_get` / `clip_edit` / `clip_view` / `clip_snapshot` / `clip_diagnostics` / `clip_export`。判断层见 `skills/clip-craft/SKILL.md`。失败抛 `ClipDomainError`，禁止 `{ ok: false }` 当成功值。
 

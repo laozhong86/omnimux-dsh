@@ -27,10 +27,11 @@ export const STAGE_CSS_CLASS_MAP = {
   'omnimux-apps': 'omnimux-apps-stage',
 }
 
-// `$=` only matches first-level roots (`omnimux-*-stage`). `*=` also hits BEM
-// internals such as clip preview `omx-clip-stage__canvas` and hides them.
 const STAGE_MUTUAL_EXCLUSION_RULES = Object.entries(STAGE_CSS_CLASS_MAP).map(([stageId, className]) => {
-  return `html[data-dsh-product-stage="${stageId}"] [class$="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`
+  // First-level stage roots are direct children of the overlay seat. Scoping
+  // this rule to those siblings avoids matching the active stage's own
+  // header/body classes, which also contain the `-stage` fragment.
+  return `html[data-dsh-product-stage="${stageId}"] [data-slot="shell.overlay"] > [class*="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`
 }).join('\n')
 
 /**
@@ -60,6 +61,10 @@ export function releaseProductStage(id) {
   } catch {}
 }
 
+// First-level stage roots end in `-stage`. A `*=`-fragment match would also
+// hide BEM internals and the vendored OpenReel studio classes (e.g.
+// `bg-stage-bg`) whenever no product stage is active — the clip editor opened
+// from the workflow canvas tab (#84).
 export const PRODUCT_STAGE_CHROME = `
 [data-slot="shell.overlay"]{pointer-events:none!important;}
 [data-slot="shell.overlay"] > *{pointer-events:auto!important;}

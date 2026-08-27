@@ -2710,7 +2710,7 @@ var STAGE_CSS_CLASS_MAP = {
   "omnimux-apps": "omnimux-apps-stage"
 };
 var STAGE_MUTUAL_EXCLUSION_RULES = Object.entries(STAGE_CSS_CLASS_MAP).map(([stageId, className]) => {
-  return `html[data-dsh-product-stage="${stageId}"] [class$="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`;
+  return `html[data-dsh-product-stage="${stageId}"] [data-slot="shell.overlay"] > [class*="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`;
 }).join("\n");
 function claimProductStage(id) {
   try {

@@ -24,6 +24,12 @@ export function createIdentity(deps) {
     }
     const cached = deps.store.readProfileCache()
     if (!verify) {
+      if (typeof deps.store.isExpired === 'function' && deps.store.isExpired()) {
+        return {
+          kind: 'token_invalid',
+          body: publicStatus({ loggedIn: false, verified: false, siteBaseUrl, profile: cached }),
+        }
+      }
       return {
         kind: 'cached',
         body: publicStatus({ loggedIn: true, verified: null, siteBaseUrl, profile: cached }),
@@ -41,15 +47,26 @@ export function createIdentity(deps) {
         userId: cached && cached.id != null ? String(cached.id) : undefined,
       })
       deps.store.writeProfileCache(profile)
+      if (typeof deps.store.clearExpired === 'function') {
+        deps.store.clearExpired()
+      }
       return {
         kind: 'verified',
         body: publicStatus({ loggedIn: true, verified: true, siteBaseUrl, profile }),
       }
     } catch (error) {
       const invalid = error instanceof Error && error.code === 'token_invalid'
-      if (invalid) await deps.store.unset()
+      if (invalid) {
+        if (typeof deps.store.markExpired === 'function') {
+          deps.store.markExpired()
+        }
+        return {
+          kind: 'token_invalid',
+          body: publicStatus({ loggedIn: false, verified: false, siteBaseUrl, profile: cached }),
+        }
+      }
       return {
-        kind: invalid ? 'token_invalid' : 'self_failed',
+        kind: 'self_failed',
         body: publicStatus({ loggedIn: false, verified: false, siteBaseUrl }),
       }
     }

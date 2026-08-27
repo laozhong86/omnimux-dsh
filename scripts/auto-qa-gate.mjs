@@ -48,7 +48,10 @@ function findFiles(dir, exts = ['.js', '.jsx', '.ts', '.tsx', '.mjs']) {
     for (const entry of entries) {
       const fullPath = join(current, entry.name)
       if (entry.isDirectory()) {
-        if (['node_modules', 'dist', '.git', '.workbuddy', 'lib'].includes(entry.name)) continue
+        // OpenReel 官方 vendor 整包（src/client/openreel/）依 openreel-vendor-contract 完整引入、严禁改写：
+        // 其颜色值与生命周期约定属官方 GUI 源码自身范畴，不参与五维通用扫描；
+        // DSH token 映射由契约 §2.2 宿主胶水层负责。vendor 专项检查见契约 §5 反自研审查清单。
+        if (['node_modules', 'dist', '.git', '.workbuddy', 'lib', 'openreel'].includes(entry.name)) continue
         walk(fullPath)
       } else if (entry.isFile()) {
         if (exts.includes(extname(entry.name))) {
@@ -180,7 +183,7 @@ const CONTENT_PRESET_PATTERN = /^(?:plugins[/\\]omnimux-clip[/\\])?src[/\\]clien
 for (const file of files) {
   const rel = relative(targetDir, file)
   // 只检测 client UI 文件
-  if (!rel.includes('client/') || rel.includes('.test.') || rel.includes('xai-theme.js')) continue
+  if (!rel.includes('client/') || rel.includes('.test.')) continue
   if (VENDOR_ENGINE_MARKER.test(rel)) continue
   if (CONTENT_PRESET_PATTERN.test(rel.replaceAll('\\', '/'))) continue
   const content = readFileSync(file, 'utf8')
@@ -190,7 +193,7 @@ for (const file of files) {
     // 忽略注释行与 svg path / canvas 绘图底层
     if (line.trim().startsWith('//') || line.includes('/*') || line.includes('d="M') || line.includes('xmlns')) return
     const matches = line.match(RAW_COLOR_PATTERN)
-    if (matches && !line.includes('--dsw-') && !line.includes('--omx-')) {
+    if (matches && !line.includes('--dsw-')) {
       // 容忍透明和纯黑白基础占位，其它必须使用 design token
       const filtered = matches.filter(m => !['#fff', '#ffffff', '#000', '#000000', 'rgba(0,0,0,0)'].includes(m.toLowerCase()))
       if (filtered.length > 0) {
@@ -205,7 +208,7 @@ for (const file of files) {
   })
 }
 if (report.dimensions.tokens.pass) {
-  report.dimensions.tokens.checks.push('UI 视觉完全遵守 x.ai Design Token 体系')
+  report.dimensions.tokens.checks.push('UI 视觉完全遵守 DSH 原生 Design Token 体系')
 }
 
 // 5. [Guards] 稳定性保活与写闸门

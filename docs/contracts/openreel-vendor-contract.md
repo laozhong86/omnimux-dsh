@@ -1,5 +1,5 @@
 ---
-title: "openreel-vendor-contract — OpenReel Video 引擎引入与反自研工程契约"
+title: "openreel-vendor-contract — OpenReel 完整微应用引入与反自研契约"
 id: "contract-openreel-vendor-standard"
 type: "contract"
 status: "living"
@@ -8,7 +8,7 @@ date: "2026-08-27"
 updated: "2026-08-27"
 authors: ["x", "agent-architect", "agent-director"]
 subsystem: "omnimux-clip"
-tags: ["openreel", "nle", "vendor", "anti-reinvention", "clip", "governance"]
+tags: ["openreel", "nle", "vendor", "anti-reinvention", "clip", "micro-app", "governance"]
 supersedes: []
 superseded_by: null
 related:
@@ -16,103 +16,151 @@ related:
   - "docs/specs/2026-08-25-omnimux-clip-studio-spec.md"
   - "docs/contracts/plugin-qa.md"
   - "docs/contracts/hub.md"
+  - "docs/contracts/ui-design-guidelines.md"
+  - "docs/contracts/gxgen-workflow-migration.md"
 ---
 
-# openreel-vendor-contract — OpenReel Video 引擎引入与反自研工程契约
+# openreel-vendor-contract — OpenReel 完整微应用引入与反自研契约
 
-> **版本**：v1.0.0 | **生效日期**：2026-08-27 | **权威级别**：L1（工程契约）  
-> **适用范围**：`omnimux-clip` 插件所有涉及时间轴、渲染、预览、导出、多媒体处理及 Agent 剪辑接口的开发与验收。
+> **版本**：v2.0.0 | **生效日期**：2026-08-27 | **权威级别**：L1
+> **适用范围**：`omnimux-clip` 一切时间轴、原生 GUI、渲染、预览、导出、多媒体处理、Tab 挂载与 Agent 剪辑接口。
+> **本版变更**：废弃「Headless 引擎 + 手写 GUI」。OpenReel 官方全套源码（含专业多轨时间轴、资源库、属性面板、视口）必须以完整微应用形态 Vendorize。
 
 ---
 
-## 1. 宗旨与最高红线（Anti-Reinvention Directive）
+## 1. 宗旨与最高红线
 
-在 OmniMux 视频剪辑工坊（`omnimux-clip`）的工程建设中，**严禁重新发明已经成熟的开源 NLE 轮子**。
+在 `omnimux-clip` 中，**严禁重新发明已经成熟的开源 NLE（含其官方 GUI）**。
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              【最高行为铁律】                               │
 │                                                                             │
-│   凡是 OpenReel Video (`Augani/openreel-video`, MIT) 原生已具备的能力，      │
-│   在 omnimux-clip 插件中【一律严禁自研/手写替代实现】，必须以 Vendorize       │
-│   形式直接复用其核心引擎。                                                  │
+│  1. 完整微应用：MUST 套用 Augani/openreel-video (MIT) 官方全套源码，         │
+│     包括原生 GUI 与 WebCodecs / WebGPU / Web Audio 管线。                   │
+│  2. 禁止 Headless 拆分：MUST NOT 抽掉官方界面，只留无头引擎再手写            │
+│     TopHeader / 资源库 / 属性面板 / 时间轴壳。                               │
+│  3. 禁止自研替代：凡官方已有的状态机、解码、波形、磁吸、花字、导出，          │
+│     一律 Vendorize，严禁手写伪实现。                                         │
+│  4. 主题：宿主胶水走 DSH 官方 --dsw-* token。MUST NOT 再写 xAI GUI。         │
+│     OpenReel 界面只做 CSS 变量映射，不重绘。                                 │
 │                                                                             │
-│   违者（如手写 Canvas 2D 占位贴图、手写简化时间轴 store、手写伪造 MP4 导出）  │
-│   代码审查一律打回，严过关五维质检判定为 Blocker 阻断，不得放行。             │
+│  违者（含自研四宫格、Canvas 2D 占位贴图、假 MP4、假时间轴 store）            │
+│  代码审查一律打回，五维质检判定 Blocker。                                    │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+对标 MiniMax Design `bundled-plugins/clip-studio`：把 OpenReel 当完整微应用嵌进宿主工作台，而不是拆引擎。
+
 ---
 
-## 2. 能力归属与边界矩阵（Boundary Matrix）
+## 2. 能力归属矩阵
 
-### 2.1 严禁自研项（Strictly Vendorize from OpenReel）
+### 2.1 严禁自研（必须来自官方 OpenReel）
 
-| 领域 | 严禁自研行为（违规） | 必须采用的 OpenReel 原生引擎模块 | 目标路径 |
+| 领域 | 严禁（违规） | 必须采用 | 目标路径 |
 |---|---|---|---|
-| **多轨时间轴** | 手写简易 Zustand/JS store、手写 Track/Clip 增删与历史记录 | OpenReel 原生 Timeline Store、Track/Clip 核心状态机与 Undo/Redo 快照 | `src/client/engine/openreel/timeline/` |
-| **视频预览解码** | 用 `loadImage` / 静态图片贴图伪造视频帧播放 | OpenReel WebCodecs (`VideoDecoder`) / `HTMLVideoElement` 逐帧精确解码管线 | `src/client/engine/openreel/render/` |
-| **画面合成视口** | 手写简易 `drawFrame` 占位渲染 | OpenReel 多图层混合合成器、高精度播放头时钟、画布缩放吸附 | `src/client/engine/openreel/stage/` |
-| **音频与波形** | 仅做标量音量增益、不提取波形 | OpenReel Web Audio API 上下文、Wasm/JS FFT 波形发生器、变速音调保持算法 | `src/client/engine/openreel/audio/` |
-| **剪辑交互** | 手写简易拖拽、忽略磁吸与波纹 | OpenReel 磁吸引擎 (Magnet Snapping)、波纹编辑 (Ripple Editing)、切片裁切手柄 | `src/client/engine/openreel/timeline/` |
-| **成片导出** | 手写仅封装 JPEG 的伪 MP4 Muxer、强行依赖外部 FFmpeg | OpenReel Web Worker 硬件加速导出管线 (`VideoEncoder` + `AudioEncoder` + Muxer) | `src/client/engine/openreel/export/` |
-| **花字与转场** | 仅支持固定几个硬编码 Chip、简单透明度变化 | OpenReel 富文本排版引擎（描边/阴影/排版）与 WebGL/WebGPU 转场 Shaders | `src/client/engine/openreel/effects/` |
+| **完整 GUI** | 手写四宫格（TopHeader / LeftSidebar / CenterStage / RightInspector / BottomTimeline）替换官方界面 | 官方资源库、视口、属性面板、多轨时间轴、原生工具栏 | `src/client/openreel/components/`（以 upstream 目录名为准） |
+| **多轨时间轴** | 自研 Zustand/JS store、自研 Track/Clip 增删与 Undo | 官方 Timeline Store、状态机、Undo/Redo | `src/client/openreel/timeline/` |
+| **视频预览** | `loadImage` / 静态贴图伪造播放 | 官方 WebCodecs `VideoDecoder` / 逐帧管线 | `src/client/openreel/render/` |
+| **画面视口** | 手写 `drawFrame` 占位 | 官方多层合成、播放头时钟 | `src/client/openreel/render/` 或 `stage/` |
+| **音频与波形** | 只做音量滑杆、不提取波形 | 官方 Web Audio、FFT 波形、变速音调保持 | `src/client/openreel/audio/` |
+| **剪辑交互** | 手写拖拽、忽略磁吸与波纹 | 官方 Magnet Snapping、Ripple、切片手柄 | `src/client/openreel/timeline/` |
+| **成片导出** | 假 MP4 Muxer、强制外部 FFmpeg | 官方 Worker：`VideoEncoder` + `AudioEncoder` + Muxer | `src/client/openreel/export/` |
+| **花字与转场** | 几个硬编码 Chip、简单透明度 | 官方排版引擎与转场 Shaders | `src/client/openreel/effects/` |
 
-### 2.2 允许且仅限自研项（OmniMux 宿主胶水层）
+旧路径 `src/client/engine/openreel/` 若仍在，视为过渡；P1 必须把 **GUI 与管线** 收拢到 `src/client/openreel/`，不得只保留无头 `engine/`。
 
-| 胶水领域 | 自研职责边界 | 实现落点 |
+### 2.2 允许且仅限自研（宿主胶水）
+
+| 胶水 | 边界 | 落点 |
 |---|---|---|
-| **Cordis 插件** | 声明 `omnimux-clip`、生命周期管理、依赖注入、`dsh.manifest.json` 与 `plugins.registry.json` 登记 | `src/index.js`, `dsh.manifest.json` |
-| **画布 IPC 桥** | 监听/派发 `omnimux-clip-open/save/progress/close` DOM CustomEvent，保持与 `omnimux-workflow` 解耦 | `src/client/ClipBridge.js` |
-| **数据适配器** | 将画布输入 `OpenClipEditorPayload` 转为 OpenReel timeline schema；将 OpenReel 产物序列化回写 | `src/client/store/openreelAdapter.js` |
-| **宿主 HTTP & 磁盘** | 挂载 `/omnimux-clip/api/projects*` 路由；在 `$DSH_HOME/omnimux/clip/` 下管理工程/导出/快照 | `src/http/routes.js`, `src/paths.js` |
-| **Agent RPC** | 将 6 大工具（`clip_get/edit/view/snapshot/diagnostics/export`）映射为 OpenReel 状态机原子操作 | `src/tools.js`, `src/timeline/ops.js` |
-| **UI 挂载与主题** | 挂载 Stage 到 `shell.overlay`；包裹符合 x.ai 设计规范的顶栏（`TopHeader`）与主题 Token | `src/client/ClipOverlay.jsx` |
-| **合规与版权** | 随包分发 `LICENSE.openreel.txt` 与 `THIRD_PARTY_NOTICES.md` | 根目录 |
+| **Cordis** | 声明插件、生命周期、`dsh.manifest.json` | `src/index.js` |
+| **侧边栏 Tab** | `ctx.betterSidebar.registerTab({ id: 'omnimux-clip:studio' })`；打开/关闭 Tab；unmount 释放 | `src/client/index.js`, `ClipStudioTab.jsx` |
+| **工程落盘** | `/omnimux-clip/api/projects*`；`$DSH_HOME/omnimux/clip/` | `src/http/routes.js`, `src/store/projectStore.js` |
+| **官方 schema 原样存** | 包一层 `ClipProjectRecord`，不改写官方字段 | `project.json` 的 `openreel` 字段 |
+| **主题映射** | OpenReel CSS 变量 → `--dsw-alias-*` / `--dsw-specific-*`；空态用 ui-kit | `src/client/theme/dsw-map.css` |
+| **Agent RPC** | Phase 2：`clip_*` 映射官方原子，禁止另写 ops 打自研 store | `src/tools.js` |
+| **画布桥** | Phase 3：`omnimux-clip-open/save/progress/close` | `src/client/host/` |
+| **合规** | `LICENSE.openreel.txt`、`THIRD_PARTY_NOTICES.md` | 包根 |
+
+### 2.3 明确禁止的「过渡实现」
+
+下列曾出现在 v1 文档或代码里，**现在直接算违规**，不得以「先跑通再换官方」为借口：
+
+- Headless OpenReel + 自研 xAI / OmniMux NLE 壳
+- 自研 `timelineStore` 当写盘真源，官方引擎只当渲染后端
+- P1 主入口挂 `shell.overlay` / `conversation.view`
+- 为品牌感重写官方资源库或时间轴
+- 把多轨合成交给 `omnimux-video` / FFmpeg
 
 ---
 
-## 3. Vendorize 目录规范与代码管理准则
+## 3. Vendorize 目录与管理
 
-1. **Vendor 目录唯一真源**：
-   所有引入的 OpenReel 源码统一置于 `plugins/omnimux-clip/src/client/engine/openreel/`。
-2. **轻量化剪裁（Pruning）准则**：
-   - **MUST 剪裁剔除**：OpenReel 的用户登录/权限系统、云存储上传器（S3/OSS）、CapCut 模版导入器、其自带的应用外层顶栏与独立路由。
-   - **MUST 保留**：时间轴、渲染器、音频处理、导出 Worker、排版与着色器特效。
-3. **单向适配契约（Adapter Pattern）**：
-   - OpenReel 引擎内部代码**禁止**反向 import DSH 专用模块（如 `@deepseek-ai/*` 或 `ClipBridge`）；
-   - 所有宿主与引擎的交互**必须**经由 `src/client/store/openreelAdapter.js` 进行单向驱动。
-4. **依赖隔离**：
-   - 宿主 `react`、`react-dom`、`@deepseek-ai/dsh-client-ui-primitives` 必须在构建时声明为 `external`，严禁在 Client Bundle 中打包第二份 React。
+1. **Vendor 根**：`plugins/omnimux-clip/src/client/openreel/`，含官方 GUI + 管线。
+2. **剪裁**：
+   - MUST 剔除：登录 / 权限、云上传（S3/OSS）、CapCut 导入、与 DSH Tab 冲突的独立 Router / 窗口壳。
+   - MUST 保留：资源库、视口、属性面板、多轨、渲染、音频、导出 Worker、花字与着色器。
+3. **单向适配**：官方源码禁止 `import` `@deepseek-ai/*`、`ClipStudioTab`、Host API。胶水包官方根组件，不得改官方内部去回调 DSH。
+4. **依赖**：宿主 `react` / `react-dom` / `@deepseek-ai/dsh-client-ui-primitives` 构建 **external**。禁止第二份 React。
+5. **工程格式**：P1 官方 JSON 原样落盘。禁止先发明第二套 `TimelineSchema` 再双向翻译官方 store。Agent / 画布需要的稳定视图用只读投影。
 
 ---
 
-## 4. 严过关五维反自研质检门禁（5D Anti-Reinvention QA Gate）
+## 4. 挂载与主题
 
-在常规 `plugin-qa` 五维验收之上，针对 `omnimux-clip` 设立**反自研专项门禁**：
+| 项 | 规则 |
+|---|---|
+| P1 主座 | `dsh-better-sidebar` 内容面板 Tab，`registerTab` |
+| 禁止 | `conversation.view`；P1 用 `shell.overlay` 当主入口；打开 Tab 时设 `data-dsh-product-stage`（会藏 `[data-dsh-panel-host]`） |
+| 未装 better-sidebar | Host API 可在，Tab 缺席；不得改挂其它座顶上 |
+| 主题权威 | DSH 官方 `--dsw-*`（见 `ui-design-guidelines.md`）。Hub 全壳桥已染色。clip 消费，不实现第二套 xAI GUI，不建 `--omx-*` |
+| 官方 GUI | 映射 CSS 变量，不重排、不换组件 |
+| 宿主空态 | ui-kit；禁止裸 `<select>` / emoji 图标 |
+
+---
+
+## 5. 五维反自研 QA 门禁
+
+在常规 `plugin-qa` 之上，`omnimux-clip` 专项：
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           【反自研专项审查清单】                             │
 │                                                                             │
-│ 1. [真视频解码] 预览区播放 MP4 时，必须能实时看到视频画面帧流动，而非图片     │
-│    占位或黑屏；DOM/Inspector 中必须存在真实的 VideoDecoder/Video 渲染上下文。 │
-│ 2. [真波形渲染] 载入音频/含音视频时，时间轴上必须渲染出真实的音频波形振幅图。 │
-│ 3. [真磁吸对齐] 拖拽片段靠近切点时，必须有磁吸吸附吸附点与吸附视觉线。         │
-│ 4. [真硬件导出] 点击导出后，由 Web Worker WebCodecs 输出真正可被本地播放器  │
-│    流畅播放的 MP4 成片，视频画面、转场、字幕严格对齐，零格式损坏。          │
-│ 5. [生命周期释放] 关页 unmount 后，WebGPU 设备、AudioContext 与视频解码器    │
-│    必须全部调用 destroy/close，无残留内存泄漏。                             │
+│ 0. [完整 GUI] Tab 内必须是官方 OpenReel 界面（资源库 + 视口 + 属性面板 +     │
+│    多轨）。若主路径仍是自研四宫格或 Headless+自绘壳 → 直接 FAIL。            │
+│ 1. [真视频解码] 预览播放 MP4 时画面帧在流动，不是图片占位或黑屏；             │
+│    Inspector 中存在真实 VideoDecoder / 官方渲染上下文。                     │
+│ 2. [真波形] 载入音频/含音视频后，时间轴出现真实波形振幅图。                   │
+│ 3. [真磁吸] 拖片段靠近切点有吸附与吸附线。                                   │
+│ 4. [真硬件导出] Worker WebCodecs 输出可被本地播放器流畅播放的 MP4，          │
+│    画面 / 转场 / 字幕对齐，零损坏。                                         │
+│ 5. [生命周期] 关 Tab unmount 后 WebGPU / AudioContext / decoder             │
+│    全部 destroy/close，无泄漏。                                             │
 │                                                                             │
-│ 任何一项未达标，严过关必须直接判定为 FAIL，禁止放行。                        │
+│ 任一项未达标 → FAIL，禁止放行。                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 5. 违规追责与退回流程
+## 6. 阶段门禁（与 PRD / Spec 对齐）
 
-1. **提交检查**：PR 或阶段交付物若被发现含有自研 NLE 伪实现，评审人或齐活林直接打回；
-2. **定界纠偏**：由许清楚与高见远重新出具 OpenReel 原生能力映射指引；
-3. **责任人修复**：由林深重新从 `src/client/engine/openreel/` 对接原生能力；
-4. **复检放行**：严过关按本契约第 4 节清单逐项核验证据（含 L2 Web 录屏），通过后方可交付。
+| Phase | 本契约要求 |
+|---|---|
+| **P1** | Tab 可开；官方 GUI 完整运行；新建 / 本地保存；五维 0–5；禁止自研主界面残留 |
+| **P2** | `clip_*` 只映射官方原子；一次 edit = 一次官方 Undo |
+| **P3** | 画布只发 JSON + `openTab`；画布不持解码器、不 import vendor 源码 |
+
+P1 未过五维，不得以 P2/P3 交付物抵数。
+
+---
+
+## 7. 违规退回
+
+1. **提交检查**：PR 含 Headless 拆分、自研 NLE 伪实现或自研主 GUI，评审直接打回。
+2. **定界**：对照本契约 §2 与 Spec §0 决策表，列必须改回官方模块的清单。
+3. **修复**：从 `src/client/openreel/` 接官方能力，删自研主路径。
+4. **复检**：按 §5 逐项核 L2 Web 录屏，通过后才可合入。
