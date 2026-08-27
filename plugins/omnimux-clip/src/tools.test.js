@@ -8,7 +8,7 @@ import { ensureClipDirs, resolveClipPaths } from './paths.js'
 import { createProjectStore } from './store/projectStore.js'
 import { createClipTools } from './tools.js'
 import { createEmptySchema } from './client/store/timelineTypes.js'
-import { apply } from './index.js'
+import { apply, inject as moduleInject } from './index.js'
 
 function tempStore() {
   const home = mkdtempSync(join(tmpdir(), 'omnimux-clip-tools-'))
@@ -184,6 +184,10 @@ describe('clip_* tools', () => {
 })
 
 describe('apply() host entry', () => {
+  it('declares strict injects including systemPrompt (regression: boot crash)', () => {
+    assert.deepEqual(moduleInject, ['tools', 'systemPrompt'])
+  })
+
   it('registers tools, prompt and clipEditor seam', () => {
     const registered = []
     const provided = {}

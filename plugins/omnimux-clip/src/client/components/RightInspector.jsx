@@ -1,6 +1,7 @@
 import { Button, DropdownSelect, InputField } from 'dsh-ui-kit'
 import { timelineStore, selectedClipOf, useTimelineStore } from '../store/useTimelineStore.js'
 import { formatTimecode } from '../store/timelineTypes.js'
+import { resolveCssColor } from '../theme/colors.js'
 
 const FONT_OPTIONS = [
   { value: 'sans-serif', label: 'Sans' },
@@ -108,7 +109,7 @@ export function RightInspector() {
             <input
               type="color"
               className="omx-clip-color__input"
-              value={style.color || '#ffffff'}
+              value={toHex(style.color) || '#ffffff'}
               onChange={(event) => timelineStore.setTextStyle(clip.id, { color: event.target.value })}
             />
           </label>
@@ -123,7 +124,7 @@ export function RightInspector() {
             <input
               type="color"
               className="omx-clip-color__input"
-              value={style.strokeColor || '#000000'}
+              value={toHex(style.strokeColor) || '#000000'}
               onChange={(event) => timelineStore.setTextStyle(clip.id, { strokeColor: event.target.value })}
             />
           </label>
@@ -154,7 +155,8 @@ export function RightInspector() {
 }
 
 function toHex(color) {
-  if (typeof color !== 'string') return '#000000'
-  if (color.startsWith('#') && (color.length === 7 || color.length === 4)) return color
-  return '#000000'
+  if (typeof color !== 'string') return ''
+  const resolved = resolveCssColor(color)
+  if (/^#[0-9a-fA-F]{6}$/.test(resolved) || /^#[0-9a-fA-F]{3}$/.test(resolved)) return resolved
+  return ''
 }

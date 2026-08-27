@@ -8,10 +8,11 @@ export const OMNIMUX_CLIP_OPEN = 'omnimux-clip-open'
 export const OMNIMUX_CLIP_SAVE = 'omnimux-clip-save'
 export const OMNIMUX_CLIP_CLOSE = 'omnimux-clip-close'
 export const OMNIMUX_CLIP_PROGRESS = 'omnimux-clip-progress'
+export const OMNIMUX_CLIP_RELOAD = 'omnimux-clip-reload'
 
 export const CLIP_EVENT_MAX_BYTES = 1024 * 1024
 
-const OPEN_SOURCES = new Set(['canvas', 'sidebar', 'agent'])
+const OPEN_SOURCES = new Set(['canvas', 'sidebar', 'agent', 'url'])
 
 /**
  * @param {unknown} value

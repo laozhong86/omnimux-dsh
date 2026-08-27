@@ -170,10 +170,19 @@ if (report.dimensions.security.pass) {
 
 // 4. [Tokens] 视觉与设计系统
 const RAW_COLOR_PATTERN = /#[0-9a-fA-F]{3,8}\b|rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+/g
+// 豁免 1：OpenReel vendor 引擎目录 —— 颜色是画布合成的视频内容像素，
+// 导出成片不随 UI 明暗主题变化；CSS 变量对 Canvas2D fillStyle 无效。
+// 豁免依据 docs/contracts/openreel-vendor-contract.md（严禁自研改写引擎）。
+const VENDOR_ENGINE_MARKER = /engine[/\\]openreel/
+// 豁免 2：字幕/花字内容预设色（用户为视频挑选的内容颜色，烤进导出成片）。
+// 兼容仓库根扫描（plugins/omnimux-clip/...）与插件内扫描（src/...）两种相对路径。
+const CONTENT_PRESET_PATTERN = /^(?:plugins[/\\]omnimux-clip[/\\])?src[/\\]client[/\\]store[/\\]timelineTypes\.js$/
 for (const file of files) {
   const rel = relative(targetDir, file)
   // 只检测 client UI 文件
   if (!rel.includes('client/') || rel.includes('.test.') || rel.includes('xai-theme.js')) continue
+  if (VENDOR_ENGINE_MARKER.test(rel)) continue
+  if (CONTENT_PRESET_PATTERN.test(rel.replaceAll('\\', '/'))) continue
   const content = readFileSync(file, 'utf8')
 
   const lines = content.split('\n')

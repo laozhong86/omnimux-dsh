@@ -64,7 +64,7 @@ const INLINE_STYLES = `
   border-radius: 10px;
   /* DSH 没有 bg-elevated/bg-primary；菜单挂 body，必须用现网 layer token。 */
   background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-bg-base, #232324));
-  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+  box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0,0,0,.16));
   color: var(--dsw-alias-label-primary, inherit);
 }
 .omnimux-sidebar-new-menu[hidden] { display: none !important; }
@@ -378,7 +378,14 @@ function install() {
   waitObserver = new MutationObserver(() => { runPlaceAll() })
   waitObserver.observe(document.body, { childList: true, subtree: true })
   bindCollapsedAttrObserver()
-  retry = setInterval(() => { runPlaceAll() }, 2000)
+  retry = setInterval(() => {
+    runPlaceAll()
+    // 侧栏已挂载 → 首轮放置完成；后续 DOM 变化交给 MutationObserver，轮询自毁防泄漏。
+    if (sidebarRoot() !== undefined) {
+      clearInterval(retry)
+      retry = undefined
+    }
+  }, 2000)
   Object.defineProperty(window, SIDEBAR_GLOBAL_KEY, { value: api, configurable: true })
   return api
 }
