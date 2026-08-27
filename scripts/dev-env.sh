@@ -40,6 +40,53 @@ L2_PORT_POOL_START="${OMNIMUX_L2_PORT_POOL_START:-44200}"
 L2_PORT_POOL_END="${OMNIMUX_L2_PORT_POOL_END:-44299}"
 LEGACY_HOME="${OMNIMUX_DEV_LEGACY_HOME:-0}"
 
+# Yarn Berry prepends a short-lived xfs bin directory to PATH. A detached
+# child can outlive that directory and fail with
+# "/private/.../xfs-.../node: No such file or directory". Resolve a durable
+# absolute Node binary before spawning Host/watch children and remove the
+# Yarn-only executable hints from their inherited environment.
+resolve_node_bin() {
+  local candidate
+  if [ -n "${OMNIMUX_NODE_BIN:-}" ] && [ -x "$OMNIMUX_NODE_BIN" ]; then
+    printf '%s\n' "$OMNIMUX_NODE_BIN"
+    return 0
+  fi
+  if [ -n "${NVM_BIN:-}" ] && [ -x "$NVM_BIN/node" ]; then
+    printf '%s\n' "$NVM_BIN/node"
+    return 0
+  fi
+  candidate="$(command -v node 2>/dev/null || true)"
+  case "$candidate" in
+    */xfs-*/node|*/xfs-*/nodejs) candidate="" ;;
+  esac
+  if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+    printf '%s\n' "$candidate"
+    return 0
+  fi
+  for candidate in /opt/homebrew/bin/node /usr/local/bin/node /usr/bin/node; do
+    if [ -x "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  printf '%s\n' node
+}
+
+NODE_BIN="$(resolve_node_bin)"
+NODE_DIR="$(dirname "$NODE_BIN")"
+CLEAN_PATH="$NODE_DIR"
+OLD_IFS="$IFS"
+IFS=':'
+for path_entry in ${PATH:-}; do
+  case "$path_entry" in
+    */xfs-*) continue ;;
+  esac
+  [ -n "$path_entry" ] && CLEAN_PATH="$CLEAN_PATH:$path_entry"
+done
+IFS="$OLD_IFS"
+export PATH="$CLEAN_PATH"
+unset npm_execpath npm_node_execpath BERRY_BIN_FOLDER
+
 usage() { sed -n '2,30p' "$0"; exit 1; }
 [ $# -lt 1 ] && usage
 cmd="$1"; name="${2:-}"
@@ -293,7 +340,7 @@ start_watch() {
   stop_watch "$pdir" >/dev/null 2>&1 || true
   mkdir -p "$pdir"
   echo "$plugin" > "$pdir/watch.plugin"
-  nohup node "$ROOT/scripts/watch-plugin.mjs" "$plugin" \
+  nohup "$NODE_BIN" "$ROOT/scripts/watch-plugin.mjs" "$plugin" \
     > "$pdir/watch.log" 2>&1 &
   echo $! > "$pdir/watch.pid"
   echo "✓ watch → ${plugin}（日志: $pdir/watch.log）"
@@ -381,7 +428,7 @@ case "$cmd" in
 
     # OMNIMUX_PLUGIN_PROFILE：symlink 装插件时显式注入 profile 名
     # 硬绑池口，避免 --port 0 与静态 patch 层叠碰巧生效
-    DSH_HOME="$RUNTIME_HOME" OMNIMUX_PLUGIN_PROFILE="omnimux-dev-$name" nohup node "$DSH_SRC/apps/cli/lib/bin.js" \
+    DSH_HOME="$RUNTIME_HOME" OMNIMUX_PLUGIN_PROFILE="omnimux-dev-$name" nohup "$NODE_BIN" "$DSH_SRC/apps/cli/lib/bin.js" \
       --profile "omnimux-dev-$name" --host 127.0.0.1 --port "$assigned_port" --no-open \
       > "$pdir/host.log" 2>&1 &
     echo $! > "$pdir/host.pid"
@@ -503,7 +550,7 @@ case "$cmd" in
     echo "--- [$(date '+%Y-%m-%d %H:%M:%S')] dev restart-host triggered ---" >> "$pdir/host.log"
     echo "$(date '+%Y-%m-%d %H:%M:%S') task=$name port=$assigned_port old_pid=${old_pid:-none}" >> "$pdir/restart-host.log"
 
-    DSH_HOME="$RUNTIME_HOME" OMNIMUX_PLUGIN_PROFILE="omnimux-dev-$name" nohup node "$DSH_SRC/apps/cli/lib/bin.js" \
+    DSH_HOME="$RUNTIME_HOME" OMNIMUX_PLUGIN_PROFILE="omnimux-dev-$name" nohup "$NODE_BIN" "$DSH_SRC/apps/cli/lib/bin.js" \
       --profile "omnimux-dev-$name" --host 127.0.0.1 --port "$assigned_port" --no-open \
       >> "$pdir/host.log" 2>&1 &
     new_pid=$!

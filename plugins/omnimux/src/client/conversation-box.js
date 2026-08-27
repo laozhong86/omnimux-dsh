@@ -28,7 +28,10 @@ export const STAGE_CSS_CLASS_MAP = {
 }
 
 const STAGE_MUTUAL_EXCLUSION_RULES = Object.entries(STAGE_CSS_CLASS_MAP).map(([stageId, className]) => {
-  return `html[data-dsh-product-stage="${stageId}"] [class*="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`
+  // First-level stage roots are direct children of the overlay seat. Scoping
+  // this rule to those siblings avoids matching the active stage's own
+  // header/body classes, which also contain the `-stage` fragment.
+  return `html[data-dsh-product-stage="${stageId}"] [data-slot="shell.overlay"] > [class*="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`
 }).join('\n')
 
 /**

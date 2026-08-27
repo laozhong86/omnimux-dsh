@@ -226,7 +226,7 @@ var NS = "omnimux";
 // src/client/ProfileSection.jsx
 var import_react4 = require("react");
 
-// node_modules/.pnpm/dsh-ui-kit@file+..+..+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0_c20a28005c8f0dbb66f7651fbedb1e05/node_modules/dsh-ui-kit/lib/index.js
+// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
 var import_react = require("react");
 var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
 var import_jsx_runtime = require("react/jsx-runtime");
@@ -2710,7 +2710,7 @@ var STAGE_CSS_CLASS_MAP = {
   "omnimux-apps": "omnimux-apps-stage"
 };
 var STAGE_MUTUAL_EXCLUSION_RULES = Object.entries(STAGE_CSS_CLASS_MAP).map(([stageId, className]) => {
-  return `html[data-dsh-product-stage="${stageId}"] [class*="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`;
+  return `html[data-dsh-product-stage="${stageId}"] [data-slot="shell.overlay"] > [class*="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`;
 }).join("\n");
 function claimProductStage(id) {
   try {
@@ -2887,7 +2887,7 @@ var INLINE_STYLES = `
   border-radius: 10px;
   /* DSH \u6CA1\u6709 bg-elevated/bg-primary\uFF1B\u83DC\u5355\u6302 body\uFF0C\u5FC5\u987B\u7528\u73B0\u7F51 layer token\u3002 */
   background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-bg-base, #232324));
-  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+  box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-1, rgba(0,0,0,.16));
   color: var(--dsw-alias-label-primary, inherit);
 }
 .omnimux-sidebar-new-menu[hidden] { display: none !important; }
@@ -3165,6 +3165,10 @@ function install() {
   bindCollapsedAttrObserver();
   retry2 = setInterval(() => {
     runPlaceAll();
+    if (sidebarRoot() !== void 0) {
+      clearInterval(retry2);
+      retry2 = void 0;
+    }
   }, 2e3);
   Object.defineProperty(window, SIDEBAR_GLOBAL_KEY, { value: api, configurable: true });
   return api;
