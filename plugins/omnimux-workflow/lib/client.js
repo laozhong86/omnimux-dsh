@@ -43,6 +43,7 @@ var zh = {
   "projects.subtitle": "\u7BA1\u7406\u672C\u5730\u5DE5\u4F5C\u6D41\u9879\u76EE",
   "projects.newProject": "\u65B0\u5EFA\u9879\u76EE",
   "projects.close": "\u5173\u95ED",
+  "projects.all": "\u5168\u90E8",
   "projects.localTab": "\u672C\u5730\u9879\u76EE",
   "projects.searchPlaceholder": "\u641C\u7D22\u9879\u76EE\u540D\u79F0\u2026",
   "projects.sortUpdated": "\u6309\u6700\u8FD1\u66F4\u65B0\u6392\u5E8F",
@@ -80,6 +81,7 @@ var en = {
   "projects.subtitle": "Manage local workflow projects",
   "projects.newProject": "New Project",
   "projects.close": "Close",
+  "projects.all": "All",
   "projects.localTab": "Local Projects",
   "projects.searchPlaceholder": "Search projects\u2026",
   "projects.sortUpdated": "Sorted by recent update",
@@ -1421,10 +1423,31 @@ var WORKFLOW_CSS = `
   line-height: 20px;
   color: var(--dsw-alias-label-secondary);
 }
+.omnimux-workflow-stage-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.omnimux-workflow-action-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px 14px;
+}
 .omnimux-workflow-stage-toolbar {
   flex: none;
   padding: 0 20px 12px;
   height: 44px;
+}
+.omnimux-workflow-tools-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.omnimux-workflow-search-wrap {
+  width: 260px;
 }
 .omnimux-workflow-chip {
   font-size: 13px;
@@ -1790,6 +1813,7 @@ function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, layout, be
       className: "omnimux-workflow-stage",
       "data-visible": open ? "true" : "false",
       style: {
+        display: open ? void 0 : "none",
         "--stage-top": `${box.top}px`,
         "--stage-left": `${box.left}px`,
         "--stage-width": `${box.width}px`,
@@ -1801,18 +1825,7 @@ function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, layout, be
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h1", { className: "omnimux-workflow-stage-title", children: t("projects.title") }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "omnimux-workflow-stage-subtitle", children: t("projects.subtitle") })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-            Button,
-            {
-              variant: "primary",
-              size: "sm",
-              leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_dsh_client_ui_primitives2.IconPlusOutline16, {}),
-              disabled: busy,
-              onClick: handleNew,
-              children: t("projects.newProject")
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-workflow-stage-controls", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
             IconButton,
             {
               "aria-label": t("projects.close"),
@@ -1822,14 +1835,35 @@ function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, layout, be
               },
               children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_dsh_client_ui_primitives2.IconCloseOutline16, {})
             }
-          )
+          ) })
         ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-workflow-action-row", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          Button,
+          {
+            variant: "primary",
+            size: "sm",
+            leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_dsh_client_ui_primitives2.IconPlusOutline16, {}),
+            disabled: busy,
+            onClick: handleNew,
+            children: t("projects.newProject")
+          }
+        ) }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           FilterBar,
           {
             className: "omnimux-workflow-stage-toolbar",
             compact: true,
-            search: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+            filters: [{ key: "all", label: t("projects.all") }].map((chip) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+              Button,
+              {
+                variant: "secondary",
+                size: "sm",
+                "aria-pressed": "true",
+                children: chip.label
+              },
+              chip.key
+            )),
+            tools: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-workflow-tools-cluster", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-workflow-search-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
               SearchField,
               {
                 value: query,
@@ -1839,11 +1873,7 @@ function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, layout, be
                 stretch: true,
                 onValueChange: setQuery
               }
-            ),
-            filters: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-workflow-chip", children: t("projects.localTab") }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-workflow-muted", children: t("projects.sortUpdated") })
-            ] })
+            ) }) })
           }
         ),
         error !== "" && !dialogOpen ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "omnimux-workflow-error", children: error }) : null,

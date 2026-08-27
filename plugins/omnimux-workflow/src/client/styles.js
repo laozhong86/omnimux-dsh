@@ -41,10 +41,31 @@ export const WORKFLOW_CSS = `
   line-height: 20px;
   color: var(--dsw-alias-label-secondary);
 }
+.omnimux-workflow-stage-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.omnimux-workflow-action-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px 14px;
+}
 .omnimux-workflow-stage-toolbar {
   flex: none;
   padding: 0 20px 12px;
   height: 44px;
+}
+.omnimux-workflow-tools-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.omnimux-workflow-search-wrap {
+  width: 260px;
 }
 .omnimux-workflow-chip {
   font-size: 13px;
