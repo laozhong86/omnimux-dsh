@@ -92,6 +92,14 @@ export function deleteInspiration(client, args) {
 
 /**
  * @param {{ withPat: Function }} client
+ * @param {Record<string, unknown>} body
+ */
+export function uploadMedia(client, body) {
+  return client.withPat(`${API}/media`, { method: 'POST', body })
+}
+
+/**
+ * @param {{ withPat: Function }} client
  */
 export function listTags(client) {
   return client.withPat(`${API}/tags`)
