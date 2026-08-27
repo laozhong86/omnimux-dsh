@@ -14,6 +14,7 @@ import {
   mediaKeyFromHostPath,
   rewriteMediaUrlsForHost,
   updateInspiration,
+  uploadMedia,
 } from './inspiration.js'
 
 const PREFIX = '/omnimux/inspiration'
@@ -101,6 +102,10 @@ export function createInspirationDispatcher(deps = {}) {
       if (method === 'POST' && path === PREFIX) {
         const body = req.body && typeof req.body === 'object' ? /** @type {Record<string, unknown>} */ (req.body) : {}
         return { status: 200, body: rewriteMediaUrlsForHost(await createInspiration(client, body)) }
+      }
+      if (method === 'POST' && path === `${PREFIX}/media`) {
+        const body = req.body && typeof req.body === 'object' ? /** @type {Record<string, unknown>} */ (req.body) : {}
+        return { status: 200, body: rewriteMediaUrlsForHost(await uploadMedia(client, body)) }
       }
       if (path.startsWith(`${PREFIX}/`) && path !== PREFIX) {
         const id = decodeURIComponent(path.slice(`${PREFIX}/`.length))

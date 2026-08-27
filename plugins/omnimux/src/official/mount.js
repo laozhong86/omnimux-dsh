@@ -19,6 +19,7 @@ import {
   listInspirations,
   listTags,
   updateInspiration,
+  uploadMedia,
 } from './inspiration.js'
 import { createPost, getPost, presignMedia } from './publish.js'
 import { fetchSocialData } from './social-data.js'
@@ -193,6 +194,15 @@ export function mountOfficial(ctx, deps) {
     'Soft-delete an inspiration item by id. Requires OmniMux sign-in.',
     { id: { type: 'string', required: true } },
     (args) => deleteInspiration(client, args),
+  )
+  tool(
+    'omnimux_inspiration_upload_media',
+    'Upload a cover or media file to cloud storage (URL ingest or payload). Returns media key and rewritten path. Requires OmniMux sign-in.',
+    {
+      url: { type: 'string', required: true },
+      kind: { type: 'string', enum: ['cover', 'media'] },
+    },
+    (args) => uploadMedia(client, args),
   )
   tool(
     'omnimux_inspiration_tags',

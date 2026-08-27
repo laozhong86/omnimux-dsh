@@ -65,6 +65,33 @@ describe('inspiration dispatcher', () => {
     assert.equal(tags.body.data.tags[0].name, '猫')
   })
 
+  it('forwards media upload and rewrites response media URLs', async () => {
+    /** @type {string[]} */
+    const paths = []
+    const dispatcher = createInspirationDispatcher({
+      official: { mount: true },
+      client: clientWith(async (path, init) => {
+        paths.push(path)
+        assert.equal(init.method, 'POST')
+        return {
+          success: true,
+          data: {
+            key: 'covers/2026/08/new.jpg',
+            url: '/api/inspiration/v1/media/covers/2026/08/new.jpg',
+          },
+        }
+      }),
+    })
+    const res = await dispatcher.dispatch({
+      method: 'POST',
+      url: '/omnimux/inspiration/media',
+      body: { url: 'https://example.com/pic.jpg' },
+    })
+    assert.equal(res.status, 200)
+    assert.deepEqual(paths, ['/api/inspiration/v1/media'])
+    assert.equal(res.body.data.url, '/omnimux/inspiration/media/covers/2026/08/new.jpg')
+  })
+
   it('maps unsigned calls to 401 and refuses a cross-origin write', async () => {
     const dispatcher = createInspirationDispatcher({
       official: { mount: true },
