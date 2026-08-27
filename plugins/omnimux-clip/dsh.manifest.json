@@ -5,8 +5,8 @@
   "tier": "tier-1-app",
   "entrypoint": "src/index.js",
   "status": "active",
-  "description": "OmniMux Clip / AI 剪辑工坊：独立多轨剪辑 overlay，与画布只交换 JSON。",
-  "tags": ["clip", "nle", "timeline", "video-editor", "overlay"],
+  "description": "OmniMux Clip / 视频剪辑：官方 OpenReel GUI + 管线，挂 better-sidebar Tab。",
+  "tags": ["clip", "nle", "timeline", "video-editor", "openreel", "sidebar-tab"],
   "skills": ["skills/clip-craft/SKILL.md"],
   "capabilities": {
     "tools": [
@@ -26,8 +26,9 @@
     "seamsConsumed": ["mediaSeam"],
     "slots": [
       {
-        "target": "shell.overlay",
-        "componentPath": "src/client/ClipOverlay.jsx"
+        "target": "betterSidebar.registerTab",
+        "id": "omnimux-clip:studio",
+        "componentPath": "src/client/OpenReelStudioTab.jsx"
       }
     ],
     "storageDomains": ["$DSH_HOME/omnimux/clip/"]

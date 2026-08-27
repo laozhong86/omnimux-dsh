@@ -56,13 +56,13 @@ describe('cordis entry inject contracts', () => {
       const svc = raw.trim().replace(/^['"]|['"]$/g, '')
       if (!svc) continue
       assert.ok(
-        new RegExp(`inject = \\[[^\\]]*['"]${svc}['"` + ']').test(bundle),
+        new RegExp(`inject\\s*=\\s*\\[[^\\]]*['"]${svc}['"]`).test(bundle),
         `lib/client.js is stale: missing declared inject "${svc}". Rebuild via node scripts/build-client.mjs`,
       )
     }
     // If the compiled apply reads ctx.locale, the declaration is mandatory.
     if (/ctx\.locale\b/.test(bundle)) {
-      assert.match(bundle, /inject = \["slots", "locale"\]/)
+      assert.match(bundle, /inject\s*=\s*\["slots",\s*"locale"\]/)
     }
   })
 })

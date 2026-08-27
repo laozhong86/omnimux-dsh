@@ -10,8 +10,10 @@ This plugin (`omnimux-clip`) incorporates and vendorizes components from open-so
 - **License**: MIT License
 - **Copyright**: (c) 2024-2026 Augustus Otu and Contributors
 - **License Text**: See [`LICENSE.openreel.txt`](./LICENSE.openreel.txt)
-- **Vendorized Location**: `src/client/engine/openreel/`
+- **Vendorized Location**: `src/client/openreel/`
+- **Upstream SHA**: `2566c34e0f8ea22992a85f3ff16e048307b49365`
 - **Scope & Modifications**:
-  - Adopted OpenReel's multi-track timeline engine, WebCodecs/Canvas frame decoding and composition pipeline, Web Audio waveform/pitch processing, and Web Worker hardware-accelerated MP4 export pipeline.
-  - Pruned cloud user authentication, cloud storage uploads, and standalone router/topbar.
-  - Integrated with DeepSeek Harness / OmniMux host lifecycle via `openreelAdapter.js` and `ClipBridge.js`.
+  - Vendorized official GUI (`apps/web/src`) plus `@openreel/core` / `@openreel/ui` / `@openreel/agent` / `@openreel/creation-schema`.
+  - In-memory router (no `window.location.hash`); theme class scoped to `.openreel-studio-root`.
+  - Pruned cloud login / S3 / CapCut as unused entry paths; official EditorInterface remains the Tab body.
+  - Host glue: `OpenReelStudioTab` + `betterSidebar.registerTab` (`omnimux-clip:studio`).
