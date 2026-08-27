@@ -1,0 +1,181 @@
+import { useEffect, useState } from 'react'
+import { listHubAccounts } from './api.js'
+import { groupAccountsByPlatform } from './capabilities.js'
+
+/**
+ * M5 账号选择面板：平台 → 账号两级勾选（发布页左侧）。
+ * 数据源：浏览器直 fetch hub GET /omnimux/accounts（hub 权威 ViewRow 合并，
+ * 本插件不自建账号路由）。不可用账号（status 异常 / agent_usable=false）置灰
+ * 并注明原因；底部「已选 N 个账号」。
+ * @param {{
+ *   t: (key: string, vars?: Record<string, unknown>) => string,
+ *   selectedIds: string[],
+ *   onChange: (accountIds: string[], selectedRows: Array<Record<string, unknown>>) => void,
+ * }} props
+ */
+export function AccountPanel({ t, selectedIds, onChange }) {
+  const [phase, setPhase] = useState('loading')
+  const [rows, setRows] = useState([])
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let disposed = false
+    listHubAccounts().then((result) => {
+      if (disposed) return
+      if (result.ok && result.body && Array.isArray(result.body.accounts)) {
+        setRows(result.body.accounts)
+        setPhase('ready')
+        setError('')
+        return
+      }
+      // hub 账号面未登录（401/403）→ 明确报因，不静默
+      if (result.status === 401 || result.status === 403 || /needs-omnimux/.test(String(result.body?.error || ''))) {
+        setPhase('need-login')
+        return
+      }
+      setPhase('ready')
+      setError(String(result.body?.error || `HTTP ${result.status}`))
+    }).catch((caught) => {
+      if (disposed) return
+      setPhase('ready')
+      setError(caught instanceof Error ? caught.message : String(caught))
+    })
+    return () => { disposed = true }
+  }, [])
+
+  const groups = groupAccountsByPlatform(rows)
+  const selected = new Set(selectedIds)
+
+  /**
+   * @param {string} id
+   * @param {boolean} checked
+   */
+  const toggleAccount = (id, checked) => {
+    const next = new Set(selected)
+    if (checked) next.add(id)
+    else next.delete(id)
+    const selectedRows = rows.filter((row) => next.has(String(row.id)))
+    onChange([...next], selectedRows)
+  }
+
+  /**
+   * 平台级勾选：只作用于此平台所有可用账号（不可用行保持不可选）。
+   * @param {string} platform
+   * @param {boolean} checked
+   */
+  const togglePlatform = (platform, checked) => {
+    const group = groups.find((g) => g.platform === platform)
+    if (!group) return
+    const next = new Set(selected)
+    for (const account of group.accounts) {
+      const id = String(account.id)
+      if (checked && account.usable) next.add(id)
+      else if (!checked) next.delete(id)
+    }
+    const selectedRows = rows.filter((row) => next.has(String(row.id)))
+    onChange([...next], selectedRows)
+  }
+
+  if (phase === 'loading') {
+    return (
+      <aside className="dsh-pub-accounts">
+        <div className="dsh-pub-accounts-title">{t('accounts.title')}</div>
+        <div className="dsh-pub-accounts-muted">{t('accounts.loading')}</div>
+      </aside>
+    )
+  }
+
+  if (phase === 'need-login') {
+    return (
+      <aside className="dsh-pub-accounts">
+        <div className="dsh-pub-accounts-title">{t('accounts.title')}</div>
+        <div className="dsh-pub-accounts-stack">
+          <div>{t('accounts.needLogin')}</div>
+          <div className="dsh-pub-accounts-muted">{t('accounts.needLogin.hint')}</div>
+        </div>
+      </aside>
+    )
+  }
+
+  return (
+    <aside className="dsh-pub-accounts">
+      <div className="dsh-pub-accounts-title">{t('accounts.title')}</div>
+      {error ? <div role="alert" className="dsh-pub-accounts-alert">{error}</div> : null}
+      {groups.length === 0 ? (
+        <div className="dsh-pub-accounts-stack">
+          <div>{t('accounts.empty')}</div>
+          <div className="dsh-pub-accounts-muted">{t('accounts.empty.hint')}</div>
+        </div>
+      ) : (
+        <div className="dsh-pub-accounts-groups">
+          {groups.map((group) => {
+            const usableIds = group.accounts.filter((a) => a.usable).map((a) => String(a.id))
+            const allChecked = usableIds.length > 0 && usableIds.every((id) => selected.has(id))
+            const someChecked = usableIds.some((id) => selected.has(id))
+            const platformLabel = t(`platform.${group.platform}`) !== `platform.${group.platform}`
+              ? t(`platform.${group.platform}`)
+              : group.platform
+            return (
+              <div key={group.platform}>
+                <label className="dsh-pub-accounts-group-label">
+                  <input
+                    type="checkbox"
+                    checked={allChecked}
+                    ref={(node) => { if (node) node.indeterminate = !allChecked && someChecked }}
+                    onChange={(event) => { togglePlatform(group.platform, event.currentTarget.checked) }}
+                  />
+                  <span className="dsh-pub-accounts-platform">{platformLabel}</span>
+                </label>
+                <div className="dsh-pub-accounts-list">
+                  {group.accounts.map((account) => (
+                    <AccountRow
+                      key={String(account.id)}
+                      t={t}
+                      account={account}
+                      checked={selected.has(String(account.id))}
+                      onToggle={(checked) => { toggleAccount(String(account.id), checked) }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      <div className="dsh-pub-accounts-foot">
+        {t('accounts.selected', { count: selected.size })}
+      </div>
+    </aside>
+  )
+}
+
+/**
+ * @param {{
+ *   t: (key: string, vars?: Record<string, unknown>) => string,
+ *   account: Record<string, unknown> & { usable: boolean, unusableReason: 'expired' | 'error' | 'agentOff' | '' },
+ *   checked: boolean,
+ *   onToggle: (checked: boolean) => void,
+ * }} props
+ */
+function AccountRow({ t, account, checked, onToggle }) {
+  const name = String(account.display_name || account.username || account.name || account.id)
+  const rowClass = account.usable
+    ? 'dsh-pub-accounts-row'
+    : 'dsh-pub-accounts-row is-disabled'
+  return (
+    <label className={rowClass}>
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={!account.usable}
+        onChange={(event) => { onToggle(event.currentTarget.checked) }}
+      />
+      <span className="dsh-pub-accounts-name">{name}</span>
+      {account.usable ? null : (
+        <span className="dsh-pub-accounts-unavail">
+          {t('accounts.unavailable', { reason: t(`accounts.reason.${account.unusableReason}`) })}
+        </span>
+      )}
+    </label>
+  )
+}
