@@ -48,7 +48,10 @@ function findFiles(dir, exts = ['.js', '.jsx', '.ts', '.tsx', '.mjs']) {
     for (const entry of entries) {
       const fullPath = join(current, entry.name)
       if (entry.isDirectory()) {
-        if (['node_modules', 'dist', '.git', '.workbuddy', 'lib'].includes(entry.name)) continue
+        // OpenReel 官方 vendor 整包（src/client/openreel/）依 openreel-vendor-contract 完整引入、严禁改写：
+        // 其颜色值与生命周期约定属官方 GUI 源码自身范畴，不参与五维通用扫描；
+        // DSH token 映射由契约 §2.2 宿主胶水层负责。vendor 专项检查见契约 §5 反自研审查清单。
+        if (['node_modules', 'dist', '.git', '.workbuddy', 'lib', 'openreel'].includes(entry.name)) continue
         walk(fullPath)
       } else if (entry.isFile()) {
         if (exts.includes(extname(entry.name))) {
