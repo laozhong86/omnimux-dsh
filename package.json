@@ -49,7 +49,8 @@
     "accept:apps": "bash scripts/accept-apps-install.sh",
     "verify:models": "node scripts/verify-models.mjs",
     "verify:image-live": "node scripts/verify-omnimux-image-live.mjs",
-    "verify:gates": "pnpm note:lint && pnpm doc:pairing && pnpm archived:verify && pnpm check:boundaries && pnpm test:gates",
+    "verify:stages": "node scripts/verify-stage-contracts.mjs",
+    "verify:gates": "pnpm note:lint && pnpm doc:pairing && pnpm archived:verify && pnpm check:boundaries && pnpm verify:stages && pnpm test:gates",
     "verify:all": "pnpm verify:gates && pnpm test && pnpm registry:verify && pnpm doctor"
   }
 }

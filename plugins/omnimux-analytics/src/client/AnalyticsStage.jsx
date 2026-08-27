@@ -114,6 +114,7 @@ export function AnalyticsStage({ t, stage }) {
       data-visible={open ? 'true' : 'false'}
       data-theme={store.theme === 'system' ? undefined : store.theme}
       style={{
+        display: open ? undefined : 'none',
         '--stage-top': `${box.top}px`,
         '--stage-left': `${box.left}px`,
         '--stage-width': `${box.width}px`,

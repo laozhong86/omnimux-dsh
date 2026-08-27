@@ -15,6 +15,23 @@ export const PRODUCT_STAGE_EVENT = 'dsh-product-stage'
 export const ACTIVE_STAGE_STORAGE_KEY = 'omnimux_active_product_stage'
 
 /**
+ * Known product-stage ID to root CSS class mapping for host-level defense in depth.
+ */
+export const STAGE_CSS_CLASS_MAP = {
+  'omnimux-accounts': 'omnimux-accounts-stage',
+  'omnimux-assets': 'omnimux-assets-stage',
+  'omnimux-analytics': 'omnimux-analytics-stage',
+  'omnimux-products': 'omnimux-products-stage',
+  'omnimux-inspiration': 'omnimux-inspiration-stage',
+  'omnimux-workflow': 'omnimux-workflow-stage',
+  'omnimux-apps': 'omnimux-apps-stage',
+}
+
+const STAGE_MUTUAL_EXCLUSION_RULES = Object.entries(STAGE_CSS_CLASS_MAP).map(([stageId, className]) => {
+  return `html[data-dsh-product-stage="${stageId}"] [class*="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`
+}).join('\n')
+
+/**
  * Open one first-level product page and tell the others to close.
  * @param {string} id
  */
@@ -43,6 +60,9 @@ export function releaseProductStage(id) {
 
 export const PRODUCT_STAGE_CHROME = `
 [data-slot="shell.overlay"]{pointer-events:none!important;}
+[data-slot="shell.overlay"] > *{pointer-events:auto!important;}
+html:not([data-dsh-product-stage]) [class*="-stage"]{display:none!important;pointer-events:none!important;}
+${STAGE_MUTUAL_EXCLUSION_RULES}
 html:not([data-dsh-product-stage]) [class*="toggleCluster"],
 html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}
 html[data-dsh-product-stage] [class*="toggleCluster"]{display:none!important;}

@@ -2412,6 +2412,7 @@ ${(asset.tags || []).join("\n")}`.toLowerCase();
   const emptyTypeLabel = filterType ? t(`type.${filterType}`) : "";
   const emptyLabel = searching ? t("empty.noMatch") : filterType ? t("empty.type").replace("{type}", emptyTypeLabel) : t("empty.all");
   const emptyActionLabel = searching ? void 0 : filterType ? t("empty.addType").replace("{type}", emptyTypeLabel) : t("add.button");
+  if (!stage || !everOpened) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
     "div",
     {

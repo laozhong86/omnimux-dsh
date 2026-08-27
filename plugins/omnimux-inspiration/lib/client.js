@@ -3146,10 +3146,13 @@ function InspirationSection({ t, active }) {
 // src/client/InspirationStage.jsx
 var import_jsx_runtime4 = require("react/jsx-runtime");
 function InspirationStage({ t, stage }) {
+  (0, import_react3.useEffect)(() => {
+    injectInspirationStyles();
+  }, []);
   const open = (0, import_react3.useSyncExternalStore)(
-    stage ? stage.subscribe : () => () => {
+    stage ? (cb) => stage.subscribe(cb) : () => () => {
     },
-    stage ? stage.getSnapshot : () => false
+    stage ? () => stage.getSnapshot() : () => false
   );
   const [everOpened, setEverOpened] = (0, import_react3.useState)(false);
   const [box, setBox] = (0, import_react3.useState)(() => stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 });
@@ -3180,6 +3183,7 @@ function InspirationStage({ t, stage }) {
       className: "omnimux-inspiration-stage",
       "data-visible": open ? "true" : "false",
       style: {
+        display: open ? void 0 : "none",
         "--stage-top": `${box.top}px`,
         "--stage-left": `${box.left}px`,
         "--stage-width": `${box.width}px`,

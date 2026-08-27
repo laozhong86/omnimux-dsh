@@ -2602,6 +2602,18 @@ function sizableBox(node) {
 }
 var PRODUCT_STAGE_EVENT = "dsh-product-stage";
 var ACTIVE_STAGE_STORAGE_KEY = "omnimux_active_product_stage";
+var STAGE_CSS_CLASS_MAP = {
+  "omnimux-accounts": "omnimux-accounts-stage",
+  "omnimux-assets": "omnimux-assets-stage",
+  "omnimux-analytics": "omnimux-analytics-stage",
+  "omnimux-products": "omnimux-products-stage",
+  "omnimux-inspiration": "omnimux-inspiration-stage",
+  "omnimux-workflow": "omnimux-workflow-stage",
+  "omnimux-apps": "omnimux-apps-stage"
+};
+var STAGE_MUTUAL_EXCLUSION_RULES = Object.entries(STAGE_CSS_CLASS_MAP).map(([stageId, className]) => {
+  return `html[data-dsh-product-stage="${stageId}"] [class*="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`;
+}).join("\n");
 function claimProductStage(id) {
   try {
     if (id) window.localStorage.setItem(ACTIVE_STAGE_STORAGE_KEY, id);
@@ -2623,6 +2635,9 @@ function releaseProductStage(id) {
 }
 var PRODUCT_STAGE_CHROME = `
 [data-slot="shell.overlay"]{pointer-events:none!important;}
+[data-slot="shell.overlay"] > *{pointer-events:auto!important;}
+html:not([data-dsh-product-stage]) [class*="-stage"]{display:none!important;pointer-events:none!important;}
+${STAGE_MUTUAL_EXCLUSION_RULES}
 html:not([data-dsh-product-stage]) [class*="toggleCluster"],
 html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}
 html[data-dsh-product-stage] [class*="toggleCluster"]{display:none!important;}

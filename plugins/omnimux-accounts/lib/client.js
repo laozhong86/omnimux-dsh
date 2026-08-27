@@ -3327,6 +3327,9 @@ function AccountsSection({ t, active = true }) {
 // src/client/AccountsStage.jsx
 var import_jsx_runtime11 = require("react/jsx-runtime");
 function AccountsStage({ t, stage }) {
+  (0, import_react7.useEffect)(() => {
+    injectAccountsStyles();
+  }, []);
   const open = (0, import_react7.useSyncExternalStore)(
     stage ? (onStoreChange) => stage.subscribe(onStoreChange) : () => () => {
     },

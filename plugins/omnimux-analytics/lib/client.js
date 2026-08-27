@@ -5077,6 +5077,7 @@ function AnalyticsStage({ t, stage }) {
       "data-visible": open ? "true" : "false",
       "data-theme": store.theme === "system" ? void 0 : store.theme,
       style: {
+        display: open ? void 0 : "none",
         "--stage-top": `${box.top}px`,
         "--stage-left": `${box.left}px`,
         "--stage-width": `${box.width}px`,
