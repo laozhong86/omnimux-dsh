@@ -33,7 +33,7 @@ subsystem: "omnimux"
 | 轨道 | 场景特征 | 主责 Agent 链路 | Issue 关注点 |
 |---|---|---|---|
 | **Track A (动态轻量插件)** | 会话内临时工具、交互卡片、轻量 Slot、实时看板 | 齐活林/许清楚 → 林深 → 严过关 | 验证纯 JS、无外部打包依赖、生命周期可逆 |
-| **Track B (产品级 Stage 插件)** | 独立一级业务页（如 clip、workflow、assets 等） | 许清楚 → 高见远 → 林深 → 严过关 | 路由挂载、`shell.overlay`、Host 契约、x.ai Token |
+| **Track B (产品级 Stage / Tab 插件)** | 独立一级业务页（workflow、assets 等 `shell.overlay`）或侧边栏内容面板 Tab（`omnimux-clip` 走 `betterSidebar.registerTab`） | 许清楚 → 高见远 → 林深 → 严过关 | 路由挂载、Host 契约、DSH `--dsw-*` token；clip 禁止 Headless+自研 GUI |
 | **Track C (标准服务/工具包)** | 通用工具、CLI 命令、后台 Job、自定义 Service | 许清楚 → 高见远 → 林深 → 严过关 | 社区查重、扩展点选型、Manifests 打包合规 |
 | **Track D (增量热修与版本迭代)** | 针对现有 `@pluginId` 修复、运行时异常、配置微调 | 许清楚/齐活林 → 林深 → 严过关 | 错误日志与复现路径、Minimal Patch、回归验证 |
 

@@ -108,7 +108,7 @@ omnimux-workflow/src/canvas/**
         ├── FilterBar（Standard 模式：filters 左，search+tools 右）
         └── ModalDialog / ConfirmModal
         ▼
-[官方 primitives + --dsw-alias-*]  主题由 omnimux xai-theme.js overrideTokens
+[官方 primitives + --dsw-alias-*]  全量消费官方原生 CSS Tokens，零外部主题覆盖
 ```
 
 清理策略：
@@ -120,7 +120,7 @@ omnimux-workflow/src/canvas/**
 | `styles.js` `<style id="omnimux-*-styles">` | `inject*Styles()` | **必须** `ctx.effect(() => () => tag.remove())`；幂等 id |
 | ResizeObserver / interval | Stage `useLayoutEffect` | effect return |
 | `--stage-*` | 运行时 CSS 变量 | 随节点卸载 |
-| 主题 | 仅 hub `overrideTokens('omnimux-xai')` | hub effect 释放 |
+| 主题 | DSH 官方原生主题服务 (`ctx.theme`) | 零覆盖层、无须清理 |
 
 ---
 
@@ -132,7 +132,7 @@ omnimux-workflow/src/canvas/**
 | `window.__omnimuxSidebar.register` | 新会话下方入口 | 协调器幂等；插件卸时 `unregister` | 禁自挂 observer |
 | `window.__omnimuxStage.claim/release` | 一级页互斥 | 关页 release | 与 `dsh-product-stage` 事件双通道 |
 | `dsh-ui-kit` 值导入 | 标准控件 + Stage 壳 | 随 client bundle；kit CSS `data-dsh-ui-kit` 侧效应 | **不是** Cordis inject 服务 |
-| `ctx.theme.overrideTokens` | 仅 hub x.ai 桥 | hub `ctx.effect` 释放 | 垂直禁第二套 token |
+| `ctx.theme.overrideTokens` | 禁用（回归官方原生主题） | — | 严禁调用 overrideTokens 覆写调色盘 |
 | `settings.plugin.item` / `settings.plugins.tab` | 插件配置卡 | Fiber 自动 | 禁一级 `settings.section` 放业务页 |
 | `ctx.tools.register` | 模型可见工具 | Fiber 自动 | **本次整改不改工具面** |
 | `cordis_define` | — | — | **禁用**（产物形态） |

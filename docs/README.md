@@ -48,18 +48,19 @@ docs/
 - **[dev-pipeline.md](contracts/dev-pipeline.md)**: 三层开发环境（开发/预发布/生产）与隔离部署流水线
 - **[ops-entry.md](contracts/ops-entry.md)**: 运维命令唯一入口契约与各级脚本权责
 - **[plugin-git-pr.md](contracts/plugin-git-pr.md)**: 插件仓 Git 分支、Worktree 与 PR 提交流程规范
-- **[ui-design-guidelines.md](contracts/ui-design-guidelines.md)**: OmniMux UI 交互与视觉设计规范 (x.ai 品牌语言)
+- **[ui-design-guidelines.md](contracts/ui-design-guidelines.md)**: OmniMux UI 交互与视觉设计规范 (DSH 原生设计体系)
 - **[model-list-ownership.md](contracts/model-list-ownership.md)**: 模型列表单一所有权与补丁机制
 - *[👉 查看完整 22 篇契约矩阵...](contracts/README.md)*
 
 ### 2.2 [decisions/ (架构决策记录 - ADR)](decisions/README.md)
 *不可变的历史架构决策（L2），记录重大技术选型背景、裁定理由与备选方案权衡。*
-- **[2026-08-14-execution-hub.md](decisions/2026-08-14-execution-hub.md)**: 执行中枢与垂直插件分离架构决议
-- **[2026-08-16-harness-consume-not-fork.md](decisions/2026-08-16-harness-consume-not-fork.md)**: 消费官方 Harness 而非全量 Fork 架构决议
-- **[2026-08-16-hub-owns-core.md](decisions/2026-08-16-hub-owns-core.md)**: 执行中枢拥有核心产品 Chrome 与认证决议
-- **[2026-08-21-xai-full-shell-theme.md](decisions/2026-08-21-xai-full-shell-theme.md)**: x.ai 全壳主题桥接方案决议
+- **[2026-08-27-adopt-dsh-native-ui-system.md](decisions/2026-08-27-adopt-dsh-native-ui-system.md)**: 全面适配 DSH 原生 UI 规范与废除外部主题决议
 - **[2026-08-26-ops-entry-authority.md](decisions/2026-08-26-ops-entry-authority.md)**: 运维入口收敛与 omnimux.mjs 权威裁定
-- *[👉 查看完整 9 篇 ADR 时间线...](decisions/README.md)*
+- **[2026-08-21-xai-full-shell-theme.md](decisions/2026-08-21-xai-full-shell-theme.md)**: *(Superseded)* x.ai 全壳主题桥接方案（已被 08-27 决议废除）
+- **[2026-08-16-hub-owns-core.md](decisions/2026-08-16-hub-owns-core.md)**: 执行中枢拥有核心产品 Chrome 与认证决议
+- **[2026-08-16-harness-consume-not-fork.md](decisions/2026-08-16-harness-consume-not-fork.md)**: 消费官方 Harness 而非全量 Fork 架构决议
+- **[2026-08-14-execution-hub.md](decisions/2026-08-14-execution-hub.md)**: 执行中枢与垂直插件分离架构决议
+- *[👉 查看完整 10 篇 ADR 时间线...](decisions/README.md)*
 
 ### 2.3 [specs/ (产品规格与技术设计)](specs/README.md)
 *各垂直插件与中枢功能的产品需求 PRD、技术设计规格 RFC 与高保真交互原型。*

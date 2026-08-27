@@ -180,7 +180,7 @@ const CONTENT_PRESET_PATTERN = /^(?:plugins[/\\]omnimux-clip[/\\])?src[/\\]clien
 for (const file of files) {
   const rel = relative(targetDir, file)
   // 只检测 client UI 文件
-  if (!rel.includes('client/') || rel.includes('.test.') || rel.includes('xai-theme.js')) continue
+  if (!rel.includes('client/') || rel.includes('.test.')) continue
   if (VENDOR_ENGINE_MARKER.test(rel)) continue
   if (CONTENT_PRESET_PATTERN.test(rel.replaceAll('\\', '/'))) continue
   const content = readFileSync(file, 'utf8')
@@ -190,7 +190,7 @@ for (const file of files) {
     // 忽略注释行与 svg path / canvas 绘图底层
     if (line.trim().startsWith('//') || line.includes('/*') || line.includes('d="M') || line.includes('xmlns')) return
     const matches = line.match(RAW_COLOR_PATTERN)
-    if (matches && !line.includes('--dsw-') && !line.includes('--omx-')) {
+    if (matches && !line.includes('--dsw-')) {
       // 容忍透明和纯黑白基础占位，其它必须使用 design token
       const filtered = matches.filter(m => !['#fff', '#ffffff', '#000', '#000000', 'rgba(0,0,0,0)'].includes(m.toLowerCase()))
       if (filtered.length > 0) {
@@ -205,7 +205,7 @@ for (const file of files) {
   })
 }
 if (report.dimensions.tokens.pass) {
-  report.dimensions.tokens.checks.push('UI 视觉完全遵守 x.ai Design Token 体系')
+  report.dimensions.tokens.checks.push('UI 视觉完全遵守 DSH 原生 Design Token 体系')
 }
 
 // 5. [Guards] 稳定性保活与写闸门
