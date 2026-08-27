@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, DropdownSelect, InputField } from 'dsh-ui-kit'
 import OpenReelApp from './openreel/web/App.tsx'
 import { useProjectStore } from './openreel/web/stores/project-store.ts'
 import { useEngineStore } from './openreel/web/stores/engine-store.ts'
@@ -46,58 +45,107 @@ function StudioCreateForm({ t, onCreated }) {
     onCreated?.()
   }
 
+  const inputStyle = {
+    width: '100%',
+    height: 36,
+    padding: '0 12px',
+    borderRadius: 8,
+    border: '1px solid var(--dsw-alias-border-subtle, rgba(255, 255, 255, 0.12))',
+    backgroundColor: 'var(--dsw-alias-bg-control, rgba(255, 255, 255, 0.04))',
+    color: 'var(--dsw-alias-label-primary, #ffffff)',
+    fontSize: 14,
+    outline: 'none',
+    boxSizing: 'border-box',
+  }
+
+  const btnSecondary = {
+    padding: '8px 16px',
+    borderRadius: 8,
+    border: '1px solid var(--dsw-alias-border-subtle, rgba(255, 255, 255, 0.12))',
+    backgroundColor: 'transparent',
+    color: 'var(--dsw-alias-label-primary, #ffffff)',
+    fontSize: 14,
+    cursor: 'pointer',
+  }
+
+  const btnPrimary = {
+    padding: '8px 16px',
+    borderRadius: 8,
+    border: 'none',
+    backgroundColor: 'var(--dsw-alias-accent-primary, #3b82f6)',
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 500,
+    cursor: 'pointer',
+  }
+
   return (
-    <div className="openreel-studio-fallback" style={{ padding: 24, gap: 16, alignItems: 'stretch', maxWidth: 420, margin: '0 auto' }}>
-      <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--dsw-alias-label-primary)' }}>
+    <div className="openreel-studio-fallback" style={{ padding: 24, gap: 16, display: 'flex', flexDirection: 'column', alignItems: 'stretch', maxWidth: 420, margin: '0 auto' }}>
+      <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--dsw-alias-label-primary)' }}>
         {t('tab.createTitle')}
       </div>
-      <InputField
-        id="omnimux-clip-project-name"
-        label={t('tab.nameLabel')}
-        value={name}
-        placeholder={t('tab.namePlaceholder')}
-        onChange={(event) => setName(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault()
-            submit()
-          }
-        }}
-      />
+      <div>
+        <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>
+          {t('tab.nameLabel')}
+        </div>
+        <input
+          id="omnimux-clip-project-name"
+          style={inputStyle}
+          value={name}
+          placeholder={t('tab.namePlaceholder')}
+          onChange={(event) => setName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              submit()
+            }
+          }}
+        />
+      </div>
       <div>
         <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>
           {t('tab.sizeLabel')}
         </div>
-        <DropdownSelect
+        <select
           id="omnimux-clip-project-preset"
-          aria-label={t('tab.sizeLabel')}
+          style={inputStyle}
           value={preset}
-          options={PRESET_OPTIONS}
-          onChange={setPreset}
-        />
+          onChange={(e) => setPreset(e.target.value)}
+        >
+          {PRESET_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value} style={{ background: '#1e1e1e', color: '#fff' }}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
       <div>
         <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>
           {t('tab.fpsLabel')}
         </div>
-        <DropdownSelect
+        <select
           id="omnimux-clip-project-fps"
-          aria-label={t('tab.fpsLabel')}
+          style={inputStyle}
           value={fps}
-          options={FPS_OPTIONS}
-          onChange={setFps}
-        />
+          onChange={(e) => setFps(e.target.value)}
+        >
+          {FPS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value} style={{ background: '#1e1e1e', color: '#fff' }}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <Button variant="outline" onClick={() => {
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+        <button style={btnSecondary} onClick={() => {
           resetOpenReelRouter({ route: 'welcome', params: {} })
           onCreated?.()
         }}>
           {t('tab.openOfficial')}
-        </Button>
-        <Button variant="primary" onClick={submit}>
+        </button>
+        <button style={btnPrimary} onClick={submit}>
           {t('tab.create')}
-        </Button>
+        </button>
       </div>
     </div>
   )
