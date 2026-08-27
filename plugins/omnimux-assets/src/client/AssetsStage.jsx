@@ -197,6 +197,8 @@ export function AssetsStage({ t, stage }) {
     ? undefined
     : (filterType ? t('empty.addType').replace('{type}', emptyTypeLabel) : t('add.button'))
 
+  if (!stage || !everOpened) return null
+
   return (
     <div
       role="region"

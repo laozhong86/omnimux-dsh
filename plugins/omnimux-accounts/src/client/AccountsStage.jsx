@@ -1,7 +1,8 @@
-import { useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
 import { IconCloseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { IconButton } from 'dsh-ui-kit'
 import { AccountsSection } from './AccountsSection.jsx'
+import { injectAccountsStyles } from './styles.js'
 
 /**
  * Standalone pinned Accounts page. Its own sidebar row toggles the stage
@@ -16,6 +17,8 @@ import { AccountsSection } from './AccountsSection.jsx'
  * @param {{ t: (key: string) => string, stage: { getSnapshot: () => boolean, subscribe: Function, set: Function, readBox: () => { top: number, left: number, width: number, height: number } } }} props
  */
 export function AccountsStage({ t, stage }) {
+  useEffect(() => { injectAccountsStyles() }, [])
+
   // Wrap method refs — useSyncExternalStore calls subscribe/getSnapshot bare.
   // Passing `stage.subscribe` / `stage.getSnapshot` drops `this` and can leave
   // the Fiber memoized snapshot stuck after store flips (issue #14).

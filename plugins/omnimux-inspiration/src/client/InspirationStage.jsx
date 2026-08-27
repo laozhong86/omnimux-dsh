@@ -1,7 +1,8 @@
-import { useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
 import { IconCloseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { IconButton } from 'dsh-ui-kit'
 import { InspirationSection } from './InspirationSection.jsx'
+import { injectInspirationStyles } from './styles.js'
 
 /**
  * After the first open the subtree stays mounted and is hidden with
@@ -9,9 +10,14 @@ import { InspirationSection } from './InspirationSection.jsx'
  * @param {{ t: (key: string) => string, stage: { getSnapshot: () => boolean, subscribe: Function, set: Function, readBox: () => { top: number, left: number, width: number, height: number } } }} props
  */
 export function InspirationStage({ t, stage }) {
+  useEffect(() => { injectInspirationStyles() }, [])
+
+  // Wrap method refs — useSyncExternalStore calls subscribe/getSnapshot bare.
+  // Passing `stage.subscribe` / `stage.getSnapshot` drops `this` and can leave
+  // the Fiber memoized snapshot stuck after store flips.
   const open = useSyncExternalStore(
-    stage ? stage.subscribe : () => () => {},
-    stage ? stage.getSnapshot : () => false,
+    stage ? (cb) => stage.subscribe(cb) : () => () => {},
+    stage ? () => stage.getSnapshot() : () => false,
   )
   const [everOpened, setEverOpened] = useState(false)
   const [box, setBox] = useState(() => (stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 }))
@@ -45,6 +51,7 @@ export function InspirationStage({ t, stage }) {
       className="omnimux-inspiration-stage"
       data-visible={open ? 'true' : 'false'}
       style={{
+        display: open ? undefined : 'none',
         '--stage-top': `${box.top}px`,
         '--stage-left': `${box.left}px`,
         '--stage-width': `${box.width}px`,
