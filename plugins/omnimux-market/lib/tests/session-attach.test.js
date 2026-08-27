@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { readSessionExpert, renderAttachedExpertSection, sanitizeSessionId, sessionExpertPath, sessionIdFromExec, writeSessionExpert, } from '../session-attach.js';
+import { escapePromptVariables, readSessionExpert, renderAttachedExpertSection, sanitizeSessionId, sessionExpertPath, sessionIdFromExec, writeSessionExpert, } from '../session-attach.js';
 function home() {
     return mkdtempSync(join(tmpdir(), 'omx-attach-'));
 }
@@ -40,6 +40,56 @@ test('renderAttachedExpertSection reloads SKILL.md from disk', () => {
     assert.match(text, /exp-product-management/);
     assert.match(text, /你必须先写问题陈述/);
     assert.match(text, /Do not plaza_search/);
+});
+test('renderAttachedExpertSection escapes double braces {{...}} for DSH interpolate safety', () => {
+    const h = home();
+    mkdirSync(join(h, 'skills', 'dev-ops-automation-engineer'), { recursive: true });
+    writeFileSync(join(h, 'skills', 'dev-ops-automation-engineer', 'SKILL.md'), '# DevOps\n\n```yaml\ndocker build -t app:${{ github.sha }} .\ndescription: "{{ $value }} errors"\n```\n');
+    writeSessionExpert(h, 's-devops', {
+        id: 'exp-dev-ops-automation-engineer',
+        skill: 'dev-ops-automation-engineer',
+        title: 'DevOps自动化工程师',
+        kind: 'expert',
+    });
+    const text = renderAttachedExpertSection(h, 's-devops');
+    assert.equal(text.includes('{{'), false, 'must not contain literal {{');
+    assert.equal(text.includes('}}'), false, 'must not contain literal }}');
+    // 模拟 DSH dsh-system-prompt 的 interpolate 算法，验证绝不报错
+    const VARIABLE_NAME = /^[a-z][a-z0-9_]*$/;
+    const GROUP_AT = /^\{\{([^{}]*)\}\}/;
+    function mockDshInterpolate(input, variables) {
+        const raw = input.text;
+        let result = '';
+        let last = 0;
+        for (let open = raw.indexOf('{{'); open >= 0; open = raw.indexOf('{{', last)) {
+            const group = GROUP_AT.exec(raw.slice(open));
+            if (group === null) {
+                if (raw.indexOf('}}', open + 2) >= 0)
+                    throw new Error(`malformed prompt variable reference in ${input.name}`);
+                result += raw.slice(last, open + 2);
+                last = open + 2;
+                continue;
+            }
+            const name = group[0].slice(2, -2);
+            if (!VARIABLE_NAME.test(name))
+                throw new Error(`malformed prompt variable reference "{{${name}}}" in ${input.name}`);
+            if (!Object.hasOwn(variables, name))
+                throw new Error(`unknown prompt variable "{{${name}}}" in ${input.name}`);
+            result += raw.slice(last, open) + variables[name];
+            last = open + group[0].length;
+        }
+        return result + raw.slice(last);
+    }
+    assert.doesNotThrow(() => {
+        mockDshInterpolate({ text, name: 'plaza:attached-expert' }, {});
+    });
+});
+test('escapePromptVariables handles edge cases', () => {
+    assert.equal(escapePromptVariables(''), '');
+    assert.equal(escapePromptVariables('plain text'), 'plain text');
+    const out = escapePromptVariables('{{{ triple }}} and {{ normal }} and }} only');
+    assert.equal(out.includes('{{'), false);
+    assert.equal(out.includes('}}'), false);
 });
 test('unattached session renders empty so the section is dropped', () => {
     assert.equal(renderAttachedExpertSection(home(), 'nobody'), '');
