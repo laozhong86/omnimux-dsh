@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L2"
 date: "2026-08-26"
-updated: "2026-08-26"
+updated: "2026-08-27"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -21,8 +21,8 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
-| `accepted` | [2026-08-25-omnimux-clip-studio-prd.md](2026-08-25-omnimux-clip-studio-prd.md) | PRD：OmniMux 独立视频剪辑插件（OmniMux Clip Studio）及画布解耦集成规格书 | `omnimux-drama` | 2026-08-25 | 1. **画布代码臃肿**：当前 `omnimux-workflow`（工作流画布）内部硬编码了部分时间轴与剪辑组件，导致画布包体积过大、构建缓慢，且多媒体逻辑与 DAG 编排逻辑深度耦合。 |
-| `accepted` | [2026-08-25-omnimux-clip-studio-spec.md](2026-08-25-omnimux-clip-studio-spec.md) | OmniMux Clip Studio（omnimux-clip）技术架构与实现 Spec | `omnimux-drama` | 2026-08-25 | \| # \| 决策 \| 内容 \| |
+| `accepted` | [2026-08-25-omnimux-clip-studio-prd.md](2026-08-25-omnimux-clip-studio-prd.md) | PRD：OmniMux Clip Studio 完整微应用化 | `omnimux-clip` | 2026-08-27 | 废弃 Headless+手写 GUI。对标 MiniMax：完整套用 OpenReel 官方源码，P1 侧边栏 Tab，P2 Agent RPC，P3 画布 Launcher。 |
+| `accepted` | [2026-08-25-omnimux-clip-studio-spec.md](2026-08-25-omnimux-clip-studio-spec.md) | OmniMux Clip Studio 完整微应用技术 Spec | `omnimux-clip` | 2026-08-27 | P1 主座 `betterSidebar.registerTab`；官方 GUI 进 `src/client/openreel/`；禁止 overlay 一级页当主入口。 |
 | `accepted` | [2026-08-25-omnimux-gateway-analytics-api-prd.md](2026-08-25-omnimux-gateway-analytics-api-prd.md) | OmniMux 网关社媒数据分析 (Social Analytics) 接口接入需求文档 (PRD) | `omnimux-analytics` | 2026-08-25 | 当前 OmniMux 执行中枢（`product/omnimux-dsh/plugins/omnimux`）已打通 `/api/social/v1/accounts`（账号授权与管理）及 `/api/ |
 | `accepted` | [2026-08-25-social-analytics-gateway-gap.md](2026-08-25-social-analytics-gateway-gap.md) | OmniMux 网关社媒数据分析接口 Gap 分析与能力设计 | `omnimux-analytics` | 2026-08-25 | 针对 **Analytics（社媒数据分析看板）** 页面需求，对 `product/omnimux-dsh` 当前已实现的执行中枢（Hub）代码及云端协议契约（`src/official/accou |
 | `accepted` | [2026-08-25-social-analytics-prd.md](2026-08-25-social-analytics-prd.md) | 社媒发布与互动数据分析看板 (Social Analytics) PRD | `omnimux-analytics` | 2026-08-25 | 面向社媒多渠道矩阵运营、短剧/图文出海团队及创作者的**全渠道内容发布表现与受众互动分析中枢**。通过聚合各社媒平台（TikTok、X/Twitter、YouTube、Instagram 等）的数据表 |

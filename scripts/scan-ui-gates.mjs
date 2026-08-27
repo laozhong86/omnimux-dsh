@@ -128,7 +128,7 @@ for (const file of clientFiles) {
           // Exclude svg paths/icons defs or var fallback lines
           if (lineText.includes('var(') || lineText.includes('xmlns=') || lineText.includes('<path') || lineText.includes('<svg') || lineText.includes('exempt-ui03')) continue
           // Exclude color hex constants in theme mapping files
-          if (file.includes('xai-theme') || file.includes('constants') || file.includes('styles.js')) continue
+          if (file.includes('constants') || file.includes('styles.js')) continue
           reportWarn('UI03', file, lineNum, `存在未经 CSS 变量封装的裸色硬编码 [${hex}]，必须使用官方 --dsw-alias-* Token`)
         }
       }

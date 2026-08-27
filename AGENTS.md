@@ -28,7 +28,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 - Product truth is `series/` on disk. Session logs and `docs/briefing.md` are not that store.
 - Briefing (`docs/briefing.md`) is project memory, not truth. On conflict, live code, this file, and `docs/contracts/` win.
 - AGPL trees (ArcReel, 墨音) stay isolate-run. MUST NOT merge them here.
-- **OpenReel 引入与反自研铁律**：`omnimux-clip` 必须以 MIT 开源 `Augani/openreel-video` 为真源进行 Vendorize 引入（存放于 `src/client/engine/openreel/`）。**严禁自研/手写 OpenReel 已有成熟能力**（多轨时间轴状态机、WebCodecs/WebGPU 逐帧解码与渲染管线、音频波形、磁吸吸附、音调保持、花字排版引擎与硬件加速成片导出）；插件自研范围严格限定于 DSH Cordis 宿主生命周期、IPC 事件桥、Host 磁盘持久化、Agent RPC 映射与 x.ai 主题 Token 适配。违反者 PR 一律驳回。详见 [docs/contracts/openreel-vendor-contract.md](docs/contracts/openreel-vendor-contract.md)。
+- **OpenReel 完整微应用铁律**：`omnimux-clip` 必须以 MIT 开源 `Augani/openreel-video` 官方**全套源码**（原生 GUI + WebCodecs/WebGPU/Web Audio 管线）为真源，完整 Vendorize 到 `src/client/openreel/`，落地为 DSH 侧边栏 Tab 插件（`ctx.betterSidebar.registerTab`，id `omnimux-clip:studio`）。**严禁**把 OpenReel 拆成 Headless 引擎再手写 GUI；**严禁**自研官方已有的多轨时间轴、资源库、属性面板、视口、解码/波形/磁吸/花字/导出。插件自研范围仅限 Cordis 生命周期、Tab 挂载、Host 磁盘持久化、Agent RPC 映射、以及把官方 CSS 变量映射到 DSH `--dsw-*` token。违反者 PR 一律驳回。详见 [docs/contracts/openreel-vendor-contract.md](docs/contracts/openreel-vendor-contract.md)。
 - Dev/test/prod layering MUST follow [docs/contracts/dev-pipeline.md](docs/contracts/dev-pipeline.md): the production profile (`omnimux`) MUST NOT link working trees (materialized copies only, synced via `yarn omnimux:sync` / `scripts/sync-to-app.sh`); dev profiles (`omnimux-dev-*` under `~/.dsh-dev`) MUST link and MUST link at most one in-progress plugin each. MUST NOT hand-rsync/cp into any profile. Day-to-day agent ops run from `/Users/x/Desktop/Project/omnimux-desktop-fork` (`yarn omnimux:dev` / `yarn omnimux:sync` / `yarn omnimux:restart` / `yarn omnimux:stage`).
 - Git / PR for this tree MUST follow [docs/contracts/plugin-git-pr.md](docs/contracts/plugin-git-pr.md): branch + PR to `laozhong86/omnimux-dsh` base `main`; no direct push to `main`; only the boss merges. Multi-agent parallel tasks MUST use isolated worktrees (`./scripts/git-wt.sh start <plugin> <topic>`) to avoid file collision and dirty workspace contamination; the main workspace must stay pure on `main`. Open-PR follow-up uses skill `omnimux-pr-handoff` and local `.workbuddy/pr-board.md`. Do NOT apply the desktop-fork `fork`/`omnimux` topology here.
 
@@ -37,7 +37,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | Path | Role |
 |---|---|
 | `CONTEXT.md` | Terms, two-agent split, shot statuses |
-| `design.md` | Plugin-series UI design system (x.ai brand): x.ai palette, token rules, full-shell bridge (adopted), light/dark strategy, component classes. The `--omx-*` island migration plan is superseded (see "Design system" below + decision [2026-08-21-xai-full-shell-theme](docs/decisions/2026-08-21-xai-full-shell-theme.md)). MUST load before any client-UI work. |
+| `design.md` | Plugin-series UI design system (v2.0): DSH native UI tokens (`--dsw-alias-*` / `--dsw-specific-*`), 32px height baseline, 8px radius, single-row toolbar, Popover dropdowns, SVG icons, WCAG AA contrast, and component standards. Single source of truth. MUST load before any client-UI work. |
 | `docs/README.md` | **全局文档导航门户**：四层权威金字塔与全量文档索引矩阵 |
 | `docs/capabilities.md` | Real / stub / absent |
 | `docs/contracts/docs-governance-standard.md` | **开发文档工程实践管理规范**：四层金字塔、元数据标准、生命周期与 CI 门禁 |
@@ -56,9 +56,9 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `plugins/omnimux-inspiration/` | 灵感库一级页（`shell.overlay`，sidebar rank 7）。浏览器只打 Host `/omnimux/inspiration`；云 HTTP 在中枢 `withPat`。 |
 | `plugins/omnimux-gallery/` | 专家·技能·连接器一级页（`shell.overlay`），技能双数据源（本地 + SkillHub 在线源）。 |
 | `plugins/omnimux-workflow/` | 工作流无限画布（拖拽 DAG、Agent 工具查询/执行），生成经 hub seam 提交。数据 `$DSH_HOME/omnimux/workflow/`。 |
-| `plugins/omnimux-clip/` | AI 剪辑工坊（`shell.overlay`）：基于 OpenReel Video (MIT) 核心引擎 vendorize，与画布通过 plain JSON 事件交互。 |
+| `plugins/omnimux-clip/` | 剪辑工坊：完整套用 OpenReel Video (MIT) 官方 GUI+管线，P1 挂 `dsh-better-sidebar` Tab（`omnimux-clip:studio`）；P2 `clip_*`；P3 与画布 JSON 事件桥。 |
 | `plugins/dsh-publish/` | 账号发布中心（`shell.overlay`，sidebar rank 9）：草稿→多账号分发→per-account 子任务台账。Host `/dsh-publish`，tools `publish_*` 9 个；执行只走中枢 `omnimux_publish_*` 官方通道，不直连平台、不存 secret。 |
-| `docs/contracts/openreel-vendor-contract.md` | **OpenReel 引入与反自研工程契约**：能力归属红线（禁止自研 NLE 内核）、Vendorize 目录规则与 QA 门禁。 |
+| `docs/contracts/openreel-vendor-contract.md` | **OpenReel 完整微应用契约**：官方 GUI+管线整包 Vendorize；禁止 Headless 拆分与自研四宫格；P1 侧边栏 Tab；DSW token 映射。 |
 | `docs/contracts/ops-entry.md` | **运维命令唯一入口**：对外只暴露 fork `yarn omnimux:*`；列出内部/废弃脚本边界。禁止插件私有 deploy/sync 体系。 |
 | `docs/contracts/plugin-git-pr.md` | **插件仓 Git/PR 合同**：`origin`/`main`、一插件一 PR、合入永远老板；board 在 `.workbuddy/pr-board.md`。Skill：`omnimux-plugin-pr` + `omnimux-pr-handoff`。 |
 | `docs/contracts/dev-pipeline.md` | 开发/预发布/生产三层环境契约：生产 MUST 物化副本、dev MUST link（在研 ≤1）。**主入口**：fork 仓库 `yarn omnimux:*`；真源：`scripts/sync-to-app.sh`、`scripts/dev-env.sh`（含统一 watch）、`scripts/dev-doctor.sh`、`scripts/sync-stable.sh`。 |
@@ -84,25 +84,25 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 
 ## Design system
 
-Single source of truth: [design.md](design.md). x.ai brand language via the full-shell bridge (official `--dsw-alias-*` / `--dsw-specific-*` tokens tinted by `xai-theme.js`).
+Single source of truth: [design.md](design.md) and [`docs/contracts/ui-design-guidelines.md`](docs/contracts/ui-design-guidelines.md). DSH native UI design system (`--dsw-alias-*` / `--dsw-specific-*` tokens).
 
 Load `design.md` when the task touches ANY of these:
 
-- Writing or editing any plugin web client UI (stage pages, tables, nav, dialogs, chips, buttons, empty states) in `omnimux-assets`, `omnimux-accounts`, `omnimux-workflow`, `omnimux-products`, `omnimux-inspiration`, or the `omnimux` hub client.
+- Writing or editing any plugin web client UI (stage pages, tables, nav, dialogs, chips, buttons, empty states) in `omnimux-assets`, `omnimux-accounts`, `omnimux-workflow`, `omnimux-products`, `omnimux-inspiration`, `omnimux-clip`, `dsh-publish`, or the `omnimux` hub client.
 - Adding or changing any color / typography / spacing / radius / shadow value in client code.
 - Creating a new plugin with a web stage.
 - Implementing or changing light/dark mode behavior.
 - Visual QA / acceptance of UI changes.
 
-Hard rules (details and token tables in `design.md`; full-shell override is implemented — see `plugins/omnimux/src/client/xai-theme.js` and decision [2026-08-21-xai-full-shell-theme](docs/decisions/2026-08-21-xai-full-shell-theme.md)):
+Hard rules (details and token tables in `design.md` and decision [2026-08-27-adopt-dsh-native-ui-system](docs/decisions/2026-08-27-adopt-dsh-native-ui-system.md)):
 
-- **Shell brand via the full-shell bridge**: the OmniMux hub stacks a `ctx.theme.overrideTokens('omnimux-xai', XAI_TOKENS)` layer that tints the whole host shell (official `--dsw-*` alias layer) in the x.ai palette. This is the adopted path (was design.md §3.3 "Phase-3 full-shell"). Client code across verticals consumes the official `--dsw-alias-*` / `--dsw-specific-*` tokens, which render x.ai after the bridge applies.
-- **Do NOT build the `--omx-*` island system**: `plugins/omnimux-theme` and `.omx-scope` / `installOmniMuxTheme` / `data-omx-mode` are NOT used and are deprecated in favor of the full-shell bridge. Do not create the theme package or mount `.omx-scope`.
-- **Light/dark** follows the host theme service (`ctx.theme` + `theme/change`); the bridge provides dual-mode `{light,dark}` values automatically. Never per-property JS switches or `filter: invert()`.
-- **Token discipline**: client code MUST consume official `--dsw-alias-*` / `--dsw-specific-*` tokens; raw hex/rgba literals in component code are violations (wrap them in a token). `xai-theme.js` is the single place the x.ai brand values live; do not add a second token/color source.
-- **Theme overrides only through `ctx.theme.overrideTokens`**: do not hand-write `<style>`-injected global token overrides or patch official stylesheets.
+- **100% Native Token Consumption**: All client code across plugins MUST consume official `--dsw-alias-*` / `--dsw-specific-*` tokens. Raw hex/rgba literals in component code are violations (wrap them in a token).
+- **Zero Theme Overrides**: `x.ai` brand language, `xai-theme.js`, and `ctx.theme.overrideTokens()` are completely abolished. Do NOT inject global style overrides or patch official stylesheets.
+- **Do NOT build `--omx-*` islands**: The `--omx-*` token namespace and `.omx-scope` isolation islands are completely removed.
+- **Zero-JS Light/Dark Adaptation**: Follows the host theme service (`ctx.theme` + CSS variables). Dual-mode `{light,dark}` is automatically handled by CSS variables cascading from the host. Never use per-property JS switches or `filter: invert()`.
+- **Visual & Interaction Invariants**: 32px control height baseline, 8px base radius (10~12px for popover menus, 16px for modal dialogs), single-row toolbars (`flex-wrap: nowrap`), React Popover dropdowns (no native `<select>`), vector SVG icons (no text/emojis), and WCAG AA contrast conformance.
 
-Doc index inside `design.md`: §1 x.ai language extraction (colors/typography/spacing/radius/elevation) · §2 token naming + 4-layer hierarchy · §3 shared theme package vs full-shell bridge · §4 light/dark adaptation · §5 shared component classes · §6 do's & don'ts · §8 component-generation prompts. The `--omx-*` island migration plan (design.md §3.1-3.2 / §7) is **superseded** by the full-shell bridge decision.
+Doc index inside `design.md`: §1 architectural principles & native regression · §2 hard rules (32px / 8px / single-row toolbar / no native select / SVG icons / WCAG AA) · §3 color & token matrices · §4 typography system · §5 component specifications · §6 do's & don'ts · §7 AI agent generation prompts.
 
 ## Package imports
 
@@ -113,7 +113,7 @@ Doc index inside `design.md`: §1 x.ai language extraction (colors/typography/sp
 | `omnimux-accounts` | Node stdlib, Host `/omnimux/accounts` | hub internals, `OMNIMUX_*` secrets |
 | `omnimux-inspiration` | Node stdlib, Host `/omnimux/inspiration` | hub internals, `OMNIMUX_*` secrets |
 
-> `omnimux-theme`（曾规划的 `--omx-*` 岛内共享主题包）**不建**——被全壳桥接 `xai-theme.js` 取代（见 Design system hard rules）。
+> `omnimux-theme`（历史规划的 `--omx-*` 岛内共享主题包）与全壳染色覆写已彻底废除，全量插件 100% 直连消费 DSH 原生 `--dsw-*` 设计系统。
 
 ## Verify
 
@@ -129,7 +129,7 @@ Do not claim the `drama` profile works unless `dsh --profile drama --dump-config
 
 ## Pointers
 
-- UI design system (tokens, theme layer, light/dark, migration): `design.md`
+- UI design system (tokens, native theme, light/dark, component standards): `design.md`
 - Positioning: `research/dsh/POSITIONING.md`
 - Hub I/O contract: `docs/contracts/hub.md`
 - Apps catalog (bundled + optional remote JSON): `docs/contracts/apps-catalog.md`
