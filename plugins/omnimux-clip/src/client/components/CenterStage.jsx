@@ -56,12 +56,12 @@ export function CenterStage() {
   }, [isPlaying])
 
   return (
-    <section className="omx-clip-stage">
+    <section className="omx-clip-preview">
       <div
-        className="omx-clip-stage__viewport"
+        className="omx-clip-preview__viewport"
         style={{ '--clip-aspect': aspectCss(aspectRatio) }}
       >
-        <canvas ref={canvasRef} className="omx-clip-stage__canvas" />
+        <canvas ref={canvasRef} className="omx-clip-preview__canvas" />
       </div>
       <div className="omx-clip-transport">
         <IconButton

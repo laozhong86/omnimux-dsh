@@ -62,7 +62,7 @@ describe('Stage Mutual Exclusion & Host Chrome Rules', () => {
 
   it('injects host-level mutual exclusion CSS for each stage', () => {
     for (const [id, className] of Object.entries(STAGE_CSS_CLASS_MAP)) {
-      const expectedRule = `html[data-dsh-product-stage="${id}"] [class*="-stage"]:not(.${className})`
+      const expectedRule = `html[data-dsh-product-stage="${id}"] [class$="-stage"]:not(.${className})`
       assert.ok(
         PRODUCT_STAGE_CHROME.includes(expectedRule),
         `PRODUCT_STAGE_CHROME must contain mutual exclusion rule for ${id} targeting ${className}`,

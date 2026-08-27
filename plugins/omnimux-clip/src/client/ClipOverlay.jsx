@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { createClipBridge } from './ClipBridge.js'
 import { CLIP_OVERLAY_CSS, CLIP_OVERLAY_STYLES_ID } from './styles.js'
 import { timelineStore } from './store/useTimelineStore.js'
 import { stripRuntimeUrls } from './store/timelineTypes.js'
 import { exportTimeline, persistExport, CLIP_API_PREFIX } from './engine/exportEngine.js'
 import { disposePreviewResources } from './engine/previewRenderer.js'
+import { readClipHostBox, watchClipHostBox } from './overlayHost.js'
 import { TopHeader } from './components/TopHeader.jsx'
 import { LeftSidebar } from './components/LeftSidebar.jsx'
 import { CenterStage } from './components/CenterStage.jsx'
@@ -39,6 +41,7 @@ function markClipReady(ready) {
 export function ClipOverlay({ t, target }) {
   const [payload, setPayload] = useState(null)
   const [saveNotice, setSaveNotice] = useState('')
+  const [hostBox, setHostBox] = useState(() => readClipHostBox())
   const [exportState, setExportState] = useState({
     open: false,
     progress: 0,
@@ -128,6 +131,11 @@ export function ClipOverlay({ t, target }) {
     })
     return () => { bridge.dispose() }
   }, [payload, target])
+
+  useLayoutEffect(() => {
+    if (!payload) return undefined
+    return watchClipHostBox(setHostBox)
+  }, [payload])
 
   if (!payload) return null
 
@@ -297,7 +305,7 @@ export function ClipOverlay({ t, target }) {
     abortRef.current?.abort()
   }
 
-  return (
+  const overlay = (
     <div
       className="omnimux-clip-overlay omnimux-clip-overlay--editor"
       role="dialog"
@@ -305,6 +313,12 @@ export function ClipOverlay({ t, target }) {
       aria-label={label('overlay.title', 'AI 剪辑工坊')}
       data-plugin="omnimux-clip"
       data-stage="clip-editor"
+      style={{
+        '--clip-overlay-top': `${hostBox.top}px`,
+        '--clip-overlay-left': `${hostBox.left}px`,
+        '--clip-overlay-width': `${hostBox.width}px`,
+        '--clip-overlay-height': `${hostBox.height}px`,
+      }}
     >
       <TopHeader
         source={source}
@@ -332,10 +346,13 @@ export function ClipOverlay({ t, target }) {
       />
     </div>
   )
+
+  if (typeof document === 'undefined') return overlay
+  return createPortal(overlay, document.body)
 }
 
 function captureThumbnailFallback() {
-  const canvas = document.querySelector('.omx-clip-stage__canvas')
+  const canvas = document.querySelector('.omx-clip-preview__canvas')
   if (!canvas) return ''
   try {
     return canvas.toDataURL('image/jpeg', 0.7)

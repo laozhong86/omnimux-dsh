@@ -135,6 +135,7 @@ module.exports = __toCommonJS(index_exports);
 
 // src/client/ClipOverlay.jsx
 var import_react6 = require("react");
+var import_react_dom = require("react-dom");
 
 // src/client/clip-events.js
 var OMNIMUX_CLIP_OPEN = "omnimux-clip-open";
@@ -273,7 +274,10 @@ var CLIP_OVERLAY_STYLES_ID = "omnimux-clip-overlay-styles";
 var CLIP_OVERLAY_CSS = `
 .omnimux-clip-overlay {
   position: fixed;
-  inset: 0;
+  top: var(--clip-overlay-top, 0px);
+  left: var(--clip-overlay-left, 0px);
+  width: var(--clip-overlay-width, 100vw);
+  height: var(--clip-overlay-height, 100vh);
   z-index: 240;
   display: flex;
   flex-direction: column;
@@ -434,7 +438,7 @@ var CLIP_OVERLAY_CSS = `
   gap: 6px;
 }
 
-.omx-clip-stage {
+.omx-clip-preview {
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -445,7 +449,7 @@ var CLIP_OVERLAY_CSS = `
   padding: 16px;
   background: var(--dsw-alias-bg-base, #111113);
 }
-.omx-clip-stage__viewport {
+.omx-clip-preview__viewport {
   width: min(100%, 720px);
   aspect-ratio: var(--clip-aspect, 16 / 9);
   border-radius: 12px;
@@ -453,7 +457,7 @@ var CLIP_OVERLAY_CSS = `
   background: var(--dsw-alias-bg-base, #000);
   border: 1px solid var(--dsw-alias-border, rgba(255, 255, 255, 0.12));
 }
-.omx-clip-stage__canvas {
+.omx-clip-preview__canvas {
   width: 100%;
   height: 100%;
   display: block;
@@ -2068,11 +2072,54 @@ function disposePreviewResources() {
   disposeMediaPool();
 }
 
+// src/client/overlayHost.js
+function sizableBox(node) {
+  if (!node || typeof node.getBoundingClientRect !== "function") return null;
+  const rect = node.getBoundingClientRect();
+  if (rect.width >= 8 && rect.height >= 8) {
+    return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+  }
+  return null;
+}
+function readClipHostBox() {
+  if (typeof document === "undefined") {
+    return { top: 0, left: 0, width: 0, height: 0 };
+  }
+  const visibleTab = document.querySelector('[data-omnimux-canvas-tab][data-visible="true"]');
+  const anyTab = document.querySelector("[data-omnimux-canvas-tab]");
+  const fromTab = sizableBox(visibleTab) || sizableBox(anyTab);
+  if (fromTab) return fromTab;
+  const details = document.querySelector(".dshDesktopDetailsSurface");
+  const fromDetails = sizableBox(details);
+  if (fromDetails) return fromDetails;
+  const width = typeof window !== "undefined" ? window.innerWidth : 0;
+  const height = typeof window !== "undefined" ? window.innerHeight : 0;
+  return { top: 0, left: 0, width: Math.max(8, width), height: Math.max(8, height) };
+}
+function watchClipHostBox(onBox) {
+  if (typeof document === "undefined" || typeof window === "undefined") {
+    return () => {
+    };
+  }
+  const update = () => {
+    onBox(readClipHostBox());
+  };
+  update();
+  const host = document.querySelector('[data-omnimux-canvas-tab][data-visible="true"]') || document.querySelector("[data-omnimux-canvas-tab]") || document.querySelector(".dshDesktopDetailsSurface") || document.documentElement;
+  const observer = typeof ResizeObserver === "function" ? new ResizeObserver(update) : null;
+  if (host && observer) observer.observe(host);
+  window.addEventListener("resize", update);
+  return () => {
+    observer?.disconnect();
+    window.removeEventListener("resize", update);
+  };
+}
+
 // src/client/components/TopHeader.jsx
 var import_react3 = require("react");
 var import_dsh_client_ui_primitives2 = require("@deepseek-ai/dsh-client-ui-primitives");
 
-// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
+// ../../../omnimux-dsh/node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
 var import_react2 = require("react");
 var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
 var import_jsx_runtime = require("react/jsx-runtime");
@@ -2752,13 +2799,13 @@ function CenterStage() {
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
   }, [isPlaying]);
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("section", { className: "omx-clip-stage", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("section", { className: "omx-clip-preview", children: [
     /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
       "div",
       {
-        className: "omx-clip-stage__viewport",
+        className: "omx-clip-preview__viewport",
         style: { "--clip-aspect": aspectCss(aspectRatio) },
-        children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("canvas", { ref: canvasRef, className: "omx-clip-stage__canvas" })
+        children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("canvas", { ref: canvasRef, className: "omx-clip-preview__canvas" })
       }
     ),
     /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omx-clip-transport", children: [
@@ -3324,6 +3371,7 @@ function markClipReady(ready) {
 function ClipOverlay({ t, target }) {
   const [payload, setPayload] = (0, import_react6.useState)(null);
   const [saveNotice, setSaveNotice] = (0, import_react6.useState)("");
+  const [hostBox, setHostBox] = (0, import_react6.useState)(() => readClipHostBox());
   const [exportState, setExportState] = (0, import_react6.useState)({
     open: false,
     progress: 0,
@@ -3400,6 +3448,10 @@ function ClipOverlay({ t, target }) {
       bridge.dispose();
     };
   }, [payload, target]);
+  (0, import_react6.useLayoutEffect)(() => {
+    if (!payload) return void 0;
+    return watchClipHostBox(setHostBox);
+  }, [payload]);
   if (!payload) return null;
   const label = (key, fallback) => {
     if (typeof t === "function") {
@@ -3552,7 +3604,7 @@ function ClipOverlay({ t, target }) {
   function handleCancelExport() {
     abortRef.current?.abort();
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+  const overlay = /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
     "div",
     {
       className: "omnimux-clip-overlay omnimux-clip-overlay--editor",
@@ -3561,6 +3613,12 @@ function ClipOverlay({ t, target }) {
       "aria-label": label("overlay.title", "AI \u526A\u8F91\u5DE5\u574A"),
       "data-plugin": "omnimux-clip",
       "data-stage": "clip-editor",
+      style: {
+        "--clip-overlay-top": `${hostBox.top}px`,
+        "--clip-overlay-left": `${hostBox.left}px`,
+        "--clip-overlay-width": `${hostBox.width}px`,
+        "--clip-overlay-height": `${hostBox.height}px`
+      },
       children: [
         /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
           TopHeader,
@@ -3595,9 +3653,11 @@ function ClipOverlay({ t, target }) {
       ]
     }
   );
+  if (typeof document === "undefined") return overlay;
+  return (0, import_react_dom.createPortal)(overlay, document.body);
 }
 function captureThumbnailFallback() {
-  const canvas = document.querySelector(".omx-clip-stage__canvas");
+  const canvas = document.querySelector(".omx-clip-preview__canvas");
   if (!canvas) return "";
   try {
     return canvas.toDataURL("image/jpeg", 0.7);

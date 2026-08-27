@@ -7,7 +7,10 @@ export const CLIP_OVERLAY_STYLES_ID = 'omnimux-clip-overlay-styles'
 export const CLIP_OVERLAY_CSS = `
 .omnimux-clip-overlay {
   position: fixed;
-  inset: 0;
+  top: var(--clip-overlay-top, 0px);
+  left: var(--clip-overlay-left, 0px);
+  width: var(--clip-overlay-width, 100vw);
+  height: var(--clip-overlay-height, 100vh);
   z-index: 240;
   display: flex;
   flex-direction: column;
@@ -168,7 +171,7 @@ export const CLIP_OVERLAY_CSS = `
   gap: 6px;
 }
 
-.omx-clip-stage {
+.omx-clip-preview {
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -179,7 +182,7 @@ export const CLIP_OVERLAY_CSS = `
   padding: 16px;
   background: var(--dsw-alias-bg-base, #111113);
 }
-.omx-clip-stage__viewport {
+.omx-clip-preview__viewport {
   width: min(100%, 720px);
   aspect-ratio: var(--clip-aspect, 16 / 9);
   border-radius: 12px;
@@ -187,7 +190,7 @@ export const CLIP_OVERLAY_CSS = `
   background: var(--dsw-alias-bg-base, #000);
   border: 1px solid var(--dsw-alias-border, rgba(255, 255, 255, 0.12));
 }
-.omx-clip-stage__canvas {
+.omx-clip-preview__canvas {
   width: 100%;
   height: 100%;
   display: block;

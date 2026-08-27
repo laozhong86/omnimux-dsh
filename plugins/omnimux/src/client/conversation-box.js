@@ -27,8 +27,10 @@ export const STAGE_CSS_CLASS_MAP = {
   'omnimux-apps': 'omnimux-apps-stage',
 }
 
+// `$=` only matches first-level roots (`omnimux-*-stage`). `*=` also hits BEM
+// internals such as clip preview `omx-clip-stage__canvas` and hides them.
 const STAGE_MUTUAL_EXCLUSION_RULES = Object.entries(STAGE_CSS_CLASS_MAP).map(([stageId, className]) => {
-  return `html[data-dsh-product-stage="${stageId}"] [class*="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`
+  return `html[data-dsh-product-stage="${stageId}"] [class$="-stage"]:not(.${className}) { display: none !important; pointer-events: none !important; }`
 }).join('\n')
 
 /**
@@ -61,7 +63,7 @@ export function releaseProductStage(id) {
 export const PRODUCT_STAGE_CHROME = `
 [data-slot="shell.overlay"]{pointer-events:none!important;}
 [data-slot="shell.overlay"] > *{pointer-events:auto!important;}
-html:not([data-dsh-product-stage]) [class*="-stage"]{display:none!important;pointer-events:none!important;}
+html:not([data-dsh-product-stage]) [class$="-stage"]{display:none!important;pointer-events:none!important;}
 ${STAGE_MUTUAL_EXCLUSION_RULES}
 html:not([data-dsh-product-stage]) [class*="toggleCluster"],
 html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}
