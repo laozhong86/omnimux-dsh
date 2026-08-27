@@ -1,8 +1,7 @@
-import { chmodSync, existsSync, readdirSync, readFileSync, renameSync, rmSync, statSync } from 'node:fs'
+import { chmodSync, existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
 import { atomicWriteFileSync } from './atomic-write.js'
-import { createKeychain } from './keychain.js'
 import { CREDENTIAL_REF } from './omnimux-auth.js'
 
 /**
@@ -50,27 +49,26 @@ function cleanupStaleLoginFlows(configDir, nowFn) {
   }
 }
 
+function runningUnderNodeTest() {
+  return Boolean(process.env.NODE_TEST_CONTEXT)
+}
+
 /**
+ * Creates the single canonical token store backed by ~/.config/omnimux/secrets.json (0600).
+ * No OS Keychain dependencies; no legacy migration overhead.
+ *
  * @param {{
  *   credentials?: { resolve?: Function, set?: Function, unset?: Function, describe?: Function },
  *   homeDir?: string,
  *   configDir?: string,
  *   env?: Record<string, string | undefined>,
- *   platform?: string,
- *   keychain?: ReturnType<typeof createKeychain>,
  *   now?: () => number,
- *   tokenPath?: string,
  *   profilePath?: string,
  * }} [opts]
  */
-function runningUnderNodeTest() {
-  return Boolean(process.env.NODE_TEST_CONTEXT)
-}
-
 export function createTokenStore(opts = {}) {
   const env = opts.env || process.env
   const underTest = runningUnderNodeTest()
-  const platform = opts.platform || (underTest ? 'linux' : process.platform)
   const now = opts.now || Date.now
   const home = resolveDshHome(opts.homeDir)
   const realDshHome = join(homedir(), '.dsh')
@@ -79,17 +77,10 @@ export function createTokenStore(opts = {}) {
   const pinchesRealHome = underTest && home === realDshHome
   const configDir = opts.configDir || (underTest ? join(sandboxRoot, 'config') : realConfigDir)
   const secretsPath = join(configDir, 'secrets.json')
-  const tokenPath = opts.tokenPath || (pinchesRealHome
-    ? join(sandboxRoot, 'access-token')
-    : join(home, 'omnimux', 'access-token'))
-  const migratedTokenPath = `${tokenPath}.migrated`
   const profilePath = opts.profilePath || (pinchesRealHome
     ? join(sandboxRoot, 'profile.json')
     : join(home, 'omnimux', 'profile.json'))
   const credentials = opts.credentials
-  const keychain = opts.keychain || createKeychain({
-    platform: underTest && !opts.keychain ? 'linux' : platform,
-  })
 
   let expired = false
 
@@ -111,7 +102,7 @@ export function createTokenStore(opts = {}) {
   }
 
   /**
-   * Reads raw secrets.json and extracts token.
+   * Reads secrets.json and extracts token.
    * Ensures 0600 permissions if the file exists.
    * @returns {{ token?: string, raw?: Record<string, unknown> } | null}
    */
@@ -146,15 +137,13 @@ export function createTokenStore(opts = {}) {
   }
 
   /**
-   * Writes token to secrets.json using atomic write.
-   * Preserves existing slots if present.
+   * Writes token to secrets.json using atomic write (tmp -> fsync -> 0600 -> rename).
    * @param {string} token
    */
   function writeSecrets(token) {
     const existing = readSecrets()?.raw || {}
     const slots = existing.slots && typeof existing.slots === 'object' ? { ...existing.slots } : {}
-    const activeSlot = typeof existing.active_slot === 'string' && existing.active_slot ? existing.active_slot : 'desktop:default'
-    const targetSlot = slots[activeSlot] ? activeSlot : 'desktop:default'
+    const targetSlot = typeof opts.slot === 'string' && opts.slot ? opts.slot : 'desktop:default'
 
     slots[targetSlot] = {
       ...(slots[targetSlot] && typeof slots[targetSlot] === 'object' ? slots[targetSlot] : {}),
@@ -173,7 +162,7 @@ export function createTokenStore(opts = {}) {
   }
 
   /**
-   * Cleans up token in secrets.json on logout.
+   * Cleans up token in secrets.json on explicit logout.
    */
   function unsetSecrets() {
     try {
@@ -208,20 +197,12 @@ export function createTokenStore(opts = {}) {
     }
   }
 
-  function readLegacyFileToken() {
-    try {
-      const value = readFileSync(tokenPath, 'utf8').trim()
-      return value || undefined
-    } catch {
-      return undefined
-    }
-  }
-
-  function writeLegacyFileToken(value) {
-    atomicWriteFileSync(tokenPath, value, { mode: 0o600, dirMode: 0o700 })
-  }
-
   /**
+   * Resolves active access token across the 3-level pipeline:
+   * Level 1: env OMNIMUX_ACCESS_TOKEN
+   * Level 2: DSH credentials seam
+   * Level 3: Canonical ~/.config/omnimux/secrets.json
+   *
    * @returns {Promise<string | undefined>}
    */
   async function resolve() {
@@ -239,80 +220,47 @@ export function createTokenStore(opts = {}) {
       }
     }
 
-    const isLegacy = env.OMNIMUX_AUTH_LEGACY_STORE === '1'
-
-    if (isLegacy) {
-      return readLegacyFileToken()
-    }
-
-    // 3. Platform canonical shared store
-    // 3a. macOS Keychain
-    if (platform === 'darwin' && keychain) {
-      try {
-        const kcToken = keychain.get()
-        if (kcToken) return kcToken
-      } catch {
-        // fallback to secrets.json
-      }
-    }
-
-    // 3b. ~/.config/omnimux/secrets.json
-    const secretsResult = readSecrets()
-    if (secretsResult && secretsResult.token) {
-      return secretsResult.token
-    }
-
-    // 4. Legacy fallback & lazy promotion
-    const legacyToken = readLegacyFileToken()
-    if (legacyToken) {
-      try {
-        // Promote to canonical store
-        if (platform === 'darwin' && keychain) {
-          try {
-            keychain.set(legacyToken)
-          } catch {
-            // ignore keychain failure
-          }
-        }
-        writeSecrets(legacyToken)
-        // Rename legacy file to .migrated
-        try {
-          renameSync(tokenPath, migratedTokenPath)
-        } catch {
-          // ignore rename failure
-        }
-      } catch {
-        // ignore promotion failure
-      }
-      return legacyToken
-    }
+    // 3. Canonical secrets.json file (0600)
+    const secrets = readSecrets()
+    if (secrets?.token) return secrets.token
 
     return undefined
   }
 
   /**
+   * Describes the current token configuration state.
    * @returns {Promise<{ configured: boolean, source?: string, writable: boolean }>}
    */
   async function describe() {
+    // 1. Process environment override
     const envToken = typeof env.OMNIMUX_ACCESS_TOKEN === 'string' ? env.OMNIMUX_ACCESS_TOKEN.trim() : ''
     if (envToken) {
       return { configured: true, source: 'env', writable: false }
     }
 
+    // 2. Credentials seam
     if (credentials && typeof credentials.describe === 'function') {
       try {
         const info = await credentials.describe(CREDENTIAL_REF)
-        if (info && typeof info.configured === 'boolean' && info.configured) return info
+        if (info && typeof info.configured === 'boolean' && info.configured) {
+          return { configured: true, source: info.source || 'credentials', writable: info.writable !== false }
+        }
       } catch {
         // fall through
       }
     }
 
-    const token = await resolve()
-    return { configured: Boolean(token), source: token ? 'file' : undefined, writable: true }
+    // 3. Canonical secrets.json file (0600)
+    const secrets = readSecrets()
+    if (secrets?.token) {
+      return { configured: true, source: 'secrets', writable: true }
+    }
+
+    return { configured: false, source: undefined, writable: true }
   }
 
   /**
+   * Sets new access token into canonical secrets.json.
    * @param {string} value
    */
   async function set(value) {
@@ -322,72 +270,38 @@ export function createTokenStore(opts = {}) {
     const token = value.trim()
     clearExpired()
 
-    const isLegacy = env.OMNIMUX_AUTH_LEGACY_STORE === '1'
-
-    if (isLegacy) {
-      writeLegacyFileToken(token)
-      if (credentials && typeof credentials.set === 'function') {
-        try {
-          await credentials.set(CREDENTIAL_REF, token)
-        } catch {
-          // ignore
-        }
-      }
-      return
-    }
-
-    // Non-legacy mode:
-    // Write to Keychain on darwin (best effort)
-    if (platform === 'darwin' && keychain) {
-      try {
-        keychain.set(token)
-      } catch {
-        // ignore keychain failure
-      }
-    }
-
-    // Always write to secrets.json
+    // 1. Write to canonical secrets.json
     writeSecrets(token)
 
-    // Attempt credentials.set
+    // 2. Best-effort mirror to credentials seam
     if (credentials && typeof credentials.set === 'function') {
       try {
         await credentials.set(CREDENTIAL_REF, token)
       } catch {
-        // env-shadowed writes fail loud; keep a plugin-owned copy
+        // ignore credentials seam write errors
       }
     }
   }
 
   /**
-   * Explicit logout. Cleans up canonical and legacy stores.
+   * Cleans up token on explicit user logout.
    */
   async function unset() {
     clearExpired()
 
+    // 1. Unset credentials seam
     if (credentials && typeof credentials.unset === 'function') {
       try {
         await credentials.unset(CREDENTIAL_REF)
       } catch {
-        // still remove the file copy
+        // ignore seam failure
       }
     }
 
-    if (platform === 'darwin' && keychain) {
-      try {
-        keychain.unset()
-      } catch {
-        // ignore
-      }
-    }
-
+    // 2. Unset from canonical secrets.json
     unsetSecrets()
 
-    try {
-      rmSync(tokenPath, { force: true })
-    } catch {
-      // absent is success
-    }
+    // 3. Clean profile cache
     try {
       rmSync(profilePath, { force: true })
     } catch {
@@ -421,7 +335,6 @@ export function createTokenStore(opts = {}) {
     markExpired,
     isExpired,
     clearExpired,
-    tokenPath,
     profilePath,
     configDir,
     secretsPath,

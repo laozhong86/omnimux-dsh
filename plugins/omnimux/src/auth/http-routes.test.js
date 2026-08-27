@@ -20,7 +20,7 @@ describe('auth http dispatcher', () => {
   it('starts a flow without leaking the device code and stores the PAT on success', async () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-http-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-http-cfg-'))
-    const store = createTokenStore({ homeDir, configDir, platform: 'linux' })
+    const store = createTokenStore({ homeDir, configDir })
     const pending = createPendingStore()
     /** @type {string[]} */
     const urls = []
@@ -98,7 +98,7 @@ describe('auth http dispatcher', () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-cap-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-cap-cfg-'))
     const dispatcher = createAuthDispatcher({
-      store: createTokenStore({ homeDir, configDir, platform: 'linux' }),
+      store: createTokenStore({ homeDir, configDir }),
       pending: createPendingStore(),
       siteBaseUrl: 'https://omnimux.ai',
       capabilities: { identity: true, videoGenerate: true, imageGenerate: true, textComplete: true, official: true },

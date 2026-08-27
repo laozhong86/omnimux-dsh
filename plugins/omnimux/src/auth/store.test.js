@@ -5,16 +5,18 @@ import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { createTokenStore } from './store.js'
 
-describe('token store', () => {
-  it('sets and unsets a file-backed token in canonical secrets.json', async () => {
+describe('token store (canonical 0600 file)', () => {
+  it('sets and unsets a file-backed token in canonical secrets.json with 0600 mode', async () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-home-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-cfg-'))
-    const store = createTokenStore({ homeDir, configDir, platform: 'linux' })
+    const store = createTokenStore({ homeDir, configDir })
     try {
       assert.equal((await store.describe()).configured, false)
       await store.set('pat-test-1')
       assert.equal(await store.resolve(), 'pat-test-1')
-      assert.equal((await store.describe()).configured, true)
+      const desc = await store.describe()
+      assert.equal(desc.configured, true)
+      assert.equal(desc.source, 'secrets')
 
       // Verify secrets.json permissions and content
       const secretsPath = join(configDir, 'secrets.json')
@@ -41,7 +43,7 @@ describe('token store', () => {
     }
   })
 
-  it('prefers credentials when present and falls back after a failed set', async () => {
+  it('prefers credentials when present and falls back to secrets.json', async () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-home-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-cfg-'))
     /** @type {Record<string, string>} */
@@ -49,14 +51,13 @@ describe('token store', () => {
     const store = createTokenStore({
       homeDir,
       configDir,
-      platform: 'linux',
       credentials: {
         async resolve(ref) {
           const value = mem[ref]
-          return value ? { value, source: 'file' } : undefined
+          return value ? { value, source: 'credentials' } : undefined
         },
         async describe(ref) {
-          return { configured: Boolean(mem[ref]), writable: true }
+          return { configured: Boolean(mem[ref]), source: 'credentials', writable: true }
         },
         async set(ref, value) {
           mem[ref] = value
@@ -69,6 +70,9 @@ describe('token store', () => {
     try {
       await store.set('pat-from-cred')
       assert.equal(await store.resolve(), 'pat-from-cred')
+      const desc = await store.describe()
+      assert.equal(desc.configured, true)
+      assert.equal(desc.source, 'credentials')
       await store.unset()
       assert.equal(await store.resolve(), undefined)
     } finally {
@@ -83,7 +87,6 @@ describe('token store', () => {
     const store = createTokenStore({
       homeDir,
       configDir,
-      platform: 'linux',
       env: { OMNIMUX_ACCESS_TOKEN: 'pat-from-env' },
     })
     try {
@@ -93,121 +96,8 @@ describe('token store', () => {
       assert.equal(desc.configured, true)
       assert.equal(desc.source, 'env')
       assert.equal(desc.writable, false)
-      assert.equal(existsSync(join(configDir, 'secrets.json')), false)
-    } finally {
-      rmSync(homeDir, { recursive: true, force: true })
-      rmSync(configDir, { recursive: true, force: true })
-    }
-  })
 
-  it('reads flat CLI secrets.json and slot format', async () => {
-    const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-home-'))
-    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-cfg-'))
-    const secretsPath = join(configDir, 'secrets.json')
-
-    // Test flat format
-    writeFileSync(secretsPath, JSON.stringify({ access_token: 'pat-flat-format' }))
-    const storeFlat = createTokenStore({ homeDir, configDir, platform: 'linux' })
-    assert.equal(await storeFlat.resolve(), 'pat-flat-format')
-
-    // Test slot format
-    writeFileSync(secretsPath, JSON.stringify({
-      version: 1,
-      active_slot: 'desktop:default',
-      slots: {
-        'desktop:default': {
-          access_token: 'pat-slot-format',
-          updated_at: Date.now(),
-        },
-      },
-    }))
-    const storeSlot = createTokenStore({ homeDir, configDir, platform: 'linux' })
-    assert.equal(await storeSlot.resolve(), 'pat-slot-format')
-
-    rmSync(homeDir, { recursive: true, force: true })
-    rmSync(configDir, { recursive: true, force: true })
-  })
-
-  it('lazily promotes legacy access-token file to secrets.json and renames it to .migrated', async () => {
-    const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-home-'))
-    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-cfg-'))
-    const legacyDir = join(homeDir, 'omnimux')
-    mkdirSync(legacyDir, { recursive: true, mode: 0o700 })
-    const legacyFile = join(legacyDir, 'access-token')
-    const migratedFile = `${legacyFile}.migrated`
-
-    writeFileSync(legacyFile, 'pat-legacy-promote\n')
-
-    const store = createTokenStore({ homeDir, configDir, platform: 'linux' })
-    try {
-      const resolved = await store.resolve()
-      assert.equal(resolved, 'pat-legacy-promote')
-
-      // Check legacy file renamed to .migrated
-      assert.equal(existsSync(legacyFile), false)
-      assert.equal(existsSync(migratedFile), true)
-      assert.equal(readFileSync(migratedFile, 'utf8').trim(), 'pat-legacy-promote')
-
-      // Check written to secrets.json
       const secretsPath = join(configDir, 'secrets.json')
-      assert.equal(existsSync(secretsPath), true)
-      const secretsContent = JSON.parse(readFileSync(secretsPath, 'utf8'))
-      assert.equal(secretsContent.access_token, 'pat-legacy-promote')
-      assert.equal(secretsContent.slots['desktop:default'].access_token, 'pat-legacy-promote')
-    } finally {
-      rmSync(homeDir, { recursive: true, force: true })
-      rmSync(configDir, { recursive: true, force: true })
-    }
-  })
-
-  it('uses fake keychain on darwin platform', async () => {
-    const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-home-'))
-    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-cfg-'))
-    let keychainValue = 'pat-keychain-val'
-    /** @type {string[]} */
-    const operations = []
-
-    const fakeKeychain = {
-      get() {
-        operations.push('get')
-        return keychainValue
-      },
-      set(val) {
-        operations.push(`set:${val}`)
-        keychainValue = val
-        return true
-      },
-      unset() {
-        operations.push('unset')
-        keychainValue = undefined
-        return true
-      },
-    }
-
-    const store = createTokenStore({
-      homeDir,
-      configDir,
-      platform: 'darwin',
-      keychain: fakeKeychain,
-    })
-
-    try {
-      assert.equal(await store.resolve(), 'pat-keychain-val')
-      const desc = await store.describe()
-      assert.equal(desc.configured, true)
-
-      await store.set('pat-darwin-new')
-      assert.equal(await store.resolve(), 'pat-darwin-new')
-      assert.equal(keychainValue, 'pat-darwin-new')
-
-      // Both keychain and secrets.json written
-      const secretsPath = join(configDir, 'secrets.json')
-      assert.equal(existsSync(secretsPath), true)
-      assert.equal(JSON.parse(readFileSync(secretsPath, 'utf8')).access_token, 'pat-darwin-new')
-
-      await store.unset()
-      assert.equal(await store.resolve(), undefined)
-      assert.equal(keychainValue, undefined)
       assert.equal(existsSync(secretsPath), false)
     } finally {
       rmSync(homeDir, { recursive: true, force: true })
@@ -215,48 +105,101 @@ describe('token store', () => {
     }
   })
 
-  it('OMNIMUX_AUTH_LEGACY_STORE=1 skips keychain and secrets.json', async () => {
+  it('reads flat CLI secrets.json format as well as slot-structured format', async () => {
+    const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-home-'))
+    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-cfg-'))
+
+    // 1. Flat format: { "access_token": "pat-cli" }
+    const secretsPath = join(configDir, 'secrets.json')
+    writeFileSync(secretsPath, JSON.stringify({ access_token: 'pat-cli-flat' }), { mode: 0o600 })
+
+    const storeFlat = createTokenStore({ homeDir, configDir })
+    assert.equal(await storeFlat.resolve(), 'pat-cli-flat')
+
+    // 2. Slot format: { active_slot: "cli:default", slots: { ... } }
+    writeFileSync(
+      secretsPath,
+      JSON.stringify({
+        version: 1,
+        active_slot: 'cli:default',
+        slots: {
+          'cli:default': { access_token: 'pat-cli-slot' },
+          'desktop:default': { access_token: 'pat-desktop' },
+        },
+      }),
+      { mode: 0o600 },
+    )
+
+    const storeSlot = createTokenStore({ homeDir, configDir })
+    assert.equal(await storeSlot.resolve(), 'pat-cli-slot')
+
+    rmSync(homeDir, { recursive: true, force: true })
+    rmSync(configDir, { recursive: true, force: true })
+  })
+
+  it('enforces 0600 mode on existing secrets.json with loose permissions', async () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-home-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-cfg-'))
     const secretsPath = join(configDir, 'secrets.json')
-    writeFileSync(secretsPath, JSON.stringify({ access_token: 'pat-in-secrets' }))
 
-    const store = createTokenStore({
-      homeDir,
-      configDir,
-      platform: 'linux',
-      env: { OMNIMUX_AUTH_LEGACY_STORE: '1' },
-    })
+    writeFileSync(secretsPath, JSON.stringify({ access_token: 'pat-loose' }), { mode: 0o644 })
+    const store = createTokenStore({ homeDir, configDir })
+    assert.equal(await store.resolve(), 'pat-loose')
 
-    try {
-      // In legacy mode, secrets.json is ignored
-      assert.equal(await store.resolve(), undefined)
+    const stat = statSync(secretsPath)
+    assert.equal(stat.mode & 0o777, 0o600)
 
-      await store.set('pat-in-legacy-file')
-      assert.equal(await store.resolve(), 'pat-in-legacy-file')
-
-      // legacy file written
-      const legacyFile = join(homeDir, 'omnimux', 'access-token')
-      assert.equal(existsSync(legacyFile), true)
-      assert.equal(readFileSync(legacyFile, 'utf8'), 'pat-in-legacy-file')
-
-      // secrets.json still has original value
-      assert.equal(JSON.parse(readFileSync(secretsPath, 'utf8')).access_token, 'pat-in-secrets')
-    } finally {
-      rmSync(homeDir, { recursive: true, force: true })
-      rmSync(configDir, { recursive: true, force: true })
-    }
+    rmSync(homeDir, { recursive: true, force: true })
+    rmSync(configDir, { recursive: true, force: true })
   })
 
-  it('cleans up stale login-flows files on initialization', () => {
+  it('preserves other slots during set and unset operations', async () => {
+    const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-home-'))
+    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-cfg-'))
+    const secretsPath = join(configDir, 'secrets.json')
+
+    writeFileSync(
+      secretsPath,
+      JSON.stringify({
+        version: 1,
+        active_slot: 'cli:default',
+        access_token: 'pat-cli',
+        slots: {
+          'cli:default': { access_token: 'pat-cli', updated_at: 100 },
+        },
+      }),
+      { mode: 0o600 },
+    )
+
+    const store = createTokenStore({ homeDir, configDir })
+    await store.set('pat-desktop-new')
+
+    const afterSet = JSON.parse(readFileSync(secretsPath, 'utf8'))
+    assert.equal(afterSet.slots['cli:default'].access_token, 'pat-cli')
+    assert.equal(afterSet.slots['desktop:default'].access_token, 'pat-desktop-new')
+    assert.equal(afterSet.active_slot, 'desktop:default')
+
+    // Unset desktop slot: cli slot remains
+    await store.unset()
+    assert.equal(existsSync(secretsPath), true)
+    const afterUnset = JSON.parse(readFileSync(secretsPath, 'utf8'))
+    assert.equal(afterUnset.slots['desktop:default'], undefined)
+    assert.equal(afterUnset.slots['cli:default'].access_token, 'pat-cli')
+    assert.equal(afterUnset.active_slot, 'cli:default')
+
+    rmSync(homeDir, { recursive: true, force: true })
+    rmSync(configDir, { recursive: true, force: true })
+  })
+
+  it('cleans up stale login-flows files on initialization', async () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-home-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-cfg-'))
     const flowsDir = join(configDir, 'login-flows')
-    mkdirSync(flowsDir, { recursive: true, mode: 0o700 })
+    mkdirSync(flowsDir, { recursive: true })
 
-    const staleFile = join(flowsDir, 'flow-stale.json')
-    const freshFile = join(flowsDir, 'flow-fresh.json')
-    const expiredByField = join(flowsDir, 'flow-expired.json')
+    const staleFile = join(flowsDir, 'stale-flow.json')
+    const freshFile = join(flowsDir, 'fresh-flow.json')
+    const expiredByField = join(flowsDir, 'expired-field.json')
 
     const baseTime = 1700000000000
     writeFileSync(staleFile, JSON.stringify({ device_code: 'abc' }))
@@ -273,7 +216,6 @@ describe('token store', () => {
     createTokenStore({
       homeDir,
       configDir,
-      platform: 'linux',
       now: () => baseTime,
     })
 
@@ -285,15 +227,12 @@ describe('token store', () => {
     rmSync(configDir, { recursive: true, force: true })
   })
 
-  it('node:test runs do not write the operator Keychain, secrets.json, or ~/.dsh token', async () => {
+  it('node:test runs do not touch real ~/.config/omnimux/secrets.json', async () => {
     const realSecrets = join(homedir(), '.config', 'omnimux', 'secrets.json')
-    const realToken = join(homedir(), '.dsh', 'omnimux', 'access-token')
     const hadSecrets = existsSync(realSecrets)
-    const hadToken = existsSync(realToken)
     const store = createTokenStore({ homeDir: join(homedir(), '.dsh') })
     await store.set('pat-must-not-escape')
     assert.equal(existsSync(realSecrets), hadSecrets)
-    assert.equal(existsSync(realToken), hadToken)
     assert.notEqual(store.secretsPath, realSecrets)
     await store.unset()
   })

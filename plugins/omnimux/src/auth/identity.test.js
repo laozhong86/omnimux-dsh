@@ -13,7 +13,7 @@ describe('identity seam', () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-id-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-cfg-'))
     const identity = createIdentity({
-      store: createTokenStore({ homeDir, configDir, platform: 'linux' }),
+      store: createTokenStore({ homeDir, configDir }),
       siteBaseUrl: 'https://omnimux.ai',
     })
     try {
@@ -34,7 +34,7 @@ describe('identity seam', () => {
   it('returns cached public fields and never the PAT', async () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-id-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-cfg-'))
-    const store = createTokenStore({ homeDir, configDir, platform: 'linux' })
+    const store = createTokenStore({ homeDir, configDir })
     await store.set('pat-secret')
     store.writeProfileCache({ id: 9, username: 'ada', quota_usd: 1, used_quota_usd: 0 })
     const identity = createIdentity({ store, siteBaseUrl: 'https://omnimux.ai' })
@@ -55,7 +55,7 @@ describe('identity seam', () => {
   it('401 on verify marks expired without unsetting token, and subsequent unverified status reports token_invalid', async () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-id-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-cfg-'))
-    const store = createTokenStore({ homeDir, configDir, platform: 'linux' })
+    const store = createTokenStore({ homeDir, configDir })
     await store.set('pat-expired-test')
     store.writeProfileCache({ id: 9, username: 'ada' })
     let hits = 0
@@ -116,7 +116,7 @@ describe('identity seam', () => {
   it('non-401 errors return self_failed and do not mark expired or unset', async () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-id-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-cfg-'))
-    const store = createTokenStore({ homeDir, configDir, platform: 'linux' })
+    const store = createTokenStore({ homeDir, configDir })
     await store.set('pat-valid-test')
     store.writeProfileCache({ id: 9, username: 'ada' })
     const identity = createIdentity({
