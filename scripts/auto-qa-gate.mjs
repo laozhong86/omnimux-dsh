@@ -21,6 +21,7 @@
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, resolve, relative, extname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const args = process.argv.slice(2)
 let targetDir = process.cwd()
@@ -99,7 +100,7 @@ if (report.dimensions.syntax.pass) {
 // 2. [Lifecycle] 生命周期可逆性
 for (const file of files) {
   const rel = relative(targetDir, file)
-  if (rel.includes('.test.') || rel.includes('scripts/')) continue
+  if (rel.includes('.test.') || rel.includes('.spec.') || file.includes('/scripts/') || file.includes('\\scripts\\')) continue
   const content = readFileSync(file, 'utf8')
 
   // 检查 setInterval 是否缺乏 clearInterval
@@ -155,7 +156,7 @@ for (const file of files) {
   }
 
   // 检查跨工作区越级写操作
-  if (content.includes("writeFileSync('../") || content.includes("writeFile('../")) {
+  if (file !== fileURLToPath(import.meta.url) && (content.includes("writeFileSync('../") || content.includes("writeFile('../"))) {
     report.dimensions.security.errors.push({
       file: rel,
       message: '检测到向父级目录跨界写入文件的越权操作。',
