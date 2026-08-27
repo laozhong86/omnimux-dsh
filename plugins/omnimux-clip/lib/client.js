@@ -7,6 +7,9 @@ var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
 var __export = (target, all) => {
   for (var name2 in all)
     __defProp(target, name2, { get: all[name2], enumerable: true });
@@ -21,6 +24,106 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
+// src/client/engine/openreel/render/videoDecoderPool.js
+async function getPooledVideo(url) {
+  if (!url || typeof document === "undefined") return null;
+  const cached = videoPool.get(url);
+  if (cached) return cached;
+  const promise = new Promise((resolve) => {
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.src = url;
+    const onReady = () => {
+      video.removeEventListener("loadeddata", onReady);
+      video.removeEventListener("error", onError);
+      resolve(video);
+    };
+    const onError = () => {
+      video.removeEventListener("loadeddata", onReady);
+      video.removeEventListener("error", onError);
+      resolve(null);
+    };
+    video.addEventListener("loadeddata", onReady);
+    video.addEventListener("error", onError);
+    setTimeout(() => {
+      if (video.readyState >= 2) resolve(video);
+      else resolve(null);
+    }, 4e3);
+  });
+  videoPool.set(url, promise);
+  return promise;
+}
+function seekVideo(video, timeSec) {
+  return new Promise((resolve) => {
+    if (!video || !Number.isFinite(timeSec)) {
+      resolve();
+      return;
+    }
+    const target = Math.max(0, Math.min(timeSec, video.duration || timeSec));
+    if (Math.abs(video.currentTime - target) < 0.03) {
+      resolve();
+      return;
+    }
+    const onSeeked = () => {
+      video.removeEventListener("seeked", onSeeked);
+      resolve();
+    };
+    video.addEventListener("seeked", onSeeked);
+    video.currentTime = target;
+    setTimeout(() => {
+      video.removeEventListener("seeked", onSeeked);
+      resolve();
+    }, 150);
+  });
+}
+async function getPooledImage(url) {
+  if (!url || typeof document === "undefined") return null;
+  const cached = imagePool.get(url);
+  if (cached) return cached;
+  const promise = new Promise((resolve) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = url;
+  });
+  imagePool.set(url, promise);
+  return promise;
+}
+function disposeMediaPool() {
+  for (const promise of videoPool.values()) {
+    promise.then((video) => {
+      if (video) {
+        try {
+          video.pause();
+          video.removeAttribute("src");
+          video.load();
+        } catch {
+        }
+      }
+    }).catch(() => {
+    });
+  }
+  videoPool.clear();
+  imagePool.clear();
+}
+var videoPool, imagePool;
+var init_videoDecoderPool = __esm({
+  "src/client/engine/openreel/render/videoDecoderPool.js"() {
+    videoPool = /* @__PURE__ */ new Map();
+    imagePool = /* @__PURE__ */ new Map();
+  }
+});
+
+// src/client/engine/openreel/audio/audioManager.js
+var init_audioManager = __esm({
+  "src/client/engine/openreel/audio/audioManager.js"() {
+  }
+});
+
 // src/client/index.js
 var index_exports = {};
 __export(index_exports, {
@@ -31,15 +134,16 @@ __export(index_exports, {
 module.exports = __toCommonJS(index_exports);
 
 // src/client/ClipOverlay.jsx
-var import_react5 = require("react");
+var import_react6 = require("react");
 
 // src/client/clip-events.js
 var OMNIMUX_CLIP_OPEN = "omnimux-clip-open";
 var OMNIMUX_CLIP_SAVE = "omnimux-clip-save";
 var OMNIMUX_CLIP_CLOSE = "omnimux-clip-close";
 var OMNIMUX_CLIP_PROGRESS = "omnimux-clip-progress";
+var OMNIMUX_CLIP_RELOAD = "omnimux-clip-reload";
 var CLIP_EVENT_MAX_BYTES = 1024 * 1024;
-var OPEN_SOURCES = /* @__PURE__ */ new Set(["canvas", "sidebar", "agent"]);
+var OPEN_SOURCES = /* @__PURE__ */ new Set(["canvas", "sidebar", "agent", "url"]);
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -112,7 +216,7 @@ function createClipBridge(opts = {}) {
     if (typeof handler !== "function") return;
     const listener = (event) => {
       const detail = event instanceof CustomEvent ? event.detail : void 0;
-      if (!guard(detail)) return;
+      if (guard && !guard(detail)) return;
       handler(detail, event);
     };
     target.addEventListener(type, listener);
@@ -122,6 +226,7 @@ function createClipBridge(opts = {}) {
   bind(OMNIMUX_CLIP_SAVE, isSaveClipEditorPayload, opts.onSave);
   bind(OMNIMUX_CLIP_CLOSE, isCloseClipEditorPayload, opts.onClose);
   bind(OMNIMUX_CLIP_PROGRESS, isProgressClipEditorPayload, opts.onProgress);
+  bind(OMNIMUX_CLIP_RELOAD, () => true, opts.onReload);
   return {
     target,
     /**
@@ -147,6 +252,12 @@ function createClipBridge(opts = {}) {
      */
     progress(payload) {
       return dispatchClipEvent(OMNIMUX_CLIP_PROGRESS, payload, { target });
+    },
+    /**
+     * @param {object} payload
+     */
+    reload(payload) {
+      return dispatchClipEvent(OMNIMUX_CLIP_RELOAD, payload, { target });
     },
     dispose() {
       for (const [type, listener] of bindings) {
@@ -1085,146 +1196,297 @@ function useTimelineStore(selector = (s) => s) {
   );
 }
 
-// src/client/engine/previewRenderer.js
-var mediaCache = /* @__PURE__ */ new Map();
-function aspectCss(aspectRatio) {
-  if (aspectRatio === "9:16") return "9 / 16";
-  if (aspectRatio === "1:1") return "1 / 1";
-  return "16 / 9";
+// src/client/engine/openreel/core/snapping.js
+function computeSnapPoints(tracks, { playheadMs, excludeClipId = null } = {}) {
+  const snapPoints = /* @__PURE__ */ new Set();
+  if (typeof playheadMs === "number" && Number.isFinite(playheadMs) && playheadMs >= 0) {
+    snapPoints.add(playheadMs);
+  }
+  snapPoints.add(0);
+  for (const track of tracks || []) {
+    for (const clip of track.clips || []) {
+      if (excludeClipId && clip.id === excludeClipId) continue;
+      const start = clip.startTimeMs || 0;
+      const end = start + (clip.durationMs || 0);
+      snapPoints.add(start);
+      snapPoints.add(end);
+    }
+  }
+  return Array.from(snapPoints).sort((a, b) => a - b);
 }
-function clipsAt(schema, timeMs, type) {
+function findSnap(targetTimeMs, snapPoints, thresholdMs = 120) {
+  let closest = targetTimeMs;
+  let minDiff = Infinity;
+  let snapped = false;
+  for (const pt of snapPoints) {
+    const diff = Math.abs(pt - targetTimeMs);
+    if (diff <= thresholdMs && diff < minDiff) {
+      minDiff = diff;
+      closest = pt;
+      snapped = true;
+    }
+  }
+  return {
+    snappedTimeMs: snapped ? closest : targetTimeMs,
+    snapped,
+    diffMs: snapped ? closest - targetTimeMs : 0
+  };
+}
+
+// src/client/engine/openreel/index.js
+init_videoDecoderPool();
+
+// src/client/engine/openreel/render/typography.js
+function drawTypography(ctx, style, canvasWidth, canvasHeight) {
+  const content = (style?.content || "").trim();
+  if (!content) return;
+  const fontSize = Number(style.fontSize) || 48;
+  const fontFamily = style.fontFamily || "sans-serif";
+  const fontWeight = style.fontWeight || "bold";
+  const textAlign = style.textAlign || "center";
+  const textColor = style.color || "#ffffff";
+  const strokeColor = style.strokeColor || "#000000";
+  const strokeWidth = Number(style.strokeWidth) || 0;
+  const backgroundColor = style.backgroundColor || "rgba(0, 0, 0, 0.4)";
+  ctx.save();
+  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+  ctx.textBaseline = "middle";
+  const lines = content.split("\n");
+  const lineHeight = fontSize * 1.3;
+  const totalHeight = lines.length * lineHeight;
+  const anchorY = canvasHeight * 0.85;
+  const startY = anchorY - totalHeight / 2 + lineHeight / 2;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const metrics = ctx.measureText(line);
+    const lineWidth = metrics.width;
+    const lineY = startY + i * lineHeight;
+    let lineX = canvasWidth / 2;
+    if (textAlign === "left") lineX = canvasWidth * 0.1;
+    else if (textAlign === "right") lineX = canvasWidth * 0.9;
+    if (backgroundColor && backgroundColor !== "transparent") {
+      const paddingX = fontSize * 0.35;
+      const paddingY = fontSize * 0.2;
+      const boxWidth = lineWidth + paddingX * 2;
+      const boxHeight = fontSize + paddingY * 2;
+      let boxX = lineX - boxWidth / 2;
+      if (textAlign === "left") boxX = lineX - paddingX;
+      else if (textAlign === "right") boxX = lineX - boxWidth + paddingX;
+      ctx.fillStyle = backgroundColor;
+      const radius = 6;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(boxX, lineY - boxHeight / 2, boxWidth, boxHeight, radius);
+      } else {
+        ctx.rect(boxX, lineY - boxHeight / 2, boxWidth, boxHeight);
+      }
+      ctx.fill();
+    }
+    if (strokeWidth > 0 && strokeColor) {
+      ctx.lineWidth = strokeWidth;
+      ctx.strokeStyle = strokeColor;
+      ctx.textAlign = textAlign;
+      ctx.strokeText(line, lineX, lineY);
+    }
+    ctx.fillStyle = textColor;
+    ctx.textAlign = textAlign;
+    ctx.fillText(line, lineX, lineY);
+  }
+  ctx.restore();
+}
+
+// src/client/engine/openreel/render/transitions.js
+function getTransitionOpacity(clip, localMs) {
+  const transition = clip.transition;
+  if (!transition || !transition.type || transition.type === "none") {
+    return 1;
+  }
+  const duration = Math.max(50, transition.durationMs || 500);
+  const clipDuration = clip.durationMs || 1e3;
+  if (localMs < duration) {
+    const progress = localMs / duration;
+    if (transition.type === "crossfade" || transition.type === "fadeblack") {
+      return Math.max(0, Math.min(1, progress));
+    }
+  }
+  const remaining = clipDuration - localMs;
+  if (remaining < duration && remaining >= 0) {
+    const progress = remaining / duration;
+    if (transition.type === "crossfade" || transition.type === "fadeblack") {
+      return Math.max(0, Math.min(1, progress));
+    }
+  }
+  return 1;
+}
+function applyTransitionClipping(ctx, clip, localMs, width, height) {
+  const transition = clip.transition;
+  if (!transition || !transition.type || transition.type === "none") return;
+  const duration = Math.max(50, transition.durationMs || 500);
+  if (localMs < duration) {
+    const progress = localMs / duration;
+    if (transition.type === "wipeleft") {
+      ctx.beginPath();
+      ctx.rect(0, 0, width * progress, height);
+      ctx.clip();
+    } else if (transition.type === "wiperight") {
+      ctx.beginPath();
+      ctx.rect(width * (1 - progress), 0, width * progress, height);
+      ctx.clip();
+    }
+  }
+}
+
+// src/client/engine/openreel/render/stageCompositor.js
+init_videoDecoderPool();
+function getActiveClipsAt(schema, timeMs, trackType) {
   const hits = [];
   for (const track of schema.tracks || []) {
-    if (type && track.type !== type) continue;
+    if (trackType && track.type !== trackType) continue;
     if (track.isVisible === false) continue;
     for (const clip of track.clips || []) {
       const start = clip.startTimeMs || 0;
       const end = start + (clip.durationMs || 0);
-      if (timeMs >= start && timeMs < end) hits.push({ track, clip, localMs: timeMs - start });
+      if (timeMs >= start && timeMs < end) {
+        hits.push({
+          track,
+          clip,
+          localMs: timeMs - start,
+          sourceOffsetMs: (clip.sourceInMs || 0) + (timeMs - start) * (clip.speed || 1)
+        });
+      }
     }
   }
-  return hits.sort((a, b) => a.track.order - b.track.order);
+  return hits.sort((a, b) => (a.track.order || 0) - (b.track.order || 0));
 }
-function loadImage(url) {
-  if (!url) return Promise.resolve(null);
-  const cached = mediaCache.get(url);
-  if (cached) return cached;
-  const promise = new Promise((resolve) => {
-    const image = new Image();
-    image.crossOrigin = "anonymous";
-    image.onload = () => resolve(image);
-    image.onerror = () => resolve(null);
-    image.src = url;
-  });
-  mediaCache.set(url, promise);
-  return promise;
-}
-async function drawFrame(ctx, schema, timeMs, { width, height } = {}) {
-  const w = width || schema.canvasConfig.width || 1920;
-  const h = height || schema.canvasConfig.height || 1080;
+async function renderCompositionFrame(ctx, schema, timeMs, { width, height } = {}) {
+  const canvasWidth = width || schema.canvasConfig?.width || 1920;
+  const canvasHeight = height || schema.canvasConfig?.height || 1080;
   ctx.save();
-  ctx.fillStyle = schema.canvasConfig.backgroundColor || "#000";
-  ctx.fillRect(0, 0, w, h);
-  const visuals = clipsAt(schema, timeMs, "video");
-  for (const { clip, localMs } of visuals) {
-    const opacity = transitionOpacity(clip, localMs);
+  ctx.fillStyle = schema.canvasConfig?.backgroundColor || "#000000";
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  const visuals = getActiveClipsAt(schema, timeMs, "video");
+  for (const { clip, localMs, sourceOffsetMs } of visuals) {
+    ctx.save();
+    const opacity = getTransitionOpacity(clip, localMs);
     ctx.globalAlpha = opacity;
-    if (clip.mediaType === "image" || looksLikeImage(clip.sourceUrl)) {
-      const image = await loadImage(clip.sourceUrl);
-      if (image) drawCover(ctx, image, w, h);
-      else drawPlaceholder(ctx, w, h, clip.name || "\u56FE\u7247");
-    } else if (clip.sourceUrl) {
-      const image = await loadImage(clip.sourceUrl);
-      if (image) drawCover(ctx, image, w, h);
-      else drawPlaceholder(ctx, w, h, clip.name || "\u89C6\u9891");
+    applyTransitionClipping(ctx, clip, localMs, canvasWidth, canvasHeight);
+    const url = clip.sourceUrl || "";
+    const isImage = clip.mediaType === "image" || looksLikeImage(url);
+    if (isImage) {
+      const img = await getPooledImage(url);
+      if (img) drawCover(ctx, img, canvasWidth, canvasHeight);
+      else drawFallbackCard(ctx, canvasWidth, canvasHeight, clip.name || "\u56FE\u7247");
+    } else if (url) {
+      const video = await getPooledVideo(url);
+      if (video) {
+        await seekVideo(video, sourceOffsetMs / 1e3);
+        drawCover(ctx, video, canvasWidth, canvasHeight);
+      } else {
+        drawFallbackCard(ctx, canvasWidth, canvasHeight, clip.name || "\u89C6\u9891");
+      }
     } else {
-      drawPlaceholder(ctx, w, h, clip.name || "\u89C6\u9891");
+      drawFallbackCard(ctx, canvasWidth, canvasHeight, clip.name || "\u7247\u6BB5");
     }
-    ctx.globalAlpha = 1;
+    ctx.restore();
   }
-  const texts = clipsAt(schema, timeMs, "text");
+  const texts = getActiveClipsAt(schema, timeMs, "text");
   for (const { clip } of texts) {
-    drawText(ctx, clip.textStyle || {}, w, h);
+    if (clip.textStyle) {
+      drawTypography(ctx, clip.textStyle, canvasWidth, canvasHeight);
+    }
   }
   ctx.restore();
 }
 function looksLikeImage(url) {
   return typeof url === "string" && /\.(png|jpe?g|gif|webp|avif)(\?|$)/i.test(url);
 }
-function transitionOpacity(clip, localMs) {
-  const transition = clip.transition;
-  if (!transition || transition.type === "none" || transition.type === "cut") return 1;
-  const fade = Math.max(0, transition.durationMs || 0);
-  if (!fade) return 1;
-  if (transition.type === "crossfade" || transition.type === "fadeblack") {
-    if (localMs < fade) return localMs / fade;
-    if (localMs > (clip.durationMs || 0) - fade) {
-      return Math.max(0, ((clip.durationMs || 0) - localMs) / fade);
-    }
+function drawCover(ctx, source, targetWidth, targetHeight) {
+  const sourceWidth = source.naturalWidth || source.videoWidth || source.width || targetWidth;
+  const sourceHeight = source.naturalHeight || source.videoHeight || source.height || targetHeight;
+  if (!sourceWidth || !sourceHeight) return;
+  const scale = Math.max(targetWidth / sourceWidth, targetHeight / sourceHeight);
+  const drawWidth = sourceWidth * scale;
+  const drawHeight = sourceHeight * scale;
+  const dx = (targetWidth - drawWidth) / 2;
+  const dy = (targetHeight - drawHeight) / 2;
+  try {
+    ctx.drawImage(source, dx, dy, drawWidth, drawHeight);
+  } catch {
   }
-  return 1;
 }
-function drawCover(ctx, source, width, height) {
-  const sw = source.videoWidth || source.naturalWidth || source.width || width;
-  const sh = source.videoHeight || source.naturalHeight || source.height || height;
-  if (!sw || !sh) {
-    ctx.drawImage(source, 0, 0, width, height);
-    return;
-  }
-  const scale = Math.max(width / sw, height / sh);
-  const dw = sw * scale;
-  const dh = sh * scale;
-  ctx.drawImage(source, (width - dw) / 2, (height - dh) / 2, dw, dh);
-}
-function drawPlaceholder(ctx, width, height, label) {
-  ctx.fillStyle = "rgba(255,255,255,0.06)";
-  ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = "rgba(255,255,255,0.7)";
-  ctx.font = `${Math.round(height * 0.045)}px sans-serif`;
+function drawFallbackCard(ctx, targetWidth, targetHeight, label) {
+  ctx.fillStyle = "#18181b";
+  ctx.fillRect(0, 0, targetWidth, targetHeight);
+  ctx.fillStyle = "#71717a";
+  ctx.font = "bold 36px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(label || "Clip", width / 2, height / 2);
-}
-function drawText(ctx, style, width, height) {
-  const content = style.content || "";
-  if (!content) return;
-  const fontSize = style.fontSize || 42;
-  const fontWeight = style.fontWeight || "normal";
-  const fontFamily = style.fontFamily || "sans-serif";
-  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
-  ctx.textAlign = style.textAlign || "center";
-  ctx.textBaseline = "middle";
-  const x = style.textAlign === "left" ? width * 0.08 : style.textAlign === "right" ? width * 0.92 : width / 2;
-  const y = height * 0.82;
-  if (style.backgroundColor) {
-    const metrics = ctx.measureText(content);
-    const padX = 18;
-    const padY = 10;
-    ctx.fillStyle = style.backgroundColor;
-    const textW = metrics.width;
-    const left = style.textAlign === "left" ? x - padX : style.textAlign === "right" ? x - textW - padX : x - textW / 2 - padX;
-    ctx.fillRect(left, y - fontSize / 2 - padY, textW + padX * 2, fontSize + padY * 2);
-  }
-  if (style.strokeColor && style.strokeWidth) {
-    ctx.lineWidth = style.strokeWidth;
-    ctx.strokeStyle = style.strokeColor;
-    ctx.strokeText(content, x, y);
-  }
-  ctx.fillStyle = style.color || "#ffffff";
-  ctx.fillText(content, x, y);
-}
-function captureThumbnail(canvas) {
-  try {
-    return canvas.toDataURL("image/jpeg", 0.72);
-  } catch {
-    return "";
-  }
-}
-function disposePreviewResources() {
-  mediaCache.clear();
+  ctx.fillText(label, targetWidth / 2, targetHeight / 2);
 }
 
-// src/client/engine/mp4Muxer.js
+// src/client/engine/openreel/index.js
+init_audioManager();
+
+// src/client/engine/openreel/audio/waveform.js
+var waveformCache = /* @__PURE__ */ new Map();
+async function getAudioWaveform(url, numBuckets = 100) {
+  if (!url || typeof window === "undefined") return [];
+  const cacheKey = `${url}_${numBuckets}`;
+  if (waveformCache.has(cacheKey)) return waveformCache.get(cacheKey);
+  const promise = (async () => {
+    try {
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return generateFallbackPeaks(numBuckets);
+      const ctx = new AudioCtx();
+      const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+      const rawData = audioBuffer.getChannelData(0);
+      const blockSize = Math.floor(rawData.length / numBuckets);
+      const peaks = [];
+      for (let i = 0; i < numBuckets; i++) {
+        const start = i * blockSize;
+        let sum = 0;
+        for (let j = 0; j < blockSize; j++) {
+          sum += Math.abs(rawData[start + j] || 0);
+        }
+        peaks.push(Math.min(1, sum / blockSize * 2.5));
+      }
+      await ctx.close();
+      return peaks;
+    } catch {
+      return generateFallbackPeaks(numBuckets);
+    }
+  })();
+  waveformCache.set(cacheKey, promise);
+  return promise;
+}
+function generateFallbackPeaks(numBuckets) {
+  const peaks = [];
+  for (let i = 0; i < numBuckets; i++) {
+    const v = 0.3 + 0.5 * Math.sin(i / 5 * Math.PI) * Math.cos(i / 3 * Math.PI);
+    peaks.push(Math.max(0.1, Math.min(0.9, Math.abs(v))));
+  }
+  return peaks;
+}
+function drawWaveformToCanvas(canvas, peaks, color = "rgba(96, 165, 250, 0.7)") {
+  if (!canvas || !peaks || peaks.length === 0) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const width = canvas.width;
+  const height = canvas.height;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = color;
+  const barWidth = width / peaks.length;
+  const centerY = height / 2;
+  for (let i = 0; i < peaks.length; i++) {
+    const amp = peaks[i] * (height / 2);
+    const x = i * barWidth;
+    ctx.fillRect(x, centerY - amp, Math.max(1, barWidth - 1), amp * 2);
+  }
+}
+
+// src/client/engine/openreel/export/mp4Muxer.js
 function concat(chunks) {
   const size = chunks.reduce((sum, item) => sum + item.byteLength, 0);
   const out = new Uint8Array(size);
@@ -1581,24 +1843,24 @@ function bytesToBase64(bytes) {
   return btoa(binary);
 }
 
-// src/client/engine/exportEngine.js
-var CLIP_API_PREFIX = "/omnimux-clip/api";
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-function pickVideoCodec() {
+// src/client/engine/openreel/export/webCodecsEncoder.js
+function pickCodec() {
   if (typeof VideoEncoder === "undefined") return null;
   return "avc1.42001f";
 }
-async function encodeWithWebCodecs(schema, { onProgress, signal } = {}) {
-  const width = even(schema.canvasConfig.width || 1920);
-  const height = even(schema.canvasConfig.height || 1080);
-  const fps = schema.canvasConfig.fps || 30;
-  const durationMs = Math.max(200, schema.canvasConfig.durationMs || 1e3);
+function even(val) {
+  const rounded = Math.round(val);
+  return rounded % 2 === 0 ? rounded : rounded + 1;
+}
+async function exportTimelineWithWebCodecs(schema, { onProgress, signal } = {}) {
+  const width = even(schema.canvasConfig?.width || 1920);
+  const height = even(schema.canvasConfig?.height || 1080);
+  const fps = schema.canvasConfig?.fps || 30;
+  const durationMs = Math.max(200, schema.canvasConfig?.durationMs || 1e3);
   const frameCount = Math.max(1, Math.round(durationMs / 1e3 * fps));
-  const codec = pickVideoCodec();
+  const codec = pickCodec();
   if (!codec) {
-    throw new Error("export-encode-failed: VideoEncoder is not available");
+    throw new Error("export-encode-failed: WebCodecs VideoEncoder is not supported in this browser");
   }
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -1627,7 +1889,7 @@ async function encodeWithWebCodecs(schema, { onProgress, signal } = {}) {
     codec,
     width,
     height,
-    bitrate: Math.max(15e5, Math.round(width * height * fps * 0.08)),
+    bitrate: Math.max(2e6, Math.round(width * height * fps * 0.08)),
     framerate: fps,
     avc: { format: "avc" },
     hardwareAcceleration: "prefer-hardware"
@@ -1640,13 +1902,11 @@ async function encodeWithWebCodecs(schema, { onProgress, signal } = {}) {
         config.codec = "avc1.4d001f";
       }
     }
-    encoder.configure(config);
-  } catch (error) {
-    encoder.close();
-    throw new Error(`export-encode-failed: ${error instanceof Error ? error.message : String(error)}`);
+  } catch {
   }
-  let thumbnail = "";
-  for (let i = 0; i < frameCount; i += 1) {
+  encoder.configure(config);
+  const frameIntervalMs = 1e3 / fps;
+  for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
     if (signal?.aborted) {
       try {
         encoder.close();
@@ -1654,73 +1914,69 @@ async function encodeWithWebCodecs(schema, { onProgress, signal } = {}) {
       }
       throw new Error("canceled");
     }
-    const timeMs = Math.min(durationMs - 1, Math.round(i / fps * 1e3));
-    await drawFrame(ctx, schema, timeMs, { width, height });
-    if (i === Math.min(3, frameCount - 1)) thumbnail = captureThumbnail(canvas);
-    const frame = new VideoFrame(canvas, {
-      timestamp: Math.round(i / fps * 1e6),
+    if (encoderError) throw encoderError;
+    const timeMs = Math.min(durationMs, frameIndex * frameIntervalMs);
+    await renderCompositionFrame(ctx, schema, timeMs, { width, height });
+    const timestampUs = Math.round(frameIndex * (1e6 / fps));
+    const videoFrame = new VideoFrame(canvas, {
+      timestamp: timestampUs,
       duration: Math.round(1e6 / fps)
     });
-    encoder.encode(frame, { keyFrame: i % Math.max(1, fps) === 0 });
-    frame.close();
-    if (i % 4 === 0) {
-      onProgress?.({
-        ratio: (i + 1) / frameCount,
-        frame: i + 1,
-        frameCount,
-        status: "encoding"
-      });
-      await wait(0);
+    const isKeyFrame = frameIndex % Math.max(1, fps * 2) === 0;
+    encoder.encode(videoFrame, { keyFrame: isKeyFrame });
+    videoFrame.close();
+    if (encoder.encodeQueueSize > 6) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
     }
-    if (encoderError) break;
+    if (typeof onProgress === "function") {
+      onProgress({
+        ratio: Math.min(0.95, (frameIndex + 1) / frameCount),
+        frame: frameIndex + 1,
+        frameCount
+      });
+    }
   }
   await encoder.flush();
   encoder.close();
-  if (encoderError) {
-    throw new Error(`export-encode-failed: ${encoderError.message || encoderError}`);
+  if (chunks.length === 0) {
+    throw new Error("export-encode-failed: VideoEncoder produced zero frames");
   }
-  const audioChunks = await encodeAudioTrack(schema, { durationMs, signal }).catch(() => []);
-  const bytes = muxMp4({
-    width,
-    height,
-    fps,
-    videoChunks: chunks,
-    audioChunks,
-    audioSampleRate: 48e3,
-    audioChannels: 2
-  });
+  const rawMp4 = muxMp4(chunks, { width, height, fps, durationMs });
+  const mp4Blob = new Blob([rawMp4], { type: "video/mp4" });
+  const base64 = bytesToBase64(rawMp4);
+  const thumbnail = canvas.toDataURL("image/jpeg", 0.85);
+  if (typeof onProgress === "function") {
+    onProgress({ ratio: 1, frame: frameCount, frameCount });
+  }
   return {
-    bytes,
-    thumbnail,
+    mp4Blob,
+    base64,
     durationMs,
     width,
-    height
+    height,
+    thumbnail
   };
 }
-async function encodeAudioTrack(schema, { durationMs, signal }) {
-  if (typeof AudioEncoder === "undefined") return [];
-  const clips = [];
-  for (let t = 0; t < durationMs; t += 1e3) {
-    if (signal?.aborted) break;
-    clips.push(...clipsAt(schema, t, "audio"));
-  }
-  if (clips.length === 0) return [];
-  return [];
-}
-function even(value) {
-  const n = Math.max(16, Math.round(Number(value) || 16));
-  return n % 2 === 0 ? n : n + 1;
-}
+
+// src/client/engine/exportEngine.js
+var CLIP_API_PREFIX = "/omnimux-clip/api";
 async function exportTimeline(schema, opts = {}) {
-  const result = await encodeWithWebCodecs(schema, opts);
-  const blob = new Blob([result.bytes], { type: "video/mp4" });
-  return { ...result, blob };
+  const encoded = await exportTimelineWithWebCodecs(schema, opts);
+  return {
+    bytes: encoded.mp4Blob,
+    base64: encoded.base64,
+    durationMs: encoded.durationMs,
+    width: encoded.width,
+    height: encoded.height,
+    thumbnail: encoded.thumbnail,
+    blob: encoded.mp4Blob
+  };
 }
 async function persistExport(projectId, result, { schema } = {}) {
   const id = projectId || schema?.projectId;
   if (!id) throw new Error("invalid-id: missing projectId");
   const payload = {
-    base64: bytesToBase64(result.bytes),
+    base64: result.base64,
     mime: "video/mp4",
     durationMs: result.durationMs,
     width: result.width,
@@ -1750,7 +2006,21 @@ async function persistExport(projectId, result, { schema } = {}) {
   };
 }
 
+// src/client/engine/previewRenderer.js
+function aspectCss(aspectRatio) {
+  if (aspectRatio === "9:16") return "9 / 16";
+  if (aspectRatio === "1:1") return "1 / 1";
+  return "16 / 9";
+}
+async function drawFrame(ctx, schema, timeMs, { width, height } = {}) {
+  return renderCompositionFrame(ctx, schema, timeMs, { width, height });
+}
+function disposePreviewResources() {
+  disposeMediaPool();
+}
+
 // src/client/components/TopHeader.jsx
+var import_react3 = require("react");
 var import_dsh_client_ui_primitives2 = require("@deepseek-ai/dsh-client-ui-primitives");
 
 // ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
@@ -2187,13 +2457,49 @@ var ZOOM_OPTIONS = [
   { value: "2", label: "200%" },
   { value: "4", label: "400%" }
 ];
-function TopHeader({ onSave, onClose, onExport, exporting }) {
+function TopHeader({
+  source = "canvas",
+  onSave,
+  onClose,
+  onExport,
+  onSwitchProject,
+  onNewProject,
+  exporting,
+  saveNotice = ""
+}) {
   const projectName = useTimelineStore((s) => s.projectName);
+  const currentProjectId = useTimelineStore((s) => s.schema.projectId);
   const aspectRatio = useTimelineStore((s) => s.schema.canvasConfig.aspectRatio);
   const zoomLevel = useTimelineStore((s) => s.zoomLevel);
   const canUndo = useTimelineStore((s) => s.past.length > 0);
   const canRedo = useTimelineStore((s) => s.future.length > 0);
   const durationMs = useTimelineStore((s) => s.schema.canvasConfig.durationMs);
+  const [projectOptions, setProjectOptions] = (0, import_react3.useState)([]);
+  (0, import_react3.useEffect)(() => {
+    fetch(`${CLIP_API_PREFIX}/projects`).then((r) => r.json()).then((data) => {
+      if (Array.isArray(data?.projects)) {
+        const opts = [
+          { value: "__current__", label: `\u5F53\u524D: ${projectName || currentProjectId}` },
+          { value: "__new__", label: "\u2795 \u65B0\u5EFA\u7A7A\u767D\u5DE5\u7A0B" },
+          ...data.projects.map((p) => ({
+            value: p.id,
+            label: `\u{1F4C1} ${p.projectName || p.id} (${formatTimecode(p.durationMs).slice(0, 5)})`
+          }))
+        ];
+        setProjectOptions(opts);
+      }
+    }).catch(() => {
+    });
+  }, [currentProjectId, projectName]);
+  function handleProjectSelect(value) {
+    if (!value || value === "__current__") return;
+    if (value === "__new__") {
+      if (typeof onNewProject === "function") onNewProject();
+    } else if (typeof onSwitchProject === "function") {
+      onSwitchProject(value);
+    }
+  }
+  const isCanvasMode = source === "canvas";
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("header", { className: "omnimux-clip-overlay-header", children: [
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-clip-overlay-heading omnimux-clip-overlay-heading--editor", children: [
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
@@ -2204,9 +2510,22 @@ function TopHeader({ onSave, onClose, onExport, exporting }) {
           onChange: (event) => timelineStore.setProjectName(event.target.value)
         }
       ),
+      projectOptions.length > 1 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+        DropdownSelect,
+        {
+          "aria-label": "\u5207\u6362\u5DE5\u7A0B",
+          value: "__current__",
+          options: projectOptions,
+          onChange: handleProjectSelect
+        }
+      ) : null,
       /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("p", { className: "omnimux-clip-overlay-subtitle", children: [
         "\u591A\u8F68\u526A\u8F91 \xB7 ",
-        formatTimecode(durationMs)
+        formatTimecode(durationMs),
+        saveNotice ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { marginLeft: 8, color: "var(--dsw-alias-success, #34d399)" }, children: [
+          "\u2713 ",
+          saveNotice
+        ] }) : null
       ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-clip-overlay-actions", children: [
@@ -2252,7 +2571,7 @@ function TopHeader({ onSave, onClose, onExport, exporting }) {
           onChange: (value) => timelineStore.setZoom(Number(value))
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Button, { variant: "outline", size: "sm", onClick: onSave, children: "\u4FDD\u5B58\u5E76\u8FD4\u56DE\u753B\u5E03" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Button, { variant: "outline", size: "sm", onClick: onSave, children: isCanvasMode ? "\u4FDD\u5B58\u5E76\u8FD4\u56DE\u753B\u5E03" : "\u{1F4BE} \u4FDD\u5B58\u5DE5\u7A0B" }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Button, { variant: "primary", size: "sm", loading: exporting, onClick: onExport, children: "\u5BFC\u51FA\u6210\u7247" }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
         IconButton,
@@ -2340,17 +2659,17 @@ function LeftSidebar() {
 }
 
 // src/client/components/CenterStage.jsx
-var import_react3 = require("react");
+var import_react4 = require("react");
 var import_dsh_client_ui_primitives3 = require("@deepseek-ai/dsh-client-ui-primitives");
 var import_jsx_runtime4 = require("react/jsx-runtime");
 function CenterStage() {
-  const canvasRef = (0, import_react3.useRef)(null);
+  const canvasRef = (0, import_react4.useRef)(null);
   const playheadMs = useTimelineStore((s) => s.playheadMs);
   const isPlaying = useTimelineStore((s) => s.isPlaying);
   const schema = useTimelineStore((s) => s.schema);
   const durationMs = schema.canvasConfig.durationMs || 0;
   const aspectRatio = schema.canvasConfig.aspectRatio || "16:9";
-  (0, import_react3.useEffect)(() => {
+  (0, import_react4.useEffect)(() => {
     const canvas = canvasRef.current;
     if (!canvas) return void 0;
     const ctx = canvas.getContext("2d");
@@ -2364,7 +2683,7 @@ function CenterStage() {
     });
     return void 0;
   }, [playheadMs, schema]);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react4.useEffect)(() => {
     if (!isPlaying) return void 0;
     let frameId = 0;
     let last = performance.now();
@@ -2608,7 +2927,7 @@ function toHex(color) {
 }
 
 // src/client/components/BottomTimeline.jsx
-var import_react4 = require("react");
+var import_react5 = require("react");
 var import_jsx_runtime6 = require("react/jsx-runtime");
 var TRACK_HEIGHT = 48;
 var MIN_CLIP_MS = 120;
@@ -2621,17 +2940,49 @@ function ticks(durationMs, zoom) {
   for (let t = 0; t <= durationMs; t += step) out.push(t);
   return out;
 }
+function ClipWaveform({ sourceUrl, widthPx, heightPx }) {
+  const canvasRef = (0, import_react5.useRef)(null);
+  (0, import_react5.useEffect)(() => {
+    if (!sourceUrl || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    canvas.width = Math.max(10, Math.round(widthPx));
+    canvas.height = Math.round(heightPx);
+    getAudioWaveform(sourceUrl, 60).then((peaks) => {
+      if (canvasRef.current) {
+        drawWaveformToCanvas(canvasRef.current, peaks, "var(--dsw-alias-brand, rgba(147, 197, 253, 0.45))");
+      }
+    });
+  }, [sourceUrl, widthPx, heightPx]);
+  if (!sourceUrl) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+    "canvas",
+    {
+      ref: canvasRef,
+      className: "omx-clip-block__waveform",
+      style: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        opacity: 0.85
+      }
+    }
+  );
+}
 function BottomTimeline() {
   const tracks = useTimelineStore((s) => s.schema.tracks);
   const durationMs = useTimelineStore((s) => s.schema.canvasConfig.durationMs);
   const playheadMs = useTimelineStore((s) => s.playheadMs);
   const zoomLevel = useTimelineStore((s) => s.zoomLevel);
   const selectedClipId = useTimelineStore((s) => s.selectedClipId);
-  const bodyRef = (0, import_react4.useRef)(null);
-  const [menu, setMenu] = (0, import_react4.useState)(null);
+  const bodyRef = (0, import_react5.useRef)(null);
+  const [menu, setMenu] = (0, import_react5.useState)(null);
+  const [snapGuide, setSnapGuide] = (0, import_react5.useState)(null);
   const scale = pxPerMs(zoomLevel);
   const widthPx = Math.max(640, durationMs * scale);
-  const marks = (0, import_react4.useMemo)(() => ticks(durationMs, zoomLevel), [durationMs, zoomLevel]);
+  const marks = (0, import_react5.useMemo)(() => ticks(durationMs, zoomLevel), [durationMs, zoomLevel]);
   function timeFromEvent(event) {
     const scroller = bodyRef.current;
     if (!scroller) return 0;
@@ -2641,6 +2992,7 @@ function BottomTimeline() {
   }
   function onRulerPointerDown(event) {
     setMenu(null);
+    setSnapGuide(null);
     timelineStore.setPlayhead(timeFromEvent(event));
     const move = (ev) => timelineStore.setPlayhead(timeFromEvent(ev));
     const up = () => {
@@ -2660,12 +3012,20 @@ function BottomTimeline() {
     const originStart = clip.startTimeMs;
     const originDuration = clip.durationMs;
     const originIn = clip.sourceInMs || 0;
+    const snapPoints = computeSnapPoints(tracks, { playheadMs, excludeClipId: clip.id });
     const move = (ev) => {
       const deltaMs = Math.round((ev.clientX - originX) / scale);
       if (edge === "move") {
-        timelineStore.moveClip(clip.id, { startTimeMs: Math.max(0, originStart + deltaMs) }, { record: false });
+        const rawTargetMs = Math.max(0, originStart + deltaMs);
+        const snap = findSnap(rawTargetMs, snapPoints, 120 / zoomLevel);
+        const finalStartMs = snap.snapped ? snap.snappedTimeMs : rawTargetMs;
+        setSnapGuide(snap.snapped ? snap.snappedTimeMs : null);
+        timelineStore.moveClip(clip.id, { startTimeMs: finalStartMs }, { record: false });
       } else if (edge === "start") {
-        const nextStart = Math.max(0, originStart + deltaMs);
+        const rawStart = Math.max(0, originStart + deltaMs);
+        const snap = findSnap(rawStart, snapPoints, 120 / zoomLevel);
+        const nextStart = snap.snapped ? snap.snappedTimeMs : rawStart;
+        setSnapGuide(snap.snapped ? snap.snappedTimeMs : null);
         const consumed = nextStart - originStart;
         const nextDuration = Math.max(MIN_CLIP_MS, originDuration - consumed);
         timelineStore.trimClip(clip.id, {
@@ -2674,12 +3034,17 @@ function BottomTimeline() {
           sourceInMs: originIn + Math.max(0, consumed) * (clip.speed || 1)
         }, { record: false });
       } else if (edge === "end") {
+        const rawEnd = originStart + originDuration + deltaMs;
+        const snap = findSnap(rawEnd, snapPoints, 120 / zoomLevel);
+        const finalEnd = snap.snapped ? snap.snappedTimeMs : rawEnd;
+        setSnapGuide(snap.snapped ? snap.snappedTimeMs : null);
         timelineStore.trimClip(clip.id, {
-          durationMs: Math.max(MIN_CLIP_MS, originDuration + deltaMs)
+          durationMs: Math.max(MIN_CLIP_MS, finalEnd - originStart)
         }, { record: false });
       }
     };
     const up = () => {
+      setSnapGuide(null);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
     };
@@ -2757,42 +3122,71 @@ function BottomTimeline() {
                 setMenu(null);
                 timelineStore.selectClip(null, track.id);
               },
-              children: track.clips.map((clip) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
-                "div",
-                {
-                  className: `omx-clip-block omx-clip-block--${clip.mediaType}${selectedClipId === clip.id ? " is-selected" : ""}`,
-                  style: {
-                    "--clip-left": `${clip.startTimeMs * scale}px`,
-                    "--clip-width": `${Math.max(8, clip.durationMs * scale)}px`,
-                    "--clip-h": `${TRACK_HEIGHT - 8}px`
+              children: track.clips.map((clip) => {
+                const clipWidth = Math.max(8, clip.durationMs * scale);
+                const isAudioOrVideo = clip.mediaType === "audio" || clip.mediaType === "video";
+                return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+                  "div",
+                  {
+                    className: `omx-clip-block omx-clip-block--${clip.mediaType}${selectedClipId === clip.id ? " is-selected" : ""}`,
+                    style: {
+                      "--clip-left": `${clip.startTimeMs * scale}px`,
+                      "--clip-width": `${clipWidth}px`,
+                      "--clip-h": `${TRACK_HEIGHT - 8}px`
+                    },
+                    onPointerDown: (event) => beginClipDrag(event, clip, "move"),
+                    onContextMenu: (event) => onClipContext(event, clip),
+                    title: clip.name,
+                    children: [
+                      isAudioOrVideo && clip.sourceUrl ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+                        ClipWaveform,
+                        {
+                          sourceUrl: clip.sourceUrl,
+                          widthPx: clipWidth,
+                          heightPx: TRACK_HEIGHT - 8
+                        }
+                      ) : null,
+                      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+                        "span",
+                        {
+                          className: "omx-clip-block__edge omx-clip-block__edge--start",
+                          onPointerDown: (event) => beginClipDrag(event, clip, "start")
+                        }
+                      ),
+                      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "omx-clip-block__label", children: clip.name }),
+                      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+                        "span",
+                        {
+                          className: "omx-clip-block__edge omx-clip-block__edge--end",
+                          onPointerDown: (event) => beginClipDrag(event, clip, "end")
+                        }
+                      )
+                    ]
                   },
-                  onPointerDown: (event) => beginClipDrag(event, clip, "move"),
-                  onContextMenu: (event) => onClipContext(event, clip),
-                  title: clip.name,
-                  children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-                      "span",
-                      {
-                        className: "omx-clip-block__edge omx-clip-block__edge--start",
-                        onPointerDown: (event) => beginClipDrag(event, clip, "start")
-                      }
-                    ),
-                    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "omx-clip-block__label", children: clip.name }),
-                    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-                      "span",
-                      {
-                        className: "omx-clip-block__edge omx-clip-block__edge--end",
-                        onPointerDown: (event) => beginClipDrag(event, clip, "end")
-                      }
-                    )
-                  ]
-                },
-                clip.id
-              ))
+                  clip.id
+                );
+              })
             },
             track.id
           )),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "omx-clip-playhead" })
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "omx-clip-playhead" }),
+          snapGuide != null ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+            "div",
+            {
+              className: "omx-clip-snap-guide",
+              style: {
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                left: `${snapGuide * scale}px`,
+                width: "1px",
+                backgroundColor: "var(--dsw-alias-brand, #38bdf8)",
+                boxShadow: "0 0 4px var(--dsw-alias-brand, #38bdf8)",
+                pointerEvents: "none",
+                zIndex: 15
+              }
+            }
+          ) : null
         ]
       }
     ) }),
@@ -2878,36 +3272,84 @@ function markClipReady(ready) {
   window.__omnimuxClipReady = ready;
 }
 function ClipOverlay({ t, target }) {
-  const [payload, setPayload] = (0, import_react5.useState)(null);
-  const [exportState, setExportState] = (0, import_react5.useState)({
+  const [payload, setPayload] = (0, import_react6.useState)(null);
+  const [saveNotice, setSaveNotice] = (0, import_react6.useState)("");
+  const [exportState, setExportState] = (0, import_react6.useState)({
     open: false,
     progress: 0,
     status: "",
     error: ""
   });
-  const abortRef = (0, import_react5.useRef)(null);
-  (0, import_react5.useEffect)(() => {
+  const abortRef = (0, import_react6.useRef)(null);
+  (0, import_react6.useEffect)(() => {
     injectClipOverlayStyles();
     markClipReady(true);
+    function checkUrlRoute() {
+      if (typeof window === "undefined") return;
+      const search = new URLSearchParams(window.location.search);
+      const hash = (window.location.hash || "").toLowerCase();
+      const isClipSearch = search.has("clip") || search.get("stage") === "clip";
+      const isClipHash = hash === "#clip" || hash.startsWith("#/clip") || hash.startsWith("#clip=");
+      if (isClipSearch || isClipHash) {
+        const rawProj = search.get("project") || search.get("projectId") || (hash.startsWith("#/clip/") ? hash.slice(7) : "");
+        const projectId = rawProj.trim() || `clip_standalone_${Date.now()}`;
+        fetch(`${CLIP_API_PREFIX}/projects/${encodeURIComponent(projectId)}`).then((r) => r.ok ? r.json() : null).then((data) => {
+          const openPayload = {
+            source: "url",
+            projectId,
+            nodeTitle: data?.schema?.projectId || projectId,
+            draftSchema: data?.schema
+          };
+          timelineStore.hydrateFromPayload(openPayload);
+          setPayload(openPayload);
+        }).catch(() => {
+          const openPayload = {
+            source: "url",
+            projectId,
+            nodeTitle: projectId
+          };
+          timelineStore.hydrateFromPayload(openPayload);
+          setPayload(openPayload);
+        });
+      }
+    }
+    checkUrlRoute();
+    window.addEventListener("hashchange", checkUrlRoute);
     return () => {
       markClipReady(false);
       disposePreviewResources();
       abortRef.current?.abort();
       timelineStore.reset();
+      window.removeEventListener("hashchange", checkUrlRoute);
     };
   }, []);
-  (0, import_react5.useEffect)(() => {
+  (0, import_react6.useEffect)(() => {
     const bridge = createClipBridge({
       target,
       onOpen: (next) => {
         timelineStore.hydrateFromPayload(next);
         setPayload(next);
+      },
+      onReload: (data) => {
+        const state = timelineStore.getState();
+        if (data?.projectId && data.projectId !== state.schema.projectId) return;
+        fetch(`${CLIP_API_PREFIX}/projects/${encodeURIComponent(state.schema.projectId)}`).then((r) => r.ok ? r.json() : null).then((fresh) => {
+          if (fresh?.schema) {
+            timelineStore.hydrateFromPayload({
+              ...payload,
+              draftSchema: fresh.schema
+            });
+            setSaveNotice("\u5DF2\u4ECE\u540E\u53F0\u540C\u6B65\u6700\u65B0\u65F6\u95F4\u8F74");
+            setTimeout(() => setSaveNotice(""), 2500);
+          }
+        }).catch(() => {
+        });
       }
     });
     return () => {
       bridge.dispose();
     };
-  }, [target]);
+  }, [payload, target]);
   if (!payload) return null;
   const label = (key, fallback) => {
     if (typeof t === "function") {
@@ -2920,6 +3362,7 @@ function ClipOverlay({ t, target }) {
     return fallback;
   };
   const nodeId = typeof payload.nodeId === "string" ? payload.nodeId : void 0;
+  const source = payload.source || "canvas";
   function currentSavePayload(extra = {}) {
     const state = timelineStore.getState();
     return {
@@ -2938,13 +3381,58 @@ function ClipOverlay({ t, target }) {
     timelineStore.reset();
     setPayload(null);
   }
-  function handleSave() {
-    const bridge = createClipBridge({ target });
-    bridge.save(currentSavePayload());
-    bridge.dispose();
-    disposePreviewResources();
-    timelineStore.reset();
-    setPayload(null);
+  async function handleSave() {
+    const state = timelineStore.getState();
+    const saveObj = currentSavePayload();
+    if (source === "canvas") {
+      const bridge = createClipBridge({ target });
+      bridge.save(saveObj);
+      bridge.dispose();
+      disposePreviewResources();
+      timelineStore.reset();
+      setPayload(null);
+    } else {
+      try {
+        await fetch(`${CLIP_API_PREFIX}/projects/${encodeURIComponent(state.schema.projectId)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schema: saveObj.schema })
+        });
+        setSaveNotice("\u5DF2\u4FDD\u5B58");
+        setTimeout(() => setSaveNotice(""), 2500);
+      } catch {
+        setSaveNotice("\u4FDD\u5B58\u5931\u8D25");
+        setTimeout(() => setSaveNotice(""), 2500);
+      }
+    }
+  }
+  function handleSwitchProject(newProjectId) {
+    if (!newProjectId) return;
+    fetch(`${CLIP_API_PREFIX}/projects/${encodeURIComponent(newProjectId)}`).then((r) => r.ok ? r.json() : null).then((data) => {
+      const nextPayload = {
+        source,
+        projectId: newProjectId,
+        nodeTitle: data?.schema?.projectId || newProjectId,
+        draftSchema: data?.schema
+      };
+      timelineStore.hydrateFromPayload(nextPayload);
+      setPayload(nextPayload);
+      setSaveNotice("\u5DF2\u5207\u6362\u5DE5\u7A0B");
+      setTimeout(() => setSaveNotice(""), 2e3);
+    }).catch(() => {
+    });
+  }
+  function handleNewProject() {
+    const newProjectId = `clip_standalone_${Date.now()}`;
+    const nextPayload = {
+      source,
+      projectId: newProjectId,
+      nodeTitle: "\u672A\u547D\u540D\u5DE5\u7A0B"
+    };
+    timelineStore.hydrateFromPayload(nextPayload);
+    setPayload(nextPayload);
+    setSaveNotice("\u5DF2\u521B\u5EFA\u65B0\u5DE5\u7A0B");
+    setTimeout(() => setSaveNotice(""), 2e3);
   }
   async function handleExport() {
     const state = timelineStore.getState();
@@ -2985,9 +3473,14 @@ function ClipOverlay({ t, target }) {
       bridge.progress({ nodeId, status: "completed", renderProgress: 100 });
       bridge.dispose();
       setExportState({ open: false, progress: 1, status: "\u5B8C\u6210", error: "" });
-      disposePreviewResources();
-      timelineStore.reset();
-      setPayload(null);
+      if (source === "canvas") {
+        disposePreviewResources();
+        timelineStore.reset();
+        setPayload(null);
+      } else {
+        setSaveNotice("\u6210\u7247\u5DF2\u5BFC\u51FA\u81F3\u672C\u5730");
+        setTimeout(() => setSaveNotice(""), 3e3);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (message === "canceled") {
@@ -3022,9 +3515,13 @@ function ClipOverlay({ t, target }) {
         /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
           TopHeader,
           {
+            source,
             onSave: handleSave,
             onClose: handleClose,
             onExport: handleExport,
+            onSwitchProject: handleSwitchProject,
+            onNewProject: handleNewProject,
+            saveNotice,
             exporting: exportState.open && !exportState.error
           }
         ),

@@ -34,3 +34,32 @@ export function resolveCssColor(value) {
   const resolved = resolveVar(value, rootEl)
   return resolved || value
 }
+
+/**
+ * Return a schema copy whose text-track colors are concrete (var 链已解析)。
+ * 无 var 值的原样透传且共享引用，避免每帧无谓克隆。
+ */
+export function normalizeSchemaTextColors(schema) {
+  if (!schema || !Array.isArray(schema.tracks)) return schema
+  let touched = false
+  const tracks = schema.tracks.map((track) => {
+    if (!track || track.type !== 'text' || !Array.isArray(track.clips)) return track
+    let trackTouched = false
+    const clips = track.clips.map((clip) => {
+      const style = clip && clip.textStyle
+      if (!style) return clip
+      const color = resolveCssColor(style.color)
+      const strokeColor = resolveCssColor(style.strokeColor)
+      const backgroundColor = resolveCssColor(style.backgroundColor)
+      if (color === style.color && strokeColor === style.strokeColor && backgroundColor === style.backgroundColor) {
+        return clip
+      }
+      trackTouched = true
+      return { ...clip, textStyle: { ...style, color, strokeColor, backgroundColor } }
+    })
+    if (!trackTouched) return track
+    touched = true
+    return { ...track, clips }
+  })
+  return touched ? { ...schema, tracks } : schema
+}
