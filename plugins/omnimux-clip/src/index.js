@@ -5,7 +5,7 @@ import { createClipEditorSeam } from './seam/clipEditor.js'
 import { CLIP_PROMPT, createClipTools, registerClipTools } from './tools.js'
 
 export const name = 'omnimux-clip'
-export const inject = ['tools']
+export const inject = ['tools', 'systemPrompt']
 
 export { ClipDomainError } from './errors.js'
 export { resolveClipPaths, ensureClipDirs } from './paths.js'
@@ -49,11 +49,10 @@ export function apply(ctx) {
     }
   }
 
-  if (ctx.systemPrompt) {
-    registerPromptOn(ctx)
-  } else if (typeof ctx.inject === 'function') {
-    ctx.inject(['systemPrompt'], (innerCtx) => registerPromptOn(innerCtx))
-  }
+  // systemPrompt is a declared inject (strict cordis): read it directly,
+  // mirroring omnimux-assets / omnimux-products. Guarded for test fakes that
+  // omit the service.
+  registerPromptOn(ctx)
 
   registerClipTools(ctx, tools)
 
