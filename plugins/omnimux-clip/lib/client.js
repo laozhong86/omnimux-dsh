@@ -683,9 +683,11 @@ var ASPECT_PRESETS = {
 };
 var TEXT_PRESETS = [
   { id: "title", label: "\u6807\u9898", content: "\u6807\u9898\u6587\u5B57", fontFamily: "sans-serif", fontSize: 72, fontWeight: "bold", color: "#ffffff", strokeColor: "#000000", strokeWidth: 4, textAlign: "center" },
-  { id: "subtitle", label: "\u5B57\u5E55", content: "\u5B57\u5E55\u5185\u5BB9", fontFamily: "sans-serif", fontSize: 42, fontWeight: "normal", color: "#ffffff", strokeColor: "#000000", strokeWidth: 3, backgroundColor: "rgba(0,0,0,0.45)", textAlign: "center" },
-  { id: "caption", label: "\u82B1\u5B57", content: "\u82B1\u5B57", fontFamily: "sans-serif", fontSize: 56, fontWeight: "bold", color: "#ffe566", strokeColor: "#ff4d6d", strokeWidth: 5, textAlign: "center" },
-  { id: "lower-third", label: "\u4E0B\u4E09\u5206\u4E4B\u4E00", content: "\u59D3\u540D / \u8EAB\u4EFD", fontFamily: "sans-serif", fontSize: 36, fontWeight: "bold", color: "#ffffff", backgroundColor: "rgba(20,20,24,0.75)", textAlign: "left" }
+  // 字幕底衬遮罩：链官方 mask 别名，令牌缺席时落回原值（画布侧由 theme/colors.js 解析）。
+  { id: "subtitle", label: "\u5B57\u5E55", content: "\u5B57\u5E55\u5185\u5BB9", fontFamily: "sans-serif", fontSize: 42, fontWeight: "normal", color: "#ffffff", strokeColor: "#000000", strokeWidth: 3, backgroundColor: "var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.45))", textAlign: "center" },
+  // 花字是创作内容默认色而非 UI 表面色：链官方品牌位令牌，缺席时保持原值。
+  { id: "caption", label: "\u82B1\u5B57", content: "\u82B1\u5B57", fontFamily: "sans-serif", fontSize: 56, fontWeight: "bold", color: "var(--dsw-specific-caption-accent, #ffe566)", strokeColor: "var(--dsw-specific-caption-stroke, #ff4d6d)", strokeWidth: 5, textAlign: "center" },
+  { id: "lower-third", label: "\u4E0B\u4E09\u5206\u4E4B\u4E00", content: "\u59D3\u540D / \u8EAB\u4EFD", fontFamily: "sans-serif", fontSize: 36, fontWeight: "bold", color: "#ffffff", backgroundColor: "var(--dsw-alias-bg-mask-2, rgba(20,20,24,0.75))", textAlign: "left" }
 ];
 var TRANSITIONS = [
   { type: "none", label: "\u65E0\u8F6C\u573A", durationMs: 0 },
@@ -1958,10 +1960,57 @@ async function exportTimelineWithWebCodecs(schema, { onProgress, signal } = {}) 
   };
 }
 
+// src/client/theme/colors.js
+var VAR_RE = /^var\(\s*(--[\w-]+)\s*(?:,\s*([\s\S]+))?\)\s*$/;
+function resolveVar(value, rootEl) {
+  const m = VAR_RE.exec(String(value).trim());
+  if (!m) return String(value).trim();
+  const name2 = m[1];
+  const rest = (m[2] ?? "").trim();
+  try {
+    if (rootEl) {
+      const v = getComputedStyle(rootEl).getPropertyValue(name2).trim();
+      if (v && !v.startsWith("var(")) return v;
+    }
+  } catch {
+  }
+  return rest ? resolveVar(rest, rootEl) : "";
+}
+function resolveCssColor(value) {
+  if (typeof value !== "string" || !value.trim().startsWith("var(")) return value;
+  const rootEl = typeof document !== "undefined" ? document.documentElement : null;
+  const resolved = resolveVar(value, rootEl);
+  return resolved || value;
+}
+function normalizeSchemaTextColors(schema) {
+  if (!schema || !Array.isArray(schema.tracks)) return schema;
+  let touched = false;
+  const tracks = schema.tracks.map((track) => {
+    if (!track || track.type !== "text" || !Array.isArray(track.clips)) return track;
+    let trackTouched = false;
+    const clips = track.clips.map((clip) => {
+      const style = clip && clip.textStyle;
+      if (!style) return clip;
+      const color = resolveCssColor(style.color);
+      const strokeColor = resolveCssColor(style.strokeColor);
+      const backgroundColor = resolveCssColor(style.backgroundColor);
+      if (color === style.color && strokeColor === style.strokeColor && backgroundColor === style.backgroundColor) {
+        return clip;
+      }
+      trackTouched = true;
+      return { ...clip, textStyle: { ...style, color, strokeColor, backgroundColor } };
+    });
+    if (!trackTouched) return track;
+    touched = true;
+    return { ...track, clips };
+  });
+  return touched ? { ...schema, tracks } : schema;
+}
+
 // src/client/engine/exportEngine.js
 var CLIP_API_PREFIX = "/omnimux-clip/api";
 async function exportTimeline(schema, opts = {}) {
-  const encoded = await exportTimelineWithWebCodecs(schema, opts);
+  const encoded = await exportTimelineWithWebCodecs(normalizeSchemaTextColors(schema), opts);
   return {
     bytes: encoded.mp4Blob,
     base64: encoded.base64,
@@ -2013,7 +2062,7 @@ function aspectCss(aspectRatio) {
   return "16 / 9";
 }
 async function drawFrame(ctx, schema, timeMs, { width, height } = {}) {
-  return renderCompositionFrame(ctx, schema, timeMs, { width, height });
+  return renderCompositionFrame(ctx, normalizeSchemaTextColors(schema), timeMs, { width, height });
 }
 function disposePreviewResources() {
   disposeMediaPool();
@@ -2867,7 +2916,7 @@ function RightInspector() {
           {
             type: "color",
             className: "omx-clip-color__input",
-            value: style.color || "#ffffff",
+            value: toHex(style.color) || "#ffffff",
             onChange: (event) => timelineStore.setTextStyle(clip.id, { color: event.target.value })
           }
         )
@@ -2888,7 +2937,7 @@ function RightInspector() {
           {
             type: "color",
             className: "omx-clip-color__input",
-            value: style.strokeColor || "#000000",
+            value: toHex(style.strokeColor) || "#000000",
             onChange: (event) => timelineStore.setTextStyle(clip.id, { strokeColor: event.target.value })
           }
         )
@@ -2921,9 +2970,10 @@ function RightInspector() {
   ] });
 }
 function toHex(color) {
-  if (typeof color !== "string") return "#000000";
-  if (color.startsWith("#") && (color.length === 7 || color.length === 4)) return color;
-  return "#000000";
+  if (typeof color !== "string") return "";
+  const resolved = resolveCssColor(color);
+  if (/^#[0-9a-fA-F]{6}$/.test(resolved) || /^#[0-9a-fA-F]{3}$/.test(resolved)) return resolved;
+  return "";
 }
 
 // src/client/components/BottomTimeline.jsx
@@ -3558,7 +3608,7 @@ function captureThumbnailFallback() {
 
 // src/client/index.js
 var name = "omnimux-clip";
-var inject = ["slots"];
+var inject = ["slots", "locale"];
 var NS = "omnimux.clip";
 function apply(ctx) {
   const t = ctx.locale && typeof ctx.locale.bind === "function" ? ctx.locale.bind(NS) : void 0;
