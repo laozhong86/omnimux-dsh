@@ -185,6 +185,18 @@ export function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, lay
           <h1 className="omnimux-workflow-stage-title">{t('projects.title')}</h1>
           <p className="omnimux-workflow-stage-subtitle">{t('projects.subtitle')}</p>
         </div>
+        <div className="omnimux-workflow-stage-controls">
+          <IconButton
+            aria-label={t('projects.close')}
+            variant="ghost"
+            onClick={() => { stage.set(false) }}
+          >
+            <IconCloseOutline16 />
+          </IconButton>
+        </div>
+      </div>
+
+      <div className="omnimux-workflow-action-row">
         <Button
           variant="primary"
           size="sm"
@@ -194,33 +206,34 @@ export function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, lay
         >
           {t('projects.newProject')}
         </Button>
-        <IconButton
-          aria-label={t('projects.close')}
-          variant="ghost"
-          onClick={() => { stage.set(false) }}
-        >
-          <IconCloseOutline16 />
-        </IconButton>
       </div>
 
       <FilterBar
         className="omnimux-workflow-stage-toolbar"
         compact
-        search={(
-          <SearchField
-            value={query}
-            placeholder={t('projects.searchPlaceholder')}
-            aria-label={t('projects.searchPlaceholder')}
-            debounceMs={0}
-            stretch
-            onValueChange={setQuery}
-          />
-        )}
-        filters={(
-          <>
-            <span className="omnimux-workflow-chip">{t('projects.localTab')}</span>
-            <span className="omnimux-workflow-muted">{t('projects.sortUpdated')}</span>
-          </>
+        filters={[{ key: 'all', label: t('projects.all') }].map((chip) => (
+          <Button
+            key={chip.key}
+            variant="secondary"
+            size="sm"
+            aria-pressed="true"
+          >
+            {chip.label}
+          </Button>
+        ))}
+        tools={(
+          <div className="omnimux-workflow-tools-cluster">
+            <div className="omnimux-workflow-search-wrap">
+              <SearchField
+                value={query}
+                placeholder={t('projects.searchPlaceholder')}
+                aria-label={t('projects.searchPlaceholder')}
+                debounceMs={0}
+                stretch
+                onValueChange={setQuery}
+              />
+            </div>
+          </div>
         )}
       />
 
