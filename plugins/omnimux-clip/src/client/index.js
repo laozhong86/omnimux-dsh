@@ -1,13 +1,16 @@
 import { ClipOverlay } from './ClipOverlay.jsx'
 
 export const name = 'omnimux-clip'
-export const inject = ['slots']
+export const inject = ['slots', 'locale']
 
 const NS = 'omnimux.clip'
 
 /**
  * Register Stage `clip-editor` on `shell.overlay`.
  * Overlay unmounts on close (spec: release WebGPU / decoders in later phases).
+ *
+ * `locale` is a declared strict inject (mirrors omnimux-assets); guarded bind
+ * keeps node-side tests without a locale service working.
  *
  * @param {{
  *   slots: { inject: Function, register: Function },
