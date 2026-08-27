@@ -56,9 +56,18 @@ export function apply(ctx) {
 
   registerClipTools(ctx, tools)
 
-  if (typeof ctx.inject === 'function') {
-    ctx.inject(['webServer'], (innerCtx) => {
-      if (innerCtx.webServer) registerClipRoutes(innerCtx, dispatcher)
-    })
+  // Mount routes with the canonical guarded pattern used by omnimux-assets /
+  // omnimux-products / omnimux-inspiration: the nested inject callback may hand
+  // us an incompletely-proxied context, so resolve webServer defensively and
+  // only touch .register when it is a real function. Wrap in effect so the
+  // mount is lifecycle-reversible.
+  const mountHttp = (httpCtx) => {
+    const webServer = httpCtx.webServer ?? httpCtx.get?.('webServer')
+    if (!webServer || typeof webServer.register !== 'function') return
+    const mount = () => registerClipRoutes(webServer, dispatcher)
+    if (typeof httpCtx.effect === 'function') httpCtx.effect(mount, 'omnimux-clip: http routes')
+    else mount()
   }
+  if (typeof ctx.inject === 'function') ctx.inject(['webServer'], mountHttp)
+  else mountHttp(ctx)
 }

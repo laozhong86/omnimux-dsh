@@ -214,4 +214,42 @@ describe('apply() host entry', () => {
     assert.equal(typeof provided.clipEditor.open, 'function')
     assert.equal(typeof provided.clipEditor.export, 'function')
   })
+
+  it('mounts routes via canonical guarded webServer resolution (regression: register without inject)', () => {
+    const home = mkdtempSync(join(tmpdir(), 'omnimux-clip-mount-'))
+    const prev = process.env.DSH_HOME
+    process.env.DSH_HOME = home
+    const mounted = []
+    const effects = []
+    let captured = null
+    try {
+      apply({
+        tools: { register: () => {} },
+        systemPrompt: { section: () => {} },
+        provide: () => {},
+        inject: (deps, cb) => { if (deps.includes('webServer')) captured = cb },
+      })
+      // Case A: nested callback hands us a ctx whose .register is gated —
+      // the guarded mount must resolve via get() and mount exactly once.
+      captured({
+        get: (name) => name === 'webServer'
+          ? { register: (route) => { mounted.push(route.path); return () => {} } }
+          : undefined,
+        effect: (fn, label) => { effects.push(label); fn() },
+      })
+      // Case B: raw service handed directly with no effect() — must still mount.
+      apply({
+        tools: { register: () => {} },
+        systemPrompt: { section: () => {} },
+        provide: () => {},
+        inject: (deps, cb) => { if (deps.includes('webServer')) cb({}) }, // no get, no register → must NOT throw
+      })
+    } finally {
+      if (prev == null) delete process.env.DSH_HOME
+      else process.env.DSH_HOME = prev
+      rmSync(home, { recursive: true, force: true })
+    }
+    assert.deepEqual(mounted, ['/omnimux-clip/api'])
+    assert.deepEqual(effects, ['omnimux-clip: http routes'])
+  })
 })
