@@ -2522,7 +2522,7 @@ function TopHeader({
       /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("p", { className: "omnimux-clip-overlay-subtitle", children: [
         "\u591A\u8F68\u526A\u8F91 \xB7 ",
         formatTimecode(durationMs),
-        saveNotice ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { marginLeft: 8, color: "#34d399" }, children: [
+        saveNotice ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { marginLeft: 8, color: "var(--dsw-alias-success, #34d399)" }, children: [
           "\u2713 ",
           saveNotice
         ] }) : null
@@ -2949,7 +2949,7 @@ function ClipWaveform({ sourceUrl, widthPx, heightPx }) {
     canvas.height = Math.round(heightPx);
     getAudioWaveform(sourceUrl, 60).then((peaks) => {
       if (canvasRef.current) {
-        drawWaveformToCanvas(canvasRef.current, peaks, "rgba(147, 197, 253, 0.45)");
+        drawWaveformToCanvas(canvasRef.current, peaks, "var(--dsw-alias-brand, rgba(147, 197, 253, 0.45))");
       }
     });
   }, [sourceUrl, widthPx, heightPx]);
@@ -3180,8 +3180,8 @@ function BottomTimeline() {
                 bottom: 0,
                 left: `${snapGuide * scale}px`,
                 width: "1px",
-                backgroundColor: "#38bdf8",
-                boxShadow: "0 0 4px #38bdf8",
+                backgroundColor: "var(--dsw-alias-brand, #38bdf8)",
+                boxShadow: "0 0 4px var(--dsw-alias-brand, #38bdf8)",
                 pointerEvents: "none",
                 zIndex: 15
               }

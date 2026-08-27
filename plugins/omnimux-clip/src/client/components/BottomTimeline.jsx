@@ -34,7 +34,7 @@ function ClipWaveform({ sourceUrl, widthPx, heightPx }) {
 
     getAudioWaveform(sourceUrl, 60).then((peaks) => {
       if (canvasRef.current) {
-        drawWaveformToCanvas(canvasRef.current, peaks, 'rgba(147, 197, 253, 0.45)')
+        drawWaveformToCanvas(canvasRef.current, peaks, 'var(--dsw-alias-brand, rgba(147, 197, 253, 0.45))')
       }
     })
   }, [sourceUrl, widthPx, heightPx])
@@ -266,8 +266,8 @@ export function BottomTimeline() {
                 bottom: 0,
                 left: `${snapGuide * scale}px`,
                 width: '1px',
-                backgroundColor: '#38bdf8',
-                boxShadow: '0 0 4px #38bdf8',
+                backgroundColor: 'var(--dsw-alias-brand, #38bdf8)',
+                boxShadow: '0 0 4px var(--dsw-alias-brand, #38bdf8)',
                 pointerEvents: 'none',
                 zIndex: 15,
               }}

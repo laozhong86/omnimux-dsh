@@ -93,7 +93,7 @@ export function TopHeader({
         ) : null}
         <p className="omnimux-clip-overlay-subtitle">
           多轨剪辑 · {formatTimecode(durationMs)}
-          {saveNotice ? <span style={{ marginLeft: 8, color: '#34d399' }}>✓ {saveNotice}</span> : null}
+          {saveNotice ? <span style={{ marginLeft: 8, color: 'var(--dsw-alias-success, #34d399)' }}>✓ {saveNotice}</span> : null}
         </p>
       </div>
       <div className="omnimux-clip-overlay-actions">
