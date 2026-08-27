@@ -39,7 +39,6 @@ export function apply(ctx, config = {}) {
     homeDir,
   })
   const identity = createIdentity({ store, siteBaseUrl })
-  void store.describe()
   ctx.provide('identity', { status: identity.status, require: identity.require })
   const profile = hubProfileName()
   const appsStore = createAppsStore({
