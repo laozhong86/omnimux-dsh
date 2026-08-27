@@ -6,7 +6,7 @@ status: "superseded"
 authority: "L4"
 date: "2026-08-26"
 authors: ["x"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 superseded_by: "docs/references/tiktok-drama-center.md"
 ---
 

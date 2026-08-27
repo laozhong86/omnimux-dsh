@@ -46,8 +46,8 @@ CLI 版本：`@omnimux/cli` **0.3.0**（`cli/package.json`）。
 | 路径 | 用途 |
 |---|---|
 | `research/dsh/POSITIONING.md` | 已定站位：OmniMux 是灵魂面，dsh 是借来的 harness |
-| `plugins/dsh-omnimux/` | 对外主包，Phase A 只挂载 |
-| `plugins/dsh-drama/` | `series/` 磁盘合同 |
+| `plugins/omnimux/` | 对外主包，Phase A 只挂载 |
+| `plugins/omnimux-drama/` | `series/` 磁盘合同 |
 | `fixtures/demo-series/series/` | 圣经 / 分集 / shots.json 样例 |
 | `.agents/skills/short-drama-router/references/catalog.md` | dest 指针，安装命令不在本会话执行 |
 

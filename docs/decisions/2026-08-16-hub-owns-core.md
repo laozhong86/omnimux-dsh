@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L2"
 date: "2026-08-16"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # 决策：中枢拥有全部 OmniMux 核心能力
@@ -21,7 +21,7 @@ subsystem: "dsh-drama"
 
 `dsh-omnimux` 是 OmniMux 落到 dsh 上的**唯一核心包**。和 OmniMux 产品身份、账号、模型、执行缝、中枢 UI 有关的能力，都写进这个包。
 
-只有**细分业务场景**才单独做插件：短剧创作（已有 `dsh-drama`）、以后的电商设计、品牌营销等。垂直包向中枢输入请求、接收结果，不实现换标、登录、模型路由，也不把中枢叫网关。
+只有**细分业务场景**才单独做插件：短剧创作（已有 `omnimux-drama`）、以后的电商设计、品牌营销等。垂直包向中枢输入请求、接收结果，不实现换标、登录、模型路由，也不把中枢叫网关。
 
 禁止再出现 `omnimux-brand` 这类「只切一块核心能力」的兄弟包，不论放在本仓、`dsh-plugin/personal`，还是官方 `deepseek-harness/plugins/`。
 
@@ -58,7 +58,7 @@ OmniMux 桌面预置 profile `omnimux` 的用户层默认模型：
 
 不把本机 `~/.dsh/profiles/web/cordis.patch.yml` 打进安装包（含密钥和私有路由名）。
 
-预置还带社区 `dsh-better-sidebar`（后期要用）。`dsh-drama` 仍是垂直包，按场景装，不默认进消费者桌面，除非另拍板。
+预置还带社区 `dsh-better-sidebar`（后期要用）。`omnimux-drama` 仍是垂直包，按场景装，不默认进消费者桌面，除非另拍板。
 
 活树：桌面仓 `/Users/x/Desktop/Project/omnimux-desktop` 首次启动种子 `$DSH_HOME/profiles/omnimux`，Host 走 `dsh --profile omnimux`。设置「DSH 插件」经捆绑 pnpm + 打包 `dsh plugin` 写入该 profile 的 bundles；不可卸 `dsh-omnimux` / `dsh-base` / `dsh-web-app`。
 

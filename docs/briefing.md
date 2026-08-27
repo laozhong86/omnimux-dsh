@@ -6,7 +6,7 @@ status: "living"
 authority: "L3"
 date: "2026-08-15"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # Briefing

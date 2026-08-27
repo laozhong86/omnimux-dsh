@@ -4,7 +4,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd -P)"
 cd "$root"
 
-pnpm --filter dsh-drama test
+pnpm --filter omnimux-drama test
 
 preset_src="$root/presets/drama"
 preset_dst="${DSH_HOME:-$HOME/.dsh}/.agent-presets/drama"
@@ -33,10 +33,10 @@ if [[ ${#dsh_cmd[@]} -eq 0 ]]; then
   exit 0
 fi
 
-if ! "${dsh_cmd[@]}" --profile drama --dump-config 2>/dev/null | rg -q "omnimux|dsh-drama"; then
+if ! "${dsh_cmd[@]}" --profile drama --dump-config 2>/dev/null | rg -q "omnimux|omnimux-drama"; then
   echo "smoke: profile drama is missing bundles. From this repo run:"
   echo "  ${dsh_cmd[*]} plugin --profile drama add $root/plugins/omnimux"
-  echo "  ${dsh_cmd[*]} plugin --profile drama add $root/plugins/dsh-drama"
+  echo "  ${dsh_cmd[*]} plugin --profile drama add $root/plugins/omnimux-drama"
   exit 1
 fi
 

@@ -15,7 +15,7 @@ hub 在 `src/index.js` 的 `apply(ctx)` 中注册（挂载即生效，非懒注�
 | `identity` | `ctx.provide('identity', …)` | 登录态（M4 未消费） |
 
 **消费方式**：cordis 依赖注入 `ctx.get('<seam>')`，返回 `{ execute(req) }`。
-参考实现（dsh-drama `src/index.js` `drama_generate_shot`）在**调用时**懒取 `ctx.get('videoGenerate')`，
+参考实现（omnimux-drama `src/index.js` `drama_generate_shot`）在**调用时**懒取 `ctx.get('videoGenerate')`，
 不在 mount 时缓存——规避插件加载顺序问题。omnimux-workflow 的 seam client 同样按调用时懒取。
 
 ## 2. 媒体 seam 请求 schema（`src/media/execute.js` `executeOmnimuxMedia`）

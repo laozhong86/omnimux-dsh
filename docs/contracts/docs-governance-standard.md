@@ -134,7 +134,7 @@ authority: "L1"                              # 权威等级: L0 | L1 | L2 | L3 |
 date: "2026-08-26"                           # 首次创建或生效日期 (YYYY-MM-DD)
 updated: "2026-08-26"                        # 最后修订日期 (YYYY-MM-DD)
 authors: ["x", "agent-architect"]            # 负责人/作者
-subsystem: "omnimux"                         # 关联子系统/插件 (如 omnimux, dsh-drama, global)
+subsystem: "omnimux"                         # 关联子系统/插件 (如 omnimux, omnimux-drama, global)
 tags: ["tag1", "tag2"]                       # 检索标签
 supersedes: []                               # 被当前文档替代的历史文档路径
 superseded_by: null                          # 取代当前文档的新文档路径 (若已废弃)

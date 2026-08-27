@@ -76,14 +76,14 @@ export function apply(ctx) {
     throw new Error('社媒解析未提取到有效视频元数据，请检查链接或网络')
   }
 
-  // Video analyze tool: exclusively consumes dsh-video tool video_analyze
+  // Video analyze tool: exclusively consumes omnimux-video tool video_analyze
   const videoAnalyzeTool = {
     async execute(args) {
       const tool = getTool('video_analyze')
       if (tool && typeof tool.execute === 'function') {
         return tool.execute(args)
       }
-      throw new Error('多模态视频分析工具 (video_analyze) 未就绪，请检查 dsh-video 插件是否加载')
+      throw new Error('多模态视频分析工具 (video_analyze) 未就绪，请检查 omnimux-video 插件是否加载')
     },
   }
 

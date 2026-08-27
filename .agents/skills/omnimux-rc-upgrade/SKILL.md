@@ -15,7 +15,7 @@ Pin 步骤（fetch / checkout / replay overlay）真源：`docs/harness-pin.md`�
 - 用户说升 rc、跟官方 tag、重打 OmniMux.app
 - Host 升级后出现：工具 `prepare`、品牌空/乱飞、侧栏叠层、启动弹出系统浏览器
 
-日常改 `dsh-drama` / Apps 文案：不加载。
+日常改 `omnimux-drama` / Apps 文案：不加载。
 
 ## 硬边界
 

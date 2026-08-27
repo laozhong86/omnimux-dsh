@@ -3,7 +3,7 @@
 把 [OmniMux](https://omnimux.ai) 落到官方 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件生态。不 fork harness。
 
 - `dsh-omnimux`：执行中枢。产品外壳、账号、模型 / 出片配一次，各垂直包复用。默认 OmniMux。兼容 OpenAI video 形的第三方 endpoint 可经 `OMNIMUX_BASE_URL` 指入（未验证）。只有 OmniMux 云里封装了业务逻辑的付费接口，必须走官方密钥并报 `needs-omnimux`。不要叫它网关，也不另开换标 / 登录插件。
-- `dsh-drama`：第一条垂直方案（短剧创作）。管 `series/`。出片向中枢输入、接收结果，不单独存密钥。电商设计、品牌营销等同属垂直包。
+- `omnimux-drama`：第一条垂直方案（短剧创作）。管 `series/`。出片向中枢输入、接收结果，不单独存密钥。电商设计、品牌营销等同属垂直包。
 - `omnimux-market`：插件市场（四 tab：技能 / 插件 / 专家 / 连接器）。基于 @cocofhu/skillhub v0.2.13（MIT）fork 改名，自更新已禁用、版本随本仓库走。**取代** 本仓库的 `omnimux-gallery`（已标 DEPRECATED 待下线）与第三方插件 `@cocofhu/skillhub`（原版请自行禁用）。
 
 I/O [docs/contracts/hub.md](docs/contracts/hub.md)。站位 [research/dsh/POSITIONING.md](research/dsh/POSITIONING.md)。拆包 [docs/decisions/2026-08-14-execution-hub.md](docs/decisions/2026-08-14-execution-hub.md)。能力真假 [docs/capabilities.md](docs/capabilities.md)。领域词表 [CONTEXT.md](CONTEXT.md)。
@@ -18,7 +18,7 @@ pnpm test
 ./scripts/smoke-drama.sh
 
 dsh plugin --profile drama add ./plugins/dsh-omnimux
-dsh plugin --profile drama add ./plugins/dsh-drama
+dsh plugin --profile drama add ./plugins/omnimux-drama
 dsh --profile drama --dump-config
 dsh --profile drama web
 ```

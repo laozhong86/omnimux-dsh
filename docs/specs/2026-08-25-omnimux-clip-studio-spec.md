@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L2"
 date: "2026-08-25"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # OmniMux Clip Studio（omnimux-clip）技术架构与实现 Spec
@@ -28,12 +28,12 @@ subsystem: "dsh-drama"
 | 2 | 画布只留代理 | `video_composition` 在画布上 **只** 是 Launcher Card：展示状态 + 打开剪辑器。节点 `data` 只存工程快照引用与产物路径。 |
 | 3 | 旧代码作废 | `omnimux-workflow/src/canvas/video-editor/**` 整树删除。本 spec **不** 复用那套 store / engine / 组件。 |
 | 4 | 引擎来源与反自研铁律 | 前端 NLE 核心 **MUST** 以 **OpenReel Video**（`Augani/openreel-video`，MIT）为真源，vendorize 进 `src/client/engine/openreel/`。**严禁自研/手写** OpenReel 已有的多轨状态机、视频解码预览、音频波形、磁吸吸附、转场着色器与 WebCodecs 导出管线。保留 `LICENSE.openreel.txt` + `THIRD_PARTY_NOTICES.md`。 |
-| 5 | 自包含成片合成 | 成片导出 **MUST** 由 `omnimux-clip` 内置的 **WebCodecs (`VideoEncoder`/`AudioEncoder`) + WebGPU/Canvas + `mediabunny`** 纯前端引擎完成，实现 100% 像素级所见即所得。**MUST NOT** 强制把多轨时间轴拆给 `dsh-video` / FFmpeg 处理，彻底消除双渲染引擎冗余与花字/转场失真。 |
+| 5 | 自包含成片合成 | 成片导出 **MUST** 由 `omnimux-clip` 内置的 **WebCodecs (`VideoEncoder`/`AudioEncoder`) + WebGPU/Canvas + `mediabunny`** 纯前端引擎完成，实现 100% 像素级所见即所得。**MUST NOT** 强制把多轨时间轴拆给 `omnimux-video` / FFmpeg 处理，彻底消除双渲染引擎冗余与花字/转场失真。 |
 | 6 | 跨插件通信 | 对齐 MiniMax `window.hub`：两棵 React 树 **只** 交换 plain JSON。通道 = Host HTTP + DOM CustomEvent。禁止跨树传 React 元素 / ref / context。 |
 | 7 | 归属与命名 | 源码 **MUST** 为 `product/omnimux-dsh/plugins/omnimux-clip/`。插件 id / 目录 / manifest `id` 一律 ASCII kebab-case **`omnimux-clip`**。**MUST NOT** 使用 `dsh-clip`、`OmniMux-clip`、`omnimux_clip`。显示名可以是「OmniMux Clip / AI 剪辑工坊」。 |
 | 8 | Agent 面 | MiniMax 的 `project.*` 映射为 DSH `clip_*` tools + 同名 client RPC。Agent 不直接操作画布节点。 |
 | 9 | 一级页形态 | 剪辑全屏工作台 **不是** 资产库 4 层一级页。挂 `shell.overlay` 的 **editor overlay**（关页可卸载，释放 WebGPU/解码器）。可选「工程列表」才走 4 层标准页（P2）。 |
-| 10 | 密钥 | 插件不持 Key。ASR / 理解若需要模型，走 hub `textComplete` / 已有 `dsh-video` 理解工具。 |
+| 10 | 密钥 | 插件不持 Key。ASR / 理解若需要模型，走 hub `textComplete` / 已有 `omnimux-video` 理解工具。 |
 
 ---
 
@@ -55,7 +55,7 @@ subsystem: "dsh-drama"
 ### 1.2 职责切分（硬边界）
 
 ```
-omnimux-workflow          omnimux-clip                         dsh-video (不参与本链路)
+omnimux-workflow          omnimux-clip                         omnimux-video (不参与本链路)
 ─────────────────         ────────────                         ────────────────────────
 DAG / 节点 / 连线          OpenReel NLE UI                      ffmpeg 11 slug 原子操作
 Launcher Card             WebCodecs / WebGPU 实时预览          Headless 批处理
@@ -158,7 +158,7 @@ product/omnimux-dsh/plugins/omnimux-clip/
 | `mediaSeam`（可选） | `omnimux` | 读资产 `real_path`；不自己做云下载 |
 | `textComplete`（P2 ASR） | hub | 仅当本地 ASR 不可用时；P1 可用静音切片，字幕可先导入 SRT |
 
-**注**：成片合成由前端 `omnimux-clip` 自包含完成（WebCodecs + mediabunny），**零外部 ffmpeg 依赖**。`dsh-video` 仅用于 headless 批处理与视频理解，不进入剪辑渲染主干链路。
+**注**：成片合成由前端 `omnimux-clip` 自包含完成（WebCodecs + mediabunny），**零外部 ffmpeg 依赖**。`omnimux-video` 仅用于 headless 批处理与视频理解，不进入剪辑渲染主干链路。
 
 ### 3.3 omnimux-workflow 消费
 
@@ -585,7 +585,7 @@ TimelineSchema (Zustand)
 ### 15.3 与「新插件必须是垂直场景」条款的关系
 
 `omnimux-dsh/AGENTS.md` 写：本树新插件应是业务垂直（短剧等），且垂直不得做 hub chrome。  
-**本插件定位为 T1 平台应用**（画布配套剪辑工作台），与已存在的 `omnimux-workflow` / `omnimux-assets` 同级，**不是** `dsh-drama` 那种垂直，也 **不是** 中枢。不实现 logo/登录/模型路由。
+**本插件定位为 T1 平台应用**（画布配套剪辑工作台），与已存在的 `omnimux-workflow` / `omnimux-assets` 同级，**不是** `omnimux-drama` 那种垂直，也 **不是** 中枢。不实现 logo/登录/模型路由。
 
 L0 路由矩阵落地时应增一行：
 
@@ -593,4 +593,4 @@ L0 路由矩阵落地时应增一行：
 |---|---|---|---|
 | 本地多轨剪辑 / 画布视频合成节点 | `T1: omnimux-clip` | `product/omnimux-dsh/plugins/omnimux-clip` | `clip_*`、seam `clipEditor`、slot `shell.overlay` |
 
-`dsh-video` 仍为 T2 处理引擎（ffmpeg），本插件消费它，不替代它。
+`omnimux-video` 仍为 T2 处理引擎（ffmpeg），本插件消费它，不替代它。

@@ -6,7 +6,7 @@ status: "living"
 authority: "L1"
 date: "2026-08-24"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # plugin-git-pr — OmniMux 插件仓 Git / PR 合同
@@ -103,7 +103,7 @@ pnpm wt:clean <topic> <issue-id>
 | UI / Host / 一级页 | `node scripts/omnimux.mjs dev start <task> <plugin>`（L2，44200–44299） | 证据 = URL + 截图或 DOM。无浏览器证据 → board「未验收」 |
 | L2 通过后物化 | `node scripts/omnimux.mjs sync <plugin>` | 静态复制。**不等于验收** |
 
-根目录 `pnpm test` 目前只 filter：`dsh-drama`、`omnimux`、`omnimux-accounts`、`omnimux-inspiration`、`omnimux-market`。改 `assets` / `products` / `workflow` / `clip` / `analytics` / `dsh-video` 必须跑 **该包** test，不能用根 `pnpm test` 代替。
+根目录 `pnpm test` 目前只 filter：`omnimux-drama`、`omnimux`、`omnimux-accounts`、`omnimux-inspiration`、`omnimux-market`。改 `assets` / `products` / `workflow` / `clip` / `analytics` / `omnimux-video` 必须跑 **该包** test，不能用根 `pnpm test` 代替。
 
 **skip ≠ pass。** `smoke` / `verify:image-live` / `verify:models` 网关段在无 `dsh` 或无 key 时会 skip 并以 0 退出。PR 必须写明 skip。
 

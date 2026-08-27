@@ -1,19 +1,19 @@
 ---
-title: "PRD：dsh-video 视频能力插件（自包含本地执行 + 理解层）"
-id: "contract-dsh-video-plugin"
+title: "PRD：omnimux-video 视频能力插件（自包含本地执行 + 理解层）"
+id: "contract-omnimux-video-plugin"
 type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-22"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
-# PRD：dsh-video 视频能力插件（自包含本地执行 + 理解层）
+# PRD：omnimux-video 视频能力插件（自包含本地执行 + 理解层）
 
 状态：**Revised v2.1（2026-08-22：增补视频理解两工具；处理层仍为本机 ffmpeg）**  
 关联：[ADR 2026-08-21-gxgen-capability-plugin](../decisions/2026-08-21-gxgen-capability-plugin.md)（原引擎客户端方案已被本版取代）  
-研究附件：`omnimux-desktop-fork/.workbuddy/artifacts/2026-08-22-video-analyze-reverse-to-dsh-video.md` · `video-modality-spike/results.json`
+研究附件：`omnimux-desktop-fork/.workbuddy/artifacts/2026-08-22-video-analyze-reverse-to-omnimux-video.md` · `video-modality-spike/results.json`
 
 ## 0. 方向变更记录
 
@@ -23,7 +23,7 @@ subsystem: "dsh-drama"
 | 插件角色 | 引擎 HTTP 客户端 | 自包含处理插件 | **处理 + 理解**：理解走 hub `textComplete`，**插件不持密钥** |
 | 网络依赖 | 引擎 HTTP | **处理层零网络必需** | **理解层需要 OmniMux 登录 + hub** |
 | 工具 | — | `video_process`（11 slug） | + `video_analyze` + `video_reverse_prompt`（**不进** 11 slug） |
-| 插件名 | dsh-gxgen | **dsh-video** | 不变 |
+| 插件名 | dsh-gxgen | **omnimux-video** | 不变 |
 
 变更理由（v2）：本地化自包含，不要求 Docker/云端引擎。  
 变更理由（v2.1）：复刻 OPC `social:video-analyze` / `social:video-reverse`；二者是理解不是剪辑，故独立工具。
@@ -38,7 +38,7 @@ OmniMux 已有"生成"（videoGenerate / imageGenerate）与本插件的"处理"
 |---|---|---|
 | 1 | 处理范围 | 全量 11 项 ffmpeg 能力；`video_export` 高级项放 v1.1 |
 | 2 | 处理执行 | **本机 ffmpeg/ffprobe**；**零服务依赖、零网络必需** |
-| 3 | 插件位置 | `product/omnimux-dsh/plugins/dsh-video` |
+| 3 | 插件位置 | `product/omnimux-dsh/plugins/omnimux-video` |
 | 4 | 验收重心 | 聊天直接可用；seam 供 vertical |
 | 5 | 理解落点（2026-08-22 拍板） | **本插件增补独立工具**；**不**塞进 `video_process` enum |
 | 6 | 理解输入（2026-08-22 拍板） | **直接喂本地视频**给 Gemini；默认 `gemini-3.7-flash` |
@@ -51,7 +51,7 @@ OmniMux 已有"生成"（videoGenerate / imageGenerate）与本插件的"处理"
 | 老板/运营 | `video_process` | 截取 / 合并 / 轮播 / 烧字幕 |
 | 老板/运营 | `video_analyze` | 「拆解这条爆款：目标/钩子/可复刻公式」→ markdown |
 | 老板/运营 | `video_reverse_prompt` | 「反推成 I2V prompt」→ 可喂生成的正文 + appendix |
-| dsh-drama | `videoProcess` / `videoUnderstand` | 素材处理；参考片理解后进生成 |
+| omnimux-drama | `videoProcess` / `videoUnderstand` | 素材处理；参考片理解后进生成 |
 | omnimux-workflow | 同上 | 画布处理节点 + 理解节点 |
 
 ## 4. 需求范围：11 项能力（ffmpeg 实现映射）
@@ -139,10 +139,10 @@ OmniMux 已有"生成"（videoGenerate / imageGenerate）与本插件的"处理"
 
 | 项 | 声明 |
 |---|---|
-| 入口形态 | 函数插件：`export const name = 'dsh-video'`，`export const inject = ['tools']`（理解工具就绪后可再 inject 所需 hub 面），`export function apply(ctx)`，`export { Config }` |
-| 工具 schema | raw `ctx.tools.register`，parameters 完整 `type:'object'` JSON Schema（objectParams 编译模式，同 dsh-drama） |
+| 入口形态 | 函数插件：`export const name = 'omnimux-video'`，`export const inject = ['tools']`（理解工具就绪后可再 inject 所需 hub 面），`export function apply(ctx)`，`export { Config }` |
+| 工具 schema | raw `ctx.tools.register`，parameters 完整 `type:'object'` JSON Schema（objectParams 编译模式，同 omnimux-drama） |
 | 进程清理 | 运行中子进程登记表，`ctx.effect` 卸载时统一 kill；**插件不留持久状态** |
-| bundle 装载件 | `package.json` 嵌套 `dsh: { bundle: { patch: './cordis.patch.yml' } }` 且 `files` 列入（patch 写 `- insert: - id: dsh-video, name: dsh-video`）；**prompt md 进 files** |
+| bundle 装载件 | `package.json` 嵌套 `dsh: { bundle: { patch: './cordis.patch.yml' } }` 且 `files` 列入（patch 写 `- insert: - id: omnimux-video, name: omnimux-video`）；**prompt md 进 files** |
 | 身份边界 | 处理：本地执行器；理解：消费 hub `textComplete`。不实现 chrome、登录、模型路由、任务 UI；**不持 OmniMux API key** |
 
 ### 5.4 错误语义（fail-closed）
@@ -184,8 +184,8 @@ Config.understand:      # v2.1
 
 | 名 | 提供方 |
 |---|---|
-| `videoProcess` / 工具 `video_process` | dsh-video |
-| `videoUnderstand`（可选同版）/ 工具 `video_analyze` · `video_reverse_prompt` | dsh-video（消费 hub `textComplete`） |
+| `videoProcess` / 工具 `video_process` | omnimux-video |
+| `videoUnderstand`（可选同版）/ 工具 `video_analyze` · `video_reverse_prompt` | omnimux-video（消费 hub `textComplete`） |
 
 ### 5.6 理解工具细节（v2.1）
 
@@ -259,14 +259,14 @@ Config.understand:      # v2.1
 |---|---|---|
 | M0–M3 | 处理层 11 能力（既有） | 生产可用 |
 | **M4** ✅ | **hub `textComplete` 扩 `video`**（旁路 `llm.stream`，按 `image_url(data:video)` 打包）+ 模态回归 | 2026-08-22 短片回归：`BG=red; SQUARE=YES_WHITE_SQUARE; MOTION=appeared_after_start` |
-| **M5** ✅ | dsh-video：迁入两份 prompt + `video_reverse_prompt` + `video_analyze` + mock 单测 | 2026-08-22：全量 **119/119**；两工具独立于 11 slug；消费 hub `textComplete.video` |
-| **M6** | `videoUnderstand` seam + drama/workflow 至少一处接入 + `yarn omnimux:sync dsh-video` + 重启验收 | 链路打通 |
+| **M5** ✅ | omnimux-video：迁入两份 prompt + `video_reverse_prompt` + `video_analyze` + mock 单测 | 2026-08-22：全量 **119/119**；两工具独立于 11 slug；消费 hub `textComplete.video` |
+| **M6** | `videoUnderstand` seam + drama/workflow 至少一处接入 + `yarn omnimux:sync omnimux-video` + 重启验收 | 链路打通 |
 
 ## 10. 旧交付物处置（v1 引擎客户端代码）
 
 | 文件 | 处置 |
 |---|---|
 | `src/engine/client.js`、`src/engine/bridge.js` 及其测试 | **作废删除**（无服务端可调） |
-| `src/index.js` 骨架 / objectParams / `src/errors.js` / `src/config.js` 模式 | 改名复用（dsh-gxgen → dsh-video） |
+| `src/index.js` 骨架 / objectParams / `src/errors.js` / `src/config.js` 模式 | 改名复用（dsh-gxgen → omnimux-video） |
 | `src/engine/job.js` 的预校验 / 多产物命名 / 错误清理逻辑 | 摘出复用；轮询/taskId 分支删除 |
-| hub.md dsh-gxgen 两行 | 替换为 dsh-video 两行 |
+| hub.md dsh-gxgen 两行 | 替换为 omnimux-video 两行 |

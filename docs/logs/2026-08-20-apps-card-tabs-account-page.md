@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L3"
 date: "2026-08-20"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # Apps card actions, sidebar app tabs, and the Accounts app stage
@@ -25,6 +25,6 @@ subsystem: "dsh-drama"
 
 ## 回归
 
-根 `pnpm test` 全绿：dsh-drama 20 / dsh-omnimux 223 / dsh-omnimux-accounts 2（2026-08-20，node:test + assert/strict，keyless）。
+根 `pnpm test` 全绿：omnimux-drama 20 / dsh-omnimux 223 / dsh-omnimux-accounts 2（2026-08-20，node:test + assert/strict，keyless）。
 
 已知环境问题：`dsh-omnimux-workbench`（他人未跟踪 WIP 包）prepare 失败会挡住触发重装的 pnpm 命令；用 `pnpm install --ignore-scripts` 刷新依赖状态后正常，未触碰该包。

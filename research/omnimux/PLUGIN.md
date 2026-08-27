@@ -5,7 +5,7 @@
 消化过程见 [NOTES.md](NOTES.md)，来源表见 [SOURCES.md](SOURCES.md)。  
 本文件只写开发参考。不拷 skill 正文，不在本会话执行 `omnimux skill install`，不出片。
 
-现行用语：`dsh-omnimux` 是**执行中枢**，不是网关。词表与 I/O 见 [docs/contracts/hub.md](../../docs/contracts/hub.md)。下文「网关」只指 OmniMux 云 HTTP（new-api fork），不是这个插件。
+现行用语：`omnimux` 是**执行中枢**，不是网关。词表与 I/O 见 [docs/contracts/hub.md](../../docs/contracts/hub.md)。下文「网关」只指 OmniMux 云 HTTP（new-api fork），不是这个插件。
 
 ## 这篇文档回答什么
 
@@ -20,7 +20,7 @@ Agent = OmniMux（灵魂面） + dsh（借来的 harness）
 结论先说：
 
 1. **OmniMux 不是短剧运行时。** 它是 new-api 维护 fork 上的网关产品，外加用户级 CLI 和一套电商口味很重的方法论 skill。
-2. **插件分两包。** `dsh-omnimux` 接网关（模型 + 图 + 视频 job + 密钥）。`dsh-drama` 管 `series/` 磁盘。方法论 skill 给产品 Agent 以后按正常方式装，不要 vendoring 进插件。
+2. **插件分两包。** `omnimux` 接网关（模型 + 图 + 视频 job + 密钥）。`omnimux-drama` 管 `series/` 磁盘。方法论 skill 给产品 Agent 以后按正常方式装，不要 vendoring 进插件。
 3. **出片只认一条客户入口：** `POST /v1/video/generations`，再 poll `GET /v1/video/generations/{task_id}`。Gxgen / RunningHub 是网关内部渠道，不是插件 dest。
 4. **脚本/分镜 schema 能抄形，不能抄语义。** required 字段是商品、卖点、CTA。短剧要把它们改写成集、角色、悬念；本仓 `shots.json` 已经在借 planning 的镜头形。
 
@@ -115,7 +115,7 @@ Authorization: Bearer sk-…
 
 `AGENTS.md` 对 type 61 的硬规则：只走 TaskAdaptor + `/v1/video/generations`。禁止 type 58 chat、`*-query` 模型、客户端 `precharge_seconds`。
 
-本仓 `AGENTS.md` 另定：视频执行经 `dsh-omnimux` → `aigc-provider-runtime-kit`，不要再写第二套网关。运行时可以是 kit 调 OmniMux `/v1`，也可以是 kit 调其它厂商；**密钥仍经 OmniMux token**。不要为了省事直接把 `sk-` 写进 job 配置。
+本仓 `AGENTS.md` 另定：视频执行经 `omnimux` → `aigc-provider-runtime-kit`，不要再写第二套网关。运行时可以是 kit 调 OmniMux `/v1`，也可以是 kit 调其它厂商；**密钥仍经 OmniMux token**。不要为了省事直接把 `sk-` 写进 job 配置。
 
 ## CLI、两套凭证、Agent RPC
 
@@ -260,7 +260,7 @@ dest id 是本仓路由器的索引名，不是 OmniMux 目录 id。目录 id �
 }
 ```
 
-`dsh-drama` 的硬门：`status` 为 `generating` 或 `ready` 时，`character_ids` 里每个 id 必须在 `bible.yaml` 里 `confirmed: true`。这是 Jellyfish 式「确认后才生成」，不是 OmniMux schema 自带的。不要倒过去改 OmniMux skill 来表达这个门。它属于 `dsh-drama`。
+`omnimux-drama` 的硬门：`status` 为 `generating` 或 `ready` 时，`character_ids` 里每个 id 必须在 `bible.yaml` 里 `confirmed: true`。这是 Jellyfish 式「确认后才生成」，不是 OmniMux schema 自带的。不要倒过去改 OmniMux skill 来表达这个门。它属于 `omnimux-drama`。
 
 ## 和本仓两包怎么对号
 
@@ -268,8 +268,8 @@ dest id 是本仓路由器的索引名，不是 OmniMux 目录 id。目录 id �
 
 | 包 | 现在 | 下一阶段该接 OmniMux 的哪一层 |
 |---|---|---|
-| `dsh-omnimux` | Phase A：`apply()` 空挂载，证明 bundle 能装 | custom provider → `https://api.omnimux.ai/v1`；图/视频 job 走 `/v1/images|video/generations`；密钥只接受 `__OMNIMUX_TOKEN_*__` 或 `tokens exec`；执行器复用 `aigc-provider-runtime-kit`。**不要**放 `series/`，**不要**放 Drama Center。 |
-| `dsh-drama` | `drama_project_status` + `series/` 读写 | 继续做领域对象。分镜表形继续对 `shot.schema.json`。写脚本/拆镜时让产品 Agent 去读已安装的 sibling skill，不要在插件里复制 SKILL.md。 |
+| `omnimux` | Phase A：`apply()` 空挂载，证明 bundle 能装 | custom provider → `https://api.omnimux.ai/v1`；图/视频 job 走 `/v1/images|video/generations`；密钥只接受 `__OMNIMUX_TOKEN_*__` 或 `tokens exec`；执行器复用 `aigc-provider-runtime-kit`。**不要**放 `series/`，**不要**放 Drama Center。 |
+| `omnimux-drama` | `drama_project_status` + `series/` 读写 | 继续做领域对象。分镜表形继续对 `shot.schema.json`。写脚本/拆镜时让产品 Agent 去读已安装的 sibling skill，不要在插件里复制 SKILL.md。 |
 | 产品 Agent 工作区 | 尚未 `skill install` | 就绪后 `omnimux skill install --project --only=...`。开发 Agent 继续读 OmniMux 真源。 |
 
 官方社区看懂的是第一包：「不 fork harness，把 OmniMux 网关接到 dsh」。短剧包是 worked example，不要当 Discussions 主标题。
@@ -284,7 +284,7 @@ dest id 是本仓路由器的索引名，不是 OmniMux 目录 id。目录 id �
 | 脚本模块字段 | 要求 `product_understanding` | 用 `script.scenes` 的形，语义改成集/对白/悬念 |
 | 分镜两份合同 | 同一轮输出两张表 | 轻量表给人口述；重 schema 给磁盘 `shots.json` |
 | 模型 prompt | 从一句题材直接写 Seedance prompt | 先有脚本或镜头，再走 `video-prompt-generation`；`seedance` 只是写法枚举 |
-| 真正出片 | 调 Gxgen / hexiaochun / 自造 list-select-init-submit | `dsh-omnimux` job → kit → `POST /v1/video/generations`；`task_id` 先写入 `shots[].job_id` |
+| 真正出片 | 调 Gxgen / hexiaochun / 自造 list-select-init-submit | `omnimux` job → kit → `POST /v1/video/generations`；`task_id` 先写入 `shots[].job_id` |
 | 成片完成 | 看见 task id 就标 `ready` | 有产物 URL 才 `ready`；失败标 `failed`；未确认角色不得进入 `generating` |
 | 参考片拆解 | 只丢链接就写「本片结构是…」 | 标 `evidence_level`；`url-only` 只给框架 |
 | 角色一致性 | 像素级抄脸；或纯文字人设撑全集 | `image-recreation` 的 Style Bible 形 + 本仓 `confirmed` |
@@ -294,9 +294,9 @@ dest id 是本仓路由器的索引名，不是 OmniMux 目录 id。目录 id �
 ## 硬边界
 
 - 不 fork OmniMux 核心路径来写短剧功能。网关改动有独立的 core-change 闸。
-- 不把 Gxgen、`generate-video` 半流程工具、canvas 节点、`r2_key` 写进 `dsh-omnimux`。以 `OMNIMUX.md` 为准。
+- 不把 Gxgen、`generate-video` 半流程工具、canvas 节点、`r2_key` 写进 `omnimux`。以 `OMNIMUX.md` 为准。
 - 不把方法论 skill 拷进本仓。`short-drama-router` 只存索引。
-- 不在 `dsh-omnimux` 里做 Drama Center 登录、上传、结算。
+- 不在 `omnimux` 里做 Drama Center 登录、上传、结算。
 - 不把 `/api/social/v1` 或社媒数据模型（`tiktok-video` 等）当成短剧发行。
 - 用户 CLI 没有 admin。渠道、ModelRatio、上架模型走 `newapi` skill / 人类，插件不要去碰。
 - AGPL：`@omnimux/cli` 声明 AGPL-3.0。插件自己保持 MIT 树外包；不要把 CLI 源码合进 dsh 包。

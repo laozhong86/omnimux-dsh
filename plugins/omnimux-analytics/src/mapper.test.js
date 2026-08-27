@@ -4,8 +4,8 @@ import { resolvePlugin } from './mapper.js'
 import { DEFAULT_PLUGIN_MAP } from './config.js'
 
 test('maps every product plugin tool prefix', () => {
-  assert.equal(resolvePlugin('drama_upsert_shot', DEFAULT_PLUGIN_MAP), 'dsh-drama')
-  assert.equal(resolvePlugin('video_process', DEFAULT_PLUGIN_MAP), 'dsh-video')
+  assert.equal(resolvePlugin('drama_upsert_shot', DEFAULT_PLUGIN_MAP), 'omnimux-drama')
+  assert.equal(resolvePlugin('video_process', DEFAULT_PLUGIN_MAP), 'omnimux-video')
   assert.equal(resolvePlugin('assets_list', DEFAULT_PLUGIN_MAP), 'omnimux-assets')
   assert.equal(resolvePlugin('assets_upload', DEFAULT_PLUGIN_MAP), 'omnimux-assets')
   assert.equal(resolvePlugin('plaza_search', DEFAULT_PLUGIN_MAP), 'omnimux-market')

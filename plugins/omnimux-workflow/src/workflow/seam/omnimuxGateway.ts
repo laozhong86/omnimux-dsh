@@ -44,7 +44,7 @@ export type SeamName = 'videoGenerate' | 'imageGenerate' | 'textComplete';
 
 /**
  * Resolves a seam by name at call time (cordis `ctx.get`). Lazy by design:
- * the hub may be mounted after this plugin; dsh-drama uses the same pattern.
+ * the hub may be mounted after this plugin; omnimux-drama uses the same pattern.
  */
 export type SeamGetter = (name: string) => unknown;
 

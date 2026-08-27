@@ -759,8 +759,8 @@
       "path": "plugins/omnimux-workflow"
     },
     {
-      "id": "dsh-drama",
-      "name": "dsh-drama",
+      "id": "omnimux-drama",
+      "name": "omnimux-drama",
       "version": "0.1.0",
       "tier": "tier-2-vertical",
       "entrypoint": "src/index.js",
@@ -835,11 +835,11 @@
         ],
         "systemBinaries": []
       },
-      "path": "plugins/dsh-drama"
+      "path": "plugins/omnimux-drama"
     },
     {
-      "id": "dsh-video",
-      "name": "dsh-video",
+      "id": "omnimux-video",
+      "name": "omnimux-video",
       "version": "0.1.0",
       "tier": "tier-2-vertical",
       "entrypoint": "src/index.js",
@@ -896,7 +896,7 @@
           "ffprobe"
         ]
       },
-      "path": "plugins/dsh-video"
+      "path": "plugins/omnimux-video"
     }
   ]
 }

@@ -139,7 +139,7 @@ function resolveStrategy() {
     // fall through to noop
   }
 
-  // dsh-video / omnimux-analytics 等：源码直读，无构建产物
+  // omnimux-video / omnimux-analytics 等：源码直读，无构建产物
   return {
     kind: 'noop',
     dirs: [],

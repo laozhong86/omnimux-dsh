@@ -53,5 +53,5 @@ description: OmniMux Clip 专业剪辑判断层。节奏、转场克制、花字
 - 一次 `clip_edit` 里塞互斥操作（先删再 trim 同一 clip、先 move 到重叠位再指望 diagnostics 救）。
 - 用 `clip_view` 当查询；查询走 `clip_get`。
 - 在 diagnostics 仍有 `media_missing` 时宣称「可以导出」。
-- 把 FFmpeg / `dsh-video` 当多轨合成引擎。成片由本插件 WebCodecs 导出。
+- 把 FFmpeg / `omnimux-video` 当多轨合成引擎。成片由本插件 WebCodecs 导出。
 - 发明工具名或秒/毫秒混用却不换算。

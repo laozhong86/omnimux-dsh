@@ -20,7 +20,7 @@ SKIP_BUILD=0
 PLUGINS=()
 
 # 与 sync-stable.sh 默认同步集合对齐（含 omnimux-market 与 omnimux-clip）
-DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip dsh-video omnimux-analytics)
+DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics)
 
 usage() {
   sed -n '2,16p' "$0"
@@ -61,7 +61,7 @@ build_one() {
       echo "→ build $name (tsc + concat-client)"
       (cd "$dir" && npm run build --silent)
       ;;
-    dsh-video|omnimux-analytics|dsh-drama)
+    omnimux-video|omnimux-analytics|omnimux-drama)
       echo "· $name 无构建产物（源码直读），跳过 build"
       ;;
     *)

@@ -18,7 +18,7 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | Surface | Status | Evidence |
 |---|---|---|
 | `dsh plugin add ./plugins/omnimux` | **real** | 2026-08-14：`DSH_SRC=… pnpm dsh --profile drama --help` 启动不再 `provide` 崩溃；`scripts/verify-cordis-propagate.mjs` |
-| `dsh plugin add ./plugins/dsh-drama` | **real** | same |
+| `dsh plugin add ./plugins/omnimux-drama` | **real** | same |
 | `drama_project_status` | **real** | reads `series/` |
 | `drama_init_project` | **real** | creates empty `series/` |
 | `drama_upsert_series` / `drama_upsert_shot` / `drama_confirm_bible` | **real** | writes yaml/json |
