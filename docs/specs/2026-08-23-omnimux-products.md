@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L2"
 date: "2026-08-23"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # OmniMux 产品库插件需求文档
@@ -375,7 +375,7 @@ $DSH_HOME/omnimux/products/
 | `omnimux-assets` | 平行准备库；引用前缀不同 | 扩六类、共享 store |
 | `omnimux-workflow` | P1 画布 `source=product` 调本插件 HTTP/选品 | 工作流磁盘复制产品表 |
 | `omnimux-accounts` / gallery | 无关 | 抢 rank 3 |
-| `dsh-drama` | 继续用角色/场景 | 产品库写 `series/` |
+| `omnimux-drama` | 继续用角色/场景 | 产品库写 `series/` |
 | 官方 composer | P0 当纯文本粘贴 | MutationObserver 改输入框 |
 
 适配预判：新垂直 = Host + tools + overlay 一级页 + sidebar register。不改 Agent loop，P0 无 Settings section。

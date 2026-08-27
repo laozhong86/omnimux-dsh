@@ -6,7 +6,7 @@ status: "living"
 authority: "L4"
 date: "2026-08-14"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # TikTok Drama Center 一站式参考

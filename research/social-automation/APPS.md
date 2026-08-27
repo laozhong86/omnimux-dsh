@@ -14,7 +14,7 @@
 
 | # | 应用 | 环节 | 状态 |
 |---|---|---|---|
-| 1 | 账号 `accounts` | 入口 | ✅ 已有（`dsh-omnimux-accounts`） |
+| 1 | 账号 `accounts` | 入口 | ✅ 已有（`omnimux-accounts`） |
 | 2 | 内容工作室 `studio` | 生产 | 新建 |
 | 3 | 发布台 `publish` | 分发 | 新建 |
 | 4 | 数据中心 `analytics` | 回收 | 新建 |
@@ -26,22 +26,22 @@
 - OmniMux 的产品句：**面向 AI Agent 的社交媒体全链路 API——内容制作 + 多平台编排，按调用付费，无订阅**。交付形态：REST、CLI、Agent Skill、MCP。
 - 不是端到端自动内容工厂：方向盘留在用户/Agent。dsh 落地公式 `Agent = OmniMux（灵魂面）+ dsh（借来的 harness）`。
 - 社交平台范围：X、LinkedIn、YouTube、Instagram、TikTok、Threads（全球，公开矩阵不含中国大陆平台）。
-- `dsh-omnimux` 是**执行中枢**：身份、模型路由、图/视频缝、官方独有工具（连账户/发帖/社交数据）。它不存储账号矩阵、排期日历、预热名单——这些不是中枢的职责，是应用/垂直自己磁盘上的东西。
-- 短剧（`dsh-drama`）是第一条垂直方案，不是本仓唯一产品；电商视频/设计是同一条线上的后续包。
+- `omnimux` 是**执行中枢**：身份、模型路由、图/视频缝、官方独有工具（连账户/发帖/社交数据）。它不存储账号矩阵、排期日历、预热名单——这些不是中枢的职责，是应用/垂直自己磁盘上的东西。
+- 短剧（`omnimux-drama`）是第一条垂直方案，不是本仓唯一产品；电商视频/设计是同一条线上的后续包。
 
 ## 应用 vs 插件
 
 | | 插件 | 应用（Apps） |
 |---|---|---|
 | 定义 | 挂在 harness 上的能力包（工具、缝、配置） | 有**独立可交互 UI** 的插件 |
-| 形态 | 工具 + Host 逻辑，如 `dsh-drama`（纯工具，无 UI） | 货架行（catalog.json `client: true`）+ 独立页面 + Host 路由 |
+| 形态 | 工具 + Host 逻辑，如 `omnimux-drama`（纯工具，无 UI） | 货架行（catalog.json `client: true`）+ 独立页面 + Host 路由 |
 | 打开方式 | 会话内被 agent 调用 | 侧栏「应用」货架点开，claim 产品舞台（`APP_OPEN_EVENT`） |
-| 例子 | `dsh-drama`、`dsh-better-sidebar` | `accounts`（`dsh-omnimux-accounts`） |
+| 例子 | `omnimux-drama`、`dsh-better-sidebar` | `accounts`（`omnimux-accounts`） |
 
 应用插件的既有模式（以 `accounts` 为模板）：
 
 - **客户端**：React 组件注册进官方 UI（Settings → 插件 tab，或独立页 claim stage）。浏览器只打本机 Host 路由（`/omnimux/accounts`），不碰 OmniMux 域、不读密钥。
-- **Host 侧**：账号类官方数据路由由中枢持有（`dsh-omnimux/src/official/http-routes.js`）；应用自己的领域路由与磁盘由应用包持有。
+- **Host 侧**：账号类官方数据路由由中枢持有（`omnimux/src/official/http-routes.js`）；应用自己的领域路由与磁盘由应用包持有。
 - **安装**：货架 catalog（bundled + 远程 JSON）→ `dsh plugin add <钉版本名>`。安装后重启 Host。
 
 ## 最小闭环拆解
@@ -73,7 +73,7 @@
   - `videoGenerate`：短视频/口播数字人（默认 seedance-2-0-fast；支持 i2v、speech）。
 - **磁盘**：`studio/`（草稿 + 素材索引），只写自己的目录。
 - **Host**：`/omnimux/studio/*` 由应用包持有，Host 侧经 `ctx.get('textComplete' / 'imageGenerate' / 'videoGenerate')` 调缝，dest 落在自己磁盘。`mode: "submitted"` 时把 `taskId` 写进草稿，续取用 `{ dest, taskId }`。
-- **与 drama 的关系**：`dsh-drama` 是短剧垂直（无 UI、`series/` 磁盘）；`studio` 是通用社媒内容应用（有 UI）。两者并存，drama 可视为 studio 在短剧场景的领域化版本。
+- **与 drama 的关系**：`omnimux-drama` 是短剧垂直（无 UI、`series/` 磁盘）；`studio` 是通用社媒内容应用（有 UI）。两者并存，drama 可视为 studio 在短剧场景的领域化版本。
 
 ### 3. 发布台 `publish`（新建）
 
@@ -110,7 +110,7 @@
 
 ## 集成规则（每个新应用照此执行）
 
-1. **包**：`plugins/dsh-omnimux-<id>/`，catalog 加一行：`id`、`title`、`summary`、`capabilities`（⊆ `identity`/`videoGenerate`/`imageGenerate`/`official`）、`client: true`、`spec`（bundled 或钉版本 npm）。
+1. **包**：`plugins/omnimux-<id>/`，catalog 加一行：`id`、`title`、`summary`、`capabilities`（⊆ `identity`/`videoGenerate`/`imageGenerate`/`official`）、`client: true`、`spec`（bundled 或钉版本 npm）。
 2. **客户端**：React 组件注册官方槽位（独立页 claim stage；如需设置项用 `settings.plugins.tab`，禁止一级 `settings.section`）。浏览器只打本机 `GET/POST /omnimux/<app>/*`。
 3. **Host 侧**：应用自己的路由 + 磁盘。账号/发布/社交数据这类官方独有数据的 Host 路由，照现有模式由中枢 `official/` 持有（避免每个应用各写一份 OmniMux HTTP + 密钥）。
 4. **缝优先**：生产类能力走 `ctx.get` 中性缝（可换第三方兼容 endpoint）；官方独有能力只能走 OmniMux。应用不得 import 中枢内部、不得存 `OMNIMUX_*` 密钥。
@@ -140,6 +140,6 @@
 
 - 产品定位与包边界：`research/dsh/POSITIONING.md`、`research/omnimux/PLUGIN.md`
 - 中枢 I/O 与能力表：`docs/contracts/hub.md`、`docs/capabilities.md`
-- 货架合同与现状：`docs/contracts/apps-catalog.md`、`plugins/dsh-omnimux/apps/catalog.json`
-- 应用模板：`plugins/dsh-omnimux-accounts/`（client + catalog 行）、`plugins/dsh-omnimux/src/official/`（Host 路由）
+- 货架合同与现状：`docs/contracts/apps-catalog.md`、`plugins/omnimux/apps/catalog.json`
+- 应用模板：`plugins/omnimux-accounts/`（client + catalog 行）、`plugins/omnimux/src/official/`（Host 路由）
 - 定时能力调研（Phase 2 参考）：`research/dsh/community-scheduled-task-plugins.md`（官方 `dsh-schedule` after/at/every ≥5min）

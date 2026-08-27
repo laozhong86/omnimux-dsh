@@ -1,0 +1,42 @@
+{
+  "id": "omnimux-video-preview",
+  "name": "omnimux-video-preview",
+  "version": "0.1.0",
+  "tier": "tier-3-extension",
+  "entrypoint": "src/index.js",
+  "status": "active",
+  "description": "DSH 视频内联预览插件：为 better-sidebar 提供高性能视频预览，支持 HTTP Range (206) 流式拖动、沙箱安全校验与元数据探查。",
+  "tags": ["video", "preview", "player", "stream", "range-206", "better-sidebar"],
+  "capabilities": {
+    "tools": [
+      {
+        "name": "video_preview_info",
+        "summary": "探查指定视频文件的元数据信息并获取本地 Range 206 流式播放地址",
+        "category": "media",
+        "isWriteOperation": false,
+        "requiresAuth": false
+      }
+    ],
+    "seamsProvided": [
+      {
+        "name": "videoPreview",
+        "interfaceDoc": "ctx.get('videoPreview').getStreamUrl(filePath)"
+      }
+    ],
+    "seamsConsumed": [
+      "webServer",
+      "betterSidebar"
+    ],
+    "slots": [
+      {
+        "target": "betterSidebar.fileViewer",
+        "componentPath": "src/client/index.js"
+      }
+    ],
+    "storageDomains": []
+  },
+  "dependencies": {
+    "requiredPlugins": [],
+    "systemBinaries": []
+  }
+}

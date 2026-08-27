@@ -6,20 +6,20 @@ status: "accepted"
 authority: "L2"
 date: "2026-08-21"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # Gxgen 微服务 → OmniMux 能力插件
 
 ## Status
 
-**Superseded（2026-08-21 下午方向变更）**：引擎客户端方案废除——用户明确要求本地化自包含，不可能依赖本地 Docker 引擎或云端。Gxgen video-engine 降级为能力清单与契约参照物（11 项 slug 与 input schema 保持对齐，未来任一端可互换执行方）。继任方案（本机 ffmpeg 子进程自包含执行，插件更名 dsh-video）见 [dsh-video-plugin.md](../contracts/dsh-video-plugin.md)。上午的引擎实测事实（canceled 单 l、.job.job_id、scene_detect base64、token env 双名）对 v2 仅存参考价值。
+**Superseded（2026-08-21 下午方向变更）**：引擎客户端方案废除——用户明确要求本地化自包含，不可能依赖本地 Docker 引擎或云端。Gxgen video-engine 降级为能力清单与契约参照物（11 项 slug 与 input schema 保持对齐，未来任一端可互换执行方）。继任方案（本机 ffmpeg 子进程自包含执行，插件更名 omnimux-video）见 [omnimux-video-plugin.md](../contracts/omnimux-video-plugin.md)。上午的引擎实测事实（canceled 单 l、.job.job_id、scene_detect base64、token env 双名）对 v2 仅存参考价值。
 
 原记录（引擎客户端方案，已被取代）：Accepted（2026-08-21 上午拍板：全量能力、引擎本地跑+本地文件进出、omnimux-dsh 兄弟目录、聊天验收优先）
 
 ## Context
 
-Gxgen 在 `/Users/x/Desktop/Project/Gxgen/services` 下有 5 个微服务。老板想把它抽成 OmniMux 的能力插件，让其他 OmniMux 插件（dsh-drama、后续电商/品牌 vertical）可以调用。
+Gxgen 在 `/Users/x/Desktop/Project/Gxgen/services` 下有 5 个微服务。老板想把它抽成 OmniMux 的能力插件，让其他 OmniMux 插件（omnimux-drama、后续电商/品牌 vertical）可以调用。
 
 一个关键事实先摆出来：**Gxgen 的"生成"能力已经挂在 OmniMux 上了**。hub 契约（`docs/contracts/hub.md`）明确提到 OmniMux cloud 的 media channel 里有 Gxgen（channel 61），`videoGenerate` / `imageGenerate` seam 已经覆盖生成场景。所以这次要抽的是 Gxgen 独有、OmniMux 缺的部分：**处理与渲染类能力**。
 
@@ -47,7 +47,7 @@ Gxgen 在 `/Users/x/Desktop/Project/Gxgen/services` 下有 5 个微服务。老�
 | B. 塞进 hub | `plugins/omnimux/src/gxgen/`（hub.md 说"new capability = new directory under that package"） | 不加插件数量 | 违背 hub 的职责边界：hub 持有的是 OmniMux cloud 凭据与路由，Gxgen 是自托管第三方系统，凭据体系不同（`OMNIMUX_API_KEY` vs `GXGEN_ENGINE_TOKEN`）；hub 膨胀后每改 Gxgen 都要动核心包 |
 | C. 作为 media vendor | `src/media/vendors/gxgen.js` + providers 行 | 零新概念 | 语义不匹配：media 层是"生成"（prompt → 新媒体），engine 是"处理"（已有媒体 → 加工）。塞进去要把 capability slug 塞进 prompt 字段，丑且脆 |
 
-选 A 的核心理由：hub 契约的 I/O 模型就是为这种场景设计的——"vertical tool → `ctx.get('<seam>')`，provider 持有 keys + HTTP + poll + download"。dsh-drama 消费 `videoGenerate` 的现成模式（`dsh-drama/src/index.js` L181-208）可以原样复制给 `videoProcess`，包括 `{ mode, taskId, url }` job handle、`wait: false` 提交、`taskId` 续询。
+选 A 的核心理由：hub 契约的 I/O 模型就是为这种场景设计的——"vertical tool → `ctx.get('<seam>')`，provider 持有 keys + HTTP + poll + download"。omnimux-drama 消费 `videoGenerate` 的现成模式（`omnimux-drama/src/index.js` L181-208）可以原样复制给 `videoProcess`，包括 `{ mode, taskId, url }` job handle、`wait: false` 提交、`taskId` 续询。
 
 ### Seam 契约（对齐 hub media job handle）
 
@@ -80,7 +80,7 @@ Config.gxgen:
 
 ### 插件形态
 
-`package.json` 仿 `dsh-drama`（`type: module`、`main: src/index.js`、`dsh.bundle.patch`）；`apply(ctx)` 里 `ctx.provide` 两个 seam + `ctx.tools.register` 两个工具；L1 测试 `node --test src/*.test.js` 用 mock fetch，不依赖真实服务。
+`package.json` 仿 `omnimux-drama`（`type: module`、`main: src/index.js`、`dsh.bundle.patch`）；`apply(ctx)` 里 `ctx.provide` 两个 seam + `ctx.tools.register` 两个工具；L1 测试 `node --test src/*.test.js` 用 mock fetch，不依赖真实服务。
 
 ## Consequences
 

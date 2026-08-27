@@ -1,6 +1,6 @@
 # omnimux-dsh
 
-OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This product tree lives at `/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh`. Hub is `omnimux`. First vertical is short-drama (`dsh-drama`), the first social-ops automation solution. Coding agents edit this tree. The product agent is `dsh --profile drama`.
+OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This product tree lives at `/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh`. Hub is `omnimux`. First vertical is short-drama (`omnimux-drama`), the first social-ops automation solution. Coding agents edit this tree. The product agent is `dsh --profile drama`.
 
 ## Agent Execution & CWD Invariants (Agent 行为与路径硬约束)
 
@@ -22,7 +22,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 - MUST NOT put `series/` or Drama Center logic in `plugins/omnimux/`.
 - A vertical MUST NOT import the hub, ship a brand-specific HTTP client, or store provider keys. It inputs through `ctx.get` / `omnimux_*` and writes only its own disk.
 - MUST NOT claim live video unless `drama_generate_shot` / `omnimux_video_submit` returned `mode: "live"`. `mode: "stub"` is a file copy.
-- Provider HTTP + keys live in `omnimux` only. Neutral seams and official-only tools are listed in `docs/contracts/hub.md`. `dsh-drama` only updates `series/`.
+- Provider HTTP + keys live in `omnimux` only. Neutral seams and official-only tools are listed in `docs/contracts/hub.md`. `omnimux-drama` only updates `series/`.
 - MUST throw `DramaDomainError` from drama tools. MUST NOT return `{ ok: false }` as a successful tool value.
 - MUST NOT commit secrets. Inject with `omnimux tokens exec` or the process environment.
 - Product truth is `series/` on disk. Session logs and `docs/briefing.md` are not that store.
@@ -64,7 +64,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `docs/contracts/apps-catalog.md` | Official Apps catalog: bundled JSON + optional remote JSON. Not an application table. |
 | `docs/logs/2026-08-15-app-marketplace-mvp.md` | Earlier marketplace stories. Catalog storage is superseded by `docs/contracts/apps-catalog.md`. |
 | `docs/logs/2026-08-16-hub-capability-mount.md` | P3–P8 hub capability mount plan and status |
-| `plugins/dsh-drama/` | First vertical: `series/` domain + `drama_*` |
+| `plugins/omnimux-drama/` | First vertical: `series/` domain + `drama_*` |
 | `fixtures/demo-series/` | Keyless replay (2 episodes, 3 shots) |
 | `presets/drama/` | Product-agent persona + `short-drama` skill |
 | `.agents/skills/short-drama-router/` | Study index for other repos |
@@ -107,8 +107,8 @@ Doc index inside `design.md`: §1 x.ai language extraction (colors/typography/sp
 
 | Package | May depend on | Must not import |
 |---|---|---|
-| `dsh-drama` | `yaml`, Node stdlib | OmniMux SDK, `omnimux` internals |
-| `omnimux` | OmniMux HTTP, `aigc-provider-runtime-kit` | `dsh-drama` domain, `series/` paths |
+| `omnimux-drama` | `yaml`, Node stdlib | OmniMux SDK, `omnimux` internals |
+| `omnimux` | OmniMux HTTP, `aigc-provider-runtime-kit` | `omnimux-drama` domain, `series/` paths |
 | `omnimux-accounts` | Node stdlib, Host `/omnimux/accounts` | hub internals, `OMNIMUX_*` secrets |
 | `omnimux-inspiration` | Node stdlib, Host `/omnimux/inspiration` | hub internals, `OMNIMUX_*` secrets |
 
@@ -124,7 +124,7 @@ pnpm verify:models
 pnpm verify:image-live
 ```
 
-Do not claim the `drama` profile works unless `dsh --profile drama --dump-config` lists both `omnimux` and `dsh-drama`. Smoke exits 0 and prints a skip line when `dsh` is missing. `verify:models` asserts every model in `plugins/omnimux/cordis.patch.yml` exists on the live gateway; it self-skips without `OMNIMUX_API_KEY` (see [docs/model-list-ownership.md](docs/model-list-ownership.md)). `verify:image-live` is the P8 image evidence gate; same key rule; not part of `pnpm test`.
+Do not claim the `drama` profile works unless `dsh --profile drama --dump-config` lists both `omnimux` and `omnimux-drama`. Smoke exits 0 and prints a skip line when `dsh` is missing. `verify:models` asserts every model in `plugins/omnimux/cordis.patch.yml` exists on the live gateway; it self-skips without `OMNIMUX_API_KEY` (see [docs/model-list-ownership.md](docs/model-list-ownership.md)). `verify:image-live` is the P8 image evidence gate; same key rule; not part of `pnpm test`.
 
 ## Pointers
 

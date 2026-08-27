@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L3"
 date: "2026-08-15"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # 开发日志：OmniMux 应用市场 MVP
@@ -124,7 +124,7 @@ OmniMux 应用是 **带 WebUI、点开就能用** 的产品。开发时仍做成
 7. **本机一份，不是多人共改一个云实例。** 云托管目录和官方接口；需要本机工具时跑用户自己的插件。
 8. **管理员 MVP 只用 CLI，不做后台 WebUI。**
 9. **不改官方 `deepseek-harness/packages/`。** 客户端改 `dsh-omnimux`；server 改 OmniMux。
-10. **领域包（如 `dsh-drama`）不认货架，不 import 中枢内部。** 应用调中性能力（已有 `videoGenerate`），不调中枢私有模块。
+10. **领域包（如 `omnimux-drama`）不认货架，不 import 中枢内部。** 应用调中性能力（已有 `videoGenerate`），不调中枢私有模块。
 
 ---
 

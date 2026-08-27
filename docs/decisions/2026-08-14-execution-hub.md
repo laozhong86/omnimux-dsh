@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L2"
 date: "2026-08-14"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # 决策：执行中枢与领域插件
@@ -23,7 +23,7 @@ subsystem: "dsh-drama"
 
 `dsh-omnimux` 是 dsh 上的 **执行中枢**（模型 / 图 / 视频，以及以后只有 OmniMux 云才有的工具）。默认 provider 是 OmniMux，第三方兼容 API 也配在这个包里。
 
-`dsh-drama` 以及以后的电商视频、电商设计等，是 **领域插件**。它们消费中枢挂上的中性缝，自己不配密钥、不维护第二套 HTTP 客户端。
+`omnimux-drama` 以及以后的电商视频、电商设计等，是 **领域插件**。它们消费中枢挂上的中性缝，自己不配密钥、不维护第二套 HTTP 客户端。
 
 短剧包不依赖中枢才能存在。没装中枢时，领域读写照常，出片走 stub 或报 `needs-provider`。装上并配好，所有领域包一起打通。
 
@@ -35,7 +35,7 @@ OmniMux 云提供 `/v1` 与官方独有 HTTP。`dsh-omnimux` 是执行中枢：�
 
 - OmniMux 是产品；dsh 是借来的 harness，不 fork、不重发。
 - 分发单位是 `dsh plugin add`。官方没有插件市场。
-- 两个包、无 npm 互引：`dsh-drama` 只有 `yaml`；`dsh-omnimux` 不认 `series/`。
+- 两个包、无 npm 互引：`omnimux-drama` 只有 `yaml`；`dsh-omnimux` 不认 `series/`。
 - 产品真源是磁盘 `series/`，不是 session。
 
 随后问题收成四句：
@@ -66,7 +66,7 @@ OmniMux 云提供 `/v1` 与官方独有 HTTP。`dsh-omnimux` 是执行中枢：�
 
 ### 当前实现实际绑在哪
 
-`AGENTS.md` 写死：`dsh-drama` 禁止打 OmniMux HTTP；live generate 属于 `dsh-omnimux`。
+`AGENTS.md` 写死：`omnimux-drama` 禁止打 OmniMux HTTP；live generate 属于 `dsh-omnimux`。
 
 `drama_generate_shot` 只 `ctx.get('omnimuxVideo')`，没有就拷 `stub.mp4`。
 
@@ -128,14 +128,14 @@ dsh 不会替插件弹窗。提示只能是工具自己的结构化错误（比�
        挂中性缝：videoGenerate / 以后的 imageGenerate
        另挂官方独有工具（未配密钥则 needs-omnimux）
             │
-            ├─ dsh-drama           短剧：series/、确认门、drama_*
+            ├─ omnimux-drama           短剧：series/、确认门、drama_*
             ├─ （以后）电商视频
             └─ （以后）电商设计
                  不配密钥，只消费缝
                  未挂缝 → stub 或 needs-provider
 ```
 
-包名保持 `dsh-omnimux`、`dsh-drama`。品牌在文档和升级提示里，不靠改名前缀。
+包名保持 `dsh-omnimux`、`omnimux-drama`。品牌在文档和升级提示里，不靠改名前缀。
 
 ### 谁拥有什么
 
@@ -197,7 +197,7 @@ dsh 不会替插件弹窗。提示只能是工具自己的结构化错误（比�
 | `research/dsh/EXTENSION.md` | 官方扩展面；adapter 不能放 preset |
 | `research/dsh/sources/official/05-architecture.md` | seam：接口 / provider / consumer |
 | `research/omnimux/PLUGIN.md` | OmniMux 云提供 `/v1`；skill 不执行；社交不是短剧发行 |
-| `AGENTS.md` + `plugins/dsh-drama/src/index.js` | 旧缝：`omnimuxVideo` 是仓规不是上游 |
+| `AGENTS.md` + `plugins/omnimux-drama/src/index.js` | 旧缝：`omnimuxVideo` 是仓规不是上游 |
 | `docs/capabilities.md` | 活能力真假；本决策不覆盖该表 |
 
 POSITIONING 里「调 OmniMux 的生成应复用 dsh-omnimux，不要复制」仍然成立，含义改为：复用中枢的 **中性缝**，不是 drama 把中枢当唯一品牌后端。

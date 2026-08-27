@@ -1,7 +1,7 @@
 # OmniMux 插件系列设计规范 —— x.ai 品牌语言的设计令牌落地（v1.0）
 
 > 品牌参考：[x.ai DESIGN.md](https://github.com/ricocc/brands-design-md/tree/master/brands/x.ai)（2026-08-01 对官网校验，验证主题为 light）。
-> 适用范围：本仓库（omnimux-dsh）内全部带 Web 客户端的插件——`plugins/omnimux`（hub 壳层与货架页）、`plugins/omnimux-accounts`、`plugins/omnimux-assets`、`plugins/omnimux-workflow`、`plugins/omnimux-products`，及后续新插件。`plugins/dsh-drama` 现为纯域层，一旦新增 UI 同样遵循。
+> 适用范围：本仓库（omnimux-dsh）内全部带 Web 客户端的插件——`plugins/omnimux`（hub 壳层与货架页）、`plugins/omnimux-accounts`、`plugins/omnimux-assets`、`plugins/omnimux-workflow`、`plugins/omnimux-products`，及后续新插件。`plugins/omnimux-drama` 现为纯域层，一旦新增 UI 同样遵循。
 > 本文件是该规范的唯一事实源（触发场景与索引见 `AGENTS.md`）；与旧实现冲突时以本文为准。
 
 ---

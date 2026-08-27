@@ -8,14 +8,6 @@ importers:
 
   .: {}
 
-  plugins/dsh-drama:
-    dependencies:
-      yaml:
-        specifier: ^2.8.1
-        version: 2.9.0
-
-  plugins/dsh-video: {}
-
   plugins/omnimux:
     dependencies:
       '@deepseek-ai/dsh-client-ui-primitives':
@@ -120,6 +112,12 @@ importers:
         specifier: ^0.25.0
         version: 0.25.12
 
+  plugins/omnimux-drama:
+    dependencies:
+      yaml:
+        specifier: ^2.8.1
+        version: 2.9.0
+
   plugins/omnimux-inspiration:
     dependencies:
       '@deepseek-ai/dsh-client-ui-primitives':
@@ -190,6 +188,24 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+    devDependencies:
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.12
+
+  plugins/omnimux-video: {}
+
+  plugins/omnimux-video-preview:
+    dependencies:
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: '>=0.1.0-rc.6'
+        version: 0.1.0-rc.8(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.0-rc.8(@deepseek-ai/cordis@4.0.1))
+      react:
+        specifier: ^18.2.0 || ^19.0.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^18.2.0 || ^19.0.0
+        version: 19.2.8(react@19.2.8)
     devDependencies:
       esbuild:
         specifier: ^0.25.0

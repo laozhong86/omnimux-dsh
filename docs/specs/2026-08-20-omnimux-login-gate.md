@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L2"
 date: "2026-08-20"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # OmniMux 统一登录门 — 架构设计
@@ -171,7 +171,7 @@ auth?.ensureLogin({
 | `omnimux-market` | 「未登录可逛货架」保留，**不拦浏览**；仅「打开/安装需要身份的 app」才 `ensureLogin`。 |
 | `omnimux-assets` | **默认不改**（本地文件/产物，无身份需求）。若后续某动作经 hub seam 需身份，再加 guard。 |
 | `omnimux-gallery` | **默认不改**（专家/技能/连接器浏览 + SkillHub 在线源，无身份需求）。 |
-| `dsh-drama` / `dsh-video` | **不改**（Host-only，无 client bundle；工具层 needs-omnimux 保持结构化错误）。 |
+| `omnimux-drama` / `omnimux-video` | **不改**（Host-only，无 client bundle；工具层 needs-omnimux 保持结构化错误）。 |
 
 ### B.4 不动的文件（明确列出）
 

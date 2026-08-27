@@ -6,7 +6,7 @@ status: "living"
 authority: "L1"
 date: "2026-08-16"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # Execution hub
@@ -18,7 +18,7 @@ Normative I/O for `omnimux` and every vertical. Status of a live surface is [cap
 | Term | Means | Must not be called |
 |---|---|---|
 | Execution hub | `omnimux`. Product chrome, identity, model routes, media seams, official-only tools, Apps shell | Gateway, 网关, OmniMux cloud, a vertical |
-| Vertical | One scene plugin (`dsh-drama`, later e-commerce / brand). Owns its disk and tools | Hub sibling, second chrome/auth package |
+| Vertical | One scene plugin (`omnimux-drama`, later e-commerce / brand). Owns its disk and tools | Hub sibling, second chrome/auth package |
 | Neutral seam | `ctx.provide` / `ctx.get` interface a third-party adapter may satisfy | An `omnimux_*` official-only tool |
 | Official-only tool | `omnimux_*` tool that exists only because OmniMux cloud implements it | A swap-in provider |
 | OmniMux cloud | Hosted HTTP at `omnimux.ai` and `api.omnimux.ai` | The hub plugin |
@@ -143,8 +143,8 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `omnimux_accounts_*` / `omnimux_publish_*` | official-only tools | connect / list / presign / create / get post; access token | upstream JSON, secrets stripped | `needs-omnimux` |
 | `omnimux_analytics_*` | official-only tools | daily metrics / best time / frequency / decay / followers / posts / sync / inbox; access token | upstream JSON | `needs-omnimux` |
 | `omnimux_inspiration_*` | official-only tools | list / get / create / update / delete / tags / status; access token | upstream `{success,data}` envelope, media URLs unchanged | `needs-omnimux` |
-| `videoProcess` | neutral provide（provider: dsh-video） | `{ capability, input, dest, signal? }` | `{ mode: "live", files?: [{ path, kind, meta? }], result? }` | `ffmpeg-missing`, `unknown-capability`, `video-invalid-input`, `video-ffmpeg-failed`, `video-incompatible-streams`, `video-canceled`, `video-timeout`, `video-<capability>-failed` |
-| `video_process` | dsh-video tool over `videoProcess` | same | same | same |
+| `videoProcess` | neutral provide（provider: omnimux-video） | `{ capability, input, dest, signal? }` | `{ mode: "live", files?: [{ path, kind, meta? }], result? }` | `ffmpeg-missing`, `unknown-capability`, `video-invalid-input`, `video-ffmpeg-failed`, `video-incompatible-streams`, `video-canceled`, `video-timeout`, `video-<capability>-failed` |
+| `video_process` | omnimux-video tool over `videoProcess` | same | same | same |
 
 `audioGenerate` does not exist until OmniMux publishes a live audio generation contract. Digital-human / talking-head is a `videoGenerate` request (reference image, duration, speech constraints), not a third HTTP client.
 

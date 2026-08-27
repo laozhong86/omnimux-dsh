@@ -3,7 +3,7 @@
  *
  * The pipeline exposes only tool names, not the owning plugin, so attribution
  * is a configurable prefix map (longest prefix wins). `drama_*` belongs to
- * dsh-drama, `omnimux_text_complete` to the hub, and so on; unlisted tools land
+ * omnimux-drama, `omnimux_text_complete` to the hub, and so on; unlisted tools land
  * in the fallback so the dashboard still sees them.
  */
 

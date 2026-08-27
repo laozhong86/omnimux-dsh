@@ -1,6 +1,6 @@
 # omnimux-analytics
 
-OmniMux 产品插件用量埋点。**一个 host 端 hook 插件**，观察 DSH 全局工具执行管线，把所有产品插件（dsh-drama / dsh-video / omnimux / omnimux-accounts / omnimux-assets / omnimux-gallery / omnimux-workflow / omnimux-market）的工具调用、会话启动上报到 **OmniMux 同款 Umami 实例**（`analytics.omnimux.ai`），在同一个后台管理。
+OmniMux 产品插件用量埋点。**一个 host 端 hook 插件**，观察 DSH 全局工具执行管线，把所有产品插件（omnimux-drama  / omnimux-video / omnimux / omnimux-accounts / omnimux-assets / omnimux-gallery / omnimux-workflow / omnimux-market）的工具调用、会话启动上报到 **OmniMux 同款 Umami 实例**（`analytics.omnimux.ai`），在同一个后台管理。
 
 无需改动任何被统计插件：新插件上线后自动被覆盖（按工具名前缀归属，未匹配的落 `other` 不丢数据）。
 
@@ -46,8 +46,8 @@ OmniMux 产品插件用量埋点。**一个 host 端 hook 插件**，观察 DSH 
 
 | 前缀 | 插件 |
 |---|---|
-| `drama_` | dsh-drama |
-| `video_` | dsh-video |
+| `drama_` | omnimux-drama |
+| `video_` | omnimux-video |
 | `assets_` | omnimux-assets |
 | `plaza_` | omnimux-market |
 | `workflow_` | omnimux-workflow |
@@ -66,7 +66,7 @@ OmniMux 产品插件用量埋点。**一个 host 端 hook 插件**，观察 DSH 
     "hostname": "omnimux-plugins",
     "url": "omnimux://plugins",
     "name": "tool-call",
-    "data": { "plugin": "dsh-drama", "tool": "drama_upsert_shot", "isError": false, "durationMs": 1234, "agent": "alpha" }
+    "data": { "plugin": "omnimux-drama", "tool": "drama_upsert_shot", "isError": false, "durationMs": 1234, "agent": "alpha" }
   }
 }
 ```

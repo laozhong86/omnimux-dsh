@@ -6,7 +6,7 @@ status: "living"
 authority: "L1"
 date: "2026-08-22"
 authors: ["x", "agent-architect"]
-subsystem: "dsh-drama"
+subsystem: "omnimux-drama"
 ---
 
 # Official harness pin
@@ -45,6 +45,6 @@ Apply requires `HEAD` to equal the SHA above. Reset restores tracked overlay fil
 1. Fetch the official tag or SHA. Set it in this file.
 2. `reset-harness-overlay.sh`, then `git checkout` that SHA in `DSH_SRC`.
 3. Replay each patch. If official added the same seat or desktop wiring, delete that patch instead of rebasing it.
-4. `pnpm install` in the clone. Run `dsh-omnimux` / `dsh-drama` tests and desktop smoke.
+4. `pnpm install` in the clone. Run `dsh-omnimux` / `omnimux-drama` tests and desktop smoke.
 5. Load skill `omnimux-rc-upgrade` (`.agents/skills/omnimux-rc-upgrade/SKILL.md`) and finish its report. MUST NOT tag or call the bump done while any `screens.*` is `missing`.
 6. Tag the product repo. Changelog names the new dsh pin.
