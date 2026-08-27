@@ -27,7 +27,7 @@ subsystem: "dsh-drama"
 | 1 | 独立插件 | 剪辑器 **MUST** 作为独立插件 `omnimux-clip`。**MUST NOT** 把 OpenReel / WebCodecs / WebGPU / 时间轴 UI 放进 `omnimux-workflow` 画布 island。 |
 | 2 | 画布只留代理 | `video_composition` 在画布上 **只** 是 Launcher Card：展示状态 + 打开剪辑器。节点 `data` 只存工程快照引用与产物路径。 |
 | 3 | 旧代码作废 | `omnimux-workflow/src/canvas/video-editor/**` 整树删除。本 spec **不** 复用那套 store / engine / 组件。 |
-| 4 | 引擎来源 | 前端 NLE 以 **OpenReel Video**（`Augani/openreel-video`，MIT）为真源，vendorize 进 `omnimux-clip`。保留 `LICENSE.openreel.txt` + `THIRD_PARTY_NOTICES.md`。 |
+| 4 | 引擎来源与反自研铁律 | 前端 NLE 核心 **MUST** 以 **OpenReel Video**（`Augani/openreel-video`，MIT）为真源，vendorize 进 `src/client/engine/openreel/`。**严禁自研/手写** OpenReel 已有的多轨状态机、视频解码预览、音频波形、磁吸吸附、转场着色器与 WebCodecs 导出管线。保留 `LICENSE.openreel.txt` + `THIRD_PARTY_NOTICES.md`。 |
 | 5 | 自包含成片合成 | 成片导出 **MUST** 由 `omnimux-clip` 内置的 **WebCodecs (`VideoEncoder`/`AudioEncoder`) + WebGPU/Canvas + `mediabunny`** 纯前端引擎完成，实现 100% 像素级所见即所得。**MUST NOT** 强制把多轨时间轴拆给 `dsh-video` / FFmpeg 处理，彻底消除双渲染引擎冗余与花字/转场失真。 |
 | 6 | 跨插件通信 | 对齐 MiniMax `window.hub`：两棵 React 树 **只** 交换 plain JSON。通道 = Host HTTP + DOM CustomEvent。禁止跨树传 React 元素 / ref / context。 |
 | 7 | 归属与命名 | 源码 **MUST** 为 `product/omnimux-dsh/plugins/omnimux-clip/`。插件 id / 目录 / manifest `id` 一律 ASCII kebab-case **`omnimux-clip`**。**MUST NOT** 使用 `dsh-clip`、`OmniMux-clip`、`omnimux_clip`。显示名可以是「OmniMux Clip / AI 剪辑工坊」。 |
@@ -430,13 +430,14 @@ TimelineSchema (Zustand)
 
 ---
 
-## 8. OpenReel 引入规则
+## 8. OpenReel 引入与反自研铁律
 
-1. Vendor 目录：`src/client/engine/openreel/`。只引入时间轴、WebGPU/Canvas 渲染、波形 FFT、编解码封装。
-2. **不要** 引入 OpenReel 的云上传、账号、CapCut 导入器、其自有顶栏。
-3. 顶栏 / 侧栏 / Inspector 外壳自研，走 ui-kit。
-4. 许可证：根目录 `LICENSE.openreel.txt` 必须随包分发。
-5. 禁止把 GPL ComfyUI 前端打进本插件（那是 MiniMax 的另一插件 `comfyui`，与 clip-studio 无关）。
+1. **Vendor 目录与代码承接**：`src/client/engine/openreel/`。必须完整承接 OpenReel 原生的多轨时间轴状态机、WebCodecs/WebGPU 逐帧解码与渲染器、Web Audio 波形 FFT 与变调算法、Web Worker 硬件导出管线。
+2. **严禁自研与造轮子**：严禁手写 Canvas 2D 占位贴图（如 `loadImage` 伪造视频播放）、严禁手写简易 Timeline Store、严禁手写假 MP4 封装器。违者 QA 一律判定 Blocker 打回。
+3. **剪裁原则**：**不要** 引入 OpenReel 的云上传、账号、CapCut 导入器、其自有顶栏。
+4. **宿主外壳与桥接**：顶栏（`TopHeader`）/ 侧栏 / Inspector 外壳自研，走 ui-kit 与 x.ai 主题 Token。
+5. **许可证合规**：根目录 `LICENSE.openreel.txt` 与 `THIRD_PARTY_NOTICES.md` 必须随包分发。
+6. 禁止把 GPL ComfyUI 前端打进本插件（那是 MiniMax 的另一插件 `comfyui`，与 clip-studio 无关）。
 
 ---
 

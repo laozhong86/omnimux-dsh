@@ -1,7 +1,13 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, IconButton } from 'dsh-ui-kit'
 import { timelineStore, useTimelineStore } from '../store/useTimelineStore.js'
 import { formatTimecode } from '../store/timelineTypes.js'
+import {
+  computeSnapPoints,
+  findSnap,
+  getAudioWaveform,
+  drawWaveformToCanvas,
+} from '../engine/openreel/index.js'
 
 const TRACK_HEIGHT = 48
 const MIN_CLIP_MS = 120
@@ -17,8 +23,42 @@ function ticks(durationMs, zoom) {
   return out
 }
 
+function ClipWaveform({ sourceUrl, widthPx, heightPx }) {
+  const canvasRef = useRef(null)
+
+  useEffect(() => {
+    if (!sourceUrl || !canvasRef.current) return
+    const canvas = canvasRef.current
+    canvas.width = Math.max(10, Math.round(widthPx))
+    canvas.height = Math.round(heightPx)
+
+    getAudioWaveform(sourceUrl, 60).then((peaks) => {
+      if (canvasRef.current) {
+        drawWaveformToCanvas(canvasRef.current, peaks, 'rgba(147, 197, 253, 0.45)')
+      }
+    })
+  }, [sourceUrl, widthPx, heightPx])
+
+  if (!sourceUrl) return null
+  return (
+    <canvas
+      ref={canvasRef}
+      className="omx-clip-block__waveform"
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        opacity: 0.85,
+      }}
+    />
+  )
+}
+
 /**
- * Multi-track timeline: trim / move / split / mute / lock / hide.
+ * Multi-track timeline: trim / move / split / mute / lock / hide + Magnet Snapping & Waveform.
  */
 export function BottomTimeline() {
   const tracks = useTimelineStore((s) => s.schema.tracks)
@@ -28,6 +68,7 @@ export function BottomTimeline() {
   const selectedClipId = useTimelineStore((s) => s.selectedClipId)
   const bodyRef = useRef(null)
   const [menu, setMenu] = useState(null)
+  const [snapGuide, setSnapGuide] = useState(null)
   const scale = pxPerMs(zoomLevel)
   const widthPx = Math.max(640, durationMs * scale)
   const marks = useMemo(() => ticks(durationMs, zoomLevel), [durationMs, zoomLevel])
@@ -42,6 +83,7 @@ export function BottomTimeline() {
 
   function onRulerPointerDown(event) {
     setMenu(null)
+    setSnapGuide(null)
     timelineStore.setPlayhead(timeFromEvent(event))
     const move = (ev) => timelineStore.setPlayhead(timeFromEvent(ev))
     const up = () => {
@@ -62,12 +104,23 @@ export function BottomTimeline() {
     const originStart = clip.startTimeMs
     const originDuration = clip.durationMs
     const originIn = clip.sourceInMs || 0
+
+    // Compute snap targets for magnet alignment
+    const snapPoints = computeSnapPoints(tracks, { playheadMs, excludeClipId: clip.id })
+
     const move = (ev) => {
       const deltaMs = Math.round((ev.clientX - originX) / scale)
       if (edge === 'move') {
-        timelineStore.moveClip(clip.id, { startTimeMs: Math.max(0, originStart + deltaMs) }, { record: false })
+        const rawTargetMs = Math.max(0, originStart + deltaMs)
+        const snap = findSnap(rawTargetMs, snapPoints, 120 / zoomLevel)
+        const finalStartMs = snap.snapped ? snap.snappedTimeMs : rawTargetMs
+        setSnapGuide(snap.snapped ? snap.snappedTimeMs : null)
+        timelineStore.moveClip(clip.id, { startTimeMs: finalStartMs }, { record: false })
       } else if (edge === 'start') {
-        const nextStart = Math.max(0, originStart + deltaMs)
+        const rawStart = Math.max(0, originStart + deltaMs)
+        const snap = findSnap(rawStart, snapPoints, 120 / zoomLevel)
+        const nextStart = snap.snapped ? snap.snappedTimeMs : rawStart
+        setSnapGuide(snap.snapped ? snap.snappedTimeMs : null)
         const consumed = nextStart - originStart
         const nextDuration = Math.max(MIN_CLIP_MS, originDuration - consumed)
         timelineStore.trimClip(clip.id, {
@@ -76,12 +129,18 @@ export function BottomTimeline() {
           sourceInMs: originIn + Math.max(0, consumed) * (clip.speed || 1),
         }, { record: false })
       } else if (edge === 'end') {
+        const rawEnd = originStart + originDuration + deltaMs
+        const snap = findSnap(rawEnd, snapPoints, 120 / zoomLevel)
+        const finalEnd = snap.snapped ? snap.snappedTimeMs : rawEnd
+        setSnapGuide(snap.snapped ? snap.snappedTimeMs : null)
         timelineStore.trimClip(clip.id, {
-          durationMs: Math.max(MIN_CLIP_MS, originDuration + deltaMs),
+          durationMs: Math.max(MIN_CLIP_MS, finalEnd - originStart),
         }, { record: false })
       }
     }
+
     const up = () => {
+      setSnapGuide(null)
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
     }
@@ -160,33 +219,60 @@ export function BottomTimeline() {
                 timelineStore.selectClip(null, track.id)
               }}
             >
-              {track.clips.map((clip) => (
-                <div
-                  key={clip.id}
-                  className={`omx-clip-block omx-clip-block--${clip.mediaType}${selectedClipId === clip.id ? ' is-selected' : ''}`}
-                  style={{
-                    '--clip-left': `${clip.startTimeMs * scale}px`,
-                    '--clip-width': `${Math.max(8, clip.durationMs * scale)}px`,
-                    '--clip-h': `${TRACK_HEIGHT - 8}px`,
-                  }}
-                  onPointerDown={(event) => beginClipDrag(event, clip, 'move')}
-                  onContextMenu={(event) => onClipContext(event, clip)}
-                  title={clip.name}
-                >
-                  <span
-                    className="omx-clip-block__edge omx-clip-block__edge--start"
-                    onPointerDown={(event) => beginClipDrag(event, clip, 'start')}
-                  />
-                  <span className="omx-clip-block__label">{clip.name}</span>
-                  <span
-                    className="omx-clip-block__edge omx-clip-block__edge--end"
-                    onPointerDown={(event) => beginClipDrag(event, clip, 'end')}
-                  />
-                </div>
-              ))}
+              {track.clips.map((clip) => {
+                const clipWidth = Math.max(8, clip.durationMs * scale)
+                const isAudioOrVideo = clip.mediaType === 'audio' || clip.mediaType === 'video'
+                return (
+                  <div
+                    key={clip.id}
+                    className={`omx-clip-block omx-clip-block--${clip.mediaType}${selectedClipId === clip.id ? ' is-selected' : ''}`}
+                    style={{
+                      '--clip-left': `${clip.startTimeMs * scale}px`,
+                      '--clip-width': `${clipWidth}px`,
+                      '--clip-h': `${TRACK_HEIGHT - 8}px`,
+                    }}
+                    onPointerDown={(event) => beginClipDrag(event, clip, 'move')}
+                    onContextMenu={(event) => onClipContext(event, clip)}
+                    title={clip.name}
+                  >
+                    {isAudioOrVideo && clip.sourceUrl ? (
+                      <ClipWaveform
+                        sourceUrl={clip.sourceUrl}
+                        widthPx={clipWidth}
+                        heightPx={TRACK_HEIGHT - 8}
+                      />
+                    ) : null}
+                    <span
+                      className="omx-clip-block__edge omx-clip-block__edge--start"
+                      onPointerDown={(event) => beginClipDrag(event, clip, 'start')}
+                    />
+                    <span className="omx-clip-block__label">{clip.name}</span>
+                    <span
+                      className="omx-clip-block__edge omx-clip-block__edge--end"
+                      onPointerDown={(event) => beginClipDrag(event, clip, 'end')}
+                    />
+                  </div>
+                )
+              })}
             </div>
           ))}
           <div className="omx-clip-playhead" />
+          {snapGuide != null ? (
+            <div
+              className="omx-clip-snap-guide"
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: `${snapGuide * scale}px`,
+                width: '1px',
+                backgroundColor: '#38bdf8',
+                boxShadow: '0 0 4px #38bdf8',
+                pointerEvents: 'none',
+                zIndex: 15,
+              }}
+            />
+          ) : null}
         </div>
       </div>
       {menu ? (
