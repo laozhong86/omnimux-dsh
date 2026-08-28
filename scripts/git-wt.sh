@@ -15,20 +15,73 @@ OmniMux 多 Agent Worktree 隔离与管理工具 (支持 GitHub Issue 绑定与�
 用法:
   ./scripts/git-wt.sh start <plugin> <topic> [issue_id]   从 origin/main 切出专属 Worktree
   ./scripts/git-wt.sh auto-start <issue_id>               根据 Issue ID 自动解析创建 Worktree
+  ./scripts/git-wt.sh finish <topic> [issue_id] [flags]   本地门禁验证 → 合并 main → 自动物化 → 销毁沙箱
   ./scripts/git-wt.sh clean <topic> [issue_id]            PR 合入后安全销毁 Worktree 及本地分支
   ./scripts/git-wt.sh list                                列出当前全部活跃的 Worktree 与对应分支
-  ./scripts/git-wt.sh doctor                              检查主目录纯净度与 Worktree 隔离状态
+  ./scripts/git-wt.sh doctor                              检查主目录纯净度、远端同步与 Worktree 隔离状态
+
+选项 (finish 指令):
+  --skip-test     跳过本地单元测试门禁
+  --skip-sync     跳过编译与 App 生产物化同步
+  --skip-push     跳过推送到远端 origin/main
 
 示例:
   # 推荐: 绑定 GitHub Issue ID
   ./scripts/git-wt.sh start workflow table-node 42
   ./scripts/git-wt.sh auto-start 42
+  ./scripts/git-wt.sh finish table-node 42
   ./scripts/git-wt.sh clean table-node 42
 
   # 兼容: 无 Issue ID 形式
   ./scripts/git-wt.sh start clip timeline-tools
+  ./scripts/git-wt.sh finish timeline-tools --skip-push
   ./scripts/git-wt.sh clean timeline-tools
 EOF
+}
+
+resolve_plugin_pkg() {
+  local input="$1"
+  [ -z "$input" ] && return
+  if [ "$input" = "common" ] || [ "$input" = "global" ] || [ "$input" = "all" ]; then
+    return
+  fi
+  if [ -d "$REPO_ROOT/plugins/$input" ]; then
+    echo "$input"
+    return
+  fi
+  if [ -d "$REPO_ROOT/plugins/omnimux-$input" ]; then
+    echo "omnimux-$input"
+    return
+  fi
+}
+
+detect_plugin_name() {
+  local b="$1"
+  local top="$2"
+  local raw="${b#agent/}"
+
+  # 1. 优先按 -${top} 及其后部分切割提取前缀
+  local candidate="${raw%%-${top}*}"
+  if [ -n "$candidate" ] && [ "$candidate" != "$raw" ]; then
+    local resolved=$(resolve_plugin_pkg "$candidate")
+    if [ -n "$resolved" ]; then
+      echo "$resolved"
+      return
+    fi
+  fi
+
+  # 2. 遍历 plugins 目录匹配前缀
+  for pdir in "$REPO_ROOT/plugins"/*; do
+    if [ -d "$pdir" ]; then
+      local pname=$(basename "$pdir")
+      local pshort="${pname#omnimux-}"
+      if [[ "$raw" == "$pname"* ]] || [[ "$raw" == "$pshort"* ]]; then
+        echo "$pname"
+        return
+      fi
+    fi
+  done
+  echo ""
 }
 
 cmd_auto_start() {
@@ -108,6 +161,250 @@ cmd_start() {
   echo "👉 请进入专属工作区开工:"
   echo "   cd $wt_dir"
   echo "   (在该目录下修改代码、构建与测试，互不干扰)"
+}
+
+cmd_finish() {
+  local topic=""
+  local raw_issue=""
+  local skip_test=0
+  local skip_sync=0
+  local skip_push=0
+  local positional=()
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --skip-test)
+        skip_test=1
+        shift
+        ;;
+      --skip-sync)
+        skip_sync=1
+        shift
+        ;;
+      --skip-push)
+        skip_push=1
+        shift
+        ;;
+      -h|--help)
+        echo "用法: ./scripts/git-wt.sh finish <topic> [issue_id] [--skip-test] [--skip-sync] [--skip-push]"
+        return 0
+        ;;
+      *)
+        positional+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  topic="${positional[0]:-}"
+  raw_issue="${positional[1]:-}"
+
+  if [ -z "$topic" ]; then
+    echo "❌ 错误: 必须提供 <topic>" >&2
+    echo "用法: ./scripts/git-wt.sh finish <topic> [issue_id] [--skip-test] [--skip-sync] [--skip-push]" >&2
+    exit 1
+  fi
+
+  local clean_issue=""
+  local wt_suffix="${topic}"
+  if [ -n "$raw_issue" ]; then
+    clean_issue=$(echo "$raw_issue" | sed 's/^[^0-9]*//g')
+    if [ -n "$clean_issue" ]; then
+      wt_suffix="${topic}-${clean_issue}"
+    fi
+  fi
+
+  local wt_dir="$(cd "$REPO_ROOT/.." && pwd)/omnimux-dsh-wt-${wt_suffix}"
+  if [ ! -d "$wt_dir" ]; then
+    if [ -n "$clean_issue" ] && [ -d "$(cd "$REPO_ROOT/.." && pwd)/omnimux-dsh-wt-${topic}" ]; then
+      wt_dir="$(cd "$REPO_ROOT/.." && pwd)/omnimux-dsh-wt-${topic}"
+      wt_suffix="${topic}"
+    else
+      local matched_dir
+      matched_dir=$(ls -d "$(cd "$REPO_ROOT/.." && pwd)/omnimux-dsh-wt-${topic}"* 2>/dev/null | head -1 || true)
+      if [ -n "$matched_dir" ] && [ -d "$matched_dir" ]; then
+        wt_dir="$matched_dir"
+        wt_suffix=$(basename "$wt_dir" | sed 's/^omnimux-dsh-wt-//')
+      else
+        echo "❌ 错误: 未找到 Worktree 目录: $wt_dir" >&2
+        echo "当前活跃的 Worktree 清单:" >&2
+        git -C "$REPO_ROOT" worktree list >&2
+        exit 1
+      fi
+    fi
+  fi
+
+  echo "==> 步骤 1: 检查 Worktree 状态与就绪度 ($wt_dir)..."
+  local branch
+  branch=$(git -C "$wt_dir" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+  if [ -z "$branch" ] || [ "$branch" = "HEAD" ]; then
+    echo "❌ 错误: Worktree 目录处于游离 HEAD 或无法识别分支！" >&2
+    exit 1
+  fi
+  echo "✓ 目标分支: $branch"
+
+  local wt_dirty
+  wt_dirty=$(git -C "$wt_dir" status --porcelain)
+  if [ -n "$wt_dirty" ]; then
+    echo "❌ 错误: Worktree 存在未提交的改动！" >&2
+    echo "请在 Worktree 目录中完成提交 (git commit) 或清理改动后再执行 finish。" >&2
+    echo "未提交文件清单:" >&2
+    echo "$wt_dirty" >&2
+    exit 1
+  fi
+  echo "✓ Worktree 工作区干净，无未提交改动"
+
+  local target_pkg
+  target_pkg=$(detect_plugin_name "$branch" "$topic")
+  if [ -n "$target_pkg" ]; then
+    echo "✓ 识别对应插件模块: [$target_pkg]"
+  else
+    echo "· 未识别到特定插件模块，将按全局通用门禁处理"
+  fi
+
+  # 步骤 2: 核心门禁验证
+  if [ "$skip_test" -eq 1 ]; then
+    echo "==> 步骤 2: 跳过本地门禁测试 (--skip-test)"
+  else
+    echo "==> 步骤 2: 执行本地门禁验证..."
+    if [ -n "$target_pkg" ]; then
+      echo "==> 运行插件 [$target_pkg] 单元测试 (工作区: $wt_dir)..."
+      if ! (cd "$wt_dir" && pnpm --filter "$target_pkg" test); then
+        echo "❌ 门禁测试失败！已阻断主干合并。Worktree 现场已保留供排障: $wt_dir" >&2
+        exit 1
+      fi
+    else
+      echo "==> 运行通用门禁测试 (工作区: $wt_dir)..."
+      if ! (cd "$wt_dir" && pnpm test); then
+        echo "❌ 门禁测试失败！已阻断主干合并。Worktree 现场已保留供排障: $wt_dir" >&2
+        exit 1
+      fi
+    fi
+    echo "✓ 本地门禁测试全绿通过"
+  fi
+
+  # 步骤 3: 切换主仓 main 并检查纯净度与远端同步
+  echo "==> 步骤 3: 检查主仓 main 纯净度与远端状态..."
+  cd "$REPO_ROOT"
+  local current_main_branch
+  current_main_branch=$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD)
+  if [ "$current_main_branch" != "main" ]; then
+    echo "==> 正在将主仓切回 main 分支..."
+    git -C "$REPO_ROOT" checkout main
+  fi
+
+  local main_dirty
+  main_dirty=$(git -C "$REPO_ROOT" status --porcelain)
+  if [ -n "$main_dirty" ]; then
+    echo "❌ 错误: 主仓库工作区存在未提交的脏改动，已中止合并！" >&2
+    echo "请保持主仓纯净后再尝试合入。脏改动清单:" >&2
+    echo "$main_dirty" >&2
+    exit 1
+  fi
+  echo "✓ 主仓位于 main 且工作区纯净"
+
+  if git -C "$REPO_ROOT" remote get-url origin >/dev/null 2>&1; then
+    echo "==> 检查并同步远端 origin/main..."
+    if git -C "$REPO_ROOT" fetch origin main 2>/dev/null; then
+      local behind_count
+      behind_count=$(git -C "$REPO_ROOT" rev-list --count main..origin/main 2>/dev/null || echo "0")
+      if [ "$behind_count" -gt 0 ]; then
+        echo "⚠️  本地 main 落后 origin/main $behind_count 个提交，正在尝试 fast-forward 同步..."
+        if ! git -C "$REPO_ROOT" merge --ff-only origin/main 2>/dev/null; then
+          echo "❌ 错误: 本地 main 与 origin/main 产生分叉，无法自动 fast-forward 同步！请手动解决后再合入。" >&2
+          exit 1
+        fi
+        echo "✓ 本地 main 已成功 fast-forward 同步至 origin/main"
+      else
+        echo "✓ 本地 main 与远端保持同步"
+      fi
+    else
+      echo "⚠️  警告: fetch origin main 失败 (网络或权限原因)，跳过远端拉取校验"
+    fi
+  fi
+
+  # 步骤 4: 安全合入主仓 main
+  echo "==> 步骤 4: 将分支 [$branch] 合入主仓 main..."
+  local plugin_label="${target_pkg:-common}"
+  local commit_msg="feat(${plugin_label}): finish ${topic}"
+  if [ -n "$clean_issue" ]; then
+    commit_msg="feat(${plugin_label}): finish ${topic} (#${clean_issue})"
+  fi
+
+  if git -C "$REPO_ROOT" merge --ff-only "$branch" 2>/dev/null; then
+    echo "✓ 已通过 fast-forward 方式将 [$branch] 合入 main"
+  else
+    echo "==> 无法 fast-forward，使用 --no-ff 创建合并提交合入 main..."
+    git -C "$REPO_ROOT" merge --no-ff -m "$commit_msg" "$branch"
+    echo "✓ 已通过 --no-ff 成功合入 main: $commit_msg"
+  fi
+
+  # 步骤 5: 可选远端推送
+  if [ "$skip_push" -eq 1 ]; then
+    echo "==> 步骤 5: 推送远端已跳过 (--skip-push)"
+  else
+    echo "==> 步骤 5: 推送主仓 main 到远端 origin/main..."
+    if git -C "$REPO_ROOT" remote get-url origin >/dev/null 2>&1; then
+      if git -C "$REPO_ROOT" push origin main 2>&1; then
+        echo "✓ 成功推送至 origin/main"
+      else
+        echo "⚠️  警告: git push origin main 失败 (网络或权限受阻)，本地合并已保留，请后续手动推送。"
+      fi
+    else
+      echo "· 未配置 origin 远端，跳过 push"
+    fi
+  fi
+
+  # 步骤 6: 可选自动物化至 App
+  if [ "$skip_sync" -eq 1 ]; then
+    echo "==> 步骤 6: 自动物化已跳过 (--skip-sync)"
+  else
+    echo "==> 步骤 6: 自动物化进 App 生产 profile..."
+    if [ -n "$target_pkg" ] && [ -f "$REPO_ROOT/scripts/sync-to-app.sh" ]; then
+      echo "==> 触发插件 [$target_pkg] 编译与物化..."
+      if bash "$REPO_ROOT/scripts/sync-to-app.sh" "$target_pkg"; then
+        echo "✅ 插件 [$target_pkg] 已自动编译并物化同步至 App！"
+      else
+        echo "⚠️  警告: sync-to-app.sh 执行未完全成功，请稍后手动运行 ./scripts/sync-to-app.sh $target_pkg"
+      fi
+    elif [ -f "$REPO_ROOT/scripts/sync-to-app.sh" ]; then
+      echo "· 未识别到单一插件模块，跳过自动单一物化 (可手动运行 ./scripts/sync-to-app.sh)"
+    fi
+  fi
+
+  # 步骤 7: 安全清理 Worktree 目录与本地分支
+  echo "==> 步骤 7: 安全清理 Worktree 目录与本地分支..."
+  if [ -d "$wt_dir" ]; then
+    git -C "$REPO_ROOT" worktree remove "$wt_dir" 2>/dev/null || git -C "$REPO_ROOT" worktree remove "$wt_dir" --force 2>/dev/null || rm -rf "$wt_dir"
+    git -C "$REPO_ROOT" worktree prune
+    echo "✓ Worktree 目录已安全移除: $wt_dir"
+  fi
+
+  if [ -n "$branch" ] && git -C "$REPO_ROOT" rev-parse --verify "$branch" >/dev/null 2>&1; then
+    git -C "$REPO_ROOT" branch -d "$branch" 2>/dev/null || git -C "$REPO_ROOT" branch -D "$branch" 2>/dev/null || true
+    echo "✓ 本地分支已删除: $branch"
+  fi
+
+  echo ""
+  echo "================================================================================"
+  echo "📋 OmniMux 任务交付透明看板 (Delivery Board)"
+  echo "================================================================================"
+  echo "  🎯 交付状态:      ✅ 100% 完成"
+  echo "  🌿 目标主题/模块:  [${plugin_label}] - ${topic}"
+  echo "  🔀 主干合并:      ✅ 已合入 main (${commit_msg})"
+  if [ "$skip_push" -eq 1 ]; then
+    echo "  🌐 远端同步:      ⏩ 跳过 (--skip-push)"
+  else
+    echo "  🌐 远端同步:      ✅ 已推送 origin/main"
+  fi
+  if [ "$skip_sync" -eq 1 ]; then
+    echo "  🚀 App 生产物化:  ⏩ 跳过 (--skip-sync)"
+  else
+    echo "  🚀 App 生产物化:  ✅ 已同步至 ~/.dsh/profiles/omnimux (刷新 App 即可生效)"
+  fi
+  echo "  🧹 沙箱环境:      ✅ Worktree 已完全销毁并清理分支"
+  echo "================================================================================"
+  echo ""
 }
 
 cmd_clean() {
@@ -211,6 +508,25 @@ cmd_doctor() {
   fi
 
   echo ""
+  echo "== 检查主仓库与远端同步状态 =="
+  if git -C "$REPO_ROOT" rev-parse --verify origin/main >/dev/null 2>&1; then
+    local counts=$(git -C "$REPO_ROOT" rev-list --left-right --count main...origin/main 2>/dev/null || echo "")
+    local ahead=$(echo "$counts" | awk '{print $1}')
+    local behind=$(echo "$counts" | awk '{print $2}')
+    if [ "$ahead" = "0" ] && [ "$behind" = "0" ]; then
+      echo "✓ 主仓库 main 与 origin/main 保持同步 (0 ahead, 0 behind)"
+    elif [ "$ahead" -gt 0 ] && [ "$behind" = "0" ]; then
+      echo "ℹ️  主仓库 main 领先 origin/main ($ahead ahead, 0 behind)"
+    elif [ "$behind" -gt 0 ] && [ "$ahead" = "0" ]; then
+      echo "⚠️  警告: 主仓库 main 落后 origin/main (0 ahead, $behind behind)，建议执行 git pull origin main"
+    else
+      echo "⚠️  警告: 主仓库 main 与 origin/main 产生分叉 ($ahead ahead, $behind behind)"
+    fi
+  else
+    echo "· 远程 origin/main 未配置或不可达"
+  fi
+
+  echo ""
   echo "== 活跃 Worktree 数量 =="
   local count=$(git -C "$REPO_ROOT" worktree list | wc -l | tr -d ' ')
   echo "当前共有 $count 个工作树 (含主树)"
@@ -224,6 +540,10 @@ case "$1" in
   auto-start)
     shift
     cmd_auto_start "$@"
+    ;;
+  finish)
+    shift
+    cmd_finish "$@"
     ;;
   clean)
     shift

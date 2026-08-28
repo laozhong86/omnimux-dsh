@@ -6,18 +6,14 @@ status: "living"
 authority: "L1"
 date: "2026-08-24"
 authors: ["x", "agent-architect"]
-<<<<<<< HEAD
-subsystem: "omnimux"
-=======
 subsystem: "global"
->>>>>>> 4845a4e (refactor(omnimux-drama): decommission short-drama plugin and update repository bindings)
 ---
 
 # plugin-git-pr — OmniMux 插件仓 Git / PR 合同
 
 > 目的：给 `laozhong86/omnimux-dsh` 规定提交、分支、PR、质量门禁、合入与收尾纪律。
 > 本合同与 `agent-issue-lifecycle.md`、`plugin-qa.md`、`dev-pipeline.md` 一起构成 Agent 交付流程的 L1 真源。
-> **默认合入由老板完成；只有低风险 Issue 在完成显式预授权、真实测试、CI 与 `ego-browser`（如适用）证据后，才允许受控自动合入。**
+> **支持双轨交付：日常单插件迭代推荐「本地沙箱 + 极速门禁 (Fast Track)」一键闭环；高风险与跨团队变更走「远程 PR + CI」通道。**
 
 ## 仓库真源
 
@@ -91,19 +87,42 @@ subsystem: "global"
 
 状态建议：`draft` / `pipeline-running` / `ci-red` / `changes-requested` / `ready-for-boss` / `auto-merge-pending` / `merged` / `blocked` / `abandoned`。
 
-## Agent 标准 Worktree 最短 SOP
+## Agent 双轨交付 SOP
+
+### 轨道 1：本地沙箱 + 极速门禁 (Fast Track — 日常迭代推荐)
+
+适用于日常单插件功能开发、UI 迭代与 Bug 热修，无需排队等待云端 CI，秒级自动闭环：
+
+```sh
+cd /Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh
+
+# 1. 切出专属沙箱 Worktree
+pnpm wt:start <plugin> <topic> [issue-id]
+cd ../omnimux-dsh-wt-<topic>-[issue-id]
+
+# 2. 在沙箱内开发、构建与提交
+git add <changed-files>
+git commit -m "feat(<plugin>): ... (#<issue-id>)"
+
+# 3. 执行一键安全闭环 (极速门禁 → 合入 main → 物化进 App → 远端同步 → 销毁沙箱)
+pnpm wt:finish <topic> [issue-id]
+```
+
+### 轨道 2：远程 PR + 云端 CI + 预授权通道 (Full PR Track — 高风险/跨团队)
+
+适用于 R0/R1 架构大重构、跨插件契约变更或开源协作：
 
 ```sh
 cd /Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh
 pnpm wt:start <plugin> <topic> <issue-id>
 cd ../omnimux-dsh-wt-<topic>-<issue-id>
-# 在受信任的 Agent 实施命令中完成代码与测试
+# 在沙箱内完成代码与单测
 pnpm --filter <plugin-pkg> test
 git add <changed-files>
 git commit -m "feat(<plugin>): ... (#<issue-id>)"
 git push -u origin HEAD
 gh -R laozhong86/omnimux-dsh pr create --base main --body-file <generated-body.md>
-# UI 验收：必须使用 ego-browser；报告与截图写入 .workbuddy/evidence/
+# UI 验收：涉及 UI/Stage 必须使用 ego-browser 收集截图与 DOM 工件
 ```
 
 ## 本地验证

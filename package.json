@@ -28,6 +28,7 @@
     "wt": "bash scripts/git-wt.sh",
     "wt:start": "bash scripts/git-wt.sh start",
     "wt:auto-start": "bash scripts/git-wt.sh auto-start",
+    "wt:finish": "bash scripts/git-wt.sh finish",
     "wt:clean": "bash scripts/git-wt.sh clean",
     "wt:list": "bash scripts/git-wt.sh list",
     "wt:doctor": "bash scripts/git-wt.sh doctor",
