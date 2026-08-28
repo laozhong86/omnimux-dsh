@@ -1,0 +1,24 @@
+{
+  "pass": true,
+  "tool": "ego-browser",
+  "issueId": "118",
+  "plugin": "omnimux-inspiration",
+  "taskSpaceName": "omnimux-qa-issue-118-icon-v2",
+  "taskSpaceId": 74,
+  "requestedUrl": "http://127.0.0.1:44200/",
+  "actualUrl": "http://127.0.0.1:44200/",
+  "dshHome": "/Users/x/.dsh-dev/tasks/tab-icon-118",
+  "port": 44200,
+  "assertions": {
+    "groupHeightPx": 32,
+    "deconstructIconPx": 16,
+    "deconstructPolylines": 0,
+    "deconstructPaths": 3,
+    "strokeWidth": "1.35",
+    "forbiddenLucideLayers": false
+  },
+  "screenshots": [
+    "docs/evidence/issue-118-l2-tab-deconstruct.png",
+    "docs/evidence/issue-118-l2-tab-crop.png"
+  ]
+}

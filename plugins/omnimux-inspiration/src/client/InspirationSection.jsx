@@ -224,8 +224,8 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
                 className={`omnimux-inspiration-switch-btn ${viewMode === 'player' ? 'active' : ''}`}
                 onClick={() => setViewMode('player')}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <polygon points="5 3 19 12 5 21 5 3" />
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M3.2 2.1v11.8L13.6 8 3.2 2.1z" />
                 </svg>
                 <span>{t('view.player')}</span>
               </button>
@@ -236,10 +236,10 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
                 className={`omnimux-inspiration-switch-btn ${viewMode === 'deconstruct' ? 'active' : ''}`}
                 onClick={() => setViewMode('deconstruct')}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                  <polyline points="2 17 12 22 22 17" />
-                  <polyline points="2 12 12 17 22 12" />
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M2 5 8 2.2 14 5" />
+                  <path d="M2 8.4 8 5.6 14 8.4" />
+                  <path d="M2 11.8 8 9 14 11.8" />
                 </svg>
                 <span>{t('view.deconstruct')}</span>
               </button>
