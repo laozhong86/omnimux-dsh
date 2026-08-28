@@ -5,22 +5,29 @@ import { objectParams, rethrow } from '../tools/schema.js'
  * @param {{
  *   tools: { register: (tool: object) => unknown },
  *   provide?: (name: string, value: unknown) => void,
+ *   get?: (name: string) => unknown,
  * }} ctx
  * @param {{
  *   kind: 'video' | 'image',
  *   execute: (req: object) => Promise<unknown>,
  *   media: unknown,
+ *   store?: { resolve: () => Promise<string | undefined> },
  *   jsonOut: object,
  * }} opts
  */
 export function mountMedia(ctx, opts) {
-  const { kind, execute, media, jsonOut } = opts
+  const { kind, execute, media, jsonOut, store } = opts
   const api = {
     /**
      * @param {{ prompt?: string, dest: string, duration?: number, image?: string, taskId?: string, wait?: boolean, signal?: AbortSignal }} req
      */
     execute(req) {
-      return execute({ ...req, media })
+      return execute({
+        ...req,
+        media,
+        store: opts.store,
+        credentials: ctx.get?.('credentials'),
+      })
     },
   }
   ctx.provide(`${kind}Generate`, api)

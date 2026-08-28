@@ -1,7 +1,7 @@
 import { OmnimuxError } from './errors.js'
 import { downloadMediaFile } from './job.js'
 import { createOpenAiMediaRuntime, pollOpenAiMediaTask } from './protocols/openai-media.js'
-import { parseMediaConfig, resolveMediaRoute } from './route.js'
+import { parseMediaConfig, resolveMediaAuth, resolveMediaRoute } from './route.js'
 import { mapOmnimuxInput, pickMediaUrl } from './vendors/omnimux.js'
 
 /**
@@ -21,6 +21,8 @@ import { mapOmnimuxInput, pickMediaUrl } from './vendors/omnimux.js'
  *   env?: Record<string, string | undefined>,
  *   media?: unknown,
  *   fetcher?: typeof fetch,
+ *   store?: { resolve: () => Promise<string | undefined> },
+ *   credentials?: { resolve: (ref: string) => Promise<{ value?: string } | undefined> },
  *   runtime?: { execute: (req: object) => Promise<{ taskId?: string, outputs: Array<{ type: string, url?: string }> }> },
  * }} input
  */
@@ -35,14 +37,17 @@ export async function executeOmnimuxMedia(capability, input) {
   }
   const media = parseMediaConfig(input.media)
   const route = resolveMediaRoute(capability, input, media, input.env)
-  if (!route.apiKey.trim()) {
-    throw new OmnimuxError('omnimux-unconfigured', 'set OMNIMUX_API_KEY or OMNIMUX_TOKEN')
-  }
+  const auth = await resolveMediaAuth(route, {
+    env: input.env,
+    store: input.store,
+    credentials: input.credentials,
+  })
+
   if (taskId) {
-    return finishMediaTask(capability, route, { ...input, taskId })
+    return finishMediaTask(capability, route, { ...input, taskId, authKey: auth.apiKey })
   }
   const wait = input.wait !== false
-  const runtime = input.runtime ?? createProtocolRuntime(route, input.fetcher)
+  const runtime = input.runtime ?? createProtocolRuntime(route, input.fetcher, auth.apiKey)
   const result = await runtime.execute({
     providerId: route.providerId,
     modelId: `${route.providerId}-${capability}`,
@@ -80,13 +85,31 @@ export async function executeOmnimuxMedia(capability, input) {
 /**
  * @param {string} capability
  * @param {ReturnType<typeof resolveMediaRoute>} route
- * @param {{ dest: string, taskId: string, fetcher?: typeof fetch, signal?: AbortSignal }} input
+ * @param {{
+ *   dest: string,
+ *   taskId: string,
+ *   fetcher?: typeof fetch,
+ *   signal?: AbortSignal,
+ *   authKey?: string,
+ *   env?: Record<string, string | undefined>,
+ *   store?: { resolve: () => Promise<string | undefined> },
+ *   credentials?: { resolve: (ref: string) => Promise<{ value?: string } | undefined> },
+ * }} input
  */
 export async function finishMediaTask(capability, route, input) {
+  let apiKey = input.authKey
+  if (apiKey === undefined) {
+    const auth = await resolveMediaAuth(route, {
+      env: input.env,
+      store: input.store,
+      credentials: input.credentials,
+    })
+    apiKey = auth.apiKey
+  }
   const done = await pollOpenAiMediaTask({
     fetcher: input.fetcher ?? fetch,
     baseUrl: route.baseUrl,
-    apiKey: route.apiKey,
+    apiKey,
     taskId: input.taskId,
     capability,
     signal: input.signal,
@@ -107,12 +130,13 @@ export async function finishMediaTask(capability, route, input) {
 /**
  * @param {ReturnType<typeof resolveMediaRoute>} route
  * @param {typeof fetch} [fetcher]
+ * @param {string} [apiKey]
  */
-function createProtocolRuntime(route, fetcher) {
+function createProtocolRuntime(route, fetcher, apiKey = route.apiKey) {
   if (route.protocol === 'openai-media') {
     return createOpenAiMediaRuntime({
       fetcher,
-      apiKey: route.apiKey,
+      apiKey: apiKey || '',
       baseUrl: route.baseUrl,
       providerId: route.providerId,
       modelId: route.modelId,

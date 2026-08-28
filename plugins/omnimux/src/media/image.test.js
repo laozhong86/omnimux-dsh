@@ -39,8 +39,38 @@ describe('omnimux image helpers', () => {
   it('refuses to execute without a key', async () => {
     await assert.rejects(
       () => executeOmnimuxImage({ prompt: 'a lamp', dest: '/tmp/no.png', env: {} }),
-      (error) => error instanceof OmnimuxError && error.code === 'omnimux-unconfigured',
+      (error) => error instanceof OmnimuxError && error.code === 'needs-omnimux',
     )
+  })
+
+  it('测试用例 6：executeOmnimuxImage 在传入 Mock store 的情况下，无需 OMNIMUX_API_KEY 也能顺利调用 mock runtime 执行成功', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-pat-'))
+    const dest = join(dir, 'out.png')
+    const result = await executeOmnimuxImage({
+      prompt: 'a lamp at night with pat',
+      dest,
+      env: {},
+      store: {
+        resolve: async () => 'pat-login-token',
+      },
+      runtime: {
+        async execute(req) {
+          assert.equal(req.modelId, 'omnimux-image')
+          return {
+            taskId: 'img-pat-1',
+            outputs: [{ type: 'image', url: 'https://cdn.example/out-pat.png' }],
+          }
+        },
+      },
+      fetcher: async (url) => {
+        assert.equal(String(url), 'https://cdn.example/out-pat.png')
+        return { ok: true, arrayBuffer: async () => Buffer.from('pat-png-bytes') }
+      },
+    })
+    assert.equal(result.mode, 'live')
+    assert.equal(result.taskId, 'img-pat-1')
+    assert.equal(readFileSync(dest, 'utf8'), 'pat-png-bytes')
+    rmSync(dir, { recursive: true, force: true })
   })
 
   it('executes through a fake runtime and writes dest', async () => {

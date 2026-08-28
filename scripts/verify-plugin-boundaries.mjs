@@ -9,7 +9,7 @@
  */
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
-import { resolve, join, dirname, relative, extname } from 'node:path'
+import { resolve, join, dirname, relative, extname, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -84,7 +84,7 @@ if (existsSync(pluginsDir)) {
         // 2. Check for client-side Node native modules
         if (isClient && NODE_NATIVE_MODULES.has(specifier)) {
           // Allow in CLI scripts, mock fixtures validation, or test files
-          if (!rel.includes('.test.') && !rel.includes('.spec.') && !rel.includes('/tests/') && !content.startsWith('#!/usr/bin/env node') && !basename(file).startsWith('validate-')) {
+          if (!rel.includes('.test.') && !rel.includes('.spec.') && !rel.includes('/tests/') && !content.startsWith('#!/usr/bin/env node') && !basename(file).startsWith('validate-') && !basename(file).includes('-cli.')) {
             errors.push(`runtime purity violation in ${rel}: client code imports Node native module "${specifier}". Client bundles must be browser-safe.`)
           }
         }

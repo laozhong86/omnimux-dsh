@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { OmnimuxError } from './errors.js'
-import { parseMediaConfig, resolveMediaRoute } from './route.js'
+import { parseMediaConfig, resolveMediaAuth, resolveMediaRoute } from './route.js'
 import { mapOmnimuxInput } from './vendors/omnimux.js'
 
 describe('media route', () => {
@@ -13,6 +13,7 @@ describe('media route', () => {
     assert.equal(route.baseUrl, 'https://api.omnimux.ai/v1')
     assert.equal(route.modelId, 'seedance-2-0-fast')
     assert.equal(route.apiKey, '')
+    assert.equal(route.authMode, 'auto')
   })
 
   it('defaults image to gpt-image-2 on the same provider row', () => {
@@ -80,6 +81,34 @@ describe('media route', () => {
     )
   })
 
+  it('validates authMode at parse', () => {
+    const valid = parseMediaConfig({ authMode: 'token' })
+    assert.equal(valid.authMode, 'token')
+
+    assert.throws(
+      () => parseMediaConfig({ authMode: 'invalid-mode' }),
+      /media\.authMode must be one of/,
+    )
+  })
+
+  it('supports inline apiKey in provider definition', () => {
+    const media = parseMediaConfig({
+      providers: {
+        custom: {
+          protocol: 'openai-media',
+          baseUrl: 'https://custom.local/v1',
+          apiKey: 'none',
+          models: { image: 'custom-img' },
+        },
+      },
+      defaultProvider: 'custom',
+    })
+    assert.equal(media.providers.custom.apiKey, 'none')
+    const route = resolveMediaRoute('image', {}, media, {})
+    assert.equal(route.providerId, 'custom')
+    assert.equal(route.apiKey, 'none')
+  })
+
   it('maps talking-head extras into metadata and leaves t2v clean', () => {
     assert.deepEqual(mapOmnimuxInput('video', { prompt: 'a street at night' }), { prompt: 'a street at night' })
     assert.deepEqual(
@@ -96,6 +125,94 @@ describe('media route', () => {
     assert.throws(
       () => parseMediaConfig({ defaultProvider: 'missing', providers: {} }),
       /defaultProvider 'missing'/,
+    )
+  })
+})
+
+describe('resolveMediaAuth (dual-track auth)', () => {
+  it('测试用例 1：优先读取环境变量 OMNIMUX_API_KEY', async () => {
+    const media = parseMediaConfig(undefined)
+    const route = resolveMediaRoute('image', {}, media, { OMNIMUX_API_KEY: 'sk-env-key' })
+    const auth = await resolveMediaAuth(route, {
+      env: { OMNIMUX_API_KEY: 'sk-env-key' },
+      store: { resolve: async () => 'pat-token' },
+      credentials: { resolve: async () => ({ value: 'cred-token' }) },
+    })
+    assert.deepEqual(auth, { apiKey: 'sk-env-key', authType: 'api-key' })
+  })
+
+  it('测试用例 2：无环境变量但 store.resolve() 返回 PAT 时，成功解析并返回 authType: access-token', async () => {
+    const media = parseMediaConfig(undefined)
+    const route = resolveMediaRoute('image', {}, media, {})
+    const auth = await resolveMediaAuth(route, {
+      env: {},
+      store: { resolve: async () => 'pat-from-store' },
+    })
+    assert.deepEqual(auth, { apiKey: 'pat-from-store', authType: 'access-token' })
+  })
+
+  it('测试用例 3：无环境变量但 credentials.resolve("OMNIMUX_ACCESS_TOKEN") 返回 PAT 时，成功解析', async () => {
+    const media = parseMediaConfig(undefined)
+    const route = resolveMediaRoute('image', {}, media, {})
+    const auth = await resolveMediaAuth(route, {
+      env: {},
+      credentials: { resolve: async (ref) => (ref === 'OMNIMUX_ACCESS_TOKEN' ? { value: 'pat-from-cred' } : undefined) },
+    })
+    assert.deepEqual(auth, { apiKey: 'pat-from-cred', authType: 'access-token' })
+  })
+
+  it('测试用例 4：自定义 provider 且 apiKey: "none" 时，返回 authType: "none" 且不抛错', async () => {
+    const media = parseMediaConfig({
+      providers: {
+        custom: {
+          protocol: 'openai-media',
+          baseUrl: 'https://comfy.internal/v1',
+          apiKey: 'none',
+          models: { image: 'sdxl' },
+        },
+      },
+      defaultProvider: 'custom',
+    })
+    const route = resolveMediaRoute('image', {}, media, {})
+    const auth = await resolveMediaAuth(route, { env: {} })
+    assert.deepEqual(auth, { apiKey: '', authType: 'none' })
+  })
+
+  it('测试用例 5：均无凭证时，omnimux 供应商抛出 needs-omnimux', async () => {
+    const media = parseMediaConfig(undefined)
+    const route = resolveMediaRoute('image', {}, media, {})
+    await assert.rejects(
+      () => resolveMediaAuth(route, { env: {} }),
+      (error) => {
+        assert(error instanceof OmnimuxError)
+        assert.equal(error.code, 'needs-omnimux')
+        assert.match(error.message, /请先在侧边栏登录 OmniMux 账号，或配置 OMNIMUX_API_KEY/)
+        return true
+      },
+    )
+  })
+
+  it('未配置凭证的第三方 provider 抛出 omnimux-unconfigured', async () => {
+    const media = parseMediaConfig({
+      providers: {
+        thirdparty: {
+          protocol: 'openai-media',
+          baseUrl: 'https://thirdparty.ai/v1',
+          apiKeyEnv: 'THIRDPARTY_KEY',
+          models: { image: 'tp-1' },
+        },
+      },
+      defaultProvider: 'thirdparty',
+    })
+    const route = resolveMediaRoute('image', {}, media, {})
+    await assert.rejects(
+      () => resolveMediaAuth(route, { env: {} }),
+      (error) => {
+        assert(error instanceof OmnimuxError)
+        assert.equal(error.code, 'omnimux-unconfigured')
+        assert.match(error.message, /media provider 'thirdparty' has no apiKey configured/)
+        return true
+      },
     )
   })
 })
