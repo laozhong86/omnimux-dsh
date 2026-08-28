@@ -1,76 +1,12 @@
 /**
  * Shared open state for the sidebar accounts entry and the center stage.
- * The product-stage primitives (claim/release/readBox) come from the hub's
- * `window.__omnimuxStage` singleton. A getter is passed so this store does
- * not depend on the hub being applied before this plugin: stage access is
- * deferred until claim/release/readBox is actually used, by which time the
- * hub has materialized.
- * @param {() => { claim: (id: string) => void, release: (id: string) => void, PRODUCT_STAGE_EVENT: string, readBox: () => { top: number, left: number, width: number, height: number } }} getStage
+ * Consumes standard StageStore from dsh-ui-kit.
  */
-const PRODUCT_STAGE_EVENT = 'dsh-product-stage'
-const STAGE_ID = 'omnimux-accounts'
+import { createStageStore as createKitStageStore } from 'dsh-ui-kit'
+
+export const PRODUCT_STAGE_EVENT = 'dsh-product-stage'
+export const STAGE_ID = 'omnimux-accounts'
 
 export function createStageStore(getStage) {
-  let open = false
-  try {
-    open = window.localStorage.getItem('omnimux_active_product_stage') === STAGE_ID
-  } catch {}
-
-  const listeners = new Set()
-
-  function emit() {
-    for (const listener of listeners) listener()
-  }
-
-  if (open) {
-    const restore = () => {
-      try {
-        const stage = getStage()
-        if (stage && typeof stage.claim === 'function') {
-          stage.claim(STAGE_ID)
-        }
-      } catch {}
-    }
-    if (typeof queueMicrotask === 'function') queueMicrotask(restore)
-    else setTimeout(restore, 0)
-  }
-
-  window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
-    const id = event instanceof CustomEvent ? event.detail?.id : undefined
-    if (id !== STAGE_ID && open) {
-      open = false
-      emit()
-    } else if (id === STAGE_ID && !open) {
-      open = true
-      emit()
-    }
-  })
-
-  return {
-    getSnapshot: () => open,
-    readBox() {
-      return getStage().readBox()
-    },
-    /**
-     * @param {() => void} listener
-     */
-    subscribe(listener) {
-      listeners.add(listener)
-      return () => { listeners.delete(listener) }
-    },
-    /**
-     * @param {boolean} next
-     */
-    set(next) {
-      if (open === next) return
-      open = next
-      const stage = getStage()
-      if (open) stage.claim(STAGE_ID)
-      else stage.release(STAGE_ID)
-      emit()
-    },
-    toggle() {
-      this.set(!open)
-    },
-  }
+  return createKitStageStore(STAGE_ID, getStage)
 }

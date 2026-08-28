@@ -21,6 +21,8 @@ const EXEMPT_PATHS = [
   'fixtures',
   '.test.',
   '.spec.',
+  // Vendored upstream OpenReel source tree
+  'openreel',
   // React Flow / Canvas internals exemption (excluding canvas/ui)
   'src/canvas/nodes',
   'src/canvas/edges',
@@ -91,13 +93,13 @@ for (const file of clientFiles) {
     if (trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*')) return
 
     // UI01: Raw Controls Check (<button, <select)
-    // Exclude button inside SVG defs or exempt patterns
-    if (/<button\b/i.test(lineText)) {
+    // Exclude button inside SVG defs or exempt patterns. Note: <button is lowercase (HTML), <Button is dsh-ui-kit (React).
+    if (/<button\b/.test(lineText)) {
       if (!lineText.includes('// exempt-ui01') && !lineText.includes('/* exempt-ui01 */')) {
         reportError('UI01', file, lineNum, `使用了原生 <button> 控件，必须使用 dsh-ui-kit (Button/IconButton) 替代`)
       }
     }
-    if (/<select\b/i.test(lineText)) {
+    if (/<select\b/.test(lineText)) {
       if (!lineText.includes('// exempt-ui01') && !lineText.includes('/* exempt-ui01 */')) {
         reportError('UI01', file, lineNum, `使用了原生 <select> 控件，必须使用 dsh-ui-kit (DropdownSelect) 替代`)
       }
@@ -129,9 +131,14 @@ for (const file of clientFiles) {
           if (lineText.includes('var(') || lineText.includes('xmlns=') || lineText.includes('<path') || lineText.includes('<svg') || lineText.includes('exempt-ui03')) continue
           // Exclude color hex constants in theme mapping files
           if (file.includes('constants') || file.includes('styles.js')) continue
-          reportWarn('UI03', file, lineNum, `存在未经 CSS 变量封装的裸色硬编码 [${hex}]，必须使用官方 --dsw-alias-* Token`)
+          reportWarn('UI03', file, lineNum, `存在未经 CSS变量封装的裸色硬编码 [${hex}]，必须使用官方 --dsw-alias-* Token`)
         }
       }
+    }
+
+    // UI07: Idempotent Sidebar Navigation Gate (Prohibit stage.toggle() in sidebar entries)
+    if (file.includes('sidebar-entry') && /stage\.toggle\s*\(/i.test(lineText)) {
+      reportError('UI07', file, lineNum, `侧边栏条目严禁使用 stage.toggle() 非幂等反选，必须使用 stageStore.open() 保证幂等激活`)
     }
   })
 }
