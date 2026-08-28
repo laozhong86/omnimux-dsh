@@ -2348,6 +2348,67 @@ function CanvasTab({ ctx, t, visible, store, scope }) {
   );
 }
 
+// src/client/projects/workflow-global.js
+var WORKFLOW_GLOBAL_KEY = "__omnimuxWorkflow";
+var WORKFLOW_GLOBAL_VERSION = 1;
+var inflight = null;
+function readTitle(input) {
+  if (!input || typeof input !== "object") return "";
+  const title = (
+    /** @type {{ title?: unknown }} */
+    input.title
+  );
+  return typeof title === "string" ? title : "";
+}
+function startReplicationProject(deps, input, io = {}) {
+  if (inflight) return Promise.resolve({ ok: false, error: "busy" });
+  if (!deps || typeof deps !== "object") {
+    return Promise.resolve({ ok: false, error: "unavailable" });
+  }
+  const run = typeof io.runNewProject === "function" ? io.runNewProject : runNewProject;
+  const title = readTitle(input);
+  const work = Promise.resolve().then(() => run(deps, { title })).then((result) => {
+    if (!result || typeof result !== "object") {
+      return { ok: false, error: "create-failed" };
+    }
+    if (result.ok) {
+      const project = result.project && typeof result.project === "object" ? result.project : {};
+      return {
+        ok: true,
+        project,
+        sessionId: result.sessionId || project.sessionId,
+        cwd: result.cwd || project.path
+      };
+    }
+    return { ok: false, error: result.error || "create-failed" };
+  }).catch(() => ({ ok: false, error: "unavailable" })).finally(() => {
+    if (inflight === work) inflight = null;
+  });
+  inflight = work;
+  return work;
+}
+function installWorkflowGlobal(target, deps) {
+  if (!target || typeof target !== "object") return () => {
+  };
+  const existing = target[WORKFLOW_GLOBAL_KEY];
+  if (existing && existing.version === WORKFLOW_GLOBAL_VERSION && typeof existing.startReplicationProject === "function") {
+    return () => {
+    };
+  }
+  const api = {
+    version: WORKFLOW_GLOBAL_VERSION,
+    startReplicationProject(input) {
+      return startReplicationProject(deps, input);
+    }
+  };
+  target[WORKFLOW_GLOBAL_KEY] = api;
+  return () => {
+    if (target[WORKFLOW_GLOBAL_KEY] === api) {
+      delete target[WORKFLOW_GLOBAL_KEY];
+    }
+  };
+}
+
 // src/client/index.js
 var name = "omnimux-workflow";
 var inject = ["slots", "locale", "sessions", "workspaces", "layout"];
@@ -2359,6 +2420,17 @@ function apply(ctx) {
   ctx.effect(
     () => mountNewProjectEntry({ sessions: ctx.sessions, workspaces: ctx.workspaces, layout: ctx.layout, stage }, t, ctx.locale),
     "omnimux-workflow: new-project entry"
+  );
+  const seamDeps = {
+    sessions: ctx.sessions,
+    workspaces: ctx.workspaces,
+    layout: ctx.layout,
+    stage,
+    t
+  };
+  ctx.effect(
+    () => installWorkflowGlobal(typeof window !== "undefined" ? window : void 0, seamDeps),
+    "omnimux-workflow: global seam"
   );
   const stageFace = () => ({
     t,

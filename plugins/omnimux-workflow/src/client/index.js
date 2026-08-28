@@ -9,6 +9,7 @@ import { mountNewProjectEntry } from './projects/sidebar-new-project.js'
 import { ProjectLibraryPage } from './projects/ProjectLibraryPage.jsx'
 import { CanvasTab } from './projects/CanvasTab.jsx'
 import { bindBetterSidebar, CANVAS_TAB_ID } from './projects/projectCanvas.js'
+import { installWorkflowGlobal } from './projects/workflow-global.js'
 
 export const name = 'omnimux-workflow'
 export const inject = ['slots', 'locale', 'sessions', 'workspaces', 'layout']
@@ -37,6 +38,20 @@ export function apply(ctx) {
   ctx.effect(
     () => mountNewProjectEntry({ sessions: ctx.sessions, workspaces: ctx.workspaces, layout: ctx.layout, stage }, t, ctx.locale),
     'omnimux-workflow: new-project entry',
+  )
+
+  // Cross-plugin seam: inspiration (and future callers) create a project
+  // without importing this package. Disposer deletes window.__omnimuxWorkflow.
+  const seamDeps = {
+    sessions: ctx.sessions,
+    workspaces: ctx.workspaces,
+    layout: ctx.layout,
+    stage,
+    t,
+  }
+  ctx.effect(
+    () => installWorkflowGlobal(typeof window !== 'undefined' ? window : undefined, seamDeps),
+    'omnimux-workflow: global seam',
   )
 
   // 一级页：项目列表页（shell.overlay）。依赖 face 透传 sessions/workspaces/layout。

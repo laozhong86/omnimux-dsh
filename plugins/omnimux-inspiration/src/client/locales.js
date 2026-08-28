@@ -87,6 +87,13 @@ export const zh = {
   'confirmRemove.cancel': '取消',
   'confirmRemove.confirm': '移入废纸篓',
   'confirmRemove.deleting': '正在删除…',
+  'card.cta.detail': '查看',
+  'card.cta.try': '去对话',
+  'card.cta.workflowMissing': '工作流未就绪，请确认已安装工作流插件',
+  'card.cta.busy': '正在创建对话，请稍候',
+  'card.cta.createFailed': '创建项目失败',
+  'card.cta.sendManual': '已打开对话，请按发送',
+  'card.cta.replicating': '正在打开对话…',
 }
 
 export const en = {
@@ -178,6 +185,13 @@ export const en = {
   'confirmRemove.cancel': 'Cancel',
   'confirmRemove.confirm': 'Move to Trash',
   'confirmRemove.deleting': 'Deleting…',
+  'card.cta.detail': 'View',
+  'card.cta.try': 'Try in chat',
+  'card.cta.workflowMissing': 'Workflow plugin is not ready',
+  'card.cta.busy': 'Creating a chat, please wait',
+  'card.cta.createFailed': 'Could not create project',
+  'card.cta.sendManual': 'Chat is ready — press Send',
+  'card.cta.replicating': 'Opening chat…',
 }
 
 export const NS = 'omnimux-inspiration'

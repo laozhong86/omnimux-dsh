@@ -100,5 +100,20 @@ describe('locale dictionaries', () => {
     assert.ok(zh['view.switch'] && en['view.switch'])
     assert.equal(zh['view.player'], '作品')
     assert.equal(zh['view.deconstruct'], '作品解析')
+    assert.equal(zh['card.cta.try'], '去对话')
+    assert.equal(zh['card.cta.detail'], '查看')
+  })
+})
+
+describe('hover overlay CTA', () => {
+  it('lets the CTA row receive pointer events and uses 28px / pill geometry', () => {
+    const row = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-overlay-cta')
+    assert.equal(decl(row, 'pointer-events'), 'auto')
+    assert.equal(decl(row, 'width'), '100%')
+    const btn = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-overlay-cta-btn')
+    assert.equal(decl(btn, 'flex'), '1 1 0')
+    assert.equal(decl(btn, 'height'), '28px')
+    assert.equal(decl(btn, 'border-radius'), '9999px')
+    assert.doesNotMatch(INSPIRATION_CSS, /👁|💬/)
   })
 })

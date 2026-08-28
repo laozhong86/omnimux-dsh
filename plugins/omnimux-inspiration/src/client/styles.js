@@ -521,6 +521,70 @@ export const INSPIRATION_CSS = `
   height: 20px;
   margin-left: 2px;
 }
+.omnimux-inspiration-overlay-cta {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: stretch;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 8px;
+  pointer-events: auto;
+}
+.omnimux-inspiration-grid.selecting .omnimux-inspiration-overlay-cta {
+  display: none;
+}
+.omnimux-inspiration-overlay-cta-btn {
+  display: inline-flex;
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font: 550 12px/16px inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+  -webkit-app-region: no-drag;
+}
+.omnimux-inspiration-overlay-cta-btn svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.omnimux-inspiration-overlay-cta-btn.secondary {
+  background: var(--dsw-alias-bg-mask-1);
+  backdrop-filter: blur(8px);
+  color: var(--dsw-alias-label-primary);
+  border-color: var(--dsw-alias-border-l3);
+}
+.omnimux-inspiration-overlay-cta-btn.secondary:hover {
+  background: var(--dsw-alias-bg-mask-2, var(--dsw-alias-bg-mask-1));
+}
+.omnimux-inspiration-overlay-cta-btn.primary {
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-foreground);
+  border-color: transparent;
+}
+.omnimux-inspiration-overlay-cta-btn.primary:hover {
+  background: var(--dsw-alias-button-primary-hover);
+}
+.omnimux-inspiration-overlay-cta-btn:disabled,
+.omnimux-inspiration-overlay-cta-btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .omnimux-inspiration-overlay-footer {
   font-size: 11px;
   color: var(--dsw-alias-label-primary, rgba(255, 255, 255, 0.85));
@@ -530,6 +594,12 @@ export const INSPIRATION_CSS = `
   text-shadow: 0 1px 2px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.8));
   position: relative;
   z-index: 1;
+}
+.omnimux-inspiration-cta-status {
+  min-height: 18px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
 }
 
 /* 详情弹窗 Modal */

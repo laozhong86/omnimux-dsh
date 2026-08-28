@@ -119,7 +119,14 @@ var zh = {
   "confirmRemove.description": "\u9009\u4E2D\u7684\u7075\u611F\u8BB0\u5F55\u5C06\u88AB\u6E05\u9664\uFF0C\u5173\u8054\u7684\u672C\u5730\u89C6\u9891\u53CA\u5C01\u9762\u7D20\u6750\u6587\u4EF6\u5C06\u79FB\u5165\u7CFB\u7EDF\u5E9F\u7EB8\u7BD3\u3002",
   "confirmRemove.cancel": "\u53D6\u6D88",
   "confirmRemove.confirm": "\u79FB\u5165\u5E9F\u7EB8\u7BD3",
-  "confirmRemove.deleting": "\u6B63\u5728\u5220\u9664\u2026"
+  "confirmRemove.deleting": "\u6B63\u5728\u5220\u9664\u2026",
+  "card.cta.detail": "\u67E5\u770B",
+  "card.cta.try": "\u53BB\u5BF9\u8BDD",
+  "card.cta.workflowMissing": "\u5DE5\u4F5C\u6D41\u672A\u5C31\u7EEA\uFF0C\u8BF7\u786E\u8BA4\u5DF2\u5B89\u88C5\u5DE5\u4F5C\u6D41\u63D2\u4EF6",
+  "card.cta.busy": "\u6B63\u5728\u521B\u5EFA\u5BF9\u8BDD\uFF0C\u8BF7\u7A0D\u5019",
+  "card.cta.createFailed": "\u521B\u5EFA\u9879\u76EE\u5931\u8D25",
+  "card.cta.sendManual": "\u5DF2\u6253\u5F00\u5BF9\u8BDD\uFF0C\u8BF7\u6309\u53D1\u9001",
+  "card.cta.replicating": "\u6B63\u5728\u6253\u5F00\u5BF9\u8BDD\u2026"
 };
 var en = {
   "nav": "Inspiration",
@@ -209,7 +216,14 @@ var en = {
   "confirmRemove.description": "Selected inspiration records will be removed, and local video/cover files will be moved to the Trash.",
   "confirmRemove.cancel": "Cancel",
   "confirmRemove.confirm": "Move to Trash",
-  "confirmRemove.deleting": "Deleting\u2026"
+  "confirmRemove.deleting": "Deleting\u2026",
+  "card.cta.detail": "View",
+  "card.cta.try": "Try in chat",
+  "card.cta.workflowMissing": "Workflow plugin is not ready",
+  "card.cta.busy": "Creating a chat, please wait",
+  "card.cta.createFailed": "Could not create project",
+  "card.cta.sendManual": "Chat is ready \u2014 press Send",
+  "card.cta.replicating": "Opening chat\u2026"
 };
 var NS = "omnimux-inspiration";
 
@@ -1847,6 +1861,70 @@ var INSPIRATION_CSS = `
   height: 20px;
   margin-left: 2px;
 }
+.omnimux-inspiration-overlay-cta {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: stretch;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 8px;
+  pointer-events: auto;
+}
+.omnimux-inspiration-grid.selecting .omnimux-inspiration-overlay-cta {
+  display: none;
+}
+.omnimux-inspiration-overlay-cta-btn {
+  display: inline-flex;
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font: 550 12px/16px inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+  -webkit-app-region: no-drag;
+}
+.omnimux-inspiration-overlay-cta-btn svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.omnimux-inspiration-overlay-cta-btn.secondary {
+  background: var(--dsw-alias-bg-mask-1);
+  backdrop-filter: blur(8px);
+  color: var(--dsw-alias-label-primary);
+  border-color: var(--dsw-alias-border-l3);
+}
+.omnimux-inspiration-overlay-cta-btn.secondary:hover {
+  background: var(--dsw-alias-bg-mask-2, var(--dsw-alias-bg-mask-1));
+}
+.omnimux-inspiration-overlay-cta-btn.primary {
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-foreground);
+  border-color: transparent;
+}
+.omnimux-inspiration-overlay-cta-btn.primary:hover {
+  background: var(--dsw-alias-button-primary-hover);
+}
+.omnimux-inspiration-overlay-cta-btn:disabled,
+.omnimux-inspiration-overlay-cta-btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .omnimux-inspiration-overlay-footer {
   font-size: 11px;
   color: var(--dsw-alias-label-primary, rgba(255, 255, 255, 0.85));
@@ -1856,6 +1934,12 @@ var INSPIRATION_CSS = `
   text-shadow: 0 1px 2px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.8));
   position: relative;
   z-index: 1;
+}
+.omnimux-inspiration-cta-status {
+  min-height: 18px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
 }
 
 /* \u8BE6\u60C5\u5F39\u7A97 Modal */
@@ -2607,8 +2691,231 @@ function injectInspirationStyles() {
   document.head.appendChild(styleNode);
 }
 
+// src/client/replication.js
+var REPLICATION_SKILL = "video-replication";
+var MAX_TITLE = 200;
+var FALLBACK_TITLE = "\u7075\u611F\u590D\u523B";
+function sanitizeFolderName(title) {
+  const trimmed = String(title ?? "").trim();
+  const replaced = trimmed.replace(/[<>:"/\\|?*\u0000-\u001f]/gu, "_").replace(/[. ]+$/u, "");
+  return replaced.replace(/^\.+$/u, "");
+}
+function deriveProjectTitle(row) {
+  const raw = String(row?.title || row?.source_url || row?.id || FALLBACK_TITLE).trim();
+  const stripped = raw.replace(/^https?:\/\/(www\.)?/i, "");
+  let name2 = sanitizeFolderName(stripped);
+  if (name2 === "") name2 = FALLBACK_TITLE;
+  if (name2.length > MAX_TITLE) name2 = name2.slice(0, MAX_TITLE);
+  return name2;
+}
+function resolveMediaType(row) {
+  const t = String(row?.type || "").toLowerCase();
+  if (t === "video" || t === "image" || t === "link") return t;
+  if (row?.local_paths?.video) return "video";
+  return "video";
+}
+function buildReplicationPrompt(row) {
+  const id = String(row?.id || "");
+  const title = String(row?.title || "").trim();
+  const url = String(row?.source_url || "").trim();
+  const media = resolveMediaType(row);
+  return [
+    `/${REPLICATION_SKILL}`,
+    "",
+    "\u8BF7\u590D\u523B\u7075\u611F\u5E93\u6761\u76EE\u3002",
+    `- inspiration_id: ${id}`,
+    `- media_type: ${media}`,
+    `- title: ${title}`,
+    `- source_url: ${url}`,
+    "",
+    "\u6B65\u9AA4\uFF1A",
+    "1. \u82E5\u5DF2\u5B89\u88C5\u5BF9\u5E94 skill\uFF0C\u5148\u8BFB\u53D6\u6280\u80FD\u8BF4\u660E\u4E66\u3002",
+    "2. \u8C03\u7528 inspiration_get\uFF0C\u4F20\u5165\u4E0A\u8FF0 inspiration_id\uFF0C\u8BFB\u53D6\u4E94\u7EF4\u62C6\u89E3\u3002",
+    "3. \u5728\u5F53\u524D\u5DE5\u4F5C\u6D41\u753B\u5E03\u4E0A\u521B\u5EFA\u590D\u523B\u7F16\u6392\uFF08\u6309\u5A92\u4F53\u7C7B\u578B\u9009\u62E9\u89C6\u9891/\u56FE\u7247\u8282\u70B9\uFF09\u3002",
+    "4. \u7B49\u5F85\u7528\u6237\u8865\u5145\u6216\u66FF\u6362\u4E3B\u4F53\u4EBA\u7269\u3001\u5546\u54C1\u56FE\u540E\u518D\u751F\u6210\u3002\u4E0D\u8981\u5047\u88C5\u5DF2\u7ECF\u51FA\u7247\u3002"
+  ].join("\n");
+}
+
+// src/client/composer-inject.js
+var COMPOSER_SELECTOR = [
+  "[data-composer-card] textarea",
+  "[data-composer-seat] textarea",
+  "textarea[data-phase]",
+  "textarea[placeholder]"
+].join(", ");
+var SEND_SELECTOR = [
+  'button[aria-label="\u53D1\u9001\u6D88\u606F"]',
+  'button[aria-label="Send message"]',
+  'button[aria-label="Send"]'
+].join(", ");
+function findComposer(doc) {
+  if (!doc || typeof doc.querySelector !== "function") return null;
+  return doc.querySelector(COMPOSER_SELECTOR);
+}
+function setComposerValue(field, text, globals = {}) {
+  if (!field) return false;
+  const value = String(text ?? "");
+  const TextArea = globals.HTMLTextAreaElement ?? (typeof HTMLTextAreaElement === "function" ? HTMLTextAreaElement : void 0);
+  const InputEl = globals.HTMLInputElement ?? (typeof HTMLInputElement === "function" ? HTMLInputElement : void 0);
+  const proto = TextArea && field instanceof TextArea ? TextArea.prototype : InputEl && field instanceof InputEl ? InputEl.prototype : Object.getPrototypeOf(field);
+  const setter = proto ? Object.getOwnPropertyDescriptor(proto, "value")?.set : void 0;
+  if (setter) setter.call(field, value);
+  else field.value = value;
+  try {
+    field.setSelectionRange?.(value.length, value.length);
+  } catch {
+  }
+  const InputCtor = globals.InputEvent ?? (typeof InputEvent === "function" ? InputEvent : void 0) ?? globals.Event ?? (typeof Event === "function" ? Event : void 0);
+  if (typeof InputCtor === "function") {
+    try {
+      field.dispatchEvent(new InputCtor("input", { bubbles: true, inputType: "insertText", data: value }));
+    } catch {
+      field.dispatchEvent(new InputCtor("input"));
+    }
+  }
+  field.focus?.();
+  return field.value.includes("inspiration_id") || field.value === value;
+}
+async function prefillReplicationPrompt(text, opts = {}) {
+  const doc = opts.document ?? (typeof document !== "undefined" ? document : null);
+  const timeoutMs = Number.isFinite(opts.timeoutMs) ? opts.timeoutMs : 6e3;
+  const pollMs = Number.isFinite(opts.pollMs) ? opts.pollMs : 50;
+  const now = typeof opts.now === "function" ? opts.now : () => Date.now();
+  const sleep = typeof opts.sleep === "function" ? opts.sleep : (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const started = now();
+  let field = findComposer(doc);
+  while (!field && now() - started < timeoutMs) {
+    await sleep(pollMs);
+    field = findComposer(doc);
+  }
+  if (!field) return { ok: false, error: "composer-missing" };
+  const wrote = setComposerValue(field, text, opts);
+  if (!wrote || !String(field.value || "").includes("inspiration_id")) {
+    return { ok: false, error: "composer-rejected" };
+  }
+  try {
+    field.focus?.();
+    const len = String(field.value || "").length;
+    field.setSelectionRange?.(len, len);
+  } catch {
+  }
+  return { ok: true, via: "prefill" };
+}
+
+// src/client/workflow-global.js
+var WORKFLOW_GLOBAL_KEY = "__omnimuxWorkflow";
+var WORKFLOW_WAIT_MS = 4e3;
+var WORKFLOW_POLL_MS = 50;
+function isWorkflowGlobalReady(api) {
+  return Boolean(
+    api && api.version === 1 && typeof api.startReplicationProject === "function"
+  );
+}
+async function waitForWorkflowGlobal(opts = {}) {
+  const getWindow = typeof opts.getWindow === "function" ? opts.getWindow : () => typeof window !== "undefined" ? window : void 0;
+  const now = typeof opts.now === "function" ? opts.now : () => Date.now();
+  const sleep = typeof opts.sleep === "function" ? opts.sleep : (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const timeoutMs = Number.isFinite(opts.timeoutMs) ? opts.timeoutMs : WORKFLOW_WAIT_MS;
+  const pollMs = Number.isFinite(opts.pollMs) ? opts.pollMs : WORKFLOW_POLL_MS;
+  const started = now();
+  for (; ; ) {
+    const win = getWindow();
+    const api = win ? win[WORKFLOW_GLOBAL_KEY] : void 0;
+    if (isWorkflowGlobalReady(api)) return api;
+    if (now() - started >= timeoutMs) return null;
+    await sleep(pollMs);
+  }
+}
+
+// src/client/replicate-to-chat.js
+var replicateInflight = null;
+function runExclusive(fn) {
+  if (replicateInflight) {
+    return Promise.resolve({ ok: false, error: "busy" });
+  }
+  const work = Promise.resolve().then(fn).finally(() => {
+    if (replicateInflight === work) replicateInflight = null;
+  });
+  replicateInflight = work;
+  return work;
+}
+function isReplicateBusy() {
+  return replicateInflight != null;
+}
+async function replicateInspirationToChat(row, io = {}) {
+  const onStatus = typeof io.onStatus === "function" ? io.onStatus : () => {
+  };
+  const wait = typeof io.waitForWorkflow === "function" ? io.waitForWorkflow : waitForWorkflowGlobal;
+  const prefill = typeof io.prefillPrompt === "function" ? io.prefillPrompt : prefillReplicationPrompt;
+  if (isReplicateBusy()) {
+    onStatus("card.cta.busy");
+    return { ok: false, error: "busy" };
+  }
+  return runExclusive(async () => {
+    onStatus("card.cta.replicating");
+    const title = deriveProjectTitle(row);
+    const api = await wait();
+    if (!api) {
+      onStatus("card.cta.workflowMissing");
+      return { ok: false, error: "workflowMissing" };
+    }
+    const start = typeof io.startReplication === "function" ? io.startReplication : typeof api.startReplicationProject === "function" ? (input) => api.startReplicationProject(input) : null;
+    if (typeof start !== "function") {
+      onStatus("card.cta.workflowMissing");
+      return { ok: false, error: "workflowMissing" };
+    }
+    let created;
+    try {
+      created = await start({ title, source: "inspiration" });
+    } catch {
+      onStatus("card.cta.createFailed");
+      return { ok: false, error: "createFailed" };
+    }
+    if (!created || created.ok !== true) {
+      const code = created && created.error ? String(created.error) : "create-failed";
+      if (code === "busy") {
+        onStatus("card.cta.busy");
+        return { ok: false, error: "busy" };
+      }
+      if (code === "unavailable") {
+        onStatus("card.cta.workflowMissing");
+        return { ok: false, error: "workflowMissing" };
+      }
+      onStatus("card.cta.createFailed", code);
+      return { ok: false, error: code };
+    }
+    const prompt = buildReplicationPrompt(row);
+    let prefilled;
+    try {
+      prefilled = await prefill(prompt);
+    } catch {
+      onStatus("card.cta.sendManual");
+      return { ok: false, error: "sendManual", created: true };
+    }
+    if (!prefilled || prefilled.ok !== true) {
+      onStatus("card.cta.sendManual");
+      return { ok: false, error: "sendManual", created: true };
+    }
+    onStatus(null);
+    return { ok: true, created };
+  });
+}
+
 // src/client/InspirationSection.jsx
 var import_jsx_runtime3 = require("react/jsx-runtime");
+var ICON_EYE = /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: [
+  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M2.062 12.348a1 1 0 0 1 0-.696A10.75 10.75 0 0 1 21.938 12.348a1 1 0 0 1 0 .696A10.75 10.75 0 0 1 2.062 12.348" }),
+  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("circle", { cx: "12", cy: "12", r: "3" })
+] });
+var ICON_CHAT = /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M7.9 20A9 9 0 1 0 4 16.1L2 22z" }) });
+function stopCardEvent(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+function isolateInnerCardKey(e) {
+  e.stopPropagation();
+  if (e.key === "Enter" || e.key === " ") e.preventDefault();
+}
 function LoginGate({ t }) {
   const login = () => {
     const gate = typeof window !== "undefined" ? window.__omnimuxAuth : void 0;
@@ -2620,7 +2927,7 @@ function LoginGate({ t }) {
     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Button, { variant: "primary", onClick: login, children: t("login") })
   ] });
 }
-function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }) {
+function PureCoverCard({ row, t, onSelect, onReplicate, selected, onToggleSelect, selecting, replicateBusy }) {
   const title = String(row.title || row.source_url || row.id);
   const cover = pickCoverSrc(row);
   const [broken, setBroken] = (0, import_react2.useState)(!cover);
@@ -2629,12 +2936,22 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
   }, [cover]);
   const platform = (row.source_platform || (row.is_local ? "local" : "tiktok")).toUpperCase();
   const isLocal = Boolean(row.is_local);
-  const handleClick = (e) => {
+  const anyBusy = Boolean(replicateBusy);
+  const handleClick = () => {
     if (selecting && isLocal && onToggleSelect) {
       onToggleSelect(row);
       return;
     }
     onSelect(row);
+  };
+  const handleDetail = (e) => {
+    stopCardEvent(e);
+    onSelect(row);
+  };
+  const handleReplicate = (e) => {
+    stopCardEvent(e);
+    if (anyBusy) return;
+    if (typeof onReplicate === "function") onReplicate(row);
   };
   return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
     "article",
@@ -2665,6 +2982,12 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
               e.stopPropagation();
               onToggleSelect(row);
             },
+            onMouseDown: (e) => e.stopPropagation(),
+            onPointerDown: (e) => e.stopPropagation(),
+            onKeyDown: (e) => {
+              isolateInnerCardKey(e);
+              if (e.key === "Enter" || e.key === " ") onToggleSelect(row);
+            },
             children: selected ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "3.2", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polyline", { points: "20 6 9 17 4 12" }) }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", {})
           }
         ) : null,
@@ -2689,6 +3012,48 @@ function PureCoverCard({ row, t, onSelect, selected, onToggleSelect, selecting }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-card-overlay", children: [
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-overlay-play", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M8 5v14l11-7z" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-overlay-cta", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+              "button",
+              {
+                type: "button",
+                className: "omnimux-inspiration-overlay-cta-btn secondary",
+                "aria-label": t("card.cta.detail"),
+                onClick: handleDetail,
+                onMouseDown: (e) => e.stopPropagation(),
+                onPointerDown: (e) => e.stopPropagation(),
+                onKeyDown: (e) => {
+                  isolateInnerCardKey(e);
+                  if (e.key === "Enter" || e.key === " ") handleDetail(e);
+                },
+                children: [
+                  ICON_EYE,
+                  t("card.cta.detail")
+                ]
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+              "button",
+              {
+                type: "button",
+                className: "omnimux-inspiration-overlay-cta-btn primary",
+                "aria-label": t("card.cta.try"),
+                "aria-disabled": anyBusy ? "true" : "false",
+                disabled: anyBusy,
+                onClick: handleReplicate,
+                onMouseDown: (e) => e.stopPropagation(),
+                onPointerDown: (e) => e.stopPropagation(),
+                onKeyDown: (e) => {
+                  isolateInnerCardKey(e);
+                  if (e.key === "Enter" || e.key === " ") handleReplicate(e);
+                },
+                children: [
+                  ICON_CHAT,
+                  t("card.cta.try")
+                ]
+              }
+            )
+          ] }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-overlay-footer", children: title.length > 32 ? `${title.slice(0, 32)}\u2026` : title })
         ] })
       ]
@@ -3100,10 +3465,42 @@ function InspirationSection({ t, active }) {
   const [selectedIds, setSelectedIds] = (0, import_react2.useState)(() => /* @__PURE__ */ new Set());
   const [pendingRemove, setPendingRemove] = (0, import_react2.useState)(null);
   const [removing, setRemoving] = (0, import_react2.useState)(false);
+  const [replicateBusy, setReplicateBusy] = (0, import_react2.useState)(null);
+  const [ctaStatus, setCtaStatus] = (0, import_react2.useState)(null);
+  const ctaStatusTimer = (0, import_react2.useRef)(null);
+  const replicateBusyRef = (0, import_react2.useRef)(null);
   const sentinelRef = (0, import_react2.useRef)(null);
   (0, import_react2.useEffect)(() => {
     injectInspirationStyles();
   }, []);
+  (0, import_react2.useEffect)(() => () => {
+    if (ctaStatusTimer.current) clearTimeout(ctaStatusTimer.current);
+  }, []);
+  const flashCtaStatus = (0, import_react2.useCallback)((key) => {
+    if (ctaStatusTimer.current) clearTimeout(ctaStatusTimer.current);
+    setCtaStatus(key);
+    if (key) {
+      ctaStatusTimer.current = setTimeout(() => setCtaStatus(null), 2e3);
+    }
+  }, []);
+  const handleReplicate = (0, import_react2.useCallback)((row) => {
+    if (replicateBusyRef.current) return;
+    const ticket = row.id;
+    replicateBusyRef.current = ticket;
+    setReplicateBusy(ticket);
+    void replicateInspirationToChat(row, {
+      onStatus(key) {
+        if (key && key !== "card.cta.replicating") flashCtaStatus(key);
+        if (key === "card.cta.replicating") setCtaStatus(key);
+        if (key == null) setCtaStatus(null);
+      }
+    }).finally(() => {
+      if (replicateBusyRef.current === ticket) {
+        replicateBusyRef.current = null;
+        setReplicateBusy(null);
+      }
+    });
+  }, [flashCtaStatus]);
   const selectedCount = selectedIds.size;
   const selecting = selectedCount > 0;
   const toggleSelect = (0, import_react2.useCallback)((row) => {
@@ -3334,11 +3731,23 @@ function InspirationSection({ t, active }) {
         t,
         selected: selectedIds.has(row.id),
         selecting,
+        replicateBusy,
         onToggleSelect: toggleSelect,
-        onSelect: (item) => setSelectedItem(item)
+        onSelect: (item) => setSelectedItem(item),
+        onReplicate: handleReplicate
       },
       String(row.id)
     )) }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      "div",
+      {
+        className: "omnimux-inspiration-cta-status",
+        id: "omnimux-inspiration-cta-status",
+        "aria-live": "polite",
+        role: "status",
+        children: ctaStatus ? t(ctaStatus) : ""
+      }
+    ),
     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { ref: sentinelRef }),
     loadingMore ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-inspiration-scroll-loader", children: [
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-inspiration-spinner" }),
