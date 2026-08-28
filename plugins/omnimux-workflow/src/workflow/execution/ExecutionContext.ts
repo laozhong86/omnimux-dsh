@@ -198,6 +198,8 @@ export interface ExecutionContextOptions {
   /** Execution id override (recovery keeps the persisted id). */
   id?: string;
   initialVariables?: Record<string, unknown>;
+  /** Pre-seeded upstream outputs (used in single-node execution mode). */
+  initialOutputs?: Record<string, unknown>;
   breakpoints?: Set<string>;
 }
 
@@ -230,6 +232,11 @@ export class ExecutionContext {
     this.breakpoints = opts.breakpoints ?? new Set<string>();
     for (const [key, value] of Object.entries(opts.initialVariables ?? {})) {
       this.variables.set(key, value);
+    }
+    for (const [key, value] of Object.entries(opts.initialOutputs ?? {})) {
+      if (value !== undefined) {
+        this.nodeOutputs.set(key, value);
+      }
     }
   }
 

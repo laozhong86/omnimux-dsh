@@ -2,18 +2,19 @@
  * Execution subgraph resolution — M3 port of Gxgen
  * `server/src/routes/canvas/executionSubgraph.ts` (pure algorithm, strict).
  *
- * full: the whole graph. subset: the selected nodes plus their transitive
- * upstream closure (induced subgraph) — Gxgen semantics.
+ * full: the whole graph.
+ * subset: the selected nodes plus their transitive upstream closure (induced subgraph) — Gxgen semantics.
+ * single: only the selected nodes (inheriting existing upstream output artifacts without re-execution).
  */
 
-export type ExecutionMode = 'full' | 'subset';
+export type ExecutionMode = 'full' | 'subset' | 'single';
 
-const SUPPORTED_EXECUTION_MODES = new Set<string>(['full', 'subset']);
+const SUPPORTED_EXECUTION_MODES = new Set<string>(['full', 'subset', 'single']);
 
 export function toExecutionMode(value: unknown): ExecutionMode {
   if (value === undefined || value === null) return 'full';
   if (typeof value !== 'string' || !SUPPORTED_EXECUTION_MODES.has(value)) {
-    throw new Error('mode 必须是 full 或 subset');
+    throw new Error('mode 必须是 full、subset 或 single');
   }
   return value as ExecutionMode;
 }
@@ -66,7 +67,7 @@ export function resolveExecutionSubgraph<TNode extends SubgraphNodeLike, TEdge e
 
   const targetNodeIds = normalizeNodeIds(input.nodeIds);
   if (targetNodeIds.length === 0) {
-    throw new Error('subset 模式必须提供 nodeIds');
+    throw new Error(`${executionMode} 模式必须提供 nodeIds`);
   }
 
   const nodeMap = new Map<string, TNode>();
@@ -77,6 +78,16 @@ export function resolveExecutionSubgraph<TNode extends SubgraphNodeLike, TEdge e
   const invalidNodeIds = targetNodeIds.filter((nodeId) => !nodeMap.has(nodeId));
   if (invalidNodeIds.length > 0) {
     throw new Error(`包含无效节点 ID: ${invalidNodeIds.join(', ')}`);
+  }
+
+  // single mode: only the selected target nodes; include incoming edges so upstream outputs can be wired
+  if (executionMode === 'single') {
+    const targetIdSet = new Set(targetNodeIds);
+    return {
+      nodes: nodes.filter((node) => targetIdSet.has(node.id)),
+      edges: edges.filter((edge) => targetIdSet.has(edge.target) && nodeMap.has(edge.source)),
+      nodeIdSet: targetIdSet,
+    };
   }
 
   // Incoming edge index (only edges between known nodes).

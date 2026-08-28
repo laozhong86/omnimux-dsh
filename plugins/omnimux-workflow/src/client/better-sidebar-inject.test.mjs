@@ -144,6 +144,7 @@ async function loadApply() {
     export function IconSearchOutline16() { return null }
     export function IconCloseFill14() { return null }
     export function IconChevronDownOutline14() { return null }
+    export function IconRefreshOutline16() { return null }
     export function Tooltip({ children }) { return children }
     export function Modal({ children }) { return children }
     export function Menu({ children }) { return children }

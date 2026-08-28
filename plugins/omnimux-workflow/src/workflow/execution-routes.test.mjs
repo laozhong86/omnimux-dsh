@@ -347,6 +347,36 @@ test('execution API: subset mode runs only the induced subgraph', async () => {
   }
 });
 
+test('execution API: single mode runs only the target node and seeds upstream outputs from snapshot', async () => {
+  const h = makeHarness();
+  try {
+    const wsId = await h.createLinearWorkspace(3);
+    // Single mode on n2: only n2 executes, n1 and n3 stay untouched
+    const created = await h.startExecution(wsId, { mode: 'single', nodeIds: ['n2'] });
+    assert.equal(created.status, 200);
+    assert.equal(created.body.execution.totalNodes, 1);
+    const execId = created.body.execution.id;
+
+    const completed = await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, execId);
+      return status.body?.execution?.status === 'completed';
+    });
+    assert.ok(completed);
+    const snapshot = (await h.executionStatus(wsId, execId)).body.execution;
+    assert.deepEqual(Object.keys(snapshot.nodeStates), ['n2']);
+    assert.equal(snapshot.nodeStates.n1, undefined, 'n1 not executed in single mode');
+    assert.equal(snapshot.nodeStates.n3, undefined, 'n3 not executed in single mode');
+    assert.equal(snapshot.nodeStates.n2.status, 'completed');
+
+    // Empty nodeIds in single mode -> 400.
+    const empty = await h.startExecution(wsId, { mode: 'single', nodeIds: [] });
+    assert.equal(empty.status, 400);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
 test('execution recovery: paused run survives dispose + remount and resumes', async () => {
   const slowGateway = { gatewayLatency: { minLatencyMs: 150, maxLatencyMs: 250 } };
   let h = makeHarness(slowGateway);

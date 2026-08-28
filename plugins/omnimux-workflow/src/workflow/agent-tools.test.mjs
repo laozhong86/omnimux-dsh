@@ -351,6 +351,18 @@ test('workflow_run resolves by unique name and supports subset mode', async () =
     assert.equal(subset.mode, 'subset');
     assert.equal(subset.status, 'completed');
     assert.equal(subset.totalNodes, 2);
+
+    // single: only img1 (direct target only) — 1 node.
+    const single = await h.tool('workflow_run').execute({
+      workspace_name: '按名执行',
+      mode: 'single',
+      node_ids: ['img1'],
+      wait: true,
+      timeout_ms: 10000,
+    });
+    assert.equal(single.mode, 'single');
+    assert.equal(single.status, 'completed');
+    assert.equal(single.totalNodes, 1);
   } finally {
     h.dispose();
     rmSync(h.dir, { recursive: true, force: true });
