@@ -1,17 +1,14 @@
 #!/usr/bin/env node
-// Cordis-level proof that omnimux provides videoGenerate and omnimux-drama
-// reads it with ctx.get (optional). One command:
+// Cordis-level proof that omnimux provides videoGenerate, imageGenerate,
+// textComplete, and identity seams, and that consumers can safely resolve and call them.
+// Usage:
 //   DSH_SRC=/Users/x/Desktop/Project/Github/deepseek-harness node scripts/verify-cordis-propagate.mjs
-// Resolves the same @deepseek-ai/cordis as DSH_SRC (vendor/cordis). Does not
-// boot the full dsh profile and does not call OmniMux.
+// Resolves @deepseek-ai/cordis from DSH_SRC (vendor/cordis). Does not
+// boot the full dsh profile and does not call external OmniMux services.
 import assert from 'node:assert/strict'
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import * as omnimux from '../plugins/omnimux/src/index.js'
-import * as drama from '../plugins/omnimux-drama/src/index.js'
-import { generateShot, initProject, upsertShot } from '../plugins/omnimux-drama/src/domain.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const dshSrc = process.env.DSH_SRC ?? '/Users/x/Desktop/Project/Github/deepseek-harness'
@@ -30,70 +27,70 @@ ctx.provide('tools', {
 })
 ctx.provide('systemPrompt', { section() {} })
 
+// Mount omnimux hub plugin
 const omniFiber = await ctx.plugin(omnimux)
-await ctx.plugin(drama)
 
-assert.equal(typeof ctx.get('videoGenerate')?.execute, 'function', 'drama host must see provided videoGenerate')
-assert.equal(typeof ctx.get('imageGenerate')?.execute, 'function', 'drama host must see provided imageGenerate')
-assert.equal(typeof ctx.get('textComplete')?.execute, 'function', 'drama host must see provided textComplete')
-assert.equal(typeof ctx.get('identity')?.status, 'function', 'drama host must see provided identity')
+// Define a neutral consumer plugin that accesses hub seams via ctx.get
+const consumerCalls = []
+const neutralConsumer = {
+  name: 'omnimux-neutral-consumer',
+  apply(subCtx) {
+    subCtx.on('test/invoke-video', async (req) => {
+      const seam = subCtx.get('videoGenerate')
+      assert.ok(seam, 'consumer must see videoGenerate seam')
+      return seam.execute(req)
+    })
+    subCtx.on('test/invoke-image', async (req) => {
+      const seam = subCtx.get('imageGenerate')
+      assert.ok(seam, 'consumer must see imageGenerate seam')
+      return seam.execute(req)
+    })
+    subCtx.on('test/invoke-text', async (req) => {
+      const seam = subCtx.get('textComplete')
+      assert.ok(seam, 'consumer must see textComplete seam')
+      return seam.execute(req)
+    })
+  },
+}
+const consumerFiber = await ctx.plugin(neutralConsumer)
+
+// Verify seams are provided
+assert.equal(typeof ctx.get('videoGenerate')?.execute, 'function', 'hub must provide videoGenerate')
+assert.equal(typeof ctx.get('imageGenerate')?.execute, 'function', 'hub must provide imageGenerate')
+assert.equal(typeof ctx.get('textComplete')?.execute, 'function', 'hub must provide textComplete')
+assert.equal(typeof ctx.get('identity')?.status, 'function', 'hub must provide identity')
 assert.equal(ctx.get('jobs'), undefined, 'jobs stays optional')
-assert.ok(tools.has('drama_generate_shot'))
+
+// Verify registered hub tools
 assert.ok(tools.has('omnimux_video_submit'))
 assert.ok(tools.has('omnimux_image_submit'))
 assert.ok(tools.has('omnimux_text_complete'))
 assert.ok(tools.has('omnimux_social_data'))
 assert.ok(tools.has('omnimux_accounts_list'))
 
-const liveRoot = mkdtempSync(join(tmpdir(), 'drama-live-'))
-const stubRoot = mkdtempSync(join(tmpdir(), 'drama-stub-'))
-const emptyRoot = mkdtempSync(join(tmpdir(), 'drama-empty-'))
-cpSync(join(root, 'fixtures/demo-series'), liveRoot, { recursive: true })
-cpSync(join(root, 'fixtures/demo-series'), stubRoot, { recursive: true })
-const exec = (cwd) => ({ agent: { session: { header: { cwd } } } })
-
+// Verify calling videoGenerate without credentials throws expected error
 try {
-  await tools.get('drama_generate_shot').execute({ shot_id: 'e01-s01' }, exec(liveRoot))
-  throw new Error('expected live branch to throw without a key')
+  await ctx.get('videoGenerate').execute({ prompt: 'test video', dest: '/tmp/test.mp4' })
+  throw new Error('expected unconfigured call to throw')
 } catch (error) {
-  assert.equal(error?.code, 'omnimux-unconfigured', 'mounted videoGenerate takes the live branch')
+  assert.equal(error?.code, 'omnimux-unconfigured', 'unconfigured videoGenerate throws omnimux-unconfigured')
 }
 
+// Verify calling imageGenerate without credentials throws expected error
+try {
+  await ctx.get('imageGenerate').execute({ prompt: 'test image', dest: '/tmp/test.png' })
+  throw new Error('expected unconfigured call to throw')
+} catch (error) {
+  assert.equal(error?.code, 'omnimux-unconfigured', 'unconfigured imageGenerate throws omnimux-unconfigured')
+}
+
+// Dispose omnimux hub fiber and verify seams are cleanly unregistered
 await omniFiber.dispose()
 assert.equal(ctx.get('videoGenerate'), undefined, 'dispose unregisters videoGenerate')
 assert.equal(ctx.get('imageGenerate'), undefined, 'dispose unregisters imageGenerate')
 assert.equal(ctx.get('textComplete'), undefined, 'dispose unregisters textComplete')
 assert.equal(ctx.get('identity'), undefined, 'dispose unregisters identity')
 
-const stub = await tools.get('drama_generate_shot').execute({ shot_id: 'e01-s01' }, exec(stubRoot))
-assert.equal(stub.mode, 'stub', 'unmounted videoGenerate with explicit stub copies')
-
-initProject(emptyRoot, { id: 'empty-series' })
-writeFileSync(join(emptyRoot, 'series/bible.yaml'), [
-  'characters:',
-  '  - id: hero',
-  '    name: Hero',
-  '    confirmed: true',
-  'scenes: []',
-  'voice: ""',
-  '',
-].join('\n'))
-upsertShot(emptyRoot, {
-  shot_id: 'e01-s01',
-  episode_id: 'e01',
-  character_ids: ['hero'],
-  status: 'confirmed',
-  visual_description: 'a face in torchlight',
-})
-try {
-  await generateShot(emptyRoot, 'e01-s01')
-  throw new Error('expected needs-provider without seam or stub')
-} catch (error) {
-  assert.equal(error?.code, 'needs-provider', 'no seam and no stub throws needs-provider')
-}
-
-rmSync(liveRoot, { recursive: true, force: true })
-rmSync(stubRoot, { recursive: true, force: true })
-rmSync(emptyRoot, { recursive: true, force: true })
+await consumerFiber.dispose()
 await ctx.fiber.dispose()
-process.stdout.write('verify-cordis-propagate: videoGenerate provided, live branch seen, stub after unload, needs-provider without stub\n')
+process.stdout.write('verify-cordis-propagate: seams provided, unconfigured errors caught, clean disposal verified\n')

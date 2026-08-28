@@ -17,8 +17,8 @@
 
 **结论：raw `ctx.tools.register` + objectParams 编译完整 JSON Schema，命名前缀 `publish_*`，共 9 个工具。**
 
-- 注册方式：同 omnimux-assets / dsh-drama 的 raw register 模式（不走 defineTool，parameters 必须是完整 `type:'object'` schema，`additionalProperties:false`），output 用 jsonOut（`{schema:{type:'object'}, render}`）。`inject = ['tools', 'systemPrompt']`。
-- 命名：`publish_*`，不用 `dsh_publish_*`。理由：生态惯例是域名前缀无 `dsh_`（`drama_*`、`assets_*`、`workflow_*`、`gxgen_video_process`、hub `omnimux_*`）；`dsh_` 前缀会被误读为框架官方工具。`publish` 与 `workflow` 同级通用度，风险可接受；被否决的 `dsh_publish_*` 理由是伪官方暗示，被否决的裸名（`submit`/`list_records`）理由是无命名空间必撞。
+- 注册方式：同 omnimux-assets 的 raw register 模式（不走 defineTool，parameters 必须是完整 `type:'object'` schema，`additionalProperties:false`），output 用 jsonOut（`{schema:{type:'object'}, render}`）。`inject = ['tools', 'systemPrompt']`。
+- 命名：`publish_*`，不用 `dsh_publish_*`。理由：生态惯例是域名前缀无 `dsh_`（`assets_*`、`workflow_*`、`gxgen_video_process`、hub `omnimux_*`）；`dsh_` 前缀会被误读为框架官方工具。`publish` 与 `workflow` 同级通用度，风险可接受；被否决的 `dsh_publish_*` 理由是伪官方暗示，被否决的裸名（`submit`/`list_records`）理由是无命名空间必撞。
 - 工具清单（PRD B1–B5 全覆盖）：
 
 | 工具 | 参数要点 | 对应 PRD |

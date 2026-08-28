@@ -61,9 +61,9 @@ test('sampleRate clamps to [0, 1]', () => {
 test('pluginMap merges over defaults and null removes a prefix', () => {
   const cfg = parseAnalyticsConfig({
     websiteId: 'w',
-    pluginMap: { drama_: 'my-drama', video_: null, brand_new_: 'x' },
+    pluginMap: { workflow_: 'my-workflow', video_: null, brand_new_: 'x' },
   })
-  assert.equal(cfg.pluginMap.drama_, 'my-drama')
+  assert.equal(cfg.pluginMap.workflow_, 'my-workflow')
   assert.equal(cfg.pluginMap.video_, undefined)
   assert.equal(cfg.pluginMap.omnimux_, 'omnimux')
   assert.equal(cfg.pluginMap.brand_new_, 'x')

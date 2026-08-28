@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L4"
 date: "2026-08-26"
-updated: "2026-08-26"
+updated: "2026-08-28"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---

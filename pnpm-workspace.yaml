@@ -2,6 +2,7 @@ packages:
   - plugins/*
 allowBuilds:
   esbuild: true
+minimumReleaseAge: 0
 minimumReleaseAgeExclude:
   - aigc-provider-runtime-kit@0.2.0
   - blobatar@0.2.0

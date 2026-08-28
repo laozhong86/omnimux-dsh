@@ -6,14 +6,14 @@ status: "accepted"
 authority: "L2"
 date: "2026-08-21"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "omnimux-video"
 ---
 
 # Gxgen 微服务 → OmniMux 能力插件
 
 ## Status
 
-**Superseded（2026-08-21 下午方向变更）**：引擎客户端方案废除——用户明确要求本地化自包含，不可能依赖本地 Docker 引擎或云端。Gxgen video-engine 降级为能力清单与契约参照物（11 项 slug 与 input schema 保持对齐，未来任一端可互换执行方）。继任方案（本机 ffmpeg 子进程自包含执行，插件更名 omnimux-video）见 [omnimux-video-plugin.md](../contracts/omnimux-video-plugin.md)。上午的引擎实测事实（canceled 单 l、.job.job_id、scene_detect base64、token env 双名）对 v2 仅存参考价值。
+**Superseded（2026-08-21 下午方向变更）**：引擎客户端方案废除——用户明确要求本地化自包含，不可能依赖本地 Docker 引擎或云端。Gxgen video-engine 降级为能力清单与契约参照物（11 项 slug 与 input schema 保持对齐，未来任一端可互换执行方）。继任方案（本机 ffmpeg 子进程自包含执行，插件更名 omnimux-video）见 [dsh-video-plugin.md](../contracts/dsh-video-plugin.md)。上午的引擎实测事实（canceled 单 l、.job.job_id、scene_detect base64、token env 双名）对 v2 仅存参考价值。
 
 原记录（引擎客户端方案，已被取代）：Accepted（2026-08-21 上午拍板：全量能力、引擎本地跑+本地文件进出、omnimux-dsh 兄弟目录、聊天验收优先）
 

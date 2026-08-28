@@ -13,7 +13,7 @@ export { Config }
 /**
  * Compile a flat field table into a JSON Schema object. Raw `register`
  * does not run defineTool, so the wire schema must already be type:object.
- * `additionalProperties` defaults to false (omnimux-drama convention); the
+ * `additionalProperties` defaults to false (OmniMux plugin convention); the
  * `input` field of video_process opts into `true` because each capability
  * carries its own field set (11 different shapes, not one flattened table).
  *

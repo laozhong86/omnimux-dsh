@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L2"
 date: "2026-08-23"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "omnimux-products"
 ---
 
 # OmniMux 产品库插件需求文档

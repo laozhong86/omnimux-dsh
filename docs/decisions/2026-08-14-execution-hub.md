@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L2"
 date: "2026-08-14"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "omnimux"
 ---
 
 # 决策：执行中枢与领域插件

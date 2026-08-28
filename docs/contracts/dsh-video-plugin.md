@@ -6,7 +6,7 @@ status: "living"
 authority: "L1"
 date: "2026-08-22"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "omnimux-video"
 ---
 
 # PRD：omnimux-video 视频能力插件（自包含本地执行 + 理解层）
@@ -51,7 +51,7 @@ OmniMux 已有"生成"（videoGenerate / imageGenerate）与本插件的"处理"
 | 老板/运营 | `video_process` | 截取 / 合并 / 轮播 / 烧字幕 |
 | 老板/运营 | `video_analyze` | 「拆解这条爆款：目标/钩子/可复刻公式」→ markdown |
 | 老板/运营 | `video_reverse_prompt` | 「反推成 I2V prompt」→ 可喂生成的正文 + appendix |
-| omnimux-drama | `videoProcess` / `videoUnderstand` | 素材处理；参考片理解后进生成 |
+| 业务插件 | `videoProcess` / `videoUnderstand` | 素材处理；参考片理解后进生成 |
 | omnimux-workflow | 同上 | 画布处理节点 + 理解节点 |
 
 ## 4. 需求范围：11 项能力（ffmpeg 实现映射）
