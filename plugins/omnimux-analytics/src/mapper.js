@@ -2,8 +2,8 @@
  * Tool name -> plugin attribution.
  *
  * The pipeline exposes only tool names, not the owning plugin, so attribution
- * is a configurable prefix map (longest prefix wins). `drama_*` belongs to
- * omnimux-drama, `omnimux_text_complete` to the hub, and so on; unlisted tools land
+ * is a configurable prefix map (longest prefix wins). `workflow_*` belongs to
+ * omnimux-workflow, `omnimux_text_complete` to the hub, and so on; unlisted tools land
  * in the fallback so the dashboard still sees them.
  */
 

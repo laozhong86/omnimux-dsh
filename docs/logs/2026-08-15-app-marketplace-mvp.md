@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L3"
 date: "2026-08-15"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "omnimux"
 ---
 
 # 开发日志：OmniMux 应用市场 MVP

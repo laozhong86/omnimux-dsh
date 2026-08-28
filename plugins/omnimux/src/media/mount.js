@@ -35,7 +35,7 @@ export function mountMedia(ctx, opts) {
   ctx.tools.register({
     name: `omnimux_${kind}_submit`,
     description:
-      `Generate one ${kind} to dest. Default waits until the file is on disk (mode live). wait false returns mode submitted plus taskId. Pass task_id with dest to poll and download an existing task. Uses OMNIMUX_API_KEY / OMNIMUX_TOKEN. Does not write series/.`,
+      `Generate one ${kind} to dest. Default waits until the file is on disk (mode live). wait false returns mode submitted plus taskId. Pass task_id with dest to poll and download an existing task. Uses OMNIMUX_API_KEY / OMNIMUX_TOKEN.`,
     parameters: objectParams({
       prompt: { type: 'string', description: 'Required unless task_id is set' },
       dest: { type: 'string', required: true, description: destHint },

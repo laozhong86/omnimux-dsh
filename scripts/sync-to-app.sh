@@ -61,7 +61,7 @@ build_one() {
       echo "→ build $name (tsc + concat-client)"
       (cd "$dir" && npm run build --silent)
       ;;
-    omnimux-video|omnimux-analytics|omnimux-drama)
+    omnimux-video|omnimux-analytics)
       echo "· $name 无构建产物（源码直读），跳过 build"
       ;;
     *)

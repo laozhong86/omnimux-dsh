@@ -44,7 +44,7 @@ related:
 
 ```text
        ┌──────────────────────────────────────────────┐
-       │   L0: 真实代码 / 磁盘真源 (series/, plugins/)   │  最高权威 (Ground Truth)
+       │   L0: 真实代码 / 磁盘真源 (plugins/)             │  最高权威 (Ground Truth)
        ├──────────────────────────────────────────────┤
        │   L0+: 根级约束规则 (AGENTS.md / CONTEXT.md)  │  全会话硬约束
        ├──────────────────────────────────────────────┤
@@ -134,7 +134,7 @@ authority: "L1"                              # 权威等级: L0 | L1 | L2 | L3 |
 date: "2026-08-26"                           # 首次创建或生效日期 (YYYY-MM-DD)
 updated: "2026-08-26"                        # 最后修订日期 (YYYY-MM-DD)
 authors: ["x", "agent-architect"]            # 负责人/作者
-subsystem: "omnimux"                         # 关联子系统/插件 (如 omnimux, omnimux-drama, global)
+subsystem: "omnimux"                         # 关联子系统/插件 (如 omnimux, omnimux-workflow, global)
 tags: ["tag1", "tag2"]                       # 检索标签
 supersedes: []                               # 被当前文档替代的历史文档路径
 superseded_by: null                          # 取代当前文档的新文档路径 (若已废弃)

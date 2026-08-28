@@ -6,7 +6,7 @@ status: "living"
 authority: "L1"
 date: "2026-08-22"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "global"
 ---
 
 # Official harness pin

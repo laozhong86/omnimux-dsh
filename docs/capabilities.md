@@ -17,12 +17,8 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 
 | Surface | Status | Evidence |
 |---|---|---|
-| `dsh plugin add ./plugins/omnimux` | **real** | 2026-08-14：`DSH_SRC=… pnpm dsh --profile drama --help` 启动不再 `provide` 崩溃；`scripts/verify-cordis-propagate.mjs` |
-| `dsh plugin add ./plugins/omnimux-drama` | **real** | same |
-| `drama_project_status` | **real** | reads `series/` |
-| `drama_init_project` | **real** | creates empty `series/` |
-| `drama_upsert_series` / `drama_upsert_shot` / `drama_confirm_bible` | **real** | writes yaml/json |
-| `drama_generate_shot` | **real + stub** | live: [docs/evidence/2026-08-15-e2e-dsh.md](evidence/2026-08-15-e2e-dsh.md) (`mode: "live"`, task `task_7iQMXxX3tL6EBiPUmi9NYiigZL1rtMzx`, 1732475-byte mp4). Default sync; `background` optional. Writes `job_id` on submit; `generating` + `job_id` resumes. No seam → stub or `needs-provider`. |
+| `dsh plugin add ./plugins/omnimux` | **real** | 2026-08-14：`DSH_SRC=… pnpm dsh --help` 启动正常；`scripts/verify-cordis-propagate.mjs` |
+| `dsh plugin add ./plugins/omnimux-workflow` | **real** | 画布工作流：DAG 编排与多模态生成节点执行 |
 | Third-party compatible endpoint via `OMNIMUX_BASE_URL` env | **unproven** | 仅 OpenAI-video 兼容形；只有 OmniMux 本身经真实任务验证过 |
 | `omnimux_video_submit` | **real** | [docs/evidence/2026-08-14-omnimux-video.md](evidence/2026-08-14-omnimux-video.md). Routed through `Config.media` (`omnimux` + `openai-media`) |
 | Media provider route table | **real** (keyless) | `src/media/route.js`. Unknown provider/protocol fail at resolve. One live vendor row: OmniMux |

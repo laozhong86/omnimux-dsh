@@ -6,7 +6,7 @@ status: "living"
 authority: "L1"
 date: "2026-08-26"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "global"
 ---
 
 # Briefing contract
@@ -45,7 +45,6 @@ Do not write a briefing on every turn.
 |---|---|
 | Coding agent in this checkout | Read and write per this contract |
 | Human | Confirmation gate; may edit the file directly |
-| `dsh --profile drama` | MUST NOT write briefing. It only mutates `series/` |
 
 ## Status
 

@@ -101,7 +101,7 @@ npm run build      # 三 bundle：dist/index.js + lib/client.js + lib/canvas.js
 | — | `dest` | `$DSH_HOME/omnimux/workflow/media/executions/<execId>/<nodeId>.<ext>`，**hub 负责下载落盘**，回填 `mediaUrl` 走既有 M3 链路 |
 | 取消 | `signal` | AbortSignal 贯通 hub 的 submit/poll/download |
 
-提交语义：`wait:false` 异步提交拿 `taskId` → `{ dest, taskId }` 轮询 + 下载（与 omnimux-drama `drama_generate_shot` 同款用法）。`textComplete` 无 taskId 机制，在 awaitTask 阶段一次性执行并把文本落盘。
+提交语义：`wait:false` 异步提交拿 `taskId` → `{ dest, taskId }` 轮询 + 下载。`textComplete` 无 taskId 机制，在 awaitTask 阶段一次性执行并把文本落盘。
 
 ### 并发与限流
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": "2026-08-26T06:13:14.572Z",
+  "updatedAt": "2026-08-28T04:00:58.624Z",
   "topology": {
     "tiers": [
       {
@@ -23,9 +23,9 @@
       }
     ],
     "summary": {
-      "totalPlugins": 11,
-      "totalTools": 55,
-      "totalSeams": 4
+      "totalPlugins": 12,
+      "totalTools": 59,
+      "totalSeams": 5
     }
   },
   "plugins": [
@@ -265,13 +265,14 @@
       "tier": "tier-1-app",
       "entrypoint": "src/index.js",
       "status": "active",
-      "description": "OmniMux Clip / AI 剪辑工坊：独立多轨剪辑 overlay，与画布只交换 JSON。",
+      "description": "OmniMux Clip / 视频剪辑：官方 OpenReel GUI + 管线，挂 better-sidebar Tab。",
       "tags": [
         "clip",
         "nle",
         "timeline",
         "video-editor",
-        "overlay"
+        "openreel",
+        "sidebar-tab"
       ],
       "skills": [
         "skills/clip-craft/SKILL.md"
@@ -332,8 +333,9 @@
         ],
         "slots": [
           {
-            "target": "shell.overlay",
-            "componentPath": "src/client/ClipOverlay.jsx"
+            "target": "betterSidebar.registerTab",
+            "id": "omnimux-clip:studio",
+            "componentPath": "src/client/OpenReelStudioTab.jsx"
           }
         ],
         "storageDomains": [
@@ -759,85 +761,6 @@
       "path": "plugins/omnimux-workflow"
     },
     {
-      "id": "omnimux-drama",
-      "name": "omnimux-drama",
-      "version": "0.1.0",
-      "tier": "tier-2-vertical",
-      "entrypoint": "src/index.js",
-      "status": "active",
-      "description": "短剧工业化制作体系：短剧系列工程初始化、剧本分镜、角色/场景 Bible 与镜头生成",
-      "tags": [
-        "drama",
-        "storyboard",
-        "series",
-        "entertainment",
-        "bible",
-        "shots"
-      ],
-      "capabilities": {
-        "tools": [
-          {
-            "name": "drama_init_project",
-            "summary": "初始化短剧系列工程目录与基础配置",
-            "category": "drama",
-            "isWriteOperation": true,
-            "requiresAuth": false
-          },
-          {
-            "name": "drama_project_status",
-            "summary": "读取 series/ 下项目全景状态与镜头列表",
-            "category": "drama",
-            "isWriteOperation": false,
-            "requiresAuth": false
-          },
-          {
-            "name": "drama_upsert_series",
-            "summary": "创建或更新短剧系列元数据",
-            "category": "drama",
-            "isWriteOperation": true,
-            "requiresAuth": false
-          },
-          {
-            "name": "drama_upsert_shot",
-            "summary": "新增或更新指定分镜镜头设定",
-            "category": "drama",
-            "isWriteOperation": true,
-            "requiresAuth": false
-          },
-          {
-            "name": "drama_confirm_bible",
-            "summary": "固化角色与场景 Bible 设定至磁盘",
-            "category": "drama",
-            "isWriteOperation": true,
-            "requiresAuth": false
-          },
-          {
-            "name": "drama_generate_shot",
-            "summary": "驱动媒体 Seam 生成镜头成片",
-            "category": "drama",
-            "isWriteOperation": true,
-            "requiresAuth": true
-          }
-        ],
-        "seamsProvided": [],
-        "seamsConsumed": [
-          "mediaSeam",
-          "identity"
-        ],
-        "slots": [],
-        "storageDomains": [
-          "series/"
-        ]
-      },
-      "dependencies": {
-        "requiredPlugins": [
-          "omnimux"
-        ],
-        "systemBinaries": []
-      },
-      "path": "plugins/omnimux-drama"
-    },
-    {
       "id": "omnimux-video",
       "name": "omnimux-video",
       "version": "0.1.0",
@@ -897,6 +820,163 @@
         ]
       },
       "path": "plugins/omnimux-video"
+    },
+    {
+      "id": "dsh-publish",
+      "name": "dsh-publish",
+      "version": "0.1.0",
+      "tier": "tier-3-personal",
+      "entrypoint": "src/index.js",
+      "status": "active",
+      "description": "社媒内容发布编排层：草稿管理、多账号分发、发布状态追踪与失败重试",
+      "tags": [
+        "publish",
+        "social",
+        "distribution",
+        "drafts",
+        "accounts"
+      ],
+      "capabilities": {
+        "tools": [
+          {
+            "name": "publish_create_draft",
+            "summary": "创建新的社媒发布草稿",
+            "category": "draft",
+            "isWriteOperation": true,
+            "requiresAuth": false
+          },
+          {
+            "name": "publish_update_draft",
+            "summary": "更新草稿内容与媒体引用",
+            "category": "draft",
+            "isWriteOperation": true,
+            "requiresAuth": false
+          },
+          {
+            "name": "publish_delete_draft",
+            "summary": "删除指定草稿",
+            "category": "draft",
+            "isWriteOperation": true,
+            "requiresAuth": false
+          },
+          {
+            "name": "publish_list_accounts",
+            "summary": "列出可供发布的目标账号列表",
+            "category": "accounts",
+            "isWriteOperation": false,
+            "requiresAuth": false
+          },
+          {
+            "name": "publish_assign_accounts",
+            "summary": "为指定草稿分配发布目标账号",
+            "category": "distribution",
+            "isWriteOperation": true,
+            "requiresAuth": false
+          },
+          {
+            "name": "publish_submit",
+            "summary": "提交草稿至发布执行通道",
+            "category": "execution",
+            "isWriteOperation": true,
+            "requiresAuth": true
+          },
+          {
+            "name": "publish_list_records",
+            "summary": "查询历史发布任务记录与状态",
+            "category": "records",
+            "isWriteOperation": false,
+            "requiresAuth": false
+          },
+          {
+            "name": "publish_get_record",
+            "summary": "获取单条发布任务详细执行日志",
+            "category": "records",
+            "isWriteOperation": false,
+            "requiresAuth": false
+          },
+          {
+            "name": "publish_retry_task",
+            "summary": "重试失败的发布子任务",
+            "category": "execution",
+            "isWriteOperation": true,
+            "requiresAuth": true
+          }
+        ],
+        "seamsProvided": [],
+        "seamsConsumed": [
+          "identity"
+        ],
+        "slots": [
+          {
+            "target": "sidebar.extra",
+            "componentPath": "src/client/sidebar-entry.js"
+          },
+          {
+            "target": "shell.overlay",
+            "componentPath": "src/client/PublishStage.jsx"
+          }
+        ],
+        "storageDomains": [
+          "$DSH_HOME/publish/"
+        ]
+      },
+      "dependencies": {
+        "requiredPlugins": [
+          "omnimux"
+        ],
+        "systemBinaries": []
+      },
+      "path": "plugins/dsh-publish"
+    },
+    {
+      "id": "omnimux-video-preview",
+      "name": "omnimux-video-preview",
+      "version": "0.1.0",
+      "tier": "tier-3-extension",
+      "entrypoint": "src/index.js",
+      "status": "active",
+      "description": "DSH 视频内联预览插件：为 better-sidebar 提供高性能视频预览，支持 HTTP Range (206) 流式拖动、沙箱安全校验与元数据探查。",
+      "tags": [
+        "video",
+        "preview",
+        "player",
+        "stream",
+        "range-206",
+        "better-sidebar"
+      ],
+      "capabilities": {
+        "tools": [
+          {
+            "name": "video_preview_info",
+            "summary": "探查指定视频文件的元数据信息并获取本地 Range 206 流式播放地址",
+            "category": "media",
+            "isWriteOperation": false,
+            "requiresAuth": false
+          }
+        ],
+        "seamsProvided": [
+          {
+            "name": "videoPreview",
+            "interfaceDoc": "ctx.get('videoPreview').getStreamUrl(filePath)"
+          }
+        ],
+        "seamsConsumed": [
+          "webServer",
+          "betterSidebar"
+        ],
+        "slots": [
+          {
+            "target": "betterSidebar.fileViewer",
+            "componentPath": "src/client/index.js"
+          }
+        ],
+        "storageDomains": []
+      },
+      "dependencies": {
+        "requiredPlugins": [],
+        "systemBinaries": []
+      },
+      "path": "plugins/omnimux-video-preview"
     }
   ]
 }

@@ -1,18 +1,13 @@
 #!/usr/bin/env node
 // Live OmniMux video check. Inject the key via:
 //   omnimux tokens exec 40 --yes --timeout=600 -- env OMNIMUX_API_KEY=__OMNIMUX_TOKEN_40__ node scripts/verify-omnimux-live.mjs
-import { mkdtempSync, readFileSync, statSync } from 'node:fs'
+import { mkdtempSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { executeOmnimuxVideo } from '../plugins/omnimux/src/media/video.js'
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const shots = JSON.parse(readFileSync(join(root, 'fixtures/demo-series/series/shots.json'), 'utf8'))
-const shot = shots.find((row) => row.shot_id === 'e01-s01')
-if (!shot?.visual_description) {
-  throw new Error('fixtures/demo-series e01-s01 is missing visual_description')
-}
+const prompt = process.env.OMNIMUX_VIDEO_PROMPT || 'a close-up portrait in soft cinematic lighting'
 
 const destDir = mkdtempSync(join(tmpdir(), 'omnimux-live-'))
 const dest = join(destDir, 'e01-s01.mp4')
@@ -93,7 +88,7 @@ async function loggingFetch(input, init) {
 const started = Date.now()
 try {
   const result = await executeOmnimuxVideo({
-    prompt: shot.visual_description,
+    prompt,
     dest,
     duration: 4,
     fetcher: loggingFetch,
