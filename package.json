@@ -42,8 +42,8 @@
     "check:boundaries": "node scripts/verify-plugin-boundaries.mjs",
     "test:gates": "node --test scripts/verify-ci-gates.test.mjs",
     "auto:run": "node scripts/auto-pipeline.mjs",
-    "test": "pnpm --filter omnimux test && pnpm --filter omnimux-accounts test && pnpm --filter omnimux-inspiration test && pnpm --filter omnimux-market test && pnpm --filter dsh-publish test && pnpm test:gates",
-    "test:all": "pnpm -r test && pnpm test:gates",
+    "test": "corepack pnpm --filter omnimux test && corepack pnpm --filter omnimux-accounts test && corepack pnpm --filter omnimux-inspiration test && corepack pnpm --filter omnimux-market test && corepack pnpm --filter dsh-publish test && corepack pnpm test:gates",
+    "test:all": "corepack pnpm -r test && corepack pnpm test:gates",
     "test:ui": "node scripts/scan-ui-gates.mjs",
     "test:e2e-mock": "OMNIMUX_MOCK_MODE=replay node scripts/mock-sidecar.test.mjs",
     "test:dx": "node scripts/test-dx-pipeline.mjs",
@@ -52,7 +52,7 @@
     "verify:models": "node scripts/verify-models.mjs",
     "verify:image-live": "node scripts/verify-omnimux-image-live.mjs",
     "verify:stages": "node scripts/verify-stage-contracts.mjs",
-    "verify:gates": "pnpm note:lint && pnpm doc:pairing && pnpm archived:verify && pnpm check:boundaries && pnpm verify:stages && pnpm test:gates",
-    "verify:all": "pnpm verify:gates && pnpm test && pnpm registry:verify && pnpm doctor"
+    "verify:gates": "corepack pnpm note:lint && corepack pnpm doc:pairing && corepack pnpm archived:verify && corepack pnpm check:boundaries && corepack pnpm verify:stages && corepack pnpm test:gates",
+    "verify:all": "corepack pnpm verify:gates && corepack pnpm test && corepack pnpm registry:verify && corepack pnpm doctor"
   }
 }
