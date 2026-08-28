@@ -1,0 +1,11 @@
+# GitHub CODEOWNERS for omnimux-dsh
+# High-risk governance, contracts, and scripts are boss-only.
+
+* @laozhong86
+AGENTS.md @laozhong86
+CLAUDE.md @laozhong86
+docs/contracts/ @laozhong86
+scripts/ @laozhong86
+.github/ @laozhong86
+package.json @laozhong86
+pnpm-lock.yaml @laozhong86
