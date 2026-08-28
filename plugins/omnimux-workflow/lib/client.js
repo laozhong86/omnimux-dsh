@@ -110,38 +110,630 @@ var en = {
 };
 var NS = "dsh-workflow";
 
-// src/client/stage-store.js
+// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_01b5a2d96805ee6fa669372349bfb5d4/node_modules/dsh-ui-kit/lib/index.js
+var import_react = require("react");
+var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
+var import_jsx_runtime = require("react/jsx-runtime");
+function cssClass(value, name2) {
+  if (!value) throw new Error(`dsh-ui-kit: missing CSS module class "${name2}"`);
+  return value;
+}
+function cx(...parts) {
+  const out = [];
+  for (const part of parts) {
+    if (!part) continue;
+    if (typeof part === "string" || typeof part === "number") {
+      out.push(String(part));
+      continue;
+    }
+    for (const [key, on] of Object.entries(part)) if (on) out.push(key);
+  }
+  return out.join(" ");
+}
+var injected = /* @__PURE__ */ new Set();
+function injectCss(id, css2) {
+  if (typeof document === "undefined") return;
+  if (injected.has(id)) return;
+  injected.add(id);
+  const style = document.createElement("style");
+  style.setAttribute("data-dsh-ui-kit", id);
+  style.textContent = css2;
+  document.head.appendChild(style);
+}
+injectCss("Button.module.css", '.dshUk-Button-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-shrink: 0;\n  gap: 6px;\n  box-sizing: border-box;\n  margin: 0;\n  border: 1px solid transparent;\n  border-radius: 8px;\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  line-height: 18px;\n  letter-spacing: 0;\n  white-space: nowrap;\n  color: var(--dsw-alias-label-primary);\n  background: transparent;\n  padding: 0 12px;\n  height: 32px;\n  vertical-align: middle;\n  user-select: none;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    transform 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-Button-button:focus {\n  outline: none;\n}\n\n.dshUk-Button-button:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-Button-button:disabled,\n.dshUk-Button-button[aria-disabled="true"] {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n\n.dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n  transform: scale(0.96);\n}\n\n.dshUk-Button-sm {\n  height: 28px;\n  padding: 0 10px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-Button-xs {\n  height: 24px;\n  padding: 0 8px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  gap: 4px;\n}\n\n.dshUk-Button-iconOnly {\n  padding: 0;\n  width: 32px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-sm {\n  width: 28px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-xs {\n  width: 24px;\n}\n\n.dshUk-Button-primary {\n  background: var(--dsw-alias-button-primary-fill);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-primary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-primary-hover);\n}\n\n.dshUk-Button-secondary {\n  background: var(--dsw-alias-bg-layer-1);\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-secondary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-ghost {\n  background: transparent;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-ghost:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-Button-ghost:active:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-active);\n}\n\n.dshUk-Button-outline {\n  background: transparent;\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-outline:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-danger {\n  background: var(--dsw-alias-state-error-primary);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-danger:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-state-error-secondary);\n}\n\n.dshUk-Button-ghost[aria-pressed="true"],\n.dshUk-Button-secondary[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  box-shadow: inset 0 0 0 1px var(--dsw-alias-button-ghost-active-border);\n}\n\n/* Outline already owns a real 1px border. Keep pressed fill/border as\n * declarations \u2014 do not share the ghost/secondary inset box-shadow or the\n * pressed state would double-stroke. */\n.dshUk-Button-outline[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  border-color: var(--dsw-alias-button-ghost-active-border);\n  color: var(--dsw-alias-label-primary);\n}\n\n/* Hover specificity defense: `.dshUk-Button-outline:hover` (and ghost/secondary hover)\n * would otherwise wash the pressed fill/border back to the idle hover tokens. */\n.dshUk-Button-ghost[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]),\n.dshUk-Button-secondary[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]),\n.dshUk-Button-outline[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-ghost-active-hover);\n}\n\n.dshUk-Button-outline[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]) {\n  border-color: var(--dsw-alias-button-ghost-active-border);\n}\n\n.dshUk-Button-slot {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n}\n\n.dshUk-Button-xs .dshUk-Button-slot {\n  width: 14px;\n  height: 14px;\n}\n\n.dshUk-Button-spinner {\n  animation: dshUkSpin 0.7s linear infinite;\n}\n\n.dshUk-Button-label {\n  min-width: 0;\n}\n\n.dshUk-Button-loadingLabel {\n  opacity: 0.84;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-Button-button {\n    transition: none;\n  }\n\n  .dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n    transform: none;\n  }\n\n  .dshUk-Button-spinner {\n    animation: none;\n  }\n}\n\n@keyframes dshUkSpin {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}\n');
+var Button_module_css_default = {
+  "button": "dshUk-Button-button",
+  "sm": "dshUk-Button-sm",
+  "xs": "dshUk-Button-xs",
+  "iconOnly": "dshUk-Button-iconOnly",
+  "primary": "dshUk-Button-primary",
+  "secondary": "dshUk-Button-secondary",
+  "ghost": "dshUk-Button-ghost",
+  "outline": "dshUk-Button-outline",
+  "danger": "dshUk-Button-danger",
+  "slot": "dshUk-Button-slot",
+  "spinner": "dshUk-Button-spinner",
+  "label": "dshUk-Button-label",
+  "loadingLabel": "dshUk-Button-loadingLabel"
+};
+var VARIANT_CLASS = {
+  primary: cssClass(Button_module_css_default.primary, "primary"),
+  secondary: cssClass(Button_module_css_default.secondary, "secondary"),
+  ghost: cssClass(Button_module_css_default.ghost, "ghost"),
+  outline: cssClass(Button_module_css_default.outline, "outline"),
+  danger: cssClass(Button_module_css_default.danger, "danger")
+};
+var SIZE_CLASS$1 = {
+  default: void 0,
+  sm: cssClass(Button_module_css_default.sm, "sm"),
+  xs: cssClass(Button_module_css_default.xs, "xs")
+};
+var Button = (0, import_react.forwardRef)(function Button2({ variant = "secondary", size = "default", loading = false, leadingIcon, trailingIcon, type = "button", className, disabled, children, ...rest }, ref) {
+  const isDisabled = Boolean(disabled) || loading;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+    ...rest,
+    ref,
+    type,
+    className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], className),
+    disabled: isDisabled,
+    "aria-busy": loading || void 0,
+    "aria-disabled": isDisabled || void 0,
+    children: [
+      loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(Button_module_css_default.slot, Button_module_css_default.spinner),
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 })
+      }) : leadingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: Button_module_css_default.slot,
+        "aria-hidden": "true",
+        children: leadingIcon
+      }) : null,
+      children != null && children !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(Button_module_css_default.label, loading && Button_module_css_default.loadingLabel),
+        children
+      }) : null,
+      !loading && trailingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: Button_module_css_default.slot,
+        "aria-hidden": "true",
+        children: trailingIcon
+      }) : null
+    ]
+  });
+});
+var IconButton = (0, import_react.forwardRef)(function IconButton2({ variant = "ghost", size = "default", loading = false, type = "button", className, disabled, children, title, tooltipSide = "bottom", "aria-label": ariaLabel, ...rest }, ref) {
+  const isDisabled = Boolean(disabled) || loading;
+  const tooltip = title ?? ariaLabel;
+  const button = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+    ...rest,
+    ref,
+    type,
+    className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], Button_module_css_default.iconOnly, className),
+    disabled: isDisabled,
+    "aria-label": ariaLabel,
+    "aria-busy": loading || void 0,
+    "aria-disabled": isDisabled || void 0,
+    children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+      className: cx(Button_module_css_default.slot, loading && Button_module_css_default.spinner),
+      "aria-hidden": "true",
+      children: loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 }) : children
+    })
+  });
+  if (!tooltip) return button;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Tooltip, {
+    label: tooltip,
+    side: tooltipSide,
+    delayMs: 280,
+    disabled: isDisabled,
+    children: button
+  });
+});
+injectCss("SearchField.module.css", '.dshUk-SearchField-root {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  min-width: 140px;\n  max-width: 260px;\n  width: 100%;\n  padding: 0 8px 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-SearchField-stretch {\n  flex: 1 1 200px;\n}\n\n.dshUk-SearchField-root:hover:not(.dshUk-SearchField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-SearchField-root:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-SearchField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-icon {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-SearchField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-SearchField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-input::-webkit-search-decoration,\n.dshUk-SearchField-input::-webkit-search-cancel-button,\n.dshUk-SearchField-input::-webkit-search-results-button,\n.dshUk-SearchField-input::-webkit-search-results-decoration {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-input[type="search"] {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-shortcut {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 4px;\n  background: var(--dsw-alias-bg-layer-2);\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 11px;\n  line-height: 16px;\n  font-weight: 500;\n  letter-spacing: 0;\n}\n\n.dshUk-SearchField-clear {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  width: 20px;\n  height: 20px;\n  margin: 0;\n  padding: 0;\n  border: none;\n  border-radius: 6px;\n  background: transparent;\n  color: var(--dsw-alias-label-tertiary);\n  cursor: pointer;\n}\n\n.dshUk-SearchField-clear:hover:not(:disabled) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-clear:focus {\n  outline: none;\n}\n\n.dshUk-SearchField-clear:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 1px;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-SearchField-root {\n    transition: none;\n  }\n}\n');
+var SearchField_module_css_default = {
+  "root": "dshUk-SearchField-root",
+  "stretch": "dshUk-SearchField-stretch",
+  "disabled": "dshUk-SearchField-disabled",
+  "icon": "dshUk-SearchField-icon",
+  "input": "dshUk-SearchField-input",
+  "shortcut": "dshUk-SearchField-shortcut",
+  "clear": "dshUk-SearchField-clear"
+};
+function isTypingTarget(target) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  return target.isContentEditable;
+}
+function matchesShortcut(event, shortcut) {
+  const raw = shortcut.trim();
+  if (!raw) return false;
+  const lower = raw.toLowerCase();
+  const wantsMeta = /⌘|cmd|meta/.test(lower);
+  const wantsCtrl = /\bctrl\b|⌃/.test(lower);
+  const wantsAlt = /\balt\b|⌥/.test(lower);
+  const wantsShift = /\bshift\b|⇧/.test(lower);
+  const key = raw.replace(/⌘|⌃|⌥|⇧|cmd|meta|ctrl|alt|shift|\+/gi, "").trim().toLowerCase();
+  if (!key) return false;
+  if (Boolean(event.metaKey) !== wantsMeta) return false;
+  if (Boolean(event.ctrlKey) !== wantsCtrl) return false;
+  if (Boolean(event.altKey) !== wantsAlt) return false;
+  if (Boolean(event.shiftKey) !== wantsShift) return false;
+  return event.key.toLowerCase() === key;
+}
+var SearchField = (0, import_react.forwardRef)(function SearchField2({ value, defaultValue = "", onValueChange, onClear, debounceMs = 200, shortcut, stretch = false, clearLabel = "Clear", className, disabled, id, placeholder = "Search", ...rest }, ref) {
+  const generatedId = (0, import_react.useId)();
+  const inputId = id ?? generatedId;
+  const inputRef = (0, import_react.useRef)(null);
+  const timerRef = (0, import_react.useRef)(null);
+  const controlled = value !== void 0;
+  const [inner, setInner] = (0, import_react.useState)(defaultValue);
+  const current = controlled ? value : inner;
+  const immediate = controlled || debounceMs <= 0;
+  (0, import_react.useEffect)(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+  (0, import_react.useEffect)(() => {
+    if (!shortcut || disabled) return;
+    const onKey = (event) => {
+      if (event.defaultPrevented) return;
+      if (isTypingTarget(event.target)) return;
+      if (!matchesShortcut(event, shortcut)) return;
+      event.preventDefault();
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [shortcut, disabled]);
+  function emit(next) {
+    if (immediate) {
+      onValueChange?.(next);
+      return;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      onValueChange?.(next);
+    }, debounceMs);
+  }
+  function apply2(next) {
+    if (!controlled) setInner(next);
+    emit(next);
+  }
+  function onChange(event) {
+    apply2(event.target.value);
+  }
+  function handleClear() {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (!controlled) setInner("");
+    onValueChange?.("");
+    onClear?.();
+    inputRef.current?.focus();
+  }
+  (0, import_react.useImperativeHandle)(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    },
+    clear: handleClear
+  }));
+  function onKeyDown(event) {
+    rest.onKeyDown?.(event);
+    if (event.defaultPrevented) return;
+    if (event.key === "Escape" && current) {
+      event.preventDefault();
+      handleClear();
+    }
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+    className: cx(SearchField_module_css_default.root, stretch && SearchField_module_css_default.stretch, disabled && SearchField_module_css_default.disabled, className),
+    children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: SearchField_module_css_default.icon,
+        "aria-hidden": "true",
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconSearchOutline16, { size: 16 })
+      }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+        ...rest,
+        ref: inputRef,
+        id: inputId,
+        type: "search",
+        className: SearchField_module_css_default.input,
+        value: current,
+        disabled,
+        placeholder,
+        autoComplete: "off",
+        spellCheck: false,
+        onChange,
+        onKeyDown
+      }),
+      current ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+        type: "button",
+        className: SearchField_module_css_default.clear,
+        "aria-label": clearLabel,
+        title: clearLabel,
+        disabled,
+        onClick: handleClear,
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseFill14, { size: 14 })
+      }) : shortcut ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
+        className: SearchField_module_css_default.shortcut,
+        children: shortcut
+      }) : null
+    ]
+  });
+});
+injectCss("InputField.module.css", ".dshUk-InputField-root {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  min-width: 0;\n}\n\n.dshUk-InputField-label {\n  display: block;\n  font-size: 12px;\n  line-height: 16px;\n  font-weight: 500;\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-InputField-required {\n  margin-left: 2px;\n  color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-control {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-InputField-control:hover:not(.dshUk-InputField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-InputField-control:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-InputField-invalid {\n  border-color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-invalid:focus-within {\n  border-color: var(--dsw-alias-state-error-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-interactive-bg-hover-danger);\n}\n\n.dshUk-InputField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-affix {\n  display: inline-flex;\n  align-items: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-InputField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-InputField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-meta {\n  min-height: 16px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-hint {\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-InputField-error {\n  color: var(--dsw-alias-state-error-primary);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-InputField-control {\n    transition: none;\n  }\n}\n");
+var InputField_module_css_default = {
+  "root": "dshUk-InputField-root",
+  "label": "dshUk-InputField-label",
+  "required": "dshUk-InputField-required",
+  "control": "dshUk-InputField-control",
+  "disabled": "dshUk-InputField-disabled",
+  "invalid": "dshUk-InputField-invalid",
+  "affix": "dshUk-InputField-affix",
+  "input": "dshUk-InputField-input",
+  "meta": "dshUk-InputField-meta",
+  "hint": "dshUk-InputField-hint",
+  "error": "dshUk-InputField-error"
+};
+var InputField = (0, import_react.forwardRef)(function InputField2({ label, hint, error, prefix, suffix, className, disabled, id, required, ...rest }, ref) {
+  const generatedId = (0, import_react.useId)();
+  const inputId = id ?? generatedId;
+  const hintId = `${inputId}-hint`;
+  const errorId = `${inputId}-error`;
+  const invalid = Boolean(error);
+  const describedBy = [
+    rest["aria-describedby"],
+    hint ? hintId : void 0,
+    invalid ? errorId : void 0
+  ].filter(Boolean).join(" ") || void 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+    className: cx(InputField_module_css_default.root, className),
+    htmlFor: inputId,
+    children: [
+      label != null && label !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+        className: InputField_module_css_default.label,
+        children: [label, required ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+          className: InputField_module_css_default.required,
+          "aria-hidden": "true",
+          children: "*"
+        }) : null]
+      }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+        className: cx(InputField_module_css_default.control, invalid && InputField_module_css_default.invalid, disabled && InputField_module_css_default.disabled),
+        children: [
+          prefix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: InputField_module_css_default.affix,
+            children: prefix
+          }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+            ...rest,
+            ref,
+            id: inputId,
+            className: InputField_module_css_default.input,
+            disabled,
+            required,
+            "aria-invalid": invalid || void 0,
+            "aria-describedby": describedBy
+          }),
+          suffix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+            className: InputField_module_css_default.affix,
+            children: suffix
+          }) : null
+        ]
+      }),
+      invalid ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(InputField_module_css_default.meta, InputField_module_css_default.error),
+        id: errorId,
+        role: "alert",
+        children: error
+      }) : hint ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+        className: cx(InputField_module_css_default.meta, InputField_module_css_default.hint),
+        id: hintId,
+        children: hint
+      }) : null
+    ]
+  });
+});
+injectCss("DropdownSelect.module.css", ".dshUk-DropdownSelect-anchor {\n  display: inline-flex;\n  flex-shrink: 0;\n  min-width: 0;\n}\n\n.dshUk-DropdownSelect-trigger {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  width: 100%;\n  min-width: 112px;\n  height: 32px;\n  margin: 0;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  text-align: left;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-trigger:hover:not(:disabled) {\n  border-color: var(--dsw-alias-border-l3);\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-DropdownSelect-trigger:focus {\n  outline: none;\n}\n\n.dshUk-DropdownSelect-trigger:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-DropdownSelect-trigger:disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-DropdownSelect-open {\n  border-color: var(--dsw-alias-brand-primary);\n}\n\n.dshUk-DropdownSelect-label {\n  flex: 1;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-DropdownSelect-placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-DropdownSelect-chevron {\n  display: inline-flex;\n  width: 14px;\n  height: 14px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-chevronOpen {\n  transform: rotate(180deg);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-DropdownSelect-trigger,\n  .dshUk-DropdownSelect-chevron {\n    transition: none;\n  }\n}\n");
+injectCss("Toolbar.module.css", ".dshUk-Toolbar-bar {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  height: 48px;\n  min-height: 44px;\n  max-height: 48px;\n  padding: 0 12px;\n  overflow: hidden;\n  white-space: nowrap;\n}\n\n.dshUk-Toolbar-compact {\n  height: 44px;\n  min-height: 44px;\n}\n\n.dshUk-Toolbar-left,\n.dshUk-Toolbar-right {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  min-width: 0;\n}\n\n.dshUk-Toolbar-left {\n  flex: 1 1 auto;\n  overflow: hidden;\n}\n\n.dshUk-Toolbar-right {\n  flex: 0 0 auto;\n  margin-left: auto;\n}\n\n.dshUk-Toolbar-right > * {\n  flex-shrink: 0;\n}\n\n.dshUk-Toolbar-filters {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  flex: 0 0 auto;\n}\n\n.dshUk-Toolbar-filters > * {\n  flex-shrink: 0;\n}\n");
+var Toolbar_module_css_default = {
+  "bar": "dshUk-Toolbar-bar",
+  "compact": "dshUk-Toolbar-compact",
+  "left": "dshUk-Toolbar-left",
+  "right": "dshUk-Toolbar-right",
+  "filters": "dshUk-Toolbar-filters"
+};
+function Toolbar({ left, right, compact = false, className, children, ...rest }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+    ...rest,
+    role: "toolbar",
+    className: cx(Toolbar_module_css_default.bar, compact && Toolbar_module_css_default.compact, className),
+    children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.left,
+      children: left ?? children
+    }), right != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.right,
+      children: right
+    }) : null]
+  });
+}
+function FilterBar({ left, search, filters, actions, right, tools, className, compact, ...rest }) {
+  let leftContent;
+  let rightContent;
+  if (left != null) {
+    leftContent = left;
+    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+      search,
+      tools,
+      actions
+    ] }) : null);
+  } else if (filters != null && search != null && tools == null && actions != null && right == null) {
+    leftContent = /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.filters,
+      children: filters
+    })] });
+    rightContent = actions;
+  } else {
+    leftContent = filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+      className: Toolbar_module_css_default.filters,
+      children: filters
+    }) : null;
+    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+      search,
+      tools,
+      actions
+    ] }) : null);
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
+    ...rest,
+    left: leftContent,
+    right: rightContent,
+    ...compact !== void 0 ? { compact } : {},
+    ...className !== void 0 ? { className } : {}
+  });
+}
+injectCss("Dialog.module.css", ".dshUk-Dialog-dialog {\n  width: min(480px, 100%);\n  max-height: min(80vh, 720px);\n  border-radius: 16px;\n}\n\n.dshUk-Dialog-sm {\n  width: min(380px, 100%);\n}\n\n.dshUk-Dialog-lg {\n  width: min(640px, 100%);\n}\n\n.dshUk-Dialog-body {\n  overflow: auto;\n  max-height: min(56vh, 480px);\n}\n\n.dshUk-Dialog-footer {\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  gap: 8px;\n  width: 100%;\n}\n\n.dshUk-Dialog-message {\n  margin: 0;\n  font-size: 14px;\n  line-height: 22px;\n  color: var(--dsw-alias-label-primary);\n}\n");
+var Dialog_module_css_default = {
+  "dialog": "dshUk-Dialog-dialog",
+  "sm": "dshUk-Dialog-sm",
+  "lg": "dshUk-Dialog-lg",
+  "body": "dshUk-Dialog-body",
+  "footer": "dshUk-Dialog-footer",
+  "message": "dshUk-Dialog-message"
+};
+var SIZE_CLASS = {
+  sm: cssClass(Dialog_module_css_default.sm, "sm"),
+  md: void 0,
+  lg: cssClass(Dialog_module_css_default.lg, "lg")
+};
+function ModalDialog({ open, onClose, title, description, children, footer, size = "md", closeLabel = "Close", className, contentClassName }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Modal, {
+    open,
+    onClose,
+    title,
+    closeLabel,
+    className: cx(Dialog_module_css_default.dialog, SIZE_CLASS[size], className),
+    contentClassName: cx(Dialog_module_css_default.body, contentClassName),
+    ...description !== void 0 ? { description } : {},
+    ...footer !== void 0 ? { footer } : {},
+    children
+  });
+}
+function ConfirmModal({ message, children, confirmLabel = "Confirm", cancelLabel = "Cancel", confirmVariant = "primary", confirmLoading = false, onConfirm, onClose, size = "sm", ...rest }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ModalDialog, {
+    ...rest,
+    size,
+    onClose,
+    footer: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+      className: Dialog_module_css_default.footer,
+      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+        variant: "outline",
+        onClick: onClose,
+        disabled: confirmLoading,
+        children: cancelLabel
+      }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+        variant: confirmVariant,
+        loading: confirmLoading,
+        onClick: onConfirm,
+        children: confirmLabel
+      })]
+    }),
+    children: message != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+      className: Dialog_module_css_default.message,
+      children: message
+    }) : children
+  });
+}
+injectCss("EmptyState.module.css", ".dshUk-EmptyState-emptyState {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n  padding: 48px 24px;\n  min-height: 240px;\n  box-sizing: border-box;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n}\n\n.dshUk-EmptyState-emptyState.dshUk-EmptyState-compact {\n  padding: 24px 16px;\n  min-height: 140px;\n}\n\n.dshUk-EmptyState-iconWrap {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 12px;\n  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.4));\n}\n\n.dshUk-EmptyState-title {\n  margin: 0 0 6px;\n  font-size: 15px;\n  font-weight: 600;\n  line-height: 20px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n}\n\n.dshUk-EmptyState-description {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  max-width: 360px;\n}\n\n.dshUk-EmptyState-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin-top: 16px;\n}\n");
+var EmptyState_module_css_default = {
+  "emptyState": "dshUk-EmptyState-emptyState",
+  "compact": "dshUk-EmptyState-compact",
+  "iconWrap": "dshUk-EmptyState-iconWrap",
+  "title": "dshUk-EmptyState-title",
+  "description": "dshUk-EmptyState-description",
+  "actions": "dshUk-EmptyState-actions"
+};
+var EMPTY_CLASS = cssClass(EmptyState_module_css_default.emptyState, "emptyState");
+var COMPACT_CLASS = cssClass(EmptyState_module_css_default.compact, "compact");
+var ICON_WRAP_CLASS = cssClass(EmptyState_module_css_default.iconWrap, "iconWrap");
+var TITLE_CLASS$1 = cssClass(EmptyState_module_css_default.title, "title");
+var DESCRIPTION_CLASS = cssClass(EmptyState_module_css_default.description, "description");
+var ACTIONS_CLASS = cssClass(EmptyState_module_css_default.actions, "actions");
+var EmptyState = (0, import_react.forwardRef)(function EmptyState2({ icon, title, description, action, secondaryAction, compact = false, className, ...rest }, ref) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+    ...rest,
+    ref,
+    className: cx(EMPTY_CLASS, compact && COMPACT_CLASS, className),
+    children: [
+      icon && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+        className: ICON_WRAP_CLASS,
+        children: icon
+      }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+        className: TITLE_CLASS$1,
+        children: title
+      }),
+      description && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+        className: DESCRIPTION_CLASS,
+        children: description
+      }),
+      (action || secondaryAction) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+        className: ACTIONS_CLASS,
+        children: [action, secondaryAction]
+      })
+    ]
+  });
+});
+injectCss("StageContainer.module.css", '.dshUk-StageContainer-stageContainer {\n  position: absolute;\n  top: var(--stage-top, 0px);\n  left: var(--stage-left, 56px);\n  width: var(--stage-width, calc(100vw - 56px));\n  height: var(--stage-height, 100vh);\n  background: var(--dsw-alias-bg-base, #111113);\n  color: var(--dsw-alias-label-primary, #ffffff);\n  z-index: 200;\n  display: flex;\n  flex-direction: column;\n  box-sizing: border-box;\n  overflow: hidden;\n}\n\n.dshUk-StageContainer-stageContainer[data-visible="false"] {\n  display: none !important;\n  pointer-events: none !important;\n}\n');
+var CONTAINER_CLASS = cssClass({ "stageContainer": "dshUk-StageContainer-stageContainer" }.stageContainer, "stageContainer");
+var StageContainer = (0, import_react.forwardRef)(function StageContainer2({ stageStore, title, className, style, children, ...rest }, ref) {
+  const open = (0, import_react.useSyncExternalStore)(stageStore ? (onStoreChange) => stageStore.subscribe(onStoreChange) : () => () => {
+  }, stageStore ? () => stageStore.getSnapshot() : () => false);
+  const [everOpened, setEverOpened] = (0, import_react.useState)(false);
+  const [box, setBox] = (0, import_react.useState)(() => stageStore ? stageStore.readBox() : {
+    top: 0,
+    left: 0,
+    width: 0,
+    height: 0
+  });
+  if (open && !everOpened) setEverOpened(true);
+  (0, import_react.useLayoutEffect)(() => {
+    if (!open || !stageStore) return void 0;
+    const update = () => {
+      setBox(stageStore.readBox());
+    };
+    update();
+    const scroll = typeof document !== "undefined" ? document.querySelector("[data-conversation-scroll]") : null;
+    const target = scroll instanceof HTMLElement ? scroll : typeof document !== "undefined" ? document.querySelector('[data-slot="conversation"]')?.parentElement : null;
+    const observer = typeof ResizeObserver === "function" && target ? new ResizeObserver(update) : null;
+    if (target && observer) observer.observe(target);
+    if (typeof window !== "undefined") window.addEventListener("resize", update);
+    return () => {
+      observer?.disconnect();
+      if (typeof window !== "undefined") window.removeEventListener("resize", update);
+    };
+  }, [open, stageStore]);
+  if (!stageStore || !everOpened) return null;
+  const customStyle = {
+    ...style,
+    display: open ? style?.display !== "none" ? style?.display : void 0 : "none",
+    ["--stage-top"]: `${box.top}px`,
+    ["--stage-left"]: `${box.left}px`,
+    ["--stage-width"]: `${box.width}px`,
+    ["--stage-height"]: `${box.height}px`
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+    ...rest,
+    ref,
+    role: "region",
+    "aria-label": title,
+    "aria-hidden": open ? void 0 : true,
+    "data-visible": open ? "true" : "false",
+    className: cx(CONTAINER_CLASS, className),
+    style: customStyle,
+    children
+  });
+});
+injectCss("StageHeader.module.css", ".dshUk-StageHeader-stageHeader {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 12px 20px;\n  min-height: 56px;\n  box-sizing: border-box;\n  flex: none;\n  gap: 16px;\n  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.06));\n}\n\n.dshUk-StageHeader-heading {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1 1 auto;\n}\n\n.dshUk-StageHeader-titleRow {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.dshUk-StageHeader-title {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 600;\n  line-height: 24px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-subtitle {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-controls {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex: none;\n}\n");
+var StageHeader_module_css_default = {
+  "stageHeader": "dshUk-StageHeader-stageHeader",
+  "heading": "dshUk-StageHeader-heading",
+  "titleRow": "dshUk-StageHeader-titleRow",
+  "title": "dshUk-StageHeader-title",
+  "subtitle": "dshUk-StageHeader-subtitle",
+  "controls": "dshUk-StageHeader-controls"
+};
+var HEADER_CLASS = cssClass(StageHeader_module_css_default.stageHeader, "stageHeader");
+var HEADING_CLASS = cssClass(StageHeader_module_css_default.heading, "heading");
+var TITLE_ROW_CLASS = cssClass(StageHeader_module_css_default.titleRow, "titleRow");
+var TITLE_CLASS = cssClass(StageHeader_module_css_default.title, "title");
+var SUBTITLE_CLASS = cssClass(StageHeader_module_css_default.subtitle, "subtitle");
+var CONTROLS_CLASS = cssClass(StageHeader_module_css_default.controls, "controls");
+var StageHeader = (0, import_react.forwardRef)(function StageHeader2({ title, subtitle, badge, onRefresh, refreshing = false, refreshTitle = "Refresh", onClose, closeTitle = "Close", actions, className, ...rest }, ref) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
+    ...rest,
+    ref,
+    className: cx(HEADER_CLASS, className),
+    children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+      className: HEADING_CLASS,
+      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+        className: TITLE_ROW_CLASS,
+        children: [typeof title === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+          className: TITLE_CLASS,
+          children: title
+        }) : title, badge]
+      }), subtitle && (typeof subtitle === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+        className: SUBTITLE_CLASS,
+        children: subtitle
+      }) : subtitle)]
+    }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+      className: CONTROLS_CLASS,
+      children: [
+        actions,
+        onRefresh && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+          variant: "ghost",
+          size: "sm",
+          "aria-label": refreshTitle,
+          title: refreshTitle,
+          disabled: refreshing,
+          onClick: () => {
+            onRefresh();
+          },
+          children: refreshing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconRefreshOutline16, {})
+        }),
+        onClose && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+          variant: "ghost",
+          size: "sm",
+          "aria-label": closeTitle,
+          title: closeTitle,
+          onClick: () => {
+            onClose();
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseOutline16, {})
+        })
+      ]
+    })]
+  });
+});
 var PRODUCT_STAGE_EVENT = "dsh-product-stage";
-var STAGE_ID = "omnimux-workflow";
-function createStageStore(getStage) {
+var ACTIVE_STAGE_STORAGE_KEY = "omnimux_active_product_stage";
+function createStageStore(stageId, getStage = () => typeof window !== "undefined" ? window.__omnimuxStage : void 0) {
   let open = false;
-  try {
-    open = window.localStorage.getItem("omnimux_active_product_stage") === STAGE_ID;
+  if (typeof window !== "undefined") try {
+    open = window.localStorage.getItem(ACTIVE_STAGE_STORAGE_KEY) === stageId;
   } catch {
   }
   const listeners = /* @__PURE__ */ new Set();
   function emit() {
-    for (const listener of listeners) listener();
+    for (const listener of listeners) try {
+      listener();
+    } catch (err) {
+      console.error("StageStore listener error:", err);
+    }
   }
-  if (open) {
+  if (open && typeof window !== "undefined") {
     const restore = () => {
       try {
         const stage = getStage();
-        if (stage && typeof stage.claim === "function") {
-          stage.claim(STAGE_ID);
-        }
+        if (stage && typeof stage.claim === "function") stage.claim(stageId);
       } catch {
       }
     };
     if (typeof queueMicrotask === "function") queueMicrotask(restore);
     else setTimeout(restore, 0);
   }
-  window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
+  if (typeof window !== "undefined") window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : void 0;
-    if (id !== STAGE_ID && open) {
+    if (id !== stageId && open) {
       open = false;
       emit();
-    } else if (id === STAGE_ID && !open) {
+    } else if (id === stageId && !open) {
       open = true;
       emit();
     }
@@ -149,38 +741,42 @@ function createStageStore(getStage) {
   return {
     getSnapshot: () => open,
     readBox() {
-      return getStage().readBox();
+      const stage = getStage();
+      if (stage && typeof stage.readBox === "function") return stage.readBox();
+      const left = 56;
+      const winWidth = typeof window !== "undefined" ? window.innerWidth : 1280;
+      const winHeight = typeof window !== "undefined" ? window.innerHeight : 800;
+      return {
+        top: 0,
+        left,
+        width: Math.max(8, winWidth - left),
+        height: Math.max(8, winHeight)
+      };
     },
-    /**
-     * @param {() => void} listener
-     */
     subscribe(listener) {
       listeners.add(listener);
       return () => {
         listeners.delete(listener);
       };
     },
-    /**
-     * @param {boolean} next
-     */
     set(next) {
       if (open === next) return;
       open = next;
       const stage = getStage();
-      if (open) stage.claim(STAGE_ID);
-      else stage.release(STAGE_ID);
+      if (open) stage?.claim?.(stageId);
+      else stage?.release?.(stageId);
       emit();
     },
-    toggle() {
-      this.set(!open);
+    open() {
+      this.set(true);
+    },
+    close() {
+      this.set(false);
     }
   };
 }
-
-// src/client/sidebar-entry.js
-var ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="14" height="14" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><path fill="currentColor" d="M2 5.5a1.5 1.5 0 0 1 3 0V6h10v-.5a1.5 1.5 0 0 1 3 0v4.757a5.5 5.5 0 0 0-1-.657V5.5a.5.5 0 0 0-1 0v3.707a5.5 5.5 0 0 0-1-.185V7H5v6h4.207a5.5 5.5 0 0 0-.185 1H5v.5a1.5 1.5 0 0 1-3 0zm2 0a.5.5 0 0 0-1 0v9a.5.5 0 0 0 1 0zm15 9a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.287-.437l-2.97-1.65a.5.5 0 0 0-.743.437v3.3a.5.5 0 0 0 .743.437l2.97-1.65a.5.5 0 0 0 0-.874"/></svg>';
-var STYLES = `
-.omnimux-workflow-entry {
+var SIDEBAR_ENTRY_COMMON_STYLES = `
+.omnimux-sidebar-nav-entry {
   box-sizing: border-box; display: flex; align-items: center; gap: 6px; position: relative;
   width: calc(100% - 8px); height: 32px; margin: 0 4px; padding: 0 8px;
   border: none; border-radius: 8px; background: transparent;
@@ -188,24 +784,38 @@ var STYLES = `
   font: var(--dsw-font-s-14, inherit); font-size: 14px; line-height: 20px;
   cursor: pointer; text-align: left;
 }
-.omnimux-workflow-entry:hover { background: var(--dsw-alias-interactive-bg-hover); }
-.omnimux-workflow-entry[data-active="true"] { background: var(--dsw-alias-interactive-bg-active); font-weight: 500; }
-.omnimux-workflow-entry-icon { flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
-.omnimux-workflow-entry svg { display: block; width: 14px; height: 14px; }
-.omnimux-workflow-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
-`;
-function paintLabel(entry, label) {
-  entry.setAttribute("aria-label", label);
-  const node = entry.querySelector(".omnimux-workflow-entry-label");
-  if (node) node.textContent = label;
+.omnimux-sidebar-nav-entry:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12));
 }
-function registerWhenReady(row) {
+.omnimux-sidebar-nav-entry[data-active="true"] {
+  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18));
+  font-weight: 500;
+}
+.omnimux-sidebar-nav-entry-icon {
+  flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center;
+}
+.omnimux-sidebar-nav-entry-icon svg {
+  display: block; width: 14px; height: 14px;
+}
+.omnimux-sidebar-nav-entry-label {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px;
+}
+`;
+function resolveLabel(label) {
+  return typeof label === "function" ? label() : label;
+}
+function paintLabel(entry, labelText) {
+  entry.setAttribute("aria-label", labelText);
+  const node = entry.querySelector(".omnimux-sidebar-nav-entry-label");
+  if (node) node.textContent = labelText;
+}
+function registerWhenCoordinatorReady(row) {
   let unregister = () => {
   };
   let disposed = false;
   const attempt = () => {
     if (disposed) return;
-    const api = window.__omnimuxSidebar;
+    const api = (typeof window !== "undefined" ? window : void 0)?.__omnimuxSidebar;
     if (!api || typeof api.register !== "function") return;
     unregister = api.register(row);
     clearInterval(timer);
@@ -218,39 +828,61 @@ function registerWhenReady(row) {
     unregister();
   };
 }
-function mountSidebarEntry(stage, t, locale) {
+function createSidebarEntry(options) {
+  const { id, rank, label, iconSvg, stageStore, locale, customClassName, datasetKey } = options;
   const entry = document.createElement("button");
   entry.type = "button";
-  entry.dataset.dshOmnimuxWorkflowEntry = "";
-  entry.className = "omnimux-workflow-entry";
-  entry.innerHTML = `<span class="omnimux-workflow-entry-icon">${ICON}</span><span class="omnimux-workflow-entry-label"></span>`;
-  paintLabel(entry, t("nav"));
+  if (datasetKey) entry.setAttribute(datasetKey, "");
+  entry.className = `omnimux-sidebar-nav-entry ${customClassName || ""}`.trim();
+  entry.innerHTML = `<span class="omnimux-sidebar-nav-entry-icon">${iconSvg}</span><span class="omnimux-sidebar-nav-entry-label"></span>`;
+  const updateLabel = () => {
+    paintLabel(entry, resolveLabel(label));
+  };
+  updateLabel();
   entry.addEventListener("click", () => {
-    stage.toggle();
+    stageStore.open();
   });
-  const paint = () => {
-    paintLabel(entry, t("nav"));
-  };
-  const unsubscribeLocale = typeof locale?.subscribe === "function" ? locale.subscribe(paint) : () => {
-  };
   const syncActive = () => {
-    if (stage.getSnapshot()) entry.dataset.active = "true";
+    if (stageStore.getSnapshot()) entry.dataset.active = "true";
     else delete entry.dataset.active;
   };
-  const unsubscribeStage = stage.subscribe(syncActive);
+  const unsubscribeStage = stageStore.subscribe(syncActive);
   syncActive();
-  const unregister = registerWhenReady({
-    id: "omnimux-workflow-entry",
-    rank: 4,
-    styles: STYLES,
-    styleId: "omnimux-workflow-entry-styles",
+  const unsubscribeLocale = typeof locale?.subscribe === "function" ? locale.subscribe(updateLabel) : () => {
+  };
+  const unregisterCoordinator = registerWhenCoordinatorReady({
+    id: `${id}-entry`,
+    rank,
+    styles: SIDEBAR_ENTRY_COMMON_STYLES,
+    styleId: "omnimux-sidebar-nav-entry-styles",
     create: () => entry
   });
   return () => {
-    unregister();
+    unregisterCoordinator();
     unsubscribeStage();
     unsubscribeLocale();
   };
+}
+
+// src/client/stage-store.js
+var STAGE_ID = "omnimux-workflow";
+function createStageStore2(getStage) {
+  return createStageStore(STAGE_ID, getStage);
+}
+
+// src/client/sidebar-entry.js
+var ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="14" height="14" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><path fill="currentColor" d="M2 5.5a1.5 1.5 0 0 1 3 0V6h10v-.5a1.5 1.5 0 0 1 3 0v4.757a5.5 5.5 0 0 0-1-.657V5.5a.5.5 0 0 0-1 0v3.707a5.5 5.5 0 0 0-1-.185V7H5v6h4.207a5.5 5.5 0 0 0-.185 1H5v.5a1.5 1.5 0 0 1-3 0zm2 0a.5.5 0 0 0-1 0v9a.5.5 0 0 0 1 0zm15 9a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.287-.437l-2.97-1.65a.5.5 0 0 0-.743.437v3.3a.5.5 0 0 0 .743.437l2.97-1.65a.5.5 0 0 0 0-.874"/></svg>';
+function mountSidebarEntry(stage, t, locale) {
+  return createSidebarEntry({
+    id: "omnimux-workflow",
+    rank: 4,
+    label: () => t("nav"),
+    iconSvg: ICON,
+    stageStore: stage,
+    locale,
+    customClassName: "omnimux-workflow-entry",
+    datasetKey: "data-dsh-omnimux-workflow-entry"
+  });
 }
 
 // src/client/api.js
@@ -867,7 +1499,7 @@ function promptNewProjectName(t, opts = {}) {
 
 // src/client/projects/sidebar-new-project.js
 var ICON2 = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>';
-var STYLES2 = `
+var STYLES = `
 .omnimux-new-project-entry {
   box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px;
   height: 38px; padding: 8px 16px;
@@ -886,7 +1518,7 @@ function paintLabel2(entry, label) {
   const node = entry.querySelector(".omnimux-new-project-entry-label");
   if (node) node.textContent = label;
 }
-function registerWhenReady2(row) {
+function registerWhenReady(row) {
   let unregister = () => {
   };
   let disposed = false;
@@ -922,10 +1554,10 @@ function mountNewProjectEntry(deps, t, locale) {
   };
   const unsubscribeLocale = typeof locale?.subscribe === "function" ? locale.subscribe(paint) : () => {
   };
-  const unregister = registerWhenReady2({
+  const unregister = registerWhenReady({
     id: "omnimux-new-project-entry",
     kind: "inline",
-    styles: STYLES2,
+    styles: STYLES,
     styleId: "omnimux-new-project-entry-styles",
     create: () => entry
   });
@@ -938,598 +1570,6 @@ function mountNewProjectEntry(deps, t, locale) {
 // src/client/projects/ProjectLibraryPage.jsx
 var import_react3 = require("react");
 var import_dsh_client_ui_primitives2 = require("@deepseek-ai/dsh-client-ui-primitives");
-
-// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_01b5a2d96805ee6fa669372349bfb5d4/node_modules/dsh-ui-kit/lib/index.js
-var import_react = require("react");
-var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
-var import_jsx_runtime = require("react/jsx-runtime");
-function cssClass(value, name2) {
-  if (!value) throw new Error(`dsh-ui-kit: missing CSS module class "${name2}"`);
-  return value;
-}
-function cx(...parts) {
-  const out = [];
-  for (const part of parts) {
-    if (!part) continue;
-    if (typeof part === "string" || typeof part === "number") {
-      out.push(String(part));
-      continue;
-    }
-    for (const [key, on] of Object.entries(part)) if (on) out.push(key);
-  }
-  return out.join(" ");
-}
-var injected = /* @__PURE__ */ new Set();
-function injectCss(id, css2) {
-  if (typeof document === "undefined") return;
-  if (injected.has(id)) return;
-  injected.add(id);
-  const style = document.createElement("style");
-  style.setAttribute("data-dsh-ui-kit", id);
-  style.textContent = css2;
-  document.head.appendChild(style);
-}
-injectCss("Button.module.css", '.dshUk-Button-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex-shrink: 0;\n  gap: 6px;\n  box-sizing: border-box;\n  margin: 0;\n  border: 1px solid transparent;\n  border-radius: 8px;\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  line-height: 18px;\n  letter-spacing: 0;\n  white-space: nowrap;\n  color: var(--dsw-alias-label-primary);\n  background: transparent;\n  padding: 0 12px;\n  height: 32px;\n  vertical-align: middle;\n  user-select: none;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    transform 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-Button-button:focus {\n  outline: none;\n}\n\n.dshUk-Button-button:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-Button-button:disabled,\n.dshUk-Button-button[aria-disabled="true"] {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n\n.dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n  transform: scale(0.96);\n}\n\n.dshUk-Button-sm {\n  height: 28px;\n  padding: 0 10px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-Button-xs {\n  height: 24px;\n  padding: 0 8px;\n  border-radius: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  gap: 4px;\n}\n\n.dshUk-Button-iconOnly {\n  padding: 0;\n  width: 32px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-sm {\n  width: 28px;\n}\n\n.dshUk-Button-iconOnly.dshUk-Button-xs {\n  width: 24px;\n}\n\n.dshUk-Button-primary {\n  background: var(--dsw-alias-button-primary-fill);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-primary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-primary-hover);\n}\n\n.dshUk-Button-secondary {\n  background: var(--dsw-alias-bg-layer-1);\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-secondary:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-ghost {\n  background: transparent;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-ghost:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-Button-ghost:active:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-active);\n}\n\n.dshUk-Button-outline {\n  background: transparent;\n  border-color: var(--dsw-alias-border-l2);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Button-outline:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-Button-danger {\n  background: var(--dsw-alias-state-error-primary);\n  color: var(--dsw-alias-label-primary-foreground);\n}\n\n.dshUk-Button-danger:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-state-error-secondary);\n}\n\n.dshUk-Button-ghost[aria-pressed="true"],\n.dshUk-Button-secondary[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  box-shadow: inset 0 0 0 1px var(--dsw-alias-button-ghost-active-border);\n}\n\n/* Outline already owns a real 1px border. Keep pressed fill/border as\n * declarations \u2014 do not share the ghost/secondary inset box-shadow or the\n * pressed state would double-stroke. */\n.dshUk-Button-outline[aria-pressed="true"] {\n  background: var(--dsw-alias-button-ghost-active-fill);\n  border-color: var(--dsw-alias-button-ghost-active-border);\n  color: var(--dsw-alias-label-primary);\n}\n\n/* Hover specificity defense: `.dshUk-Button-outline:hover` (and ghost/secondary hover)\n * would otherwise wash the pressed fill/border back to the idle hover tokens. */\n.dshUk-Button-ghost[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]),\n.dshUk-Button-secondary[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]),\n.dshUk-Button-outline[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]) {\n  background: var(--dsw-alias-button-ghost-active-hover);\n}\n\n.dshUk-Button-outline[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]) {\n  border-color: var(--dsw-alias-button-ghost-active-border);\n}\n\n.dshUk-Button-slot {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n}\n\n.dshUk-Button-xs .dshUk-Button-slot {\n  width: 14px;\n  height: 14px;\n}\n\n.dshUk-Button-spinner {\n  animation: dshUkSpin 0.7s linear infinite;\n}\n\n.dshUk-Button-label {\n  min-width: 0;\n}\n\n.dshUk-Button-loadingLabel {\n  opacity: 0.84;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-Button-button {\n    transition: none;\n  }\n\n  .dshUk-Button-button:active:not(:disabled):not([aria-disabled="true"]) {\n    transform: none;\n  }\n\n  .dshUk-Button-spinner {\n    animation: none;\n  }\n}\n\n@keyframes dshUkSpin {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}\n');
-var Button_module_css_default = {
-  "button": "dshUk-Button-button",
-  "sm": "dshUk-Button-sm",
-  "xs": "dshUk-Button-xs",
-  "iconOnly": "dshUk-Button-iconOnly",
-  "primary": "dshUk-Button-primary",
-  "secondary": "dshUk-Button-secondary",
-  "ghost": "dshUk-Button-ghost",
-  "outline": "dshUk-Button-outline",
-  "danger": "dshUk-Button-danger",
-  "slot": "dshUk-Button-slot",
-  "spinner": "dshUk-Button-spinner",
-  "label": "dshUk-Button-label",
-  "loadingLabel": "dshUk-Button-loadingLabel"
-};
-var VARIANT_CLASS = {
-  primary: cssClass(Button_module_css_default.primary, "primary"),
-  secondary: cssClass(Button_module_css_default.secondary, "secondary"),
-  ghost: cssClass(Button_module_css_default.ghost, "ghost"),
-  outline: cssClass(Button_module_css_default.outline, "outline"),
-  danger: cssClass(Button_module_css_default.danger, "danger")
-};
-var SIZE_CLASS$1 = {
-  default: void 0,
-  sm: cssClass(Button_module_css_default.sm, "sm"),
-  xs: cssClass(Button_module_css_default.xs, "xs")
-};
-var Button = (0, import_react.forwardRef)(function Button2({ variant = "secondary", size = "default", loading = false, leadingIcon, trailingIcon, type = "button", className, disabled, children, ...rest }, ref) {
-  const isDisabled = Boolean(disabled) || loading;
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-    ...rest,
-    ref,
-    type,
-    className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], className),
-    disabled: isDisabled,
-    "aria-busy": loading || void 0,
-    "aria-disabled": isDisabled || void 0,
-    children: [
-      loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-        className: cx(Button_module_css_default.slot, Button_module_css_default.spinner),
-        "aria-hidden": "true",
-        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 })
-      }) : leadingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-        className: Button_module_css_default.slot,
-        "aria-hidden": "true",
-        children: leadingIcon
-      }) : null,
-      children != null && children !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-        className: cx(Button_module_css_default.label, loading && Button_module_css_default.loadingLabel),
-        children
-      }) : null,
-      !loading && trailingIcon != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-        className: Button_module_css_default.slot,
-        "aria-hidden": "true",
-        children: trailingIcon
-      }) : null
-    ]
-  });
-});
-var IconButton = (0, import_react.forwardRef)(function IconButton2({ variant = "ghost", size = "default", loading = false, type = "button", className, disabled, children, title, tooltipSide = "bottom", "aria-label": ariaLabel, ...rest }, ref) {
-  const isDisabled = Boolean(disabled) || loading;
-  const tooltip = title ?? ariaLabel;
-  const button = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-    ...rest,
-    ref,
-    type,
-    className: cx(Button_module_css_default.button, VARIANT_CLASS[variant], SIZE_CLASS$1[size], Button_module_css_default.iconOnly, className),
-    disabled: isDisabled,
-    "aria-label": ariaLabel,
-    "aria-busy": loading || void 0,
-    "aria-disabled": isDisabled || void 0,
-    children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-      className: cx(Button_module_css_default.slot, loading && Button_module_css_default.spinner),
-      "aria-hidden": "true",
-      children: loading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, { size: size === "xs" ? 14 : 16 }) : children
-    })
-  });
-  if (!tooltip) return button;
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Tooltip, {
-    label: tooltip,
-    side: tooltipSide,
-    delayMs: 280,
-    disabled: isDisabled,
-    children: button
-  });
-});
-injectCss("SearchField.module.css", '.dshUk-SearchField-root {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  min-width: 140px;\n  max-width: 260px;\n  width: 100%;\n  padding: 0 8px 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-SearchField-stretch {\n  flex: 1 1 200px;\n}\n\n.dshUk-SearchField-root:hover:not(.dshUk-SearchField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-SearchField-root:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-SearchField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-icon {\n  display: inline-flex;\n  width: 16px;\n  height: 16px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-SearchField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-SearchField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-SearchField-input::-webkit-search-decoration,\n.dshUk-SearchField-input::-webkit-search-cancel-button,\n.dshUk-SearchField-input::-webkit-search-results-button,\n.dshUk-SearchField-input::-webkit-search-results-decoration {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-input[type="search"] {\n  -webkit-appearance: none;\n  appearance: none;\n}\n\n.dshUk-SearchField-shortcut {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 4px;\n  background: var(--dsw-alias-bg-layer-2);\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 11px;\n  line-height: 16px;\n  font-weight: 500;\n  letter-spacing: 0;\n}\n\n.dshUk-SearchField-clear {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  width: 20px;\n  height: 20px;\n  margin: 0;\n  padding: 0;\n  border: none;\n  border-radius: 6px;\n  background: transparent;\n  color: var(--dsw-alias-label-tertiary);\n  cursor: pointer;\n}\n\n.dshUk-SearchField-clear:hover:not(:disabled) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-SearchField-clear:focus {\n  outline: none;\n}\n\n.dshUk-SearchField-clear:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 1px;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-SearchField-root {\n    transition: none;\n  }\n}\n');
-var SearchField_module_css_default = {
-  "root": "dshUk-SearchField-root",
-  "stretch": "dshUk-SearchField-stretch",
-  "disabled": "dshUk-SearchField-disabled",
-  "icon": "dshUk-SearchField-icon",
-  "input": "dshUk-SearchField-input",
-  "shortcut": "dshUk-SearchField-shortcut",
-  "clear": "dshUk-SearchField-clear"
-};
-function isTypingTarget(target) {
-  if (!(target instanceof HTMLElement)) return false;
-  const tag = target.tagName;
-  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
-  return target.isContentEditable;
-}
-function matchesShortcut(event, shortcut) {
-  const raw = shortcut.trim();
-  if (!raw) return false;
-  const lower = raw.toLowerCase();
-  const wantsMeta = /⌘|cmd|meta/.test(lower);
-  const wantsCtrl = /\bctrl\b|⌃/.test(lower);
-  const wantsAlt = /\balt\b|⌥/.test(lower);
-  const wantsShift = /\bshift\b|⇧/.test(lower);
-  const key = raw.replace(/⌘|⌃|⌥|⇧|cmd|meta|ctrl|alt|shift|\+/gi, "").trim().toLowerCase();
-  if (!key) return false;
-  if (Boolean(event.metaKey) !== wantsMeta) return false;
-  if (Boolean(event.ctrlKey) !== wantsCtrl) return false;
-  if (Boolean(event.altKey) !== wantsAlt) return false;
-  if (Boolean(event.shiftKey) !== wantsShift) return false;
-  return event.key.toLowerCase() === key;
-}
-var SearchField = (0, import_react.forwardRef)(function SearchField2({ value, defaultValue = "", onValueChange, onClear, debounceMs = 200, shortcut, stretch = false, clearLabel = "Clear", className, disabled, id, placeholder = "Search", ...rest }, ref) {
-  const generatedId = (0, import_react.useId)();
-  const inputId = id ?? generatedId;
-  const inputRef = (0, import_react.useRef)(null);
-  const timerRef = (0, import_react.useRef)(null);
-  const controlled = value !== void 0;
-  const [inner, setInner] = (0, import_react.useState)(defaultValue);
-  const current = controlled ? value : inner;
-  const immediate = controlled || debounceMs <= 0;
-  (0, import_react.useEffect)(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-  (0, import_react.useEffect)(() => {
-    if (!shortcut || disabled) return;
-    const onKey = (event) => {
-      if (event.defaultPrevented) return;
-      if (isTypingTarget(event.target)) return;
-      if (!matchesShortcut(event, shortcut)) return;
-      event.preventDefault();
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [shortcut, disabled]);
-  function emit(next) {
-    if (immediate) {
-      onValueChange?.(next);
-      return;
-    }
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null;
-      onValueChange?.(next);
-    }, debounceMs);
-  }
-  function apply2(next) {
-    if (!controlled) setInner(next);
-    emit(next);
-  }
-  function onChange(event) {
-    apply2(event.target.value);
-  }
-  function handleClear() {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    if (!controlled) setInner("");
-    onValueChange?.("");
-    onClear?.();
-    inputRef.current?.focus();
-  }
-  (0, import_react.useImperativeHandle)(ref, () => ({
-    focus: () => {
-      inputRef.current?.focus();
-    },
-    clear: handleClear
-  }));
-  function onKeyDown(event) {
-    rest.onKeyDown?.(event);
-    if (event.defaultPrevented) return;
-    if (event.key === "Escape" && current) {
-      event.preventDefault();
-      handleClear();
-    }
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-    className: cx(SearchField_module_css_default.root, stretch && SearchField_module_css_default.stretch, disabled && SearchField_module_css_default.disabled, className),
-    children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-        className: SearchField_module_css_default.icon,
-        "aria-hidden": "true",
-        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconSearchOutline16, { size: 16 })
-      }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-        ...rest,
-        ref: inputRef,
-        id: inputId,
-        type: "search",
-        className: SearchField_module_css_default.input,
-        value: current,
-        disabled,
-        placeholder,
-        autoComplete: "off",
-        spellCheck: false,
-        onChange,
-        onKeyDown
-      }),
-      current ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-        type: "button",
-        className: SearchField_module_css_default.clear,
-        "aria-label": clearLabel,
-        title: clearLabel,
-        disabled,
-        onClick: handleClear,
-        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseFill14, { size: 14 })
-      }) : shortcut ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("kbd", {
-        className: SearchField_module_css_default.shortcut,
-        children: shortcut
-      }) : null
-    ]
-  });
-});
-injectCss("InputField.module.css", ".dshUk-InputField-root {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  min-width: 0;\n}\n\n.dshUk-InputField-label {\n  display: block;\n  font-size: 12px;\n  line-height: 16px;\n  font-weight: 500;\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-InputField-required {\n  margin-left: 2px;\n  color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-control {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  box-sizing: border-box;\n  height: 32px;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  transition:\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-InputField-control:hover:not(.dshUk-InputField-disabled) {\n  border-color: var(--dsw-alias-border-l3);\n}\n\n.dshUk-InputField-control:focus-within {\n  border-color: var(--dsw-alias-brand-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary);\n}\n\n.dshUk-InputField-invalid {\n  border-color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-InputField-invalid:focus-within {\n  border-color: var(--dsw-alias-state-error-primary);\n  box-shadow: 0 0 0 2px var(--dsw-alias-interactive-bg-hover-danger);\n}\n\n.dshUk-InputField-disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-affix {\n  display: inline-flex;\n  align-items: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-input {\n  flex: 1;\n  min-width: 0;\n  height: 100%;\n  border: none;\n  outline: none;\n  background: transparent;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-InputField-input::placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-InputField-input:disabled {\n  cursor: not-allowed;\n}\n\n.dshUk-InputField-meta {\n  min-height: 16px;\n  font-size: 12px;\n  line-height: 16px;\n}\n\n.dshUk-InputField-hint {\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-InputField-error {\n  color: var(--dsw-alias-state-error-primary);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-InputField-control {\n    transition: none;\n  }\n}\n");
-var InputField_module_css_default = {
-  "root": "dshUk-InputField-root",
-  "label": "dshUk-InputField-label",
-  "required": "dshUk-InputField-required",
-  "control": "dshUk-InputField-control",
-  "disabled": "dshUk-InputField-disabled",
-  "invalid": "dshUk-InputField-invalid",
-  "affix": "dshUk-InputField-affix",
-  "input": "dshUk-InputField-input",
-  "meta": "dshUk-InputField-meta",
-  "hint": "dshUk-InputField-hint",
-  "error": "dshUk-InputField-error"
-};
-var InputField = (0, import_react.forwardRef)(function InputField2({ label, hint, error, prefix, suffix, className, disabled, id, required, ...rest }, ref) {
-  const generatedId = (0, import_react.useId)();
-  const inputId = id ?? generatedId;
-  const hintId = `${inputId}-hint`;
-  const errorId = `${inputId}-error`;
-  const invalid = Boolean(error);
-  const describedBy = [
-    rest["aria-describedby"],
-    hint ? hintId : void 0,
-    invalid ? errorId : void 0
-  ].filter(Boolean).join(" ") || void 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-    className: cx(InputField_module_css_default.root, className),
-    htmlFor: inputId,
-    children: [
-      label != null && label !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-        className: InputField_module_css_default.label,
-        children: [label, required ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-          className: InputField_module_css_default.required,
-          "aria-hidden": "true",
-          children: "*"
-        }) : null]
-      }) : null,
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-        className: cx(InputField_module_css_default.control, invalid && InputField_module_css_default.invalid, disabled && InputField_module_css_default.disabled),
-        children: [
-          prefix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-            className: InputField_module_css_default.affix,
-            children: prefix
-          }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-            ...rest,
-            ref,
-            id: inputId,
-            className: InputField_module_css_default.input,
-            disabled,
-            required,
-            "aria-invalid": invalid || void 0,
-            "aria-describedby": describedBy
-          }),
-          suffix != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-            className: InputField_module_css_default.affix,
-            children: suffix
-          }) : null
-        ]
-      }),
-      invalid ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-        className: cx(InputField_module_css_default.meta, InputField_module_css_default.error),
-        id: errorId,
-        role: "alert",
-        children: error
-      }) : hint ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-        className: cx(InputField_module_css_default.meta, InputField_module_css_default.hint),
-        id: hintId,
-        children: hint
-      }) : null
-    ]
-  });
-});
-injectCss("DropdownSelect.module.css", ".dshUk-DropdownSelect-anchor {\n  display: inline-flex;\n  flex-shrink: 0;\n  min-width: 0;\n}\n\n.dshUk-DropdownSelect-trigger {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  width: 100%;\n  min-width: 112px;\n  height: 32px;\n  margin: 0;\n  padding: 0 10px;\n  border: 1px solid var(--dsw-alias-border-l2);\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-1);\n  color: var(--dsw-alias-label-primary);\n  cursor: pointer;\n  font: inherit;\n  font-size: 13px;\n  line-height: 18px;\n  text-align: left;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-trigger:hover:not(:disabled) {\n  border-color: var(--dsw-alias-border-l3);\n  background: var(--dsw-alias-interactive-bg-hover);\n}\n\n.dshUk-DropdownSelect-trigger:focus {\n  outline: none;\n}\n\n.dshUk-DropdownSelect-trigger:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 2px;\n}\n\n.dshUk-DropdownSelect-trigger:disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n.dshUk-DropdownSelect-open {\n  border-color: var(--dsw-alias-brand-primary);\n}\n\n.dshUk-DropdownSelect-label {\n  flex: 1;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-DropdownSelect-placeholder {\n  color: var(--dsw-alias-label-dimmed);\n}\n\n.dshUk-DropdownSelect-chevron {\n  display: inline-flex;\n  width: 14px;\n  height: 14px;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: var(--dsw-alias-label-tertiary);\n  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-DropdownSelect-chevronOpen {\n  transform: rotate(180deg);\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .dshUk-DropdownSelect-trigger,\n  .dshUk-DropdownSelect-chevron {\n    transition: none;\n  }\n}\n");
-injectCss("Toolbar.module.css", ".dshUk-Toolbar-bar {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  box-sizing: border-box;\n  height: 48px;\n  min-height: 44px;\n  max-height: 48px;\n  padding: 0 12px;\n  overflow: hidden;\n  white-space: nowrap;\n}\n\n.dshUk-Toolbar-compact {\n  height: 44px;\n  min-height: 44px;\n}\n\n.dshUk-Toolbar-left,\n.dshUk-Toolbar-right {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  min-width: 0;\n}\n\n.dshUk-Toolbar-left {\n  flex: 1 1 auto;\n  overflow: hidden;\n}\n\n.dshUk-Toolbar-right {\n  flex: 0 0 auto;\n  margin-left: auto;\n}\n\n.dshUk-Toolbar-right > * {\n  flex-shrink: 0;\n}\n\n.dshUk-Toolbar-filters {\n  display: flex;\n  flex-wrap: nowrap;\n  align-items: center;\n  gap: 8px;\n  flex: 0 0 auto;\n}\n\n.dshUk-Toolbar-filters > * {\n  flex-shrink: 0;\n}\n");
-var Toolbar_module_css_default = {
-  "bar": "dshUk-Toolbar-bar",
-  "compact": "dshUk-Toolbar-compact",
-  "left": "dshUk-Toolbar-left",
-  "right": "dshUk-Toolbar-right",
-  "filters": "dshUk-Toolbar-filters"
-};
-function Toolbar({ left, right, compact = false, className, children, ...rest }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-    ...rest,
-    role: "toolbar",
-    className: cx(Toolbar_module_css_default.bar, compact && Toolbar_module_css_default.compact, className),
-    children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-      className: Toolbar_module_css_default.left,
-      children: left ?? children
-    }), right != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-      className: Toolbar_module_css_default.right,
-      children: right
-    }) : null]
-  });
-}
-function FilterBar({ left, search, filters, actions, right, tools, className, compact, ...rest }) {
-  let leftContent;
-  let rightContent;
-  if (left != null) {
-    leftContent = left;
-    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-      search,
-      tools,
-      actions
-    ] }) : null);
-  } else if (filters != null && search != null && tools == null && actions != null && right == null) {
-    leftContent = /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [search, /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-      className: Toolbar_module_css_default.filters,
-      children: filters
-    })] });
-    rightContent = actions;
-  } else {
-    leftContent = filters != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-      className: Toolbar_module_css_default.filters,
-      children: filters
-    }) : null;
-    rightContent = right ?? (search != null || tools != null || actions != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-      search,
-      tools,
-      actions
-    ] }) : null);
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toolbar, {
-    ...rest,
-    left: leftContent,
-    right: rightContent,
-    ...compact !== void 0 ? { compact } : {},
-    ...className !== void 0 ? { className } : {}
-  });
-}
-injectCss("Dialog.module.css", ".dshUk-Dialog-dialog {\n  width: min(480px, 100%);\n  max-height: min(80vh, 720px);\n  border-radius: 16px;\n}\n\n.dshUk-Dialog-sm {\n  width: min(380px, 100%);\n}\n\n.dshUk-Dialog-lg {\n  width: min(640px, 100%);\n}\n\n.dshUk-Dialog-body {\n  overflow: auto;\n  max-height: min(56vh, 480px);\n}\n\n.dshUk-Dialog-footer {\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  gap: 8px;\n  width: 100%;\n}\n\n.dshUk-Dialog-message {\n  margin: 0;\n  font-size: 14px;\n  line-height: 22px;\n  color: var(--dsw-alias-label-primary);\n}\n");
-var Dialog_module_css_default = {
-  "dialog": "dshUk-Dialog-dialog",
-  "sm": "dshUk-Dialog-sm",
-  "lg": "dshUk-Dialog-lg",
-  "body": "dshUk-Dialog-body",
-  "footer": "dshUk-Dialog-footer",
-  "message": "dshUk-Dialog-message"
-};
-var SIZE_CLASS = {
-  sm: cssClass(Dialog_module_css_default.sm, "sm"),
-  md: void 0,
-  lg: cssClass(Dialog_module_css_default.lg, "lg")
-};
-function ModalDialog({ open, onClose, title, description, children, footer, size = "md", closeLabel = "Close", className, contentClassName }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.Modal, {
-    open,
-    onClose,
-    title,
-    closeLabel,
-    className: cx(Dialog_module_css_default.dialog, SIZE_CLASS[size], className),
-    contentClassName: cx(Dialog_module_css_default.body, contentClassName),
-    ...description !== void 0 ? { description } : {},
-    ...footer !== void 0 ? { footer } : {},
-    children
-  });
-}
-function ConfirmModal({ message, children, confirmLabel = "Confirm", cancelLabel = "Cancel", confirmVariant = "primary", confirmLoading = false, onConfirm, onClose, size = "sm", ...rest }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ModalDialog, {
-    ...rest,
-    size,
-    onClose,
-    footer: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-      className: Dialog_module_css_default.footer,
-      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-        variant: "outline",
-        onClick: onClose,
-        disabled: confirmLoading,
-        children: cancelLabel
-      }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-        variant: confirmVariant,
-        loading: confirmLoading,
-        onClick: onConfirm,
-        children: confirmLabel
-      })]
-    }),
-    children: message != null ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-      className: Dialog_module_css_default.message,
-      children: message
-    }) : children
-  });
-}
-injectCss("EmptyState.module.css", ".dshUk-EmptyState-emptyState {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n  padding: 48px 24px;\n  min-height: 240px;\n  box-sizing: border-box;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n}\n\n.dshUk-EmptyState-emptyState.dshUk-EmptyState-compact {\n  padding: 24px 16px;\n  min-height: 140px;\n}\n\n.dshUk-EmptyState-iconWrap {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 12px;\n  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.4));\n}\n\n.dshUk-EmptyState-title {\n  margin: 0 0 6px;\n  font-size: 15px;\n  font-weight: 600;\n  line-height: 20px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n}\n\n.dshUk-EmptyState-description {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  max-width: 360px;\n}\n\n.dshUk-EmptyState-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin-top: 16px;\n}\n");
-var EmptyState_module_css_default = {
-  "emptyState": "dshUk-EmptyState-emptyState",
-  "compact": "dshUk-EmptyState-compact",
-  "iconWrap": "dshUk-EmptyState-iconWrap",
-  "title": "dshUk-EmptyState-title",
-  "description": "dshUk-EmptyState-description",
-  "actions": "dshUk-EmptyState-actions"
-};
-var EMPTY_CLASS = cssClass(EmptyState_module_css_default.emptyState, "emptyState");
-var COMPACT_CLASS = cssClass(EmptyState_module_css_default.compact, "compact");
-var ICON_WRAP_CLASS = cssClass(EmptyState_module_css_default.iconWrap, "iconWrap");
-var TITLE_CLASS$1 = cssClass(EmptyState_module_css_default.title, "title");
-var DESCRIPTION_CLASS = cssClass(EmptyState_module_css_default.description, "description");
-var ACTIONS_CLASS = cssClass(EmptyState_module_css_default.actions, "actions");
-var EmptyState = (0, import_react.forwardRef)(function EmptyState2({ icon, title, description, action, secondaryAction, compact = false, className, ...rest }, ref) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-    ...rest,
-    ref,
-    className: cx(EMPTY_CLASS, compact && COMPACT_CLASS, className),
-    children: [
-      icon && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-        className: ICON_WRAP_CLASS,
-        children: icon
-      }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-        className: TITLE_CLASS$1,
-        children: title
-      }),
-      description && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-        className: DESCRIPTION_CLASS,
-        children: description
-      }),
-      (action || secondaryAction) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-        className: ACTIONS_CLASS,
-        children: [action, secondaryAction]
-      })
-    ]
-  });
-});
-injectCss("StageContainer.module.css", '.dshUk-StageContainer-stageContainer {\n  position: absolute;\n  top: var(--stage-top, 0px);\n  left: var(--stage-left, 56px);\n  width: var(--stage-width, calc(100vw - 56px));\n  height: var(--stage-height, 100vh);\n  background: var(--dsw-alias-bg-base, #111113);\n  color: var(--dsw-alias-label-primary, #ffffff);\n  z-index: 200;\n  display: flex;\n  flex-direction: column;\n  box-sizing: border-box;\n  overflow: hidden;\n}\n\n.dshUk-StageContainer-stageContainer[data-visible="false"] {\n  display: none !important;\n  pointer-events: none !important;\n}\n');
-var CONTAINER_CLASS = cssClass({ "stageContainer": "dshUk-StageContainer-stageContainer" }.stageContainer, "stageContainer");
-var StageContainer = (0, import_react.forwardRef)(function StageContainer2({ stageStore, title, className, style, children, ...rest }, ref) {
-  const open = (0, import_react.useSyncExternalStore)(stageStore ? (onStoreChange) => stageStore.subscribe(onStoreChange) : () => () => {
-  }, stageStore ? () => stageStore.getSnapshot() : () => false);
-  const [everOpened, setEverOpened] = (0, import_react.useState)(false);
-  const [box, setBox] = (0, import_react.useState)(() => stageStore ? stageStore.readBox() : {
-    top: 0,
-    left: 0,
-    width: 0,
-    height: 0
-  });
-  if (open && !everOpened) setEverOpened(true);
-  (0, import_react.useLayoutEffect)(() => {
-    if (!open || !stageStore) return void 0;
-    const update = () => {
-      setBox(stageStore.readBox());
-    };
-    update();
-    const scroll = typeof document !== "undefined" ? document.querySelector("[data-conversation-scroll]") : null;
-    const target = scroll instanceof HTMLElement ? scroll : typeof document !== "undefined" ? document.querySelector('[data-slot="conversation"]')?.parentElement : null;
-    const observer = typeof ResizeObserver === "function" && target ? new ResizeObserver(update) : null;
-    if (target && observer) observer.observe(target);
-    if (typeof window !== "undefined") window.addEventListener("resize", update);
-    return () => {
-      observer?.disconnect();
-      if (typeof window !== "undefined") window.removeEventListener("resize", update);
-    };
-  }, [open, stageStore]);
-  if (!stageStore || !everOpened) return null;
-  const customStyle = {
-    ...style,
-    display: open ? style?.display !== "none" ? style?.display : void 0 : "none",
-    ["--stage-top"]: `${box.top}px`,
-    ["--stage-left"]: `${box.left}px`,
-    ["--stage-width"]: `${box.width}px`,
-    ["--stage-height"]: `${box.height}px`
-  };
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-    ...rest,
-    ref,
-    role: "region",
-    "aria-label": title,
-    "aria-hidden": open ? void 0 : true,
-    "data-visible": open ? "true" : "false",
-    className: cx(CONTAINER_CLASS, className),
-    style: customStyle,
-    children
-  });
-});
-injectCss("StageHeader.module.css", ".dshUk-StageHeader-stageHeader {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 12px 20px;\n  min-height: 56px;\n  box-sizing: border-box;\n  flex: none;\n  gap: 16px;\n  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.06));\n}\n\n.dshUk-StageHeader-heading {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1 1 auto;\n}\n\n.dshUk-StageHeader-titleRow {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.dshUk-StageHeader-title {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 600;\n  line-height: 24px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-subtitle {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-controls {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex: none;\n}\n");
-var StageHeader_module_css_default = {
-  "stageHeader": "dshUk-StageHeader-stageHeader",
-  "heading": "dshUk-StageHeader-heading",
-  "titleRow": "dshUk-StageHeader-titleRow",
-  "title": "dshUk-StageHeader-title",
-  "subtitle": "dshUk-StageHeader-subtitle",
-  "controls": "dshUk-StageHeader-controls"
-};
-var HEADER_CLASS = cssClass(StageHeader_module_css_default.stageHeader, "stageHeader");
-var HEADING_CLASS = cssClass(StageHeader_module_css_default.heading, "heading");
-var TITLE_ROW_CLASS = cssClass(StageHeader_module_css_default.titleRow, "titleRow");
-var TITLE_CLASS = cssClass(StageHeader_module_css_default.title, "title");
-var SUBTITLE_CLASS = cssClass(StageHeader_module_css_default.subtitle, "subtitle");
-var CONTROLS_CLASS = cssClass(StageHeader_module_css_default.controls, "controls");
-var StageHeader = (0, import_react.forwardRef)(function StageHeader2({ title, subtitle, badge, onRefresh, refreshing = false, refreshTitle = "Refresh", onClose, closeTitle = "Close", actions, className, ...rest }, ref) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
-    ...rest,
-    ref,
-    className: cx(HEADER_CLASS, className),
-    children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-      className: HEADING_CLASS,
-      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-        className: TITLE_ROW_CLASS,
-        children: [typeof title === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-          className: TITLE_CLASS,
-          children: title
-        }) : title, badge]
-      }), subtitle && (typeof subtitle === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-        className: SUBTITLE_CLASS,
-        children: subtitle
-      }) : subtitle)]
-    }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-      className: CONTROLS_CLASS,
-      children: [
-        actions,
-        onRefresh && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
-          variant: "ghost",
-          size: "sm",
-          "aria-label": refreshTitle,
-          title: refreshTitle,
-          disabled: refreshing,
-          onClick: () => {
-            onRefresh();
-          },
-          children: refreshing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconRefreshOutline16, {})
-        }),
-        onClose && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
-          variant: "ghost",
-          size: "sm",
-          "aria-label": closeTitle,
-          title: closeTitle,
-          onClick: () => {
-            onClose();
-          },
-          children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseOutline16, {})
-        })
-      ]
-    })]
-  });
-});
 
 // src/client/styles.js
 var STYLES_ID = "omnimux-workflow-styles";
@@ -2314,7 +2354,7 @@ var inject = ["slots", "locale", "sessions", "workspaces", "layout"];
 function apply(ctx) {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux-workflow: dictionaries");
   const t = ctx.locale.bind(NS);
-  const stage = createStageStore(() => window.__omnimuxStage);
+  const stage = createStageStore2(() => window.__omnimuxStage);
   ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), "omnimux-workflow: sidebar entry");
   ctx.effect(
     () => mountNewProjectEntry({ sessions: ctx.sessions, workspaces: ctx.workspaces, layout: ctx.layout, stage }, t, ctx.locale),
