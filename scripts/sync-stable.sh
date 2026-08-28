@@ -18,7 +18,33 @@ if [ "${OMNIMUX_SYNC_VIA:-}" != "sync-to-app" ] && [ "${OMNIMUX_SYNC_VIA:-}" != 
 fi
 
 PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh/plugins}"
-PROFILE="${DSH_HOME:-$HOME/.dsh}/profiles/omnimux"
+
+# 支持多 Home 目录同步：扫描并同步所有存在的 profile (包括 ~/.dsh, ~/.omnimux-dev, ~/.omnimux, 及显式 DSH_HOME)
+PROFILES=()
+HOMES=("$HOME/.dsh" "$HOME/.omnimux-dev" "$HOME/.omnimux")
+if [ -n "${DSH_HOME:-}" ]; then
+  HOMES+=("$DSH_HOME")
+fi
+
+for home_candidate in "${HOMES[@]}"; do
+  prof_dir="$home_candidate/profiles/omnimux"
+  if [ -d "$prof_dir" ] || [ -d "$home_candidate" ]; then
+    # 避免重复加入
+    already=0
+    if [ "${#PROFILES[@]}" -gt 0 ]; then
+      for p in "${PROFILES[@]}"; do
+        if [ "$p" = "$prof_dir" ]; then
+          already=1
+          break
+        fi
+      done
+    fi
+    if [ "$already" -eq 0 ]; then
+      PROFILES+=("$prof_dir")
+    fi
+  fi
+done
+
 # 产品树垂直（含产品库 / 插件市场 / 剪辑）+ omnimux-video + omnimux-analytics（埋点）+ omnimux-publish（发布中心）
 ALL_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics omnimux-publish)
 
@@ -28,29 +54,36 @@ else
   PLUGINS=("${ALL_PLUGINS[@]}")
 fi
 
-for name in "${PLUGINS[@]}"; do
-  src="$PLUGINS_ROOT/$name"
-  dst="$PROFILE/node_modules/$name"
-  if [ ! -f "$src/package.json" ]; then
-    echo "✗ 源码缺失: $src" >&2
-    exit 1
-  fi
-  # 逐目录同步（含 lib/ 构建产物与 cordis.patch.yml），排除依赖与测试
-  mkdir -p "$dst"
-  rsync -a --delete \
-    --exclude node_modules \
-    --exclude '*.test.js' \
-    --exclude '*.spec.js' \
-    "$src/" "$dst/"
-  echo "✓ $name 已物化进生产 profile"
-done
+for PROFILE in "${PROFILES[@]}"; do
+  echo "== 同步目标 Profile: $PROFILE =="
+  mkdir -p "$PROFILE/node_modules"
 
-# 依赖声明统一回 file:（物化副本形态），声明了 dsh.bundle 的插件幂等写入加载名单
-node - "$PROFILE" "${PLUGINS[@]}" <<'EOF'
+  for name in "${PLUGINS[@]}"; do
+    src="$PLUGINS_ROOT/$name"
+    dst="$PROFILE/node_modules/$name"
+    if [ ! -f "$src/package.json" ]; then
+      echo "✗ 源码缺失: $src" >&2
+      exit 1
+    fi
+    # 逐目录同步（含 lib/ 构建产物与 cordis.patch.yml），排除依赖与测试
+    mkdir -p "$dst"
+    rsync -a --delete \
+      --exclude node_modules \
+      --exclude '*.test.js' \
+      --exclude '*.spec.js' \
+      "$src/" "$dst/"
+    echo "✓ $name 已物化进 $PROFILE"
+  done
+
+  # 依赖声明统一回 file:（物化副本形态），声明了 dsh.bundle 的插件幂等写入加载名单
+  node - "$PROFILE" "${PLUGINS[@]}" <<'EOF'
 const fs = require('fs')
 const path = require('path')
 const [profile, ...plugins] = process.argv.slice(2)
 const file = path.join(profile, 'package.json')
+if (!fs.existsSync(file)) {
+  process.exit(0)
+}
 const manifest = JSON.parse(fs.readFileSync(file, 'utf8'))
 if (!manifest.dependencies) manifest.dependencies = {}
 if (!manifest.dsh) manifest.dsh = {}
@@ -126,5 +159,8 @@ if (bundleChanged) console.log('✓ dsh.profile.bundles 已幂等补齐本次 ds
 else console.log('· dsh.profile.bundles 无需变更')
 EOF
 
-(cd "$PROFILE" && pnpm install --silent)
-echo "✓ pnpm install 完成。重启 OmniMux 后生效。"
+  if [ -f "$PROFILE/package.json" ]; then
+    (cd "$PROFILE" && pnpm install --ignore-scripts --silent)
+    echo "✓ $PROFILE pnpm install 完成。"
+  fi
+done
