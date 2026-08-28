@@ -616,7 +616,9 @@ export const INSPIRATION_CSS = `
   overflow: hidden;
 }
 
-/* 左侧顶部模式切换开关 Segmented Controls */
+/* 左侧顶部模式切换开关 Segmented Controls
+ * 32px 轨道 + 28px 内钮（紧凑变体）。必须 overflow:hidden，且选择器
+ * 盖过 dsh-ui-kit Button 的 height/radius，避免选中态顶破胶囊。 */
 .omnimux-inspiration-preview-switch {
   display: flex;
   align-items: center;
@@ -629,29 +631,53 @@ export const INSPIRATION_CSS = `
 }
 .omnimux-inspiration-switch-group {
   display: inline-flex;
+  align-items: stretch;
+  height: 32px;
+  padding: 1px;
+  box-sizing: border-box;
+  overflow: hidden;
   background: var(--dsw-alias-bg-base, #0a0a0a);
-  padding: 3px;
   border-radius: 9999px;
   border: 1px solid var(--dsw-alias-border-l2, #242424);
 }
-.omnimux-inspiration-switch-btn {
+.omnimux-inspiration-switch-group > .omnimux-inspiration-switch-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  height: 26px;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
   padding: 0 12px;
   border-radius: 9999px;
   border: none;
   background: transparent;
   color: var(--dsw-alias-label-tertiary, #7c7c7c);
-  font: 500 12px/14px inherit;
+  font: 500 12px/16px inherit;
   cursor: pointer;
-  transition: all 120ms ease;
+  flex: 0 0 auto;
+  box-shadow: none;
+  transform: none;
+  outline: none;
+  transition: color 120ms ease, background-color 120ms ease;
 }
-.omnimux-inspiration-switch-btn.active {
+.omnimux-inspiration-switch-group > .omnimux-inspiration-switch-btn svg {
+  display: block;
+  flex-shrink: 0;
+}
+.omnimux-inspiration-switch-group > .omnimux-inspiration-switch-btn:hover {
+  color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
+  background: transparent;
+}
+.omnimux-inspiration-switch-group > .omnimux-inspiration-switch-btn.active,
+.omnimux-inspiration-switch-group > .omnimux-inspiration-switch-btn[aria-selected="true"] {
   background: var(--dsw-alias-bg-layer-1, #242424);
   color: var(--dsw-alias-label-primary, #ffffff);
-  box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1, rgba(0,0,0,0.5));
+  box-shadow: none;
+}
+.omnimux-inspiration-switch-group > .omnimux-inspiration-switch-btn:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary);
+  outline-offset: -2px;
 }
 .omnimux-inspiration-status-badge {
   display: inline-flex;
