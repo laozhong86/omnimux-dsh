@@ -1,5 +1,8 @@
 import { createElement } from 'react'
 import { OpenReelStudioTab } from './OpenReelStudioTab.jsx'
+import { createStageStore } from './stage-store.js'
+import { mountSidebarEntry } from './sidebar-entry.js'
+import { ClipStage } from './ClipStage.jsx'
 
 export const name = 'omnimux-clip'
 export const inject = ['slots', 'locale']
@@ -65,14 +68,16 @@ function renderClipIcon(size = 16) {
 }
 
 /**
- * P1 主座：`dsh-better-sidebar` Tab。未装 better-sidebar 时 Tab 缺席，
- * 不得改挂 shell.overlay / conversation.view。
- *
- * `slots` remains declared so existing loaders keep injecting it; P1 no
- * longer mounts a first-level overlay.
+ * OmniMux Clip client entry.
+ * Mounts:
+ * 1. Locale dictionaries (NS: omnimux.clip)
+ * 2. Left sidebar extra entry (rank 8.2 under 新会话)
+ * 3. First-level Stage on `shell.overlay` (ClipStage)
+ * 4. Better Sidebar Tab (`omnimux-clip:studio`)
  *
  * @param {{
  *   locale?: { bind?: Function, register?: Function },
+ *   slots?: { inject: Function, register: Function },
  *   inject?: Function,
  *   effect?: Function,
  * }} ctx
@@ -87,6 +92,25 @@ export function apply(ctx) {
   const t = ctx.locale && typeof ctx.locale.bind === 'function'
     ? ctx.locale.bind(NS)
     : (key) => zh[key] || key
+
+  const stage = createStageStore(() => window.__omnimuxStage)
+  const stageFace = () => ({ t, stage })
+
+  if (typeof ctx.effect === 'function') {
+    ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), 'omnimux-clip: sidebar entry')
+  } else {
+    mountSidebarEntry(stage, t, ctx.locale)
+  }
+
+  if (ctx.slots && typeof ctx.slots.inject === 'function') {
+    ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+      name: 'shell.overlay',
+      id: 'omnimux-clip-stage',
+      order: 35,
+      locale: NS,
+      inject: stageFace,
+    }, ClipStage))
+  }
 
   const registerStudio = (sidebar) => {
     if (!sidebar || typeof sidebar.registerTab !== 'function') return () => {}

@@ -220,9 +220,20 @@ export function OpenReelStudioTab({ t: tProp }) {
           {project?.name || t('tab.title')}
         </div>
         <div className="openreel-studio-hostbar-status">{saveStatus}</div>
-        <Button
-          variant="outline"
+        <button
+          type="button"
           disabled={!hasOpenProject}
+          style={{
+            padding: '4px 12px',
+            height: 24,
+            borderRadius: 6,
+            border: '1px solid var(--dsw-alias-border-subtle, rgba(255, 255, 255, 0.12))',
+            backgroundColor: 'transparent',
+            color: 'var(--dsw-alias-label-primary, #ffffff)',
+            fontSize: 12,
+            cursor: hasOpenProject ? 'pointer' : 'not-allowed',
+            opacity: hasOpenProject ? 1 : 0.5,
+          }}
           onClick={() => {
             if (!project?.id) return
             setSaveStatus(t('tab.saving'))
@@ -232,7 +243,7 @@ export function OpenReelStudioTab({ t: tProp }) {
           }}
         >
           {t('tab.save')}
-        </Button>
+        </button>
       </div>
       <div className="openreel-studio-body">
         {showCreate ? (

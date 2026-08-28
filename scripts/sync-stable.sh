@@ -1,13 +1,12 @@
 #!/bin/bash
-# sync-stable.sh — 【内部实现】把已构建好的插件目录物化进生产 profile（omnimux）。
+# sync-stable.sh — 【内部实现】把已构建好的插件目录物化进目标 profile（默认 Dev 开发版，--prod 进生产）。
 #
 # ⚠ 日常请勿直调本脚本。统一入口：
 #   cd ~/Desktop/Project/omnimux-desktop-fork
-#   yarn omnimux:sync [插件...]          # 会先 build 再调本脚本
-#   yarn omnimux:restart                 # 需要时再重启 App
+#   yarn omnimux:sync [插件...]          # 默认同步到 Dev 开发版
+#   yarn omnimux:sync --prod [插件...]   # 仅在人类明确指令下同步到生产正式版
 #
 # 本脚本只做 rsync 物化 + file: 依赖声明 + dsh.profile.bundles 幂等入名单 + pnpm install，**不 build**。
-# 直调容易把陈旧 lib/client.js 推进生产（已踩过坑）。禁止手动 rsync/cp 进 profile。
 #
 # 规范：docs/contracts/dev-pipeline.md
 set -euo pipefail
@@ -17,14 +16,39 @@ if [ "${OMNIMUX_SYNC_VIA:-}" != "sync-to-app" ] && [ "${OMNIMUX_SYNC_VIA:-}" != 
   echo "  （若你确认已手动 build 且只要物化，可设 OMNIMUX_SYNC_VIA=internal 消掉本提示）" >&2
 fi
 
+TARGET_ENV="${OMNIMUX_TARGET_ENV:-dev}"
 PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh/plugins}"
-PROFILE="${DSH_HOME:-$HOME/.dsh}/profiles/omnimux"
+
+if [ "$TARGET_ENV" = "prod" ]; then
+  PROFILE="${OMNIMUX_PROD_HOME:-${DSH_HOME:-$HOME/.dsh}}/profiles/omnimux"
+  ENV_LABEL="生产正式版"
+else
+  PROFILE="${OMNIMUX_DEV_HOME:-$HOME/.omnimux-dev}/profiles/omnimux"
+  ENV_LABEL="开发版"
+fi
+
+mkdir -p "$PROFILE"
+if [ ! -f "$PROFILE/package.json" ]; then
+  echo '{"name":"dsh-profile-omnimux","private":true,"dependencies":{},"dsh":{"profile":{"bundles":[]}}}' > "$PROFILE/package.json"
+fi
+
 # 产品树垂直（含产品库 / 插件市场 / 剪辑）+ omnimux-video + omnimux-analytics（埋点）+ dsh-publish（发布中心）
 ALL_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics dsh-publish)
 
-if [ $# -gt 0 ]; then
-  PLUGINS=("$@")
-else
+RAW_ARGS=("$@")
+PLUGINS=()
+for arg in "${RAW_ARGS[@]}"; do
+  case "$arg" in
+    --dev) TARGET_ENV="dev" ;;
+    --prod) TARGET_ENV="prod" ;;
+    --env=dev) TARGET_ENV="dev" ;;
+    --env=prod) TARGET_ENV="prod" ;;
+    -*) ;;
+    *) PLUGINS+=("$arg") ;;
+  esac
+done
+
+if [ ${#PLUGINS[@]} -eq 0 ]; then
   PLUGINS=("${ALL_PLUGINS[@]}")
 fi
 
@@ -42,7 +66,7 @@ for name in "${PLUGINS[@]}"; do
     --exclude '*.test.js' \
     --exclude '*.spec.js' \
     "$src/" "$dst/"
-  echo "✓ $name 已物化进生产 profile"
+  echo "✓ $name 已物化进${ENV_LABEL} profile ($PROFILE)"
 done
 
 # 依赖声明统一回 file:（物化副本形态），声明了 dsh.bundle 的插件幂等写入加载名单
@@ -108,5 +132,5 @@ if (bundleChanged) console.log('✓ dsh.profile.bundles 已幂等补齐本次 ds
 else console.log('· dsh.profile.bundles 无需变更')
 EOF
 
-(cd "$PROFILE" && pnpm install --silent)
-echo "✓ pnpm install 完成。重启 OmniMux 后生效。"
+(cd "$PROFILE" && pnpm install --ignore-scripts --silent)
+echo "✓ pnpm install 完成。重启 OmniMux Dev 或正式版后生效。"
