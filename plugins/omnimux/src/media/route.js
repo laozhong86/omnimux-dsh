@@ -4,8 +4,8 @@ export const PROTOCOLS = Object.freeze(['openai-media'])
 export const AUTH_MODES = Object.freeze(['auto', 'token', 'custom'])
 
 export const DEFAULT_MEDIA = Object.freeze({
-  authMode: 'auto',
   defaultProvider: 'omnimux',
+  authMode: 'auto',
   providers: Object.freeze({
     omnimux: Object.freeze({
       protocol: 'openai-media',
