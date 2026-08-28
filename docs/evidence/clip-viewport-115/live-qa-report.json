@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-08-28T12:30:00.000Z",
+  "targetStage": "omnimux-clip",
+  "port": 45120,
+  "taskSpace": "omnimux-clip-viewport-115",
+  "screenshots": [
+    "docs/evidence/clip-viewport-115/welcome-standalone.png",
+    "docs/evidence/clip-viewport-115/editor-standalone.png"
+  ],
+  "assertions": {
+    "1. Dataset Stage Mutex claimed": true,
+    "2. Stage Root DOM Exists": true,
+    "3. Stage Computed Display Visible": true,
+    "4. Content Rendered Non-empty": true,
+    "5. Sidebar does not overlap stage": true,
+    "6. Close button does not cover Export": true
+  },
+  "details": {
+    "datasetActualStage": "omnimux-clip",
+    "sidebar": { "left": 0, "right": 280, "width": 280 },
+    "stage": {
+      "left": 280,
+      "top": 0,
+      "width": 1624,
+      "height": 913,
+      "mode": "standalone",
+      "display": "flex"
+    },
+    "exportBtn": { "left": 1735, "right": 1812, "top": 11, "width": 77 },
+    "closeBtn": { "left": 1864, "right": 1896, "top": 8, "width": 32 },
+    "overlapSidebar": 0,
+    "overlapCloseExport": { "xOverlap": -52, "yOverlap": 29 }
+  },
+  "verdict": "PASS",
+  "note": "Official pnpm verify:live clip timed out. Geometry and screenshots were captured on the live Dev Host (45120) in a dedicated ego-browser task space."
+}

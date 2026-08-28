@@ -21,7 +21,7 @@
   ],
   "scripts": {
     "build": "node scripts/build-client.mjs",
-    "test": "node --test src/*.test.js src/timeline/*.test.js src/client/store/timelineStore.test.js src/client/canvas-bridge.test.js",
+    "test": "node --test src/*.test.js src/timeline/*.test.js src/client/store/timelineStore.test.js src/client/*.test.js",
     "prepack": "node scripts/build-client.mjs"
   },
   "dsh": {

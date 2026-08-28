@@ -5,8 +5,8 @@ import { useEngineStore } from './openreel/web/stores/engine-store.ts'
 import { applyOpenReelTheme } from './openreel/web/stores/theme-store.ts'
 import { resetOpenReelRouter } from './openreel/web/hooks/use-router.ts'
 import { putClipProject } from './host/projectApi.js'
-import './theme/dsw-map.css'
 import './openreel/web/index.css'
+import './theme/dsw-map.css'
 
 const PRESET_OPTIONS = [
   { value: '1920x1080', label: '横屏 1920×1080' },

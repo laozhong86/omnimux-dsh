@@ -15,11 +15,28 @@
   overflow: hidden;
   box-sizing: border-box;
   color-scheme: dark;
-  /* 让官方 `position: fixed` 相对本 Tab 而不是整个 DSH 窗口 */
+  --tl-height: 40%;
+  /* 让官方 `position: fixed` / 100vw 相对本 Tab 而不是整个 DSH 窗口 */
   transform: translateZ(0);
+  contain: layout paint;
   background: var(--dsw-alias-bg-base, var(--bg, #111113));
   color: var(--dsw-alias-label-primary, var(--fg, #f3f4f6));
   -webkit-app-region: no-drag;
+}
+
+.openreel-studio-root .h-screen,
+.openreel-studio-root .min-h-screen,
+.openreel-studio-root .h-dvh {
+  height: 100% !important;
+  min-height: 100% !important;
+}
+
+.openreel-studio-root .w-screen {
+  width: 100% !important;
+}
+
+.openreel-studio-root .fixed.inset-0 {
+  position: absolute !important;
 }
 
 .openreel-studio-root,
@@ -73,6 +90,7 @@
 
 .openreel-studio-body {
   flex: 1 1 auto;
+  height: 100%;
   min-height: 0;
   min-width: 0;
   position: relative;

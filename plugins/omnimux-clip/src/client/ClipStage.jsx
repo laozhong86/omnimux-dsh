@@ -1,20 +1,61 @@
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { Component, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { createPortal } from 'react-dom'
 import OpenReelApp from './openreel/web/App.tsx'
 import { applyOpenReelTheme } from './openreel/web/stores/theme-store.ts'
+import { resetOpenReelRouter } from './openreel/web/hooks/use-router.ts'
+import { useProjectStore } from './openreel/web/stores/project-store.ts'
 import { injectClipStyles } from './styles.js'
+import { computeHeaderPadLeft, computeStandaloneBox, readHostSidebarInset } from './stage-box.js'
 import { useCanvasIngestion } from './hooks/useCanvasIngestion.ts'
 import { notifyCanvasSave, notifyCanvasClose } from './CanvasBridge.js'
-import './theme/dsw-map.css'
+import { findCanvasHost } from './findCanvasHost.js'
 import './openreel/web/index.css'
+import './theme/dsw-map.css'
+
+class ClipErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('[omnimux-clip] render error:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 24, color: 'var(--dsw-alias-label-primary, #ffffff)', background: 'var(--dsw-alias-bg-base, #111113)', height: '100%', boxSizing: 'border-box' }}>
+          <h3 style={{ margin: '0 0 12px 0', fontSize: 16, color: 'var(--dsw-alias-label-danger)' }}>剪辑器加载遇到异常</h3>
+          <pre style={{ fontSize: 12, padding: 12, borderRadius: 6, background: 'var(--dsw-alias-bg-mask-1)', overflow: 'auto', whiteSpace: 'pre-wrap' }}>
+            {String(this.state.error?.stack || this.state.error?.message || this.state.error)}
+          </pre>
+          <button
+            type="button"
+            style={{ marginTop: 12, padding: '8px 16px', background: 'var(--dsw-alias-accent-primary)', color: 'var(--dsw-alias-on-accent, #fff)', border: 'none', borderRadius: 8, cursor: 'pointer' }}
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            重试加载
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 /**
  * OmniMux Clip first-level stage page on the shell.overlay seat.
  * After first open, keep the subtree with display:none — never `if (!open) return null`.
  * Supports both standalone mode (from sidebar) and canvas mode (from workflow node).
  *
- * In canvas mode (`session.source === 'canvas'`), it adaptively positions itself directly
- * over the workflow canvas tab (`[data-omnimux-canvas-tab]`), providing a full-screen
- * editing workspace on the canvas area without squeezing the conversation column.
+ * In canvas mode (`session.source === 'canvas'`), the editor is portaled into the
+ * visible `[data-omnimux-canvas-tab]` host and laid out with `position:absolute; inset:0`.
+ * It must not guess overlay coordinates or occupy the conversation column.
  *
  * @param {{
  *   t: (key: string) => string,
@@ -42,47 +83,82 @@ export function ClipStage({ t, stage }) {
     stage ? () => stage.getSessionSnapshot() : () => null,
   )
 
+  const isCanvasMode = session?.source === 'canvas'
+
   const [everOpened, setEverOpened] = useState(false)
-  const [box, setBox] = useState(() => ({ top: 0, left: 0, width: 0, height: 0 }))
+  const [canvasHost, setCanvasHost] = useState(null)
+  const [box, setBox] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return {
+        top: 0,
+        left: 56,
+        width: Math.max(320, window.innerWidth - 56),
+        height: Math.max(240, window.innerHeight),
+      }
+    }
+    return { top: 0, left: 0, width: 0, height: 0 }
+  })
   const [saveStatus, setSaveStatus] = useState('')
 
-  if (open && !everOpened) setEverOpened(true)
+  useEffect(() => {
+    if (open) setEverOpened(true)
+  }, [open])
 
   // Ingest upstream inputs if opened from canvas
   useCanvasIngestion(session)
 
+  // 路由同步重置到 editor
+  useEffect(() => {
+    if (open && isCanvasMode) {
+      try {
+        resetOpenReelRouter({ route: 'editor', params: {} })
+      } catch (err) {
+        console.warn('[omnimux-clip] resetOpenReelRouter failed:', err)
+      }
+    }
+  }, [open, isCanvasMode])
+
   useLayoutEffect(() => {
-    if (!open || !stage) return undefined
+    if (!open) return undefined
 
     const update = () => {
-      // 1. 画布联动模式：优先探测右侧 [data-omnimux-canvas-tab]，使剪辑器精确覆盖画布区域
       if (session?.source === 'canvas') {
-        const canvasTab = document.querySelector('[data-omnimux-canvas-tab]')
-        if (canvasTab instanceof HTMLElement) {
-          const rect = canvasTab.getBoundingClientRect()
-          if (rect.width >= 100 && rect.height >= 100) {
-            setBox({
-              top: rect.top,
-              left: rect.left,
-              width: rect.width,
-              height: rect.height,
-            })
-            return
-          }
-        }
+        const host = findCanvasHost()
+        setCanvasHost(host)
+        return
       }
+      setCanvasHost(null)
 
-      // 2. 独立模式（左侧栏）：使用标准 stage.readBox()
-      setBox(stage.readBox())
+      const read = stage?.readBox?.()
+      const usableRead = read && read.width >= 50 && read.height >= 50 ? read : null
+      setBox(computeStandaloneBox(
+        usableRead,
+        { width: window.innerWidth, height: window.innerHeight },
+        readHostSidebarInset(document),
+      ))
     }
 
     update()
 
-    // 监听画布容器与会话容器的 resize
+    let retryTimer = 0
+    if (session?.source === 'canvas' && !findCanvasHost()) {
+      let attempts = 0
+      const retry = () => {
+        attempts += 1
+        update()
+        if (!findCanvasHost() && attempts < 40) {
+          retryTimer = window.setTimeout(retry, 50)
+        }
+      }
+      retryTimer = window.setTimeout(retry, 50)
+    }
+
     const targets = [
       document.querySelector('[data-omnimux-canvas-tab]'),
+      document.querySelector('.omnimux-workflow-canvas-tab'),
       document.querySelector('[data-conversation-scroll]'),
       document.querySelector('[data-slot="conversation"]')?.parentElement,
+      document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]'),
     ].filter((el) => el instanceof HTMLElement)
 
     const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null
@@ -92,14 +168,14 @@ export function ClipStage({ t, stage }) {
 
     window.addEventListener('resize', update)
     return () => {
+      if (retryTimer) window.clearTimeout(retryTimer)
       observer?.disconnect()
       window.removeEventListener('resize', update)
     }
   }, [open, stage, session])
 
-  if (!stage || !everOpened) return null
-
-  const isCanvasMode = session?.source === 'canvas'
+  if (!stage) return null
+  if (!open && !everOpened) return null
 
   const handleSaveDraft = () => {
     if (session?.nodeId) {
@@ -119,7 +195,11 @@ export function ClipStage({ t, stage }) {
     stage.set(false)
   }
 
-  return (
+  const isMac = typeof navigator !== 'undefined' && /Macintosh|Mac OS X/i.test(navigator.userAgent)
+  const headerPadLeft = computeHeaderPadLeft({ isCanvasMode, boxLeft: box.left, isMac })
+  const portalTarget = isCanvasMode ? canvasHost : null
+
+  const stageNode = (
     <div
       role="region"
       aria-label={t ? t('tab.title') : '视频剪辑'}
@@ -127,25 +207,57 @@ export function ClipStage({ t, stage }) {
       className="omnimux-clip-stage"
       data-visible={open ? 'true' : 'false'}
       data-clip-mode={isCanvasMode ? 'canvas' : 'standalone'}
-      style={{
+      style={isCanvasMode ? {
+        display: open ? undefined : 'none',
+        '--clip-header-pad-left': `${headerPadLeft}px`,
+      } : {
         display: open ? undefined : 'none',
         '--stage-top': `${box.top}px`,
         '--stage-left': `${box.left}px`,
         '--stage-width': `${box.width}px`,
         '--stage-height': `${box.height}px`,
+        '--clip-header-pad-left': `${headerPadLeft}px`,
       }}
     >
       <div className="omnimux-clip-stage-header">
-        <div className="omnimux-clip-stage-heading">
-          <h1 className="omnimux-clip-stage-title">
-            {isCanvasMode ? (session.nodeTitle || (t ? t('tab.untitled') : '画布视频合成')) : (t ? t('tab.title') : '视频剪辑')}
-          </h1>
-          <span className="omnimux-clip-stage-subtitle">
-            {isCanvasMode ? `· ${t ? t('tab.canvasMode') : '画布联动模式'}` : '· OpenReel Studio'}
-          </span>
-        </div>
+        {!isCanvasMode ? (
+          <div className="omnimux-clip-stage-heading">
+            <h1 className="omnimux-clip-stage-title">
+              {t ? t('tab.title') : '视频剪辑'}
+            </h1>
+            <span className="omnimux-clip-stage-subtitle">
+              · OpenReel Studio
+            </span>
+          </div>
+        ) : (
+          <div style={{ flex: 1 }} />
+        )}
 
         <div className="omnimux-clip-stage-actions">
+          <button
+            type="button"
+            className="omnimux-clip-stage-icon-btn"
+            title="撤销 (Cmd+Z)"
+            aria-label="撤销"
+            onClick={() => useProjectStore.getState().undo()}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 7v6h6" />
+              <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="omnimux-clip-stage-icon-btn"
+            title="重做 (Cmd+Shift+Z)"
+            aria-label="重做"
+            onClick={() => useProjectStore.getState().redo()}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 7v6h-6" />
+              <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7" />
+            </svg>
+          </button>
           {saveStatus ? (
             <span className="omnimux-clip-stage-save-status">{saveStatus}</span>
           ) : null}
@@ -176,10 +288,18 @@ export function ClipStage({ t, stage }) {
         </div>
       </div>
       <div className="omnimux-clip-stage-body openreel-studio-root dark" data-theme="dark">
-        <OpenReelApp />
+        <ClipErrorBoundary>
+          <OpenReelApp />
+        </ClipErrorBoundary>
       </div>
     </div>
   )
+
+  if (isCanvasMode) {
+    if (!portalTarget) return null
+    return createPortal(stageNode, portalTarget)
+  }
+  return stageNode
 }
 
 export default ClipStage
