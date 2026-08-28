@@ -1,0 +1,32 @@
+{
+  "pass": true,
+  "tool": "ego-browser",
+  "issueId": "116",
+  "pr": 117,
+  "plugin": "omnimux-inspiration",
+  "commitSha": "271660820d09e202c251f85a9bd0e30f31fea734",
+  "taskSpaceName": "omnimux-qa-issue-116-inspiration",
+  "taskSpaceId": 57,
+  "requestedUrl": "http://127.0.0.1:44200",
+  "actualUrl": "http://127.0.0.1:44200/",
+  "title": "OmniMux",
+  "dshHome": "/Users/x/.dsh-dev/tasks/insp-tab-116",
+  "l2Task": "insp-tab-116",
+  "port": 44200,
+  "assertions": {
+    "stageVisible": true,
+    "modalPresent": true,
+    "groupHeightPx": 32,
+    "groupOverflow": "hidden",
+    "groupRole": "tablist",
+    "buttonHeightPx": 28,
+    "overflowY": false,
+    "overflowX": false,
+    "usesKitButton": false,
+    "playerSelectedThenDeconstruct": true
+  },
+  "screenshots": [
+    "docs/evidence/issue-116-l2-tab-media.png",
+    "docs/evidence/issue-116-l2-tab-deconstruct.png"
+  ]
+}
