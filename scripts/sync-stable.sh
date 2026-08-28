@@ -70,6 +70,24 @@ function declaresBundle(name) {
   }
 }
 
+// 清理已知历史废弃/更名前的包名，避免 Cordis 重复注册 Service 冲突导致 Host 启动失败崩溃
+const LEGACY_PRUNE_NAMES = ['dsh-video', 'dsh-omnimux', 'dsh-drama']
+for (const legacy of LEGACY_PRUNE_NAMES) {
+  if (manifest.dependencies[legacy]) {
+    delete manifest.dependencies[legacy]
+    depChanged = true
+  }
+  const idx = bundles.indexOf(legacy)
+  if (idx >= 0) {
+    bundles.splice(idx, 1)
+    bundleChanged = true
+  }
+  const legacyDir = path.join(profile, 'node_modules', legacy)
+  if (fs.existsSync(legacyDir)) {
+    try { fs.rmSync(legacyDir, { recursive: true, force: true }) } catch {}
+  }
+}
+
 for (const name of plugins) {
   const spec = `file:./node_modules/${name}`
   if (manifest.dependencies[name] !== spec) {
