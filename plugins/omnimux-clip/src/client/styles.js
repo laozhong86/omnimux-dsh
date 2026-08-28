@@ -20,6 +20,10 @@ export const CLIP_CSS = `
   display: none;
   pointer-events: none;
 }
+html:not([data-dsh-product-stage]) .omnimux-clip-stage[data-clip-mode="canvas"][data-visible="true"] {
+  display: flex !important;
+  pointer-events: auto !important;
+}
 .omnimux-clip-stage-header {
   flex: none;
   display: flex;

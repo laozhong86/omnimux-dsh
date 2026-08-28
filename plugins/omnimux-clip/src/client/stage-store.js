@@ -92,6 +92,20 @@ export function createStageStore(getStage) {
      * @param {boolean} next
      */
     set(next) {
+      if (activeSession?.source === 'canvas') {
+        if (next === false) {
+          open = false
+          activeSession = null
+          emit()
+        } else {
+          if (!open) {
+            open = true
+            emit()
+          }
+        }
+        return
+      }
+
       if (open === next) return
       open = next
       const stage = getStage()
@@ -116,7 +130,8 @@ export function createStageStore(getStage) {
         draftSchema: payload?.draftSchema,
         upstreamInputs: payload?.upstreamInputs,
       }
-      this.set(true)
+      open = true
+      emit()
     },
     /**
      * Set or clear active session context without changing visibility.

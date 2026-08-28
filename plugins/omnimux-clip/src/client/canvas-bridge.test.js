@@ -18,11 +18,12 @@ import {
   isProgressClipEditorPayload,
 } from './clip-events.js'
 
-test('stage-store: handles openFromCanvas and session state', () => {
+test('stage-store: openFromCanvas does not claim stage, set(false) does not release stage', () => {
   let claimed = null
+  let released = null
   const mockGetStage = () => ({
     claim: (id) => { claimed = id },
-    release: () => { claimed = null },
+    release: (id) => { released = id },
     readBox: () => ({ top: 0, left: 0, width: 800, height: 600 }),
     PRODUCT_STAGE_EVENT: 'dsh-product-stage',
   })
@@ -31,6 +32,7 @@ test('stage-store: handles openFromCanvas and session state', () => {
   assert.equal(store.getSnapshot(), false)
   assert.equal(store.getSessionSnapshot(), null)
 
+  // 1. openFromCanvas 仅将 open 设为 true 并保留 session，不调用 mockStage.claim
   store.openFromCanvas({
     nodeId: 'node_123',
     nodeTitle: '测试视频合成',
@@ -41,7 +43,7 @@ test('stage-store: handles openFromCanvas and session state', () => {
   })
 
   assert.equal(store.getSnapshot(), true)
-  assert.equal(claimed, 'omnimux-clip')
+  assert.equal(claimed, null, 'openFromCanvas must NOT claim product stage')
   const session = store.getSessionSnapshot()
   assert.equal(session.source, 'canvas')
   assert.equal(session.nodeId, 'node_123')
@@ -49,9 +51,96 @@ test('stage-store: handles openFromCanvas and session state', () => {
   assert.equal(session.projectId, 'proj_456')
   assert.equal(session.upstreamInputs.videos.length, 1)
 
+  // 2. stage.set(false) 在画布模式下关闭浮层，清理 session，且不调用 mockStage.release
   store.set(false)
   assert.equal(store.getSnapshot(), false)
   assert.equal(store.getSessionSnapshot(), null)
+  assert.equal(released, null, 'set(false) in canvas mode must NOT release product stage')
+
+  store.dispose()
+})
+
+test('stage-store: standalone mode properly claims and releases product stage', () => {
+  let claimed = null
+  let released = null
+  const mockGetStage = () => ({
+    claim: (id) => { claimed = id },
+    release: (id) => { released = id },
+    readBox: () => ({ top: 0, left: 0, width: 800, height: 600 }),
+    PRODUCT_STAGE_EVENT: 'dsh-product-stage',
+  })
+
+  const store = createStageStore(mockGetStage)
+
+  // 3. 独立模式下 stage.set(true) 正常调用 mockStage.claim
+  store.set(true)
+  assert.equal(store.getSnapshot(), true)
+  assert.equal(claimed, 'omnimux-clip')
+  assert.equal(store.getSessionSnapshot(), null)
+
+  // 独立模式下 stage.set(false) 正常调用 mockStage.release
+  store.set(false)
+  assert.equal(store.getSnapshot(), false)
+  assert.equal(released, 'omnimux-clip')
+  assert.equal(store.getSessionSnapshot(), null)
+
+  store.dispose()
+})
+
+test('stage-store: external switch to another stage exits canvas mode', () => {
+  if (typeof globalThis.window === 'undefined') {
+    globalThis.window = new EventTarget()
+  }
+
+  const mockGetStage = () => ({
+    claim: () => {},
+    release: () => {},
+    readBox: () => ({ top: 0, left: 0, width: 800, height: 600 }),
+    PRODUCT_STAGE_EVENT: 'dsh-product-stage',
+  })
+
+  const store = createStageStore(mockGetStage)
+  store.openFromCanvas({
+    nodeId: 'node_canvas_1',
+    nodeTitle: 'Canvas Video',
+  })
+  assert.equal(store.getSnapshot(), true)
+  assert.equal(store.getSessionSnapshot()?.source, 'canvas')
+
+  // 4. 外部派发切换到其他 stageId
+  globalThis.window.dispatchEvent(new CustomEvent('dsh-product-stage', {
+    detail: { id: 'omnimux-assets' },
+  }))
+
+  assert.equal(store.getSnapshot(), false, 'Canvas mode must close on external stage switch')
+  assert.equal(store.getSessionSnapshot(), null, 'Session must be cleared on external stage switch')
+
+  store.dispose()
+})
+
+test('stage-store: external switch to omnimux-clip activates standalone mode', () => {
+  if (typeof globalThis.window === 'undefined') {
+    globalThis.window = new EventTarget()
+  }
+
+  const mockGetStage = () => ({
+    claim: () => {},
+    release: () => {},
+    readBox: () => ({ top: 0, left: 0, width: 800, height: 600 }),
+    PRODUCT_STAGE_EVENT: 'dsh-product-stage',
+  })
+
+  const store = createStageStore(mockGetStage)
+  assert.equal(store.getSnapshot(), false)
+
+  globalThis.window.dispatchEvent(new CustomEvent('dsh-product-stage', {
+    detail: { id: 'omnimux-clip' },
+  }))
+
+  assert.equal(store.getSnapshot(), true, 'Must activate when id matches STAGE_ID')
+  assert.equal(store.getSessionSnapshot(), null, 'Standalone mode has no session')
+
+  store.dispose()
 })
 
 test('CanvasBridge: mounts and routes OMNIMUX_CLIP_OPEN / CLOSE', () => {
