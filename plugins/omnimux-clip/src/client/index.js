@@ -1,5 +1,9 @@
 import { createElement } from 'react'
 import { OpenReelStudioTab } from './OpenReelStudioTab.jsx'
+import { createStageStore } from './stage-store.js'
+import { mountSidebarEntry } from './sidebar-entry.js'
+import { createAndMountCanvasBridge } from './CanvasBridge.js'
+import { ClipStage } from './ClipStage.jsx'
 
 export const name = 'omnimux-clip'
 export const inject = ['slots', 'locale']
@@ -20,6 +24,9 @@ const zh = {
   'tab.saved': '已保存',
   'tab.saving': '保存中…',
   'tab.saveFailed': '保存失败',
+  'tab.saveToNode': '保存草稿至节点',
+  'tab.savedToNode': '已保存至节点',
+  'tab.canvasMode': '画布联动模式',
 }
 
 const en = {
@@ -36,6 +43,9 @@ const en = {
   'tab.saved': 'Saved',
   'tab.saving': 'Saving…',
   'tab.saveFailed': 'Save failed',
+  'tab.saveToNode': 'Save draft to node',
+  'tab.savedToNode': 'Saved to node',
+  'tab.canvasMode': 'Canvas Link Mode',
 }
 
 function renderClipIcon(size = 16) {
@@ -65,14 +75,17 @@ function renderClipIcon(size = 16) {
 }
 
 /**
- * P1 主座：`dsh-better-sidebar` Tab。未装 better-sidebar 时 Tab 缺席，
- * 不得改挂 shell.overlay / conversation.view。
- *
- * `slots` remains declared so existing loaders keep injecting it; P1 no
- * longer mounts a first-level overlay.
+ * OmniMux Clip client entry.
+ * Mounts:
+ * 1. Locale dictionaries (NS: omnimux.clip)
+ * 2. Left sidebar extra entry (rank 8.2 under 新会话)
+ * 3. First-level Stage on `shell.overlay` (ClipStage)
+ * 4. Better Sidebar Tab (`omnimux-clip:studio`)
+ * 5. CanvasBridge event listener for omnimux-workflow integration
  *
  * @param {{
  *   locale?: { bind?: Function, register?: Function },
+ *   slots?: { inject: Function, register: Function },
  *   inject?: Function,
  *   effect?: Function,
  * }} ctx
@@ -87,6 +100,36 @@ export function apply(ctx) {
   const t = ctx.locale && typeof ctx.locale.bind === 'function'
     ? ctx.locale.bind(NS)
     : (key) => zh[key] || key
+
+  const stage = createStageStore(() => window.__omnimuxStage)
+  const stageFace = () => ({ t, stage })
+
+  if (typeof ctx.effect === 'function') {
+    ctx.effect(() => () => stage.dispose?.(), 'omnimux-clip: stage store')
+  }
+
+  if (typeof ctx.effect === 'function') {
+    ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), 'omnimux-clip: sidebar entry')
+  } else {
+    mountSidebarEntry(stage, t, ctx.locale)
+  }
+
+  // Mount Canvas Bridge to connect canvas workflow with stage
+  if (typeof ctx.effect === 'function') {
+    ctx.effect(() => createAndMountCanvasBridge({ stage }), 'omnimux-clip: canvas bridge')
+  } else {
+    createAndMountCanvasBridge({ stage })
+  }
+
+  if (ctx.slots && typeof ctx.slots.inject === 'function') {
+    ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+      name: 'shell.overlay',
+      id: 'omnimux-clip-stage',
+      order: 35,
+      locale: NS,
+      inject: stageFace,
+    }, ClipStage))
+  }
 
   const registerStudio = (sidebar) => {
     if (!sidebar || typeof sidebar.registerTab !== 'function') return () => {}
