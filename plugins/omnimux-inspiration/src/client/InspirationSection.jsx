@@ -212,31 +212,37 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
           <div className="omnimux-inspiration-modal-left">
           {/* 模式切换 Header */}
           <div className="omnimux-inspiration-preview-switch">
-            <div className="omnimux-inspiration-switch-group">
-              <Button
-                variant="ghost"
-                size="sm"
+            <div
+              className="omnimux-inspiration-switch-group"
+              role="tablist"
+              aria-label={t('view.switch')}
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={viewMode === 'player'}
                 className={`omnimux-inspiration-switch-btn ${viewMode === 'player' ? 'active' : ''}`}
                 onClick={() => setViewMode('player')}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <polygon points="5 3 19 12 5 21 5 3" />
                 </svg>
                 <span>{t('view.player')}</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={viewMode === 'deconstruct'}
                 className={`omnimux-inspiration-switch-btn ${viewMode === 'deconstruct' ? 'active' : ''}`}
                 onClick={() => setViewMode('deconstruct')}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <polygon points="12 2 2 7 12 12 22 7 12 2" />
                   <polyline points="2 17 12 22 22 17" />
                   <polyline points="2 12 12 17 22 12" />
                 </svg>
                 <span>{t('view.deconstruct')}</span>
-              </Button>
+              </button>
             </div>
           </div>
 
