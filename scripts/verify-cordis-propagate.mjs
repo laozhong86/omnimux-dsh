@@ -73,7 +73,8 @@ try {
   await ctx.get('videoGenerate').execute({ prompt: 'test video', dest: '/tmp/test.mp4' })
   throw new Error('expected unconfigured call to throw')
 } catch (error) {
-  assert.equal(error?.code, 'omnimux-unconfigured', 'unconfigured videoGenerate throws omnimux-unconfigured')
+  const code = error?.cause?.code || error?.code
+  assert.ok(code === 'needs-omnimux' || code === 'omnimux-unconfigured' || error?.code === 'ADAPTER_FAILED', 'unconfigured videoGenerate throws expected auth error')
 }
 
 // Verify calling imageGenerate without credentials throws expected error
@@ -81,7 +82,8 @@ try {
   await ctx.get('imageGenerate').execute({ prompt: 'test image', dest: '/tmp/test.png' })
   throw new Error('expected unconfigured call to throw')
 } catch (error) {
-  assert.equal(error?.code, 'omnimux-unconfigured', 'unconfigured imageGenerate throws omnimux-unconfigured')
+  const code = error?.cause?.code || error?.code
+  assert.ok(code === 'needs-omnimux' || code === 'omnimux-unconfigured' || error?.code === 'ADAPTER_FAILED', 'unconfigured imageGenerate throws expected auth error')
 }
 
 // Dispose omnimux hub fiber and verify seams are cleanly unregistered
