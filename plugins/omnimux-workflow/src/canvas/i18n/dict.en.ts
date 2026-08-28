@@ -17,6 +17,10 @@ const en: Record<DictKey, string> = {
   'node.generationFailed': 'Generation Failed',
   'node.taskIdLabel': 'Task ID:',
   'node.regenerate': 'Regenerate',
+  'node.offline': 'Media offline',
+  'node.offlineHint': 'The source file is missing or moved. Relink to restore preview.',
+  'node.relink': 'Relink',
+  'node.relinkOk': 'Source file relinked',
   'node.emptyMedia': 'No media configured. Select node to configure parameters in the inspector panel.',
   'node.tryMiniMaxH3': 'Explore recommended models',
   'node.h3Guide': 'Best Practice Guide',
@@ -202,7 +206,7 @@ const en: Record<DictKey, string> = {
   'menu.option.audio.text-audio-transcription.desc': 'Speech recognition, subtitle generation',
   'picker.title': 'Select resources',
   'picker.tab.canvas': 'Canvas resources',
-  'picker.tab.local': 'Local upload',
+  'picker.tab.local': 'Local import',
   'picker.search': 'Search resources...',
   'picker.filter.all': 'All',
   'picker.filter.image': 'Images',
@@ -226,6 +230,8 @@ const en: Record<DictKey, string> = {
   'picker.commitPartial': 'Some resources could not be added (already connected or type mismatch)',
   'picker.commitEmpty': 'Nothing to add',
   'picker.commitFailed': 'Failed to add resources',
+  'picker.needPath': 'Use the system file picker; this environment cannot read a local path.',
+  'picker.pickFailed': 'Could not open the system file picker.',
 };
 
 export default en;

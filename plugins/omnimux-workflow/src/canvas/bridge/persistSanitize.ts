@@ -15,11 +15,50 @@ import type {
   SerializedCanvasEdge,
   SerializedCanvasNode,
 } from '../../shared/canvasTypes';
+import { isBlobUrl, localFileMediaUrl } from '../../shared/localMedia.ts';
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? { ...(value as Record<string, unknown>) }
     : {};
+}
+
+function sanitizeImportedMedia(data: Record<string, unknown>): void {
+  const realPath = typeof data.realPath === 'string' ? data.realPath : '';
+  if (realPath) {
+    const url = localFileMediaUrl(realPath);
+    data.mediaUrl = url;
+    if (Array.isArray(data.mediaAssets)) {
+      data.mediaAssets = data.mediaAssets.map((asset) => {
+        if (!asset || typeof asset !== 'object') return asset;
+        const row = { ...(asset as Record<string, unknown>) };
+        if (isBlobUrl(row.url) || !row.url) row.url = url;
+        if (!row.path) row.path = realPath;
+        return row;
+      });
+    }
+  } else if (isBlobUrl(data.mediaUrl)) {
+    delete data.mediaUrl;
+  }
+
+  if (Array.isArray(data.mediaAssets)) {
+    const cleaned = data.mediaAssets
+      .map((asset) => {
+        if (!asset || typeof asset !== 'object') return null;
+        const row = { ...(asset as Record<string, unknown>) };
+        if (isBlobUrl(row.url)) {
+          if (typeof row.path === 'string' && row.path) {
+            row.url = localFileMediaUrl(row.path);
+          } else {
+            delete row.url;
+          }
+        }
+        return row.url || row.path ? row : null;
+      })
+      .filter(Boolean);
+    if (cleaned.length === 0) delete data.mediaAssets;
+    else data.mediaAssets = cleaned;
+  }
 }
 
 /** Strip island + xyflow transient fields before signature / PUT. */
@@ -28,6 +67,7 @@ export function sanitizeNodes(nodes: SerializedCanvasNode[]): SerializedCanvasNo
     const raw = node as SerializedCanvasNode & Record<string, unknown>;
     const data = asRecord(raw.data);
     delete data.__catalog;
+    sanitizeImportedMedia(data);
 
     const clean: Record<string, unknown> = {
       id: raw.id,

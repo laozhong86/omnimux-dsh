@@ -33,7 +33,10 @@ import { createMaterialNode } from '../../utils/nodeFactory';
 import { useExecutionStore } from '../../../store/executionStore';
 import { useCanvasStore } from '../../../store/canvasStore';
 import { useT } from '../../../i18n';
+import { toast } from '../../../ui';
 import type { CapabilityCatalog, NodeExecutionApiStatus } from '../../../../shared/api';
+import { buildImportedMediaData, materialTypeFromFilename } from '../../../../shared/localMedia.ts';
+import { nativePathOf } from '../../utils/localFileDraft.ts';
 
 // ==================== 主组件 ====================
 
@@ -167,34 +170,28 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     [materialType, updateNodeData],
   );
 
-  // 本地文件导入
+  // 本地文件导入：只接受带绝对路径的 File（Electron）或 native picker。
   const handleImportFile = useCallback(
     (file: File) => {
-      const url = URL.createObjectURL(file);
-      if (file.type.startsWith('image/')) {
-        const img = new Image();
-        img.src = url;
-        img.onload = () => {
-          if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-            handleMediaSizeChange(img.naturalWidth, img.naturalHeight);
-          }
-        };
-      } else if (file.type.startsWith('video/')) {
-        const v = document.createElement('video');
-        v.src = url;
-        v.onloadedmetadata = () => {
-          if (v.videoWidth > 0 && v.videoHeight > 0) {
-            handleMediaSizeChange(v.videoWidth, v.videoHeight);
-          }
-        };
+      const path = nativePathOf(file);
+      if (!path) {
+        toast.warning(t('picker.needPath'));
+        return;
       }
-      updateNodeData({
-        mediaUrl: url,
-        status: 'ready',
-        content: file.name,
-      });
+      const material = materialTypeFromFilename(file.name, file.type) ?? materialType;
+      if (material !== 'image' && material !== 'video' && material !== 'audio') {
+        toast.warning(t('picker.unsupported'));
+        return;
+      }
+      updateNodeData(buildImportedMediaData({
+        realPath: path,
+        name: file.name,
+        materialType: material,
+        mime: file.type,
+        size: file.size,
+      }));
     },
-    [handleMediaSizeChange, updateNodeData],
+    [materialType, t, updateNodeData],
   );
 
   // 拖拽文件进入
@@ -246,8 +243,11 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   }, [selected]);
 
   const panelVisible = isConfigPanelVisible(selected, panelDismissed, executionStatus);
+  const isOffline = status === 'offline' || nodeData.isMissing === true;
   const previewUrl = resolveMediaPreviewUrl(materialType, mediaAssets, mediaUrl);
-  const generationStatus = mapNodeToGenerationStatus(executionStatus, status, Boolean(previewUrl));
+  const generationStatus = isOffline
+    ? null
+    : mapNodeToGenerationStatus(executionStatus, status, Boolean(previewUrl));
 
   const loadingAspectRatio =
     materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'square';
@@ -266,7 +266,9 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         <FloatingTopPill
           materialType={materialType}
           selected={selected}
-          onOpenResourcePicker={() => resourcePicker.openPicker('local')}
+          onOpenResourcePicker={() => {
+            void resourcePicker.importLocalFiles();
+          }}
           onStartTextEdit={() => setTextEditing(true)}
           onCopyText={handleCopyText}
           onSplitText={handleSplitText}
@@ -346,7 +348,20 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         )}
 
         {/* 2. 媒体节点渲染 */}
-        {materialType !== 'text' &&
+        {materialType !== 'text' && isOffline && (
+          <div className="wf-material-node__media wf-media-offline">
+            <div className="wf-media-offline__title">{t('node.offline')}</div>
+            <div className="wf-media-offline__hint">{t('node.offlineHint')}</div>
+            <button
+              type="button"
+              className="wf-media-offline__relink nodrag"
+              onClick={() => void resourcePicker.relinkLocalFile(materialType)}
+            >
+              {t('node.relink')}
+            </button>
+          </div>
+        )}
+        {materialType !== 'text' && !isOffline &&
           (generationStatus ? (
             <div className="wf-material-node__media">
               <GenerationStateContainer

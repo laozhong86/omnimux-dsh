@@ -12,6 +12,8 @@ export interface WorkflowDispatcherDeps {
   gateway: GenerationGateway;
   mediaDir: string;
   executionManager: ExecutionManager;
+  /** Injected native picker (tests). Default: macOS osascript chooser. */
+  picker?: (kind: string) => Promise<{ path: string | null; paths: string[] }>;
 }
 
 export interface WorkflowDispatchRequest {
@@ -21,6 +23,7 @@ export interface WorkflowDispatchRequest {
   referer?: string;
   secFetchSite?: string;
   body?: unknown;
+  range?: string;
 }
 
 export type DispatchResult =

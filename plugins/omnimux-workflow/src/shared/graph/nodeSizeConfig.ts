@@ -15,8 +15,6 @@ import type { MaterialType } from './materialNode.ts';
  * 5. 音频节点 (audio)：扁横版 350x150（7:3 比例，aspectRatio: 2.333）
  */
 
-import type { MaterialType } from './materialNode.ts';
-
 export type NodeSizeCategory = 'portrait' | 'square' | 'video_landscape' | 'audio_compact';
 
 export interface NodeSizeConfig {

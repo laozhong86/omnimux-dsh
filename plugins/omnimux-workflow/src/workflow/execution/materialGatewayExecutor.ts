@@ -13,6 +13,7 @@
  */
 
 import { join } from 'node:path';
+import { localFileMediaUrl } from '../../shared/localMedia.ts';
 import type { GenerationGateway } from '../seam/gateway';
 import type {
   ExecutionContext,
@@ -105,10 +106,14 @@ export function createMaterialGatewayExecutor(opts: {
 
       // ---- Non-generative: pass-through (node-owned / upstream content) ----
       if (!isGenerativeTool(tool, data, upstream)) {
+        const materialType = readMaterialType(data);
+        const type = materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'image';
+        const realPath = readString(data, 'realPath');
+        if (realPath) {
+          return { mediaAssets: [{ type, url: localFileMediaUrl(realPath) }] };
+        }
         const nodeMediaUrl = readString(data, 'mediaUrl');
-        if (nodeMediaUrl) {
-          const materialType = readMaterialType(data);
-          const type = materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'image';
+        if (nodeMediaUrl && !nodeMediaUrl.startsWith('blob:')) {
           return { mediaAssets: [{ type, url: nodeMediaUrl }] };
         }
         const text = readString(data, 'content') ?? upstream.text;

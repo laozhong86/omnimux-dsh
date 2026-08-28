@@ -33,14 +33,21 @@ function extractNodeOutputFromSnapshot(node: { data?: Record<string, unknown>; [
   const text = (data.generatedContent as string | undefined)
     ?? (data.content as string | undefined)
     ?? (data.prompt as string | undefined);
+  const materialType = data.materialType as string | undefined;
+  const type = materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'image';
+  const realPath = typeof data.realPath === 'string' ? data.realPath : '';
+  if (realPath) {
+    return {
+      mediaAssets: [{ type, url: `/omnimux-workflow/api/local-file?path=${encodeURIComponent(realPath)}`, path: realPath }],
+      text,
+    };
+  }
   const mediaAssets = data.mediaAssets;
   const mediaUrl = data.mediaUrl as string | undefined;
-  const materialType = data.materialType as string | undefined;
   if (Array.isArray(mediaAssets) && mediaAssets.length > 0) {
     return { mediaAssets, text };
   }
-  if (mediaUrl) {
-    const type = materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'image';
+  if (mediaUrl && !mediaUrl.startsWith('blob:')) {
     return { mediaAssets: [{ type, url: mediaUrl }], text };
   }
   return { text: text ?? '' };

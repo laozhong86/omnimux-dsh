@@ -160,8 +160,8 @@ test('noteGraphReset 会清掉 user-delete，推断为 reset', () => {
 test('源码契约：hydrateGraph 之后才 setBoot ready；persist enabled 绑定 ready', () => {
   const bootSrc = readFileSync(join(here, '../hooks/useCanvasBoot.ts'), 'utf8');
   const appSrc = readFileSync(join(here, '../App.tsx'), 'utf8');
-  const hydrateIdx = bootSrc.indexOf('hydrateGraph(loaded.body.workspace.nodes');
-  const readyIdx = bootSrc.indexOf("setBoot({ phase: 'ready'");
+  const hydrateIdx = bootSrc.lastIndexOf('hydrateGraph(');
+  const readyIdx = bootSrc.lastIndexOf("setBoot({ phase: 'ready'");
   assert.ok(hydrateIdx >= 0, 'missing hydrateGraph before ready');
   assert.ok(readyIdx > hydrateIdx, 'hydrateGraph must run before setBoot ready');
   assert.match(appSrc, /enabled:\s*boot\.phase === 'ready'/);

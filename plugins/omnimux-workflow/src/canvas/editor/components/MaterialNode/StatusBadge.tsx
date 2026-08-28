@@ -39,6 +39,8 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ executionStatus, status }) =>
         return <span className="wf-material-node__badge wf-material-node__badge--done" />;
       case 'failed':
         return <span className="wf-material-node__badge wf-material-node__badge--failed" />;
+      case 'offline':
+        return <span className="wf-material-node__badge wf-material-node__badge--offline" title={t('node.offline')} />;
       default:
         return null;
     }

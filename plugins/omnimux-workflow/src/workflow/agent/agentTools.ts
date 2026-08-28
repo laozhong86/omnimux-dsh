@@ -158,9 +158,18 @@ function readBoolean(args: Record<string, unknown>, key: string): boolean {
   return args[key] === true;
 }
 
-/** Media URL (public route) -> absolute local path under the media root. */
+/** Media URL (public route) -> absolute local path under the media root, or imported realPath. */
 function mediaUrlToPath(url: unknown, mediaDir: string): string | null {
   if (typeof url !== 'string' || url.length === 0) return null;
+  try {
+    const parsed = new URL(url, 'http://127.0.0.1');
+    if (parsed.pathname.endsWith('/api/local-file')) {
+      const imported = parsed.searchParams.get('path');
+      return imported && imported.length > 0 ? imported : null;
+    }
+  } catch {
+    // fall through to executions media mapping
+  }
   const marker = '/media/';
   const index = url.indexOf(marker);
   if (index === -1 || !url.startsWith('/')) return null;

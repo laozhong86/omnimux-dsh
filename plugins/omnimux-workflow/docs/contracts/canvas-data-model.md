@@ -11,6 +11,8 @@ $DSH_HOME/omnimux/workflow/
 └── media/<workspaceId>/<executionId>/      # M4：seam 产物落盘（静态路由回显）
 ```
 
+本地导入**不**复制进上述目录：源文件留在用户磁盘，`canvas.json` 只记 `realPath`。`media/` 仍仅服务 AI 生成产物。见 [workflow-media-asset-indexing.md](./workflow-media-asset-indexing.md)。
+
 workspaceId 形如 `ws_<12 hex>`（随机，UUID 派生）。
 
 ## 快照结构
@@ -51,10 +53,61 @@ workspaceId 形如 `ws_<12 hex>`（随机，UUID 派生）。
 
 ## 节点 data（material 类型，窄化自 Gxgen MaterialNodeData）
 
-保留字段：`label` / `materialType` / `status(empty|ready|generating|completed|failed)` / `content` / `mediaUrl` / `taskId` / `errorMessage` / `generatedContent` / `selectedTool` / `prompt` / `params` / `failStrategy` / 尺寸组（`nodeWidth` / `nodeHeight` / `dimensions` / `aspectRatio` / `duration`）。
 裁掉：预设服务绑定（sceneId/modelOptions/parameterTemplate…）、输入槽位、角色设计、字幕样式。
 island 内部注入键（`__catalog`）保存前剥离，永不落盘。
+瞬时 `blob:` URL（弹窗预览）保存前剥离或改写，**禁止**出现在 `canvas.json`。
 
 xyflow 运行时字段（`measured` / `dragging` / `positionAbsolute` / `resizing` / `selected`）也不落盘：
 客户端 `persistSanitize` 白名单消毒（脏签名与 PUT 共用）；Host `WorkspaceStore.save` 落盘 zod `strict.data`（默认 strip）。
 仅选中或首次布局量尺寸不得抬 `version`。
+
+### 字段表
+
+| 字段 | 类型 | 落盘 | 说明 |
+|---|---|---|---|
+| `label` | `string` | 是 | 空串时 UI 回退 i18n `node.type.<materialType>` |
+| `materialType` | `'text' \| 'image' \| 'video' \| 'audio'` | 是 | 素材族 |
+| `status` | 见下方状态机 | 是 | 导入节点含 `offline` |
+| `content` | `string?` | 是 | 文本正文或导入文件显示名 |
+| `mediaUrl` | `string?` | 是 | **派生**预览 URL，禁止 `blob:` |
+| `mediaAssets` | `{ type, url }[]?` | 是 | `url` 与 `mediaUrl` 同规则；禁止 `blob:` |
+| `taskId` | `string?` | 是 | 生成任务 id |
+| `errorMessage` | `string?` | 是 | 失败文案 |
+| `generatedContent` | `string?` | 是 | 生成文本预览 |
+| `selectedTool` | `MaterialTool` | 是 | 导入默认为 `'import'` |
+| `prompt` | `string?` | 是 | 生成指令 |
+| `params` | `Record<string, unknown>` | 是 | 生成参数 |
+| `failStrategy` | `'abort' \| 'skip'` | 是 | 节点失败策略 |
+| `nodeWidth` / `nodeHeight` | `number?` | 是 | 卡片尺寸 |
+| `dimensions` | `{ width, height }?` | 是 | 媒体像素尺寸 |
+| `aspectRatio` | `number?` | 是 | 宽高比 |
+| `duration` | `number?` | 是 | 音视频时长（秒） |
+| `realPath` | `string?` | 是 | 本地导入绝对路径。索引，不复制源文件。Issue #122 |
+| `originalName` | `string?` | 是 | 导入显示名，默认 `basename(realPath)` |
+| `fileSize` | `number?` | 是 | 字节；`stat.size` |
+| `mimeType` | `string?` | 是 | 白名单 MIME（image / video / audio） |
+| `isMissing` | `boolean?` | 是 | `true` ⇔ 导入节点 `status === 'offline'` |
+
+本地导入字段的语义、派生公式与 Relink 见 [workflow-media-asset-indexing.md](./workflow-media-asset-indexing.md)。
+
+`mediaUrl` 两条互斥来源（不得混写）：
+
+1. **本地导入**：`/omnimux-workflow/api/local-file?path=` + `encodeURIComponent(realPath)`。
+2. **AI 生成产物**（本 Issue 不改）：`/omnimux-workflow/media/executions/<id>/…`，对应磁盘 `$DSH_HOME/omnimux/workflow/media/executions/`。
+
+### 状态机
+
+```
+empty | ready | offline | generating | completed | failed
+```
+
+| 状态 | 谁用 | 含义 |
+|---|---|---|
+| `empty` | 全部 | 无输出。导入节点无 `realPath` |
+| `ready` | 导入 / 手工文本 | 可预览或可连线。导入节点：源文件在盘且 `isMissing === false` |
+| `offline` | **仅本地导入** | 源文件丢失或不可读。保留 `realPath`，UI = Media Offline + Relink。画布不崩 |
+| `generating` | 生成管线 | 任务进行中 |
+| `completed` | 生成管线 | 产物已回填 |
+| `failed` | 生成管线 | 任务失败 |
+
+不变量：导入节点 `ready` ⇔ `isMissing === false`；`offline` ⇔ `isMissing === true`。生成节点无 `realPath`，hydrate probe 不得把它们改成 `offline`。

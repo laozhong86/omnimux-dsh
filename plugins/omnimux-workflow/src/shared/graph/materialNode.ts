@@ -77,7 +77,7 @@ export const MATERIAL_TOOL_INPUT_TYPES: Partial<Record<MaterialTool, MaterialTyp
 // Narrowed from Gxgen apps/web/src/types/materialNode.ts
 // ============================================================================
 
-export type MaterialStatus = 'empty' | 'ready' | 'generating' | 'completed' | 'failed';
+export type MaterialStatus = 'empty' | 'ready' | 'generating' | 'completed' | 'failed' | 'offline';
 export type NodeFailStrategy = 'abort' | 'skip';
 
 /**
@@ -99,6 +99,12 @@ export interface MaterialNodeData {
   status: MaterialStatus;
   content?: string;
   mediaUrl?: string;
+  /** Absolute local source path for imported media (index, never a copy). */
+  realPath?: string;
+  originalName?: string;
+  fileSize?: number;
+  mimeType?: string;
+  isMissing?: boolean;
   taskId?: string;
   errorMessage?: string;
   generatedContent?: string;
