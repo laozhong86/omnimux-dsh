@@ -9,6 +9,7 @@ import {
   collectRealPaths,
   isAllowedImportedMedia,
   isBlobUrl,
+  isLocalFileUrl,
   localFileMediaUrl,
   localFilePathFromUrl,
   looksAbsolutePath,
@@ -22,6 +23,8 @@ test('localFileMediaUrl 编码绝对路径，禁止 blob', () => {
   assert.equal(localFilePathFromUrl(url), '/Users/me/a b.png');
   assert.equal(isBlobUrl('blob:http://localhost/x'), true);
   assert.equal(isBlobUrl(url), false);
+  assert.equal(isLocalFileUrl(url), true);
+  assert.equal(isLocalFileUrl('blob:http://localhost/x'), false);
 });
 
 test('MIME / 扩展名白名单：媒体放行，pdf 拒绝', () => {
