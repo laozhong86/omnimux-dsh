@@ -30,13 +30,13 @@ class ClipErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div style={{ padding: 24, color: 'var(--dsw-alias-label-primary, #ffffff)', background: 'var(--dsw-alias-bg-base, #111113)', height: '100%', boxSizing: 'border-box' }}>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: 16, color: '#ef4444' }}>剪辑器加载遇到异常</h3>
-          <pre style={{ fontSize: 12, padding: 12, borderRadius: 6, background: 'rgba(0,0,0,0.5)', overflow: 'auto', whiteSpace: 'pre-wrap' }}>
+          <h3 style={{ margin: '0 0 12px 0', fontSize: 16, color: 'var(--dsw-alias-label-danger)' }}>剪辑器加载遇到异常</h3>
+          <pre style={{ fontSize: 12, padding: 12, borderRadius: 6, background: 'var(--dsw-alias-bg-mask-1)', overflow: 'auto', whiteSpace: 'pre-wrap' }}>
             {String(this.state.error?.stack || this.state.error?.message || this.state.error)}
           </pre>
           <button
             type="button"
-            style={{ marginTop: 12, padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}
+            style={{ marginTop: 12, padding: '8px 16px', background: 'var(--dsw-alias-accent-primary)', color: 'var(--dsw-alias-on-accent, #fff)', border: 'none', borderRadius: 8, cursor: 'pointer' }}
             onClick={() => this.setState({ hasError: false, error: null })}
           >
             重试加载

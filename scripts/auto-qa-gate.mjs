@@ -280,8 +280,9 @@ function staticScan(report, files, root) {
     }
 
     // Dynamic/plain JS must not contain JSX. Keep this scoped to source files;
-    // static .jsx/.tsx bundles are validated by their package toolchain.
-    if (!isTestFile(file) && extname(file) === '.js' && !rel.startsWith('scripts/')) {
+    // compiled lib/dist bundles and static .jsx/.tsx are validated by the package toolchain.
+    const isCompiledBundle = /(^|\/)(lib|dist)\//.test(rel)
+    if (!isTestFile(file) && extname(file) === '.js' && !rel.startsWith('scripts/') && !isCompiledBundle) {
       const codeOnly = maskNonCode(content)
       const hasJsxTag = /<[A-Za-z][A-Za-z0-9._-]*(?:\s+[^>]*)?(?:\/>|>[^<]*<\/[A-Za-z][A-Za-z0-9._-]*>)/.test(codeOnly)
         || /return\s+<[A-Za-z][A-Za-z0-9._-]*/.test(codeOnly)
