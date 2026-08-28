@@ -102,48 +102,58 @@ function StudioCreateForm({ t, onCreated }) {
           }}
         />
       </div>
-      <div>
-        <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>
-          {t('tab.sizeLabel')}
+      <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>
+            {t('tab.sizeLabel')}
+          </div>
+          <select
+            id="omnimux-clip-preset"
+            style={inputStyle}
+            value={preset}
+            onChange={(event) => setPreset(event.target.value)}
+          >
+            {PRESET_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          id="omnimux-clip-project-preset"
-          style={inputStyle}
-          value={preset}
-          onChange={(e) => setPreset(e.target.value)}
-        >
-          {PRESET_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value} style={{ background: 'var(--dsw-alias-bg-layer-2, #1e1e1e)', color: 'var(--dsw-alias-label-primary, #fff)' }}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>
-          {t('tab.fpsLabel')}
+        <div style={{ width: 120 }}>
+          <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>
+            {t('tab.fpsLabel')}
+          </div>
+          <select
+            id="omnimux-clip-fps"
+            style={inputStyle}
+            value={fps}
+            onChange={(event) => setFps(event.target.value)}
+          >
+            {FPS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          id="omnimux-clip-project-fps"
-          style={inputStyle}
-          value={fps}
-          onChange={(e) => setFps(e.target.value)}
-        >
-          {FPS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value} style={{ background: 'var(--dsw-alias-bg-layer-2, #1e1e1e)', color: 'var(--dsw-alias-label-primary, #fff)' }}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
       </div>
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
-        <button style={btnSecondary} onClick={() => {
-          resetOpenReelRouter({ route: 'welcome', params: {} })
-          onCreated?.()
-        }}>
+      <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+        <button
+          type="button"
+          style={{ ...btnSecondary, flex: 1 }}
+          onClick={() => {
+            resetOpenReelRouter({ route: 'welcome', params: {} })
+            onCreated?.()
+          }}
+        >
           {t('tab.openOfficial')}
         </button>
-        <button style={btnPrimary} onClick={submit}>
+        <button
+          type="button"
+          style={{ ...btnPrimary, flex: 1 }}
+          onClick={submit}
+        >
           {t('tab.create')}
         </button>
       </div>
@@ -152,8 +162,9 @@ function StudioCreateForm({ t, onCreated }) {
 }
 
 /**
- * better-sidebar Tab 根。外层 `.openreel-studio-root` 做主题隔离；
- * 内层挂官方 OpenReel App（Welcome + EditorInterface）。
+ * OmniMux Clip Studio Tab component mounted in dsh-better-sidebar.
+ * Wraps OpenReel with an OmniMux top action row (project name + save status + save button).
+ * @param {{ t?: (key: string) => string }} props
  */
 export function OpenReelStudioTab({ t: tProp }) {
   const t = (key) => {
@@ -220,9 +231,10 @@ export function OpenReelStudioTab({ t: tProp }) {
           {project?.name || t('tab.title')}
         </div>
         <div className="openreel-studio-hostbar-status">{saveStatus}</div>
-        <Button
-          variant="outline"
+        <button
+          type="button"
           disabled={!hasOpenProject}
+          className="omnimux-clip-stage-save-btn"
           onClick={() => {
             if (!project?.id) return
             setSaveStatus(t('tab.saving'))
@@ -231,8 +243,12 @@ export function OpenReelStudioTab({ t: tProp }) {
               .catch(() => setSaveStatus(t('tab.saveFailed')))
           }}
         >
-          {t('tab.save')}
-        </Button>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M12.667 14H3.333A1.333 1.333 0 0 1 2 12.667V3.333C2 2.597 2.597 2 3.333 2h7.334L14 5.333v7.334A1.333 1.333 0 0 1 12.667 14Z" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M11.333 14V9.333H4.667V14M4.667 2v3.333h5.333" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span>{t('tab.save')}</span>
+        </button>
       </div>
       <div className="openreel-studio-body">
         {showCreate ? (
