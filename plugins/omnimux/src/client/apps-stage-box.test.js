@@ -76,8 +76,11 @@ describe('PRODUCT_STAGE_CHROME', () => {
     assert.match(PRODUCT_STAGE_CHROME, /pointer-events:none/)
     assert.match(PRODUCT_STAGE_CHROME, /dsh-window-drag/)
     assert.match(PRODUCT_STAGE_CHROME, /data-dsh-panel-host/)
+    assert.match(PRODUCT_STAGE_CHROME, /data-dsh-better-sidebar/)
+    assert.match(PRODUCT_STAGE_CHROME, /_panel/)
     assert.match(PRODUCT_STAGE_CHROME, /--dsh-sidebar-width/)
     assert.match(PRODUCT_STAGE_CHROME, /--dsh-sidebar-height/)
+    assert.match(PRODUCT_STAGE_CHROME, /margin-right:0px/)
   })
 })
 
