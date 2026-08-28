@@ -12,6 +12,10 @@ import './openreel/web/index.css'
  * After first open, keep the subtree with display:none — never `if (!open) return null`.
  * Supports both standalone mode (from sidebar) and canvas mode (from workflow node).
  *
+ * In canvas mode (`session.source === 'canvas'`), it adaptively positions itself directly
+ * over the workflow canvas tab (`[data-omnimux-canvas-tab]`), providing a full-screen
+ * editing workspace on the canvas area without squeezing the conversation column.
+ *
  * @param {{
  *   t: (key: string) => string,
  *   stage: {
@@ -49,20 +53,49 @@ export function ClipStage({ t, stage }) {
 
   useLayoutEffect(() => {
     if (!open || !stage) return undefined
-    const update = () => { setBox(stage.readBox()) }
+
+    const update = () => {
+      // 1. 画布联动模式：优先探测右侧 [data-omnimux-canvas-tab]，使剪辑器精确覆盖画布区域
+      if (session?.source === 'canvas') {
+        const canvasTab = document.querySelector('[data-omnimux-canvas-tab]')
+        if (canvasTab instanceof HTMLElement) {
+          const rect = canvasTab.getBoundingClientRect()
+          if (rect.width >= 100 && rect.height >= 100) {
+            setBox({
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height,
+            })
+            return
+          }
+        }
+      }
+
+      // 2. 独立模式（左侧栏）：使用标准 stage.readBox()
+      setBox(stage.readBox())
+    }
+
     update()
-    const scroll = document.querySelector('[data-conversation-scroll]')
-    const target = scroll instanceof HTMLElement
-      ? scroll
-      : document.querySelector('[data-slot="conversation"]')?.parentElement
-    const observer = typeof ResizeObserver === 'function' && target ? new ResizeObserver(update) : null
-    if (target && observer) observer.observe(target)
+
+    // 监听画布容器与会话容器的 resize
+    const targets = [
+      document.querySelector('[data-omnimux-canvas-tab]'),
+      document.querySelector('[data-conversation-scroll]'),
+      document.querySelector('[data-slot="conversation"]')?.parentElement,
+    ].filter((el) => el instanceof HTMLElement)
+
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null
+    for (const target of targets) {
+      observer?.observe(target)
+    }
+
     window.addEventListener('resize', update)
     return () => {
       observer?.disconnect()
       window.removeEventListener('resize', update)
     }
-  }, [open, stage])
+  }, [open, stage, session])
 
   if (!stage || !everOpened) return null
 
