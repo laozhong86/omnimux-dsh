@@ -47,8 +47,38 @@ describe('omnimux video helpers', () => {
   it('refuses to execute without a key', async () => {
     await assert.rejects(
       () => executeOmnimuxVideo({ prompt: 'x', dest: '/tmp/no.mp4', env: {} }),
-      (error) => error instanceof OmnimuxError && error.code === 'omnimux-unconfigured',
+      (error) => error instanceof OmnimuxError && error.code === 'needs-omnimux',
     )
+  })
+
+  it('executes through mock store token without OMNIMUX_API_KEY', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-vid-pat-'))
+    const dest = join(dir, 'out.mp4')
+    const result = await executeOmnimuxVideo({
+      prompt: 'a wall with pat',
+      dest,
+      duration: 4,
+      env: {},
+      store: {
+        resolve: async () => 'pat-video-token',
+      },
+      runtime: {
+        async execute() {
+          return {
+            taskId: 'task-vid-pat',
+            outputs: [{ type: 'video', url: 'https://cdn.example/out-pat.mp4' }],
+          }
+        },
+      },
+      fetcher: async (url) => {
+        assert.equal(String(url), 'https://cdn.example/out-pat.mp4')
+        return { ok: true, arrayBuffer: async () => Buffer.from('mp4-pat-bytes') }
+      },
+    })
+    assert.equal(result.mode, 'live')
+    assert.equal(result.taskId, 'task-vid-pat')
+    assert.equal(readFileSync(dest, 'utf8'), 'mp4-pat-bytes')
+    rmSync(dir, { recursive: true, force: true })
   })
 
   it('executes through a fake runtime and writes dest', async () => {

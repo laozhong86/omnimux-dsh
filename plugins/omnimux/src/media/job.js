@@ -9,12 +9,14 @@ import { OmnimuxError } from './errors.js'
  * @param {AbortSignal | undefined} signal
  */
 export async function getJson(fetcher, url, apiKey, signal) {
+  /** @type {Record<string, string>} */
+  const headers = {
+    accept: 'application/json',
+    ...(apiKey && apiKey.trim() ? { authorization: `Bearer ${apiKey.trim()}` } : {}),
+  }
   const response = await fetcher(url, {
     method: 'GET',
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      accept: 'application/json',
-    },
+    headers,
     ...(signal ? { signal } : {}),
   })
   const json = await response.json()
