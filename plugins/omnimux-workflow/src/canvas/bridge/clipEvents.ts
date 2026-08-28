@@ -102,6 +102,7 @@ export interface SaveClipEditorPayload {
   nodeId?: string;
   schema?: TimelineSchema;
   projectId?: string;
+  createDownstreamNode?: boolean;
   output?: {
     videoPath: string;
     thumbnailPath?: string;

@@ -193,6 +193,7 @@ const zh = {
   'clip.openClip': '打开视频剪辑',
   'clip.launcherTitle': '开始视频合成',
   'clip.launcherBlurb': '开源 AI 视频剪辑工具，支持自动剪辑与字幕生成。',
+  'clip.exportedToNode': '已生成视频节点并连接到画布',
   // 错误兜底（error.*：API/SSE 错误消息缺失时的兜底）
   'error.createWorkspaceFailed': '创建工作区失败',
   'error.loadWorkspaceFailed': '读取工作区失败',

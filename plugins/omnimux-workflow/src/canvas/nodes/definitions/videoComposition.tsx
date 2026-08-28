@@ -134,6 +134,7 @@ export function createDefaultVideoCompositionData(): VideoCompositionNodeData {
 const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const nodeData = (isRecord(data) ? data : {}) as VideoCompositionNodeData;
   const setNodes = useCanvasStore((state) => state.setNodes);
+  const setEdges = useCanvasStore((state) => state.setEdges);
   const t = useT();
 
   const status: VideoCompositionStatus = nodeData.status ?? 'idle';
@@ -174,6 +175,60 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         renderProgress: output?.videoPath ? 100 : undefined,
         errorMessage: undefined,
       });
+
+      // ─── 画布模式：自动创建下游视频素材节点并连线 ───
+      if (output?.videoPath && detail.createDownstreamNode) {
+        const store = useCanvasStore.getState();
+        const currentNodes = store.nodes;
+        const currentNode = currentNodes.find((n) => n.id === id);
+        const currentPos = currentNode?.position || { x: 0, y: 0 };
+
+        // 防重：若已有挂载同一文件路径的下游节点则不重复创建
+        const alreadyLinked = currentNodes.some(
+          (n) => n.type === 'material' && (n.data as Record<string, unknown>)?.realPath === output.videoPath
+        );
+
+        if (!alreadyLinked) {
+          const newNodeId = `node_mat_vid_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+          const newPos = {
+            x: currentPos.x + VIDEO_COMPOSITION_NODE_WIDTH + 80,
+            y: currentPos.y,
+          };
+          const newVideoNode = {
+            id: newNodeId,
+            type: 'material',
+            position: newPos,
+            selected: true,
+            data: {
+              materialType: 'video',
+              label: `${nodeData.title || nodeData.label || t('node.type.video_composition')}_成片`,
+              status: 'ready',
+              selectedTool: 'import',
+              realPath: output.videoPath,
+              mediaUrl: output.videoPath,
+              thumbnailUrl: output.thumbnailPath,
+              duration: output.durationMs ? Math.round(output.durationMs / 1000) : undefined,
+              size: { width: output.width || 1920, height: output.height || 1080 },
+            },
+          };
+
+          const newEdgeId = `edge_${id}_${newNodeId}`;
+          const newEdge = {
+            id: newEdgeId,
+            source: id,
+            target: newNodeId,
+            sourceHandle: 'output',
+            targetHandle: 'input',
+          };
+
+          setNodes((nodes) => [
+            ...nodes.map((node) => ({ ...node, selected: false })),
+            newVideoNode as never,
+          ]);
+          setEdges((edges) => [...edges, newEdge as never]);
+          toast.success(t('clip.exportedToNode') || '已生成视频节点并连接到画布');
+        }
+      }
     };
 
     const onProgress = (event: Event) => {
