@@ -175,6 +175,7 @@ const en: Record<DictKey, string> = {
   'clip.openClip': 'Open Video Clip',
   'clip.launcherTitle': 'Start Video Composition',
   'clip.launcherBlurb': 'Open-source AI video clip studio with auto-cutting and subtitle generation.',
+  'clip.exportedToNode': 'Video node generated and linked to canvas',
   'error.createWorkspaceFailed': 'Failed to create workspace',
   'error.loadWorkspaceFailed': 'Failed to load workspace',
   'error.nodeExecutionFailed': 'Node execution failed',

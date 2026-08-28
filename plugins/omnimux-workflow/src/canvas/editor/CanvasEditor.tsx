@@ -36,7 +36,7 @@ import type { MaterialType } from '../types/materialNode';
 import AnimatedEdge from './components/AnimatedEdge';
 import Toolbar, { type CanvasPointerMode } from './components/Toolbar';
 import HeaderControls from './components/HeaderControls';
-import AssetsDrawer from './components/AssetsDrawer';
+import AssetsDrawer, { type AssetRecord } from './components/AssetsDrawer';
 import ShortcutsModal from './components/ShortcutsModal';
 import CanvasNodeActionMenu from './components/CanvasNodeActionMenu';
 import ContextMenu from './components/ContextMenu';
@@ -56,6 +56,61 @@ import { videoCompositionNodeDefinition } from '../nodes/definitions/videoCompos
 import { SpreadsheetStage } from '../components/table-node/stage/SpreadsheetStage';
 import type { CapabilityCatalog } from '../../shared/api';
 
+// 抽屉独立隔离保护器：确保抽屉内部发生任何未捕获错误时，画布绝不崩溃或黑屏
+class DrawerErrorBoundary extends React.Component<
+  { children: React.ReactNode; onClose: () => void },
+  { hasError: boolean; errorMsg: string }
+> {
+  constructor(props: { children: React.ReactNode; onClose: () => void }) {
+    super(props);
+    this.state = { hasError: false, errorMsg: '' };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, errorMsg: error.message };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[AssetsDrawer ErrorBoundary] 捕获到抽屉渲染错误:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          className="wf-assets-drawer-root nodrag nopan"
+          style={{ width: '320px', padding: '16px', color: '#fff', background: '#18181b' }}
+        >
+          <div style={{ fontSize: '13px', fontWeight: 600, color: '#ef4444', marginBottom: '8px' }}>
+            资产抽屉加载异常
+          </div>
+          <div style={{ fontSize: '11px', color: '#a1a1aa', marginBottom: '12px' }}>
+            {this.state.errorMsg || '组件渲染发生未知错误'}
+          </div>
+          <button
+            type="button"
+            style={{
+              padding: '4px 12px',
+              borderRadius: '6px',
+              background: '#3b82f6',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+            onClick={() => {
+              this.setState({ hasError: false, errorMsg: '' });
+              this.props.onClose();
+            }}
+          >
+            重置并关闭
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Register node definitions once at module load (extension point ①).
 // nodeTypes built outside the component to prevent re-creation (Gxgen rule).
 registerNodeDefinition(materialNodeDefinition);
@@ -65,6 +120,7 @@ registerNodeDefinition(videoCompositionNodeDefinition);
 const nodeTypes = buildNodeTypes();
 
 const edgeTypes = {
+  default: AnimatedEdge,
   animated: AnimatedEdge,
 };
 
@@ -239,7 +295,8 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
 
   // 插入资产到画布作为新节点
   const handleInsertAsset = useCallback(
-    (asset: { name: string; type: string; path: string; previewUrl?: string }) => {
+    (asset: AssetRecord) => {
+      const assetPath = asset.real_path || asset.files?.[0]?.path || '';
       const targetType: MaterialType =
         asset.type === 'video' ? 'video' : asset.type === 'image' ? 'image' : 'text';
       const count = nodeCreateCounter.current++;
@@ -250,7 +307,7 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
 
       const result = createMaterialNode(targetType, position, {
         title: asset.name,
-        content: asset.path,
+        content: assetPath,
         previewUrl: asset.previewUrl,
         status: 'ready',
       });
@@ -315,6 +372,46 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
     );
   }, [setNodes]);
 
+  // 资产从抽屉拖拽释放到画布 (Drag-to-Mount)
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      try {
+        const raw = e.dataTransfer.getData('application/json');
+        if (!raw) return;
+        const payload = JSON.parse(raw);
+        if (payload.type === 'omnimux-asset' && payload.asset) {
+          const asset = payload.asset;
+          const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+          const targetType: MaterialType =
+            asset.type === 'video' ? 'video' : asset.type === 'image' ? 'image' : 'text';
+          const result = createMaterialNode(targetType, pos, {
+            title: asset.name,
+            content: asset.real_path || asset.prompt || '',
+            previewUrl: asset.previewUrl,
+            status: 'ready',
+          });
+          const newNode = result.nodes[0];
+          if (newNode) {
+            applyCanvasInputMutation({
+              addNodes: [newNode],
+            });
+            setSelectedElement('node', newNode.id);
+            toast.success(`已挂载素材到画布: ${asset.name}`);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to parse dropped asset', err);
+      }
+    },
+    [screenToFlowPosition, applyCanvasInputMutation, setSelectedElement],
+  );
+
   return (
     <div className="wf-canvas-editor" style={{ position: 'relative', height: '100%' }}>
       <ReactFlow
@@ -330,6 +427,8 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
         onPaneClick={handlePaneClick}
         onNodeContextMenu={handleNodeContextMenu}
         onPaneContextMenu={handlePaneContextMenu}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
         onSelectionContextMenu={handleSelectionContextMenu}
         onDelete={handleDelete}
         nodeTypes={nodeTypes}
@@ -387,21 +486,40 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
         canRedo={canRedo}
         pointerMode={pointerMode}
         onPointerModeChange={setPointerMode}
-        onToggleAssets={() => setIsAssetsOpen((prev) => !prev)}
-        onToggleShortcuts={() => setIsShortcutsOpen((prev) => !prev)}
+        onOpenAssets={() => setIsAssetsOpen((prev) => !prev)}
+        onOpenHelp={() => setIsShortcutsOpen((prev) => !prev)}
         isAssetsOpen={isAssetsOpen}
-        isShortcutsOpen={isShortcutsOpen}
         isAddMenuOpen={isAddMenuOpen}
         onToggleAddMenu={() => setIsAddMenuOpen((prev) => !prev)}
       />
 
-      {/* 项目资产抽屉 */}
-      <AssetsDrawer
-        isOpen={isAssetsOpen}
-        onClose={() => setIsAssetsOpen(false)}
-        onInsertAsset={handleInsertAsset}
-        selectedCategoryIndex={assetsCategoryIndex}
-      />
+      {/* 项目资产抽屉 (带防护隔离，保证画布永远不黑屏) */}
+      {isAssetsOpen && (
+        <DrawerErrorBoundary onClose={() => setIsAssetsOpen(false)}>
+          <AssetsDrawer
+            isOpen={isAssetsOpen}
+            onClose={() => setIsAssetsOpen(false)}
+            onInsertAsset={handleInsertAsset}
+            nodes={flowNodes}
+            onFocusNode={(nodeId) => {
+              const targetNode = flowNodes.find((n) => n.id === nodeId);
+              if (targetNode) {
+                setCenter(targetNode.position.x + 100, targetNode.position.y + 100, {
+                  zoom: 1,
+                  duration: 800,
+                });
+                // 选中该节点
+                setNodes((nds) =>
+                  nds.map((n) => ({
+                    ...n,
+                    selected: n.id === nodeId,
+                  })),
+                );
+              }
+            }}
+          />
+        </DrawerErrorBoundary>
+      )}
 
       {/* 快捷键帮助浮窗 */}
       <ShortcutsModal
