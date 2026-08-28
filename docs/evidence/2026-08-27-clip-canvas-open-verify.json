@@ -1,0 +1,32 @@
+{
+  "date": "2026-08-27",
+  "task": "clip #84 browser verification — L2 omnimux-dev-canvas84 @ http://127.0.0.1:44201",
+  "merged": "PR #92 squash 5ec2ad8 (fix(omnimux-clip): 宿主 -stage 规则收敛 $= 结尾匹配)",
+  "scenario": "画布内打开剪辑工坊（无一级页激活时，宿主 idle 规则不得隐藏 vendored OpenReel studio 内部类）",
+  "runtimeProof": {
+    "noStageActive": true,
+    "injectedIdleRuleUsesDollar": true,
+    "injectedIdleRuleUsesStarFragment": false,
+    "bgStageBg_matchesOldStarRule": true,
+    "bgStageBg_matchesNewDollarRule": false,
+    "omnimuxWorkflowStage_matchesNewDollarRule": true,
+    "bgStageBg_computedDisplay_withInjectedChrome": "block"
+  },
+  "conclusion": "PASS（CSS/运行时语义级）— $= 规则只命中一级页根（omnimux-*-stage），vendored studio 内部类（bg-stage-bg）不再被隐藏；一级页隐藏/互斥逻辑保留完整（#91 sibling 作用域规则同在运行时验证通过：data-dsh-product-stage 声明、互斥 CSS 均在工作流页打开时生效）",
+  "unverified": [
+    {
+      "item": "剪辑工坊 Tab 完整渲染（OpenReel GUI 可见性目检）",
+      "blocker": "L2 web host 上 dsh-better-sidebar 懒加载 chunk 报错：`[dsh-better-sidebar] chunk \"terminal\": client module system unavailable`（terminal 及 studio 等 Tab 均未注册/打开）；疑似 L2 web 模块系统限制，需在 DSH Desktop 重启后于真实应用内复验",
+      "evidence": "底部面板 zsh 终端 tab 显示该错误 + Retry"
+    },
+    {
+      "item": "画布 tab（data-omnimux-canvas-tab）打开后的覆盖几何",
+      "blocker": "画布 tab 需会话+项目会话上下文；本 L2 任务数据全新，工作流项目列表存在但项目卡点击未打开画布（无会话承载），且 better-sidebar tab 系统不可用"
+    }
+  ],
+  "commands": [
+    "yarn omnimux:dev start canvas84 omnimux  (fork, L2 44201)",
+    "ego-browser: 建工作区 verify-ws → 会话 → 注入 chrome 提取 + matches/computedStyle 探针",
+    "ps: watch/host 于 2026-08-27 22:0x 停止（task canvas84）"
+  ]
+}

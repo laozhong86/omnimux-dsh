@@ -2,6 +2,7 @@ import { createElement } from 'react'
 import { OpenReelStudioTab } from './OpenReelStudioTab.jsx'
 import { createStageStore } from './stage-store.js'
 import { mountSidebarEntry } from './sidebar-entry.js'
+import { createAndMountCanvasBridge } from './CanvasBridge.js'
 import { ClipStage } from './ClipStage.jsx'
 
 export const name = 'omnimux-clip'
@@ -74,6 +75,7 @@ function renderClipIcon(size = 16) {
  * 2. Left sidebar extra entry (rank 8.2 under 新会话)
  * 3. First-level Stage on `shell.overlay` (ClipStage)
  * 4. Better Sidebar Tab (`omnimux-clip:studio`)
+ * 5. CanvasBridge event listener for omnimux-workflow integration
  *
  * @param {{
  *   locale?: { bind?: Function, register?: Function },
@@ -100,6 +102,13 @@ export function apply(ctx) {
     ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), 'omnimux-clip: sidebar entry')
   } else {
     mountSidebarEntry(stage, t, ctx.locale)
+  }
+
+  // Mount Canvas Bridge to connect canvas workflow with stage
+  if (typeof ctx.effect === 'function') {
+    ctx.effect(() => createAndMountCanvasBridge({ stage }), 'omnimux-clip: canvas bridge')
+  } else {
+    createAndMountCanvasBridge({ stage })
   }
 
   if (ctx.slots && typeof ctx.slots.inject === 'function') {
