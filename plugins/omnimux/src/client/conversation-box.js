@@ -72,9 +72,14 @@ html:not([data-dsh-product-stage]) [class$="-stage"]{display:none!important;poin
 ${STAGE_MUTUAL_EXCLUSION_RULES}
 html:not([data-dsh-product-stage]) [class*="toggleCluster"],
 html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}
-html[data-dsh-product-stage] [class*="toggleCluster"]{display:none!important;}
-html[data-dsh-product-stage] [data-dsh-panel-host]{display:none!important;}
+html[data-dsh-product-stage] [data-dsh-better-sidebar],
+html[data-dsh-product-stage] [class*="_panel"],
+html[data-dsh-product-stage] [class*="_bottomPanel"],
+html[data-dsh-product-stage] [data-dsh-panel-host],
+html[data-dsh-product-stage] [class*="toggleCluster"],
+html[data-dsh-product-stage] [data-slot="shell.sidebar.auxiliary"]{display:none!important;visibility:hidden!important;pointer-events:none!important;}
 html[data-dsh-product-stage]{--dsh-sidebar-width:0px!important;--dsh-sidebar-height:0px!important;}
+html[data-dsh-product-stage] #root{margin-right:0px!important;}
 html[data-dsh-product-stage] #dsh-window-drag{-webkit-app-region:no-drag!important;pointer-events:none!important;}
 html[data-dsh-product-stage] header{-webkit-app-region:no-drag!important;}
 html[data-dsh-product-stage] [data-slot="conversation.session.header"],
@@ -167,19 +172,34 @@ function watchSelectedSessionClick() {
 }
 
 /**
- * Cover the whole conversation column (header + body + composer).
+ * Cover the whole conversation column (header + body + composer) and expand
+ * to the full viewport width so right-side auxiliary sidebars cannot squeeze it.
  * First-level product pages are not session views.
  * @returns {{ top: number, left: number, width: number, height: number }}
  */
 export function readConversationBox() {
   let node = document.querySelector('[data-slot="conversation"]')
+  let found = null
   while (node) {
     const box = sizableBox(node)
-    if (box) return box
+    if (box) {
+      found = box
+      break
+    }
     node = node.parentElement
   }
-  const preferred = sizableBox(document.querySelector('[data-conversation-scroll]'))
-  if (preferred) return preferred
+  if (!found) {
+    found = sizableBox(document.querySelector('[data-conversation-scroll]'))
+  }
+  if (found) {
+    const winWidth = typeof window !== 'undefined' && typeof window.innerWidth === 'number' ? window.innerWidth : 0
+    const winHeight = typeof window !== 'undefined' && typeof window.innerHeight === 'number' ? window.innerHeight : 0
+    const width = winWidth > found.left ? Math.max(found.width, winWidth - found.left) : found.width
+    const height = winHeight > found.top ? Math.max(found.height, winHeight - found.top) : found.height
+    return { top: found.top, left: found.left, width, height }
+  }
   const left = 56
-  return { top: 0, left, width: Math.max(8, window.innerWidth - left), height: Math.max(8, window.innerHeight) }
+  const winWidth = typeof window !== 'undefined' && typeof window.innerWidth === 'number' ? window.innerWidth : 1024
+  const winHeight = typeof window !== 'undefined' && typeof window.innerHeight === 'number' ? window.innerHeight : 768
+  return { top: 0, left, width: Math.max(8, winWidth - left), height: Math.max(8, winHeight) }
 }
