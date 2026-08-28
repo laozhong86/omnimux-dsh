@@ -6,10 +6,14 @@
  * Canvas MUST NOT import omnimux-clip source (spec §2).
  */
 
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { type NodeProps } from '@xyflow/react';
 import { Download, Film, Layers, Pencil, Play } from 'lucide-react';
-import CanvasNodeHandle from '../../editor/components/CanvasNodeHandle';
+import CanvasNodeShell from '../../editor/components/CanvasNodeShell';
+import FloatingTopPill, { type FloatingPillAction } from '../../editor/components/FloatingTopPill';
+import NodeHeader from '../../editor/components/MaterialNode/NodeHeader';
+import StatusBadge from '../../editor/components/MaterialNode/StatusBadge';
+import NodeLauncherState from '../../editor/components/NodeEmptyState/NodeLauncherState';
 import { useCanvasStore } from '../../store/canvasStore';
 import { toast } from '../../ui';
 import { useT } from '../../i18n';
@@ -29,14 +33,6 @@ import {
 
 export const VIDEO_COMPOSITION_NODE_WIDTH = 350;
 export const VIDEO_COMPOSITION_NODE_HEIGHT = 440;
-
-const STATUS_LABEL: Record<VideoCompositionStatus, string> = {
-  idle: '未初始化',
-  editing: '编辑中',
-  rendering: '合成中',
-  completed: '已合成',
-  error: '出错',
-};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -138,7 +134,6 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const nodeData = (isRecord(data) ? data : {}) as VideoCompositionNodeData;
   const setNodes = useCanvasStore((state) => state.setNodes);
   const t = useT();
-  const [hovered, setHovered] = useState(false);
   const [isPlayingInline, setIsPlayingInline] = useState(false);
 
   const status: VideoCompositionStatus = nodeData.status ?? 'idle';
@@ -241,144 +236,158 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     anchor.remove();
   }, [nodeData.outputVideoUrl, title]);
 
-  const statusClass = useMemo(() => {
-    if (status === 'completed') return 'wf-clip-status--done';
-    if (status === 'editing' || status === 'rendering') return 'wf-clip-status--busy';
-    if (status === 'error') return 'wf-clip-status--error';
-    return 'wf-clip-status--idle';
-  }, [status]);
-
   return (
-    <div
-      className={`wf-material-node wf-clip-launcher ${selected ? 'wf-material-node--selected' : ''}`}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onDoubleClick={(event) => {
+    <CanvasNodeShell
+      id={id}
+      selected={selected}
+      nodeWidth={VIDEO_COMPOSITION_NODE_WIDTH}
+      nodeHeight={VIDEO_COMPOSITION_NODE_HEIGHT}
+      dataNodeType="video_composition"
+      showLeftHandle={true}
+      showRightHandle={true}
+      leftHandleVariant="plain"
+      rightHandleVariant="plain"
+      onCardDoubleClick={(event) => {
         event.stopPropagation();
         openEditor();
       }}
+      renderFloatingPill={({ hovered, selected: isSelected }) => {
+        if (!hovered && !isSelected) return null;
+        const pillActions: FloatingPillAction[] = [
+          {
+            key: 'open_clip',
+            label: '打开剪辑',
+            icon: Pencil,
+            variant: 'primary',
+            onClick: (e) => {
+              e.stopPropagation();
+              openEditor();
+            },
+            title: '打开视频剪辑编辑器',
+          },
+        ];
+        if (hasOutput) {
+          pillActions.push({
+            key: 'download_video',
+            label: '下载',
+            icon: Download,
+            onClick: handleDownload,
+            title: '下载合成视频',
+          });
+        }
+        return <FloatingTopPill actions={pillActions} />;
+      }}
+      renderHeader={() => (
+        <NodeHeader
+          label={title}
+          materialType="video_composition"
+          customIcon={<Film size={14} />}
+          onLabelChange={(newLabel) => updateNodeData({ label: newLabel, title: newLabel })}
+          trailing={
+            <StatusBadge
+              status={
+                status === 'completed'
+                  ? 'completed'
+                  : status === 'rendering' || status === 'editing'
+                  ? 'generating'
+                  : status === 'error'
+                  ? 'failed'
+                  : 'empty'
+              }
+            />
+          }
+        />
+      )}
     >
-      <CanvasNodeHandle side="left" nodeHovered={hovered} />
-      <CanvasNodeHandle side="right" nodeHovered={hovered} variant="plain" />
-
-      <div
-        className="wf-material-node__card wf-clip-launcher__card"
-        data-node-type="video_composition"
-      >
-        {selected ? (
-          <>
-            <span className="wf-node-corner wf-node-corner--tl" />
-            <span className="wf-node-corner wf-node-corner--tr" />
-            <span className="wf-node-corner wf-node-corner--bl" />
-            <span className="wf-node-corner wf-node-corner--br" />
-          </>
-        ) : null}
-
-        <header className="wf-clip-launcher__header">
-          <span className="wf-clip-launcher__icon" aria-hidden="true">
-            <Layers size={18} />
-            <Film size={12} className="wf-clip-launcher__icon-film" />
-          </span>
-          <div className="wf-clip-launcher__heading">
-            <h3 className="wf-clip-launcher__title">{title}</h3>
-            <span className={`wf-clip-status ${statusClass}`}>
-              {STATUS_LABEL[status]}
-            </span>
-          </div>
-        </header>
-
-        {hasOutput ? (
-          <div className="wf-clip-launcher__result">
-            <div
-              className="wf-clip-launcher__preview nodrag nopan"
-              style={{ position: 'relative', cursor: 'pointer' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsPlayingInline(!isPlayingInline);
-              }}
-            >
-              {isPlayingInline && nodeData.outputVideoUrl ? (
-                <video
-                  src={nodeData.outputVideoUrl}
-                  controls
-                  autoPlay
-                  className="wf-clip-launcher__thumb"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-              ) : thumbnail ? (
-                <>
-                  <img src={thumbnail} alt="" className="wf-clip-launcher__thumb" />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'rgba(0,0,0,0.3)',
-                    }}
-                  >
-                    <Play size={28} color="#fff" fill="#fff" />
-                  </div>
-                </>
-              ) : (
-                <div className="wf-clip-launcher__thumb-fallback">
-                  <Film size={36} />
+      {hasOutput ? (
+        <div className="wf-clip-launcher__result">
+          <div
+            className="wf-clip-launcher__preview nodrag nopan"
+            style={{ position: 'relative', cursor: 'pointer' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsPlayingInline(!isPlayingInline);
+            }}
+          >
+            {isPlayingInline && nodeData.outputVideoUrl ? (
+              <video
+                src={nodeData.outputVideoUrl}
+                controls
+                autoPlay
+                className="wf-clip-launcher__thumb"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
+            ) : thumbnail ? (
+              <>
+                <img src={thumbnail} alt="" className="wf-clip-launcher__thumb" />
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.3)',
+                  }}
+                >
+                  <Play size={28} color="#fff" fill="#fff" />
                 </div>
-              )}
-            </div>
-            <dl className="wf-clip-launcher__meta">
-              <div>
-                <dt>时长</dt>
-                <dd>{formatDuration(nodeData.outputDurationMs)}</dd>
+              </>
+            ) : (
+              <div className="wf-clip-launcher__thumb-fallback">
+                <Film size={36} />
               </div>
-              <div>
-                <dt>分辨率</dt>
-                <dd>{formatResolution(nodeData.outputWidth, nodeData.outputHeight)}</dd>
-              </div>
-            </dl>
-            <div className="wf-clip-launcher__actions nodrag nopan">
-              <button
-                type="button"
-                className="wf-clip-launcher__btn wf-clip-launcher__btn--primary"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  openEditor();
-                }}
-              >
-                <Pencil size={14} />
-                <span>重新编辑</span>
-              </button>
-              <button
-                type="button"
-                className="wf-clip-launcher__btn"
-                onClick={handleDownload}
-              >
-                <Download size={14} />
-                <span>下载</span>
-              </button>
-            </div>
+            )}
           </div>
-        ) : (
-          <div className="wf-clip-launcher__empty">
-            <p className="wf-clip-launcher__blurb">
-              开源 AI 视频剪辑工具，支持自动剪辑与字幕生成。
-            </p>
+          <dl className="wf-clip-launcher__meta">
+            <div>
+              <dt>时长</dt>
+              <dd>{formatDuration(nodeData.outputDurationMs)}</dd>
+            </div>
+            <div>
+              <dt>分辨率</dt>
+              <dd>{formatResolution(nodeData.outputWidth, nodeData.outputHeight)}</dd>
+            </div>
+          </dl>
+          <div className="wf-clip-launcher__actions nodrag nopan">
             <button
               type="button"
-              className="wf-clip-launcher__btn wf-clip-launcher__btn--primary wf-clip-launcher__open nodrag nopan"
+              className="wf-clip-launcher__btn wf-clip-launcher__btn--primary"
               onClick={(event) => {
                 event.stopPropagation();
                 openEditor();
               }}
             >
               <Pencil size={14} />
-              <span>打开视频剪辑</span>
+              <span>重新编辑</span>
+            </button>
+            <button
+              type="button"
+              className="wf-clip-launcher__btn"
+              onClick={handleDownload}
+            >
+              <Download size={14} />
+              <span>下载</span>
             </button>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      ) : (
+        <NodeLauncherState
+          mainIcon={<Film size={36} strokeWidth={1.5} />}
+          secondaryIcon={<Layers size={14} />}
+          blurb="开源 AI 视频剪辑工具，支持自动剪辑与字幕生成。"
+          actions={[
+            {
+              key: 'open_clip',
+              label: '打开视频剪辑',
+              icon: Pencil,
+              variant: 'primary',
+              onClick: () => openEditor(),
+            },
+          ]}
+        />
+      )}
+    </CanvasNodeShell>
   );
 };
 

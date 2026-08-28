@@ -1,15 +1,19 @@
 /**
- * NodeHeader — 移植自 Gxgen
- * apps/web/src/pages/CanvasEditor/components/MaterialNode/components/NodeHeader.tsx(176)。
+ * NodeHeader — 节点外置标题栏组件。
  *
  * 节点标题显示在卡片外部顶端，双击编辑；useViewport 反向缩放使标题在
  * 画布缩放时保持固定视觉尺寸（scale(1/zoom)，计划 §9 坑#5）。
- * 差异：AppIcon → lucide-react 直接引用；fallback label 走 i18n 字典。
+ *
+ * 增强能力：
+ * 1. 扩展支持 `customIcon`（React 组件或 ReactNode 自定义图标）；
+ * 2. 扩展支持 `video_composition` 及通用 string 材质类型；
+ * 3. 保持 100% 兼容现有 TableNode / MaterialNode 调用；
+ * 4. 内置双击编辑与 StatusBadge 挂载插槽。
  */
 
 import React, { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { useViewport } from '@xyflow/react';
-import { FileText, ImagePlus, Video, Music, Table } from 'lucide-react';
+import { FileText, ImagePlus, Video, Music, Table, Film } from 'lucide-react';
 import type { MaterialType } from '../../../types/materialNode';
 import { useT } from '../../../i18n';
 import { inverseScaleForZoom } from '../../utils/nodeVisualMath';
@@ -20,31 +24,50 @@ const HEADER_HEIGHT = 24;
 /** 节点名称最大长度（字符数） */
 const MAX_LABEL_LENGTH = 30;
 
-/** 素材类型 → lucide 图标（替换 M1-M5 的 emoji 表） */
-const MATERIAL_TYPE_ICON_COMPONENTS: Record<MaterialType | 'table', React.ComponentType<{ size?: number }>> = {
+/** 素材类型 → lucide 图标映射 */
+const MATERIAL_TYPE_ICON_COMPONENTS: Record<
+  MaterialType | 'table' | 'video_composition',
+  React.ComponentType<{ size?: number; className?: string }>
+> = {
   text: FileText,
   image: ImagePlus,
   video: Video,
   audio: Music,
   table: Table,
+  video_composition: Film,
 };
+
+export type NodeHeaderMaterialType =
+  | MaterialType
+  | 'table'
+  | 'video_composition'
+  | (string & {});
 
 export interface NodeHeaderProps {
   /** 节点标签（用户可编辑） */
   label?: string;
-  /** 素材类型 */
-  materialType: MaterialType | 'table';
+  /** 素材类型（当未提供 customIcon 时用于自动匹配图标和默认文案） */
+  materialType?: NodeHeaderMaterialType;
+  /** 自定义图标（组件或 ReactNode，优先级高于 materialType 默认图标） */
+  customIcon?:
+    | React.ComponentType<{ size?: number; className?: string }>
+    | React.ReactNode;
   /** 标签变化回调（接 updateNodeData） */
   onLabelChange?: (newLabel: string) => void;
-  /** 头部右侧附加内容（执行状态徽标） */
+  /** 头部右侧附加内容（执行状态徽标等） */
   trailing?: React.ReactNode;
 }
 
-const NodeHeader: React.FC<NodeHeaderProps> = ({ label, materialType, onLabelChange, trailing }) => {
+const NodeHeader: React.FC<NodeHeaderProps> = ({
+  label,
+  materialType = 'text',
+  customIcon,
+  onLabelChange,
+  trailing,
+}) => {
   const t = useT();
-  const fallbackLabel = t(`node.type.${materialType}`);
+  const fallbackLabel = materialType ? t(`node.type.${materialType}`) : '节点';
   const displayLabel = label || fallbackLabel;
-  const IconComponent = MATERIAL_TYPE_ICON_COMPONENTS[materialType];
   const { zoom } = useViewport();
 
   // 编辑状态
@@ -113,6 +136,28 @@ const NodeHeader: React.FC<NodeHeaderProps> = ({ label, materialType, onLabelCha
     }
   }, []);
 
+  const renderIcon = () => {
+    if (customIcon) {
+      if (React.isValidElement(customIcon)) {
+        return customIcon;
+      }
+      const CustomIconComp = customIcon as React.ComponentType<{
+        size?: number;
+        className?: string;
+      }>;
+      return <CustomIconComp size={14} />;
+    }
+
+    const IconComponent =
+      (materialType in MATERIAL_TYPE_ICON_COMPONENTS
+        ? MATERIAL_TYPE_ICON_COMPONENTS[
+            materialType as keyof typeof MATERIAL_TYPE_ICON_COMPONENTS
+          ]
+        : null) || FileText;
+
+    return <IconComponent size={14} />;
+  };
+
   // 视觉间距（屏幕像素），标题底部与卡片顶部的距离
   const visualGap = 4;
 
@@ -129,9 +174,7 @@ const NodeHeader: React.FC<NodeHeaderProps> = ({ label, materialType, onLabelCha
         pointerEvents: 'auto',
       }}
     >
-      <span className="wf-node-header__icon">
-        <IconComponent size={14} />
-      </span>
+      <span className="wf-node-header__icon">{renderIcon()}</span>
       {isEditing ? (
         <input
           ref={inputRef}
