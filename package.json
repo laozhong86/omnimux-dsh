@@ -32,6 +32,8 @@
     "wt:list": "bash scripts/git-wt.sh list",
     "wt:doctor": "bash scripts/git-wt.sh doctor",
     "qa:gate": "node scripts/auto-qa-gate.mjs",
+    "qa:verdict": "node scripts/ci-verdict.mjs",
+    "test:ci": "node --test scripts/auto-pipeline.test.mjs",
     "note:lint": "node scripts/verify-agent-note-format.mjs",
     "doc:pairing": "node scripts/verify-bilingual-docs.mjs",
     "doc:pairing:write": "node scripts/verify-bilingual-docs.mjs --write",

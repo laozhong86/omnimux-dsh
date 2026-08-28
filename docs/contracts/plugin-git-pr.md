@@ -6,14 +6,14 @@ status: "living"
 authority: "L1"
 date: "2026-08-24"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "omnimux"
 ---
 
 # plugin-git-pr — OmniMux 插件仓 Git / PR 合同
 
-> 目的：给 `laozhong86/omnimux-dsh` 补提交 / 分支 / PR / 合入纪律。
-> 对照桌面壳 `omnimux-desktop-fork/docs/contracts/parallel-dev-pr.md`；本合同更轻，先强制「分支 + PR + board」，不强制 worktree。
-> 拍板（2026-08-24）：base=`main`；合入永远由老板点；一插件一 PR 为默认；开 PR 之后的 CI/review 交棒 `omnimux-pr-handoff`（罩着市场版 github-pr-manager）。
+> 目的：给 `laozhong86/omnimux-dsh` 规定提交、分支、PR、质量门禁、合入与收尾纪律。
+> 本合同与 `agent-issue-lifecycle.md`、`plugin-qa.md`、`dev-pipeline.md` 一起构成 Agent 交付流程的 L1 真源。
+> **默认合入由老板完成；只有低风险 Issue 在完成显式预授权、真实测试、CI 与 `ego-browser`（如适用）证据后，才允许受控自动合入。**
 
 ## 仓库真源
 
@@ -28,119 +28,111 @@ subsystem: "omnimux-drama"
 
 ## 硬规则
 
-1. **No Issue, No Code（必须先立项建单）**。所有需求、重构、Bug 修复必须在 GitHub 创建 Issue（参照 `docs/contracts/agent-issue-lifecycle.md`），获得 Issue ID 后方可开始后续工作。严禁跳过 Issue 直接切支编码。
-2. **禁止直接推 `main`**。日常改动走特性分支 + PR。
+1. **No Issue, No Code（必须先立项建单）**。所有需求、重构、Bug 修复必须在 GitHub 创建 Issue，完成定界并写明可验证的验收标准后，方可切支编码。
+2. **禁止直接推 `main`**。日常改动走特性分支 + PR；Agent 不得把工作树直接切到 `main` 修改。
 3. **产品 PR 只打本仓**：`gh -R laozhong86/omnimux-dsh …`，base=`main`。禁止对上游 harness / desktop 开插件特性 PR。
-4. **强制 Worktree 物理隔离**。多 Agent 并行开发时，**严禁**在主仓库目录直接切分支或修改代码。每个新特性任务必须通过 `git worktree` 建立独立目录（`../omnimux-dsh-wt-<topic>-<issue-id>`）进行开发，主目录永远停留在干净的 `main` 分支。
-5. **合入权与预授权自动化通道**。默认合入权属于老板；但在全自动无人值守流水线（`pnpm auto:run <issue_id>`）中，当且仅当前置已确认实施立项、5D 自动化质检门禁 `qa:pass` 且测试全绿时，流水线被赋予预授权代行 `gh pr merge --squash --auto --delete-branch`，并在合入后自动清理 Worktree 与静态物化。
-6. **默认一插件一 PR**。跨插件改动（例如 hub + accounts 同改）须在 PR 描述写明理由；大跨包先问老板。PR 必须显式声明 `Closes #<issue-id>`。
-7. **提交信息**用 conventional commits（例：`feat(market): … (#<issue-id>)`、`fix(workflow): … (#<issue-id>)`）。`feat` / `fix` / `docs` 是 commit type，**不是**分支前缀。scope 用插件目录名或 `contracts` / `scripts`。禁止 `WIP`、`update`、`temp commit`、`fix bug` 这类标题。特性改动与纯格式化拆开。
-8. **未验收不得标完成**。本地测绿 / sync 成功 ≠ 合入；缺浏览器或窗口证据时，board 写「未验收」。验证命令见下方「本地验证」。
-9. **禁止提交密钥**。credentials / token / `.env` / 私钥不进仓。安全修复的分支名、commit、PR 标题、测试名只写代码现在做什么（例如校验请求体大小），不写攻击类别词。
-10. **跟 PR 细节交棒** `omnimux-pr-handoff`；跟踪写入本仓 `.workbuddy/pr-board.md`。**禁止**单文件 `memory/pr-tracking.md` 覆盖多 PR。
-11. **插件进 App** 仍走桌面壳 `yarn omnimux:*`（见 `ops-entry.md`）。本合同不管 sync / restart。
+4. **强制 Worktree 物理隔离**。每个实施任务使用 `./scripts/git-wt.sh start <plugin> <topic> <issue-id>` 创建独立工作区；主仓必须保持在干净的 `main`。
+5. **按风险定级决定合入通道**：
+   - `R0/R1`、跨插件、生产 profile、一级页、公开契约、manifest/工具入口、模型/凭据边界、回滚或上游同步变更：**只能老板人工合入**。
+   - `R2/R3`：只有 Issue 上存在老板/维护者的显式预授权，且所有质量门禁与 CI required checks 均通过，才可由 `pnpm auto:run <issue-id>` 代行 `gh pr merge --squash --auto --delete-branch`。
+   - 预授权不能授予 Agent 任意 `git merge`、直推 `main` 或绕过 required checks 的权限。
+6. **显式预授权必须可机检**：Issue 同时具备 `status:ready-to-run`、`risk:R2` 或 `risk:R3`、frontmatter `pre-authorized: true`，以及维护者白名单作者的 `/auto-approve risk:R2` 或 `/auto-approve risk:R3` 评论。老板可以在合入前用移除标签或 `/revoke` 撤销。
+7. **默认一插件一 PR**。跨插件改动必须在 Issue 与 PR 中说明理由；R0/R1 跨包改动自动进入人工通道。PR 必须显式声明 `Closes #<issue-id>`。
+8. **质量证据先于状态标签**。`qa:pass` 只能由 CI 聚合门禁在真实检查全绿后写入；本地 Agent、`auto-pipeline` 或 PR 作者不得自打 `qa:pass`。
+9. **未验收不得标完成**。本地测绿 / sync 成功 ≠ UI 验收；涉及浏览器的变更必须使用 `ego-browser`，缺 task space、URL、`snapshotText()`/DOM 断言或 `captureScreenshot()` 工件即 FAIL。
+10. **禁止提交密钥**。credentials / token / `.env` / 私钥不进仓。所有敏感配置只能由环境或受控 Host 注入。
+11. **跟 PR 细节交棒** `omnimux-pr-handoff`；跟踪写入本仓 `.workbuddy/pr-board.md`。该 board 不作为质量门禁的唯一信任源。
+12. **插件进 App** 仍走桌面壳 `yarn omnimux:*`（见 `ops-entry.md`）。本合同不允许 Agent 重启公共桌面 App。
+
+## 合入决策矩阵
+
+| 风险 | 典型变更 | 自动合入 | 证据要求 | 最终通道 |
+|---|---|---:|---|---|
+| R0 | P0、生产发布/回滚、凭据或权限边界、破坏性恢复 | 否 | 完整 L0–L3 | 老板人工 |
+| R1 | 跨插件、一级 `shell.overlay`、公开 I/O、manifest/工具入口、模型列表、合同/CI/门禁 | 否 | 完整 L0–L3；必要时老板审查 | 老板人工 |
+| R2 | 单插件常规功能、兼容性修复、非破坏性 Host/Client 改动 | 是（需预授权） | L0–L3 全绿、非 skip 测试、CI required checks、UI 用 ego-browser | 受控自动 |
+| R3 | 纯文档、测试补齐、格式化、低风险脚本/标签描述 | 是（需预授权；可由策略默认开启） | L0–L2 全绿；若触及 UI 仍需 ego-browser | 受控自动 |
+
+**风险高于标签**：任何变更只要命中 R0/R1 特征，流水线必须拒绝自动合入并转 `status:ready-for-boss`。不能通过把 Issue 改标成 R2/R3 绕过定级。
+
+## 受控自动合入的完整前置条件
+
+`auto-pipeline` 只有在以下条件全部成立时，才可发出 merge 请求：
+
+1. Issue 元数据完整，风险为 R2/R3，且预授权尚未撤销；
+2. 实施命令在受信任的 Agent 侧显式传入（不得从 Issue 正文执行任意命令）；
+3. Worktree 与分支绑定 Issue，主仓未被修改；
+4. L0 diff-aware 静态扫描通过；
+5. L1 相关包真实执行测试，失败、0 tests、未声明的 skip 均阻断；
+6. L2 集成/注册表/边界/doctor 检查通过；
+7. 触及 UI/Host/Stage 时，L3 使用 `ego-browser` 取得 task space、真实 L2 URL、快照/DOM 断言与截图工件；ego-browser 不可用或证据缺失即阻断；
+8. PR 已创建，CI 聚合 required check 通过，且合入确认接口返回 `state=MERGED`、`mergedAt` 与 merge commit；
+9. 只有确认合入后，才允许 pull、物化、清理 Worktree 与更新终态。
 
 ## 分支与 Worktree 约定
 
 | 项 | 约定 |
 |---|---|
-| 分支名 | `agent/<plugin>-<topic>-issue-<ID>`（例：`agent/market-plaza-keepalive-issue-42`） |
+| 分支名 | `agent/<plugin>-<topic>-issue-<ID>` |
 | 跨插件（已批准） | `agent/cross-<topic>-issue-<ID>` |
 | 推送远端 | `origin` |
 | PR base | `main` |
-| Worktree 目录 | `../omnimux-dsh-wt-<topic>-<ID>`（例：`../omnimux-dsh-wt-clip-42`） |
-| 生命周期工具 | `./scripts/git-wt.sh`（命令：`start`、`clean`、`list`、`doctor`） |
-| 回收 | PR 合入或放弃后删远程支与对应 Worktree；更新 board |
-
-多会话并行开发时，必须使用 `./scripts/git-wt.sh start <plugin> <topic> <issue_id>` 派生出独立兄弟目录，所有编码、构建与单测均在各自的 Worktree 中完成，禁止在主目录切支或写临时代码。
+| Worktree 目录 | `../omnimux-dsh-wt-<topic>-<ID>` |
+| 生命周期工具 | `./scripts/git-wt.sh`（`start`、`clean`、`list`、`doctor`） |
+| 回收 | 仅在合入确认且物化成功后删远程支与对应 Worktree；失败时保留现场 |
 
 ## 本机 board（不进 git）
 
-真源：`.workbuddy/pr-board.md`（已 gitignore `.workbuddy/`）
+真源：`.workbuddy/pr-board.md`（已 gitignore `.workbuddy/`）。每个 open PR 至少含 PR 号、Issue、分支、插件、风险、状态、CI、Review、下次动作、ego-browser 证据位置、会话、是否允许 force-with-lease。
 
-每个 open PR 一行，至少含：PR 号、分支、插件、状态、CI、Review、下次动作、会话、是否允许 force-with-lease。
-
-状态机建议：`draft` / `ci-red` / `changes-requested` / `ready-for-boss` / `merged` / `abandoned`。
+状态建议：`draft` / `pipeline-running` / `ci-red` / `changes-requested` / `ready-for-boss` / `auto-merge-pending` / `merged` / `blocked` / `abandoned`。
 
 ## Agent 标准 Worktree 最短 SOP
 
 ```sh
 cd /Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh
-
-# 1. 创建独立工作区（自动从 origin/main 切支，可使用 npm scripts 别名 pnpm wt:start）
 pnpm wt:start <plugin> <topic> <issue-id>
-# 或原生脚本: ./scripts/git-wt.sh start <plugin> <topic> <issue-id>
-
-# 2. 进入专属 Worktree 独立实现与验证
 cd ../omnimux-dsh-wt-<topic>-<issue-id>
+# 在受信任的 Agent 实施命令中完成代码与测试
 pnpm --filter <plugin-pkg> test
-
-# 3. 提交并推送到远端
-git add plugins/<plugin-pkg>/
+git add <changed-files>
 git commit -m "feat(<plugin>): ... (#<issue-id>)"
 git push -u origin HEAD
-
-# 4. 创建 PR
-gh -R laozhong86/omnimux-dsh pr create --base main --fill
-# 更新主仓 .workbuddy/pr-board.md
-
-# 5. 老板合入后在主仓收尾销毁 Worktree
-cd /Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh
-git pull origin main
-pnpm wt:clean <topic> <issue-id>
+gh -R laozhong86/omnimux-dsh pr create --base main --body-file <generated-body.md>
+# UI 验收：必须使用 ego-browser；报告与截图写入 .workbuddy/evidence/
 ```
 
 ## 本地验证
 
-按影响面选**已存在**的命令。没有的命令不要跑、不要写进 hook。没执行过的命令不得声称通过。
+按影响面选已存在的命令；未执行的命令不得声称通过。
 
 | 改动面 | 命令 | 通过标准 |
 |---|---|---|
-| 插件 `dsh.manifest.json` / 工具名 / 入口 | 在 `dsh-plugin` 根：`node scripts/registry-tool.mjs verify`，必要时 `build` | 声明的工具与入口在代码里存在 |
+| 插件 `dsh.manifest.json` / 工具名 / 入口 | `node scripts/registry-tool.mjs verify` | 声明的工具与入口在代码里存在 |
 | 生产 profile 是否误 link | `node scripts/omnimux.mjs doctor` | 生产 profile 无工作区 symlink |
-| 某插件 `src/`（`.js` `.jsx` `.mjs` `.ts` `.tsx`） | **该包** `pnpm --filter <pkg> test`（包内 `node --test`） | 非 skip 用例实际执行。有代码 diff 且 0 tests = 失败 |
-| 仅已声明 `typecheck` 的 ts 包 | 该包 `pnpm --filter <pkg> typecheck` | 无该 script 的 JS 包不要假装跑 |
-| UI / Host / 一级页 | `node scripts/omnimux.mjs dev start <task> <plugin>`（L2，44200–44299） | 证据 = URL + 截图或 DOM。无浏览器证据 → board「未验收」 |
-| L2 通过后物化 | `node scripts/omnimux.mjs sync <plugin>` | 静态复制。**不等于验收** |
+| 某插件 `src/` | `pnpm --filter <pkg> test` | 真实执行、无失败、非 skip；有代码 diff 且 0 tests = FAIL |
+| 合同/脚本/标签 | `pnpm test:gates` + 对应脚本测试 | 退出码 0，测试计数真实 |
+| UI / Host / 一级页 | `node scripts/omnimux.mjs dev start <task> <plugin>`，随后 `scripts/ego-browser-qa.sh <url>` | task space + URL + `snapshotText()`/DOM + 截图工件齐全 |
+| L2 通过后物化 | `node scripts/omnimux.mjs sync <plugin>` | 仅在合入确认后执行；静态复制不等于验收 |
 
-根目录 `pnpm test` 目前只 filter：`omnimux-drama`、`omnimux`、`omnimux-accounts`、`omnimux-inspiration`、`omnimux-market`。改 `assets` / `products` / `workflow` / `clip` / `analytics` / `omnimux-video` 必须跑 **该包** test，不能用根 `pnpm test` 代替。
+`skip ≠ pass`：`smoke` / `verify:image-live` / `verify:models` 因缺 `dsh` 或 key 而 skip 时，必须记录环境限制；若该检查被 Issue DoD 声明为必需，流水线阻断。
 
-**skip ≠ pass。** `smoke` / `verify:image-live` / `verify:models` 网关段在无 `dsh` 或无 key 时会 skip 并以 0 退出。PR 必须写明 skip。
-
-**禁止当作本仓验证命令：** 根 `pnpm lint`、根 `pnpm typecheck`、`pnpm run lint:docs`、`vitest related`、`pnpm test:affected`、`diff-cover`、`cargo test`、`go test`、Playwright 多 OS、Knip、Trivy。不要在外层 `dsh-plugin/` 装 Husky / commitlint / `.github/workflows`。
+**本仓 CI 约定**：允许在 `omnimux-dsh/.github/workflows/` 放置本仓 required checks；禁止在外层 `dsh-plugin/` 添加独立 Git 仓、Husky、commitlint 或工作流。
 
 ## force-with-lease 闸门
 
-- 默认 **禁止** `git push --force` / `--force-with-lease`。
-- 仅当 board 该行 `force-with-lease=yes` **且** 老板当轮同意（DCO amend、独享分支纠错等）才可用 `--force-with-lease`。
+- 默认禁止 `git push --force` / `--force-with-lease`。
+- 仅当 board 该行 `force-with-lease=yes` 且老板当轮同意才可用。
 - 多人同支或不确定是否有人已拉支 → 停手。
-
-## 现状债（启用并行前）
-
-启用多 PR 并行前，先处理：
-
-1. 本地 `main` 相对 `origin/main` 的未推 commit
-2. 工作区未提交脏文件（按插件分组进分支）
-
-未清债时，禁止再叠新的并行特性分支「假装干净」。
-
-## 与既有合同交棒
-
-| 合同 / 技能 | 关系 |
-|---|---|
-| `ops-entry.md` / `dev-pipeline.md` | 管运维分层与 sync；不管 GitHub 合入 |
-| 桌面壳 `parallel-dev-pr.md` | 壳层并行制度；插件仓用本合同，不混用 shell remote=`fork` |
-| `omnimux-plugin-pr` | 开写 / 开 PR 前调度 |
-| `omnimux-pr-handoff` | 开 PR 之后的 CI / review / 冲突跟踪；合入请示老板 |
-| `omnimux-plugin-ops` | sync / doctor / restart；不代替 PR |
 
 ## 明确不做
 
-- 直推 `main`
-- agent 擅自 merge
-- 用桌面壳的 `fork` remote / base=`omnimux` 套到本仓
-- 市场版 github-pr-manager 单文件覆盖跟踪
-- 把 sync 纪律和 Git PR 揉成一个巨无霸文档
-- 在外层 `dsh-plugin/` `git init`、装 Husky、加 GitHub Actions
-- 把 `--force-with-lease` 写成默认动作
-- 用 `feat/` / `fix/` / `refactor/` 当分支前缀
+- 直推 `main`；
+- Agent 擅自 merge；
+- 用 `git merge` 绕过 PR、required checks 或风险通道；
+- 用标签伪造 `qa:pass`；
+- 把缺失的 ego-browser 证据写成「人工看过」；
+- 用桌面壳的 `fork` remote / base=`omnimux` 套到本仓；
+- 在外层 `dsh-plugin/` `git init`、装 Husky、加 GitHub Actions；
+- 把 `--force-with-lease` 写成默认动作；
+- 用 `feat/` / `fix/` / `refactor/` 当分支前缀。
