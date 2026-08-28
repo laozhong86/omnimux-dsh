@@ -18136,6 +18136,11 @@ var ExecutionContext = class _ExecutionContext {
     for (const [key, value] of Object.entries(opts.initialVariables ?? {})) {
       this.variables.set(key, value);
     }
+    for (const [key, value] of Object.entries(opts.initialOutputs ?? {})) {
+      if (value !== void 0) {
+        this.nodeOutputs.set(key, value);
+      }
+    }
   }
   // ========================================================================
   // Execution state machine
@@ -18489,12 +18494,15 @@ var ExecutionScheduler = class _ExecutionScheduler {
     return scheduler;
   }
   static buildDependencyGraph(nodes, edges) {
+    const nodeSet = new Set(nodes.map((n) => n.id));
     const graph = /* @__PURE__ */ new Map();
     for (const node of nodes) {
       graph.set(node.id, /* @__PURE__ */ new Set());
     }
     for (const edge of edges) {
-      graph.get(edge.target)?.add(edge.source);
+      if (nodeSet.has(edge.source)) {
+        graph.get(edge.target)?.add(edge.source);
+      }
     }
     return graph;
   }
@@ -18508,11 +18516,13 @@ var ExecutionScheduler = class _ExecutionScheduler {
     const groups = [];
     const inDegree = /* @__PURE__ */ new Map();
     const adjList = /* @__PURE__ */ new Map();
+    const nodeSet = new Set(this.nodes.map((n) => n.id));
     for (const node of this.nodes) {
       inDegree.set(node.id, 0);
       adjList.set(node.id, []);
     }
     for (const edge of this.edges) {
+      if (!nodeSet.has(edge.source)) continue;
       const current = inDegree.get(edge.target);
       if (current !== void 0) inDegree.set(edge.target, current + 1);
       adjList.get(edge.source)?.push(edge.target);
@@ -19334,7 +19344,8 @@ function createExecutionManager(deps) {
   function createExecution(opts) {
     const context = new ExecutionContext({
       workflowId: opts.workspaceId,
-      breakpoints: new Set(opts.breakpoints ?? [])
+      breakpoints: new Set(opts.breakpoints ?? []),
+      initialOutputs: opts.initialOutputs
     });
     const abortController = new AbortController();
     const { executor } = createDispatchingNodeExecutor({
@@ -20596,11 +20607,11 @@ function createWorkspaceRoutes(store) {
 }
 
 // src/workflow/execution/subgraph.ts
-var SUPPORTED_EXECUTION_MODES = /* @__PURE__ */ new Set(["full", "subset"]);
+var SUPPORTED_EXECUTION_MODES = /* @__PURE__ */ new Set(["full", "subset", "single"]);
 function toExecutionMode(value) {
   if (value === void 0 || value === null) return "full";
   if (typeof value !== "string" || !SUPPORTED_EXECUTION_MODES.has(value)) {
-    throw new Error("mode \u5FC5\u987B\u662F full \u6216 subset");
+    throw new Error("mode \u5FC5\u987B\u662F full\u3001subset \u6216 single");
   }
   return value;
 }
@@ -20625,7 +20636,7 @@ function resolveExecutionSubgraph(input) {
   }
   const targetNodeIds = normalizeNodeIds(input.nodeIds);
   if (targetNodeIds.length === 0) {
-    throw new Error("subset \u6A21\u5F0F\u5FC5\u987B\u63D0\u4F9B nodeIds");
+    throw new Error(`${executionMode} \u6A21\u5F0F\u5FC5\u987B\u63D0\u4F9B nodeIds`);
   }
   const nodeMap = /* @__PURE__ */ new Map();
   for (const node of nodes) {
@@ -20634,6 +20645,14 @@ function resolveExecutionSubgraph(input) {
   const invalidNodeIds = targetNodeIds.filter((nodeId) => !nodeMap.has(nodeId));
   if (invalidNodeIds.length > 0) {
     throw new Error(`\u5305\u542B\u65E0\u6548\u8282\u70B9 ID: ${invalidNodeIds.join(", ")}`);
+  }
+  if (executionMode === "single") {
+    const targetIdSet = new Set(targetNodeIds);
+    return {
+      nodes: nodes.filter((node) => targetIdSet.has(node.id)),
+      edges: edges.filter((edge) => targetIdSet.has(edge.target) && nodeMap.has(edge.source)),
+      nodeIdSet: targetIdSet
+    };
   }
   const incomingMap = /* @__PURE__ */ new Map();
   for (const edge of edges) {
@@ -20674,6 +20693,21 @@ var STATUS_BY_CODE2 = {
   "path-denied": 403,
   "internal": 500
 };
+function extractNodeOutputFromSnapshot(node) {
+  const data = node.data ?? {};
+  const text = data.generatedContent ?? data.content ?? data.prompt;
+  const mediaAssets = data.mediaAssets;
+  const mediaUrl = data.mediaUrl;
+  const materialType = data.materialType;
+  if (Array.isArray(mediaAssets) && mediaAssets.length > 0) {
+    return { mediaAssets, text };
+  }
+  if (mediaUrl) {
+    const type = materialType === "video" ? "video" : materialType === "audio" ? "audio" : "image";
+    return { mediaAssets: [{ type, url: mediaUrl }], text };
+  }
+  return { text: text ?? "" };
+}
 function createExecutionRoutes(opts) {
   const { store, executionManager } = opts;
   const executionsRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions$`);
@@ -20748,11 +20782,24 @@ function createExecutionRoutes(opts) {
             executionMode: mode,
             nodeIds: normalizeNodeIds(body.nodeIds)
           });
+          const initialOutputs = {};
+          const executedNodeIds = subgraph.nodeIdSet;
+          for (const edge of snapshot.edges) {
+            if (executedNodeIds.has(edge.target) && !executedNodeIds.has(edge.source)) {
+              const sourceNode = snapshot.nodes.find(
+                (n) => n.id === edge.source
+              );
+              if (sourceNode) {
+                initialOutputs[edge.source] = extractNodeOutputFromSnapshot(sourceNode);
+              }
+            }
+          }
           const entry = executionManager.createExecution({
             workspaceId: snapshot.id,
             nodes: subgraph.nodes,
             edges: subgraph.edges,
-            maxParallel: snapshot.settings.maxParallel
+            maxParallel: snapshot.settings.maxParallel,
+            initialOutputs
           });
           return {
             status: 200,
@@ -21013,7 +21060,7 @@ function normalizeCanvasEdge(edge) {
   };
 }
 
-// ../../node_modules/.pnpm/@xyflow+react@12.11.3_@types+react-dom@19.2.4_@types+react@19.2.18__@types+react@19.2.1_bba454786e3f3f5139a15545723059ca/node_modules/@xyflow/react/dist/esm/index.js
+// ../../node_modules/.pnpm/@xyflow+react@12.11.3_@types+react-dom@19.2.4_@types+react@19.2.18__@types+react@19.2.1_88151d4d6946c040c274901fac10766d/node_modules/@xyflow/react/dist/esm/index.js
 var import_jsx_runtime = __toESM(require_jsx_runtime());
 var import_react2 = __toESM(require_react());
 
@@ -26655,11 +26702,11 @@ function XYResizer({ domNode, nodeId, getStoreItems, onChange, onEnd }) {
   };
 }
 
-// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_react@19.2.8/node_modules/zustand/esm/traditional.mjs
+// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/traditional.mjs
 var import_react = __toESM(require_react(), 1);
 var import_with_selector = __toESM(require_with_selector(), 1);
 
-// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_react@19.2.8/node_modules/zustand/esm/vanilla.mjs
+// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/vanilla.mjs
 var createStoreImpl = (createState) => {
   let state;
   const listeners = /* @__PURE__ */ new Set();
@@ -26691,7 +26738,7 @@ var createStoreImpl = (createState) => {
 };
 var createStore = (createState) => createState ? createStoreImpl(createState) : createStoreImpl;
 
-// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_react@19.2.8/node_modules/zustand/esm/traditional.mjs
+// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/traditional.mjs
 var { useDebugValue } = import_react.default;
 var { useSyncExternalStoreWithSelector } = import_with_selector.default;
 var identity3 = (arg) => arg;
@@ -26714,7 +26761,7 @@ var createWithEqualityFnImpl = (createState, defaultEqualityFn) => {
 };
 var createWithEqualityFn = (createState, defaultEqualityFn) => createState ? createWithEqualityFnImpl(createState, defaultEqualityFn) : createWithEqualityFnImpl;
 
-// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_react@19.2.8/node_modules/zustand/esm/shallow.mjs
+// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/shallow.mjs
 function shallow$1(objA, objB) {
   if (Object.is(objA, objB)) {
     return true;
@@ -26752,7 +26799,7 @@ function shallow$1(objA, objB) {
   return true;
 }
 
-// ../../node_modules/.pnpm/@xyflow+react@12.11.3_@types+react-dom@19.2.4_@types+react@19.2.18__@types+react@19.2.1_bba454786e3f3f5139a15545723059ca/node_modules/@xyflow/react/dist/esm/index.js
+// ../../node_modules/.pnpm/@xyflow+react@12.11.3_@types+react-dom@19.2.4_@types+react@19.2.18__@types+react@19.2.1_88151d4d6946c040c274901fac10766d/node_modules/@xyflow/react/dist/esm/index.js
 var import_react_dom = __toESM(require_react_dom());
 var StoreContext = (0, import_react2.createContext)(null);
 var Provider$1 = StoreContext.Provider;
@@ -30730,7 +30777,7 @@ function createWorkflowRunTool(deps) {
   const { store, executionManager, mediaDir } = deps;
   return {
     name: "workflow_run",
-    description: 'Run a workflow canvas (node DAG) on the omnimux-workflow execution engine. mode "full" runs every node; mode "subset" runs only the given nodeIds plus their transitive upstream closure. wait=false (default) returns the executionId immediately \u2014 the user can watch live progress on the canvas (per-node badges + SSE). wait=true polls until a terminal status (completed/error/cancelled) or the timeout (default 120s) and returns per-node statuses, text excerpts and media file paths. The canvas performs generation through the OmniMux gateway (real hub seams when available, mock otherwise).',
+    description: 'Run a workflow canvas (node DAG) on the omnimux-workflow execution engine. mode "full" runs every node; mode "subset" runs only the given nodeIds plus their transitive upstream closure; mode "single" runs only the given nodeIds directly (inheriting existing upstream outputs). wait=false (default) returns the executionId immediately \u2014 the user can watch live progress on the canvas (per-node badges + SSE). wait=true polls until a terminal status (completed/error/cancelled) or the timeout (default 120s) and returns per-node statuses, text excerpts and media file paths. The canvas performs generation through the OmniMux gateway (real hub seams when available, mock otherwise).',
     parameters: objectParams({
       workspace_id: {
         type: "string",
@@ -30742,13 +30789,13 @@ function createWorkflowRunTool(deps) {
       },
       mode: {
         type: "string",
-        enum: ["full", "subset"],
-        description: "Execution scope: full (default) or subset (nodeIds + upstream closure)"
+        enum: ["full", "subset", "single"],
+        description: "Execution scope: full (default), subset (nodeIds + upstream closure), or single (target nodeIds only)"
       },
       node_ids: {
         type: "array",
         items: { type: "string" },
-        description: "Required for subset mode: node ids to execute (upstream nodes are added automatically)"
+        description: "Required for subset and single modes: node ids to execute"
       },
       wait: {
         type: "boolean",
@@ -30793,11 +30840,34 @@ function createWorkflowRunTool(deps) {
       if (subgraph.nodes.length === 0) {
         return errorBody2("empty-graph", `workspace ${workspace.id} has no nodes to execute`);
       }
+      const initialOutputs = {};
+      const executedNodeIds = subgraph.nodeIdSet;
+      for (const edge of workspace.edges) {
+        if (executedNodeIds.has(edge.target) && !executedNodeIds.has(edge.source)) {
+          const sourceNode = workspace.nodes.find((n) => n.id === edge.source);
+          if (sourceNode) {
+            const data = sourceNode.data ?? {};
+            const text = data.generatedContent ?? data.content ?? data.prompt;
+            const mediaAssets = data.mediaAssets;
+            const mediaUrl = data.mediaUrl;
+            const materialType = data.materialType;
+            if (Array.isArray(mediaAssets) && mediaAssets.length > 0) {
+              initialOutputs[edge.source] = { mediaAssets, text };
+            } else if (mediaUrl) {
+              const type = materialType === "video" ? "video" : materialType === "audio" ? "audio" : "image";
+              initialOutputs[edge.source] = { mediaAssets: [{ type, url: mediaUrl }], text };
+            } else {
+              initialOutputs[edge.source] = { text: text ?? "" };
+            }
+          }
+        }
+      }
       const entry = executionManager.createExecution({
         workspaceId: workspace.id,
         nodes: subgraph.nodes,
         edges: subgraph.edges,
-        maxParallel: workspace.settings.maxParallel
+        maxParallel: workspace.settings.maxParallel,
+        initialOutputs
       });
       const executionId = entry.context.id;
       if (!readBoolean(args, "wait")) {

@@ -6,7 +6,7 @@ import { jsonBodyProblem, messageOf } from '../../http/helpers';
 import { WorkflowStoreError } from '../workspace/WorkspaceStore';
 import type { WorkspaceStore } from '../workspace/WorkspaceStore';
 import type { ExecutionManager } from '../execution/ExecutionManager';
-import { resolveExecutionSubgraph, toExecutionMode, normalizeNodeIds } from '../execution/subgraph';
+import { resolveExecutionSubgraph, toExecutionMode, normalizeNodeIds, type ExecutionMode } from '../execution/subgraph';
 import { notFound, type RouteTry, type WorkflowDispatchRequest } from './dispatch';
 
 const STATUS_BY_CODE: Record<string, number> = {
@@ -23,6 +23,28 @@ const STATUS_BY_CODE: Record<string, number> = {
   'path-denied': 403,
   'internal': 500,
 };
+
+/**
+ * Extract existing output data from a saved node snapshot so downstream nodes
+ * executing in single-node mode can consume upstream text/media without re-running.
+ */
+function extractNodeOutputFromSnapshot(node: { data?: Record<string, unknown>; [key: string]: unknown }): unknown {
+  const data = node.data ?? {};
+  const text = (data.generatedContent as string | undefined)
+    ?? (data.content as string | undefined)
+    ?? (data.prompt as string | undefined);
+  const mediaAssets = data.mediaAssets;
+  const mediaUrl = data.mediaUrl as string | undefined;
+  const materialType = data.materialType as string | undefined;
+  if (Array.isArray(mediaAssets) && mediaAssets.length > 0) {
+    return { mediaAssets, text };
+  }
+  if (mediaUrl) {
+    const type = materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'image';
+    return { mediaAssets: [{ type, url: mediaUrl }], text };
+  }
+  return { text: text ?? '' };
+}
 
 export function createExecutionRoutes(opts: {
   store: WorkspaceStore;
@@ -85,7 +107,7 @@ export function createExecutionRoutes(opts: {
         const problem = jsonBodyProblem(req.body);
         if (problem) return problem;
         const body = req.body as { mode?: unknown; nodeIds?: unknown };
-        let mode: 'full' | 'subset';
+        let mode: ExecutionMode;
         try {
           mode = toExecutionMode(body.mode);
         } catch (error) {
@@ -110,11 +132,27 @@ export function createExecutionRoutes(opts: {
             executionMode: mode,
             nodeIds: normalizeNodeIds(body.nodeIds),
           });
+
+          // Seed initial outputs for upstream nodes not included in this execution batch
+          const initialOutputs: Record<string, unknown> = {};
+          const executedNodeIds = subgraph.nodeIdSet;
+          for (const edge of snapshot.edges as Array<{ source: string; target: string }>) {
+            if (executedNodeIds.has(edge.target) && !executedNodeIds.has(edge.source)) {
+              const sourceNode = (snapshot.nodes as Array<{ id: string; [key: string]: unknown }>).find(
+                (n) => n.id === edge.source,
+              );
+              if (sourceNode) {
+                initialOutputs[edge.source] = extractNodeOutputFromSnapshot(sourceNode);
+              }
+            }
+          }
+
           const entry = executionManager.createExecution({
             workspaceId: snapshot.id,
             nodes: subgraph.nodes as unknown as Array<{ id: string; type: string; data?: Record<string, unknown> }>,
             edges: subgraph.edges as unknown as Array<{ source: string; target: string }>,
             maxParallel: snapshot.settings.maxParallel,
+            initialOutputs,
           });
           return {
             status: 200,

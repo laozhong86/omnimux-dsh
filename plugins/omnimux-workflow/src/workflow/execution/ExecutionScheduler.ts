@@ -179,12 +179,17 @@ export class ExecutionScheduler {
     nodes: ExecutableNode[],
     edges: ExecutableEdge[],
   ): Map<string, Set<string>> {
+    const nodeSet = new Set(nodes.map((n) => n.id));
     const graph = new Map<string, Set<string>>();
     for (const node of nodes) {
       graph.set(node.id, new Set<string>());
     }
     for (const edge of edges) {
-      graph.get(edge.target)?.add(edge.source);
+      // Only an edge whose source is also being executed creates a dependency to await.
+      // External upstream edges (e.g. in single-node mode) are consumed via context.nodeOutputs.
+      if (nodeSet.has(edge.source)) {
+        graph.get(edge.target)?.add(edge.source);
+      }
     }
     return graph;
   }
@@ -200,6 +205,7 @@ export class ExecutionScheduler {
     const groups: string[][] = [];
     const inDegree = new Map<string, number>();
     const adjList = new Map<string, string[]>();
+    const nodeSet = new Set(this.nodes.map((n) => n.id));
 
     for (const node of this.nodes) {
       inDegree.set(node.id, 0);
@@ -207,6 +213,7 @@ export class ExecutionScheduler {
     }
 
     for (const edge of this.edges) {
+      if (!nodeSet.has(edge.source)) continue;
       const current = inDegree.get(edge.target);
       if (current !== undefined) inDegree.set(edge.target, current + 1);
       adjList.get(edge.source)?.push(edge.target);

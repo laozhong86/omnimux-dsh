@@ -1379,6 +1379,157 @@ function ConfirmModal({ message, children, confirmLabel = "Confirm", cancelLabel
     }) : children
   });
 }
+injectCss("EmptyState.module.css", ".dshUk-EmptyState-emptyState {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n  padding: 48px 24px;\n  min-height: 240px;\n  box-sizing: border-box;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n}\n\n.dshUk-EmptyState-emptyState.dshUk-EmptyState-compact {\n  padding: 24px 16px;\n  min-height: 140px;\n}\n\n.dshUk-EmptyState-iconWrap {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 12px;\n  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.4));\n}\n\n.dshUk-EmptyState-title {\n  margin: 0 0 6px;\n  font-size: 15px;\n  font-weight: 600;\n  line-height: 20px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n}\n\n.dshUk-EmptyState-description {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  max-width: 360px;\n}\n\n.dshUk-EmptyState-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin-top: 16px;\n}\n");
+var EmptyState_module_css_default = {
+  "emptyState": "dshUk-EmptyState-emptyState",
+  "compact": "dshUk-EmptyState-compact",
+  "iconWrap": "dshUk-EmptyState-iconWrap",
+  "title": "dshUk-EmptyState-title",
+  "description": "dshUk-EmptyState-description",
+  "actions": "dshUk-EmptyState-actions"
+};
+var EMPTY_CLASS = cssClass(EmptyState_module_css_default.emptyState, "emptyState");
+var COMPACT_CLASS = cssClass(EmptyState_module_css_default.compact, "compact");
+var ICON_WRAP_CLASS = cssClass(EmptyState_module_css_default.iconWrap, "iconWrap");
+var TITLE_CLASS$1 = cssClass(EmptyState_module_css_default.title, "title");
+var DESCRIPTION_CLASS = cssClass(EmptyState_module_css_default.description, "description");
+var ACTIONS_CLASS = cssClass(EmptyState_module_css_default.actions, "actions");
+var EmptyState = (0, import_react.forwardRef)(function EmptyState2({ icon, title, description, action, secondaryAction, compact = false, className, ...rest }, ref) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+    ...rest,
+    ref,
+    className: cx(EMPTY_CLASS, compact && COMPACT_CLASS, className),
+    children: [
+      icon && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+        className: ICON_WRAP_CLASS,
+        children: icon
+      }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+        className: TITLE_CLASS$1,
+        children: title
+      }),
+      description && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+        className: DESCRIPTION_CLASS,
+        children: description
+      }),
+      (action || secondaryAction) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+        className: ACTIONS_CLASS,
+        children: [action, secondaryAction]
+      })
+    ]
+  });
+});
+injectCss("StageContainer.module.css", '.dshUk-StageContainer-stageContainer {\n  position: absolute;\n  top: var(--stage-top, 0px);\n  left: var(--stage-left, 56px);\n  width: var(--stage-width, calc(100vw - 56px));\n  height: var(--stage-height, 100vh);\n  background: var(--dsw-alias-bg-base, #111113);\n  color: var(--dsw-alias-label-primary, #ffffff);\n  z-index: 200;\n  display: flex;\n  flex-direction: column;\n  box-sizing: border-box;\n  overflow: hidden;\n}\n\n.dshUk-StageContainer-stageContainer[data-visible="false"] {\n  display: none !important;\n  pointer-events: none !important;\n}\n');
+var CONTAINER_CLASS = cssClass({ "stageContainer": "dshUk-StageContainer-stageContainer" }.stageContainer, "stageContainer");
+var StageContainer = (0, import_react.forwardRef)(function StageContainer2({ stageStore, title, className, style, children, ...rest }, ref) {
+  const open = (0, import_react.useSyncExternalStore)(stageStore ? (onStoreChange) => stageStore.subscribe(onStoreChange) : () => () => {
+  }, stageStore ? () => stageStore.getSnapshot() : () => false);
+  const [everOpened, setEverOpened] = (0, import_react.useState)(false);
+  const [box, setBox] = (0, import_react.useState)(() => stageStore ? stageStore.readBox() : {
+    top: 0,
+    left: 0,
+    width: 0,
+    height: 0
+  });
+  if (open && !everOpened) setEverOpened(true);
+  (0, import_react.useLayoutEffect)(() => {
+    if (!open || !stageStore) return void 0;
+    const update = () => {
+      setBox(stageStore.readBox());
+    };
+    update();
+    const scroll = typeof document !== "undefined" ? document.querySelector("[data-conversation-scroll]") : null;
+    const target = scroll instanceof HTMLElement ? scroll : typeof document !== "undefined" ? document.querySelector('[data-slot="conversation"]')?.parentElement : null;
+    const observer = typeof ResizeObserver === "function" && target ? new ResizeObserver(update) : null;
+    if (target && observer) observer.observe(target);
+    if (typeof window !== "undefined") window.addEventListener("resize", update);
+    return () => {
+      observer?.disconnect();
+      if (typeof window !== "undefined") window.removeEventListener("resize", update);
+    };
+  }, [open, stageStore]);
+  if (!stageStore || !everOpened) return null;
+  const customStyle = {
+    ...style,
+    display: open ? style?.display !== "none" ? style?.display : void 0 : "none",
+    ["--stage-top"]: `${box.top}px`,
+    ["--stage-left"]: `${box.left}px`,
+    ["--stage-width"]: `${box.width}px`,
+    ["--stage-height"]: `${box.height}px`
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+    ...rest,
+    ref,
+    role: "region",
+    "aria-label": title,
+    "aria-hidden": open ? void 0 : true,
+    "data-visible": open ? "true" : "false",
+    className: cx(CONTAINER_CLASS, className),
+    style: customStyle,
+    children
+  });
+});
+injectCss("StageHeader.module.css", ".dshUk-StageHeader-stageHeader {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 12px 20px;\n  min-height: 56px;\n  box-sizing: border-box;\n  flex: none;\n  gap: 16px;\n  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.06));\n}\n\n.dshUk-StageHeader-heading {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1 1 auto;\n}\n\n.dshUk-StageHeader-titleRow {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.dshUk-StageHeader-title {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 600;\n  line-height: 24px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-subtitle {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-controls {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex: none;\n}\n");
+var StageHeader_module_css_default = {
+  "stageHeader": "dshUk-StageHeader-stageHeader",
+  "heading": "dshUk-StageHeader-heading",
+  "titleRow": "dshUk-StageHeader-titleRow",
+  "title": "dshUk-StageHeader-title",
+  "subtitle": "dshUk-StageHeader-subtitle",
+  "controls": "dshUk-StageHeader-controls"
+};
+var HEADER_CLASS = cssClass(StageHeader_module_css_default.stageHeader, "stageHeader");
+var HEADING_CLASS = cssClass(StageHeader_module_css_default.heading, "heading");
+var TITLE_ROW_CLASS = cssClass(StageHeader_module_css_default.titleRow, "titleRow");
+var TITLE_CLASS = cssClass(StageHeader_module_css_default.title, "title");
+var SUBTITLE_CLASS = cssClass(StageHeader_module_css_default.subtitle, "subtitle");
+var CONTROLS_CLASS = cssClass(StageHeader_module_css_default.controls, "controls");
+var StageHeader = (0, import_react.forwardRef)(function StageHeader2({ title, subtitle, badge, onRefresh, refreshing = false, refreshTitle = "Refresh", onClose, closeTitle = "Close", actions, className, ...rest }, ref) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
+    ...rest,
+    ref,
+    className: cx(HEADER_CLASS, className),
+    children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+      className: HEADING_CLASS,
+      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+        className: TITLE_ROW_CLASS,
+        children: [typeof title === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+          className: TITLE_CLASS,
+          children: title
+        }) : title, badge]
+      }), subtitle && (typeof subtitle === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+        className: SUBTITLE_CLASS,
+        children: subtitle
+      }) : subtitle)]
+    }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+      className: CONTROLS_CLASS,
+      children: [
+        actions,
+        onRefresh && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+          variant: "ghost",
+          size: "sm",
+          "aria-label": refreshTitle,
+          title: refreshTitle,
+          disabled: refreshing,
+          onClick: () => {
+            onRefresh();
+          },
+          children: refreshing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconRefreshOutline16, {})
+        }),
+        onClose && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+          variant: "ghost",
+          size: "sm",
+          "aria-label": closeTitle,
+          title: closeTitle,
+          onClick: () => {
+            onClose();
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseOutline16, {})
+        })
+      ]
+    })]
+  });
+});
 
 // src/client/styles.js
 var STYLES_ID = "omnimux-workflow-styles";

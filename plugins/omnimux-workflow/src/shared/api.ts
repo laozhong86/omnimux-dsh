@@ -127,9 +127,9 @@ export type NodeExecutionApiStatus = 'pending' | 'running' | 'completed' | 'erro
 
 /** POST /executions request body. */
 export interface StartExecutionPayload {
-  /** full = whole graph; subset = nodeIds + transitive upstream closure. */
-  mode?: 'full' | 'subset';
-  /** Required for subset mode. */
+  /** full = whole graph; subset = nodeIds + transitive upstream closure; single = target nodeIds only (inheriting existing upstream outputs). */
+  mode?: 'full' | 'subset' | 'single';
+  /** Required for subset and single modes. */
   nodeIds?: string[];
 }
 

@@ -311,10 +311,10 @@ test('fromPersistedState re-pends nodes that were in-flight at the crash', async
 });
 
 // ============================================================================
-// Subgraph (full / subset)
+// Subgraph (full / subset / single)
 // ============================================================================
 
-test('resolveExecutionSubgraph handles full and subset modes', () => {
+test('resolveExecutionSubgraph handles full, subset, and single modes', () => {
   const nodes = linearNodes.map((node) => ({ ...node }));
   const edges = linearEdges.map((edge) => ({ ...edge }));
 
@@ -346,15 +346,35 @@ test('resolveExecutionSubgraph handles full and subset modes', () => {
   });
   assert.deepEqual([...head.nodeIdSet].sort(), ['a', 'b']);
 
+  // Single mode: only the specified node, but keeps incoming edges from upstream
+  const singleC = resolveExecutionSubgraph({
+    nodes,
+    edges,
+    executionMode: 'single',
+    nodeIds: ['c'],
+  });
+  assert.deepEqual([...singleC.nodeIdSet], ['c'], 'single contains only target node c');
+  assert.equal(singleC.nodes.length, 1);
+  assert.equal(singleC.nodes[0].id, 'c');
+  assert.equal(singleC.edges.length, 1, 'single retains incoming edge b -> c for upstream wiring');
+  assert.equal(singleC.edges[0].source, 'b');
+  assert.equal(singleC.edges[0].target, 'c');
+
   assert.throws(
     () => resolveExecutionSubgraph({ nodes, edges, executionMode: 'subset', nodeIds: [] }),
     /subset/,
   );
   assert.throws(
-    () => resolveExecutionSubgraph({ nodes, edges, executionMode: 'subset', nodeIds: ['zz'] }),
+    () => resolveExecutionSubgraph({ nodes, edges, executionMode: 'single', nodeIds: [] }),
+    /single/,
+  );
+  assert.throws(
+    () => resolveExecutionSubgraph({ nodes, edges, executionMode: 'single', nodeIds: ['zz'] }),
     /无效节点/,
   );
   assert.deepEqual(normalizeNodeIds(['a', ' a ', 42, '']), ['a']);
+  assert.equal(toExecutionMode('single'), 'single');
+  assert.throws(() => toExecutionMode('invalid'), /mode 必须是 full、subset 或 single/);
 });
 
 // ============================================================================

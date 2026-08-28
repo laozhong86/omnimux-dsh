@@ -66,6 +66,8 @@ export interface CreateExecutionOptions {
   edges: ExecutableEdge[];
   maxParallel?: number;
   breakpoints?: string[];
+  /** Pre-seeded upstream outputs (e.g. for single-node execution). */
+  initialOutputs?: Record<string, unknown>;
 }
 
 export interface ExecutionSummary {
@@ -263,6 +265,7 @@ export function createExecutionManager(deps: ExecutionManagerDeps) {
     const context = new ExecutionContext({
       workflowId: opts.workspaceId,
       breakpoints: new Set(opts.breakpoints ?? []),
+      initialOutputs: opts.initialOutputs,
     });
     const abortController = new AbortController();
     const { executor } = createDispatchingNodeExecutor({

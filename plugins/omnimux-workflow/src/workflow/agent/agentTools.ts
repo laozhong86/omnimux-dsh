@@ -307,7 +307,7 @@ function createWorkflowRunTool(deps: WorkflowAgentDeps): AgentToolSpec {
   return {
     name: 'workflow_run',
     description:
-      'Run a workflow canvas (node DAG) on the omnimux-workflow execution engine. mode "full" runs every node; mode "subset" runs only the given nodeIds plus their transitive upstream closure. wait=false (default) returns the executionId immediately — the user can watch live progress on the canvas (per-node badges + SSE). wait=true polls until a terminal status (completed/error/cancelled) or the timeout (default 120s) and returns per-node statuses, text excerpts and media file paths. The canvas performs generation through the OmniMux gateway (real hub seams when available, mock otherwise).',
+      'Run a workflow canvas (node DAG) on the omnimux-workflow execution engine. mode "full" runs every node; mode "subset" runs only the given nodeIds plus their transitive upstream closure; mode "single" runs only the given nodeIds directly (inheriting existing upstream outputs). wait=false (default) returns the executionId immediately — the user can watch live progress on the canvas (per-node badges + SSE). wait=true polls until a terminal status (completed/error/cancelled) or the timeout (default 120s) and returns per-node statuses, text excerpts and media file paths. The canvas performs generation through the OmniMux gateway (real hub seams when available, mock otherwise).',
     parameters: objectParams({
       workspace_id: {
         type: 'string',
@@ -319,13 +319,13 @@ function createWorkflowRunTool(deps: WorkflowAgentDeps): AgentToolSpec {
       },
       mode: {
         type: 'string',
-        enum: ['full', 'subset'],
-        description: 'Execution scope: full (default) or subset (nodeIds + upstream closure)',
+        enum: ['full', 'subset', 'single'],
+        description: 'Execution scope: full (default), subset (nodeIds + upstream closure), or single (target nodeIds only)',
       },
       node_ids: {
         type: 'array',
         items: { type: 'string' },
-        description: 'Required for subset mode: node ids to execute (upstream nodes are added automatically)',
+        description: 'Required for subset and single modes: node ids to execute',
       },
       wait: {
         type: 'boolean',
@@ -344,7 +344,7 @@ function createWorkflowRunTool(deps: WorkflowAgentDeps): AgentToolSpec {
       if ('error' in resolved) return resolved;
       const workspace = resolved.snapshot;
 
-      let mode: 'full' | 'subset';
+      let mode: 'full' | 'subset' | 'single';
       try {
         mode = toExecutionMode(args.mode);
       } catch (error) {
@@ -373,11 +373,38 @@ function createWorkflowRunTool(deps: WorkflowAgentDeps): AgentToolSpec {
         return errorBody('empty-graph', `workspace ${workspace.id} has no nodes to execute`);
       }
 
+      // Seed initial outputs for upstream nodes not included in this execution batch
+      const initialOutputs: Record<string, unknown> = {};
+      const executedNodeIds = subgraph.nodeIdSet;
+      for (const edge of workspace.edges) {
+        if (executedNodeIds.has(edge.target) && !executedNodeIds.has(edge.source)) {
+          const sourceNode = workspace.nodes.find((n) => n.id === edge.source);
+          if (sourceNode) {
+            const data = sourceNode.data ?? {};
+            const text = (data.generatedContent as string | undefined)
+              ?? (data.content as string | undefined)
+              ?? (data.prompt as string | undefined);
+            const mediaAssets = data.mediaAssets;
+            const mediaUrl = data.mediaUrl as string | undefined;
+            const materialType = data.materialType as string | undefined;
+            if (Array.isArray(mediaAssets) && mediaAssets.length > 0) {
+              initialOutputs[edge.source] = { mediaAssets, text };
+            } else if (mediaUrl) {
+              const type = materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'image';
+              initialOutputs[edge.source] = { mediaAssets: [{ type, url: mediaUrl }], text };
+            } else {
+              initialOutputs[edge.source] = { text: text ?? '' };
+            }
+          }
+        }
+      }
+
       const entry = executionManager.createExecution({
         workspaceId: workspace.id,
         nodes: subgraph.nodes as unknown as Array<{ id: string; type: string; data?: Record<string, unknown> }>,
         edges: subgraph.edges as unknown as Array<{ source: string; target: string }>,
         maxParallel: workspace.settings.maxParallel,
+        initialOutputs,
       });
       const executionId = entry.context.id;
 

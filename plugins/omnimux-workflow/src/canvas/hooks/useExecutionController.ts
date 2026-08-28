@@ -70,7 +70,7 @@ export interface ExecutionControllerOptions {
 }
 
 export interface ExecutionController {
-  startExecution: (opts?: { mode?: 'full' | 'subset'; nodeIds?: string[] }) => Promise<void>;
+  startExecution: (opts?: { mode?: 'full' | 'subset' | 'single'; nodeIds?: string[] }) => Promise<void>;
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   cancel: () => Promise<void>;
@@ -287,12 +287,21 @@ export function useExecutionController(
   }, []);
 
   const startExecution = useCallback(
-    async (opts: { mode?: 'full' | 'subset'; nodeIds?: string[] } = {}) => {
+    async (opts: { mode?: 'full' | 'subset' | 'single'; nodeIds?: string[] } = {}) => {
       const workspace = workspaceIdRef.current;
       if (!workspace) return;
       closeStream();
       useExecutionStore.getState().resetExecution();
       useExecutionStore.getState().setExecution({ status: 'pending' });
+
+      // In single-node mode, mark target node as pending upfront for immediate feedback
+      if (opts.mode === 'single' && opts.nodeIds && opts.nodeIds[0]) {
+        useExecutionStore.getState().setNodeStatus(opts.nodeIds[0], 'pending');
+        writeNodeData(opts.nodeIds[0], {
+          executionStatus: 'pending',
+          executionError: undefined,
+        });
+      }
 
       // 执行前触发外部保存钩子，确保后端拿到最新的 Prompt/模型参数
       if (onBeforeStartRef.current) {
@@ -367,11 +376,11 @@ export function useExecutionController(
     };
   }, [workspaceId, applySnapshot, subscribe]);
 
-  // Single-node (subset) execution bridge for MaterialNode.
+  // Single-node execution bridge for MaterialNode (in-place generation).
   useEffect(() => {
     const exec = useExecutionStore.getState();
     exec.setStartNodeExecution((nodeId: string) => {
-      void startExecution({ mode: 'subset', nodeIds: [nodeId] });
+      void startExecution({ mode: 'single', nodeIds: [nodeId] });
     });
     return () => {
       useExecutionStore.getState().setStartNodeExecution(null);
