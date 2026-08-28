@@ -13,6 +13,9 @@
  *   DELETE /omnimux-workflow/api/workspaces/:id
  *   GET  /omnimux-workflow/api/capabilities     capability catalog (stub in M1)
  *   GET  /omnimux-workflow/media/*              media files (traversal- + symlink-guarded)
+ *   POST /omnimux-workflow/api/pick             native file picker (absolute paths)
+ *   GET  /omnimux-workflow/api/local-file       stream imported realPath (Range 206)
+ *   POST /omnimux-workflow/api/local-file/probe batch exists/size for realPath[]
  *
  * M3 execution routes (legacy prefix aliases all of them):
  *   GET  /omnimux-workflow/api/workspaces/:id/executions            list live runs
@@ -31,6 +34,8 @@
 import { createReadStream, statSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { extname } from 'node:path';
+import { parseByteRange } from '../byteRange';
+import { mimeFromFilename } from '../../shared/localMedia';
 import {
   LEGACY_WORKFLOW_ROUTE_PREFIX,
   WORKFLOW_ROUTE_PREFIX,
@@ -57,6 +62,7 @@ import { createStaticRoutes } from './staticRoutes';
 import { createWorkspaceRoutes } from './workspaceRoutes';
 import { createExecutionRoutes } from './executionRoutes';
 import { createMediaRoutes } from './mediaRoutes';
+import { createLocalFileRoutes } from './localFileRoutes';
 
 export {
   MAX_JSON_BODY_BYTES,
@@ -84,6 +90,12 @@ const STATUS_BY_CODE: Record<string, number> = {
   'not-local': 403,
   'path-denied': 403,
   'internal': 500,
+  'picker-unsupported': 501,
+  'picker-failed': 500,
+  'picker-invalid-kind': 400,
+  'unsupported-media': 415,
+  'invalid-path': 400,
+  'not-a-file': 400,
 };
 
 const MIME_BY_EXT: Record<string, string> = {
@@ -104,13 +116,44 @@ const MIME_BY_EXT: Record<string, string> = {
 
 const PLUGIN_ROOT = resolvePluginRoot();
 
-/** Serve a file body with mime + stream (never throws synchronously). */
-function serveFile(res: ServerResponse, filePath: string, fallbackMime: string): void {
-  const mime = MIME_BY_EXT[extname(filePath)] ?? fallbackMime;
+/** Serve a file body with mime + optional Range 206 (never throws synchronously). */
+function serveFile(
+  res: ServerResponse,
+  filePath: string,
+  fallbackMime: string,
+  rangeHeader?: string,
+): void {
+  const mime = mimeFromFilename(filePath) ?? MIME_BY_EXT[extname(filePath)] ?? fallbackMime;
   const stat = statSync(filePath);
+  const range = parseByteRange(rangeHeader, stat.size);
+  if (range && 'invalid' in range) {
+    res.writeHead(416, {
+      'Content-Range': `bytes */${stat.size}`,
+      'Content-Type': 'text/plain; charset=utf-8',
+    });
+    res.end('Requested Range Not Satisfiable');
+    return;
+  }
+  if (range) {
+    const chunkSize = range.end - range.start + 1;
+    res.writeHead(206, {
+      'Content-Type': mime,
+      'Content-Length': chunkSize,
+      'Content-Range': `bytes ${range.start}-${range.end}/${stat.size}`,
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'no-cache',
+    });
+    const stream = createReadStream(filePath, { start: range.start, end: range.end });
+    stream.on('error', () => {
+      res.destroy();
+    });
+    stream.pipe(res);
+    return;
+  }
   res.writeHead(200, {
     'Content-Type': mime,
     'Content-Length': stat.size,
+    'Accept-Ranges': 'bytes',
     'Cache-Control': 'no-cache',
   });
   const stream = createReadStream(filePath);
@@ -121,12 +164,13 @@ function serveFile(res: ServerResponse, filePath: string, fallbackMime: string):
 }
 
 export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
-  const { store, gateway, mediaDir, executionManager } = deps;
+  const { store, gateway, mediaDir, executionManager, picker } = deps;
   const projectDispatcher = createProjectDispatcher();
   const staticRoutes = createStaticRoutes({ pluginRoot: PLUGIN_ROOT, gateway });
   const workspaceRoutes = createWorkspaceRoutes(store);
   const executionRoutes = createExecutionRoutes({ store, executionManager });
   const mediaRoutes = createMediaRoutes(mediaDir);
+  const localFileRoutes = createLocalFileRoutes(picker ? { picker } : {});
 
   /**
    * Legacy M1 prefix compatibility: /dsh-workflow/* is rewritten (in-memory,
@@ -170,6 +214,8 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
       if (fromExecution) return fromExecution;
       const fromCapabilities = await Promise.resolve(staticRoutes.tryCapabilities(method, path, req));
       if (fromCapabilities) return fromCapabilities;
+      const fromLocalFile = await Promise.resolve(localFileRoutes.tryHandle(method, path, req));
+      if (fromLocalFile) return fromLocalFile;
       const fromMedia = await Promise.resolve(mediaRoutes.tryHandle(method, path, req));
       if (fromMedia) return fromMedia;
 
@@ -218,10 +264,11 @@ export function registerWorkflowRoutes(
           origin: header(req, 'origin'),
           referer: header(req, 'referer'),
           secFetchSite: header(req, 'sec-fetch-site'),
+          range: header(req, 'range'),
           body,
         });
         if ('file' in result) {
-          serveFile(res, result.file, 'application/octet-stream');
+          serveFile(res, result.file, 'application/octet-stream', header(req, 'range'));
           return;
         }
         if ('sse' in result) {

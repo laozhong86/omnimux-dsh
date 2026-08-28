@@ -32,10 +32,13 @@ test('画布面板使用 CustomSelect，禁止裸 select', () => {
   assert.equal(/<select\b/.test(localPaneSrc), false);
 });
 
-test('本地上传支持 multiple、拖拽与移除', () => {
-  assert.match(localPaneSrc, /\bmultiple\b/);
+test('本地导入走系统选择器 + 带 path 的拖拽，不写 blob', () => {
+  assert.match(localPaneSrc, /pickLocalFiles/);
   assert.match(localPaneSrc, /onDrop=\{handleDrop\}/);
+  assert.match(localPaneSrc, /nativePathOf/);
   assert.match(localPaneSrc, /onRemove/);
+  assert.equal(/createObjectURL/.test(localPaneSrc), false);
+  assert.equal(/objectUrl/.test(localPaneSrc), false);
 });
 
 test('提交走 applyCanvasInputMutation / planResourcePickerCommit', () => {
@@ -56,8 +59,25 @@ test('ConfigPanel Prompt 左上角 [+] 按钮唤起弹窗', () => {
 test('MaterialNode 挂载 ResourcePickerModal 与 useResourcePicker', () => {
   assert.match(nodeSrc, /useResourcePicker\(id\)/);
   assert.match(nodeSrc, /<ResourcePickerModal/);
-  assert.match(nodeSrc, /openPicker\('local'\)/);
+  assert.match(nodeSrc, /importLocalFiles/);
   assert.match(nodeSrc, /openPicker\('canvas'\)/);
+  assert.equal(/createObjectURL/.test(nodeSrc), false);
+});
+
+test('源码契约：MaterialNode / LocalUploadPane 不得把 createObjectURL 写入节点', () => {
+  const policySrc = readFileSync(join(here, '../../utils/resourcePickerPolicy.ts'), 'utf8');
+  assert.equal(/createObjectURL/.test(nodeSrc), false);
+  assert.equal(/createObjectURL/.test(localPaneSrc), false);
+  assert.equal(/createObjectURL/.test(policySrc), false);
+  assert.match(policySrc, /buildImportedMediaData/);
+  assert.match(nodeSrc, /buildImportedMediaData/);
+  assert.match(nodeSrc, /nativePathOf/);
+  const importBlock = nodeSrc.slice(
+    nodeSrc.indexOf('const handleImportFile'),
+    nodeSrc.indexOf('const handleDragOver'),
+  );
+  assert.match(importBlock, /updateNodeData\(buildImportedMediaData/);
+  assert.equal(/mediaUrl:\s*url/.test(importBlock), false);
 });
 
 test('选择资源样式覆盖 Tab / 网格 / 拖拽区 / 已添加 / [+] 按钮', () => {

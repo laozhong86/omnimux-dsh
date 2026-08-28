@@ -1,0 +1,35 @@
+{
+  "pass": true,
+  "tool": "ego-browser",
+  "issueId": "122",
+  "plugin": "omnimux-workflow",
+  "taskSpaceName": "omnimux-qa-issue-122-workflow",
+  "taskSpaceId": 101,
+  "requestedUrl": "http://127.0.0.1:44200/",
+  "actualUrl": "http://127.0.0.1:44200/",
+  "title": "workflow media index L2",
+  "viewport": {
+    "w": 1728,
+    "h": 873,
+    "pw": 1728,
+    "ph": 873
+  },
+  "snapshot": "root\n  container\n  container\n    heading\n      text \"工作流素材索引 L2\"\n    paragraph\n      text \"导入 = realPath 关联，不复制源文件。\"\n    image\n    text \"{ \"items\": [ { \"path\": \"/tmp/wf-media-122-l2/hero.png\", \"exists\": true, \"size\": 67, \"mime\": \"image/png\", \"name\": \"hero.png\" } ] }\"\n  container\n",
+  "dom": {
+    "title": "workflow media index L2",
+    "bodyText": "工作流素材索引 L2\n\n导入 = realPath 关联，不复制源文件。\n\n{\n  \"items\": [\n    {\n      \"path\": \"/tmp/wf-media-122-l2/hero.png\",\n      \"exists\": true,\n      \"size\": 67,\n      \"mime\": \"image/png\",\n      \"name\": \"hero.png\"\n    }\n  ]\n}",
+    "bodyTextLength": 209,
+    "imgSrc": "http://127.0.0.1:44200/omnimux-workflow/api/local-file?path=%2Ftmp%2Fwf-media-122-l2%2Fhero.png",
+    "imgNatural": {
+      "w": 1,
+      "h": 1
+    },
+    "hasLocalFile": true,
+    "probeLog": "{\n  \"items\": [\n    {\n      \"path\": \"/tmp/wf-media-122-l2/hero.png\",\n      \"exists\": true,\n      \"size\": 67,\n      \"mime\": \"image/png\",\n      \"name\": \"hero.png\"\n    }\n  ]\n}",
+    "hasDocumentRoot": true
+  },
+  "screenshot": "ego-browser.png",
+  "errors": [],
+  "capturedAt": "2026-08-28T10:55:21.168Z",
+  "commitSha": "caf7551"
+}

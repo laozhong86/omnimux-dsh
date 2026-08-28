@@ -1,0 +1,61 @@
+{
+  "pass": true,
+  "tool": "ego-browser",
+  "issueId": "122",
+  "plugin": "omnimux-workflow",
+  "taskSpaceName": "omnimux-qa-issue-122-workflow-r2",
+  "taskSpaceId": 105,
+  "requestedUrl": "http://127.0.0.1:44200/",
+  "actualUrl": "http://127.0.0.1:44200/",
+  "title": "workflow media index L2",
+  "port": 44200,
+  "commitSha": "403f989",
+  "assertions": {
+    "importUsesLocalFileUrl": true,
+    "refreshKeepsLocalFileUrl": true,
+    "missingSourceGoesOffline": true,
+    "offlineCopyVisible": true,
+    "relinkRestoresReady": true,
+    "relinkPointsAtNewPath": true,
+    "canvasJsonHasNoBlob": true,
+    "mediaDirHasNoSourceCopy": true
+  },
+  "steps": [
+    {
+      "name": "import",
+      "status": "ready",
+      "realPath": "/tmp/wf-media-122-l2/gone-later.png",
+      "mediaUrl": "/omnimux-workflow/api/local-file?path=%2Ftmp%2Fwf-media-122-l2%2Fgone-later.png"
+    },
+    {
+      "name": "refresh",
+      "status": "ready",
+      "keptLocalFile": true
+    },
+    {
+      "name": "offline",
+      "status": "offline",
+      "isMissing": true,
+      "copy": "媒体已脱机"
+    },
+    {
+      "name": "relink",
+      "status": "ready",
+      "realPath": "/tmp/wf-media-122-l2/hero-relink.png"
+    }
+  ],
+  "disk": {
+    "workspaceId": "ws_861f77155f4a",
+    "version": 2,
+    "blobCount": 0,
+    "mediaDirHasSourceCopy": false,
+    "canvasJson": "docs/evidence/issue-122-l2/canvas.json"
+  },
+  "screenshots": [
+    "docs/evidence/issue-122-l2/ego-browser.png",
+    "docs/evidence/issue-122-l2/offline.png",
+    "docs/evidence/issue-122-l2/relink.png",
+    "docs/evidence/issue-122-l2/refresh.png"
+  ],
+  "notes": "Official yarn omnimux:dev start failed to boot the cloned L2 profile (missing dsh-client-ui-* modules). Evidence was collected against the same worktree dist Host dispatcher on L2 port 44200: persist PUT/GET, GET /api/local-file stream, probe missing→offline, relink persist, canvas.json has realPath and no blob:, media/ empty."
+}

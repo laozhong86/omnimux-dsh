@@ -119,6 +119,22 @@ export function getExecution(
 
 export type ExecutionAction = 'pause' | 'resume' | 'cancel';
 
+export function pickLocalFiles(): Promise<ApiResult<{ path: string | null; paths: string[] }>> {
+  return request<{ path: string | null; paths: string[] }>(WORKFLOW_API_ROUTES.pick, {
+    method: 'POST',
+    body: { kind: 'file' },
+  });
+}
+
+export function probeLocalFiles(
+  paths: string[],
+): Promise<ApiResult<{ items: Array<{ path: string; exists: boolean; size?: number; mime?: string; name?: string }> }>> {
+  return request<{ items: Array<{ path: string; exists: boolean; size?: number; mime?: string; name?: string }> }>(
+    WORKFLOW_API_ROUTES.localFileProbe,
+    { method: 'POST', body: { paths } },
+  );
+}
+
 export function executionAction(
   workspaceId: string,
   executionId: string,

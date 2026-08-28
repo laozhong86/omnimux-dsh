@@ -21,6 +21,10 @@ const zh = {
   'node.generationFailed': '生成失败',
   'node.taskIdLabel': '任务 ID：',
   'node.regenerate': '重新生成',
+  'node.offline': '媒体已脱机',
+  'node.offlineHint': '源文件不存在或已被移动，可重新链接。',
+  'node.relink': '重新链接',
+  'node.relinkOk': '已重新链接源文件',
   // 媒体空态
   'node.emptyMedia': '未配置素材输入。选中节点在属性面板中配置参数。',
   'node.tryMiniMaxH3': '探索推荐生成模型',
@@ -224,7 +228,7 @@ const zh = {
   // 选择资源弹窗（picker.*）
   'picker.title': '选择资源',
   'picker.tab.canvas': '画布上的资源',
-  'picker.tab.local': '本地上传',
+  'picker.tab.local': '本地导入',
   'picker.search': '搜索资源...',
   'picker.filter.all': '全部',
   'picker.filter.image': '图片',
@@ -248,6 +252,8 @@ const zh = {
   'picker.commitPartial': '部分资源未能添加（已连接或类型不匹配）',
   'picker.commitEmpty': '没有可添加的资源',
   'picker.commitFailed': '添加资源失败',
+  'picker.needPath': '请使用系统选择器导入，当前环境拿不到本地路径。',
+  'picker.pickFailed': '打开系统文件选择器失败。',
 } as const;
 
 export type DictKey = keyof typeof zh;

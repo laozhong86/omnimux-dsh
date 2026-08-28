@@ -90,6 +90,39 @@ test('sanitizeEdges 丢掉 selected，保留连接字段', () => {
   assert.equal('selected' in out, false);
 });
 
+test('sanitizeNodes 剥 blob:，有 realPath 时派生 local-file URL', () => {
+  const [indexed] = sanitizeNodes([
+    {
+      id: 'n1',
+      type: 'material',
+      position: { x: 0, y: 0 },
+      data: {
+        materialType: 'image',
+        realPath: '/Users/me/hero.png',
+        mediaUrl: 'blob:http://localhost/abc',
+        mediaAssets: [{ type: 'image', url: 'blob:http://localhost/abc' }],
+      },
+    },
+  ]);
+  assert.equal(indexed.data.realPath, '/Users/me/hero.png');
+  assert.equal(String(indexed.data.mediaUrl).startsWith('blob:'), false);
+  assert.match(String(indexed.data.mediaUrl), /\/api\/local-file\?path=/);
+  assert.equal(indexed.data.mediaAssets[0].path, '/Users/me/hero.png');
+  assert.match(String(indexed.data.mediaAssets[0].url), /\/omnimux-workflow\/api\/local-file\?path=/);
+  assert.equal(String(indexed.data.mediaAssets[0].url).includes('blob:'), false);
+
+  const [orphan] = sanitizeNodes([
+    {
+      id: 'n2',
+      type: 'material',
+      position: { x: 0, y: 0 },
+      data: { mediaUrl: 'blob:orphan', mediaAssets: [{ type: 'image', url: 'blob:orphan' }] },
+    },
+  ]);
+  assert.equal('mediaUrl' in orphan.data, false);
+  assert.equal('mediaAssets' in orphan.data, false);
+});
+
 test('真位移 / 改 data 会变脏', () => {
   const a = signatureOf(
     [{ id: 'n1', type: 'material', position: { x: 0, y: 0 }, data: { label: '' } }],

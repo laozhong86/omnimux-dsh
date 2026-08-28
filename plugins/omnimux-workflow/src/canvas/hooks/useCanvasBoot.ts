@@ -10,7 +10,9 @@ import {
   createWorkspace,
   getWorkspace,
   fetchCapabilities,
+  probeLocalFiles,
 } from '../bridge/apiClient';
+import { applyLocalMediaProbe, collectRealPaths } from '../../shared/localMedia.ts';
 import type { CapabilityCatalog } from '../../shared/api';
 import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes';
 import { getCachedCatalog, setCachedCatalog } from '../editor/hooks/useModelParameterSchema';
@@ -44,6 +46,19 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
     let cancelled = false;
     // 重跑时先退出 ready，persistence enabled=false，避免 resetStore 空图被 autosave
     setBoot({ phase: 'loading' });
+
+    async function probeAndPatchImportedMedia(): Promise<void> {
+      const store = useCanvasStore.getState();
+      const paths = collectRealPaths(store.nodes);
+      if (paths.length === 0) return;
+      const probed = await probeLocalFiles(paths);
+      if (cancelled || !probed.ok || !Array.isArray(probed.body.items)) return;
+      const next = applyLocalMediaProbe(store.nodes, probed.body.items);
+      const changed = next.some((node, index) => node !== store.nodes[index]);
+      if (!changed || cancelled) return;
+      store.setNodes(next);
+    }
+
     (async () => {
       try {
         void fetchCapabilities().then((result) => {
@@ -59,6 +74,8 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
           if (cancelled) return;
           if (loaded.ok && loaded.body.workspace) {
             hydrateGraph(loaded.body.workspace.nodes, loaded.body.workspace.edges);
+            await probeAndPatchImportedMedia();
+            if (cancelled) return;
             setBoot({ phase: 'ready', workspace: loaded.body.workspace });
             return;
           }
@@ -91,6 +108,8 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
           throw new Error(loaded.body.message ?? t('error.loadWorkspaceFailed'));
         }
         hydrateGraph(loaded.body.workspace.nodes, loaded.body.workspace.edges);
+        await probeAndPatchImportedMedia();
+        if (cancelled) return;
         setBoot({ phase: 'ready', workspace: loaded.body.workspace });
       } catch (error) {
         if (!cancelled) {

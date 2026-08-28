@@ -15,6 +15,7 @@ import type {
   CanvasNode,
 } from '../../../shared/graph/canvasInputMutationGateway.ts';
 import { resolveMediaPreviewUrl, type MediaAssetLike } from './mediaUrl.ts';
+import { buildImportedMediaData } from '../../../shared/localMedia.ts';
 import { getDefaultNodeHeight, getDefaultNodeWidth } from './nodeSizeConfig.ts';
 
 export type ResourceTypeFilter = 'all' | 'image' | 'video' | 'audio';
@@ -41,8 +42,10 @@ export interface LocalFileDraft {
   name: string;
   mime: string;
   size: number;
-  objectUrl: string;
+  realPath: string;
   materialType: MaterialType;
+  /** Transient picker-only preview. Must not be persisted. */
+  previewUrl?: string;
 }
 
 export interface ResourcePickerCommitInput {
@@ -225,12 +228,13 @@ function canConnect(source: CanvasNode, target: CanvasNode): boolean {
 }
 
 function mediaPatch(file: LocalFileDraft): Record<string, unknown> {
-  return {
-    mediaUrl: file.objectUrl,
-    status: 'ready',
-    content: file.name,
-    mediaAssets: [{ type: file.materialType, url: file.objectUrl }],
-  };
+  return buildImportedMediaData({
+    realPath: file.realPath,
+    name: file.name,
+    materialType: file.materialType,
+    mime: file.mime,
+    size: file.size,
+  });
 }
 
 function placeUpstream(
@@ -294,7 +298,7 @@ export function planResourcePickerCommit(input: ResourcePickerCommitInput): Reso
   }
 
   const usableFiles = input.localFiles.filter((file) => {
-    if (!file.objectUrl || !MEDIA_TYPES.includes(file.materialType)) {
+    if (!file.realPath || !MEDIA_TYPES.includes(file.materialType)) {
       rejected.push({ id: file.id, reason: 'unsupported' });
       return false;
     }

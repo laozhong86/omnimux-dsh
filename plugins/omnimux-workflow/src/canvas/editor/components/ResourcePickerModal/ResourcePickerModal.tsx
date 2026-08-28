@@ -1,5 +1,5 @@
 /**
- * 选择资源弹窗：CustomModal + 画布资源 / 本地上传双 Tab。
+ * 选择资源弹窗：CustomModal + 画布资源 / 本地导入双 Tab。
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -49,17 +49,11 @@ const ResourcePickerModal: React.FC<ResourcePickerModalProps> = ({
     if (!open) return;
     setTab(initialTab);
     setSelectedIds([]);
-    setLocalFiles((prev) => {
-      for (const file of prev) URL.revokeObjectURL(file.objectUrl);
-      return [];
-    });
+    setLocalFiles([]);
   }, [open, initialTab]);
 
   const handleCancel = useCallback(() => {
-    setLocalFiles((prev) => {
-      for (const file of prev) URL.revokeObjectURL(file.objectUrl);
-      return [];
-    });
+    setLocalFiles([]);
     onCancel();
   }, [onCancel]);
 
@@ -73,12 +67,7 @@ const ResourcePickerModal: React.FC<ResourcePickerModalProps> = ({
   }, []);
 
   const handleRemoveFile = useCallback((id: string) => {
-    setLocalFiles((prev) => {
-      const next = prev.filter((file) => file.id !== id);
-      const removed = prev.find((file) => file.id === id);
-      if (removed) URL.revokeObjectURL(removed.objectUrl);
-      return next;
-    });
+    setLocalFiles((prev) => prev.filter((file) => file.id !== id));
   }, []);
 
   const usableCanvasCount = selectedIds.filter((id) => {

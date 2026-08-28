@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 2,
+  "id": "ws_861f77155f4a",
+  "name": "media-index-122",
+  "version": 2,
+  "nodes": [
+    {
+      "id": "n-hero",
+      "type": "material",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "data": {
+        "materialType": "image",
+        "label": "hero",
+        "realPath": "/tmp/wf-media-122-l2/hero-relink.png",
+        "originalName": "hero-relink.png",
+        "mediaUrl": "/omnimux-workflow/api/local-file?path=%2Ftmp%2Fwf-media-122-l2%2Fhero-relink.png",
+        "status": "ready",
+        "isMissing": false,
+        "mediaAssets": [
+          {
+            "type": "image",
+            "url": "/omnimux-workflow/api/local-file?path=%2Ftmp%2Fwf-media-122-l2%2Fhero-relink.png",
+            "path": "/tmp/wf-media-122-l2/hero-relink.png"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [],
+  "settings": {
+    "maxParallel": 3,
+    "failStrategy": "fail-fast"
+  },
+  "metadata": {
+    "createdAt": "2026-08-28T11:02:57.704Z",
+    "updatedAt": "2026-08-28T11:10:48.174Z",
+    "nodeCount": 1
+  }
+}

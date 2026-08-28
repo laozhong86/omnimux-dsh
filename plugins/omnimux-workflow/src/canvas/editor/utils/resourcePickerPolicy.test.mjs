@@ -130,7 +130,7 @@ test('planResourcePickerCommit：单文件类型匹配时写入当前节点', ()
         name: 'hero.png',
         mime: 'image/png',
         size: 12,
-        objectUrl: 'blob:hero',
+        realPath: '/Users/me/hero.png',
         materialType: 'image',
       },
     ],
@@ -140,10 +140,12 @@ test('planResourcePickerCommit：单文件类型匹配时写入当前节点', ()
   assert.equal(plan.addEdges, undefined);
   assert.equal(plan.nodePatches?.length, 1);
   assert.equal(plan.nodePatches[0].nodeId, 'target');
-  assert.equal(plan.nodePatches[0].data.mediaUrl, 'blob:hero');
+  assert.equal(plan.nodePatches[0].data.realPath, '/Users/me/hero.png');
   assert.equal(plan.nodePatches[0].data.status, 'ready');
   assert.equal(plan.nodePatches[0].data.content, 'hero.png');
-  assert.deepEqual(plan.nodePatches[0].data.mediaAssets, [{ type: 'image', url: 'blob:hero' }]);
+  assert.equal(plan.nodePatches[0].data.mediaUrl.includes('blob:'), false);
+  assert.equal(plan.nodePatches[0].data.mediaUrl.includes('/api/local-file?path='), true);
+  assert.equal(plan.nodePatches[0].data.mediaAssets[0].path, '/Users/me/hero.png');
 });
 
 test('planResourcePickerCommit：多文件首个写入当前节点，其余创建上游并连线', () => {
@@ -154,14 +156,15 @@ test('planResourcePickerCommit：多文件首个写入当前节点，其余创�
     targetNodeId: 'target',
     selectedCanvasNodeIds: [],
     localFiles: [
-      { id: 'f1', name: 'a.png', mime: 'image/png', size: 1, objectUrl: 'blob:a', materialType: 'image' },
-      { id: 'f2', name: 'b.png', mime: 'image/png', size: 1, objectUrl: 'blob:b', materialType: 'image' },
-      { id: 'f3', name: 'c.png', mime: 'image/png', size: 1, objectUrl: 'blob:c', materialType: 'image' },
+      { id: 'f1', name: 'a.png', mime: 'image/png', size: 1, realPath: '/Users/me/a.png', materialType: 'image' },
+      { id: 'f2', name: 'b.png', mime: 'image/png', size: 1, realPath: '/Users/me/b.png', materialType: 'image' },
+      { id: 'f3', name: 'c.png', mime: 'image/png', size: 1, realPath: '/Users/me/c.png', materialType: 'image' },
     ],
   });
   assert.equal(plan.hasWork, true);
   assert.equal(plan.nodePatches?.length, 1);
-  assert.equal(plan.nodePatches[0].data.mediaUrl, 'blob:a');
+  assert.equal(plan.nodePatches[0].data.realPath, '/Users/me/a.png');
+  assert.equal(String(plan.nodePatches[0].data.mediaUrl).includes('blob:'), false);
   assert.equal(plan.addNodes?.length, 2);
   assert.equal(plan.addEdges?.length, 2);
   assert.ok(plan.addNodes.every((node) => node.position.x < 600));
@@ -177,8 +180,8 @@ test('planResourcePickerCommit：类型合同不匹配的上游不入 mutation',
     targetNodeId: 'target',
     selectedCanvasNodeIds: [],
     localFiles: [
-      { id: 'f1', name: 'a.png', mime: 'image/png', size: 1, objectUrl: 'blob:a', materialType: 'image' },
-      { id: 'f2', name: 'c.mp4', mime: 'video/mp4', size: 1, objectUrl: 'blob:c', materialType: 'video' },
+      { id: 'f1', name: 'a.png', mime: 'image/png', size: 1, realPath: '/Users/me/a.png', materialType: 'image' },
+      { id: 'f2', name: 'c.mp4', mime: 'video/mp4', size: 1, realPath: '/Users/me/c.mp4', materialType: 'video' },
     ],
   });
   assert.equal(plan.nodePatches?.length, 1);
@@ -195,13 +198,29 @@ test('planResourcePickerCommit：当前节点为文本时全部本地文件走�
     targetNodeId: 'target',
     selectedCanvasNodeIds: [],
     localFiles: [
-      { id: 'f1', name: 'a.png', mime: 'image/png', size: 1, objectUrl: 'blob:a', materialType: 'image' },
+      { id: 'f1', name: 'a.png', mime: 'image/png', size: 1, realPath: '/Users/me/a.png', materialType: 'image' },
     ],
   });
   assert.equal(plan.nodePatches, undefined);
   assert.equal(plan.addNodes?.length, 1);
   assert.equal(plan.addEdges?.length, 1);
   assert.equal(plan.addNodes[0].data.materialType, 'image');
+});
+
+test('planResourcePickerCommit：无 realPath 的 draft 视为 unsupported', () => {
+  const nodes = [materialNode('target', 'image', { status: 'empty' })];
+  const plan = planResourcePickerCommit({
+    nodes,
+    edges: [],
+    targetNodeId: 'target',
+    selectedCanvasNodeIds: [],
+    localFiles: [
+      { id: 'f1', name: 'hero.png', mime: 'image/png', size: 12, objectUrl: 'blob:hero', materialType: 'image' },
+    ],
+  });
+  assert.equal(plan.hasWork, false);
+  assert.equal(plan.nodePatches, undefined);
+  assert.equal(plan.rejected[0].reason, 'unsupported');
 });
 
 test('planResourcePickerCommit：目标缺失时无 mutation', () => {

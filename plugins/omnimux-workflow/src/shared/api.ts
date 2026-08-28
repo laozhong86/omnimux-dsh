@@ -37,6 +37,12 @@ export const WORKFLOW_API_ROUTES = {
   capabilities: `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`,
   /** GET: media files under the plugin-owned media dir (traversal-guarded). */
   media: `${WORKFLOW_ROUTE_PREFIX}/media`,
+  /** POST: native file/folder picker → absolute paths (no copy). */
+  pick: `${WORKFLOW_ROUTE_PREFIX}/api/pick`,
+  /** GET: stream an imported local file by realPath (Range 206). */
+  localFile: `${WORKFLOW_ROUTE_PREFIX}/api/local-file`,
+  /** POST: batch exists/size probe for imported realPath values. */
+  localFileProbe: `${WORKFLOW_ROUTE_PREFIX}/api/local-file/probe`,
   /** GET: execution summaries. POST: create execution {mode, nodeIds?}. */
   executions: (workspaceId: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions`,
   /** GET: one execution status snapshot. */
