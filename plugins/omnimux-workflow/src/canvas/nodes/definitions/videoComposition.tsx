@@ -4,16 +4,31 @@
  * The node itself is a 350×440 proxy. Opening the editor dispatches
  * `omnimux-clip-open`; save/progress/close events write back into node data.
  * Canvas MUST NOT import omnimux-clip source (spec §2).
+ *
+ * 表现层（T4 拉齐 MaterialNode 规范）：
+ * - 外置 NodeHeader + StatusBadge（mapVideoCompositionToBadge）；
+ * - 主卡片四分支状态机：result / rendering / error / launcher
+ *   （mapVideoCompositionToView 分流；rendering/error 走 GenerationStateContainer）；
+ * - 产物态由纯展示组件 VideoCompositionResult 承载（.wf-vc-result* Token 类）。
+ * 功能契约 100% 不变：OMNIMUX_CLIP_* 事件桥、collectUpstreamInputs、
+ * ports、executorKey、350×440 尺寸。
  */
 
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect } from 'react';
 import { type NodeProps } from '@xyflow/react';
-import { Download, Film, Layers, Pencil, Play } from 'lucide-react';
+import { Download, Film, Layers, Pencil } from 'lucide-react';
 import CanvasNodeShell from '../../editor/components/CanvasNodeShell';
 import FloatingTopPill, { type FloatingPillAction } from '../../editor/components/FloatingTopPill';
 import NodeHeader from '../../editor/components/MaterialNode/NodeHeader';
 import StatusBadge from '../../editor/components/MaterialNode/StatusBadge';
+import GenerationStateContainer from '../../editor/components/GenerationStateContainer';
 import NodeLauncherState from '../../editor/components/NodeEmptyState/NodeLauncherState';
+import VideoCompositionResult from './videoCompositionResult';
+import {
+  mapVideoCompositionToBadge,
+  mapVideoCompositionToView,
+  projectFileName,
+} from './videoCompositionStatus';
 import { useCanvasStore } from '../../store/canvasStore';
 import { toast } from '../../ui';
 import { useT } from '../../i18n';
@@ -44,20 +59,6 @@ function asString(value: unknown): string | undefined {
 
 function asNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
-
-function formatDuration(ms: number | undefined): string {
-  if (ms == null || !Number.isFinite(ms) || ms < 0) return '—';
-  const total = Math.round(ms);
-  const minutes = Math.floor(total / 60_000);
-  const seconds = Math.floor((total % 60_000) / 1000);
-  const millis = total % 1000;
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
-}
-
-function formatResolution(width?: number, height?: number): string {
-  if (!width || !height) return '—';
-  return `${width}×${height}`;
 }
 
 function mediaPathOf(data: Record<string, unknown>): string | undefined {
@@ -134,12 +135,14 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const nodeData = (isRecord(data) ? data : {}) as VideoCompositionNodeData;
   const setNodes = useCanvasStore((state) => state.setNodes);
   const t = useT();
-  const [isPlayingInline, setIsPlayingInline] = useState(false);
 
   const status: VideoCompositionStatus = nodeData.status ?? 'idle';
   const hasOutput = Boolean(nodeData.outputVideoUrl);
   const thumbnail = nodeData.thumbnailUrl || nodeData.outputThumbnailUrl;
   const title = nodeData.title || nodeData.label || t('node.type.video_composition');
+
+  // 四分支状态机（T4）
+  const view = mapVideoCompositionToView(status, hasOutput);
 
   const updateNodeData = useCallback(
     (updates: Partial<VideoCompositionNodeData>) => {
@@ -223,8 +226,7 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     }, 400);
   }, [id, nodeData.projectId, nodeData.schema, t, title, updateNodeData]);
 
-  const handleDownload = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
+  const handleDownload = useCallback(() => {
     const url = nodeData.outputVideoUrl;
     if (!url) return;
     const anchor = document.createElement('a');
@@ -256,23 +258,23 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         const pillActions: FloatingPillAction[] = [
           {
             key: 'open_clip',
-            label: '打开剪辑',
+            label: t('clip.openEditor'),
             icon: Pencil,
             variant: 'primary',
             onClick: (e) => {
               e.stopPropagation();
               openEditor();
             },
-            title: '打开视频剪辑编辑器',
+            title: t('clip.openEditorTitle'),
           },
         ];
         if (hasOutput) {
           pillActions.push({
             key: 'download_video',
-            label: '下载',
+            label: t('clip.download'),
             icon: Download,
             onClick: handleDownload,
-            title: '下载合成视频',
+            title: t('clip.downloadTitle'),
           });
         }
         return <FloatingTopPill actions={pillActions} />;
@@ -283,103 +285,54 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           materialType="video_composition"
           customIcon={<Film size={14} />}
           onLabelChange={(newLabel) => updateNodeData({ label: newLabel, title: newLabel })}
-          trailing={
-            <StatusBadge
-              status={
-                status === 'completed'
-                  ? 'completed'
-                  : status === 'rendering' || status === 'editing'
-                  ? 'generating'
-                  : status === 'error'
-                  ? 'failed'
-                  : 'empty'
-              }
-            />
-          }
+          trailing={<StatusBadge status={mapVideoCompositionToBadge(status)} />}
         />
       )}
     >
-      {hasOutput ? (
-        <div className="wf-clip-launcher__result">
-          <div
-            className="wf-clip-launcher__preview nodrag nopan"
-            style={{ position: 'relative', cursor: 'pointer' }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsPlayingInline(!isPlayingInline);
-            }}
-          >
-            {isPlayingInline && nodeData.outputVideoUrl ? (
-              <video
-                src={nodeData.outputVideoUrl}
-                controls
-                autoPlay
-                className="wf-clip-launcher__thumb"
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              />
-            ) : thumbnail ? (
-              <>
-                <img src={thumbnail} alt="" className="wf-clip-launcher__thumb" />
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.3)',
-                  }}
-                >
-                  <Play size={28} color="#fff" fill="#fff" />
-                </div>
-              </>
-            ) : (
-              <div className="wf-clip-launcher__thumb-fallback">
-                <Film size={36} />
-              </div>
-            )}
-          </div>
-          <dl className="wf-clip-launcher__meta">
-            <div>
-              <dt>时长</dt>
-              <dd>{formatDuration(nodeData.outputDurationMs)}</dd>
-            </div>
-            <div>
-              <dt>分辨率</dt>
-              <dd>{formatResolution(nodeData.outputWidth, nodeData.outputHeight)}</dd>
-            </div>
-          </dl>
-          <div className="wf-clip-launcher__actions nodrag nopan">
-            <button
-              type="button"
-              className="wf-clip-launcher__btn wf-clip-launcher__btn--primary"
-              onClick={(event) => {
-                event.stopPropagation();
-                openEditor();
-              }}
-            >
-              <Pencil size={14} />
-              <span>重新编辑</span>
-            </button>
-            <button
-              type="button"
-              className="wf-clip-launcher__btn"
-              onClick={handleDownload}
-            >
-              <Download size={14} />
-              <span>下载</span>
-            </button>
-          </div>
+      {view === 'result' && (
+        <VideoCompositionResult
+          outputVideoUrl={nodeData.outputVideoUrl}
+          thumbnailUrl={thumbnail}
+          durationMs={nodeData.outputDurationMs}
+          width={nodeData.outputWidth}
+          height={nodeData.outputHeight}
+          title={title}
+          onReEdit={openEditor}
+          onDownload={handleDownload}
+        />
+      )}
+
+      {view === 'rendering' && (
+        <div className="wf-material-node__media">
+          <GenerationStateContainer status="generating" loadingAspectRatio="video">
+            {null}
+          </GenerationStateContainer>
         </div>
-      ) : (
+      )}
+
+      {view === 'error' && (
+        <div className="wf-material-node__media">
+          <GenerationStateContainer
+            status="failed"
+            loadingAspectRatio="video"
+            errorMessage={nodeData.errorMessage}
+            onRetry={openEditor}
+          >
+            {null}
+          </GenerationStateContainer>
+        </div>
+      )}
+
+      {view === 'launcher' && (
         <NodeLauncherState
           mainIcon={<Film size={36} strokeWidth={1.5} />}
           secondaryIcon={<Layers size={14} />}
-          blurb="开源 AI 视频剪辑工具，支持自动剪辑与字幕生成。"
+          title={t('clip.launcherTitle')}
+          blurb={t('clip.launcherBlurb')}
           actions={[
             {
               key: 'open_clip',
-              label: '打开视频剪辑',
+              label: t('clip.openClip'),
               icon: Pencil,
               variant: 'primary',
               onClick: () => openEditor(),
@@ -390,11 +343,6 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     </CanvasNodeShell>
   );
 };
-
-function projectFileName(title: string): string {
-  const cleaned = title.replace(/[^\w\u4e00-\u9fff.-]+/g, '_').slice(0, 48);
-  return cleaned || 'clip';
-}
 
 export const videoCompositionNodeDefinition: NodeDefinition = {
   type: 'video_composition',
