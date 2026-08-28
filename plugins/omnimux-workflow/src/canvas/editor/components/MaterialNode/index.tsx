@@ -9,6 +9,7 @@
  */
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { Unlink } from 'lucide-react';
 import { type NodeProps, useReactFlow } from '@xyflow/react';
 import type { MaterialNodeData, MaterialType, MaterialTool } from '../../../types/materialNode';
 import CanvasNodeHandle, { type CanvasNodeHandleSelectMeta } from '../CanvasNodeHandle';
@@ -350,6 +351,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         {/* 2. 媒体节点渲染 */}
         {materialType !== 'text' && isOffline && (
           <div className="wf-material-node__media wf-media-offline">
+            <Unlink size={22} className="wf-media-offline__icon" />
             <div className="wf-media-offline__title">{t('node.offline')}</div>
             <div className="wf-media-offline__hint">{t('node.offlineHint')}</div>
             <button
@@ -377,6 +379,8 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                     mediaAssets={mediaAssets}
                     mediaUrl={mediaUrl}
                     label={label}
+                    status={status}
+                    isMissing={nodeData.isMissing === true}
                     onMediaSizeChange={handleMediaSizeChange}
                   />
                 ) : (

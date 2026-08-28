@@ -19,6 +19,13 @@ test('源码契约：useCanvasBoot cleanup 里 beforeReset 在 resetStore() 之�
   const bootSrc = readFileSync(join(here, 'useCanvasBoot.ts'), 'utf8');
   assert.match(bootSrc, /beforeReset\?:/);
   assert.match(bootSrc, /return \{ boot, setBoot, catalog, nodeCount \}/);
+  assert.match(bootSrc, /probeLocalFiles/);
+  assert.match(bootSrc, /applyLocalMediaProbe/);
+  const hydrateIdx = bootSrc.indexOf("hydrateGraph(loaded.body.workspace.nodes");
+  const probeIdx = bootSrc.indexOf('await probeAndPatchImportedMedia()');
+  const readyIdx = bootSrc.indexOf("setBoot({ phase: 'ready'");
+  assert.ok(hydrateIdx >= 0 && probeIdx > hydrateIdx, 'hydrate 后才 probe');
+  assert.ok(readyIdx > probeIdx, 'probe 完成前不得 setBoot ready');
 
   const cleanupStart = bootSrc.indexOf('return () => {');
   assert.ok(cleanupStart >= 0, 'missing effect cleanup');

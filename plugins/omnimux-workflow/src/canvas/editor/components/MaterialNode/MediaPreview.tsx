@@ -19,6 +19,8 @@ export interface MediaPreviewProps {
   mediaAssets?: MediaAssetLike[];
   mediaUrl?: string;
   label?: string;
+  status?: string;
+  isMissing?: boolean;
   onMediaSizeChange?: (width: number, height: number) => void;
 }
 
@@ -27,6 +29,8 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
   mediaAssets,
   mediaUrl,
   label,
+  status,
+  isMissing,
   onMediaSizeChange,
 }) => {
   const url = useMemo(
@@ -54,6 +58,7 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
     [onMediaSizeChange],
   );
 
+  if (status === 'offline' || isMissing) return null;
   if (!url) return null;
 
   switch (materialType) {

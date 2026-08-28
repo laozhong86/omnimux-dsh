@@ -207,6 +207,22 @@ test('planResourcePickerCommit：当前节点为文本时全部本地文件走�
   assert.equal(plan.addNodes[0].data.materialType, 'image');
 });
 
+test('planResourcePickerCommit：无 realPath 的 draft 视为 unsupported', () => {
+  const nodes = [materialNode('target', 'image', { status: 'empty' })];
+  const plan = planResourcePickerCommit({
+    nodes,
+    edges: [],
+    targetNodeId: 'target',
+    selectedCanvasNodeIds: [],
+    localFiles: [
+      { id: 'f1', name: 'hero.png', mime: 'image/png', size: 12, objectUrl: 'blob:hero', materialType: 'image' },
+    ],
+  });
+  assert.equal(plan.hasWork, false);
+  assert.equal(plan.nodePatches, undefined);
+  assert.equal(plan.rejected[0].reason, 'unsupported');
+});
+
 test('planResourcePickerCommit：目标缺失时无 mutation', () => {
   const plan = planResourcePickerCommit({
     nodes: [],

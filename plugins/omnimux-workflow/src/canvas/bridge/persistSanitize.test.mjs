@@ -108,6 +108,8 @@ test('sanitizeNodes 剥 blob:，有 realPath 时派生 local-file URL', () => {
   assert.equal(String(indexed.data.mediaUrl).startsWith('blob:'), false);
   assert.match(String(indexed.data.mediaUrl), /\/api\/local-file\?path=/);
   assert.equal(indexed.data.mediaAssets[0].path, '/Users/me/hero.png');
+  assert.match(String(indexed.data.mediaAssets[0].url), /\/omnimux-workflow\/api\/local-file\?path=/);
+  assert.equal(String(indexed.data.mediaAssets[0].url).includes('blob:'), false);
 
   const [orphan] = sanitizeNodes([
     {

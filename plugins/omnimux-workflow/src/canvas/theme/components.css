@@ -83,7 +83,7 @@
 }
 
 .wf-material-node__badge--offline {
-  background: var(--dsw-alias-warning, var(--wb-warning, #d97706));
+  background: var(--dsw-alias-warning, var(--wb-warning));
 }
 
 .wf-media-offline {
@@ -97,17 +97,22 @@
   padding: 16px;
   box-sizing: border-box;
   text-align: center;
+  background: color-mix(in srgb, var(--dsw-alias-warning, var(--wb-warning)) 8%, transparent);
+}
+
+.wf-media-offline__icon {
+  color: var(--dsw-alias-warning, var(--wb-warning));
 }
 
 .wf-media-offline__title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--dsw-alias-label-primary, var(--wb-node-text));
+  color: var(--dsw-alias-label-primary, var(--wb-text-primary));
 }
 
 .wf-media-offline__hint {
   font-size: 12px;
-  color: var(--dsw-alias-label-secondary, var(--wb-node-text-muted));
+  color: var(--dsw-alias-label-secondary, var(--wb-text-muted));
 }
 
 .wf-media-offline__relink {
@@ -116,7 +121,7 @@
   border-radius: 8px;
   border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
   background: var(--dsw-alias-bg-elevated, var(--wb-surface));
-  color: var(--dsw-alias-label-primary, var(--wb-node-text));
+  color: var(--dsw-alias-label-primary, var(--wb-text-primary));
   cursor: pointer;
 }
 

@@ -42,22 +42,23 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
   const beforeResetRef = useRef(opts.beforeReset);
   beforeResetRef.current = opts.beforeReset;
 
-  async function probeAndPatchImportedMedia(): Promise<void> {
-    const store = useCanvasStore.getState();
-    const paths = collectRealPaths(store.nodes);
-    if (paths.length === 0) return;
-    const probed = await probeLocalFiles(paths);
-    if (!probed.ok || !Array.isArray(probed.body.items)) return;
-    const next = applyLocalMediaProbe(store.nodes, probed.body.items);
-    const changed = next.some((node, index) => node !== store.nodes[index]);
-    if (!changed) return;
-    store.setNodes(next);
-  }
-
   useEffect(() => {
     let cancelled = false;
     // 重跑时先退出 ready，persistence enabled=false，避免 resetStore 空图被 autosave
     setBoot({ phase: 'loading' });
+
+    async function probeAndPatchImportedMedia(): Promise<void> {
+      const store = useCanvasStore.getState();
+      const paths = collectRealPaths(store.nodes);
+      if (paths.length === 0) return;
+      const probed = await probeLocalFiles(paths);
+      if (cancelled || !probed.ok || !Array.isArray(probed.body.items)) return;
+      const next = applyLocalMediaProbe(store.nodes, probed.body.items);
+      const changed = next.some((node, index) => node !== store.nodes[index]);
+      if (!changed || cancelled) return;
+      store.setNodes(next);
+    }
+
     (async () => {
       try {
         void fetchCapabilities().then((result) => {
@@ -72,10 +73,10 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
           const loaded = await getWorkspace(targetWorkspaceId);
           if (cancelled) return;
           if (loaded.ok && loaded.body.workspace) {
-            const workspace = loaded.body.workspace;
-            hydrateGraph(workspace.nodes, workspace.edges);
-            setBoot({ phase: 'ready', workspace });
-            void probeAndPatchImportedMedia();
+            hydrateGraph(loaded.body.workspace.nodes, loaded.body.workspace.edges);
+            await probeAndPatchImportedMedia();
+            if (cancelled) return;
+            setBoot({ phase: 'ready', workspace: loaded.body.workspace });
             return;
           }
           // 专属工作区尚不存在，创建属于该 ID 的纯净新工作区
@@ -107,8 +108,9 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
           throw new Error(loaded.body.message ?? t('error.loadWorkspaceFailed'));
         }
         hydrateGraph(loaded.body.workspace.nodes, loaded.body.workspace.edges);
+        await probeAndPatchImportedMedia();
+        if (cancelled) return;
         setBoot({ phase: 'ready', workspace: loaded.body.workspace });
-        void probeAndPatchImportedMedia();
       } catch (error) {
         if (!cancelled) {
           setBoot({ phase: 'error', message: error instanceof Error ? error.message : String(error) });

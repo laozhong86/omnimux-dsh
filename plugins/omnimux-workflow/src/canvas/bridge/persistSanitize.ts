@@ -23,29 +23,43 @@ function asRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
+function asMediaAsset(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return { ...(value as Record<string, unknown>) };
+}
+
 function sanitizeImportedMedia(data: Record<string, unknown>): void {
   const realPath = typeof data.realPath === 'string' ? data.realPath : '';
   if (realPath) {
     const url = localFileMediaUrl(realPath);
     data.mediaUrl = url;
-    if (Array.isArray(data.mediaAssets)) {
-      data.mediaAssets = data.mediaAssets.map((asset) => {
-        if (!asset || typeof asset !== 'object') return asset;
-        const row = { ...(asset as Record<string, unknown>) };
-        if (isBlobUrl(row.url) || !row.url) row.url = url;
-        if (!row.path) row.path = realPath;
+    const assets = Array.isArray(data.mediaAssets) ? data.mediaAssets : [];
+    const rewritten = assets
+      .map((asset) => {
+        const row = asMediaAsset(asset);
+        if (!row) return null;
+        row.url = url;
+        row.path = realPath;
         return row;
-      });
-    }
-  } else if (isBlobUrl(data.mediaUrl)) {
-    delete data.mediaUrl;
+      })
+      .filter((row): row is Record<string, unknown> => row !== null);
+    data.mediaAssets = rewritten.length > 0
+      ? rewritten
+      : [{
+        type: typeof data.materialType === 'string' ? data.materialType : 'image',
+        url,
+        path: realPath,
+      }];
+    return;
   }
+
+  if (isBlobUrl(data.mediaUrl)) delete data.mediaUrl;
 
   if (Array.isArray(data.mediaAssets)) {
     const cleaned = data.mediaAssets
       .map((asset) => {
-        if (!asset || typeof asset !== 'object') return null;
-        const row = { ...(asset as Record<string, unknown>) };
+        const row = asMediaAsset(asset);
+        if (!row) return null;
         if (isBlobUrl(row.url)) {
           if (typeof row.path === 'string' && row.path) {
             row.url = localFileMediaUrl(row.path);
@@ -55,7 +69,7 @@ function sanitizeImportedMedia(data: Record<string, unknown>): void {
         }
         return row.url || row.path ? row : null;
       })
-      .filter(Boolean);
+      .filter((row): row is Record<string, unknown> => row !== null);
     if (cleaned.length === 0) delete data.mediaAssets;
     else data.mediaAssets = cleaned;
   }

@@ -2,6 +2,7 @@
  * Execution collection, item, control, and SSE event stream.
  */
 import { WORKFLOW_ROUTE_PREFIX } from '../../shared/api';
+import { localFileMediaUrl } from '../../shared/localMedia';
 import { jsonBodyProblem, messageOf } from '../../http/helpers';
 import { WorkflowStoreError } from '../workspace/WorkspaceStore';
 import type { WorkspaceStore } from '../workspace/WorkspaceStore';
@@ -38,7 +39,7 @@ function extractNodeOutputFromSnapshot(node: { data?: Record<string, unknown>; [
   const realPath = typeof data.realPath === 'string' ? data.realPath : '';
   if (realPath) {
     return {
-      mediaAssets: [{ type, url: `/omnimux-workflow/api/local-file?path=${encodeURIComponent(realPath)}`, path: realPath }],
+      mediaAssets: [{ type, url: localFileMediaUrl(realPath), path: realPath }],
       text,
     };
   }

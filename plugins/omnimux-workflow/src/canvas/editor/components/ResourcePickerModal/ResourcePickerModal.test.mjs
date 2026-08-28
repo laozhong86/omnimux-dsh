@@ -64,6 +64,22 @@ test('MaterialNode 挂载 ResourcePickerModal 与 useResourcePicker', () => {
   assert.equal(/createObjectURL/.test(nodeSrc), false);
 });
 
+test('源码契约：MaterialNode / LocalUploadPane 不得把 createObjectURL 写入节点', () => {
+  const policySrc = readFileSync(join(here, '../../utils/resourcePickerPolicy.ts'), 'utf8');
+  assert.equal(/createObjectURL/.test(nodeSrc), false);
+  assert.equal(/createObjectURL/.test(localPaneSrc), false);
+  assert.equal(/createObjectURL/.test(policySrc), false);
+  assert.match(policySrc, /buildImportedMediaData/);
+  assert.match(nodeSrc, /buildImportedMediaData/);
+  assert.match(nodeSrc, /nativePathOf/);
+  const importBlock = nodeSrc.slice(
+    nodeSrc.indexOf('const handleImportFile'),
+    nodeSrc.indexOf('const handleDragOver'),
+  );
+  assert.match(importBlock, /updateNodeData\(buildImportedMediaData/);
+  assert.equal(/mediaUrl:\s*url/.test(importBlock), false);
+});
+
 test('选择资源样式覆盖 Tab / 网格 / 拖拽区 / 已添加 / [+] 按钮', () => {
   assert.match(cssSrc, /\.wf-picker-tab--active/);
   assert.match(cssSrc, /\.wf-picker-grid/);

@@ -1,5 +1,5 @@
 /**
- * 选择资源弹窗：CustomModal + 画布资源 / 本地上传双 Tab。
+ * 选择资源弹窗：CustomModal + 画布资源 / 本地导入双 Tab。
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';

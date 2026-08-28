@@ -109,7 +109,10 @@ export function createLocalFileRoutes(deps: LocalFileRouteDeps = {}): { tryHandl
       const problem = jsonBodyProblem(req.body);
       if (problem) return problem;
       const body = (req.body ?? {}) as { kind?: string };
-      const kind = body.kind === 'directory' ? 'directory' : 'file';
+      const kind = body.kind ?? 'file';
+      if (kind !== 'file' && kind !== 'directory') {
+        return jsonError(400, 'picker-invalid-kind', `unknown pick kind: ${String(kind)}`);
+      }
       try {
         const result = await picker(kind);
         const paths = Array.isArray(result.paths)
