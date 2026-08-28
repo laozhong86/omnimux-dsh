@@ -42,15 +42,15 @@ const ChatPanel = React.lazy(() =>
   import("./chat/ChatPanel").then((module) => ({ default: module.ChatPanel })),
 );
 
-// Timeline area (bottom band) is sized as a vh fraction so the
+// Timeline area (bottom band) is sized as a container percentage ratio so the
 // top workspace (media | stage | inspector) gets the rest. The grid
-// from the mockup is `1fr var(--tl-height)` rows — by default
-// timeline is 58vh which leaves the top row with ~38–42vh of stage.
-const DEFAULT_TIMELINE_VH = 42;
-const MIN_TIMELINE_VH = 22;
-const MAX_TIMELINE_VH = 70;
+// uses `1fr var(--tl-height)` rows — by default timeline is 40%
+// which leaves the top workspace with ~60% of available height.
+const DEFAULT_TIMELINE_RATIO = 40;
+const MIN_TIMELINE_RATIO = 20;
+const MAX_TIMELINE_RATIO = 70;
 // Compact mode: timeline takes most of the height, leaving a small preview.
-const COMPACT_TIMELINE_VH = 80;
+const COMPACT_TIMELINE_RATIO = 80;
 
 const DEFAULT_MEDIA_W = 460;
 const MIN_MEDIA_W = 320;
@@ -72,6 +72,8 @@ type ResizeTarget = "timeline" | "media" | "inspector" | "chat";
 const clamp = (value: number, min: number, max: number): number => {
   return Math.min(Math.max(value, min), max);
 };
+
+const TIMELINE_RATIO_STORAGE_KEY = "openreel_timeline_ratio";
 
 /**
  * Auto-save initialization hook
@@ -322,7 +324,14 @@ export const EditorInterface: React.FC = () => {
   const [mediaWidth, setMediaWidth] = useState(DEFAULT_MEDIA_W);
   const [inspectorWidth, setInspectorWidth] = useState(DEFAULT_INSPECTOR_W);
   const [chatWidth, setChatWidth] = useState(DEFAULT_CHAT_W);
-  const [timelineVh, setTimelineVh] = useState(DEFAULT_TIMELINE_VH);
+  const [timelineRatio, setTimelineRatio] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_TIMELINE_RATIO;
+    const stored = window.localStorage.getItem(TIMELINE_RATIO_STORAGE_KEY);
+    const parsed = stored ? Number.parseFloat(stored) : NaN;
+    return Number.isFinite(parsed) && parsed >= MIN_TIMELINE_RATIO && parsed <= MAX_TIMELINE_RATIO
+      ? parsed
+      : DEFAULT_TIMELINE_RATIO;
+  });
 
   const chatVisible = panels.agentChat?.visible ?? false;
 
@@ -361,22 +370,9 @@ export const EditorInterface: React.FC = () => {
       const chatOffset = chatOpen ? chatRef.current + RESIZE_HANDLE : 0;
 
       if (target === "media") {
-        const maxByStage =
-          rect.width - inspectorRef.current - chatOffset - MIN_STAGE_W;
+        const maxByStage = rect.width - chatOffset - MIN_STAGE_W;
         setMediaWidth(
           clamp(e.clientX - rect.left, MIN_MEDIA_W, Math.min(MAX_MEDIA_W, maxByStage)),
-        );
-        return;
-      }
-      if (target === "inspector") {
-        const maxByStage =
-          rect.width - mediaRef.current - chatOffset - MIN_STAGE_W;
-        setInspectorWidth(
-          clamp(
-            rect.right - chatOffset - e.clientX,
-            MIN_INSPECTOR_W,
-            Math.min(MAX_INSPECTOR_W, maxByStage),
-          ),
         );
         return;
       }
@@ -384,7 +380,6 @@ export const EditorInterface: React.FC = () => {
         const maxByStage =
           rect.width -
           mediaRef.current -
-          inspectorRef.current -
           2 * RESIZE_HANDLE -
           MIN_STAGE_W;
         setChatWidth(
@@ -396,9 +391,14 @@ export const EditorInterface: React.FC = () => {
         );
         return;
       }
-      // timeline: vh based on the distance from bottom of the viewport
-      const vh = ((window.innerHeight - e.clientY) / window.innerHeight) * 100;
-      setTimelineVh(clamp(vh, MIN_TIMELINE_VH, MAX_TIMELINE_VH));
+      // timeline: percentage based on the available container height (minus Toolbar)
+      const availableHeight = Math.max(100, rect.height - 40);
+      const ratio = ((rect.bottom - e.clientY) / availableHeight) * 100;
+      const nextRatio = clamp(ratio, MIN_TIMELINE_RATIO, MAX_TIMELINE_RATIO);
+      setTimelineRatio(nextRatio);
+      try {
+        window.localStorage.setItem(TIMELINE_RATIO_STORAGE_KEY, String(Math.round(nextRatio)));
+      } catch {}
     };
 
     const onUp = () => {
@@ -420,12 +420,12 @@ export const EditorInterface: React.FC = () => {
   useEffect(() => {
     const r = rootRef.current;
     if (!r) return;
-    const tlVh = timelineMaximized ? COMPACT_TIMELINE_VH : timelineVh;
+    const tlRatio = timelineMaximized ? COMPACT_TIMELINE_RATIO : timelineRatio;
     r.style.setProperty("--media-w", `${mediaWidth}px`);
     r.style.setProperty("--inspector-w", `${inspectorWidth}px`);
     r.style.setProperty("--chat-w", `${chatWidth}px`);
-    r.style.setProperty("--tl-height", `${tlVh}vh`);
-  }, [mediaWidth, inspectorWidth, chatWidth, timelineVh, timelineMaximized]);
+    r.style.setProperty("--tl-height", `${tlRatio}%`);
+  }, [mediaWidth, inspectorWidth, chatWidth, timelineRatio, timelineMaximized]);
 
   if (initializing || !initialized) {
     return (
@@ -446,21 +446,21 @@ export const EditorInterface: React.FC = () => {
   // Grid template uses inline CSS for the resizable columns. The CSS
   // variables `--media-w`, `--inspector-w`, `--tl-height` are kept in
   // sync via the effect above so other components can use them too.
-  const effectiveTimelineVh = timelineMaximized
-    ? COMPACT_TIMELINE_VH
-    : timelineVh;
+  const effectiveTimelineRatio = timelineMaximized
+    ? COMPACT_TIMELINE_RATIO
+    : timelineRatio;
   const gridStyle: React.CSSProperties = chatVisible
     ? {
-        gridTemplateColumns: `${mediaWidth}px ${RESIZE_HANDLE}px 1fr ${RESIZE_HANDLE}px ${inspectorWidth}px ${RESIZE_HANDLE}px ${chatWidth}px`,
-        gridTemplateRows: `1fr ${RESIZE_HANDLE}px ${effectiveTimelineVh}vh`,
+        gridTemplateColumns: `${mediaWidth}px ${RESIZE_HANDLE}px 1fr ${RESIZE_HANDLE}px ${chatWidth}px`,
+        gridTemplateRows: `1fr ${RESIZE_HANDLE}px ${effectiveTimelineRatio}%`,
         gridTemplateAreas:
-          "'media mh stage ih inspector ch chat' 'th th th th th th th' 'timeline timeline timeline timeline timeline timeline timeline'",
+          "'media mh stage ch chat' 'th th th th th' 'timeline timeline timeline timeline timeline'",
       }
     : {
-        gridTemplateColumns: `${mediaWidth}px ${RESIZE_HANDLE}px 1fr ${RESIZE_HANDLE}px ${inspectorWidth}px`,
-        gridTemplateRows: `1fr ${RESIZE_HANDLE}px ${effectiveTimelineVh}vh`,
+        gridTemplateColumns: `${mediaWidth}px ${RESIZE_HANDLE}px 1fr`,
+        gridTemplateRows: `1fr ${RESIZE_HANDLE}px ${effectiveTimelineRatio}%`,
         gridTemplateAreas:
-          "'media mh stage ih inspector' 'th th th th th' 'timeline timeline timeline timeline timeline'",
+          "'media mh stage' 'th th th' 'timeline timeline timeline'",
       };
 
   return (
@@ -471,7 +471,6 @@ export const EditorInterface: React.FC = () => {
       <Toolbar />
 
       <div className="flex-1 min-h-0 flex">
-        <EditorActionRail />
         <div
           className="flex-1 min-h-0 grid gap-0 bg-bg p-2.5"
           style={gridStyle}
@@ -499,23 +498,6 @@ export const EditorInterface: React.FC = () => {
         >
           <PanelErrorBoundary name="Stage">
             <Preview />
-          </PanelErrorBoundary>
-        </div>
-
-        <div
-          className="grid place-items-center cursor-col-resize group/h"
-          style={{ gridArea: "ih" }}
-          onMouseDown={beginResize("inspector")}
-        >
-          <span className="h-10 w-1 rounded-full bg-transparent group-hover/h:bg-accent/40 transition-colors" />
-        </div>
-
-        <div
-          className="bg-bg-1 min-w-0 min-h-0 overflow-hidden rounded-xl border border-border shadow-sm"
-          style={{ gridArea: "inspector" }}
-        >
-          <PanelErrorBoundary name="Inspector">
-            <InspectorPanel />
           </PanelErrorBoundary>
         </div>
 

@@ -150,7 +150,7 @@ function App() {
       {/* DSH 侧边栏 Tab 宽度可变，禁用官方 MobileBlocker 以免误拦工作台 */}
       {isMotionSurface ? (
         <Suspense fallback={<LoadingSpinner message="Loading Motion Creator..." />}>
-          <MotionCreatorApp />
+          <MotionCreatorApp embedded />
         </Suspense>
       ) : isSharePage ? (
         <SharePage shareId={params.shareId!} />
