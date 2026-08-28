@@ -159,10 +159,8 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           injected = '镜头1：全景，城市天际线鸟瞰（缓慢下推 3s）\n镜头2：中景，主角推门走进咖啡馆（特写手部 2s）\n镜头3：特写，桌上的老式黑白照片（静止 2s）';
         }
         updateNodeData({
-          content: injected,
           prompt: injected,
-          status: injected.trim() ? 'ready' : 'empty',
-          generatedContent: undefined,
+          selectedTool: 'text-to-text',
         });
       }
     },
