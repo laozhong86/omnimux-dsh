@@ -40,6 +40,15 @@ export function createStageStore(getStage) {
 
   const handleStageEvent = (event) => {
     const id = event instanceof CustomEvent ? event.detail?.id : undefined
+    // 画布联动模式下与 omnimux-workflow 共存，不被工作流 Stage 声明关闭
+    if (activeSession?.source === 'canvas') {
+      if (id && id !== STAGE_ID && id !== 'omnimux-workflow') {
+        open = false
+        activeSession = null
+        emit()
+      }
+      return
+    }
     if (id !== STAGE_ID && open) {
       open = false
       activeSession = null
@@ -140,6 +149,18 @@ export function createStageStore(getStage) {
     setSession(session) {
       activeSession = session
       emit()
+    },
+    /**
+     * Standard StageStore open method for sidebar entry activation.
+     */
+    open() {
+      this.set(true)
+    },
+    /**
+     * Standard StageStore close method.
+     */
+    close() {
+      this.set(false)
     },
     toggle() {
       this.set(!open)

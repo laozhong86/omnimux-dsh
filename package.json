@@ -52,6 +52,7 @@
     "verify:models": "node scripts/verify-models.mjs",
     "verify:image-live": "node scripts/verify-omnimux-image-live.mjs",
     "verify:stages": "node scripts/verify-stage-contracts.mjs",
+    "verify:live": "node scripts/agent-live-qa.mjs",
     "verify:gates": "corepack pnpm note:lint && corepack pnpm doc:pairing && corepack pnpm archived:verify && corepack pnpm check:boundaries && corepack pnpm verify:stages && corepack pnpm test:gates",
     "verify:all": "corepack pnpm verify:gates && corepack pnpm test && corepack pnpm registry:verify && corepack pnpm doctor"
   }
