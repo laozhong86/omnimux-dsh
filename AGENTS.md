@@ -1,6 +1,6 @@
 # omnimux-dsh
 
-OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This product tree lives at `/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh`. Hub is `omnimux`. First vertical is short-drama (`omnimux-drama`), the first social-ops automation solution. Coding agents edit this tree. The product agent is `dsh --profile drama`.
+OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This product tree lives at `/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh`. Hub is `omnimux`. Coding agents edit this tree. Platform plugins include `omnimux-workflow`, `omnimux-assets`, `omnimux-clip`, `omnimux-products`, `omnimux-inspiration`, `omnimux-accounts`, `omnimux-gallery`, `omnimux-analytics`, `dsh-publish`.
 
 ## Agent Execution & CWD Invariants (Agent 行为与路径硬约束)
 
@@ -17,15 +17,12 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 - A published catalog app's own user page (`client: true`, e.g. accounts) belongs to the app stage (`shell.overlay` + the hub `omnimux-app-open` event), NOT to any Settings seat. Settings keeps the install channels and the full bundle inventory; the app page opens from the Apps card / sidebar tab.
 - Official-clone overlays MUST live in `patches/` against the pin in `docs/harness-pin.md`. Apply/reset: `scripts/apply-harness-overlay.sh` and `scripts/reset-harness-overlay.sh`. MUST NOT accumulate product edits only as uncommitted diffs in the official clone. Bumping that pin or a dsh RC MUST load skill `omnimux-rc-upgrade` and finish its report; MUST NOT claim the bump done with `screens.*: missing`.
 - OmniMux core MUST live in `plugins/omnimux/`: product chrome (logo, wordmark, tab title, favicon), auth, credentials, model/provider routes, hub Settings/Apps UI, and execution seams. MUST NOT add a sibling plugin for those (`omnimux-brand` and the same split under another name are forbidden).
-- A new plugin in this tree MUST be one vertical business scene (short-drama, later e-commerce design, brand marketing). A vertical MUST NOT implement hub chrome, auth, or provider routes.
+- A new plugin in this tree MUST be focused on its own business domain (workflow canvas, e-commerce assets, accounts, video clip, publishing). A plugin MUST NOT implement hub chrome, auth, or provider routes.
 - MUST call `omnimux` the execution hub. MUST NOT call it a gateway or implement a second OmniMux router inside it. I/O: [docs/contracts/hub.md](docs/contracts/hub.md).
-- MUST NOT put `series/` or Drama Center logic in `plugins/omnimux/`.
-- A vertical MUST NOT import the hub, ship a brand-specific HTTP client, or store provider keys. It inputs through `ctx.get` / `omnimux_*` and writes only its own disk.
-- MUST NOT claim live video unless `drama_generate_shot` / `omnimux_video_submit` returned `mode: "live"`. `mode: "stub"` is a file copy.
-- Provider HTTP + keys live in `omnimux` only. Neutral seams and official-only tools are listed in `docs/contracts/hub.md`. `omnimux-drama` only updates `series/`.
-- MUST throw `DramaDomainError` from drama tools. MUST NOT return `{ ok: false }` as a successful tool value.
+- A plugin MUST NOT import the hub, ship a brand-specific HTTP client, or store provider keys. It inputs through `ctx.get` / `omnimux_*` seams and writes only its own domain store.
+- MUST NOT claim live video/image generation unless media submission returned `mode: "live"`. `mode: "stub"` is a file copy.
+- Provider HTTP + keys live in `omnimux` only. Neutral seams and official-only tools are listed in `docs/contracts/hub.md`.
 - MUST NOT commit secrets. Inject with `omnimux tokens exec` or the process environment.
-- Product truth is `series/` on disk. Session logs and `docs/briefing.md` are not that store.
 - Briefing (`docs/briefing.md`) is project memory, not truth. On conflict, live code, this file, and `docs/contracts/` win.
 - AGPL trees (ArcReel, 墨音) stay isolate-run. MUST NOT merge them here.
 - **OpenReel 完整微应用铁律**：`omnimux-clip` 必须以 MIT 开源 `Augani/openreel-video` 官方**全套源码**（原生 GUI + WebCodecs/WebGPU/Web Audio 管线）为真源，完整 Vendorize 到 `src/client/openreel/`，落地为 DSH 侧边栏 Tab 插件（`ctx.betterSidebar.registerTab`，id `omnimux-clip:studio`）。**严禁**把 OpenReel 拆成 Headless 引擎再手写 GUI；**严禁**自研官方已有的多轨时间轴、资源库、属性面板、视口、解码/波形/磁吸/花字/导出。插件自研范围仅限 Cordis 生命周期、Tab 挂载、Host 磁盘持久化、Agent RPC 映射、以及把官方 CSS 变量映射到 DSH `--dsw-*` token。违反者 PR 一律驳回。详见 [docs/contracts/openreel-vendor-contract.md](docs/contracts/openreel-vendor-contract.md)。
@@ -65,11 +62,6 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `docs/contracts/apps-catalog.md` | Official Apps catalog: bundled JSON + optional remote JSON. Not an application table. |
 | `docs/logs/2026-08-15-app-marketplace-mvp.md` | Earlier marketplace stories. Catalog storage is superseded by `docs/contracts/apps-catalog.md`. |
 | `docs/logs/2026-08-16-hub-capability-mount.md` | P3–P8 hub capability mount plan and status |
-| `plugins/omnimux-drama/` | First vertical: `series/` domain + `drama_*` |
-| `fixtures/demo-series/` | Keyless replay (2 episodes, 3 shots) |
-| `presets/drama/` | Product-agent persona + `short-drama` skill |
-| `.agents/skills/short-drama-router/` | Study index for other repos |
-| `.agents/skills/tiktok-drama-center/` | Human Drama Center SOP |
 | skill `dsh-plugin-dev` | Edit this tree (hub / first-level pages / top chrome). Not `dsh-plugin-guide`. |
 | `docs/archive/2026-08-14-handoff-audit.md` | Stale-scaffold correction (Archived). Read if you still think `packages/drama-*` or phase letters are live. |
 | `docs/decisions/2026-08-14-execution-hub.md` | Hub vs vertical split. Live seam is `videoGenerate`. |
@@ -108,10 +100,10 @@ Doc index inside `design.md`: §1 architectural principles & native regression �
 
 | Package | May depend on | Must not import |
 |---|---|---|
-| `omnimux-drama` | `yaml`, Node stdlib | OmniMux SDK, `omnimux` internals |
-| `omnimux` | OmniMux HTTP, `aigc-provider-runtime-kit` | `omnimux-drama` domain, `series/` paths |
+| `omnimux` | OmniMux HTTP, `aigc-provider-runtime-kit` | Plugin-private internals |
 | `omnimux-accounts` | Node stdlib, Host `/omnimux/accounts` | hub internals, `OMNIMUX_*` secrets |
 | `omnimux-inspiration` | Node stdlib, Host `/omnimux/inspiration` | hub internals, `OMNIMUX_*` secrets |
+| `omnimux-workflow` | React, React Flow, Node stdlib | hub internals, `OMNIMUX_*` secrets |
 
 > `omnimux-theme`（历史规划的 `--omx-*` 岛内共享主题包）与全壳染色覆写已彻底废除，全量插件 100% 直连消费 DSH 原生 `--dsw-*` 设计系统。
 
@@ -119,13 +111,13 @@ Doc index inside `design.md`: §1 architectural principles & native regression �
 
 ```sh
 pnpm test
-./scripts/smoke-drama.sh
+./scripts/smoke.sh
 ./scripts/accept-apps-install.sh
 pnpm verify:models
 pnpm verify:image-live
 ```
 
-Do not claim the `drama` profile works unless `dsh --profile drama --dump-config` lists both `omnimux` and `omnimux-drama`. Smoke exits 0 and prints a skip line when `dsh` is missing. `verify:models` asserts every model in `plugins/omnimux/cordis.patch.yml` exists on the live gateway; it self-skips without `OMNIMUX_API_KEY` (see [docs/model-list-ownership.md](docs/model-list-ownership.md)). `verify:image-live` is the P8 image evidence gate; same key rule; not part of `pnpm test`.
+Smoke exits 0 and prints a skip line when `dsh` is missing. `verify:models` asserts every model in `plugins/omnimux/cordis.patch.yml` exists on the live gateway; it self-skips without `OMNIMUX_API_KEY` (see [docs/model-list-ownership.md](docs/model-list-ownership.md)). `verify:image-live` is the P8 image evidence gate; same key rule; not part of `pnpm test`.
 
 ## Pointers
 

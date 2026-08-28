@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L3"
 date: "2026-08-20"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "omnimux-accounts"
 ---
 
 # Apps card actions, sidebar app tabs, and the Accounts app stage

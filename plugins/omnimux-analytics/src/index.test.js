@@ -56,7 +56,7 @@ test('registers pipeline listeners and reports a tool call without arguments', a
 
   const token = Symbol('t')
   const exec = {
-    name: 'drama_upsert_shot',
+    name: 'workflow_run',
     token,
     arguments: { secretInput: 'never-send-this' },
     agent: { name: 'alpha' },
@@ -68,8 +68,8 @@ test('registers pipeline listeners and reports a tool call without arguments', a
   const sent = captured.filter((c) => c.payload?.name === 'tool-call')
   assert.equal(sent.length, 1)
   const data = /** @type {Record<string, unknown>} */ (sent[0].payload.data)
-  assert.equal(data.plugin, 'omnimux-drama')
-  assert.equal(data.tool, 'drama_upsert_shot')
+  assert.equal(data.plugin, 'omnimux-workflow')
+  assert.equal(data.tool, 'workflow_run')
   assert.equal(data.isError, false)
   assert.equal(data.agent, 'alpha')
   assert.equal(typeof data.durationMs, 'number')

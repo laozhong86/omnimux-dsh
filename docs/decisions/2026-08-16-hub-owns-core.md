@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L2"
 date: "2026-08-16"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "omnimux"
 ---
 
 # 决策：中枢拥有全部 OmniMux 核心能力

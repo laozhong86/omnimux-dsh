@@ -6,7 +6,7 @@ status: "accepted"
 authority: "L2"
 date: "2026-08-20"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "omnimux"
 ---
 
 # OmniMux 统一登录门 — 架构设计

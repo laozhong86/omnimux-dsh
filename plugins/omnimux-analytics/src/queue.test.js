@@ -20,7 +20,7 @@ test('flush POSTs one event per request to /api/send with the Umami contract sha
     ...BASE,
     send: async (request) => { seen.push(request) },
   })
-  queue.push({ name: 'tool-call', data: { plugin: 'omnimux-drama', tool: 'drama_upsert_shot' } })
+  queue.push({ name: 'tool-call', data: { plugin: 'omnimux-workflow', tool: 'workflow_run' } })
   await queue.flush()
 
   assert.equal(seen.length, 1)
@@ -31,7 +31,7 @@ test('flush POSTs one event per request to /api/send with the Umami contract sha
   assert.equal(payload.websiteId, 'w-1')
   assert.equal(payload.hostname, 'omnimux-plugins')
   assert.equal(payload.name, 'tool-call')
-  assert.deepEqual(payload.data, { plugin: 'omnimux-drama', tool: 'drama_upsert_shot' })
+  assert.deepEqual(payload.data, { plugin: 'omnimux-workflow', tool: 'workflow_run' })
   assert.equal(queue.stats.sent, 1)
   assert.equal(queue.stats.failed, 0)
   assert.equal(queue.pending(), 0)

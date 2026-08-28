@@ -2,14 +2,18 @@
 title: "series/ contract"
 id: "contract-series"
 type: "contract"
-status: "living"
+status: "archived"
 authority: "L1"
 date: "2026-08-26"
+updated: "2026-08-28"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "omnimux-workflow"
+tags: ["series", "drama", "archived", "workflow-replaced"]
 ---
 
-# `series/` contract
+# `series/` contract (ARCHIVED)
+
+> **归档说明（2026-08-28）**：本契约属于 OmniMux 1.0 短剧垂直插件（`omnimux-drama`），现已由 OmniMux 2.0 画布工作流（`omnimux-workflow`）全面替代。`omnimux-drama` 插件及相关 `series/` 工具已正式下线，本文档仅保留历史归档参考。
 
 Product store. Session logs are not this store.
 

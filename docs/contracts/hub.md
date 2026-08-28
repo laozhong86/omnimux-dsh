@@ -6,19 +6,19 @@ status: "living"
 authority: "L1"
 date: "2026-08-16"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-drama"
+subsystem: "omnimux"
 ---
 
 # Execution hub
 
-Normative I/O for `omnimux` and every vertical. Status of a live surface is [capabilities.md](../capabilities.md). Rationale: [2026-08-16 hub I/O and facilities](../decisions/2026-08-16-hub-io-and-facilities.md).
+Normative I/O for `omnimux` and every vertical/domain plugin. Status of a live surface is [capabilities.md](../capabilities.md). Rationale: [2026-08-16 hub I/O and facilities](../decisions/2026-08-16-hub-io-and-facilities.md).
 
 ## Terms
 
 | Term | Means | Must not be called |
 |---|---|---|
 | Execution hub | `omnimux`. Product chrome, identity, model routes, media seams, official-only tools, Apps shell | Gateway, 网关, OmniMux cloud, a vertical |
-| Vertical | One scene plugin (`omnimux-drama`, later e-commerce / brand). Owns its disk and tools | Hub sibling, second chrome/auth package |
+| Domain Plugin | One scene plugin (`omnimux-workflow`, `omnimux-products`, `omnimux-clip`, etc.). Owns its store and tools | Hub sibling, second chrome/auth package |
 | Neutral seam | `ctx.provide` / `ctx.get` interface a third-party adapter may satisfy | An `omnimux_*` official-only tool |
 | Official-only tool | `omnimux_*` tool that exists only because OmniMux cloud implements it | A swap-in provider |
 | OmniMux cloud | Hosted HTTP at `omnimux.ai` and `api.omnimux.ai` | The hub plugin |

@@ -11,7 +11,6 @@
  */
 
 export const DEFAULT_PLUGIN_MAP = Object.freeze({
-  drama_: 'omnimux-drama',
   video_: 'omnimux-video',
   assets_: 'omnimux-assets',
   plaza_: 'omnimux-market',
