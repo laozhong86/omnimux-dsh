@@ -21011,6 +21011,7 @@ function registerWorkflowRoutes(webServer, dispatcher) {
 }
 
 // src/workflow/agent/agentTools.ts
+import { existsSync as existsSync8, readFileSync as readFileSync5 } from "node:fs";
 import { join as join13 } from "node:path";
 
 // src/shared/graph/canvasConnectionUtils.ts
@@ -30360,6 +30361,38 @@ function createMaterialNode(materialType, position, overrides) {
   };
 }
 
+// src/shared/workspaceId.ts
+var WORKSPACE_ID_REGEX = /^ws_[a-f0-9]{12}$/;
+function isValidWorkspaceId(id2) {
+  return typeof id2 === "string" && WORKSPACE_ID_REGEX.test(id2);
+}
+function sanitizeSessionId(raw) {
+  const id2 = String(raw || "").trim();
+  if (!id2 || id2.length > 180) return "";
+  if (!/^[A-Za-z0-9._-]+$/.test(id2)) return "";
+  return id2;
+}
+function sessionToWorkspaceId(sessionId) {
+  const cleanId = sanitizeSessionId(sessionId);
+  if (!cleanId) return void 0;
+  let h1 = 2166136261;
+  let h2 = 1075203691;
+  for (let i = 0; i < cleanId.length; i++) {
+    const code = cleanId.charCodeAt(i);
+    h1 = Math.imul(h1 ^ code, 16777619);
+    h2 = Math.imul(h2 ^ code, 84703693);
+  }
+  const hex1 = (h1 >>> 0).toString(16).padStart(8, "0");
+  const hex22 = (h2 >>> 0).toString(16).padStart(8, "0");
+  return `ws_${(hex1 + hex22).slice(0, 12)}`;
+}
+function sessionIdFromExec(exec) {
+  if (!exec || typeof exec !== "object") return "";
+  const agent = exec.agent;
+  const raw = agent?.session?.header?.id ?? agent?.session?.id ?? agent?.id;
+  return sanitizeSessionId(raw);
+}
+
 // src/workflow/agent/tableTools.ts
 import path2 from "node:path";
 
@@ -30634,10 +30667,10 @@ function createCanvasGetTableNodeTool(deps) {
 function objectParams(fields) {
   const properties = {};
   const required2 = [];
-  for (const [key, spec] of Object.entries(fields)) {
-    const { required: isRequired, ...rest } = spec;
-    properties[key] = rest;
-    if (isRequired === true) required2.push(key);
+  for (const [name2, spec] of Object.entries(fields)) {
+    const { required: req, ...rest } = spec;
+    properties[name2] = rest;
+    if (req === true) required2.push(name2);
   }
   return {
     type: "object",
@@ -30710,36 +30743,52 @@ function summarizeNodes(workspace, nodeIds, snapshot, mediaDir) {
   }
   return rows;
 }
-function resolveWorkspace(store, workspaceId, workspaceName) {
-  if (workspaceId) {
-    try {
-      return { snapshot: store.get(workspaceId) };
-    } catch {
-      return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-    }
+function resolveTargetWorkspaceId(store, workspaceIdArg, workspaceNameArg, exec) {
+  if (workspaceIdArg && workspaceIdArg.trim() !== "") {
+    return { workspaceId: workspaceIdArg.trim(), isDerivedSession: false };
   }
-  if (workspaceName) {
-    const matches = store.list().filter((row) => row.name === workspaceName);
+  if (workspaceNameArg && workspaceNameArg.trim() !== "") {
+    const matches = store.list().filter((row) => row.name === workspaceNameArg.trim());
     const first = matches[0];
     if (matches.length === 0 || !first) {
-      return errorBody2("workspace-not-found", `no workspace named "${workspaceName}"`);
+      return errorBody2("workspace-not-found", `no workspace named "${workspaceNameArg}"`);
     }
     if (matches.length > 1) {
       return errorBody2(
         "ambiguous-workspace-name",
-        `multiple workspaces named "${workspaceName}" \u2014 pass workspaceId instead`
+        `multiple workspaces named "${workspaceNameArg}" \u2014 pass workspace_id instead`
       );
     }
-    try {
-      return { snapshot: store.get(first.id) };
-    } catch {
-      return errorBody2("workspace-not-found", `workspace ${first.id} not found`);
+    return { workspaceId: first.id, isDerivedSession: false };
+  }
+  const sessionId = sessionIdFromExec(exec);
+  if (sessionId) {
+    const derivedId = sessionToWorkspaceId(sessionId);
+    if (derivedId) {
+      return { workspaceId: derivedId, isDerivedSession: true };
     }
   }
   return errorBody2(
     "invalid-args",
-    "pass workspaceId (preferred, from workflow_list) or workspaceName"
+    "pass workspace_id (preferred, from workflow_list) or workspace_name, or run within a valid session"
   );
+}
+function resolveWorkspace(store, workspaceIdArg, workspaceNameArg, exec) {
+  const resolved = resolveTargetWorkspaceId(store, workspaceIdArg, workspaceNameArg, exec);
+  if ("error" in resolved) return resolved;
+  const targetId = resolved.workspaceId;
+  try {
+    return { snapshot: store.get(targetId), workspaceId: targetId };
+  } catch {
+    if (resolved.isDerivedSession === true && isValidWorkspaceId(targetId)) {
+      try {
+        const created = store.create("\u5DE5\u4F5C\u6D41", targetId);
+        return { snapshot: created, workspaceId: targetId };
+      } catch {
+      }
+    }
+    return errorBody2("workspace-not-found", `workspace ${targetId} not found`);
+  }
 }
 async function waitForTerminal(executionManager, executionId, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
@@ -30755,7 +30804,7 @@ function createWorkflowListTool(deps) {
   const { store, executionManager } = deps;
   return {
     name: "workflow_list",
-    description: "List the workflow infinite-canvas workspaces of the omnimux-workflow plugin (id, name, version, nodeCount, updatedAt), newest first. Set includeExecutions=true to also get the 5 most recent executions (current process) with status and progress. Read-only. Use workflow_snapshot to inspect one workspace and workflow_run to execute it.",
+    description: "List the workflow infinite-canvas workspaces of the omnimux-workflow plugin (id, name, version, nodeCount, updatedAt), newest first. Set include_executions=true to also get the 5 most recent executions (current process) with status and progress. Read-only. Use workflow_snapshot to inspect one workspace and workflow_run to execute it.",
     parameters: objectParams({
       include_executions: {
         type: "boolean",
@@ -30781,7 +30830,7 @@ function createWorkflowRunTool(deps) {
     parameters: objectParams({
       workspace_id: {
         type: "string",
-        description: "Workspace id (preferred \u2014 from workflow_list), e.g. ws_0123456789ab"
+        description: "Workspace id (preferred \u2014 from workflow_list). Optional: defaults to current session canvas workspace."
       },
       workspace_name: {
         type: "string",
@@ -30807,10 +30856,10 @@ function createWorkflowRunTool(deps) {
       }
     }),
     output: jsonOut2,
-    async execute(args) {
+    async execute(args, exec) {
       const workspaceId = readString3(args, "workspace_id");
       const workspaceName = readString3(args, "workspace_name");
-      const resolved = resolveWorkspace(store, workspaceId, workspaceName);
+      const resolved = resolveWorkspace(store, workspaceId, workspaceName, exec);
       if ("error" in resolved) return resolved;
       const workspace = resolved.snapshot;
       let mode;
@@ -30913,12 +30962,11 @@ function createWorkflowSnapshotTool(deps) {
   const { store } = deps;
   return {
     name: "workflow_snapshot",
-    description: "Read the current state of one workflow canvas workspace. Default: a compact summary (name, version, node/edge counts, node type/material breakdown, execution settings). includeNodes=true returns the FULL node and edge structure (positions, prompts, tools, models, connections) so the graph can be analyzed or modification advice given. Read-only. Data lives under $DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json.",
+    description: "Read the current state of one workflow canvas workspace. Default: a compact summary (name, version, node/edge counts, node type/material breakdown, execution settings). include_nodes=true returns the FULL node and edge structure (positions, prompts, tools, models, connections) so the graph can be analyzed or modification advice given. Read-only. Data lives under $DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json.",
     parameters: objectParams({
       workspace_id: {
         type: "string",
-        required: true,
-        description: "Workspace id (from workflow_list), e.g. ws_0123456789ab"
+        description: "Workspace id (from workflow_list), e.g. ws_0123456789ab. Optional: defaults to the current session canvas workspace."
       },
       include_nodes: {
         type: "boolean",
@@ -30926,17 +30974,11 @@ function createWorkflowSnapshotTool(deps) {
       }
     }),
     output: jsonOut2,
-    async execute(args) {
+    async execute(args, exec) {
       const workspaceId = readString3(args, "workspace_id");
-      if (!workspaceId) {
-        return errorBody2("invalid-args", "workspace_id is required");
-      }
-      let workspace;
-      try {
-        workspace = store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
+      const resolved = resolveWorkspace(store, workspaceId, void 0, exec);
+      if ("error" in resolved) return resolved;
+      const workspace = resolved.snapshot;
       if (readBoolean(args, "include_nodes")) {
         return { workspace };
       }
@@ -31003,7 +31045,7 @@ function createWorkflowCreateTool(deps) {
   const { store } = deps;
   return {
     name: "workflow_create",
-    description: "Create a new empty workflow canvas workspace and return it (id, name, version). Follow up with workflow_node_add / workflow_connect to build the graph, and workflow_run to execute it.",
+    description: "Create a separate, standalone workflow canvas workspace file and return it (id, name, version). CAUTION: Only use this when the user explicitly requests creating a brand new independent workflow file. If the user asks to build or add nodes to the current project workflow, DO NOT call this \u2014 use workflow_node_add and workflow_connect on the active canvas instead.",
     parameters: objectParams({
       name: {
         type: "string",
@@ -31030,7 +31072,7 @@ function createWorkflowNodeAddTool(deps) {
     name: "workflow_node_add",
     description: "Add a material node to a workflow canvas. material_type picks the node kind; tool picks what the node does and must be valid for that type \u2014 text: text-editor|text-to-text|link-extract|audio-transcription, image: import|text-to-image|image-to-image, video: import|video-generation|motion-mimicry|subtitle-render|digital-human, audio: import|text-to-audio|text-to-music|video-to-audio|voice-clone|audio-extract (default: text-editor for text, import otherwise). position is optional (auto-placed right of the existing nodes). Node ids come from the returned node \u2014 use them for workflow_connect / workflow_run. Read workflow_snapshot first when editing an existing canvas.",
     parameters: objectParams({
-      workspace_id: { type: "string", required: true, description: "Workspace id (from workflow_list)" },
+      workspace_id: { type: "string", description: "Workspace id. Optional: defaults to the current session canvas workspace." },
       material_type: { type: "string", enum: MATERIAL_TYPE_ENUM, required: true, description: "Node material type" },
       tool: { type: "string", description: "Node tool; must belong to material_type (see description). Default: text-editor (text) / import (others)" },
       position: {
@@ -31044,21 +31086,18 @@ function createWorkflowNodeAddTool(deps) {
       prompt: { type: "string", description: "Generation prompt for generative tools" }
     }),
     output: jsonOut2,
-    async execute(args) {
+    async execute(args, exec) {
       const workspaceId = readString3(args, "workspace_id");
-      if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
       const materialType = readString3(args, "material_type");
       if (!materialType || !MATERIAL_TYPE_ENUM.includes(materialType)) {
         return errorBody2("invalid-args", `material_type must be one of ${MATERIAL_TYPE_ENUM.join(", ")}`);
       }
       const toolResolved = resolveTool(materialType, args.tool);
       if ("error" in toolResolved) return toolResolved;
-      let snapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
+      const resolved = resolveWorkspace(store, workspaceId, void 0, exec);
+      if ("error" in resolved) return resolved;
+      const snapshot = resolved.snapshot;
+      const targetWorkspaceId = resolved.workspaceId;
       const label = readString3(args, "label");
       const prompt = readString3(args, "prompt");
       const node = createMaterialNode(materialType, readPosition(args) ?? defaultNodePosition(snapshot), {
@@ -31066,7 +31105,7 @@ function createWorkflowNodeAddTool(deps) {
         ...label !== void 0 ? { label } : {},
         ...prompt !== void 0 ? { prompt } : {}
       });
-      const result = mutateWorkspaceGraph(store, workspaceId, { addNodes: [node] });
+      const result = mutateWorkspaceGraph(store, targetWorkspaceId, { addNodes: [node] });
       if (!result.ok) return errorBody2(result.error, result.message);
       return { workspace: workspaceSummary(result.snapshot), node };
     }
@@ -31078,7 +31117,7 @@ function createWorkflowNodeUpdateTool(deps) {
     name: "workflow_node_update",
     description: "Patch one node on a workflow canvas: label / prompt / tool / params / position (all optional, shallow-merged into the node). tool must be valid for the node's material_type. Changing tool never invalidates existing edges (edge validation uses the union of all tools of the material type), but it changes what the node does on the next workflow_run. material_type and output content fields cannot be changed \u2014 remove and re-add the node instead.",
     parameters: objectParams({
-      workspace_id: { type: "string", required: true, description: "Workspace id" },
+      workspace_id: { type: "string", description: "Workspace id. Optional: defaults to the current session canvas workspace." },
       node_id: { type: "string", required: true, description: "Node id (from workflow_snapshot include_nodes=true)" },
       patch: {
         type: "object",
@@ -31100,24 +31139,21 @@ function createWorkflowNodeUpdateTool(deps) {
       }
     }),
     output: jsonOut2,
-    async execute(args) {
+    async execute(args, exec) {
       const workspaceId = readString3(args, "workspace_id");
       const nodeId = readString3(args, "node_id");
-      if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
       if (!nodeId) return errorBody2("invalid-args", "node_id is required");
       const patch = args.patch;
       if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
         return errorBody2("invalid-args", "patch object is required");
       }
       const spec = patch;
-      let snapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
+      const resolved = resolveWorkspace(store, workspaceId, void 0, exec);
+      if ("error" in resolved) return resolved;
+      const snapshot = resolved.snapshot;
+      const targetWorkspaceId = resolved.workspaceId;
       const node = snapshot.nodes.find((row) => row.id === nodeId);
-      if (!node) return errorBody2("node-not-found", `node ${nodeId} not found in workspace ${workspaceId}`);
+      if (!node) return errorBody2("node-not-found", `node ${nodeId} not found in workspace ${targetWorkspaceId}`);
       const materialType = node.data.materialType;
       const data = {};
       if (spec.label !== void 0) data.label = spec.label;
@@ -31150,7 +31186,7 @@ function createWorkflowNodeUpdateTool(deps) {
           ...position !== void 0 ? { node: { position } } : {}
         }]
       };
-      const result = mutateWorkspaceGraph(store, workspaceId, mutation);
+      const result = mutateWorkspaceGraph(store, targetWorkspaceId, mutation);
       if (!result.ok) return errorBody2(result.error, result.message);
       return {
         workspace: workspaceSummary(result.snapshot),
@@ -31165,27 +31201,24 @@ function createWorkflowNodeRemoveTool(deps) {
     name: "workflow_node_remove",
     description: "Remove nodes from a workflow canvas. Edges connected to removed nodes are deleted automatically (same cascade as the Delete key on the canvas). Returns the removed node/edge counts.",
     parameters: objectParams({
-      workspace_id: { type: "string", required: true, description: "Workspace id" },
+      workspace_id: { type: "string", description: "Workspace id. Optional: defaults to the current session canvas workspace." },
       node_ids: { type: "array", required: true, items: { type: "string" }, description: "Node ids to remove" }
     }),
     output: jsonOut2,
-    async execute(args) {
+    async execute(args, exec) {
       const workspaceId = readString3(args, "workspace_id");
-      if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
       const nodeIds = normalizeNodeIds(args.node_ids);
       if (nodeIds.length === 0) return errorBody2("invalid-args", "node_ids must be a non-empty array");
-      let snapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
+      const resolved = resolveWorkspace(store, workspaceId, void 0, exec);
+      if ("error" in resolved) return resolved;
+      const snapshot = resolved.snapshot;
+      const targetWorkspaceId = resolved.workspaceId;
       const existing = new Set(snapshot.nodes.map((node) => node.id));
       const toRemove = nodeIds.filter((id2) => existing.has(id2));
       if (toRemove.length === 0) {
-        return errorBody2("node-not-found", `none of ${nodeIds.join(", ")} exists in workspace ${workspaceId}`);
+        return errorBody2("node-not-found", `none of ${nodeIds.join(", ")} exists in workspace ${targetWorkspaceId}`);
       }
-      const result = mutateWorkspaceGraph(store, workspaceId, { removeNodeIds: toRemove });
+      const result = mutateWorkspaceGraph(store, targetWorkspaceId, { removeNodeIds: toRemove });
       if (!result.ok) return errorBody2(result.error, result.message);
       return {
         workspace: workspaceSummary(result.snapshot),
@@ -31201,26 +31234,24 @@ function createWorkflowConnectTool(deps) {
     name: "workflow_connect",
     description: "Connect two nodes on a workflow canvas (source output \u2192 target input). Validated exactly like a manual drag connection: no self-connection, no duplicates, no cycles, and the source material type must be accepted by the target (edge validation uses the union of all tools of the target material type). On rejection the error message carries the reason code (self_connection / duplicate_edge / missing_node / cycle / type_contract).",
     parameters: objectParams({
-      workspace_id: { type: "string", required: true, description: "Workspace id" },
+      workspace_id: { type: "string", description: "Workspace id. Optional: defaults to the current session canvas workspace." },
       source: { type: "string", required: true, description: "Source (upstream) node id" },
       target: { type: "string", required: true, description: "Target (downstream) node id" },
       source_handle: { type: "string", description: "Source handle (default out)" },
       target_handle: { type: "string", description: "Target handle (default in)" }
     }),
     output: jsonOut2,
-    async execute(args) {
+    async execute(args, exec) {
       const workspaceId = readString3(args, "workspace_id");
       const source = readString3(args, "source");
       const target = readString3(args, "target");
-      if (!workspaceId || !source || !target) {
-        return errorBody2("invalid-args", "workspace_id, source and target are required");
+      if (!source || !target) {
+        return errorBody2("invalid-args", "source and target are required");
       }
-      try {
-        store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
-      const result = mutateWorkspaceGraph(store, workspaceId, {
+      const resolved = resolveWorkspace(store, workspaceId, void 0, exec);
+      if ("error" in resolved) return resolved;
+      const targetWorkspaceId = resolved.workspaceId;
+      const result = mutateWorkspaceGraph(store, targetWorkspaceId, {
         addEdges: [{
           source,
           target,
@@ -31242,41 +31273,43 @@ function createWorkflowDisconnectTool(deps) {
     name: "workflow_disconnect",
     description: "Remove edges from a workflow canvas, either by edge ids (from workflow_snapshot include_nodes=true) or by a source+target node pair. Returns the removed edge count.",
     parameters: objectParams({
-      workspace_id: { type: "string", required: true, description: "Workspace id" },
+      workspace_id: { type: "string", description: "Workspace id. Optional: defaults to the current session canvas workspace." },
       edge_ids: { type: "array", items: { type: "string" }, description: "Edge ids to remove" },
       source: { type: "string", description: "With target: remove the edge between these nodes" },
       target: { type: "string", description: "With source: remove the edge between these nodes" }
     }),
     output: jsonOut2,
-    async execute(args) {
+    async execute(args, exec) {
       const workspaceId = readString3(args, "workspace_id");
-      if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
       const edgeIds = normalizeNodeIds(args.edge_ids);
       const source = readString3(args, "source");
       const target = readString3(args, "target");
       if (edgeIds.length === 0 && !(source && target)) {
         return errorBody2("invalid-args", "pass edge_ids or source+target");
       }
-      let snapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
+      const resolved = resolveWorkspace(store, workspaceId, void 0, exec);
+      if ("error" in resolved) return resolved;
+      const targetWorkspaceId = resolved.workspaceId;
+      const snapshot = resolved.snapshot;
+      let toRemove = [];
+      if (edgeIds.length > 0) {
+        const existing = new Set(snapshot.edges.map((edge) => edge.id));
+        toRemove = edgeIds.filter((id2) => existing.has(id2));
+      } else if (source && target) {
+        const matching = snapshot.edges.filter(
+          (edge) => edge.source === source && edge.target === target
+        );
+        toRemove = matching.map((edge) => edge.id);
       }
-      const resolved = new Set(edgeIds);
-      if (source && target) {
-        for (const edge of snapshot.edges) {
-          if (edge.source === source && edge.target === target) resolved.add(edge.id);
-        }
-      }
-      const existing = new Set(snapshot.edges.map((edge) => edge.id));
-      const toRemove = [...resolved].filter((id2) => existing.has(id2));
       if (toRemove.length === 0) {
-        return errorBody2("edge-not-found", "no matching edges in this workspace");
+        return errorBody2("edge-not-found", "no matching edges found in workspace");
       }
-      const result = mutateWorkspaceGraph(store, workspaceId, { removeEdgeIds: toRemove });
+      const result = mutateWorkspaceGraph(store, targetWorkspaceId, { removeEdgeIds: toRemove });
       if (!result.ok) return errorBody2(result.error, result.message);
-      return { workspace: workspaceSummary(result.snapshot), removedEdges: toRemove.length };
+      return {
+        workspace: workspaceSummary(result.snapshot),
+        removedEdges: toRemove.length
+      };
     }
   };
 }
@@ -31284,18 +31317,18 @@ function createWorkflowExecutionControlTool(deps) {
   const { executionManager } = deps;
   return {
     name: "workflow_execution_control",
-    description: "Control a running workflow execution: pause (halts scheduling, in-flight node finishes), resume (continues; also recovers a persisted paused execution after a restart), or cancel (aborts cooperatively). Use the executionId returned by workflow_run. The open canvas reflects the new state live via SSE. Returns the resulting execution status.",
+    description: 'Control a live workflow execution: pause / resume / cancel. action "pause" stops scheduling further nodes (in-flight nodes finish); "resume" restarts a paused execution; "cancel" immediately stops all in-flight nodes and marks the execution cancelled. Use the executionId returned by workflow_run.',
     parameters: objectParams({
       execution_id: {
         type: "string",
         required: true,
-        description: "Execution id (from workflow_run or workflow_list include_executions=true)"
+        description: "Execution id from workflow_run"
       },
       action: {
         type: "string",
-        enum: ["pause", "resume", "cancel"],
         required: true,
-        description: "Control action"
+        enum: ["pause", "resume", "cancel"],
+        description: "Control action to perform"
       }
     }),
     output: jsonOut2,
@@ -31303,8 +31336,8 @@ function createWorkflowExecutionControlTool(deps) {
       const executionId = readString3(args, "execution_id");
       const action = readString3(args, "action");
       if (!executionId) return errorBody2("invalid-args", "execution_id is required");
-      if (action !== "pause" && action !== "resume" && action !== "cancel") {
-        return errorBody2("invalid-args", "action must be pause | resume | cancel");
+      if (!action || !["pause", "resume", "cancel"].includes(action)) {
+        return errorBody2("invalid-args", "action must be pause, resume, or cancel");
       }
       const control = action === "pause" ? executionManager.pauseExecution : action === "resume" ? executionManager.resumeExecution : executionManager.cancelExecution;
       const result = await control(executionId);
@@ -31322,11 +31355,48 @@ function createWorkflowExecutionControlTool(deps) {
     }
   };
 }
-var WORKFLOW_PROMPT = `This workspace may mount the OmniMux workflow canvas (omnimux-workflow): an infinite canvas where the user builds node DAGs (text/image/video/audio material nodes) and executes them through the OmniMux generation gateway.
+var WORKFLOW_PROMPT_BASE = `This workspace mounts the OmniMux workflow canvas (omnimux-workflow): an infinite canvas where the user builds node DAGs (text/image/video/audio material nodes) and executes them through the OmniMux generation gateway.
 Reading: workflow_list enumerates the user's canvas workspaces (id, name, nodeCount); workflow_snapshot returns one workspace's structure (include_nodes=true gives the full graph \u2014 ALWAYS read it before editing: node/edge ids must come from the snapshot, never invent them); workflow_run starts an execution (full or subset with node_ids) and with wait=true returns per-node statuses, text excerpts and generated media file paths.
-Editing: workflow_create makes a new empty canvas; workflow_node_add adds a material node (returns its id); workflow_node_update patches label/prompt/tool/params/position; workflow_node_remove deletes nodes (edges cascade); workflow_connect / workflow_disconnect wire and unwire edges. Write tools fail with a structured error (invalid-args / node-not-found / mutation-rejected with reasonCode like cycle or type_contract) \u2014 fix the arguments and retry, do not work around the validation. After each edit the response carries the new workspace version; the open canvas refreshes itself within a few seconds.
+Editing: workflow_node_add adds a material node (returns its id); workflow_node_update patches label/prompt/tool/params/position; workflow_node_remove deletes nodes (edges cascade); workflow_connect / workflow_disconnect wire and unwire edges. Write tools fail with a structured error (invalid-args / node-not-found / mutation-rejected with reasonCode like cycle or type_contract) \u2014 fix the arguments and retry, do not work around the validation. After each edit the response carries the new workspace version; the open canvas refreshes itself within a few seconds.
 Control: workflow_execution_control pauses / resumes / cancels a live execution by executionId (from workflow_run).
 When the user mentions a canvas, a workflow, nodes, or asks to run/analyze/modify their graph, use these tools instead of guessing. Executions stream live progress on the canvas (SSE, pause/resume/cancel available there). Generation goes through the OmniMux hub seams when available (mock gateway offline) \u2014 never invent results: report what the tools return, including per-node errors like [omnimux:<code>].`;
+function createWorkflowPrompt(assembleContext) {
+  const sessionId = sessionIdFromExec(assembleContext);
+  const activeWorkspaceId = sessionId ? sessionToWorkspaceId(sessionId) : void 0;
+  let projectInfo = "";
+  let cwd = "";
+  if (assembleContext && typeof assembleContext === "object") {
+    cwd = assembleContext?.agent?.cwd || "";
+  }
+  if (!cwd && typeof process !== "undefined" && process.cwd) {
+    try {
+      cwd = process.cwd();
+    } catch {
+    }
+  }
+  if (cwd) {
+    try {
+      const projectJsonPath = join13(cwd, ".omnimux", "project.json");
+      if (existsSync8(projectJsonPath)) {
+        const raw = JSON.parse(readFileSync5(projectJsonPath, "utf8"));
+        const title = typeof raw?.title === "string" ? raw.title.trim() : "";
+        const id2 = typeof raw?.id === "string" ? raw.id.trim() : "";
+        if (title || id2) {
+          projectInfo = `
+- Current Bound Project: "${title}" (ID: ${id2}, Directory: ${cwd})`;
+        }
+      }
+    } catch {
+    }
+  }
+  const contextBlock = activeWorkspaceId ? `
+
+[Active Session Canvas Context]
+- Current Session Active Workspace ID: "${activeWorkspaceId}"${projectInfo}
+- Default Behavior: When the user asks to build, modify, or add nodes to a workflow, ALWAYS operate on this active workspace ("${activeWorkspaceId}") by default so changes immediately reflect on the user's open canvas in real-time.
+- DO NOT call workflow_create to make a new workspace unless the user explicitly demands creating a separate, standalone workflow file.` : "";
+  return `${WORKFLOW_PROMPT_BASE}${contextBlock}`;
+}
 function registerWorkflowAgentSeats(ctx, deps) {
   const disposers = [];
   const tools = ctx.tools;
@@ -31349,8 +31419,8 @@ function registerWorkflowAgentSeats(ctx, deps) {
       const origExecute = spec.execute;
       const wrappedSpec = {
         ...spec,
-        async execute(args) {
-          const result = await origExecute(args);
+        async execute(args, exec) {
+          const result = await origExecute(args, exec);
           return sanitizeLosslessJson(result);
         }
       };
@@ -31363,7 +31433,7 @@ function registerWorkflowAgentSeats(ctx, deps) {
     const dispose = systemPrompt.section({
       name: "workflow:ops",
       order: 60,
-      text: WORKFLOW_PROMPT
+      text: (assemble) => createWorkflowPrompt(assemble)
     });
     if (typeof dispose === "function") disposers.push(dispose);
   }
@@ -31622,6 +31692,7 @@ export {
   createProjectDispatcher,
   createProjectStore,
   createSSEPublisher,
+  createWorkflowPrompt,
   createWorkspaceStore,
   defaultProjectLibrary,
   defaultReadme,
@@ -31632,6 +31703,7 @@ export {
   globalNodeCache,
   inject,
   isInsideDir,
+  isValidWorkspaceId,
   mountWorkflowHost,
   mutateWorkspaceGraph,
   name,
@@ -31647,8 +31719,12 @@ export {
   resolveGatewayMode,
   resolveLibraryPaths,
   resolveProjectPaths,
+  resolveTargetWorkspaceId,
   resolveVideosDir,
   sanitizeFolderName,
+  sanitizeSessionId,
+  sessionIdFromExec,
+  sessionToWorkspaceId,
   toExecutionMode,
   validateProjectTitle
 };

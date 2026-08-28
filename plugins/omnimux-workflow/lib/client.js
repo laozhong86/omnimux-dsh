@@ -2268,14 +2268,20 @@ function CanvasBridge({ onClose, t, locale, workspaceId }) {
   ] });
 }
 
-// src/client/projects/CanvasTab.jsx
-var import_jsx_runtime5 = require("react/jsx-runtime");
+// src/shared/workspaceId.ts
+function sanitizeSessionId(raw) {
+  const id = String(raw || "").trim();
+  if (!id || id.length > 180) return "";
+  if (!/^[A-Za-z0-9._-]+$/.test(id)) return "";
+  return id;
+}
 function sessionToWorkspaceId(sessionId) {
-  if (!sessionId) return void 0;
+  const cleanId = sanitizeSessionId(sessionId);
+  if (!cleanId) return void 0;
   let h1 = 2166136261;
   let h2 = 1075203691;
-  for (let i = 0; i < sessionId.length; i++) {
-    const code = sessionId.charCodeAt(i);
+  for (let i = 0; i < cleanId.length; i++) {
+    const code = cleanId.charCodeAt(i);
     h1 = Math.imul(h1 ^ code, 16777619);
     h2 = Math.imul(h2 ^ code, 84703693);
   }
@@ -2283,6 +2289,9 @@ function sessionToWorkspaceId(sessionId) {
   const hex2 = (h2 >>> 0).toString(16).padStart(8, "0");
   return `ws_${(hex1 + hex2).slice(0, 12)}`;
 }
+
+// src/client/projects/CanvasTab.jsx
+var import_jsx_runtime5 = require("react/jsx-runtime");
 function CanvasTab({ ctx, t, visible, store, scope }) {
   (0, import_react5.useEffect)(() => {
     injectWorkflowStyles();

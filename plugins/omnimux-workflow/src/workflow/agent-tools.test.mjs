@@ -179,7 +179,8 @@ test('agent seats register the twelve tools + workflow:ops prompt section', () =
     const section = h.promptSections.find((s) => s.name === 'workflow:ops');
     assert.ok(section, 'workflow:ops section registered');
     assert.equal(section.order, 60);
-    assert.match(section.text, /workflow_run/);
+    const promptText = typeof section.text === 'function' ? section.text() : section.text;
+    assert.match(promptText, /workflow_run/);
   } finally {
     h.dispose();
     rmSync(h.dir, { recursive: true, force: true });

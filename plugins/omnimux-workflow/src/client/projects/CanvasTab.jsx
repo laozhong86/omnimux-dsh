@@ -1,22 +1,4 @@
 /**
- * 将会话 ID 转换为严格符合原生规范的 12 位十六进制工作区 ID (ws_[a-f0-9]{12})
- * 这样无论宿主后端进程是否重启，都能 100% 兼容校验且实现会话间强隔离
- */
-function sessionToWorkspaceId(sessionId) {
-  if (!sessionId) return undefined
-  let h1 = 0x811c9dc5
-  let h2 = 0x40164e6b
-  for (let i = 0; i < sessionId.length; i++) {
-    const code = sessionId.charCodeAt(i)
-    h1 = Math.imul(h1 ^ code, 0x01000193)
-    h2 = Math.imul(h2 ^ code, 0x050c79cd)
-  }
-  const hex1 = (h1 >>> 0).toString(16).padStart(8, '0')
-  const hex2 = (h2 >>> 0).toString(16).padStart(8, '0')
-  return `ws_${(hex1 + hex2).slice(0, 12)}`
-}
-
-/**
  * better-sidebar 画布 tab：宿主 React 18 壳里挂 CanvasBridge（React 19 island）。
  * 第三方 tab 只给 DOM 容器；双 React 树边界仍是 CanvasBridge 的硬规则。
  */
@@ -24,6 +6,7 @@ import { useCallback, useEffect, useSyncExternalStore } from 'react'
 import { CanvasBridge } from '../CanvasBridge.jsx'
 import { injectWorkflowStyles } from '../styles.js'
 import { applyProjectCanvasRatio, getBetterSidebar } from './projectCanvas.js'
+import { sessionToWorkspaceId } from '../../shared/workspaceId.ts'
 
 /**
  * @param {{

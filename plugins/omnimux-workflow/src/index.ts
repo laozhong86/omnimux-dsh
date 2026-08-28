@@ -97,7 +97,15 @@ export {
   registerWorkflowAgentSeats,
   WORKFLOW_PROMPT_SECTION,
   DEFAULT_RUN_WAIT_TIMEOUT_MS,
+  createWorkflowPrompt,
+  resolveTargetWorkspaceId,
 } from './workflow/agent/agentTools';
+export {
+  sessionToWorkspaceId,
+  isValidWorkspaceId,
+  sanitizeSessionId,
+  sessionIdFromExec,
+} from './shared/workspaceId';
 export type {
   AgentToolSpec,
   ToolsSeat,
