@@ -3711,105 +3711,172 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   border-color: transparent;
 }
 
-/* ==================== video_composition launcher (350×440) ==================== */
+/* ==================== video_composition result (wf-vc-result) ====================
+ * T5：旧 launcher 私有样式族（14 条）整体下架，改为 wf-vc-result 标准类。
+ * 100% 消费 DSH 原生 --dsw-alias-* Token；32px 控件高 / 8px 圆角；0 裸色。
+ * 亮暗自适应完全依赖宿主 CSS 变量级联，无 JS 主题分支。
+ * ============================================================================ */
 
-.wf-clip-launcher {
-  width: 350px;
-}
-
-.wf-clip-launcher__card {
-  width: 350px;
-  height: 440px;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  box-sizing: border-box;
-  gap: 14px;
-}
-
-.wf-clip-launcher__result {
+.wf-vc-result {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 16px 16px 14px;
+  box-sizing: border-box;
 }
 
-.wf-clip-launcher__preview {
+.wf-vc-result__preview {
+  position: relative;
   flex: 1 1 auto;
   min-height: 180px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--dsw-alias-bg-base, var(--wb-surface-raised, #111));
-  border: 1px solid var(--dsw-alias-border, var(--wb-border, rgba(255, 255, 255, 0.12)));
-}
-
-.wf-clip-launcher__thumb,
-.wf-clip-launcher__thumb-fallback {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--dsw-alias-label-secondary, var(--wb-text-secondary, inherit));
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  cursor: pointer;
 }
 
-.wf-clip-launcher__meta {
+.wf-vc-result__video,
+.wf-vc-result__thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.wf-vc-result__video {
+  object-fit: contain;
+}
+
+.wf-vc-result__thumb {
+  object-fit: cover;
+}
+
+.wf-vc-result__fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* 播放遮罩（底暗化）与中央播放 Chip（按钮 Primary 语义，双主题对比均达标） */
+.wf-vc-result__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dsw-alias-bg-mask-1);
+  transition: background 150ms ease;
+}
+
+.wf-vc-result__preview:hover .wf-vc-result__play {
+  background: var(--dsw-alias-bg-mask-2);
+}
+
+.wf-vc-result__play-chip {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-foreground);
+  box-shadow: 0 4px 14px var(--dsw-alias-bg-mask-3);
+}
+
+/* Meta 胶囊：时长 / 分辨率，数字走 Mono 等宽栈 */
+.wf-vc-result__meta {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin: 0;
 }
 
-.wf-clip-launcher__meta dt {
-  font-size: 11px;
-  color: var(--dsw-alias-label-secondary, var(--wb-text-secondary, inherit));
+.wf-vc-result__meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.wf-clip-launcher__meta dd {
-  margin: 2px 0 0;
+.wf-vc-result__meta dt {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.wf-vc-result__meta dd {
+  margin: 0;
   font-size: 13px;
   font-weight: 600;
-  color: var(--dsw-alias-label-primary, var(--wb-text-primary, inherit));
+  color: var(--dsw-alias-label-primary);
 }
 
-.wf-clip-launcher__actions {
+.wf-vc-result__mono {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 操作按钮行：Re-edit Primary / Download Secondary（32px 高 / 8px 圆角） */
+.wf-vc-result__actions {
   display: flex;
   gap: 8px;
 }
 
-.wf-clip-launcher__btn {
+.wf-vc-result__btn {
   flex: 1 1 auto;
   height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  padding: 0 12px;
+  box-sizing: border-box;
   border-radius: 8px;
-  border: 1px solid var(--dsw-alias-border, var(--wb-border, rgba(255, 255, 255, 0.12)));
-  background: var(--dsw-alias-bg-elevated, var(--wb-surface, #1a1a1c));
-  color: var(--dsw-alias-label-primary, var(--wb-text-primary, inherit));
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: background 150ms ease, border-color 150ms ease, transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.wf-clip-launcher__btn:hover {
-  background: color-mix(in srgb, var(--dsw-alias-bg-elevated, var(--wb-surface-raised, #252528)) 90%, #fff 10%);
-  border-color: var(--dsw-alias-border-focus, var(--wb-border-strong, rgba(255, 255, 255, 0.24)));
+.wf-vc-result__btn:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  border-color: var(--dsw-alias-border-l3);
 }
 
-.wf-clip-launcher__btn--primary {
-  background: var(--dsw-alias-control-primary, var(--wb-accent, #5b68f6));
+.wf-vc-result__btn:active {
+  transform: scale(0.96);
+}
+
+.wf-vc-result__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.wf-vc-result__btn--primary {
   border-color: transparent;
-  color: var(--dsw-alias-on-primary, #fff);
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-foreground);
 }
 
-.wf-clip-launcher__btn--primary:hover {
-  background: color-mix(in srgb, var(--dsw-alias-control-primary, var(--wb-accent, #5b68f6)) 88%, #fff 12%);
+.wf-vc-result__btn--primary:hover {
   border-color: transparent;
+  background: var(--dsw-alias-button-primary-hover);
 }
 
 
