@@ -113,10 +113,29 @@ cmd_start() {
 cmd_clean() {
   local topic="$1"
   local raw_issue="$2"
+  shift 2 || true
+  local pr_number=""
+  local force_flag=""
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --pr)
+        pr_number="$2"
+        shift 2
+        ;;
+      --force)
+        force_flag="1"
+        shift
+        ;;
+      *)
+        shift
+        ;;
+    esac
+  done
 
   if [ -z "$topic" ]; then
     echo "❌ 错误: 必须提供 <topic>"
-    echo "示例: ./scripts/git-wt.sh clean table-node 42"
+    echo "示例: ./scripts/git-wt.sh clean table-node 42 [--pr <pr_number>]"
     exit 1
   fi
 
@@ -130,9 +149,23 @@ cmd_clean() {
 
   local wt_dir="$(cd "$REPO_ROOT/.." && pwd)/omnimux-dsh-wt-${wt_suffix}"
 
+  if [ -n "$pr_number" ] && command -v gh >/dev/null 2>&1 && [ "$force_flag" != "1" ]; then
+    echo "==> 校验 PR #${pr_number} 合入状态..."
+    local pr_state
+    pr_state=$(gh pr view "$pr_number" -R laozhong86/omnimux-dsh --json state,mergedAt -q '.state' 2>/dev/null || true)
+    if [ "$pr_state" != "MERGED" ]; then
+      echo "❌ 安全守卫拦截：PR #${pr_number} 状态为 [$pr_state]，未确认 MERGED 严禁清理现场！" >&2
+      exit 1
+    fi
+    echo "✓ PR #${pr_number} 已确认 MERGED"
+  elif [ "$force_flag" != "1" ] && [ "${OMNIMUX_MERGE_CONFIRMED:-0}" != "1" ]; then
+    echo "⚠️ 未声明 --pr / --force 且未置位 OMNIMUX_MERGE_CONFIRMED；若要强制清理，请显式传入 --force" >&2
+    exit 1
+  fi
+
   echo "==> 1. 移除 Worktree 目录..."
   if [ -d "$wt_dir" ]; then
-    git -C "$REPO_ROOT" worktree remove "$wt_dir" --force 2>/dev/null || rm -rf "$wt_dir"
+    git -C "$REPO_ROOT" worktree remove "$wt_dir" 2>/dev/null || git -C "$REPO_ROOT" worktree remove "$wt_dir" --force 2>/dev/null || rm -rf "$wt_dir"
     git -C "$REPO_ROOT" worktree prune
     echo "✓ 目录 $wt_dir 已移除"
   else
