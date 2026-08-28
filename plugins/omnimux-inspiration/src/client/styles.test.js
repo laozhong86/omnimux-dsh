@@ -72,6 +72,26 @@ describe('inspiration modal segmented switch', () => {
     assert.match(switchBlock, /<button\s+type="button"/)
     assert.doesNotMatch(switchBlock, /<Button[\s\S]*omnimux-inspiration-switch-btn/)
   })
+
+  it('uses 16px glyphs and forbids the 13px lucide layers polyline blob', () => {
+    const section = readFileSync(join(here, 'InspirationSection.jsx'), 'utf8')
+    const switchBlock = section.slice(
+      section.indexOf('omnimux-inspiration-preview-switch'),
+      section.indexOf('omnimux-inspiration-preview-player'),
+    )
+    assert.doesNotMatch(switchBlock, /polyline points="2 17"/)
+    assert.doesNotMatch(switchBlock, /polygon points="12 2/)
+    assert.doesNotMatch(switchBlock, /strokeWidth="2"/)
+    assert.doesNotMatch(switchBlock, /width="13"/)
+    assert.match(switchBlock, /width="16"/)
+    assert.match(switchBlock, /d="M2 5 8 2\.2 14 5"/)
+    const svgRule = ruleBody(
+      INSPIRATION_CSS,
+      '.omnimux-inspiration-switch-group > .omnimux-inspiration-switch-btn svg',
+    )
+    assert.equal(decl(svgRule, 'width'), '16px')
+    assert.equal(decl(svgRule, 'height'), '16px')
+  })
 })
 
 describe('locale dictionaries', () => {

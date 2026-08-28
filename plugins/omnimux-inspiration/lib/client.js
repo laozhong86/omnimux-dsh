@@ -1990,6 +1990,9 @@ var INSPIRATION_CSS = `
 .omnimux-inspiration-switch-group > .omnimux-inspiration-switch-btn svg {
   display: block;
   flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  overflow: visible;
 }
 .omnimux-inspiration-switch-group > .omnimux-inspiration-switch-btn:hover {
   color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
@@ -2775,7 +2778,7 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
                   className: `omnimux-inspiration-switch-btn ${viewMode === "player" ? "active" : ""}`,
                   onClick: () => setViewMode("player"),
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "currentColor", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polygon", { points: "5 3 19 12 5 21 5 3" }) }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { width: "16", height: "16", viewBox: "0 0 16 16", fill: "currentColor", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M3.2 2.1v11.8L13.6 8 3.2 2.1z" }) }),
                     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: t("view.player") })
                   ]
                 }
@@ -2789,10 +2792,10 @@ function InspirationModal({ row, t, onClose, onItemUpdated }) {
                   className: `omnimux-inspiration-switch-btn ${viewMode === "deconstruct" ? "active" : ""}`,
                   onClick: () => setViewMode("deconstruct"),
                   children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", "aria-hidden": "true", children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polygon", { points: "12 2 2 7 12 12 22 7 12 2" }),
-                      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polyline", { points: "2 17 12 22 22 17" }),
-                      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polyline", { points: "2 12 12 17 22 12" })
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { width: "16", height: "16", viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: "1.35", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M2 5 8 2.2 14 5" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M2 8.4 8 5.6 14 8.4" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M2 11.8 8 9 14 11.8" })
                     ] }),
                     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: t("view.deconstruct") })
                   ]

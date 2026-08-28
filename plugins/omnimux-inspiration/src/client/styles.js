@@ -664,6 +664,9 @@ export const INSPIRATION_CSS = `
 .omnimux-inspiration-switch-group > .omnimux-inspiration-switch-btn svg {
   display: block;
   flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  overflow: visible;
 }
 .omnimux-inspiration-switch-group > .omnimux-inspiration-switch-btn:hover {
   color: var(--dsw-alias-label-primary-dimmed, #ebebeb);
