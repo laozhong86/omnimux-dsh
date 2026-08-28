@@ -1,6 +1,6 @@
 # omnimux-dsh
 
-OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This product tree lives at `/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh`. Hub is `omnimux`. Coding agents edit this tree. Platform plugins include `omnimux-workflow`, `omnimux-assets`, `omnimux-clip`, `omnimux-products`, `omnimux-inspiration`, `omnimux-accounts`, `omnimux-gallery`, `omnimux-analytics`, `dsh-publish`.
+OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This product tree lives at `/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh`. Hub is `omnimux`. Coding agents edit this tree. Platform plugins include `omnimux-workflow`, `omnimux-assets`, `omnimux-clip`, `omnimux-products`, `omnimux-inspiration`, `omnimux-accounts`, `omnimux-gallery`, `omnimux-analytics`, `omnimux-publish`.
 
 ## Agent Execution & CWD Invariants (Agent 行为与路径硬约束)
 
@@ -54,7 +54,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `plugins/omnimux-gallery/` | 专家·技能·连接器一级页（`shell.overlay`），技能双数据源（本地 + SkillHub 在线源）。 |
 | `plugins/omnimux-workflow/` | 工作流无限画布（拖拽 DAG、Agent 工具查询/执行），生成经 hub seam 提交。数据 `$DSH_HOME/omnimux/workflow/`。 |
 | `plugins/omnimux-clip/` | 剪辑工坊：完整套用 OpenReel Video (MIT) 官方 GUI+管线，P1 挂 `dsh-better-sidebar` Tab（`omnimux-clip:studio`）；P2 `clip_*`；P3 与画布 JSON 事件桥。 |
-| `plugins/dsh-publish/` | 账号发布中心（`shell.overlay`，sidebar rank 9）：草稿→多账号分发→per-account 子任务台账。Host `/dsh-publish`，tools `publish_*` 9 个；执行只走中枢 `omnimux_publish_*` 官方通道，不直连平台、不存 secret。 |
+| `plugins/omnimux-publish/` | 账号发布中心（`shell.overlay`，sidebar rank 9）：草稿→多账号分发→per-account 子任务台账。Host `/omnimux/publish`，tools `publish_*` 9 个；执行只走中枢 `omnimux_publish_*` 官方通道，不直连平台、不存 secret。 |
 | `docs/contracts/openreel-vendor-contract.md` | **OpenReel 完整微应用契约**：官方 GUI+管线整包 Vendorize；禁止 Headless 拆分与自研四宫格；P1 侧边栏 Tab；DSW token 映射。 |
 | `docs/contracts/ops-entry.md` | **运维命令唯一入口**：对外只暴露 fork `yarn omnimux:*`；列出内部/废弃脚本边界。禁止插件私有 deploy/sync 体系。 |
 | `docs/contracts/plugin-git-pr.md` | **插件仓 Git/PR 合同**：`origin`/`main`、一插件一 PR、R0/R1 老板人工合入、R2/R3 显式预授权后可自动合入；board 在 `.workbuddy/pr-board.md`。UI 验收统一用 `ego-browser`。Skill：`omnimux-plugin-pr` + `omnimux-pr-handoff`。 |
@@ -80,7 +80,7 @@ Single source of truth: [design.md](design.md) and [`docs/contracts/ui-design-gu
 
 Load `design.md` when the task touches ANY of these:
 
-- Writing or editing any plugin web client UI (stage pages, tables, nav, dialogs, chips, buttons, empty states) in `omnimux-assets`, `omnimux-accounts`, `omnimux-workflow`, `omnimux-products`, `omnimux-inspiration`, `omnimux-clip`, `dsh-publish`, or the `omnimux` hub client.
+- Writing or editing any plugin web client UI (stage pages, tables, nav, dialogs, chips, buttons, empty states) in `omnimux-assets`, `omnimux-accounts`, `omnimux-workflow`, `omnimux-products`, `omnimux-inspiration`, `omnimux-clip`, `omnimux-publish`, or the `omnimux` hub client.
 - Adding or changing any color / typography / spacing / radius / shadow value in client code.
 - Creating a new plugin with a web stage.
 - Implementing or changing light/dark mode behavior.

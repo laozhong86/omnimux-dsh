@@ -13,7 +13,7 @@ This repo lands OmniMux on official dsh. `omnimux` is the execution hub, not a g
 | **Video Clip Studio (`omnimux-clip`)** | Timeline video editing studio based on OpenReel engine integration (`clip_*`). |
 | **Social Matrix & Accounts (`omnimux-accounts`)** | Social accounts authorization and status matrix. |
 | **Inspiration Library (`omnimux-inspiration`)** | Community trends, prompt inspirations, and creative ideas. |
-| **Publishing Center (`dsh-publish`)** | Cross-platform multi-account post publishing and schedule ledger (`publish_*`). |
+| **Publishing Center (`omnimux-publish`)** | Cross-platform multi-account post publishing and schedule ledger (`publish_*`). |
 | **Market & Skills (`omnimux-market`)** | Plaza catalog, SkillHub skill integration, and connector manager. |
 | **Analytics (`omnimux-analytics`)** | Cross-plugin tool execution metrics and social posting analytics. |
 

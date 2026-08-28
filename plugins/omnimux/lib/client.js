@@ -2858,6 +2858,8 @@ var STAGE_CSS_CLASS_MAP = {
   "omnimux-products": "omnimux-products-stage",
   "omnimux-inspiration": "omnimux-inspiration-stage",
   "omnimux-workflow": "omnimux-workflow-stage",
+  "omnimux-publish": "omnimux-publish-stage",
+  "omnimux-clip": "omnimux-clip-stage",
   "omnimux-apps": "omnimux-apps-stage"
 };
 var STAGE_MUTUAL_EXCLUSION_RULES = Object.entries(STAGE_CSS_CLASS_MAP).map(([stageId, className]) => {

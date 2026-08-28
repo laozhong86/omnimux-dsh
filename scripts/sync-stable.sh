@@ -19,8 +19,8 @@ fi
 
 PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh/plugins}"
 PROFILE="${DSH_HOME:-$HOME/.dsh}/profiles/omnimux"
-# 产品树垂直（含产品库 / 插件市场 / 剪辑）+ omnimux-video + omnimux-analytics（埋点）+ dsh-publish（发布中心）
-ALL_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics dsh-publish)
+# 产品树垂直（含产品库 / 插件市场 / 剪辑）+ omnimux-video + omnimux-analytics（埋点）+ omnimux-publish（发布中心）
+ALL_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics omnimux-publish)
 
 if [ $# -gt 0 ]; then
   PLUGINS=("$@")
@@ -71,7 +71,7 @@ function declaresBundle(name) {
 }
 
 // 清理已知历史废弃/更名前的包名，避免 Cordis 重复注册 Service 冲突导致 Host 启动失败崩溃
-const LEGACY_PRUNE_NAMES = ['dsh-video', 'dsh-omnimux', 'dsh-drama']
+const LEGACY_PRUNE_NAMES = ['dsh-video', 'dsh-omnimux', 'dsh-drama', 'dsh-publish']
 for (const legacy of LEGACY_PRUNE_NAMES) {
   if (manifest.dependencies[legacy]) {
     delete manifest.dependencies[legacy]

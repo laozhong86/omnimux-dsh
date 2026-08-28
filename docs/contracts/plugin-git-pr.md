@@ -120,7 +120,7 @@ gh -R laozhong86/omnimux-dsh pr create --base main --body-file <generated-body.m
 | L2 通过后物化 | `node scripts/omnimux.mjs sync <plugin>` | 仅在合入确认后执行；静态复制不等于验收 |
 
 `skip ≠ pass`：`smoke` / `verify:image-live` / `verify:models` 因缺 `dsh` 或 key 而 skip 时，必须记录环境限制；若该检查被 Issue DoD 声明为必需，流水线阻断。
-根目录 `pnpm test` 目前 filter：`omnimux`、`omnimux-accounts`、`omnimux-inspiration`、`omnimux-market`、`dsh-publish`。改 `assets` / `products` / `workflow` / `clip` / `analytics` / `omnimux-video` 必须跑 **该包** test，不能用根 `pnpm test` 代替。
+根目录 `pnpm test` 目前 filter：`omnimux`、`omnimux-accounts`、`omnimux-inspiration`、`omnimux-market`、`omnimux-publish`。改 `assets` / `products` / `workflow` / `clip` / `analytics` / `omnimux-video` 必须跑 **该包** test，不能用根 `pnpm test` 代替。
 
 **本仓 CI 约定**：允许在 `omnimux-dsh/.github/workflows/` 放置本仓 required checks；禁止在外层 `dsh-plugin/` 添加独立 Git 仓、Husky、commitlint 或工作流。
 

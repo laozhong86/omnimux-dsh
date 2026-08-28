@@ -41,6 +41,9 @@ describe('Stage Mutual Exclusion & Host Chrome Rules', () => {
         <div class="omnimux-assets-stage" data-visible="false">Assets</div>
         <div class="omnimux-products-stage" data-visible="false">Products</div>
         <div class="omnimux-workflow-stage" data-visible="false">Workflow</div>
+        <div class="omnimux-publish-stage" data-visible="false">Publish</div>
+        <div class="omnimux-clip-stage" data-visible="false">Clip</div>
+        <div class="omnimux-apps-stage" data-visible="false">Apps</div>
       </div>
     </body></html>`, { url: 'http://localhost' })
     globalThis.window = dom.window
@@ -55,9 +58,13 @@ describe('Stage Mutual Exclusion & Host Chrome Rules', () => {
     assert.equal(STAGE_CSS_CLASS_MAP['omnimux-accounts'], 'omnimux-accounts-stage')
     assert.equal(STAGE_CSS_CLASS_MAP['omnimux-assets'], 'omnimux-assets-stage')
     assert.equal(STAGE_CSS_CLASS_MAP['omnimux-analytics'], 'omnimux-analytics-stage')
-    assert.equal(STAGE_CSS_CLASS_MAP['omnimux-inspiration'], 'omnimux-inspiration-stage')
     assert.equal(STAGE_CSS_CLASS_MAP['omnimux-products'], 'omnimux-products-stage')
+    assert.equal(STAGE_CSS_CLASS_MAP['omnimux-inspiration'], 'omnimux-inspiration-stage')
     assert.equal(STAGE_CSS_CLASS_MAP['omnimux-workflow'], 'omnimux-workflow-stage')
+    assert.equal(STAGE_CSS_CLASS_MAP['omnimux-publish'], 'omnimux-publish-stage')
+    assert.equal(STAGE_CSS_CLASS_MAP['omnimux-clip'], 'omnimux-clip-stage')
+    assert.equal(STAGE_CSS_CLASS_MAP['omnimux-apps'], 'omnimux-apps-stage')
+    assert.equal(Object.keys(STAGE_CSS_CLASS_MAP).length, 9)
   })
 
   it('injects host-level mutual exclusion CSS for each stage', () => {

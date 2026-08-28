@@ -1,7 +1,7 @@
 # OmniMux 插件系列 UI 设计规范 —— DeepSeek Harness 原生 UI 体系适配（v2.0）
 
 > **权威等级**：L1（最高设计与交互契约）  
-> **适用范围**：本仓库（`omnimux-dsh`）内全部带 Web 客户端的插件 —— `plugins/omnimux`（Hub 壳层与货架页）、`plugins/omnimux-accounts`、`plugins/omnimux-assets`、`plugins/omnimux-products`、`plugins/omnimux-inspiration`、`plugins/omnimux-workflow`、`plugins/omnimux-clip`、`plugins/dsh-publish` 及后续新增垂直插件。  
+> **适用范围**：本仓库（`omnimux-dsh`）内全部带 Web 客户端的插件 —— `plugins/omnimux`（Hub 壳层与货架页）、`plugins/omnimux-accounts`、`plugins/omnimux-assets`、`plugins/omnimux-products`、`plugins/omnimux-inspiration`、`plugins/omnimux-workflow`、`plugins/omnimux-clip`、`plugins/omnimux-publish` 及后续新增垂直插件。  
 > **单一事实源**：本文件与 [`docs/contracts/ui-design-guidelines.md`](docs/contracts/ui-design-guidelines.md) 共同构成插件 UI 开发的唯一事实源；任何与旧版本（v1.0 x.ai 品牌岛）冲突之处，一律以本文档为准。
 
 ---

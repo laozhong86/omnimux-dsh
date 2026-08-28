@@ -61,7 +61,7 @@ shell.overlay 一级页
 | `omnimux-accounts` | `AccountsStage.jsx` + `AccountsSection.jsx` | Stage 只有标题+Close，无副标题/Refresh；OverviewBar 占 L2；**主 CTA `+ 连接` 与 FilterBar 同行** | **A / P0** |
 | `omnimux-inspiration` | `InspirationStage.jsx` + `InspirationSection.jsx` | Stage 只有标题+Close；过滤/搜索沉在 Section；无独立 Action Row | **A / P0** |
 | `omnimux-workflow` | `projects/ProjectLibraryPage.jsx` | 有副标题，但 **主 CTA 进 Header**；FilterBar classic（search 在左、无 tools） | **A / P0** |
-| `dsh-publish` | `PublishStage.jsx` | 一级页 + 三 Tab 账本；控件已 kit，骨架未对齐 4 层 | **A（允许 3A Tab）/ P1** |
+| `omnimux-publish` | `PublishStage.jsx` | 一级页 + 三 Tab 账本；控件已 kit，骨架未对齐 4 层 | **A（允许 3A Tab）/ P1** |
 
 A 类 **零豁免**。OverviewBar / KPI 条只能作为 **L2 与 L3 之间的可选条带**（`StageKpiStrip`），不得替代 Action Row，不得把主 CTA 吸进去。
 
@@ -257,7 +257,7 @@ P0 完成标准：A 类四页源码能被 `client-layout` 同类断言扫过；d
 | P1.2 | 工程师 | Analytics：确认 L2 语义=Tab+Sync（豁免「新建」）；去掉绕 host 的页面级色值 |
 | P1.3 | 工程师 | Market：Plaza 顶栏几何改 `--stage-*`；FilterBar 保持 Standard，提交按钮不造成换行 |
 | P1.4 | 工程师 | `omnimux` `AppsStage` / LoginGate / Profile* 去 inline blob + 生 button（B5） |
-| P1.5 | 工程师 | `dsh-publish` 升 A 类（3A Tab 合法）；oil-creator `ActionButton` → kit |
+| P1.5 | 工程师 | `omnimux-publish` 升 A 类（3A Tab 合法）；oil-creator `ActionButton` → kit |
 | P1.6 | QA | B 类外框 + 中枢抽屉回归 |
 
 ### P2 —— 内芯债与个人插件（约 3 日，可并行）
@@ -308,7 +308,7 @@ P0 完成标准：A 类四页源码能被 `client-layout` 同类断言扫过；d
     { "plugin": "omnimux-accounts", "entryFile": "src/client/AccountsStage.jsx" },
     { "plugin": "omnimux-inspiration", "entryFile": "src/client/InspirationStage.jsx" },
     { "plugin": "omnimux-workflow", "entryFile": "src/client/projects/ProjectLibraryPage.jsx" },
-    { "plugin": "dsh-publish", "entryFile": "src/client/PublishStage.jsx", "phase": "P1" }
+    { "plugin": "omnimux-publish", "entryFile": "src/client/PublishStage.jsx", "phase": "P1" }
   ],
   "special": [
     { "plugin": "omnimux-workflow", "kind": "canvas", "shellFile": "src/client/WorkflowStage.jsx", "exemptGlobs": ["src/canvas/**", "!src/canvas/ui/**"] },
@@ -354,6 +354,6 @@ P0 完成标准：A 类四页源码能被 `client-layout` 同类断言扫过；d
 ## 9. 待工程师现场核对源码
 
 - FilterBar Classic 分支（`filters + search + actions`）是否仍被 accounts/products/market 依赖 → 改完 A 类后 **删除 Classic 或标 `@deprecated` 并让 doctor 禁新用**。
-- Market 单体 `boot.js` 拼接的 `require("dsh-ui-kit")` 是否打进 bundle（kit 非 ModuleLoader 共享模块，必须打包；`react` / primitives 必须 external）—— 与现网 `dsh-publish` 相同。
+- Market 单体 `boot.js` 拼接的 `require("dsh-ui-kit")` 是否打进 bundle（kit 非 ModuleLoader 共享模块，必须打包；`react` / primitives 必须 external）—— 与现网 `omnimux-publish` 相同。
 - `omnimux-gallery` 是否仍有独立一级页（sidebar 合同写 gallery，plugins 目录现为 `omnimux-market`）→ 以 plugins 目录为准，gallery 不单列整改。
 - Assets header `16px` vs 合同 `12px`：P0 不改视觉，P2.3 单独 PR。

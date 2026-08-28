@@ -24,6 +24,8 @@ export const STAGE_CSS_CLASS_MAP = {
   'omnimux-products': 'omnimux-products-stage',
   'omnimux-inspiration': 'omnimux-inspiration-stage',
   'omnimux-workflow': 'omnimux-workflow-stage',
+  'omnimux-publish': 'omnimux-publish-stage',
+  'omnimux-clip': 'omnimux-clip-stage',
   'omnimux-apps': 'omnimux-apps-stage',
 }
 
