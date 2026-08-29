@@ -93,6 +93,44 @@ function toFullPath(filePath, cwd) {
   return filePath.startsWith('/') || isAbsolute(filePath) ? filePath : resolve(cwd, filePath)
 }
 
+export function getUnpushedCommits(cwd) {
+  const root = gitRoot(cwd) || cwd
+  const res = git(['rev-list', 'origin/main..HEAD'], root)
+  if (gitUnavailable(res) || res.status !== 0) return []
+  return String(res.stdout || '')
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
+export function isDestructiveResetCommand(command) {
+  if (!command || typeof command !== 'string') return false
+  // Ignore non-git commands like gh, echo, grep, cat, node, etc. that might mention git reset in quotes
+  const trimmed = command.trim()
+  if (trimmed.startsWith('gh ') || trimmed.startsWith('echo ') || trimmed.startsWith('grep ') || trimmed.startsWith('node ')) {
+    return false
+  }
+  // Match git reset --hard as a real command invocation (at start or after shell operator)
+  return /(?:^|[;&|]\s*)git\s+reset\s+[^;&|]*--hard\b/i.test(command)
+}
+
+export function decideBashCommand({ command, cwd }) {
+  if (!command || typeof command !== 'string') return { decision: 'allow' }
+  if (!isDestructiveResetCommand(command)) return { decision: 'allow' }
+
+  // Check if unpushed commits exist on current HEAD
+  const unpushed = getUnpushedCommits(cwd)
+  if (unpushed.length > 0) {
+    return {
+      decision: 'deny',
+      reason: 'unpushed-commits-at-risk',
+      unpushedCount: unpushed.length,
+      unpushedCommits: unpushed,
+    }
+  }
+  return { decision: 'allow', reason: 'clean-upstream' }
+}
+
 export function decideWrite({ filePath, cwd, toolName }) {
   // Normalize toolName to handle namespace e.g. "default_api:edit" -> "edit"
   const rawName = String(toolName || '').toLowerCase()
@@ -114,18 +152,28 @@ export function decideWrite({ filePath, cwd, toolName }) {
   return { decision: 'deny', fullPath, reason: 'tracked-plugin' }
 }
 
-function decisionJson(hookEventName, decision) {
+function decisionJson(hookEventName, decision, reason, extra = {}) {
   const output = {
     hookEventName,
     permissionDecision: decision,
   }
   if (decision === 'deny') {
-    output.permissionDecisionReason = [
-      '🚫【DSH 核心门禁阻断】严禁在主仓库 main 分支直接修改 plugins/ 已跟踪的业务代码！',
-      '📌 违反了《OmniMux 插件 Git / PR 合同》（docs/contracts/plugin-git-pr.md）中「强制 Worktree 物理隔离」与「No Issue, No Code」红线。',
-      '👉 请先调用 bash 运行: ./scripts/git-wt.sh start <plugin> <topic> <issue_id> 创建并进入独立 Worktree 工作区！',
-      'ℹ️  豁免：gitignore / 临时目录（node_modules、dist、dist-harness、tmp、*.log 等）以及未被 git 跟踪的文件仍可在主仓修改。',
-    ].join('\n')
+    if (reason === 'unpushed-commits-at-risk') {
+      output.permissionDecisionReason = [
+        `🚫【DSH 核心安全阻断】拦截破坏性重置：检测到当前本地分支存在尚未推送到远端 origin/main 的提交（共 ${extra.unpushedCount || 0} 个）！`,
+        '📌 事故防范守则：执行 git reset --hard 会导致这些未同步的本地工作成果被永久抹去（本会话曾出现同类事故）。',
+        '👉 正确流程：',
+        '  1. 若成果有效：请切换到工作分支推送远端（git push / 提 PR 合入 main）；',
+        '  2. 若确需重置：请先执行备份命令（如 git tag backup/safety-$(date +%s)）后再安全处理。',
+      ].join('\n')
+    } else {
+      output.permissionDecisionReason = [
+        '🚫【DSH 核心门禁阻断】严禁在主仓库 main 分支直接修改 plugins/ 已跟踪的业务代码！',
+        '📌 违反了《OmniMux 插件 Git / PR 合同》（docs/contracts/plugin-git-pr.md）中「强制 Worktree 物理隔离」与「No Issue, No Code」红线。',
+        '👉 请先调用 bash 运行: ./scripts/git-wt.sh start <plugin> <topic> <issue_id> 创建并进入独立 Worktree 工作区！',
+        'ℹ️  豁免：gitignore / 临时目录（node_modules、dist、dist-harness、tmp、*.log 等）以及未被 git 跟踪的文件仍可在主仓修改。',
+      ].join('\n')
+    }
   }
   return { hookSpecificOutput: output }
 }
@@ -133,13 +181,20 @@ function decisionJson(hookEventName, decision) {
 function handle(rawInput) {
   const input = JSON.parse(rawInput || '{}')
   const hookEventName = input.hook_event_name || 'PreToolUse'
-  const toolName = String(input.tool_name || '').toLowerCase()
+  const rawTool = String(input.tool_name || '').toLowerCase()
+  const toolName = rawTool.replace(/^.*:/, '')
   const toolInput = input.tool_input || {}
-  const filePath = String(toolInput.file_path || '').trim()
   const cwd = String(input.cwd || process.cwd())
 
+  if (toolName === 'bash') {
+    const command = String(toolInput.command || '').trim()
+    const result = decideBashCommand({ command, cwd })
+    return decisionJson(hookEventName, result.decision, result.reason, result)
+  }
+
+  const filePath = String(toolInput.file_path || '').trim()
   const result = decideWrite({ filePath, cwd, toolName })
-  return decisionJson(hookEventName, result.decision)
+  return decisionJson(hookEventName, result.decision, result.reason, result)
 }
 
 function main() {

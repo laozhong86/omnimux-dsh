@@ -4,7 +4,9 @@ import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  decideBashCommand,
   decideWrite,
+  isDestructiveResetCommand,
   isEphemeralPath,
   isMainRepoPluginPath,
   isWorktreePath,
@@ -42,6 +44,30 @@ describe('guard-worktree path classification', () => {
     assert.equal(isEphemeralPath(`${repoRoot}/plugins/omnimux-workflow/dist-harness/app.js`), true)
     assert.equal(isEphemeralPath(`${repoRoot}/plugins/omnimux/tmp/scratch.js`), true)
     assert.equal(isEphemeralPath(`${repoRoot}/plugins/omnimux/src/index.js`), false)
+  })
+})
+
+describe('guard-worktree destructive reset interception', () => {
+  it('detects git reset --hard commands accurately without false positives', () => {
+    assert.equal(isDestructiveResetCommand('git reset --hard origin/main'), true)
+    assert.equal(isDestructiveResetCommand('git reset -q --hard origin/main'), true)
+    assert.equal(isDestructiveResetCommand('git reset --hard HEAD~1'), true)
+    assert.equal(isDestructiveResetCommand('git status && git reset --hard origin/main'), true)
+    assert.equal(isDestructiveResetCommand('git status'), false)
+    assert.equal(isDestructiveResetCommand('git reset HEAD file.txt'), false)
+    assert.equal(isDestructiveResetCommand('git push -u origin agent/infra-guard-destructive-reset'), false)
+    assert.equal(isDestructiveResetCommand('gh pr create --body "includes git reset --hard text"'), false)
+    assert.equal(isDestructiveResetCommand('pnpm test'), false)
+  })
+
+  it('allows safe bash commands through hook payload', () => {
+    const output = runHook({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'bash',
+      tool_input: { command: 'pnpm test' },
+      cwd: repoRoot,
+    })
+    assert.equal(output.hookSpecificOutput.permissionDecision, 'allow')
   })
 })
 
