@@ -220,61 +220,7 @@ export function ClipStage({ t, stage }) {
       }}
     >
       <div className="omnimux-clip-stage-header">
-        {!isCanvasMode ? (
-          <div className="omnimux-clip-stage-heading">
-            <h1 className="omnimux-clip-stage-title">
-              {t ? t('tab.title') : '视频剪辑'}
-            </h1>
-            <span className="omnimux-clip-stage-subtitle">
-              · OpenReel Studio
-            </span>
-          </div>
-        ) : (
-          <div style={{ flex: 1 }} />
-        )}
-
         <div className="omnimux-clip-stage-actions">
-          <button
-            type="button"
-            className="omnimux-clip-stage-icon-btn"
-            title="撤销 (Cmd+Z)"
-            aria-label="撤销"
-            onClick={() => useProjectStore.getState().undo()}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 7v6h6" />
-              <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="omnimux-clip-stage-icon-btn"
-            title="重做 (Cmd+Shift+Z)"
-            aria-label="重做"
-            onClick={() => useProjectStore.getState().redo()}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 7v6h-6" />
-              <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7" />
-            </svg>
-          </button>
-          {saveStatus ? (
-            <span className="omnimux-clip-stage-save-status">{saveStatus}</span>
-          ) : null}
-          {isCanvasMode ? (
-            <button
-              type="button"
-              className="omnimux-clip-stage-save-btn"
-              onClick={handleSaveDraft}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <rect x="2.5" y="2.5" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round"/>
-                <path d="M5.25 2.5v3.5c0 .41.34.75.75.75h4c.41 0 .75-.34.75-.75V2.5" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round"/>
-                <path d="M5.25 9h5.5v4.5h-5.5V9Z" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round"/>
-              </svg>
-              <span>{t ? t('tab.saveToNode') : '保存草稿至节点'}</span>
-            </button>
-          ) : null}
           <button
             type="button"
             className="omnimux-clip-stage-close-btn"
