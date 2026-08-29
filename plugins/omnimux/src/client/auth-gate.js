@@ -14,12 +14,13 @@
  * separate host client bundle (the hub) is the single owner and vertical
  * plugins consume it lazily. Vertical bundles never import this module.
  *
- * State machine phase: `closed | checking | starting | waiting | denied |
- * expired | error`.
+ * State machine phase: `closed | checking | prompt | starting | waiting |
+ * denied | expired | error`.
  *
  *  - `closed`: no gate. `ensureLogin` may open one.
  *  - `checking`: a status (non-verify) read is in flight.
- *  - `starting`: device login started, awaiting the auth page.
+ *  - `prompt`: marketing modal is open; device flow waits for the CTA.
+ *  - `starting`: user clicked Sign in, device login is requesting a code.
  *  - `waiting`: device code shown, polling for completion.
  *  - `denied` / `expired` / `error`: the flow ended in a terminal failure.
  *
@@ -37,7 +38,7 @@ import { runLogin } from './use-omnimux-auth.js'
 export const AUTH_GLOBAL_KEY = '__omnimuxAuth'
 
 /** Hard cap so a runaway caller cannot grow the intent queue unboundedly. */
-const MAX_INTENTS = 100
+export const MAX_INTENTS = 100
 
 /**
  * Runtime implementation hooks, so L1 tests can inject a fake `getStatus` /
@@ -183,7 +184,9 @@ async function checkAndStart(reason) {
     resolveAll(status.body)
     return
   }
-  beginLogin(reason)
+  // Marketing modal first. The device handshake starts only when the user
+  // clicks the CTA (`begin()`), matching the locked PRD sequence.
+  setState({ phase: 'prompt', reason })
 }
 
 /**
@@ -193,6 +196,17 @@ async function checkAndStart(reason) {
  * @returns {Promise<void>}
  */
 export async function ensureLogin(opts = {}) {
+  // Overflow guard runs in EVERY phase (closed / prompt / waiting / error)
+  // BEFORE the new intent is pushed. Overflow rejects only this caller;
+  // never rejectAll, which would kill the already-queued intents.
+  if (intents.length >= MAX_INTENTS) {
+    try {
+      opts.onCancel?.('overflow')
+    } catch {
+      // a caller's onCancel must never wedge the gate
+    }
+    return
+  }
   const intent = makeIntent(opts)
   if (state.phase !== 'closed') {
     // Single-gate guarantee: an already-open/terminal gate is reused. Only
@@ -203,11 +217,6 @@ export async function ensureLogin(opts = {}) {
       latestReason = intent.reason ?? latestReason
       beginLogin(intent.reason ?? latestReason)
     }
-    return
-  }
-  if (intents.length >= MAX_INTENTS) {
-    // Overflow: reject the overflow intent and stay closed.
-    rejectAll('overflow')
     return
   }
   intents.push(intent)
@@ -226,6 +235,16 @@ export function cancel(reason = 'cancelled') {
   }
   rejectAll(reason)
   setState({ phase: 'closed' })
+}
+
+/**
+ * Start the device handshake from the marketing prompt (CTA "立即登录").
+ * `runLogin` opens `verification_url` in the system browser and the gate
+ * moves `starting` → `waiting` (polling).
+ */
+export function begin() {
+  if (state.phase !== 'prompt') return
+  beginLogin(latestReason)
 }
 
 /**
@@ -261,6 +280,7 @@ export function installAuthGlobal(target, overrides = {}) {
     getStatus: (verify) => impl.getStatus(verify),
     ensureLogin,
     cancel,
+    begin,
     retry,
     subscribe,
     getSnapshot,

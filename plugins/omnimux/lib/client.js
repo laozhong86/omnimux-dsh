@@ -57,6 +57,16 @@ var zh = {
   "quota.hint": "\u53EF\u7528\u989D\u5EA6\u4E0D\u8DB3\uFF0C\u5145\u503C\u540E\u5373\u53EF\u7EE7\u7EED\u3002",
   "quota.topUp": "\u5145\u503C\u989D\u5EA6",
   "auth.gate.title": "\u767B\u5F55 OmniMux",
+  "auth.gate.brandTitle": "OmniMux Studio",
+  "auth.gate.headline": "OmniMux \u5168\u9762\u63A5\u5165\u5546\u4E1A Agent \u77E9\u9635",
+  "auth.gate.subdeck": "\u6700\u5F3A\u591A\u6A21\u6001\u521B\u4F5C\u5F15\u64CE + \u9876\u5C16\u793E\u5A92\u8FD0\u8425\u4E13\u5BB6\u56E2\u961F",
+  "auth.gate.feature1": "\u7406\u89E3\u3001\u62C6\u89E3\u5E76\u5168\u81EA\u52A8\u6267\u884C\u591A\u5E73\u53F0\u5546\u4E1A\u5185\u5BB9\u751F\u4EA7",
+  "auth.gate.feature2": "\u4E13\u4E1A\u5DE5\u4F5C\u6D41\u753B\u5E03\u4E0E Skill\uFF0C\u91CA\u653E\u5341\u500D\u51FA\u7247\u751F\u4EA7\u529B",
+  "auth.gate.feature3": "\u4ECE\u4E00\u4E2A\u521B\u610F\u7075\u611F\u5F00\u59CB\uFF0COmniMux \u966A\u4F60\u5168\u94FE\u8DEF\u51FA\u6D77\u843D\u5730",
+  "auth.gate.cta": "\u7ACB\u5373\u767B\u5F55",
+  "auth.gate.waitingDeviceCode": "\u5DF2\u5728\u65B0\u7A97\u53E3\u6253\u5F00\u6388\u6743\u9875\uFF0C\u8BF7\u8F93\u5165\u8BBE\u5907\u7801\uFF1A",
+  "auth.gate.reopen": "\u91CD\u65B0\u6253\u5F00\u6388\u6743\u9875",
+  "auth.gate.tag": "Studio Suite",
   "auth.gate.reason.generic": "\u5F53\u524D\u64CD\u4F5C\u9700\u8981\u9A8C\u8BC1\u60A8\u7684 OmniMux \u8D26\u53F7\uFF0C\u767B\u5F55\u540E\u5C06\u81EA\u52A8\u6062\u590D\u6267\u884C\u3002",
   "auth.gate.reason.account": "\u767B\u5F55 OmniMux \u4EE5\u7BA1\u7406\u793E\u4EA4\u5E73\u53F0\u8D26\u53F7\u3002",
   "auth.gate.reason.publish": "\u767B\u5F55 OmniMux \u4EE5\u6267\u884C\u5185\u5BB9\u53D1\u5E03\u3002",
@@ -64,6 +74,7 @@ var zh = {
   "auth.gate.resumeHint": "\u5B8C\u6210\u767B\u5F55\u540E\u5C06\u81EA\u52A8\u6062\u590D\u5F53\u524D\u64CD\u4F5C\u3002",
   "auth.gate.cancel": "\u53D6\u6D88",
   "auth.gate.retry": "\u91CD\u8BD5",
+  "auth.gate.close": "\u5173\u95ED",
   "plugins.nav": "\u5E94\u7528",
   "plugins.title": "\u5E94\u7528\u4E2D\u5FC3",
   "plugins.needLogin": "\u767B\u5F55 OmniMux \u4EE5\u67E5\u770B\u5DF2\u53D1\u5E03\u5E94\u7528\u3002",
@@ -152,6 +163,16 @@ var en = {
   "quota.hint": "Available quota is low. Add credits to continue.",
   "quota.topUp": "Add Credits",
   "auth.gate.title": "Sign in to OmniMux",
+  "auth.gate.brandTitle": "OmniMux Studio",
+  "auth.gate.headline": "OmniMux is fully connected to a commercial Agent matrix",
+  "auth.gate.subdeck": "The strongest multimodal creation engine plus a top social-media operations team",
+  "auth.gate.feature1": "Understand, break down, and fully automate multi-platform commercial content production",
+  "auth.gate.feature2": "Professional workflow canvas and Skills that 10x your publishing throughput",
+  "auth.gate.feature3": "From a single creative spark, OmniMux walks you through the full go-global pipeline",
+  "auth.gate.cta": "Sign in now",
+  "auth.gate.waitingDeviceCode": "Authorization opened in a new window. Enter the device code:",
+  "auth.gate.reopen": "Reopen authorization page",
+  "auth.gate.tag": "Studio Suite",
   "auth.gate.reason.generic": "Sign in to OmniMux to continue.",
   "auth.gate.reason.account": "Sign in to OmniMux to manage social accounts.",
   "auth.gate.reason.publish": "Sign in to OmniMux to publish content.",
@@ -159,6 +180,7 @@ var en = {
   "auth.gate.resumeHint": "Action resumes automatically after sign-in.",
   "auth.gate.cancel": "Cancel",
   "auth.gate.retry": "Retry",
+  "auth.gate.close": "Close",
   "plugins.nav": "Apps",
   "plugins.title": "App Center",
   "plugins.needLogin": "Sign in to OmniMux to view published apps.",
@@ -226,7 +248,7 @@ var NS = "omnimux";
 // src/client/ProfileSection.jsx
 var import_react4 = require("react");
 
-// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
+// ../../../omnimux-dsh/node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
 var import_react = require("react");
 var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
 var import_jsx_runtime = require("react/jsx-runtime");
@@ -1177,6 +1199,8 @@ function AvatarModal({ t, avatar, initial, busy, error, onApply, onClose }) {
 
 // src/client/styles.js
 var STYLES_ID = "omnimux-hub-styles";
+var LOGIN_GATE_SEA_URI = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 348 520" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="w" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1e0b3a"/><stop offset="42%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#0f172a"/></linearGradient><radialGradient id="c" cx="50%" cy="10%" r="72%"><stop offset="0%" stop-color="#fae8ff" stop-opacity=".55"/><stop offset="38%" stop-color="#c084fc" stop-opacity=".22"/><stop offset="100%" stop-color="#1e0b3a" stop-opacity="0"/></radialGradient><linearGradient id="r" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fae8ff" stop-opacity=".32"/><stop offset="100%" stop-color="#fae8ff" stop-opacity="0"/></linearGradient><radialGradient id="j" cx="50%" cy="40%" r="55%"><stop offset="0%" stop-color="#fce7f3" stop-opacity=".85"/><stop offset="55%" stop-color="#e879f9" stop-opacity=".4"/><stop offset="100%" stop-color="#6d28d9" stop-opacity="0"/></radialGradient></defs><rect width="348" height="520" fill="url(#w)"/><rect width="348" height="520" fill="url(#c)"/><g opacity=".75"><polygon points="174,-12 208,520 142,520" fill="url(#r)"/><polygon points="88,-24 72,520 28,520" fill="url(#r)" opacity=".55"/><polygon points="268,-18 312,520 262,520" fill="url(#r)" opacity=".5"/></g><g fill="#f5d0fe" opacity=".38"><circle cx="36" cy="72" r="1.2"/><circle cx="92" cy="128" r=".9"/><circle cx="148" cy="64" r="1.1"/><circle cx="210" cy="96" r=".8"/><circle cx="268" cy="58" r="1"/><circle cx="48" cy="190" r=".7"/><circle cx="310" cy="170" r=".9"/><circle cx="180" cy="150" r=".6"/><circle cx="24" cy="260" r=".8"/><circle cx="300" cy="240" r="1"/><circle cx="120" cy="300" r=".7"/><circle cx="240" cy="280" r=".8"/></g><ellipse cx="64" cy="86" rx="30" ry="34" fill="url(#j)" opacity=".5"/><ellipse cx="292" cy="124" rx="22" ry="26" fill="url(#j)" opacity=".38"/><g fill="#e9d5ff"><g opacity=".62" transform="translate(42 188) rotate(-22)"><ellipse cx="0" cy="0" rx="8" ry="2.5"/><polygon points="7 0 13.5 -3.1 13.5 3.1"/></g><g opacity=".5" transform="translate(68 206) rotate(-16)"><ellipse cx="0" cy="0" rx="6.5" ry="2.1"/><polygon points="5.5 0 11 -2.6 11 2.6"/></g><g opacity=".55" transform="translate(54 224) rotate(-28)"><ellipse cx="0" cy="0" rx="7.2" ry="2.3"/><polygon points="6.2 0 12 -2.8 12 2.8"/></g><g opacity=".42" transform="translate(96 198) rotate(-10)"><ellipse cx="0" cy="0" rx="5.8" ry="1.9"/><polygon points="5 0 10 -2.2 10 2.2"/></g><g opacity=".48" transform="translate(84 236) rotate(-20)"><ellipse cx="0" cy="0" rx="6.2" ry="2"/><polygon points="5.4 0 10.6 -2.4 10.6 2.4"/></g><g opacity=".4" transform="translate(118 218) rotate(-8)"><ellipse cx="0" cy="0" rx="5.4" ry="1.8"/><polygon points="4.6 0 9.4 -2.1 9.4 2.1"/></g><g opacity=".46" transform="translate(246 250) rotate(18)"><ellipse cx="0" cy="0" rx="7" ry="2.2"/><polygon points="-7 0 -13.2 -2.8 -13.2 2.8"/></g><g opacity=".36" transform="translate(272 268) rotate(24)"><ellipse cx="0" cy="0" rx="5.6" ry="1.8"/><polygon points="-5 0 -10.4 -2.2 -10.4 2.2"/></g><g opacity=".4" transform="translate(228 272) rotate(12)"><ellipse cx="0" cy="0" rx="6.4" ry="2"/><polygon points="-5.6 0 -11.2 -2.5 -11.2 2.5"/></g></g></svg>`)}")`;
+var LOGIN_GATE_JELLY_URI = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" preserveAspectRatio="xMidYMid meet"><defs><radialGradient id="bell" cx="50%" cy="36%" r="58%"><stop offset="0%" stop-color="#fff7fb" stop-opacity=".96"/><stop offset="22%" stop-color="#f9a8d4" stop-opacity=".82"/><stop offset="52%" stop-color="#d8b4fe" stop-opacity=".55"/><stop offset="78%" stop-color="#a855f7" stop-opacity=".22"/><stop offset="100%" stop-color="#6d28d9" stop-opacity="0"/></radialGradient><radialGradient id="core" cx="48%" cy="40%" r="28%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".95"/><stop offset="100%" stop-color="#f472b6" stop-opacity="0"/></radialGradient><linearGradient id="tent" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fce7f3" stop-opacity=".9"/><stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/></linearGradient><filter id="soft" x="-25%" y="-25%" width="150%" height="170%"><feGaussianBlur stdDeviation="1.8"/></filter></defs><g fill="none" stroke="url(#tent)" stroke-linecap="round" filter="url(#soft)" opacity=".9"><path stroke-width="2.4" d="M108 128 C96 168 86 204 78 252"/><path stroke-width="2.1" d="M122 132 C112 176 116 214 108 258"/><path stroke-width="2.6" d="M140 134 C138 180 146 220 142 262"/><path stroke-width="2.2" d="M156 132 C164 176 158 216 168 258"/><path stroke-width="2.5" d="M172 128 C186 170 190 208 198 250"/><path stroke-width="1.7" d="M114 130 C104 178 98 216 94 256"/><path stroke-width="1.8" d="M166 130 C176 178 184 214 190 254"/><path stroke-width="1.5" d="M132 134 C126 186 130 222 124 260"/></g><g fill="#fbcfe8" opacity=".38" filter="url(#soft)"><ellipse cx="140" cy="152" rx="16" ry="40"/><ellipse cx="124" cy="156" rx="10" ry="32"/><ellipse cx="156" cy="156" rx="10" ry="32"/></g><ellipse cx="140" cy="108" rx="86" ry="74" fill="url(#bell)"/><ellipse cx="138" cy="98" rx="46" ry="34" fill="url(#core)"/><path d="M64 116 Q140 162 216 116" fill="none" stroke="#fce7f3" stroke-width="2.2" opacity=".55"/><path d="M78 108 Q140 96 202 108" fill="none" stroke="#ffffff" stroke-width="1.4" opacity=".4"/><ellipse cx="118" cy="92" rx="10" ry="6" fill="#ffffff" opacity=".28"/></svg>`)}")`;
 var HUB_CSS = `
 .omnimux-apps-stage {
   position: fixed;
@@ -1221,15 +1245,357 @@ var HUB_CSS = `
   overflow: auto;
 }
 
-.omnimux-login-gate-code {
-  font-family: var(--dsw-font-markdown-code-font-family, monospace);
-  font-size: 22px;
-  letter-spacing: 3px;
-  text-align: center;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--dsw-alias-border-l2, inherit);
+/* \u2500\u2500 OmniMux universal login gate (1:1 with docs/prototypes/omnimux-login-gate-modal.html) \u2500\u2500 */
+.omnimux-login-gate-backdrop,
+.omnimux-login-gate-backdrop *,
+.omnimux-login-gate-dialog,
+.omnimux-login-gate-dialog * {
+  box-sizing: border-box;
+}
+.omnimux-login-gate-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.75));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.omnimux-login-gate-dialog {
+  position: relative;
+  width: 820px;
+  height: 520px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--dsw-alias-surface-raised, var(--dsw-alias-bg-elevated, #161618));
+  border: 1px solid var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.1));
+  box-shadow:
+    0 24px 64px -12px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.75)),
+    0 0 40px color-mix(in srgb, var(--dsw-alias-brand-primary, #7c3aed) 18%, transparent);
   color: var(--dsw-alias-label-primary, inherit);
+}
+.omnimux-login-gate-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 20;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.08));
+  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.65));
+}
+.omnimux-login-gate-close:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255, 255, 255, 0.14));
+  border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.25));
+  color: var(--dsw-alias-label-primary, #fff);
+  transform: scale(1.06);
+}
+.omnimux-login-gate-hero {
+  position: relative;
+  width: 348px;
+  flex: 0 0 348px;
+  height: 100%;
+  padding: 32px 30px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  user-select: none;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--dsw-alias-brand-primary, #4c1d95) 55%, #3b0764) 0%,
+    var(--dsw-alias-brand-primary, #6d28d9) 45%,
+    #3b0764 100%
+  );
+}
+.omnimux-login-gate-hero-glow {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  width: 220px;
+  height: 220px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--dsw-alias-brand-primary, #ec4899) 40%, transparent) 0%,
+    color-mix(in srgb, var(--dsw-alias-brand-primary, #a855f7) 25%, transparent) 40%,
+    transparent 70%
+  );
+  filter: blur(28px);
+  pointer-events: none;
+  animation: omnimux-login-gate-pulse 5s ease-in-out infinite alternate;
+}
+.omnimux-login-gate-hero-media {
+  position: absolute;
+  inset: 0;
+  background-color: #1a0a36;
+  background-image:
+    ${LOGIN_GATE_SEA_URI},
+    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.28) 0%, transparent 46%),
+    repeating-linear-gradient(118deg, transparent 0 16px, rgba(233, 213, 255, 0.045) 16px 17px),
+    radial-gradient(ellipse at 42% 48%, rgba(99, 102, 241, 0.22) 0%, transparent 48%);
+  background-size: cover, cover, 140px 520px, cover;
+  background-position: center 25%, center, 0 0, center;
+  mix-blend-mode: overlay;
+  opacity: 0.92;
+  transform: scale(1.04);
+  animation: omnimux-login-gate-float 12s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.omnimux-login-gate-hero-jellyfish {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  width: 280px;
+  height: 280px;
+  transform: translateX(-50%);
+  background-image: ${LOGIN_GATE_JELLY_URI};
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  mask-image: radial-gradient(circle at 50% 45%, #000 48%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 48%, transparent 75%);
+  opacity: 0.92;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.45)) contrast(1.15) brightness(1.08);
+  pointer-events: none;
+  animation: omnimux-login-gate-jelly 8s ease-in-out infinite alternate;
+}
+.omnimux-login-gate-hero-scrim {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 55%;
+  background: linear-gradient(
+    to top,
+    rgba(20, 10, 45, 0.85) 0%,
+    rgba(20, 10, 45, 0.4) 55%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 5;
+}
+.omnimux-login-gate-hero-type {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+  padding-bottom: 8px;
+  overflow: visible;
+}
+.omnimux-login-gate-hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--dsw-alias-label-primary, #e9d5ff) 88%, #c084fc);
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+.omnimux-login-gate-hero-tag-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--dsw-alias-brand-primary, #c084fc);
+  box-shadow: 0 0 8px var(--dsw-alias-brand-primary, #c084fc);
+}
+.omnimux-login-gate-hero-brand {
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1.05;
+  color: var(--dsw-alias-label-primary, #fff);
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 20px color-mix(in srgb, var(--dsw-alias-brand-primary, #a855f7) 30%, transparent);
+}
+.omnimux-login-gate-hero-title,
+.omnimux-login-gate-hero-ai {
+  font-family: 'Cinzel', 'Playfair Display', 'Didot', 'Songti SC', 'STSong', Georgia, serif;
+  font-size: 70px;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -1.5px;
+  margin-top: 2px;
+  padding-bottom: 6px;
+  overflow: visible;
+  background: linear-gradient(180deg, var(--dsw-alias-label-primary, #fff) 30%, color-mix(in srgb, var(--dsw-alias-brand-primary, #e9d5ff) 70%, #fff) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.6));
+}
+.omnimux-login-gate-content {
+  position: relative;
+  width: 472px;
+  flex: 1 1 472px;
+  height: 100%;
+  padding: 42px 40px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--dsw-alias-bg-primary, #141416);
+}
+.omnimux-login-gate-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.omnimux-login-gate-brand-logo {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 8px;
+  overflow: visible;
+  background: #101B2B;
+  border: 1px solid color-mix(in srgb, #C6F14F 25%, transparent);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 10px color-mix(in srgb, #C6F14F 15%, transparent);
+}
+.omnimux-login-gate-brand-logo::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 1px dashed color-mix(in srgb, #C6F14F 45%, transparent);
+  border-radius: 11px;
+  pointer-events: none;
+}
+.omnimux-login-gate-brand-logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+}
+.omnimux-login-gate-brand-title {
+  font-family: 'Playfair Display', 'Cinzel', 'Didot', 'Songti SC', 'STSong', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--dsw-alias-label-primary, #fff);
+}
+.omnimux-login-gate-headline {
+  margin: 0 0 10px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.3px;
+  color: var(--dsw-alias-label-primary, #fff);
+}
+.omnimux-login-gate-subdeck {
+  margin: 0 0 26px;
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-secondary, #a1a1aa);
+}
+.omnimux-login-gate-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.omnimux-login-gate-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--dsw-alias-label-secondary, #d4d4d8);
+}
+.omnimux-login-gate-bullet {
+  width: 6px;
+  height: 6px;
+  margin-top: 7px;
+  flex: 0 0 6px;
+  border-radius: 1px;
+  background: var(--dsw-alias-label-tertiary, #71717a);
+}
+.omnimux-login-gate-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+.omnimux-login-gate-cta {
+  height: 40px !important;
+  padding: 0 28px !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  background: var(--dsw-alias-label-primary, #fff) !important;
+  color: var(--dsw-alias-bg-base, #09090b) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--dsw-alias-label-primary, #fff) 15%, transparent);
+}
+.omnimux-login-gate-cta:hover:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--dsw-alias-interactive-bg-hover, #f4f4f5) !important;
+  color: var(--dsw-alias-bg-base, #09090b) !important;
+  transform: translateY(-1px);
+}
+.omnimux-login-gate-waiting {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.08));
+}
+.omnimux-login-gate-reopen {
+  flex: 0 0 auto;
+  height: 32px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--dsw-alias-label-secondary, #d4d4d8) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.omnimux-login-gate-waiting-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--dsw-alias-label-secondary, #d4d4d8);
+}
+.omnimux-login-gate-spinner {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border: 2px solid var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.2));
+  border-top-color: var(--dsw-alias-brand-primary, #a855f7);
+  border-radius: 50%;
+  animation: omnimux-login-gate-spin 0.8s linear infinite;
+}
+.omnimux-login-gate-code {
+  font-family: var(--dsw-font-markdown-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--dsw-alias-brand-primary, #9333ea) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--dsw-alias-brand-primary, #9333ea) 40%, transparent);
+  color: color-mix(in srgb, var(--dsw-alias-label-primary, #d8b4fe) 80%, var(--dsw-alias-brand-primary, #d8b4fe));
 }
 .omnimux-login-gate-hint {
   margin: 0;
@@ -1239,8 +1605,9 @@ var HUB_CSS = `
 }
 .omnimux-login-gate-error {
   margin: 0;
+  width: 100%;
   font-size: 12px;
-  color: var(--dsw-alias-label-error, inherit);
+  color: var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit));
   line-height: 1.5;
 }
 .omnimux-login-gate-actions {
@@ -1248,6 +1615,42 @@ var HUB_CSS = `
   gap: 8px;
   justify-content: flex-end;
   flex-wrap: wrap;
+}
+@keyframes omnimux-login-gate-float {
+  0% { transform: scale(1.02) translateY(0); }
+  100% { transform: scale(1.06) translateY(-6px); }
+}
+@keyframes omnimux-login-gate-jelly {
+  0% { transform: translateX(-50%) translateY(0) scale(1); }
+  100% { transform: translateX(-50%) translateY(-8px) scale(1.03); }
+}
+@keyframes omnimux-login-gate-pulse {
+  0% { opacity: 0.5; transform: translateX(-50%) scale(0.92); }
+  100% { opacity: 0.95; transform: translateX(-50%) scale(1.12); }
+}
+@keyframes omnimux-login-gate-spin {
+  to { transform: rotate(360deg); }
+}
+@media (max-width: 860px) {
+  .omnimux-login-gate-dialog {
+    width: 92vw;
+    height: auto;
+    max-height: calc(100vh - 24px);
+    flex-direction: column;
+  }
+  .omnimux-login-gate-hero,
+  .omnimux-login-gate-content {
+    width: 100%;
+    flex: none;
+  }
+  .omnimux-login-gate-hero {
+    height: 220px;
+    padding: 24px;
+  }
+  .omnimux-login-gate-hero-title,
+  .omnimux-login-gate-hero-ai { font-size: 52px; line-height: 1.08; padding-bottom: 4px; }
+  .omnimux-login-gate-hero-brand { font-size: 24px; }
+  .omnimux-login-gate-content { padding: 28px 24px; }
 }
 
 .omnimux-profile {
@@ -1867,6 +2270,8 @@ function DshPluginsSection({ t }) {
 
 // src/client/LoginGate.jsx
 var import_react6 = require("react");
+var import_react_dom = require("react-dom");
+var import_dsh_client_ui_primitives2 = require("@deepseek-ai/dsh-client-ui-primitives");
 
 // src/client/auth-gate.js
 var AUTH_GLOBAL_KEY = "__omnimuxAuth";
@@ -1961,9 +2366,16 @@ async function checkAndStart(reason) {
     resolveAll(status.body);
     return;
   }
-  beginLogin(reason);
+  setState({ phase: "prompt", reason });
 }
 async function ensureLogin(opts = {}) {
+  if (intents.length >= MAX_INTENTS) {
+    try {
+      opts.onCancel?.("overflow");
+    } catch {
+    }
+    return;
+  }
   const intent = makeIntent(opts);
   if (state.phase !== "closed") {
     intents.push(intent);
@@ -1971,10 +2383,6 @@ async function ensureLogin(opts = {}) {
       latestReason = intent.reason ?? latestReason;
       beginLogin(intent.reason ?? latestReason);
     }
-    return;
-  }
-  if (intents.length >= MAX_INTENTS) {
-    rejectAll("overflow");
     return;
   }
   intents.push(intent);
@@ -1988,6 +2396,10 @@ function cancel(reason = "cancelled") {
   }
   rejectAll(reason);
   setState({ phase: "closed" });
+}
+function begin() {
+  if (state.phase !== "prompt") return;
+  beginLogin(latestReason);
 }
 function retry() {
   if (state.phase !== "denied" && state.phase !== "expired" && state.phase !== "error") return;
@@ -2007,6 +2419,7 @@ function installAuthGlobal(target, overrides = {}) {
     getStatus: (verify) => impl.getStatus(verify),
     ensureLogin,
     cancel,
+    begin,
     retry,
     subscribe,
     getSnapshot
@@ -2017,155 +2430,6 @@ function installAuthGlobal(target, overrides = {}) {
 installAuthGlobal(
   typeof window !== "undefined" ? window : void 0
 );
-
-// src/client/LoginGate.jsx
-var import_jsx_runtime5 = require("react/jsx-runtime");
-function LoginGate({ t }) {
-  (0, import_react6.useEffect)(() => {
-    injectHubStyles();
-  }, []);
-  const gate = (0, import_react6.useSyncExternalStore)(subscribe, getSnapshot);
-  if (!gate || gate.phase === "closed") return null;
-  const hint = { checking: t("profile.loading"), starting: t("profile.loading") };
-  const waiting = gate.phase === "waiting";
-  const failed = gate.phase === "denied" || gate.phase === "expired" || gate.phase === "error";
-  const reason = gate.reason || t("auth.gate.reason.generic");
-  const detail = {
-    denied: t("plugins.denied"),
-    expired: t("plugins.expired"),
-    error: t("plugins.error")
-  }[gate.phase];
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
-    ModalDialog,
-    {
-      open: true,
-      size: "sm",
-      onClose: () => {
-        cancel();
-      },
-      title: t("auth.gate.title"),
-      description: reason,
-      closeLabel: t("auth.gate.cancel"),
-      footer: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-login-gate-actions", children: [
-        waiting && gate.verification_url ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-          Button,
-          {
-            variant: "primary",
-            onClick: () => window.open(gate.verification_url, "_blank", "noopener,noreferrer"),
-            children: t("plugins.open")
-          }
-        ) : null,
-        failed ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Button, { variant: "primary", onClick: () => retry(), children: t("auth.gate.retry") }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Button, { variant: "ghost", onClick: () => cancel(), children: t("auth.gate.cancel") })
-      ] }),
-      children: [
-        waiting ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_jsx_runtime5.Fragment, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-login-gate-code", children: gate.user_code || "\u2014" }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-login-gate-hint", children: t("auth.gate.resumeHint") })
-        ] }) : null,
-        waiting || gate.phase === "checking" || gate.phase === "starting" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-login-gate-hint", children: hint[gate.phase] || t("plugins.waiting") }) : null,
-        failed ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-login-gate-error", children: detail }) : null
-      ]
-    }
-  );
-}
-
-// src/client/SidebarUpdateAction.jsx
-var import_react7 = require("react");
-var import_jsx_runtime6 = require("react/jsx-runtime");
-var ICON_DOWNLOAD = /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M8 2v9m0 0l-3-3m3 3l3-3M2 13.5h12" }) });
-var ICON_ROCKET = /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", children: [
-  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M12 2c-3.5 0-6.5 3-7.5 7.5L3 11l2 2 1.5-1.5C11 10.5 14 7.5 14 4V2h-2z" }),
-  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M6.5 9.5L4 12v2h2l2.5-2.5" }),
-  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "10.5", cy: "5.5", r: "1", fill: "currentColor" })
-] });
-function SidebarUpdateAction({ wide = true, t = (k) => k }) {
-  (0, import_react7.useEffect)(() => {
-    injectHubStyles();
-  }, []);
-  const [updateState, setUpdateState] = (0, import_react7.useState)({ status: "idle" });
-  const [requesting, setRequesting] = (0, import_react7.useState)(false);
-  (0, import_react7.useEffect)(() => {
-    let active = true;
-    async function checkStatus() {
-      try {
-        const res = await fetch("/api/desktop/updates/status", { cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
-          if (active && data.status) {
-            setUpdateState(data);
-          }
-        }
-      } catch {
-      }
-    }
-    void checkStatus();
-    const timer = setInterval(checkStatus, updateState.status === "downloading" ? 1e3 : 3e3);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
-  }, [updateState.status]);
-  const { status, latestVersion, error: updateError, isDev } = updateState;
-  if (isDev || status === "idle" || !status) {
-    return null;
-  }
-  const isReady = status === "readyToRestart";
-  const isDownloading = status === "downloading";
-  const isError = status === "error";
-  const handleClick = async (e) => {
-    e.stopPropagation();
-    if (requesting) return;
-    if (status === "available" || status === "error") {
-      setRequesting(true);
-      setUpdateState((prev) => ({ ...prev, status: "downloading" }));
-      try {
-        const res = await fetch("/api/desktop/updates/download", { method: "POST" });
-        if (res.ok) {
-          const data = await res.json();
-          setUpdateState(data);
-        }
-      } catch {
-        setUpdateState((prev) => ({ ...prev, status: "available" }));
-      } finally {
-        setRequesting(false);
-      }
-    } else if (status === "readyToRestart") {
-      setRequesting(true);
-      try {
-        await fetch("/api/desktop/updates/apply", { method: "POST" });
-      } catch {
-        setRequesting(false);
-      }
-    }
-  };
-  if (!wide) {
-    return null;
-  }
-  const pick = (key, fallback) => {
-    const value = t(key);
-    return value === key ? fallback : value;
-  };
-  const labelText = isReady ? pick("update.status.restart", "\u66F4\u65B0\u91CD\u542F") : isDownloading ? pick("update.status.downloading", "\u6B63\u5728\u4E0B\u8F7D") : isError ? pick("update.status.retry", "\u91CD\u8BD5\u66F4\u65B0") : pick("update.status.ready", "\u7ACB\u5373\u66F4\u65B0");
-  const versionHint = latestVersion ? pick("update.tooltip.newVersion", `\u65B0\u7248\u672C: v${latestVersion}`).replace("{version}", latestVersion) : void 0;
-  const title = isError ? updateError : versionHint;
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "omnimux-update-action", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-    Button,
-    {
-      type: "button",
-      size: "sm",
-      variant: isError ? "danger" : "primary",
-      className: "omnimux-update-action-btn",
-      "data-status": status,
-      onClick: handleClick,
-      disabled: isDownloading || requesting,
-      loading: isDownloading || requesting,
-      title,
-      leadingIcon: isReady ? ICON_ROCKET : ICON_DOWNLOAD,
-      children: labelText
-    }
-  ) });
-}
 
 // src/brand/defaults.js
 var BOOT_WINDOW_KEY = "__OMNIMUX_BRAND__";
@@ -2840,6 +3104,363 @@ function svgDataUri(logoSvg) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(logoSvg)}`;
 }
 
+// src/client/hero-brand.js
+var HERO_BRAND_SLOT = "conversation.hero.brand.mark";
+var HERO_BRAND_PRIORITY = -10;
+var HERO_BRAND_ID = "omnimux-hero-brand-mark";
+function heroMarkPresentation(size, className) {
+  const px = typeof size === "number" ? size : Number(size);
+  const edge = Number.isFinite(px) && px > 0 ? px : 34;
+  return {
+    width: edge,
+    height: edge,
+    className: typeof className === "string" && className !== "" ? className : void 0
+  };
+}
+function parseLogoSvg(markup) {
+  if (typeof markup !== "string" || !markup.includes("<svg")) {
+    throw new Error("omnimux: hero mark logoSvg must contain an <svg> document");
+  }
+  const viewBox = /viewBox\s*=\s*"([^"]+)"/i.exec(markup)?.[1] ?? "0 0 32 32";
+  const open = markup.search(/<svg\b/i);
+  const innerStart = markup.indexOf(">", open) + 1;
+  const close = markup.toLowerCase().lastIndexOf("</svg>");
+  const inner = (close === -1 ? markup.slice(innerStart) : markup.slice(innerStart, close)).trim();
+  return { viewBox, inner };
+}
+function resolveHeroLogoSvg(win) {
+  const target = win ?? (typeof window === "undefined" ? void 0 : window);
+  if (target) {
+    const svg = configFromWindow(target).logoSvg;
+    if (typeof svg === "string" && svg.includes("<svg")) return svg;
+  }
+  return DEFAULT_CONFIG.logoSvg ?? DEFAULT_LOGO_SVG;
+}
+function installHeroBrandSlot(ctx, component, config) {
+  const replace = config?.replaceHeroMark ?? (typeof window === "undefined" ? DEFAULT_CONFIG.replaceHeroMark : configFromWindow(window).replaceHeroMark);
+  if (!replace) return;
+  if (typeof ctx?.slots?.inject !== "function" || typeof ctx.slots.register !== "function") return;
+  ctx.slots.inject(HERO_BRAND_SLOT, () => ctx.slots.register({
+    name: HERO_BRAND_SLOT,
+    id: HERO_BRAND_ID,
+    priority: HERO_BRAND_PRIORITY
+  }, component));
+}
+
+// src/client/login-gate-view.js
+var LOGIN_GATE_COPY_KEYS = {
+  brandTitle: "auth.gate.brandTitle",
+  headline: "auth.gate.headline",
+  subdeck: "auth.gate.subdeck",
+  feature1: "auth.gate.feature1",
+  feature2: "auth.gate.feature2",
+  feature3: "auth.gate.feature3",
+  cta: "auth.gate.cta",
+  waitingDeviceCode: "auth.gate.waitingDeviceCode",
+  reopen: "auth.gate.reopen",
+  tag: "auth.gate.tag",
+  close: "auth.gate.close",
+  retry: "auth.gate.retry",
+  cancel: "auth.gate.cancel"
+};
+var LOGIN_GATE_FEATURE_KEYS = [
+  LOGIN_GATE_COPY_KEYS.feature1,
+  LOGIN_GATE_COPY_KEYS.feature2,
+  LOGIN_GATE_COPY_KEYS.feature3
+];
+function describeLoginGate(gate) {
+  const phase = gate && typeof gate.phase === "string" ? gate.phase : "closed";
+  if (phase === "closed") {
+    return {
+      visible: false,
+      phase,
+      showHero: false,
+      showCta: false,
+      showWaiting: false,
+      showRetry: false,
+      showError: false,
+      userCode: "",
+      verificationUrl: "",
+      intent: null
+    };
+  }
+  const failed = phase === "denied" || phase === "expired" || phase === "error";
+  const waiting = phase === "waiting";
+  const starting = phase === "starting" || phase === "checking";
+  const userCode = typeof gate.user_code === "string" && gate.user_code ? gate.user_code : "\u2014";
+  const verificationUrl = typeof gate.verification_url === "string" ? gate.verification_url : "";
+  return {
+    visible: true,
+    phase,
+    showHero: true,
+    showCta: phase === "prompt" || failed,
+    showWaiting: waiting || starting,
+    showRetry: failed,
+    showError: failed,
+    userCode,
+    verificationUrl,
+    intent: failed ? "retry" : phase === "prompt" ? "begin" : waiting ? "open-url" : null
+  };
+}
+function runLoginGateIntent(view, handlers) {
+  if (!view || !view.visible || !view.intent) return "noop";
+  if (view.intent === "begin") {
+    handlers.begin();
+    return "begin";
+  }
+  if (view.intent === "retry") {
+    handlers.retry();
+    return "retry";
+  }
+  if (view.intent === "open-url" && view.verificationUrl) {
+    handlers.openUrl(view.verificationUrl);
+    return "open-url";
+  }
+  return "noop";
+}
+
+// src/client/LoginGate.jsx
+var import_jsx_runtime5 = require("react/jsx-runtime");
+function GateBrandLogo() {
+  const { viewBox, inner } = parseLogoSvg(resolveHeroLogoSvg());
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-login-gate-brand-logo", "data-omnimux-login-gate-logo": "", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+    "svg",
+    {
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox,
+      "aria-hidden": "true",
+      focusable: "false",
+      dangerouslySetInnerHTML: { __html: inner }
+    }
+  ) });
+}
+function openVerificationUrl(url) {
+  if (typeof url === "string" && url) window.open(url, "_blank", "noopener,noreferrer");
+}
+function LoginGate({ t }) {
+  (0, import_react6.useEffect)(() => {
+    injectHubStyles();
+  }, []);
+  const gate = (0, import_react6.useSyncExternalStore)(subscribe, getSnapshot);
+  const view = describeLoginGate(gate);
+  (0, import_react6.useEffect)(() => {
+    if (!view.visible) return void 0;
+    const onKey = (event) => {
+      if (event.key === "Escape") cancel();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [view.visible]);
+  if (!view.visible) return null;
+  if (typeof document === "undefined" || !document.body) return null;
+  const failedDetail = {
+    denied: t("plugins.denied"),
+    expired: t("plugins.expired"),
+    error: t("plugins.error")
+  }[view.phase];
+  const onCta = () => {
+    runLoginGateIntent(view, { begin, retry, openUrl: openVerificationUrl });
+  };
+  return (0, import_react_dom.createPortal)(
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      "div",
+      {
+        className: "omnimux-login-gate-backdrop",
+        "data-omnimux-login-gate": "",
+        "data-phase": view.phase,
+        onClick: () => {
+          cancel();
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+          "div",
+          {
+            className: "omnimux-login-gate-dialog",
+            role: "dialog",
+            "aria-modal": "true",
+            "aria-labelledby": "omnimux-login-gate-headline",
+            onClick: (event) => {
+              event.stopPropagation();
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                IconButton,
+                {
+                  variant: "ghost",
+                  className: "omnimux-login-gate-close",
+                  "aria-label": t(LOGIN_GATE_COPY_KEYS.close),
+                  title: t(LOGIN_GATE_COPY_KEYS.close),
+                  onClick: () => {
+                    cancel();
+                  },
+                  children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_dsh_client_ui_primitives2.IconCloseOutline16, { size: 14 })
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("section", { className: "omnimux-login-gate-hero", "aria-hidden": "true", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-login-gate-hero-glow" }),
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-login-gate-hero-media" }),
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-login-gate-hero-jellyfish" }),
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-login-gate-hero-scrim" }),
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-login-gate-hero-type", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-login-gate-hero-tag", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-login-gate-hero-tag-dot" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: t(LOGIN_GATE_COPY_KEYS.tag) })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-login-gate-hero-brand", children: "OmniMux" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-login-gate-hero-title omnimux-login-gate-hero-ai", children: "AI" })
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("section", { className: "omnimux-login-gate-content", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-login-gate-brand", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(GateBrandLogo, {}),
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-login-gate-brand-title", children: t(LOGIN_GATE_COPY_KEYS.brandTitle) })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h2", { id: "omnimux-login-gate-headline", className: "omnimux-login-gate-headline", children: t(LOGIN_GATE_COPY_KEYS.headline) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-login-gate-subdeck", children: t(LOGIN_GATE_COPY_KEYS.subdeck) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("ul", { className: "omnimux-login-gate-features", children: LOGIN_GATE_FEATURE_KEYS.map((key) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("li", { className: "omnimux-login-gate-feature", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-login-gate-bullet" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: t(key) })
+                  ] }, key)) })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-login-gate-footer", children: [
+                  view.showError && failedDetail ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-login-gate-error", children: failedDetail }) : null,
+                  view.showWaiting ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-login-gate-waiting", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-login-gate-waiting-info", children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-login-gate-spinner", "aria-hidden": "true" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: t(LOGIN_GATE_COPY_KEYS.waitingDeviceCode) }),
+                      view.phase === "waiting" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "omnimux-login-gate-code", children: view.userCode }) : null
+                    ] }),
+                    view.phase === "waiting" && gate.verification_url ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                      Button,
+                      {
+                        variant: "ghost",
+                        className: "omnimux-login-gate-reopen",
+                        onClick: () => {
+                          window.open(gate.verification_url, "_blank", "noopener,noreferrer");
+                        },
+                        children: t(LOGIN_GATE_COPY_KEYS.reopen)
+                      }
+                    ) : null
+                  ] }) : null,
+                  view.showCta ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+                    Button,
+                    {
+                      variant: "primary",
+                      className: "omnimux-login-gate-cta",
+                      onClick: onCta,
+                      children: view.showRetry ? t(LOGIN_GATE_COPY_KEYS.retry) : t(LOGIN_GATE_COPY_KEYS.cta)
+                    }
+                  ) : null
+                ] })
+              ] })
+            ]
+          }
+        )
+      }
+    ),
+    document.body
+  );
+}
+
+// src/client/SidebarUpdateAction.jsx
+var import_react7 = require("react");
+var import_jsx_runtime6 = require("react/jsx-runtime");
+var ICON_DOWNLOAD = /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M8 2v9m0 0l-3-3m3 3l3-3M2 13.5h12" }) });
+var ICON_ROCKET = /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { width: "13", height: "13", viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", children: [
+  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M12 2c-3.5 0-6.5 3-7.5 7.5L3 11l2 2 1.5-1.5C11 10.5 14 7.5 14 4V2h-2z" }),
+  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M6.5 9.5L4 12v2h2l2.5-2.5" }),
+  /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "10.5", cy: "5.5", r: "1", fill: "currentColor" })
+] });
+function SidebarUpdateAction({ wide = true, t = (k) => k }) {
+  (0, import_react7.useEffect)(() => {
+    injectHubStyles();
+  }, []);
+  const [updateState, setUpdateState] = (0, import_react7.useState)({ status: "idle" });
+  const [requesting, setRequesting] = (0, import_react7.useState)(false);
+  (0, import_react7.useEffect)(() => {
+    let active = true;
+    async function checkStatus() {
+      try {
+        const res = await fetch("/api/desktop/updates/status", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (active && data.status) {
+            setUpdateState(data);
+          }
+        }
+      } catch {
+      }
+    }
+    void checkStatus();
+    const timer = setInterval(checkStatus, updateState.status === "downloading" ? 1e3 : 3e3);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [updateState.status]);
+  const { status, latestVersion, error: updateError, isDev } = updateState;
+  if (isDev || status === "idle" || !status) {
+    return null;
+  }
+  const isReady = status === "readyToRestart";
+  const isDownloading = status === "downloading";
+  const isError = status === "error";
+  const handleClick = async (e) => {
+    e.stopPropagation();
+    if (requesting) return;
+    if (status === "available" || status === "error") {
+      setRequesting(true);
+      setUpdateState((prev) => ({ ...prev, status: "downloading" }));
+      try {
+        const res = await fetch("/api/desktop/updates/download", { method: "POST" });
+        if (res.ok) {
+          const data = await res.json();
+          setUpdateState(data);
+        }
+      } catch {
+        setUpdateState((prev) => ({ ...prev, status: "available" }));
+      } finally {
+        setRequesting(false);
+      }
+    } else if (status === "readyToRestart") {
+      setRequesting(true);
+      try {
+        await fetch("/api/desktop/updates/apply", { method: "POST" });
+      } catch {
+        setRequesting(false);
+      }
+    }
+  };
+  if (!wide) {
+    return null;
+  }
+  const pick = (key, fallback) => {
+    const value = t(key);
+    return value === key ? fallback : value;
+  };
+  const labelText = isReady ? pick("update.status.restart", "\u66F4\u65B0\u91CD\u542F") : isDownloading ? pick("update.status.downloading", "\u6B63\u5728\u4E0B\u8F7D") : isError ? pick("update.status.retry", "\u91CD\u8BD5\u66F4\u65B0") : pick("update.status.ready", "\u7ACB\u5373\u66F4\u65B0");
+  const versionHint = latestVersion ? pick("update.tooltip.newVersion", `\u65B0\u7248\u672C: v${latestVersion}`).replace("{version}", latestVersion) : void 0;
+  const title = isError ? updateError : versionHint;
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "omnimux-update-action", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+    Button,
+    {
+      type: "button",
+      size: "sm",
+      variant: isError ? "danger" : "primary",
+      className: "omnimux-update-action-btn",
+      "data-status": status,
+      onClick: handleClick,
+      disabled: isDownloading || requesting,
+      loading: isDownloading || requesting,
+      title,
+      leadingIcon: isReady ? ICON_ROCKET : ICON_DOWNLOAD,
+      children: labelText
+    }
+  ) });
+}
+
 // src/client/conversation-box.js
 function sizableBox(node) {
   if (!node || typeof node.getBoundingClientRect !== "function") return null;
@@ -3365,49 +3986,6 @@ function installHubChrome(ctx) {
   }, "omnimux: product-stage chrome");
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux: dictionaries");
   return ctx.locale.bind(NS);
-}
-
-// src/client/hero-brand.js
-var HERO_BRAND_SLOT = "conversation.hero.brand.mark";
-var HERO_BRAND_PRIORITY = -10;
-var HERO_BRAND_ID = "omnimux-hero-brand-mark";
-function heroMarkPresentation(size, className) {
-  const px = typeof size === "number" ? size : Number(size);
-  const edge = Number.isFinite(px) && px > 0 ? px : 34;
-  return {
-    width: edge,
-    height: edge,
-    className: typeof className === "string" && className !== "" ? className : void 0
-  };
-}
-function parseLogoSvg(markup) {
-  if (typeof markup !== "string" || !markup.includes("<svg")) {
-    throw new Error("omnimux: hero mark logoSvg must contain an <svg> document");
-  }
-  const viewBox = /viewBox\s*=\s*"([^"]+)"/i.exec(markup)?.[1] ?? "0 0 32 32";
-  const open = markup.search(/<svg\b/i);
-  const innerStart = markup.indexOf(">", open) + 1;
-  const close = markup.toLowerCase().lastIndexOf("</svg>");
-  const inner = (close === -1 ? markup.slice(innerStart) : markup.slice(innerStart, close)).trim();
-  return { viewBox, inner };
-}
-function resolveHeroLogoSvg(win) {
-  const target = win ?? (typeof window === "undefined" ? void 0 : window);
-  if (target) {
-    const svg = configFromWindow(target).logoSvg;
-    if (typeof svg === "string" && svg.includes("<svg")) return svg;
-  }
-  return DEFAULT_CONFIG.logoSvg ?? DEFAULT_LOGO_SVG;
-}
-function installHeroBrandSlot(ctx, component, config) {
-  const replace = config?.replaceHeroMark ?? (typeof window === "undefined" ? DEFAULT_CONFIG.replaceHeroMark : configFromWindow(window).replaceHeroMark);
-  if (!replace) return;
-  if (typeof ctx?.slots?.inject !== "function" || typeof ctx.slots.register !== "function") return;
-  ctx.slots.inject(HERO_BRAND_SLOT, () => ctx.slots.register({
-    name: HERO_BRAND_SLOT,
-    id: HERO_BRAND_ID,
-    priority: HERO_BRAND_PRIORITY
-  }, component));
 }
 
 // src/client/HeroBrandMark.jsx
