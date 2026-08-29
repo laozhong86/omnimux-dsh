@@ -103,6 +103,35 @@ test('registerCatalogSkillProvider registers with ctx.skills', () => {
   assert.equal(registered, null)
 })
 
+test('registerCatalogSkillProvider never throws when ctx.skills is a Cordis Proxy that throws', () => {
+  // 复刻 Cordis 的 ctx Proxy：访问未注入的 services 会直接 throw
+  // "cannot get property ... without inject"，可选链 ?. 拦不住。
+  // registerCatalogSkillProvider 必须 try/catch 绝对防御，否则整个插件在 apply 阶段崩掉 Host。
+  const cordisProxy = new Proxy({}, {
+    get(_target, prop) {
+      if (prop === 'skills') throw new Error('cannot get property "skills" without inject')
+      return undefined
+    },
+  })
+
+  let disposer
+  assert.doesNotThrow(() => {
+    disposer = registerCatalogSkillProvider(cordisProxy)
+  })
+  assert.equal(typeof disposer, 'function')
+  disposer()
+})
+
+test('registerCatalogSkillProvider no-ops when ctx.skills lacks registerProvider', () => {
+  const noSkills = { skills: {} }
+  let disposer
+  assert.doesNotThrow(() => {
+    disposer = registerCatalogSkillProvider(noSkills)
+  })
+  assert.equal(typeof disposer, 'function')
+  disposer()
+})
+
 // —— DSH 官方契约镜像校验（依据 @deepseek-ai/dsh-skill/lib/index.js）——
 // validateCandidate 硬性要求 name/description/source/rank/provider，缺失即抛错并中止注册；
 // validateDefinition 额外要求 content。这里把官方规则搬进单测，防止契约漂移静默回归。
