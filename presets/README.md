@@ -12,7 +12,8 @@
 
 1. 本目录是 **OmniMux 产品真源**（不是 DSH 上游 `config/agent-presets`）。
 2. `scripts/sync-agent-presets.sh` 物化到：
-   - 各 profile 的 `node_modules/@deepseek-ai/dsh/config/agent-presets/`（桌面端强制以此为 system root）
+   - `app.asar.unpacked/.../config/agent-presets/`（真实文件）
+   - 同长度 patch `app.asar` header，把目录从官方 `code/cordis/minimal/standard` 改成三项（Electron 先读 asar 清单）
    - 可选清理 `~/.dsh/.agent-presets` 旧用户预设
 3. Profile `cordis.patch.yml` 必须设置：
 

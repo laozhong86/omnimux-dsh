@@ -47,11 +47,31 @@ for profile_home in "$HOME/.dsh/profiles"/* "$HOME/.omnimux/profiles"/* "$HOME/.
 done
 
 # 2) DSH Desktop / OmniMux unpacked app copies + desktop-fork vendor copies (best-effort)
+# Electron 把 shippedPresetRoot 解析到 app.asar 后再 rewrite 成 unpacked；
+# 但 asar header 仍列出官方 code/cordis/minimal。仅改 unpacked 不够，
+# 还要用同长度 header 补丁把目录改成三项（见 patch_asar_preset_header）。
 for app_presets in \
   "/Applications/DSH Desktop.app/Contents/Resources/app.asar.unpacked/node_modules/@deepseek-ai/dsh/config/agent-presets" \
   "/Applications/OmniMux.app/Contents/Resources/app.asar.unpacked/node_modules/@deepseek-ai/dsh/config/agent-presets" \
+  "/Applications/OmniMux Dev.app/Contents/Resources/app.asar.unpacked/node_modules/@deepseek-ai/dsh/config/agent-presets" \
   "$HOME/Desktop/Project/omnimux-desktop-fork/dsh-plugin-desktop/node_modules/@deepseek-ai/dsh/config/agent-presets"; do
   materialize_into "$app_presets"
+done
+
+patch_asar_preset_header() {
+  local asar="$1"
+  local unpacked="$2"
+  [ -f "$asar" ] && [ -d "$unpacked" ] || return 0
+  node "$ROOT/scripts/patch-asar-agent-presets.mjs" "$asar" "$unpacked" || echo "· asar header patch failed for $asar"
+}
+
+for pair in \
+  "/Applications/DSH Desktop.app/Contents/Resources/app.asar|/Applications/DSH Desktop.app/Contents/Resources/app.asar.unpacked/node_modules/@deepseek-ai/dsh/config/agent-presets" \
+  "/Applications/OmniMux.app/Contents/Resources/app.asar|/Applications/OmniMux.app/Contents/Resources/app.asar.unpacked/node_modules/@deepseek-ai/dsh/config/agent-presets" \
+  "/Applications/OmniMux Dev.app/Contents/Resources/app.asar|/Applications/OmniMux Dev.app/Contents/Resources/app.asar.unpacked/node_modules/@deepseek-ai/dsh/config/agent-presets"; do
+  asar="${pair%%|*}"
+  unpacked="${pair#*|}"
+  patch_asar_preset_header "$asar" "$unpacked"
 done
 
 # 3) ensure profile patch disables user-root merge

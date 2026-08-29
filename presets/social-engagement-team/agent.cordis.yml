@@ -202,7 +202,13 @@
         backgroundMode: continuable
 
     - id: tool-subagent-fork
-      name: '@deepseek-ai/dsh-tool-s    # ── OmniMux 社媒专家团子代理 ────────────────────────────────────────
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: fork
+        toolName: subagent_fork
+        backgroundMode: continuable
+
+    # ── OmniMux 社媒专家团子代理 ────────────────────────────────────────
     # 每个专家 = 一个带独立 persona 的 spawn 子代理工具，主理人按任务特性委派。
     - id: tool-subagent-expert-interaction-automator
       name: '@deepseek-ai/dsh-tool-subagent'
@@ -436,9 +442,6 @@
           - **降级条件**：负面量连续6h下降、核心负面帖被处理、品牌回应获认可
           - **特殊直升L3**：涉及人身安全
           …（完整能力见市场专家档案）
-财务专家。方法论：数据先行→报表比率拆解→预算差异归因→风险分级→建议量化。
-          产出：结构化财务分析报告（指标结论+归因+风险提示+可执行建议）。铁律：涉及会计准则/税法须检索核实；不构成审计或税务专业意见。
-
     # Product providers are host-plane singletons. Copy this preset, then
     # remove `disabled` from either ordinary tool row to expose that product
     # only to agents composed from the copy.
