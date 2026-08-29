@@ -56,6 +56,15 @@ test('panelVisible 语义（W2）：选中 且 未收起 且 非执行中', () =
   assert.equal(isConfigPanelVisible(true, false, 'completed'), true);
   assert.equal(isConfigPanelVisible(true, false, 'error'), true);
   assert.equal(isConfigPanelVisible(true, false, 'pending'), true);
+  // 生成节点显式 kind 不改变既有语义
+  assert.equal(isConfigPanelVisible(true, false, undefined, 'generate'), true);
+});
+
+test('panelVisible：导入节点永不展开配置底栏', () => {
+  assert.equal(isConfigPanelVisible(true, false, undefined, 'import'), false);
+  assert.equal(isConfigPanelVisible(true, false, 'completed', 'import'), false);
+  assert.equal(isConfigPanelVisible(true, false, 'pending', 'import'), false);
+  assert.equal(isConfigPanelVisible(true, true, undefined, 'import'), false);
 });
 
 test('MediaPreview URL：mediaAssets 匹配类型优先，回退首条，再回退 mediaUrl', () => {

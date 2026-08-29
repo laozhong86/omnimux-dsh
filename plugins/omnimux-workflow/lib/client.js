@@ -110,7 +110,7 @@ var en = {
 };
 var NS = "dsh-workflow";
 
-// ../../../omnimux-dsh/node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_01b5a2d96805ee6fa669372349bfb5d4/node_modules/dsh-ui-kit/lib/index.js
+// ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_01b5a2d96805ee6fa669372349bfb5d4/node_modules/dsh-ui-kit/lib/index.js
 var import_react = require("react");
 var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
 var import_jsx_runtime = require("react/jsx-runtime");
@@ -1000,7 +1000,7 @@ function registerWhenCoordinatorReady(row) {
   };
 }
 function createSidebarEntry(options) {
-  const { id, rank, label, iconSvg, stageStore, locale, customClassName, datasetKey, requireAuth, authReason } = options;
+  const { id, rank, label, iconSvg, stageStore, locale, customClassName, datasetKey } = options;
   const entry = document.createElement("button");
   entry.type = "button";
   if (datasetKey) entry.setAttribute(datasetKey, "");
@@ -1011,19 +1011,6 @@ function createSidebarEntry(options) {
   };
   updateLabel();
   entry.addEventListener("click", () => {
-    if (requireAuth !== false) {
-      const auth = (typeof window !== "undefined" ? window : void 0)?.__omnimuxAuth;
-      if (auth && typeof auth.ensureLogin === "function") {
-        const reason = authReason ? resolveLabel(authReason) : resolveLabel(label);
-        auth.ensureLogin({
-          reason,
-          onSuccess: () => {
-            stageStore.open();
-          }
-        });
-        return;
-      }
-    }
     stageStore.open();
   });
   const syncActive = () => {

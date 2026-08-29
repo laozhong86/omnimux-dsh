@@ -65,6 +65,11 @@ test('MaterialNode 挂载 ResourcePickerModal 与 useResourcePicker', () => {
   assert.equal(/createObjectURL/.test(nodeSrc), false);
 });
 
+test('导入节点选中不展开 ConfigPanel，替换走卡片按钮', () => {
+  assert.match(nodeSrc, /isConfigPanelVisible\(selected, panelDismissed, executionStatus, kind\)/);
+  assert.match(nodeSrc, /showReplaceButton = kind === 'import'/);
+});
+
 test('画布导入素材入口先选文件再落节点，取消不建空节点', () => {
   assert.match(editorSrc, /pickLocalFiles\(\)/);
   assert.match(editorSrc, /planStandaloneImportNodes/);

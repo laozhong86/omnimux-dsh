@@ -32,9 +32,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// ../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react-jsx-runtime.production.js
+// ../../node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react-jsx-runtime.production.js
 var require_react_jsx_runtime_production = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react-jsx-runtime.production.js"(exports) {
+  "../../node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react-jsx-runtime.production.js"(exports) {
     "use strict";
     var REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element");
     var REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment");
@@ -62,9 +62,9 @@ var require_react_jsx_runtime_production = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react.production.js
+// ../../node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react.production.js
 var require_react_production = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react.production.js"(exports) {
+  "../../node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react.production.js"(exports) {
     "use strict";
     var REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element");
     var REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal");
@@ -503,9 +503,9 @@ var require_react_production = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react.development.js
+// ../../node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react.development.js
 var require_react_development = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react.development.js"(exports, module) {
+  "../../node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react.development.js"(exports, module) {
     "use strict";
     "production" !== process.env.NODE_ENV && (function() {
       function defineDeprecationWarning(methodName, info) {
@@ -1475,9 +1475,9 @@ var require_react_development = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/index.js
+// ../../node_modules/.pnpm/react@19.2.8/node_modules/react/index.js
 var require_react = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/index.js"(exports, module) {
+  "../../node_modules/.pnpm/react@19.2.8/node_modules/react/index.js"(exports, module) {
     "use strict";
     if (process.env.NODE_ENV === "production") {
       module.exports = require_react_production();
@@ -1487,9 +1487,9 @@ var require_react = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react-jsx-runtime.development.js
+// ../../node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react-jsx-runtime.development.js
 var require_react_jsx_runtime_development = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react-jsx-runtime.development.js"(exports) {
+  "../../node_modules/.pnpm/react@19.2.8/node_modules/react/cjs/react-jsx-runtime.development.js"(exports) {
     "use strict";
     "production" !== process.env.NODE_ENV && (function() {
       function getComponentNameFromType(type) {
@@ -1744,9 +1744,9 @@ var require_react_jsx_runtime_development = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/jsx-runtime.js
+// ../../node_modules/.pnpm/react@19.2.8/node_modules/react/jsx-runtime.js
 var require_jsx_runtime = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/react@19.2.8/node_modules/react/jsx-runtime.js"(exports, module) {
+  "../../node_modules/.pnpm/react@19.2.8/node_modules/react/jsx-runtime.js"(exports, module) {
     "use strict";
     if (process.env.NODE_ENV === "production") {
       module.exports = require_react_jsx_runtime_production();
@@ -1756,9 +1756,9 @@ var require_jsx_runtime = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
+// ../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
 var require_use_sync_external_store_shim_production = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js"(exports) {
+  "../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js"(exports) {
     "use strict";
     var React = require_react();
     function is(x, y) {
@@ -1809,9 +1809,9 @@ var require_use_sync_external_store_shim_production = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js
+// ../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js
 var require_use_sync_external_store_shim_development = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js"(exports) {
+  "../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.development.js"(exports) {
     "use strict";
     "production" !== process.env.NODE_ENV && (function() {
       function is(x, y) {
@@ -1873,9 +1873,9 @@ var require_use_sync_external_store_shim_development = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/shim/index.js
+// ../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/shim/index.js
 var require_shim = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/shim/index.js"(exports, module) {
+  "../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/shim/index.js"(exports, module) {
     "use strict";
     if (process.env.NODE_ENV === "production") {
       module.exports = require_use_sync_external_store_shim_production();
@@ -1885,9 +1885,9 @@ var require_shim = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js
+// ../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js
 var require_with_selector_production = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js"(exports) {
+  "../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js"(exports) {
     "use strict";
     var React = require_react();
     var shim = require_shim();
@@ -1954,9 +1954,9 @@ var require_with_selector_production = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js
+// ../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js
 var require_with_selector_development = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js"(exports) {
+  "../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.development.js"(exports) {
     "use strict";
     "production" !== process.env.NODE_ENV && (function() {
       function is(x, y) {
@@ -2021,9 +2021,9 @@ var require_with_selector_development = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/shim/with-selector.js
+// ../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/shim/with-selector.js
 var require_with_selector = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/shim/with-selector.js"(exports, module) {
+  "../../node_modules/.pnpm/use-sync-external-store@1.6.0_react@19.2.8/node_modules/use-sync-external-store/shim/with-selector.js"(exports, module) {
     "use strict";
     if (process.env.NODE_ENV === "production") {
       module.exports = require_with_selector_production();
@@ -2033,9 +2033,9 @@ var require_with_selector = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom.production.js
+// ../../node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom.production.js
 var require_react_dom_production = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom.production.js"(exports) {
+  "../../node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom.production.js"(exports) {
     "use strict";
     var React = require_react();
     function formatProdErrorMessage(code) {
@@ -2182,9 +2182,9 @@ var require_react_dom_production = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom.development.js
+// ../../node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom.development.js
 var require_react_dom_development = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom.development.js"(exports) {
+  "../../node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom.development.js"(exports) {
     "use strict";
     "production" !== process.env.NODE_ENV && (function() {
       function noop2() {
@@ -2426,9 +2426,9 @@ var require_react_dom_development = __commonJS({
   }
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/index.js
+// ../../node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/index.js
 var require_react_dom = __commonJS({
-  "../../../omnimux-dsh/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/index.js"(exports, module) {
+  "../../node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/index.js"(exports, module) {
     "use strict";
     function checkDCE() {
       if (typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ === "undefined" || typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE !== "function") {
@@ -2453,8 +2453,7 @@ var require_react_dom = __commonJS({
 });
 
 // src/workflow/index.ts
-import { mkdirSync as mkdirSync10 } from "node:fs";
-import { join as join16 } from "node:path";
+import { mkdirSync as mkdirSync9 } from "node:fs";
 
 // src/workflow/paths.ts
 import { homedir } from "node:os";
@@ -2469,8 +2468,7 @@ function resolveWorkflowPaths(opts = {}) {
     root: root2,
     workspacesDir: join(root2, "workspaces"),
     executionsDir: join(root2, "executions"),
-    mediaDir: join(root2, "media"),
-    templatesDir: join(root2, "templates")
+    mediaDir: join(root2, "media")
   };
 }
 
@@ -2494,7 +2492,7 @@ var DEFAULT_CANVAS_SETTINGS = {
 };
 var SNAPSHOT_SCHEMA_VERSION = 3;
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/external.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/external.js
 var external_exports = {};
 __export(external_exports, {
   $brand: () => $brand,
@@ -2737,7 +2735,7 @@ __export(external_exports, {
   xor: () => xor
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/index.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/index.js
 var core_exports2 = {};
 __export(core_exports2, {
   $ZodAny: () => $ZodAny,
@@ -3016,7 +3014,7 @@ __export(core_exports2, {
   version: () => version
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js
 var _a;
 var NEVER = /* @__PURE__ */ Object.freeze({
   status: "aborted"
@@ -3093,7 +3091,7 @@ function config(newConfig) {
   return globalConfig;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js
 var util_exports = {};
 __export(util_exports, {
   BIGINT_FORMAT_RANGES: () => BIGINT_FORMAT_RANGES,
@@ -3789,7 +3787,7 @@ var Class = class {
   }
 };
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/errors.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/errors.js
 var initializer = (inst, def) => {
   inst.name = "$ZodError";
   Object.defineProperty(inst, "_zod", {
@@ -3928,7 +3926,7 @@ function prettifyError(error51) {
   return lines.join("\n");
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js
 var _parse = (_Err) => (schema, value, _ctx, _params) => {
   const ctx = _ctx ? { ..._ctx, async: false } : { async: false };
   const result = schema._zod.run({ value, issues: [] }, ctx);
@@ -4016,7 +4014,7 @@ var _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
 };
 var safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync($ZodRealError);
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/regexes.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/regexes.js
 var regexes_exports = {};
 __export(regexes_exports, {
   base64: () => base64,
@@ -4175,7 +4173,7 @@ var sha512_hex = /^[0-9a-fA-F]{128}$/;
 var sha512_base64 = /* @__PURE__ */ fixedBase64(86, "==");
 var sha512_base64url = /* @__PURE__ */ fixedBase64url(86);
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/checks.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/checks.js
 var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
   var _a3;
   inst._zod ?? (inst._zod = {});
@@ -4723,7 +4721,7 @@ var $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (ins
   };
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/doc.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/doc.js
 var Doc = class {
   constructor(args = []) {
     this.content = [];
@@ -4759,14 +4757,14 @@ var Doc = class {
   }
 };
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/versions.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/versions.js
 var version = {
   major: 4,
   minor: 4,
   patch: 3
 };
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js
 var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   var _a3;
   inst ?? (inst = {});
@@ -6859,7 +6857,7 @@ function handleRefineResult(result, payload, input, inst) {
   }
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/index.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/index.js
 var locales_exports = {};
 __export(locales_exports, {
   ar: () => ar_default,
@@ -6916,7 +6914,7 @@ __export(locales_exports, {
   zhTW: () => zh_TW_default
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ar.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ar.js
 var error = () => {
   const Sizable = {
     string: { unit: "\u062D\u0631\u0641", verb: "\u0623\u0646 \u064A\u062D\u0648\u064A" },
@@ -7023,7 +7021,7 @@ function ar_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/az.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/az.js
 var error2 = () => {
   const Sizable = {
     string: { unit: "simvol", verb: "olmal\u0131d\u0131r" },
@@ -7129,7 +7127,7 @@ function az_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/be.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/be.js
 function getBelarusianPlural(count, one2, few, many) {
   const absCount = Math.abs(count);
   const lastDigit = absCount % 10;
@@ -7286,7 +7284,7 @@ function be_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/bg.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/bg.js
 var error4 = () => {
   const Sizable = {
     string: { unit: "\u0441\u0438\u043C\u0432\u043E\u043B\u0430", verb: "\u0434\u0430 \u0441\u044A\u0434\u044A\u0440\u0436\u0430" },
@@ -7407,7 +7405,7 @@ function bg_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ca.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ca.js
 var error5 = () => {
   const Sizable = {
     string: { unit: "car\xE0cters", verb: "contenir" },
@@ -7516,7 +7514,7 @@ function ca_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/cs.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/cs.js
 var error6 = () => {
   const Sizable = {
     string: { unit: "znak\u016F", verb: "m\xEDt" },
@@ -7628,7 +7626,7 @@ function cs_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/da.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/da.js
 var error7 = () => {
   const Sizable = {
     string: { unit: "tegn", verb: "havde" },
@@ -7744,7 +7742,7 @@ function da_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/de.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/de.js
 var error8 = () => {
   const Sizable = {
     string: { unit: "Zeichen", verb: "zu haben" },
@@ -7853,7 +7851,7 @@ function de_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/el.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/el.js
 var error9 = () => {
   const Sizable = {
     string: { unit: "\u03C7\u03B1\u03C1\u03B1\u03BA\u03C4\u03AE\u03C1\u03B5\u03C2", verb: "\u03BD\u03B1 \u03AD\u03C7\u03B5\u03B9" },
@@ -7963,7 +7961,7 @@ function el_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/en.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/en.js
 var error10 = () => {
   const Sizable = {
     string: { unit: "characters", verb: "to have" },
@@ -8076,7 +8074,7 @@ function en_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/eo.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/eo.js
 var error11 = () => {
   const Sizable = {
     string: { unit: "karaktrojn", verb: "havi" },
@@ -8186,7 +8184,7 @@ function eo_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/es.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/es.js
 var error12 = () => {
   const Sizable = {
     string: { unit: "caracteres", verb: "tener" },
@@ -8319,7 +8317,7 @@ function es_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/fa.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/fa.js
 var error13 = () => {
   const Sizable = {
     string: { unit: "\u06A9\u0627\u0631\u0627\u06A9\u062A\u0631", verb: "\u062F\u0627\u0634\u062A\u0647 \u0628\u0627\u0634\u062F" },
@@ -8434,7 +8432,7 @@ function fa_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/fi.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/fi.js
 var error14 = () => {
   const Sizable = {
     string: { unit: "merkki\xE4", subject: "merkkijonon" },
@@ -8547,7 +8545,7 @@ function fi_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/fr.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/fr.js
 var error15 = () => {
   const Sizable = {
     string: { unit: "caract\xE8res", verb: "avoir" },
@@ -8673,7 +8671,7 @@ function fr_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/fr-CA.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/fr-CA.js
 var error16 = () => {
   const Sizable = {
     string: { unit: "caract\xE8res", verb: "avoir" },
@@ -8781,7 +8779,7 @@ function fr_CA_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/he.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/he.js
 var error17 = () => {
   const TypeNames = {
     string: { label: "\u05DE\u05D7\u05E8\u05D5\u05D6\u05EA", gender: "f" },
@@ -8976,7 +8974,7 @@ function he_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/hr.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/hr.js
 var error18 = () => {
   const Sizable = {
     string: { unit: "znakova", verb: "imati" },
@@ -9099,7 +9097,7 @@ function hr_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/hu.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/hu.js
 var error19 = () => {
   const Sizable = {
     string: { unit: "karakter", verb: "legyen" },
@@ -9208,7 +9206,7 @@ function hu_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/hy.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/hy.js
 function getArmenianPlural(count, one2, many) {
   return Math.abs(count) === 1 ? one2 : many;
 }
@@ -9356,7 +9354,7 @@ function hy_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/id.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/id.js
 var error21 = () => {
   const Sizable = {
     string: { unit: "karakter", verb: "memiliki" },
@@ -9463,7 +9461,7 @@ function id_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/is.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/is.js
 var error22 = () => {
   const Sizable = {
     string: { unit: "stafi", verb: "a\xF0 hafa" },
@@ -9573,7 +9571,7 @@ function is_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/it.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/it.js
 var error23 = () => {
   const Sizable = {
     string: { unit: "caratteri", verb: "avere" },
@@ -9682,7 +9680,7 @@ function it_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ja.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ja.js
 var error24 = () => {
   const Sizable = {
     string: { unit: "\u6587\u5B57", verb: "\u3067\u3042\u308B" },
@@ -9790,7 +9788,7 @@ function ja_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ka.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ka.js
 var error25 = () => {
   const Sizable = {
     string: { unit: "\u10E1\u10D8\u10DB\u10D1\u10DD\u10DA\u10DD", verb: "\u10E3\u10DC\u10D3\u10D0 \u10E8\u10D4\u10D8\u10EA\u10D0\u10D5\u10D3\u10D4\u10E1" },
@@ -9903,7 +9901,7 @@ function ka_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/km.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/km.js
 var error26 = () => {
   const Sizable = {
     string: { unit: "\u178F\u17BD\u17A2\u1780\u17D2\u179F\u179A", verb: "\u1782\u17BD\u179A\u1798\u17B6\u1793" },
@@ -10014,12 +10012,12 @@ function km_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/kh.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/kh.js
 function kh_default() {
   return km_default();
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ko.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ko.js
 var error27 = () => {
   const Sizable = {
     string: { unit: "\uBB38\uC790", verb: "to have" },
@@ -10131,7 +10129,7 @@ function ko_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/lt.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/lt.js
 var capitalizeFirstCharacter = (text) => {
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
@@ -10335,7 +10333,7 @@ function lt_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/mk.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/mk.js
 var error29 = () => {
   const Sizable = {
     string: { unit: "\u0437\u043D\u0430\u0446\u0438", verb: "\u0434\u0430 \u0438\u043C\u0430\u0430\u0442" },
@@ -10445,7 +10443,7 @@ function mk_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ms.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ms.js
 var error30 = () => {
   const Sizable = {
     string: { unit: "aksara", verb: "mempunyai" },
@@ -10553,7 +10551,7 @@ function ms_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/nl.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/nl.js
 var error31 = () => {
   const Sizable = {
     string: { unit: "tekens", verb: "heeft" },
@@ -10664,7 +10662,7 @@ function nl_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/no.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/no.js
 var error32 = () => {
   const Sizable = {
     string: { unit: "tegn", verb: "\xE5 ha" },
@@ -10773,7 +10771,7 @@ function no_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ota.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ota.js
 var error33 = () => {
   const Sizable = {
     string: { unit: "harf", verb: "olmal\u0131d\u0131r" },
@@ -10883,7 +10881,7 @@ function ota_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ps.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ps.js
 var error34 = () => {
   const Sizable = {
     string: { unit: "\u062A\u0648\u06A9\u064A", verb: "\u0648\u0644\u0631\u064A" },
@@ -10998,7 +10996,7 @@ function ps_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/pl.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/pl.js
 var error35 = () => {
   const Sizable = {
     string: { unit: "znak\xF3w", verb: "mie\u0107" },
@@ -11108,7 +11106,7 @@ function pl_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/pt.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/pt.js
 var error36 = () => {
   const Sizable = {
     string: { unit: "caracteres", verb: "ter" },
@@ -11217,7 +11215,7 @@ function pt_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ro.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ro.js
 var error37 = () => {
   const Sizable = {
     string: { unit: "caractere", verb: "s\u0103 aib\u0103" },
@@ -11337,7 +11335,7 @@ function ro_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ru.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ru.js
 function getRussianPlural(count, one2, few, many) {
   const absCount = Math.abs(count);
   const lastDigit = absCount % 10;
@@ -11494,7 +11492,7 @@ function ru_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/sl.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/sl.js
 var error39 = () => {
   const Sizable = {
     string: { unit: "znakov", verb: "imeti" },
@@ -11604,7 +11602,7 @@ function sl_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/sv.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/sv.js
 var error40 = () => {
   const Sizable = {
     string: { unit: "tecken", verb: "att ha" },
@@ -11715,7 +11713,7 @@ function sv_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ta.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ta.js
 var error41 = () => {
   const Sizable = {
     string: { unit: "\u0B8E\u0BB4\u0BC1\u0BA4\u0BCD\u0BA4\u0BC1\u0B95\u0BCD\u0B95\u0BB3\u0BCD", verb: "\u0B95\u0BCA\u0BA3\u0BCD\u0B9F\u0BBF\u0BB0\u0BC1\u0B95\u0BCD\u0B95 \u0BB5\u0BC7\u0BA3\u0BCD\u0B9F\u0BC1\u0BAE\u0BCD" },
@@ -11826,7 +11824,7 @@ function ta_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/th.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/th.js
 var error42 = () => {
   const Sizable = {
     string: { unit: "\u0E15\u0E31\u0E27\u0E2D\u0E31\u0E01\u0E29\u0E23", verb: "\u0E04\u0E27\u0E23\u0E21\u0E35" },
@@ -11937,7 +11935,7 @@ function th_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/tr.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/tr.js
 var error43 = () => {
   const Sizable = {
     string: { unit: "karakter", verb: "olmal\u0131" },
@@ -12043,7 +12041,7 @@ function tr_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/uk.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/uk.js
 var error44 = () => {
   const Sizable = {
     string: { unit: "\u0441\u0438\u043C\u0432\u043E\u043B\u0456\u0432", verb: "\u043C\u0430\u0442\u0438\u043C\u0435" },
@@ -12152,12 +12150,12 @@ function uk_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ua.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ua.js
 function ua_default() {
   return uk_default();
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ur.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/ur.js
 var error45 = () => {
   const Sizable = {
     string: { unit: "\u062D\u0631\u0648\u0641", verb: "\u06C1\u0648\u0646\u0627" },
@@ -12268,7 +12266,7 @@ function ur_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/uz.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/uz.js
 var error46 = () => {
   const Sizable = {
     string: { unit: "belgi", verb: "bo\u2018lishi kerak" },
@@ -12379,7 +12377,7 @@ function uz_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/vi.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/vi.js
 var error47 = () => {
   const Sizable = {
     string: { unit: "k\xFD t\u1EF1", verb: "c\xF3" },
@@ -12488,7 +12486,7 @@ function vi_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/zh-CN.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/zh-CN.js
 var error48 = () => {
   const Sizable = {
     string: { unit: "\u5B57\u7B26", verb: "\u5305\u542B" },
@@ -12598,7 +12596,7 @@ function zh_CN_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/zh-TW.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/zh-TW.js
 var error49 = () => {
   const Sizable = {
     string: { unit: "\u5B57\u5143", verb: "\u64C1\u6709" },
@@ -12706,7 +12704,7 @@ function zh_TW_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/yo.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/yo.js
 var error50 = () => {
   const Sizable = {
     string: { unit: "\xE0mi", verb: "n\xED" },
@@ -12814,7 +12812,7 @@ function yo_default() {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/registries.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/registries.js
 var _a2;
 var $output = /* @__PURE__ */ Symbol("ZodOutput");
 var $input = /* @__PURE__ */ Symbol("ZodInput");
@@ -12864,7 +12862,7 @@ function registry() {
 (_a2 = globalThis).__zod_globalRegistry ?? (_a2.__zod_globalRegistry = registry());
 var globalRegistry = globalThis.__zod_globalRegistry;
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/api.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/api.js
 // @__NO_SIDE_EFFECTS__
 function _string(Class2, params) {
   return new Class2({
@@ -13903,7 +13901,7 @@ function _stringFormat(Class2, format, fnOrRegex, _params = {}) {
   return inst;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/to-json-schema.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/to-json-schema.js
 function initializeContext(params) {
   let target = params?.target ?? "draft-2020-12";
   if (target === "draft-4")
@@ -14262,7 +14260,7 @@ var createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) =
   return finalize(ctx, schema);
 };
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema-processors.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema-processors.js
 var formatMap = {
   guid: "uuid",
   url: "uri",
@@ -14806,7 +14804,7 @@ function toJSONSchema(input, params) {
   return finalize(ctx, input);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema-generator.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema-generator.js
 var JSONSchemaGenerator = class {
   /** @deprecated Access via ctx instead */
   get metadataRegistry() {
@@ -14881,10 +14879,10 @@ var JSONSchemaGenerator = class {
   }
 };
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema.js
 var json_schema_exports = {};
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js
 var schemas_exports2 = {};
 __export(schemas_exports2, {
   ZodAny: () => ZodAny,
@@ -15055,7 +15053,7 @@ __export(schemas_exports2, {
   xor: () => xor
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/checks.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/checks.js
 var checks_exports2 = {};
 __export(checks_exports2, {
   endsWith: () => _endsWith,
@@ -15089,7 +15087,7 @@ __export(checks_exports2, {
   uppercase: () => _uppercase
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/iso.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/iso.js
 var iso_exports = {};
 __export(iso_exports, {
   ZodISODate: () => ZodISODate,
@@ -15130,7 +15128,7 @@ function duration2(params) {
   return _isoDuration(ZodISODuration, params);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/errors.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/errors.js
 var initializer2 = (inst, issues) => {
   $ZodError.init(inst, issues);
   inst.name = "ZodError";
@@ -15170,7 +15168,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, {
   Parent: Error
 });
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/parse.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/parse.js
 var parse2 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync2 = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse2 = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -15184,7 +15182,7 @@ var safeDecode2 = /* @__PURE__ */ _safeDecode(ZodRealError);
 var safeEncodeAsync2 = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 var safeDecodeAsync2 = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js
 var _installedGroups = /* @__PURE__ */ new WeakMap();
 function _installLazyMethods(inst, group, methods) {
   const proto = Object.getPrototypeOf(inst);
@@ -16474,7 +16472,7 @@ function preprocess(fn, schema) {
   });
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/compat.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/compat.js
 var ZodIssueCode = {
   invalid_type: "invalid_type",
   too_big: "too_big",
@@ -16500,7 +16498,7 @@ var ZodFirstPartyTypeKind;
 /* @__PURE__ */ (function(ZodFirstPartyTypeKind2) {
 })(ZodFirstPartyTypeKind || (ZodFirstPartyTypeKind = {}));
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/from-json-schema.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/from-json-schema.js
 var z = {
   ...schemas_exports2,
   ...checks_exports2,
@@ -16980,7 +16978,7 @@ function fromJSONSchema(schema, params) {
   return convertSchema(normalized, ctx);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/coerce.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/coerce.js
 var coerce_exports = {};
 __export(coerce_exports, {
   bigint: () => bigint3,
@@ -17005,7 +17003,7 @@ function date4(params) {
   return _coercedDate(ZodDate, params);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/external.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/external.js
 config(en_default());
 
 // src/workflow/workspace/snapshotSchema.ts
@@ -17024,10 +17022,6 @@ var canvasNodeSchema = external_exports.object({
   width: external_exports.number().optional(),
   height: external_exports.number().optional(),
   parentId: external_exports.string().optional(),
-  extent: external_exports.union([
-    external_exports.literal("parent"),
-    external_exports.tuple([external_exports.number(), external_exports.number(), external_exports.number(), external_exports.number()])
-  ]).optional(),
   zIndex: external_exports.number().optional(),
   style: external_exports.record(external_exports.string(), external_exports.unknown()).optional()
 });
@@ -17303,120 +17297,9 @@ function createWorkspaceStore(opts) {
   };
 }
 
-// src/workflow/templates/TemplateStore.ts
-import {
-  existsSync as existsSync2,
-  mkdirSync as mkdirSync2,
-  readFileSync as readFileSync2,
-  readdirSync as readdirSync2,
-  renameSync as renameSync2,
-  rmSync as rmSync2,
-  writeFileSync as writeFileSync2
-} from "node:fs";
-import { join as join3 } from "node:path";
-
-// src/workflow/templates/templateSchema.ts
-var TEMPLATE_SCHEMA_VERSION = 1;
-var workflowTemplateSchema = external_exports.object({
-  schemaVersion: external_exports.literal(TEMPLATE_SCHEMA_VERSION),
-  id: external_exports.string().min(1),
-  name: external_exports.string().min(1).max(200),
-  description: external_exports.string().default(""),
-  tags: external_exports.array(external_exports.string()).default([]),
-  coverUrl: external_exports.string().optional(),
-  createdAt: external_exports.string(),
-  updatedAt: external_exports.string(),
-  nodeCount: external_exports.number().int().min(0),
-  nodes: external_exports.array(canvasNodeSchema),
-  edges: external_exports.array(canvasEdgeSchema)
-});
-var createTemplatePayloadSchema = external_exports.object({
-  name: external_exports.string().min(1).max(200),
-  description: external_exports.string().optional(),
-  tags: external_exports.array(external_exports.string()).optional(),
-  coverUrl: external_exports.string().optional(),
-  nodes: external_exports.array(canvasNodeSchema),
-  edges: external_exports.array(canvasEdgeSchema)
-});
-
-// src/workflow/templates/TemplateStore.ts
-var TemplateStore = class {
-  templatesDir;
-  constructor(opts = {}) {
-    if (opts.templatesDir) {
-      this.templatesDir = opts.templatesDir;
-    } else {
-      const paths = resolveWorkflowPaths(opts);
-      this.templatesDir = paths.templatesDir;
-    }
-    mkdirSync2(this.templatesDir, { recursive: true });
-  }
-  list() {
-    if (!existsSync2(this.templatesDir)) return [];
-    const files = readdirSync2(this.templatesDir).filter((f) => f.endsWith(".json"));
-    const templates = [];
-    for (const file2 of files) {
-      try {
-        const raw = readFileSync2(join3(this.templatesDir, file2), "utf8");
-        const parsed = JSON.parse(raw);
-        const validated = workflowTemplateSchema.safeParse(parsed);
-        if (validated.success) {
-          templates.push(validated.data);
-        }
-      } catch {
-      }
-    }
-    return templates.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  }
-  get(id2) {
-    const file2 = join3(this.templatesDir, `${id2}.json`);
-    if (!existsSync2(file2)) return null;
-    try {
-      const raw = readFileSync2(file2, "utf8");
-      const parsed = JSON.parse(raw);
-      const validated = workflowTemplateSchema.safeParse(parsed);
-      return validated.success ? validated.data : null;
-    } catch {
-      return null;
-    }
-  }
-  save(payload) {
-    const validated = createTemplatePayloadSchema.parse(payload);
-    const id2 = payload.id || `tmpl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    const now2 = (/* @__PURE__ */ new Date()).toISOString();
-    const template = {
-      schemaVersion: TEMPLATE_SCHEMA_VERSION,
-      id: id2,
-      name: validated.name,
-      description: validated.description || "",
-      tags: validated.tags || [],
-      coverUrl: validated.coverUrl,
-      createdAt: now2,
-      updatedAt: now2,
-      nodeCount: validated.nodes.length,
-      nodes: validated.nodes,
-      edges: validated.edges
-    };
-    const targetFile = join3(this.templatesDir, `${id2}.json`);
-    const tmpFile = `${targetFile}.tmp-${process.pid}-${Date.now()}`;
-    writeFileSync2(tmpFile, `${JSON.stringify(template, null, 2)}
-`, "utf8");
-    renameSync2(tmpFile, targetFile);
-    return template;
-  }
-  delete(id2) {
-    const targetFile = join3(this.templatesDir, `${id2}.json`);
-    if (existsSync2(targetFile)) {
-      rmSync2(targetFile, { force: true });
-      return true;
-    }
-    return false;
-  }
-};
-
 // src/workflow/seam/mockGateway.ts
-import { mkdirSync as mkdirSync3, writeFileSync as writeFileSync3 } from "node:fs";
-import { join as join4 } from "node:path";
+import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2 } from "node:fs";
+import { join as join3 } from "node:path";
 import { randomUUID as randomUUID2 } from "node:crypto";
 var DEFAULT_MOCK_MIN_LATENCY_MS = 1e3;
 var DEFAULT_MOCK_MAX_LATENCY_MS = 3e3;
@@ -17443,8 +17326,8 @@ function createMockGateway(opts = {}) {
           return;
         }
         try {
-          mkdirSync3(join4(dest, ".."), { recursive: true });
-          writeFileSync3(dest, placeholderFor(task.req.capability), "utf8");
+          mkdirSync2(join3(dest, ".."), { recursive: true });
+          writeFileSync2(dest, placeholderFor(task.req.capability), "utf8");
           resolve5();
         } catch (error51) {
           reject(error51 instanceof Error ? error51 : new Error(String(error51)));
@@ -17495,7 +17378,7 @@ function createMockGateway(opts = {}) {
 }
 
 // src/workflow/seam/omnimuxGateway.ts
-import { mkdirSync as mkdirSync4, writeFileSync as writeFileSync4 } from "node:fs";
+import { mkdirSync as mkdirSync3, writeFileSync as writeFileSync3 } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID as randomUUID3 } from "node:crypto";
 
@@ -18469,8 +18352,8 @@ function createOmnimuxSeamClient(opts) {
         const text = typeof result2.text === "string" ? result2.text : "";
         tasks.delete(taskId);
         try {
-          mkdirSync4(dirname(dest), { recursive: true });
-          writeFileSync4(dest, text, "utf8");
+          mkdirSync3(dirname(dest), { recursive: true });
+          writeFileSync3(dest, text, "utf8");
         } catch (error51) {
           logger.warn("failed to persist text artifact", {
             dest,
@@ -19461,41 +19344,41 @@ var ExecutionScheduler = class _ExecutionScheduler {
 
 // src/workflow/execution/executionStore.ts
 import {
-  existsSync as existsSync3,
-  mkdirSync as mkdirSync5,
-  readFileSync as readFileSync3,
-  readdirSync as readdirSync3,
-  renameSync as renameSync3,
-  rmSync as rmSync3,
-  writeFileSync as writeFileSync5
+  existsSync as existsSync2,
+  mkdirSync as mkdirSync4,
+  readFileSync as readFileSync2,
+  readdirSync as readdirSync2,
+  renameSync as renameSync2,
+  rmSync as rmSync2,
+  writeFileSync as writeFileSync4
 } from "node:fs";
-import { join as join5 } from "node:path";
+import { join as join4 } from "node:path";
 var RECORD_FILE = "execution.json";
 var DAG_STATE_FILE = "dag-state.json";
 function atomicWriteJson2(filePath, value) {
-  mkdirSync5(join5(filePath, ".."), { recursive: true });
+  mkdirSync4(join4(filePath, ".."), { recursive: true });
   const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
-  writeFileSync5(tmp, `${JSON.stringify(value, null, 2)}
+  writeFileSync4(tmp, `${JSON.stringify(value, null, 2)}
 `, "utf8");
-  renameSync3(tmp, filePath);
+  renameSync2(tmp, filePath);
 }
 function readJsonFile(filePath) {
-  if (!existsSync3(filePath)) return null;
+  if (!existsSync2(filePath)) return null;
   try {
-    return JSON.parse(readFileSync3(filePath, "utf8"));
+    return JSON.parse(readFileSync2(filePath, "utf8"));
   } catch {
     return null;
   }
 }
 function executionDir(executionsDir, executionId) {
-  return join5(executionsDir, executionId);
+  return join4(executionsDir, executionId);
 }
 function saveExecutionRecord(executionsDir, record2) {
-  atomicWriteJson2(join5(executionDir(executionsDir, record2.id), RECORD_FILE), record2);
+  atomicWriteJson2(join4(executionDir(executionsDir, record2.id), RECORD_FILE), record2);
 }
 function loadExecutionRecord(executionsDir, executionId) {
   const raw = readJsonFile(
-    join5(executionDir(executionsDir, executionId), RECORD_FILE)
+    join4(executionDir(executionsDir, executionId), RECORD_FILE)
   );
   if (!raw || typeof raw.id !== "string" || !Array.isArray(raw.nodes)) return null;
   return {
@@ -19522,17 +19405,17 @@ function loadExecutionRecord(executionsDir, executionId) {
   };
 }
 function saveDagState(executionsDir, executionId, dagState) {
-  atomicWriteJson2(join5(executionDir(executionsDir, executionId), DAG_STATE_FILE), dagState);
+  atomicWriteJson2(join4(executionDir(executionsDir, executionId), DAG_STATE_FILE), dagState);
 }
 function loadDagState(executionsDir, executionId) {
   return readJsonFile(
-    join5(executionDir(executionsDir, executionId), DAG_STATE_FILE)
+    join4(executionDir(executionsDir, executionId), DAG_STATE_FILE)
   );
 }
 function listPersistedExecutionIds(executionsDir) {
-  if (!existsSync3(executionsDir)) return [];
+  if (!existsSync2(executionsDir)) return [];
   const ids = [];
-  for (const entry of readdirSync3(executionsDir, { withFileTypes: true })) {
+  for (const entry of readdirSync2(executionsDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const record2 = loadExecutionRecord(executionsDir, entry.name);
     if (record2) ids.push({ id: record2.id, createdAt: record2.createdAt });
@@ -19614,11 +19497,7 @@ var WORKFLOW_API_ROUTES = {
   /** POST: pause | resume | cancel. */
   executionAction: (workspaceId, executionId, action) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/${action}`,
   /** GET: execution SSE event stream (text/event-stream). */
-  executionEvents: (workspaceId, executionId) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/events`,
-  /** GET: list templates. POST: create template. */
-  templates: `${WORKFLOW_ROUTE_PREFIX}/api/templates`,
-  /** GET/DELETE one template. */
-  template: (id2) => `${WORKFLOW_ROUTE_PREFIX}/api/templates/${id2}`
+  executionEvents: (workspaceId, executionId) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/events`
 };
 
 // src/workflow/execution/nodeExecutors.ts
@@ -19693,7 +19572,7 @@ function normalizeOutput(output) {
 }
 
 // src/workflow/execution/materialGatewayExecutor.ts
-import { join as join6 } from "node:path";
+import { join as join5 } from "node:path";
 function readMockFail(nodeData) {
   return nodeData.mockFail === true;
 }
@@ -19750,7 +19629,7 @@ function createMaterialGatewayExecutor(opts) {
       } else if (upstream.mediaType === "video") {
         ctx.reportProgress?.(15, "\u89C6\u9891\u53C2\u8003\u8F93\u5165\u6682\u4E0D\u652F\u6301\uFF08\u7B49\u5F85\u6267\u884C\u4E2D\u67A2\u6269\u5C55\uFF09\uFF0C\u5DF2\u5FFD\u7565");
       }
-      const dest = join6(ctx.mediaDir, `${node.id}.${extFor(capability)}`);
+      const dest = join5(ctx.mediaDir, `${node.id}.${extFor(capability)}`);
       ctx.reportProgress?.(10, "\u5DF2\u63D0\u4EA4\u751F\u6210\u4EFB\u52A1");
       const submitted = await gateway.submit({
         capability,
@@ -19906,7 +19785,8 @@ function createVideoCompositionExecutor() {
   };
 }
 
-// src/workflow/execution/executionTypes.ts
+// src/workflow/execution/ExecutionManager.ts
+var LOG_TAG6 = "ExecutionManager";
 var RECORD_SYNC_INTERVAL_MS = 5e3;
 var EXECUTION_TIMEOUT_MS = 30 * 60 * 1e3;
 var TERMINAL_STATUSES = /* @__PURE__ */ new Set([
@@ -19914,11 +19794,7 @@ var TERMINAL_STATUSES = /* @__PURE__ */ new Set([
   ExecutionStatus.ERROR,
   ExecutionStatus.CANCELLED
 ]);
-var CANCELABLE_STATUSES = /* @__PURE__ */ new Set([
-  ExecutionStatus.PENDING,
-  ExecutionStatus.RUNNING,
-  ExecutionStatus.PAUSED
-]);
+var logger6 = createWorkflowLogger(LOG_TAG6);
 var EVENT_LOG_LIMIT = 500;
 var ALL_EVENT_NAMES = [
   "execution_start",
@@ -19933,524 +19809,428 @@ var ALL_EVENT_NAMES = [
   "execution_error",
   "execution_cancelled"
 ];
-
-// src/workflow/execution/executionTimers.ts
-var logger6 = createWorkflowLogger("ExecutionTimers");
-function persistRecord(executionsDir, entry) {
-  try {
-    const record2 = buildExecutionRecord({
-      context: entry.context.toJSON(),
-      nodes: entry.nodes,
-      edges: entry.edges,
-      maxParallel: entry.maxParallel,
-      createdAt: entry.createdAt,
-      progress: entry.scheduler.getProgress(),
-      eventLog: entry.eventLog
-    });
-    saveExecutionRecord(executionsDir, record2);
-  } catch (error51) {
-    const message = error51 instanceof Error ? error51.message : String(error51);
-    logger6.warn("failed to persist execution record", {
-      executionId: entry.context.id,
-      error: message
-    });
-  }
-}
-function persistDagState(executionsDir, executionId, state) {
-  saveDagState(executionsDir, executionId, state);
-  return Promise.resolve();
-}
-function stopSyncTimer(entry) {
-  if (!entry.syncTimer) return;
-  clearInterval(entry.syncTimer);
-  entry.syncTimer = null;
-}
-function stopTimeoutTimer(entry) {
-  if (!entry.timeoutTimer) return;
-  clearTimeout(entry.timeoutTimer);
-  entry.timeoutTimer = null;
-}
-function startTimeout(entry, onTimeout) {
-  entry.timeoutTimer = setTimeout(onTimeout, EXECUTION_TIMEOUT_MS);
-}
-function appendReplayEvent(entry, event, payload) {
-  entry.eventLog.push({ event, payload });
-  if (entry.eventLog.length <= EVENT_LOG_LIMIT) return;
-  const excess = entry.eventLog.length - EVENT_LOG_LIMIT;
-  entry.eventLog.splice(0, excess);
-}
-function setupExecutionListeners(executionsDir, entry) {
-  const { context } = entry;
-  const onStart = () => {
-    persistRecord(executionsDir, entry);
-    stopSyncTimer(entry);
-    entry.syncTimer = setInterval(
-      () => persistRecord(executionsDir, entry),
-      RECORD_SYNC_INTERVAL_MS
-    );
-  };
-  const onStateChange = () => {
-    persistRecord(executionsDir, entry);
-  };
-  const onTerminal = () => {
-    stopSyncTimer(entry);
-    persistRecord(executionsDir, entry);
-  };
-  context.events.on("execution_start", onStart);
-  context.events.on("execution_paused", onStateChange);
-  context.events.on("execution_resumed", onStateChange);
-  context.events.on("execution_complete", onTerminal);
-  context.events.on("execution_error", onTerminal);
-  context.events.on("execution_cancelled", onTerminal);
-  for (const event of ALL_EVENT_NAMES) {
-    const recorder = (payload) => {
-      appendReplayEvent(entry, event, payload);
-    };
-    context.events.on(event, recorder);
-    entry.disposers.push(() => context.events.off(event, recorder));
-  }
-  entry.disposers.push(
-    () => context.events.off("execution_start", onStart),
-    () => context.events.off("execution_paused", onStateChange),
-    () => context.events.off("execution_resumed", onStateChange),
-    () => context.events.off("execution_complete", onTerminal),
-    () => context.events.off("execution_error", onTerminal),
-    () => context.events.off("execution_cancelled", onTerminal)
-  );
-}
-function cleanupExecution(entries, executionId) {
-  const entry = entries.get(executionId);
-  if (!entry) return;
-  const wasRunning = entry.context.status === ExecutionStatus.RUNNING;
-  if (wasRunning) {
-    entry.scheduler.cancel();
-    entry.abortController.abort();
-  }
-  stopSyncTimer(entry);
-  stopTimeoutTimer(entry);
-  entries.delete(executionId);
-  logger6.info("execution cleaned up", {
-    executionId,
-    wasRunning,
-    finalStatus: entry.context.status
-  });
-}
-function disposeAllExecutions(executionsDir, entries) {
-  for (const entry of entries.values()) {
-    stopSyncTimer(entry);
-    stopTimeoutTimer(entry);
-    for (const dispose of entry.disposers) dispose();
-    entry.disposers.length = 0;
-    entry.scheduler.dispose();
-    persistRecord(executionsDir, entry);
-  }
-  entries.clear();
-}
-
-// src/workflow/execution/executionRecovery.ts
-var logger7 = createWorkflowLogger("ExecutionRecovery");
-function handleTimedOutExecution(executionsDir, record2) {
-  logger7.warn("recovered execution timed out, marking failed", {
-    executionId: record2.id
-  });
-  saveExecutionRecord(executionsDir, {
-    ...record2,
-    status: ExecutionStatus.ERROR,
-    error: `Execution timed out after restart (>${Math.round(EXECUTION_TIMEOUT_MS / 6e4)}min)`,
-    completedAt: Date.now()
-  });
-  return null;
-}
-function resetInFlightNodeStates(context, dagState) {
-  for (const nodeId of dagState.runningNodes || []) {
-    const state = context.nodeStates.get(nodeId);
-    if (!state || state.status !== "running") continue;
-    context.nodeStates.set(nodeId, {
-      status: "pending",
-      startedAt: null,
-      completedAt: null,
-      error: null
-    });
-  }
-}
-function filterValidReplayLog(eventLog) {
-  const allowedNames = ALL_EVENT_NAMES;
-  const result = [];
-  for (const row of eventLog) {
-    if (allowedNames.includes(row.event)) {
-      result.push(row);
-    }
-  }
-  return result;
-}
-function buildRecoveredContext(record2) {
-  return ExecutionContext.fromJSON({
-    id: record2.id,
-    workflowId: record2.workspaceId,
-    status: record2.status,
-    variables: record2.variables,
-    nodeOutputs: record2.nodeOutputs,
-    nodeStates: record2.nodeStates,
-    mediaAssets: record2.mediaAssets,
-    breakpoints: record2.breakpoints,
-    startedAt: record2.startedAt,
-    completedAt: record2.completedAt,
-    error: record2.error,
-    totalNodes: record2.totalNodes,
-    completedNodes: record2.completedNodes
-  });
-}
-function createSchedulerForRecovery(params) {
-  return ExecutionScheduler.fromPersistedState({
-    dagState: params.dagState,
-    nodes: params.record.nodes,
-    edges: params.record.edges,
-    context: params.context,
-    nodeExecutor: params.executor,
-    maxParallel: params.record.maxParallel,
-    persistDagState: (state) => persistDagState(params.executionsDir, params.record.id, state)
-  });
-}
-function assembleRecoveredEntry(record2, context, scheduler, abortController) {
-  return {
-    context,
-    scheduler,
-    abortController,
-    nodes: record2.nodes,
-    edges: record2.edges,
-    maxParallel: record2.maxParallel,
-    createdAt: record2.createdAt,
-    syncTimer: null,
-    timeoutTimer: null,
-    loopRunning: false,
-    isRecovered: true,
-    eventLog: filterValidReplayLog(record2.eventLog),
-    disposers: []
-  };
-}
-async function recoverExecution(deps, executionId) {
-  const existing = deps.entries.get(executionId);
-  if (existing) return existing;
-  const record2 = loadExecutionRecord(deps.executionsDir, executionId);
-  if (!record2 || TERMINAL_STATUSES.has(record2.status)) return null;
-  if (record2.startedAt !== null && Date.now() - record2.startedAt > EXECUTION_TIMEOUT_MS) {
-    return handleTimedOutExecution(deps.executionsDir, record2);
-  }
-  const dagState = loadDagState(deps.executionsDir, executionId) || {};
-  const context = buildRecoveredContext(record2);
-  const abortController = new AbortController();
-  const { executor } = createDispatchingNodeExecutor({
-    gateway: deps.gateway,
-    mediaRoot: deps.mediaDir,
-    executionId: record2.id,
-    edges: record2.edges,
-    abortController
-  });
-  const scheduler = createSchedulerForRecovery({
-    dagState,
-    record: record2,
-    context,
-    executor,
-    executionsDir: deps.executionsDir
-  });
-  resetInFlightNodeStates(context, dagState);
-  const entry = assembleRecoveredEntry(record2, context, scheduler, abortController);
-  deps.entries.set(record2.id, entry);
-  deps.onSetupEntry(entry);
-  logger7.info("execution recovered", {
-    executionId: record2.id,
-    status: record2.status,
-    pending: scheduler.getProgress().pending,
-    completed: scheduler.getProgress().completed
-  });
-  return entry;
-}
-async function tryRecoverSingleId(executionId, params, stats) {
-  try {
-    const entry = await params.recoverOne(executionId);
-    if (!entry) return;
-    stats.recovered += 1;
-    if (entry.context.status === ExecutionStatus.RUNNING) {
-      params.continueLoop(entry, { isRecovery: true });
-      stats.resumed += 1;
-    }
-  } catch (error51) {
-    let errorMsg = String(error51);
-    if (error51 instanceof Error) {
-      errorMsg = error51.message;
-    }
-    logger7.error("recovery failed", {
-      executionId,
-      error: errorMsg
-    });
-  }
-}
-async function recoverAll(params) {
-  const stats = { recovered: 0, resumed: 0 };
-  const ids = listPersistedExecutionIds(params.executionsDir);
-  for (const executionId of ids) {
-    await tryRecoverSingleId(executionId, params, stats);
-  }
-  if (stats.recovered > 0) {
-    logger7.info("recovery complete", {
-      recovered: stats.recovered,
-      resumed: stats.resumed
-    });
-  }
-  return stats;
-}
-
-// src/workflow/execution/executionControl.ts
-async function pauseExecution(entries, executionId) {
-  const entry = entries.get(executionId);
-  if (!entry) {
-    return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728" };
-  }
-  if (entry.context.status !== ExecutionStatus.RUNNING) {
-    return { ok: false, message: `\u65E0\u6CD5\u6682\u505C ${entry.context.status} \u72B6\u6001\u7684\u6267\u884C` };
-  }
-  entry.scheduler.pause();
-  return { ok: true };
-}
-async function resumeExecution(deps, executionId) {
-  let entry = deps.entries.get(executionId) ?? null;
-  if (!entry) {
-    entry = await deps.recoverExecution(executionId);
-    if (!entry) {
-      return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728\u6216\u4E0D\u53EF\u6062\u590D" };
-    }
-  }
-  const status = entry.context.status;
-  const isResumable = status === ExecutionStatus.PAUSED || status === ExecutionStatus.RUNNING;
-  if (!isResumable) {
-    return { ok: false, message: `\u53EA\u80FD\u6062\u590D\u6682\u505C\u72B6\u6001\u7684\u6267\u884C\uFF08\u5F53\u524D ${status}\uFF09` };
-  }
-  entry.scheduler.resume();
-  if (!entry.loopRunning) {
-    deps.continueLoop(entry, { isRecovery: true });
-  }
-  return { ok: true };
-}
-async function cancelExecution(entries, executionId) {
-  const entry = entries.get(executionId);
-  if (!entry) {
-    return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728" };
-  }
-  if (!CANCELABLE_STATUSES.has(entry.context.status)) {
-    return { ok: false, message: `\u65E0\u6CD5\u53D6\u6D88 ${entry.context.status} \u72B6\u6001\u7684\u6267\u884C` };
-  }
-  entry.scheduler.cancel();
-  entry.abortController.abort();
-  return { ok: true };
-}
-async function openEventStream(deps, executionId) {
-  const existing = deps.entries.get(executionId);
-  if (existing) {
-    if (!existing.loopRunning && existing.context.status === ExecutionStatus.RUNNING) {
-      deps.continueLoop(existing, { isRecovery: true });
-    }
-    return { context: existing.context, eventLog: existing.eventLog };
-  }
-  const recovered = await deps.recoverExecution(executionId);
-  if (!recovered) return null;
-  if (recovered.context.status === ExecutionStatus.RUNNING) {
-    deps.continueLoop(recovered, { isRecovery: true });
-  }
-  return { context: recovered.context, eventLog: recovered.eventLog };
-}
-
-// src/workflow/execution/ExecutionManager.ts
-var LOG_TAG6 = "ExecutionManager";
-var logger8 = createWorkflowLogger(LOG_TAG6);
-function buildNewExecutionEntry(opts, context, scheduler, abortController) {
-  let maxParallel = 3;
-  if (typeof opts.maxParallel === "number") {
-    maxParallel = opts.maxParallel;
-  }
-  return {
-    context,
-    scheduler,
-    abortController,
-    nodes: opts.nodes,
-    edges: opts.edges,
-    maxParallel,
-    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-    syncTimer: null,
-    timeoutTimer: null,
-    loopRunning: false,
-    isRecovered: false,
-    eventLog: [],
-    disposers: []
-  };
-}
-function snapshotOfEntry(entry) {
-  const json2 = entry.context.toJSON();
-  const progress = entry.scheduler.getProgress();
-  return {
-    id: json2.id,
-    workspaceId: json2.workflowId,
-    status: json2.status,
-    createdAt: entry.createdAt,
-    startedAt: json2.startedAt,
-    completedAt: json2.completedAt,
-    error: json2.error,
-    totalNodes: json2.totalNodes,
-    completedNodes: json2.completedNodes,
-    progress,
-    nodeStates: json2.nodeStates,
-    nodeOutputs: json2.nodeOutputs,
-    mediaAssets: json2.mediaAssets,
-    breakpoints: json2.breakpoints
-  };
-}
-function snapshotOfRecord(record2) {
-  const remaining = Math.max(0, record2.progress.total - record2.progress.completed);
-  return {
-    id: record2.id,
-    workspaceId: record2.workspaceId,
-    status: record2.status,
-    createdAt: record2.createdAt,
-    startedAt: record2.startedAt,
-    completedAt: record2.completedAt,
-    error: record2.error,
-    totalNodes: record2.totalNodes,
-    completedNodes: record2.completedNodes,
-    progress: {
-      total: record2.progress.total,
-      completed: record2.progress.completed,
-      running: 0,
-      pending: remaining,
-      percentage: record2.progress.percentage
-    },
-    nodeStates: record2.nodeStates,
-    nodeOutputs: record2.nodeOutputs,
-    mediaAssets: record2.mediaAssets,
-    breakpoints: record2.breakpoints
-  };
-}
-function continueExecutionLoop(entry, opts = {}) {
-  if (entry.loopRunning) return;
-  entry.loopRunning = true;
-  let isRecovery = true;
-  if (typeof opts.isRecovery === "boolean") {
-    isRecovery = opts.isRecovery;
-  }
-  void entry.scheduler.execute({ isRecovery }).finally(() => {
-    entry.loopRunning = false;
-  });
-}
-function setupAndRunExecution(executionsDir, entries, entry) {
-  entries.set(entry.context.id, entry);
-  persistRecord(executionsDir, entry);
-  setupExecutionListeners(executionsDir, entry);
-  startTimeout(entry, () => cleanupExecution(entries, entry.context.id));
-  continueExecutionLoop(entry, { isRecovery: false });
-}
-function createExecutionInstance(deps, entries, opts) {
-  const breakpointsList = opts.breakpoints || [];
-  const breakpoints = new Set(breakpointsList);
-  const context = new ExecutionContext({
-    workflowId: opts.workspaceId,
-    breakpoints,
-    initialOutputs: opts.initialOutputs
-  });
-  const abortController = new AbortController();
-  const { executor } = createDispatchingNodeExecutor({
-    gateway: deps.gateway,
-    mediaRoot: deps.mediaDir,
-    executionId: context.id,
-    edges: opts.edges,
-    abortController
-  });
-  const scheduler = new ExecutionScheduler({
-    nodes: opts.nodes,
-    edges: opts.edges,
-    context,
-    nodeExecutor: executor,
-    maxParallel: opts.maxParallel,
-    persistDagState: (state) => persistDagState(deps.executionsDir, context.id, state)
-  });
-  const entry = buildNewExecutionEntry(opts, context, scheduler, abortController);
-  logger8.info("execution created", {
-    executionId: context.id,
-    workspaceId: opts.workspaceId,
-    nodeCount: opts.nodes.length,
-    edgeCount: opts.edges.length,
-    maxParallel: entry.maxParallel
-  });
-  setupAndRunExecution(deps.executionsDir, entries, entry);
-  return entry;
-}
-function listExecutionSummaries(entries, workspaceId) {
-  const rows = [];
-  for (const entry of entries.values()) {
-    if (workspaceId && entry.context.workflowId !== workspaceId) continue;
-    rows.push({
-      id: entry.context.id,
-      workspaceId: entry.context.workflowId,
-      status: entry.context.status,
-      createdAt: entry.createdAt,
-      progress: entry.scheduler.getProgress()
-    });
-  }
-  rows.sort((a, b) => {
-    if (a.createdAt < b.createdAt) return 1;
-    return -1;
-  });
-  return rows;
-}
-function readExecutionSnapshot(executionsDir, entries, executionId) {
-  const entry = entries.get(executionId);
-  if (entry) return snapshotOfEntry(entry);
-  const record2 = loadExecutionRecord(executionsDir, executionId);
-  if (!record2) return null;
-  return snapshotOfRecord(record2);
-}
-function lookupEntryById(entries, executionId) {
-  const found = entries.get(executionId);
-  if (!found) return null;
-  return found;
-}
 function createExecutionManager(deps) {
   const { executionsDir, gateway, mediaDir } = deps;
   const entries = /* @__PURE__ */ new Map();
   registerExecutor(createMaterialGatewayExecutor({ gateway }));
   registerExecutor(createImportExecutor());
   registerExecutor(createVideoCompositionExecutor());
-  const handleEntrySetup = (entry) => {
-    setupExecutionListeners(executionsDir, entry);
-    startTimeout(entry, () => cleanupExecution(entries, entry.context.id));
+  const persistRecord = (entry) => {
+    try {
+      saveExecutionRecord(executionsDir, buildExecutionRecord({
+        context: entry.context.toJSON(),
+        nodes: entry.nodes,
+        edges: entry.edges,
+        maxParallel: entry.maxParallel,
+        createdAt: entry.createdAt,
+        progress: entry.scheduler.getProgress(),
+        eventLog: entry.eventLog
+      }));
+    } catch (error51) {
+      logger6.warn("failed to persist execution record", {
+        executionId: entry.context.id,
+        error: error51 instanceof Error ? error51.message : String(error51)
+      });
+    }
   };
-  const recoveryDeps = {
-    executionsDir,
-    gateway,
-    mediaDir,
-    entries,
-    onSetupEntry: handleEntrySetup
+  const persistDagState = (executionId, state) => {
+    saveDagState(executionsDir, executionId, state);
+    return Promise.resolve();
   };
-  const doRecoverExecution = (executionId) => recoverExecution(recoveryDeps, executionId);
-  const controlDeps = {
-    entries,
-    recoverExecution: doRecoverExecution,
-    continueLoop: continueExecutionLoop
+  const stopSyncTimer = (entry) => {
+    if (entry.syncTimer) {
+      clearInterval(entry.syncTimer);
+      entry.syncTimer = null;
+    }
   };
+  const stopTimeoutTimer = (entry) => {
+    if (entry.timeoutTimer) {
+      clearTimeout(entry.timeoutTimer);
+      entry.timeoutTimer = null;
+    }
+  };
+  const setupListeners = (entry) => {
+    const { context } = entry;
+    const onStart = () => {
+      persistRecord(entry);
+      stopSyncTimer(entry);
+      entry.syncTimer = setInterval(() => persistRecord(entry), RECORD_SYNC_INTERVAL_MS);
+    };
+    const onPause = () => {
+      persistRecord(entry);
+    };
+    const onResume = () => {
+      persistRecord(entry);
+    };
+    const onTerminal = () => {
+      stopSyncTimer(entry);
+      persistRecord(entry);
+    };
+    context.events.on("execution_start", onStart);
+    context.events.on("execution_paused", onPause);
+    context.events.on("execution_resumed", onResume);
+    context.events.on("execution_complete", onTerminal);
+    context.events.on("execution_error", onTerminal);
+    context.events.on("execution_cancelled", onTerminal);
+    for (const event of ALL_EVENT_NAMES) {
+      const recorder = (payload) => {
+        entry.eventLog.push({ event, payload });
+        if (entry.eventLog.length > EVENT_LOG_LIMIT) {
+          entry.eventLog.splice(0, entry.eventLog.length - EVENT_LOG_LIMIT);
+        }
+      };
+      context.events.on(event, recorder);
+      entry.disposers.push(() => context.events.off(event, recorder));
+    }
+    entry.disposers.push(
+      () => context.events.off("execution_start", onStart),
+      () => context.events.off("execution_paused", onPause),
+      () => context.events.off("execution_resumed", onResume),
+      () => context.events.off("execution_complete", onTerminal),
+      () => context.events.off("execution_error", onTerminal),
+      () => context.events.off("execution_cancelled", onTerminal)
+    );
+  };
+  const continueLoop = (entry, opts = {}) => {
+    if (entry.loopRunning) return;
+    entry.loopRunning = true;
+    void entry.scheduler.execute({ isRecovery: opts.isRecovery ?? true }).finally(() => {
+      entry.loopRunning = false;
+    });
+  };
+  const startTimeout = (entry) => {
+    entry.timeoutTimer = setTimeout(() => {
+      cleanupExecution(entry.context.id);
+    }, EXECUTION_TIMEOUT_MS);
+  };
+  function createExecution(opts) {
+    const context = new ExecutionContext({
+      workflowId: opts.workspaceId,
+      breakpoints: new Set(opts.breakpoints ?? []),
+      initialOutputs: opts.initialOutputs
+    });
+    const abortController = new AbortController();
+    const { executor } = createDispatchingNodeExecutor({
+      gateway,
+      mediaRoot: mediaDir,
+      executionId: context.id,
+      edges: opts.edges,
+      abortController
+    });
+    const scheduler = new ExecutionScheduler({
+      nodes: opts.nodes,
+      edges: opts.edges,
+      context,
+      nodeExecutor: executor,
+      maxParallel: opts.maxParallel,
+      persistDagState: (state) => persistDagState(context.id, state)
+    });
+    const entry = {
+      context,
+      scheduler,
+      abortController,
+      nodes: opts.nodes,
+      edges: opts.edges,
+      maxParallel: opts.maxParallel ?? 3,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      syncTimer: null,
+      timeoutTimer: null,
+      loopRunning: false,
+      isRecovered: false,
+      eventLog: [],
+      disposers: []
+    };
+    entries.set(context.id, entry);
+    logger6.info("execution created", {
+      executionId: context.id,
+      workspaceId: opts.workspaceId,
+      nodeCount: opts.nodes.length,
+      edgeCount: opts.edges.length,
+      maxParallel: entry.maxParallel
+    });
+    persistRecord(entry);
+    setupListeners(entry);
+    startTimeout(entry);
+    continueLoop(entry, { isRecovery: false });
+    return entry;
+  }
+  function getEntry(executionId) {
+    return entries.get(executionId) ?? null;
+  }
+  function listExecutions(workspaceId) {
+    const rows = [];
+    for (const entry of entries.values()) {
+      if (workspaceId && entry.context.workflowId !== workspaceId) continue;
+      rows.push({
+        id: entry.context.id,
+        workspaceId: entry.context.workflowId,
+        status: entry.context.status,
+        createdAt: entry.createdAt,
+        progress: entry.scheduler.getProgress()
+      });
+    }
+    rows.sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
+    return rows;
+  }
+  function snapshotOfEntry(entry) {
+    const json2 = entry.context.toJSON();
+    const progress = entry.scheduler.getProgress();
+    return {
+      id: json2.id,
+      workspaceId: json2.workflowId,
+      status: json2.status,
+      createdAt: entry.createdAt,
+      startedAt: json2.startedAt,
+      completedAt: json2.completedAt,
+      error: json2.error,
+      totalNodes: json2.totalNodes,
+      completedNodes: json2.completedNodes,
+      progress,
+      nodeStates: json2.nodeStates,
+      nodeOutputs: json2.nodeOutputs,
+      mediaAssets: json2.mediaAssets,
+      breakpoints: json2.breakpoints
+    };
+  }
+  function snapshotOfRecord(record2) {
+    return {
+      id: record2.id,
+      workspaceId: record2.workspaceId,
+      status: record2.status,
+      createdAt: record2.createdAt,
+      startedAt: record2.startedAt,
+      completedAt: record2.completedAt,
+      error: record2.error,
+      totalNodes: record2.totalNodes,
+      completedNodes: record2.completedNodes,
+      progress: {
+        total: record2.progress.total,
+        completed: record2.progress.completed,
+        running: 0,
+        pending: Math.max(0, record2.progress.total - record2.progress.completed),
+        percentage: record2.progress.percentage
+      },
+      nodeStates: record2.nodeStates,
+      nodeOutputs: record2.nodeOutputs,
+      mediaAssets: record2.mediaAssets,
+      breakpoints: record2.breakpoints
+    };
+  }
+  function getSnapshot(executionId) {
+    const entry = entries.get(executionId);
+    if (entry) return snapshotOfEntry(entry);
+    const record2 = loadExecutionRecord(executionsDir, executionId);
+    return record2 ? snapshotOfRecord(record2) : null;
+  }
+  async function pauseExecution(executionId) {
+    const entry = entries.get(executionId);
+    if (!entry) return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728" };
+    if (entry.context.status !== ExecutionStatus.RUNNING) {
+      return { ok: false, message: `\u65E0\u6CD5\u6682\u505C ${entry.context.status} \u72B6\u6001\u7684\u6267\u884C` };
+    }
+    entry.scheduler.pause();
+    return { ok: true };
+  }
+  async function resumeExecution(executionId) {
+    let entry = entries.get(executionId) ?? null;
+    if (!entry) {
+      entry = await recoverExecution(executionId);
+      if (!entry) return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728\u6216\u4E0D\u53EF\u6062\u590D" };
+    }
+    const status = entry.context.status;
+    if (status !== ExecutionStatus.PAUSED && status !== ExecutionStatus.RUNNING) {
+      return { ok: false, message: `\u53EA\u80FD\u6062\u590D\u6682\u505C\u72B6\u6001\u7684\u6267\u884C\uFF08\u5F53\u524D ${status}\uFF09` };
+    }
+    entry.scheduler.resume();
+    if (!entry.loopRunning) {
+      continueLoop(entry, { isRecovery: true });
+    }
+    return { ok: true };
+  }
+  async function cancelExecution(executionId) {
+    const entry = entries.get(executionId);
+    if (!entry) return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728" };
+    const canCancelStatuses = [
+      ExecutionStatus.PENDING,
+      ExecutionStatus.RUNNING,
+      ExecutionStatus.PAUSED
+    ];
+    if (!canCancelStatuses.includes(entry.context.status)) {
+      return { ok: false, message: `\u65E0\u6CD5\u53D6\u6D88 ${entry.context.status} \u72B6\u6001\u7684\u6267\u884C` };
+    }
+    entry.scheduler.cancel();
+    entry.abortController.abort();
+    return { ok: true };
+  }
+  async function openEventStream(executionId) {
+    const existing = entries.get(executionId);
+    if (existing) {
+      if (!existing.loopRunning && existing.context.status === ExecutionStatus.RUNNING) {
+        continueLoop(existing, { isRecovery: true });
+      }
+      return { context: existing.context, eventLog: existing.eventLog };
+    }
+    const entry = await recoverExecution(executionId);
+    if (!entry) return null;
+    if (entry.context.status === ExecutionStatus.RUNNING) {
+      continueLoop(entry, { isRecovery: true });
+    }
+    return { context: entry.context, eventLog: entry.eventLog };
+  }
+  async function recoverExecution(executionId) {
+    const existing = entries.get(executionId);
+    if (existing) return existing;
+    const record2 = loadExecutionRecord(executionsDir, executionId);
+    if (!record2) return null;
+    if (TERMINAL_STATUSES.has(record2.status)) return null;
+    if (record2.startedAt !== null && Date.now() - record2.startedAt > EXECUTION_TIMEOUT_MS) {
+      logger6.warn("recovered execution timed out, marking failed", { executionId });
+      saveExecutionRecord(executionsDir, {
+        ...record2,
+        status: ExecutionStatus.ERROR,
+        error: `Execution timed out after restart (>${Math.round(EXECUTION_TIMEOUT_MS / 6e4)}min)`,
+        completedAt: Date.now()
+      });
+      return null;
+    }
+    const dagState = loadDagState(executionsDir, executionId) ?? {};
+    const context = ExecutionContext.fromJSON({
+      id: record2.id,
+      workflowId: record2.workspaceId,
+      status: record2.status,
+      variables: record2.variables,
+      nodeOutputs: record2.nodeOutputs,
+      nodeStates: record2.nodeStates,
+      mediaAssets: record2.mediaAssets,
+      breakpoints: record2.breakpoints,
+      startedAt: record2.startedAt,
+      completedAt: record2.completedAt,
+      error: record2.error,
+      totalNodes: record2.totalNodes,
+      completedNodes: record2.completedNodes
+    });
+    const abortController = new AbortController();
+    const { executor } = createDispatchingNodeExecutor({
+      gateway,
+      mediaRoot: mediaDir,
+      executionId: record2.id,
+      edges: record2.edges,
+      abortController
+    });
+    const scheduler = ExecutionScheduler.fromPersistedState({
+      dagState,
+      nodes: record2.nodes,
+      edges: record2.edges,
+      context,
+      nodeExecutor: executor,
+      maxParallel: record2.maxParallel,
+      persistDagState: (state) => persistDagState(record2.id, state)
+    });
+    for (const nodeId of dagState.runningNodes ?? []) {
+      const state = context.nodeStates.get(nodeId);
+      if (state && state.status === "running") {
+        context.nodeStates.set(nodeId, {
+          status: "pending",
+          startedAt: null,
+          completedAt: null,
+          error: null
+        });
+      }
+    }
+    const entry = {
+      context,
+      scheduler,
+      abortController,
+      nodes: record2.nodes,
+      edges: record2.edges,
+      maxParallel: record2.maxParallel,
+      createdAt: record2.createdAt,
+      syncTimer: null,
+      timeoutTimer: null,
+      loopRunning: false,
+      isRecovered: true,
+      // Restore the persisted replay log (unknown event names dropped) so a
+      // late SSE subscriber still sees pre-crash events after recovery.
+      eventLog: record2.eventLog.filter(
+        (row) => ALL_EVENT_NAMES.includes(row.event)
+      ),
+      disposers: []
+    };
+    entries.set(record2.id, entry);
+    setupListeners(entry);
+    startTimeout(entry);
+    logger6.info("execution recovered", {
+      executionId: record2.id,
+      status: record2.status,
+      pending: scheduler.getProgress().pending,
+      completed: scheduler.getProgress().completed
+    });
+    return entry;
+  }
+  async function recoverAll() {
+    const stats = { recovered: 0, resumed: 0 };
+    for (const executionId of listPersistedExecutionIds(executionsDir)) {
+      try {
+        const entry = await recoverExecution(executionId);
+        if (!entry) continue;
+        stats.recovered += 1;
+        if (entry.context.status === ExecutionStatus.RUNNING) {
+          continueLoop(entry, { isRecovery: true });
+          stats.resumed += 1;
+        }
+      } catch (error51) {
+        logger6.error("recovery failed", {
+          executionId,
+          error: error51 instanceof Error ? error51.message : String(error51)
+        });
+      }
+    }
+    if (stats.recovered > 0) {
+      logger6.info("recovery complete", stats);
+    }
+    return stats;
+  }
+  function cleanupExecution(executionId) {
+    const entry = entries.get(executionId);
+    if (!entry) return;
+    const wasRunning = entry.context.status === ExecutionStatus.RUNNING;
+    if (wasRunning) {
+      entry.scheduler.cancel();
+      entry.abortController.abort();
+    }
+    stopSyncTimer(entry);
+    stopTimeoutTimer(entry);
+    entries.delete(executionId);
+    logger6.info("execution cleaned up", {
+      executionId,
+      wasRunning,
+      finalStatus: entry.context.status
+    });
+  }
+  function disposeAll() {
+    for (const entry of entries.values()) {
+      stopSyncTimer(entry);
+      stopTimeoutTimer(entry);
+      for (const dispose of entry.disposers) dispose();
+      entry.disposers.length = 0;
+      entry.scheduler.dispose();
+      persistRecord(entry);
+    }
+    entries.clear();
+  }
   return {
-    createExecution: (opts) => createExecutionInstance(deps, entries, opts),
-    getEntry: (executionId) => lookupEntryById(entries, executionId),
-    listExecutions: (workspaceId) => listExecutionSummaries(entries, workspaceId),
-    getSnapshot: (executionId) => readExecutionSnapshot(executionsDir, entries, executionId),
-    pauseExecution: (executionId) => pauseExecution(entries, executionId),
-    resumeExecution: (executionId) => resumeExecution(controlDeps, executionId),
-    cancelExecution: (executionId) => cancelExecution(entries, executionId),
-    openEventStream: (executionId) => openEventStream(controlDeps, executionId),
-    recoverExecution: doRecoverExecution,
-    recoverAll: () => recoverAll({
-      executionsDir,
-      recoverOne: doRecoverExecution,
-      continueLoop: continueExecutionLoop
-    }),
-    cleanupExecution: (executionId) => cleanupExecution(entries, executionId),
-    disposeAll: () => disposeAllExecutions(executionsDir, entries)
+    createExecution,
+    getEntry,
+    listExecutions,
+    getSnapshot,
+    pauseExecution,
+    resumeExecution,
+    cancelExecution,
+    openEventStream,
+    recoverExecution,
+    recoverAll,
+    cleanupExecution,
+    disposeAll
   };
 }
 
@@ -20574,7 +20354,7 @@ var SSE_EVENT_NAMES = [
   "execution_cancelled"
 ];
 var HEARTBEAT_EVENT = "heartbeat";
-var logger9 = createWorkflowLogger(LOG_TAG7);
+var logger7 = createWorkflowLogger(LOG_TAG7);
 var ExecutionSSEPublisher = class {
   res;
   context;
@@ -20588,7 +20368,7 @@ var ExecutionSSEPublisher = class {
     this.context = context;
     this.heartbeatMs = opts.heartbeatMs ?? SSE_HEARTBEAT_MS;
     this.closeListener = () => {
-      logger9.info("sse connection closed", { executionId: this.context.id });
+      logger7.info("sse connection closed", { executionId: this.context.id });
       this.connected = false;
       this.cleanup();
     };
@@ -20630,7 +20410,7 @@ var ExecutionSSEPublisher = class {
 
 `);
     } catch (error51) {
-      logger9.error("failed to send sse event", {
+      logger7.error("failed to send sse event", {
         executionId: this.context.id,
         eventType,
         error: error51 instanceof Error ? error51.message : String(error51)
@@ -20662,9 +20442,9 @@ function createSSEPublisher(res, context, opts = {}) {
 }
 
 // src/projects/library.ts
-import { existsSync as existsSync4, mkdirSync as mkdirSync6 } from "node:fs";
+import { existsSync as existsSync3, mkdirSync as mkdirSync5 } from "node:fs";
 import { homedir as osHomedir } from "node:os";
-import { join as join7 } from "node:path";
+import { join as join6 } from "node:path";
 import { join as posixJoin } from "node:path/posix";
 import { join as win32Join } from "node:path/win32";
 var LIBRARY_BRAND_DIR = "OmniMux";
@@ -20677,7 +20457,7 @@ function envOf(opts) {
   return opts.env ?? process.env;
 }
 function existsOf(opts) {
-  return opts.exists ?? existsSync4;
+  return opts.exists ?? existsSync3;
 }
 function joinFor(platform, ...parts) {
   return platform === "win32" ? win32Join(...parts) : posixJoin(...parts);
@@ -20699,8 +20479,8 @@ function defaultProjectLibrary(opts = {}) {
   return joinFor(platform, resolveVideosDir(opts), LIBRARY_BRAND_DIR, LIBRARY_PROJECTS_DIR);
 }
 function ensureLibraryRoot(opts = {}) {
-  const libraryRoot = join7(resolveVideosDir(opts), LIBRARY_BRAND_DIR, LIBRARY_PROJECTS_DIR);
-  mkdirSync6(libraryRoot, { recursive: true });
+  const libraryRoot = join6(resolveVideosDir(opts), LIBRARY_BRAND_DIR, LIBRARY_PROJECTS_DIR);
+  mkdirSync5(libraryRoot, { recursive: true });
   return libraryRoot;
 }
 function displayHomePath(absPath, home = osHomedir()) {
@@ -20714,7 +20494,7 @@ function displayHomePath(absPath, home = osHomedir()) {
 
 // src/projects/paths.ts
 import { realpathSync, statSync } from "node:fs";
-import { join as join8, resolve as resolve2, sep } from "node:path";
+import { join as join7, resolve as resolve2, sep } from "node:path";
 var ProjectPathError = class extends Error {
   code;
   constructor(code, message) {
@@ -20755,15 +20535,15 @@ function resolveLibraryPaths(libraryRoot) {
 }
 function resolveProjectPaths(projectRoot) {
   const normalized = assertExistingDirectory(projectRoot, "invalid-project-root", "projectRoot");
-  const metaDir = join8(normalized, ".omnimux");
+  const metaDir = join7(normalized, ".omnimux");
   if (!isInsideDir(metaDir, normalized)) {
     throw new ProjectPathError("path-denied", "meta dir escapes project root");
   }
   return {
     projectRoot: normalized,
     metaDir,
-    projectFile: join8(metaDir, "project.json"),
-    readmeFile: join8(normalized, PROJECT_README_NAME)
+    projectFile: join7(metaDir, "project.json"),
+    readmeFile: join7(normalized, PROJECT_README_NAME)
   };
 }
 function assertProjectInsideLibrary(projectRoot, libraryRoot) {
@@ -20791,19 +20571,19 @@ function assertProjectWriteSafe(target, root2) {
 // src/projects/ProjectStore.ts
 import { randomUUID as randomUUID5 } from "node:crypto";
 import {
-  existsSync as existsSync6,
-  mkdirSync as mkdirSync8,
-  readFileSync as readFileSync4,
-  readdirSync as readdirSync4,
-  renameSync as renameSync4,
-  rmSync as rmSync4,
-  writeFileSync as writeFileSync6
+  existsSync as existsSync5,
+  mkdirSync as mkdirSync7,
+  readFileSync as readFileSync3,
+  readdirSync as readdirSync3,
+  renameSync as renameSync3,
+  rmSync as rmSync3,
+  writeFileSync as writeFileSync5
 } from "node:fs";
-import { join as join10 } from "node:path";
+import { join as join9 } from "node:path";
 
 // src/projects/folderName.ts
-import { existsSync as existsSync5, mkdirSync as mkdirSync7 } from "node:fs";
-import { join as join9, resolve as resolve3 } from "node:path";
+import { existsSync as existsSync4, mkdirSync as mkdirSync6 } from "node:fs";
+import { join as join8, resolve as resolve3 } from "node:path";
 
 // src/projects/schema.ts
 var PROJECT_SCHEMA_VERSION = 1;
@@ -20884,11 +20664,11 @@ function allocateUniqueProjectFolder(libraryRoot, baseName) {
   const root2 = resolve3(libraryRoot);
   for (let attempt = 0; attempt < MAX_DIRECTORY_ATTEMPTS; attempt += 1) {
     const name2 = folderNameAttempt(validated, attempt);
-    const target = join9(root2, name2);
+    const target = join8(root2, name2);
     assertProjectInsideLibrary(target, root2);
-    if (existsSync5(target)) continue;
+    if (existsSync4(target)) continue;
     try {
-      mkdirSync7(target);
+      mkdirSync6(target);
       return target;
     } catch (error51) {
       const code = error51 && typeof error51 === "object" && "code" in error51 ? String(error51.code) : "";
@@ -20918,17 +20698,17 @@ function newProjectId() {
   return randomUUID5();
 }
 function atomicWriteJson3(filePath, value) {
-  mkdirSync8(join10(filePath, ".."), { recursive: true });
+  mkdirSync7(join9(filePath, ".."), { recursive: true });
   const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
-  writeFileSync6(tmp, `${JSON.stringify(value, null, 2)}
+  writeFileSync5(tmp, `${JSON.stringify(value, null, 2)}
 `, "utf8");
-  renameSync4(tmp, filePath);
+  renameSync3(tmp, filePath);
 }
 function readJsonFile2(filePath) {
-  if (!existsSync6(filePath)) return void 0;
+  if (!existsSync5(filePath)) return void 0;
   let raw;
   try {
-    raw = readFileSync4(filePath, "utf8");
+    raw = readFileSync3(filePath, "utf8");
   } catch {
     return void 0;
   }
@@ -20965,14 +20745,14 @@ function toSummary(project, path3) {
 }
 function createProjectStore(opts) {
   const { libraryRoot } = opts;
-  mkdirSync8(libraryRoot, { recursive: true });
+  mkdirSync7(libraryRoot, { recursive: true });
   function scanEntries() {
-    if (!existsSync6(libraryRoot)) return [];
+    if (!existsSync5(libraryRoot)) return [];
     const rows = [];
-    for (const entry of readdirSync4(libraryRoot, { withFileTypes: true })) {
+    for (const entry of readdirSync3(libraryRoot, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
-      const dir = join10(libraryRoot, entry.name);
-      const file2 = join10(dir, ".omnimux", "project.json");
+      const dir = join9(libraryRoot, entry.name);
+      const file2 = join9(dir, ".omnimux", "project.json");
       const raw = readJsonFile2(file2);
       if (raw === void 0) continue;
       const project = parseProject(raw);
@@ -21020,7 +20800,7 @@ function createProjectStore(opts) {
       const projectRoot = givenRoot !== "" ? givenRoot : allocateUniqueProjectFolder(libraryRoot, sanitizeFolderName(trimmed));
       const paths = resolveProjectPaths(projectRoot);
       assertProjectInsideLibrary(paths.projectRoot, libraryRoot);
-      if (existsSync6(paths.projectFile)) {
+      if (existsSync5(paths.projectFile)) {
         throw new ProjectStoreError("project-exists", `project already seeded at ${paths.projectRoot}`);
       }
       const now2 = (/* @__PURE__ */ new Date()).toISOString();
@@ -21034,8 +20814,8 @@ function createProjectStore(opts) {
         canvasWorkspaceIds: createOpts.canvasWorkspaceIds ?? []
       };
       assertProjectWriteSafe(paths.readmeFile, paths.projectRoot);
-      if (!existsSync6(paths.readmeFile)) {
-        writeFileSync6(paths.readmeFile, defaultReadme(trimmed), "utf8");
+      if (!existsSync5(paths.readmeFile)) {
+        writeFileSync5(paths.readmeFile, defaultReadme(trimmed), "utf8");
       }
       return persistProject(paths.projectRoot, project);
     },
@@ -21121,8 +20901,8 @@ function createProjectStore(opts) {
       const paths = resolveProjectPaths(current.dir);
       assertProjectWriteSafe(paths.projectFile, paths.projectRoot);
       const metaDir = paths.metaDir;
-      if (existsSync6(metaDir)) {
-        rmSync4(metaDir, { recursive: true, force: true });
+      if (existsSync5(metaDir)) {
+        rmSync3(metaDir, { recursive: true, force: true });
       }
       void PROJECT_README_NAME;
     }
@@ -21296,22 +21076,22 @@ function createProjectDispatcher() {
 }
 
 // src/workflow/routes/pluginRoot.ts
-import { existsSync as existsSync7 } from "node:fs";
-import { dirname as dirname2, join as join11 } from "node:path";
+import { existsSync as existsSync6 } from "node:fs";
+import { dirname as dirname2, join as join10 } from "node:path";
 import { fileURLToPath } from "node:url";
 function resolvePluginRoot() {
   const here = dirname2(fileURLToPath(import.meta.url));
-  const candidates = [join11(here, ".."), join11(here, "..", "..", "..")];
+  const candidates = [join10(here, ".."), join10(here, "..", "..", "..")];
   for (const candidate of candidates) {
-    if (existsSync7(join11(candidate, "package.json"))) return candidate;
+    if (existsSync6(join10(candidate, "package.json"))) return candidate;
   }
   return candidates[0] ?? process.cwd();
 }
 
 // src/workflow/routes/staticRoutes.ts
 import { createHash as createHash2 } from "node:crypto";
-import { existsSync as existsSync8, readFileSync as readFileSync5 } from "node:fs";
-import { join as join12 } from "node:path";
+import { existsSync as existsSync7, readFileSync as readFileSync4 } from "node:fs";
+import { join as join11 } from "node:path";
 function createStaticRoutes(opts) {
   const { pluginRoot, gateway } = opts;
   const capabilitiesPath = `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`;
@@ -21321,18 +21101,18 @@ function createStaticRoutes(opts) {
   function canvasJsHash() {
     const now2 = Date.now();
     if (cachedCanvasHash && now2 - cachedCanvasHash.at < 5e3) return cachedCanvasHash.hash;
-    const file2 = join12(pluginRoot, "lib", "canvas.js");
+    const file2 = join11(pluginRoot, "lib", "canvas.js");
     let hash2 = "missing";
-    if (existsSync8(file2)) {
-      hash2 = createHash2("sha256").update(readFileSync5(file2, "utf8")).digest("hex").slice(0, 16);
+    if (existsSync7(file2)) {
+      hash2 = createHash2("sha256").update(readFileSync4(file2, "utf8")).digest("hex").slice(0, 16);
     }
     cachedCanvasHash = { hash: hash2, at: now2 };
     return hash2;
   }
   const tryBundle = (method, path3) => {
     if (method === "GET" && path3 === canvasJsPath) {
-      const file2 = join12(pluginRoot, "lib", "canvas.js");
-      if (!existsSync8(file2)) {
+      const file2 = join11(pluginRoot, "lib", "canvas.js");
+      if (!existsSync7(file2)) {
         return { status: 404, body: { error: "not-found", message: "canvas bundle not built (run npm run build)" } };
       }
       return { status: 200, file: file2 };
@@ -21432,11 +21212,10 @@ function normalizeNodeIds(nodeIds) {
 function resolveExecutionSubgraph(input) {
   const { nodes, edges, executionMode } = input;
   if (executionMode === "full") {
-    const executableNodes = nodes.filter((n) => n.type !== "group");
     return {
-      nodes: executableNodes,
+      nodes,
       edges,
-      nodeIdSet: new Set(executableNodes.map((node) => node.id))
+      nodeIdSet: new Set(nodes.map((node) => node.id))
     };
   }
   const targetNodeIds = normalizeNodeIds(input.nodeIds);
@@ -21453,11 +21232,10 @@ function resolveExecutionSubgraph(input) {
   }
   if (executionMode === "single") {
     const targetIdSet = new Set(targetNodeIds);
-    const targetNodes = nodes.filter((node) => targetIdSet.has(node.id) && node.type !== "group");
     return {
-      nodes: targetNodes,
+      nodes: nodes.filter((node) => targetIdSet.has(node.id)),
       edges: edges.filter((edge) => targetIdSet.has(edge.target) && nodeMap.has(edge.source)),
-      nodeIdSet: new Set(targetNodes.map((n) => n.id))
+      nodeIdSet: targetIdSet
     };
   }
   const incomingMap = /* @__PURE__ */ new Map();
@@ -21477,11 +21255,10 @@ function resolveExecutionSubgraph(input) {
       if (!closure.has(upstream)) stack.push(upstream);
     }
   }
-  const resultNodes = nodes.filter((node) => closure.has(node.id) && node.type !== "group");
   return {
-    nodes: resultNodes,
+    nodes: nodes.filter((node) => closure.has(node.id)),
     edges: edges.filter((edge) => closure.has(edge.source) && closure.has(edge.target)),
-    nodeIdSet: new Set(resultNodes.map((n) => n.id))
+    nodeIdSet: closure
   };
 }
 
@@ -21640,7 +21417,7 @@ function createExecutionRoutes(opts) {
 
 // src/workflow/routes/mediaRoutes.ts
 import { realpathSync as realpathSync2, statSync as statSync2 } from "node:fs";
-import { join as join13, normalize, resolve as resolve4, sep as sep2 } from "node:path";
+import { join as join12, normalize, resolve as resolve4, sep as sep2 } from "node:path";
 function isInsideDir2(target, root2) {
   return target === root2 || target.startsWith(root2 + sep2);
 }
@@ -21653,7 +21430,7 @@ function createMediaRoutes(mediaDir) {
     if (rel.split("/").some((segment) => segment === "..")) {
       return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
     }
-    const target = resolve4(join13(mediaRoot, normalize(`/${rel}`)));
+    const target = resolve4(join12(mediaRoot, normalize(`/${rel}`)));
     if (!isInsideDir2(target, mediaRoot)) {
       return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
     }
@@ -21676,7 +21453,7 @@ function createMediaRoutes(mediaDir) {
 }
 
 // src/workflow/routes/localFileRoutes.ts
-import { existsSync as existsSync9, realpathSync as realpathSync3, statSync as statSync3 } from "node:fs";
+import { existsSync as existsSync8, realpathSync as realpathSync3, statSync as statSync3 } from "node:fs";
 import { basename, isAbsolute as isAbsolute2 } from "node:path";
 
 // src/workflow/picker.ts
@@ -21880,7 +21657,7 @@ function createLocalFileRoutes(deps = {}) {
       if (!resolved.ok) {
         return jsonError(resolved.status, resolved.error, resolved.message);
       }
-      if (!existsSync9(resolved.path)) {
+      if (!existsSync8(resolved.path)) {
         return jsonError(404, "not-found", "file not found");
       }
       return { status: 200, file: resolved.path };
@@ -21943,14 +21720,14 @@ function createProjectAssetsRoutes(store) {
 // src/workflow/workspace/ProjectAssetsStore.ts
 import { randomUUID as randomUUID6 } from "node:crypto";
 import {
-  existsSync as existsSync10,
-  mkdirSync as mkdirSync9,
-  readFileSync as readFileSync6,
-  renameSync as renameSync5,
+  existsSync as existsSync9,
+  mkdirSync as mkdirSync8,
+  readFileSync as readFileSync5,
+  renameSync as renameSync4,
   statSync as statSync4,
-  writeFileSync as writeFileSync7
+  writeFileSync as writeFileSync6
 } from "node:fs";
-import { basename as basename2, isAbsolute as isAbsolute3, join as join14 } from "node:path";
+import { basename as basename2, isAbsolute as isAbsolute3, join as join13 } from "node:path";
 
 // src/shared/projectAssets.ts
 var PROJECT_ASSETS_SCHEMA_VERSION = 1;
@@ -22012,11 +21789,11 @@ function newItemId() {
   return `ast_${randomUUID6().replace(/-/g, "").slice(0, 12)}`;
 }
 function atomicWriteJson4(filePath, value) {
-  mkdirSync9(join14(filePath, ".."), { recursive: true });
+  mkdirSync8(join13(filePath, ".."), { recursive: true });
   const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
-  writeFileSync7(tmp, `${JSON.stringify(value, null, 2)}
+  writeFileSync6(tmp, `${JSON.stringify(value, null, 2)}
 `, "utf8");
-  renameSync5(tmp, filePath);
+  renameSync4(tmp, filePath);
 }
 function asNumber(value, fallback) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -22060,10 +21837,10 @@ function hydrateItem(row) {
   };
 }
 function readAssetsFile(filePath) {
-  if (!existsSync10(filePath)) return emptyProjectAssetsDocument();
+  if (!existsSync9(filePath)) return emptyProjectAssetsDocument();
   let raw;
   try {
-    raw = readFileSync6(filePath, "utf8");
+    raw = readFileSync5(filePath, "utf8");
   } catch {
     return emptyProjectAssetsDocument();
   }
@@ -22090,8 +21867,8 @@ function assertWorkspaceExists(workspacesDir, id2) {
   if (!isWorkspaceId2(id2)) {
     throw new WorkflowStoreError("invalid-id", `invalid workspace id ${id2}`);
   }
-  const canvas = join14(workspacesDir, id2, "canvas.json");
-  if (!existsSync10(canvas)) {
+  const canvas = join13(workspacesDir, id2, "canvas.json");
+  if (!existsSync9(canvas)) {
     throw new WorkflowStoreError("workspace-not-found", `workspace ${id2} not found`);
   }
 }
@@ -22162,7 +21939,7 @@ function assertWritableDocument(next) {
     if (item.parentId && !folderIds.has(item.parentId)) {
       throw new WorkflowStoreError("invalid-id", `item parent ${item.parentId} does not exist`);
     }
-    if (existsSync10(item.real_path)) {
+    if (existsSync9(item.real_path)) {
       let st;
       try {
         st = statSync4(item.real_path);
@@ -22234,7 +22011,7 @@ function indexOnePath(rawPath, parentId, now2) {
 }
 function createProjectAssetsStore(opts) {
   const { workspacesDir } = opts;
-  const fileOf = (id2) => join14(workspacesDir, id2, "assets.json");
+  const fileOf = (id2) => join13(workspacesDir, id2, "assets.json");
   function load(id2) {
     assertWorkspaceExists(workspacesDir, id2);
     return { current: readAssetsFile(fileOf(id2)), filePath: fileOf(id2) };
@@ -22320,59 +22097,6 @@ function createProjectAssetsStore(opts) {
   };
 }
 
-// src/workflow/routes/templateRoutes.ts
-function createTemplateRoutes(store) {
-  const listPath = `${WORKFLOW_ROUTE_PREFIX}/api/templates`;
-  const itemRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/templates/([^/]+)$`);
-  const tryHandle = (method, path3, req) => {
-    if (!store) return null;
-    if (path3 === listPath) {
-      if (method === "GET") {
-        return { status: 200, body: { templates: store.list() } };
-      }
-      if (method === "POST") {
-        const problem = jsonBodyProblem(req.body);
-        if (problem) return problem;
-        try {
-          const payload = createTemplatePayloadSchema.parse(req.body);
-          if (payload.nodes.length < 2) {
-            return { status: 400, body: { error: "invalid-template", message: "\u6A21\u677F\u81F3\u5C11\u9700\u8981 2 \u4E2A\u8282\u70B9" } };
-          }
-          const template = store.save(payload);
-          return { status: 200, body: { template } };
-        } catch (error51) {
-          if (error51 instanceof ZodError) {
-            return {
-              status: 400,
-              body: {
-                error: "invalid-template",
-                message: error51.issues.slice(0, 3).map((issue2) => issue2.message).join("; ") || "invalid template"
-              }
-            };
-          }
-          throw error51;
-        }
-      }
-      return notFound();
-    }
-    const match = itemRe.exec(path3);
-    if (!match) return null;
-    const id2 = match[1] ?? "";
-    if (method === "GET") {
-      const template = store.get(id2);
-      if (!template) return { status: 404, body: { error: "not-found", message: "template not found" } };
-      return { status: 200, body: { template } };
-    }
-    if (method === "DELETE") {
-      const deleted = store.delete(id2);
-      if (!deleted) return { status: 404, body: { error: "not-found", message: "template not found" } };
-      return { status: 200, body: { ok: true } };
-    }
-    return notFound();
-  };
-  return { tryHandle };
-}
-
 // src/workflow/routes/canvasRoutes.ts
 var STATUS_BY_CODE3 = {
   "invalid-json": 400,
@@ -22455,7 +22179,7 @@ function serveFile(res, filePath, fallbackMime, rangeHeader) {
   stream.pipe(res);
 }
 function createWorkflowDispatcher(deps) {
-  const { store, gateway, mediaDir, executionManager, picker, templates } = deps;
+  const { store, gateway, mediaDir, executionManager, picker } = deps;
   const projectDispatcher = createProjectDispatcher();
   const staticRoutes = createStaticRoutes({ pluginRoot: PLUGIN_ROOT, gateway });
   const workspaceRoutes = createWorkspaceRoutes(store);
@@ -22466,7 +22190,6 @@ function createWorkflowDispatcher(deps) {
   const executionRoutes = createExecutionRoutes({ store, executionManager });
   const mediaRoutes = createMediaRoutes(mediaDir);
   const localFileRoutes = createLocalFileRoutes(picker ? { picker } : {});
-  const templateRoutes = createTemplateRoutes(templates);
   function normalizePath(path3) {
     if (path3 === LEGACY_WORKFLOW_ROUTE_PREFIX) return WORKFLOW_ROUTE_PREFIX;
     if (path3.startsWith(`${LEGACY_WORKFLOW_ROUTE_PREFIX}/`)) {
@@ -22495,8 +22218,6 @@ function createWorkflowDispatcher(deps) {
       if (fromWorkspace) return fromWorkspace;
       const fromProjectAssets = await Promise.resolve(projectAssetsRoutes.tryHandle(method, path3, req));
       if (fromProjectAssets) return fromProjectAssets;
-      const fromTemplates = await Promise.resolve(templateRoutes.tryHandle(method, path3, req));
-      if (fromTemplates) return fromTemplates;
       const fromExecution = await Promise.resolve(executionRoutes.tryHandle(method, path3, req));
       if (fromExecution) return fromExecution;
       const fromCapabilities = await Promise.resolve(staticRoutes.tryCapabilities(method, path3, req));
@@ -22842,7 +22563,7 @@ function createCanvasGetTableNodeTool(deps) {
 }
 
 // src/workflow/agent/agentToolShared.ts
-import { join as join15 } from "node:path";
+import { join as join14 } from "node:path";
 function objectParams(fields) {
   const properties = {};
   const required2 = [];
@@ -22904,7 +22625,7 @@ function mediaUrlToPath(url2, mediaDir) {
   const marker = "/media/";
   const index2 = url2.indexOf(marker);
   if (index2 === -1 || !url2.startsWith("/")) return null;
-  return join15(mediaDir, url2.slice(index2 + marker.length));
+  return join14(mediaDir, url2.slice(index2 + marker.length));
 }
 var MEDIA_KIND = {
   video: "video",
@@ -23286,11 +23007,11 @@ function normalizeCanvasEdge(edge) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/@xyflow+react@12.11.3_@types+react-dom@19.2.4_@types+react@19.2.18__@types+react@19.2.1_88151d4d6946c040c274901fac10766d/node_modules/@xyflow/react/dist/esm/index.js
+// ../../node_modules/.pnpm/@xyflow+react@12.11.3_@types+react-dom@19.2.4_@types+react@19.2.18__@types+react@19.2.1_88151d4d6946c040c274901fac10766d/node_modules/@xyflow/react/dist/esm/index.js
 var import_jsx_runtime = __toESM(require_jsx_runtime());
 var import_react2 = __toESM(require_react());
 
-// ../../../omnimux-dsh/node_modules/.pnpm/classcat@5.0.5/node_modules/classcat/index.js
+// ../../node_modules/.pnpm/classcat@5.0.5/node_modules/classcat/index.js
 function cc(names) {
   if (typeof names === "string" || typeof names === "number") return "" + names;
   let out = "";
@@ -23308,7 +23029,7 @@ function cc(names) {
   return out;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-dispatch@3.0.1/node_modules/d3-dispatch/src/dispatch.js
+// ../../node_modules/.pnpm/d3-dispatch@3.0.1/node_modules/d3-dispatch/src/dispatch.js
 var noop = { value: () => {
 } };
 function dispatch() {
@@ -23378,7 +23099,7 @@ function set2(type, name2, callback) {
 }
 var dispatch_default = dispatch;
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/namespaces.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/namespaces.js
 var xhtml = "http://www.w3.org/1999/xhtml";
 var namespaces_default = {
   svg: "http://www.w3.org/2000/svg",
@@ -23388,14 +23109,14 @@ var namespaces_default = {
   xmlns: "http://www.w3.org/2000/xmlns/"
 };
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/namespace.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/namespace.js
 function namespace_default(name2) {
   var prefix = name2 += "", i = prefix.indexOf(":");
   if (i >= 0 && (prefix = name2.slice(0, i)) !== "xmlns") name2 = name2.slice(i + 1);
   return namespaces_default.hasOwnProperty(prefix) ? { space: namespaces_default[prefix], local: name2 } : name2;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/creator.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/creator.js
 function creatorInherit(name2) {
   return function() {
     var document2 = this.ownerDocument, uri = this.namespaceURI;
@@ -23412,7 +23133,7 @@ function creator_default(name2) {
   return (fullname.local ? creatorFixed : creatorInherit)(fullname);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selector.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selector.js
 function none() {
 }
 function selector_default(selector) {
@@ -23421,7 +23142,7 @@ function selector_default(selector) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/select.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/select.js
 function select_default(select) {
   if (typeof select !== "function") select = selector_default(select);
   for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
@@ -23435,12 +23156,12 @@ function select_default(select) {
   return new Selection(subgroups, this._parents);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/array.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/array.js
 function array2(x) {
   return x == null ? [] : Array.isArray(x) ? x : Array.from(x);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selectorAll.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selectorAll.js
 function empty() {
   return [];
 }
@@ -23450,7 +23171,7 @@ function selectorAll_default(selector) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectAll.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectAll.js
 function arrayAll(select) {
   return function() {
     return array2(select.apply(this, arguments));
@@ -23470,7 +23191,7 @@ function selectAll_default(select) {
   return new Selection(subgroups, parents);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/matcher.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/matcher.js
 function matcher_default(selector) {
   return function() {
     return this.matches(selector);
@@ -23482,7 +23203,7 @@ function childMatcher(selector) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChild.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChild.js
 var find = Array.prototype.find;
 function childFind(match) {
   return function() {
@@ -23496,7 +23217,7 @@ function selectChild_default(match) {
   return this.select(match == null ? childFirst : childFind(typeof match === "function" ? match : childMatcher(match)));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChildren.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/selectChildren.js
 var filter = Array.prototype.filter;
 function children() {
   return Array.from(this.children);
@@ -23510,7 +23231,7 @@ function selectChildren_default(match) {
   return this.selectAll(match == null ? children : childrenFilter(typeof match === "function" ? match : childMatcher(match)));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/filter.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/filter.js
 function filter_default(match) {
   if (typeof match !== "function") match = matcher_default(match);
   for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
@@ -23523,12 +23244,12 @@ function filter_default(match) {
   return new Selection(subgroups, this._parents);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sparse.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sparse.js
 function sparse_default(update) {
   return new Array(update.length);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/enter.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/enter.js
 function enter_default() {
   return new Selection(this._enter || this._groups.map(sparse_default), this._parents);
 }
@@ -23555,14 +23276,14 @@ EnterNode.prototype = {
   }
 };
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/constant.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/constant.js
 function constant_default(x) {
   return function() {
     return x;
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/data.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/data.js
 function bindIndex(parent, group, enter, update, exit, data) {
   var i = 0, node, groupLength = group.length, dataLength = data.length;
   for (; i < dataLength; ++i) {
@@ -23634,12 +23355,12 @@ function arraylike(data) {
   return typeof data === "object" && "length" in data ? data : Array.from(data);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/exit.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/exit.js
 function exit_default() {
   return new Selection(this._exit || this._groups.map(sparse_default), this._parents);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/join.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/join.js
 function join_default(onenter, onupdate, onexit) {
   var enter = this.enter(), update = this, exit = this.exit();
   if (typeof onenter === "function") {
@@ -23657,7 +23378,7 @@ function join_default(onenter, onupdate, onexit) {
   return enter && update ? enter.merge(update).order() : update;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/merge.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/merge.js
 function merge_default(context) {
   var selection2 = context.selection ? context.selection() : context;
   for (var groups0 = this._groups, groups1 = selection2._groups, m0 = groups0.length, m1 = groups1.length, m = Math.min(m0, m1), merges = new Array(m0), j = 0; j < m; ++j) {
@@ -23673,7 +23394,7 @@ function merge_default(context) {
   return new Selection(merges, this._parents);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/order.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/order.js
 function order_default() {
   for (var groups = this._groups, j = -1, m = groups.length; ++j < m; ) {
     for (var group = groups[j], i = group.length - 1, next = group[i], node; --i >= 0; ) {
@@ -23686,7 +23407,7 @@ function order_default() {
   return this;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sort.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/sort.js
 function sort_default(compare) {
   if (!compare) compare = ascending;
   function compareNode(a, b) {
@@ -23706,7 +23427,7 @@ function ascending(a, b) {
   return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/call.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/call.js
 function call_default() {
   var callback = arguments[0];
   arguments[0] = this;
@@ -23714,12 +23435,12 @@ function call_default() {
   return this;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/nodes.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/nodes.js
 function nodes_default() {
   return Array.from(this);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/node.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/node.js
 function node_default() {
   for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) {
     for (var group = groups[j], i = 0, n = group.length; i < n; ++i) {
@@ -23730,19 +23451,19 @@ function node_default() {
   return null;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/size.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/size.js
 function size_default() {
   let size = 0;
   for (const node of this) ++size;
   return size;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/empty.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/empty.js
 function empty_default() {
   return !this.node();
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/each.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/each.js
 function each_default(callback) {
   for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) {
     for (var group = groups[j], i = 0, n = group.length, node; i < n; ++i) {
@@ -23752,7 +23473,7 @@ function each_default(callback) {
   return this;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/attr.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/attr.js
 function attrRemove(name2) {
   return function() {
     this.removeAttribute(name2);
@@ -23796,12 +23517,12 @@ function attr_default(name2, value) {
   return this.each((value == null ? fullname.local ? attrRemoveNS : attrRemove : typeof value === "function" ? fullname.local ? attrFunctionNS : attrFunction : fullname.local ? attrConstantNS : attrConstant)(fullname, value));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/window.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/window.js
 function window_default(node) {
   return node.ownerDocument && node.ownerDocument.defaultView || node.document && node || node.defaultView;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/style.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/style.js
 function styleRemove(name2) {
   return function() {
     this.style.removeProperty(name2);
@@ -23826,7 +23547,7 @@ function styleValue(node, name2) {
   return node.style.getPropertyValue(name2) || window_default(node).getComputedStyle(node, null).getPropertyValue(name2);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/property.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/property.js
 function propertyRemove(name2) {
   return function() {
     delete this[name2];
@@ -23848,7 +23569,7 @@ function property_default(name2, value) {
   return arguments.length > 1 ? this.each((value == null ? propertyRemove : typeof value === "function" ? propertyFunction : propertyConstant)(name2, value)) : this.node()[name2];
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/classed.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/classed.js
 function classArray(string4) {
   return string4.trim().split(/^|\s+/);
 }
@@ -23911,7 +23632,7 @@ function classed_default(name2, value) {
   return this.each((typeof value === "function" ? classedFunction : value ? classedTrue : classedFalse)(names, value));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/text.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/text.js
 function textRemove() {
   this.textContent = "";
 }
@@ -23930,7 +23651,7 @@ function text_default(value) {
   return arguments.length ? this.each(value == null ? textRemove : (typeof value === "function" ? textFunction : textConstant)(value)) : this.node().textContent;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/html.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/html.js
 function htmlRemove() {
   this.innerHTML = "";
 }
@@ -23949,7 +23670,7 @@ function html_default(value) {
   return arguments.length ? this.each(value == null ? htmlRemove : (typeof value === "function" ? htmlFunction : htmlConstant)(value)) : this.node().innerHTML;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/raise.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/raise.js
 function raise() {
   if (this.nextSibling) this.parentNode.appendChild(this);
 }
@@ -23957,7 +23678,7 @@ function raise_default() {
   return this.each(raise);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/lower.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/lower.js
 function lower() {
   if (this.previousSibling) this.parentNode.insertBefore(this, this.parentNode.firstChild);
 }
@@ -23965,7 +23686,7 @@ function lower_default() {
   return this.each(lower);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/append.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/append.js
 function append_default(name2) {
   var create2 = typeof name2 === "function" ? name2 : creator_default(name2);
   return this.select(function() {
@@ -23973,7 +23694,7 @@ function append_default(name2) {
   });
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/insert.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/insert.js
 function constantNull() {
   return null;
 }
@@ -23984,7 +23705,7 @@ function insert_default(name2, before) {
   });
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/remove.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/remove.js
 function remove() {
   var parent = this.parentNode;
   if (parent) parent.removeChild(this);
@@ -23993,7 +23714,7 @@ function remove_default() {
   return this.each(remove);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/clone.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/clone.js
 function selection_cloneShallow() {
   var clone2 = this.cloneNode(false), parent = this.parentNode;
   return parent ? parent.insertBefore(clone2, this.nextSibling) : clone2;
@@ -24006,12 +23727,12 @@ function clone_default(deep) {
   return this.select(deep ? selection_cloneDeep : selection_cloneShallow);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/datum.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/datum.js
 function datum_default(value) {
   return arguments.length ? this.property("__data__", value) : this.node().__data__;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/on.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/on.js
 function contextListener(listener) {
   return function(event) {
     listener.call(this, event, this.__data__);
@@ -24074,7 +23795,7 @@ function on_default(typename, value, options) {
   return this;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/dispatch.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/dispatch.js
 function dispatchEvent(node, type, params) {
   var window2 = window_default(node), event = window2.CustomEvent;
   if (typeof event === "function") {
@@ -24100,7 +23821,7 @@ function dispatch_default2(type, params) {
   return this.each((typeof params === "function" ? dispatchFunction : dispatchConstant)(type, params));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/iterator.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/iterator.js
 function* iterator_default() {
   for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) {
     for (var group = groups[j], i = 0, n = group.length, node; i < n; ++i) {
@@ -24109,7 +23830,7 @@ function* iterator_default() {
   }
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/index.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/selection/index.js
 var root = [null];
 function Selection(groups, parents) {
   this._groups = groups;
@@ -24161,19 +23882,19 @@ Selection.prototype = selection.prototype = {
 };
 var selection_default = selection;
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/select.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/select.js
 function select_default2(selector) {
   return typeof selector === "string" ? new Selection([[document.querySelector(selector)]], [document.documentElement]) : new Selection([[selector]], root);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/sourceEvent.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/sourceEvent.js
 function sourceEvent_default(event) {
   let sourceEvent;
   while (sourceEvent = event.sourceEvent) event = sourceEvent;
   return event;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/pointer.js
+// ../../node_modules/.pnpm/d3-selection@3.0.0/node_modules/d3-selection/src/pointer.js
 function pointer_default(event, node) {
   event = sourceEvent_default(event);
   if (node === void 0) node = event.currentTarget;
@@ -24193,7 +23914,7 @@ function pointer_default(event, node) {
   return [event.pageX, event.pageY];
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/noevent.js
+// ../../node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/noevent.js
 var nonpassive = { passive: false };
 var nonpassivecapture = { capture: true, passive: false };
 function nopropagation(event) {
@@ -24204,7 +23925,7 @@ function noevent_default(event) {
   event.stopImmediatePropagation();
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/nodrag.js
+// ../../node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/nodrag.js
 function nodrag_default(view) {
   var root2 = view.document.documentElement, selection2 = select_default2(view).on("dragstart.drag", noevent_default, nonpassivecapture);
   if ("onselectstart" in root2) {
@@ -24230,10 +23951,10 @@ function yesdrag(view, noclick) {
   }
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/constant.js
+// ../../node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/constant.js
 var constant_default2 = (x) => () => x;
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/event.js
+// ../../node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/event.js
 function DragEvent(type, {
   sourceEvent,
   subject,
@@ -24265,7 +23986,7 @@ DragEvent.prototype.on = function() {
   return value === this._ ? this : value;
 };
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/drag.js
+// ../../node_modules/.pnpm/d3-drag@3.0.0/node_modules/d3-drag/src/drag.js
 function defaultFilter(event) {
   return !event.ctrlKey && !event.button;
 }
@@ -24410,7 +24131,7 @@ function drag_default() {
   return drag;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/define.js
+// ../../node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/define.js
 function define_default(constructor, factory, prototype) {
   constructor.prototype = factory.prototype = prototype;
   prototype.constructor = constructor;
@@ -24421,7 +24142,7 @@ function extend2(parent, definition) {
   return prototype;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/color.js
+// ../../node_modules/.pnpm/d3-color@3.1.0/node_modules/d3-color/src/color.js
 function Color() {
 }
 var darker = 0.7;
@@ -24758,7 +24479,7 @@ function hsl2rgb(h, m1, m2) {
   return (h < 60 ? m1 + (m2 - m1) * h / 60 : h < 180 ? m2 : h < 240 ? m1 + (m2 - m1) * (240 - h) / 60 : m1) * 255;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/basis.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/basis.js
 function basis(t1, v0, v1, v2, v3) {
   var t2 = t1 * t1, t3 = t2 * t1;
   return ((1 - 3 * t1 + 3 * t2 - t3) * v0 + (4 - 6 * t2 + 3 * t3) * v1 + (1 + 3 * t1 + 3 * t2 - 3 * t3) * v2 + t3 * v3) / 6;
@@ -24771,7 +24492,7 @@ function basis_default(values) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/basisClosed.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/basisClosed.js
 function basisClosed_default(values) {
   var n = values.length;
   return function(t) {
@@ -24780,10 +24501,10 @@ function basisClosed_default(values) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/constant.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/constant.js
 var constant_default3 = (x) => () => x;
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/color.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/color.js
 function linear(a, d) {
   return function(t) {
     return a + t * d;
@@ -24804,7 +24525,7 @@ function nogamma(a, b) {
   return d ? linear(a, d) : constant_default3(isNaN(a) ? b : a);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/rgb.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/rgb.js
 var rgb_default = (function rgbGamma(y) {
   var color2 = gamma(y);
   function rgb2(start2, end) {
@@ -24844,7 +24565,7 @@ function rgbSpline(spline) {
 var rgbBasis = rgbSpline(basis_default);
 var rgbBasisClosed = rgbSpline(basisClosed_default);
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/numberArray.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/numberArray.js
 function numberArray_default(a, b) {
   if (!b) b = [];
   var n = a ? Math.min(b.length, a.length) : 0, c = b.slice(), i;
@@ -24857,7 +24578,7 @@ function isNumberArray(x) {
   return ArrayBuffer.isView(x) && !(x instanceof DataView);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/array.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/array.js
 function genericArray(a, b) {
   var nb = b ? b.length : 0, na = a ? Math.min(nb, a.length) : 0, x = new Array(na), c = new Array(nb), i;
   for (i = 0; i < na; ++i) x[i] = value_default(a[i], b[i]);
@@ -24868,7 +24589,7 @@ function genericArray(a, b) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/date.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/date.js
 function date_default(a, b) {
   var d = /* @__PURE__ */ new Date();
   return a = +a, b = +b, function(t) {
@@ -24876,14 +24597,14 @@ function date_default(a, b) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/number.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/number.js
 function number_default(a, b) {
   return a = +a, b = +b, function(t) {
     return a * (1 - t) + b * t;
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/object.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/object.js
 function object_default(a, b) {
   var i = {}, c = {}, k;
   if (a === null || typeof a !== "object") a = {};
@@ -24901,7 +24622,7 @@ function object_default(a, b) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/string.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/string.js
 var reA = /[-+]?(?:\d+\.?\d*|\.?\d+)(?:[eE][-+]?\d+)?/g;
 var reB = new RegExp(reA.source, "g");
 function zero(b) {
@@ -24943,13 +24664,13 @@ function string_default(a, b) {
   });
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/value.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/value.js
 function value_default(a, b) {
   var t = typeof b, c;
   return b == null || t === "boolean" ? constant_default3(b) : (t === "number" ? number_default : t === "string" ? (c = color(b)) ? (b = c, rgb_default) : string_default : b instanceof color ? rgb_default : b instanceof Date ? date_default : isNumberArray(b) ? numberArray_default : Array.isArray(b) ? genericArray : typeof b.valueOf !== "function" && typeof b.toString !== "function" || isNaN(b) ? object_default : number_default)(a, b);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/decompose.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/decompose.js
 var degrees = 180 / Math.PI;
 var identity = {
   translateX: 0,
@@ -24975,7 +24696,7 @@ function decompose_default(a, b, c, d, e, f) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/parse.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/parse.js
 var svgNode;
 function parseCss(value) {
   const m = new (typeof DOMMatrix === "function" ? DOMMatrix : WebKitCSSMatrix)(value + "");
@@ -24990,7 +24711,7 @@ function parseSvg(value) {
   return decompose_default(value.a, value.b, value.c, value.d, value.e, value.f);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/index.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/transform/index.js
 function interpolateTransform(parse3, pxComma, pxParen, degParen) {
   function pop(s) {
     return s.length ? s.pop() + " " : "";
@@ -25045,7 +24766,7 @@ function interpolateTransform(parse3, pxComma, pxParen, degParen) {
 var interpolateTransformCss = interpolateTransform(parseCss, "px, ", "px)", "deg)");
 var interpolateTransformSvg = interpolateTransform(parseSvg, ", ", ")", ")");
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/zoom.js
+// ../../node_modules/.pnpm/d3-interpolate@3.0.1/node_modules/d3-interpolate/src/zoom.js
 var epsilon2 = 1e-12;
 function cosh(x) {
   return ((x = Math.exp(x)) + 1 / x) / 2;
@@ -25090,7 +24811,7 @@ var zoom_default = (function zoomRho(rho, rho2, rho4) {
   return zoom;
 })(Math.SQRT2, 2, 4);
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timer.js
+// ../../node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timer.js
 var frame = 0;
 var timeout = 0;
 var interval = 0;
@@ -25192,7 +24913,7 @@ function sleep2(time3) {
   }
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timeout.js
+// ../../node_modules/.pnpm/d3-timer@3.0.1/node_modules/d3-timer/src/timeout.js
 function timeout_default(callback, delay, time3) {
   var t = new Timer();
   delay = delay == null ? 0 : +delay;
@@ -25203,7 +24924,7 @@ function timeout_default(callback, delay, time3) {
   return t;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/schedule.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/schedule.js
 var emptyOn = dispatch_default("start", "end", "cancel", "interrupt");
 var emptyTween = [];
 var CREATED = 0;
@@ -25314,7 +25035,7 @@ function create(node, id2, self) {
   }
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/interrupt.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/interrupt.js
 function interrupt_default(node, name2) {
   var schedules = node.__transition, schedule, active, empty2 = true, i;
   if (!schedules) return;
@@ -25333,14 +25054,14 @@ function interrupt_default(node, name2) {
   if (empty2) delete node.__transition;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/interrupt.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/interrupt.js
 function interrupt_default2(name2) {
   return this.each(function() {
     interrupt_default(this, name2);
   });
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/tween.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/tween.js
 function tweenRemove(id2, name2) {
   var tween0, tween1;
   return function() {
@@ -25401,13 +25122,13 @@ function tweenValue(transition2, name2, value) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/interpolate.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/interpolate.js
 function interpolate_default(a, b) {
   var c;
   return (typeof b === "number" ? number_default : b instanceof color ? rgb_default : (c = color(b)) ? (b = c, rgb_default) : string_default)(a, b);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attr.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attr.js
 function attrRemove2(name2) {
   return function() {
     this.removeAttribute(name2);
@@ -25457,7 +25178,7 @@ function attr_default2(name2, value) {
   return this.attrTween(name2, typeof value === "function" ? (fullname.local ? attrFunctionNS2 : attrFunction2)(fullname, i, tweenValue(this, "attr." + name2, value)) : value == null ? (fullname.local ? attrRemoveNS2 : attrRemove2)(fullname) : (fullname.local ? attrConstantNS2 : attrConstant2)(fullname, i, value));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attrTween.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/attrTween.js
 function attrInterpolate(name2, i) {
   return function(t) {
     this.setAttribute(name2, i.call(this, t));
@@ -25497,7 +25218,7 @@ function attrTween_default(name2, value) {
   return this.tween(key, (fullname.local ? attrTweenNS : attrTween)(fullname, value));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/delay.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/delay.js
 function delayFunction(id2, value) {
   return function() {
     init(this, id2).delay = +value.apply(this, arguments);
@@ -25513,7 +25234,7 @@ function delay_default(value) {
   return arguments.length ? this.each((typeof value === "function" ? delayFunction : delayConstant)(id2, value)) : get2(this.node(), id2).delay;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/duration.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/duration.js
 function durationFunction(id2, value) {
   return function() {
     set3(this, id2).duration = +value.apply(this, arguments);
@@ -25529,7 +25250,7 @@ function duration_default(value) {
   return arguments.length ? this.each((typeof value === "function" ? durationFunction : durationConstant)(id2, value)) : get2(this.node(), id2).duration;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/ease.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/ease.js
 function easeConstant(id2, value) {
   if (typeof value !== "function") throw new Error();
   return function() {
@@ -25541,7 +25262,7 @@ function ease_default(value) {
   return arguments.length ? this.each(easeConstant(id2, value)) : get2(this.node(), id2).ease;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/easeVarying.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/easeVarying.js
 function easeVarying(id2, value) {
   return function() {
     var v = value.apply(this, arguments);
@@ -25554,7 +25275,7 @@ function easeVarying_default(value) {
   return this.each(easeVarying(this._id, value));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/filter.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/filter.js
 function filter_default2(match) {
   if (typeof match !== "function") match = matcher_default(match);
   for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
@@ -25567,7 +25288,7 @@ function filter_default2(match) {
   return new Transition(subgroups, this._parents, this._name, this._id);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/merge.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/merge.js
 function merge_default2(transition2) {
   if (transition2._id !== this._id) throw new Error();
   for (var groups0 = this._groups, groups1 = transition2._groups, m0 = groups0.length, m1 = groups1.length, m = Math.min(m0, m1), merges = new Array(m0), j = 0; j < m; ++j) {
@@ -25583,7 +25304,7 @@ function merge_default2(transition2) {
   return new Transition(merges, this._parents, this._name, this._id);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/on.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/on.js
 function start(name2) {
   return (name2 + "").trim().split(/^|\s+/).every(function(t) {
     var i = t.indexOf(".");
@@ -25604,7 +25325,7 @@ function on_default2(name2, listener) {
   return arguments.length < 2 ? get2(this.node(), id2).on.on(name2) : this.each(onFunction(id2, name2, listener));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/remove.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/remove.js
 function removeFunction(id2) {
   return function() {
     var parent = this.parentNode;
@@ -25616,7 +25337,7 @@ function remove_default2() {
   return this.on("end.remove", removeFunction(this._id));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/select.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/select.js
 function select_default3(select) {
   var name2 = this._name, id2 = this._id;
   if (typeof select !== "function") select = selector_default(select);
@@ -25632,7 +25353,7 @@ function select_default3(select) {
   return new Transition(subgroups, this._parents, name2, id2);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selectAll.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selectAll.js
 function selectAll_default2(select) {
   var name2 = this._name, id2 = this._id;
   if (typeof select !== "function") select = selectorAll_default(select);
@@ -25652,13 +25373,13 @@ function selectAll_default2(select) {
   return new Transition(subgroups, parents, name2, id2);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selection.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/selection.js
 var Selection2 = selection_default.prototype.constructor;
 function selection_default2() {
   return new Selection2(this._groups, this._parents);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/style.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/style.js
 function styleNull(name2, interpolate) {
   var string00, string10, interpolate0;
   return function() {
@@ -25699,7 +25420,7 @@ function style_default2(name2, value, priority) {
   return value == null ? this.styleTween(name2, styleNull(name2, i)).on("end.style." + name2, styleRemove2(name2)) : typeof value === "function" ? this.styleTween(name2, styleFunction2(name2, i, tweenValue(this, "style." + name2, value))).each(styleMaybeRemove(this._id, name2)) : this.styleTween(name2, styleConstant2(name2, i, value), priority).on("end.style." + name2, null);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/styleTween.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/styleTween.js
 function styleInterpolate(name2, i, priority) {
   return function(t) {
     this.style.setProperty(name2, i.call(this, t), priority);
@@ -25723,7 +25444,7 @@ function styleTween_default(name2, value, priority) {
   return this.tween(key, styleTween(name2, value, priority == null ? "" : priority));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/text.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/text.js
 function textConstant2(value) {
   return function() {
     this.textContent = value;
@@ -25739,7 +25460,7 @@ function text_default2(value) {
   return this.tween("text", typeof value === "function" ? textFunction2(tweenValue(this, "text", value)) : textConstant2(value == null ? "" : value + ""));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/textTween.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/textTween.js
 function textInterpolate(i) {
   return function(t) {
     this.textContent = i.call(this, t);
@@ -25763,7 +25484,7 @@ function textTween_default(value) {
   return this.tween(key, textTween(value));
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/transition.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/transition.js
 function transition_default() {
   var name2 = this._name, id0 = this._id, id1 = newId();
   for (var groups = this._groups, m = groups.length, j = 0; j < m; ++j) {
@@ -25782,7 +25503,7 @@ function transition_default() {
   return new Transition(groups, this._parents, name2, id1);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/end.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/end.js
 function end_default() {
   var on0, on1, that = this, id2 = that._id, size = that.size();
   return new Promise(function(resolve5, reject) {
@@ -25803,7 +25524,7 @@ function end_default() {
   });
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/index.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/transition/index.js
 var id = 0;
 function Transition(groups, parents, name2, id2) {
   this._groups = groups;
@@ -25851,12 +25572,12 @@ Transition.prototype = transition.prototype = {
   [Symbol.iterator]: selection_prototype[Symbol.iterator]
 };
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-ease@3.0.1/node_modules/d3-ease/src/cubic.js
+// ../../node_modules/.pnpm/d3-ease@3.0.1/node_modules/d3-ease/src/cubic.js
 function cubicInOut(t) {
   return ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/transition.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/transition.js
 var defaultTiming = {
   time: null,
   // Set on use.
@@ -25890,14 +25611,14 @@ function transition_default2(name2) {
   return new Transition(groups, this._parents, name2, id2);
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/index.js
+// ../../node_modules/.pnpm/d3-transition@3.0.1_d3-selection@3.0.0/node_modules/d3-transition/src/selection/index.js
 selection_default.prototype.interrupt = interrupt_default2;
 selection_default.prototype.transition = transition_default2;
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/constant.js
+// ../../node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/constant.js
 var constant_default4 = (x) => () => x;
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/event.js
+// ../../node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/event.js
 function ZoomEvent(type, {
   sourceEvent,
   target,
@@ -25913,7 +25634,7 @@ function ZoomEvent(type, {
   });
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/transform.js
+// ../../node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/transform.js
 function Transform(k, x, y) {
   this.k = k;
   this.x = x;
@@ -25962,7 +25683,7 @@ function transform2(node) {
   return node.__zoom;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/noevent.js
+// ../../node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/noevent.js
 function nopropagation2(event) {
   event.stopImmediatePropagation();
 }
@@ -25971,7 +25692,7 @@ function noevent_default2(event) {
   event.stopImmediatePropagation();
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/zoom.js
+// ../../node_modules/.pnpm/d3-zoom@3.0.0/node_modules/d3-zoom/src/zoom.js
 function defaultFilter2(event) {
   return (!event.ctrlKey || event.type === "wheel") && !event.button;
 }
@@ -26286,7 +26007,7 @@ function zoom_default2() {
   return zoom;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/@xyflow+system@0.0.80/node_modules/@xyflow/system/dist/esm/index.js
+// ../../node_modules/.pnpm/@xyflow+system@0.0.80/node_modules/@xyflow/system/dist/esm/index.js
 var errorMessages = {
   error001: (lib = "react") => `Seems like you have not used ${lib === "svelte" ? "SvelteFlowProvider" : "ReactFlowProvider"} as an ancestor. Help: https://${lib}flow.dev/error#001`,
   error002: () => "It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them.",
@@ -28928,11 +28649,11 @@ function XYResizer({ domNode, nodeId, getStoreItems, onChange, onEnd }) {
   };
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/traditional.mjs
+// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/traditional.mjs
 var import_react = __toESM(require_react(), 1);
 var import_with_selector = __toESM(require_with_selector(), 1);
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/vanilla.mjs
+// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/vanilla.mjs
 var createStoreImpl = (createState) => {
   let state;
   const listeners = /* @__PURE__ */ new Set();
@@ -28964,7 +28685,7 @@ var createStoreImpl = (createState) => {
 };
 var createStore = (createState) => createState ? createStoreImpl(createState) : createStoreImpl;
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/traditional.mjs
+// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/traditional.mjs
 var { useDebugValue } = import_react.default;
 var { useSyncExternalStoreWithSelector } = import_with_selector.default;
 var identity3 = (arg) => arg;
@@ -28987,7 +28708,7 @@ var createWithEqualityFnImpl = (createState, defaultEqualityFn) => {
 };
 var createWithEqualityFn = (createState, defaultEqualityFn) => createState ? createWithEqualityFnImpl(createState, defaultEqualityFn) : createWithEqualityFnImpl;
 
-// ../../../omnimux-dsh/node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/shallow.mjs
+// ../../node_modules/.pnpm/zustand@4.5.7_@types+react@19.2.18_immer@11.1.18_react@19.2.8/node_modules/zustand/esm/shallow.mjs
 function shallow$1(objA, objB) {
   if (Object.is(objA, objB)) {
     return true;
@@ -29025,7 +28746,7 @@ function shallow$1(objA, objB) {
   return true;
 }
 
-// ../../../omnimux-dsh/node_modules/.pnpm/@xyflow+react@12.11.3_@types+react-dom@19.2.4_@types+react@19.2.18__@types+react@19.2.1_88151d4d6946c040c274901fac10766d/node_modules/@xyflow/react/dist/esm/index.js
+// ../../node_modules/.pnpm/@xyflow+react@12.11.3_@types+react-dom@19.2.4_@types+react@19.2.18__@types+react@19.2.1_88151d4d6946c040c274901fac10766d/node_modules/@xyflow/react/dist/esm/index.js
 var import_react_dom = __toESM(require_react_dom());
 var StoreContext = (0, import_react2.createContext)(null);
 var Provider$1 = StoreContext.Provider;
@@ -33055,13 +32776,10 @@ var globalCheckpointManager = new CheckpointManager();
 // src/workflow/index.ts
 function mountWorkflowHost(ctx, opts = {}) {
   const paths = opts.paths ?? resolveWorkflowPaths();
-  const templatesDir = paths.templatesDir || join16(paths.root, "templates");
-  mkdirSync10(paths.workspacesDir, { recursive: true });
-  mkdirSync10(paths.mediaDir, { recursive: true });
-  mkdirSync10(paths.executionsDir, { recursive: true });
-  mkdirSync10(templatesDir, { recursive: true });
+  mkdirSync9(paths.workspacesDir, { recursive: true });
+  mkdirSync9(paths.mediaDir, { recursive: true });
+  mkdirSync9(paths.executionsDir, { recursive: true });
   const store = createWorkspaceStore({ workspacesDir: paths.workspacesDir });
-  const templates = new TemplateStore({ templatesDir });
   const gateway = opts.gateway ?? assembleGateway({
     getSeam: (name2) => ctx.get?.(name2),
     ...opts.gatewayMode !== void 0 ? { mode: opts.gatewayMode } : {},
@@ -33077,8 +32795,7 @@ function mountWorkflowHost(ctx, opts = {}) {
     store,
     gateway,
     mediaDir: paths.mediaDir,
-    executionManager,
-    templates
+    executionManager
   });
   void executionManager.recoverAll();
   const disposers = [];
