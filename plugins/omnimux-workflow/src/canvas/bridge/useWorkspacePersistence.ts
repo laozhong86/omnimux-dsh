@@ -5,14 +5,13 @@
  * Behavior:
  * - Subscribes to the canvasStore graph; changes are debounced (1s) and
  *   saved via PUT with the optimistic-lock version.
- * - 409 conflicts: pull the server snapshot, adopt its version, and retry
- *   the save once (local last-write-wins merge — the single-user / two
- *   windows scenario the plan §5.2 describes). A second conflict surfaces
- *   as status 'conflict' for explicit user action.
- * - Selection / measure-only changes are NOT saved (signature keeps a
- *   whitelist of canvas.json fields — strips `selected`, `measured`,
- *   `dragging`, `positionAbsolute`, `__catalog`, …), so casual clicking
- *   and first layout measure never dirty the doc.
+ * - 409 / external version poll: compare signatures. Same graph → adopt
+ *   the remote version (self-collision from open/flush). Local still equal
+ *   to last-saved → reload. Only a real content split surfaces 'conflict'.
+ * - Selection / measure-only / media nodeHeight changes are NOT saved
+ *   (signature strips `selected`, `measured`, `dragging`, `positionAbsolute`,
+ *   `__catalog`, `nodeHeight`, blob: URLs), so casual clicking, first layout
+ *   measure, and media onLoad never dirty the doc.
  * - Best-effort flush on unmount / pagehide.
  *
  * 空图保护（persistPolicy）：
@@ -36,6 +35,7 @@ import {
   snapshotGraph,
   type PersistCause,
 } from './persistPolicy';
+import { decideRemoteVersionAdvance } from './persistConflict';
 import { sanitizeEdges, sanitizeNodes, signatureOf } from './persistSanitize';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
@@ -134,6 +134,44 @@ export function useWorkspacePersistence(
   };
 
   /**
+   * 远端 version 超前：先拉快照比签名。同图只 adopt version，不弹冲突条。
+   */
+  const resolveRemoteAdvance = useCallback(async (input: {
+    localNodes: SerializedCanvasNode[];
+    localEdges: SerializedCanvasEdge[];
+  }): Promise<void> => {
+    const ws = workspaceRef.current;
+    if (!ws) {
+      setStatus('error');
+      return;
+    }
+    const latest = await getWorkspace(ws.id);
+    if (!latest.ok || !latest.body.workspace) {
+      setStatus('error');
+      return;
+    }
+    const snapshot = latest.body.workspace;
+    const decision = decideRemoteVersionAdvance({
+      localSignature: signatureOf(input.localNodes, input.localEdges),
+      lastSavedSignature: lastSavedSigRef.current,
+      remoteSignature: signatureOf(snapshot.nodes, snapshot.edges),
+    });
+    serverVersionRef.current = snapshot.version;
+    if (decision === 'conflict') {
+      setStatus('conflict');
+      return;
+    }
+    lastSavedSigRef.current = signatureOf(snapshot.nodes, snapshot.edges);
+    lastSavedNodeCountRef.current = snapshot.nodes.length;
+    if (decision === 'reload') {
+      useCanvasStore.getState().hydrateGraph(snapshot.nodes, snapshot.edges);
+    }
+    setIsDirty(false);
+    setStatus('idle');
+    onSavedRef.current?.(snapshot);
+  }, []);
+
+  /**
    * 只用调用瞬间传入的 capture；await 之后禁止再读 store。
    */
   const performSave = useCallback(async (
@@ -165,23 +203,21 @@ export function useWorkspacePersistence(
     savingRef.current = true;
     setStatus('saving');
     try {
-      let result = await saveWorkspace(ws.id, {
+      const result = await saveWorkspace(ws.id, {
         name,
         nodes: sanitizeNodes(nodes),
         edges: sanitizeEdges(edges),
         expectedVersion: serverVersionRef.current,
       });
 
-      // 409: the doc moved on under us (another window, or an agent edit
-      // via the workflow_* write tools). Local last-write-wins retry was
-      // the M2 policy, but it silently clobbers agent edits — PR3 surfaces
-      // the conflict instead; the user picks resolveConflict (push local)
-      // or reloadFromServer (take remote).
+      // 409: the doc moved on under us (another window, an agent edit, or
+      // this island's own overlapping autosave/flush). Same-graph advances
+      // only adopt the remote version — do not scare the user with a banner.
       if (result.status === 409) {
-        if (typeof result.body.current === 'number') {
-          serverVersionRef.current = result.body.current;
-        }
-        setStatus('conflict');
+        await resolveRemoteAdvance({
+          localNodes: nodes,
+          localEdges: edges,
+        });
         return;
       }
 
@@ -196,8 +232,6 @@ export function useWorkspacePersistence(
           setStatus((prev) => (prev === 'saved' ? 'idle' : prev));
         }, SAVED_BADGE_MS);
         onSavedRef.current?.(result.body.workspace);
-      } else if (result.status === 409) {
-        setStatus('conflict');
       } else {
         setStatus('error');
       }
@@ -206,7 +240,7 @@ export function useWorkspacePersistence(
     } finally {
       savingRef.current = false;
     }
-  }, []);
+  }, [resolveRemoteAdvance]);
 
   // Core subscription: debounce store changes, skip no-op notifications.
   // hydrate 完成前不订阅。
@@ -353,11 +387,9 @@ export function useWorkspacePersistence(
     onSavedRef.current?.(snapshot);
   }, []);
 
-  // PR3 external-edit watcher: the agent write tools bump the workspace
-  // version without this window noticing. Poll the lightweight /version
-  // route while the tab is visible; when the server runs ahead, adopt the
-  // server graph if local is clean, otherwise surface the conflict state
-  // (never silently clobber either side).
+  // PR3 external-edit watcher: agent tools bump version without this window
+  // noticing. Poll /version while visible; same-graph advances adopt the
+  // remote version, clean local reloads, only a real split surfaces conflict.
   useEffect(() => {
     if (!enabled) return;
     let inFlight = false;
@@ -373,15 +405,10 @@ export function useWorkspacePersistence(
         if (!probe.ok || typeof probe.body.version !== 'number') return;
         if (probe.body.version <= serverVersionRef.current) return;
         const capture = readStoreCapture();
-        const dirty = signatureOf(capture.nodes, capture.edges) !== lastSavedSigRef.current;
-        if (dirty) {
-          // Adopt the server version so future saves don't 409-loop, and let
-          // the user resolve explicitly.
-          serverVersionRef.current = probe.body.version;
-          setStatus('conflict');
-          return;
-        }
-        await reloadFromServer();
+        await resolveRemoteAdvance({
+          localNodes: capture.nodes,
+          localEdges: capture.edges,
+        });
       } catch {
         // Probe failures are silent — the next tick retries.
       } finally {
@@ -392,7 +419,7 @@ export function useWorkspacePersistence(
       void tick();
     }, EXTERNAL_WATCH_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [enabled, reloadFromServer]);
+  }, [enabled, resolveRemoteAdvance]);
 
   return { status, isDirty, saveNow, flushPendingSave, resolveConflict, reloadFromServer };
 }

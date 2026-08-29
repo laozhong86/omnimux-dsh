@@ -9,6 +9,8 @@
  *
  * 白名单与 src/workflow/workspace/snapshotSchema.ts 的 canvasNodeSchema /
  * canvasEdgeSchema 对齐；selected 强制 false（仅选中不得脏文档）。
+ * 签名额外忽略 nodeHeight / 顶层 width-height，并剥所有 blob: 预览 URL，
+ * 避免打开画布量媒体、残留 blob 把文档判脏后自撞 409。
  */
 
 import type {
@@ -26,6 +28,20 @@ function asRecord(value: unknown): Record<string, unknown> {
 function asMediaAsset(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   return { ...(value as Record<string, unknown>) };
+}
+
+function stripBlobStrings(value: unknown): void {
+  if (!value || typeof value !== 'object') return;
+  if (Array.isArray(value)) {
+    for (const item of value) stripBlobStrings(item);
+    return;
+  }
+  const record = value as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    const next = record[key];
+    if (isBlobUrl(next)) delete record[key];
+    else if (next && typeof next === 'object') stripBlobStrings(next);
+  }
 }
 
 function sanitizeImportedMedia(data: Record<string, unknown>): void {
@@ -50,29 +66,31 @@ function sanitizeImportedMedia(data: Record<string, unknown>): void {
         url,
         path: realPath,
       }];
-    return;
-  }
+  } else {
+    if (isBlobUrl(data.mediaUrl)) delete data.mediaUrl;
 
-  if (isBlobUrl(data.mediaUrl)) delete data.mediaUrl;
-
-  if (Array.isArray(data.mediaAssets)) {
-    const cleaned = data.mediaAssets
-      .map((asset) => {
-        const row = asMediaAsset(asset);
-        if (!row) return null;
-        if (isBlobUrl(row.url)) {
-          if (typeof row.path === 'string' && row.path) {
-            row.url = localFileMediaUrl(row.path);
-          } else {
-            delete row.url;
+    if (Array.isArray(data.mediaAssets)) {
+      const cleaned = data.mediaAssets
+        .map((asset) => {
+          const row = asMediaAsset(asset);
+          if (!row) return null;
+          if (isBlobUrl(row.url)) {
+            if (typeof row.path === 'string' && row.path) {
+              row.url = localFileMediaUrl(row.path);
+            } else {
+              delete row.url;
+            }
           }
-        }
-        return row.url || row.path ? row : null;
-      })
-      .filter((row): row is Record<string, unknown> => row !== null);
-    if (cleaned.length === 0) delete data.mediaAssets;
-    else data.mediaAssets = cleaned;
+          return row.url || row.path ? row : null;
+        })
+        .filter((row): row is Record<string, unknown> => row !== null);
+      if (cleaned.length === 0) delete data.mediaAssets;
+      else data.mediaAssets = cleaned;
+    }
   }
+
+  // 会话内 blob: 预览（outputVideoUrl / thumbnailUrl 等）不得进签名或落盘。
+  stripBlobStrings(data);
 }
 
 /** Strip island + xyflow transient fields before signature / PUT. */
@@ -104,6 +122,15 @@ export function sanitizeNodes(nodes: SerializedCanvasNode[]): SerializedCanvasNo
   });
 }
 
+/** 布局派生字段：打开即量媒体高度 / xyflow 写 width-height，不得单独把文档判脏。 */
+function omitLayoutDerivedFields(node: SerializedCanvasNode): SerializedCanvasNode {
+  const raw = node as SerializedCanvasNode & Record<string, unknown>;
+  const data = asRecord(raw.data);
+  delete data.nodeHeight;
+  const { width: _width, height: _height, ...rest } = raw;
+  return { ...rest, data } as SerializedCanvasNode;
+}
+
 export function sanitizeEdges(edges: SerializedCanvasEdge[]): SerializedCanvasEdge[] {
   return edges.map((edge) => {
     const raw = edge as SerializedCanvasEdge & Record<string, unknown>;
@@ -129,5 +156,8 @@ export function signatureOf(
   nodes: SerializedCanvasNode[],
   edges: SerializedCanvasEdge[],
 ): string {
-  return JSON.stringify({ nodes: sanitizeNodes(nodes), edges: sanitizeEdges(edges) });
+  return JSON.stringify({
+    nodes: sanitizeNodes(nodes).map(omitLayoutDerivedFields),
+    edges: sanitizeEdges(edges),
+  });
 }
