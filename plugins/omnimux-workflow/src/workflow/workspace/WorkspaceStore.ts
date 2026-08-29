@@ -24,33 +24,21 @@ import {
   type WorkspaceSummary,
 } from '../../shared/canvasTypes';
 import { workspaceSnapshotSchema } from './snapshotSchema';
+import { WorkflowStoreError } from './WorkflowStoreError';
 import { migrateSnapshot } from './snapshotMigration';
 
 /** Mirrors the snapshot schema name cap (workspaceSnapshotSchema). */
 const MAX_WORKSPACE_NAME_LENGTH = 200;
 
-export class WorkflowStoreError extends Error {
-  readonly code: string;
-  /**
-   * Server-side current version carried by version_conflict errors, so the
-   * HTTP layer can surface it in the 409 body without parsing the message
-   * (M2 QA fix #5 — the regex-based extraction was brittle).
-   */
-  readonly current?: number;
-
-  constructor(code: string, message: string, details: { current?: number } = {}) {
-    super(message);
-    this.code = code;
-    this.current = details.current;
-    this.name = 'WorkflowStoreError';
-  }
-}
+export { WorkflowStoreError } from './WorkflowStoreError';
 
 export interface WorkspaceSaveResult {
   snapshot: CanvasWorkspaceSnapshot;
 }
 
 export interface WorkspaceStore {
+  /** Absolute workspaces root; sibling stores (assets.json) share this. */
+  readonly workspacesDir: string;
   list(): WorkspaceSummary[];
   create(name: string | undefined, id?: string): CanvasWorkspaceSnapshot;
   get(id: string): CanvasWorkspaceSnapshot;
@@ -112,6 +100,8 @@ export function createWorkspaceStore(opts: {
   }
 
   return {
+    workspacesDir,
+
     list(): WorkspaceSummary[] {
       if (!existsSync(workspacesDir)) return [];
       const rows: WorkspaceSummary[] = [];

@@ -109,6 +109,29 @@ Body：`{ "paths": ["/abs/a.png", "/abs/b.mp4"] }`（1–64 条 string）。
 
 `results` 与入参顺序一致。单条非法/缺失仍 HTTP 200（该元素 `allowed: false` / `isMissing: true`）；整段非 loopback 才 403。空数组或超长 → 400 `invalid-probe`。
 
+### GET /omnimux-workflow/api/workspaces/:id/assets
+
+项目私有资产树。无 `assets.json` / 坏 JSON → `{ "assets": { "schemaVersion": 1, "rev": 0, "folders": [], "items": [] } }`。无 `canvas.json` → 404 `workspace-not-found`。legacy `/dsh-workflow` 同等改写。
+
+### PUT /omnimux-workflow/api/workspaces/:id/assets
+
+Body：`{ "expectedRev": number, "folders": Folder[], "items": Item[] }`。
+
+- 成功 → `{ "assets": <新文档，rev+1> }`（**不**抬 `canvas.version`）
+- 版本不符 → **409** `{ "error": "version_conflict", "message": "…", "current": <服务端当前 rev> }`
+- `blob:` / 相对路径 / NUL → 400 `blob-url-forbidden` / `invalid-path`
+- 目录写入 `items` → 400 `not-a-file`
+
+### POST /omnimux-workflow/api/workspaces/:id/assets/mkdir
+
+Body：`{ "name": string, "parentId"?: string | null, "expectedRev"?: number }`。同层重名 → 409 `name-conflict`；非法名（空、含 `/`、控制符）→ 400 `name-invalid`。
+
+### POST /omnimux-workflow/api/workspaces/:id/assets/index
+
+Body：`{ "paths": string[], "parentId"?: string | null, "expectedRev"?: number }`。只把绝对路径写入记录，**不 copy**。regular file → `items`；directory → `folders`（一条记录，不扁平）。
+
+完整闸与主体库 ACL 见 [workflow-project-assets.md](./workflow-project-assets.md)。
+
 ## M3 预留（本里程碑未实现）
 
 ```

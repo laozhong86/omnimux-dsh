@@ -5,29 +5,24 @@ import {
   SlidersHorizontal,
   Plus,
   Sparkles,
-  Layers,
   ChevronDown,
+  Layers,
 } from 'lucide-react';
 import { SortFilterPopover } from '../popovers/SortFilterPopover';
+import { SUBJECT_CATEGORY_TABS } from '../../../../bridge/assetsLibraryMapper';
 import type { SubjectPack } from '../types';
 
 interface SubjectLibraryViewProps {
   subjects: SubjectPack[];
+  error?: string | null;
   onBack: () => void;
   onSelectSubject: (subject: SubjectPack) => void;
   onCreateSubject: () => void;
 }
 
-const CATEGORY_TABS = [
-  { id: 'all', label: '全部' },
-  { id: 'character', label: '角色', tag: '角色' },
-  { id: 'scene', label: '场景', tag: '场景' },
-  { id: 'prop', label: '道具/机甲', tag: '机甲' },
-  { id: 'style', label: '风格/Lora', tag: 'Lora' },
-];
-
 export const SubjectLibraryView: React.FC<SubjectLibraryViewProps> = ({
   subjects,
+  error,
   onBack,
   onSelectSubject,
   onCreateSubject,
@@ -46,12 +41,14 @@ export const SubjectLibraryView: React.FC<SubjectLibraryViewProps> = ({
   const filteredSubjects = subjects
     .filter((s) => {
       if (selectedCategory !== 'all') {
-        const cat = CATEGORY_TABS.find((c) => c.id === selectedCategory);
-        if (cat?.tag) {
-          const matchTag = s.tags.some(
-            (t) => t.toLowerCase().includes(cat.tag.toLowerCase()) || s.name.includes(cat.tag)
-          );
-          if (!matchTag) return false;
+        if (s.type) {
+          if (s.type !== selectedCategory) return false;
+        } else {
+          const cat = SUBJECT_CATEGORY_TABS.find((c) => c.id === selectedCategory);
+          if (cat && cat.id !== 'all') {
+            const matchTag = s.tags.some((t) => t === cat.label);
+            if (!matchTag) return false;
+          }
         }
       }
 
@@ -114,7 +111,7 @@ export const SubjectLibraryView: React.FC<SubjectLibraryViewProps> = ({
 
         {/* 快捷分类 Pills */}
         <div className="wf-subject-pills-row-compact">
-          {CATEGORY_TABS.map((cat) => (
+          {SUBJECT_CATEGORY_TABS.map((cat) => (
             <button
               key={cat.id}
               type="button"
@@ -132,7 +129,9 @@ export const SubjectLibraryView: React.FC<SubjectLibraryViewProps> = ({
         {filteredSubjects.length === 0 ? (
           <div className="wf-assets-empty-state-compact">
             <Sparkles size={24} className="wf-assets-empty-icon" />
-            <div className="wf-assets-empty-title">未找到匹配的主体</div>
+            <div className="wf-assets-empty-title">
+              {error ? '主体库暂不可用' : subjects.length === 0 ? '暂无主体' : '未找到匹配的主体'}
+            </div>
           </div>
         ) : (
           <div className="wf-subject-grid-compact">

@@ -33,6 +33,12 @@ export const WORKFLOW_API_ROUTES = {
   workspace: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}`,
   /** GET: lightweight { id, version } — external-edit polling (PR3). */
   workspaceVersion: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/version`,
+  /** GET/PUT: project-private assets.json (independent rev, never canvas.version). */
+  workspaceAssets: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/assets`,
+  /** POST: create a logical folder record in assets.json. */
+  workspaceAssetsMkdir: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/assets/mkdir`,
+  /** POST: index absolute paths into assets.json (no copy). */
+  workspaceAssetsIndex: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/assets/index`,
   /** GET: generation capability catalog (M3/M4 fills real data). */
   capabilities: `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`,
   /** GET: media files under the plugin-owned media dir (traversal-guarded). */

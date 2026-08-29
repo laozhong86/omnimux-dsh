@@ -108,6 +108,7 @@ const App: React.FC<CanvasAppProps> = ({ locale, workspaceId }) => {
       <main className="wf-canvas-main">
         <CanvasEditor
           catalog={catalog}
+          workspaceId={workspace?.id ?? null}
           onExecuteNodeIds={(nodeIds) => {
             // M4 组/子集执行入口（右键菜单）：subset 模式自动补传递上游闭包。
             void execution.startExecution({ mode: 'subset', nodeIds });

@@ -136,6 +136,7 @@ const CONNECTION_RADIUS = 96;
 
 interface CanvasEditorProps {
   catalog: CapabilityCatalog | null;
+  workspaceId?: string | null;
   /**
    * M4 组/子集执行入口：右键「执行选中节点 / 执行此节点」回调
    * （subset 模式：nodeIds + 传递上游闭包，由 host 解析）。
@@ -150,6 +151,7 @@ interface CanvasEditorProps {
 
 const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
   catalog,
+  workspaceId,
   onExecuteNodeIds,
   onStartExecution,
   onPauseExecution,
@@ -547,6 +549,7 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
             isOpen={isAssetsOpen}
             onClose={() => setIsAssetsOpen(false)}
             onInsertAsset={handleInsertAsset}
+            workspaceId={workspaceId}
             nodes={flowNodes}
             onFocusNode={(nodeId) => {
               applyFocusCanvasNode({

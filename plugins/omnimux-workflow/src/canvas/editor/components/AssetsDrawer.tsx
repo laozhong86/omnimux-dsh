@@ -5,6 +5,9 @@ import {
 } from 'lucide-react';
 import { stopToolbarNativeEvent } from './toolbarPointerGuard';
 import { toast } from '../../ui';
+import { pickLocalFiles } from '../../bridge/apiClient';
+import { createAssetsLibraryClient } from '../../bridge/assetsLibraryClient';
+import { interpretPickResponse } from '../../bridge/assetsLibraryMapper';
 import {
   CanvasOutlineView,
   ProjectAssetsView,
@@ -19,11 +22,12 @@ import type {
   ActiveTab,
   AssetItem,
   CanvasNodeItem,
-  SubjectPack,
   ContextMenuState,
   HoverInspectorState,
   ViewMode,
 } from './assets/types';
+import { useProjectAssets } from '../hooks/useProjectAssets';
+import { useSubjectLibrary } from '../hooks/useSubjectLibrary';
 
 export interface AssetRecord {
   id: string;
@@ -40,11 +44,37 @@ export interface AssetRecord {
 interface AssetsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  onInsertAsset?: (asset: any) => void;
+  onInsertAsset?: (asset: AssetRecord) => void;
   activeCategory?: string;
   onCategoryChange?: (category: string) => void;
-  nodes?: any[];
+  nodes?: unknown[];
   onFocusNode?: (nodeId: string) => void;
+  workspaceId?: string | null;
+}
+
+const assetsPickClient = createAssetsLibraryClient();
+
+function basenameOf(path: string): string {
+  const trimmed = path.replace(/[/\\]+$/, '');
+  const parts = trimmed.split(/[/\\]/);
+  return parts[parts.length - 1] || path;
+}
+
+function typeFromName(name: string): AssetItem['type'] {
+  const ext = name.split('.').pop()?.toLowerCase() || '';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'avif', 'heic'].includes(ext)) return 'image';
+  if (['mp4', 'webm', 'mov', 'mkv', 'avi', 'm4v'].includes(ext)) return 'video';
+  if (['mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg', 'opus'].includes(ext)) return 'audio';
+  return 'doc';
+}
+
+function reportPickFailure(interpretation: { kind: string; message?: string }): void {
+  if (interpretation.kind === 'cancel') return;
+  if (interpretation.kind === 'unsupported') {
+    toast.warning('当前环境不支持原生文件选择器');
+    return;
+  }
+  toast.error(interpretation.kind === 'error' ? (interpretation.message || '选择文件失败') : '选择文件失败');
 }
 
 export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
@@ -53,6 +83,7 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
   onInsertAsset,
   nodes: propNodes,
   onFocusNode: propOnFocusNode,
+  workspaceId,
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('canvas');
   const [viewState, setViewState] = useState<'normal' | 'subject-library'>('normal');
@@ -60,12 +91,10 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
   const [drawerWidth, setDrawerWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
 
-  // 画布 Tab 由真实节点纯派生；资产 / 主体库初始为空，导入后才写入本地 list。
   const canvasNodes = useMemo(() => extractCanvasAssets(propNodes), [propNodes]);
-  const [assets, setAssets] = useState<AssetItem[]>([]);
-  const [subjects, setSubjects] = useState<SubjectPack[]>([]);
+  const projectAssets = useProjectAssets(workspaceId ?? null);
+  const subjectLibrary = useSubjectLibrary(isOpen && viewState === 'subject-library');
 
-  // Context Menu state
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
     x: 0,
@@ -73,7 +102,6 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
     targetType: 'canvas-item',
   });
 
-  // Hover Inspector state
   const [hoverInspector, setHoverInspector] = useState<HoverInspectorState>({
     visible: false,
     x: 0,
@@ -90,7 +118,6 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
     };
   }, []);
 
-  // Width Resize Handler
   const startResize = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
@@ -112,7 +139,6 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
     window.addEventListener('mouseup', onMouseUp);
   }, [drawerWidth]);
 
-  // Focus node handler
   const handleFocusNode = (nodeId: string) => {
     if (propOnFocusNode) {
       propOnFocusNode(nodeId);
@@ -126,7 +152,6 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
     }
   };
 
-  // Hover Inspector Trigger
   const handleHoverItem = (item: AssetItem | CanvasNodeItem | null, e?: React.MouseEvent) => {
     if (hoverTimerRef.current) {
       clearTimeout(hoverTimerRef.current);
@@ -149,7 +174,6 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
     }, 300);
   };
 
-  // Context Menu Trigger Handlers
   const handleCanvasContextMenu = (e: React.MouseEvent, item: CanvasNodeItem) => {
     setContextMenu({
       visible: true,
@@ -205,37 +229,25 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
       case 'add-to-chat':
         insertToChat(item, 'canvas');
         break;
-      case 'add-to-subjects':
-        setSubjects((prev) => [
-          {
-            id: `sub-${Date.now()}`,
-            name: item.name.replace(/\.[^/.]+$/, ''),
-            avatar: item.previewUrl || '',
-            itemCount: 1,
-            tags: [item.type, '来自画布'],
-            updatedAt: Date.now(),
-            previewUrls: item.previewUrl ? [item.previewUrl] : [],
-          },
-          ...prev,
-        ]);
-        toast.success(`已添加到主体库：${item.name}`);
+      case 'add-to-subjects': {
+        const name = item.name.replace(/\.[^/.]+$/, '') || item.name;
+        void subjectLibrary.createSubject(name).then((created) => {
+          if (created) toast.success(`已添加到主体库：${created.name}`);
+          else toast.warning('主体库暂不可用');
+        });
         break;
-      case 'save-to-assets':
-        setAssets((prev) => [
-          {
-            id: `asset-${Date.now()}`,
-            name: item.name,
-            type: (item.type as AssetItem['type']) || 'doc',
-            fileExt: item.name.split('.').pop()?.toUpperCase() || 'FILE',
-            updatedAt: Date.now(),
-            previewUrl: item.previewUrl,
-            real_path: item.real_path,
-            tags: ['画布沉淀'],
-          },
-          ...prev,
-        ]);
-        toast.success(`已存到项目资产：${item.name}`);
+      }
+      case 'save-to-assets': {
+        if (!item.real_path || item.real_path.startsWith('blob:')) {
+          toast.warning('无法索引此文件（无本地路径）');
+          break;
+        }
+        void projectAssets.indexPaths([item.real_path]).then((ok) => {
+          if (ok) toast.success(`已存到项目资产：${item.name}`);
+          else toast.error('写入项目资产失败');
+        });
         break;
+      }
       case 'open-preview':
         if (item.previewUrl) {
           window.open(item.previewUrl, '_blank', 'noopener,noreferrer');
@@ -288,23 +300,23 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         revealInFinder(item);
         break;
       case 'move-to': {
-        const folders = assets.filter((a) => a.type === 'folder');
-        const names = folders.map((f) => f.name).join(' / ') || '根目录';
+        const folders = projectAssets.assets.filter((row) => row.type === 'folder' && row.id !== item.id);
+        const names = folders.map((folder) => folder.name).join(' / ') || '根目录';
         const target = prompt(`移动至目标文件夹（${names}）：`, folders[0]?.name || '');
         if (target && target.trim()) {
-          const folder = folders.find((f) => f.name === target.trim());
-          setAssets((prev) =>
-            prev.map((a) =>
-              a.id === item.id ? { ...a, parentId: folder?.id || target.trim() } : a,
-            ),
-          );
-          toast.success(`已移动到：${target.trim()}`);
+          const folder = folders.find((row) => row.name === target.trim());
+          void projectAssets.moveNode(item.id, folder?.id ?? null).then((ok) => {
+            if (ok) toast.success(`已移动到：${target.trim()}`);
+            else toast.error('移动失败');
+          });
         }
         break;
       }
       case 'delete':
-        setAssets((prev) => prev.filter((a) => a.id !== item.id));
-        toast.success(`已删除：${item.name}`);
+        void projectAssets.deleteNode(item.id).then((ok) => {
+          if (ok) toast.success(`已删除：${item.name}`);
+          else toast.error('删除失败');
+        });
         break;
       default:
         toast.warning(`未识别的菜单动作：${action}`);
@@ -320,31 +332,31 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
       case 'rename': {
         const newName = prompt('重命名文件夹：', item.name);
         if (newName && newName.trim()) {
-          setAssets((prev) =>
-            prev.map((a) => (a.id === item.id ? { ...a, name: newName.trim() } : a)),
-          );
-          toast.success('文件夹已重命名');
+          void projectAssets.renameFolder(item.id, newName.trim()).then((ok) => {
+            if (ok) toast.success('文件夹已重命名');
+            else toast.error('重命名失败');
+          });
         }
         break;
       }
       case 'move-to': {
-        const folders = assets.filter((a) => a.type === 'folder' && a.id !== item.id);
-        const names = folders.map((f) => f.name).join(' / ') || '根目录';
+        const folders = projectAssets.assets.filter((row) => row.type === 'folder' && row.id !== item.id);
+        const names = folders.map((folder) => folder.name).join(' / ') || '根目录';
         const target = prompt(`移动至目标文件夹（${names}）：`, folders[0]?.name || '');
         if (target && target.trim()) {
-          const folder = folders.find((f) => f.name === target.trim());
-          setAssets((prev) =>
-            prev.map((a) =>
-              a.id === item.id ? { ...a, parentId: folder?.id || target.trim() } : a,
-            ),
-          );
-          toast.success(`文件夹已移动到：${target.trim()}`);
+          const folder = folders.find((row) => row.name === target.trim());
+          void projectAssets.moveNode(item.id, folder?.id ?? null).then((ok) => {
+            if (ok) toast.success(`文件夹已移动到：${target.trim()}`);
+            else toast.error('移动失败');
+          });
         }
         break;
       }
       case 'delete':
-        setAssets((prev) => prev.filter((a) => a.id !== item.id && a.parentId !== item.id));
-        toast.success(`已删除文件夹：${item.name}`);
+        void projectAssets.deleteNode(item.id).then((ok) => {
+          if (ok) toast.success(`已删除文件夹：${item.name}`);
+          else toast.error('删除失败');
+        });
         break;
       default:
         toast.warning(`未识别的菜单动作：${action}`);
@@ -352,42 +364,46 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
     }
   };
 
-  const handleImportFiles = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.multiple = true;
-    input.onchange = (e: any) => {
-      const files = e.target.files;
-      if (files && files.length > 0) {
-        const newItems: AssetItem[] = Array.from(files).map((f: any, idx) => ({
-          id: `upload-${Date.now()}-${idx}`,
-          name: f.name,
-          type: f.type.startsWith('image/') ? 'image' : f.type.startsWith('video/') ? 'video' : 'doc',
-          fileExt: f.name.split('.').pop()?.toUpperCase() || 'FILE',
-          size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
-          updatedAt: Date.now(),
-          tags: ['最新导入'],
-        }));
-        setAssets((prev) => [...newItems, ...prev]);
-        toast.success(`已导入 ${newItems.length} 个文件`);
-      }
-    };
-    input.click();
+  /** Canvas Tab: #122 workflow pick. Never falls back to hidden <input type=file>. */
+  const handleCanvasImport = async () => {
+    const result = await pickLocalFiles();
+    const interpretation = interpretPickResponse(result);
+    if (interpretation.kind !== 'ok') {
+      reportPickFailure(interpretation);
+      return;
+    }
+    for (const path of interpretation.paths) {
+      const name = basenameOf(path);
+      onInsertAsset?.({
+        id: path,
+        name,
+        type: typeFromName(name),
+        real_path: path,
+      });
+    }
+    toast.success(`已导入 ${String(interpretation.paths.length)} 个文件到画布`);
+  };
+
+  /** Assets Tab: POST /omnimux/assets/pick. Cancel = no toast.error, no write. */
+  const handleAssetsImport = async () => {
+    const result = await assetsPickClient.pickAssets('file');
+    const interpretation = result.interpretation;
+    if (interpretation.kind !== 'ok') {
+      reportPickFailure(interpretation);
+      return;
+    }
+    const ok = await projectAssets.indexPaths(interpretation.paths);
+    if (ok) toast.success(`已导入 ${String(interpretation.paths.length)} 个文件`);
+    else toast.error(projectAssets.error || '写入项目资产失败');
   };
 
   const handleCreateFolder = () => {
     const name = prompt('请输入新文件夹名称：', '新建素材文件夹');
-    if (name && name.trim()) {
-      const newFolder: AssetItem = {
-        id: `folder-${Date.now()}`,
-        name: name.trim(),
-        type: 'folder',
-        itemCount: 0,
-        updatedAt: Date.now(),
-      };
-      setAssets((prev) => [newFolder, ...prev]);
-      toast.success(`已新建文件夹：${name.trim()}`);
-    }
+    if (!name || !name.trim()) return;
+    void projectAssets.mkdir(name.trim()).then((ok) => {
+      if (ok) toast.success(`已新建文件夹：${name.trim()}`);
+      else toast.error(projectAssets.error || '新建文件夹失败');
+    });
   };
 
   if (!isOpen) return null;
@@ -400,10 +416,8 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
       onMouseDown={stopToolbarNativeEvent}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* 拖拽宽度调节手柄 */}
       <div className={`wf-drawer-resize-handle ${isResizing ? 'resizing' : ''}`} onMouseDown={startResize} />
 
-      {/* 极简顶栏: 单行分段切换器 [ 画布 ] [ 资产 ] + 关闭按钮 ✕ */}
       <div className="wf-drawer-header-compact">
         <div className="wf-segmented-switch-compact">
           <button
@@ -438,31 +452,22 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         </button>
       </div>
 
-      {/* 抽屉内容主体区 */}
       <div className="wf-drawer-body">
         {viewState === 'subject-library' ? (
           <SubjectLibraryView
-            subjects={subjects}
+            subjects={subjectLibrary.subjects}
+            error={subjectLibrary.error}
             onBack={() => setViewState('normal')}
-            onSelectSubject={(sub) => {
-              // Expand subject assets
+            onSelectSubject={() => {
+              // Expand subject assets in a later issue.
             }}
             onCreateSubject={() => {
               const name = prompt('请输入新主体名称：', '新主体');
-              if (name && name.trim()) {
-                setSubjects((prev) => [
-                  {
-                    id: `sub-${Date.now()}`,
-                    name: name.trim(),
-                    avatar: '',
-                    itemCount: 0,
-                    tags: ['自定义'],
-                    updatedAt: Date.now(),
-                    previewUrls: [],
-                  },
-                  ...prev,
-                ]);
-              }
+              if (!name || !name.trim()) return;
+              void subjectLibrary.createSubject(name.trim()).then((created) => {
+                if (created) toast.success(`已新建主体：${created.name}`);
+                else toast.warning('主体库暂不可用，未能创建');
+              });
             }}
           />
         ) : activeTab === 'canvas' ? (
@@ -479,13 +484,12 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
               }}
             />
 
-            {/* 画布 Tab 紧凑底部导入按钮 (始终吸底固定) */}
             <div className="wf-assets-bottom-bar-compact">
               <button
                 type="button"
                 className="wf-assets-action-primary-btn-compact"
                 style={{ width: '100%' }}
-                onClick={handleImportFiles}
+                onClick={() => void handleCanvasImport()}
               >
                 <ArrowUp size={13} />
                 <span>导入文件</span>
@@ -494,18 +498,20 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
           </div>
         ) : (
           <ProjectAssetsView
-            assets={assets}
+            assets={projectAssets.assets}
             onOpenSubjects={() => setViewState('subject-library')}
             onContextMenu={handleAssetContextMenu}
             onHoverItem={handleHoverItem}
-            onImportFiles={handleImportFiles}
+            onImportFiles={() => void handleAssetsImport()}
             onCreateFolder={handleCreateFolder}
             onInsertToCanvas={(item) => onInsertAsset?.(item)}
+            onRefresh={() => {
+              void projectAssets.refresh().then(() => toast.success('已刷新项目资产'));
+            }}
           />
         )}
       </div>
 
-      {/* 悬停元数据卡片 (Hover Inspector) */}
       <HoverInspector
         isOpen={hoverInspector.visible}
         x={hoverInspector.x}
@@ -513,7 +519,6 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         item={hoverInspector.item || null}
       />
 
-      {/* 画布素材专属右键菜单 (13 项) */}
       <CanvasItemContextMenu
         isOpen={contextMenu.visible && contextMenu.targetType === 'canvas-item'}
         x={contextMenu.x}
@@ -523,7 +528,6 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         onClose={() => setContextMenu((prev) => ({ ...prev, visible: false }))}
       />
 
-      {/* 资产素材专属右键菜单 (5 项) */}
       <AssetItemContextMenu
         isOpen={contextMenu.visible && contextMenu.targetType === 'asset-item'}
         x={contextMenu.x}
@@ -533,7 +537,6 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         onClose={() => setContextMenu((prev) => ({ ...prev, visible: false }))}
       />
 
-      {/* 资产文件夹专属右键菜单 (4 项) */}
       <FolderContextMenu
         isOpen={contextMenu.visible && contextMenu.targetType === 'asset-folder'}
         x={contextMenu.x}

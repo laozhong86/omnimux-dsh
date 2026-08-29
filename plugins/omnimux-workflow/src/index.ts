@@ -113,8 +113,21 @@ export type {
   GraphMutationSuccess,
   GraphMutationError,
 } from './workflow/graph/GraphMutator';
-export { createWorkspaceStore, WorkflowStoreError } from './workflow/workspace/WorkspaceStore';
+export { createWorkspaceStore } from './workflow/workspace/WorkspaceStore';
+export { WorkflowStoreError } from './workflow/workspace/WorkflowStoreError';
 export type { WorkspaceStore } from './workflow/workspace/WorkspaceStore';
+export { createProjectAssetsStore } from './workflow/workspace/ProjectAssetsStore';
+export type { ProjectAssetsStore } from './workflow/workspace/ProjectAssetsStore';
+export {
+  PROJECT_ASSETS_SCHEMA_VERSION,
+  emptyProjectAssetsDocument,
+} from './shared/projectAssets';
+export type {
+  ProjectAssetsDocument,
+  ProjectAssetsFolder,
+  ProjectAssetsItem,
+  SaveProjectAssetsPayload,
+} from './shared/projectAssets';
 
 // M3 execution engine surface (also consumed by node --test suites).
 export {

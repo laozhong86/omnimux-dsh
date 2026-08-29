@@ -58,6 +58,8 @@ export interface SubjectPack {
   tags: string[];
   updatedAt: number;
   previewUrls: string[];
+  /** Library ASSET_TYPES id (character/scene/style/prop/knowledge/custom). */
+  type?: 'character' | 'scene' | 'style' | 'prop' | 'knowledge' | 'custom';
 }
 
 export type ViewMode = 'tree' | 'grid';

@@ -7,11 +7,14 @@
 ```
 $DSH_HOME/omnimux/workflow/
 ├── workspaces/<workspaceId>/canvas.json    # 本文档的快照（原子写：tmp + rename）
+├── workspaces/<workspaceId>/assets.json    # 项目私有资产树（独立 rev，见 workflow-project-assets.md）
 ├── executions/<executionId>/               # M3：dag-state.json + task-ledger.json
 └── media/<workspaceId>/<executionId>/      # M4：seam 产物落盘（静态路由回显）
 ```
 
 本地导入**不**复制进上述目录：源文件留在用户磁盘，`canvas.json` 只记 `realPath`。`media/` 仍仅服务 AI 生成产物。见 [workflow-media-asset-indexing.md](./workflow-media-asset-indexing.md)。
+
+项目抽屉【资产】Tab 的文件夹/文件树**不**写入 `canvas.json`，落在并列的 `assets.json`（独立 `rev`，刷新/重开抽屉仍在）。见 [workflow-project-assets.md](./workflow-project-assets.md)。
 
 workspaceId 形如 `ws_<12 hex>`（随机，UUID 派生）。
 

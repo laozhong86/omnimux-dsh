@@ -268,6 +268,82 @@ test('capabilities stub served from the mock gateway', async () => {
   }
 });
 
+test('project assets.json GET/PUT/mkdir via dispatcher (canonical + legacy)', async () => {
+  const h = makeHarness();
+  try {
+    const created = await h.call({
+      method: 'POST',
+      url: '/omnimux-workflow/api/workspaces',
+      body: { name: '项目资产' },
+      headers: h.localHeaders,
+    });
+    const ws = created.body.workspace;
+    const canvasVersion = ws.version;
+
+    const empty = await h.call({
+      url: `/omnimux-workflow/api/workspaces/${ws.id}/assets`,
+      headers: h.localHeaders,
+    });
+    assert.equal(empty.status, 200);
+    assert.equal(empty.body.assets.rev, 0);
+
+    const blob = await h.call({
+      method: 'PUT',
+      url: `/omnimux-workflow/api/workspaces/${ws.id}/assets`,
+      body: {
+        expectedRev: 0,
+        folders: [],
+        items: [{
+          id: 'ast_x',
+          name: 'x.png',
+          type: 'image',
+          parentId: null,
+          real_path: 'blob:https://local/x',
+          updatedAt: 1,
+        }],
+      },
+      headers: h.localHeaders,
+    });
+    assert.equal(blob.status, 400);
+    assert.equal(blob.body.error, 'blob-url-forbidden');
+
+    const mkdir = await h.call({
+      method: 'POST',
+      url: `/dsh-workflow/api/workspaces/${ws.id}/assets/mkdir`,
+      body: { name: '道具', expectedRev: 0 },
+      headers: h.localHeaders,
+    });
+    assert.equal(mkdir.status, 200);
+    assert.equal(mkdir.body.assets.folders[0].name, '道具');
+    assert.equal(mkdir.body.assets.rev, 1);
+
+    const conflict = await h.call({
+      method: 'POST',
+      url: `/omnimux-workflow/api/workspaces/${ws.id}/assets/mkdir`,
+      body: { name: '道具', expectedRev: mkdir.body.assets.rev },
+      headers: h.localHeaders,
+    });
+    assert.equal(conflict.status, 409);
+    assert.equal(conflict.body.error, 'name-conflict');
+
+    const missingWs = await h.call({
+      url: '/omnimux-workflow/api/workspaces/ws_nope/assets',
+      headers: h.localHeaders,
+    });
+    assert.equal(missingWs.status, 404);
+    assert.equal(missingWs.body.error, 'workspace-not-found');
+
+    const stillCanvas = await h.call({
+      url: `/omnimux-workflow/api/workspaces/${ws.id}`,
+      headers: h.localHeaders,
+    });
+    assert.equal(stillCanvas.body.workspace.version, canvasVersion);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
 test('PR3: GET /api/workspaces/:id/version tracks saves (canonical prefix)', async () => {
   const h = makeHarness();
   try {

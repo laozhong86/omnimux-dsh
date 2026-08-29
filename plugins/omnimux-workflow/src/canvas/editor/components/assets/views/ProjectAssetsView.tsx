@@ -78,6 +78,89 @@ export const ProjectAssetsView: React.FC<ProjectAssetsViewProps> = ({
     return true;
   });
 
+  const childrenOf = (parentId: string | null): AssetItem[] =>
+    filteredAssets.filter((item) => (item.parentId ?? null) === parentId);
+
+  const renderTreeRows = (parentId: string | null, depth: number): React.ReactNode[] => {
+    const rows: React.ReactNode[] = [];
+    for (const item of childrenOf(parentId)) {
+      const isFolder = item.type === 'folder';
+      const isExpanded = isFolder && (expandedFolders[item.id] ?? depth === 0);
+      const isSelected = selectedId === item.id;
+      rows.push(
+        <div
+          key={item.id}
+          className={`wf-tree-item-compact ${isSelected ? 'selected' : ''}`}
+          style={{ paddingLeft: `${8 + depth * 14}px` }}
+          data-asset-id={item.id}
+          data-parent-id={item.parentId ?? ''}
+          draggable={!isFolder}
+          onDragStart={(e) => {
+            if (!isFolder) {
+              e.dataTransfer.setData(
+                'application/json',
+                JSON.stringify({
+                  type: 'omnimux-asset',
+                  asset: item,
+                }),
+              );
+              e.dataTransfer.effectAllowed = 'copy';
+            }
+          }}
+          onClick={() => {
+            setSelectedId(item.id);
+            if (isFolder) toggleFolder(item.id);
+          }}
+          onDoubleClick={() => {
+            if (!isFolder) onInsertToCanvas(item);
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setSelectedId(item.id);
+            onContextMenu(e, item, isFolder);
+          }}
+          onMouseEnter={(e) => onHoverItem(item, e)}
+          onMouseLeave={() => onHoverItem(null)}
+        >
+          {isFolder ? (
+            <span className="wf-tree-folder-arrow-compact">
+              {isExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+            </span>
+          ) : null}
+
+          {item.previewUrl ? (
+            <img src={item.previewUrl} alt={item.name} className="wf-tree-file-thumb-compact" />
+          ) : (
+            <div className="wf-tree-file-icon-box-compact">
+              {getAssetIcon(item.type)}
+            </div>
+          )}
+
+          <span className="wf-tree-name-compact" title={item.name}>
+            {item.name}
+          </span>
+
+          {!isFolder && (
+            <div
+              className="wf-item-locate-icon-compact"
+              title="在画布定位"
+              onClick={(e) => {
+                e.stopPropagation();
+                onInsertToCanvas(item);
+              }}
+            >
+              <Crosshair size={12} />
+            </div>
+          )}
+        </div>,
+      );
+      if (isFolder && isExpanded) {
+        rows.push(...renderTreeRows(item.id, depth + 1));
+      }
+    }
+    return rows;
+  };
+
   return (
     <div className="wf-project-assets-view-compact">
       {/* 1. 纯净主体库入口 (无副标题) */}
@@ -142,76 +225,7 @@ export const ProjectAssetsView: React.FC<ProjectAssetsViewProps> = ({
           </div>
         ) : viewMode === 'tree' ? (
           <div className="wf-tree-list-container-compact">
-            {filteredAssets.map((item) => {
-              const isFolder = item.type === 'folder';
-              const isExpanded = isFolder && (expandedFolders[item.id] ?? false);
-              const isSelected = selectedId === item.id;
-
-              return (
-                <div
-                  key={item.id}
-                  className={`wf-tree-item-compact ${isSelected ? 'selected' : ''}`}
-                  draggable={!isFolder}
-                  onDragStart={(e) => {
-                    if (!isFolder) {
-                      e.dataTransfer.setData(
-                        'application/json',
-                        JSON.stringify({
-                          type: 'omnimux-asset',
-                          asset: item,
-                        }),
-                      );
-                      e.dataTransfer.effectAllowed = 'copy';
-                    }
-                  }}
-                  onClick={() => {
-                    setSelectedId(item.id);
-                    if (isFolder) toggleFolder(item.id);
-                  }}
-                  onDoubleClick={() => {
-                    if (!isFolder) onInsertToCanvas(item);
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setSelectedId(item.id);
-                    onContextMenu(e, item, isFolder);
-                  }}
-                  onMouseEnter={(e) => onHoverItem(item, e)}
-                  onMouseLeave={() => onHoverItem(null)}
-                >
-                  {isFolder ? (
-                    <span className="wf-tree-folder-arrow-compact">
-                      {isExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
-                    </span>
-                  ) : null}
-
-                  {item.previewUrl ? (
-                    <img src={item.previewUrl} alt={item.name} className="wf-tree-file-thumb-compact" />
-                  ) : (
-                    <div className="wf-tree-file-icon-box-compact">
-                      {getAssetIcon(item.type)}
-                    </div>
-                  )}
-
-                  <span className="wf-tree-name-compact" title={item.name}>
-                    {item.name}
-                  </span>
-
-                  {!isFolder && (
-                    <div
-                      className="wf-item-locate-icon-compact"
-                      title="在画布定位"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onInsertToCanvas(item);
-                      }}
-                    >
-                      <Crosshair size={12} />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {renderTreeRows(null, 0)}
           </div>
         ) : (
           <div className="wf-grid-view-container-compact">
