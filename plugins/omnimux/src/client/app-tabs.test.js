@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { placeTabsContainer, tabRowModel } from './app-tabs.js'
+import { mountAppTabs, placeTabsContainer, safeOpenApp, tabRowModel } from './app-tabs.js'
 import { TABS_CHANGED_EVENT } from './open-app-flow.js'
 
 describe('tabRowModel', () => {
@@ -89,5 +89,80 @@ describe('placeTabsContainer', () => {
     assert.equal(placeTabsContainer({ parentElement: null, nextElementSibling: null }, container), false)
     assert.equal(placeTabsContainer(null, container), false)
     assert.equal(placeTabsContainer(undefined, container), false)
+  })
+})
+
+describe('safeOpenApp (Auth Guard)', () => {
+  it('gates openApp through window.__omnimuxAuth.ensureLogin when available', () => {
+    let ensuredWith = null
+    let openedId = null
+    const origWindow = globalThis.window
+    globalThis.window = {
+      __omnimuxAuth: {
+        ensureLogin: (opts) => {
+          ensuredWith = opts
+          opts.onSuccess?.()
+        },
+      },
+    }
+
+    try {
+      safeOpenApp('accounts', '账号管理', (id) => { openedId = id })
+      assert.ok(ensuredWith, 'ensureLogin must be called')
+      assert.equal(ensuredWith.reason, '账号管理')
+      assert.equal(openedId, 'accounts')
+    } finally {
+      globalThis.window = origWindow
+    }
+  })
+
+  it('falls back to id when title is empty', () => {
+    let ensuredWith = null
+    let openedId = null
+    const origWindow = globalThis.window
+    globalThis.window = {
+      __omnimuxAuth: {
+        ensureLogin: (opts) => {
+          ensuredWith = opts
+          opts.onSuccess?.()
+        },
+      },
+    }
+
+    try {
+      safeOpenApp('my-app', '', (id) => { openedId = id })
+      assert.equal(ensuredWith?.reason, 'my-app')
+      assert.equal(openedId, 'my-app')
+    } finally {
+      globalThis.window = origWindow
+    }
+  })
+
+  it('degrades to direct openApp when __omnimuxAuth is absent or not a function', () => {
+    let openedId = null
+    const origWindow = globalThis.window
+
+    try {
+      // 1. window is empty object
+      globalThis.window = {}
+      safeOpenApp('gallery', '专家馆', (id) => { openedId = id })
+      assert.equal(openedId, 'gallery')
+
+      // 2. ensureLogin is not a function
+      openedId = null
+      globalThis.window = { __omnimuxAuth: {} }
+      safeOpenApp('workflow', '工作流', (id) => { openedId = id })
+      assert.equal(openedId, 'workflow')
+    } finally {
+      globalThis.window = origWindow
+    }
+  })
+
+  it('safely no-ops when id is empty or null', () => {
+    let called = false
+    safeOpenApp('', '标题', () => { called = true })
+    assert.equal(called, false)
+    safeOpenApp(null, '标题', () => { called = true })
+    assert.equal(called, false)
   })
 })
