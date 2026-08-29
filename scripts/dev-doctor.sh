@@ -6,7 +6,8 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$SCRIPT_DIR/../plugins}"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$REPO_ROOT/plugins}"
 PROD_HOME="${DSH_HOME:-$HOME/.dsh}"
 PROD_PROFILE="$PROD_HOME/profiles/omnimux"
 DEV_HOME="${DSH_DEV_HOME:-$HOME/.dsh-dev}"
@@ -431,6 +432,32 @@ else
     warn "UI 规范扫描发现待整改项（见上方日志；随 Issue #17/#18/#19 逐步收敛）"
   else
     ok "UI01~UI06 静态扫描通过（0 违规拦截）"
+  fi
+fi
+
+echo
+echo "== 15. Worktree 门禁活性与拦截断言 (docs/contracts/plugin-git-pr.md) =="
+guard_script="$REPO_ROOT/scripts/guard-worktree.mjs"
+hooks_json="$REPO_ROOT/.dsh/hooks.json"
+if [ ! -f "$hooks_json" ]; then
+  bad "Hook 配置文件缺失 .dsh/hooks.json"
+elif [ ! -f "$guard_script" ]; then
+  bad "Worktree 守卫脚本缺失 scripts/guard-worktree.mjs"
+else
+  # 1. 运行单测契约
+  if node --test "$REPO_ROOT/scripts/guard-worktree.test.mjs" >/dev/null 2>&1; then
+    ok "scripts/guard-worktree.test.mjs 契约单测全绿"
+  else
+    bad "scripts/guard-worktree.test.mjs 契约测试失败"
+  fi
+
+  # 2. 模拟真实攻击写入探针 (Mock write to main plugins/)
+  mock_payload='{"hook_event_name":"PreToolUse","tool_name":"edit","cwd":"'"$REPO_ROOT"'","tool_input":{"file_path":"'"$PLUGINS_ROOT"'/omnimux/src/host/apply.js"}}'
+  probe_out=$(echo "$mock_payload" | node "$guard_script" 2>/dev/null || echo '{"error":true}')
+  if echo "$probe_out" | grep -q '"permissionDecision":"deny"'; then
+    ok "Worktree 守卫探针实测阻断成功（main 直接修改 plugins/ 100% 拦截）"
+  else
+    bad "Worktree 守卫探针未拦截非法修改: $probe_out"
   fi
 fi
 

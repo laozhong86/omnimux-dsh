@@ -64,3 +64,11 @@ test('verify-stage-contracts passes on all first-level Stage and StageStore file
   })
   strictEqual(res.status, 0, `stage contract verification failed: ${res.stderr}`)
 })
+
+test('guard-worktree PreToolUse contract and unit tests pass', () => {
+  const res = spawnSync('node', ['--test', resolve(here, 'guard-worktree.test.mjs')], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  })
+  strictEqual(res.status, 0, `guard-worktree tests failed: ${res.stderr}\n${res.stdout}`)
+})
