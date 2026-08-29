@@ -45,7 +45,107 @@ export const DEFAULT_IGNORE_PATTERNS = [
   '**/coverage/**',
   '**/*.min.js',
   '**/*.bundle.js',
+  '**/lib/**',
+  '**/dist-harness/**',
+  '**/openreel/**',
 ];
+
+export const TEST_FILE_RE = /(?:^|[./\\])[^/\\]*\.(?:test|spec)\.[^/\\]+$/;
+export const MODULE_LOADER_MARK = 'window.__ModuleLoader__';
+const SKIP_DIR_NAMES = new Set([
+  'node_modules',
+  'dist',
+  'build',
+  'lib',
+  'coverage',
+  'dist-harness',
+  'openreel',
+]);
+
+const emptyBucket = () => ({ files: 0, sloc: 0, smells: 0, scoreSum: 0 });
+
+function toPosix(filePath) {
+  return String(filePath).split(path.sep).join('/');
+}
+
+/**
+ * Convert a simple glob (`*`, `**`, literals) into a anchored RegExp.
+ * @param {string} pattern
+ * @returns {RegExp}
+ */
+export function globToRegExp(pattern) {
+  let i = 0;
+  let out = '^';
+  const text = String(pattern);
+  while (i < text.length) {
+    if (text[i] === '*' && text[i + 1] === '*') {
+      if (text[i + 2] === '/') {
+        out += '(?:.*/)?';
+        i += 3;
+        continue;
+      }
+      out += '.*';
+      i += 2;
+      continue;
+    }
+    if (text[i] === '*') {
+      out += '[^/]*';
+      i += 1;
+      continue;
+    }
+    if (text[i] === '?') {
+      out += '[^/]';
+      i += 1;
+      continue;
+    }
+    out += text[i].replace(/[.+^${}()|[\]\\]/g, '\\$&');
+    i += 1;
+  }
+  out += '$';
+  return new RegExp(out);
+}
+
+/**
+ * @param {string} relPath posix-ish path relative to the walk root or cwd
+ * @param {string[]} [patterns=DEFAULT_IGNORE_PATTERNS]
+ */
+export function matchesIgnore(relPath, patterns = DEFAULT_IGNORE_PATTERNS) {
+  const rel = toPosix(relPath).replace(/^\.\//, '').replace(/^\/+/, '');
+  return patterns.some((pattern) => {
+    const re = globToRegExp(pattern);
+    return re.test(rel) || re.test(`${rel}/`);
+  });
+}
+
+/**
+ * Classify a file into the CRSA reporting bucket.
+ * Path-based vendor/generated still win even if the file was passed explicitly.
+ * @param {string} filePath
+ * @param {string} [source='']
+ * @returns {'source'|'generated'|'vendor'|'tests'}
+ */
+export function classifyFile(filePath, source = '') {
+  const rel = toPosix(filePath);
+  if (/(?:^|\/)openreel(?:\/|$)/i.test(rel) || matchesIgnore(rel, ['**/openreel/**'])) {
+    return 'vendor';
+  }
+  if (matchesIgnore(rel, ['**/lib/**', '**/dist/**', '**/dist-harness/**', '**/build/**'])) {
+    return 'generated';
+  }
+  if (String(source).slice(0, 2048).includes(MODULE_LOADER_MARK)) {
+    return 'generated';
+  }
+  if (TEST_FILE_RE.test(rel)) return 'tests';
+  return 'source';
+}
+
+function levelFromScore(avgHealthScore) {
+  if (avgHealthScore < 40) return 'F';
+  if (avgHealthScore < 60) return 'D';
+  if (avgHealthScore < 75) return 'C';
+  if (avgHealthScore < 90) return 'B';
+  return 'A';
+}
 
 /**
  * ANSI 颜色输出工具
@@ -381,20 +481,33 @@ export function analyzeSource(source, filename = 'anonymous.js', customThreshold
  */
 export function analyzeFile(filePath, thresholds = {}) {
   const content = fs.readFileSync(filePath, 'utf8');
-  return analyzeSource(content, filePath, thresholds);
+  const report = analyzeSource(content, filePath, thresholds);
+  report.bucket = classifyFile(filePath, content);
+  return report;
 }
 
 /**
  * 递归收集目标路径下符合条件的文件列表
  * @param {string} targetPath 目录或文件路径
  * @param {string[]} [customIgnore=[]]
+ * @param {{ root?: string }} [options={}]
  * @returns {string[]}
  */
-export function collectFiles(targetPath, customIgnore = []) {
+export function collectFiles(targetPath, customIgnore = [], options = {}) {
+  const ignore = [...DEFAULT_IGNORE_PATTERNS, ...customIgnore];
+  const root = options.root || process.cwd();
   const stat = fs.statSync(targetPath);
+
+  const relOf = (abs) => {
+    const rel = toPosix(path.relative(root, abs) || path.basename(abs));
+    return rel.replace(/^\.\//, '');
+  };
+
   if (stat.isFile()) {
     const ext = path.extname(targetPath).toLowerCase();
-    return SUPPORTED_EXTENSIONS.has(ext) ? [targetPath] : [];
+    if (!SUPPORTED_EXTENSIONS.has(ext)) return [];
+    if (matchesIgnore(relOf(targetPath), ignore)) return [];
+    return [targetPath];
   }
 
   const results = [];
@@ -403,16 +516,19 @@ export function collectFiles(targetPath, customIgnore = []) {
   for (const entry of entries) {
     const fullPath = path.join(targetPath, entry.name);
     if (entry.name.startsWith('.') && entry.name !== '.') continue;
-    if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === 'build') continue;
+    if (SKIP_DIR_NAMES.has(entry.name)) continue;
 
+    const rel = relOf(fullPath);
     if (entry.isDirectory()) {
-      results.push(...collectFiles(fullPath, customIgnore));
-    } else if (entry.isFile()) {
-      const ext = path.extname(entry.name).toLowerCase();
-      if (SUPPORTED_EXTENSIONS.has(ext)) {
-        results.push(fullPath);
-      }
+      if (matchesIgnore(`${rel}/`, ignore) || matchesIgnore(rel, ignore)) continue;
+      results.push(...collectFiles(fullPath, customIgnore, { root }));
+      continue;
     }
+    if (!entry.isFile()) continue;
+    const ext = path.extname(entry.name).toLowerCase();
+    if (!SUPPORTED_EXTENSIONS.has(ext)) continue;
+    if (matchesIgnore(rel, ignore)) continue;
+    results.push(fullPath);
   }
   return results;
 }
@@ -420,57 +536,78 @@ export function collectFiles(targetPath, customIgnore = []) {
 /**
  * 批量分析工程或目录
  * @param {string|string[]} targets
- * @param {Partial<typeof DEFAULT_THRESHOLDS>} [thresholds={}]
+ * @param {Partial<typeof DEFAULT_THRESHOLDS> & { includeGenerated?: boolean, ignore?: string[] }} [thresholds={}]
  * @returns {ProjectAnalysisReport}
  */
 export function analyzeProject(targets, thresholds = {}) {
+  const { includeGenerated = false, ignore: customIgnore = [], ...metricThresholds } = thresholds;
   const targetList = Array.isArray(targets) ? targets : [targets];
   const allFiles = [];
 
   for (const t of targetList) {
     if (fs.existsSync(t)) {
-      allFiles.push(...collectFiles(t));
+      allFiles.push(...collectFiles(t, customIgnore));
     }
   }
 
   // 去重
   const uniqueFiles = Array.from(new Set(allFiles));
   const fileReports = [];
-
-  let totalSLOC = 0;
-  let totalFunctions = 0;
-  let totalSmells = 0;
-  let scoreSum = 0;
+  const buckets = {
+    source: emptyBucket(),
+    generated: emptyBucket(),
+    vendor: emptyBucket(),
+    tests: emptyBucket(),
+  };
 
   for (const file of uniqueFiles) {
     try {
-      const report = analyzeFile(file, thresholds);
+      const report = analyzeFile(file, metricThresholds);
       fileReports.push(report);
-      totalSLOC += report.metrics.sloc;
-      totalFunctions += report.metrics.functionCount;
-      totalSmells += report.smells.length;
-      scoreSum += report.healthScore;
+      const bucket = buckets[report.bucket] || buckets.source;
+      bucket.files += 1;
+      bucket.sloc += report.metrics.sloc;
+      bucket.smells += report.smells.length;
+      bucket.scoreSum += report.healthScore;
     } catch (err) {
       console.error(`[CRSA Error] 分析文件失败 ${file}: ${err.message}`);
     }
   }
 
-  const avgHealthScore = fileReports.length ? Math.round(scoreSum / fileReports.length) : 100;
-  let projectLevel = 'A';
-  if (avgHealthScore < 40) projectLevel = 'F';
-  else if (avgHealthScore < 60) projectLevel = 'D';
-  else if (avgHealthScore < 75) projectLevel = 'C';
-  else if (avgHealthScore < 90) projectLevel = 'B';
+  const scoring = includeGenerated
+    ? fileReports.filter((f) => f.bucket === 'source' || f.bucket === 'generated')
+    : fileReports.filter((f) => f.bucket === 'source');
+  const scoreSum = scoring.reduce((acc, f) => acc + f.healthScore, 0);
+  const totalSLOC = scoring.reduce((acc, f) => acc + f.metrics.sloc, 0);
+  const totalFunctions = scoring.reduce((acc, f) => acc + f.metrics.functionCount, 0);
+  const totalSmells = scoring.reduce((acc, f) => acc + f.smells.length, 0);
+  const avgHealthScore = scoring.length ? Math.round(scoreSum / scoring.length) : 100;
+  const projectLevel = levelFromScore(avgHealthScore);
+
+  const bucketSummary = Object.fromEntries(
+    Object.entries(buckets).map(([name, stats]) => [
+      name,
+      {
+        files: stats.files,
+        sloc: stats.sloc,
+        smells: stats.smells,
+        avgHealthScore: stats.files ? Math.round(stats.scoreSum / stats.files) : 100,
+      },
+    ]),
+  );
 
   return {
     summary: {
-      totalFiles: fileReports.length,
+      totalFiles: scoring.length,
+      scannedFiles: fileReports.length,
       totalSLOC,
       totalFunctions,
       totalSmells,
       avgHealthScore,
       projectLevel,
       analyzedAt: new Date().toISOString(),
+      includeGenerated,
+      buckets: bucketSummary,
     },
     files: fileReports,
   };
@@ -490,8 +627,14 @@ export function formatReport(report, format = 'console') {
   if (format === 'markdown') {
     let md = `# 代码重构与简化分析报表 (CRSA Report)\n\n`;
     md += `**分析时间**: ${report.summary.analyzedAt}\n`;
-    md += `**工程综合健康评分**: \`${report.summary.avgHealthScore} / 100\` (等级: **${report.summary.projectLevel}**)\n`;
-    md += `**文件总数**: ${report.summary.totalFiles} | **代码有效行 (SLOC)**: ${report.summary.totalSLOC} | **函数总数**: ${report.summary.totalFunctions} | **代码异味总数**: ${report.summary.totalSmells}\n\n`;
+    md += `**工程综合健康评分**: \`${report.summary.avgHealthScore} / 100\` (等级: **${report.summary.projectLevel}**，仅自研 source)\n`;
+    md += `**计入等级的文件**: ${report.summary.totalFiles} | **扫描文件**: ${report.summary.scannedFiles ?? report.summary.totalFiles} | **代码有效行 (SLOC)**: ${report.summary.totalSLOC} | **函数总数**: ${report.summary.totalFunctions} | **代码异味总数**: ${report.summary.totalSmells}\n`;
+    if (report.summary.buckets) {
+      const b = report.summary.buckets;
+      md += `**分桶**: source ${b.source?.files ?? 0} | generated ${b.generated?.files ?? 0} | vendor ${b.vendor?.files ?? 0} | tests ${b.tests?.files ?? 0}\n\n`;
+    } else {
+      md += `\n`;
+    }
 
     md += `## 待重构文件与问题清单\n\n`;
     for (const f of report.files) {
@@ -521,8 +664,12 @@ export function formatReport(report, format = 'console') {
   const s = report.summary;
   const levelColor = s.projectLevel === 'A' ? 'green' : s.projectLevel === 'B' ? 'cyan' : s.projectLevel === 'C' ? 'yellow' : 'red';
   
-  lines.push(`  ${c('bold', '工程健康总评分:')} ${c(levelColor, c('bold', `${s.avgHealthScore} / 100`))} [${c(levelColor, c('bold', `等级 ${s.projectLevel}`))}]`);
-  lines.push(`  ${c('gray', '扫描文件:')} ${c('bold', s.totalFiles)} 个  |  ${c('gray', '源码行数 (SLOC):')} ${c('bold', s.totalSLOC)} 行  |  ${c('gray', '函数总量:')} ${c('bold', s.totalFunctions)}  |  ${c('gray', '异味/重构点:')} ${c(s.totalSmells > 0 ? 'yellow' : 'green', c('bold', s.totalSmells))}`);
+  lines.push(`  ${c('bold', '工程健康总评分:')} ${c(levelColor, c('bold', `${s.avgHealthScore} / 100`))} [${c(levelColor, c('bold', `等级 ${s.projectLevel}`))}] ${c('gray', '(仅自研 source)')}`);
+  lines.push(`  ${c('gray', '计入等级:')} ${c('bold', s.totalFiles)}  |  ${c('gray', '扫描文件:')} ${c('bold', s.scannedFiles ?? s.totalFiles)}  |  ${c('gray', '源码行数 (SLOC):')} ${c('bold', s.totalSLOC)} 行  |  ${c('gray', '函数总量:')} ${c('bold', s.totalFunctions)}  |  ${c('gray', '异味/重构点:')} ${c(s.totalSmells > 0 ? 'yellow' : 'green', c('bold', s.totalSmells))}`);
+  if (s.buckets) {
+    const b = s.buckets;
+    lines.push(`  ${c('gray', '分桶:')} source ${b.source?.files ?? 0}  generated ${b.generated?.files ?? 0}  vendor ${b.vendor?.files ?? 0}  tests ${b.tests?.files ?? 0}`);
+  }
   lines.push('');
 
   // 严重与告警文件展开
@@ -566,6 +713,7 @@ function parseCliArgs(args) {
     output: null,
     check: false,
     failOnLevel: 'D',
+    includeGenerated: false,
     thresholds: {},
   };
 
@@ -577,6 +725,8 @@ function parseCliArgs(args) {
       options.output = args[++i];
     } else if (arg === '--check') {
       options.check = true;
+    } else if (arg === '--include-generated') {
+      options.includeGenerated = true;
     } else if (arg === '--fail-on-level') {
       options.failOnLevel = args[++i].toUpperCase();
     } else if (arg === '--max-file-lines') {
@@ -615,6 +765,7 @@ ${c('bold', '选项:')}
   -f, --format <console|json|markdown>  报表输出格式 (默认: console)
   -o, --output <file>                  输出到文件
   --check                              CI 门禁模式 (达不到目标等级时以退出码 1 退出)
+  --include-generated                  把 generated 桶并进工程等级 (默认只算 source)
   --fail-on-level <B|C|D|F>            门禁失败最低健康等级 (默认: D)
   --max-file-lines <N>                 单文件有效代码行 (SLOC) 阈值 (默认: 400)
   --max-func-lines <N>                 单函数有效代码行阈值 (默认: 45)
@@ -637,7 +788,10 @@ async function main() {
   const args = process.argv.slice(2);
   const options = parseCliArgs(args);
 
-  const report = analyzeProject(options.targets, options.thresholds);
+  const report = analyzeProject(options.targets, {
+    ...options.thresholds,
+    includeGenerated: options.includeGenerated,
+  });
   const outputText = formatReport(report, options.format);
 
   if (options.output) {
