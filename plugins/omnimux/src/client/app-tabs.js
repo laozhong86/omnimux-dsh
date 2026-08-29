@@ -48,6 +48,28 @@ const STYLES = `
 `
 
 /**
+ * Safely opens an app tab, gating through window.__omnimuxAuth when present.
+ * Falls back to openApp directly when auth global is missing or ensureLogin is unavailable.
+ * @param {string} id
+ * @param {string} [title]
+ * @param {(id: string) => unknown} [openFn]
+ */
+export function safeOpenApp(id, title, openFn = openApp) {
+  if (!id) return
+  const auth = typeof window !== 'undefined' ? window.__omnimuxAuth : undefined
+  if (auth && typeof auth.ensureLogin === 'function') {
+    auth.ensureLogin({
+      reason: title || id,
+      onSuccess: () => {
+        openFn(id)
+      },
+    })
+    return
+  }
+  openFn(id)
+}
+
+/**
  * View rows → render models. Pure so tests cover the mapping.
  * @param {{ tabs?: unknown } | null | undefined} view
  * @returns {Array<{ id: string, title: string, pinned: boolean, lastOpenedAt: string }>}
@@ -208,8 +230,8 @@ export function mountAppTabs(t, locale, register) {
       }
       return
     }
-    // Row click = open. The login gate stays a card-side concern (P1).
-    openApp(id)
+    const model = modelFor(id)
+    safeOpenApp(id, model?.title)
   }
 
   function onKeyDown(event) {
@@ -220,7 +242,10 @@ export function mountAppTabs(t, locale, register) {
     if (row !== target || !(row instanceof Element)) return
     event.preventDefault()
     const id = row.getAttribute('data-omnimux-app-tab') ?? ''
-    if (id !== '') openApp(id)
+    if (id !== '') {
+      const model = modelFor(id)
+      safeOpenApp(id, model?.title)
+    }
   }
 
   container.addEventListener('click', onClick)

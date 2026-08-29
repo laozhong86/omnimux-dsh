@@ -1178,7 +1178,7 @@ function registerWhenCoordinatorReady(row) {
   };
 }
 function createSidebarEntry(options) {
-  const { id, rank, label, iconSvg, stageStore, locale, customClassName, datasetKey } = options;
+  const { id, rank, label, iconSvg, stageStore, locale, customClassName, datasetKey, requireAuth, authReason } = options;
   const entry = document.createElement("button");
   entry.type = "button";
   if (datasetKey) entry.setAttribute(datasetKey, "");
@@ -1189,6 +1189,19 @@ function createSidebarEntry(options) {
   };
   updateLabel();
   entry.addEventListener("click", () => {
+    if (requireAuth !== false) {
+      const auth = (typeof window !== "undefined" ? window : void 0)?.__omnimuxAuth;
+      if (auth && typeof auth.ensureLogin === "function") {
+        const reason = authReason ? resolveLabel(authReason) : resolveLabel(label);
+        auth.ensureLogin({
+          reason,
+          onSuccess: () => {
+            stageStore.open();
+          }
+        });
+        return;
+      }
+    }
     stageStore.open();
   });
   const syncActive = () => {
