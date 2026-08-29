@@ -21,13 +21,16 @@ export function inverseScaleForZoom(zoom: number): number {
 
 /**
  * 配置面板可见性语义（W2）：选中 且 本次选中周期未收起 且 非执行中。
+ * 导入节点永不展开：替换走卡片右上角按钮 / 空态胶囊，不占用配置底栏。
  * 抽成纯函数供 node:test 断言（计划 §8 W2 测试点 panelVisible 语义）。
  */
 export function isConfigPanelVisible(
   selected: boolean | undefined,
   panelDismissed: boolean,
   executionStatus: NodeExecutionApiStatus | undefined,
+  nodeKind?: 'generate' | 'import',
 ): boolean {
+  if (nodeKind === 'import') return false;
   return Boolean(selected) && !panelDismissed && executionStatus !== 'running';
 }
 

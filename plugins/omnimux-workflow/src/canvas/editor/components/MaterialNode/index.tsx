@@ -5,7 +5,7 @@
  * 1. 顶部操作胶囊（FloatingTopPill）：导入节点空态唤起系统选文件器；文本节点编辑/复制/拆分
  * 2. 空态引导模板（NodeEmptyState）：四类素材各具特色的空态与快捷 Prompt 预设
  * 3. 拖拽即导入：仅导入节点接受本地媒体文件
- * 4. 底部配置底栏（ConfigPanel）：生成节点展开 Prompt、模型、参数与生成；导入节点仅替换
+ * 4. 底部配置底栏（ConfigPanel）：仅生成节点展开 Prompt、模型、参数与生成；导入节点不展开
  */
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
@@ -295,7 +295,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     }
   }, [selected]);
 
-  const panelVisible = isConfigPanelVisible(selected, panelDismissed, executionStatus);
+  const panelVisible = isConfigPanelVisible(selected, panelDismissed, executionStatus, kind);
   const isOffline = status === 'offline' || nodeData.isMissing === true;
   const previewUrl = resolveMediaPreviewUrl(materialType, mediaAssets, mediaUrl);
   const generationStatus = isOffline
