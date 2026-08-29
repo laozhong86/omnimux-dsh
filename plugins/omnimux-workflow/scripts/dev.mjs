@@ -6,12 +6,13 @@
 import { spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { realNode, nodeEnv } from './resolve-node.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const scripts = ['build-host.mjs', 'build-client.mjs', 'build-canvas.mjs']
 
 function run(script) {
-  const child = spawn(process.execPath, [join('scripts', script)], { cwd: root, stdio: 'inherit' })
+  const child = spawn(realNode(), [join('scripts', script)], { cwd: root, stdio: 'inherit', env: nodeEnv() })
   child.on('exit', (code) => {
     if (code !== 0) console.error(`[${script}] exited with ${code}`)
   })

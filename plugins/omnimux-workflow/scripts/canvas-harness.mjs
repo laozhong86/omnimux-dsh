@@ -12,6 +12,7 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync, watch } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { realNode, nodeEnv } from './resolve-node.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const portArg = process.argv.indexOf('--port');
@@ -34,9 +35,10 @@ const INDEX_HTML = `<!doctype html>
 
 function build() {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [join('scripts', 'build-canvas.mjs'), '--harness'], {
+    const child = spawn(realNode(), [join('scripts', 'build-canvas.mjs'), '--harness'], {
       cwd: root,
       stdio: 'inherit',
+      env: nodeEnv(),
     });
     child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`build exited ${code}`))));
   });
