@@ -48,6 +48,7 @@ import { useT } from '../i18n';
 import { CANVAS_ZOOM_CONFIG } from './utils/nodeSizeConfig';
 import { validateConnection, rejectReasonKey } from './utils/connectionValidator';
 import { DEFAULT_CANVAS_EDGE_OPTIONS } from './utils/canvasConnectionUtils';
+import { applyFocusCanvasNode } from './utils/focusCanvasNode';
 import { createMaterialNode, appendWithSelectionReset } from './utils/nodeFactory';
 import { buildNodeTypes, createNode, registerNodeDefinition } from '../nodes/registry';
 import { materialNodeDefinition } from '../nodes/definitions/material';
@@ -152,7 +153,7 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
   onCancelExecution,
   onResetExecution,
 }) => {
-  const { screenToFlowPosition, fitView, zoomTo } = useReactFlow();
+  const { screenToFlowPosition, fitView, zoomTo, setCenter } = useReactFlow();
   const { nodes, edges, onNodesChange, onEdgesChange } = useGraphStore();
   const applyCanvasInputMutation = useCanvasStore((state) => state.applyCanvasInputMutation);
   const setNodes = useCanvasStore((state) => state.setNodes);
@@ -502,20 +503,12 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
             onInsertAsset={handleInsertAsset}
             nodes={flowNodes}
             onFocusNode={(nodeId) => {
-              const targetNode = flowNodes.find((n) => n.id === nodeId);
-              if (targetNode) {
-                setCenter(targetNode.position.x + 100, targetNode.position.y + 100, {
-                  zoom: 1,
-                  duration: 800,
-                });
-                // 选中该节点
-                setNodes((nds) =>
-                  nds.map((n) => ({
-                    ...n,
-                    selected: n.id === nodeId,
-                  })),
-                );
-              }
+              applyFocusCanvasNode({
+                nodes: flowNodes,
+                nodeId,
+                setCenter,
+                setNodes,
+              });
             }}
           />
         </DrawerErrorBoundary>
