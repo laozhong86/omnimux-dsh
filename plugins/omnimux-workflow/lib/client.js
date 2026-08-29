@@ -1764,33 +1764,6 @@ var WORKFLOW_CSS = `
   display: none;
   pointer-events: none;
 }
-.omnimux-workflow-stage-header {
-  flex: none;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 20px;
-  -webkit-app-region: no-drag;
-}
-.omnimux-workflow-stage-heading { flex: 1; min-width: 0; }
-.omnimux-workflow-stage-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 32px;
-}
-.omnimux-workflow-stage-subtitle {
-  margin: 0;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--dsw-alias-label-secondary);
-}
-.omnimux-workflow-stage-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-}
 .omnimux-workflow-action-row {
   flex: none;
   display: flex;
@@ -2182,23 +2155,17 @@ function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, layout, be
         "--stage-height": `${box.height}px`
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-workflow-stage-header", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-workflow-stage-heading", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h1", { className: "omnimux-workflow-stage-title", children: t("projects.title") }),
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "omnimux-workflow-stage-subtitle", children: t("projects.subtitle") })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-workflow-stage-controls", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-            IconButton,
-            {
-              "aria-label": t("projects.close"),
-              variant: "ghost",
-              onClick: () => {
-                stage.set(false);
-              },
-              children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_dsh_client_ui_primitives2.IconCloseOutline16, {})
-            }
-          ) })
-        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          PageHeader,
+          {
+            title: t("projects.title"),
+            subtitle: t("projects.subtitle"),
+            onClose: () => {
+              stage.set(false);
+            },
+            closeTitle: t("projects.close")
+          }
+        ),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-workflow-action-row", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           Button,
           {

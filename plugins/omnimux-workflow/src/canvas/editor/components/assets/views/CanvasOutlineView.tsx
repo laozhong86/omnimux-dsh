@@ -264,7 +264,13 @@ export const CanvasOutlineView: React.FC<CanvasOutlineViewProps> = ({
       </div>
 
       <div className="wf-drawer-content-scroll-compact">
-        {filteredNodes.length === 0 ? (
+        {nodes.length === 0 ? (
+          <div className="wf-assets-empty-state-compact">
+            <Layers size={24} className="wf-assets-empty-icon" />
+            <div className="wf-assets-empty-title">画布暂无素材</div>
+            <div className="wf-assets-empty-subtitle">请导入文件或添加节点并生成</div>
+          </div>
+        ) : filteredNodes.length === 0 ? (
           <div className="wf-assets-empty-state-compact">
             <Layers size={24} className="wf-assets-empty-icon" />
             <div className="wf-assets-empty-title">当前画布暂无匹配素材</div>
@@ -276,6 +282,7 @@ export const CanvasOutlineView: React.FC<CanvasOutlineViewProps> = ({
               return (
                 <div
                   key={node.id}
+                  data-id={node.id}
                   className={`wf-tree-item-compact ${isSelected ? 'selected' : ''}`}
                   draggable
                   onDragStart={bindDrag(node)}
@@ -322,6 +329,7 @@ export const CanvasOutlineView: React.FC<CanvasOutlineViewProps> = ({
             {filteredNodes.map((node) => (
               <div
                 key={node.id}
+                data-id={node.id}
                 className="wf-grid-card-compact"
                 draggable
                 onDragStart={bindDrag(node)}

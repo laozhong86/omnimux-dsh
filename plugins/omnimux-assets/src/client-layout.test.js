@@ -12,10 +12,10 @@ const stylesJs = readFileSync(stylesPath, 'utf8')
 
 describe('OmniMux Assets Client 4-Layer Layout Contract', () => {
   it('conforms to 4-layer hierarchy in AssetsStage.jsx', () => {
-    // Layer 1: Page Header
-    assert.match(stageJsx, /className="omnimux-assets-stage-header"/)
-    assert.match(stageJsx, /className="omnimux-assets-stage-title"/)
-    assert.match(stageJsx, /className="omnimux-assets-stage-subtitle"/)
+    // Layer 1: Page Header (converged to dsh-ui-kit PageHeader)
+    assert.match(stageJsx, /<PageHeader\b/)
+    assert.match(stageJsx, /title=\{t\('stage\.title'\)\}/)
+    assert.match(stageJsx, /subtitle=\{t\('stage\.subtitle'\)\}/)
 
     // Layer 2: Action Row
     assert.match(stageJsx, /className="omnimux-assets-action-row"/)

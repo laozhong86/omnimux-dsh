@@ -27,23 +27,6 @@ export const STYLES = `
   display: none;
   pointer-events: none;
 }
-.omnimux-accounts-stage-header {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 32px;
-  padding: 12px 20px;
-  -webkit-app-region: no-drag;
-}
-.omnimux-accounts-stage-title {
-  margin: 0;
-  flex: 1;
-  min-width: 0;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 32px;
-}
 .omnimux-accounts-stage-body {
   flex: 1;
   min-height: 0;

@@ -55,7 +55,7 @@ describe('hub client UI kit contract (B5 drawer)', () => {
     }
   })
 
-  it('positions AppsStage with --stage-* and a kit close IconButton', () => {
+  it('positions AppsStage with --stage-* and kit PageHeader', () => {
     const stage = read('AppsStage.jsx')
     const styles = read('styles.js')
     assert.match(stage, /className="omnimux-apps-stage"/)
@@ -63,7 +63,7 @@ describe('hub client UI kit contract (B5 drawer)', () => {
     assert.match(stage, /'--stage-left'/)
     assert.match(stage, /'--stage-width'/)
     assert.match(stage, /'--stage-height'/)
-    assert.match(stage, /<IconButton/)
+    assert.match(stage, /<PageHeader/)
     assert.doesNotMatch(stage, /position:\s*['"]fixed['"]/)
     assert.match(styles, /\.omnimux-apps-stage \{/)
     assert.match(styles, /top:\s*var\(--stage-top\)/)

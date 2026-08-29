@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
-import { IconCloseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
-import { IconButton } from 'dsh-ui-kit'
+import { PageHeader } from 'dsh-ui-kit'
 import { AccountsSection } from './AccountsSection.jsx'
 import { injectAccountsStyles } from './styles.js'
 
@@ -65,16 +64,11 @@ export function AccountsStage({ t, stage }) {
         '--stage-height': `${box.height}px`,
       }}
     >
-      <div className="omnimux-accounts-stage-header">
-        <h1 className="omnimux-accounts-stage-title">{t('title')}</h1>
-        <IconButton
-          aria-label={t('close')}
-          variant="ghost"
-          onClick={() => { stage.set(false) }}
-        >
-          <IconCloseOutline16 />
-        </IconButton>
-      </div>
+      <PageHeader
+        title={t('title')}
+        onClose={() => { stage.set(false) }}
+        closeTitle={t('close')}
+      />
       <div className="omnimux-accounts-stage-body">
         <AccountsSection t={t} active={open} />
       </div>

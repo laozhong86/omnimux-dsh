@@ -771,7 +771,11 @@ export function MotionCreatorShell({
       className={`flex ${embedded ? "h-full w-full" : "h-screen w-screen"} flex-col overflow-hidden bg-bg font-sans text-fg`}
     >
       <header className="flex h-[60px] shrink-0 items-center gap-[18px] border-b border-border bg-bg-1 px-[18px]">
-        <div className="flex min-w-0 shrink-0 items-center gap-[18px]">
+        {/* data-toolbar-section: 供 CLIP_CSS 按 data-clip-mode 做三段显隐互斥 */}
+        <div
+          data-toolbar-section="left"
+          className="openreel-toolbar-left flex min-w-0 shrink-0 items-center gap-[18px]"
+        >
           {!embedded ? (
             <WorkspaceModeTabs
               activeMode="motion"
@@ -785,13 +789,21 @@ export function MotionCreatorShell({
           ) : null}
         </div>
 
-        <div className="pointer-events-none hidden min-w-0 flex-1 items-center justify-center lg:flex">
+        {/* 官方 responsive 段（hidden lg:flex）：standalone 下保留断点行为 */}
+        <div
+          data-toolbar-section="center"
+          data-toolbar-responsive="true"
+          className="openreel-toolbar-center pointer-events-none hidden min-w-0 flex-1 items-center justify-center lg:flex"
+        >
           <div className="pointer-events-auto">
             <SceneSwitcher composition={composition} />
           </div>
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div
+          data-toolbar-section="right"
+          className="openreel-toolbar-right ml-auto flex shrink-0 items-center gap-2"
+        >
           <MotionHeaderIconButton
             icon="arrow.uturn.backward"
             label="Undo"
@@ -1164,7 +1176,7 @@ function ExportButton({
           aria-label="Export"
           disabled={exporting}
           onClick={() => setOpen((value) => !value)}
-          className="flex items-center bg-accent px-[18px] py-[9px] text-[13px] font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-60"
+          className="openreel-export-btn flex items-center bg-accent px-[18px] py-[9px] text-[13px] font-semibold text-accent-fg transition-colors hover:bg-accent-strong disabled:opacity-60"
         >
           {exporting ? `${progress ?? 0}%` : "Export"}
         </button>
@@ -1174,7 +1186,7 @@ function ExportButton({
           aria-expanded={open}
           disabled={exporting}
           onClick={() => setOpen((value) => !value)}
-          className="flex items-center justify-center border-l border-white/25 bg-accent px-2 text-white transition-colors hover:bg-accent/90 disabled:opacity-60"
+          className="openreel-export-btn-chevron flex items-center justify-center border-l border-accent-divider bg-accent px-2 text-accent-fg transition-colors hover:bg-accent-strong disabled:opacity-60"
         >
           <Icon name="chevron.down" size={12} ariaHidden />
         </button>
