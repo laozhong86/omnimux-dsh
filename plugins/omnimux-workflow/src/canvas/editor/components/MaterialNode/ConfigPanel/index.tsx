@@ -164,7 +164,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
               style={{ padding: '4px 10px', height: '28px' }}
               onClick={onOpenResourcePicker}
             >
-              <span>{t('node.relink')}</span>
+              <span>{t('node.replace')}</span>
             </button>
           )}
         </div>

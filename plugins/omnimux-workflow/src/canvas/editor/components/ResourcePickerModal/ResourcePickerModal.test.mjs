@@ -59,8 +59,8 @@ test('ConfigPanel Prompt 左上角 [+] 按钮唤起弹窗', () => {
 test('MaterialNode 挂载 ResourcePickerModal 与 useResourcePicker', () => {
   assert.match(nodeSrc, /useResourcePicker\(id\)/);
   assert.match(nodeSrc, /<ResourcePickerModal/);
-  assert.match(nodeSrc, /importLocalFiles/);
-  assert.match(nodeSrc, /openPicker\('canvas'\)/);
+  assert.match(nodeSrc, /openPicker\('local'\)/);
+  assert.match(nodeSrc, /kind === 'import' \? 'local' : 'canvas'/);
   assert.equal(/createObjectURL/.test(nodeSrc), false);
 });
 

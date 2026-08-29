@@ -21,6 +21,7 @@ import {
   Sparkles,
   Wand2,
   Film,
+  UploadCloud,
 } from 'lucide-react';
 import type { MaterialType, NodeKind } from '../../../types/materialNode';
 import { useT } from '../../../i18n';
@@ -42,12 +43,9 @@ const NodeEmptyState: React.FC<NodeEmptyStateProps> = ({
 
   if (nodeKind === 'import') {
     return (
-      <div className={`wf-node-empty wf-node-empty--${materialType} wf-node-empty--import-kind`}>
+      <div className="wf-node-empty wf-node-empty--import-kind">
         <div className="wf-node-empty__icon-box">
-          {materialType === 'image' && <ImageIcon size={44} strokeWidth={1.5} className="wf-node-empty__icon" />}
-          {materialType === 'video' && <Play size={44} strokeWidth={1.5} className="wf-node-empty__icon" />}
-          {materialType === 'audio' && <Music size={44} strokeWidth={1.5} className="wf-node-empty__icon" />}
-          {materialType === 'text' && <FileText size={32} strokeWidth={1.75} className="wf-node-empty__icon" />}
+          <UploadCloud size={44} strokeWidth={1.5} className="wf-node-empty__icon" />
         </div>
         <div className="wf-node-empty__try-label">{t('panel.dropToImport')}</div>
       </div>
