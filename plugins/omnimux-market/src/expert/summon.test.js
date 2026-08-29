@@ -56,6 +56,22 @@ test('summons the social-engagement-team agent pack from bundled catalog', () =>
   assert.equal(existsSync(join(roots.home, 'skills', 'social-engagement-ops', 'SKILL.md')), true)
 })
 
+test('summons the social-content-team agent pack from bundled catalog', () => {
+  const roots = env()
+  const result = summonItem({
+    catalog: loadCatalog(),
+    id: 'exp-social-content-team',
+    sessionState: 'locked',
+    ...roots,
+  })
+  assert.equal(result.id, 'exp-social-content-team')
+  assert.equal(result.skill, 'social-content-team')
+  assert.equal(result.gesture, '/social-content-team')
+  assert.equal(existsSync(join(roots.home, 'skills', 'social-content-team', 'agents', 'social-content-team-lead.md')), true)
+  assert.equal(existsSync(join(roots.home, 'skills', 'social-content-team', 'agents', 'content-copywriter.md')), true)
+  assert.equal(existsSync(join(roots.home, 'skills', 'social-content-team', 'agents', 'visual-director.md')), true)
+})
+
 test('connectors cannot be summoned', () => {
   const roots = env()
   assert.throws(() => summonItem({
