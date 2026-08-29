@@ -12,6 +12,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Unlink } from 'lucide-react';
 import { type NodeProps, useReactFlow } from '@xyflow/react';
 import type { MaterialNodeData, MaterialType, MaterialTool } from '../../../types/materialNode';
+import { resolveNodeKind } from '../../../types/materialNode';
 import CanvasNodeHandle, { type CanvasNodeHandleSelectMeta } from '../CanvasNodeHandle';
 import GenerationStateContainer from '../GenerationStateContainer';
 import NodeHeader from './NodeHeader';
@@ -98,20 +99,23 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   );
 
   const handleGenerate = useCallback(() => {
-    const currentTool = nodeData.selectedTool;
-    const defaultGenTools: Record<MaterialType, MaterialTool> = {
-      text: 'text-to-text',
-      image: 'text-to-image',
-      video: 'video-generation',
-      audio: 'text-to-audio',
-    };
-    if (!currentTool || currentTool === 'text-editor' || currentTool === 'import') {
-      updateNodeData({
-        selectedTool: defaultGenTools[materialType],
-      });
+    const kind = resolveNodeKind(nodeData);
+    if (kind === 'generate') {
+      const currentTool = nodeData.selectedTool;
+      const defaultGenTools: Record<MaterialType, MaterialTool> = {
+        text: 'text-to-text',
+        image: 'text-to-image',
+        video: 'video-generation',
+        audio: 'text-to-audio',
+      };
+      if (!currentTool || currentTool === 'text-editor') {
+        updateNodeData({
+          selectedTool: defaultGenTools[materialType],
+        });
+      }
     }
     useExecutionStore.getState().startNodeExecution?.(id);
-  }, [id, materialType, nodeData.selectedTool, updateNodeData]);
+  }, [id, materialType, nodeData, updateNodeData]);
 
   const t = useT();
   const applyCanvasInputMutation = useCanvasStore((state) => state.applyCanvasInputMutation);

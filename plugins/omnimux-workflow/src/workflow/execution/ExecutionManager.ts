@@ -32,6 +32,7 @@ import {
 } from './executionStore';
 import { createDispatchingNodeExecutor } from './nodeExecutors';
 import { createMaterialGatewayExecutor } from './materialGatewayExecutor';
+import { createImportExecutor } from './importExecutor';
 import { createVideoCompositionExecutor } from './videoCompositionExecutor';
 import { registerExecutor } from '../executors/registry';
 import type { GenerationGateway } from '../seam/gateway';
@@ -146,9 +147,10 @@ export function createExecutionManager(deps: ExecutionManagerDeps) {
   const { executionsDir, gateway, mediaDir } = deps;
   const entries = new Map<string, ExecutionEntry>();
 
-  // Extension point ② wiring: register the gateway-backed material executor
-  // (replaces nothing else — further node types register the same way).
+  // Extension point ② wiring: register specialized executors for material kinds
+  // (material:generate for models, material:import for static assets) + video composition.
   registerExecutor(createMaterialGatewayExecutor({ gateway }));
+  registerExecutor(createImportExecutor());
   registerExecutor(createVideoCompositionExecutor());
 
   // ========================================================================
