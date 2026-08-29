@@ -144,6 +144,7 @@ function createFakeSeamHub(opts = {}) {
   const seams = {
     videoGenerate: makeMediaSeam('video'),
     imageGenerate: makeMediaSeam('image'),
+    audioGenerate: makeMediaSeam('audio'),
     textComplete,
   };
   return { seams, state };
@@ -478,7 +479,8 @@ test('capabilities：seam 可达时返回 omnimux 真实目录（含 env 覆盖�
     assert.equal(caps.body.text.length, 5);
     assert.ok(caps.body.text.some((row) => row.id === 'gemini-3.7-flash'));
     assert.ok(caps.body.text.some((row) => row.id === 'claude-opus-4-6'));
-    assert.deepEqual(caps.body.audio, []);
+    assert.ok(caps.body.audio.some((row) => row.id === 'suno'));
+    assert.ok(caps.body.audio.some((row) => row.id === 'gpt-4o-mini-tts'));
   } finally {
     h.dispose();
     rmSync(h.root, { recursive: true, force: true });

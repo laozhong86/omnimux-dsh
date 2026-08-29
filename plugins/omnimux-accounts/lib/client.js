@@ -185,153 +185,6 @@ var en = {
 };
 var NS = "omnimux-accounts";
 
-// src/client/stage-store.js
-var PRODUCT_STAGE_EVENT = "dsh-product-stage";
-var STAGE_ID = "omnimux-accounts";
-function createStageStore(getStage) {
-  let open = false;
-  try {
-    open = window.localStorage.getItem("omnimux_active_product_stage") === STAGE_ID;
-  } catch {
-  }
-  const listeners = /* @__PURE__ */ new Set();
-  function emit() {
-    for (const listener of listeners) listener();
-  }
-  if (open) {
-    const restore = () => {
-      try {
-        const stage = getStage();
-        if (stage && typeof stage.claim === "function") {
-          stage.claim(STAGE_ID);
-        }
-      } catch {
-      }
-    };
-    if (typeof queueMicrotask === "function") queueMicrotask(restore);
-    else setTimeout(restore, 0);
-  }
-  window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
-    const id = event instanceof CustomEvent ? event.detail?.id : void 0;
-    if (id !== STAGE_ID && open) {
-      open = false;
-      emit();
-    } else if (id === STAGE_ID && !open) {
-      open = true;
-      emit();
-    }
-  });
-  return {
-    getSnapshot: () => open,
-    readBox() {
-      return getStage().readBox();
-    },
-    /**
-     * @param {() => void} listener
-     */
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    /**
-     * @param {boolean} next
-     */
-    set(next) {
-      if (open === next) return;
-      open = next;
-      const stage = getStage();
-      if (open) stage.claim(STAGE_ID);
-      else stage.release(STAGE_ID);
-      emit();
-    },
-    toggle() {
-      this.set(!open);
-    }
-  };
-}
-
-// src/client/sidebar-entry.js
-var ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="14" height="14" fill="none" role="presentation" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"><path d="M12.527 7c.551-2.024 2.29-3.486 4.473-3.643C19.556 3.173 23.335 3 28.5 3c5.133 0 8.897.171 11.452.354c2.558.182 4.512 2.136 4.694 4.694c.183 2.555.354 6.32.354 11.452c0 5.165-.173 8.944-.357 11.5c-.157 2.183-1.62 3.922-3.643 4.473"/><path d="M35.646 17.047c-.182-2.557-2.136-4.51-4.694-4.693C28.397 12.17 24.632 12 19.5 12c-5.133 0-8.897.171-11.452.354c-2.558.182-4.512 2.136-4.694 4.694C3.17 19.602 3 23.367 3 28.5s.171 8.897.354 11.453c.182 2.557 2.136 4.51 4.694 4.693c2.555.183 6.32.354 11.452.354c5.133 0 8.897-.171 11.452-.354c2.558-.182 4.512-2.136 4.694-4.694c.183-2.555.354-6.32.354-11.452c0-5.133-.171-8.897-.354-11.453"/><path d="M24.026 30.727a7 7 0 1 0-8.066-.01c-2.496.933-4.485 2.709-5.5 4.92c-.646 1.405.16 3.087 1.704 3.18l.044.003a150 150 0 0 0 7.77.18c3.309 0 5.874-.081 7.77-.18l.045-.003c1.543-.093 2.35-1.775 1.704-3.18c-1.012-2.203-2.989-3.974-5.471-4.91"/></g></svg>';
-var STYLES = `
-.omnimux-accounts-entry {
-  box-sizing: border-box; display: flex; align-items: center; gap: 6px; position: relative;
-  width: calc(100% - 8px); height: 32px; margin: 0 4px; padding: 0 8px;
-  border: none; border-radius: 8px; background: transparent;
-  color: var(--dsw-alias-label-primary, inherit);
-  font: var(--dsw-font-s-14, inherit); font-size: 14px; line-height: 20px;
-  cursor: pointer; text-align: left;
-}
-.omnimux-accounts-entry:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12)); }
-.omnimux-accounts-entry[data-active="true"] { background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18)); font-weight: 500; }
-.omnimux-accounts-entry-icon { flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
-.omnimux-accounts-entry svg { display: block; width: 14px; height: 14px; }
-.omnimux-accounts-entry-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px; }
-`;
-function paintLabel(entry, label) {
-  entry.setAttribute("aria-label", label);
-  const node = entry.querySelector(".omnimux-accounts-entry-label");
-  if (node) node.textContent = label;
-}
-function registerWhenReady(row) {
-  let unregister = () => {
-  };
-  let disposed = false;
-  const attempt = () => {
-    if (disposed) return;
-    const api = window.__omnimuxSidebar;
-    if (!api || typeof api.register !== "function") return;
-    unregister = api.register(row);
-    clearInterval(timer);
-  };
-  const timer = setInterval(attempt, 500);
-  attempt();
-  return () => {
-    disposed = true;
-    clearInterval(timer);
-    unregister();
-  };
-}
-function mountSidebarEntry(stage, t, locale) {
-  const entry = document.createElement("button");
-  entry.type = "button";
-  entry.dataset.omnimuxAccountsEntry = "";
-  entry.className = "omnimux-accounts-entry";
-  entry.innerHTML = `<span class="omnimux-accounts-entry-icon">${ICON}</span><span class="omnimux-accounts-entry-label"></span>`;
-  paintLabel(entry, t("nav"));
-  entry.addEventListener("click", () => {
-    stage.toggle();
-  });
-  const paint = () => {
-    paintLabel(entry, t("nav"));
-  };
-  const unsubscribeLocale = typeof locale?.subscribe === "function" ? locale.subscribe(paint) : () => {
-  };
-  const syncActive = () => {
-    if (stage.getSnapshot()) entry.dataset.active = "true";
-    else delete entry.dataset.active;
-  };
-  const unsubscribeStage = stage.subscribe(syncActive);
-  syncActive();
-  const unregister = registerWhenReady({
-    id: "omnimux-accounts-entry",
-    rank: 3,
-    styles: STYLES,
-    styleId: "omnimux-accounts-entry-styles",
-    create: () => entry
-  });
-  return () => {
-    unregister();
-    unsubscribeStage();
-    unsubscribeLocale();
-  };
-}
-
-// src/client/AccountsStage.jsx
-var import_react7 = require("react");
-var import_dsh_client_ui_primitives2 = require("@deepseek-ai/dsh-client-ui-primitives");
-
 // ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
 var import_react = require("react");
 var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
@@ -833,6 +686,344 @@ function ConfirmModal({ message, children, confirmLabel = "Confirm", cancelLabel
     }) : children
   });
 }
+injectCss("EmptyState.module.css", ".dshUk-EmptyState-emptyState {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n  padding: 48px 24px;\n  min-height: 240px;\n  box-sizing: border-box;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n}\n\n.dshUk-EmptyState-emptyState.dshUk-EmptyState-compact {\n  padding: 24px 16px;\n  min-height: 140px;\n}\n\n.dshUk-EmptyState-iconWrap {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 12px;\n  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.4));\n}\n\n.dshUk-EmptyState-title {\n  margin: 0 0 6px;\n  font-size: 15px;\n  font-weight: 600;\n  line-height: 20px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n}\n\n.dshUk-EmptyState-description {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  max-width: 360px;\n}\n\n.dshUk-EmptyState-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin-top: 16px;\n}\n");
+var EmptyState_module_css_default = {
+  "emptyState": "dshUk-EmptyState-emptyState",
+  "compact": "dshUk-EmptyState-compact",
+  "iconWrap": "dshUk-EmptyState-iconWrap",
+  "title": "dshUk-EmptyState-title",
+  "description": "dshUk-EmptyState-description",
+  "actions": "dshUk-EmptyState-actions"
+};
+var EMPTY_CLASS = cssClass(EmptyState_module_css_default.emptyState, "emptyState");
+var COMPACT_CLASS = cssClass(EmptyState_module_css_default.compact, "compact");
+var ICON_WRAP_CLASS = cssClass(EmptyState_module_css_default.iconWrap, "iconWrap");
+var TITLE_CLASS$1 = cssClass(EmptyState_module_css_default.title, "title");
+var DESCRIPTION_CLASS = cssClass(EmptyState_module_css_default.description, "description");
+var ACTIONS_CLASS = cssClass(EmptyState_module_css_default.actions, "actions");
+var EmptyState = (0, import_react.forwardRef)(function EmptyState2({ icon, title, description, action, secondaryAction, compact = false, className, ...rest }, ref) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+    ...rest,
+    ref,
+    className: cx(EMPTY_CLASS, compact && COMPACT_CLASS, className),
+    children: [
+      icon && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+        className: ICON_WRAP_CLASS,
+        children: icon
+      }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+        className: TITLE_CLASS$1,
+        children: title
+      }),
+      description && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+        className: DESCRIPTION_CLASS,
+        children: description
+      }),
+      (action || secondaryAction) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+        className: ACTIONS_CLASS,
+        children: [action, secondaryAction]
+      })
+    ]
+  });
+});
+injectCss("StageContainer.module.css", '.dshUk-StageContainer-stageContainer {\n  position: absolute;\n  top: var(--stage-top, 0px);\n  left: var(--stage-left, 56px);\n  width: var(--stage-width, calc(100vw - 56px));\n  height: var(--stage-height, 100vh);\n  background: var(--dsw-alias-bg-base, #111113);\n  color: var(--dsw-alias-label-primary, #ffffff);\n  z-index: 200;\n  display: flex;\n  flex-direction: column;\n  box-sizing: border-box;\n  overflow: hidden;\n}\n\n.dshUk-StageContainer-stageContainer[data-visible="false"] {\n  display: none !important;\n  pointer-events: none !important;\n}\n');
+var CONTAINER_CLASS = cssClass({ "stageContainer": "dshUk-StageContainer-stageContainer" }.stageContainer, "stageContainer");
+var StageContainer = (0, import_react.forwardRef)(function StageContainer2({ stageStore, title, className, style, children, ...rest }, ref) {
+  const open = (0, import_react.useSyncExternalStore)(stageStore ? (onStoreChange) => stageStore.subscribe(onStoreChange) : () => () => {
+  }, stageStore ? () => stageStore.getSnapshot() : () => false);
+  const [everOpened, setEverOpened] = (0, import_react.useState)(false);
+  const [box, setBox] = (0, import_react.useState)(() => stageStore ? stageStore.readBox() : {
+    top: 0,
+    left: 0,
+    width: 0,
+    height: 0
+  });
+  if (open && !everOpened) setEverOpened(true);
+  (0, import_react.useLayoutEffect)(() => {
+    if (!open || !stageStore) return void 0;
+    const update = () => {
+      setBox(stageStore.readBox());
+    };
+    update();
+    const scroll = typeof document !== "undefined" ? document.querySelector("[data-conversation-scroll]") : null;
+    const target = scroll instanceof HTMLElement ? scroll : typeof document !== "undefined" ? document.querySelector('[data-slot="conversation"]')?.parentElement : null;
+    const observer = typeof ResizeObserver === "function" && target ? new ResizeObserver(update) : null;
+    if (target && observer) observer.observe(target);
+    if (typeof window !== "undefined") window.addEventListener("resize", update);
+    return () => {
+      observer?.disconnect();
+      if (typeof window !== "undefined") window.removeEventListener("resize", update);
+    };
+  }, [open, stageStore]);
+  if (!stageStore || !everOpened) return null;
+  const customStyle = {
+    ...style,
+    display: open ? style?.display !== "none" ? style?.display : void 0 : "none",
+    ["--stage-top"]: `${box.top}px`,
+    ["--stage-left"]: `${box.left}px`,
+    ["--stage-width"]: `${box.width}px`,
+    ["--stage-height"]: `${box.height}px`
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+    ...rest,
+    ref,
+    role: "region",
+    "aria-label": title,
+    "aria-hidden": open ? void 0 : true,
+    "data-visible": open ? "true" : "false",
+    className: cx(CONTAINER_CLASS, className),
+    style: customStyle,
+    children
+  });
+});
+injectCss("StageHeader.module.css", ".dshUk-StageHeader-stageHeader {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 12px 20px;\n  min-height: 56px;\n  box-sizing: border-box;\n  flex: none;\n  gap: 16px;\n  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.06));\n}\n\n.dshUk-StageHeader-heading {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1 1 auto;\n}\n\n.dshUk-StageHeader-titleRow {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.dshUk-StageHeader-title {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 600;\n  line-height: 24px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-subtitle {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-controls {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex: none;\n}\n");
+var StageHeader_module_css_default = {
+  "stageHeader": "dshUk-StageHeader-stageHeader",
+  "heading": "dshUk-StageHeader-heading",
+  "titleRow": "dshUk-StageHeader-titleRow",
+  "title": "dshUk-StageHeader-title",
+  "subtitle": "dshUk-StageHeader-subtitle",
+  "controls": "dshUk-StageHeader-controls"
+};
+var HEADER_CLASS = cssClass(StageHeader_module_css_default.stageHeader, "stageHeader");
+var HEADING_CLASS = cssClass(StageHeader_module_css_default.heading, "heading");
+var TITLE_ROW_CLASS = cssClass(StageHeader_module_css_default.titleRow, "titleRow");
+var TITLE_CLASS = cssClass(StageHeader_module_css_default.title, "title");
+var SUBTITLE_CLASS = cssClass(StageHeader_module_css_default.subtitle, "subtitle");
+var CONTROLS_CLASS = cssClass(StageHeader_module_css_default.controls, "controls");
+var StageHeader = (0, import_react.forwardRef)(function StageHeader2({ title, subtitle, badge, onRefresh, refreshing = false, refreshTitle = "Refresh", onClose, closeTitle = "Close", actions, className, ...rest }, ref) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
+    ...rest,
+    ref,
+    className: cx(HEADER_CLASS, className),
+    children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+      className: HEADING_CLASS,
+      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+        className: TITLE_ROW_CLASS,
+        children: [typeof title === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+          className: TITLE_CLASS,
+          children: title
+        }) : title, badge]
+      }), subtitle && (typeof subtitle === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+        className: SUBTITLE_CLASS,
+        children: subtitle
+      }) : subtitle)]
+    }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+      className: CONTROLS_CLASS,
+      children: [
+        actions,
+        onRefresh && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+          variant: "ghost",
+          size: "sm",
+          "aria-label": refreshTitle,
+          title: refreshTitle,
+          disabled: refreshing,
+          onClick: () => {
+            onRefresh();
+          },
+          children: refreshing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconRefreshOutline16, {})
+        }),
+        onClose && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+          variant: "ghost",
+          size: "sm",
+          "aria-label": closeTitle,
+          title: closeTitle,
+          onClick: () => {
+            onClose();
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseOutline16, {})
+        })
+      ]
+    })]
+  });
+});
+var PRODUCT_STAGE_EVENT = "dsh-product-stage";
+var ACTIVE_STAGE_STORAGE_KEY = "omnimux_active_product_stage";
+function createStageStore(stageId, getStage = () => typeof window !== "undefined" ? window.__omnimuxStage : void 0) {
+  let open = false;
+  if (typeof window !== "undefined") try {
+    open = window.localStorage.getItem(ACTIVE_STAGE_STORAGE_KEY) === stageId;
+  } catch {
+  }
+  const listeners = /* @__PURE__ */ new Set();
+  function emit() {
+    for (const listener of listeners) try {
+      listener();
+    } catch (err) {
+      console.error("StageStore listener error:", err);
+    }
+  }
+  if (open && typeof window !== "undefined") {
+    const restore = () => {
+      try {
+        const stage = getStage();
+        if (stage && typeof stage.claim === "function") stage.claim(stageId);
+      } catch {
+      }
+    };
+    if (typeof queueMicrotask === "function") queueMicrotask(restore);
+    else setTimeout(restore, 0);
+  }
+  if (typeof window !== "undefined") window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
+    const id = event instanceof CustomEvent ? event.detail?.id : void 0;
+    if (id !== stageId && open) {
+      open = false;
+      emit();
+    } else if (id === stageId && !open) {
+      open = true;
+      emit();
+    }
+  });
+  return {
+    getSnapshot: () => open,
+    readBox() {
+      const stage = getStage();
+      if (stage && typeof stage.readBox === "function") return stage.readBox();
+      const left = 56;
+      const winWidth = typeof window !== "undefined" ? window.innerWidth : 1280;
+      const winHeight = typeof window !== "undefined" ? window.innerHeight : 800;
+      return {
+        top: 0,
+        left,
+        width: Math.max(8, winWidth - left),
+        height: Math.max(8, winHeight)
+      };
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    set(next) {
+      if (open === next) return;
+      open = next;
+      const stage = getStage();
+      if (open) stage?.claim?.(stageId);
+      else stage?.release?.(stageId);
+      emit();
+    },
+    open() {
+      this.set(true);
+    },
+    close() {
+      this.set(false);
+    }
+  };
+}
+var SIDEBAR_ENTRY_COMMON_STYLES = `
+.omnimux-sidebar-nav-entry {
+  box-sizing: border-box; display: flex; align-items: center; gap: 6px; position: relative;
+  width: calc(100% - 8px); height: 32px; margin: 0 4px; padding: 0 8px;
+  border: none; border-radius: 8px; background: transparent;
+  color: var(--dsw-alias-label-primary, inherit);
+  font: var(--dsw-font-s-14, inherit); font-size: 14px; line-height: 20px;
+  cursor: pointer; text-align: left;
+}
+.omnimux-sidebar-nav-entry:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12));
+}
+.omnimux-sidebar-nav-entry[data-active="true"] {
+  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18));
+  font-weight: 500;
+}
+.omnimux-sidebar-nav-entry-icon {
+  flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center;
+}
+.omnimux-sidebar-nav-entry-icon svg {
+  display: block; width: 14px; height: 14px;
+}
+.omnimux-sidebar-nav-entry-label {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 20px;
+}
+`;
+function resolveLabel(label) {
+  return typeof label === "function" ? label() : label;
+}
+function paintLabel(entry, labelText) {
+  entry.setAttribute("aria-label", labelText);
+  const node = entry.querySelector(".omnimux-sidebar-nav-entry-label");
+  if (node) node.textContent = labelText;
+}
+function registerWhenCoordinatorReady(row) {
+  let unregister = () => {
+  };
+  let disposed = false;
+  const attempt = () => {
+    if (disposed) return;
+    const api = (typeof window !== "undefined" ? window : void 0)?.__omnimuxSidebar;
+    if (!api || typeof api.register !== "function") return;
+    unregister = api.register(row);
+    clearInterval(timer);
+  };
+  const timer = setInterval(attempt, 500);
+  attempt();
+  return () => {
+    disposed = true;
+    clearInterval(timer);
+    unregister();
+  };
+}
+function createSidebarEntry(options) {
+  const { id, rank, label, iconSvg, stageStore, locale, customClassName, datasetKey } = options;
+  const entry = document.createElement("button");
+  entry.type = "button";
+  if (datasetKey) entry.setAttribute(datasetKey, "");
+  entry.className = `omnimux-sidebar-nav-entry ${customClassName || ""}`.trim();
+  entry.innerHTML = `<span class="omnimux-sidebar-nav-entry-icon">${iconSvg}</span><span class="omnimux-sidebar-nav-entry-label"></span>`;
+  const updateLabel = () => {
+    paintLabel(entry, resolveLabel(label));
+  };
+  updateLabel();
+  entry.addEventListener("click", () => {
+    stageStore.open();
+  });
+  const syncActive = () => {
+    if (stageStore.getSnapshot()) entry.dataset.active = "true";
+    else delete entry.dataset.active;
+  };
+  const unsubscribeStage = stageStore.subscribe(syncActive);
+  syncActive();
+  const unsubscribeLocale = typeof locale?.subscribe === "function" ? locale.subscribe(updateLabel) : () => {
+  };
+  const unregisterCoordinator = registerWhenCoordinatorReady({
+    id: `${id}-entry`,
+    rank,
+    styles: SIDEBAR_ENTRY_COMMON_STYLES,
+    styleId: "omnimux-sidebar-nav-entry-styles",
+    create: () => entry
+  });
+  return () => {
+    unregisterCoordinator();
+    unsubscribeStage();
+    unsubscribeLocale();
+  };
+}
+
+// src/client/stage-store.js
+var STAGE_ID = "omnimux-accounts";
+function createStageStore2(getStage) {
+  return createStageStore(STAGE_ID, getStage);
+}
+
+// src/client/sidebar-entry.js
+var ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="14" height="14" fill="none" role="presentation" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"><path d="M12.527 7c.551-2.024 2.29-3.486 4.473-3.643C19.556 3.173 23.335 3 28.5 3c5.133 0 8.897.171 11.452.354c2.558.182 4.512 2.136 4.694 4.694c.183 2.555.354 6.32.354 11.452c0 5.165-.173 8.944-.357 11.5c-.157 2.183-1.62 3.922-3.643 4.473"/><path d="M35.646 17.047c-.182-2.557-2.136-4.51-4.694-4.693C28.397 12.17 24.632 12 19.5 12c-5.133 0-8.897.171-11.452.354c-2.558.182-4.512 2.136-4.694 4.694C3.17 19.602 3 23.367 3 28.5s.171 8.897.354 11.453c.182 2.557 2.136 4.51 4.694 4.693c2.555.183 6.32.354 11.452.354c5.133 0 8.897-.171 11.452-.354c2.558-.182 4.512-2.136 4.694-4.694c.183-2.555.354-6.32.354-11.452c0-5.133-.171-8.897-.354-11.453"/><path d="M24.026 30.727a7 7 0 1 0-8.066-.01c-2.496.933-4.485 2.709-5.5 4.92c-.646 1.405.16 3.087 1.704 3.18l.044.003a150 150 0 0 0 7.77.18c3.309 0 5.874-.081 7.77-.18l.045-.003c1.543-.093 2.35-1.775 1.704-3.18c-1.012-2.203-2.989-3.974-5.471-4.91"/></g></svg>';
+function mountSidebarEntry(stage, t, locale) {
+  return createSidebarEntry({
+    id: "omnimux-accounts",
+    rank: 3,
+    label: () => t("nav"),
+    iconSvg: ICON,
+    stageStore: stage,
+    locale,
+    customClassName: "omnimux-accounts-entry",
+    datasetKey: "data-omnimux-accounts-entry"
+  });
+}
+
+// src/client/AccountsStage.jsx
+var import_react7 = require("react");
+var import_dsh_client_ui_primitives2 = require("@deepseek-ai/dsh-client-ui-primitives");
 
 // src/client/AccountsSection.jsx
 var import_react6 = require("react");
@@ -1493,7 +1684,7 @@ function ConnectModal({ t, watchConnect, onClose, onConnected }) {
 
 // src/client/EmptyState.jsx
 var import_jsx_runtime7 = require("react/jsx-runtime");
-function EmptyState({ t, onConnect, busy = "" }) {
+function EmptyState3({ t, onConnect, busy = "" }) {
   return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "omnimux-accounts-empty", children: [
     /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
       "svg",
@@ -1928,7 +2119,7 @@ function useAccounts() {
 }
 
 // src/client/styles.js
-var STYLES2 = `
+var STYLES = `
 .omnimux-accounts-stage {
   position: fixed;
   z-index: 200;
@@ -2944,7 +3135,7 @@ function injectAccountsStyles() {
   if (document.getElementById(STYLE_ELEMENT_ID)) return;
   const style = document.createElement("style");
   style.id = STYLE_ELEMENT_ID;
-  style.textContent = STYLES2;
+  style.textContent = STYLES;
   document.head.append(style);
 }
 
@@ -3278,7 +3469,7 @@ function AccountsSection({ t, active = true }) {
     ] }) : null,
     errorText !== "" ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "omnimux-accounts-error", role: "alert", children: errorText }) : null,
     notice !== "" ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "omnimux-accounts-notice", role: "status", children: notice }) : null,
-    accounts.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(EmptyState, { t, onConnect: openConnect, busy: combinedBusy }) : visible.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "omnimux-accounts-muted", children: t("filter.noResults") }) : view === "table" ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    accounts.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(EmptyState3, { t, onConnect: openConnect, busy: combinedBusy }) : visible.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "omnimux-accounts-muted", children: t("filter.noResults") }) : view === "table" ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
       AccountTable,
       {
         t,
@@ -3397,7 +3588,7 @@ var inject = ["slots", "locale"];
 function apply(ctx) {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux-accounts: dictionaries");
   const t = ctx.locale.bind(NS);
-  const stage = createStageStore(() => window.__omnimuxStage);
+  const stage = createStageStore2(() => window.__omnimuxStage);
   const stageFace = () => ({ t, stage });
   ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), "omnimux-accounts: sidebar entry");
   ctx.slots.inject("shell.overlay", () => ctx.slots.register({

@@ -134,8 +134,10 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `identity` | official provide | `{ verify?: boolean }` | public profile fields only; never a token | unsigned / `token_invalid` |
 | `videoGenerate` | neutral provide | `{ dest, prompt?, duration?, image?, speech?, audio?, provider?, model?, taskId?, wait?, signal? }` | `{ mode: "live" \| "submitted", taskId, url? }` | `needs-provider`, `omnimux-unconfigured`, `unknown-provider`, `unknown-protocol`, `omnimux-invalid-request`, task/download errors |
 | `imageGenerate` | neutral provide | same job handle as video | same | same |
+| `audioGenerate` | neutral provide | `{ dest, prompt?, duration?, voice?, style?, instrumental?, speed?, provider?, model?, taskId?, wait?, signal? }` | `{ mode: "live" \| "submitted", taskId, url? }` | `needs-provider`, `omnimux-unconfigured`, `unknown-provider`, `unknown-protocol`, `omnimux-invalid-request`, task/download errors |
 | `omnimux_video_submit` | hub tool over `videoGenerate` | same as the seam | same | same |
 | `omnimux_image_submit` | hub tool over `imageGenerate` | same as the seam | same | same |
+| `omnimux_audio_submit` | hub tool over `audioGenerate` | same as the seam | same | same |
 | `textComplete` | neutral provide | `{ prompt, model?, image?, video?, system?, maxTokens?, signal? }` | `{ mode: "live", model, text }` | `needs-provider`, `omnimux-unconfigured` (video), `unknown-model`, `omnimux-invalid-request`, stream / HTTP errors |
 | `omnimux_text_complete` | hub tool over `textComplete` | same plus required `reason` | same | same |
 | `omnimux_social_data` | official-only tool | `platform` + `capability` + `url`/`id`/`query`; `sk-` | `{ platform, capability, model, data }` | `omnimux-unconfigured`, `omnimux-invalid-request` |
@@ -146,7 +148,7 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `videoProcess` | neutral provide（provider: omnimux-video） | `{ capability, input, dest, signal? }` | `{ mode: "live", files?: [{ path, kind, meta? }], result? }` | `ffmpeg-missing`, `unknown-capability`, `video-invalid-input`, `video-ffmpeg-failed`, `video-incompatible-streams`, `video-canceled`, `video-timeout`, `video-<capability>-failed` |
 | `video_process` | omnimux-video tool over `videoProcess` | same | same | same |
 
-`audioGenerate` does not exist until OmniMux publishes a live audio generation contract. Digital-human / talking-head is a `videoGenerate` request (reference image, duration, speech constraints), not a third HTTP client.
+`audioGenerate` exposes audio generation / TTS / music capabilities (Suno, GPT-4o Mini TTS, Whisper-1). Digital-human / talking-head is a `videoGenerate` request (reference image, duration, speech constraints), not a third HTTP client.
 
 ## Official-only (C-class)
 

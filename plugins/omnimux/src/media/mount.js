@@ -8,7 +8,7 @@ import { objectParams, rethrow } from '../tools/schema.js'
  *   get?: (name: string) => unknown,
  * }} ctx
  * @param {{
- *   kind: 'video' | 'image',
+ *   kind: 'video' | 'image' | 'audio',
  *   execute: (req: object) => Promise<unknown>,
  *   media: unknown,
  *   store?: { resolve: () => Promise<string | undefined> },
@@ -31,7 +31,7 @@ export function mountMedia(ctx, opts) {
     },
   }
   ctx.provide(`${kind}Generate`, api)
-  const destHint = kind === 'video' ? 'Absolute file path for the mp4' : 'Absolute file path for the image'
+  const destHint = kind === 'video' ? 'Absolute file path for the mp4' : kind === 'audio' ? 'Absolute file path for the audio' : 'Absolute file path for the image'
   ctx.tools.register({
     name: `omnimux_${kind}_submit`,
     description:
@@ -39,11 +39,15 @@ export function mountMedia(ctx, opts) {
     parameters: objectParams({
       prompt: { type: 'string', description: 'Required unless task_id is set' },
       dest: { type: 'string', required: true, description: destHint },
-      model: { type: 'string', description: 'Model ID (e.g. nanobanana-2, seedream-5.0-pro, midjourney-8.1, gpt-image-2)' },
+      model: { type: 'string', description: 'Model ID (e.g. suno, gpt-4o-mini-tts, nanobanana-2, seedream-5.0-pro, midjourney-8.1, gpt-image-2)' },
       duration: { type: 'number' },
       image: { type: 'string', description: 'Reference image URL or data URI' },
       speech: { type: 'string', description: 'Talking-head / spoken text. Optional.' },
       audio: { type: 'string', description: 'Reference audio URL. Optional.' },
+      voice: { type: 'string', description: 'TTS voice selection (alloy, echo, fable, onyx, nova, shimmer). Optional.' },
+      style: { type: 'string', description: 'Music/audio style prompt. Optional.' },
+      instrumental: { type: 'boolean', description: 'Instrumental only music generation. Optional.' },
+      speed: { type: 'number', description: 'Speech speed multiplier. Optional.' },
       wait: { type: 'boolean', description: 'If false, return after submit. Default true.' },
       task_id: { type: 'string', description: 'Resume poll and download; skips submit' },
     }),

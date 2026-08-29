@@ -1,0 +1,30 @@
+import { executeOmnimuxMedia } from './execute.js'
+import { pollOpenAiMediaTask } from './protocols/openai-media.js'
+import { parseMediaConfig, resolveMediaRoute } from './route.js'
+
+export { OmnimuxError } from './errors.js'
+export { downloadMediaFile as downloadAudioFile } from './job.js'
+export { pollOpenAiMediaTask } from './protocols/openai-media.js'
+export { pickTaskId, pickMediaUrl as pickAudioUrl } from './vendors/omnimux.js'
+
+/**
+ * @param {Parameters<typeof pollOpenAiMediaTask>[0]} options
+ */
+export function pollAudioTask(options) {
+  return pollOpenAiMediaTask({ ...options, capability: options.capability || 'audio' })
+}
+
+/**
+ * @param {Record<string, string | undefined>} [env]
+ */
+export function readOmnimuxAudioConfig(env = process.env) {
+  const route = resolveMediaRoute('audio', {}, parseMediaConfig(undefined), env)
+  return { baseUrl: route.baseUrl, apiKey: route.apiKey, modelId: route.modelId }
+}
+
+/**
+ * @param {Parameters<typeof executeOmnimuxMedia>[1]} input
+ */
+export function executeOmnimuxAudio(input) {
+  return executeOmnimuxMedia('audio', input)
+}

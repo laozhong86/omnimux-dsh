@@ -54,7 +54,28 @@ const DEFAULT_FALLBACK_SCHEMA: Record<MaterialType, ModelParameterSchema> = {
       defaultValue: '1080P',
     },
   },
-  audio: {},
+  audio: {
+    duration: {
+      options: [
+        { value: 30, label: '30s' },
+        { value: 60, label: '60s' },
+        { value: 120, label: '120s' },
+      ],
+      defaultValue: 60,
+      unit: 's',
+    },
+    voice: {
+      options: [
+        { value: 'alloy', label: 'Alloy' },
+        { value: 'echo', label: 'Echo' },
+        { value: 'fable', label: 'Fable' },
+        { value: 'onyx', label: 'Onyx' },
+        { value: 'nova', label: 'Nova' },
+        { value: 'shimmer', label: 'Shimmer' },
+      ],
+      defaultValue: 'alloy',
+    },
+  },
   text: {},
 };
 
@@ -73,6 +94,10 @@ export interface UseModelParameterSchemaResult {
   defaultQuality: string;
   hasSoundSupport: boolean;
   defaultSound: boolean;
+  voiceOptions: Array<{ value: string; label: string }>;
+  defaultVoice: string;
+  hasInstrumentalSupport: boolean;
+  defaultInstrumental: boolean;
 }
 
 /** 获取本地缓存的 Catalog（带异常保护） */
@@ -147,6 +172,14 @@ export function useModelParameterSchema(
     const hasSoundSupport = Boolean(schema.sound?.supported);
     const defaultSound = Boolean(schema.sound?.defaultValue);
 
+    // 音色 (TTS)
+    const voiceOptions = schema.voice?.options ?? [];
+    const defaultVoice = schema.voice?.defaultValue ?? voiceOptions[0]?.value ?? '';
+
+    // 纯音乐 (Suno)
+    const hasInstrumentalSupport = Boolean(schema.instrumental?.supported);
+    const defaultInstrumental = Boolean(schema.instrumental?.defaultValue);
+
     return {
       schema,
       modelItem,
@@ -162,6 +195,10 @@ export function useModelParameterSchema(
       defaultQuality,
       hasSoundSupport,
       defaultSound,
+      voiceOptions,
+      defaultVoice,
+      hasInstrumentalSupport,
+      defaultInstrumental,
     };
   }, [materialType, modelId, catalog]);
 }

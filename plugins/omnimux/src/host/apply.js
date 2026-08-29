@@ -1,3 +1,4 @@
+import { executeOmnimuxAudio } from '../media/audio.js'
 import { executeOmnimuxImage } from '../media/image.js'
 import { executeOmnimuxVideo } from '../media/video.js'
 import { CLIENT_NAME, DEFAULT_SITE, resolveSiteBaseUrl } from '../auth/omnimux-auth.js'
@@ -80,6 +81,7 @@ export function apply(ctx, config = {}) {
   const jsonOut = JSON_TOOL_OUTPUT
   mountMedia(ctx, { kind: 'video', execute: executeOmnimuxVideo, media: hub.media, store, jsonOut })
   mountMedia(ctx, { kind: 'image', execute: executeOmnimuxImage, media: hub.media, store, jsonOut })
+  mountMedia(ctx, { kind: 'audio', execute: executeOmnimuxAudio, media: hub.media, store, jsonOut })
   mountTextComplete(ctx, hub, jsonOut, rethrow)
   mountOfficial(ctx, {
     hub,

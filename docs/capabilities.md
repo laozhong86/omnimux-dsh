@@ -26,6 +26,7 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | OmniMux chat as default dsh model | **absent** | no adapter; Settings custom provider still works |
 | `identity` provide for other plugins | **real** (keyless) | `ctx.get('identity').status` / `require`. PAT never in the payload. HTTP `/omnimux/auth/*` still for the browser. |
 | `imageGenerate` / `omnimux_image_submit` | **real** | Default `gpt-image-2`. Live: [docs/evidence/2026-08-16-omnimux-image.md](evidence/2026-08-16-omnimux-image.md). Also live: `grok-imagine-image`. `nano_banana_2` excluded (tokens-flow 403) |
+| `audioGenerate` / `omnimux_audio_submit` | **real** (keyless) | Default `suno`. Also routes `gpt-4o-mini-tts` and `whisper-1`. Full seam + workflow mapping |
 | `needs-omnimux` error | **real** (keyless) | `identity.require()` throws `needs-omnimux` when unsigned. Official-only tools throw the same code when unsigned |
 | `omnimux_social_data` | **unproven** | First cut: tiktok/video, tiktok/user, instagram/post via `/v1/chat/completions`. Keyless only |
 | Analytics tools / routes | **unproven** | `omnimux_analytics_*` (`daily_metrics`, `best_time`, `frequency`, `content_decay`, `follower_stats`, `posts`, `sync_external`, `inbox`) + Host `/omnimux/analytics/*` wrap `/api/social/v1/analytics/*`. Unauthenticated → `needs-omnimux` |

@@ -125,6 +125,7 @@ if (!key) {
   })}\n`)
   process.exit(0)
 }
+process.env.OMNIMUX_API_KEY = key
 
 const started = Date.now()
 try {

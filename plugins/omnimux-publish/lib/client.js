@@ -334,53 +334,6 @@ var en = {
   "platform.x": "X (Twitter)"
 };
 
-// src/client/stage-store.js
-var PRODUCT_STAGE_EVENT = "dsh-product-stage";
-var STAGE_ID = "omnimux-publish";
-function createStageStore(getStage) {
-  let open = false;
-  const listeners = /* @__PURE__ */ new Set();
-  function emit() {
-    for (const listener of listeners) listener();
-  }
-  window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
-    const id = event instanceof CustomEvent ? event.detail?.id : void 0;
-    if (id !== STAGE_ID && open) {
-      open = false;
-      emit();
-    }
-  });
-  return {
-    getSnapshot: () => open,
-    readBox() {
-      return getStage().readBox();
-    },
-    /**
-     * @param {() => void} listener
-     */
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    /**
-     * @param {boolean} next
-     */
-    set(next) {
-      if (open === next) return;
-      open = next;
-      const stage = getStage();
-      if (open) stage.claim(STAGE_ID);
-      else stage.release(STAGE_ID);
-      emit();
-    },
-    toggle() {
-      this.set(!open);
-    }
-  };
-}
-
 // ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
 var import_react = require("react");
 var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
@@ -1033,6 +986,80 @@ var StageHeader = (0, import_react.forwardRef)(function StageHeader2({ title, su
     })]
   });
 });
+var PRODUCT_STAGE_EVENT = "dsh-product-stage";
+var ACTIVE_STAGE_STORAGE_KEY = "omnimux_active_product_stage";
+function createStageStore(stageId, getStage = () => typeof window !== "undefined" ? window.__omnimuxStage : void 0) {
+  let open = false;
+  if (typeof window !== "undefined") try {
+    open = window.localStorage.getItem(ACTIVE_STAGE_STORAGE_KEY) === stageId;
+  } catch {
+  }
+  const listeners = /* @__PURE__ */ new Set();
+  function emit() {
+    for (const listener of listeners) try {
+      listener();
+    } catch (err) {
+      console.error("StageStore listener error:", err);
+    }
+  }
+  if (open && typeof window !== "undefined") {
+    const restore = () => {
+      try {
+        const stage = getStage();
+        if (stage && typeof stage.claim === "function") stage.claim(stageId);
+      } catch {
+      }
+    };
+    if (typeof queueMicrotask === "function") queueMicrotask(restore);
+    else setTimeout(restore, 0);
+  }
+  if (typeof window !== "undefined") window.addEventListener(PRODUCT_STAGE_EVENT, (event) => {
+    const id = event instanceof CustomEvent ? event.detail?.id : void 0;
+    if (id !== stageId && open) {
+      open = false;
+      emit();
+    } else if (id === stageId && !open) {
+      open = true;
+      emit();
+    }
+  });
+  return {
+    getSnapshot: () => open,
+    readBox() {
+      const stage = getStage();
+      if (stage && typeof stage.readBox === "function") return stage.readBox();
+      const left = 56;
+      const winWidth = typeof window !== "undefined" ? window.innerWidth : 1280;
+      const winHeight = typeof window !== "undefined" ? window.innerHeight : 800;
+      return {
+        top: 0,
+        left,
+        width: Math.max(8, winWidth - left),
+        height: Math.max(8, winHeight)
+      };
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    set(next) {
+      if (open === next) return;
+      open = next;
+      const stage = getStage();
+      if (open) stage?.claim?.(stageId);
+      else stage?.release?.(stageId);
+      emit();
+    },
+    open() {
+      this.set(true);
+    },
+    close() {
+      this.set(false);
+    }
+  };
+}
 var SIDEBAR_ENTRY_COMMON_STYLES = `
 .omnimux-sidebar-nav-entry {
   box-sizing: border-box; display: flex; align-items: center; gap: 6px; position: relative;
@@ -1120,6 +1147,12 @@ function createSidebarEntry(options) {
     unsubscribeStage();
     unsubscribeLocale();
   };
+}
+
+// src/client/stage-store.js
+var STAGE_ID = "omnimux-publish";
+function createStageStore2(getStage) {
+  return createStageStore(STAGE_ID, getStage);
 }
 
 // src/client/sidebar-entry.js
@@ -3690,7 +3723,7 @@ function apply(ctx) {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "omnimux-publish: dictionaries");
   ctx.effect(() => ensureCss(), "omnimux-publish: styles");
   const t = ctx.locale.bind(NS);
-  const stage = createStageStore(() => window.__omnimuxStage);
+  const stage = createStageStore2(() => window.__omnimuxStage);
   const stageFace = () => ({ t, stage });
   ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), "omnimux-publish: sidebar entry");
   ctx.slots.inject("shell.overlay", () => ctx.slots.register({
