@@ -205,6 +205,20 @@ describe('LoginGate.jsx 1:1 structure', () => {
     assert.match(source, /omnimux-login-gate-hero-title/)
   })
 
+  it('renders the locked Unsplash ocean poster as hero media + jellyfish img', () => {
+    assert.match(source, /className="omnimux-login-gate-hero-media"/)
+    assert.match(
+      source,
+      /className="omnimux-login-gate-hero-jellyfish"/,
+    )
+    assert.match(
+      source,
+      /src="https:\/\/images\.unsplash\.com\/photo-1544551763-46a013bb70d5\?auto=format&fit=crop&w=600&q=80"/,
+    )
+    assert.match(source, /alt="Ocean Aesthetic"/)
+    assert.match(source, /className="omnimux-login-gate-hero-scrim"/)
+  })
+
   it('does not use kit ModalDialog chrome (custom 820×520 poster)', () => {
     assert.doesNotMatch(source, /ModalDialog/)
     assert.match(source, /from 'dsh-ui-kit'/)
@@ -242,11 +256,52 @@ describe('HUB_CSS login-gate 1:1 tokens', () => {
     assert.match(styles, /mix-blend-mode:\s*overlay/)
   })
 
+  it('locks the solid-white CTA tokens so theme hover cannot invert contrast', () => {
+    assert.match(styles, /--login-gate-cta-bg:\s*#ffffff/)
+    assert.match(styles, /--login-gate-cta-text:\s*#09090b/)
+    assert.match(styles, /--login-gate-cta-hover:\s*#f4f4f5/)
+    assert.match(styles, /--login-gate-cta-active:\s*#e4e4e7/)
+    assert.match(styles, /background:\s*var\(--login-gate-cta-bg,\s*#ffffff\)\s*!important/)
+    assert.match(styles, /color:\s*var\(--login-gate-cta-text,\s*#09090b\)\s*!important/)
+    assert.match(
+      styles,
+      /\.omnimux-login-gate-cta:hover:not\(:disabled\):not\(\[aria-disabled="true"\]\) \{[\s\S]*?background:\s*var\(--login-gate-cta-hover,\s*#f4f4f5\)\s*!important/,
+    )
+    assert.match(
+      styles,
+      /\.omnimux-login-gate-cta:hover:not\(:disabled\):not\(\[aria-disabled="true"\]\) \{[\s\S]*?color:\s*var\(--login-gate-cta-text,\s*#09090b\)\s*!important/,
+    )
+    assert.match(
+      styles,
+      /\.omnimux-login-gate-cta:active:not\(:disabled\):not\(\[aria-disabled="true"\]\) \{[\s\S]*?background:\s*var\(--login-gate-cta-active,\s*#e4e4e7\)\s*!important/,
+    )
+    assert.doesNotMatch(
+      styles,
+      /\.omnimux-login-gate-cta:hover[\s\S]{0,280}--dsw-alias-interactive-bg-hover/,
+    )
+    assert.doesNotMatch(
+      styles,
+      /\.omnimux-login-gate-cta:hover[\s\S]{0,280}--dsw-alias-bg-base/,
+    )
+  })
+
+  it('keeps the waiting reopen link readable in both themes', () => {
+    assert.match(styles, /\.omnimux-login-gate-reopen \{[\s\S]*?color:\s*var\(--dsw-alias-label-secondary,\s*#d4d4d8\)\s*!important/)
+    assert.match(styles, /\.omnimux-login-gate-reopen:hover \{[\s\S]*?color:\s*var\(--dsw-alias-label-primary,\s*#ffffff\)\s*!important/)
+  })
+
   it('embeds deep-sea media, box-sizing, and font fallbacks so the poster is not a purple fog', () => {
     assert.match(styles, /box-sizing:\s*border-box/)
     assert.match(styles, /\.omnimux-login-gate-hero-media/)
+    assert.match(
+      styles,
+      /url\('https:\/\/images\.unsplash\.com\/photo-1544551763-46a013bb70d5\?auto=format&fit=crop&w=800&q=80'\)/,
+    )
+    assert.match(styles, /radial-gradient\(circle at 50% 25%, rgba\(255, 255, 255, 0\.25\) 0%, transparent 60%\)/)
     assert.match(styles, /data:image\/svg\+xml/)
     assert.match(styles, /\.omnimux-login-gate-hero-jellyfish/)
+    assert.match(styles, /object-fit:\s*cover/)
+    assert.match(styles, /mask-image:\s*radial-gradient\(circle at 50% 45%, black 48%, transparent 75%\)/)
     assert.match(styles, /\.omnimux-login-gate-hero-title/)
     assert.match(styles, /padding:\s*32px 30px 36px/)
     assert.match(styles, /'Cinzel', 'Playfair Display', 'Didot', 'Songti SC', 'STSong', Georgia, serif/)
@@ -300,20 +355,28 @@ describe('HUB_CSS real stylesheet parse', () => {
     return match[0]
   }
 
-  it('parses .omnimux-login-gate-hero-media as a complete quoted SVG data-uri', () => {
+  it('parses .omnimux-login-gate-hero-media with the locked Unsplash ocean url and SVG fallback', () => {
     const sheet = loadSheet()
     const rule = ruleFor(sheet, '.omnimux-login-gate-hero-media')
     const backgroundImage = rule.style.getPropertyValue('background-image')
-    assert.ok(backgroundImage.startsWith('url("data:image/svg+xml,'), backgroundImage.slice(0, 80))
+    assert.match(backgroundImage, /radial-gradient\(circle at 50% 25%/)
+    assert.match(
+      backgroundImage,
+      /url\(["']?https:\/\/images\.unsplash\.com\/photo-1544551763-46a013bb70d5\?auto=format&fit=crop&w=800&q=80["']?\)/,
+    )
     const dataUri = firstQuotedDataUri(backgroundImage)
     assert.ok(dataUri.startsWith('url("data:image/svg+xml,'))
     assert.ok(dataUri.endsWith('")'))
     assert.match(dataUri, /%3Csvg/)
     assert.match(dataUri, /%3C%2Fsvg%3E/)
     assert.ok(dataUri.length > 800, `encoded sea svg looks truncated: ${dataUri.length}`)
+    assert.equal(rule.style.getPropertyValue('background-size'), 'cover')
+    assert.equal(rule.style.getPropertyValue('background-position'), 'center 25%')
+    assert.equal(rule.style.getPropertyValue('mix-blend-mode'), 'overlay')
+    assert.equal(rule.style.getPropertyValue('opacity'), '0.92')
   })
 
-  it('parses .omnimux-login-gate-hero-jellyfish with a quoted SVG data-uri and valid size', () => {
+  it('parses .omnimux-login-gate-hero-jellyfish with prototype geometry and SVG fallback', () => {
     const sheet = loadSheet()
     const rule = ruleFor(sheet, '.omnimux-login-gate-hero-jellyfish')
     const backgroundImage = rule.style.getPropertyValue('background-image')
@@ -324,6 +387,10 @@ describe('HUB_CSS real stylesheet parse', () => {
     assert.match(dataUri, /%3C%2Fsvg%3E/)
     assert.equal(rule.style.getPropertyValue('width'), '280px')
     assert.equal(rule.style.getPropertyValue('height'), '280px')
+    assert.equal(rule.style.getPropertyValue('object-fit'), 'cover')
+    assert.equal(rule.style.getPropertyValue('object-position'), 'center')
+    assert.equal(rule.style.getPropertyValue('opacity'), '0.92')
+    assert.match(rule.style.getPropertyValue('mask-image') || rule.style.getPropertyValue('-webkit-mask-image'), /circle at 50% 45%/)
     assert.ok(dataUri.length > 400, `encoded jellyfish svg looks truncated: ${dataUri.length}`)
   })
 
@@ -345,5 +412,61 @@ describe('HUB_CSS real stylesheet parse', () => {
     const rule = ruleFor(sheet, '.omnimux-login-gate-dialog')
     assert.equal(rule.style.getPropertyValue('width'), '820px')
     assert.equal(rule.style.getPropertyValue('height'), '520px')
+  })
+
+  it('parses dialog-scoped solid-white CTA tokens independent of host theme', () => {
+    const sheet = loadSheet()
+    const dialog = ruleFor(sheet, '.omnimux-login-gate-dialog')
+    assert.equal(dialog.style.getPropertyValue('--login-gate-cta-bg'), '#ffffff')
+    assert.equal(dialog.style.getPropertyValue('--login-gate-cta-text'), '#09090b')
+    assert.equal(dialog.style.getPropertyValue('--login-gate-cta-hover'), '#f4f4f5')
+    assert.equal(dialog.style.getPropertyValue('--login-gate-cta-active'), '#e4e4e7')
+  })
+
+  it('parses .omnimux-login-gate-cta as a solid white button with dark text', () => {
+    const sheet = loadSheet()
+    const rule = ruleFor(sheet, '.omnimux-login-gate-cta')
+    assert.equal(rule.style.getPropertyValue('display'), 'inline-flex')
+    assert.equal(rule.style.getPropertyValue('height'), '40px')
+    assert.equal(rule.style.getPropertyValue('padding'), '0px 28px')
+    assert.equal(rule.style.getPropertyValue('font-size'), '14.5px')
+    assert.equal(rule.style.getPropertyValue('font-weight'), '700')
+    assert.equal(rule.style.getPropertyValue('border-radius'), '8px')
+    assert.equal(rule.style.getPropertyValue('border-style') || rule.style.borderStyle, 'none')
+    assert.equal(rule.style.getPropertyValue('background'), 'var(--login-gate-cta-bg, #ffffff)')
+    assert.equal(rule.style.getPropertyValue('color'), 'var(--login-gate-cta-text, #09090b)')
+    assert.equal(rule.style.getPropertyValue('box-shadow'), '0 4px 14px rgba(255, 255, 255, 0.15)')
+    assert.equal(rule.style.getPropertyValue('cursor'), 'pointer')
+    assert.doesNotMatch(rule.style.getPropertyValue('background'), /interactive-bg-hover/)
+    assert.doesNotMatch(rule.style.getPropertyValue('color'), /bg-base/)
+  })
+
+  it('parses CTA hover as zinc-100 white, never ghost interactive-bg-hover', () => {
+    const sheet = loadSheet()
+    const rule = ruleFor(sheet, '.omnimux-login-gate-cta:hover:not(:disabled):not([aria-disabled="true"])')
+    assert.equal(rule.style.getPropertyValue('background'), 'var(--login-gate-cta-hover, #f4f4f5)')
+    assert.equal(rule.style.getPropertyValue('color'), 'var(--login-gate-cta-text, #09090b)')
+    assert.equal(rule.style.getPropertyValue('transform'), 'translateY(-1px)')
+    assert.equal(rule.style.getPropertyValue('box-shadow'), '0 6px 20px rgba(255, 255, 255, 0.25)')
+    assert.doesNotMatch(rule.cssText, /--dsw-alias-interactive-bg-hover/)
+    assert.doesNotMatch(rule.cssText, /--dsw-alias-bg-base/)
+  })
+
+  it('parses CTA active as zinc-200 white with dark text retained', () => {
+    const sheet = loadSheet()
+    const rule = ruleFor(sheet, '.omnimux-login-gate-cta:active:not(:disabled):not([aria-disabled="true"])')
+    assert.equal(rule.style.getPropertyValue('background'), 'var(--login-gate-cta-active, #e4e4e7)')
+    assert.equal(rule.style.getPropertyValue('color'), 'var(--login-gate-cta-text, #09090b)')
+    assert.equal(rule.style.getPropertyValue('transform'), 'translateY(0)')
+    assert.equal(rule.style.getPropertyValue('box-shadow'), '0 2px 8px rgba(255, 255, 255, 0.15)')
+  })
+
+  it('parses reopen hover as primary label, not a ghost-button fill', () => {
+    const sheet = loadSheet()
+    const rest = ruleFor(sheet, '.omnimux-login-gate-reopen')
+    const hover = ruleFor(sheet, '.omnimux-login-gate-reopen:hover')
+    assert.equal(rest.style.getPropertyValue('color'), 'var(--dsw-alias-label-secondary, #d4d4d8)')
+    assert.equal(hover.style.getPropertyValue('color'), 'var(--dsw-alias-label-primary, #ffffff)')
+    assert.doesNotMatch(hover.cssText, /interactive-bg-hover/)
   })
 })

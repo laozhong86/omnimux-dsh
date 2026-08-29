@@ -62,7 +62,7 @@ describe('inspiration modal segmented switch', () => {
   })
 
   it('renders native tab buttons instead of dsh-ui-kit Button so kit geometry cannot win', () => {
-    const section = readFileSync(join(here, 'InspirationSection.jsx'), 'utf8')
+    const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
     const switchBlock = section.slice(
       section.indexOf('omnimux-inspiration-preview-switch'),
       section.indexOf('omnimux-inspiration-preview-player'),
@@ -74,7 +74,7 @@ describe('inspiration modal segmented switch', () => {
   })
 
   it('uses 16px glyphs and forbids the 13px lucide layers polyline blob', () => {
-    const section = readFileSync(join(here, 'InspirationSection.jsx'), 'utf8')
+    const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
     const switchBlock = section.slice(
       section.indexOf('omnimux-inspiration-preview-switch'),
       section.indexOf('omnimux-inspiration-preview-player'),

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
@@ -103,6 +103,35 @@ test('registerCatalogSkillProvider registers with ctx.skills', () => {
   assert.equal(registered, null)
 })
 
+test('registerCatalogSkillProvider never throws when ctx.skills is a Cordis Proxy that throws', () => {
+  // 复刻 Cordis 的 ctx Proxy：访问未注入的 services 会直接 throw
+  // "cannot get property ... without inject"，可选链 ?. 拦不住。
+  // registerCatalogSkillProvider 必须 try/catch 绝对防御，否则整个插件在 apply 阶段崩掉 Host。
+  const cordisProxy = new Proxy({}, {
+    get(_target, prop) {
+      if (prop === 'skills') throw new Error('cannot get property "skills" without inject')
+      return undefined
+    },
+  })
+
+  let disposer
+  assert.doesNotThrow(() => {
+    disposer = registerCatalogSkillProvider(cordisProxy)
+  })
+  assert.equal(typeof disposer, 'function')
+  disposer()
+})
+
+test('registerCatalogSkillProvider no-ops when ctx.skills lacks registerProvider', () => {
+  const noSkills = { skills: {} }
+  let disposer
+  assert.doesNotThrow(() => {
+    disposer = registerCatalogSkillProvider(noSkills)
+  })
+  assert.equal(typeof disposer, 'function')
+  disposer()
+})
+
 // —— DSH 官方契约镜像校验（依据 @deepseek-ai/dsh-skill/lib/index.js）——
 // validateCandidate 硬性要求 name/description/source/rank/provider，缺失即抛错并中止注册；
 // validateDefinition 额外要求 content。这里把官方规则搬进单测，防止契约漂移静默回归。
@@ -160,4 +189,16 @@ test('resolved definitions satisfy official validateDefinition', async () => {
     assert.equal(definition.provider, provider.name)
     assert.equal(definition.source, 'omnimux-market')
   }
+})
+
+test('host.ts declares skills in inject so ctx.skills is safely readable', () => {
+  // R1 事故回归护栏：host.ts 必须把 skills 加入 inject 声明，
+  // 否则 Cordis 在 apply() 阶段读 ctx.skills 会抛 "without inject" 崩掉整个 Host。
+  const hostPath = join(import.meta.dirname, '..', '..', 'src', 'host.ts')
+  const host = readFileSync(hostPath, 'utf8')
+  const injectMatch = host.match(/export\s+const\s+inject\s*=\s*(\[[\s\S]*?\])/)
+  assert.ok(injectMatch, 'host.ts must declare export const inject')
+  const injectArr = injectMatch[1]
+  assert.match(injectArr, /'skills'/, 'host.ts inject must declare "skills" so ctx.skills is inject-required-safe')
+  assert.match(injectArr, /'tools'/, 'host.ts inject must still declare "tools"')
 })

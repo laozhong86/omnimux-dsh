@@ -35,6 +35,8 @@ export default {
           fg: 'var(--accent-fg)',
           foreground: 'var(--accent-fg)',
           glow: 'var(--accent-glow)',
+          /* Export 按钮内部分隔线：派生自 --accent-fg，双主题自动跟随 */
+          divider: 'var(--accent-divider)',
         },
         clip: {
           video: 'var(--c-video)',

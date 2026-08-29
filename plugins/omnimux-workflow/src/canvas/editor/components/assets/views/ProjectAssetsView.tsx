@@ -44,10 +44,7 @@ export const ProjectAssetsView: React.FC<ProjectAssetsViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({
-    'folder-1': true,
-    'folder-2': false,
-  });
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
 
   const toggleFolder = (folderId: string) => {
     setExpandedFolders((prev) => ({ ...prev, [folderId]: !prev[folderId] }));

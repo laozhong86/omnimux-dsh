@@ -224,10 +224,24 @@ export function createCatalogSkillProvider(opts = {}) {
 
 /**
  * Register with Cordis ctx.skills if present.
+ * Cordis 的 ctx 是 Proxy：访问未声明 inject 的服务（如 skills）会直接 throw
+ * "cannot get property ... without inject"，可选链 ?. 无法拦截这种抛错。
+ * 因此改用 try/catch 绝对防御：skills 缺失或不可注入时静默降级为空操作，
+ * 绝不让插件因一个可选的技能目录注册而阻断整个 Host 启动。
  * @param {any} ctx
  * @param {Object} [opts]
  */
 export function registerCatalogSkillProvider(ctx, opts = {}) {
-  if (!ctx.skills?.registerProvider) return () => {}
-  return ctx.skills.registerProvider(() => createCatalogSkillProvider(opts))
+  let skills
+  try {
+    skills = ctx.skills
+  } catch {
+    return () => {}
+  }
+  if (!skills || typeof skills.registerProvider !== 'function') return () => {}
+  try {
+    return skills.registerProvider(() => createCatalogSkillProvider(opts))
+  } catch {
+    return () => {}
+  }
 }

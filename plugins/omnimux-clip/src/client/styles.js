@@ -50,6 +50,11 @@ html:not([data-dsh-product-stage]) .omnimux-clip-stage[data-clip-mode="canvas"][
 .omnimux-clip-stage[data-clip-mode="canvas"] .omnimux-clip-stage-heading { /* exempt-ui08: 画布内浮层操作区标题，非页面标题栏 */
   display: none !important;
 }
+/* canvas 模式下右段被顶到最右，会被浮层关闭按钮压住，同样留出 64px 安全区 */
+.omnimux-clip-stage[data-clip-mode="canvas"] .openreel-studio-root > * header,
+.omnimux-clip-stage[data-clip-mode="canvas"] .openreel-studio-root header:first-of-type {
+  padding-right: 64px;
+}
 .omnimux-clip-stage-header, /* exempt-ui08: 画布内浮层操作区，非页面标题栏 */
 .omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-header, /* exempt-ui08: 同上 */
 .omnimux-clip-stage[data-clip-mode="canvas"] .omnimux-clip-stage-header { /* exempt-ui08: 同上 */

@@ -295,15 +295,15 @@ export function ProductsStage({ t, stage }) {
       {creating ? (
         <ProductFormDialog
           t={t}
-          mode="create"
-          busy={busy}
-          error={formError}
-          onCancel={() => { setCreating(false); setFormError('') }}
-          onPick={handlePick}
-          onSubmit={(payload) => {
-            run(() => createProduct(payload), () => {
-              setCreating(false)
-            })
+          data={{ mode: 'create', busy, error: formError }}
+          onAction={{
+            onCancel: () => { setCreating(false); setFormError('') },
+            onPick: handlePick,
+            onSubmit: (payload) => {
+              run(() => createProduct(payload), () => {
+                setCreating(false)
+              })
+            },
           }}
         />
       ) : null}
@@ -311,25 +311,22 @@ export function ProductsStage({ t, stage }) {
       {editing ? (
         <ProductFormDialog
           t={t}
-          mode="edit"
-          busy={busy}
-          error={formError}
-          dirty={editingDirty}
-          initial={editing}
-          onCancel={() => { setEditing(null); setEditingDirty(false); setFormError('') }}
-          onPick={handlePick}
-          onReload={() => {
-            if (editing._fresh) {
+          data={{ mode: 'edit', busy, error: formError, dirty: editingDirty, initial: editing }}
+          onAction={{
+            onCancel: () => { setEditing(null); setEditingDirty(false); setFormError('') },
+            onPick: handlePick,
+            onReload: () => {
+              if (!editing._fresh) return
               setEditing(editing._fresh)
               setEditingDirty(false)
-            }
-          }}
-          onSubmit={(payload) => {
-            run(() => updateProduct(editing.id, payload), (result) => {
-              const product = result.body?.product
-              setEditing(product ?? null)
-              setEditingDirty(false)
-            })
+            },
+            onSubmit: (payload) => {
+              run(() => updateProduct(editing.id, payload), (result) => {
+                const product = result.body?.product
+                setEditing(product ?? null)
+                setEditingDirty(false)
+              })
+            },
           }}
         />
       ) : null}

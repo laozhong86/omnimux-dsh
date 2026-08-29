@@ -20,7 +20,7 @@ import { PLUGIN_PROMPT_LINES, createPluginTools } from './plugin-tools.js';
 import { installMarketPlugin, isProtectedBundle, listPlugins, readInstalledPlugins, withPluginInstallLock, } from './plugin-market.js';
 import { renderAttachedExpertSection, sessionIdFromExec } from './session-attach.js';
 export const name = 'omnimux-market';
-export const inject = ['tools'];
+export const inject = ['tools', 'skills'];
 export const Config = Schema.object({
     apiBase: Schema.string().default('https://api.skillhub.cn').description('SkillHub API'),
     webBase: Schema.string().default('https://skillhub.cn').description('技能主页'),

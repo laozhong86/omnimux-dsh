@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   X,
   ArrowUp,
@@ -13,6 +13,7 @@ import {
   CanvasItemContextMenu,
   AssetItemContextMenu,
   FolderContextMenu,
+  extractCanvasAssets,
 } from './assets';
 import type {
   ActiveTab,
@@ -46,169 +47,6 @@ interface AssetsDrawerProps {
   onFocusNode?: (nodeId: string) => void;
 }
 
-const INITIAL_CANVAS_NODES: CanvasNodeItem[] = [
-  {
-    id: 'node-1',
-    name: '截屏2026-08-21 12.17.35.png',
-    type: 'image',
-    prompt: 'masterpiece, 1girl, cyberpunk city background, neon lights, 8k',
-    previewUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80',
-    tags: ['scene'],
-    updatedAt: Date.now() - 1000 * 60 * 15,
-  },
-  {
-    id: 'node-2',
-    name: '截屏2026-08-22 11.24.02.png',
-    type: 'image',
-    prompt: 'ayla character portrait, sci-fi costume, detailed face',
-    previewUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=400&q=80',
-    tags: ['person'],
-    updatedAt: Date.now() - 1000 * 60 * 45,
-  },
-  {
-    id: 'node-3',
-    name: '截屏2026-08-22 11.54.15.png',
-    type: 'image',
-    prompt: 'cyberpunk alley at night, rain reflection on ground',
-    previewUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80',
-    tags: ['scene'],
-    updatedAt: Date.now() - 1000 * 60 * 80,
-  },
-  {
-    id: 'node-4',
-    name: '截屏2026-08-22 14.26.02.png',
-    type: 'image',
-    prompt: 'high-tech quantum terminal device, glowing blue interface',
-    previewUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&q=80',
-    tags: ['prop'],
-    updatedAt: Date.now() - 1000 * 60 * 110,
-  },
-  {
-    id: 'node-5',
-    name: '播客男.MP3',
-    type: 'audio',
-    tags: ['voice'],
-    updatedAt: Date.now() - 1000 * 60 * 140,
-  },
-  {
-    id: 'node-6',
-    name: '分镜脚本大纲 #01.md',
-    type: 'text',
-    prompt: '第一幕：雨夜初遇，主角从阴影中走出，手持量子终端...',
-    tags: ['draft'],
-    updatedAt: Date.now() - 1000 * 60 * 180,
-  },
-  {
-    id: 'node-7',
-    name: '主角回眸动态分镜_Seedance.mp4',
-    type: 'video',
-    previewUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&q=80',
-    tags: ['final'],
-    updatedAt: Date.now() - 1000 * 60 * 240,
-  },
-];
-
-const INITIAL_ASSETS: AssetItem[] = [
-  {
-    id: 'folder-1',
-    name: '01_角色立绘与三视图',
-    type: 'folder',
-    itemCount: 4,
-    updatedAt: Date.now() - 1000 * 60 * 60,
-  },
-  {
-    id: 'folder-2',
-    name: '02_分镜参考素材',
-    type: 'folder',
-    itemCount: 8,
-    updatedAt: Date.now() - 1000 * 60 * 120,
-  },
-  {
-    id: 'asset-1',
-    name: '截屏2026-08-21 12.17.35.png',
-    type: 'image',
-    fileExt: 'PNG',
-    size: '2.4 MB',
-    resolution: '1920 × 1080',
-    tags: ['场景底图', '后期调色'],
-    previewUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80',
-    updatedAt: Date.now() - 1000 * 60 * 30,
-  },
-  {
-    id: 'asset-2',
-    name: '截屏2026-08-22 11.24.02.png',
-    type: 'image',
-    fileExt: 'PNG',
-    size: '313 KB',
-    resolution: '1622 × 1194',
-    tags: ['角色立绘'],
-    previewUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=400&q=80',
-    updatedAt: Date.now() - 1000 * 60 * 45,
-  },
-  {
-    id: 'asset-3',
-    name: '雨夜追逐_动态分镜_v2.mp4',
-    type: 'video',
-    fileExt: 'MP4',
-    size: '28.5 MB',
-    duration: '00:08',
-    resolution: '1920 × 1080',
-    tags: ['特写镜头', '特效分层'],
-    previewUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&q=80',
-    updatedAt: Date.now() - 1000 * 60 * 80,
-  },
-  {
-    id: 'asset-4',
-    name: '短剧第一季_台词脚本_定稿.pdf',
-    type: 'doc',
-    fileExt: 'PDF',
-    size: '840 KB',
-    tags: ['特写镜头'],
-    updatedAt: Date.now() - 1000 * 60 * 150,
-  },
-  {
-    id: 'asset-5',
-    name: '播客男.MP3',
-    type: 'audio',
-    fileExt: 'MP3',
-    size: '4.2 MB',
-    tags: ['音效提示'],
-    updatedAt: Date.now() - 1000 * 60 * 200,
-  },
-];
-
-const INITIAL_SUBJECTS: SubjectPack[] = [
-  {
-    id: 'sub-1',
-    name: '主角·艾拉 (Ayla)',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-    itemCount: 6,
-    tags: ['立绘', '三视图', 'Lora模型', '音色'],
-    updatedAt: Date.now() - 1000 * 60 * 30,
-    previewUrls: [
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-    ],
-  },
-  {
-    id: 'sub-2',
-    name: '反派·赛博机械师·维克托',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-    itemCount: 4,
-    tags: ['角色', '概念图', '机甲'],
-    updatedAt: Date.now() - 1000 * 60 * 90,
-    previewUrls: [],
-  },
-  {
-    id: 'sub-3',
-    name: '核心场景·老城区地下黑市',
-    avatar: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=300&auto=format&fit=crop&q=80',
-    itemCount: 5,
-    tags: ['场景', '氛围图', '光影方案'],
-    updatedAt: Date.now() - 1000 * 60 * 180,
-    previewUrls: [],
-  },
-];
-
 export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
   isOpen,
   onClose,
@@ -222,10 +60,10 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
   const [drawerWidth, setDrawerWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
 
-  // Data states
-  const [canvasNodes, setCanvasNodes] = useState<CanvasNodeItem[]>(INITIAL_CANVAS_NODES);
-  const [assets, setAssets] = useState<AssetItem[]>(INITIAL_ASSETS);
-  const [subjects, setSubjects] = useState<SubjectPack[]>(INITIAL_SUBJECTS);
+  // 画布 Tab 由真实节点纯派生；资产 / 主体库初始为空，导入后才写入本地 list。
+  const canvasNodes = useMemo(() => extractCanvasAssets(propNodes), [propNodes]);
+  const [assets, setAssets] = useState<AssetItem[]>([]);
+  const [subjects, setSubjects] = useState<SubjectPack[]>([]);
 
   // Context Menu state
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
@@ -241,50 +79,16 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
     x: 0,
     y: 0,
   });
-  const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync canvas nodes from prop if available
   useEffect(() => {
-    if (propNodes && propNodes.length > 0) {
-      const mapNodeType = (n: any): 'image' | 'video' | 'audio' | 'text' | 'doc' => {
-        const materialType = String(n.data?.materialType || n.data?.mediaType || '').toLowerCase();
-        if (materialType === 'image') return 'image';
-        if (materialType === 'video') return 'video';
-        if (materialType === 'audio') return 'audio';
-        if (materialType === 'text') return 'text';
-
-        const t = String(n.type || '').toLowerCase();
-        if (t === 'video_composition' || t.includes('video') || t.includes('clip')) return 'video';
-        if (t.includes('image') || t === 'media') return 'image';
-        if (t.includes('audio') || t.includes('sound') || t.includes('voice')) return 'audio';
-        if (t.includes('prompt') || t.includes('text') || t.includes('script') || t === 'note' || t === 'table') return 'text';
-        return 'doc';
-      };
-
-      const mapped: CanvasNodeItem[] = propNodes.map((n: any) => {
-        const mappedType = mapNodeType(n);
-        const previewUrl =
-          n.data?.previewUrl ||
-          n.data?.imageUrl ||
-          n.data?.outputUrl ||
-          n.data?.mediaUrl ||
-          n.data?.coverUrl;
-        return {
-          id: n.id,
-          name: n.data?.label || n.data?.title || n.data?.name || `${n.type || '节点'} #${String(n.id || '').slice(-4)}`,
-          type: mappedType,
-          prompt: n.data?.prompt || n.data?.text || n.data?.content || '',
-          previewUrl,
-          real_path: n.data?.real_path || n.data?.path || n.data?.content,
-          tags: Array.isArray(n.data?.tags) ? n.data.tags : [],
-          updatedAt: n.data?.updatedAt || Date.now(),
-        };
-      });
-      setCanvasNodes(mapped);
-    } else {
-      setCanvasNodes(INITIAL_CANVAS_NODES);
-    }
-  }, [propNodes]);
+    return () => {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Width Resize Handler
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -426,7 +230,6 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
             name: item.name,
             type: (item.type as AssetItem['type']) || 'doc',
             fileExt: item.name.split('.').pop()?.toUpperCase() || 'FILE',
-            size: '2.4 MB',
             updatedAt: Date.now(),
             previewUrl: item.previewUrl,
             real_path: item.real_path,
@@ -456,34 +259,17 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         toast.success(`已复制文件名：${item.name}`);
         break;
       case 'duplicate':
-        setCanvasNodes((prev) => [
-          {
-            ...item,
-            id: `node-${Date.now()}`,
-            name: `副本_${item.name}`,
-            updatedAt: Date.now(),
-          },
-          ...prev,
-        ]);
-        toast.success(`已创建副本：${item.name}`);
+        toast.info('请在画布上复制节点');
         break;
       case 'toggle-tree-view':
         setCanvasViewMode((prev) => (prev === 'tree' ? 'grid' : 'tree'));
         toast.success(canvasViewMode === 'tree' ? '已切换到网格视图' : '已切换到树形视图');
         break;
-      case 'rename': {
-        const newName = prompt('重命名素材：', item.name);
-        if (newName && newName.trim()) {
-          setCanvasNodes((prev) =>
-            prev.map((n) => (n.id === item.id ? { ...n, name: newName.trim() } : n)),
-          );
-          toast.success('已重命名');
-        }
+      case 'rename':
+        toast.info('请在画布上重命名节点');
         break;
-      }
       case 'delete':
-        setCanvasNodes((prev) => prev.filter((n) => n.id !== item.id));
-        toast.success(`已删除：${item.name}`);
+        toast.info('请在画布上删除节点');
         break;
       default:
         toast.warning(`未识别的菜单动作：${action}`);
@@ -692,12 +478,7 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
               viewMode={canvasViewMode}
               onViewModeChange={setCanvasViewMode}
               onRefresh={() => {
-                if (propNodes && propNodes.length > 0) {
-                  toast.success('已刷新画布素材');
-                } else {
-                  setCanvasNodes([...INITIAL_CANVAS_NODES]);
-                  toast.success('已刷新画布素材');
-                }
+                toast.success('已刷新画布素材');
               }}
             />
 
