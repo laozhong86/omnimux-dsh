@@ -18,6 +18,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Writable } from 'node:stream';
+import { realNode, nodeEnv } from './resolve-node.mjs';
 
 const host = await import('../dist/index.js');
 
@@ -224,9 +225,9 @@ try {
   // ---- 4. 性能基线跑通出数字 ----
   const scriptDir = dirname(fileURLToPath(import.meta.url));
   const baseline = spawnSync(
-    process.execPath,
+    realNode(),
     [join(scriptDir, 'perf-baseline.mjs')],
-    { encoding: 'utf8', timeout: 180000 },
+    { encoding: 'utf8', timeout: 180000, env: nodeEnv() },
   );
   const baselineOk = baseline.status === 0;
   const numbersLine = (baseline.stdout || '').split('\n').find((line) => line.includes('host 全链路')) ?? '';
