@@ -108,6 +108,8 @@ test('installs bundled social-engagement-team as a full agent pack, not a flat S
   assert.equal(existsSync(join(pack, 'agents', 'ai-comment-specialist.md')), true)
   assert.equal(existsSync(join(pack, 'agents', 'signal-miner.md')), true)
   assert.equal(existsSync(join(pack, 'agents', 'brand-monitor.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'content-copywriter.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'visual-director.md')), true)
   const plugin = JSON.parse(readFileSync(join(pack, '.codebuddy-plugin', 'plugin.json'), 'utf8'))
   assert.equal(plugin.expertType, 'team')
   assert.equal(plugin.agentName, 'social-engagement-team-lead')
@@ -116,6 +118,8 @@ test('installs bundled social-engagement-team as a full agent pack, not a flat S
     'ai-comment-specialist',
     'signal-miner',
     'brand-monitor',
+    'content-copywriter',
+    'visual-director',
   ])
   const lead = readFileSync(join(pack, 'SKILL.md'), 'utf8')
   assert.match(lead, /社媒互动增长专家团 - 主理人/)
@@ -124,6 +128,42 @@ test('installs bundled social-engagement-team as a full agent pack, not a flat S
   assert.equal(existsSync(join(env.home, 'skills', 'social-engagement-ops', 'references', 'ai-comment-strategy.md')), true)
   const again = installItem({ catalog, id: 'exp-social-engagement-team', ...env })
   assert.equal(again.already, true)
+})
+
+/**
+ * 只解析「## 专属绑定技能」小节里的表格行（以 | ` 开头的行），
+ * 避免把"严禁越界调用 xxx"的说明文字误判为已绑定技能。
+ * @param {string} md
+ */
+function boundSkills(md) {
+  const section = md.split('## 专属绑定技能（Scoped Skills）')[1]?.split('\n## ')[0] ?? ''
+  return [...section.matchAll(/^\|\s*`([^`]+)`/gm)].map((m) => m[1])
+}
+
+test('subagents bind only their own scoped skills, never the whole catalog', () => {
+  const env = roots()
+  const catalog = loadCatalog()
+  installItem({ catalog, id: 'exp-social-engagement-team', ...env })
+  const pack = join(env.home, 'skills', 'social-engagement-team')
+
+  const copywriter = readFileSync(join(pack, 'agents', 'content-copywriter.md'), 'utf8')
+  const director = readFileSync(join(pack, 'agents', 'visual-director.md'), 'utf8')
+
+  const copyBound = boundSkills(copywriter)
+  const visualBound = boundSkills(director)
+
+  // 文案专员：只绑文案三件套
+  assert.deepEqual(copyBound.sort(), ['ad-creative', 'content-strategy', 'social-caption'])
+  // 视觉导演：只绑视觉三件套
+  assert.deepEqual(visualBound.sort(), ['character-scene-storyboard', 'cinematic-motion-language', 'dynamic-poster'])
+
+  // 两个子代理的技能集合完全不相交（严格的职责隔离）
+  const overlap = copyBound.filter((s) => visualBound.includes(s))
+  assert.deepEqual(overlap, [], '文案与视觉子代理不得共享技能')
+
+  // 隔离铁律文案仍在，作为给模型的显式约束（避开 markdown 加粗标记）
+  assert.match(copywriter, /越界调用视觉分镜类技能/)
+  assert.match(director, /越界调用文案类技能/)
 })
 
 test('installs a local WorkBuddy expert pack without git clone', () => {

@@ -3901,10 +3901,8 @@
       ],
       "skill": "ad-creative",
       "source": {
-        "type": "git",
-        "repo": "infometa/OmniMux-skills",
-        "path": "skills/ad-creative",
-        "ref": "main"
+        "type": "bundled",
+        "path": "catalog/skills/ad-creative"
       }
     },
     {
@@ -4152,10 +4150,8 @@
       ],
       "skill": "character-scene-storyboard",
       "source": {
-        "type": "git",
-        "repo": "infometa/OmniMux-skills",
-        "path": "skills/character-scene-storyboard",
-        "ref": "main"
+        "type": "bundled",
+        "path": "catalog/skills/character-scene-storyboard"
       }
     },
     {
@@ -4190,10 +4186,8 @@
       ],
       "skill": "cinematic-motion-language",
       "source": {
-        "type": "git",
-        "repo": "infometa/OmniMux-skills",
-        "path": "skills/cinematic-motion-language",
-        "ref": "main"
+        "type": "bundled",
+        "path": "catalog/skills/cinematic-motion-language"
       }
     },
     {
@@ -4248,10 +4242,8 @@
       ],
       "skill": "clip-export",
       "source": {
-        "type": "git",
-        "repo": "infometa/OmniMux-skills",
-        "path": "skills/clip-export",
-        "ref": "main"
+        "type": "bundled",
+        "path": "catalog/skills/clip-export"
       }
     },
     {
@@ -4287,10 +4279,8 @@
       ],
       "skill": "content-strategy",
       "source": {
-        "type": "git",
-        "repo": "infometa/OmniMux-skills",
-        "path": "skills/content-strategy",
-        "ref": "main"
+        "type": "bundled",
+        "path": "catalog/skills/content-strategy"
       }
     },
     {
@@ -4460,10 +4450,8 @@
       ],
       "skill": "dynamic-poster",
       "source": {
-        "type": "git",
-        "repo": "infometa/OmniMux-skills",
-        "path": "skills/dynamic-poster",
-        "ref": "main"
+        "type": "bundled",
+        "path": "catalog/skills/dynamic-poster"
       }
     },
     {
@@ -4498,10 +4486,8 @@
       ],
       "skill": "ecommerce-image",
       "source": {
-        "type": "git",
-        "repo": "infometa/OmniMux-skills",
-        "path": "skills/ecommerce-image",
-        "ref": "main"
+        "type": "bundled",
+        "path": "catalog/skills/ecommerce-image"
       }
     },
     {
@@ -5434,10 +5420,8 @@
       ],
       "skill": "social-caption",
       "source": {
-        "type": "git",
-        "repo": "infometa/OmniMux-skills",
-        "path": "skills/social-caption",
-        "ref": "main"
+        "type": "bundled",
+        "path": "catalog/skills/social-caption"
       }
     },
     {

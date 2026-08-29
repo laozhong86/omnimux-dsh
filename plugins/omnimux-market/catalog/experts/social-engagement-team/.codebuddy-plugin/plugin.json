@@ -13,7 +13,9 @@
       "interaction-automator",
       "ai-comment-specialist",
       "signal-miner",
-      "brand-monitor"
+      "brand-monitor",
+      "content-copywriter",
+      "visual-director"
     ]
   },
   "agents": [
@@ -21,7 +23,9 @@
     "./agents/interaction-automator.md",
     "./agents/ai-comment-specialist.md",
     "./agents/signal-miner.md",
-    "./agents/brand-monitor.md"
+    "./agents/brand-monitor.md",
+    "./agents/content-copywriter.md",
+    "./agents/visual-director.md"
   ],
   "skills": [
     "./skills/social-engagement-ops"
@@ -88,6 +92,20 @@
       "name": { "en": "Watch", "zh": "沃奇" },
       "profession": { "en": "Brand Monitor Expert", "zh": "品牌监控专家" },
       "avatar": "avatars/brand-monitor.png",
+      "role": "member"
+    },
+    {
+      "id": "content-copywriter",
+      "name": { "en": "Copy", "zh": "可可" },
+      "profession": { "en": "Social Copywriter", "zh": "社媒文案专员" },
+      "avatar": "avatars/content-copywriter.png",
+      "role": "member"
+    },
+    {
+      "id": "visual-director",
+      "name": { "en": "Vision", "zh": "维森" },
+      "profession": { "en": "Visual Director", "zh": "视觉分镜导演" },
+      "avatar": "avatars/visual-director.png",
       "role": "member"
     }
   ]
