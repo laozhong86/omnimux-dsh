@@ -297,11 +297,11 @@ describe('HUB_CSS login-gate 1:1 tokens', () => {
       styles,
       /url\('https:\/\/images\.unsplash\.com\/photo-1544551763-46a013bb70d5\?auto=format&fit=crop&w=800&q=80'\)/,
     )
-    assert.match(styles, /radial-gradient\(circle at 50% 25%, rgba\(255, 255, 255, 0\.25\) 0%, transparent 60%\)/)
+    assert.match(styles, /radial-gradient\(circle at 50% 25%, color-mix\(in srgb, var\(--dsw-alias-label-primary, #fff\) 25%, transparent\) 0%, color-mix\(in srgb, var\(--dsw-alias-label-primary, #fff\) 14%, transparent\) 30%, color-mix\(in srgb, var\(--dsw-alias-label-primary, #fff\) 5%, transparent\) 55%, transparent 75%\)/)
     assert.match(styles, /data:image\/svg\+xml/)
     assert.match(styles, /\.omnimux-login-gate-hero-jellyfish/)
     assert.match(styles, /object-fit:\s*cover/)
-    assert.match(styles, /mask-image:\s*radial-gradient\(circle at 50% 45%, black 48%, transparent 75%\)/)
+    assert.match(styles, /mask-image:\s*radial-gradient\(ellipse at 50% 54%, black 20%, transparent 68%\)/)
     assert.match(styles, /\.omnimux-login-gate-hero-title/)
     assert.match(styles, /padding:\s*32px 30px 36px/)
     assert.match(styles, /'Cinzel', 'Playfair Display', 'Didot', 'Songti SC', 'STSong', Georgia, serif/)
@@ -310,8 +310,10 @@ describe('HUB_CSS login-gate 1:1 tokens', () => {
   })
 
   it('closes both offline SVG data-uri templates with a quoted url()', () => {
-    assert.match(styles, /const LOGIN_GATE_SEA_URI = `url\("data:image\/svg\+xml,\$\{encodeURIComponent\(`[\s\S]+?<\/svg>`\)\}"\)`/)
-    assert.match(styles, /const LOGIN_GATE_JELLY_URI = `url\("data:image\/svg\+xml,\$\{encodeURIComponent\(`[\s\S]+?<\/svg>`\)\}"\)`/)
+    assert.match(styles, /const LOGIN_GATE_SEA_SVG = '<svg[\s\S]+?<\/svg>'/)
+    assert.match(styles, /const LOGIN_GATE_JELLY_SVG = '<svg[\s\S]+?<\/svg>'/)
+    assert.match(styles, /const LOGIN_GATE_SEA_URI = `url\("data:image\/svg\+xml,\$\{encodeURIComponent\(LOGIN_GATE_SEA_SVG\)}"\)`/)
+    assert.match(styles, /const LOGIN_GATE_JELLY_URI = `url\("data:image\/svg\+xml,\$\{encodeURIComponent\(LOGIN_GATE_JELLY_SVG\)}"\)`/)
     assert.doesNotMatch(styles, /encodeURIComponent\(`[\s\S]+?<\/svg>`\)\}\)`/)
   })
 })
@@ -390,7 +392,7 @@ describe('HUB_CSS real stylesheet parse', () => {
     assert.equal(rule.style.getPropertyValue('object-fit'), 'cover')
     assert.equal(rule.style.getPropertyValue('object-position'), 'center')
     assert.equal(rule.style.getPropertyValue('opacity'), '0.92')
-    assert.match(rule.style.getPropertyValue('mask-image') || rule.style.getPropertyValue('-webkit-mask-image'), /circle at 50% 45%/)
+    assert.match(rule.style.getPropertyValue('mask-image') || rule.style.getPropertyValue('-webkit-mask-image'), /(?:ellipse )?at 50% 54%/)
     assert.ok(dataUri.length > 400, `encoded jellyfish svg looks truncated: ${dataUri.length}`)
   })
 
