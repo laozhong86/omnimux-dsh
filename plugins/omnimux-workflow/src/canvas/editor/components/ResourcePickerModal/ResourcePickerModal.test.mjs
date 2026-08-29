@@ -74,6 +74,23 @@ test('画布导入素材入口先选文件再落节点，取消不建空节点',
   assert.equal(/openPickerOnMount/.test(nodeSrc), false);
 });
 
+test('资产侧栏入画布走导入节点，画布 Tab 拖入只定位', () => {
+  const outlineSrc = readFileSync(join(here, '../assets/views/CanvasOutlineView.tsx'), 'utf8');
+  assert.match(editorSrc, /classifyAssetImport/);
+  assert.match(editorSrc, /mountImportFromAsset/);
+  assert.match(editorSrc, /omnimux-canvas-node/);
+  assert.match(outlineSrc, /omnimux-canvas-node/);
+  assert.equal(/type: 'omnimux-asset', asset: node/.test(outlineSrc), false);
+  const mountBlock = editorSrc.slice(
+    editorSrc.indexOf('const mountImportFromAsset'),
+    editorSrc.indexOf('const handleInsertAsset'),
+  );
+  assert.equal(/createMaterialNode/.test(mountBlock), false);
+  const dropStart = editorSrc.indexOf('const handleDrop');
+  const dropBlock = editorSrc.slice(dropStart, editorSrc.indexOf('return (', dropStart));
+  assert.equal(/createMaterialNode/.test(dropBlock), false);
+});
+
 test('源码契约：MaterialNode / LocalUploadPane 不得把 createObjectURL 写入节点', () => {
   const policySrc = readFileSync(join(here, '../../utils/resourcePickerPolicy.ts'), 'utf8');
   assert.equal(/createObjectURL/.test(nodeSrc), false);

@@ -1,5 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const here = dirname(fileURLToPath(import.meta.url));
 
 test('Project Assets Types and Popover Options Data Integrity', async (t) => {
   await t.test('TAG_OPTIONS contains 7 standard color tags', async () => {
@@ -47,5 +52,20 @@ test('Project Assets Types and Popover Options Data Integrity', async (t) => {
       'delete',
     ];
     assert.equal(folderMenuActions.length, 4);
+  });
+
+  await t.test('Canvas Tab first action focuses existing node instead of remounting', () => {
+    const menuSrc = readFileSync(join(here, 'menus/CanvasItemContextMenu.tsx'), 'utf8');
+    const drawerSrc = readFileSync(join(here, '../AssetsDrawer.tsx'), 'utf8');
+    const outlineSrc = readFileSync(join(here, 'views/CanvasOutlineView.tsx'), 'utf8');
+    assert.match(menuSrc, /在画布中定位/);
+    assert.equal(/添加到画布/.test(menuSrc), false);
+    assert.match(outlineSrc, /omnimux-canvas-node/);
+    const canvasAction = drawerSrc.slice(
+      drawerSrc.indexOf("case 'add-to-canvas'"),
+      drawerSrc.indexOf("case 'add-to-dialog'"),
+    );
+    assert.match(canvasAction, /handleFocusNode/);
+    assert.equal(/onInsertAsset/.test(canvasAction), false);
   });
 });

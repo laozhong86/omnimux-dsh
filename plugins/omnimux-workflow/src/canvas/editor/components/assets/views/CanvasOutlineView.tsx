@@ -159,9 +159,9 @@ export const CanvasOutlineView: React.FC<CanvasOutlineViewProps> = ({
   const bindDrag = (node: CanvasNodeItem) => (e: React.DragEvent) => {
     e.dataTransfer.setData(
       'application/json',
-      JSON.stringify({ type: 'omnimux-asset', asset: node }),
+      JSON.stringify({ type: 'omnimux-canvas-node', nodeId: node.id }),
     );
-    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   return (
