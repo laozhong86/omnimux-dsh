@@ -3002,7 +3002,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 120px;
+  min-height: 120px;
   gap: 4px;
   color: var(--wb-text-muted, #71717a);
 }
@@ -3012,6 +3012,13 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
 .wf-assets-empty-title {
   font-size: var(--wb-fs-body, 13px);
   color: var(--wb-text-secondary, #a1a1aa);
+}
+.wf-assets-empty-subtitle {
+  font-size: var(--wb-fs-caption, 12px);
+  color: var(--wb-text-muted, #71717a);
+  text-align: center;
+  max-width: 220px;
+  line-height: 1.4;
 }
 
 /* 始终固定在底部的操作栏（无上边框，背景实体不透光） */
