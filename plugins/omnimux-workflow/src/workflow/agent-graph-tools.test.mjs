@@ -452,3 +452,40 @@ test('PR4: workflow_execution_control pause → resume → cancel lifecycle', as
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('guard clauses: write tools return invalid-args immediately on missing/bad required args', async () => {
+  const h = makeHarness();
+  try {
+    // workflow_node_add missing workspace_id / material_type / invalid material_type
+    assert.equal((await h.tool('workflow_node_add').execute({})).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_node_add').execute({ workspace_id: 'ws_1' })).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_node_add').execute({ workspace_id: 'ws_1', material_type: 'unknown' })).error, 'invalid-args');
+
+    // workflow_node_update missing workspace_id / node_id / patch
+    assert.equal((await h.tool('workflow_node_update').execute({})).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_node_update').execute({ workspace_id: 'ws_1' })).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_node_update').execute({ workspace_id: 'ws_1', node_id: 'n1' })).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_node_update').execute({ workspace_id: 'ws_1', node_id: 'n1', patch: 'not-an-object' })).error, 'invalid-args');
+
+    // workflow_node_remove missing workspace_id / node_ids
+    assert.equal((await h.tool('workflow_node_remove').execute({})).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_node_remove').execute({ workspace_id: 'ws_1' })).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_node_remove').execute({ workspace_id: 'ws_1', node_ids: [] })).error, 'invalid-args');
+
+    // workflow_connect missing workspace_id / source / target
+    assert.equal((await h.tool('workflow_connect').execute({})).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_connect').execute({ workspace_id: 'ws_1' })).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_connect').execute({ workspace_id: 'ws_1', source: 'a' })).error, 'invalid-args');
+
+    // workflow_disconnect missing workspace_id / edge_ids or source+target
+    assert.equal((await h.tool('workflow_disconnect').execute({})).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_disconnect').execute({ workspace_id: 'ws_1' })).error, 'invalid-args');
+
+    // workflow_execution_control missing execution_id / action / invalid action
+    assert.equal((await h.tool('workflow_execution_control').execute({})).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_execution_control').execute({ execution_id: 'ex_1' })).error, 'invalid-args');
+    assert.equal((await h.tool('workflow_execution_control').execute({ execution_id: 'ex_1', action: 'bad' })).error, 'invalid-args');
+  } finally {
+    h.cleanup();
+  }
+});
