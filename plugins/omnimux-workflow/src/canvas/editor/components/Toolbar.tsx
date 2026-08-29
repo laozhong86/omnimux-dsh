@@ -5,7 +5,7 @@
  * 2. Primary (+) button (Hotkey N) opening modern node creation popover menu.
  * 3. Pointer mode selector: Select (V) / Pan (H).
  * 4. Project Assets (📁) drawer trigger (Hotkey A).
- * 5. Undo / Redo controls + Hotkey help (?) modal.
+ * 5. Hotkey help (?) modal.
  *
  * Maintains .nodrag .nopan and pointer event guards to prevent xyflow mouse capture.
  */
@@ -23,8 +23,6 @@ import {
   Hand,
   FolderOpen,
   HelpCircle,
-  Undo2,
-  Redo2,
   ChevronUp,
   UploadCloud,
   FileCode,
@@ -43,10 +41,6 @@ export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition' | '
 
 export interface ToolbarProps {
   onAddNode: (type: CanvasAddNodeType) => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
-  canUndo?: boolean;
-  canRedo?: boolean;
   pointerMode?: CanvasPointerMode;
   onPointerModeChange?: (mode: CanvasPointerMode) => void;
   onOpenAssets?: () => void;
@@ -75,10 +69,6 @@ const ADD_NODE_ITEMS: Array<{
 
 const Toolbar: React.FC<ToolbarProps> = ({
   onAddNode,
-  onUndo,
-  onRedo,
-  canUndo = false,
-  canRedo = false,
   pointerMode = 'select',
   onPointerModeChange,
   onOpenAssets,
@@ -239,39 +229,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
         </span>
         <span className="wf-canvas-toolbar__label">{t('toolbar.assets')}</span>
       </button>
-
-      {/* 撤销 / 重做 */}
-      {(onUndo || onRedo) && <div className="wf-canvas-toolbar__divider" />}
-
-      {onUndo && (
-        <button
-          type="button"
-          className="wf-canvas-toolbar__item wf-canvas-toolbar__item--icon-only"
-          onClick={() => onUndo()}
-          disabled={!canUndo}
-          title={t('toolbar.undoTitle')}
-        >
-          <span className="wf-canvas-toolbar__icon">
-            <Undo2 size={16} />
-          </span>
-          <span className="wf-canvas-toolbar__label">{t('toolbar.undo')}</span>
-        </button>
-      )}
-
-      {onRedo && (
-        <button
-          type="button"
-          className="wf-canvas-toolbar__item wf-canvas-toolbar__item--icon-only"
-          onClick={() => onRedo()}
-          disabled={!canRedo}
-          title={t('toolbar.redoTitle')}
-        >
-          <span className="wf-canvas-toolbar__icon">
-            <Redo2 size={16} />
-          </span>
-          <span className="wf-canvas-toolbar__label">{t('toolbar.redo')}</span>
-        </button>
-      )}
 
       {/* 帮助 */}
       {onOpenHelp && (
