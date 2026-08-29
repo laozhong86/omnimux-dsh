@@ -13,13 +13,17 @@
       );
     }
 
-    function SkillPlaza() {
+    function SkillPlaza(props) {
       const tr = useTr();
       const pageSize = 48;
-      const [query, setQuery] = useState("");
-      const [submitted, setSubmitted] = useState("");
+      const submitted = (props && props.submittedQuery) ?? "";
       const [category, setCategory] = useState("");
       const [page, setPage] = useState(1);
+      const [prevSubmitted, setPrevSubmitted] = useState(submitted);
+      if (prevSubmitted !== submitted) {
+        setPrevSubmitted(submitted);
+        setPage(1);
+      }
       const [items, setItems] = useState([]);
       const [total, setTotal] = useState(0);
       const [hasMore, setHasMore] = useState(false);
@@ -90,13 +94,6 @@
         ? tr("search.fallback")
         : tr("search.hint", { n: total || items.length });
       return h("div", { className: "sh-mkt" },
-        h(MarketSearchBar, {
-          query,
-          onQuery: setQuery,
-          placeholder: tr("mkt.searchPlaceholder"),
-          submitLabel: tr("mkt.search"),
-          onSubmit: () => { setPage(1); setSubmitted(query.trim()); },
-        }),
         h("div", { className: "sh-mkt-filters" },
           h(Button, {
             type: "button",

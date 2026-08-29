@@ -1,10 +1,11 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Image as ImageIcon, Film, Music, Plus, Upload, Trash2,
   Square, Circle, Triangle, Star, ArrowRight, Hexagon, FileCode, AlertTriangle,
   RefreshCw, Palette, Sparkles, Video,
-  Type, Shapes, Wand2, LayoutTemplate, Zap, Shuffle,
+  Type, Shapes, Wand2, LayoutTemplate, Zap, Shuffle, SlidersHorizontal,
 } from "@/icons/lucide-compat";
+import { InspectorPanel } from "./InspectorPanel";
 import {
   BACKGROUND_PRESETS,
   generateBackgroundBlob,
@@ -54,6 +55,7 @@ type AssetsTab =
   | "graphics"
   | "effects"
   | "transitions"
+  | "adjust"
   | "ai"
   | "recipes"
   | "templates";
@@ -65,43 +67,48 @@ const ASSETS_TABS: ReadonlyArray<{
 }> = [
   {
     value: "media",
-    label: "Media",
-    description: "Import footage, audio, and stills.",
+    label: "媒体",
+    description: "导入视频、音频与静态素材。",
   },
   {
     value: "text",
-    label: "Text",
-    description: "Add title presets and caption elements.",
+    label: "文字",
+    description: "添加标题预设与字幕元素。",
   },
   {
     value: "graphics",
-    label: "Graphics",
-    description: "Create shapes, arrows, and SVG overlays.",
+    label: "图形",
+    description: "创建形状、贴纸与矢量图形。",
   },
   {
     value: "effects",
-    label: "Effects",
-    description: "Drag effects onto a clip to apply them.",
+    label: "效果",
+    description: "视觉特效与滤镜渲染。",
   },
   {
     value: "transitions",
-    label: "Transitions",
-    description: "Drag transitions onto a clip's edge.",
+    label: "转场",
+    description: "片段之间的过渡转场。",
+  },
+  {
+    value: "adjust",
+    label: "调整",
+    description: "选中元素的图层属性、位置、样式与音频微调。",
   },
   {
     value: "ai",
-    label: "AI Generate",
-    description: "Generate clips, captions, and assisted edits.",
+    label: "AI 生成",
+    description: "智能生成片段与字幕。",
   },
   {
     value: "recipes",
-    label: "Recipes",
-    description: "Apply clip-scoped looks, overlays, and text stacks.",
+    label: "配方",
+    description: "整套风格与花字预设。",
   },
   {
     value: "templates",
-    label: "Project Templates",
-    description: "Load full-project starter layouts and presets.",
+    label: "模板",
+    description: "全案项目模板与预设。",
   },
 ] as const;
 
@@ -195,6 +202,7 @@ const TAB_ICONS: Record<AssetsTab, React.ElementType> = {
   graphics: Shapes,
   effects: Zap,
   transitions: Shuffle,
+  adjust: SlidersHorizontal,
   ai: Sparkles,
   recipes: Wand2,
   templates: LayoutTemplate,
@@ -630,6 +638,8 @@ export const AssetsPanel: React.FC = () => {
   const [activeTab, setActiveTabRaw] = useState<AssetsTab>("media");
   const ttsHasUnsaved = useTtsAudioStore((s) => s.generatedAudio !== null && !s.isAudioSaved);
   const playheadPosition = useTimelineStore((state) => state.playheadPosition);
+  const selectedItems = useUIStore((s) => s.selectedItems);
+  const prevSelectedCountRef = useRef(selectedItems.length);
 
   const setActiveTab = useCallback((tab: AssetsTab) => {
     if (activeTab === "ai" && tab !== "ai" && ttsHasUnsaved) {
@@ -637,6 +647,13 @@ export const AssetsPanel: React.FC = () => {
     }
     setActiveTabRaw(tab);
   }, [activeTab, ttsHasUnsaved]);
+
+  useEffect(() => {
+    if (selectedItems.length > 0 && prevSelectedCountRef.current === 0) {
+      setActiveTab("adjust");
+    }
+    prevSelectedCountRef.current = selectedItems.length;
+  }, [selectedItems.length, setActiveTab]);
 
   const [isDragOver, setIsDragOver] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -915,7 +932,7 @@ export const AssetsPanel: React.FC = () => {
 
   const handleAddToTimeline = useCallback(
     async (item: MediaItem) => {
-      const { project: currentProject } = useProjectStore.getState();
+      const { project: currentProject, updateSettings } = useProjectStore.getState();
       const tracks = currentProject.timeline.tracks;
       const hasClips = tracks.some((track) => track.clips.length > 0);
 
@@ -931,9 +948,11 @@ export const AssetsPanel: React.FC = () => {
         const projectHeight = currentProject.settings.height;
 
         if (videoWidth !== projectWidth || videoHeight !== projectHeight) {
-          setAspectRatioDialogData({ videoWidth, videoHeight, itemToAdd: item });
-          setShowAspectRatioDialog(true);
-          return;
+          // 自动匹配视频尺寸，无感上轨
+          await updateSettings({
+            width: videoWidth,
+            height: videoHeight,
+          });
         }
       }
 
@@ -1527,6 +1546,12 @@ export const AssetsPanel: React.FC = () => {
             <TransitionsPanel />
           </div>
         );
+      case "adjust":
+        return (
+          <div className="flex min-h-0 flex-1 flex-col border-t border-border/70 bg-bg-1 overflow-hidden">
+            <InspectorPanel />
+          </div>
+        );
       case "ai":
         return (
           <div className="flex min-h-0 flex-1 flex-col border-t border-border/70 bg-background-secondary content-area-fix">
@@ -1550,14 +1575,18 @@ export const AssetsPanel: React.FC = () => {
     }
   };
 
+  const visibleTabs = ASSETS_TABS.filter((t) =>
+    ["media", "text", "graphics", "effects", "transitions", "adjust"].includes(t.value)
+  );
+
   return (
     <div
       data-tour="assets"
-      className="w-full h-full bg-bg-1 overflow-hidden flex flex-row relative"
+      className="w-full h-full bg-bg-1 overflow-hidden flex flex-col relative"
     >
-      {/* ── Vertical tool rail (icon + label, left) ───────────── */}
-      <div className="flex flex-col items-center gap-1 px-0 py-[14px] border-r border-border bg-bg-1 overflow-y-auto scrollbar-none shrink-0 w-[92px]">
-        {ASSETS_TABS.map((tab) => {
+      {/* ── Top horizontal category tabs ───────────── */}
+      <div className="flex items-center gap-1 px-2.5 py-2 border-b border-border bg-bg-1 shrink-0 overflow-x-auto scrollbar-none">
+        {visibleTabs.map((tab) => {
           const Icon = TAB_ICONS[tab.value];
           const isActive = activeTab === tab.value;
           return (
@@ -1566,25 +1595,23 @@ export const AssetsPanel: React.FC = () => {
               type="button"
               aria-label={tab.label}
               aria-pressed={isActive}
-              title={tab.label}
+              title={tab.description}
               onClick={() => setActiveTab(tab.value)}
-              className={`group flex h-16 w-[68px] shrink-0 flex-col items-center justify-center gap-1 rounded-[10px] px-1 py-2 text-[10px] leading-tight tracking-tight transition-colors ${
+              className={`group flex items-center justify-center gap-1.5 flex-1 min-w-0 h-8 rounded-lg px-1.5 text-[12px] leading-none transition-all cursor-pointer ${
                 isActive
-                  ? "bg-selected text-accent font-semibold"
-                  : "text-fg-muted font-medium"
+                  ? "bg-accent/15 text-accent font-semibold shadow-xs border border-accent/30"
+                  : "hover:bg-bg-2 text-fg-muted hover:text-fg font-medium border border-transparent"
               }`}
             >
-              <Icon size={20} strokeWidth={isActive ? 1.8 : 1.7} />
-              <span className="block max-w-full text-center leading-[11px]">
-                {tab.label}
-              </span>
+              <Icon size={14} strokeWidth={isActive ? 2 : 1.7} className="shrink-0" />
+              <span className="truncate">{tab.label}</span>
             </button>
           );
         })}
       </div>
 
       {/* ── Body: section content fills the remaining space ──── */}
-      <div className="flex-1 flex flex-col min-w-0 h-full bg-bg-1 relative">
+      <div className="flex-1 flex flex-col min-w-0 h-full bg-bg-1 relative overflow-hidden">
         {isImporting && (
           <LoadingIndicator message={importProgress || "Importing media..."} />
         )}
@@ -1604,16 +1631,6 @@ export const AssetsPanel: React.FC = () => {
 
         {/* Dynamic Section Content */}
         <div className="flex-1 min-h-0 relative flex flex-col overflow-hidden">
-          {activeTab !== "media" && (
-            <div className="min-w-0 px-4 pt-[18px] pb-0 shrink-0">
-              <div
-                className="truncate font-bold text-[18px] text-fg"
-                title={ASSETS_TABS.find((t) => t.value === activeTab)?.label}
-              >
-                {ASSETS_TABS.find((t) => t.value === activeTab)?.label}
-              </div>
-            </div>
-          )}
           {renderSectionContent(activeTab)}
         </div>
       </div>

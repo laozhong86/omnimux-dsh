@@ -245,48 +245,7 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
 
   // Sync canvas nodes from prop if available
   useEffect(() => {
-    if (Array.isArray(propNodes)) {
-      const hasRealAsset = (n: any): boolean => {
-        if (!n || !n.data) return false;
-        const d = n.data;
-
-        // 1. 本地磁盘物理文件路径 (导入的素材)
-        if (typeof d.real_path === 'string' && d.real_path.trim().length > 0) return true;
-        if (typeof d.path === 'string' && d.path.trim().length > 0) return true;
-        if (typeof d.filePath === 'string' && d.filePath.trim().length > 0) return true;
-
-        // 2. 已生成的图片/视频/音频媒体结果或预览
-        if (typeof d.previewUrl === 'string' && d.previewUrl.trim().length > 0) return true;
-        if (typeof d.imageUrl === 'string' && d.imageUrl.trim().length > 0) return true;
-        if (typeof d.outputUrl === 'string' && d.outputUrl.trim().length > 0) return true;
-        if (typeof d.mediaUrl === 'string' && d.mediaUrl.trim().length > 0) return true;
-        if (typeof d.coverUrl === 'string' && d.coverUrl.trim().length > 0) return true;
-        if (typeof d.url === 'string' && d.url.trim().length > 0) return true;
-
-        // 3. SSE 执行生成的多媒体产物数组 (mediaAssets)
-        if (Array.isArray(d.mediaAssets) && d.mediaAssets.some((a: any) => a && (a.url || a.path || a.real_path))) {
-          return true;
-        }
-
-        // 4. 多文件/多素材挂载
-        if (Array.isArray(d.materials) && d.materials.length > 0) return true;
-        if (Array.isArray(d.files) && d.files.length > 0) return true;
-
-        // 5. 任务已完成且有产物输出
-        if ((d.status === 'completed' || d.executionStatus === 'completed') && (d.output || d.result || d.previewUrl || d.mediaUrl)) {
-          return true;
-        }
-
-        // 6. 文档/脚本/表格类型：必须有实质文本内容或结构化数据，未填写的空节点不显示
-        const matType = String(d.materialType || n.type || '').toLowerCase();
-        if (matType === 'text' || matType === 'doc' || matType === 'table' || matType === 'script') {
-          const content = String(d.content || d.text || d.prompt || '').trim();
-          if (content.length > 0) return true;
-        }
-
-        return false;
-      };
-
+    if (propNodes && propNodes.length > 0) {
       const mapNodeType = (n: any): 'image' | 'video' | 'audio' | 'text' | 'doc' => {
         const materialType = String(n.data?.materialType || n.data?.mediaType || '').toLowerCase();
         if (materialType === 'image') return 'image';
@@ -302,10 +261,7 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         return 'doc';
       };
 
-      // 仅过滤出具备真实导入文件或生成产物的实体节点
-      const validNodes = propNodes.filter(hasRealAsset);
-
-      const mapped: CanvasNodeItem[] = validNodes.map((n: any) => {
+      const mapped: CanvasNodeItem[] = propNodes.map((n: any) => {
         const mappedType = mapNodeType(n);
         const previewUrl =
           n.data?.previewUrl ||

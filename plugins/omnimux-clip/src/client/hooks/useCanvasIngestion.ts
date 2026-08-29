@@ -24,18 +24,25 @@ export interface CanvasSession {
   };
 }
 
-function isValidUrl(rawUrl: string): boolean {
-  if (!rawUrl || typeof rawUrl !== "string") return false;
+function resolveFetchableUrl(rawUrl: string): string {
+  if (!rawUrl || typeof rawUrl !== "string") return "";
   const trimmed = rawUrl.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:") || trimmed.startsWith("blob:") || trimmed.startsWith("/omnimux")) {
+    return trimmed;
+  }
   if (trimmed.startsWith("/") || trimmed.startsWith("./") || trimmed.startsWith("../")) {
-    return true;
+    return `/omnimux-workflow/api/local-file?path=${encodeURIComponent(trimmed)}`;
   }
   try {
     const parsed = new URL(trimmed, "http://localhost");
-    return ALLOWED_PROTOCOLS.includes(parsed.protocol);
+    return ALLOWED_PROTOCOLS.includes(parsed.protocol) ? trimmed : "";
   } catch {
-    return false;
+    return "";
   }
+}
+
+function isValidUrl(rawUrl: string): boolean {
+  return Boolean(resolveFetchableUrl(rawUrl));
 }
 
 function inferMime(path: string, fallback: string): string {
@@ -100,28 +107,31 @@ export function useCanvasIngestion(session: CanvasSession | null | undefined) {
 
       if (Array.isArray(upstreamInputs.videos)) {
         for (const v of upstreamInputs.videos) {
-          const url = v.url || v.path;
-          if (url && isValidUrl(url) && !processedRef.current.has(url)) {
-            itemsToImport.push({ url, name: v.name || "video.mp4", fallbackMime: "video/mp4" });
-          }
+          const raw = v.url || v.path;
+const url = resolveFetchableUrl(raw);
+if (url && !processedRef.current.has(raw)) {
+  itemsToImport.push({ url, name: v.name || "video.mp4", fallbackMime: "video/mp4" });
+}
         }
       }
 
       if (Array.isArray(upstreamInputs.images)) {
         for (const img of upstreamInputs.images) {
-          const url = img.url || img.path;
-          if (url && isValidUrl(url) && !processedRef.current.has(url)) {
-            itemsToImport.push({ url, name: img.name || "image.png", fallbackMime: "image/png" });
-          }
+          const raw = img.url || img.path;
+const url = resolveFetchableUrl(raw);
+if (url && !processedRef.current.has(raw)) {
+  itemsToImport.push({ url, name: img.name || "image.png", fallbackMime: "image/png" });
+}
         }
       }
 
       if (Array.isArray(upstreamInputs.audios)) {
         for (const a of upstreamInputs.audios) {
-          const url = a.url || a.path;
-          if (url && isValidUrl(url) && !processedRef.current.has(url)) {
-            itemsToImport.push({ url, name: a.name || "audio.mp3", fallbackMime: "audio/mpeg" });
-          }
+          const raw = a.url || a.path;
+const url = resolveFetchableUrl(raw);
+if (url && !processedRef.current.has(raw)) {
+  itemsToImport.push({ url, name: a.name || "audio.mp3", fallbackMime: "audio/mpeg" });
+}
         }
       }
 
@@ -138,6 +148,9 @@ export function useCanvasIngestion(session: CanvasSession | null | undefined) {
       let isMounted = true;
 
       const importAll = async () => {
+        let firstVideoId: string | null = null;
+        let firstVideoMeta: { width?: number; height?: number } | null = null;
+
         for (const item of itemsToImport) {
           if (!isMounted) break;
           processedRef.current.add(item.url);
@@ -148,8 +161,34 @@ export function useCanvasIngestion(session: CanvasSession | null | undefined) {
             const mime = inferMime(item.name || item.url, item.fallbackMime);
             const file = new File([blob], item.name, { type: mime });
             await useProjectStore.getState().importMedia(file);
+
+            const currentItems = useProjectStore.getState().project.mediaLibrary.items;
+            const latest = currentItems[currentItems.length - 1];
+            if (latest && latest.type === "video" && !firstVideoId) {
+              firstVideoId = latest.id;
+              firstVideoMeta = latest.metadata;
+            }
           } catch (err) {
             console.warn("[omnimux-clip:ingestion] failed to import upstream asset:", item.url, err);
+          }
+        }
+
+        // 若时间轴为空，自动将首个上游素材加入时间轴并适配比例
+        if (firstVideoId && isMounted) {
+          try {
+            const store = useProjectStore.getState();
+            const hasClips = store.project.timeline.tracks.some((t) => t.clips.length > 0);
+            if (!hasClips) {
+              if (firstVideoMeta?.width && firstVideoMeta?.height) {
+                await store.updateSettings({
+                  width: firstVideoMeta.width,
+                  height: firstVideoMeta.height,
+                });
+              }
+              await store.addClipToNewTrack(firstVideoId, 0);
+            }
+          } catch (e) {
+            console.warn("[omnimux-clip:ingestion] auto-add first video to timeline failed:", e);
           }
         }
       };

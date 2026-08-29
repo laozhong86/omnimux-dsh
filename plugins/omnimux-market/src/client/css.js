@@ -182,13 +182,15 @@
 .sh-plaza-trigger .dshUk-Button-label,.sh-plaza-trigger span{white-space:nowrap;overflow:hidden}
 .sh-plaza-page{position:fixed;z-index:200;box-sizing:border-box;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--dsw-alias-bg-base,#111215);color:var(--dsw-alias-label-primary,#fff);top:0;left:var(--stage-left,56px);right:0;bottom:0;width:auto;height:auto}
 .sh-plaza-view[data-active="false"]{display:none;pointer-events:none}
-.sh-plaza-top{display:flex;align-items:center;gap:16px;flex:none;padding:10px 20px;border-bottom:1px solid var(--dsw-alias-border-l2,#e2e4e8);background:var(--dsw-alias-bg-base,#fff)}
-.sh-plaza-tabs{display:flex;align-items:center;gap:16px;padding:0;border:0;background:inherit}
+.sh-plaza-top{display:flex;align-items:center;gap:12px;flex:none;height:48px;padding:8px 20px;border-bottom:1px solid var(--dsw-alias-border-l2,#e2e4e8);background:var(--dsw-alias-bg-base,#fff);box-sizing:border-box;flex-wrap:nowrap}
+.sh-plaza-tabs{display:flex;align-items:center;gap:16px;padding:0;border:0;background:inherit;flex:none}
 .sh-plaza-tabs .sh-plaza-tab,.sh-plaza-tab{height:30px;padding:0;border:0;border-radius:0;background:inherit;color:var(--dsw-alias-label-tertiary,#7b8088);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
 .sh-plaza-tabs .sh-plaza-tab:hover,.sh-plaza-tab:hover{color:var(--dsw-alias-label-primary,#17191c);background:inherit}
 .sh-plaza-tabs .sh-plaza-tab.on,.sh-plaza-tab.on{background:inherit;color:var(--dsw-alias-state-business-primary,#4d6bfe);box-shadow:none}
 .sh-plaza-tab .dshUk-Button-label{font:inherit;font-size:inherit;font-weight:inherit;color:inherit}
-.sh-plaza-close{margin-left:auto}
+.sh-plaza-search{display:flex;align-items:center;margin-left:auto;min-width:180px;max-width:280px;width:100%;flex:0 1 280px}
+.sh-plaza-search .dshUk-SearchField-root,.sh-plaza-search .dshUk-SearchField-stretch{width:100%;max-width:none}
+.sh-plaza-close{display:flex;align-items:center;flex:none}
 .sh-plaza-body{flex:1;min-height:0;overflow:auto;padding:18px 20px 32px}
 .sh-plaza-body .sh-mkt{max-width:none;width:100%}
 .sh-plaza-body .sh-cards,.sh-plaza-body .sh-mkt-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkles, Calendar, HardDrive, Maximize2, Tag } from 'lucide-react';
+import { stopToolbarNativeEvent } from '../../toolbarPointerGuard';
 import type { AssetItem, CanvasNodeItem } from '../types';
 
 interface HoverInspectorProps {
@@ -23,35 +24,16 @@ export const HoverInspector: React.FC<HoverInspectorProps> = ({
   const cardWidth = 260;
   const cardHeight = 290;
 
-  // 获取抽屉/侧边栏的实际边界，严格将悬停卡片置于侧边栏外侧（左侧）
-  const drawerEl =
-    typeof document !== 'undefined'
-      ? document.querySelector('.wf-assets-drawer-root, .wf-assets-drawer, .wf-canvas-tab-view-compact, .wf-project-assets-view-compact')
-      : null;
-  const drawerRect = drawerEl ? drawerEl.getBoundingClientRect() : null;
-
-  let left: number;
-  if (drawerRect && drawerRect.left > 0) {
-    // 强制位于侧边栏左边界的外侧，留出 12px 间隙
-    left = drawerRect.left - cardWidth - 12;
-  } else {
-    // 降级：以鼠标位置为基准向左弹出
-    left = x - cardWidth - 24;
+  // Place inspector to the right of cursor by default, flip left if overflowing
+  let left = x + 15;
+  if (left + cardWidth > window.innerWidth - 10) {
+    left = x - cardWidth - 15;
   }
-
-  // 避免超出屏幕左边界
-  if (left < 10) {
-    left = 10;
+  let top = y - 20;
+  if (top + cardHeight > window.innerHeight - 10) {
+    top = window.innerHeight - cardHeight - 10;
   }
-
-  // 垂直方向以鼠标 y 轴居中对齐，并限制在可视窗口内
-  let top = y - cardHeight / 2;
-  if (top + cardHeight > window.innerHeight - 12) {
-    top = window.innerHeight - cardHeight - 12;
-  }
-  if (top < 12) {
-    top = 12;
-  }
+  if (top < 10) top = 10;
 
   const isAsset = 'type' in item && ('fileExt' in item || 'real_path' in item || 'parentId' in item);
   const asset = isAsset ? (item as AssetItem) : null;
@@ -64,7 +46,7 @@ export const HoverInspector: React.FC<HoverInspectorProps> = ({
         hour: '2-digit',
         minute: '2-digit',
       })
-    : '08/28 20:49';
+    : '2026-08-28 14:30';
 
   return createPortal(
     <div
@@ -75,7 +57,7 @@ export const HoverInspector: React.FC<HoverInspectorProps> = ({
         top: `${top}px`,
         left: `${left}px`,
         width: `${cardWidth}px`,
-        zIndex: 99999,
+        zIndex: 10001,
         pointerEvents: 'none',
       }}
     >

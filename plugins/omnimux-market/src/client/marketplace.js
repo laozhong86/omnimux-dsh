@@ -122,10 +122,14 @@
       useEffect(() => ensureCss(), []);
       const tr = typeof props.t === "function" ? props.t : lookup;
       const locale = tr("locale") === "en" ? "en" : "zh";
-      const [query, setQuery] = useState("");
-      const [submitted, setSubmitted] = useState("");
+      const submitted = (props && props.submittedQuery) ?? "";
       const [category, setCategory] = useState("");
       const [page, setPage] = useState(1);
+      const [prevSubmitted, setPrevSubmitted] = useState(submitted);
+      if (prevSubmitted !== submitted) {
+        setPrevSubmitted(submitted);
+        setPage(1);
+      }
       const [items, setItems] = useState([]);
       const [total, setTotal] = useState(0);
       const [status, setStatus] = useState("loading");
@@ -264,13 +268,6 @@
       };
       return h(I18nProvider, { t: tr },
         h("div", { className: "sh-mkt" },
-          h(MarketSearchBar, {
-            query,
-            onQuery: setQuery,
-            placeholder: tr("mkt.searchPlaceholder"),
-            submitLabel: tr("mkt.search"),
-            onSubmit: () => { setSubmitted(query.trim()); setPage(1); },
-          }),
           h("div", { className: "sh-mkt-filters" },
             h(Button, {
               type: "button",

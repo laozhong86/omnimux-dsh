@@ -1,7 +1,6 @@
     /** 连接器 tab：P0 读 WorkBuddy 本地市场全量展示；安装下一刀再接。 */
-    function ConnectorPanel() {
+    function ConnectorPanel({ query = "" }) {
       const tr = useTr();
-      const [query, setQuery] = useState("");
       const [category, setCategory] = useState("");
       const [items, setItems] = useState([]);
       const [categories, setCategories] = useState([]);
@@ -39,7 +38,7 @@
           });
         return () => { live = false; };
       }, []);
-      const q = query.trim().toLowerCase();
+      const q = String(query || "").trim().toLowerCase();
       const filtered = items.filter((it) => {
         if (category && it.category !== category) return false;
         if (!q) return true;
@@ -66,12 +65,6 @@
         }
       }
       return h("div", { className: "sh-mkt" },
-        h(MarketSearchBar, {
-          query,
-          onQuery: setQuery,
-          placeholder: tr("connector.searchPlaceholder"),
-          submitLabel: tr("mkt.search"),
-        }),
         h("div", { className: "sh-mkt-filters" },
           h(Button, {
             type: "button",

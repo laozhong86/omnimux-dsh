@@ -73,6 +73,25 @@
       return box;
     }
 
+    function PlazaTopSearch({ query, onQuery, onSubmit, onClear, placeholder }) {
+      return h("form", {
+        className: "sh-plaza-search",
+        onSubmit: (e) => {
+          e.preventDefault();
+          if (onSubmit) onSubmit();
+        },
+      },
+        h(SearchField, {
+          stretch: true,
+          value: query,
+          debounceMs: 0,
+          placeholder,
+          onValueChange: onQuery,
+          onClear: onClear || (() => onQuery("")),
+        }),
+      );
+    }
+
     function PlazaView({ t, onClose, box, active }) {
       useEffect(() => {
         ensureCss();
@@ -87,6 +106,38 @@
       }, [onClose, active]);
       const tr = typeof t === "function" ? t : lookup;
       const [tab, setTab] = useState("plugins");
+      const [tabQueries, setTabQueries] = useState({
+        plugins: "",
+        skills: "",
+        experts: "",
+        connectors: "",
+      });
+      const [submittedQueries, setSubmittedQueries] = useState({
+        plugins: "",
+        skills: "",
+      });
+
+      const currentQuery = tabQueries[tab] || "";
+      const handleQueryChange = (val) => {
+        setTabQueries((prev) => ({ ...prev, [tab]: val }));
+      };
+      const handleSubmit = () => {
+        if (tab === "plugins" || tab === "skills") {
+          setSubmittedQueries((prev) => ({ ...prev, [tab]: (tabQueries[tab] || "").trim() }));
+        }
+      };
+      const handleClear = () => {
+        setTabQueries((prev) => ({ ...prev, [tab]: "" }));
+        if (tab === "plugins" || tab === "skills") {
+          setSubmittedQueries((prev) => ({ ...prev, [tab]: "" }));
+        }
+      };
+
+      const placeholder = tab === "plugins" ? tr("mkt.searchPlaceholder")
+        : tab === "skills" ? tr("mkt.searchPlaceholder")
+        : tab === "experts" ? tr("expert.searchPlaceholder")
+        : tr("connector.searchPlaceholder");
+
       return h(I18nProvider, { t: tr },
         h("div", {
           className: "sh-plaza-page",
@@ -139,6 +190,13 @@
                 onClick: () => setTab("connectors"),
               }, tr("plaza.connectors")),
             ),
+            h(PlazaTopSearch, {
+              query: currentQuery,
+              onQuery: handleQueryChange,
+              onSubmit: handleSubmit,
+              onClear: handleClear,
+              placeholder,
+            }),
             h("span", { className: "sh-plaza-close" },
               h(IconButton, {
                 variant: "ghost",
@@ -149,10 +207,10 @@
             ),
           ),
           h("div", { className: "sh-plaza-body" },
-            tab === "plugins" ? h(Marketplace, { t: tr })
-              : tab === "skills" ? h(SkillPlaza)
-              : tab === "experts" ? h(ExpertPanel, { onClose })
-              : h(ConnectorPanel),
+            tab === "plugins" ? h(Marketplace, { t: tr, query: tabQueries.plugins, submittedQuery: submittedQueries.plugins })
+              : tab === "skills" ? h(SkillPlaza, { query: tabQueries.skills, submittedQuery: submittedQueries.skills })
+              : tab === "experts" ? h(ExpertPanel, { query: tabQueries.experts, onClose })
+              : h(ConnectorPanel, { query: tabQueries.connectors }),
           ),
         ),
       );
