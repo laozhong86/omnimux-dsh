@@ -55,12 +55,8 @@ export function installItem(opts) {
     }
     if (!item.skill) throw new Error(`item ${item.id} missing skill`)
     if (item.source.type === 'bundled') {
-      const from = join(opts.packageRoot, item.source.path)
-      if (!existsSync(from)) throw new Error(`bundled skill missing: ${item.source.path}`)
-      const destDir = skillDir(opts.home, item.skill)
-      mkdirSync(destDir, { recursive: true })
-      copyFileSync(from, join(destDir, 'SKILL.md'))
-      return { id: item.id, installed: true, kind: item.kind, skill: item.skill }
+      installBundledPack(opts.home, item, opts.packageRoot)
+      return { id: item.id, installed: true, kind: item.kind, skill: item.skill, source: 'bundled' }
     }
     if (item.source.type === 'git') {
       installGitBundle(opts.home, item)
@@ -104,6 +100,49 @@ export function installGitBundle(home, item) {
     copyFileSync(from, join(destDir, 'SKILL.md'))
   }
   ensureSkillMd(destDir, item)
+  installNestedSkills(home, destDir)
+}
+
+/**
+ * Copy a bundled catalog entry. A file is a single SKILL.md; a directory is a
+ * full expert/team pack (agents/*.md + nested skills), not a flattened prompt.
+ * @param {string} home
+ * @param {{ skill?: string, title?: string, summary?: string, source: { type: string, path?: string } }} item
+ * @param {string} packageRoot
+ */
+export function installBundledPack(home, item, packageRoot) {
+  if (!item.skill) throw new Error('bundled install missing skill')
+  const from = join(packageRoot, item.source.path || '')
+  if (!existsSync(from)) throw new Error(`bundled skill missing: ${item.source.path}`)
+  const destDir = skillDir(home, item.skill)
+  mkdirSync(dirname(destDir), { recursive: true })
+  if (statSync(from).isDirectory()) {
+    cpRecursive(from, destDir)
+    ensureSkillMd(destDir, item)
+    installNestedSkills(home, destDir)
+    return
+  }
+  mkdirSync(destDir, { recursive: true })
+  copyFileSync(from, join(destDir, 'SKILL.md'))
+}
+
+/**
+ * Expert packs keep tools under skills/<name>/. DSH only discovers one level
+ * at $DSH_HOME/skills/<name>/SKILL.md, so flatten nested skills next to the pack.
+ * @param {string} home
+ * @param {string} packDir
+ */
+export function installNestedSkills(home, packDir) {
+  const nestedRoot = join(packDir, 'skills')
+  if (!existsSync(nestedRoot) || !statSync(nestedRoot).isDirectory()) return
+  for (const name of readdirSync(nestedRoot)) {
+    const src = join(nestedRoot, name)
+    if (!statSync(src).isDirectory()) continue
+    if (!existsSync(join(src, 'SKILL.md'))) continue
+    const dest = skillDir(home, name)
+    if (existsSync(join(dest, 'SKILL.md'))) continue
+    cpRecursive(src, dest)
+  }
 }
 
 /**

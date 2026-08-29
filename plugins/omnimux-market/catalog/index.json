@@ -1815,10 +1815,8 @@
       "avatar": "https://raw.githubusercontent.com/infometa/workbuddyskills/main/experts/social-engagement-team/avatars/team.png",
       "skill": "social-engagement-team",
       "source": {
-        "type": "git",
-        "repo": "infometa/workbuddyskills",
-        "path": "experts/social-engagement-team",
-        "ref": "main"
+        "type": "bundled",
+        "path": "catalog/experts/social-engagement-team"
       }
     },
     {
