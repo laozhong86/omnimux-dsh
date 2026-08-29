@@ -58,10 +58,11 @@ export function resolveExecutionSubgraph<TNode extends SubgraphNodeLike, TEdge e
   const { nodes, edges, executionMode } = input;
 
   if (executionMode === 'full') {
+    const executableNodes = nodes.filter((n) => n.type !== 'group');
     return {
-      nodes,
+      nodes: executableNodes,
       edges,
-      nodeIdSet: new Set(nodes.map((node) => node.id)),
+      nodeIdSet: new Set(executableNodes.map((node) => node.id)),
     };
   }
 
@@ -83,10 +84,11 @@ export function resolveExecutionSubgraph<TNode extends SubgraphNodeLike, TEdge e
   // single mode: only the selected target nodes; include incoming edges so upstream outputs can be wired
   if (executionMode === 'single') {
     const targetIdSet = new Set(targetNodeIds);
+    const targetNodes = nodes.filter((node) => targetIdSet.has(node.id) && node.type !== 'group');
     return {
-      nodes: nodes.filter((node) => targetIdSet.has(node.id)),
+      nodes: targetNodes,
       edges: edges.filter((edge) => targetIdSet.has(edge.target) && nodeMap.has(edge.source)),
-      nodeIdSet: targetIdSet,
+      nodeIdSet: new Set(targetNodes.map((n) => n.id)),
     };
   }
 
@@ -111,9 +113,11 @@ export function resolveExecutionSubgraph<TNode extends SubgraphNodeLike, TEdge e
     }
   }
 
+  const resultNodes = nodes.filter((node) => closure.has(node.id) && node.type !== 'group');
+
   return {
-    nodes: nodes.filter((node) => closure.has(node.id)),
+    nodes: resultNodes,
     edges: edges.filter((edge) => closure.has(edge.source) && closure.has(edge.target)),
-    nodeIdSet: closure,
+    nodeIdSet: new Set(resultNodes.map((n) => n.id)),
   };
 }

@@ -375,6 +375,22 @@ test('resolveExecutionSubgraph handles full, subset, and single modes', () => {
   assert.deepEqual(normalizeNodeIds(['a', ' a ', 42, '']), ['a']);
   assert.equal(toExecutionMode('single'), 'single');
   assert.throws(() => toExecutionMode('invalid'), /mode 必须是 full、subset 或 single/);
+
+  // Group container exclusion in execution subgraph
+  const nodesWithGroup = [
+    { id: 'grp1', type: 'group', data: { title: 'Group 1' } },
+    { id: 'n1', type: 'material', data: {} },
+    { id: 'n2', type: 'material', data: {} },
+  ];
+  const edgesWithGroup = [{ source: 'n1', target: 'n2' }];
+  const fullWithGroup = resolveExecutionSubgraph({
+    nodes: nodesWithGroup,
+    edges: edgesWithGroup,
+    executionMode: 'full',
+    nodeIds: [],
+  });
+  assert.equal(fullWithGroup.nodes.some((n) => n.type === 'group'), false, 'full 模式自动过滤 group 容器');
+  assert.equal(fullWithGroup.nodes.length, 2);
 });
 
 // ============================================================================

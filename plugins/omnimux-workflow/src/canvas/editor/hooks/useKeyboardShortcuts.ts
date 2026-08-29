@@ -35,6 +35,8 @@ interface UseKeyboardShortcutsProps {
   onFitView?: () => void;
   onResetZoom?: () => void;
   onCategoryKey?: (catIndex: number) => void;
+  onGroupSelected?: () => void;
+  onUngroupSelected?: () => void;
   isAssetsOpen?: boolean;
   enabled?: boolean;
 }
@@ -57,6 +59,8 @@ export const useKeyboardShortcuts = ({
   onFitView,
   onResetZoom,
   onCategoryKey,
+  onGroupSelected,
+  onUngroupSelected,
   isAssetsOpen = false,
   enabled = true,
 }: UseKeyboardShortcutsProps) => {
@@ -154,6 +158,20 @@ export const useKeyboardShortcuts = ({
         return;
       }
 
+      // Cmd/Ctrl + Shift + G: Ungroup
+      if (isMod && keyLower === 'g' && e.shiftKey) {
+        e.preventDefault();
+        onUngroupSelected?.();
+        return;
+      }
+
+      // Cmd/Ctrl + G: Group selected nodes
+      if (isMod && keyLower === 'g' && !e.shiftKey) {
+        e.preventDefault();
+        onGroupSelected?.();
+        return;
+      }
+
       // Cmd/Ctrl + D: duplicate selected nodes
       if (isMod && keyLower === 'd' && hasSelection) {
         e.preventDefault();
@@ -217,6 +235,8 @@ export const useKeyboardShortcuts = ({
     onFitView,
     onResetZoom,
     onCategoryKey,
+    onGroupSelected,
+    onUngroupSelected,
     isAssetsOpen,
   ]);
 };

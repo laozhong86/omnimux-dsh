@@ -132,6 +132,44 @@ Body：`{ "paths": string[], "parentId"?: string | null, "expectedRev"?: number 
 
 完整闸与主体库 ACL 见 [workflow-project-assets.md](./workflow-project-assets.md)。
 
+### GET /omnimux-workflow/api/templates
+
+列出可复用工作流模板。legacy `/dsh-workflow/api/templates` 同样改写。
+
+```json
+{ "templates": [ { "schemaVersion": 1, "id": "tmpl_…", "name": "夜景精修", "description": "", "tags": ["子图"], "nodeCount": 2, "createdAt": "…", "updatedAt": "…" } ] }
+```
+
+磁盘：`$DSH_HOME/omnimux/workflow/templates/<id>.json`。JSON `schemaVersion` 固定为 `1`。不是 `.omxflow`。
+
+### POST /omnimux-workflow/api/templates
+
+从一组子图节点创建模板。Body：
+
+```json
+{ "name": "夜景精修", "description": "", "tags": ["子图"], "nodes": [ /* sanitize 后的节点 */ ], "edges": [] }
+```
+
+成功 → `{ "template": WorkflowTemplate }`。
+
+| 情况 | HTTP | body.error |
+|---|---|---|
+| 空名 / schema 不合法 | 400 | `invalid-template` |
+| 节点数 &lt; 2 | 400 | `invalid-template` |
+| 非 loopback | 403 | `not-local` |
+
+写入后 island 可用 `GET` 列表、工具栏插入（Client 重映射 id、剥 `parentId`/`extent`、平移到视口原点）。**插入时不自动再打组。**
+
+### GET /omnimux-workflow/api/templates/:id
+
+`{ "template": WorkflowTemplate }`；不存在 → 404 `not-found`。
+
+### DELETE /omnimux-workflow/api/templates/:id
+
+`{ "ok": true }`；不存在 → 404 `not-found`。
+
+资产入库不走本前缀。画布 island 直接 `POST /omnimux/assets/library`（`files[].real_path`，`source: "workflow-canvas"`）。workflow **禁止** `import omnimux-assets`。生产环境需已安装 assets 插件；隔离 L2 可用 mock。
+
 ## M3 预留（本里程碑未实现）
 
 ```

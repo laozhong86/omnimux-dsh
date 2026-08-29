@@ -17,6 +17,7 @@ export interface WorkflowPaths {
   workspacesDir: string;
   executionsDir: string;
   mediaDir: string;
+  templatesDir: string;
 }
 
 /** All dsh-workflow state lives under `<dsh home>/omnimux/workflow/`. */
@@ -30,5 +31,6 @@ export function resolveWorkflowPaths(
     workspacesDir: join(root, 'workspaces'),
     executionsDir: join(root, 'executions'),
     mediaDir: join(root, 'media'),
+    templatesDir: join(root, 'templates'),
   };
 }
