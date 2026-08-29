@@ -198,7 +198,20 @@
       name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
 
     - id: tool-subagent
-      name: '@deepseek-ai/dsh-tool-subagent    # ── OmniMux 社媒专家团子代理 ────────────────────────────────────────
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: subagent
+        backgroundMode: continuable
+
+    - id: tool-subagent-fork
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: fork
+        toolName: subagent_fork
+        backgroundMode: continuable
+
+    # ── OmniMux 社媒专家团子代理 ────────────────────────────────────────
     # 每个专家 = 一个带独立 persona 的 spawn 子代理工具，主理人按任务特性委派。
     - id: tool-subagent-expert-content-copywriter
       name: '@deepseek-ai/dsh-tool-subagent'
@@ -430,15 +443,6 @@
           ### Step 1: 任务解析与模式选择
           - **用户需要可视化精修** ➔ 调用 `omnimux-clip` 插件创建多轨工程，将分镜视频、旁白、B
           …（完整能力见市场专家档案）
-nt-expert-finance
-      name: '@deepseek-ai/dsh-tool-subagent'
-      config:
-        provider: spawn
-        toolName: expert_finance
-        persona: |
-          你是一位企业财务专家。方法论：数据先行→报表比率拆解→预算差异归因→风险分级→建议量化。
-          产出：结构化财务分析报告（指标结论+归因+风险提示+可执行建议）。铁律：涉及会计准则/税法须检索核实；不构成审计或税务专业意见。
-
     # Product providers are host-plane singletons. Copy this preset, then
     # remove `disabled` from either ordinary tool row to expose that product
     # only to agents composed from the copy.
