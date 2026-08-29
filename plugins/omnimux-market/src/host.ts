@@ -30,7 +30,7 @@ import { renderAttachedExpertSection, sessionIdFromExec } from './session-attach
 import type { InstallResult, InstalledSkill, MarketToolSpec, PluginConfig, SearchResult, SortBy } from './types.js'
 
 export const name = 'omnimux-market'
-export const inject = ['tools']
+export const inject = ['tools', 'skills']
 
 export interface Config extends PluginConfig {}
 
