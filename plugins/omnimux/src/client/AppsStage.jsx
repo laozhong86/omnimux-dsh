@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { IconCloseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
-import { IconButton } from 'dsh-ui-kit'
+import { PageHeader } from 'dsh-ui-kit'
 import { readConversationBox } from './conversation-box.js'
 import { PluginsSection } from './PluginsSection.jsx'
 import { injectHubStyles } from './styles.js'
@@ -76,17 +75,11 @@ export function AppsStage({ t, apps, useSessions }) {
         '--stage-height': `${box.height}px`,
       }}
     >
-      <div className="omnimux-apps-stage-header">
-        <h1 className="omnimux-apps-stage-title">{t('plugins.title')}</h1>
-        <IconButton
-          variant="ghost"
-          size="sm"
-          aria-label={t('plugins.close')}
-          onClick={() => { apps.set(false) }}
-        >
-          <IconCloseOutline16 size={16} />
-        </IconButton>
-      </div>
+      <PageHeader
+        title={t('plugins.title')}
+        onClose={() => { apps.set(false) }}
+        closeTitle={t('plugins.close')}
+      />
       <div className="omnimux-apps-stage-body">
         <PluginsSection t={t} />
       </div>

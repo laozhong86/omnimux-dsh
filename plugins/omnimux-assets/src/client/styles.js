@@ -20,34 +20,6 @@ export const ASSETS_CSS = `
   display: none;
   pointer-events: none;
 }
-.omnimux-assets-stage-header {
-  flex: none;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px 20px 8px;
-  -webkit-app-region: no-drag;
-}
-.omnimux-assets-stage-heading { flex: 1; min-width: 0; }
-.omnimux-assets-stage-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 30px;
-  letter-spacing: -0.01em;
-}
-.omnimux-assets-stage-subtitle {
-  margin: 4px 0 0;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--dsw-alias-label-secondary);
-}
-.omnimux-assets-stage-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-}
 .omnimux-assets-action-row {
   flex: none;
   display: flex;

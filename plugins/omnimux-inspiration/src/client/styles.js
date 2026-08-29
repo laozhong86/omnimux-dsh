@@ -25,24 +25,6 @@ export const INSPIRATION_CSS = `
   display: none;
   pointer-events: none;
 }
-.omnimux-inspiration-stage-header {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 32px;
-  padding: 12px 20px;
-  box-sizing: border-box;
-  -webkit-app-region: no-drag;
-}
-.omnimux-inspiration-stage-title {
-  margin: 0;
-  flex: 1;
-  min-width: 0;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 32px;
-}
 .omnimux-inspiration-stage-body {
   flex: 1;
   min-height: 0;
@@ -1144,7 +1126,7 @@ export const INSPIRATION_CSS = `
 }
 .omnimux-inspiration-summary-text {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 12.5px; /* exempt-ui10: 密集信息卡辅助文本微调 */
   line-height: 1.55;
   color: var(--dsw-alias-label-tertiary, #a3a3a3);
   word-break: break-word;

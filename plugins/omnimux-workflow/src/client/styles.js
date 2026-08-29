@@ -20,33 +20,6 @@ export const WORKFLOW_CSS = `
   display: none;
   pointer-events: none;
 }
-.omnimux-workflow-stage-header {
-  flex: none;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 20px;
-  -webkit-app-region: no-drag;
-}
-.omnimux-workflow-stage-heading { flex: 1; min-width: 0; }
-.omnimux-workflow-stage-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 32px;
-}
-.omnimux-workflow-stage-subtitle {
-  margin: 0;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--dsw-alias-label-secondary);
-}
-.omnimux-workflow-stage-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-}
 .omnimux-workflow-action-row {
   flex: none;
   display: flex;

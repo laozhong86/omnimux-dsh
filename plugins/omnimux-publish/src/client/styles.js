@@ -23,40 +23,6 @@ const CSS = `
   pointer-events: none;
 }
 
-/* Layer 1: Page Header (16px 20px 8px) */
-.omnimux-publish-header {
-  flex: none;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 16px 20px 8px;
-  background: var(--dsw-alias-bg-base, #ffffff);
-}
-.omnimux-publish-header-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.omnimux-publish-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 28px;
-  color: var(--dsw-alias-label-primary, #0f172a);
-  letter-spacing: -0.2px;
-}
-.omnimux-publish-subtitle {
-  margin: 0;
-  font-size: 13px;
-  line-height: 18px;
-  color: var(--dsw-alias-label-secondary, #64748b);
-}
-.omnimux-publish-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 /* Layer 2: Action Row (8px 20px 14px) */
 .omnimux-publish-action-row {
   flex: none;

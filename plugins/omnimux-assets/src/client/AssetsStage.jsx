@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { Button, DropdownSelect, FilterBar, IconButton, SearchField } from 'dsh-ui-kit'
-import { CloseIcon, GridIcon, ImportIcon, ListIcon, PlusIcon, RefreshIcon } from './icons.jsx'
+import { Button, DropdownSelect, FilterBar, IconButton, PageHeader, SearchField } from 'dsh-ui-kit'
+import { GridIcon, ImportIcon, ListIcon, PlusIcon } from './icons.jsx'
 import { createAsset, deleteAsset, getState, pickPath, updateAsset } from './api.js'
 import { AddAssetDialog, ASSET_TYPE_KEYS } from './AddAssetDialog.jsx'
 import { AssetBrowse } from './AssetBrowse.jsx'
@@ -214,35 +214,18 @@ export function AssetsStage({ t, stage }) {
         '--stage-height': `${box.height}px`,
       }}
     >
-      <div className="omnimux-assets-stage-header">
-        <div className="omnimux-assets-stage-heading">
-          <h1 className="omnimux-assets-stage-title">{t('stage.title')}</h1>
-          <p className="omnimux-assets-stage-subtitle">{t('stage.subtitle')}</p>
-        </div>
-        <div className="omnimux-assets-stage-controls">
-          <IconButton
-            variant="ghost"
-            size="sm"
-            aria-label={t('stage.refresh')}
-            title={t('stage.refresh')}
-            disabled={busy}
-            onClick={() => {
-              setBusy(true)
-              void refreshState(true).finally(() => { setBusy(false) })
-            }}
-          >
-            <RefreshIcon size={16} />
-          </IconButton>
-          <IconButton
-            aria-label={t('stage.close')}
-            variant="ghost"
-            size="sm"
-            onClick={() => { stage.set(false) }}
-          >
-            <CloseIcon size={16} />
-          </IconButton>
-        </div>
-      </div>
+      <PageHeader
+        title={t('stage.title')}
+        subtitle={t('stage.subtitle')}
+        onRefresh={() => {
+          setBusy(true)
+          void refreshState(true).finally(() => { setBusy(false) })
+        }}
+        refreshing={busy}
+        refreshTitle={t('stage.refresh')}
+        onClose={() => { stage.set(false) }}
+        closeTitle={t('stage.close')}
+      />
 
       <div className="omnimux-assets-action-row">
         <Button

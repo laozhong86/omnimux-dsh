@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { IconDownloadOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconButton, PageHeader } from 'dsh-ui-kit'
 import { injectAnalyticsStyles } from './styles.js'
 import { useAnalyticsStore } from './store.js'
 import { buildDashboardCsv, downloadCsv } from './csv.js'
-import { StageHeader } from './components/StageHeader.jsx'
 import { ActionNavRow } from './components/ActionNavRow.jsx'
 import { FilterBar } from './components/FilterBar.jsx'
 import { KpiGrid } from './components/KpiGrid.jsx'
@@ -88,11 +89,6 @@ export function AnalyticsStage({ t, stage }) {
     }
   }
 
-  const handleTheme = () => {
-    const next = store.theme === 'dark' ? 'light' : 'dark'
-    store.setTheme(next)
-  }
-
   const handleExport = () => {
     const csv = buildDashboardCsv(store.payload)
     downloadCsv(csv, `omnimux-analytics-${store.query.timeRange}.csv`)
@@ -112,7 +108,6 @@ export function AnalyticsStage({ t, stage }) {
       aria-hidden={open ? undefined : 'true'}
       className="omnimux-analytics-stage"
       data-visible={open ? 'true' : 'false'}
-      data-theme={store.theme === 'system' ? undefined : store.theme}
       style={{
         display: open ? undefined : 'none',
         '--stage-top': `${box.top}px`,
@@ -121,14 +116,25 @@ export function AnalyticsStage({ t, stage }) {
         '--stage-height': `${box.height}px`,
       }}
     >
-      <StageHeader
-        t={t}
-        theme={store.theme}
-        refreshing={store.phase === 'loading'}
+      <PageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+        actions={(
+          <IconButton
+            variant="ghost"
+            size="sm"
+            aria-label={t('export')}
+            title={t('export')}
+            onClick={handleExport}
+          >
+            <IconDownloadOutline16 />
+          </IconButton>
+        )}
         onRefresh={() => { void store.refresh() }}
-        onToggleTheme={handleTheme}
-        onExport={handleExport}
+        refreshing={store.phase === 'loading'}
+        refreshTitle={t('refresh')}
         onClose={() => { stage.set(false) }}
+        closeTitle={t('close')}
       />
       <ActionNavRow
         t={t}

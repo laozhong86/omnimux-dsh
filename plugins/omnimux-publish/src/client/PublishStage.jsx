@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import {
-  IconCloseOutline16,
   IconPlusOutline16,
-  IconRefreshOutline16,
   IconDownloadOutline16,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import {
@@ -11,7 +9,7 @@ import {
   IconListOutline16,
   IconCalendarOutline16,
 } from './icons/stage.js'
-import { Button, IconButton, SearchField, DropdownSelect, FilterBar, ConfirmModal } from 'dsh-ui-kit'
+import { Button, IconButton, SearchField, DropdownSelect, FilterBar, ConfirmModal, PageHeader } from 'dsh-ui-kit'
 import { listRecords, getState, deleteDraft, retryTask, errorText } from './api.js'
 import { displayStatus } from './status-display.js'
 import { RecordsTable } from './views/RecordsTable.jsx'
@@ -308,31 +306,16 @@ export function PublishStage({ t, stage }) {
         display: open ? undefined : 'none',
       }}
     >
-      {/* Layer 1: Page Header (16px 20px 8px) */}
-      <header className="omnimux-publish-header">
-        <div className="omnimux-publish-header-text">
-          <h1 className="omnimux-publish-title">{t('title')}</h1>
-          <p className="omnimux-publish-subtitle">{t('subtitle')}</p>
-        </div>
-        <div className="omnimux-publish-header-actions">
-          <IconButton
-            aria-label={t('records.refresh')}
-            variant="ghost"
-            size="sm"
-            onClick={loadList}
-          >
-            <IconRefreshOutline16 />
-          </IconButton>
-          <IconButton
-            aria-label={t('close')}
-            variant="ghost"
-            size="sm"
-            onClick={() => stage.set(false)}
-          >
-            <IconCloseOutline16 />
-          </IconButton>
-        </div>
-      </header>
+      {/* Layer 1: Page Header */}
+      <PageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+        onRefresh={loadList}
+        refreshing={listLoading}
+        refreshTitle={t('records.refresh')}
+        onClose={() => stage.set(false)}
+        closeTitle={t('close')}
+      />
 
       {/* Layer 2: Action Row (8px 20px 14px) */}
       <section className="omnimux-publish-action-row">

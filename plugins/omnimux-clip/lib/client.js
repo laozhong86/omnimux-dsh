@@ -19338,62 +19338,20 @@ html:not([data-dsh-product-stage]) .omnimux-clip-stage[data-clip-mode="canvas"][
   display: flex !important;
   pointer-events: auto !important;
 }
-.omnimux-clip-stage[data-clip-mode="canvas"] .omnimux-clip-stage-heading {
+/* exempt-ui08: clip \u7684 stage-header \u662F\u753B\u5E03\u5185\u7EDD\u5BF9\u5B9A\u4F4D\u7684\u6D6E\u5C42\u64CD\u4F5C\u533A\uFF08top/right 8px\uFF09\uFF0C
+   \u4E0D\u662F\u4E00\u7EA7 Stage \u9875\u9762\u6807\u9898\u680F\uFF1B\u5176 heading \u5728 standalone/canvas \u4E24\u79CD\u6A21\u5F0F\u4E0B\u5747 display:none\u3002
+   \u4F9D docs/contracts/openreel-vendor-contract.md\uFF0C\u6B64\u5904\u4FDD\u6301\u5BBF\u4E3B\u5916\u58F3\u539F\u5F62\u6001\uFF0C\u4E0D\u5957 PageHeader\u3002 */
+.omnimux-clip-stage[data-clip-mode="canvas"] .omnimux-clip-stage-heading { /* exempt-ui08: \u753B\u5E03\u5185\u6D6E\u5C42\u64CD\u4F5C\u533A\u6807\u9898\uFF0C\u975E\u9875\u9762\u6807\u9898\u680F */
   display: none !important;
-}
-/* \u2500\u2500\u2500 \u9876\u680F\u4E09\u6BB5\u6A21\u5F0F\u4E92\u65A5 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-   \u6BB5\u6807\u8BB0\u7531 OpenReel \u9876\u680F\u81EA\u8EAB\u63D0\u4F9B\uFF1Adata-toolbar-section="left|center|right"
-   \uFF08\u53CC\u4FDD\u9669\u7C7B\u540D .openreel-toolbar-left / -center / -right\uFF09\u3002
-
-   \xB7 canvas\uFF08\u753B\u5E03\u5D4C\u5165\uFF09\uFF1A\u53EA\u4FDD\u7559\u53F3\u6BB5\uFF08Export / \u4EA4\u4ED8\uFF09\u3002\u5DE6\u6BB5\u6A21\u5F0F\u5207\u6362\u4E0E\u4E2D\u6BB5
-     \u9879\u76EE\u540D\u79F0 + \u9879\u76EE\u5207\u6362\u5668\u5168\u90E8\u9690\u85CF\uFF1B\u53F3\u6BB5\u7528 margin-left:auto \u9876\u5230\u6700\u53F3\u3002
-   \xB7 standalone\uFF08\u5B8C\u6574\u6A21\u5F0F\uFF09\uFF1A\u4E09\u6BB5\u5168\u90E8\u8FD8\u539F\u4E3A flex \u6D41\u5F0F\u5C55\u793A\uFF0C\u4E00\u4E2A\u4E0D\u4E22\u3002
-
-   \u6CE8\u610F\uFF1A\u8FD9\u91CC\u7528 margin-left:auto \u800C\u975E\u6539 header \u7684 justify-content\uFF0C\u907F\u514D\u7834\u574F
-   \u53F3\u6BB5\u81EA\u8EAB\u7684 items-center \u5E03\u5C40\uFF1Bheader \u662F flex \u5BB9\u5668\uFF0Cauto margin \u8DB3\u591F\u5438\u6536\u7A7A\u4F4D\u3002
-   ------------------------------------------------------------------ */
-.omnimux-clip-stage[data-clip-mode="canvas"] [data-toolbar-section="left"],
-.omnimux-clip-stage[data-clip-mode="canvas"] [data-toolbar-section="center"],
-.omnimux-clip-stage[data-clip-mode="canvas"] .openreel-toolbar-left,
-.omnimux-clip-stage[data-clip-mode="canvas"] .openreel-toolbar-center {
-  display: none !important;
-}
-.omnimux-clip-stage[data-clip-mode="canvas"] [data-toolbar-section="right"],
-.omnimux-clip-stage[data-clip-mode="canvas"] .openreel-toolbar-right {
-  margin-left: auto !important;
-}
-.omnimux-clip-stage[data-clip-mode="standalone"]
-  [data-toolbar-section="left"]:where(:not([data-toolbar-responsive="true"])),
-.omnimux-clip-stage[data-clip-mode="standalone"]
-  [data-toolbar-section="center"]:where(:not([data-toolbar-responsive="true"])),
-.omnimux-clip-stage[data-clip-mode="standalone"]
-  [data-toolbar-section="right"]:where(:not([data-toolbar-responsive="true"])),
-.omnimux-clip-stage[data-clip-mode="standalone"]
-  .openreel-toolbar-left:where(:not([data-toolbar-responsive="true"])),
-.omnimux-clip-stage[data-clip-mode="standalone"]
-  .openreel-toolbar-center:where(:not([data-toolbar-responsive="true"])),
-.omnimux-clip-stage[data-clip-mode="standalone"]
-  .openreel-toolbar-right:where(:not([data-toolbar-responsive="true"])) {
-  display: flex !important;
-}
-/* \u5B98\u65B9 responsive \u6BB5\uFF08hidden lg:flex\uFF0C\u5982 Motion \u9876\u680F\u7684 SceneSwitcher \u4E2D\u6BB5\uFF09\uFF1A
-   standalone \u4E0B\u4E0D\u65E0\u8111\u5F3A\u5236 flex\uFF0C\u4EA4\u56DE\u5B98\u65B9 lg \u65AD\u70B9\uFF0C\u907F\u514D\u7A84\u7A97\u53E3\u628A\u9876\u680F\u6324\u7206\u3002
-   Tailwind \u4EE5 important: '.openreel-studio-root' \u524D\u7F00\u751F\u6210 .hidden\uFF0C
-   \u82E5\u4E0D\u8C41\u514D\uFF0C\u4E0A\u9762\u7684 !important \u4F1A\u6C38\u4E45\u5403\u6389\u5B98\u65B9\u65AD\u70B9\u884C\u4E3A\u3002 */
-@media (min-width: 1024px) {
-  .omnimux-clip-stage[data-clip-mode="standalone"]
-    [data-toolbar-section][data-toolbar-responsive="true"] {
-    display: flex !important;
-  }
 }
 /* canvas \u6A21\u5F0F\u4E0B\u53F3\u6BB5\u88AB\u9876\u5230\u6700\u53F3\uFF0C\u4F1A\u88AB\u6D6E\u5C42\u5173\u95ED\u6309\u94AE\u538B\u4F4F\uFF0C\u540C\u6837\u7559\u51FA 64px \u5B89\u5168\u533A */
 .omnimux-clip-stage[data-clip-mode="canvas"] .openreel-studio-root > * header,
 .omnimux-clip-stage[data-clip-mode="canvas"] .openreel-studio-root header:first-of-type {
   padding-right: 64px;
 }
-.omnimux-clip-stage-header,
-.omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-header,
-.omnimux-clip-stage[data-clip-mode="canvas"] .omnimux-clip-stage-header {
+.omnimux-clip-stage-header, /* exempt-ui08: \u753B\u5E03\u5185\u6D6E\u5C42\u64CD\u4F5C\u533A\uFF0C\u975E\u9875\u9762\u6807\u9898\u680F */
+.omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-header, /* exempt-ui08: \u540C\u4E0A */
+.omnimux-clip-stage[data-clip-mode="canvas"] .omnimux-clip-stage-header { /* exempt-ui08: \u540C\u4E0A */
   position: absolute;
   top: 8px;
   right: 8px;
@@ -19407,11 +19365,11 @@ html:not([data-dsh-product-stage]) .omnimux-clip-stage[data-clip-mode="canvas"][
   pointer-events: none;
   -webkit-app-region: no-drag;
 }
-.omnimux-clip-stage-heading,
+.omnimux-clip-stage-heading, /* exempt-ui08: \u753B\u5E03\u5185\u6D6E\u5C42\u64CD\u4F5C\u533A\u6807\u9898\uFF0C\u975E\u9875\u9762\u6807\u9898\u680F */
 .omnimux-clip-stage-icon-btn,
 .omnimux-clip-stage-save-btn,
 .omnimux-clip-stage-save-status,
-.omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-heading,
+.omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-heading, /* exempt-ui08: \u540C\u4E0A */
 .omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-icon-btn,
 .omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-save-btn,
 .omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-save-status {
