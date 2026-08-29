@@ -147,6 +147,34 @@ pnpm verify:live <stage>       # 在 127.0.0.1:45120 执行 L2 真机验收
 `package.json:59` 的 `"verify:live": "node scripts/agent-live-qa.mjs"` 指向的脚本**在仓库中不存在**（`ENOENT`）。
 因此即使环境就绪，`pnpm verify:live` 也无法执行，需先补齐该脚本（建议作为独立 Issue）。
 
+### 2.5 ⚠️ 交付约束：`dsh-ui-kit` 不在 `omnimux-dsh` 仓库内（合入前必读）
+
+本次依赖的 `dsh-ui-kit` 扩容（`PageHeader` / `Tabs` / `StatBar` / `ActionRow` 及 `StageHeader` 的 20px 改造）
+位于 **`/Users/x/Desktop/Project/dsh-plugin/personal/dsh-ui-kit`**，这是一个**独立的 Git 仓库，且没有 remote**。
+
+- `omnimux-dsh` 仓库**不跟踪** `personal/` 目录（`git ls-files personal/` 为空）；
+- 但 10 个插件通过 `"dsh-ui-kit": "file:../../../../personal/dsh-ui-kit"` 依赖它，
+  该路径从 `plugins/<name>/` 出发解析到 `/Users/x/Desktop/Project/dsh-plugin/personal/dsh-ui-kit`，即**仓库之外**；
+- 这是**既有架构**（PR #29 引入，非本次改动引入），目的是让多个仓库共享同一个 kit。
+
+**因此：插件 PR 合入 ≠ kit 改动交付。** 若合入后 kit 未同步到位，构建将拿不到 `PageHeader` 而失败。
+
+当前 kit 工作区改动（已 build，`lib/` 已是最新）：
+
+```
+ M src/stage/PageHeader.tsx            (新增)   M src/stage/StageHeader.tsx      (转发到 PageHeader)
+ M src/stage/PageHeader.module.css     (新增)   M src/stage/StageHeader.module.css (18px → 20px)
+ M src/tabs/Tabs.tsx                   (新增)   M src/index.ts                   (导出新组件)
+ M src/stat/StatBar.tsx                (新增)   M src/kit-export.test.js         (导出契约测试)
+ M src/action/ActionRow.tsx            (新增)   M lib/*                          (构建产物)
+```
+
+**可选处置（需老板决策）**，三者择一：
+
+1. **保持现状**：kit 由人工在本机维护，合入后手动确认 `lib/` 为最新（当前已是）。CI 不跑 `pnpm install`，不会挂。
+2. **给 kit 加 remote 并随 PR 一并发版**：最规范，但需先建仓库。
+3. **把 kit 移入 `omnimux-dsh` 仓库**：改动依赖路径，影响面大（10 个插件 package.json + 其他仓库）。
+
 ---
 
 ## 3. 遗留债（不属于本次收敛范围）
