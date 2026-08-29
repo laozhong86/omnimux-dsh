@@ -1,0 +1,31 @@
+{
+  "task": "omnimux-qa-issue-185-login-gate-hero",
+  "issue": 185,
+  "commitBase": "980f7c8",
+  "plugin": "omnimux",
+  "url": "http://127.0.0.1:44200/",
+  "title": "OmniMux",
+  "dshHome": "/Users/x/.dsh-dev/tasks/login-gate-hero",
+  "hostPid": 66306,
+  "screenshot": "docs/evidence/login-gate-hero/final.png",
+  "control": "docs/evidence/login-gate-hero/control-mask-off.png",
+  "verdict": "L3 PASS (isolated worktree; PR not merged)",
+  "quant": {
+    "maskFeatherSpanPct": 48,
+    "maskTop1pxMaxDl": 1.9,
+    "oldHardEdgeZone1pxMaxDl": 2.9,
+    "leftRightJumpIsPhotoContent": true,
+    "maskOnLeftMaxDl": 35.5,
+    "maskOffLeftMaxDl": 96.3,
+    "maskOnRightMaxDl": 35.9,
+    "maskOffRightMaxDl": 78.0,
+    "heroRect": { "x": 455, "y": 177.5, "w": 348, "h": 518 }
+  },
+  "notes": [
+    "Old mask (circle at 50% 45%, black 48% / transparent 75%) put the element top inside the fully-opaque zone → rectangular hard cut.",
+    "New mask (ellipse at 50% 54%, black 20% / transparent 68%) fades the top before the box edge; 1px luminance step at the old hard-edge zone is 2.9.",
+    "Left/right 35-step jumps persist and grow with mask disabled → photo content, not a mask edge.",
+    "hero::after 48px to-right feather; full-height scrim with top vignette; highlight stops 0/30/55/75%.",
+    "scripts/ego-browser-qa.sh still fails on Node CJS/await mix; evidence via native ego-browser nodejs."
+  ]
+}

@@ -297,11 +297,11 @@ describe('HUB_CSS login-gate 1:1 tokens', () => {
       styles,
       /url\('https:\/\/images\.unsplash\.com\/photo-1544551763-46a013bb70d5\?auto=format&fit=crop&w=800&q=80'\)/,
     )
-    assert.match(styles, /radial-gradient\(circle at 50% 25%, rgba\(255, 255, 255, 0\.25\) 0%, transparent 60%\)/)
+    assert.match(styles, /radial-gradient\(circle at 50% 25%, rgba\(255, 255, 255, 0\.25\) 0%, rgba\(255, 255, 255, 0\.14\) 30%, rgba\(255, 255, 255, 0\.05\) 55%, transparent 75%\)/)
     assert.match(styles, /data:image\/svg\+xml/)
     assert.match(styles, /\.omnimux-login-gate-hero-jellyfish/)
     assert.match(styles, /object-fit:\s*cover/)
-    assert.match(styles, /mask-image:\s*radial-gradient\(circle at 50% 45%, black 48%, transparent 75%\)/)
+    assert.match(styles, /mask-image:\s*radial-gradient\(ellipse at 50% 54%, black 20%, transparent 68%\)/)
     assert.match(styles, /\.omnimux-login-gate-hero-title/)
     assert.match(styles, /padding:\s*32px 30px 36px/)
     assert.match(styles, /'Cinzel', 'Playfair Display', 'Didot', 'Songti SC', 'STSong', Georgia, serif/)
@@ -390,7 +390,7 @@ describe('HUB_CSS real stylesheet parse', () => {
     assert.equal(rule.style.getPropertyValue('object-fit'), 'cover')
     assert.equal(rule.style.getPropertyValue('object-position'), 'center')
     assert.equal(rule.style.getPropertyValue('opacity'), '0.92')
-    assert.match(rule.style.getPropertyValue('mask-image') || rule.style.getPropertyValue('-webkit-mask-image'), /circle at 50% 45%/)
+    assert.match(rule.style.getPropertyValue('mask-image') || rule.style.getPropertyValue('-webkit-mask-image'), /(?:ellipse )?at 50% 54%/)
     assert.ok(dataUri.length > 400, `encoded jellyfish svg looks truncated: ${dataUri.length}`)
   })
 

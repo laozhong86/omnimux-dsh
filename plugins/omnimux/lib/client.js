@@ -1474,6 +1474,22 @@ var HUB_CSS = `
     #3b0764 100%
   );
 }
+.omnimux-login-gate-hero::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 48px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(20, 20, 22, 0.35) 50%,
+    var(--dsw-alias-bg-primary, #141416) 100%
+  );
+  pointer-events: none;
+  z-index: 6;
+}
 .omnimux-login-gate-hero-glow {
   position: absolute;
   top: 15%;
@@ -1496,7 +1512,7 @@ var HUB_CSS = `
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.25) 0%, transparent 60%),
+    radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.14) 30%, rgba(255, 255, 255, 0.05) 55%, transparent 75%),
     url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'),
     ${LOGIN_GATE_SEA_URI};
   background-size: cover;
@@ -1520,23 +1536,22 @@ var HUB_CSS = `
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  mask-image: radial-gradient(circle at 50% 45%, black 48%, transparent 75%);
-  -webkit-mask-image: radial-gradient(circle at 50% 45%, black 48%, transparent 75%);
+  mask-image: radial-gradient(ellipse at 50% 54%, black 20%, transparent 68%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 54%, black 20%, transparent 68%);
   opacity: 0.92;
   filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.45)) contrast(1.15) brightness(1.08);
   pointer-events: none;
 }
 .omnimux-login-gate-hero-scrim {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 55%;
+  inset: 0;
   background: linear-gradient(
-    to top,
-    rgba(20, 10, 45, 0.85) 0%,
-    rgba(20, 10, 45, 0.4) 55%,
-    transparent 100%
+    180deg,
+    rgba(15, 8, 35, 0.45) 0%,
+    rgba(20, 10, 45, 0.12) 28%,
+    transparent 45%,
+    rgba(20, 10, 45, 0.45) 70%,
+    rgba(15, 8, 35, 0.88) 100%
   );
   pointer-events: none;
   z-index: 5;
