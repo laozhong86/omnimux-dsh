@@ -68,4 +68,25 @@ test('Project Assets Types and Popover Options Data Integrity', async (t) => {
     assert.match(canvasAction, /handleFocusNode/);
     assert.equal(/onInsertAsset/.test(canvasAction), false);
   });
+
+  await t.test('Canvas Tab shows import/generate badges; import hover hides Prompt', () => {
+    const outlineSrc = readFileSync(join(here, 'views/CanvasOutlineView.tsx'), 'utf8');
+    const hoverSrc = readFileSync(join(here, 'views/HoverInspector.tsx'), 'utf8');
+    const drawerSrc = readFileSync(join(here, '../AssetsDrawer.tsx'), 'utf8');
+    const subjectSrc = readFileSync(join(here, 'views/SubjectLibraryView.tsx'), 'utf8');
+    assert.match(outlineSrc, /wf-node-kind-badge/);
+    assert.match(outlineSrc, /导入/);
+    assert.match(outlineSrc, /生成/);
+    assert.match(hoverSrc, /本地路径/);
+    assert.match(hoverSrc, /nodeKind !== 'import'/);
+    const addToSubjects = drawerSrc.slice(
+      drawerSrc.indexOf("case 'add-to-subjects'"),
+      drawerSrc.indexOf("case 'save-to-assets'"),
+    );
+    assert.match(addToSubjects, /无法索引此文件/);
+    assert.match(addToSubjects, /real_path: item.real_path/);
+    assert.equal(/prompt: sub.tags/.test(subjectSrc), false);
+    assert.match(subjectSrc, /real_path: firstFile\?\.real_path/);
+    assert.match(subjectSrc, /无本地文件，无法入画布/);
+  });
 });

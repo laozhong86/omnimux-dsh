@@ -5,6 +5,7 @@
  */
 
 import { resolveMediaPreviewUrl, type MediaAssetLike } from '../../utils/mediaUrl.ts';
+import { resolveNodeKind } from '../../../../shared/graph/materialNode.ts';
 import type { CanvasNodeItem } from './types.ts';
 
 export interface FlowNodeLike {
@@ -182,13 +183,15 @@ function toCanvasNodeItem(node: FlowNodeLike): CanvasNodeItem | null {
 
   const realPath = pickRealPath(data);
   const updatedAt = asFiniteNumber(data.updatedAt) ?? 0;
-  const prompt = asTrimmed(data.prompt);
+  const nodeKind = resolveNodeKind(data);
+  const prompt = nodeKind === 'import' ? '' : asTrimmed(data.prompt);
 
   const item: CanvasNodeItem = {
     id,
     name: itemName(kind, id, data),
     type: kind,
     status: itemStatus(data),
+    nodeKind,
     updatedAt,
   };
   if (previewUrl) item.previewUrl = previewUrl;

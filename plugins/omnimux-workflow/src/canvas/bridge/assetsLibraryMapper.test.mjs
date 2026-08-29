@@ -46,6 +46,18 @@ test('6. mapLibraryAssetToSubject 六类 + 未知 → custom', () => {
   const unknown = mapLibraryAssetToSubject({ id: 'ast_x', name: '未知', type: 'mecha' });
   assert.equal(unknown.type, 'custom');
   assert.equal(unknown.tags[0], '自定义');
+  assert.equal(unknown.files, undefined);
+
+  const withPath = mapLibraryAssetToSubject({
+    id: 'ast_path',
+    name: '夜景',
+    type: 'scene',
+    files: [{ id: 'fil_night', real_path: '/tmp/night.png', original_name: 'night.png' }],
+    cover_file_id: 'fil_night',
+  });
+  assert.deepEqual(withPath.files, [
+    { id: 'fil_night', real_path: '/tmp/night.png', original_name: 'night.png' },
+  ]);
 
   assert.deepEqual(
     SUBJECT_CATEGORY_TABS.map((tab) => tab.id),
@@ -136,6 +148,36 @@ test('树按 parentId 展平至少两层', () => {
   assert.equal(file?.parentId, 'fld_b');
   assert.equal(file?.real_path, '/tmp/hero.png');
   assert.match(file?.previewUrl || '', /\/omnimux-workflow\/api\/local-file\?path=/);
+});
+
+test('createLibraryAsset 可携带 files[].real_path', async () => {
+  let posted = null;
+  const client = createAssetsLibraryClient({
+    fetch: async (url, init) => {
+      posted = { url: String(url), body: JSON.parse(String(init?.body || '{}')) };
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          asset: {
+            id: 'ast_new',
+            name: posted.body.name,
+            type: 'custom',
+            files: posted.body.files,
+          },
+        }),
+      };
+    },
+  });
+  const created = await client.createLibraryAsset('夜景', 'custom', [
+    { real_path: '/tmp/night.png', original_name: 'night.png' },
+  ]);
+  assert.equal(created.ok, true);
+  assert.equal(posted.body.name, '夜景');
+  assert.deepEqual(posted.body.files, [
+    { real_path: '/tmp/night.png', original_name: 'night.png' },
+  ]);
+  assert.equal(created.subject?.files?.[0]?.real_path, '/tmp/night.png');
 });
 
 test('SubjectLibraryView lucide-react 命名导入必须绑定 Layers（防卡片徽章 ReferenceError）', () => {

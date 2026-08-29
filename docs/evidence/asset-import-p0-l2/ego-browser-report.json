@@ -1,0 +1,41 @@
+{
+  "pass": true,
+  "tool": "ego-browser",
+  "issueId": "p0",
+  "plugin": "omnimux-workflow",
+  "taskSpaceName": "asset-import-p0-qa",
+  "taskSpaceId": 162,
+  "requestedUrl": "http://127.0.0.1:45120/",
+  "actualUrl": "http://127.0.0.1:45120/",
+  "title": "OmniMux",
+  "viewport": {
+    "w": 1728,
+    "h": 873
+  },
+  "probe": {
+    "nodeCount": 3,
+    "nodes": [
+      "图片 生成失败 [omnimux:ADAPTER_FAILED] Adapter openai-compatible failed 重新生成",
+      "截屏2026-08-09 22.07.40 替换",
+      "截屏2026-08-12 15.16.01 替换"
+    ],
+    "replaceCount": 2,
+    "generateFail": true,
+    "drawer": true,
+    "importBtn": true,
+    "tree": [
+      "截屏2026-08-09 22.07.40.png",
+      "截屏2026-08-12 15.16.01.png"
+    ],
+    "tabs": ["画布", "资产"]
+  },
+  "screenshot": "product-demo-drawer-canvas-tab.png",
+  "notes": [
+    "Independent L2 44200 failed to boot (missing official dsh-client-ui-* modules in cloned task env). Evidence collected on live Dev Host 45120.",
+    "Product demo canvas: 2 import nodes with 替换, 1 generate node with 重新生成.",
+    "Canvas Tab lists only imported screenshots; generate-failed node is not listed (no local file / no successful media).",
+    "Native file picker cannot be driven by ego-browser; cancel=no-node remains code-covered by pickLocalFiles cancel path.",
+    "Final recapture was interrupted because the user took control of task space 162. Do not reclaim the space unless the user asks to continue."
+  ],
+  "capturedAt": "2026-08-29T09:58:00.000Z"
+}
