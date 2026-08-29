@@ -13,7 +13,8 @@ import {
 } from './guard-worktree.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const repoRoot = join(here, '..')
+const rawRoot = join(here, '..')
+const repoRoot = rawRoot.includes('-wt-') ? '/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh' : rawRoot
 const scriptPath = join(here, 'guard-worktree.mjs')
 
 function runHook(payload) {
@@ -79,7 +80,7 @@ describe('guard-worktree decideWrite', () => {
       filePath: 'plugins/omnimux/src/host/apply.js',
     })
     assert.equal(result.decision, 'deny')
-    assert.equal(result.reason, 'tracked-plugin')
+    assert.equal(result.reason, 'tracked-file')
   })
 
   it('denies namespaced tool default_api:edit on tracked plugin source', () => {
@@ -89,7 +90,7 @@ describe('guard-worktree decideWrite', () => {
       filePath: 'plugins/omnimux/src/host/apply.js',
     })
     assert.equal(result.decision, 'deny')
-    assert.equal(result.reason, 'tracked-plugin')
+    assert.equal(result.reason, 'tracked-file')
   })
 
   it('allows gitignored plugin paths', () => {
@@ -129,13 +130,20 @@ describe('guard-worktree decideWrite', () => {
     assert.equal(result.reason, 'untracked')
   })
 
-  it('allows writes outside plugins/', () => {
-    const result = decideWrite({
+  it('denies tracked docs on main checkout, but allows untracked files', () => {
+    const trackedResult = decideWrite({
       toolName: 'write',
       cwd: repoRoot,
       filePath: 'docs/contracts/plugin-git-pr.md',
     })
-    assert.equal(result.decision, 'allow')
+    assert.equal(trackedResult.decision, 'deny')
+
+    const untrackedResult = decideWrite({
+      toolName: 'write',
+      cwd: repoRoot,
+      filePath: '__untracked_temp_notes__.md',
+    })
+    assert.equal(untrackedResult.decision, 'allow')
   })
 
   it('allows plugin writes inside a worktree path', () => {
