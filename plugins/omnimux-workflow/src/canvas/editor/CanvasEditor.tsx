@@ -49,7 +49,7 @@ import { CANVAS_ZOOM_CONFIG } from './utils/nodeSizeConfig';
 import { validateConnection, rejectReasonKey } from './utils/connectionValidator';
 import { DEFAULT_CANVAS_EDGE_OPTIONS } from './utils/canvasConnectionUtils';
 import { applyFocusCanvasNode } from './utils/focusCanvasNode';
-import { createMaterialNode, appendWithSelectionReset } from './utils/nodeFactory';
+import { createMaterialNode, createImportNode, appendWithSelectionReset } from './utils/nodeFactory';
 import { buildNodeTypes, createNode, registerNodeDefinition } from '../nodes/registry';
 import { materialNodeDefinition } from '../nodes/definitions/material';
 import { tableNodeDefinition } from '../nodes/definitions/table';
@@ -237,12 +237,20 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
   // 工具栏添加节点（错位网格摆放，避免节点互相遮挡 Handle —— spike 坑 #2）；
   // 右键菜单可传入显式落点。
   const handleAddNode = useCallback(
-    (type: MaterialType | 'table' | 'video_composition', position?: { x: number; y: number }) => {
+    (type: MaterialType | 'table' | 'video_composition' | 'import_asset', position?: { x: number; y: number }) => {
       const index = nodeCreateCounter.current;
       const targetPosition = position ?? {
         x: 120 + (index % 3) * 420,
         y: 120 + Math.floor(index / 3) * 360,
       };
+
+      if (type === 'import_asset') {
+        const result = createImportNode('image', targetPosition);
+        if (result.nodes.length === 0) return;
+        nodeCreateCounter.current += 1;
+        setNodes((current) => appendWithSelectionReset(current, result.nodes));
+        return;
+      }
 
       if (type === 'table' || type === 'video_composition') {
         const created = createNode(type, targetPosition, `node_${type}_${Date.now()}`);

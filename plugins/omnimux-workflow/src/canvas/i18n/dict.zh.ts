@@ -13,6 +13,7 @@ const zh = {
   'node.type.audio': '音频',
   'node.type.table': '表格',
   'node.type.video_composition': '视频合成',
+  'node.type.import_asset': '素材导入',
   // 节点头
   'node.renameHint': '双击重命名',
   // GenerationStateContainer
@@ -77,6 +78,8 @@ const zh = {
   'node.textPlaceholder': '输入文本内容…',
   'node.skipped': '节点被跳过',
   // 工具栏 / 底部 Dock（toolbar.*）
+  'toolbar.add.import_asset': '添加素材导入节点',
+  'toolbar.add.import_assetDesc': '导入本地图片、视频或音频文件',
   'toolbar.add.text': '添加文本节点',
   'toolbar.add.image': '添加图片节点',
   'toolbar.add.video': '添加视频节点',

@@ -24,6 +24,7 @@ import {
   type WorkspaceSummary,
 } from '../../shared/canvasTypes';
 import { workspaceSnapshotSchema } from './snapshotSchema';
+import { migrateSnapshot } from './snapshotMigration';
 
 /** Mirrors the snapshot schema name cap (workspaceSnapshotSchema). */
 const MAX_WORKSPACE_NAME_LENGTH = 200;
@@ -88,7 +89,7 @@ function readSnapshotFile(filePath: string): CanvasWorkspaceSnapshot | null {
   }
   const result = workspaceSnapshotSchema.safeParse(parsed);
   if (!result.success) return null;
-  return result.data as CanvasWorkspaceSnapshot;
+  return migrateSnapshot(result.data as CanvasWorkspaceSnapshot);
 }
 
 export function createWorkspaceStore(opts: {

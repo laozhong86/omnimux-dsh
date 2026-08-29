@@ -55,11 +55,11 @@ export function createWorkflowNodeAddTool(deps: WorkflowAgentDeps): AgentToolSpe
   return {
     name: 'workflow_node_add',
     description:
-      'Add a material node to a workflow canvas. material_type picks the node kind; tool picks what the node does and must be valid for that type — text: text-editor|text-to-text|link-extract|audio-transcription, image: import|text-to-image|image-to-image, video: import|video-generation|motion-mimicry|subtitle-render|digital-human, audio: import|text-to-audio|text-to-music|video-to-audio|voice-clone|audio-extract (default: text-editor for text, import otherwise). position is optional (auto-placed right of the existing nodes). Node ids come from the returned node — use them for workflow_connect / workflow_run. Read workflow_snapshot first when editing an existing canvas.',
+      'Add a material node to a workflow canvas. material_type picks the node kind; tool picks what the node does and must be valid for that type — text: text-editor|text-to-text|link-extract|audio-transcription, image: import|text-to-image|image-to-image, video: import|video-generation|motion-mimicry|subtitle-render|digital-human, audio: import|text-to-audio|text-to-music|video-to-audio|voice-clone|audio-extract (defaults to dedicated generative tools: text-editor for text, text-to-image for image, video-generation for video, text-to-audio for audio; pass import for static assets). position is optional (auto-placed right of the existing nodes). Node ids come from the returned node — use them for workflow_connect / workflow_run. Read workflow_snapshot first when editing an existing canvas.',
     parameters: objectParams({
       workspace_id: { type: 'string', required: true, description: 'Workspace id (from workflow_list)' },
       material_type: { type: 'string', enum: MATERIAL_TYPE_ENUM, required: true, description: 'Node material type' },
-      tool: { type: 'string', description: 'Node tool; must belong to material_type (see description). Default: text-editor (text) / import (others)' },
+      tool: { type: 'string', description: 'Node tool; must belong to material_type (see description). Default: generative tool for material_type (or import for static assets)' },
       position: {
         type: 'object',
         properties: { x: { type: 'number' }, y: { type: 'number' } },

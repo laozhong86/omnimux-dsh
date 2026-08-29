@@ -26,6 +26,7 @@ import {
   Undo2,
   Redo2,
   ChevronUp,
+  UploadCloud,
 } from 'lucide-react';
 import type { MaterialType } from '../../types/materialNode';
 import { useT } from '../../i18n';
@@ -37,7 +38,7 @@ import {
 
 export type CanvasPointerMode = 'select' | 'pan';
 
-export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition';
+export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition' | 'import_asset';
 
 export interface ToolbarProps {
   onAddNode: (type: CanvasAddNodeType) => void;
@@ -60,6 +61,7 @@ const ADD_NODE_ITEMS: Array<{
   color: string;
   bg: string;
 }> = [
+  { type: 'import_asset', Icon: UploadCloud, color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.16)' },
   { type: 'text', Icon: FileText, color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.16)' },
   { type: 'image', Icon: ImagePlus, color: '#c084fc', bg: 'rgba(168, 85, 247, 0.16)' },
   { type: 'video', Icon: Video, color: '#fb923c', bg: 'rgba(249, 115, 22, 0.16)' },

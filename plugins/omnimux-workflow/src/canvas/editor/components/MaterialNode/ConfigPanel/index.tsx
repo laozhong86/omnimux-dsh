@@ -26,6 +26,7 @@ import type { MaterialNodeData, MaterialTool } from '../../../../types/materialN
 import {
   ASPECT_RATIO_OPTIONS,
   MATERIAL_TOOLS,
+  resolveNodeKind,
 } from '../../../../types/materialNode';
 import type { CapabilityCatalog } from '../../../../../shared/api';
 import { useT } from '../../../../i18n';
@@ -124,11 +125,52 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 }) => {
   const t = useT();
   const { materialType, selectedTool, params, prompt } = nodeData;
+  const kind = resolveNodeKind(nodeData);
 
   const [expandedModal, setExpandedModal] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const upstreams = useUpstreamMedia(nodeId);
+
+  // 导入类节点的专属面板展示：仅展示资源概览与替换入口，不提供模型生成设置
+  if (kind === 'import') {
+    return (
+      <div className="wf-config-panel wf-config-panel--import">
+        <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--wb-text-secondary)' }}>
+              {t('panel.hintImportNode')}
+            </span>
+            {Boolean(nodeData.realPath) && (
+              <span
+                style={{
+                  fontSize: '11px',
+                  color: 'var(--wb-text-muted)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '240px',
+                }}
+                title={String(nodeData.realPath)}
+              >
+                {String(nodeData.realPath).split('/').pop()}
+              </span>
+            )}
+          </div>
+          {onOpenResourcePicker && (
+            <button
+              type="button"
+              className="wf-param-pill wf-param-pill--btn"
+              style={{ padding: '4px 10px', height: '28px' }}
+              onClick={onOpenResourcePicker}
+            >
+              <span>{t('node.relink')}</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // 音频子模式：音频生成 (text-to-audio) / 音乐生成 (text-to-music)
   const audioSubMode = selectedTool === 'text-to-music' ? 'music' : 'speech';
