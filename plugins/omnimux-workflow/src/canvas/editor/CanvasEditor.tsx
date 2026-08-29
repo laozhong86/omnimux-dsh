@@ -52,6 +52,7 @@ import { applyFocusCanvasNode } from './utils/focusCanvasNode';
 import { createMaterialNode, appendWithSelectionReset } from './utils/nodeFactory';
 import { pickLocalFiles } from '../bridge/apiClient.ts';
 import { draftsFromPickedPaths } from './utils/localFileDraft.ts';
+import { classifyAssetImport } from './utils/assetImportAdapter.ts';
 import { planStandaloneImportNodes } from './utils/resourcePickerPolicy.ts';
 import { buildNodeTypes, createNode, registerNodeDefinition } from '../nodes/registry';
 import { materialNodeDefinition } from '../nodes/definitions/material';
@@ -332,34 +333,48 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
     onAddNode: handleAddNode,
   });
 
-  // 插入资产到画布作为新节点
+  // 资产侧栏入画布：有绝对路径才落导入节点；无路径拒绝，不建生成节点。
+  const mountImportFromAsset = useCallback(
+    (asset: AssetRecord | Record<string, unknown>, position: { x: number; y: number }) => {
+      const classified = classifyAssetImport(asset);
+      if (!classified.ok) {
+        toast.warning(t(classified.reason === 'unsupported' ? 'picker.unsupported' : 'picker.needPath'));
+        return false;
+      }
+      const plan = planStandaloneImportNodes({ files: [classified.draft], origin: position });
+      if (!plan.hasWork || !plan.addNodes?.length) {
+        toast.warning(t('picker.unsupported'));
+        return false;
+      }
+      const applied = applyCanvasInputMutation({ addNodes: plan.addNodes });
+      if (applied.status !== 'allowed') {
+        toast.error(t('picker.commitFailed'));
+        return false;
+      }
+      const importedIds = new Set(plan.addNodes.map((node) => node.id));
+      setNodes((current) => current.map((node) => {
+        if (importedIds.has(node.id)) return node;
+        return node.selected ? { ...node, selected: false } : node;
+      }));
+      nodeCreateCounter.current += plan.addNodes.length;
+      const first = plan.addNodes[0];
+      if (first) setSelectedElement('node', first.id);
+      toast.success(t('picker.importOk'));
+      return true;
+    },
+    [applyCanvasInputMutation, setNodes, setSelectedElement, t],
+  );
+
   const handleInsertAsset = useCallback(
     (asset: AssetRecord) => {
-      const assetPath = asset.real_path || asset.files?.[0]?.path || '';
-      const targetType: MaterialType =
-        asset.type === 'video' ? 'video' : asset.type === 'image' ? 'image' : 'text';
-      const count = nodeCreateCounter.current++;
+      const count = nodeCreateCounter.current;
       const position = {
         x: 200 + (count % 4) * 50,
         y: 200 + (count % 4) * 40,
       };
-
-      const result = createMaterialNode(targetType, position, {
-        title: asset.name,
-        content: assetPath,
-        previewUrl: asset.previewUrl,
-        status: 'ready',
-      });
-      const newNode = result.nodes[0];
-      if (!newNode) return;
-
-      applyCanvasInputMutation({
-        addNodes: [newNode],
-      });
-      setSelectedElement('node', newNode.id);
-      toast.success(t('toolbar.assets') + ': ' + asset.name);
+      mountImportFromAsset(asset, position);
     },
-    [applyCanvasInputMutation, setSelectedElement, t],
+    [mountImportFromAsset],
   );
 
   // 键盘快捷键全集
@@ -424,31 +439,24 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
         const raw = e.dataTransfer.getData('application/json');
         if (!raw) return;
         const payload = JSON.parse(raw);
-        if (payload.type === 'omnimux-asset' && payload.asset) {
-          const asset = payload.asset;
-          const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-          const targetType: MaterialType =
-            asset.type === 'video' ? 'video' : asset.type === 'image' ? 'image' : 'text';
-          const result = createMaterialNode(targetType, pos, {
-            title: asset.name,
-            content: asset.real_path || asset.prompt || '',
-            previewUrl: asset.previewUrl,
-            status: 'ready',
+        if (payload?.type === 'omnimux-canvas-node' && typeof payload.nodeId === 'string') {
+          applyFocusCanvasNode({
+            nodes,
+            nodeId: payload.nodeId,
+            setCenter,
+            setNodes,
           });
-          const newNode = result.nodes[0];
-          if (newNode) {
-            applyCanvasInputMutation({
-              addNodes: [newNode],
-            });
-            setSelectedElement('node', newNode.id);
-            toast.success(`已挂载素材到画布: ${asset.name}`);
-          }
+          return;
+        }
+        if (payload?.type === 'omnimux-asset' && payload.asset) {
+          const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+          mountImportFromAsset(payload.asset, pos);
         }
       } catch (err) {
         console.error('Failed to parse dropped asset', err);
       }
     },
-    [screenToFlowPosition, applyCanvasInputMutation, setSelectedElement],
+    [screenToFlowPosition, mountImportFromAsset, nodes, setCenter, setNodes],
   );
 
   return (
