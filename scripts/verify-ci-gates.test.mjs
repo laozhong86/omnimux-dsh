@@ -94,6 +94,15 @@ test('simulate-multi-agent-lifecycle incident tests pass', () => {
   strictEqual(res.status, 0, `lifecycle simulation failed: ${res.stderr}\n${res.stdout}`)
 })
 
+test('agent presets splice and persona routing stay valid', () => {
+  const res = spawnSync('node', ['--test', resolve(here, 'verify-agent-presets.test.mjs')], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: nestedTestEnv,
+  })
+  strictEqual(res.status, 0, `agent-presets verification failed: ${res.stderr}\n${res.stdout}`)
+})
+
 test('git-wt finish never locally merges or force-pushes main', () => {
   const res = spawnSync('node', ['--test', resolve(here, 'git-wt.test.mjs')], {
     cwd: repoRoot,

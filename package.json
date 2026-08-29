@@ -59,6 +59,8 @@
     "verify:live": "node scripts/agent-live-qa.mjs",
     "verify:gates": "corepack pnpm note:lint && corepack pnpm doc:pairing && corepack pnpm archived:verify && corepack pnpm check:boundaries && corepack pnpm verify:stages && corepack pnpm test:gates",
     "verify:all": "corepack pnpm verify:gates && corepack pnpm test && corepack pnpm registry:verify && corepack pnpm doctor",
-    "sync:presets": "bash scripts/sync-agent-presets.sh"
+    "sync:presets": "bash scripts/sync-agent-presets.sh",
+    "presets:build": "node scripts/build-agent-presets.mjs",
+    "presets:verify": "node --test scripts/verify-agent-presets.test.mjs"
   }
 }

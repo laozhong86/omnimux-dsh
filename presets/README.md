@@ -26,6 +26,14 @@
 
 这样顶部下拉不会再混入 PTC / 极简 / 创造 / 专家模式 / 旧社媒增长团。
 
+## 标准模式如何调用专家团
+
+DSH **不允许**已开始的会话热切换 preset（`agentPreset.select` 会 `agent-preset-locked`）。产品路径是：
+
+- **默认停在 `standard`**：主会话按指令 spawn 10 个具名专家（创作 6 + 增长 4），header 仍显示「标准模式」。
+- **专用团 preset**：用户开新会话就要整场沉浸该团时，用下拉选团（仅空白会话可 `select`）。
+- 专家 spawn 真源在 `presets/fragments/`，由 `scripts/build-agent-presets.mjs` 插入三个 `agent.cordis.yml`。
+
 ## 命名契约
 
 与市场专家团 catalog id 对齐：
