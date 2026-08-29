@@ -86,7 +86,7 @@ test('all six write tools are registered', () => {
   }
 });
 
-test('workflow_create + node_add defaults: import tool for image, auto position', async () => {
+test('workflow_create + node_add defaults: dedicated generative tool for image, auto position', async () => {
   const h = makeHarness();
   try {
     const { wsId } = await seed(h);
@@ -94,7 +94,7 @@ test('workflow_create + node_add defaults: import tool for image, auto position'
       workspace_id: wsId,
       material_type: 'image',
     });
-    assert.equal(added.node.data.selectedTool, 'import');
+    assert.equal(added.node.data.selectedTool, 'text-to-image');
     assert.equal(added.node.data.materialType, 'image');
     assert.ok(added.node.position.x > 0);
     assert.equal(added.workspace.nodeCount, 2);

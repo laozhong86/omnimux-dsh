@@ -7,7 +7,10 @@
  */
 
 import type { MaterialNodeData, MaterialType } from '../../types/materialNode';
-import { createMaterialNode as createSharedMaterialNode } from '../../../shared/graph/nodeFactory.ts';
+import {
+  createMaterialNode as createSharedMaterialNode,
+  createImportNode as createSharedImportNode,
+} from '../../../shared/graph/nodeFactory.ts';
 import type { CanvasNode } from './canvasInputMutationGateway';
 
 export interface WorkflowCreationResult {
@@ -22,6 +25,15 @@ export function createMaterialNode(
   overrides?: Partial<MaterialNodeData>,
 ): WorkflowCreationResult {
   return { nodes: [createSharedMaterialNode(materialType, position, overrides)], edges: [] };
+}
+
+/** Create an explicit asset import node. */
+export function createImportNode(
+  materialType: MaterialType = 'image',
+  position: { x: number; y: number } = { x: 0, y: 0 },
+  overrides?: Partial<MaterialNodeData>,
+): WorkflowCreationResult {
+  return { nodes: [createSharedImportNode(materialType, position, overrides)], edges: [] };
 }
 
 /** 将新节点追加到现有节点列表，同时取消现有节点的选中状态（原样保留） */

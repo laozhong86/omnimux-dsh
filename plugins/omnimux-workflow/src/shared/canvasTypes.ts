@@ -27,8 +27,8 @@ export interface CanvasSettings {
 
 /** Canvas workspace snapshot persisted at workspaces/<id>/canvas.json. */
 export interface CanvasWorkspaceSnapshot {
-  /** Snapshot schema discriminator (migration hook). */
-  schemaVersion: 2;
+  /** Snapshot schema discriminator (migration hook: v2 legacy, v3 with explicit nodeKind). */
+  schemaVersion: 2 | 3;
   id: string;
   name: string;
   /** Optimistic-lock counter, incremented on every PUT. */
@@ -79,4 +79,4 @@ export const DEFAULT_CANVAS_SETTINGS: CanvasSettings = {
   failStrategy: 'fail-fast',
 };
 
-export const SNAPSHOT_SCHEMA_VERSION = 2 as const;
+export const SNAPSHOT_SCHEMA_VERSION = 3 as const;

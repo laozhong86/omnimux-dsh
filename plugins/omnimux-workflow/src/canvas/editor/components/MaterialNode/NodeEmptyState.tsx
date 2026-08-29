@@ -22,21 +22,37 @@ import {
   Wand2,
   Film,
 } from 'lucide-react';
-import type { MaterialType } from '../../../types/materialNode';
+import type { MaterialType, NodeKind } from '../../../types/materialNode';
 import { useT } from '../../../i18n';
 
 export interface NodeEmptyStateProps {
   materialType: MaterialType;
+  nodeKind?: NodeKind;
   onApplyPreset?: (presetKey: string) => void;
   onStartEdit?: () => void;
 }
 
 const NodeEmptyState: React.FC<NodeEmptyStateProps> = ({
   materialType,
+  nodeKind = 'generate',
   onApplyPreset,
   onStartEdit,
 }) => {
   const t = useT();
+
+  if (nodeKind === 'import') {
+    return (
+      <div className={`wf-node-empty wf-node-empty--${materialType} wf-node-empty--import-kind`}>
+        <div className="wf-node-empty__icon-box">
+          {materialType === 'image' && <ImageIcon size={44} strokeWidth={1.5} className="wf-node-empty__icon" />}
+          {materialType === 'video' && <Play size={44} strokeWidth={1.5} className="wf-node-empty__icon" />}
+          {materialType === 'audio' && <Music size={44} strokeWidth={1.5} className="wf-node-empty__icon" />}
+          {materialType === 'text' && <FileText size={32} strokeWidth={1.75} className="wf-node-empty__icon" />}
+        </div>
+        <div className="wf-node-empty__try-label">{t('panel.dropToImport')}</div>
+      </div>
+    );
+  }
 
   if (materialType === 'text') {
     return (

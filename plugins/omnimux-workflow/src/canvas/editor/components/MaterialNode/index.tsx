@@ -390,6 +390,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                 ) : (
                   <NodeEmptyState
                     materialType={materialType}
+                    nodeKind={nodeData.nodeKind ?? (nodeData.selectedTool === 'import' ? 'import' : 'generate')}
                     onApplyPreset={handleApplyPreset}
                   />
                 )}
@@ -399,6 +400,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             <div className="wf-material-node__media">
               <NodeEmptyState
                 materialType={materialType}
+                nodeKind={nodeData.nodeKind ?? (nodeData.selectedTool === 'import' ? 'import' : 'generate')}
                 onApplyPreset={handleApplyPreset}
               />
             </div>

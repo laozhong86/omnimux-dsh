@@ -2490,7 +2490,7 @@ var DEFAULT_CANVAS_SETTINGS = {
   maxParallel: 3,
   failStrategy: "fail-fast"
 };
-var SNAPSHOT_SCHEMA_VERSION = 2;
+var SNAPSHOT_SCHEMA_VERSION = 3;
 
 // ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -17041,7 +17041,7 @@ var canvasSettingsSchema = external_exports.object({
   failStrategy: external_exports.enum(["fail-fast", "continue"])
 });
 var workspaceSnapshotSchema = external_exports.object({
-  schemaVersion: external_exports.literal(SNAPSHOT_SCHEMA_VERSION),
+  schemaVersion: external_exports.union([external_exports.literal(2), external_exports.literal(SNAPSHOT_SCHEMA_VERSION)]),
   id: external_exports.string().min(1),
   name: external_exports.string().min(1).max(200),
   version: external_exports.number().int().min(0),
@@ -17054,6 +17054,85 @@ var workspaceSnapshotSchema = external_exports.object({
     nodeCount: external_exports.number().int().min(0)
   })
 });
+
+// src/shared/graph/materialNode.ts
+var MATERIAL_TOOLS = {
+  text: ["text-editor", "text-to-text", "link-extract", "audio-transcription"],
+  image: ["import", "text-to-image", "image-to-image"],
+  video: ["import", "video-generation", "motion-mimicry", "subtitle-render", "digital-human"],
+  audio: ["import", "text-to-audio", "text-to-music", "video-to-audio", "voice-clone", "audio-extract"]
+};
+var DEFAULT_MATERIAL_TOOL = {
+  text: "text-editor",
+  image: "text-to-image",
+  video: "video-generation",
+  audio: "text-to-audio"
+};
+var MATERIAL_TOOL_INPUT_TYPES = {
+  "text-editor": [],
+  "text-to-text": ["text", "image", "video"],
+  "link-extract": ["text"],
+  "audio-transcription": ["audio"],
+  import: [],
+  "text-to-image": ["text"],
+  "image-to-image": ["text", "image"],
+  "video-generation": ["text", "image", "video", "audio"],
+  "digital-human": ["text", "image", "video", "audio"],
+  "motion-mimicry": ["text", "image", "video"],
+  "subtitle-render": ["text", "video"],
+  "text-to-audio": ["text"],
+  "video-to-audio": ["video"],
+  "voice-clone": ["text", "audio"],
+  "audio-extract": ["video"],
+  "text-to-music": ["text"]
+};
+function createDefaultMaterialNodeData(materialType, overrides) {
+  return {
+    label: "",
+    materialType,
+    status: "empty",
+    selectedTool: DEFAULT_MATERIAL_TOOL[materialType],
+    params: {},
+    failStrategy: "abort",
+    ...overrides
+  };
+}
+function resolveNodeKind(data) {
+  if (data.nodeKind === "generate" || data.nodeKind === "import") {
+    return data.nodeKind;
+  }
+  if (data.selectedTool === "import") {
+    return "import";
+  }
+  return "generate";
+}
+
+// src/workflow/workspace/snapshotMigration.ts
+function migrateSnapshot(snapshot) {
+  const currentVersion = snapshot.schemaVersion;
+  if (currentVersion >= SNAPSHOT_SCHEMA_VERSION) {
+    return snapshot;
+  }
+  const upgradedNodes = snapshot.nodes.map((node) => {
+    if (node.type !== "material") {
+      return node;
+    }
+    const data = node.data ?? {};
+    const nodeKind = resolveNodeKind(data);
+    return {
+      ...node,
+      data: {
+        ...data,
+        nodeKind
+      }
+    };
+  });
+  return {
+    ...snapshot,
+    schemaVersion: SNAPSHOT_SCHEMA_VERSION,
+    nodes: upgradedNodes
+  };
+}
 
 // src/workflow/workspace/WorkspaceStore.ts
 var MAX_WORKSPACE_NAME_LENGTH = 200;
@@ -17101,7 +17180,7 @@ function readSnapshotFile(filePath) {
   }
   const result = workspaceSnapshotSchema.safeParse(parsed);
   if (!result.success) return null;
-  return result.data;
+  return migrateSnapshot(result.data);
 }
 function createWorkspaceStore(opts) {
   const { workspacesDir } = opts;
@@ -19412,58 +19491,6 @@ var WORKFLOW_API_ROUTES = {
   /** GET: execution SSE event stream (text/event-stream). */
   executionEvents: (workspaceId, executionId) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/events`
 };
-
-// src/shared/graph/materialNode.ts
-var MATERIAL_TOOLS = {
-  text: ["text-editor", "text-to-text", "link-extract", "audio-transcription"],
-  image: ["import", "text-to-image", "image-to-image"],
-  video: ["import", "video-generation", "motion-mimicry", "subtitle-render", "digital-human"],
-  audio: ["import", "text-to-audio", "text-to-music", "video-to-audio", "voice-clone", "audio-extract"]
-};
-var DEFAULT_MATERIAL_TOOL = {
-  text: "text-editor",
-  image: "import",
-  video: "import",
-  audio: "import"
-};
-var MATERIAL_TOOL_INPUT_TYPES = {
-  "text-editor": [],
-  "text-to-text": ["text", "image", "video"],
-  "link-extract": ["text"],
-  "audio-transcription": ["audio"],
-  import: [],
-  "text-to-image": ["text"],
-  "image-to-image": ["text", "image"],
-  "video-generation": ["text", "image", "video", "audio"],
-  "digital-human": ["text", "image", "video", "audio"],
-  "motion-mimicry": ["text", "image", "video"],
-  "subtitle-render": ["text", "video"],
-  "text-to-audio": ["text"],
-  "video-to-audio": ["video"],
-  "voice-clone": ["text", "audio"],
-  "audio-extract": ["video"],
-  "text-to-music": ["text"]
-};
-function createDefaultMaterialNodeData(materialType, overrides) {
-  return {
-    label: "",
-    materialType,
-    status: "empty",
-    selectedTool: DEFAULT_MATERIAL_TOOL[materialType],
-    params: {},
-    failStrategy: "abort",
-    ...overrides
-  };
-}
-function resolveNodeKind(data) {
-  if (data.nodeKind === "generate" || data.nodeKind === "import") {
-    return data.nodeKind;
-  }
-  if (data.selectedTool === "import") {
-    return "import";
-  }
-  return "generate";
-}
 
 // src/workflow/execution/nodeExecutors.ts
 var LOG_TAG5 = "nodeExecutors";
@@ -31769,6 +31796,7 @@ function getDefaultNodeWidth(nodeType) {
 // src/shared/graph/nodeFactory.ts
 function createMaterialNode(materialType, position, overrides) {
   const data = createDefaultMaterialNodeData(materialType, {
+    nodeKind: "generate",
     status: "empty",
     nodeWidth: getDefaultNodeWidth(materialType),
     ...overrides
@@ -31813,11 +31841,11 @@ function createWorkflowNodeAddTool(deps) {
   const { store } = deps;
   return {
     name: "workflow_node_add",
-    description: "Add a material node to a workflow canvas. material_type picks the node kind; tool picks what the node does and must be valid for that type \u2014 text: text-editor|text-to-text|link-extract|audio-transcription, image: import|text-to-image|image-to-image, video: import|video-generation|motion-mimicry|subtitle-render|digital-human, audio: import|text-to-audio|text-to-music|video-to-audio|voice-clone|audio-extract (default: text-editor for text, import otherwise). position is optional (auto-placed right of the existing nodes). Node ids come from the returned node \u2014 use them for workflow_connect / workflow_run. Read workflow_snapshot first when editing an existing canvas.",
+    description: "Add a material node to a workflow canvas. material_type picks the node kind; tool picks what the node does and must be valid for that type \u2014 text: text-editor|text-to-text|link-extract|audio-transcription, image: import|text-to-image|image-to-image, video: import|video-generation|motion-mimicry|subtitle-render|digital-human, audio: import|text-to-audio|text-to-music|video-to-audio|voice-clone|audio-extract (defaults to dedicated generative tools: text-editor for text, text-to-image for image, video-generation for video, text-to-audio for audio; pass import for static assets). position is optional (auto-placed right of the existing nodes). Node ids come from the returned node \u2014 use them for workflow_connect / workflow_run. Read workflow_snapshot first when editing an existing canvas.",
     parameters: objectParams({
       workspace_id: { type: "string", required: true, description: "Workspace id (from workflow_list)" },
       material_type: { type: "string", enum: MATERIAL_TYPE_ENUM, required: true, description: "Node material type" },
-      tool: { type: "string", description: "Node tool; must belong to material_type (see description). Default: text-editor (text) / import (others)" },
+      tool: { type: "string", description: "Node tool; must belong to material_type (see description). Default: generative tool for material_type (or import for static assets)" },
       position: {
         type: "object",
         properties: { x: { type: "number" }, y: { type: "number" } },
