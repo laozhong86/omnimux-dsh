@@ -1,0 +1,36 @@
+{
+  "pass": true,
+  "tool": "ego-browser",
+  "issueId": "group-node",
+  "plugin": "omnimux-workflow",
+  "taskSpaceName": "omnimux-qa-group-node-r3",
+  "taskSpaceId": 160,
+  "requestedUrl": "http://127.0.0.1:44202/?r=3",
+  "actualUrl": "http://127.0.0.1:44202/?r=3",
+  "title": "workflow group-node L2",
+  "viewport": {
+    "w": 1728,
+    "h": 873,
+    "pw": 1728,
+    "ph": 873
+  },
+  "port": 44202,
+  "canvasHash": "6e88aa7a4bdcbdc0",
+  "snapshot": "root\n  container\n  container\n    container\n      application\n        container\n          group [ref=17, loc=unstable]\n            container\n              button [ref=21, loc=unstable]\n              button [ref=24, loc=unstable]\n                svg_root\n                text \"布局\"\n                svg_root\n              container\n              button [ref=35, loc=unstable]\n                svg_root\n                text \"整组执行\"\n              container\n              button [ref=41, loc=unstable]\n                svg_root\n                text \"创建工作流\"\n              container\n              button [ref=50, loc=unstable]\n                svg_root\n                text \"解组\"\n            container\n            container\n            container\n            container\n            container\n            container\n            container\n            container\n            container\n              container\n              text \"新建组\"\n          group [ref=68, loc=unstable]\n            container\n            container\n              svg_root\n              text \"夜景静帧\"\n            image\n            container\n          group [ref=86, loc=unstable]\n            container\n            container\n              svg_root\n              text \"分镜脚本\"\n            textbox [ref=5, loc=unstable]\n              text \"夜景人像精修脚本\"\n            container\n          group [ref=103, loc=unstable]\n            container\n            container\n              svg_root\n              text \"夜景静帧\"\n            image\n            container\n          group [ref=121, loc=unstable]\n            container\n            container\n              svg_root\n              text \"分镜脚本\"\n            textbox [ref=6, loc=unstable]\n              text \"夜景人像精修脚本\"\n            container\n        svg_root\n        anchor \"React Flow attribution\" [ref=141, loc=css:a[aria-label=\"React Flow attribution\"], url=https://reactflow.dev/?utm_source=attribution]\n          text \"React Flow\"\n      container\n        button \"执行全部\" [ref=144, loc=css:button[aria-label=\"执行全部\"]]\n          svg_root\n        container\n          button [ref=148, loc=unstable]\n            svg_root\n          container\n          button [ref=155, loc=unstable]\n            svg_root\n          container\n            text \"100\"\n            text \"%\"\n          button [ref=161, loc=unstable]\n            svg_root\n        container\n          button [ref=166, loc=unstable]\n            svg_root\n          button [ref=172, loc=unstable]\n            svg_root\n          button [ref=181, loc=unstable]\n            svg_root\n      container\n        button [ref=188, loc=unstable]\n          svg_root\n        container\n        button [ref=195, loc=unstable]\n          svg_root\n        button [ref=203, loc=unstable]\n          svg_root\n          svg_root\n        button [ref=210, loc=unstable]\n          svg_root\n        container\n        button [ref=215, loc=unstable]\n          svg_root\n        button [ref=220, loc=unstable]\n          svg_root\n        container\n        button [ref=226, loc=unstable]\n          svg_root\n    container\n      container\n        text \"批量保存到资产库\"\n        button \"Close\" [ref=297, loc=css:button[aria-label=\"Close\"]]\n          svg_root\n      form\n        container\n          text \"资产名称\"\n          textbox [ref=287, loc=css:input[placeholder=\"夜景静帧\"]]\n            text \"夜景静帧\"\n        container\n          text \"资产类别\"\n          container\n            button [ref=308, loc=unstable]\n              svg_root\n              text \"角色 (Character)\"\n            button [ref=313, loc=unstable]\n              svg_root\n              text \"场景 (Scene)\"\n            button [ref=318, loc=unstable]\n              svg_root\n              text \"道具 (Prop)\"\n            button [ref=323, loc=unstable]\n              svg_root\n              text \"风格包 (Style)\"\n            button [ref=328, loc=unstable]\n              svg_root\n              text \"知识包 (Knowledge)\"\n            button [ref=333, loc=unstable]\n              svg_root\n              text \"自定义素材 (Custom)\"\n        container\n          text \"待入库本地文件（1 项）\"\n          text \"夜景静帧\"\n        container\n          text \"标签\"\n          textbox [ref=288, loc=css:input[placeholder=\"逗号分隔标签\"]]\n            text \"AIGC, 工作流生成\"\n        container\n          button [ref=349, loc=unstable]\n            text \"取消\"\n          button [ref=351, loc=unstable]\n            svg_root\n            text \"确认写入资产库\"\n  container\n",
+  "screenshot": "ego-browser-r3.png",
+  "assertions": {
+    "l2Port": true,
+    "templateModalDefaultNameIsGroupTitle": true,
+    "assetModalDefaultNameIsNodeLabel": true,
+    "assetModalHasLocalFile": true,
+    "i18nZhChrome": false
+  },
+  "modal": {
+    "overlay": true,
+    "title": "批量保存到资产库\n资产名称\n资产类别\n角色 (Character)\n场景 (Scene)\n道具 (Prop)\n风格包 (Style)\n知识包 (Knowledge)\n自定义素材 (Custom)\n待入库本地文件（1 项）\n夜景静帧\n标签\n取消\n确认写入资产库",
+    "name": "夜景静帧",
+    "list": "夜景静帧"
+  },
+  "notes": "R3 close-out: create-workflow modal default name follows group title (新建组, not 新建工作流模板). Asset modal default name follows node label. Isolation Host 44202, official yarn omnimux:dev start still missing dsh-client-ui-* packages.",
+  "capturedAt": "2026-08-29T09:39:15.947Z"
+}

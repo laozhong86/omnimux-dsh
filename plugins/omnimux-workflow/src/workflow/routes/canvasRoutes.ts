@@ -20,6 +20,10 @@
  *   PUT  /omnimux-workflow/api/workspaces/:id/assets          save (independent rev)
  *   POST /omnimux-workflow/api/workspaces/:id/assets/mkdir    create folder record
  *   POST /omnimux-workflow/api/workspaces/:id/assets/index    index absolute paths (no copy)
+ *   GET  /omnimux-workflow/api/templates        list reusable workflow templates
+ *   POST /omnimux-workflow/api/templates        create template from a group subgraph
+ *   GET  /omnimux-workflow/api/templates/:id    one template
+ *   DELETE /omnimux-workflow/api/templates/:id
  *
  * M3 execution routes (legacy prefix aliases all of them):
  *   GET  /omnimux-workflow/api/workspaces/:id/executions            list live runs
@@ -69,6 +73,7 @@ import { createMediaRoutes } from './mediaRoutes';
 import { createLocalFileRoutes } from './localFileRoutes';
 import { createProjectAssetsRoutes } from './projectAssetsRoutes';
 import { createProjectAssetsStore } from '../workspace/ProjectAssetsStore';
+import { createTemplateRoutes } from './templateRoutes';
 
 export {
   MAX_JSON_BODY_BYTES,
@@ -174,7 +179,7 @@ function serveFile(
 }
 
 export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
-  const { store, gateway, mediaDir, executionManager, picker } = deps;
+  const { store, gateway, mediaDir, executionManager, picker, templates } = deps;
   const projectDispatcher = createProjectDispatcher();
   const staticRoutes = createStaticRoutes({ pluginRoot: PLUGIN_ROOT, gateway });
   const workspaceRoutes = createWorkspaceRoutes(store);
@@ -185,6 +190,7 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
   const executionRoutes = createExecutionRoutes({ store, executionManager });
   const mediaRoutes = createMediaRoutes(mediaDir);
   const localFileRoutes = createLocalFileRoutes(picker ? { picker } : {});
+  const templateRoutes = createTemplateRoutes(templates);
 
   /**
    * Legacy M1 prefix compatibility: /dsh-workflow/* is rewritten (in-memory,
@@ -226,6 +232,8 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
       if (fromWorkspace) return fromWorkspace;
       const fromProjectAssets = await Promise.resolve(projectAssetsRoutes.tryHandle(method, path, req));
       if (fromProjectAssets) return fromProjectAssets;
+      const fromTemplates = await Promise.resolve(templateRoutes.tryHandle(method, path, req));
+      if (fromTemplates) return fromTemplates;
       const fromExecution = await Promise.resolve(executionRoutes.tryHandle(method, path, req));
       if (fromExecution) return fromExecution;
       const fromCapabilities = await Promise.resolve(staticRoutes.tryCapabilities(method, path, req));

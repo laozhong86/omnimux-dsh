@@ -70,6 +70,23 @@ test('sanitizeNodes 白名单：丢掉 measured/dragging，selected 强制 false
   assert.equal(out.data.label, 'x');
 });
 
+test('sanitizeNodes 保留 extent: parent 与 parentId，供分组重开后约束子节点', () => {
+  const [out] = sanitizeNodes([
+    {
+      id: 'child',
+      type: 'material',
+      position: { x: 32, y: 32 },
+      data: { label: 'in-group' },
+      parentId: 'group_1',
+      extent: 'parent',
+      measured: { width: 100, height: 80 },
+    },
+  ]);
+  assert.equal(out.parentId, 'group_1');
+  assert.equal(out.extent, 'parent');
+  assert.equal('measured' in out, false);
+});
+
 test('sanitizeEdges 丢掉 selected，保留连接字段', () => {
   const [out] = sanitizeEdges([
     {

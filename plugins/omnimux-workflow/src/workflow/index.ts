@@ -20,10 +20,12 @@
  */
 
 import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import type { ServerResponse, IncomingMessage } from 'node:http';
 import type { WorkflowPaths } from './paths';
 import { resolveWorkflowPaths } from './paths';
 import { createWorkspaceStore } from './workspace/WorkspaceStore';
+import { TemplateStore } from './templates/TemplateStore.ts';
 import type { GenerationGateway } from './seam/gateway';
 import {
   assembleGateway,
@@ -63,11 +65,14 @@ export interface MountWorkflowHostOptions {
 
 export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptions = {}): () => void {
   const paths = opts.paths ?? resolveWorkflowPaths();
+  const templatesDir = paths.templatesDir || join(paths.root, 'templates');
   mkdirSync(paths.workspacesDir, { recursive: true });
   mkdirSync(paths.mediaDir, { recursive: true });
   mkdirSync(paths.executionsDir, { recursive: true });
+  mkdirSync(templatesDir, { recursive: true });
 
   const store = createWorkspaceStore({ workspacesDir: paths.workspacesDir });
+  const templates = new TemplateStore({ templatesDir });
   const gateway =
     opts.gateway
     ?? assembleGateway({
@@ -86,6 +91,7 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
     gateway,
     mediaDir: paths.mediaDir,
     executionManager,
+    templates,
   });
 
   // Recovery pass (Gxgen ExecutionRecoveryService port): resume live runs

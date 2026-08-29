@@ -60,6 +60,10 @@ export const WORKFLOW_API_ROUTES = {
   /** GET: execution SSE event stream (text/event-stream). */
   executionEvents: (workspaceId: string, executionId: string) =>
     `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/events`,
+  /** GET: list templates. POST: create template. */
+  templates: `${WORKFLOW_ROUTE_PREFIX}/api/templates`,
+  /** GET/DELETE one template. */
+  template: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/templates/${id}`,
 } as const;
 
 /** GET /api/manifest response. */
