@@ -126,7 +126,7 @@ test('installs bundled social-engagement-team as a full agent pack, not a flat S
   assert.equal(again.already, true)
 })
 
-test('installs bundled social-content-team as a full agent pack', () => {
+test('installs bundled social-content-team as a full multimodal agent pack', () => {
   const env = roots()
   const catalog = loadCatalog()
   const result = installItem({ catalog, id: 'exp-social-content-team', ...env })
@@ -137,17 +137,31 @@ test('installs bundled social-content-team as a full agent pack', () => {
   assert.equal(existsSync(join(pack, '.codebuddy-plugin', 'plugin.json')), true)
   assert.equal(existsSync(join(pack, 'agents', 'social-content-team-lead.md')), true)
   assert.equal(existsSync(join(pack, 'agents', 'content-copywriter.md')), true)
-  assert.equal(existsSync(join(pack, 'agents', 'visual-director.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'speech-agent.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'image-agent.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'video-agent.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'music-agent.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'editing-agent.md')), true)
+  assert.equal(existsSync(join(pack, 'contracts', 'anti-loop.md')), true)
+  assert.equal(existsSync(join(pack, 'contracts', 'character-ref-guard.md')), true)
+  assert.equal(existsSync(join(pack, 'contracts', 'editing-defaults.md')), true)
+  assert.equal(existsSync(join(pack, 'contracts', 'canvas-discipline.md')), true)
+  assert.equal(existsSync(join(pack, 'contracts', 'output-format.md')), true)
   const plugin = JSON.parse(readFileSync(join(pack, '.codebuddy-plugin', 'plugin.json'), 'utf8'))
   assert.equal(plugin.expertType, 'team')
   assert.equal(plugin.agentName, 'social-content-team-lead')
   assert.deepEqual(plugin.teamInfo.memberAgents, [
     'content-copywriter',
-    'visual-director',
+    'speech-agent',
+    'image-agent',
+    'video-agent',
+    'music-agent',
+    'editing-agent',
   ])
   const lead = readFileSync(join(pack, 'SKILL.md'), 'utf8')
-  assert.match(lead, /社媒内容创作专家团 - 主理人/)
+  assert.match(lead, /社媒多模态内容创作工坊 - 主理人/)
   assert.match(lead, /content-copywriter/)
+  assert.match(lead, /editing-agent/)
 })
 
 /**
@@ -167,23 +181,11 @@ test('subagents bind only their own scoped skills, never the whole catalog', () 
   const pack = join(env.home, 'skills', 'social-content-team')
 
   const copywriter = readFileSync(join(pack, 'agents', 'content-copywriter.md'), 'utf8')
-  const director = readFileSync(join(pack, 'agents', 'visual-director.md'), 'utf8')
-
   const copyBound = boundSkills(copywriter)
-  const visualBound = boundSkills(director)
 
   // 文案专员：只绑文案三件套
   assert.deepEqual(copyBound.sort(), ['ad-creative', 'content-strategy', 'social-caption'])
-  // 视觉导演：只绑视觉三件套
-  assert.deepEqual(visualBound.sort(), ['character-scene-storyboard', 'cinematic-motion-language', 'dynamic-poster'])
-
-  // 两个子代理的技能集合完全不相交（严格的职责隔离）
-  const overlap = copyBound.filter((s) => visualBound.includes(s))
-  assert.deepEqual(overlap, [], '文案与视觉子代理不得共享技能')
-
-  // 隔离铁律文案仍在，作为给模型的显式约束（避开 markdown 加粗标记）
   assert.match(copywriter, /越界调用视觉分镜类技能/)
-  assert.match(director, /越界调用文案类技能/)
 })
 
 test('installs a local WorkBuddy expert pack without git clone', () => {

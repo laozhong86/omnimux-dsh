@@ -69,7 +69,8 @@ test('summons the social-content-team agent pack from bundled catalog', () => {
   assert.equal(result.gesture, '/social-content-team')
   assert.equal(existsSync(join(roots.home, 'skills', 'social-content-team', 'agents', 'social-content-team-lead.md')), true)
   assert.equal(existsSync(join(roots.home, 'skills', 'social-content-team', 'agents', 'content-copywriter.md')), true)
-  assert.equal(existsSync(join(roots.home, 'skills', 'social-content-team', 'agents', 'visual-director.md')), true)
+  assert.equal(existsSync(join(roots.home, 'skills', 'social-content-team', 'agents', 'editing-agent.md')), true)
+  assert.equal(existsSync(join(roots.home, 'skills', 'social-content-team', 'contracts', 'editing-defaults.md')), true)
 })
 
 test('connectors cannot be summoned', () => {
