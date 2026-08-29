@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
@@ -189,4 +189,16 @@ test('resolved definitions satisfy official validateDefinition', async () => {
     assert.equal(definition.provider, provider.name)
     assert.equal(definition.source, 'omnimux-market')
   }
+})
+
+test('host.ts declares skills in inject so ctx.skills is safely readable', () => {
+  // R1 事故回归护栏：host.ts 必须把 skills 加入 inject 声明，
+  // 否则 Cordis 在 apply() 阶段读 ctx.skills 会抛 "without inject" 崩掉整个 Host。
+  const hostPath = join(import.meta.dirname, '..', '..', 'src', 'host.ts')
+  const host = readFileSync(hostPath, 'utf8')
+  const injectMatch = host.match(/export\s+const\s+inject\s*=\s*(\[[\s\S]*?\])/)
+  assert.ok(injectMatch, 'host.ts must declare export const inject')
+  const injectArr = injectMatch[1]
+  assert.match(injectArr, /'skills'/, 'host.ts inject must declare "skills" so ctx.skills is inject-required-safe')
+  assert.match(injectArr, /'tools'/, 'host.ts inject must still declare "tools"')
 })
