@@ -36,8 +36,8 @@ const EPHEMERAL_DIR_NAMES = new Set([
 const EPHEMERAL_BASENAMES = new Set(['.DS_Store'])
 const EPHEMERAL_SUFFIXES = ['.log', '.tsbuildinfo']
 
-export function isWorktreePath(fullPath, cwd = '') {
-  return fullPath.includes(WORKTREE_MARK) || (cwd && cwd.includes(WORKTREE_MARK))
+export function isWorktreePath(fullPath) {
+  return Boolean(fullPath && fullPath.includes(WORKTREE_MARK))
 }
 
 export function isEphemeralPath(fullPath) {
@@ -134,7 +134,7 @@ export function decideWrite({ filePath, cwd, toolName }) {
   if (!fullPath) return { decision: 'allow' }
 
   // 1. 独立 Worktree 目录完全豁免放行
-  if (isWorktreePath(fullPath, cwd)) {
+  if (isWorktreePath(fullPath)) {
     return { decision: 'allow', fullPath, reason: 'worktree-isolated' }
   }
 
@@ -192,9 +192,9 @@ function handle(rawInput) {
   const cwd = String(input.cwd || process.cwd())
 
   if (toolName === 'bash') {
-    const command = String(toolInput.command || '')
-    const bashResult = decideBashCommand({ command, cwd })
-    return decisionJson(hookEventName, bashResult.decision, bashResult.reason, bashResult)
+    const command = String(toolInput.command || '').trim()
+    const result = decideBashCommand({ command, cwd })
+    return decisionJson(hookEventName, result.decision, result.reason, result)
   }
 
   const filePath = String(toolInput.file_path || '').trim()

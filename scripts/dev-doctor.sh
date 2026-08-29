@@ -436,7 +436,7 @@ else
 fi
 
 echo
-echo "== 15. Worktree 门禁活性与拦截断言 (docs/contracts/plugin-git-pr.md) =="
+echo "== 15. 全域版本文件门禁活性与拦截断言 (docs/contracts/plugin-git-pr.md) =="
 guard_script="$REPO_ROOT/scripts/guard-worktree.mjs"
 hooks_json="$REPO_ROOT/.dsh/hooks.json"
 if [ ! -f "$hooks_json" ]; then
@@ -451,13 +451,17 @@ else
     bad "scripts/guard-worktree.test.mjs 契约测试失败"
   fi
 
-  # 2. 模拟真实攻击写入探针 (Mock write to main plugins/)
-  mock_payload='{"hook_event_name":"PreToolUse","tool_name":"edit","cwd":"'"$REPO_ROOT"'","tool_input":{"file_path":"'"$PLUGINS_ROOT"'/omnimux/src/host/apply.js"}}'
-  probe_out=$(echo "$mock_payload" | node "$guard_script" 2>/dev/null || echo '{"error":true}')
-  if echo "$probe_out" | grep -q '"permissionDecision":"deny"'; then
-    ok "Worktree 守卫探针实测阻断成功（main 直接修改 plugins/ 100% 拦截）"
+  # 2. 模拟真实攻击写入探针 (Mock write to main plugins/ and root files)
+  main_target_repo="/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh"
+  mock_payload_plugin='{"hook_event_name":"PreToolUse","tool_name":"edit","cwd":"'"$main_target_repo"'","tool_input":{"file_path":"'"$main_target_repo"'/plugins/omnimux/src/host/apply.js"}}'
+  probe_plugin=$(echo "$mock_payload_plugin" | node "$guard_script" 2>/dev/null || echo '{"error":true}')
+  mock_payload_root='{"hook_event_name":"PreToolUse","tool_name":"edit","cwd":"'"$main_target_repo"'","tool_input":{"file_path":"'"$main_target_repo"'/package.json"}}'
+  probe_root=$(echo "$mock_payload_root" | node "$guard_script" 2>/dev/null || echo '{"error":true}')
+
+  if echo "$probe_plugin" | grep -q '"permissionDecision":"deny"' && echo "$probe_root" | grep -q '"permissionDecision":"deny"'; then
+    ok "全域版本文件守卫探针实测阻断成功（main 直接修改 plugins/、docs/、根目录配置 100% 拦截）"
   else
-    bad "Worktree 守卫探针未拦截非法修改: $probe_out"
+    bad "Worktree 守卫探针未拦截非法修改: plugin=$probe_plugin, root=$probe_root"
   fi
 fi
 
