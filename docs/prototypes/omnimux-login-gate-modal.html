@@ -219,7 +219,7 @@
       background: linear-gradient(
         to right,
         transparent 0%,
-        rgba(20, 20, 22, 0.35) 50%,
+        color-mix(in srgb, var(--dsw-alias-bg-primary, #141416) 35%, transparent) 50%,
         var(--dsw-alias-bg-primary, #141416) 100%
       );
       pointer-events: none;
@@ -231,7 +231,7 @@
       position: absolute;
       inset: 0;
       background-image: 
-        radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.14) 30%, rgba(255, 255, 255, 0.05) 55%, transparent 75%),
+        radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--dsw-alias-label-primary, #fff) 25%, transparent) 0%, color-mix(in srgb, var(--dsw-alias-label-primary, #fff) 14%, transparent) 30%, color-mix(in srgb, var(--dsw-alias-label-primary, #fff) 5%, transparent) 55%, transparent 75%),
         url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80');
       background-size: cover;
       background-position: center 25%;
@@ -277,7 +277,7 @@
     .hero-text-scrim {
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(15, 8, 35, 0.45) 0%, rgba(20, 10, 45, 0.12) 28%, transparent 45%, rgba(20, 10, 45, 0.45) 70%, rgba(15, 8, 35, 0.88) 100%);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--dsw-alias-bg-mask-1, #0f0823) 45%, transparent) 0%, color-mix(in srgb, var(--dsw-alias-bg-mask-1, #140a2d) 12%, transparent) 28%, transparent 45%, color-mix(in srgb, var(--dsw-alias-bg-mask-1, #140a2d) 45%, transparent) 70%, color-mix(in srgb, var(--dsw-alias-bg-mask-1, #0f0823) 88%, transparent) 100%);
       pointer-events: none;
       z-index: 5;
     }

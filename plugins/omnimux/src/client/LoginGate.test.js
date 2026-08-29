@@ -297,7 +297,7 @@ describe('HUB_CSS login-gate 1:1 tokens', () => {
       styles,
       /url\('https:\/\/images\.unsplash\.com\/photo-1544551763-46a013bb70d5\?auto=format&fit=crop&w=800&q=80'\)/,
     )
-    assert.match(styles, /radial-gradient\(circle at 50% 25%, rgba\(255, 255, 255, 0\.25\) 0%, rgba\(255, 255, 255, 0\.14\) 30%, rgba\(255, 255, 255, 0\.05\) 55%, transparent 75%\)/)
+    assert.match(styles, /radial-gradient\(circle at 50% 25%, color-mix\(in srgb, var\(--dsw-alias-label-primary, #fff\) 25%, transparent\) 0%, color-mix\(in srgb, var\(--dsw-alias-label-primary, #fff\) 14%, transparent\) 30%, color-mix\(in srgb, var\(--dsw-alias-label-primary, #fff\) 5%, transparent\) 55%, transparent 75%\)/)
     assert.match(styles, /data:image\/svg\+xml/)
     assert.match(styles, /\.omnimux-login-gate-hero-jellyfish/)
     assert.match(styles, /object-fit:\s*cover/)
@@ -310,8 +310,10 @@ describe('HUB_CSS login-gate 1:1 tokens', () => {
   })
 
   it('closes both offline SVG data-uri templates with a quoted url()', () => {
-    assert.match(styles, /const LOGIN_GATE_SEA_URI = `url\("data:image\/svg\+xml,\$\{encodeURIComponent\(`[\s\S]+?<\/svg>`\)\}"\)`/)
-    assert.match(styles, /const LOGIN_GATE_JELLY_URI = `url\("data:image\/svg\+xml,\$\{encodeURIComponent\(`[\s\S]+?<\/svg>`\)\}"\)`/)
+    assert.match(styles, /const LOGIN_GATE_SEA_SVG = '<svg[\s\S]+?<\/svg>'/)
+    assert.match(styles, /const LOGIN_GATE_JELLY_SVG = '<svg[\s\S]+?<\/svg>'/)
+    assert.match(styles, /const LOGIN_GATE_SEA_URI = `url\("data:image\/svg\+xml,\$\{encodeURIComponent\(LOGIN_GATE_SEA_SVG\)}"\)`/)
+    assert.match(styles, /const LOGIN_GATE_JELLY_URI = `url\("data:image\/svg\+xml,\$\{encodeURIComponent\(LOGIN_GATE_JELLY_SVG\)}"\)`/)
     assert.doesNotMatch(styles, /encodeURIComponent\(`[\s\S]+?<\/svg>`\)\}\)`/)
   })
 })
