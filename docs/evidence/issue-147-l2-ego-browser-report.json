@@ -1,0 +1,49 @@
+{
+  "pass": true,
+  "tool": "ego-browser",
+  "issueId": "147",
+  "pr": 151,
+  "plugin": "omnimux-inspiration",
+  "commitSha": "3a41a6d",
+  "taskSpaceName": "omnimux-qa-issue-147-inspiration",
+  "taskSpaceId": 145,
+  "requestedUrl": "http://127.0.0.1:44200",
+  "actualUrl": "http://127.0.0.1:44200/",
+  "title": "OmniMux",
+  "dshHome": "/Users/x/.dsh-dev/tasks/crsa-insp-147",
+  "l2Task": "crsa-insp-147",
+  "port": 44200,
+  "runtime": "OmniMux.app bundled dsh 0.1.1-rc.2",
+  "assertions": {
+    "stageVisible": true,
+    "stageDisplay": "flex",
+    "stageBox": { "x": 280, "y": 0, "w": 1448, "h": 873 },
+    "cards": 1,
+    "localTab": true,
+    "previewModal": true,
+    "previewSwitch": true,
+    "previewSwitchClass": "omnimux-inspiration-preview-switch",
+    "cardClass": "omnimux-inspiration-card-pure",
+    "snapshotContainsInspirationVault": true,
+    "snapshotContainsLocal": true,
+    "snapshotContainsView": true,
+    "snapshotContainsMedia": true,
+    "snapshotContainsDeconstruction": true
+  },
+  "dom": {
+    "bodyTextLength": 710,
+    "interactiveCount": 1,
+    "hasDocumentRoot": true
+  },
+  "screenshots": [
+    ".workbuddy/evidence/issue-147/inspiration-cards.png",
+    ".workbuddy/evidence/issue-147/inspiration-preview.png"
+  ],
+  "notes": [
+    "L2 Host cloned from production profile, booted with OmniMux.app dsh 0.1.1-rc.2 (not harness HEAD).",
+    "omnimux-market disabled in L2 patch only (ctx.skills inject missing); not part of this PR.",
+    "Cloud /omnimux/inspiration returns 401 without login; Local /omnimux/inspiration/local 200 with copied store.",
+    "Cover card object API and preview hooks-before-return were exercised via Local tab + View."
+  ],
+  "capturedAt": "2026-08-29T06:56:00.000Z"
+}
