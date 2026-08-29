@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Plus,
   MessageSquare,
   Sparkles,
   Bookmark,
@@ -90,8 +89,8 @@ export const CanvasItemContextMenu: React.FC<CanvasItemContextMenuProps> = ({
       onClick={(e) => e.stopPropagation()}
     >
       <div className="wf-context-menu-item" onClick={() => handleItemClick('add-to-canvas')}>
-        <Plus size={14} className="wf-context-menu-icon" />
-        <span className="wf-context-menu-label">添加到画布</span>
+        <Crosshair size={14} className="wf-context-menu-icon" />
+        <span className="wf-context-menu-label">在画布中定位</span>
         <span className="wf-context-menu-shortcut">⌘⇧A</span>
       </div>
 

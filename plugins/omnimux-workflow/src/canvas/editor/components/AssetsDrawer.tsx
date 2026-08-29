@@ -221,9 +221,6 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
   const handleCanvasMenuAction = (action: string, item: CanvasNodeItem) => {
     switch (action) {
       case 'add-to-canvas':
-        onInsertAsset?.(item);
-        toast.success(`已添加到画布：${item.name}`);
-        break;
       case 'focus-in-canvas':
         handleFocusNode(item.id);
         toast.info('已在画布中定位');
