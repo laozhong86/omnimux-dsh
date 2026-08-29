@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
   AUTH_GLOBAL_KEY,
+  MAX_INTENTS,
   cancel,
   ensureLogin,
   getSnapshot,
@@ -70,21 +71,37 @@ describe('auth-gate store', () => {
     assert.equal(run.captured(), null, 'no device flow was started')
   })
 
-  it('not logged in → opens the gate and reaches waiting', async () => {
-    const { gate } = install({ loggedIn: false })
+  it('not logged in → opens the marketing prompt (device flow waits for CTA)', async () => {
+    const { gate, run } = install({ loggedIn: false })
     await gate.ensureLogin({ reason: 'x', onSuccess: () => {} })
+    const state = getSnapshot()
+    assert.equal(state.phase, 'prompt')
+    assert.equal(state.reason, 'x')
+    assert.equal(run.count(), 0, 'device flow must not start until the CTA')
+  })
+
+  it('CTA begin() starts the device handshake and reaches waiting', async () => {
+    const { gate, run } = install({ loggedIn: false })
+    await gate.ensureLogin({ reason: 'x', onSuccess: () => {} })
+    assert.equal(getSnapshot().phase, 'prompt')
+    gate.begin()
     const state = getSnapshot()
     assert.equal(state.phase, 'waiting')
     assert.equal(state.user_code, 'ABCD')
     assert.equal(state.verification_url, 'https://verify.example/dev')
+    assert.equal(run.count(), 1)
   })
 
   it('single-gate: a second intent enqueues without re-opening the flow', async () => {
     const { gate, run } = install({ loggedIn: false })
     await gate.ensureLogin({ reason: 'a', onSuccess: () => {} })
-    assert.equal(run.count(), 1)
+    assert.equal(getSnapshot().phase, 'prompt')
+    assert.equal(run.count(), 0)
     // Second call while the gate is open: only enqueue, no second start.
     await gate.ensureLogin({ reason: 'b', onSuccess: () => {} })
+    assert.equal(getSnapshot().phase, 'prompt')
+    assert.equal(run.count(), 0, 'the device flow must not start for a queued intent')
+    gate.begin()
     assert.equal(getSnapshot().phase, 'waiting')
     assert.equal(run.count(), 1, 'the device flow must not restart for a queued intent')
   })
@@ -94,6 +111,7 @@ describe('auth-gate store', () => {
     const seen = []
     await gate.ensureLogin({ reason: 'a', onSuccess: (p) => { seen.push({ kind: 'a', p }) } })
     await gate.ensureLogin({ reason: 'b', onSuccess: (p) => { seen.push({ kind: 'b', p }) } })
+    gate.begin()
     run.captured().onSuccess({ logged_in: true, username: 'ada' })
     assert.deepEqual(seen, [
       { kind: 'a', p: { logged_in: true, username: 'ada' } },
@@ -103,7 +121,7 @@ describe('auth-gate store', () => {
   })
 
   it('cancel → every intent onCancel, gate closes', async () => {
-    const { gate, run } = install({ loggedIn: false })
+    const { gate } = install({ loggedIn: false })
     const cancelled = []
     await gate.ensureLogin({ reason: 'a', onCancel: (r) => { cancelled.push(['a', r]) } })
     await gate.ensureLogin({ reason: 'b', onCancel: (r) => { cancelled.push(['b', r]) } })
@@ -116,6 +134,7 @@ describe('auth-gate store', () => {
     const { gate, run } = install({ loggedIn: false })
     const cancelled = []
     await gate.ensureLogin({ reason: 'a', onCancel: (r) => { cancelled.push(r) } })
+    gate.begin()
     run.captured().onState('denied', { detail: 'nope' })
     assert.deepEqual(cancelled, ['denied'])
     assert.equal(getSnapshot().phase, 'denied')
@@ -127,6 +146,7 @@ describe('auth-gate store', () => {
     const { gate, run } = install({ loggedIn: false })
     const cancelled = []
     await gate.ensureLogin({ onCancel: (r) => { cancelled.push(r) } })
+    gate.begin()
     run.captured().onState('expired', { detail: 'late' })
     assert.deepEqual(cancelled, ['expired'])
     assert.equal(getSnapshot().phase, 'expired')
@@ -141,18 +161,104 @@ describe('auth-gate store', () => {
     })
     resetAuthGate()
     await win[AUTH_GLOBAL_KEY].ensureLogin({ onSuccess: () => {} })
+    assert.equal(getSnapshot().phase, 'prompt')
+  })
+
+  it('MAX_INTENTS overflow rejects only the 101st intent and keeps the queued 100', async () => {
+    assert.equal(MAX_INTENTS, 100)
+    const { gate, run } = install({ loggedIn: false })
+    const resolved = []
+    const cancelled = []
+    for (let i = 0; i < MAX_INTENTS; i += 1) {
+      await gate.ensureLogin({
+        reason: `keep-${i}`,
+        onSuccess: (profile) => { resolved.push(i) },
+        onCancel: (reason) => { cancelled.push({ i, reason }) },
+      })
+    }
+    assert.equal(getSnapshot().phase, 'prompt')
+
+    let overflowCancel = 0
+    await gate.ensureLogin({
+      reason: 'overflow-101',
+      onSuccess: () => { throw new Error('overflow intent must not resolve') },
+      onCancel: (reason) => {
+        overflowCancel += 1
+        assert.equal(reason, 'overflow')
+      },
+    })
+    assert.equal(overflowCancel, 1)
+    assert.deepEqual(cancelled, [], 'queued intents must not be rejectAll-killed on overflow')
+    assert.equal(getSnapshot().phase, 'prompt', 'gate stays on the marketing prompt')
+
+    gate.begin()
     assert.equal(getSnapshot().phase, 'waiting')
+    run.captured().onSuccess({ logged_in: true, username: 'ada' })
+    assert.equal(resolved.length, MAX_INTENTS)
+    assert.deepEqual(resolved, Array.from({ length: MAX_INTENTS }, (_, i) => i))
+    assert.equal(getSnapshot().phase, 'closed')
+    assert.equal(overflowCancel, 1)
+  })
+
+  it('MAX_INTENTS overflow still only rejects the new intent while waiting or error', async () => {
+    const { gate, run } = install({ loggedIn: false })
+    const resolved = []
+    const cancelled = []
+    for (let i = 0; i < MAX_INTENTS; i += 1) {
+      await gate.ensureLogin({
+        onSuccess: () => { resolved.push(i) },
+        onCancel: (reason) => { cancelled.push(reason) },
+      })
+    }
+    gate.begin()
+    assert.equal(getSnapshot().phase, 'waiting')
+
+    const waitingOverflow = []
+    await gate.ensureLogin({
+      onSuccess: () => { throw new Error('waiting overflow must not resolve') },
+      onCancel: (reason) => { waitingOverflow.push(reason) },
+    })
+    assert.deepEqual(waitingOverflow, ['overflow'])
+    assert.equal(getSnapshot().phase, 'waiting')
+    assert.deepEqual(cancelled, [])
+
+    run.captured().onState('error', { detail: 'net' })
+    assert.equal(getSnapshot().phase, 'error')
+    assert.equal(cancelled.length, MAX_INTENTS)
+    assert.ok(cancelled.every((reason) => reason === 'error'))
+
+    // After a terminal failure the queue is empty, so a new intent may enqueue
+    // (and restart the handshake). Fill back to the cap, then overflow again.
+    cancelled.length = 0
+    const refill = []
+    for (let i = 0; i < MAX_INTENTS; i += 1) {
+      await gate.ensureLogin({
+        onSuccess: () => { refill.push(i) },
+        onCancel: (reason) => { cancelled.push(reason) },
+      })
+    }
+    assert.equal(getSnapshot().phase, 'waiting')
+    const errorOverflow = []
+    await gate.ensureLogin({
+      onSuccess: () => { throw new Error('error-phase overflow must not resolve') },
+      onCancel: (reason) => { errorOverflow.push(reason) },
+    })
+    assert.deepEqual(errorOverflow, ['overflow'])
+    assert.equal(getSnapshot().phase, 'waiting')
+    run.captured().onSuccess({ logged_in: true, username: 'ada' })
+    assert.equal(refill.length, MAX_INTENTS)
+    assert.deepEqual(cancelled, [])
   })
 
   it('resetting clears queued intents and returns to closed', async () => {
     const { gate, run } = install({ loggedIn: false })
     await gate.ensureLogin({ onSuccess: () => {} })
-    assert.equal(getSnapshot().phase, 'waiting')
+    assert.equal(getSnapshot().phase, 'prompt')
     resetAuthGate()
     assert.equal(getSnapshot().phase, 'closed')
-    assert.equal(run.captured().onSuccess !== undefined, true)
+    assert.equal(run.captured(), null)
     // A reset gate should be able to reopen without stale intents.
     await gate.ensureLogin({ onSuccess: () => {} })
-    assert.equal(getSnapshot().phase, 'waiting')
+    assert.equal(getSnapshot().phase, 'prompt')
   })
 })

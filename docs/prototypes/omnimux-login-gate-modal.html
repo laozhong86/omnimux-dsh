@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniMux 全局登录拦截与授权弹窗 - 1:1 高保真原型</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-surface: #0a0a0c;
+      --bg-overlay: rgba(0, 0, 0, 0.75);
+      --card-bg: #161618;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-primary: #ffffff;
+      --text-secondary: #9e9ea4;
+      --text-muted: #64646b;
+      --accent-purple: #6b21a8;
+      --accent-purple-light: #9333ea;
+      --accent-indigo: #4f46e5;
+      --accent-glow: rgba(147, 51, 234, 0.45);
+      --btn-primary-bg: #ffffff;
+      --btn-primary-text: #09090b;
+      --btn-primary-hover: #f4f4f5;
+      --bullet-color: #606068;
+      --dsw-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--dsw-font-sans);
+      background-color: #0d0e12;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    /* 顶部控制与调试面板 */
+    .debug-toolbar {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: rgba(24, 24, 27, 0.9);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 8px 18px;
+      border-radius: 999px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+      z-index: 1000;
+      font-size: 13px;
+      max-width: 95vw;
+    }
+
+    .debug-toolbar span {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .debug-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .debug-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .debug-btn.active {
+      background: #7c3aed;
+      border-color: #a855f7;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(147, 51, 234, 0.5);
+    }
+
+    /* 模拟底层的 OmniMux 宿主界面背景（示意未登录拦截场景） */
+    .mock-host-background {
+      width: 100%;
+      max-width: 1200px;
+      background: #121316;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      opacity: 0.35;
+      pointer-events: none;
+      filter: blur(2px);
+    }
+
+    /* 遮罩蒙层 */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg-overlay);
+      backdrop-filter: blur(14px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.32s;
+    }
+
+    .modal-backdrop.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* 核心弹窗容器 - 1:1 还原宽高与比例 */
+    .omnimux-modal-dialog {
+      position: relative;
+      width: 820px;
+      height: 520px;
+      background: var(--card-bg);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 
+        0 24px 64px -12px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        0 0 40px rgba(120, 40, 200, 0.18);
+      display: flex;
+      overflow: hidden;
+      transform: scale(1);
+      transition: transform 0.36s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .modal-backdrop.hidden .omnimux-modal-dialog {
+      transform: scale(0.92);
+    }
+
+    /* 右上角关闭按钮 */
+    .modal-close-btn {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 20;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-close-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      transform: scale(1.06);
+    }
+
+    .modal-close-btn svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2.2;
+    }
+
+    /* 左侧视觉海报区域 (42% 宽度) - 保留用户赞许的海洋/水母视觉背景与紫光氛围 */
+    .dialog-hero-section {
+      position: relative;
+      width: 348px;
+      height: 100%;
+      background: linear-gradient(145deg, #4c1d95 0%, #6d28d9 45%, #3b0764 100%);
+      padding: 32px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* 用户赞许的配图素材背景层 - 保持真实海洋鱼群/水母光影 */
+    .hero-media-layer {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.25) 0%, transparent 60%),
+        url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80');
+      background-size: cover;
+      background-position: center 25%;
+      mix-blend-mode: overlay;
+      opacity: 0.92;
+      transform: scale(1.04);
+      animation: floatAura 12s ease-in-out infinite alternate;
+    }
+
+    /* 真实发光水母素材 */
+    .hero-jellyfish-img {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 280px;
+      height: 280px;
+      object-fit: cover;
+      object-position: center;
+      mask-image: radial-gradient(circle at 50% 45%, black 48%, transparent 75%);
+      -webkit-mask-image: radial-gradient(circle at 50% 45%, black 48%, transparent 75%);
+      opacity: 0.92;
+      filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.45)) contrast(1.15) brightness(1.08);
+      pointer-events: none;
+    }
+
+    /* 水母辉光脉冲层 */
+    .hero-glowing-jellyfish {
+      position: absolute;
+      top: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle at center, rgba(236, 72, 153, 0.4) 0%, rgba(168, 85, 247, 0.25) 40%, transparent 70%);
+      border-radius: 50%;
+      filter: blur(28px);
+      pointer-events: none;
+      animation: pulseGlow 5s ease-in-out infinite alternate;
+    }
+
+    /* 底部文字遮罩底衬 - 保证白字在深海背景上的超高对比度与艺术美感 */
+    .hero-text-scrim {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 55%;
+      background: linear-gradient(to top, rgba(20, 10, 45, 0.85) 0%, rgba(20, 10, 45, 0.4) 55%, transparent 100%);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    @keyframes floatAura {
+      0% { transform: scale(1.02) translateY(0); }
+      100% { transform: scale(1.06) translateY(-6px); }
+    }
+
+    @keyframes pulseGlow {
+      0% { opacity: 0.5; transform: translateX(-50%) scale(0.92); }
+      100% { opacity: 0.95; transform: translateX(-50%) scale(1.12); }
+    }
+
+    /* ==========================================================================
+       左下角标题排版系统（美化重构与多种精修方案）
+       ========================================================================== */
+    .hero-typography-container {
+      position: relative;
+      z-index: 10;
+      margin-bottom: 4px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 方案 1 (默认推荐)：精修现代极简比例 - 视觉平衡黄金比 + 雅致光晕 */
+    .typo-layout-balanced .hero-brand-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #e9d5ff;
+      margin-bottom: 6px;
+      opacity: 0.9;
+    }
+
+    .typo-layout-balanced .hero-brand-tag .tag-dot {
+      width: 4px;
+      height: 4px;
+      background: #c084fc;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #c084fc;
+    }
+
+    .typo-layout-balanced .hero-brand-subtitle {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.8px;
+      line-height: 1.05;
+      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.3);
+    }
+
+    .typo-layout-balanced .hero-hero-title {
+      font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+      font-size: 72px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 0.92;
+      letter-spacing: -1.5px;
+      margin-top: 2px;
+      text-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 35px rgba(216, 180, 254, 0.35);
+      background: linear-gradient(180deg, #ffffff 30%, #e9d5ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* 方案 2：典雅横排徽标一体化 (OmniMux · AI) */
+    .typo-layout-inline .hero-brand-tag { display: none; }
+    .typo-layout-inline .hero-brand-subtitle {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+    .typo-layout-inline .hero-brand-subtitle::after {
+      content: 'STUDIO';
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: #d8b4fe;
+      font-weight: 600;
+    }
+    .typo-layout-inline .hero-hero-title {
+      font-family: 'Cinzel', 'Playfair Display', serif;
+      font-size: 56px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1;
+      margin-top: 4px;
+      letter-spacing: 1px;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+
+    /* 方案 3：纯净奢华大字 (OMNIMUX + 2026 AI) */
+    .typo-layout-luxury .hero-brand-tag {
+      font-size: 11.5px;
+      letter-spacing: 4px;
+      color: #d8b4fe;
+      margin-bottom: 4px;
+    }
+    .typo-layout-luxury .hero-brand-subtitle {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+    .typo-layout-luxury .hero-hero-title {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 76px;
+      font-weight: 700;
+      line-height: 0.95;
+      color: #ffffff;
+      margin-top: 4px;
+    }
+
+    /* 方案 4：1:1 原版结构紧凑微调 (MiniMax / H3 经典) */
+    .typo-layout-original .hero-brand-tag { display: none; }
+    .typo-layout-original .hero-brand-subtitle {
+      font-size: 36px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.05;
+      letter-spacing: -0.5px;
+    }
+    .typo-layout-original .hero-hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 88px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 0.9;
+      letter-spacing: -2px;
+    }
+
+    /* ==========================================================================
+       右侧内容与操作区域 (58% 宽度)
+       ========================================================================== */
+    .dialog-content-section {
+      position: relative;
+      flex: 1;
+      height: 100%;
+      background: #141416;
+      padding: 42px 40px 36px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* 顶部 Logo 与品名徽标 */
+    .content-brand-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .brand-icon-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #101B2B;
+      border: 1px solid rgba(198, 241, 79, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 10px rgba(198, 241, 79, 0.15);
+      overflow: visible;
+      flex-shrink: 0;
+    }
+
+    .brand-icon-box svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 7px;
+    }
+
+    /* 徽标四角装饰虚线边框（与官方章鱼 IP 荧光黄绿 #C6F14F 呼应） */
+    .brand-icon-box::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border: 1px dashed rgba(198, 241, 79, 0.45);
+      border-radius: 11px;
+      pointer-events: none;
+    }
+
+    .brand-title-text {
+      font-family: 'Playfair Display', 'Cinzel', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+    }
+
+    /* 主标题与副标题 */
+    .content-headline {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.35;
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+
+    .content-subdeck {
+      font-size: 14.5px;
+      font-weight: 500;
+      color: #a1a1aa;
+      line-height: 1.5;
+      margin-bottom: 26px;
+    }
+
+    /* 核心特性清单列表 (方块 Bullet) */
+    .content-feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: auto;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 14.5px;
+      color: #d4d4d8;
+      line-height: 1.45;
+    }
+
+    /* 正方形实心小灰块 */
+    .feature-item .bullet-cube {
+      width: 6px;
+      height: 6px;
+      background: #71717a;
+      border-radius: 1px;
+      margin-top: 7px;
+      flex-shrink: 0;
+    }
+
+    /* 底部操作与登录按钮区 */
+    .content-footer-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .login-primary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 40px;
+      padding: 0 28px;
+      background: var(--btn-primary-bg);
+      color: var(--btn-primary-text);
+      font-size: 14.5px;
+      font-weight: 700;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 14px rgba(255, 255, 255, 0.15);
+      text-decoration: none;
+    }
+
+    .login-primary-btn:hover {
+      background: var(--btn-primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.25);
+    }
+
+    .login-primary-btn:active {
+      transform: translateY(0);
+    }
+
+    /* 登录进行中与设备码轮询交互态 */
+    .login-loading-state {
+      display: none;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 12px 16px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .login-loading-state.active {
+      display: flex;
+    }
+
+    .loading-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #d4d4d8;
+    }
+
+    .loading-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #a855f7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .user-code-badge {
+      font-family: monospace;
+      background: rgba(147, 51, 234, 0.25);
+      border: 1px solid rgba(147, 51, 234, 0.4);
+      color: #d8b4fe;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    /* Toast 提示 */
+    .toast-notification {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(24, 24, 27, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toast-notification.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* 响应式适配 */
+    @media (max-width: 860px) {
+      .omnimux-modal-dialog {
+        width: 92vw;
+        height: auto;
+        flex-direction: column;
+      }
+      .dialog-hero-section {
+        width: 100%;
+        height: 220px;
+        padding: 24px;
+      }
+      .hero-hero-title {
+        font-size: 52px;
+      }
+      .hero-brand-subtitle {
+        font-size: 24px;
+      }
+      .dialog-content-section {
+        padding: 28px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部调试与交互控制台 -->
+  <div class="debug-toolbar">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
+      <span>✍️ 文案（已锁定 A）：</span>
+      <button class="debug-btn active" id="btnCopyA" onclick="switchCopyPreset('versionA')">🔒 商业出海与出片（官方锁定）</button>
+      <button class="debug-btn" id="btnCopyB" onclick="switchCopyPreset('versionB')">对照 B（已废弃）</button>
+      <button class="debug-btn" id="btnCopyC" onclick="switchCopyPreset('versionC')">对照 C（已废弃）</button>
+      <button class="debug-btn" id="btnCopyD" onclick="switchCopyPreset('minimax')">对照 MiniMax 原版</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 4px;">
+      <span>📐 左侧标题排版：</span>
+      <button class="debug-btn active" id="btnLayoutBalanced" onclick="switchTypoLayout('balanced')">方案1: 黄金比例精修</button>
+      <button class="debug-btn" id="btnLayoutInline" onclick="switchTypoLayout('inline')">方案2: 横排徽标一体化</button>
+      <button class="debug-btn" id="btnLayoutLuxury" onclick="switchTypoLayout('luxury')">方案3: 典雅衬线风</button>
+      <span style="margin: 0 4px; color: rgba(255,255,255,0.2);">|</span>
+      <button class="debug-btn" onclick="toggleModal(true)">唤起弹窗</button>
+      <button class="debug-btn" onclick="toggleModal(false)">关闭</button>
+    </div>
+  </div>
+
+  <!-- 模拟背景应用层 -->
+  <div class="mock-host-background">
+    <div style="font-size: 18px; font-weight: 700; margin-bottom: 12px; color: #fff;">OmniMux Studio 宿主工作台（模拟背景）</div>
+    <div style="color: #71717a; font-size: 13px; line-height: 1.6;">
+      当前处于未登录状态。当用户在左侧侧边栏点击任意一级 Stage 插件（如工作流画布、资产库、产品库、剪辑工坊、灵感库、账号分发等）时，
+      执行中枢 <code>window.__omnimuxAuth.ensureLogin()</code> 会自动截获该意图，并弹出居中授权弹窗。
+    </div>
+  </div>
+
+  <!-- 模态弹窗遮罩 -->
+  <div class="modal-backdrop" id="modalBackdrop" onclick="handleBackdropClick(event)">
+    
+    <!-- 核心弹窗容器 -->
+    <div class="omnimux-modal-dialog" id="modalDialog" onclick="event.stopPropagation()">
+      
+      <!-- 右上角关闭按钮 -->
+      <button class="modal-close-btn" onclick="handleClose()" title="关闭弹窗" aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <!-- 左侧海报区 (保留用户赞许的配图，重构美化底部文字排版与高斯遮罩) -->
+      <div class="dialog-hero-section" id="heroSection">
+        <div class="hero-glowing-jellyfish"></div>
+        <div class="hero-media-layer"></div>
+        <!-- 保持用户认可的海洋/水母视觉素材 -->
+        <img class="hero-jellyfish-img" src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80" alt="Ocean Aesthetic" />
+        <div class="hero-text-scrim"></div>
+        
+        <!-- 左下角重构美化排版容器 -->
+        <div class="hero-typography-container typo-layout-balanced" id="typoContainer">
+          <div class="hero-brand-tag">
+            <span class="tag-dot"></span>
+            <span id="heroTagText">Studio Suite</span>
+          </div>
+          <div class="hero-brand-subtitle" id="heroSubtitle">OmniMux</div>
+          <div class="hero-hero-title" id="heroMainTitle">AI</div>
+        </div>
+      </div>
+
+      <!-- 右侧内容与操作区 (1:1 间距、方块 Bullet、立即登录按钮) -->
+      <div class="dialog-content-section">
+        
+        <!-- 顶部品名徽标 -->
+        <div>
+          <div class="content-brand-header">
+            <div class="brand-icon-box" title="OmniMux Official Logo">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" fill="none">
+                <rect width="1254" height="1254" rx="140" fill="#101B2B"/>
+                <g transform="translate(0 1254) scale(0.1 -0.1)">
+                  <path d="M8950 11039 c-25 -3 -65 -14 -90 -23 -25 -9 -57 -21 -72 -26 -35 -11 -123 -70 -168 -112 -41 -38 -130 -158 -153 -205 -8 -18 -18 -47 -22 -65 -3 -18 -13 -53 -20 -78 -7 -25 -16 -67 -20 -95 -3 -27 -10 -76 -14 -108 -6 -46 -3 -78 16 -155 30 -118 46 -156 89 -205 19 -20 34 -45 34 -55 0 -22 67 -103 81 -99 6 1 21 -12 35 -29 l24 -30 -60 -93 c-33 -51 -88 -121 -123 -155 l-62 -63 -180 -12 c-745 -48 -1527 -316 -2125 -729 -439 -303 -765 -621 -1077 -1050 -57 -78 -103 -143 -103 -146 0 -2 -26 -46 -59 -97 -337 -540 -551 -1176 -623 -1849 -18 -178 -16 -635 5 -810 64 -526 239 -1044 483 -1428 19 -29 34 -57 34 -62 0 -6 5 -10 10 -10 6 0 10 -6 10 -14 0 -7 7 -19 15 -26 26 -22 17 -27 -61 -35 -177 -16 -401 -87 -566 -178 -225 -123 -446 -325 -588 -537 -46 -69 -102 -165 -126 -215 -53 -112 -133 -348 -140 -412 -3 -26 -9 -61 -14 -76 -10 -31 -7 -406 3 -447 4 -14 9 -34 11 -45 27 -128 125 -345 191 -422 5 -6 28 -33 50 -59 91 -108 262 -222 415 -278 146 -52 204 -61 405 -61 228 0 366 28 587 121 32 13 59 24 62 24 2 0 16 -25 30 -55 57 -126 175 -267 306 -366 66 -50 249 -149 276 -149 8 0 12 -4 9 -10 -4 -7 205 -10 619 -10 343 0 626 3 628 8 2 4 37 20 78 36 154 59 316 147 458 248 45 33 86 58 91 56 4 -2 38 -38 76 -81 70 -81 177 -178 245 -223 22 -15 40 -31 40 -35 0 -5 464 -9 1049 -9 l1050 0 48 42 c91 80 175 173 233 260 32 48 61 96 65 107 5 18 14 15 108 -45 215 -138 457 -238 692 -284 154 -31 436 -38 597 -16 291 41 524 143 724 317 l73 64 0 862 c1 474 -3 863 -7 865 -4 2 -36 40 -70 85 -113 150 -312 332 -468 429 -65 40 -73 48 -62 63 7 9 45 52 84 96 180 203 356 461 468 683 20 39 41 72 46 72 7 0 10 578 10 1672 0 919 -3 1668 -6 1665 -4 -3 -31 46 -60 111 -64 137 -148 290 -251 456 -436 697 -1082 1232 -1908 1579 -148 62 -384 143 -531 182 -54 14 -107 34 -117 43 -34 30 -67 98 -112 226 l-44 125 29 21 c17 12 34 19 39 16 12 -8 64 42 56 54 -3 5 15 35 41 67 58 72 60 74 44 43 l-13 -25 33 26 c32 24 94 123 116 185 29 81 22 401 -12 544 -17 69 -67 182 -96 214 -10 11 -20 27 -23 35 -6 18 -98 91 -113 91 -6 0 -24 12 -41 26 -17 14 -31 23 -31 19 0 -3 -12 2 -27 12 -74 50 -372 78 -563 52z m-2523 -4673 c11 -2 34 -11 50 -19 40 -21 153 -137 159 -164 4 -13 10 -23 15 -23 5 0 8 -3 7 -7 -1 -5 3 -18 10 -29 6 -12 8 -24 5 -28 -3 -3 -2 -6 4 -6 6 0 9 -9 5 -22 -3 -13 -1 -19 5 -15 7 5 9 0 6 -13 -3 -11 -1 -20 5 -20 6 0 8 -9 5 -20 -3 -11 -1 -20 4 -20 5 0 8 -13 5 -30 -2 -16 0 -30 4 -30 11 0 13 -29 17 -172 1 -58 -1 -101 -5 -95 -5 7 -8 -10 -8 -38 0 -68 -4 -105 -11 -105 -4 0 -7 -16 -7 -35 0 -20 -6 -42 -12 -50 -7 -8 -9 -15 -5 -15 4 0 2 -7 -5 -15 -7 -8 -9 -15 -5 -15 4 0 3 -6 -3 -12 -6 -7 -10 -15 -10 -18 0 -21 -16 -60 -25 -60 -6 0 -8 -3 -4 -6 3 -4 -1 -13 -9 -21 -8 -8 -12 -19 -9 -24 4 -5 1 -9 -5 -9 -6 0 -8 -4 -5 -10 3 -5 1 -10 -5 -10 -6 0 -8 -5 -5 -10 3 -6 -1 -13 -9 -16 -9 -3 -14 -10 -11 -15 3 -4 -4 -13 -15 -19 -11 -6 -19 -14 -17 -19 3 -13 -113 -122 -123 -116 -6 3 -10 1 -10 -5 0 -6 -4 -8 -10 -5 -5 3 -10 2 -10 -4 0 -10 -73 -36 -130 -46 -47 -8 -165 19 -192 45 -12 11 -28 18 -36 15 -7 -2 -10 -1 -7 5 3 5 -7 16 -22 24 -36 18 -79 64 -88 94 -3 12 -10 22 -15 22 -5 0 -14 10 -21 21 -7 15 -8 19 0 15 7 -5 9 -1 5 8 -3 9 -10 16 -15 16 -4 0 -6 7 -3 15 4 8 1 15 -6 15 -6 0 -8 4 -5 10 3 5 0 20 -7 32 -7 13 -11 28 -10 35 1 6 -2 14 -7 17 -5 4 -7 23 -5 44 4 28 3 33 -5 22 -8 -11 -10 -1 -5 42 3 35 1 59 -5 63 -6 3 -11 27 -11 53 0 35 3 43 10 32 7 -10 9 7 6 58 -2 39 -1 72 4 72 4 0 6 11 5 25 -2 14 1 25 5 25 5 0 7 11 4 25 -2 15 0 25 7 25 6 0 9 7 6 15 -4 8 -2 17 4 21 6 3 8 12 5 20 -3 8 -1 14 5 14 6 0 8 7 5 16 -3 8 -2 12 4 9 9 -6 14 10 13 43 -1 6 4 12 9 12 6 0 8 6 5 13 -3 8 8 33 24 57 16 23 26 46 23 51 -3 5 0 9 5 9 6 0 10 3 9 8 -5 13 41 77 71 100 17 12 31 28 31 35 0 12 57 62 71 62 3 0 13 8 23 18 10 9 22 15 27 12 5 -4 9 -2 9 3 0 23 162 36 237 18z m3666 -195 c8 -6 17 -8 20 -4 4 3 7 1 7 -6 0 -8 6 -11 16 -7 8 3 12 2 9 -4 -6 -9 8 -14 27 -11 5 0 38 -29 75 -65 38 -36 62 -62 54 -59 -9 5 -8 -1 4 -19 10 -14 22 -26 27 -26 5 0 6 -4 3 -10 -3 -5 -1 -10 4 -10 6 0 10 -3 9 -7 -4 -15 14 -53 24 -53 6 0 8 -3 5 -7 -4 -3 -2 -12 3 -18 16 -19 39 -105 33 -121 -3 -8 -1 -14 4 -14 5 0 7 -16 5 -36 -3 -22 -1 -34 5 -31 5 3 10 -6 10 -21 0 -15 3 -60 7 -99 4 -40 4 -79 -1 -85 -4 -7 -8 -44 -9 -83 -2 -92 -45 -248 -97 -355 -33 -66 -60 -103 -122 -166 -90 -91 -152 -122 -260 -131 -77 -6 -174 5 -154 18 10 6 8 9 -11 10 -14 1 -29 1 -33 0 -17 -3 -114 70 -125 94 -7 16 -17 23 -24 19 -7 -4 -8 -3 -4 4 3 6 -3 16 -14 22 -11 6 -18 15 -15 21 4 5 -1 12 -9 15 -9 3 -13 10 -10 15 3 5 0 9 -6 9 -6 0 -8 5 -5 10 3 6 1 10 -6 10 -7 0 -10 3 -6 6 3 4 -1 13 -9 21 -8 8 -12 18 -9 23 3 5 1 11 -5 15 -6 4 -8 11 -5 16 4 5 1 9 -5 9 -7 0 -10 7 -6 15 3 8 1 15 -5 15 -5 0 -7 11 -3 26 4 17 3 25 -3 21 -5 -4 -8 7 -5 26 3 25 1 29 -7 17 -8 -11 -9 -7 -4 19 4 25 3 32 -6 27 -8 -6 -10 11 -5 66 4 53 3 69 -5 58 -8 -11 -10 0 -9 45 l1 60 7 -45 c6 -38 8 -31 8 40 1 73 4 111 13 178 1 6 6 12 11 12 5 0 7 4 3 9 -3 5 -1 12 5 16 5 3 7 18 4 32 -5 20 -4 24 6 18 10 -6 12 -3 7 14 -3 12 1 28 10 36 8 8 12 19 8 24 -3 5 -1 12 4 15 4 3 11 19 15 36 3 18 10 29 16 25 5 -3 10 -1 10 4 0 18 3 26 17 39 7 8 11 17 8 22 -3 4 2 11 11 14 8 3 13 10 10 14 -6 10 34 54 109 122 65 58 94 76 151 93 54 16 198 15 217 -2z" fill="#C6F14F"/>
+                  <path d="M9137 11184 c-1 -1 -66 -5 -145 -7 -90 -3 -147 -9 -157 -17 -8 -6 -19 -9 -25 -5 -5 3 -16 3 -22 -2 -7 -4 -22 -9 -32 -10 -11 -2 -28 -11 -38 -20 -10 -9 -18 -13 -18 -9 0 4 -13 -2 -29 -13 -16 -12 -33 -21 -37 -21 -4 0 -14 -7 -23 -15 -52 -47 -62 -55 -68 -55 -9 0 -103 -101 -103 -111 0 -4 -6 -14 -13 -21 -15 -15 -27 -35 -76 -134 -19 -38 -38 -71 -41 -74 -3 -3 -12 -25 -19 -50 -7 -25 -17 -56 -22 -70 -28 -83 -31 -326 -5 -435 10 -44 21 -87 24 -95 3 -8 6 -22 7 -32 2 -16 37 -77 65 -112 34 -44 121 -126 133 -126 6 0 31 -20 54 -44 l42 -43 35 35 c20 19 36 42 36 52 0 22 -39 72 -50 65 -12 -7 -80 75 -80 97 0 10 -15 35 -34 55 -43 49 -59 87 -89 205 -19 77 -22 109 -16 155 4 32 11 81 14 108 4 28 13 70 20 95 7 25 17 60 20 78 4 18 14 47 22 65 23 47 112 167 153 205 46 43 134 101 168 112 15 5 52 18 82 30 44 17 85 22 208 26 201 7 373 -16 435 -59 15 -10 27 -15 27 -12 0 4 14 -5 31 -19 17 -14 35 -26 41 -26 15 0 107 -73 113 -91 3 -8 13 -24 23 -35 29 -32 79 -145 96 -214 34 -143 41 -463 12 -544 -22 -62 -84 -161 -116 -185 l-33 -26 13 25 c16 31 14 29 -44 -43 -26 -32 -44 -62 -41 -67 8 -12 -44 -62 -56 -54 -5 3 -23 -4 -39 -16 -23 -16 -28 -25 -21 -34 6 -7 8 -16 4 -19 -3 -4 -1 -7 6 -7 8 0 11 -7 7 -15 -3 -8 -1 -15 5 -15 6 0 8 -7 5 -16 -3 -8 -2 -13 3 -9 5 3 11 1 13 -5 3 -10 91 31 118 56 8 8 40 33 70 56 30 23 61 50 68 60 7 10 20 18 28 18 8 0 18 8 21 18 4 9 15 25 26 35 11 9 17 17 13 17 -4 0 -1 7 7 15 9 8 23 36 33 62 10 27 20 50 23 53 4 3 8 14 9 25 2 10 11 25 20 32 10 7 12 13 5 13 -13 0 -5 40 9 40 5 0 7 4 4 9 -3 5 1 30 8 56 17 56 15 383 -2 426 -6 15 -8 30 -5 33 4 3 -2 6 -11 6 -12 0 -16 5 -12 16 3 8 2 12 -4 9 -6 -4 -10 8 -10 27 -1 18 -7 51 -15 72 -8 22 -12 43 -9 48 3 4 1 8 -5 8 -5 0 -12 14 -16 30 -4 17 -10 30 -15 30 -4 0 -20 23 -34 52 -14 29 -26 49 -26 45 0 -4 -10 1 -22 13 -12 11 -26 20 -32 20 -5 0 -7 3 -3 6 6 6 -16 34 -27 34 -4 0 -20 12 -37 28 -17 15 -35 26 -40 25 -5 -2 -9 2 -9 7 0 10 -44 33 -65 34 -5 1 -16 7 -23 14 -7 6 -22 12 -33 12 -13 0 -18 4 -13 12 5 8 2 9 -9 5 -11 -4 -17 -1 -17 8 0 8 -6 12 -14 9 -7 -3 -20 1 -27 8 -8 8 -41 13 -79 14 -36 1 -111 3 -168 6 -56 3 -103 3 -105 2z" fill="#232A35"/>
+                </g>
+              </svg>
+            </div>
+            <div class="brand-title-text" id="brandTitle">OmniMux Studio</div>
+          </div>
+
+          <!-- 主标题与副标题 -->
+          <h2 class="content-headline" id="contentHeadline">OmniMux 全面接入商业 Agent 矩阵</h2>
+          <p class="content-subdeck" id="contentSubdeck">最强多模态创作引擎 + 顶尖社媒运营专家团队</p>
+
+          <!-- 特性清单 (实心小方块) -->
+          <ul class="content-feature-list" id="featureList">
+            <li class="feature-item">
+              <span class="bullet-cube"></span>
+              <span>理解、拆解并全自动执行多平台商业内容生产</span>
+            </li>
+            <li class="feature-item">
+              <span class="bullet-cube"></span>
+              <span>专业工作流画布与 Skill，释放十倍出片生产力</span>
+            </li>
+            <li class="feature-item">
+              <span class="bullet-cube"></span>
+              <span>从一个创意灵感开始，OmniMux 陪你全链路出海落地</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 底部操作区 -->
+        <div class="content-footer-actions">
+          
+          <!-- 默认状态：立即登录按钮 -->
+          <button class="login-primary-btn" id="loginBtn" onclick="handleLoginClick()">立即登录</button>
+          
+          <!-- 登录进行中：设备码授权轮询态 -->
+          <div class="login-loading-state" id="loadingState">
+            <div class="loading-info">
+              <div class="loading-spinner"></div>
+              <span>已在新窗口打开授权页，请输入设备码：</span>
+              <span class="user-code-badge" id="userCodeDisplay">OM7X-92K</span>
+            </div>
+            <button class="debug-btn" style="padding: 3px 8px; font-size: 11px;" onclick="simulateLoginSuccess()">模拟授权成功</button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast 提示 -->
+  <div class="toast-notification" id="toast">
+    <span id="toastMsg">提示信息</span>
+  </div>
+
+  <script>
+    let pollTimer = null;
+
+    const COPY_PRESETS = {
+      versionA: {
+        brandTitle: 'OmniMux Studio',
+        headline: 'OmniMux 全面接入商业 Agent 矩阵',
+        subdeck: '最强多模态创作引擎 + 顶尖社媒运营专家团队',
+        features: [
+          '理解、拆解并全自动执行多平台商业内容生产',
+          '专业工作流画布与 Skill，释放十倍出片生产力',
+          '从一个创意灵感开始，OmniMux 陪你全链路出海落地'
+        ],
+        btnText: '立即登录',
+        btnId: 'btnCopyA',
+        desc: '🔒 官方锁定：商业出海与出片'
+      },
+      versionB: {
+        brandTitle: 'OmniMux Studio',
+        headline: 'OmniMux Studio 全面接入 AI 创作中枢',
+        subdeck: '顶尖通用多模态模型 + 专业级协同工作流',
+        features: [
+          '感知、编排并交付音视频图文全模态内容生产任务',
+          '无限画布与丰富资产库，打破复杂创作效率边界',
+          '从一句话想法开始，OmniMux 驱动创意一键成片'
+        ],
+        btnText: '立即登录',
+        btnId: 'btnCopyB',
+        desc: '版本 B: 全栈 AIGC 创作中枢 (突出音视频图文全模态、无限画布与一键成片)'
+      },
+      versionC: {
+        brandTitle: 'OmniMux Studio',
+        headline: 'OmniMux 全面接入 AI Agent 矩阵',
+        subdeck: '最强创作 Agent + 顶尖通用多模态模型',
+        features: [
+          '理解、拆解并执行多场景多模态内容生产任务',
+          '专业工作流与 Skill 矩阵，释放商业内容生产力',
+          '从一句话想法开始，OmniMux 陪你一路出海出片'
+        ],
+        btnText: '立即登录',
+        btnId: 'btnCopyC',
+        desc: '版本 C: 1:1 句式严谨对齐 (严格对照参考图原版结构与语式)'
+      },
+      minimax: {
+        brandTitle: 'MiniMax Design',
+        headline: 'MiniMax Design 全面接入 H3',
+        subdeck: '最强创作 Agent + 顶尖通用多模态模型',
+        features: [
+          '理解、拆解并执行多场景内容生产任务',
+          '专业工作流与 Skill，释放商业内容生产力',
+          '从一句话想法开始，Design陪你一路落地'
+        ],
+        btnText: '立即登录',
+        btnId: 'btnCopyD',
+        desc: '版本 D: MiniMax 原版对照'
+      }
+    };
+
+    function switchCopyPreset(key) {
+      const data = COPY_PRESETS[key];
+      document.getElementById('brandTitle').innerText = data.brandTitle;
+      document.getElementById('contentHeadline').innerText = data.headline;
+      document.getElementById('contentSubdeck').innerText = data.subdeck;
+      document.getElementById('loginBtn').innerText = data.btnText;
+
+      const listEl = document.getElementById('featureList');
+      listEl.innerHTML = data.features.map(f => `
+        <li class="feature-item">
+          <span class="bullet-cube"></span>
+          <span>${f}</span>
+        </li>
+      `).join('');
+
+      document.querySelectorAll('.debug-toolbar .debug-btn').forEach(btn => {
+        if (btn.id && btn.id.startsWith('btnCopy')) {
+          btn.classList.remove('active');
+        }
+      });
+      const activeBtn = document.getElementById(data.btnId);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      showToast('已切换文案：' + data.desc);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      toastMsg.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    function switchTypoLayout(key) {
+      const preset = TYPO_PRESETS[key];
+      const container = document.getElementById('typoContainer');
+      const tagText = document.getElementById('heroTagText');
+      const subtitle = document.getElementById('heroSubtitle');
+      const mainTitle = document.getElementById('heroMainTitle');
+
+      // 切换样式类
+      container.className = 'hero-typography-container ' + preset.className;
+      tagText.innerText = preset.tag;
+      subtitle.innerText = preset.subtitle;
+      mainTitle.innerText = preset.mainTitle;
+
+      // 切换按钮激活态
+      document.querySelectorAll('.debug-toolbar .debug-btn').forEach(btn => {
+        if (btn.id && btn.id.startsWith('btnLayout')) {
+          btn.classList.remove('active');
+        }
+      });
+      const activeBtn = document.getElementById(preset.btnId);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      showToast('已切换至：' + preset.desc);
+    }
+
+    function toggleModal(show) {
+      const backdrop = document.getElementById('modalBackdrop');
+      if (show) {
+        backdrop.classList.remove('hidden');
+        resetLoginState();
+      } else {
+        backdrop.classList.add('hidden');
+        resetLoginState();
+      }
+    }
+
+    function handleBackdropClick(e) {
+      handleClose();
+    }
+
+    function handleClose() {
+      toggleModal(false);
+      showToast('用户取消登录，恢复未登录游览状态');
+    }
+
+    function handleLoginClick() {
+      const loginBtn = document.getElementById('loginBtn');
+      const loadingState = document.getElementById('loadingState');
+      const userCodeDisplay = document.getElementById('userCodeDisplay');
+      
+      loginBtn.style.display = 'none';
+      loadingState.classList.add('active');
+
+      const randomCode = 'OMX-' + Math.floor(1000 + Math.random() * 9000);
+      userCodeDisplay.innerText = randomCode;
+
+      showToast('🚀 已拉起浏览器设备码授权流程 (' + randomCode + ')');
+
+      clearTimeout(pollTimer);
+      pollTimer = setTimeout(() => {
+        simulateLoginSuccess();
+      }, 6000);
+    }
+
+    function simulateLoginSuccess() {
+      clearTimeout(pollTimer);
+      toggleModal(false);
+      showToast('🎉 授权登录成功！已自动恢复并打开刚才点击的插件页面。');
+    }
+
+    function resetLoginState() {
+      clearTimeout(pollTimer);
+      const loginBtn = document.getElementById('loginBtn');
+      const loadingState = document.getElementById('loadingState');
+      if (loginBtn) loginBtn.style.display = 'inline-flex';
+      if (loadingState) loadingState.classList.remove('active');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    });
+  </script>
+</body>
+</html>

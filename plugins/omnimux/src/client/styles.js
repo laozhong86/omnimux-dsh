@@ -1,5 +1,11 @@
 export const STYLES_ID = 'omnimux-hub-styles'
 
+/** Deep-sea school + caustic shafts (offline SVG, 1:1 with the locked poster). */
+const LOGIN_GATE_SEA_URI = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 348 520" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="w" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1e0b3a"/><stop offset="42%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#0f172a"/></linearGradient><radialGradient id="c" cx="50%" cy="10%" r="72%"><stop offset="0%" stop-color="#fae8ff" stop-opacity=".55"/><stop offset="38%" stop-color="#c084fc" stop-opacity=".22"/><stop offset="100%" stop-color="#1e0b3a" stop-opacity="0"/></radialGradient><linearGradient id="r" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fae8ff" stop-opacity=".32"/><stop offset="100%" stop-color="#fae8ff" stop-opacity="0"/></linearGradient><radialGradient id="j" cx="50%" cy="40%" r="55%"><stop offset="0%" stop-color="#fce7f3" stop-opacity=".85"/><stop offset="55%" stop-color="#e879f9" stop-opacity=".4"/><stop offset="100%" stop-color="#6d28d9" stop-opacity="0"/></radialGradient></defs><rect width="348" height="520" fill="url(#w)"/><rect width="348" height="520" fill="url(#c)"/><g opacity=".75"><polygon points="174,-12 208,520 142,520" fill="url(#r)"/><polygon points="88,-24 72,520 28,520" fill="url(#r)" opacity=".55"/><polygon points="268,-18 312,520 262,520" fill="url(#r)" opacity=".5"/></g><g fill="#f5d0fe" opacity=".38"><circle cx="36" cy="72" r="1.2"/><circle cx="92" cy="128" r=".9"/><circle cx="148" cy="64" r="1.1"/><circle cx="210" cy="96" r=".8"/><circle cx="268" cy="58" r="1"/><circle cx="48" cy="190" r=".7"/><circle cx="310" cy="170" r=".9"/><circle cx="180" cy="150" r=".6"/><circle cx="24" cy="260" r=".8"/><circle cx="300" cy="240" r="1"/><circle cx="120" cy="300" r=".7"/><circle cx="240" cy="280" r=".8"/></g><ellipse cx="64" cy="86" rx="30" ry="34" fill="url(#j)" opacity=".5"/><ellipse cx="292" cy="124" rx="22" ry="26" fill="url(#j)" opacity=".38"/><g fill="#e9d5ff"><g opacity=".62" transform="translate(42 188) rotate(-22)"><ellipse cx="0" cy="0" rx="8" ry="2.5"/><polygon points="7 0 13.5 -3.1 13.5 3.1"/></g><g opacity=".5" transform="translate(68 206) rotate(-16)"><ellipse cx="0" cy="0" rx="6.5" ry="2.1"/><polygon points="5.5 0 11 -2.6 11 2.6"/></g><g opacity=".55" transform="translate(54 224) rotate(-28)"><ellipse cx="0" cy="0" rx="7.2" ry="2.3"/><polygon points="6.2 0 12 -2.8 12 2.8"/></g><g opacity=".42" transform="translate(96 198) rotate(-10)"><ellipse cx="0" cy="0" rx="5.8" ry="1.9"/><polygon points="5 0 10 -2.2 10 2.2"/></g><g opacity=".48" transform="translate(84 236) rotate(-20)"><ellipse cx="0" cy="0" rx="6.2" ry="2"/><polygon points="5.4 0 10.6 -2.4 10.6 2.4"/></g><g opacity=".4" transform="translate(118 218) rotate(-8)"><ellipse cx="0" cy="0" rx="5.4" ry="1.8"/><polygon points="4.6 0 9.4 -2.1 9.4 2.1"/></g><g opacity=".46" transform="translate(246 250) rotate(18)"><ellipse cx="0" cy="0" rx="7" ry="2.2"/><polygon points="-7 0 -13.2 -2.8 -13.2 2.8"/></g><g opacity=".36" transform="translate(272 268) rotate(24)"><ellipse cx="0" cy="0" rx="5.6" ry="1.8"/><polygon points="-5 0 -10.4 -2.2 -10.4 2.2"/></g><g opacity=".4" transform="translate(228 272) rotate(12)"><ellipse cx="0" cy="0" rx="6.4" ry="2"/><polygon points="-5.6 0 -11.2 -2.5 -11.2 2.5"/></g></g></svg>`)}")`
+
+/** Translucent glowing moon-jellyfish, matching the locked poster subject. */
+const LOGIN_GATE_JELLY_URI = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" preserveAspectRatio="xMidYMid meet"><defs><radialGradient id="bell" cx="50%" cy="36%" r="58%"><stop offset="0%" stop-color="#fff7fb" stop-opacity=".96"/><stop offset="22%" stop-color="#f9a8d4" stop-opacity=".82"/><stop offset="52%" stop-color="#d8b4fe" stop-opacity=".55"/><stop offset="78%" stop-color="#a855f7" stop-opacity=".22"/><stop offset="100%" stop-color="#6d28d9" stop-opacity="0"/></radialGradient><radialGradient id="core" cx="48%" cy="40%" r="28%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".95"/><stop offset="100%" stop-color="#f472b6" stop-opacity="0"/></radialGradient><linearGradient id="tent" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fce7f3" stop-opacity=".9"/><stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/></linearGradient><filter id="soft" x="-25%" y="-25%" width="150%" height="170%"><feGaussianBlur stdDeviation="1.8"/></filter></defs><g fill="none" stroke="url(#tent)" stroke-linecap="round" filter="url(#soft)" opacity=".9"><path stroke-width="2.4" d="M108 128 C96 168 86 204 78 252"/><path stroke-width="2.1" d="M122 132 C112 176 116 214 108 258"/><path stroke-width="2.6" d="M140 134 C138 180 146 220 142 262"/><path stroke-width="2.2" d="M156 132 C164 176 158 216 168 258"/><path stroke-width="2.5" d="M172 128 C186 170 190 208 198 250"/><path stroke-width="1.7" d="M114 130 C104 178 98 216 94 256"/><path stroke-width="1.8" d="M166 130 C176 178 184 214 190 254"/><path stroke-width="1.5" d="M132 134 C126 186 130 222 124 260"/></g><g fill="#fbcfe8" opacity=".38" filter="url(#soft)"><ellipse cx="140" cy="152" rx="16" ry="40"/><ellipse cx="124" cy="156" rx="10" ry="32"/><ellipse cx="156" cy="156" rx="10" ry="32"/></g><ellipse cx="140" cy="108" rx="86" ry="74" fill="url(#bell)"/><ellipse cx="138" cy="98" rx="46" ry="34" fill="url(#core)"/><path d="M64 116 Q140 162 216 116" fill="none" stroke="#fce7f3" stroke-width="2.2" opacity=".55"/><path d="M78 108 Q140 96 202 108" fill="none" stroke="#ffffff" stroke-width="1.4" opacity=".4"/><ellipse cx="118" cy="92" rx="10" ry="6" fill="#ffffff" opacity=".28"/></svg>`)}")`
+
 export const HUB_CSS = `
 .omnimux-apps-stage {
   position: fixed;
@@ -44,15 +50,357 @@ export const HUB_CSS = `
   overflow: auto;
 }
 
-.omnimux-login-gate-code {
-  font-family: var(--dsw-font-markdown-code-font-family, monospace);
-  font-size: 22px;
-  letter-spacing: 3px;
-  text-align: center;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--dsw-alias-border-l2, inherit);
+/* ── OmniMux universal login gate (1:1 with docs/prototypes/omnimux-login-gate-modal.html) ── */
+.omnimux-login-gate-backdrop,
+.omnimux-login-gate-backdrop *,
+.omnimux-login-gate-dialog,
+.omnimux-login-gate-dialog * {
+  box-sizing: border-box;
+}
+.omnimux-login-gate-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.75));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.omnimux-login-gate-dialog {
+  position: relative;
+  width: 820px;
+  height: 520px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--dsw-alias-surface-raised, var(--dsw-alias-bg-elevated, #161618));
+  border: 1px solid var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.1));
+  box-shadow:
+    0 24px 64px -12px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.75)),
+    0 0 40px color-mix(in srgb, var(--dsw-alias-brand-primary, #7c3aed) 18%, transparent);
   color: var(--dsw-alias-label-primary, inherit);
+}
+.omnimux-login-gate-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 20;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.08));
+  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.65));
+}
+.omnimux-login-gate-close:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255, 255, 255, 0.14));
+  border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.25));
+  color: var(--dsw-alias-label-primary, #fff);
+  transform: scale(1.06);
+}
+.omnimux-login-gate-hero {
+  position: relative;
+  width: 348px;
+  flex: 0 0 348px;
+  height: 100%;
+  padding: 32px 30px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  user-select: none;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--dsw-alias-brand-primary, #4c1d95) 55%, #3b0764) 0%,
+    var(--dsw-alias-brand-primary, #6d28d9) 45%,
+    #3b0764 100%
+  );
+}
+.omnimux-login-gate-hero-glow {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  width: 220px;
+  height: 220px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--dsw-alias-brand-primary, #ec4899) 40%, transparent) 0%,
+    color-mix(in srgb, var(--dsw-alias-brand-primary, #a855f7) 25%, transparent) 40%,
+    transparent 70%
+  );
+  filter: blur(28px);
+  pointer-events: none;
+  animation: omnimux-login-gate-pulse 5s ease-in-out infinite alternate;
+}
+.omnimux-login-gate-hero-media {
+  position: absolute;
+  inset: 0;
+  background-color: #1a0a36;
+  background-image:
+    ${LOGIN_GATE_SEA_URI},
+    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.28) 0%, transparent 46%),
+    repeating-linear-gradient(118deg, transparent 0 16px, rgba(233, 213, 255, 0.045) 16px 17px),
+    radial-gradient(ellipse at 42% 48%, rgba(99, 102, 241, 0.22) 0%, transparent 48%);
+  background-size: cover, cover, 140px 520px, cover;
+  background-position: center 25%, center, 0 0, center;
+  mix-blend-mode: overlay;
+  opacity: 0.92;
+  transform: scale(1.04);
+  animation: omnimux-login-gate-float 12s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.omnimux-login-gate-hero-jellyfish {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  width: 280px;
+  height: 280px;
+  transform: translateX(-50%);
+  background-image: ${LOGIN_GATE_JELLY_URI};
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  mask-image: radial-gradient(circle at 50% 45%, #000 48%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 48%, transparent 75%);
+  opacity: 0.92;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.45)) contrast(1.15) brightness(1.08);
+  pointer-events: none;
+  animation: omnimux-login-gate-jelly 8s ease-in-out infinite alternate;
+}
+.omnimux-login-gate-hero-scrim {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 55%;
+  background: linear-gradient(
+    to top,
+    rgba(20, 10, 45, 0.85) 0%,
+    rgba(20, 10, 45, 0.4) 55%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 5;
+}
+.omnimux-login-gate-hero-type {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+  padding-bottom: 8px;
+  overflow: visible;
+}
+.omnimux-login-gate-hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--dsw-alias-label-primary, #e9d5ff) 88%, #c084fc);
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+.omnimux-login-gate-hero-tag-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--dsw-alias-brand-primary, #c084fc);
+  box-shadow: 0 0 8px var(--dsw-alias-brand-primary, #c084fc);
+}
+.omnimux-login-gate-hero-brand {
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1.05;
+  color: var(--dsw-alias-label-primary, #fff);
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 20px color-mix(in srgb, var(--dsw-alias-brand-primary, #a855f7) 30%, transparent);
+}
+.omnimux-login-gate-hero-title,
+.omnimux-login-gate-hero-ai {
+  font-family: 'Cinzel', 'Playfair Display', 'Didot', 'Songti SC', 'STSong', Georgia, serif;
+  font-size: 70px;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -1.5px;
+  margin-top: 2px;
+  padding-bottom: 6px;
+  overflow: visible;
+  background: linear-gradient(180deg, var(--dsw-alias-label-primary, #fff) 30%, color-mix(in srgb, var(--dsw-alias-brand-primary, #e9d5ff) 70%, #fff) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.6));
+}
+.omnimux-login-gate-content {
+  position: relative;
+  width: 472px;
+  flex: 1 1 472px;
+  height: 100%;
+  padding: 42px 40px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--dsw-alias-bg-primary, #141416);
+}
+.omnimux-login-gate-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.omnimux-login-gate-brand-logo {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 8px;
+  overflow: visible;
+  background: #101B2B;
+  border: 1px solid color-mix(in srgb, #C6F14F 25%, transparent);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 10px color-mix(in srgb, #C6F14F 15%, transparent);
+}
+.omnimux-login-gate-brand-logo::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 1px dashed color-mix(in srgb, #C6F14F 45%, transparent);
+  border-radius: 11px;
+  pointer-events: none;
+}
+.omnimux-login-gate-brand-logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+}
+.omnimux-login-gate-brand-title {
+  font-family: 'Playfair Display', 'Cinzel', 'Didot', 'Songti SC', 'STSong', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--dsw-alias-label-primary, #fff);
+}
+.omnimux-login-gate-headline {
+  margin: 0 0 10px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.3px;
+  color: var(--dsw-alias-label-primary, #fff);
+}
+.omnimux-login-gate-subdeck {
+  margin: 0 0 26px;
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-secondary, #a1a1aa);
+}
+.omnimux-login-gate-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.omnimux-login-gate-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--dsw-alias-label-secondary, #d4d4d8);
+}
+.omnimux-login-gate-bullet {
+  width: 6px;
+  height: 6px;
+  margin-top: 7px;
+  flex: 0 0 6px;
+  border-radius: 1px;
+  background: var(--dsw-alias-label-tertiary, #71717a);
+}
+.omnimux-login-gate-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+.omnimux-login-gate-cta {
+  height: 40px !important;
+  padding: 0 28px !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  background: var(--dsw-alias-label-primary, #fff) !important;
+  color: var(--dsw-alias-bg-base, #09090b) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--dsw-alias-label-primary, #fff) 15%, transparent);
+}
+.omnimux-login-gate-cta:hover:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--dsw-alias-interactive-bg-hover, #f4f4f5) !important;
+  color: var(--dsw-alias-bg-base, #09090b) !important;
+  transform: translateY(-1px);
+}
+.omnimux-login-gate-waiting {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.08));
+}
+.omnimux-login-gate-reopen {
+  flex: 0 0 auto;
+  height: 32px !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--dsw-alias-label-secondary, #d4d4d8) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.omnimux-login-gate-waiting-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--dsw-alias-label-secondary, #d4d4d8);
+}
+.omnimux-login-gate-spinner {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border: 2px solid var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.2));
+  border-top-color: var(--dsw-alias-brand-primary, #a855f7);
+  border-radius: 50%;
+  animation: omnimux-login-gate-spin 0.8s linear infinite;
+}
+.omnimux-login-gate-code {
+  font-family: var(--dsw-font-markdown-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--dsw-alias-brand-primary, #9333ea) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--dsw-alias-brand-primary, #9333ea) 40%, transparent);
+  color: color-mix(in srgb, var(--dsw-alias-label-primary, #d8b4fe) 80%, var(--dsw-alias-brand-primary, #d8b4fe));
 }
 .omnimux-login-gate-hint {
   margin: 0;
@@ -62,8 +410,9 @@ export const HUB_CSS = `
 }
 .omnimux-login-gate-error {
   margin: 0;
+  width: 100%;
   font-size: 12px;
-  color: var(--dsw-alias-label-error, inherit);
+  color: var(--dsw-alias-label-error, var(--dsw-alias-state-error-primary, inherit));
   line-height: 1.5;
 }
 .omnimux-login-gate-actions {
@@ -71,6 +420,42 @@ export const HUB_CSS = `
   gap: 8px;
   justify-content: flex-end;
   flex-wrap: wrap;
+}
+@keyframes omnimux-login-gate-float {
+  0% { transform: scale(1.02) translateY(0); }
+  100% { transform: scale(1.06) translateY(-6px); }
+}
+@keyframes omnimux-login-gate-jelly {
+  0% { transform: translateX(-50%) translateY(0) scale(1); }
+  100% { transform: translateX(-50%) translateY(-8px) scale(1.03); }
+}
+@keyframes omnimux-login-gate-pulse {
+  0% { opacity: 0.5; transform: translateX(-50%) scale(0.92); }
+  100% { opacity: 0.95; transform: translateX(-50%) scale(1.12); }
+}
+@keyframes omnimux-login-gate-spin {
+  to { transform: rotate(360deg); }
+}
+@media (max-width: 860px) {
+  .omnimux-login-gate-dialog {
+    width: 92vw;
+    height: auto;
+    max-height: calc(100vh - 24px);
+    flex-direction: column;
+  }
+  .omnimux-login-gate-hero,
+  .omnimux-login-gate-content {
+    width: 100%;
+    flex: none;
+  }
+  .omnimux-login-gate-hero {
+    height: 220px;
+    padding: 24px;
+  }
+  .omnimux-login-gate-hero-title,
+  .omnimux-login-gate-hero-ai { font-size: 52px; line-height: 1.08; padding-bottom: 4px; }
+  .omnimux-login-gate-hero-brand { font-size: 24px; }
+  .omnimux-login-gate-content { padding: 28px 24px; }
 }
 
 .omnimux-profile {
