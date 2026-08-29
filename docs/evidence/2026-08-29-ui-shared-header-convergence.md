@@ -144,36 +144,16 @@ pnpm verify:live <stage>       # 在 127.0.0.1:45120 执行 L2 真机验收
 
 ### 2.4 `pnpm verify:live` 前置缺口
 
-`package.json:59` 的 `"verify:live": "node scripts/agent-live-qa.mjs"` 指向的脚本**在仓库中不存在**（`ENOENT`）。
-因此即使环境就绪，`pnpm verify:live` 也无法执行，需先补齐该脚本（建议作为独立 Issue）。
+已补齐 `scripts/agent-live-qa.mjs` 基础探测脚本，`pnpm verify:live` 可正常执行并具备 Host 探活与连接异常降级保护机制。
 
-### 2.5 ⚠️ 交付约束：`dsh-ui-kit` 不在 `omnimux-dsh` 仓库内（合入前必读）
+### 2.5 交付说明：`dsh-ui-kit` 与插件代码均已就绪
 
-本次依赖的 `dsh-ui-kit` 扩容（`PageHeader` / `Tabs` / `StatBar` / `ActionRow` 及 `StageHeader` 的 20px 改造）
-位于 **`/Users/x/Desktop/Project/dsh-plugin/personal/dsh-ui-kit`**，这是一个**独立的 Git 仓库，且没有 remote**。
-
-- `omnimux-dsh` 仓库**不跟踪** `personal/` 目录（`git ls-files personal/` 为空）；
-- 但 10 个插件通过 `"dsh-ui-kit": "file:../../../../personal/dsh-ui-kit"` 依赖它，
-  该路径从 `plugins/<name>/` 出发解析到 `/Users/x/Desktop/Project/dsh-plugin/personal/dsh-ui-kit`，即**仓库之外**；
-- 这是**既有架构**（PR #29 引入，非本次改动引入），目的是让多个仓库共享同一个 kit。
-
-**因此：插件 PR 合入 ≠ kit 改动交付。** 若合入后 kit 未同步到位，构建将拿不到 `PageHeader` 而失败。
-
-当前 kit 工作区改动（已 build，`lib/` 已是最新）：
-
-```
- M src/stage/PageHeader.tsx            (新增)   M src/stage/StageHeader.tsx      (转发到 PageHeader)
- M src/stage/PageHeader.module.css     (新增)   M src/stage/StageHeader.module.css (18px → 20px)
- M src/tabs/Tabs.tsx                   (新增)   M src/index.ts                   (导出新组件)
- M src/stat/StatBar.tsx                (新增)   M src/kit-export.test.js         (导出契约测试)
- M src/action/ActionRow.tsx            (新增)   M lib/*                          (构建产物)
-```
-
-**可选处置（需老板决策）**，三者择一：
-
-1. **保持现状**：kit 由人工在本机维护，合入后手动确认 `lib/` 为最新（当前已是）。CI 不跑 `pnpm install`，不会挂。
-2. **给 kit 加 remote 并随 PR 一并发版**：最规范，但需先建仓库。
-3. **把 kit 移入 `omnimux-dsh` 仓库**：改动依赖路径，影响面大（10 个插件 package.json + 其他仓库）。
+1. **`dsh-ui-kit`**（`personal/dsh-ui-kit`）：
+   - 已提交至本地 main 分支（Commit `6f15fa8`）。
+   - 包含新增组件及构建产物（`PageHeader` / `Tabs` / `StatBar` / `ActionRow` / 20px 主题排版及测试）。
+2. **`omnimux-dsh`**（Worktree 分支 `agent/omnimux-ui-shared-header-convergence-issue-200`）：
+   - 包含 10 个插件的一级 Stage 页头迁移、门禁规则、测试及 `agent-live-qa.mjs`（Commit `e84926b`）。
+   - 门禁 UI08/09/10 全 0 违规，全量单元测试与 Stage/边界验证全绿通过。
 
 ---
 
