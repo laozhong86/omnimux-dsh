@@ -189,7 +189,8 @@ function parseSource(raw, id) {
     const type = String(row.type || '');
     if (type === 'bundled') {
         const path = String(row.path || '');
-        if (!path.startsWith('catalog/skills/') || path.includes('..')) {
+        const bundled = path.startsWith('catalog/skills/') || path.startsWith('catalog/experts/');
+        if (!bundled || path.includes('..')) {
             throw new Error(`catalog: item ${id} bad bundled path`);
         }
         return { type: 'bundled', path };

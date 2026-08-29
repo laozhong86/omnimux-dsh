@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
@@ -39,6 +39,21 @@ test('blank session stages expert-mode when the preset exists', () => {
   })
   assert.equal(result.stagePreset, 'expert-mode')
   assert.equal(result.gesture, '/esc-demo-note')
+})
+
+test('summons the social-engagement-team agent pack from bundled catalog', () => {
+  const roots = env()
+  const result = summonItem({
+    catalog: loadCatalog(),
+    id: 'exp-social-engagement-team',
+    sessionState: 'locked',
+    ...roots,
+  })
+  assert.equal(result.id, 'exp-social-engagement-team')
+  assert.equal(result.skill, 'social-engagement-team')
+  assert.equal(result.gesture, '/social-engagement-team')
+  assert.equal(existsSync(join(roots.home, 'skills', 'social-engagement-team', 'agents', 'social-engagement-team-lead.md')), true)
+  assert.equal(existsSync(join(roots.home, 'skills', 'social-engagement-ops', 'SKILL.md')), true)
 })
 
 test('connectors cannot be summoned', () => {

@@ -94,6 +94,38 @@ test('rejects unknown ids', () => {
   assert.throws(() => installItem({ catalog: loadCatalog(), id: 'nope', ...env }), /unknown item/)
 })
 
+test('installs bundled social-engagement-team as a full agent pack, not a flat SKILL.md', () => {
+  const env = roots()
+  const catalog = loadCatalog()
+  const result = installItem({ catalog, id: 'exp-social-engagement-team', ...env })
+  assert.equal(result.installed, true)
+  assert.equal(result.source, 'bundled')
+  const pack = join(env.home, 'skills', 'social-engagement-team')
+  assert.equal(existsSync(join(pack, 'SKILL.md')), true)
+  assert.equal(existsSync(join(pack, '.codebuddy-plugin', 'plugin.json')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'social-engagement-team-lead.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'interaction-automator.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'ai-comment-specialist.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'signal-miner.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'brand-monitor.md')), true)
+  const plugin = JSON.parse(readFileSync(join(pack, '.codebuddy-plugin', 'plugin.json'), 'utf8'))
+  assert.equal(plugin.expertType, 'team')
+  assert.equal(plugin.agentName, 'social-engagement-team-lead')
+  assert.deepEqual(plugin.teamInfo.memberAgents, [
+    'interaction-automator',
+    'ai-comment-specialist',
+    'signal-miner',
+    'brand-monitor',
+  ])
+  const lead = readFileSync(join(pack, 'SKILL.md'), 'utf8')
+  assert.match(lead, /社媒互动增长专家团 - 主理人/)
+  assert.match(lead, /interaction-automator/)
+  assert.equal(existsSync(join(env.home, 'skills', 'social-engagement-ops', 'SKILL.md')), true)
+  assert.equal(existsSync(join(env.home, 'skills', 'social-engagement-ops', 'references', 'ai-comment-strategy.md')), true)
+  const again = installItem({ catalog, id: 'exp-social-engagement-team', ...env })
+  assert.equal(again.already, true)
+})
+
 test('installs a local WorkBuddy expert pack without git clone', () => {
   const env = roots()
   const catalog = loadCatalog()
