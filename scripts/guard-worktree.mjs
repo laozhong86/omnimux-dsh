@@ -38,7 +38,7 @@ const EPHEMERAL_BASENAMES = new Set(['.DS_Store'])
 const EPHEMERAL_SUFFIXES = ['.log', '.tsbuildinfo']
 
 export function isWorktreePath(fullPath) {
-  return typeof fullPath === 'string' && fullPath.includes(WORKTREE_MARK)
+  return Boolean(fullPath && fullPath.includes(WORKTREE_MARK))
 }
 
 export function isMainRepoPluginPath(fullPath) {
@@ -200,9 +200,9 @@ function handle(rawInput) {
   const cwd = String(input.cwd || process.cwd())
 
   if (toolName === 'bash') {
-    const command = String(toolInput.command || '')
-    const bashResult = decideBashCommand({ command, cwd })
-    return decisionJson(hookEventName, bashResult.decision, bashResult.reason, bashResult)
+    const command = String(toolInput.command || '').trim()
+    const result = decideBashCommand({ command, cwd })
+    return decisionJson(hookEventName, result.decision, result.reason, result)
   }
 
   const filePath = String(toolInput.file_path || '').trim()
