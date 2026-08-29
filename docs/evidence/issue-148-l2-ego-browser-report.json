@@ -1,0 +1,43 @@
+{
+  "pass": true,
+  "tool": "ego-browser",
+  "issueId": "148",
+  "pr": 152,
+  "plugin": "omnimux-products",
+  "commitSha": "8aee1a8",
+  "taskSpaceName": "omnimux-qa-issue-148-products",
+  "taskSpaceId": 151,
+  "requestedUrl": "http://127.0.0.1:44203",
+  "actualUrl": "http://127.0.0.1:44203/",
+  "title": "OmniMux",
+  "dshHome": "/Users/x/.dsh-dev/tasks/crsa-prod-148",
+  "l2Task": "crsa-prod-148",
+  "port": 44203,
+  "runtime": "OmniMux.app bundled dsh 0.1.1-rc.2",
+  "assertions": {
+    "stageVisible": true,
+    "stageDisplay": "flex",
+    "stageBox": { "x": 280, "y": 0, "w": 1448, "h": 873 },
+    "cards": 1,
+    "createDialog": true,
+    "createTitle": "Add Product",
+    "createFields": ["Product name", "Kind Physical Product / Digital Offering", "Key selling points", "Target audience", "Brand", "Features", "Price", "SKU"],
+    "editDialog": true,
+    "editTitle": "Edit Product",
+    "editNameValue": "OmniMux Prompt QA Digital",
+    "digitalStrategyPanel": true,
+    "digitalFields": ["Website URL", "Company name", "Brand Strategy", "Content angles", "Key Messaging (Dos)"],
+    "productFormDialogObjectApi": true
+  },
+  "screenshots": [
+    ".workbuddy/evidence/issue-148/products-grid.png",
+    ".workbuddy/evidence/issue-148/products-create-dialog.png",
+    ".workbuddy/evidence/issue-148/products-edit-dialog.png"
+  ],
+  "notes": [
+    "L2 Host cloned from production profile, booted with OmniMux.app dsh 0.1.1-rc.2 on 44203.",
+    "omnimux-market disabled in L2 patch only (ctx.skills inject missing); not part of this PR.",
+    "ProductFormDialog({ t, data, onAction }) create + edit paths exercised; Digital Offering strategy panel visible."
+  ],
+  "capturedAt": "2026-08-29T07:01:00.000Z"
+}
