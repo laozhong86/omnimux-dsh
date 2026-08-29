@@ -257,6 +257,7 @@ const zh = {
   'picker.commitPartial': '部分资源未能添加（已连接或类型不匹配）',
   'picker.commitEmpty': '没有可添加的资源',
   'picker.commitFailed': '添加资源失败',
+  'picker.importOk': '已导入素材',
   'picker.needPath': '请使用系统选择器导入，当前环境拿不到本地路径。',
   'picker.pickFailed': '打开系统文件选择器失败。',
 } as const;

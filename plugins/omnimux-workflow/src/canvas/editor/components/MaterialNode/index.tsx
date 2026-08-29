@@ -2,10 +2,10 @@
  * MaterialNode — 统一素材节点（Unified Material Node）。
  *
  * 核心交互：
- * 1. 顶部操作胶囊（FloatingTopPill）：导入图片/视频/音频、文本编辑/复制/结构化拆分
+ * 1. 顶部操作胶囊（FloatingTopPill）：导入节点空态唤起系统选文件器；文本节点编辑/复制/拆分
  * 2. 空态引导模板（NodeEmptyState）：四类素材各具特色的空态与快捷 Prompt 预设
- * 3. 拖拽即导入：支持拖拽本地媒体文件直接投喂到卡片
- * 4. 底部配置底栏（ConfigPanel）：统一展开 Prompt、模型、参数与生成
+ * 3. 拖拽即导入：仅导入节点接受本地媒体文件
+ * 4. 底部配置底栏（ConfigPanel）：生成节点展开 Prompt、模型、参数与生成；导入节点仅替换
  */
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
@@ -37,8 +37,8 @@ import { useCanvasStore } from '../../../store/canvasStore';
 import { useT } from '../../../i18n';
 import { toast } from '../../../ui';
 import type { CapabilityCatalog, NodeExecutionApiStatus } from '../../../../shared/api';
-import { buildImportedMediaData, materialTypeFromFilename } from '../../../../shared/localMedia.ts';
-import { nativePathOf } from '../../utils/localFileDraft.ts';
+import { draftFromRealPath, nativePathOf } from '../../utils/localFileDraft.ts';
+import { planImportNodeFill } from '../../utils/resourcePickerPolicy.ts';
 
 // ==================== 主组件 ====================
 
@@ -122,14 +122,6 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const resourcePicker = useResourcePicker(id);
   const kind = resolveNodeKind(nodeData);
 
-  // 新建「导入素材」节点后立即打开素材导入弹窗（一次性）
-  useEffect(() => {
-    if (kind !== 'import') return;
-    if (nodeData.openPickerOnMount !== true) return;
-    resourcePicker.openPicker('local');
-    updateNodeData({ openPickerOnMount: false });
-  }, [kind, nodeData.openPickerOnMount, resourcePicker, updateNodeData]);
-
   const outputMenuOptions = useMemo(
     () =>
       getOutputOptionSpecs(materialType).map((spec) => ({
@@ -192,20 +184,34 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         toast.warning(t('picker.needPath'));
         return;
       }
-      const material = materialTypeFromFilename(file.name, file.type) ?? materialType;
-      if (material !== 'image' && material !== 'video' && material !== 'audio') {
+      const draft = draftFromRealPath(path, {
+        name: file.name,
+        mime: file.type,
+        size: file.size,
+      });
+      if (!draft) {
         toast.warning(t('picker.unsupported'));
         return;
       }
-      updateNodeData(buildImportedMediaData({
-        realPath: path,
-        name: file.name,
-        materialType: material,
-        mime: file.type,
-        size: file.size,
-      }));
+      const state = useCanvasStore.getState();
+      const plan = planImportNodeFill({
+        nodes: state.nodes,
+        targetNodeId: id,
+        files: [draft],
+      });
+      if (!plan.hasWork) {
+        toast.warning(t('picker.unsupported'));
+        return;
+      }
+      const applied = applyCanvasInputMutation({
+        addNodes: plan.addNodes,
+        nodePatches: plan.nodePatches,
+      });
+      if (applied.status !== 'allowed') {
+        toast.error(t('picker.commitFailed'));
+      }
     },
-    [materialType, t, updateNodeData],
+    [applyCanvasInputMutation, id, t],
   );
 
   // 拖拽文件进入：仅导入素材节点接受本地文件，生成节点不再单独导入
@@ -229,12 +235,42 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       e.preventDefault();
       e.stopPropagation();
       setIsDraggingOver(false);
-      const file = e.dataTransfer.files?.[0];
-      if (file) {
-        handleImportFile(file);
+      const files = Array.from(e.dataTransfer.files ?? []);
+      if (files.length === 1) {
+        handleImportFile(files[0]);
+        return;
+      }
+      const drafts = files
+        .map((file) => {
+          const path = nativePathOf(file);
+          return path
+            ? draftFromRealPath(path, { name: file.name, mime: file.type, size: file.size })
+            : null;
+        })
+        .filter((draft): draft is NonNullable<typeof draft> => Boolean(draft));
+      if (drafts.length === 0) {
+        if (files.length > 0) toast.warning(t('picker.needPath'));
+        return;
+      }
+      const state = useCanvasStore.getState();
+      const plan = planImportNodeFill({
+        nodes: state.nodes,
+        targetNodeId: id,
+        files: drafts,
+      });
+      if (!plan.hasWork) {
+        toast.warning(t('picker.unsupported'));
+        return;
+      }
+      const applied = applyCanvasInputMutation({
+        addNodes: plan.addNodes,
+        nodePatches: plan.nodePatches,
+      });
+      if (applied.status !== 'allowed') {
+        toast.error(t('picker.commitFailed'));
       }
     },
-    [handleImportFile, kind],
+    [applyCanvasInputMutation, handleImportFile, id, kind, t],
   );
 
   // 文本快捷操作
@@ -287,7 +323,9 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           materialType={materialType}
           nodeKind={kind}
           selected={selected}
-          onOpenResourcePicker={() => resourcePicker.openPicker('local')}
+          onOpenResourcePicker={() => {
+            void resourcePicker.fillImportNode();
+          }}
           onStartTextEdit={() => setTextEditing(true)}
           onCopyText={handleCopyText}
           onSplitText={handleSplitText}
@@ -326,7 +364,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             className="wf-material-node__replace-btn nodrag nopan"
             onClick={(e) => {
               e.stopPropagation();
-              resourcePicker.openPicker('local');
+              void resourcePicker.fillImportNode();
             }}
             title={t('node.replace')}
           >
@@ -452,8 +490,12 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             onUpdateNodeData={updateNodeData}
             onGenerate={handleGenerate}
             execBusy={execBusy}
-            onOpenResourcePicker={() =>
-              resourcePicker.openPicker(kind === 'import' ? 'local' : 'canvas')
+            onOpenResourcePicker={
+              kind === 'import'
+                ? () => {
+                    void resourcePicker.fillImportNode();
+                  }
+                : () => resourcePicker.openPicker('canvas')
             }
           />
         </ConfigPanelShell>

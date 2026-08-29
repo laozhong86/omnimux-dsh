@@ -9,6 +9,8 @@ import {
   mimeToMaterialType,
   formatFileSize,
   planResourcePickerCommit,
+  planStandaloneImportNodes,
+  planImportNodeFill,
 } from './resourcePickerPolicy.ts';
 
 function materialNode(id, materialType, extras = {}) {
@@ -233,4 +235,62 @@ test('planResourcePickerCommit：目标缺失时无 mutation', () => {
   });
   assert.equal(plan.hasWork, false);
   assert.equal(plan.rejected[0].reason, 'missing');
+});
+
+test('planStandaloneImportNodes：空选择不建节点', () => {
+  const plan = planStandaloneImportNodes({ files: [], origin: { x: 120, y: 80 } });
+  assert.equal(plan.hasWork, false);
+  assert.equal(plan.addNodes, undefined);
+});
+
+test('planStandaloneImportNodes：按文件类型落导入节点，取消路径不得出现空节点', () => {
+  const plan = planStandaloneImportNodes({
+    origin: { x: 200, y: 100 },
+    files: [
+      { id: 'f1', name: 'hero.png', mime: 'image/png', size: 12, realPath: '/Users/me/hero.png', materialType: 'image' },
+      { id: 'f2', name: 'clip.mp4', mime: 'video/mp4', size: 20, realPath: '/Users/me/clip.mp4', materialType: 'video' },
+      { id: 'f3', name: 'doc.pdf', mime: 'application/pdf', size: 8, realPath: '/Users/me/doc.pdf', materialType: 'text' },
+    ],
+  });
+  assert.equal(plan.hasWork, true);
+  assert.equal(plan.addNodes?.length, 2);
+  assert.equal(plan.addNodes[0].data.nodeKind, 'import');
+  assert.equal(plan.addNodes[0].data.selectedTool, 'import');
+  assert.equal(plan.addNodes[0].data.materialType, 'image');
+  assert.equal(plan.addNodes[0].data.realPath, '/Users/me/hero.png');
+  assert.equal(plan.addNodes[1].data.materialType, 'video');
+  assert.equal(plan.addNodes[1].selected, true);
+  assert.equal(plan.addNodes[0].position.x, 200);
+  assert.ok(plan.addNodes[1].position.y > plan.addNodes[0].position.y);
+  assert.equal(plan.rejected.some((item) => item.id === 'f3' && item.reason === 'unsupported'), true);
+  assert.equal(plan.addEdges, undefined);
+});
+
+test('planImportNodeFill：首个文件替换当前导入节点，其余向下落独立导入节点', () => {
+  const nodes = [materialNode('target', 'image', {
+    status: 'empty',
+    selectedTool: 'import',
+    position: { x: 400, y: 80 },
+  })];
+  const plan = planImportNodeFill({
+    nodes,
+    targetNodeId: 'target',
+    files: [
+      { id: 'f1', name: 'voice.wav', mime: 'audio/wav', size: 4, realPath: '/Users/me/voice.wav', materialType: 'audio' },
+      { id: 'f2', name: 'b.png', mime: 'image/png', size: 2, realPath: '/Users/me/b.png', materialType: 'image' },
+    ],
+  });
+  assert.equal(plan.hasWork, true);
+  assert.equal(plan.nodePatches?.length, 1);
+  assert.equal(plan.nodePatches[0].data.materialType, 'audio');
+  assert.equal(plan.nodePatches[0].data.nodeKind, 'import');
+  assert.equal(plan.nodePatches[0].data.realPath, '/Users/me/voice.wav');
+  assert.equal(typeof plan.nodePatches[0].data.nodeWidth, 'number');
+  assert.equal(typeof plan.nodePatches[0].data.nodeHeight, 'number');
+  assert.equal(plan.addNodes?.length, 1);
+  assert.equal(plan.addNodes[0].data.nodeKind, 'import');
+  assert.equal(plan.addNodes[0].data.materialType, 'image');
+  assert.equal(plan.addNodes[0].position.x, 400);
+  assert.ok(plan.addNodes[0].position.y > 80);
+  assert.equal(plan.addEdges, undefined);
 });

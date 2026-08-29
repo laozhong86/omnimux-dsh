@@ -52,8 +52,6 @@ export function createImportNode(
     nodeKind: 'import',
     selectedTool: 'import',
     status: 'empty',
-    // 新建后由 MaterialNode 消费一次并立即打开导入弹窗
-    openPickerOnMount: true,
     nodeWidth: getDefaultNodeWidth(materialType),
     ...overrides,
   });
