@@ -19,14 +19,16 @@ import {
   Plus,
   Table,
   Type,
+  UploadCloud,
   Video,
 } from 'lucide-react';
 import { useT } from '../../i18n';
 import type { MaterialType } from '../../types/materialNode';
 
-export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition';
+export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition' | 'import_asset';
 
 export type ContextMenuAction =
+  | 'import-asset'
   | 'copy'
   | 'paste'
   | 'duplicate'
@@ -143,8 +145,9 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         { action: 'delete', label: t('menu.delete'), shortcut: 'Del' },
       ];
     }
-    // pane: 允许快速「添加节点」展开面板 + 常规编辑动作
+    // pane: 允许快速「素材导入」与「添加节点」展开面板 + 常规编辑动作
     return [
+      { action: 'import-asset', label: t('toolbar.add.import_asset'), icon: <UploadCloud size={15} /> },
       { action: 'open-add-node', label: t('menu.addNode'), icon: <Plus size={15} /> },
       { action: 'undo', label: t('toolbar.undo'), shortcut: '⌘Z', disabled: !canUndo },
       { action: 'redo', label: t('toolbar.redo'), shortcut: '⇧⌘Z', disabled: !canRedo },
