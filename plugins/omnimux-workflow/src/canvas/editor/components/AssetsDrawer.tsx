@@ -230,8 +230,15 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         insertToChat(item, 'canvas');
         break;
       case 'add-to-subjects': {
+        if (!item.real_path || item.real_path.startsWith('blob:')) {
+          toast.warning('无法索引此文件（无本地路径）');
+          break;
+        }
         const name = item.name.replace(/\.[^/.]+$/, '') || item.name;
-        void subjectLibrary.createSubject(name).then((created) => {
+        void subjectLibrary.createSubject(name, [{
+          real_path: item.real_path,
+          original_name: item.name,
+        }]).then((created) => {
           if (created) toast.success(`已添加到主体库：${created.name}`);
           else toast.warning('主体库暂不可用');
         });

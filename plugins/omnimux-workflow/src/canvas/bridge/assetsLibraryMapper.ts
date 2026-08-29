@@ -93,6 +93,20 @@ export function mapLibraryAssetToSubject(asset: LibraryAssetView): SubjectPack {
       ? asset.updatedAt
       : (typeof asset.updated_at === 'string' ? Date.parse(asset.updated_at) || 0 : 0);
 
+  const fileRefs = files
+    .map((file) => {
+      const realPath = typeof file.real_path === 'string' ? file.real_path.trim() : '';
+      const originalName = typeof file.original_name === 'string' ? file.original_name.trim() : '';
+      const fileId = typeof file.id === 'string' ? file.id : '';
+      if (!realPath && !fileId && !originalName) return null;
+      return {
+        ...(fileId ? { id: fileId } : {}),
+        ...(realPath ? { real_path: realPath } : {}),
+        ...(originalName ? { original_name: originalName } : {}),
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
   return {
     id,
     name,
@@ -102,6 +116,7 @@ export function mapLibraryAssetToSubject(asset: LibraryAssetView): SubjectPack {
     updatedAt,
     previewUrls: previewUrls.length > 0 ? previewUrls : (avatar ? [avatar] : []),
     type,
+    ...(fileRefs.length > 0 ? { files: fileRefs } : {}),
   };
 }
 

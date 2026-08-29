@@ -3000,6 +3000,24 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   line-height: 18px;
 }
 
+.wf-node-kind-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  line-height: 16px;
+  padding: 0 6px;
+  border-radius: 4px;
+  color: var(--dsw-alias-label-secondary, var(--wb-text-secondary));
+  background: var(--dsw-alias-bg-tertiary, var(--wb-pill-bg));
+  border: 1px solid var(--dsw-alias-border-subtle, var(--wb-border));
+}
+.wf-node-kind-badge--import {
+  color: var(--dsw-alias-label-primary, var(--wb-text-primary));
+}
+.wf-grid-card-meta-compact .wf-node-kind-badge {
+  margin-top: 2px;
+  align-self: flex-start;
+}
+
 .wf-item-locate-icon-compact {
   width: 18px;
   height: 18px;
@@ -3688,6 +3706,9 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .wf-hover-inspector-grid {

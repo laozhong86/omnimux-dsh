@@ -140,17 +140,18 @@ export const SubjectLibraryView: React.FC<SubjectLibraryViewProps> = ({
                 key={sub.id}
                 className="wf-subject-card-compact"
                 draggable
+                title={sub.files?.some((file) => file.real_path) ? sub.name : '无本地文件，无法入画布'}
                 onDragStart={(e) => {
+                  const firstFile = (sub.files || []).find((file) => file.real_path);
                   e.dataTransfer.setData(
                     'application/json',
                     JSON.stringify({
                       type: 'omnimux-asset',
                       asset: {
                         id: sub.id,
-                        name: sub.name,
-                        type: 'image',
-                        previewUrl: sub.avatar,
-                        prompt: sub.tags.join(', '),
+                        name: firstFile?.original_name || sub.name,
+                        real_path: firstFile?.real_path,
+                        files: sub.files,
                       },
                     }),
                   );

@@ -43,11 +43,19 @@ export interface CanvasNodeItem {
   name: string;
   type: 'image' | 'video' | 'audio' | 'table' | 'text' | 'group' | string;
   status?: 'idle' | 'generating' | 'success' | 'error';
+  /** import = 本地文件透传；generate = 模型产物。缺省视为 generate。 */
+  nodeKind?: 'import' | 'generate';
   prompt?: string;
   previewUrl?: string;
   real_path?: string;
   tags?: string[];
   updatedAt: number;
+}
+
+export interface SubjectFileRef {
+  id?: string;
+  real_path?: string;
+  original_name?: string;
 }
 
 export interface SubjectPack {
@@ -60,6 +68,7 @@ export interface SubjectPack {
   previewUrls: string[];
   /** Library ASSET_TYPES id (character/scene/style/prop/knowledge/custom). */
   type?: 'character' | 'scene' | 'style' | 'prop' | 'knowledge' | 'custom';
+  files?: SubjectFileRef[];
 }
 
 export type ViewMode = 'tree' | 'grid';

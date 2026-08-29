@@ -97,12 +97,18 @@ export function createAssetsLibraryClient(opts: { fetch?: AssetsFetch } = {}) {
     }
   }
 
-  async function createLibraryAsset(name: string, type = 'custom'): Promise<AssetsLibraryCreateResult> {
+  async function createLibraryAsset(
+    name: string,
+    type = 'custom',
+    files?: Array<{ real_path: string; original_name?: string }>,
+  ): Promise<AssetsLibraryCreateResult> {
     try {
+      const payload: Record<string, unknown> = { name, type };
+      if (Array.isArray(files) && files.length > 0) payload.files = files;
       const response = await fetchImpl('/omnimux/assets/library', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, type }),
+        body: JSON.stringify(payload),
       });
       const body = await readJson(response);
       if (!response.ok) {

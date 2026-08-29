@@ -32,6 +32,7 @@ function materialNode(id, materialType, extras = {}) {
       generatedContent: extras.generatedContent,
       prompt: extras.prompt,
       selectedTool: extras.selectedTool,
+      nodeKind: extras.nodeKind,
       tags: extras.tags,
       updatedAt: extras.updatedAt,
       rowCount: extras.rowCount,
@@ -61,6 +62,7 @@ test('§7.03 已导入 image（realPath + mediaUrl）出现，且 id 等于节�
       status: 'ready',
       originalName: '截图.png',
       label: '不该用的 label',
+      selectedTool: 'import',
       realPath: '/Users/x/Pictures/hero.png',
       mediaUrl: '/omnimux-workflow/api/local-file?path=%2FUsers%2Fx%2FPictures%2Fhero.png',
     }),
@@ -75,6 +77,8 @@ test('§7.03 已导入 image（realPath + mediaUrl）出现，且 id 等于节�
     items[0].previewUrl,
     '/omnimux-workflow/api/local-file?path=%2FUsers%2Fx%2FPictures%2Fhero.png',
   );
+  assert.equal(items[0].nodeKind, 'import');
+  assert.equal(items[0].prompt, undefined);
 });
 
 test('§7.04 已生成 video（mediaAssets）出现', () => {
@@ -91,6 +95,34 @@ test('§7.04 已生成 video（mediaAssets）出现', () => {
   assert.equal(items[0].type, 'video');
   assert.equal(items[0].previewUrl, '/omnimux-workflow/media/executions/e1/out.mp4');
   assert.equal(items[0].status, 'success');
+  assert.equal(items[0].nodeKind, 'generate');
+});
+
+test('§7.21 导入节点残留 prompt 不写入画布 Tab；显式 generate 保留 prompt', () => {
+  const imported = extractCanvasAssets([
+    materialNode('img-import', 'image', {
+      status: 'ready',
+      nodeKind: 'import',
+      originalName: 'hero.png',
+      realPath: '/tmp/hero.png',
+      mediaUrl: '/omnimux-workflow/api/local-file?path=%2Ftmp%2Fhero.png',
+      prompt: '不该出现的残留 prompt',
+    }),
+  ]);
+  assert.equal(imported[0].nodeKind, 'import');
+  assert.equal(imported[0].prompt, undefined);
+
+  const generated = extractCanvasAssets([
+    materialNode('img-gen', 'image', {
+      status: 'completed',
+      nodeKind: 'generate',
+      label: '生成图',
+      prompt: '一只猫',
+      mediaAssets: [{ type: 'image', url: '/omnimux-workflow/media/out.png' }],
+    }),
+  ]);
+  assert.equal(generated[0].nodeKind, 'generate');
+  assert.equal(generated[0].prompt, '一只猫');
 });
 
 test('§7.05 audio 认 snake_case real_path', () => {
@@ -98,6 +130,7 @@ test('§7.05 audio 认 snake_case real_path', () => {
     materialNode('aud-1', 'audio', {
       status: 'ready',
       title: '旁白.mp3',
+      selectedTool: 'import',
       real_path: '/tmp/voice.mp3',
     }),
   ];

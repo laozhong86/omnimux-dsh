@@ -13,7 +13,10 @@ export interface UseSubjectLibraryResult {
   loading: boolean;
   error: string | null;
   refresh: (filter?: { type?: string; q?: string }) => Promise<void>;
-  createSubject: (name: string) => Promise<SubjectPack | null>;
+  createSubject: (
+    name: string,
+    files?: Array<{ real_path: string; original_name?: string }>,
+  ) => Promise<SubjectPack | null>;
 }
 
 export function useSubjectLibrary(enabled: boolean): UseSubjectLibraryResult {
@@ -45,8 +48,11 @@ export function useSubjectLibrary(enabled: boolean): UseSubjectLibraryResult {
     return () => controller.abort();
   }, [enabled, refresh]);
 
-  const createSubject = useCallback(async (name: string) => {
-    const result = await client.createLibraryAsset(name, 'custom');
+  const createSubject = useCallback(async (
+    name: string,
+    files?: Array<{ real_path: string; original_name?: string }>,
+  ) => {
+    const result = await client.createLibraryAsset(name, 'custom', files);
     if (!result.ok || !result.subject) {
       setError(result.error || 'create-failed');
       return null;

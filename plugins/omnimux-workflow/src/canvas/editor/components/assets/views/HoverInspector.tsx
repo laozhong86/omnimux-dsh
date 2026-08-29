@@ -1,7 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkles, Calendar, HardDrive, Maximize2, Tag } from 'lucide-react';
-import { stopToolbarNativeEvent } from '../../toolbarPointerGuard';
 import type { AssetItem, CanvasNodeItem } from '../types';
 
 interface HoverInspectorProps {
@@ -35,9 +34,8 @@ export const HoverInspector: React.FC<HoverInspectorProps> = ({
   }
   if (top < 10) top = 10;
 
-  const isAsset = 'type' in item && ('fileExt' in item || 'real_path' in item || 'parentId' in item);
-  const asset = isAsset ? (item as AssetItem) : null;
-  const node = !isAsset ? (item as CanvasNodeItem) : null;
+  const node = 'nodeKind' in item ? (item as CanvasNodeItem) : null;
+  const asset = node ? null : (item as AssetItem);
 
   const formattedDate = item.updatedAt
     ? new Date(item.updatedAt).toLocaleDateString('zh-CN', {
@@ -79,6 +77,11 @@ export const HoverInspector: React.FC<HoverInspectorProps> = ({
       <div className="wf-hover-inspector-content">
         <div className="wf-hover-inspector-title" title={item.name}>
           {item.name}
+          {node?.nodeKind ? (
+            <span className={`wf-node-kind-badge wf-node-kind-badge--${node.nodeKind}`}>
+              {node.nodeKind === 'import' ? '导入' : '生成'}
+            </span>
+          ) : null}
         </div>
 
         <div className="wf-hover-inspector-grid">
@@ -107,14 +110,22 @@ export const HoverInspector: React.FC<HoverInspectorProps> = ({
             </div>
           )}
 
-          {node?.prompt && (
+          {node?.nodeKind === 'import' && node.real_path ? (
+            <div className="wf-hover-inspector-row wf-hover-inspector-row--full">
+              <span className="wf-hover-inspector-label">本地路径</span>
+              <span className="wf-hover-inspector-value wf-hover-inspector-value--prompt" title={node.real_path}>
+                {node.real_path}
+              </span>
+            </div>
+          ) : null}
+          {node?.nodeKind !== 'import' && node?.prompt ? (
             <div className="wf-hover-inspector-row wf-hover-inspector-row--full">
               <span className="wf-hover-inspector-label">Prompt</span>
               <span className="wf-hover-inspector-value wf-hover-inspector-value--prompt">
                 {node.prompt}
               </span>
             </div>
-          )}
+          ) : null}
         </div>
 
         {asset?.tags && asset.tags.length > 0 && (

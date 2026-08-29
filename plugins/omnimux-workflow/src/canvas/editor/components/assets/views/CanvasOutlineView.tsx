@@ -309,6 +309,11 @@ export const CanvasOutlineView: React.FC<CanvasOutlineViewProps> = ({
                   <span className="wf-tree-name-compact" title={node.name}>
                     {node.name}
                   </span>
+                  {node.nodeKind ? (
+                    <span className={`wf-node-kind-badge wf-node-kind-badge--${node.nodeKind}`}>
+                      {node.nodeKind === 'import' ? '导入' : '生成'}
+                    </span>
+                  ) : null}
 
                   <div
                     className="wf-item-locate-icon-compact"
@@ -355,6 +360,11 @@ export const CanvasOutlineView: React.FC<CanvasOutlineViewProps> = ({
                   <div className="wf-grid-card-title-compact" title={node.name}>
                     {node.name}
                   </div>
+                  {node.nodeKind ? (
+                    <span className={`wf-node-kind-badge wf-node-kind-badge--${node.nodeKind}`}>
+                      {node.nodeKind === 'import' ? '导入' : '生成'}
+                    </span>
+                  ) : null}
                 </div>
               </div>
             ))}
