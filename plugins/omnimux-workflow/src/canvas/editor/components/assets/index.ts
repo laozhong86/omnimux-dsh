@@ -1,4 +1,5 @@
 export * from './types';
+export * from './extractCanvasAssets';
 export * from './popovers/TypeFilterPopover';
 export * from './popovers/TagFilterPopover';
 export * from './popovers/TimeFilterPopover';
