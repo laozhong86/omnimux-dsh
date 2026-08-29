@@ -1800,6 +1800,27 @@
       }
     },
     {
+      "id": "exp-social-content-team",
+      "tab": "experts",
+      "kind": "team",
+      "title": "社媒内容创作专家团",
+      "subtitle": "",
+      "summary": "覆盖全平台的高转化爆款文案、黄金钩子、视觉分镜脚本与动态海报设计，文创总监统筹文案与分镜协同产出",
+      "category": "exp-writing",
+      "tags": [
+        "社媒文案",
+        "视觉分镜",
+        "内容创作",
+        "爆款钩子"
+      ],
+      "avatar": "https://raw.githubusercontent.com/infometa/workbuddyskills/main/experts/social-content-team/avatars/team.png",
+      "skill": "social-content-team",
+      "source": {
+        "type": "bundled",
+        "path": "catalog/experts/social-content-team"
+      }
+    },
+    {
       "id": "exp-social-engagement-team",
       "tab": "experts",
       "kind": "team",

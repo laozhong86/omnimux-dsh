@@ -1,0 +1,75 @@
+{
+  "name": "social-content-team",
+  "version": "1.0.0",
+  "description": "Social media content creation team focusing on high-converting copy, viral hooks, visual storyboards, poster layouts, and creative direction across multi-platforms",
+  "author": {
+    "name": "CodeBuddy Teams"
+  },
+  "expertType": "team",
+  "agentName": "social-content-team-lead",
+  "teamInfo": {
+    "leadAgent": "social-content-team-lead",
+    "memberAgents": [
+      "content-copywriter",
+      "visual-director"
+    ]
+  },
+  "agents": [
+    "./agents/social-content-team-lead.md",
+    "./agents/content-copywriter.md",
+    "./agents/visual-director.md"
+  ],
+  "skills": [],
+  "displayName": {
+    "en": "Social Content Creation Team",
+    "zh": "社媒内容创作专家团"
+  },
+  "profession": {
+    "en": "Social Content Creation Team",
+    "zh": "社媒内容创作专家团"
+  },
+  "displayDescription": {
+    "en": "High-converting social media copy, viral hooks, camera motion prompts, visual storyboards, and poster layouts for Xiaohongshu, TikTok, Instagram, X, and YouTube.",
+    "zh": "覆盖小红书、抖音、TikTok、Instagram、X 等全平台的高转化爆款文案、黄金钩子、视觉分镜脚本与动态海报设计"
+  },
+  "avatar": "avatars/team.png",
+  "categoryId": "01-ContentCreation",
+  "defaultInitPrompt": {
+    "en": "Help me create high-converting social media copy and a visual storyboard",
+    "zh": "帮我为我的产品/选题创作一套高转化社媒文案与分镜方案"
+  },
+  "tags": [
+    { "en": "Social Copywriting", "zh": "社媒文案" },
+    { "en": "Visual Storyboard", "zh": "视觉分镜" },
+    { "en": "Content Creation", "zh": "内容创作" },
+    { "en": "Viral Hooks", "zh": "爆款钩子" }
+  ],
+  "quickPrompts": [
+    { "en": "Help me write a Xiaohongshu seed post with viral hooks", "zh": "帮我写一篇小红书爆款种草文案并配上吸睛钩子" },
+    { "en": "Design a 5-shot video storyboard and prompt for this script", "zh": "基于这篇口播文案设计 5 个镜头的分镜脚本与生成提示词" },
+    { "en": "Create 3 different angles of ad copy for A/B testing", "zh": "为这款产品提炼 3 个不同受众角度的信息流广告文案变体" }
+  ],
+  "members": [
+    {
+      "id": "social-content-team-lead",
+      "name": { "en": "Director", "zh": "迪克特" },
+      "profession": { "en": "Creative Director", "zh": "文创总监" },
+      "avatar": "avatars/social-content-team-lead.png",
+      "role": "lead"
+    },
+    {
+      "id": "content-copywriter",
+      "name": { "en": "Copy", "zh": "可可" },
+      "profession": { "en": "Social Copywriter", "zh": "社媒文案专员" },
+      "avatar": "avatars/content-copywriter.png",
+      "role": "member"
+    },
+    {
+      "id": "visual-director",
+      "name": { "en": "Vision", "zh": "维森" },
+      "profession": { "en": "Visual Director", "zh": "视觉分镜导演" },
+      "avatar": "avatars/visual-director.png",
+      "role": "member"
+    }
+  ]
+}

@@ -108,8 +108,6 @@ test('installs bundled social-engagement-team as a full agent pack, not a flat S
   assert.equal(existsSync(join(pack, 'agents', 'ai-comment-specialist.md')), true)
   assert.equal(existsSync(join(pack, 'agents', 'signal-miner.md')), true)
   assert.equal(existsSync(join(pack, 'agents', 'brand-monitor.md')), true)
-  assert.equal(existsSync(join(pack, 'agents', 'content-copywriter.md')), true)
-  assert.equal(existsSync(join(pack, 'agents', 'visual-director.md')), true)
   const plugin = JSON.parse(readFileSync(join(pack, '.codebuddy-plugin', 'plugin.json'), 'utf8'))
   assert.equal(plugin.expertType, 'team')
   assert.equal(plugin.agentName, 'social-engagement-team-lead')
@@ -118,8 +116,6 @@ test('installs bundled social-engagement-team as a full agent pack, not a flat S
     'ai-comment-specialist',
     'signal-miner',
     'brand-monitor',
-    'content-copywriter',
-    'visual-director',
   ])
   const lead = readFileSync(join(pack, 'SKILL.md'), 'utf8')
   assert.match(lead, /社媒互动增长专家团 - 主理人/)
@@ -128,6 +124,30 @@ test('installs bundled social-engagement-team as a full agent pack, not a flat S
   assert.equal(existsSync(join(env.home, 'skills', 'social-engagement-ops', 'references', 'ai-comment-strategy.md')), true)
   const again = installItem({ catalog, id: 'exp-social-engagement-team', ...env })
   assert.equal(again.already, true)
+})
+
+test('installs bundled social-content-team as a full agent pack', () => {
+  const env = roots()
+  const catalog = loadCatalog()
+  const result = installItem({ catalog, id: 'exp-social-content-team', ...env })
+  assert.equal(result.installed, true)
+  assert.equal(result.source, 'bundled')
+  const pack = join(env.home, 'skills', 'social-content-team')
+  assert.equal(existsSync(join(pack, 'SKILL.md')), true)
+  assert.equal(existsSync(join(pack, '.codebuddy-plugin', 'plugin.json')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'social-content-team-lead.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'content-copywriter.md')), true)
+  assert.equal(existsSync(join(pack, 'agents', 'visual-director.md')), true)
+  const plugin = JSON.parse(readFileSync(join(pack, '.codebuddy-plugin', 'plugin.json'), 'utf8'))
+  assert.equal(plugin.expertType, 'team')
+  assert.equal(plugin.agentName, 'social-content-team-lead')
+  assert.deepEqual(plugin.teamInfo.memberAgents, [
+    'content-copywriter',
+    'visual-director',
+  ])
+  const lead = readFileSync(join(pack, 'SKILL.md'), 'utf8')
+  assert.match(lead, /社媒内容创作专家团 - 主理人/)
+  assert.match(lead, /content-copywriter/)
 })
 
 /**
@@ -143,8 +163,8 @@ function boundSkills(md) {
 test('subagents bind only their own scoped skills, never the whole catalog', () => {
   const env = roots()
   const catalog = loadCatalog()
-  installItem({ catalog, id: 'exp-social-engagement-team', ...env })
-  const pack = join(env.home, 'skills', 'social-engagement-team')
+  installItem({ catalog, id: 'exp-social-content-team', ...env })
+  const pack = join(env.home, 'skills', 'social-content-team')
 
   const copywriter = readFileSync(join(pack, 'agents', 'content-copywriter.md'), 'utf8')
   const director = readFileSync(join(pack, 'agents', 'visual-director.md'), 'utf8')
