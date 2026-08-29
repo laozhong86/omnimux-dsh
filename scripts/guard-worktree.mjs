@@ -3,20 +3,22 @@
  * scripts/guard-worktree.mjs
  * dsh-hooks-plugin PreToolUse Guard for OmniMux DSH
  *
- * Intercepts edit/write calls targeting the main repo's plugins/ directory,
- * forcing agents to create and work in isolated worktrees (./scripts/git-wt.sh).
+ * 全域版本控制守卫 (Universal Version-Control Guard):
+ * 严禁在主仓库 main 分支直接对任何已加入 Git 版本管理（Tracked）的文件/文件夹执行 edit/write 操作。
+ * 强制所有改动走独立 Worktree 工作区 (./scripts/git-wt.sh) 进行物理隔离，防止主干污染、冲突覆盖与成果丢弃。
+ * 同时拦截对未推送提交具有毁灭性覆盖风险的 `git reset --hard` 操作。
  *
- * Exemptions (still allowed on the main checkout):
- *   - ephemeral dirs/files: node_modules, dist, dist-harness, tmp, temp, coverage, *.log, …
- *   - paths matching .gitignore (git check-ignore)
- *   - files and dirs that git does not track (untracked / not in the index)
+ * 豁免清单 (允许在主仓操作):
+ *   - 独立 Worktree 目录 (路径含 omnimux-dsh-wt-)
+ *   - 临时/衍生目录或文件: node_modules, dist, dist-harness, tmp, temp, coverage, *.log, *.tsbuildinfo, .pnpm-store 等
+ *   - 符合 .gitignore 的未跟踪/忽略文件 (git check-ignore)
+ *   - 尚未被 git 跟踪的本地临时文件/草稿
  */
 
 import { spawnSync } from 'node:child_process'
 import { isAbsolute, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const MAIN_PLUGINS_MARK = `${sep}omnimux-dsh${sep}plugins${sep}`
 const WORKTREE_MARK = `${sep}omnimux-dsh-wt-`
 
 const EPHEMERAL_DIR_NAMES = new Set([
@@ -35,16 +37,7 @@ const EPHEMERAL_BASENAMES = new Set(['.DS_Store'])
 const EPHEMERAL_SUFFIXES = ['.log', '.tsbuildinfo']
 
 export function isWorktreePath(fullPath) {
-  return fullPath.includes(WORKTREE_MARK)
-}
-
-export function isMainRepoPluginPath(fullPath) {
-  // Support both full path containing omnimux-dsh/plugins/ and relative plugins/
-  if (isWorktreePath(fullPath)) return false
-  if (fullPath.includes(MAIN_PLUGINS_MARK)) return true
-  // Check if starts with plugins/ or contains /plugins/
-  const normalized = fullPath.replace(/\\/g, '/')
-  return normalized.includes('/omnimux-dsh/plugins/') || normalized.startsWith('plugins/') || normalized.includes('/plugins/')
+  return Boolean(fullPath && fullPath.includes(WORKTREE_MARK))
 }
 
 export function isEphemeralPath(fullPath) {
@@ -83,7 +76,7 @@ export function isGitIgnored(fullPath, cwd) {
 export function isGitTracked(fullPath, cwd) {
   const root = gitRoot(cwd) || cwd
   const res = git(['ls-files', '--error-unmatch', '--', fullPath], root)
-  // Git missing / not a repo → treat as tracked so the plugins/ gate stays closed.
+  // Git missing / not a repo → treat as tracked so the gate stays closed safely.
   if (gitUnavailable(res)) return true
   return res.status === 0
 }
@@ -139,17 +132,29 @@ export function decideWrite({ filePath, cwd, toolName }) {
 
   const fullPath = toFullPath(String(filePath || '').trim(), cwd)
   if (!fullPath) return { decision: 'allow' }
-  if (!isMainRepoPluginPath(fullPath)) return { decision: 'allow', fullPath }
+
+  // 1. 独立 Worktree 目录完全豁免放行
+  if (isWorktreePath(fullPath)) {
+    return { decision: 'allow', fullPath, reason: 'worktree-isolated' }
+  }
+
+  // 2. 临时与衍生文件豁免放行
   if (isEphemeralPath(fullPath)) {
     return { decision: 'allow', fullPath, reason: 'ephemeral' }
   }
+
+  // 3. 符合 .gitignore 的被忽略文件豁免放行
   if (isGitIgnored(fullPath, cwd)) {
     return { decision: 'allow', fullPath, reason: 'gitignored' }
   }
+
+  // 4. 未加入版本管理的全新临时草稿文件豁免放行
   if (!isGitTracked(fullPath, cwd)) {
     return { decision: 'allow', fullPath, reason: 'untracked' }
   }
-  return { decision: 'deny', fullPath, reason: 'tracked-plugin' }
+
+  // 5. 【核心全域拦截】任何已加入 Git 版本管理（Tracked）的文件，在主仓一律严禁直接修改！
+  return { decision: 'deny', fullPath, reason: 'tracked-file' }
 }
 
 function decisionJson(hookEventName, decision, reason, extra = {}) {
@@ -168,10 +173,10 @@ function decisionJson(hookEventName, decision, reason, extra = {}) {
       ].join('\n')
     } else {
       output.permissionDecisionReason = [
-        '🚫【DSH 核心门禁阻断】严禁在主仓库 main 分支直接修改 plugins/ 已跟踪的业务代码！',
-        '📌 违反了《OmniMux 插件 Git / PR 合同》（docs/contracts/plugin-git-pr.md）中「强制 Worktree 物理隔离」与「No Issue, No Code」红线。',
-        '👉 请先调用 bash 运行: ./scripts/git-wt.sh start <plugin> <topic> <issue_id> 创建并进入独立 Worktree 工作区！',
-        'ℹ️  豁免：gitignore / 临时目录（node_modules、dist、dist-harness、tmp、*.log 等）以及未被 git 跟踪的文件仍可在主仓修改。',
+        '🚫【DSH 核心门禁阻断】严禁在主仓库 main 分支直接修改任何已加入版本管理（Git Tracked）的文件！',
+        '📌 核心防线原则：版本管理的文件一旦在主目录被修改，将面临未经审核的脏提交，或者在同步拉取时被覆盖/丢弃。',
+        '👉 正确流程：请先调用 bash 运行: ./scripts/git-wt.sh start <plugin> <topic> <issue_id> 创建并切入独立 Worktree 工作区！',
+        'ℹ️  豁免范围：独立 Worktree 目录、gitignore 规则文件、临时缓存（node_modules、dist、tmp、*.log）与尚未跟踪的草稿文件。',
       ].join('\n')
     }
   }

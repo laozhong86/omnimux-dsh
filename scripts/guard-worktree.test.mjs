@@ -8,17 +8,17 @@ import {
   decideWrite,
   isDestructiveResetCommand,
   isEphemeralPath,
-  isMainRepoPluginPath,
   isWorktreePath,
 } from './guard-worktree.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const repoRoot = join(here, '..')
+const worktreeRoot = join(here, '..')
+const mainRepoRoot = '/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh'
 const scriptPath = join(here, 'guard-worktree.mjs')
 
 function runHook(payload) {
   const res = spawnSync('node', [scriptPath], {
-    cwd: repoRoot,
+    cwd: mainRepoRoot,
     encoding: 'utf8',
     input: JSON.stringify(payload),
   })
@@ -27,75 +27,68 @@ function runHook(payload) {
 }
 
 describe('guard-worktree path classification', () => {
-  it('detects main-repo plugins vs worktree vs ephemeral', () => {
-    assert.equal(
-      isMainRepoPluginPath('/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh/plugins/omnimux/src/index.js'),
-      true,
-    )
+  it('detects worktree vs ephemeral vs tracked', () => {
     assert.equal(
       isWorktreePath('/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-clip-42/plugins/omnimux/src/index.js'),
       true,
     )
     assert.equal(
-      isMainRepoPluginPath('/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-clip-42/plugins/omnimux/src/index.js'),
+      isWorktreePath('/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh/plugins/omnimux/src/index.js'),
       false,
     )
-    assert.equal(isEphemeralPath(`${repoRoot}/plugins/omnimux/node_modules/foo/index.js`), true)
-    assert.equal(isEphemeralPath(`${repoRoot}/plugins/omnimux-workflow/dist-harness/app.js`), true)
-    assert.equal(isEphemeralPath(`${repoRoot}/plugins/omnimux/tmp/scratch.js`), true)
-    assert.equal(isEphemeralPath(`${repoRoot}/plugins/omnimux/src/index.js`), false)
+    assert.equal(isEphemeralPath(`${mainRepoRoot}/plugins/omnimux/node_modules/foo/index.js`), true)
+    assert.equal(isEphemeralPath(`${mainRepoRoot}/plugins/omnimux-workflow/dist-harness/app.js`), true)
+    assert.equal(isEphemeralPath(`${mainRepoRoot}/plugins/omnimux/tmp/scratch.js`), true)
+    assert.equal(isEphemeralPath(`${mainRepoRoot}/plugins/omnimux/src/index.js`), false)
+    assert.equal(isEphemeralPath(`${mainRepoRoot}/package.json`), false)
   })
 })
 
-describe('guard-worktree destructive reset interception', () => {
-  it('detects git reset --hard commands accurately without false positives', () => {
-    assert.equal(isDestructiveResetCommand('git reset --hard origin/main'), true)
-    assert.equal(isDestructiveResetCommand('git reset -q --hard origin/main'), true)
-    assert.equal(isDestructiveResetCommand('git reset --hard HEAD~1'), true)
-    assert.equal(isDestructiveResetCommand('git status && git reset --hard origin/main'), true)
-    assert.equal(isDestructiveResetCommand('git status'), false)
-    assert.equal(isDestructiveResetCommand('git reset HEAD file.txt'), false)
-    assert.equal(isDestructiveResetCommand('git push -u origin agent/infra-guard-destructive-reset'), false)
-    assert.equal(isDestructiveResetCommand('gh pr create --body "includes git reset --hard text"'), false)
-    assert.equal(isDestructiveResetCommand('pnpm test'), false)
-  })
-
-  it('allows safe bash commands through hook payload', () => {
-    const output = runHook({
-      hook_event_name: 'PreToolUse',
-      tool_name: 'bash',
-      tool_input: { command: 'pnpm test' },
-      cwd: repoRoot,
-    })
-    assert.equal(output.hookSpecificOutput.permissionDecision, 'allow')
-  })
-})
-
-describe('guard-worktree decideWrite', () => {
+describe('guard-worktree decideWrite (全量版本文件拦截)', () => {
   it('denies tracked plugin source on the main checkout', () => {
     const result = decideWrite({
       toolName: 'edit',
-      cwd: repoRoot,
+      cwd: mainRepoRoot,
       filePath: 'plugins/omnimux/src/host/apply.js',
     })
     assert.equal(result.decision, 'deny')
-    assert.equal(result.reason, 'tracked-plugin')
+    assert.equal(result.reason, 'tracked-file')
   })
 
-  it('denies namespaced tool default_api:edit on tracked plugin source', () => {
+  it('denies tracked root-level files (e.g. package.json)', () => {
     const result = decideWrite({
-      toolName: 'default_api:edit',
-      cwd: repoRoot,
-      filePath: 'plugins/omnimux/src/host/apply.js',
+      toolName: 'edit',
+      cwd: mainRepoRoot,
+      filePath: 'package.json',
     })
     assert.equal(result.decision, 'deny')
-    assert.equal(result.reason, 'tracked-plugin')
+    assert.equal(result.reason, 'tracked-file')
   })
 
-  it('allows gitignored plugin paths', () => {
+  it('denies tracked docs files (e.g. docs/contracts/hub.md)', () => {
+    const result = decideWrite({
+      toolName: 'edit',
+      cwd: mainRepoRoot,
+      filePath: 'docs/contracts/hub.md',
+    })
+    assert.equal(result.decision, 'deny')
+    assert.equal(result.reason, 'tracked-file')
+  })
+
+  it('denies tracked scripts files (e.g. scripts/dev-doctor.sh)', () => {
+    const result = decideWrite({
+      toolName: 'edit',
+      cwd: mainRepoRoot,
+      filePath: 'scripts/dev-doctor.sh',
+    })
+    assert.equal(result.decision, 'deny')
+    assert.equal(result.reason, 'tracked-file')
+  })
+
+  it('allows gitignored plugin paths in main repo', () => {
     const result = decideWrite({
       toolName: 'write',
-      cwd: repoRoot,
+      cwd: mainRepoRoot,
       filePath: 'plugins/omnimux/node_modules/not-a-real-pkg/index.js',
     })
     assert.equal(result.decision, 'allow')
@@ -105,77 +98,103 @@ describe('guard-worktree decideWrite', () => {
   it('allows workflow dist / dist-harness (temp build dirs)', () => {
     const distHarness = decideWrite({
       toolName: 'write',
-      cwd: repoRoot,
+      cwd: mainRepoRoot,
       filePath: 'plugins/omnimux-workflow/dist-harness/scratch.js',
     })
     assert.equal(distHarness.decision, 'allow')
 
     const dist = decideWrite({
       toolName: 'write',
-      cwd: repoRoot,
+      cwd: mainRepoRoot,
       filePath: 'plugins/omnimux-workflow/dist/index.js',
     })
     assert.equal(dist.decision, 'allow')
     assert.equal(dist.reason, 'ephemeral')
   })
 
-  it('allows untracked files under plugins/', () => {
+  it('allows untracked scratch files in main repo', () => {
     const result = decideWrite({
       toolName: 'write',
-      cwd: repoRoot,
-      filePath: 'plugins/omnimux/__guard_untracked_scratch__.js',
+      cwd: mainRepoRoot,
+      filePath: '__untracked_scratch_987654.txt',
     })
     assert.equal(result.decision, 'allow')
     assert.equal(result.reason, 'untracked')
   })
 
-  it('allows writes outside plugins/', () => {
-    const result = decideWrite({
-      toolName: 'write',
-      cwd: repoRoot,
-      filePath: 'docs/contracts/plugin-git-pr.md',
-    })
-    assert.equal(result.decision, 'allow')
-  })
-
-  it('allows plugin writes inside a worktree path', () => {
-    const result = decideWrite({
+  it('allows all writes inside a worktree path (including plugins, docs, root)', () => {
+    const wtPlugin = decideWrite({
       toolName: 'edit',
-      cwd: repoRoot,
-      filePath: '/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-clip-42/plugins/omnimux/src/index.js',
+      cwd: worktreeRoot,
+      filePath: 'plugins/omnimux/src/index.js',
     })
-    assert.equal(result.decision, 'allow')
+    assert.equal(wtPlugin.decision, 'allow')
+    assert.equal(wtPlugin.reason, 'worktree-isolated')
+
+    const wtRoot = decideWrite({
+      toolName: 'edit',
+      cwd: worktreeRoot,
+      filePath: 'package.json',
+    })
+    assert.equal(wtRoot.decision, 'allow')
+    assert.equal(wtRoot.reason, 'worktree-isolated')
   })
 })
 
 describe('guard-worktree PreToolUse protocol', () => {
-  it('emits deny JSON for tracked plugin source', () => {
-    const out = runHook({
+  it('emits deny JSON for tracked files across plugins, docs, and scripts', () => {
+    const outPlugin = runHook({
       hook_event_name: 'PreToolUse',
       tool_name: 'edit',
-      cwd: repoRoot,
-      tool_input: { file_path: join(repoRoot, 'plugins/omnimux/src/host/apply.js') },
+      cwd: mainRepoRoot,
+      tool_input: { file_path: join(mainRepoRoot, 'plugins/omnimux/src/host/apply.js') },
     })
-    assert.equal(out.hookSpecificOutput.hookEventName, 'PreToolUse')
-    assert.equal(out.hookSpecificOutput.permissionDecision, 'deny')
-    assert.match(out.hookSpecificOutput.permissionDecisionReason, /Worktree/)
+    assert.equal(outPlugin.hookSpecificOutput.hookEventName, 'PreToolUse')
+    assert.equal(outPlugin.hookSpecificOutput.permissionDecision, 'deny')
+
+    const outDoc = runHook({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'edit',
+      cwd: mainRepoRoot,
+      tool_input: { file_path: join(mainRepoRoot, 'docs/contracts/hub.md') },
+    })
+    assert.equal(outDoc.hookSpecificOutput.permissionDecision, 'deny')
+
+    const outRoot = runHook({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'edit',
+      cwd: mainRepoRoot,
+      tool_input: { file_path: join(mainRepoRoot, 'package.json') },
+    })
+    assert.equal(outRoot.hookSpecificOutput.permissionDecision, 'deny')
   })
 
-  it('emits allow JSON for untracked / ignored plugin paths', () => {
+  it('emits allow JSON for untracked / ignored / worktree paths', () => {
     const ignored = runHook({
       hook_event_name: 'PreToolUse',
       tool_name: 'write',
-      cwd: repoRoot,
-      tool_input: { file_path: join(repoRoot, 'plugins/omnimux-workflow/dist-harness/hook-test.js') },
+      cwd: mainRepoRoot,
+      tool_input: { file_path: join(mainRepoRoot, 'plugins/omnimux-workflow/dist-harness/hook-test.js') },
     })
     assert.equal(ignored.hookSpecificOutput.permissionDecision, 'allow')
 
     const untracked = runHook({
       hook_event_name: 'PreToolUse',
       tool_name: 'write',
-      cwd: repoRoot,
-      tool_input: { file_path: join(repoRoot, 'plugins/omnimux/__guard_untracked_scratch__.js') },
+      cwd: mainRepoRoot,
+      tool_input: { file_path: join(mainRepoRoot, '__guard_untracked_scratch__.tmp') },
     })
     assert.equal(untracked.hookSpecificOutput.permissionDecision, 'allow')
+  })
+})
+
+describe('guard-worktree git reset --hard safety guard', () => {
+  it('correctly classifies destructive git reset commands', () => {
+    assert.equal(isDestructiveResetCommand('git reset --hard HEAD~1'), true)
+    assert.equal(isDestructiveResetCommand('git reset --hard origin/main'), true)
+    assert.equal(isDestructiveResetCommand('git reset --soft HEAD~1'), false)
+    assert.equal(isDestructiveResetCommand('git reset HEAD file.txt'), false)
+    assert.equal(isDestructiveResetCommand('echo "git reset --hard"'), false)
+    assert.equal(isDestructiveResetCommand('gh issue create --body "ran git reset --hard"'), false)
   })
 })
