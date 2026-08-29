@@ -173,27 +173,36 @@ export async function resolveMediaAuth(route, deps = {}) {
     }
   }
 
-  // 3. 若 route.providerId === 'omnimux' 且未从前面拿到 Key：
-  if (route.providerId === 'omnimux') {
-    if (deps.credentials && typeof deps.credentials.resolve === 'function') {
+  // 3. OmniMux: credentials sk- (same refs as chat / official tools), then login PAT.
+  // Desktop login writes a console access_token that 401s /v1/images/generations.
+  if (route.providerId === 'omnimux' && deps.credentials && typeof deps.credentials.resolve === 'function') {
+    for (const ref of ['OMNIMUX_API_KEY', 'OMNIMUX_TOKEN']) {
       try {
-        const hit = await deps.credentials.resolve('OMNIMUX_ACCESS_TOKEN')
+        const hit = await deps.credentials.resolve(ref)
         if (hit && typeof hit.value === 'string' && hit.value.trim()) {
-          return { apiKey: hit.value.trim(), authType: 'access-token' }
+          return { apiKey: hit.value.trim(), authType: 'api-key' }
         }
       } catch {
-        // credentials resolution fallback
+        // next ref
       }
     }
-    if (deps.store && typeof deps.store.resolve === 'function') {
-      try {
-        const token = await deps.store.resolve()
-        if (typeof token === 'string' && token.trim()) {
-          return { apiKey: token.trim(), authType: 'access-token' }
-        }
-      } catch {
-        // store resolution fallback
+    try {
+      const hit = await deps.credentials.resolve('OMNIMUX_ACCESS_TOKEN')
+      if (hit && typeof hit.value === 'string' && hit.value.trim()) {
+        return { apiKey: hit.value.trim(), authType: 'access-token' }
       }
+    } catch {
+      // fall through to login store
+    }
+  }
+  if (route.providerId === 'omnimux' && deps.store && typeof deps.store.resolve === 'function') {
+    try {
+      const token = await deps.store.resolve()
+      if (typeof token === 'string' && token.trim()) {
+        return { apiKey: token.trim(), authType: 'access-token' }
+      }
+    } catch {
+      // store resolution fallback
     }
   }
 

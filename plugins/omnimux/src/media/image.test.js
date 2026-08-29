@@ -124,6 +124,60 @@ describe('omnimux image helpers', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('unwraps ADAPTER_FAILED cause so canvas shows the provider message', async () => {
+    const inner = Object.assign(new Error('Invalid token (request id: abc)'), { code: 'REQUEST_FAILED', status: 401 })
+    const wrapped = Object.assign(new Error('Adapter openai-compatible failed'), {
+      name: 'ProviderRuntimeError',
+      code: 'ADAPTER_FAILED',
+      cause: inner,
+    })
+    await assert.rejects(
+      () => executeOmnimuxImage({
+        prompt: '1 dog',
+        dest: '/tmp/no.png',
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        runtime: {
+          async execute() {
+            throw wrapped
+          },
+        },
+      }),
+      (error) => {
+        assert(error instanceof OmnimuxError)
+        assert.equal(error.code, 'ADAPTER_FAILED')
+        assert.match(error.message, /Invalid token/)
+        return true
+      },
+    )
+  })
+
+  it('wait false still writes dest when the provider returns a url (sync gpt-image-2)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-sync-'))
+    const dest = join(dir, 'out.png')
+    const result = await executeOmnimuxImage({
+      prompt: '1 dog',
+      dest,
+      wait: false,
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+      runtime: {
+        async execute() {
+          return {
+            taskId: null,
+            outputs: [{ type: 'image', url: 'https://cdn.example/sync.png' }],
+          }
+        },
+      },
+      fetcher: async (url) => {
+        assert.equal(String(url), 'https://cdn.example/sync.png')
+        return { ok: true, arrayBuffer: async () => Buffer.from('sync-png') }
+      },
+    })
+    assert.equal(result.mode, 'live')
+    assert.equal(result.taskId, null)
+    assert.equal(readFileSync(dest, 'utf8'), 'sync-png')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('wait false returns submitted without writing dest', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-'))
     const dest = join(dir, 'out.png')
