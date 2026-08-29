@@ -1218,7 +1218,7 @@ function mountSidebarEntry(stage, t, locale) {
 }
 
 // src/client/AssetsStage.jsx
-var import_react5 = require("react");
+var import_react7 = require("react");
 
 // src/client/icons.jsx
 var import_jsx_runtime2 = require("react/jsx-runtime");
@@ -1288,58 +1288,6 @@ function ListIcon(props) {
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: "3", y1: "12", x2: "3.01", y2: "12" }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: "3", y1: "18", x2: "3.01", y2: "18" })
   ] });
-}
-
-// src/client/api.js
-async function assetsRequest(path, opts = {}) {
-  const response = await fetch(path, {
-    method: opts.method ?? "GET",
-    headers: opts.body === void 0 ? void 0 : { "Content-Type": "application/json" },
-    body: opts.body === void 0 ? void 0 : JSON.stringify(opts.body)
-  });
-  let json = {};
-  try {
-    json = await response.json();
-  } catch {
-    json = { error: `HTTP ${String(response.status)}` };
-  }
-  return { ok: response.ok, status: response.status, body: json };
-}
-function getState(mrev, arev) {
-  const query = new URLSearchParams();
-  if (Number.isFinite(
-    /** @type {number} */
-    mrev
-  )) query.set("lrev", String(mrev));
-  if (Number.isFinite(
-    /** @type {number} */
-    arev
-  )) query.set("arev", String(arev));
-  const suffix = query.toString() ? `?${query}` : "";
-  return assetsRequest(`/omnimux/assets/state${suffix}`);
-}
-function createAsset(body) {
-  return assetsRequest("/omnimux/assets/library", { method: "POST", body });
-}
-function updateAsset(id, patch) {
-  return assetsRequest("/omnimux/assets/library/update", { method: "POST", body: { id, ...patch } });
-}
-function deleteAsset(id) {
-  return assetsRequest("/omnimux/assets/library/delete", { method: "POST", body: { id } });
-}
-function pickPath(kind) {
-  return assetsRequest("/omnimux/assets/pick", { method: "POST", body: { kind } });
-}
-function listAssetFiles(assetId, fileId, subPath = "") {
-  const query = new URLSearchParams({ id: assetId, file: fileId });
-  if (subPath !== "") query.set("path", subPath);
-  return assetsRequest(`/omnimux/assets/library/files?${query}`);
-}
-function previewUrl(assetId, fileId = "", subPath = "") {
-  const query = new URLSearchParams({ id: assetId });
-  if (fileId) query.set("file", fileId);
-  if (subPath !== "") query.set("path", subPath);
-  return `/omnimux/assets/library/preview?${query}`;
 }
 
 // src/client/AddAssetDialog.jsx
@@ -1562,6 +1510,58 @@ function activateRowKeydown(trigger) {
       trigger();
     }
   };
+}
+
+// src/client/api.js
+async function assetsRequest(path, opts = {}) {
+  const response = await fetch(path, {
+    method: opts.method ?? "GET",
+    headers: opts.body === void 0 ? void 0 : { "Content-Type": "application/json" },
+    body: opts.body === void 0 ? void 0 : JSON.stringify(opts.body)
+  });
+  let json = {};
+  try {
+    json = await response.json();
+  } catch {
+    json = { error: `HTTP ${String(response.status)}` };
+  }
+  return { ok: response.ok, status: response.status, body: json };
+}
+function getState(mrev, arev) {
+  const query = new URLSearchParams();
+  if (Number.isFinite(
+    /** @type {number} */
+    mrev
+  )) query.set("lrev", String(mrev));
+  if (Number.isFinite(
+    /** @type {number} */
+    arev
+  )) query.set("arev", String(arev));
+  const suffix = query.toString() ? `?${query}` : "";
+  return assetsRequest(`/omnimux/assets/state${suffix}`);
+}
+function createAsset(body) {
+  return assetsRequest("/omnimux/assets/library", { method: "POST", body });
+}
+function updateAsset(id, patch) {
+  return assetsRequest("/omnimux/assets/library/update", { method: "POST", body: { id, ...patch } });
+}
+function deleteAsset(id) {
+  return assetsRequest("/omnimux/assets/library/delete", { method: "POST", body: { id } });
+}
+function pickPath(kind) {
+  return assetsRequest("/omnimux/assets/pick", { method: "POST", body: { kind } });
+}
+function listAssetFiles(assetId, fileId, subPath = "") {
+  const query = new URLSearchParams({ id: assetId, file: fileId });
+  if (subPath !== "") query.set("path", subPath);
+  return assetsRequest(`/omnimux/assets/library/files?${query}`);
+}
+function previewUrl(assetId, fileId = "", subPath = "") {
+  const query = new URLSearchParams({ id: assetId });
+  if (fileId) query.set("file", fileId);
+  if (subPath !== "") query.set("path", subPath);
+  return `/omnimux/assets/library/preview?${query}`;
 }
 
 // src/client/AssetBrowse.jsx
@@ -2153,6 +2153,95 @@ function ConfirmRemoveDialog({ t, name: name2, title, busy, onCancel, onConfirm 
   );
 }
 
+// src/client/feed-helpers.js
+function messageOf(result, t) {
+  const body = result?.body;
+  if (body?.error === "name-conflict") return t("error.nameConflict");
+  const msg = body?.message || body?.error;
+  if (msg) return String(msg);
+  if (result?.status) return `HTTP ${String(result.status)}`;
+  return t("error.generic");
+}
+function errText(caught) {
+  if (caught instanceof Error) return caught.message;
+  return String(caught);
+}
+function pickErrorText(result, t) {
+  const code = String(result?.body?.error ?? "");
+  if (code === "picker-unsupported") return t("error.pickerUnsupported");
+  if (code === "picker-failed") return t("error.pickerFailed");
+  return messageOf(result, t);
+}
+function citeOf(asset) {
+  if (!asset) return "";
+  return asset.cite || `@${asset.type}/${asset.name}`;
+}
+function matchAssetQuery(asset, query) {
+  if (!query) return true;
+  const tags = Array.isArray(asset.tags) ? asset.tags.join("\n") : "";
+  const hay = `${asset.name || ""}
+${asset.description || ""}
+${tags}`.toLowerCase();
+  return hay.includes(query);
+}
+function sortAssetsBy(assets, sortKey) {
+  if (sortKey === "name") {
+    return [...assets].sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+  }
+  return [...assets].sort((a, b) => String(b.updated_at || "").localeCompare(String(a.updated_at || "")));
+}
+function filterAndSortAssets(assets, filterType, query, sortKey) {
+  const list = Array.isArray(assets) ? assets : [];
+  const q = String(query || "").trim().toLowerCase();
+  const filtered = list.filter((asset) => {
+    if (filterType && asset.type !== filterType) return false;
+    return matchAssetQuery(asset, q);
+  });
+  return sortAssetsBy(filtered, sortKey);
+}
+function parsePickedPathsResult(result, t) {
+  if (!result || !result.ok) {
+    return { ok: false, error: pickErrorText(result, t), paths: [] };
+  }
+  const bodyPaths = result.body?.paths;
+  if (Array.isArray(bodyPaths)) {
+    const valid = bodyPaths.filter((p) => typeof p === "string" && p !== "");
+    if (valid.length > 0) return { ok: true, error: "", paths: valid };
+  }
+  const single = result.body?.path;
+  if (typeof single === "string" && single !== "") {
+    return { ok: true, error: "", paths: [single] };
+  }
+  return { ok: true, error: "", paths: [] };
+}
+function toggleAssetIdInSet(prevSet, assetId) {
+  const next = new Set(prevSet);
+  if (next.has(assetId)) next.delete(assetId);
+  else next.add(assetId);
+  return next;
+}
+function cleanRemovedSelection(selectedIds, liveAssets) {
+  const live = new Set((liveAssets || []).map((row) => row.id));
+  const kept = [...selectedIds].filter((id) => live.has(id));
+  if (kept.length === selectedIds.size) return selectedIds;
+  return new Set(kept);
+}
+function computeEmptyState(filterType, query, t) {
+  const searching = Boolean(String(query || "").trim());
+  const emptyTypeLabel = filterType ? t(`type.${filterType}`) : "";
+  let emptyLabel = t("empty.all");
+  if (searching) {
+    emptyLabel = t("empty.noMatch");
+  } else if (filterType) {
+    emptyLabel = t("empty.type").replace("{type}", emptyTypeLabel);
+  }
+  let emptyActionLabel = void 0;
+  if (!searching) {
+    emptyActionLabel = filterType ? t("empty.addType").replace("{type}", emptyTypeLabel) : t("add.button");
+  }
+  return { searching, emptyLabel, emptyActionLabel };
+}
+
 // src/client/styles.js
 var STYLES_ID = "omnimux-assets-styles";
 var ASSETS_CSS = `
@@ -2584,101 +2673,121 @@ function injectAssetsStyles() {
   document.head.appendChild(styleNode);
 }
 
-// src/client/AssetsStage.jsx
-var import_jsx_runtime8 = require("react/jsx-runtime");
+// src/client/use-assets-feed.js
+var import_react5 = require("react");
 var POLL_MS = 5e3;
-function messageOf(result, t) {
-  if (result.body?.error === "name-conflict") return t("error.nameConflict");
-  return String(result.body?.message || result.body?.error || `HTTP ${String(result.status)}` || t("error.generic"));
+function resolveRevsArgs(current, force) {
+  if (force) return { lrev: void 0, arev: void 0 };
+  if (current.lrev === null || current.arev === null) {
+    return { lrev: void 0, arev: void 0 };
+  }
+  return { lrev: current.lrev, arev: current.arev };
 }
-function errText(caught) {
-  return caught instanceof Error ? caught.message : String(caught);
+function extractRevisionsFromBody(body) {
+  const rawLrev = body?.lrev ?? body?.mrev;
+  return {
+    lrev: Number(rawLrev) || 0,
+    arev: Number(body?.arev) || 0
+  };
 }
-function pickErrorText(result, t) {
-  const code = String(result.body?.error ?? "");
-  if (code === "picker-unsupported") return t("error.pickerUnsupported");
-  if (code === "picker-failed") return t("error.pickerFailed");
-  return messageOf(result, t);
+async function executeStateFetch(options) {
+  const { revisionsRef, force, t, setRevisions, applyFreshState, setError } = options;
+  const revs = resolveRevsArgs(revisionsRef.current, force);
+  try {
+    const result = await getState(revs.lrev, revs.arev);
+    if (!result.ok) {
+      setError(messageOf(result, t));
+      return;
+    }
+    setError("");
+    const next = extractRevisionsFromBody(result.body);
+    revisionsRef.current = next;
+    setRevisions(next);
+    applyFreshState(result.body);
+  } catch (caught) {
+    setError(errText(caught));
+  }
 }
-function citeOf(asset) {
-  return asset.cite || `@${asset.type}/${asset.name}`;
+async function executeMutation(options) {
+  const { work, after, refreshState, setBusy, setError, setFormError, t } = options;
+  setBusy(true);
+  setError("");
+  try {
+    const result = await Promise.resolve(work());
+    if (!result.ok) {
+      const msg = messageOf(result, t);
+      setError(msg);
+      setFormError(msg);
+      return;
+    }
+    setFormError("");
+    if (after) after(result);
+    await refreshState(true);
+  } catch (caught) {
+    setError(errText(caught));
+  } finally {
+    setBusy(false);
+  }
 }
-function AssetsStage({ t, stage }) {
-  (0, import_react5.useEffect)(() => {
-    injectAssetsStyles();
-  }, []);
-  const open = (0, import_react5.useSyncExternalStore)(
-    stage ? (cb) => stage.subscribe(cb) : () => () => {
-    },
-    stage ? () => stage.getSnapshot() : () => false
-  );
-  const [everOpened, setEverOpened] = (0, import_react5.useState)(false);
-  const [box, setBox] = (0, import_react5.useState)(() => ({ top: 0, left: 0, width: 0, height: 0 }));
-  if (open && !everOpened) setEverOpened(true);
-  (0, import_react5.useLayoutEffect)(() => {
-    if (!open || !stage) return void 0;
-    const update = () => {
-      setBox(stage.readBox());
-    };
-    update();
-    const scroll = document.querySelector("[data-conversation-scroll]");
-    const target = scroll instanceof HTMLElement ? scroll : document.querySelector('[data-slot="conversation"]')?.parentElement;
-    const observer = typeof ResizeObserver === "function" && target ? new ResizeObserver(update) : null;
-    if (target && observer) observer.observe(target);
-    window.addEventListener("resize", update);
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener("resize", update);
-    };
-  }, [open, stage]);
-  const [assets, setAssets] = (0, import_react5.useState)([]);
+async function executeDeleteBatch(ids) {
+  let last = { ok: true, status: 200, body: {} };
+  for (const id of ids) {
+    last = await deleteAsset(id);
+    if (!last.ok) return last;
+  }
+  return last;
+}
+function removeIdsFromSet(prev, ids) {
+  const next = new Set(prev);
+  for (const id of ids) next.delete(id);
+  return next;
+}
+function useFeedFilterState() {
   const [filterType, setFilterType] = (0, import_react5.useState)("");
   const [query, setQuery] = (0, import_react5.useState)("");
   const [sortKey, setSortKey] = (0, import_react5.useState)("updated_at");
   const [viewMode, setViewMode] = (0, import_react5.useState)("grid");
-  const [detail, setDetail] = (0, import_react5.useState)(null);
-  const [creating, setCreating] = (0, import_react5.useState)(null);
-  const [pendingRemove, setPendingRemove] = (0, import_react5.useState)(null);
+  return {
+    filterType,
+    setFilterType,
+    query,
+    setQuery,
+    sortKey,
+    setSortKey,
+    viewMode,
+    setViewMode
+  };
+}
+function useFeedSelection(assets) {
   const [selectedIds, setSelectedIds] = (0, import_react5.useState)(() => /* @__PURE__ */ new Set());
-  const [error, setError] = (0, import_react5.useState)("");
-  const [formError, setFormError] = (0, import_react5.useState)("");
-  const [busy, setBusy] = (0, import_react5.useState)(false);
-  const [copiedId, setCopiedId] = (0, import_react5.useState)("");
-  const [revisions, setRevisions] = (0, import_react5.useState)({ lrev: null, arev: null });
-  const revisionsRef = (0, import_react5.useRef)(revisions);
-  const refreshState = (0, import_react5.useCallback)((force = false) => {
-    const current = revisionsRef.current;
-    const useRevs = !force && current.lrev !== null && current.arev !== null;
-    return getState(useRevs ? current.lrev : void 0, useRevs ? current.arev : void 0).then((result) => {
-      if (!result.ok) {
-        setError(messageOf(result, t));
-        return;
-      }
-      setError("");
-      const next = {
-        lrev: Number(result.body.lrev ?? result.body.mrev) || 0,
-        arev: Number(result.body.arev) || 0
-      };
-      revisionsRef.current = next;
-      setRevisions(next);
-      if (result.body.unchanged) return;
-      const nextAssets = Array.isArray(result.body.assets) ? result.body.assets : [];
-      setAssets(nextAssets);
-      setDetail((current2) => {
-        if (!current2) return current2;
-        const fresh = nextAssets.find((row) => row.id === current2.id);
-        return fresh ?? current2;
-      });
-      const live = new Set(nextAssets.map((row) => row.id));
-      setSelectedIds((prev) => {
-        const kept = [...prev].filter((id) => live.has(id));
-        if (kept.length === prev.size) return prev;
-        return new Set(kept);
-      });
-    }).catch((caught) => {
-      setError(errText(caught));
-    });
-  }, [t]);
+  const [pendingRemove, setPendingRemove] = (0, import_react5.useState)(null);
+  const toggleSelect = (0, import_react5.useCallback)((asset) => {
+    setSelectedIds((prev) => toggleAssetIdInSet(prev, asset.id));
+  }, []);
+  const clearSelection = (0, import_react5.useCallback)(() => {
+    setSelectedIds(/* @__PURE__ */ new Set());
+  }, []);
+  const handleRemoveSingle = (0, import_react5.useCallback)((asset) => {
+    setPendingRemove({ ids: [asset.id], names: [asset.name] });
+  }, []);
+  const handleOpenBatchDelete = (0, import_react5.useCallback)(() => {
+    const names = assets.filter((row) => selectedIds.has(row.id)).map((row) => row.name);
+    setPendingRemove({ ids: [...selectedIds], names });
+  }, [assets, selectedIds]);
+  return {
+    selectedIds,
+    setSelectedIds,
+    pendingRemove,
+    setPendingRemove,
+    selectedCount: selectedIds.size,
+    selecting: selectedIds.size > 0,
+    toggleSelect,
+    clearSelection,
+    handleRemoveSingle,
+    handleOpenBatchDelete
+  };
+}
+function useFeedPolling(open, refreshState) {
   (0, import_react5.useEffect)(() => {
     if (!open) return void 0;
     void refreshState(true);
@@ -2692,66 +2801,486 @@ function AssetsStage({ t, stage }) {
       clearInterval(timer);
     };
   }, [open, refreshState]);
-  const run = (work, after) => {
-    setBusy(true);
-    setError("");
-    void Promise.resolve(work()).then((result) => {
-      if (!result.ok) {
-        setError(messageOf(result, t));
-        setFormError(messageOf(result, t));
-        return;
-      }
-      setFormError("");
-      if (after) after(result);
-      return refreshState(true);
-    }).catch((caught) => {
-      setError(errText(caught));
-    }).finally(() => {
-      setBusy(false);
+}
+function useFreshStateApplier(options) {
+  const { setAssets, setDetail, setSelectedIds } = options;
+  return (0, import_react5.useCallback)((body) => {
+    if (body.unchanged) return;
+    const nextAssets = Array.isArray(body.assets) ? body.assets : [];
+    setAssets(nextAssets);
+    setDetail((curr) => {
+      if (!curr) return curr;
+      const fresh = nextAssets.find((row) => row.id === curr.id);
+      return fresh ?? curr;
     });
+    setSelectedIds((prev) => cleanRemovedSelection(prev, nextAssets));
+  }, [setAssets, setDetail, setSelectedIds]);
+}
+function useFeedData(options) {
+  const { t, open, assets, setAssets, setDetail, setSelectedIds } = options;
+  const [error, setError] = (0, import_react5.useState)("");
+  const [formError, setFormError] = (0, import_react5.useState)("");
+  const [busy, setBusy] = (0, import_react5.useState)(false);
+  const [revisions, setRevisions] = (0, import_react5.useState)({ lrev: null, arev: null });
+  const revisionsRef = (0, import_react5.useRef)(revisions);
+  const applyFreshState = useFreshStateApplier({ setAssets, setDetail, setSelectedIds });
+  const refreshState = (0, import_react5.useCallback)((force = false) => {
+    return executeStateFetch({ revisionsRef, force, t, setRevisions, applyFreshState, setError });
+  }, [applyFreshState, t]);
+  useFeedPolling(open, refreshState);
+  return {
+    assets,
+    setAssets,
+    error,
+    setError,
+    formError,
+    setFormError,
+    busy,
+    setBusy,
+    revisions,
+    refreshState
   };
-  const handlePick = async (kind) => {
+}
+function useCiteCopy() {
+  const [copiedId, setCopiedId] = (0, import_react5.useState)("");
+  const copyCite = (0, import_react5.useCallback)((asset) => {
+    const text = citeOf(asset);
+    if (navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(text);
+    }
+    setCopiedId(asset.id);
+    window.setTimeout(() => {
+      setCopiedId("");
+    }, 1500);
+  }, []);
+  return { copiedId, copyCite };
+}
+function usePickHandler(t, setFormError) {
+  return (0, import_react5.useCallback)(async (kind) => {
     const result = await pickPath(kind);
-    if (!result.ok) {
-      setFormError(pickErrorText(result, t));
+    const parsed = parsePickedPathsResult(result, t);
+    if (!parsed.ok) {
+      setFormError(parsed.error);
       return [];
     }
-    const paths = Array.isArray(result.body?.paths) ? result.body.paths.filter((path) => typeof path === "string" && path !== "") : [];
-    if (paths.length > 0) return paths;
-    return typeof result.body?.path === "string" && result.body.path !== "" ? [result.body.path] : [];
-  };
-  const visible = assets.filter((asset) => {
-    if (filterType && asset.type !== filterType) return false;
-    if (!query.trim()) return true;
-    const hay = `${asset.name}
-${asset.description}
-${(asset.tags || []).join("\n")}`.toLowerCase();
-    return hay.includes(query.trim().toLowerCase());
-  }).sort((a, b) => {
-    if (sortKey === "name") {
-      return String(a.name || "").localeCompare(String(b.name || ""));
-    }
-    return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
-  });
-  const selectedCount = selectedIds.size;
-  const selecting = selectedCount > 0;
-  const toggleSelect = (asset) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(asset.id)) next.delete(asset.id);
-      else next.add(asset.id);
-      return next;
+    return parsed.paths;
+  }, [setFormError, t]);
+}
+function useCreateHandler(options) {
+  const { run, setCreating, setDetail, setFilterType } = options;
+  return (0, import_react5.useCallback)((payload) => {
+    return run(() => createAsset(payload), (result) => {
+      const asset = result.body?.asset;
+      setCreating(null);
+      if (asset?.type) setFilterType(asset.type);
+      if (asset) setDetail(asset);
     });
+  }, [run, setCreating, setDetail, setFilterType]);
+}
+function useSaveDetailHandler(options) {
+  const { detail, run, setDetail } = options;
+  return (0, import_react5.useCallback)((patch) => {
+    if (!detail) return;
+    return run(() => updateAsset(detail.id, patch), (result) => {
+      setDetail(result.body?.asset ?? { ...detail, ...patch });
+    });
+  }, [detail, run, setDetail]);
+}
+function useDeleteBatchHandler(options) {
+  const { pendingRemove, run, detail, setDetail, setPendingRemove, setSelectedIds } = options;
+  return (0, import_react5.useCallback)(() => {
+    if (!pendingRemove) return;
+    const ids = pendingRemove.ids;
+    const after = () => {
+      setPendingRemove(null);
+      if (detail && ids.includes(detail.id)) setDetail(null);
+      setSelectedIds((prev) => removeIdsFromSet(prev, ids));
+    };
+    return run(() => executeDeleteBatch(ids), after);
+  }, [detail, pendingRemove, run, setDetail, setPendingRemove, setSelectedIds]);
+}
+function useFeedMutations(options) {
+  const { t, detail, setDetail, setCreating, refreshState, setBusy, setError, setFormError, setSelectedIds, setPendingRemove, pendingRemove, setFilterType } = options;
+  const run = (0, import_react5.useCallback)((work, after) => {
+    return executeMutation({ work, after, refreshState, setBusy, setError, setFormError, t });
+  }, [refreshState, setBusy, setError, setFormError, t]);
+  const handlePick = usePickHandler(t, setFormError);
+  const { copiedId, copyCite } = useCiteCopy();
+  const handleCreate = useCreateHandler({ run, setCreating, setDetail, setFilterType });
+  const handleSaveDetail = useSaveDetailHandler({ detail, run, setDetail });
+  const handleConfirmDelete = useDeleteBatchHandler({
+    pendingRemove,
+    run,
+    detail,
+    setDetail,
+    setPendingRemove,
+    setSelectedIds
+  });
+  return {
+    copiedId,
+    run,
+    handlePick,
+    copyCite,
+    handleCreate,
+    handleSaveDetail,
+    handleConfirmDelete
   };
-  const clearSelection = () => {
-    setSelectedIds(/* @__PURE__ */ new Set());
+}
+function useAssetsFeed(options) {
+  const { t, open } = options;
+  const [detail, setDetail] = (0, import_react5.useState)(null);
+  const [creating, setCreating] = (0, import_react5.useState)(null);
+  const [assets, setAssets] = (0, import_react5.useState)([]);
+  const filters = useFeedFilterState();
+  const selection = useFeedSelection(assets);
+  const data = useFeedData({
+    t,
+    open,
+    assets,
+    setAssets,
+    setDetail,
+    setSelectedIds: selection.setSelectedIds
+  });
+  const mutations = useFeedMutations({
+    t,
+    detail,
+    setDetail,
+    setCreating,
+    refreshState: data.refreshState,
+    setBusy: data.setBusy,
+    setError: data.setError,
+    setFormError: data.setFormError,
+    setSelectedIds: selection.setSelectedIds,
+    setPendingRemove: selection.setPendingRemove,
+    pendingRemove: selection.pendingRemove,
+    setFilterType: filters.setFilterType
+  });
+  const visible = (0, import_react5.useMemo)(() => {
+    return filterAndSortAssets(assets, filters.filterType, filters.query, filters.sortKey);
+  }, [assets, filters.filterType, filters.query, filters.sortKey]);
+  return {
+    ...data,
+    ...filters,
+    ...selection,
+    ...mutations,
+    detail,
+    setDetail,
+    creating,
+    setCreating,
+    visible
   };
+}
+
+// src/client/use-stage-box.js
+var import_react6 = require("react");
+var DEFAULT_BOX = { top: 0, left: 0, width: 0, height: 0 };
+function getInitialBox(stage) {
+  if (stage && typeof stage.readBox === "function") {
+    return stage.readBox();
+  }
+  return DEFAULT_BOX;
+}
+function findScrollTarget() {
+  const scroll = document.querySelector("[data-conversation-scroll]");
+  if (scroll instanceof HTMLElement) return scroll;
+  const conv = document.querySelector('[data-slot="conversation"]');
+  return conv ? conv.parentElement : null;
+}
+function useStageBox(open, stage) {
+  const [box, setBox] = (0, import_react6.useState)(() => getInitialBox(stage));
+  (0, import_react6.useLayoutEffect)(() => {
+    if (!open || !stage || typeof stage.readBox !== "function") return void 0;
+    const update = () => {
+      setBox(stage.readBox());
+    };
+    update();
+    const target = findScrollTarget();
+    const observer = typeof ResizeObserver === "function" && target ? new ResizeObserver(update) : null;
+    if (target && observer) observer.observe(target);
+    window.addEventListener("resize", update);
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [open, stage]);
+  return box;
+}
+
+// src/client/AssetsStage.jsx
+var import_jsx_runtime8 = require("react/jsx-runtime");
+function AssetsHeader(props) {
+  const { t, stage, busy, refreshState, setBusy } = props;
+  const onRefresh = () => {
+    setBusy(true);
+    void refreshState(true).finally(() => setBusy(false));
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    PageHeader,
+    {
+      title: t("stage.title"),
+      subtitle: t("stage.subtitle"),
+      onRefresh,
+      refreshing: busy,
+      refreshTitle: t("stage.refresh"),
+      onClose: () => {
+        stage.set(false);
+      },
+      closeTitle: t("stage.close")
+    }
+  );
+}
+function AssetsActionRow(props) {
+  const { t, feed } = props;
+  const onAdd = () => {
+    feed.setCreating(feed.filterType || "character");
+    feed.setFormError("");
+  };
+  const onImport = () => {
+    feed.setError(t("import.notice"));
+    setTimeout(() => feed.setError(""), 3e3);
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-action-row", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Button, { variant: "primary", leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(PlusIcon, {}), onClick: onAdd, children: t("add.button") }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Button, { variant: "outline", leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(ImportIcon, {}), onClick: onImport, children: t("import.button") })
+  ] });
+}
+function AssetsFilterChips(props) {
+  const { t, filterType, onTypeChange } = props;
+  const filterChips = [
+    { key: "", label: t("chip.all") },
+    ...ASSET_TYPE_KEYS.map((k) => ({ key: k, label: t(`type.${k}`) }))
+  ];
+  return filterChips.map((chip) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    Button,
+    {
+      variant: filterType === chip.key ? "secondary" : "ghost",
+      size: "sm",
+      "aria-pressed": filterType === chip.key,
+      onClick: () => onTypeChange(chip.key),
+      children: chip.label
+    },
+    chip.key || "all"
+  ));
+}
+function AssetsViewToggle(props) {
+  const { t, viewMode, onViewModeChange } = props;
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-view-toggle", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+      IconButton,
+      {
+        variant: viewMode === "grid" ? "secondary" : "ghost",
+        size: "xs",
+        "aria-pressed": viewMode === "grid",
+        "aria-label": t("view.grid"),
+        title: t("view.grid"),
+        onClick: () => onViewModeChange("grid"),
+        children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(GridIcon, { size: 14 })
+      }
+    ),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+      IconButton,
+      {
+        variant: viewMode === "list" ? "secondary" : "ghost",
+        size: "xs",
+        "aria-pressed": viewMode === "list",
+        "aria-label": t("view.list"),
+        title: t("view.list"),
+        onClick: () => onViewModeChange("list"),
+        children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(ListIcon, { size: 14 })
+      }
+    )
+  ] });
+}
+function AssetsToolsCluster(props) {
+  const { t, query, sortKey, viewMode, onQueryChange, onSortChange, onViewModeChange } = props;
+  const sortOptions = [
+    { value: "updated_at", label: t("sort.updated") },
+    { value: "name", label: t("sort.name") }
+  ];
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-tools-cluster", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-assets-search-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+      SearchField,
+      {
+        value: query,
+        placeholder: t("search.placeholder"),
+        "aria-label": t("search.placeholder"),
+        debounceMs: 0,
+        stretch: true,
+        onValueChange: onQueryChange
+      }
+    ) }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-assets-sort-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(DropdownSelect, { value: sortKey, options: sortOptions, onChange: onSortChange }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(AssetsViewToggle, { t, viewMode, onViewModeChange })
+  ] });
+}
+function AssetsFilterBar(props) {
+  const { t, feed } = props;
+  const onTypeChange = (key) => {
+    feed.setFilterType(key);
+    feed.setDetail(null);
+    feed.clearSelection();
+  };
+  const filterButtons = /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(AssetsFilterChips, { t, filterType: feed.filterType, onTypeChange });
+  const tools = /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    AssetsToolsCluster,
+    {
+      t,
+      query: feed.query,
+      sortKey: feed.sortKey,
+      viewMode: feed.viewMode,
+      onQueryChange: feed.setQuery,
+      onSortChange: feed.setSortKey,
+      onViewModeChange: feed.setViewMode
+    }
+  );
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    FilterBar,
+    {
+      className: "omnimux-assets-stage-toolbar",
+      compact: true,
+      filters: filterButtons,
+      tools
+    }
+  );
+}
+function AssetsSelectionBar(props) {
+  const { t, feed } = props;
+  if (!feed.selecting) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-selection", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: t("select.count").replace("{n}", String(feed.selectedCount)) }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-selection-actions", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Button, { variant: "ghost", size: "sm", onClick: feed.clearSelection, children: t("select.clear") }),
+      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Button, { variant: "danger", size: "sm", disabled: feed.busy, onClick: feed.handleOpenBatchDelete, children: t("select.delete").replace("{n}", String(feed.selectedCount)) })
+    ] })
+  ] });
+}
+function AssetsMainView(props) {
+  const { t, feed, emptyProps, onOpenAdd } = props;
+  const { detail, setDetail, visible, viewMode, copyCite, copiedId, selectedIds, toggleSelect, handleRemoveSingle } = feed;
+  const { emptyLabel, emptyActionLabel, searching } = emptyProps;
+  if (detail) {
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+      AssetBrowse,
+      {
+        t,
+        asset: detail,
+        onBack: () => setDetail(null)
+      },
+      detail.id
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    AssetGrid,
+    {
+      t,
+      assets: visible,
+      viewMode,
+      emptyLabel,
+      emptyActionLabel,
+      showEmptyAction: !searching,
+      onEmptyAction: onOpenAdd,
+      onOpen: setDetail,
+      onCopy: copyCite,
+      onRemove: handleRemoveSingle,
+      copiedId,
+      selectedIds,
+      onToggleSelect: toggleSelect
+    }
+  );
+}
+function AssetsBody(props) {
+  const { t, feed, emptyProps } = props;
+  const { detail, setDetail, busy, handleSaveDetail, filterType } = feed;
+  const onOpenAdd = () => {
+    feed.setCreating(filterType || "character");
+    feed.setFormError("");
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-body", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-assets-main", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(AssetsMainView, { t, feed, emptyProps, onOpenAdd }) }),
+    detail ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+      AssetDetail,
+      {
+        t,
+        asset: detail,
+        busy,
+        onClose: () => setDetail(null),
+        onSave: handleSaveDetail
+      },
+      detail.id
+    ) : null
+  ] });
+}
+function AddAssetDialogItem(props) {
+  const { t, feed } = props;
+  const onCancel = () => {
+    feed.setCreating(null);
+    feed.setFormError("");
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    AddAssetDialog,
+    {
+      t,
+      busy: feed.busy,
+      presetType: feed.creating,
+      error: feed.formError,
+      onCancel,
+      onPick: feed.handlePick,
+      onSubmit: feed.handleCreate
+    }
+  );
+}
+function ConfirmRemoveDialogItem(props) {
+  const { t, feed } = props;
+  const { pendingRemove, busy, setPendingRemove, handleConfirmDelete } = feed;
+  const removeTitle = pendingRemove && pendingRemove.ids.length > 1 ? t("select.removeTitle").replace("{n}", String(pendingRemove.ids.length)) : void 0;
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    ConfirmRemoveDialog,
+    {
+      t,
+      name: String(pendingRemove.names[0] ?? ""),
+      title: removeTitle,
+      busy,
+      onCancel: () => setPendingRemove(null),
+      onConfirm: handleConfirmDelete
+    }
+  );
+}
+function AssetsDialogs(props) {
+  const { t, feed } = props;
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+    feed.creating ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(AddAssetDialogItem, { t, feed }) : null,
+    feed.pendingRemove ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(ConfirmRemoveDialogItem, { t, feed }) : null
+  ] });
+}
+function createStageStyle(open, box) {
+  return {
+    display: open ? void 0 : "none",
+    "--stage-top": `${box.top}px`,
+    "--stage-left": `${box.left}px`,
+    "--stage-width": `${box.width}px`,
+    "--stage-height": `${box.height}px`
+  };
+}
+function useStageState(stage) {
+  const open = (0, import_react7.useSyncExternalStore)(
+    stage ? (cb) => stage.subscribe(cb) : () => () => {
+    },
+    stage ? () => stage.getSnapshot() : () => false
+  );
+  const [everOpened, setEverOpened] = (0, import_react7.useState)(false);
+  if (open && !everOpened) setEverOpened(true);
+  return { open, everOpened };
+}
+function AssetsStage(props) {
+  const { t, stage } = props;
+  (0, import_react7.useEffect)(() => {
+    injectAssetsStyles();
+  }, []);
+  const { open, everOpened } = useStageState(stage);
+  const box = useStageBox(open, stage);
+  const feed = useAssetsFeed({ t, open });
   if (!stage || !everOpened) return null;
-  const searching = Boolean(query.trim());
-  const emptyTypeLabel = filterType ? t(`type.${filterType}`) : "";
-  const emptyLabel = searching ? t("empty.noMatch") : filterType ? t("empty.type").replace("{type}", emptyTypeLabel) : t("empty.all");
-  const emptyActionLabel = searching ? void 0 : filterType ? t("empty.addType").replace("{type}", emptyTypeLabel) : t("add.button");
-  if (!stage || !everOpened) return null;
+  const emptyProps = computeEmptyState(feed.filterType, feed.query, t);
   return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
     "div",
     {
@@ -2760,265 +3289,15 @@ ${(asset.tags || []).join("\n")}`.toLowerCase();
       "aria-hidden": open ? void 0 : "true",
       className: "omnimux-assets-stage",
       "data-visible": open ? "true" : "false",
-      style: {
-        display: open ? void 0 : "none",
-        "--stage-top": `${box.top}px`,
-        "--stage-left": `${box.left}px`,
-        "--stage-width": `${box.width}px`,
-        "--stage-height": `${box.height}px`
-      },
+      style: createStageStyle(open, box),
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-          PageHeader,
-          {
-            title: t("stage.title"),
-            subtitle: t("stage.subtitle"),
-            onRefresh: () => {
-              setBusy(true);
-              void refreshState(true).finally(() => {
-                setBusy(false);
-              });
-            },
-            refreshing: busy,
-            refreshTitle: t("stage.refresh"),
-            onClose: () => {
-              stage.set(false);
-            },
-            closeTitle: t("stage.close")
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-action-row", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-            Button,
-            {
-              variant: "primary",
-              leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(PlusIcon, {}),
-              onClick: () => {
-                setCreating(filterType || "character");
-                setFormError("");
-              },
-              children: t("add.button")
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-            Button,
-            {
-              variant: "outline",
-              leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(ImportIcon, {}),
-              onClick: () => {
-                setError(t("import.notice"));
-                setTimeout(() => setError(""), 3e3);
-              },
-              children: t("import.button")
-            }
-          )
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-          FilterBar,
-          {
-            className: "omnimux-assets-stage-toolbar",
-            compact: true,
-            filters: [{ key: "", label: t("chip.all") }, ...ASSET_TYPE_KEYS.map((key) => ({ key, label: t(`type.${key}`) }))].map((chip) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-              Button,
-              {
-                variant: filterType === chip.key ? "secondary" : "ghost",
-                size: "sm",
-                "aria-pressed": filterType === chip.key,
-                onClick: () => {
-                  setFilterType(chip.key);
-                  setDetail(null);
-                  clearSelection();
-                },
-                children: chip.label
-              },
-              chip.key || "all"
-            )),
-            tools: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-tools-cluster", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-assets-search-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                SearchField,
-                {
-                  value: query,
-                  placeholder: t("search.placeholder"),
-                  "aria-label": t("search.placeholder"),
-                  debounceMs: 0,
-                  stretch: true,
-                  onValueChange: setQuery
-                }
-              ) }),
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-assets-sort-wrap", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                DropdownSelect,
-                {
-                  value: sortKey,
-                  options: [
-                    { value: "updated_at", label: t("sort.updated") },
-                    { value: "name", label: t("sort.name") }
-                  ],
-                  onChange: setSortKey
-                }
-              ) }),
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-view-toggle", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                  IconButton,
-                  {
-                    variant: viewMode === "grid" ? "secondary" : "ghost",
-                    size: "xs",
-                    "aria-pressed": viewMode === "grid",
-                    "aria-label": t("view.grid"),
-                    title: t("view.grid"),
-                    onClick: () => setViewMode("grid"),
-                    children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(GridIcon, { size: 14 })
-                  }
-                ),
-                /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-                  IconButton,
-                  {
-                    variant: viewMode === "list" ? "secondary" : "ghost",
-                    size: "xs",
-                    "aria-pressed": viewMode === "list",
-                    "aria-label": t("view.list"),
-                    title: t("view.list"),
-                    onClick: () => setViewMode("list"),
-                    children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(ListIcon, { size: 14 })
-                  }
-                )
-              ] })
-            ] })
-          }
-        ),
-        selecting ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-selection", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: t("select.count").replace("{n}", String(selectedCount)) }),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-selection-actions", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(Button, { variant: "ghost", size: "sm", onClick: clearSelection, children: t("select.clear") }),
-            /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-              Button,
-              {
-                variant: "danger",
-                size: "sm",
-                disabled: busy,
-                onClick: () => {
-                  const names = assets.filter((row) => selectedIds.has(row.id)).map((row) => row.name);
-                  setPendingRemove({ ids: [...selectedIds], names });
-                },
-                children: t("select.delete").replace("{n}", String(selectedCount))
-              }
-            )
-          ] })
-        ] }) : null,
-        error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("p", { className: "omnimux-assets-error", children: error }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-assets-body", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-assets-main", children: detail ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-            AssetBrowse,
-            {
-              t,
-              asset: detail,
-              onBack: () => {
-                setDetail(null);
-              }
-            },
-            detail.id
-          ) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-            AssetGrid,
-            {
-              t,
-              assets: visible,
-              viewMode,
-              emptyLabel,
-              emptyActionLabel,
-              showEmptyAction: !searching,
-              onEmptyAction: () => {
-                setCreating(filterType || "character");
-                setFormError("");
-              },
-              onOpen: (asset) => {
-                setDetail(asset);
-              },
-              onCopy: (asset) => {
-                const text = citeOf(asset);
-                if (navigator.clipboard?.writeText) void navigator.clipboard.writeText(text);
-                setCopiedId(asset.id);
-                window.setTimeout(() => {
-                  setCopiedId("");
-                }, 1500);
-              },
-              onRemove: (asset) => {
-                setPendingRemove({ ids: [asset.id], names: [asset.name] });
-              },
-              copiedId,
-              selectedIds,
-              onToggleSelect: toggleSelect
-            }
-          ) }),
-          detail ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-            AssetDetail,
-            {
-              t,
-              asset: detail,
-              busy,
-              onClose: () => {
-                setDetail(null);
-              },
-              onSave: (patch) => {
-                run(() => updateAsset(detail.id, patch), (result) => {
-                  setDetail(result.body?.asset ?? { ...detail, ...patch });
-                });
-              }
-            },
-            detail.id
-          ) : null
-        ] }),
-        creating ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-          AddAssetDialog,
-          {
-            t,
-            busy,
-            presetType: creating,
-            error: formError,
-            onCancel: () => {
-              setCreating(null);
-              setFormError("");
-            },
-            onPick: handlePick,
-            onSubmit: (payload) => {
-              run(() => createAsset(payload), (result) => {
-                const asset = result.body?.asset;
-                setCreating(null);
-                if (asset?.type) setFilterType(asset.type);
-                if (asset) setDetail(asset);
-              });
-            }
-          }
-        ) : null,
-        pendingRemove ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-          ConfirmRemoveDialog,
-          {
-            t,
-            name: String(pendingRemove.names[0] ?? ""),
-            title: pendingRemove.ids.length > 1 ? t("select.removeTitle").replace("{n}", String(pendingRemove.ids.length)) : void 0,
-            busy,
-            onCancel: () => {
-              setPendingRemove(null);
-            },
-            onConfirm: () => {
-              const ids = pendingRemove.ids;
-              run(async () => {
-                let last = { ok: true, status: 200, body: {} };
-                for (const id of ids) {
-                  last = await deleteAsset(id);
-                  if (!last.ok) return last;
-                }
-                return last;
-              }, () => {
-                setPendingRemove(null);
-                if (ids.includes(detail?.id)) setDetail(null);
-                setSelectedIds((prev) => {
-                  const next = new Set(prev);
-                  for (const id of ids) next.delete(id);
-                  return next;
-                });
-              });
-            }
-          }
-        ) : null
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(AssetsHeader, { t, stage, busy: feed.busy, refreshState: feed.refreshState, setBusy: feed.setBusy }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(AssetsActionRow, { t, feed }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(AssetsFilterBar, { t, feed }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(AssetsSelectionBar, { t, feed }),
+        feed.error !== "" ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("p", { className: "omnimux-assets-error", children: feed.error }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(AssetsBody, { t, feed, emptyProps }),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(AssetsDialogs, { t, feed })
       ]
     }
   );
