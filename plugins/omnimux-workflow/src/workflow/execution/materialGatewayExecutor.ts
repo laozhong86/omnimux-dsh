@@ -158,6 +158,12 @@ export function createMaterialGatewayExecutor(opts: {
         model: readString(data.params as Record<string, unknown> | undefined, 'model'),
         resolution: readString(data.params as Record<string, unknown> | undefined, 'resolution'),
         aspectRatio: readString(data.params as Record<string, unknown> | undefined, 'aspectRatio'),
+        voice: readString(data.params as Record<string, unknown> | undefined, 'voice'),
+        style: readString(data.params as Record<string, unknown> | undefined, 'style'),
+        instrumental: (data.params as Record<string, unknown> | undefined)?.instrumental === true,
+        speed: typeof (data.params as Record<string, unknown> | undefined)?.speed === 'number'
+          ? (data.params as Record<string, unknown>).speed as number
+          : undefined,
         dest,
         signal: ctx.signal,
         // Mock-gateway control flag (deterministic failure injection for M3).

@@ -11,10 +11,11 @@ describe('hub apply composition', () => {
       provide(name) { provided.push(name) },
       get() { return undefined },
     }, { official: { mount: false } })
-    assert.deepEqual(provided, ['identity', 'videoGenerate', 'imageGenerate', 'textComplete'])
+    assert.deepEqual(provided, ['identity', 'videoGenerate', 'imageGenerate', 'audioGenerate', 'textComplete'])
     assert.deepEqual(names, [
       'omnimux_video_submit',
       'omnimux_image_submit',
+      'omnimux_audio_submit',
       'omnimux_text_complete',
     ])
   })
@@ -33,5 +34,6 @@ describe('hub apply composition', () => {
 
     assert(provided.imageGenerate && typeof provided.imageGenerate.execute === 'function')
     assert(provided.videoGenerate && typeof provided.videoGenerate.execute === 'function')
+    assert(provided.audioGenerate && typeof provided.audioGenerate.execute === 'function')
   })
 })

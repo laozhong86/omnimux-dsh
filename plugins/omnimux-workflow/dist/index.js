@@ -17371,58 +17371,51 @@ var RATIO_OPTS = {
 };
 var IMAGE_MODEL_SPECS = [
   {
-    id: "nanobanana-2",
-    label: "NanoBanana 2",
-    badge: "Yearly -20%",
-    subtitle: "auto-4K",
-    family: "nanobanana",
+    id: "gpt-image-2",
+    label: "GPT Image 2",
+    badge: "\u9ED8\u8BA4",
+    subtitle: "1k-4k",
+    family: "openai",
     parameters: {
       aspectRatio: {
-        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
+        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
         defaultValue: "16:9"
       },
       resolution: {
-        options: [{ value: "auto-4K", label: "auto-4K" }, { value: "2K", label: "2K" }, { value: "1K", label: "1K" }],
-        defaultValue: "auto-4K"
+        options: [{ value: "1024x1024", label: "1K" }, { value: "1792x1024", label: "2K" }],
+        defaultValue: "1792x1024"
+      },
+      quality: {
+        options: [{ value: "standard", label: "\u6807\u51C6" }, { value: "hd", label: "\u9AD8\u6E05 HD" }],
+        defaultValue: "standard"
       }
     }
   },
   {
-    id: "nanobanana-pro",
-    label: "NanoBanana Pro",
-    badge: "Yearly -20%",
-    subtitle: "auto-4K",
-    family: "nanobanana",
+    id: "gpt-image2-hd",
+    label: "GPT Image 2 HD",
+    subtitle: "\u9AD8\u6E05 4K",
+    family: "openai",
     parameters: {
       aspectRatio: {
-        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
+        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
         defaultValue: "16:9"
       },
       resolution: {
-        options: [{ value: "auto-4K", label: "auto-4K" }, { value: "2K", label: "2K" }, { value: "1K", label: "1K" }],
-        defaultValue: "auto-4K"
+        options: [{ value: "1792x1024", label: "2K" }, { value: "3840x2160", label: "4K" }],
+        defaultValue: "1792x1024"
       }
     }
   },
   {
-    id: "seedream-5.0-pro",
-    label: "Seedream 5.0 Pro",
-    badge: "Yearly -20%",
-    subtitle: "1K-2K",
-    family: "seedream",
+    id: "grok-imagine-image",
+    label: "Grok Imagine Image",
+    badge: "\u6781\u901F",
+    subtitle: "xAI Grok",
+    family: "grok",
     parameters: {
       aspectRatio: {
-        options: [
-          RATIO_OPTS.auto,
-          RATIO_OPTS.r1_1,
-          RATIO_OPTS.r4_3,
-          RATIO_OPTS.r3_4,
-          RATIO_OPTS.r16_9,
-          RATIO_OPTS.r9_16,
-          RATIO_OPTS.r21_9,
-          RATIO_OPTS.r3_2,
-          RATIO_OPTS.r2_3
-        ],
+        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4],
         defaultValue: "16:9"
       },
       resolution: {
@@ -17432,11 +17425,28 @@ var IMAGE_MODEL_SPECS = [
     }
   },
   {
-    id: "seedream-4.5",
-    label: "Seedream 4.5",
-    badge: "Yearly -20%",
-    subtitle: "2K-4K",
-    family: "seedream",
+    id: "grok-imagine-image-quality",
+    label: "Grok Imagine Image Quality",
+    badge: "\u9AD8\u753B\u8D28",
+    subtitle: "xAI Grok HD",
+    family: "grok",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4],
+        defaultValue: "16:9"
+      },
+      resolution: {
+        options: [{ value: "2K", label: "2K" }, { value: "4K", label: "4K" }],
+        defaultValue: "2K"
+      }
+    }
+  },
+  {
+    id: "midjourney",
+    label: "Midjourney",
+    badge: "\u65D7\u8230",
+    subtitle: "Midjourney v7/v8",
+    family: "midjourney",
     parameters: {
       aspectRatio: {
         options: [
@@ -17453,7 +17463,7 @@ var IMAGE_MODEL_SPECS = [
         defaultValue: "16:9"
       },
       resolution: {
-        options: [{ value: "4K", label: "4K" }, { value: "2K", label: "2K" }],
+        options: [{ value: "2K", label: "2K" }, { value: "1080P", label: "1080P" }],
         defaultValue: "2K"
       }
     }
@@ -17489,7 +17499,6 @@ var IMAGE_MODEL_SPECS = [
   {
     id: "midjourney-7",
     label: "Midjourney 7",
-    badge: "Yearly -20%",
     subtitle: "1080P",
     family: "midjourney",
     parameters: {
@@ -17516,8 +17525,7 @@ var IMAGE_MODEL_SPECS = [
   {
     id: "midjourney-niji-7",
     label: "Midjourney Niji 7",
-    badge: "Yearly -20%",
-    subtitle: "1080P",
+    subtitle: "\u4E8C\u6B21\u5143\u52A8\u6F2B",
     family: "midjourney",
     parameters: {
       aspectRatio: {
@@ -17541,28 +17549,317 @@ var IMAGE_MODEL_SPECS = [
     }
   },
   {
-    id: "gpt-image-2",
-    label: "GPT Image 2",
-    badge: "Yearly -20%",
-    subtitle: "1k-4k",
-    family: "openai",
+    id: "nanobanana-2",
+    label: "NanoBanana 2",
+    badge: "Imagen",
+    subtitle: "auto-4K",
+    family: "nanobanana",
     parameters: {
       aspectRatio: {
-        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
+        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
         defaultValue: "16:9"
       },
       resolution: {
-        options: [{ value: "1024x1024", label: "1K" }, { value: "1792x1024", label: "2K" }],
-        defaultValue: "1792x1024"
+        options: [{ value: "auto-4K", label: "auto-4K" }, { value: "2K", label: "2K" }, { value: "1K", label: "1K" }],
+        defaultValue: "auto-4K"
+      }
+    }
+  },
+  {
+    id: "nano_banana_2",
+    label: "Nano Banana 2",
+    subtitle: "Google Imagen",
+    family: "nanobanana",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
+        defaultValue: "16:9"
       },
-      quality: {
-        options: [{ value: "standard", label: "\u6807\u51C6" }, { value: "hd", label: "\u9AD8\u6E05 HD" }],
-        defaultValue: "standard"
+      resolution: {
+        options: [{ value: "auto-4K", label: "auto-4K" }, { value: "2K", label: "2K" }],
+        defaultValue: "auto-4K"
+      }
+    }
+  },
+  {
+    id: "nanobanana-pro",
+    label: "NanoBanana Pro",
+    subtitle: "auto-4K Pro",
+    family: "nanobanana",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
+        defaultValue: "16:9"
+      },
+      resolution: {
+        options: [{ value: "auto-4K", label: "auto-4K" }, { value: "2K", label: "2K" }, { value: "1K", label: "1K" }],
+        defaultValue: "auto-4K"
+      }
+    }
+  },
+  {
+    id: "nano_banana_pro",
+    label: "Nano Banana Pro",
+    subtitle: "Google Imagen Pro",
+    family: "nanobanana",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
+        defaultValue: "16:9"
+      },
+      resolution: {
+        options: [{ value: "auto-4K", label: "auto-4K" }, { value: "2K", label: "2K" }],
+        defaultValue: "auto-4K"
+      }
+    }
+  },
+  {
+    id: "seedream-5.0-pro",
+    label: "Seedream 5.0 Pro",
+    subtitle: "1K-2K",
+    family: "seedream",
+    parameters: {
+      aspectRatio: {
+        options: [
+          RATIO_OPTS.auto,
+          RATIO_OPTS.r1_1,
+          RATIO_OPTS.r4_3,
+          RATIO_OPTS.r3_4,
+          RATIO_OPTS.r16_9,
+          RATIO_OPTS.r9_16,
+          RATIO_OPTS.r21_9,
+          RATIO_OPTS.r3_2,
+          RATIO_OPTS.r2_3
+        ],
+        defaultValue: "16:9"
+      },
+      resolution: {
+        options: [{ value: "2K", label: "2K" }, { value: "1K", label: "1K" }],
+        defaultValue: "2K"
+      }
+    }
+  },
+  {
+    id: "seedream-4.5",
+    label: "Seedream 4.5",
+    subtitle: "2K-4K",
+    family: "seedream",
+    parameters: {
+      aspectRatio: {
+        options: [
+          RATIO_OPTS.auto,
+          RATIO_OPTS.r1_1,
+          RATIO_OPTS.r4_3,
+          RATIO_OPTS.r3_4,
+          RATIO_OPTS.r16_9,
+          RATIO_OPTS.r9_16,
+          RATIO_OPTS.r21_9,
+          RATIO_OPTS.r3_2,
+          RATIO_OPTS.r2_3
+        ],
+        defaultValue: "16:9"
+      },
+      resolution: {
+        options: [{ value: "4K", label: "4K" }, { value: "2K", label: "2K" }],
+        defaultValue: "2K"
       }
     }
   }
 ];
 var VIDEO_MODEL_SPECS = [
+  {
+    id: "seedance-2-0-fast",
+    label: "Seedance 2.0 Fast",
+    badge: "\u9ED8\u8BA4",
+    subtitle: "720P \xB7 \u23F1 4-8s",
+    family: "bytedance",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
+        defaultValue: "16:9"
+      },
+      duration: {
+        options: [
+          { value: 4, label: "4s" },
+          { value: 6, label: "6s" },
+          { value: 8, label: "8s" }
+        ],
+        defaultValue: 4,
+        unit: "s"
+      },
+      resolution: {
+        options: [{ value: "720P", label: "720P" }, { value: "1080P", label: "1080P" }],
+        defaultValue: "720P"
+      }
+    }
+  },
+  {
+    id: "seedance-2-5",
+    label: "Seedance 2.5",
+    badge: "\u5373\u68A6\u65D7\u8230",
+    subtitle: "720P-1080P \xB7 \u23F1 5-10s",
+    family: "bytedance",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
+        defaultValue: "16:9"
+      },
+      duration: {
+        options: [
+          { value: 5, label: "5s" },
+          { value: 10, label: "10s" }
+        ],
+        defaultValue: 5,
+        unit: "s"
+      },
+      resolution: {
+        options: [{ value: "720P", label: "720P" }, { value: "1080P", label: "1080P" }],
+        defaultValue: "720P"
+      }
+    }
+  },
+  {
+    id: "seedance-2-0",
+    label: "Seedance 2.0",
+    subtitle: "720P \xB7 \u23F1 5s",
+    family: "bytedance",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
+        defaultValue: "16:9"
+      },
+      duration: {
+        options: [{ value: 5, label: "5s" }],
+        defaultValue: 5,
+        unit: "s"
+      },
+      resolution: {
+        options: [{ value: "720P", label: "720P" }],
+        defaultValue: "720P"
+      }
+    }
+  },
+  {
+    id: "seedance2.5-stable-max-720p",
+    label: "Seedance 2.5 Stable Max",
+    badge: "\u9AD8\u753B\u8D28\u7A33\u5B9A",
+    subtitle: "720P \xB7 \u23F1 5-10s",
+    family: "bytedance",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
+        defaultValue: "16:9"
+      },
+      duration: {
+        options: [{ value: 5, label: "5s" }, { value: 10, label: "10s" }],
+        defaultValue: 5,
+        unit: "s"
+      },
+      resolution: {
+        options: [{ value: "720P", label: "720P" }],
+        defaultValue: "720P"
+      }
+    }
+  },
+  {
+    id: "kling-v3",
+    label: "Kling V3",
+    badge: "\u53EF\u7075 3.0",
+    subtitle: "1080P-4K \xB7 \u23F1 5-10s \xB7 \u{1F50A}",
+    family: "kling",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
+        defaultValue: "16:9"
+      },
+      duration: {
+        options: [
+          { value: 5, label: "5s" },
+          { value: 10, label: "10s" }
+        ],
+        defaultValue: 5,
+        unit: "s"
+      },
+      resolution: {
+        options: [{ value: "1080P", label: "1080P" }, { value: "4K", label: "4K" }],
+        defaultValue: "1080P"
+      },
+      sound: {
+        supported: true,
+        defaultValue: true
+      }
+    }
+  },
+  {
+    id: "kling-v2-6",
+    label: "Kling V2.6",
+    subtitle: "1080P \xB7 \u23F1 5-10s",
+    family: "kling",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
+        defaultValue: "16:9"
+      },
+      duration: {
+        options: [
+          { value: 5, label: "5s" },
+          { value: 10, label: "10s" }
+        ],
+        defaultValue: 5,
+        unit: "s"
+      },
+      resolution: {
+        options: [{ value: "1080P", label: "1080P" }],
+        defaultValue: "1080P"
+      }
+    }
+  },
+  {
+    id: "kling-v3-motion-control",
+    label: "Kling V3 \u8FD0\u955C\u63A7\u5236",
+    badge: "\u8FD0\u955C\u63A7\u5236",
+    subtitle: "1080P \xB7 \u8FD0\u955C\u8F68\u8FF9",
+    family: "kling",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
+        defaultValue: "16:9"
+      },
+      duration: {
+        options: [
+          { value: 5, label: "5s" },
+          { value: 10, label: "10s" }
+        ],
+        defaultValue: 5,
+        unit: "s"
+      },
+      resolution: {
+        options: [{ value: "1080P", label: "1080P" }],
+        defaultValue: "1080P"
+      }
+    }
+  },
+  {
+    id: "kling-avatar",
+    label: "Kling Avatar (\u6570\u5B57\u4EBA)",
+    badge: "\u6570\u5B57\u4EBA",
+    subtitle: "\u97F3\u9891\u5BF9\u53E3\u578B",
+    family: "kling",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
+        defaultValue: "16:9"
+      },
+      duration: {
+        options: [
+          { value: 5, label: "5s" },
+          { value: 10, label: "10s" }
+        ],
+        defaultValue: 5,
+        unit: "s"
+      }
+    }
+  },
   {
     id: "kling-o1",
     label: "Kling O1",
@@ -17584,10 +17881,6 @@ var VIDEO_MODEL_SPECS = [
       resolution: {
         options: [{ value: "1080P", label: "1080P" }],
         defaultValue: "1080P"
-      },
-      sound: {
-        supported: false,
-        defaultValue: false
       }
     }
   },
@@ -17621,45 +17914,120 @@ var VIDEO_MODEL_SPECS = [
     }
   },
   {
-    id: "kling-avatar",
-    label: "Kling Avatar",
-    family: "kling",
+    id: "veo-3.1",
+    label: "Veo 3.1",
+    badge: "\u8C37\u6B4C\u9876\u7EA7",
+    subtitle: "720p-1080p \xB7 \u23F1 8s",
+    family: "veo",
     parameters: {
       aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
         defaultValue: "16:9"
       },
       duration: {
         options: [
           { value: 5, label: "5s" },
-          { value: 10, label: "10s" }
+          { value: 8, label: "8s" }
         ],
-        defaultValue: 5,
+        defaultValue: 8,
         unit: "s"
+      },
+      resolution: {
+        options: [{ value: "1080P", label: "1080P" }, { value: "720P", label: "720P" }],
+        defaultValue: "1080P"
       }
     }
   },
   {
-    id: "kling-motion-control",
-    label: "Kling Motion Control",
-    subtitle: "1080P",
-    family: "kling",
+    id: "veo-3.1-fast",
+    label: "Veo 3.1 Fast",
+    badge: "\u6781\u901F",
+    subtitle: "720p-1080p \xB7 \u23F1 8s",
+    family: "veo",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
+        defaultValue: "16:9"
+      },
+      duration: {
+        options: [
+          { value: 5, label: "5s" },
+          { value: 8, label: "8s" }
+        ],
+        defaultValue: 8,
+        unit: "s"
+      },
+      resolution: {
+        options: [{ value: "1080P", label: "1080P" }, { value: "720P", label: "720P" }],
+        defaultValue: "1080P"
+      }
+    }
+  },
+  {
+    id: "grok-imagine-video",
+    label: "Grok Imagine Video",
+    badge: "xAI Grok",
+    subtitle: "720P \xB7 \u23F1 5s",
+    family: "grok",
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
         defaultValue: "16:9"
       },
       duration: {
-        options: [
-          { value: 5, label: "5s" },
-          { value: 10, label: "10s" }
-        ],
+        options: [{ value: 5, label: "5s" }],
         defaultValue: 5,
         unit: "s"
       },
       resolution: {
-        options: [{ value: "1080P", label: "1080P" }],
+        options: [{ value: "720P", label: "720P" }],
+        defaultValue: "720P"
+      }
+    }
+  },
+  {
+    id: "grok-imagine-video-1.5",
+    label: "Grok Imagine Video 1.5",
+    subtitle: "720P-1080P \xB7 \u23F1 5s",
+    family: "grok",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
+        defaultValue: "16:9"
+      },
+      duration: {
+        options: [{ value: 5, label: "5s" }],
+        defaultValue: 5,
+        unit: "s"
+      },
+      resolution: {
+        options: [{ value: "1080P", label: "1080P" }, { value: "720P", label: "720P" }],
         defaultValue: "1080P"
+      }
+    }
+  },
+  {
+    id: "omni_flash",
+    label: "Omni Flash Video",
+    subtitle: "\u591A\u65F6\u957F\u89C6\u9891",
+    family: "veo",
+    parameters: {
+      aspectRatio: {
+        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
+        defaultValue: "16:9"
+      },
+      duration: {
+        options: [
+          { value: 4, label: "4s" },
+          { value: 6, label: "6s" },
+          { value: 10, label: "10s" }
+        ],
+        defaultValue: 6,
+        unit: "s"
+      },
+      resolution: {
+        options: [{ value: "720P", label: "720P" }],
+        defaultValue: "720P"
       }
     }
   },
@@ -17691,57 +18059,60 @@ var VIDEO_MODEL_SPECS = [
         defaultValue: false
       }
     }
-  },
-  {
-    id: "veo-3.1-fast",
-    label: "Veo3.1 Fast",
-    subtitle: "720p-1080p \xB7 \u23F1 8s",
-    family: "veo",
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: "16:9"
-      },
-      duration: {
-        options: [
-          { value: 5, label: "5s" },
-          { value: 8, label: "8s" }
-        ],
-        defaultValue: 8,
-        unit: "s"
-      },
-      resolution: {
-        options: [{ value: "1080P", label: "1080P" }, { value: "720P", label: "720P" }],
-        defaultValue: "1080P"
-      }
-    }
-  },
-  {
-    id: "veo-3.1",
-    label: "Veo3.1",
-    subtitle: "720p-1080p \xB7 \u23F1 8s",
-    family: "veo",
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: "16:9"
-      },
-      duration: {
-        options: [
-          { value: 5, label: "5s" },
-          { value: 8, label: "8s" }
-        ],
-        defaultValue: 8,
-        unit: "s"
-      },
-      resolution: {
-        options: [{ value: "1080P", label: "1080P" }, { value: "720P", label: "720P" }],
-        defaultValue: "1080P"
-      }
-    }
   }
 ];
-var DEFAULT_VIDEO_MODEL = "seedance-2-0-fast";
+var AUDIO_MODEL_SPECS = [
+  {
+    id: "suno",
+    label: "Suno Music",
+    badge: "\u97F3\u4E50\u521B\u4F5C",
+    subtitle: "AI \u6B4C\u66F2 / \u7EAF\u97F3\u4E50 \xB7 \u23F1 30-120s",
+    family: "suno",
+    parameters: {
+      duration: {
+        options: [
+          { value: 30, label: "30s" },
+          { value: 60, label: "60s" },
+          { value: 120, label: "120s" }
+        ],
+        defaultValue: 60,
+        unit: "s"
+      },
+      instrumental: {
+        supported: true,
+        defaultValue: false
+      }
+    }
+  },
+  {
+    id: "gpt-4o-mini-tts",
+    label: "GPT-4o Mini TTS",
+    badge: "\u8BED\u97F3\u5408\u6210",
+    subtitle: "OpenAI \u9AD8\u6E05\u914D\u97F3 \xB7 6 \u79CD\u97F3\u8272",
+    family: "openai",
+    parameters: {
+      voice: {
+        options: [
+          { value: "alloy", label: "Alloy (\u81EA\u7136\u901A\u7528)" },
+          { value: "echo", label: "Echo (\u6C89\u7A33\u7537\u58F0)" },
+          { value: "fable", label: "Fable (\u82F1\u5F0F\u53D9\u4E8B)" },
+          { value: "onyx", label: "Onyx (\u6DF1\u6C89\u539A\u91CD)" },
+          { value: "nova", label: "Nova (\u660E\u4EAE\u5973\u58F0)" },
+          { value: "shimmer", label: "Shimmer (\u6E05\u4EAE\u67D4\u548C)" }
+        ],
+        defaultValue: "alloy"
+      }
+    }
+  },
+  {
+    id: "whisper-1",
+    label: "Whisper 1",
+    badge: "\u8BED\u97F3\u8BC6\u522B",
+    subtitle: "OpenAI \u8BED\u97F3\u8F6C\u6587\u5B57 / ASR",
+    family: "openai",
+    parameters: {}
+  }
+];
 function envString(env, key) {
   const value = env[key];
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : void 0;
@@ -17776,7 +18147,7 @@ function isSeamApi(value) {
   return typeof value === "object" && value !== null && typeof value.execute === "function";
 }
 function requireMediaSeam(getSeam, capability) {
-  const name2 = capability === "video" ? "videoGenerate" : "imageGenerate";
+  const name2 = capability === "video" ? "videoGenerate" : capability === "audio" ? "audioGenerate" : "imageGenerate";
   const seam = getSeam(name2);
   if (!isSeamApi(seam)) {
     throw new SeamGatewayError(
@@ -17823,13 +18194,7 @@ function createOmnimuxSeamClient(opts) {
         });
         return { taskId, mode: "submitted" };
       }
-      if (req.capability === "audio") {
-        throw new SeamGatewayError(
-          "needs-provider",
-          "\u6267\u884C\u4E2D\u67A2\u6682\u65E0\u97F3\u9891\u751F\u6210\u63A5\u7F1D\uFF08audioGenerate \u672A\u5F00\u653E\uFF09"
-        );
-      }
-      const capability = req.capability === "video" ? "video" : "image";
+      const capability = req.capability === "video" ? "video" : req.capability === "audio" ? "audio" : "image";
       const seam = requireMediaSeam(opts.getSeam, capability);
       if (!req.prompt || !req.prompt.trim()) {
         throw new SeamGatewayError("omnimux-invalid-request", "\u751F\u6210\u8282\u70B9\u7F3A\u5C11 prompt");
@@ -17845,6 +18210,10 @@ function createOmnimuxSeamClient(opts) {
       if (req.aspectRatio !== void 0) request.aspectRatio = req.aspectRatio;
       if (req.speech !== void 0) request.speech = req.speech;
       if (req.audio !== void 0) request.audio = req.audio;
+      if (req.voice !== void 0) request.voice = req.voice;
+      if (req.style !== void 0) request.style = req.style;
+      if (req.instrumental !== void 0) request.instrumental = req.instrumental;
+      if (req.speed !== void 0) request.speed = req.speed;
       if (req.model !== void 0) request.model = req.model;
       if (req.signal !== void 0) request.signal = req.signal;
       let result;
@@ -17927,9 +18296,9 @@ function createOmnimuxSeamClient(opts) {
     async capabilities() {
       const hasVideo = isSeamApi(opts.getSeam("videoGenerate"));
       const hasImage = isSeamApi(opts.getSeam("imageGenerate"));
+      const hasAudio = isSeamApi(opts.getSeam("audioGenerate"));
       const hasText = isSeamApi(opts.getSeam("textComplete"));
-      const source = hasVideo || hasImage || hasText ? "omnimux" : "static-stub";
-      const videoId = envString(env, "OMNIMUX_VIDEO_MODEL") ?? DEFAULT_VIDEO_MODEL;
+      const source = hasVideo || hasImage || hasAudio || hasText ? "omnimux" : "static-stub";
       const imageModels = hasImage || source === "static-stub" ? envString(env, "OMNIMUX_IMAGE_MODEL") ? [{ id: envString(env, "OMNIMUX_IMAGE_MODEL"), label: envString(env, "OMNIMUX_IMAGE_MODEL") }] : IMAGE_MODEL_SPECS.map((m) => ({
         id: m.id,
         label: m.label,
@@ -17946,13 +18315,20 @@ function createOmnimuxSeamClient(opts) {
         family: m.family,
         parameters: m.parameters
       })) : [];
+      const audioModels = hasAudio || source === "static-stub" ? envString(env, "OMNIMUX_AUDIO_MODEL") ? [{ id: envString(env, "OMNIMUX_AUDIO_MODEL"), label: envString(env, "OMNIMUX_AUDIO_MODEL") }] : AUDIO_MODEL_SPECS.map((m) => ({
+        id: m.id,
+        label: m.label,
+        badge: m.badge,
+        subtitle: m.subtitle,
+        family: m.family,
+        parameters: m.parameters
+      })) : [];
       return {
         source,
         text: hasText || source === "static-stub" ? TEXT_MODEL_IDS.map(labelOf) : [],
         image: imageModels,
         video: videoModels,
-        // No audioGenerate seam exists in the hub (docs/contracts/hub.md).
-        audio: []
+        audio: audioModels
       };
     },
     currentMode() {
@@ -17978,6 +18354,7 @@ function probeSeams(getSeam) {
   return {
     video: isApi("videoGenerate"),
     image: isApi("imageGenerate"),
+    audio: isApi("audioGenerate"),
     text: isApi("textComplete")
   };
 }
@@ -17986,13 +18363,13 @@ function createAutoSwitchGateway(opts) {
   const omnimux = opts.omnimuxGateway ?? createOmnimuxSeamClient({ getSeam: opts.getSeam, env: opts.env });
   let mode = (() => {
     const seams = probeSeams(opts.getSeam);
-    return seams.video || seams.image || seams.text ? "omnimux" : "mock";
+    return seams.video || seams.image || seams.audio || seams.text ? "omnimux" : "mock";
   })();
   const taskOwners = /* @__PURE__ */ new Map();
   const pick2 = () => {
     if (mode === "mock") {
       const seams = probeSeams(opts.getSeam);
-      if (seams.video || seams.image || seams.text) {
+      if (seams.video || seams.image || seams.audio || seams.text) {
         mode = "omnimux";
         logger2.info("execution hub seams detected after mount; upgrading gateway", {
           seams
@@ -18042,7 +18419,7 @@ function assembleGateway(opts) {
     return { gateway: omnimux, mode, backend: "omnimux" };
   }
   const seams = probeSeams(opts.getSeam);
-  const backend = seams.video || seams.image || seams.text ? "omnimux" : "mock";
+  const backend = seams.video || seams.image || seams.audio || seams.text ? "omnimux" : "mock";
   logger2.info("gateway mode: auto", { seams, backend });
   if (backend === "mock") {
     return {
@@ -19253,6 +19630,10 @@ function createMaterialGatewayExecutor(opts) {
         model: readString(data.params, "model"),
         resolution: readString(data.params, "resolution"),
         aspectRatio: readString(data.params, "aspectRatio"),
+        voice: readString(data.params, "voice"),
+        style: readString(data.params, "style"),
+        instrumental: data.params?.instrumental === true,
+        speed: typeof data.params?.speed === "number" ? data.params.speed : void 0,
         dest,
         signal: ctx.signal,
         // Mock-gateway control flag (deterministic failure injection for M3).

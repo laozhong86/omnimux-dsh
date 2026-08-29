@@ -25,6 +25,14 @@ export interface SubmitRequest {
   /** Speech audio for talking-head, or background audio. */
   speech?: string;
   audio?: string;
+  /** Audio voice selection (alloy, echo, fable, onyx, nova, shimmer). */
+  voice?: string;
+  /** Audio/music style. */
+  style?: string;
+  /** Instrumental only flag for music. */
+  instrumental?: boolean;
+  /** Speed multiplier for speech. */
+  speed?: number;
   /** Model id from the capability catalog; omit for hub default. */
   model?: string;
   /** Absolute download destination (plugin-owned media dir). */

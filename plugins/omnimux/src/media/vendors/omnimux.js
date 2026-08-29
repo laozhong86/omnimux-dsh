@@ -3,6 +3,7 @@
 export const TASK_PATH = Object.freeze({
   video: 'video/generations',
   image: 'images/generations',
+  audio: 'audio/generations',
 })
 
 /**
@@ -35,15 +36,19 @@ export function pickMediaUrl(raw) {
     ? /** @type {Record<string, unknown>} */ (dataRows[0])
     : undefined
   const direct = row.videoUrl ?? row.video_url ?? row.imageUrl ?? row.image_url
+    ?? row.audioUrl ?? row.audio_url
     ?? row.url ?? row.result_url
     ?? data?.videoUrl ?? data?.video_url ?? data?.imageUrl ?? data?.image_url
+    ?? data?.audioUrl ?? data?.audio_url
     ?? data?.url ?? data?.result_url
     ?? firstData?.url
   if (typeof direct === 'string' && direct) return direct
   const b64 = firstData?.b64_json ?? row.b64_json ?? data?.b64_json
   if (typeof b64 === 'string' && b64.trim()) return `data:image/png;base64,${b64.trim()}`
   const list = row.videoUrls ?? row.video_urls ?? row.imageUrls ?? row.image_urls
+    ?? row.audioUrls ?? row.audio_urls
     ?? row.images ?? data?.videoUrls ?? data?.video_urls ?? data?.imageUrls ?? data?.images
+    ?? data?.audioUrls ?? data?.audio_urls
   if (Array.isArray(list) && typeof list[0] === 'string') return list[0]
   const outputs = row.outputs
   if (Array.isArray(outputs)) {
@@ -82,6 +87,10 @@ export function mapOmnimuxInput(_capability, request) {
   const metadata = {}
   if (typeof request.speech === 'string' && request.speech.trim()) metadata.speech = request.speech.trim()
   if (typeof request.audio === 'string' && request.audio.trim()) metadata.audio = request.audio.trim()
+  if (typeof request.voice === 'string' && request.voice.trim()) metadata.voice = request.voice.trim()
+  if (typeof request.style === 'string' && request.style.trim()) metadata.style = request.style.trim()
+  if (request.instrumental !== undefined) metadata.instrumental = Boolean(request.instrumental)
+  if (request.speed !== undefined) metadata.speed = request.speed
   if (Object.keys(metadata).length > 0) input.metadata = metadata
   return input
 }

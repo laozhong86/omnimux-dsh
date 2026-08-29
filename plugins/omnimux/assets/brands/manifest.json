@@ -106,9 +106,17 @@
       "series": { "zh": "SD", "en": "Stable Diffusion" },
       "primaryColor": "#7C3AED",
       "models": ["sdxl-turbo", "sd-3.5-large", "stable-video-diffusion"]
+    },
+    "suno": {
+      "id": "suno",
+      "company": "Suno",
+      "series": { "zh": "Suno 音乐", "en": "Suno Music" },
+      "primaryColor": "#FF3366",
+      "models": ["suno", "suno-v3", "suno-v3.5", "suno-v4"]
     }
   },
   "rules": [
+    { "brand": "suno", "pattern": "(^suno|\\bsuno\\b)" },
     { "brand": "veo", "pattern": "(^veo|\\bveo\\b|omni[- ]?flash)" },
     { "brand": "google", "pattern": "(^gemini|\\bgemini\\b|google|nano[- ]?banana)" },
     { "brand": "anthropic", "pattern": "(^claude|\\bclaude\\b|anthropic)" },

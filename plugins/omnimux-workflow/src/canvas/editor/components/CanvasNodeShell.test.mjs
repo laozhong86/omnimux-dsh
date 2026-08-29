@@ -130,9 +130,9 @@ test('components.css 契约：wf-clip-launcher 私有族彻底删除，补齐 la
 test('components.css 契约：wf-vc-result 新块 100% DSW Token 消费，0 裸色、0 私有变量', () => {
   const start = cssSrc.indexOf('.wf-vc-result');
   assert.ok(start >= 0, '缺少 .wf-vc-result 标准块');
-  // 新块位于文件尾部（承接被删的 launcher 块），自首个选择器到 EOF 即整块；
-  // 期间不允许出现裸 Hex/RGB、--omx-*/--wb-* 影子变量或旧 launcher 类。
-  const block = cssSrc.slice(start);
+  const nextSectionMatch = cssSrc.slice(start + 1).match(/\/\*\s*={3,}/);
+  const nextSection = nextSectionMatch ? start + 1 + nextSectionMatch.index : -1;
+  const block = nextSection > start ? cssSrc.slice(start, nextSection) : cssSrc.slice(start);
   assert.doesNotMatch(block, /#[0-9a-fA-F]{3,8}/);
   assert.doesNotMatch(block, /rgba?\(/);
   assert.doesNotMatch(block, /--omx-|--wb-/);

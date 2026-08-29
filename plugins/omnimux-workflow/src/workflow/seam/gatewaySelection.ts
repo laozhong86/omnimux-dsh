@@ -40,6 +40,7 @@ export function resolveGatewayMode(env: NodeJS.ProcessEnv = process.env): Gatewa
 export interface SeamAvailability {
   video: boolean;
   image: boolean;
+  audio: boolean;
   text: boolean;
 }
 
@@ -56,6 +57,7 @@ export function probeSeams(getSeam: SeamGetter): SeamAvailability {
   return {
     video: isApi('videoGenerate'),
     image: isApi('imageGenerate'),
+    audio: isApi('audioGenerate'),
     text: isApi('textComplete'),
   };
 }
@@ -87,7 +89,7 @@ export function createAutoSwitchGateway(opts: AutoSwitchGatewayOptions): AutoSwi
 
   let mode: 'mock' | 'omnimux' = (() => {
     const seams = probeSeams(opts.getSeam);
-    return seams.video || seams.image || seams.text ? 'omnimux' : 'mock';
+    return seams.video || seams.image || seams.audio || seams.text ? 'omnimux' : 'mock';
   })();
 
   /** task/submit ownership: a submitted task is awaited by its own backend. */
@@ -97,7 +99,7 @@ export function createAutoSwitchGateway(opts: AutoSwitchGatewayOptions): AutoSwi
   const pick = (): 'mock' | 'omnimux' => {
     if (mode === 'mock') {
       const seams = probeSeams(opts.getSeam);
-      if (seams.video || seams.image || seams.text) {
+      if (seams.video || seams.image || seams.audio || seams.text) {
         mode = 'omnimux';
         logger.info('execution hub seams detected after mount; upgrading gateway', {
           seams,
@@ -177,7 +179,7 @@ export function assembleGateway(opts: AssembleGatewayOptions): AssembledGateway 
   }
 
   const seams = probeSeams(opts.getSeam);
-  const backend: 'mock' | 'omnimux' = seams.video || seams.image || seams.text
+  const backend: 'mock' | 'omnimux' = seams.video || seams.image || seams.audio || seams.text
     ? 'omnimux'
     : 'mock';
   logger.info('gateway mode: auto', { seams, backend });

@@ -95,6 +95,16 @@ export interface ModelParameterSchema {
     supported: boolean;
     defaultValue: boolean;
   };
+  /** 音色选项 (TTS) */
+  voice?: {
+    options: Array<ModelParameterOption<string>>;
+    defaultValue: string;
+  };
+  /** 纯音乐选项 (Suno) */
+  instrumental?: {
+    supported: boolean;
+    defaultValue: boolean;
+  };
 }
 
 export interface CapabilityModelItem {

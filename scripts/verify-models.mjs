@@ -143,18 +143,24 @@ function resolveKey() {
 }
 
 async function fetchPricing() {
-  const response = await fetch('https://api.omnimux.ai/api/pricing')
-  if (!response.ok) {
-    throw new Error(`pricing endpoint returned ${response.status}`)
-  }
-  const payload = await response.json()
-  const byName = new Map()
-  for (const row of payload.data ?? []) {
-    if (typeof row?.model_name === 'string' && typeof row?.description === 'string') {
-      byName.set(row.model_name, row.description)
+  try {
+    const response = await fetch('https://api.omnimux.ai/api/pricing', {
+      headers: { 'User-Agent': 'OmniMux-DSH/1.0' },
+    })
+    if (!response.ok) {
+      return new Map()
     }
+    const payload = await response.json()
+    const byName = new Map()
+    for (const row of payload.data ?? []) {
+      if (typeof row?.model_name === 'string' && typeof row?.description === 'string') {
+        byName.set(row.model_name, row.description)
+      }
+    }
+    return byName
+  } catch {
+    return new Map()
   }
-  return byName
 }
 
 /**
