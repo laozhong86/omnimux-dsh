@@ -1264,6 +1264,11 @@ var HUB_CSS = `
   -webkit-backdrop-filter: blur(14px);
 }
 .omnimux-login-gate-dialog {
+  /* Locked dark-card CTA: solid white on the deep-sea poster, never ghost-hover tokens. */
+  --login-gate-cta-bg: #ffffff;
+  --login-gate-cta-text: #09090b;
+  --login-gate-cta-hover: #f4f4f5;
+  --login-gate-cta-active: #e4e4e7;
   position: relative;
   width: 820px;
   height: 520px;
@@ -1533,19 +1538,33 @@ var HUB_CSS = `
   margin-top: 24px;
 }
 .omnimux-login-gate-cta {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   height: 40px !important;
   padding: 0 28px !important;
   font-size: 14.5px !important;
   font-weight: 700 !important;
   border-radius: 8px !important;
-  background: var(--dsw-alias-label-primary, #fff) !important;
-  color: var(--dsw-alias-bg-base, #09090b) !important;
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--dsw-alias-label-primary, #fff) 15%, transparent);
+  border: none !important;
+  background: var(--login-gate-cta-bg, #ffffff) !important;
+  color: var(--login-gate-cta-text, #09090b) !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.15) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
 }
 .omnimux-login-gate-cta:hover:not(:disabled):not([aria-disabled="true"]) {
-  background: var(--dsw-alias-interactive-bg-hover, #f4f4f5) !important;
-  color: var(--dsw-alias-bg-base, #09090b) !important;
-  transform: translateY(-1px);
+  background: var(--login-gate-cta-hover, #f4f4f5) !important;
+  color: var(--login-gate-cta-text, #09090b) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.25) !important;
+}
+.omnimux-login-gate-cta:active:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--login-gate-cta-active, #e4e4e7) !important;
+  color: var(--login-gate-cta-text, #09090b) !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.15) !important;
 }
 .omnimux-login-gate-waiting {
   width: 100%;
@@ -1567,6 +1586,9 @@ var HUB_CSS = `
   color: var(--dsw-alias-label-secondary, #d4d4d8) !important;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+.omnimux-login-gate-reopen:hover {
+  color: var(--dsw-alias-label-primary, #ffffff) !important;
 }
 .omnimux-login-gate-waiting-info {
   display: flex;
