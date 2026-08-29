@@ -24,8 +24,8 @@
 │ ③ HOST 区（src/workflow/ + src/projects/ + src/http/ +       │
 │    src/index.ts，dist/index.js，零运行时三方：zod 打进 bundle）│
 │   http/helpers         sendJson / 1MB body / loopback 写校验 │
-│   workspace/           WorkspaceStore（快照+乐观锁+原子写）   │
-│   routes/              组装器 canvasRoutes + 静态/工作区/执行/媒体 │
+│   workspace/           WorkspaceStore + ProjectAssetsStore（assets.json 独立 rev） │
+│   routes/              组装器 canvasRoutes + 静态/工作区/项目资产/执行/媒体 │
 │   projects/            本地项目库（委托进同一 prefix）        │
 │   executors/registry   ★ 扩展点② 执行器注册表                │
 │   seam/gateway         ★ 扩展点③ GenerationGateway（mock）   │

@@ -20,6 +20,12 @@ import type {
   SaveCanvasWorkspacePayload,
   WorkspaceSummary,
 } from '../../shared/canvasTypes';
+import type {
+  IndexProjectAssetsPayload,
+  MkdirProjectAssetsPayload,
+  ProjectAssetsDocument,
+  SaveProjectAssetsPayload,
+} from '../../shared/projectAssets';
 
 export interface ApiResult<T> {
   ok: boolean;
@@ -30,12 +36,13 @@ export interface ApiResult<T> {
 
 async function request<T>(
   path: string,
-  opts: { method?: string; body?: unknown } = {},
+  opts: { method?: string; body?: unknown; signal?: AbortSignal } = {},
 ): Promise<ApiResult<T>> {
   const response = await fetch(path, {
     method: opts.method ?? 'GET',
     headers: opts.body === undefined ? undefined : { 'Content-Type': 'application/json' },
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+    signal: opts.signal,
   });
   let json = {} as T & { error?: string; message?: string };
   try {
@@ -118,6 +125,46 @@ export function getExecution(
 }
 
 export type ExecutionAction = 'pause' | 'resume' | 'cancel';
+
+export function getWorkspaceAssets(
+  id: string,
+  signal?: AbortSignal,
+): Promise<ApiResult<{ assets: ProjectAssetsDocument }>> {
+  return request<{ assets: ProjectAssetsDocument }>(
+    WORKFLOW_API_ROUTES.workspaceAssets(encodeURIComponent(id)),
+    { signal },
+  );
+}
+
+export function saveWorkspaceAssets(
+  id: string,
+  payload: SaveProjectAssetsPayload,
+): Promise<ApiResult<{ assets: ProjectAssetsDocument; current?: number }>> {
+  return request<{ assets: ProjectAssetsDocument; current?: number }>(
+    WORKFLOW_API_ROUTES.workspaceAssets(encodeURIComponent(id)),
+    { method: 'PUT', body: payload },
+  );
+}
+
+export function mkdirWorkspaceAsset(
+  id: string,
+  payload: MkdirProjectAssetsPayload,
+): Promise<ApiResult<{ assets: ProjectAssetsDocument; current?: number }>> {
+  return request<{ assets: ProjectAssetsDocument; current?: number }>(
+    WORKFLOW_API_ROUTES.workspaceAssetsMkdir(encodeURIComponent(id)),
+    { method: 'POST', body: payload },
+  );
+}
+
+export function indexWorkspaceAssets(
+  id: string,
+  payload: IndexProjectAssetsPayload,
+): Promise<ApiResult<{ assets: ProjectAssetsDocument; current?: number }>> {
+  return request<{ assets: ProjectAssetsDocument; current?: number }>(
+    WORKFLOW_API_ROUTES.workspaceAssetsIndex(encodeURIComponent(id)),
+    { method: 'POST', body: payload },
+  );
+}
 
 export function pickLocalFiles(): Promise<ApiResult<{ path: string | null; paths: string[] }>> {
   return request<{ path: string | null; paths: string[] }>(WORKFLOW_API_ROUTES.pick, {

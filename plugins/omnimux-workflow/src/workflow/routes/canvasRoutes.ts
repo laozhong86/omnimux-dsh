@@ -16,6 +16,10 @@
  *   POST /omnimux-workflow/api/pick             native file picker (absolute paths)
  *   GET  /omnimux-workflow/api/local-file       stream imported realPath (Range 206)
  *   POST /omnimux-workflow/api/local-file/probe batch exists/size for realPath[]
+ *   GET  /omnimux-workflow/api/workspaces/:id/assets          project assets.json
+ *   PUT  /omnimux-workflow/api/workspaces/:id/assets          save (independent rev)
+ *   POST /omnimux-workflow/api/workspaces/:id/assets/mkdir    create folder record
+ *   POST /omnimux-workflow/api/workspaces/:id/assets/index    index absolute paths (no copy)
  *
  * M3 execution routes (legacy prefix aliases all of them):
  *   GET  /omnimux-workflow/api/workspaces/:id/executions            list live runs
@@ -63,6 +67,8 @@ import { createWorkspaceRoutes } from './workspaceRoutes';
 import { createExecutionRoutes } from './executionRoutes';
 import { createMediaRoutes } from './mediaRoutes';
 import { createLocalFileRoutes } from './localFileRoutes';
+import { createProjectAssetsRoutes } from './projectAssetsRoutes';
+import { createProjectAssetsStore } from '../workspace/ProjectAssetsStore';
 
 export {
   MAX_JSON_BODY_BYTES,
@@ -96,6 +102,10 @@ const STATUS_BY_CODE: Record<string, number> = {
   'unsupported-media': 415,
   'invalid-path': 400,
   'not-a-file': 400,
+  'blob-url-forbidden': 400,
+  'name-conflict': 409,
+  'name-invalid': 400,
+  'version-required': 400,
 };
 
 const MIME_BY_EXT: Record<string, string> = {
@@ -168,6 +178,10 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
   const projectDispatcher = createProjectDispatcher();
   const staticRoutes = createStaticRoutes({ pluginRoot: PLUGIN_ROOT, gateway });
   const workspaceRoutes = createWorkspaceRoutes(store);
+  const assetsStore = createProjectAssetsStore({
+    workspacesDir: store.workspacesDir,
+  });
+  const projectAssetsRoutes = createProjectAssetsRoutes(assetsStore);
   const executionRoutes = createExecutionRoutes({ store, executionManager });
   const mediaRoutes = createMediaRoutes(mediaDir);
   const localFileRoutes = createLocalFileRoutes(picker ? { picker } : {});
@@ -210,6 +224,8 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
       if (fromBundle) return fromBundle;
       const fromWorkspace = await Promise.resolve(workspaceRoutes.tryHandle(method, path, req));
       if (fromWorkspace) return fromWorkspace;
+      const fromProjectAssets = await Promise.resolve(projectAssetsRoutes.tryHandle(method, path, req));
+      if (fromProjectAssets) return fromProjectAssets;
       const fromExecution = await Promise.resolve(executionRoutes.tryHandle(method, path, req));
       if (fromExecution) return fromExecution;
       const fromCapabilities = await Promise.resolve(staticRoutes.tryCapabilities(method, path, req));

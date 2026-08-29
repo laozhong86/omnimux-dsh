@@ -2453,7 +2453,7 @@ var require_react_dom = __commonJS({
 });
 
 // src/workflow/index.ts
-import { mkdirSync as mkdirSync8 } from "node:fs";
+import { mkdirSync as mkdirSync9 } from "node:fs";
 
 // src/workflow/paths.ts
 import { homedir } from "node:os";
@@ -17055,14 +17055,12 @@ var workspaceSnapshotSchema = external_exports.object({
   })
 });
 
-// src/workflow/workspace/WorkspaceStore.ts
-var MAX_WORKSPACE_NAME_LENGTH = 200;
+// src/workflow/workspace/WorkflowStoreError.ts
 var WorkflowStoreError = class extends Error {
   code;
   /**
-   * Server-side current version carried by version_conflict errors, so the
-   * HTTP layer can surface it in the 409 body without parsing the message
-   * (M2 QA fix #5 — the regex-based extraction was brittle).
+   * Server-side current version/rev carried by version_conflict errors, so the
+   * HTTP layer can surface it in the 409 body without parsing the message.
    */
   current;
   constructor(code, message, details = {}) {
@@ -17072,6 +17070,9 @@ var WorkflowStoreError = class extends Error {
     this.name = "WorkflowStoreError";
   }
 };
+
+// src/workflow/workspace/WorkspaceStore.ts
+var MAX_WORKSPACE_NAME_LENGTH = 200;
 function isWorkspaceId(id2) {
   return /^ws_[a-zA-Z0-9_-]{1,128}$/.test(id2);
 }
@@ -17118,6 +17119,7 @@ function createWorkspaceStore(opts) {
     return snapshot;
   }
   return {
+    workspacesDir,
     list() {
       if (!existsSync(workspacesDir)) return [];
       const rows = [];
@@ -19393,6 +19395,12 @@ var WORKFLOW_API_ROUTES = {
   workspace: (id2) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id2}`,
   /** GET: lightweight { id, version } — external-edit polling (PR3). */
   workspaceVersion: (id2) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id2}/version`,
+  /** GET/PUT: project-private assets.json (independent rev, never canvas.version). */
+  workspaceAssets: (id2) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id2}/assets`,
+  /** POST: create a logical folder record in assets.json. */
+  workspaceAssetsMkdir: (id2) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id2}/assets/mkdir`,
+  /** POST: index absolute paths into assets.json (no copy). */
+  workspaceAssetsIndex: (id2) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id2}/assets/index`,
   /** GET: generation capability catalog (M3/M4 fills real data). */
   capabilities: `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`,
   /** GET: media files under the plugin-owned media dir (traversal-guarded). */
@@ -20200,7 +20208,7 @@ function createExecutionManager(deps) {
 }
 
 // src/workflow/routes/canvasRoutes.ts
-import { createReadStream, statSync as statSync4 } from "node:fs";
+import { createReadStream, statSync as statSync5 } from "node:fs";
 import { extname } from "node:path";
 
 // src/workflow/byteRange.ts
@@ -21632,6 +21640,436 @@ function createLocalFileRoutes(deps = {}) {
   return { tryHandle };
 }
 
+// src/workflow/routes/projectAssetsRoutes.ts
+function createProjectAssetsRoutes(store) {
+  const assetsRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets$`);
+  const mkdirRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/mkdir$`);
+  const indexRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/index$`);
+  const tryHandle = (method, path3, req) => {
+    const mkdirMatch = mkdirRe.exec(path3);
+    if (mkdirMatch) {
+      if (method !== "POST") return notFound();
+      const problem = jsonBodyProblem(req.body);
+      if (problem) return problem;
+      const body = req.body;
+      const assets = store.mkdir(mkdirMatch[1] ?? "", body);
+      return { status: 200, body: { assets } };
+    }
+    const indexMatch = indexRe.exec(path3);
+    if (indexMatch) {
+      if (method !== "POST") return notFound();
+      const problem = jsonBodyProblem(req.body);
+      if (problem) return problem;
+      const body = req.body;
+      const assets = store.index(indexMatch[1] ?? "", body);
+      return { status: 200, body: { assets } };
+    }
+    const assetsMatch = assetsRe.exec(path3);
+    if (assetsMatch) {
+      const id2 = assetsMatch[1] ?? "";
+      if (method === "GET") {
+        return { status: 200, body: { assets: store.get(id2) } };
+      }
+      if (method === "PUT") {
+        const problem = jsonBodyProblem(req.body);
+        if (problem) return problem;
+        const payload = req.body;
+        if (typeof payload.expectedRev !== "number") {
+          return {
+            status: 400,
+            body: { error: "version-required", message: "expectedRev is required for saves" }
+          };
+        }
+        const assets = store.save(id2, payload);
+        return { status: 200, body: { assets } };
+      }
+      return notFound();
+    }
+    return null;
+  };
+  return { tryHandle };
+}
+
+// src/workflow/workspace/ProjectAssetsStore.ts
+import { randomUUID as randomUUID6 } from "node:crypto";
+import {
+  existsSync as existsSync9,
+  mkdirSync as mkdirSync8,
+  readFileSync as readFileSync5,
+  renameSync as renameSync4,
+  statSync as statSync4,
+  writeFileSync as writeFileSync6
+} from "node:fs";
+import { basename as basename2, isAbsolute as isAbsolute3, join as join13 } from "node:path";
+
+// src/shared/projectAssets.ts
+var PROJECT_ASSETS_SCHEMA_VERSION = 1;
+var PROJECT_ASSET_FILE_TYPES = ["image", "video", "audio", "doc"];
+var MAX_FOLDER_NAME_LENGTH = 200;
+function emptyProjectAssetsDocument() {
+  return {
+    schemaVersion: PROJECT_ASSETS_SCHEMA_VERSION,
+    rev: 0,
+    folders: [],
+    items: []
+  };
+}
+function normalizeParentId(value) {
+  if (value == null) return null;
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed === "" ? null : trimmed;
+}
+function validateFolderName(value) {
+  if (typeof value !== "string") {
+    return { ok: false, code: "name-invalid", message: "folder name is required" };
+  }
+  const name2 = value.trim();
+  if (name2.length === 0) {
+    return { ok: false, code: "name-invalid", message: "folder name is required" };
+  }
+  if (name2.length > MAX_FOLDER_NAME_LENGTH) {
+    return {
+      ok: false,
+      code: "name-invalid",
+      message: `folder name exceeds ${String(MAX_FOLDER_NAME_LENGTH)} characters`
+    };
+  }
+  if (name2.includes("/") || name2.includes("\\") || /[\u0000-\u001f]/.test(name2)) {
+    return { ok: false, code: "name-invalid", message: "folder name contains invalid characters" };
+  }
+  return { ok: true, name: name2 };
+}
+function forbiddenPathCode(raw) {
+  if (typeof raw !== "string" || raw.trim() === "") return "invalid-path";
+  if (raw.includes("\0")) return "invalid-path";
+  if (raw.startsWith("blob:")) return "blob-url-forbidden";
+  if (!looksAbsolutePath(raw)) return "invalid-path";
+  return null;
+}
+function isProjectAssetFileType(value) {
+  return typeof value === "string" && PROJECT_ASSET_FILE_TYPES.includes(value);
+}
+
+// src/workflow/workspace/ProjectAssetsStore.ts
+function isWorkspaceId2(id2) {
+  return /^ws_[a-zA-Z0-9_-]{1,128}$/.test(id2);
+}
+function newFolderId() {
+  return `fld_${randomUUID6().replace(/-/g, "").slice(0, 12)}`;
+}
+function newItemId() {
+  return `ast_${randomUUID6().replace(/-/g, "").slice(0, 12)}`;
+}
+function atomicWriteJson4(filePath, value) {
+  mkdirSync8(join13(filePath, ".."), { recursive: true });
+  const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
+  writeFileSync6(tmp, `${JSON.stringify(value, null, 2)}
+`, "utf8");
+  renameSync4(tmp, filePath);
+}
+function asNumber(value, fallback) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+function fileTypeOf(name2) {
+  const material = materialTypeFromFilename(name2);
+  if (material === "image" || material === "video" || material === "audio") return material;
+  return "doc";
+}
+function hydrateFolder(row) {
+  if (!row || typeof row !== "object" || Array.isArray(row)) return null;
+  const rec = row;
+  if (typeof rec.id !== "string" || rec.id.trim() === "") return null;
+  const named2 = validateFolderName(rec.name);
+  if (!named2.ok) return null;
+  const folder = {
+    id: rec.id,
+    name: named2.name,
+    parentId: normalizeParentId(rec.parentId),
+    updatedAt: asNumber(rec.updatedAt, 0)
+  };
+  if (typeof rec.real_path === "string" && rec.real_path.trim() !== "") {
+    folder.real_path = rec.real_path;
+  }
+  return folder;
+}
+function hydrateItem(row) {
+  if (!row || typeof row !== "object" || Array.isArray(row)) return null;
+  const rec = row;
+  if (typeof rec.id !== "string" || rec.id.trim() === "") return null;
+  if (typeof rec.name !== "string" || rec.name.trim() === "") return null;
+  if (typeof rec.real_path !== "string" || rec.real_path.trim() === "") return null;
+  const type = isProjectAssetFileType(rec.type) ? rec.type : fileTypeOf(rec.name);
+  return {
+    id: rec.id,
+    name: rec.name.trim(),
+    type,
+    parentId: normalizeParentId(rec.parentId),
+    real_path: rec.real_path,
+    updatedAt: asNumber(rec.updatedAt, 0)
+  };
+}
+function readAssetsFile(filePath) {
+  if (!existsSync9(filePath)) return emptyProjectAssetsDocument();
+  let raw;
+  try {
+    raw = readFileSync5(filePath, "utf8");
+  } catch {
+    return emptyProjectAssetsDocument();
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return emptyProjectAssetsDocument();
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return emptyProjectAssetsDocument();
+  }
+  const rec = parsed;
+  const folders = Array.isArray(rec.folders) ? rec.folders.map(hydrateFolder).filter((row) => row !== null) : [];
+  const items = Array.isArray(rec.items) ? rec.items.map(hydrateItem).filter((row) => row !== null) : [];
+  return {
+    schemaVersion: PROJECT_ASSETS_SCHEMA_VERSION,
+    rev: asNumber(rec.rev, 0),
+    folders,
+    items
+  };
+}
+function assertWorkspaceExists(workspacesDir, id2) {
+  if (!isWorkspaceId2(id2)) {
+    throw new WorkflowStoreError("invalid-id", `invalid workspace id ${id2}`);
+  }
+  const canvas = join13(workspacesDir, id2, "canvas.json");
+  if (!existsSync9(canvas)) {
+    throw new WorkflowStoreError("workspace-not-found", `workspace ${id2} not found`);
+  }
+}
+function assertNoBlobOrRelative(path3, field) {
+  const code = forbiddenPathCode(path3);
+  if (code === "blob-url-forbidden") {
+    throw new WorkflowStoreError("blob-url-forbidden", `${field} must not be a blob: URL`);
+  }
+  if (code === "invalid-path") {
+    throw new WorkflowStoreError("invalid-path", `${field} must be an absolute path without NUL`);
+  }
+  if (!isAbsolute3(path3) || !looksAbsolutePath(path3)) {
+    throw new WorkflowStoreError("invalid-path", `${field} must be an absolute path`);
+  }
+}
+function parentExists(doc, parentId) {
+  if (parentId === null) return true;
+  return doc.folders.some((folder) => folder.id === parentId);
+}
+function siblingFolderConflict(folders, parentId, name2, exceptId) {
+  return folders.some(
+    (folder) => folder.parentId === parentId && folder.name === name2 && folder.id !== exceptId
+  );
+}
+function assertWritableDocument(next) {
+  const folderIds = /* @__PURE__ */ new Set();
+  for (const folder of next.folders) {
+    const named2 = validateFolderName(folder.name);
+    if (!named2.ok) {
+      throw new WorkflowStoreError(named2.code, named2.message);
+    }
+    if (folderIds.has(folder.id)) {
+      throw new WorkflowStoreError("invalid-id", `duplicate folder id ${folder.id}`);
+    }
+    folderIds.add(folder.id);
+    if (folder.real_path) {
+      assertNoBlobOrRelative(folder.real_path, "folder.real_path");
+    }
+  }
+  for (const folder of next.folders) {
+    if (folder.parentId && !folderIds.has(folder.parentId)) {
+      throw new WorkflowStoreError("invalid-id", `folder parent ${folder.parentId} does not exist`);
+    }
+  }
+  const seenNames = /* @__PURE__ */ new Map();
+  for (const folder of next.folders) {
+    const key = folder.parentId ?? "";
+    const bucket = seenNames.get(key) ?? /* @__PURE__ */ new Set();
+    if (bucket.has(folder.name)) {
+      throw new WorkflowStoreError("name-conflict", `folder name already exists at this level: ${folder.name}`);
+    }
+    bucket.add(folder.name);
+    seenNames.set(key, bucket);
+  }
+  const itemIds = /* @__PURE__ */ new Set();
+  for (const item of next.items) {
+    if (itemIds.has(item.id)) {
+      throw new WorkflowStoreError("invalid-id", `duplicate item id ${item.id}`);
+    }
+    itemIds.add(item.id);
+    if (typeof item.name !== "string" || item.name.trim() === "") {
+      throw new WorkflowStoreError("name-invalid", "item name is required");
+    }
+    if (!isProjectAssetFileType(item.type)) {
+      throw new WorkflowStoreError("invalid-path", `unknown item type ${String(item.type)}`);
+    }
+    assertNoBlobOrRelative(item.real_path, "item.real_path");
+    if (item.parentId && !folderIds.has(item.parentId)) {
+      throw new WorkflowStoreError("invalid-id", `item parent ${item.parentId} does not exist`);
+    }
+    if (existsSync9(item.real_path)) {
+      let st;
+      try {
+        st = statSync4(item.real_path);
+      } catch {
+        st = null;
+      }
+      if (st?.isDirectory()) {
+        throw new WorkflowStoreError("not-a-file", "path is not a regular file");
+      }
+    }
+  }
+}
+function persist(filePath, current, next) {
+  const document2 = {
+    schemaVersion: PROJECT_ASSETS_SCHEMA_VERSION,
+    rev: current.rev + 1,
+    folders: next.folders,
+    items: next.items
+  };
+  assertWritableDocument(document2);
+  atomicWriteJson4(filePath, document2);
+  return document2;
+}
+function assertExpectedRev(current, expectedRev) {
+  if (typeof expectedRev !== "number") return;
+  if (expectedRev !== current.rev) {
+    throw new WorkflowStoreError(
+      "version_conflict",
+      `assets moved on: expected ${String(expectedRev)}, current ${String(current.rev)}`,
+      { current: current.rev }
+    );
+  }
+}
+function indexOnePath(rawPath, parentId, now2) {
+  assertNoBlobOrRelative(rawPath, "path");
+  let stat;
+  try {
+    stat = statSync4(rawPath);
+  } catch {
+    throw new WorkflowStoreError("not-found", `path not found: ${rawPath}`);
+  }
+  if (stat.isDirectory()) {
+    return {
+      kind: "directory",
+      folder: {
+        id: newFolderId(),
+        name: basename2(rawPath.replace(/[/\\]+$/, "")) || rawPath,
+        parentId,
+        real_path: rawPath,
+        updatedAt: now2
+      }
+    };
+  }
+  if (!stat.isFile()) {
+    throw new WorkflowStoreError("not-a-file", "path is not a regular file");
+  }
+  const name2 = basename2(rawPath);
+  return {
+    kind: "file",
+    item: {
+      id: newItemId(),
+      name: name2,
+      type: fileTypeOf(name2),
+      parentId,
+      real_path: rawPath,
+      updatedAt: now2
+    }
+  };
+}
+function createProjectAssetsStore(opts) {
+  const { workspacesDir } = opts;
+  const fileOf = (id2) => join13(workspacesDir, id2, "assets.json");
+  function load(id2) {
+    assertWorkspaceExists(workspacesDir, id2);
+    return { current: readAssetsFile(fileOf(id2)), filePath: fileOf(id2) };
+  }
+  return {
+    get(workspaceId) {
+      return load(workspaceId).current;
+    },
+    save(workspaceId, payload) {
+      const { current, filePath } = load(workspaceId);
+      if (typeof payload.expectedRev !== "number") {
+        throw new WorkflowStoreError("version-required", "expectedRev is required for saves");
+      }
+      assertExpectedRev(current, payload.expectedRev);
+      if (!Array.isArray(payload.folders) || !Array.isArray(payload.items)) {
+        throw new WorkflowStoreError("invalid-json", "folders and items must be arrays");
+      }
+      return persist(filePath, current, {
+        folders: payload.folders,
+        items: payload.items
+      });
+    },
+    mkdir(workspaceId, payload) {
+      const { current, filePath } = load(workspaceId);
+      assertExpectedRev(current, payload.expectedRev);
+      const named2 = validateFolderName(payload.name);
+      if (!named2.ok) {
+        throw new WorkflowStoreError(named2.code, named2.message);
+      }
+      const parentId = normalizeParentId(payload.parentId);
+      if (!parentExists(current, parentId)) {
+        throw new WorkflowStoreError("invalid-id", "parent folder does not exist");
+      }
+      if (siblingFolderConflict(current.folders, parentId, named2.name)) {
+        throw new WorkflowStoreError("name-conflict", `folder name already exists at this level: ${named2.name}`);
+      }
+      const folder = {
+        id: newFolderId(),
+        name: named2.name,
+        parentId,
+        updatedAt: Date.now()
+      };
+      return persist(filePath, current, {
+        folders: [...current.folders, folder],
+        items: current.items
+      });
+    },
+    index(workspaceId, payload) {
+      const { current, filePath } = load(workspaceId);
+      assertExpectedRev(current, payload.expectedRev);
+      if (!Array.isArray(payload.paths)) {
+        throw new WorkflowStoreError("invalid-json", "paths must be an array");
+      }
+      const parentId = normalizeParentId(payload.parentId);
+      if (!parentExists(current, parentId)) {
+        throw new WorkflowStoreError("invalid-id", "parent folder does not exist");
+      }
+      const now2 = Date.now();
+      const folders = [...current.folders];
+      const items = [...current.items];
+      const existingPaths = new Set(items.map((item) => item.real_path));
+      for (const raw of payload.paths) {
+        if (typeof raw !== "string") {
+          throw new WorkflowStoreError("invalid-path", "path must be a string");
+        }
+        const indexed = indexOnePath(raw, parentId, now2);
+        if (indexed.kind === "directory") {
+          if (siblingFolderConflict(folders, parentId, indexed.folder.name)) {
+            throw new WorkflowStoreError(
+              "name-conflict",
+              `folder name already exists at this level: ${indexed.folder.name}`
+            );
+          }
+          folders.push(indexed.folder);
+          continue;
+        }
+        if (existingPaths.has(indexed.item.real_path)) continue;
+        existingPaths.add(indexed.item.real_path);
+        items.push(indexed.item);
+      }
+      return persist(filePath, current, { folders, items });
+    }
+  };
+}
+
 // src/workflow/routes/canvasRoutes.ts
 var STATUS_BY_CODE3 = {
   "invalid-json": 400,
@@ -21651,7 +22089,11 @@ var STATUS_BY_CODE3 = {
   "picker-invalid-kind": 400,
   "unsupported-media": 415,
   "invalid-path": 400,
-  "not-a-file": 400
+  "not-a-file": 400,
+  "blob-url-forbidden": 400,
+  "name-conflict": 409,
+  "name-invalid": 400,
+  "version-required": 400
 };
 var MIME_BY_EXT2 = {
   ".js": "application/javascript; charset=utf-8",
@@ -21671,7 +22113,7 @@ var MIME_BY_EXT2 = {
 var PLUGIN_ROOT = resolvePluginRoot();
 function serveFile(res, filePath, fallbackMime, rangeHeader) {
   const mime = mimeFromFilename(filePath) ?? MIME_BY_EXT2[extname(filePath)] ?? fallbackMime;
-  const stat = statSync4(filePath);
+  const stat = statSync5(filePath);
   const range = parseByteRange(rangeHeader, stat.size);
   if (range && "invalid" in range) {
     res.writeHead(416, {
@@ -21714,6 +22156,10 @@ function createWorkflowDispatcher(deps) {
   const projectDispatcher = createProjectDispatcher();
   const staticRoutes = createStaticRoutes({ pluginRoot: PLUGIN_ROOT, gateway });
   const workspaceRoutes = createWorkspaceRoutes(store);
+  const assetsStore = createProjectAssetsStore({
+    workspacesDir: store.workspacesDir
+  });
+  const projectAssetsRoutes = createProjectAssetsRoutes(assetsStore);
   const executionRoutes = createExecutionRoutes({ store, executionManager });
   const mediaRoutes = createMediaRoutes(mediaDir);
   const localFileRoutes = createLocalFileRoutes(picker ? { picker } : {});
@@ -21743,6 +22189,8 @@ function createWorkflowDispatcher(deps) {
       if (fromBundle) return fromBundle;
       const fromWorkspace = await Promise.resolve(workspaceRoutes.tryHandle(method, path3, req));
       if (fromWorkspace) return fromWorkspace;
+      const fromProjectAssets = await Promise.resolve(projectAssetsRoutes.tryHandle(method, path3, req));
+      if (fromProjectAssets) return fromProjectAssets;
       const fromExecution = await Promise.resolve(executionRoutes.tryHandle(method, path3, req));
       if (fromExecution) return fromExecution;
       const fromCapabilities = await Promise.resolve(staticRoutes.tryCapabilities(method, path3, req));
@@ -22088,7 +22536,7 @@ function createCanvasGetTableNodeTool(deps) {
 }
 
 // src/workflow/agent/agentToolShared.ts
-import { join as join13 } from "node:path";
+import { join as join14 } from "node:path";
 function objectParams(fields) {
   const properties = {};
   const required2 = [];
@@ -22146,7 +22594,7 @@ function mediaUrlToPath(url2, mediaDir) {
   const marker = "/media/";
   const index2 = url2.indexOf(marker);
   if (index2 === -1 || !url2.startsWith("/")) return null;
-  return join13(mediaDir, url2.slice(index2 + marker.length));
+  return join14(mediaDir, url2.slice(index2 + marker.length));
 }
 var MEDIA_KIND = {
   video: "video",
@@ -32304,9 +32752,9 @@ var globalCheckpointManager = new CheckpointManager();
 // src/workflow/index.ts
 function mountWorkflowHost(ctx, opts = {}) {
   const paths = opts.paths ?? resolveWorkflowPaths();
-  mkdirSync8(paths.workspacesDir, { recursive: true });
-  mkdirSync8(paths.mediaDir, { recursive: true });
-  mkdirSync8(paths.executionsDir, { recursive: true });
+  mkdirSync9(paths.workspacesDir, { recursive: true });
+  mkdirSync9(paths.mediaDir, { recursive: true });
+  mkdirSync9(paths.executionsDir, { recursive: true });
   const store = createWorkspaceStore({ workspacesDir: paths.workspacesDir });
   const gateway = opts.gateway ?? assembleGateway({
     getSeam: (name2) => ctx.get?.(name2),
@@ -32388,6 +32836,7 @@ export {
   NodeExecutionError,
   NodeResultCache,
   NodeStatus,
+  PROJECT_ASSETS_SCHEMA_VERSION,
   PROJECT_LIBRARY_PATH,
   PROJECT_README_NAME,
   PROJECT_ROUTE_PREFIX,
@@ -32411,6 +32860,7 @@ export {
   createExecutionManager,
   createMockGateway,
   createOmnimuxSeamClient,
+  createProjectAssetsStore,
   createProjectDispatcher,
   createProjectStore,
   createSSEPublisher,
@@ -32418,6 +32868,7 @@ export {
   defaultProjectLibrary,
   defaultReadme,
   displayHomePath,
+  emptyProjectAssetsDocument,
   ensureLibraryRoot,
   folderNameAttempt,
   globalCheckpointManager,
