@@ -8,6 +8,7 @@ import { CONNECTOR_PROMPT_LINES, createConnectorTools } from './connector-tools.
 import { assignConfig, dshHome, readOverlay, sanitizeSortBy, withDefaults } from './config-store.js'
 import { removeDshPlugin } from './dsh-cli.js'
 import { decorateCatalog, loadCatalog } from './expert/catalog.js'
+import { registerCatalogSkillProvider } from './expert/catalog-provider.js'
 import { findItem, installItem, removeMcpRow, withConnectorPatchLock } from './expert/install.js'
 import { packageRoot, profileDir } from './expert/paths.js'
 import { configureHttpJsonCache } from './http.js'
@@ -255,6 +256,8 @@ export function apply(ctx: Context, config: Config): void {
     }).settings
     settings.register('omnimux-market', Config, { base: config })
   })
+
+  registerCatalogSkillProvider(ctx)
 }
 
 function registerMarketTools(ctx: Context, specs: MarketToolSpec[]): void {
