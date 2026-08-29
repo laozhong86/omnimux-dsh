@@ -9,6 +9,7 @@ import { toast } from '../../ui';
 import { useT } from '../../i18n';
 import { pickLocalFiles } from '../../bridge/apiClient.ts';
 import {
+  planImportNodeFill,
   planResourcePickerCommit,
   type LocalFileDraft,
   type ResourcePickerTab,
@@ -23,6 +24,7 @@ export interface UseResourcePickerResult {
   openPicker: (tab?: ResourcePickerTab) => void;
   closePicker: () => void;
   importLocalFiles: () => Promise<boolean>;
+  fillImportNode: () => Promise<boolean>;
   relinkLocalFile: (materialType: MaterialType) => Promise<boolean>;
   commit: (payload: {
     selectedCanvasNodeIds: string[];
@@ -82,6 +84,45 @@ export function useResourcePicker(nodeId: string): UseResourcePickerResult {
     [nodeId, t],
   );
 
+  const fillImportNode = useCallback(async () => {
+    const result = await pickLocalFiles();
+    if (!result.ok) {
+      if (result.body.error === 'picker-unsupported') {
+        toast.warning(t('picker.needPath'));
+      } else {
+        toast.error(t('picker.pickFailed'));
+      }
+      return false;
+    }
+    const paths = result.body.paths ?? [];
+    if (paths.length === 0) return false;
+    const drafts = draftsFromPickedPaths(paths);
+    if (drafts.length === 0) {
+      toast.warning(t('picker.unsupported'));
+      return false;
+    }
+    const state = useCanvasStore.getState();
+    const plan = planImportNodeFill({
+      nodes: state.nodes,
+      targetNodeId: nodeId,
+      files: drafts,
+    });
+    if (!plan.hasWork) {
+      toast.warning(t('picker.unsupported'));
+      return false;
+    }
+    const applied = state.applyCanvasInputMutation({
+      addNodes: plan.addNodes,
+      nodePatches: plan.nodePatches,
+    });
+    if (applied.status !== 'allowed') {
+      toast.error(t('picker.commitFailed'));
+      return false;
+    }
+    toast.success(t('picker.importOk'));
+    return true;
+  }, [nodeId, t]);
+
   const importLocalFiles = useCallback(async () => {
     const result = await pickLocalFiles();
     if (!result.ok) {
@@ -134,5 +175,14 @@ export function useResourcePicker(nodeId: string): UseResourcePickerResult {
     return true;
   }, [nodeId, t]);
 
-  return { open, initialTab, openPicker, closePicker, importLocalFiles, relinkLocalFile, commit };
+  return {
+    open,
+    initialTab,
+    openPicker,
+    closePicker,
+    importLocalFiles,
+    fillImportNode,
+    relinkLocalFile,
+    commit,
+  };
 }

@@ -5,9 +5,16 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {
   analyzeSource,
   analyzeProject,
+  analyzeFile,
+  collectFiles,
+  classifyFile,
+  matchesIgnore,
   formatReport,
   DEFAULT_THRESHOLDS,
 } from './code-refactor-analyzer.mjs';
@@ -230,6 +237,96 @@ describe('CRSA (Code Refactor & Simplification Analyzer) 核心测试', () => {
       const mdStr = formatReport(projectReport, 'markdown');
       assert.match(mdStr, /# 代码重构与简化分析报表/);
       assert.match(mdStr, /100 \/ 100/);
+    });
+  });
+
+  describe('5. ignore 与自研源码分桶', () => {
+    it('matchesIgnore 命中 lib / openreel / min 产物', () => {
+      assert.equal(matchesIgnore('plugins/omnimux/lib/client.js'), true);
+      assert.equal(matchesIgnore('plugins/omnimux-clip/src/client/openreel/App.tsx'), true);
+      assert.equal(matchesIgnore('vendor/foo.min.js'), true);
+      assert.equal(matchesIgnore('plugins/omnimux-products/src/client/ProductFormDialog.jsx'), false);
+    });
+
+    it('classifyFile 区分 source / generated / vendor / tests', () => {
+      assert.equal(
+        classifyFile('plugins/omnimux-products/src/client/ProductFormDialog.jsx', 'export function ProductFormDialog() {}'),
+        'source',
+      );
+      assert.equal(
+        classifyFile('plugins/omnimux-market/src/client.js', 'window.__ModuleLoader__.load({ id: "omnimux-market" });\n'),
+        'generated',
+      );
+      assert.equal(
+        classifyFile('plugins/omnimux-clip/src/client/openreel/Timeline.tsx', 'export const x = 1;\n'),
+        'vendor',
+      );
+      assert.equal(
+        classifyFile('plugins/omnimux-products/src/library.test.js', 'import assert from "node:assert";\n'),
+        'tests',
+      );
+    });
+
+    it('collectFiles 跳过 lib / openreel，保留自研源码', () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), 'crsa-buckets-'));
+      try {
+        fs.mkdirSync(path.join(root, 'src'), { recursive: true });
+        fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
+        fs.mkdirSync(path.join(root, 'vendor', 'openreel'), { recursive: true });
+        fs.writeFileSync(path.join(root, 'src', 'app.js'), 'export const n = 1;\n');
+        fs.writeFileSync(path.join(root, 'src', 'app.test.js'), 'export const t = 1;\n');
+        fs.writeFileSync(
+          path.join(root, 'src', 'client.js'),
+          'window.__ModuleLoader__.load({ id: "demo" });\nexport const bundled = true;\n',
+        );
+        fs.writeFileSync(path.join(root, 'lib', 'client.js'), 'export const generated = true;\n');
+        fs.writeFileSync(path.join(root, 'vendor', 'openreel', 'App.js'), 'export const vendor = true;\n');
+
+        const collected = collectFiles(root, [], { root }).map((file) => path.relative(root, file).split(path.sep).join('/')).sort();
+        assert.deepEqual(collected, ['src/app.js', 'src/app.test.js', 'src/client.js']);
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+      }
+    });
+
+    it('analyzeProject 的 projectLevel 只聚合 source，tests/generated 进分桶', () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), 'crsa-project-'));
+      try {
+        fs.mkdirSync(path.join(root, 'src'), { recursive: true });
+        fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
+        fs.writeFileSync(path.join(root, 'src', 'app.js'), 'export function ok() { return 1; }\n');
+        fs.writeFileSync(
+          path.join(root, 'src', 'client.js'),
+          'window.__ModuleLoader__.load({ id: "demo" });\nfunction mega(a, b, c, d, e, f) {\n  if (a && b && c) { if (d) { if (e) { return a ? b : c; } } }\n}\n',
+        );
+        const testLines = ['function god(a, b, c, d, e, f) {'];
+        for (let i = 0; i < 40; i++) {
+          testLines.push(`  if (a > ${i} && b > ${i}) { if (c > ${i}) { return 1; } }`);
+        }
+        testLines.push('}');
+        fs.writeFileSync(path.join(root, 'src', 'app.test.js'), `${testLines.join('\n')}\n`);
+        fs.writeFileSync(path.join(root, 'lib', 'client.js'), 'export const generated = true;\n');
+
+        const report = analyzeProject(root);
+        assert.equal(report.summary.buckets.source.files, 1);
+        assert.equal(report.summary.buckets.generated.files, 1);
+        assert.equal(report.summary.buckets.tests.files, 1);
+        assert.equal(report.summary.totalFiles, 1);
+        assert.equal(report.summary.projectLevel, 'A');
+        assert.equal(report.files.some((f) => f.filename.endsWith('lib/client.js') || f.filename.endsWith('lib\\client.js')), false);
+
+        const sourceFile = report.files.find((f) => f.bucket === 'source');
+        assert.equal(sourceFile.healthLevel, 'A');
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+      }
+    });
+
+    it('ProductFormDialog.jsx 仍归 source 桶', () => {
+      const target = 'plugins/omnimux-products/src/client/ProductFormDialog.jsx';
+      if (!fs.existsSync(target)) return;
+      const report = analyzeFile(target);
+      assert.equal(report.bucket, 'source');
     });
   });
 

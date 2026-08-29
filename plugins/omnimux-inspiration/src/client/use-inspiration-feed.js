@@ -1,45 +1,46 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { whenAuthReady } from './api.js'
 import {
-  batchDeleteLocalInspirations,
-  getInspirationCache,
-  loadInspirationsAtomic,
-  setInspirationCache,
-  whenAuthReady,
-} from './api.js'
+  applyCachedPage,
+  cacheKeyOf,
+  createReplicateStatusHandler,
+  executeBatchDelete,
+  executeFeedLoad,
+  extractLocalItemIds,
+  filterOutItemsByIds,
+  mergeFetchResult,
+  removeIdsFromSet,
+  resetReplicateBusy,
+  toggleIdInSet,
+  updateItemInList,
+} from './feed-helpers.js'
 import { replicateInspirationToChat } from './replicate-to-chat.js'
 
-/**
- * Pagination, tab/filter loading, selection and replicate busy state
- * for the inspiration grid. Extracted from InspirationSection.
- */
-export function useInspirationFeed({ active }) {
-  const [tab, setTab] = useState('all')
-  const [q, setQ] = useState('')
-  const [type, setType] = useState('')
-  const [sort, setSort] = useState('hot')
-  const [favorite, setFavorite] = useState('0')
+export {
+  applyCachedPage,
+  cacheKeyOf,
+  createReplicateStatusHandler,
+  executeBatchDelete,
+  executeFeedLoad,
+  extractLocalItemIds,
+  filterOutItemsByIds,
+  mergeFetchResult,
+  removeIdsFromSet,
+  resetReplicateBusy,
+  toggleIdInSet,
+  updateItemInList,
+}
 
-  const [items, setItems] = useState([])
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [phase, setPhase] = useState('loading')
-  const [error, setError] = useState(null)
-
-  const [selectedItem, setSelectedItem] = useState(null)
-  const [importOpen, setImportOpen] = useState(false)
-  const [selectedIds, setSelectedIds] = useState(() => new Set())
-  const [pendingRemove, setPendingRemove] = useState(null)
-  const [removing, setRemoving] = useState(false)
+function useReplicateToChat() {
   const [replicateBusy, setReplicateBusy] = useState(null)
   const [ctaStatus, setCtaStatus] = useState(null)
   const ctaStatusTimer = useRef(null)
   const replicateBusyRef = useRef(null)
-  const sentinelRef = useRef(null)
 
-  useEffect(() => () => {
-    if (ctaStatusTimer.current) clearTimeout(ctaStatusTimer.current)
+  useEffect(() => {
+    return () => {
+      if (ctaStatusTimer.current) clearTimeout(ctaStatusTimer.current)
+    }
   }, [])
 
   const flashCtaStatus = useCallback((key) => {
@@ -55,178 +56,184 @@ export function useInspirationFeed({ active }) {
     const ticket = row.id
     replicateBusyRef.current = ticket
     setReplicateBusy(ticket)
-    void replicateInspirationToChat(row, {
-      onStatus(key) {
-        if (key && key !== 'card.cta.replicating') flashCtaStatus(key)
-        if (key === 'card.cta.replicating') setCtaStatus(key)
-        if (key == null) setCtaStatus(null)
-      },
-    }).finally(() => {
-      if (replicateBusyRef.current === ticket) {
-        replicateBusyRef.current = null
-        setReplicateBusy(null)
-      }
+
+    const onStatus = createReplicateStatusHandler(flashCtaStatus, setCtaStatus)
+    const execOpts = { onStatus }
+    void replicateInspirationToChat(row, execOpts).finally(() => {
+      resetReplicateBusy(replicateBusyRef, setReplicateBusy, ticket)
     })
   }, [flashCtaStatus])
 
-  const selectedCount = selectedIds.size
-  const selecting = selectedCount > 0
+  return { replicateBusy, ctaStatus, handleReplicate }
+}
+
+function useFeedSelection(options) {
+  const { items, selectedItem, setSelectedItem, setItems } = options || {}
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [pendingRemove, setPendingRemove] = useState(null)
+  const [removing, setRemoving] = useState(false)
 
   const toggleSelect = useCallback((row) => {
     if (!row.is_local) return
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(row.id)) next.delete(row.id)
-      else next.add(row.id)
-      return next
-    })
+    setSelectedIds((prev) => toggleIdInSet(prev, row.id))
   }, [])
 
   const selectAllLocal = useCallback(() => {
-    const localIds = items.filter((it) => it.is_local).map((it) => it.id)
-    setSelectedIds(new Set(localIds))
+    setSelectedIds(new Set(extractLocalItemIds(items)))
   }, [items])
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set())
   }, [])
 
-  const handleConfirmBatchRemove = async () => {
-    if (!pendingRemove || !pendingRemove.ids.length) return
+  const handleConfirmBatchRemove = useCallback(async () => {
+    const ids = pendingRemove?.ids
+    if (!ids || ids.length === 0) return
     setRemoving(true)
     try {
-      await batchDeleteLocalInspirations(pendingRemove.ids)
-      const removedSet = new Set(pendingRemove.ids)
-      setItems((prev) => prev.filter((it) => !removedSet.has(it.id)))
-      setSelectedIds((prev) => {
-        const next = new Set(prev)
-        for (const id of removedSet) next.delete(id)
-        return next
-      })
-      if (selectedItem && removedSet.has(selectedItem.id)) {
-        setSelectedItem(null)
-      }
-      setPendingRemove(null)
+      await executeBatchDelete(ids, { selectedItem, setSelectedItem, setItems, setSelectedIds, setPendingRemove })
     } catch (err) {
       console.error('Failed to delete local inspirations:', err)
     } finally {
       setRemoving(false)
     }
+  }, [pendingRemove, selectedItem, setItems, setSelectedItem])
+
+  return {
+    selectedIds,
+    setSelectedIds,
+    pendingRemove,
+    setPendingRemove,
+    removing,
+    selectedCount: selectedIds.size,
+    selecting: selectedIds.size > 0,
+    toggleSelect,
+    selectAllLocal,
+    clearSelection,
+    handleConfirmBatchRemove,
   }
+}
 
-  const loadData = useCallback(async (isNextPage = false) => {
-    const targetPage = isNextPage ? page + 1 : 1
-    const cacheKey = `insp:${tab}:${q}:${type}:${sort}:${favorite}`
-
-    if (!isNextPage) {
-      const cached = getInspirationCache(cacheKey)
-      if (cached) {
-        setItems(cached.data.items)
-        setHasMore(cached.data.hasMore)
-        setPhase(cached.data.phase)
-        setLoading(false)
-        if (!cached.isStale) return
-      } else {
-        setLoading(true)
-      }
-    } else {
-      setLoadingMore(true)
+function createSentinelObserver(sentinelEl, options) {
+  const { hasMore, loading, loadingMore, loadData } = options
+  const observer = new IntersectionObserver((entries) => {
+    const isVisible = Boolean(entries[0]?.isIntersecting)
+    const isIdle = !loading && !loadingMore
+    if (isVisible && hasMore && isIdle) {
+      loadData(true)
     }
+  }, { rootMargin: '200px' })
+  observer.observe(sentinelEl)
+  return observer
+}
 
-    try {
-      const result = await loadInspirationsAtomic({
-        tab,
-        q,
-        type,
-        sort,
-        favorite,
-        page: targetPage,
-        pageSize: 20,
-      })
-
-      if (isNextPage) {
-        setItems((prev) => [...prev, ...result.items])
-        setPage(targetPage)
-        setHasMore(result.hasMore)
-      } else {
-        setItems(result.items)
-        setPage(1)
-        setHasMore(result.hasMore)
-        setPhase(result.phase)
-        setInspirationCache(cacheKey, result)
-      }
-      setError(null)
-    } catch (err) {
-      setError(String(err.message || err))
-      if (!isNextPage && items.length === 0) setPhase('ready')
-    } finally {
-      setLoading(false)
-      setLoadingMore(false)
-    }
-  }, [tab, q, type, sort, favorite, page, items.length])
-
+function useSentinelObserver(options) {
+  const { sentinelRef, hasMore, loading, loadingMore, loadData } = options || {}
   useEffect(() => {
-    if (!active) return
-    loadData(false)
-  }, [active, tab, q, type, sort, favorite])
-
-  useEffect(() => {
-    return whenAuthReady(() => {
-      loadData(false)
-    })
-  }, [])
-
-  useEffect(() => {
-    if (!sentinelRef.current || !hasMore || loading || loadingMore) return
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
-        loadData(true)
-      }
-    }, { rootMargin: '200px' })
-
-    observer.observe(sentinelRef.current)
+    const sentinelEl = sentinelRef?.current
+    const isIdle = !loading && !loadingMore
+    if (!sentinelEl || !hasMore || !isIdle) return
+    const observer = createSentinelObserver(sentinelEl, { hasMore, loading, loadingMore, loadData })
     return () => observer.disconnect()
-  }, [hasMore, loading, loadingMore, loadData])
+  }, [hasMore, loading, loadingMore, loadData, sentinelRef])
+}
 
-  const handleImportSuccess = (newItem) => {
-    setItems((prev) => [newItem, ...prev])
-    setSelectedItem(newItem)
-  }
-
-  const handleItemUpdated = (updatedItem) => {
-    setItems((prev) => prev.map((it) => (it.id === updatedItem.id ? updatedItem : it)))
-    setSelectedItem(updatedItem)
-  }
-
+function useInspirationFilters() {
+  const [tab, setTab] = useState('all')
+  const [q, setQ] = useState('')
+  const [type, setType] = useState('')
+  const [sort, setSort] = useState('hot')
+  const [favorite, setFavorite] = useState('0')
   return {
     tab, setTab,
     q, setQ,
     type, setType,
     sort, setSort,
     favorite, setFavorite,
+  }
+}
+
+function useFeedData(options) {
+  const { active, filters } = options || {}
+  const { tab, q, type, sort, favorite } = filters || {}
+  const [items, setItems] = useState([])
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [phase, setPhase] = useState('loading')
+  const [error, setError] = useState(null)
+
+  const loadData = useCallback((isNextPage = false) => {
+    return executeFeedLoad(
+      { isNextPage, tab, q, type, sort, favorite, page, hasExistingItems: items.length > 0 },
+      { setItems, setPage, setHasMore, setPhase, setError, setLoading, setLoadingMore },
+    )
+  }, [tab, q, type, sort, favorite, page, items.length])
+
+  useEffect(() => {
+    if (!active) return
+    loadData(false)
+  }, [active, tab, q, type, sort, favorite, loadData])
+
+  useEffect(() => {
+    return whenAuthReady(() => {
+      loadData(false)
+    })
+  }, [loadData])
+
+  return {
     items,
+    setItems,
+    page,
     hasMore,
     loading,
     loadingMore,
     phase,
     error,
-    selectedItem, setSelectedItem,
-    importOpen, setImportOpen,
-    selectedIds,
-    pendingRemove, setPendingRemove,
-    removing,
-    replicateBusy,
-    ctaStatus,
+    loadData,
+  }
+}
+
+/**
+ * Pagination, tab/filter loading, selection and replicate busy state
+ * for the inspiration grid. Extracted from InspirationSection.
+ */
+export function useInspirationFeed({ active }) {
+  const filters = useInspirationFilters()
+  const data = useFeedData({ active, filters })
+  const { items, setItems, hasMore, loading, loadingMore, loadData } = data
+
+  const [selectedItem, setSelectedItem] = useState(null)
+  const [importOpen, setImportOpen] = useState(false)
+  const sentinelRef = useRef(null)
+
+  const replicate = useReplicateToChat()
+  const selection = useFeedSelection({ items, selectedItem, setSelectedItem, setItems })
+
+  useSentinelObserver({ sentinelRef, hasMore, loading, loadingMore, loadData })
+
+  const handleImportSuccess = useCallback((newItem) => {
+    setItems((prev) => [newItem, ...prev])
+    setSelectedItem(newItem)
+  }, [setItems])
+
+  const handleItemUpdated = useCallback((updatedItem) => {
+    setItems((prev) => updateItemInList(prev, updatedItem))
+    setSelectedItem(updatedItem)
+  }, [setItems])
+
+  return {
+    ...filters,
+    ...data,
+    selectedItem,
+    setSelectedItem,
+    importOpen,
+    setImportOpen,
     sentinelRef,
-    selectedCount,
-    selecting,
-    handleReplicate,
-    toggleSelect,
-    selectAllLocal,
-    clearSelection,
-    handleConfirmBatchRemove,
+    ...replicate,
     handleImportSuccess,
     handleItemUpdated,
+    ...selection,
   }
 }

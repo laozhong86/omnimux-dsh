@@ -15,6 +15,7 @@ const hookSrc = readFileSync(join(here, '../../hooks/useResourcePicker.ts'), 'ut
 const pillSrc = readFileSync(join(here, '../MaterialNode/FloatingTopPill.tsx'), 'utf8');
 const panelSrc = readFileSync(join(here, '../MaterialNode/ConfigPanel/index.tsx'), 'utf8');
 const nodeSrc = readFileSync(join(here, '../MaterialNode/index.tsx'), 'utf8');
+const editorSrc = readFileSync(join(here, '../../CanvasEditor.tsx'), 'utf8');
 const cssSrc = readFileSync(join(here, '../../../theme/components.css'), 'utf8');
 
 test('弹窗基于 CustomModal，含画布/本地 Tab 与 Footer 使用 N 项', () => {
@@ -59,9 +60,18 @@ test('ConfigPanel Prompt 左上角 [+] 按钮唤起弹窗', () => {
 test('MaterialNode 挂载 ResourcePickerModal 与 useResourcePicker', () => {
   assert.match(nodeSrc, /useResourcePicker\(id\)/);
   assert.match(nodeSrc, /<ResourcePickerModal/);
-  assert.match(nodeSrc, /importLocalFiles/);
+  assert.match(nodeSrc, /fillImportNode/);
   assert.match(nodeSrc, /openPicker\('canvas'\)/);
   assert.equal(/createObjectURL/.test(nodeSrc), false);
+});
+
+test('画布导入素材入口先选文件再落节点，取消不建空节点', () => {
+  assert.match(editorSrc, /pickLocalFiles\(\)/);
+  assert.match(editorSrc, /planStandaloneImportNodes/);
+  assert.match(hookSrc, /planImportNodeFill/);
+  assert.equal(/createImportNode\('image'/.test(editorSrc), false);
+  assert.equal(/openPickerOnMount/.test(editorSrc), false);
+  assert.equal(/openPickerOnMount/.test(nodeSrc), false);
 });
 
 test('源码契约：MaterialNode / LocalUploadPane 不得把 createObjectURL 写入节点', () => {
@@ -70,13 +80,13 @@ test('源码契约：MaterialNode / LocalUploadPane 不得把 createObjectURL �
   assert.equal(/createObjectURL/.test(localPaneSrc), false);
   assert.equal(/createObjectURL/.test(policySrc), false);
   assert.match(policySrc, /buildImportedMediaData/);
-  assert.match(nodeSrc, /buildImportedMediaData/);
+  assert.match(nodeSrc, /planImportNodeFill/);
   assert.match(nodeSrc, /nativePathOf/);
   const importBlock = nodeSrc.slice(
     nodeSrc.indexOf('const handleImportFile'),
     nodeSrc.indexOf('const handleDragOver'),
   );
-  assert.match(importBlock, /updateNodeData\(buildImportedMediaData/);
+  assert.match(importBlock, /planImportNodeFill/);
   assert.equal(/mediaUrl:\s*url/.test(importBlock), false);
 });
 

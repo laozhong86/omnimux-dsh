@@ -8,7 +8,7 @@
 
 import type { Edge } from '@xyflow/react';
 import type { MaterialType } from '../../types/materialNode.ts';
-import { createMaterialNode } from '../../../shared/graph/nodeFactory.ts';
+import { createImportNode, createMaterialNode } from '../../../shared/graph/nodeFactory.ts';
 import { isNodeConnectionValid } from '../../../shared/graph/connectionConfig.ts';
 import type {
   CanvasInputMutation,
@@ -25,6 +25,7 @@ export type ResourcePickerView = 'grid' | 'list';
 const MEDIA_TYPES: readonly MaterialType[] = ['image', 'video', 'audio'];
 const UPSTREAM_GAP_X = 80;
 const UPSTREAM_STACK_Y = 40;
+const IMPORT_STACK_Y = 40;
 
 export interface CanvasResourceItem {
   nodeId: string;
@@ -346,5 +347,114 @@ export function planResourcePickerCommit(input: ResourcePickerCommitInput): Reso
     addNodes: addNodes.length > 0 ? addNodes : undefined,
     addEdges: addEdges.length > 0 ? addEdges : undefined,
     nodePatches: nodePatches.length > 0 ? nodePatches : undefined,
+  };
+}
+
+function usableMediaFiles(
+  files: LocalFileDraft[],
+  rejected: ResourcePickerRejection[],
+): LocalFileDraft[] {
+  return files.filter((file) => {
+    if (!file.realPath || !MEDIA_TYPES.includes(file.materialType)) {
+      rejected.push({ id: file.id, reason: 'unsupported' });
+      return false;
+    }
+    return true;
+  });
+}
+
+function importNodeFromFile(
+  file: LocalFileDraft,
+  position: { x: number; y: number },
+  selected = false,
+): CanvasNode {
+  const node = createImportNode(file.materialType, position, {
+    ...mediaPatch(file),
+    label: file.name.replace(/\.[^.]+$/, '') || file.name,
+  });
+  return selected ? ({ ...node, selected: true } as CanvasNode) : node;
+}
+
+/**
+ * 画布「导入素材」入口：先选文件，再按文件落导入节点。
+ * 取消选择 / 无可用文件时 hasWork=false，调用方不得创建空节点。
+ */
+export function planStandaloneImportNodes(input: {
+  files: LocalFileDraft[];
+  origin: { x: number; y: number };
+}): ResourcePickerCommitPlan {
+  const rejected: ResourcePickerRejection[] = [];
+  const usable = usableMediaFiles(input.files, rejected);
+  const addNodes: CanvasNode[] = [];
+  let y = input.origin.y;
+
+  usable.forEach((file, index) => {
+    const height = getDefaultNodeHeight(file.materialType);
+    addNodes.push(importNodeFromFile(
+      file,
+      { x: input.origin.x, y },
+      index === usable.length - 1,
+    ));
+    y += height + IMPORT_STACK_Y;
+  });
+
+  return {
+    hasWork: addNodes.length > 0,
+    rejected,
+    addNodes: addNodes.length > 0 ? addNodes : undefined,
+  };
+}
+
+/**
+ * 已有导入节点的填充 / 替换：首个文件写入当前节点（可改 materialType），
+ * 其余文件在下方落成独立导入节点，不连线、不生成。
+ */
+export function planImportNodeFill(input: {
+  nodes: CanvasNode[];
+  targetNodeId: string;
+  files: LocalFileDraft[];
+}): ResourcePickerCommitPlan {
+  const rejected: ResourcePickerRejection[] = [];
+  const target = input.nodes.find((node) => node.id === input.targetNodeId);
+  if (!target) {
+    return { hasWork: false, rejected: [{ id: input.targetNodeId, reason: 'missing' }] };
+  }
+
+  const usable = usableMediaFiles(input.files, rejected);
+  const first = usable[0];
+  if (!first) {
+    return { hasWork: false, rejected };
+  }
+
+  const nodePatches: NonNullable<CanvasInputMutation['nodePatches']> = [{
+    nodeId: input.targetNodeId,
+    data: {
+      ...mediaPatch(first),
+      materialType: first.materialType,
+      nodeKind: 'import',
+      selectedTool: 'import',
+      nodeWidth: getDefaultNodeWidth(first.materialType),
+      nodeHeight: getDefaultNodeHeight(first.materialType),
+      label: first.name.replace(/\.[^.]+$/, '') || first.name,
+    },
+  }];
+
+  const addNodes: CanvasNode[] = [];
+  let y = target.position.y + getDefaultNodeHeight(first.materialType) + IMPORT_STACK_Y;
+  usable.slice(1).forEach((file, index, rest) => {
+    const height = getDefaultNodeHeight(file.materialType);
+    addNodes.push(importNodeFromFile(
+      file,
+      { x: target.position.x, y },
+      index === rest.length - 1,
+    ));
+    y += height + IMPORT_STACK_Y;
+  });
+
+  return {
+    hasWork: true,
+    rejected,
+    nodePatches,
+    addNodes: addNodes.length > 0 ? addNodes : undefined,
   };
 }

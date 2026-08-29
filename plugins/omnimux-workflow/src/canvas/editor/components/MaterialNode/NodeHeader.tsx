@@ -13,7 +13,7 @@
 
 import React, { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { useViewport } from '@xyflow/react';
-import { FileText, ImagePlus, Video, Music, Table, Film } from 'lucide-react';
+import { FileText, ImagePlus, Video, Music, Table, Film, UploadCloud } from 'lucide-react';
 import type { MaterialType } from '../../../types/materialNode';
 import { useT } from '../../../i18n';
 import { inverseScaleForZoom } from '../../utils/nodeVisualMath';
@@ -26,7 +26,7 @@ const MAX_LABEL_LENGTH = 30;
 
 /** 素材类型 → lucide 图标映射 */
 const MATERIAL_TYPE_ICON_COMPONENTS: Record<
-  MaterialType | 'table' | 'video_composition',
+  MaterialType | 'table' | 'video_composition' | 'import_asset',
   React.ComponentType<{ size?: number; className?: string }>
 > = {
   text: FileText,
@@ -35,12 +35,14 @@ const MATERIAL_TYPE_ICON_COMPONENTS: Record<
   audio: Music,
   table: Table,
   video_composition: Film,
+  import_asset: UploadCloud,
 };
 
 export type NodeHeaderMaterialType =
   | MaterialType
   | 'table'
   | 'video_composition'
+  | 'import_asset'
   | (string & {});
 
 export interface NodeHeaderProps {

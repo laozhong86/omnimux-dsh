@@ -2490,7 +2490,7 @@ var DEFAULT_CANVAS_SETTINGS = {
   maxParallel: 3,
   failStrategy: "fail-fast"
 };
-var SNAPSHOT_SCHEMA_VERSION = 2;
+var SNAPSHOT_SCHEMA_VERSION = 3;
 
 // ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -17041,7 +17041,7 @@ var canvasSettingsSchema = external_exports.object({
   failStrategy: external_exports.enum(["fail-fast", "continue"])
 });
 var workspaceSnapshotSchema = external_exports.object({
-  schemaVersion: external_exports.literal(SNAPSHOT_SCHEMA_VERSION),
+  schemaVersion: external_exports.union([external_exports.literal(2), external_exports.literal(SNAPSHOT_SCHEMA_VERSION)]),
   id: external_exports.string().min(1),
   name: external_exports.string().min(1).max(200),
   version: external_exports.number().int().min(0),
@@ -17070,6 +17070,85 @@ var WorkflowStoreError = class extends Error {
     this.name = "WorkflowStoreError";
   }
 };
+
+// src/shared/graph/materialNode.ts
+var MATERIAL_TOOLS = {
+  text: ["text-editor", "text-to-text", "link-extract", "audio-transcription"],
+  image: ["import", "text-to-image", "image-to-image"],
+  video: ["import", "video-generation", "motion-mimicry", "subtitle-render", "digital-human"],
+  audio: ["import", "text-to-audio", "text-to-music", "video-to-audio", "voice-clone", "audio-extract"]
+};
+var DEFAULT_MATERIAL_TOOL = {
+  text: "text-editor",
+  image: "text-to-image",
+  video: "video-generation",
+  audio: "text-to-audio"
+};
+var MATERIAL_TOOL_INPUT_TYPES = {
+  "text-editor": [],
+  "text-to-text": ["text", "image", "video"],
+  "link-extract": ["text"],
+  "audio-transcription": ["audio"],
+  import: [],
+  "text-to-image": ["text"],
+  "image-to-image": ["text", "image"],
+  "video-generation": ["text", "image", "video", "audio"],
+  "digital-human": ["text", "image", "video", "audio"],
+  "motion-mimicry": ["text", "image", "video"],
+  "subtitle-render": ["text", "video"],
+  "text-to-audio": ["text"],
+  "video-to-audio": ["video"],
+  "voice-clone": ["text", "audio"],
+  "audio-extract": ["video"],
+  "text-to-music": ["text"]
+};
+function createDefaultMaterialNodeData(materialType, overrides) {
+  return {
+    label: "",
+    materialType,
+    status: "empty",
+    selectedTool: DEFAULT_MATERIAL_TOOL[materialType],
+    params: {},
+    failStrategy: "abort",
+    ...overrides
+  };
+}
+function resolveNodeKind(data) {
+  if (data.nodeKind === "generate" || data.nodeKind === "import") {
+    return data.nodeKind;
+  }
+  if (data.selectedTool === "import") {
+    return "import";
+  }
+  return "generate";
+}
+
+// src/workflow/workspace/snapshotMigration.ts
+function migrateSnapshot(snapshot) {
+  const currentVersion = snapshot.schemaVersion;
+  if (currentVersion >= SNAPSHOT_SCHEMA_VERSION) {
+    return snapshot;
+  }
+  const upgradedNodes = snapshot.nodes.map((node) => {
+    if (node.type !== "material") {
+      return node;
+    }
+    const data = node.data ?? {};
+    const nodeKind = resolveNodeKind(data);
+    return {
+      ...node,
+      data: {
+        ...data,
+        nodeKind
+      }
+    };
+  });
+  return {
+    ...snapshot,
+    schemaVersion: SNAPSHOT_SCHEMA_VERSION,
+    nodes: upgradedNodes
+  };
+}
 
 // src/workflow/workspace/WorkspaceStore.ts
 var MAX_WORKSPACE_NAME_LENGTH = 200;
@@ -17102,7 +17181,7 @@ function readSnapshotFile(filePath) {
   }
   const result = workspaceSnapshotSchema.safeParse(parsed);
   if (!result.success) return null;
-  return result.data;
+  return migrateSnapshot(result.data);
 }
 function createWorkspaceStore(opts) {
   const { workspacesDir } = opts;
@@ -19420,58 +19499,6 @@ var WORKFLOW_API_ROUTES = {
   /** GET: execution SSE event stream (text/event-stream). */
   executionEvents: (workspaceId, executionId) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/events`
 };
-
-// src/shared/graph/materialNode.ts
-var MATERIAL_TOOLS = {
-  text: ["text-editor", "text-to-text", "link-extract", "audio-transcription"],
-  image: ["import", "text-to-image", "image-to-image"],
-  video: ["import", "video-generation", "motion-mimicry", "subtitle-render", "digital-human"],
-  audio: ["import", "text-to-audio", "text-to-music", "video-to-audio", "voice-clone", "audio-extract"]
-};
-var DEFAULT_MATERIAL_TOOL = {
-  text: "text-editor",
-  image: "import",
-  video: "import",
-  audio: "import"
-};
-var MATERIAL_TOOL_INPUT_TYPES = {
-  "text-editor": [],
-  "text-to-text": ["text", "image", "video"],
-  "link-extract": ["text"],
-  "audio-transcription": ["audio"],
-  import: [],
-  "text-to-image": ["text"],
-  "image-to-image": ["text", "image"],
-  "video-generation": ["text", "image", "video", "audio"],
-  "digital-human": ["text", "image", "video", "audio"],
-  "motion-mimicry": ["text", "image", "video"],
-  "subtitle-render": ["text", "video"],
-  "text-to-audio": ["text"],
-  "video-to-audio": ["video"],
-  "voice-clone": ["text", "audio"],
-  "audio-extract": ["video"],
-  "text-to-music": ["text"]
-};
-function createDefaultMaterialNodeData(materialType, overrides) {
-  return {
-    label: "",
-    materialType,
-    status: "empty",
-    selectedTool: DEFAULT_MATERIAL_TOOL[materialType],
-    params: {},
-    failStrategy: "abort",
-    ...overrides
-  };
-}
-function resolveNodeKind(data) {
-  if (data.nodeKind === "generate" || data.nodeKind === "import") {
-    return data.nodeKind;
-  }
-  if (data.selectedTool === "import") {
-    return "import";
-  }
-  return "generate";
-}
 
 // src/workflow/execution/nodeExecutors.ts
 var LOG_TAG5 = "nodeExecutors";
@@ -22542,8 +22569,12 @@ function objectParams(fields) {
   const required2 = [];
   for (const [key, spec] of Object.entries(fields)) {
     const { required: isRequired, ...rest } = spec;
-    properties[key] = rest;
-    if (isRequired === true) required2.push(key);
+    if (Array.isArray(isRequired)) {
+      properties[key] = { ...rest, required: isRequired };
+    } else {
+      properties[key] = rest;
+      if (isRequired === true) required2.push(key);
+    }
   }
   return {
     type: "object",
@@ -22636,13 +22667,18 @@ function summarizeNodes(workspace, nodeIds, snapshot, mediaDir) {
   }
   return rows;
 }
+function withWorkspace(store, workspaceId, fn) {
+  let snapshot;
+  try {
+    snapshot = store.get(workspaceId);
+  } catch {
+    return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
+  }
+  return fn(snapshot);
+}
 function resolveWorkspace(store, workspaceId, workspaceName) {
   if (workspaceId) {
-    try {
-      return { snapshot: store.get(workspaceId) };
-    } catch {
-      return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-    }
+    return withWorkspace(store, workspaceId, (snapshot) => ({ snapshot }));
   }
   if (workspaceName) {
     const matches = store.list().filter((row) => row.name === workspaceName);
@@ -22656,11 +22692,7 @@ function resolveWorkspace(store, workspaceId, workspaceName) {
         `multiple workspaces named "${workspaceName}" \u2014 pass workspaceId instead`
       );
     }
-    try {
-      return { snapshot: store.get(first.id) };
-    } catch {
-      return errorBody2("workspace-not-found", `workspace ${first.id} not found`);
-    }
+    return withWorkspace(store, first.id, (snapshot) => ({ snapshot }));
   }
   return errorBody2(
     "invalid-args",
@@ -22711,6 +22743,32 @@ function defaultNodePosition(snapshot) {
 }
 
 // src/workflow/agent/agentReadTools.ts
+function extractNodeInitialOutput(sourceNode) {
+  const data = sourceNode.data ?? {};
+  const text = data.generatedContent ?? data.content ?? data.prompt;
+  const mediaAssets = data.mediaAssets;
+  const mediaUrl = data.mediaUrl;
+  const materialType = data.materialType;
+  if (Array.isArray(mediaAssets) && mediaAssets.length > 0) {
+    return { mediaAssets, text };
+  }
+  if (mediaUrl) {
+    const type = mediaKindFromMaterial(materialType);
+    return { mediaAssets: [{ type, url: mediaUrl }], text };
+  }
+  return { text: text ?? "" };
+}
+function buildInitialOutputs(workspace, executedNodeIds) {
+  const initialOutputs = {};
+  for (const edge of workspace.edges) {
+    if (!executedNodeIds.has(edge.target) || executedNodeIds.has(edge.source)) continue;
+    const sourceNode = workspace.nodes.find((n) => n.id === edge.source);
+    if (sourceNode) {
+      initialOutputs[edge.source] = extractNodeInitialOutput(sourceNode);
+    }
+  }
+  return initialOutputs;
+}
 function createWorkflowListTool(deps) {
   const { store, executionManager } = deps;
   return {
@@ -22800,28 +22858,7 @@ function createWorkflowRunTool(deps) {
       if (subgraph.nodes.length === 0) {
         return errorBody2("empty-graph", `workspace ${workspace.id} has no nodes to execute`);
       }
-      const initialOutputs = {};
-      const executedNodeIds = subgraph.nodeIdSet;
-      for (const edge of workspace.edges) {
-        if (executedNodeIds.has(edge.target) && !executedNodeIds.has(edge.source)) {
-          const sourceNode = workspace.nodes.find((n) => n.id === edge.source);
-          if (sourceNode) {
-            const data = sourceNode.data ?? {};
-            const text = data.generatedContent ?? data.content ?? data.prompt;
-            const mediaAssets = data.mediaAssets;
-            const mediaUrl = data.mediaUrl;
-            const materialType = data.materialType;
-            if (Array.isArray(mediaAssets) && mediaAssets.length > 0) {
-              initialOutputs[edge.source] = { mediaAssets, text };
-            } else if (mediaUrl) {
-              const type = mediaKindFromMaterial(materialType);
-              initialOutputs[edge.source] = { mediaAssets: [{ type, url: mediaUrl }], text };
-            } else {
-              initialOutputs[edge.source] = { text: text ?? "" };
-            }
-          }
-        }
-      }
+      const initialOutputs = buildInitialOutputs(workspace, subgraph.nodeIdSet);
       const entry = executionManager.createExecution({
         workspaceId: workspace.id,
         nodes: subgraph.nodes,
@@ -22891,38 +22928,34 @@ function createWorkflowSnapshotTool(deps) {
       if (!workspaceId) {
         return errorBody2("invalid-args", "workspace_id is required");
       }
-      let workspace;
-      try {
-        workspace = store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
-      if (readBoolean(args, "include_nodes")) {
-        return { workspace };
-      }
-      const nodeTypeCounts = {};
-      const materialCounts = {};
-      for (const node of workspace.nodes) {
-        const data = node.data ?? {};
-        const type = typeof node.type === "string" ? node.type : "unknown";
-        nodeTypeCounts[type] = (nodeTypeCounts[type] ?? 0) + 1;
-        const material = typeof data.materialType === "string" ? data.materialType : "unknown";
-        materialCounts[material] = (materialCounts[material] ?? 0) + 1;
-      }
-      return {
-        summary: {
-          id: workspace.id,
-          name: workspace.name,
-          version: workspace.version,
-          nodeCount: workspace.nodes.length,
-          edgeCount: workspace.edges.length,
-          nodeTypeCounts,
-          materialCounts,
-          settings: workspace.settings,
-          metadata: workspace.metadata
-        },
-        hint: "Pass include_nodes=true for the full node/edge structure."
-      };
+      return withWorkspace(store, workspaceId, (workspace) => {
+        if (readBoolean(args, "include_nodes")) {
+          return { workspace };
+        }
+        const nodeTypeCounts = {};
+        const materialCounts = {};
+        for (const node of workspace.nodes) {
+          const data = node.data ?? {};
+          const type = typeof node.type === "string" ? node.type : "unknown";
+          nodeTypeCounts[type] = (nodeTypeCounts[type] ?? 0) + 1;
+          const material = typeof data.materialType === "string" ? data.materialType : "unknown";
+          materialCounts[material] = (materialCounts[material] ?? 0) + 1;
+        }
+        return {
+          summary: {
+            id: workspace.id,
+            name: workspace.name,
+            version: workspace.version,
+            nodeCount: workspace.nodes.length,
+            edgeCount: workspace.edges.length,
+            nodeTypeCounts,
+            materialCounts,
+            settings: workspace.settings,
+            metadata: workspace.metadata
+          },
+          hint: "Pass include_nodes=true for the full node/edge structure."
+        };
+      });
     }
   };
 }
@@ -32217,6 +32250,7 @@ function getDefaultNodeWidth(nodeType) {
 // src/shared/graph/nodeFactory.ts
 function createMaterialNode(materialType, position, overrides) {
   const data = createDefaultMaterialNodeData(materialType, {
+    nodeKind: "generate",
     status: "empty",
     nodeWidth: getDefaultNodeWidth(materialType),
     ...overrides
@@ -32232,6 +32266,39 @@ function createMaterialNode(materialType, position, overrides) {
 }
 
 // src/workflow/agent/agentWriteTools.ts
+function parseNodePatch(nodeId, node, spec) {
+  const position = spec.position;
+  if (position !== void 0) {
+    if (!position || typeof position !== "object" || Array.isArray(position) || typeof position.x !== "number" || typeof position.y !== "number") {
+      return errorBody2("invalid-args", "patch.position must be {x: number, y: number}");
+    }
+  }
+  if (spec.params !== void 0) {
+    if (!spec.params || typeof spec.params !== "object" || Array.isArray(spec.params)) {
+      return errorBody2("invalid-args", "patch.params must be an object");
+    }
+  }
+  const materialType = node.data?.materialType;
+  let selectedTool;
+  if (spec.tool !== void 0) {
+    if (!materialType) return errorBody2("invalid-args", `node ${nodeId} has no material_type; cannot set tool`);
+    const toolResolved = resolveTool(materialType, spec.tool);
+    if ("error" in toolResolved) return toolResolved;
+    selectedTool = toolResolved.tool;
+  }
+  const data = {};
+  if (spec.label !== void 0) data.label = spec.label;
+  if (spec.prompt !== void 0) data.prompt = spec.prompt;
+  if (spec.params !== void 0) data.params = spec.params;
+  if (selectedTool !== void 0) data.selectedTool = selectedTool;
+  if (Object.keys(data).length === 0 && position === void 0) {
+    return errorBody2("invalid-args", "patch must contain at least one of label / prompt / tool / params / position");
+  }
+  return {
+    data,
+    ...position !== void 0 ? { position } : {}
+  };
+}
 function createWorkflowCreateTool(deps) {
   const { store } = deps;
   return {
@@ -32261,11 +32328,11 @@ function createWorkflowNodeAddTool(deps) {
   const { store } = deps;
   return {
     name: "workflow_node_add",
-    description: "Add a material node to a workflow canvas. material_type picks the node kind; tool picks what the node does and must be valid for that type \u2014 text: text-editor|text-to-text|link-extract|audio-transcription, image: import|text-to-image|image-to-image, video: import|video-generation|motion-mimicry|subtitle-render|digital-human, audio: import|text-to-audio|text-to-music|video-to-audio|voice-clone|audio-extract (default: text-editor for text, import otherwise). position is optional (auto-placed right of the existing nodes). Node ids come from the returned node \u2014 use them for workflow_connect / workflow_run. Read workflow_snapshot first when editing an existing canvas.",
+    description: "Add a material node to a workflow canvas. material_type picks the node kind; tool picks what the node does and must be valid for that type \u2014 text: text-editor|text-to-text|link-extract|audio-transcription, image: import|text-to-image|image-to-image, video: import|video-generation|motion-mimicry|subtitle-render|digital-human, audio: import|text-to-audio|text-to-music|video-to-audio|voice-clone|audio-extract (defaults to dedicated generative tools: text-editor for text, text-to-image for image, video-generation for video, text-to-audio for audio; pass import for static assets). position is optional (auto-placed right of the existing nodes). Node ids come from the returned node \u2014 use them for workflow_connect / workflow_run. Read workflow_snapshot first when editing an existing canvas.",
     parameters: objectParams({
       workspace_id: { type: "string", required: true, description: "Workspace id (from workflow_list)" },
       material_type: { type: "string", enum: MATERIAL_TYPE_ENUM, required: true, description: "Node material type" },
-      tool: { type: "string", description: "Node tool; must belong to material_type (see description). Default: text-editor (text) / import (others)" },
+      tool: { type: "string", description: "Node tool; must belong to material_type (see description). Default: generative tool for material_type (or import for static assets)" },
       position: {
         type: "object",
         properties: { x: { type: "number" }, y: { type: "number" } },
@@ -32286,22 +32353,18 @@ function createWorkflowNodeAddTool(deps) {
       }
       const toolResolved = resolveTool(materialType, args.tool);
       if ("error" in toolResolved) return toolResolved;
-      let snapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
-      const label = readString4(args, "label");
-      const prompt = readString4(args, "prompt");
-      const node = createMaterialNode(materialType, readPosition(args) ?? defaultNodePosition(snapshot), {
-        selectedTool: toolResolved.tool,
-        ...label !== void 0 ? { label } : {},
-        ...prompt !== void 0 ? { prompt } : {}
+      return withWorkspace(store, workspaceId, (snapshot) => {
+        const label = readString4(args, "label");
+        const prompt = readString4(args, "prompt");
+        const node = createMaterialNode(materialType, readPosition(args) ?? defaultNodePosition(snapshot), {
+          selectedTool: toolResolved.tool,
+          ...label !== void 0 ? { label } : {},
+          ...prompt !== void 0 ? { prompt } : {}
+        });
+        const result = mutateWorkspaceGraph(store, workspaceId, { addNodes: [node] });
+        if (!result.ok) return errorBody2(result.error, result.message);
+        return { workspace: workspaceSummary(result.snapshot), node };
       });
-      const result = mutateWorkspaceGraph(store, workspaceId, { addNodes: [node] });
-      if (!result.ok) return errorBody2(result.error, result.message);
-      return { workspace: workspaceSummary(result.snapshot), node };
     }
   };
 }
@@ -32335,60 +32398,32 @@ function createWorkflowNodeUpdateTool(deps) {
     output: jsonOut2,
     async execute(args) {
       const workspaceId = readString4(args, "workspace_id");
-      const nodeId = readString4(args, "node_id");
       if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
+      const nodeId = readString4(args, "node_id");
       if (!nodeId) return errorBody2("invalid-args", "node_id is required");
       const patch = args.patch;
       if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
         return errorBody2("invalid-args", "patch object is required");
       }
-      const spec = patch;
-      let snapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
-      const node = snapshot.nodes.find((row) => row.id === nodeId);
-      if (!node) return errorBody2("node-not-found", `node ${nodeId} not found in workspace ${workspaceId}`);
-      const materialType = node.data.materialType;
-      const data = {};
-      if (spec.label !== void 0) data.label = spec.label;
-      if (spec.prompt !== void 0) data.prompt = spec.prompt;
-      if (spec.params !== void 0) {
-        if (!spec.params || typeof spec.params !== "object" || Array.isArray(spec.params)) {
-          return errorBody2("invalid-args", "patch.params must be an object");
-        }
-        data.params = spec.params;
-      }
-      if (spec.tool !== void 0) {
-        if (!materialType) return errorBody2("invalid-args", `node ${nodeId} has no material_type; cannot set tool`);
-        const toolResolved = resolveTool(materialType, spec.tool);
-        if ("error" in toolResolved) return toolResolved;
-        data.selectedTool = toolResolved.tool;
-      }
-      const position = spec.position;
-      if (position !== void 0) {
-        if (!position || typeof position !== "object" || Array.isArray(position) || typeof position.x !== "number" || typeof position.y !== "number") {
-          return errorBody2("invalid-args", "patch.position must be {x: number, y: number}");
-        }
-      }
-      if (Object.keys(data).length === 0 && position === void 0) {
-        return errorBody2("invalid-args", "patch must contain at least one of label / prompt / tool / params / position");
-      }
-      const mutation = {
-        nodePatches: [{
-          nodeId,
-          data,
-          ...position !== void 0 ? { node: { position } } : {}
-        }]
-      };
-      const result = mutateWorkspaceGraph(store, workspaceId, mutation);
-      if (!result.ok) return errorBody2(result.error, result.message);
-      return {
-        workspace: workspaceSummary(result.snapshot),
-        node: result.snapshot.nodes.find((row) => row.id === nodeId)
-      };
+      return withWorkspace(store, workspaceId, (snapshot) => {
+        const node = snapshot.nodes.find((row) => row.id === nodeId);
+        if (!node) return errorBody2("node-not-found", `node ${nodeId} not found in workspace ${workspaceId}`);
+        const parsed = parseNodePatch(nodeId, node, patch);
+        if ("error" in parsed) return parsed;
+        const mutation = {
+          nodePatches: [{
+            nodeId,
+            data: parsed.data,
+            ...parsed.position !== void 0 ? { node: { position: parsed.position } } : {}
+          }]
+        };
+        const result = mutateWorkspaceGraph(store, workspaceId, mutation);
+        if (!result.ok) return errorBody2(result.error, result.message);
+        return {
+          workspace: workspaceSummary(result.snapshot),
+          node: result.snapshot.nodes.find((row) => row.id === nodeId)
+        };
+      });
     }
   };
 }
@@ -32407,24 +32442,20 @@ function createWorkflowNodeRemoveTool(deps) {
       if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
       const nodeIds = normalizeNodeIds(args.node_ids);
       if (nodeIds.length === 0) return errorBody2("invalid-args", "node_ids must be a non-empty array");
-      let snapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
-      const existing = new Set(snapshot.nodes.map((node) => node.id));
-      const toRemove = nodeIds.filter((id2) => existing.has(id2));
-      if (toRemove.length === 0) {
-        return errorBody2("node-not-found", `none of ${nodeIds.join(", ")} exists in workspace ${workspaceId}`);
-      }
-      const result = mutateWorkspaceGraph(store, workspaceId, { removeNodeIds: toRemove });
-      if (!result.ok) return errorBody2(result.error, result.message);
-      return {
-        workspace: workspaceSummary(result.snapshot),
-        removedNodes: toRemove.length,
-        removedEdges: snapshot.edges.length - result.snapshot.edges.length
-      };
+      return withWorkspace(store, workspaceId, (snapshot) => {
+        const existing = new Set(snapshot.nodes.map((node) => node.id));
+        const toRemove = nodeIds.filter((id2) => existing.has(id2));
+        if (toRemove.length === 0) {
+          return errorBody2("node-not-found", `none of ${nodeIds.join(", ")} exists in workspace ${workspaceId}`);
+        }
+        const result = mutateWorkspaceGraph(store, workspaceId, { removeNodeIds: toRemove });
+        if (!result.ok) return errorBody2(result.error, result.message);
+        return {
+          workspace: workspaceSummary(result.snapshot),
+          removedNodes: toRemove.length,
+          removedEdges: snapshot.edges.length - result.snapshot.edges.length
+        };
+      });
     }
   };
 }
@@ -32448,24 +32479,21 @@ function createWorkflowConnectTool(deps) {
       if (!workspaceId || !source || !target) {
         return errorBody2("invalid-args", "workspace_id, source and target are required");
       }
-      try {
-        store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
-      const result = mutateWorkspaceGraph(store, workspaceId, {
-        addEdges: [{
-          source,
-          target,
-          sourceHandle: readString4(args, "source_handle"),
-          targetHandle: readString4(args, "target_handle")
-        }]
+      return withWorkspace(store, workspaceId, (_snapshot) => {
+        const result = mutateWorkspaceGraph(store, workspaceId, {
+          addEdges: [{
+            source,
+            target,
+            sourceHandle: readString4(args, "source_handle"),
+            targetHandle: readString4(args, "target_handle")
+          }]
+        });
+        if (!result.ok) return errorBody2(result.error, result.message);
+        const edge = result.snapshot.edges.find(
+          (row) => row.source === source && row.target === target
+        );
+        return { workspace: workspaceSummary(result.snapshot), edge };
       });
-      if (!result.ok) return errorBody2(result.error, result.message);
-      const edge = result.snapshot.edges.find(
-        (row) => row.source === source && row.target === target
-      );
-      return { workspace: workspaceSummary(result.snapshot), edge };
     }
   };
 }
@@ -32490,26 +32518,22 @@ function createWorkflowDisconnectTool(deps) {
       if (edgeIds.length === 0 && !(source && target)) {
         return errorBody2("invalid-args", "pass edge_ids or source+target");
       }
-      let snapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
-      const resolved = new Set(edgeIds);
-      if (source && target) {
-        for (const edge of snapshot.edges) {
-          if (edge.source === source && edge.target === target) resolved.add(edge.id);
+      return withWorkspace(store, workspaceId, (snapshot) => {
+        const resolved = new Set(edgeIds);
+        if (source && target) {
+          for (const edge of snapshot.edges) {
+            if (edge.source === source && edge.target === target) resolved.add(edge.id);
+          }
         }
-      }
-      const existing = new Set(snapshot.edges.map((edge) => edge.id));
-      const toRemove = [...resolved].filter((id2) => existing.has(id2));
-      if (toRemove.length === 0) {
-        return errorBody2("edge-not-found", "no matching edges in this workspace");
-      }
-      const result = mutateWorkspaceGraph(store, workspaceId, { removeEdgeIds: toRemove });
-      if (!result.ok) return errorBody2(result.error, result.message);
-      return { workspace: workspaceSummary(result.snapshot), removedEdges: toRemove.length };
+        const existing = new Set(snapshot.edges.map((edge) => edge.id));
+        const toRemove = [...resolved].filter((id2) => existing.has(id2));
+        if (toRemove.length === 0) {
+          return errorBody2("edge-not-found", "no matching edges in this workspace");
+        }
+        const result = mutateWorkspaceGraph(store, workspaceId, { removeEdgeIds: toRemove });
+        if (!result.ok) return errorBody2(result.error, result.message);
+        return { workspace: workspaceSummary(result.snapshot), removedEdges: toRemove.length };
+      });
     }
   };
 }
@@ -32534,8 +32558,8 @@ function createWorkflowExecutionControlTool(deps) {
     output: jsonOut2,
     async execute(args) {
       const executionId = readString4(args, "execution_id");
-      const action = readString4(args, "action");
       if (!executionId) return errorBody2("invalid-args", "execution_id is required");
+      const action = readString4(args, "action");
       if (action !== "pause" && action !== "resume" && action !== "cancel") {
         return errorBody2("invalid-args", "action must be pause | resume | cancel");
       }

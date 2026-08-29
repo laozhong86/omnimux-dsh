@@ -13,6 +13,7 @@ const zh = {
   'node.type.audio': '音频',
   'node.type.table': '表格',
   'node.type.video_composition': '视频合成',
+  'node.type.import_asset': '导入素材',
   // 节点头
   'node.renameHint': '双击重命名',
   // GenerationStateContainer
@@ -25,15 +26,16 @@ const zh = {
   'node.offlineHint': '源文件不存在或已被移动，可重新链接。',
   'node.relink': '重新链接',
   'node.relinkOk': '已重新链接源文件',
+  'node.replace': '替换',
   // 媒体空态
   'node.emptyMedia': '未配置素材输入。选中节点在属性面板中配置参数。',
   'node.tryMiniMaxH3': '探索推荐生成模型',
   'node.h3Guide': '模型最佳实践指南',
   // 顶部胶囊操作栏（pill.*）
-  'pill.import': '导入',
-  'pill.importImage': '导入图片',
-  'pill.importVideo': '导入视频',
-  'pill.importAudio': '导入音频',
+  'pill.import': '导入素材',
+  'pill.importImage': '导入素材',
+  'pill.importVideo': '导入素材',
+  'pill.importAudio': '导入素材',
   'pill.textEdit': '文本编辑',
   'pill.copy': '复制',
   'pill.structureSplit': '结构化拆分',
@@ -51,7 +53,7 @@ const zh = {
   'panel.aspectAdaptive': '自适应',
   'panel.batchCount': '× 1',
   'panel.getFreeChance': '领取免费机会',
-  'panel.dropToImport': '松手立即导入',
+  'panel.dropToImport': '支持图片 / 视频 / 音频，拖拽或点击导入素材',
   'panel.duration': '时长（秒）',
   'panel.failAbort': '出错即中止',
   'panel.failSkip': '跳过该节点',
@@ -59,7 +61,7 @@ const zh = {
   'panel.modelEmpty': '能力目录为空（stub）',
   'panel.runHint': '执行此节点（含上游）',
   'panel.hintTextNode': '文本编辑节点直接在卡片内编辑内容；上游输入可通过文生类工具引用',
-  'panel.hintImportNode': '导入素材节点由上游连线输入填充',
+  'panel.hintImportNode': '导入素材节点仅支持替换本地文件，不支持生成',
   // 错误消息映射（Gxgen canvasEditor.errors.*）
   'error.contentPolicyViolation': '内容安全审核未通过，请调整提示词或参考图后重试。',
   'error.generationProviderFailed': '生成服务失败，请稍后重试。',
@@ -77,6 +79,8 @@ const zh = {
   'node.textPlaceholder': '输入文本内容…',
   'node.skipped': '节点被跳过',
   // 工具栏 / 底部 Dock（toolbar.*）
+  'toolbar.add.import_asset': '导入素材',
+  'toolbar.add.import_assetDesc': '导入本地图片、视频或音频文件',
   'toolbar.add.text': '添加文本节点',
   'toolbar.add.image': '添加图片节点',
   'toolbar.add.video': '添加视频节点',
@@ -253,6 +257,7 @@ const zh = {
   'picker.commitPartial': '部分资源未能添加（已连接或类型不匹配）',
   'picker.commitEmpty': '没有可添加的资源',
   'picker.commitFailed': '添加资源失败',
+  'picker.importOk': '已导入素材',
   'picker.needPath': '请使用系统选择器导入，当前环境拿不到本地路径。',
   'picker.pickFailed': '打开系统文件选择器失败。',
 } as const;

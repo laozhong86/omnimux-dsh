@@ -94,7 +94,7 @@ function VideoPlayer({ mediaUrl, path, title }) {
         maxWidth: "100%",
         maxHeight: "100%",
         borderRadius: "var(--dsw-alias-radius-md, 8px)",
-        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.4)",
+        boxShadow: "0 4px 20px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.4))",
         backgroundColor: "#000",
         outline: "none"
       }

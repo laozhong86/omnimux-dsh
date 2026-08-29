@@ -50,7 +50,7 @@ export const canvasSettingsSchema = z.object({
 });
 
 export const workspaceSnapshotSchema = z.object({
-  schemaVersion: z.literal(SNAPSHOT_SCHEMA_VERSION),
+  schemaVersion: z.union([z.literal(2), z.literal(SNAPSHOT_SCHEMA_VERSION)]),
   id: z.string().min(1),
   name: z.string().min(1).max(200),
   version: z.number().int().min(0),

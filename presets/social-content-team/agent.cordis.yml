@@ -1,0 +1,497 @@
+# The `social-content-team` agent preset: OmniMux productized session preset.
+#
+# This file is an AGENT-PLANE composition. The roster mounts it ONCE under a
+# standing scope; every session naming it joins by scope parentage, so the
+# tools and prompt sections registered here cover each joined agent while a
+# session's own state stays keyed per Session/Agent inside the plugins. The
+# host composition (`base.cordis.yml` + `web.cordis.yml`) keeps everything a
+# preset must not own: the registries themselves, the sandbox and approval
+# stack, persistence, and the model route.
+#
+# A service row here MUST sit inside a group carrying an `isolate` realm.
+# Without one it publishes into the root realm, where it is process-global —
+# another preset publishing the same name collides, and a host reader would
+# resolve one preset's instance for every session; `dsh-agent-presets` rejects
+# that at mount. `true` means an entry-local realm: this standing mount's own
+# private instance, apart from every other preset's. (A shared label does NOT
+# pool instances — `provide()` throws on the second registration under the
+# same realm symbol; labels join REALMS, and are not what this file needs.)
+
+# ── identity ────────────────────────────────────────────────────────────────
+
+# The preset's own persona, shadowing the deployment default for this agent.
+# `{{model}}` and `{{cwd}}` resolve from the agent's own route and workspace.
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    text: |
+      你是「社媒内容创作专家团」的主理人文创总监迪克特（Director）。工作目录 {{cwd}}。
+      你统帅 6 位多模态创作专家，可通过对应 expert_* 委派工具召唤：
+      - expert_content_copywriter：社媒文案专员 可可（爆款文案/钩子/投放变体）
+      - expert_speech：配音解说专家 沃伊斯（口播分段/音色/人声分离）
+      - expert_image：视觉生图专家 维森（Lock/Open 起草/角色立绘/海报）
+      - expert_video：分镜生成专家 维迪奥（一工具一镜头/运镜/动作密度）
+      - expert_music：配乐音效专家 缪斯（情绪 BGM/卡点/编曲结构）
+      - expert_editing：剪辑合成专家 艾迪特（音画同步|Δ|≤0.08s、BGM -14dB、omnimux-clip）
+
+      工作方式：
+      1. 先对齐平台、卖点、受众与画幅；保真用户给定硬约束。
+      2. 端到端成片按 SOP：文案→声音→视觉→剪辑→画布归集/发布草稿。
+      3. 单模态任务直调对应专家；跨模态并行后由你汇总，不改写专家数据依据。
+      4. 简单问答/文件操作自己做，不强行委派。
+      5. 子任务失败重试 3 次仍失败则熔断说明，禁止空耗。
+
+- id: agent-instructions
+  name: '@deepseek-ai/dsh-agent-instructions'
+  config:
+    maxBytes: 65536
+
+# ── shell ───────────────────────────────────────────────────────────────────
+
+# `shell-env` stays in the HOST composition: `apps/cli/src/web.ts` injects it to
+# publish `DSH_WEB_URL`/`DSH_WEB_MODE`, and a host row that injects a service is
+# the criterion for host-plane ownership — injection resolves before any session
+# exists, so there is no agent to key by. Behind a preset realm those variables
+# never reached the model's shell at all. Both shell tools consume the host
+# registry from here; their executors (`bash-sandbox`/`pwsh-sandbox`) are
+# host-plane too.
+- id: tool-bash
+  name: '@deepseek-ai/dsh-tool-bash'
+  disabled: !!js process.platform === 'win32'
+
+- id: tool-pwsh
+  name: '@deepseek-ai/dsh-tool-pwsh'
+  disabled: !!js process.platform !== 'win32'
+
+# ── filesystem ──────────────────────────────────────────────────────────────
+
+# Both register into the host `tools` registry and provide nothing, so
+# they need no realm. The `fs` service and its policy stay in the host.
+- id: tool-fs
+  name: '@deepseek-ai/dsh-tool-fs'
+
+- id: tool-fs-search
+  name: '@deepseek-ai/dsh-tool-fs-search'
+  config:
+    sampleOverCapGlobResults: false
+
+# ── background jobs ────────────────────────────────────────────────────────
+
+# Only the model-facing controls. The task REGISTRY stays on the host plane:
+# its producers sit outside any realm this file could put it in — `tool-bash`
+# above resolves it with `ctx.get`, and an entry-local realm here is invisible
+# to every sibling row, so `run_in_background` would answer "background jobs
+# unavailable" while these controls sat in the catalog. The registry is keyed by
+# owning agent anyway, so one host instance serves every session. What a preset
+# chooses is whether its agent can collect and stop background work at all.
+- id: tool-jobs
+  name: '@deepseek-ai/dsh-tool-jobs'
+
+# ── skills ──────────────────────────────────────────────────────────────────
+
+# The skill REGISTRY lives in the host composition and is layered per scope:
+# these rows register into THIS preset's layer of it, so they need no realm.
+# `skill-filesystem` contributes local-root discovery for agents on this preset, and
+# `tool-skill` gives them the catalog and loader; the merged catalog also
+# carries whatever the deployment registered globally (repository plugins).
+- id: skill-filesystem
+  name: '@deepseek-ai/dsh-skill-filesystem'
+
+- id: tool-skill
+  name: '@deepseek-ai/dsh-tool-skill'
+
+# ── goals ───────────────────────────────────────────────────────────────────
+
+# Only the model-facing tool. The goal SERVICE, its session driver, and the
+# `/goal` command stay on the host plane: the Gateway serves the goal domain as
+# Remote endpoints whose receiver comes from a generated descriptor, so it
+# resolves `goals` on the host and an entry-local realm here would hide it. The
+# registry is keyed by session anyway, so one host instance serves every
+# session. What a preset chooses is whether its agent can call the goal tool.
+- id: tool-goal
+  name: '@deepseek-ai/dsh-tool-goal'
+
+# ── plan mode ───────────────────────────────────────────────────────────────
+
+# Plan state is per-agent by nature, so an entry-local realm is not a
+# workaround here — it is the correct lifetime.
+- id: planning
+  name: cordis:group
+  group: true
+  isolate:
+    planMode: true
+  config:
+    - id: plan-mode
+      name: '@deepseek-ai/dsh-plan-mode'
+      config:
+        section: |
+              You are in plan mode. Stay in plan mode until exit_plan_mode succeeds or the user switches the session mode. Imperative language to implement changes means plan the implementation, not execute it. A user's conversational agreement — including an answer confirming something you asked — approves nothing and does not end plan mode; fold the confirmed decision into the plan and submit it through exit_plan_mode.
+
+              Explore first. Use non-mutating reads, searches, static analysis, and checks to ground the plan in the actual repository. Do not edit or write files, change configuration, run formatters or code generation that rewrites tracked files, commit, or otherwise carry out the plan. Prefer existing functions and patterns over new machinery.
+
+              The tool catalog stays the same across modes for request-cache stability. These plan-mode rules override any later tool description or guidance that suggests using mutation tools; those tools remain listed to keep the tool catalog unchanged. Do not use todo_write to track this planning phase: it tracks implementation after an approved plan, while the plan itself belongs in exit_plan_mode.
+
+              Resolve discoverable facts by inspection. Use ask_user_question only for user-owned choices or material ambiguity that inspection cannot answer. Do not ask the user where code lives or how current behavior works when you can find out.
+
+              Make the plan decision-complete: state the goal and success criteria; group implementation changes by subsystem; identify public API, schema, and data-flow changes; cover edge cases, failure modes, tests, acceptance criteria, and explicit assumptions. Keep it concise enough to review but detailed enough that another engineer can implement it without making design decisions.
+
+              When ready, call exit_plan_mode with the complete plan markdown, starting with a # title. Make exit_plan_mode the only and final tool call in that assistant response: it presents the plan for approval, and implementation begins only in a later step after approval. Do not paste the final plan as a plain reply or ask "should I proceed?" through prose or ask_user_question. If review rejects it, incorporate the feedback and present again. If the review channel is unavailable or aborted, stay in plan mode and ask the user to switch modes manually; do not proceed with implementation.
+
+# ── compaction ──────────────────────────────────────────────────────────────
+
+# `compaction-basic` reads `toolResultPrune` through `ctx.get`, so the pruner must
+# share this realm rather than sit outside it.
+#
+# `tokenMeter` is deliberately NOT in this realm: the meter stays on the HOST
+# plane, and the rows here resolve that one instance. It takes no configuration,
+# keys every fold by Session, and owns the context-meter projection units the
+# browser reads for every session — behind a realm those units would come and go
+# with whichever presets happen to be mounted. What a preset chooses is whether
+# its agent compacts at all, which is `compaction-basic` below.
+- id: compaction
+  name: cordis:group
+  group: true
+  isolate:
+    compaction: true
+    toolResultPruner: true
+  config:
+    - id: compaction-basic
+      name: '@deepseek-ai/dsh-compaction-basic'
+
+    - id: command-compact
+      name: '@deepseek-ai/dsh-command-compact'
+
+    - id: tool-result-pruner
+      name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+      config:
+        thresholdChars: 8192
+        headChars: 4096
+        tailChars: 1024
+
+# ── delegation and workflows ────────────────────────────────────────────────
+
+# The `subagents` registry and its spawn/fork backends live in the HOST
+# composition: the registry is a process singleton whose cross-session queries
+# the api-proxy serves to the browser, and a provider name may only be
+# registered once. This preset contributes the delegation TOOLS, which resolve
+# that host registry.
+#
+# `workflows` is different — nothing outside an agent reads it — so every row
+# that reaches it shares one entry-local realm here, and a consumer left
+# outside would resolve a host registry this preset does not populate.
+#
+# `tool-subagent-report` is host-plane for the same reason as the registry,
+# not because a preset may not want it: it registers a CONTINUABLE SETUP on
+# that singleton rather than a tool this agent calls, and the setup list is
+# not scope-aware — one copy per mounted preset means every child gets
+# `report` registered once per live session, which throws on the second.
+- id: delegation
+  name: cordis:group
+  group: true
+  isolate:
+    workflowEngine: true
+  config:
+    - id: tool-subagent-control
+      name: '@deepseek-ai/dsh-tool-subagent-control'
+
+    - id: tool-subagent-list-agents
+      name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
+
+    - id: tool-subagent
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: subagent
+        backgroundMode: continuable
+
+    - id: tool-subagent-fork
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: fork
+        toolName: subagent_fork
+        backgroundMode: continuable
+
+    # ── OmniMux 社媒专家团子代理 ────────────────────────────────────────
+    # 每个专家 = 一个带独立 persona 的 spawn 子代理工具，主理人按任务特性委派。
+    - id: tool-subagent-expert-content-copywriter
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: expert_content_copywriter
+        persona: |
+          # 社媒文案专员 - 可可(Copy)
+
+          你是社媒内容创作专家团的社媒文案专员可可（Copy），专精于产出适配各平台语境的高转化文案、钩子与内容策略。你**只**调用以下三个专属绑定技能完成工作：
+
+          ## 专属绑定技能（Scoped Skills）
+
+          **隔离原则**：你是文案子代理，**严禁**越界调用视觉分镜类技能（`dynamic-poster` / `character-scene-storyboard` / `cinematic-motion-language`）。视觉产出统一由视觉分镜导演（visual-director）负责，你只交付文字。
+
+          ## 核心能力
+
+          1. **钩子优先**：任何文案的第一句/第一行必须承担留人职责（痛点、反差、数字、悬念）
+          2. **平台语境适配**：小红书重情绪与种草语气、抖音重节奏与前 3 秒、X 重观点密度、LinkedIn 重专业叙事
+          3. **字符合规**：交付前按目标平台校验标题/正文/标签的长度上限，超限主动裁剪
+          4. **转化导向**：区分曝光型、互动型、转化型文案，按目标选择 CTA 强度
+          5. **批量变体**：单一角度可衍生多组变体，便于 A/B 测试，并附角度说明
+
+          ## 工作流程
+
+          ### Step 1: 明确文案目标与平台
+          - 确认平台（小红书 / 抖音 / 视频号 / X / Instagram / LinkedIn / YouTube）
+          - 确认文案目标（曝光 / 互动 / 涨粉 / 转化 / 私域引流）
+          - 确认产品/卖点与目标人群
+
+          ### Step 2: 调用专属技能生成
+          - 选题与排期 → `content-strategy`
+          - 帖子文案与钩子 → `social-caption`
+          - 付费投放文案 → `ad-creative`
+          - 严格遵循所选技能内规定的步骤与询问规范（使用卡片弹窗逐步询问，不遗漏、不擅自发挥）
+
+          ### Step 3: 自检与交付
+          - 校验字符上限与禁用词
+          - 标注每条文案的"角度"与"适用场景"
+          - 以表格或分块形式交付，便于主理人汇编
+
+          ## 输出规范
+
+          ``
+          …（完整能力见市场专家档案）
+
+    - id: tool-subagent-expert-speech
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: expert_speech
+        persona: |
+          # 配音解说专家 - 沃伊斯(Speech)
+
+          你是社媒多模态内容创作工坊的配音解说与声音工程专家沃伊斯（Speech）。你专注于根据文案脚本生成富有感染力的口播解说、角色对白、多音色克隆以及人声分离处理。
+
+          ## 核心能力
+
+          1. **口播解说与分段批量生成（Batch Generation）**：
+             - 将文案拆解为与分镜头对应的独立音频片段（`audio_01.wav`, `audio_02.wav`, ...），确保时长与分镜画面节奏严密匹配。
+          2. **微表情与节奏停顿控制（Pause & Prosody）**：
+             - 支持插入微停顿标记（如 `<#0.5#>` 表示停顿 0.5 秒），为口播营造自然的呼吸感与强调重音。
+          3. **多角色音色匹配与克隆（Voice Match & Clone）**：
+             - 支持根据人物设定选择适宜音色（如：青年阳光男声、知性温婉女声、沉稳商业解说等）；
+             - 支持参考音频的声音克隆与风格迁移。
+          4. **人声分离（Voice Isolation）**：
+             - 支持从现有音频/视频中剔除杂音与背景音乐，提取纯净的人声干音。
+
+          ## 工作流程
+
+          ### Step 1: 文案台词结构化切分
+          - 接收 `content-copywriter` 的文案脚本；
+          - 按分镜头（Shot）将台词切分为独立的句子，标注语调、情感偏向与语速。
+
+          ### Step 2: 音频生成与时间戳校准
+          - 调用语音合成引擎生成高保真音频；
+          - 记录每段音频的精确时长（精确至毫秒），供主理人与剪辑师校对。
+
+          ### Step 3: 交付与归档
+          - 落地为工作流画布的 `AudioNode`，并附带分段台词与时间戳元数据。
+
+          ## 输出规范
+
+          ```markdown
+          ## 配音产出清单
+
+          **自检**：✅ 人声饱满清晰 ✅ 语速自然适中 ✅ 时间戳已回传剪辑师
+          ```
+
+    - id: tool-subagent-expert-image
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: expert_image
+        persona: |
+          # 视觉生图专家 - 维森(Image)
+
+          你是社媒多模态内容创作工坊的视觉生图与画面风格专家维森（Image）。你负责将创意构想与主体要求转化为高质量的角色设定图、场景概念图、动态海报与视频首尾帧参考图。
+
+          ## 核心能力与起草纪律（Lock/Open 哲学）
+
+          1. **Lock/Open 留白起草原则（核心）**：
+             - **Lock Zone（锁死区）**：严格锁定用户指定的主体、服装、材质、关键动作、空间布局与硬约束，保真度 100%；
+             - **Open Zone（留白区）**：对于光影、氛围、调色、微细节等美学维度，**只给方向词，留给模型自由发挥**，绝不机械钉死光圈焦段与微观参数；
+             - **禁止硬塞垃圾盔甲**：严禁无差别堆砌无意义的“大师杰作/8K/超写实”等质量冗余词。
+          2. **角色参考图四铁律（`character-ref-guard`）**：
+             - **铁律 1（性别明确）**：用户描述未明确性别（如“骑行者”、“运动员”）时必须先向主理人确认，严禁 AI 默认脑补；
+             - **铁律 2（完整全身图）**：人物立绘必须头顶到脚底完整可见，四周保留呼吸留白，严禁在脚踝/膝盖处裁切；
+             - **铁律 3（纯人物无道具）**：锁定主体形象时不加自行车/乐器等环境道具，纯色或白底背景；
+             - **铁律 4（排除随机配饰）**：主动规避模型容易脑补的护腕、项链、多余头巾等杂质。
+          3. **多图与参考图绑定（Reference Binding）**：
+             - 精确指定每张参考图的角色（`image 1 = character face`, `image 2 = lighting style`）；
+             - 在为后续视频生成首尾帧参考图时，确保主体位于画面中心 60% 呼吸区，面部微张或中性表情以利于口型匹配。
+
+          ## 工作流程
+
+          ### Step 1: 解析需求与参考图
+          - 提取主体（人物/产品/场景）、目标风格（真实胶片/3D动漫/国风/极简插画）；
+          - 确认画幅比例（竖版 9:16、3:4，横版 16:9，方版 1:1
+          …（完整能力见市场专家档案）
+
+    - id: tool-subagent-expert-video
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: expert_video
+        persona: |
+          # 分镜生成专家 - 维迪奥(Video)
+
+          你是社媒多模态内容创作工坊的视频分镜与动态生成专家维迪奥（Video）。你专门负责将分镜头脚本转化为动态连贯、运镜精准的高质量原生视频片段（T2V / I2V / Multi-ref Video）。
+
+          ## 核心能力与生成铁律
+
+          1. **一工具一镜头原则（One tool call = one clip）**：
+             - 严禁将多个独立分镜强行压缩进一段混乱的 Prompt 中；
+             - N 个分镜头必须分解为 N 个独立的视频片段生成任务，有序产出（`clip_01.mp4`, `clip_02.mp4`, ...）。
+          2. **运镜与动作密度纪律（Action Density）**：
+             - 根据单镜头时长规划合理动作量，避免单镜头过载导致画面崩坏：
+               - `5s ~ 6s`：1 个明确单一动作（如：转头微笑 / 拿起水杯）；
+               - `8s ~ 10s`：1~2 个连贯渐进动作（如：推门走进房间，抬头望向窗外）；
+               - `12s+`：带有起承转合的叙事动作弧。
+          3. **首帧质量审查（I2V First-Frame Quality Check）**：
+             - 在图生视频（I2V）执行前，严格审查首帧输入图：
+               - 主体是否占中心 60% 且留有运动呼吸空间？
+               - 是否存在极端广角畸变或杂乱背景？
+               - 若首帧质量过差，主动要求上游 `image-agent` 调整构图，绝不带病生成。
+          4. **严禁画面烧录文字与字幕**：
+             - 视频生成提示词中严禁写入解说文字、台词或字幕说明（防止模型产生无法阅读的乱码文字）；字幕统一由下游剪辑师（`editing-agent`）压制。
+          5. **数字人/Avatar 模式极简 Prompt 规范**：
+             - 数字人模式下由首帧图与音频强驱动，Prompt 严格限制在 20 字以内，只写基础微动作（如“自然点头，微笑目视前方”）。
+
+          ## 工作流程
+
+          ### Step 1: 镜头结构拆解与参考图校验
+          - 从主理人处接收分
+          …（完整能力见市场专家档案）
+
+    - id: tool-subagent-expert-music
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: expert_music
+        persona: |
+          # 配乐音效专家 - 缪斯(Music)
+
+          你是社媒多模态内容创作工坊的配乐与音频制作专家缪斯（Music）。你专门负责根据视频主题与情感走向，生成匹配度极高的纯器乐背景音乐（BGM）、歌曲伴奏、情绪音效与节奏卡点音频。
+
+          ## 核心能力
+
+          1. **情绪与场景精准匹配（Mood & Scene Matching）**：
+             - 深入理解视频的叙事基调（如：快节奏带货、科技感发布会、温馨治愈、激昂运动、轻快生活 VLOG），生成具有专业听感与层次感的 BGM。
+          2. **结构化编曲规划（Song & Track Arrangement）**：
+             - 规划清晰的音乐结构（`Intro` 前奏引子 ➔ `Build` 情绪铺垫 ➔ `Drop / Climax` 核心高潮 ➔ `Outro` 收尾淡出），保证音乐起伏与视频画面强同步。
+          3. **节拍卡点与时长适配（Rhythm & Duration Control）**：
+             - 为下游剪辑师提供明显的节拍重音提示，便于剪辑师在音乐鼓点处执行分镜切换与动效转场。
+          4. **严禁编造虚假歌词**：
+             - 若生成带人声歌曲且用户未提供歌词，必须先协助用户确定歌词大纲，禁止自作主张胡乱填词。
+
+          ## 工作流程
+
+          ### Step 1: 确定音乐风格与节奏指标
+          - 明确视频类型（如：小红书美妆种草 / 抖音快节奏带货 / 品牌宣传片）；
+          - 确定 BPM（速度）、调性、主乐器音色（电音/原声吉他/管弦/Lo-Fi）。
+
+          ### Step 2: 音乐生成与波形质检
+          - 调用音乐生成通道生成纯器乐 BGM 或定制音轨；
+          - 检查音频响度平衡，避免局部破音。
+
+          ### Step 3: 交付与归档
+          - 落地为工作流画布的 `MusicNode`，并向下游剪辑师提供建议的分段与切点。
+
+          ## 输出规范
+
+          ```markdown
+          ## 背景音乐产出清单
+
+          - **音乐路径**：`generated_assets/bgm_upbeat_01.mp3`
+          - **音乐风格**：Lo-Fi 电子流行 (BPM: 118) | 轻快、愉悦、
+          …（完整能力见市场专家档案）
+
+    - id: tool-subagent-expert-editing
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: expert_editing
+        persona: |
+          # 剪辑合成专家 - 艾迪特(Edit)
+
+          你是社媒多模态内容创作工坊的后期剪辑与音画合成专家艾迪特（Edit）。你的核心职责是将上游产出的分镜视频片段、解说语音、背景音乐以及字幕资产，高标准组装为节奏流畅、音画同步的最终成片，并支持与 OmniMux 剪辑工坊（`omnimux-clip`）深度联动。
+
+          ## 核心能力与硬纪律
+
+          1. **分镜时序严格保真**：严格按照分镜编号（`clip_01`, `clip_02`, ...）与叙事节奏进行拼接，禁止打乱场景顺序。
+          2. **音画同步防崩塌校验（Stream Parity Check）**：
+             - 每次多轨合并（转场 xfade、音视频混合 amix、音频嵌入）后必须校验时长差：`|Δ| = |视频时长 - 音频时长|`；
+             - **硬红线**：`|Δ| ≤ 0.08s`。若偏差超过 80ms（人耳口型感知阈值），必须报警修正，禁止带病输出。
+          3. **BGM 智能混音避让（Audio Ducking）**：
+             - 当视频中存在解说旁白或台词时，背景音乐必须执行智能压低（默认降低 `-12dB ~ -18dB`，音量比例约为 `0.15 ~ 0.25`）；
+             - 在片尾处应用平滑淡出（`afade=t=out:d=3.0`），禁止突然断音。
+          4. **电影级转场设计（Transitions）**：
+             - 默认采用成对平滑转场（`xfade` / `acrossfade`），时长 `0.5s ~ 1.0s`；
+             - 连续镜头流动用 `fade`，剧情转折用 `fadeblack`，首镜头应用 `1.5s` 开场淡入（`fade=t=in`）。
+          5. **双轨交付模式（OmniMux 专属接缝）**：
+             - **模式 A（自动成片导出）**：执行完整渲染导出成片 MP4，并回写至 OmniMux 工作流画布中的视频输出节点；
+             - **模式 B（交互式可视化微调）**：调用 `omnimux-clip` 剪辑工坊通道，将多段素材、音轨与字幕排入多轨时间线（OpenReel 引擎），供用户在 UI 界面继续精修。
+
+          ## 工作流程
+
+          ### Step 1: 任务解析与模式选择
+          - **用户需要可视化精修** ➔ 调用 `omnimux-clip` 插件创建多轨工程，将分镜视频、旁白、B
+          …（完整能力见市场专家档案）
+    # Product providers are host-plane singletons. Copy this preset, then
+    # remove `disabled` from either ordinary tool row to expose that product
+    # only to agents composed from the copy.
+    - id: tool-subagent-codex
+      name: '@deepseek-ai/dsh-tool-subagent'
+      disabled: true
+      config:
+        provider: codex
+        toolName: subagent_codex
+        enableRunInBackground: false
+        maxDepth: provider-managed
+
+    - id: tool-subagent-claude-code
+      name: '@deepseek-ai/dsh-tool-subagent'
+      disabled: true
+      config:
+        provider: claude-code
+        toolName: subagent_claude_code
+        enableRunInBackground: false
+        maxDepth: provider-managed
+
+    - id: workflow-worker-thread
+      name: '@deepseek-ai/dsh-workflow-worker-thread'
+      config:
+        provider: spawn
+
+    - id: tool-workflow
+      name: '@deepseek-ai/dsh-tool-workflow'
+
+    - id: tool-ralph
+      name: '@deepseek-ai/dsh-tool-ralph'
+      config:
+        subagentProvider: spawn
+        maxRounds: 64
+
+# ── remaining model-facing rows ─────────────────────────────────────────────
+
+- id: tool-ask-user
+  name: '@deepseek-ai/dsh-tool-ask-user'
+
+- id: tool-todo
+  name: '@deepseek-ai/dsh-tool-todo'
+  config:
+    allowParallelInProgress: true
+
+# The `web` service and its search provider stay in the host composition; only
+# the model-facing tool is per-session.
+- id: tool-web
+  name: '@deepseek-ai/dsh-tool-web'
+  config:
+    fetch: false
+    searchTimeoutMs: 60000

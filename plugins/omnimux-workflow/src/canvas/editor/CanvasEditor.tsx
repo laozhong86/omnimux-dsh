@@ -50,6 +50,9 @@ import { validateConnection, rejectReasonKey } from './utils/connectionValidator
 import { DEFAULT_CANVAS_EDGE_OPTIONS } from './utils/canvasConnectionUtils';
 import { applyFocusCanvasNode } from './utils/focusCanvasNode';
 import { createMaterialNode, appendWithSelectionReset } from './utils/nodeFactory';
+import { pickLocalFiles } from '../bridge/apiClient.ts';
+import { draftsFromPickedPaths } from './utils/localFileDraft.ts';
+import { planStandaloneImportNodes } from './utils/resourcePickerPolicy.ts';
 import { buildNodeTypes, createNode, registerNodeDefinition } from '../nodes/registry';
 import { materialNodeDefinition } from '../nodes/definitions/material';
 import { tableNodeDefinition } from '../nodes/definitions/table';
@@ -238,13 +241,48 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
 
   // 工具栏添加节点（错位网格摆放，避免节点互相遮挡 Handle —— spike 坑 #2）；
   // 右键菜单可传入显式落点。
+  // 「导入素材」：先弹系统选文件器，确认后再按文件落导入节点；取消则不建空节点。
   const handleAddNode = useCallback(
-    (type: MaterialType | 'table' | 'video_composition', position?: { x: number; y: number }) => {
+    async (type: MaterialType | 'table' | 'video_composition' | 'import_asset', position?: { x: number; y: number }) => {
       const index = nodeCreateCounter.current;
       const targetPosition = position ?? {
         x: 120 + (index % 3) * 420,
         y: 120 + Math.floor(index / 3) * 360,
       };
+
+      if (type === 'import_asset') {
+        const picked = await pickLocalFiles();
+        if (!picked.ok) {
+          if (picked.body.error === 'picker-unsupported') {
+            toast.warning(t('picker.needPath'));
+          } else {
+            toast.error(t('picker.pickFailed'));
+          }
+          return;
+        }
+        const paths = picked.body.paths ?? [];
+        if (paths.length === 0) return;
+        const drafts = draftsFromPickedPaths(paths);
+        if (drafts.length === 0) {
+          toast.warning(t('picker.unsupported'));
+          return;
+        }
+        const plan = planStandaloneImportNodes({ files: drafts, origin: targetPosition });
+        if (!plan.hasWork || !plan.addNodes?.length) return;
+        const applied = applyCanvasInputMutation({ addNodes: plan.addNodes });
+        if (applied.status !== 'allowed') {
+          toast.error(t('picker.commitFailed'));
+          return;
+        }
+        const importedIds = new Set(plan.addNodes.map((node) => node.id));
+        setNodes((current) => current.map((node) => {
+          if (importedIds.has(node.id)) return node;
+          return node.selected ? { ...node, selected: false } : node;
+        }));
+        nodeCreateCounter.current += plan.addNodes.length;
+        toast.success(t('picker.importOk'));
+        return;
+      }
 
       if (type === 'table' || type === 'video_composition') {
         const created = createNode(type, targetPosition, `node_${type}_${Date.now()}`);
@@ -259,7 +297,7 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
       nodeCreateCounter.current += 1;
       setNodes((current) => appendWithSelectionReset(current, result.nodes));
     },
-    [setNodes],
+    [setNodes, applyCanvasInputMutation, t],
   );
 
   // 删除键：级联删除（经 mutation gateway，自动清 dangling edges）

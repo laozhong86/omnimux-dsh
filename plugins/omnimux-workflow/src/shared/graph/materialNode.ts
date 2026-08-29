@@ -45,9 +45,9 @@ export const MATERIAL_TOOLS: Record<MaterialType, readonly MaterialTool[]> = {
 
 export const DEFAULT_MATERIAL_TOOL: Record<MaterialType, MaterialTool> = {
   text: 'text-editor',
-  image: 'import',
-  video: 'import',
-  audio: 'import',
+  image: 'text-to-image',
+  video: 'video-generation',
+  audio: 'text-to-audio',
 };
 
 /** 生成型工具的可用画幅选项（params.aspectRatio） */

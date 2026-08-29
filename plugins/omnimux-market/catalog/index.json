@@ -1803,15 +1803,16 @@
       "id": "exp-social-content-team",
       "tab": "experts",
       "kind": "team",
-      "title": "社媒内容创作专家团",
+      "title": "社媒多模态内容创作工坊",
       "subtitle": "",
-      "summary": "覆盖全平台的高转化爆款文案、黄金钩子、视觉分镜脚本与动态海报设计，文创总监统筹文案与分镜协同产出",
+      "summary": "端到端多模态全链路创作团队：爆款文案、口播解说配音、视觉生图、视频分镜生成、BGM卡点配乐与后期剪辑成片，深度集成剪辑工坊",
       "category": "exp-writing",
       "tags": [
+        "多模态工坊",
         "社媒文案",
-        "视觉分镜",
-        "内容创作",
-        "爆款钩子"
+        "口播配音",
+        "分镜生视频",
+        "剪辑后期"
       ],
       "avatar": "https://raw.githubusercontent.com/infometa/workbuddyskills/main/experts/social-content-team/avatars/team.png",
       "skill": "social-content-team",

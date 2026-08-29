@@ -27,6 +27,7 @@ export function createMaterialNode(
 ): CanvasNode {
   // label 留空：NodeHeader 回退 i18n 类型名（随宿主语言切换）。
   const data = createDefaultMaterialNodeData(materialType, {
+    nodeKind: 'generate',
     status: 'empty',
     nodeWidth: getDefaultNodeWidth(materialType),
     ...overrides,
@@ -34,6 +35,27 @@ export function createMaterialNode(
   return {
     // globalThis.crypto.randomUUID: isomorphic (Node 19+ and all browsers),
     // no `uuid` / `node:crypto` dep so the canvas bundle can import this too.
+    id: globalThis.crypto.randomUUID(),
+    type: 'material',
+    position,
+    data: data as unknown as Record<string, unknown>,
+  };
+}
+
+/** Create an explicit asset import node (registry-equivalent). */
+export function createImportNode(
+  materialType: MaterialType = 'image',
+  position: { x: number; y: number } = { x: 0, y: 0 },
+  overrides?: Partial<MaterialNodeData>,
+): CanvasNode {
+  const data = createDefaultMaterialNodeData(materialType, {
+    nodeKind: 'import',
+    selectedTool: 'import',
+    status: 'empty',
+    nodeWidth: getDefaultNodeWidth(materialType),
+    ...overrides,
+  });
+  return {
     id: globalThis.crypto.randomUUID(),
     type: 'material',
     position,

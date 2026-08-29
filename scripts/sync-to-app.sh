@@ -232,8 +232,11 @@ else
   echo "== 1/2 build 跳过 (--skip-build) =="
 fi
 
-echo "== 2/2 物化进生产 profile =="
+echo "== 2/3 物化进生产 profile =="
 OMNIMUX_SYNC_VIA=sync-to-app "$ROOT/scripts/sync-stable.sh" "${PLUGINS[@]}"
+
+echo "== 3/3 物化出厂 Agent Presets =="
+"$ROOT/scripts/sync-agent-presets.sh"
 
 cat <<EOF
 
@@ -241,5 +244,6 @@ cat <<EOF
   【多 Agent 并发与生效规则】
   - 前端 Client 修改：在浏览器或已打开的客户端窗口中刷新（Cmd+R）即可加载最新 bundle。
   - 后端 Host/插件扩展修改：产物已静默就绪，在应用下次自然启动或用户闲时手动重启后生效。
+  - 会话预设下拉：已同步为「标准模式 / 社媒内容创作专家团 / 社媒互动增长专家团」，需重启 Host 后生效。
   - 【安全红线】Agent 严禁强杀或重启任何桌面 App（测试验证一律在 L2 独立隔离环境内闭环）。
 EOF
