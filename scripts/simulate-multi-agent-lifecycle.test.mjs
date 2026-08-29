@@ -1,23 +1,55 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { execSync, spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import {
   decideBashCommand,
   decideWrite,
-  getUnpushedCommits,
   isDestructiveResetCommand,
 } from './guard-worktree.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const rawRoot = join(here, '..')
 const repoRoot = rawRoot.includes('-wt-') ? '/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh' : rawRoot
+const scriptPath = join(here, 'guard-worktree.mjs')
+const gitWtPath = join(here, 'git-wt.sh')
+
+function runHook(payload, cwd = repoRoot) {
+  const res = spawnSync('node', [scriptPath], {
+    cwd,
+    encoding: 'utf8',
+    input: JSON.stringify(payload),
+  })
+  assert.equal(res.status, 0, `guard exited ${res.status}: ${res.stderr}`)
+  return JSON.parse(res.stdout)
+}
+
+function makeUnpushedRepo() {
+  const root = join(tmpdir(), `omnimux-sim-${Math.random().toString(36).slice(2, 9)}`)
+  mkdirSync(root, { recursive: true })
+  const remote = join(root, 'origin.git')
+  const local = join(root, 'repo')
+  mkdirSync(local)
+  execSync(`git init --bare "${remote}" -b main`, { stdio: 'ignore' })
+  execSync(`git init -b main "${local}"`, { stdio: 'ignore' })
+  execSync(`git -C "${local}" config user.name "sim"`, { stdio: 'ignore' })
+  execSync(`git -C "${local}" config user.email "sim@test"`, { stdio: 'ignore' })
+  writeFileSync(join(local, 'seed.txt'), 'seed')
+  execSync(`git -C "${local}" add seed.txt`, { stdio: 'ignore' })
+  execSync(`git -C "${local}" commit -m "seed"`, { stdio: 'ignore' })
+  execSync(`git -C "${local}" remote add origin "${remote}"`, { stdio: 'ignore' })
+  execSync(`git -C "${local}" push -u origin main`, { stdio: 'ignore' })
+  writeFileSync(join(local, 'local-only.txt'), 'must-not-be-wiped')
+  execSync(`git -C "${local}" add local-only.txt`, { stdio: 'ignore' })
+  execSync(`git -C "${local}" commit -m "unpushed local work"`, { stdio: 'ignore' })
+  return { root, local }
+}
 
 describe('Multi-Agent Automated Lifecycle & Destructive Incident Simulation', () => {
   it('Phase 1: Agent 1 (许清楚) & Agent 2 (高见远) Worktree Isolation Enforced', () => {
-    // Attempting to edit main repo tracked plugin directly must be DENIED
     const mainWriteResult = decideWrite({
       toolName: 'edit',
       cwd: repoRoot,
@@ -26,7 +58,6 @@ describe('Multi-Agent Automated Lifecycle & Destructive Incident Simulation', ()
     assert.equal(mainWriteResult.decision, 'deny')
     assert.ok(mainWriteResult.reason === 'tracked-file' || mainWriteResult.reason === 'tracked-plugin')
 
-    // Editing inside an isolated Worktree directory must be ALLOWED
     const wtWriteResult = decideWrite({
       toolName: 'edit',
       cwd: '/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-sim-test-999',
@@ -35,31 +66,53 @@ describe('Multi-Agent Automated Lifecycle & Destructive Incident Simulation', ()
     assert.equal(wtWriteResult.decision, 'allow')
   })
 
-  it('Phase 2: Destructive Attack Simulation (The Incident Scenario Guard)', () => {
-    // 1. Assert destructive reset syntax detection
-    const dangerousCommand = 'git reset --hard origin/main'
-    assert.equal(isDestructiveResetCommand(dangerousCommand), true)
-
-    // 2. Simulate decideBashCommand under presence of unpushed commits
-    // If unpushed commits exist on HEAD, it MUST DENY with reason 'unpushed-commits-at-risk'
-    const simulatedDecision = decideBashCommand({
-      command: dangerousCommand,
-      cwd: repoRoot,
-    })
-    // In our current clean state (0 unpushed commits), clean-upstream is allowed,
-    // but if unpushed commits are present, it denies.
-    assert.ok(simulatedDecision.decision === 'allow' || simulatedDecision.decision === 'deny')
+  it('Phase 2: unpushed commits make git -C reset --hard deny, and the commit stays', () => {
+    const { root, local } = makeUnpushedRepo()
+    try {
+      const sha = execSync(`git -C "${local}" rev-parse HEAD`, { encoding: 'utf8' }).trim()
+      const variants = [
+        'git reset --hard origin/main',
+        `git -C "${local}" reset --hard origin/main`,
+        'gh pr merge && git reset --hard origin/main',
+      ]
+      for (const command of variants) {
+        assert.equal(isDestructiveResetCommand(command), true, command)
+        const decision = decideBashCommand({ command, cwd: local })
+        assert.equal(decision.decision, 'deny', command)
+        assert.equal(decision.reason, 'unpushed-commits-at-risk')
+        const hook = runHook(
+          {
+            hook_event_name: 'PreToolUse',
+            tool_name: 'bash',
+            tool_input: { command },
+            cwd: local,
+          },
+          local,
+        )
+        assert.equal(hook.hookSpecificOutput.permissionDecision, 'deny')
+      }
+      const still = execSync(`git -C "${local}" rev-parse HEAD`, { encoding: 'utf8' }).trim()
+      assert.equal(still, sha)
+      assert.ok(existsSync(join(local, 'local-only.txt')))
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 
-  it('Phase 3: Agent 4 (严过关) 5D Verification & Delivery Pipeline', () => {
-    // Check doctor script availability and executable status
-    assert.equal(existsSync(join(repoRoot, 'scripts/git-wt.sh')), true)
-    assert.equal(existsSync(join(repoRoot, 'scripts/guard-worktree.mjs')), true)
-    assert.equal(existsSync(join(repoRoot, '.dsh/hooks.json')), true)
+  it('Phase 3: finish 契约禁止本地合 main / 直推 main，看板禁止假阳性 100%', () => {
+    const src = readFileSync(gitWtPath, 'utf8')
+    assert.equal(/\bgit(?:\s+-C\s+\S+)?\s+push\s+origin\s+main\b/.test(src), false)
+    assert.equal(/\bmerge\s+--no-ff\b/.test(src), false)
+    assert.ok(src.includes('禁止直推 main') || src.includes('推送特性分支'))
+    assert.ok(src.includes('未完成') || src.includes('禁止宣称 100% 完成'))
+    assert.ok(!src.includes('🎯 交付状态:      ✅ 100% 完成'))
 
-    const hooksConfig = JSON.parse(readFileSync(join(repoRoot, '.dsh/hooks.json'), 'utf8'))
-    assert.ok(hooksConfig.PreToolUse, 'PreToolUse hooks must be defined')
+    const hooksConfig = JSON.parse(readFileSync(join(here, '..', '.dsh/hooks.json'), 'utf8'))
     const matchers = hooksConfig.PreToolUse.map((h) => h.matcher)
-    assert.ok(matchers.some((m) => m.includes('edit') && m.includes('write') && m.includes('bash')), 'Hooks must cover edit|write|bash')
+    assert.ok(matchers.some((m) => m.includes('edit') && m.includes('write') && m.includes('bash')))
+
+    const syncSrc = readFileSync(join(here, 'sync-to-app.sh'), 'utf8')
+    assert.ok(syncSrc.includes('origin/main..HEAD'))
+    assert.ok(syncSrc.includes('OMNIMUX_ALLOW_UNMERGED_MATERIALIZE'))
   })
 })

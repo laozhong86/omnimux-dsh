@@ -15,15 +15,15 @@ OmniMux 多 Agent Worktree 隔离与管理工具 (支持 GitHub Issue 绑定与�
 用法:
   ./scripts/git-wt.sh start <plugin> <topic> [issue_id]   从 origin/main 切出专属 Worktree
   ./scripts/git-wt.sh auto-start <issue_id>               根据 Issue ID 自动解析创建 Worktree
-  ./scripts/git-wt.sh finish <topic> [issue_id] [flags]   本地门禁验证 → 合并 main → 自动物化 → 销毁沙箱
-  ./scripts/git-wt.sh clean <topic> [issue_id]            PR 合入后安全销毁 Worktree 及本地分支
+  ./scripts/git-wt.sh finish <topic> [issue_id] [flags]   本地门禁 → 推送特性分支 → 创建/核验 PR（禁止本地合 main）
+  ./scripts/git-wt.sh clean <topic> [issue_id]            PR MERGED 后安全销毁 Worktree 及本地分支
   ./scripts/git-wt.sh list                                列出当前全部活跃的 Worktree 与对应分支
   ./scripts/git-wt.sh doctor                              检查主目录纯净度、远端同步与 Worktree 隔离状态
 
 选项 (finish 指令):
   --skip-test     跳过本地单元测试门禁
-  --skip-sync     跳过编译与 App 生产物化同步
-  --skip-push     跳过推送到远端 origin/main
+  --skip-sync     即使 PR 已 MERGED 也跳过 App 物化
+  --skip-push     跳过推送特性分支（交付未完成，保留沙箱）
 
 示例:
   # 推荐: 绑定 GitHub Issue ID
@@ -270,20 +270,20 @@ cmd_finish() {
     if [ -n "$target_pkg" ]; then
       echo "==> 运行插件 [$target_pkg] 单元测试 (工作区: $wt_dir)..."
       if ! (cd "$wt_dir" && pnpm --filter "$target_pkg" test); then
-        echo "❌ 门禁测试失败！已阻断主干合并。Worktree 现场已保留供排障: $wt_dir" >&2
+        echo "❌ 门禁测试失败！已阻断交付。Worktree 现场已保留供排障: $wt_dir" >&2
         exit 1
       fi
     else
       echo "==> 运行通用门禁测试 (工作区: $wt_dir)..."
       if ! (cd "$wt_dir" && pnpm test); then
-        echo "❌ 门禁测试失败！已阻断主干合并。Worktree 现场已保留供排障: $wt_dir" >&2
+        echo "❌ 门禁测试失败！已阻断交付。Worktree 现场已保留供排障: $wt_dir" >&2
         exit 1
       fi
     fi
     echo "✓ 本地门禁测试全绿通过"
   fi
 
-  # 步骤 3: 切换主仓 main 并检查纯净度与远端同步
+  # 步骤 3: 主仓必须停留在干净的 main，只允许 fast-forward 对齐远端（禁止把特性分支合进本地 main）
   echo "==> 步骤 3: 检查主仓 main 纯净度与远端状态..."
   cd "$REPO_ROOT"
   local current_main_branch
@@ -296,8 +296,8 @@ cmd_finish() {
   local main_dirty
   main_dirty=$(git -C "$REPO_ROOT" status --porcelain)
   if [ -n "$main_dirty" ]; then
-    echo "❌ 错误: 主仓库工作区存在未提交的脏改动，已中止合并！" >&2
-    echo "请保持主仓纯净后再尝试合入。脏改动清单:" >&2
+    echo "❌ 错误: 主仓库工作区存在未提交的脏改动，已中止交付！" >&2
+    echo "请保持主仓纯净后再尝试 finish。脏改动清单:" >&2
     echo "$main_dirty" >&2
     exit 1
   fi
@@ -311,7 +311,7 @@ cmd_finish() {
       if [ "$behind_count" -gt 0 ]; then
         echo "⚠️  本地 main 落后 origin/main $behind_count 个提交，正在尝试 fast-forward 同步..."
         if ! git -C "$REPO_ROOT" merge --ff-only origin/main 2>/dev/null; then
-          echo "❌ 错误: 本地 main 与 origin/main 产生分叉，无法自动 fast-forward 同步！请手动解决后再合入。" >&2
+          echo "❌ 错误: 本地 main 与 origin/main 产生分叉，无法自动 fast-forward。禁止把特性分支合进本地 main。" >&2
           exit 1
         fi
         echo "✓ 本地 main 已成功 fast-forward 同步至 origin/main"
@@ -323,86 +323,157 @@ cmd_finish() {
     fi
   fi
 
-  # 步骤 4: 安全合入主仓 main
-  echo "==> 步骤 4: 将分支 [$branch] 合入主仓 main..."
   local plugin_label="${target_pkg:-common}"
-  local commit_msg="feat(${plugin_label}): finish ${topic}"
-  if [ -n "$clean_issue" ]; then
-    commit_msg="feat(${plugin_label}): finish ${topic} (#${clean_issue})"
-  fi
+  local pushed=0
+  local pr_url=""
+  local pr_state=""
+  local merged=0
+  local synced=0
+  local cleaned=0
 
-  if git -C "$REPO_ROOT" merge --ff-only "$branch" 2>/dev/null; then
-    echo "✓ 已通过 fast-forward 方式将 [$branch] 合入 main"
-  else
-    echo "==> 无法 fast-forward，使用 --no-ff 创建合并提交合入 main..."
-    git -C "$REPO_ROOT" merge --no-ff -m "$commit_msg" "$branch"
-    echo "✓ 已通过 --no-ff 成功合入 main: $commit_msg"
-  fi
-
-  # 步骤 5: 可选远端推送
+  # 步骤 4: 只推特性分支，严禁直推主干 / 把特性分支合进本地 main
   if [ "$skip_push" -eq 1 ]; then
-    echo "==> 步骤 5: 推送远端已跳过 (--skip-push)"
+    echo "==> 步骤 4: 推送特性分支已跳过 (--skip-push)"
   else
-    echo "==> 步骤 5: 推送主仓 main 到远端 origin/main..."
+    echo "==> 步骤 4: 推送特性分支 [$branch] 到 origin（禁止直推 main）..."
     if git -C "$REPO_ROOT" remote get-url origin >/dev/null 2>&1; then
-      if git -C "$REPO_ROOT" push origin main 2>&1; then
-        echo "✓ 成功推送至 origin/main"
+      if git -C "$wt_dir" push -u origin "HEAD:${branch}" 2>&1; then
+        echo "✓ 特性分支已推送: origin/${branch}"
+        pushed=1
       else
-        echo "⚠️  警告: git push origin main 失败 (网络或权限受阻)，本地合并已保留，请后续手动推送。"
+        echo "❌ 错误: 特性分支推送失败。主仓 main 未被修改，Worktree 已保留。" >&2
+        exit 1
       fi
     else
-      echo "· 未配置 origin 远端，跳过 push"
+      echo "❌ 错误: 未配置 origin 远端，无法完成 PR 交付通道。" >&2
+      exit 1
     fi
   fi
 
-  # 步骤 6: 可选自动物化至 App
-  if [ "$skip_sync" -eq 1 ]; then
-    echo "==> 步骤 6: 自动物化已跳过 (--skip-sync)"
-  else
-    echo "==> 步骤 6: 自动物化进 App 生产 profile..."
-    if [ -n "$target_pkg" ] && [ -f "$REPO_ROOT/scripts/sync-to-app.sh" ]; then
-      echo "==> 触发插件 [$target_pkg] 编译与物化..."
-      if bash "$REPO_ROOT/scripts/sync-to-app.sh" "$target_pkg"; then
-        echo "✅ 插件 [$target_pkg] 已自动编译并物化同步至 App！"
+  # 步骤 5: 创建或核验 PR（不在本地合 main；仅对真实 GitHub origin 调 gh）
+  echo "==> 步骤 5: 创建/核验 Pull Request..."
+  local origin_url=""
+  origin_url=$(git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || true)
+  local is_github_origin=0
+  case "$origin_url" in
+    *github.com*laozhong86/omnimux-dsh*) is_github_origin=1 ;;
+  esac
+  if [ "$skip_push" -eq 1 ]; then
+    echo "⏩ 未推送特性分支，跳过 PR 创建"
+  elif [ "$is_github_origin" -eq 1 ] && command -v gh >/dev/null 2>&1; then
+    local existing
+    existing=$(gh pr list -R laozhong86/omnimux-dsh --head "$branch" --json number,url,state --jq '.[0]' 2>/dev/null || true)
+    if [ -n "$existing" ] && [ "$existing" != "null" ]; then
+      pr_url=$(echo "$existing" | sed -n 's/.*"url":"\([^"]*\)".*/\1/p')
+      pr_state=$(echo "$existing" | sed -n 's/.*"state":"\([^"]*\)".*/\1/p')
+      echo "✓ 已有 PR: $pr_url (state=$pr_state)"
+    else
+      local pr_title="feat(${plugin_label}): ${topic}"
+      local pr_body="Closes #${clean_issue:-0}"
+      [ -z "$clean_issue" ] && pr_body="Automated finish for ${topic} on \`${branch}\`. Do not merge locally; wait for GitHub MERGED."
+      if pr_url=$(gh pr create -R laozhong86/omnimux-dsh --base main --head "$branch" --title "$pr_title" --body "$pr_body" 2>/dev/null); then
+        pr_state="OPEN"
+        echo "✓ 已创建 PR: $pr_url"
       else
-        echo "⚠️  警告: sync-to-app.sh 执行未完全成功，请稍后手动运行 ./scripts/sync-to-app.sh $target_pkg"
+        echo "⚠️  gh pr create 未成功（可能已存在或无权限）。请手动开 PR：gh pr create --base main --head $branch"
       fi
-    elif [ -f "$REPO_ROOT/scripts/sync-to-app.sh" ]; then
-      echo "· 未识别到单一插件模块，跳过自动单一物化 (可手动运行 ./scripts/sync-to-app.sh)"
     fi
+    if [ -n "$pr_url" ]; then
+      local pr_json
+      pr_json=$(gh pr view "$pr_url" --json state,mergedAt,mergeCommit 2>/dev/null || true)
+      pr_state=$(echo "$pr_json" | sed -n 's/.*"state":"\([^"]*\)".*/\1/p')
+      if [ "$pr_state" = "MERGED" ]; then
+        merged=1
+        echo "✓ PR 已确认 MERGED"
+      fi
+    fi
+  elif [ "$is_github_origin" -eq 0 ]; then
+    echo "⏩ origin 不是 GitHub 产品仓，跳过 gh pr create。特性分支已推送的话，请在对应远端开 PR，禁止把特性分支合进本地 main 或直推主干。"
+  else
+    echo "⚠️  未安装 gh。特性分支已推送的话，请手动创建 PR，禁止把特性分支合进本地 main 或直推主干。"
   fi
 
-  # 步骤 7: 安全清理 Worktree 目录与本地分支
-  echo "==> 步骤 7: 安全清理 Worktree 目录与本地分支..."
-  if [ -d "$wt_dir" ]; then
-    git -C "$REPO_ROOT" worktree remove "$wt_dir" 2>/dev/null || git -C "$REPO_ROOT" worktree remove "$wt_dir" --force 2>/dev/null || rm -rf "$wt_dir"
-    git -C "$REPO_ROOT" worktree prune
-    echo "✓ Worktree 目录已安全移除: $wt_dir"
+  # 步骤 6: 仅在远端 main 已包含该提交时才物化
+  echo "==> 步骤 6: 物化门禁（仅 MERGED / origin/main 已包含特性提交）..."
+  local feature_sha
+  feature_sha=$(git -C "$wt_dir" rev-parse HEAD)
+  if [ "$skip_sync" -eq 1 ]; then
+    echo "⏩ 自动物化已跳过 (--skip-sync)"
+  elif [ "$merged" -eq 1 ] || git -C "$REPO_ROOT" merge-base --is-ancestor "$feature_sha" origin/main 2>/dev/null; then
+    git -C "$REPO_ROOT" merge --ff-only origin/main >/dev/null 2>&1 || true
+    if [ -n "$target_pkg" ] && [ -f "$REPO_ROOT/scripts/sync-to-app.sh" ]; then
+      echo "==> PR 已在远端合入，触发插件 [$target_pkg] 编译与物化..."
+      if bash "$REPO_ROOT/scripts/sync-to-app.sh" "$target_pkg"; then
+        echo "✅ 插件 [$target_pkg] 已物化同步至 App"
+        synced=1
+      else
+        echo "❌ 错误: sync-to-app.sh 失败。Worktree 保留，禁止假装交付完成。" >&2
+        exit 1
+      fi
+    else
+      echo "· 未识别到单一插件模块，跳过自动单一物化"
+    fi
+  else
+    echo "⏩ 远端 origin/main 尚未包含该提交，禁止物化。请等待 PR MERGED 后再 pnpm sync / git-wt.sh clean。"
   fi
 
-  if [ -n "$branch" ] && git -C "$REPO_ROOT" rev-parse --verify "$branch" >/dev/null 2>&1; then
-    git -C "$REPO_ROOT" branch -d "$branch" 2>/dev/null || git -C "$REPO_ROOT" branch -D "$branch" 2>/dev/null || true
-    echo "✓ 本地分支已删除: $branch"
+  # 步骤 7: 仅 MERGED 后销毁沙箱
+  echo "==> 步骤 7: 沙箱回收策略..."
+  if [ "$merged" -eq 1 ]; then
+    if [ -d "$wt_dir" ]; then
+      git -C "$REPO_ROOT" worktree remove "$wt_dir" 2>/dev/null || git -C "$REPO_ROOT" worktree remove "$wt_dir" --force 2>/dev/null || rm -rf "$wt_dir"
+      git -C "$REPO_ROOT" worktree prune
+      echo "✓ Worktree 目录已安全移除: $wt_dir"
+    fi
+    if [ -n "$branch" ] && git -C "$REPO_ROOT" rev-parse --verify "$branch" >/dev/null 2>&1; then
+      git -C "$REPO_ROOT" branch -d "$branch" 2>/dev/null || git -C "$REPO_ROOT" branch -D "$branch" 2>/dev/null || true
+      echo "✓ 本地分支已删除: $branch"
+    fi
+    cleaned=1
+  else
+    echo "⏩ PR 未 MERGED，Worktree 与特性分支已保留: $wt_dir"
   fi
 
   echo ""
   echo "================================================================================"
   echo "📋 OmniMux 任务交付透明看板 (Delivery Board)"
   echo "================================================================================"
-  echo "  🎯 交付状态:      ✅ 100% 完成"
   echo "  🌿 目标主题/模块:  [${plugin_label}] - ${topic}"
-  echo "  🔀 主干合并:      ✅ 已合入 main (${commit_msg})"
-  if [ "$skip_push" -eq 1 ]; then
-    echo "  🌐 远端同步:      ⏩ 跳过 (--skip-push)"
+  echo "  🔀 特性分支:      ${branch}"
+  if [ "$merged" -eq 1 ]; then
+    echo "  🎯 交付状态:      ✅ PR MERGED，主干已对齐远端"
   else
-    echo "  🌐 远端同步:      ✅ 已推送 origin/main"
+    echo "  🎯 交付状态:      ⏳ 未完成（禁止宣称 100% 完成）"
+  fi
+  if [ "$skip_push" -eq 1 ]; then
+    echo "  🌐 远端同步:      ⏩ 跳过 (--skip-push)，特性分支未推送"
+  elif [ "$pushed" -eq 1 ]; then
+    echo "  🌐 远端同步:      ✅ 已推送 origin/${branch}（未直推 main）"
+  else
+    echo "  🌐 远端同步:      ❌ 未推送"
+  fi
+  if [ -n "$pr_url" ]; then
+    echo "  📬 Pull Request:   ${pr_url} (${pr_state:-OPEN})"
+  else
+    echo "  📬 Pull Request:   ⏳ 未创建 — 下一步: gh pr create --base main --head ${branch}"
+  fi
+  if [ "$merged" -eq 1 ]; then
+    echo "  🧬 主干合并:      ✅ origin/main 已包含 ${feature_sha:0:8}"
+  else
+    echo "  🧬 主干合并:      ⏳ 本地 main 未合入特性分支（防丢失）"
   fi
   if [ "$skip_sync" -eq 1 ]; then
     echo "  🚀 App 生产物化:  ⏩ 跳过 (--skip-sync)"
+  elif [ "$synced" -eq 1 ]; then
+    echo "  🚀 App 生产物化:  ✅ 已同步（HEAD 已等于 origin/main）"
   else
-    echo "  🚀 App 生产物化:  ✅ 已同步至 ~/.dsh/profiles/omnimux (刷新 App 即可生效)"
+    echo "  🚀 App 生产物化:  ⏳ 未执行（等待 PR MERGED）"
   fi
-  echo "  🧹 沙箱环境:      ✅ Worktree 已完全销毁并清理分支"
+  if [ "$cleaned" -eq 1 ]; then
+    echo "  🧹 沙箱环境:      ✅ Worktree 已销毁"
+  else
+    echo "  🧹 沙箱环境:      ⏳ 已保留 $wt_dir"
+  fi
   echo "================================================================================"
   echo ""
 }

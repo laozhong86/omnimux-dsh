@@ -19,6 +19,44 @@ PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$ROOT/plugins}"
 SKIP_BUILD=0
 PLUGINS=()
 
+assert_origin_main_aligned() {
+  if [ "${OMNIMUX_ALLOW_UNMERGED_MATERIALIZE:-0}" = "1" ]; then
+    echo "⚠ OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1：跳过 origin/main 对齐门禁（仅排障使用）"
+    return 0
+  fi
+  if ! git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "· 非 git 工作区，跳过远端对齐检查"
+    return 0
+  fi
+  if ! git -C "$ROOT" rev-parse --verify origin/main >/dev/null 2>&1; then
+    echo "⚠ origin/main 不可用，跳过远端对齐检查"
+    return 0
+  fi
+  local branch ahead dirty
+  branch=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+  if [ "$branch" != "main" ]; then
+    echo "❌ sync-to-app: 当前分支是 [$branch]，生产物化只允许在已对齐的 main 上执行。" >&2
+    echo "   请等待 PR MERGED 后在主仓 git pull origin main，或显式设置 OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1。" >&2
+    exit 1
+  fi
+  dirty=$(git -C "$ROOT" status --porcelain)
+  if [ -n "$dirty" ]; then
+    echo "❌ sync-to-app: 工作区有未提交改动，禁止把本地脏状态物化进 App。" >&2
+    echo "$dirty" >&2
+    exit 1
+  fi
+  ahead=$(git -C "$ROOT" rev-list --count origin/main..HEAD 2>/dev/null || echo "0")
+  if [ "${ahead:-0}" -gt 0 ]; then
+    echo "❌ sync-to-app: 本地 main 领先 origin/main ${ahead} 个提交。禁止物化未推送/未 MERGED 的提交（上次丢代码事故路径）。" >&2
+    echo "   正确流程: 推特性分支 → PR MERGED → git pull origin main → 再 pnpm sync。" >&2
+    echo "   排障旁路: OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1" >&2
+    exit 1
+  fi
+  echo "✓ HEAD 已对齐 origin/main，允许物化"
+}
+
+assert_origin_main_aligned
+
 # 与 sync-stable.sh 默认同步集合对齐（含 omnimux-market 与 omnimux-clip）
 DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics omnimux-publish)
 
