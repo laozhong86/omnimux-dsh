@@ -100,7 +100,7 @@ export function useCanvasContextMenu(deps: CanvasContextMenuDeps) {
       const flowPosition = screenToFlowPosition({ x: menu.x, y: menu.y });
       switch (action) {
         case 'import-asset':
-          onAddNode?.('import_asset', flowPosition);
+          void onAddNode?.('import_asset', flowPosition);
           break;
         case 'copy': {
           if (context.type === 'node') {
@@ -177,6 +177,7 @@ export function useCanvasContextMenu(deps: CanvasContextMenuDeps) {
       selectAllNodes,
       closeMenu,
       onExecuteNodeIds,
+      onAddNode,
     ],
   );
 

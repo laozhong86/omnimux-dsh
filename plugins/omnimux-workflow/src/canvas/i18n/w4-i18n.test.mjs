@@ -73,6 +73,7 @@ test('W4 入典代表 key：双语可取且不回退到 key 本身', () => {
     'picker.tab.local',
     'picker.use',
     'picker.addRef',
+    'picker.importOk',
   ];
   for (const key of keys) {
     setLocale('zh');

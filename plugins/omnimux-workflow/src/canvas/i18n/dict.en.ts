@@ -235,6 +235,7 @@ const en: Record<DictKey, string> = {
   'picker.commitPartial': 'Some resources could not be added (already connected or type mismatch)',
   'picker.commitEmpty': 'Nothing to add',
   'picker.commitFailed': 'Failed to add resources',
+  'picker.importOk': 'Asset imported',
   'picker.needPath': 'Use the system file picker; this environment cannot read a local path.',
   'picker.pickFailed': 'Could not open the system file picker.',
 };
