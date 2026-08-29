@@ -57,10 +57,14 @@ export function objectParams(fields: Record<string, FieldSpec>): Record<string, 
   const required: string[] = [];
   for (const [key, spec] of Object.entries(fields)) {
     const { required: isRequired, ...rest } = spec;
-    properties[key] = rest;
-    // Only a boolean `true` marks the TOP-LEVEL field required; a string[]
-    // belongs to a nested object schema and passes through untouched.
-    if (isRequired === true) required.push(key);
+    if (Array.isArray(isRequired)) {
+      properties[key] = { ...rest, required: isRequired };
+    } else {
+      properties[key] = rest;
+      // Only a boolean `true` marks the TOP-LEVEL field required; a string[]
+      // belongs to a nested object schema and passes through untouched.
+      if (isRequired === true) required.push(key);
+    }
   }
   return {
     type: 'object',
@@ -197,6 +201,23 @@ export function summarizeNodes(
   return rows;
 }
 
+/**
+ * Execute a callback on a resolved workspace snapshot, or return a workspace-not-found error envelope.
+ */
+export function withWorkspace<T>(
+  store: WorkspaceStore,
+  workspaceId: string,
+  fn: (snapshot: CanvasWorkspaceSnapshot) => T,
+): T | { error: string; message: string } {
+  let snapshot: CanvasWorkspaceSnapshot;
+  try {
+    snapshot = store.get(workspaceId);
+  } catch {
+    return errorBody('workspace-not-found', `workspace ${workspaceId} not found`);
+  }
+  return fn(snapshot);
+}
+
 /** Resolve a workspace by id (preferred) or exact unique name. */
 export function resolveWorkspace(
   store: WorkspaceStore,
@@ -204,11 +225,7 @@ export function resolveWorkspace(
   workspaceName: string | undefined,
 ): { snapshot: CanvasWorkspaceSnapshot } | { error: string; message: string } {
   if (workspaceId) {
-    try {
-      return { snapshot: store.get(workspaceId) };
-    } catch {
-      return errorBody('workspace-not-found', `workspace ${workspaceId} not found`);
-    }
+    return withWorkspace(store, workspaceId, (snapshot) => ({ snapshot }));
   }
   if (workspaceName) {
     const matches = store.list().filter((row) => row.name === workspaceName);
@@ -222,11 +239,7 @@ export function resolveWorkspace(
         `multiple workspaces named "${workspaceName}" — pass workspaceId instead`,
       );
     }
-    try {
-      return { snapshot: store.get(first.id) };
-    } catch {
-      return errorBody('workspace-not-found', `workspace ${first.id} not found`);
-    }
+    return withWorkspace(store, first.id, (snapshot) => ({ snapshot }));
   }
   return errorBody(
     'invalid-args',

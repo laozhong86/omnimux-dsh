@@ -3,10 +3,9 @@
  * Names, descriptions and JSON schemas are unchanged from the monolith.
  */
 
-import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes';
 import { mutateWorkspaceGraph } from '../graph/GraphMutator';
 import { createMaterialNode } from '../../shared/graph/nodeFactory.ts';
-import type { MaterialType } from '../../shared/graph/materialNode.ts';
+import type { MaterialType, MaterialTool } from '../../shared/graph/materialNode.ts';
 import type { CanvasInputMutation } from '../../shared/graph/canvasInputMutationGateway.ts';
 import { normalizeNodeIds } from '../execution/subgraph';
 import {
@@ -21,7 +20,58 @@ import {
   resolveTool,
   readPosition,
   defaultNodePosition,
+  withWorkspace,
 } from './agentToolShared.ts';
+
+/**
+ * Validate and parse patch payload for workflow_node_update.
+ */
+function parseNodePatch(
+  nodeId: string,
+  node: { data?: Record<string, unknown> },
+  spec: Record<string, unknown>,
+): { data: Record<string, unknown>; position?: { x: number; y: number } } | { error: string; message: string } {
+  const position = spec.position;
+  if (position !== undefined) {
+    if (
+      !position || typeof position !== 'object' || Array.isArray(position)
+      || typeof (position as Record<string, unknown>).x !== 'number'
+      || typeof (position as Record<string, unknown>).y !== 'number'
+    ) {
+      return errorBody('invalid-args', 'patch.position must be {x: number, y: number}');
+    }
+  }
+
+  if (spec.params !== undefined) {
+    if (!spec.params || typeof spec.params !== 'object' || Array.isArray(spec.params)) {
+      return errorBody('invalid-args', 'patch.params must be an object');
+    }
+  }
+
+  const materialType = (node.data as Record<string, unknown>)?.materialType as MaterialType | undefined;
+  let selectedTool: MaterialTool | undefined;
+  if (spec.tool !== undefined) {
+    if (!materialType) return errorBody('invalid-args', `node ${nodeId} has no material_type; cannot set tool`);
+    const toolResolved = resolveTool(materialType, spec.tool);
+    if ('error' in toolResolved) return toolResolved;
+    selectedTool = toolResolved.tool;
+  }
+
+  const data: Record<string, unknown> = {};
+  if (spec.label !== undefined) data.label = spec.label;
+  if (spec.prompt !== undefined) data.prompt = spec.prompt;
+  if (spec.params !== undefined) data.params = spec.params;
+  if (selectedTool !== undefined) data.selectedTool = selectedTool;
+
+  if (Object.keys(data).length === 0 && position === undefined) {
+    return errorBody('invalid-args', 'patch must contain at least one of label / prompt / tool / params / position');
+  }
+
+  return {
+    data,
+    ...(position !== undefined ? { position: position as { x: number; y: number } } : {}),
+  };
+}
 
 export function createWorkflowCreateTool(deps: WorkflowAgentDeps): AgentToolSpec {
   const { store } = deps;
@@ -74,31 +124,28 @@ export function createWorkflowNodeAddTool(deps: WorkflowAgentDeps): AgentToolSpe
     async execute(args) {
       const workspaceId = readString(args, 'workspace_id');
       if (!workspaceId) return errorBody('invalid-args', 'workspace_id is required');
+
       const materialType = readString(args, 'material_type') as MaterialType | undefined;
       if (!materialType || !MATERIAL_TYPE_ENUM.includes(materialType)) {
         return errorBody('invalid-args', `material_type must be one of ${MATERIAL_TYPE_ENUM.join(', ')}`);
       }
+
       const toolResolved = resolveTool(materialType, args.tool);
       if ('error' in toolResolved) return toolResolved;
 
-      let snapshot: CanvasWorkspaceSnapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody('workspace-not-found', `workspace ${workspaceId} not found`);
-      }
+      return withWorkspace(store, workspaceId, (snapshot) => {
+        const label = readString(args, 'label');
+        const prompt = readString(args, 'prompt');
+        const node = createMaterialNode(materialType, readPosition(args) ?? defaultNodePosition(snapshot), {
+          selectedTool: toolResolved.tool,
+          ...(label !== undefined ? { label } : {}),
+          ...(prompt !== undefined ? { prompt } : {}),
+        });
 
-      const label = readString(args, 'label');
-      const prompt = readString(args, 'prompt');
-      const node = createMaterialNode(materialType, readPosition(args) ?? defaultNodePosition(snapshot), {
-        selectedTool: toolResolved.tool,
-        ...(label !== undefined ? { label } : {}),
-        ...(prompt !== undefined ? { prompt } : {}),
+        const result = mutateWorkspaceGraph(store, workspaceId, { addNodes: [node] });
+        if (!result.ok) return errorBody(result.error, result.message);
+        return { workspace: workspaceSummary(result.snapshot), node };
       });
-
-      const result = mutateWorkspaceGraph(store, workspaceId, { addNodes: [node] });
-      if (!result.ok) return errorBody(result.error, result.message);
-      return { workspace: workspaceSummary(result.snapshot), node };
     },
   };
 }
@@ -134,65 +181,37 @@ export function createWorkflowNodeUpdateTool(deps: WorkflowAgentDeps): AgentTool
     output: jsonOut,
     async execute(args) {
       const workspaceId = readString(args, 'workspace_id');
-      const nodeId = readString(args, 'node_id');
       if (!workspaceId) return errorBody('invalid-args', 'workspace_id is required');
+
+      const nodeId = readString(args, 'node_id');
       if (!nodeId) return errorBody('invalid-args', 'node_id is required');
+
       const patch = args.patch;
       if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
         return errorBody('invalid-args', 'patch object is required');
       }
-      const spec = patch as Record<string, unknown>;
 
-      let snapshot: CanvasWorkspaceSnapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody('workspace-not-found', `workspace ${workspaceId} not found`);
-      }
-      const node = snapshot.nodes.find((row) => row.id === nodeId);
-      if (!node) return errorBody('node-not-found', `node ${nodeId} not found in workspace ${workspaceId}`);
+      return withWorkspace(store, workspaceId, (snapshot) => {
+        const node = snapshot.nodes.find((row) => row.id === nodeId);
+        if (!node) return errorBody('node-not-found', `node ${nodeId} not found in workspace ${workspaceId}`);
 
-      const materialType = (node.data as Record<string, unknown>).materialType as MaterialType | undefined;
-      const data: Record<string, unknown> = {};
-      if (spec.label !== undefined) data.label = spec.label;
-      if (spec.prompt !== undefined) data.prompt = spec.prompt;
-      if (spec.params !== undefined) {
-        if (!spec.params || typeof spec.params !== 'object' || Array.isArray(spec.params)) {
-          return errorBody('invalid-args', 'patch.params must be an object');
-        }
-        data.params = spec.params;
-      }
-      if (spec.tool !== undefined) {
-        if (!materialType) return errorBody('invalid-args', `node ${nodeId} has no material_type; cannot set tool`);
-        const toolResolved = resolveTool(materialType, spec.tool);
-        if ('error' in toolResolved) return toolResolved;
-        data.selectedTool = toolResolved.tool;
-      }
-      const position = spec.position;
-      if (position !== undefined) {
-        if (!position || typeof position !== 'object' || Array.isArray(position)
-          || typeof (position as Record<string, unknown>).x !== 'number'
-          || typeof (position as Record<string, unknown>).y !== 'number') {
-          return errorBody('invalid-args', 'patch.position must be {x: number, y: number}');
-        }
-      }
-      if (Object.keys(data).length === 0 && position === undefined) {
-        return errorBody('invalid-args', 'patch must contain at least one of label / prompt / tool / params / position');
-      }
+        const parsed = parseNodePatch(nodeId, node, patch as Record<string, unknown>);
+        if ('error' in parsed) return parsed;
 
-      const mutation: CanvasInputMutation = {
-        nodePatches: [{
-          nodeId,
-          data,
-          ...(position !== undefined ? { node: { position: position as { x: number; y: number } } } : {}),
-        }],
-      };
-      const result = mutateWorkspaceGraph(store, workspaceId, mutation);
-      if (!result.ok) return errorBody(result.error, result.message);
-      return {
-        workspace: workspaceSummary(result.snapshot),
-        node: result.snapshot.nodes.find((row) => row.id === nodeId),
-      };
+        const mutation: CanvasInputMutation = {
+          nodePatches: [{
+            nodeId,
+            data: parsed.data,
+            ...(parsed.position !== undefined ? { node: { position: parsed.position } } : {}),
+          }],
+        };
+        const result = mutateWorkspaceGraph(store, workspaceId, mutation);
+        if (!result.ok) return errorBody(result.error, result.message);
+        return {
+          workspace: workspaceSummary(result.snapshot),
+          node: result.snapshot.nodes.find((row) => row.id === nodeId),
+        };
+      });
     },
   };
 }
@@ -211,28 +230,25 @@ export function createWorkflowNodeRemoveTool(deps: WorkflowAgentDeps): AgentTool
     async execute(args) {
       const workspaceId = readString(args, 'workspace_id');
       if (!workspaceId) return errorBody('invalid-args', 'workspace_id is required');
+
       const nodeIds = normalizeNodeIds(args.node_ids);
       if (nodeIds.length === 0) return errorBody('invalid-args', 'node_ids must be a non-empty array');
 
-      let snapshot: CanvasWorkspaceSnapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody('workspace-not-found', `workspace ${workspaceId} not found`);
-      }
-      const existing = new Set(snapshot.nodes.map((node) => node.id));
-      const toRemove = nodeIds.filter((id) => existing.has(id));
-      if (toRemove.length === 0) {
-        return errorBody('node-not-found', `none of ${nodeIds.join(', ')} exists in workspace ${workspaceId}`);
-      }
+      return withWorkspace(store, workspaceId, (snapshot) => {
+        const existing = new Set(snapshot.nodes.map((node) => node.id));
+        const toRemove = nodeIds.filter((id) => existing.has(id));
+        if (toRemove.length === 0) {
+          return errorBody('node-not-found', `none of ${nodeIds.join(', ')} exists in workspace ${workspaceId}`);
+        }
 
-      const result = mutateWorkspaceGraph(store, workspaceId, { removeNodeIds: toRemove });
-      if (!result.ok) return errorBody(result.error, result.message);
-      return {
-        workspace: workspaceSummary(result.snapshot),
-        removedNodes: toRemove.length,
-        removedEdges: snapshot.edges.length - result.snapshot.edges.length,
-      };
+        const result = mutateWorkspaceGraph(store, workspaceId, { removeNodeIds: toRemove });
+        if (!result.ok) return errorBody(result.error, result.message);
+        return {
+          workspace: workspaceSummary(result.snapshot),
+          removedNodes: toRemove.length,
+          removedEdges: snapshot.edges.length - result.snapshot.edges.length,
+        };
+      });
     },
   };
 }
@@ -258,24 +274,22 @@ export function createWorkflowConnectTool(deps: WorkflowAgentDeps): AgentToolSpe
       if (!workspaceId || !source || !target) {
         return errorBody('invalid-args', 'workspace_id, source and target are required');
       }
-      try {
-        store.get(workspaceId);
-      } catch {
-        return errorBody('workspace-not-found', `workspace ${workspaceId} not found`);
-      }
-      const result = mutateWorkspaceGraph(store, workspaceId, {
-        addEdges: [{
-          source,
-          target,
-          sourceHandle: readString(args, 'source_handle'),
-          targetHandle: readString(args, 'target_handle'),
-        }],
+
+      return withWorkspace(store, workspaceId, (_snapshot) => {
+        const result = mutateWorkspaceGraph(store, workspaceId, {
+          addEdges: [{
+            source,
+            target,
+            sourceHandle: readString(args, 'source_handle'),
+            targetHandle: readString(args, 'target_handle'),
+          }],
+        });
+        if (!result.ok) return errorBody(result.error, result.message);
+        const edge = result.snapshot.edges.find(
+          (row) => row.source === source && row.target === target,
+        );
+        return { workspace: workspaceSummary(result.snapshot), edge };
       });
-      if (!result.ok) return errorBody(result.error, result.message);
-      const edge = result.snapshot.edges.find(
-        (row) => row.source === source && row.target === target,
-      );
-      return { workspace: workspaceSummary(result.snapshot), edge };
     },
   };
 }
@@ -296,6 +310,7 @@ export function createWorkflowDisconnectTool(deps: WorkflowAgentDeps): AgentTool
     async execute(args) {
       const workspaceId = readString(args, 'workspace_id');
       if (!workspaceId) return errorBody('invalid-args', 'workspace_id is required');
+
       const edgeIds = normalizeNodeIds(args.edge_ids);
       const source = readString(args, 'source');
       const target = readString(args, 'target');
@@ -303,28 +318,23 @@ export function createWorkflowDisconnectTool(deps: WorkflowAgentDeps): AgentTool
         return errorBody('invalid-args', 'pass edge_ids or source+target');
       }
 
-      let snapshot: CanvasWorkspaceSnapshot;
-      try {
-        snapshot = store.get(workspaceId);
-      } catch {
-        return errorBody('workspace-not-found', `workspace ${workspaceId} not found`);
-      }
-
-      const resolved = new Set(edgeIds);
-      if (source && target) {
-        for (const edge of snapshot.edges) {
-          if (edge.source === source && edge.target === target) resolved.add(edge.id);
+      return withWorkspace(store, workspaceId, (snapshot) => {
+        const resolved = new Set(edgeIds);
+        if (source && target) {
+          for (const edge of snapshot.edges) {
+            if (edge.source === source && edge.target === target) resolved.add(edge.id);
+          }
         }
-      }
-      const existing = new Set(snapshot.edges.map((edge) => edge.id));
-      const toRemove = [...resolved].filter((id) => existing.has(id));
-      if (toRemove.length === 0) {
-        return errorBody('edge-not-found', 'no matching edges in this workspace');
-      }
+        const existing = new Set(snapshot.edges.map((edge) => edge.id));
+        const toRemove = [...resolved].filter((id) => existing.has(id));
+        if (toRemove.length === 0) {
+          return errorBody('edge-not-found', 'no matching edges in this workspace');
+        }
 
-      const result = mutateWorkspaceGraph(store, workspaceId, { removeEdgeIds: toRemove });
-      if (!result.ok) return errorBody(result.error, result.message);
-      return { workspace: workspaceSummary(result.snapshot), removedEdges: toRemove.length };
+        const result = mutateWorkspaceGraph(store, workspaceId, { removeEdgeIds: toRemove });
+        if (!result.ok) return errorBody(result.error, result.message);
+        return { workspace: workspaceSummary(result.snapshot), removedEdges: toRemove.length };
+      });
     },
   };
 }
@@ -351,11 +361,13 @@ export function createWorkflowExecutionControlTool(deps: WorkflowAgentDeps): Age
     output: jsonOut,
     async execute(args) {
       const executionId = readString(args, 'execution_id');
-      const action = readString(args, 'action');
       if (!executionId) return errorBody('invalid-args', 'execution_id is required');
+
+      const action = readString(args, 'action');
       if (action !== 'pause' && action !== 'resume' && action !== 'cancel') {
         return errorBody('invalid-args', 'action must be pause | resume | cancel');
       }
+
       const controlByAction = {
         pause: executionManager.pauseExecution,
         resume: executionManager.resumeExecution,

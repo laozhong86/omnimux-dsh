@@ -20,10 +20,47 @@ import {
   readString,
   readBoolean,
   resolveWorkspace,
+  withWorkspace,
   waitForTerminal,
   summarizeNodes,
   mediaKindFromMaterial,
 } from './agentToolShared.ts';
+
+function extractNodeInitialOutput(
+  sourceNode: { data?: Record<string, unknown> },
+): Record<string, unknown> {
+  const data = sourceNode.data ?? {};
+  const text = (data.generatedContent as string | undefined)
+    ?? (data.content as string | undefined)
+    ?? (data.prompt as string | undefined);
+  const mediaAssets = data.mediaAssets;
+  const mediaUrl = data.mediaUrl as string | undefined;
+  const materialType = data.materialType as string | undefined;
+
+  if (Array.isArray(mediaAssets) && mediaAssets.length > 0) {
+    return { mediaAssets, text };
+  }
+  if (mediaUrl) {
+    const type = mediaKindFromMaterial(materialType);
+    return { mediaAssets: [{ type, url: mediaUrl }], text };
+  }
+  return { text: text ?? '' };
+}
+
+function buildInitialOutputs(
+  workspace: CanvasWorkspaceSnapshot,
+  executedNodeIds: ReadonlySet<string>,
+): Record<string, unknown> {
+  const initialOutputs: Record<string, unknown> = {};
+  for (const edge of workspace.edges) {
+    if (!executedNodeIds.has(edge.target) || executedNodeIds.has(edge.source)) continue;
+    const sourceNode = workspace.nodes.find((n) => n.id === edge.source);
+    if (sourceNode) {
+      initialOutputs[edge.source] = extractNodeInitialOutput(sourceNode as { data?: Record<string, unknown> });
+    }
+  }
+  return initialOutputs;
+}
 
 export function createWorkflowListTool(deps: WorkflowAgentDeps): AgentToolSpec {
   const { store, executionManager } = deps;
@@ -122,31 +159,7 @@ export function createWorkflowRunTool(deps: WorkflowAgentDeps): AgentToolSpec {
         return errorBody('empty-graph', `workspace ${workspace.id} has no nodes to execute`);
       }
 
-      // Seed initial outputs for upstream nodes not included in this execution batch
-      const initialOutputs: Record<string, unknown> = {};
-      const executedNodeIds = subgraph.nodeIdSet;
-      for (const edge of workspace.edges) {
-        if (executedNodeIds.has(edge.target) && !executedNodeIds.has(edge.source)) {
-          const sourceNode = workspace.nodes.find((n) => n.id === edge.source);
-          if (sourceNode) {
-            const data = sourceNode.data ?? {};
-            const text = (data.generatedContent as string | undefined)
-              ?? (data.content as string | undefined)
-              ?? (data.prompt as string | undefined);
-            const mediaAssets = data.mediaAssets;
-            const mediaUrl = data.mediaUrl as string | undefined;
-            const materialType = data.materialType as string | undefined;
-            if (Array.isArray(mediaAssets) && mediaAssets.length > 0) {
-              initialOutputs[edge.source] = { mediaAssets, text };
-            } else if (mediaUrl) {
-              const type = mediaKindFromMaterial(materialType);
-              initialOutputs[edge.source] = { mediaAssets: [{ type, url: mediaUrl }], text };
-            } else {
-              initialOutputs[edge.source] = { text: text ?? '' };
-            }
-          }
-        }
-      }
+      const initialOutputs = buildInitialOutputs(workspace, subgraph.nodeIdSet);
 
       const entry = executionManager.createExecution({
         workspaceId: workspace.id,
@@ -231,40 +244,36 @@ export function createWorkflowSnapshotTool(deps: WorkflowAgentDeps): AgentToolSp
       if (!workspaceId) {
         return errorBody('invalid-args', 'workspace_id is required');
       }
-      let workspace: CanvasWorkspaceSnapshot;
-      try {
-        workspace = store.get(workspaceId);
-      } catch {
-        return errorBody('workspace-not-found', `workspace ${workspaceId} not found`);
-      }
 
-      if (readBoolean(args, 'include_nodes')) {
-        return { workspace };
-      }
+      return withWorkspace(store, workspaceId, (workspace) => {
+        if (readBoolean(args, 'include_nodes')) {
+          return { workspace };
+        }
 
-      const nodeTypeCounts: Record<string, number> = {};
-      const materialCounts: Record<string, number> = {};
-      for (const node of workspace.nodes) {
-        const data = (node.data ?? {}) as Record<string, unknown>;
-        const type = typeof node.type === 'string' ? node.type : 'unknown';
-        nodeTypeCounts[type] = (nodeTypeCounts[type] ?? 0) + 1;
-        const material = typeof data.materialType === 'string' ? data.materialType : 'unknown';
-        materialCounts[material] = (materialCounts[material] ?? 0) + 1;
-      }
-      return {
-        summary: {
-          id: workspace.id,
-          name: workspace.name,
-          version: workspace.version,
-          nodeCount: workspace.nodes.length,
-          edgeCount: workspace.edges.length,
-          nodeTypeCounts,
-          materialCounts,
-          settings: workspace.settings,
-          metadata: workspace.metadata,
-        },
-        hint: 'Pass include_nodes=true for the full node/edge structure.',
-      };
+        const nodeTypeCounts: Record<string, number> = {};
+        const materialCounts: Record<string, number> = {};
+        for (const node of workspace.nodes) {
+          const data = (node.data ?? {}) as Record<string, unknown>;
+          const type = typeof node.type === 'string' ? node.type : 'unknown';
+          nodeTypeCounts[type] = (nodeTypeCounts[type] ?? 0) + 1;
+          const material = typeof data.materialType === 'string' ? data.materialType : 'unknown';
+          materialCounts[material] = (materialCounts[material] ?? 0) + 1;
+        }
+        return {
+          summary: {
+            id: workspace.id,
+            name: workspace.name,
+            version: workspace.version,
+            nodeCount: workspace.nodes.length,
+            edgeCount: workspace.edges.length,
+            nodeTypeCounts,
+            materialCounts,
+            settings: workspace.settings,
+            metadata: workspace.metadata,
+          },
+          hint: 'Pass include_nodes=true for the full node/edge structure.',
+        };
+      });
     },
   };
 }

@@ -435,3 +435,61 @@ test('workflow_run on an empty workspace returns empty-graph', async () => {
     rmSync(h.dir, { recursive: true, force: true });
   }
 });
+
+test('pinned schemas: workflow_* tool names and parameter contracts remain equal', () => {
+  const h = makeHarness();
+  try {
+    const workflowTools = h.tools
+      .filter((t) => t.name.startsWith('workflow_'))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const names = workflowTools.map((t) => t.name);
+    assert.deepEqual(names, [
+      'workflow_connect',
+      'workflow_create',
+      'workflow_disconnect',
+      'workflow_execution_control',
+      'workflow_list',
+      'workflow_node_add',
+      'workflow_node_remove',
+      'workflow_node_update',
+      'workflow_run',
+      'workflow_snapshot',
+    ]);
+
+    const toolMap = new Map(workflowTools.map((t) => [t.name, t]));
+
+    // Critical parameter checks
+    assert.deepEqual(toolMap.get('workflow_list').parameters.required, undefined);
+
+    assert.deepEqual(toolMap.get('workflow_run').parameters.properties.mode.enum, ['full', 'subset', 'single']);
+
+    assert.deepEqual(toolMap.get('workflow_snapshot').parameters.required, ['workspace_id']);
+
+    assert.deepEqual(toolMap.get('workflow_create').parameters.required, undefined);
+
+    assert.deepEqual(toolMap.get('workflow_node_add').parameters.required, ['workspace_id', 'material_type']);
+    assert.deepEqual(toolMap.get('workflow_node_add').parameters.properties.material_type.enum, ['text', 'image', 'video', 'audio']);
+    assert.deepEqual(toolMap.get('workflow_node_add').parameters.properties.position.required, ['x', 'y']);
+
+    assert.deepEqual(toolMap.get('workflow_node_update').parameters.required, ['workspace_id', 'node_id', 'patch']);
+    assert.deepEqual(toolMap.get('workflow_node_update').parameters.properties.patch.properties.position.required, ['x', 'y']);
+
+    assert.deepEqual(toolMap.get('workflow_node_remove').parameters.required, ['workspace_id', 'node_ids']);
+
+    assert.deepEqual(toolMap.get('workflow_connect').parameters.required, ['workspace_id', 'source', 'target']);
+
+    assert.deepEqual(toolMap.get('workflow_disconnect').parameters.required, ['workspace_id']);
+
+    assert.deepEqual(toolMap.get('workflow_execution_control').parameters.required, ['execution_id', 'action']);
+    assert.deepEqual(toolMap.get('workflow_execution_control').parameters.properties.action.enum, ['pause', 'resume', 'cancel']);
+
+    // Check that descriptions are non-empty strings and untouched
+    for (const tool of workflowTools) {
+      assert.ok(tool.description && tool.description.length > 20);
+    }
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
