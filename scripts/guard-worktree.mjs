@@ -19,6 +19,7 @@ import { spawnSync } from 'node:child_process'
 import { isAbsolute, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
+const MAIN_PLUGINS_MARK = `${sep}omnimux-dsh${sep}plugins${sep}`
 const WORKTREE_MARK = `${sep}omnimux-dsh-wt-`
 
 const EPHEMERAL_DIR_NAMES = new Set([
@@ -38,6 +39,13 @@ const EPHEMERAL_SUFFIXES = ['.log', '.tsbuildinfo']
 
 export function isWorktreePath(fullPath) {
   return Boolean(fullPath && fullPath.includes(WORKTREE_MARK))
+}
+
+export function isMainRepoPluginPath(fullPath) {
+  if (isWorktreePath(fullPath)) return false
+  if (fullPath.includes(MAIN_PLUGINS_MARK)) return true
+  const normalized = fullPath.replace(/\\/g, '/')
+  return normalized.includes('/omnimux-dsh/plugins/') || normalized.startsWith('plugins/') || normalized.includes('/plugins/')
 }
 
 export function isEphemeralPath(fullPath) {

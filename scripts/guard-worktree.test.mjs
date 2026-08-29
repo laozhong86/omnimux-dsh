@@ -12,8 +12,8 @@ import {
 } from './guard-worktree.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const worktreeRoot = join(here, '..')
 const mainRepoRoot = '/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh'
+const repoRoot = mainRepoRoot
 const scriptPath = join(here, 'guard-worktree.mjs')
 
 function runHook(payload) {
@@ -120,6 +120,22 @@ describe('guard-worktree decideWrite (全量版本文件拦截)', () => {
     })
     assert.equal(result.decision, 'allow')
     assert.equal(result.reason, 'untracked')
+  })
+
+  it('denies tracked docs on main checkout, but allows untracked files', () => {
+    const trackedResult = decideWrite({
+      toolName: 'write',
+      cwd: mainRepoRoot,
+      filePath: 'docs/contracts/plugin-git-pr.md',
+    })
+    assert.equal(trackedResult.decision, 'deny')
+
+    const untrackedResult = decideWrite({
+      toolName: 'write',
+      cwd: mainRepoRoot,
+      filePath: '__untracked_temp_notes__.md',
+    })
+    assert.equal(untrackedResult.decision, 'allow')
   })
 
   it('allows all writes inside a worktree path (including plugins, docs, root)', () => {
