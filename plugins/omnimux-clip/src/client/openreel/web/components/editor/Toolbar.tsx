@@ -417,14 +417,23 @@ export const Toolbar: React.FC = () => {
   return (
     <header className="h-[60px] flex items-center gap-[18px] px-[18px] bg-bg-1 border-b border-border shrink-0 z-30 relative">
       {/* ─── Left: mode switch ────────────────────────────────── */}
-      <WorkspaceModeTabs
-        activeMode="video"
-        onSelectMode={handleWorkspaceModeSelect}
-        className="shrink-0"
-      />
+      {/* data-toolbar-section: 供 CLIP_CSS 按 data-clip-mode 做三段显隐互斥 */}
+      <div
+        data-toolbar-section="left"
+        className="openreel-toolbar-left flex shrink-0 items-center"
+      >
+        <WorkspaceModeTabs
+          activeMode="video"
+          onSelectMode={handleWorkspaceModeSelect}
+          className="shrink-0"
+        />
+      </div>
 
       {/* ─── Center: project name ─────────────────────────────── */}
-      <div className="flex flex-1 min-w-0 items-center justify-center gap-1.5">
+      <div
+        data-toolbar-section="center"
+        className="openreel-toolbar-center flex flex-1 min-w-0 items-center justify-center gap-1.5"
+      >
         <ToolcraftTextInputControl
           label="Project name"
           isLabelHidden
@@ -446,7 +455,10 @@ export const Toolbar: React.FC = () => {
       </div>
 
       {/* ─── Right: export only ───────────────────────────────── */}
-      <div className="flex items-center justify-end shrink-0">
+      <div
+        data-toolbar-section="right"
+        className="openreel-toolbar-right flex items-center justify-end shrink-0"
+      >
         {/* Export */}
         {exportState.isExporting ? (
           <button
@@ -481,7 +493,7 @@ export const Toolbar: React.FC = () => {
             <button
               type="button"
               onClick={() => handleExport("mp4")}
-              className="rounded-l-[8px] rounded-r-none bg-accent px-[18px] py-[9px] text-[13px] font-semibold text-white"
+              className="openreel-export-btn rounded-l-[8px] rounded-r-none bg-accent px-[18px] py-[9px] text-[13px] font-semibold text-accent-fg"
             >
               Export
             </button>
@@ -500,7 +512,7 @@ export const Toolbar: React.FC = () => {
                     height="11"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#fff"
+                    stroke="currentColor"
                     strokeWidth="2.4"
                     aria-hidden
                   >
@@ -508,7 +520,7 @@ export const Toolbar: React.FC = () => {
                   </svg>
                 ),
                 className:
-                  "rounded-l-none rounded-r-[8px] border-l border-white/25",
+                  "openreel-export-btn-chevron rounded-l-none rounded-r-[8px] border-l border-accent-divider",
                 style: {
                   background: "var(--accent)",
                   width: "auto",
