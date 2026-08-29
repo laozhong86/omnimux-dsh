@@ -96,7 +96,8 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
   // 必须稳定引用：CanvasBridge 虽已不再因 onClose 卸岛，但仍走 updateCanvas。
   const onClose = useCallback(() => {}, [])
 
-  // 每个会话 / 项目拥有专属独立的画布工作区 ID，绝不串连其他项目的画布
+  // 每个会话 / 项目拥有专属独立的画布工作区 ID，绝不串连其他项目的画布。
+  // sessionId 未就绪时禁止挂岛：否则 workspaceId=undefined，boot 会误开最新图。
   const targetWorkspaceId = sessionToWorkspaceId(sessionId)
 
   return (
@@ -105,7 +106,13 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
       className="omnimux-workflow-canvas-tab"
       data-visible={visible ? 'true' : 'false'}
     >
-      <CanvasBridge onClose={onClose} t={t} locale={activeLocale} workspaceId={targetWorkspaceId} />
+      {targetWorkspaceId ? (
+        <CanvasBridge onClose={onClose} t={t} locale={activeLocale} workspaceId={targetWorkspaceId} />
+      ) : (
+        <div className="omnimux-workflow-canvas-status">
+          {t('canvas.loading')}
+        </div>
+      )}
     </div>
   )
 }

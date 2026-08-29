@@ -181,15 +181,17 @@ test('源码契约：performSave / flush 用决策瞬间快照，reset 不会异
     'flushIfDirty 不得 void performSave() 无快照',
   );
   assert.match(persistSrc, /enabledRef/);
-  // 409 重试必须复用 captured，不得再次 getState
+  // 409 必须走 resolveRemoteAdvance（比签名），不得在 performSave 里回读 store
   const performSaveStart = persistSrc.indexOf('const performSave = useCallback');
-  const performSaveEnd = persistSrc.indexOf('}, []);', performSaveStart);
+  const performSaveEnd = persistSrc.indexOf('}, [resolveRemoteAdvance]);', performSaveStart);
+  assert.ok(performSaveEnd > performSaveStart, 'performSave 必须依赖 resolveRemoteAdvance');
   const performSaveBlock = persistSrc.slice(performSaveStart, performSaveEnd);
   assert.equal(
     performSaveBlock.includes('useCanvasStore.getState()'),
     false,
     'performSave 不得在 await 后回读 store',
   );
+  assert.match(performSaveBlock, /resolveRemoteAdvance\(/);
 });
 
 test('源码契约：resetStore 标 cause reset；用户删除走 noteUserDeletedGraphElements', () => {

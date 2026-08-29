@@ -123,6 +123,51 @@ test('sanitizeNodes 剥 blob:，有 realPath 时派生 local-file URL', () => {
   assert.equal('mediaAssets' in orphan.data, false);
 });
 
+test('仅 nodeHeight / width / height 变化 → 签名不变', () => {
+  const base = [
+    {
+      id: 'n1',
+      type: 'material',
+      position: { x: 0, y: 0 },
+      data: { label: '', materialType: 'image', nodeWidth: 350 },
+    },
+  ];
+  const measured = [
+    {
+      ...base[0],
+      width: 350,
+      height: 362,
+      data: { ...base[0].data, nodeHeight: 362 },
+    },
+  ];
+  assert.equal(signatureOf(base, []), signatureOf(measured, []));
+});
+
+test('剥 outputVideoUrl / thumbnailUrl 的 blob，签名与无 blob 一致', () => {
+  const clean = [
+    {
+      id: 'n1',
+      type: 'material',
+      position: { x: 0, y: 0 },
+      data: { label: '视频合成 - 导出产物', materialType: 'video', status: 'done' },
+    },
+  ];
+  const withBlob = [
+    {
+      ...clean[0],
+      data: {
+        ...clean[0].data,
+        outputVideoUrl: 'blob:http://127.0.0.1:45120/abc',
+        thumbnailUrl: 'blob:http://127.0.0.1:45120/def',
+      },
+    },
+  ];
+  const [out] = sanitizeNodes(withBlob);
+  assert.equal('outputVideoUrl' in out.data, false);
+  assert.equal('thumbnailUrl' in out.data, false);
+  assert.equal(signatureOf(clean, []), signatureOf(withBlob, []));
+});
+
 test('真位移 / 改 data 会变脏', () => {
   const a = signatureOf(
     [{ id: 'n1', type: 'material', position: { x: 0, y: 0 }, data: { label: '' } }],
@@ -143,6 +188,8 @@ test('真位移 / 改 data 会变脏', () => {
 test('源码契约：persistence 用 persistSanitize，不再本地展开 {...node}', () => {
   const persistSrc = readFileSync(join(here, 'useWorkspacePersistence.ts'), 'utf8');
   assert.match(persistSrc, /from '\.\/persistSanitize'/);
+  assert.match(persistSrc, /from '\.\/persistConflict'/);
+  assert.match(persistSrc, /decideRemoteVersionAdvance/);
   assert.match(persistSrc, /sanitizeNodes|signatureOf/);
   assert.equal(
     /function sanitizeNodes\(/.test(persistSrc),

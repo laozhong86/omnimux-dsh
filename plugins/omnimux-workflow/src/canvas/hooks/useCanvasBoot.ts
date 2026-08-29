@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 import { t } from '../i18n';
 import {
-  listWorkspaces,
   createWorkspace,
   getWorkspace,
   fetchCapabilities,
@@ -68,49 +67,27 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
           }
         });
 
-        // 1. 如果传入了特定会话/创作页的 workspaceId，优先加载或新建该专属画布
-        if (targetWorkspaceId) {
-          const loaded = await getWorkspace(targetWorkspaceId);
+        // 会话画布必须带 workspaceId。sessionId 空窗时不得 fallback 到
+        // list()[0]（会打开别人的最新图，cleanup flush 再和自己 409）。
+        if (!targetWorkspaceId) return;
+
+        const loaded = await getWorkspace(targetWorkspaceId);
+        if (cancelled) return;
+        if (loaded.ok && loaded.body.workspace) {
+          hydrateGraph(loaded.body.workspace.nodes, loaded.body.workspace.edges);
+          await probeAndPatchImportedMedia();
           if (cancelled) return;
-          if (loaded.ok && loaded.body.workspace) {
-            hydrateGraph(loaded.body.workspace.nodes, loaded.body.workspace.edges);
-            await probeAndPatchImportedMedia();
-            if (cancelled) return;
-            setBoot({ phase: 'ready', workspace: loaded.body.workspace });
-            return;
-          }
-          // 专属工作区尚不存在，创建属于该 ID 的纯净新工作区
-          const created = await createWorkspace('工作流', targetWorkspaceId);
-          if (cancelled) return;
-          if (!created.ok || !created.body.workspace) {
-            throw new Error(created.body.message ?? t('error.createWorkspaceFailed'));
-          }
-          hydrateGraph(created.body.workspace.nodes, created.body.workspace.edges);
-          setBoot({ phase: 'ready', workspace: created.body.workspace });
+          setBoot({ phase: 'ready', workspace: loaded.body.workspace });
           return;
         }
-
-        // 2. 兜底策略（仅在没有指定 workspaceId 时回退）
-        const list = await listWorkspaces();
+        // 专属工作区尚不存在，创建属于该 ID 的纯净新工作区
+        const created = await createWorkspace('工作流', targetWorkspaceId);
         if (cancelled) return;
-        let workspaceId: string | undefined = list.body.workspaces?.[0]?.id;
-        if (!workspaceId) {
-          const created = await createWorkspace('我的工作流');
-          if (cancelled) return;
-          if (!created.ok || !created.body.workspace) {
-            throw new Error(created.body.message ?? t('error.createWorkspaceFailed'));
-          }
-          workspaceId = created.body.workspace.id;
+        if (!created.ok || !created.body.workspace) {
+          throw new Error(created.body.message ?? t('error.createWorkspaceFailed'));
         }
-        const loaded = await getWorkspace(workspaceId);
-        if (cancelled) return;
-        if (!loaded.ok || !loaded.body.workspace) {
-          throw new Error(loaded.body.message ?? t('error.loadWorkspaceFailed'));
-        }
-        hydrateGraph(loaded.body.workspace.nodes, loaded.body.workspace.edges);
-        await probeAndPatchImportedMedia();
-        if (cancelled) return;
-        setBoot({ phase: 'ready', workspace: loaded.body.workspace });
+        hydrateGraph(created.body.workspace.nodes, created.body.workspace.edges);
+        setBoot({ phase: 'ready', workspace: created.body.workspace });
       } catch (error) {
         if (!cancelled) {
           setBoot({ phase: 'error', message: error instanceof Error ? error.message : String(error) });

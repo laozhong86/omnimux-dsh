@@ -15,6 +15,12 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+test('源码契约：无 workspaceId 不得 fallback list()[0]', () => {
+  const bootSrc = readFileSync(join(here, 'useCanvasBoot.ts'), 'utf8');
+  assert.equal(/listWorkspaces/.test(bootSrc), false, 'boot 不得再 list 最新工作区');
+  assert.match(bootSrc, /if \(!targetWorkspaceId\) return/);
+});
+
 test('源码契约：useCanvasBoot cleanup 里 beforeReset 在 resetStore() 之前', () => {
   const bootSrc = readFileSync(join(here, 'useCanvasBoot.ts'), 'utf8');
   assert.match(bootSrc, /beforeReset\?:/);
