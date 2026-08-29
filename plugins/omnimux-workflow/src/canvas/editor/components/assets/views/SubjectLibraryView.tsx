@@ -6,6 +6,7 @@ import {
   Plus,
   Sparkles,
   ChevronDown,
+  Layers,
 } from 'lucide-react';
 import { SortFilterPopover } from '../popovers/SortFilterPopover';
 import { SUBJECT_CATEGORY_TABS } from '../../../../bridge/assetsLibraryMapper';

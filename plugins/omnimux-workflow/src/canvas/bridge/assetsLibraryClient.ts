@@ -13,7 +13,12 @@ import type { SubjectPack } from '../editor/components/assets/types.ts';
 
 export type AssetsFetch = (
   input: string,
-  init?: { method?: string; headers?: Record<string, string>; body?: string },
+  init?: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    signal?: AbortSignal;
+  },
 ) => Promise<{
   ok: boolean;
   status: number;
@@ -59,13 +64,16 @@ async function readJson(response: { json: () => Promise<unknown> }): Promise<Rec
 export function createAssetsLibraryClient(opts: { fetch?: AssetsFetch } = {}) {
   const fetchImpl = opts.fetch ?? defaultFetch();
 
-  async function listLibrary(filter: { type?: string; q?: string } = {}): Promise<AssetsLibraryListResult> {
+  async function listLibrary(
+    filter: { type?: string; q?: string } = {},
+    signal?: AbortSignal,
+  ): Promise<AssetsLibraryListResult> {
     try {
       const params = new URLSearchParams();
       if (filter.type && filter.type !== 'all') params.set('type', filter.type);
       if (filter.q) params.set('q', filter.q);
       const suffix = params.toString() ? `?${params.toString()}` : '';
-      const response = await fetchImpl(`/omnimux/assets/library${suffix}`, { method: 'GET' });
+      const response = await fetchImpl(`/omnimux/assets/library${suffix}`, { method: 'GET', signal });
       const body = await readJson(response);
       if (!response.ok) {
         return {
@@ -81,7 +89,10 @@ export function createAssetsLibraryClient(opts: { fetch?: AssetsFetch } = {}) {
         .map((row) => mapLibraryAssetToSubject(row))
         .filter((row) => row.id !== '');
       return { ok: true, status: response.status, subjects };
-    } catch {
+    } catch (err) {
+      if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
+        return { ok: false, status: 0, subjects: [], error: 'aborted' };
+      }
       return { ok: false, status: 0, subjects: [], error: 'network' };
     }
   }

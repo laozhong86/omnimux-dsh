@@ -21,22 +21,28 @@ export function useSubjectLibrary(enabled: boolean): UseSubjectLibraryResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(async (filter: { type?: string; q?: string } = {}) => {
+  const refresh = useCallback(async (filter: { type?: string; q?: string } = {}, signal?: AbortSignal) => {
     setLoading(true);
-    const result = await client.listLibrary(filter);
-    setLoading(false);
-    if (!result.ok) {
-      setError(result.error || 'library-unavailable');
-      setSubjects([]);
-      return;
+    try {
+      const result = await client.listLibrary(filter, signal);
+      if (signal?.aborted || result.error === 'aborted') return;
+      if (!result.ok) {
+        setError(result.error || 'library-unavailable');
+        setSubjects([]);
+        return;
+      }
+      setError(null);
+      setSubjects(result.subjects);
+    } finally {
+      if (!signal?.aborted) setLoading(false);
     }
-    setError(null);
-    setSubjects(result.subjects);
   }, []);
 
   useEffect(() => {
     if (!enabled) return;
-    void refresh();
+    const controller = new AbortController();
+    void refresh({}, controller.signal);
+    return () => controller.abort();
   }, [enabled, refresh]);
 
   const createSubject = useCallback(async (name: string) => {

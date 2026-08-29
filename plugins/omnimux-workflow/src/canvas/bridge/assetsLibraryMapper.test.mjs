@@ -4,6 +4,9 @@
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   interpretPickResponse,
   libraryPreviewUrl,
@@ -14,6 +17,8 @@ import {
 } from './assetsLibraryMapper.ts';
 import { createAssetsLibraryClient } from './assetsLibraryClient.ts';
 import { flattenProjectAssets } from '../editor/hooks/flattenProjectAssets.ts';
+
+const here = dirname(fileURLToPath(import.meta.url));
 
 test('6. mapLibraryAssetToSubject 六类 + 未知 → custom', () => {
   const types = ['character', 'scene', 'style', 'prop', 'knowledge', 'custom'];
@@ -131,4 +136,52 @@ test('树按 parentId 展平至少两层', () => {
   assert.equal(file?.parentId, 'fld_b');
   assert.equal(file?.real_path, '/tmp/hero.png');
   assert.match(file?.previewUrl || '', /\/omnimux-workflow\/api\/local-file\?path=/);
+});
+
+test('SubjectLibraryView lucide-react 命名导入必须绑定 Layers（防卡片徽章 ReferenceError）', () => {
+  const source = readFileSync(
+    join(here, '../editor/components/assets/views/SubjectLibraryView.tsx'),
+    'utf8',
+  );
+  const importMatch = source.match(/import\s*\{([\s\S]*?)\}\s*from\s*['"]lucide-react['"]/);
+  assert.ok(importMatch, 'SubjectLibraryView.tsx 必须有 lucide-react 命名导入');
+  const imported = importMatch[1]
+    .split(',')
+    .map((part) => part.trim().split(/\s+as\s+/)[0].trim())
+    .filter(Boolean);
+  assert.ok(
+    imported.includes('Layers'),
+    `lucide-react import 必须含 Layers，实际: ${imported.join(', ')}`,
+  );
+  assert.match(
+    source,
+    /<Layers\b/,
+    '卡片计数徽章必须使用 <Layers />，import 绑定才有运行时意义',
+  );
+});
+
+test('listLibrary 转发 AbortSignal；中止后返回 aborted 而非 network', async () => {
+  const controller = new AbortController();
+  let forwarded = false;
+  const client = createAssetsLibraryClient({
+    fetch: async (_url, init) => {
+      forwarded = Boolean(init?.signal);
+      if (init?.signal?.aborted) {
+        const err = new Error('This operation was aborted');
+        err.name = 'AbortError';
+        throw err;
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ assets: [{ id: 'ast_late', name: 'late', type: 'custom' }] }),
+      };
+    },
+  });
+  controller.abort();
+  const result = await client.listLibrary({}, controller.signal);
+  assert.equal(forwarded, true);
+  assert.equal(result.ok, false);
+  assert.equal(result.error, 'aborted');
+  assert.deepEqual(result.subjects, []);
 });
