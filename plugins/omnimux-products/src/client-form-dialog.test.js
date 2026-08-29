@@ -76,6 +76,7 @@ describe('OmniMux Products self-drawn form modal contract', () => {
 
   it('keeps form submit / cancel wiring and forbids raw visible controls', () => {
     assert.match(dialogJsx, /onClick=\{\(\) => \{ onSubmit\(payload\(\)\) \}\}/)
+    assert.match(dialogJsx, /export function ProductFormDialog\(\{ t, data, onAction \}\)/)
     assert.match(dialogJsx, /<CloseIcon size=\{14\} \/>/)
     assert.doesNotMatch(dialogJsx, /<button\b/)
     assert.doesNotMatch(dialogJsx, /<select\b/)
