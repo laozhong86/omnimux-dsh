@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-08-28T20:10:00+08:00",
+  "targetStage": "omnimux-inspiration",
+  "port": 45120,
+  "assertions": {
+    "1. Dataset Stage Mutex claimed": true,
+    "2. Stage Root DOM Exists": true,
+    "3. Stage Computed Display Visible": true,
+    "4. Content Rendered Non-empty": true,
+    "5. CTA copy shortened to 查看": true,
+    "6. Overlay CTA buttons equal width 1:1": true,
+    "7. Live client.js matches rebuilt source": true
+  },
+  "details": {
+    "stageId": "omnimux-inspiration",
+    "datasetActualStage": "omnimux-inspiration",
+    "stageDomExists": true,
+    "stageIsVisible": true,
+    "stageComputedDisplay": "flex",
+    "title": "灵感素材库",
+    "cardCount": 11,
+    "cardW": 215.4,
+    "ctaW": 189.4,
+    "btnWidths": [
+      91.7,
+      91.7
+    ],
+    "widthDiff": 0,
+    "equalWidth": true,
+    "detailCopy": "查看",
+    "tryCopy": "去对话",
+    "hasOldDetailCopy": false,
+    "flex": "1 1 0px",
+    "minWidth": "0px",
+    "padding": "0px 8px",
+    "justifyContent": "center",
+    "liveClientSha256": "faa83484cbd115f2bfdf2612b3ec1a696d89735a0d41e1f0c9b66569e15f66b8",
+    "sourceClientSha256": "faa83484cbd115f2bfdf2612b3ec1a696d89735a0d41e1f0c9b66569e15f66b8",
+    "profiles": [
+      "/Users/x/.dsh/profiles/omnimux",
+      "/Users/x/.omnimux-dev/profiles/omnimux",
+      "/Users/x/.omnimux/profiles/omnimux"
+    ],
+    "screenshot": "docs/evidence/inspiration-cta-ratio-live-45120.png",
+    "officialVerifyLive": "timed_out_claiming_sibling_omnimux_space"
+  },
+  "verdict": "PASS",
+  "note": "Official pnpm verify:live inspiration timed out claiming a sibling OmniMux ego-browser space. Dedicated task space inspiration-cta-ratio-live against Dev Host 45120: claim omnimux-inspiration, hover first card. CTA copy is 查看 / 去对话 (no 查看详情). Measured widths 91.7px / 91.7px (diff 0) with flex 1 1 0, min-width 0, padding 0 8px, justify-content center. Live /plugins/omnimux-inspiration/client.js SHA matches rebuilt source faa83484cbd115f2."
+}

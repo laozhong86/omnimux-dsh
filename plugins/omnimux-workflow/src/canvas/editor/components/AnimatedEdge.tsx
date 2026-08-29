@@ -1,20 +1,17 @@
 /**
- * W3 rework, ported from Gxgen
- * `apps/web/src/pages/CanvasEditor/components/AnimatedEdge.tsx` (107 lines).
+ * OmniMux 物理级流光连线组件 (AnimatedEdge)
  *
- * Activation semantics aligned with Gxgen: the beam is driven by the
- * DOWNSTREAM (target) node — the component subscribes to
- * useExecutionStore(s => s.nodeStatuses[target] === 'running') internally.
- * (The old upstream-driven edge.animated mapping in CanvasEditor was
- * removed in T3.2.)
- *
- * - inactive: static BaseEdge (selected → accent stroke, as before)
- * - active: BaseEdge at opacity 0 + AnimatedBeam (blue gradient + glow)
- * - active + prefers-reduced-motion: .wf-edge--flowing CSS dash fallback
- *   (its animation is disabled by the reduced-motion media query)
- *
- * Both branches wrap in .wf-edge-with-disconnect and mount
- * EdgeDisconnectControl at the bezier label point (T3.3).
+ * 核心交互与设计准则：
+ * 1. 原生底轨完全保真（Base Edge Fidelity）：
+ *    静态连线颜色、线宽与样式 100% 保持深浅色模式原本的基准设计，不篡改底线颜色；
+ * 2. 节点关联触发（Node Selection Trigger）：
+ *    当用户在画布中选中某个节点时，与该节点直接相连（流入/流出）的所有连线在原底轨之上点亮 MiniMax 彗星拖尾流光；
+ * 3. 连线直接选中（Edge Selection）：
+ *    当鼠标点击选中单条连线时，同样激活彗星流光；
+ * 4. 运行态流光（Execution Flowing）：
+ *    当下游节点处于 running 状态时，入边激活流光反馈；
+ * 5. 拖尾数学模型（Comet Physics）：
+ *    6 段微元非线性指数衰减（progress ** 1.35），104px/s 恒定流速，双主题非蓝配色。
  */
 
 import { memo } from 'react';
@@ -23,6 +20,7 @@ import {
   getBezierPath,
   type EdgeProps,
 } from '@xyflow/react';
+import { useCanvasStore } from '../../store/canvasStore';
 import { useExecutionStore } from '../../store/executionStore';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import AnimatedBeam from './AnimatedBeam';
@@ -30,6 +28,8 @@ import EdgeDisconnectControl from './EdgeDisconnectControl';
 
 const AnimatedEdge = ({
   id,
+  source,
+  target,
   sourceX,
   sourceY,
   targetX,
@@ -37,7 +37,9 @@ const AnimatedEdge = ({
   sourcePosition,
   targetPosition,
   selected,
-  target,
+  animated,
+  data,
+  style,
 }: EdgeProps) => {
   const [path, labelX, labelY] = getBezierPath({
     sourceX,
@@ -48,56 +50,47 @@ const AnimatedEdge = ({
     targetPosition,
   });
 
-  // 下游节点 running → 光束激活（对齐 Gxgen 下游语义，store 字段不变）
+  // 1. 响应式订阅：当上游源节点或下游目标节点被选中时，激活流光
+  const isConnectedNodeSelected = useCanvasStore((state) => {
+    const activeSelectedId = state.selectedElement.id;
+    if (activeSelectedId && (activeSelectedId === source || activeSelectedId === target)) {
+      return true;
+    }
+    return state.nodes.some((node) => node.selected && (node.id === source || node.id === target));
+  });
+
+  // 2. 下游节点 running 状态激活流光
   const isTargetRunning = useExecutionStore((state) => state.nodeStatuses[target] === 'running');
+
+  // 3. 边本身被选中或显式声明 flowing
+  const isEdgeSelected = selected === true;
+  const isExplicitFlowing = animated === true || (data && typeof data === 'object' && (data as Record<string, unknown>).flowing === true);
+
+  // 综合激活判定：仅在选中相关节点、选中本边、或执行时激活流光
+  const isBeamActive = isConnectedNodeSelected || isEdgeSelected || isTargetRunning || isExplicitFlowing;
+
   const reducedMotion = usePrefersReducedMotion();
 
-  const stroke = selected ? 'var(--wb-accent)' : 'var(--wb-edge)';
-  const strokeWidth = selected ? 2.5 : 2;
+  return (
+    <g className="wf-edge-with-disconnect">
+      {/* 1. 底层原版连线：100% 保持深浅色原本的连线颜色与样式 */}
+      <BaseEdge
+        id={id}
+        path={path}
+        style={style}
+      />
 
-  // reduced-motion 降级：CSS dash（媒体查询下动画静止）
-  if (isTargetRunning && reducedMotion) {
-    return (
-      <g className="wf-edge-with-disconnect">
-        <BaseEdge
-          id={id}
-          path={path}
-          className="wf-edge--flowing"
-          style={{ stroke, strokeWidth }}
-        />
-        <EdgeDisconnectControl edgeId={id} x={labelX} y={labelY} />
-      </g>
-    );
-  }
-
-  // 下游 running：BaseEdge 隐去（保留交互/选中热区）+ 蓝系光束
-  if (isTargetRunning) {
-    return (
-      <g className="wf-edge-with-disconnect">
-        <BaseEdge
-          id={id}
-          path={path}
-          style={{ stroke, strokeWidth, opacity: 0 }}
-        />
+      {/* 2. 顶层流光：仅在激活时叠加 MiniMax 6 段彗星拖尾流光（无障碍模式下静止不渲染） */}
+      {isBeamActive && !reducedMotion && (
         <AnimatedBeam
           pathD={path}
           startPoint={{ x: sourceX, y: sourceY }}
           endPoint={{ x: targetX, y: targetY }}
-          pathColor={stroke}
-          pathWidth={strokeWidth}
+          duration={isTargetRunning ? 0.8 : undefined}
         />
-        <EdgeDisconnectControl edgeId={id} x={labelX} y={labelY} />
-      </g>
-    );
-  }
+      )}
 
-  return (
-    <g className="wf-edge-with-disconnect">
-      <BaseEdge
-        id={id}
-        path={path}
-        style={{ stroke, strokeWidth }}
-      />
+      {/* 3. 悬停断开微控制器 */}
       <EdgeDisconnectControl edgeId={id} x={labelX} y={labelY} />
     </g>
   );

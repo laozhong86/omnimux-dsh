@@ -1,38 +1,29 @@
 /**
- * Ported verbatim from Gxgen
- * `apps/web/src/components/magicui/animated-beam.tsx` (161 lines) —
- * zero-dependency SVG beam primitive (stroke-dasharray + getTotalLength()
- * + inline CSS keyframes + glow filter). esbuild-compatible, no
- * framer-motion.
+ * MiniMax 进阶版 8 段非线性长拖尾彗星流光图层 (AnimatedBeam)
  *
- * Only the default colors changed: gradient defaults → --wb-beam-start /
- * --wb-beam-end (dsh blue, not Gxgen purple); track color → --wb-edge.
- *
- * Kept behaviors (plan pit #3): the top flowing path renders only when
- * pathLength > 0 (getTotalLength() is 0 on the first frame); useId colon
- * cleanup is copied as-is.
+ * 核心升级参数：
+ * - EDGE_FLOW_PULSE_LENGTH_PX = 64 (加长能量彗星拖尾总长，由 36px 扩展至 64px)
+ * - EDGE_FLOW_GAP_LENGTH_PX = 186 (拉宽脉冲间隙，由 120px 扩展至 186px，单周期 250px)
+ * - EDGE_FLOW_SEGMENT_COUNT = 8 (8 段微元渐变，拖尾过渡极致丝滑)
+ * - EDGE_FLOW_SPEED_PX_PER_SECOND = 108 (108px/s 恒定物理流速)
+ * - EDGE_FLOW_TAIL_WIDTH = 0.9 (尾尖 0.9px 渐细)
+ * - EDGE_FLOW_HEAD_WIDTH = 3.0 (头部 3.0px 高亮核)
+ * - EDGE_FLOW_TAIL_OPACITY = 0.16 (尾部极致渐隐)
+ * - EDGE_FLOW_HEAD_OPACITY = 0.98 (头部高能量)
+ * - taperedProgress = progress ** 1.4 (非线性长拖尾指数曲线)
+ * - 纯流光叠加层：不侵入底层静态连线颜色，100% 保持深浅色底轨。
  */
 
-import { useId, useRef, useState, useEffect, useMemo } from 'react';
+import { useId, useRef, useState, useEffect, useMemo, memo } from 'react';
 
 export interface AnimatedBeamProps {
-  /** SVG path d 值（由调用方计算提供） */
+  /** SVG path d 值 */
   pathD: string;
-  /** 路径起点坐标（保留接口兼容，当前实现不依赖此参数） */
+  /** 路径起点坐标 */
   startPoint?: { x: number; y: number };
-  /** 路径终点坐标（保留接口兼容，当前实现不依赖此参数） */
+  /** 路径终点坐标 */
   endPoint?: { x: number; y: number };
-  /** 底层轨迹线颜色 */
-  pathColor?: string;
-  /** 底层轨迹线宽度 */
-  pathWidth?: number;
-  /** 底层轨迹线透明度 */
-  pathOpacity?: number;
-  /** 光束渐变起始色（电流主色） */
-  gradientStartColor?: string;
-  /** 光束渐变终止色（电流辉光色） */
-  gradientStopColor?: string;
-  /** 动画一个循环周期的时长（秒），值越小流速越快 */
+  /** 自定义动画时长（秒） */
   duration?: number;
   /** 动画延迟（秒） */
   delay?: number;
@@ -42,97 +33,127 @@ export interface AnimatedBeamProps {
   className?: string;
 }
 
-/**
- * SVG 光束动画原语 —— 电流持续循环流动效果
- *
- * 渲染三层：
- * 1. SVG filter（glow 辉光）
- * 2. 底层 path：低透明度静态描边（轨迹背景线）
- * 3. 顶层 path：虚线段 + dashoffset 动画（流动电流）
- *
- * 必须在 <svg> 内使用（如 ReactFlow edge、独立 SVG 等）。
- */
+// 进阶物理常量：加长拖尾 (64px) + 拉宽间隙 (186px) + 8 段微元平滑过渡
+const EDGE_FLOW_SPEED_PX_PER_SECOND = 108; // 108px/s 恒定物理流速
+const EDGE_FLOW_PULSE_LENGTH_PX = 64;       // 64px 加长能量微元总长
+const EDGE_FLOW_GAP_LENGTH_PX = 186;        // 186px 脉冲间隔
+const EDGE_FLOW_PERIOD_PX = EDGE_FLOW_PULSE_LENGTH_PX + EDGE_FLOW_GAP_LENGTH_PX; // 250px 周期
+const EDGE_FLOW_SEGMENT_COUNT = 8;          // 8 段微元无缝拼接
+const EDGE_FLOW_TAIL_WIDTH = 0.9;
+const EDGE_FLOW_HEAD_WIDTH = 3.0;
+const EDGE_FLOW_TAIL_OPACITY = 0.16;
+const EDGE_FLOW_HEAD_OPACITY = 0.98;
+
 export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
   pathD,
-  pathColor = 'var(--wb-edge, #b1b1b7)',
-  pathWidth = 2,
-  pathOpacity = 0.2,
-  gradientStartColor = 'var(--wb-beam-start, #4176E6)',
-  gradientStopColor = 'var(--wb-beam-end, #679EFE)',
-  duration = 1.5,
+  startPoint,
+  endPoint,
+  duration,
   delay = 0,
   reverse = false,
   className,
 }) => {
   const id = useId();
-  // 清理 id 中的特殊字符（如 :），确保可用于 CSS animation-name
-  const safeId = id.replace(/:/g, '');
-  const filterId = `${safeId}-glow`;
-  const gradientId = `${safeId}-grad`;
-  const animationName = `beam-flow-${safeId}`;
+  const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
+  const filterId = `beam-comet-glow-${safeId}`;
+  const flowAnimationName = `beam-flow-${safeId}`;
+  const breatheAnimationName = `beam-breathe-${safeId}`;
 
-  // 测量 path 实际长度，用于精确匹配 dasharray 循环
+  // 第 0 帧默认估算弧长
+  const initialEstimate = useMemo(() => {
+    if (startPoint && endPoint) {
+      const dx = endPoint.x - startPoint.x;
+      const dy = endPoint.y - startPoint.y;
+      return Math.max(250, Math.hypot(dx, dy) * 1.15);
+    }
+    return 250;
+  }, [startPoint, endPoint]);
+
   const pathRef = useRef<SVGPathElement>(null);
-  const [pathLength, setPathLength] = useState(0);
+  const [pathLength, setPathLength] = useState<number>(initialEstimate);
 
   useEffect(() => {
     if (pathRef.current) {
-      setPathLength(pathRef.current.getTotalLength());
+      try {
+        const len = pathRef.current.getTotalLength();
+        if (Number.isFinite(len) && len > 0) {
+          setPathLength(len);
+        }
+      } catch {
+        // SVG detached fallback
+      }
     }
   }, [pathD]);
 
-  // dash 段长和间隔（基于路径长度动态计算，确保均匀分布）
-  const { dashSize, gapSize, offsetRange } = useMemo(() => {
-    if (!pathLength) return { dashSize: 8, gapSize: 16, offsetRange: 24 };
-    // 每段"电流"约 8px，间隔约 16px，构成一个周期 24px
-    const period = 24;
-    // 取整到路径长度的整数倍，确保循环无缝
-    const cycles = Math.max(1, Math.round(pathLength / period));
-    const adjustedPeriod = pathLength / cycles;
-    const dash = adjustedPeriod * (1 / 3); // 1/3 为发光段
-    const gap = adjustedPeriod * (2 / 3); // 2/3 为间隔
-    return { dashSize: dash, gapSize: gap, offsetRange: adjustedPeriod };
-  }, [pathLength]);
+  // 8 段彗星微元几何与动画计算
+  const { segments, calculatedDuration, periodPx } = useMemo(() => {
+    const effectiveLength = pathLength > 0 ? pathLength : initialEstimate;
+    const cycles = Math.max(1, Math.round(effectiveLength / EDGE_FLOW_PERIOD_PX));
+    const actualPeriod = effectiveLength / cycles;
+    
+    // 脉冲与间隙等比放缩至当前周期网格
+    const pulseLength = actualPeriod * (EDGE_FLOW_PULSE_LENGTH_PX / EDGE_FLOW_PERIOD_PX);
+    const segLength = pulseLength / EDGE_FLOW_SEGMENT_COUNT;
+    const computedSec = duration ?? Math.max(0.5, actualPeriod / EDGE_FLOW_SPEED_PX_PER_SECOND);
 
-  // 注入 keyframes（CSS animation 比 framer-motion 更适合无限线性循环，零 JS 开销）
+    const segs = Array.from({ length: EDGE_FLOW_SEGMENT_COUNT }, (_, index) => {
+      const progress = index / (EDGE_FLOW_SEGMENT_COUNT - 1); // 0 (tail tip) -> 1 (head spark)
+      const taperedProgress = progress ** 1.4; // 彗星长拖尾非线性指数
+      const coreWidth = EDGE_FLOW_TAIL_WIDTH + (EDGE_FLOW_HEAD_WIDTH - EDGE_FLOW_TAIL_WIDTH) * taperedProgress;
+      const haloWidth = coreWidth + 1.4;
+      const opacity = EDGE_FLOW_TAIL_OPACITY + (EDGE_FLOW_HEAD_OPACITY - EDGE_FLOW_TAIL_OPACITY) * taperedProgress;
+
+      // 负向延迟对齐，8 段严密拼接成 64px 长拖尾彗星
+      const segmentTimeOffsetSec = -(index * (computedSec / actualPeriod) * segLength);
+
+      return {
+        index,
+        progress,
+        taperedProgress,
+        coreWidth,
+        haloWidth,
+        opacity,
+        dashArray: `${segLength} ${actualPeriod - segLength}`,
+        timeDelay: delay + segmentTimeOffsetSec,
+      };
+    });
+
+    return {
+      segments: segs,
+      calculatedDuration: computedSec,
+      periodPx: actualPeriod,
+    };
+  }, [pathLength, initialEstimate, duration, delay]);
+
+  // CSS 关键帧：流光位移 + 1600ms 正弦呼吸
   const styleContent = `
-        @keyframes ${animationName} {
-            from { stroke-dashoffset: ${reverse ? -offsetRange : 0}px; }
-            to { stroke-dashoffset: ${reverse ? 0 : -offsetRange}px; }
-        }
-    `;
+    @keyframes ${flowAnimationName} {
+      from { stroke-dashoffset: ${reverse ? -periodPx : 0}px; }
+      to { stroke-dashoffset: ${reverse ? 0 : -periodPx}px; }
+    }
+    @keyframes ${breatheAnimationName} {
+      0%, 100% { opacity: 0.88; }
+      50% { opacity: 1.0; }
+    }
+  `;
 
   return (
-    <g className={className}>
+    <g className={className} pointerEvents="none">
       <defs>
-        {/* CSS keyframes */}
+        {/* CSS GPU 加速关键帧 */}
         <style>{styleContent}</style>
-        {/* 电流辉光滤镜 */}
-        <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+
+        {/* 彗星头部高能量电晕发光滤镜 */}
+        <filter id={filterId} x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2.8" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        {/* 电流渐变色 */}
-        <linearGradient id={gradientId} gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor={gradientStartColor} />
-          <stop offset="100%" stopColor={gradientStopColor} />
-        </linearGradient>
       </defs>
 
-      {/* 底层：静态轨迹背景线 */}
-      <path
-        d={pathD}
-        stroke={pathColor}
-        strokeWidth={pathWidth}
-        strokeOpacity={pathOpacity}
-        strokeLinecap="round"
-        fill="none"
-      />
-
-      {/* 隐藏的测量路径（用于获取 path 总长度） */}
+      {/* 隐藏测量辅助路径 */}
       <path
         ref={pathRef}
         d={pathD}
@@ -140,24 +161,55 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
         stroke="none"
       />
 
-      {/* 顶层：流动电流 */}
-      {pathLength > 0 && (
-        <path
-          d={pathD}
-          stroke={`url(#${gradientId})`}
-          strokeWidth={pathWidth + 1}
-          strokeLinecap="round"
-          strokeDasharray={`${dashSize} ${gapSize}`}
-          fill="none"
-          filter={`url(#${filterId})`}
-          style={{
-            animation: `${animationName} ${duration}s linear ${delay}s infinite`,
-            willChange: 'stroke-dashoffset',
-          }}
-        />
-      )}
+      {/* 8 段长拖尾彗星流光图层 */}
+      <g
+        style={{
+          animation: `${breatheAnimationName} 1.6s ease-in-out infinite`,
+        }}
+      >
+        {segments.map((seg) => {
+          const isHead = seg.index >= 5;
+          return (
+            <g key={seg.index}>
+              {/* 外层 Halo 辉光（头部高能微元） */}
+              {isHead && (
+                <path
+                  d={pathD}
+                  stroke="var(--wb-beam-glow, #10B981)"
+                  strokeWidth={seg.haloWidth}
+                  strokeLinecap="round"
+                  strokeDasharray={seg.dashArray}
+                  fill="none"
+                  filter={`url(#${filterId})`}
+                  opacity={seg.opacity * 0.75}
+                  style={{
+                    animation: `${flowAnimationName} ${calculatedDuration}s linear ${seg.timeDelay}s infinite`,
+                    willChange: 'stroke-dashoffset',
+                  }}
+                />
+              )}
+
+              {/* 核心彗星能量微元（尾部渐细深翠，头部高亮电光绿） */}
+              <path
+                d={pathD}
+                stroke={seg.index === 7 ? 'var(--wb-beam-start, #D4FF38)' : 'var(--wb-beam-end, #10B981)'}
+                strokeWidth={seg.coreWidth}
+                strokeLinecap="round"
+                strokeDasharray={seg.dashArray}
+                fill="none"
+                opacity={seg.opacity}
+                filter={seg.index === 7 ? `url(#${filterId})` : undefined}
+                style={{
+                  animation: `${flowAnimationName} ${calculatedDuration}s linear ${seg.timeDelay}s infinite`,
+                  willChange: 'stroke-dashoffset',
+                }}
+              />
+            </g>
+          );
+        })}
+      </g>
     </g>
   );
 };
 
-export default AnimatedBeam;
+export default memo(AnimatedBeam);

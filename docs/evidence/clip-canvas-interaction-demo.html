@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>交互理解 Demo · 画布区域打开视频剪辑</title>
+  <style>
+    :root {
+      --bg: #111113;
+      --bg-2: #18181b;
+      --bg-3: #1f1f23;
+      --line: rgba(255,255,255,.08);
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --accent: #3b82f6;
+      --ok: #22c55e;
+      --rail: 56px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text); font: 13px/1.45 ui-sans-serif, system-ui, sans-serif; }
+    .app {
+      display: grid;
+      grid-template-columns: var(--rail) minmax(280px, 32%) 1fr;
+      height: 100%;
+    }
+    .rail {
+      background: #0c0c0e;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0;
+      gap: 8px;
+    }
+    .rail .dot {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: grid; place-items: center;
+      color: var(--muted); background: transparent;
+    }
+    .rail .dot.active { background: rgba(255,255,255,.08); color: var(--text); }
+    .conversation {
+      background: var(--bg-2);
+      border-right: 1px solid var(--line);
+      display: flex; flex-direction: column;
+    }
+    .conversation header, .canvas-chrome {
+      height: 44px; display: flex; align-items: center; gap: 8px;
+      padding: 0 12px; border-bottom: 1px solid var(--line);
+    }
+    .tab {
+      height: 28px; padding: 0 10px; border-radius: 8px;
+      background: rgba(255,255,255,.06); display: flex; align-items: center; gap: 6px;
+    }
+    .conversation .body {
+      flex: 1; padding: 16px; color: var(--muted);
+    }
+    .bubble {
+      background: var(--bg-3); border: 1px solid var(--line); border-radius: 12px;
+      padding: 12px; max-width: 92%;
+    }
+    .canvas {
+      position: relative;
+      min-width: 0;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(255,255,255,.06) 1px, transparent 0) 0 0 / 22px 22px,
+        #121214;
+      display: flex; flex-direction: column;
+    }
+    .canvas-body { flex: 1; position: relative; overflow: hidden; }
+    .graph {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center; gap: 28px;
+    }
+    .node {
+      width: 210px; min-height: 240px; border-radius: 14px;
+      background: #1a1a1e; border: 1px solid var(--line); padding: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .node.vc { border-color: rgba(59,130,246,.45); }
+    .node h3 { margin: 0 0 8px; font-size: 13px; }
+    .node p { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
+    .pill {
+      width: 100%; height: 32px; border: 0; border-radius: 8px; cursor: pointer;
+      background: rgba(255,255,255,.08); color: var(--text);
+    }
+    .pill:hover { background: rgba(255,255,255,.14); }
+    .edge {
+      width: 48px; height: 2px; background: rgba(255,255,255,.18); align-self: center;
+    }
+    .editor {
+      position: absolute; inset: 0;
+      display: none; flex-direction: column;
+      background: #111113;
+      z-index: 5;
+    }
+    .editor.open { display: flex; }
+    .editor-head {
+      height: 44px; display: flex; align-items: center; gap: 10px;
+      padding: 0 12px; border-bottom: 1px solid var(--line); background: #161618;
+    }
+    .badge { color: var(--ok); font-size: 12px; }
+    .spacer { flex: 1; }
+    .btn {
+      height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line);
+      background: transparent; color: var(--text); cursor: pointer;
+    }
+    .btn.primary { background: var(--accent); border-color: transparent; }
+    .editor-main { flex: 1; display: grid; grid-template-columns: 72px 220px 1fr 240px; min-height: 0; }
+    .tools, .media, .preview, .inspector {
+      border-right: 1px solid var(--line); padding: 12px; color: var(--muted);
+    }
+    .inspector { border-right: 0; }
+    .preview {
+      display: grid; place-items: center;
+      background: #0b0b0d;
+    }
+    .screen {
+      width: 72%; aspect-ratio: 16/9; border-radius: 10px;
+      background: linear-gradient(180deg, #1c1c22, #0e0e12);
+      border: 1px solid var(--line);
+      display: grid; place-items: center; color: var(--muted);
+    }
+    .timeline {
+      height: 120px; border-top: 1px solid var(--line); padding: 10px 12px; color: var(--muted);
+    }
+    .note {
+      position: absolute; left: 16px; bottom: 16px; z-index: 6;
+      background: rgba(17,17,19,.92); border: 1px solid var(--line); border-radius: 12px;
+      padding: 10px 12px; max-width: 420px; color: var(--muted);
+    }
+    .note b { color: var(--text); }
+    .wrong { outline: 2px dashed rgba(239,68,68,.0); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail" aria-label="活动栏">
+      <div class="dot">＋</div>
+      <div class="dot">◇</div>
+      <div class="dot active">▣</div>
+      <div class="dot">✂</div>
+    </aside>
+
+    <section class="conversation" id="conversation">
+      <header>会话 · 保持不动</header>
+      <div class="body">
+        <div class="bubble">
+          这里是左侧对话区。<br/>
+          点击右侧节点「打开视频剪辑」后，<b>这里不应该被剪辑器占掉</b>。
+        </div>
+      </div>
+    </section>
+
+    <section class="canvas" id="canvas">
+      <div class="canvas-chrome">
+        <div class="tab">画布工作区 ×</div>
+        <span class="spacer"></span>
+        <span id="stateLabel" style="color:var(--muted)">状态：画布图</span>
+      </div>
+      <div class="canvas-body">
+        <div class="graph" id="graph">
+          <div class="node">
+            <h3>视频</h3>
+            <p>上游素材节点</p>
+          </div>
+          <div class="edge"></div>
+          <div class="node vc">
+            <h3>视频合成</h3>
+            <p>开源 AI 视频剪辑工具，支持自动剪辑与字幕生成。</p>
+            <button class="pill" id="openBtn">打开视频剪辑</button>
+          </div>
+        </div>
+
+        <div class="editor" id="editor">
+          <div class="editor-head">
+            <strong>视频合成</strong>
+            <span class="badge">· 画布联动模式</span>
+            <span class="spacer"></span>
+            <button class="btn primary" id="saveBtn">保存草稿至节点</button>
+            <button class="btn" id="closeBtn">关闭，回到画布</button>
+          </div>
+          <div class="editor-main">
+            <div class="tools">工具栏<br/>Media / Text / FX</div>
+            <div class="media">素材库<br/>Import / Record</div>
+            <div class="preview"><div class="screen">预览视口覆盖在原画布位置</div></div>
+            <div class="inspector">属性面板</div>
+          </div>
+          <div class="timeline">时间轴 · 多轨</div>
+        </div>
+
+        <div class="note">
+          <b>我理解的正确交互：</b><br/>
+          1. 点「打开视频剪辑」→ 剪辑器在<strong>当前右侧画布区域原地展开</strong>。<br/>
+          2. 左侧会话、活动栏、画布 Tab 栏都还在。<br/>
+          3. 点关闭 → 剪辑器收起，工作流图画回来。
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const editor = document.getElementById('editor')
+    const graph = document.getElementById('graph')
+    const stateLabel = document.getElementById('stateLabel')
+    const conversation = document.getElementById('conversation')
+
+    function openEditor() {
+      editor.classList.add('open')
+      graph.style.visibility = 'hidden'
+      stateLabel.textContent = '状态：画布区域内打开剪辑器'
+      conversation.style.outline = '2px solid rgba(34,197,94,.45)'
+    }
+    function closeEditor() {
+      editor.classList.remove('open')
+      graph.style.visibility = 'visible'
+      stateLabel.textContent = '状态：画布图'
+      conversation.style.outline = 'none'
+    }
+    document.getElementById('openBtn').onclick = openEditor
+    document.getElementById('closeBtn').onclick = closeEditor
+    document.getElementById('saveBtn').onclick = () => {
+      stateLabel.textContent = '状态：已保存草稿到「视频合成」节点'
+    }
+  </script>
+</body>
+</html>

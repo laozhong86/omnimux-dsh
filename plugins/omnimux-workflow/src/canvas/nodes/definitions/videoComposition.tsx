@@ -309,29 +309,16 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         openEditor();
       }}
       renderFloatingPill={({ hovered, selected: isSelected }) => {
-        if (!hovered && !isSelected) return null;
+        if ((!hovered && !isSelected) || !hasOutput) return null;
         const pillActions: FloatingPillAction[] = [
           {
-            key: 'open_clip',
-            label: t('clip.openEditor'),
-            icon: Pencil,
-            variant: 'primary',
-            onClick: (e) => {
-              e.stopPropagation();
-              openEditor();
-            },
-            title: t('clip.openEditorTitle'),
-          },
-        ];
-        if (hasOutput) {
-          pillActions.push({
             key: 'download_video',
             label: t('clip.download'),
             icon: Download,
             onClick: handleDownload,
             title: t('clip.downloadTitle'),
-          });
-        }
+          },
+        ];
         return <FloatingTopPill actions={pillActions} />;
       }}
       renderHeader={() => (
@@ -389,7 +376,6 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
               key: 'open_clip',
               label: t('clip.openClip'),
               icon: Pencil,
-              variant: 'primary',
               onClick: () => openEditor(),
             },
           ]}
