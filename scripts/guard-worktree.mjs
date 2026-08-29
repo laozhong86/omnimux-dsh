@@ -105,12 +105,13 @@ export function getUnpushedCommits(cwd) {
 
 export function isDestructiveResetCommand(command) {
   if (!command || typeof command !== 'string') return false
-  // Match git reset --hard, git reset -q --hard, git reset --hard origin/main, git reset HEAD~1 --hard, etc.
-  const norm = command.toLowerCase().replace(/\s+/g, ' ')
-  if (norm.includes('git reset') && (norm.includes('--hard') || norm.includes('-hard'))) {
-    return true
+  // Ignore non-git commands like gh, echo, grep, cat, node, etc. that might mention git reset in quotes
+  const trimmed = command.trim()
+  if (trimmed.startsWith('gh ') || trimmed.startsWith('echo ') || trimmed.startsWith('grep ') || trimmed.startsWith('node ')) {
+    return false
   }
-  return false
+  // Match git reset --hard as a real command invocation (at start or after shell operator)
+  return /(?:^|[;&|]\s*)git\s+reset\s+[^;&|]*--hard\b/i.test(command)
 }
 
 export function decideBashCommand({ command, cwd }) {

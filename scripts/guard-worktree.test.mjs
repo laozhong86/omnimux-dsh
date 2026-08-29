@@ -48,12 +48,15 @@ describe('guard-worktree path classification', () => {
 })
 
 describe('guard-worktree destructive reset interception', () => {
-  it('detects git reset --hard commands accurately', () => {
+  it('detects git reset --hard commands accurately without false positives', () => {
     assert.equal(isDestructiveResetCommand('git reset --hard origin/main'), true)
     assert.equal(isDestructiveResetCommand('git reset -q --hard origin/main'), true)
     assert.equal(isDestructiveResetCommand('git reset --hard HEAD~1'), true)
+    assert.equal(isDestructiveResetCommand('git status && git reset --hard origin/main'), true)
     assert.equal(isDestructiveResetCommand('git status'), false)
     assert.equal(isDestructiveResetCommand('git reset HEAD file.txt'), false)
+    assert.equal(isDestructiveResetCommand('git push -u origin agent/infra-guard-destructive-reset'), false)
+    assert.equal(isDestructiveResetCommand('gh pr create --body "includes git reset --hard text"'), false)
     assert.equal(isDestructiveResetCommand('pnpm test'), false)
   })
 
