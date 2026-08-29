@@ -44,12 +44,15 @@ html:not([data-dsh-product-stage]) .omnimux-clip-stage[data-clip-mode="canvas"][
   display: flex !important;
   pointer-events: auto !important;
 }
-.omnimux-clip-stage[data-clip-mode="canvas"] .omnimux-clip-stage-heading {
+/* exempt-ui08: clip 的 stage-header 是画布内绝对定位的浮层操作区（top/right 8px），
+   不是一级 Stage 页面标题栏；其 heading 在 standalone/canvas 两种模式下均 display:none。
+   依 docs/contracts/openreel-vendor-contract.md，此处保持宿主外壳原形态，不套 PageHeader。 */
+.omnimux-clip-stage[data-clip-mode="canvas"] .omnimux-clip-stage-heading { /* exempt-ui08: 画布内浮层操作区标题，非页面标题栏 */
   display: none !important;
 }
-.omnimux-clip-stage-header,
-.omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-header,
-.omnimux-clip-stage[data-clip-mode="canvas"] .omnimux-clip-stage-header {
+.omnimux-clip-stage-header, /* exempt-ui08: 画布内浮层操作区，非页面标题栏 */
+.omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-header, /* exempt-ui08: 同上 */
+.omnimux-clip-stage[data-clip-mode="canvas"] .omnimux-clip-stage-header { /* exempt-ui08: 同上 */
   position: absolute;
   top: 8px;
   right: 8px;
@@ -63,11 +66,11 @@ html:not([data-dsh-product-stage]) .omnimux-clip-stage[data-clip-mode="canvas"][
   pointer-events: none;
   -webkit-app-region: no-drag;
 }
-.omnimux-clip-stage-heading,
+.omnimux-clip-stage-heading, /* exempt-ui08: 画布内浮层操作区标题，非页面标题栏 */
 .omnimux-clip-stage-icon-btn,
 .omnimux-clip-stage-save-btn,
 .omnimux-clip-stage-save-status,
-.omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-heading,
+.omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-heading, /* exempt-ui08: 同上 */
 .omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-icon-btn,
 .omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-save-btn,
 .omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-save-status {

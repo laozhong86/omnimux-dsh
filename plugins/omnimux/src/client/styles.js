@@ -25,23 +25,6 @@ export const HUB_CSS = `
   display: none;
   pointer-events: none;
 }
-.omnimux-apps-stage-header {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 32px;
-  padding: 12px 20px 12px;
-  -webkit-app-region: no-drag;
-}
-.omnimux-apps-stage-title {
-  margin: 0;
-  flex: 1;
-  min-width: 0;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 32px;
-}
 .omnimux-apps-stage-body {
   flex: 1;
   min-height: 0;
@@ -228,7 +211,7 @@ export const HUB_CSS = `
 .omnimux-login-gate-hero-title,
 .omnimux-login-gate-hero-ai {
   font-family: 'Cinzel', 'Playfair Display', 'Didot', 'Songti SC', 'STSong', Georgia, serif;
-  font-size: 70px;
+  font-size: 70px; /* exempt-ui10: 登录门禁 Hero 品牌大字，非一级 Stage 页头 */
   font-weight: 800;
   line-height: 1.08;
   letter-spacing: -1.5px;
@@ -287,14 +270,14 @@ export const HUB_CSS = `
 }
 .omnimux-login-gate-brand-title {
   font-family: 'Playfair Display', 'Cinzel', 'Didot', 'Songti SC', 'STSong', Georgia, serif;
-  font-size: 22px;
+  font-size: 22px; /* exempt-ui10: 登录门禁品牌标题衬线字，非一级 Stage 页头 */
   font-weight: 700;
   letter-spacing: -0.3px;
   color: var(--dsw-alias-label-primary, #fff);
 }
 .omnimux-login-gate-headline {
   margin: 0 0 10px;
-  font-size: 22px;
+  font-size: 22px; /* exempt-ui10: 登录门禁营销标题，非一级 Stage 页头 */
   font-weight: 700;
   line-height: 1.35;
   letter-spacing: -0.3px;
@@ -302,7 +285,7 @@ export const HUB_CSS = `
 }
 .omnimux-login-gate-subdeck {
   margin: 0 0 26px;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.5;
   color: var(--dsw-alias-label-secondary, #a1a1aa);
@@ -319,7 +302,7 @@ export const HUB_CSS = `
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  font-size: 14.5px;
+  font-size: 14.5px; /* exempt-ui10: 登录门禁营销正文微调，非 Stage 页头 */
   line-height: 1.45;
   color: var(--dsw-alias-label-secondary, #d4d4d8);
 }
@@ -341,7 +324,7 @@ export const HUB_CSS = `
 .omnimux-login-gate-cta {
   height: 40px !important;
   padding: 0 28px !important;
-  font-size: 14.5px !important;
+  font-size: 14.5px !important; /* exempt-ui10: 登录门禁营销正文微调，非 Stage 页头 */
   font-weight: 700 !important;
   border-radius: 8px !important;
   background: var(--dsw-alias-label-primary, #fff) !important;
@@ -453,7 +436,7 @@ export const HUB_CSS = `
     padding: 24px;
   }
   .omnimux-login-gate-hero-title,
-  .omnimux-login-gate-hero-ai { font-size: 52px; line-height: 1.08; padding-bottom: 4px; }
+  .omnimux-login-gate-hero-ai { font-size: 52px; /* exempt-ui10: Hero 品牌大字 */ line-height: 1.08; padding-bottom: 4px; }
   .omnimux-login-gate-hero-brand { font-size: 24px; }
   .omnimux-login-gate-content { padding: 28px 24px; }
 }
@@ -547,7 +530,7 @@ export const HUB_CSS = `
   text-align: right;
 }
 .omnimux-profile-quota-amount {
-  font-size: 22px;
+  font-size: 22px; /* exempt-ui10: 配额数字强调，非标题 */
   font-weight: 600;
   line-height: 1.2;
 }

@@ -768,7 +768,7 @@ var SIZE_CLASS = {
   md: void 0,
   lg: cssClass(Dialog_module_css_default.lg, "lg")
 };
-injectCss("EmptyState.module.css", ".dshUk-EmptyState-emptyState {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n  padding: 48px 24px;\n  min-height: 240px;\n  box-sizing: border-box;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n}\n\n.dshUk-EmptyState-emptyState.dshUk-EmptyState-compact {\n  padding: 24px 16px;\n  min-height: 140px;\n}\n\n.dshUk-EmptyState-iconWrap {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 12px;\n  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.4));\n}\n\n.dshUk-EmptyState-title {\n  margin: 0 0 6px;\n  font-size: 15px;\n  font-weight: 600;\n  line-height: 20px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n}\n\n.dshUk-EmptyState-description {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  max-width: 360px;\n}\n\n.dshUk-EmptyState-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin-top: 16px;\n}\n");
+injectCss("EmptyState.module.css", ".dshUk-EmptyState-emptyState {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n  padding: 48px 24px;\n  min-height: 240px;\n  box-sizing: border-box;\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-EmptyState-emptyState.dshUk-EmptyState-compact {\n  padding: 24px 16px;\n  min-height: 140px;\n}\n\n.dshUk-EmptyState-iconWrap {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 12px;\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-EmptyState-title {\n  margin: 0 0 6px;\n  font-size: 15px;\n  font-weight: 600;\n  line-height: 20px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-EmptyState-description {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary);\n  max-width: 360px;\n}\n\n.dshUk-EmptyState-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin-top: 16px;\n}\n");
 var EmptyState_module_css_default = {
   "emptyState": "dshUk-EmptyState-emptyState",
   "compact": "dshUk-EmptyState-compact",
@@ -808,7 +808,7 @@ var EmptyState = (0, import_react.forwardRef)(function EmptyState2({ icon, title
     ]
   });
 });
-injectCss("StageContainer.module.css", '.dshUk-StageContainer-stageContainer {\n  position: absolute;\n  top: var(--stage-top, 0px);\n  left: var(--stage-left, 56px);\n  width: var(--stage-width, calc(100vw - 56px));\n  height: var(--stage-height, 100vh);\n  background: var(--dsw-alias-bg-base, #111113);\n  color: var(--dsw-alias-label-primary, #ffffff);\n  z-index: 200;\n  display: flex;\n  flex-direction: column;\n  box-sizing: border-box;\n  overflow: hidden;\n}\n\n.dshUk-StageContainer-stageContainer[data-visible="false"] {\n  display: none !important;\n  pointer-events: none !important;\n}\n');
+injectCss("StageContainer.module.css", '.dshUk-StageContainer-stageContainer {\n  position: absolute;\n  top: var(--stage-top, 0px);\n  left: var(--stage-left, 56px);\n  width: var(--stage-width, calc(100vw - 56px));\n  height: var(--stage-height, 100vh);\n  background: var(--dsw-alias-bg-base);\n  color: var(--dsw-alias-label-primary);\n  z-index: 200;\n  display: flex;\n  flex-direction: column;\n  box-sizing: border-box;\n  overflow: hidden;\n}\n\n.dshUk-StageContainer-stageContainer[data-visible="false"] {\n  display: none !important;\n  pointer-events: none !important;\n}\n');
 var CONTAINER_CLASS = cssClass({ "stageContainer": "dshUk-StageContainer-stageContainer" }.stageContainer, "stageContainer");
 var StageContainer = (0, import_react.forwardRef)(function StageContainer2({ stageStore, title, className, style, children, ...rest }, ref) {
   const open = (0, import_react.useSyncExternalStore)(stageStore ? (onStoreChange) => stageStore.subscribe(onStoreChange) : () => () => {
@@ -858,65 +858,236 @@ var StageContainer = (0, import_react.forwardRef)(function StageContainer2({ sta
     children
   });
 });
-injectCss("StageHeader.module.css", ".dshUk-StageHeader-stageHeader {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 12px 20px;\n  min-height: 56px;\n  box-sizing: border-box;\n  flex: none;\n  gap: 16px;\n  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.06));\n}\n\n.dshUk-StageHeader-heading {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1 1 auto;\n}\n\n.dshUk-StageHeader-titleRow {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.dshUk-StageHeader-title {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 600;\n  line-height: 24px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-subtitle {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-controls {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex: none;\n}\n");
-var StageHeader_module_css_default = {
-  "stageHeader": "dshUk-StageHeader-stageHeader",
-  "heading": "dshUk-StageHeader-heading",
-  "titleRow": "dshUk-StageHeader-titleRow",
-  "title": "dshUk-StageHeader-title",
-  "subtitle": "dshUk-StageHeader-subtitle",
-  "controls": "dshUk-StageHeader-controls"
+injectCss("Tabs.module.css", '.dshUk-Tabs-tabs {\n  display: inline-flex;\n  align-items: center;\n  gap: 2px;\n  padding: 2px;\n  height: 32px;\n  box-sizing: border-box;\n  background: var(--dsw-alias-bg-layer-1);\n  border: 1px solid var(--dsw-alias-border-l1);\n  border-radius: 8px;\n  flex-shrink: 0;\n  user-select: none;\n}\n\n.dshUk-Tabs-sm {\n  height: 28px;\n  padding: 2px;\n  border-radius: 6px;\n}\n\n.dshUk-Tabs-tabItem {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  height: 26px;\n  padding: 0 10px;\n  border-radius: 6px;\n  border: none;\n  background: transparent;\n  color: var(--dsw-alias-label-secondary);\n  font: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  line-height: 18px;\n  cursor: pointer;\n  white-space: nowrap;\n  box-sizing: border-box;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-Tabs-sm .dshUk-Tabs-tabItem {\n  height: 22px;\n  padding: 0 8px;\n  border-radius: 4px;\n  font-size: 12px;\n  line-height: 16px;\n  gap: 4px;\n}\n\n.dshUk-Tabs-tabItem:hover:not(:disabled):not([aria-selected="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Tabs-tabItem:focus {\n  outline: none;\n}\n\n.dshUk-Tabs-tabItem:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 1px;\n}\n\n.dshUk-Tabs-tabItem:disabled {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n\n.dshUk-Tabs-active {\n  background: var(--dsw-alias-bg-elevated);\n  color: var(--dsw-alias-label-primary);\n  font-weight: 600;\n  box-shadow: 0 1px 2px var(--dsw-alias-border-l1);\n}\n\n.dshUk-Tabs-active:hover {\n  background: var(--dsw-alias-bg-elevated);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Tabs-label {\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.dshUk-Tabs-badge {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 16px;\n  height: 16px;\n  padding: 0 4px;\n  box-sizing: border-box;\n  border-radius: 9999px;\n  font-size: 11px;\n  font-weight: 600;\n  line-height: 1;\n  background: var(--dsw-alias-interactive-bg-hover);\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-Tabs-sm .dshUk-Tabs-badge {\n  min-width: 14px;\n  height: 14px;\n  padding: 0 3px;\n  font-size: 10px;\n}\n\n.dshUk-Tabs-active .dshUk-Tabs-badge {\n  background: var(--dsw-alias-interactive-bg-active);\n  color: var(--dsw-alias-label-primary);\n}\n');
+var Tabs_module_css_default = {
+  "tabs": "dshUk-Tabs-tabs",
+  "sm": "dshUk-Tabs-sm",
+  "tabItem": "dshUk-Tabs-tabItem",
+  "active": "dshUk-Tabs-active",
+  "label": "dshUk-Tabs-label",
+  "badge": "dshUk-Tabs-badge"
 };
-var HEADER_CLASS = cssClass(StageHeader_module_css_default.stageHeader, "stageHeader");
-var HEADING_CLASS = cssClass(StageHeader_module_css_default.heading, "heading");
-var TITLE_ROW_CLASS = cssClass(StageHeader_module_css_default.titleRow, "titleRow");
-var TITLE_CLASS = cssClass(StageHeader_module_css_default.title, "title");
-var SUBTITLE_CLASS = cssClass(StageHeader_module_css_default.subtitle, "subtitle");
-var CONTROLS_CLASS = cssClass(StageHeader_module_css_default.controls, "controls");
-var StageHeader = (0, import_react.forwardRef)(function StageHeader2({ title, subtitle, badge, onRefresh, refreshing = false, refreshTitle = "Refresh", onClose, closeTitle = "Close", actions, className, ...rest }, ref) {
+var TABS_CLASS = cssClass(Tabs_module_css_default.tabs, "tabs");
+var SM_CLASS = cssClass(Tabs_module_css_default.sm, "sm");
+var TAB_ITEM_CLASS = cssClass(Tabs_module_css_default.tabItem, "tabItem");
+var ACTIVE_CLASS = cssClass(Tabs_module_css_default.active, "active");
+var BADGE_CLASS = cssClass(Tabs_module_css_default.badge, "badge");
+var LABEL_CLASS$1 = cssClass(Tabs_module_css_default.label, "label");
+var Tabs = (0, import_react.forwardRef)(function Tabs2({ items, activeId, onChange, size = "default", className, ...rest }, ref) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+    ...rest,
+    ref,
+    role: "tablist",
+    className: cx(TABS_CLASS, size === "sm" && SM_CLASS, className),
+    children: items.map((item) => {
+      const isActive = item.id === activeId;
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+        type: "button",
+        role: "tab",
+        "aria-selected": isActive,
+        disabled: item.disabled,
+        className: cx(TAB_ITEM_CLASS, isActive && ACTIVE_CLASS),
+        onClick: () => {
+          if (!item.disabled && item.id !== activeId) onChange(item.id);
+        },
+        children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+          className: LABEL_CLASS$1,
+          children: item.label
+        }), item.badge != null && item.badge !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+          className: BADGE_CLASS,
+          children: item.badge
+        }) : null]
+      }, item.id);
+    })
+  });
+});
+injectCss("PageHeader.module.css", ".dshUk-PageHeader-pageHeader {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 12px 20px;\n  min-height: 56px;\n  box-sizing: border-box;\n  flex: none;\n  gap: 16px;\n  border-bottom: 1px solid var(--dsw-alias-border-l1);\n  -webkit-app-region: no-drag;\n}\n\n.dshUk-PageHeader-heading {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1 1 auto;\n}\n\n.dshUk-PageHeader-breadcrumb {\n  display: flex;\n  align-items: center;\n  font-size: 12px;\n  line-height: 16px;\n  color: var(--dsw-alias-label-secondary);\n  margin-bottom: 2px;\n}\n\n.dshUk-PageHeader-titleRow {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.dshUk-PageHeader-title {\n  margin: 0;\n  font-size: 20px;\n  font-weight: 600;\n  line-height: 28px;\n  color: var(--dsw-alias-label-primary);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-PageHeader-subtitle {\n  margin: 0;\n  font-size: 13px;\n  font-weight: 400;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-PageHeader-tabsContainer {\n  display: flex;\n  align-items: center;\n  flex: none;\n}\n\n.dshUk-PageHeader-controls {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex: none;\n}\n");
+var PageHeader_module_css_default = {
+  "pageHeader": "dshUk-PageHeader-pageHeader",
+  "heading": "dshUk-PageHeader-heading",
+  "breadcrumb": "dshUk-PageHeader-breadcrumb",
+  "titleRow": "dshUk-PageHeader-titleRow",
+  "title": "dshUk-PageHeader-title",
+  "subtitle": "dshUk-PageHeader-subtitle",
+  "tabsContainer": "dshUk-PageHeader-tabsContainer",
+  "controls": "dshUk-PageHeader-controls"
+};
+var PAGE_HEADER_CLASS = cssClass(PageHeader_module_css_default.pageHeader, "pageHeader");
+var HEADING_CLASS = cssClass(PageHeader_module_css_default.heading, "heading");
+var BREADCRUMB_CLASS = cssClass(PageHeader_module_css_default.breadcrumb, "breadcrumb");
+var TITLE_ROW_CLASS = cssClass(PageHeader_module_css_default.titleRow, "titleRow");
+var TITLE_CLASS = cssClass(PageHeader_module_css_default.title, "title");
+var SUBTITLE_CLASS = cssClass(PageHeader_module_css_default.subtitle, "subtitle");
+var TABS_CONTAINER_CLASS = cssClass(PageHeader_module_css_default.tabsContainer, "tabsContainer");
+var CONTROLS_CLASS = cssClass(PageHeader_module_css_default.controls, "controls");
+var PageHeader = (0, import_react.forwardRef)(function PageHeader2({ title, subtitle, badge, tabs, actions, onRefresh, refreshing = false, refreshTitle = "Refresh", onClose, closeTitle = "Close", breadcrumb, className, ...rest }, ref) {
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
     ...rest,
     ref,
-    className: cx(HEADER_CLASS, className),
-    children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-      className: HEADING_CLASS,
-      children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-        className: TITLE_ROW_CLASS,
-        children: [typeof title === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-          className: TITLE_CLASS,
-          children: title
-        }) : title, badge]
-      }), subtitle && (typeof subtitle === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-        className: SUBTITLE_CLASS,
-        children: subtitle
-      }) : subtitle)]
-    }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-      className: CONTROLS_CLASS,
-      children: [
-        actions,
-        onRefresh && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
-          variant: "ghost",
-          size: "sm",
-          "aria-label": refreshTitle,
-          title: refreshTitle,
-          disabled: refreshing,
-          onClick: () => {
-            onRefresh();
-          },
-          children: refreshing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconRefreshOutline16, {})
-        }),
-        onClose && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
-          variant: "ghost",
-          size: "sm",
-          "aria-label": closeTitle,
-          title: closeTitle,
-          onClick: () => {
-            onClose();
-          },
-          children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseOutline16, {})
+    className: cx(PAGE_HEADER_CLASS, className),
+    children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+        className: HEADING_CLASS,
+        children: [
+          breadcrumb && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+            className: BREADCRUMB_CLASS,
+            children: breadcrumb
+          }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+            className: TITLE_ROW_CLASS,
+            children: [typeof title === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+              className: TITLE_CLASS,
+              children: title
+            }) : title, badge]
+          }),
+          subtitle && (typeof subtitle === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+            className: SUBTITLE_CLASS,
+            children: subtitle
+          }) : subtitle)
+        ]
+      }),
+      tabs && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+        className: TABS_CONTAINER_CLASS,
+        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tabs, {
+          items: tabs.items,
+          activeId: tabs.activeId,
+          onChange: tabs.onChange,
+          size: "sm"
         })
-      ]
-    })]
+      }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+        className: CONTROLS_CLASS,
+        children: [
+          actions,
+          onRefresh && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+            variant: "ghost",
+            size: "sm",
+            "aria-label": refreshTitle,
+            title: refreshTitle,
+            disabled: refreshing,
+            onClick: () => {
+              onRefresh();
+            },
+            children: refreshing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconRefreshOutline16, {})
+          }),
+          onClose && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+            variant: "ghost",
+            size: "sm",
+            "aria-label": closeTitle,
+            title: closeTitle,
+            onClick: () => {
+              onClose();
+            },
+            children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseOutline16, {})
+          })
+        ]
+      })
+    ]
+  });
+});
+var StageHeader = (0, import_react.forwardRef)(function StageHeader2(props, ref) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PageHeader, {
+    ...props,
+    ref
+  });
+});
+injectCss("StatBar.module.css", ".dshUk-StatBar-statBar {\n  display: flex;\n  align-items: stretch;\n  gap: 12px;\n  width: 100%;\n  box-sizing: border-box;\n  flex-wrap: wrap;\n}\n\n.dshUk-StatBar-item {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  flex: 1 1 0;\n  min-width: 140px;\n  padding: 12px 16px;\n  background: var(--dsw-alias-bg-layer-1);\n  border: 1px solid var(--dsw-alias-border-l1);\n  border-radius: 8px;\n  box-sizing: border-box;\n}\n\n.dshUk-StatBar-label {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: 16px;\n  color: var(--dsw-alias-label-secondary);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StatBar-valueRow {\n  display: flex;\n  align-items: baseline;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n\n.dshUk-StatBar-value {\n  font-size: 20px;\n  font-weight: 600;\n  line-height: 28px;\n  color: var(--dsw-alias-label-primary);\n  letter-spacing: -0.01em;\n}\n\n.dshUk-StatBar-trend {\n  display: inline-flex;\n  align-items: center;\n  gap: 2px;\n  font-size: 12px;\n  font-weight: 500;\n  line-height: 16px;\n}\n\n.dshUk-StatBar-trendUp {\n  color: var(--dsw-alias-status-success);\n}\n\n.dshUk-StatBar-trendDown {\n  color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-StatBar-trendNeutral {\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-StatBar-trendIcon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 14px;\n  height: 14px;\n  flex: none;\n}\n\n.dshUk-StatBar-extra {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: 16px;\n  color: var(--dsw-alias-label-tertiary);\n  margin-top: auto;\n}\n");
+var StatBar_module_css_default = {
+  "statBar": "dshUk-StatBar-statBar",
+  "item": "dshUk-StatBar-item",
+  "label": "dshUk-StatBar-label",
+  "valueRow": "dshUk-StatBar-valueRow",
+  "value": "dshUk-StatBar-value",
+  "trend": "dshUk-StatBar-trend",
+  "trendUp": "dshUk-StatBar-trendUp",
+  "trendDown": "dshUk-StatBar-trendDown",
+  "trendNeutral": "dshUk-StatBar-trendNeutral",
+  "trendIcon": "dshUk-StatBar-trendIcon",
+  "extra": "dshUk-StatBar-extra"
+};
+var STAT_BAR_CLASS = cssClass(StatBar_module_css_default.statBar, "statBar");
+var ITEM_CLASS = cssClass(StatBar_module_css_default.item, "item");
+var LABEL_CLASS = cssClass(StatBar_module_css_default.label, "label");
+var VALUE_ROW_CLASS = cssClass(StatBar_module_css_default.valueRow, "valueRow");
+var VALUE_CLASS = cssClass(StatBar_module_css_default.value, "value");
+var TREND_CLASS = cssClass(StatBar_module_css_default.trend, "trend");
+var TREND_UP_CLASS = cssClass(StatBar_module_css_default.trendUp, "trendUp");
+var TREND_DOWN_CLASS = cssClass(StatBar_module_css_default.trendDown, "trendDown");
+var TREND_NEUTRAL_CLASS = cssClass(StatBar_module_css_default.trendNeutral, "trendNeutral");
+var TREND_ICON_CLASS = cssClass(StatBar_module_css_default.trendIcon, "trendIcon");
+var EXTRA_CLASS = cssClass(StatBar_module_css_default.extra, "extra");
+var StatBar = (0, import_react.forwardRef)(function StatBar2({ items, className, ...rest }, ref) {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+    ...rest,
+    ref,
+    className: cx(STAT_BAR_CLASS, className),
+    children: items.map((item) => {
+      const trend = item.trend;
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+        className: ITEM_CLASS,
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+            className: LABEL_CLASS,
+            children: item.label
+          }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+            className: VALUE_ROW_CLASS,
+            children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+              className: VALUE_CLASS,
+              children: item.value
+            }), trend && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+              className: cx(TREND_CLASS, trend.direction === "up" && TREND_UP_CLASS, trend.direction === "down" && TREND_DOWN_CLASS, trend.direction === "neutral" && TREND_NEUTRAL_CLASS),
+              children: [
+                trend.direction === "up" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+                  className: TREND_ICON_CLASS,
+                  "aria-hidden": "true",
+                  children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconChevronUpOutline14, { size: 14 })
+                }),
+                trend.direction === "down" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+                  className: TREND_ICON_CLASS,
+                  "aria-hidden": "true",
+                  children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconChevronDownOutline14, { size: 14 })
+                }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: trend.value })
+              ]
+            })]
+          }),
+          item.extra != null && item.extra !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+            className: EXTRA_CLASS,
+            children: item.extra
+          }) : null
+        ]
+      }, item.key);
+    })
+  });
+});
+injectCss("ActionRow.module.css", ".dshUk-ActionRow-actionRow {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: nowrap;\n  min-height: 32px;\n  box-sizing: border-box;\n  width: 100%;\n}\n\n.dshUk-ActionRow-leftGroup {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-shrink: 0;\n  min-width: 0;\n}\n\n.dshUk-ActionRow-rightGroup {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin-left: auto;\n  flex-shrink: 0;\n}\n");
+var ActionRow_module_css_default = {
+  "actionRow": "dshUk-ActionRow-actionRow",
+  "leftGroup": "dshUk-ActionRow-leftGroup",
+  "rightGroup": "dshUk-ActionRow-rightGroup"
+};
+var ACTION_ROW_CLASS = cssClass(ActionRow_module_css_default.actionRow, "actionRow");
+var LEFT_GROUP_CLASS = cssClass(ActionRow_module_css_default.leftGroup, "leftGroup");
+var RIGHT_GROUP_CLASS = cssClass(ActionRow_module_css_default.rightGroup, "rightGroup");
+var ActionRow = (0, import_react.forwardRef)(function ActionRow2({ primaryAction, secondaryActions, rightActions, className, children, ...rest }, ref) {
+  const hasLeft = primaryAction != null || secondaryActions != null;
+  const hasRight = rightActions != null;
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+    ...rest,
+    ref,
+    className: cx(ACTION_ROW_CLASS, className),
+    children: [
+      hasLeft && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+        className: LEFT_GROUP_CLASS,
+        children: [primaryAction, secondaryActions]
+      }),
+      children,
+      hasRight && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+        className: RIGHT_GROUP_CLASS,
+        children: rightActions
+      })
+    ]
   });
 });
 var PRODUCT_STAGE_EVENT = "dsh-product-stage";
@@ -1003,10 +1174,10 @@ var SIDEBAR_ENTRY_COMMON_STYLES = `
   cursor: pointer; text-align: left;
 }
 .omnimux-sidebar-nav-entry:hover {
-  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12));
+  background: var(--dsw-alias-interactive-bg-hover);
 }
 .omnimux-sidebar-nav-entry[data-active="true"] {
-  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18));
+  background: var(--dsw-alias-interactive-bg-active);
   font-weight: 500;
 }
 .omnimux-sidebar-nav-entry-icon {
@@ -1104,6 +1275,7 @@ function mountSidebarEntry(stage, t, locale) {
 
 // src/client/AnalyticsStage.jsx
 var import_react7 = require("react");
+var import_dsh_client_ui_primitives4 = require("@deepseek-ai/dsh-client-ui-primitives");
 
 // src/client/styles.js
 var STYLES_ID = "omnimux-analytics-styles";
@@ -1149,34 +1321,6 @@ var ANALYTICS_CSS = `
 .omnimux-analytics-stage[data-visible="false"] {
   display: none;
   pointer-events: none;
-}
-.omnimux-analytics-stage-header {
-  flex: none;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 20px;
-  -webkit-app-region: no-drag;
-}
-.omnimux-analytics-stage-heading { flex: 1; min-width: 0; }
-.omnimux-analytics-stage-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 32px;
-  color: var(--dsw-alias-label-primary, inherit);
-}
-.omnimux-analytics-stage-subtitle {
-  margin: 4px 0 0;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--dsw-alias-label-secondary, rgba(128,128,128,.72));
-}
-.omnimux-analytics-stage-header-actions {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
 /* Layer 2 */
@@ -1302,7 +1446,7 @@ var ANALYTICS_CSS = `
 }
 .omnimux-analytics-kpi-value {
   margin: 0;
-  font-size: 26px;
+  font-size: 26px; /* exempt-ui10: KPI \u5927\u6570\u5B57\u7279\u5316\uFF0C\u975E\u6807\u9898 */
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 32px;
@@ -4188,65 +4332,9 @@ function downloadCsv(csv, filename) {
   URL.revokeObjectURL(url);
 }
 
-// src/client/components/StageHeader.jsx
+// src/client/components/ActionNavRow.jsx
 var import_dsh_client_ui_primitives2 = require("@deepseek-ai/dsh-client-ui-primitives");
 var import_jsx_runtime2 = require("react/jsx-runtime");
-function StageHeader3({ t, theme, refreshing, onRefresh, onToggleTheme, onExport, onClose }) {
-  const dark = theme === "dark";
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("header", { className: "omnimux-analytics-stage-header", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-analytics-stage-heading", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("h1", { className: "omnimux-analytics-stage-title", children: t("title") }),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "omnimux-analytics-stage-subtitle", children: t("subtitle") })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-analytics-stage-header-actions", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        IconButton,
-        {
-          "aria-label": t("refresh"),
-          title: refreshing ? t("refreshing") : t("refresh"),
-          variant: "ghost",
-          disabled: refreshing,
-          onClick: onRefresh,
-          children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives2.IconRefreshOutline16, {})
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        IconButton,
-        {
-          "aria-label": t("theme.toggle"),
-          title: t("theme.toggle"),
-          variant: "ghost",
-          "aria-pressed": dark,
-          onClick: onToggleTheme,
-          children: dark ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives2.IconLightOutline16, {}) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives2.IconDarkOutline16, {})
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        IconButton,
-        {
-          "aria-label": t("export"),
-          title: t("export"),
-          variant: "ghost",
-          onClick: onExport,
-          children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives2.IconDownloadOutline16, {})
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        IconButton,
-        {
-          "aria-label": t("close"),
-          variant: "ghost",
-          onClick: onClose,
-          children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives2.IconCloseOutline16, {})
-        }
-      )
-    ] })
-  ] });
-}
-
-// src/client/components/ActionNavRow.jsx
-var import_dsh_client_ui_primitives3 = require("@deepseek-ai/dsh-client-ui-primitives");
-var import_jsx_runtime3 = require("react/jsx-runtime");
 function formatMinutes(t, info, ago) {
   if (info.kind === "justNow") return t(ago ? "sync.justNow" : "sync.soon");
   const template = t(ago ? "sync.minutesAgo" : "sync.minutesLater");
@@ -4256,9 +4344,9 @@ function ActionNavRow({ t, tab, syncStatus, syncing, now = Date.now(), onTabChan
   const last = minutesBetween(syncStatus?.lastSyncedAt, now);
   const next = minutesBetween(syncStatus?.nextSyncAt, now);
   const caption = syncing ? t("sync.pulling") : syncStatus?.lastSyncedAt ? `${t("sync.last")}\uFF1A${formatMinutes(t, last, true)} \xB7 ${t("sync.next")}\uFF1A${formatMinutes(t, next, false)}` : t("loading");
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-analytics-stage-action-row", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-analytics-tabs", role: "tablist", "aria-label": t("tab.list"), children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-analytics-stage-action-row", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-analytics-tabs", role: "tablist", "aria-label": t("tab.list"), children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
         Button,
         {
           type: "button",
@@ -4270,7 +4358,7 @@ function ActionNavRow({ t, tab, syncStatus, syncing, now = Date.now(), onTabChan
           children: t("tab.posting")
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
         Button,
         {
           type: "button",
@@ -4283,9 +4371,9 @@ function ActionNavRow({ t, tab, syncStatus, syncing, now = Date.now(), onTabChan
         }
       )
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "omnimux-analytics-sync", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "omnimux-analytics-sync-caption", children: caption }),
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "omnimux-analytics-sync", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { className: "omnimux-analytics-sync-caption", children: caption }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
         Button,
         {
           type: "button",
@@ -4293,7 +4381,7 @@ function ActionNavRow({ t, tab, syncStatus, syncing, now = Date.now(), onTabChan
           size: "sm",
           loading: syncing,
           disabled: syncing,
-          leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_dsh_client_ui_primitives3.IconRefreshOutline14, {}),
+          leadingIcon: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_dsh_client_ui_primitives2.IconRefreshOutline14, {}),
           onClick: onSync,
           children: syncing ? t("sync.syncing") : t("sync.now")
         }
@@ -4361,7 +4449,7 @@ var CADENCE_BRACKET_LABEL = {
 };
 
 // src/client/components/FilterBar.jsx
-var import_jsx_runtime4 = require("react/jsx-runtime");
+var import_jsx_runtime3 = require("react/jsx-runtime");
 function FilterBar2({ t, query, onChange, disabled, accounts }) {
   const platformOptions = [
     { value: "all", label: t("filter.all") },
@@ -4384,12 +4472,12 @@ function FilterBar2({ t, query, onChange, disabled, accounts }) {
   }
   const sourceOptions = SOURCE_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }));
   const rangeOptions = RANGE_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.labelKey) }));
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-analytics-stage-filter", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-analytics-stage-filter", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
     FilterBar,
     {
       className: "omnimux-analytics-filterbar",
-      filters: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      filters: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_jsx_runtime3.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           DropdownSelect,
           {
             value: query.platform === "all" ? void 0 : query.platform,
@@ -4400,7 +4488,7 @@ function FilterBar2({ t, query, onChange, disabled, accounts }) {
             onChange: (platform) => onChange({ platform })
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           DropdownSelect,
           {
             value: query.profileId === "all" ? void 0 : query.profileId,
@@ -4411,7 +4499,7 @@ function FilterBar2({ t, query, onChange, disabled, accounts }) {
             onChange: (profileId) => onChange({ profileId })
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           DropdownSelect,
           {
             value: query.source === "all" ? void 0 : query.source,
@@ -4422,7 +4510,7 @@ function FilterBar2({ t, query, onChange, disabled, accounts }) {
             onChange: (source) => onChange({ source })
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           DropdownSelect,
           {
             value: query.timeRange,
@@ -4434,7 +4522,7 @@ function FilterBar2({ t, query, onChange, disabled, accounts }) {
           }
         )
       ] }),
-      search: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-analytics-search", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      search: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "omnimux-analytics-search", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
         SearchField,
         {
           value: query.searchQuery,
@@ -4451,17 +4539,17 @@ function FilterBar2({ t, query, onChange, disabled, accounts }) {
 }
 
 // src/client/components/KpiGrid.jsx
-var import_dsh_client_ui_primitives4 = require("@deepseek-ai/dsh-client-ui-primitives");
-var import_jsx_runtime5 = require("react/jsx-runtime");
+var import_dsh_client_ui_primitives3 = require("@deepseek-ai/dsh-client-ui-primitives");
+var import_jsx_runtime4 = require("react/jsx-runtime");
 function Trend({ up, children }) {
   if (!children) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: up ? "omnimux-analytics-kpi-badge is-up" : "omnimux-analytics-kpi-badge", children });
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: up ? "omnimux-analytics-kpi-badge is-up" : "omnimux-analytics-kpi-badge", children });
 }
 function BestPostCard({ t, post }) {
   if (!post) {
-    return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("article", { className: "omnimux-analytics-kpi", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.bestPost") }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-analytics-kpi-value", children: "-" })
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("article", { className: "omnimux-analytics-kpi", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.bestPost") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-analytics-kpi-value", children: "-" })
     ] });
   }
   const href = post.detailHref || "#omnimux-analytics-top-posts";
@@ -4476,16 +4564,16 @@ function BestPostCard({ t, post }) {
       }
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("article", { className: "omnimux-analytics-kpi omnimux-analytics-kpi-best", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.bestPost") }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-analytics-best", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-analytics-best-cover", "aria-hidden": "true", children: post.coverUrl ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("img", { src: post.coverUrl, alt: "" }) : post.coverLabel || t("kpi.coverFallback") }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-analytics-best-copy", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("p", { className: "omnimux-analytics-best-views", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("strong", { children: formatCount(post.views) }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: t("kpi.plays") })
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("article", { className: "omnimux-analytics-kpi omnimux-analytics-kpi-best", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.bestPost") }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-analytics-best", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "omnimux-analytics-best-cover", "aria-hidden": "true", children: post.coverUrl ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("img", { src: post.coverUrl, alt: "" }) : post.coverLabel || t("kpi.coverFallback") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-analytics-best-copy", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { className: "omnimux-analytics-best-views", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("strong", { children: formatCount(post.views) }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: t("kpi.plays") })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
           "a",
           {
             className: "omnimux-analytics-best-link",
@@ -4495,7 +4583,7 @@ function BestPostCard({ t, post }) {
             onClick: handleClick,
             children: [
               t("kpi.viewDetail"),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_dsh_client_ui_primitives4.IconRightUpOutline14, {})
+              /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_dsh_client_ui_primitives3.IconRightUpOutline14, {})
             ]
           }
         )
@@ -4509,30 +4597,30 @@ function KpiGrid({ t, kpi, timeRange = "30d" }) {
   const posts = kpi?.postsCount?.value;
   const health = kpi?.postsHealth || "none";
   const rangeLabel = t(`filter.range.${timeRange}`);
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("section", { className: "omnimux-analytics-kpi-grid", "aria-label": t("kpi.group"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("article", { className: "omnimux-analytics-kpi", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.er") }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-analytics-kpi-value", children: formatEr(kpi?.engagementRate?.value) })
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("section", { className: "omnimux-analytics-kpi-grid", "aria-label": t("kpi.group"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("article", { className: "omnimux-analytics-kpi", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.er") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-analytics-kpi-value", children: formatEr(kpi?.engagementRate?.value) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("article", { className: "omnimux-analytics-kpi", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.reach") }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-analytics-kpi-value", children: formatCount(kpi?.totalReach?.value) })
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("article", { className: "omnimux-analytics-kpi", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.reach") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-analytics-kpi-value", children: formatCount(kpi?.totalReach?.value) })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("article", { className: "omnimux-analytics-kpi", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.followers") }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-analytics-kpi-row", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-analytics-kpi-value", children: formatCount(followers) }),
-        typeof diff === "number" && diff > 0 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Trend, { up: true, children: t("kpi.followersDelta").replace("{range}", rangeLabel).replace("{n}", formatSignedCount(diff)) }) : null
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("article", { className: "omnimux-analytics-kpi", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.followers") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-analytics-kpi-row", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-analytics-kpi-value", children: formatCount(followers) }),
+        typeof diff === "number" && diff > 0 ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Trend, { up: true, children: t("kpi.followersDelta").replace("{range}", rangeLabel).replace("{n}", formatSignedCount(diff)) }) : null
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("article", { className: "omnimux-analytics-kpi", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.posts") }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-analytics-kpi-row", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-analytics-kpi-value", children: formatCount(posts) }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Trend, { up: health === "normal", children: t(`kpi.health.${health}`) })
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("article", { className: "omnimux-analytics-kpi", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("h3", { className: "omnimux-analytics-kpi-title", children: t("kpi.posts") }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "omnimux-analytics-kpi-row", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "omnimux-analytics-kpi-value", children: formatCount(posts) }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Trend, { up: health === "normal", children: t(`kpi.health.${health}`) })
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(BestPostCard, { t, post: kpi?.bestPost })
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(BestPostCard, { t, post: kpi?.bestPost })
   ] });
 }
 
@@ -4625,28 +4713,28 @@ function chartPointsForMetric(key, points) {
 }
 
 // src/client/components/SvgChart.jsx
-var import_jsx_runtime6 = require("react/jsx-runtime");
+var import_jsx_runtime5 = require("react/jsx-runtime");
 function AxisLabels({ box, max, labels, labelXs, formatTick = formatAxisTick }) {
   const yTicks = ticks(max, 5);
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_jsx_runtime5.Fragment, { children: [
     yTicks.map((tick, index) => {
       const y = box.bottom - (max === 0 ? 0 : tick / max * box.height);
-      return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("g", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("line", { className: "omnimux-analytics-gridline", x1: box.x, x2: box.right, y1: y, y2: y }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("text", { className: "omnimux-analytics-tick omnimux-analytics-tick-y", x: box.x - 6, y: y + 3, children: formatTick(tick) })
+      return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("g", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("line", { className: "omnimux-analytics-gridline", x1: box.x, x2: box.right, y1: y, y2: y }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("text", { className: "omnimux-analytics-tick omnimux-analytics-tick-y", x: box.x - 6, y: y + 3, children: formatTick(tick) })
       ] }, `y-${index}-${tick}`);
     }),
     labels.map((label, index) => {
       const x = labelXs?.[index] ?? (labels.length === 1 ? box.x + box.width / 2 : box.x + box.width / Math.max(1, labels.length - 1) * index);
-      return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("text", { className: "omnimux-analytics-tick omnimux-analytics-tick-x", x, y: box.bottom + 16, children: label }, `x-${label}-${index}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("text", { className: "omnimux-analytics-tick omnimux-analytics-tick-x", x, y: box.bottom + 16, children: label }, `x-${label}-${index}`);
     })
   ] });
 }
 function BarChart({ labels, values, width = 480, height = 200 }) {
   const { box, max, bars } = barLayout(values, width, height);
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, className: "omnimux-analytics-svg", role: "img", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(AxisLabels, { box, max, labels, labelXs: bars.map((bar) => bar.cx) }),
-    bars.map((bar, index) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, className: "omnimux-analytics-svg", role: "img", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(AxisLabels, { box, max, labels, labelXs: bars.map((bar) => bar.cx) }),
+    bars.map((bar, index) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
       "rect",
       {
         className: "omnimux-analytics-bar",
@@ -4655,7 +4743,7 @@ function BarChart({ labels, values, width = 480, height = 200 }) {
         width: bar.width,
         height: bar.height,
         rx: "3",
-        children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("title", { children: `${labels[index] ?? ""}: ${formatCount(bar.value)}` })
+        children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("title", { children: `${labels[index] ?? ""}: ${formatCount(bar.value)}` })
       },
       `${labels[index] ?? index}`
     ))
@@ -4680,11 +4768,11 @@ function LineChart({
   const right = lineLayout(rightValues.length ? rightValues : [0], width, height, { pad });
   const leftMax = leftSeries.length ? left.max : 1;
   const rightMax = rightSeries.length ? right.max : 1;
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, className: "omnimux-analytics-svg", role: "img", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(AxisLabels, { box: left.box, max: leftMax, labels, formatTick: yFormat ?? formatAxisTick }),
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, className: "omnimux-analytics-svg", role: "img", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(AxisLabels, { box: left.box, max: leftMax, labels, formatTick: yFormat ?? formatAxisTick }),
     dual && rightSeries.length > 0 ? ticks(rightMax, 5).map((tick) => {
       const y = right.box.bottom - (rightMax === 0 ? 0 : tick / rightMax * right.box.height);
-      return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("text", { className: "omnimux-analytics-tick omnimux-analytics-tick-y1", x: right.box.right + 6, y: y + 3, children: (y1Format ?? formatCount)(tick) }, `y1-${tick}`);
+      return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("text", { className: "omnimux-analytics-tick omnimux-analytics-tick-y1", x: right.box.right + 6, y: y + 3, children: (y1Format ?? formatCount)(tick) }, `y1-${tick}`);
     }) : null,
     series.map((item) => {
       if (item.visible === false) return null;
@@ -4692,41 +4780,41 @@ function LineChart({
       const laid = lineLayout(item.points, width, height, { pad, max: axis.max });
       const d = polylinePath(laid.points);
       if (!d) return null;
-      return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("g", { className: "omnimux-analytics-series", style: { "--series-color": item.color }, children: [
-        fillFirst && item === series[0] ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { className: "omnimux-analytics-area", d: areaPath(laid.points, laid.box.bottom) }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+      return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("g", { className: "omnimux-analytics-series", style: { "--series-color": item.color }, children: [
+        fillFirst && item === series[0] ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { className: "omnimux-analytics-area", d: areaPath(laid.points, laid.box.bottom) }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
           "path",
           {
             className: item.dashed ? "omnimux-analytics-line omnimux-analytics-line-dash" : "omnimux-analytics-line",
             d
           }
         ),
-        laid.points.map((point, index) => point.y == null ? null : /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { className: "omnimux-analytics-dot", cx: point.x, cy: point.y, r: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("title", { children: `${item.label}: ${labels[index]} ${item.format ? item.format(point.value) : formatCount(point.value)}` }) }, `${item.key}-${index}`))
+        laid.points.map((point, index) => point.y == null ? null : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { className: "omnimux-analytics-dot", cx: point.x, cy: point.y, r: "2.5", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("title", { children: `${item.label}: ${labels[index]} ${item.format ? item.format(point.value) : formatCount(point.value)}` }) }, `${item.key}-${index}`))
       ] }, item.key);
     })
   ] });
 }
 function ChartPanel({ title, subtitle, meta, legend, footer, children, wide }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: wide ? "omnimux-analytics-panel omnimux-analytics-panel-wide" : "omnimux-analytics-panel", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("header", { className: "omnimux-analytics-panel-header", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "omnimux-analytics-panel-heading", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { className: "omnimux-analytics-panel-title", children: title }),
-        subtitle ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "omnimux-analytics-panel-subtitle", children: subtitle }) : null
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("section", { className: wide ? "omnimux-analytics-panel omnimux-analytics-panel-wide" : "omnimux-analytics-panel", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("header", { className: "omnimux-analytics-panel-header", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "omnimux-analytics-panel-heading", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h3", { className: "omnimux-analytics-panel-title", children: title }),
+        subtitle ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "omnimux-analytics-panel-subtitle", children: subtitle }) : null
       ] }),
-      meta ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "omnimux-analytics-panel-meta", children: meta }) : null,
+      meta ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-analytics-panel-meta", children: meta }) : null,
       legend
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "omnimux-analytics-chartbox", children }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "omnimux-analytics-chartbox", children }),
     footer
   ] });
 }
 
 // src/client/components/BasicCharts.jsx
-var import_jsx_runtime7 = require("react/jsx-runtime");
+var import_jsx_runtime6 = require("react/jsx-runtime");
 function totalLabel(t, total, unitKey) {
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("strong", { children: formatCount(total) }),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { children: t(unitKey) })
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("strong", { children: formatCount(total) }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: t(unitKey) })
   ] });
 }
 function BasicCharts({ t, basicCharts, timeRange = "30d" }) {
@@ -4735,23 +4823,23 @@ function BasicCharts({ t, basicCharts, timeRange = "30d" }) {
   const likesPlat = basicCharts?.likesPerPlatform ?? { labels: [], values: [], total: null };
   const likesTime = basicCharts?.likesOverTime ?? { buckets: [], total: null };
   const rangeLabel = t(`filter.range.${timeRange}`);
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("section", { className: "omnimux-analytics-grid-2", "aria-label": t("charts.basic"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: "omnimux-analytics-grid-2", "aria-label": t("charts.basic"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
       ChartPanel,
       {
         title: t("charts.postsPlatform"),
         subtitle: t("charts.postsPlatformSub"),
         meta: totalLabel(t, postsPlat.total, "charts.postsUnit"),
-        children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(BarChart, { labels: postsPlat.labels, values: postsPlat.values })
+        children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(BarChart, { labels: postsPlat.labels, values: postsPlat.values })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
       ChartPanel,
       {
         title: t("charts.postsTime"),
         subtitle: t("charts.weekSlice").replace("{range}", rangeLabel),
         meta: totalLabel(t, postsTime.total, "charts.postsUnit"),
-        children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
           BarChart,
           {
             labels: postsTime.buckets.map((b) => b.label),
@@ -4760,22 +4848,22 @@ function BasicCharts({ t, basicCharts, timeRange = "30d" }) {
         )
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
       ChartPanel,
       {
         title: t("charts.likesPlatform"),
         subtitle: t("charts.likesPlatformSub"),
         meta: totalLabel(t, likesPlat.total, "charts.likesUnit"),
-        children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(BarChart, { labels: likesPlat.labels, values: likesPlat.values })
+        children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(BarChart, { labels: likesPlat.labels, values: likesPlat.values })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
       ChartPanel,
       {
         title: t("charts.likesTime"),
         subtitle: t("charts.weekSlice").replace("{range}", rangeLabel),
         meta: totalLabel(t, likesTime.total, "charts.likesUnit"),
-        children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
           BarChart,
           {
             labels: likesTime.buckets.map((b) => b.label),
@@ -4789,7 +4877,7 @@ function BasicCharts({ t, basicCharts, timeRange = "30d" }) {
 
 // src/client/components/EngagementChart.jsx
 var import_react3 = require("react");
-var import_jsx_runtime8 = require("react/jsx-runtime");
+var import_jsx_runtime7 = require("react/jsx-runtime");
 function formatMetric(key, value) {
   if (key === "er") return formatEr(value);
   return formatCount(value);
@@ -4817,17 +4905,17 @@ function EngagementChart({ t, block, locale = "zh-CN" }) {
     points: chartPointsForMetric(item.key, item.points),
     format: (value) => item.key === "er" ? `${Number(value).toFixed(2)}%` : formatCount(value)
   })), [series, overrides, defaults, locale]);
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
     ChartPanel,
     {
       wide: true,
       title: t("charts.engagement"),
       subtitle: t("charts.engagementSub"),
-      footer: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-analytics-pills", role: "group", "aria-label": t("charts.metrics"), children: series.map((item) => {
+      footer: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "omnimux-analytics-pills", role: "group", "aria-label": t("charts.metrics"), children: series.map((item) => {
         const checked = (overrides[item.key] ?? defaults[item.key]) !== false;
         const total = block?.totals?.[item.key];
         const delta = block?.deltas?.[item.key];
-        return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
           Button,
           {
             type: "button",
@@ -4839,22 +4927,22 @@ function EngagementChart({ t, block, locale = "zh-CN" }) {
               setOverrides((prev) => ({ ...prev, [item.key]: !checked }));
             },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
                 "span",
                 {
                   className: "omnimux-analytics-pill-dot",
                   style: { "--pill-color": `var(--omnimux-analytics-metric-${item.key}, ${item.color})` }
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "omnimux-analytics-pill-label", children: locale.startsWith("en") ? item.labelEn : item.labelZh }),
-              /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("strong", { children: formatMetric(item.key, total) }),
-              delta != null ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "omnimux-analytics-pill-delta", children: formatDelta(delta) }) : null
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "omnimux-analytics-pill-label", children: locale.startsWith("en") ? item.labelEn : item.labelZh }),
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("strong", { children: formatMetric(item.key, total) }),
+              delta != null ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: "omnimux-analytics-pill-delta", children: formatDelta(delta) }) : null
             ]
           },
           item.key
         );
       }) }),
-      children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+      children: /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
         LineChart,
         {
           dual: true,
@@ -4871,7 +4959,7 @@ function EngagementChart({ t, block, locale = "zh-CN" }) {
 
 // src/client/components/HeatmapChart.jsx
 var import_react4 = require("react");
-var import_jsx_runtime9 = require("react/jsx-runtime");
+var import_jsx_runtime8 = require("react/jsx-runtime");
 function cellTitle(dayLabel, cell) {
   const hour = String(cell.hour).padStart(2, "0");
   return `${dayLabel} ${hour}:00 \xB7 ${cell.score}`;
@@ -4881,26 +4969,26 @@ function HeatmapChart({ t, heatmap, locale = "zh-CN" }) {
   const cells = ensureHeatmapCells(heatmap?.cells, heatmap?.maxScore ?? 0);
   const recommended = Array.isArray(heatmap?.recommended) ? heatmap.recommended : [];
   const [hover, setHover] = (0, import_react4.useState)(null);
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
     ChartPanel,
     {
       title: t("charts.heatmap"),
       subtitle: t("charts.heatmapSub"),
-      legend: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "omnimux-analytics-heatmap-legend", "aria-hidden": "true", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { children: t("charts.low") }),
-        [0, 1, 2, 3, 4].map((level) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "omnimux-analytics-heatcell", "data-level": String(level) }, level)),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { children: t("charts.high") })
+      legend: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-analytics-heatmap-legend", "aria-hidden": "true", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: t("charts.low") }),
+        [0, 1, 2, 3, 4].map((level) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "omnimux-analytics-heatcell", "data-level": String(level) }, level)),
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { children: t("charts.high") })
       ] }),
-      footer: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "omnimux-analytics-chips", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "omnimux-analytics-chips-label", children: t("charts.recommended") }),
-        recommended.map((slot) => /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "omnimux-analytics-chip is-highlight", children: locale.startsWith("en") ? slot.labelEn : slot.labelZh }, `${slot.dayOfWeek}-${slot.hour}`))
+      footer: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-analytics-chips", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "omnimux-analytics-chips-label", children: t("charts.recommended") }),
+        recommended.map((slot) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "omnimux-analytics-chip is-highlight", children: locale.startsWith("en") ? slot.labelEn : slot.labelZh }, `${slot.dayOfWeek}-${slot.hour}`))
       ] }),
-      children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "omnimux-analytics-heatmap", role: "grid", "aria-label": t("charts.heatmap"), children: [
-        dayLabels.map((label, day) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "omnimux-analytics-heatmap-row", role: "row", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: "omnimux-analytics-heatmap-label", children: label }),
+      children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-analytics-heatmap", role: "grid", "aria-label": t("charts.heatmap"), children: [
+        dayLabels.map((label, day) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "omnimux-analytics-heatmap-row", role: "row", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("span", { className: "omnimux-analytics-heatmap-label", children: label }),
           Array.from({ length: 24 }, (_, hour) => {
             const cell = cells[day * 24 + hour];
-            return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+            return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
               "span",
               {
                 role: "gridcell",
@@ -4914,14 +5002,14 @@ function HeatmapChart({ t, heatmap, locale = "zh-CN" }) {
             );
           })
         ] }, label)),
-        hover ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "omnimux-analytics-heatmap-tip", role: "tooltip", children: cellTitle(hover.label, hover.cell) }) : null
+        hover ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "omnimux-analytics-heatmap-tip", role: "tooltip", children: cellTitle(hover.label, hover.cell) }) : null
       ] })
     }
   );
 }
 
 // src/client/components/FollowerEvolution.jsx
-var import_jsx_runtime10 = require("react/jsx-runtime");
+var import_jsx_runtime9 = require("react/jsx-runtime");
 var PLATFORM_COLOR = {
   tiktok: "var(--omnimux-analytics-platform-tiktok, var(--dsw-alias-label-primary, #0a0a0a))",
   twitter: "var(--omnimux-analytics-platform-twitter, var(--dsw-alias-brand-twitter, #1d9bf0))",
@@ -4941,23 +5029,23 @@ function FollowerEvolution({ t, block }) {
     points: timeline.map((point) => point.breakdown?.[platform] ?? null)
   }));
   const countLabel = t("charts.authorizedCount").replace("{n}", String(platforms.length));
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
     ChartPanel,
     {
       title: t("charts.followers"),
       subtitle: countLabel,
-      meta: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_jsx_runtime10.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("strong", { children: formatCount(block?.totalFollowers) }),
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { children: t("charts.followersUnit") })
+      meta: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_jsx_runtime9.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("strong", { children: formatCount(block?.totalFollowers) }),
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { children: t("charts.followersUnit") })
       ] }),
-      children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(LineChart, { labels, series })
+      children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(LineChart, { labels, series })
     }
   );
 }
 
 // src/client/components/PlatformTable.jsx
 var import_react5 = require("react");
-var import_jsx_runtime11 = require("react/jsx-runtime");
+var import_jsx_runtime10 = require("react/jsx-runtime");
 function cellText(kind, value) {
   if (kind === "er") return formatEr(value);
   if (kind === "count") return formatCount(value);
@@ -4970,12 +5058,12 @@ function PlatformTable({ t, rows }) {
     () => sortRows(Array.isArray(rows) ? rows : [], sort.key, sort.dir),
     [rows, sort]
   );
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("section", { className: "omnimux-analytics-tablewrap", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("header", { className: "omnimux-analytics-table-head", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h3", { className: "omnimux-analytics-panel-title", children: t("table.platformTitle") }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "omnimux-analytics-tablescroll", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("table", { className: "omnimux-analytics-table", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("tr", { children: PLATFORM_TABLE_COLUMNS.map((column) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("section", { className: "omnimux-analytics-tablewrap", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("header", { className: "omnimux-analytics-table-head", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h3", { className: "omnimux-analytics-panel-title", children: t("table.platformTitle") }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "omnimux-analytics-tablescroll", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("table", { className: "omnimux-analytics-table", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("tr", { children: PLATFORM_TABLE_COLUMNS.map((column) => {
         const active = sort.key === column.key;
-        return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("th", { scope: "col", "aria-sort": active ? sort.dir === "asc" ? "ascending" : "descending" : "none", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("th", { scope: "col", "aria-sort": active ? sort.dir === "asc" ? "ascending" : "descending" : "none", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
           Button,
           {
             variant: "ghost",
@@ -4986,22 +5074,22 @@ function PlatformTable({ t, rows }) {
             },
             children: [
               t(column.labelKey),
-              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "omnimux-analytics-sortmark", "data-active": active ? "true" : "false", "data-dir": sort.dir })
+              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: "omnimux-analytics-sortmark", "data-active": active ? "true" : "false", "data-dir": sort.dir })
             ]
           }
         ) }, column.key);
       }) }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("tbody", { children: sorted.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("td", { colSpan: PLATFORM_TABLE_COLUMNS.length, children: t("table.empty") }) }) : sorted.map((row) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("tr", { children: PLATFORM_TABLE_COLUMNS.map((column) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("td", { className: column.kind === "text" ? "" : "is-num", children: column.key === "platformLabel" ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { className: "omnimux-analytics-platform", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "omnimux-analytics-platform-dot", "data-platform": row.platform }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("tbody", { children: sorted.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("td", { colSpan: PLATFORM_TABLE_COLUMNS.length, children: t("table.empty") }) }) : sorted.map((row) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("tr", { children: PLATFORM_TABLE_COLUMNS.map((column) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("td", { className: column.kind === "text" ? "" : "is-num", children: column.key === "platformLabel" ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("span", { className: "omnimux-analytics-platform", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: "omnimux-analytics-platform-dot", "data-platform": row.platform }),
         row.platformLabel || t(`platform.${row.platform}`)
-      ] }) : column.kind === "er" && row.er != null ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "omnimux-analytics-er", children: formatEr(row.er) }) : cellText(column.kind, row[column.key]) }, column.key)) }, row.platform)) })
+      ] }) : column.kind === "er" && row.er != null ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: "omnimux-analytics-er", children: formatEr(row.er) }) : cellText(column.kind, row[column.key]) }, column.key)) }, row.platform)) })
     ] }) })
   ] });
 }
 
 // src/client/components/TopPostsTable.jsx
 var import_react6 = require("react");
-var import_jsx_runtime12 = require("react/jsx-runtime");
+var import_jsx_runtime11 = require("react/jsx-runtime");
 function cellText2(kind, value) {
   if (kind === "er") return formatEr(value);
   if (kind === "count") return formatCount(value);
@@ -5015,13 +5103,13 @@ function TopPostsTable({ t, rows }) {
     if (sort.key === "er" && sort.dir === "desc") return sortTopPostsDefault(list);
     return sortRows(list, sort.key, sort.dir);
   }, [rows, sort]);
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { id: "omnimux-analytics-top-posts", className: "omnimux-analytics-tablewrap", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("header", { className: "omnimux-analytics-table-head", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h3", { className: "omnimux-analytics-panel-title", children: t("table.postsTitle") }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "omnimux-analytics-tablescroll", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("table", { className: "omnimux-analytics-table", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("tr", { children: POST_TABLE_COLUMNS.map((column) => {
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("section", { id: "omnimux-analytics-top-posts", className: "omnimux-analytics-tablewrap", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("header", { className: "omnimux-analytics-table-head", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h3", { className: "omnimux-analytics-panel-title", children: t("table.postsTitle") }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "omnimux-analytics-tablescroll", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("table", { className: "omnimux-analytics-table", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("tr", { children: POST_TABLE_COLUMNS.map((column) => {
         const sortable = column.sortable !== false;
         const active = sort.key === column.key;
-        return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("th", { scope: "col", "aria-sort": active ? sort.dir === "asc" ? "ascending" : "descending" : "none", children: sortable ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+        return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("th", { scope: "col", "aria-sort": active ? sort.dir === "asc" ? "ascending" : "descending" : "none", children: sortable ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
           Button,
           {
             variant: "ghost",
@@ -5032,30 +5120,30 @@ function TopPostsTable({ t, rows }) {
             },
             children: [
               t(column.labelKey),
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "omnimux-analytics-sortmark", "data-active": active ? "true" : "false", "data-dir": sort.dir })
+              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "omnimux-analytics-sortmark", "data-active": active ? "true" : "false", "data-dir": sort.dir })
             ]
           }
         ) : t(column.labelKey) }, column.key);
       }) }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("tbody", { children: sorted.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("td", { colSpan: POST_TABLE_COLUMNS.length, children: t("table.empty") }) }) : sorted.map((row) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("tr", { children: POST_TABLE_COLUMNS.map((column) => {
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("tbody", { children: sorted.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("tr", { children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("td", { colSpan: POST_TABLE_COLUMNS.length, children: t("table.empty") }) }) : sorted.map((row) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("tr", { children: POST_TABLE_COLUMNS.map((column) => {
         if (column.kind === "post") {
-          return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "omnimux-analytics-postcell", children: [
-            row.coverUrl ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("img", { className: "omnimux-analytics-thumb", src: row.coverUrl, alt: "" }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "omnimux-analytics-thumb is-fallback", "data-platform": row.platform }),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "omnimux-analytics-platform-dot", "data-platform": row.platform }),
-            /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "omnimux-analytics-postcopy", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "omnimux-analytics-posttitle", children: row.title || "-" }),
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "omnimux-analytics-postmeta", children: row.publishedLabel || "-" })
+          return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("td", { children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "omnimux-analytics-postcell", children: [
+            row.coverUrl ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("img", { className: "omnimux-analytics-thumb", src: row.coverUrl, alt: "" }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "omnimux-analytics-thumb is-fallback", "data-platform": row.platform }),
+            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "omnimux-analytics-platform-dot", "data-platform": row.platform }),
+            /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "omnimux-analytics-postcopy", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "omnimux-analytics-posttitle", children: row.title || "-" }),
+              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "omnimux-analytics-postmeta", children: row.publishedLabel || "-" })
             ] })
           ] }) }, column.key);
         }
-        return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("td", { className: "is-num", children: column.kind === "er" && row.er != null ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "omnimux-analytics-er", children: formatEr(row.er) }) : cellText2(column.kind, row[column.key]) }, column.key);
+        return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("td", { className: "is-num", children: column.kind === "er" && row.er != null ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "omnimux-analytics-er", children: formatEr(row.er) }) : cellText2(column.kind, row[column.key]) }, column.key);
       }) }, row.postId)) })
     ] }) })
   ] });
 }
 
 // src/client/components/StrategyCharts.jsx
-var import_jsx_runtime13 = require("react/jsx-runtime");
+var import_jsx_runtime12 = require("react/jsx-runtime");
 var CADENCE_COLOR = {
   tiktok: "var(--omnimux-analytics-cadence, var(--dsw-alias-brand-primary, #0ea5e9))",
   twitter: "var(--omnimux-analytics-platform-twitter, var(--dsw-alias-brand-twitter, #1d9bf0))",
@@ -5089,20 +5177,20 @@ function StrategyCharts({ t, strategy, locale = "zh-CN" }) {
   }];
   const optimal = Array.isArray(cadence?.optimal) ? cadence.optimal : [];
   const milestones = accumulation?.milestones;
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("section", { className: "omnimux-analytics-grid-2", "aria-label": t("charts.strategy"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("section", { className: "omnimux-analytics-grid-2", "aria-label": t("charts.strategy"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
       ChartPanel,
       {
         title: t("charts.cadence"),
         subtitle: t("charts.cadenceSub"),
-        footer: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "omnimux-analytics-chips", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "omnimux-analytics-chips-label", children: t("charts.optimal") }),
-          optimal.map((item) => /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { className: "omnimux-analytics-chip", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "omnimux-analytics-platform-dot", "data-platform": item.platform }),
+        footer: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "omnimux-analytics-chips", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "omnimux-analytics-chips-label", children: t("charts.optimal") }),
+          optimal.map((item) => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("span", { className: "omnimux-analytics-chip", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "omnimux-analytics-platform-dot", "data-platform": item.platform }),
             locale.startsWith("en") ? item.labelEn : item.labelZh
           ] }, item.platform))
         ] }),
-        children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
           LineChart,
           {
             labels: cadenceLabels,
@@ -5113,16 +5201,16 @@ function StrategyCharts({ t, strategy, locale = "zh-CN" }) {
         )
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
       ChartPanel,
       {
         title: t("charts.accumulation"),
         subtitle: t("charts.accumulationSub"),
-        footer: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "omnimux-analytics-chips", children: [
-          milestones?.halfLabelZh ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "omnimux-analytics-chip", children: locale.startsWith("en") ? t("charts.halfEn") : milestones.halfLabelZh }) : null,
-          milestones?.eightyLabelZh ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "omnimux-analytics-chip", children: locale.startsWith("en") ? t("charts.eightyEn") : milestones.eightyLabelZh }) : null
+        footer: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "omnimux-analytics-chips", children: [
+          milestones?.halfLabelZh ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "omnimux-analytics-chip", children: locale.startsWith("en") ? t("charts.halfEn") : milestones.halfLabelZh }) : null,
+          milestones?.eightyLabelZh ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: "omnimux-analytics-chip", children: locale.startsWith("en") ? t("charts.eightyEn") : milestones.eightyLabelZh }) : null
         ] }),
-        children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
           LineChart,
           {
             labels: accLabels,
@@ -5136,7 +5224,7 @@ function StrategyCharts({ t, strategy, locale = "zh-CN" }) {
 }
 
 // src/client/components/EmptyState.jsx
-var import_jsx_runtime14 = require("react/jsx-runtime");
+var import_jsx_runtime13 = require("react/jsx-runtime");
 function actionLabel(t, hint) {
   if (hint?.action === "open_accounts") return t("empty.no_accounts.action");
   if (hint?.action === "reauth") return t("empty.auth_expired.action");
@@ -5146,40 +5234,40 @@ function actionLabel(t, hint) {
 }
 function EmptyState3({ t, hint, onAction }) {
   const code = hint?.code ?? "no_accounts";
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "omnimux-analytics-empty", "data-code": code, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("svg", { className: "omnimux-analytics-empty-icon", viewBox: "0 0 120 96", width: "120", height: "96", "aria-hidden": "true", focusable: "false", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("g", { fill: "none", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("rect", { x: "18", y: "22", width: "84", height: "56", rx: "8", opacity: "0.85" }),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("path", { d: "M30 64 L48 46 L62 58 L78 38 L102 64", opacity: "0.7" }),
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("circle", { cx: "40", cy: "40", r: "4", fill: "currentColor", stroke: "none", opacity: "0.7" })
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "omnimux-analytics-empty", "data-code": code, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { className: "omnimux-analytics-empty-icon", viewBox: "0 0 120 96", width: "120", height: "96", "aria-hidden": "true", focusable: "false", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("g", { fill: "none", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("rect", { x: "18", y: "22", width: "84", height: "56", rx: "8", opacity: "0.85" }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { d: "M30 64 L48 46 L62 58 L78 38 L102 64", opacity: "0.7" }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("circle", { cx: "40", cy: "40", r: "4", fill: "currentColor", stroke: "none", opacity: "0.7" })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("h2", { className: "omnimux-analytics-empty-title", children: t(`empty.${code}.title`) }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "omnimux-analytics-empty-text", children: hint?.detail || t(`empty.${code}.description`) }),
-    hint?.action && onAction ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(Button, { variant: "primary", onClick: () => onAction(hint.action), children: actionLabel(t, hint) }) : null
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h2", { className: "omnimux-analytics-empty-title", children: t(`empty.${code}.title`) }),
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { className: "omnimux-analytics-empty-text", children: hint?.detail || t(`empty.${code}.description`) }),
+    hint?.action && onAction ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(Button, { variant: "primary", onClick: () => onAction(hint.action), children: actionLabel(t, hint) }) : null
   ] });
 }
 function LoadingState({ t }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "omnimux-analytics-empty", "data-code": "loading", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "omnimux-analytics-empty-text", children: t("loading") }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "omnimux-analytics-empty", "data-code": "loading", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { className: "omnimux-analytics-empty-text", children: t("loading") }) });
 }
 function InboxPlaceholder({ t }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("section", { className: "omnimux-analytics-panel omnimux-analytics-inbox", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("h3", { className: "omnimux-analytics-panel-title", children: t("inbox.title") }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("p", { className: "omnimux-analytics-panel-subtitle", children: t("inbox.subtitle") }),
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "omnimux-analytics-chip", children: t("tab.inboxSoon") })
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("section", { className: "omnimux-analytics-panel omnimux-analytics-inbox", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h3", { className: "omnimux-analytics-panel-title", children: t("inbox.title") }),
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { className: "omnimux-analytics-panel-subtitle", children: t("inbox.subtitle") }),
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "omnimux-analytics-chip", children: t("tab.inboxSoon") })
   ] });
 }
 function Banner({ t, hint, onAction }) {
   if (!hint?.code) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "omnimux-analytics-banner", "data-code": hint.code, role: "status", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: "omnimux-analytics-banner-copy", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: t(`empty.${hint.code}.title`) }),
-      hint.detail ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: "omnimux-analytics-banner-detail", children: hint.detail }) : null
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "omnimux-analytics-banner", "data-code": hint.code, role: "status", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "omnimux-analytics-banner-copy", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { children: t(`empty.${hint.code}.title`) }),
+      hint.detail ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: "omnimux-analytics-banner-detail", children: hint.detail }) : null
     ] }),
-    hint.action && onAction ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(Button, { variant: "outline", size: "sm", onClick: () => onAction(hint.action), children: actionLabel(t, hint) }) : null
+    hint.action && onAction ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(Button, { variant: "outline", size: "sm", onClick: () => onAction(hint.action), children: actionLabel(t, hint) }) : null
   ] });
 }
 
 // src/client/AnalyticsStage.jsx
-var import_jsx_runtime15 = require("react/jsx-runtime");
+var import_jsx_runtime14 = require("react/jsx-runtime");
 function readLocale() {
   if (typeof document === "undefined") return "zh-CN";
   const lang = document.documentElement.lang || "";
@@ -5243,10 +5331,6 @@ function AnalyticsStage({ t, stage }) {
       } });
     }
   };
-  const handleTheme = () => {
-    const next = store.theme === "dark" ? "light" : "dark";
-    store.setTheme(next);
-  };
   const handleExport = () => {
     const csv = buildDashboardCsv(store.payload);
     downloadCsv(csv, `omnimux-analytics-${store.query.timeRange}.csv`);
@@ -5256,7 +5340,7 @@ function AnalyticsStage({ t, stage }) {
   const empty = payload?.emptyState;
   const blockingEmpty = empty?.code === "no_accounts" || empty?.code === "unauthorized" || empty?.code === "fetch_failed";
   const locale = readLocale();
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
     "div",
     {
       role: "region",
@@ -5264,7 +5348,6 @@ function AnalyticsStage({ t, stage }) {
       "aria-hidden": open ? void 0 : "true",
       className: "omnimux-analytics-stage",
       "data-visible": open ? "true" : "false",
-      "data-theme": store.theme === "system" ? void 0 : store.theme,
       style: {
         display: open ? void 0 : "none",
         "--stage-top": `${box.top}px`,
@@ -5273,23 +5356,34 @@ function AnalyticsStage({ t, stage }) {
         "--stage-height": `${box.height}px`
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
-          StageHeader3,
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+          PageHeader,
           {
-            t,
-            theme: store.theme,
-            refreshing: store.phase === "loading",
+            title: t("title"),
+            subtitle: t("subtitle"),
+            actions: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+              IconButton,
+              {
+                variant: "ghost",
+                size: "sm",
+                "aria-label": t("export"),
+                title: t("export"),
+                onClick: handleExport,
+                children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_dsh_client_ui_primitives4.IconDownloadOutline16, {})
+              }
+            ),
             onRefresh: () => {
               void store.refresh();
             },
-            onToggleTheme: handleTheme,
-            onExport: handleExport,
+            refreshing: store.phase === "loading",
+            refreshTitle: t("refresh"),
             onClose: () => {
               stage.set(false);
-            }
+            },
+            closeTitle: t("close")
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
           ActionNavRow,
           {
             t,
@@ -5303,7 +5397,7 @@ function AnalyticsStage({ t, stage }) {
             }
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
           FilterBar2,
           {
             t,
@@ -5313,19 +5407,19 @@ function AnalyticsStage({ t, stage }) {
             onChange: (patch) => store.setQuery(patch)
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: "omnimux-analytics-stage-body", children: store.phase === "loading" && !payload ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(LoadingState, { t }) : store.query.tab === "inbox" ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(InboxPlaceholder, { t }) : blockingEmpty ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EmptyState3, { t, hint: empty, onAction: handleAction }) : !payload ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EmptyState3, { t, hint: { code: "fetch_failed", action: "retry" }, onAction: handleAction }) : /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_jsx_runtime15.Fragment, { children: [
-          empty && empty.code !== "no_accounts" ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Banner, { t, hint: empty, onAction: handleAction }) : null,
-          store.lastError && empty?.code !== "network_error" ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Banner, { t, hint: { code: "network_error", action: "retry", detail: store.lastError }, onAction: handleAction }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(KpiGrid, { t, kpi: payload.kpi, timeRange: store.query.timeRange }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(BasicCharts, { t, basicCharts: payload.basicCharts, timeRange: store.query.timeRange }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EngagementChart, { t, block: payload.engagementOverTime, locale }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("section", { className: "omnimux-analytics-grid-2", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(HeatmapChart, { t, heatmap: payload.heatmap, locale }),
-            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(FollowerEvolution, { t, block: payload.followerEvolution })
+        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: "omnimux-analytics-stage-body", children: store.phase === "loading" && !payload ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(LoadingState, { t }) : store.query.tab === "inbox" ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(InboxPlaceholder, { t }) : blockingEmpty ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(EmptyState3, { t, hint: empty, onAction: handleAction }) : !payload ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(EmptyState3, { t, hint: { code: "fetch_failed", action: "retry" }, onAction: handleAction }) : /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_jsx_runtime14.Fragment, { children: [
+          empty && empty.code !== "no_accounts" ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(Banner, { t, hint: empty, onAction: handleAction }) : null,
+          store.lastError && empty?.code !== "network_error" ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(Banner, { t, hint: { code: "network_error", action: "retry", detail: store.lastError }, onAction: handleAction }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(KpiGrid, { t, kpi: payload.kpi, timeRange: store.query.timeRange }),
+          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(BasicCharts, { t, basicCharts: payload.basicCharts, timeRange: store.query.timeRange }),
+          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(EngagementChart, { t, block: payload.engagementOverTime, locale }),
+          /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("section", { className: "omnimux-analytics-grid-2", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(HeatmapChart, { t, heatmap: payload.heatmap, locale }),
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(FollowerEvolution, { t, block: payload.followerEvolution })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(PlatformTable, { t, rows: payload.platformBreakdown }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(TopPostsTable, { t, rows: payload.topPosts }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(StrategyCharts, { t, strategy: payload.strategy, locale })
+          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(PlatformTable, { t, rows: payload.platformBreakdown }),
+          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(TopPostsTable, { t, rows: payload.topPosts }),
+          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(StrategyCharts, { t, strategy: payload.strategy, locale })
         ] }) })
       ]
     }

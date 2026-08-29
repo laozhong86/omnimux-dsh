@@ -20,27 +20,6 @@ export const PRODUCTS_CSS = `
   display: none;
   pointer-events: none;
 }
-.omnimux-products-stage-header {
-  flex: none;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 20px;
-  -webkit-app-region: no-drag;
-}
-.omnimux-products-stage-heading { flex: 1; min-width: 0; }
-.omnimux-products-stage-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 32px;
-}
-.omnimux-products-stage-subtitle {
-  margin: 0;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--dsw-alias-label-secondary);
-}
 .omnimux-products-stage-toolbar {
   flex: none;
   padding: 0 20px 12px;

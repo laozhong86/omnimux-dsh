@@ -57,6 +57,112 @@ assert_origin_main_aligned() {
 
 assert_origin_main_aligned
 
+# ---------------------------------------------------------------------------
+# dsh-ui-kit 版本漂移防护 (Issue #200)
+#
+# 背景：10 个插件通过 file: 依赖共享 kit，但构建与物化链路从未 build kit，
+# 导致生产 profile 里的 kit 停留在旧版本（实测 ~/.dsh 缺 StageHeader 等 5 个导出，
+# 而 ~/.omnimux 已是最新）——物化后会静默跑旧代码。
+#
+# 策略：物化前先构建 kit，再对所有 profile 副本做 sha256 指纹校验并自动补齐。
+# ---------------------------------------------------------------------------
+# 默认路径：优先同级 personal/dsh-ui-kit（worktree 与主仓均在 product/ 下）；
+# 缺失时回退到 product/personal/dsh-ui-kit。可用 OMNIMUX_DSH_UI_KIT_DIR 显式覆盖。
+if [ -z "${OMNIMUX_DSH_UI_KIT_DIR:-}" ]; then
+  for candidate in \
+    "$ROOT/../personal/dsh-ui-kit" \
+    "$ROOT/../../personal/dsh-ui-kit" \
+    "$ROOT/../../../personal/dsh-ui-kit"; do
+    if [ -d "$candidate" ]; then
+      DSH_UI_KIT_DIR="$candidate"
+      break
+    fi
+  done
+  DSH_UI_KIT_DIR="${DSH_UI_KIT_DIR:-$ROOT/../personal/dsh-ui-kit}"
+fi
+
+sync_kit_artifact() {
+  local kit_dir="$1" profile="$2"
+  local src="$kit_dir/lib/index.js"
+  local dst="$profile/node_modules/dsh-ui-kit/lib/index.js"
+  [ -f "$dst" ] || return 0
+  if [ -f "$src" ]; then
+    cp -f "$src" "$dst"
+    local extra
+    for extra in index.d.ts index.js.map index.d.ts.map; do
+      [ -f "$kit_dir/lib/$extra" ] && cp -f "$kit_dir/lib/$extra" "$(dirname "$dst")/$extra"
+    done
+    echo "  ✓ 已同步 kit → $profile"
+  fi
+}
+
+ensure_dsh_ui_kit_fresh() {
+  if [ ! -d "$DSH_UI_KIT_DIR" ]; then
+    echo "· 未发现 dsh-ui-kit ($DSH_UI_KIT_DIR)，跳过 kit 校验"
+    return 0
+  fi
+  if [ "${OMNIMUX_SKIP_KIT_BUILD:-0}" = "1" ]; then
+    echo "· OMNIMUX_SKIP_KIT_BUILD=1，跳过 kit 构建校验"
+    return 0
+  fi
+
+  echo "== kit 校验: dsh-ui-kit =="
+  if ! (cd "$DSH_UI_KIT_DIR" && corepack pnpm build >/dev/null 2>&1); then
+    echo "❌ dsh-ui-kit 构建失败，禁止物化（否则插件会消费到残缺 kit）。" >&2
+    echo "   请先在 $DSH_UI_KIT_DIR 修复构建，或设置 OMNIMUX_SKIP_KIT_BUILD=1 旁路。" >&2
+    exit 1
+  fi
+
+  # pnpm 对 file: 依赖是硬拷贝到 .pnpm store，而非软链。
+  # 因此 kit 重新 build 后必须刷新 store，否则插件仍消费旧拷贝（漂移的真正上游根因）。
+  local store_kit
+  store_kit=$(find "$ROOT/node_modules/.pnpm" -maxdepth 4 -type d -name 'dsh-ui-kit' \
+    -path '*node_modules/dsh-ui-kit' 2>/dev/null | head -1)
+  if [ -n "$store_kit" ] && [ -f "$store_kit/lib/index.js" ]; then
+    local store_hash
+    store_hash=$(shasum -a 256 "$store_kit/lib/index.js" 2>/dev/null | awk '{print $1}')
+    local src_build_hash
+    src_build_hash=$(shasum -a 256 "$DSH_UI_KIT_DIR/lib/index.js" 2>/dev/null | awk '{print $1}')
+    if [ -n "$src_build_hash" ] && [ "$store_hash" != "$src_build_hash" ]; then
+      echo "  ⚠ pnpm store 中的 kit 已过期，正在刷新（file: 依赖为硬拷贝）…"
+      (cd "$ROOT" && corepack pnpm install --filter omnimux... --filter omnimux-assets... \
+        --filter omnimux-accounts... --filter omnimux-products... --filter omnimux-inspiration... \
+        --filter omnimux-publish... --filter omnimux-analytics... --filter omnimux-workflow... \
+        --filter omnimux-clip... --filter omnimux-market... >/dev/null 2>&1) || \
+      (cd "$ROOT" && corepack pnpm install >/dev/null 2>&1) || {
+        echo "❌ pnpm store 刷新失败，禁止物化。" >&2
+        exit 1
+      }
+      echo "  ✓ pnpm store 已刷新"
+    else
+      echo "  ✓ pnpm store 中的 kit 已是最新"
+    fi
+  fi
+
+  local src="$DSH_UI_KIT_DIR/lib/index.js"
+  local src_hash dst_hash profile drift=0
+  src_hash=$(shasum -a 256 "$src" 2>/dev/null | awk '{print $1}')
+  if [ -z "$src_hash" ]; then
+    echo "· 无法计算 kit 指纹，跳过校验"
+    return 0
+  fi
+
+  for profile in "$HOME/.dsh/profiles/omnimux" "$HOME/.omnimux/profiles/omnimux" "$HOME/.omnimux-dev/profiles/omnimux"; do
+    local dst="$profile/node_modules/dsh-ui-kit/lib/index.js"
+    [ -f "$dst" ] || continue
+    dst_hash=$(shasum -a 256 "$dst" 2>/dev/null | awk '{print $1}')
+    if [ "$src_hash" != "$dst_hash" ]; then
+      echo "  ⚠ kit 漂移: $profile"
+      drift=1
+      sync_kit_artifact "$DSH_UI_KIT_DIR" "$profile"
+    fi
+  done
+  [ "$drift" -eq 0 ] && echo "  ✓ 全部 profile 的 kit 与源码一致"
+  return 0
+}
+
+ensure_dsh_ui_kit_fresh
+
 # 与 sync-stable.sh 默认同步集合对齐（含 omnimux-market 与 omnimux-clip）
 DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics omnimux-publish)
 

@@ -50,34 +50,6 @@ export const ANALYTICS_CSS = `
   display: none;
   pointer-events: none;
 }
-.omnimux-analytics-stage-header {
-  flex: none;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 20px;
-  -webkit-app-region: no-drag;
-}
-.omnimux-analytics-stage-heading { flex: 1; min-width: 0; }
-.omnimux-analytics-stage-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 32px;
-  color: var(--dsw-alias-label-primary, inherit);
-}
-.omnimux-analytics-stage-subtitle {
-  margin: 4px 0 0;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--dsw-alias-label-secondary, rgba(128,128,128,.72));
-}
-.omnimux-analytics-stage-header-actions {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
 
 /* Layer 2 */
 .omnimux-analytics-stage-action-row {
@@ -202,7 +174,7 @@ export const ANALYTICS_CSS = `
 }
 .omnimux-analytics-kpi-value {
   margin: 0;
-  font-size: 26px;
+  font-size: 26px; /* exempt-ui10: KPI 大数字特化，非标题 */
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 32px;

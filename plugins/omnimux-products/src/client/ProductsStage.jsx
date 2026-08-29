@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { Button, FilterBar, IconButton, SearchField } from 'dsh-ui-kit'
+import { Button, FilterBar, PageHeader, SearchField } from 'dsh-ui-kit'
 import { createProduct, deleteProduct, getState, pickPath, updateProduct } from './api.js'
 import { ConfirmRemoveDialog } from './ConfirmRemoveDialog.jsx'
-import { CloseIcon, PlusIcon, RefreshIcon } from './icons.jsx'
+import { PlusIcon, RefreshIcon } from './icons.jsx'
 import { ProductFormDialog } from './ProductFormDialog.jsx'
 import { ProductGrid } from './ProductGrid.jsx'
 import { injectProductsStyles } from './styles.js'
@@ -195,31 +195,26 @@ export function ProductsStage({ t, stage }) {
         '--stage-height': `${box.height}px`,
       }}
     >
-      <div className="omnimux-products-stage-header">
-        <div className="omnimux-products-stage-heading">
-          <h1 className="omnimux-products-stage-title">{t('stage.title')}</h1>
-          <p className="omnimux-products-stage-subtitle">{t('stage.subtitle')}</p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          leadingIcon={<RefreshIcon />}
-          disabled={busy}
-          onClick={() => {
-            setBusy(true)
-            void refreshState(true).finally(() => { setBusy(false) })
-          }}
-        >
-          {busy ? t('stage.refreshing') : t('stage.refresh')}
-        </Button>
-        <IconButton
-          aria-label={t('stage.close')}
-          variant="ghost"
-          onClick={() => { stage.set(false) }}
-        >
-          <CloseIcon size={16} />
-        </IconButton>
-      </div>
+      <PageHeader
+        title={t('stage.title')}
+        subtitle={t('stage.subtitle')}
+        actions={(
+          <Button
+            variant="outline"
+            size="sm"
+            leadingIcon={<RefreshIcon />}
+            disabled={busy}
+            onClick={() => {
+              setBusy(true)
+              void refreshState(true).finally(() => { setBusy(false) })
+            }}
+          >
+            {busy ? t('stage.refreshing') : t('stage.refresh')}
+          </Button>
+        )}
+        onClose={() => { stage.set(false) }}
+        closeTitle={t('stage.close')}
+      />
 
       <FilterBar
         className="omnimux-products-stage-toolbar"

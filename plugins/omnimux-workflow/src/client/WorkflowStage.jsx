@@ -6,8 +6,7 @@
  * 舞台定位走 --stage-* 变量 + [data-visible="false"]；控件消费 dsh-ui-kit。
  */
 import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
-import { IconCloseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
-import { IconButton } from 'dsh-ui-kit'
+import { PageHeader } from 'dsh-ui-kit'
 import { CanvasBridge } from './CanvasBridge.jsx'
 import { injectWorkflowStyles } from './styles.js'
 
@@ -76,18 +75,11 @@ export function WorkflowStage({ t, stage, locale }) {
         '--stage-height': `${box.height}px`,
       }}
     >
-      <div className="omnimux-workflow-stage-header">
-        <div className="omnimux-workflow-stage-heading">
-          <h1 className="omnimux-workflow-stage-title">{t('stage.title')}</h1>
-        </div>
-        <IconButton
-          aria-label={t('stage.close')}
-          variant="ghost"
-          onClick={handleClose}
-        >
-          <IconCloseOutline16 />
-        </IconButton>
-      </div>
+      <PageHeader
+        title={t('stage.title')}
+        onClose={handleClose}
+        closeTitle={t('stage.close')}
+      />
       <div className="omnimux-workflow-canvas-body">
         <CanvasBridge onClose={handleClose} t={t} locale={activeLocale} />
       </div>

@@ -8,12 +8,11 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
 import {
-  IconCloseOutline16,
   IconEditOutline16,
   IconPlusOutline16,
   IconTrashOutline16,
 } from '@deepseek-ai/dsh-client-ui-primitives'
-import { Button, ConfirmModal, FilterBar, IconButton, SearchField } from 'dsh-ui-kit'
+import { Button, ConfirmModal, FilterBar, IconButton, PageHeader, SearchField } from 'dsh-ui-kit'
 import { listProjects, renameProject, deleteProject, bindProjectSession } from '../api.js'
 import { injectWorkflowStyles } from '../styles.js'
 import { NewLocalProjectDialog } from './NewLocalProjectDialog.jsx'
@@ -180,21 +179,12 @@ export function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, lay
         '--stage-height': `${box.height}px`,
       }}
     >
-      <div className="omnimux-workflow-stage-header">
-        <div className="omnimux-workflow-stage-heading">
-          <h1 className="omnimux-workflow-stage-title">{t('projects.title')}</h1>
-          <p className="omnimux-workflow-stage-subtitle">{t('projects.subtitle')}</p>
-        </div>
-        <div className="omnimux-workflow-stage-controls">
-          <IconButton
-            aria-label={t('projects.close')}
-            variant="ghost"
-            onClick={() => { stage.set(false) }}
-          >
-            <IconCloseOutline16 />
-          </IconButton>
-        </div>
-      </div>
+      <PageHeader
+        title={t('projects.title')}
+        subtitle={t('projects.subtitle')}
+        onClose={() => { stage.set(false) }}
+        closeTitle={t('projects.close')}
+      />
 
       <div className="omnimux-workflow-action-row">
         <Button

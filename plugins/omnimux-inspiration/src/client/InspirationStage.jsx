@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
-import { IconCloseOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
-import { IconButton } from 'dsh-ui-kit'
+import { PageHeader } from 'dsh-ui-kit'
 import { InspirationSection } from './InspirationSection.jsx'
 import { injectInspirationStyles } from './styles.js'
 
@@ -58,16 +57,11 @@ export function InspirationStage({ t, stage }) {
         '--stage-height': `${box.height}px`,
       }}
     >
-      <div className="omnimux-inspiration-stage-header">
-        <h1 className="omnimux-inspiration-stage-title">{t('title')}</h1>
-        <IconButton
-          aria-label={t('close')}
-          variant="ghost"
-          onClick={() => { stage.set(false) }}
-        >
-          <IconCloseOutline16 />
-        </IconButton>
-      </div>
+      <PageHeader
+        title={t('title')}
+        onClose={() => { stage.set(false) }}
+        closeTitle={t('close')}
+      />
       <div className="omnimux-inspiration-stage-body">
         <InspirationSection t={t} active={open} />
       </div>

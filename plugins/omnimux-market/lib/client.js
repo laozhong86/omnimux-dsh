@@ -27,6 +27,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // ../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js
 var lib_exports = {};
 __export(lib_exports, {
+  ActionRow: () => ActionRow,
   Button: () => Button,
   ConfirmModal: () => ConfirmModal,
   DropdownSelect: () => DropdownSelect,
@@ -35,9 +36,12 @@ __export(lib_exports, {
   IconButton: () => IconButton,
   InputField: () => InputField,
   ModalDialog: () => ModalDialog,
+  PageHeader: () => PageHeader,
   SearchField: () => SearchField,
   StageContainer: () => StageContainer,
   StageHeader: () => StageHeader,
+  StatBar: () => StatBar,
+  Tabs: () => Tabs,
   Toolbar: () => Toolbar,
   createSidebarEntry: () => createSidebarEntry,
   createStageStore: () => createStageStore
@@ -362,7 +366,7 @@ function createSidebarEntry(options) {
     unsubscribeLocale();
   };
 }
-var import_react, import_dsh_client_ui_primitives, import_jsx_runtime, injected, Button_module_css_default, VARIANT_CLASS, SIZE_CLASS$1, Button, IconButton, SearchField_module_css_default, SearchField, InputField_module_css_default, InputField, DropdownSelect_module_css_default, Toolbar_module_css_default, Dialog_module_css_default, SIZE_CLASS, EmptyState_module_css_default, EMPTY_CLASS, COMPACT_CLASS, ICON_WRAP_CLASS, TITLE_CLASS$1, DESCRIPTION_CLASS, ACTIONS_CLASS, EmptyState, CONTAINER_CLASS, StageContainer, StageHeader_module_css_default, HEADER_CLASS, HEADING_CLASS, TITLE_ROW_CLASS, TITLE_CLASS, SUBTITLE_CLASS, CONTROLS_CLASS, StageHeader, PRODUCT_STAGE_EVENT, ACTIVE_STAGE_STORAGE_KEY, SIDEBAR_ENTRY_COMMON_STYLES;
+var import_react, import_dsh_client_ui_primitives, import_jsx_runtime, injected, Button_module_css_default, VARIANT_CLASS, SIZE_CLASS$1, Button, IconButton, SearchField_module_css_default, SearchField, InputField_module_css_default, InputField, DropdownSelect_module_css_default, Toolbar_module_css_default, Dialog_module_css_default, SIZE_CLASS, EmptyState_module_css_default, EMPTY_CLASS, COMPACT_CLASS, ICON_WRAP_CLASS, TITLE_CLASS$1, DESCRIPTION_CLASS, ACTIONS_CLASS, EmptyState, CONTAINER_CLASS, StageContainer, Tabs_module_css_default, TABS_CLASS, SM_CLASS, TAB_ITEM_CLASS, ACTIVE_CLASS, BADGE_CLASS, LABEL_CLASS$1, Tabs, PageHeader_module_css_default, PAGE_HEADER_CLASS, HEADING_CLASS, BREADCRUMB_CLASS, TITLE_ROW_CLASS, TITLE_CLASS, SUBTITLE_CLASS, TABS_CONTAINER_CLASS, CONTROLS_CLASS, PageHeader, StageHeader, StatBar_module_css_default, STAT_BAR_CLASS, ITEM_CLASS, LABEL_CLASS, VALUE_ROW_CLASS, VALUE_CLASS, TREND_CLASS, TREND_UP_CLASS, TREND_DOWN_CLASS, TREND_NEUTRAL_CLASS, TREND_ICON_CLASS, EXTRA_CLASS, StatBar, ActionRow_module_css_default, ACTION_ROW_CLASS, LEFT_GROUP_CLASS, RIGHT_GROUP_CLASS, ActionRow, PRODUCT_STAGE_EVENT, ACTIVE_STAGE_STORAGE_KEY, SIDEBAR_ENTRY_COMMON_STYLES;
 var init_lib = __esm({
   "../../node_modules/.pnpm/dsh-ui-kit@file+..+..+personal+dsh-ui-kit_@deepseek-ai+dsh-client-ui-primitives@0.1.0-r_e00e670598d3e1b30755d8571e7350d4/node_modules/dsh-ui-kit/lib/index.js"() {
     import_react = require("react");
@@ -679,7 +683,7 @@ var init_lib = __esm({
       md: void 0,
       lg: cssClass(Dialog_module_css_default.lg, "lg")
     };
-    injectCss("EmptyState.module.css", ".dshUk-EmptyState-emptyState {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n  padding: 48px 24px;\n  min-height: 240px;\n  box-sizing: border-box;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n}\n\n.dshUk-EmptyState-emptyState.dshUk-EmptyState-compact {\n  padding: 24px 16px;\n  min-height: 140px;\n}\n\n.dshUk-EmptyState-iconWrap {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 12px;\n  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.4));\n}\n\n.dshUk-EmptyState-title {\n  margin: 0 0 6px;\n  font-size: 15px;\n  font-weight: 600;\n  line-height: 20px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n}\n\n.dshUk-EmptyState-description {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  max-width: 360px;\n}\n\n.dshUk-EmptyState-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin-top: 16px;\n}\n");
+    injectCss("EmptyState.module.css", ".dshUk-EmptyState-emptyState {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n  padding: 48px 24px;\n  min-height: 240px;\n  box-sizing: border-box;\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-EmptyState-emptyState.dshUk-EmptyState-compact {\n  padding: 24px 16px;\n  min-height: 140px;\n}\n\n.dshUk-EmptyState-iconWrap {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 12px;\n  color: var(--dsw-alias-label-tertiary);\n}\n\n.dshUk-EmptyState-title {\n  margin: 0 0 6px;\n  font-size: 15px;\n  font-weight: 600;\n  line-height: 20px;\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-EmptyState-description {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary);\n  max-width: 360px;\n}\n\n.dshUk-EmptyState-actions {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin-top: 16px;\n}\n");
     EmptyState_module_css_default = {
       "emptyState": "dshUk-EmptyState-emptyState",
       "compact": "dshUk-EmptyState-compact",
@@ -719,7 +723,7 @@ var init_lib = __esm({
         ]
       });
     });
-    injectCss("StageContainer.module.css", '.dshUk-StageContainer-stageContainer {\n  position: absolute;\n  top: var(--stage-top, 0px);\n  left: var(--stage-left, 56px);\n  width: var(--stage-width, calc(100vw - 56px));\n  height: var(--stage-height, 100vh);\n  background: var(--dsw-alias-bg-base, #111113);\n  color: var(--dsw-alias-label-primary, #ffffff);\n  z-index: 200;\n  display: flex;\n  flex-direction: column;\n  box-sizing: border-box;\n  overflow: hidden;\n}\n\n.dshUk-StageContainer-stageContainer[data-visible="false"] {\n  display: none !important;\n  pointer-events: none !important;\n}\n');
+    injectCss("StageContainer.module.css", '.dshUk-StageContainer-stageContainer {\n  position: absolute;\n  top: var(--stage-top, 0px);\n  left: var(--stage-left, 56px);\n  width: var(--stage-width, calc(100vw - 56px));\n  height: var(--stage-height, 100vh);\n  background: var(--dsw-alias-bg-base);\n  color: var(--dsw-alias-label-primary);\n  z-index: 200;\n  display: flex;\n  flex-direction: column;\n  box-sizing: border-box;\n  overflow: hidden;\n}\n\n.dshUk-StageContainer-stageContainer[data-visible="false"] {\n  display: none !important;\n  pointer-events: none !important;\n}\n');
     CONTAINER_CLASS = cssClass({ "stageContainer": "dshUk-StageContainer-stageContainer" }.stageContainer, "stageContainer");
     StageContainer = (0, import_react.forwardRef)(function StageContainer2({ stageStore, title, className, style, children, ...rest }, ref) {
       const open = (0, import_react.useSyncExternalStore)(stageStore ? (onStoreChange) => stageStore.subscribe(onStoreChange) : () => () => {
@@ -769,65 +773,236 @@ var init_lib = __esm({
         children
       });
     });
-    injectCss("StageHeader.module.css", ".dshUk-StageHeader-stageHeader {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 12px 20px;\n  min-height: 56px;\n  box-sizing: border-box;\n  flex: none;\n  gap: 16px;\n  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.06));\n}\n\n.dshUk-StageHeader-heading {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1 1 auto;\n}\n\n.dshUk-StageHeader-titleRow {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.dshUk-StageHeader-title {\n  margin: 0;\n  font-size: 18px;\n  font-weight: 600;\n  line-height: 24px;\n  color: var(--dsw-alias-label-primary, #ffffff);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-subtitle {\n  margin: 0;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StageHeader-controls {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex: none;\n}\n");
-    StageHeader_module_css_default = {
-      "stageHeader": "dshUk-StageHeader-stageHeader",
-      "heading": "dshUk-StageHeader-heading",
-      "titleRow": "dshUk-StageHeader-titleRow",
-      "title": "dshUk-StageHeader-title",
-      "subtitle": "dshUk-StageHeader-subtitle",
-      "controls": "dshUk-StageHeader-controls"
+    injectCss("Tabs.module.css", '.dshUk-Tabs-tabs {\n  display: inline-flex;\n  align-items: center;\n  gap: 2px;\n  padding: 2px;\n  height: 32px;\n  box-sizing: border-box;\n  background: var(--dsw-alias-bg-layer-1);\n  border: 1px solid var(--dsw-alias-border-l1);\n  border-radius: 8px;\n  flex-shrink: 0;\n  user-select: none;\n}\n\n.dshUk-Tabs-sm {\n  height: 28px;\n  padding: 2px;\n  border-radius: 6px;\n}\n\n.dshUk-Tabs-tabItem {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  height: 26px;\n  padding: 0 10px;\n  border-radius: 6px;\n  border: none;\n  background: transparent;\n  color: var(--dsw-alias-label-secondary);\n  font: inherit;\n  font-size: 13px;\n  font-weight: 500;\n  line-height: 18px;\n  cursor: pointer;\n  white-space: nowrap;\n  box-sizing: border-box;\n  transition:\n    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    color 120ms cubic-bezier(0.16, 1, 0.3, 1),\n    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.dshUk-Tabs-sm .dshUk-Tabs-tabItem {\n  height: 22px;\n  padding: 0 8px;\n  border-radius: 4px;\n  font-size: 12px;\n  line-height: 16px;\n  gap: 4px;\n}\n\n.dshUk-Tabs-tabItem:hover:not(:disabled):not([aria-selected="true"]) {\n  background: var(--dsw-alias-interactive-bg-hover);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Tabs-tabItem:focus {\n  outline: none;\n}\n\n.dshUk-Tabs-tabItem:focus-visible {\n  outline: 2px solid var(--dsw-alias-brand-primary);\n  outline-offset: 1px;\n}\n\n.dshUk-Tabs-tabItem:disabled {\n  cursor: not-allowed;\n  opacity: 0.4;\n}\n\n.dshUk-Tabs-active {\n  background: var(--dsw-alias-bg-elevated);\n  color: var(--dsw-alias-label-primary);\n  font-weight: 600;\n  box-shadow: 0 1px 2px var(--dsw-alias-border-l1);\n}\n\n.dshUk-Tabs-active:hover {\n  background: var(--dsw-alias-bg-elevated);\n  color: var(--dsw-alias-label-primary);\n}\n\n.dshUk-Tabs-label {\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.dshUk-Tabs-badge {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 16px;\n  height: 16px;\n  padding: 0 4px;\n  box-sizing: border-box;\n  border-radius: 9999px;\n  font-size: 11px;\n  font-weight: 600;\n  line-height: 1;\n  background: var(--dsw-alias-interactive-bg-hover);\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-Tabs-sm .dshUk-Tabs-badge {\n  min-width: 14px;\n  height: 14px;\n  padding: 0 3px;\n  font-size: 10px;\n}\n\n.dshUk-Tabs-active .dshUk-Tabs-badge {\n  background: var(--dsw-alias-interactive-bg-active);\n  color: var(--dsw-alias-label-primary);\n}\n');
+    Tabs_module_css_default = {
+      "tabs": "dshUk-Tabs-tabs",
+      "sm": "dshUk-Tabs-sm",
+      "tabItem": "dshUk-Tabs-tabItem",
+      "active": "dshUk-Tabs-active",
+      "label": "dshUk-Tabs-label",
+      "badge": "dshUk-Tabs-badge"
     };
-    HEADER_CLASS = cssClass(StageHeader_module_css_default.stageHeader, "stageHeader");
-    HEADING_CLASS = cssClass(StageHeader_module_css_default.heading, "heading");
-    TITLE_ROW_CLASS = cssClass(StageHeader_module_css_default.titleRow, "titleRow");
-    TITLE_CLASS = cssClass(StageHeader_module_css_default.title, "title");
-    SUBTITLE_CLASS = cssClass(StageHeader_module_css_default.subtitle, "subtitle");
-    CONTROLS_CLASS = cssClass(StageHeader_module_css_default.controls, "controls");
-    StageHeader = (0, import_react.forwardRef)(function StageHeader2({ title, subtitle, badge, onRefresh, refreshing = false, refreshTitle = "Refresh", onClose, closeTitle = "Close", actions, className, ...rest }, ref) {
+    TABS_CLASS = cssClass(Tabs_module_css_default.tabs, "tabs");
+    SM_CLASS = cssClass(Tabs_module_css_default.sm, "sm");
+    TAB_ITEM_CLASS = cssClass(Tabs_module_css_default.tabItem, "tabItem");
+    ACTIVE_CLASS = cssClass(Tabs_module_css_default.active, "active");
+    BADGE_CLASS = cssClass(Tabs_module_css_default.badge, "badge");
+    LABEL_CLASS$1 = cssClass(Tabs_module_css_default.label, "label");
+    Tabs = (0, import_react.forwardRef)(function Tabs2({ items, activeId, onChange, size = "default", className, ...rest }, ref) {
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+        ...rest,
+        ref,
+        role: "tablist",
+        className: cx(TABS_CLASS, size === "sm" && SM_CLASS, className),
+        children: items.map((item) => {
+          const isActive = item.id === activeId;
+          return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+            type: "button",
+            role: "tab",
+            "aria-selected": isActive,
+            disabled: item.disabled,
+            className: cx(TAB_ITEM_CLASS, isActive && ACTIVE_CLASS),
+            onClick: () => {
+              if (!item.disabled && item.id !== activeId) onChange(item.id);
+            },
+            children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+              className: LABEL_CLASS$1,
+              children: item.label
+            }), item.badge != null && item.badge !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+              className: BADGE_CLASS,
+              children: item.badge
+            }) : null]
+          }, item.id);
+        })
+      });
+    });
+    injectCss("PageHeader.module.css", ".dshUk-PageHeader-pageHeader {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 12px 20px;\n  min-height: 56px;\n  box-sizing: border-box;\n  flex: none;\n  gap: 16px;\n  border-bottom: 1px solid var(--dsw-alias-border-l1);\n  -webkit-app-region: no-drag;\n}\n\n.dshUk-PageHeader-heading {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1 1 auto;\n}\n\n.dshUk-PageHeader-breadcrumb {\n  display: flex;\n  align-items: center;\n  font-size: 12px;\n  line-height: 16px;\n  color: var(--dsw-alias-label-secondary);\n  margin-bottom: 2px;\n}\n\n.dshUk-PageHeader-titleRow {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.dshUk-PageHeader-title {\n  margin: 0;\n  font-size: 20px;\n  font-weight: 600;\n  line-height: 28px;\n  color: var(--dsw-alias-label-primary);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-PageHeader-subtitle {\n  margin: 0;\n  font-size: 13px;\n  font-weight: 400;\n  line-height: 18px;\n  color: var(--dsw-alias-label-secondary);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-PageHeader-tabsContainer {\n  display: flex;\n  align-items: center;\n  flex: none;\n}\n\n.dshUk-PageHeader-controls {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex: none;\n}\n");
+    PageHeader_module_css_default = {
+      "pageHeader": "dshUk-PageHeader-pageHeader",
+      "heading": "dshUk-PageHeader-heading",
+      "breadcrumb": "dshUk-PageHeader-breadcrumb",
+      "titleRow": "dshUk-PageHeader-titleRow",
+      "title": "dshUk-PageHeader-title",
+      "subtitle": "dshUk-PageHeader-subtitle",
+      "tabsContainer": "dshUk-PageHeader-tabsContainer",
+      "controls": "dshUk-PageHeader-controls"
+    };
+    PAGE_HEADER_CLASS = cssClass(PageHeader_module_css_default.pageHeader, "pageHeader");
+    HEADING_CLASS = cssClass(PageHeader_module_css_default.heading, "heading");
+    BREADCRUMB_CLASS = cssClass(PageHeader_module_css_default.breadcrumb, "breadcrumb");
+    TITLE_ROW_CLASS = cssClass(PageHeader_module_css_default.titleRow, "titleRow");
+    TITLE_CLASS = cssClass(PageHeader_module_css_default.title, "title");
+    SUBTITLE_CLASS = cssClass(PageHeader_module_css_default.subtitle, "subtitle");
+    TABS_CONTAINER_CLASS = cssClass(PageHeader_module_css_default.tabsContainer, "tabsContainer");
+    CONTROLS_CLASS = cssClass(PageHeader_module_css_default.controls, "controls");
+    PageHeader = (0, import_react.forwardRef)(function PageHeader2({ title, subtitle, badge, tabs, actions, onRefresh, refreshing = false, refreshTitle = "Refresh", onClose, closeTitle = "Close", breadcrumb, className, ...rest }, ref) {
       return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
         ...rest,
         ref,
-        className: cx(HEADER_CLASS, className),
-        children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-          className: HEADING_CLASS,
-          children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-            className: TITLE_ROW_CLASS,
-            children: [typeof title === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-              className: TITLE_CLASS,
-              children: title
-            }) : title, badge]
-          }), subtitle && (typeof subtitle === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-            className: SUBTITLE_CLASS,
-            children: subtitle
-          }) : subtitle)]
-        }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-          className: CONTROLS_CLASS,
-          children: [
-            actions,
-            onRefresh && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
-              variant: "ghost",
-              size: "sm",
-              "aria-label": refreshTitle,
-              title: refreshTitle,
-              disabled: refreshing,
-              onClick: () => {
-                onRefresh();
-              },
-              children: refreshing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconRefreshOutline16, {})
-            }),
-            onClose && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
-              variant: "ghost",
-              size: "sm",
-              "aria-label": closeTitle,
-              title: closeTitle,
-              onClick: () => {
-                onClose();
-              },
-              children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseOutline16, {})
+        className: cx(PAGE_HEADER_CLASS, className),
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+            className: HEADING_CLASS,
+            children: [
+              breadcrumb && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+                className: BREADCRUMB_CLASS,
+                children: breadcrumb
+              }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+                className: TITLE_ROW_CLASS,
+                children: [typeof title === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+                  className: TITLE_CLASS,
+                  children: title
+                }) : title, badge]
+              }),
+              subtitle && (typeof subtitle === "string" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+                className: SUBTITLE_CLASS,
+                children: subtitle
+              }) : subtitle)
+            ]
+          }),
+          tabs && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+            className: TABS_CONTAINER_CLASS,
+            children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tabs, {
+              items: tabs.items,
+              activeId: tabs.activeId,
+              onChange: tabs.onChange,
+              size: "sm"
             })
-          ]
-        })]
+          }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+            className: CONTROLS_CLASS,
+            children: [
+              actions,
+              onRefresh && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+                variant: "ghost",
+                size: "sm",
+                "aria-label": refreshTitle,
+                title: refreshTitle,
+                disabled: refreshing,
+                onClick: () => {
+                  onRefresh();
+                },
+                children: refreshing ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconLoadingOutline16, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconRefreshOutline16, {})
+              }),
+              onClose && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconButton, {
+                variant: "ghost",
+                size: "sm",
+                "aria-label": closeTitle,
+                title: closeTitle,
+                onClick: () => {
+                  onClose();
+                },
+                children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconCloseOutline16, {})
+              })
+            ]
+          })
+        ]
+      });
+    });
+    StageHeader = (0, import_react.forwardRef)(function StageHeader2(props, ref) {
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PageHeader, {
+        ...props,
+        ref
+      });
+    });
+    injectCss("StatBar.module.css", ".dshUk-StatBar-statBar {\n  display: flex;\n  align-items: stretch;\n  gap: 12px;\n  width: 100%;\n  box-sizing: border-box;\n  flex-wrap: wrap;\n}\n\n.dshUk-StatBar-item {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  flex: 1 1 0;\n  min-width: 140px;\n  padding: 12px 16px;\n  background: var(--dsw-alias-bg-layer-1);\n  border: 1px solid var(--dsw-alias-border-l1);\n  border-radius: 8px;\n  box-sizing: border-box;\n}\n\n.dshUk-StatBar-label {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: 16px;\n  color: var(--dsw-alias-label-secondary);\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n.dshUk-StatBar-valueRow {\n  display: flex;\n  align-items: baseline;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n\n.dshUk-StatBar-value {\n  font-size: 20px;\n  font-weight: 600;\n  line-height: 28px;\n  color: var(--dsw-alias-label-primary);\n  letter-spacing: -0.01em;\n}\n\n.dshUk-StatBar-trend {\n  display: inline-flex;\n  align-items: center;\n  gap: 2px;\n  font-size: 12px;\n  font-weight: 500;\n  line-height: 16px;\n}\n\n.dshUk-StatBar-trendUp {\n  color: var(--dsw-alias-status-success);\n}\n\n.dshUk-StatBar-trendDown {\n  color: var(--dsw-alias-state-error-primary);\n}\n\n.dshUk-StatBar-trendNeutral {\n  color: var(--dsw-alias-label-secondary);\n}\n\n.dshUk-StatBar-trendIcon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 14px;\n  height: 14px;\n  flex: none;\n}\n\n.dshUk-StatBar-extra {\n  font-size: 12px;\n  font-weight: 400;\n  line-height: 16px;\n  color: var(--dsw-alias-label-tertiary);\n  margin-top: auto;\n}\n");
+    StatBar_module_css_default = {
+      "statBar": "dshUk-StatBar-statBar",
+      "item": "dshUk-StatBar-item",
+      "label": "dshUk-StatBar-label",
+      "valueRow": "dshUk-StatBar-valueRow",
+      "value": "dshUk-StatBar-value",
+      "trend": "dshUk-StatBar-trend",
+      "trendUp": "dshUk-StatBar-trendUp",
+      "trendDown": "dshUk-StatBar-trendDown",
+      "trendNeutral": "dshUk-StatBar-trendNeutral",
+      "trendIcon": "dshUk-StatBar-trendIcon",
+      "extra": "dshUk-StatBar-extra"
+    };
+    STAT_BAR_CLASS = cssClass(StatBar_module_css_default.statBar, "statBar");
+    ITEM_CLASS = cssClass(StatBar_module_css_default.item, "item");
+    LABEL_CLASS = cssClass(StatBar_module_css_default.label, "label");
+    VALUE_ROW_CLASS = cssClass(StatBar_module_css_default.valueRow, "valueRow");
+    VALUE_CLASS = cssClass(StatBar_module_css_default.value, "value");
+    TREND_CLASS = cssClass(StatBar_module_css_default.trend, "trend");
+    TREND_UP_CLASS = cssClass(StatBar_module_css_default.trendUp, "trendUp");
+    TREND_DOWN_CLASS = cssClass(StatBar_module_css_default.trendDown, "trendDown");
+    TREND_NEUTRAL_CLASS = cssClass(StatBar_module_css_default.trendNeutral, "trendNeutral");
+    TREND_ICON_CLASS = cssClass(StatBar_module_css_default.trendIcon, "trendIcon");
+    EXTRA_CLASS = cssClass(StatBar_module_css_default.extra, "extra");
+    StatBar = (0, import_react.forwardRef)(function StatBar2({ items, className, ...rest }, ref) {
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+        ...rest,
+        ref,
+        className: cx(STAT_BAR_CLASS, className),
+        children: items.map((item) => {
+          const trend = item.trend;
+          return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+            className: ITEM_CLASS,
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+                className: LABEL_CLASS,
+                children: item.label
+              }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+                className: VALUE_ROW_CLASS,
+                children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+                  className: VALUE_CLASS,
+                  children: item.value
+                }), trend && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+                  className: cx(TREND_CLASS, trend.direction === "up" && TREND_UP_CLASS, trend.direction === "down" && TREND_DOWN_CLASS, trend.direction === "neutral" && TREND_NEUTRAL_CLASS),
+                  children: [
+                    trend.direction === "up" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+                      className: TREND_ICON_CLASS,
+                      "aria-hidden": "true",
+                      children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconChevronUpOutline14, { size: 14 })
+                    }),
+                    trend.direction === "down" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+                      className: TREND_ICON_CLASS,
+                      "aria-hidden": "true",
+                      children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_dsh_client_ui_primitives.IconChevronDownOutline14, { size: 14 })
+                    }),
+                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: trend.value })
+                  ]
+                })]
+              }),
+              item.extra != null && item.extra !== "" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+                className: EXTRA_CLASS,
+                children: item.extra
+              }) : null
+            ]
+          }, item.key);
+        })
+      });
+    });
+    injectCss("ActionRow.module.css", ".dshUk-ActionRow-actionRow {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: nowrap;\n  min-height: 32px;\n  box-sizing: border-box;\n  width: 100%;\n}\n\n.dshUk-ActionRow-leftGroup {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-shrink: 0;\n  min-width: 0;\n}\n\n.dshUk-ActionRow-rightGroup {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin-left: auto;\n  flex-shrink: 0;\n}\n");
+    ActionRow_module_css_default = {
+      "actionRow": "dshUk-ActionRow-actionRow",
+      "leftGroup": "dshUk-ActionRow-leftGroup",
+      "rightGroup": "dshUk-ActionRow-rightGroup"
+    };
+    ACTION_ROW_CLASS = cssClass(ActionRow_module_css_default.actionRow, "actionRow");
+    LEFT_GROUP_CLASS = cssClass(ActionRow_module_css_default.leftGroup, "leftGroup");
+    RIGHT_GROUP_CLASS = cssClass(ActionRow_module_css_default.rightGroup, "rightGroup");
+    ActionRow = (0, import_react.forwardRef)(function ActionRow2({ primaryAction, secondaryActions, rightActions, className, children, ...rest }, ref) {
+      const hasLeft = primaryAction != null || secondaryActions != null;
+      const hasRight = rightActions != null;
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+        ...rest,
+        ref,
+        className: cx(ACTION_ROW_CLASS, className),
+        children: [
+          hasLeft && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+            className: LEFT_GROUP_CLASS,
+            children: [primaryAction, secondaryActions]
+          }),
+          children,
+          hasRight && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+            className: RIGHT_GROUP_CLASS,
+            children: rightActions
+          })
+        ]
       });
     });
     PRODUCT_STAGE_EVENT = "dsh-product-stage";
@@ -842,10 +1017,10 @@ var init_lib = __esm({
   cursor: pointer; text-align: left;
 }
 .omnimux-sidebar-nav-entry:hover {
-  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,.12));
+  background: var(--dsw-alias-interactive-bg-hover);
 }
 .omnimux-sidebar-nav-entry[data-active="true"] {
-  background: var(--dsw-alias-interactive-bg-active, rgba(128,128,128,.18));
+  background: var(--dsw-alias-interactive-bg-active);
   font-weight: 500;
 }
 .omnimux-sidebar-nav-entry-icon {
