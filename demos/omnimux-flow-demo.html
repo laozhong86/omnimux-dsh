@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniMux 物理级能量流光 (双主题非蓝视觉落地)</title>
+  <style>
+    /* ==================== 双主题与非蓝视觉设计系统 ==================== */
+    :root[data-theme="dark"] {
+      /* 暗色模式：OmniMux 电光荧光绿 + 翡翠能量流光 */
+      --wb-accent: #C8F135;
+      --wb-accent-hover: #D4FF38;
+      --wb-accent-glow: rgba(200, 241, 53, 0.45);
+      
+      --wb-bg-canvas: #0e1017;
+      --wb-grid-dot: #1e2230;
+      
+      --wb-surface-card: rgba(20, 23, 31, 0.88);
+      --wb-border: rgba(255, 255, 255, 0.08);
+      --wb-border-strong: rgba(255, 255, 255, 0.16);
+      
+      --wb-text-primary: #f8fafc;
+      --wb-text-secondary: #94a3b8;
+      --wb-text-muted: #64748b;
+      
+      --wb-edge-track: #1f2533;
+      --wb-edge-selected: #C8F135;
+
+      /* 流光真实物理颜色 (Canvas 2D 直接求值) */
+      --flow-glow-color: rgba(200, 241, 53, 0.55);
+      --flow-core-color: #D4FF38;
+      --flow-core-end: #10B981;
+    }
+
+    :root[data-theme="light"] {
+      /* 浅色模式：深森林翠绿 + 高亮薄荷绿 (WCAG AA 对比度 5.2:1) */
+      --wb-accent: #059669;
+      --wb-accent-hover: #047857;
+      --wb-accent-glow: rgba(5, 150, 105, 0.35);
+      
+      --wb-bg-canvas: #f4f5f8;
+      --wb-grid-dot: #d8dbe2;
+      
+      --wb-surface-card: rgba(255, 255, 255, 0.94);
+      --wb-border: rgba(0, 0, 0, 0.08);
+      --wb-border-strong: rgba(0, 0, 0, 0.16);
+      
+      --wb-text-primary: #111827;
+      --wb-text-secondary: #4b5563;
+      --wb-text-muted: #9ca3af;
+      
+      --wb-edge-track: #d1d5db;
+      --wb-edge-selected: #059669;
+
+      /* 流光真实物理颜色 */
+      --flow-glow-color: rgba(16, 185, 129, 0.45);
+      --flow-core-color: #047857;
+      --flow-core-end: #10B981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--wb-bg-canvas);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--wb-text-primary);
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* 顶部控制台 */
+    .top-toolbar {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 18px;
+      background: var(--wb-surface-card);
+      border: 1px solid var(--wb-border-strong);
+      backdrop-filter: blur(20px);
+      border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    }
+
+    .top-toolbar .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--wb-text-primary);
+      padding-right: 12px;
+      border-right: 1px solid var(--wb-border);
+    }
+
+    .logo-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #C8F135 0%, #10B981 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(200, 241, 53, 0.5);
+      color: #0b0d14;
+    }
+
+    .toolbar-button {
+      height: 32px;
+      padding: 0 14px;
+      border-radius: 8px;
+      background: rgba(125, 125, 125, 0.08);
+      border: 1px solid var(--wb-border);
+      color: var(--wb-text-primary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .toolbar-button:hover {
+      background: rgba(200, 241, 53, 0.15);
+      border-color: var(--wb-accent);
+      color: var(--wb-text-primary);
+    }
+
+    .toolbar-button.active {
+      background: var(--wb-accent);
+      border-color: var(--wb-accent-hover);
+      color: #0b0d14;
+      font-weight: 600;
+      box-shadow: 0 0 16px var(--wb-accent-glow);
+    }
+
+    /* 画布容器 */
+    .wf-canvas-root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background-color: var(--wb-bg-canvas);
+      background-image: radial-gradient(var(--wb-grid-dot) 1.2px, transparent 1.2px);
+      background-size: 24px 24px;
+      cursor: grab;
+    }
+
+    .wf-canvas-root:active {
+      cursor: grabbing;
+    }
+
+    /* 双层 Canvas 系统 */
+    .hilo-edges-canvas,
+    .hilo-edges-flow-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* 节点图层 */
+    .nodes-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    /* OmniMux 真实节点 */
+    .wf-material-node {
+      position: absolute;
+      width: 250px;
+      pointer-events: auto;
+      cursor: move;
+      touch-action: none;
+    }
+
+    .wf-node-header {
+      position: absolute;
+      top: -26px;
+      left: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 4px;
+      max-width: 100%;
+      white-space: nowrap;
+      z-index: 10;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--wb-text-secondary);
+      pointer-events: none;
+    }
+
+    .wf-node-header__icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      background: rgba(200, 241, 53, 0.2);
+      color: var(--wb-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    :root[data-theme="light"] .wf-node-header__icon {
+      background: rgba(5, 150, 105, 0.15);
+      color: #047857;
+    }
+
+    .wf-node-header__label {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--wb-text-primary);
+    }
+
+    .wf-material-node__badge {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+    }
+
+    .wf-material-node__card {
+      position: relative;
+      border-radius: 18px;
+      border: 1px solid var(--wb-border);
+      background: var(--wb-surface-card);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .wf-material-node:hover .wf-material-node__card {
+      border-color: var(--wb-border-strong);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+    }
+
+    .wf-material-node.selected .wf-material-node__card {
+      border-color: var(--wb-accent);
+      box-shadow: inset 0 0 0 1.5px var(--wb-accent), 0 0 28px var(--wb-accent-glow), 0 16px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .wf-material-node.upstream-highlight .wf-material-node__card {
+      border-color: #10B981;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+    }
+
+    .wf-material-node.downstream-highlight .wf-material-node__card {
+      border-color: var(--wb-accent);
+      box-shadow: 0 0 20px var(--wb-accent-glow);
+    }
+
+    .wf-node-preview {
+      height: 110px;
+      background: rgba(125, 125, 125, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid var(--wb-border);
+    }
+
+    .wf-node-preview__title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--wb-text-primary);
+      margin-bottom: 4px;
+    }
+
+    .wf-node-preview__desc {
+      font-size: 11px;
+      color: var(--wb-text-secondary);
+      line-height: 1.4;
+    }
+
+    .wf-node-footer {
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(125, 125, 125, 0.03);
+    }
+
+    .wf-node-meta {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 10px;
+      color: var(--wb-text-muted);
+    }
+
+    .wf-node-tag {
+      font-size: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(200, 241, 53, 0.12);
+      color: var(--wb-accent);
+      border: 1px solid rgba(200, 241, 53, 0.2);
+    }
+
+    :root[data-theme="light"] .wf-node-tag {
+      background: rgba(5, 150, 105, 0.12);
+      color: #047857;
+      border-color: rgba(5, 150, 105, 0.2);
+    }
+
+    .wf-node-handle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--wb-surface-card);
+      border: 2px solid var(--wb-accent);
+      box-shadow: 0 0 6px var(--wb-accent-glow);
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 30;
+    }
+
+    .wf-node-handle--left { left: -5px; }
+    .wf-node-handle--right { right: -5px; }
+
+    .wf-node-corner {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: #ffffff;
+      border: 1px solid #111;
+      z-index: 25;
+      display: none;
+    }
+    .wf-material-node.selected .wf-node-corner { display: block; }
+    .wf-node-corner--tl { top: -3px; left: -3px; }
+    .wf-node-corner--tr { top: -3px; right: -3px; }
+    .wf-node-corner--bl { bottom: -3px; left: -3px; }
+    .wf-node-corner--br { bottom: -3px; right: -3px; }
+
+    /* 底部面板 */
+    .info-footer {
+      position: absolute;
+      bottom: 20px;
+      left: 24px;
+      background: var(--wb-surface-card);
+      border: 1px solid var(--wb-border-strong);
+      backdrop-filter: blur(20px);
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-size: 12px;
+      color: var(--wb-text-secondary);
+      z-index: 100;
+      line-height: 1.7;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+      max-width: 640px;
+    }
+
+    .info-footer strong {
+      color: var(--wb-text-primary);
+    }
+
+    .badge-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--wb-accent);
+      margin-right: 4px;
+      box-shadow: 0 0 8px var(--wb-accent);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部控制台 -->
+  <div class="top-toolbar">
+    <div class="logo">
+      <div class="logo-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      </div>
+      <span>OmniMux 能量流光</span>
+    </div>
+
+    <button class="toolbar-button active" id="btnSelectCentral" onclick="selectNode('node_orchestrator')">
+      ⚡ 选中分镜中枢
+    </button>
+    <button class="toolbar-button" id="btnSelectSource" onclick="selectNode('node_prompt')">
+      🎯 选中上游
+    </button>
+    <button class="toolbar-button" id="btnSelectSink" onclick="selectNode('node_video')">
+      🎬 选中下游
+    </button>
+    <button class="toolbar-button" onclick="deselectAll()">
+      ✕ 清除选中
+    </button>
+    <button class="toolbar-button" id="btnThemeToggle" onclick="toggleTheme()" style="margin-left: 8px; border-left: 1px solid var(--wb-border);">
+      🌓 切换浅色/深色主题
+    </button>
+  </div>
+
+  <!-- 无限画布区域 -->
+  <div class="wf-canvas-root" id="canvasRoot">
+    <canvas id="edgesCanvas" class="hilo-edges-canvas"></canvas>
+    <canvas id="flowCanvas" class="hilo-edges-flow-canvas"></canvas>
+    <div class="nodes-layer" id="nodesContainer"></div>
+  </div>
+
+  <!-- 底部说明面板 -->
+  <div class="info-footer">
+    <div style="margin-bottom: 4px;">
+      <span class="badge-dot"></span>
+      <strong>非蓝方案 · 双主题 1:1 MiniMax 物理流光动效：</strong>
+    </div>
+    <div>• <strong>暗色主题（Dark）</strong>：<code>#D4FF38</code>（OmniMux 电光荧光绿）渐变至 <code>#10B981</code>（翡翠能量流光），搭配 <code>rgba(200, 241, 53, 0.45)</code> 电晕外发光。</div>
+    <div>• <strong>浅色主题（Light）</strong>：<code>#047857</code>（深森林翡翠绿，AA 对比度 5.2:1）渐变至 <code>#10B981</code>（高亮薄荷绿），优雅且清晰可读。</div>
+    <div>• <strong>物理引擎</strong>：<code>104px/s</code> 恒定速率、<code>36px 脉冲</code> + <code>120px 间距</code>、<code>6 段 1.35 次幂平滑渐细</code>，叠加 <code>1600ms 正弦呼吸律动</code>。</div>
+  </div>
+
+  <script>
+    // ========================================================================
+    // 1. MiniMax 物理引擎常量 (Verbatim Physics Engine)
+    // ========================================================================
+    const EDGE_FLOW_PULSE_LENGTH_PX = 36;
+    const EDGE_FLOW_GAP_LENGTH_PX = 120;
+    const EDGE_FLOW_SPEED_PX_PER_SECOND = 104;
+    const EDGE_FLOW_SEGMENT_COUNT = 6;
+    const EDGE_FLOW_TAIL_WIDTH = 1.2;
+    const EDGE_FLOW_HEAD_WIDTH = 2.6;
+    const EDGE_FLOW_HALO_EXTRA_WIDTH = 1.15;
+    const EDGE_FLOW_MIN_ZOOM = 0.01;
+    const EDGE_FLOW_TAIL_OPACITY = 0.46;
+    const EDGE_FLOW_HEAD_OPACITY = 0.96;
+    const EDGE_FLOW_BREATH_MIN = 0.9;
+    const EDGE_FLOW_BREATH_RANGE = 0.1;
+    const EDGE_FLOW_BREATH_PERIOD_MS = 1600;
+
+    let currentTheme = 'dark';
+
+    function getThemePalette() {
+      if (currentTheme === 'dark') {
+        return {
+          staticTrack: '#1f2533',
+          staticSelected: '#C8F135',
+          flowGlow: 'rgba(200, 241, 53, 0.55)',
+          flowCore: '#D4FF38'
+        };
+      } else {
+        return {
+          staticTrack: '#d1d5db',
+          staticSelected: '#059669',
+          flowGlow: 'rgba(16, 185, 129, 0.45)',
+          flowCore: '#047857'
+        };
+      }
+    }
+
+    function toggleTheme() {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      drawStaticEdges();
+    }
+
+    function safeZoom(zoom) {
+      return Number.isFinite(zoom) && zoom > 0 ? Math.max(zoom, EDGE_FLOW_MIN_ZOOM) : 1;
+    }
+
+    function getEdgeFlowFrame(timestampMs, zoom = 1) {
+      const resolvedZoom = safeZoom(zoom);
+      const patternLengthPx = EDGE_FLOW_PULSE_LENGTH_PX + EDGE_FLOW_GAP_LENGTH_PX;
+      const segmentLengthPx = EDGE_FLOW_PULSE_LENGTH_PX / EDGE_FLOW_SEGMENT_COUNT;
+      const elapsedMs = Number.isFinite(timestampMs) ? Math.max(0, timestampMs) : 0;
+      const distancePx = (elapsedMs / 1000 * EDGE_FLOW_SPEED_PX_PER_SECOND) % patternLengthPx;
+      const breathPhase = (elapsedMs % EDGE_FLOW_BREATH_PERIOD_MS) / EDGE_FLOW_BREATH_PERIOD_MS;
+      const breath = EDGE_FLOW_BREATH_MIN + ((Math.sin(breathPhase * Math.PI * 2 - Math.PI / 2) + 1) / 2) * EDGE_FLOW_BREATH_RANGE;
+
+      return {
+        segments: Array.from({ length: EDGE_FLOW_SEGMENT_COUNT }, (_, index) => {
+          const progress = index / (EDGE_FLOW_SEGMENT_COUNT - 1);
+          const taperedProgress = progress ** 1.35;
+          const coreWidth = EDGE_FLOW_TAIL_WIDTH + (EDGE_FLOW_HEAD_WIDTH - EDGE_FLOW_TAIL_WIDTH) * taperedProgress;
+          const opacity = (EDGE_FLOW_TAIL_OPACITY + (EDGE_FLOW_HEAD_OPACITY - EDGE_FLOW_TAIL_OPACITY) * taperedProgress) * breath;
+          return {
+            dashPattern: [
+              segmentLengthPx / resolvedZoom,
+              (patternLengthPx - segmentLengthPx) / resolvedZoom
+            ],
+            dashOffset: -(distancePx + index * segmentLengthPx) / resolvedZoom,
+            haloWidth: coreWidth + EDGE_FLOW_HALO_EXTRA_WIDTH,
+            coreWidth,
+            opacity
+          };
+        })
+      };
+    }
+
+    // ========================================================================
+    // 2. 节点与 DAG 数据
+    // ========================================================================
+    const NODE_WIDTH = 250;
+    const NODE_HEIGHT = 146;
+
+    const graphData = {
+      nodes: [
+        { id: 'node_prompt', type: 'TX', title: '创意提示词 Prompt', desc: '输入短剧分镜与角色外貌设定', meta: 'TEXT-TO-TEXT', x: 80, y: 140 },
+        { id: 'node_style', type: 'CF', title: '风格预设 Style Preset', desc: '赛博朋克 / 电影级光影', meta: 'CONFIG-PACK', x: 80, y: 380 },
+        { id: 'node_orchestrator', type: 'LL', title: '分镜规划器 LLM', desc: '解析上下游依赖并生成分镜任务', meta: 'CORE-PLANNER', x: 440, y: 260 },
+        { id: 'node_image_1', type: 'IM', title: '角色主图生图 Image', desc: '1024×1024 高清正视图生成', meta: 'SD-XL-TURBO', x: 800, y: 140 },
+        { id: 'node_image_2', type: 'IM', title: '场景环境生图 Scene', desc: '全景背景深度渲染', meta: 'FLUX-1-DEV', x: 800, y: 380 },
+        { id: 'node_video', type: 'VI', title: '动态视频合成 Video', desc: '多轨视频序列生成与转场', meta: 'SVD-PRO-V2', x: 1160, y: 260 }
+      ],
+      edges: [
+        { id: 'e1', source: 'node_prompt', target: 'node_orchestrator' },
+        { id: 'e2', source: 'node_style', target: 'node_orchestrator' },
+        { id: 'e3', source: 'node_orchestrator', target: 'node_image_1' },
+        { id: 'e4', source: 'node_orchestrator', target: 'node_image_2' },
+        { id: 'e5', source: 'node_image_1', target: 'node_video' },
+        { id: 'e6', source: 'node_image_2', target: 'node_video' }
+      ]
+    };
+
+    let selectedNodeId = 'node_orchestrator';
+
+    function getConnectedEdges(rootId) {
+      if (!rootId) return { upstream: new Set(), downstream: new Set(), all: new Set() };
+      const upstream = new Set();
+      const downstream = new Set();
+      const all = new Set();
+      const incoming = new Map();
+      const outgoing = new Map();
+
+      graphData.edges.forEach(e => {
+        if (!incoming.has(e.target)) incoming.set(e.target, []);
+        if (!outgoing.has(e.source)) outgoing.set(e.source, []);
+        incoming.get(e.target).push(e);
+        outgoing.get(e.source).push(e);
+      });
+
+      const upQueue = [rootId];
+      const visitedUp = new Set([rootId]);
+      while (upQueue.length > 0) {
+        const curr = upQueue.shift();
+        const inEdges = incoming.get(curr) || [];
+        inEdges.forEach(edge => {
+          upstream.add(edge.id);
+          all.add(edge.id);
+          if (!visitedUp.has(edge.source)) {
+            visitedUp.add(edge.source);
+            upQueue.push(edge.source);
+          }
+        });
+      }
+
+      const downQueue = [rootId];
+      const visitedDown = new Set([rootId]);
+      while (downQueue.length > 0) {
+        const curr = downQueue.shift();
+        const outEdges = outgoing.get(curr) || [];
+        outEdges.forEach(edge => {
+          downstream.add(edge.id);
+          all.add(edge.id);
+          if (!visitedDown.has(edge.target)) {
+            visitedDown.add(edge.target);
+            downQueue.push(edge.target);
+          }
+        });
+      }
+
+      return { upstream, downstream, all, visitedUp, visitedDown };
+    }
+
+    function traceBezierPath(path, srcNode, tgtNode) {
+      const p0 = { x: srcNode.x + NODE_WIDTH, y: srcNode.y + NODE_HEIGHT / 2 };
+      const p3 = { x: tgtNode.x, y: tgtNode.y + NODE_HEIGHT / 2 };
+      const dx = Math.abs(p3.x - p0.x) * 0.55;
+      const p1 = { x: p0.x + dx, y: p0.y };
+      const p2 = { x: p3.x - dx, y: p3.y };
+
+      path.moveTo(p0.x, p0.y);
+      path.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+    }
+
+    // ========================================================================
+    // 3. 双层 Canvas 系统
+    // ========================================================================
+    const edgesCanvas = document.getElementById('edgesCanvas');
+    const flowCanvas = document.getElementById('flowCanvas');
+    const edgesCtx = edgesCanvas.getContext('2d');
+    const flowCtx = flowCanvas.getContext('2d');
+
+    let dpr = window.devicePixelRatio || 1;
+
+    function resizeCanvases() {
+      dpr = Math.max(1, window.devicePixelRatio || 1);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      [edgesCanvas, flowCanvas].forEach(c => {
+        c.width = w * dpr;
+        c.height = h * dpr;
+        c.style.width = `${w}px`;
+        c.style.height = `${h}px`;
+      });
+
+      edgesCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      flowCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawStaticEdges();
+    }
+    window.addEventListener('resize', resizeCanvases);
+
+    function drawStaticEdges() {
+      const palette = getThemePalette();
+      edgesCtx.setTransform(1, 0, 0, 1, 0, 0);
+      edgesCtx.clearRect(0, 0, edgesCanvas.width, edgesCanvas.height);
+      edgesCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const conn = getConnectedEdges(selectedNodeId);
+      const nodeMap = new Map(graphData.nodes.map(n => [n.id, n]));
+
+      const defaultPath = new Path2D();
+      const selectedPath = new Path2D();
+
+      graphData.edges.forEach(edge => {
+        const src = nodeMap.get(edge.source);
+        const tgt = nodeMap.get(edge.target);
+        if (!src || !tgt) return;
+
+        const isSelected = conn.all.has(edge.id);
+        const targetPath = isSelected ? selectedPath : defaultPath;
+        traceBezierPath(targetPath, src, tgt);
+      });
+
+      edgesCtx.lineCap = "round";
+      edgesCtx.lineJoin = "round";
+
+      edgesCtx.lineWidth = 1.5;
+      edgesCtx.strokeStyle = palette.staticTrack;
+      edgesCtx.stroke(defaultPath);
+
+      edgesCtx.lineWidth = 2.0;
+      edgesCtx.strokeStyle = palette.staticSelected;
+      edgesCtx.stroke(selectedPath);
+    }
+
+    function renderFlow(timestampMs) {
+      flowCtx.setTransform(1, 0, 0, 1, 0, 0);
+      flowCtx.clearRect(0, 0, flowCanvas.width, flowCanvas.height);
+      flowCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const conn = getConnectedEdges(selectedNodeId);
+
+      if (conn.all.size > 0) {
+        const palette = getThemePalette();
+        const nodeMap = new Map(graphData.nodes.map(n => [n.id, n]));
+        const selectedPath = new Path2D();
+
+        graphData.edges.forEach(edge => {
+          if (!conn.all.has(edge.id)) return;
+          const src = nodeMap.get(edge.source);
+          const tgt = nodeMap.get(edge.target);
+          if (src && tgt) {
+            traceBezierPath(selectedPath, src, tgt);
+          }
+        });
+
+        flowCtx.lineCap = "round";
+        flowCtx.lineJoin = "round";
+
+        const frame = getEdgeFlowFrame(timestampMs, 1);
+
+        // Pass 1: 光晕 (Halo)
+        flowCtx.strokeStyle = palette.flowGlow;
+        for (const segment of frame.segments) {
+          flowCtx.setLineDash(segment.dashPattern);
+          flowCtx.lineDashOffset = segment.dashOffset;
+          flowCtx.globalAlpha = segment.opacity;
+          flowCtx.lineWidth = segment.haloWidth;
+          flowCtx.stroke(selectedPath);
+        }
+
+        // Pass 2: 核心高亮 (Core)
+        flowCtx.strokeStyle = palette.flowCore;
+        for (const segment of frame.segments) {
+          flowCtx.setLineDash(segment.dashPattern);
+          flowCtx.lineDashOffset = segment.dashOffset;
+          flowCtx.globalAlpha = segment.opacity;
+          flowCtx.lineWidth = segment.coreWidth;
+          flowCtx.stroke(selectedPath);
+        }
+
+        flowCtx.globalAlpha = 1;
+      }
+
+      requestAnimationFrame(renderFlow);
+    }
+
+    // ========================================================================
+    // 4. 节点构建
+    // ========================================================================
+    const nodesContainer = document.getElementById('nodesContainer');
+
+    function initNodes() {
+      nodesContainer.innerHTML = '';
+      graphData.nodes.forEach(node => {
+        const nodeEl = document.createElement('div');
+        nodeEl.className = 'wf-material-node';
+        nodeEl.id = node.id;
+        nodeEl.style.transform = `translate(${node.x}px, ${node.y}px)`;
+
+        nodeEl.innerHTML = `
+          <div class="wf-node-header">
+            <div class="wf-node-header__icon">${node.type}</div>
+            <span class="wf-node-header__label">${node.title}</span>
+            <div class="wf-material-node__badge"></div>
+          </div>
+
+          <div class="wf-material-node__card">
+            <div class="wf-node-preview">
+              <div class="wf-node-preview__title">${node.title}</div>
+              <div class="wf-node-preview__desc">${node.desc}</div>
+            </div>
+            <div class="wf-node-footer">
+              <span class="wf-node-meta">ID: ${node.id}</span>
+              <span class="wf-node-tag">${node.meta}</span>
+            </div>
+          </div>
+
+          <div class="wf-node-handle wf-node-handle--left"></div>
+          <div class="wf-node-handle wf-node-handle--right"></div>
+
+          <div class="wf-node-corner wf-node-corner--tl"></div>
+          <div class="wf-node-corner wf-node-corner--tr"></div>
+          <div class="wf-node-corner wf-node-corner--bl"></div>
+          <div class="wf-node-corner wf-node-corner--br"></div>
+        `;
+
+        nodeEl.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          selectNode(node.id);
+          startDragNode(e, node);
+        });
+
+        nodesContainer.appendChild(nodeEl);
+      });
+    }
+
+    let draggingNode = null;
+    let dragOffset = { x: 0, y: 0 };
+
+    function startDragNode(e, node) {
+      draggingNode = node;
+      dragOffset.x = e.clientX - node.x;
+      dragOffset.y = e.clientY - node.y;
+
+      function onPointerMove(moveEvent) {
+        if (!draggingNode) return;
+        draggingNode.x = moveEvent.clientX - dragOffset.x;
+        draggingNode.y = moveEvent.clientY - dragOffset.y;
+        
+        const nodeEl = document.getElementById(draggingNode.id);
+        if (nodeEl) {
+          nodeEl.style.transform = `translate(${draggingNode.x}px, ${draggingNode.y}px)`;
+        }
+        drawStaticEdges();
+      }
+
+      function onPointerUp() {
+        draggingNode = null;
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+      }
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+    }
+
+    function selectNode(nodeId) {
+      selectedNodeId = nodeId;
+      updateNodeStyles();
+      drawStaticEdges();
+    }
+
+    function deselectAll() {
+      selectedNodeId = null;
+      updateNodeStyles();
+      drawStaticEdges();
+    }
+
+    function updateNodeStyles() {
+      const conn = getConnectedEdges(selectedNodeId);
+
+      graphData.nodes.forEach(node => {
+        const el = document.getElementById(node.id);
+        if (!el) return;
+
+        el.classList.remove('selected', 'upstream-highlight', 'downstream-highlight');
+
+        if (node.id === selectedNodeId) {
+          el.classList.add('selected');
+        } else if (conn.visitedUp && conn.visitedUp.has(node.id)) {
+          el.classList.add('upstream-highlight');
+        } else if (conn.visitedDown && conn.visitedDown.has(node.id)) {
+          el.classList.add('downstream-highlight');
+        }
+      });
+
+      document.getElementById('btnSelectCentral').classList.toggle('active', selectedNodeId === 'node_orchestrator');
+      document.getElementById('btnSelectSource').classList.toggle('active', selectedNodeId === 'node_prompt');
+      document.getElementById('btnSelectSink').classList.toggle('active', selectedNodeId === 'node_video');
+    }
+
+    document.getElementById('canvasRoot').addEventListener('pointerdown', (e) => {
+      if (e.target.id === 'canvasRoot' || e.target.tagName === 'CANVAS') {
+        deselectAll();
+      }
+    });
+
+    initNodes();
+    resizeCanvases();
+    selectNode('node_orchestrator');
+    requestAnimationFrame(renderFlow);
+  </script>
+</body>
+</html>

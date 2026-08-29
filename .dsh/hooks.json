@@ -1,0 +1,15 @@
+{
+  "PreToolUse": [
+    {
+      "matcher": "edit|write",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node scripts/guard-worktree.mjs",
+          "statusMessage": "🛡️ 检查工作区 Worktree 隔离规范",
+          "timeout": 5
+        }
+      ]
+    }
+  ]
+}

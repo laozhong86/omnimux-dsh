@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organic Shimmer — Transitions.dev 样式完美复刻演示</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ==========================================================================
+       1. 基础重置与全局变量（融合 DSH 视觉体系与 Transitions.dev 规格）
+       ========================================================================== */
+    :root {
+      /* 色彩系统 - 浅色模式 */
+      --bg-base: #f7f7f8;
+      --bg-surface: #ffffff;
+      --bg-elevated: #ffffff;
+      --border-subtle: rgba(0, 0, 0, 0.08);
+      --border-strong: rgba(0, 0, 0, 0.16);
+      --text-primary: #17181c;
+      --text-secondary: #6e6f79;
+      --text-tertiary: #9e9fa8;
+      --accent-primary: #0066ff;
+      --accent-hover: #0052cc;
+      --stage-bg: #eeeeee;
+      --stage-rgb: 238, 238, 238;
+      --stage-hex: #eeeeee;
+
+      /* Organic Shimmer 参数控制 */
+      --shimmer-dur: 5000ms;
+      --shimmer-ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --shimmer-band-factor: 26%;
+      --shimmer-band: calc(var(--shimmer-band-factor) * 0.848);
+      --shimmer-bg-opacity: 1;
+      --shimmer-glow-blur: 20px;
+      --shimmer-glow-opacity: 0.75;
+      --shimmer-border-opacity: 1;
+
+      /* 字体与圆角 */
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', "Roboto Mono", monospace;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+
+      /* 阴影 */
+      --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+      --shadow-stage: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+    }
+
+    html[data-theme="dark"] {
+      --bg-base: #0e0e11;
+      --bg-surface: #16161a;
+      --bg-elevated: #1e1e24;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --text-primary: #f0f0f3;
+      --text-secondary: #9e9fa8;
+      --text-tertiary: #64656f;
+      --accent-primary: #3b82f6;
+      --accent-hover: #60a5fa;
+      --stage-bg: #222226;
+      --stage-rgb: 34, 34, 38;
+      --stage-hex: #222226;
+      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      --shadow-stage: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ==========================================================================
+       2. 顶栏导航与标题区域
+       ========================================================================== */
+    .header {
+      width: 100%;
+      max-width: 1080px;
+      margin-bottom: 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .brand-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .badge-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-pro {
+      display: inline-flex;
+      align-items: center;
+      height: 20px;
+      padding: 0 8px;
+      border-radius: 6px;
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      color: var(--accent-primary);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-origin {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      max-width: 600px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .theme-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      transition: all 0.2s ease;
+    }
+
+    .theme-toggle-btn:hover {
+      border-color: var(--border-strong);
+      background: var(--bg-elevated);
+    }
+
+    /* ==========================================================================
+       3. 主体验收看板网格布局
+       ========================================================================== */
+    .main-grid {
+      width: 100%;
+      max-width: 1080px;
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 28px;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ==========================================================================
+       4. 舞台展示卡片
+       ========================================================================== */
+    .preview-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .stage-container {
+      position: relative;
+      width: 100%;
+      height: 380px;
+      border-radius: var(--radius-md);
+      background: var(--stage-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: var(--shadow-stage);
+      transition: background-color 0.3s ease;
+    }
+
+    /* ==========================================================================
+       ★ 5. ORGANIC SHIMMER 核心 CSS 样式（1:1 复刻规范）
+       ========================================================================== */
+    .organic-shimmer-card {
+      --stage-rgb-val: var(--stage-rgb);
+      --band-val: var(--shimmer-band);
+      position: relative;
+      width: 160px;
+      height: 160px;
+      border-radius: 16px;
+      background: var(--stage-bg);
+      overflow: hidden;
+      isolation: isolate;
+      flex-shrink: 0;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+      transition: width 0.3s ease, height 0.3s ease, border-radius 0.3s ease;
+    }
+
+    /* 暂停状态控制 */
+    .organic-shimmer-card[data-playing="false"] .shimmer-distortion,
+    .organic-shimmer-card[data-playing="false"] .shimmer-mask {
+      animation-play-state: paused !important;
+    }
+
+    /* 底层扩展画布容器 */
+    .shimmer-canvas {
+      position: absolute;
+      inset: -20px;
+      pointer-events: none;
+    }
+
+    /* 1. 多色环状光谱背景场（多彩弥散底光） */
+    .shimmer-field {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(90px 70px at 20% 15%, rgba(40, 140, 255, 0.18), transparent),
+        radial-gradient(80px 60px at 65% 25%, rgba(255, 50, 100, 0.16), transparent),
+        radial-gradient(70px 80px at 30% 55%, rgba(50, 200, 80, 0.15), transparent),
+        radial-gradient(90px 70px at 75% 65%, rgba(180, 40, 240, 0.16), transparent),
+        radial-gradient(70px 60px at 45% 85%, rgba(255, 120, 40, 0.15), transparent),
+        radial-gradient(60px 60px at 10% 85%, rgba(30, 185, 170, 0.14), transparent),
+        linear-gradient(rgba(90, 90, 100, 0.05), rgba(90, 90, 100, 0.05));
+      opacity: var(--shimmer-bg-opacity);
+      pointer-events: none;
+    }
+
+    /* 2. SVG 湍流折射液体波浪层（核心有机流动效果） */
+    .shimmer-distortion {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 330%;
+      height: 330%;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      transform: translate3d(-69.697%, -69.697%, 0);
+      animation: organic-shimmer-sweep var(--shimmer-dur) var(--shimmer-ease) infinite;
+      will-change: transform;
+      pointer-events: none;
+    }
+
+    /* 3. 动态同步线性过渡遮罩层（与背景色融合） */
+    .shimmer-mask {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 330%;
+      height: 330%;
+      background-image: linear-gradient(
+        135deg,
+        rgba(var(--stage-rgb), 1) 0%,
+        rgba(var(--stage-rgb), 1) calc(50% - var(--band-val) * 1.4),
+        rgba(var(--stage-rgb), 0.94) calc(50% - var(--band-val) * 1),
+        rgba(var(--stage-rgb), 0.82) calc(50% - var(--band-val) * 0.6),
+        rgba(var(--stage-rgb), 0.55) calc(50% - var(--band-val) * 0.25),
+        rgba(var(--stage-rgb), 0) 50%,
+        rgba(var(--stage-rgb), 0.5) calc(50% + var(--band-val) * 0.18),
+        rgba(var(--stage-rgb), 1) calc(50% + var(--band-val) * 0.35),
+        rgba(var(--stage-rgb), 1) 100%
+      );
+      transform: translate3d(-69.697%, -69.697%, 0);
+      animation: organic-shimmer-sweep var(--shimmer-dur) var(--shimmer-ease) infinite;
+      will-change: transform;
+      pointer-events: none;
+    }
+
+    /* 4. 外圈边缘发光多层系统 */
+    .shimmer-glow-layer {
+      position: absolute;
+      inset: -20px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .shimmer-glow-wrap {
+      position: absolute;
+      inset: 0;
+      opacity: var(--shimmer-glow-opacity);
+      pointer-events: none;
+    }
+
+    .glow-deep,
+    .glow-mid,
+    .glow-border {
+      position: absolute;
+      inset: 20px;
+      border-radius: 16px;
+      pointer-events: none;
+    }
+
+    /* 深层广域边缘发光 (Deep Blur) */
+    .glow-deep {
+      background:
+        radial-gradient(55px 31px at 33% -7.4%, rgba(255, 50, 100, 0.4), transparent),
+        radial-gradient(47px 27px at 12% -5%, rgba(40, 140, 255, 0.34), transparent),
+        radial-gradient(31px 55px at 2.1% 68.3%, rgba(50, 200, 80, 0.38), transparent),
+        radial-gradient(140px 25px at 74.4% 100%, rgba(100, 70, 255, 0.4), transparent),
+        radial-gradient(66px 20px at 55% 100%, rgba(40, 140, 255, 0.35), transparent),
+        radial-gradient(58px 25px at 93.9% 0%, rgba(255, 120, 40, 0.44), transparent),
+        radial-gradient(40px 38px at 100% 27.1%, rgba(180, 40, 240, 0.38), transparent);
+      box-shadow: inset 0 0 calc(var(--shimmer-glow-blur) * 3) calc(var(--shimmer-glow-blur) / 2) rgba(90, 90, 100, 0.1);
+      filter: blur(var(--shimmer-glow-blur));
+      mask-image:
+        linear-gradient(white, transparent 26px, transparent calc(100% - 26px), white),
+        linear-gradient(to right, white, transparent 26px, transparent calc(100% - 26px), white);
+      mask-composite: add;
+      -webkit-mask-composite: source-over;
+    }
+
+    /* 中层精准内发光 (Mid Rim) */
+    .glow-mid {
+      background:
+        radial-gradient(39px 21px at 33% -7.4%, rgba(255, 50, 100, 0.34), transparent),
+        radial-gradient(33px 18px at 12% -5%, rgba(40, 140, 255, 0.28), transparent),
+        radial-gradient(21px 39px at 2.1% 68.3%, rgba(50, 200, 80, 0.3), transparent),
+        radial-gradient(9px 18px at 2.1% 68.3%, rgba(30, 185, 170, 0.25), transparent),
+        radial-gradient(104px 17px at 74.4% 100%, rgba(100, 70, 255, 0.32), transparent),
+        radial-gradient(48px 13px at 55% 100%, rgba(40, 140, 255, 0.28), transparent),
+        radial-gradient(41px 17px at 93.9% 0%, rgba(255, 120, 40, 0.35), transparent),
+        radial-gradient(13px 23px at 100% 27.1%, rgba(240, 50, 180, 0.28), transparent),
+        radial-gradient(28px 26px at 100% 27.1%, rgba(180, 40, 240, 0.3), transparent),
+        radial-gradient(36px 36px at 0% 0%, rgba(90, 90, 100, 0.14), transparent 70%),
+        radial-gradient(36px 36px at 100% 0%, rgba(90, 90, 100, 0.14), transparent 70%),
+        radial-gradient(36px 36px at 0% 100%, rgba(90, 90, 100, 0.14), transparent 70%),
+        radial-gradient(36px 36px at 100% 100%, rgba(90, 90, 100, 0.14), transparent 70%);
+      box-shadow: rgba(90, 90, 100, 0.12) 0px 0px 14px 1px inset;
+      filter: blur(2px);
+      mask-image:
+        linear-gradient(white, transparent 44px, transparent calc(100% - 44px), white),
+        linear-gradient(to right, white, transparent 44px, transparent calc(100% - 44px), white);
+      mask-composite: add;
+      -webkit-mask-composite: source-over;
+    }
+
+    /* 超精细 1px 彩色轮廓发光线 (1px Crisp Border) */
+    .glow-border {
+      padding: 1px;
+      opacity: var(--shimmer-border-opacity);
+      background:
+        radial-gradient(42px 24px at 33% -7.4%, rgba(255, 50, 100, 0.65), transparent),
+        radial-gradient(36px 21px at 12% -5%, rgba(40, 140, 255, 0.52), transparent),
+        radial-gradient(24px 42px at 2.1% 68.3%, rgba(50, 200, 80, 0.6), transparent),
+        radial-gradient(12px 21px at 2.1% 68.3%, rgba(30, 185, 170, 0.48), transparent),
+        radial-gradient(108px 19px at 74.4% 100%, rgba(100, 70, 255, 0.62), transparent),
+        radial-gradient(51px 16px at 55% 100%, rgba(40, 140, 255, 0.55), transparent),
+        radial-gradient(44px 19px at 93.9% 0%, rgba(255, 120, 40, 0.7), transparent),
+        radial-gradient(16px 25px at 100% 27.1%, rgba(240, 50, 180, 0.55), transparent),
+        radial-gradient(31px 29px at 100% 27.1%, rgba(180, 40, 240, 0.6), transparent),
+        linear-gradient(rgba(90, 90, 100, 0.25), rgba(90, 90, 100, 0.25));
+      mask:
+        linear-gradient(#fff 0 0) content-box exclude,
+        linear-gradient(#fff 0 0);
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+
+    /* 核心动画关键帧 */
+    @keyframes organic-shimmer-sweep {
+      0% {
+        transform: translate3d(-69.697%, -69.697%, 0);
+      }
+      100% {
+        transform: translate3d(0, 0, 0);
+      }
+    }
+
+    /* 交互控制器 */
+    .stage-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      z-index: 2;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      padding: 0 18px;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+
+    .btn-action:active {
+      transform: translateY(0);
+    }
+
+    .btn-action.primary {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: #ffffff;
+    }
+
+    .btn-action.primary:hover {
+      background: var(--accent-hover);
+    }
+
+    /* ==========================================================================
+       6. 参数调节面板与多场景卡片演示
+       ========================================================================== */
+    .controls-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .controls-title {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .control-label span:last-child {
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--border-subtle);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .preset-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .chip-btn:hover, .chip-btn.active {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      font-weight: 500;
+    }
+
+    /* ==========================================================================
+       7. 丰富业务应用场景演示（骨架屏、按钮、大图卡片）
+       ========================================================================== */
+    .showcase-section {
+      width: 100%;
+      max-width: 1080px;
+      margin-top: 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .showcase-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .showcase-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .showcase-card-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .showcase-card-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* 骨架屏演示 */
+    .skeleton-box {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 12px;
+      background: var(--bg-base);
+    }
+
+    .skeleton-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .skeleton-lines {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .skeleton-line {
+      height: 12px;
+      border-radius: 6px;
+    }
+
+    .skeleton-line.short {
+      width: 60%;
+    }
+
+    /* 按钮发光 */
+    .organic-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      height: 48px;
+      padding: 0 28px;
+      border-radius: 14px;
+      background: var(--stage-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      overflow: hidden;
+      isolation: isolate;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .organic-btn .btn-text {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* 代码展示栏 */
+    .code-panel {
+      margin-top: 24px;
+      background: #111114;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #d1d5db;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+
+    .code-comment { color: #6b7280; }
+    .code-selector { color: #60a5fa; }
+    .code-prop { color: #f472b6; }
+    .code-val { color: #34d399; }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部标题 -->
+  <header class="header">
+    <div class="brand-group">
+      <div class="badge-wrap">
+        <span class="badge-pro">PRO TRANSITION</span>
+        <span class="badge-origin">transitions.dev/detail.html?t=organic-shimmer</span>
+      </div>
+      <h1 class="title">Organic Shimmer (有机流体微光)</h1>
+      <p class="subtitle">基于 SVG 湍流分形噪声 (feTurbulence) + 矢量置换贴图 (feDisplacementMap) + 多色阶径向光谱 + 1px 晶透边缘发光锁相算法复刻。</p>
+    </div>
+    <div class="header-actions">
+      <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">
+        <span id="themeIcon">☀️</span>
+        <span id="themeText">切换浅色模式</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 主体工作区 -->
+  <main class="main-grid">
+    
+    <!-- 左侧：主要效果展示卡片 -->
+    <div class="preview-card">
+      <div class="stage-container" id="stageBox">
+        
+        <!-- 核心复刻组件容器 -->
+        <div class="organic-shimmer-card" id="shimmerCard" data-playing="true">
+          <!-- 1. 弥散光谱底光与 SVG 流体湍流层 -->
+          <span class="shimmer-canvas">
+            <span class="shimmer-field"></span>
+            <span class="shimmer-distortion" id="shimmerSvgLayer"></span>
+          </span>
+          <!-- 2. 边缘光影与同步过渡遮罩层 -->
+          <span class="shimmer-glow-layer">
+            <span class="shimmer-glow-wrap">
+              <span class="glow-deep"></span>
+              <span class="glow-mid"></span>
+              <span class="glow-border"></span>
+            </span>
+            <span class="shimmer-mask"></span>
+          </span>
+        </div>
+
+        <!-- 舞台控制栏 -->
+        <div class="stage-toolbar">
+          <button class="btn-action primary" id="playBtn" onclick="togglePlay()">
+            <span id="playIcon">⏸</span>
+            <span id="playText" style="margin-left: 6px;">暂停动效</span>
+          </button>
+          <button class="btn-action" onclick="resetDefaults()">重置默认参数</button>
+        </div>
+      </div>
+
+      <!-- 样式原理摘要 -->
+      <div class="code-panel">
+        <div class="code-comment">/* ── 核心原理：SVG 湍流置换 + 330% 视口对角线位移 ── */</div>
+        <div><span class="code-selector">.organic-shimmer-card</span> { <span class="code-prop">isolation</span>: <span class="code-val">isolate</span>; <span class="code-prop">overflow</span>: <span class="code-val">hidden</span>; }</div>
+        <div><span class="code-selector">.shimmer-distortion</span> {</div>
+        <div>&nbsp;&nbsp;<span class="code-prop">background-image</span>: <span class="code-val">url("data:image/svg+xml,...&lt;feTurbulence.../&gt;&lt;feDisplacementMap scale='46'/&gt;...")</span>;</div>
+        <div>&nbsp;&nbsp;<span class="code-prop">animation</span>: <span class="code-val">organic-shimmer-sweep 5000ms cubic-bezier(0.16, 1, 0.3, 1) infinite</span>;</div>
+        <div>}</div>
+      </div>
+    </div>
+
+    <!-- 右侧：实时参数动态微调面板 -->
+    <div class="controls-card">
+      <div class="controls-title">
+        <span>实时效果调优 (Live Controls)</span>
+        <span class="badge-pro" style="font-size: 10px;">CONFIG</span>
+      </div>
+
+      <!-- 速度节奏预设 -->
+      <div class="control-item">
+        <div class="control-label">
+          <span>动效节奏预设 (Speed Presets)</span>
+        </div>
+        <div class="preset-chips" id="speedPresets">
+          <button class="chip-btn" onclick="setSpeedPreset(3000, this)">稍快 (3s)</button>
+          <button class="chip-btn active" onclick="setSpeedPreset(5000, this)">从容舒适 (5s)</button>
+          <button class="chip-btn" onclick="setSpeedPreset(7000, this)">慢速呼吸 (7s)</button>
+          <button class="chip-btn" onclick="setSpeedPreset(10000, this)">超慢水波 (10s)</button>
+        </div>
+      </div>
+
+      <!-- 尺寸预设 -->
+      <div class="control-item">
+        <div class="control-label">
+          <span>形态预设</span>
+        </div>
+        <div class="preset-chips" id="shapePresets">
+          <button class="chip-btn active" onclick="setSize(160, 160, 16, this)">标准卡片 (160×160)</button>
+          <button class="chip-btn" onclick="setSize(280, 160, 20, this)">宽幅横条 (280×160)</button>
+          <button class="chip-btn" onclick="setSize(120, 120, 60, this)">圆形气泡 (120×120)</button>
+        </div>
+      </div>
+
+      <!-- 动画周期速度 -->
+      <div class="control-item">
+        <div class="control-label">
+          <span>动效周期 (Duration)</span>
+          <span id="durVal">5000ms</span>
+        </div>
+        <input type="range" id="durRange" min="1500" max="12000" step="200" value="5000" oninput="updateDuration(this.value)">
+      </div>
+
+      <!-- 光带宽幅 -->
+      <div class="control-item">
+        <div class="control-label">
+          <span>光斑宽幅 (Band Width)</span>
+          <span id="bandVal">26%</span>
+        </div>
+        <input type="range" id="bandRange" min="10" max="60" step="1" value="26" oninput="updateBand(this.value)">
+      </div>
+
+      <!-- 边缘光强度 -->
+      <div class="control-item">
+        <div class="control-label">
+          <span>边缘发光强度 (Edge Glow)</span>
+          <span id="glowVal">0.75</span>
+        </div>
+        <input type="range" id="glowRange" min="0" max="1.5" step="0.05" value="0.75" oninput="updateGlow(this.value)">
+      </div>
+
+      <!-- 底光透明度 -->
+      <div class="control-item">
+        <div class="control-label">
+          <span>弥散底光丰富度 (Spectrum Field)</span>
+          <span id="bgVal">1.0</span>
+        </div>
+        <input type="range" id="bgRange" min="0" max="1.5" step="0.05" value="1.0" oninput="updateBg(this.value)">
+      </div>
+
+      <!-- 湍流置换扰动强度 -->
+      <div class="control-item">
+        <div class="control-label">
+          <span>湍流扰动强度 (Scale Factor)</span>
+          <span id="scaleVal">46</span>
+        </div>
+        <input type="range" id="scaleRange" min="0" max="100" step="2" value="46" oninput="updateScale(this.value)">
+      </div>
+    </div>
+  </main>
+
+  <!-- 底部实际场景应用示范 -->
+  <section class="showcase-section">
+    <h2 class="section-title">真实 UI 业务场景落地演示</h2>
+    <div class="showcase-grid">
+
+      <!-- 场景 1：高端流体骨架屏 -->
+      <div class="showcase-card">
+        <div class="showcase-card-header">
+          <div class="showcase-card-title">有机骨架屏 (Fluid Skeleton)</div>
+          <span class="badge-pro" style="font-size: 10px;">PRELOADER</span>
+        </div>
+        <div class="showcase-card-desc">比常规单色骨架屏更具呼吸感与科技质感的高级加载态。</div>
+        
+        <div class="skeleton-box">
+          <div class="organic-shimmer-card skeleton-avatar" style="width: 52px; height: 52px; border-radius: 50%;">
+            <span class="shimmer-canvas"><span class="shimmer-field"></span><span class="shimmer-distortion"></span></span>
+            <span class="shimmer-glow-layer"><span class="shimmer-glow-wrap"><span class="glow-deep"></span><span class="glow-mid"></span><span class="glow-border"></span></span><span class="shimmer-mask"></span></span>
+          </div>
+          <div class="skeleton-lines">
+            <div class="organic-shimmer-card skeleton-line" style="width: 100%; height: 14px; border-radius: 7px;">
+              <span class="shimmer-canvas"><span class="shimmer-field"></span><span class="shimmer-distortion"></span></span>
+              <span class="shimmer-glow-layer"><span class="shimmer-glow-wrap"><span class="glow-deep"></span><span class="glow-mid"></span><span class="glow-border"></span></span><span class="shimmer-mask"></span></span>
+            </div>
+            <div class="organic-shimmer-card skeleton-line short" style="width: 60%; height: 14px; border-radius: 7px;">
+              <span class="shimmer-canvas"><span class="shimmer-field"></span><span class="shimmer-distortion"></span></span>
+              <span class="shimmer-glow-layer"><span class="shimmer-glow-wrap"><span class="glow-deep"></span><span class="glow-mid"></span><span class="glow-border"></span></span><span class="shimmer-mask"></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 场景 2：AI 运算生成按钮 -->
+      <div class="showcase-card">
+        <div class="showcase-card-header">
+          <div class="showcase-card-title">AI 推理交互按钮 (AI Generate CTA)</div>
+          <span class="badge-pro" style="font-size: 10px;">ACTION</span>
+        </div>
+        <div class="showcase-card-desc">融入 DSH AI Harness 生成态，表现流动算力与高级质感。</div>
+        
+        <div style="display: flex; align-items: center; justify-content: center; padding: 20px 0;">
+          <button class="organic-shimmer-card organic-btn" style="width: 220px; height: 50px; border-radius: 25px;">
+            <span class="shimmer-canvas"><span class="shimmer-field"></span><span class="shimmer-distortion"></span></span>
+            <span class="shimmer-glow-layer"><span class="shimmer-glow-wrap"><span class="glow-deep"></span><span class="glow-mid"></span><span class="glow-border"></span></span><span class="shimmer-mask"></span></span>
+            <span class="btn-text">✨ 正在生成创意分镜...</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       8. 动态交互与 SVG 实时生成脚本
+       ========================================================================== -->
+  <script>
+    let isPlaying = true;
+    let currentScale = 46;
+    let currentTheme = 'dark';
+
+    // 动态生成匹配当前主题色与扰动参数的 SVG Data URL
+    function generateSvgDataUrl(colorHex, scale) {
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600' preserveAspectRatio='none'>
+<defs>
+<linearGradient id='g' gradientUnits='userSpaceOnUse' x1='0' y1='0' x2='600' y2='600'>
+<stop offset='0.0000' stop-color='${colorHex}' stop-opacity='1'/>
+<stop offset='0.3236' stop-color='${colorHex}' stop-opacity='1'/>
+<stop offset='0.4008' stop-color='${colorHex}' stop-opacity='0.75'/>
+<stop offset='0.4603' stop-color='${colorHex}' stop-opacity='0.3'/>
+<stop offset='0.5000' stop-color='${colorHex}' stop-opacity='0'/>
+<stop offset='0.5397' stop-color='${colorHex}' stop-opacity='0.3'/>
+<stop offset='0.5992' stop-color='${colorHex}' stop-opacity='0.75'/>
+<stop offset='0.6764' stop-color='${colorHex}' stop-opacity='1'/>
+<stop offset='1.0000' stop-color='${colorHex}' stop-opacity='1'/>
+</linearGradient>
+<filter id='w' x='-10%' y='-10%' width='120%' height='120%'>
+<feTurbulence type='fractalNoise' baseFrequency='0.009 0.015' numOctaves='2' seed='7' result='n'/>
+<feDisplacementMap in='SourceGraphic' in2='n' scale='${scale}' xChannelSelector='R' yChannelSelector='G'/>
+<feGaussianBlur stdDeviation='5'/>
+</filter>
+</defs>
+<rect x='-70' y='-70' width='740' height='740' fill='url(%23g)' filter='url(%23w)'/>
+</svg>`;
+      return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+    }
+
+    // 刷新全量 SVG 湍流图层
+    function refreshSvgLayers() {
+      const colorHex = currentTheme === 'dark' ? '%23222226' : '%23eeeeee';
+      const bgUrl = generateSvgDataUrl(colorHex, currentScale);
+      document.querySelectorAll('.shimmer-distortion').forEach(el => {
+        el.style.backgroundImage = bgUrl;
+      });
+    }
+
+    // 播放 / 暂停切换
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      document.querySelectorAll('.organic-shimmer-card').forEach(card => {
+        card.setAttribute('data-playing', isPlaying ? 'true' : 'false');
+      });
+      document.getElementById('playIcon').textContent = isPlaying ? '⏸' : '▶';
+      document.getElementById('playText').textContent = isPlaying ? '暂停动效' : '播放动效';
+      document.getElementById('playBtn').className = isPlaying ? 'btn-action primary' : 'btn-action';
+    }
+
+    // 主题明暗切换
+    function toggleTheme() {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      document.getElementById('themeIcon').textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+      document.getElementById('themeText').textContent = currentTheme === 'dark' ? '切换浅色模式' : '切换深色模式';
+      refreshSvgLayers();
+    }
+
+    // 形态预设切换
+    function setSize(w, h, r, btn) {
+      const card = document.getElementById('shimmerCard');
+      card.style.width = w + 'px';
+      card.style.height = h + 'px';
+      card.style.borderRadius = r + 'px';
+      card.querySelectorAll('.glow-deep, .glow-mid, .glow-border').forEach(el => {
+        el.style.borderRadius = r + 'px';
+      });
+
+      document.querySelectorAll('.preset-chips .chip-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    }
+
+    // 调节周期
+    function updateDuration(val) {
+      document.documentElement.style.setProperty('--shimmer-dur', val + 'ms');
+      document.getElementById('durVal').textContent = val + 'ms';
+      document.getElementById('durRange').value = val;
+    }
+
+    // 速度预设
+    function setSpeedPreset(val, btn) {
+      updateDuration(val);
+      document.querySelectorAll('#speedPresets .chip-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    }
+
+    // 调节光带宽幅
+    function updateBand(val) {
+      document.documentElement.style.setProperty('--shimmer-band-factor', val + '%');
+      document.getElementById('bandVal').textContent = val + '%';
+    }
+
+    // 调节发光强度
+    function updateGlow(val) {
+      document.documentElement.style.setProperty('--shimmer-glow-opacity', val);
+      document.getElementById('glowVal').textContent = val;
+    }
+
+    // 调节底光丰富度
+    function updateBg(val) {
+      document.documentElement.style.setProperty('--shimmer-bg-opacity', val);
+      document.getElementById('bgVal').textContent = val;
+    }
+
+    // 调节湍流扰动强度
+    function updateScale(val) {
+      currentScale = val;
+      document.getElementById('scaleVal').textContent = val;
+      refreshSvgLayers();
+    }
+
+    // 重置默认参数
+    function resetDefaults() {
+      document.getElementById('durRange').value = 5000;
+      document.getElementById('bandRange').value = 26;
+      document.getElementById('glowRange').value = 0.75;
+      document.getElementById('bgRange').value = 1.0;
+      document.getElementById('scaleRange').value = 46;
+      updateDuration(5000);
+      updateBand(26);
+      updateGlow(0.75);
+      updateBg(1.0);
+      updateScale(46);
+      setSpeedPreset(5000, document.querySelectorAll('#speedPresets .chip-btn')[1]);
+      setSize(160, 160, 16, document.querySelector('#shapePresets .chip-btn'));
+      if (!isPlaying) togglePlay();
+    }
+
+    // 初始化运行
+    refreshSvgLayers();
+  </script>
+</body>
+</html>

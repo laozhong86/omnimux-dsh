@@ -21,6 +21,7 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `accepted` | [2026-08-28-inspiration-hover-replication.md](2026-08-28-inspiration-hover-replication.md) | 灵感库卡片悬停 CTA × 去对话复刻：架构规格与任务分解 | `omnimux-inspiration` | 2026-08-28 | Track C 双包；跨包唯一缝 `window.__omnimuxWorkflow.startReplicationProject`；复用 `runNewProject` 默认库路径；Composer 走市场插件已验证的 React 18 setter + 发送按钮。严禁跨包 client import。 |
 | `accepted` | [2026-08-25-omnimux-clip-studio-prd.md](2026-08-25-omnimux-clip-studio-prd.md) | PRD：OmniMux Clip Studio（omnimux-clip）完整微应用化 | `omnimux-clip` | 2026-08-25 | 工作流画布 (`omnimux-workflow`) 不该再内嵌多媒体时间轴。WebCodecs / WebGPU 与 React Flow 同树会把包体积和运行时一起拖垮。剪辑必须是独立插件。 |
 | `accepted` | [2026-08-25-omnimux-clip-studio-spec.md](2026-08-25-omnimux-clip-studio-spec.md) | OmniMux Clip Studio（omnimux-clip）完整微应用技术 Spec | `omnimux-clip` | 2026-08-25 | \| # \| 决策 \| 内容 \| |
 | `accepted` | [2026-08-25-omnimux-gateway-analytics-api-prd.md](2026-08-25-omnimux-gateway-analytics-api-prd.md) | OmniMux 网关社媒数据分析 (Social Analytics) 接口接入需求文档 (PRD) | `omnimux-analytics` | 2026-08-25 | 当前 OmniMux 执行中枢（`product/omnimux-dsh/plugins/omnimux`）已打通 `/api/social/v1/accounts`（账号授权与管理）及 `/api/ |

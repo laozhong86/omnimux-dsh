@@ -1,0 +1,2754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniMux-DSH 画布「项目资产」高保真交互演示原型 (v9.0 UI规范图标优化与弹窗绝对可见版)</title>
+  <style>
+    :root {
+      /* DSH Native Design Tokens (Dark Theme Baseline - 100% 对齐 MiniMax / DSH 原生) */
+      --dsw-alias-bg-canvas: #121214;
+      --dsw-alias-bg-surface: #18181b;
+      --dsw-alias-bg-elevated: #222226;
+      --dsw-alias-bg-popover: #1e1e22;
+      --dsw-alias-bg-hover: rgba(255, 255, 255, 0.08);
+      --dsw-alias-bg-active: rgba(255, 255, 255, 0.14);
+      
+      --dsw-alias-border-subtle: #27272a;
+      --dsw-alias-border-default: #38383f;
+      --dsw-alias-border-active-btn: #ffffff;
+      --dsw-alias-border-focus: #3b82f6;
+      
+      --dsw-alias-text-primary: #f4f4f5;
+      --dsw-alias-text-secondary: #a1a1aa;
+      --dsw-alias-text-muted: #71717a;
+      --dsw-alias-text-accent: #60a5fa;
+      
+      --dsw-specific-badge: #ef4444;
+      --dsw-specific-accent-blue: #2563eb;
+      --dsw-specific-accent-purple: #8b5cf6;
+      --dsw-specific-accent-green: #10b981;
+      --dsw-specific-accent-orange: #f59e0b;
+      
+      --dsw-radius-sm: 4px;
+      --dsw-radius-md: 8px;
+      --dsw-radius-lg: 12px;
+      --dsw-radius-xl: 16px;
+      
+      --dsw-control-height: 32px;
+      --dsw-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --dsw-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    [data-theme="light"] {
+      --dsw-alias-bg-canvas: #f4f4f5;
+      --dsw-alias-bg-surface: #ffffff;
+      --dsw-alias-bg-elevated: #fafafa;
+      --dsw-alias-bg-popover: #ffffff;
+      --dsw-alias-bg-hover: rgba(0, 0, 0, 0.05);
+      --dsw-alias-bg-active: rgba(0, 0, 0, 0.08);
+      
+      --dsw-alias-border-subtle: #e4e4e7;
+      --dsw-alias-border-default: #d4d4d8;
+      --dsw-alias-border-active-btn: #18181b;
+      --dsw-alias-border-focus: #2563eb;
+      
+      --dsw-alias-text-primary: #18181b;
+      --dsw-alias-text-secondary: #52525b;
+      --dsw-alias-text-muted: #a1a1aa;
+      --dsw-alias-text-accent: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: var(--dsw-font-sans);
+      background-color: var(--dsw-alias-bg-canvas);
+      color: var(--dsw-alias-text-primary);
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* ========================================================
+       SVG 图标核心全局规范 (严格遵循 DSH / Lucide 统一风格)
+       ======================================================== */
+    svg, .icon {
+      width: 16px;
+      height: 16px;
+      stroke-width: 1.6;
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .icon-sm { width: 14px; height: 14px; }
+    .icon-xs { width: 12px; height: 12px; }
+    .icon-lg { width: 20px; height: 20px; }
+
+    /* Top Global Header */
+    .top-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 48px;
+      background: var(--dsw-alias-bg-surface);
+      border-bottom: 1px solid var(--dsw-alias-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 40;
+    }
+    .brand-title {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-tag {
+      font-size: 11px;
+      padding: 2px 6px;
+      background: rgba(37, 99, 235, 0.15);
+      color: var(--dsw-alias-text-accent);
+      border-radius: var(--dsw-radius-sm);
+      font-weight: 500;
+    }
+    .theme-toggle-btn {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: var(--dsw-radius-md);
+      background: var(--dsw-alias-bg-elevated);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      color: var(--dsw-alias-text-secondary);
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .theme-toggle-btn:hover {
+      background: var(--dsw-alias-bg-hover);
+      color: var(--dsw-alias-text-primary);
+    }
+
+    /* Main App Layout */
+    .app-viewport {
+      position: absolute;
+      top: 48px;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Canvas Surface */
+    .canvas-container {
+      flex: 1;
+      height: 100%;
+      position: relative;
+      background-color: var(--dsw-alias-bg-canvas);
+      background-image: radial-gradient(var(--dsw-alias-border-subtle) 1px, transparent 1px);
+      background-size: 24px 24px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .canvas-watermark {
+      position: absolute;
+      bottom: 80px;
+      right: 20px;
+      font-size: 12px;
+      color: var(--dsw-alias-text-muted);
+      pointer-events: none;
+    }
+
+    /* Canvas Nodes Mock */
+    .canvas-node {
+      position: absolute;
+      width: 270px;
+      background: var(--dsw-alias-bg-surface);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      border-radius: var(--dsw-radius-lg);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      cursor: move;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.2s;
+    }
+    .canvas-node.selected {
+      border-color: var(--dsw-alias-border-focus);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3), 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .canvas-node.highlight-pulse {
+      animation: pulseHighlight 0.9s cubic-bezier(0.16, 1, 0.3, 1) 2;
+    }
+    @keyframes pulseHighlight {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.8); }
+      50% { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0.35); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    .node-header {
+      height: 36px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--dsw-alias-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--dsw-alias-text-primary);
+    }
+    .node-body {
+      padding: 12px;
+      font-size: 12px;
+      color: var(--dsw-alias-text-secondary);
+    }
+    .node-preview-img {
+      width: 100%;
+      height: 130px;
+      border-radius: var(--dsw-radius-md);
+      object-fit: cover;
+      background: #000;
+    }
+
+    /* Floating ToolDock at bottom */
+    .floating-tooldock {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 44px;
+      background: var(--dsw-alias-bg-elevated);
+      border: 1px solid var(--dsw-alias-border-default);
+      border-radius: 22px;
+      padding: 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+      z-index: 30;
+      backdrop-filter: blur(12px);
+    }
+    .dock-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 16px;
+      border: none;
+      background: transparent;
+      color: var(--dsw-alias-text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease;
+    }
+    .dock-btn:hover {
+      background: var(--dsw-alias-bg-hover);
+      color: var(--dsw-alias-text-primary);
+    }
+    .dock-btn.active {
+      background: var(--dsw-alias-bg-active);
+      color: var(--dsw-alias-text-accent);
+    }
+    .dock-btn.primary {
+      background: #ffffff;
+      color: #000000;
+    }
+    .dock-btn.primary:hover {
+      background: #e4e4e7;
+    }
+    .dock-divider {
+      width: 1px;
+      height: 18px;
+      background: var(--dsw-alias-border-subtle);
+      margin: 0 4px;
+    }
+    .dock-tooltip {
+      position: absolute;
+      bottom: 48px;
+      background: #27272a;
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: all 0.15s;
+    }
+    .dock-btn:hover .dock-tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Left Sliding Drawer */
+    .assets-drawer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 360px;
+      min-width: 300px;
+      max-width: 600px;
+      background: var(--dsw-alias-bg-surface);
+      border-right: 1px solid var(--dsw-alias-border-subtle);
+      display: flex;
+      flex-direction: column;
+      z-index: 25;
+      transform: translateX(-100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+    }
+    .assets-drawer.open {
+      transform: translateX(0);
+    }
+    .drawer-resizer {
+      position: absolute;
+      top: 0;
+      right: -3px;
+      width: 6px;
+      bottom: 0;
+      cursor: col-resize;
+      z-index: 30;
+    }
+    .drawer-resizer:hover, .drawer-resizer.resizing {
+      background: var(--dsw-alias-border-focus);
+    }
+
+    /* Drawer Header */
+    .drawer-header {
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--dsw-alias-border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .drawer-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .drawer-title-col {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .proj-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--dsw-alias-text-primary);
+    }
+    .proj-subtitle {
+      font-size: 11px;
+      color: var(--dsw-alias-text-muted);
+    }
+    .close-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--dsw-radius-sm);
+      border: none;
+      background: transparent;
+      color: var(--dsw-alias-text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .close-btn:hover {
+      background: var(--dsw-alias-bg-hover);
+      color: var(--dsw-alias-text-primary);
+    }
+
+    /* Segmented Switcher [画布] vs [资产] */
+    .segmented-switch {
+      display: flex;
+      background: var(--dsw-alias-bg-canvas);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      border-radius: var(--dsw-radius-md);
+      padding: 2px;
+      height: 32px;
+    }
+    .segmented-tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--dsw-alias-text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: var(--dsw-radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .segmented-tab.active {
+      background: var(--dsw-alias-bg-elevated);
+      color: var(--dsw-alias-text-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    /* Drawer Views Container */
+    .drawer-view-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ========================================================
+       1. 画布 Tab 工具栏与三维下拉筛选
+       ======================================================== */
+    .canvas-toolbar {
+      padding: 8px 14px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--dsw-alias-border-subtle);
+      position: relative;
+      z-index: 45;
+    }
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .search-input-wrapper {
+      flex: 1;
+      height: 32px;
+      background: var(--dsw-alias-bg-canvas);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      border-radius: var(--dsw-radius-md);
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      gap: 6px;
+    }
+    .search-input-wrapper:focus-within {
+      border-color: var(--dsw-alias-border-focus);
+    }
+    .search-input {
+      border: none;
+      background: transparent;
+      outline: none;
+      color: var(--dsw-alias-text-primary);
+      font-size: 12px;
+      width: 100%;
+    }
+    .search-input::placeholder {
+      color: var(--dsw-alias-text-muted);
+    }
+    .view-mode-toggle {
+      display: flex;
+      background: var(--dsw-alias-bg-canvas);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      border-radius: var(--dsw-radius-md);
+      padding: 2px;
+      height: 32px;
+    }
+    .view-mode-btn {
+      width: 28px;
+      height: 26px;
+      border: none;
+      background: transparent;
+      color: var(--dsw-alias-text-muted);
+      border-radius: var(--dsw-radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .view-mode-btn.active {
+      background: var(--dsw-alias-bg-elevated);
+      color: var(--dsw-alias-text-primary);
+    }
+
+    /* 触发按钮外层容器 */
+    .filter-chips-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+    .filter-dropdown-wrapper {
+      flex: 1;
+    }
+    .filter-dropdown-btn {
+      width: 100%;
+      height: 30px;
+      padding: 0 8px;
+      border-radius: var(--dsw-radius-md);
+      background: var(--dsw-alias-bg-elevated);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      color: var(--dsw-alias-text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .filter-dropdown-btn:hover {
+      background: var(--dsw-alias-bg-hover);
+      color: var(--dsw-alias-text-primary);
+    }
+    .filter-dropdown-btn.active {
+      background: var(--dsw-alias-bg-elevated) !important;
+      border: 1.5px solid var(--dsw-alias-border-active-btn) !important;
+      color: #ffffff !important;
+      font-weight: 500;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+    }
+
+    /* ========================================================
+       全量 Popover 菜单样式 (Fixed 绝对坐标渲染，绝不被截断)
+       ======================================================== */
+    .popover-menu-portal {
+      position: fixed;
+      background: var(--dsw-alias-bg-popover);
+      border: 1px solid var(--dsw-alias-border-default);
+      border-radius: var(--dsw-radius-lg);
+      padding: 6px;
+      box-shadow: 0 18px 48px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.08);
+      z-index: 250;
+      display: none;
+      min-width: 140px;
+      backdrop-filter: blur(20px);
+      animation: popoverFadeIn 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes popoverFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .popover-item {
+      height: 34px;
+      padding: 0 10px;
+      font-size: 13px;
+      color: var(--dsw-alias-text-primary);
+      border-radius: var(--dsw-radius-md);
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.1s;
+    }
+    .popover-item:hover {
+      background: var(--dsw-alias-bg-hover);
+    }
+
+    /* 1. 【类型 ∨】(左侧白底圆圈 + 黑色勾) */
+    .type-check-circle {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: #121214;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .type-check-circle svg {
+      width: 12px;
+      height: 12px;
+      stroke-width: 2.5;
+      stroke: #121214;
+    }
+    .type-check-circle.uncheck {
+      background: transparent;
+      border: 1.5px solid var(--dsw-alias-text-muted);
+    }
+    .type-check-circle.uncheck svg {
+      display: none;
+    }
+
+    /* 2. 【标签 ∨】(左侧实心彩色圆点) */
+    .tag-color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    /* 3. 【时间 ∨】(两段式分组 + 右侧白勾) */
+    .time-item-row {
+      justify-content: space-between;
+    }
+    .time-check-icon {
+      color: #ffffff;
+      opacity: 0;
+    }
+    .time-item-row.selected .time-check-icon {
+      opacity: 1;
+    }
+    .popover-divider {
+      height: 1px;
+      background: var(--dsw-alias-border-subtle);
+      margin: 5px 4px;
+    }
+
+    /* 4. 【最近更新 ∨】(左侧白勾) */
+    .sort-left-check {
+      width: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 8px;
+      color: #ffffff;
+      opacity: 0;
+    }
+    .popover-item.selected .sort-left-check {
+      opacity: 1;
+    }
+
+    /* 列表与网格容器 */
+    .drawer-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 10px;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      height: 36px;
+      padding: 0 6px;
+      border-radius: var(--dsw-radius-md);
+      font-size: 12px;
+      color: var(--dsw-alias-text-secondary);
+      cursor: pointer;
+      gap: 8px;
+      position: relative;
+      transition: background-color 0.1s;
+    }
+    .tree-item:hover, .tree-item.hovered {
+      background: var(--dsw-alias-bg-hover);
+      color: var(--dsw-alias-text-primary);
+    }
+    .tree-item.selected {
+      background: var(--dsw-alias-bg-active);
+      color: var(--dsw-alias-text-primary);
+    }
+    .tree-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tree-file-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      object-fit: cover;
+      background: #000;
+      flex-shrink: 0;
+    }
+
+    /* 靶心定位图标 (⌖) */
+    .item-locate-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      color: var(--dsw-alias-text-muted);
+      opacity: 0;
+      transition: opacity 0.15s, color 0.15s;
+    }
+    .tree-item:hover .item-locate-icon, .tree-item.selected .item-locate-icon {
+      opacity: 1;
+    }
+    .item-locate-icon:hover {
+      color: var(--dsw-alias-text-primary);
+      background: var(--dsw-alias-bg-elevated);
+    }
+
+    /* 网格视图 */
+    .grid-view-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      padding: 4px 2px;
+    }
+    .grid-card {
+      background: var(--dsw-alias-bg-elevated);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      border-radius: var(--dsw-radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      cursor: grab;
+      position: relative;
+      transition: all 0.15s;
+    }
+    .grid-card:hover {
+      border-color: var(--dsw-alias-border-default);
+      transform: translateY(-1px);
+    }
+    .grid-card:active {
+      cursor: grabbing;
+    }
+    .grid-card-thumb {
+      width: 100%;
+      height: 96px;
+      background: #09090b;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .grid-card-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .grid-card-meta {
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .grid-card-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--dsw-alias-text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .grid-card-sub {
+      font-size: 10px;
+      color: var(--dsw-alias-text-muted);
+    }
+
+    /* 【画布】Tab 底部双胶囊操作栏 */
+    .canvas-bottom-bar {
+      padding: 10px 14px;
+      border-top: 1px solid var(--dsw-alias-border-subtle);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .canvas-bottom-btn {
+      flex: 1;
+      height: 36px;
+      border-radius: var(--dsw-radius-md);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .canvas-bottom-btn.secondary {
+      background: var(--dsw-alias-bg-elevated);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      color: var(--dsw-alias-text-primary);
+    }
+    .canvas-bottom-btn.secondary:hover {
+      background: var(--dsw-alias-bg-hover);
+      border-color: var(--dsw-alias-border-default);
+    }
+    .canvas-bottom-btn.primary {
+      background: #ffffff;
+      border: 1px solid transparent;
+      color: #000000;
+      font-weight: 600;
+    }
+    .canvas-bottom-btn.primary:hover {
+      background: #e4e4e7;
+    }
+
+    /* ========================================================
+       2. 资产 Tab (Assets - 主体库与持久化资产)
+       ======================================================== */
+    .subject-hero-card {
+      margin: 10px 14px 6px;
+      padding: 10px 12px;
+      background: var(--dsw-alias-bg-elevated);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      border-radius: var(--dsw-radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: border-color 0.15s, background-color 0.15s;
+      flex-shrink: 0;
+    }
+    .subject-hero-card:hover {
+      border-color: var(--dsw-alias-border-default);
+      background: var(--dsw-alias-bg-hover);
+    }
+    .subject-hero-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .subject-icon-box {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--dsw-radius-sm);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--dsw-alias-text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .subject-name {
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--dsw-alias-text-primary);
+    }
+
+    .assets-toolbar {
+      padding: 6px 14px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    /* 资产 Tab 底部栏 */
+    .assets-bottom-bar {
+      padding: 10px 14px;
+      border-top: 1px solid var(--dsw-alias-border-subtle);
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .action-btn {
+      flex: 1;
+      height: var(--dsw-control-height);
+      border-radius: var(--dsw-radius-md);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .action-btn.secondary {
+      background: var(--dsw-alias-bg-elevated);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      color: var(--dsw-alias-text-primary);
+    }
+    .action-btn.secondary:hover {
+      background: var(--dsw-alias-bg-hover);
+      border-color: var(--dsw-alias-border-default);
+    }
+    .action-btn.primary {
+      background: #ffffff;
+      border: 1px solid transparent;
+      color: #000000;
+    }
+    .action-btn.primary:hover {
+      opacity: 0.9;
+    }
+
+    /* ========================================================
+       3. 主体库二级页面
+       ======================================================== */
+    .subject-page-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--dsw-alias-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .subject-page-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--dsw-alias-text-primary);
+      cursor: pointer;
+    }
+    .subject-sort-wrapper {
+      position: relative;
+    }
+    .subject-sort-trigger {
+      font-size: 11px;
+      color: var(--dsw-alias-text-secondary);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: var(--dsw-radius-sm);
+      background: var(--dsw-alias-bg-elevated);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--dsw-alias-border-subtle);
+    }
+    .subject-sort-trigger:hover, .subject-sort-trigger.active {
+      color: var(--dsw-alias-text-primary);
+      border-color: var(--dsw-alias-border-active-btn);
+    }
+
+    .subject-filter-chips {
+      padding: 8px 14px 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+    .filter-pill {
+      height: 26px;
+      padding: 0 12px;
+      border-radius: 13px;
+      background: var(--dsw-alias-bg-elevated);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      color: var(--dsw-alias-text-secondary);
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .filter-pill:hover {
+      background: var(--dsw-alias-bg-hover);
+      color: var(--dsw-alias-text-primary);
+    }
+    .filter-pill.active {
+      background: #ffffff;
+      color: #000000;
+      font-weight: 600;
+      border-color: #ffffff;
+    }
+
+    .subject-section-title {
+      font-size: 11px;
+      color: var(--dsw-alias-text-muted);
+      padding: 8px 14px 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .subject-empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--dsw-alias-text-muted);
+      font-size: 12px;
+    }
+
+    /* ========================================================
+       4. 悬浮预览与元数据详情卡片 (Asset Inspector Flyout)
+       ======================================================== */
+    .asset-preview-flyout {
+      position: absolute;
+      left: 372px;
+      top: 90px;
+      width: 250px;
+      background: var(--dsw-alias-bg-surface);
+      border: 1px solid var(--dsw-alias-border-default);
+      border-radius: var(--dsw-radius-lg);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.5);
+      z-index: 60;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      opacity: 0;
+      transform: translateX(-8px);
+      pointer-events: none;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .asset-preview-flyout.show {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    .flyout-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .flyout-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--dsw-alias-text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .flyout-locate-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: var(--dsw-alias-bg-elevated);
+      color: var(--dsw-alias-text-primary);
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .flyout-locate-btn:hover {
+      background: var(--dsw-alias-border-focus);
+      color: #fff;
+    }
+    .flyout-preview-box {
+      width: 100%;
+      height: 140px;
+      border-radius: var(--dsw-radius-md);
+      background: #09090b;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--dsw-alias-border-subtle);
+    }
+    .flyout-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .flyout-meta-table {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--dsw-alias-text-secondary);
+      border-top: 1px solid var(--dsw-alias-border-subtle);
+      padding-top: 8px;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+    }
+    .meta-label {
+      color: var(--dsw-alias-text-muted);
+    }
+    .flyout-dependency-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0 2px;
+      font-size: 11px;
+      color: var(--dsw-alias-text-secondary);
+      cursor: pointer;
+      border-top: 1px solid var(--dsw-alias-border-subtle);
+    }
+    .flyout-dependency-row:hover {
+      color: var(--dsw-alias-text-primary);
+    }
+
+    /* Left Bottom Watermark Setting Button */
+    .watermark-btn-container {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      z-index: 35;
+    }
+    .watermark-btn {
+      height: 30px;
+      padding: 0 12px;
+      background: var(--dsw-alias-bg-elevated);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      border-radius: var(--dsw-radius-md);
+      color: var(--dsw-alias-text-secondary);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: all 0.15s;
+    }
+    .watermark-btn:hover {
+      background: var(--dsw-alias-bg-hover);
+      color: var(--dsw-alias-text-primary);
+      border-color: var(--dsw-alias-border-default);
+    }
+
+    /* ========================================================
+       5. 专属精准右键上下文菜单 (矢量高质感图标，绝无黑块)
+       ======================================================== */
+    .context-menu-popover {
+      position: fixed;
+      background: var(--dsw-alias-bg-popover);
+      border: 1px solid var(--dsw-alias-border-default);
+      border-radius: var(--dsw-radius-lg);
+      padding: 6px;
+      box-shadow: 0 18px 48px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.08);
+      z-index: 300;
+      display: none;
+      backdrop-filter: blur(20px);
+      animation: contextMenuAnim 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes contextMenuAnim {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .ctx-item {
+      height: 34px;
+      padding: 0 12px 0 10px;
+      font-size: 13px;
+      color: var(--dsw-alias-text-primary);
+      border-radius: var(--dsw-radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: background-color 0.1s, color 0.1s;
+    }
+    .ctx-item:hover {
+      background: var(--dsw-alias-bg-hover);
+    }
+    .ctx-item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ctx-item-left svg {
+      width: 15px;
+      height: 15px;
+      stroke-width: 1.6;
+      stroke: var(--dsw-alias-text-secondary);
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.1s;
+    }
+    .ctx-item:hover .ctx-item-left svg {
+      stroke: var(--dsw-alias-text-primary);
+    }
+    .ctx-shortcut {
+      font-family: var(--dsw-font-mono);
+      font-size: 12px;
+      color: var(--dsw-alias-text-muted);
+      letter-spacing: 0.5px;
+      margin-left: 16px;
+    }
+
+    .ctx-divider {
+      height: 1px;
+      background: var(--dsw-alias-border-subtle);
+      margin: 4px 6px;
+    }
+
+    /* 红色危险项（删除） */
+    .ctx-item.danger {
+      color: #f87171;
+    }
+    .ctx-item.danger .ctx-item-left svg {
+      stroke: #f87171;
+    }
+    .ctx-item.danger:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+    }
+    .ctx-item.danger:hover .ctx-item-left svg {
+      stroke: #fca5a5;
+    }
+
+    /* Right Agent Panel Mock */
+    .agent-dock {
+      width: 320px;
+      background: var(--dsw-alias-bg-surface);
+      border-left: 1px solid var(--dsw-alias-border-subtle);
+      display: flex;
+      flex-direction: column;
+      z-index: 20;
+    }
+    .agent-header {
+      height: 48px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--dsw-alias-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .agent-messages {
+      flex: 1;
+      padding: 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .msg-bubble {
+      padding: 10px 12px;
+      border-radius: var(--dsw-radius-md);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .msg-bubble.assistant {
+      background: var(--dsw-alias-bg-elevated);
+      color: var(--dsw-alias-text-primary);
+      border: 1px solid var(--dsw-alias-border-subtle);
+    }
+    .msg-bubble.user {
+      background: var(--dsw-alias-border-focus);
+      color: #ffffff;
+      align-self: flex-end;
+    }
+    .agent-mention-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      background: rgba(37, 99, 235, 0.2);
+      border: 1px solid var(--dsw-alias-border-focus);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--dsw-alias-text-accent);
+      margin-bottom: 4px;
+    }
+    .agent-input-box {
+      padding: 10px 14px;
+      border-top: 1px solid var(--dsw-alias-border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .agent-input {
+      height: 60px;
+      background: var(--dsw-alias-bg-canvas);
+      border: 1px solid var(--dsw-alias-border-subtle);
+      border-radius: var(--dsw-radius-md);
+      padding: 8px;
+      color: var(--dsw-alias-text-primary);
+      font-size: 12px;
+      resize: none;
+      outline: none;
+    }
+
+    /* Toast */
+    .toast-popup {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #18181b;
+      color: #fff;
+      border: 1px solid var(--dsw-alias-border-default);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 400;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .toast-popup.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Global Header -->
+  <header class="top-bar">
+    <div class="brand-title">
+      <svg class="icon icon-lg" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+      <span>OmniMux-DSH 工作流画布</span>
+      <span class="badge-tag">交互演示原型 v9.0</span>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <span>深/浅主题切换</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Viewport -->
+  <main class="app-viewport">
+
+    <!-- Left Sliding Drawer -->
+    <aside class="assets-drawer open" id="assetsDrawer">
+      <div class="drawer-resizer" id="drawerResizer"></div>
+
+      <!-- Drawer Header -->
+      <div class="drawer-header" id="drawerMainHeader">
+        <div class="drawer-title-row">
+          <div class="drawer-title-col">
+            <span class="proj-title">View project user guide</span>
+            <span class="proj-subtitle">Project Onboarding Guide</span>
+          </div>
+          <button class="close-btn" onclick="toggleDrawer()" title="关闭抽屉">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <!-- Segmented Switch: 画布 (默认选中) vs 资产 -->
+        <div class="segmented-switch">
+          <button class="segmented-tab active" id="tabCanvas" onclick="switchMainTab('canvas')">画布</button>
+          <button class="segmented-tab" id="tabAssets" onclick="switchMainTab('assets')">资产</button>
+        </div>
+      </div>
+
+      <!-- ========================================================
+           VIEW 1: 【画布】Tab
+           ======================================================== -->
+      <div class="drawer-view-panel" id="viewCanvas">
+        <!-- 画布 Tab 专属工具栏与三维下拉筛选 -->
+        <div class="canvas-toolbar">
+          <div class="search-row">
+            <div class="search-input-wrapper">
+              <svg class="icon icon-sm" style="color: var(--dsw-alias-text-muted);" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" class="search-input" id="canvasSearchInput" placeholder="搜索文件" oninput="handleCanvasSearch(this.value)">
+            </div>
+            <div class="view-mode-toggle">
+              <button class="view-mode-btn active" id="btnCanvasListView" title="列表视图" onclick="setCanvasViewMode('list')">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              </button>
+              <button class="view-mode-btn" id="btnCanvasGridView" title="网格视图" onclick="setCanvasViewMode('grid')">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              </button>
+            </div>
+            <button class="view-mode-btn" title="刷新画布素材" onclick="refreshCanvasAssets()">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+          </div>
+
+          <!-- 3 个下拉菜单触发区域 (点击直接在全局计算绝对位置打开 Popover) -->
+          <div class="filter-chips-row">
+            <div class="filter-dropdown-wrapper">
+              <button class="filter-dropdown-btn" id="btnFilterType" onclick="toggleFilterDropdown(event, 'popoverType')">
+                <span id="labelFilterType">类型</span>
+                <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+            </div>
+
+            <div class="filter-dropdown-wrapper">
+              <button class="filter-dropdown-btn" id="btnFilterTag" onclick="toggleFilterDropdown(event, 'popoverTag')">
+                <span id="labelFilterTag">标签</span>
+                <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+            </div>
+
+            <div class="filter-dropdown-wrapper">
+              <button class="filter-dropdown-btn" id="btnFilterTime" onclick="toggleFilterDropdown(event, 'popoverTime')">
+                <span id="labelFilterTime">时间</span>
+                <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 画布素材内容区 (列表 / 网格) -->
+        <div class="drawer-content" id="canvasDrawerContent">
+          <!-- 列表模式 (默认) -->
+          <div id="canvasListView"></div>
+          <!-- 网格模式 -->
+          <div class="grid-view-container" id="canvasGridView" style="display: none;"></div>
+        </div>
+
+        <!-- 【画布】Tab 底部操作栏: [ ↑ 导入文件 ] -->
+        <div class="canvas-bottom-bar">
+          <button class="canvas-bottom-btn primary" style="width: 100%;" onclick="document.getElementById('fileUploadInput').click()">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+            <span>导入文件</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ========================================================
+           VIEW 2: 【资产】Tab
+           ======================================================== -->
+      <div class="drawer-view-panel" id="viewAssets" style="display: none;">
+        <!-- 置顶主体库卡片 (主体库 ⓘ >) -->
+        <div class="subject-hero-card" onclick="openSubjectLibraryPage()">
+          <div class="subject-hero-left">
+            <div class="subject-icon-box">
+              <svg class="icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+            </div>
+            <div>
+              <div class="subject-name">
+                <span>主体库</span>
+                <svg class="icon icon-xs" style="color: var(--dsw-alias-text-muted);" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              </div>
+            </div>
+          </div>
+          <svg class="icon icon-sm" style="color: var(--dsw-alias-text-muted);" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+
+        <!-- 资产 Tab 搜索栏 -->
+        <div class="assets-toolbar">
+          <div class="search-row">
+            <div class="search-input-wrapper">
+              <svg class="icon icon-sm" style="color: var(--dsw-alias-text-muted);" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" class="search-input" placeholder="搜索项目资产" oninput="handleAssetsSearch(this.value)">
+            </div>
+            <div class="view-mode-toggle">
+              <button class="view-mode-btn active" title="列表视图">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              </button>
+              <button class="view-mode-btn" title="网格视图">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              </button>
+            </div>
+            <button class="view-mode-btn" title="刷新项目资产" onclick="showToast('已刷新项目资产')">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 资产内容区 (文件夹与素材) -->
+        <div class="drawer-content" id="assetsDrawerContent">
+          <!-- 文件夹 1111 (支持截图 1 专属文件夹右键菜单) -->
+          <div class="tree-item" oncontextmenu="showContextMenu(event, '1111', 'folder', 'assets')">
+            <svg class="icon icon-sm" style="color:var(--dsw-alias-text-muted);" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <svg class="icon icon-sm" style="color:#6366f1;" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <span class="tree-name">1111</span>
+          </div>
+
+          <!-- 素材 9月13日.mp4 (支持截图 2 专属资产素材右键菜单) -->
+          <div class="tree-item" draggable="true" ondragstart="handleDragStart(event, '9月13日.mp4', 'video')" oncontextmenu="showContextMenu(event, '9月13日.mp4', 'video', 'assets')">
+            <img class="tree-file-thumb" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80">
+            <span class="tree-name">9月13日.mp4</span>
+            <div class="item-locate-icon" title="在画布定位" onclick="event.stopPropagation(); locateAssetOnCanvas('node_video', '9月13日.mp4')">
+              <svg class="icon icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+            </div>
+          </div>
+
+          <!-- 空态拖拽上传区 -->
+          <div class="empty-dropzone" onclick="document.getElementById('fileUploadInput').click()" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDropUpload(event)">
+            <div class="dropzone-icon">
+              <svg class="icon icon-lg" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline></svg>
+            </div>
+            <div class="dropzone-title">拖拽文件到此处，或点击上传</div>
+            <div class="dropzone-desc">支持多个文件同时上传</div>
+          </div>
+        </div>
+
+        <!-- 资产 Tab 底部操作栏: [ 📁 新建文件夹 ] + [ ↑ 导入文件 ] -->
+        <div class="assets-bottom-bar">
+          <button class="action-btn secondary" onclick="createNewFolder()">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+            <span>新建文件夹</span>
+          </button>
+          <button class="action-btn primary" onclick="document.getElementById('fileUploadInput').click()">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+            <span>导入文件</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ========================================================
+           VIEW 3: 主体库二级页面
+           ======================================================== -->
+      <div class="drawer-view-panel" id="viewSubjectLibraryPage" style="display: none;">
+        <div class="subject-page-header">
+          <div class="subject-page-back" onclick="closeSubjectLibraryPage()">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            <span>主体库</span>
+            <svg class="icon icon-xs" style="color: var(--dsw-alias-text-muted);" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          </div>
+
+          <div class="subject-sort-wrapper">
+            <div class="subject-sort-trigger" id="btnSubjectSort" onclick="toggleFilterDropdown(event, 'popoverSubjectSort')">
+              <span id="labelSubjectSort">最近更新</span>
+              <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="assets-toolbar" style="padding-top: 8px;">
+          <div class="search-row">
+            <div class="search-input-wrapper">
+              <svg class="icon icon-sm" style="color: var(--dsw-alias-text-muted);" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" class="search-input" placeholder="搜索主体..." oninput="handleSubjectSearch(this.value)">
+            </div>
+            <div class="view-mode-toggle">
+              <button class="view-mode-btn active" title="网格视图">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              </button>
+            </div>
+            <button class="view-mode-btn" title="刷新主体" onclick="showToast('已刷新主体列表')">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
+          </div>
+
+          <!-- Subject Type Filter Chips -->
+          <div class="subject-filter-chips">
+            <div class="filter-pill active" onclick="switchSubjectCategory(this, 'all')">所有类型</div>
+            <div class="filter-pill" onclick="switchSubjectCategory(this, 'character')">角色</div>
+            <div class="filter-pill" onclick="switchSubjectCategory(this, 'scene')">场景</div>
+            <div class="filter-pill" onclick="switchSubjectCategory(this, 'style')">风格包</div>
+            <div class="filter-pill" onclick="switchSubjectCategory(this, 'custom')">自定义</div>
+          </div>
+        </div>
+
+        <div class="drawer-content" id="subjectLibraryContent">
+          <div class="subject-section-title">
+            <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            <span>已添加至此创作页的主体</span>
+          </div>
+
+          <div class="grid-view-container" id="subjectCardsGrid">
+            <!-- Subject Card 1 -->
+            <div class="grid-card" draggable="true" ondragstart="handleSubjectDrag(event, '测试')" onclick="showToast('已选中主体：测试 (可拖拽上画布)')">
+              <div class="grid-card-thumb">
+                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80" alt="测试主体">
+              </div>
+              <div class="grid-card-meta">
+                <span class="grid-card-title">测试</span>
+                <span class="grid-card-sub">角色 · 资产/connectors...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state when category filtered -->
+          <div class="subject-empty-state" id="subjectEmptyState" style="display: none;">
+            <svg class="icon icon-lg" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+            <span id="subjectEmptyText">暂无角色</span>
+          </div>
+        </div>
+
+        <!-- Subject Bottom Action Bar -->
+        <div class="assets-bottom-bar">
+          <button class="action-btn primary" onclick="showToast('弹出创建主体对话框')">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>创建主体</span>
+          </button>
+          <button class="action-btn secondary" onclick="showToast('弹出导入主体包文件选择器')">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+            <span>导入主体包</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <input type="file" id="fileUploadInput" style="display:none" multiple onchange="handleFileSelected(event)">
+
+    <!-- ========================================================
+         悬浮预览与元数据详情卡片 (Asset Inspector Flyout)
+         ======================================================== -->
+    <div class="asset-preview-flyout" id="assetPreviewFlyout">
+      <div class="flyout-header">
+        <span class="flyout-title" id="flyoutTitle">截屏2026-08-22 11.24.02.png</span>
+        <button class="flyout-locate-btn" id="flyoutLocateBtn" title="在画布定位对应素材节点" onclick="locateCurrentAssetOnCanvas()">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="flyout-preview-box">
+        <img id="flyoutImg" src="https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=400&q=80" alt="预览">
+      </div>
+
+      <div class="flyout-meta-table">
+        <div class="meta-row">
+          <span class="meta-label">尺寸</span>
+          <span id="flyoutDim">1622 × 1194</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">格式</span>
+          <span id="flyoutFormat">PNG</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">大小</span>
+          <span id="flyoutSize">313 KB</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">修改时间</span>
+          <span id="flyoutTime">2026-08-28 14:21</span>
+        </div>
+      </div>
+
+      <div class="flyout-dependency-row" onclick="showToast('正在展开当前素材上下游依赖链路...')">
+        <span style="display:flex; align-items:center; gap:6px;">
+          <svg class="icon icon-xs" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          <span>查看依赖</span>
+        </span>
+        <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </div>
+    </div>
+
+    <!-- Canvas Surface -->
+    <section class="canvas-container" id="canvasSurface" ondragover="event.preventDefault()" ondrop="handleDropOnCanvas(event)">
+      <div class="canvas-watermark">OmniMux 无限画布 · 点击「类型 ∨」、「标签 ∨」、「时间 ∨」展开筛选，右键素材呼出完整操作菜单</div>
+
+      <!-- Mock Canvas Nodes -->
+      <div class="canvas-node selected" style="top: 80px; left: 420px;" id="node_screenshot" onclick="selectCanvasNode('node_screenshot')">
+        <div class="node-header">
+          <span style="display:flex; align-items:center; gap:6px;">
+            <svg class="icon icon-sm" style="color:#60a5fa;" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            <span>截屏2026-08-22 11.24.02.png</span>
+          </span>
+          <span style="color:var(--dsw-specific-accent-green); font-size: 10px;">已定位</span>
+        </div>
+        <div class="node-body">
+          <img class="node-preview-img" src="https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=400&q=80" alt="截屏">
+          <div style="margin-top: 8px; display:flex; justify-content:space-between; font-size:11px;">
+            <span>尺寸: 1622 × 1194</span>
+            <span style="color:var(--dsw-alias-text-muted)">313 KB</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="canvas-node" style="top: 280px; left: 740px;" id="node_video" onclick="selectCanvasNode('node_video')">
+        <div class="node-header">
+          <span style="display:flex; align-items:center; gap:6px;">
+            <svg class="icon icon-sm" style="color:#a855f7;" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            <span>9月14日.mp4 (视频节点)</span>
+          </span>
+          <span style="color:var(--dsw-alias-text-accent); font-size: 10px;">完成</span>
+        </div>
+        <div class="node-body">
+          <div style="background: rgba(0,0,0,0.5); padding: 8px; border-radius: 6px; font-size: 11px; margin-bottom: 8px;">
+            短剧第 4 幕合成镜头，时长 00:14，已绑定主体林萧...
+          </div>
+          <button style="width:100%; height:28px; border-radius:4px; border:1px solid var(--dsw-alias-border-subtle); background:var(--dsw-alias-bg-elevated); color:var(--dsw-alias-text-primary); font-size:11px; cursor:pointer;" onclick="saveNodeToAssets()">
+            右键产物可保存到项目资产 📥
+          </button>
+        </div>
+      </div>
+
+      <!-- Watermark Setting Button at Left Bottom -->
+      <div class="watermark-btn-container">
+        <button class="watermark-btn" onclick="showToast('正在打开全局水印与出图设置面板...')">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+          <span>水印设置</span>
+        </button>
+      </div>
+
+      <!-- Floating Bottom ToolDock -->
+      <div class="floating-tooldock">
+        <button class="dock-btn primary" title="添加新节点" onclick="showToast('添加节点菜单')">
+          <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+        <button class="dock-btn" title="投递到 Agent 对话" onclick="showToast('已投递至 Agent 会话')">
+          <svg class="icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+        <button class="dock-btn" title="展开更多工具" onclick="showToast('展开更多工具')">
+          <svg class="icon" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+        </button>
+
+        <div class="dock-divider"></div>
+
+        <button class="dock-btn active" id="dockAssetBtn" onclick="toggleDrawer()" style="position: relative;">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          <span style="position:absolute; top:4px; right:4px; width:6px; height:6px; background:var(--dsw-specific-badge); border-radius:50%;"></span>
+          <div class="dock-tooltip">画布素材 / 项目资产 (Cmd+E)</div>
+        </button>
+
+        <div class="dock-divider"></div>
+
+        <button class="dock-btn" title="使用帮助" onclick="showToast('提示：右键素材可直接呼出专属操作菜单')">
+          <svg class="icon viewBox 0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Right Side: Agent Chat Mock -->
+    <aside class="agent-dock">
+      <div class="agent-header">
+        <span>🤖 创意编排助手</span>
+        <span style="font-size: 11px; color: var(--dsw-specific-accent-green)">在线</span>
+      </div>
+      <div class="agent-messages" id="agentMessages">
+        <div class="msg-bubble assistant">
+          你好！我是短剧导演 Agent。你可以从左侧资产库将素材直接右键「添加到对话」或「添加到 agent」，我将自动注入上下文进行提示词扩写或分镜生成。
+        </div>
+      </div>
+      <div class="agent-input-box">
+        <div id="mentionContainer"></div>
+        <textarea class="agent-input" id="agentInput" placeholder="输入指令或输入 @ 引用项目资产..."></textarea>
+        <button class="action-btn primary" style="height: 28px; font-size: 11px;" onclick="sendAgentMsg()">发送给 Agent</button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ========================================================
+       4 套全局 FIXED 绝对定位 Popover 浮层 (绝不被任何容器裁切)
+       ======================================================== -->
+  
+  <!-- 1. 【类型 ∨】Popover -->
+  <div class="popover-menu-portal" id="popoverType" onclick="event.stopPropagation()" style="width: 140px;">
+    <div class="popover-item" onclick="toggleTypeFilter('全部')">
+      <div class="type-check-circle" id="checkType_全部"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+      <span>全部</span>
+    </div>
+    <div class="popover-item" onclick="toggleTypeFilter('图片')">
+      <div class="type-check-circle" id="checkType_图片"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+      <span>图片</span>
+    </div>
+    <div class="popover-item" onclick="toggleTypeFilter('视频')">
+      <div class="type-check-circle" id="checkType_视频"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+      <span>视频</span>
+    </div>
+    <div class="popover-item" onclick="toggleTypeFilter('音频')">
+      <div class="type-check-circle" id="checkType_音频"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+      <span>音频</span>
+    </div>
+    <div class="popover-item" onclick="toggleTypeFilter('文本')">
+      <div class="type-check-circle" id="checkType_文本"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+      <span>文本</span>
+    </div>
+    <div class="popover-item" onclick="toggleTypeFilter('其他')">
+      <div class="type-check-circle" id="checkType_其他"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+      <span>其他</span>
+    </div>
+  </div>
+
+  <!-- 2. 【标签 ∨】Popover -->
+  <div class="popover-menu-portal" id="popoverTag" onclick="event.stopPropagation()" style="width: 136px;">
+    <div class="popover-item" onclick="applyFilterTag('人物')">
+      <span class="tag-color-dot" style="background:#f87171;"></span>
+      <span>人物</span>
+    </div>
+    <div class="popover-item" onclick="applyFilterTag('场景')">
+      <span class="tag-color-dot" style="background:#fb923c;"></span>
+      <span>场景</span>
+    </div>
+    <div class="popover-item" onclick="applyFilterTag('待定版')">
+      <span class="tag-color-dot" style="background:#facc15;"></span>
+      <span>待定版</span>
+    </div>
+    <div class="popover-item" onclick="applyFilterTag('最终版')">
+      <span class="tag-color-dot" style="background:#4ade80;"></span>
+      <span>最终版</span>
+    </div>
+    <div class="popover-item" onclick="applyFilterTag('道具')">
+      <span class="tag-color-dot" style="background:#38bdf8;"></span>
+      <span>道具</span>
+    </div>
+    <div class="popover-item" onclick="applyFilterTag('音色')">
+      <span class="tag-color-dot" style="background:#c084fc;"></span>
+      <span>音色</span>
+    </div>
+    <div class="popover-item" onclick="applyFilterTag('服装')">
+      <span class="tag-color-dot" style="background:#818cf8;"></span>
+      <span>服装</span>
+    </div>
+  </div>
+
+  <!-- 3. 【时间 ∨】Popover -->
+  <div class="popover-menu-portal" id="popoverTime" onclick="event.stopPropagation()" style="width: 145px;">
+    <div class="popover-item time-item-row selected" id="optSort_latest" onclick="applyTimeSort('latest')">
+      <span>最新优先</span>
+      <svg class="icon icon-xs time-check-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <div class="popover-item time-item-row" id="optSort_oldest" onclick="applyTimeSort('oldest')">
+      <span>最旧优先</span>
+      <svg class="icon icon-xs time-check-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <div class="popover-divider"></div>
+    <div class="popover-item time-item-row selected" id="optRange_all" onclick="applyTimeRange('all')">
+      <span>全部</span>
+      <svg class="icon icon-xs time-check-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <div class="popover-item time-item-row" id="optRange_today" onclick="applyTimeRange('today')">
+      <span>今天</span>
+      <svg class="icon icon-xs time-check-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <div class="popover-item time-item-row" id="optRange_7d" onclick="applyTimeRange('7d')">
+      <span>近 7 天</span>
+      <svg class="icon icon-xs time-check-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <div class="popover-item time-item-row" id="optRange_30d" onclick="applyTimeRange('30d')">
+      <span>近 30 天</span>
+      <svg class="icon icon-xs time-check-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <div class="popover-item time-item-row" id="optRange_custom" onclick="applyTimeRange('custom')">
+      <span>自定义</span>
+      <svg class="icon icon-xs time-check-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+  </div>
+
+  <!-- 4. 【最近更新 ∨】Popover -->
+  <div class="popover-menu-portal" id="popoverSubjectSort" onclick="event.stopPropagation()" style="width: 130px;">
+    <div class="popover-item selected" id="optSubSort_recent" onclick="applySubjectSort('最近更新')">
+      <span class="sort-left-check"><svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+      <span>最近更新</span>
+    </div>
+    <div class="popover-item" id="optSubSort_count" onclick="applySubjectSort('使用次数')">
+      <span class="sort-left-check"><svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+      <span>使用次数</span>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       专属右键菜单 1: 【画布 Tab】素材专属右键菜单 (100% 矢量线条无黑块)
+       ======================================================== -->
+  <div class="context-menu-popover" id="contextMenuCanvasAsset" style="width: 232px;">
+    <!-- 1. 添加到画布 ⌘⇧A -->
+    <div class="ctx-item" onclick="executeContextAction('addToCanvas')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span>添加到画布</span>
+      </div>
+      <span class="ctx-shortcut">⌘ ⇧ A</span>
+    </div>
+
+    <!-- 2. 添加到对话 -->
+    <div class="ctx-item" onclick="executeContextAction('addToAgent')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="9" y1="10" x2="15" y2="10"></line><line x1="12" y1="7" x2="12" y2="13"></line></svg>
+        <span>添加到对话</span>
+      </div>
+    </div>
+
+    <!-- 3. 添加到主体库 -->
+    <div class="ctx-item" onclick="executeContextAction('addToSubjectLibrary')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+        <span>添加到主体库</span>
+      </div>
+    </div>
+
+    <!-- 4. 存到项目资产 -->
+    <div class="ctx-item" onclick="executeContextAction('saveToProjectAssets')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        <span>存到项目资产</span>
+      </div>
+    </div>
+
+    <!-- 5. 在画布中定位 -->
+    <div class="ctx-item" onclick="executeContextAction('locateCanvas')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+        <span>在画布中定位</span>
+      </div>
+    </div>
+
+    <!-- 6. 打开 ⌘O -->
+    <div class="ctx-item" onclick="executeContextAction('openAsset')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        <span>打开</span>
+      </div>
+      <span class="ctx-shortcut">⌘ O</span>
+    </div>
+
+    <!-- 7. 在 Finder 中打开 ⌘⇧R -->
+    <div class="ctx-item" onclick="executeContextAction('revealFinder')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4" ry="4"></rect><path d="M9 15c1 1 5 1 6 0"></path><circle cx="9" cy="9" r="1"></circle><circle cx="15" cy="9" r="1"></circle><path d="M12 9v4"></path></svg>
+        <span>在 Finder 中打开</span>
+      </div>
+      <span class="ctx-shortcut">⌘ ⇧ R</span>
+    </div>
+
+    <!-- 8. 复制路径 -->
+    <div class="ctx-item" onclick="executeContextAction('copyPath')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <span>复制路径</span>
+      </div>
+    </div>
+
+    <!-- 9. 复制文件 ⌘C -->
+    <div class="ctx-item" onclick="executeContextAction('copyFile')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+        <span>复制文件</span>
+      </div>
+      <span class="ctx-shortcut">⌘ C</span>
+    </div>
+
+    <!-- 10. 复制副本 ⌘D -->
+    <div class="ctx-item" onclick="executeContextAction('duplicate')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <span>复制副本</span>
+      </div>
+      <span class="ctx-shortcut">⌘ D</span>
+    </div>
+
+    <!-- 11. 切换到树形视图 -->
+    <div class="ctx-item" onclick="executeContextAction('toggleTreeView')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><circle cx="4" cy="6" r="1.5"></circle><circle cx="4" cy="12" r="1.5"></circle><circle cx="4" cy="18" r="1.5"></circle></svg>
+        <span>切换到树形视图</span>
+      </div>
+    </div>
+
+    <!-- 12. 重命名 Enter -->
+    <div class="ctx-item" onclick="executeContextAction('rename')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        <span>重命名</span>
+      </div>
+      <span class="ctx-shortcut">Enter</span>
+    </div>
+
+    <!-- 13. 删除 Backspace (红色) -->
+    <div class="ctx-item danger" onclick="executeContextAction('delete')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+        <span>删除</span>
+      </div>
+      <span class="ctx-shortcut" style="color:#f87171;">Backspace</span>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       专属右键菜单 2: 【资产 Tab】素材专属右键菜单 (矢量线条)
+       ======================================================== -->
+  <div class="context-menu-popover" id="contextMenuAssetsFile" style="width: 175px;">
+    <div class="ctx-item" onclick="executeContextAction('addToCanvas')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        <span>添加到画布</span>
+      </div>
+    </div>
+    <div class="ctx-item" onclick="executeContextAction('addToAgent')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="9" y1="10" x2="15" y2="10"></line><line x1="12" y1="7" x2="12" y2="13"></line></svg>
+        <span>添加到 agent</span>
+      </div>
+    </div>
+    <div class="ctx-item" onclick="executeContextAction('revealFinder')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        <span>在 Finder 中打开</span>
+      </div>
+    </div>
+    <div class="ctx-item" onclick="executeContextAction('moveTo')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="17" y2="11"></line><polyline points="15 9 17 11 15 13"></polyline></svg>
+        <span>移动到</span>
+      </div>
+    </div>
+    <div class="ctx-item danger" onclick="executeContextAction('delete')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        <span>删除</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       专属右键菜单 3: 【资产 Tab】文件夹专属右键菜单 (矢量线条)
+       ======================================================== -->
+  <div class="context-menu-popover" id="contextMenuAssetsFolder" style="width: 175px;">
+    <div class="ctx-item" onclick="executeContextAction('revealFinder')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        <span>在 Finder 中打开</span>
+      </div>
+    </div>
+    <div class="ctx-item" onclick="executeContextAction('rename')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        <span>重命名</span>
+      </div>
+    </div>
+    <div class="ctx-item" onclick="executeContextAction('moveTo')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="17" y2="11"></line><polyline points="15 9 17 11 15 13"></polyline></svg>
+        <span>移动到</span>
+      </div>
+    </div>
+    <div class="ctx-item danger" onclick="executeContextAction('delete')">
+      <div class="ctx-item-left">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        <span>删除</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-popup" id="toastPopup">
+    <svg class="icon icon-sm" style="color:var(--dsw-specific-accent-green)" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+    <span id="toastMsg">操作成功</span>
+  </div>
+
+  <script>
+    // State
+    let currentTheme = 'dark';
+    let currentMainTab = 'canvas';
+    let currentCanvasViewMode = 'list';
+    let selectedAsset = null;
+    let draggedAssetData = null;
+    let hoveredAsset = null;
+    let flyoutHideTimeout = null;
+
+    // 过滤与排序状态
+    let selectedTypes = ['全部', '图片', '视频', '音频', '文本', '其他'];
+    let selectedTag = '全部';
+    let selectedTimeSort = 'latest';
+    let selectedTimeRange = 'all';
+    let currentSubjectSort = '最近更新';
+
+    // 全量画布素材数据 (100% 对齐截图)
+    const canvasAssetItems = [
+      { id: '1', name: '截屏2026-08-21 12.17.35.png', type: '图片', tag: '场景', ext: 'PNG', size: '2.4 MB', dim: '1920 × 1080', time: '2026-08-21 12:17', thumb: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80', nodeId: 'node_screenshot' },
+      { id: '2', name: '截屏2026-08-22 11.24.02.png', type: '图片', tag: '人物', ext: 'PNG', size: '313 KB', dim: '1622 × 1194', time: '2026-08-28 14:21', thumb: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=400&q=80', nodeId: 'node_screenshot' },
+      { id: '3', name: '截屏2026-08-22 11.54.15.png', type: '图片', tag: '待定版', ext: 'PNG', size: '1.2 MB', dim: '1440 × 900', time: '2026-08-22 11:54', thumb: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80', nodeId: 'node_screenshot' },
+      { id: '4', name: '截屏2026-08-22 14.26.02.png', type: '图片', tag: '道具', ext: 'PNG', size: '980 KB', dim: '1280 × 720', time: '2026-08-22 14:26', thumb: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&q=80', nodeId: 'node_screenshot' },
+      { id: '5', name: '截屏2026-08-22 14.26.07.png', type: '图片', tag: '服装', ext: 'PNG', size: '1.1 MB', dim: '1280 × 720', time: '2026-08-22 14:26', thumb: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&q=80', nodeId: 'node_screenshot' },
+      { id: '6', name: '播客男.MP3', type: '音频', tag: '音色', ext: 'MP3', size: '4.2 MB', dim: '48kHz / 320kbps', duration: '0:34', time: '2026-08-22 15:10' },
+      { id: '7', name: '参考图(3).png', type: '图片', tag: '场景', ext: 'PNG', size: '3.1 MB', dim: '2048 × 1152', time: '2026-08-23 09:30', thumb: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&q=80' },
+      { id: '8', name: '参考图(2).png', type: '图片', tag: '人物', ext: 'PNG', size: '2.9 MB', dim: '2048 × 1152', time: '2026-08-23 09:28', thumb: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&q=80' },
+      { id: '9', name: '尾帧.png', type: '图片', tag: '最终版', ext: 'PNG', size: '1.8 MB', dim: '1920 × 1080', time: '2026-08-24 16:40', thumb: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80' },
+      { id: '10', name: '首帧.png', type: '图片', tag: '待定版', ext: 'PNG', size: '1.9 MB', dim: '1920 × 1080', time: '2026-08-24 16:38', thumb: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80' },
+      { id: '11', name: '参考图(1).png', type: '图片', tag: '场景', ext: 'PNG', size: '2.7 MB', dim: '2048 × 1152', time: '2026-08-23 09:20', thumb: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&q=80' },
+      { id: '12', name: 'Untitled.md', type: '文本', tag: '待定版', ext: 'MD', size: '12 KB', dim: '240 字', time: '2026-08-25 10:11' },
+      { id: '13', name: 'feishu-iframe-overseas.html', type: '文本', tag: '其他', ext: 'HTML', size: '45 KB', dim: '网页文件', time: '2026-08-26 14:02' },
+      { id: '14', name: 'create-project-cta.html', type: '文本', tag: '其他', ext: 'HTML', size: '38 KB', dim: '网页文件', time: '2026-08-26 14:05' },
+      { id: '15', name: 'MiniMax Design-Project Gallery T... .pdf', type: '其他', tag: '其他', ext: 'PDF', size: '5.6 MB', dim: '12 页', time: '2026-08-27 18:20' },
+      { id: '16', name: 'Group 2085662936.png', type: '图片', tag: '道具', ext: 'PNG', size: '890 KB', dim: '800 × 600', time: '2026-08-28 09:15', thumb: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80' },
+      { id: '17', name: 'Frame 2147203641.png', type: '图片', tag: '服装', ext: 'PNG', size: '920 KB', dim: '800 × 600', time: '2026-08-28 09:18', thumb: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=400&q=80' }
+    ];
+
+    function init() {
+      switchMainTab('canvas');
+      renderCanvasAssets();
+    }
+
+    // Tab 切换
+    function switchMainTab(tab) {
+      currentMainTab = tab;
+      document.getElementById('tabCanvas').classList.toggle('active', tab === 'canvas');
+      document.getElementById('tabAssets').classList.toggle('active', tab === 'assets');
+      
+      const canvasPanel = document.getElementById('viewCanvas');
+      const assetsPanel = document.getElementById('viewAssets');
+      const subjectPanel = document.getElementById('viewSubjectLibraryPage');
+
+      if (tab === 'canvas') {
+        canvasPanel.style.display = 'flex';
+        assetsPanel.style.display = 'none';
+        subjectPanel.style.display = 'none';
+        renderCanvasAssets();
+      } else {
+        canvasPanel.style.display = 'none';
+        assetsPanel.style.display = 'flex';
+        subjectPanel.style.display = 'none';
+      }
+      closeAllPopovers();
+      closeAllContextMenus();
+      hideFlyout();
+    }
+
+    // ========================================================
+    // Popover 展开与高亮状态控制 (Fixed 绝对坐标渲染，绝不裁切)
+    // ========================================================
+    function toggleFilterDropdown(e, popoverId) {
+      if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+      const popover = document.getElementById(popoverId);
+      if (!popover) return;
+      
+      const isOpen = popover.style.display === 'block';
+      closeAllPopovers();
+      closeAllContextMenus();
+
+      if (!isOpen) {
+        let triggerBtn = null;
+        if (popoverId === 'popoverType') triggerBtn = document.getElementById('btnFilterType');
+        if (popoverId === 'popoverTag') triggerBtn = document.getElementById('btnFilterTag');
+        if (popoverId === 'popoverTime') triggerBtn = document.getElementById('btnFilterTime');
+        if (popoverId === 'popoverSubjectSort') triggerBtn = document.getElementById('btnSubjectSort');
+
+        if (triggerBtn) {
+          triggerBtn.classList.add('active');
+          const rect = triggerBtn.getBoundingClientRect();
+          popover.style.top = `${rect.bottom + 6}px`;
+          
+          let left = rect.left;
+          if (popoverId === 'popoverSubjectSort') {
+            left = rect.right - 130;
+          } else if (left + 150 > window.innerWidth) {
+            left = window.innerWidth - 160;
+          }
+          popover.style.left = `${Math.max(10, left)}px`;
+        }
+
+        popover.style.display = 'block';
+      }
+    }
+
+    function closeAllPopovers() {
+      document.querySelectorAll('.popover-menu-portal').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.filter-dropdown-btn').forEach(el => el.classList.remove('active'));
+      const sortBtn = document.getElementById('btnSubjectSort');
+      if (sortBtn) sortBtn.classList.remove('active');
+    }
+
+    function closeAllContextMenus() {
+      document.querySelectorAll('.context-menu-popover').forEach(el => el.style.display = 'none');
+    }
+
+    // 全局点击空白处关闭菜单 (安全守卫：排除点击按钮本身或菜单内部)
+    window.addEventListener('click', (e) => {
+      if (e.target.closest('.filter-dropdown-btn') || 
+          e.target.closest('.popover-menu-portal') || 
+          e.target.closest('.subject-sort-trigger') ||
+          e.target.closest('.context-menu-popover')) {
+        return;
+      }
+      closeAllPopovers();
+      closeAllContextMenus();
+    });
+
+    // 1. 【类型 ∨】多选勾选与过滤逻辑
+    function toggleTypeFilter(type) {
+      if (type === '全部') {
+        if (selectedTypes.includes('全部')) {
+          selectedTypes = [];
+        } else {
+          selectedTypes = ['全部', '图片', '视频', '音频', '文本', '其他'];
+        }
+      } else {
+        if (selectedTypes.includes(type)) {
+          selectedTypes = selectedTypes.filter(t => t !== type && t !== '全部');
+        } else {
+          selectedTypes.push(type);
+          if (selectedTypes.filter(t => t !== '全部').length === 5) {
+            selectedTypes.push('全部');
+          }
+        }
+      }
+
+      // 更新所有选项图标状态
+      const allTypes = ['全部', '图片', '视频', '音频', '文本', '其他'];
+      allTypes.forEach(t => {
+        const el = document.getElementById(`checkType_${t}`);
+        if (el) {
+          el.classList.toggle('uncheck', !selectedTypes.includes(t));
+        }
+      });
+
+      renderCanvasAssets();
+      showToast(`类型筛选：${selectedTypes.length > 0 ? selectedTypes.join('、') : '无选中'}`);
+    }
+
+    // 2. 【标签 ∨】点击与单选过滤逻辑
+    function applyFilterTag(tag) {
+      selectedTag = tag;
+      document.getElementById('labelFilterTag').textContent = tag;
+      renderCanvasAssets();
+      closeAllPopovers();
+      showToast(`已按标签筛选: ${tag}`);
+    }
+
+    // 3. 【时间 ∨】排序与范围逻辑
+    function applyTimeSort(sortKey) {
+      selectedTimeSort = sortKey;
+      document.getElementById('optSort_latest').classList.toggle('selected', sortKey === 'latest');
+      document.getElementById('optSort_oldest').classList.toggle('selected', sortKey === 'oldest');
+      renderCanvasAssets();
+      closeAllPopovers();
+      showToast(`排序方式: ${sortKey === 'latest' ? '最新优先' : '最旧优先'}`);
+    }
+
+    function applyTimeRange(rangeKey) {
+      selectedTimeRange = rangeKey;
+      const ranges = ['all', 'today', '7d', '30d', 'custom'];
+      ranges.forEach(r => {
+        const el = document.getElementById(`optRange_${r}`);
+        if (el) el.classList.toggle('selected', r === rangeKey);
+      });
+      renderCanvasAssets();
+      closeAllPopovers();
+      showToast(`时间范围: ${rangeKey}`);
+    }
+
+    // 4. 【最近更新 ∨】主体库排序
+    function applySubjectSort(sortName) {
+      currentSubjectSort = sortName;
+      document.getElementById('labelSubjectSort').textContent = sortName;
+      document.getElementById('optSubSort_recent').classList.toggle('selected', sortName === '最近更新');
+      document.getElementById('optSubSort_count').classList.toggle('selected', sortName === '使用次数');
+      closeAllPopovers();
+      showToast(`主体排序已切换为：${sortName}`);
+    }
+
+    // ========================================================
+    // 画布素材列表渲染
+    // ========================================================
+    function renderCanvasAssets() {
+      const listContainer = document.getElementById('canvasListView');
+      const gridContainer = document.getElementById('canvasGridView');
+      listContainer.innerHTML = '';
+      gridContainer.innerHTML = '';
+
+      let filtered = canvasAssetItems.filter(item => {
+        if (!selectedTypes.includes('全部') && !selectedTypes.includes(item.type)) return false;
+        if (selectedTag !== '全部' && item.tag !== selectedTag) return false;
+        return true;
+      });
+
+      // 渲染列表视图
+      filtered.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = `tree-item ${index === 1 ? 'selected' : ''}`;
+        row.draggable = true;
+        row.ondragstart = (e) => handleDragStart(e, item.name, item.type);
+        // 画布 Tab 素材专属右键菜单
+        row.oncontextmenu = (e) => showContextMenu(e, item.name, item.type, 'canvas');
+        row.onclick = () => {
+          document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('selected'));
+          row.classList.add('selected');
+          showFlyoutForAsset(item, row);
+        };
+        row.onmouseenter = () => showFlyoutForAsset(item, row);
+        row.onmouseleave = () => scheduleHideFlyout();
+
+        let iconOrThumb = '';
+        if (item.thumb) {
+          iconOrThumb = `<img class="tree-file-thumb" src="${item.thumb}">`;
+        } else if (item.type === '音频') {
+          iconOrThumb = `<svg class="icon icon-sm" style="color:#a855f7;" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path></svg>`;
+        } else if (item.type === '文本' || item.type === '其他') {
+          iconOrThumb = `<svg class="icon icon-sm" style="color:#71717a;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
+        } else {
+          iconOrThumb = `<svg class="icon icon-sm" style="color:#60a5fa;" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`;
+        }
+
+        const hasNodeOnCanvas = item.nodeId ? true : false;
+        const locateIconHtml = hasNodeOnCanvas ? `
+          <div class="item-locate-icon" title="在画布定位" onclick="event.stopPropagation(); locateAssetOnCanvas('${item.nodeId}', '${item.name}')">
+            <svg class="icon icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+          </div>
+        ` : '';
+
+        row.innerHTML = `
+          ${iconOrThumb}
+          <span class="tree-name">${item.name}</span>
+          ${locateIconHtml}
+        `;
+        listContainer.appendChild(row);
+      });
+
+      // 渲染网格视图
+      filtered.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'grid-card';
+        card.draggable = true;
+        card.ondragstart = (e) => handleDragStart(e, item.name, item.type);
+        card.oncontextmenu = (e) => showContextMenu(e, item.name, item.type, 'canvas');
+        card.onmouseenter = (e) => showFlyoutForAsset(item, card);
+        card.onmouseleave = () => scheduleHideFlyout();
+
+        let thumbHtml = '';
+        if (item.thumb) {
+          thumbHtml = `<img src="${item.thumb}" alt="${item.name}">`;
+        } else if (item.type === '音频') {
+          thumbHtml = `<div style="display:flex; flex-direction:column; align-items:center; gap:4px; color:#a1a1aa;"><svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path></svg><span style="font-size:10px; background:rgba(255,255,255,0.1); padding:1px 6px; border-radius:3px;">${item.duration || '0:30'}</span></div>`;
+        } else {
+          thumbHtml = `<svg class="icon icon-lg" style="color:#71717a;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
+        }
+
+        card.innerHTML = `
+          <div class="grid-card-thumb">${thumbHtml}</div>
+          <div class="grid-card-meta">
+            <span class="grid-card-title">${item.name}</span>
+            <span class="grid-card-sub">${item.dim || item.size}</span>
+          </div>
+        `;
+        gridContainer.appendChild(card);
+      });
+    }
+
+    function setCanvasViewMode(mode) {
+      currentCanvasViewMode = mode;
+      document.getElementById('btnCanvasListView').classList.toggle('active', mode === 'list');
+      document.getElementById('btnCanvasGridView').classList.toggle('active', mode === 'grid');
+      document.getElementById('canvasListView').style.display = mode === 'list' ? 'block' : 'none';
+      document.getElementById('canvasGridView').style.display = mode === 'grid' ? 'grid' : 'none';
+    }
+
+    function handleCanvasSearch(val) {
+      const list = document.getElementById('canvasListView');
+      const rows = list.getElementsByClassName('tree-item');
+      Array.from(rows).forEach(row => {
+        const title = row.querySelector('.tree-name').textContent.toLowerCase();
+        row.style.display = title.includes(val.toLowerCase()) ? 'flex' : 'none';
+      });
+    }
+
+    function refreshCanvasAssets() {
+      showToast('已完成画布素材文件索引同步');
+    }
+
+    function focusAllCanvasNodes() {
+      showToast('🕒 已自适应全画布视口 (Zoom to Fit)');
+    }
+
+    function autoLayoutCanvasNodes() {
+      showToast('☰ 已对全画布节点执行 Dagre 拓扑自动整理与布局');
+    }
+
+    // 资产 Tab 交互
+    function handleAssetsSearch(val) {
+      if (val.trim()) showToast(`正在搜索项目资产: "${val}"`);
+    }
+
+    // 主体库二级页面
+    function openSubjectLibraryPage() {
+      document.getElementById('drawerMainHeader').style.display = 'none';
+      document.getElementById('viewCanvas').style.display = 'none';
+      document.getElementById('viewAssets').style.display = 'none';
+      document.getElementById('viewSubjectLibraryPage').style.display = 'flex';
+      hideFlyout();
+      closeAllPopovers();
+      closeAllContextMenus();
+      showToast('已进入「主体库」');
+    }
+
+    function closeSubjectLibraryPage() {
+      document.getElementById('viewSubjectLibraryPage').style.display = 'none';
+      document.getElementById('drawerMainHeader').style.display = 'flex';
+      switchMainTab(currentMainTab);
+    }
+
+    function switchSubjectCategory(btn, category) {
+      document.querySelectorAll('.subject-filter-chips .filter-pill').forEach(el => el.classList.remove('active'));
+      btn.classList.add('active');
+
+      const grid = document.getElementById('subjectCardsGrid');
+      const empty = document.getElementById('subjectEmptyState');
+      const emptyText = document.getElementById('subjectEmptyText');
+
+      if (category === 'all') {
+        grid.style.display = 'grid';
+        empty.style.display = 'none';
+      } else if (category === 'character') {
+        grid.style.display = 'none';
+        empty.style.display = 'flex';
+        emptyText.textContent = `暂无角色`;
+      } else {
+        grid.style.display = 'none';
+        empty.style.display = 'flex';
+        emptyText.textContent = `暂无${btn.textContent}`;
+      }
+    }
+
+    function handleSubjectSearch(q) {
+      if (q.trim()) showToast(`正在搜索主体: "${q}"`);
+    }
+
+    function handleSubjectDrag(e, subjectName) {
+      e.dataTransfer.setData('text/plain', JSON.stringify({ name: subjectName, type: 'subject' }));
+      draggedAssetData = { name: subjectName, type: 'subject' };
+    }
+
+    // 悬浮预览与定位
+    function showFlyoutForAsset(item, triggerEl) {
+      if (flyoutHideTimeout) clearTimeout(flyoutHideTimeout);
+      hoveredAsset = item;
+      
+      const flyout = document.getElementById('assetPreviewFlyout');
+      document.getElementById('flyoutTitle').textContent = item.name;
+      document.getElementById('flyoutDim').textContent = item.dim || '未知';
+      document.getElementById('flyoutFormat').textContent = item.ext || item.type;
+      document.getElementById('flyoutSize').textContent = item.size || '未知';
+      document.getElementById('flyoutTime').textContent = item.time || '2026-08-28 14:21';
+      
+      const imgDom = document.getElementById('flyoutImg');
+      if (item.thumb) {
+        imgDom.src = item.thumb;
+        imgDom.style.display = 'block';
+      } else {
+        imgDom.style.display = 'none';
+      }
+
+      const rect = triggerEl.getBoundingClientRect();
+      const topOffset = Math.max(60, Math.min(window.innerHeight - 340, rect.top - 20));
+      flyout.style.top = `${topOffset}px`;
+      flyout.classList.add('show');
+    }
+
+    function scheduleHideFlyout() {
+      flyoutHideTimeout = setTimeout(() => {
+        hideFlyout();
+      }, 300);
+    }
+
+    function hideFlyout() {
+      document.getElementById('assetPreviewFlyout').classList.remove('show');
+    }
+
+    document.getElementById('assetPreviewFlyout').addEventListener('mouseenter', () => {
+      if (flyoutHideTimeout) clearTimeout(flyoutHideTimeout);
+    });
+    document.getElementById('assetPreviewFlyout').addEventListener('mouseleave', () => {
+      scheduleHideFlyout();
+    });
+
+    function locateCurrentAssetOnCanvas() {
+      if (hoveredAsset && hoveredAsset.nodeId) {
+        locateAssetOnCanvas(hoveredAsset.nodeId, hoveredAsset.name);
+      } else {
+        showToast(`「${hoveredAsset?.name || '素材'}」尚未放置在画布中，可直接拖入生成节点！`);
+      }
+    }
+
+    function locateAssetOnCanvas(nodeId, name) {
+      focusCanvasNode(nodeId);
+      showToast(`已在画布中定位素材节点：「${name}」`);
+    }
+
+    function focusCanvasNode(nodeId) {
+      document.querySelectorAll('.canvas-node').forEach(el => el.classList.remove('selected', 'highlight-pulse'));
+      const target = document.getElementById(nodeId);
+      if (target) {
+        target.classList.add('selected', 'highlight-pulse');
+        target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
+    }
+
+    function selectCanvasNode(nodeId) {
+      document.querySelectorAll('.canvas-node').forEach(el => el.classList.remove('selected'));
+      const target = document.getElementById(nodeId);
+      if (target) target.classList.add('selected');
+    }
+
+    // 拖拽
+    function handleDragStart(e, name, type) {
+      draggedAssetData = { name, type };
+      e.dataTransfer.setData('text/plain', JSON.stringify({ name, type }));
+      hideFlyout();
+    }
+
+    function handleDropOnCanvas(e) {
+      e.preventDefault();
+      if (!draggedAssetData) return;
+      
+      const x = e.clientX - 40;
+      const y = e.clientY - 40;
+      const newId = `node_${Date.now()}`;
+      
+      const newNode = document.createElement('div');
+      newNode.className = 'canvas-node';
+      newNode.id = newId;
+      newNode.style.left = `${x}px`;
+      newNode.style.top = `${y}px`;
+      newNode.onclick = () => selectCanvasNode(newId);
+      
+      let title = draggedAssetData.name;
+      let badge = '新放入素材';
+      if (draggedAssetData.type === 'subject') {
+        title = `主体组: ${draggedAssetData.name}`;
+        badge = '成套主体';
+      }
+
+      newNode.innerHTML = `
+        <div class="node-header">
+          <span style="display:flex; align-items:center; gap:6px;">
+            <svg class="icon icon-sm" style="color:#60a5fa;" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            <span>${title}</span>
+          </span>
+          <span style="color:var(--dsw-specific-accent-green); font-size: 10px;">${badge}</span>
+        </div>
+        <div class="node-body">
+          <div style="background:var(--dsw-alias-bg-elevated); padding:8px; border-radius:4px; font-size:11px;">
+            物理路径: /assets/${draggedAssetData.name}
+          </div>
+        </div>
+      `;
+      document.getElementById('canvasSurface').appendChild(newNode);
+
+      const matchedAsset = canvasAssetItems.find(i => i.name === draggedAssetData.name);
+      if (matchedAsset) matchedAsset.nodeId = newId;
+
+      renderCanvasAssets();
+      showToast(`已将「${draggedAssetData.name}」放入画布！`);
+      draggedAssetData = null;
+    }
+
+    // ========================================================
+    // 3 套专属右键菜单控制逻辑
+    // ========================================================
+    function showContextMenu(e, name, type, contextScope) {
+      e.preventDefault();
+      e.stopPropagation();
+      selectedAsset = { name, type, contextScope };
+      closeAllPopovers();
+      closeAllContextMenus();
+      hideFlyout();
+
+      let targetMenuId = 'contextMenuCanvasAsset';
+      if (contextScope === 'assets') {
+        if (type === 'folder') {
+          targetMenuId = 'contextMenuAssetsFolder';
+        } else {
+          targetMenuId = 'contextMenuAssetsFile';
+        }
+      } else {
+        targetMenuId = 'contextMenuCanvasAsset';
+      }
+
+      const menu = document.getElementById(targetMenuId);
+      if (!menu) return;
+
+      // 视口边界溢出防护
+      let x = e.clientX;
+      let y = e.clientY;
+      const menuWidth = targetMenuId === 'contextMenuCanvasAsset' ? 232 : 180;
+      const menuHeight = targetMenuId === 'contextMenuCanvasAsset' ? 460 : 200;
+
+      if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+      if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+
+      menu.style.left = `${x}px`;
+      menu.style.top = `${y}px`;
+      menu.style.display = 'block';
+    }
+
+    // 全量上下文操作执行路由
+    function executeContextAction(action) {
+      if (!selectedAsset) return;
+      closeAllContextMenus();
+      const { name, type } = selectedAsset;
+
+      switch(action) {
+        case 'addToCanvas':
+          draggedAssetData = { name, type };
+          handleDropOnCanvas({ clientX: 520, clientY: 180, preventDefault: () => {} });
+          break;
+        case 'addToAgent':
+          const mention = document.getElementById('mentionContainer');
+          mention.innerHTML = `<div class="agent-mention-tag">📎 @引用: ${name}</div>`;
+          document.getElementById('agentInput').value = `请参考这个素材【${name}】进行分镜分析与生成`;
+          showToast(`已将「${name}」挂载为 Agent 上下文引用！`);
+          break;
+        case 'addToSubjectLibrary':
+          showToast(`✅ 已将「${name}」提取特征并添加至主体库！`);
+          break;
+        case 'saveToProjectAssets':
+          showToast(`📥 已将画布素材「${name}」持久化存入项目资产目录！`);
+          break;
+        case 'locateCanvas':
+          const matched = canvasAssetItems.find(i => i.name === name);
+          if (matched && matched.nodeId) {
+            locateAssetOnCanvas(matched.nodeId, matched.name);
+          } else {
+            showToast(`「${name}」尚未在画布中生成节点，已自动投入当前画布`);
+            draggedAssetData = { name, type };
+            handleDropOnCanvas({ clientX: 520, clientY: 180, preventDefault: () => {} });
+          }
+          break;
+        case 'openAsset':
+          showToast(`正在查看「${name}」高清大图预览...`);
+          break;
+        case 'revealFinder':
+          showToast(`已在系统 Finder 中定位: /Users/x/Project/assets/${name}`);
+          break;
+        case 'copyPath':
+          navigator.clipboard ? navigator.clipboard.writeText(`/Users/x/Project/assets/${name}`) : null;
+          showToast(`已复制路径: /assets/${name}`);
+          break;
+        case 'copyFile':
+          showToast(`已复制文件「${name}」至剪贴板`);
+          break;
+        case 'duplicate':
+          const baseName = name.replace(/\.[^/.]+$/, "");
+          const ext = name.split('.').pop();
+          const dupName = `${baseName}-副本.${ext}`;
+          canvasAssetItems.unshift({
+            id: String(Date.now()),
+            name: dupName,
+            type: type,
+            tag: '待定版',
+            ext: ext.toUpperCase(),
+            size: '1.2 MB',
+            dim: '1920 × 1080',
+            thumb: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80',
+            time: '刚刚'
+          });
+          renderCanvasAssets();
+          showToast(`已成功创建副本「${dupName}」`);
+          break;
+        case 'toggleTreeView':
+          showToast(`已切换为树形层级视图显示`);
+          break;
+        case 'rename':
+          const newName = prompt('重命名素材/文件夹:', name);
+          if (newName && newName.trim()) {
+            selectedAsset.name = newName;
+            const targetItem = canvasAssetItems.find(i => i.name === name);
+            if (targetItem) targetItem.name = newName;
+            renderCanvasAssets();
+            showToast(`已重命名为: ${newName}`);
+          }
+          break;
+        case 'moveTo':
+          const folder = prompt('移动至目标文件夹 (如: 1111):', '1111');
+          if (folder) {
+            showToast(`已将「${name}」移动至目录: 📁 ${folder}`);
+          }
+          break;
+        case 'delete':
+          if (confirm(`确定要将「${name}」移至废纸篓吗？`)) {
+            const idx = canvasAssetItems.findIndex(i => i.name === name);
+            if (idx !== -1) {
+              canvasAssetItems.splice(idx, 1);
+              renderCanvasAssets();
+            }
+            showToast(`已删除「${name}」`);
+          }
+          break;
+      }
+    }
+
+    function createNewFolder() {
+      const name = prompt('请输入新文件夹名称:', '新建文件夹');
+      if (name) {
+        showToast(`已在项目资产中创建目录: 📁 ${name}`);
+      }
+    }
+
+    function handleFileSelected(e) {
+      const files = Array.from(e.target.files);
+      if (files.length > 0) {
+        files.forEach(f => {
+          canvasAssetItems.unshift({
+            id: String(Date.now()),
+            name: f.name,
+            type: '图片',
+            tag: '待定版',
+            ext: f.name.split('.').pop().toUpperCase(),
+            size: `${(f.size / 1024 / 1024).toFixed(1)} MB`,
+            dim: '1920 × 1080',
+            thumb: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80',
+            time: '刚刚'
+          });
+        });
+        renderCanvasAssets();
+        showToast(`成功导入 ${files.length} 个文件至项目资产！`);
+      }
+    }
+
+    function handleDropUpload(e) {
+      e.preventDefault();
+      document.querySelector('.empty-dropzone').classList.remove('drag-over');
+      showToast('检测到外部文件拖入，已触发本地增量同步与缩略图生成！');
+    }
+
+    function saveNodeToAssets() {
+      showToast('✅ 节点产物已就地保存至项目资产库');
+    }
+
+    function sendAgentMsg() {
+      const input = document.getElementById('agentInput');
+      const val = input.value.trim();
+      if (!val) return;
+      
+      const msgs = document.getElementById('agentMessages');
+      const userBubble = document.createElement('div');
+      userBubble.className = 'msg-bubble user';
+      userBubble.textContent = val;
+      msgs.appendChild(userBubble);
+      
+      input.value = '';
+      document.getElementById('mentionContainer').innerHTML = '';
+      
+      setTimeout(() => {
+        const reply = document.createElement('div');
+        reply.className = 'msg-bubble assistant';
+        reply.textContent = `已收到关于该素材的编排指令！正在生成后续节点...`;
+        msgs.appendChild(reply);
+        msgs.scrollTop = msgs.scrollHeight;
+      }, 600);
+    }
+
+    function toggleTheme() {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      showToast(`已切换至 ${currentTheme === 'dark' ? '深色' : '浅色'} 主题`);
+    }
+
+    function toggleDrawer() {
+      const drawer = document.getElementById('assetsDrawer');
+      const btn = document.getElementById('dockAssetBtn');
+      drawer.classList.toggle('open');
+      btn.classList.toggle('active', drawer.classList.contains('open'));
+      hideFlyout();
+      closeAllContextMenus();
+      closeAllPopovers();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastPopup');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    // 快捷键支持
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        toggleDrawer();
+      }
+    });
+
+    // 拖拽调整抽屉宽度
+    const resizer = document.getElementById('drawerResizer');
+    const drawer = document.getElementById('assetsDrawer');
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      resizer.classList.add('resizing');
+      document.body.style.cursor = 'col-resize';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      const newWidth = Math.max(280, Math.min(600, e.clientX));
+      drawer.style.width = `${newWidth}px`;
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+      }
+    });
+
+    // Start App
+    init();
+  </script>
+</body>
+</html>
