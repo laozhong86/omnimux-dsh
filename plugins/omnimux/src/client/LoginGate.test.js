@@ -205,6 +205,20 @@ describe('LoginGate.jsx 1:1 structure', () => {
     assert.match(source, /omnimux-login-gate-hero-title/)
   })
 
+  it('renders the locked Unsplash ocean poster as hero media + jellyfish img', () => {
+    assert.match(source, /className="omnimux-login-gate-hero-media"/)
+    assert.match(
+      source,
+      /className="omnimux-login-gate-hero-jellyfish"/,
+    )
+    assert.match(
+      source,
+      /src="https:\/\/images\.unsplash\.com\/photo-1544551763-46a013bb70d5\?auto=format&fit=crop&w=600&q=80"/,
+    )
+    assert.match(source, /alt="Ocean Aesthetic"/)
+    assert.match(source, /className="omnimux-login-gate-hero-scrim"/)
+  })
+
   it('does not use kit ModalDialog chrome (custom 820×520 poster)', () => {
     assert.doesNotMatch(source, /ModalDialog/)
     assert.match(source, /from 'dsh-ui-kit'/)
@@ -245,8 +259,15 @@ describe('HUB_CSS login-gate 1:1 tokens', () => {
   it('embeds deep-sea media, box-sizing, and font fallbacks so the poster is not a purple fog', () => {
     assert.match(styles, /box-sizing:\s*border-box/)
     assert.match(styles, /\.omnimux-login-gate-hero-media/)
+    assert.match(
+      styles,
+      /url\('https:\/\/images\.unsplash\.com\/photo-1544551763-46a013bb70d5\?auto=format&fit=crop&w=800&q=80'\)/,
+    )
+    assert.match(styles, /radial-gradient\(circle at 50% 25%, rgba\(255, 255, 255, 0\.25\) 0%, transparent 60%\)/)
     assert.match(styles, /data:image\/svg\+xml/)
     assert.match(styles, /\.omnimux-login-gate-hero-jellyfish/)
+    assert.match(styles, /object-fit:\s*cover/)
+    assert.match(styles, /mask-image:\s*radial-gradient\(circle at 50% 45%, black 48%, transparent 75%\)/)
     assert.match(styles, /\.omnimux-login-gate-hero-title/)
     assert.match(styles, /padding:\s*32px 30px 36px/)
     assert.match(styles, /'Cinzel', 'Playfair Display', 'Didot', 'Songti SC', 'STSong', Georgia, serif/)
@@ -300,20 +321,28 @@ describe('HUB_CSS real stylesheet parse', () => {
     return match[0]
   }
 
-  it('parses .omnimux-login-gate-hero-media as a complete quoted SVG data-uri', () => {
+  it('parses .omnimux-login-gate-hero-media with the locked Unsplash ocean url and SVG fallback', () => {
     const sheet = loadSheet()
     const rule = ruleFor(sheet, '.omnimux-login-gate-hero-media')
     const backgroundImage = rule.style.getPropertyValue('background-image')
-    assert.ok(backgroundImage.startsWith('url("data:image/svg+xml,'), backgroundImage.slice(0, 80))
+    assert.match(backgroundImage, /radial-gradient\(circle at 50% 25%/)
+    assert.match(
+      backgroundImage,
+      /url\(["']?https:\/\/images\.unsplash\.com\/photo-1544551763-46a013bb70d5\?auto=format&fit=crop&w=800&q=80["']?\)/,
+    )
     const dataUri = firstQuotedDataUri(backgroundImage)
     assert.ok(dataUri.startsWith('url("data:image/svg+xml,'))
     assert.ok(dataUri.endsWith('")'))
     assert.match(dataUri, /%3Csvg/)
     assert.match(dataUri, /%3C%2Fsvg%3E/)
     assert.ok(dataUri.length > 800, `encoded sea svg looks truncated: ${dataUri.length}`)
+    assert.equal(rule.style.getPropertyValue('background-size'), 'cover')
+    assert.equal(rule.style.getPropertyValue('background-position'), 'center 25%')
+    assert.equal(rule.style.getPropertyValue('mix-blend-mode'), 'overlay')
+    assert.equal(rule.style.getPropertyValue('opacity'), '0.92')
   })
 
-  it('parses .omnimux-login-gate-hero-jellyfish with a quoted SVG data-uri and valid size', () => {
+  it('parses .omnimux-login-gate-hero-jellyfish with prototype geometry and SVG fallback', () => {
     const sheet = loadSheet()
     const rule = ruleFor(sheet, '.omnimux-login-gate-hero-jellyfish')
     const backgroundImage = rule.style.getPropertyValue('background-image')
@@ -324,6 +353,10 @@ describe('HUB_CSS real stylesheet parse', () => {
     assert.match(dataUri, /%3C%2Fsvg%3E/)
     assert.equal(rule.style.getPropertyValue('width'), '280px')
     assert.equal(rule.style.getPropertyValue('height'), '280px')
+    assert.equal(rule.style.getPropertyValue('object-fit'), 'cover')
+    assert.equal(rule.style.getPropertyValue('object-position'), 'center')
+    assert.equal(rule.style.getPropertyValue('opacity'), '0.92')
+    assert.match(rule.style.getPropertyValue('mask-image') || rule.style.getPropertyValue('-webkit-mask-image'), /circle at 50% 45%/)
     assert.ok(dataUri.length > 400, `encoded jellyfish svg looks truncated: ${dataUri.length}`)
   })
 

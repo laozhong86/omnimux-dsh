@@ -92,7 +92,11 @@ export function LoginGate({ t }) {
           <section className="omnimux-login-gate-hero" aria-hidden="true">
             <div className="omnimux-login-gate-hero-glow" />
             <div className="omnimux-login-gate-hero-media" />
-            <div className="omnimux-login-gate-hero-jellyfish" />
+            <img
+              className="omnimux-login-gate-hero-jellyfish"
+              src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80"
+              alt="Ocean Aesthetic"
+            />
             <div className="omnimux-login-gate-hero-scrim" />
             <div className="omnimux-login-gate-hero-type">
               <div className="omnimux-login-gate-hero-tag">
