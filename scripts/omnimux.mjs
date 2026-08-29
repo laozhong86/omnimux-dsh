@@ -118,6 +118,7 @@ function printHelp() {
   dev restart-host <task>         【推荐】仅原地重启指定 L2 环境的 Host 进程（2秒同端口冷重启，Agent 允许调用）
   build:all                       并发全量构建产品插件
   lint:i18n                       全量文案/禁词与多语言门禁检查
+  analyze:refactor [路径...]       代码重构与简化分析工具 (CRSA: 行数超标与业务逻辑混乱检测)
   doc:lint                        开发文档工程实践合规与死链校验
   doc:index                       自动生成与更新全量文档索引矩阵
   registry [build|verify|query]   编译与校验插件 Manifest 及能力注册表
@@ -150,6 +151,11 @@ switch (cmd) {
     break
   case 'lint:i18n':
     runNodeScript('scripts/i18n-lint.mjs', rest)
+    break
+  case 'analyze:refactor':
+  case 'refactor':
+  case 'crsa':
+    runNodeScript('scripts/code-refactor-analyzer.mjs', rest)
     break
   case 'doc:lint':
     runNodeScript('scripts/doc-lint.mjs', rest)
