@@ -19413,9 +19413,74 @@ var WORKFLOW_API_ROUTES = {
   executionEvents: (workspaceId, executionId) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/events`
 };
 
+// src/shared/graph/materialNode.ts
+var MATERIAL_TOOLS = {
+  text: ["text-editor", "text-to-text", "link-extract", "audio-transcription"],
+  image: ["import", "text-to-image", "image-to-image"],
+  video: ["import", "video-generation", "motion-mimicry", "subtitle-render", "digital-human"],
+  audio: ["import", "text-to-audio", "text-to-music", "video-to-audio", "voice-clone", "audio-extract"]
+};
+var DEFAULT_MATERIAL_TOOL = {
+  text: "text-editor",
+  image: "import",
+  video: "import",
+  audio: "import"
+};
+var MATERIAL_TOOL_INPUT_TYPES = {
+  "text-editor": [],
+  "text-to-text": ["text", "image", "video"],
+  "link-extract": ["text"],
+  "audio-transcription": ["audio"],
+  import: [],
+  "text-to-image": ["text"],
+  "image-to-image": ["text", "image"],
+  "video-generation": ["text", "image", "video", "audio"],
+  "digital-human": ["text", "image", "video", "audio"],
+  "motion-mimicry": ["text", "image", "video"],
+  "subtitle-render": ["text", "video"],
+  "text-to-audio": ["text"],
+  "video-to-audio": ["video"],
+  "voice-clone": ["text", "audio"],
+  "audio-extract": ["video"],
+  "text-to-music": ["text"]
+};
+function createDefaultMaterialNodeData(materialType, overrides) {
+  return {
+    label: "",
+    materialType,
+    status: "empty",
+    selectedTool: DEFAULT_MATERIAL_TOOL[materialType],
+    params: {},
+    failStrategy: "abort",
+    ...overrides
+  };
+}
+function resolveNodeKind(data) {
+  if (data.nodeKind === "generate" || data.nodeKind === "import") {
+    return data.nodeKind;
+  }
+  if (data.selectedTool === "import") {
+    return "import";
+  }
+  return "generate";
+}
+
 // src/workflow/execution/nodeExecutors.ts
 var LOG_TAG5 = "nodeExecutors";
 var logger5 = createWorkflowLogger(LOG_TAG5);
+function resolveExecutorKey(node) {
+  if (node.type !== "material") return node.type;
+  try {
+    const kind = resolveNodeKind(node.data ?? {});
+    return kind === "import" ? "material:import" : "material:generate";
+  } catch (err) {
+    logger5.warn("failed to resolve material node kind, falling back to generate", {
+      nodeId: node.id,
+      error: err instanceof Error ? err.message : String(err)
+    });
+    return "material:generate";
+  }
+}
 function createDispatchingNodeExecutor(opts) {
   const mediaDir = resolve(opts.mediaRoot, "executions", opts.executionId);
   const toPublicUrl = (absolutePath) => {
@@ -19428,9 +19493,10 @@ function createDispatchingNodeExecutor(opts) {
     return `${WORKFLOW_ROUTE_PREFIX}/media/${normalized}`;
   };
   const executor = async (node, context) => {
-    const registryExecutor = getExecutor(node.type);
+    const executorKey = resolveExecutorKey(node);
+    const registryExecutor = getExecutor(executorKey);
     if (!registryExecutor) {
-      throw new Error(`\u8282\u70B9\u7C7B\u578B ${node.type} \u6CA1\u6709\u6CE8\u518C\u6267\u884C\u5668\uFF08registry key: ${node.type}\uFF09`);
+      throw new Error(`\u8282\u70B9\u7C7B\u578B ${node.type} \u6CA1\u6709\u6CE8\u518C\u6267\u884C\u5668\uFF08registry key: ${executorKey}\uFF09`);
     }
     const upstreamOutputs = resolveUpstreamOutputs(node, opts.edges, context);
     const ctx = {
@@ -19472,6 +19538,94 @@ function normalizeOutput(output) {
 
 // src/workflow/execution/materialGatewayExecutor.ts
 import { join as join5 } from "node:path";
+function readMockFail(nodeData) {
+  return nodeData.mockFail === true;
+}
+function readString(source, key) {
+  const value = source?.[key];
+  return typeof value === "string" && value.trim().length > 0 ? value : void 0;
+}
+function readDuration(data) {
+  const fromParams = data.params?.duration;
+  if (typeof fromParams === "number") return fromParams;
+  if (typeof data.duration === "number") return data.duration;
+  return void 0;
+}
+function readMaterialType(nodeData) {
+  const value = nodeData.materialType;
+  if (value === "image" || value === "video" || value === "audio") return value;
+  return "text";
+}
+function extFor(capability) {
+  if (capability === "image") return "svg";
+  if (capability === "video") return "mp4";
+  if (capability === "audio") return "mp3";
+  return "txt";
+}
+function collectUpstream(ctx) {
+  for (const output of ctx.upstreamOutputs.values()) {
+    if (output.text && output.text.trim()) {
+      return { text: output.text };
+    }
+  }
+  for (const output of ctx.upstreamOutputs.values()) {
+    const asset = output.mediaAssets?.[0];
+    if (asset) {
+      return { mediaUrl: asset.url, mediaType: asset.type };
+    }
+  }
+  return {};
+}
+function createMaterialGatewayExecutor(opts) {
+  const { gateway } = opts;
+  return {
+    key: "material:generate",
+    async execute(node, ctx) {
+      const data = node.data ?? {};
+      const upstream = collectUpstream(ctx);
+      const capability = readMaterialType(data);
+      const prompt = readString(data, "prompt") ?? readString(data, "content") ?? upstream.text ?? "";
+      let image;
+      let audio;
+      if (upstream.mediaType === "image") {
+        image = upstream.mediaUrl;
+      } else if (upstream.mediaType === "audio" && capability === "video") {
+        audio = upstream.mediaUrl;
+      } else if (upstream.mediaType === "video") {
+        ctx.reportProgress?.(15, "\u89C6\u9891\u53C2\u8003\u8F93\u5165\u6682\u4E0D\u652F\u6301\uFF08\u7B49\u5F85\u6267\u884C\u4E2D\u67A2\u6269\u5C55\uFF09\uFF0C\u5DF2\u5FFD\u7565");
+      }
+      const dest = join5(ctx.mediaDir, `${node.id}.${extFor(capability)}`);
+      ctx.reportProgress?.(10, "\u5DF2\u63D0\u4EA4\u751F\u6210\u4EFB\u52A1");
+      const submitted = await gateway.submit({
+        capability,
+        prompt,
+        image,
+        audio,
+        duration: readDuration(data),
+        model: readString(data.params, "model"),
+        resolution: readString(data.params, "resolution"),
+        aspectRatio: readString(data.params, "aspectRatio"),
+        voice: readString(data.params, "voice"),
+        style: readString(data.params, "style"),
+        instrumental: data.params?.instrumental === true,
+        speed: typeof data.params?.speed === "number" ? data.params.speed : void 0,
+        dest,
+        signal: ctx.signal,
+        mockFail: readMockFail(data)
+      });
+      ctx.reportProgress?.(40, "\u751F\u6210\u4E2D\u2026");
+      const settled = await gateway.awaitTask(submitted.taskId, dest, ctx.signal);
+      ctx.reportProgress?.(90, "\u751F\u6210\u5B8C\u6210");
+      if (capability === "text") {
+        return { text: settled.text ?? `[gateway:${capability}] ${prompt}` };
+      }
+      const url2 = ctx.toPublicUrl ? ctx.toPublicUrl(settled.url) : settled.url;
+      return {
+        mediaAssets: [{ type: capability, url: url2 }]
+      };
+    }
+  };
+}
 
 // src/shared/localMedia.ts
 var IMAGE_EXT = /* @__PURE__ */ new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "avif", "heic"]);
@@ -19533,122 +19687,41 @@ function looksAbsolutePath(path3) {
   return /^[a-zA-Z]:[\\/]/.test(path3);
 }
 
-// src/workflow/execution/materialGatewayExecutor.ts
-function readMockFail(nodeData) {
-  return nodeData.mockFail === true;
-}
-function readString(source, key) {
+// src/workflow/execution/importExecutor.ts
+function readString2(source, key) {
   const value = source?.[key];
   return typeof value === "string" && value.trim().length > 0 ? value : void 0;
 }
-function readDuration(data) {
-  const fromParams = data.params?.duration;
-  if (typeof fromParams === "number") return fromParams;
-  if (typeof data.duration === "number") return data.duration;
-  return void 0;
-}
-function readMaterialType(nodeData) {
+function readMaterialType2(nodeData) {
   const value = nodeData.materialType;
   if (value === "image" || value === "video" || value === "audio") return value;
   return "text";
 }
-function isGenerativeTool(tool, data, upstream) {
-  if (typeof tool === "string" && tool !== "import" && tool !== "text-editor") {
-    return true;
-  }
-  const prompt = readString(data, "prompt");
-  if (prompt && prompt.trim().length > 0) {
-    return true;
-  }
-  const model = readString(data.params, "model");
-  if (model && (upstream.text || upstream.mediaUrl || readString(data, "content"))) {
-    return true;
-  }
-  return false;
-}
-function extFor(capability) {
-  if (capability === "image") return "svg";
-  if (capability === "video") return "mp4";
-  if (capability === "audio") return "mp3";
-  return "txt";
-}
-function collectUpstream(ctx) {
+function collectUpstreamText(ctx) {
   for (const output of ctx.upstreamOutputs.values()) {
     if (output.text && output.text.trim()) {
-      return { text: output.text };
+      return output.text;
     }
   }
-  for (const output of ctx.upstreamOutputs.values()) {
-    const asset = output.mediaAssets?.[0];
-    if (asset) {
-      return { mediaUrl: asset.url, mediaType: asset.type };
-    }
-  }
-  return {};
+  return void 0;
 }
-function createMaterialGatewayExecutor(opts) {
-  const { gateway } = opts;
+function createImportExecutor() {
   return {
-    key: "material",
+    key: "material:import",
     async execute(node, ctx) {
       const data = node.data ?? {};
-      const tool = readString(data, "selectedTool");
-      const upstream = collectUpstream(ctx);
-      if (!isGenerativeTool(tool, data, upstream)) {
-        const materialType = readMaterialType(data);
-        const type = materialType === "video" ? "video" : materialType === "audio" ? "audio" : "image";
-        const realPath = readString(data, "realPath");
-        if (realPath) {
-          return { mediaAssets: [{ type, url: localFileMediaUrl(realPath) }] };
-        }
-        const nodeMediaUrl = readString(data, "mediaUrl");
-        if (nodeMediaUrl && !nodeMediaUrl.startsWith("blob:")) {
-          return { mediaAssets: [{ type, url: nodeMediaUrl }] };
-        }
-        const text = readString(data, "content") ?? upstream.text;
-        return { text };
+      const materialType = readMaterialType2(data);
+      const type = materialType === "video" ? "video" : materialType === "audio" ? "audio" : "image";
+      const realPath = readString2(data, "realPath");
+      if (realPath) {
+        return { mediaAssets: [{ type, url: localFileMediaUrl(realPath) }] };
       }
-      const capability = readMaterialType(data);
-      const prompt = readString(data, "prompt") ?? readString(data, "content") ?? upstream.text ?? "";
-      let image;
-      let audio;
-      if (upstream.mediaType === "image") {
-        image = upstream.mediaUrl;
-      } else if (upstream.mediaType === "audio" && capability === "video") {
-        audio = upstream.mediaUrl;
-      } else if (upstream.mediaType === "video") {
-        ctx.reportProgress?.(15, "\u89C6\u9891\u53C2\u8003\u8F93\u5165\u6682\u4E0D\u652F\u6301\uFF08\u7B49\u5F85\u6267\u884C\u4E2D\u67A2\u6269\u5C55\uFF09\uFF0C\u5DF2\u5FFD\u7565");
+      const nodeMediaUrl = readString2(data, "mediaUrl");
+      if (nodeMediaUrl && !nodeMediaUrl.startsWith("blob:")) {
+        return { mediaAssets: [{ type, url: nodeMediaUrl }] };
       }
-      const dest = join5(ctx.mediaDir, `${node.id}.${extFor(capability)}`);
-      ctx.reportProgress?.(10, "\u5DF2\u63D0\u4EA4\u751F\u6210\u4EFB\u52A1");
-      const submitted = await gateway.submit({
-        capability,
-        prompt,
-        image,
-        audio,
-        duration: readDuration(data),
-        model: readString(data.params, "model"),
-        resolution: readString(data.params, "resolution"),
-        aspectRatio: readString(data.params, "aspectRatio"),
-        voice: readString(data.params, "voice"),
-        style: readString(data.params, "style"),
-        instrumental: data.params?.instrumental === true,
-        speed: typeof data.params?.speed === "number" ? data.params.speed : void 0,
-        dest,
-        signal: ctx.signal,
-        // Mock-gateway control flag (deterministic failure injection for M3).
-        mockFail: readMockFail(data)
-      });
-      ctx.reportProgress?.(40, "\u751F\u6210\u4E2D\u2026");
-      const settled = await gateway.awaitTask(submitted.taskId, dest, ctx.signal);
-      ctx.reportProgress?.(90, "\u751F\u6210\u5B8C\u6210");
-      if (capability === "text") {
-        return { text: settled.text ?? `[gateway:${capability}] ${prompt}` };
-      }
-      const url2 = ctx.toPublicUrl ? ctx.toPublicUrl(settled.url) : settled.url;
-      return {
-        mediaAssets: [{ type: capability, url: url2 }]
-      };
+      const text = readString2(data, "content") ?? collectUpstreamText(ctx);
+      return { text };
     }
   };
 }
@@ -19705,6 +19778,7 @@ function createExecutionManager(deps) {
   const { executionsDir, gateway, mediaDir } = deps;
   const entries = /* @__PURE__ */ new Map();
   registerExecutor(createMaterialGatewayExecutor({ gateway }));
+  registerExecutor(createImportExecutor());
   registerExecutor(createVideoCompositionExecutor());
   const persistRecord = (entry) => {
     try {
@@ -21743,8 +21817,667 @@ function registerWorkflowRoutes(webServer, dispatcher) {
   };
 }
 
-// src/workflow/agent/agentTools.ts
+// src/workflow/agent/tableTools.ts
+import path2 from "node:path";
+
+// src/workflow/storage/TableStorageService.ts
+import fs from "node:fs/promises";
+import path from "node:path";
+
+// src/workflow/storage/AsyncMutex.ts
+var AsyncMutex = class {
+  queue = Promise.resolve();
+  async runExclusive(fn) {
+    let release;
+    const nextTicket = new Promise((resolve5) => {
+      release = resolve5;
+    });
+    const currentTicket = this.queue;
+    this.queue = this.queue.then(() => nextTicket);
+    await currentTicket;
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
+  }
+};
+
+// src/shared/types/htable.ts
+var HTableFieldTypeSchema = external_exports.enum(["text", "number", "attachment"]);
+var HTableColumnSchema = external_exports.object({
+  id: external_exports.string().min(1),
+  title: external_exports.string().min(1),
+  type: HTableFieldTypeSchema,
+  visible: external_exports.boolean().default(true),
+  width: external_exports.number().min(60).max(2e3).default(240)
+});
+var HTableAttachmentSchema = external_exports.object({
+  assetId: external_exports.string(),
+  name: external_exports.string(),
+  kind: external_exports.enum(["image", "video", "audio", "text"]),
+  thumbnailUrl: external_exports.string().optional(),
+  mimeType: external_exports.string().optional(),
+  size: external_exports.number().optional()
+});
+var HTableCellValueSchema = external_exports.union([
+  external_exports.string(),
+  external_exports.number(),
+  external_exports.array(HTableAttachmentSchema),
+  external_exports.null()
+]);
+var HTableRowSchema = external_exports.object({
+  id: external_exports.string().optional(),
+  cells: external_exports.array(HTableCellValueSchema)
+});
+var FilterOperatorSchema = external_exports.enum([
+  "equals",
+  "notEquals",
+  "contains",
+  "notContains",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "empty",
+  "notEmpty"
+]);
+var HTableFilterConditionSchema = external_exports.object({
+  columnIndex: external_exports.number().int().min(0),
+  op: FilterOperatorSchema,
+  value: external_exports.union([external_exports.string(), external_exports.number()]).optional()
+});
+var HTableFilterSchema = external_exports.object({
+  match: external_exports.enum(["all", "any"]).default("all"),
+  conditions: external_exports.array(HTableFilterConditionSchema)
+});
+var HTableRowHeightSchema = external_exports.enum(["low", "medium", "tall", "extraTall"]);
+var HTableDocumentSchema = external_exports.object({
+  version: external_exports.literal(1),
+  title: external_exports.string().default("\u672A\u547D\u540D\u8868\u683C"),
+  columns: external_exports.array(HTableColumnSchema),
+  rows: external_exports.array(HTableRowSchema),
+  filter: HTableFilterSchema.optional(),
+  rowHeight: HTableRowHeightSchema.default("low")
+});
+
+// src/workflow/storage/TableStorageService.ts
+var TableStorageService = class {
+  static fileLocks = /* @__PURE__ */ new Map();
+  static getMutex(tablePath) {
+    if (!this.fileLocks.has(tablePath)) {
+      this.fileLocks.set(tablePath, new AsyncMutex());
+    }
+    return this.fileLocks.get(tablePath);
+  }
+  /**
+   * 安全加载并校验 .htable 表格文件
+   */
+  static async loadTable(tablePath) {
+    const mutex = this.getMutex(tablePath);
+    return await mutex.runExclusive(async () => {
+      const raw = await fs.readFile(tablePath, "utf-8");
+      const json2 = JSON.parse(raw);
+      return HTableDocumentSchema.parse(json2);
+    });
+  }
+  /**
+   * 原子化写入 .htable 文件 (tmp -> rename) 并保证数据符合 Schema 契约
+   */
+  static async saveTable(tablePath, doc) {
+    const mutex = this.getMutex(tablePath);
+    return await mutex.runExclusive(async () => {
+      const validated = HTableDocumentSchema.parse(doc);
+      const content = JSON.stringify(validated, null, 2);
+      const dir = path.dirname(tablePath);
+      await fs.mkdir(dir, { recursive: true });
+      const tempPath = path.join(dir, `.${path.basename(tablePath)}.${Date.now()}.${Math.random().toString(36).substring(2, 7)}.tmp`);
+      await fs.writeFile(tempPath, content, "utf-8");
+      await fs.rename(tempPath, tablePath);
+    });
+  }
+  /**
+   * 检查表格文件是否存在
+   */
+  static async exists(tablePath) {
+    try {
+      await fs.access(tablePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+};
+
+// src/workflow/agent/tableTools.ts
+function jsonOut(args, value) {
+  return [{ type: "text", text: JSON.stringify(value, null, 2) }];
+}
+function readString3(args, key) {
+  const v = args[key];
+  return typeof v === "string" && v.trim() !== "" ? v.trim() : void 0;
+}
+function errorBody(code, message) {
+  return { error: code, message };
+}
+function createCanvasWriteTableNodeTool(deps) {
+  return {
+    name: "canvas_write_table_node",
+    description: "\u5728\u5F53\u524D\u753B\u5E03\u5DE5\u4F5C\u533A\u4E2D\u521B\u5EFA\u6216\u66F4\u65B0\u4E00\u4E2A\u7ED3\u6784\u5316\u6570\u636E\u8868\u8282\u70B9 (.htable)\uFF0C\u652F\u6301\u6279\u91CF\u6570\u636E\u5BFC\u5165\u4E0E\u5206\u955C\u5267\u672C\u8BB0\u5F55\u3002",
+    parameters: {
+      type: "object",
+      properties: {
+        workspace_id: { type: "string", description: "\u5DE5\u4F5C\u533A ID (\u7F3A\u7701\u5219\u4F7F\u7528\u9ED8\u8BA4\u5DE5\u4F5C\u533A)" },
+        node_id: { type: "string", description: "\u5DF2\u6709\u8282\u70B9 ID\uFF0C\u7559\u7A7A\u5219\u5728\u753B\u5E03\u65B0\u5EFA\u8282\u70B9" },
+        title: { type: "string", description: '\u8868\u683C\u6807\u9898 (\u5982 "\u77ED\u5267\u5206\u955C\u8868")' },
+        columns: {
+          type: "array",
+          description: "\u5B57\u6BB5\u5217\u5B9A\u4E49\u5217\u8868",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              title: { type: "string" },
+              type: { type: "string", enum: ["text", "number", "attachment"] },
+              visible: { type: "boolean" },
+              width: { type: "number" }
+            },
+            required: ["title", "type"]
+          }
+        },
+        rows: {
+          type: "array",
+          description: "\u884C\u6570\u636E\u5217\u8868 (\u6BCF\u884C\u7684 cells \u4E0E columns \u4E0B\u6807\u4E00\u4E00\u5BF9\u5E94)",
+          items: {
+            type: "object",
+            properties: {
+              cells: { type: "array" }
+            },
+            required: ["cells"]
+          }
+        },
+        row_height: { type: "string", enum: ["low", "medium", "tall", "extraTall"] },
+        position: {
+          type: "object",
+          properties: {
+            x: { type: "number" },
+            y: { type: "number" }
+          }
+        }
+      },
+      required: ["title", "columns", "rows"]
+    },
+    output: {
+      schema: { type: "object" },
+      render: jsonOut
+    },
+    async execute(args) {
+      const title = readString3(args, "title") || "\u672A\u547D\u540D\u8868\u683C";
+      const rawColumns = Array.isArray(args.columns) ? args.columns : [];
+      const rawRows = Array.isArray(args.rows) ? args.rows : [];
+      const rowHeight = readString3(args, "row_height") || "low";
+      const nodeId = readString3(args, "node_id") || `tbl_${Math.random().toString(36).substring(2, 9)}`;
+      const formattedColumns = rawColumns.map((c, idx) => ({
+        id: c.id || `col_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+        title: c.title || `\u5217 ${idx + 1}`,
+        type: c.type || "text",
+        visible: c.visible !== false,
+        width: c.width || 240
+      }));
+      const formattedRows = rawRows.map((r) => ({
+        cells: Array.isArray(r.cells) ? r.cells : []
+      }));
+      const doc = {
+        version: 1,
+        title,
+        columns: formattedColumns,
+        rows: formattedRows,
+        rowHeight
+      };
+      try {
+        const tableRelPath = `.hilo/tables/${nodeId}.htable`;
+        const fullPath = path2.join(process.cwd(), tableRelPath);
+        await TableStorageService.saveTable(fullPath, doc);
+        return {
+          ok: true,
+          nodeId,
+          tablePath: tableRelPath,
+          title,
+          columnCount: formattedColumns.length,
+          rowCount: formattedRows.length
+        };
+      } catch (err) {
+        return errorBody("table-save-failed", err?.message || "Failed to save table document");
+      }
+    }
+  };
+}
+function createCanvasGetTableNodeTool(deps) {
+  return {
+    name: "canvas_get_table_node",
+    description: "\u8BFB\u53D6\u753B\u5E03\u7ED3\u6784\u5316\u6570\u636E\u8868\u8282\u70B9\u7684\u5B8C\u6574\u6570\u636E\u5185\u5BB9 (.htable)\uFF0C\u8FD4\u56DE\u5B57\u6BB5\u5217\u8868\u4E0E\u884C\u8BB0\u5F55\u6570\u636E\u3002",
+    parameters: {
+      type: "object",
+      properties: {
+        table_path: { type: "string", description: "\u8868\u683C\u76F8\u5BF9\u8DEF\u5F84 (\u5982 .hilo/tables/tbl_xxx.htable)" }
+      },
+      required: ["table_path"]
+    },
+    output: {
+      schema: { type: "object" },
+      render: jsonOut
+    },
+    async execute(args) {
+      const tablePath = readString3(args, "table_path");
+      if (!tablePath) {
+        return errorBody("invalid-args", "table_path is required");
+      }
+      try {
+        const fullPath = path2.join(process.cwd(), tablePath);
+        const doc = await TableStorageService.loadTable(fullPath);
+        return {
+          ok: true,
+          tablePath,
+          document: doc
+        };
+      } catch (err) {
+        return errorBody("table-read-failed", err?.message || "Failed to load table document");
+      }
+    }
+  };
+}
+
+// src/workflow/agent/agentToolShared.ts
 import { join as join13 } from "node:path";
+function objectParams(fields) {
+  const properties = {};
+  const required2 = [];
+  for (const [key, spec] of Object.entries(fields)) {
+    const { required: isRequired, ...rest } = spec;
+    properties[key] = rest;
+    if (isRequired === true) required2.push(key);
+  }
+  return {
+    type: "object",
+    properties,
+    ...required2.length > 0 ? { required: required2 } : {},
+    additionalProperties: false
+  };
+}
+var jsonOut2 = {
+  schema: { type: "object", additionalProperties: true },
+  render: (_args, value) => [
+    { type: "text", text: JSON.stringify(value, null, 2) }
+  ]
+};
+var TERMINAL_STATUSES2 = /* @__PURE__ */ new Set(["completed", "error", "cancelled"]);
+var RUN_POLL_INTERVAL_MS = 250;
+var DEFAULT_RUN_WAIT_TIMEOUT_MS = 12e4;
+var TEXT_EXCERPT_CHARS = 240;
+var LIST_EXECUTIONS_LIMIT = 5;
+var MATERIAL_TYPE_ENUM = ["text", "image", "video", "audio"];
+function errorBody2(error51, message) {
+  return { error: error51, message };
+}
+function sanitizeLosslessJson(val) {
+  if (val === void 0) return null;
+  return JSON.parse(JSON.stringify(val));
+}
+function sleep(ms) {
+  return new Promise((resolve5) => setTimeout(resolve5, ms));
+}
+function readString4(args, key) {
+  const value = args[key];
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : void 0;
+}
+function readBoolean(args, key) {
+  return args[key] === true;
+}
+function mediaUrlToPath(url2, mediaDir) {
+  if (typeof url2 !== "string" || url2.length === 0) return null;
+  try {
+    const parsed = new URL(url2, "http://127.0.0.1");
+    if (parsed.pathname.endsWith("/api/local-file")) {
+      const imported = parsed.searchParams.get("path");
+      return imported && imported.length > 0 ? imported : null;
+    }
+  } catch {
+  }
+  const marker = "/media/";
+  const index2 = url2.indexOf(marker);
+  if (index2 === -1 || !url2.startsWith("/")) return null;
+  return join13(mediaDir, url2.slice(index2 + marker.length));
+}
+var MEDIA_KIND = {
+  video: "video",
+  audio: "audio"
+};
+function mediaKindFromMaterial(materialType) {
+  return MEDIA_KIND[materialType ?? ""] ?? "image";
+}
+function excerptText(text) {
+  return text.length > TEXT_EXCERPT_CHARS ? `${text.slice(0, TEXT_EXCERPT_CHARS)}\u2026` : text;
+}
+function nodeLabel(data, fallback) {
+  return typeof data.label === "string" && data.label ? data.label : fallback;
+}
+function summarizeNodes(workspace, nodeIds, snapshot, mediaDir) {
+  const rows = [];
+  for (const node of workspace.nodes) {
+    if (!nodeIds.has(node.id)) continue;
+    const data = node.data ?? {};
+    const state = snapshot.nodeStates[node.id] ?? {};
+    const output = snapshot.nodeOutputs[node.id] ?? {};
+    const assets = Array.isArray(snapshot.mediaAssets[node.id]) ? snapshot.mediaAssets[node.id] : [];
+    const row = {
+      nodeId: node.id,
+      label: nodeLabel(data, node.id),
+      type: typeof node.type === "string" ? node.type : "unknown",
+      status: typeof state.status === "string" ? state.status : "pending"
+    };
+    if (typeof state.error === "string" && state.error) row.error = state.error;
+    if (typeof output.text === "string" && output.text) row.textExcerpt = excerptText(output.text);
+    if (assets.length > 0) {
+      row.mediaAssets = assets.map((asset) => ({
+        type: asset.type,
+        url: asset.url,
+        path: mediaUrlToPath(asset.url, mediaDir)
+      }));
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+function resolveWorkspace(store, workspaceId, workspaceName) {
+  if (workspaceId) {
+    try {
+      return { snapshot: store.get(workspaceId) };
+    } catch {
+      return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
+    }
+  }
+  if (workspaceName) {
+    const matches = store.list().filter((row) => row.name === workspaceName);
+    const first = matches[0];
+    if (matches.length === 0 || !first) {
+      return errorBody2("workspace-not-found", `no workspace named "${workspaceName}"`);
+    }
+    if (matches.length > 1) {
+      return errorBody2(
+        "ambiguous-workspace-name",
+        `multiple workspaces named "${workspaceName}" \u2014 pass workspaceId instead`
+      );
+    }
+    try {
+      return { snapshot: store.get(first.id) };
+    } catch {
+      return errorBody2("workspace-not-found", `workspace ${first.id} not found`);
+    }
+  }
+  return errorBody2(
+    "invalid-args",
+    "pass workspaceId (preferred, from workflow_list) or workspaceName"
+  );
+}
+async function waitForTerminal(executionManager, executionId, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  for (; ; ) {
+    const snapshot = executionManager.getSnapshot(executionId);
+    if (!snapshot) return { snapshot: null, timedOut: false };
+    if (TERMINAL_STATUSES2.has(snapshot.status)) return { snapshot, timedOut: false };
+    if (Date.now() >= deadline) return { snapshot, timedOut: true };
+    await sleep(RUN_POLL_INTERVAL_MS);
+  }
+}
+function workspaceSummary(workspace) {
+  return {
+    id: workspace.id,
+    name: workspace.name,
+    version: workspace.version,
+    nodeCount: workspace.nodes.length,
+    edgeCount: workspace.edges.length
+  };
+}
+function resolveTool(materialType, tool) {
+  if (tool === void 0) return { tool: DEFAULT_MATERIAL_TOOL[materialType] };
+  const valid = MATERIAL_TOOLS[materialType];
+  if (typeof tool !== "string" || !valid.includes(tool)) {
+    return errorBody2(
+      "invalid-args",
+      `tool must be one of ${valid.join(", ")} for material_type ${materialType} (got ${JSON.stringify(tool)})`
+    );
+  }
+  return { tool };
+}
+function readPosition(args) {
+  const raw = args.position;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return void 0;
+  const pos = raw;
+  if (typeof pos.x !== "number" || typeof pos.y !== "number") return void 0;
+  return { x: pos.x, y: pos.y };
+}
+function defaultNodePosition(snapshot) {
+  if (snapshot.nodes.length === 0) return { x: 120, y: 120 };
+  const maxX = Math.max(...snapshot.nodes.map((node) => node.position.x));
+  return { x: maxX + 420, y: 120 };
+}
+
+// src/workflow/agent/agentReadTools.ts
+function createWorkflowListTool(deps) {
+  const { store, executionManager } = deps;
+  return {
+    name: "workflow_list",
+    description: "List the workflow infinite-canvas workspaces of the omnimux-workflow plugin (id, name, version, nodeCount, updatedAt), newest first. Set includeExecutions=true to also get the 5 most recent executions (current process) with status and progress. Read-only. Use workflow_snapshot to inspect one workspace and workflow_run to execute it.",
+    parameters: objectParams({
+      include_executions: {
+        type: "boolean",
+        description: "Also include the 5 most recent executions (status + progress overview)"
+      }
+    }),
+    output: jsonOut2,
+    async execute(args) {
+      const workspaces = store.list();
+      if (!readBoolean(args, "include_executions")) {
+        return { workspaces };
+      }
+      const executions = executionManager.listExecutions().slice(0, LIST_EXECUTIONS_LIMIT);
+      return { workspaces, executions };
+    }
+  };
+}
+function createWorkflowRunTool(deps) {
+  const { store, executionManager, mediaDir } = deps;
+  return {
+    name: "workflow_run",
+    description: 'Run a workflow canvas (node DAG) on the omnimux-workflow execution engine. mode "full" runs every node; mode "subset" runs only the given nodeIds plus their transitive upstream closure; mode "single" runs only the given nodeIds directly (inheriting existing upstream outputs). wait=false (default) returns the executionId immediately \u2014 the user can watch live progress on the canvas (per-node badges + SSE). wait=true polls until a terminal status (completed/error/cancelled) or the timeout (default 120s) and returns per-node statuses, text excerpts and media file paths. The canvas performs generation through the OmniMux gateway (real hub seams when available, mock otherwise).',
+    parameters: objectParams({
+      workspace_id: {
+        type: "string",
+        description: "Workspace id (preferred \u2014 from workflow_list), e.g. ws_0123456789ab"
+      },
+      workspace_name: {
+        type: "string",
+        description: "Exact workspace name (fallback when the id is unknown; must be unique)"
+      },
+      mode: {
+        type: "string",
+        enum: ["full", "subset", "single"],
+        description: "Execution scope: full (default), subset (nodeIds + upstream closure), or single (target nodeIds only)"
+      },
+      node_ids: {
+        type: "array",
+        items: { type: "string" },
+        description: "Required for subset and single modes: node ids to execute"
+      },
+      wait: {
+        type: "boolean",
+        description: "Wait for a terminal status (bounded by timeout_ms) and return the result summary"
+      },
+      timeout_ms: {
+        type: "number",
+        description: "wait=true polling budget in milliseconds (default 120000)"
+      }
+    }),
+    output: jsonOut2,
+    async execute(args) {
+      const workspaceId = readString4(args, "workspace_id");
+      const workspaceName = readString4(args, "workspace_name");
+      const resolved = resolveWorkspace(store, workspaceId, workspaceName);
+      if ("error" in resolved) return resolved;
+      const workspace = resolved.snapshot;
+      let mode;
+      try {
+        mode = toExecutionMode(args.mode);
+      } catch (error51) {
+        return errorBody2(
+          "invalid-args",
+          error51 instanceof Error ? error51.message : String(error51)
+        );
+      }
+      const nodeIds = normalizeNodeIds(args.node_ids);
+      let subgraph;
+      try {
+        subgraph = resolveExecutionSubgraph({
+          nodes: workspace.nodes,
+          edges: workspace.edges,
+          executionMode: mode,
+          nodeIds
+        });
+      } catch (error51) {
+        return errorBody2(
+          "invalid-subgraph",
+          error51 instanceof Error ? error51.message : String(error51)
+        );
+      }
+      if (subgraph.nodes.length === 0) {
+        return errorBody2("empty-graph", `workspace ${workspace.id} has no nodes to execute`);
+      }
+      const initialOutputs = {};
+      const executedNodeIds = subgraph.nodeIdSet;
+      for (const edge of workspace.edges) {
+        if (executedNodeIds.has(edge.target) && !executedNodeIds.has(edge.source)) {
+          const sourceNode = workspace.nodes.find((n) => n.id === edge.source);
+          if (sourceNode) {
+            const data = sourceNode.data ?? {};
+            const text = data.generatedContent ?? data.content ?? data.prompt;
+            const mediaAssets = data.mediaAssets;
+            const mediaUrl = data.mediaUrl;
+            const materialType = data.materialType;
+            if (Array.isArray(mediaAssets) && mediaAssets.length > 0) {
+              initialOutputs[edge.source] = { mediaAssets, text };
+            } else if (mediaUrl) {
+              const type = mediaKindFromMaterial(materialType);
+              initialOutputs[edge.source] = { mediaAssets: [{ type, url: mediaUrl }], text };
+            } else {
+              initialOutputs[edge.source] = { text: text ?? "" };
+            }
+          }
+        }
+      }
+      const entry = executionManager.createExecution({
+        workspaceId: workspace.id,
+        nodes: subgraph.nodes,
+        edges: subgraph.edges,
+        maxParallel: workspace.settings.maxParallel,
+        initialOutputs
+      });
+      const executionId = entry.context.id;
+      if (!readBoolean(args, "wait")) {
+        return {
+          executionId,
+          workspaceId: workspace.id,
+          workspaceName: workspace.name,
+          mode,
+          totalNodes: subgraph.nodes.length,
+          maxParallel: workspace.settings.maxParallel,
+          status: entry.context.status,
+          hint: "Execution started in the background \u2014 the user can watch live per-node progress on the canvas. Call workflow_snapshot / workflow_list(include_executions=true) or re-run with wait=true to fetch the outcome."
+        };
+      }
+      const timeoutMs = typeof args.timeout_ms === "number" && args.timeout_ms > 0 ? Math.floor(args.timeout_ms) : DEFAULT_RUN_WAIT_TIMEOUT_MS;
+      const { snapshot: final, timedOut } = await waitForTerminal(
+        executionManager,
+        executionId,
+        timeoutMs
+      );
+      if (!final) {
+        return errorBody2("execution-not-found", `execution ${executionId} disappeared`);
+      }
+      const durationMs = final.completedAt !== null && final.startedAt !== null ? final.completedAt - final.startedAt : null;
+      return {
+        executionId,
+        workspaceId: workspace.id,
+        workspaceName: workspace.name,
+        mode,
+        totalNodes: subgraph.nodes.length,
+        status: final.status,
+        timedOut,
+        error: final.error,
+        progress: final.progress,
+        ...durationMs !== null ? { durationMs } : {},
+        nodes: summarizeNodes(workspace, subgraph.nodeIdSet, final, mediaDir),
+        ...timedOut ? { hint: `Still not terminal after ${String(timeoutMs)}ms \u2014 the run continues in the background; retry workflow_run or check the canvas.` } : {}
+      };
+    }
+  };
+}
+function createWorkflowSnapshotTool(deps) {
+  const { store } = deps;
+  return {
+    name: "workflow_snapshot",
+    description: "Read the current state of one workflow canvas workspace. Default: a compact summary (name, version, node/edge counts, node type/material breakdown, execution settings). includeNodes=true returns the FULL node and edge structure (positions, prompts, tools, models, connections) so the graph can be analyzed or modification advice given. Read-only. Data lives under $DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json.",
+    parameters: objectParams({
+      workspace_id: {
+        type: "string",
+        required: true,
+        description: "Workspace id (from workflow_list), e.g. ws_0123456789ab"
+      },
+      include_nodes: {
+        type: "boolean",
+        description: "Return the full nodes/edges structure instead of the compact summary"
+      }
+    }),
+    output: jsonOut2,
+    async execute(args) {
+      const workspaceId = readString4(args, "workspace_id");
+      if (!workspaceId) {
+        return errorBody2("invalid-args", "workspace_id is required");
+      }
+      let workspace;
+      try {
+        workspace = store.get(workspaceId);
+      } catch {
+        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
+      }
+      if (readBoolean(args, "include_nodes")) {
+        return { workspace };
+      }
+      const nodeTypeCounts = {};
+      const materialCounts = {};
+      for (const node of workspace.nodes) {
+        const data = node.data ?? {};
+        const type = typeof node.type === "string" ? node.type : "unknown";
+        nodeTypeCounts[type] = (nodeTypeCounts[type] ?? 0) + 1;
+        const material = typeof data.materialType === "string" ? data.materialType : "unknown";
+        materialCounts[material] = (materialCounts[material] ?? 0) + 1;
+      }
+      return {
+        summary: {
+          id: workspace.id,
+          name: workspace.name,
+          version: workspace.version,
+          nodeCount: workspace.nodes.length,
+          edgeCount: workspace.edges.length,
+          nodeTypeCounts,
+          materialCounts,
+          settings: workspace.settings,
+          metadata: workspace.metadata
+        },
+        hint: "Pass include_nodes=true for the full node/edge structure."
+      };
+    }
+  };
+}
 
 // src/shared/graph/canvasConnectionUtils.ts
 var DEFAULT_CANVAS_EDGE_STYLE = {
@@ -23632,13 +24365,13 @@ Timer.prototype = timer.prototype = {
     }
     this._call = callback;
     this._time = time3;
-    sleep();
+    sleep2();
   },
   stop: function() {
     if (this._call) {
       this._call = null;
       this._time = Infinity;
-      sleep();
+      sleep2();
     }
   }
 };
@@ -23684,9 +24417,9 @@ function nap() {
     }
   }
   taskTail = t0;
-  sleep(time3);
+  sleep2(time3);
 }
-function sleep(time3) {
+function sleep2(time3) {
   if (frame) return;
   if (timeout) timeout = clearTimeout(timeout);
   var delay = time3 - clockNow;
@@ -30771,49 +31504,6 @@ function ResizeControl({ nodeId, position, variant = ResizeControlVariant.Handle
 }
 var NodeResizeControl = (0, import_react2.memo)(ResizeControl);
 
-// src/shared/graph/materialNode.ts
-var MATERIAL_TOOLS = {
-  text: ["text-editor", "text-to-text", "link-extract", "audio-transcription"],
-  image: ["import", "text-to-image", "image-to-image"],
-  video: ["import", "video-generation", "motion-mimicry", "subtitle-render", "digital-human"],
-  audio: ["import", "text-to-audio", "text-to-music", "video-to-audio", "voice-clone", "audio-extract"]
-};
-var DEFAULT_MATERIAL_TOOL = {
-  text: "text-editor",
-  image: "import",
-  video: "import",
-  audio: "import"
-};
-var MATERIAL_TOOL_INPUT_TYPES = {
-  "text-editor": [],
-  "text-to-text": ["text", "image", "video"],
-  "link-extract": ["text"],
-  "audio-transcription": ["audio"],
-  import: [],
-  "text-to-image": ["text"],
-  "image-to-image": ["text", "image"],
-  "video-generation": ["text", "image", "video", "audio"],
-  "digital-human": ["text", "image", "video", "audio"],
-  "motion-mimicry": ["text", "image", "video"],
-  "subtitle-render": ["text", "video"],
-  "text-to-audio": ["text"],
-  "video-to-audio": ["video"],
-  "voice-clone": ["text", "audio"],
-  "audio-extract": ["video"],
-  "text-to-music": ["text"]
-};
-function createDefaultMaterialNodeData(materialType, overrides) {
-  return {
-    label: "",
-    materialType,
-    status: "empty",
-    selectedTool: DEFAULT_MATERIAL_TOOL[materialType],
-    params: {},
-    failStrategy: "abort",
-    ...overrides
-  };
-}
-
 // src/shared/graph/connectionConfig.ts
 function getNodeOutputInfo(node) {
   const nodeType = node.type ?? "";
@@ -31093,653 +31783,7 @@ function createMaterialNode(materialType, position, overrides) {
   };
 }
 
-// src/workflow/agent/tableTools.ts
-import path2 from "node:path";
-
-// src/workflow/storage/TableStorageService.ts
-import fs from "node:fs/promises";
-import path from "node:path";
-
-// src/workflow/storage/AsyncMutex.ts
-var AsyncMutex = class {
-  queue = Promise.resolve();
-  async runExclusive(fn) {
-    let release;
-    const nextTicket = new Promise((resolve5) => {
-      release = resolve5;
-    });
-    const currentTicket = this.queue;
-    this.queue = this.queue.then(() => nextTicket);
-    await currentTicket;
-    try {
-      return await fn();
-    } finally {
-      release();
-    }
-  }
-};
-
-// src/shared/types/htable.ts
-var HTableFieldTypeSchema = external_exports.enum(["text", "number", "attachment"]);
-var HTableColumnSchema = external_exports.object({
-  id: external_exports.string().min(1),
-  title: external_exports.string().min(1),
-  type: HTableFieldTypeSchema,
-  visible: external_exports.boolean().default(true),
-  width: external_exports.number().min(60).max(2e3).default(240)
-});
-var HTableAttachmentSchema = external_exports.object({
-  assetId: external_exports.string(),
-  name: external_exports.string(),
-  kind: external_exports.enum(["image", "video", "audio", "text"]),
-  thumbnailUrl: external_exports.string().optional(),
-  mimeType: external_exports.string().optional(),
-  size: external_exports.number().optional()
-});
-var HTableCellValueSchema = external_exports.union([
-  external_exports.string(),
-  external_exports.number(),
-  external_exports.array(HTableAttachmentSchema),
-  external_exports.null()
-]);
-var HTableRowSchema = external_exports.object({
-  id: external_exports.string().optional(),
-  cells: external_exports.array(HTableCellValueSchema)
-});
-var FilterOperatorSchema = external_exports.enum([
-  "equals",
-  "notEquals",
-  "contains",
-  "notContains",
-  "gt",
-  "gte",
-  "lt",
-  "lte",
-  "empty",
-  "notEmpty"
-]);
-var HTableFilterConditionSchema = external_exports.object({
-  columnIndex: external_exports.number().int().min(0),
-  op: FilterOperatorSchema,
-  value: external_exports.union([external_exports.string(), external_exports.number()]).optional()
-});
-var HTableFilterSchema = external_exports.object({
-  match: external_exports.enum(["all", "any"]).default("all"),
-  conditions: external_exports.array(HTableFilterConditionSchema)
-});
-var HTableRowHeightSchema = external_exports.enum(["low", "medium", "tall", "extraTall"]);
-var HTableDocumentSchema = external_exports.object({
-  version: external_exports.literal(1),
-  title: external_exports.string().default("\u672A\u547D\u540D\u8868\u683C"),
-  columns: external_exports.array(HTableColumnSchema),
-  rows: external_exports.array(HTableRowSchema),
-  filter: HTableFilterSchema.optional(),
-  rowHeight: HTableRowHeightSchema.default("low")
-});
-
-// src/workflow/storage/TableStorageService.ts
-var TableStorageService = class {
-  static fileLocks = /* @__PURE__ */ new Map();
-  static getMutex(tablePath) {
-    if (!this.fileLocks.has(tablePath)) {
-      this.fileLocks.set(tablePath, new AsyncMutex());
-    }
-    return this.fileLocks.get(tablePath);
-  }
-  /**
-   * 安全加载并校验 .htable 表格文件
-   */
-  static async loadTable(tablePath) {
-    const mutex = this.getMutex(tablePath);
-    return await mutex.runExclusive(async () => {
-      const raw = await fs.readFile(tablePath, "utf-8");
-      const json2 = JSON.parse(raw);
-      return HTableDocumentSchema.parse(json2);
-    });
-  }
-  /**
-   * 原子化写入 .htable 文件 (tmp -> rename) 并保证数据符合 Schema 契约
-   */
-  static async saveTable(tablePath, doc) {
-    const mutex = this.getMutex(tablePath);
-    return await mutex.runExclusive(async () => {
-      const validated = HTableDocumentSchema.parse(doc);
-      const content = JSON.stringify(validated, null, 2);
-      const dir = path.dirname(tablePath);
-      await fs.mkdir(dir, { recursive: true });
-      const tempPath = path.join(dir, `.${path.basename(tablePath)}.${Date.now()}.${Math.random().toString(36).substring(2, 7)}.tmp`);
-      await fs.writeFile(tempPath, content, "utf-8");
-      await fs.rename(tempPath, tablePath);
-    });
-  }
-  /**
-   * 检查表格文件是否存在
-   */
-  static async exists(tablePath) {
-    try {
-      await fs.access(tablePath);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-};
-
-// src/workflow/agent/tableTools.ts
-function jsonOut(args, value) {
-  return [{ type: "text", text: JSON.stringify(value, null, 2) }];
-}
-function readString2(args, key) {
-  const v = args[key];
-  return typeof v === "string" && v.trim() !== "" ? v.trim() : void 0;
-}
-function errorBody(code, message) {
-  return { error: code, message };
-}
-function createCanvasWriteTableNodeTool(deps) {
-  return {
-    name: "canvas_write_table_node",
-    description: "\u5728\u5F53\u524D\u753B\u5E03\u5DE5\u4F5C\u533A\u4E2D\u521B\u5EFA\u6216\u66F4\u65B0\u4E00\u4E2A\u7ED3\u6784\u5316\u6570\u636E\u8868\u8282\u70B9 (.htable)\uFF0C\u652F\u6301\u6279\u91CF\u6570\u636E\u5BFC\u5165\u4E0E\u5206\u955C\u5267\u672C\u8BB0\u5F55\u3002",
-    parameters: {
-      type: "object",
-      properties: {
-        workspace_id: { type: "string", description: "\u5DE5\u4F5C\u533A ID (\u7F3A\u7701\u5219\u4F7F\u7528\u9ED8\u8BA4\u5DE5\u4F5C\u533A)" },
-        node_id: { type: "string", description: "\u5DF2\u6709\u8282\u70B9 ID\uFF0C\u7559\u7A7A\u5219\u5728\u753B\u5E03\u65B0\u5EFA\u8282\u70B9" },
-        title: { type: "string", description: '\u8868\u683C\u6807\u9898 (\u5982 "\u77ED\u5267\u5206\u955C\u8868")' },
-        columns: {
-          type: "array",
-          description: "\u5B57\u6BB5\u5217\u5B9A\u4E49\u5217\u8868",
-          items: {
-            type: "object",
-            properties: {
-              id: { type: "string" },
-              title: { type: "string" },
-              type: { type: "string", enum: ["text", "number", "attachment"] },
-              visible: { type: "boolean" },
-              width: { type: "number" }
-            },
-            required: ["title", "type"]
-          }
-        },
-        rows: {
-          type: "array",
-          description: "\u884C\u6570\u636E\u5217\u8868 (\u6BCF\u884C\u7684 cells \u4E0E columns \u4E0B\u6807\u4E00\u4E00\u5BF9\u5E94)",
-          items: {
-            type: "object",
-            properties: {
-              cells: { type: "array" }
-            },
-            required: ["cells"]
-          }
-        },
-        row_height: { type: "string", enum: ["low", "medium", "tall", "extraTall"] },
-        position: {
-          type: "object",
-          properties: {
-            x: { type: "number" },
-            y: { type: "number" }
-          }
-        }
-      },
-      required: ["title", "columns", "rows"]
-    },
-    output: {
-      schema: { type: "object" },
-      render: jsonOut
-    },
-    async execute(args) {
-      const title = readString2(args, "title") || "\u672A\u547D\u540D\u8868\u683C";
-      const rawColumns = Array.isArray(args.columns) ? args.columns : [];
-      const rawRows = Array.isArray(args.rows) ? args.rows : [];
-      const rowHeight = readString2(args, "row_height") || "low";
-      const nodeId = readString2(args, "node_id") || `tbl_${Math.random().toString(36).substring(2, 9)}`;
-      const formattedColumns = rawColumns.map((c, idx) => ({
-        id: c.id || `col_${idx}_${Math.random().toString(36).substring(2, 6)}`,
-        title: c.title || `\u5217 ${idx + 1}`,
-        type: c.type || "text",
-        visible: c.visible !== false,
-        width: c.width || 240
-      }));
-      const formattedRows = rawRows.map((r) => ({
-        cells: Array.isArray(r.cells) ? r.cells : []
-      }));
-      const doc = {
-        version: 1,
-        title,
-        columns: formattedColumns,
-        rows: formattedRows,
-        rowHeight
-      };
-      try {
-        const tableRelPath = `.hilo/tables/${nodeId}.htable`;
-        const fullPath = path2.join(process.cwd(), tableRelPath);
-        await TableStorageService.saveTable(fullPath, doc);
-        return {
-          ok: true,
-          nodeId,
-          tablePath: tableRelPath,
-          title,
-          columnCount: formattedColumns.length,
-          rowCount: formattedRows.length
-        };
-      } catch (err) {
-        return errorBody("table-save-failed", err?.message || "Failed to save table document");
-      }
-    }
-  };
-}
-function createCanvasGetTableNodeTool(deps) {
-  return {
-    name: "canvas_get_table_node",
-    description: "\u8BFB\u53D6\u753B\u5E03\u7ED3\u6784\u5316\u6570\u636E\u8868\u8282\u70B9\u7684\u5B8C\u6574\u6570\u636E\u5185\u5BB9 (.htable)\uFF0C\u8FD4\u56DE\u5B57\u6BB5\u5217\u8868\u4E0E\u884C\u8BB0\u5F55\u6570\u636E\u3002",
-    parameters: {
-      type: "object",
-      properties: {
-        table_path: { type: "string", description: "\u8868\u683C\u76F8\u5BF9\u8DEF\u5F84 (\u5982 .hilo/tables/tbl_xxx.htable)" }
-      },
-      required: ["table_path"]
-    },
-    output: {
-      schema: { type: "object" },
-      render: jsonOut
-    },
-    async execute(args) {
-      const tablePath = readString2(args, "table_path");
-      if (!tablePath) {
-        return errorBody("invalid-args", "table_path is required");
-      }
-      try {
-        const fullPath = path2.join(process.cwd(), tablePath);
-        const doc = await TableStorageService.loadTable(fullPath);
-        return {
-          ok: true,
-          tablePath,
-          document: doc
-        };
-      } catch (err) {
-        return errorBody("table-read-failed", err?.message || "Failed to load table document");
-      }
-    }
-  };
-}
-
-// src/workflow/agent/agentTools.ts
-function objectParams(fields) {
-  const properties = {};
-  const required2 = [];
-  for (const [key, spec] of Object.entries(fields)) {
-    const { required: isRequired, ...rest } = spec;
-    properties[key] = rest;
-    if (isRequired === true) required2.push(key);
-  }
-  return {
-    type: "object",
-    properties,
-    ...required2.length > 0 ? { required: required2 } : {},
-    additionalProperties: false
-  };
-}
-var jsonOut2 = {
-  schema: { type: "object", additionalProperties: true },
-  render: (_args, value) => [
-    { type: "text", text: JSON.stringify(value, null, 2) }
-  ]
-};
-var TERMINAL_STATUSES2 = /* @__PURE__ */ new Set(["completed", "error", "cancelled"]);
-var RUN_POLL_INTERVAL_MS = 250;
-var DEFAULT_RUN_WAIT_TIMEOUT_MS = 12e4;
-var TEXT_EXCERPT_CHARS = 240;
-var LIST_EXECUTIONS_LIMIT = 5;
-function errorBody2(error51, message) {
-  return { error: error51, message };
-}
-function sanitizeLosslessJson(val) {
-  if (val === void 0) return null;
-  return JSON.parse(JSON.stringify(val));
-}
-function sleep2(ms) {
-  return new Promise((resolve5) => setTimeout(resolve5, ms));
-}
-function readString3(args, key) {
-  const value = args[key];
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : void 0;
-}
-function readBoolean(args, key) {
-  return args[key] === true;
-}
-function mediaUrlToPath(url2, mediaDir) {
-  if (typeof url2 !== "string" || url2.length === 0) return null;
-  try {
-    const parsed = new URL(url2, "http://127.0.0.1");
-    if (parsed.pathname.endsWith("/api/local-file")) {
-      const imported = parsed.searchParams.get("path");
-      return imported && imported.length > 0 ? imported : null;
-    }
-  } catch {
-  }
-  const marker = "/media/";
-  const index2 = url2.indexOf(marker);
-  if (index2 === -1 || !url2.startsWith("/")) return null;
-  return join13(mediaDir, url2.slice(index2 + marker.length));
-}
-function summarizeNodes(workspace, nodeIds, snapshot, mediaDir) {
-  const rows = [];
-  for (const node of workspace.nodes) {
-    if (!nodeIds.has(node.id)) continue;
-    const data = node.data ?? {};
-    const state = snapshot.nodeStates[node.id] ?? {};
-    const output = snapshot.nodeOutputs[node.id] ?? {};
-    const assets = Array.isArray(snapshot.mediaAssets[node.id]) ? snapshot.mediaAssets[node.id] : [];
-    const row = {
-      nodeId: node.id,
-      label: typeof data.label === "string" && data.label ? data.label : node.id,
-      type: typeof node.type === "string" ? node.type : "unknown",
-      status: typeof state.status === "string" ? state.status : "pending"
-    };
-    if (typeof state.error === "string" && state.error) row.error = state.error;
-    if (typeof output.text === "string" && output.text) {
-      row.textExcerpt = output.text.length > TEXT_EXCERPT_CHARS ? `${output.text.slice(0, TEXT_EXCERPT_CHARS)}\u2026` : output.text;
-    }
-    if (assets.length > 0) {
-      row.mediaAssets = assets.map((asset) => ({
-        type: asset.type,
-        url: asset.url,
-        path: mediaUrlToPath(asset.url, mediaDir)
-      }));
-    }
-    rows.push(row);
-  }
-  return rows;
-}
-function resolveWorkspace(store, workspaceId, workspaceName) {
-  if (workspaceId) {
-    try {
-      return { snapshot: store.get(workspaceId) };
-    } catch {
-      return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-    }
-  }
-  if (workspaceName) {
-    const matches = store.list().filter((row) => row.name === workspaceName);
-    const first = matches[0];
-    if (matches.length === 0 || !first) {
-      return errorBody2("workspace-not-found", `no workspace named "${workspaceName}"`);
-    }
-    if (matches.length > 1) {
-      return errorBody2(
-        "ambiguous-workspace-name",
-        `multiple workspaces named "${workspaceName}" \u2014 pass workspaceId instead`
-      );
-    }
-    try {
-      return { snapshot: store.get(first.id) };
-    } catch {
-      return errorBody2("workspace-not-found", `workspace ${first.id} not found`);
-    }
-  }
-  return errorBody2(
-    "invalid-args",
-    "pass workspaceId (preferred, from workflow_list) or workspaceName"
-  );
-}
-async function waitForTerminal(executionManager, executionId, timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
-  for (; ; ) {
-    const snapshot = executionManager.getSnapshot(executionId);
-    if (!snapshot) return { snapshot: null, timedOut: false };
-    if (TERMINAL_STATUSES2.has(snapshot.status)) return { snapshot, timedOut: false };
-    if (Date.now() >= deadline) return { snapshot, timedOut: true };
-    await sleep2(RUN_POLL_INTERVAL_MS);
-  }
-}
-function createWorkflowListTool(deps) {
-  const { store, executionManager } = deps;
-  return {
-    name: "workflow_list",
-    description: "List the workflow infinite-canvas workspaces of the omnimux-workflow plugin (id, name, version, nodeCount, updatedAt), newest first. Set includeExecutions=true to also get the 5 most recent executions (current process) with status and progress. Read-only. Use workflow_snapshot to inspect one workspace and workflow_run to execute it.",
-    parameters: objectParams({
-      include_executions: {
-        type: "boolean",
-        description: "Also include the 5 most recent executions (status + progress overview)"
-      }
-    }),
-    output: jsonOut2,
-    async execute(args) {
-      const workspaces = store.list();
-      if (!readBoolean(args, "include_executions")) {
-        return { workspaces };
-      }
-      const executions = executionManager.listExecutions().slice(0, LIST_EXECUTIONS_LIMIT);
-      return { workspaces, executions };
-    }
-  };
-}
-function createWorkflowRunTool(deps) {
-  const { store, executionManager, mediaDir } = deps;
-  return {
-    name: "workflow_run",
-    description: 'Run a workflow canvas (node DAG) on the omnimux-workflow execution engine. mode "full" runs every node; mode "subset" runs only the given nodeIds plus their transitive upstream closure; mode "single" runs only the given nodeIds directly (inheriting existing upstream outputs). wait=false (default) returns the executionId immediately \u2014 the user can watch live progress on the canvas (per-node badges + SSE). wait=true polls until a terminal status (completed/error/cancelled) or the timeout (default 120s) and returns per-node statuses, text excerpts and media file paths. The canvas performs generation through the OmniMux gateway (real hub seams when available, mock otherwise).',
-    parameters: objectParams({
-      workspace_id: {
-        type: "string",
-        description: "Workspace id (preferred \u2014 from workflow_list), e.g. ws_0123456789ab"
-      },
-      workspace_name: {
-        type: "string",
-        description: "Exact workspace name (fallback when the id is unknown; must be unique)"
-      },
-      mode: {
-        type: "string",
-        enum: ["full", "subset", "single"],
-        description: "Execution scope: full (default), subset (nodeIds + upstream closure), or single (target nodeIds only)"
-      },
-      node_ids: {
-        type: "array",
-        items: { type: "string" },
-        description: "Required for subset and single modes: node ids to execute"
-      },
-      wait: {
-        type: "boolean",
-        description: "Wait for a terminal status (bounded by timeout_ms) and return the result summary"
-      },
-      timeout_ms: {
-        type: "number",
-        description: "wait=true polling budget in milliseconds (default 120000)"
-      }
-    }),
-    output: jsonOut2,
-    async execute(args) {
-      const workspaceId = readString3(args, "workspace_id");
-      const workspaceName = readString3(args, "workspace_name");
-      const resolved = resolveWorkspace(store, workspaceId, workspaceName);
-      if ("error" in resolved) return resolved;
-      const workspace = resolved.snapshot;
-      let mode;
-      try {
-        mode = toExecutionMode(args.mode);
-      } catch (error51) {
-        return errorBody2(
-          "invalid-args",
-          error51 instanceof Error ? error51.message : String(error51)
-        );
-      }
-      const nodeIds = normalizeNodeIds(args.node_ids);
-      let subgraph;
-      try {
-        subgraph = resolveExecutionSubgraph({
-          nodes: workspace.nodes,
-          edges: workspace.edges,
-          executionMode: mode,
-          nodeIds
-        });
-      } catch (error51) {
-        return errorBody2(
-          "invalid-subgraph",
-          error51 instanceof Error ? error51.message : String(error51)
-        );
-      }
-      if (subgraph.nodes.length === 0) {
-        return errorBody2("empty-graph", `workspace ${workspace.id} has no nodes to execute`);
-      }
-      const initialOutputs = {};
-      const executedNodeIds = subgraph.nodeIdSet;
-      for (const edge of workspace.edges) {
-        if (executedNodeIds.has(edge.target) && !executedNodeIds.has(edge.source)) {
-          const sourceNode = workspace.nodes.find((n) => n.id === edge.source);
-          if (sourceNode) {
-            const data = sourceNode.data ?? {};
-            const text = data.generatedContent ?? data.content ?? data.prompt;
-            const mediaAssets = data.mediaAssets;
-            const mediaUrl = data.mediaUrl;
-            const materialType = data.materialType;
-            if (Array.isArray(mediaAssets) && mediaAssets.length > 0) {
-              initialOutputs[edge.source] = { mediaAssets, text };
-            } else if (mediaUrl) {
-              const type = materialType === "video" ? "video" : materialType === "audio" ? "audio" : "image";
-              initialOutputs[edge.source] = { mediaAssets: [{ type, url: mediaUrl }], text };
-            } else {
-              initialOutputs[edge.source] = { text: text ?? "" };
-            }
-          }
-        }
-      }
-      const entry = executionManager.createExecution({
-        workspaceId: workspace.id,
-        nodes: subgraph.nodes,
-        edges: subgraph.edges,
-        maxParallel: workspace.settings.maxParallel,
-        initialOutputs
-      });
-      const executionId = entry.context.id;
-      if (!readBoolean(args, "wait")) {
-        return {
-          executionId,
-          workspaceId: workspace.id,
-          workspaceName: workspace.name,
-          mode,
-          totalNodes: subgraph.nodes.length,
-          maxParallel: workspace.settings.maxParallel,
-          status: entry.context.status,
-          hint: "Execution started in the background \u2014 the user can watch live per-node progress on the canvas. Call workflow_snapshot / workflow_list(include_executions=true) or re-run with wait=true to fetch the outcome."
-        };
-      }
-      const timeoutMs = typeof args.timeout_ms === "number" && args.timeout_ms > 0 ? Math.floor(args.timeout_ms) : DEFAULT_RUN_WAIT_TIMEOUT_MS;
-      const { snapshot: final, timedOut } = await waitForTerminal(
-        executionManager,
-        executionId,
-        timeoutMs
-      );
-      if (!final) {
-        return errorBody2("execution-not-found", `execution ${executionId} disappeared`);
-      }
-      const durationMs = final.completedAt !== null && final.startedAt !== null ? final.completedAt - final.startedAt : null;
-      return {
-        executionId,
-        workspaceId: workspace.id,
-        workspaceName: workspace.name,
-        mode,
-        totalNodes: subgraph.nodes.length,
-        status: final.status,
-        timedOut,
-        error: final.error,
-        progress: final.progress,
-        ...durationMs !== null ? { durationMs } : {},
-        nodes: summarizeNodes(workspace, subgraph.nodeIdSet, final, mediaDir),
-        ...timedOut ? { hint: `Still not terminal after ${String(timeoutMs)}ms \u2014 the run continues in the background; retry workflow_run or check the canvas.` } : {}
-      };
-    }
-  };
-}
-function createWorkflowSnapshotTool(deps) {
-  const { store } = deps;
-  return {
-    name: "workflow_snapshot",
-    description: "Read the current state of one workflow canvas workspace. Default: a compact summary (name, version, node/edge counts, node type/material breakdown, execution settings). includeNodes=true returns the FULL node and edge structure (positions, prompts, tools, models, connections) so the graph can be analyzed or modification advice given. Read-only. Data lives under $DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json.",
-    parameters: objectParams({
-      workspace_id: {
-        type: "string",
-        required: true,
-        description: "Workspace id (from workflow_list), e.g. ws_0123456789ab"
-      },
-      include_nodes: {
-        type: "boolean",
-        description: "Return the full nodes/edges structure instead of the compact summary"
-      }
-    }),
-    output: jsonOut2,
-    async execute(args) {
-      const workspaceId = readString3(args, "workspace_id");
-      if (!workspaceId) {
-        return errorBody2("invalid-args", "workspace_id is required");
-      }
-      let workspace;
-      try {
-        workspace = store.get(workspaceId);
-      } catch {
-        return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
-      }
-      if (readBoolean(args, "include_nodes")) {
-        return { workspace };
-      }
-      const nodeTypeCounts = {};
-      const materialCounts = {};
-      for (const node of workspace.nodes) {
-        const data = node.data ?? {};
-        const type = typeof node.type === "string" ? node.type : "unknown";
-        nodeTypeCounts[type] = (nodeTypeCounts[type] ?? 0) + 1;
-        const material = typeof data.materialType === "string" ? data.materialType : "unknown";
-        materialCounts[material] = (materialCounts[material] ?? 0) + 1;
-      }
-      return {
-        summary: {
-          id: workspace.id,
-          name: workspace.name,
-          version: workspace.version,
-          nodeCount: workspace.nodes.length,
-          edgeCount: workspace.edges.length,
-          nodeTypeCounts,
-          materialCounts,
-          settings: workspace.settings,
-          metadata: workspace.metadata
-        },
-        hint: "Pass include_nodes=true for the full node/edge structure."
-      };
-    }
-  };
-}
-var MATERIAL_TYPE_ENUM = ["text", "image", "video", "audio"];
-function workspaceSummary(workspace) {
-  return {
-    id: workspace.id,
-    name: workspace.name,
-    version: workspace.version,
-    nodeCount: workspace.nodes.length,
-    edgeCount: workspace.edges.length
-  };
-}
-function resolveTool(materialType, tool) {
-  if (tool === void 0) return { tool: DEFAULT_MATERIAL_TOOL[materialType] };
-  const valid = MATERIAL_TOOLS[materialType];
-  if (typeof tool !== "string" || !valid.includes(tool)) {
-    return errorBody2(
-      "invalid-args",
-      `tool must be one of ${valid.join(", ")} for material_type ${materialType} (got ${JSON.stringify(tool)})`
-    );
-  }
-  return { tool };
-}
-function readPosition(args) {
-  const raw = args.position;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return void 0;
-  const pos = raw;
-  if (typeof pos.x !== "number" || typeof pos.y !== "number") return void 0;
-  return { x: pos.x, y: pos.y };
-}
-function defaultNodePosition(snapshot) {
-  if (snapshot.nodes.length === 0) return { x: 120, y: 120 };
-  const maxX = Math.max(...snapshot.nodes.map((node) => node.position.x));
-  return { x: maxX + 420, y: 120 };
-}
+// src/workflow/agent/agentWriteTools.ts
 function createWorkflowCreateTool(deps) {
   const { store } = deps;
   return {
@@ -31754,7 +31798,7 @@ function createWorkflowCreateTool(deps) {
     output: jsonOut2,
     async execute(args) {
       try {
-        const workspace = store.create(readString3(args, "name"));
+        const workspace = store.create(readString4(args, "name"));
         return { workspace };
       } catch (error51) {
         return errorBody2(
@@ -31786,9 +31830,9 @@ function createWorkflowNodeAddTool(deps) {
     }),
     output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString3(args, "workspace_id");
+      const workspaceId = readString4(args, "workspace_id");
       if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
-      const materialType = readString3(args, "material_type");
+      const materialType = readString4(args, "material_type");
       if (!materialType || !MATERIAL_TYPE_ENUM.includes(materialType)) {
         return errorBody2("invalid-args", `material_type must be one of ${MATERIAL_TYPE_ENUM.join(", ")}`);
       }
@@ -31800,8 +31844,8 @@ function createWorkflowNodeAddTool(deps) {
       } catch {
         return errorBody2("workspace-not-found", `workspace ${workspaceId} not found`);
       }
-      const label = readString3(args, "label");
-      const prompt = readString3(args, "prompt");
+      const label = readString4(args, "label");
+      const prompt = readString4(args, "prompt");
       const node = createMaterialNode(materialType, readPosition(args) ?? defaultNodePosition(snapshot), {
         selectedTool: toolResolved.tool,
         ...label !== void 0 ? { label } : {},
@@ -31842,8 +31886,8 @@ function createWorkflowNodeUpdateTool(deps) {
     }),
     output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString3(args, "workspace_id");
-      const nodeId = readString3(args, "node_id");
+      const workspaceId = readString4(args, "workspace_id");
+      const nodeId = readString4(args, "node_id");
       if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
       if (!nodeId) return errorBody2("invalid-args", "node_id is required");
       const patch = args.patch;
@@ -31911,7 +31955,7 @@ function createWorkflowNodeRemoveTool(deps) {
     }),
     output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString3(args, "workspace_id");
+      const workspaceId = readString4(args, "workspace_id");
       if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
       const nodeIds = normalizeNodeIds(args.node_ids);
       if (nodeIds.length === 0) return errorBody2("invalid-args", "node_ids must be a non-empty array");
@@ -31950,9 +31994,9 @@ function createWorkflowConnectTool(deps) {
     }),
     output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString3(args, "workspace_id");
-      const source = readString3(args, "source");
-      const target = readString3(args, "target");
+      const workspaceId = readString4(args, "workspace_id");
+      const source = readString4(args, "source");
+      const target = readString4(args, "target");
       if (!workspaceId || !source || !target) {
         return errorBody2("invalid-args", "workspace_id, source and target are required");
       }
@@ -31965,8 +32009,8 @@ function createWorkflowConnectTool(deps) {
         addEdges: [{
           source,
           target,
-          sourceHandle: readString3(args, "source_handle"),
-          targetHandle: readString3(args, "target_handle")
+          sourceHandle: readString4(args, "source_handle"),
+          targetHandle: readString4(args, "target_handle")
         }]
       });
       if (!result.ok) return errorBody2(result.error, result.message);
@@ -31990,11 +32034,11 @@ function createWorkflowDisconnectTool(deps) {
     }),
     output: jsonOut2,
     async execute(args) {
-      const workspaceId = readString3(args, "workspace_id");
+      const workspaceId = readString4(args, "workspace_id");
       if (!workspaceId) return errorBody2("invalid-args", "workspace_id is required");
       const edgeIds = normalizeNodeIds(args.edge_ids);
-      const source = readString3(args, "source");
-      const target = readString3(args, "target");
+      const source = readString4(args, "source");
+      const target = readString4(args, "target");
       if (edgeIds.length === 0 && !(source && target)) {
         return errorBody2("invalid-args", "pass edge_ids or source+target");
       }
@@ -32041,13 +32085,18 @@ function createWorkflowExecutionControlTool(deps) {
     }),
     output: jsonOut2,
     async execute(args) {
-      const executionId = readString3(args, "execution_id");
-      const action = readString3(args, "action");
+      const executionId = readString4(args, "execution_id");
+      const action = readString4(args, "action");
       if (!executionId) return errorBody2("invalid-args", "execution_id is required");
       if (action !== "pause" && action !== "resume" && action !== "cancel") {
         return errorBody2("invalid-args", "action must be pause | resume | cancel");
       }
-      const control = action === "pause" ? executionManager.pauseExecution : action === "resume" ? executionManager.resumeExecution : executionManager.cancelExecution;
+      const controlByAction = {
+        pause: executionManager.pauseExecution,
+        resume: executionManager.resumeExecution,
+        cancel: executionManager.cancelExecution
+      };
+      const control = controlByAction[action];
       const result = await control(executionId);
       if (!result.ok) {
         return errorBody2("execution-control-failed", result.message ?? `cannot ${action} execution ${executionId}`);
@@ -32063,6 +32112,8 @@ function createWorkflowExecutionControlTool(deps) {
     }
   };
 }
+
+// src/workflow/agent/agentTools.ts
 var WORKFLOW_PROMPT = `This workspace may mount the OmniMux workflow canvas (omnimux-workflow): an infinite canvas where the user builds node DAGs (text/image/video/audio material nodes) and executes them through the OmniMux generation gateway.
 Reading: workflow_list enumerates the user's canvas workspaces (id, name, nodeCount); workflow_snapshot returns one workspace's structure (include_nodes=true gives the full graph \u2014 ALWAYS read it before editing: node/edge ids must come from the snapshot, never invent them); workflow_run starts an execution (full or subset with node_ids) and with wait=true returns per-node statuses, text excerpts and generated media file paths.
 Editing: workflow_create makes a new empty canvas; workflow_node_add adds a material node (returns its id); workflow_node_update patches label/prompt/tool/params/position; workflow_node_remove deletes nodes (edges cascade); workflow_connect / workflow_disconnect wire and unwire edges. Write tools fail with a structured error (invalid-args / node-not-found / mutation-rejected with reasonCode like cycle or type_contract) \u2014 fix the arguments and retry, do not work around the validation. After each edit the response carries the new workspace version; the open canvas refreshes itself within a few seconds.

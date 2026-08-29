@@ -12,23 +12,38 @@
  */
 
 import { relative, resolve } from 'node:path';
-import { ExecutionContext } from './ExecutionContext';
+import type { ExecutionContext } from './ExecutionContext.ts';
 import type {
   ExecutableEdge,
   ExecutableNode,
   NodeExecutorFn,
-} from './ExecutionScheduler';
+} from './ExecutionScheduler.ts';
 import {
   getExecutor,
   type ExecutionContext as ExecutorContext,
   type NodeOutput,
-} from '../executors/registry';
-import { createWorkflowLogger } from './logger';
-import { WORKFLOW_ROUTE_PREFIX } from '../../shared/api';
+} from '../executors/registry.ts';
+import { createWorkflowLogger } from './logger.ts';
+import { WORKFLOW_ROUTE_PREFIX } from '../../shared/api.ts';
+import { resolveNodeKind } from '../../shared/graph/materialNode.ts';
 
 const LOG_TAG = 'nodeExecutors';
 
 const logger = createWorkflowLogger(LOG_TAG);
+
+export function resolveExecutorKey(node: { type: string; data?: Record<string, unknown> }): string {
+  if (node.type !== 'material') return node.type;
+  try {
+    const kind = resolveNodeKind(node.data ?? {});
+    return kind === 'import' ? 'material:import' : 'material:generate';
+  } catch (err) {
+    logger.warn('failed to resolve material node kind, falling back to generate', {
+      nodeId: (node as { id?: string }).id,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return 'material:generate';
+  }
+}
 
 export interface DispatchingExecutorOptions {
   gateway: import('../seam/gateway').GenerationGateway;
@@ -65,9 +80,10 @@ export function createDispatchingNodeExecutor(
   };
 
   const executor: NodeExecutorFn = async (node, context) => {
-    const registryExecutor = getExecutor(node.type);
+    const executorKey = resolveExecutorKey(node);
+    const registryExecutor = getExecutor(executorKey);
     if (!registryExecutor) {
-      throw new Error(`节点类型 ${node.type} 没有注册执行器（registry key: ${node.type}）`);
+      throw new Error(`节点类型 ${node.type} 没有注册执行器（registry key: ${executorKey}）`);
     }
 
     const upstreamOutputs = resolveUpstreamOutputs(node, opts.edges, context);

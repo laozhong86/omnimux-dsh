@@ -79,6 +79,7 @@ export const MATERIAL_TOOL_INPUT_TYPES: Partial<Record<MaterialTool, MaterialTyp
 
 export type MaterialStatus = 'empty' | 'ready' | 'generating' | 'completed' | 'failed' | 'offline';
 export type NodeFailStrategy = 'abort' | 'skip';
+export type NodeKind = 'generate' | 'import';
 
 /**
  * MaterialNode 节点数据（窄化版）。
@@ -94,6 +95,8 @@ export interface MaterialNodeData {
   // === 基础信息 ===
   label: string;
   materialType: MaterialType;
+  /** 不可变身份判别：创建时确定，只读。缺省由 selectedTool 推导（兼容老数据）。 */
+  nodeKind?: NodeKind;
 
   // === 输出内容 ===
   status: MaterialStatus;
@@ -144,7 +147,32 @@ export function createDefaultMaterialNodeData(
   };
 }
 
-/** 判断工具是否需要触发生成任务 */
+/**
+ * 全仓唯一节点身份判定真源：
+ * 1. 显式 nodeKind === 'generate' | 'import' 优先
+ * 2. 老数据 / 未标注节点兜底：selectedTool === 'import' 视为导入节点，其余为生成节点
+ *
+ * 关键规则：身份证据优先于行为残留 —— 标为 import 的节点即使残留 prompt，
+ * 也绝不走模型生成（从根本上杜绝覆盖 realPath 与误烧钱）。
+ */
+export function resolveNodeKind(data: {
+  nodeKind?: unknown;
+  selectedTool?: unknown;
+  realPath?: unknown;
+}): NodeKind {
+  if (data.nodeKind === 'generate' || data.nodeKind === 'import') {
+    return data.nodeKind;
+  }
+  if (data.selectedTool === 'import') {
+    return 'import';
+  }
+  return 'generate';
+}
+
+/**
+ * @deprecated 请改用 `resolveNodeKind(data) === 'generate'`。
+ * 保留此函数仅供老代码兼容，内部委托给 resolveNodeKind。
+ */
 export function isGenerativeTool(tool: MaterialTool): boolean {
-  return tool !== 'import' && tool !== 'text-editor';
+  return resolveNodeKind({ selectedTool: tool }) === 'generate';
 }

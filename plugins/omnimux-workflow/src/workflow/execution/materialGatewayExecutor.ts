@@ -1,19 +1,12 @@
 /**
- * Material executor (M3): dispatches generative material nodes through the
- * GenerationGateway seam. M4 runs on the OmniMux seam client when the
- * execution hub is reachable (mock gateway otherwise) — this executor is
- * gateway-agnostic.
+ * Material generator executor: dispatches generative material nodes through the
+ * GenerationGateway seam (key: 'material:generate').
  *
- * Behavior by tool class:
- * - generative tools (text-to-image, video-generation, …): resolve prompt +
- *   upstream reference input, submit via gateway.submit, poll via
- *   gateway.awaitTask, return media assets (or text for text capabilities).
- * - non-generative tools (import / text-editor): pass-through of node-owned
- *   content and upstream outputs (M1 semantics, now upstream-aware).
+ * All non-generative / pass-through logic has been cleanly separated into
+ * `importExecutor.ts`.
  */
 
 import { join } from 'node:path';
-import { localFileMediaUrl } from '../../shared/localMedia.ts';
 import type { GenerationGateway } from '../seam/gateway';
 import type {
   ExecutionContext,
@@ -42,27 +35,6 @@ function readMaterialType(nodeData: Record<string, unknown>): 'text' | 'image' |
   const value = nodeData.materialType;
   if (value === 'image' || value === 'video' || value === 'audio') return value;
   return 'text';
-}
-
-function isGenerativeTool(
-  tool: string | undefined,
-  data: Record<string, unknown>,
-  upstream: { text?: string; mediaUrl?: string },
-): boolean {
-  if (typeof tool === 'string' && tool !== 'import' && tool !== 'text-editor') {
-    return true;
-  }
-  // If the node has an explicit prompt, it is intended to generate via model
-  const prompt = readString(data, 'prompt');
-  if (prompt && prompt.trim().length > 0) {
-    return true;
-  }
-  // If the node has an explicit model selected and has upstream input or content
-  const model = readString(data.params as Record<string, unknown> | undefined, 'model');
-  if (model && (upstream.text || upstream.mediaUrl || readString(data, 'content'))) {
-    return true;
-  }
-  return false;
 }
 
 function extFor(capability: 'text' | 'image' | 'video' | 'audio'): string {
@@ -98,29 +70,12 @@ export function createMaterialGatewayExecutor(opts: {
   const { gateway } = opts;
 
   return {
-    key: 'material',
+    key: 'material:generate',
     async execute(node, ctx): Promise<NodeOutput> {
       const data = node.data ?? {};
-      const tool = readString(data, 'selectedTool');
       const upstream = collectUpstream(ctx);
 
-      // ---- Non-generative: pass-through (node-owned / upstream content) ----
-      if (!isGenerativeTool(tool, data, upstream)) {
-        const materialType = readMaterialType(data);
-        const type = materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'image';
-        const realPath = readString(data, 'realPath');
-        if (realPath) {
-          return { mediaAssets: [{ type, url: localFileMediaUrl(realPath) }] };
-        }
-        const nodeMediaUrl = readString(data, 'mediaUrl');
-        if (nodeMediaUrl && !nodeMediaUrl.startsWith('blob:')) {
-          return { mediaAssets: [{ type, url: nodeMediaUrl }] };
-        }
-        const text = readString(data, 'content') ?? upstream.text;
-        return { text };
-      }
-
-      // ---- Generative: gateway submit -> await -> output ----
+      // Generative: gateway submit -> await -> output
       const capability = readMaterialType(data);
       const prompt =
         readString(data, 'prompt')
@@ -128,12 +83,7 @@ export function createMaterialGatewayExecutor(opts: {
         ?? upstream.text
         ?? '';
 
-      // ---- Upstream reference mapping (M4, hub seam schema) ----
-      // The hub media seams accept `image` (reference picture) and `audio`
-      // (reference audio); textComplete accepts `image` on vision models.
-      // There is NO video-reference field yet — a video upstream on an
-      // image/video node is intentionally dropped (never faked as consumed);
-      // see README「已知限制」and docs/m4-hub-seam-research.md §7.
+      // Upstream reference mapping (M4, hub seam schema)
       let image: string | undefined;
       let audio: string | undefined;
       if (upstream.mediaType === 'image') {
@@ -141,8 +91,6 @@ export function createMaterialGatewayExecutor(opts: {
       } else if (upstream.mediaType === 'audio' && capability === 'video') {
         audio = upstream.mediaUrl;
       } else if (upstream.mediaType === 'video') {
-        // Degrade: first-frame-style video reference is not expressible on
-        // the current seam. Logged + surfaced in the node UI hint.
         ctx.reportProgress?.(15, '视频参考输入暂不支持（等待执行中枢扩展），已忽略');
       }
 
@@ -166,7 +114,6 @@ export function createMaterialGatewayExecutor(opts: {
           : undefined,
         dest,
         signal: ctx.signal,
-        // Mock-gateway control flag (deterministic failure injection for M3).
         mockFail: readMockFail(data),
       });
 
