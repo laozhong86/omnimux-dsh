@@ -117,3 +117,18 @@ test('build-agent-presets is idempotent', () => {
   const after = read('presets/standard/agent.cordis.yml')
   equal(after, before)
 })
+
+test('sync-agent-presets.sh never writes DSH Desktop or desktop/web profiles', () => {
+  const script = read('scripts/sync-agent-presets.sh')
+  const code = script
+    .split('\n')
+    .filter((line) => !line.trimStart().startsWith('#'))
+    .join('\n')
+  ok(!code.includes('/Applications/DSH Desktop.app'), 'must not touch DSH Desktop.app')
+  ok(!code.includes('dsh-plugin-desktop'), 'must not overwrite desktop-fork vendor copy')
+  ok(!code.includes('profiles/desktop/cordis.patch.yml'), 'must not patch desktop profile')
+  ok(!code.includes('profiles/web/cordis.patch.yml'), 'must not patch web profile')
+  ok(!code.includes('$HOME/.dsh/.agent-presets'), 'must not rewrite DSH user preset root')
+  ok(code.includes('/Applications/OmniMux.app'), 'must still materialize OmniMux.app')
+  ok(code.includes('/Applications/OmniMux Dev.app'), 'must still materialize OmniMux Dev.app')
+})

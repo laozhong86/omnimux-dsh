@@ -11,11 +11,11 @@
 ## 产品化机制
 
 1. 本目录是 **OmniMux 产品真源**（不是 DSH 上游 `config/agent-presets`）。
-2. `scripts/sync-agent-presets.sh` 物化到：
-   - `app.asar.unpacked/.../config/agent-presets/`（真实文件）
-   - 同长度 patch `app.asar` header，把目录从官方 `code/cordis/minimal/standard` 改成三项（Electron 先读 asar 清单）
-   - 可选清理 `~/.dsh/.agent-presets` 旧用户预设
-3. Profile `cordis.patch.yml` 必须设置：
+2. `scripts/sync-agent-presets.sh` **只**物化 OmniMux 系列：
+   - `/Applications/OmniMux.app` 与 `/Applications/OmniMux Dev.app` 的 unpacked + 同长度 asar header
+   - `~/.dsh/profiles/omnimux`（及 `~/.omnimux*` 下的 omnimux profile）
+   - **禁止**写入 `/Applications/DSH Desktop.app`、`desktop` profile、`dsh-plugin-desktop` vendor 副本、`~/.dsh/.agent-presets`。DSH Desktop 是开发工具，出厂四项（标准 / PTC / 极简 / 创造）必须保留。
+3. OmniMux profile `cordis.patch.yml` 必须设置：
 
 ```yaml
 - id: agent-presets
