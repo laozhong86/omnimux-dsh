@@ -120,6 +120,15 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const t = useT();
   const applyCanvasInputMutation = useCanvasStore((state) => state.applyCanvasInputMutation);
   const resourcePicker = useResourcePicker(id);
+  const kind = resolveNodeKind(nodeData);
+
+  // 新建「导入素材」节点后立即打开素材导入弹窗（一次性）
+  useEffect(() => {
+    if (kind !== 'import') return;
+    if (nodeData.openPickerOnMount !== true) return;
+    resourcePicker.openPicker('local');
+    updateNodeData({ openPickerOnMount: false });
+  }, [kind, nodeData.openPickerOnMount, resourcePicker, updateNodeData]);
 
   const outputMenuOptions = useMemo(
     () =>
@@ -199,21 +208,24 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     [materialType, t, updateNodeData],
   );
 
-  // 拖拽文件进入
+  // 拖拽文件进入：仅导入素材节点接受本地文件，生成节点不再单独导入
   const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (kind !== 'import') return;
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOver(true);
-  }, []);
+  }, [kind]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (kind !== 'import') return;
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOver(false);
-  }, []);
+  }, [kind]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
+      if (kind !== 'import') return;
       e.preventDefault();
       e.stopPropagation();
       setIsDraggingOver(false);
@@ -222,7 +234,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         handleImportFile(file);
       }
     },
-    [handleImportFile],
+    [handleImportFile, kind],
   );
 
   // 文本快捷操作
@@ -257,7 +269,10 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const loadingAspectRatio =
     materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'square';
 
-  const showFloatingPill = isHovered || selected;
+  const showFloatingPill =
+    (isHovered || selected) &&
+    (materialType === 'text' || (kind === 'import' && !previewUrl && !isOffline));
+  const showReplaceButton = kind === 'import' && Boolean(previewUrl) && !isOffline;
 
   return (
     <div
@@ -266,14 +281,13 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 顶部悬浮胶囊栏 */}
+      {/* 顶部悬浮胶囊栏：生成媒体节点不再提供导入入口 */}
       {showFloatingPill && (
         <FloatingTopPill
           materialType={materialType}
+          nodeKind={kind}
           selected={selected}
-          onOpenResourcePicker={() => {
-            void resourcePicker.importLocalFiles();
-          }}
+          onOpenResourcePicker={() => resourcePicker.openPicker('local')}
           onStartTextEdit={() => setTextEditing(true)}
           onCopyText={handleCopyText}
           onSplitText={handleSplitText}
@@ -283,10 +297,10 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       {/* 输入 Handle */}
       <CanvasNodeHandle side="left" nodeHovered={isHovered} />
 
-      {/* 节点标题 */}
+      {/* 节点标题：导入节点统一显示「导入素材」 */}
       <NodeHeader
         label={label}
-        materialType={materialType}
+        materialType={kind === 'import' ? 'import_asset' : materialType}
         onLabelChange={(newLabel) => updateNodeData({ label: newLabel })}
         trailing={<StatusBadge executionStatus={executionStatus} status={status} />}
       />
@@ -299,11 +313,27 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         style={{
           width: nodeWidth,
           height: nodeHeight,
+          position: 'relative',
         }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
+        {/* 导入素材：卡片内侧右上角「替换」 */}
+        {showReplaceButton && (
+          <button
+            type="button"
+            className="wf-material-node__replace-btn nodrag nopan"
+            onClick={(e) => {
+              e.stopPropagation();
+              resourcePicker.openPicker('local');
+            }}
+            title={t('node.replace')}
+          >
+            {t('node.replace')}
+          </button>
+        )}
+
         {/* 四角缩放定位点 */}
         {selected && (
           <>
@@ -422,7 +452,9 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             onUpdateNodeData={updateNodeData}
             onGenerate={handleGenerate}
             execBusy={execBusy}
-            onOpenResourcePicker={() => resourcePicker.openPicker('canvas')}
+            onOpenResourcePicker={() =>
+              resourcePicker.openPicker(kind === 'import' ? 'local' : 'canvas')
+            }
           />
         </ConfigPanelShell>
       )}

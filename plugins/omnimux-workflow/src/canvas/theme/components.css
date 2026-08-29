@@ -167,6 +167,29 @@
     0 0 16px rgba(59, 130, 246, 0.3) !important;
 }
 
+/* 导入素材节点：卡片内侧右上角「替换」按钮 */
+.wf-material-node__replace-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 12;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
+  background: color-mix(in srgb, var(--dsw-alias-bg-elevated, var(--wb-surface)) 88%, transparent);
+  color: var(--dsw-alias-label-primary, var(--wb-text-primary));
+  font-size: 12px;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+
+.wf-material-node__replace-btn:hover {
+  border-color: var(--dsw-alias-border-l2, var(--wb-border));
+  background: var(--dsw-alias-bg-elevated, var(--wb-surface));
+}
+
 /* 选中节点的四角方形缩放锚点（对齐设计） */
 .wf-node-corner {
   position: absolute;

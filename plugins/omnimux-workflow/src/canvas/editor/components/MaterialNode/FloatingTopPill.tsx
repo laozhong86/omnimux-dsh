@@ -1,11 +1,9 @@
 /**
  * FloatingTopPill — 悬浮在材质卡片上方的胶囊操作栏。
  *
- * 视觉对齐设计参考：
- * - 图片/视频/音频：[ ⇪ 导入图片/视频/音频 ] 胶囊，点击打开选择资源弹窗（默认本地上传 Tab）。
- * - 文本：[ ✎ 文本编辑 ] [ ❐ 复制 ] [ ≡+ 结构化拆分 ] 三联操作胶囊。
- *
- * 交互：反向缩放保持恒定像素，防止画布缩放时过小或失真。
+ * - 文本生成节点：[ ✎ 文本编辑 ] [ ❐ 复制 ] [ ≡+ 结构化拆分 ]
+ * - 导入素材节点（空态）：[ ⇪ 导入素材 ]
+ * - 生成类图片/视频/音频节点：不展示导入入口（避免与导入素材冲突）
  */
 
 import React, { memo, useCallback, useMemo } from 'react';
@@ -17,12 +15,13 @@ import {
   Layers,
   Check,
 } from 'lucide-react';
-import type { MaterialType } from '../../../types/materialNode';
+import type { MaterialType, NodeKind } from '../../../types/materialNode';
 import { useT } from '../../../i18n';
 import { inverseScaleForZoom } from '../../utils/nodeVisualMath';
 
 export interface FloatingTopPillProps {
   materialType: MaterialType;
+  nodeKind?: NodeKind;
   selected?: boolean;
   onOpenResourcePicker?: () => void;
   onStartTextEdit?: () => void;
@@ -32,6 +31,7 @@ export interface FloatingTopPillProps {
 
 const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
   materialType,
+  nodeKind = 'generate',
   selected,
   onOpenResourcePicker,
   onStartTextEdit,
@@ -52,21 +52,13 @@ const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
     }
   }, [onCopyText]);
 
-  const importLabel = useMemo(() => {
-    switch (materialType) {
-      case 'image':
-        return t('pill.importImage');
-      case 'video':
-        return t('pill.importVideo');
-      case 'audio':
-        return t('pill.importAudio');
-      default:
-        return t('pill.import');
-    }
-  }, [materialType, t]);
-
   // 节点标题高度（20px）+ 标题与卡片间隙（4px）+ 工具栏与标题间隙（6px）
   const headerTotalOffset = 30;
+
+  // 生成类媒体节点：不再提供单独导入入口
+  if (nodeKind === 'generate' && materialType !== 'text') {
+    return null;
+  }
 
   return (
     <div
@@ -112,7 +104,7 @@ const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
             <Layers size={13} className="wf-floating-top-pill__icon" />
           </button>
         </div>
-      ) : (
+      ) : nodeKind === 'import' ? (
         <div className="wf-floating-top-pill__single">
           <button
             type="button"
@@ -120,10 +112,10 @@ const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
             onClick={onOpenResourcePicker}
           >
             <Upload size={13} className="wf-floating-top-pill__icon" />
-            <span>{importLabel}</span>
+            <span>{t('pill.import')}</span>
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };
