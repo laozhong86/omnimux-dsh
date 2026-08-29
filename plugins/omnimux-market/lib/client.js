@@ -1051,13 +1051,15 @@ var CSS = `
 .sh-plaza-trigger .dshUk-Button-label,.sh-plaza-trigger span{white-space:nowrap;overflow:hidden}
 .sh-plaza-page{position:fixed;z-index:200;box-sizing:border-box;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--dsw-alias-bg-base,#111215);color:var(--dsw-alias-label-primary,#fff);top:0;left:var(--stage-left,56px);right:0;bottom:0;width:auto;height:auto}
 .sh-plaza-view[data-active="false"]{display:none;pointer-events:none}
-.sh-plaza-top{display:flex;align-items:center;gap:16px;flex:none;padding:10px 20px;border-bottom:1px solid var(--dsw-alias-border-l2,#e2e4e8);background:var(--dsw-alias-bg-base,#fff)}
-.sh-plaza-tabs{display:flex;align-items:center;gap:16px;padding:0;border:0;background:inherit}
+.sh-plaza-top{display:flex;align-items:center;gap:12px;flex:none;height:48px;padding:8px 20px;border-bottom:1px solid var(--dsw-alias-border-l2,#e2e4e8);background:var(--dsw-alias-bg-base,#fff);box-sizing:border-box;flex-wrap:nowrap}
+.sh-plaza-tabs{display:flex;align-items:center;gap:16px;padding:0;border:0;background:inherit;flex:none}
 .sh-plaza-tabs .sh-plaza-tab,.sh-plaza-tab{height:30px;padding:0;border:0;border-radius:0;background:inherit;color:var(--dsw-alias-label-tertiary,#7b8088);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
 .sh-plaza-tabs .sh-plaza-tab:hover,.sh-plaza-tab:hover{color:var(--dsw-alias-label-primary,#17191c);background:inherit}
 .sh-plaza-tabs .sh-plaza-tab.on,.sh-plaza-tab.on{background:inherit;color:var(--dsw-alias-state-business-primary,#4d6bfe);box-shadow:none}
 .sh-plaza-tab .dshUk-Button-label{font:inherit;font-size:inherit;font-weight:inherit;color:inherit}
-.sh-plaza-close{margin-left:auto}
+.sh-plaza-search{display:flex;align-items:center;margin-left:auto;min-width:180px;max-width:280px;width:100%;flex:0 1 280px}
+.sh-plaza-search .dshUk-SearchField-root,.sh-plaza-search .dshUk-SearchField-stretch{width:100%;max-width:none}
+.sh-plaza-close{display:flex;align-items:center;flex:none}
 .sh-plaza-body{flex:1;min-height:0;overflow:auto;padding:18px 20px 32px}
 .sh-plaza-body .sh-mkt{max-width:none;width:100%}
 .sh-plaza-body .sh-cards,.sh-plaza-body .sh-mkt-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
@@ -2357,29 +2359,6 @@ function MarketAvatar({ plugin }) {
     "aria-hidden": "true"
   }, pluginLetter(plugin));
 }
-function MarketSearchBar({ query, onQuery, placeholder, onSubmit, submitLabel }) {
-  return h(
-    "form",
-    {
-      className: "sh-mkt-search",
-      onSubmit: (e) => {
-        e.preventDefault();
-        if (onSubmit) onSubmit();
-      }
-    },
-    h(FilterBar2, {
-      compact: true,
-      search: h(SearchField3, {
-        stretch: true,
-        value: query,
-        debounceMs: 0,
-        placeholder,
-        onValueChange: onQuery
-      }),
-      actions: h(Button3, { type: "submit", variant: "primary", size: "sm" }, submitLabel)
-    })
-  );
-}
 function StarIcon() {
   return h(
     "svg",
@@ -2440,10 +2419,14 @@ function Marketplace(props) {
   useEffect2(() => ensureCss(), []);
   const tr = typeof props.t === "function" ? props.t : lookup;
   const locale = tr("locale") === "en" ? "en" : "zh";
-  const [query, setQuery] = useState2("");
-  const [submitted, setSubmitted] = useState2("");
+  const submitted = (props && props.submittedQuery) ?? "";
   const [category, setCategory] = useState2("");
   const [page, setPage] = useState2(1);
+  const [prevSubmitted, setPrevSubmitted] = useState2(submitted);
+  if (prevSubmitted !== submitted) {
+    setPrevSubmitted(submitted);
+    setPage(1);
+  }
   const [items, setItems] = useState2([]);
   const [total, setTotal] = useState2(0);
   const [status, setStatus] = useState2("loading");
@@ -2593,16 +2576,6 @@ function Marketplace(props) {
     h(
       "div",
       { className: "sh-mkt" },
-      h(MarketSearchBar, {
-        query,
-        onQuery: setQuery,
-        placeholder: tr("mkt.searchPlaceholder"),
-        submitLabel: tr("mkt.search"),
-        onSubmit: () => {
-          setSubmitted(query.trim());
-          setPage(1);
-        }
-      }),
       h(
         "div",
         { className: "sh-mkt-filters" },
@@ -2773,13 +2746,17 @@ function PlazaIcon() {
     h("rect", { x: "8.75", y: "8.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" })
   );
 }
-function SkillPlaza() {
+function SkillPlaza(props) {
   const tr = useTr();
   const pageSize = 48;
-  const [query, setQuery] = useState2("");
-  const [submitted, setSubmitted] = useState2("");
+  const submitted = (props && props.submittedQuery) ?? "";
   const [category, setCategory] = useState2("");
   const [page, setPage] = useState2(1);
+  const [prevSubmitted, setPrevSubmitted] = useState2(submitted);
+  if (prevSubmitted !== submitted) {
+    setPrevSubmitted(submitted);
+    setPage(1);
+  }
   const [items, setItems] = useState2([]);
   const [total, setTotal] = useState2(0);
   const [hasMore, setHasMore] = useState2(false);
@@ -2849,16 +2826,6 @@ function SkillPlaza() {
   return h(
     "div",
     { className: "sh-mkt" },
-    h(MarketSearchBar, {
-      query,
-      onQuery: setQuery,
-      placeholder: tr("mkt.searchPlaceholder"),
-      submitLabel: tr("mkt.search"),
-      onSubmit: () => {
-        setPage(1);
-        setSubmitted(query.trim());
-      }
-    }),
     h(
       "div",
       { className: "sh-mkt-filters" },
@@ -2958,9 +2925,8 @@ function clickPreset(id) {
   chip.click();
   return false;
 }
-function ExpertPanel({ onClose }) {
+function ExpertPanel({ query = "", onClose }) {
   const tr = useTr();
-  const [query, setQuery] = useState2("");
   const [category, setCategory] = useState2("");
   const [items, setItems] = useState2([]);
   const [categories, setCategories] = useState2([]);
@@ -2998,7 +2964,7 @@ function ExpertPanel({ onClose }) {
       live = false;
     };
   }, []);
-  const q = query.trim().toLowerCase();
+  const q = String(query || "").trim().toLowerCase();
   const filtered = items.filter((it) => {
     if (category && it.category !== category) return false;
     if (!q) return true;
@@ -3030,12 +2996,6 @@ function ExpertPanel({ onClose }) {
   return h(
     "div",
     { className: "sh-mkt" },
-    h(MarketSearchBar, {
-      query,
-      onQuery: setQuery,
-      placeholder: tr("expert.searchPlaceholder"),
-      submitLabel: tr("mkt.search")
-    }),
     h(
       "div",
       { className: "sh-mkt-filters" },
@@ -3061,9 +3021,8 @@ function ExpertPanel({ onClose }) {
     filtered.length ? h(Cards, { items: filtered, onOpen: summon }) : null
   );
 }
-function ConnectorPanel() {
+function ConnectorPanel({ query = "" }) {
   const tr = useTr();
-  const [query, setQuery] = useState2("");
   const [category, setCategory] = useState2("");
   const [items, setItems] = useState2([]);
   const [categories, setCategories] = useState2([]);
@@ -3101,7 +3060,7 @@ function ConnectorPanel() {
       live = false;
     };
   }, []);
-  const q = query.trim().toLowerCase();
+  const q = String(query || "").trim().toLowerCase();
   const filtered = items.filter((it) => {
     if (category && it.category !== category) return false;
     if (!q) return true;
@@ -3129,12 +3088,6 @@ function ConnectorPanel() {
   return h(
     "div",
     { className: "sh-mkt" },
-    h(MarketSearchBar, {
-      query,
-      onQuery: setQuery,
-      placeholder: tr("connector.searchPlaceholder"),
-      submitLabel: tr("mkt.search")
-    }),
     h(
       "div",
       { className: "sh-mkt-filters" },
@@ -3227,6 +3180,26 @@ function useConversationBox(active) {
   }, [active]);
   return box;
 }
+function PlazaTopSearch({ query, onQuery, onSubmit, onClear, placeholder }) {
+  return h(
+    "form",
+    {
+      className: "sh-plaza-search",
+      onSubmit: (e) => {
+        e.preventDefault();
+        if (onSubmit) onSubmit();
+      }
+    },
+    h(SearchField3, {
+      stretch: true,
+      value: query,
+      debounceMs: 0,
+      placeholder,
+      onValueChange: onQuery,
+      onClear: onClear || (() => onQuery(""))
+    })
+  );
+}
 function PlazaView({ t, onClose, box, active }) {
   useEffect2(() => {
     ensureCss();
@@ -3241,6 +3214,32 @@ function PlazaView({ t, onClose, box, active }) {
   }, [onClose, active]);
   const tr = typeof t === "function" ? t : lookup;
   const [tab, setTab] = useState2("plugins");
+  const [tabQueries, setTabQueries] = useState2({
+    plugins: "",
+    skills: "",
+    experts: "",
+    connectors: ""
+  });
+  const [submittedQueries, setSubmittedQueries] = useState2({
+    plugins: "",
+    skills: ""
+  });
+  const currentQuery = tabQueries[tab] || "";
+  const handleQueryChange = (val) => {
+    setTabQueries((prev) => ({ ...prev, [tab]: val }));
+  };
+  const handleSubmit = () => {
+    if (tab === "plugins" || tab === "skills") {
+      setSubmittedQueries((prev) => ({ ...prev, [tab]: (tabQueries[tab] || "").trim() }));
+    }
+  };
+  const handleClear = () => {
+    setTabQueries((prev) => ({ ...prev, [tab]: "" }));
+    if (tab === "plugins" || tab === "skills") {
+      setSubmittedQueries((prev) => ({ ...prev, [tab]: "" }));
+    }
+  };
+  const placeholder = tab === "plugins" ? tr("mkt.searchPlaceholder") : tab === "skills" ? tr("mkt.searchPlaceholder") : tab === "experts" ? tr("expert.searchPlaceholder") : tr("connector.searchPlaceholder");
   return h(
     I18nProvider,
     { t: tr },
@@ -3301,6 +3300,13 @@ function PlazaView({ t, onClose, box, active }) {
             onClick: () => setTab("connectors")
           }, tr("plaza.connectors"))
         ),
+        h(PlazaTopSearch, {
+          query: currentQuery,
+          onQuery: handleQueryChange,
+          onSubmit: handleSubmit,
+          onClear: handleClear,
+          placeholder
+        }),
         h(
           "span",
           { className: "sh-plaza-close" },
@@ -3315,7 +3321,7 @@ function PlazaView({ t, onClose, box, active }) {
       h(
         "div",
         { className: "sh-plaza-body" },
-        tab === "plugins" ? h(Marketplace, { t: tr }) : tab === "skills" ? h(SkillPlaza) : tab === "experts" ? h(ExpertPanel, { onClose }) : h(ConnectorPanel)
+        tab === "plugins" ? h(Marketplace, { t: tr, query: tabQueries.plugins, submittedQuery: submittedQueries.plugins }) : tab === "skills" ? h(SkillPlaza, { query: tabQueries.skills, submittedQuery: submittedQueries.skills }) : tab === "experts" ? h(ExpertPanel, { query: tabQueries.experts, onClose }) : h(ConnectorPanel, { query: tabQueries.connectors })
       )
     )
   );

@@ -1,7 +1,6 @@
     /** 专家 tab：全量拉取本地目录（105 条）+ 客户端过滤，点卡片即召唤。 */
-    function ExpertPanel({ onClose }) {
+    function ExpertPanel({ query = "", onClose }) {
       const tr = useTr();
-      const [query, setQuery] = useState("");
       const [category, setCategory] = useState("");
       const [items, setItems] = useState([]);
       const [categories, setCategories] = useState([]);
@@ -39,7 +38,7 @@
           });
         return () => { live = false; };
       }, []);
-      const q = query.trim().toLowerCase();
+      const q = String(query || "").trim().toLowerCase();
       const filtered = items.filter((it) => {
         if (category && it.category !== category) return false;
         if (!q) return true;
@@ -71,12 +70,6 @@
         }
       }
       return h("div", { className: "sh-mkt" },
-        h(MarketSearchBar, {
-          query,
-          onQuery: setQuery,
-          placeholder: tr("expert.searchPlaceholder"),
-          submitLabel: tr("mkt.search"),
-        }),
         h("div", { className: "sh-mkt-filters" },
           h(Button, {
             type: "button",

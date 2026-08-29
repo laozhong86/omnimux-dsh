@@ -15,6 +15,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { RefreshCw, X } from 'lucide-react';
 import { useT } from '../../i18n';
 import type { GenerationStatus } from '../utils/nodeVisualMath';
+import { OrganicShimmerOverlay } from './OrganicShimmer';
 
 export type { GenerationStatus };
 
@@ -149,14 +150,15 @@ const GenerationStateContainer: React.FC<GenerationStateContainerProps> = ({
 
   const aspectClass = `wf-gsc__box--${loadingAspectRatio}`;
 
-  // 加载骨架屏（点阵漂移 + 扫光 + 进度文字呼吸）
+  // 加载骨架屏（升级为 OrganicShimmerOverlay 有机流体微光动效 + 进度文字呼吸）
   const renderSkeleton = () => (
     <div className="wf-gsc__skeleton" style={{ ...transitionStyle(), opacity: skeletonOpacity }}>
       <div className={`wf-gsc__box wf-gsc__skeleton-card ${aspectClass}`}>
-        <div className="wf-gsc__loading-overlay" />
-        <div className="wf-gsc__skeleton-body">
-          <span className="wf-gsc__progress-text">{defaultLoadingText}</span>
-        </div>
+        <OrganicShimmerOverlay borderRadius="inherit">
+          <div className="wf-gsc__skeleton-body">
+            <span className="wf-gsc__progress-text">{defaultLoadingText}</span>
+          </div>
+        </OrganicShimmerOverlay>
       </div>
     </div>
   );

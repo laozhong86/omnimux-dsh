@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNodes, useEdges } from '@xyflow/react';
-import type { MaterialNodeData, MaterialType } from '../../../types/materialNode';
+import type { MaterialNodeData, MaterialType } from '../../types/materialNode';
 import { resolveMediaPreviewUrl, type MediaAssetLike } from '../utils/mediaUrl';
 
 export interface UpstreamMediaItem {

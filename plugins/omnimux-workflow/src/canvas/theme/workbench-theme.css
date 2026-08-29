@@ -41,11 +41,15 @@
   /* node card tokens (W1 Gxgen alignment) */
   --wb-node-text-strong: var(--wb-text-secondary);
   --wb-node-text-muted: var(--wb-text-muted);
-  --wb-node-ring: var(--wb-accent);
+  --wb-node-ring: var(--dsw-alias-label-primary, #000000);
   --wb-node-radius: 20px;
   --wb-danger-soft: color-mix(in srgb, var(--wb-danger) 12%, transparent);
-  --wb-beam-start: var(--wb-accent);
-  --wb-beam-end: var(--wb-accent-hover);
+  /* 连线物理流光 token（非蓝，双主题自适应：浅色森林翠绿/薄荷，深色电光荧光绿/翡翠） */
+  --wb-beam-start: #047857; /* 浅色端点 1：深翡翠绿（对比度 ≥ 4.5:1） */
+  --wb-beam-end: #10B981;   /* 浅色端点 2：高亮薄荷绿 */
+  --wb-beam-glow: rgba(5, 150, 105, 0.35);
+  --wb-beam-glow-secondary: rgba(16, 185, 129, 0.4);
+  --wb-beam-track: rgba(0, 0, 0, 0.08);
 
   /* Modern Floating Dock & Capsule Header tokens */
   --wb-dock-bg: rgba(255, 255, 255, 0.88);
@@ -84,6 +88,21 @@
   --wb-fs-icon: 18px;
   --wb-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+
+  /* Organic Shimmer Token System (Transitions.dev 流体微光) */
+  --wf-shimmer-dur: 5000ms;
+  --wf-shimmer-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --wf-shimmer-band-factor: 26%;
+  --wf-shimmer-band: calc(var(--wf-shimmer-band-factor) * 0.848);
+  --wf-shimmer-bg-opacity: 1;
+  --wf-shimmer-glow-blur: 20px;
+  --wf-shimmer-glow-opacity: 0.75;
+  --wf-shimmer-border-opacity: 1;
+  --wf-shimmer-stage-bg: var(--wb-surface-raised, #fbfbfc);
+  --wf-shimmer-stage-rgb: 245, 245, 248;
+  --wf-shimmer-svg-light: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22600%22%20viewBox%3D%220%200%20600%20600%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22wf_shm_g%22%20gradientUnits%3D%22userSpaceOnUse%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22600%22%20y2%3D%22600%22%3E%3Cstop%20offset%3D%220.0000%22%20stop-color%3D%22%23eeeeee%22%20stop-opacity%3D%221%22%2F%3E%3Cstop%20offset%3D%220.3236%22%20stop-color%3D%22%23eeeeee%22%20stop-opacity%3D%221%22%2F%3E%3Cstop%20offset%3D%220.4008%22%20stop-color%3D%22%23eeeeee%22%20stop-opacity%3D%220.75%22%2F%3E%3Cstop%20offset%3D%220.4603%22%20stop-color%3D%22%23eeeeee%22%20stop-opacity%3D%220.3%22%2F%3E%3Cstop%20offset%3D%220.5000%22%20stop-color%3D%22%23eeeeee%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.5397%22%20stop-color%3D%22%23eeeeee%22%20stop-opacity%3D%220.3%22%2F%3E%3Cstop%20offset%3D%220.5992%22%20stop-color%3D%22%23eeeeee%22%20stop-opacity%3D%220.75%22%2F%3E%3Cstop%20offset%3D%220.6764%22%20stop-color%3D%22%23eeeeee%22%20stop-opacity%3D%221%22%2F%3E%3Cstop%20offset%3D%221.0000%22%20stop-color%3D%22%23eeeeee%22%20stop-opacity%3D%221%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22wf_shm_w%22%20x%3D%22-10%25%22%20y%3D%22-10%25%22%20width%3D%22120%25%22%20height%3D%22120%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.009%200.015%22%20numOctaves%3D%222%22%20seed%3D%227%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%2246%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3CfeGaussianBlur%20stdDeviation%3D%225%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20x%3D%22-70%22%20y%3D%22-70%22%20width%3D%22740%22%20height%3D%22740%22%20fill%3D%22url(%23wf_shm_g)%22%20filter%3D%22url(%23wf_shm_w)%22%2F%3E%3C%2Fsvg%3E");
+  --wf-shimmer-svg-dark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22600%22%20viewBox%3D%220%200%20600%20600%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22wf_shm_g%22%20gradientUnits%3D%22userSpaceOnUse%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22600%22%20y2%3D%22600%22%3E%3Cstop%20offset%3D%220.0000%22%20stop-color%3D%22%23222226%22%20stop-opacity%3D%221%22%2F%3E%3Cstop%20offset%3D%220.3236%22%20stop-color%3D%22%23222226%22%20stop-opacity%3D%221%22%2F%3E%3Cstop%20offset%3D%220.4008%22%20stop-color%3D%22%23222226%22%20stop-opacity%3D%220.75%22%2F%3E%3Cstop%20offset%3D%220.4603%22%20stop-color%3D%22%23222226%22%20stop-opacity%3D%220.3%22%2F%3E%3Cstop%20offset%3D%220.5000%22%20stop-color%3D%22%23222226%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.5397%22%20stop-color%3D%22%23222226%22%20stop-opacity%3D%220.3%22%2F%3E%3Cstop%20offset%3D%220.5992%22%20stop-color%3D%22%23222226%22%20stop-opacity%3D%220.75%22%2F%3E%3Cstop%20offset%3D%220.6764%22%20stop-color%3D%22%23222226%22%20stop-opacity%3D%221%22%2F%3E%3Cstop%20offset%3D%221.0000%22%20stop-color%3D%22%23222226%22%20stop-opacity%3D%221%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22wf_shm_w%22%20x%3D%22-10%25%22%20y%3D%22-10%25%22%20width%3D%22120%25%22%20height%3D%22120%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.009%200.015%22%20numOctaves%3D%222%22%20seed%3D%227%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%2246%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3CfeGaussianBlur%20stdDeviation%3D%225%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20x%3D%22-70%22%20y%3D%22-70%22%20width%3D%22740%22%20height%3D%22740%22%20fill%3D%22url(%23wf_shm_g)%22%20filter%3D%22url(%23wf_shm_w)%22%2F%3E%3C%2Fsvg%3E");
+  --wf-shimmer-svg-url: var(--wf-shimmer-svg-light);
 
   height: 100%;
   display: flex;
@@ -131,6 +150,19 @@ body[data-ds-dark-theme] .wf-canvas-root {
     rgba(0, 0, 0, 0.3) 0 10px 10px -5px,
     rgba(0, 0, 0, 0.3) 0 20px 25px -5px,
     rgba(0, 0, 0, 0.3) 0 20px 32px -12px;
+  /* 连线物理流光暗色翻转：OmniMux 电光荧光绿 + 翡翠翠绿，无蓝色 */
+  --wb-beam-start: #D4FF38;
+  --wb-beam-end: #10B981;
+  --wb-beam-glow: rgba(212, 255, 56, 0.45);
+  --wb-beam-glow-secondary: rgba(16, 185, 129, 0.6);
+  --wb-beam-track: rgba(255, 255, 255, 0.12);
+  /* 节点选中/高亮边框线暗色自适应：白色边框 */
+  --wb-node-ring: var(--dsw-alias-label-primary, #ffffff);
+
+  /* Organic Shimmer dark cascade */
+  --wf-shimmer-stage-bg: var(--wb-surface-raised, #222226);
+  --wf-shimmer-stage-rgb: 34, 34, 38;
+  --wf-shimmer-svg-url: var(--wf-shimmer-svg-dark);
   /* node tokens (--wb-node-*/--wb-danger-soft/--wb-beam-*) reference the
      vars above, so they flip automatically — no JS isDark branch. */
 }
