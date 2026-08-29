@@ -256,6 +256,40 @@ describe('HUB_CSS login-gate 1:1 tokens', () => {
     assert.match(styles, /mix-blend-mode:\s*overlay/)
   })
 
+  it('locks the solid-white CTA tokens so theme hover cannot invert contrast', () => {
+    assert.match(styles, /--login-gate-cta-bg:\s*#ffffff/)
+    assert.match(styles, /--login-gate-cta-text:\s*#09090b/)
+    assert.match(styles, /--login-gate-cta-hover:\s*#f4f4f5/)
+    assert.match(styles, /--login-gate-cta-active:\s*#e4e4e7/)
+    assert.match(styles, /background:\s*var\(--login-gate-cta-bg,\s*#ffffff\)\s*!important/)
+    assert.match(styles, /color:\s*var\(--login-gate-cta-text,\s*#09090b\)\s*!important/)
+    assert.match(
+      styles,
+      /\.omnimux-login-gate-cta:hover:not\(:disabled\):not\(\[aria-disabled="true"\]\) \{[\s\S]*?background:\s*var\(--login-gate-cta-hover,\s*#f4f4f5\)\s*!important/,
+    )
+    assert.match(
+      styles,
+      /\.omnimux-login-gate-cta:hover:not\(:disabled\):not\(\[aria-disabled="true"\]\) \{[\s\S]*?color:\s*var\(--login-gate-cta-text,\s*#09090b\)\s*!important/,
+    )
+    assert.match(
+      styles,
+      /\.omnimux-login-gate-cta:active:not\(:disabled\):not\(\[aria-disabled="true"\]\) \{[\s\S]*?background:\s*var\(--login-gate-cta-active,\s*#e4e4e7\)\s*!important/,
+    )
+    assert.doesNotMatch(
+      styles,
+      /\.omnimux-login-gate-cta:hover[\s\S]{0,280}--dsw-alias-interactive-bg-hover/,
+    )
+    assert.doesNotMatch(
+      styles,
+      /\.omnimux-login-gate-cta:hover[\s\S]{0,280}--dsw-alias-bg-base/,
+    )
+  })
+
+  it('keeps the waiting reopen link readable in both themes', () => {
+    assert.match(styles, /\.omnimux-login-gate-reopen \{[\s\S]*?color:\s*var\(--dsw-alias-label-secondary,\s*#d4d4d8\)\s*!important/)
+    assert.match(styles, /\.omnimux-login-gate-reopen:hover \{[\s\S]*?color:\s*var\(--dsw-alias-label-primary,\s*#ffffff\)\s*!important/)
+  })
+
   it('embeds deep-sea media, box-sizing, and font fallbacks so the poster is not a purple fog', () => {
     assert.match(styles, /box-sizing:\s*border-box/)
     assert.match(styles, /\.omnimux-login-gate-hero-media/)
@@ -378,5 +412,61 @@ describe('HUB_CSS real stylesheet parse', () => {
     const rule = ruleFor(sheet, '.omnimux-login-gate-dialog')
     assert.equal(rule.style.getPropertyValue('width'), '820px')
     assert.equal(rule.style.getPropertyValue('height'), '520px')
+  })
+
+  it('parses dialog-scoped solid-white CTA tokens independent of host theme', () => {
+    const sheet = loadSheet()
+    const dialog = ruleFor(sheet, '.omnimux-login-gate-dialog')
+    assert.equal(dialog.style.getPropertyValue('--login-gate-cta-bg'), '#ffffff')
+    assert.equal(dialog.style.getPropertyValue('--login-gate-cta-text'), '#09090b')
+    assert.equal(dialog.style.getPropertyValue('--login-gate-cta-hover'), '#f4f4f5')
+    assert.equal(dialog.style.getPropertyValue('--login-gate-cta-active'), '#e4e4e7')
+  })
+
+  it('parses .omnimux-login-gate-cta as a solid white button with dark text', () => {
+    const sheet = loadSheet()
+    const rule = ruleFor(sheet, '.omnimux-login-gate-cta')
+    assert.equal(rule.style.getPropertyValue('display'), 'inline-flex')
+    assert.equal(rule.style.getPropertyValue('height'), '40px')
+    assert.equal(rule.style.getPropertyValue('padding'), '0px 28px')
+    assert.equal(rule.style.getPropertyValue('font-size'), '14.5px')
+    assert.equal(rule.style.getPropertyValue('font-weight'), '700')
+    assert.equal(rule.style.getPropertyValue('border-radius'), '8px')
+    assert.equal(rule.style.getPropertyValue('border-style') || rule.style.borderStyle, 'none')
+    assert.equal(rule.style.getPropertyValue('background'), 'var(--login-gate-cta-bg, #ffffff)')
+    assert.equal(rule.style.getPropertyValue('color'), 'var(--login-gate-cta-text, #09090b)')
+    assert.equal(rule.style.getPropertyValue('box-shadow'), '0 4px 14px rgba(255, 255, 255, 0.15)')
+    assert.equal(rule.style.getPropertyValue('cursor'), 'pointer')
+    assert.doesNotMatch(rule.style.getPropertyValue('background'), /interactive-bg-hover/)
+    assert.doesNotMatch(rule.style.getPropertyValue('color'), /bg-base/)
+  })
+
+  it('parses CTA hover as zinc-100 white, never ghost interactive-bg-hover', () => {
+    const sheet = loadSheet()
+    const rule = ruleFor(sheet, '.omnimux-login-gate-cta:hover:not(:disabled):not([aria-disabled="true"])')
+    assert.equal(rule.style.getPropertyValue('background'), 'var(--login-gate-cta-hover, #f4f4f5)')
+    assert.equal(rule.style.getPropertyValue('color'), 'var(--login-gate-cta-text, #09090b)')
+    assert.equal(rule.style.getPropertyValue('transform'), 'translateY(-1px)')
+    assert.equal(rule.style.getPropertyValue('box-shadow'), '0 6px 20px rgba(255, 255, 255, 0.25)')
+    assert.doesNotMatch(rule.cssText, /--dsw-alias-interactive-bg-hover/)
+    assert.doesNotMatch(rule.cssText, /--dsw-alias-bg-base/)
+  })
+
+  it('parses CTA active as zinc-200 white with dark text retained', () => {
+    const sheet = loadSheet()
+    const rule = ruleFor(sheet, '.omnimux-login-gate-cta:active:not(:disabled):not([aria-disabled="true"])')
+    assert.equal(rule.style.getPropertyValue('background'), 'var(--login-gate-cta-active, #e4e4e7)')
+    assert.equal(rule.style.getPropertyValue('color'), 'var(--login-gate-cta-text, #09090b)')
+    assert.equal(rule.style.getPropertyValue('transform'), 'translateY(0)')
+    assert.equal(rule.style.getPropertyValue('box-shadow'), '0 2px 8px rgba(255, 255, 255, 0.15)')
+  })
+
+  it('parses reopen hover as primary label, not a ghost-button fill', () => {
+    const sheet = loadSheet()
+    const rest = ruleFor(sheet, '.omnimux-login-gate-reopen')
+    const hover = ruleFor(sheet, '.omnimux-login-gate-reopen:hover')
+    assert.equal(rest.style.getPropertyValue('color'), 'var(--dsw-alias-label-secondary, #d4d4d8)')
+    assert.equal(hover.style.getPropertyValue('color'), 'var(--dsw-alias-label-primary, #ffffff)')
+    assert.doesNotMatch(hover.cssText, /interactive-bg-hover/)
   })
 })
