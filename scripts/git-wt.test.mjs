@@ -223,10 +223,9 @@ describe('scripts/git-wt.sh finish lifecycle in isolated environment', () => {
     }
   })
 
-  it('completes full end-to-end finish lifecycle with test gating, merge, sync and cleanup', () => {
+  it('pushes the feature branch only — never merges into local main or deletes the worktree before MERGED', () => {
     setupSandbox()
     try {
-      // 1. 切出 worktree
       const startOut = execSync(`bash "${scriptCopy}" start workflow table-action 103`, {
         cwd: mainRepo,
         encoding: 'utf8'
@@ -236,43 +235,37 @@ describe('scripts/git-wt.sh finish lifecycle in isolated environment', () => {
       const wtDir = join(testRoot, 'omnimux-dsh-wt-table-action-103')
       assert.ok(existsSync(wtDir))
 
-      // 2. 在 worktree 中开发特性并提交
       writeFileSync(join(wtDir, 'plugins', 'omnimux-workflow', 'table-feature.js'), 'export const action = "done";')
       execSync(`git -C "${wtDir}" add .`, { stdio: 'ignore' })
       execSync(`git -C "${wtDir}" commit -m "feat(workflow): implement table action"`, { stdio: 'ignore' })
 
-      // 3. 执行 finish (测试通过，物化触发，远端推送)
-      const finishOut = execSync(`bash "${scriptCopy}" finish table-action 103`, {
+      const finishOut = execSync(`bash "${scriptCopy}" finish table-action 103 --skip-sync`, {
         cwd: mainRepo,
         encoding: 'utf8'
       })
 
       assert.ok(finishOut.includes('步骤 1: 检查 Worktree 状态'))
       assert.ok(finishOut.includes('识别对应插件模块: [omnimux-workflow]'))
-      assert.ok(finishOut.includes('步骤 2: 执行本地门禁验证'))
-      assert.ok(finishOut.includes('步骤 3: 检查主仓 main 纯净度'))
-      assert.ok(finishOut.includes('步骤 4: 将分支 [agent/workflow-table-action-issue-103] 合入主仓 main'))
-      assert.ok(finishOut.includes('步骤 5: 推送主仓 main 到远端 origin/main'))
-      assert.ok(finishOut.includes('步骤 6: 自动物化进 App 生产 profile'))
-      assert.ok(finishOut.includes('插件 [omnimux-workflow] 已自动编译并物化同步至 App'))
-      assert.ok(finishOut.includes('步骤 7: 安全清理 Worktree 目录与本地分支'))
+      assert.ok(finishOut.includes('步骤 4: 推送特性分支'))
+      assert.ok(finishOut.includes('禁止直推 main'))
+      assert.ok(!finishOut.includes('合入主仓 main'))
+      assert.ok(!finishOut.includes('推送主仓 main 到远端 origin/main'))
+      assert.ok(finishOut.includes('未完成') || finishOut.includes('Worktree 与特性分支已保留'))
       assert.ok(finishOut.includes('任务交付透明看板') || finishOut.includes('Delivery Board'))
+      assert.ok(!finishOut.includes('🎯 交付状态:      ✅ 100% 完成'))
 
-      // 4. 校验主仓状态
-      assert.ok(!existsSync(wtDir), 'Worktree directory should be deleted')
-      assert.ok(existsSync(join(mainRepo, 'plugins', 'omnimux-workflow', 'table-feature.js')), 'Feature file should exist in main')
-      const branches = execSync(`git -C "${mainRepo}" branch --list "agent/*table-action*"`, { encoding: 'utf8' })
-      assert.strictEqual(branches.trim(), '', 'Feature branch should be deleted')
-
-      // 5. 校验远程主干已同步
-      const remoteLog = execSync(`git -C "${mainRepo}" log origin/main -n 1 --oneline`, { encoding: 'utf8' })
-      assert.ok(remoteLog.includes('implement table action') || remoteLog.includes('finish table-action'), 'Remote main should have received the merge')
+      assert.ok(existsSync(wtDir), 'Worktree must stay until PR is MERGED')
+      assert.ok(!existsSync(join(mainRepo, 'plugins', 'omnimux-workflow', 'table-feature.js')), 'Local main must not receive the feature via finish')
+      const mainLog = execSync(`git -C "${mainRepo}" log -n 1 --oneline`, { encoding: 'utf8' })
+      assert.ok(!mainLog.includes('implement table action'), 'Local main must stay on the previous tip')
+      const remoteBranches = execSync(`git -C "${remoteRepo}" branch`, { encoding: 'utf8' })
+      assert.ok(remoteBranches.includes('agent/workflow-table-action-issue-103'), 'Feature branch must be on origin')
     } finally {
       cleanupSandbox()
     }
   })
 
-  it('supports finish flags (--skip-test, --skip-sync, --skip-push)', () => {
+  it('supports finish flags (--skip-test, --skip-sync, --skip-push) without merging or destroying the sandbox', () => {
     setupSandbox()
     try {
       execSync(`bash "${scriptCopy}" start common quick-fix 104`, {
@@ -291,10 +284,10 @@ describe('scripts/git-wt.sh finish lifecycle in isolated environment', () => {
       })
 
       assert.ok(finishOut.includes('跳过本地门禁测试 (--skip-test)'))
-      assert.ok(finishOut.includes('推送远端已跳过 (--skip-push)'))
-      assert.ok(finishOut.includes('自动物化已跳过 (--skip-sync)'))
-      assert.ok(!existsSync(wtDir), 'Worktree directory should be cleaned up')
-      assert.ok(existsSync(join(mainRepo, 'quick-fix.txt')), 'Merged file should exist in main')
+      assert.ok(finishOut.includes('--skip-push'))
+      assert.ok(finishOut.includes('未完成') || finishOut.includes('Worktree 与特性分支已保留'))
+      assert.ok(existsSync(wtDir), 'Worktree must be preserved when not MERGED')
+      assert.ok(!existsSync(join(mainRepo, 'quick-fix.txt')), 'Local main must not absorb unpushed work')
     } finally {
       cleanupSandbox()
     }

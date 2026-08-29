@@ -58,6 +58,7 @@ function parseI18nRecord(content) {
   return entries
 }
 
+function main() {
 const sidecarPaths = findI18nRecords(repoRoot)
 let checkedTriplets = 0
 const errors = []
@@ -166,3 +167,7 @@ for (const e of errors) {
 }
 console.error('\n👉 Tip: Run `node scripts/verify-bilingual-docs.mjs --write` to update hashes if document edits are intentional.')
 process.exit(1)
+}
+
+const isMain = Boolean(process.argv[1]) && import.meta.url === new URL(`file://${resolve(process.argv[1])}`).href
+if (isMain) main()

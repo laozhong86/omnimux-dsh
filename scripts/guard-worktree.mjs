@@ -104,15 +104,35 @@ export function getUnpushedCommits(cwd) {
     .filter(Boolean)
 }
 
+function stripQuotedSpans(command) {
+  return String(command)
+    .replace(/\\"/g, '')
+    .replace(/\\'/g, '')
+    .replace(/"(?:[^"\\]|\\.)*"/g, ' ')
+    .replace(/'(?:[^'\\]|\\.)*'/g, ' ')
+}
+
+function commandSegments(command) {
+  return stripQuotedSpans(command)
+    .split(/\s*(?:&&|\|\||;|\n)\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
+function looksLikeGitInvocation(segment) {
+  return /(?:^|\s)git(?:\s|$)/i.test(segment)
+}
+
 export function isDestructiveResetCommand(command) {
   if (!command || typeof command !== 'string') return false
-  // Ignore non-git commands like gh, echo, grep, cat, node, etc. that might mention git reset in quotes
-  const trimmed = command.trim()
-  if (trimmed.startsWith('gh ') || trimmed.startsWith('echo ') || trimmed.startsWith('grep ') || trimmed.startsWith('node ')) {
+  return commandSegments(command).some((seg) => {
+    if (!looksLikeGitInvocation(seg)) return false
+    if (/\breset\b/i.test(seg) && /(?:^|\s)--hard\b/.test(seg)) return true
+    if (/\bcheckout\b/i.test(seg) && /(?:^|\s)-f\b/.test(seg)) return true
+    if (/\brestore\b/i.test(seg) && /--source=origin\/(?:main|master)\b/.test(seg)) return true
+    if (/\bclean\b/i.test(seg) && /(?:^|\s)-[a-z]*[fx]\b/i.test(seg)) return true
     return false
-  }
-  // Match git reset --hard as a real command invocation (at start or after shell operator)
-  return /(?:^|[;&|]\s*)git\s+reset\s+[^;&|]*--hard\b/i.test(command)
+  })
 }
 
 export function decideBashCommand({ command, cwd }) {

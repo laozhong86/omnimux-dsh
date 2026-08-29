@@ -78,7 +78,7 @@ subsystem: "global"
 | 推送远端 | `origin` |
 | PR base | `main` |
 | Worktree 目录 | `../omnimux-dsh-wt-<topic>-<ID>` |
-| 生命周期工具 | `./scripts/git-wt.sh`（`start`、`clean`、`list`、`doctor`） |
+| 生命周期工具 | `./scripts/git-wt.sh`（`start`、`finish`、`clean`、`list`、`doctor`）。`finish` 只推特性分支并开 PR，禁止本地合 `main` / 直推 `main` |
 | 回收 | 仅在合入确认且物化成功后删远程支与对应 Worktree；失败时保留现场 |
 
 ## 本机 board（不进 git）
@@ -91,7 +91,7 @@ subsystem: "global"
 
 ### 轨道 1：本地沙箱 + 极速门禁 (Fast Track — 日常迭代推荐)
 
-适用于日常单插件功能开发、UI 迭代与 Bug 热修，无需排队等待云端 CI，秒级自动闭环：
+适用于日常单插件功能开发、UI 迭代与 Bug 热修。`wt:finish` **只推特性分支并开 PR**，禁止本地 `git merge` / `git push origin main`。物化与销毁沙箱必须等 GitHub `state=MERGED`。
 
 ```sh
 cd /Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh
@@ -104,8 +104,14 @@ cd ../omnimux-dsh-wt-<topic>-[issue-id]
 git add <changed-files>
 git commit -m "feat(<plugin>): ... (#<issue-id>)"
 
-# 3. 执行一键安全闭环 (极速门禁 → 合入 main → 物化进 App → 远端同步 → 销毁沙箱)
+# 3. 本地门禁 → 推送特性分支 → 创建 PR（主仓 main 保持干净）
 pnpm wt:finish <topic> [issue-id]
+# 看板若不是 MERGED：不得宣称完成，不得 pnpm sync，不得销毁 Worktree
+
+# 4. PR MERGED 且存在 mergeCommit 后，主仓 pull + 物化 + 回收沙箱
+git -C /Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh pull origin main
+pnpm sync
+pnpm wt:clean <topic> [issue-id] --pr <pr-number>
 ```
 
 ### 轨道 2：远程 PR + 云端 CI + 预授权通道 (Full PR Track — 高风险/跨团队)

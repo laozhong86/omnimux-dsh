@@ -213,4 +213,15 @@ describe('guard-worktree git reset --hard safety guard', () => {
     assert.equal(isDestructiveResetCommand('echo "git reset --hard"'), false)
     assert.equal(isDestructiveResetCommand('gh issue create --body "ran git reset --hard"'), false)
   })
+
+  it('catches git -C, pipelines, checkout -f, restore --source and clean -f', () => {
+    assert.equal(isDestructiveResetCommand('git -C "$REPO_ROOT" reset --hard origin/main'), true)
+    assert.equal(isDestructiveResetCommand('git -C /tmp/repo reset --hard origin/main'), true)
+    assert.equal(isDestructiveResetCommand('gh pr merge && git reset --hard origin/main'), true)
+    assert.equal(isDestructiveResetCommand('git fetch origin && git checkout -f main'), true)
+    assert.equal(isDestructiveResetCommand('git restore --source=origin/main --worktree --staged .'), true)
+    assert.equal(isDestructiveResetCommand('git clean -fdx'), true)
+    assert.equal(isDestructiveResetCommand('git status && git log -1'), false)
+    assert.equal(isDestructiveResetCommand('git push -u origin agent/infra-guard-destructive-reset'), false)
+  })
 })
