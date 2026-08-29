@@ -17,6 +17,19 @@ export type SerializedCanvasEdge = Edge<Record<string, unknown>>;
 
 export type MaterialType = 'text' | 'image' | 'video' | 'audio';
 
+/** Group node custom data contract for visual grouping and subgraphs. */
+export interface GroupNodeData extends Record<string, unknown> {
+  title: string;
+  color: string;
+  isCollapsed?: boolean;
+  minWidth?: number;
+  minHeight?: number;
+  padding?: number;
+  nodeIds?: string[];
+}
+
+export type SerializedGroupNode = Node<GroupNodeData>;
+
 /** Canvas execution settings persisted with the workspace. */
 export interface CanvasSettings {
   /** Max parallel node executions (serial = 1). */

@@ -11,7 +11,7 @@ import { z } from 'zod';
 import {
   DEFAULT_CANVAS_SETTINGS,
   SNAPSHOT_SCHEMA_VERSION,
-} from '../../shared/canvasTypes';
+} from '../../shared/canvasTypes.ts';
 
 export const canvasNodeSchema = z.object({
   id: z.string().min(1),
@@ -28,6 +28,10 @@ export const canvasNodeSchema = z.object({
   width: z.number().optional(),
   height: z.number().optional(),
   parentId: z.string().optional(),
+  extent: z.union([
+    z.literal('parent'),
+    z.tuple([z.number(), z.number(), z.number(), z.number()]),
+  ]).optional(),
   zIndex: z.number().optional(),
   style: z.record(z.string(), z.unknown()).optional(),
 });

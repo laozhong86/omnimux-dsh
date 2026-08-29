@@ -38,6 +38,10 @@ import {
   noteGraphReset,
   noteUserDeletedGraphElements,
 } from '../bridge/persistPolicy';
+import {
+  planGroupNodes,
+  planUngroupNode,
+} from '../editor/utils/nodeVisualMath';
 
 export type SelectedElementType = 'none' | 'node';
 
@@ -82,6 +86,12 @@ export interface CanvasState {
   setEdges: (edges: Edge[] | ((edges: Edge[]) => Edge[])) => void;
   removeEdge: (edgeId: string) => void;
   deleteElements: (nodeIds: string[], edgeIds: string[]) => void;
+  /** Group given nodes into a new group container node. */
+  groupNodes: (nodeIds: string[], title?: string, color?: string) => string | null;
+  /** Ungroup container and restore child nodes to absolute canvas space. */
+  ungroup: (groupId: string) => void;
+  /** Resize or reposition a group node. */
+  resizeGroup: (groupId: string, bounds: { x: number; y: number; width: number; height: number }) => void;
   /** Replace the whole graph (workspace load). */
   hydrateGraph: (nodes: CanvasNode[], edges: Edge[]) => void;
 
@@ -185,6 +195,66 @@ export const useCanvasStore = create<CanvasState>()(
       if (selected.type === 'node' && selected.id && nodeIds.includes(selected.id)) {
         set({ selectedElement: { type: 'none', id: null } });
       }
+    },
+
+    groupNodes: (nodeIds, title = '新建组', color = '#3b82f6') => {
+      const plan = planGroupNodes(get().nodes, nodeIds, title, color);
+      if (!plan) return null;
+
+      set({
+        nodes: plan.nodes,
+        selectedElement: { type: 'node', id: plan.groupId },
+      });
+
+      return plan.groupId;
+    },
+
+    ungroup: (groupId) => {
+      const updatedNodes = planUngroupNode(get().nodes, groupId);
+      if (!updatedNodes) return;
+
+      set({
+        nodes: updatedNodes,
+        selectedElement: { type: 'none', id: null },
+      });
+    },
+
+    resizeGroup: (groupId, bounds) => {
+      const currentNodes = get().nodes;
+      const groupNode = currentNodes.find((n) => n.id === groupId && n.type === 'group');
+      if (!groupNode) return;
+
+      const dx = bounds.x - groupNode.position.x;
+      const dy = bounds.y - groupNode.position.y;
+
+      const updatedNodes = currentNodes.map((node) => {
+        if (node.id === groupId) {
+          return {
+            ...node,
+            position: { x: bounds.x, y: bounds.y },
+            width: bounds.width,
+            height: bounds.height,
+            style: {
+              ...node.style,
+              width: bounds.width,
+              height: bounds.height,
+            },
+          };
+        }
+        // If group position shifted (e.g. from NW resize), adjust children relative positions
+        if (node.parentId === groupId && (dx !== 0 || dy !== 0)) {
+          return {
+            ...node,
+            position: {
+              x: node.position.x - dx,
+              y: node.position.y - dy,
+            },
+          };
+        }
+        return node;
+      });
+
+      set({ nodes: updatedNodes });
     },
 
     hydrateGraph: (nodes, edges) => {

@@ -1,0 +1,20 @@
+{
+  "pass": false,
+  "tool": "ego-browser",
+  "issueId": "group-node",
+  "plugin": "omnimux-workflow",
+  "taskSpaceName": "omnimux-qa-group-node-workflow",
+  "taskSpaceId": 154,
+  "requestedUrl": "http://127.0.0.1:44202/",
+  "actualUrl": null,
+  "title": null,
+  "viewport": null,
+  "snapshot": null,
+  "dom": null,
+  "screenshot": null,
+  "assertions": {},
+  "errors": [
+    "Task space not found: 154"
+  ],
+  "capturedAt": "2026-08-29T08:46:10.318Z"
+}

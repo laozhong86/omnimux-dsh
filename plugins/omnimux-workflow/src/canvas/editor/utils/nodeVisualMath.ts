@@ -70,3 +70,295 @@ export function mapNodeToGenerationStatus(
   }
   return hasMedia ? 'completed' : null;
 }
+
+export interface RectBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface NodeSpatialInfo {
+  id?: string;
+  position: { x: number; y: number };
+  width?: number;
+  height?: number;
+}
+
+export const DEFAULT_GROUP_PADDING = 24;
+export const DEFAULT_NODE_FALLBACK_WIDTH = 320;
+export const DEFAULT_NODE_FALLBACK_HEIGHT = 200;
+
+/**
+ * 计算多个节点在画布中的最小包围盒（含 Padding 留白）。
+ */
+export function calculateGroupBounds(
+  nodes: NodeSpatialInfo[],
+  padding = DEFAULT_GROUP_PADDING,
+): RectBounds & { minWidth: number; minHeight: number } {
+  if (!nodes || nodes.length === 0) {
+    return {
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 300,
+      minWidth: 200,
+      minHeight: 150,
+    };
+  }
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (const node of nodes) {
+    const nx = node.position.x;
+    const ny = node.position.y;
+    const nw = typeof node.width === 'number' && node.width > 0 ? node.width : DEFAULT_NODE_FALLBACK_WIDTH;
+    const nh = typeof node.height === 'number' && node.height > 0 ? node.height : DEFAULT_NODE_FALLBACK_HEIGHT;
+
+    if (nx < minX) minX = nx;
+    if (ny < minY) minY = ny;
+    if (nx + nw > maxX) maxX = nx + nw;
+    if (ny + nh > maxY) maxY = ny + nh;
+  }
+
+  const x = minX - padding;
+  const y = minY - padding;
+  const width = Math.max(120, maxX - minX + padding * 2);
+  const height = Math.max(80, maxY - minY + padding * 2);
+
+  return {
+    x,
+    y,
+    width,
+    height,
+    minWidth: width,
+    minHeight: height,
+  };
+}
+
+/**
+ * 将绝对画布坐标转换为组内局部相对坐标。
+ */
+export function toRelativeCoordinates(
+  nodePosition: { x: number; y: number },
+  groupPosition: { x: number; y: number },
+): { x: number; y: number } {
+  return {
+    x: nodePosition.x - groupPosition.x,
+    y: nodePosition.y - groupPosition.y,
+  };
+}
+
+/**
+ * 将组内局部相对坐标还原为绝对画布坐标。
+ */
+export function toAbsoluteCoordinates(
+  relativePosition: { x: number; y: number },
+  groupPosition: { x: number; y: number },
+): { x: number; y: number } {
+  return {
+    x: relativePosition.x + groupPosition.x,
+    y: relativePosition.y + groupPosition.y,
+  };
+}
+
+export type ResizeHandleDirection = 'nw' | 'ne' | 'se' | 'sw' | 'n' | 'e' | 's' | 'w';
+
+/**
+ * 8轴手柄尺寸计算器：
+ * 根据拖拽方向与位移量计算新边界，强制阻止边界穿透子节点最小包围范围。
+ */
+export function clampGroupResize(
+  handle: ResizeHandleDirection,
+  current: RectBounds,
+  delta: { dx: number; dy: number },
+  minAllowed: { minWidth: number; minHeight: number },
+): RectBounds {
+  let { x, y, width, height } = current;
+  const { dx, dy } = delta;
+
+  switch (handle) {
+    case 'se': {
+      width = Math.max(minAllowed.minWidth, width + dx);
+      height = Math.max(minAllowed.minHeight, height + dy);
+      break;
+    }
+    case 'e': {
+      width = Math.max(minAllowed.minWidth, width + dx);
+      break;
+    }
+    case 's': {
+      height = Math.max(minAllowed.minHeight, height + dy);
+      break;
+    }
+    case 'nw': {
+      const newWidth = width - dx;
+      if (newWidth >= minAllowed.minWidth) {
+        x += dx;
+        width = newWidth;
+      } else {
+        x += width - minAllowed.minWidth;
+        width = minAllowed.minWidth;
+      }
+      const newHeight = height - dy;
+      if (newHeight >= minAllowed.minHeight) {
+        y += dy;
+        height = newHeight;
+      } else {
+        y += height - minAllowed.minHeight;
+        height = minAllowed.minHeight;
+      }
+      break;
+    }
+    case 'w': {
+      const newWidth = width - dx;
+      if (newWidth >= minAllowed.minWidth) {
+        x += dx;
+        width = newWidth;
+      } else {
+        x += width - minAllowed.minWidth;
+        width = minAllowed.minWidth;
+      }
+      break;
+    }
+    case 'n': {
+      const newHeight = height - dy;
+      if (newHeight >= minAllowed.minHeight) {
+        y += dy;
+        height = newHeight;
+      } else {
+        y += height - minAllowed.minHeight;
+        height = minAllowed.minHeight;
+      }
+      break;
+    }
+    case 'ne': {
+      width = Math.max(minAllowed.minWidth, width + dx);
+      const newHeight = height - dy;
+      if (newHeight >= minAllowed.minHeight) {
+        y += dy;
+        height = newHeight;
+      } else {
+        y += height - minAllowed.minHeight;
+        height = minAllowed.minHeight;
+      }
+      break;
+    }
+    case 'sw': {
+      height = Math.max(minAllowed.minHeight, height + dy);
+      const newWidth = width - dx;
+      if (newWidth >= minAllowed.minWidth) {
+        x += dx;
+        width = newWidth;
+      } else {
+        x += width - minAllowed.minWidth;
+        width = minAllowed.minWidth;
+      }
+      break;
+    }
+  }
+
+  return { x, y, width, height };
+}
+
+/** Convert a screen-space pointer delta into flow units for the current zoom. */
+export function screenDeltaToFlowDelta(
+  dx: number,
+  dy: number,
+  zoom: number,
+): { dx: number; dy: number } {
+  const scale = zoom > 0 ? zoom : 1;
+  return { dx: dx / scale, dy: dy / scale };
+}
+
+export function childIdsOfGroup(nodes: Array<{ id: string; type?: string; parentId?: string }>, groupId: string): string[] {
+  return nodes
+    .filter((node) => node.parentId === groupId && node.type !== 'group')
+    .map((node) => node.id);
+}
+
+/**
+ * 纯逻辑：将指定节点打组为 GroupNode 并将子节点转为相对坐标。
+ */
+export function planGroupNodes(
+  currentNodes: any[],
+  nodeIds: string[],
+  title = '新建组',
+  color = '#3b82f6',
+): { groupId: string; nodes: any[] } | null {
+  const targetNodes = currentNodes.filter((n) => (
+    nodeIds.includes(n.id)
+    && n.type !== 'group'
+    && !n.parentId
+  ));
+  if (targetNodes.length < 2) return null;
+
+  const bounds = calculateGroupBounds(targetNodes, 32);
+  const groupId = `group_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+  const groupNode = {
+    id: groupId,
+    type: 'group',
+    position: { x: bounds.x, y: bounds.y },
+    width: bounds.width,
+    height: bounds.height,
+    selected: true,
+    style: {
+      width: bounds.width,
+      height: bounds.height,
+      zIndex: 0,
+    },
+    data: {
+      title,
+      color,
+      minWidth: bounds.minWidth,
+      minHeight: bounds.minHeight,
+      padding: 32,
+      nodeIds: targetNodes.map((n) => n.id),
+    },
+  };
+
+  const groupedIds = new Set(targetNodes.map((n) => n.id));
+
+  const updatedChildren = currentNodes.map((node) => {
+    if (!groupedIds.has(node.id) || node.type === 'group') return node;
+    const relPos = toRelativeCoordinates(node.position, { x: bounds.x, y: bounds.y });
+    return {
+      ...node,
+      parentId: groupId,
+      position: relPos,
+      selected: false,
+      extent: 'parent',
+    };
+  });
+
+  return {
+    groupId,
+    nodes: [groupNode, ...updatedChildren],
+  };
+}
+
+/**
+ * 纯逻辑：解除组，将组内节点还原为绝对坐标。
+ */
+export function planUngroupNode(currentNodes: any[], groupId: string): any[] | null {
+  const groupNode = currentNodes.find((n) => n.id === groupId && n.type === 'group');
+  if (!groupNode) return null;
+
+  const groupPos = groupNode.position;
+  return currentNodes
+    .filter((n) => n.id !== groupId)
+    .map((node) => {
+      if (node.parentId !== groupId) return node;
+      const absPos = toAbsoluteCoordinates(node.position, groupPos);
+      const { parentId, extent, ...rest } = node;
+      return {
+        ...rest,
+        position: absPos,
+        selected: true,
+      };
+    });
+}

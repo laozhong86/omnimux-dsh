@@ -34,7 +34,7 @@ export interface ApiResult<T> {
   body: T & { error?: string; message?: string };
 }
 
-async function request<T>(
+export async function request<T>(
   path: string,
   opts: { method?: string; body?: unknown; signal?: AbortSignal } = {},
 ): Promise<ApiResult<T>> {

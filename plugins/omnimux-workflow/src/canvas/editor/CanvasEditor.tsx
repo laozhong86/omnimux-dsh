@@ -58,6 +58,14 @@ import { buildNodeTypes, createNode, registerNodeDefinition } from '../nodes/reg
 import { materialNodeDefinition } from '../nodes/definitions/material';
 import { tableNodeDefinition } from '../nodes/definitions/table';
 import { videoCompositionNodeDefinition } from '../nodes/definitions/videoComposition';
+import { groupNodeDefinition } from '../nodes/definitions/group';
+import { FloatingSelectionToolbar } from './components/FloatingSelectionToolbar';
+import { BatchCreateAssetModal, type MediaAssetItem } from './components/BatchCreateAssetModal';
+import { CreateWorkflowModal } from './components/CreateWorkflowModal';
+import { calculateGroupBounds, childIdsOfGroup } from './utils/nodeVisualMath';
+import { createTemplate, getTemplate, listTemplates } from '../bridge/templateApi';
+import { sanitizeEdges, sanitizeNodes } from '../bridge/persistSanitize';
+import { planInstantiateTemplate } from './utils/planInstantiateTemplate';
 import { SpreadsheetStage } from '../components/table-node/stage/SpreadsheetStage';
 import type { CapabilityCatalog } from '../../shared/api';
 
@@ -121,6 +129,7 @@ class DrawerErrorBoundary extends React.Component<
 registerNodeDefinition(materialNodeDefinition);
 registerNodeDefinition(tableNodeDefinition);
 registerNodeDefinition(videoCompositionNodeDefinition);
+registerNodeDefinition(groupNodeDefinition);
 
 const nodeTypes = buildNodeTypes();
 
@@ -159,11 +168,15 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
   onCancelExecution,
   onResetExecution,
 }) => {
+  const t = useT();
   const { screenToFlowPosition, fitView, zoomTo, setCenter } = useReactFlow();
+  const reactFlowInstance = useReactFlow();
   const { nodes, edges, onNodesChange, onEdgesChange } = useGraphStore();
   const applyCanvasInputMutation = useCanvasStore((state) => state.applyCanvasInputMutation);
   const setNodes = useCanvasStore((state) => state.setNodes);
   const setSelectedElement = useCanvasStore((state) => state.setSelectedElement);
+  const groupNodes = useCanvasStore((state) => state.groupNodes);
+  const ungroup = useCanvasStore((state) => state.ungroup);
   const pushHistory = useCanvasStore((state) => state.pushHistory);
   const undo = useCanvasStore((state) => state.undo);
   const redo = useCanvasStore((state) => state.redo);
@@ -176,9 +189,179 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [assetsCategoryIndex, setAssetsCategoryIndex] = useState<number | undefined>(undefined);
   const [pointerMode, setPointerMode] = useState<CanvasPointerMode>('select');
+  const [batchAssetModalOpen, setBatchAssetModalOpen] = useState(false);
+  const [batchAssetItems, setBatchAssetItems] = useState<MediaAssetItem[]>([]);
+  const [createWorkflowModalOpen, setCreateWorkflowModalOpen] = useState(false);
+  const [targetGroupForWorkflow, setTargetGroupForWorkflow] = useState<{ id: string; title: string; nodeCount: number } | null>(null);
+  const [workflowTemplates, setWorkflowTemplates] = useState<Array<{ id: string; name: string; nodeCount: number }>>([]);
   const nodeCreateCounter = useRef(0);
 
   const hasSelection = useMemo(() => nodes.some((node) => node.selected), [nodes]);
+
+  const selectedRegularNodes = useMemo(
+    () => nodes.filter((node) => node.selected && node.type !== 'group'),
+    [nodes],
+  );
+
+  const multiSelectToolbarPosition = useMemo(() => {
+    if (selectedRegularNodes.length < 2) return { x: 0, y: 0 };
+    const bounds = calculateGroupBounds(selectedRegularNodes, 0);
+    const flowCenterX = bounds.x + bounds.width / 2;
+    const flowTopY = bounds.y;
+    const vp = reactFlowInstance.getViewport ? reactFlowInstance.getViewport() : { x: 0, y: 0, zoom: 1 };
+    return {
+      x: vp.x + flowCenterX * vp.zoom,
+      y: vp.y + flowTopY * vp.zoom,
+    };
+  }, [selectedRegularNodes, reactFlowInstance]);
+
+  const refreshWorkflowTemplates = useCallback(async () => {
+    const result = await listTemplates();
+    if (!result.ok) return;
+    setWorkflowTemplates((result.body.templates || []).map((template) => ({
+      id: template.id,
+      name: template.name,
+      nodeCount: template.nodeCount,
+    })));
+  }, []);
+
+  useEffect(() => {
+    void refreshWorkflowTemplates();
+  }, [refreshWorkflowTemplates]);
+
+  const handleInsertTemplate = useCallback(async (templateId: string) => {
+    const result = await getTemplate(templateId);
+    if (!result.ok || !result.body.template) {
+      toast.error(result.body.message || result.body.error || t('template.toast.loadFailed'));
+      return;
+    }
+    const origin = screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    });
+    const instantiated = planInstantiateTemplate(result.body.template, origin);
+    applyCanvasInputMutation({
+      addNodes: instantiated.nodes,
+      addEdges: instantiated.edges,
+    });
+    toast.success(t('template.toast.inserted').replace('{name}', result.body.template.name));
+  }, [applyCanvasInputMutation, screenToFlowPosition, t]);
+
+  const handleGroupSelected = useCallback(() => {
+    if (selectedRegularNodes.length < 2) return;
+    const groupId = groupNodes(selectedRegularNodes.map((n) => n.id), t('group.defaultTitle'));
+    if (groupId) {
+      toast.success(t('group.toast.grouped'));
+    }
+  }, [selectedRegularNodes, groupNodes, t]);
+
+  const handleAlignLayout = useCallback(
+    (layoutType: 'horizontal' | 'vertical' | 'grid', targetNodes = selectedRegularNodes) => {
+      if (targetNodes.length < 2) return;
+      const sorted = [...targetNodes].sort((a, b) => a.position.x - b.position.x);
+      const first = sorted[0];
+      if (!first) return;
+      const firstX = first.position.x;
+      const firstY = first.position.y;
+      const gap = 40;
+
+      let currentX = firstX;
+      let currentY = firstY;
+      const cols = Math.ceil(Math.sqrt(targetNodes.length));
+
+      const updated = targetNodes.map((node, index) => {
+        let nextPos = { ...node.position };
+        const w = (node.width as number) || 320;
+        const h = (node.height as number) || 200;
+
+        if (layoutType === 'horizontal') {
+          nextPos = { x: currentX, y: firstY };
+          currentX += w + gap;
+        } else if (layoutType === 'vertical') {
+          nextPos = { x: firstX, y: currentY };
+          currentY += h + gap;
+        } else if (layoutType === 'grid') {
+          const col = index % cols;
+          const row = Math.floor(index / cols);
+          nextPos = { x: firstX + col * (320 + gap), y: firstY + row * (220 + gap) };
+        }
+        return { ...node, position: nextPos };
+      });
+
+      const updatedMap = new Map(updated.map((n) => [n.id, n]));
+      setNodes((current) => current.map((n) => updatedMap.get(n.id) || n));
+      toast.success(t('group.toast.layout'));
+    },
+    [selectedRegularNodes, setNodes, t],
+  );
+
+  // 监听组事件 (整组执行 / 创建工作流 / 组内布局)
+  useEffect(() => {
+    const handleExecuteGroupEvent = (e: Event) => {
+      const customEvt = e as CustomEvent<{ groupId: string; nodeIds?: string[] }>;
+      const liveIds = customEvt.detail?.groupId
+        ? childIdsOfGroup(nodes, customEvt.detail.groupId)
+        : [];
+      const nodeIds = liveIds.length > 0 ? liveIds : (customEvt.detail?.nodeIds || []);
+      if (nodeIds.length > 0 && onExecuteNodeIds) {
+        onExecuteNodeIds(nodeIds);
+        toast.success(t('group.toast.execute'));
+      }
+    };
+
+    const handleLayoutGroupEvent = (e: Event) => {
+      const customEvt = e as CustomEvent<{ groupId: string; layoutType: 'horizontal' | 'vertical' | 'grid' }>;
+      const { groupId, layoutType } = customEvt.detail;
+      const groupChildren = nodes.filter((n) => n.parentId === groupId);
+      if (groupChildren.length >= 2) {
+        handleAlignLayout(layoutType, groupChildren);
+      }
+    };
+
+    const handleBatchAssetEvent = (e: Event) => {
+      const customEvt = e as CustomEvent<{ nodeIds: string[] }>;
+      const targetIds = customEvt.detail?.nodeIds || [];
+      const targetNodes = nodes.filter((n) => targetIds.includes(n.id));
+      const items: MediaAssetItem[] = targetNodes.map((n) => {
+        const d = (n.data || {}) as Record<string, unknown>;
+        return {
+          id: n.id,
+          nodeId: n.id,
+          nodeTitle: (d.label as string) || (d.title as string) || (d.name as string) || n.id,
+          type: (d.materialType as any) || (n.type as any) || 'image',
+          previewUrl: d.previewUrl as string | undefined,
+          content: d.content as string | undefined,
+          realPath: d.realPath as string | undefined,
+        };
+      });
+      setBatchAssetItems(items);
+      setBatchAssetModalOpen(true);
+    };
+
+    const handleCreateSubworkflowEvent = (e: Event) => {
+      const customEvt = e as CustomEvent<{ groupId: string; groupTitle: string; nodeIds: string[] }>;
+      const { groupId, groupTitle } = customEvt.detail;
+      const groupChildren = nodes.filter((n) => n.parentId === groupId);
+      setTargetGroupForWorkflow({
+        id: groupId,
+        title: groupTitle || t('template.modal.defaultName'),
+        nodeCount: groupChildren.length,
+      });
+      setCreateWorkflowModalOpen(true);
+    };
+
+    window.addEventListener('omnimux:workflow:execute-group', handleExecuteGroupEvent);
+    window.addEventListener('omnimux:workflow:layout-group', handleLayoutGroupEvent);
+    window.addEventListener('omnimux:workflow:batch-create-asset', handleBatchAssetEvent);
+    window.addEventListener('omnimux:workflow:create-subworkflow', handleCreateSubworkflowEvent);
+
+    return () => {
+      window.removeEventListener('omnimux:workflow:execute-group', handleExecuteGroupEvent);
+      window.removeEventListener('omnimux:workflow:layout-group', handleLayoutGroupEvent);
+      window.removeEventListener('omnimux:workflow:batch-create-asset', handleBatchAssetEvent);
+      window.removeEventListener('omnimux:workflow:create-subworkflow', handleCreateSubworkflowEvent);
+    };
+  }, [nodes, onExecuteNodeIds, handleAlignLayout, t]);
 
   const clipboard = useCanvasClipboard(setNodes, setSelectedElement);
 
@@ -186,7 +369,6 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
   // subscription); the old upstream flowEdges mapping was removed — edges
   // pass through unchanged.
   // W3 T3.4: release menu + rejection toast three-branch split.
-  const t = useT();
   const connectionMenuTitle = t('menu.generateFromNode');
   const {
     menuState: connectionMenuState,
@@ -387,6 +569,14 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
     onDeleteSelected: clipboard.deleteSelectedNodes,
     onClearSelection: clipboard.clearSelection,
     onDuplicate: clipboard.duplicateSelectedNodes,
+    onGroupSelected: handleGroupSelected,
+    onUngroupSelected: () => {
+      const selectedGroup = nodes.find((n) => n.selected && n.type === 'group');
+      if (selectedGroup) {
+        ungroup(selectedGroup.id);
+        toast.success(t('group.toast.ungrouped'));
+      }
+    },
     onUndo: undo,
     onRedo: redo,
     hasSelection,
@@ -540,6 +730,8 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
         isAssetsOpen={isAssetsOpen}
         isAddMenuOpen={isAddMenuOpen}
         onToggleAddMenu={() => setIsAddMenuOpen((prev) => !prev)}
+        templates={workflowTemplates}
+        onInsertTemplate={(id) => { void handleInsertTemplate(id); }}
       />
 
       {/* 项目资产抽屉 (带防护隔离，保证画布永远不黑屏) */}
@@ -569,6 +761,22 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
         onClose={() => setIsShortcutsOpen(false)}
       />
 
+      {/* 多选浮动工具栏 */}
+      <FloatingSelectionToolbar
+        visible={selectedRegularNodes.length >= 2}
+        selectedCount={selectedRegularNodes.length}
+        position={multiSelectToolbarPosition}
+        onGroup={handleGroupSelected}
+        onCreateAsset={() => {
+          window.dispatchEvent(
+            new CustomEvent('omnimux:workflow:batch-create-asset', {
+              detail: { nodeIds: selectedRegularNodes.map((n) => n.id) },
+            }),
+          );
+        }}
+        onLayout={(type) => handleAlignLayout(type)}
+      />
+
       <ContextMenu
         x={menu.x}
         y={menu.y}
@@ -595,6 +803,43 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
 
       {/* 全屏独立电子表格舞台 */}
       <SpreadsheetStage />
+
+      {/* 批量保存资产弹窗 */}
+      <BatchCreateAssetModal
+        isOpen={batchAssetModalOpen}
+        onClose={() => setBatchAssetModalOpen(false)}
+        items={batchAssetItems}
+      />
+
+      {/* 创建可复用工作流弹窗 */}
+      <CreateWorkflowModal
+        isOpen={createWorkflowModalOpen}
+        onClose={() => {
+          setCreateWorkflowModalOpen(false);
+          setTargetGroupForWorkflow(null);
+        }}
+        groupId={targetGroupForWorkflow?.id}
+        defaultTitle={targetGroupForWorkflow?.title}
+        nodeCount={targetGroupForWorkflow?.nodeCount}
+        onConfirm={async (payload) => {
+          const groupId = targetGroupForWorkflow?.id;
+          if (!groupId) throw new Error(t('template.missingGroup'));
+          const childIds = new Set(childIdsOfGroup(nodes, groupId));
+          const childNodes = nodes.filter((n) => childIds.has(n.id));
+          const childEdges = edges.filter((edge) => childIds.has(edge.source) && childIds.has(edge.target));
+          const result = await createTemplate({
+            name: payload.name,
+            description: payload.description,
+            tags: payload.tags,
+            nodes: sanitizeNodes(childNodes),
+            edges: sanitizeEdges(childEdges),
+          });
+          if (!result.ok || !result.body.template) {
+            throw new Error(result.body.message || result.body.error || t('template.modal.failed'));
+          }
+          await refreshWorkflowTemplates();
+        }}
+      />
 
       {lastRejectedReason && (
         <div className="wf-rejected-toast">{lastRejectedReason}</div>

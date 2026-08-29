@@ -115,6 +115,9 @@ export function sanitizeNodes(nodes: SerializedCanvasNode[]): SerializedCanvasNo
     if (typeof raw.width === 'number') clean.width = raw.width;
     if (typeof raw.height === 'number') clean.height = raw.height;
     if (typeof raw.parentId === 'string') clean.parentId = raw.parentId;
+    if (raw.extent === 'parent') {
+      clean.extent = 'parent';
+    }
     if (typeof raw.zIndex === 'number') clean.zIndex = raw.zIndex;
     if (raw.style && typeof raw.style === 'object') clean.style = asRecord(raw.style);
 

@@ -27,6 +27,7 @@ import {
   Redo2,
   ChevronUp,
   UploadCloud,
+  FileCode,
 } from 'lucide-react';
 import type { MaterialType } from '../../types/materialNode';
 import { useT } from '../../i18n';
@@ -53,6 +54,8 @@ export interface ToolbarProps {
   isAddMenuOpen?: boolean;
   onToggleAddMenu?: () => void;
   isAssetsOpen?: boolean;
+  templates?: Array<{ id: string; name: string; nodeCount: number }>;
+  onInsertTemplate?: (id: string) => void;
 }
 
 const ADD_NODE_ITEMS: Array<{
@@ -83,9 +86,12 @@ const Toolbar: React.FC<ToolbarProps> = ({
   isAddMenuOpen: externalIsAddMenuOpen,
   onToggleAddMenu,
   isAssetsOpen = false,
+  templates = [],
+  onInsertTemplate,
 }) => {
   const t = useT();
   const [internalIsAddMenuOpen, setInternalIsAddMenuOpen] = useState(false);
+  const [isTemplateMenuOpen, setIsTemplateMenuOpen] = useState(false);
 
   const isAddOpen = externalIsAddMenuOpen !== undefined ? externalIsAddMenuOpen : internalIsAddMenuOpen;
   const toggleAdd = onToggleAddMenu || (() => setInternalIsAddMenuOpen((v) => !v));
@@ -164,6 +170,44 @@ const Toolbar: React.FC<ToolbarProps> = ({
       </div>
 
       <div className="wf-canvas-toolbar__divider" />
+
+      {onInsertTemplate && (
+        <div style={{ position: 'relative' }}>
+          <button
+            type="button"
+            className="wf-canvas-toolbar__item wf-canvas-toolbar__item--icon-only"
+            onClick={() => setIsTemplateMenuOpen((open) => !open)}
+            title={t('toolbar.insertTemplate')}
+          >
+            <span className="wf-canvas-toolbar__icon">
+              <FileCode size={16} />
+            </span>
+            <span className="wf-canvas-toolbar__label">{t('toolbar.insertTemplateLabel')}</span>
+          </button>
+          {isTemplateMenuOpen && (
+            <div className="wf-dock-add-popover wf-template-picker">
+              {templates.length === 0 ? (
+                <div className="wf-template-picker__empty">{t('toolbar.insertTemplateEmpty')}</div>
+              ) : (
+                templates.map((template) => (
+                  <button
+                    key={template.id}
+                    type="button"
+                    className="wf-template-picker__item"
+                    onClick={() => {
+                      onInsertTemplate(template.id);
+                      setIsTemplateMenuOpen(false);
+                    }}
+                  >
+                    <span>{template.name}</span>
+                    <span className="wf-template-picker__meta">{t('toolbar.insertTemplateNodes').replace('{count}', String(template.nodeCount))}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 指针模式选择 (V/H) */}
       <CustomDropdown

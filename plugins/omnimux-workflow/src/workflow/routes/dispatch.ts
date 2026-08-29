@@ -6,6 +6,7 @@ import type { ExecutionManager, ExecutionEventLogEntry } from '../execution/Exec
 import type { ExecutionContext } from '../execution/ExecutionContext';
 import type { GenerationGateway } from '../seam/gateway';
 import type { WorkspaceStore } from '../workspace/WorkspaceStore';
+import type { TemplateStore } from '../templates/TemplateStore.ts';
 
 export interface WorkflowDispatcherDeps {
   store: WorkspaceStore;
@@ -14,6 +15,7 @@ export interface WorkflowDispatcherDeps {
   executionManager: ExecutionManager;
   /** Injected native picker (tests). Default: macOS osascript chooser. */
   picker?: (kind: string) => Promise<{ path: string | null; paths: string[] }>;
+  templates?: TemplateStore;
 }
 
 export interface WorkflowDispatchRequest {
