@@ -333,7 +333,10 @@ export function retry() {
  * @returns {any} the installed singleton.
  */
 export function installAuthGlobal(target, overrides = {}) {
-  if (overrides && (overrides.getStatus || overrides.getStatusCached || overrides.peekCache || overrides.runLogin)) {
+  const injected = Boolean(
+    overrides && (overrides.getStatus || overrides.getStatusCached || overrides.peekCache || overrides.runLogin),
+  )
+  if (injected) {
     const injectedStatus = Boolean(overrides.getStatus || overrides.getStatusCached)
     impl = {
       getStatus: overrides.getStatus ?? impl.getStatus,
@@ -365,6 +368,14 @@ export function installAuthGlobal(target, overrides = {}) {
     getSnapshot,
   }
   Object.defineProperty(target, AUTH_GLOBAL_KEY, { value: api, configurable: true })
+  // Cloud sidebar rows subscribe to gate phases only. Warm the session
+  // cache and emit so they re-check isLoggedIn after CLI/App shared auth.
+  // Skip when tests inject getStatus without getStatusCached (cold HTTP path).
+  if (!injected || overrides.getStatusCached) {
+    void impl.getStatusCached().then((status) => {
+      if (status && status.ok && status.body?.logged_in === true) emit()
+    }).catch(() => {})
+  }
   return api
 }
 

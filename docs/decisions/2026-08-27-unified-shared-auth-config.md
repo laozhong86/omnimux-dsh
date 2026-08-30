@@ -30,6 +30,10 @@ subsystem: "omnimux"
    - 放弃复杂回滚兼容开关，全端直接收敛至全新标准配置目录。
 3. **去即焚生命周期保护**：
    - 401 报错严禁物理删除磁盘凭据，改由内存标记 `expired` 状态并阻断请求；仅在显式退出登录时清空。
+4. **认证共享、家目录隔离**：
+   - CLI、Dev App、Prod App 共用 `~/.config/omnimux/{secrets.json,config.json,profile.json}`。
+   - Dev `~/.omnimux-dev` 与 Prod `~/.omnimux` 只放插件/项目/物化，不放账号。
+   - 官方 `~/.dsh` 仅原生 DSH 配置；OmniMux 认证不把它当运行时路径。
 
 ---
 

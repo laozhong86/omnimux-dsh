@@ -30,10 +30,14 @@ export function createIdentity(deps) {
           body: publicStatus({ loggedIn: false, verified: false, siteBaseUrl, profile: cached }),
         }
       }
-      return {
-        kind: 'cached',
-        body: publicStatus({ loggedIn: true, verified: null, siteBaseUrl, profile: cached }),
+      if (hasPublicProfile(cached)) {
+        return {
+          kind: 'cached',
+          body: publicStatus({ loggedIn: true, verified: null, siteBaseUrl, profile: cached }),
+        }
       }
+      // Token is shared (CLI/App) but this home has no public profile yet.
+      // Fall through to /self so the settings card and cloud sidebar fill in.
     }
     const token = await deps.store.resolve()
     if (!token) {
@@ -67,6 +71,12 @@ export function createIdentity(deps) {
           body: publicStatus({ loggedIn: false, verified: false, siteBaseUrl, profile: cached }),
         }
       }
+      if (!verify) {
+        return {
+          kind: 'cached',
+          body: publicStatus({ loggedIn: true, verified: false, siteBaseUrl, profile: cached }),
+        }
+      }
       return {
         kind: 'self_failed',
         body: publicStatus({ loggedIn: false, verified: false, siteBaseUrl }),
@@ -95,6 +105,18 @@ export function createIdentity(deps) {
   }
 
   return { load, status, require }
+}
+
+/**
+ * @param {unknown} profile
+ */
+function hasPublicProfile(profile) {
+  if (!profile || typeof profile !== 'object') return false
+  const row = /** @type {Record<string, unknown>} */ (profile)
+  if (row.id != null && String(row.id).trim() !== '') return true
+  if (typeof row.username === 'string' && row.username.trim() !== '') return true
+  if (typeof row.display_name === 'string' && row.display_name.trim() !== '') return true
+  return false
 }
 
 /**

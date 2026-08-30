@@ -32,6 +32,8 @@ describe('token store (canonical 0600 file)', () => {
 
       store.writeProfileCache({ username: 'ada' })
       assert.equal(store.readProfileCache().username, 'ada')
+      assert.equal(existsSync(join(configDir, 'profile.json')), true)
+      assert.equal(existsSync(join(homeDir, 'omnimux', 'profile.json')), false)
 
       await store.unset()
       assert.equal(await store.resolve(), undefined)
@@ -311,6 +313,47 @@ describe('token store (canonical 0600 file)', () => {
 
     rmSync(homeDir, { recursive: true, force: true })
     rmSync(configDir, { recursive: true, force: true })
+  })
+
+  it('Dev and Prod homes share one profile.json under configDir, not $DSH_HOME', async () => {
+    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-shared-cfg-'))
+    const devHome = mkdtempSync(join(tmpdir(), 'omnimux-dev-home-'))
+    const prodHome = mkdtempSync(join(tmpdir(), 'omnimux-prod-home-'))
+    try {
+      const devStore = createTokenStore({ homeDir: devHome, configDir })
+      await devStore.set('shared-pat')
+      devStore.writeProfileCache({ id: 1, username: 'admin', display_name: 'Root User', quota_usd: 10 })
+
+      const prodStore = createTokenStore({ homeDir: prodHome, configDir })
+      assert.equal(await prodStore.resolve(), 'shared-pat')
+      assert.equal(prodStore.readProfileCache().username, 'admin')
+      assert.equal(prodStore.profilePath, join(configDir, 'profile.json'))
+      assert.equal(existsSync(join(devHome, 'omnimux', 'profile.json')), false)
+      assert.equal(existsSync(join(prodHome, 'omnimux', 'profile.json')), false)
+    } finally {
+      rmSync(configDir, { recursive: true, force: true })
+      rmSync(devHome, { recursive: true, force: true })
+      rmSync(prodHome, { recursive: true, force: true })
+    }
+  })
+
+  it('lifts a leftover $DSH_HOME profile cache into the shared config dir once', async () => {
+    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-lift-cfg-'))
+    const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-lift-home-'))
+    const prev = process.env.NODE_TEST_CONTEXT
+    try {
+      mkdirSync(join(homeDir, 'omnimux'), { recursive: true })
+      writeFileSync(join(homeDir, 'omnimux', 'profile.json'), JSON.stringify({ id: 7, username: 'legacy' }))
+      delete process.env.NODE_TEST_CONTEXT
+      const store = createTokenStore({ homeDir, configDir })
+      assert.equal(store.readProfileCache().username, 'legacy')
+      assert.equal(existsSync(join(configDir, 'profile.json')), true)
+    } finally {
+      if (prev === undefined) delete process.env.NODE_TEST_CONTEXT
+      else process.env.NODE_TEST_CONTEXT = prev
+      rmSync(configDir, { recursive: true, force: true })
+      rmSync(homeDir, { recursive: true, force: true })
+    }
   })
 
   it('node:test runs do not touch real ~/.config/omnimux/secrets.json', async () => {

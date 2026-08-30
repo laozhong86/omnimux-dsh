@@ -31,6 +31,43 @@ describe('identity seam', () => {
     }
   })
 
+  it('hydrates /self when token exists but shared profile cache is empty', async () => {
+    const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-id-'))
+    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-cfg-'))
+    const store = createTokenStore({ homeDir, configDir })
+    await store.set('pat-secret')
+    let hits = 0
+    const identity = createIdentity({
+      store,
+      siteBaseUrl: 'https://omnimux.ai',
+      fetcher: async () => {
+        hits += 1
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            data: { id: 1, username: 'admin', display_name: 'Root User', quota: 500000, used_quota: 0 },
+          }),
+        }
+      },
+    })
+    try {
+      const body = await identity.status()
+      assert.equal(body.logged_in, true)
+      assert.equal(body.username, 'admin')
+      assert.equal(body.display_name, 'Root User')
+      assert.equal(hits, 1)
+      assert.equal(store.readProfileCache().username, 'admin')
+      const cached = await identity.status()
+      assert.equal(cached.username, 'admin')
+      assert.equal(hits, 1)
+    } finally {
+      rmSync(homeDir, { recursive: true, force: true })
+      rmSync(configDir, { recursive: true, force: true })
+    }
+  })
+
   it('returns cached public fields and never the PAT', async () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-id-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-cfg-'))
