@@ -1,0 +1,215 @@
+/* ==========================================================================
+   OmniMux 会话附件附着槽样式 (100% 消费 DSH 原生 --dsw-* Token)
+   ========================================================================== */
+
+.omx-attachment-dock {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 0 6px 0;
+  margin: 0 auto;
+}
+
+.omx-attachment-tray {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  padding: 2px 2px 4px 2px;
+}
+
+.omx-attachment-tray::-webkit-scrollbar {
+  display: none;
+}
+
+/* ==========================================================================
+   通用卡片容器 (Base Card)
+   ========================================================================== */
+
+.omx-att-card {
+  position: relative;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  background: var(--dsw-alias-bg-layer-1);
+  border: 1px solid var(--dsw-alias-border-l2);
+  user-select: none;
+  cursor: default;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.omx-att-card:hover {
+  background: var(--dsw-alias-bg-layer-2);
+  border-color: var(--dsw-alias-border-l3);
+}
+
+/* 呼吸高亮动效 (重复添加时反馈) */
+.omx-att-card--highlight {
+  animation: omx-att-pulse 0.6s ease-in-out;
+}
+
+@keyframes omx-att-pulse {
+  0% { transform: scale(1); border-color: var(--dsw-alias-state-business-primary); }
+  50% { transform: scale(1.04); border-color: var(--dsw-alias-state-business-primary); }
+  100% { transform: scale(1); border-color: var(--dsw-alias-border-l2); }
+}
+
+/* ==========================================================================
+   1. 媒体类卡片 (图像 / 视频微缩图)
+   ========================================================================== */
+
+.omx-att-card--media {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 0;
+  justify-content: center;
+}
+
+.omx-att-card__media-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.omx-att-card__media-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* 视频居中播放小三角 */
+.omx-att-card__play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dsw-alias-bg-mask-1);
+  backdrop-filter: blur(2px);
+  border-radius: 50%;
+  color: var(--dsw-alias-label-primary-inverted);
+  pointer-events: none;
+}
+
+/* 视频右下角时长胶囊 */
+.omx-att-card__duration-badge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: var(--dsw-alias-bg-mask-1);
+  backdrop-filter: blur(4px);
+  color: var(--dsw-alias-label-primary-inverted);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+  padding: 0 4px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   2. 文件/表格/文档类卡片 (Document / Table / File)
+   ========================================================================== */
+
+.omx-att-card--file {
+  height: 56px;
+  min-width: 130px;
+  max-width: 180px;
+  border-radius: 10px;
+  padding: 8px 10px 8px 10px;
+  gap: 10px;
+}
+
+.omx-att-card__file-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.omx-att-card__file-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+
+/* 文件名超长截断限制 */
+.omx-att-card__file-title {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--dsw-alias-label-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 115px;
+}
+
+/* 大写扩展名徽标 (MD, HTABLE, JSON 等) */
+.omx-att-card__file-ext {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 12px;
+  color: var(--dsw-alias-label-tertiary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   卡片悬浮移除按钮 (Remove Button ✕)
+   ========================================================================== */
+
+.omx-att-card__remove-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--dsw-alias-bg-elevated);
+  border: 1px solid var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  z-index: 5;
+}
+
+.omx-att-card:hover .omx-att-card__remove-btn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.omx-att-card__remove-btn:hover {
+  background: var(--dsw-alias-state-error-primary);
+  border-color: var(--dsw-alias-state-error-primary);
+  color: var(--dsw-alias-label-primary-inverted);
+}

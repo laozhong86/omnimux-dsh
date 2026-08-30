@@ -15,9 +15,10 @@
 
 import { memo, useCallback, useEffect } from 'react';
 import { type NodeProps } from '@xyflow/react';
-import { Download, Film, Layers, Pencil } from 'lucide-react';
+import { Download, Film, Layers, Pencil, MessageSquarePlus } from 'lucide-react';
 import CanvasNodeShell from '../../editor/components/CanvasNodeShell';
 import FloatingTopPill, { type FloatingPillAction } from '../../editor/components/FloatingTopPill';
+import { useAddToConversation } from '../../hooks/useAddToConversation';
 import NodeHeader from '../../editor/components/MaterialNode/NodeHeader';
 import StatusBadge from '../../editor/components/MaterialNode/StatusBadge';
 import GenerationStateContainer from '../../editor/components/GenerationStateContainer';
@@ -287,6 +288,22 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     }, 400);
   }, [id, nodeData.projectId, nodeData.schema, t, title, updateNodeData]);
 
+  const { addToConversation } = useAddToConversation();
+
+  const handleAddToConversation = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    addToConversation({
+      sourcePlugin: 'omnimux-workflow',
+      kind: 'video',
+      entityId: id,
+      title: `${projectFileName(title)}.mp4`,
+      extension: 'MP4',
+      relativePath: nodeData.outputVideoUrl || `assets/videos/${id}.mp4`,
+      previewUrl: nodeData.outputVideoUrl,
+      duration: (nodeData as any)?.durationText || '0:31',
+    });
+  }, [addToConversation, id, nodeData, title]);
+
   const handleDownload = useCallback(() => {
     const url = nodeData.outputVideoUrl;
     if (!url) return;
@@ -317,6 +334,12 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       renderFloatingPill={({ hovered, selected: isSelected }) => {
         if ((!hovered && !isSelected) || !hasOutput) return null;
         const pillActions: FloatingPillAction[] = [
+          {
+            key: 'add-to-conversation',
+            icon: MessageSquarePlus,
+            onClick: handleAddToConversation,
+            title: '添加到会话',
+          },
           {
             key: 'download_video',
             label: t('clip.download'),

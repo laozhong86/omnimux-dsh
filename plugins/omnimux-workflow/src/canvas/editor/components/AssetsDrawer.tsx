@@ -28,6 +28,7 @@ import type {
   ViewMode,
 } from './assets/types';
 import { useProjectAssets } from '../hooks/useProjectAssets';
+import { useAddToConversation } from '../../hooks/useAddToConversation';
 import { useSubjectLibrary } from '../hooks/useSubjectLibrary';
 
 export interface AssetRecord {
@@ -216,16 +217,19 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
   const itemPath = (item: { name: string; real_path?: string }) =>
     item.real_path || item.name;
 
-  const insertToChat = (item: { name: string; previewUrl?: string; real_path?: string }, kind: 'canvas' | 'asset') => {
-    const label = kind === 'canvas' ? '素材引用' : '项目资产引用';
-    const text = `[${label}: ${item.name}]`;
-    navigator.clipboard?.writeText(text);
-    window.dispatchEvent(
-      new CustomEvent('omnimux:insert-chat', {
-        detail: { text, name: item.name, previewUrl: item.previewUrl, path: item.real_path },
-      }),
-    );
-    toast.success(`已添加到对话：${item.name}`);
+  const { addToConversation } = useAddToConversation();
+
+  const insertToConversation = (item: { id?: string; name: string; previewUrl?: string; real_path?: string; type?: string }, kind: 'canvas' | 'asset') => {
+    const ext = item.name.match(/\.([a-zA-Z0-9_-]+)$/)?.[1]?.toUpperCase() || 'FILE';
+    addToConversation({
+      sourcePlugin: kind === 'canvas' ? 'omnimux-workflow' : 'omnimux-assets',
+      kind: 'asset',
+      entityId: item.id || item.name,
+      title: item.name,
+      extension: ext,
+      relativePath: item.real_path || item.name,
+      previewUrl: item.previewUrl,
+    });
   };
 
   const revealInFinder = (item: { name: string; real_path?: string }) => {
@@ -246,7 +250,8 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         break;
       case 'add-to-dialog':
       case 'add-to-chat':
-        insertToChat(item, 'canvas');
+      case 'add-to-conversation':
+        insertToConversation(item, 'canvas');
         break;
       case 'add-to-subjects': {
         if (!item.real_path || item.real_path.startsWith('blob:')) {
@@ -320,7 +325,8 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         break;
       case 'add-to-agent':
       case 'add-to-chat':
-        insertToChat(item, 'asset');
+      case 'add-to-conversation':
+        insertToConversation(item, 'asset');
         break;
       case 'reveal-in-finder':
         revealInFinder(item);

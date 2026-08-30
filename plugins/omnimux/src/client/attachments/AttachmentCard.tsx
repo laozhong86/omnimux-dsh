@@ -1,0 +1,145 @@
+import React, { useState, useMemo } from 'react';
+import type { ConversationAttachment } from './types.ts';
+
+interface AttachmentCardProps {
+  attachment: ConversationAttachment;
+  onRemove: (id: string) => void;
+  isHighlighted?: boolean;
+}
+
+// 矢量 SVG 图标定义（杜绝 Emoji，消费 --dsw-*）
+const PlayTriangleIcon = () => (
+  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M8 5v14l11-7z" />
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <path d="M18 6L6 18M6 6l12 12" />
+  </svg>
+);
+
+const TableFileIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+  </svg>
+);
+
+const DocFileIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <line x1="10" y1="9" x2="8" y2="9" />
+  </svg>
+);
+
+const MediaPlaceholderIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+);
+
+export const AttachmentCard: React.FC<AttachmentCardProps> = ({
+  attachment,
+  onRemove,
+  isHighlighted,
+}) => {
+  const [imageError, setImageError] = useState(false);
+
+  const isMedia = attachment.kind === 'image' || attachment.kind === 'video';
+  const isVideo = attachment.kind === 'video';
+
+  const fileIcon = useMemo(() => {
+    if (attachment.kind === 'table') {
+      return <TableFileIcon />;
+    }
+    return <DocFileIcon />;
+  }, [attachment.kind]);
+
+  const handleRemoveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRemove(attachment.id);
+  };
+
+  if (isMedia) {
+    return (
+      <div
+        className={`omx-att-card omx-att-card--media ${isHighlighted ? 'omx-att-card--highlight' : ''}`}
+        title={`${attachment.title} (${attachment.relativePath})`}
+      >
+        {attachment.previewUrl && !imageError ? (
+          <img
+            src={attachment.previewUrl}
+            alt={attachment.title}
+            className="omx-att-card__media-thumb"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className="omx-att-card__media-placeholder">
+            <MediaPlaceholderIcon />
+          </div>
+        )}
+
+        {/* 视频专属：居中播放三角 + 右下角时长 */}
+        {isVideo && (
+          <>
+            <div className="omx-att-card__play-icon">
+              <PlayTriangleIcon />
+            </div>
+            {attachment.duration && (
+              <span className="omx-att-card__duration-badge">
+                {attachment.duration}
+              </span>
+            )}
+          </>
+        )}
+
+        {/* 悬浮移除按钮 */}
+        <button
+          type="button"
+          className="omx-att-card__remove-btn"
+          onClick={handleRemoveClick}
+          aria-label={`移除 ${attachment.title}`}
+        >
+          <CloseIcon />
+        </button>
+      </div>
+    );
+  }
+
+  // 文档 / 表格 / 普通文件卡片
+  return (
+    <div
+      className={`omx-att-card omx-att-card--file ${isHighlighted ? 'omx-att-card--highlight' : ''}`}
+      title={`${attachment.title} (${attachment.relativePath})`}
+    >
+      <div className="omx-att-card__file-icon">
+        {fileIcon}
+      </div>
+      <div className="omx-att-card__file-info">
+        <span className="omx-att-card__file-title">
+          {attachment.title}
+        </span>
+        <span className="omx-att-card__file-ext">
+          {attachment.extension || 'FILE'}
+        </span>
+      </div>
+
+      {/* 悬浮移除按钮 */}
+      <button
+        type="button"
+        className="omx-att-card__remove-btn"
+        onClick={handleRemoveClick}
+        aria-label={`移除 ${attachment.title}`}
+      >
+        <CloseIcon />
+      </button>
+    </div>
+  );
+};

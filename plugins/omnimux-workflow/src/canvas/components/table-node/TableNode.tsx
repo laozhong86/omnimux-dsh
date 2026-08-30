@@ -12,6 +12,7 @@ import { useIsMultiSelected } from '../../store/canvasStore.ts';
 import NodeHeader from '../../editor/components/MaterialNode/NodeHeader.tsx';
 import CanvasNodeHandle from '../../editor/components/CanvasNodeHandle.tsx';
 import FloatingTopPill, { type FloatingPillAction } from '../../editor/components/FloatingTopPill.tsx';
+import { useAddToConversation } from '../../hooks/useAddToConversation';
 
 const DEFAULT_TABLE_NODE_WIDTH = 380;
 const DEFAULT_TABLE_NODE_HEIGHT = 280;
@@ -28,28 +29,28 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
   const isMultiSelected = useIsMultiSelected();
   const showFloatingPill = !isMultiSelected && (isHovered || selected);
 
-  // 【Add to Chat 链路】点击派发事件至 Host Chat Composer
-  const handleAddToChat = useCallback((e: React.MouseEvent) => {
+  const { addToConversation } = useAddToConversation();
+
+  // 【Add to Conversation 链路】点击派发至全局会话附件 Store
+  const handleAddToConversation = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    window.dispatchEvent(
-      new CustomEvent('omnimux:add-to-chat', {
-        detail: {
-          relativePath: tableRelPath,
-          filename: `${nodeTitle}.htable`,
-          nodeId: id,
-          kind: 'table',
-        },
-      })
-    );
-  }, [id, nodeTitle, tableRelPath]);
+    addToConversation({
+      sourcePlugin: 'omnimux-workflow',
+      kind: 'table',
+      entityId: id,
+      title: `${nodeTitle}.htable`,
+      extension: 'HTABLE',
+      relativePath: tableRelPath,
+    });
+  }, [addToConversation, id, nodeTitle, tableRelPath]);
 
   // 【全仓通用 FloatingTopPill 声明式 Actions】
   const pillActions: FloatingPillAction[] = useMemo(() => [
     {
-      key: 'add-to-chat',
+      key: 'add-to-conversation',
       icon: MessageSquarePlus,
-      title: '添加到对话',
-      onClick: handleAddToChat,
+      title: '添加到会话',
+      onClick: handleAddToConversation,
     },
     {
       key: 'fullscreen-edit',
@@ -60,7 +61,7 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
         openStage();
       },
     },
-  ], [handleAddToChat, openStage]);
+  ], [handleAddToConversation, openStage]);
 
   return (
     <div

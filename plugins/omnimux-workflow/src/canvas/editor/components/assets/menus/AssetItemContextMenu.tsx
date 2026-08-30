@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Image, MessageSquare, Folder, FolderInput, Trash2 } from 'lucide-react';
+import { Image, MessageSquarePlus, Folder, FolderInput, Trash2 } from 'lucide-react';
 import { stopToolbarNativeEvent } from '../../toolbarPointerGuard';
 import type { AssetItem } from '../types';
 
@@ -80,9 +80,9 @@ export const AssetItemContextMenu: React.FC<AssetItemContextMenuProps> = ({
         <span className="wf-context-menu-label">添加到画布</span>
       </div>
 
-      <div className="wf-context-menu-item" onClick={() => handleItemClick('add-to-agent')}>
-        <MessageSquare size={14} className="wf-context-menu-icon" />
-        <span className="wf-context-menu-label">添加到 agent</span>
+      <div className="wf-context-menu-item" onClick={() => handleItemClick('add-to-conversation')}>
+        <MessageSquarePlus size={14} className="wf-context-menu-icon" />
+        <span className="wf-context-menu-label">添加到会话</span>
       </div>
 
       <div className="wf-context-menu-item" onClick={() => handleItemClick('reveal-in-finder')}>
