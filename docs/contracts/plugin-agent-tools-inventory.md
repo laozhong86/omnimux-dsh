@@ -141,9 +141,9 @@ related:
 | 模糊搜索与标签过滤灵感 | 灵感库一级页瀑布流 | `inspiration_search` | L1 | `Implemented` | 否 |
 | 获取指定灵感 5D 结构化拆解详情 | 灵感详情模态框 | `inspiration_get` | L1 | `Implemented` | 否 |
 | 从社媒 URL 抓取并入库新灵感 | 采集导入弹窗 | `inspiration_create` | L1 | `Implemented` | 否 |
-| 更新灵感笔记、标签与结构化字段 | 灵感编辑面板 | `inspiration_update` | L1 | `Planned` | 否 |
-| 删除指定灵感条目及其本地缓存 | 灵感卡片删除操作 | `inspiration_delete` | L1 | `Planned` | 是 (`confirm: true`) |
-| 收藏/取消收藏灵感条目 | 卡片爱心图标点赞 | `inspiration_favorite` | L2 | `Planned` | 否 |
+| 更新灵感笔记、标签与结构化字段 | 灵感编辑面板 | `inspiration_update` | L1 | `Implemented` | 否 |
+| 删除指定灵感条目及其本地缓存 | 灵感卡片删除操作 | `inspiration_delete` | L1 | `Implemented` | 是 (`confirm: true`) |
+| 收藏/取消收藏灵感条目 | 卡片爱心图标点赞 | `inspiration_favorite` | L2 | `Implemented` | 否 |
 | 瀑布流列宽与滚动锚定 | 界面自适应容器 | — | UI-Only | `UI-Only` | 豁免 (前端排版状态) |
 
 ---

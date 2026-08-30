@@ -10,6 +10,9 @@ export const INSPIRATION_TOOL_NAMES = [
   'inspiration_search',
   'inspiration_get',
   'inspiration_create',
+  'inspiration_update',
+  'inspiration_delete',
+  'inspiration_favorite',
 ]
 
 function objectParams(fields) {
@@ -211,6 +214,67 @@ export function apply(ctx) {
       })
       if (result.status >= 400) throw new Error(result.body?.error || `HTTP ${result.status}`)
       return result.body?.data
+    },
+  })
+
+  ctx.tools.register({
+    name: 'inspiration_update',
+    description: 'Update inspiration item metadata including title, content, tags, or deconstruction notes.',
+    parameters: objectParams({
+      id: { type: 'string', required: true, description: 'Inspiration item ID' },
+      title: { type: 'string', description: 'Updated title' },
+      content: { type: 'string', description: 'Updated textual notes or script content' },
+      tags: { type: 'array', items: { type: 'string' }, description: 'Updated tags array' },
+      is_favorite: { type: 'boolean', description: 'Favorite status' },
+    }),
+    output: jsonOut,
+    async execute(args) {
+      const id = String(args.id)
+      const patch = {}
+      if (typeof args.title === 'string') patch.title = args.title
+      if (typeof args.content === 'string') patch.content = args.content
+      if (Array.isArray(args.tags)) patch.tags = args.tags
+      if (typeof args.is_favorite === 'boolean') patch.is_favorite = args.is_favorite
+      const item = store.update(id, patch)
+      return { ok: true, item }
+    },
+  })
+
+  ctx.tools.register({
+    name: 'inspiration_delete',
+    description: 'Delete an inspiration item and recycle its local media cache. Destructive action requiring confirm=true.',
+    parameters: objectParams({
+      id: { type: 'string', required: true, description: 'Inspiration item ID' },
+      confirm: {
+        type: 'boolean',
+        required: true,
+        description: 'Must be true to confirm permanent deletion of the inspiration item',
+      },
+    }),
+    output: jsonOut,
+    async execute(args) {
+      if (args.confirm !== true) {
+        throw new Error('inspiration_delete is destructive; confirm must be explicitly true')
+      }
+      const id = String(args.id)
+      const removed = await store.delete(id)
+      return { ok: true, id: removed.id, deleted: true }
+    },
+  })
+
+  ctx.tools.register({
+    name: 'inspiration_favorite',
+    description: 'Toggle or set the favorite status of an inspiration item.',
+    parameters: objectParams({
+      id: { type: 'string', required: true, description: 'Inspiration item ID' },
+      is_favorite: { type: 'boolean', required: true, description: 'Favorite status to set (true or false)' },
+    }),
+    output: jsonOut,
+    async execute(args) {
+      const id = String(args.id)
+      const is_favorite = Boolean(args.is_favorite)
+      const item = store.update(id, { is_favorite })
+      return { ok: true, id: item.id, is_favorite: item.is_favorite }
     },
   })
 }
