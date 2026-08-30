@@ -248,9 +248,11 @@ ensure_dsh_ui_kit_fresh() {
     exit 1
   fi
 
-  local store_kit
-  store_kit=$(find "$ROOT/node_modules/.pnpm" -maxdepth 4 -type d -name 'dsh-ui-kit' \
-    -path '*node_modules/dsh-ui-kit' 2>/dev/null | head -1)
+  local store_kit=""
+  if [ -d "$ROOT/node_modules/.pnpm" ]; then
+    store_kit=$(find "$ROOT/node_modules/.pnpm" -maxdepth 4 -type d -name 'dsh-ui-kit' \
+      -path '*node_modules/dsh-ui-kit' 2>/dev/null | head -1 || true)
+  fi
   if [ -n "$store_kit" ] && [ -f "$store_kit/lib/index.js" ]; then
     local store_hash
     store_hash=$(shasum -a 256 "$store_kit/lib/index.js" 2>/dev/null | awk '{print $1}')
@@ -351,10 +353,10 @@ else
 fi
 
 echo "== 2/3 物化进 Profile 目录 =="
-OMNIMUX_SYNC_VIA=sync-to-app "$ROOT/scripts/sync-stable.sh" "${TARGET_FLAGS[@]}" "${PLUGINS[@]}"
+OMNIMUX_SYNC_VIA=sync-to-app "$ROOT/scripts/sync-stable.sh" ${TARGET_FLAGS[@]+"${TARGET_FLAGS[@]}"} "${PLUGINS[@]}"
 
 echo "== 3/3 物化出厂 Agent Presets =="
-"$ROOT/scripts/sync-agent-presets.sh" "${TARGET_FLAGS[@]}"
+"$ROOT/scripts/sync-agent-presets.sh" ${TARGET_FLAGS[@]+"${TARGET_FLAGS[@]}"}
 
 cat <<EOF
 
