@@ -12,3 +12,9 @@ dist
 # 本机符号链接，指向仓外 OPC 资产库，仅开发机可用。
 .agents/skills/short-drama-router
 .agents/skills/dsh-plugin-guide
+
+# 会话产出 / 一次性演示，不进 git。权威规格与原型在 docs/。
+deliverables/
+/demos/
+/demo-*.html
+/skills/

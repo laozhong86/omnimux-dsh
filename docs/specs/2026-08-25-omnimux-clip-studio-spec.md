@@ -348,7 +348,7 @@ interface ClipEditorSeam {
 `clip_view` / `clip_snapshot` 在 Tab 未挂载时 `{ code: 'PREVIEW_NOT_READY' }` 作为 **抛错**（`ClipDomainError`），禁止 `{ ok: false }` 当成功返回值。
 实现必须调官方状态机原子，禁止另写一套 ops 去改自研 store。
 
-Skill：`skills/clip-craft/SKILL.md` 只写剪辑判断，不重复 tool catalog。
+Skill：`plugins/omnimux-clip/skills/clip-craft/SKILL.md` 只写剪辑判断，不重复 tool catalog。
 
 ---
 
