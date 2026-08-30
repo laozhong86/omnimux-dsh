@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-08-30T14:46:00+08:00",
+  "issue": 279,
+  "port": 45120,
+  "url": "http://127.0.0.1:45120/",
+  "taskSpace": "verify-settings-stage-modal-279",
+  "topic": "settings-modal-unauth-stage-visible",
+  "rootCause": "PRODUCT_STAGE_CHROME had an unscoped html[data-dsh-product-stage] [class*='_panel'] rule intended for better-sidebar that inadvertently hid the official settings modal dialog .VOzbGW_panel during any active product stage",
+  "fix": "Scoped the _panel and _bottomPanel rules to [data-dsh-better-sidebar] namespace in plugins/omnimux/src/client/conversation-box.js",
+  "auth": {
+    "logged_in": false,
+    "phase": "closed"
+  },
+  "assertions": {
+    "1. Unauthenticated sidebar entries match contract": true,
+    "2. Opening 资产库 stage activates data-dsh-product-stage": true,
+    "3. Clicking 设置 button mounts VOzbGW_overlay with display:flex zIndex:1000": true,
+    "4. Settings dialog VOzbGW_panel is visible with display:flex visibility:visible pointerEvents:auto": true,
+    "5. All 6 settings tabs (通用设置, 个人资料, 模型, 插件, Agent 预设, 侧边卡片) render correctly": true,
+    "6. Closing settings modal and switching to 创作 stage and reopening settings works smoothly": true,
+    "7. Automated unit test prevents unscoped _panel selector regression": true
+  },
+  "evidence": {
+    "screenshot": "docs/evidence/issue-279-settings-modal-stage-45120.png"
+  },
+  "verdict": "PASS"
+}
