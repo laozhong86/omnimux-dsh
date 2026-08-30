@@ -43,6 +43,14 @@ MUST NOT use 13px labels or 16px filled icons on these rows. MUST NOT invent a s
 | `[data-omnimux-products-entry]` | `omnimux-products` | 产品库（rank 6，不重排旧行） |
 | `[data-omnimux-inspiration-entry]` | `omnimux-inspiration` | 灵感库（rank 7，不重排旧行） |
 | `[data-omnimux-publish-entry]` | `omnimux-publish` | 发布（rank 9，尾部追加，不重排旧行；styleId `omnimux-publish-entry-styles`） |
+| `[data-omnimux-analytics-entry]` | `omnimux-analytics` | 数据分析（rank 10） |
+
+## Offline vs Cloud Visibility
+
+Extra rows follow [docs/contracts/plugin-offline-cloud-matrix.md](./plugin-offline-cloud-matrix.md):
+- `access: 'offline'`: Always visible. Clicking directly opens the stage without login blocking. (Workflow, Assets, Products, Clip).
+- `access: 'cloud'`: Hidden when unauthenticated (`logged_in !== true`). Dynamic appearance upon login. (Analytics, Publish, Accounts, Inspiration).
+- Policy D (Visitor Polite Interception): Cancelling a write-gate login prompt suppresses subsequent navigation prompts for the remainder of the session.
 
 New extra rows MUST reuse these metrics (copy the CSS block or import the same numbers). A PR that adds a 新会话-below row with a different font-size or icon size is rejected.
 

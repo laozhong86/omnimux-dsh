@@ -48,13 +48,13 @@ export const AUTH_GLOBAL_KEY = '__omnimuxAuth'
 export const MAX_INTENTS = 100
 
 /**
- * C/D seams, frozen and not wired to Config / Settings / window.
- *   gateNavigation: true  → C closed: every nav still goes through the gate.
- *   suppressNavigationAfterCancel: false → D closed: cancel does not mute later nav.
+ * C/D seams:
+ *   gateNavigation: true  → C closed: every nav goes through the gate.
+ *   suppressNavigationAfterCancel: true → D active: cancel mutes later nav in the current session.
  */
 export const AUTH_GATE_POLICY = Object.freeze({
   gateNavigation: true,
-  suppressNavigationAfterCancel: false,
+  suppressNavigationAfterCancel: true,
 })
 
 /**
@@ -78,6 +78,9 @@ let impl = {
 
 /** Current gate snapshot (never exposed mutated; replaced on every change). */
 let state = Object.freeze({ phase: 'closed' })
+
+/** Session suppression for Policy D (cancel mutes subsequent nav prompts). */
+let navSuppressed = false
 
 /** @type {Array<{ id: number, reason?: string, kind?: string, onSuccess?: (p: any) => void, onCancel?: (r?: any) => void }>} */
 let intents = []
@@ -155,6 +158,7 @@ function rejectAll(reason) {
  * @param {any} profile
  */
 function resolveAll(profile) {
+  navSuppressed = false
   rememberLoggedInStatus(profile)
   const pending = intents
   intents = []
@@ -249,6 +253,18 @@ export async function ensureLogin(opts = {}) {
     return
   }
   const intent = makeIntent(opts)
+  if (
+    AUTH_GATE_POLICY.suppressNavigationAfterCancel &&
+    intent.kind === 'nav' &&
+    navSuppressed
+  ) {
+    try {
+      if (intent.onSuccess) intent.onSuccess({ logged_in: false, suppressed: true })
+    } catch {
+      // caller error must not break gate
+    }
+    return
+  }
   if (state.phase !== 'closed') {
     // Single-gate guarantee: an already-open/terminal/checking gate is reused.
     // checking = in-flight lock; a second ensureLogin only enqueues.
@@ -274,6 +290,9 @@ export function cancel(reason = 'cancelled') {
   if (currentLogin) {
     currentLogin.cancel()
     currentLogin = null
+  }
+  if (AUTH_GATE_POLICY.suppressNavigationAfterCancel) {
+    navSuppressed = true
   }
   rejectAll(reason)
   setState({ phase: 'closed' })
@@ -333,6 +352,11 @@ export function installAuthGlobal(target, overrides = {}) {
   if (existing !== undefined) return existing
   const api = {
     getStatus: (verify) => impl.getStatus(verify),
+    isLoggedIn: () => {
+      const peeked = impl.peekCache()
+      return Boolean(peeked && peeked.body && peeked.body.logged_in === true)
+    },
+    peekCache: () => impl.peekCache(),
     ensureLogin,
     cancel,
     begin,
@@ -356,6 +380,7 @@ export function resetAuthGate() {
   }
   intents = []
   latestReason = undefined
+  navSuppressed = false
   resetStatusCache()
   setState({ phase: 'closed' })
 }
