@@ -54,6 +54,25 @@ function runningUnderNodeTest() {
 }
 
 /**
+ * One-shot copy of a home-local profile cache into the shared config dir.
+ * Never reads ~/.dsh as an ongoing auth path; only lifts the previous
+ * `$DSH_HOME/omnimux/profile.json` when the canonical file is absent.
+ * @param {{ dest: string, legacy: string, skip: boolean }} opts
+ */
+function migrateLegacyProfileCache(opts) {
+  if (opts.skip) return
+  try {
+    if (existsSync(opts.dest) || !existsSync(opts.legacy)) return
+    const raw = readFileSync(opts.legacy, 'utf8')
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return
+    atomicWriteFileSync(opts.dest, raw.endsWith('\n') ? raw : `${raw}\n`, { mode: 0o600, dirMode: 0o700 })
+  } catch {
+    // absent or unreadable legacy cache is not fatal
+  }
+}
+
+/**
  * Creates the single canonical token store backed by ~/.config/omnimux/secrets.json (0600).
  * No OS Keychain dependencies; no legacy migration overhead.
  *
@@ -78,10 +97,18 @@ export function createTokenStore(opts = {}) {
   const configDir = opts.configDir || (underTest ? join(sandboxRoot, 'config') : realConfigDir)
   const secretsPath = join(configDir, 'secrets.json')
   const configPath = join(configDir, 'config.json')
+  // Public profile cache lives next to secrets/config so CLI, Dev App and
+  // Prod App share one account picture. $DSH_HOME stays plugin/project data.
   const profilePath = opts.profilePath || (pinchesRealHome
     ? join(sandboxRoot, 'profile.json')
-    : join(home, 'omnimux', 'profile.json'))
+    : join(configDir, 'profile.json'))
   const credentials = opts.credentials
+
+  migrateLegacyProfileCache({
+    dest: profilePath,
+    legacy: join(home, 'omnimux', 'profile.json'),
+    skip: underTest || pinchesRealHome || Boolean(opts.profilePath),
+  })
 
   let expired = false
 

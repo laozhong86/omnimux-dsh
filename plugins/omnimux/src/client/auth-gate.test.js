@@ -457,6 +457,31 @@ describe('auth-gate store', () => {
     assert.equal(peekStatusCache(), null)
   })
 
+  it('installAuthGlobal hydrates session cache and notifies subscribers when already logged in', async () => {
+    resetAuthGate()
+    const win = {}
+    let ticks = 0
+    const pending = new Promise((resolve) => {
+      const unsub = subscribe(() => {
+        ticks += 1
+        unsub()
+        resolve()
+      })
+    })
+    const status = { ok: true, status: 200, body: { logged_in: true, username: 'admin' } }
+    installAuthGlobal(win, {
+      getStatusCached: async () => {
+        rememberLoggedInStatus(status.body)
+        return status
+      },
+      peekCache: () => peekStatusCache(),
+      runLogin: makeRunLogin().fn,
+    })
+    await pending
+    assert.equal(win[AUTH_GLOBAL_KEY].isLoggedIn(), true)
+    assert.ok(ticks >= 1)
+  })
+
   it('T9 hub apply warms the status cache without awaiting or setState', () => {
     const here = dirname(fileURLToPath(import.meta.url))
     const source = readFileSync(join(here, 'index.js'), 'utf8')
