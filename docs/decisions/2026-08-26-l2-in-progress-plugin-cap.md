@@ -14,7 +14,7 @@ subsystem: "omnimux-assets"
 日期：2026-08-26。
 状态：**已确认（审计修订）。**
 性质：否决 `spec-plugin-dx-pipeline.md` v1.0.0 G2「同一 L2 task 多 symlink」。对照合同 [dev-pipeline.md](../contracts/dev-pipeline.md) 铁律 3、[plugin-qa.md](../contracts/plugin-qa.md)。
-依据：工程保障审计 `deliverables/engineering-assurance/code-review-plan-plugin-dx-pipeline-2026-08-26.md`（Archi / Cody / Rex / Tessa / Docu）。
+依据：2026-08-26 工程保障审计（Archi / Cody / Rex / Tessa / Docu；原稿未入库）。对照合同 [dev-pipeline.md](../contracts/dev-pipeline.md)、[plugin-qa.md](../contracts/plugin-qa.md)。
 
 ## 结论
 

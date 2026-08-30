@@ -14,7 +14,7 @@ subsystem: "omnimux"
 日期：2026-08-26。
 状态：**已确认（审计修订）。**
 性质：否决 `spec-plugin-dx-pipeline.md` v1.0.0 G1「唯一心智入口改到 dsh-plugin 根 npm scripts」。对照合同 [ops-entry.md](../contracts/ops-entry.md)。
-依据：工程保障审计 `deliverables/engineering-assurance/code-review-plan-plugin-dx-pipeline-2026-08-26.md`（Archi / Docu）。
+依据：2026-08-26 工程保障审计（Archi / Docu；原稿未入库）。对照合同 [ops-entry.md](../contracts/ops-entry.md)。
 
 ## 结论
 
