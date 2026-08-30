@@ -240,8 +240,8 @@ related:
 
 | 业务功能描述 | 对应 UI 交互 / HTTP 路由 | Agent 工具名称 (`Tool Name`) | 分级 | 状态 | 破坏性 confirm |
 |---|---|---|---|---|---|
-| 查询账号列表与授权状态 | 账号一级页卡片与表格 | `accounts_list` | L1 | `Planned` | 否 |
-| 修改账号分组或 Agent 权限开关 | 账号卡片 Switch 与分组设置 | `accounts_update_group` | L2 | `Planned` | 否 |
+| 查询账号列表与授权状态 | 账号一级页卡片与表格 | `accounts_list` | L1 | `Implemented` | 否 |
+| 修改账号分组或 Agent 权限开关 | 账号卡片 Switch 与分组设置 | `accounts_update_group` | L2 | `Implemented` | 否 |
 | 账号卡片排序与筛选偏好 | 筛选栏选择器 | — | UI-Only | `UI-Only` | 豁免 (前端本地排序) |
 
 ---
