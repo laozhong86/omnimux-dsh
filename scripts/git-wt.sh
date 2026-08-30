@@ -55,6 +55,24 @@ resolve_plugin_pkg() {
   fi
 }
 
+detect_repo_name() {
+  if [ -n "$OMNIMUX_REPO" ]; then
+    echo "$OMNIMUX_REPO"
+    return
+  fi
+  local origin_url
+  origin_url=$(git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || true)
+  if [ -n "$origin_url" ]; then
+    local parsed
+    parsed=$(echo "$origin_url" | sed -E 's#^.*github\.com[:/]([^/]+/[^/.]+)(\.git)?$#\1#' || true)
+    if [ -n "$parsed" ] && [ "$parsed" != "$origin_url" ]; then
+      echo "$parsed"
+      return
+    fi
+  fi
+  echo "laozhong86/omnimux-dsh"
+}
+
 detect_plugin_name() {
   local b="$1"
   local top="$2"
@@ -95,8 +113,9 @@ cmd_auto_start() {
 
   echo "==> 正在查询 GitHub Issue #${clean_issue} 元数据..."
   local issue_json=""
+  local repo_name=$(detect_repo_name)
   if command -v gh >/dev/null 2>&1; then
-    issue_json=$(gh issue view "$clean_issue" -R laozhong86/omnimux-dsh --json title,labels 2>/dev/null || true)
+    issue_json=$(gh issue view "$clean_issue" -R "$repo_name" --json title,labels 2>/dev/null || true)
   fi
 
   local plugin="common"
@@ -355,14 +374,15 @@ cmd_finish() {
   local origin_url=""
   origin_url=$(git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || true)
   local is_github_origin=0
+  local repo_name=$(detect_repo_name)
   case "$origin_url" in
-    *github.com*laozhong86/omnimux-dsh*) is_github_origin=1 ;;
+    *github.com*) is_github_origin=1 ;;
   esac
   if [ "$skip_push" -eq 1 ]; then
     echo "⏩ 未推送特性分支，跳过 PR 创建"
   elif [ "$is_github_origin" -eq 1 ] && command -v gh >/dev/null 2>&1; then
     local existing
-    existing=$(gh pr list -R laozhong86/omnimux-dsh --head "$branch" --json number,url,state --jq '.[0]' 2>/dev/null || true)
+    existing=$(gh pr list -R "$repo_name" --head "$branch" --json number,url,state --jq '.[0]' 2>/dev/null || true)
     if [ -n "$existing" ] && [ "$existing" != "null" ]; then
       pr_url=$(echo "$existing" | sed -n 's/.*"url":"\([^"]*\)".*/\1/p')
       pr_state=$(echo "$existing" | sed -n 's/.*"state":"\([^"]*\)".*/\1/p')
@@ -371,7 +391,7 @@ cmd_finish() {
       local pr_title="feat(${plugin_label}): ${topic}"
       local pr_body="Closes #${clean_issue:-0}"
       [ -z "$clean_issue" ] && pr_body="Automated finish for ${topic} on \`${branch}\`. Do not merge locally; wait for GitHub MERGED."
-      if pr_url=$(gh pr create -R laozhong86/omnimux-dsh --base main --head "$branch" --title "$pr_title" --body "$pr_body" 2>/dev/null); then
+      if pr_url=$(gh pr create -R "$repo_name" --base main --head "$branch" --title "$pr_title" --body "$pr_body" 2>/dev/null); then
         pr_state="OPEN"
         echo "✓ 已创建 PR: $pr_url"
       else
@@ -520,7 +540,8 @@ cmd_clean() {
   if [ -n "$pr_number" ] && command -v gh >/dev/null 2>&1 && [ "$force_flag" != "1" ]; then
     echo "==> 校验 PR #${pr_number} 合入状态..."
     local pr_state
-    pr_state=$(gh pr view "$pr_number" -R laozhong86/omnimux-dsh --json state,mergedAt -q '.state' 2>/dev/null || true)
+    local repo_name=$(detect_repo_name)
+    pr_state=$(gh pr view "$pr_number" -R "$repo_name" --json state,mergedAt -q '.state' 2>/dev/null || true)
     if [ "$pr_state" != "MERGED" ]; then
       echo "❌ 安全守卫拦截：PR #${pr_number} 状态为 [$pr_state]，未确认 MERGED 严禁清理现场！" >&2
       exit 1

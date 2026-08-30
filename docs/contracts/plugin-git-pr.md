@@ -20,9 +20,9 @@ subsystem: "global"
 | 项 | 值 |
 |---|---|
 | 本地路径 | `/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh` |
-| GitHub | `laozhong86/omnimux-dsh`（私有） |
+| GitHub | 组织开源公开仓（`https://github.com/<org>/omnimux-dsh`） |
 | remote | `origin` |
-| 默认分支 / PR base | `main` |
+| 默认分支 / PR base | `main`（已配置 GitHub Merge Queue 保护队列） |
 | 外层 `dsh-plugin/` | **不是** Git 仓；不要在外层初始化仓库 |
 | `plugins/*` | **禁止**各自再嵌套 `.git` |
 
@@ -30,19 +30,20 @@ subsystem: "global"
 
 1. **No Issue, No Code（必须先立项建单）**。所有需求、重构、Bug 修复必须在 GitHub 创建 Issue，完成定界并写明可验证的验收标准后，方可切支编码。
 2. **禁止直接推 `main`**。日常改动走特性分支 + PR；Agent 不得把工作树直接切到 `main` 修改。
-3. **产品 PR 只打本仓**：`gh -R laozhong86/omnimux-dsh …`，base=`main`。禁止对上游 harness / desktop 开插件特性 PR。
+3. **产品 PR 只打本仓**：`gh -R <origin-repo> …`，base=`main`。禁止对上游 harness / desktop 开插件特性 PR。
 4. **强制 Worktree 物理隔离**。每个实施任务使用 `./scripts/git-wt.sh start <plugin> <topic> <issue-id>` 创建独立工作区；主仓必须保持在干净的 `main`。
-5. **按风险定级决定合入通道**：
+5. **Merge Queue 无损合并保护**：所有进入主干的变更必须走合并队列（`gh pr merge --squash --auto --delete-branch` 或网页 Enqueue）。GitHub 自动拉取最新 `main` 临时构建并在 CI 验证全绿后自动合入，根绝多 Worktree 并发导致的改动覆盖与无限排队问题。
+6. **按风险定级决定合入通道**：
    - `R0/R1`、跨插件、生产 profile、一级页、公开契约、manifest/工具入口、模型/凭据边界、回滚或上游同步变更：**只能老板人工合入**。
-   - `R2/R3`：只有 Issue 上存在老板/维护者的显式预授权，且所有质量门禁与 CI required checks 均通过，才可由 `pnpm auto:run <issue-id>` 代行 `gh pr merge --squash --auto --delete-branch`。
+   - `R2/R3`：只有 Issue 上存在老板/维护者的显式预授权，且所有质量门禁与 CI required checks 均通过，才可由 `pnpm auto:run <issue-id>` 代行自动加入合并队列。
    - 预授权不能授予 Agent 任意 `git merge`、直推 `main` 或绕过 required checks 的权限。
-6. **显式预授权必须可机检**：Issue 同时具备 `status:ready-to-run`、`risk:R2` 或 `risk:R3`、frontmatter `pre-authorized: true`，以及维护者白名单作者的 `/auto-approve risk:R2` 或 `/auto-approve risk:R3` 评论。老板可以在合入前用移除标签或 `/revoke` 撤销。
-7. **默认一插件一 PR**。跨插件改动必须在 Issue 与 PR 中说明理由；R0/R1 跨包改动自动进入人工通道。PR 必须显式声明 `Closes #<issue-id>`。
-8. **质量证据先于状态标签**。`qa:pass` 只能由 CI 聚合门禁在真实检查全绿后写入；本地 Agent、`auto-pipeline` 或 PR 作者不得自打 `qa:pass`。
-9. **未验收不得标完成**。本地测绿 / sync 成功 ≠ UI 验收；涉及浏览器的变更必须使用 `ego-browser`，缺 task space、URL、`snapshotText()`/DOM 断言或 `captureScreenshot()` 工件即 FAIL。
-10. **禁止提交密钥**。credentials / token / `.env` / 私钥不进仓。所有敏感配置只能由环境或受控 Host 注入。
-11. **跟 PR 细节交棒** `omnimux-pr-handoff`；跟踪写入本仓 `.workbuddy/pr-board.md`。该 board 不作为质量门禁的唯一信任源。
-12. **插件进 App** 仍走桌面壳 `yarn omnimux:*`（见 `ops-entry.md`）。本合同不允许 Agent 重启公共桌面 App。
+7. **显式预授权必须可机检**：Issue 同时具备 `status:ready-to-run`、`risk:R2` 或 `risk:R3`、frontmatter `pre-authorized: true`，以及维护者白名单作者的 `/auto-approve risk:R2` 或 `/auto-approve risk:R3` 评论。老板可以在合入前用移除标签或 `/revoke` 撤销。
+8. **默认一插件一 PR**。跨插件改动必须在 Issue 与 PR 中说明理由；R0/R1 跨包改动自动进入人工通道。PR 必须显式声明 `Closes #<issue-id>`。
+9. **质量证据先于状态标签**。`qa:pass` 只能由 CI 聚合门禁在真实检查全绿后写入；本地 Agent、`auto-pipeline` 或 PR 作者不得自打 `qa:pass`。
+10. **未验收不得标完成**。本地测绿 / sync 成功 ≠ UI 验收；涉及浏览器的变更必须使用 `ego-browser`，缺 task space、URL、`snapshotText()`/DOM 断言或 `captureScreenshot()` 工件即 FAIL。
+11. **禁止提交密钥**。credentials / token / `.env` / 私钥不进仓。所有敏感配置只能由环境或受控 Host 注入。
+12. **跟 PR 细节交棒** `omnimux-pr-handoff`；跟踪写入本仓 `.workbuddy/pr-board.md`。该 board 不作为质量门禁的唯一信任源。
+13. **插件进 App** 仍走桌面壳 `yarn omnimux:*`（见 `ops-entry.md`）。本合同不允许 Agent 重启公共桌面 App。
 
 ## 合入决策矩阵
 
