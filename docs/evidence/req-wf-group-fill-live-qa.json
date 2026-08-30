@@ -1,0 +1,49 @@
+{
+  "id": "REQ-WF-GROUP-FILL",
+  "stage": "omnimux-workflow",
+  "port": 45120,
+  "host": "http://127.0.0.1:45120/",
+  "app": "OmniMux Dev",
+  "canvasJs": "http://127.0.0.1:45120/omnimux-workflow/canvas.js?v=f8e5d485ab3672a9",
+  "materialize": "OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1 OMNIMUX_SKIP_KIT_BUILD=1 bash scripts/sync-to-app.sh --skip-build --dsh omnimux-workflow",
+  "timestamp": "2026-08-30T02:40:00Z",
+  "theme": "dark",
+  "project": "产品演示",
+  "egoBrowserTaskSpace": 178,
+  "results": [
+    {
+      "state": "default expanded unselected",
+      "class": "wf-group-node",
+      "background": "color(srgb 0.231373 0.509804 0.964706 / 0.12)",
+      "pass": true,
+      "screenshot": "docs/evidence/req-wf-group-fill-dark-default.png"
+    },
+    {
+      "state": "expanded selected",
+      "class": "wf-group-node wf-group-node--selected",
+      "background": "color(srgb 0.231373 0.509804 0.964706 / 0.2)",
+      "pass": true,
+      "screenshot": "docs/evidence/req-wf-group-fill-dark-selected.png"
+    },
+    {
+      "state": "collapsed selected",
+      "class": "wf-group-node wf-group-node--selected wf-group-node--collapsed",
+      "background": "color(srgb 0.125961 0.17051 0.253176)",
+      "note": "collapsed fill is accent 16% mixed with --wb-surface #1b1b1e (opaque, not 20%)",
+      "pass": true,
+      "screenshot": "docs/evidence/req-wf-group-fill-dark-collapsed.png"
+    }
+  ],
+  "assertions": {
+    "groupVisibleFillNotTransparent": true,
+    "selectedFillDarkerThanDefault": true,
+    "collapsedUsesSurfaceMixNotSelected20": true,
+    "childNodesRemainOpaque": true,
+    "canvasJsHash": "f8e5d485ab3672a9",
+    "wfGroupFillTokenPresent": true
+  },
+  "gaps": [
+    "light theme not captured in this round (host was dark)",
+    "L2 yarn omnimux:dev start group-fill failed: harness plugin tree missing @deepseek-ai/dsh-host-apiproxy; used OmniMux Dev :45120 instead"
+  ]
+}

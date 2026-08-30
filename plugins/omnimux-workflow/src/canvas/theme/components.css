@@ -5182,12 +5182,33 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
 }
 
 .wf-group-node {
+  --wf-group-fill: color-mix(
+    in srgb,
+    var(--wf-group-accent, var(--wb-accent)) 12%,
+    transparent
+  );
+  --wf-group-fill-selected: color-mix(
+    in srgb,
+    var(--wf-group-accent, var(--wb-accent)) 20%,
+    transparent
+  );
+  --wf-group-fill-collapsed: color-mix(
+    in srgb,
+    var(--wf-group-accent, var(--wb-accent)) 16%,
+    var(--wb-surface)
+  );
+
   position: relative;
   box-sizing: border-box;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--wb-surface) 8%, transparent);
+  background: var(--wf-group-fill);
   border: 1.5px solid var(--wb-border-strong);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, width 0.2s ease, height 0.2s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease,
+    width 0.2s ease,
+    height 0.2s ease;
 }
 
 .wf-group-node--selected {
@@ -5195,8 +5216,12 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   box-shadow: 0 0 24px color-mix(in srgb, var(--wf-group-accent, var(--wb-accent)) 14%, transparent);
 }
 
+.wf-group-node--selected:not(.wf-group-node--collapsed) {
+  background: var(--wf-group-fill-selected);
+}
+
 .wf-group-node--collapsed {
-  background: color-mix(in srgb, var(--wb-surface) 18%, transparent);
+  background: var(--wf-group-fill-collapsed);
 }
 
 /* ==================== 编组头部胶囊 (GroupHeader) ==================== */
