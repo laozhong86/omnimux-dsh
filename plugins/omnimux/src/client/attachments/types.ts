@@ -10,7 +10,8 @@ export type AttachmentKind =
   | 'document'      // 文档/Markdown/文本 (.md/.txt/.json)
   | 'canvas'        // 画布 DAG (.json)
   | 'asset'         // 资产库实体
-  | 'product';      // 产品库货品
+  | 'product'       // 产品库货品
+  | 'inspiration';  // 灵感库条目
 
 export type AttachmentSourcePlugin =
   | 'omnimux-workflow'

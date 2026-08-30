@@ -9,6 +9,7 @@ const KIND_LABELS: Record<string, string> = {
   canvas: '工作流',
   asset: '资产',
   product: '产品',
+  inspiration: '灵感',
 };
 
 /**

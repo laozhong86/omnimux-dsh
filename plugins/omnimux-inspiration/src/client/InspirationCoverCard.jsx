@@ -9,9 +9,11 @@ const ICON_EYE = (
   </svg>
 )
 
-const ICON_CHAT = (
+const ICON_ADD_TO_CHAT = (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" />
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    <line x1="12" y1="8" x2="12" y2="14" />
+    <line x1="9" y1="11" x2="15" y2="11" />
   </svg>
 )
 
@@ -56,6 +58,29 @@ export function InspirationCoverCard({ card }) {
   const handleReplicate = (e) => {
     stopCardEvent(e)
     if (anyBusy) return
+    if (typeof window !== 'undefined') {
+      const coverUrl = pickCoverSrc(row)
+      window.dispatchEvent(
+        new CustomEvent('omnimux:add-to-conversation', {
+          detail: {
+            sourcePlugin: 'omnimux-inspiration',
+            kind: 'inspiration',
+            entityId: row.id,
+            title: row.title || row.source_url || '灵感素材',
+            extension: 'INSPIRATION',
+            relativePath: row.local_paths?.video || row.local_paths?.cover || `inspiration/${row.id}`,
+            previewUrl: coverUrl,
+            metadata: {
+              inspiration_id: row.id,
+              source_url: row.source_url,
+              source_platform: row.source_platform,
+            },
+          },
+        })
+      )
+      const clipText = `[灵感: ${title}](@${row.local_paths?.video || row.local_paths?.cover || `inspiration/${row.id}`})`
+      navigator.clipboard?.writeText?.(clipText).catch(() => {})
+    }
     if (typeof onReplicate === 'function') onReplicate(row)
   }
 
@@ -168,7 +193,7 @@ export function InspirationCoverCard({ card }) {
               if (e.key === 'Enter' || e.key === ' ') handleReplicate(e)
             }}
           >
-            {ICON_CHAT}
+            {ICON_ADD_TO_CHAT}
             {t('card.cta.try')}
           </button>
         </div>

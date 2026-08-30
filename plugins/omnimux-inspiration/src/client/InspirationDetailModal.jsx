@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { Target, Clapperboard } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { Target, Clapperboard, MessageSquarePlus } from 'lucide-react'
 import { Button, ModalDialog } from 'dsh-ui-kit'
-import { hostMediaSrc } from './api.js'
+import { hostMediaSrc, pickCoverSrc } from './api.js'
 
 /**
  * @param {{ t: (k: string) => string, item: any, onClose: () => void }} props
@@ -24,6 +24,36 @@ export function InspirationDetailModal({ t, item, onClose }) {
     }
   }
 
+  const handleAddToConversation = useCallback(() => {
+    if (typeof window !== 'undefined' && item) {
+      const coverUrl = pickCoverSrc(item)
+      const itemTitle = item.title || item.source_url || '灵感素材'
+      const relPath = item.local_paths?.video || item.local_paths?.cover || `inspiration/${item.id}`
+
+      window.dispatchEvent(
+        new CustomEvent('omnimux:add-to-conversation', {
+          detail: {
+            sourcePlugin: 'omnimux-inspiration',
+            kind: 'inspiration',
+            entityId: item.id,
+            title: itemTitle,
+            extension: 'INSPIRATION',
+            relativePath: relPath,
+            previewUrl: coverUrl,
+            metadata: {
+              inspiration_id: item.id,
+              source_url: item.source_url,
+              source_platform: item.source_platform,
+            },
+          },
+        })
+      )
+      const clipText = `[灵感: ${itemTitle}](@${relPath})`
+      navigator.clipboard?.writeText?.(clipText).catch(() => {})
+    }
+    onClose()
+  }, [item, onClose])
+
   return (
     <ModalDialog
       open
@@ -31,7 +61,15 @@ export function InspirationDetailModal({ t, item, onClose }) {
       title={item.title || t('detail.title')}
       closeLabel={t('close')}
       size="lg"
-      footer={<Button variant="outline" onClick={onClose}>{t('close')}</Button>}
+      footer={(
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', width: '100%' }}>
+          <Button variant="primary" onClick={handleAddToConversation}>
+            <MessageSquarePlus size={14} style={{ marginRight: 6 }} />
+            {t('card.cta.addToConversation') || '添加到会话'}
+          </Button>
+          <Button variant="outline" onClick={onClose}>{t('close')}</Button>
+        </div>
+      )}
     >
       <div className="omnimux-inspiration-detail-body">
         {videoUrl ? (

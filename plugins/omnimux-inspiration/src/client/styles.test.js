@@ -100,7 +100,7 @@ describe('locale dictionaries', () => {
     assert.ok(zh['view.switch'] && en['view.switch'])
     assert.equal(zh['view.player'], '作品')
     assert.equal(zh['view.deconstruct'], '作品解析')
-    assert.equal(zh['card.cta.try'], '去对话')
+    assert.equal(zh['card.cta.try'], '添加到会话')
     assert.equal(zh['card.cta.detail'], '查看')
   })
 })
