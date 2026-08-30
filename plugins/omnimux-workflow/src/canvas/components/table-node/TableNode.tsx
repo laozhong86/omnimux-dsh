@@ -52,49 +52,36 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 顶部悬浮胶囊栏 (统一风格) */}
+      {/* 顶部悬浮胶囊栏 (统一风格：收敛为两个纯图标按钮) */}
       {showFloatingPill && (
         <div
-          className="wf-floating-top-pill"
+          className="wf-floating-top-pill nodrag nowheel"
           style={{
             top: -38 * inverseScale,
             transform: `translateX(-50%) scale(${inverseScale})`,
             transformOrigin: 'bottom center',
           }}
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="wf-floating-top-pill__group">
             <button
               type="button"
               className="wf-floating-top-pill__btn"
-              title="添加到对话 (作为 Agent 上下文)"
+              title="添加到对话"
               onClick={handleAddToChat}
             >
-              <MessageSquarePlus size={13} />
-              <span>添加到对话</span>
+              <MessageSquarePlus size={14} />
             </button>
             <button
               type="button"
               className="wf-floating-top-pill__btn"
-              title="添加数据行"
-              onClick={(e) => {
-                e.stopPropagation();
-                addRow();
-              }}
-            >
-              <Plus size={14} />
-              <span>添加行</span>
-            </button>
-            <button
-              type="button"
-              className="wf-floating-top-pill__btn"
-              title="全屏表格编辑"
+              title="全屏编辑"
               onClick={(e) => {
                 e.stopPropagation();
                 openStage();
               }}
             >
-              <Maximize2 size={13} />
-              <span>全屏编辑</span>
+              <Maximize2 size={14} />
             </button>
           </div>
         </div>
