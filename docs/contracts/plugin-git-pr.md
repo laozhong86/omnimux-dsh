@@ -5,6 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-24"
+updated: "2026-08-30"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -44,6 +45,7 @@ subsystem: "global"
 11. **禁止提交密钥**。credentials / token / `.env` / 私钥不进仓。所有敏感配置只能由环境或受控 Host 注入。
 12. **跟 PR 细节交棒** `omnimux-pr-handoff`；跟踪写入本仓 `.workbuddy/pr-board.md`。该 board 不作为质量门禁的唯一信任源。
 13. **插件进 App** 仍走桌面壳 `yarn omnimux:*`（见 `ops-entry.md`）。本合同不允许 Agent 重启公共桌面 App。
+14. **`omnimux-workflow` 生成物不进 Git**。`dist/index.js`、`lib/client.js`、`lib/canvas.js` 由 `prepare` / `sync-to-app` 现场 build；禁止为「跟仓」另开 PR 提交这些文件。其它插件的 `lib/client.js` 仍跟踪，直至后续统一。
 
 ## 合入决策矩阵
 
@@ -166,4 +168,5 @@ gh -R laozhong86/omnimux-dsh pr create --base main --body-file <generated-body.m
 - 用桌面壳的 `fork` remote / base=`omnimux` 套到本仓；
 - 在外层 `dsh-plugin/` `git init`、装 Husky、加 GitHub Actions；
 - 把 `--force-with-lease` 写成默认动作；
-- 用 `feat/` / `fix/` / `refactor/` 当分支前缀。
+- 用 `feat/` / `fix/` / `refactor/` 当分支前缀；
+- 提交 `omnimux-workflow` 的 `dist/` / `lib/client.js` / `lib/canvas.js`（源码唯一真相，见 `dev-pipeline.md`）。

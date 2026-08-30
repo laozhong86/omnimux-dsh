@@ -2,6 +2,11 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 格式。
 
+## Unreleased
+
+### 变更
+- **源码唯一真相**：停止跟踪 `dist/index.js`、`lib/client.js`、`lib/canvas.js`。入口仍由 build 生成（`prepare` + `sync-to-app` 现场 build）；CI 拒绝把这些文件重新提交进 Git。画布 island 在 `canvasHash` 变化时替换 `<script>`，避免 Dev App 吃到过期 IIFE。
+
 ## [1.0.0-rc.1] - 2026-08-22 — M5 产品化收官
 
 ### 新增

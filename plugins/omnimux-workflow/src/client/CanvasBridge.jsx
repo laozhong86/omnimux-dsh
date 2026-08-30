@@ -27,15 +27,29 @@ const SCRIPT_ID = 'omnimux-workflow-canvas-island'
  * @returns {Promise<void>}
  */
 function ensureCanvasScript(hash) {
-  if (typeof window !== 'undefined' && window[CANVAS_GLOBAL] && typeof window[CANVAS_GLOBAL].mountCanvas === 'function') {
-    return Promise.resolve()
-  }
+  const expectedSrc = `/omnimux-workflow/canvas.js?v=${encodeURIComponent(hash)}`
   const existing = document.getElementById(SCRIPT_ID)
-  if (existing instanceof HTMLScriptElement && existing.dataset.loaded === '1') {
+  if (existing instanceof HTMLScriptElement && existing.getAttribute('src') !== expectedSrc) {
+    existing.remove()
+    if (typeof window !== 'undefined') {
+      try {
+        delete window[CANVAS_GLOBAL]
+      } catch {
+        window[CANVAS_GLOBAL] = undefined
+      }
+    }
+  }
+  const current = document.getElementById(SCRIPT_ID)
+  if (typeof window !== 'undefined' && window[CANVAS_GLOBAL] && typeof window[CANVAS_GLOBAL].mountCanvas === 'function') {
+    if (current instanceof HTMLScriptElement && current.getAttribute('src') === expectedSrc) {
+      return Promise.resolve()
+    }
+  }
+  if (current instanceof HTMLScriptElement && current.dataset.loaded === '1' && current.getAttribute('src') === expectedSrc) {
     return Promise.resolve()
   }
   return new Promise((resolve, reject) => {
-    let script = existing
+    let script = document.getElementById(SCRIPT_ID)
     if (!(script instanceof HTMLScriptElement)) {
       script = document.createElement('script')
       script.id = SCRIPT_ID
@@ -44,14 +58,19 @@ function ensureCanvasScript(hash) {
         script.remove()
         script = document.createElement('script')
         script.id = SCRIPT_ID
-      } else {
+      } else if (script.getAttribute('src') === expectedSrc) {
         // A previous injection is still in flight: piggyback on its events.
         script.addEventListener('load', () => resolve(), { once: true })
         script.addEventListener('error', () => reject(new Error('canvas island script failed')), { once: true })
         return
+      } else {
+        script.remove()
+        script = document.createElement('script')
+        script.id = SCRIPT_ID
       }
     }
-    script.src = `/omnimux-workflow/canvas.js?v=${encodeURIComponent(hash)}`
+    script.src = expectedSrc
+    script.dataset.hash = hash
     script.async = true
     script.addEventListener('load', () => {
       script.dataset.loaded = '1'
