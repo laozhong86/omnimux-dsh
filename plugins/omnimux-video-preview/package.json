@@ -18,6 +18,7 @@
   ],
   "scripts": {
     "build": "node scripts/build-client.mjs",
+    "prepare": "npm run build",
     "test": "node --test test/*.test.js"
   },
   "dsh": {
