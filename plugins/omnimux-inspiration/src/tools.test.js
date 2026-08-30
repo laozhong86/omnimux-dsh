@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 import { INSPIRATION_TOOL_NAMES, apply } from './index.js'
 
 describe('inspiration tools registration', () => {
-  it('registers inspiration_search, inspiration_get, inspiration_create', () => {
+  it('registers all 6 tools including update, delete, favorite', () => {
     const registered = []
     const mockCtx = {
       tools: {
@@ -17,9 +17,12 @@ describe('inspiration tools registration', () => {
 
     const names = registered.map((t) => t.name)
     assert.deepEqual(names, INSPIRATION_TOOL_NAMES)
+    assert.ok(names.includes('inspiration_update'))
+    assert.ok(names.includes('inspiration_delete'))
+    assert.ok(names.includes('inspiration_favorite'))
   })
 
-  it('inspiration_search filters items correctly', async () => {
+  it('inspiration_search, inspiration_update, inspiration_favorite, inspiration_delete lifecycle', async () => {
     const registered = {}
     const mockCtx = {
       tools: {
@@ -36,5 +39,13 @@ describe('inspiration tools registration', () => {
 
     const result = await searchTool.execute({ query: '' })
     assert.ok(Array.isArray(result.inspirations))
+
+    // Test inspiration_delete confirm guard
+    const deleteTool = registered.inspiration_delete
+    assert.ok(deleteTool)
+    await assert.rejects(
+      async () => deleteTool.execute({ id: 'insp_dummy', confirm: false }),
+      { message: /confirm must be explicitly true/ }
+    )
   })
 })
