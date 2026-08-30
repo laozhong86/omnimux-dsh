@@ -67,6 +67,8 @@ import { createTemplate, getTemplate, listTemplates } from '../bridge/templateAp
 import { sanitizeEdges, sanitizeNodes } from '../bridge/persistSanitize';
 import { planInstantiateTemplate } from './utils/planInstantiateTemplate';
 import { SpreadsheetStage } from '../components/table-node/stage/SpreadsheetStage';
+import { TextStage } from '../components/text-stage/TextStage';
+import { useTextStageStore } from '../store/textStageStore';
 import type { CapabilityCatalog } from '../../shared/api';
 
 // 抽屉独立隔离保护器：确保抽屉内部发生任何未捕获错误时，画布绝不崩溃或黑屏
@@ -231,6 +233,31 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
   useEffect(() => {
     void refreshWorkflowTemplates();
   }, [refreshWorkflowTemplates]);
+
+  // 全屏 TextStage 提交同步器
+  useEffect(() => {
+    const unregister = useTextStageStore.getState().registerCommitHandler((nodeId, payload) => {
+      setNodes((currentNodes) =>
+        currentNodes.map((n) => {
+          if (n.id !== nodeId) return n;
+          return {
+            ...n,
+            data: {
+              ...(n.data || {}),
+              label: payload.title,
+              content: payload.content,
+              versions: payload.versions,
+              wordCount: payload.wordCount,
+              charCount: payload.charCount,
+              status: payload.content.trim() ? 'ready' : 'empty',
+              generatedContent: undefined,
+            },
+          };
+        }),
+      );
+    });
+    return unregister;
+  }, [setNodes]);
 
   const handleInsertTemplate = useCallback(async (templateId: string) => {
     const result = await getTemplate(templateId);
@@ -806,6 +833,9 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
 
       {/* 全屏独立电子表格舞台 */}
       <SpreadsheetStage />
+
+      {/* 全屏独立文本/剧本编辑器舞台 */}
+      <TextStage />
 
       {/* 批量保存资产弹窗 */}
       <BatchCreateAssetModal

@@ -34,6 +34,7 @@ import { getOutputOptionSpecs, parseOutputOptionKey } from '../../utils/connecti
 import { createMaterialNode } from '../../utils/nodeFactory';
 import { useExecutionStore } from '../../../store/executionStore';
 import { useCanvasStore, useIsMultiSelected } from '../../../store/canvasStore';
+import { useTextStageStore } from '../../../store/textStageStore';
 import { useT } from '../../../i18n';
 import { toast } from '../../../ui';
 import type { CapabilityCatalog, NodeExecutionApiStatus } from '../../../../shared/api';
@@ -274,7 +275,15 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     [applyCanvasInputMutation, handleImportFile, id, kind, t],
   );
 
-  // 文本快捷操作
+  // 文本快捷操作与全屏 Stage 打开
+  const handleOpenTextStage = useCallback(() => {
+    useTextStageStore.getState().openStage(id, {
+      title: label || '',
+      content: effectiveTextContent || '',
+      versions: nodeData.versions || [],
+    });
+  }, [effectiveTextContent, id, label, nodeData.versions]);
+
   const handleCopyText = useCallback(() => {
     if (effectiveTextContent) {
       navigator.clipboard.writeText(effectiveTextContent).catch(() => {});
@@ -334,7 +343,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           onOpenResourcePicker={() => {
             void resourcePicker.fillImportNode();
           }}
-          onStartTextEdit={() => setTextEditing(true)}
+          onStartTextEdit={handleOpenTextStage}
           onCopyText={handleCopyText}
           onSplitText={handleSplitText}
         />
@@ -392,7 +401,14 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
         {/* 1. 文本节点渲染 */}
         {materialType === 'text' && (
-          <div className="wf-material-node__text-shell" style={{ padding: '12px 14px' }}>
+          <div
+            className="wf-material-node__text-shell"
+            style={{ padding: '12px 14px' }}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              handleOpenTextStage();
+            }}
+          >
             {effectiveTextContent || textEditing ? (
               <textarea
                 className={`wf-material-node__text-editor nowheel${textEditing ? ' nodrag' : ''}`}
@@ -405,8 +421,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                 }}
                 onDoubleClick={(e) => {
                   e.stopPropagation();
-                  setTextEditing(true);
-                  e.currentTarget.focus();
+                  handleOpenTextStage();
                 }}
                 onFocus={() => setTextEditing(true)}
                 onBlur={() => setTextEditing(false)}
@@ -421,7 +436,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             ) : (
               <NodeEmptyState
                 materialType="text"
-                onStartEdit={() => setTextEditing(true)}
+                onStartEdit={handleOpenTextStage}
                 onApplyPreset={handleApplyPreset}
               />
             )}

@@ -1,0 +1,124 @@
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { useTextStageStore } from '../../store/textStageStore';
+import { TextStageTopbar } from './TextStageTopbar';
+import { CodeMirrorEditor } from './CodeMirrorEditor';
+import { MarkdownPreview } from './MarkdownPreview';
+import { VersionDrawer } from './VersionDrawer';
+import { VersionDiffModal } from './VersionDiffModal';
+
+export const TextStage: React.FC = () => {
+  const {
+    isStageOpen,
+    content,
+    viewMode,
+    setContent,
+    closeStage,
+    save,
+    isDrawerOpen,
+    setDrawerOpen,
+    diffModal,
+    closeDiffModal,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useTextStageStore();
+
+  // 快捷键全局监听 (Escape, Cmd+S, Cmd+Z, Cmd+Shift+Z)
+  useEffect(() => {
+    if (!isStageOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+
+      if (e.key === 'Escape') {
+        if (diffModal.isOpen) {
+          closeDiffModal();
+          return;
+        }
+        if (isDrawerOpen) {
+          setDrawerOpen(false);
+          return;
+        }
+        closeStage();
+        return;
+      }
+
+      // 保存 Cmd+S / Ctrl+S
+      if (mod && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        save();
+        return;
+      }
+
+      // 全局撤销/重做（在非编辑器焦点时或按键捕获）
+      if (mod && e.key.toLowerCase() === 'z') {
+        // 如果焦点在 CodeMirror 内容区，由 CodeMirror 内部 keymap 处理；若处于外部则由 store 处理
+        const activeTag = document.activeElement?.tagName.toLowerCase();
+        if (activeTag !== 'textarea' && !document.activeElement?.classList.contains('cm-content')) {
+          if (e.shiftKey) {
+            if (canRedo()) {
+              e.preventDefault();
+              redo();
+            }
+          } else {
+            if (canUndo()) {
+              e.preventDefault();
+              undo();
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [isStageOpen, diffModal.isOpen, isDrawerOpen, closeDiffModal, setDrawerOpen, closeStage, save, undo, redo, canUndo, canRedo]);
+
+  if (!isStageOpen || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div className="wf-text-stage-overlay wf-canvas-root">
+      {/* 顶部工具栏 */}
+      <TextStageTopbar />
+
+      {/* 核心编辑与预览区 */}
+      <main className="wf-text-stage-workspace">
+        <div className={`wf-text-stage-body wf-text-stage-body--${viewMode}`}>
+          {/* 编辑区 */}
+          {(viewMode === 'split' || viewMode === 'edit') && (
+            <section className="wf-text-stage-pane wf-text-stage-pane--editor">
+              <CodeMirrorEditor
+                value={content}
+                onChange={setContent}
+                className="wf-text-stage-cm"
+              />
+            </section>
+          )}
+
+          {/* 双栏分隔线 */}
+          {viewMode === 'split' && <div className="wf-text-stage-split-divider" />}
+
+          {/* 实时预览区 */}
+          {(viewMode === 'split' || viewMode === 'preview') && (
+            <section className="wf-text-stage-pane wf-text-stage-pane--preview">
+              <MarkdownPreview
+                content={content}
+                className="wf-text-stage-md-preview"
+              />
+            </section>
+          )}
+        </div>
+
+        {/* 历史版本右侧抽屉 */}
+        <VersionDrawer />
+      </main>
+
+      {/* 差异对比弹窗 */}
+      <VersionDiffModal />
+    </div>,
+    document.body,
+  );
+};
