@@ -70,7 +70,7 @@ export const FloatingSelectionToolbar: React.FC<FloatingSelectionToolbarProps> =
 
       <button
         type="button"
-        className="wf-floating-selection-bar__btn wf-floating-selection-bar__btn--accent"
+        className="wf-floating-selection-bar__btn"
         onClick={onGroup}
         title={t('group.float.groupTitle')}
       >
