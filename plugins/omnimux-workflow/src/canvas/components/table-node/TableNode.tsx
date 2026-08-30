@@ -1,5 +1,5 @@
 import React, { memo, useState, useCallback, useMemo } from 'react';
-import { useViewport, type NodeProps } from '@xyflow/react';
+import type { NodeProps } from '@xyflow/react';
 import {
   Table,
   Plus,
@@ -11,7 +11,7 @@ import { useTableStore } from '../../store/tableStore.ts';
 import { useIsMultiSelected } from '../../store/canvasStore.ts';
 import NodeHeader from '../../editor/components/MaterialNode/NodeHeader.tsx';
 import CanvasNodeHandle from '../../editor/components/CanvasNodeHandle.tsx';
-import { inverseScaleForZoom } from '../../editor/utils/nodeVisualMath.ts';
+import FloatingTopPill, { type FloatingPillAction } from '../../editor/components/FloatingTopPill.tsx';
 
 const DEFAULT_TABLE_NODE_WIDTH = 380;
 const DEFAULT_TABLE_NODE_HEIGHT = 280;
@@ -19,8 +19,6 @@ const DEFAULT_TABLE_NODE_HEIGHT = 280;
 export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
   const { document, openStage, addRow } = useTableStore();
   const [isHovered, setIsHovered] = useState(false);
-  const { zoom } = useViewport();
-  const inverseScale = useMemo(() => inverseScaleForZoom(zoom), [zoom]);
 
   const rows = document.rows || [];
   const firstCol = document.columns[0];
@@ -45,6 +43,25 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
     );
   }, [id, nodeTitle, tableRelPath]);
 
+  // 【全仓通用 FloatingTopPill 声明式 Actions】
+  const pillActions: FloatingPillAction[] = useMemo(() => [
+    {
+      key: 'add-to-chat',
+      icon: MessageSquarePlus,
+      title: '添加到对话',
+      onClick: handleAddToChat,
+    },
+    {
+      key: 'fullscreen-edit',
+      icon: Maximize2,
+      title: '全屏编辑',
+      onClick: (e) => {
+        e.stopPropagation();
+        openStage();
+      },
+    },
+  ], [handleAddToChat, openStage]);
+
   return (
     <div
       className={`wf-material-node ${selected ? 'wf-material-node--selected' : ''}`}
@@ -52,39 +69,9 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 顶部悬浮胶囊栏 (统一风格：收敛为两个纯图标按钮) */}
+      {/* 顶部悬浮胶囊栏 (100% 复用全仓通用 FloatingTopPill 标准组件) */}
       {showFloatingPill && (
-        <div
-          className="wf-floating-top-pill nodrag nowheel"
-          style={{
-            top: -38 * inverseScale,
-            transform: `translateX(-50%) scale(${inverseScale})`,
-            transformOrigin: 'bottom center',
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="wf-floating-top-pill__group">
-            <button
-              type="button"
-              className="wf-floating-top-pill__btn"
-              title="添加到对话"
-              onClick={handleAddToChat}
-            >
-              <MessageSquarePlus size={14} />
-            </button>
-            <button
-              type="button"
-              className="wf-floating-top-pill__btn"
-              title="全屏编辑"
-              onClick={(e) => {
-                e.stopPropagation();
-                openStage();
-              }}
-            >
-              <Maximize2 size={14} />
-            </button>
-          </div>
-        </div>
+        <FloatingTopPill actions={pillActions} />
       )}
 
       {/* 左侧输入 Handle */}
