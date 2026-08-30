@@ -82,6 +82,19 @@ export type NodeFailStrategy = 'abort' | 'skip';
 export type NodeKind = 'generate' | 'import';
 
 /**
+ * 文本节点历史版本快照
+ */
+export interface TextVersionSnapshot {
+  id: string;
+  timestamp: number;
+  name: string;
+  content: string;
+  source?: 'auto' | 'manual' | 'revert' | 'import';
+  wordCount?: number;
+  charCount?: number;
+}
+
+/**
  * MaterialNode 节点数据（窄化版）。
  *
  * 保留了画布图结构 + 连接校验 + 配置面板真正消费的字段，裁掉了预设
@@ -124,6 +137,11 @@ export interface MaterialNodeData {
   dimensions?: { width: number; height: number };
   aspectRatio?: number;
   duration?: number;
+
+  // === 文本与版本快照配置 ===
+  versions?: TextVersionSnapshot[];
+  wordCount?: number;
+  charCount?: number;
 }
 
 /** 创建默认的 MaterialNodeData（窄化版）。
