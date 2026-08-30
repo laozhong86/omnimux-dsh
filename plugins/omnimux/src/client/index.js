@@ -9,6 +9,8 @@ import { installHubChrome } from './chrome.js'
 import { STYLES_ID, injectHubStyles } from './styles.js'
 import { HeroBrandMark } from './HeroBrandMark.jsx'
 import { installHeroBrandSlot } from './hero-brand.js'
+import { AttachmentTray } from './attachments/AttachmentTray.tsx'
+import { getGlobalAttachmentStore } from './attachments/store.ts'
 
 export const name = 'omnimux'
 export const inject = ['slots', 'locale']
@@ -82,6 +84,15 @@ export function apply(ctx) {
     locale: NS,
     inject: () => ({ t }),
   }, SidebarUpdateAction))
+
+  // 全平台通用「添加到会话」附件附着槽 (挂载至 conversation.input.dock, order: 20)
+  const attachmentStore = getGlobalAttachmentStore()
+  ctx.effect?.(() => attachmentStore.installGlobalEvents(), 'omnimux: attachment global events')
+  ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({
+    name: 'conversation.input.dock',
+    id: 'omnimux-attachment-tray',
+    order: 20,
+  }, AttachmentTray))
   // ctx.effect(() => mountSidebarEntry(apps, t, ctx.locale, SIDEBAR_GLOBAL().register), 'omnimux: sidebar apps entry')
   // ctx.effect(() => mountAppTabs(t, ctx.locale, SIDEBAR_GLOBAL().register), 'omnimux: sidebar app tabs')
   // ctx.slots.inject('shell.overlay', () => ctx.slots.register({

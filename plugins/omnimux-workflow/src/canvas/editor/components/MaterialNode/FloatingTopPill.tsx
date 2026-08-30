@@ -14,6 +14,7 @@ import {
   Copy,
   Layers,
   Check,
+  MessageSquarePlus,
 } from 'lucide-react';
 import type { MaterialType, NodeKind } from '../../../types/materialNode';
 import { useT } from '../../../i18n';
@@ -27,6 +28,7 @@ export interface FloatingTopPillProps {
   onStartTextEdit?: () => void;
   onCopyText?: () => void;
   onSplitText?: () => void;
+  onAddToConversation?: () => void;
 }
 
 const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
@@ -37,6 +39,7 @@ const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
   onStartTextEdit,
   onCopyText,
   onSplitText,
+  onAddToConversation,
 }) => {
   const t = useT();
   const { zoom } = useViewport();
@@ -72,6 +75,20 @@ const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
     >
       {materialType === 'text' ? (
         <div className="wf-floating-top-pill__group">
+          {onAddToConversation && (
+            <>
+              <button
+                type="button"
+                className="wf-floating-top-pill__btn"
+                onClick={onAddToConversation}
+                title="添加到会话"
+              >
+                <MessageSquarePlus size={13} className="wf-floating-top-pill__icon" />
+                <span>添加到会话</span>
+              </button>
+              <span className="wf-floating-top-pill__divider" />
+            </>
+          )}
           <button
             type="button"
             className="wf-floating-top-pill__btn"

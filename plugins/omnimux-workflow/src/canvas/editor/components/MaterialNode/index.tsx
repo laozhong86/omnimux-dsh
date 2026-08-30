@@ -24,6 +24,7 @@ import ConfigPanelShell from './ConfigPanel/ConfigPanelShell';
 import ConfigPanel from './ConfigPanel';
 import ResourcePickerModal from '../ResourcePickerModal';
 import { useResourcePicker } from '../../hooks/useResourcePicker';
+import { useAddToConversation } from '../../../hooks/useAddToConversation';
 import {
   getDefaultNodeWidth,
   getNodeSizeCategory,
@@ -327,6 +328,24 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     (materialType === 'text' || (kind === 'import' && !previewUrl && !isOffline));
   const showReplaceButton = kind === 'import' && Boolean(previewUrl) && !isOffline;
 
+  const { addToConversation } = useAddToConversation();
+
+  const handleAddToConversation = useCallback(() => {
+    const isText = materialType === 'text';
+    const filename = isText ? `${label || '未命名文本'}.md` : `${label || materialType}.${materialType === 'video' ? 'mp4' : materialType === 'image' ? 'png' : 'bin'}`;
+    const relPath = (data as any)?.filePath || (data as any)?.previewUrl || `assets/${materialType}s/${id}.${isText ? 'md' : materialType === 'video' ? 'mp4' : 'png'}`;
+
+    addToConversation({
+      sourcePlugin: 'omnimux-workflow',
+      kind: isText ? 'document' : (materialType as any),
+      entityId: id,
+      title: filename,
+      extension: isText ? 'MD' : materialType.toUpperCase(),
+      relativePath: relPath,
+      previewUrl: resolveMediaPreviewUrl((data as any)?.asset) || (data as any)?.previewUrl,
+    });
+  }, [addToConversation, data, id, label, materialType]);
+
   return (
     <div
       className={`wf-material-node ${selected ? 'wf-material-node--selected' : ''}`}
@@ -334,7 +353,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 顶部悬浮胶囊栏：生成媒体节点不再提供导入入口 */}
+      {/* 顶部悬浮胶囊栏 */}
       {showFloatingPill && (
         <FloatingTopPill
           materialType={materialType}
@@ -346,6 +365,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           onStartTextEdit={handleOpenTextStage}
           onCopyText={handleCopyText}
           onSplitText={handleSplitText}
+          onAddToConversation={handleAddToConversation}
         />
       )}
 

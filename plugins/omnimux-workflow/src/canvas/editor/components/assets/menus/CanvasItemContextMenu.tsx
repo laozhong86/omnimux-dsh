@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  MessageSquare,
+  MessageSquarePlus,
   Sparkles,
   Bookmark,
   Crosshair,
@@ -94,9 +94,10 @@ export const CanvasItemContextMenu: React.FC<CanvasItemContextMenuProps> = ({
         <span className="wf-context-menu-shortcut">⌘⇧A</span>
       </div>
 
-      <div className="wf-context-menu-item" onClick={() => handleItemClick('add-to-dialog')}>
-        <MessageSquare size={14} className="wf-context-menu-icon" />
-        <span className="wf-context-menu-label">添加到对话</span>
+      <div className="wf-context-menu-item" onClick={() => handleItemClick('add-to-conversation')}>
+        <MessageSquarePlus size={14} className="wf-context-menu-icon" />
+        <span className="wf-context-menu-label">添加到会话</span>
+        <span className="wf-context-menu-shortcut">⌘⇧C</span>
       </div>
 
       <div className="wf-context-menu-item" onClick={() => handleItemClick('add-to-subjects')}>
