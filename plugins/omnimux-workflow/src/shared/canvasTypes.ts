@@ -22,6 +22,10 @@ export interface GroupNodeData extends Record<string, unknown> {
   title: string;
   color: string;
   isCollapsed?: boolean;
+  expandedBounds?: {
+    width: number;
+    height: number;
+  };
   minWidth?: number;
   minHeight?: number;
   padding?: number;

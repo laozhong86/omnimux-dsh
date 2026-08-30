@@ -41,6 +41,7 @@ import {
 import {
   planGroupNodes,
   planUngroupNode,
+  planToggleGroupCollapse,
 } from '../editor/utils/nodeVisualMath';
 
 export type SelectedElementType = 'none' | 'node';
@@ -90,6 +91,8 @@ export interface CanvasState {
   groupNodes: (nodeIds: string[], title?: string, color?: string) => string | null;
   /** Ungroup container and restore child nodes to absolute canvas space. */
   ungroup: (groupId: string) => void;
+  /** Toggle group collapse/expand state. */
+  toggleGroupCollapse: (groupId: string) => void;
   /** Resize or reposition a group node. */
   resizeGroup: (groupId: string, bounds: { x: number; y: number; width: number; height: number }) => void;
   /** Replace the whole graph (workspace load). */
@@ -217,6 +220,13 @@ export const useCanvasStore = create<CanvasState>()(
         nodes: updatedNodes,
         selectedElement: { type: 'none', id: null },
       });
+    },
+
+    toggleGroupCollapse: (groupId) => {
+      const updatedNodes = planToggleGroupCollapse(get().nodes, groupId);
+      if (!updatedNodes) return;
+
+      set({ nodes: updatedNodes });
     },
 
     resizeGroup: (groupId, bounds) => {

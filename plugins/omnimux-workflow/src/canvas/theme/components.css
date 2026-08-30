@@ -5209,7 +5209,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   border-radius: 12px;
   background: color-mix(in srgb, var(--wb-surface) 8%, transparent);
   border: 1.5px solid var(--wb-border-strong);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, width 0.2s ease, height 0.2s ease;
 }
 
 .wf-group-node--selected {
@@ -5217,39 +5217,84 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   box-shadow: 0 0 24px color-mix(in srgb, var(--wf-group-accent, var(--wb-accent)) 14%, transparent);
 }
 
-.wf-group-header {
+.wf-group-node--collapsed {
+  background: color-mix(in srgb, var(--wb-surface) 18%, transparent);
+}
+
+/* ==================== 编组头部胶囊 (GroupHeader) ==================== */
+.wf-group-header-pill {
   position: absolute;
-  top: 10px;
-  left: 14px;
-  z-index: 2;
-  display: flex;
+  top: 8px;
+  left: 10px;
+  z-index: 10;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-}
-
-.wf-group-header__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--wf-group-accent, var(--wb-accent));
-}
-
-.wf-group-header__title {
+  gap: 6px;
+  height: 28px;
+  padding: 2px 10px 2px 6px;
+  background: rgba(24, 24, 27, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   color: var(--wb-text-primary);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: text;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
   user-select: none;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
 }
 
-.wf-group-header__input {
+.wf-group-header-pill:hover {
+  background: rgba(36, 36, 40, 0.96);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.wf-group-header-pill--selected {
+  border-color: var(--wf-group-accent, var(--wb-accent));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--wf-group-accent, var(--wb-accent)) 30%, transparent);
+}
+
+.wf-group-header-pill__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.wf-group-header-pill__toggle:hover {
+  color: var(--wb-text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.wf-group-header-pill__title {
+  color: var(--wb-text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.wf-group-header-pill__input {
   background: var(--wb-surface);
   border: 1px solid var(--wf-group-accent, var(--wb-accent));
   border-radius: 4px;
   color: var(--wb-text-primary);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 1px 6px;
   outline: none;
 }
 
