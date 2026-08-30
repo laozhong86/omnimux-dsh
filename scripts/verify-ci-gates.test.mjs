@@ -111,3 +111,12 @@ test('git-wt finish never locally merges or force-pushes main', () => {
   })
   strictEqual(res.status, 0, `git-wt tests failed: ${res.stderr}\n${res.stdout}`)
 })
+
+test('sync-to-app and sync-stable target selection matrix passes', () => {
+  const res = spawnSync('node', ['--test', resolve(here, 'sync-targets.test.mjs')], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: nestedTestEnv,
+  })
+  strictEqual(res.status, 0, `sync-targets tests failed: ${res.stderr}\n${res.stdout}`)
+})
