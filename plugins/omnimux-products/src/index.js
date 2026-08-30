@@ -212,9 +212,34 @@ export function apply(ctx) {
       return { product }
     },
   })
+
+  ctx.tools.register({
+    name: 'products_delete',
+    description:
+      'Delete a product from the library. Does not delete disk media files. Destructive action requiring confirm=true.',
+    parameters: objectParams({
+      id: { type: 'string', required: true, description: 'Product id (prd_…) or handle' },
+      confirm: {
+        type: 'boolean',
+        required: true,
+        description: 'Must be true to confirm permanent deletion of the product record',
+      },
+    }),
+    output: jsonOut,
+    async execute(args) {
+      if (args.confirm !== true) {
+        throw new ProductsError('confirmation-required', 'products_delete is destructive; confirm must be explicitly true')
+      }
+      const id = typeof args.id === 'string' ? args.id : ''
+      const existing = library.get(id)
+      if (!existing) throw new ProductsError('product-not-found', `no product ${id}`)
+      library.remove(existing.id)
+      return { ok: true, id: existing.id, deleted: true }
+    },
+  })
 }
 
-/** Test helper: the six live tool names, in register order. */
+/** Test helper: the seven live tool names, in register order. */
 export const PRODUCT_TOOL_NAMES = Object.freeze([
   'products_list',
   'products_search',
@@ -222,4 +247,5 @@ export const PRODUCT_TOOL_NAMES = Object.freeze([
   'products_read_media',
   'products_create',
   'products_update',
+  'products_delete',
 ])
