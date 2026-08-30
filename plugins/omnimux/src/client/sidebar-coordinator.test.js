@@ -20,7 +20,9 @@ globalThis.clearInterval = () => {}
 /** @type {JSDOM | undefined} */
 let dom
 
-afterEach(() => {
+afterEach(async () => {
+  const { resetSidebarCoordinatorForTests } = await import('./sidebar-coordinator.js')
+  resetSidebarCoordinatorForTests()
   dom?.window.close()
   dom = undefined
 })
@@ -218,5 +220,50 @@ test('AppFrame 去掉 data-sidebar-collapsed 后 observer 关掉菜单', async (
     assert.equal(document.getElementById('omnimux-sidebar-new-menu'), null, '展开时加号不再拦截成菜单')
   } finally {
     disposeInline()
+  }
+})
+
+test('sidebar 就绪后 observer 收窄到侧栏列，overlay 突变不触发 placeAll', async () => {
+  setup()
+  const {
+    installSidebarGlobal,
+    SIDEBAR_GLOBAL,
+    getSidebarObserverTargetForTests,
+    getPlaceCountForTests,
+  } = await import('./sidebar-coordinator.js')
+  installSidebarGlobal()
+  const api = SIDEBAR_GLOBAL()
+
+  const belowBtn = document.createElement('button')
+  belowBtn.id = 'below-scope'
+  const disposeBelow = api.register({ id: 'below-scope', rank: 5, create: () => belowBtn })
+
+  try {
+    const column = document.querySelector('[data-pane="sidebar"]')
+    assert.equal(
+      getSidebarObserverTargetForTests(),
+      column,
+      'observer 必须绑在 sidebar 列，不得长驻 document.body',
+    )
+    assert.notEqual(getSidebarObserverTargetForTests(), document.body)
+
+    // Flush the observer tick caused by register()'s own insertBefore.
+    await new Promise((resolve) => { setTimeout(resolve, 20) })
+    const before = getPlaceCountForTests()
+    const overlay = document.createElement('div')
+    overlay.setAttribute('data-slot', 'shell.overlay')
+    for (let i = 0; i < 40; i++) {
+      const child = document.createElement('div')
+      child.className = 'omnimux-assets-stage'
+      child.append(document.createElement('span'))
+      overlay.append(child)
+    }
+    document.body.append(overlay)
+    await new Promise((resolve) => { setTimeout(resolve, 20) })
+
+    assert.equal(getPlaceCountForTests(), before, 'Stage overlay 的 DOM 突变不得回灌 placeAll')
+    assert.equal(belowBtn.parentElement, column, 'overlay 突变不得搅动侧栏行')
+  } finally {
+    disposeBelow()
   }
 })
