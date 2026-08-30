@@ -388,13 +388,16 @@ export function childIdsOfGroup(nodes: Array<{ id: string; type?: string; parent
     .map((node) => node.id);
 }
 
+export const COLLAPSED_GROUP_WIDTH = 220;
+export const COLLAPSED_GROUP_HEIGHT = 44;
+
 /**
  * 纯逻辑：将指定节点打组为 GroupNode 并将子节点转为相对坐标。
  */
 export function planGroupNodes(
   currentNodes: any[],
   nodeIds: string[],
-  title = '新建组',
+  title?: string,
   color = '#3b82f6',
 ): { groupId: string; nodes: any[] } | null {
   const targetNodes = currentNodes.filter((n) => (
@@ -404,6 +407,7 @@ export function planGroupNodes(
   ));
   if (targetNodes.length < 2) return null;
 
+  const defaultTitle = title && title !== '新建组' ? title : `编组 ${targetNodes.length} 个节点`;
   const bounds = calculateGroupBounds(targetNodes, 32);
   const groupId = `group_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -420,8 +424,13 @@ export function planGroupNodes(
       zIndex: 0,
     },
     data: {
-      title,
+      title: defaultTitle,
       color,
+      isCollapsed: false,
+      expandedBounds: {
+        width: bounds.width,
+        height: bounds.height,
+      },
       minWidth: bounds.minWidth,
       minHeight: bounds.minHeight,
       padding: 32,
@@ -447,6 +456,66 @@ export function planGroupNodes(
     groupId,
     nodes: [groupNode, ...updatedChildren],
   };
+}
+
+/**
+ * 纯逻辑：切换组的收起/展开状态。
+ * 收起时：
+ * 1. 记录 expandedBounds（如果未记录或有变更）；
+ * 2. 组尺寸变为紧凑胶囊尺寸（220x44）；
+ * 3. 组内所有子节点设为 hidden: true（隐藏子节点）；
+ * 展开时：
+ * 1. 还原 groupNode.width 和 groupNode.height 为 expandedBounds；
+ * 2. 组内所有子节点恢复 hidden: false。
+ */
+export function planToggleGroupCollapse(
+  currentNodes: any[],
+  groupId: string,
+): any[] | null {
+  const groupNode = currentNodes.find((n) => n.id === groupId && n.type === 'group');
+  if (!groupNode) return null;
+
+  const currentData = (groupNode.data || {}) as Record<string, unknown>;
+  const isCurrentlyCollapsed = Boolean(currentData.isCollapsed);
+  const willCollapse = !isCurrentlyCollapsed;
+
+  const expandedBounds =
+    (currentData.expandedBounds as { width: number; height: number }) || {
+      width: groupNode.width || 400,
+      height: groupNode.height || 300,
+    };
+
+  const nextWidth = willCollapse ? COLLAPSED_GROUP_WIDTH : expandedBounds.width;
+  const nextHeight = willCollapse ? COLLAPSED_GROUP_HEIGHT : expandedBounds.height;
+
+  return currentNodes.map((node) => {
+    if (node.id === groupId) {
+      return {
+        ...node,
+        width: nextWidth,
+        height: nextHeight,
+        style: {
+          ...node.style,
+          width: nextWidth,
+          height: nextHeight,
+        },
+        data: {
+          ...currentData,
+          isCollapsed: willCollapse,
+          expandedBounds: willCollapse
+            ? { width: groupNode.width || expandedBounds.width, height: groupNode.height || expandedBounds.height }
+            : expandedBounds,
+        },
+      };
+    }
+    if (node.parentId === groupId) {
+      return {
+        ...node,
+        hidden: willCollapse,
+      };
+    }
+    return node;
+  });
 }
 
 /**

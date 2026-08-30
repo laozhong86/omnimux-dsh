@@ -72,10 +72,10 @@ export const GroupTopBar: React.FC<GroupTopBarProps> = memo(({
       onPointerDown={stopToolbarNativeEvent}
       onMouseDown={stopToolbarNativeEvent}
       style={{
-        top: -(14 * inverseScale),
-        transform: `translate(-50%, -100%) scale(${inverseScale})`,
-        transformOrigin: 'bottom center',
-        left: '50%',
+        top: -(12 * inverseScale),
+        transform: `translate(0, -100%) scale(${inverseScale})`,
+        transformOrigin: 'bottom left',
+        left: 12,
         ['--wf-group-accent' as string]: groupColor,
       }}
     >
