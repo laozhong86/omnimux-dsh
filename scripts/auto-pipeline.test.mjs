@@ -18,7 +18,7 @@ import {
   transitionState,
   writeState,
 } from './pipeline-state.mjs'
-import { validateBrowserEvidence } from './auto-qa-gate.mjs'
+import { isScannableSourceFile, validateBrowserEvidence } from './auto-qa-gate.mjs'
 import { evaluateVerdict } from './ci-verdict.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -41,6 +41,15 @@ describe('OmniMux 自动化交付流水线与质量门禁套件', () => {
     assert.ok('tokens' in report.dimensions)
     assert.ok('guards' in report.dimensions)
     assert.equal(typeof report.pass, 'boolean')
+  })
+
+  it('L0 不扫描已删除或不入库的 omnimux-workflow 生成物', () => {
+    const missing = join(repoRoot, 'plugins/omnimux-workflow/dist/index.js')
+    const canvas = join(repoRoot, 'plugins/omnimux-workflow/lib/canvas.js')
+    const source = join(repoRoot, 'plugins/omnimux-workflow/src/client/CanvasBridge.jsx')
+    assert.equal(isScannableSourceFile(repoRoot, missing), false)
+    assert.equal(isScannableSourceFile(repoRoot, canvas), false)
+    assert.equal(isScannableSourceFile(repoRoot, source), true)
   })
 
   it('auto-pipeline.mjs 支持 dry-run 完整链路校验', () => {

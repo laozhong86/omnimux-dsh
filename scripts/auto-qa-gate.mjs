@@ -22,6 +22,7 @@ import {
 } from 'node:fs'
 import { extname, isAbsolute, join, resolve, sep } from 'node:path'
 import { maskNonCode, normalizedRelative, staticScan } from './auto-qa-scan.mjs'
+import { isForbiddenWorkflowArtifact } from './check-tracked-artifacts.mjs'
 
 export { maskNonCode }
 
@@ -112,6 +113,13 @@ function parseGitNames(output, { porcelain = false } = {}) {
   return names
     .map(name => name.trim())
     .filter(Boolean)
+}
+
+export function isScannableSourceFile(root, file) {
+  const rel = normalizedRelative(root, file)
+  if (isForbiddenWorkflowArtifact(rel)) return false
+  if (!existsSync(file)) return false
+  return SOURCE_EXTENSIONS.has(extname(file))
 }
 
 export function changedFilesFromGit(root, base = 'origin/main', { strict = false } = {}) {
@@ -206,7 +214,7 @@ export function runGate(options) {
   if (options.diff) {
     const changed = changedFilesFromGit(root, options.base)
     report.changedFiles = changed.map(file => normalizedRelative(root, file))
-    files = changed.filter(file => isInside(options.targetDir, file) && SOURCE_EXTENSIONS.has(extname(file)))
+    files = changed.filter(file => isInside(options.targetDir, file) && isScannableSourceFile(root, file))
   } else {
     files = findFiles(options.targetDir)
     report.changedFiles = files.map(file => normalizedRelative(root, file))
