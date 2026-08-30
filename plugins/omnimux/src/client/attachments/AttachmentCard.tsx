@@ -37,6 +37,12 @@ const DocFileIcon = () => (
   </svg>
 );
 
+const SparklesIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
+  </svg>
+);
+
 const MediaPlaceholderIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -52,12 +58,15 @@ export const AttachmentCard: React.FC<AttachmentCardProps> = ({
 }) => {
   const [imageError, setImageError] = useState(false);
 
-  const isMedia = attachment.kind === 'image' || attachment.kind === 'video';
-  const isVideo = attachment.kind === 'video';
+  const isMedia = attachment.kind === 'image' || attachment.kind === 'video' || (attachment.kind === 'inspiration' && Boolean(attachment.previewUrl));
+  const isVideo = attachment.kind === 'video' || (attachment.kind === 'inspiration' && Boolean(attachment.duration));
 
   const fileIcon = useMemo(() => {
     if (attachment.kind === 'table') {
       return <TableFileIcon />;
+    }
+    if (attachment.kind === 'inspiration') {
+      return <SparklesIcon />;
     }
     return <DocFileIcon />;
   }, [attachment.kind]);
