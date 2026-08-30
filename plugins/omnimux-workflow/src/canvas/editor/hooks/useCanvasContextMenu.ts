@@ -6,7 +6,8 @@
 import { useCallback, useState } from 'react';
 import type { Node } from '@xyflow/react';
 import { useCanvasStore } from '../../store/canvasStore';
-import type { ContextMenuAction, ContextMenuContext, CanvasAddNodeType } from '../components/ContextMenu';
+import type { ContextMenuAction, ContextMenuContext } from '../components/ContextMenu';
+import type { CanvasAddNodeType } from '../components/addNodePalette';
 
 export interface MenuState {
   x: number;

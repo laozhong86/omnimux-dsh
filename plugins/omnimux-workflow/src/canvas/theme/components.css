@@ -1670,11 +1670,51 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   background: var(--wf-menu-border);
 }
 
-/* ==================== Add Node Drill-down Panel ==================== */
+.wf-context-menu__icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  opacity: 0.85;
+}
 
-.wf-add-node-menu {
+.wf-add-node-menu-host {
   min-width: 230px;
   padding: 8px;
+}
+
+/* ==================== Add Node Menu（Dock + Context 共用，零裸色） ==================== */
+
+.wf-add-node-menu {
+  --wf-add-icon-bg: var(--dsw-alias-bg-layer-2, var(--wb-surface-raised));
+  --wf-add-icon-border: var(--dsw-alias-border-l1, var(--wb-border));
+  --wf-add-icon-fg: var(--dsw-alias-label-primary, var(--wb-text-primary));
+  --wf-add-badge-primary-bg: var(--dsw-alias-brand-primary, var(--wb-accent));
+  --wf-add-badge-primary-fg: var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary));
+  --wf-add-badge-new-bg: var(--dsw-alias-bg-layer-1, var(--wb-surface-raised));
+  --wf-add-badge-new-fg: var(--dsw-alias-label-secondary, var(--wb-text-secondary));
+  --wf-add-badge-new-border: var(--dsw-alias-border-l1, var(--wb-border));
+}
+
+.wf-add-node-menu--dock {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  z-index: 25;
+  pointer-events: auto;
+  min-width: 230px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--dsw-alias-border, var(--wb-border));
+  background: var(--dsw-alias-bg-elevated, var(--wb-surface));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--wb-shadow-pop);
+  animation: wf-dock-pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wf-add-node-menu--context {
+  min-width: 214px;
+  padding: 0;
 }
 
 .wf-add-node-menu__container {
@@ -1687,7 +1727,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   align-items: center;
   gap: 8px;
   padding: 2px 4px 8px 2px;
-  border-bottom: 1px solid var(--wf-menu-border, rgba(255, 255, 255, 0.08));
+  border-bottom: 1px solid var(--dsw-alias-border-l1, var(--wf-menu-border, var(--wb-border)));
   margin-bottom: 6px;
 }
 
@@ -1699,23 +1739,36 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   height: 24px;
   border: none;
   background: transparent;
-  color: var(--wf-menu-text-muted, #a1a1aa);
+  color: var(--dsw-alias-label-tertiary, var(--wf-menu-text-muted, var(--wb-text-muted)));
   border-radius: 6px;
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: background 120ms ease, color 120ms ease;
   padding: 0;
 }
 
 .wf-add-node-menu__back-btn:hover {
-  background: var(--wf-menu-surface-hover, rgba(255, 255, 255, 0.1));
-  color: #ffffff;
+  background: var(--dsw-alias-interactive-bg-hover, var(--wf-menu-surface-hover, var(--wb-dock-item-hover)));
+  color: var(--dsw-alias-label-primary, var(--wf-menu-text, var(--wb-text-primary)));
 }
 
 .wf-add-node-menu__title {
+  flex: 1;
   font-size: 13px;
   font-weight: 600;
-  color: var(--wf-menu-text, #e4e4e7);
+  color: var(--dsw-alias-label-primary, var(--wf-menu-text, var(--wb-text-primary)));
   letter-spacing: 0.2px;
+}
+
+.wf-add-node-menu__kbd {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 6px;
+  color: var(--dsw-alias-label-tertiary, var(--wf-menu-text-muted, var(--wb-text-muted)));
+  background: var(--dsw-alias-bg-layer-1, var(--wb-surface-raised));
+  border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
 }
 
 .wf-add-node-menu__list {
@@ -1733,15 +1786,14 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--wf-menu-text, #e4e4e7);
+  color: var(--dsw-alias-label-primary, var(--wf-menu-text, var(--wb-text-primary)));
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
   text-align: left;
 }
 
 .wf-add-node-menu__item:hover {
-  background: var(--wf-menu-surface-hover, rgba(255, 255, 255, 0.08));
-  color: #ffffff;
+  background: var(--dsw-alias-interactive-bg-hover, var(--wf-menu-surface-hover, var(--wb-dock-item-hover)));
 }
 
 .wf-add-node-menu__icon-box {
@@ -1751,9 +1803,9 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: #e4e4e7;
+  background: var(--wf-add-icon-bg);
+  border: 1px solid var(--wf-add-icon-border);
+  color: var(--wf-add-icon-fg);
   flex-shrink: 0;
 }
 
@@ -1777,18 +1829,18 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
 }
 
 .wf-add-node-menu__badge--primary {
-  background: #5B68F6;
-  color: #ffffff;
+  background: var(--wf-add-badge-primary-bg);
+  color: var(--wf-add-badge-primary-fg);
 }
 
 .wf-add-node-menu__badge--new {
-  background: #27272a;
-  color: #d4d4d8;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--wf-add-badge-new-bg);
+  color: var(--wf-add-badge-new-fg);
+  border: 1px solid var(--wf-add-badge-new-border);
 }
 
 .wf-add-node-menu__arrow {
-  color: var(--wf-menu-text-muted, #71717a);
+  color: var(--dsw-alias-label-tertiary, var(--wf-menu-text-muted, var(--wb-text-muted)));
   margin-left: 2px;
 }
 
@@ -2492,28 +2544,6 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   border-radius: 0 !important;
 }
 
-/* ==================== 底部 Dock 添加气泡菜单 ==================== */
-
-.wf-dock-add-popover {
-  position: absolute;
-  bottom: calc(100% + 12px);
-  left: 0;
-  z-index: 25;
-  pointer-events: auto;
-  background: rgba(24, 24, 27, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  box-shadow: 0 20px 40px -4px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 210px;
-  animation: wf-dock-pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 @keyframes wf-dock-pop-in {
   from {
     opacity: 0;
@@ -2523,58 +2553,6 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
     opacity: 1;
     transform: translateY(0) scale(1);
   }
-}
-
-.wf-dock-add-popover__item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  transition: all 120ms ease;
-  width: 100%;
-}
-
-.wf-dock-add-popover__item:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.wf-dock-add-popover__icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
-  color: #f4f4f5;
-  flex-shrink: 0;
-}
-
-.wf-dock-add-popover__item:hover .wf-dock-add-popover__icon {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-}
-
-.wf-dock-add-popover__content {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.wf-dock-add-popover__label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #f4f4f5;
-}
-
-.wf-dock-add-popover__desc {
-  font-size: 11px;
-  color: #a1a1aa;
 }
 
 /* ==================== 节点内空态胶囊按钮 ==================== */
@@ -5560,10 +5538,25 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
 }
 
 .wf-template-picker {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  z-index: 25;
+  pointer-events: auto;
   min-width: 240px;
   max-height: 280px;
   overflow-y: auto;
   padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-radius: 12px;
+  border: 1px solid var(--dsw-alias-border, var(--wb-border));
+  background: var(--dsw-alias-bg-elevated, var(--wb-surface));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--wb-shadow-pop);
+  animation: wf-dock-pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .wf-template-picker__empty {
