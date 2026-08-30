@@ -58,7 +58,7 @@ jobs:
         run: |
           TMP="$(mktemp -d)"
           printf '%s\n' '{"type":"module"}' > "$TMP/package.json"
-          npm --prefix "$TMP" install --ignore-scripts --no-audit --no-fund esbuild@0.28.2
+          npm --prefix "$TMP" install --ignore-scripts --no-audit --no-fund esbuild@0.28.2 zod @xyflow/react uuid
           ln -sfn "$TMP/node_modules" plugins/omnimux-workflow/node_modules
           node plugins/omnimux-workflow/scripts/build-host.mjs
           test -s plugins/omnimux-workflow/dist/index.js

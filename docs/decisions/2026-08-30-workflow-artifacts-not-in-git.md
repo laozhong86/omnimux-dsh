@@ -32,7 +32,7 @@ related:
 
 1. Git 只跟踪 `plugins/omnimux-workflow/src/` 与构建脚本。`dist/`、`lib/client.js`、`lib/canvas.js` gitignore，停跟踪。
 2. 入口仍是 `package.json` `main` / `dsh.manifest.json` `entrypoint` = `dist/index.js`。生成时机：`prepare`、`npm run build`、`scripts/sync-to-app.sh`（已对 workflow 三件套 build）。
-3. CI：`git ls-files` 命中上述路径即失败；另用 `--ignore-scripts` 装 esbuild 后跑 `build-host.mjs`，证明 src→Host 可复现。完整 client/canvas 构建依赖仓外 `dsh-ui-kit`，由本机 `sync-to-app` 覆盖，不在本阶段强行进 GitHub Actions。
+3. CI：`git ls-files` 命中上述路径即失败；另用临时 `node_modules`（esbuild + zod + `@xyflow/react` + uuid，避开仓外 `file: dsh-ui-kit`）跑 `build-host.mjs`，证明 src→Host 可复现。完整 client/canvas 构建由本机 `sync-to-app` 覆盖。
 4. 禁止为「跟仓」单独提交生成物。其它插件 `lib/client.js` 本阶段仍跟踪（第二阶段再统一）。
 5. 画布加载必须带 `?v=<canvasHash>`；hash 变化替换旧 `<script>`。验收见旧 UI 先硬刷新。
 
