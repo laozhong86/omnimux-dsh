@@ -719,10 +719,6 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
       {/* 底部悬浮控制坞 */}
       <Toolbar
         onAddNode={handleAddNode}
-        onUndo={undo}
-        onRedo={redo}
-        canUndo={canUndo}
-        canRedo={canRedo}
         pointerMode={pointerMode}
         onPointerModeChange={setPointerMode}
         onOpenAssets={() => setIsAssetsOpen((prev) => !prev)}

@@ -5,7 +5,7 @@
  * 2. Primary (+) button (Hotkey N) opening modern node creation popover menu.
  * 3. Pointer mode selector: Select (V) / Pan (H).
  * 4. Project Assets (📁) drawer trigger (Hotkey A).
- * 5. Undo / Redo controls + Hotkey help (?) modal.
+ * 5. Hotkey help (?) modal.
  *
  * Maintains .nodrag .nopan and pointer event guards to prevent xyflow mouse capture.
  */
@@ -23,8 +23,6 @@ import {
   Hand,
   FolderOpen,
   HelpCircle,
-  Undo2,
-  Redo2,
   ChevronUp,
   UploadCloud,
   FileCode,
@@ -43,10 +41,6 @@ export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition' | '
 
 export interface ToolbarProps {
   onAddNode: (type: CanvasAddNodeType) => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
-  canUndo?: boolean;
-  canRedo?: boolean;
   pointerMode?: CanvasPointerMode;
   onPointerModeChange?: (mode: CanvasPointerMode) => void;
   onOpenAssets?: () => void;
@@ -75,10 +69,6 @@ const ADD_NODE_ITEMS: Array<{
 
 const Toolbar: React.FC<ToolbarProps> = ({
   onAddNode,
-  onUndo,
-  onRedo,
-  canUndo = false,
-  canRedo = false,
   pointerMode = 'select',
   onPointerModeChange,
   onOpenAssets,
@@ -111,13 +101,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
   const pointerMenuItems: DropdownMenuItem[] = [
     {
       key: 'select',
-      icon: <MousePointer size={15} />,
+      icon: <MousePointer size={18} />,
       label: t('toolbar.selectMode'),
       onClick: () => onPointerModeChange?.('select'),
     },
     {
       key: 'pan',
-      icon: <Hand size={15} />,
+      icon: <Hand size={18} />,
       label: t('toolbar.panMode'),
       onClick: () => onPointerModeChange?.('pan'),
     },
@@ -139,7 +129,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           title={t('toolbar.addNode')}
         >
           <span className="wf-canvas-toolbar__icon">
-            <Plus size={20} />
+            <Plus size={24} />
           </span>
         </button>
 
@@ -180,7 +170,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             title={t('toolbar.insertTemplate')}
           >
             <span className="wf-canvas-toolbar__icon">
-              <FileCode size={16} />
+              <FileCode size={20} />
             </span>
             <span className="wf-canvas-toolbar__label">{t('toolbar.insertTemplateLabel')}</span>
           </button>
@@ -221,9 +211,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
           title={pointerMode === 'select' ? t('toolbar.selectMode') : t('toolbar.panMode')}
         >
           <span className="wf-canvas-toolbar__icon">
-            {pointerMode === 'select' ? <MousePointer size={16} /> : <Hand size={16} />}
+            {pointerMode === 'select' ? <MousePointer size={20} /> : <Hand size={20} />}
           </span>
-          <ChevronUp size={12} style={{ opacity: 0.6, marginLeft: 2 }} />
+          <ChevronUp size={14} style={{ opacity: 0.6, marginLeft: 2 }} />
         </button>
       </CustomDropdown>
 
@@ -235,43 +225,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
         title={t('toolbar.assets')}
       >
         <span className="wf-canvas-toolbar__icon">
-          <FolderOpen size={17} />
+          <FolderOpen size={20} />
         </span>
         <span className="wf-canvas-toolbar__label">{t('toolbar.assets')}</span>
       </button>
-
-      {/* 撤销 / 重做 */}
-      {(onUndo || onRedo) && <div className="wf-canvas-toolbar__divider" />}
-
-      {onUndo && (
-        <button
-          type="button"
-          className="wf-canvas-toolbar__item wf-canvas-toolbar__item--icon-only"
-          onClick={() => onUndo()}
-          disabled={!canUndo}
-          title={t('toolbar.undoTitle')}
-        >
-          <span className="wf-canvas-toolbar__icon">
-            <Undo2 size={16} />
-          </span>
-          <span className="wf-canvas-toolbar__label">{t('toolbar.undo')}</span>
-        </button>
-      )}
-
-      {onRedo && (
-        <button
-          type="button"
-          className="wf-canvas-toolbar__item wf-canvas-toolbar__item--icon-only"
-          onClick={() => onRedo()}
-          disabled={!canRedo}
-          title={t('toolbar.redoTitle')}
-        >
-          <span className="wf-canvas-toolbar__icon">
-            <Redo2 size={16} />
-          </span>
-          <span className="wf-canvas-toolbar__label">{t('toolbar.redo')}</span>
-        </button>
-      )}
 
       {/* 帮助 */}
       {onOpenHelp && (
@@ -284,7 +241,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             title={t('toolbar.help')}
           >
             <span className="wf-canvas-toolbar__icon">
-              <HelpCircle size={16} />
+              <HelpCircle size={20} />
             </span>
             <span className="wf-canvas-toolbar__label">{t('toolbar.help')}</span>
           </button>
