@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTextStageStore } from '../../store/textStageStore';
 import { TextStageTopbar } from './TextStageTopbar';
 import { CodeMirrorEditor } from './CodeMirrorEditor';
@@ -21,6 +21,11 @@ export const TextStage: React.FC = () => {
     canUndo,
     canRedo,
   } = useTextStageStore();
+
+  const [everOpened, setEverOpened] = useState(false);
+  if (isStageOpen && !everOpened) {
+    setEverOpened(true);
+  }
 
   // 快捷键全局监听 (Escape, Cmd+S, Cmd+Z, Cmd+Shift+Z)
   useEffect(() => {
@@ -73,10 +78,18 @@ export const TextStage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [isStageOpen, diffModal.isOpen, isDrawerOpen, closeDiffModal, setDrawerOpen, closeStage, save, undo, redo, canUndo, canRedo]);
 
-  if (!isStageOpen) return null;
+  if (!everOpened) return null;
 
   return (
-    <div className="wf-text-stage-overlay wf-canvas-root">
+    <div
+      className="wf-text-stage-overlay wf-canvas-root"
+      hidden={!isStageOpen}
+      data-visible={isStageOpen ? 'true' : 'false'}
+      aria-hidden={isStageOpen ? undefined : 'true'}
+      style={{
+        display: isStageOpen ? 'flex' : 'none',
+      }}
+    >
       {/* 顶部工具栏 */}
       <TextStageTopbar />
 
