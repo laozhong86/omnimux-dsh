@@ -41,7 +41,19 @@ import { changedFilesFromGit, validateBrowserEvidence } from './auto-qa-gate.mjs
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(here, '..')
-const REPO = process.env.OMNIMUX_REPO || 'laozhong86/omnimux-dsh'
+
+function detectRepoFromGit(root) {
+  try {
+    const res = spawnSync('git', ['-C', root, 'remote', 'get-url', 'origin'], { encoding: 'utf8' })
+    if (res.status === 0 && res.stdout) {
+      const match = res.stdout.trim().match(/github\.com[:/]([^/]+\/[^/.]+)(?:\.git)?$/)
+      if (match && match[1]) return match[1]
+    }
+  } catch {}
+  return 'laozhong86/omnimux-dsh'
+}
+
+const REPO = process.env.OMNIMUX_REPO || detectRepoFromGit(repoRoot)
 const BASE_BRANCH = process.env.OMNIMUX_BASE_BRANCH || 'main'
 const STATUS_LABELS = [
   'status:triage',
