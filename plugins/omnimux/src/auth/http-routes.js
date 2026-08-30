@@ -141,19 +141,21 @@ export function createAuthDispatcher(deps) {
         deviceCode: pending.deviceCode,
       })
       if (polled.kind === 'success') {
-        await deps.store.set(polled.accessToken)
+        await deps.store.set(polled.accessToken, { userId: polled.userId, baseUrl: pending.siteBaseUrl })
         let profile = { id: polled.userId || undefined, username: polled.username || undefined }
         try {
           profile = await fetchSelf({
             fetcher,
             siteBaseUrl: pending.siteBaseUrl,
             token: polled.accessToken,
-            userId: polled.userId,
           })
         } catch {
           // token is stored; profile can fill in on the next verify
         }
         deps.store.writeProfileCache(profile)
+        if (profile && profile.id != null && typeof deps.store.writeConfig === 'function') {
+          deps.store.writeConfig({ userId: String(profile.id), baseUrl: pending.siteBaseUrl })
+        }
         deps.pending.remove(flowId)
         return {
           status: 200,
