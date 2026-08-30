@@ -301,3 +301,18 @@ test('canvas-toolbar-mode: 两段模式选择器都以 data-clip-mode 为条件'
     '所有段级规则都必须挂在 .omnimux-clip-stage 作用域下，禁止全局污染宿主主题',
   )
 })
+
+test('canvas-toolbar-mode: canvas 模式下隐藏媒体素材卡片上的生成 (KieAI/Sparkles) 图标', () => {
+  const rules = rulesFor(`${CANVAS} [data-action="kieai"]`)
+  assert.ok(rules.length > 0, 'canvas 模式必须有针对 [data-action="kieai"] 的隐藏规则')
+  assert.ok(
+    rules.every((r) => r.decls.get('display') === 'none !important'),
+    'canvas [data-action="kieai"] 必须 display:none !important',
+  )
+  const aliasRules = rulesFor(`${CANVAS} .openreel-media-kieai-btn`)
+  assert.ok(aliasRules.length > 0, 'canvas 模式必须同时覆盖 .openreel-media-kieai-btn 双保险类名')
+  assert.ok(
+    aliasRules.every((r) => r.decls.get('display') === 'none !important'),
+    'canvas .openreel-media-kieai-btn 必须 display:none !important',
+  )
+})
