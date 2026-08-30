@@ -2,42 +2,37 @@
  * Modernized Floating Dock Toolbar (aligned with modern AI video/workflow canvases):
  *
  * 1. Centered bottom floating capsule dock (.wf-canvas-toolbar nodrag nopan).
- * 2. Primary (+) button (Hotkey N) opening modern node creation popover menu.
+ * 2. Primary (+) button (Hotkey N) opening AddNodeMenu (scope="dock").
  * 3. Pointer mode selector: Select (V) / Pan (H).
- * 4. Project Assets (📁) drawer trigger (Hotkey A).
+ * 4. Project Assets drawer trigger (Hotkey A).
  * 5. Hotkey help (?) modal.
  *
  * Maintains .nodrag .nopan and pointer event guards to prevent xyflow mouse capture.
  */
 
-import { memo, useState, useCallback } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import {
-  FileText,
-  ImagePlus,
-  Video,
-  Music,
   Plus,
-  Film,
-  Table,
   MousePointer,
   Hand,
   FolderOpen,
   HelpCircle,
   ChevronUp,
-  UploadCloud,
   FileCode,
 } from 'lucide-react';
-import type { MaterialType } from '../../types/materialNode';
 import { useT } from '../../i18n';
 import { CustomDropdown, type DropdownMenuItem } from '../../ui';
+import { useClickOutside } from '../hooks/useClickOutside';
 import {
   preventToolbarAddContextMenu,
   stopToolbarNativeEvent,
 } from './toolbarPointerGuard';
+import AddNodeMenu from './AddNodeMenu';
+import type { CanvasAddNodeType } from './addNodePalette';
 
 export type CanvasPointerMode = 'select' | 'pan';
 
-export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition' | 'import_asset';
+export type { CanvasAddNodeType };
 
 export interface ToolbarProps {
   onAddNode: (type: CanvasAddNodeType) => void;
@@ -51,21 +46,6 @@ export interface ToolbarProps {
   templates?: Array<{ id: string; name: string; nodeCount: number }>;
   onInsertTemplate?: (id: string) => void;
 }
-
-const ADD_NODE_ITEMS: Array<{
-  type: CanvasAddNodeType;
-  Icon: React.ComponentType<{ size?: number }>;
-  color: string;
-  bg: string;
-}> = [
-  { type: 'import_asset', Icon: UploadCloud, color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.16)' },
-  { type: 'text', Icon: FileText, color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.16)' },
-  { type: 'image', Icon: ImagePlus, color: '#c084fc', bg: 'rgba(168, 85, 247, 0.16)' },
-  { type: 'video', Icon: Video, color: '#fb923c', bg: 'rgba(249, 115, 22, 0.16)' },
-  { type: 'audio', Icon: Music, color: '#34d399', bg: 'rgba(16, 185, 129, 0.16)' },
-  { type: 'table', Icon: Table, color: '#10b981', bg: 'rgba(16, 185, 129, 0.16)' },
-  { type: 'video_composition', Icon: Film, color: '#f472b6', bg: 'rgba(244, 114, 182, 0.16)' },
-];
 
 const Toolbar: React.FC<ToolbarProps> = ({
   onAddNode,
@@ -82,21 +62,38 @@ const Toolbar: React.FC<ToolbarProps> = ({
   const t = useT();
   const [internalIsAddMenuOpen, setInternalIsAddMenuOpen] = useState(false);
   const [isTemplateMenuOpen, setIsTemplateMenuOpen] = useState(false);
+  const addMenuRef = useRef<HTMLDivElement>(null);
+  const templateMenuRef = useRef<HTMLDivElement>(null);
 
   const isAddOpen = externalIsAddMenuOpen !== undefined ? externalIsAddMenuOpen : internalIsAddMenuOpen;
+  const closeAdd = useCallback(() => {
+    if (onToggleAddMenu) {
+      if (isAddOpen) onToggleAddMenu();
+    } else {
+      setInternalIsAddMenuOpen(false);
+    }
+  }, [isAddOpen, onToggleAddMenu]);
   const toggleAdd = onToggleAddMenu || (() => setInternalIsAddMenuOpen((v) => !v));
 
   const handleSelectNodeType = useCallback(
     (type: CanvasAddNodeType) => {
       onAddNode(type);
-      if (onToggleAddMenu) {
-        onToggleAddMenu();
-      } else {
-        setInternalIsAddMenuOpen(false);
-      }
+      closeAdd();
     },
-    [onAddNode, onToggleAddMenu],
+    [onAddNode, closeAdd],
   );
+
+  useClickOutside({
+    refs: addMenuRef,
+    onClose: closeAdd,
+    enabled: isAddOpen,
+  });
+
+  useClickOutside({
+    refs: templateMenuRef,
+    onClose: () => setIsTemplateMenuOpen(false),
+    enabled: isTemplateMenuOpen,
+  });
 
   const pointerMenuItems: DropdownMenuItem[] = [
     {
@@ -120,7 +117,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
       onMouseDown={stopToolbarNativeEvent}
     >
       {/* 核心 (+) 按钮与浮层菜单 */}
-      <div style={{ position: 'relative' }}>
+      <div ref={addMenuRef} style={{ position: 'relative' }}>
         <button
           type="button"
           className={`wf-canvas-toolbar__item wf-canvas-toolbar__item--primary-add ${isAddOpen ? 'wf-canvas-toolbar__item--primary-add-open' : ''}`}
@@ -133,36 +130,15 @@ const Toolbar: React.FC<ToolbarProps> = ({
           </span>
         </button>
 
-        {isAddOpen && (
-          <div className="wf-dock-add-popover">
-            {ADD_NODE_ITEMS.map((item) => (
-              <button
-                key={item.type}
-                type="button"
-                className="wf-dock-add-popover__item"
-                onClick={() => handleSelectNodeType(item.type)}
-                onContextMenu={preventToolbarAddContextMenu}
-              >
-                <div
-                  className="wf-dock-add-popover__icon"
-                  style={{ background: item.bg, color: item.color }}
-                >
-                  <item.Icon size={18} />
-                </div>
-                <div className="wf-dock-add-popover__content">
-                  <span className="wf-dock-add-popover__label">{t(`node.type.${item.type}`)}</span>
-                  <span className="wf-dock-add-popover__desc">{t(`toolbar.add.${item.type}Desc`)}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+        {isAddOpen ? (
+          <AddNodeMenu scope="dock" onSelect={handleSelectNodeType} />
+        ) : null}
       </div>
 
       <div className="wf-canvas-toolbar__divider" />
 
       {onInsertTemplate && (
-        <div style={{ position: 'relative' }}>
+        <div ref={templateMenuRef} style={{ position: 'relative' }}>
           <button
             type="button"
             className="wf-canvas-toolbar__item wf-canvas-toolbar__item--icon-only"
@@ -175,7 +151,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             <span className="wf-canvas-toolbar__label">{t('toolbar.insertTemplateLabel')}</span>
           </button>
           {isTemplateMenuOpen && (
-            <div className="wf-dock-add-popover wf-template-picker">
+            <div className="wf-template-picker">
               {templates.length === 0 ? (
                 <div className="wf-template-picker__empty">{t('toolbar.insertTemplateEmpty')}</div>
               ) : (

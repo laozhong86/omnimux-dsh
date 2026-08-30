@@ -34,13 +34,23 @@ test('所有 button 显式 type="button"，添加按钮点击仍调 onAddNode', 
   for (const attrs of buttons) {
     assert.match(attrs, /\btype="button"/);
   }
-  assert.match(toolbarSrc, /handleSelectNodeType\(item\.type\)/);
+  assert.match(toolbarSrc, /onSelect=\{handleSelectNodeType\}/);
+  assert.match(toolbarSrc, /onAddNode\(type\)/);
 });
 
-test('四个添加按钮有 onContextMenu，不新做工具栏右键菜单', () => {
+test('添加按钮有 onContextMenu，不新做工具栏右键菜单', () => {
   assert.match(toolbarSrc, /onContextMenu=\{preventToolbarAddContextMenu\}/);
   assert.equal(toolbarSrc.includes('ToolbarContextMenu'), false);
   assert.equal(toolbarSrc.includes('<ContextMenu'), false);
+});
+
+test('Dock 添加菜单挂载 AddNodeMenu scope="dock"，并有外部点击关闭保护', () => {
+  assert.match(toolbarSrc, /<AddNodeMenu scope="dock"/);
+  assert.match(toolbarSrc, /useClickOutside/);
+  assert.match(toolbarSrc, /enabled: isAddOpen/);
+  assert.equal(toolbarSrc.includes('ADD_NODE_ITEMS'), false);
+  assert.equal(toolbarSrc.includes('wf-dock-add-popover'), false);
+  assert.equal(toolbarSrc.includes('toolbar.add.'), false);
 });
 
 test('stopToolbarNativeEvent 只 stopPropagation，不 preventDefault', () => {

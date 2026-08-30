@@ -5,27 +5,23 @@
  * Rendered through a portal on document.body; its own token block mirrors
  * the island --wb-* layer so it follows the host theme outside the island
  * subtree.
+ *
+ * 「添加节点」钻取面板直接挂载 <AddNodeMenu scope="context" />，数据源与 Dock 共用。
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  AudioLines,
-  ChevronLeft,
   ChevronRight,
-  Film,
-  Image as ImageIcon,
   Plus,
-  Table,
-  Type,
   UploadCloud,
-  Video,
 } from 'lucide-react';
 import { useT } from '../../i18n';
-import type { MaterialType } from '../../types/materialNode';
+import AddNodeMenu from './AddNodeMenu';
+import type { CanvasAddNodeType } from './addNodePalette';
 
-export type CanvasAddNodeType = MaterialType | 'table' | 'video_composition' | 'import_asset';
+export type { CanvasAddNodeType };
 
 export type ContextMenuAction =
   | 'import-asset'
@@ -69,18 +65,6 @@ interface MenuItemSpec {
   shortcut?: string;
   disabled?: boolean;
   icon?: ReactNode;
-}
-
-interface AddNodeItemSpec {
-  key: string;
-  type: CanvasAddNodeType;
-  label: string;
-  icon: ReactNode;
-  badge?: {
-    text: string;
-    variant: 'primary' | 'new';
-  };
-  hasSubmenu?: boolean;
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -156,59 +140,6 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     ];
   }, [context, canUndo, canRedo, hasClipboard, hasSelection, t]);
 
-  const addNodeItems = useMemo((): AddNodeItemSpec[] => {
-    return [
-      {
-        key: 'text',
-        type: 'text',
-        label: t('node.type.text'),
-        icon: <Type size={18} />,
-      },
-      {
-        key: 'image',
-        type: 'image',
-        label: t('node.type.image'),
-        icon: <ImageIcon size={18} />,
-      },
-      {
-        key: 'video',
-        type: 'video',
-        label: t('node.type.video'),
-        icon: <Video size={18} />,
-        badge: {
-          text: 'MiniMax H3',
-          variant: 'primary',
-        },
-      },
-      {
-        key: 'audio',
-        type: 'audio',
-        label: t('node.type.audio'),
-        icon: <AudioLines size={18} />,
-      },
-      {
-        key: 'table',
-        type: 'table',
-        label: t('node.type.table'),
-        icon: <Table size={18} />,
-        badge: {
-          text: 'HTable',
-          variant: 'primary',
-        },
-      },
-      {
-        key: 'video_composition',
-        type: 'video_composition',
-        label: t('node.type.video_composition'),
-        icon: <Film size={18} />,
-        badge: {
-          text: 'Clip',
-          variant: 'new',
-        },
-      },
-    ];
-  }, [t]);
-
   if (!visible) return null;
 
   const currentWidth = view === 'add-node' ? ADD_MENU_WIDTH : MENU_WIDTH;
@@ -218,7 +149,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   return createPortal(
     <div
       ref={menuRef}
-      className={`wf-context-menu ${view === 'add-node' ? 'wf-add-node-menu' : ''}`}
+      className={`wf-context-menu ${view === 'add-node' ? 'wf-add-node-menu-host' : ''}`}
       style={{ left, top }}
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -245,9 +176,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
               }}
             >
               {item.icon ? (
-                <span style={{ display: 'inline-flex', alignItems: 'center', marginRight: 6, opacity: 0.85 }}>
-                  {item.icon}
-                </span>
+                <span className="wf-context-menu__icon">{item.icon}</span>
               ) : null}
               <span className="wf-context-menu__label">{item.label}</span>
               {item.action === 'open-add-node' ? (
@@ -259,49 +188,14 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
           </React.Fragment>
         ))
       ) : (
-        <div className="wf-add-node-menu__container">
-          <div className="wf-add-node-menu__header">
-            <button
-              type="button"
-              className="wf-add-node-menu__back-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                setView('main');
-              }}
-              title={t('menu.back')}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="wf-add-node-menu__title">{t('menu.addNode')}</span>
-          </div>
-          <div className="wf-add-node-menu__list">
-            {addNodeItems.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                className="wf-add-node-menu__item"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddNode?.(item.type);
-                  onClose();
-                }}
-              >
-                <div className="wf-add-node-menu__icon-box">{item.icon}</div>
-                <span className="wf-add-node-menu__label">{item.label}</span>
-                {item.badge ? (
-                  <span
-                    className={`wf-add-node-menu__badge wf-add-node-menu__badge--${item.badge.variant}`}
-                  >
-                    {item.badge.text}
-                  </span>
-                ) : null}
-                {item.hasSubmenu ? (
-                  <ChevronRight size={14} className="wf-add-node-menu__arrow" />
-                ) : null}
-              </button>
-            ))}
-          </div>
-        </div>
+        <AddNodeMenu
+          scope="context"
+          onSelect={(type) => {
+            onAddNode?.(type);
+            onClose();
+          }}
+          onBack={() => setView('main')}
+        />
       )}
     </div>,
     document.body,
