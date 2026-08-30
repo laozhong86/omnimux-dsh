@@ -89,4 +89,19 @@ test('Project Assets Types and Popover Options Data Integrity', async (t) => {
     assert.match(subjectSrc, /real_path: firstFile\?\.real_path/);
     assert.match(subjectSrc, /无本地文件，无法入画布/);
   });
+
+  await t.test('HoverInspector positions preview card fixed to the outer left of the sidebar', () => {
+    const hoverSrc = readFileSync(join(here, 'views/HoverInspector.tsx'), 'utf8');
+    const drawerSrc = readFileSync(join(here, '../AssetsDrawer.tsx'), 'utf8');
+    // AssetsDrawer captures element bounding rect and drawer bounding rect
+    assert.match(drawerSrc, /currentTarget\?\.getBoundingClientRect\(\)/);
+    assert.match(drawerSrc, /drawerRef\.current\?\.getBoundingClientRect\(\)/);
+    assert.match(drawerSrc, /anchorRect/);
+    assert.match(drawerSrc, /drawerLeft/);
+    // HoverInspector anchors to outer left of sidebar aligned with item top
+    assert.match(hoverSrc, /sidebarLeft\s*-\s*cardWidth/);
+    assert.match(hoverSrc, /top\s*=\s*anchorRect\.top/);
+    assert.match(hoverSrc, /anchorRect/);
+    assert.match(hoverSrc, /drawerLeft/);
+  });
 });

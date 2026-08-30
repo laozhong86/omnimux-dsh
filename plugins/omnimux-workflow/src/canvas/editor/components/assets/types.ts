@@ -89,9 +89,20 @@ export interface ContextMenuState {
   targetItem?: AssetItem | CanvasNodeItem;
 }
 
+export interface HoverInspectorAnchorRect {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+  width: number;
+  height: number;
+}
+
 export interface HoverInspectorState {
   visible: boolean;
   x: number;
   y: number;
-  item?: AssetItem | CanvasNodeItem;
+  anchorRect?: HoverInspectorAnchorRect | null;
+  drawerLeft?: number;
+  item?: AssetItem | CanvasNodeItem | null;
 }
