@@ -43,6 +43,7 @@ docs/
 
 ### 2.1 [contracts/ (系统契约与工程规范)](contracts/README.md)
 *随系统迭代持续演进的高权威契约（L1），定义模块接口、中枢 I/O 缝、UI 规范与运维入口。*
+- **[plugin-agent-tools-inventory.md](contracts/plugin-agent-tools-inventory.md)**: 全量插件 Agent 工具与双面交付清单契约 (88 个工具全景图与 CI 门禁)
 - **[docs-governance-standard.md](contracts/docs-governance-standard.md)**: 《开发文档工程实践管理规范》（本规范）
 - **[hub.md](contracts/hub.md)**: 执行中枢（Hub）I/O 契约、中立缝与官方专属工具定义
 - **[dev-pipeline.md](contracts/dev-pipeline.md)**: 三层开发环境（开发/预发布/生产）与隔离部署流水线
