@@ -11,12 +11,13 @@
  *
  * This module is the single owner instead. It installs `window.__omnimuxSidebar`
  * at import time (same global-singleton pattern as `__omnimuxStage`) and owns
- * exactly one `document.body` subtree observer, one sidebar-root observer and
- * one retry interval. Plugins `register()` a row with a fixed `rank`; on every
- * change the coordinator runs a single idempotent `placeAll()` that walks rows
- * in rank order and re-inserts a row only when it is out of place. Because the
- * walker never mutates an already-correct tree, a placement does not re-trigger
- * its own observer, so there is no feedback loop.
+ * exactly one sidebar-column subtree observer (body only as a boot fallback),
+ * one collapsed-attribute observer and one retry interval. Plugins `register()`
+ * a row with a fixed `rank`; on every change the coordinator runs a single
+ * idempotent `placeAll()` that walks rows in rank order and re-inserts a row
+ * only when it is out of place. Because the walker never mutates an
+ * already-correct tree, a placement does not re-trigger its own observer, so
+ * there is no feedback loop. Product-stage overlays must never be observed.
  */
 
 export const SIDEBAR_GLOBAL_KEY = '__omnimuxSidebar'
@@ -220,6 +221,48 @@ let waitObserver
 let collapsedAttrObserver
 let collapsedHost
 let retry
+/** Node currently observed for extra-row placement. Never stay on document.body once the sidebar column exists. */
+let observedRoot
+let placeScheduled = false
+let placeCount = 0
+let placeGeneration = 0
+
+function enqueuePlaceAll() {
+  if (placeScheduled) return
+  placeScheduled = true
+  const generation = placeGeneration
+  const enqueue = typeof requestAnimationFrame === 'function'
+    ? (fn) => requestAnimationFrame(fn)
+    : (fn) => setTimeout(fn, 0)
+  enqueue(() => {
+    if (generation !== placeGeneration) return
+    placeScheduled = false
+    runPlaceAll()
+  })
+}
+
+/**
+ * Observe the sidebar column, not document.body. A body+subtree observer
+ * re-enters placeAll() for every product-stage mount (unauthenticated
+ * sidebar clicks now open stages directly) and wedges the renderer.
+ */
+function bindWaitObserver() {
+  const column = document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]')
+  const target = column instanceof HTMLElement
+    ? column
+    : (document.body instanceof HTMLElement ? document.body : undefined)
+  if (!(target instanceof HTMLElement)) return
+  if (observedRoot === target) return
+  observedRoot = target
+  waitObserver?.disconnect()
+  waitObserver = new MutationObserver(() => {
+    enqueuePlaceAll()
+    if (observedRoot === document.body && sidebarRoot() !== undefined) {
+      bindWaitObserver()
+    }
+  })
+  waitObserver.observe(target, { childList: true, subtree: true })
+}
 
 /**
  * 官方 AppFrame 把 `data-sidebar-collapsed` 写在 frame 根节点，不是 `<html>`。
@@ -260,6 +303,8 @@ function bindCollapsedAttrObserver() {
 }
 
 function runPlaceAll() {
+  placeCount += 1
+  bindWaitObserver()
   bindCollapsedAttrObserver()
   const root = sidebarRoot()
   if (root === undefined) return
@@ -375,12 +420,15 @@ function install() {
   waitObserver?.disconnect()
   collapsedAttrObserver?.disconnect()
   collapsedHost = undefined
-  waitObserver = new MutationObserver(() => { runPlaceAll() })
-  waitObserver.observe(document.body, { childList: true, subtree: true })
+  observedRoot = undefined
+  placeScheduled = false
+  placeCount = 0
+  placeGeneration += 1
+  bindWaitObserver()
   bindCollapsedAttrObserver()
   retry = setInterval(() => {
     runPlaceAll()
-    // 侧栏已挂载 → 首轮放置完成；后续 DOM 变化交给 MutationObserver，轮询自毁防泄漏。
+    // 侧栏已挂载 → 收窄到 sidebar 列，后续 DOM 变化交给列级 observer，轮询自毁防泄漏。
     if (sidebarRoot() !== undefined) {
       clearInterval(retry)
       retry = undefined
@@ -393,4 +441,44 @@ function install() {
 /** Call at module top level of the hub client (mirrors installStageGlobal). */
 export function installSidebarGlobal() {
   install()
+}
+
+/** Test-only: node currently observed for extra-row placement. */
+export function getSidebarObserverTargetForTests() {
+  return observedRoot
+}
+
+export function getPlaceCountForTests() {
+  return placeCount
+}
+
+/**
+ * Test-only: drop the singleton so a later case can re-install against a new DOM.
+ * Not exposed on the window global.
+ */
+export function resetSidebarCoordinatorForTests() {
+  waitObserver?.disconnect()
+  collapsedAttrObserver?.disconnect()
+  waitObserver = undefined
+  collapsedAttrObserver = undefined
+  collapsedHost = undefined
+  observedRoot = undefined
+  placeScheduled = false
+  placeCount = 0
+  placeGeneration += 1
+  if (retry) {
+    clearInterval(retry)
+    retry = undefined
+  }
+  ROWS.length = 0
+  INLINE_ROWS.length = 0
+  seen.clear()
+  closeNewMenu()
+  if (typeof window !== 'undefined') {
+    try {
+      delete window[SIDEBAR_GLOBAL_KEY]
+    } catch {
+      window[SIDEBAR_GLOBAL_KEY] = undefined
+    }
+  }
 }
