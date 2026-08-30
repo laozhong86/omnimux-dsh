@@ -17,8 +17,8 @@ import type { VideoCompositionStatus } from '../../bridge/clipEvents';
 export type VideoCompositionBadgeStatus = 'completed' | 'generating' | 'failed';
 /** GenerationStateContainer 可消费的状态（GenerationStatus 子集，null = 空态）。 */
 export type VideoCompositionGenerationStatus = 'completed' | 'generating' | 'failed' | null;
-/** 主节点四分支状态机视图。 */
-export type VideoCompositionView = 'result' | 'rendering' | 'error' | 'launcher';
+/** 主节点视图。成片预览由下游素材节点承载，本节点不切 result。 */
+export type VideoCompositionView = 'rendering' | 'error' | 'launcher';
 
 /**
  * 节点状态 → StatusBadge 语义（节点外置标题栏尾缀徽标）。
@@ -68,21 +68,18 @@ export function mapVideoCompositionToGeneration(
 }
 
 /**
- * 节点状态 → 主卡片四分支视图（result / rendering / error / launcher）。
+ * 节点状态 → 主卡片视图（rendering / error / launcher）。
  *
- * 判定优先级：
- * 1. error      → 'error'（GSC failed 分支）；
- * 2. rendering  → 'rendering'（GSC generating 分支）；
- * 3. 其余（idle / editing / completed）→ 有产物走 'result'，
- *    否则走 'launcher'（编辑器打开时卡片保持原状，与旧行为一致）。
+ * 成片预览落在下游视频素材节点上，本节点始终保持 launcher（打开剪辑），
+ * 仅在导出中 / 失败时切到 GSC。hasOutput 不再分流 result。
  */
 export function mapVideoCompositionToView(
   status: VideoCompositionStatus,
-  hasOutput: boolean,
+  _hasOutput = false,
 ): VideoCompositionView {
   if (status === 'error') return 'error';
   if (status === 'rendering') return 'rendering';
-  return hasOutput ? 'result' : 'launcher';
+  return 'launcher';
 }
 
 /**
