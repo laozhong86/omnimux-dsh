@@ -16,6 +16,7 @@ test('TextStage 文件完整性与契约检查', () => {
     'src/canvas/components/text-stage/TextStage.tsx',
     'src/canvas/components/text-stage/TextStageTopbar.tsx',
     'src/canvas/components/text-stage/CodeMirrorEditor.tsx',
+    'src/canvas/components/text-stage/liveMarkdownPlugin.ts',
     'src/canvas/components/text-stage/cmTheme.ts',
     'src/canvas/components/text-stage/MarkdownPreview.tsx',
     'src/canvas/components/text-stage/VersionDrawer.tsx',

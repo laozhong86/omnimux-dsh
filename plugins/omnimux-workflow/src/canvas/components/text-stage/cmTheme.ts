@@ -15,9 +15,9 @@ export const dshCodeMirrorTheme = EditorView.theme({
     color: 'var(--dsw-alias-label-primary, #ffffff)',
     backgroundColor: 'transparent',
     height: '100%',
-    fontSize: '14px',
-    fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
-    lineHeight: '1.6',
+    fontSize: '14.5px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
+    lineHeight: '1.7',
   },
   '.cm-scroller': {
     overflow: 'auto',
@@ -25,11 +25,13 @@ export const dshCodeMirrorTheme = EditorView.theme({
     fontFamily: 'inherit',
   },
   '.cm-content': {
-    padding: '16px 20px',
+    padding: '28px 44px',
+    boxSizing: 'border-box',
+    width: '100%',
     caretColor: 'var(--dsw-alias-label-primary, #ffffff)',
   },
   '.cm-line': {
-    padding: '0 2px',
+    padding: '0',
   },
   '&.cm-focused': {
     outline: 'none',
@@ -43,23 +45,7 @@ export const dshCodeMirrorTheme = EditorView.theme({
     borderRadius: '2px',
   },
   '.cm-gutters': {
-    backgroundColor: 'var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.03))',
-    color: 'var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.40))',
-    borderRight: '1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.06))',
-    paddingRight: '8px',
-    userSelect: 'none',
-  },
-  '.cm-activeLineGutter': {
-    backgroundColor: 'var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06))',
-    color: 'var(--dsw-alias-label-primary, #ffffff)',
-    fontWeight: '500',
-  },
-  '.cm-activeLine': {
-    backgroundColor: 'var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.03))',
-  },
-  '.cm-selectionMatch': {
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    borderRadius: '2px',
+    display: 'none',
   },
   '.cm-placeholder': {
     color: 'var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.35))',
