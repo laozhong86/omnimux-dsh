@@ -35,6 +35,7 @@ import { KieAIImageDialog } from "./kieai/KieAIImageDialog";
 import { loadMediaBlob } from "../../services/media-storage";
 import { useKieAIStore } from "../../stores/kieai-store";
 import { StickerPickerPanel } from "./inspector/StickerPickerPanel";
+import { getActiveClipSession } from "../../../../stage-store.js";
 
 const formatDuration = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
@@ -133,7 +134,7 @@ export const TEXT_STYLE_PRESETS: ReadonlyArray<{
       fontWeight: 600,
       textAlign: "left",
       verticalAlign: "bottom",
-      backgroundColor: "rgba(0, 0, 0, 0.7)",
+      backgroundColor: "var(--dsw-bg-overlay, rgba(0, 0, 0, 0.7))",
     },
   },
   {
@@ -143,7 +144,7 @@ export const TEXT_STYLE_PRESETS: ReadonlyArray<{
       fontSize: 24,
       fontWeight: 400,
       verticalAlign: "bottom",
-      shadowColor: "rgba(0, 0, 0, 0.8)",
+      shadowColor: "var(--dsw-shadow-color, rgba(0, 0, 0, 0.8))",
       shadowBlur: 4,
       shadowOffsetX: 1,
       shadowOffsetY: 1,
@@ -168,7 +169,7 @@ export const TEXT_STYLE_PRESETS: ReadonlyArray<{
       fontWeight: 600,
       fontStyle: "italic",
       lineHeight: 1.25,
-      shadowColor: "rgba(0, 0, 0, 0.65)",
+      shadowColor: "var(--dsw-shadow-color, rgba(0, 0, 0, 0.65))",
       shadowBlur: 10,
       shadowOffsetY: 4,
     },
@@ -180,7 +181,7 @@ export const TEXT_STYLE_PRESETS: ReadonlyArray<{
       fontSize: 80,
       fontWeight: 900,
       letterSpacing: 2,
-      strokeColor: "#111827",
+      strokeColor: "var(--dsw-border-strong, #111827)",
       strokeWidth: 5,
     },
   },
@@ -191,7 +192,7 @@ export const TEXT_STYLE_PRESETS: ReadonlyArray<{
       fontSize: 28,
       fontWeight: 800,
       letterSpacing: 3,
-      backgroundColor: "rgba(17, 24, 39, 0.88)",
+      backgroundColor: "var(--dsw-bg-overlay, rgba(17, 24, 39, 0.88))",
     },
   },
 ];
@@ -308,11 +309,11 @@ const MediaThumbnail: React.FC<{
       : "text-status-info/50";
 
   const borderClass = item.kieaiError
-    ? "border-red-500 ring-1 ring-red-500/50 shadow-[0_0_10px_rgba(239,68,68,0.3)]"
+    ? "border-red-500 ring-1 ring-red-500/50 shadow-[0_0_10px_var(--dsw-color-error,rgba(239,68,68,0.3))]"
     : item.isPending
     ? "border-primary ring-1 ring-primary shadow-glow"
     : item.isPlaceholder
-      ? "border-yellow-500 ring-1 ring-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.3)]"
+      ? "border-yellow-500 ring-1 ring-yellow-500/50 shadow-[0_0_10px_var(--dsw-color-warning,rgba(234,179,8,0.3))]"
       : isSelected
         ? "border-accent ring-1 ring-accent/40 shadow-sm"
         : "border-border hover:border-border-strong";
@@ -350,9 +351,10 @@ const MediaThumbnail: React.FC<{
           {item.type === "image" && onKieAI && (
             <PanelIconButton
               label="Create with KieAI"
+              data-action="kieai"
               icon={<Sparkles size={14} className="text-primary" />}
               onClick={(e) => { e.stopPropagation(); onKieAI(); }}
-              className="p-2 bg-primary/20 rounded-full hover:bg-primary/40 backdrop-blur-sm transition-colors"
+              className="p-2 bg-primary/20 rounded-full hover:bg-primary/40 backdrop-blur-sm transition-colors openreel-media-kieai-btn"
             />
           )}
           <PanelIconButton
@@ -461,9 +463,10 @@ const MediaThumbnail: React.FC<{
                 {item.type === "image" && onKieAI && (
                   <PanelIconButton
                     label="Create with KieAI"
+                    data-action="kieai"
                     icon={<Sparkles size={12} className="text-primary" />}
                     onClick={(e) => { e.stopPropagation(); onKieAI(); }}
-                    className="p-1 bg-primary/20 rounded hover:bg-primary/40 transition-colors"
+                    className="p-1 bg-primary/20 rounded hover:bg-primary/40 transition-colors openreel-media-kieai-btn"
                   />
                 )}
                 <PanelIconButton
@@ -675,6 +678,8 @@ export const AssetsPanel: React.FC = () => {
 
   // KieAI image generation dialog
   const [kieaiDialog, setKieaiDialog] = useState<{ file: File; previewUrl: string | null } | null>(null);
+
+  const isCanvasMode = getActiveClipSession()?.source === "canvas";
 
   // Project store
   const {
@@ -1148,7 +1153,7 @@ export const AssetsPanel: React.FC = () => {
                         onReplace={() => handleReplaceAsset(item.id)}
                         onDragStart={(e) => handleItemDragStart(e, item)}
                         onAddToTimeline={() => handleAddToTimeline(item)}
-                        onKieAI={item.type === "image" && !item.isPending && !item.kieaiError ? () => handleOpenKieAI(item) : undefined}
+                        onKieAI={!isCanvasMode && item.type === "image" && !item.isPending && !item.kieaiError ? () => handleOpenKieAI(item) : undefined}
                         onRetryKieAI={item.kieaiError && item.kieaiTaskId ? () => handleRetryKieAI(item) : undefined}
                       />
                     ))}

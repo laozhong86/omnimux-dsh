@@ -67,6 +67,11 @@ html:not([data-dsh-product-stage]) .omnimux-clip-stage[data-clip-mode="canvas"][
 .omnimux-clip-stage[data-clip-mode="canvas"] .openreel-toolbar-right {
   margin-left: auto !important;
 }
+/* canvas 模式下隐藏媒体素材卡片上的生成 (KieAI/Sparkles) 图标按钮 */
+.omnimux-clip-stage[data-clip-mode="canvas"] [data-action="kieai"],
+.omnimux-clip-stage[data-clip-mode="canvas"] .openreel-media-kieai-btn {
+  display: none !important;
+}
 .omnimux-clip-stage[data-clip-mode="standalone"] [data-toolbar-section="left"]:where(:not([data-toolbar-responsive="true"])),
 .omnimux-clip-stage[data-clip-mode="standalone"] .openreel-toolbar-left:where(:not([data-toolbar-responsive="true"])) {
   display: flex !important;
