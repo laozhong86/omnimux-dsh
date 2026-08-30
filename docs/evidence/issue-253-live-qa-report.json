@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-08-30T12:58:00+08:00",
+  "issue": 253,
+  "port": 45120,
+  "topic": "offline-cloud-visibility-and-policy-d",
+  "assertions": {
+    "1. Contract docs/contracts/plugin-offline-cloud-matrix.md exists": true,
+    "2. dsh-ui-kit createSidebarEntry supports reactive access: 'offline' | 'cloud'": true,
+    "3. AUTH_GATE_POLICY.suppressNavigationAfterCancel active (Policy D)": true,
+    "4. Unauthenticated state hides 4 cloud plugins (analytics, publish, accounts, inspiration)": true,
+    "5. Unauthenticated state shows 4 offline plugins (workflow, assets, products, clip)": true,
+    "6. Authenticated state shows all 8 first-level plugin entries": true,
+    "7. Clicking offline plugins opens Stage directly without login popup": true,
+    "8. Policy D suppresses subsequent navigation popups after modal cancel": true
+  },
+  "matrix": {
+    "offline": ["omnimux-workflow", "omnimux-assets", "omnimux-products", "omnimux-clip"],
+    "cloud": ["omnimux-analytics", "omnimux-publish", "omnimux-accounts", "omnimux-inspiration"]
+  },
+  "evidence": {
+    "unauthenticatedScreenshot": "docs/evidence/issue-253-unauth-offline-entries-45120.png",
+    "authenticatedScreenshot": "docs/evidence/issue-253-auth-all-entries-45120.png"
+  },
+  "verdict": "PASS"
+}

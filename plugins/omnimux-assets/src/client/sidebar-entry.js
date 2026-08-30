@@ -16,6 +16,7 @@ export function mountSidebarEntry(stage, t, locale) {
     iconSvg: ICON,
     stageStore: stage,
     locale,
+    access: 'offline',
     customClassName: 'omnimux-assets-entry',
     datasetKey: 'data-omnimux-assets-entry',
   })

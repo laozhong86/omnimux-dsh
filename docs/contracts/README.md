@@ -22,6 +22,7 @@ subsystem: "global"
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
 | `living` | [plugin-agent-tools-inventory.md](plugin-agent-tools-inventory.md) | OmniMux 全量插件 Agent 工具与双面交付清单契约 | `global` | 2026-08-30 | 全量 12 插件 88 工具双面交付契约、L1/L2/L3 分级、破坏性 confirm 守卫与 CI 静态门禁。 |
+| `living` | [plugin-offline-cloud-matrix.md](plugin-offline-cloud-matrix.md) | 插件离线/云端定界与侧栏动态可见性合同 | `global` | 2026-08-30 | 规范 8 大插件离线 vs 云端定级，云端依赖未登录隐藏，离线可用常驻且落地方案 D 礼貌拦截。 |
 | `living` | [project-assets-contract.md](project-assets-contract.md) | 项目资产与主体库物理实体化合同 | `omnimux-workflow` | 2026-08-30 | 导入即 copy；项目相对路径；全局仓 `data/files/`；禁止 `/api/projects/:id` 新前缀。 |
 | `living` | [openreel-vendor-contract.md](openreel-vendor-contract.md) | openreel-vendor-contract — OpenReel 完整微应用引入与反自研契约 | `omnimux-clip` | 2026-08-27 | 在 `omnimux-clip` 中，**严禁重新发明已经成熟的开源 NLE（含其官方 GUI）**。 |
 | `living` | [agent-issue-lifecycle.md](agent-issue-lifecycle.md) | agent-issue-lifecycle — OmniMux Agent 专属 GitHub Issue 驱动开发合同 | `omnimux` | 2026-08-26 | 1. **唯一真源（Single Source of Truth）**：GitHub Issue 是任务背景、技术决策、验收标准和流转状态的唯一真源。 |

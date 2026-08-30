@@ -16,6 +16,7 @@ export function mountSidebarEntry(stage, t, locale) {
     iconSvg: ICON,
     stageStore: stage,
     locale,
+    access: 'offline',
     customClassName: 'omnimux-workflow-entry',
     datasetKey: 'data-dsh-omnimux-workflow-entry',
   })

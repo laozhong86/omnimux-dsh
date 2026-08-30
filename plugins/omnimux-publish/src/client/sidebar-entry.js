@@ -16,6 +16,7 @@ export function mountSidebarEntry(stage, t, locale) {
     iconSvg: ICON,
     stageStore: stage,
     locale,
+    access: 'cloud',
     customClassName: 'omnimux-publish-entry',
     datasetKey: 'data-omnimux-publish-entry',
   })

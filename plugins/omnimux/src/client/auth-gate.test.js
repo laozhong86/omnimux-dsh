@@ -419,17 +419,35 @@ describe('auth-gate store', () => {
     assert.equal(getSnapshot().phase, 'prompt')
   })
 
-  it('T8 AUTH_GATE_POLICY keeps C/D off; cancel does not mute the next nav', async () => {
+  it('T8 AUTH_GATE_POLICY activates Policy D; cancel suppresses subsequent nav prompts', async () => {
     assert.equal(AUTH_GATE_POLICY.gateNavigation, true)
-    assert.equal(AUTH_GATE_POLICY.suppressNavigationAfterCancel, false)
+    assert.equal(AUTH_GATE_POLICY.suppressNavigationAfterCancel, true)
     assert.ok(Object.isFrozen(AUTH_GATE_POLICY))
     const { gate } = install({ loggedIn: false })
+
+    // 1st nav prompt
     await gate.ensureLogin({ kind: 'nav', onCancel: () => {} })
     assert.equal(getSnapshot().phase, 'prompt')
+
+    // User cancels
     cancel('cancelled')
     assert.equal(getSnapshot().phase, 'closed')
-    await gate.ensureLogin({ kind: 'nav', onSuccess: () => {} })
-    assert.equal(getSnapshot().phase, 'prompt', 'next nav after cancel still opens the gate')
+
+    // 2nd nav prompt is suppressed (resolves without opening modal)
+    let navResolved = false
+    await gate.ensureLogin({
+      kind: 'nav',
+      onSuccess: () => { navResolved = true },
+    })
+    assert.equal(navResolved, true, 'subsequent nav after cancel is suppressed and resolved')
+    assert.equal(getSnapshot().phase, 'closed', 'gate stays closed during suppressed nav')
+
+    // Write operation is NOT suppressed and still prompts
+    await gate.ensureLogin({
+      kind: 'write',
+      onSuccess: () => { throw new Error('write must not be suppressed') },
+    })
+    assert.equal(getSnapshot().phase, 'prompt', 'write operation still opens the prompt')
   })
 
   it('resetAuthGate also drops the session status cache', () => {
