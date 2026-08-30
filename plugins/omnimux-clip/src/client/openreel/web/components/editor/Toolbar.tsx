@@ -182,6 +182,11 @@ export const Toolbar: React.FC = () => {
     async (type: ExportType) => {
       setIsExportOpen(false);
 
+      if (!project.timeline?.duration || project.timeline.duration <= 0 || project.timeline.tracks.every((t) => t.clips.length === 0)) {
+        toast.warning("时间轴无素材", "请先在时间轴上添加视频、音频或图片素材再进行导出");
+        return;
+      }
+
       try {
         if (type === "wav") {
           const writable = await showSavePicker(exportFilename(project.name, "wav"), "wav");
@@ -260,6 +265,11 @@ export const Toolbar: React.FC = () => {
   const handleCustomExport = useCallback(
     async (settings: VideoExportSettings) => {
       setIsExportDialogOpen(false);
+
+      if (!project.timeline?.duration || project.timeline.duration <= 0 || project.timeline.tracks.every((t) => t.clips.length === 0)) {
+        toast.warning("时间轴无素材", "请先在时间轴上添加视频、音频或图片素材再进行导出");
+        return;
+      }
 
       try {
         const ext = extForFormat(settings.format);

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createStageStore } from './stage-store.js'
+import { createStageStore, getActiveClipSession } from './stage-store.js'
 import {
   createAndMountCanvasBridge,
   notifyCanvasSave,
@@ -191,4 +191,77 @@ test('clip-events payload validators', () => {
 
   assert.equal(isProgressClipEditorPayload({ nodeId: 'n1', renderProgress: 50 }), true)
   assert.equal(isProgressClipEditorPayload({ renderProgress: 'not-number' }), false)
+})
+
+test('getActiveClipSession: tracks canvas session and clears on dispose', () => {
+  const mockGetStage = () => ({
+    claim: () => {},
+    release: () => {},
+    readBox: () => ({ top: 0, left: 0, width: 800, height: 600 }),
+    PRODUCT_STAGE_EVENT: 'dsh-product-stage',
+  })
+
+  const store = createStageStore(mockGetStage)
+  assert.equal(getActiveClipSession(), null)
+
+  store.openFromCanvas({
+    nodeId: 'node_test_export',
+    projectId: 'proj_export_1',
+    nodeTitle: 'Export Composition',
+  })
+
+  const active = getActiveClipSession()
+  assert.ok(active)
+  assert.equal(active.source, 'canvas')
+  assert.equal(active.nodeId, 'node_test_export')
+  assert.equal(active.projectId, 'proj_export_1')
+
+  store.dispose()
+  assert.equal(getActiveClipSession(), null)
+})
+
+test('notifyCanvasSave & notifyCanvasProgress: deliver correct payloads to canvas listener', () => {
+  const target = new EventTarget()
+  let savedEvent = null
+  let progressEvent = null
+
+  target.addEventListener(OMNIMUX_CLIP_SAVE, (e) => {
+    savedEvent = e.detail
+  })
+  target.addEventListener(OMNIMUX_CLIP_PROGRESS, (e) => {
+    progressEvent = e.detail
+  })
+
+  notifyCanvasProgress({
+    nodeId: 'node_comp_1',
+    status: 'rendering',
+    renderProgress: 75,
+  }, target)
+
+  assert.ok(progressEvent)
+  assert.equal(progressEvent.nodeId, 'node_comp_1')
+  assert.equal(progressEvent.status, 'rendering')
+  assert.equal(progressEvent.renderProgress, 75)
+
+  notifyCanvasSave({
+    nodeId: 'node_comp_1',
+    projectId: 'proj_out_1',
+    createDownstreamNode: true,
+    output: {
+      videoPath: '/exports/proj_out_1.mp4',
+      thumbnailPath: 'data:image/jpeg;base64,thumb',
+      durationMs: 15000,
+      width: 1920,
+      height: 1080,
+    },
+  }, target)
+
+  assert.ok(savedEvent)
+  assert.equal(savedEvent.nodeId, 'node_comp_1')
+  assert.equal(savedEvent.createDownstreamNode, true)
+  assert.equal(savedEvent.output.videoPath, '/exports/proj_out_1.mp4')
+  assert.equal(savedEvent.output.thumbnailPath, 'data:image/jpeg;base64,thumb')
+  assert.equal(savedEvent.output.durationMs, 15000)
+  assert.equal(savedEvent.output.width, 1920)
+  assert.equal(savedEvent.output.height, 1080)
 })

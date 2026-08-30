@@ -52,6 +52,8 @@ import { RenderQueuePanel } from "./components/RenderQueuePanel";
 import { StageCanvas } from "./components/StageCanvas";
 import { VariablesPanel } from "./components/VariablesPanel";
 import { exportMotionCompositionSceneMp4 } from "./export-motion-frame";
+import { getActiveClipSession } from "../../../stage-store.js";
+import { notifyCanvasProgress, notifyCanvasSave } from "../../../CanvasBridge.js";
 import {
   useMotionStore,
   type MotionLeftTab,
@@ -706,16 +708,54 @@ export function MotionCreatorShell({
     setIsExportingScene(true);
     setExportActive(true);
     setExportProgress(0);
+
+    const session = getActiveClipSession();
+    const isCanvas = session?.source === "canvas" && Boolean(session?.nodeId);
+
+    if (isCanvas && session?.nodeId) {
+      notifyCanvasProgress({
+        nodeId: session.nodeId,
+        status: "rendering",
+        renderProgress: 0,
+      });
+    }
+
     try {
       const result = await exportMotionCompositionSceneMp4({
         project,
         composition,
         compositionLibrary: project.motionCompositions ?? [],
         onProgress: (progress) => {
-          setExportProgress(Math.round(progress.progress * 100));
+          const pct = Math.round(progress.progress * 100);
+          setExportProgress(pct);
+          if (isCanvas && session?.nodeId) {
+            notifyCanvasProgress({
+              nodeId: session.nodeId,
+              status: "rendering",
+              renderProgress: pct,
+            });
+          }
         },
       });
       toast.success("Motion scene exported", result.filename);
+
+      if (isCanvas && session?.nodeId) {
+        const projectId = session.projectId || project.id || `clip_${Date.now()}`;
+        const videoPath = (window as { __openreelExportPath?: string }).__openreelExportPath
+          || `/omnimux-workflow/api/local-file?path=${encodeURIComponent(`clip/exports/${projectId}.mp4`)}`;
+        notifyCanvasSave({
+          nodeId: session.nodeId,
+          projectId,
+          schema: project as unknown as Record<string, unknown>,
+          createDownstreamNode: true,
+          output: {
+            videoPath,
+            durationMs: Math.round(result.duration * 1000),
+            width: result.width,
+            height: result.height,
+          },
+        });
+      }
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         return;

@@ -66,25 +66,38 @@ export function createAndMountCanvasBridge({ stage, target = window }) {
  *   nodeId?: string,
  *   projectId?: string,
  *   schema?: unknown,
+ *   createDownstreamNode?: boolean,
  *   output?: { videoPath: string, thumbnailPath?: string, durationMs?: number, width?: number, height?: number }
  * }} payload
+ * @param {EventTarget | { target?: EventTarget }} [targetOrOpts]
  */
-export function notifyCanvasSave(payload) {
-  return dispatchClipEvent(OMNIMUX_CLIP_SAVE, payload)
+export function notifyCanvasSave(payload, targetOrOpts) {
+  const opts = targetOrOpts && typeof targetOrOpts.addEventListener === 'function'
+    ? { target: targetOrOpts }
+    : (targetOrOpts || {})
+  return dispatchClipEvent(OMNIMUX_CLIP_SAVE, payload, opts)
 }
 
 /**
  * Helper to emit progress event back to canvas.
  * @param {{ nodeId?: string, status?: string, renderProgress?: number }} payload
+ * @param {EventTarget | { target?: EventTarget }} [targetOrOpts]
  */
-export function notifyCanvasProgress(payload) {
-  return dispatchClipEvent(OMNIMUX_CLIP_PROGRESS, payload)
+export function notifyCanvasProgress(payload, targetOrOpts) {
+  const opts = targetOrOpts && typeof targetOrOpts.addEventListener === 'function'
+    ? { target: targetOrOpts }
+    : (targetOrOpts || {})
+  return dispatchClipEvent(OMNIMUX_CLIP_PROGRESS, payload, opts)
 }
 
 /**
  * Helper to emit close event back to canvas.
  * @param {{ nodeId?: string }} payload
+ * @param {EventTarget | { target?: EventTarget }} [targetOrOpts]
  */
-export function notifyCanvasClose(payload) {
-  return dispatchClipEvent(OMNIMUX_CLIP_CLOSE, payload)
+export function notifyCanvasClose(payload, targetOrOpts) {
+  const opts = targetOrOpts && typeof targetOrOpts.addEventListener === 'function'
+    ? { target: targetOrOpts }
+    : (targetOrOpts || {})
+  return dispatchClipEvent(OMNIMUX_CLIP_CLOSE, payload, opts)
 }

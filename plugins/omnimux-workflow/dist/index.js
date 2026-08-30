@@ -2453,7 +2453,8 @@ var require_react_dom = __commonJS({
 });
 
 // src/workflow/index.ts
-import { mkdirSync as mkdirSync9 } from "node:fs";
+import { mkdirSync as mkdirSync10 } from "node:fs";
+import { join as join16 } from "node:path";
 
 // src/workflow/paths.ts
 import { homedir } from "node:os";
@@ -2468,7 +2469,8 @@ function resolveWorkflowPaths(opts = {}) {
     root: root2,
     workspacesDir: join(root2, "workspaces"),
     executionsDir: join(root2, "executions"),
-    mediaDir: join(root2, "media")
+    mediaDir: join(root2, "media"),
+    templatesDir: join(root2, "templates")
   };
 }
 
@@ -17022,6 +17024,10 @@ var canvasNodeSchema = external_exports.object({
   width: external_exports.number().optional(),
   height: external_exports.number().optional(),
   parentId: external_exports.string().optional(),
+  extent: external_exports.union([
+    external_exports.literal("parent"),
+    external_exports.tuple([external_exports.number(), external_exports.number(), external_exports.number(), external_exports.number()])
+  ]).optional(),
   zIndex: external_exports.number().optional(),
   style: external_exports.record(external_exports.string(), external_exports.unknown()).optional()
 });
@@ -17297,9 +17303,120 @@ function createWorkspaceStore(opts) {
   };
 }
 
-// src/workflow/seam/mockGateway.ts
-import { mkdirSync as mkdirSync2, writeFileSync as writeFileSync2 } from "node:fs";
+// src/workflow/templates/TemplateStore.ts
+import {
+  existsSync as existsSync2,
+  mkdirSync as mkdirSync2,
+  readFileSync as readFileSync2,
+  readdirSync as readdirSync2,
+  renameSync as renameSync2,
+  rmSync as rmSync2,
+  writeFileSync as writeFileSync2
+} from "node:fs";
 import { join as join3 } from "node:path";
+
+// src/workflow/templates/templateSchema.ts
+var TEMPLATE_SCHEMA_VERSION = 1;
+var workflowTemplateSchema = external_exports.object({
+  schemaVersion: external_exports.literal(TEMPLATE_SCHEMA_VERSION),
+  id: external_exports.string().min(1),
+  name: external_exports.string().min(1).max(200),
+  description: external_exports.string().default(""),
+  tags: external_exports.array(external_exports.string()).default([]),
+  coverUrl: external_exports.string().optional(),
+  createdAt: external_exports.string(),
+  updatedAt: external_exports.string(),
+  nodeCount: external_exports.number().int().min(0),
+  nodes: external_exports.array(canvasNodeSchema),
+  edges: external_exports.array(canvasEdgeSchema)
+});
+var createTemplatePayloadSchema = external_exports.object({
+  name: external_exports.string().min(1).max(200),
+  description: external_exports.string().optional(),
+  tags: external_exports.array(external_exports.string()).optional(),
+  coverUrl: external_exports.string().optional(),
+  nodes: external_exports.array(canvasNodeSchema),
+  edges: external_exports.array(canvasEdgeSchema)
+});
+
+// src/workflow/templates/TemplateStore.ts
+var TemplateStore = class {
+  templatesDir;
+  constructor(opts = {}) {
+    if (opts.templatesDir) {
+      this.templatesDir = opts.templatesDir;
+    } else {
+      const paths = resolveWorkflowPaths(opts);
+      this.templatesDir = paths.templatesDir;
+    }
+    mkdirSync2(this.templatesDir, { recursive: true });
+  }
+  list() {
+    if (!existsSync2(this.templatesDir)) return [];
+    const files = readdirSync2(this.templatesDir).filter((f) => f.endsWith(".json"));
+    const templates = [];
+    for (const file2 of files) {
+      try {
+        const raw = readFileSync2(join3(this.templatesDir, file2), "utf8");
+        const parsed = JSON.parse(raw);
+        const validated = workflowTemplateSchema.safeParse(parsed);
+        if (validated.success) {
+          templates.push(validated.data);
+        }
+      } catch {
+      }
+    }
+    return templates.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }
+  get(id2) {
+    const file2 = join3(this.templatesDir, `${id2}.json`);
+    if (!existsSync2(file2)) return null;
+    try {
+      const raw = readFileSync2(file2, "utf8");
+      const parsed = JSON.parse(raw);
+      const validated = workflowTemplateSchema.safeParse(parsed);
+      return validated.success ? validated.data : null;
+    } catch {
+      return null;
+    }
+  }
+  save(payload) {
+    const validated = createTemplatePayloadSchema.parse(payload);
+    const id2 = payload.id || `tmpl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const now2 = (/* @__PURE__ */ new Date()).toISOString();
+    const template = {
+      schemaVersion: TEMPLATE_SCHEMA_VERSION,
+      id: id2,
+      name: validated.name,
+      description: validated.description || "",
+      tags: validated.tags || [],
+      coverUrl: validated.coverUrl,
+      createdAt: now2,
+      updatedAt: now2,
+      nodeCount: validated.nodes.length,
+      nodes: validated.nodes,
+      edges: validated.edges
+    };
+    const targetFile = join3(this.templatesDir, `${id2}.json`);
+    const tmpFile = `${targetFile}.tmp-${process.pid}-${Date.now()}`;
+    writeFileSync2(tmpFile, `${JSON.stringify(template, null, 2)}
+`, "utf8");
+    renameSync2(tmpFile, targetFile);
+    return template;
+  }
+  delete(id2) {
+    const targetFile = join3(this.templatesDir, `${id2}.json`);
+    if (existsSync2(targetFile)) {
+      rmSync2(targetFile, { force: true });
+      return true;
+    }
+    return false;
+  }
+};
+
+// src/workflow/seam/mockGateway.ts
+import { mkdirSync as mkdirSync3, writeFileSync as writeFileSync3 } from "node:fs";
+import { join as join4 } from "node:path";
 import { randomUUID as randomUUID2 } from "node:crypto";
 var DEFAULT_MOCK_MIN_LATENCY_MS = 1e3;
 var DEFAULT_MOCK_MAX_LATENCY_MS = 3e3;
@@ -17326,8 +17443,8 @@ function createMockGateway(opts = {}) {
           return;
         }
         try {
-          mkdirSync2(join3(dest, ".."), { recursive: true });
-          writeFileSync2(dest, placeholderFor(task.req.capability), "utf8");
+          mkdirSync3(join4(dest, ".."), { recursive: true });
+          writeFileSync3(dest, placeholderFor(task.req.capability), "utf8");
           resolve5();
         } catch (error51) {
           reject(error51 instanceof Error ? error51 : new Error(String(error51)));
@@ -17378,7 +17495,7 @@ function createMockGateway(opts = {}) {
 }
 
 // src/workflow/seam/omnimuxGateway.ts
-import { mkdirSync as mkdirSync3, writeFileSync as writeFileSync3 } from "node:fs";
+import { mkdirSync as mkdirSync4, writeFileSync as writeFileSync4 } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID as randomUUID3 } from "node:crypto";
 
@@ -18352,8 +18469,8 @@ function createOmnimuxSeamClient(opts) {
         const text = typeof result2.text === "string" ? result2.text : "";
         tasks.delete(taskId);
         try {
-          mkdirSync3(dirname(dest), { recursive: true });
-          writeFileSync3(dest, text, "utf8");
+          mkdirSync4(dirname(dest), { recursive: true });
+          writeFileSync4(dest, text, "utf8");
         } catch (error51) {
           logger.warn("failed to persist text artifact", {
             dest,
@@ -19344,41 +19461,41 @@ var ExecutionScheduler = class _ExecutionScheduler {
 
 // src/workflow/execution/executionStore.ts
 import {
-  existsSync as existsSync2,
-  mkdirSync as mkdirSync4,
-  readFileSync as readFileSync2,
-  readdirSync as readdirSync2,
-  renameSync as renameSync2,
-  rmSync as rmSync2,
-  writeFileSync as writeFileSync4
+  existsSync as existsSync3,
+  mkdirSync as mkdirSync5,
+  readFileSync as readFileSync3,
+  readdirSync as readdirSync3,
+  renameSync as renameSync3,
+  rmSync as rmSync3,
+  writeFileSync as writeFileSync5
 } from "node:fs";
-import { join as join4 } from "node:path";
+import { join as join5 } from "node:path";
 var RECORD_FILE = "execution.json";
 var DAG_STATE_FILE = "dag-state.json";
 function atomicWriteJson2(filePath, value) {
-  mkdirSync4(join4(filePath, ".."), { recursive: true });
+  mkdirSync5(join5(filePath, ".."), { recursive: true });
   const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
-  writeFileSync4(tmp, `${JSON.stringify(value, null, 2)}
+  writeFileSync5(tmp, `${JSON.stringify(value, null, 2)}
 `, "utf8");
-  renameSync2(tmp, filePath);
+  renameSync3(tmp, filePath);
 }
 function readJsonFile(filePath) {
-  if (!existsSync2(filePath)) return null;
+  if (!existsSync3(filePath)) return null;
   try {
-    return JSON.parse(readFileSync2(filePath, "utf8"));
+    return JSON.parse(readFileSync3(filePath, "utf8"));
   } catch {
     return null;
   }
 }
 function executionDir(executionsDir, executionId) {
-  return join4(executionsDir, executionId);
+  return join5(executionsDir, executionId);
 }
 function saveExecutionRecord(executionsDir, record2) {
-  atomicWriteJson2(join4(executionDir(executionsDir, record2.id), RECORD_FILE), record2);
+  atomicWriteJson2(join5(executionDir(executionsDir, record2.id), RECORD_FILE), record2);
 }
 function loadExecutionRecord(executionsDir, executionId) {
   const raw = readJsonFile(
-    join4(executionDir(executionsDir, executionId), RECORD_FILE)
+    join5(executionDir(executionsDir, executionId), RECORD_FILE)
   );
   if (!raw || typeof raw.id !== "string" || !Array.isArray(raw.nodes)) return null;
   return {
@@ -19405,17 +19522,17 @@ function loadExecutionRecord(executionsDir, executionId) {
   };
 }
 function saveDagState(executionsDir, executionId, dagState) {
-  atomicWriteJson2(join4(executionDir(executionsDir, executionId), DAG_STATE_FILE), dagState);
+  atomicWriteJson2(join5(executionDir(executionsDir, executionId), DAG_STATE_FILE), dagState);
 }
 function loadDagState(executionsDir, executionId) {
   return readJsonFile(
-    join4(executionDir(executionsDir, executionId), DAG_STATE_FILE)
+    join5(executionDir(executionsDir, executionId), DAG_STATE_FILE)
   );
 }
 function listPersistedExecutionIds(executionsDir) {
-  if (!existsSync2(executionsDir)) return [];
+  if (!existsSync3(executionsDir)) return [];
   const ids = [];
-  for (const entry of readdirSync2(executionsDir, { withFileTypes: true })) {
+  for (const entry of readdirSync3(executionsDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const record2 = loadExecutionRecord(executionsDir, entry.name);
     if (record2) ids.push({ id: record2.id, createdAt: record2.createdAt });
@@ -19497,7 +19614,11 @@ var WORKFLOW_API_ROUTES = {
   /** POST: pause | resume | cancel. */
   executionAction: (workspaceId, executionId, action) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/${action}`,
   /** GET: execution SSE event stream (text/event-stream). */
-  executionEvents: (workspaceId, executionId) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/events`
+  executionEvents: (workspaceId, executionId) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/executions/${executionId}/events`,
+  /** GET: list templates. POST: create template. */
+  templates: `${WORKFLOW_ROUTE_PREFIX}/api/templates`,
+  /** GET/DELETE one template. */
+  template: (id2) => `${WORKFLOW_ROUTE_PREFIX}/api/templates/${id2}`
 };
 
 // src/workflow/execution/nodeExecutors.ts
@@ -19572,7 +19693,7 @@ function normalizeOutput(output) {
 }
 
 // src/workflow/execution/materialGatewayExecutor.ts
-import { join as join5 } from "node:path";
+import { join as join6 } from "node:path";
 function readMockFail(nodeData) {
   return nodeData.mockFail === true;
 }
@@ -19629,7 +19750,7 @@ function createMaterialGatewayExecutor(opts) {
       } else if (upstream.mediaType === "video") {
         ctx.reportProgress?.(15, "\u89C6\u9891\u53C2\u8003\u8F93\u5165\u6682\u4E0D\u652F\u6301\uFF08\u7B49\u5F85\u6267\u884C\u4E2D\u67A2\u6269\u5C55\uFF09\uFF0C\u5DF2\u5FFD\u7565");
       }
-      const dest = join5(ctx.mediaDir, `${node.id}.${extFor(capability)}`);
+      const dest = join6(ctx.mediaDir, `${node.id}.${extFor(capability)}`);
       ctx.reportProgress?.(10, "\u5DF2\u63D0\u4EA4\u751F\u6210\u4EFB\u52A1");
       const submitted = await gateway.submit({
         capability,
@@ -19785,8 +19906,7 @@ function createVideoCompositionExecutor() {
   };
 }
 
-// src/workflow/execution/ExecutionManager.ts
-var LOG_TAG6 = "ExecutionManager";
+// src/workflow/execution/executionTypes.ts
 var RECORD_SYNC_INTERVAL_MS = 5e3;
 var EXECUTION_TIMEOUT_MS = 30 * 60 * 1e3;
 var TERMINAL_STATUSES = /* @__PURE__ */ new Set([
@@ -19794,7 +19914,11 @@ var TERMINAL_STATUSES = /* @__PURE__ */ new Set([
   ExecutionStatus.ERROR,
   ExecutionStatus.CANCELLED
 ]);
-var logger6 = createWorkflowLogger(LOG_TAG6);
+var CANCELABLE_STATUSES = /* @__PURE__ */ new Set([
+  ExecutionStatus.PENDING,
+  ExecutionStatus.RUNNING,
+  ExecutionStatus.PAUSED
+]);
 var EVENT_LOG_LIMIT = 500;
 var ALL_EVENT_NAMES = [
   "execution_start",
@@ -19809,428 +19933,524 @@ var ALL_EVENT_NAMES = [
   "execution_error",
   "execution_cancelled"
 ];
+
+// src/workflow/execution/executionTimers.ts
+var logger6 = createWorkflowLogger("ExecutionTimers");
+function persistRecord(executionsDir, entry) {
+  try {
+    const record2 = buildExecutionRecord({
+      context: entry.context.toJSON(),
+      nodes: entry.nodes,
+      edges: entry.edges,
+      maxParallel: entry.maxParallel,
+      createdAt: entry.createdAt,
+      progress: entry.scheduler.getProgress(),
+      eventLog: entry.eventLog
+    });
+    saveExecutionRecord(executionsDir, record2);
+  } catch (error51) {
+    const message = error51 instanceof Error ? error51.message : String(error51);
+    logger6.warn("failed to persist execution record", {
+      executionId: entry.context.id,
+      error: message
+    });
+  }
+}
+function persistDagState(executionsDir, executionId, state) {
+  saveDagState(executionsDir, executionId, state);
+  return Promise.resolve();
+}
+function stopSyncTimer(entry) {
+  if (!entry.syncTimer) return;
+  clearInterval(entry.syncTimer);
+  entry.syncTimer = null;
+}
+function stopTimeoutTimer(entry) {
+  if (!entry.timeoutTimer) return;
+  clearTimeout(entry.timeoutTimer);
+  entry.timeoutTimer = null;
+}
+function startTimeout(entry, onTimeout) {
+  entry.timeoutTimer = setTimeout(onTimeout, EXECUTION_TIMEOUT_MS);
+}
+function appendReplayEvent(entry, event, payload) {
+  entry.eventLog.push({ event, payload });
+  if (entry.eventLog.length <= EVENT_LOG_LIMIT) return;
+  const excess = entry.eventLog.length - EVENT_LOG_LIMIT;
+  entry.eventLog.splice(0, excess);
+}
+function setupExecutionListeners(executionsDir, entry) {
+  const { context } = entry;
+  const onStart = () => {
+    persistRecord(executionsDir, entry);
+    stopSyncTimer(entry);
+    entry.syncTimer = setInterval(
+      () => persistRecord(executionsDir, entry),
+      RECORD_SYNC_INTERVAL_MS
+    );
+  };
+  const onStateChange = () => {
+    persistRecord(executionsDir, entry);
+  };
+  const onTerminal = () => {
+    stopSyncTimer(entry);
+    persistRecord(executionsDir, entry);
+  };
+  context.events.on("execution_start", onStart);
+  context.events.on("execution_paused", onStateChange);
+  context.events.on("execution_resumed", onStateChange);
+  context.events.on("execution_complete", onTerminal);
+  context.events.on("execution_error", onTerminal);
+  context.events.on("execution_cancelled", onTerminal);
+  for (const event of ALL_EVENT_NAMES) {
+    const recorder = (payload) => {
+      appendReplayEvent(entry, event, payload);
+    };
+    context.events.on(event, recorder);
+    entry.disposers.push(() => context.events.off(event, recorder));
+  }
+  entry.disposers.push(
+    () => context.events.off("execution_start", onStart),
+    () => context.events.off("execution_paused", onStateChange),
+    () => context.events.off("execution_resumed", onStateChange),
+    () => context.events.off("execution_complete", onTerminal),
+    () => context.events.off("execution_error", onTerminal),
+    () => context.events.off("execution_cancelled", onTerminal)
+  );
+}
+function cleanupExecution(entries, executionId) {
+  const entry = entries.get(executionId);
+  if (!entry) return;
+  const wasRunning = entry.context.status === ExecutionStatus.RUNNING;
+  if (wasRunning) {
+    entry.scheduler.cancel();
+    entry.abortController.abort();
+  }
+  stopSyncTimer(entry);
+  stopTimeoutTimer(entry);
+  entries.delete(executionId);
+  logger6.info("execution cleaned up", {
+    executionId,
+    wasRunning,
+    finalStatus: entry.context.status
+  });
+}
+function disposeAllExecutions(executionsDir, entries) {
+  for (const entry of entries.values()) {
+    stopSyncTimer(entry);
+    stopTimeoutTimer(entry);
+    for (const dispose of entry.disposers) dispose();
+    entry.disposers.length = 0;
+    entry.scheduler.dispose();
+    persistRecord(executionsDir, entry);
+  }
+  entries.clear();
+}
+
+// src/workflow/execution/executionRecovery.ts
+var logger7 = createWorkflowLogger("ExecutionRecovery");
+function handleTimedOutExecution(executionsDir, record2) {
+  logger7.warn("recovered execution timed out, marking failed", {
+    executionId: record2.id
+  });
+  saveExecutionRecord(executionsDir, {
+    ...record2,
+    status: ExecutionStatus.ERROR,
+    error: `Execution timed out after restart (>${Math.round(EXECUTION_TIMEOUT_MS / 6e4)}min)`,
+    completedAt: Date.now()
+  });
+  return null;
+}
+function resetInFlightNodeStates(context, dagState) {
+  for (const nodeId of dagState.runningNodes || []) {
+    const state = context.nodeStates.get(nodeId);
+    if (!state || state.status !== "running") continue;
+    context.nodeStates.set(nodeId, {
+      status: "pending",
+      startedAt: null,
+      completedAt: null,
+      error: null
+    });
+  }
+}
+function filterValidReplayLog(eventLog) {
+  const allowedNames = ALL_EVENT_NAMES;
+  const result = [];
+  for (const row of eventLog) {
+    if (allowedNames.includes(row.event)) {
+      result.push(row);
+    }
+  }
+  return result;
+}
+function buildRecoveredContext(record2) {
+  return ExecutionContext.fromJSON({
+    id: record2.id,
+    workflowId: record2.workspaceId,
+    status: record2.status,
+    variables: record2.variables,
+    nodeOutputs: record2.nodeOutputs,
+    nodeStates: record2.nodeStates,
+    mediaAssets: record2.mediaAssets,
+    breakpoints: record2.breakpoints,
+    startedAt: record2.startedAt,
+    completedAt: record2.completedAt,
+    error: record2.error,
+    totalNodes: record2.totalNodes,
+    completedNodes: record2.completedNodes
+  });
+}
+function createSchedulerForRecovery(params) {
+  return ExecutionScheduler.fromPersistedState({
+    dagState: params.dagState,
+    nodes: params.record.nodes,
+    edges: params.record.edges,
+    context: params.context,
+    nodeExecutor: params.executor,
+    maxParallel: params.record.maxParallel,
+    persistDagState: (state) => persistDagState(params.executionsDir, params.record.id, state)
+  });
+}
+function assembleRecoveredEntry(record2, context, scheduler, abortController) {
+  return {
+    context,
+    scheduler,
+    abortController,
+    nodes: record2.nodes,
+    edges: record2.edges,
+    maxParallel: record2.maxParallel,
+    createdAt: record2.createdAt,
+    syncTimer: null,
+    timeoutTimer: null,
+    loopRunning: false,
+    isRecovered: true,
+    eventLog: filterValidReplayLog(record2.eventLog),
+    disposers: []
+  };
+}
+async function recoverExecution(deps, executionId) {
+  const existing = deps.entries.get(executionId);
+  if (existing) return existing;
+  const record2 = loadExecutionRecord(deps.executionsDir, executionId);
+  if (!record2 || TERMINAL_STATUSES.has(record2.status)) return null;
+  if (record2.startedAt !== null && Date.now() - record2.startedAt > EXECUTION_TIMEOUT_MS) {
+    return handleTimedOutExecution(deps.executionsDir, record2);
+  }
+  const dagState = loadDagState(deps.executionsDir, executionId) || {};
+  const context = buildRecoveredContext(record2);
+  const abortController = new AbortController();
+  const { executor } = createDispatchingNodeExecutor({
+    gateway: deps.gateway,
+    mediaRoot: deps.mediaDir,
+    executionId: record2.id,
+    edges: record2.edges,
+    abortController
+  });
+  const scheduler = createSchedulerForRecovery({
+    dagState,
+    record: record2,
+    context,
+    executor,
+    executionsDir: deps.executionsDir
+  });
+  resetInFlightNodeStates(context, dagState);
+  const entry = assembleRecoveredEntry(record2, context, scheduler, abortController);
+  deps.entries.set(record2.id, entry);
+  deps.onSetupEntry(entry);
+  logger7.info("execution recovered", {
+    executionId: record2.id,
+    status: record2.status,
+    pending: scheduler.getProgress().pending,
+    completed: scheduler.getProgress().completed
+  });
+  return entry;
+}
+async function tryRecoverSingleId(executionId, params, stats) {
+  try {
+    const entry = await params.recoverOne(executionId);
+    if (!entry) return;
+    stats.recovered += 1;
+    if (entry.context.status === ExecutionStatus.RUNNING) {
+      params.continueLoop(entry, { isRecovery: true });
+      stats.resumed += 1;
+    }
+  } catch (error51) {
+    let errorMsg = String(error51);
+    if (error51 instanceof Error) {
+      errorMsg = error51.message;
+    }
+    logger7.error("recovery failed", {
+      executionId,
+      error: errorMsg
+    });
+  }
+}
+async function recoverAll(params) {
+  const stats = { recovered: 0, resumed: 0 };
+  const ids = listPersistedExecutionIds(params.executionsDir);
+  for (const executionId of ids) {
+    await tryRecoverSingleId(executionId, params, stats);
+  }
+  if (stats.recovered > 0) {
+    logger7.info("recovery complete", {
+      recovered: stats.recovered,
+      resumed: stats.resumed
+    });
+  }
+  return stats;
+}
+
+// src/workflow/execution/executionControl.ts
+async function pauseExecution(entries, executionId) {
+  const entry = entries.get(executionId);
+  if (!entry) {
+    return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728" };
+  }
+  if (entry.context.status !== ExecutionStatus.RUNNING) {
+    return { ok: false, message: `\u65E0\u6CD5\u6682\u505C ${entry.context.status} \u72B6\u6001\u7684\u6267\u884C` };
+  }
+  entry.scheduler.pause();
+  return { ok: true };
+}
+async function resumeExecution(deps, executionId) {
+  let entry = deps.entries.get(executionId) ?? null;
+  if (!entry) {
+    entry = await deps.recoverExecution(executionId);
+    if (!entry) {
+      return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728\u6216\u4E0D\u53EF\u6062\u590D" };
+    }
+  }
+  const status = entry.context.status;
+  const isResumable = status === ExecutionStatus.PAUSED || status === ExecutionStatus.RUNNING;
+  if (!isResumable) {
+    return { ok: false, message: `\u53EA\u80FD\u6062\u590D\u6682\u505C\u72B6\u6001\u7684\u6267\u884C\uFF08\u5F53\u524D ${status}\uFF09` };
+  }
+  entry.scheduler.resume();
+  if (!entry.loopRunning) {
+    deps.continueLoop(entry, { isRecovery: true });
+  }
+  return { ok: true };
+}
+async function cancelExecution(entries, executionId) {
+  const entry = entries.get(executionId);
+  if (!entry) {
+    return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728" };
+  }
+  if (!CANCELABLE_STATUSES.has(entry.context.status)) {
+    return { ok: false, message: `\u65E0\u6CD5\u53D6\u6D88 ${entry.context.status} \u72B6\u6001\u7684\u6267\u884C` };
+  }
+  entry.scheduler.cancel();
+  entry.abortController.abort();
+  return { ok: true };
+}
+async function openEventStream(deps, executionId) {
+  const existing = deps.entries.get(executionId);
+  if (existing) {
+    if (!existing.loopRunning && existing.context.status === ExecutionStatus.RUNNING) {
+      deps.continueLoop(existing, { isRecovery: true });
+    }
+    return { context: existing.context, eventLog: existing.eventLog };
+  }
+  const recovered = await deps.recoverExecution(executionId);
+  if (!recovered) return null;
+  if (recovered.context.status === ExecutionStatus.RUNNING) {
+    deps.continueLoop(recovered, { isRecovery: true });
+  }
+  return { context: recovered.context, eventLog: recovered.eventLog };
+}
+
+// src/workflow/execution/ExecutionManager.ts
+var LOG_TAG6 = "ExecutionManager";
+var logger8 = createWorkflowLogger(LOG_TAG6);
+function buildNewExecutionEntry(opts, context, scheduler, abortController) {
+  let maxParallel = 3;
+  if (typeof opts.maxParallel === "number") {
+    maxParallel = opts.maxParallel;
+  }
+  return {
+    context,
+    scheduler,
+    abortController,
+    nodes: opts.nodes,
+    edges: opts.edges,
+    maxParallel,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    syncTimer: null,
+    timeoutTimer: null,
+    loopRunning: false,
+    isRecovered: false,
+    eventLog: [],
+    disposers: []
+  };
+}
+function snapshotOfEntry(entry) {
+  const json2 = entry.context.toJSON();
+  const progress = entry.scheduler.getProgress();
+  return {
+    id: json2.id,
+    workspaceId: json2.workflowId,
+    status: json2.status,
+    createdAt: entry.createdAt,
+    startedAt: json2.startedAt,
+    completedAt: json2.completedAt,
+    error: json2.error,
+    totalNodes: json2.totalNodes,
+    completedNodes: json2.completedNodes,
+    progress,
+    nodeStates: json2.nodeStates,
+    nodeOutputs: json2.nodeOutputs,
+    mediaAssets: json2.mediaAssets,
+    breakpoints: json2.breakpoints
+  };
+}
+function snapshotOfRecord(record2) {
+  const remaining = Math.max(0, record2.progress.total - record2.progress.completed);
+  return {
+    id: record2.id,
+    workspaceId: record2.workspaceId,
+    status: record2.status,
+    createdAt: record2.createdAt,
+    startedAt: record2.startedAt,
+    completedAt: record2.completedAt,
+    error: record2.error,
+    totalNodes: record2.totalNodes,
+    completedNodes: record2.completedNodes,
+    progress: {
+      total: record2.progress.total,
+      completed: record2.progress.completed,
+      running: 0,
+      pending: remaining,
+      percentage: record2.progress.percentage
+    },
+    nodeStates: record2.nodeStates,
+    nodeOutputs: record2.nodeOutputs,
+    mediaAssets: record2.mediaAssets,
+    breakpoints: record2.breakpoints
+  };
+}
+function continueExecutionLoop(entry, opts = {}) {
+  if (entry.loopRunning) return;
+  entry.loopRunning = true;
+  let isRecovery = true;
+  if (typeof opts.isRecovery === "boolean") {
+    isRecovery = opts.isRecovery;
+  }
+  void entry.scheduler.execute({ isRecovery }).finally(() => {
+    entry.loopRunning = false;
+  });
+}
+function setupAndRunExecution(executionsDir, entries, entry) {
+  entries.set(entry.context.id, entry);
+  persistRecord(executionsDir, entry);
+  setupExecutionListeners(executionsDir, entry);
+  startTimeout(entry, () => cleanupExecution(entries, entry.context.id));
+  continueExecutionLoop(entry, { isRecovery: false });
+}
+function createExecutionInstance(deps, entries, opts) {
+  const breakpointsList = opts.breakpoints || [];
+  const breakpoints = new Set(breakpointsList);
+  const context = new ExecutionContext({
+    workflowId: opts.workspaceId,
+    breakpoints,
+    initialOutputs: opts.initialOutputs
+  });
+  const abortController = new AbortController();
+  const { executor } = createDispatchingNodeExecutor({
+    gateway: deps.gateway,
+    mediaRoot: deps.mediaDir,
+    executionId: context.id,
+    edges: opts.edges,
+    abortController
+  });
+  const scheduler = new ExecutionScheduler({
+    nodes: opts.nodes,
+    edges: opts.edges,
+    context,
+    nodeExecutor: executor,
+    maxParallel: opts.maxParallel,
+    persistDagState: (state) => persistDagState(deps.executionsDir, context.id, state)
+  });
+  const entry = buildNewExecutionEntry(opts, context, scheduler, abortController);
+  logger8.info("execution created", {
+    executionId: context.id,
+    workspaceId: opts.workspaceId,
+    nodeCount: opts.nodes.length,
+    edgeCount: opts.edges.length,
+    maxParallel: entry.maxParallel
+  });
+  setupAndRunExecution(deps.executionsDir, entries, entry);
+  return entry;
+}
+function listExecutionSummaries(entries, workspaceId) {
+  const rows = [];
+  for (const entry of entries.values()) {
+    if (workspaceId && entry.context.workflowId !== workspaceId) continue;
+    rows.push({
+      id: entry.context.id,
+      workspaceId: entry.context.workflowId,
+      status: entry.context.status,
+      createdAt: entry.createdAt,
+      progress: entry.scheduler.getProgress()
+    });
+  }
+  rows.sort((a, b) => {
+    if (a.createdAt < b.createdAt) return 1;
+    return -1;
+  });
+  return rows;
+}
+function readExecutionSnapshot(executionsDir, entries, executionId) {
+  const entry = entries.get(executionId);
+  if (entry) return snapshotOfEntry(entry);
+  const record2 = loadExecutionRecord(executionsDir, executionId);
+  if (!record2) return null;
+  return snapshotOfRecord(record2);
+}
+function lookupEntryById(entries, executionId) {
+  const found = entries.get(executionId);
+  if (!found) return null;
+  return found;
+}
 function createExecutionManager(deps) {
   const { executionsDir, gateway, mediaDir } = deps;
   const entries = /* @__PURE__ */ new Map();
   registerExecutor(createMaterialGatewayExecutor({ gateway }));
   registerExecutor(createImportExecutor());
   registerExecutor(createVideoCompositionExecutor());
-  const persistRecord = (entry) => {
-    try {
-      saveExecutionRecord(executionsDir, buildExecutionRecord({
-        context: entry.context.toJSON(),
-        nodes: entry.nodes,
-        edges: entry.edges,
-        maxParallel: entry.maxParallel,
-        createdAt: entry.createdAt,
-        progress: entry.scheduler.getProgress(),
-        eventLog: entry.eventLog
-      }));
-    } catch (error51) {
-      logger6.warn("failed to persist execution record", {
-        executionId: entry.context.id,
-        error: error51 instanceof Error ? error51.message : String(error51)
-      });
-    }
+  const handleEntrySetup = (entry) => {
+    setupExecutionListeners(executionsDir, entry);
+    startTimeout(entry, () => cleanupExecution(entries, entry.context.id));
   };
-  const persistDagState = (executionId, state) => {
-    saveDagState(executionsDir, executionId, state);
-    return Promise.resolve();
+  const recoveryDeps = {
+    executionsDir,
+    gateway,
+    mediaDir,
+    entries,
+    onSetupEntry: handleEntrySetup
   };
-  const stopSyncTimer = (entry) => {
-    if (entry.syncTimer) {
-      clearInterval(entry.syncTimer);
-      entry.syncTimer = null;
-    }
+  const doRecoverExecution = (executionId) => recoverExecution(recoveryDeps, executionId);
+  const controlDeps = {
+    entries,
+    recoverExecution: doRecoverExecution,
+    continueLoop: continueExecutionLoop
   };
-  const stopTimeoutTimer = (entry) => {
-    if (entry.timeoutTimer) {
-      clearTimeout(entry.timeoutTimer);
-      entry.timeoutTimer = null;
-    }
-  };
-  const setupListeners = (entry) => {
-    const { context } = entry;
-    const onStart = () => {
-      persistRecord(entry);
-      stopSyncTimer(entry);
-      entry.syncTimer = setInterval(() => persistRecord(entry), RECORD_SYNC_INTERVAL_MS);
-    };
-    const onPause = () => {
-      persistRecord(entry);
-    };
-    const onResume = () => {
-      persistRecord(entry);
-    };
-    const onTerminal = () => {
-      stopSyncTimer(entry);
-      persistRecord(entry);
-    };
-    context.events.on("execution_start", onStart);
-    context.events.on("execution_paused", onPause);
-    context.events.on("execution_resumed", onResume);
-    context.events.on("execution_complete", onTerminal);
-    context.events.on("execution_error", onTerminal);
-    context.events.on("execution_cancelled", onTerminal);
-    for (const event of ALL_EVENT_NAMES) {
-      const recorder = (payload) => {
-        entry.eventLog.push({ event, payload });
-        if (entry.eventLog.length > EVENT_LOG_LIMIT) {
-          entry.eventLog.splice(0, entry.eventLog.length - EVENT_LOG_LIMIT);
-        }
-      };
-      context.events.on(event, recorder);
-      entry.disposers.push(() => context.events.off(event, recorder));
-    }
-    entry.disposers.push(
-      () => context.events.off("execution_start", onStart),
-      () => context.events.off("execution_paused", onPause),
-      () => context.events.off("execution_resumed", onResume),
-      () => context.events.off("execution_complete", onTerminal),
-      () => context.events.off("execution_error", onTerminal),
-      () => context.events.off("execution_cancelled", onTerminal)
-    );
-  };
-  const continueLoop = (entry, opts = {}) => {
-    if (entry.loopRunning) return;
-    entry.loopRunning = true;
-    void entry.scheduler.execute({ isRecovery: opts.isRecovery ?? true }).finally(() => {
-      entry.loopRunning = false;
-    });
-  };
-  const startTimeout = (entry) => {
-    entry.timeoutTimer = setTimeout(() => {
-      cleanupExecution(entry.context.id);
-    }, EXECUTION_TIMEOUT_MS);
-  };
-  function createExecution(opts) {
-    const context = new ExecutionContext({
-      workflowId: opts.workspaceId,
-      breakpoints: new Set(opts.breakpoints ?? []),
-      initialOutputs: opts.initialOutputs
-    });
-    const abortController = new AbortController();
-    const { executor } = createDispatchingNodeExecutor({
-      gateway,
-      mediaRoot: mediaDir,
-      executionId: context.id,
-      edges: opts.edges,
-      abortController
-    });
-    const scheduler = new ExecutionScheduler({
-      nodes: opts.nodes,
-      edges: opts.edges,
-      context,
-      nodeExecutor: executor,
-      maxParallel: opts.maxParallel,
-      persistDagState: (state) => persistDagState(context.id, state)
-    });
-    const entry = {
-      context,
-      scheduler,
-      abortController,
-      nodes: opts.nodes,
-      edges: opts.edges,
-      maxParallel: opts.maxParallel ?? 3,
-      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-      syncTimer: null,
-      timeoutTimer: null,
-      loopRunning: false,
-      isRecovered: false,
-      eventLog: [],
-      disposers: []
-    };
-    entries.set(context.id, entry);
-    logger6.info("execution created", {
-      executionId: context.id,
-      workspaceId: opts.workspaceId,
-      nodeCount: opts.nodes.length,
-      edgeCount: opts.edges.length,
-      maxParallel: entry.maxParallel
-    });
-    persistRecord(entry);
-    setupListeners(entry);
-    startTimeout(entry);
-    continueLoop(entry, { isRecovery: false });
-    return entry;
-  }
-  function getEntry(executionId) {
-    return entries.get(executionId) ?? null;
-  }
-  function listExecutions(workspaceId) {
-    const rows = [];
-    for (const entry of entries.values()) {
-      if (workspaceId && entry.context.workflowId !== workspaceId) continue;
-      rows.push({
-        id: entry.context.id,
-        workspaceId: entry.context.workflowId,
-        status: entry.context.status,
-        createdAt: entry.createdAt,
-        progress: entry.scheduler.getProgress()
-      });
-    }
-    rows.sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
-    return rows;
-  }
-  function snapshotOfEntry(entry) {
-    const json2 = entry.context.toJSON();
-    const progress = entry.scheduler.getProgress();
-    return {
-      id: json2.id,
-      workspaceId: json2.workflowId,
-      status: json2.status,
-      createdAt: entry.createdAt,
-      startedAt: json2.startedAt,
-      completedAt: json2.completedAt,
-      error: json2.error,
-      totalNodes: json2.totalNodes,
-      completedNodes: json2.completedNodes,
-      progress,
-      nodeStates: json2.nodeStates,
-      nodeOutputs: json2.nodeOutputs,
-      mediaAssets: json2.mediaAssets,
-      breakpoints: json2.breakpoints
-    };
-  }
-  function snapshotOfRecord(record2) {
-    return {
-      id: record2.id,
-      workspaceId: record2.workspaceId,
-      status: record2.status,
-      createdAt: record2.createdAt,
-      startedAt: record2.startedAt,
-      completedAt: record2.completedAt,
-      error: record2.error,
-      totalNodes: record2.totalNodes,
-      completedNodes: record2.completedNodes,
-      progress: {
-        total: record2.progress.total,
-        completed: record2.progress.completed,
-        running: 0,
-        pending: Math.max(0, record2.progress.total - record2.progress.completed),
-        percentage: record2.progress.percentage
-      },
-      nodeStates: record2.nodeStates,
-      nodeOutputs: record2.nodeOutputs,
-      mediaAssets: record2.mediaAssets,
-      breakpoints: record2.breakpoints
-    };
-  }
-  function getSnapshot(executionId) {
-    const entry = entries.get(executionId);
-    if (entry) return snapshotOfEntry(entry);
-    const record2 = loadExecutionRecord(executionsDir, executionId);
-    return record2 ? snapshotOfRecord(record2) : null;
-  }
-  async function pauseExecution(executionId) {
-    const entry = entries.get(executionId);
-    if (!entry) return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728" };
-    if (entry.context.status !== ExecutionStatus.RUNNING) {
-      return { ok: false, message: `\u65E0\u6CD5\u6682\u505C ${entry.context.status} \u72B6\u6001\u7684\u6267\u884C` };
-    }
-    entry.scheduler.pause();
-    return { ok: true };
-  }
-  async function resumeExecution(executionId) {
-    let entry = entries.get(executionId) ?? null;
-    if (!entry) {
-      entry = await recoverExecution(executionId);
-      if (!entry) return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728\u6216\u4E0D\u53EF\u6062\u590D" };
-    }
-    const status = entry.context.status;
-    if (status !== ExecutionStatus.PAUSED && status !== ExecutionStatus.RUNNING) {
-      return { ok: false, message: `\u53EA\u80FD\u6062\u590D\u6682\u505C\u72B6\u6001\u7684\u6267\u884C\uFF08\u5F53\u524D ${status}\uFF09` };
-    }
-    entry.scheduler.resume();
-    if (!entry.loopRunning) {
-      continueLoop(entry, { isRecovery: true });
-    }
-    return { ok: true };
-  }
-  async function cancelExecution(executionId) {
-    const entry = entries.get(executionId);
-    if (!entry) return { ok: false, message: "\u6267\u884C\u4E0D\u5B58\u5728" };
-    const canCancelStatuses = [
-      ExecutionStatus.PENDING,
-      ExecutionStatus.RUNNING,
-      ExecutionStatus.PAUSED
-    ];
-    if (!canCancelStatuses.includes(entry.context.status)) {
-      return { ok: false, message: `\u65E0\u6CD5\u53D6\u6D88 ${entry.context.status} \u72B6\u6001\u7684\u6267\u884C` };
-    }
-    entry.scheduler.cancel();
-    entry.abortController.abort();
-    return { ok: true };
-  }
-  async function openEventStream(executionId) {
-    const existing = entries.get(executionId);
-    if (existing) {
-      if (!existing.loopRunning && existing.context.status === ExecutionStatus.RUNNING) {
-        continueLoop(existing, { isRecovery: true });
-      }
-      return { context: existing.context, eventLog: existing.eventLog };
-    }
-    const entry = await recoverExecution(executionId);
-    if (!entry) return null;
-    if (entry.context.status === ExecutionStatus.RUNNING) {
-      continueLoop(entry, { isRecovery: true });
-    }
-    return { context: entry.context, eventLog: entry.eventLog };
-  }
-  async function recoverExecution(executionId) {
-    const existing = entries.get(executionId);
-    if (existing) return existing;
-    const record2 = loadExecutionRecord(executionsDir, executionId);
-    if (!record2) return null;
-    if (TERMINAL_STATUSES.has(record2.status)) return null;
-    if (record2.startedAt !== null && Date.now() - record2.startedAt > EXECUTION_TIMEOUT_MS) {
-      logger6.warn("recovered execution timed out, marking failed", { executionId });
-      saveExecutionRecord(executionsDir, {
-        ...record2,
-        status: ExecutionStatus.ERROR,
-        error: `Execution timed out after restart (>${Math.round(EXECUTION_TIMEOUT_MS / 6e4)}min)`,
-        completedAt: Date.now()
-      });
-      return null;
-    }
-    const dagState = loadDagState(executionsDir, executionId) ?? {};
-    const context = ExecutionContext.fromJSON({
-      id: record2.id,
-      workflowId: record2.workspaceId,
-      status: record2.status,
-      variables: record2.variables,
-      nodeOutputs: record2.nodeOutputs,
-      nodeStates: record2.nodeStates,
-      mediaAssets: record2.mediaAssets,
-      breakpoints: record2.breakpoints,
-      startedAt: record2.startedAt,
-      completedAt: record2.completedAt,
-      error: record2.error,
-      totalNodes: record2.totalNodes,
-      completedNodes: record2.completedNodes
-    });
-    const abortController = new AbortController();
-    const { executor } = createDispatchingNodeExecutor({
-      gateway,
-      mediaRoot: mediaDir,
-      executionId: record2.id,
-      edges: record2.edges,
-      abortController
-    });
-    const scheduler = ExecutionScheduler.fromPersistedState({
-      dagState,
-      nodes: record2.nodes,
-      edges: record2.edges,
-      context,
-      nodeExecutor: executor,
-      maxParallel: record2.maxParallel,
-      persistDagState: (state) => persistDagState(record2.id, state)
-    });
-    for (const nodeId of dagState.runningNodes ?? []) {
-      const state = context.nodeStates.get(nodeId);
-      if (state && state.status === "running") {
-        context.nodeStates.set(nodeId, {
-          status: "pending",
-          startedAt: null,
-          completedAt: null,
-          error: null
-        });
-      }
-    }
-    const entry = {
-      context,
-      scheduler,
-      abortController,
-      nodes: record2.nodes,
-      edges: record2.edges,
-      maxParallel: record2.maxParallel,
-      createdAt: record2.createdAt,
-      syncTimer: null,
-      timeoutTimer: null,
-      loopRunning: false,
-      isRecovered: true,
-      // Restore the persisted replay log (unknown event names dropped) so a
-      // late SSE subscriber still sees pre-crash events after recovery.
-      eventLog: record2.eventLog.filter(
-        (row) => ALL_EVENT_NAMES.includes(row.event)
-      ),
-      disposers: []
-    };
-    entries.set(record2.id, entry);
-    setupListeners(entry);
-    startTimeout(entry);
-    logger6.info("execution recovered", {
-      executionId: record2.id,
-      status: record2.status,
-      pending: scheduler.getProgress().pending,
-      completed: scheduler.getProgress().completed
-    });
-    return entry;
-  }
-  async function recoverAll() {
-    const stats = { recovered: 0, resumed: 0 };
-    for (const executionId of listPersistedExecutionIds(executionsDir)) {
-      try {
-        const entry = await recoverExecution(executionId);
-        if (!entry) continue;
-        stats.recovered += 1;
-        if (entry.context.status === ExecutionStatus.RUNNING) {
-          continueLoop(entry, { isRecovery: true });
-          stats.resumed += 1;
-        }
-      } catch (error51) {
-        logger6.error("recovery failed", {
-          executionId,
-          error: error51 instanceof Error ? error51.message : String(error51)
-        });
-      }
-    }
-    if (stats.recovered > 0) {
-      logger6.info("recovery complete", stats);
-    }
-    return stats;
-  }
-  function cleanupExecution(executionId) {
-    const entry = entries.get(executionId);
-    if (!entry) return;
-    const wasRunning = entry.context.status === ExecutionStatus.RUNNING;
-    if (wasRunning) {
-      entry.scheduler.cancel();
-      entry.abortController.abort();
-    }
-    stopSyncTimer(entry);
-    stopTimeoutTimer(entry);
-    entries.delete(executionId);
-    logger6.info("execution cleaned up", {
-      executionId,
-      wasRunning,
-      finalStatus: entry.context.status
-    });
-  }
-  function disposeAll() {
-    for (const entry of entries.values()) {
-      stopSyncTimer(entry);
-      stopTimeoutTimer(entry);
-      for (const dispose of entry.disposers) dispose();
-      entry.disposers.length = 0;
-      entry.scheduler.dispose();
-      persistRecord(entry);
-    }
-    entries.clear();
-  }
   return {
-    createExecution,
-    getEntry,
-    listExecutions,
-    getSnapshot,
-    pauseExecution,
-    resumeExecution,
-    cancelExecution,
-    openEventStream,
-    recoverExecution,
-    recoverAll,
-    cleanupExecution,
-    disposeAll
+    createExecution: (opts) => createExecutionInstance(deps, entries, opts),
+    getEntry: (executionId) => lookupEntryById(entries, executionId),
+    listExecutions: (workspaceId) => listExecutionSummaries(entries, workspaceId),
+    getSnapshot: (executionId) => readExecutionSnapshot(executionsDir, entries, executionId),
+    pauseExecution: (executionId) => pauseExecution(entries, executionId),
+    resumeExecution: (executionId) => resumeExecution(controlDeps, executionId),
+    cancelExecution: (executionId) => cancelExecution(entries, executionId),
+    openEventStream: (executionId) => openEventStream(controlDeps, executionId),
+    recoverExecution: doRecoverExecution,
+    recoverAll: () => recoverAll({
+      executionsDir,
+      recoverOne: doRecoverExecution,
+      continueLoop: continueExecutionLoop
+    }),
+    cleanupExecution: (executionId) => cleanupExecution(entries, executionId),
+    disposeAll: () => disposeAllExecutions(executionsDir, entries)
   };
 }
 
@@ -20354,7 +20574,7 @@ var SSE_EVENT_NAMES = [
   "execution_cancelled"
 ];
 var HEARTBEAT_EVENT = "heartbeat";
-var logger7 = createWorkflowLogger(LOG_TAG7);
+var logger9 = createWorkflowLogger(LOG_TAG7);
 var ExecutionSSEPublisher = class {
   res;
   context;
@@ -20368,7 +20588,7 @@ var ExecutionSSEPublisher = class {
     this.context = context;
     this.heartbeatMs = opts.heartbeatMs ?? SSE_HEARTBEAT_MS;
     this.closeListener = () => {
-      logger7.info("sse connection closed", { executionId: this.context.id });
+      logger9.info("sse connection closed", { executionId: this.context.id });
       this.connected = false;
       this.cleanup();
     };
@@ -20410,7 +20630,7 @@ var ExecutionSSEPublisher = class {
 
 `);
     } catch (error51) {
-      logger7.error("failed to send sse event", {
+      logger9.error("failed to send sse event", {
         executionId: this.context.id,
         eventType,
         error: error51 instanceof Error ? error51.message : String(error51)
@@ -20442,9 +20662,9 @@ function createSSEPublisher(res, context, opts = {}) {
 }
 
 // src/projects/library.ts
-import { existsSync as existsSync3, mkdirSync as mkdirSync5 } from "node:fs";
+import { existsSync as existsSync4, mkdirSync as mkdirSync6 } from "node:fs";
 import { homedir as osHomedir } from "node:os";
-import { join as join6 } from "node:path";
+import { join as join7 } from "node:path";
 import { join as posixJoin } from "node:path/posix";
 import { join as win32Join } from "node:path/win32";
 var LIBRARY_BRAND_DIR = "OmniMux";
@@ -20457,7 +20677,7 @@ function envOf(opts) {
   return opts.env ?? process.env;
 }
 function existsOf(opts) {
-  return opts.exists ?? existsSync3;
+  return opts.exists ?? existsSync4;
 }
 function joinFor(platform, ...parts) {
   return platform === "win32" ? win32Join(...parts) : posixJoin(...parts);
@@ -20479,8 +20699,8 @@ function defaultProjectLibrary(opts = {}) {
   return joinFor(platform, resolveVideosDir(opts), LIBRARY_BRAND_DIR, LIBRARY_PROJECTS_DIR);
 }
 function ensureLibraryRoot(opts = {}) {
-  const libraryRoot = join6(resolveVideosDir(opts), LIBRARY_BRAND_DIR, LIBRARY_PROJECTS_DIR);
-  mkdirSync5(libraryRoot, { recursive: true });
+  const libraryRoot = join7(resolveVideosDir(opts), LIBRARY_BRAND_DIR, LIBRARY_PROJECTS_DIR);
+  mkdirSync6(libraryRoot, { recursive: true });
   return libraryRoot;
 }
 function displayHomePath(absPath, home = osHomedir()) {
@@ -20494,7 +20714,7 @@ function displayHomePath(absPath, home = osHomedir()) {
 
 // src/projects/paths.ts
 import { realpathSync, statSync } from "node:fs";
-import { join as join7, resolve as resolve2, sep } from "node:path";
+import { join as join8, resolve as resolve2, sep } from "node:path";
 var ProjectPathError = class extends Error {
   code;
   constructor(code, message) {
@@ -20535,15 +20755,15 @@ function resolveLibraryPaths(libraryRoot) {
 }
 function resolveProjectPaths(projectRoot) {
   const normalized = assertExistingDirectory(projectRoot, "invalid-project-root", "projectRoot");
-  const metaDir = join7(normalized, ".omnimux");
+  const metaDir = join8(normalized, ".omnimux");
   if (!isInsideDir(metaDir, normalized)) {
     throw new ProjectPathError("path-denied", "meta dir escapes project root");
   }
   return {
     projectRoot: normalized,
     metaDir,
-    projectFile: join7(metaDir, "project.json"),
-    readmeFile: join7(normalized, PROJECT_README_NAME)
+    projectFile: join8(metaDir, "project.json"),
+    readmeFile: join8(normalized, PROJECT_README_NAME)
   };
 }
 function assertProjectInsideLibrary(projectRoot, libraryRoot) {
@@ -20571,19 +20791,19 @@ function assertProjectWriteSafe(target, root2) {
 // src/projects/ProjectStore.ts
 import { randomUUID as randomUUID5 } from "node:crypto";
 import {
-  existsSync as existsSync5,
-  mkdirSync as mkdirSync7,
-  readFileSync as readFileSync3,
-  readdirSync as readdirSync3,
-  renameSync as renameSync3,
-  rmSync as rmSync3,
-  writeFileSync as writeFileSync5
+  existsSync as existsSync6,
+  mkdirSync as mkdirSync8,
+  readFileSync as readFileSync4,
+  readdirSync as readdirSync4,
+  renameSync as renameSync4,
+  rmSync as rmSync4,
+  writeFileSync as writeFileSync6
 } from "node:fs";
-import { join as join9 } from "node:path";
+import { join as join10 } from "node:path";
 
 // src/projects/folderName.ts
-import { existsSync as existsSync4, mkdirSync as mkdirSync6 } from "node:fs";
-import { join as join8, resolve as resolve3 } from "node:path";
+import { existsSync as existsSync5, mkdirSync as mkdirSync7 } from "node:fs";
+import { join as join9, resolve as resolve3 } from "node:path";
 
 // src/projects/schema.ts
 var PROJECT_SCHEMA_VERSION = 1;
@@ -20664,11 +20884,11 @@ function allocateUniqueProjectFolder(libraryRoot, baseName) {
   const root2 = resolve3(libraryRoot);
   for (let attempt = 0; attempt < MAX_DIRECTORY_ATTEMPTS; attempt += 1) {
     const name2 = folderNameAttempt(validated, attempt);
-    const target = join8(root2, name2);
+    const target = join9(root2, name2);
     assertProjectInsideLibrary(target, root2);
-    if (existsSync4(target)) continue;
+    if (existsSync5(target)) continue;
     try {
-      mkdirSync6(target);
+      mkdirSync7(target);
       return target;
     } catch (error51) {
       const code = error51 && typeof error51 === "object" && "code" in error51 ? String(error51.code) : "";
@@ -20698,17 +20918,17 @@ function newProjectId() {
   return randomUUID5();
 }
 function atomicWriteJson3(filePath, value) {
-  mkdirSync7(join9(filePath, ".."), { recursive: true });
+  mkdirSync8(join10(filePath, ".."), { recursive: true });
   const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
-  writeFileSync5(tmp, `${JSON.stringify(value, null, 2)}
+  writeFileSync6(tmp, `${JSON.stringify(value, null, 2)}
 `, "utf8");
-  renameSync3(tmp, filePath);
+  renameSync4(tmp, filePath);
 }
 function readJsonFile2(filePath) {
-  if (!existsSync5(filePath)) return void 0;
+  if (!existsSync6(filePath)) return void 0;
   let raw;
   try {
-    raw = readFileSync3(filePath, "utf8");
+    raw = readFileSync4(filePath, "utf8");
   } catch {
     return void 0;
   }
@@ -20745,14 +20965,14 @@ function toSummary(project, path3) {
 }
 function createProjectStore(opts) {
   const { libraryRoot } = opts;
-  mkdirSync7(libraryRoot, { recursive: true });
+  mkdirSync8(libraryRoot, { recursive: true });
   function scanEntries() {
-    if (!existsSync5(libraryRoot)) return [];
+    if (!existsSync6(libraryRoot)) return [];
     const rows = [];
-    for (const entry of readdirSync3(libraryRoot, { withFileTypes: true })) {
+    for (const entry of readdirSync4(libraryRoot, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
-      const dir = join9(libraryRoot, entry.name);
-      const file2 = join9(dir, ".omnimux", "project.json");
+      const dir = join10(libraryRoot, entry.name);
+      const file2 = join10(dir, ".omnimux", "project.json");
       const raw = readJsonFile2(file2);
       if (raw === void 0) continue;
       const project = parseProject(raw);
@@ -20800,7 +21020,7 @@ function createProjectStore(opts) {
       const projectRoot = givenRoot !== "" ? givenRoot : allocateUniqueProjectFolder(libraryRoot, sanitizeFolderName(trimmed));
       const paths = resolveProjectPaths(projectRoot);
       assertProjectInsideLibrary(paths.projectRoot, libraryRoot);
-      if (existsSync5(paths.projectFile)) {
+      if (existsSync6(paths.projectFile)) {
         throw new ProjectStoreError("project-exists", `project already seeded at ${paths.projectRoot}`);
       }
       const now2 = (/* @__PURE__ */ new Date()).toISOString();
@@ -20814,8 +21034,8 @@ function createProjectStore(opts) {
         canvasWorkspaceIds: createOpts.canvasWorkspaceIds ?? []
       };
       assertProjectWriteSafe(paths.readmeFile, paths.projectRoot);
-      if (!existsSync5(paths.readmeFile)) {
-        writeFileSync5(paths.readmeFile, defaultReadme(trimmed), "utf8");
+      if (!existsSync6(paths.readmeFile)) {
+        writeFileSync6(paths.readmeFile, defaultReadme(trimmed), "utf8");
       }
       return persistProject(paths.projectRoot, project);
     },
@@ -20901,8 +21121,8 @@ function createProjectStore(opts) {
       const paths = resolveProjectPaths(current.dir);
       assertProjectWriteSafe(paths.projectFile, paths.projectRoot);
       const metaDir = paths.metaDir;
-      if (existsSync5(metaDir)) {
-        rmSync3(metaDir, { recursive: true, force: true });
+      if (existsSync6(metaDir)) {
+        rmSync4(metaDir, { recursive: true, force: true });
       }
       void PROJECT_README_NAME;
     }
@@ -21076,22 +21296,22 @@ function createProjectDispatcher() {
 }
 
 // src/workflow/routes/pluginRoot.ts
-import { existsSync as existsSync6 } from "node:fs";
-import { dirname as dirname2, join as join10 } from "node:path";
+import { existsSync as existsSync7 } from "node:fs";
+import { dirname as dirname2, join as join11 } from "node:path";
 import { fileURLToPath } from "node:url";
 function resolvePluginRoot() {
   const here = dirname2(fileURLToPath(import.meta.url));
-  const candidates = [join10(here, ".."), join10(here, "..", "..", "..")];
+  const candidates = [join11(here, ".."), join11(here, "..", "..", "..")];
   for (const candidate of candidates) {
-    if (existsSync6(join10(candidate, "package.json"))) return candidate;
+    if (existsSync7(join11(candidate, "package.json"))) return candidate;
   }
   return candidates[0] ?? process.cwd();
 }
 
 // src/workflow/routes/staticRoutes.ts
 import { createHash as createHash2 } from "node:crypto";
-import { existsSync as existsSync7, readFileSync as readFileSync4 } from "node:fs";
-import { join as join11 } from "node:path";
+import { existsSync as existsSync8, readFileSync as readFileSync5 } from "node:fs";
+import { join as join12 } from "node:path";
 function createStaticRoutes(opts) {
   const { pluginRoot, gateway } = opts;
   const capabilitiesPath = `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`;
@@ -21101,18 +21321,18 @@ function createStaticRoutes(opts) {
   function canvasJsHash() {
     const now2 = Date.now();
     if (cachedCanvasHash && now2 - cachedCanvasHash.at < 5e3) return cachedCanvasHash.hash;
-    const file2 = join11(pluginRoot, "lib", "canvas.js");
+    const file2 = join12(pluginRoot, "lib", "canvas.js");
     let hash2 = "missing";
-    if (existsSync7(file2)) {
-      hash2 = createHash2("sha256").update(readFileSync4(file2, "utf8")).digest("hex").slice(0, 16);
+    if (existsSync8(file2)) {
+      hash2 = createHash2("sha256").update(readFileSync5(file2, "utf8")).digest("hex").slice(0, 16);
     }
     cachedCanvasHash = { hash: hash2, at: now2 };
     return hash2;
   }
   const tryBundle = (method, path3) => {
     if (method === "GET" && path3 === canvasJsPath) {
-      const file2 = join11(pluginRoot, "lib", "canvas.js");
-      if (!existsSync7(file2)) {
+      const file2 = join12(pluginRoot, "lib", "canvas.js");
+      if (!existsSync8(file2)) {
         return { status: 404, body: { error: "not-found", message: "canvas bundle not built (run npm run build)" } };
       }
       return { status: 200, file: file2 };
@@ -21212,10 +21432,11 @@ function normalizeNodeIds(nodeIds) {
 function resolveExecutionSubgraph(input) {
   const { nodes, edges, executionMode } = input;
   if (executionMode === "full") {
+    const executableNodes = nodes.filter((n) => n.type !== "group");
     return {
-      nodes,
+      nodes: executableNodes,
       edges,
-      nodeIdSet: new Set(nodes.map((node) => node.id))
+      nodeIdSet: new Set(executableNodes.map((node) => node.id))
     };
   }
   const targetNodeIds = normalizeNodeIds(input.nodeIds);
@@ -21232,10 +21453,11 @@ function resolveExecutionSubgraph(input) {
   }
   if (executionMode === "single") {
     const targetIdSet = new Set(targetNodeIds);
+    const targetNodes = nodes.filter((node) => targetIdSet.has(node.id) && node.type !== "group");
     return {
-      nodes: nodes.filter((node) => targetIdSet.has(node.id)),
+      nodes: targetNodes,
       edges: edges.filter((edge) => targetIdSet.has(edge.target) && nodeMap.has(edge.source)),
-      nodeIdSet: targetIdSet
+      nodeIdSet: new Set(targetNodes.map((n) => n.id))
     };
   }
   const incomingMap = /* @__PURE__ */ new Map();
@@ -21255,10 +21477,11 @@ function resolveExecutionSubgraph(input) {
       if (!closure.has(upstream)) stack.push(upstream);
     }
   }
+  const resultNodes = nodes.filter((node) => closure.has(node.id) && node.type !== "group");
   return {
-    nodes: nodes.filter((node) => closure.has(node.id)),
+    nodes: resultNodes,
     edges: edges.filter((edge) => closure.has(edge.source) && closure.has(edge.target)),
-    nodeIdSet: closure
+    nodeIdSet: new Set(resultNodes.map((n) => n.id))
   };
 }
 
@@ -21417,7 +21640,7 @@ function createExecutionRoutes(opts) {
 
 // src/workflow/routes/mediaRoutes.ts
 import { realpathSync as realpathSync2, statSync as statSync2 } from "node:fs";
-import { join as join12, normalize, resolve as resolve4, sep as sep2 } from "node:path";
+import { join as join13, normalize, resolve as resolve4, sep as sep2 } from "node:path";
 function isInsideDir2(target, root2) {
   return target === root2 || target.startsWith(root2 + sep2);
 }
@@ -21430,7 +21653,7 @@ function createMediaRoutes(mediaDir) {
     if (rel.split("/").some((segment) => segment === "..")) {
       return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
     }
-    const target = resolve4(join12(mediaRoot, normalize(`/${rel}`)));
+    const target = resolve4(join13(mediaRoot, normalize(`/${rel}`)));
     if (!isInsideDir2(target, mediaRoot)) {
       return { status: 403, body: { error: "path-denied", message: "path escapes media root" } };
     }
@@ -21453,7 +21676,7 @@ function createMediaRoutes(mediaDir) {
 }
 
 // src/workflow/routes/localFileRoutes.ts
-import { existsSync as existsSync8, realpathSync as realpathSync3, statSync as statSync3 } from "node:fs";
+import { existsSync as existsSync9, realpathSync as realpathSync3, statSync as statSync3 } from "node:fs";
 import { basename, isAbsolute as isAbsolute2 } from "node:path";
 
 // src/workflow/picker.ts
@@ -21657,7 +21880,7 @@ function createLocalFileRoutes(deps = {}) {
       if (!resolved.ok) {
         return jsonError(resolved.status, resolved.error, resolved.message);
       }
-      if (!existsSync8(resolved.path)) {
+      if (!existsSync9(resolved.path)) {
         return jsonError(404, "not-found", "file not found");
       }
       return { status: 200, file: resolved.path };
@@ -21720,14 +21943,14 @@ function createProjectAssetsRoutes(store) {
 // src/workflow/workspace/ProjectAssetsStore.ts
 import { randomUUID as randomUUID6 } from "node:crypto";
 import {
-  existsSync as existsSync9,
-  mkdirSync as mkdirSync8,
-  readFileSync as readFileSync5,
-  renameSync as renameSync4,
+  existsSync as existsSync10,
+  mkdirSync as mkdirSync9,
+  readFileSync as readFileSync6,
+  renameSync as renameSync5,
   statSync as statSync4,
-  writeFileSync as writeFileSync6
+  writeFileSync as writeFileSync7
 } from "node:fs";
-import { basename as basename2, isAbsolute as isAbsolute3, join as join13 } from "node:path";
+import { basename as basename2, isAbsolute as isAbsolute3, join as join14 } from "node:path";
 
 // src/shared/projectAssets.ts
 var PROJECT_ASSETS_SCHEMA_VERSION = 1;
@@ -21789,11 +22012,11 @@ function newItemId() {
   return `ast_${randomUUID6().replace(/-/g, "").slice(0, 12)}`;
 }
 function atomicWriteJson4(filePath, value) {
-  mkdirSync8(join13(filePath, ".."), { recursive: true });
+  mkdirSync9(join14(filePath, ".."), { recursive: true });
   const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
-  writeFileSync6(tmp, `${JSON.stringify(value, null, 2)}
+  writeFileSync7(tmp, `${JSON.stringify(value, null, 2)}
 `, "utf8");
-  renameSync4(tmp, filePath);
+  renameSync5(tmp, filePath);
 }
 function asNumber(value, fallback) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -21837,10 +22060,10 @@ function hydrateItem(row) {
   };
 }
 function readAssetsFile(filePath) {
-  if (!existsSync9(filePath)) return emptyProjectAssetsDocument();
+  if (!existsSync10(filePath)) return emptyProjectAssetsDocument();
   let raw;
   try {
-    raw = readFileSync5(filePath, "utf8");
+    raw = readFileSync6(filePath, "utf8");
   } catch {
     return emptyProjectAssetsDocument();
   }
@@ -21867,8 +22090,8 @@ function assertWorkspaceExists(workspacesDir, id2) {
   if (!isWorkspaceId2(id2)) {
     throw new WorkflowStoreError("invalid-id", `invalid workspace id ${id2}`);
   }
-  const canvas = join13(workspacesDir, id2, "canvas.json");
-  if (!existsSync9(canvas)) {
+  const canvas = join14(workspacesDir, id2, "canvas.json");
+  if (!existsSync10(canvas)) {
     throw new WorkflowStoreError("workspace-not-found", `workspace ${id2} not found`);
   }
 }
@@ -21939,7 +22162,7 @@ function assertWritableDocument(next) {
     if (item.parentId && !folderIds.has(item.parentId)) {
       throw new WorkflowStoreError("invalid-id", `item parent ${item.parentId} does not exist`);
     }
-    if (existsSync9(item.real_path)) {
+    if (existsSync10(item.real_path)) {
       let st;
       try {
         st = statSync4(item.real_path);
@@ -22011,7 +22234,7 @@ function indexOnePath(rawPath, parentId, now2) {
 }
 function createProjectAssetsStore(opts) {
   const { workspacesDir } = opts;
-  const fileOf = (id2) => join13(workspacesDir, id2, "assets.json");
+  const fileOf = (id2) => join14(workspacesDir, id2, "assets.json");
   function load(id2) {
     assertWorkspaceExists(workspacesDir, id2);
     return { current: readAssetsFile(fileOf(id2)), filePath: fileOf(id2) };
@@ -22097,6 +22320,59 @@ function createProjectAssetsStore(opts) {
   };
 }
 
+// src/workflow/routes/templateRoutes.ts
+function createTemplateRoutes(store) {
+  const listPath = `${WORKFLOW_ROUTE_PREFIX}/api/templates`;
+  const itemRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/templates/([^/]+)$`);
+  const tryHandle = (method, path3, req) => {
+    if (!store) return null;
+    if (path3 === listPath) {
+      if (method === "GET") {
+        return { status: 200, body: { templates: store.list() } };
+      }
+      if (method === "POST") {
+        const problem = jsonBodyProblem(req.body);
+        if (problem) return problem;
+        try {
+          const payload = createTemplatePayloadSchema.parse(req.body);
+          if (payload.nodes.length < 2) {
+            return { status: 400, body: { error: "invalid-template", message: "\u6A21\u677F\u81F3\u5C11\u9700\u8981 2 \u4E2A\u8282\u70B9" } };
+          }
+          const template = store.save(payload);
+          return { status: 200, body: { template } };
+        } catch (error51) {
+          if (error51 instanceof ZodError) {
+            return {
+              status: 400,
+              body: {
+                error: "invalid-template",
+                message: error51.issues.slice(0, 3).map((issue2) => issue2.message).join("; ") || "invalid template"
+              }
+            };
+          }
+          throw error51;
+        }
+      }
+      return notFound();
+    }
+    const match = itemRe.exec(path3);
+    if (!match) return null;
+    const id2 = match[1] ?? "";
+    if (method === "GET") {
+      const template = store.get(id2);
+      if (!template) return { status: 404, body: { error: "not-found", message: "template not found" } };
+      return { status: 200, body: { template } };
+    }
+    if (method === "DELETE") {
+      const deleted = store.delete(id2);
+      if (!deleted) return { status: 404, body: { error: "not-found", message: "template not found" } };
+      return { status: 200, body: { ok: true } };
+    }
+    return notFound();
+  };
+  return { tryHandle };
+}
+
 // src/workflow/routes/canvasRoutes.ts
 var STATUS_BY_CODE3 = {
   "invalid-json": 400,
@@ -22179,7 +22455,7 @@ function serveFile(res, filePath, fallbackMime, rangeHeader) {
   stream.pipe(res);
 }
 function createWorkflowDispatcher(deps) {
-  const { store, gateway, mediaDir, executionManager, picker } = deps;
+  const { store, gateway, mediaDir, executionManager, picker, templates } = deps;
   const projectDispatcher = createProjectDispatcher();
   const staticRoutes = createStaticRoutes({ pluginRoot: PLUGIN_ROOT, gateway });
   const workspaceRoutes = createWorkspaceRoutes(store);
@@ -22190,6 +22466,7 @@ function createWorkflowDispatcher(deps) {
   const executionRoutes = createExecutionRoutes({ store, executionManager });
   const mediaRoutes = createMediaRoutes(mediaDir);
   const localFileRoutes = createLocalFileRoutes(picker ? { picker } : {});
+  const templateRoutes = createTemplateRoutes(templates);
   function normalizePath(path3) {
     if (path3 === LEGACY_WORKFLOW_ROUTE_PREFIX) return WORKFLOW_ROUTE_PREFIX;
     if (path3.startsWith(`${LEGACY_WORKFLOW_ROUTE_PREFIX}/`)) {
@@ -22218,6 +22495,8 @@ function createWorkflowDispatcher(deps) {
       if (fromWorkspace) return fromWorkspace;
       const fromProjectAssets = await Promise.resolve(projectAssetsRoutes.tryHandle(method, path3, req));
       if (fromProjectAssets) return fromProjectAssets;
+      const fromTemplates = await Promise.resolve(templateRoutes.tryHandle(method, path3, req));
+      if (fromTemplates) return fromTemplates;
       const fromExecution = await Promise.resolve(executionRoutes.tryHandle(method, path3, req));
       if (fromExecution) return fromExecution;
       const fromCapabilities = await Promise.resolve(staticRoutes.tryCapabilities(method, path3, req));
@@ -22563,7 +22842,7 @@ function createCanvasGetTableNodeTool(deps) {
 }
 
 // src/workflow/agent/agentToolShared.ts
-import { join as join14 } from "node:path";
+import { join as join15 } from "node:path";
 function objectParams(fields) {
   const properties = {};
   const required2 = [];
@@ -22625,7 +22904,7 @@ function mediaUrlToPath(url2, mediaDir) {
   const marker = "/media/";
   const index2 = url2.indexOf(marker);
   if (index2 === -1 || !url2.startsWith("/")) return null;
-  return join14(mediaDir, url2.slice(index2 + marker.length));
+  return join15(mediaDir, url2.slice(index2 + marker.length));
 }
 var MEDIA_KIND = {
   video: "video",
@@ -32776,10 +33055,13 @@ var globalCheckpointManager = new CheckpointManager();
 // src/workflow/index.ts
 function mountWorkflowHost(ctx, opts = {}) {
   const paths = opts.paths ?? resolveWorkflowPaths();
-  mkdirSync9(paths.workspacesDir, { recursive: true });
-  mkdirSync9(paths.mediaDir, { recursive: true });
-  mkdirSync9(paths.executionsDir, { recursive: true });
+  const templatesDir = paths.templatesDir || join16(paths.root, "templates");
+  mkdirSync10(paths.workspacesDir, { recursive: true });
+  mkdirSync10(paths.mediaDir, { recursive: true });
+  mkdirSync10(paths.executionsDir, { recursive: true });
+  mkdirSync10(templatesDir, { recursive: true });
   const store = createWorkspaceStore({ workspacesDir: paths.workspacesDir });
+  const templates = new TemplateStore({ templatesDir });
   const gateway = opts.gateway ?? assembleGateway({
     getSeam: (name2) => ctx.get?.(name2),
     ...opts.gatewayMode !== void 0 ? { mode: opts.gatewayMode } : {},
@@ -32795,7 +33077,8 @@ function mountWorkflowHost(ctx, opts = {}) {
     store,
     gateway,
     mediaDir: paths.mediaDir,
-    executionManager
+    executionManager,
+    templates
   });
   void executionManager.recoverAll();
   const disposers = [];
