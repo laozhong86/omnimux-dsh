@@ -44,9 +44,11 @@ export function createIdentity(deps) {
         fetcher,
         siteBaseUrl,
         token,
-        userId: cached && cached.id != null ? String(cached.id) : undefined,
       })
       deps.store.writeProfileCache(profile)
+      if (profile && profile.id != null && typeof deps.store.writeConfig === 'function') {
+        deps.store.writeConfig({ userId: String(profile.id), baseUrl: siteBaseUrl })
+      }
       if (typeof deps.store.clearExpired === 'function') {
         deps.store.clearExpired()
       }

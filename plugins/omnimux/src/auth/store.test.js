@@ -43,11 +43,11 @@ describe('token store (canonical 0600 file)', () => {
     }
   })
 
-  it('prefers credentials when present and falls back to secrets.json', async () => {
+  it('canonical secrets.json takes precedence over credentials seam so CLI updates reflect immediately', async () => {
     const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-home-'))
     const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-cfg-'))
     /** @type {Record<string, string>} */
-    const mem = {}
+    const mem = { OMNIMUX_ACCESS_TOKEN: 'stale-token-in-credentials-yaml' }
     const store = createTokenStore({
       homeDir,
       configDir,
@@ -68,13 +68,36 @@ describe('token store (canonical 0600 file)', () => {
       },
     })
     try {
-      await store.set('pat-from-cred')
-      assert.equal(await store.resolve(), 'pat-from-cred')
-      const desc = await store.describe()
-      assert.equal(desc.configured, true)
-      assert.equal(desc.source, 'credentials')
+      // 1. Initially without secrets.json, falls back to credentials seam
+      assert.equal(await store.resolve(), 'stale-token-in-credentials-yaml')
+      assert.equal((await store.describe()).source, 'credentials')
+
+      // 2. When CLI logs in and writes secrets.json + config.json
+      const secretsPath = join(configDir, 'secrets.json')
+      writeFileSync(secretsPath, JSON.stringify({
+        version: 1,
+        active_slot: 'cli:default',
+        access_token: 'fresh-token-from-cli',
+        slots: { 'cli:default': { access_token: 'fresh-token-from-cli' } },
+      }), { mode: 0o600 })
+
+      // App immediately resolves fresh CLI token instead of being shadowed by stale credentials
+      assert.equal(await store.resolve(), 'fresh-token-from-cli')
+      assert.equal((await store.describe()).source, 'secrets')
+
+      // 3. When App logs in, updates secrets.json and config.json
+      await store.set('app-token-2', { userId: '101', baseUrl: 'https://omnimux.ai' })
+      assert.equal(await store.resolve(), 'app-token-2')
+      const cfgPath = join(configDir, 'config.json')
+      assert.equal(existsSync(cfgPath), true)
+      const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'))
+      assert.equal(cfg.user_id, '101')
+      assert.equal(cfg.base_url, 'https://omnimux.ai')
+
+      // 4. Logout cleans token and config user_id
       await store.unset()
       assert.equal(await store.resolve(), undefined)
+      assert.equal(existsSync(secretsPath), false)
     } finally {
       rmSync(homeDir, { recursive: true, force: true })
       rmSync(configDir, { recursive: true, force: true })
@@ -171,7 +194,7 @@ describe('token store (canonical 0600 file)', () => {
       { mode: 0o600 },
     )
 
-    const store = createTokenStore({ homeDir, configDir })
+    const store = createTokenStore({ homeDir, configDir, slot: 'desktop:default' })
     await store.set('pat-desktop-new')
 
     const afterSet = JSON.parse(readFileSync(secretsPath, 'utf8'))
@@ -189,6 +212,69 @@ describe('token store (canonical 0600 file)', () => {
 
     rmSync(homeDir, { recursive: true, force: true })
     rmSync(configDir, { recursive: true, force: true })
+  })
+
+  it('bidirectional single-sign-on: CLI login immediately unlocks App, and App login immediately unlocks CLI without collision', async () => {
+    const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-home-'))
+    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-auth-cfg-'))
+
+    const appStore = createTokenStore({ homeDir, configDir })
+    const secretsPath = join(configDir, 'secrets.json')
+    const configPath = join(configDir, 'config.json')
+
+    try {
+      // 1. Initially neither is logged in
+      assert.equal(await appStore.resolve(), undefined)
+      assert.equal((await appStore.describe()).configured, false)
+
+      // 2. CLI performs login and writes canonical secrets.json + config.json
+      writeFileSync(
+        secretsPath,
+        JSON.stringify({
+          version: 1,
+          active_slot: 'cli:default',
+          access_token: 'cli-user-pat-42',
+          slots: {
+            'cli:default': { access_token: 'cli-user-pat-42', user_id: '42', updated_at: 1000 },
+          },
+        }),
+        { mode: 0o600 },
+      )
+      writeFileSync(
+        configPath,
+        JSON.stringify({
+          base_url: 'https://omnimux.ai',
+          user_id: '42',
+        }),
+        { mode: 0o600 },
+      )
+
+      // 3. App immediately shares and resolves CLI login state
+      assert.equal(await appStore.resolve(), 'cli-user-pat-42')
+      const appDesc = await appStore.describe()
+      assert.equal(appDesc.configured, true)
+      assert.equal(appDesc.source, 'secrets')
+      assert.equal(appStore.readConfig().user_id, '42')
+
+      // 4. App updates login (e.g. user re-authenticated via App UI)
+      await appStore.set('app-user-pat-99', { userId: '99', baseUrl: 'https://omnimux.ai' })
+
+      // 5. Verification: CLI secrets.json & config.json are seamlessly updated with new token and user_id
+      const secretsRaw = JSON.parse(readFileSync(secretsPath, 'utf8'))
+      assert.equal(secretsRaw.access_token, 'app-user-pat-99')
+      const configRaw = JSON.parse(readFileSync(configPath, 'utf8'))
+      assert.equal(configRaw.user_id, '99')
+      assert.equal(configRaw.base_url, 'https://omnimux.ai')
+
+      // 6. Explicit logout removes credentials completely
+      await appStore.unset()
+      assert.equal(await appStore.resolve(), undefined)
+      assert.equal(existsSync(secretsPath), false)
+      assert.equal(appStore.readConfig()?.user_id, undefined)
+    } finally {
+      rmSync(homeDir, { recursive: true, force: true })
+      rmSync(configDir, { recursive: true, force: true })
+    }
   })
 
   it('cleans up stale login-flows files on initialization', async () => {
