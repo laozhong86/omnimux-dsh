@@ -86,18 +86,90 @@ export interface NodeSpatialInfo {
   position: { x: number; y: number };
   width?: number;
   height?: number;
+  measured?: { width?: number; height?: number };
+  data?: Record<string, unknown>;
+  type?: string;
+  style?: Record<string, unknown>;
 }
 
-export const DEFAULT_GROUP_PADDING = 24;
-export const DEFAULT_NODE_FALLBACK_WIDTH = 320;
-export const DEFAULT_NODE_FALLBACK_HEIGHT = 200;
+export const DEFAULT_GROUP_PADDING = 32;
+export const DEFAULT_NODE_FALLBACK_WIDTH = 350;
+export const DEFAULT_NODE_FALLBACK_HEIGHT = 280;
 
 /**
- * 计算多个节点在画布中的最小包围盒（含 Padding 留白）。
+ * 解析节点的真实可视尺寸与外挂标题栏偏移高度
+ */
+export function resolveNodeDimensions(node: NodeSpatialInfo): {
+  width: number;
+  height: number;
+  headerOffset: number;
+} {
+  const data = (node.data || {}) as Record<string, unknown>;
+  const materialType = (data.materialType as string) || (node.type === 'material' ? 'text' : undefined);
+
+  // 默认规格对齐 nodeSizeConfig.ts
+  let defaultWidth = DEFAULT_NODE_FALLBACK_WIDTH;
+  let defaultHeight = DEFAULT_NODE_FALLBACK_HEIGHT;
+  let headerOffset = 0;
+
+  if (node.type === 'material' || materialType) {
+    headerOffset = 28; // NodeHeader 约 24px + 4px gap
+    if (materialType === 'text') {
+      defaultWidth = 350;
+      defaultHeight = 500;
+    } else if (materialType === 'image') {
+      defaultWidth = 350;
+      defaultHeight = 350;
+    } else if (materialType === 'video') {
+      defaultWidth = 350;
+      defaultHeight = 280;
+    } else if (materialType === 'audio') {
+      defaultWidth = 350;
+      defaultHeight = 150;
+    }
+  } else if (node.type === 'table') {
+    headerOffset = 28;
+    defaultWidth = 380;
+    defaultHeight = 280;
+  } else if (node.type === 'video_composition') {
+    headerOffset = 28;
+    defaultWidth = 350;
+    defaultHeight = 440;
+  } else if (node.type === 'group') {
+    defaultWidth = 400;
+    defaultHeight = 300;
+    headerOffset = 0;
+  }
+
+  // 优先级：node.measured (真实 DOM 测量) > node.width/height > data.nodeWidth/nodeHeight > 默认几何规格
+  const width =
+    (typeof node.measured?.width === 'number' && node.measured.width > 0)
+      ? node.measured.width
+      : (typeof node.width === 'number' && node.width > 0)
+        ? node.width
+        : (typeof data.nodeWidth === 'number' && (data.nodeWidth as number) > 0)
+          ? (data.nodeWidth as number)
+          : defaultWidth;
+
+  const height =
+    (typeof node.measured?.height === 'number' && node.measured.height > 0)
+      ? node.measured.height
+      : (typeof node.height === 'number' && node.height > 0)
+        ? node.height
+        : (typeof data.nodeHeight === 'number' && (data.nodeHeight as number) > 0)
+          ? (data.nodeHeight as number)
+          : defaultHeight;
+
+  return { width, height, headerOffset };
+}
+
+/**
+ * 计算多个节点在画布中的最小包围盒（含 Padding 留白与外挂标题栏）。
  */
 export function calculateGroupBounds(
   nodes: NodeSpatialInfo[],
   padding = DEFAULT_GROUP_PADDING,
+  options?: { includeHeaderOffset?: boolean },
 ): RectBounds & { minWidth: number; minHeight: number } {
   if (!nodes || nodes.length === 0) {
     return {
@@ -110,6 +182,8 @@ export function calculateGroupBounds(
     };
   }
 
+  const includeHeader = options?.includeHeaderOffset ?? true;
+
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -118,11 +192,11 @@ export function calculateGroupBounds(
   for (const node of nodes) {
     const nx = node.position.x;
     const ny = node.position.y;
-    const nw = typeof node.width === 'number' && node.width > 0 ? node.width : DEFAULT_NODE_FALLBACK_WIDTH;
-    const nh = typeof node.height === 'number' && node.height > 0 ? node.height : DEFAULT_NODE_FALLBACK_HEIGHT;
+    const { width: nw, height: nh, headerOffset } = resolveNodeDimensions(node);
+    const topY = includeHeader ? ny - headerOffset : ny;
 
     if (nx < minX) minX = nx;
-    if (ny < minY) minY = ny;
+    if (topY < minY) minY = topY;
     if (nx + nw > maxX) maxX = nx + nw;
     if (ny + nh > maxY) maxY = ny + nh;
   }

@@ -110,7 +110,33 @@ test('planGroupNodes: 生成 GroupNode 并将子节点转为相对坐标', () =>
   assert.equal(child1.parentId, plan.groupId);
   assert.equal(child2.parentId, plan.groupId);
   assert.equal(child1.position.x, 32);
-  assert.equal(child1.position.y, 32);
+  // 考虑 material 节点 28px headerOffset 后，卡片 y 为 60（标题栏位于 60-28=32px 留白处）
+  assert.equal(child1.position.y, 60);
+});
+
+test('calculateGroupBounds: 自动适配 text 节点 (350x500) 与外挂标题栏', () => {
+  const textNodes = [
+    {
+      id: 't1',
+      type: 'material',
+      position: { x: 100, y: 100 },
+      data: { materialType: 'text', label: '爆款短剧' },
+    },
+    {
+      id: 't2',
+      type: 'material',
+      position: { x: 500, y: 100 },
+      data: { materialType: 'text', label: '文本' },
+    },
+  ];
+  const bounds = calculateGroupBounds(textNodes, 32);
+  // X: minX(100) - 32 = 68, maxX(500 + 350 = 850), width = 750 + 64 = 814
+  assert.equal(bounds.x, 68);
+  assert.equal(bounds.width, 814);
+  // Y: minY(100 - 28 = 72) - 32 = 40, maxY(100 + 500 = 600), height = (600 - 72) + 64 = 592
+  assert.equal(bounds.y, 40);
+  assert.equal(bounds.height, 592);
+  assert.equal(bounds.minHeight, 592);
 });
 
 test('planUngroupNode: 销毁 GroupNode 并恢复子节点绝对坐标', () => {
