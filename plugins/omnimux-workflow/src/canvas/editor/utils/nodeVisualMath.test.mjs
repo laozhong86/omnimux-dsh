@@ -1,10 +1,15 @@
 /**
  * W1 节点视觉纯逻辑测试（计划 §8）：反缩放公式 + GSC 状态映射 +
- * MediaPreview URL 解析。
+ * MediaPreview URL 解析 + 多选抑制与防御性包围盒计算。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { inverseScaleForZoom, isConfigPanelVisible, mapNodeToGenerationStatus } from './nodeVisualMath.ts';
+import {
+  calculateGroupBounds,
+  inverseScaleForZoom,
+  isConfigPanelVisible,
+  mapNodeToGenerationStatus,
+} from './nodeVisualMath.ts';
 import { resolveMediaPreviewUrl } from './mediaUrl.ts';
 
 test('反缩放公式：zoom=1 → 1，zoom=0.5 → 2，zoom=2 → 0.5', () => {
@@ -68,6 +73,30 @@ test('panelVisible：导入节点永不展开配置底栏', () => {
   assert.equal(isConfigPanelVisible(true, false, 'completed', 'import'), false);
   assert.equal(isConfigPanelVisible(true, false, 'pending', 'import'), false);
   assert.equal(isConfigPanelVisible(true, true, undefined, 'import'), false);
+});
+
+test('panelVisible：多选状态下（isMultiSelected=true，如全选）抑制展开单节点配置面板', () => {
+  // 即使单个节点处于 selected=true 状态，一旦处于多选模式，一律不展开底栏
+  assert.equal(isConfigPanelVisible(true, false, undefined, 'generate', true), false);
+  assert.equal(isConfigPanelVisible(true, false, 'completed', 'generate', true), false);
+  // 单选时正常展开
+  assert.equal(isConfigPanelVisible(true, false, undefined, 'generate', false), true);
+});
+
+test('calculateGroupBounds：包含 NaN / 非法对象 / 负坐标时安全兜底', () => {
+  // 包含 undefined position
+  const abnormalNodes = [
+    { position: null },
+    { position: { x: NaN, y: 100 } },
+    { position: { x: -460, y: -200 }, width: 300, height: 200 },
+  ];
+  const bounds = calculateGroupBounds(abnormalNodes, 24);
+  assert.ok(Number.isFinite(bounds.x));
+  assert.ok(Number.isFinite(bounds.y));
+  assert.ok(Number.isFinite(bounds.width));
+  assert.ok(Number.isFinite(bounds.height));
+  assert.ok(bounds.width >= 120);
+  assert.ok(bounds.height >= 80);
 });
 
 test('MediaPreview URL：mediaAssets 匹配类型优先，回退首条，再回退 mediaUrl', () => {

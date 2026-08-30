@@ -22,7 +22,7 @@ export function inverseScaleForZoom(zoom: number): number {
 /**
  * 配置面板可见性语义（W2）：选中 且 本次选中周期未收起 且 非执行中 且 非多选态。
  * 导入节点永不展开：替换走卡片右上角按钮 / 空态胶囊，不占用配置底栏。
- * 多选态（>=2 节点）强制收起：避免多节点同时展开配置坞挤占视口。
+ * 多选态（isMultiSelected=true，≥2 节点）强制收起，由 FloatingSelectionToolbar 接管。
  * 抽成纯函数供 node:test 断言（计划 §8 W2 测试点 panelVisible 语义）。
  */
 export function isConfigPanelVisible(
@@ -32,8 +32,7 @@ export function isConfigPanelVisible(
   nodeKind?: 'generate' | 'import',
   isMultiSelected?: boolean,
 ): boolean {
-  if (isMultiSelected) return false;
-  if (nodeKind === 'import') return false;
+  if (isMultiSelected || nodeKind === 'import') return false;
   return Boolean(selected) && !panelDismissed && executionStatus !== 'running';
 }
 
@@ -143,20 +142,20 @@ export function resolveNodeDimensions(node: NodeSpatialInfo): {
 
   // 优先级：node.measured (真实 DOM 测量) > node.width/height > data.nodeWidth/nodeHeight > 默认几何规格
   const width =
-    (typeof node.measured?.width === 'number' && node.measured.width > 0)
+    (typeof node.measured?.width === 'number' && Number.isFinite(node.measured.width) && node.measured.width > 0)
       ? node.measured.width
-      : (typeof node.width === 'number' && node.width > 0)
+      : (typeof node.width === 'number' && Number.isFinite(node.width) && node.width > 0)
         ? node.width
-        : (typeof data.nodeWidth === 'number' && (data.nodeWidth as number) > 0)
+        : (typeof data.nodeWidth === 'number' && Number.isFinite(data.nodeWidth as number) && (data.nodeWidth as number) > 0)
           ? (data.nodeWidth as number)
           : defaultWidth;
 
   const height =
-    (typeof node.measured?.height === 'number' && node.measured.height > 0)
+    (typeof node.measured?.height === 'number' && Number.isFinite(node.measured.height) && node.measured.height > 0)
       ? node.measured.height
-      : (typeof node.height === 'number' && node.height > 0)
+      : (typeof node.height === 'number' && Number.isFinite(node.height) && node.height > 0)
         ? node.height
-        : (typeof data.nodeHeight === 'number' && (data.nodeHeight as number) > 0)
+        : (typeof data.nodeHeight === 'number' && Number.isFinite(data.nodeHeight as number) && (data.nodeHeight as number) > 0)
           ? (data.nodeHeight as number)
           : defaultHeight;
 
@@ -165,6 +164,7 @@ export function resolveNodeDimensions(node: NodeSpatialInfo): {
 
 /**
  * 计算多个节点在画布中的最小包围盒（含 Padding 留白与外挂标题栏）。
+ * 具备防御性校验：过滤 NaN / undefined / 非数字坐标，确保在任何异常数据下均返回安全有限数值。
  */
 export function calculateGroupBounds(
   nodes: NodeSpatialInfo[],
@@ -190,8 +190,14 @@ export function calculateGroupBounds(
   let maxY = -Infinity;
 
   for (const node of nodes) {
-    const nx = node.position.x;
-    const ny = node.position.y;
+    const nx =
+      typeof node?.position?.x === 'number' && Number.isFinite(node.position.x)
+        ? node.position.x
+        : 0;
+    const ny =
+      typeof node?.position?.y === 'number' && Number.isFinite(node.position.y)
+        ? node.position.y
+        : 0;
     const { width: nw, height: nh, headerOffset } = resolveNodeDimensions(node);
     const topY = includeHeader ? ny - headerOffset : ny;
 
@@ -201,10 +207,27 @@ export function calculateGroupBounds(
     if (ny + nh > maxY) maxY = ny + nh;
   }
 
-  const x = minX - padding;
-  const y = minY - padding;
-  const width = Math.max(120, maxX - minX + padding * 2);
-  const height = Math.max(80, maxY - minY + padding * 2);
+  if (
+    !Number.isFinite(minX) ||
+    !Number.isFinite(minY) ||
+    !Number.isFinite(maxX) ||
+    !Number.isFinite(maxY)
+  ) {
+    return {
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 300,
+      minWidth: 200,
+      minHeight: 150,
+    };
+  }
+
+  const safePadding = Number.isFinite(padding) && padding >= 0 ? padding : DEFAULT_GROUP_PADDING;
+  const x = minX - safePadding;
+  const y = minY - safePadding;
+  const width = Math.max(120, maxX - minX + safePadding * 2);
+  const height = Math.max(80, maxY - minY + safePadding * 2);
 
   return {
     x,
@@ -223,9 +246,13 @@ export function toRelativeCoordinates(
   nodePosition: { x: number; y: number },
   groupPosition: { x: number; y: number },
 ): { x: number; y: number } {
+  const nx = typeof nodePosition?.x === 'number' && Number.isFinite(nodePosition.x) ? nodePosition.x : 0;
+  const ny = typeof nodePosition?.y === 'number' && Number.isFinite(nodePosition.y) ? nodePosition.y : 0;
+  const gx = typeof groupPosition?.x === 'number' && Number.isFinite(groupPosition.x) ? groupPosition.x : 0;
+  const gy = typeof groupPosition?.y === 'number' && Number.isFinite(groupPosition.y) ? groupPosition.y : 0;
   return {
-    x: nodePosition.x - groupPosition.x,
-    y: nodePosition.y - groupPosition.y,
+    x: nx - gx,
+    y: ny - gy,
   };
 }
 
@@ -236,9 +263,13 @@ export function toAbsoluteCoordinates(
   relativePosition: { x: number; y: number },
   groupPosition: { x: number; y: number },
 ): { x: number; y: number } {
+  const rx = typeof relativePosition?.x === 'number' && Number.isFinite(relativePosition.x) ? relativePosition.x : 0;
+  const ry = typeof relativePosition?.y === 'number' && Number.isFinite(relativePosition.y) ? relativePosition.y : 0;
+  const gx = typeof groupPosition?.x === 'number' && Number.isFinite(groupPosition.x) ? groupPosition.x : 0;
+  const gy = typeof groupPosition?.y === 'number' && Number.isFinite(groupPosition.y) ? groupPosition.y : 0;
   return {
-    x: relativePosition.x + groupPosition.x,
-    y: relativePosition.y + groupPosition.y,
+    x: rx + gx,
+    y: ry + gy,
   };
 }
 
