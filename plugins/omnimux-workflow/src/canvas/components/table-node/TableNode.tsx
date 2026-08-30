@@ -8,6 +8,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useTableStore } from '../../store/tableStore';
+import { useIsMultiSelected } from '../../store/canvasStore';
 import NodeHeader from '../../editor/components/MaterialNode/NodeHeader';
 import CanvasNodeHandle from '../../editor/components/CanvasNodeHandle';
 import { inverseScaleForZoom } from '../../editor/utils/nodeVisualMath';
@@ -25,7 +26,8 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
   const firstCol = document.columns[0];
   const nodeTitle = (data as any)?.label || document.title || '表格';
 
-  const showFloatingPill = isHovered || selected;
+  const isMultiSelected = useIsMultiSelected();
+  const showFloatingPill = !isMultiSelected && (isHovered || selected);
 
   return (
     <div

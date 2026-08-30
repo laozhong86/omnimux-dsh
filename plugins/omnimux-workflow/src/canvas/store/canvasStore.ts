@@ -386,3 +386,12 @@ export const useSelection = () =>
 export const useCanUndo = () => useCanvasStore((state) => state.past.length > 0);
 
 export const useCanRedo = () => useCanvasStore((state) => state.future.length > 0);
+
+/** 是否处于多选模式（选中的常规非组节点数 >= 2） */
+export const useIsMultiSelected = () =>
+  useCanvasStore((state) => state.nodes.filter((n) => n.selected && n.type !== 'group').length >= 2);
+
+/** 当前选中的常规非组节点数量 */
+export const useSelectedNodeCount = () =>
+  useCanvasStore((state) => state.nodes.filter((n) => n.selected && n.type !== 'group').length);
+
