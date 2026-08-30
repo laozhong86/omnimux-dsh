@@ -2,8 +2,6 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   EditorView,
   keymap,
-  lineNumbers,
-  highlightActiveLineGutter,
   highlightSpecialChars,
   drawSelection,
   dropCursor,
@@ -128,15 +126,13 @@ export const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     }
   }, [isSearchOpen]);
 
-  // 初始化 CodeMirror 6 实例（集成 liveMarkdownPlugin）
+  // 初始化 CodeMirror 6 实例（集成 liveMarkdownPlugin，无行号，全宽铺满）
   useEffect(() => {
     if (!containerRef.current) return;
 
     const startState = EditorState.create({
       doc: value,
       extensions: [
-        lineNumbers(),
-        highlightActiveLineGutter(),
         highlightSpecialChars(),
         history(),
         drawSelection(),
