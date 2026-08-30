@@ -388,13 +388,16 @@ export function childIdsOfGroup(nodes: Array<{ id: string; type?: string; parent
     .map((node) => node.id);
 }
 
+export const COLLAPSED_GROUP_WIDTH = 220;
+export const COLLAPSED_GROUP_HEIGHT = 44;
+
 /**
  * 纯逻辑：将指定节点打组为 GroupNode 并将子节点转为相对坐标。
  */
 export function planGroupNodes(
   currentNodes: any[],
   nodeIds: string[],
-  title = '新建组',
+  title?: string,
   color = '#3b82f6',
 ): { groupId: string; nodes: any[] } | null {
   const targetNodes = currentNodes.filter((n) => (
@@ -404,6 +407,7 @@ export function planGroupNodes(
   ));
   if (targetNodes.length < 2) return null;
 
+  const defaultTitle = title && title !== '新建组' ? title : `编组 ${targetNodes.length} 个节点`;
   const bounds = calculateGroupBounds(targetNodes, 32);
   const groupId = `group_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -420,8 +424,13 @@ export function planGroupNodes(
       zIndex: 0,
     },
     data: {
-      title,
+      title: defaultTitle,
       color,
+      isCollapsed: false,
+      expandedBounds: {
+        width: bounds.width,
+        height: bounds.height,
+      },
       minWidth: bounds.minWidth,
       minHeight: bounds.minHeight,
       padding: 32,
@@ -450,6 +459,66 @@ export function planGroupNodes(
 }
 
 /**
+ * 纯逻辑：切换组的收起/展开状态。
+ * 收起时：
+ * 1. 记录 expandedBounds（如果未记录或有变更）；
+ * 2. 组尺寸变为紧凑胶囊尺寸（220x44）；
+ * 3. 组内所有子节点设为 hidden: true（隐藏子节点）；
+ * 展开时：
+ * 1. 还原 groupNode.width 和 groupNode.height 为 expandedBounds；
+ * 2. 组内所有子节点恢复 hidden: false。
+ */
+export function planToggleGroupCollapse(
+  currentNodes: any[],
+  groupId: string,
+): any[] | null {
+  const groupNode = currentNodes.find((n) => n.id === groupId && n.type === 'group');
+  if (!groupNode) return null;
+
+  const currentData = (groupNode.data || {}) as Record<string, unknown>;
+  const isCurrentlyCollapsed = Boolean(currentData.isCollapsed);
+  const willCollapse = !isCurrentlyCollapsed;
+
+  const expandedBounds =
+    (currentData.expandedBounds as { width: number; height: number }) || {
+      width: groupNode.width || 400,
+      height: groupNode.height || 300,
+    };
+
+  const nextWidth = willCollapse ? COLLAPSED_GROUP_WIDTH : expandedBounds.width;
+  const nextHeight = willCollapse ? COLLAPSED_GROUP_HEIGHT : expandedBounds.height;
+
+  return currentNodes.map((node) => {
+    if (node.id === groupId) {
+      return {
+        ...node,
+        width: nextWidth,
+        height: nextHeight,
+        style: {
+          ...node.style,
+          width: nextWidth,
+          height: nextHeight,
+        },
+        data: {
+          ...currentData,
+          isCollapsed: willCollapse,
+          expandedBounds: willCollapse
+            ? { width: groupNode.width || expandedBounds.width, height: groupNode.height || expandedBounds.height }
+            : expandedBounds,
+        },
+      };
+    }
+    if (node.parentId === groupId) {
+      return {
+        ...node,
+        hidden: willCollapse,
+      };
+    }
+    return node;
+  });
+}
+
+/**
  * 纯逻辑：解除组，将组内节点还原为绝对坐标。
  */
 export function planUngroupNode(currentNodes: any[], groupId: string): any[] | null {
@@ -469,4 +538,158 @@ export function planUngroupNode(currentNodes: any[], groupId: string): any[] | n
         selected: true,
       };
     });
+}
+
+export type AlignLayoutType = 'horizontal' | 'vertical' | 'grid';
+
+export interface PlanAlignLayoutOptions {
+  gap?: number;
+  columns?: number;
+}
+
+/**
+ * 纯逻辑：根据节点的真实几何尺寸（measured/显式宽高/默认规格）与外挂标题栏偏移，
+ * 精确计算水平、垂直、网格紧凑排列坐标，彻底杜绝节点重叠与尺寸丢失。
+ */
+export function planAlignLayout<T extends NodeSpatialInfo>(
+  nodes: T[],
+  layoutType: AlignLayoutType,
+  options?: PlanAlignLayoutOptions,
+): T[] {
+  if (!nodes || nodes.length < 2) return nodes || [];
+
+  const gap = typeof options?.gap === 'number' ? options.gap : 40;
+
+  // 1. 垂直排列 Vertical:
+  // - 按当前 y 坐标升序排列（从上到下）
+  // - 锁定共同最左 x (minX)
+  // - 起始 y 锚点：minTopY (首个节点的整体顶部，包含外挂标题栏)
+  // - 逐项累加: nextX = minX, nextY = currentTopY + headerOffset, currentTopY = nextY + height + gap
+  if (layoutType === 'vertical') {
+    const sorted = [...nodes].sort((a, b) => a.position.y - b.position.y);
+    const minX = Math.min(...nodes.map((n) => n.position.x));
+    const minTopY = Math.min(
+      ...nodes.map((n) => {
+        const { headerOffset } = resolveNodeDimensions(n);
+        return n.position.y - headerOffset;
+      }),
+    );
+
+    let currentTopY = minTopY;
+
+    const layoutResult = sorted.map((node) => {
+      const { height, headerOffset } = resolveNodeDimensions(node);
+      const nextX = minX;
+      const nextY = currentTopY + headerOffset;
+      currentTopY = nextY + height + gap;
+      return {
+        ...node,
+        position: { x: nextX, y: nextY },
+      };
+    });
+
+    const resultMap = new Map(layoutResult.map((n) => [n.id || '', n]));
+    return nodes.map((n) => (n.id && resultMap.has(n.id) ? (resultMap.get(n.id) as T) : n));
+  }
+
+  // 2. 水平排列 Horizontal:
+  // - 按当前 x 坐标升序排列（从左到右）
+  // - 锁定共同顶部 y (minTopY，使得外挂标题栏平齐)
+  // - 起始 x 锚点: minX
+  // - 逐项累加: nextX = currentLeftX, nextY = minTopY + headerOffset, currentLeftX = nextX + width + gap
+  if (layoutType === 'horizontal') {
+    const sorted = [...nodes].sort((a, b) => a.position.x - b.position.x);
+    const minTopY = Math.min(
+      ...nodes.map((n) => {
+        const { headerOffset } = resolveNodeDimensions(n);
+        return n.position.y - headerOffset;
+      }),
+    );
+    const minX = Math.min(...nodes.map((n) => n.position.x));
+
+    let currentLeftX = minX;
+
+    const layoutResult = sorted.map((node) => {
+      const { width, headerOffset } = resolveNodeDimensions(node);
+      const nextX = currentLeftX;
+      const nextY = minTopY + headerOffset;
+      currentLeftX = nextX + width + gap;
+      return {
+        ...node,
+        position: { x: nextX, y: nextY },
+      };
+    });
+
+    const resultMap = new Map(layoutResult.map((n) => [n.id || '', n]));
+    return nodes.map((n) => (n.id && resultMap.has(n.id) ? (resultMap.get(n.id) as T) : n));
+  }
+
+  // 3. 网格紧凑排列 Grid:
+  // - 先按 y (阈值分行) 再按 x 升序排序
+  // - 列数 cols: 动态计算，默认 clamp(ceil(sqrt(N)), 2, 4)
+  // - 动态计算各列最大宽度与各行最大高度（含 headerOffset）
+  // - 各单元格自动撑开并按最大尺寸对齐
+  if (layoutType === 'grid') {
+    const cols = options?.columns || Math.min(4, Math.max(2, Math.ceil(Math.sqrt(nodes.length))));
+    const sorted = [...nodes].sort((a, b) => {
+      const dy = a.position.y - b.position.y;
+      if (Math.abs(dy) > 120) return dy;
+      return a.position.x - b.position.x;
+    });
+
+    const minX = Math.min(...nodes.map((n) => n.position.x));
+    const minTopY = Math.min(
+      ...nodes.map((n) => {
+        const { headerOffset } = resolveNodeDimensions(n);
+        return n.position.y - headerOffset;
+      }),
+    );
+
+    const rows = Math.ceil(sorted.length / cols);
+    const colWidths = new Array<number>(cols).fill(0);
+    const rowHeights = new Array<number>(rows).fill(0);
+
+    // 收集各行列的最大尺寸
+    sorted.forEach((node, index) => {
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const { width, height, headerOffset } = resolveNodeDimensions(node);
+      const totalH = height + headerOffset;
+      if (width > colWidths[col]) colWidths[col] = width;
+      if (totalH > rowHeights[row]) rowHeights[row] = totalH;
+    });
+
+    // 计算各列的 X 起始偏移
+    const colStartX = new Array<number>(cols).fill(0);
+    let curX = minX;
+    for (let c = 0; c < cols; c++) {
+      colStartX[c] = curX;
+      curX += colWidths[c] + gap;
+    }
+
+    // 计算各行的 TopY 起始偏移
+    const rowStartTopY = new Array<number>(rows).fill(0);
+    let curTopY = minTopY;
+    for (let r = 0; r < rows; r++) {
+      rowStartTopY[r] = curTopY;
+      curTopY += rowHeights[r] + gap;
+    }
+
+    const layoutResult = sorted.map((node, index) => {
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const { headerOffset } = resolveNodeDimensions(node);
+      const nextX = colStartX[col];
+      const nextY = rowStartTopY[row] + headerOffset;
+      return {
+        ...node,
+        position: { x: nextX, y: nextY },
+      };
+    });
+
+    const resultMap = new Map(layoutResult.map((n) => [n.id || '', n]));
+    return nodes.map((n) => (n.id && resultMap.has(n.id) ? (resultMap.get(n.id) as T) : n));
+  }
+
+  return nodes;
 }

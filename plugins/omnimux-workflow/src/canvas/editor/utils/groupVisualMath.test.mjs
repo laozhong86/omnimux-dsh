@@ -7,8 +7,11 @@ import {
   clampGroupResize,
   planGroupNodes,
   planUngroupNode,
+  planToggleGroupCollapse,
   screenDeltaToFlowDelta,
   childIdsOfGroup,
+  COLLAPSED_GROUP_WIDTH,
+  COLLAPSED_GROUP_HEIGHT,
 } from './nodeVisualMath.ts';
 
 test('calculateGroupBounds: 两个节点包围盒计算含 24px Padding', () => {
@@ -201,4 +204,60 @@ test('childIdsOfGroup: 只返回 live parentId 子节点', () => {
     { id: 'g2', type: 'group', parentId: 'g1' },
   ];
   assert.deepEqual(childIdsOfGroup(nodes, 'g1'), ['n1', 'n2']);
+});
+
+test('planGroupNodes: 未传 title 时默认生成「编组 N 个节点」', () => {
+  const initialNodes = [
+    { id: 'n1', type: 'material', position: { x: 0, y: 0 }, width: 300, height: 200 },
+    { id: 'n2', type: 'material', position: { x: 400, y: 0 }, width: 300, height: 200 },
+  ];
+  const plan = planGroupNodes(initialNodes, ['n1', 'n2']);
+  assert.ok(plan);
+  const groupNode = plan.nodes.find((n) => n.id === plan.groupId);
+  assert.ok(groupNode);
+  assert.equal(groupNode.data.title, '编组 2 个节点');
+  assert.equal(groupNode.data.isCollapsed, false);
+  assert.deepEqual(groupNode.data.expandedBounds, { width: groupNode.width, height: groupNode.height });
+});
+
+test('planToggleGroupCollapse: 收起组并隐藏子节点，再次触发完整展开还原', () => {
+  const initialNodes = [
+    { id: 'n1', type: 'material', position: { x: 0, y: 0 }, width: 300, height: 200 },
+    { id: 'n2', type: 'material', position: { x: 400, y: 0 }, width: 300, height: 200 },
+  ];
+  const plan = planGroupNodes(initialNodes, ['n1', 'n2'], '短剧精修组');
+  assert.ok(plan);
+
+  const originalWidth = plan.nodes.find((n) => n.id === plan.groupId).width;
+  const originalHeight = plan.nodes.find((n) => n.id === plan.groupId).height;
+
+  // 1. 收起
+  const collapsedNodes = planToggleGroupCollapse(plan.nodes, plan.groupId);
+  assert.ok(collapsedNodes);
+  const collapsedGroup = collapsedNodes.find((n) => n.id === plan.groupId);
+  assert.equal(collapsedGroup.data.isCollapsed, true);
+  assert.equal(collapsedGroup.width, COLLAPSED_GROUP_WIDTH);
+  assert.equal(collapsedGroup.height, COLLAPSED_GROUP_HEIGHT);
+  assert.equal(collapsedGroup.style.width, COLLAPSED_GROUP_WIDTH);
+  assert.equal(collapsedGroup.style.height, COLLAPSED_GROUP_HEIGHT);
+
+  const collapsedChild1 = collapsedNodes.find((n) => n.id === 'n1');
+  const collapsedChild2 = collapsedNodes.find((n) => n.id === 'n2');
+  assert.equal(collapsedChild1.hidden, true);
+  assert.equal(collapsedChild2.hidden, true);
+
+  // 2. 展开
+  const expandedNodes = planToggleGroupCollapse(collapsedNodes, plan.groupId);
+  assert.ok(expandedNodes);
+  const expandedGroup = expandedNodes.find((n) => n.id === plan.groupId);
+  assert.equal(expandedGroup.data.isCollapsed, false);
+  assert.equal(expandedGroup.width, originalWidth);
+  assert.equal(expandedGroup.height, originalHeight);
+  assert.equal(expandedGroup.style.width, originalWidth);
+  assert.equal(expandedGroup.style.height, originalHeight);
+
+  const expandedChild1 = expandedNodes.find((n) => n.id === 'n1');
+  const expandedChild2 = expandedNodes.find((n) => n.id === 'n2');
+  assert.equal(expandedChild1.hidden, false);
+  assert.equal(expandedChild2.hidden, false);
 });

@@ -62,7 +62,7 @@ import { groupNodeDefinition } from '../nodes/definitions/group';
 import { FloatingSelectionToolbar } from './components/FloatingSelectionToolbar';
 import { BatchCreateAssetModal, type MediaAssetItem } from './components/BatchCreateAssetModal';
 import { CreateWorkflowModal } from './components/CreateWorkflowModal';
-import { calculateGroupBounds, childIdsOfGroup } from './utils/nodeVisualMath';
+import { calculateGroupBounds, childIdsOfGroup, planAlignLayout } from './utils/nodeVisualMath';
 import { createTemplate, getTemplate, listTemplates } from '../bridge/templateApi';
 import { sanitizeEdges, sanitizeNodes } from '../bridge/persistSanitize';
 import { planInstantiateTemplate } from './utils/planInstantiateTemplate';
@@ -261,38 +261,42 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
   const handleAlignLayout = useCallback(
     (layoutType: 'horizontal' | 'vertical' | 'grid', targetNodes = selectedRegularNodes) => {
       if (targetNodes.length < 2) return;
-      const sorted = [...targetNodes].sort((a, b) => a.position.x - b.position.x);
-      const first = sorted[0];
-      if (!first) return;
-      const firstX = first.position.x;
-      const firstY = first.position.y;
-      const gap = 40;
+      const updatedNodes = planAlignLayout(targetNodes, layoutType, { gap: 40 });
+      const updatedMap = new Map(updatedNodes.map((n) => [n.id, n]));
 
-      let currentX = firstX;
-      let currentY = firstY;
-      const cols = Math.ceil(Math.sqrt(targetNodes.length));
+      const firstParentId = targetNodes[0]?.parentId;
+      const isSameGroup = Boolean(firstParentId && targetNodes.every((n) => n.parentId === firstParentId));
 
-      const updated = targetNodes.map((node, index) => {
-        let nextPos = { ...node.position };
-        const w = (node.width as number) || 320;
-        const h = (node.height as number) || 200;
-
-        if (layoutType === 'horizontal') {
-          nextPos = { x: currentX, y: firstY };
-          currentX += w + gap;
-        } else if (layoutType === 'vertical') {
-          nextPos = { x: firstX, y: currentY };
-          currentY += h + gap;
-        } else if (layoutType === 'grid') {
-          const col = index % cols;
-          const row = Math.floor(index / cols);
-          nextPos = { x: firstX + col * (320 + gap), y: firstY + row * (220 + gap) };
+      setNodes((current) => {
+        const nextNodes = current.map((n) => updatedMap.get(n.id) || n);
+        if (isSameGroup && firstParentId) {
+          const groupChildren = nextNodes.filter((n) => n.parentId === firstParentId && n.type !== 'group');
+          if (groupChildren.length > 0) {
+            const bounds = calculateGroupBounds(groupChildren, 32);
+            return nextNodes.map((n) => {
+              if (n.id === firstParentId && n.type === 'group') {
+                return {
+                  ...n,
+                  width: bounds.width,
+                  height: bounds.height,
+                  style: {
+                    ...(n.style || {}),
+                    width: bounds.width,
+                    height: bounds.height,
+                  },
+                  data: {
+                    ...(n.data || {}),
+                    minWidth: bounds.minWidth,
+                    minHeight: bounds.minHeight,
+                  },
+                };
+              }
+              return n;
+            });
+          }
         }
-        return { ...node, position: nextPos };
+        return nextNodes;
       });
-
-      const updatedMap = new Map(updated.map((n) => [n.id, n]));
-      setNodes((current) => current.map((n) => updatedMap.get(n.id) || n));
       toast.success(t('group.toast.layout'));
     },
     [selectedRegularNodes, setNodes, t],

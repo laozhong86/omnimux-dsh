@@ -267,6 +267,9 @@ const zh = {
   'picker.pickFailed': '打开系统文件选择器失败。',
   // 分组 / 模板 / 资产入库
   'group.defaultTitle': '新建组',
+  'group.defaultCountTitle': '编组 {count} 个节点',
+  'group.collapse': '收起分组',
+  'group.expand': '展开分组',
   'group.renameHint': '双击重命名',
   'group.colorTitle': '选择组主题色',
   'group.layout': '布局',
