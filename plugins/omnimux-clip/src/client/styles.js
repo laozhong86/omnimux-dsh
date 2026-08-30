@@ -55,6 +55,36 @@ html:not([data-dsh-product-stage]) .omnimux-clip-stage[data-clip-mode="canvas"][
 .omnimux-clip-stage[data-clip-mode="canvas"] .openreel-studio-root header:first-of-type {
   padding-right: 64px;
 }
+.omnimux-clip-stage[data-clip-mode="canvas"] [data-toolbar-section="left"],
+.omnimux-clip-stage[data-clip-mode="canvas"] .openreel-toolbar-left {
+  display: none !important;
+}
+.omnimux-clip-stage[data-clip-mode="canvas"] [data-toolbar-section="center"],
+.omnimux-clip-stage[data-clip-mode="canvas"] .openreel-toolbar-center {
+  display: none !important;
+}
+.omnimux-clip-stage[data-clip-mode="canvas"] [data-toolbar-section="right"],
+.omnimux-clip-stage[data-clip-mode="canvas"] .openreel-toolbar-right {
+  margin-left: auto !important;
+}
+.omnimux-clip-stage[data-clip-mode="standalone"] [data-toolbar-section="left"]:where(:not([data-toolbar-responsive="true"])),
+.omnimux-clip-stage[data-clip-mode="standalone"] .openreel-toolbar-left:where(:not([data-toolbar-responsive="true"])) {
+  display: flex !important;
+}
+.omnimux-clip-stage[data-clip-mode="standalone"] [data-toolbar-section="center"]:where(:not([data-toolbar-responsive="true"])),
+.omnimux-clip-stage[data-clip-mode="standalone"] .openreel-toolbar-center:where(:not([data-toolbar-responsive="true"])) {
+  display: flex !important;
+}
+.omnimux-clip-stage[data-clip-mode="standalone"] [data-toolbar-section="right"]:where(:not([data-toolbar-responsive="true"])),
+.omnimux-clip-stage[data-clip-mode="standalone"] .openreel-toolbar-right:where(:not([data-toolbar-responsive="true"])) {
+  display: flex !important;
+}
+@media (min-width: 1024px) {
+  .omnimux-clip-stage[data-clip-mode="standalone"] [data-toolbar-section="center"][data-toolbar-responsive="true"],
+  .omnimux-clip-stage[data-clip-mode="standalone"] .openreel-toolbar-center[data-toolbar-responsive="true"] {
+    display: flex !important;
+  }
+}
 .omnimux-clip-stage-header, /* exempt-ui08: 画布内浮层操作区，非页面标题栏 */
 .omnimux-clip-stage[data-clip-mode="standalone"] .omnimux-clip-stage-header, /* exempt-ui08: 同上 */
 .omnimux-clip-stage[data-clip-mode="canvas"] .omnimux-clip-stage-header { /* exempt-ui08: 同上 */

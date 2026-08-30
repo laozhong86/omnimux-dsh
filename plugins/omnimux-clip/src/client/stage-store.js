@@ -8,6 +8,16 @@ const PRODUCT_STAGE_EVENT = 'dsh-product-stage'
 const STAGE_ID = 'omnimux-clip'
 const EMPTY_BOX = Object.freeze({ top: 0, left: 0, width: 0, height: 0 })
 
+let globalActiveStageStore = null
+
+export function getActiveClipStageStore() {
+  return globalActiveStageStore
+}
+
+export function getActiveClipSession() {
+  return globalActiveStageStore?.getSessionSnapshot() ?? null
+}
+
 export function createStageStore(getStage) {
   let open = false
   try {
@@ -86,7 +96,7 @@ export function createStageStore(getStage) {
     return { top, left, width, height }
   }
 
-  return {
+  const store = {
     getSnapshot: () => open,
     getSessionSnapshot: () => activeSession,
     readBox,
@@ -177,6 +187,23 @@ export function createStageStore(getStage) {
       listeners.clear()
       activeSession = null
       open = false
+      if (globalActiveStageStore === store) {
+        globalActiveStageStore = null
+      }
+      try {
+        if (typeof window !== 'undefined' && window.__omnimuxClipStageStore === store) {
+          delete window.__omnimuxClipStageStore
+        }
+      } catch {}
     },
   }
+
+  globalActiveStageStore = store
+  try {
+    if (typeof window !== 'undefined') {
+      window.__omnimuxClipStageStore = store
+    }
+  } catch {}
+
+  return store
 }

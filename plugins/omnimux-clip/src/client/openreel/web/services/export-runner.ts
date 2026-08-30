@@ -5,6 +5,9 @@ import {
   type ExportResult,
   type Project,
 } from "@openreel/core";
+import { getActiveClipSession } from "../../../stage-store.js";
+import { notifyCanvasProgress, notifyCanvasSave } from "../../../CanvasBridge.js";
+import { getVideoEngine } from "../../core/video/video-engine";
 
 export interface ExportRunnerState {
   isExporting: boolean;
@@ -92,14 +95,10 @@ function triggerAnchorDownload(data: Blob, filename: string, onRelease?: () => v
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
-  window.addEventListener(
-    "pagehide",
-    () => {
-      URL.revokeObjectURL(url);
-      onRelease?.();
-    },
-    { once: true },
-  );
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    onRelease?.();
+  }, 1000);
 }
 
 const OPFS_TMP_PREFIX = ".openreel-export-";
@@ -247,6 +246,124 @@ async function createFallbackWritable(
   mime: string,
 ): Promise<FileSystemWritableFileStream> {
   return (await createOpfsDownloadWritable(filename)) ?? createBufferedDownloadWritable(filename, mime);
+}
+
+export function createCapturingWritable(
+  target: FileSystemWritableFileStream,
+  mime: string,
+  onComplete: (blob: Blob) => void,
+): FileSystemWritableFileStream {
+  const chunks: Uint8Array[] = [];
+
+  return {
+    async seek(position: number) {
+      if (typeof target.seek === "function") {
+        await target.seek(position);
+      }
+    },
+    async write(data: unknown) {
+      await target.write(data as Parameters<typeof target.write>[0]);
+      if (data instanceof ArrayBuffer) {
+        chunks.push(new Uint8Array(data.slice(0)));
+      } else if (ArrayBuffer.isView(data)) {
+        chunks.push(new Uint8Array(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)));
+      } else if (data instanceof Blob) {
+        const buf = await data.arrayBuffer();
+        chunks.push(new Uint8Array(buf));
+      }
+    },
+    async truncate(size: number) {
+      if (typeof target.truncate === "function") {
+        await target.truncate(size);
+      }
+    },
+    async close() {
+      await target.close();
+      const blob = new Blob(chunks, { type: mime });
+      onComplete(blob);
+    },
+    async abort() {
+      if (typeof target.abort === "function") {
+        await target.abort();
+      }
+    },
+  } as unknown as FileSystemWritableFileStream;
+}
+
+export async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      if (typeof result !== "string") {
+        resolve("");
+        return;
+      }
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = () => reject(reader.error || new Error("Failed to encode blob to base64"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+export async function persistExportBlobToHost(
+  projectId: string,
+  blob: Blob,
+  metadata: { durationMs?: number; width?: number; height?: number } = {},
+): Promise<{ path?: string; bytes?: number }> {
+  try {
+    const base64 = await blobToBase64(blob);
+    if (!base64) return {};
+    const res = await fetch(`/omnimux-clip/api/projects/${encodeURIComponent(projectId)}/save-export`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        base64,
+        mime: "video/mp4",
+        durationMs: metadata.durationMs,
+        width: metadata.width,
+        height: metadata.height,
+      }),
+    });
+    if (!res.ok) {
+      return {};
+    }
+    return await res.json();
+  } catch (err) {
+    console.warn("[export-runner] persistExportBlobToHost failed:", err);
+    return {};
+  }
+}
+
+export async function captureProjectThumbnail(
+  project: Project,
+  width: number = 320,
+  height: number = 180,
+): Promise<string | undefined> {
+  try {
+    const videoEngine = getVideoEngine();
+    if (videoEngine && videoEngine.isInitialized()) {
+      const rendered = await videoEngine.renderFrame(project, 0, width, height);
+      if (rendered?.image) {
+        const canvas = document.createElement("canvas");
+        canvas.width = rendered.image.width;
+        canvas.height = rendered.image.height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(rendered.image, 0, 0);
+          rendered.image.close?.();
+          return canvas.toDataURL("image/jpeg", 0.85);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[export-runner] Frame thumbnail capture failed:", err);
+  }
+
+  // Fallback to first media item thumbnail if available
+  const firstThumb = project.mediaLibrary?.items?.find((m) => m.thumbnailUrl)?.thumbnailUrl;
+  return firstThumb || undefined;
 }
 
 export async function createDownloadWritable(
@@ -409,13 +526,33 @@ export function useExportRunner(options: ExportRunnerOptions): UseExportRunner {
   const runExport = useCallback(
     async (
       videoSettings: Partial<VideoExportSettings>,
-      _ext: string,
+      ext: string,
       writableStream: FileSystemWritableFileStream,
     ): Promise<void> => {
       const engine = getExportEngine();
       await engine.initialize();
 
-      const generator = engine.exportVideo(project, videoSettings, writableStream);
+      let capturedBlob: Blob | null = null;
+      const capturingWritable = createCapturingWritable(
+        writableStream,
+        mimeForExt(ext),
+        (blob) => {
+          capturedBlob = blob;
+        },
+      );
+
+      const session = getActiveClipSession();
+      const isCanvas = session?.source === "canvas" && Boolean(session?.nodeId);
+
+      if (isCanvas && session?.nodeId) {
+        notifyCanvasProgress({
+          nodeId: session.nodeId,
+          status: "rendering",
+          renderProgress: 0,
+        });
+      }
+
+      const generator = engine.exportVideo(project, videoSettings, capturingWritable);
       let finalResult: ExportResult | undefined;
 
       while (true) {
@@ -424,16 +561,74 @@ export function useExportRunner(options: ExportRunnerOptions): UseExportRunner {
           finalResult = value;
           break;
         }
+        const progressPercent = Math.round(value.progress * 100);
         setState((prev) => ({
           ...prev,
-          progress: value.progress * 100,
+          progress: progressPercent,
           phase: progressPhaseLabel(value.phase),
         }));
+
+        if (isCanvas && session?.nodeId) {
+          notifyCanvasProgress({
+            nodeId: session.nodeId,
+            status: "rendering",
+            renderProgress: progressPercent,
+          });
+        }
       }
 
       if (finalResult?.success) {
         setState((prev) => ({ ...prev, complete: true, phase: "Saved!" }));
         onExported?.(videoSettings);
+
+        // If in Canvas mode, persist to host and notify canvas save
+        if (isCanvas && session?.nodeId) {
+          try {
+            const projectId = session.projectId || project.id || `clip_${Date.now()}`;
+            const durationMs = Math.round((project.timeline?.duration ?? 0) * 1000);
+            const width = videoSettings.width ?? project.settings?.width ?? 1920;
+            const height = videoSettings.height ?? project.settings?.height ?? 1080;
+
+            const thumbnailPath = await captureProjectThumbnail(project, 320, Math.round(320 * (height / width)));
+
+            let videoPath = (window as { __openreelExportPath?: string }).__openreelExportPath;
+
+            if (capturedBlob) {
+              try {
+                const persistRes = await persistExportBlobToHost(projectId, capturedBlob, {
+                  durationMs,
+                  width,
+                  height,
+                });
+                if (persistRes?.path) {
+                  videoPath = persistRes.path;
+                }
+              } catch (persistErr) {
+                console.warn("[export-runner] Failed to persist export to host API:", persistErr);
+              }
+            }
+
+            if (!videoPath) {
+              videoPath = `/omnimux-workflow/api/local-file?path=${encodeURIComponent(`clip/exports/${projectId}.${ext}`)}`;
+            }
+
+            notifyCanvasSave({
+              nodeId: session.nodeId,
+              projectId,
+              schema: project as unknown as Record<string, unknown>,
+              createDownstreamNode: true,
+              output: {
+                videoPath,
+                thumbnailPath,
+                durationMs,
+                width,
+                height,
+              },
+            });
+          } catch (canvasSaveErr) {
+            console.error("[export-runner] notifyCanvasSave failed:", canvasSaveErr);
+          }
+        }
       } else {
         throw new Error(finalResult?.error?.message || "Export failed");
       }

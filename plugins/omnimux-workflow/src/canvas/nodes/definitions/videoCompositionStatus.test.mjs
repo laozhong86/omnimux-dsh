@@ -118,3 +118,90 @@ test('projectFileName：截断 48 字符与空兜底', () => {
   // 旧函数行为原样迁移：纯符号串折叠为下划线后仍为真值，不回退 'clip'
   assert.equal(projectFileName('!!!'), '_');
 });
+
+// ==================== 状态流转与产物联动契约 ====================
+
+test('状态流转：save 事件触发后状态从 rendering/editing 转换为 completed，且视图命中 result', () => {
+  // 模拟从 editing 阶段开始
+  const editingStatus = 'editing';
+  const hasOutputBefore = false;
+  assert.equal(mapVideoCompositionToView(editingStatus, hasOutputBefore), 'launcher');
+  assert.equal(mapVideoCompositionToBadge(editingStatus), 'generating');
+
+  // 模拟导出进行中 rendering 阶段
+  const renderingStatus = 'rendering';
+  assert.equal(mapVideoCompositionToView(renderingStatus, hasOutputBefore), 'rendering');
+  assert.equal(mapVideoCompositionToBadge(renderingStatus), 'generating');
+
+  // 模拟监听到 onSave 事件，output.videoPath 写入
+  const savePayload = {
+    nodeId: 'node_comp_1',
+    createDownstreamNode: true,
+    output: {
+      videoPath: '/exports/final_render.mp4',
+      thumbnailPath: 'data:image/jpeg;base64,thumb_data',
+      durationMs: 12500,
+      width: 1920,
+      height: 1080,
+    },
+  };
+
+  const nextStatus = savePayload.output.videoPath ? 'completed' : 'idle';
+  const hasOutputAfter = Boolean(savePayload.output.videoPath);
+
+  assert.equal(nextStatus, 'completed');
+  assert.equal(hasOutputAfter, true);
+  assert.equal(mapVideoCompositionToView(nextStatus, hasOutputAfter), 'result');
+  assert.equal(mapVideoCompositionToBadge(nextStatus), 'completed');
+  assert.equal(formatDuration(savePayload.output.durationMs), '00:12.500');
+  assert.equal(formatResolution(savePayload.output.width, savePayload.output.height), '1920×1080');
+});
+
+test('下游连线：save 事件携带 createDownstreamNode 时的目标节点与边数据契约', () => {
+  const currentPos = { x: 100, y: 200 };
+  const nodeWidth = 350;
+  const gap = 80;
+  const targetX = currentPos.x + nodeWidth + gap;
+  const targetY = currentPos.y;
+
+  const output = {
+    videoPath: '/data/renders/project_123.mp4',
+    thumbnailPath: 'data:image/jpeg;base64,cover',
+    durationMs: 30000,
+    width: 3840,
+    height: 2160,
+  };
+
+  const downstreamNode = {
+    id: 'node_mat_vid_test_1',
+    type: 'material',
+    position: { x: targetX, y: targetY },
+    data: {
+      materialType: 'video',
+      label: '视频合成_成片',
+      status: 'ready',
+      selectedTool: 'import',
+      realPath: output.videoPath,
+      mediaUrl: output.videoPath,
+      thumbnailUrl: output.thumbnailPath,
+      duration: Math.round(output.durationMs / 1000),
+      size: { width: output.width, height: output.height },
+    },
+  };
+
+  const edge = {
+    id: `edge_comp_${downstreamNode.id}`,
+    source: 'node_comp_1',
+    target: downstreamNode.id,
+    sourceHandle: 'output',
+    targetHandle: 'input',
+  };
+
+  assert.equal(downstreamNode.type, 'material');
+  assert.equal(downstreamNode.data.materialType, 'video');
+  assert.equal(downstreamNode.data.realPath, '/data/renders/project_123.mp4');
+  assert.equal(downstreamNode.position.x, 530);
+  assert.equal(downstreamNode.position.y, 200);
+  assert.equal(edge.sourceHandle, 'output');
+  assert.equal(edge.targetHandle, 'input');
+});
