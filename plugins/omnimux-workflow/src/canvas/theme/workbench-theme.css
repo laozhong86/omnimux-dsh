@@ -259,6 +259,14 @@ body[data-ds-dark-theme] .wf-canvas-root {
   outline: none;
 }
 
+.wf-canvas-root .react-flow__node-group {
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .wf-canvas-root .react-flow__controls {
   box-shadow: var(--wb-shadow-card-hover);
   border-radius: 10px;
