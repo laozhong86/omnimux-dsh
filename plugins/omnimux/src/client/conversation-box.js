@@ -75,8 +75,8 @@ ${STAGE_MUTUAL_EXCLUSION_RULES}
 html:not([data-dsh-product-stage]) [class*="toggleCluster"],
 html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}
 html[data-dsh-product-stage] [data-dsh-better-sidebar],
-html[data-dsh-product-stage] [class*="_panel"],
-html[data-dsh-product-stage] [class*="_bottomPanel"],
+html[data-dsh-product-stage] [data-dsh-better-sidebar] [class*="_panel"],
+html[data-dsh-product-stage] [data-dsh-better-sidebar] [class*="_bottomPanel"],
 html[data-dsh-product-stage] [data-dsh-panel-host],
 html[data-dsh-product-stage] [class*="toggleCluster"],
 html[data-dsh-product-stage] [data-slot="shell.sidebar.auxiliary"]{display:none!important;visibility:hidden!important;pointer-events:none!important;}
@@ -95,8 +95,8 @@ html[data-dsh-product-stage] [data-slot="input.trigger"] {visibility:hidden!impo
 export function ensureProductStageChrome() {
   const existing = document.getElementById('dsh-product-stage-chrome')
   if (existing instanceof HTMLStyleElement) {
-    // 已注入且含 dsh-window-drag 的旧 CSS 拿不到 panel-host，以该选择器为失效键。
-    if (!existing.textContent?.includes('data-dsh-panel-host')) existing.textContent = PRODUCT_STAGE_CHROME
+    // 失效键：需包含 scoped better-sidebar panel 规则，否则重写以修复设置弹窗被误杀。
+    if (!existing.textContent?.includes('data-dsh-better-sidebar] [class*="_panel"]')) existing.textContent = PRODUCT_STAGE_CHROME
   } else {
     const style = document.createElement('style')
     style.id = 'dsh-product-stage-chrome'

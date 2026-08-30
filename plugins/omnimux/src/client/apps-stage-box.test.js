@@ -77,7 +77,8 @@ describe('PRODUCT_STAGE_CHROME', () => {
     assert.match(PRODUCT_STAGE_CHROME, /dsh-window-drag/)
     assert.match(PRODUCT_STAGE_CHROME, /data-dsh-panel-host/)
     assert.match(PRODUCT_STAGE_CHROME, /data-dsh-better-sidebar/)
-    assert.match(PRODUCT_STAGE_CHROME, /_panel/)
+    assert.match(PRODUCT_STAGE_CHROME, /\[data-dsh-better-sidebar\] \[class\*="_panel"\]/)
+    assert.doesNotMatch(PRODUCT_STAGE_CHROME, /html\[data-dsh-product-stage\]\s+\[class\*="_panel"\]/, '禁止使用无命名空间的全局 _panel 选择器，避免误杀设置弹窗 VOzbGW_panel')
     assert.match(PRODUCT_STAGE_CHROME, /--dsh-sidebar-width/)
     assert.match(PRODUCT_STAGE_CHROME, /--dsh-sidebar-height/)
     assert.match(PRODUCT_STAGE_CHROME, /margin-right:0px/)
@@ -130,7 +131,7 @@ describe('session-row closer', () => {
     delete document.documentElement.dataset.dshSessionCloser
   }
 
-  it('rewrites injected chrome that has window-drag but not panel-host', () => {
+  it('rewrites injected chrome that has window-drag but not scoped better-sidebar panel rule', () => {
     setup()
     const style = document.createElement('style')
     style.id = 'dsh-product-stage-chrome'
@@ -138,6 +139,7 @@ describe('session-row closer', () => {
     document.head.append(style)
     ensureProductStageChrome()
     assert.match(style.textContent, /data-dsh-panel-host/)
+    assert.match(style.textContent, /\[data-dsh-better-sidebar\] \[class\*="_panel"\]/)
     assert.match(style.textContent, /--dsh-sidebar-width/)
   })
 
