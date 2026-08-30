@@ -306,6 +306,78 @@ test('HTTP 路由模块：GET 空文档 / PUT blob 抛 blob-url-forbidden / mkdi
   }
 });
 
+test('T02 instantiate copies into assets/subjects and does not write back to global', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'wf-instantiate-'));
+  const workspacesDir = join(dir, 'workspaces');
+  const libraryRoot = join(dir, 'library');
+  mkdirSync(workspacesDir, { recursive: true });
+  mkdirSync(libraryRoot, { recursive: true });
+  const vaultFile = join(dir, 'vault', 'hero.png');
+  mkdirSync(join(dir, 'vault'), { recursive: true });
+  writeFileSync(vaultFile, 'VAULT');
+  let detailCalls = 0;
+  let promoteCalls = 0;
+  const bindings = new Map();
+  const assetsStore = createProjectAssetsStore({
+    workspacesDir,
+    resolveProjectRoot: (workspaceId) => bindings.get(workspaceId) ?? null,
+    fetchLibraryDetail: async (id) => {
+      detailCalls += 1;
+      if (id === 'ast_empty') return { id, name: '空', files: [] };
+      if (id !== 'ast_lin') return null;
+      return {
+        id,
+        name: '林晓',
+        files: [{ id: 'fil_1', real_path: vaultFile, original_name: 'hero.png', visible: true }],
+      };
+    },
+    promoteToLibrary: async () => {
+      promoteCalls += 1;
+      return { id: 'ast_promoted' };
+    },
+  });
+  const workspaceId = seedWorkspace(workspacesDir, 'ws_inst01');
+  const projectRoot = join(libraryRoot, workspaceId);
+  mkdirSync(join(projectRoot, '.omnimux'), { recursive: true });
+  writeFileSync(join(projectRoot, '.omnimux', 'project.json'), '{"schemaVersion":1}\n');
+  bindings.set(workspaceId, { path: projectRoot });
+  const routes = createProjectAssetsRoutes(assetsStore);
+  try {
+    await assert.rejects(
+      () => assetsStore.instantiate(workspaceId, { globalSubjectId: 'ast_empty', expectedRev: 0 }),
+      (error) => error instanceof WorkflowStoreError && error.code === 'subject-has-no-files',
+    );
+    const snapped = await assetsStore.instantiate(workspaceId, { globalSubjectId: 'ast_lin', expectedRev: 0 });
+    assert.equal(snapped.items.length, 1);
+    assert.equal(snapped.items[0].relative_path.startsWith(`assets/subjects/ast_lin/`), true);
+    assert.equal(snapped.items[0].snapshot.globalSubjectId, 'ast_lin');
+    const copied = join(projectRoot, snapped.items[0].relative_path);
+    assert.equal(readFileSync(copied, 'utf8'), 'VAULT');
+    assert.equal(promoteCalls, 0);
+    assert.equal(detailCalls >= 1, true);
+
+    const viaHttp = await routes.tryHandle('POST', `/omnimux-workflow/api/workspaces/${workspaceId}/assets/instantiate`, {
+      method: 'POST',
+      url: `/omnimux-workflow/api/workspaces/${workspaceId}/assets/instantiate`,
+      body: { globalSubjectId: 'ast_lin', expectedRev: snapped.rev },
+    });
+    assert.equal(viaHttp.status, 200);
+    assert.equal(viaHttp.body.assets.items.length, 2);
+    rmSync(vaultFile);
+    assert.equal(readFileSync(copied, 'utf8'), 'VAULT');
+
+    const promoted = await assetsStore.promote(workspaceId, {
+      relative_path: snapped.items[0].relative_path,
+      name: '林晓定妆',
+      type: 'character',
+    });
+    assert.equal(promoteCalls, 1);
+    assert.equal(promoted.asset.id, 'ast_promoted');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('8. 源码无「机甲」「Lora」当 type id、无 Mock「主角·艾拉」', () => {
   const files = [
     join(pluginRoot, 'src/canvas/editor/components/AssetsDrawer.tsx'),

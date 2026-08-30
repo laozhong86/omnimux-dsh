@@ -1,7 +1,7 @@
 import { ConfirmModal } from 'dsh-ui-kit'
 
 /**
- * Confirm removing a library record. Never unlinks the real file.
+ * Confirm removing a library record. Recycles the managed copy; never unlinks user originals.
  * @param {{
  *   t: (key: string) => string,
  *   name: string,

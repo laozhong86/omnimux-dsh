@@ -8,7 +8,9 @@ import { WORKFLOW_ROUTE_PREFIX } from '../../shared/api.ts';
 import { jsonBodyProblem } from '../../http/helpers.ts';
 import type {
   IngestProjectAssetsPayload,
+  InstantiateProjectAssetsPayload,
   MkdirProjectAssetsPayload,
+  PromoteProjectAssetsPayload,
   SaveProjectAssetsPayload,
 } from '../../shared/projectAssets.ts';
 import type { ProjectAssetsStore } from '../workspace/ProjectAssetsStore.ts';
@@ -19,6 +21,8 @@ export function createProjectAssetsRoutes(store: ProjectAssetsStore): { tryHandl
   const mkdirRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/mkdir$`);
   const ingestRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/ingest$`);
   const indexRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/index$`);
+  const instantiateRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/instantiate$`);
+  const promoteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/promote$`);
   const fileRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/file$`);
   const aliasFilePath = `${WORKFLOW_ROUTE_PREFIX}/api/project-file`;
 
@@ -41,6 +45,26 @@ export function createProjectAssetsRoutes(store: ProjectAssetsStore): { tryHandl
       const body = req.body as IngestProjectAssetsPayload;
       const assets = await store.ingest(ingestMatch[1] ?? '', body);
       return { status: 200, body: { assets } };
+    }
+
+    const instantiateMatch = instantiateRe.exec(path);
+    if (instantiateMatch) {
+      if (method !== 'POST') return notFound();
+      const problem = jsonBodyProblem(req.body);
+      if (problem) return problem;
+      const body = req.body as InstantiateProjectAssetsPayload;
+      const assets = await store.instantiate(instantiateMatch[1] ?? '', body);
+      return { status: 200, body: { assets } };
+    }
+
+    const promoteMatch = promoteRe.exec(path);
+    if (promoteMatch) {
+      if (method !== 'POST') return notFound();
+      const problem = jsonBodyProblem(req.body);
+      if (problem) return problem;
+      const body = req.body as PromoteProjectAssetsPayload;
+      const promoted = await store.promote(promoteMatch[1] ?? '', body);
+      return { status: 200, body: promoted };
     }
 
     if (method === 'GET' && (fileRe.test(path) || path === aliasFilePath)) {

@@ -173,6 +173,26 @@ export function indexWorkspaceAssets(
   return ingestWorkspaceAssets(id, payload);
 }
 
+export function instantiateWorkspaceAssets(
+  id: string,
+  payload: { globalSubjectId: string; parentId?: string | null; expectedRev?: number },
+): Promise<ApiResult<{ assets: ProjectAssetsDocument; current?: number }>> {
+  return request<{ assets: ProjectAssetsDocument; current?: number }>(
+    WORKFLOW_API_ROUTES.workspaceAssetsInstantiate(encodeURIComponent(id)),
+    { method: 'POST', body: payload },
+  );
+}
+
+export function promoteWorkspaceAsset(
+  id: string,
+  payload: { relative_path: string; name: string; type?: string },
+): Promise<ApiResult<{ asset: unknown }>> {
+  return request<{ asset: unknown }>(
+    WORKFLOW_API_ROUTES.workspaceAssetsPromote(encodeURIComponent(id)),
+    { method: 'POST', body: payload },
+  );
+}
+
 export function pickLocalFiles(): Promise<ApiResult<{ path: string | null; paths: string[] }>> {
   return request<{ path: string | null; paths: string[] }>(WORKFLOW_API_ROUTES.pick, {
     method: 'POST',

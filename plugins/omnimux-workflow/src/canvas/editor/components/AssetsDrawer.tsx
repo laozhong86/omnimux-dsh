@@ -485,8 +485,16 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
             subjects={subjectLibrary.subjects}
             error={subjectLibrary.error}
             onBack={() => setViewState('normal')}
-            onSelectSubject={() => {
-              // Expand subject assets in a later issue.
+            onSelectSubject={(subject) => {
+              void projectAssets.instantiateSubject(subject.id).then((ok) => {
+                if (ok) {
+                  toast.success(`已实例化到项目：${subject.name}`);
+                  setViewState('normal');
+                  setActiveTab('assets');
+                } else {
+                  toast.error(projectAssets.error || '实例化失败');
+                }
+              });
             }}
             onCreateSubject={() => {
               const name = prompt('请输入新主体名称：', '新主体');

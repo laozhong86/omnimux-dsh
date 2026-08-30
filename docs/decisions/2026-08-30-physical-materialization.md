@@ -44,7 +44,8 @@ related:
 | 存储 | 100% 物理深拷贝。禁止外链当 JSON 真源。无 50MB 外链例外。 |
 | 路径 | 项目 POSIX 相对路径；全局仓相对 `$DSH_HOME/omnimux/assets/`。 |
 | 主体投入 | 快照 copy 到 `assets/subjects/<id>/`，不回写全局。 |
-| 提升全局 | copy 到 `data/files/<id>/`，项目副本保留。 |
+| 提升全局 | copy 到 `data/files/<id>/`，项目副本保留。仅用户显式 promote。 |
+| 生成落地 | 只在项目 `artifacts/` 留持久副本。禁止生成成功自动写入全局 `data/files/` 或 assets 插件 `artifacts/`（全局+项目双真源）。执行态 tmp 成功后 move 进项目并删除 tmp。 |
 | 删除项目 | 只摘账本，不 `rm` 文件夹。 |
 | 删资产记录 | 可回收**受管副本**；永不碰用户原文件。 |
 | HTTP | 沿用 `/omnimux-workflow/api/workspaces/:id/...` 与 `/omnimux/assets/library`。禁止新前缀 `/api/projects/:id`。 |

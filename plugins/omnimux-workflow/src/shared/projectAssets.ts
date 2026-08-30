@@ -28,6 +28,7 @@ export interface ProjectAssetsItem {
   relative_path: string;
   size?: number;
   lineage?: unknown;
+  snapshot?: { globalSubjectId: string };
   /**
    * Legacy absolute path from pre-materialization ledgers. Readable on GET;
    * new save/ingest MUST NOT persist this field.
@@ -62,6 +63,18 @@ export interface IndexProjectAssetsPayload {
 }
 
 export type IngestProjectAssetsPayload = IndexProjectAssetsPayload;
+
+export interface InstantiateProjectAssetsPayload {
+  globalSubjectId: string;
+  parentId?: string | null;
+  expectedRev?: number;
+}
+
+export interface PromoteProjectAssetsPayload {
+  relative_path: string;
+  name: string;
+  type?: string;
+}
 
 export const MAX_FOLDER_NAME_LENGTH = 200;
 

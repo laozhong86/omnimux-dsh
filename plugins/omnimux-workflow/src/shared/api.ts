@@ -41,6 +41,10 @@ export const WORKFLOW_API_ROUTES = {
   workspaceAssetsIngest: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/assets/ingest`,
   /** POST: deprecated alias of ingest (physical copy, not a path index). */
   workspaceAssetsIndex: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/assets/index`,
+  /** POST: copy a global library subject into `<ProjectRoot>/assets/subjects/<id>/`. */
+  workspaceAssetsInstantiate: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/assets/instantiate`,
+  /** POST: copy a project file into the global library (explicit promote). */
+  workspaceAssetsPromote: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/assets/promote`,
   /** GET: stream a project-relative file (Range 206). */
   workspaceFile: (id: string, rel: string) =>
     `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/file?rel=${encodeURIComponent(rel)}`,

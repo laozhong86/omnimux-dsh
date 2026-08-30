@@ -35,6 +35,11 @@ const STATUS_BY_CODE = {
   'tags-invalid': 400,
   'files-invalid': 400,
   'not-local': 403,
+  'disk-space-insufficient': 413,
+  'invalid-path': 400,
+  'not-a-file': 400,
+  'blob-url-forbidden': 400,
+  'internal': 500,
 }
 
 /**
@@ -312,7 +317,7 @@ export function createAssetsDispatcher(deps) {
         const problem = jsonBodyProblem(req)
         if (problem) return problem
         const body = /** @type {{ name?: string, type?: string, description?: string, tags?: unknown, files?: unknown }} */ (req.body)
-        const asset = library.add(body)
+        const asset = await library.add(body)
         return { status: 200, body: { asset, lrev: library.revision() } }
       }
 
@@ -321,7 +326,7 @@ export function createAssetsDispatcher(deps) {
         if (problem) return problem
         const body = /** @type {{ id?: string, name?: string, type?: string, description?: string, tags?: unknown, files?: unknown }} */ (req.body)
         const id = String(body.id ?? '')
-        const asset = library.update(id, body)
+        const asset = await library.update(id, body)
         return { status: 200, body: { asset, lrev: library.revision() } }
       }
 

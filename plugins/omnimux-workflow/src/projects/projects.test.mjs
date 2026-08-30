@@ -147,6 +147,7 @@ test('T0 paths：libraryRoot / projectRoot 必须绝对路径 + 越界断言', (
     assert.equal(paths.projectFile, join(projectRoot, '.omnimux', 'project.json'));
     assert.equal(paths.assetsFile, join(projectRoot, '.omnimux', 'assets.json'));
     assert.equal(paths.importedDir, join(projectRoot, 'assets', 'imported'));
+    assert.equal(paths.subjectsDir, join(projectRoot, 'assets', 'subjects'));
     assert.equal(paths.readmeFile, join(projectRoot, '说明.md'));
     host.assertProjectInsideLibrary(projectRoot, libraryRoot);
     assert.throws(

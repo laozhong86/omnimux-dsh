@@ -7,6 +7,7 @@ import {
   createWriteStream,
   existsSync,
   mkdirSync,
+  readdirSync,
   renameSync,
   statSync,
   unlinkSync,
@@ -80,12 +81,15 @@ export function assertDiskSpace(
   }
 }
 
-export async function copyFileIntoImported(opts: {
+export async function copyFileIntoDir(opts: {
   projectRoot: string;
+  destDir: string;
   sourceAbs: string;
+  originalName?: string;
+  checkMedia?: boolean;
   statfs?: StatFsFn;
 }): Promise<CopyIntoImportedResult> {
-  const { projectRoot, sourceAbs, statfs } = opts;
+  const { projectRoot, destDir, sourceAbs, statfs } = opts;
   if (typeof sourceAbs !== 'string' || sourceAbs.trim() === '') {
     throw new WorkflowStoreError('invalid-path', 'source path is required');
   }
@@ -104,21 +108,21 @@ export async function copyFileIntoImported(opts: {
   if (stat.isDirectory() || !stat.isFile()) {
     throw new WorkflowStoreError('not-a-file', 'path is not a regular file');
   }
-  if (!isAllowedImportedMedia(sourceAbs)) {
+  if (opts.checkMedia !== false && !isAllowedImportedMedia(sourceAbs)) {
     throw new WorkflowStoreError('unsupported-media', 'file type is not an imported media');
   }
 
-  const paths = resolveProjectPaths(projectRoot);
-  mkdirSync(paths.importedDir, { recursive: true });
-  assertDiskSpace(paths.projectRoot, stat.size, statfs ?? statfsSync);
+  mkdirSync(destDir, { recursive: true });
+  assertProjectWriteSafe(destDir, projectRoot);
+  assertDiskSpace(projectRoot, stat.size, statfs ?? statfsSync);
 
-  const name = uniqueImportedName(paths.importedDir, basename(sourceAbs));
-  const destAbs = join(paths.importedDir, name);
-  assertProjectWriteSafe(destAbs, paths.projectRoot);
+  const name = uniqueImportedName(destDir, opts.originalName || basename(sourceAbs));
+  const destAbs = join(destDir, name);
+  assertProjectWriteSafe(destAbs, projectRoot);
   const tmp = `${destAbs}.tmp-${process.pid}-${Date.now()}`;
   try {
     await pipeline(createReadStream(sourceAbs), createWriteStream(tmp));
-    assertProjectWriteSafe(tmp, paths.projectRoot);
+    assertProjectWriteSafe(tmp, projectRoot);
     renameSync(tmp, destAbs);
   } catch (error) {
     try {
@@ -132,8 +136,86 @@ export async function copyFileIntoImported(opts: {
 
   return {
     destAbs,
-    relativePath: toProjectRelativePath(paths.projectRoot, destAbs),
+    relativePath: toProjectRelativePath(projectRoot, destAbs),
     size: stat.size,
     name,
   };
+}
+
+export async function copyFileIntoImported(opts: {
+  projectRoot: string;
+  sourceAbs: string;
+  statfs?: StatFsFn;
+}): Promise<CopyIntoImportedResult> {
+  const paths = resolveProjectPaths(opts.projectRoot);
+  return copyFileIntoDir({
+    projectRoot: paths.projectRoot,
+    destDir: paths.importedDir,
+    sourceAbs: opts.sourceAbs,
+    ...(opts.statfs ? { statfs: opts.statfs } : {}),
+  });
+}
+
+/**
+ * Copy a file or directory tree into destDir (instantiate snapshots).
+ */
+export async function copyPathIntoDir(opts: {
+  projectRoot: string;
+  destDir: string;
+  sourceAbs: string;
+  originalName?: string;
+  statfs?: StatFsFn;
+}): Promise<CopyIntoImportedResult> {
+  let stat;
+  try {
+    stat = statSync(opts.sourceAbs);
+  } catch {
+    throw new WorkflowStoreError('not-found', `path not found: ${opts.sourceAbs}`);
+  }
+  if (stat.isFile()) {
+    return copyFileIntoDir({ ...opts, checkMedia: false });
+  }
+  if (!stat.isDirectory()) {
+    throw new WorkflowStoreError('not-a-file', 'path is not a file or directory');
+  }
+  mkdirSync(opts.destDir, { recursive: true });
+  assertProjectWriteSafe(opts.destDir, opts.projectRoot);
+  const name = uniqueImportedName(opts.destDir, opts.originalName || basename(opts.sourceAbs.replace(/\/+$/, '')));
+  const destAbs = join(opts.destDir, name);
+  assertProjectWriteSafe(destAbs, opts.projectRoot);
+  mkdirSync(destAbs, { recursive: true });
+  await copyDirTree(opts.sourceAbs, destAbs, opts.projectRoot);
+  return {
+    destAbs,
+    relativePath: toProjectRelativePath(opts.projectRoot, destAbs),
+    size: stat.size,
+    name,
+  };
+}
+
+async function copyDirTree(sourceDir: string, destDir: string, projectRoot: string): Promise<void> {
+  mkdirSync(destDir, { recursive: true });
+  for (const name of readdirSync(sourceDir)) {
+    if (name === '.' || name === '..' || name === '.DS_Store') continue;
+    const from = join(sourceDir, name);
+    const to = join(destDir, name);
+    assertProjectWriteSafe(to, projectRoot);
+    const info = statSync(from);
+    if (info.isDirectory()) {
+      await copyDirTree(from, to, projectRoot);
+    } else if (info.isFile()) {
+      const tmp = `${to}.tmp-${process.pid}-${Date.now()}`;
+      try {
+        await pipeline(createReadStream(from), createWriteStream(tmp));
+        renameSync(tmp, to);
+      } catch (error) {
+        try {
+          if (existsSync(tmp)) unlinkSync(tmp);
+        } catch {
+          // ignore
+        }
+        throw error;
+      }
+    }
+  }
 }

@@ -25,5 +25,6 @@ export function resolveAssetsPaths(opts = {}) {
     artifactsFile: join(dir, 'artifacts.json'),
     scansDir: join(dir, 'scans'),
     artifactsDir: join(dir, 'artifacts'),
+    filesDir: join(dir, 'data', 'files'),
   }
 }
