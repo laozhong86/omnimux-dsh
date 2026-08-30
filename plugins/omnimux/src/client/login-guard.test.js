@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { authGuard, NEEDS_AUTH_CODE, pickAuthError } from './api.js'
+import {
+  authGuard,
+  NEEDS_AUTH_CODE,
+  peekStatusCache,
+  pickAuthError,
+  rememberLoggedInStatus,
+  resetStatusCache,
+} from './api.js'
 
 describe('pickAuthError', () => {
   it('recognises the needs-omnimux error code', () => {
@@ -52,6 +59,7 @@ describe('authGuard', () => {
       assert.equal(calls, 2, 'the original call is replayed once')
       assert.deepEqual(result, { ok: true, status: 200, body: { accounts: [{ id: 1 }] } })
       assert.equal(ensureArgs !== null, true)
+      assert.equal(ensureArgs.kind, 'write')
     } finally {
       globalThis.window = previousWindow
     }
@@ -80,15 +88,54 @@ describe('authGuard', () => {
     }
   })
 
+  it('invalidates the status cache before ensureLogin (no stale-peek 401 loop)', async () => {
+    const previousWindow = globalThis.window
+    const events = []
+    rememberLoggedInStatus({ logged_in: true, username: 'stale' })
+    assert.equal(peekStatusCache()?.body.logged_in, true)
+    globalThis.window = {
+      __omnimuxAuth: {
+        ensureLogin(opts) {
+          events.push({
+            kind: opts.kind,
+            peek: peekStatusCache(),
+          })
+          opts.onSuccess({ logged_in: true, username: 'ada' })
+        },
+      },
+    }
+    try {
+      let calls = 0
+      const fn = async () => {
+        calls += 1
+        return calls === 1
+          ? { ok: false, status: 401, body: { error: 'needs-omnimux' } }
+          : { ok: true, status: 200, body: { ok: true } }
+      }
+      const result = await authGuard(fn)()
+      assert.equal(calls, 2)
+      assert.equal(result.ok, true)
+      assert.equal(events.length, 1)
+      assert.equal(events[0].kind, 'write')
+      assert.equal(events[0].peek, null, 'cache must already be null when ensureLogin runs')
+    } finally {
+      globalThis.window = previousWindow
+      resetStatusCache()
+    }
+  })
+
   it('does not throw when the gate global is absent', async () => {
     const previousWindow = globalThis.window
+    rememberLoggedInStatus({ logged_in: true, username: 'stale' })
     globalThis.window = {} // no __omnimuxAuth
     try {
       const fn = async () => ({ ok: false, status: 401, body: { error: 'needs-omnimux' } })
       const result = await authGuard(fn)()
       assert.equal(result.status, 401)
+      assert.equal(peekStatusCache(), null, '401 still drops the cache without a gate')
     } finally {
       globalThis.window = previousWindow
+      resetStatusCache()
     }
   })
 })

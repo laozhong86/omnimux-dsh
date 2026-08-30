@@ -4,6 +4,7 @@ import { ProfileSection } from './ProfileSection.jsx'
 import { DshPluginsSection } from './DshPluginsSection.jsx'
 import { LoginGate } from './LoginGate.jsx'
 import { SidebarUpdateAction } from './SidebarUpdateAction.jsx'
+import { getStatusCached } from './api.js'
 import { installHubChrome } from './chrome.js'
 import { STYLES_ID, injectHubStyles } from './styles.js'
 import { HeroBrandMark } from './HeroBrandMark.jsx'
@@ -30,6 +31,10 @@ export const inject = ['slots', 'locale']
 export function apply(ctx) {
   const t = installHubChrome(ctx)
   installHeroBrandSlot(ctx, HeroBrandMark)
+  // Optional session warmup: fill the status cache so the first sidebar
+  // click can take the sync short path. Not a startup gate — fire-and-forget,
+  // never setState, never block apply().
+  void getStatusCached().catch(() => {})
   ctx.effect?.(() => {
     injectHubStyles()
     return () => { document.getElementById(STYLES_ID)?.remove() }

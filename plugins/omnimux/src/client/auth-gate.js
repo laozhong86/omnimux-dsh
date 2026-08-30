@@ -18,7 +18,8 @@
  * denied | expired | error`.
  *
  *  - `closed`: no gate. `ensureLogin` may open one.
- *  - `checking`: a status (non-verify) read is in flight.
+ *  - `checking`: a status (non-verify) read is in flight. Internal lock only;
+ *    `describeLoginGate` maps it to `visible: false`.
  *  - `prompt`: marketing modal is open; device flow waits for the CTA.
  *  - `starting`: user clicked Sign in, device login is requesting a code.
  *  - `waiting`: device code shown, polling for completion.
@@ -31,7 +32,13 @@
  * caller re-invokes `ensureLogin` (the design's documented tradeoff in risk
  * item D.3).
  */
-import { getStatus } from './api.js'
+import {
+  getStatus,
+  getStatusCached,
+  peekStatusCache,
+  rememberLoggedInStatus,
+  resetStatusCache,
+} from './api.js'
 import { runLogin } from './use-omnimux-auth.js'
 
 /** Global key the hub installs and vertical plugins read. */
@@ -41,19 +48,38 @@ export const AUTH_GLOBAL_KEY = '__omnimuxAuth'
 export const MAX_INTENTS = 100
 
 /**
+ * C/D seams, frozen and not wired to Config / Settings / window.
+ *   gateNavigation: true  → C closed: every nav still goes through the gate.
+ *   suppressNavigationAfterCancel: false → D closed: cancel does not mute later nav.
+ */
+export const AUTH_GATE_POLICY = Object.freeze({
+  gateNavigation: true,
+  suppressNavigationAfterCancel: false,
+})
+
+/**
  * Runtime implementation hooks, so L1 tests can inject a fake `getStatus` /
- * `runLogin` without a host or fetch. Production uses the real imports above.
+ * `runLogin` / cache peek without a host or fetch. Production uses the real
+ * imports above. Tests that do not inject peek/cache still go through HTTP
+ * (view layer already hides `checking`).
  * @type {{
  *   getStatus: (verify?: boolean) => Promise<{ ok: boolean, status: number, body: any }>,
+ *   getStatusCached: () => Promise<{ ok: boolean, status: number, body: any }>,
+ *   peekCache: () => { ok: boolean, status: number, body: any } | null,
  *   runLogin: (opts: { onSuccess: (profile: any) => void, onState: (phase: string, detail?: any) => void }) => { start: () => void, stop: () => void, cancel: () => void },
  * }}
  */
-let impl = { getStatus, runLogin }
+let impl = {
+  getStatus,
+  getStatusCached,
+  peekCache: peekStatusCache,
+  runLogin,
+}
 
 /** Current gate snapshot (never exposed mutated; replaced on every change). */
 let state = Object.freeze({ phase: 'closed' })
 
-/** @type {Array<{ id: number, reason?: string, onSuccess?: (p: any) => void, onCancel?: (r?: any) => void }>} */
+/** @type {Array<{ id: number, reason?: string, kind?: string, onSuccess?: (p: any) => void, onCancel?: (r?: any) => void }>} */
 let intents = []
 /** @type {ReturnType<typeof impl.runLogin> | null} */
 let currentLogin = null
@@ -93,13 +119,14 @@ export function subscribe(listener) {
 }
 
 /**
- * @param {{ reason?: string, onSuccess?: (p: any) => void, onCancel?: (r?: any) => void }} opts
+ * @param {{ reason?: string, kind?: string, onSuccess?: (p: any) => void, onCancel?: (r?: any) => void }} opts
  */
 function makeIntent(opts) {
   intentSeq += 1
   return {
     id: intentSeq,
     reason: typeof opts.reason === 'string' ? opts.reason : undefined,
+    kind: opts.kind === 'write' ? 'write' : 'nav',
     onSuccess: typeof opts.onSuccess === 'function' ? opts.onSuccess : undefined,
     onCancel: typeof opts.onCancel === 'function' ? opts.onCancel : undefined,
   }
@@ -123,10 +150,12 @@ function rejectAll(reason) {
 
 /**
  * Success path: every queued intent is resumed with the logged-in profile,
- * then the gate closes.
+ * then the gate closes. Also remembers a positive session cache so the next
+ * `ensureLogin` can take the synchronous short path.
  * @param {any} profile
  */
 function resolveAll(profile) {
+  rememberLoggedInStatus(profile)
   const pending = intents
   intents = []
   for (const intent of pending) {
@@ -170,29 +199,41 @@ function beginLogin(reason) {
   currentLogin.start()
 }
 
+/**
+ * Peek hit with `logged_in:true` → synchronous resolveAll, never emit checking,
+ * 0 HTTP. Miss → internal `checking` lock then `getStatusCached()`.
+ * @param {string | undefined} reason
+ */
 async function checkAndStart(reason) {
+  const peeked = impl.peekCache()
+  if (peeked && peeked.body?.logged_in === true) {
+    resolveAll(peeked.body)
+    return
+  }
   setState({ phase: 'checking' })
   /** @type {{ ok: boolean, status: number, body: { logged_in?: boolean } }} */
   let status
   try {
-    status = await impl.getStatus(false)
+    status = await impl.getStatusCached()
   } catch {
     status = { ok: false, status: 0, body: { logged_in: false } }
   }
   // Short path: already signed in, do not open the gate.
-  if (status.body?.logged_in) {
+  // ok:false / throw / logged_in:false → prompt (宁可误弹，不可误放行).
+  if (status.ok && status.body?.logged_in) {
     resolveAll(status.body)
     return
   }
-  // Marketing modal first. The device handshake starts only when the user
-  // clicks the CTA (`begin()`), matching the locked PRD sequence.
   setState({ phase: 'prompt', reason })
 }
 
 /**
  * Open / reuse the unified login gate for one intent.
  *
- * @param {{ reason?: string, onSuccess?: (profile: any) => void, onCancel?: (reason?: any) => void }} [opts]
+ * `kind` is a C/D seam (`'nav'` default, `'write'` from authGuard). C/D flags
+ * stay frozen-off, so both kinds currently share the same path.
+ *
+ * @param {{ reason?: string, kind?: 'nav' | 'write', onSuccess?: (profile: any) => void, onCancel?: (reason?: any) => void }} [opts]
  * @returns {Promise<void>}
  */
 export async function ensureLogin(opts = {}) {
@@ -209,9 +250,10 @@ export async function ensureLogin(opts = {}) {
   }
   const intent = makeIntent(opts)
   if (state.phase !== 'closed') {
-    // Single-gate guarantee: an already-open/terminal gate is reused. Only
-    // if it is a terminal failure do we restart the handshake so the gate
-    // reacts (e.g. a caller retrying after a denied/expired/error).
+    // Single-gate guarantee: an already-open/terminal/checking gate is reused.
+    // checking = in-flight lock; a second ensureLogin only enqueues.
+    // Only if it is a terminal failure do we restart the handshake so the
+    // gate reacts (e.g. a caller retrying after a denied/expired/error).
     intents.push(intent)
     if (state.phase === 'denied' || state.phase === 'expired' || state.phase === 'error') {
       latestReason = intent.reason ?? latestReason
@@ -261,15 +303,28 @@ export function retry() {
  * Install the gate API on the target (default `window`). Idempotent. In the
  * browser this runs at module top-level (mirrors `stage.js`), so it exists as
  * soon as the hub client bundle is evaluated. `overrides` lets L1 tests inject
- * a fake `getStatus` / `runLogin` without a host or `fetch`.
+ * a fake `getStatus` / `runLogin` / cache peek without a host or `fetch`.
  * @param {any} [target]
- * @param {{ getStatus?: typeof getStatus, runLogin?: typeof runLogin }} [overrides]
+ * @param {{
+ *   getStatus?: typeof getStatus,
+ *   getStatusCached?: typeof getStatusCached,
+ *   peekCache?: typeof peekStatusCache,
+ *   runLogin?: typeof runLogin,
+ * }} [overrides]
  * @returns {any} the installed singleton.
  */
 export function installAuthGlobal(target, overrides = {}) {
-  if (overrides && (overrides.getStatus || overrides.runLogin)) {
+  if (overrides && (overrides.getStatus || overrides.getStatusCached || overrides.peekCache || overrides.runLogin)) {
+    const injectedStatus = Boolean(overrides.getStatus || overrides.getStatusCached)
     impl = {
       getStatus: overrides.getStatus ?? impl.getStatus,
+      getStatusCached: overrides.getStatusCached
+        ?? (overrides.getStatus ? () => overrides.getStatus(false) : impl.getStatusCached),
+      // Tests that fake getStatus and omit peekCache stay on the cold HTTP
+      // path (peek = null). A previous case's positive peek must not leak.
+      peekCache: Object.prototype.hasOwnProperty.call(overrides, 'peekCache')
+        ? overrides.peekCache
+        : (injectedStatus ? () => null : impl.peekCache),
       runLogin: overrides.runLogin ?? impl.runLogin,
     }
   }
@@ -291,7 +346,8 @@ export function installAuthGlobal(target, overrides = {}) {
 
 /**
  * Test-only: reset the singleton so each L1 case starts from `closed`.
- * Not exposed on the window global.
+ * Not exposed on the window global. Also drops the session status cache so
+ * a later case cannot inherit a positive peek from a previous one.
  */
 export function resetAuthGate() {
   if (currentLogin) {
@@ -300,6 +356,7 @@ export function resetAuthGate() {
   }
   intents = []
   latestReason = undefined
+  resetStatusCache()
   setState({ phase: 'closed' })
 }
 

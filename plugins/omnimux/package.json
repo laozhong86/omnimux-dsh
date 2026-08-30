@@ -31,7 +31,7 @@
   ],
   "scripts": {
     "build": "node scripts/build-client.mjs",
-    "test": "node --test src/config.test.js src/media/*.test.js src/auth/*.test.js src/brand/*.test.js src/official/*.test.js src/plugins/*.test.js src/text/*.test.js src/reader/*.test.js src/apps/*.test.js src/avatar/*.test.js src/tools/*.test.js src/host/*.test.js src/client/api.test.js src/client/app-actions.test.js src/client/app-tabs.test.js src/client/apps-store.test.js src/client/apps-stage-box.test.js src/client/stage-mutual-exclusion.test.js src/client/settings-placement.test.js src/client/avatar-api.test.js src/client/auth-gate.test.js src/client/login-guard.test.js src/client/LoginGate.test.js src/client/sidebar-coordinator.test.js src/client/hero-brand.test.js src/client/HeroBrandMark.test.js src/client/hub-ui-kit.test.js"
+    "test": "node --test src/config.test.js src/media/*.test.js src/auth/*.test.js src/brand/*.test.js src/official/*.test.js src/plugins/*.test.js src/text/*.test.js src/reader/*.test.js src/apps/*.test.js src/avatar/*.test.js src/tools/*.test.js src/host/*.test.js src/client/api.test.js src/client/api-auth.test.js src/client/app-actions.test.js src/client/app-tabs.test.js src/client/apps-store.test.js src/client/apps-stage-box.test.js src/client/stage-mutual-exclusion.test.js src/client/settings-placement.test.js src/client/avatar-api.test.js src/client/auth-gate.test.js src/client/login-guard.test.js src/client/LoginGate.test.js src/client/sidebar-coordinator.test.js src/client/hero-brand.test.js src/client/HeroBrandMark.test.js src/client/hub-ui-kit.test.js"
   },
   "dependencies": {
     "aigc-provider-runtime-kit": "^0.2.0",

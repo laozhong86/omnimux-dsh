@@ -993,6 +993,9 @@ var PUBLIC_KEYS = [
   "kind",
   "error"
 ];
+var statusCache = null;
+var statusInflight = null;
+var statusGeneration = 0;
 function pickPublic(raw) {
   const row = raw && typeof raw === "object" ? (
     /** @type {Record<string, unknown>} */
@@ -1017,8 +1020,64 @@ async function authRequest(path, opts = {}) {
   }
   return result;
 }
+function peekStatusCache() {
+  return statusCache;
+}
+function invalidateStatusCache() {
+  statusGeneration += 1;
+  statusCache = null;
+  statusInflight = null;
+}
+function rememberLoggedInStatus(profile) {
+  statusGeneration += 1;
+  statusInflight = null;
+  if (!profile || typeof profile !== "object") return;
+  const body = (
+    /** @type {Record<string, unknown>} */
+    profile
+  );
+  statusCache = {
+    ok: true,
+    status: 200,
+    body: body.logged_in === true ? body : { ...body, logged_in: true }
+  };
+}
+function rememberStatusResult(result, generation) {
+  if (generation !== statusGeneration) return;
+  const body = result && result.body;
+  const loggedIn = Boolean(result && result.ok && body && body.logged_in === true);
+  const loggedOut = Boolean(body && body.logged_in === false);
+  if (loggedIn || loggedOut) {
+    statusCache = {
+      ok: Boolean(result.ok),
+      status: Number(result.status) || 0,
+      body
+    };
+    return;
+  }
+  statusCache = null;
+}
 function getStatus(verify = false) {
-  return authRequest(verify ? "/omnimux/auth/status?verify=1" : "/omnimux/auth/status");
+  const generation = statusGeneration;
+  return authRequest(verify ? "/omnimux/auth/status?verify=1" : "/omnimux/auth/status").then(
+    (result) => {
+      rememberStatusResult(result, generation);
+      return result;
+    },
+    (error) => {
+      if (generation === statusGeneration) statusCache = null;
+      throw error;
+    }
+  );
+}
+function getStatusCached() {
+  if (statusCache) return Promise.resolve(statusCache);
+  if (statusInflight) return statusInflight;
+  const started = getStatus(false);
+  statusInflight = started.finally(() => {
+    if (statusInflight === started) statusInflight = null;
+  });
+  return statusInflight;
 }
 function startLogin() {
   return authRequest("/omnimux/auth/login", { method: "POST" });
@@ -1027,6 +1086,7 @@ function pollLogin(flowId) {
   return authRequest("/omnimux/auth/poll", { method: "POST", body: { flow_id: flowId } });
 }
 function logout() {
+  invalidateStatusCache();
   return authRequest("/omnimux/auth/logout", { method: "POST" });
 }
 
@@ -2468,7 +2528,16 @@ var import_dsh_client_ui_primitives2 = require("@deepseek-ai/dsh-client-ui-primi
 // src/client/auth-gate.js
 var AUTH_GLOBAL_KEY = "__omnimuxAuth";
 var MAX_INTENTS = 100;
-var impl = { getStatus, runLogin };
+var AUTH_GATE_POLICY = Object.freeze({
+  gateNavigation: true,
+  suppressNavigationAfterCancel: false
+});
+var impl = {
+  getStatus,
+  getStatusCached,
+  peekCache: peekStatusCache,
+  runLogin
+};
 var state = Object.freeze({ phase: "closed" });
 var intents = [];
 var currentLogin = null;
@@ -2496,6 +2565,7 @@ function makeIntent(opts) {
   return {
     id: intentSeq,
     reason: typeof opts.reason === "string" ? opts.reason : void 0,
+    kind: opts.kind === "write" ? "write" : "nav",
     onSuccess: typeof opts.onSuccess === "function" ? opts.onSuccess : void 0,
     onCancel: typeof opts.onCancel === "function" ? opts.onCancel : void 0
   };
@@ -2511,6 +2581,7 @@ function rejectAll(reason) {
   }
 }
 function resolveAll(profile) {
+  rememberLoggedInStatus(profile);
   const pending = intents;
   intents = [];
   for (const intent of pending) {
@@ -2547,14 +2618,19 @@ function beginLogin(reason) {
   currentLogin.start();
 }
 async function checkAndStart(reason) {
+  const peeked = impl.peekCache();
+  if (peeked && peeked.body?.logged_in === true) {
+    resolveAll(peeked.body);
+    return;
+  }
   setState({ phase: "checking" });
   let status;
   try {
-    status = await impl.getStatus(false);
+    status = await impl.getStatusCached();
   } catch {
     status = { ok: false, status: 0, body: { logged_in: false } };
   }
-  if (status.body?.logged_in) {
+  if (status.ok && status.body?.logged_in) {
     resolveAll(status.body);
     return;
   }
@@ -2598,9 +2674,14 @@ function retry() {
   beginLogin(latestReason);
 }
 function installAuthGlobal(target, overrides = {}) {
-  if (overrides && (overrides.getStatus || overrides.runLogin)) {
+  if (overrides && (overrides.getStatus || overrides.getStatusCached || overrides.peekCache || overrides.runLogin)) {
+    const injectedStatus = Boolean(overrides.getStatus || overrides.getStatusCached);
     impl = {
       getStatus: overrides.getStatus ?? impl.getStatus,
+      getStatusCached: overrides.getStatusCached ?? (overrides.getStatus ? () => overrides.getStatus(false) : impl.getStatusCached),
+      // Tests that fake getStatus and omit peekCache stay on the cold HTTP
+      // path (peek = null). A previous case's positive peek must not leak.
+      peekCache: Object.prototype.hasOwnProperty.call(overrides, "peekCache") ? overrides.peekCache : injectedStatus ? () => null : impl.peekCache,
       runLogin: overrides.runLogin ?? impl.runLogin
     };
   }
@@ -3362,7 +3443,7 @@ var LOGIN_GATE_FEATURE_KEYS = [
 ];
 function describeLoginGate(gate) {
   const phase = gate && typeof gate.phase === "string" ? gate.phase : "closed";
-  if (phase === "closed") {
+  if (phase === "closed" || phase === "checking") {
     return {
       visible: false,
       phase,
@@ -3378,7 +3459,7 @@ function describeLoginGate(gate) {
   }
   const failed = phase === "denied" || phase === "expired" || phase === "error";
   const waiting = phase === "waiting";
-  const starting = phase === "starting" || phase === "checking";
+  const starting = phase === "starting";
   const userCode = typeof gate.user_code === "string" && gate.user_code ? gate.user_code : "\u2014";
   const verificationUrl = typeof gate.verification_url === "string" ? gate.verification_url : "";
   return {
@@ -4214,6 +4295,8 @@ var inject = ["slots", "locale"];
 function apply(ctx) {
   const t = installHubChrome(ctx);
   installHeroBrandSlot(ctx, HeroBrandMark);
+  void getStatusCached().catch(() => {
+  });
   ctx.effect?.(() => {
     injectHubStyles();
     return () => {
