@@ -1,5 +1,6 @@
 import type { NodeDefinition } from '../registry';
 import { GroupNode } from '../../editor/components/GroupNode/GroupNode';
+import { DEFAULT_GROUP_COLOR } from '../../editor/utils/nodeVisualMath';
 
 export const groupNodeDefinition: NodeDefinition = {
   type: 'group',
@@ -7,7 +8,7 @@ export const groupNodeDefinition: NodeDefinition = {
   ports: [],
   defaultData: () => ({
     title: '',
-    color: '#3b82f6',
+    color: DEFAULT_GROUP_COLOR,
     padding: 32,
     minWidth: 300,
     minHeight: 200,

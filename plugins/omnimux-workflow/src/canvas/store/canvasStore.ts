@@ -39,6 +39,7 @@ import {
   noteUserDeletedGraphElements,
 } from '../bridge/persistPolicy';
 import {
+  DEFAULT_GROUP_COLOR,
   planGroupNodes,
   planUngroupNode,
   planToggleGroupCollapse,
@@ -200,7 +201,7 @@ export const useCanvasStore = create<CanvasState>()(
       }
     },
 
-    groupNodes: (nodeIds, title = '新建组', color = '#3b82f6') => {
+    groupNodes: (nodeIds, title = '新建组', color = DEFAULT_GROUP_COLOR) => {
       const plan = planGroupNodes(get().nodes, nodeIds, title, color);
       if (!plan) return null;
 

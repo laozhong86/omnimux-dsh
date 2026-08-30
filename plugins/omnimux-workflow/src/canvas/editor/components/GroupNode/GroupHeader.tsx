@@ -3,7 +3,11 @@ import { useViewport } from '@xyflow/react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useT } from '../../../i18n';
 import { stopToolbarNativeEvent } from '../toolbarPointerGuard';
-import { inverseScaleForZoom } from '../../utils/nodeVisualMath';
+import {
+  inverseScaleForZoom,
+  resolveGroupAccentStyle,
+  resolveGroupHeaderLayout,
+} from '../../utils/nodeVisualMath';
 
 export interface GroupHeaderProps {
   groupId: string;
@@ -29,6 +33,14 @@ export const GroupHeader: React.FC<GroupHeaderProps> = memo(({
   const t = useT();
   const { zoom } = useViewport();
   const inverseScale = useMemo(() => inverseScaleForZoom(zoom), [zoom]);
+  const layout = useMemo(
+    () => resolveGroupHeaderLayout({ isCollapsed, inverseScale }),
+    [isCollapsed, inverseScale],
+  );
+  const accentStyle = useMemo(() => resolveGroupAccentStyle(color), [color]);
+  const placementClass = isCollapsed
+    ? 'wf-group-header-pill--internal'
+    : 'wf-group-header-pill--external';
 
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
@@ -89,13 +101,16 @@ export const GroupHeader: React.FC<GroupHeaderProps> = memo(({
 
   return (
     <div
-      className={`wf-group-header-pill nodrag nopan ${selected ? 'wf-group-header-pill--selected' : ''}`}
+      className={`wf-group-header-pill nodrag nopan ${placementClass} ${selected ? 'wf-group-header-pill--selected' : ''}`}
       onClick={handleHeaderClick}
       onPointerDown={stopToolbarNativeEvent}
       onMouseDown={stopToolbarNativeEvent}
       style={{
-        ['--wf-group-accent' as string]: color || 'var(--wb-accent)',
-        transformOrigin: 'top left',
+        ...accentStyle,
+        top: layout.top,
+        left: layout.left,
+        transform: layout.transform,
+        transformOrigin: layout.transformOrigin,
       }}
       title={isCollapsed ? t('group.expand') : t('group.collapse')}
     >

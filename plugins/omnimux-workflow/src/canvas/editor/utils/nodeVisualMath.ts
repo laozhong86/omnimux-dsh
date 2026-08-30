@@ -95,6 +95,114 @@ export const DEFAULT_GROUP_PADDING = 32;
 export const DEFAULT_NODE_FALLBACK_WIDTH = 350;
 export const DEFAULT_NODE_FALLBACK_HEIGHT = 280;
 
+/** 新建组默认不注入自定义强调色，走 `--wb-node-ring` 中性描边。 */
+export const DEFAULT_GROUP_COLOR = '';
+/** 历史默认蓝：读档时视为未自定义，避免继续当强调色渲染。 */
+export const LEGACY_DEFAULT_GROUP_COLORS = ['#3b82f6'];
+export const GROUP_HEADER_HEIGHT = 28;
+export const GROUP_HEADER_EXTERNAL_GAP = 8;
+export const GROUP_CHROME_INSET = 12;
+
+export type GroupHeaderPlacement = 'external' | 'internal';
+
+export interface GroupHeaderLayout {
+  placement: GroupHeaderPlacement;
+  top: number;
+  left: number;
+  transform: string;
+  transformOrigin: string;
+}
+
+export interface GroupTopBarLayout {
+  top: number;
+  left: string;
+  right: number | 'auto';
+  transform: string;
+  transformOrigin: string;
+}
+
+export type GroupAccentStyle = { '--wf-group-accent': string };
+
+function safeInverseScale(inverseScale: number): number {
+  return typeof inverseScale === 'number' && Number.isFinite(inverseScale) && inverseScale > 0
+    ? inverseScale
+    : 1;
+}
+
+const THEME_ACCENT_TOKEN = 'var(--wb-accent)';
+
+/**
+ * 自定义强调色：非空且不是遗留默认蓝 / 主题 accent token。
+ * 空串 / 未定义 / `#3b82f6` / `var(--wb-accent)` 一律走中性黑白。
+ */
+export function isCustomGroupAccent(color: unknown): boolean {
+  if (typeof color !== 'string') return false;
+  const trimmed = color.trim();
+  if (!trimmed) return false;
+  const normalized = trimmed.toLowerCase();
+  if (normalized === THEME_ACCENT_TOKEN) return false;
+  return !LEGACY_DEFAULT_GROUP_COLORS.some((legacy) => legacy.toLowerCase() === normalized);
+}
+
+/** 非自定义时不注入 `--wf-group-accent`，让 CSS 回落到 `--wb-node-ring`。 */
+export function resolveGroupAccentStyle(color: unknown): GroupAccentStyle | Record<string, never> {
+  if (!isCustomGroupAccent(color)) return {};
+  return { '--wf-group-accent': String(color).trim() };
+}
+
+/**
+ * 组标题胶囊定位：展开态外挂在容器上方并反缩放；折叠态内置于胶囊内。
+ */
+export function resolveGroupHeaderLayout(options: {
+  isCollapsed: boolean;
+  inverseScale: number;
+}): GroupHeaderLayout {
+  const inverseScale = safeInverseScale(options.inverseScale);
+  if (options.isCollapsed) {
+    return {
+      placement: 'internal',
+      top: GROUP_HEADER_EXTERNAL_GAP,
+      left: GROUP_CHROME_INSET,
+      transform: `scale(${inverseScale})`,
+      transformOrigin: 'left center',
+    };
+  }
+  return {
+    placement: 'external',
+    top: -(GROUP_HEADER_HEIGHT + GROUP_HEADER_EXTERNAL_GAP * inverseScale),
+    left: GROUP_CHROME_INSET,
+    transform: `scale(${inverseScale})`,
+    transformOrigin: 'bottom left',
+  };
+}
+
+/**
+ * 组顶栏定位：展开态贴右侧避让外挂标题；折叠态水平居中。
+ */
+export function resolveGroupTopBarLayout(options: {
+  isCollapsed: boolean;
+  inverseScale: number;
+}): GroupTopBarLayout {
+  const inverseScale = safeInverseScale(options.inverseScale);
+  const top = -(GROUP_CHROME_INSET * inverseScale);
+  if (options.isCollapsed) {
+    return {
+      top,
+      left: '50%',
+      right: 'auto',
+      transform: `translate(-50%, -100%) scale(${inverseScale})`,
+      transformOrigin: 'bottom center',
+    };
+  }
+  return {
+    top,
+    left: 'auto',
+    right: GROUP_CHROME_INSET,
+    transform: `translate(0, -100%) scale(${inverseScale})`,
+    transformOrigin: 'bottom right',
+  };
+}
+
 /**
  * 解析节点的真实可视尺寸与外挂标题栏偏移高度
  */
@@ -398,7 +506,7 @@ export function planGroupNodes(
   currentNodes: any[],
   nodeIds: string[],
   title?: string,
-  color = '#3b82f6',
+  color = DEFAULT_GROUP_COLOR,
 ): { groupId: string; nodes: any[] } | null {
   const targetNodes = currentNodes.filter((n) => (
     nodeIds.includes(n.id)
@@ -693,3 +801,5 @@ export function planAlignLayout<T extends NodeSpatialInfo>(
 
   return nodes;
 }
+
+

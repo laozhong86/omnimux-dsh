@@ -1,0 +1,42 @@
+{
+  "id": "REQ-WF-GROUP-MONO-OUTSIDE-HEADER",
+  "issue": 267,
+  "stage": "omnimux-workflow",
+  "port": 45120,
+  "app": "OmniMux Dev",
+  "timestamp": "2026-08-30T04:50:00Z",
+  "theme": "dark",
+  "canvasJsSha256": "f8156b603f4184b2",
+  "assertions": {
+    "monochromeStyleVerified": true,
+    "selectedBorderIsNeutral": true,
+    "headerPillIsAboveGroupTopBorder": true,
+    "topbarAvoidsHeaderOnRight": true,
+    "collapsedHeaderIsCenteredCapsule": true,
+    "testsPassed": "474/474"
+  },
+  "results": [
+    {
+      "state": "default unselected",
+      "class": "wf-group-node",
+      "borderColor": "rgb(229, 231, 235)",
+      "isAboveGroup": true,
+      "screenshot": "docs/evidence/req-wf-group-mono-default.png"
+    },
+    {
+      "state": "expanded selected",
+      "class": "wf-group-node wf-group-node--selected",
+      "borderColor": "rgb(229, 231, 235)",
+      "isAboveGroup": true,
+      "headerLeft": 12,
+      "topbarRight": 12,
+      "screenshot": "docs/evidence/req-wf-group-mono-selected.png"
+    },
+    {
+      "state": "collapsed",
+      "class": "wf-group-node wf-group-node--collapsed",
+      "headerPlacement": "internal",
+      "screenshot": "docs/evidence/req-wf-group-mono-collapsed.png"
+    }
+  ]
+}
