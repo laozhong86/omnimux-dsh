@@ -110,6 +110,11 @@ export function useWorkspacePersistence(
   const onSavedRef = useRef(opts.onSaved);
   onSavedRef.current = opts.onSaved;
 
+  const graphSig = (
+    nodes: SerializedCanvasNode[],
+    edges: SerializedCanvasEdge[],
+  ) => signatureOf(nodes, edges, { workspaceId: workspaceRef.current?.id });
+
   // (Re)initialize tracking on workspace switch / initial load. A mere
   // version bump from our own successful save only refreshes the server
   // version — it must not clobber the 'saved' badge or dirty tracking.
@@ -120,7 +125,7 @@ export function useWorkspacePersistence(
     if (lastInitIdRef.current === workspace.id) return;
     lastInitIdRef.current = workspace.id;
     // 以磁盘/服务端快照为 last-saved，不读可能已被 reset 的 store
-    lastSavedSigRef.current = signatureOf(workspace.nodes, workspace.edges);
+    lastSavedSigRef.current = graphSig(workspace.nodes, workspace.edges);
     lastSavedNodeCountRef.current = workspace.nodes.length;
     setIsDirty(false);
     setStatus('idle');
@@ -152,16 +157,16 @@ export function useWorkspacePersistence(
     }
     const snapshot = latest.body.workspace;
     const decision = decideRemoteVersionAdvance({
-      localSignature: signatureOf(input.localNodes, input.localEdges),
+      localSignature: graphSig(input.localNodes, input.localEdges),
       lastSavedSignature: lastSavedSigRef.current,
-      remoteSignature: signatureOf(snapshot.nodes, snapshot.edges),
+      remoteSignature: graphSig(snapshot.nodes, snapshot.edges),
     });
     serverVersionRef.current = snapshot.version;
     if (decision === 'conflict') {
       setStatus('conflict');
       return;
     }
-    lastSavedSigRef.current = signatureOf(snapshot.nodes, snapshot.edges);
+    lastSavedSigRef.current = graphSig(snapshot.nodes, snapshot.edges);
     lastSavedNodeCountRef.current = snapshot.nodes.length;
     if (decision === 'reload') {
       useCanvasStore.getState().hydrateGraph(snapshot.nodes, snapshot.edges);
@@ -194,7 +199,7 @@ export function useWorkspacePersistence(
       nextEdges: capture.edges,
       cause,
       lastSavedSignature: lastSavedSigRef.current,
-      nextSignature: signatureOf(capture.nodes, capture.edges),
+      nextSignature: graphSig(capture.nodes, capture.edges),
     });
     if (!decision.persist || !decision.snapshot) return;
 
@@ -205,7 +210,7 @@ export function useWorkspacePersistence(
     try {
       const result = await saveWorkspace(ws.id, {
         name,
-        nodes: sanitizeNodes(nodes),
+        nodes: sanitizeNodes(nodes, { workspaceId: ws.id }),
         edges: sanitizeEdges(edges),
         expectedVersion: serverVersionRef.current,
       });
@@ -223,7 +228,7 @@ export function useWorkspacePersistence(
 
       if (result.ok && result.body.workspace) {
         serverVersionRef.current = result.body.workspace.version;
-        lastSavedSigRef.current = signatureOf(nodes, edges);
+        lastSavedSigRef.current = graphSig(nodes, edges);
         lastSavedNodeCountRef.current = nodes.length;
         setIsDirty(false);
         setStatus('saved');
@@ -251,7 +256,7 @@ export function useWorkspacePersistence(
       if (!ws) return;
       if (!enabledRef.current) return;
       const capture = readStoreCapture();
-      const sig = signatureOf(capture.nodes, capture.edges);
+      const sig = graphSig(capture.nodes, capture.edges);
       const dirty = sig !== lastSavedSigRef.current;
       setIsDirty(dirty);
       if (!dirty) {
@@ -318,7 +323,7 @@ export function useWorkspacePersistence(
         nextEdges: capture.edges,
         cause,
         lastSavedSignature: lastSavedSigRef.current,
-        nextSignature: signatureOf(capture.nodes, capture.edges),
+        nextSignature: graphSig(capture.nodes, capture.edges),
       });
       if (!decision.persist || !decision.snapshot) return;
       void performSave(decision.snapshot, cause);
@@ -358,7 +363,7 @@ export function useWorkspacePersistence(
       nextEdges: capture.edges,
       cause,
       lastSavedSignature: lastSavedSigRef.current,
-      nextSignature: signatureOf(capture.nodes, capture.edges),
+      nextSignature: graphSig(capture.nodes, capture.edges),
     });
     if (!decision.persist || !decision.snapshot) return;
     void performSave(decision.snapshot, cause, true);
@@ -379,7 +384,7 @@ export function useWorkspacePersistence(
     }
     const snapshot = latest.body.workspace;
     serverVersionRef.current = snapshot.version;
-    lastSavedSigRef.current = signatureOf(snapshot.nodes, snapshot.edges);
+    lastSavedSigRef.current = graphSig(snapshot.nodes, snapshot.edges);
     lastSavedNodeCountRef.current = snapshot.nodes.length;
     useCanvasStore.getState().hydrateGraph(snapshot.nodes, snapshot.edges);
     setIsDirty(false);

@@ -29,6 +29,15 @@ export interface ExecutionManagerDeps {
   gateway: GenerationGateway;
   /** Plugin media root (absolute). */
   mediaDir: string;
+  persistGenerated?: (input: {
+    workspaceId: string;
+    nodeId: string;
+    nodeType: string;
+    tmpAbs: string;
+    materialType: 'image' | 'video' | 'audio';
+    prompt?: string;
+    modelId?: string;
+  }) => Promise<{ url: string; relativePath: string; assetId: string }>;
 }
 
 export interface CreateExecutionOptions {

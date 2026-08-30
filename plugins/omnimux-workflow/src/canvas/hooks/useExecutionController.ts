@@ -47,8 +47,15 @@ interface SseEventData {
   workflowId?: string;
   failedNode?: string | null;
   output?: {
-    mediaAssets?: Array<{ type: 'image' | 'video' | 'audio'; url: string }>;
+    mediaAssets?: Array<{
+      type: 'image' | 'video' | 'audio';
+      url: string;
+      relativePath?: string;
+      assetId?: string;
+    }>;
     text?: string;
+    relativePath?: string;
+    assetId?: string;
   };
 }
 
@@ -156,9 +163,19 @@ export function useExecutionController(
         const patch: Record<string, unknown> = { executionStatus: 'completed', executionError: undefined };
         if (output.text) patch.generatedContent = output.text;
         if (output.mediaAssets && output.mediaAssets.length > 0) {
-          const first = output.mediaAssets[0] as { type: string; url: string };
+          const first = output.mediaAssets[0] as {
+            type: string;
+            url: string;
+            relativePath?: string;
+            assetId?: string;
+          };
           patch.mediaAssets = output.mediaAssets;
-          if (first.type === 'image') patch.mediaUrl = first.url;
+          if (first.url) patch.mediaUrl = first.url;
+          const relativePath = output.relativePath || first.relativePath;
+          const assetId = output.assetId || first.assetId;
+          if (relativePath) patch.relativePath = relativePath;
+          if (assetId) patch.assetId = assetId;
+          delete patch.realPath;
           patch.taskId = `exec-${data.executionId ?? ''}`;
         }
         writeNodeData(data.nodeId, patch);
@@ -271,15 +288,24 @@ export function useExecutionController(
       const patch: Record<string, unknown> = { executionStatus: state.status };
       if (state.status === 'error' && state.error) patch.executionError = state.error;
       const output = snapshot.nodeOutputs?.[nodeId] as
-        | { mediaAssets?: Array<{ type: string; url: string }>; text?: string }
+        | {
+            mediaAssets?: Array<{ type: string; url: string; relativePath?: string; assetId?: string }>;
+            text?: string;
+            relativePath?: string;
+            assetId?: string;
+          }
         | undefined;
       if (output) {
         if (output.text) patch.generatedContent = output.text;
         if (output.mediaAssets && output.mediaAssets.length > 0) {
           patch.mediaAssets = output.mediaAssets;
-          if (output.mediaAssets[0] && output.mediaAssets[0].type === 'image') {
-            patch.mediaUrl = output.mediaAssets[0].url;
-          }
+          const first = output.mediaAssets[0];
+          if (first?.url) patch.mediaUrl = first.url;
+          const relativePath = output.relativePath || first?.relativePath;
+          const assetId = output.assetId || first?.assetId;
+          if (relativePath) patch.relativePath = relativePath;
+          if (assetId) patch.assetId = assetId;
+          delete patch.realPath;
         }
       }
       writeNodeData(nodeId, patch);

@@ -12,7 +12,7 @@ subsystem: "omnimux-workflow"
 # OmniMux 工作流画布：项目资产与画布素材双 Tab 抽屉功能规格说明书 (PRD)
 
 > 状态：**已拍板（以高保真原型 v10.0 为优先真相）**  
-> 原型依据：`deliverables/prototypes/canvas-project-assets-demo.html`  
+> 原型依据：`docs/specs/prototypes/2026-08-28-canvas-project-assets-prototype.html`  
 > 设计令牌：`product/omnimux-dsh/design.md`（100% DSH 原生 `--dsw-*` Token）  
 > 宿主插件：`plugins/omnimux-workflow`
 

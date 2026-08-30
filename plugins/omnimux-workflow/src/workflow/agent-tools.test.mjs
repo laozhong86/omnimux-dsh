@@ -15,7 +15,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Writable } from 'node:stream';
@@ -86,6 +86,8 @@ function makeHarness({ gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 30 } }
       },
     },
   };
+  const libraryRoot = join(dir, 'library');
+  mkdirSync(libraryRoot, { recursive: true });
   const dispose = host.mountWorkflowHost(ctx, {
     paths: {
       root: dir,
@@ -93,6 +95,7 @@ function makeHarness({ gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 30 } }
       executionsDir: join(dir, 'executions'),
       mediaDir: join(dir, 'media'),
     },
+    libraryRoot,
     gateway: host.createMockGateway(gatewayLatency),
   });
 
@@ -144,6 +147,12 @@ function makeHarness({ gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 30 } }
         ],
         edges: [{ id: 'e1', source: 'txt1', target: 'img1' }],
       },
+    });
+    const projectRoot = join(libraryRoot, ws.id);
+    mkdirSync(projectRoot, { recursive: true });
+    host.createProjectStore({ libraryRoot }).create('工具测试项目', {
+      projectRoot,
+      canvasWorkspaceIds: [ws.id],
     });
     return ws.id;
   };
@@ -321,8 +330,10 @@ test('workflow_run wait=true returns the terminal summary with per-node results'
     assert.match(txt.textExcerpt, /mock/);
     assert.equal(img.status, 'completed');
     assert.ok(img.mediaAssets.length > 0, 'image node carries a media asset');
-    assert.match(img.mediaAssets[0].url, /^\/omnimux-workflow\/media\/executions\//);
+    assert.match(img.mediaAssets[0].url, /\/omnimux-workflow\/api\/workspaces\/.+\/file\?rel=/);
     assert.equal(typeof img.mediaAssets[0].path, 'string');
+    assert.match(String(img.mediaAssets[0].path), /^artifacts\//);
+    assert.equal(String(img.mediaAssets[0].path).includes('/Users'), false);
   } finally {
     h.dispose();
     rmSync(h.dir, { recursive: true, force: true });

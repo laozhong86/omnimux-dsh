@@ -73,7 +73,7 @@ docs/
 - **[2026-08-23-omnimux-products.md](specs/2026-08-23-omnimux-products.md)**: 产品库需求与设计规格
 - **[2026-08-24-omnimux-market-agent-plaza.md](specs/2026-08-23-omnimux-market-agent-plaza.md)**: 专家·技能·连接器集市设计规格
 - **[2026-08-25-social-analytics-prd.md](specs/2026-08-25-social-analytics-prd.md)**: 全社媒矩阵数据看板 PRD
-- **[prototypes/](specs/prototypes/)**: 包含独立交互原型（如 `2026-08-23-omnimux-products-prototype.html`、`2026-08-25-social-analytics-prototype.html`）
+- **[prototypes/](specs/prototypes/)**: 包含独立交互原型（如 `2026-08-23-omnimux-products-prototype.html`、`2026-08-25-social-analytics-prototype.html`、`2026-08-28-canvas-project-assets-prototype.html`）
 - *[👉 查看完整 18 篇技术与产品规格...](specs/README.md)*
 
 ### 2.4 [evidence/ (实测与验证证据)](evidence/README.md)
