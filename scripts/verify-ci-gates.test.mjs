@@ -73,6 +73,14 @@ test('verify-stage-contracts passes on all first-level Stage and StageStore file
   strictEqual(res.status, 0, `stage contract verification failed: ${res.stderr}`)
 })
 
+test('verify-plugin-agent-tools passes 4-dimension audit on all 12 plugins', () => {
+  const res = spawnSync('node', [resolve(here, 'verify-plugin-agent-tools.mjs')], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  })
+  strictEqual(res.status, 0, `agent tools verification failed: ${res.stderr}\n${res.stdout}`)
+})
+
 const nestedTestEnv = { ...process.env }
 delete nestedTestEnv.NODE_TEST_CONTEXT
 
