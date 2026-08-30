@@ -6,9 +6,18 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   calculateGroupBounds,
+  DEFAULT_GROUP_COLOR,
+  GROUP_CHROME_INSET,
+  GROUP_HEADER_EXTERNAL_GAP,
+  GROUP_HEADER_HEIGHT,
   inverseScaleForZoom,
   isConfigPanelVisible,
+  isCustomGroupAccent,
+  LEGACY_DEFAULT_GROUP_COLORS,
   mapNodeToGenerationStatus,
+  resolveGroupAccentStyle,
+  resolveGroupHeaderLayout,
+  resolveGroupTopBarLayout,
 } from './nodeVisualMath.ts';
 import { resolveMediaPreviewUrl } from './mediaUrl.ts';
 
@@ -97,6 +106,63 @@ test('calculateGroupBounds：包含 NaN / 非法对象 / 负坐标时安全兜�
   assert.ok(Number.isFinite(bounds.height));
   assert.ok(bounds.width >= 120);
   assert.ok(bounds.height >= 80);
+});
+
+test('组强调色：空串 / 空白 / 遗留默认蓝 / 主题 accent 不算自定义', () => {
+  assert.equal(DEFAULT_GROUP_COLOR, '');
+  assert.deepEqual(LEGACY_DEFAULT_GROUP_COLORS, ['#3b82f6']);
+  assert.equal(isCustomGroupAccent(''), false);
+  assert.equal(isCustomGroupAccent('   '), false);
+  assert.equal(isCustomGroupAccent('#3b82f6'), false);
+  assert.equal(isCustomGroupAccent('#3B82F6'), false);
+  assert.equal(isCustomGroupAccent('var(--wb-accent)'), false);
+  assert.equal(isCustomGroupAccent(' var(--wb-accent) '), false);
+  assert.equal(isCustomGroupAccent(undefined), false);
+  assert.equal(isCustomGroupAccent(null), false);
+  assert.equal(isCustomGroupAccent('#10b981'), true);
+  assert.equal(isCustomGroupAccent('#2563eb'), true);
+});
+
+test('resolveGroupAccentStyle：非自定义不注入 --wf-group-accent', () => {
+  assert.deepEqual(resolveGroupAccentStyle(''), {});
+  assert.deepEqual(resolveGroupAccentStyle('#3b82f6'), {});
+  assert.deepEqual(resolveGroupAccentStyle('var(--wb-accent)'), {});
+  assert.deepEqual(resolveGroupAccentStyle('#10b981'), { '--wf-group-accent': '#10b981' });
+});
+
+test('resolveGroupHeaderLayout：展开态外挂 + 反缩放；折叠态内置', () => {
+  const expanded = resolveGroupHeaderLayout({ isCollapsed: false, inverseScale: 2 });
+  assert.equal(expanded.placement, 'external');
+  assert.equal(expanded.top, -(GROUP_HEADER_HEIGHT + GROUP_HEADER_EXTERNAL_GAP * 2));
+  assert.equal(expanded.left, GROUP_CHROME_INSET);
+  assert.equal(expanded.transform, 'scale(2)');
+  assert.equal(expanded.transformOrigin, 'bottom left');
+
+  const collapsed = resolveGroupHeaderLayout({ isCollapsed: true, inverseScale: 2 });
+  assert.equal(collapsed.placement, 'internal');
+  assert.equal(collapsed.top, GROUP_HEADER_EXTERNAL_GAP);
+  assert.equal(collapsed.left, GROUP_CHROME_INSET);
+  assert.equal(collapsed.transform, 'scale(2)');
+  assert.equal(collapsed.transformOrigin, 'left center');
+
+  const fallback = resolveGroupHeaderLayout({ isCollapsed: false, inverseScale: 0 });
+  assert.equal(fallback.transform, 'scale(1)');
+  assert.equal(fallback.top, -(GROUP_HEADER_HEIGHT + GROUP_HEADER_EXTERNAL_GAP));
+});
+
+test('resolveGroupTopBarLayout：展开态右侧避让；折叠态水平居中', () => {
+  const expanded = resolveGroupTopBarLayout({ isCollapsed: false, inverseScale: 2 });
+  assert.equal(expanded.left, 'auto');
+  assert.equal(expanded.right, GROUP_CHROME_INSET);
+  assert.equal(expanded.top, -(GROUP_CHROME_INSET * 2));
+  assert.equal(expanded.transform, 'translate(0, -100%) scale(2)');
+  assert.equal(expanded.transformOrigin, 'bottom right');
+
+  const collapsed = resolveGroupTopBarLayout({ isCollapsed: true, inverseScale: 2 });
+  assert.equal(collapsed.left, '50%');
+  assert.equal(collapsed.right, 'auto');
+  assert.equal(collapsed.transform, 'translate(-50%, -100%) scale(2)');
+  assert.equal(collapsed.transformOrigin, 'bottom center');
 });
 
 test('MediaPreview URL：mediaAssets 匹配类型优先，回退首条，再回退 mediaUrl', () => {

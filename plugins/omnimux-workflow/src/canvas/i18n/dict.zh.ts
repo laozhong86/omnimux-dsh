@@ -272,6 +272,7 @@ const zh = {
   'group.expand': '展开分组',
   'group.renameHint': '双击重命名',
   'group.colorTitle': '选择组主题色',
+  'group.colorReset': '重置为中性黑白',
   'group.layout': '布局',
   'group.layoutTitle': '组内节点自动布局',
   'group.layoutHorizontal': '水平排列',

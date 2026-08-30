@@ -1,9 +1,9 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { useReactFlow, type NodeProps } from '@xyflow/react';
 import { useCanvasStore } from '../../../store/canvasStore';
 import type { GroupNodeData } from '../../../../shared/canvasTypes';
 import { useT } from '../../../i18n';
-import { childIdsOfGroup } from '../../utils/nodeVisualMath';
+import { childIdsOfGroup, resolveGroupAccentStyle } from '../../utils/nodeVisualMath';
 import { GroupTopBar } from './GroupTopBar';
 import { GroupResizeHandles } from './GroupResizeHandles';
 import { GroupHeader } from './GroupHeader';
@@ -18,10 +18,11 @@ export const GroupNode: React.FC<NodeProps> = memo(({
   const t = useT();
   const groupData = data as unknown as GroupNodeData;
   const title = groupData.title || t('group.defaultTitle');
-  const color = groupData.color || 'var(--wb-accent)';
+  const color = typeof groupData.color === 'string' ? groupData.color : '';
   const isCollapsed = Boolean(groupData.isCollapsed);
   const minWidth = groupData.minWidth || 220;
   const minHeight = groupData.minHeight || 44;
+  const accentStyle = useMemo(() => resolveGroupAccentStyle(color), [color]);
 
   const width = typeof rawWidth === 'number' && rawWidth > 0 ? rawWidth : 400;
   const height = typeof rawHeight === 'number' && rawHeight > 0 ? rawHeight : 300;
@@ -116,7 +117,7 @@ export const GroupNode: React.FC<NodeProps> = memo(({
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        ['--wf-group-accent' as string]: color,
+        ...accentStyle,
       }}
     >
       {selected && (
@@ -124,6 +125,7 @@ export const GroupNode: React.FC<NodeProps> = memo(({
           groupId={id}
           groupTitle={title}
           groupColor={color}
+          isCollapsed={isCollapsed}
           onExecuteGroup={handleExecuteGroup}
           onCreateWorkflow={handleCreateWorkflow}
           onUngroup={handleUngroup}

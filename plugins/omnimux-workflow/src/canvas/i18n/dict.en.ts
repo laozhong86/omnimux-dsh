@@ -249,6 +249,7 @@ const en: Record<DictKey, string> = {
   'group.expand': 'Expand group',
   'group.renameHint': 'Double-click to rename',
   'group.colorTitle': 'Choose group color',
+  'group.colorReset': 'Reset to monochrome',
   'group.layout': 'Layout',
   'group.layoutTitle': 'Auto-layout nodes in this group',
   'group.layoutHorizontal': 'Arrange horizontally',

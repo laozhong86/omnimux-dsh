@@ -12,6 +12,7 @@ import {
   childIdsOfGroup,
   COLLAPSED_GROUP_WIDTH,
   COLLAPSED_GROUP_HEIGHT,
+  DEFAULT_GROUP_COLOR,
 } from './nodeVisualMath.ts';
 
 test('calculateGroupBounds: 两个节点包围盒计算含 24px Padding', () => {
@@ -216,6 +217,8 @@ test('planGroupNodes: 未传 title 时默认生成「编组 N 个节点」', () 
   const groupNode = plan.nodes.find((n) => n.id === plan.groupId);
   assert.ok(groupNode);
   assert.equal(groupNode.data.title, '编组 2 个节点');
+  assert.equal(groupNode.data.color, DEFAULT_GROUP_COLOR);
+  assert.equal(groupNode.data.color, '');
   assert.equal(groupNode.data.isCollapsed, false);
   assert.deepEqual(groupNode.data.expandedBounds, { width: groupNode.width, height: groupNode.height });
 });

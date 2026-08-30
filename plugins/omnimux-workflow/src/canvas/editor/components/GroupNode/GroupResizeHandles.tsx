@@ -1,6 +1,6 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import type { ResizeHandleDirection } from '../../utils/nodeVisualMath';
-import { clampGroupResize, screenDeltaToFlowDelta } from '../../utils/nodeVisualMath';
+import { clampGroupResize, resolveGroupAccentStyle, screenDeltaToFlowDelta } from '../../utils/nodeVisualMath';
 import { stopToolbarNativeEvent } from '../toolbarPointerGuard';
 
 export interface GroupResizeHandlesProps {
@@ -29,6 +29,13 @@ export const GroupResizeHandles: React.FC<GroupResizeHandlesProps> = memo(({
   zoom = 1,
   onResize,
 }) => {
+  const accentStyle = useMemo(
+    () => {
+      const resolved = resolveGroupAccentStyle(color);
+      return Object.keys(resolved).length > 0 ? resolved : { '--wf-group-accent': 'var(--wb-node-ring)' };
+    },
+    [color],
+  );
   const handlePointerDown = useCallback(
     (direction: ResizeHandleDirection, e: React.PointerEvent) => {
       e.stopPropagation();
@@ -65,7 +72,7 @@ export const GroupResizeHandles: React.FC<GroupResizeHandlesProps> = memo(({
       className="wf-group-resize-handles nodrag nopan"
       onPointerDown={stopToolbarNativeEvent}
       onMouseDown={stopToolbarNativeEvent}
-      style={{ ['--wf-group-accent' as string]: color || 'var(--wb-accent)' }}
+      style={accentStyle as React.CSSProperties}
     >
       {HANDLES.map((handle) => (
         <div

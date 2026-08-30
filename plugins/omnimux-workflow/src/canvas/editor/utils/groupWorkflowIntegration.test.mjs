@@ -45,7 +45,7 @@ test('全链路集成测试：多选 -> 打组 -> 8轴缩放 -> 局部执行 -> 
   ];
 
   // 2. 多选框选打组
-  const groupPlan = planGroupNodes(initialNodes, ['node_video_src', 'node_img_ref', 'node_video_out'], '夜景模特精修组', '#3b82f6');
+  const groupPlan = planGroupNodes(initialNodes, ['node_video_src', 'node_img_ref', 'node_video_out'], '夜景模特精修组');
   assert.ok(groupPlan, '打组计划应成功生成');
   assert.equal(groupPlan.nodes.length, 4, '应包含1个组容器+3个子节点');
 
@@ -53,7 +53,7 @@ test('全链路集成测试：多选 -> 打组 -> 8轴缩放 -> 局部执行 -> 
   assert.ok(groupNode);
   assert.equal(groupNode.type, 'group');
   assert.equal(groupNode.data.title, '夜景模特精修组');
-  assert.equal(groupNode.data.color, '#3b82f6');
+  assert.equal(groupNode.data.color, '');
 
   // 子节点相对坐标验证
   const child1 = groupPlan.nodes.find((n) => n.id === 'node_video_src');

@@ -12,12 +12,18 @@ import {
 } from 'lucide-react';
 import { useT } from '../../../i18n';
 import { stopToolbarNativeEvent } from '../toolbarPointerGuard';
-import { inverseScaleForZoom } from '../../utils/nodeVisualMath';
+import {
+  inverseScaleForZoom,
+  isCustomGroupAccent,
+  resolveGroupAccentStyle,
+  resolveGroupTopBarLayout,
+} from '../../utils/nodeVisualMath';
 
 export interface GroupTopBarProps {
   groupId: string;
   groupTitle: string;
   groupColor: string;
+  isCollapsed?: boolean;
   onExecuteGroup: () => void;
   onCreateWorkflow: () => void;
   onUngroup: () => void;
@@ -25,19 +31,22 @@ export interface GroupTopBarProps {
   onColorChange: (color: string) => void;
 }
 
+const NEUTRAL_SWATCH = '';
+/** 首位中性重置；需要蓝时用 #2563eb，不再保留遗留默认蓝 #3b82f6。 */
 const PALETTE_COLORS = [
-  '#3b82f6',
+  NEUTRAL_SWATCH,
+  '#2563eb',
   '#10b981',
   '#8b5cf6',
   '#f59e0b',
   '#ef4444',
   '#ec4899',
   '#06b6d4',
-  '#64748b',
 ];
 
 export const GroupTopBar: React.FC<GroupTopBarProps> = memo(({
   groupColor,
+  isCollapsed = false,
   onExecuteGroup,
   onCreateWorkflow,
   onUngroup,
@@ -47,6 +56,12 @@ export const GroupTopBar: React.FC<GroupTopBarProps> = memo(({
   const t = useT();
   const { zoom } = useViewport();
   const inverseScale = useMemo(() => inverseScaleForZoom(zoom), [zoom]);
+  const layout = useMemo(
+    () => resolveGroupTopBarLayout({ isCollapsed, inverseScale }),
+    [isCollapsed, inverseScale],
+  );
+  const accentStyle = useMemo(() => resolveGroupAccentStyle(groupColor), [groupColor]);
+  const isNeutral = !isCustomGroupAccent(groupColor);
 
   const [isLayoutOpen, setIsLayoutOpen] = useState(false);
   const [isColorOpen, setIsColorOpen] = useState(false);
@@ -72,11 +87,12 @@ export const GroupTopBar: React.FC<GroupTopBarProps> = memo(({
       onPointerDown={stopToolbarNativeEvent}
       onMouseDown={stopToolbarNativeEvent}
       style={{
-        top: -(12 * inverseScale),
-        transform: `translate(0, -100%) scale(${inverseScale})`,
-        transformOrigin: 'bottom left',
-        left: 12,
-        ['--wf-group-accent' as string]: groupColor,
+        ...accentStyle,
+        top: layout.top,
+        left: layout.left,
+        right: layout.right,
+        transform: layout.transform,
+        transformOrigin: layout.transformOrigin,
       }}
     >
       <div className="wf-floating-top-pill__group">
@@ -87,22 +103,30 @@ export const GroupTopBar: React.FC<GroupTopBarProps> = memo(({
             onClick={() => setIsColorOpen((prev) => !prev)}
             title={t('group.colorTitle')}
           >
-            <div className="wf-group-topbar__swatch" style={{ backgroundColor: groupColor }} />
+            <div
+              className="wf-group-topbar__swatch"
+              style={{ backgroundColor: isNeutral ? 'var(--wb-node-ring)' : groupColor }}
+            />
           </button>
           {isColorOpen && (
             <div className="wf-group-topbar__palette">
-              {PALETTE_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`wf-group-topbar__palette-dot ${groupColor === c ? 'is-active' : ''}`}
-                  style={{ backgroundColor: c }}
-                  onClick={() => {
-                    onColorChange(c);
-                    setIsColorOpen(false);
-                  }}
-                />
-              ))}
+              {PALETTE_COLORS.map((c) => {
+                const isReset = c === NEUTRAL_SWATCH;
+                const isActive = isReset ? isNeutral : groupColor === c;
+                return (
+                  <button
+                    key={isReset ? 'neutral-reset' : c}
+                    type="button"
+                    className={`wf-group-topbar__palette-dot ${isActive ? 'is-active' : ''}`}
+                    style={{ backgroundColor: isReset ? 'var(--wb-node-ring)' : c }}
+                    title={isReset ? t('group.colorReset') : undefined}
+                    onClick={() => {
+                      onColorChange(isReset ? '' : c);
+                      setIsColorOpen(false);
+                    }}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

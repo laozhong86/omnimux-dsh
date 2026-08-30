@@ -265,6 +265,7 @@ body[data-ds-dark-theme] .wf-canvas-root {
   background: transparent;
   border-radius: 0;
   box-shadow: none;
+  overflow: visible;
 }
 
 .wf-canvas-root .react-flow__controls {
