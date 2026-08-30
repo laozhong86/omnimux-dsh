@@ -88,7 +88,7 @@ export interface NodeSpatialInfo {
   measured?: { width?: number; height?: number };
   data?: Record<string, unknown>;
   type?: string;
-  style?: Record<string, unknown>;
+  style?: unknown;
 }
 
 export const DEFAULT_GROUP_PADDING = 32;
