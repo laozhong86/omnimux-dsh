@@ -1,7 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { AsyncMutex } from './AsyncMutex.ts';
-import { type HTableDocument, HTableDocumentSchema } from '../../shared/types/htable.ts';
+import {
+  type HTableDocument,
+  HTableDocumentSchema,
+  migrateLegacyTableDocument,
+} from '../../shared/types/htable.ts';
 
 export class TableStorageService {
   private static fileLocks = new Map<string, AsyncMutex>();
@@ -14,14 +18,16 @@ export class TableStorageService {
   }
 
   /**
-   * 安全加载并校验 .htable 表格文件
+   * 安全加载并校验 .htable 表格文件（支持老版本数组格式平滑迁移）
    */
   static async loadTable(tablePath: string): Promise<HTableDocument> {
     const mutex = this.getMutex(tablePath);
     return await mutex.runExclusive(async () => {
       const raw = await fs.readFile(tablePath, 'utf-8');
       const json = JSON.parse(raw);
-      return HTableDocumentSchema.parse(json);
+      // 容错迁移老数据与坏结构
+      const migrated = migrateLegacyTableDocument(json);
+      return HTableDocumentSchema.parse(migrated);
     });
   }
 
@@ -31,8 +37,9 @@ export class TableStorageService {
   static async saveTable(tablePath: string, doc: HTableDocument): Promise<void> {
     const mutex = this.getMutex(tablePath);
     return await mutex.runExclusive(async () => {
-      // 1. Zod Schema 运行时校验
-      const validated = HTableDocumentSchema.parse(doc);
+      // 1. 容错迁移并执行 Zod Schema 运行时校验
+      const normalized = migrateLegacyTableDocument(doc);
+      const validated = HTableDocumentSchema.parse(normalized);
       const content = JSON.stringify(validated, null, 2);
 
       // 2. 确保目录存在
@@ -40,7 +47,10 @@ export class TableStorageService {
       await fs.mkdir(dir, { recursive: true });
 
       // 3. 写入临时文件
-      const tempPath = path.join(dir, `.${path.basename(tablePath)}.${Date.now()}.${Math.random().toString(36).substring(2, 7)}.tmp`);
+      const tempPath = path.join(
+        dir,
+        `.${path.basename(tablePath)}.${Date.now()}.${Math.random().toString(36).substring(2, 7)}.tmp`
+      );
       await fs.writeFile(tempPath, content, 'utf-8');
 
       // 4. 原子重命名覆盖

@@ -5,13 +5,13 @@ import {
   Plus,
   Maximize2,
   FileSpreadsheet,
-  Layers,
+  MessageSquarePlus,
 } from 'lucide-react';
-import { useTableStore } from '../../store/tableStore';
-import { useIsMultiSelected } from '../../store/canvasStore';
-import NodeHeader from '../../editor/components/MaterialNode/NodeHeader';
-import CanvasNodeHandle from '../../editor/components/CanvasNodeHandle';
-import { inverseScaleForZoom } from '../../editor/utils/nodeVisualMath';
+import { useTableStore } from '../../store/tableStore.ts';
+import { useIsMultiSelected } from '../../store/canvasStore.ts';
+import NodeHeader from '../../editor/components/MaterialNode/NodeHeader.tsx';
+import CanvasNodeHandle from '../../editor/components/CanvasNodeHandle.tsx';
+import { inverseScaleForZoom } from '../../editor/utils/nodeVisualMath.ts';
 
 const DEFAULT_TABLE_NODE_WIDTH = 380;
 const DEFAULT_TABLE_NODE_HEIGHT = 280;
@@ -25,9 +25,25 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
   const rows = document.rows || [];
   const firstCol = document.columns[0];
   const nodeTitle = (data as any)?.label || document.title || '表格';
+  const tableRelPath = (data as any)?.tablePath || (data as any)?.path || `.hilo/tables/${id}.htable`;
 
   const isMultiSelected = useIsMultiSelected();
   const showFloatingPill = !isMultiSelected && (isHovered || selected);
+
+  // 【Add to Chat 链路】点击派发事件至 Host Chat Composer
+  const handleAddToChat = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.dispatchEvent(
+      new CustomEvent('omnimux:add-to-chat', {
+        detail: {
+          relativePath: tableRelPath,
+          filename: `${nodeTitle}.htable`,
+          nodeId: id,
+          kind: 'table',
+        },
+      })
+    );
+  }, [id, nodeTitle, tableRelPath]);
 
   return (
     <div
@@ -47,6 +63,15 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
           }}
         >
           <div className="wf-floating-top-pill__group">
+            <button
+              type="button"
+              className="wf-floating-top-pill__btn"
+              title="添加到对话 (作为 Agent 上下文)"
+              onClick={handleAddToChat}
+            >
+              <MessageSquarePlus size={13} />
+              <span>添加到对话</span>
+            </button>
             <button
               type="button"
               className="wf-floating-top-pill__btn"
@@ -157,10 +182,10 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
               </span>
             </div>
 
-            {/* 记录预览列表 */}
+            {/* 记录预览列表：通过 firstCol.id 从字典提取预览值 */}
             <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto' }}>
               {rows.slice(0, 3).map((r, idx) => {
-                const cellVal = r.cells[0];
+                const cellVal = firstCol ? r.cells[firstCol.id] : undefined;
                 const previewText =
                   typeof cellVal === 'string' && cellVal
                     ? cellVal
@@ -172,7 +197,7 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
 
                 return (
                   <div
-                    key={idx}
+                    key={r.id || idx}
                     style={{
                       padding: '8px 12px',
                       background: 'color-mix(in srgb, var(--wb-surface) 40%, transparent)',

@@ -1,13 +1,17 @@
 import { create } from 'zustand';
-import type {
-  HTableDocument,
-  HTableColumn,
-  HTableRow,
-  HTableFieldType,
-  HTableCellValue,
-  HTableFilterCondition,
-  HTableRowHeight,
-} from '../../shared/types/htable';
+import {
+  type HTableDocument,
+  type HTableColumn,
+  type HTableRow,
+  type HTableFieldType,
+  type HTableCellValue,
+  type HTableFilterCondition,
+  type HTableRowHeight,
+  newColumnId,
+  newRowId,
+  defaultColumnWidth,
+  migrateLegacyTableDocument,
+} from '../../shared/types/htable.ts';
 
 export interface ColumnModalState {
   isOpen: boolean;
@@ -22,6 +26,9 @@ export interface TableStoreState {
   document: HTableDocument;
   isStageOpen: boolean;
 
+  // Row Selection State
+  selectedRowIndices: number[];
+
   // History Stacks
   undoStack: HTableDocument[];
   redoStack: HTableDocument[];
@@ -34,6 +41,13 @@ export interface TableStoreState {
   // Stage Control
   openStage: (initialDoc?: HTableDocument) => void;
   closeStage: () => void;
+
+  // Row Selection Actions
+  toggleRowSelection: (rowIdx: number) => void;
+  selectAllRows: () => void;
+  clearRowSelection: () => void;
+  setRowSelection: (indices: number[]) => void;
+  deleteSelectedRows: () => void;
 
   // History Actions
   undo: () => void;
@@ -49,11 +63,13 @@ export interface TableStoreState {
 
   // Document Mutations (with automatic History Snapshot push)
   setTitle: (title: string) => void;
-  updateCell: (rowIdx: number, colIdx: number, val: HTableCellValue) => void;
-  addRow: (cells?: HTableCellValue[]) => void;
+  updateCell: (rowIdx: number, columnIdOrIdx: string | number, val: HTableCellValue) => void;
+  addRow: (cells?: Record<string, HTableCellValue> | HTableCellValue[]) => void;
   deleteRow: (rowIdx: number) => void;
+  reorderRows: (sourceIdx: number, targetIdx: number) => void;
   addColumn: (title: string, type: HTableFieldType, width?: number) => void;
   updateColumn: (colIdx: number, title: string, type: HTableFieldType) => void;
+  renameColumn: (colIdx: number, newTitle: string) => void;
   deleteColumn: (colIdx: number) => void;
   toggleColumnVisibility: (colIdx: number) => void;
   reorderColumns: (sourceIdx: number, targetIdx: number) => void;
@@ -76,12 +92,6 @@ const defaultInitialDocument: HTableDocument = {
     { id: 'col_text', title: '文本', type: 'text', visible: true, width: 280 },
   ],
   rows: [],
-  filter: {
-    match: 'all',
-    conditions: [
-      { columnIndex: 0, op: 'equals', value: '' },
-    ],
-  },
 };
 
 export const useTableStore = create<TableStoreState>((set, get) => {
@@ -94,6 +104,7 @@ export const useTableStore = create<TableStoreState>((set, get) => {
   return {
     document: defaultInitialDocument,
     isStageOpen: false,
+    selectedRowIndices: [],
     undoStack: [],
     redoStack: [],
     activePopover: null,
@@ -108,19 +119,63 @@ export const useTableStore = create<TableStoreState>((set, get) => {
 
     openStage: (initialDoc) => {
       if (initialDoc) {
+        const normalized = migrateLegacyTableDocument(initialDoc);
         set({
-          document: cloneDoc(initialDoc),
+          document: cloneDoc(normalized),
           isStageOpen: true,
+          selectedRowIndices: [],
           undoStack: [],
           redoStack: [],
           activePopover: null,
         });
       } else {
-        set({ isStageOpen: true, activePopover: null });
+        set({ isStageOpen: true, selectedRowIndices: [], activePopover: null });
       }
     },
 
-    closeStage: () => set({ isStageOpen: false, activePopover: null, activeContextMenuColIdx: null }),
+    closeStage: () =>
+      set({
+        isStageOpen: false,
+        selectedRowIndices: [],
+        activePopover: null,
+        activeContextMenuColIdx: null,
+      }),
+
+    toggleRowSelection: (rowIdx) => {
+      const { selectedRowIndices } = get();
+      if (selectedRowIndices.includes(rowIdx)) {
+        set({ selectedRowIndices: selectedRowIndices.filter((idx) => idx !== rowIdx) });
+      } else {
+        const newSelection = [...selectedRowIndices, rowIdx].sort((a, b) => a - b);
+        set({ selectedRowIndices: newSelection });
+      }
+    },
+
+    selectAllRows: () => {
+      const { document } = get();
+      const allIndices = document.rows.map((_, idx) => idx);
+      set({ selectedRowIndices: allIndices });
+    },
+
+    clearRowSelection: () => set({ selectedRowIndices: [] }),
+
+    setRowSelection: (indices) => {
+      const sorted = Array.from(new Set(indices)).sort((a, b) => a - b);
+      set({ selectedRowIndices: sorted });
+    },
+
+    deleteSelectedRows: () => {
+      const { document, selectedRowIndices } = get();
+      if (selectedRowIndices.length === 0) return;
+      const history = pushSnapshot(document);
+      const toDeleteSet = new Set(selectedRowIndices);
+      const newRows = document.rows.filter((_, idx) => !toDeleteSet.has(idx));
+      set({
+        document: { ...document, rows: newRows },
+        selectedRowIndices: [],
+        ...history,
+      });
+    },
 
     undo: () => {
       const { undoStack, document, redoStack } = get();
@@ -130,6 +185,7 @@ export const useTableStore = create<TableStoreState>((set, get) => {
       const newUndo = undoStack.slice(0, -1);
       set({
         document: cloneDoc(prevDoc),
+        selectedRowIndices: [],
         undoStack: newUndo,
         redoStack: [...redoStack, cloneDoc(document)].slice(-MAX_HISTORY_DEPTH),
       });
@@ -143,6 +199,7 @@ export const useTableStore = create<TableStoreState>((set, get) => {
       const newRedo = redoStack.slice(0, -1);
       set({
         document: cloneDoc(nextDoc),
+        selectedRowIndices: [],
         redoStack: newRedo,
         undoStack: [...undoStack, cloneDoc(document)].slice(-MAX_HISTORY_DEPTH),
       });
@@ -195,14 +252,24 @@ export const useTableStore = create<TableStoreState>((set, get) => {
       });
     },
 
-    updateCell: (rowIdx, colIdx, val) => {
+    updateCell: (rowIdx, columnIdOrIdx, val) => {
       const { document } = get();
       const existingRow = document.rows[rowIdx];
       if (!existingRow) return;
+
+      const columnId =
+        typeof columnIdOrIdx === 'number'
+          ? document.columns[columnIdOrIdx]?.id
+          : columnIdOrIdx;
+
+      if (!columnId) return;
+
       const history = pushSnapshot(document);
       const newRows = [...document.rows];
-      const targetRow = { ...existingRow, cells: [...existingRow.cells] };
-      targetRow.cells[colIdx] = val;
+      const targetRow: HTableRow = {
+        ...existingRow,
+        cells: { ...existingRow.cells, [columnId]: val },
+      };
       newRows[rowIdx] = targetRow;
       set({
         document: { ...document, rows: newRows },
@@ -213,46 +280,81 @@ export const useTableStore = create<TableStoreState>((set, get) => {
     addRow: (cells) => {
       const { document } = get();
       const history = pushSnapshot(document);
-      const emptyCells = cells || document.columns.map((c) => (c.type === 'attachment' ? [] : ''));
+      const cellMap: Record<string, HTableCellValue> = {};
+
+      if (cells && typeof cells === 'object' && !Array.isArray(cells)) {
+        Object.assign(cellMap, cells);
+      } else if (Array.isArray(cells)) {
+        cells.forEach((val, idx) => {
+          const col = document.columns[idx];
+          if (col) cellMap[col.id] = val;
+        });
+      }
+
       set({
         document: {
           ...document,
-          rows: [...document.rows, { cells: emptyCells }],
+          rows: [...document.rows, { id: newRowId(), cells: cellMap }],
         },
         ...history,
       });
     },
 
     deleteRow: (rowIdx) => {
-      const { document } = get();
+      const { document, selectedRowIndices } = get();
       if (!document.rows[rowIdx]) return;
       const history = pushSnapshot(document);
       const newRows = document.rows.filter((_, idx) => idx !== rowIdx);
+      const newSelection = selectedRowIndices
+        .filter((idx) => idx !== rowIdx)
+        .map((idx) => (idx > rowIdx ? idx - 1 : idx));
       set({
         document: { ...document, rows: newRows },
+        selectedRowIndices: newSelection,
         ...history,
       });
     },
 
-    addColumn: (title, type, width = 240) => {
+    reorderRows: (sourceIdx, targetIdx) => {
+      const { document, selectedRowIndices } = get();
+      if (sourceIdx === targetIdx) return;
+      const rowToMove = document.rows[sourceIdx];
+      if (!rowToMove) return;
+
+      const history = pushSnapshot(document);
+      const newRows = [...document.rows];
+      const [moved] = newRows.splice(sourceIdx, 1);
+      if (moved) newRows.splice(targetIdx, 0, moved);
+
+      // 重新映射选中行
+      const newSelection = selectedRowIndices.map((idx) => {
+        if (idx === sourceIdx) return targetIdx;
+        if (sourceIdx < targetIdx && idx > sourceIdx && idx <= targetIdx) return idx - 1;
+        if (sourceIdx > targetIdx && idx >= targetIdx && idx < sourceIdx) return idx + 1;
+        return idx;
+      }).sort((a, b) => a - b);
+
+      set({
+        document: { ...document, rows: newRows },
+        selectedRowIndices: newSelection,
+        ...history,
+      });
+    },
+
+    addColumn: (title, type, width) => {
       const { document } = get();
       const history = pushSnapshot(document);
       const newCol: HTableColumn = {
-        id: `col_${Math.random().toString(36).substring(2, 9)}`,
-        title,
+        id: newColumnId(),
+        title: title.trim() || 'Untitled',
         type,
         visible: true,
-        width,
+        width: width ?? defaultColumnWidth(type),
       };
-      const newRows = document.rows.map((row) => ({
-        ...row,
-        cells: [...row.cells, type === 'attachment' ? [] : ''],
-      }));
       set({
         document: {
           ...document,
           columns: [...document.columns, newCol],
-          rows: newRows,
         },
         ...history,
       });
@@ -264,7 +366,27 @@ export const useTableStore = create<TableStoreState>((set, get) => {
       if (!targetCol) return;
       const history = pushSnapshot(document);
       const newCols = [...document.columns];
-      newCols[colIdx] = { ...targetCol, title, type };
+      newCols[colIdx] = {
+        ...targetCol,
+        title: title.trim() || targetCol.title,
+        type,
+      };
+      set({
+        document: { ...document, columns: newCols },
+        ...history,
+      });
+    },
+
+    renameColumn: (colIdx, newTitle) => {
+      const { document } = get();
+      const targetCol = document.columns[colIdx];
+      if (!targetCol) return;
+      const trimmed = newTitle.trim();
+      if (!trimmed || targetCol.title === trimmed) return;
+
+      const history = pushSnapshot(document);
+      const newCols = [...document.columns];
+      newCols[colIdx] = { ...targetCol, title: trimmed };
       set({
         document: { ...document, columns: newCols },
         ...history,
@@ -276,12 +398,9 @@ export const useTableStore = create<TableStoreState>((set, get) => {
       if (!document.columns[colIdx]) return;
       const history = pushSnapshot(document);
       const newCols = document.columns.filter((_, idx) => idx !== colIdx);
-      const newRows = document.rows.map((row) => ({
-        ...row,
-        cells: row.cells.filter((_, idx) => idx !== colIdx),
-      }));
+      // 字典模型下删除列定义无需对 rows 做破坏性清洗，保留原数据解耦
       set({
-        document: { ...document, columns: newCols, rows: newRows },
+        document: { ...document, columns: newCols },
         ...history,
       });
     },
@@ -310,15 +429,9 @@ export const useTableStore = create<TableStoreState>((set, get) => {
       const [movedCol] = newCols.splice(sourceIdx, 1);
       if (movedCol) newCols.splice(targetIdx, 0, movedCol);
 
-      const newRows = document.rows.map((row) => {
-        const newCells = [...row.cells];
-        const [movedCell] = newCells.splice(sourceIdx, 1);
-        if (movedCell !== undefined) newCells.splice(targetIdx, 0, movedCell);
-        return { ...row, cells: newCells };
-      });
-
+      // 字典模型下列重排无需改动 rows[].cells，纯表头顺序更新，100% 杜绝错位
       set({
-        document: { ...document, columns: newCols, rows: newRows },
+        document: { ...document, columns: newCols },
         ...history,
       });
     },
@@ -345,6 +458,14 @@ export const useTableStore = create<TableStoreState>((set, get) => {
       });
     },
 
-    loadDocument: (doc) => set({ document: cloneDoc(doc), undoStack: [], redoStack: [] }),
+    loadDocument: (doc) => {
+      const normalized = migrateLegacyTableDocument(doc);
+      set({
+        document: cloneDoc(normalized),
+        selectedRowIndices: [],
+        undoStack: [],
+        redoStack: [],
+      });
+    },
   };
 });
