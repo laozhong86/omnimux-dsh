@@ -24,6 +24,7 @@ import StatusBadge from '../../editor/components/MaterialNode/StatusBadge';
 import GenerationStateContainer from '../../editor/components/GenerationStateContainer';
 import NodeLauncherState from '../../editor/components/NodeEmptyState/NodeLauncherState';
 import VideoCompositionResult from './videoCompositionResult';
+import { planClipExportDownstream } from './videoCompositionDownstream';
 import {
   mapVideoCompositionToBadge,
   mapVideoCompositionToView,
@@ -134,7 +135,7 @@ export function createDefaultVideoCompositionData(): VideoCompositionNodeData {
 const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const nodeData = (isRecord(data) ? data : {}) as VideoCompositionNodeData;
   const setNodes = useCanvasStore((state) => state.setNodes);
-  const setEdges = useCanvasStore((state) => state.setEdges);
+  const applyCanvasInputMutation = useCanvasStore((state) => state.applyCanvasInputMutation);
   const t = useT();
 
   const status: VideoCompositionStatus = nodeData.status ?? 'idle';
@@ -179,53 +180,22 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       // ─── 画布模式：自动创建下游视频素材节点并连线 ───
       if (output?.videoPath && detail.createDownstreamNode) {
         const store = useCanvasStore.getState();
-        const currentNodes = store.nodes;
-        const currentNode = currentNodes.find((n) => n.id === id);
-        const currentPos = currentNode?.position || { x: 0, y: 0 };
-
-        // 防重：若已有挂载同一文件路径的下游节点则不重复创建
-        const alreadyLinked = currentNodes.some(
-          (n) => n.type === 'material' && (n.data as Record<string, unknown>)?.realPath === output.videoPath
-        );
-
-        if (!alreadyLinked) {
-          const newNodeId = `node_mat_vid_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-          const newPos = {
-            x: currentPos.x + VIDEO_COMPOSITION_NODE_WIDTH + 80,
-            y: currentPos.y,
-          };
-          const newVideoNode = {
-            id: newNodeId,
-            type: 'material',
-            position: newPos,
-            selected: true,
-            data: {
-              materialType: 'video',
-              label: `${nodeData.title || nodeData.label || t('node.type.video_composition')}_成片`,
-              status: 'ready',
-              selectedTool: 'import',
-              realPath: output.videoPath,
-              mediaUrl: output.videoPath,
-              thumbnailUrl: output.thumbnailPath,
-              duration: output.durationMs ? Math.round(output.durationMs / 1000) : undefined,
-              size: { width: output.width || 1920, height: output.height || 1080 },
-            },
-          };
-
-          const newEdgeId = `edge_${id}_${newNodeId}`;
-          const newEdge = {
-            id: newEdgeId,
-            source: id,
-            target: newNodeId,
-            sourceHandle: 'output',
-            targetHandle: 'input',
-          };
-
-          setNodes((nodes) => [
-            ...nodes.map((node) => ({ ...node, selected: false })),
-            newVideoNode as never,
-          ]);
-          setEdges((edges) => [...edges, newEdge as never]);
+        const currentNode = store.nodes.find((n) => n.id === id);
+        const plan = planClipExportDownstream({
+          sourceNodeId: id,
+          sourcePosition: currentNode?.position || { x: 0, y: 0 },
+          sourceLabel: nodeData.title || nodeData.label || t('node.type.video_composition'),
+          output,
+          currentNodes: store.nodes,
+          currentEdges: store.edges,
+          nodeWidth: VIDEO_COMPOSITION_NODE_WIDTH,
+        });
+        if (plan) {
+          applyCanvasInputMutation({
+            addNodes: plan.addNodes.map((node) => ({ ...node, selected: true })),
+            addEdges: plan.addEdges,
+            removeEdgeIds: plan.removeEdgeIds,
+          });
           toast.success(t('clip.exportedToNode') || '已生成视频节点并连接到画布');
         }
       }
@@ -259,7 +229,47 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       window.removeEventListener(OMNIMUX_CLIP_PROGRESS, onProgress);
       window.removeEventListener(OMNIMUX_CLIP_CLOSE, onClose);
     };
-  }, [hasOutput, id, nodeData.projectId, nodeData.status, updateNodeData]);
+  }, [applyCanvasInputMutation, hasOutput, id, nodeData.projectId, nodeData.status, t, updateNodeData]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!nodeData.outputVideoUrl) return;
+    const store = useCanvasStore.getState();
+    const currentNode = store.nodes.find((n) => n.id === id);
+    const plan = planClipExportDownstream({
+      sourceNodeId: id,
+      sourcePosition: currentNode?.position || { x: 0, y: 0 },
+      sourceLabel: nodeData.title || nodeData.label || t('node.type.video_composition'),
+      output: {
+        videoPath: nodeData.outputVideoUrl,
+        thumbnailPath: nodeData.thumbnailUrl || nodeData.outputThumbnailUrl,
+        durationMs: nodeData.outputDurationMs,
+        width: nodeData.outputWidth,
+        height: nodeData.outputHeight,
+      },
+      currentNodes: store.nodes,
+      currentEdges: store.edges,
+      nodeWidth: VIDEO_COMPOSITION_NODE_WIDTH,
+      createIfMissing: false,
+    });
+    if (!plan) return;
+    applyCanvasInputMutation({
+      addEdges: plan.addEdges,
+      removeEdgeIds: plan.removeEdgeIds,
+    });
+  }, [
+    applyCanvasInputMutation,
+    id,
+    nodeData.label,
+    nodeData.outputDurationMs,
+    nodeData.outputHeight,
+    nodeData.outputThumbnailUrl,
+    nodeData.outputVideoUrl,
+    nodeData.outputWidth,
+    nodeData.thumbnailUrl,
+    nodeData.title,
+    t,
+  ]);
 
   const openEditor = useCallback(() => {
     if (typeof window === 'undefined') return;

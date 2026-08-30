@@ -157,51 +157,33 @@ test('状态流转：save 事件触发后状态从 rendering/editing 转换为 c
   assert.equal(formatResolution(savePayload.output.width, savePayload.output.height), '1920×1080');
 });
 
-test('下游连线：save 事件携带 createDownstreamNode 时的目标节点与边数据契约', () => {
-  const currentPos = { x: 100, y: 200 };
-  const nodeWidth = 350;
-  const gap = 80;
-  const targetX = currentPos.x + nodeWidth + gap;
-  const targetY = currentPos.y;
-
-  const output = {
-    videoPath: '/data/renders/project_123.mp4',
-    thumbnailPath: 'data:image/jpeg;base64,cover',
-    durationMs: 30000,
-    width: 3840,
-    height: 2160,
-  };
-
-  const downstreamNode = {
-    id: 'node_mat_vid_test_1',
-    type: 'material',
-    position: { x: targetX, y: targetY },
-    data: {
-      materialType: 'video',
-      label: '视频合成_成片',
-      status: 'ready',
-      selectedTool: 'import',
-      realPath: output.videoPath,
-      mediaUrl: output.videoPath,
-      thumbnailUrl: output.thumbnailPath,
-      duration: Math.round(output.durationMs / 1000),
-      size: { width: output.width, height: output.height },
+test('下游连线：save 事件携带 createDownstreamNode 时的目标节点与边数据契约', async () => {
+  const { planClipExportDownstream } = await import('./videoCompositionDownstream.ts');
+  const plan = planClipExportDownstream({
+    sourceNodeId: 'node_comp_1',
+    sourcePosition: { x: 100, y: 200 },
+    sourceLabel: '视频合成',
+    output: {
+      videoPath: '/data/renders/project_123.mp4',
+      thumbnailPath: 'data:image/jpeg;base64,cover',
+      durationMs: 30000,
+      width: 3840,
+      height: 2160,
     },
-  };
+    currentNodes: [],
+    currentEdges: [],
+    nodeWidth: 350,
+    createNodeId: () => 'node_mat_vid_test_1',
+  });
 
-  const edge = {
-    id: `edge_comp_${downstreamNode.id}`,
-    source: 'node_comp_1',
-    target: downstreamNode.id,
-    sourceHandle: 'output',
-    targetHandle: 'input',
-  };
-
-  assert.equal(downstreamNode.type, 'material');
-  assert.equal(downstreamNode.data.materialType, 'video');
-  assert.equal(downstreamNode.data.realPath, '/data/renders/project_123.mp4');
-  assert.equal(downstreamNode.position.x, 530);
-  assert.equal(downstreamNode.position.y, 200);
-  assert.equal(edge.sourceHandle, 'output');
-  assert.equal(edge.targetHandle, 'input');
+  assert.ok(plan);
+  assert.equal(plan.addNodes.length, 1);
+  assert.equal(plan.addEdges.length, 1);
+  assert.equal(plan.addNodes[0].type, 'material');
+  assert.equal(plan.addNodes[0].data.materialType, 'video');
+  assert.equal(plan.addNodes[0].data.realPath, '/data/renders/project_123.mp4');
+  assert.equal(plan.addNodes[0].position.x, 530);
+  assert.equal(plan.addNodes[0].position.y, 200);
+  assert.equal(plan.addEdges[0].sourceHandle, 'out');
+  assert.equal(plan.addEdges[0].targetHandle, 'in');
 });
