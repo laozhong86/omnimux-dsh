@@ -39,7 +39,6 @@ const MATERIAL_OUTPUT_OPTIONS: Record<MaterialType, MaterialOutputOption[]> = {
   video: [
     { targetMaterialType: 'text', targetTool: 'text-to-text', icon: 'TextGen' },
     { targetMaterialType: 'video', targetTool: 'video-generation', icon: 'VideoGen' },
-    { targetMaterialType: 'video', targetTool: 'motion-mimicry', icon: 'PersonStanding' },
   ],
   audio: [
     { targetMaterialType: 'video', targetTool: 'video-generation', icon: 'VideoGen' },
