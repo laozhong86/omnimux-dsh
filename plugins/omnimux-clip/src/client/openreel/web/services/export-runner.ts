@@ -95,14 +95,10 @@ function triggerAnchorDownload(data: Blob, filename: string, onRelease?: () => v
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
-  window.addEventListener(
-    "pagehide",
-    () => {
-      URL.revokeObjectURL(url);
-      onRelease?.();
-    },
-    { once: true },
-  );
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    onRelease?.();
+  }, 1000);
 }
 
 const OPFS_TMP_PREFIX = ".openreel-export-";
