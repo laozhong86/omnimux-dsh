@@ -1,4 +1,4 @@
-import { OmnimuxError } from './errors.js'
+import { OmnimuxError, unwrapAdapterError } from './errors.js'
 import { downloadMediaFile } from './job.js'
 import { createOpenAiMediaRuntime, pollOpenAiMediaTask } from './protocols/openai-media.js'
 import { parseMediaConfig, resolveMediaAuth, resolveMediaRoute } from './route.js'
@@ -48,20 +48,25 @@ export async function executeOmnimuxMedia(capability, input) {
   }
   const wait = input.wait !== false
   const runtime = input.runtime ?? createProtocolRuntime(route, input.fetcher, auth.apiKey)
-  const result = await runtime.execute({
-    providerId: route.providerId,
-    modelId: `${route.providerId}-${capability}`,
-    input: mapOmnimuxInput(capability, {
-      prompt,
-      duration: input.duration,
-      image: input.image,
-      speech: input.speech,
-      audio: input.audio,
-    }),
-    timeoutMs: 10 * 60_000,
-    metadata: { wait },
-    ...(input.signal ? { signal: input.signal } : {}),
-  })
+  let result
+  try {
+    result = await runtime.execute({
+      providerId: route.providerId,
+      modelId: `${route.providerId}-${capability}`,
+      input: mapOmnimuxInput(capability, {
+        prompt,
+        duration: input.duration,
+        image: input.image,
+        speech: input.speech,
+        audio: input.audio,
+      }),
+      timeoutMs: 10 * 60_000,
+      metadata: { wait },
+      ...(input.signal ? { signal: input.signal } : {}),
+    })
+  } catch (error) {
+    throw unwrapAdapterError(error)
+  }
   const url = result.outputs.find((item) => item.type === capability)?.url
   const submittedId = result.taskId ?? null
   if (!wait && !url) {

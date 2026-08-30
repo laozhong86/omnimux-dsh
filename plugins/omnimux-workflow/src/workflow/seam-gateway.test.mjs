@@ -120,6 +120,11 @@ function createFakeSeamHub(opts = {}) {
         if (opts.failSubmitWith) throw opts.failSubmitWith;
         assert.equal(req.wait, false, 'fake hub expects wait:false submits');
         await sleep(submitDelayMs, req.signal);
+        if (opts.liveSubmitWithoutTaskId) {
+          mkdirSync(dirname(req.dest), { recursive: true });
+          writeFileSync(req.dest, `fake-${capability}-sync`);
+          return { mode: 'live', taskId: null, url: `https://cdn.test/${capability}/sync` };
+        }
         const taskId = `hub_${capability}_${state.submits}`;
         return { mode: 'submitted', taskId, url: null };
       } finally {
@@ -367,6 +372,62 @@ test('text node: textComplete seam → generatedContent 回填 + 落盘', async 
     const absolute = join(h.root, 'media', 'executions', execId, 'n1.txt');
     assert.ok(existsSync(absolute));
     assert.equal(readFileSync(absolute, 'utf8'), 'echo:prompt for n1');
+  } finally {
+    h.dispose();
+    rmSync(h.root, { recursive: true, force: true });
+  }
+});
+
+test('sync live 提交没有 taskId 时仍回填产物（gpt-image-2 b64）', async () => {
+  const hub = createFakeSeamHub({
+    liveSubmitWithoutTaskId: true,
+  });
+  const h = makeHarness({ seamHub: hub });
+  try {
+    const wsId = await h.createGraph({ nodes: [h.materialNode('n1', 'image')] });
+    const exec = await h.call({
+      method: 'POST',
+      url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
+      body: { mode: 'full' },
+    });
+    const execId = exec.body.execution.id;
+    const sse = await h.openSse({
+      url: `/omnimux-workflow/api/workspaces/${wsId}/executions/${execId}/events`,
+      until: (raw) => raw.includes('event: execution_complete'),
+    });
+    assert.ok(sse.satisfied, 'sync live submit should complete without a hub taskId');
+    const complete = h.parseSse(sse.raw).find((e) => e.event === 'node_complete');
+    assert.equal(complete.data.output.mediaAssets[0].type, 'image');
+    const absolute = join(h.root, 'media', 'executions', execId, 'n1.svg');
+    assert.ok(existsSync(absolute));
+    assert.equal(hub.state.polls, 0, 'must not poll a missing task id');
+  } finally {
+    h.dispose();
+    rmSync(h.root, { recursive: true, force: true });
+  }
+});
+
+test('ADAPTER_FAILED 把 cause 拼进节点错误', async () => {
+  const wrapped = codedError('ADAPTER_FAILED', 'Adapter openai-compatible failed');
+  wrapped.cause = Object.assign(new Error('Invalid token (request id: xyz)'), { code: 'REQUEST_FAILED' });
+  const hub = createFakeSeamHub({ failSubmitWith: wrapped });
+  const h = makeHarness({ seamHub: hub });
+  try {
+    const wsId = await h.createGraph({ nodes: [h.materialNode('n1', 'image')] });
+    const exec = await h.call({
+      method: 'POST',
+      url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
+      body: { mode: 'full' },
+    });
+    const execId = exec.body.execution.id;
+    const sse = await h.openSse({
+      url: `/omnimux-workflow/api/workspaces/${wsId}/executions/${execId}/events`,
+      until: (raw) => raw.includes('event: execution_error'),
+    });
+    assert.ok(sse.satisfied, 'execution should fail');
+    const nodeError = h.parseSse(sse.raw).find((e) => e.event === 'node_error');
+    assert.match(nodeError.data.error, /\[omnimux:ADAPTER_FAILED\]/);
+    assert.match(nodeError.data.error, /Invalid token/);
   } finally {
     h.dispose();
     rmSync(h.root, { recursive: true, force: true });

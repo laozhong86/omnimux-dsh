@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -160,5 +160,65 @@ describe('OmniMux Profile Target Selection Matrix', () => {
     })
     assert.equal(res.status, 0)
     assert.match(res.stdout, /Agent Presets 物化完成/)
+    assert.match(res.stdout, /OmniMux Dev\.app/)
+    assert.doesNotMatch(res.stdout, /OmniMux\.app\/Contents/)
+    assert.doesNotMatch(res.stdout, /DSH Desktop\.app/)
+    assert.doesNotMatch(res.stdout, /\.agent-presets/)
+  })
+
+  it('sync-agent-presets.sh --dsh skips desktop/web and never retires user presets', () => {
+    const userRoot = join(fakeHome, '.dsh', '.agent-presets')
+    mkdirSync(join(userRoot, 'dsh-plugin-team'), { recursive: true })
+    writeFileSync(join(userRoot, 'dsh-plugin-team', 'preset.yml'), 'name: keep-me\n')
+    mkdirSync(join(fakeHome, '.dsh', 'profiles', 'desktop'), { recursive: true })
+    mkdirSync(join(fakeHome, '.dsh', 'profiles', 'web'), { recursive: true })
+    mkdirSync(join(fakeHome, '.dsh', 'profiles', 'omnimux'), { recursive: true })
+
+    const res = spawnSync('bash', [
+      syncPresetsScript,
+      '--dsh',
+    ], {
+      cwd: root,
+      env: {
+        ...process.env,
+        HOME: fakeHome,
+      },
+      encoding: 'utf8',
+    })
+    assert.equal(res.status, 0)
+    assert.match(res.stdout, /skip non-omnimux profile/)
+    assert.doesNotMatch(res.stdout, /==> 物化 Agent Presets → .*DSH Desktop/)
+    assert.doesNotMatch(res.stdout, /清理旧用户预设/)
+    assert.doesNotMatch(res.stdout, /- retired /)
+    assert.ok(existsSync(join(userRoot, 'dsh-plugin-team', 'preset.yml')))
+    assert.equal(
+      readFileSync(join(userRoot, 'dsh-plugin-team', 'preset.yml'), 'utf8'),
+      'name: keep-me\n',
+    )
+  })
+
+  it('sync-agent-presets.sh --all never writes DSH Desktop.app or user preset root', () => {
+    const userRoot = join(fakeHome, '.dsh', '.agent-presets', 'software-company')
+    mkdirSync(userRoot, { recursive: true })
+    writeFileSync(join(userRoot, 'preset.yml'), 'name: software\n')
+
+    const res = spawnSync('bash', [
+      syncPresetsScript,
+      '--all',
+    ], {
+      cwd: root,
+      env: {
+        ...process.env,
+        HOME: fakeHome,
+      },
+      encoding: 'utf8',
+    })
+    assert.equal(res.status, 0)
+    assert.match(res.stdout, /OmniMux Dev\.app/)
+    assert.match(res.stdout, /==> 物化 Agent Presets → \/Applications\/OmniMux\.app/)
+    assert.doesNotMatch(res.stdout, /==> 物化 Agent Presets → .*DSH Desktop/)
+    assert.doesNotMatch(res.stdout, /清理旧用户预设/)
+    assert.doesNotMatch(res.stdout, /- retired /)
+    assert.ok(existsSync(join(userRoot, 'preset.yml')))
   })
 })

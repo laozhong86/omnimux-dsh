@@ -1,0 +1,46 @@
+{
+  "pass": true,
+  "tool": "ego-browser",
+  "issueId": "188",
+  "relatedIssue": 203,
+  "pr": 196,
+  "plugin": "omnimux-publish",
+  "commitSha": "0c13da0",
+  "taskSpaceName": "omnimux-qa-issue-188-190-stages",
+  "taskSpaceId": 163,
+  "requestedUrl": "http://127.0.0.1:44203",
+  "actualUrl": "http://127.0.0.1:44203/",
+  "title": "OmniMux",
+  "dshHome": "/Users/x/.dsh-dev/tasks/crsa-ui-188-190",
+  "l2Task": "crsa-ui-188-190",
+  "port": 44203,
+  "runtime": "OmniMux.app bundled dsh 0.1.1-rc.2",
+  "assertions": {
+    "stageVisible": true,
+    "stageDisplay": "flex",
+    "stageBox": { "x": 280, "y": 0, "w": 1448, "h": 873 },
+    "header": "Content Publishing Center",
+    "newPost": true,
+    "tabs": ["All Records", "Drafts2", "In Review", "Published", "Failed & Retry2"],
+    "composer": true,
+    "composerTextContains": "Select Type",
+    "draftComposer": true,
+    "draftComposerContains": ["Save Draft", "Publish", "Title", "Description"],
+    "recordDetail": true,
+    "recordDetailContains": ["Channel Results", "TikTok", "Retry channel"]
+  },
+  "screenshots": [
+    "docs/evidence/issue-188-l2-list.png",
+    "docs/evidence/issue-188-l2-composer.png",
+    "docs/evidence/issue-188-l2-draft.png",
+    "docs/evidence/issue-188-l2-detail.png"
+  ],
+  "notes": [
+    "L2 Host cloned from production profile, booted with OmniMux.app dsh 0.1.1-rc.2 on 44203.",
+    "omnimux-market disabled in L2 patch only (ctx.skills inject missing); not part of this PR.",
+    "Publish store copied from production ~/.dsh/omnimux/publish (draft + failed records titled 测试).",
+    "Grid list, New Post composer, draft composer, and failed-record RecordDetail were exercised.",
+    "Production OmniMux.app on 44202 was not killed."
+  ],
+  "capturedAt": "2026-08-29T10:03:00.000Z"
+}

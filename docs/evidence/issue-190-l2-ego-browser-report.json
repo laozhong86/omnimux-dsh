@@ -1,0 +1,51 @@
+{
+  "pass": true,
+  "tool": "ego-browser",
+  "issueId": "190",
+  "relatedIssue": 203,
+  "pr": 195,
+  "plugin": "omnimux-assets",
+  "commitSha": "d58309c",
+  "taskSpaceName": "omnimux-qa-issue-188-190-stages",
+  "taskSpaceId": 163,
+  "requestedUrl": "http://127.0.0.1:44203",
+  "actualUrl": "http://127.0.0.1:44203/",
+  "title": "OmniMux",
+  "dshHome": "/Users/x/.dsh-dev/tasks/crsa-ui-188-190",
+  "l2Task": "crsa-ui-188-190",
+  "port": 44203,
+  "runtime": "OmniMux.app bundled dsh 0.1.1-rc.2",
+  "assertions": {
+    "stageVisible": true,
+    "stageDisplay": "flex",
+    "stageBox": { "x": 280, "y": 0, "w": 1448, "h": 873 },
+    "header": "Asset Center",
+    "chips": ["All Types", "Character", "Scene", "Style Pack", "Prop", "Knowledge", "Custom"],
+    "card": "资产库",
+    "addAssetDialog": true,
+    "addAssetTitle": "Add Asset",
+    "addAssetFields": ["Asset name", "Character", "Choose Files", "Choose Folders", "Tags (optional)"],
+    "assetDetail": true,
+    "assetDetailContains": ["Asset Details", "Name", "Custom", "@自定义/资产库", "Save"],
+    "keepAliveAfterClose": {
+      "exists": true,
+      "display": "none",
+      "visible": "false",
+      "nullReturn": false
+    }
+  },
+  "screenshots": [
+    "docs/evidence/issue-190-l2-grid.png",
+    "docs/evidence/issue-190-l2-add.png",
+    "docs/evidence/issue-190-l2-detail.png"
+  ],
+  "notes": [
+    "L2 Host cloned from production profile, booted with OmniMux.app dsh 0.1.1-rc.2 on 44203.",
+    "omnimux-market disabled in L2 patch only (ctx.skills inject missing); not part of this PR.",
+    "Assets store copied from production ~/.dsh/omnimux/assets (one custom asset named 资产库).",
+    "Grid, Add Asset dialog, and AssetDetail panel were exercised.",
+    "Keep-alive: after Close, .omnimux-assets-stage remained in DOM with display:none / data-visible=false (never if (!open) return null).",
+    "Production OmniMux.app on 44202 was not killed."
+  ],
+  "capturedAt": "2026-08-29T10:04:00.000Z"
+}
