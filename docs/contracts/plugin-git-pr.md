@@ -11,7 +11,7 @@ subsystem: "global"
 
 # plugin-git-pr — OmniMux 插件仓 Git / PR 合同
 
-> 目的：给 `laozhong86/omnimux-dsh` 规定提交、分支、PR、质量门禁、合入与收尾纪律。
+> 目的：给 `omnimux-ai/omnimux-dsh` 规定提交、分支、PR、质量门禁、合入与收尾纪律。
 > 本合同与 `agent-issue-lifecycle.md`、`plugin-qa.md`、`dev-pipeline.md` 一起构成 Agent 交付流程的 L1 真源。
 > **支持双轨交付：日常单插件迭代推荐「本地沙箱 + 极速门禁 (Fast Track)」一键闭环；高风险与跨团队变更走「远程 PR + CI」通道。**
 
@@ -20,7 +20,7 @@ subsystem: "global"
 | 项 | 值 |
 |---|---|
 | 本地路径 | `/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh` |
-| GitHub | 组织开源公开仓（`https://github.com/<org>/omnimux-dsh`） |
+| GitHub | `omnimux-ai/omnimux-dsh`（组织开源公开仓） |
 | remote | `origin` |
 | 默认分支 / PR base | `main`（已配置 GitHub Merge Queue 保护队列） |
 | 外层 `dsh-plugin/` | **不是** Git 仓；不要在外层初始化仓库 |

@@ -2,10 +2,10 @@
   "name": "omnimux-market",
   "version": "0.2.13-omni.0",
   "description": "OmniMux 插件市场：技能 · 插件 · 专家 · 连接器（基于 @cocofhu/skillhub 二次开发，MIT）",
-  "homepage": "https://github.com/laozhong86/omnimux-dsh#readme",
+  "homepage": "https://github.com/omnimux-ai/omnimux-dsh#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/laozhong86/omnimux-dsh.git",
+    "url": "git+https://github.com/omnimux-ai/omnimux-dsh.git",
     "directory": "plugins/omnimux-market"
   },
   "type": "module",
