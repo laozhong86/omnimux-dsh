@@ -37,6 +37,29 @@ const EPHEMERAL_DIR_NAMES = new Set([
 const EPHEMERAL_BASENAMES = new Set(['.DS_Store'])
 const EPHEMERAL_SUFFIXES = ['.log', '.tsbuildinfo']
 
+const PROTECTED_DIR_PREFIXES = [
+  'plugins/',
+  'scripts/',
+  'docs/',
+  'research/',
+  '.github/',
+  '.agents/',
+]
+
+const PROTECTED_ROOT_FILES = new Set([
+  'package.json',
+  'pnpm-workspace.yaml',
+  'pnpm-lock.yaml',
+  'tsconfig.json',
+  'tsconfig.host.json',
+  'tsconfig.client.json',
+  'AGENTS.md',
+  'CLAUDE.md',
+  'CONTEXT.md',
+  'design.md',
+  '.dsh/hooks.json',
+])
+
 export function isWorktreePath(fullPath) {
   return Boolean(fullPath && fullPath.includes(WORKTREE_MARK))
 }
@@ -54,6 +77,35 @@ export function isEphemeralPath(fullPath) {
   const base = parts[parts.length - 1] || ''
   if (EPHEMERAL_BASENAMES.has(base)) return true
   return EPHEMERAL_SUFFIXES.some((suffix) => base.endsWith(suffix))
+}
+
+export function isProtectedScope(fullPath, cwd) {
+  const root = gitRoot(cwd) || cwd
+  const normalizedFull = String(fullPath || '').replace(/\\/g, '/')
+  const normalizedRoot = String(root || '').replace(/\\/g, '/').replace(/\/+$/, '')
+
+  let relative = normalizedFull
+  if (normalizedRoot && normalizedFull.startsWith(normalizedRoot + '/')) {
+    relative = normalizedFull.slice(normalizedRoot.length + 1)
+  } else if (normalizedFull.startsWith('/')) {
+    const marker = '/omnimux-dsh/'
+    const idx = normalizedFull.lastIndexOf(marker)
+    if (idx !== -1) {
+      relative = normalizedFull.slice(idx + marker.length)
+    }
+  }
+
+  // 1. 核心目录前缀匹配
+  if (PROTECTED_DIR_PREFIXES.some((prefix) => relative.startsWith(prefix) || relative.includes('/' + prefix))) {
+    return true
+  }
+
+  // 2. 根目录受保护关键文件
+  if (PROTECTED_ROOT_FILES.has(relative) || Array.from(PROTECTED_ROOT_FILES).some((f) => relative.endsWith('/' + f))) {
+    return true
+  }
+
+  return false
 }
 
 function git(args, cwd) {
@@ -166,7 +218,7 @@ export function decideWrite({ filePath, cwd, toolName }) {
     return { decision: 'allow', fullPath, reason: 'worktree-isolated' }
   }
 
-  // 2. 临时与衍生文件豁免放行
+  // 2. 临时与衍生文件豁免放行 (node_modules, dist, dist-harness, tmp, temp, coverage, *.log, *.tsbuildinfo)
   if (isEphemeralPath(fullPath)) {
     return { decision: 'allow', fullPath, reason: 'ephemeral' }
   }
@@ -176,13 +228,18 @@ export function decideWrite({ filePath, cwd, toolName }) {
     return { decision: 'allow', fullPath, reason: 'gitignored' }
   }
 
-  // 4. 未加入版本管理的全新临时草稿文件豁免放行
-  if (!isGitTracked(fullPath, cwd)) {
-    return { decision: 'allow', fullPath, reason: 'untracked' }
+  // 4. 【核心全域拦截】任何已加入 Git 版本管理（Tracked）的文件，在主仓一律严禁直接修改！
+  if (isGitTracked(fullPath, cwd)) {
+    return { decision: 'deny', fullPath, reason: 'tracked-file' }
   }
 
-  // 5. 【核心全域拦截】任何已加入 Git 版本管理（Tracked）的文件，在主仓一律严禁直接修改！
-  return { decision: 'deny', fullPath, reason: 'tracked-file' }
+  // 5. 【新增核心防线：新建未跟踪源码拦截】严禁在主仓核心源码或配置目录下新建任何未跟踪文件！
+  if (isProtectedScope(fullPath, cwd)) {
+    return { decision: 'deny', fullPath, reason: 'untracked-protected-scope' }
+  }
+
+  // 6. 仅允许在主仓创建合法非受保护临时草稿（如 .workbuddy/ 记录、临时排查脚本等）
+  return { decision: 'allow', fullPath, reason: 'untracked-draft' }
 }
 
 function decisionJson(hookEventName, decision, reason, extra = {}) {
@@ -199,12 +256,19 @@ function decisionJson(hookEventName, decision, reason, extra = {}) {
         '  1. 若成果有效：请切换到工作分支推送远端（git push / 提 PR 合入 main）；',
         '  2. 若确需重置：请先执行备份命令（如 git tag backup/safety-$(date +%s)）后再安全处理。',
       ].join('\n')
+    } else if (reason === 'untracked-protected-scope') {
+      output.permissionDecisionReason = [
+        '🚫【DSH 核心门禁阻断】严禁在主仓库 plugins/、scripts/、docs/ 等核心目录下新建任何源码或配置文件！',
+        '📌 核心防线原则：在主目录直接创建未跟踪源码文件会导致主干工作区被污染，并引发构建衍生与多 Agent 冲突覆盖。',
+        '👉 正确流程：请先调用 bash 运行: ./scripts/git-wt.sh start <plugin> <topic> <issue_id> 创建并切入独立 Worktree 工作区！',
+        'ℹ️  豁免范围：独立 Worktree 目录 (omnimux-dsh-wt-*)、本地工作台记录 (.workbuddy/)、临时缓存目录 (tmp/、dist/、node_modules/)。',
+      ].join('\n')
     } else {
       output.permissionDecisionReason = [
         '🚫【DSH 核心门禁阻断】严禁在主仓库 main 分支直接修改任何已加入版本管理（Git Tracked）的文件！',
         '📌 核心防线原则：版本管理的文件一旦在主目录被修改，将面临未经审核的脏提交，或者在同步拉取时被覆盖/丢弃。',
         '👉 正确流程：请先调用 bash 运行: ./scripts/git-wt.sh start <plugin> <topic> <issue_id> 创建并切入独立 Worktree 工作区！',
-        'ℹ️  豁免范围：独立 Worktree 目录、gitignore 规则文件、临时缓存（node_modules、dist、tmp、*.log）与尚未跟踪的草稿文件。',
+        'ℹ️  豁免范围：独立 Worktree 目录、gitignore 规则文件、临时缓存（node_modules、dist、tmp、*.log）与非受保护草稿文件。',
       ].join('\n')
     }
   }

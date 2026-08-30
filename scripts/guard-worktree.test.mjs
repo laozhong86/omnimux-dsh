@@ -112,30 +112,58 @@ describe('guard-worktree decideWrite (全量版本文件拦截)', () => {
     assert.equal(dist.reason, 'ephemeral')
   })
 
-  it('allows untracked scratch files in main repo', () => {
+  it('allows untracked scratch files in main repo root and .workbuddy', () => {
     const result = decideWrite({
       toolName: 'write',
       cwd: mainRepoRoot,
       filePath: '__untracked_scratch_987654.txt',
     })
     assert.equal(result.decision, 'allow')
-    assert.equal(result.reason, 'untracked')
+    assert.equal(result.reason, 'untracked-draft')
+
+    const workbuddyResult = decideWrite({
+      toolName: 'write',
+      cwd: mainRepoRoot,
+      filePath: '.workbuddy/scratch_board.md',
+    })
+    assert.equal(workbuddyResult.decision, 'allow')
+    assert.ok(workbuddyResult.reason === 'gitignored' || workbuddyResult.reason === 'untracked-draft')
   })
 
-  it('denies tracked docs on main checkout, but allows untracked files', () => {
+  it('denies untracked files in protected scopes (plugins, scripts, docs, .github)', () => {
+    const pluginUntracked = decideWrite({
+      toolName: 'write',
+      cwd: mainRepoRoot,
+      filePath: 'plugins/omnimux-workflow/src/canvas/editor/components/AddNodeMenu.tsx',
+    })
+    assert.equal(pluginUntracked.decision, 'deny')
+    assert.equal(pluginUntracked.reason, 'untracked-protected-scope')
+
+    const scriptsUntracked = decideWrite({
+      toolName: 'write',
+      cwd: mainRepoRoot,
+      filePath: 'scripts/new-untracked-tool.mjs',
+    })
+    assert.equal(scriptsUntracked.decision, 'deny')
+    assert.equal(scriptsUntracked.reason, 'untracked-protected-scope')
+
+    const docsUntracked = decideWrite({
+      toolName: 'write',
+      cwd: mainRepoRoot,
+      filePath: 'docs/contracts/new-untracked-contract.md',
+    })
+    assert.equal(docsUntracked.decision, 'deny')
+    assert.equal(docsUntracked.reason, 'untracked-protected-scope')
+  })
+
+  it('denies tracked docs on main checkout', () => {
     const trackedResult = decideWrite({
       toolName: 'write',
       cwd: mainRepoRoot,
       filePath: 'docs/contracts/plugin-git-pr.md',
     })
     assert.equal(trackedResult.decision, 'deny')
-
-    const untrackedResult = decideWrite({
-      toolName: 'write',
-      cwd: mainRepoRoot,
-      filePath: '__untracked_temp_notes__.md',
-    })
-    assert.equal(untrackedResult.decision, 'allow')
+    assert.equal(trackedResult.reason, 'tracked-file')
   })
 
   it('allows all writes inside a worktree path (including plugins, docs, root)', () => {
