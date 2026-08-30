@@ -53,7 +53,7 @@ export function updateAsset(id, patch) {
 }
 
 /**
- * Only deletes the library record — real files stay untouched.
+ * Deletes the library record and recycles data/files/<id>/. User originals stay.
  * @param {string} id
  */
 export function deleteAsset(id) {

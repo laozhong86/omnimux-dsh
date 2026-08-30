@@ -72,6 +72,7 @@ related:
 - 删除项目时 `rm -rf` 文件夹
 - 无项目绑定的隐式「另存为」
 - 抽屉视觉大改 / 四套筛选 Popover 重做（可后续）
+- 生成成功自动写入全局主体库 / `assets_upload`（promote 必须是用户显式动作）
 
 ---
 
@@ -92,8 +93,8 @@ flowchart LR
   Ext[外部原文件] -->|ingest copy| Imp[assets/imported]
   Glob["$DSH_HOME data/files"] -->|instantiate copy| Sub[assets/subjects]
   Node[画布生成节点] -->|write| Art[artifacts]
-  Imp -->|promote copy| Glob
-  Art -->|promote copy| Glob
+  Imp -.->|用户 promote| Glob
+  Art -.->|用户 promote| Glob
   Imp --> Canvas[画布节点相对路径]
   Sub --> Canvas
   Art --> Canvas

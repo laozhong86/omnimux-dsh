@@ -36,6 +36,8 @@ export interface ProjectPaths {
   assetsFile: string;
   /** `<projectRoot>/assets/imported` */
   importedDir: string;
+  /** `<projectRoot>/assets/subjects` */
+  subjectsDir: string;
   /** `<projectRoot>/说明.md` */
   readmeFile: string;
 }
@@ -94,6 +96,7 @@ export function resolveProjectPaths(projectRoot: string): ProjectPaths {
     projectFile: join(metaDir, 'project.json'),
     assetsFile: join(metaDir, 'assets.json'),
     importedDir: join(normalized, 'assets', 'imported'),
+    subjectsDir: join(normalized, 'assets', 'subjects'),
     readmeFile: join(normalized, PROJECT_README_NAME),
   };
 }

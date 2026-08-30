@@ -31,12 +31,13 @@ related:
 ## 1. 红线
 
 1. **导入即物化**。拖入、文件选择器、主体库投入、AI 节点成功产物，都必须在受管目录留下一份物理文件。禁止把外部绝对路径当作持久化真源。
-2. **项目内只存 POSIX 相对路径**。`.omnimux/assets.json`、`.omnimux/canvases/*.json`、`.omnimux/project.json` 不得持久化 `/Users/...`、`C:\...`、`file://`、`blob:`。
-3. **用户原文件永不 `unlink` / `rename` / `move`**。受管副本（项目 `assets/`、`artifacts/`、全局 `data/files/`）只在删除**对应资产记录**时回收。
-4. **删除整个项目**只摘会话与工作区账本，**禁止** `rm -rf` 用户作品包文件夹（沿用 `ProjectStore.remove`）。
-5. **workflow 禁止 `import omnimux-assets`**。跨插件只走 Host HTTP。
-6. **无绑定项目的画布不得 ingest**。返回 `400 project-required`，不得把媒体写进 `$DSH_HOME/omnimux/workflow/media/` 当作品。
-7. **同名禁止静默覆盖**。目标名已存在则 `{base} ({n}).{ext}`。
+2. **落地唯一性**。本地导入才从用户原始路径 copy 进对应受管仓（项目 `assets/imported/` 或全局 `data/files/<id>/`）。**AI 生成只在项目 `artifacts/` 留持久副本**。`$DSH_HOME/omnimux/workflow/executions/` 仅为可回收 tmp，不得成为第二 SSOT。禁止生成成功自动写入全局 `data/files/` 或 `$DSH_HOME/omnimux/assets/artifacts/`。用户显式「提升为角色」（promote）除外。instantiate 快照（全局母本 → 项目 `assets/subjects/<id>/`）是故意的第二份，不是双真源。
+3. **项目内只存 POSIX 相对路径**。`.omnimux/assets.json`、`.omnimux/canvases/*.json`、`.omnimux/project.json` 不得持久化 `/Users/...`、`C:\...`、`file://`、`blob:`。
+4. **用户原文件永不 `unlink` / `rename` / `move`**。受管副本（项目 `assets/`、`artifacts/`、全局 `data/files/`）只在删除**对应资产记录**时回收。
+5. **删除整个项目**只摘会话与工作区账本，**禁止** `rm -rf` 用户作品包文件夹（沿用 `ProjectStore.remove`）。
+6. **workflow 禁止 `import omnimux-assets`**。跨插件只走 Host HTTP。
+7. **无绑定项目的画布不得 ingest**。返回 `400 project-required`，不得把媒体写进 `$DSH_HOME/omnimux/workflow/media/` 当作品。
+8. **同名禁止静默覆盖**。目标名已存在则 `{base} ({n}).{ext}`。
 
 运行时绝对路径只允许出现在：ingest 请求的 `sourcePath`、内存、一次性 probe。预览 URL 由 Host 按项目根或全局仓解析。
 
@@ -175,7 +176,7 @@ Canonical：`/omnimux-workflow`；legacy `/dsh-workflow` in-memory 改写。写�
 
 **项目 → 全局（promote）**：copy 项目受管文件 → `data/files/<newId>/`，登记 `library.json`。项目内副本保留。
 
-**生成物**：执行成功后落 `<ProjectRoot>/artifacts/<timestamp>_<nodeId>.<ext>`，登记 `assets.json`，`lineage` 尽量填满。执行态临时文件可暂存 `$DSH_HOME/omnimux/workflow/executions/`，成功后再迁入 artifacts。
+**生成物**：执行成功后落 `<ProjectRoot>/artifacts/<timestamp>_<nodeId>.<ext>`，登记 `assets.json`，`lineage` 尽量填满。执行态临时文件可暂存 `$DSH_HOME/omnimux/workflow/executions/`，成功后 **move**（copy 成功再删 tmp）进项目 `artifacts/`。tmp 不得成为第二 SSOT，也不得自动 copy 进全局 `data/files/` 或 `/omnimux/assets/artifacts`。
 
 ---
 

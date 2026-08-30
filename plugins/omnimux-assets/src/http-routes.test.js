@@ -59,7 +59,7 @@ describe('AssetsDispatcher state', () => {
     assert.deepEqual(first.body.assets, [])
     assert.deepEqual(first.body.mappings, [])
 
-    library.add({ name: '林晓', type: 'character' })
+    await library.add({ name: '林晓', type: 'character' })
     const second = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/assets/state?mrev=0&arev=0' })
     assert.equal(second.status, 200)
     assert.equal(second.body.unchanged, false)
@@ -137,6 +137,20 @@ describe('AssetsDispatcher state', () => {
     const deleted = await dispatcher.dispatch(post('/omnimux/assets/library/delete', { id: created.body.asset.id }))
     assert.equal(deleted.status, 200)
     assert.equal(library.list().length, 0)
+  })
+
+  it('copies on POST /library and returns 413 when disk is short', async () => {
+    const { dispatcher, library } = makeDispatcher()
+    const created = await dispatcher.dispatch(post('/omnimux/assets/library', {
+      name: '副本',
+      type: 'character',
+      files: [{ real_path: join(realDir, 'hero.png') }],
+    }))
+    assert.equal(created.status, 200)
+    assert.equal(created.body.asset.files[0].relative_path.startsWith(`data/files/${created.body.asset.id}/`), true)
+    assert.equal(JSON.stringify(created.body.asset.files[0].relative_path).includes('/Users'), false)
+    const listed = library.list()
+    assert.equal(listed[0].files[0].real_path.startsWith(join(root, 'store')), true)
   })
 })
 

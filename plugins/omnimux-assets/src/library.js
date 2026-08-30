@@ -1,16 +1,18 @@
 /**
- * Creative-asset library: named objects with a type + path-only file refs.
+ * Creative-asset library: named objects with materialized files.
  *
- * RED LINE: this store never copies, moves, or deletes anything under a
- * file's `real_path`. Missing paths drop out of the visible file list.
+ * New writes copy into `$DSH_HOME/omnimux/assets/data/files/<id>/` and persist
+ * vault-relative `relative_path`. User originals are never unlinked.
+ * Deleting a record recycles the managed copy only.
  */
-import { accessSync, constants, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, statSync, writeFileSync } from 'node:fs'
-import { basename, dirname, resolve, sep } from 'node:path'
+import { accessSync, constants, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { basename, dirname, join, resolve, sep } from 'node:path'
 import { bucketOf, extOf, previewMimeOf, scanDir, scanFile, statStatus } from './scanner.js'
 import { AssetsError, newRecordId } from './mappings.js'
-import { formatAssetUri, isAssetUri, parseAssetUri, resolveAssetUri, toAssetUri } from './protocol.js'
+import { formatAssetUri, isAssetUri, parseAssetUri, toAssetUri } from './protocol.js'
+import { copyIntoVault, copyIntoVaultSync, isInsideDir, resolveVaultRelPath } from './ingest.js'
 
-const DEFAULT_FS = { accessSync, constants, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, statSync, writeFileSync }
+const DEFAULT_FS = { accessSync, constants, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync }
 
 export const ASSET_TYPES = Object.freeze(['character', 'scene', 'style', 'prop', 'knowledge', 'custom'])
 
@@ -109,20 +111,40 @@ export function handleOf(name) {
 }
 
 /**
- * Visible file probe: missing path → hidden (record stays on disk JSON).
- * @param {string} realPath
- * @param {{ statSync: typeof statSync }} fs
+ * Resolve a ledger file row to an absolute path inside the vault when possible.
+ * @param {{ relative_path?: string, real_path?: string }} file
+ * @param {string | undefined} vaultRoot
  */
-function fileView(realPath, fs) {
-  const path = str(realPath).trim()
+function absoluteOf(file, vaultRoot) {
+  const rel = str(file?.relative_path).trim()
+  if (rel && vaultRoot) {
+    try {
+      return resolveVaultRelPath(vaultRoot, rel)
+    } catch {
+      return ''
+    }
+  }
+  return str(file?.real_path).trim()
+}
+
+/**
+ * Visible file probe: missing path → hidden (record stays on disk JSON).
+ * @param {string} absPath
+ * @param {{ statSync: typeof statSync }} fs
+ * @param {{ relative_path?: string, original_name?: string }} [file]
+ */
+function fileView(absPath, fs, file = {}) {
+  const path = str(absPath).trim()
   if (!path) return null
   try {
     const info = fs.statSync(path)
     if (!info.isFile() && !info.isDirectory()) return null
-    const name = basename(path.replace(/\/+$/, '')) || path
+    const name = str(file.original_name) || basename(path.replace(/\/+$/, '')) || path
     const ext = extOf(name)
     const kind = info.isDirectory() ? 'directory' : bucketOf(ext)
+    const relative = str(file.relative_path)
     return {
+      relative_path: relative || undefined,
       real_path: path,
       original_name: name,
       kind,
@@ -142,22 +164,24 @@ function fileView(realPath, fs) {
  *   type: string,
  *   description: string,
  *   tags: string[],
- *   files: { id: string, real_path: string, original_name?: string }[],
+ *   files: { id: string, relative_path?: string, real_path?: string, original_name?: string }[],
  *   cover_file_id: string | null,
  *   source: string,
  *   created_at: string,
  *   updated_at: string,
  * }} asset
  * @param {{ statSync: typeof statSync }} fs
+ * @param {string | undefined} vaultRoot
  */
-function viewOf(asset, fs) {
+function viewOf(asset, fs, vaultRoot) {
   const visibleFiles = []
   for (const file of asset.files) {
-    const live = fileView(file.real_path, fs)
+    const abs = absoluteOf(file, vaultRoot)
+    const live = fileView(abs, fs, file)
     if (!live) continue
     visibleFiles.push({
       id: file.id,
-      uri: toAssetUri(file.real_path, { scope: asset.type }),
+      uri: toAssetUri(abs, { scope: asset.type }),
       ...live,
     })
   }
@@ -232,7 +256,7 @@ function normalizeFiles(files, fs, opts = {}) {
 
 /**
  * @param {{
- *   paths?: { libraryFile: string, mappingsFile?: string },
+ *   paths?: { libraryFile: string, mappingsFile?: string, dir?: string, filesDir?: string },
  *   fs?: Partial<typeof DEFAULT_FS>,
  *   migrateFrom?: { list?: Function },
  * }} [opts]
@@ -240,6 +264,8 @@ function normalizeFiles(files, fs, opts = {}) {
 export function createLibraryStore(opts = {}) {
   const fs = { ...DEFAULT_FS, ...(opts.fs ?? {}) }
   const paths = opts.paths ?? {}
+  const vaultRoot = paths.dir || (paths.libraryFile ? dirname(paths.libraryFile) : '')
+  const filesDir = paths.filesDir || (vaultRoot ? join(vaultRoot, 'data', 'files') : '')
 
   function loadState() {
     try {
@@ -266,11 +292,16 @@ export function createLibraryStore(opts = {}) {
     const name = str(row.name)
     const type = TYPE_SET.has(row.type) ? row.type : 'custom'
     const files = Array.isArray(row.files)
-      ? row.files.filter((file) => file && typeof file.real_path === 'string').map((file) => ({
-          id: typeof file.id === 'string' ? file.id : newRecordId('fil'),
-          real_path: file.real_path,
-          original_name: str(file.original_name) || basename(file.real_path),
-        }))
+      ? row.files.filter((file) => file && (typeof file.relative_path === 'string' || typeof file.real_path === 'string')).map((file) => {
+          const relative = str(file.relative_path)
+          const real = str(file.real_path)
+          return {
+            id: typeof file.id === 'string' ? file.id : newRecordId('fil'),
+            ...(relative ? { relative_path: relative } : {}),
+            ...(real && !relative ? { real_path: real } : {}),
+            original_name: str(file.original_name) || basename((relative || real).replace(/\/+$/, '')),
+          }
+        })
       : []
     return {
       id: row.id,
@@ -289,13 +320,114 @@ export function createLibraryStore(opts = {}) {
 
   let state = loadState()
 
+  /**
+   * @param {{ id: string, relative_path?: string, real_path?: string, original_name?: string }} file
+   */
+  function persistableFile(file) {
+    const relative = str(file.relative_path)
+    const row = {
+      id: file.id,
+      original_name: str(file.original_name),
+    }
+    if (relative) row.relative_path = relative
+    else if (file.real_path) row.real_path = file.real_path
+    return row
+  }
+
   function persist() {
     atomicWrite(fs, paths.libraryFile, `${JSON.stringify({
       schema: 2,
       revision: state.revision,
       migrated_mappings: state.migrated_mappings,
-      assets: state.assets,
+      assets: state.assets.map((asset) => ({
+        ...asset,
+        files: asset.files.map(persistableFile),
+      })),
     }, null, 2)}\n`)
+  }
+
+  function managedDirOf(assetId) {
+    return filesDir ? join(filesDir, assetId) : ''
+  }
+
+  /**
+   * Copy a leftover desktop path into the vault. Missing sources stay hidden.
+   * @param {string} assetId
+   * @param {{ id: string, relative_path?: string, real_path?: string, original_name?: string }} file
+   */
+  function materializeFileSync(assetId, file) {
+    if (str(file.relative_path)) return file
+    const source = str(file.real_path)
+    if (!source || !filesDir || !vaultRoot) return file
+    try {
+      const copied = copyIntoVaultSync({
+        sourceAbs: source,
+        destDir: managedDirOf(assetId),
+        vaultRoot,
+        originalName: file.original_name || basename(source.replace(/\/+$/, '')),
+        fs,
+      })
+      return {
+        id: file.id,
+        relative_path: copied.relativePath,
+        original_name: file.original_name || copied.name,
+      }
+    } catch {
+      return file
+    }
+  }
+
+  function materializeAssetSync(asset) {
+    if (!asset || !Array.isArray(asset.files) || asset.files.length === 0) return asset
+    let changed = false
+    const files = asset.files.map((file) => {
+      const next = materializeFileSync(asset.id, file)
+      if (next !== file) changed = true
+      return next
+    })
+    if (!changed) return asset
+    asset.files = files
+    persist()
+    return asset
+  }
+
+  /**
+   * @param {string} assetId
+   * @param {unknown} files
+   */
+  async function materializeIncomingFiles(assetId, files) {
+    const sources = normalizeFiles(files, fs, { requireExisting: false })
+    if (!filesDir || !vaultRoot) return sources
+    const out = []
+    for (const file of sources) {
+      const source = str(file.real_path)
+      if (!source) continue
+      const copied = await copyIntoVault({
+        sourceAbs: source,
+        destDir: managedDirOf(assetId),
+        vaultRoot,
+        originalName: file.original_name,
+        fs,
+      })
+      out.push({
+        id: file.id,
+        relative_path: copied.relativePath,
+        original_name: file.original_name || copied.name,
+      })
+    }
+    return out
+  }
+
+  function recycleManagedDir(assetId) {
+    const dir = managedDirOf(assetId)
+    if (!dir || !vaultRoot || !isInsideDir(dir, vaultRoot)) return
+    if (typeof fs.rmSync === 'function') {
+      try {
+        fs.rmSync(dir, { recursive: true, force: true })
+      } catch {
+        // ignore recycle failure
+      }
+    }
   }
 
   /**
@@ -345,7 +477,7 @@ export function createLibraryStore(opts = {}) {
   function list(filter = {}) {
     const type = str(filter.type).trim()
     const query = str(filter.query).trim().toLowerCase()
-    let rows = state.assets.map((asset) => viewOf(asset, fs))
+    let rows = state.assets.map((asset) => viewOf(materializeAssetSync(asset), fs, vaultRoot))
     if (type && TYPE_SET.has(type)) rows = rows.filter((row) => row.type === type)
     if (query) {
       rows = rows.filter((row) => {
@@ -385,13 +517,15 @@ export function createLibraryStore(opts = {}) {
    */
   function getView(idOrHandle) {
     const found = get(idOrHandle)
-    return found ? viewOf(found, fs) : null
+    if (!found) return null
+    const live = state.assets.find((asset) => asset.id === found.id)
+    return viewOf(materializeAssetSync(live || found), fs, vaultRoot)
   }
 
   /**
    * @param {{ name: unknown, type?: unknown, description?: unknown, tags?: unknown, files?: unknown, source?: string }} input
    */
-  function add(input) {
+  async function add(input) {
     const name = normalizeName(input?.name)
     const handle = handleOf(name)
     if (state.assets.some((asset) => asset.handle === handle)) {
@@ -400,7 +534,6 @@ export function createLibraryStore(opts = {}) {
     const type = normalizeType(input?.type)
     const description = normalizeDescription(input?.description)
     const tags = normalizeTags(input?.tags)
-    const files = normalizeFiles(input?.files, fs, { requireExisting: false })
     const now = new Date().toISOString()
     const asset = {
       id: newRecordId('ast'),
@@ -409,23 +542,25 @@ export function createLibraryStore(opts = {}) {
       type,
       description,
       tags,
-      files,
-      cover_file_id: files[0]?.id ?? null,
+      files: [],
+      cover_file_id: null,
       source: str(input?.source) || 'manual',
       created_at: now,
       updated_at: now,
     }
+    asset.files = await materializeIncomingFiles(asset.id, input?.files)
+    asset.cover_file_id = asset.files[0]?.id ?? null
     state.assets.push(asset)
     state.revision += 1
     persist()
-    return viewOf(asset, fs)
+    return viewOf(asset, fs, vaultRoot)
   }
 
   /**
    * @param {string} id
    * @param {{ name?: unknown, type?: unknown, description?: unknown, tags?: unknown, files?: unknown }} patch
    */
-  function update(id, patch) {
+  async function update(id, patch) {
     const found = state.assets.find((asset) => asset.id === id)
     if (!found) throw new AssetsError('asset-not-found', 'asset not found')
     if (patch && Object.prototype.hasOwnProperty.call(patch, 'name')) {
@@ -447,25 +582,27 @@ export function createLibraryStore(opts = {}) {
       found.tags = normalizeTags(patch.tags)
     }
     if (patch && Object.prototype.hasOwnProperty.call(patch, 'files')) {
-      found.files = normalizeFiles(patch.files, fs, { requireExisting: false })
+      found.files = await materializeIncomingFiles(found.id, patch.files)
       found.cover_file_id = found.files[0]?.id ?? null
     }
     found.updated_at = new Date().toISOString()
     state.revision += 1
     persist()
-    return viewOf(found, fs)
+    return viewOf(found, fs, vaultRoot)
   }
 
   /**
-   * Delete only the JSON record. Never unlinks real_path.
+   * Drop the JSON record and recycle `data/files/<id>/`. Never unlinks user originals.
    * @param {string} id
    */
   function remove(id) {
     const index = state.assets.findIndex((asset) => asset.id === id)
     if (index < 0) throw new AssetsError('asset-not-found', 'asset not found')
+    const assetId = state.assets[index].id
     state.assets.splice(index, 1)
     state.revision += 1
     persist()
+    recycleManagedDir(assetId)
   }
 
   function revision() {
@@ -510,19 +647,22 @@ export function createLibraryStore(opts = {}) {
    * @param {string} [subPath]
    */
   function listFileEntries(assetId, fileId, subPath = '') {
-    const asset = get(assetId)
-    if (!asset) throw new AssetsError('asset-not-found', 'asset not found')
-    const file = asset.files.find((row) => row.id === fileId)
+    const live = get(assetId)
+    if (!live) throw new AssetsError('asset-not-found', 'asset not found')
+    const stored = state.assets.find((row) => row.id === live.id) || live
+    materializeAssetSync(stored)
+    const file = stored.files.find((row) => row.id === fileId)
     if (!file) throw new AssetsError('path-not-found', 'asset file not found')
-    const view = fileView(file.real_path, fs)
+    const abs = absoluteOf(file, vaultRoot)
+    const view = fileView(abs, fs, file)
     if (!view) throw new AssetsError('path-not-found', 'path does not exist')
     if (view.kind !== 'directory') {
       if (String(subPath ?? '') !== '') {
         throw new AssetsError('path-not-dir', 'file refs have no sub directories')
       }
-      return { file: { id: file.id, ...view }, path: '', entries: scanFile(file.real_path, { stat: (p) => fs.statSync(p) }) }
+      return { file: { id: file.id, ...view }, path: '', entries: scanFile(abs, { stat: (p) => fs.statSync(p) }) }
     }
-    const target = resolveFileSubPath(file.real_path, subPath)
+    const target = resolveFileSubPath(abs, subPath)
     const prefix = String(subPath ?? '').replace(/^\/+|\/+$/g, '')
     return {
       file: { id: file.id, ...view },
@@ -540,17 +680,20 @@ export function createLibraryStore(opts = {}) {
    * @returns {{ absolutePath: string, mime: string, size: number }}
    */
   function resolvePreview(assetId, fileId, subPath = '') {
-    const asset = get(assetId)
-    if (!asset) throw new AssetsError('asset-not-found', 'asset not found')
-    const file = asset.files.find((row) => row.id === fileId)
+    const live = get(assetId)
+    if (!live) throw new AssetsError('asset-not-found', 'asset not found')
+    const stored = state.assets.find((row) => row.id === live.id) || live
+    materializeAssetSync(stored)
+    const file = stored.files.find((row) => row.id === fileId)
     if (!file) throw new AssetsError('path-not-found', 'asset file not found')
-    const view = fileView(file.real_path, fs)
+    const abs = absoluteOf(file, vaultRoot)
+    const view = fileView(abs, fs, file)
     if (!view) throw new AssetsError('path-not-found', 'path does not exist')
-    let absolutePath = file.real_path
+    let absolutePath = abs
     if (view.kind === 'directory') {
       const cleaned = String(subPath ?? '').replace(/^\/+/, '')
       if (cleaned === '') throw new AssetsError('path-not-dir', 'folders cannot be previewed')
-      absolutePath = resolveFileSubPath(file.real_path, cleaned)
+      absolutePath = resolveFileSubPath(abs, cleaned)
     } else if (String(subPath ?? '') !== '') {
       throw new AssetsError('path-not-dir', 'file refs have no sub directories')
     }

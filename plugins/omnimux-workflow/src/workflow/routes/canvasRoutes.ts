@@ -76,6 +76,7 @@ import { createExecutionRoutes } from './executionRoutes';
 import { createMediaRoutes } from './mediaRoutes';
 import { createLocalFileRoutes } from './localFileRoutes';
 import { createProjectAssetsRoutes } from './projectAssetsRoutes';
+import { createLibraryHttpClient } from '../library/libraryHttp';
 import { createProjectAssetsStore } from '../workspace/ProjectAssetsStore';
 import { createProjectStore } from '../../projects/ProjectStore';
 import { ensureLibraryRoot } from '../../projects/library';
@@ -119,6 +120,7 @@ const STATUS_BY_CODE: Record<string, number> = {
   'version-required': 400,
   'project-required': 400,
   'disk-space-insufficient': 413,
+  'subject-has-no-files': 400,
 };
 
 const MIME_BY_EXT: Record<string, string> = {
@@ -192,9 +194,12 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
   const staticRoutes = createStaticRoutes({ pluginRoot: PLUGIN_ROOT, gateway });
   const workspaceRoutes = createWorkspaceRoutes(store);
   const projectStore = createProjectStore({ libraryRoot: libraryRoot ?? ensureLibraryRoot() });
+  const libraryHttp = createLibraryHttpClient();
   const assetsStore = createProjectAssetsStore({
     workspacesDir: store.workspacesDir,
     resolveProjectRoot: (workspaceId) => projectStore.findByCanvasWorkspaceId(workspaceId),
+    fetchLibraryDetail: libraryHttp.fetchLibraryDetail,
+    promoteToLibrary: libraryHttp.promoteToLibrary,
   });
   const projectAssetsRoutes = createProjectAssetsRoutes(assetsStore);
   const executionRoutes = createExecutionRoutes({ store, executionManager });

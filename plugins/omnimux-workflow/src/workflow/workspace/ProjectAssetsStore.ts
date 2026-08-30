@@ -26,11 +26,13 @@ import {
   PROJECT_ASSETS_SCHEMA_VERSION,
   validateFolderName,
   type IngestProjectAssetsPayload,
+  type InstantiateProjectAssetsPayload,
   type MkdirProjectAssetsPayload,
   type ProjectAssetFileType,
   type ProjectAssetsDocument,
   type ProjectAssetsFolder,
   type ProjectAssetsItem,
+  type PromoteProjectAssetsPayload,
   type SaveProjectAssetsPayload,
 } from '../../shared/projectAssets.ts';
 import {
@@ -38,7 +40,7 @@ import {
   resolveProjectPaths,
   resolveProjectRelPath,
 } from '../../projects/paths.ts';
-import { copyFileIntoImported } from '../ingest/IngestionPipeline.ts';
+import { copyFileIntoImported, copyPathIntoDir } from '../ingest/IngestionPipeline.ts';
 import { WorkflowStoreError } from './WorkflowStoreError.ts';
 
 export interface ProjectRootRecord {
@@ -47,6 +49,28 @@ export interface ProjectRootRecord {
 
 export type ResolveProjectRoot = (workspaceId: string) => ProjectRootRecord | null;
 
+export interface LibraryFileRef {
+  id?: string;
+  relative_path?: string;
+  real_path?: string;
+  original_name?: string;
+  kind?: string;
+  visible?: boolean;
+}
+
+export interface LibraryAssetDetail {
+  id: string;
+  name?: string;
+  files?: LibraryFileRef[];
+}
+
+export type FetchLibraryDetail = (id: string) => Promise<LibraryAssetDetail | null>;
+export type PromoteToLibrary = (payload: {
+  name: string;
+  type?: string;
+  files: Array<{ real_path: string }>;
+}) => Promise<unknown>;
+
 export interface ProjectAssetsStore {
   get(workspaceId: string): ProjectAssetsDocument;
   save(workspaceId: string, payload: SaveProjectAssetsPayload): ProjectAssetsDocument;
@@ -54,6 +78,8 @@ export interface ProjectAssetsStore {
   ingest(workspaceId: string, payload: IngestProjectAssetsPayload): Promise<ProjectAssetsDocument>;
   /** Deprecated alias — forwards to ingest (physical copy). */
   index(workspaceId: string, payload: IngestProjectAssetsPayload): Promise<ProjectAssetsDocument>;
+  instantiate(workspaceId: string, payload: InstantiateProjectAssetsPayload): Promise<ProjectAssetsDocument>;
+  promote(workspaceId: string, payload: PromoteProjectAssetsPayload): Promise<{ asset: unknown }>;
   resolveProjectFile(workspaceId: string, rel: string): string;
 }
 
@@ -97,6 +123,7 @@ function persistableItem(item: ProjectAssetsItem): ProjectAssetsItem {
   };
   if (typeof item.size === 'number' && Number.isFinite(item.size)) next.size = item.size;
   if (item.lineage != null) next.lineage = item.lineage;
+  if (item.snapshot?.globalSubjectId) next.snapshot = { globalSubjectId: item.snapshot.globalSubjectId };
   return next;
 }
 
@@ -137,6 +164,12 @@ function hydrateItem(row: unknown): ProjectAssetsItem | null {
   };
   if (typeof rec.size === 'number' && Number.isFinite(rec.size)) item.size = rec.size;
   if (rec.lineage != null) item.lineage = rec.lineage;
+  if (rec.snapshot && typeof rec.snapshot === 'object' && !Array.isArray(rec.snapshot)) {
+    const snap = rec.snapshot as Record<string, unknown>;
+    if (typeof snap.globalSubjectId === 'string' && snap.globalSubjectId.trim()) {
+      item.snapshot = { globalSubjectId: snap.globalSubjectId.trim() };
+    }
+  }
   if (!relative && legacy) item.real_path = legacy;
   return item;
 }
@@ -304,8 +337,10 @@ function assertExpectedRev(current: ProjectAssetsDocument, expectedRev: unknown)
 export function createProjectAssetsStore(opts: {
   workspacesDir: string;
   resolveProjectRoot: ResolveProjectRoot;
+  fetchLibraryDetail?: FetchLibraryDetail;
+  promoteToLibrary?: PromoteToLibrary;
 }): ProjectAssetsStore {
-  const { workspacesDir, resolveProjectRoot } = opts;
+  const { workspacesDir, resolveProjectRoot, fetchLibraryDetail, promoteToLibrary } = opts;
 
   function requireWorkspaceId(id: string): string {
     if (!isWorkspaceId(id)) {
@@ -377,6 +412,25 @@ export function createProjectAssetsStore(opts: {
     return persist(filePath, current, { folders: current.folders, items });
   }
 
+  function resolveFile(workspaceId: string, rel: string): string {
+    const { projectRoot } = load(workspaceId);
+    const abs = resolveProjectRelPath(projectRoot, rel);
+    assertProjectWriteSafe(abs, projectRoot);
+    if (!existsSync(abs)) {
+      throw new WorkflowStoreError('not-found', `file not found: ${rel}`);
+    }
+    let st;
+    try {
+      st = statSync(abs);
+    } catch {
+      throw new WorkflowStoreError('not-found', `file not found: ${rel}`);
+    }
+    if (!st.isFile()) {
+      throw new WorkflowStoreError('not-a-file', 'path is not a regular file');
+    }
+    return abs;
+  }
+
   return {
     get(workspaceId: string): ProjectAssetsDocument {
       return load(workspaceId).current;
@@ -429,23 +483,73 @@ export function createProjectAssetsStore(opts: {
       return ingest(workspaceId, payload);
     },
 
+    async instantiate(workspaceId: string, payload: InstantiateProjectAssetsPayload): Promise<ProjectAssetsDocument> {
+      const { current, filePath, projectRoot } = load(workspaceId);
+      assertExpectedRev(current, payload.expectedRev);
+      const subjectId = typeof payload.globalSubjectId === 'string' ? payload.globalSubjectId.trim() : '';
+      if (!subjectId) {
+        throw new WorkflowStoreError('invalid-id', 'globalSubjectId is required');
+      }
+      if (!fetchLibraryDetail) {
+        throw new WorkflowStoreError('internal', 'library client is not configured');
+      }
+      const parentId = normalizeParentId(payload.parentId);
+      if (!parentExists(current, parentId)) {
+        throw new WorkflowStoreError('invalid-id', 'parent folder does not exist');
+      }
+      const detail = await fetchLibraryDetail(subjectId);
+      if (!detail) {
+        throw new WorkflowStoreError('not-found', `subject ${subjectId} not found`);
+      }
+      const visible = (detail.files ?? []).filter((file) => file && file.visible !== false);
+      const sources = visible
+        .map((file) => String(file.real_path || '').trim())
+        .filter(Boolean);
+      if (sources.length === 0) {
+        throw new WorkflowStoreError('subject-has-no-files', 'subject has no visible files');
+      }
+      const paths = resolveProjectPaths(projectRoot);
+      const destDir = join(paths.subjectsDir, subjectId);
+      const now = Date.now();
+      const items = [...current.items];
+      for (const sourceAbs of sources) {
+        const copied = await copyPathIntoDir({
+          projectRoot,
+          destDir,
+          sourceAbs,
+        });
+        items.push({
+          id: newItemId(),
+          name: copied.name,
+          type: fileTypeOf(copied.name),
+          parentId,
+          relative_path: copied.relativePath,
+          size: copied.size,
+          snapshot: { globalSubjectId: subjectId },
+          updatedAt: now,
+        });
+      }
+      return persist(filePath, current, { folders: current.folders, items });
+    },
+
+    async promote(workspaceId: string, payload: PromoteProjectAssetsPayload): Promise<{ asset: unknown }> {
+      if (!promoteToLibrary) {
+        throw new WorkflowStoreError('internal', 'library client is not configured');
+      }
+      const rel = typeof payload.relative_path === 'string' ? payload.relative_path.trim() : '';
+      const name = typeof payload.name === 'string' ? payload.name.trim() : '';
+      if (!name) throw new WorkflowStoreError('name-required', 'name is required');
+      const abs = resolveFile(workspaceId, rel);
+      const asset = await promoteToLibrary({
+        name,
+        type: payload.type,
+        files: [{ real_path: abs }],
+      });
+      return { asset };
+    },
+
     resolveProjectFile(workspaceId: string, rel: string): string {
-      const { projectRoot } = load(workspaceId);
-      const abs = resolveProjectRelPath(projectRoot, rel);
-      assertProjectWriteSafe(abs, projectRoot);
-      if (!existsSync(abs)) {
-        throw new WorkflowStoreError('not-found', `file not found: ${rel}`);
-      }
-      let st;
-      try {
-        st = statSync(abs);
-      } catch {
-        throw new WorkflowStoreError('not-found', `file not found: ${rel}`);
-      }
-      if (!st.isFile()) {
-        throw new WorkflowStoreError('not-a-file', 'path is not a regular file');
-      }
-      return abs;
+      return resolveFile(workspaceId, rel);
     },
   };
 }

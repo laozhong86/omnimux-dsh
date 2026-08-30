@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   getWorkspaceAssets,
   indexWorkspaceAssets,
+  instantiateWorkspaceAssets,
   mkdirWorkspaceAsset,
   saveWorkspaceAssets,
 } from '../../bridge/apiClient.ts';
@@ -30,6 +31,7 @@ export interface UseProjectAssetsResult {
   refresh: () => Promise<void>;
   mkdir: (name: string, parentId?: string | null) => Promise<boolean>;
   indexPaths: (paths: string[], parentId?: string | null) => Promise<boolean>;
+  instantiateSubject: (globalSubjectId: string, parentId?: string | null) => Promise<boolean>;
   persist: (next: { folders: ProjectAssetsFolder[]; items: ProjectAssetsItem[] }) => Promise<boolean>;
   renameFolder: (folderId: string, name: string) => Promise<boolean>;
   moveNode: (id: string, parentId: string | null) => Promise<boolean>;
@@ -110,6 +112,21 @@ export function useProjectAssets(workspaceId: string | null | undefined): UsePro
     return true;
   }, [adopt, workspaceId]);
 
+  const instantiateSubject = useCallback(async (globalSubjectId: string, parentId?: string | null) => {
+    if (!workspaceId) return false;
+    const result = await instantiateWorkspaceAssets(workspaceId, {
+      globalSubjectId,
+      parentId: parentId ?? null,
+      expectedRev: documentRef.current.rev,
+    });
+    if (!result.ok || !result.body.assets) {
+      setError(result.body.error || result.body.message || 'instantiate failed');
+      return false;
+    }
+    adopt(result.body.assets);
+    return true;
+  }, [adopt, workspaceId]);
+
   const persist = useCallback(async (next: { folders: ProjectAssetsFolder[]; items: ProjectAssetsItem[] }) => {
     if (!workspaceId) return false;
     const result = await saveWorkspaceAssets(workspaceId, {
@@ -171,6 +188,7 @@ export function useProjectAssets(workspaceId: string | null | undefined): UsePro
     refresh,
     mkdir,
     indexPaths,
+    instantiateSubject,
     persist,
     renameFolder,
     moveNode,
