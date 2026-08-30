@@ -8,7 +8,7 @@
  *  - looks the executor up in the registry (extension point ②) — unknown
  *    node types fail fast with a clear error,
  *  - threads cooperative cancellation (one AbortController per execution),
- *  - rewrites absolute artifact paths into /omnimux-workflow/media/ URLs.
+ *  - rewrites artifact paths into project-file URLs when bound.
  */
 
 import { relative, resolve } from 'node:path';
@@ -47,12 +47,14 @@ export function resolveExecutorKey(node: { type: string; data?: Record<string, u
 
 export interface DispatchingExecutorOptions {
   gateway: import('../seam/gateway').GenerationGateway;
-  /** Plugin media root (absolute) — artifacts land under <root>/executions/<id>/. */
+  /** Plugin media root (absolute) — tmp artifacts land under <root>/executions/<id>/. */
   mediaRoot: string;
   executionId: string;
+  workspaceId?: string;
   edges: ExecutableEdge[];
   /** AbortController shared by the execution (cancel aborts in-flight nodes). */
   abortController: AbortController;
+  persistGenerated?: ExecutorContext['persistGenerated'];
 }
 
 export interface DispatchingNodeExecutor {
@@ -92,7 +94,9 @@ export function createDispatchingNodeExecutor(
       upstreamOutputs,
       signal: opts.abortController.signal,
       mediaDir,
+      workspaceId: opts.workspaceId,
       toPublicUrl,
+      persistGenerated: opts.persistGenerated,
       reportProgress: (progress, message) => {
         context.reportProgress(node.id, progress, message ?? '');
       },

@@ -107,8 +107,8 @@ test('sanitizeEdges 丢掉 selected，保留连接字段', () => {
   assert.equal('selected' in out, false);
 });
 
-test('sanitizeNodes 剥 blob:，有 realPath 时派生 local-file URL', () => {
-  const [indexed] = sanitizeNodes([
+test('sanitizeNodes 剥 realPath / blob；relativePath 派生 project-file URL', () => {
+  const [stripped] = sanitizeNodes([
     {
       id: 'n1',
       type: 'material',
@@ -117,16 +117,40 @@ test('sanitizeNodes 剥 blob:，有 realPath 时派生 local-file URL', () => {
         materialType: 'image',
         realPath: '/Users/me/hero.png',
         mediaUrl: 'blob:http://localhost/abc',
-        mediaAssets: [{ type: 'image', url: 'blob:http://localhost/abc' }],
+        mediaAssets: [{ type: 'image', url: 'blob:http://localhost/abc', path: '/Users/me/hero.png' }],
       },
     },
   ]);
-  assert.equal(indexed.data.realPath, '/Users/me/hero.png');
-  assert.equal(String(indexed.data.mediaUrl).startsWith('blob:'), false);
-  assert.match(String(indexed.data.mediaUrl), /\/api\/local-file\?path=/);
-  assert.equal(indexed.data.mediaAssets[0].path, '/Users/me/hero.png');
-  assert.match(String(indexed.data.mediaAssets[0].url), /\/omnimux-workflow\/api\/local-file\?path=/);
-  assert.equal(String(indexed.data.mediaAssets[0].url).includes('blob:'), false);
+  assert.equal('realPath' in stripped.data, false);
+  assert.equal(String(stripped.data.mediaUrl || '').startsWith('blob:'), false);
+  assert.equal('mediaUrl' in stripped.data, false);
+  assert.equal('mediaAssets' in stripped.data, false);
+
+  const [relative] = sanitizeNodes(
+    [
+      {
+        id: 'n1',
+        type: 'material',
+        position: { x: 0, y: 0 },
+        data: {
+          materialType: 'image',
+          relativePath: 'artifacts/out.png',
+          assetId: 'ast_1',
+          realPath: '/Users/me/hero.png',
+          mediaUrl: 'blob:http://localhost/abc',
+          mediaAssets: [{ type: 'image', url: 'blob:http://localhost/abc', path: '/Users/me/hero.png' }],
+        },
+      },
+    ],
+    { workspaceId: 'ws_abc' },
+  );
+  assert.equal('realPath' in relative.data, false);
+  assert.equal(relative.data.relativePath, 'artifacts/out.png');
+  assert.match(String(relative.data.mediaUrl), /\/api\/workspaces\/ws_abc\/file\?rel=/);
+  assert.equal(relative.data.mediaAssets[0].relativePath, 'artifacts/out.png');
+  assert.equal(relative.data.mediaAssets[0].assetId, 'ast_1');
+  assert.equal('path' in relative.data.mediaAssets[0], false);
+  assert.equal(JSON.stringify(relative).includes('/Users'), false);
 
   const [orphan] = sanitizeNodes([
     {

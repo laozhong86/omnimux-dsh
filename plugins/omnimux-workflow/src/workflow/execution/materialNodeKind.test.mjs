@@ -90,6 +90,33 @@ describe('importExecutor - 专职导入执行器契约', () => {
     assert.equal(executor.key, 'material:import');
   });
 
+  it('relativePath + workspaceId 派生 project-file URL', async () => {
+    const executor = createImportExecutor();
+    const mockCtx = {
+      upstreamOutputs: new Map(),
+      signal: new AbortController().signal,
+      mediaDir: '/tmp',
+      workspaceId: 'ws_abc',
+    };
+    const output = await executor.execute(
+      {
+        id: 'node-rel',
+        type: 'material',
+        data: {
+          materialType: 'image',
+          relativePath: 'assets/imported/pic.png',
+          assetId: 'ast_1',
+          realPath: '/Users/test/pic.png',
+        },
+      },
+      mockCtx,
+    );
+    assert.equal(output.relativePath, 'assets/imported/pic.png');
+    assert.equal(output.assetId, 'ast_1');
+    assert.match(output.mediaAssets[0].url, /\/api\/workspaces\/ws_abc\/file\?rel=/);
+    assert.equal(output.mediaAssets[0].relativePath, 'assets/imported/pic.png');
+  });
+
   it('realPath 存在时透传 localFileMediaUrl', async () => {
     const executor = createImportExecutor();
     const mockCtx = {

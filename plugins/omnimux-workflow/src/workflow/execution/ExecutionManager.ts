@@ -171,12 +171,24 @@ function createExecutionInstance(
     initialOutputs: opts.initialOutputs,
   });
   const abortController = new AbortController();
+  const persistGenerated = deps.persistGenerated
+    ? (input: {
+        nodeId: string;
+        nodeType: string;
+        tmpAbs: string;
+        materialType: 'image' | 'video' | 'audio';
+        prompt?: string;
+        modelId?: string;
+      }) => deps.persistGenerated!({ workspaceId: opts.workspaceId, ...input })
+    : undefined;
   const { executor } = createDispatchingNodeExecutor({
     gateway: deps.gateway,
     mediaRoot: deps.mediaDir,
     executionId: context.id,
+    workspaceId: opts.workspaceId,
     edges: opts.edges,
     abortController,
+    persistGenerated,
   });
   const scheduler = new ExecutionScheduler({
     nodes: opts.nodes,
@@ -262,6 +274,7 @@ export function createExecutionManager(deps: ExecutionManagerDeps) {
     mediaDir,
     entries,
     onSetupEntry: handleEntrySetup,
+    persistGenerated: deps.persistGenerated,
   };
 
   const doRecoverExecution = (executionId: string): Promise<ExecutionEntry | null> =>

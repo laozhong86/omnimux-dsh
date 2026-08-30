@@ -115,7 +115,11 @@ export interface MaterialNodeData {
   status: MaterialStatus;
   content?: string;
   mediaUrl?: string;
-  /** Absolute local source path for imported media (index, never a copy). */
+  /** Project-relative POSIX path of the materialized file (SSOT). */
+  relativePath?: string;
+  /** Ledger asset id in `<ProjectRoot>/.omnimux/assets.json`. */
+  assetId?: string;
+  /** Legacy absolute path. New writes must not persist this. */
   realPath?: string;
   originalName?: string;
   fileSize?: number;

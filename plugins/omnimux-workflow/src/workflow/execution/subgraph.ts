@@ -7,7 +7,29 @@
  * single: only the selected nodes (inheriting existing upstream output artifacts without re-execution).
  */
 
+import { resolveNodeKind } from '../../shared/graph/materialNode.ts';
+
 export type ExecutionMode = 'full' | 'subset' | 'single';
+
+const MEDIA_TYPES = new Set(['image', 'video', 'audio']);
+
+/** Media generate (image/video/audio) requires a bound local project. Text generate does not. */
+export function subgraphContainsMediaGenerate(
+  nodes: Array<{ type?: string; data?: Record<string, unknown> }>,
+): boolean {
+  for (const node of nodes) {
+    if (node.type !== 'material') continue;
+    const data = node.data ?? {};
+    const materialType = data.materialType;
+    if (typeof materialType !== 'string' || !MEDIA_TYPES.has(materialType)) continue;
+    try {
+      if (resolveNodeKind(data) === 'generate') return true;
+    } catch {
+      return true;
+    }
+  }
+  return false;
+}
 
 const SUPPORTED_EXECUTION_MODES = new Set<string>(['full', 'subset', 'single']);
 
