@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { useTextStageStore } from '../../store/textStageStore';
 import { TextStageTopbar } from './TextStageTopbar';
 import { CodeMirrorEditor } from './CodeMirrorEditor';
@@ -74,9 +73,9 @@ export const TextStage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [isStageOpen, diffModal.isOpen, isDrawerOpen, closeDiffModal, setDrawerOpen, closeStage, save, undo, redo, canUndo, canRedo]);
 
-  if (!isStageOpen || typeof document === 'undefined') return null;
+  if (!isStageOpen) return null;
 
-  return createPortal(
+  return (
     <div className="wf-text-stage-overlay wf-canvas-root">
       {/* 顶部工具栏 */}
       <TextStageTopbar />
@@ -99,7 +98,6 @@ export const TextStage: React.FC = () => {
 
       {/* 差异对比弹窗 */}
       <VersionDiffModal />
-    </div>,
-    document.body,
+    </div>
   );
 };

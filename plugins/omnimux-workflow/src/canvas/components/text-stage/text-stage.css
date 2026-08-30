@@ -5,10 +5,12 @@
    - 零 JS 双模自适应、WCAG AA 对比度合规
    ============================================================================ */
 
-/* 全屏 Overlay 根容器 */
+/* 全屏 Overlay 根容器（限制在画布区域全屏，不遮挡侧边栏与主界面） */
 .wf-text-stage-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 1000;
   display: flex;
   flex-direction: column;
