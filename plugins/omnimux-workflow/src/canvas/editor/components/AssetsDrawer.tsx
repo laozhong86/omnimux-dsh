@@ -109,6 +109,7 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
     y: 0,
   });
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     return () => {
@@ -160,9 +161,24 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
     }
 
     if (!item || !e) {
-      setHoverInspector({ visible: false, x: 0, y: 0 });
+      setHoverInspector({ visible: false, x: 0, y: 0, anchorRect: null, item: null });
       return;
     }
+
+    const currentTarget = e.currentTarget as HTMLElement | null;
+    const rect = currentTarget?.getBoundingClientRect();
+    const anchorRect = rect
+      ? {
+          top: rect.top,
+          bottom: rect.bottom,
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+          height: rect.height,
+        }
+      : null;
+    const drawerRect = drawerRef.current?.getBoundingClientRect();
+    const drawerLeft = drawerRect ? drawerRect.left : undefined;
 
     const { clientX, clientY } = e;
     hoverTimerRef.current = setTimeout(() => {
@@ -170,9 +186,11 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         visible: true,
         x: clientX,
         y: clientY,
+        anchorRect,
+        drawerLeft,
         item,
       });
-    }, 300);
+    }, 200);
   };
 
   const handleCanvasContextMenu = (e: React.MouseEvent, item: CanvasNodeItem) => {
@@ -418,6 +436,7 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
 
   return (
     <div
+      ref={drawerRef}
       className="wf-assets-drawer-root nodrag nopan"
       style={{ width: `${drawerWidth}px` }}
       onPointerDown={stopToolbarNativeEvent}
@@ -524,6 +543,8 @@ export const AssetsDrawer: React.FC<AssetsDrawerProps> = ({
         isOpen={hoverInspector.visible}
         x={hoverInspector.x}
         y={hoverInspector.y}
+        anchorRect={hoverInspector.anchorRect}
+        drawerLeft={hoverInspector.drawerLeft}
         item={hoverInspector.item || null}
       />
 

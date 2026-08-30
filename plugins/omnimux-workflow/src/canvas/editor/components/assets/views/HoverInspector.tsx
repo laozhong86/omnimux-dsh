@@ -1,19 +1,23 @@
 import React, { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkles, Calendar, HardDrive, Maximize2, Tag } from 'lucide-react';
-import type { AssetItem, CanvasNodeItem } from '../types';
+import type { AssetItem, CanvasNodeItem, HoverInspectorAnchorRect } from '../types';
 
-interface HoverInspectorProps {
+export interface HoverInspectorProps {
   isOpen: boolean;
-  x: number;
-  y: number;
+  x?: number;
+  y?: number;
+  anchorRect?: HoverInspectorAnchorRect | null;
+  drawerLeft?: number;
   item: AssetItem | CanvasNodeItem | null;
 }
 
 export const HoverInspector: React.FC<HoverInspectorProps> = ({
   isOpen,
-  x,
-  y,
+  x = 0,
+  y = 0,
+  anchorRect,
+  drawerLeft,
   item,
 }) => {
   const inspectorRef = useRef<HTMLDivElement>(null);
@@ -21,18 +25,35 @@ export const HoverInspector: React.FC<HoverInspectorProps> = ({
   if (!isOpen || !item) return null;
 
   const cardWidth = 260;
-  const cardHeight = 290;
+  const cardHeight = inspectorRef.current?.offsetHeight || 290;
 
-  // Place inspector to the right of cursor by default, flip left if overflowing
-  let left = x + 15;
-  if (left + cardWidth > window.innerWidth - 10) {
+  // 定位计算：始终固定在侧边栏外侧左侧，垂直方向对齐素材条目
+  let left: number;
+  let top: number;
+
+  if (anchorRect) {
+    // 侧边栏外侧左侧：使用侧边栏左边缘（或条目左边缘）减去卡片宽度与间隙
+    const sidebarLeft = drawerLeft ?? anchorRect.left;
+    left = sidebarLeft - cardWidth - 8;
+    top = anchorRect.top;
+  } else {
+    // 降级兜底：基于鼠标位置
     left = x - cardWidth - 15;
+    top = y - 20;
   }
-  let top = y - 20;
-  if (top + cardHeight > window.innerHeight - 10) {
-    top = window.innerHeight - cardHeight - 10;
+
+  // 边界保护：确保不超出视口
+  if (left < 10) {
+    left = 10;
   }
-  if (top < 10) top = 10;
+
+  const maxTop = window.innerHeight - cardHeight - 12;
+  if (top > maxTop) {
+    top = maxTop;
+  }
+  if (top < 12) {
+    top = 12;
+  }
 
   const node = 'nodeKind' in item ? (item as CanvasNodeItem) : null;
   const asset = node ? null : (item as AssetItem);
