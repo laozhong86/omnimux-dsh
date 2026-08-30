@@ -40,10 +40,10 @@ function harness() {
 }
 
 describe('products tools', () => {
-  it('registers six tools and never products_delete', () => {
+  it('registers all seven tools including products_delete', () => {
     const tools = harness()
     assert.deepEqual([...tools.keys()], [...PRODUCT_TOOL_NAMES])
-    assert.equal(tools.has('products_delete'), false)
+    assert.equal(tools.has('products_delete'), true)
   })
 
   it('create requires content; list/search/get/update/read_media share the store', async () => {
@@ -84,7 +84,7 @@ describe('products tools', () => {
     )
   })
 
-  it('create digital + strategy persists; strategy-only satisfies content; price-only update keeps strategy', async () => {
+  it('create digital + strategy persists; strategy-only satisfies content; price-only update keeps strategy; delete works with confirm', async () => {
     const tools = harness()
     await assert.rejects(
       () => tools.get('products_create').execute({
@@ -109,6 +109,22 @@ describe('products tools', () => {
     assert.equal(updated.product.price, '99')
     assert.equal(updated.product.brand_strategy.brand_basic_info.product.name, 'X')
 
-    assert.equal(tools.has('products_delete'), false)
+    // Test products_delete without confirm
+    await assert.rejects(
+      () => tools.get('products_delete').execute({ id: created.product.id, confirm: false }),
+      (error) => error.code === 'confirmation-required',
+    )
+
+    // Test products_delete with confirm
+    const deleteRes = await tools.get('products_delete').execute({ id: created.product.id, confirm: true })
+    assert.equal(deleteRes.ok, true)
+    assert.equal(deleteRes.id, created.product.id)
+    assert.equal(deleteRes.deleted, true)
+
+    // Verify it is gone
+    await assert.rejects(
+      () => tools.get('products_get').execute({ id: created.product.id }),
+      (error) => error.code === 'product-not-found',
+    )
   })
 })

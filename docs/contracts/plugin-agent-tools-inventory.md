@@ -126,7 +126,7 @@ related:
 | 读取商品绑定的主图/媒体流 | 媒体预览抽屉 | `products_read_media` | L2 | `Implemented` | 否 |
 | 创建新商品与带货策略 | 新增商品弹窗 | `products_create` | L1 | `Implemented` | 否 |
 | 更新商品信息与营销卖点 | 编辑商品弹窗 | `products_update` | L1 | `Implemented` | 否 |
-| 删除指定商品条目 | 商品卡片删除按钮 | `products_delete` | L1 | `Planned` | 是 (`confirm: true`) |
+| 删除指定商品条目 | 商品卡片删除按钮 | `products_delete` | L1 | `Implemented` | 是 (`confirm: true`) |
 | 商品多选状态维护 | 表格 Checkbox | — | UI-Only | `UI-Only` | 豁免 (前端纯交互状态) |
 
 ---
