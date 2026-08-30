@@ -161,6 +161,26 @@ describe('resolveMediaAuth (dual-track auth)', () => {
     assert.deepEqual(auth, { apiKey: 'pat-from-cred', authType: 'access-token' })
   })
 
+  it('credentials OMNIMUX_API_KEY 优先于登录 PAT，避免 PAT 401 /v1/images/generations', async () => {
+    const media = parseMediaConfig(undefined)
+    const route = resolveMediaRoute('image', {}, media, {})
+    const seen = []
+    const auth = await resolveMediaAuth(route, {
+      env: {},
+      store: { resolve: async () => 'pat-from-store' },
+      credentials: {
+        async resolve(ref) {
+          seen.push(ref)
+          if (ref === 'OMNIMUX_API_KEY') return { value: 'sk-from-yaml' }
+          if (ref === 'OMNIMUX_ACCESS_TOKEN') return { value: 'pat-from-cred' }
+          return undefined
+        },
+      },
+    })
+    assert.deepEqual(auth, { apiKey: 'sk-from-yaml', authType: 'api-key' })
+    assert.deepEqual(seen, ['OMNIMUX_API_KEY'])
+  })
+
   it('测试用例 4：自定义 provider 且 apiKey: "none" 时，返回 authType: "none" 且不抛错', async () => {
     const media = parseMediaConfig({
       providers: {

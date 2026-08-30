@@ -931,6 +931,8 @@ interface MediaTaskRecord {
   capability: 'image' | 'video' | 'audio';
   /** Hub task id (used for poll + download resume). */
   hubTaskId: string;
+  /** Sync providers (gpt-image-2) already wrote dest; skip poll. */
+  settled?: boolean;
 }
 
 interface TextTaskRecord {
@@ -970,8 +972,22 @@ function requireMediaSeam(getSeam: SeamGetter, capability: 'image' | 'video' | '
 /**
  * Normalize a hub rejection into SeamGatewayError. Errors carrying a string
  * `code` (OmnimuxError) keep code + message; anything else becomes
- * `omnimux-request-failed`.
+ * `omnimux-request-failed`. Adapter wrappers keep the provider text on `cause`.
  */
+function causeDetail(error: unknown): string {
+  if (!error || typeof error !== 'object') return '';
+  const cause = (error as { cause?: unknown }).cause;
+  if (cause instanceof Error && cause.message.trim()) return cause.message.trim();
+  if (typeof cause === 'string' && cause.trim()) return cause.trim();
+  return '';
+}
+
+function withCause(message: string, error: unknown): string {
+  const detail = causeDetail(error);
+  if (!detail || message.includes(detail)) return message;
+  return `${message}: ${detail}`;
+}
+
 function toSeamError(error: unknown): Error {
   if (error instanceof SeamGatewayError) return error;
   if (
@@ -979,10 +995,10 @@ function toSeamError(error: unknown): Error {
     && typeof (error as { code?: unknown }).code === 'string'
   ) {
     const coded = error as unknown as { code: string; message?: string };
-    return new SeamGatewayError(coded.code, coded.message ?? String(error));
+    return new SeamGatewayError(coded.code, withCause(coded.message ?? String(error), error));
   }
   if (error instanceof Error) {
-    return new SeamGatewayError('omnimux-request-failed', error.message);
+    return new SeamGatewayError('omnimux-request-failed', withCause(error.message, error));
   }
   return new SeamGatewayError('omnimux-request-failed', String(error));
 }
@@ -1063,14 +1079,10 @@ export function createOmnimuxSeamClient(
           : '';
       if (result.mode === 'live') {
         // Provider already produced the file: the hub downloaded it to dest.
-        if (!hubTaskId) {
-          throw new SeamGatewayError(
-            'omnimux-invalid-response',
-            'live 提交缺少 taskId，无法登记任务',
-          );
-        }
-        tasks.set(hubTaskId, { kind: 'media', capability, hubTaskId });
-        return { taskId: hubTaskId, mode: 'live', url: result.url ?? undefined };
+        // Sync image models (gpt-image-2) return b64_json with no task_id.
+        const localId = hubTaskId || `live_${randomUUID().slice(0, 12)}`;
+        tasks.set(localId, { kind: 'media', capability, hubTaskId: localId, settled: true });
+        return { taskId: localId, mode: 'live', url: result.url ?? undefined };
       }
       if (!hubTaskId) {
         throw new SeamGatewayError(
@@ -1128,6 +1140,12 @@ export function createOmnimuxSeamClient(
           });
         }
         return { url: dest, text };
+      }
+
+      // Sync live submit already wrote dest; do not poll a missing task id.
+      if (record.settled) {
+        tasks.delete(taskId);
+        return { url: dest };
       }
 
       // Media: poll + download via the hub ({ dest, taskId } resume path).

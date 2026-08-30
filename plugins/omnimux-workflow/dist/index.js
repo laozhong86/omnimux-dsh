@@ -18355,14 +18355,26 @@ function requireMediaSeam(getSeam, capability) {
   }
   return seam;
 }
+function causeDetail(error51) {
+  if (!error51 || typeof error51 !== "object") return "";
+  const cause = error51.cause;
+  if (cause instanceof Error && cause.message.trim()) return cause.message.trim();
+  if (typeof cause === "string" && cause.trim()) return cause.trim();
+  return "";
+}
+function withCause(message, error51) {
+  const detail = causeDetail(error51);
+  if (!detail || message.includes(detail)) return message;
+  return `${message}: ${detail}`;
+}
 function toSeamError(error51) {
   if (error51 instanceof SeamGatewayError) return error51;
   if (error51 instanceof Error && typeof error51.code === "string") {
     const coded = error51;
-    return new SeamGatewayError(coded.code, coded.message ?? String(error51));
+    return new SeamGatewayError(coded.code, withCause(coded.message ?? String(error51), error51));
   }
   if (error51 instanceof Error) {
-    return new SeamGatewayError("omnimux-request-failed", error51.message);
+    return new SeamGatewayError("omnimux-request-failed", withCause(error51.message, error51));
   }
   return new SeamGatewayError("omnimux-request-failed", String(error51));
 }
@@ -18422,14 +18434,9 @@ function createOmnimuxSeamClient(opts) {
       }
       const hubTaskId = typeof result.taskId === "string" && result.taskId.trim().length > 0 ? result.taskId.trim() : "";
       if (result.mode === "live") {
-        if (!hubTaskId) {
-          throw new SeamGatewayError(
-            "omnimux-invalid-response",
-            "live \u63D0\u4EA4\u7F3A\u5C11 taskId\uFF0C\u65E0\u6CD5\u767B\u8BB0\u4EFB\u52A1"
-          );
-        }
-        tasks.set(hubTaskId, { kind: "media", capability, hubTaskId });
-        return { taskId: hubTaskId, mode: "live", url: result.url ?? void 0 };
+        const localId = hubTaskId || `live_${randomUUID3().slice(0, 12)}`;
+        tasks.set(localId, { kind: "media", capability, hubTaskId: localId, settled: true });
+        return { taskId: localId, mode: "live", url: result.url ?? void 0 };
       }
       if (!hubTaskId) {
         throw new SeamGatewayError(
@@ -18478,6 +18485,10 @@ function createOmnimuxSeamClient(opts) {
           });
         }
         return { url: dest, text };
+      }
+      if (record2.settled) {
+        tasks.delete(taskId);
+        return { url: dest };
       }
       const seam = requireMediaSeam(opts.getSeam, record2.capability);
       const request = { dest, taskId: record2.hubTaskId };
