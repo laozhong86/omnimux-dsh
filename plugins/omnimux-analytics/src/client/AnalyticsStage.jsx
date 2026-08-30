@@ -85,7 +85,7 @@ export function AnalyticsStage({ t, stage }) {
     else if (action === 'retry') void store.refresh()
     else if (action === 'login') {
       const gate = window.__omnimuxAuth
-      if (gate && typeof gate.ensureLogin === 'function') gate.ensureLogin({ onSuccess: () => { void store.refresh() } })
+      if (gate && typeof gate.ensureLogin === 'function') gate.ensureLogin({ kind: 'explicit', onSuccess: () => { void store.refresh() } })
     }
   }
 

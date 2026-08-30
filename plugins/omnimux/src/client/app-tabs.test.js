@@ -93,7 +93,7 @@ describe('placeTabsContainer', () => {
 })
 
 describe('safeOpenApp (Auth Guard)', () => {
-  it('gates openApp through window.__omnimuxAuth.ensureLogin when available', () => {
+  it('gates openApp through window.__omnimuxAuth.ensureLogin when available with kind: explicit', () => {
     let ensuredWith = null
     let openedId = null
     const origWindow = globalThis.window
@@ -110,13 +110,14 @@ describe('safeOpenApp (Auth Guard)', () => {
       safeOpenApp('accounts', '账号管理', (id) => { openedId = id })
       assert.ok(ensuredWith, 'ensureLogin must be called')
       assert.equal(ensuredWith.reason, '账号管理')
+      assert.equal(ensuredWith.kind, 'explicit', 'must pass kind: explicit')
       assert.equal(openedId, 'accounts')
     } finally {
       globalThis.window = origWindow
     }
   })
 
-  it('falls back to id when title is empty', () => {
+  it('falls back to id when title is empty and passes kind: explicit', () => {
     let ensuredWith = null
     let openedId = null
     const origWindow = globalThis.window
@@ -132,6 +133,7 @@ describe('safeOpenApp (Auth Guard)', () => {
     try {
       safeOpenApp('my-app', '', (id) => { openedId = id })
       assert.equal(ensuredWith?.reason, 'my-app')
+      assert.equal(ensuredWith?.kind, 'explicit', 'must pass kind: explicit')
       assert.equal(openedId, 'my-app')
     } finally {
       globalThis.window = origWindow

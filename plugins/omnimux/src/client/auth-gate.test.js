@@ -419,7 +419,7 @@ describe('auth-gate store', () => {
     assert.equal(getSnapshot().phase, 'prompt')
   })
 
-  it('T8 AUTH_GATE_POLICY activates Policy D; cancel suppresses subsequent nav prompts', async () => {
+  it('T8 AUTH_GATE_POLICY activates Policy D; cancel suppresses subsequent nav prompts while explicit and write are not suppressed', async () => {
     assert.equal(AUTH_GATE_POLICY.gateNavigation, true)
     assert.equal(AUTH_GATE_POLICY.suppressNavigationAfterCancel, true)
     assert.ok(Object.isFrozen(AUTH_GATE_POLICY))
@@ -437,17 +437,46 @@ describe('auth-gate store', () => {
     let navResolved = false
     await gate.ensureLogin({
       kind: 'nav',
-      onSuccess: () => { navResolved = true },
+      onSuccess: (p) => {
+        navResolved = true
+        assert.equal(p.suppressed, true)
+      },
     })
     assert.equal(navResolved, true, 'subsequent nav after cancel is suppressed and resolved')
     assert.equal(getSnapshot().phase, 'closed', 'gate stays closed during suppressed nav')
 
+    // Profile-style call without explicit kind defaults to nav (which is suppressed)
+    let defaultKindResolved = false
+    await gate.ensureLogin({
+      onSuccess: (p) => {
+        defaultKindResolved = true
+        assert.equal(p.suppressed, true)
+      },
+    })
+    assert.equal(defaultKindResolved, true, 'omitted kind defaults to nav and is suppressed after cancel')
+    assert.equal(getSnapshot().phase, 'closed')
+
+    // Explicit call (kind: 'explicit') is NOT suppressed and MUST reopen prompt
+    await gate.ensureLogin({
+      kind: 'explicit',
+      reason: 'explicit-login',
+      onSuccess: () => { throw new Error('explicit must not be suppressed') },
+    })
+    assert.equal(getSnapshot().phase, 'prompt', 'explicit operation opens the prompt even after cancel')
+    assert.equal(getSnapshot().reason, 'explicit-login')
+
+    // Cancel again
+    cancel('cancelled-again')
+    assert.equal(getSnapshot().phase, 'closed')
+
     // Write operation is NOT suppressed and still prompts
     await gate.ensureLogin({
       kind: 'write',
+      reason: 'write-op',
       onSuccess: () => { throw new Error('write must not be suppressed') },
     })
     assert.equal(getSnapshot().phase, 'prompt', 'write operation still opens the prompt')
+    assert.equal(getSnapshot().reason, 'write-op')
   })
 
   it('resetAuthGate also drops the session status cache', () => {

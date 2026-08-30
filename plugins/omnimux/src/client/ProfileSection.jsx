@@ -157,6 +157,7 @@ export function ProfileSection({ t }) {
     if (gate && typeof gate.ensureLogin === 'function') {
       gate.ensureLogin({
         reason: t('auth.gate.reason.account'),
+        kind: 'explicit',
         onSuccess: () => { void recheck() },
       })
     } else {

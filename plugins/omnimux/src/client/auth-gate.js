@@ -129,7 +129,7 @@ function makeIntent(opts) {
   return {
     id: intentSeq,
     reason: typeof opts.reason === 'string' ? opts.reason : undefined,
-    kind: opts.kind === 'write' ? 'write' : 'nav',
+    kind: opts.kind === 'write' || opts.kind === 'explicit' ? opts.kind : 'nav',
     onSuccess: typeof opts.onSuccess === 'function' ? opts.onSuccess : undefined,
     onCancel: typeof opts.onCancel === 'function' ? opts.onCancel : undefined,
   }
@@ -234,10 +234,9 @@ async function checkAndStart(reason) {
 /**
  * Open / reuse the unified login gate for one intent.
  *
- * `kind` is a C/D seam (`'nav'` default, `'write'` from authGuard). C/D flags
- * stay frozen-off, so both kinds currently share the same path.
+ * `kind` is a C/D seam (`'nav'` default, `'write'` from authGuard, `'explicit'` from manual user action).
  *
- * @param {{ reason?: string, kind?: 'nav' | 'write', onSuccess?: (profile: any) => void, onCancel?: (reason?: any) => void }} [opts]
+ * @param {{ reason?: string, kind?: 'nav' | 'write' | 'explicit', onSuccess?: (profile: any) => void, onCancel?: (reason?: any) => void }} [opts]
  * @returns {Promise<void>}
  */
 export async function ensureLogin(opts = {}) {

@@ -45,9 +45,13 @@ describe('authGuard', () => {
 
     const saved = globalThis.window
     let calls = 0
+    let recordedKind = null
     globalThis.window = {
       __omnimuxAuth: {
-        ensureLogin({ onSuccess }) { onSuccess({ logged_in: true }) },
+        ensureLogin({ kind, onSuccess }) {
+          recordedKind = kind
+          onSuccess({ logged_in: true })
+        },
       },
     }
     try {
@@ -60,6 +64,7 @@ describe('authGuard', () => {
       const result = await authGuard(fn)()
       assert.equal(calls, 2)
       assert.equal(result.status, 200)
+      assert.equal(recordedKind, 'write')
     } finally {
       globalThis.window = saved
     }
