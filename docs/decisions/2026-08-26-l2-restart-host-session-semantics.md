@@ -14,7 +14,7 @@ subsystem: "omnimux"
 日期：2026-08-26。
 状态：**已确认（审计修订）。**
 性质：降级 `spec-plugin-dx-pipeline.md` v1.0.0 G3「不丢失浏览器会话与调试数据」。对照官方 CLI SIGTERM dispose 与现网 `dev-env.sh start`。
-依据：工程保障审计 `deliverables/engineering-assurance/code-review-plan-plugin-dx-pipeline-2026-08-26.md`（Rex SEV2 / 潜伏 SEV1；Archi / Cody）。
+依据：2026-08-26 工程保障审计（Rex SEV2 / 潜伏 SEV1；Archi / Cody；原稿未入库）。对照 [dev-pipeline.md](../contracts/dev-pipeline.md)。
 
 ## 结论
 

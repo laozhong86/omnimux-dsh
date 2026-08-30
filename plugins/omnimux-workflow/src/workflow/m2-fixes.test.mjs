@@ -59,6 +59,8 @@ function fakeReq({ method = 'GET', url = '/', headers = {}, body = undefined }) 
 
 function makeHarness() {
   const dir = mkdtempSync(join(tmpdir(), 'omnimux-workflow-m2-'));
+  const libraryRoot = join(dir, 'library');
+  mkdirSync(libraryRoot, { recursive: true });
   const registered = [];
   const webServer = {
     register(route) {
@@ -75,6 +77,7 @@ function makeHarness() {
         executionsDir: join(dir, 'executions'),
         mediaDir: join(dir, 'media'),
       },
+      libraryRoot,
     },
   );
   // Both registered handlers dispatch identically (canonical + legacy).

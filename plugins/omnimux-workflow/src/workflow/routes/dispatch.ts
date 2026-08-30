@@ -6,6 +6,7 @@ import type { ExecutionManager, ExecutionEventLogEntry } from '../execution/Exec
 import type { ExecutionContext } from '../execution/ExecutionContext';
 import type { GenerationGateway } from '../seam/gateway';
 import type { WorkspaceStore } from '../workspace/WorkspaceStore';
+import type { ProjectAssetsStore } from '../workspace/ProjectAssetsStore';
 import type { TemplateStore } from '../templates/TemplateStore.ts';
 
 export interface WorkflowDispatcherDeps {
@@ -18,6 +19,8 @@ export interface WorkflowDispatcherDeps {
   /** Injected native picker (tests). Default: macOS osascript chooser. */
   picker?: (kind: string) => Promise<{ path: string | null; paths: string[] }>;
   templates?: TemplateStore;
+  /** Shared with host mount so generate persist and HTTP ingest use one ledger. */
+  assetsStore?: ProjectAssetsStore;
 }
 
 export interface WorkflowDispatchRequest {

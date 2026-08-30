@@ -1,0 +1,121 @@
+{
+  "requirementId": "REQ-WF-GROUP-BUTTON-AND-ACTION-FIX",
+  "title": "画布多选工具栏打组按钮样式修正与打组操作防御闭环质检报告",
+  "timestamp": "2026-08-30T07:04:39.176Z",
+  "targetProfile": "omnimux-dev",
+  "port": 44200,
+  "verdict": "PASS",
+  "fiveDimensionAudit": {
+    "dim1_syntaxAndModuleBoundary": {
+      "status": "PASS",
+      "details": "纯 TS/JS 语法，无 cross-plugin 违规 import，check:boundaries 1680 个源文件全绿。"
+    },
+    "dim2_lifecycleAndEvents": {
+      "status": "PASS",
+      "details": "FloatingSelectionToolbar 容器携带 nodrag nopan，绑定 stopToolbarNativeEvent 拦截 pointerDown/mouseDown，保护 React Flow 选区不变量。"
+    },
+    "dim3_dataIsolationAndSafety": {
+      "status": "PASS",
+      "details": "planGroupNodes 保持纯函数计算，自动过滤 !n.parentId，生成外层边界并计算子节点相对坐标，零数据污染。"
+    },
+    "dim4_visualAndTokens": {
+      "status": "PASS",
+      "details": "彻底移除 wf-floating-selection-bar__btn--accent 高亮类名，打组按钮与其他按钮均使用统一中性胶囊样式（computedBg: rgba(0,0,0,0)，无硬编码蓝色背景）。"
+    },
+    "dim5_stabilityAndDefense": {
+      "status": "PASS",
+      "details": "选区有效顶层常规节点 < 2 时做 toast.warning 区分提示；成功打组后 toast.success 并自动选中 GroupNode，创建外置 GroupHeader、右上 GroupTopBar 与 8 方向缩放手柄。"
+    }
+  },
+  "evidence": {
+    "defaultToolbar": {
+      "screenshot": "docs/evidence/req-wf-group-button-default.png",
+      "selectedNodeCount": 2,
+      "barRect": {
+        "x": 1155.3515625,
+        "y": 122,
+        "width": 315.296875,
+        "height": 40
+      },
+      "buttons": [
+        {
+          "text": "Create asset",
+          "title": "Save selected outputs to the asset library",
+          "className": "wf-floating-selection-bar__btn",
+          "computedBg": "rgba(0, 0, 0, 0)",
+          "computedColor": "rgb(245, 245, 245)",
+          "computedBorder": "0px none rgb(245, 245, 245)",
+          "rect": {
+            "x": 1164.3515625,
+            "y": 128,
+            "width": 113.890625,
+            "height": 28
+          }
+        },
+        {
+          "text": "Group",
+          "title": "Group selected nodes (Cmd + G)",
+          "className": "wf-floating-selection-bar__btn",
+          "computedBg": "rgba(0, 0, 0, 0)",
+          "computedColor": "rgb(245, 245, 245)",
+          "computedBorder": "0px none rgb(245, 245, 245)",
+          "rect": {
+            "x": 1282.2421875,
+            "y": 128,
+            "width": 76.4921875,
+            "height": 28
+          }
+        },
+        {
+          "text": "Layout",
+          "title": "Arrange selected nodes",
+          "className": "wf-floating-selection-bar__btn",
+          "computedBg": "rgba(0, 0, 0, 0)",
+          "computedColor": "rgb(245, 245, 245)",
+          "computedBorder": "0px none rgb(245, 245, 245)",
+          "rect": {
+            "x": 1362.734375,
+            "y": 128,
+            "width": 98.9140625,
+            "height": 28
+          }
+        }
+      ]
+    },
+    "groupedCanvas": {
+      "screenshot": "docs/evidence/req-wf-group-button-grouped.png",
+      "groupNodeFound": true,
+      "groupNodeId": "group_1788073476572_te8ou",
+      "groupNodeSelected": true,
+      "groupHeaderFound": true,
+      "groupHeaderText": "New group",
+      "groupTopBarFound": true,
+      "resizeHandlesCount": 8,
+      "allNodes": [
+        {
+          "id": "group_1788073476572_te8ou",
+          "className": "react-flow__node react-flow__node-group nopan selected selectable parent draggable",
+          "selected": true,
+          "text": "Layout Run group Create workflow Ungroup"
+        },
+        {
+          "id": "a757ea9e-88e6-41e0-b6e1-932b059326ee",
+          "className": "react-flow__node react-flow__node-material nopan selectable draggable",
+          "selected": false,
+          "text": "添加到会话 Edit Text Text Try: Write Draft Sc"
+        },
+        {
+          "id": "2bf8ba2d-4a3c-46d5-9e53-90f880a84c3c",
+          "className": "react-flow__node react-flow__node-material nopan selectable draggable",
+          "selected": false,
+          "text": "Video"
+        }
+      ]
+    }
+  },
+  "testGates": {
+    "unitTests": "480/480 PASS",
+    "ciGates": "14/14 PASS",
+    "boundaryCheck": "1680/1680 PASS"
+  }
+}

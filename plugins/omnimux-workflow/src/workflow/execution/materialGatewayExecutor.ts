@@ -125,6 +125,27 @@ export function createMaterialGatewayExecutor(opts: {
         return { text: settled.text ?? `[gateway:${capability}] ${prompt}` };
       }
 
+      if (ctx.persistGenerated) {
+        const persisted = await ctx.persistGenerated({
+          nodeId: node.id,
+          nodeType: node.type,
+          tmpAbs: dest,
+          materialType: capability,
+          prompt,
+          modelId: readString(data.params as Record<string, unknown> | undefined, 'model'),
+        });
+        return {
+          relativePath: persisted.relativePath,
+          assetId: persisted.assetId,
+          mediaAssets: [{
+            type: capability,
+            url: persisted.url,
+            relativePath: persisted.relativePath,
+            assetId: persisted.assetId,
+          }],
+        };
+      }
+
       const url = ctx.toPublicUrl ? ctx.toPublicUrl(settled.url) : settled.url;
       return {
         mediaAssets: [{ type: capability as 'image' | 'video' | 'audio', url }],

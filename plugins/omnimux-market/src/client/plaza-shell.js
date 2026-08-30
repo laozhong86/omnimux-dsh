@@ -330,13 +330,11 @@
 
       return h(I18nProvider, { t: tr },
         h("div", { className: "sh-plaza-wrap" + (wide ? "" : " rail") },
-          h(Button, {
+          h("button", {
             type: "button",
-            variant: "ghost",
             className: "sh-plaza-trigger" + (open ? " on" : ""),
             "aria-label": tr("plaza.title"),
             "aria-expanded": open,
-            leadingIcon: h(PlazaIcon),
             onClick: () => {
               if (open) {
                 close();
@@ -346,7 +344,10 @@
               setOpen(true);
               setHint("");
             },
-          }, wide ? tr("plaza.title") : null),
+          },
+            h(PlazaIcon),
+            wide ? h("span", null, tr("plaza.title")) : null,
+          ),
           hint ? h(Toast, { text: hint, onDone: () => setHint("") }) : null,
           panel,
         ),

@@ -161,6 +161,8 @@ function createFakeSeamHub(opts = {}) {
 
 function makeHarness({ seamHub = null, gatewayMode, seamConcurrency, env } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'omnimux-seam-gw-'));
+  const libraryRoot = join(root, 'library');
+  mkdirSync(libraryRoot, { recursive: true });
   const captured = { handler: null };
   const webServer = {
     register(route) {
@@ -179,6 +181,7 @@ function makeHarness({ seamHub = null, gatewayMode, seamConcurrency, env } = {})
       executionsDir: join(root, 'executions'),
       mediaDir: join(root, 'media'),
     },
+    libraryRoot,
     env: env ?? {},
   };
   if (gatewayMode !== undefined) opts.gatewayMode = gatewayMode;
@@ -254,7 +257,17 @@ function makeHarness({ seamHub = null, gatewayMode, seamConcurrency, env } = {})
   };
 
   /** Create a workspace and save a graph (nodes/edges/settings). */
-  const createGraph = async ({ nodes, edges = [], maxParallel }) => {
+  const bindProject = (wsId) => {
+    const projectRoot = join(libraryRoot, wsId);
+    mkdirSync(projectRoot, { recursive: true });
+    host.createProjectStore({ libraryRoot }).create('seam-test', {
+      projectRoot,
+      canvasWorkspaceIds: [wsId],
+    });
+    return projectRoot;
+  };
+
+  const createGraph = async ({ nodes, edges = [], maxParallel, bind = false }) => {
     const created = await call({
       method: 'POST',
       url: '/omnimux-workflow/api/workspaces',
@@ -272,7 +285,8 @@ function makeHarness({ seamHub = null, gatewayMode, seamConcurrency, env } = {})
       },
     });
     assert.equal(saved.status, 200, 'graph save failed');
-    return wsId;
+    const projectRoot = bind ? bindProject(wsId) : null;
+    return { wsId, projectRoot };
   };
 
   const materialNode = (id, materialType, data = {}) => ({
@@ -311,7 +325,7 @@ test('image node: submit → poll → download → mediaUrl 回填 (fake seam fu
   const hub = createFakeSeamHub();
   const h = makeHarness({ seamHub: hub });
   try {
-    const wsId = await h.createGraph({ nodes: [h.materialNode('n1', 'image')] });
+    const { wsId, projectRoot } = await h.createGraph({ nodes: [h.materialNode('n1', 'image')], bind: true });
     const exec = await h.call({
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
@@ -327,19 +341,25 @@ test('image node: submit → poll → download → mediaUrl 回填 (fake seam fu
 
     const complete = events.find((e) => e.event === 'node_complete');
     const asset = complete.data.output.mediaAssets[0];
-    assert.match(asset.url, /^\/omnimux-workflow\/media\/executions\/[^/]+\/n1\.svg$/);
+    assert.match(asset.url, /\/omnimux-workflow\/api\/workspaces\/.+\/file\?rel=/);
     assert.equal(asset.type, 'image');
+    assert.match(String(asset.relativePath), /^artifacts\//);
 
-    // The hub downloaded the artifact to dest (fake writes the file):
-    const absolute = join(h.root, 'media', 'executions', execId, 'n1.svg');
-    assert.ok(existsSync(absolute), 'artifact must exist on disk');
-    assert.match(readFileSync(absolute, 'utf8'), /^fake-image-hub_image_1$/);
+    const dest = hub.state.submitRequests[0].dest;
+    assert.match(dest, /\/media\/executions\//);
+    const ledger = JSON.parse(readFileSync(join(projectRoot, '.omnimux', 'assets.json'), 'utf8'));
+    assert.equal(ledger.items[0].relative_path.startsWith('artifacts/'), true);
+    assert.equal(JSON.stringify(ledger).includes('/Users'), false);
+    const copied = join(projectRoot, ledger.items[0].relative_path);
+    assert.ok(existsSync(copied), 'project artifacts copy is the SSOT');
+    assert.match(readFileSync(copied, 'utf8'), /^fake-image-hub_image_1$/);
+    assert.equal(existsSync(dest), false, 'tmp execution file is recycled after move');
 
     // Seam traffic: one wait:false submit + one {dest, taskId} poll.
     assert.equal(hub.state.submits, 1);
     assert.equal(hub.state.polls, 1);
     assert.equal(hub.state.submitRequests[0].prompt, 'prompt for n1');
-    assert.equal(hub.state.submitRequests[0].dest, absolute);
+    assert.equal(hub.state.submitRequests[0].dest, dest);
   } finally {
     h.dispose();
     rmSync(h.root, { recursive: true, force: true });
@@ -350,7 +370,7 @@ test('text node: textComplete seam → generatedContent 回填 + 落盘', async 
   const hub = createFakeSeamHub();
   const h = makeHarness({ seamHub: hub });
   try {
-    const wsId = await h.createGraph({ nodes: [h.materialNode('n1', 'text')] });
+    const { wsId } = await h.createGraph({ nodes: [h.materialNode('n1', 'text')] });
     const exec = await h.call({
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
@@ -384,7 +404,7 @@ test('sync live 提交没有 taskId 时仍回填产物（gpt-image-2 b64）', as
   });
   const h = makeHarness({ seamHub: hub });
   try {
-    const wsId = await h.createGraph({ nodes: [h.materialNode('n1', 'image')] });
+    const { wsId } = await h.createGraph({ nodes: [h.materialNode('n1', 'image')], bind: true });
     const exec = await h.call({
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
@@ -398,8 +418,7 @@ test('sync live 提交没有 taskId 时仍回填产物（gpt-image-2 b64）', as
     assert.ok(sse.satisfied, 'sync live submit should complete without a hub taskId');
     const complete = h.parseSse(sse.raw).find((e) => e.event === 'node_complete');
     assert.equal(complete.data.output.mediaAssets[0].type, 'image');
-    const absolute = join(h.root, 'media', 'executions', execId, 'n1.svg');
-    assert.ok(existsSync(absolute));
+    assert.match(complete.data.output.mediaAssets[0].url, /\/file\?rel=/);
     assert.equal(hub.state.polls, 0, 'must not poll a missing task id');
   } finally {
     h.dispose();
@@ -413,7 +432,7 @@ test('ADAPTER_FAILED 把 cause 拼进节点错误', async () => {
   const hub = createFakeSeamHub({ failSubmitWith: wrapped });
   const h = makeHarness({ seamHub: hub });
   try {
-    const wsId = await h.createGraph({ nodes: [h.materialNode('n1', 'image')] });
+    const { wsId } = await h.createGraph({ nodes: [h.materialNode('n1', 'image')], bind: true });
     const exec = await h.call({
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
@@ -440,7 +459,7 @@ test('hub 错误映射：code 透传到节点错误（omnimux-unconfigured）', 
   });
   const h = makeHarness({ seamHub: hub });
   try {
-    const wsId = await h.createGraph({ nodes: [h.materialNode('n1', 'image')] });
+    const { wsId } = await h.createGraph({ nodes: [h.materialNode('n1', 'image')], bind: true });
     const exec = await h.call({
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
@@ -471,7 +490,7 @@ test('failStrategy=skip：hub 错误只失败单节点，执行整体完成', as
       h.materialNode('bad', 'image', { failStrategy: 'skip' }),
       h.materialNode('good', 'text'),
     ];
-    const wsId = await h.createGraph({ nodes });
+    const { wsId } = await h.createGraph({ nodes, bind: true });
     const exec = await h.call({
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
@@ -499,7 +518,7 @@ test('取消：AbortSignal 贯通到 seam 轮询，执行转为 cancelled', asyn
   const hub = createFakeSeamHub({ pollDelayMs: 400 });
   const h = makeHarness({ seamHub: hub });
   try {
-    const wsId = await h.createGraph({ nodes: [h.materialNode('n1', 'image')] });
+    const { wsId } = await h.createGraph({ nodes: [h.materialNode('n1', 'image')], bind: true });
     const exec = await h.call({
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
@@ -595,7 +614,7 @@ test('强制 omnimux 且 seam 缺失：节点错误 needs-provider（不静默 m
     env: { OMNIMUX_WORKFLOW_GATEWAY: 'omnimux' },
   });
   try {
-    const wsId = await h.createGraph({ nodes: [h.materialNode('n1', 'image')] });
+    const { wsId } = await h.createGraph({ nodes: [h.materialNode('n1', 'image')], bind: true });
     const exec = await h.call({
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
@@ -620,7 +639,7 @@ test('并发上限：宽 DAG（maxParallel=8）下 seam 并发被压到 ≤2（�
   const h = makeHarness({ seamHub: hub });
   try {
     const nodes = ['a', 'b', 'c', 'd'].map((id) => h.materialNode(id, 'image'));
-    const wsId = await h.createGraph({ nodes, maxParallel: 8 });
+    const { wsId } = await h.createGraph({ nodes, maxParallel: 8, bind: true });
     const exec = await h.call({
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
@@ -649,7 +668,7 @@ test('并发上限可配：seamConcurrency=4 时并发可达 4', async () => {
   const h = makeHarness({ seamHub: hub, seamConcurrency: 4 });
   try {
     const nodes = ['a', 'b', 'c', 'd'].map((id) => h.materialNode(id, 'image'));
-    const wsId = await h.createGraph({ nodes, maxParallel: 8 });
+    const { wsId } = await h.createGraph({ nodes, maxParallel: 8, bind: true });
     const exec = await h.call({
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
@@ -683,6 +702,8 @@ test('auto 晚绑定：mount 时无 seam，hub 出现后目录升级为 omnimux'
       return () => {};
     },
   };
+  const libraryRoot = join(root, 'library');
+  mkdirSync(libraryRoot, { recursive: true });
   const dispose = host.mountWorkflowHost(
     { webServer, get: (name) => holder.seams?.[name] },
     {
@@ -692,6 +713,7 @@ test('auto 晚绑定：mount 时无 seam，hub 出现后目录升级为 omnimux'
         executionsDir: join(root, 'executions'),
         mediaDir: join(root, 'media'),
       },
+      libraryRoot,
       env: {},
     },
   );

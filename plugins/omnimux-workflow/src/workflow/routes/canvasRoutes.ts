@@ -195,7 +195,7 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
   const workspaceRoutes = createWorkspaceRoutes(store);
   const projectStore = createProjectStore({ libraryRoot: libraryRoot ?? ensureLibraryRoot() });
   const libraryHttp = createLibraryHttpClient();
-  const assetsStore = createProjectAssetsStore({
+  const assetsStore = deps.assetsStore ?? createProjectAssetsStore({
     workspacesDir: store.workspacesDir,
     resolveProjectRoot: (workspaceId) => projectStore.findByCanvasWorkspaceId(workspaceId),
     fetchLibraryDetail: libraryHttp.fetchLibraryDetail,

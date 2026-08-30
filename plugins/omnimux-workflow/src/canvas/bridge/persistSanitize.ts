@@ -17,7 +17,7 @@ import type {
   SerializedCanvasEdge,
   SerializedCanvasNode,
 } from '../../shared/canvasTypes';
-import { isBlobUrl, localFileMediaUrl } from '../../shared/localMedia.ts';
+import { isBlobUrl, looksAbsolutePath, projectFileMediaUrl } from '../../shared/localMedia.ts';
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -44,29 +44,35 @@ function stripBlobStrings(value: unknown): void {
   }
 }
 
-function sanitizeImportedMedia(data: Record<string, unknown>): void {
-  const realPath = typeof data.realPath === 'string' ? data.realPath : '';
-  if (realPath) {
-    const url = localFileMediaUrl(realPath);
-    data.mediaUrl = url;
-    const assets = Array.isArray(data.mediaAssets) ? data.mediaAssets : [];
-    const rewritten = assets
-      .map((asset) => {
-        const row = asMediaAsset(asset);
-        if (!row) return null;
-        row.url = url;
-        row.path = realPath;
-        return row;
-      })
-      .filter((row): row is Record<string, unknown> => row !== null);
-    data.mediaAssets = rewritten.length > 0
-      ? rewritten
-      : [{
-        type: typeof data.materialType === 'string' ? data.materialType : 'image',
-        url,
-        path: realPath,
-      }];
+function sanitizeImportedMedia(data: Record<string, unknown>, workspaceId?: string): void {
+  const relativePath = typeof data.relativePath === 'string' ? data.relativePath.trim() : '';
+  if (relativePath) {
+    delete data.realPath;
+    delete data.real_path;
+    if (workspaceId) {
+      data.mediaUrl = projectFileMediaUrl(workspaceId, relativePath);
+    } else if (isBlobUrl(data.mediaUrl) || (typeof data.mediaUrl === 'string' && data.mediaUrl.includes('/api/local-file'))) {
+      delete data.mediaUrl;
+    }
+    if (Array.isArray(data.mediaAssets)) {
+      const cleaned = data.mediaAssets
+        .map((asset) => {
+          const row = asMediaAsset(asset);
+          if (!row) return null;
+          row.relativePath = relativePath;
+          if (typeof data.assetId === 'string' && data.assetId) row.assetId = data.assetId;
+          if (workspaceId) row.url = projectFileMediaUrl(workspaceId, relativePath);
+          if (typeof row.path === 'string' && looksAbsolutePath(row.path)) delete row.path;
+          if (isBlobUrl(row.url)) delete row.url;
+          return row.url || row.relativePath ? row : null;
+        })
+        .filter((row): row is Record<string, unknown> => row !== null);
+      if (cleaned.length === 0) delete data.mediaAssets;
+      else data.mediaAssets = cleaned;
+    }
   } else {
+    delete data.realPath;
+    delete data.real_path;
     if (isBlobUrl(data.mediaUrl)) delete data.mediaUrl;
 
     if (Array.isArray(data.mediaAssets)) {
@@ -74,14 +80,9 @@ function sanitizeImportedMedia(data: Record<string, unknown>): void {
         .map((asset) => {
           const row = asMediaAsset(asset);
           if (!row) return null;
-          if (isBlobUrl(row.url)) {
-            if (typeof row.path === 'string' && row.path) {
-              row.url = localFileMediaUrl(row.path);
-            } else {
-              delete row.url;
-            }
-          }
-          return row.url || row.path ? row : null;
+          if (isBlobUrl(row.url)) delete row.url;
+          if (typeof row.path === 'string' && looksAbsolutePath(row.path)) delete row.path;
+          return row.url || row.relativePath ? row : null;
         })
         .filter((row): row is Record<string, unknown> => row !== null);
       if (cleaned.length === 0) delete data.mediaAssets;
@@ -94,12 +95,15 @@ function sanitizeImportedMedia(data: Record<string, unknown>): void {
 }
 
 /** Strip island + xyflow transient fields before signature / PUT. */
-export function sanitizeNodes(nodes: SerializedCanvasNode[]): SerializedCanvasNode[] {
+export function sanitizeNodes(
+  nodes: SerializedCanvasNode[],
+  opts: { workspaceId?: string } = {},
+): SerializedCanvasNode[] {
   return nodes.map((node) => {
     const raw = node as SerializedCanvasNode & Record<string, unknown>;
     const data = asRecord(raw.data);
     delete data.__catalog;
-    sanitizeImportedMedia(data);
+    sanitizeImportedMedia(data, opts.workspaceId);
 
     const clean: Record<string, unknown> = {
       id: raw.id,
@@ -158,9 +162,10 @@ export function sanitizeEdges(edges: SerializedCanvasEdge[]): SerializedCanvasEd
 export function signatureOf(
   nodes: SerializedCanvasNode[],
   edges: SerializedCanvasEdge[],
+  opts: { workspaceId?: string } = {},
 ): string {
   return JSON.stringify({
-    nodes: sanitizeNodes(nodes).map(omitLayoutDerivedFields),
+    nodes: sanitizeNodes(nodes, opts).map(omitLayoutDerivedFields),
     edges: sanitizeEdges(edges),
   });
 }

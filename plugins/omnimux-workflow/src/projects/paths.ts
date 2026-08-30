@@ -38,6 +38,10 @@ export interface ProjectPaths {
   importedDir: string;
   /** `<projectRoot>/assets/subjects` */
   subjectsDir: string;
+  /** `<projectRoot>/artifacts` — 画布 AIGC / 合成产物 */
+  artifactsDir: string;
+  /** `<projectRoot>/.omnimux/canvases` — 绑定后的 DAG */
+  canvasesDir: string;
   /** `<projectRoot>/说明.md` */
   readmeFile: string;
 }
@@ -97,6 +101,8 @@ export function resolveProjectPaths(projectRoot: string): ProjectPaths {
     assetsFile: join(metaDir, 'assets.json'),
     importedDir: join(normalized, 'assets', 'imported'),
     subjectsDir: join(normalized, 'assets', 'subjects'),
+    artifactsDir: join(normalized, 'artifacts'),
+    canvasesDir: join(metaDir, 'canvases'),
     readmeFile: join(normalized, PROJECT_README_NAME),
   };
 }
