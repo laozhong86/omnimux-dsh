@@ -8,7 +8,7 @@
 
 import { useMemo } from 'react';
 import type { CapabilityCatalog, CapabilityModelItem, ModelParameterSchema } from '../../../shared/api';
-import type { MaterialType } from '../../../types/materialNode';
+import type { MaterialType } from '../../types/materialNode';
 
 const CATALOG_CACHE_KEY = 'wf_capabilities_catalog_v1';
 
@@ -130,8 +130,10 @@ export function useModelParameterSchema(
 ): UseModelParameterSchemaResult {
   return useMemo(() => {
     const activeCatalog = catalog ?? getCachedCatalog();
-    const modelList = activeCatalog?.[materialType] ?? [];
-    const modelItem = modelList.find((m) => m.id === modelId) ?? modelList[0];
+    const modelList: CapabilityModelItem[] = activeCatalog && (activeCatalog as Record<string, any>)[materialType]
+      ? (activeCatalog as Record<string, any>)[materialType]
+      : [];
+    const modelItem = modelList.find((m: CapabilityModelItem) => m.id === modelId) ?? modelList[0];
 
     const fallback = DEFAULT_FALLBACK_SCHEMA[materialType] ?? {};
     const schema: ModelParameterSchema = modelItem?.parameters ?? fallback;

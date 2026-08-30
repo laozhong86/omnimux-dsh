@@ -208,10 +208,13 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
     const bounds = calculateGroupBounds(selectedRegularNodes, 0);
     const flowCenterX = bounds.x + bounds.width / 2;
     const flowTopY = bounds.y;
-    const vp = reactFlowInstance.getViewport ? reactFlowInstance.getViewport() : { x: 0, y: 0, zoom: 1 };
+    const vp = typeof reactFlowInstance?.getViewport === 'function' ? reactFlowInstance.getViewport() : { x: 0, y: 0, zoom: 1 };
+    const zoom = typeof vp?.zoom === 'number' && Number.isFinite(vp.zoom) && vp.zoom > 0 ? vp.zoom : 1;
+    const vpx = typeof vp?.x === 'number' && Number.isFinite(vp.x) ? vp.x : 0;
+    const vpy = typeof vp?.y === 'number' && Number.isFinite(vp.y) ? vp.y : 0;
     return {
-      x: vp.x + flowCenterX * vp.zoom,
-      y: vp.y + flowTopY * vp.zoom,
+      x: Math.round(vpx + flowCenterX * zoom),
+      y: Math.round(vpy + flowTopY * zoom),
     };
   }, [selectedRegularNodes, reactFlowInstance]);
 

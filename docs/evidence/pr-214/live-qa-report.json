@@ -1,0 +1,24 @@
+{
+  "issue": 213,
+  "pr": 214,
+  "stage": "workflow-canvas-harness",
+  "taskSpace": 165,
+  "url": "http://127.0.0.1:4817/",
+  "source": "worktree canvas harness (production App :45120 still old bundle; not synced)",
+  "timestamp": "2026-08-30T00:23:00Z",
+  "verdict": "PASS",
+  "assertions": {
+    "ctrl-cmd-a-ignored": true,
+    "cmd-a-select-all-no-blank": true,
+    "esc-clears-selection": true
+  },
+  "details": {
+    "ctrlCmdA": "CDP Input.dispatchKeyEvent modifiers=6 (Ctrl+Meta) + KeyA → selected=0, toolbar=0, error=0, editor remains",
+    "cmdA": "CDP modifiers=4 (Meta) + KeyA → selected=4/4, floating toolbar 创建资产/打组/布局, ConfigPanel=0, error boundary=0, W4 harness chrome still visible",
+    "esc": "Escape after select-all → selected=0, toolbar=0, editor remains"
+  },
+  "screenshots": [
+    "docs/evidence/pr-214/cmd-a-select-all.png",
+    "docs/evidence/pr-214/ctrl-cmd-a-ignored.png"
+  ]
+}

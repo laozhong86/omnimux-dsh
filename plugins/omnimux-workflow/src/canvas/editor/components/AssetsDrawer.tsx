@@ -18,6 +18,7 @@ import {
   FolderContextMenu,
   extractCanvasAssets,
 } from './assets';
+import type { FlowNodeLike } from './assets/extractCanvasAssets';
 import type {
   ActiveTab,
   AssetItem,
@@ -47,7 +48,7 @@ interface AssetsDrawerProps {
   onInsertAsset?: (asset: AssetRecord) => void;
   activeCategory?: string;
   onCategoryChange?: (category: string) => void;
-  nodes?: unknown[];
+  nodes?: FlowNodeLike[] | null;
   onFocusNode?: (nodeId: string) => void;
   workspaceId?: string | null;
 }

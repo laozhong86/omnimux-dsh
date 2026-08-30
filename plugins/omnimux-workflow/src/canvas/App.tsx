@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import CanvasEditor from './editor/CanvasEditor';
+import { CanvasErrorBoundary } from './ui/CanvasErrorBoundary';
 import { useExecutionController } from './hooks/useExecutionController';
 import { useCanvasBoot } from './hooks/useCanvasBoot';
 import { setLocale, useT, type Locale } from './i18n';
@@ -106,19 +107,21 @@ const App: React.FC<CanvasAppProps> = ({ locale, workspaceId }) => {
         </div>
       ) : null}
       <main className="wf-canvas-main">
-        <CanvasEditor
-          catalog={catalog}
-          workspaceId={workspace?.id ?? null}
-          onExecuteNodeIds={(nodeIds) => {
-            // M4 组/子集执行入口（右键菜单）：subset 模式自动补传递上游闭包。
-            void execution.startExecution({ mode: 'subset', nodeIds });
-          }}
-          onStartExecution={() => void execution.startExecution({ mode: 'full' })}
-          onPauseExecution={() => void execution.pause()}
-          onResumeExecution={() => void execution.resume()}
-          onCancelExecution={() => void execution.cancel()}
-          onResetExecution={execution.reset}
-        />
+        <CanvasErrorBoundary>
+          <CanvasEditor
+            catalog={catalog}
+            workspaceId={workspace?.id ?? null}
+            onExecuteNodeIds={(nodeIds) => {
+              // M4 组/子集执行入口（右键菜单）：subset 模式自动补传递上游闭包。
+              void execution.startExecution({ mode: 'subset', nodeIds });
+            }}
+            onStartExecution={() => void execution.startExecution({ mode: 'full' })}
+            onPauseExecution={() => void execution.pause()}
+            onResumeExecution={() => void execution.resume()}
+            onCancelExecution={() => void execution.cancel()}
+            onResetExecution={execution.reset}
+          />
+        </CanvasErrorBoundary>
       </main>
     </div>
   );

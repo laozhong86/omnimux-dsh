@@ -237,7 +237,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       e.stopPropagation();
       setIsDraggingOver(false);
       const files = Array.from(e.dataTransfer.files ?? []);
-      if (files.length === 1) {
+      if (files.length === 1 && files[0]) {
         handleImportFile(files[0]);
         return;
       }
