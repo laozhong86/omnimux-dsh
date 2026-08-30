@@ -25,12 +25,10 @@
     ],
     "flashes": 0,
     "gateNow": 0,
-    "authFrames": ["closed", "closed", "closed", "closed", "closed"],
     "screenshot": "docs/evidence/issue-238-login-gate-no-flash-45120.png",
     "taskSpace": "login-gate no-flash live probe",
-    "hostPid": 12378,
     "hostProfileObserved": "/Users/x/.dsh/profiles/omnimux",
-    "note": "OmniMux Dev.app on 45120 was serving ~/.dsh, not ~/.omnimux-dev. After OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1 ./scripts/sync-to-app.sh --dsh omnimux, live SHA matched worktree. Prod ~/.omnimux left untouched (194796 / a80ca1d5)."
+    "note": "OmniMux Dev.app on 45120 was serving ~/.dsh. After --dsh materialize, live SHA matched worktree. Prod ~/.omnimux left untouched."
   },
   "verdict": "PASS"
 }

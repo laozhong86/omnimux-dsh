@@ -31,7 +31,9 @@ export const LOGIN_GATE_FEATURE_KEYS = [
  */
 export function describeLoginGate(gate) {
   const phase = gate && typeof gate.phase === 'string' ? gate.phase : 'closed'
-  if (phase === 'closed') {
+  // checking is an internal in-flight lock. Never portal the marketing
+  // window, never show the waiting spinner.
+  if (phase === 'closed' || phase === 'checking') {
     return {
       visible: false,
       phase,
@@ -47,7 +49,7 @@ export function describeLoginGate(gate) {
   }
   const failed = phase === 'denied' || phase === 'expired' || phase === 'error'
   const waiting = phase === 'waiting'
-  const starting = phase === 'starting' || phase === 'checking'
+  const starting = phase === 'starting'
   const userCode = typeof gate.user_code === 'string' && gate.user_code ? gate.user_code : '—'
   const verificationUrl = typeof gate.verification_url === 'string' ? gate.verification_url : ''
   return {

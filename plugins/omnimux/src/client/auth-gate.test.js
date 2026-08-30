@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { describe, it } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import {
+  AUTH_GATE_POLICY,
   AUTH_GLOBAL_KEY,
   MAX_INTENTS,
   cancel,
@@ -9,7 +13,10 @@ import {
   installAuthGlobal,
   resetAuthGate,
   retry,
+  subscribe,
 } from './auth-gate.js'
+import { describeLoginGate } from './login-gate-view.js'
+import { logout, peekStatusCache, rememberLoggedInStatus, resetStatusCache } from './api-auth.js'
 
 /**
  * A controllable fake device flow. `start()` drives the gate into `waiting`
@@ -39,14 +46,57 @@ function makeRunLogin() {
   return { fn, captured: () => captured, count: () => count }
 }
 
-/** @returns {{ win: {}, gate: any, run: ReturnType<typeof makeRunLogin> }} */
-function install({ loggedIn = false } = {}) {
+/**
+ * @param {{
+ *   loggedIn?: boolean
+ *   peek?: { ok: boolean, status: number, body: any } | null
+ *   getStatus?: (verify?: boolean) => Promise<{ ok: boolean, status: number, body: any }>
+ *   delayMs?: number
+ * }} [opts]
+ * @returns {{
+ *   win: {},
+ *   gate: any,
+ *   run: ReturnType<typeof makeRunLogin>,
+ *   getStatusCallCount: () => number,
+ * }}
+ */
+function install({ loggedIn = false, peek, getStatus } = {}) {
   const win = {}
   const run = makeRunLogin()
-  const getStatus = async () => ({ ok: true, status: 200, body: { logged_in: loggedIn, username: 'ada' } })
-  installAuthGlobal(win, { getStatus, runLogin: run.fn })
+  let getStatusCallCount = 0
+  const countedStatus = async (verify) => {
+    getStatusCallCount += 1
+    if (getStatus) return getStatus(verify)
+    return { ok: true, status: 200, body: { logged_in: loggedIn, username: 'ada' } }
+  }
+  const overrides = {
+    getStatus: countedStatus,
+    runLogin: run.fn,
+  }
+  if (peek !== undefined) overrides.peekCache = () => peek
+  installAuthGlobal(win, overrides)
   resetAuthGate()
-  return { win, gate: win[AUTH_GLOBAL_KEY], run }
+  return {
+    win,
+    gate: win[AUTH_GLOBAL_KEY],
+    run,
+    getStatusCallCount: () => getStatusCallCount,
+  }
+}
+
+function recordGateFrames() {
+  const phases = []
+  const unsub = subscribe(() => {
+    const snap = getSnapshot()
+    phases.push({
+      phase: snap.phase,
+      visible: describeLoginGate(snap).visible,
+    })
+  })
+  return {
+    phases,
+    stop() { unsub() },
+  }
 }
 
 describe('auth-gate store', () => {
@@ -260,5 +310,140 @@ describe('auth-gate store', () => {
     // A reset gate should be able to reopen without stale intents.
     await gate.ensureLogin({ onSuccess: () => {} })
     assert.equal(getSnapshot().phase, 'prompt')
+  })
+
+  it('T5 peek hit: onSuccess is sync, never emits checking, never HTTP, visible always false', () => {
+    const peek = { ok: true, status: 200, body: { logged_in: true, username: 'ada' } }
+    const { gate, getStatusCallCount } = install({ peek })
+    const frames = recordGateFrames()
+    let onSuccessCalled = false
+    let onSuccessBeforeAwait = false
+    const pending = gate.ensureLogin({
+      onSuccess: () => { onSuccessCalled = true },
+    })
+    onSuccessBeforeAwait = onSuccessCalled
+    frames.stop()
+    assert.equal(onSuccessCalled, true)
+    assert.equal(onSuccessBeforeAwait, true, 'onSuccess must fire before the first await')
+    assert.ok(frames.phases.every((p) => p.visible === false))
+    assert.ok(frames.phases.every((p) => p.phase !== 'checking'), 'cached hit must never emit checking')
+    assert.equal(getStatusCallCount(), 0)
+    assert.equal(getSnapshot().phase, 'closed')
+    return pending
+  })
+
+  it('T5 cold path: logged-in HTTP may emit checking but visible stays false', async () => {
+    const { gate, getStatusCallCount } = install({ loggedIn: true })
+    const frames = recordGateFrames()
+    let onSuccessCalled = false
+    await gate.ensureLogin({ onSuccess: () => { onSuccessCalled = true } })
+    frames.stop()
+    assert.equal(onSuccessCalled, true)
+    assert.ok(frames.phases.every((p) => p.visible === false), 'checking must never become a visible modal')
+    assert.ok(frames.phases.some((p) => p.phase === 'checking'), 'cold path is allowed to emit checking')
+    assert.equal(getSnapshot().phase, 'closed')
+    assert.equal(getStatusCallCount(), 1)
+  })
+
+  it('T6 second ensureLogin during checking only enqueues; one HTTP; both onSuccess', async () => {
+    let release
+    const pendingStatus = new Promise((resolve) => { release = resolve })
+    let getStatusCallCount = 0
+    const { gate } = install({
+      getStatus: async () => {
+        getStatusCallCount += 1
+        await pendingStatus
+        return { ok: true, status: 200, body: { logged_in: true, username: 'ada' } }
+      },
+    })
+    const seen = []
+    const first = gate.ensureLogin({ onSuccess: (p) => { seen.push(['a', p.username]) } })
+    assert.equal(getSnapshot().phase, 'checking')
+    const second = gate.ensureLogin({ onSuccess: (p) => { seen.push(['b', p.username]) } })
+    assert.equal(getSnapshot().phase, 'checking', 'second call must not reopen the gate')
+    release()
+    await Promise.all([first, second])
+    assert.deepEqual(seen, [['a', 'ada'], ['b', 'ada']])
+    assert.equal(getStatusCallCount, 1)
+    assert.equal(getSnapshot().phase, 'closed')
+  })
+
+  it('T7 logout invalidates; the next ensureLogin opens the prompt', async () => {
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = async (path) => {
+      assert.equal(path, '/omnimux/auth/logout')
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ ok: true }),
+      }
+    }
+    try {
+      const win = {}
+      const run = makeRunLogin()
+      installAuthGlobal(win, {
+        peekCache: () => peekStatusCache(),
+        getStatus: async () => ({ ok: true, status: 200, body: { logged_in: false } }),
+        runLogin: run.fn,
+      })
+      resetAuthGate()
+      rememberLoggedInStatus({ logged_in: true, username: 'ada' })
+      const gate = win[AUTH_GLOBAL_KEY]
+      let firstResolved = false
+      await gate.ensureLogin({ onSuccess: () => { firstResolved = true } })
+      assert.equal(firstResolved, true)
+      assert.equal(getSnapshot().phase, 'closed')
+
+      await logout()
+      assert.equal(peekStatusCache(), null)
+      await gate.ensureLogin({ onSuccess: () => { throw new Error('must not short-path after logout') } })
+      assert.equal(getSnapshot().phase, 'prompt')
+    } finally {
+      globalThis.fetch = originalFetch
+      resetStatusCache()
+    }
+  })
+
+  it('status ok:false is treated as needs-login even if body claims logged_in', async () => {
+    const win = {}
+    const run = makeRunLogin()
+    installAuthGlobal(win, {
+      getStatus: async () => ({ ok: false, status: 500, body: { logged_in: true, username: 'spoof' } }),
+      runLogin: run.fn,
+    })
+    resetAuthGate()
+    await win[AUTH_GLOBAL_KEY].ensureLogin({
+      onSuccess: () => { throw new Error('must not admit on ok:false') },
+    })
+    assert.equal(getSnapshot().phase, 'prompt')
+  })
+
+  it('T8 AUTH_GATE_POLICY keeps C/D off; cancel does not mute the next nav', async () => {
+    assert.equal(AUTH_GATE_POLICY.gateNavigation, true)
+    assert.equal(AUTH_GATE_POLICY.suppressNavigationAfterCancel, false)
+    assert.ok(Object.isFrozen(AUTH_GATE_POLICY))
+    const { gate } = install({ loggedIn: false })
+    await gate.ensureLogin({ kind: 'nav', onCancel: () => {} })
+    assert.equal(getSnapshot().phase, 'prompt')
+    cancel('cancelled')
+    assert.equal(getSnapshot().phase, 'closed')
+    await gate.ensureLogin({ kind: 'nav', onSuccess: () => {} })
+    assert.equal(getSnapshot().phase, 'prompt', 'next nav after cancel still opens the gate')
+  })
+
+  it('resetAuthGate also drops the session status cache', () => {
+    rememberLoggedInStatus({ logged_in: true, username: 'ada' })
+    assert.equal(peekStatusCache()?.body.logged_in, true)
+    resetAuthGate()
+    assert.equal(peekStatusCache(), null)
+  })
+
+  it('T9 hub apply warms the status cache without awaiting or setState', () => {
+    const here = dirname(fileURLToPath(import.meta.url))
+    const source = readFileSync(join(here, 'index.js'), 'utf8')
+    assert.match(source, /void getStatusCached\(\)\.catch\(\(\) => \{\}\)/)
+    assert.match(source, /import \{ getStatusCached \} from '\.\/api\.js'/)
+    assert.doesNotMatch(source, /await getStatusCached\(/)
   })
 })

@@ -7,6 +7,18 @@ const PUBLIC_KEYS = [
 ]
 
 /**
+ * Session-level status cache. No TTL — expiry is event-driven (logout, 401,
+ * verify/network failure, explicit logged_out). Lives here, not in the gate
+ * store, so every caller of `getStatus` / `getStatusCached` shares one picture.
+ * @type {{ ok: boolean, status: number, body: any } | null}
+ */
+let statusCache = null
+/** @type {Promise<{ ok: boolean, status: number, body: any }> | null} */
+let statusInflight = null
+/** Bumped on invalidate so a stale inflight cannot rewrite the cache. */
+let statusGeneration = 0
+
+/**
  * @param {unknown} raw
  */
 export function pickPublic(raw) {
@@ -37,13 +49,99 @@ export async function authRequest(path, opts = {}) {
   return result
 }
 
-export function getStatus(verify = false) {
-  return authRequest(verify ? '/omnimux/auth/status?verify=1' : '/omnimux/auth/status')
+/**
+ * Synchronous session-cache read for the login-gate short path.
+ * @returns {{ ok: boolean, status: number, body: any } | null}
+ */
+export function peekStatusCache() {
+  return statusCache
 }
 
-/** Non-verify convenience used by the unified login gate's short path. */
+/**
+ * Drop the session cache immediately and discard any inflight write.
+ */
+export function invalidateStatusCache() {
+  statusGeneration += 1
+  statusCache = null
+  statusInflight = null
+}
+
+/** Test-only: identical to invalidate; kept as a named seam for L1 resets. */
+export function resetStatusCache() {
+  invalidateStatusCache()
+}
+
+/**
+ * Remember a successful login so the next `ensureLogin` can resolve
+ * synchronously. Also drops any inflight status read so it cannot clobber
+ * the positive cache with a stale negative.
+ * @param {any} profile
+ */
+export function rememberLoggedInStatus(profile) {
+  statusGeneration += 1
+  statusInflight = null
+  if (!profile || typeof profile !== 'object') return
+  const body = /** @type {Record<string, unknown>} */ (profile)
+  statusCache = {
+    ok: true,
+    status: 200,
+    body: body.logged_in === true ? body : { ...body, logged_in: true },
+  }
+}
+
+/**
+ * @param {{ ok?: boolean, status?: number, body?: any }} result
+ * @param {number} generation
+ */
+function rememberStatusResult(result, generation) {
+  if (generation !== statusGeneration) return
+  const body = result && result.body
+  const loggedIn = Boolean(result && result.ok && body && body.logged_in === true)
+  const loggedOut = Boolean(body && body.logged_in === false)
+  if (loggedIn || loggedOut) {
+    statusCache = {
+      ok: Boolean(result.ok),
+      status: Number(result.status) || 0,
+      body,
+    }
+    return
+  }
+  // verify / network-shaped failure: never write as logged in; drop a
+  // positive cache conservatively.
+  statusCache = null
+}
+
+/**
+ * Always hits HTTP. On the way back: `logged_in:true` remembers; explicit
+ * `logged_in:false` writes a negative cache; verify/network failure drops
+ * any positive cache and does not remember a login.
+ * @param {boolean} [verify]
+ */
+export function getStatus(verify = false) {
+  const generation = statusGeneration
+  return authRequest(verify ? '/omnimux/auth/status?verify=1' : '/omnimux/auth/status').then(
+    (result) => {
+      rememberStatusResult(result, generation)
+      return result
+    },
+    (error) => {
+      if (generation === statusGeneration) statusCache = null
+      throw error
+    },
+  )
+}
+
+/**
+ * Peek hit → `Promise.resolve` (0 HTTP). Miss → one inflight `getStatus(false)`.
+ */
 export function getStatusCached() {
-  return getStatus(false)
+  if (statusCache) return Promise.resolve(statusCache)
+  if (statusInflight) return statusInflight
+  const started = getStatus(false)
+  statusInflight = started.finally(() => {
+    if (statusInflight === started) statusInflight = null
+  })
+  return statusInflight
 }
 
 /** The Host uses this exact code to signal "sign in to OmniMux first". */
@@ -69,6 +167,9 @@ export function pickAuthError(result) {
  * When the gate is unavailable (or the user cancels) the original result is
  * returned untouched. The replay bypasses the guard so a still-401 response
  * cannot recursively re-open the gate.
+ *
+ * Cache is invalidated *before* `ensureLogin` so a stale positive peek cannot
+ * short-circuit the gate and replay the 401 forever.
  * @param {(...args: any[]) => Promise<{ ok: boolean, status: number, body: unknown }>} fn
  * @returns {(...args: any[]) => Promise<{ ok: boolean, status: number, body: unknown }>}
  */
@@ -77,10 +178,15 @@ export function authGuard(fn) {
     const run = async () => {
       const result = await fn(...args)
       if (pickAuthError(result) === null) return result
+      // 401 / needs-omnimux means the session picture is stale. Drop it
+      // before the gate short path can replay the same 401 forever, even
+      // when the gate global is absent.
+      invalidateStatusCache()
       const authGlobal = typeof window !== 'undefined' ? /** @type {any} */ (window).__omnimuxAuth : undefined
       if (!authGlobal || typeof authGlobal.ensureLogin !== 'function') return result
       return new Promise((resolve, reject) => {
         authGlobal.ensureLogin({
+          kind: 'write',
           onSuccess: () => {
             fn(...args).then(resolve, reject)
           },
@@ -104,5 +210,8 @@ export function pollLogin(flowId) {
 }
 
 export function logout() {
+  // Drop the session picture *before* the request leaves, so a concurrent
+  // `ensureLogin` cannot peek a stale logged-in row while logout is in flight.
+  invalidateStatusCache()
   return authRequest('/omnimux/auth/logout', { method: 'POST' })
 }

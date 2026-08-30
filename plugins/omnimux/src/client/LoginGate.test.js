@@ -73,14 +73,22 @@ describe('describeLoginGate phases', () => {
     assert.equal(view.intent, 'begin')
   })
 
-  it('checking/starting show the waiting spinner without a retry CTA', () => {
-    for (const phase of ['checking', 'starting']) {
-      const view = describeLoginGate({ phase })
-      assert.equal(view.visible, true)
-      assert.equal(view.showWaiting, true)
-      assert.equal(view.showCta, false)
-      assert.equal(view.showRetry, false)
-    }
+  it('checking is an internal lock: hidden, no waiting spinner', () => {
+    const view = describeLoginGate({ phase: 'checking' })
+    assert.equal(view.visible, false)
+    assert.equal(view.showWaiting, false)
+    assert.equal(view.showCta, false)
+    assert.equal(view.showHero, false)
+    assert.equal(view.showRetry, false)
+    assert.equal(view.intent, null)
+  })
+
+  it('starting shows the waiting spinner without a retry CTA', () => {
+    const view = describeLoginGate({ phase: 'starting' })
+    assert.equal(view.visible, true)
+    assert.equal(view.showWaiting, true)
+    assert.equal(view.showCta, false)
+    assert.equal(view.showRetry, false)
   })
 
   it('waiting surfaces the device code and open-url intent', () => {
