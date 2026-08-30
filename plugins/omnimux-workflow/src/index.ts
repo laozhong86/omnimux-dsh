@@ -158,6 +158,7 @@ export {
   resolveExecutionSubgraph,
   toExecutionMode,
   normalizeNodeIds,
+  subgraphContainsMediaGenerate,
 } from './workflow/execution/subgraph';
 export { createExecutionManager } from './workflow/execution/ExecutionManager';
 export type {

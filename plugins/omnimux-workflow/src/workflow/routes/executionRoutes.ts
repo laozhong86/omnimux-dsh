@@ -2,12 +2,18 @@
  * Execution collection, item, control, and SSE event stream.
  */
 import { WORKFLOW_ROUTE_PREFIX } from '../../shared/api';
-import { localFileMediaUrl } from '../../shared/localMedia';
+import { localFileMediaUrl, projectFileMediaUrl } from '../../shared/localMedia';
 import { jsonBodyProblem, messageOf } from '../../http/helpers';
 import { WorkflowStoreError } from '../workspace/WorkspaceStore';
 import type { WorkspaceStore } from '../workspace/WorkspaceStore';
 import type { ExecutionManager } from '../execution/ExecutionManager';
-import { resolveExecutionSubgraph, toExecutionMode, normalizeNodeIds, type ExecutionMode } from '../execution/subgraph';
+import {
+  resolveExecutionSubgraph,
+  toExecutionMode,
+  normalizeNodeIds,
+  subgraphContainsMediaGenerate,
+  type ExecutionMode,
+} from '../execution/subgraph';
 import { notFound, type RouteTry, type WorkflowDispatchRequest } from './dispatch';
 
 const STATUS_BY_CODE: Record<string, number> = {
@@ -21,7 +27,8 @@ const STATUS_BY_CODE: Record<string, number> = {
   'workspace-not-found': 404,
   'not-found': 404,
   'not-local': 403,
-  'path-denied': 403,
+  'path-denied': 400,
+  'project-required': 400,
   'internal': 500,
 };
 
@@ -29,17 +36,33 @@ const STATUS_BY_CODE: Record<string, number> = {
  * Extract existing output data from a saved node snapshot so downstream nodes
  * executing in single-node mode can consume upstream text/media without re-running.
  */
-function extractNodeOutputFromSnapshot(node: { data?: Record<string, unknown>; [key: string]: unknown }): unknown {
+function extractNodeOutputFromSnapshot(
+  node: { data?: Record<string, unknown>; [key: string]: unknown },
+  workspaceId: string,
+): unknown {
   const data = node.data ?? {};
   const text = (data.generatedContent as string | undefined)
     ?? (data.content as string | undefined)
     ?? (data.prompt as string | undefined);
   const materialType = data.materialType as string | undefined;
   const type = materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'image';
+  const relativePath = typeof data.relativePath === 'string' ? data.relativePath.trim() : '';
+  const assetId = typeof data.assetId === 'string' ? data.assetId : undefined;
+  if (relativePath) {
+    const url = workspaceId
+      ? projectFileMediaUrl(workspaceId, relativePath)
+      : (typeof data.mediaUrl === 'string' ? data.mediaUrl : '');
+    return {
+      relativePath,
+      assetId,
+      mediaAssets: [{ type, url, relativePath, assetId }],
+      text,
+    };
+  }
   const realPath = typeof data.realPath === 'string' ? data.realPath : '';
   if (realPath) {
     return {
-      mediaAssets: [{ type, url: localFileMediaUrl(realPath), path: realPath }],
+      mediaAssets: [{ type, url: localFileMediaUrl(realPath) }],
       text,
     };
   }
@@ -141,6 +164,16 @@ export function createExecutionRoutes(opts: {
             nodeIds: normalizeNodeIds(body.nodeIds),
           });
 
+          if (
+            subgraphContainsMediaGenerate(subgraph.nodes as Array<{ type?: string; data?: Record<string, unknown> }>)
+            && !store.resolveProjectRoot(workspaceId)
+          ) {
+            throw new WorkflowStoreError(
+              'project-required',
+              `workspace ${workspaceId} is not bound to a local project`,
+            );
+          }
+
           // Seed initial outputs for upstream nodes not included in this execution batch
           const initialOutputs: Record<string, unknown> = {};
           const executedNodeIds = subgraph.nodeIdSet;
@@ -150,7 +183,7 @@ export function createExecutionRoutes(opts: {
                 (n) => n.id === edge.source,
               );
               if (sourceNode) {
-                initialOutputs[edge.source] = extractNodeOutputFromSnapshot(sourceNode);
+                initialOutputs[edge.source] = extractNodeOutputFromSnapshot(sourceNode, snapshot.id);
               }
             }
           }
@@ -175,6 +208,12 @@ export function createExecutionRoutes(opts: {
             },
           };
         } catch (error) {
+          if (error instanceof WorkflowStoreError) {
+            return {
+              status: STATUS_BY_CODE[error.code] ?? 400,
+              body: { error: error.code, message: error.message },
+            };
+          }
           return { status: 400, body: { error: 'invalid-subgraph', message: messageOf(error) } };
         }
       }

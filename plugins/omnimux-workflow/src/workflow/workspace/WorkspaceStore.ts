@@ -1,12 +1,13 @@
 /**
  * WorkspaceStore: canvas.json CRUD + optimistic lock + atomic writes.
  *
- * Layout: workspaces/<id>/canvas.json (one file per workspace, tmp+rename).
- * Version discipline: server version increments on every save; PUT with a
- * stale expectedVersion -> VersionConflictError (HTTP 409).
+ * Unbound canvases live under `$DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json`.
+ * Bound canvases migrate (copy, metadata only) to
+ * `<ProjectRoot>/.omnimux/canvases/<id>.json` and that file becomes SSOT.
  */
 import { createHash, randomUUID } from 'node:crypto';
 import {
+  copyFileSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -16,29 +17,40 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
+import { resolveProjectPaths } from '../../projects/paths.ts';
 import {
   DEFAULT_CANVAS_SETTINGS,
   SNAPSHOT_SCHEMA_VERSION,
   type CanvasWorkspaceSnapshot,
   type SaveCanvasWorkspacePayload,
   type WorkspaceSummary,
-} from '../../shared/canvasTypes';
-import { workspaceSnapshotSchema } from './snapshotSchema';
-import { WorkflowStoreError } from './WorkflowStoreError';
-import { migrateSnapshot } from './snapshotMigration';
+} from '../../shared/canvasTypes.ts';
+import { workspaceSnapshotSchema } from './snapshotSchema.ts';
+import { WorkflowStoreError } from './WorkflowStoreError.ts';
+import { migrateSnapshot } from './snapshotMigration.ts';
 
 /** Mirrors the snapshot schema name cap (workspaceSnapshotSchema). */
 const MAX_WORKSPACE_NAME_LENGTH = 200;
 
-export { WorkflowStoreError } from './WorkflowStoreError';
+export { WorkflowStoreError } from './WorkflowStoreError.ts';
 
 export interface WorkspaceSaveResult {
   snapshot: CanvasWorkspaceSnapshot;
 }
 
+export interface ProjectRootRecord {
+  path: string;
+}
+
+export type ResolveProjectRoot = (workspaceId: string) => ProjectRootRecord | null;
+
 export interface WorkspaceStore {
   /** Absolute workspaces root; sibling stores (assets.json) share this. */
   readonly workspacesDir: string;
+  /** Bound-project lookup; null when the canvas is not a local project. */
+  resolveProjectRoot(workspaceId: string): ProjectRootRecord | null;
+  /** Absolute canvas.json path after lazy migrate. */
+  canvasFileOf(id: string): string;
   list(): WorkspaceSummary[];
   create(name: string | undefined, id?: string): CanvasWorkspaceSnapshot;
   get(id: string): CanvasWorkspaceSnapshot;
@@ -80,13 +92,57 @@ function readSnapshotFile(filePath: string): CanvasWorkspaceSnapshot | null {
   return migrateSnapshot(result.data as CanvasWorkspaceSnapshot);
 }
 
+function homeCanvasFile(workspacesDir: string, id: string): string {
+  return join(workspacesDir, id, 'canvas.json');
+}
+
+function projectCanvasFile(projectRoot: string, id: string): string {
+  return join(resolveProjectPaths(projectRoot).canvasesDir, `${id}.json`);
+}
+
+/**
+ * Prefer the project DAG after bind. First bind copies the home canvas
+ * (JSON only — not media) into `.omnimux/canvases/`.
+ */
+export function resolveCanvasFilePath(opts: {
+  workspacesDir: string;
+  workspaceId: string;
+  resolveProjectRoot?: ResolveProjectRoot;
+}): string {
+  const home = homeCanvasFile(opts.workspacesDir, opts.workspaceId);
+  const bound = opts.resolveProjectRoot?.(opts.workspaceId);
+  if (!bound) return home;
+  const projectFile = projectCanvasFile(bound.path, opts.workspaceId);
+  if (existsSync(projectFile)) return projectFile;
+  if (existsSync(home)) {
+    mkdirSync(join(projectFile, '..'), { recursive: true });
+    copyFileSync(home, projectFile);
+    return projectFile;
+  }
+  return projectFile;
+}
+
+export function canvasExistsOnDisk(opts: {
+  workspacesDir: string;
+  workspaceId: string;
+  resolveProjectRoot?: ResolveProjectRoot;
+}): boolean {
+  const home = homeCanvasFile(opts.workspacesDir, opts.workspaceId);
+  if (existsSync(home)) return true;
+  const bound = opts.resolveProjectRoot?.(opts.workspaceId);
+  if (!bound) return false;
+  return existsSync(projectCanvasFile(bound.path, opts.workspaceId));
+}
+
 export function createWorkspaceStore(opts: {
   workspacesDir: string;
+  resolveProjectRoot?: ResolveProjectRoot;
 }): WorkspaceStore {
-  const { workspacesDir } = opts;
+  const { workspacesDir, resolveProjectRoot } = opts;
   mkdirSync(workspacesDir, { recursive: true });
 
-  const fileOf = (id: string) => join(workspacesDir, id, 'canvas.json');
+  const fileOf = (id: string) =>
+    resolveCanvasFilePath({ workspacesDir, workspaceId: id, resolveProjectRoot });
 
   function requireSnapshot(id: string): CanvasWorkspaceSnapshot {
     if (!isWorkspaceId(id)) {
@@ -101,13 +157,19 @@ export function createWorkspaceStore(opts: {
 
   return {
     workspacesDir,
+    resolveProjectRoot(workspaceId: string): ProjectRootRecord | null {
+      return resolveProjectRoot?.(workspaceId) ?? null;
+    },
+    canvasFileOf(id: string): string {
+      return fileOf(id);
+    },
 
     list(): WorkspaceSummary[] {
       if (!existsSync(workspacesDir)) return [];
       const rows: WorkspaceSummary[] = [];
       for (const entry of readdirSync(workspacesDir, { withFileTypes: true })) {
         if (!entry.isDirectory()) continue;
-        const snapshot = readSnapshotFile(join(workspacesDir, entry.name, 'canvas.json'));
+        const snapshot = readSnapshotFile(fileOf(entry.name));
         if (!snapshot) continue;
         rows.push({
           id: snapshot.id,
@@ -148,7 +210,8 @@ export function createWorkspaceStore(opts: {
           nodeCount: 0,
         },
       };
-      atomicWriteJson(fileOf(id), snapshot);
+      // Create always seeds the home canvas so unbound sessions still work.
+      atomicWriteJson(homeCanvasFile(workspacesDir, id), snapshot);
       return snapshot;
     },
 
@@ -210,11 +273,18 @@ export function createWorkspaceStore(opts: {
       if (!isWorkspaceId(id)) {
         throw new WorkflowStoreError('invalid-id', `invalid workspace id ${id}`);
       }
-      const dir = join(workspacesDir, id);
-      if (!existsSync(dir)) {
+      const homeDir = join(workspacesDir, id);
+      const bound = resolveProjectRoot?.(id);
+      if (bound) {
+        const projectFile = projectCanvasFile(bound.path, id);
+        if (existsSync(projectFile)) rmSync(projectFile, { force: true });
+      }
+      if (!existsSync(homeDir) && !bound) {
         throw new WorkflowStoreError('workspace-not-found', `workspace ${id} not found`);
       }
-      rmSync(dir, { recursive: true, force: true });
+      if (existsSync(homeDir)) {
+        rmSync(homeDir, { recursive: true, force: true });
+      }
     },
   };
 }

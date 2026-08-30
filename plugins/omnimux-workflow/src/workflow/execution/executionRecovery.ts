@@ -32,6 +32,15 @@ export interface RecoverExecutionDeps {
   mediaDir: string;
   entries: Map<string, ExecutionEntry>;
   onSetupEntry: (entry: ExecutionEntry) => void;
+  persistGenerated?: (input: {
+    workspaceId: string;
+    nodeId: string;
+    nodeType: string;
+    tmpAbs: string;
+    materialType: 'image' | 'video' | 'audio';
+    prompt?: string;
+    modelId?: string;
+  }) => Promise<{ url: string; relativePath: string; assetId: string }>;
 }
 
 function handleTimedOutExecution(
@@ -154,12 +163,24 @@ export async function recoverExecution(
   const context = buildRecoveredContext(record);
   const abortController = new AbortController();
 
+  const persistGenerated = deps.persistGenerated
+    ? (input: {
+        nodeId: string;
+        nodeType: string;
+        tmpAbs: string;
+        materialType: 'image' | 'video' | 'audio';
+        prompt?: string;
+        modelId?: string;
+      }) => deps.persistGenerated!({ workspaceId: record.workspaceId, ...input })
+    : undefined;
   const { executor } = createDispatchingNodeExecutor({
     gateway: deps.gateway,
     mediaRoot: deps.mediaDir,
     executionId: record.id,
+    workspaceId: record.workspaceId,
     edges: record.edges,
     abortController,
+    persistGenerated,
   });
 
   const scheduler = createSchedulerForRecovery({

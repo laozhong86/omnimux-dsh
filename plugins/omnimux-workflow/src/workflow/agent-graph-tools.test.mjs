@@ -14,7 +14,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -32,6 +32,8 @@ function makeHarness() {
     },
     systemPrompt: { section() { return () => {}; } },
   };
+  const libraryRoot = join(dir, 'library');
+  mkdirSync(libraryRoot, { recursive: true });
   const dispose = host.mountWorkflowHost(ctx, {
     paths: {
       root: dir,
@@ -39,6 +41,7 @@ function makeHarness() {
       executionsDir: join(dir, 'executions'),
       mediaDir: join(dir, 'media'),
     },
+    libraryRoot,
     gateway: host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 30 }),
   });
   const tool = (name) => {
@@ -48,12 +51,22 @@ function makeHarness() {
   };
   return {
     dir,
+    libraryRoot,
     tool,
     cleanup: () => {
       dispose();
       rmSync(dir, { recursive: true, force: true });
     },
   };
+}
+
+function bindProject(h, workspaceId) {
+  const projectRoot = join(h.libraryRoot, workspaceId);
+  mkdirSync(projectRoot, { recursive: true });
+  host.createProjectStore({ libraryRoot: h.libraryRoot }).create('图工具测试', {
+    projectRoot,
+    canvasWorkspaceIds: [workspaceId],
+  });
 }
 
 /** create a workspace + one text node, returning { wsId, textNode }. */
@@ -321,6 +334,7 @@ test('edited graph runs end-to-end (create → add → connect → run wait)', a
   try {
     const created = await h.tool('workflow_create').execute({ name: 'e2e' });
     const wsId = created.workspace.id;
+    bindProject(h, wsId);
     const text = await h.tool('workflow_node_add').execute({
       workspace_id: wsId,
       material_type: 'text',
@@ -356,6 +370,8 @@ test('PR4: workflow_execution_control pause → resume → cancel lifecycle', as
     tools: { register(t) { tools.push(t); return () => {}; } },
     systemPrompt: { section() { return () => {}; } },
   };
+  const libraryRoot = join(dir, 'library');
+  mkdirSync(libraryRoot, { recursive: true });
   const dispose = host.mountWorkflowHost(ctx, {
     paths: {
       root: dir,
@@ -363,12 +379,14 @@ test('PR4: workflow_execution_control pause → resume → cancel lifecycle', as
       executionsDir: join(dir, 'executions'),
       mediaDir: join(dir, 'media'),
     },
+    libraryRoot,
     // Slow mock gateway so the execution stays live long enough to pause.
     gateway: host.createMockGateway({ minLatencyMs: 1500, maxLatencyMs: 2000 }),
   });
   const tool = (name) => tools.find((t) => t.name === name);
   try {
     const { wsId } = await seed({ tool });
+    bindProject({ libraryRoot }, wsId);
     // text-editor finishes instantly (no gateway call) — add a generative
     // image node so the run stays live long enough to control.
     const image = await tool('workflow_node_add').execute({

@@ -25,6 +25,9 @@ import type { ServerResponse, IncomingMessage } from 'node:http';
 import type { WorkflowPaths } from './paths';
 import { resolveWorkflowPaths } from './paths';
 import { createWorkspaceStore } from './workspace/WorkspaceStore';
+import { createProjectAssetsStore } from './workspace/ProjectAssetsStore';
+import { createProjectStore } from '../projects/ProjectStore';
+import { ensureLibraryRoot } from '../projects/library';
 import { TemplateStore } from './templates/TemplateStore.ts';
 import type { GenerationGateway } from './seam/gateway';
 import {
@@ -32,6 +35,8 @@ import {
   type GatewayMode,
 } from './seam/gatewaySelection';
 import { createExecutionManager } from './execution/ExecutionManager';
+import { persistGeneratedArtifact } from './execution/persistGeneratedArtifact';
+import { createLibraryHttpClient } from './library/libraryHttp';
 import { createWorkflowDispatcher, registerWorkflowRoutes } from './routes/canvasRoutes';
 import { registerWorkflowAgentSeats } from './agent/agentTools';
 import type { AgentSeatContext } from './agent/agentTools';
@@ -73,7 +78,13 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
   mkdirSync(paths.executionsDir, { recursive: true });
   mkdirSync(templatesDir, { recursive: true });
 
-  const store = createWorkspaceStore({ workspacesDir: paths.workspacesDir });
+  const libraryRoot = opts.libraryRoot ?? ensureLibraryRoot();
+  const projectStore = createProjectStore({ libraryRoot });
+  const resolveProjectRoot = (workspaceId: string) => projectStore.findByCanvasWorkspaceId(workspaceId);
+  const store = createWorkspaceStore({
+    workspacesDir: paths.workspacesDir,
+    resolveProjectRoot,
+  });
   const templates = new TemplateStore({ templatesDir });
   const gateway =
     opts.gateway
@@ -83,10 +94,22 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
       ...(opts.seamConcurrency !== undefined ? { seamConcurrency: opts.seamConcurrency } : {}),
       env: opts.env ?? process.env,
     }).gateway;
+  const libraryHttp = createLibraryHttpClient();
+  const assetsStore = createProjectAssetsStore({
+    workspacesDir: paths.workspacesDir,
+    resolveProjectRoot,
+    fetchLibraryDetail: libraryHttp.fetchLibraryDetail,
+    promoteToLibrary: libraryHttp.promoteToLibrary,
+  });
   const executionManager = createExecutionManager({
     executionsDir: paths.executionsDir,
     gateway,
     mediaDir: paths.mediaDir,
+    persistGenerated: (input) => persistGeneratedArtifact({
+      ...input,
+      resolveProjectRoot,
+      registerGenerated: (workspaceId, payload) => assetsStore.registerGenerated(workspaceId, payload),
+    }),
   });
   const dispatcher = createWorkflowDispatcher({
     store,
@@ -94,7 +117,8 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
     mediaDir: paths.mediaDir,
     executionManager,
     templates,
-    ...(opts.libraryRoot ? { libraryRoot: opts.libraryRoot } : {}),
+    libraryRoot,
+    assetsStore,
   });
 
   // Recovery pass (Gxgen ExecutionRecoveryService port): resume live runs

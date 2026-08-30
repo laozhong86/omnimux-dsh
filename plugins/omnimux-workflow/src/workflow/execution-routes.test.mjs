@@ -7,7 +7,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Writable } from 'node:stream';
@@ -62,6 +62,8 @@ function makeHarness({ dir, gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 3
       return () => {};
     },
   };
+  const libraryRoot = join(root, 'library');
+  mkdirSync(libraryRoot, { recursive: true });
   const dispose = host.mountWorkflowHost(
     { webServer },
     {
@@ -71,6 +73,7 @@ function makeHarness({ dir, gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 3
         executionsDir: join(root, 'executions'),
         mediaDir: join(root, 'media'),
       },
+      libraryRoot,
       gateway: host.createMockGateway(gatewayLatency),
     },
   );
@@ -194,6 +197,7 @@ function makeHarness({ dir, gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 3
 
   return {
     dir: root,
+    libraryRoot,
     registered,
     call,
     openSse,
@@ -217,6 +221,50 @@ const waitUntil = async (predicate, { timeoutMs = 5000, intervalMs = 15 } = {}) 
 };
 
 // ============================================================================
+
+test('unbound media generate → 400 project-required；text generate 仍可通过', async () => {
+  const h = makeHarness();
+  try {
+    const textId = await h.createLinearWorkspace(1);
+    const textExec = await h.startExecution(textId, { mode: 'full' });
+    assert.equal(textExec.status, 200);
+
+    const created = await h.call({
+      method: 'POST',
+      url: '/omnimux-workflow/api/workspaces',
+      body: { name: '未绑定生图' },
+      headers: h.localHeaders,
+    });
+    const wsId = created.body.workspace.id;
+    await h.call({
+      method: 'PUT',
+      url: `/omnimux-workflow/api/workspaces/${wsId}`,
+      body: {
+        expectedVersion: 0,
+        nodes: [{
+          id: 'img',
+          type: 'material',
+          position: { x: 0, y: 0 },
+          data: {
+            label: '图',
+            materialType: 'image',
+            selectedTool: 'text-to-image',
+            prompt: 'x',
+            status: 'ready',
+          },
+        }],
+        edges: [],
+      },
+      headers: h.localHeaders,
+    });
+    const exec = await h.startExecution(wsId, { mode: 'full' });
+    assert.equal(exec.status, 400);
+    assert.equal(exec.body.error, 'project-required');
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
 
 test('execution API: create -> SSE full event sequence -> completed snapshot', async () => {
   const h = makeHarness();

@@ -16,15 +16,37 @@ export interface ExecutionContext {
   signal: AbortSignal;
   /** Destination dir for artifacts of this execution (absolute path). */
   mediaDir: string;
+  /** Canvas workspace id — used to build project-file URLs. */
+  workspaceId?: string;
   /** Maps an absolute artifact path under mediaDir to a servable URL. */
   toPublicUrl?: (absolutePath: string) => string;
+  /**
+   * After a media generate tmp lands, move it into project artifacts/
+   * and return the public project-file URL. Text generate may skip this.
+   */
+  persistGenerated?: (input: {
+    nodeId: string;
+    nodeType: string;
+    tmpAbs: string;
+    materialType: 'image' | 'video' | 'audio';
+    prompt?: string;
+    modelId?: string;
+  }) => Promise<{ url: string; relativePath: string; assetId: string }>;
   /** Progress reporter wired to node_progress SSE events (0-100). */
   reportProgress?: (progress: number, message?: string) => void;
 }
 
 export interface NodeOutput {
-  mediaAssets?: Array<{ type: 'image' | 'video' | 'audio'; url: string; thumbnail?: string }>;
+  mediaAssets?: Array<{
+    type: 'image' | 'video' | 'audio';
+    url: string;
+    thumbnail?: string;
+    relativePath?: string;
+    assetId?: string;
+  }>;
   text?: string;
+  relativePath?: string;
+  assetId?: string;
 }
 
 export interface NodeExecutor {

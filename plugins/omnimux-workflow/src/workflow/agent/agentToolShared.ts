@@ -126,6 +126,10 @@ export function mediaUrlToPath(url: unknown, mediaDir: string): string | null {
       const imported = parsed.searchParams.get('path');
       return imported && imported.length > 0 ? imported : null;
     }
+    if (parsed.pathname.endsWith('/file') || parsed.pathname.includes('/file')) {
+      const rel = parsed.searchParams.get('rel');
+      if (rel && rel.length > 0) return rel;
+    }
   } catch {
     // fall through to executions media mapping
   }

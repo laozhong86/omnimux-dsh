@@ -13,7 +13,7 @@ import {
   unlinkSync,
 } from 'node:fs';
 import { statfsSync } from 'node:fs';
-import { basename, extname, join } from 'node:path';
+import { basename, extname, join, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { isAllowedImportedMedia } from '../../shared/localMedia.ts';
 import {
@@ -140,6 +140,29 @@ export async function copyFileIntoDir(opts: {
     size: stat.size,
     name,
   };
+}
+
+/**
+ * Copy into destDir then unlink the source. Only for managed tmp
+ * (`$DSH_HOME/.../executions/`), never user originals.
+ */
+export async function moveFileIntoDir(opts: {
+  projectRoot: string;
+  destDir: string;
+  sourceAbs: string;
+  originalName?: string;
+  checkMedia?: boolean;
+  statfs?: StatFsFn;
+}): Promise<CopyIntoImportedResult> {
+  const copied = await copyFileIntoDir(opts);
+  try {
+    if (existsSync(opts.sourceAbs) && resolve(opts.sourceAbs) !== resolve(copied.destAbs)) {
+      unlinkSync(opts.sourceAbs);
+    }
+  } catch {
+    // tmp recycle is best-effort; the project copy is the SSOT
+  }
+  return copied;
 }
 
 export async function copyFileIntoImported(opts: {

@@ -7,6 +7,7 @@ import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes';
 import {
   normalizeNodeIds,
   resolveExecutionSubgraph,
+  subgraphContainsMediaGenerate,
   toExecutionMode,
 } from '../execution/subgraph';
 import {
@@ -158,6 +159,15 @@ export function createWorkflowRunTool(deps: WorkflowAgentDeps): AgentToolSpec {
       if (subgraph.nodes.length === 0) {
         return errorBody('empty-graph', `workspace ${workspace.id} has no nodes to execute`);
       }
+      if (
+        subgraphContainsMediaGenerate(subgraph.nodes as Array<{ type?: string; data?: Record<string, unknown> }>)
+        && !store.resolveProjectRoot(workspace.id)
+      ) {
+        return errorBody(
+          'project-required',
+          `workspace ${workspace.id} is not bound to a local project`,
+        );
+      }
 
       const initialOutputs = buildInitialOutputs(workspace, subgraph.nodeIdSet);
 
@@ -226,7 +236,7 @@ export function createWorkflowSnapshotTool(deps: WorkflowAgentDeps): AgentToolSp
   return {
     name: 'workflow_snapshot',
     description:
-      'Read the current state of one workflow canvas workspace. Default: a compact summary (name, version, node/edge counts, node type/material breakdown, execution settings). includeNodes=true returns the FULL node and edge structure (positions, prompts, tools, models, connections) so the graph can be analyzed or modification advice given. Read-only. Data lives under $DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json.',
+      'Read the current state of one workflow canvas workspace. Default: a compact summary (name, version, node/edge counts, node type/material breakdown, execution settings). includeNodes=true returns the FULL node and edge structure (positions, prompts, tools, models, connections) so the graph can be analyzed or modification advice given. Read-only. Unbound canvases live under $DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json; bound canvases live under <ProjectRoot>/.omnimux/canvases/<id>.json.',
     parameters: objectParams({
       workspace_id: {
         type: 'string',

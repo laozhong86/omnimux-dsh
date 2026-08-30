@@ -1,8 +1,8 @@
 /**
  * ProjectAssetsStore: assets.json CRUD + independent optimistic lock.
  *
- * Layout: `<ProjectRoot>/.omnimux/assets.json`. Canvas DAG still lives under
- * `$DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json` (T03 moves it).
+ * Layout: `<ProjectRoot>/.omnimux/assets.json`. Canvas DAG lives under
+ * `<ProjectRoot>/.omnimux/canvases/<id>.json` once bound (T03).
  * GET of a missing / corrupt file returns an empty document (rev:0), not 404.
  * Writes are atomic (tmp-pid-ts + rename). Ingest copies; never unlinks user sources.
  */
@@ -42,6 +42,7 @@ import {
 } from '../../projects/paths.ts';
 import { copyFileIntoImported, copyPathIntoDir } from '../ingest/IngestionPipeline.ts';
 import { WorkflowStoreError } from './WorkflowStoreError.ts';
+import { canvasExistsOnDisk } from './WorkspaceStore.ts';
 
 export interface ProjectRootRecord {
   path: string;
@@ -80,7 +81,16 @@ export interface ProjectAssetsStore {
   index(workspaceId: string, payload: IngestProjectAssetsPayload): Promise<ProjectAssetsDocument>;
   instantiate(workspaceId: string, payload: InstantiateProjectAssetsPayload): Promise<ProjectAssetsDocument>;
   promote(workspaceId: string, payload: PromoteProjectAssetsPayload): Promise<{ asset: unknown }>;
+  registerGenerated(workspaceId: string, payload: RegisterGeneratedAssetPayload): ProjectAssetsDocument;
   resolveProjectFile(workspaceId: string, rel: string): string;
+}
+
+export interface RegisterGeneratedAssetPayload {
+  relative_path: string;
+  name: string;
+  type?: ProjectAssetFileType;
+  size?: number;
+  lineage?: unknown;
 }
 
 function isWorkspaceId(id: string): boolean {
@@ -351,15 +361,19 @@ export function createProjectAssetsStore(opts: {
 
   function requireBoundProject(id: string): { projectRoot: string; assetsFile: string } {
     const workspaceId = requireWorkspaceId(id);
-    const canvas = join(workspacesDir, workspaceId, 'canvas.json');
     const bound = resolveProjectRoot(workspaceId);
+    const hasCanvas = canvasExistsOnDisk({
+      workspacesDir,
+      workspaceId,
+      resolveProjectRoot,
+    });
     if (!bound) {
-      if (!existsSync(canvas)) {
+      if (!hasCanvas) {
         throw new WorkflowStoreError('workspace-not-found', `workspace ${workspaceId} not found`);
       }
       throw new WorkflowStoreError('project-required', `workspace ${workspaceId} is not bound to a local project`);
     }
-    if (!existsSync(canvas)) {
+    if (!hasCanvas) {
       throw new WorkflowStoreError('workspace-not-found', `workspace ${workspaceId} not found`);
     }
     const paths = resolveProjectPaths(bound.path);
@@ -546,6 +560,43 @@ export function createProjectAssetsStore(opts: {
         files: [{ real_path: abs }],
       });
       return { asset };
+    },
+
+    registerGenerated(workspaceId: string, payload: RegisterGeneratedAssetPayload): ProjectAssetsDocument {
+      const { current, filePath } = load(workspaceId);
+      const relative = typeof payload.relative_path === 'string' ? payload.relative_path.trim() : '';
+      const name = typeof payload.name === 'string' ? payload.name.trim() : '';
+      if (!name) throw new WorkflowStoreError('name-required', 'name is required');
+      assertRelativeLedgerPath(relative, 'item.relative_path');
+      const existing = current.items.find((item) => item.relative_path === relative);
+      if (existing) {
+        const items = current.items.map((item) => {
+          if (item.relative_path !== relative) return item;
+          return {
+            ...item,
+            name,
+            type: payload.type && isProjectAssetFileType(payload.type) ? payload.type : item.type,
+            size: typeof payload.size === 'number' ? payload.size : item.size,
+            lineage: payload.lineage ?? item.lineage,
+            updatedAt: Date.now(),
+          };
+        });
+        return persist(filePath, current, { folders: current.folders, items });
+      }
+      const items = [
+        ...current.items,
+        {
+          id: newItemId(),
+          name,
+          type: payload.type && isProjectAssetFileType(payload.type) ? payload.type : fileTypeOf(name),
+          parentId: null,
+          relative_path: relative,
+          size: payload.size,
+          lineage: payload.lineage,
+          updatedAt: Date.now(),
+        },
+      ];
+      return persist(filePath, current, { folders: current.folders, items });
     },
 
     resolveProjectFile(workspaceId: string, rel: string): string {
