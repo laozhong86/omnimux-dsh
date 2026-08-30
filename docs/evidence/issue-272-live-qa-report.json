@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-08-30T14:16:00+08:00",
+  "issue": 272,
+  "port": 45120,
+  "url": "http://127.0.0.1:45120/",
+  "taskSpace": "omnimux-unauth-plugin-freeze-272",
+  "topic": "unauthenticated-sidebar-click-freeze",
+  "rootCause": "sidebar-coordinator observed document.body subtree; unauthenticated stage.open() mounted overlay DOM that re-entered placeAll and wedged the renderer",
+  "auth": {
+    "logged_in": false,
+    "phase": "closed",
+    "loginGate": false
+  },
+  "sidebar": {
+    "visible": ["创作", "资产库", "产品库", "视频剪辑"],
+    "hidden": ["账号", "发布", "数据分析", "灵感库"]
+  },
+  "clicks": [
+    { "label": "资产库", "clickRoundtripMs": 10, "stage": "omnimux-assets", "gate": false, "interactiveWithinMs": 412 },
+    { "label": "创作", "clickRoundtripMs": 407, "stage": "omnimux-workflow", "gate": false },
+    { "label": "产品库", "clickRoundtripMs": 488, "stage": "omnimux-products", "gate": false },
+    { "label": "视频剪辑", "clickRoundtripMs": 30, "stage": "omnimux-clip", "gate": false, "interactiveWithinMs": 633 }
+  ],
+  "assertions": {
+    "1. Unauthenticated sidebar shows only 4 offline entries": true,
+    "2. Cloud entries stay hidden while unsigned": true,
+    "3. Clicking 资产库 opens omnimux-assets without login gate": true,
+    "4. Clicking 创作 opens omnimux-workflow without login gate": true,
+    "5. Clicking 产品库 opens omnimux-products without login gate": true,
+    "6. Clicking 视频剪辑 opens omnimux-clip without login gate": true,
+    "7. All four clicks became interactive well under 1s": true,
+    "8. Materialized hub client no longer observes document.body": true
+  },
+  "evidence": {
+    "productsScreenshot": "docs/evidence/issue-272-unauth-click-45120.png",
+    "clipScreenshot": "docs/evidence/issue-272-unauth-clip-click-45120.png"
+  },
+  "verdict": "PASS"
+}
