@@ -278,10 +278,22 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
   }, [applyCanvasInputMutation, screenToFlowPosition, t]);
 
   const handleGroupSelected = useCallback(() => {
-    if (selectedRegularNodes.length < 2) return;
-    const groupId = groupNodes(selectedRegularNodes.map((n) => n.id), t('group.defaultTitle'));
+    const topLevelNodes = selectedRegularNodes.filter((n) => !n.parentId);
+    if (topLevelNodes.length < 2) {
+      const hasGroupedNode = selectedRegularNodes.some((n) => Boolean(n.parentId));
+      if (hasGroupedNode) {
+        toast.warning(t('group.toast.alreadyInGroup'));
+      } else {
+        toast.warning(t('group.toast.cannotGroup'));
+      }
+      return;
+    }
+
+    const groupId = groupNodes(topLevelNodes.map((n) => n.id), t('group.defaultTitle'));
     if (groupId) {
       toast.success(t('group.toast.grouped'));
+    } else {
+      toast.error(t('group.toast.failed'));
     }
   }, [selectedRegularNodes, groupNodes, t]);
 
