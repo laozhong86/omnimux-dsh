@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-08-30T14:58:00+08:00",
+  "issue": 283,
+  "port": 45120,
+  "url": "http://127.0.0.1:45120/",
+  "taskSpace": "verify-unified-auth-283",
+  "topic": "cli-app-unified-auth-sso-single-source-of-truth",
+  "rootCause": "Store resolution hierarchy had credentials.yaml (Level 2) shadowing canonical ~/.config/omnimux/secrets.json (Level 3), preventing CLI login updates from reaching App and causing 401 expiration traps; also stale New-Api-User headers during fetchSelf and uncoordinated config.json sync",
+  "fix": "Elevated ~/.config/omnimux/secrets.json to highest storage priority in store.resolve/describe, synced config.json (user_id/base_url) on login/logout, removed stale New-Api-User headers from fetchSelf, and added bidirectional SSO test suite",
+  "assertions": {
+    "1. CLI login immediately unlocks App state without separate login": true,
+    "2. App status reports logged_in: true when secrets.json is updated by CLI": true,
+    "3. App login syncs user_id and base_url to config.json for CLI commands": true,
+    "4. App logout cleanly unlinks secrets.json and resets CLI configured status": true,
+    "5. Unit test suite passes all 99 tests": true,
+    "6. CLI unit test suite passes all 20 tests": true
+  },
+  "evidence": {
+    "screenshot": "docs/evidence/issue-283-cli-app-unified-sso-45120.png"
+  },
+  "verdict": "PASS"
+}
