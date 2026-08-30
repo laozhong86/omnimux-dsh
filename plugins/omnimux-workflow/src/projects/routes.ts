@@ -51,8 +51,8 @@ export const MAX_PROJECT_JSON_BODY_BYTES = MAX_JSON_BODY_BYTES;
 
 export { sendJson, JsonBodyLimitError, readJsonBody, assertLocalWrite };
 
-function scopedStore() {
-  const libraryRoot = ensureLibraryRoot();
+function scopedStore(libraryRootOverride?: string) {
+  const libraryRoot = libraryRootOverride ?? ensureLibraryRoot();
   return { libraryRoot, store: createProjectStore({ libraryRoot }) };
 }
 
@@ -74,7 +74,7 @@ export interface ProjectDispatcher {
 }
 
 /** 项目路由无状态：库根由 host 解析，不跟当前会话 cwd。 */
-export function createProjectDispatcher(): ProjectDispatcher {
+export function createProjectDispatcher(opts: { libraryRoot?: string } = {}): ProjectDispatcher {
   const collectionRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}$`);
   const libraryRe = new RegExp(`^${PROJECT_LIBRARY_PATH}$`);
   const itemRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)$`);
@@ -103,7 +103,7 @@ export function createProjectDispatcher(): ProjectDispatcher {
         if (method !== 'GET') {
           return { status: 404, body: { error: 'not-found', message: 'unknown route' } };
         }
-        const libraryRoot = ensureLibraryRoot();
+        const libraryRoot = opts.libraryRoot ?? ensureLibraryRoot();
         return {
           status: 200,
           body: {
@@ -116,25 +116,34 @@ export function createProjectDispatcher(): ProjectDispatcher {
 
       if (collectionRe.exec(path)) {
         if (method === 'GET') {
-          const { store } = scopedStore();
+          const { store } = scopedStore(opts.libraryRoot);
           return { status: 200, body: { projects: store.list() } };
         }
         if (method === 'POST') {
           const problem = jsonBodyProblem(req.body);
           if (problem) return problem;
-          const body = req.body as { title?: unknown; projectRoot?: unknown; sessionId?: unknown; cwd?: unknown };
+          const body = req.body as {
+            title?: unknown;
+            projectRoot?: unknown;
+            sessionId?: unknown;
+            cwd?: unknown;
+            canvasWorkspaceIds?: unknown;
+          };
           if (body.cwd !== undefined) {
             return { status: 400, body: { error: 'invalid-json', message: 'cwd is no longer a project library scope' } };
           }
-          const { store } = scopedStore();
+          const { store } = scopedStore(opts.libraryRoot);
           const title = typeof body.title === 'string' ? body.title : undefined;
           const sessionId = typeof body.sessionId === 'string' ? body.sessionId : null;
           const projectRoot = typeof body.projectRoot === 'string' && body.projectRoot.trim() !== ''
             ? body.projectRoot
             : undefined;
+          const canvasWorkspaceIds = Array.isArray(body.canvasWorkspaceIds)
+            ? body.canvasWorkspaceIds.filter((id): id is string => typeof id === 'string' && id.trim() !== '')
+            : undefined;
           return {
             status: 200,
-            body: { project: store.create(title ?? '', { projectRoot, sessionId }) },
+            body: { project: store.create(title ?? '', { projectRoot, sessionId, canvasWorkspaceIds }) },
           };
         }
         return { status: 404, body: { error: 'not-found', message: 'unknown route' } };
@@ -144,7 +153,7 @@ export function createProjectDispatcher(): ProjectDispatcher {
       const pagesMatch = pagesRe.exec(path);
       if (pagesMatch) {
         const projectId = pagesMatch[1] ?? '';
-        const { store } = scopedStore();
+        const { store } = scopedStore(opts.libraryRoot);
         if (method === 'POST') {
           const problem = jsonBodyProblem(req.body);
           if (problem) return problem;
@@ -165,7 +174,7 @@ export function createProjectDispatcher(): ProjectDispatcher {
       if (pageItemMatch) {
         const projectId = pageItemMatch[1] ?? '';
         const pageId = pageItemMatch[2] ?? '';
-        const { store } = scopedStore();
+        const { store } = scopedStore(opts.libraryRoot);
         if (method === 'PATCH') {
           const problem = jsonBodyProblem(req.body);
           if (problem) return problem;
@@ -190,7 +199,7 @@ export function createProjectDispatcher(): ProjectDispatcher {
         if (id === 'library') {
           return { status: 404, body: { error: 'not-found', message: 'unknown route' } };
         }
-        const { store } = scopedStore();
+        const { store } = scopedStore(opts.libraryRoot);
         if (method === 'GET') {
           return { status: 200, body: { project: store.get(id) } };
         }

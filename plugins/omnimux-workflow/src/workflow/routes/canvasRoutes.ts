@@ -19,7 +19,10 @@
  *   GET  /omnimux-workflow/api/workspaces/:id/assets          project assets.json
  *   PUT  /omnimux-workflow/api/workspaces/:id/assets          save (independent rev)
  *   POST /omnimux-workflow/api/workspaces/:id/assets/mkdir    create folder record
- *   POST /omnimux-workflow/api/workspaces/:id/assets/index    index absolute paths (no copy)
+ *   POST /omnimux-workflow/api/workspaces/:id/assets/ingest   copy into project assets/imported/
+ *   POST /omnimux-workflow/api/workspaces/:id/assets/index    deprecated alias of ingest
+ *   GET  /omnimux-workflow/api/workspaces/:id/file?rel=       stream project-relative file
+ *   GET  /omnimux-workflow/api/project-file?workspace=&rel=   alias of workspace file
  *   GET  /omnimux-workflow/api/templates        list reusable workflow templates
  *   POST /omnimux-workflow/api/templates        create template from a group subgraph
  *   GET  /omnimux-workflow/api/templates/:id    one template
@@ -58,6 +61,7 @@ import {
   messageOf,
 } from '../../http/helpers';
 import { WorkflowStoreError } from '../workspace/WorkspaceStore';
+import { ProjectPathError } from '../../projects/paths';
 import { createSSEPublisher } from '../execution/ExecutionSSE';
 import { createProjectDispatcher } from '../../projects/routes';
 import type {
@@ -73,6 +77,8 @@ import { createMediaRoutes } from './mediaRoutes';
 import { createLocalFileRoutes } from './localFileRoutes';
 import { createProjectAssetsRoutes } from './projectAssetsRoutes';
 import { createProjectAssetsStore } from '../workspace/ProjectAssetsStore';
+import { createProjectStore } from '../../projects/ProjectStore';
+import { ensureLibraryRoot } from '../../projects/library';
 import { createTemplateRoutes } from './templateRoutes';
 
 export {
@@ -99,7 +105,7 @@ const STATUS_BY_CODE: Record<string, number> = {
   'workspace-not-found': 404,
   'not-found': 404,
   'not-local': 403,
-  'path-denied': 403,
+  'path-denied': 400,
   'internal': 500,
   'picker-unsupported': 501,
   'picker-failed': 500,
@@ -111,6 +117,8 @@ const STATUS_BY_CODE: Record<string, number> = {
   'name-conflict': 409,
   'name-invalid': 400,
   'version-required': 400,
+  'project-required': 400,
+  'disk-space-insufficient': 413,
 };
 
 const MIME_BY_EXT: Record<string, string> = {
@@ -179,12 +187,14 @@ function serveFile(
 }
 
 export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
-  const { store, gateway, mediaDir, executionManager, picker, templates } = deps;
-  const projectDispatcher = createProjectDispatcher();
+  const { store, gateway, mediaDir, executionManager, picker, templates, libraryRoot } = deps;
+  const projectDispatcher = createProjectDispatcher(libraryRoot ? { libraryRoot } : {});
   const staticRoutes = createStaticRoutes({ pluginRoot: PLUGIN_ROOT, gateway });
   const workspaceRoutes = createWorkspaceRoutes(store);
+  const projectStore = createProjectStore({ libraryRoot: libraryRoot ?? ensureLibraryRoot() });
   const assetsStore = createProjectAssetsStore({
     workspacesDir: store.workspacesDir,
+    resolveProjectRoot: (workspaceId) => projectStore.findByCanvasWorkspaceId(workspaceId),
   });
   const projectAssetsRoutes = createProjectAssetsRoutes(assetsStore);
   const executionRoutes = createExecutionRoutes({ store, executionManager });
@@ -256,6 +266,12 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
             message: error.message,
             ...(conflict && error.current !== undefined ? { current: error.current } : {}),
           },
+        };
+      }
+      if (error instanceof ProjectPathError) {
+        return {
+          status: STATUS_BY_CODE[error.code] ?? 400,
+          body: { error: error.code, message: error.message },
         };
       }
       return { status: 500, body: { error: 'internal', message: messageOf(error) } };

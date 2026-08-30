@@ -145,6 +145,8 @@ test('T0 paths：libraryRoot / projectRoot 必须绝对路径 + 越界断言', (
     const paths = host.resolveProjectPaths(projectRoot);
     assert.equal(paths.projectRoot, projectRoot);
     assert.equal(paths.projectFile, join(projectRoot, '.omnimux', 'project.json'));
+    assert.equal(paths.assetsFile, join(projectRoot, '.omnimux', 'assets.json'));
+    assert.equal(paths.importedDir, join(projectRoot, 'assets', 'imported'));
     assert.equal(paths.readmeFile, join(projectRoot, '说明.md'));
     host.assertProjectInsideLibrary(projectRoot, libraryRoot);
     assert.throws(
@@ -153,6 +155,11 @@ test('T0 paths：libraryRoot / projectRoot 必须绝对路径 + 越界断言', (
     );
     assert.throws(
       () => host.assertProjectWriteSafe(join(projectRoot, '..', 'evil.json'), projectRoot),
+      (e) => e.code === 'path-denied',
+    );
+    assert.equal(host.toProjectRelativePath(projectRoot, join(projectRoot, 'assets', 'imported', 'a.png')), 'assets/imported/a.png');
+    assert.throws(
+      () => host.resolveProjectRelPath(projectRoot, '../evil.png'),
       (e) => e.code === 'path-denied',
     );
   } finally {
@@ -178,6 +185,11 @@ test('T1 ProjectStore：扫描 list / Host mkdir+seed / remove 不 rm 项目根'
 
     const bound = store.bindSession(created.id, 'sess-1');
     assert.equal(bound.sessionId, 'sess-1');
+    const hashed = host.sessionToWorkspaceId('sess-1');
+    const found = store.findByCanvasWorkspaceId(hashed);
+    assert.equal(found.id, created.id);
+    assert.equal(found.canvasWorkspaceIds.includes(hashed), true);
+    assert.equal(store.findByCanvasWorkspaceId('ws_missing0000'), null);
     const renamed = store.rename(created.id, '项目乙');
     assert.equal(renamed.title, '项目乙');
 

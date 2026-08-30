@@ -13,6 +13,8 @@ export interface WorkflowDispatcherDeps {
   gateway: GenerationGateway;
   mediaDir: string;
   executionManager: ExecutionManager;
+  /** Override the default videos library (tests). */
+  libraryRoot?: string;
   /** Injected native picker (tests). Default: macOS osascript chooser. */
   picker?: (kind: string) => Promise<{ path: string | null; paths: string[] }>;
   templates?: TemplateStore;

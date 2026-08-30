@@ -1,12 +1,13 @@
 /**
- * Project-private assets.json REST (GET/PUT + mkdir/index).
+ * Project-private assets.json REST (GET/PUT + mkdir/ingest).
+ * `POST .../assets/index` forwards to ingest (physical copy).
  * Mounted after workspace CRUD and before execution routes so
  * `/workspaces/:id/assets` is not swallowed by `/workspaces/:id`.
  */
 import { WORKFLOW_ROUTE_PREFIX } from '../../shared/api.ts';
 import { jsonBodyProblem } from '../../http/helpers.ts';
 import type {
-  IndexProjectAssetsPayload,
+  IngestProjectAssetsPayload,
   MkdirProjectAssetsPayload,
   SaveProjectAssetsPayload,
 } from '../../shared/projectAssets.ts';
@@ -16,9 +17,12 @@ import { notFound, type RouteTry, type WorkflowDispatchRequest } from './dispatc
 export function createProjectAssetsRoutes(store: ProjectAssetsStore): { tryHandle: RouteTry } {
   const assetsRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets$`);
   const mkdirRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/mkdir$`);
+  const ingestRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/ingest$`);
   const indexRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/index$`);
+  const fileRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/file$`);
+  const aliasFilePath = `${WORKFLOW_ROUTE_PREFIX}/api/project-file`;
 
-  const tryHandle: RouteTry = (method, path, req: WorkflowDispatchRequest) => {
+  const tryHandle: RouteTry = async (method, path, req: WorkflowDispatchRequest) => {
     const mkdirMatch = mkdirRe.exec(path);
     if (mkdirMatch) {
       if (method !== 'POST') return notFound();
@@ -29,14 +33,23 @@ export function createProjectAssetsRoutes(store: ProjectAssetsStore): { tryHandl
       return { status: 200, body: { assets } };
     }
 
-    const indexMatch = indexRe.exec(path);
-    if (indexMatch) {
+    const ingestMatch = ingestRe.exec(path) ?? indexRe.exec(path);
+    if (ingestMatch) {
       if (method !== 'POST') return notFound();
       const problem = jsonBodyProblem(req.body);
       if (problem) return problem;
-      const body = req.body as IndexProjectAssetsPayload;
-      const assets = store.index(indexMatch[1] ?? '', body);
+      const body = req.body as IngestProjectAssetsPayload;
+      const assets = await store.ingest(ingestMatch[1] ?? '', body);
       return { status: 200, body: { assets } };
+    }
+
+    if (method === 'GET' && (fileRe.test(path) || path === aliasFilePath)) {
+      const url = new URL(req.url, 'http://127.0.0.1');
+      const fromPath = fileRe.exec(path)?.[1];
+      const workspaceId = fromPath || url.searchParams.get('workspace') || '';
+      const rel = url.searchParams.get('rel') || '';
+      const file = store.resolveProjectFile(workspaceId, rel);
+      return { status: 200, file };
     }
 
     const assetsMatch = assetsRe.exec(path);

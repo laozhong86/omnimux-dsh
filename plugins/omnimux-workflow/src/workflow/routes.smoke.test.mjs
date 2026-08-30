@@ -8,7 +8,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Writable } from 'node:stream';
@@ -54,6 +54,8 @@ function fakeReq({ method = 'GET', url = '/', headers = {}, body = undefined }) 
 
 function makeHarness() {
   const dir = mkdtempSync(join(tmpdir(), 'omnimux-workflow-test-'));
+  const libraryRoot = join(dir, 'library');
+  mkdirSync(libraryRoot, { recursive: true });
   const registered = [];
   const captured = { handler: null, path: '' };
   const webServer = {
@@ -73,6 +75,7 @@ function makeHarness() {
         executionsDir: join(dir, 'executions'),
         mediaDir: join(dir, 'media'),
       },
+      libraryRoot,
     },
   );
   const localHeaders = { origin: 'http://localhost:3000' };
@@ -280,6 +283,22 @@ test('project assets.json GET/PUT/mkdir via dispatcher (canonical + legacy)', as
     const ws = created.body.workspace;
     const canvasVersion = ws.version;
 
+    const unbound = await h.call({
+      url: `/omnimux-workflow/api/workspaces/${ws.id}/assets`,
+      headers: h.localHeaders,
+    });
+    assert.equal(unbound.status, 400);
+    assert.equal(unbound.body.error, 'project-required');
+
+    const seeded = await h.call({
+      method: 'POST',
+      url: '/omnimux-workflow/api/projects',
+      body: { title: '项目资产包', canvasWorkspaceIds: [ws.id] },
+      headers: h.localHeaders,
+    });
+    assert.equal(seeded.status, 200);
+    assert.ok(seeded.body.project?.path);
+
     const empty = await h.call({
       url: `/omnimux-workflow/api/workspaces/${ws.id}/assets`,
       headers: h.localHeaders,
@@ -317,10 +336,38 @@ test('project assets.json GET/PUT/mkdir via dispatcher (canonical + legacy)', as
     assert.equal(mkdir.body.assets.folders[0].name, '道具');
     assert.equal(mkdir.body.assets.rev, 1);
 
+    const source = join(h.dir, 'hero.png');
+    writeFileSync(source, 'PNG-BYTES');
+    const ingested = await h.call({
+      method: 'POST',
+      url: `/omnimux-workflow/api/workspaces/${ws.id}/assets/ingest`,
+      body: { paths: [source], parentId: mkdir.body.assets.folders[0].id, expectedRev: mkdir.body.assets.rev },
+      headers: h.localHeaders,
+    });
+    assert.equal(ingested.status, 200);
+    assert.equal(ingested.body.assets.items[0].relative_path, 'assets/imported/hero.png');
+    assert.equal(ingested.body.assets.items[0].real_path, undefined);
+    assert.equal(existsSync(join(seeded.body.project.path, 'assets', 'imported', 'hero.png')), true);
+    assert.equal(existsSync(source), true);
+
+    const streamed = await h.call({
+      url: `/omnimux-workflow/api/workspaces/${ws.id}/file?rel=assets/imported/hero.png`,
+      headers: h.localHeaders,
+    });
+    assert.equal(streamed.status, 200);
+    assert.equal(streamed.raw, 'PNG-BYTES');
+
+    const escaped = await h.call({
+      url: `/omnimux-workflow/api/workspaces/${ws.id}/file?rel=../secret.png`,
+      headers: h.localHeaders,
+    });
+    assert.equal(escaped.status, 400);
+    assert.equal(escaped.body.error, 'path-denied');
+
     const conflict = await h.call({
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${ws.id}/assets/mkdir`,
-      body: { name: '道具', expectedRev: mkdir.body.assets.rev },
+      body: { name: '道具', expectedRev: ingested.body.assets.rev },
       headers: h.localHeaders,
     });
     assert.equal(conflict.status, 409);

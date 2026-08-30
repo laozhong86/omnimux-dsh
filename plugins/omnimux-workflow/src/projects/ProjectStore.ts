@@ -22,6 +22,7 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 import { allocateUniqueProjectFolder, sanitizeFolderName } from './folderName';
+import { sessionToWorkspaceId } from '../shared/sessionWorkspaceId';
 import {
   PROJECT_README_NAME,
   assertProjectInsideLibrary,
@@ -61,6 +62,8 @@ export interface ProjectStore {
   get(id: string): ProjectRecord;
   rename(id: string, title: string): ProjectRecord;
   bindSession(id: string, sessionId: string): ProjectRecord;
+  /** Resolve a canvas `ws_*` id to the owning project (lazy-binds canvasWorkspaceIds). */
+  findByCanvasWorkspaceId(workspaceId: string): ProjectRecord | null;
   addPage(projectId: string, pageTitle: string, opts?: { canvasWorkspaceId?: string; loadMemory?: boolean }): ProjectRecord;
   removePage(projectId: string, pageId: string): ProjectRecord;
   renamePage(projectId: string, pageId: string, title: string): ProjectRecord;
@@ -228,6 +231,32 @@ export function createProjectStore(opts: { libraryRoot: string }): ProjectStore 
       }
       const next: Project = { ...current.project, sessionId, updatedAt: new Date().toISOString() };
       return persistProject(current.dir, next);
+    },
+
+    findByCanvasWorkspaceId(workspaceId: string): ProjectRecord | null {
+      if (typeof workspaceId !== 'string' || workspaceId.trim() === '') return null;
+      const id = workspaceId.trim();
+      for (const row of scanEntries()) {
+        const ids = row.project.canvasWorkspaceIds ?? [];
+        if (ids.includes(id)) {
+          return { ...row.project, path: row.dir };
+        }
+        if (row.project.pages?.some((page) => page.canvasWorkspaceId === id)) {
+          return { ...row.project, path: row.dir };
+        }
+        if (row.project.sessionId && sessionToWorkspaceId(row.project.sessionId) === id) {
+          if (ids.includes(id)) {
+            return { ...row.project, path: row.dir };
+          }
+          const next: Project = {
+            ...row.project,
+            canvasWorkspaceIds: [...ids, id],
+            updatedAt: new Date().toISOString(),
+          };
+          return persistProject(row.dir, next);
+        }
+      }
+      return null;
     },
 
     addPage(projectId: string, pageTitle: string, opts = {}): ProjectRecord {

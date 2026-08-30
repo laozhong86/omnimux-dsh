@@ -1,10 +1,10 @@
 /**
  * ProjectAssetsStore: assets.json CRUD + independent optimistic lock.
  *
- * Layout: workspaces/<id>/assets.json (sibling of canvas.json).
+ * Layout: `<ProjectRoot>/.omnimux/assets.json`. Canvas DAG still lives under
+ * `$DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json` (T03 moves it).
  * GET of a missing / corrupt file returns an empty document (rev:0), not 404.
- * Workspace existence is canvas.json; missing canvas.json → workspace-not-found.
- * Writes are atomic (tmp-pid-ts + rename). Never copy / unlink user sources.
+ * Writes are atomic (tmp-pid-ts + rename). Ingest copies; never unlinks user sources.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -15,16 +15,17 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { basename, isAbsolute, join } from 'node:path';
-import { looksAbsolutePath, materialTypeFromFilename } from '../../shared/localMedia.ts';
+import { join } from 'node:path';
+import { materialTypeFromFilename } from '../../shared/localMedia.ts';
 import {
   emptyProjectAssetsDocument,
-  forbiddenPathCode,
+  forbiddenRelativePathCode,
+  forbiddenSourcePathCode,
   isProjectAssetFileType,
   normalizeParentId,
   PROJECT_ASSETS_SCHEMA_VERSION,
   validateFolderName,
-  type IndexProjectAssetsPayload,
+  type IngestProjectAssetsPayload,
   type MkdirProjectAssetsPayload,
   type ProjectAssetFileType,
   type ProjectAssetsDocument,
@@ -32,13 +33,28 @@ import {
   type ProjectAssetsItem,
   type SaveProjectAssetsPayload,
 } from '../../shared/projectAssets.ts';
+import {
+  assertProjectWriteSafe,
+  resolveProjectPaths,
+  resolveProjectRelPath,
+} from '../../projects/paths.ts';
+import { copyFileIntoImported } from '../ingest/IngestionPipeline.ts';
 import { WorkflowStoreError } from './WorkflowStoreError.ts';
+
+export interface ProjectRootRecord {
+  path: string;
+}
+
+export type ResolveProjectRoot = (workspaceId: string) => ProjectRootRecord | null;
 
 export interface ProjectAssetsStore {
   get(workspaceId: string): ProjectAssetsDocument;
   save(workspaceId: string, payload: SaveProjectAssetsPayload): ProjectAssetsDocument;
   mkdir(workspaceId: string, payload: MkdirProjectAssetsPayload): ProjectAssetsDocument;
-  index(workspaceId: string, payload: IndexProjectAssetsPayload): ProjectAssetsDocument;
+  ingest(workspaceId: string, payload: IngestProjectAssetsPayload): Promise<ProjectAssetsDocument>;
+  /** Deprecated alias — forwards to ingest (physical copy). */
+  index(workspaceId: string, payload: IngestProjectAssetsPayload): Promise<ProjectAssetsDocument>;
+  resolveProjectFile(workspaceId: string, rel: string): string;
 }
 
 function isWorkspaceId(id: string): boolean {
@@ -70,6 +86,20 @@ function fileTypeOf(name: string): ProjectAssetFileType {
   return 'doc';
 }
 
+function persistableItem(item: ProjectAssetsItem): ProjectAssetsItem {
+  const next: ProjectAssetsItem = {
+    id: item.id,
+    name: item.name,
+    type: item.type,
+    parentId: item.parentId,
+    relative_path: item.relative_path,
+    updatedAt: item.updatedAt,
+  };
+  if (typeof item.size === 'number' && Number.isFinite(item.size)) next.size = item.size;
+  if (item.lineage != null) next.lineage = item.lineage;
+  return next;
+}
+
 function hydrateFolder(row: unknown): ProjectAssetsFolder | null {
   if (!row || typeof row !== 'object' || Array.isArray(row)) return null;
   const rec = row as Record<string, unknown>;
@@ -93,16 +123,22 @@ function hydrateItem(row: unknown): ProjectAssetsItem | null {
   const rec = row as Record<string, unknown>;
   if (typeof rec.id !== 'string' || rec.id.trim() === '') return null;
   if (typeof rec.name !== 'string' || rec.name.trim() === '') return null;
-  if (typeof rec.real_path !== 'string' || rec.real_path.trim() === '') return null;
+  const relative = typeof rec.relative_path === 'string' ? rec.relative_path.trim() : '';
+  const legacy = typeof rec.real_path === 'string' ? rec.real_path.trim() : '';
+  if (!relative && !legacy) return null;
   const type = isProjectAssetFileType(rec.type) ? rec.type : fileTypeOf(rec.name);
-  return {
+  const item: ProjectAssetsItem = {
     id: rec.id,
     name: rec.name.trim(),
     type,
     parentId: normalizeParentId(rec.parentId),
-    real_path: rec.real_path,
+    relative_path: relative,
     updatedAt: asNumber(rec.updatedAt, 0),
   };
+  if (typeof rec.size === 'number' && Number.isFinite(rec.size)) item.size = rec.size;
+  if (rec.lineage != null) item.lineage = rec.lineage;
+  if (!relative && legacy) item.real_path = legacy;
+  return item;
 }
 
 function readAssetsFile(filePath: string): ProjectAssetsDocument {
@@ -137,29 +173,6 @@ function readAssetsFile(filePath: string): ProjectAssetsDocument {
   };
 }
 
-function assertWorkspaceExists(workspacesDir: string, id: string): void {
-  if (!isWorkspaceId(id)) {
-    throw new WorkflowStoreError('invalid-id', `invalid workspace id ${id}`);
-  }
-  const canvas = join(workspacesDir, id, 'canvas.json');
-  if (!existsSync(canvas)) {
-    throw new WorkflowStoreError('workspace-not-found', `workspace ${id} not found`);
-  }
-}
-
-function assertNoBlobOrRelative(path: string, field: string): void {
-  const code = forbiddenPathCode(path);
-  if (code === 'blob-url-forbidden') {
-    throw new WorkflowStoreError('blob-url-forbidden', `${field} must not be a blob: URL`);
-  }
-  if (code === 'invalid-path') {
-    throw new WorkflowStoreError('invalid-path', `${field} must be an absolute path without NUL`);
-  }
-  if (!isAbsolute(path) || !looksAbsolutePath(path)) {
-    throw new WorkflowStoreError('invalid-path', `${field} must be an absolute path`);
-  }
-}
-
 function parentExists(doc: ProjectAssetsDocument, parentId: string | null): boolean {
   if (parentId === null) return true;
   return doc.folders.some((folder) => folder.id === parentId);
@@ -179,6 +192,19 @@ function siblingFolderConflict(
   );
 }
 
+function assertRelativeLedgerPath(path: string, field: string): void {
+  const code = forbiddenRelativePathCode(path);
+  if (code === 'blob-url-forbidden') {
+    throw new WorkflowStoreError('blob-url-forbidden', `${field} must not be a blob: URL`);
+  }
+  if (code === 'path-denied') {
+    throw new WorkflowStoreError('path-denied', `${field} must be a project-relative POSIX path`);
+  }
+  if (code === 'invalid-path') {
+    throw new WorkflowStoreError('invalid-path', `${field} must be a project-relative POSIX path`);
+  }
+}
+
 function assertWritableDocument(next: ProjectAssetsDocument): void {
   const folderIds = new Set<string>();
   for (const folder of next.folders) {
@@ -191,7 +217,8 @@ function assertWritableDocument(next: ProjectAssetsDocument): void {
     }
     folderIds.add(folder.id);
     if (folder.real_path) {
-      assertNoBlobOrRelative(folder.real_path, 'folder.real_path');
+      const code = forbiddenSourcePathCode(folder.real_path);
+      if (code) throw new WorkflowStoreError(code, `folder.real_path is invalid`);
     }
   }
   for (const folder of next.folders) {
@@ -222,34 +249,43 @@ function assertWritableDocument(next: ProjectAssetsDocument): void {
     if (!isProjectAssetFileType(item.type)) {
       throw new WorkflowStoreError('invalid-path', `unknown item type ${String(item.type)}`);
     }
-    assertNoBlobOrRelative(item.real_path, 'item.real_path');
     if (item.parentId && !folderIds.has(item.parentId)) {
       throw new WorkflowStoreError('invalid-id', `item parent ${item.parentId} does not exist`);
     }
-    // Missing sources stay as records (offline). Existing directories must not
-    // land in items — they belong in folders.
-    if (existsSync(item.real_path)) {
-      let st;
-      try {
-        st = statSync(item.real_path);
-      } catch {
-        st = null;
-      }
-      if (st?.isDirectory()) {
-        throw new WorkflowStoreError('not-a-file', 'path is not a regular file');
-      }
+    const relative = typeof item.relative_path === 'string' ? item.relative_path.trim() : '';
+    if (relative) {
+      assertRelativeLedgerPath(relative, 'item.relative_path');
+      continue;
     }
+    if (item.real_path) {
+      const code = forbiddenSourcePathCode(item.real_path);
+      if (code === 'blob-url-forbidden') {
+        throw new WorkflowStoreError(code, 'item.real_path is invalid');
+      }
+      if (code) throw new WorkflowStoreError(code, 'item.real_path is invalid');
+      continue;
+    }
+    throw new WorkflowStoreError('invalid-path', 'item.relative_path is required');
   }
 }
 
-function persist(filePath: string, current: ProjectAssetsDocument, next: Omit<ProjectAssetsDocument, 'rev' | 'schemaVersion'>): ProjectAssetsDocument {
-  const document: ProjectAssetsDocument = {
+function persist(
+  filePath: string,
+  current: ProjectAssetsDocument,
+  next: { folders: ProjectAssetsFolder[]; items: ProjectAssetsItem[] },
+): ProjectAssetsDocument {
+  assertWritableDocument({
     schemaVersion: PROJECT_ASSETS_SCHEMA_VERSION,
     rev: current.rev + 1,
     folders: next.folders,
     items: next.items,
+  });
+  const document: ProjectAssetsDocument = {
+    schemaVersion: PROJECT_ASSETS_SCHEMA_VERSION,
+    rev: current.rev + 1,
+    folders: next.folders,
+    items: next.items.map(persistableItem).filter((item) => item.relative_path.trim() !== ''),
   };
-  assertWritableDocument(document);
   atomicWriteJson(filePath, document);
   return document;
 }
@@ -265,57 +301,80 @@ function assertExpectedRev(current: ProjectAssetsDocument, expectedRev: unknown)
   }
 }
 
-function indexOnePath(
-  rawPath: string,
-  parentId: string | null,
-  now: number,
-): { kind: 'file'; item: ProjectAssetsItem } | { kind: 'directory'; folder: ProjectAssetsFolder } {
-  assertNoBlobOrRelative(rawPath, 'path');
-  let stat;
-  try {
-    stat = statSync(rawPath);
-  } catch {
-    throw new WorkflowStoreError('not-found', `path not found: ${rawPath}`);
-  }
-  if (stat.isDirectory()) {
-    return {
-      kind: 'directory',
-      folder: {
-        id: newFolderId(),
-        name: basename(rawPath.replace(/[/\\]+$/, '')) || rawPath,
-        parentId,
-        real_path: rawPath,
-        updatedAt: now,
-      },
-    };
-  }
-  if (!stat.isFile()) {
-    throw new WorkflowStoreError('not-a-file', 'path is not a regular file');
-  }
-  const name = basename(rawPath);
-  return {
-    kind: 'file',
-    item: {
-      id: newItemId(),
-      name,
-      type: fileTypeOf(name),
-      parentId,
-      real_path: rawPath,
-      updatedAt: now,
-    },
-  };
-}
-
 export function createProjectAssetsStore(opts: {
   workspacesDir: string;
+  resolveProjectRoot: ResolveProjectRoot;
 }): ProjectAssetsStore {
-  const { workspacesDir } = opts;
+  const { workspacesDir, resolveProjectRoot } = opts;
 
-  const fileOf = (id: string) => join(workspacesDir, id, 'assets.json');
+  function requireWorkspaceId(id: string): string {
+    if (!isWorkspaceId(id)) {
+      throw new WorkflowStoreError('invalid-id', `invalid workspace id ${id}`);
+    }
+    return id;
+  }
 
-  function load(id: string): { current: ProjectAssetsDocument; filePath: string } {
-    assertWorkspaceExists(workspacesDir, id);
-    return { current: readAssetsFile(fileOf(id)), filePath: fileOf(id) };
+  function requireBoundProject(id: string): { projectRoot: string; assetsFile: string } {
+    const workspaceId = requireWorkspaceId(id);
+    const canvas = join(workspacesDir, workspaceId, 'canvas.json');
+    const bound = resolveProjectRoot(workspaceId);
+    if (!bound) {
+      if (!existsSync(canvas)) {
+        throw new WorkflowStoreError('workspace-not-found', `workspace ${workspaceId} not found`);
+      }
+      throw new WorkflowStoreError('project-required', `workspace ${workspaceId} is not bound to a local project`);
+    }
+    if (!existsSync(canvas)) {
+      throw new WorkflowStoreError('workspace-not-found', `workspace ${workspaceId} not found`);
+    }
+    const paths = resolveProjectPaths(bound.path);
+    return { projectRoot: paths.projectRoot, assetsFile: paths.assetsFile };
+  }
+
+  function load(id: string): { current: ProjectAssetsDocument; filePath: string; projectRoot: string } {
+    const bound = requireBoundProject(id);
+    return {
+      current: readAssetsFile(bound.assetsFile),
+      filePath: bound.assetsFile,
+      projectRoot: bound.projectRoot,
+    };
+  }
+
+  async function ingest(workspaceId: string, payload: IngestProjectAssetsPayload): Promise<ProjectAssetsDocument> {
+    const { current, filePath, projectRoot } = load(workspaceId);
+    assertExpectedRev(current, payload.expectedRev);
+    if (!Array.isArray(payload.paths)) {
+      throw new WorkflowStoreError('invalid-json', 'paths must be an array');
+    }
+    const parentId = normalizeParentId(payload.parentId);
+    if (!parentExists(current, parentId)) {
+      throw new WorkflowStoreError('invalid-id', 'parent folder does not exist');
+    }
+    const now = Date.now();
+    const items = [...current.items];
+    const existingRel = new Set(items.map((item) => item.relative_path).filter(Boolean));
+    for (const raw of payload.paths) {
+      if (typeof raw !== 'string') {
+        throw new WorkflowStoreError('invalid-path', 'path must be a string');
+      }
+      const sourceCode = forbiddenSourcePathCode(raw);
+      if (sourceCode) {
+        throw new WorkflowStoreError(sourceCode, 'source path is invalid');
+      }
+      const copied = await copyFileIntoImported({ projectRoot, sourceAbs: raw });
+      if (existingRel.has(copied.relativePath)) continue;
+      existingRel.add(copied.relativePath);
+      items.push({
+        id: newItemId(),
+        name: copied.name,
+        type: fileTypeOf(copied.name),
+        parentId,
+        relative_path: copied.relativePath,
+        size: copied.size,
+        updatedAt: now,
+      });
+    }
+    return persist(filePath, current, { folders: current.folders, items });
   }
 
   return {
@@ -364,40 +423,29 @@ export function createProjectAssetsStore(opts: {
       });
     },
 
-    index(workspaceId: string, payload: IndexProjectAssetsPayload): ProjectAssetsDocument {
-      const { current, filePath } = load(workspaceId);
-      assertExpectedRev(current, payload.expectedRev);
-      if (!Array.isArray(payload.paths)) {
-        throw new WorkflowStoreError('invalid-json', 'paths must be an array');
+    ingest,
+
+    index(workspaceId: string, payload: IngestProjectAssetsPayload): Promise<ProjectAssetsDocument> {
+      return ingest(workspaceId, payload);
+    },
+
+    resolveProjectFile(workspaceId: string, rel: string): string {
+      const { projectRoot } = load(workspaceId);
+      const abs = resolveProjectRelPath(projectRoot, rel);
+      assertProjectWriteSafe(abs, projectRoot);
+      if (!existsSync(abs)) {
+        throw new WorkflowStoreError('not-found', `file not found: ${rel}`);
       }
-      const parentId = normalizeParentId(payload.parentId);
-      if (!parentExists(current, parentId)) {
-        throw new WorkflowStoreError('invalid-id', 'parent folder does not exist');
+      let st;
+      try {
+        st = statSync(abs);
+      } catch {
+        throw new WorkflowStoreError('not-found', `file not found: ${rel}`);
       }
-      const now = Date.now();
-      const folders = [...current.folders];
-      const items = [...current.items];
-      const existingPaths = new Set(items.map((item) => item.real_path));
-      for (const raw of payload.paths) {
-        if (typeof raw !== 'string') {
-          throw new WorkflowStoreError('invalid-path', 'path must be a string');
-        }
-        const indexed = indexOnePath(raw, parentId, now);
-        if (indexed.kind === 'directory') {
-          if (siblingFolderConflict(folders, parentId, indexed.folder.name)) {
-            throw new WorkflowStoreError(
-              'name-conflict',
-              `folder name already exists at this level: ${indexed.folder.name}`,
-            );
-          }
-          folders.push(indexed.folder);
-          continue;
-        }
-        if (existingPaths.has(indexed.item.real_path)) continue;
-        existingPaths.add(indexed.item.real_path);
-        items.push(indexed.item);
+      if (!st.isFile()) {
+        throw new WorkflowStoreError('not-a-file', 'path is not a regular file');
       }
-      return persist(filePath, current, { folders, items });
+      return abs;
     },
   };
 }

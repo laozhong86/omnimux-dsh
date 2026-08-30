@@ -2319,6 +2319,21 @@ function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, layout, be
 // src/client/projects/CanvasTab.jsx
 var import_react5 = require("react");
 
+// src/shared/sessionWorkspaceId.ts
+function sessionToWorkspaceId(sessionId) {
+  if (typeof sessionId !== "string" || sessionId.length === 0) return void 0;
+  let h1 = 2166136261;
+  let h2 = 1075203691;
+  for (let i = 0; i < sessionId.length; i++) {
+    const code = sessionId.charCodeAt(i);
+    h1 = Math.imul(h1 ^ code, 16777619);
+    h2 = Math.imul(h2 ^ code, 84703693);
+  }
+  const hex1 = (h1 >>> 0).toString(16).padStart(8, "0");
+  const hex2 = (h2 >>> 0).toString(16).padStart(8, "0");
+  return `ws_${(hex1 + hex2).slice(0, 12)}`;
+}
+
 // src/client/CanvasBridge.jsx
 var import_react4 = require("react");
 var import_jsx_runtime4 = require("react/jsx-runtime");
@@ -2421,19 +2436,6 @@ function CanvasBridge({ onClose, t, locale, workspaceId }) {
 
 // src/client/projects/CanvasTab.jsx
 var import_jsx_runtime5 = require("react/jsx-runtime");
-function sessionToWorkspaceId(sessionId) {
-  if (!sessionId) return void 0;
-  let h1 = 2166136261;
-  let h2 = 1075203691;
-  for (let i = 0; i < sessionId.length; i++) {
-    const code = sessionId.charCodeAt(i);
-    h1 = Math.imul(h1 ^ code, 16777619);
-    h2 = Math.imul(h2 ^ code, 84703693);
-  }
-  const hex1 = (h1 >>> 0).toString(16).padStart(8, "0");
-  const hex2 = (h2 >>> 0).toString(16).padStart(8, "0");
-  return `ws_${(hex1 + hex2).slice(0, 12)}`;
-}
 function CanvasTab({ ctx, t, visible, store, scope }) {
   (0, import_react5.useEffect)(() => {
     injectWorkflowStyles();

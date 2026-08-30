@@ -156,14 +156,21 @@ export function mkdirWorkspaceAsset(
   );
 }
 
-export function indexWorkspaceAssets(
+export function ingestWorkspaceAssets(
   id: string,
   payload: IndexProjectAssetsPayload,
 ): Promise<ApiResult<{ assets: ProjectAssetsDocument; current?: number }>> {
   return request<{ assets: ProjectAssetsDocument; current?: number }>(
-    WORKFLOW_API_ROUTES.workspaceAssetsIndex(encodeURIComponent(id)),
+    WORKFLOW_API_ROUTES.workspaceAssetsIngest(encodeURIComponent(id)),
     { method: 'POST', body: payload },
   );
+}
+
+export function indexWorkspaceAssets(
+  id: string,
+  payload: IndexProjectAssetsPayload,
+): Promise<ApiResult<{ assets: ProjectAssetsDocument; current?: number }>> {
+  return ingestWorkspaceAssets(id, payload);
 }
 
 export function pickLocalFiles(): Promise<ApiResult<{ path: string | null; paths: string[] }>> {

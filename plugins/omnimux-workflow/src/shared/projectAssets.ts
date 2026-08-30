@@ -1,9 +1,8 @@
 /**
  * Project-private asset tree (assets.json) — shared types + pure helpers.
  *
- * Disk: $DSH_HOME/omnimux/workflow/workspaces/<id>/assets.json
- * Independent `rev` (do not bump canvas.json version). Never copy/unlink
- * user source files; records are path indexes only. blob: is forbidden.
+ * Disk: `<ProjectRoot>/.omnimux/assets.json` (independent `rev`, do not bump
+ * canvas.json version). New writes persist POSIX `relative_path` only.
  */
 import { looksAbsolutePath } from './localMedia.ts';
 
@@ -25,7 +24,15 @@ export interface ProjectAssetsItem {
   name: string;
   type: ProjectAssetFileType;
   parentId: string | null;
-  real_path: string;
+  /** POSIX path relative to the project root, e.g. `assets/imported/hero.png`. */
+  relative_path: string;
+  size?: number;
+  lineage?: unknown;
+  /**
+   * Legacy absolute path from pre-materialization ledgers. Readable on GET;
+   * new save/ingest MUST NOT persist this field.
+   */
+  real_path?: string;
   updatedAt: number;
 }
 
@@ -53,6 +60,8 @@ export interface IndexProjectAssetsPayload {
   parentId?: string | null;
   expectedRev?: number;
 }
+
+export type IngestProjectAssetsPayload = IndexProjectAssetsPayload;
 
 export const MAX_FOLDER_NAME_LENGTH = 200;
 
@@ -95,7 +104,8 @@ export function validateFolderName(
   return { ok: true, name };
 }
 
-export function forbiddenPathCode(
+/** Source-path gate for ingest request bodies (must be an absolute disk path). */
+export function forbiddenSourcePathCode(
   raw: unknown,
 ): 'blob-url-forbidden' | 'invalid-path' | null {
   if (typeof raw !== 'string' || raw.trim() === '') return 'invalid-path';
@@ -103,6 +113,26 @@ export function forbiddenPathCode(
   if (raw.startsWith('blob:')) return 'blob-url-forbidden';
   if (!looksAbsolutePath(raw)) return 'invalid-path';
   return null;
+}
+
+/** Ledger-field gate: POSIX relative path, no `..`, no absolute, no blob. */
+export function forbiddenRelativePathCode(
+  raw: unknown,
+): 'blob-url-forbidden' | 'invalid-path' | 'path-denied' | null {
+  if (typeof raw !== 'string' || raw.trim() === '') return 'invalid-path';
+  if (raw.includes('\0')) return 'invalid-path';
+  if (raw.startsWith('blob:')) return 'blob-url-forbidden';
+  if (looksAbsolutePath(raw)) return 'path-denied';
+  const posix = raw.replace(/\\/g, '/');
+  if (posix.split('/').some((segment) => segment === '..' || segment === '')) return 'path-denied';
+  return null;
+}
+
+/** @deprecated Use forbiddenSourcePathCode / forbiddenRelativePathCode. */
+export function forbiddenPathCode(
+  raw: unknown,
+): 'blob-url-forbidden' | 'invalid-path' | null {
+  return forbiddenSourcePathCode(raw);
 }
 
 export function isProjectAssetFileType(value: unknown): value is ProjectAssetFileType {

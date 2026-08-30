@@ -1,7 +1,6 @@
 /**
- * Project-private assets.json store (Issue #166).
- * Seeds canvas.json as a dummy marker so tests do not import WorkspaceStore/zod.
- * Never copies or unlinks user sources.
+ * Project-private assets.json store (Issue #233).
+ * Seeds canvas.json + a bound project.json. Ingest copies; never unlinks user sources.
  */
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -25,18 +24,45 @@ function seedWorkspace(workspacesDir, id = `ws_${Math.random().toString(16).slic
 function makeRoot() {
   const dir = mkdtempSync(join(tmpdir(), 'wf-assets-json-'));
   const workspacesDir = join(dir, 'workspaces');
+  const libraryRoot = join(dir, 'library');
   mkdirSync(workspacesDir, { recursive: true });
-  const assetsStore = createProjectAssetsStore({ workspacesDir });
+  mkdirSync(libraryRoot, { recursive: true });
+  const bindings = new Map();
+  const assetsStore = createProjectAssetsStore({
+    workspacesDir,
+    resolveProjectRoot: (workspaceId) => bindings.get(workspaceId) ?? null,
+  });
   return {
     dir,
     workspacesDir,
+    libraryRoot,
     assetsStore,
-    seed: (id) => seedWorkspace(workspacesDir, id),
+    seed: (id) => {
+      const workspaceId = seedWorkspace(workspacesDir, id);
+      const projectRoot = join(libraryRoot, workspaceId);
+      mkdirSync(join(projectRoot, '.omnimux'), { recursive: true });
+      writeFileSync(
+        join(projectRoot, '.omnimux', 'project.json'),
+        JSON.stringify({
+          schemaVersion: 1,
+          id: `p_${workspaceId}`,
+          title: '测试项目',
+          createdAt: '2026-08-30T00:00:00.000Z',
+          updatedAt: '2026-08-30T00:00:00.000Z',
+          sessionId: null,
+          canvasWorkspaceIds: [workspaceId],
+        }),
+        'utf8',
+      );
+      bindings.set(workspaceId, { path: projectRoot });
+      return workspaceId;
+    },
+    projectRootOf: (workspaceId) => bindings.get(workspaceId)?.path,
     cleanup: () => rmSync(dir, { recursive: true, force: true }),
   };
 }
 
-test('1. schema 空文件/坏 JSON → 空文档 rev:0，不 404', () => {
+test('1. schema 空文件/坏 JSON → 空文档 rev:0，不 404；未绑定 → project-required', () => {
   const root = makeRoot();
   try {
     const id = root.seed();
@@ -46,7 +72,7 @@ test('1. schema 空文件/坏 JSON → 空文档 rev:0，不 404', () => {
     assert.deepEqual(missing.items, []);
     assert.equal(missing.schemaVersion, 1);
 
-    const file = join(root.workspacesDir, id, 'assets.json');
+    const file = join(root.projectRootOf(id), '.omnimux', 'assets.json');
     writeFileSync(file, '{not-json', 'utf8');
     const broken = root.assetsStore.get(id);
     assert.equal(broken.rev, 0);
@@ -61,21 +87,28 @@ test('1. schema 空文件/坏 JSON → 空文档 rev:0，不 404', () => {
       () => root.assetsStore.get('ws_doesnotexist'),
       (error) => error instanceof WorkflowStoreError && error.code === 'workspace-not-found',
     );
+
+    const unbound = seedWorkspace(root.workspacesDir, 'ws_unbound01');
+    assert.throws(
+      () => root.assetsStore.get(unbound),
+      (error) => error instanceof WorkflowStoreError && error.code === 'project-required',
+    );
   } finally {
     root.cleanup();
   }
 });
 
-test('2. 原子写 + 错 expectedRev → 409 + current；不写 canvas.json', () => {
+test('2. 原子写 + 错 expectedRev → 409 + current；不写 canvas.json；账本在项目根', () => {
   const root = makeRoot();
   try {
     const id = root.seed();
     const canvasBefore = readFileSync(join(root.workspacesDir, id, 'canvas.json'), 'utf8');
     const created = root.assetsStore.mkdir(id, { name: '角色', expectedRev: 0 });
     assert.equal(created.rev, 1);
-    const disk = JSON.parse(readFileSync(join(root.workspacesDir, id, 'assets.json'), 'utf8'));
+    const disk = JSON.parse(readFileSync(join(root.projectRootOf(id), '.omnimux', 'assets.json'), 'utf8'));
     assert.equal(disk.rev, 1);
     assert.equal(disk.schemaVersion, 1);
+    assert.equal(existsSync(join(root.workspacesDir, id, 'assets.json')), false);
 
     try {
       root.assetsStore.mkdir(id, { name: '场景', expectedRev: 0 });
@@ -97,7 +130,7 @@ test('3. blob: / 相对路径 / NUL PUT → 400', () => {
   const root = makeRoot();
   try {
     const id = root.seed();
-    const payload = (real_path) => ({
+    const payload = (pathFields) => ({
       expectedRev: 0,
       folders: [],
       items: [{
@@ -105,29 +138,26 @@ test('3. blob: / 相对路径 / NUL PUT → 400', () => {
         name: 'hero.png',
         type: 'image',
         parentId: null,
-        real_path,
         updatedAt: 1,
+        ...pathFields,
       }],
     });
 
     assert.throws(
-      () => root.assetsStore.save(id, payload('blob:https://local/hero')),
+      () => root.assetsStore.save(id, payload({ real_path: 'blob:https://local/hero' })),
       (error) => error instanceof WorkflowStoreError && error.code === 'blob-url-forbidden',
     );
     assert.throws(
-      () => root.assetsStore.save(id, payload('relative/hero.png')),
+      () => root.assetsStore.save(id, payload({ relative_path: '../evil.png' })),
+      (error) => error instanceof WorkflowStoreError && error.code === 'path-denied',
+    );
+    assert.throws(
+      () => root.assetsStore.save(id, payload({ relative_path: 'assets/imported/hero.png\0sneaky' })),
       (error) => error instanceof WorkflowStoreError && error.code === 'invalid-path',
     );
     assert.throws(
-      () => root.assetsStore.save(id, payload('/tmp/hero.png\0sneaky')),
-      (error) => error instanceof WorkflowStoreError && error.code === 'invalid-path',
-    );
-
-    const dirPath = join(root.dir, 'a-directory');
-    mkdirSync(dirPath);
-    assert.throws(
-      () => root.assetsStore.save(id, payload(dirPath)),
-      (error) => error instanceof WorkflowStoreError && error.code === 'not-a-file',
+      () => root.assetsStore.save(id, payload({ relative_path: '/tmp/hero.png' })),
+      (error) => error instanceof WorkflowStoreError && error.code === 'path-denied',
     );
   } finally {
     root.cleanup();
@@ -155,7 +185,7 @@ test('4. mkdir 同层重名 → 409 name-conflict', () => {
   }
 });
 
-test('5. index 不 copy；delete 记录后源文件仍在', () => {
+test('5. ingest 复制进 assets/imported；delete 记录后源文件仍在', async () => {
   const root = makeRoot();
   try {
     const id = root.seed();
@@ -168,17 +198,20 @@ test('5. index 不 copy；delete 记录后源文件仍在', () => {
       expectedRev: parent.rev,
     });
     const folderB = child.folders.find((folder) => folder.name === 'B');
-    const withFile = root.assetsStore.index(id, {
+    const withFile = await root.assetsStore.ingest(id, {
       paths: [source],
       parentId: folderB.id,
       expectedRev: child.rev,
     });
     assert.equal(withFile.items.length, 1);
-    assert.equal(withFile.items[0].real_path, source);
+    assert.equal(withFile.items[0].relative_path, 'assets/imported/hero.png');
+    assert.equal(withFile.items[0].real_path, undefined);
     assert.equal(withFile.items.some((item) => item.parentId === folderB.id), true);
     assert.equal(existsSync(source), true);
-    const siblingCopy = join(root.workspacesDir, id, 'hero.png');
-    assert.equal(existsSync(siblingCopy), false);
+    const copied = join(root.projectRootOf(id), 'assets', 'imported', 'hero.png');
+    assert.equal(existsSync(copied), true);
+    assert.equal(readFileSync(copied, 'utf8'), 'PNG-BYTES');
+    assert.equal(existsSync(join(root.workspacesDir, id, 'hero.png')), false);
 
     const folderA = withFile.folders.find((folder) => folder.name === 'A');
     const drop = new Set([
@@ -193,24 +226,25 @@ test('5. index 不 copy；delete 记录后源文件仍在', () => {
     });
     assert.equal(after.folders.some((folder) => folder.name === 'A' || folder.name === 'B'), false);
     assert.equal(existsSync(source), true);
+    assert.equal(existsSync(copied), true);
   } finally {
     root.cleanup();
   }
 });
 
-test('HTTP 路由模块：GET 空文档 / PUT blob 抛 blob-url-forbidden / mkdir 冲突', () => {
+test('HTTP 路由模块：GET 空文档 / PUT blob 抛 blob-url-forbidden / mkdir 冲突 / ingest copy', async () => {
   const root = makeRoot();
   try {
     const id = root.seed();
     const routes = createProjectAssetsRoutes(root.assetsStore);
-    const empty = routes.tryHandle('GET', `/omnimux-workflow/api/workspaces/${id}/assets`, {
+    const empty = await routes.tryHandle('GET', `/omnimux-workflow/api/workspaces/${id}/assets`, {
       method: 'GET',
       url: `/omnimux-workflow/api/workspaces/${id}/assets`,
     });
     assert.equal(empty.status, 200);
     assert.equal(empty.body.assets.rev, 0);
 
-    assert.throws(
+    await assert.rejects(
       () => routes.tryHandle('PUT', `/omnimux-workflow/api/workspaces/${id}/assets`, {
         method: 'PUT',
         url: `/omnimux-workflow/api/workspaces/${id}/assets`,
@@ -230,7 +264,7 @@ test('HTTP 路由模块：GET 空文档 / PUT blob 抛 blob-url-forbidden / mkdi
       (error) => error instanceof WorkflowStoreError && error.code === 'blob-url-forbidden',
     );
 
-    const mkdir = routes.tryHandle('POST', `/omnimux-workflow/api/workspaces/${id}/assets/mkdir`, {
+    const mkdir = await routes.tryHandle('POST', `/omnimux-workflow/api/workspaces/${id}/assets/mkdir`, {
       method: 'POST',
       url: `/omnimux-workflow/api/workspaces/${id}/assets/mkdir`,
       body: { name: '道具', expectedRev: 0 },
@@ -238,7 +272,7 @@ test('HTTP 路由模块：GET 空文档 / PUT blob 抛 blob-url-forbidden / mkdi
     assert.equal(mkdir.status, 200);
     assert.equal(mkdir.body.assets.folders[0].name, '道具');
 
-    assert.throws(
+    await assert.rejects(
       () => routes.tryHandle('POST', `/omnimux-workflow/api/workspaces/${id}/assets/mkdir`, {
         method: 'POST',
         url: `/omnimux-workflow/api/workspaces/${id}/assets/mkdir`,
@@ -246,6 +280,27 @@ test('HTTP 路由模块：GET 空文档 / PUT blob 抛 blob-url-forbidden / mkdi
       }),
       (error) => error instanceof WorkflowStoreError && error.code === 'name-conflict',
     );
+
+    const source = join(root.dir, 'clip.png');
+    writeFileSync(source, 'PNG');
+    const ingested = await routes.tryHandle('POST', `/omnimux-workflow/api/workspaces/${id}/assets/ingest`, {
+      method: 'POST',
+      url: `/omnimux-workflow/api/workspaces/${id}/assets/ingest`,
+      body: { paths: [source], expectedRev: mkdir.body.assets.rev },
+    });
+    assert.equal(ingested.status, 200);
+    assert.equal(ingested.body.assets.items[0].relative_path, 'assets/imported/clip.png');
+    assert.equal(existsSync(join(root.projectRootOf(id), 'assets', 'imported', 'clip.png')), true);
+
+    const viaIndex = await routes.tryHandle('POST', `/omnimux-workflow/api/workspaces/${id}/assets/index`, {
+      method: 'POST',
+      url: `/omnimux-workflow/api/workspaces/${id}/assets/index`,
+      body: { paths: [source], expectedRev: ingested.body.assets.rev },
+    });
+    assert.equal(viaIndex.status, 200);
+    assert.equal(viaIndex.body.assets.items.length, 2);
+    assert.equal(viaIndex.body.assets.items[1].relative_path, 'assets/imported/clip (1).png');
+    assert.equal(existsSync(join(root.projectRootOf(id), 'assets', 'imported', 'clip (1).png')), true);
   } finally {
     root.cleanup();
   }

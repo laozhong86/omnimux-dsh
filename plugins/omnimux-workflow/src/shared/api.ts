@@ -37,8 +37,15 @@ export const WORKFLOW_API_ROUTES = {
   workspaceAssets: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/assets`,
   /** POST: create a logical folder record in assets.json. */
   workspaceAssetsMkdir: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/assets/mkdir`,
-  /** POST: index absolute paths into assets.json (no copy). */
+  /** POST: copy source files into `<ProjectRoot>/assets/imported/`. */
+  workspaceAssetsIngest: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/assets/ingest`,
+  /** POST: deprecated alias of ingest (physical copy, not a path index). */
   workspaceAssetsIndex: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/assets/index`,
+  /** GET: stream a project-relative file (Range 206). */
+  workspaceFile: (id: string, rel: string) =>
+    `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/file?rel=${encodeURIComponent(rel)}`,
+  /** GET: alias of workspaceFile (`?workspace=&rel=`). */
+  projectFile: `${WORKFLOW_ROUTE_PREFIX}/api/project-file`,
   /** GET: generation capability catalog (M3/M4 fills real data). */
   capabilities: `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`,
   /** GET: media files under the plugin-owned media dir (traversal-guarded). */

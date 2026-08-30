@@ -53,6 +53,8 @@ type HostContext = AgentSeatContext & {
 
 export interface MountWorkflowHostOptions {
   paths?: WorkflowPaths;
+  /** Override OmniMux/Projects library root (tests). */
+  libraryRoot?: string;
   /** Override the gateway entirely (tests / embedding code win over assembly). */
   gateway?: GenerationGateway;
   /** Gateway selection override (default: env OMNIMUX_WORKFLOW_GATEWAY / auto). */
@@ -92,6 +94,7 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
     mediaDir: paths.mediaDir,
     executionManager,
     templates,
+    ...(opts.libraryRoot ? { libraryRoot: opts.libraryRoot } : {}),
   });
 
   // Recovery pass (Gxgen ExecutionRecoveryService port): resume live runs
