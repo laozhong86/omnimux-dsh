@@ -33,15 +33,20 @@ subsystem: "omnimux-assets"
 2. **严禁 Agent 强杀或重启任何桌面 App**（避免多 Agent / 人机并发撞车）。
 3. 日常迭代走 `omnimux:sync` 静态物化；前端 Client 改动直接在客户端/浏览器按 `Cmd+R` 刷新即可生效，无需重启进程。
 
-## 三层模型
+## 三层与多 Profile 物理隔离模型
 
-| 层 | 目的 | 载体 | profile | 插件形态 | 数据根 |
-|----|------|------|---------|---------|--------|
-| L1 本地开发 | 写代码 + 快速验证 | `node --test`（不开 App） | 不需要 | 源码直读 | 测试临时目录 |
-| L2 预发布测试 | 真实运行集成验证 | 纯 Host + 浏览器 | `omnimux-dev-<task>`（可多实例并行） | **link 源码树** | `~/.dsh-dev/tasks/<task>`（任务隔离；逃生 `OMNIMUX_DEV_LEGACY_HOME=1`） |
-| L3 生产 | 日常使用 | `/Applications/OmniMux.app`（由 `laozhong86/omnimux-desktop-fork` `dist:mac` / `dist:win` 产出） | `omnimux` | **物化副本**（打包时 stage-preset 物化进 preset/plugins/，首启 seed 写入 profile） | `~/.dsh`（真实数据） |
+| 环境类型 | 目的 | 载体与端口 | Profile 目录 | 权限与物化规则 |
+|---|---|---|---|---|
+| **L1 本地单测** | 代码级快速测试 | `node --test` / `vitest` | 无 / 临时目录 | 源码直读，零副作用 |
+| **L2 任务沙箱** | 隔离并发调试 | 独立端口 (44200~44299) | `~/.dsh-dev/tasks/<task>` | 任务隔离，用完即弃 |
+| **L3-Dev 开发版** | 日常 Agent 物化与真机验收 | `OmniMux Dev.app` (端口 `45120`) | `~/.omnimux-dev` | **日常开发唯一目标**：`./scripts/sync-to-app.sh` 默认写入，Cmd+R / 重启即见最新改动 |
+| **L3-Prod 正式版** | 用户日常高可用生产 | `OmniMux.app` (正式端口) | `~/.omnimux` | **严格物理锁定**：日常严禁写入，仅在人类明确下达发布指令时通过 `./scripts/sync-to-app.sh --prod` 单向发布 |
+| **L3-Base 底座版** | 官方原生底座 | `DSH Desktop.app` | `~/.dsh` | 官方原生干净目录，禁止业务污染 |
 
-三层零共享：L1 不启动实例；L2/L3 用不同 `$DSH_HOME`（配置、插件、数据全隔离）；L3 插件更新只走工具通道。
+### 物理隔离核心原则（铁律）
+1. **日常开发与生产环境绝对物理隔离**：`./scripts/sync-to-app.sh` 默认且仅物化到 `~/.omnimux-dev`。严禁 Agent 在日常研发中未经授权添加 `--prod` 或 `--all` 污染正式版 `~/.omnimux`。
+2. **真机定点验收（45120 端口红线）**：涉及 Web/Stage 界面改动的交付验收，Ego-Browser 探针必须且只能连接 `http://127.0.0.1:45120`（Dev App）真实环境；**严禁使用 4817 等独立私有 harness 沙箱作为交付完成依据**。
+3. **零重启与安全刷新**：前端 Client 代码更新在 45120 Dev App 界面按 `Cmd+R` 刷新即生效；Agent 严禁强杀或重启任何桌面 App。
 
 ## 铁律（违反即事故）
 
