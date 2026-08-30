@@ -25,6 +25,7 @@ subsystem: "global"
 | 2026-08-16-harness-consume | 2026-08-16 | decided | 消费官方 dsh，不整仓 fork |
 | 2026-08-17-apps-catalog-json | 2026-08-17 | decided | 官方货架用 bundled + 远程 JSON，不做应用表 |
 | 2026-08-16-text-complete | 2026-08-16 | decided | 一次性专家补全；白名单不是第二套 chat |
+| 2026-08-30-physical-materialization | 2026-08-30 | decided | 画布/主体库导入全部物理实体化 |
 
 ## 2026-08-15-briefing-log
 
@@ -124,3 +125,13 @@ subsystem: "global"
 
 ### Amendments
 - 2026-08-18 — 识图模型按实测矩阵开放（gpt-5.6-sol / grok-4.6 / kimi-k3 / gemini-3.7-flash），默认模型改为 `gemini-3.7-flash`。证据：`docs/evidence/omnimux-modality-2026-08-18.md`。claude-opus-5 走 `/v1/messages` 支持图，但 chat-completions 分组 403，待分组升级后接入。
+
+## 2026-08-30-physical-materialization
+
+- **status:** decided
+- **topic:** 画布与资产库 100% 物理实体化
+- **decision:** 导入/拖入/生成不再只记外部 `real_path`。全局主体落 `$DSH_HOME/omnimux/assets/data/files/`；项目资产与画布绑作品包 `assets/` + `artifacts/`；JSON 只记相对路径。用户原文件永不删；删除项目不 `rm` 文件夹。
+- **why:** 零拷贝导致断链与作品包无法离线打包。用户 2026-08-30 明确要求全部实体化。
+- **not:** 本轮不改产品库、不改 OpenReel、不做 hardlink 去重、不隐式另存无项目画布。
+- **authority:** `docs/contracts/project-assets-contract.md`, `docs/decisions/2026-08-30-physical-materialization.md`, `docs/specs/2026-08-30-omnimux-physical-materialization.md`
+- **updated:** 2026-08-30

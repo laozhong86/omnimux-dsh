@@ -5,6 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-22"
+updated: "2026-08-30"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux-workflow"
 ---
@@ -278,11 +279,16 @@ L1 完整库页、L8 模板/变体/分享、跨更多管理能力。不阻塞 Ph
 <videos>/OmniMux/Projects/          # 默认库：Mac ~/Movies/…；Win %USERPROFILE%\Videos\…
   <可读项目名>/                     # = dsh workspace.path = 会话 cwd
     说明.md
-    images/  video/  audio/         # 刀 3；本轮可空
+    assets/imported/                # 外部导入物理副本（2026-08-30）
+    assets/subjects/<id>/           # 全局主体快照
+    artifacts/                      # 画布生成物
     .omnimux/
       project.json
-      canvas.json                   # 刀 2 搬家；本轮可后写
+      assets.json                   # 项目资产 SSOT
+      canvases/<canvasId>.json      # 刀 2：从 $DSH_HOME workspaces 迁入
 ```
+
+媒体与相对路径：[`project-assets-contract.md`](project-assets-contract.md)。旧 `images/ video/ audio/` 与单文件 `canvas.json` 不再作为新写入布局。
 
 旧实现 `<cwd>/.omnimux/projects/<id>/project.json` **作废为主路径**。不自动迁移；项目库只扫默认库。
 

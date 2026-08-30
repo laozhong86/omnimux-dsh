@@ -126,9 +126,13 @@ Body：`{ "expectedRev": number, "folders": Folder[], "items": Item[] }`。
 
 Body：`{ "name": string, "parentId"?: string | null, "expectedRev"?: number }`。同层重名 → 409 `name-conflict`；非法名（空、含 `/`、控制符）→ 400 `name-invalid`。
 
+### POST /omnimux-workflow/api/workspaces/:id/assets/ingest
+
+Body：`{ "paths": string[], "parentId"?: string | null, "expectedRev"?: number }`。物理 copy 进 `<ProjectRoot>/assets/imported/`，账本记 `relative_path`。见 [`project-assets-contract.md`](../../../../docs/contracts/project-assets-contract.md)。
+
 ### POST /omnimux-workflow/api/workspaces/:id/assets/index
 
-Body：`{ "paths": string[], "parentId"?: string | null, "expectedRev"?: number }`。只把绝对路径写入记录，**不 copy**。regular file → `items`；directory → `folders`（一条记录，不扁平）。
+**废弃（2026-08-30）**。新实现应 `410 ingest-required` 或内部转 ingest。历史行为：只把绝对路径写入记录、不 copy。
 
 完整闸与主体库 ACL 见 [workflow-project-assets.md](./workflow-project-assets.md)。
 
@@ -168,7 +172,7 @@ Body：`{ "paths": string[], "parentId"?: string | null, "expectedRev"?: number 
 
 `{ "ok": true }`；不存在 → 404 `not-found`。
 
-资产入库不走本前缀。画布 island 直接 `POST /omnimux/assets/library`（`files[].real_path`，`source: "workflow-canvas"`）。workflow **禁止** `import omnimux-assets`。生产环境需已安装 assets 插件；隔离 L2 可用 mock。
+提升全局：`POST /omnimux/assets/library`（`sourceWorkspaceId` + 项目 `relative_path`，或仍接受一次性源路径并由 assets Host copy 进 `data/files/`）。workflow **禁止** `import omnimux-assets`。生产环境需已安装 assets 插件；隔离 L2 可用 mock。
 
 ## M3 预留（本里程碑未实现）
 

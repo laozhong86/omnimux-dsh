@@ -52,11 +52,11 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `docs/briefing.md` | Agent–human project briefing log |
 | `plugins/omnimux/` | Execution hub. Verticals I/O through its seams. Apps shelf client (temporarily taken down from `client/index.js`; source kept in `src/client/apps-*`, `catalog.json`). Catalog contract: [docs/contracts/apps-catalog.md](docs/contracts/apps-catalog.md). |
 | `plugins/omnimux-accounts/` | Pinned first-level plugin: own sidebar row under 新会话 (rank 3), standalone product page (`shell.overlay`, opened directly via the product stage — not the Apps catalog / `omnimux-app-open`). Host `/omnimux/accounts` only. |
-| `plugins/omnimux-assets/` | 创作资产库：角色/场景/风格包/道具/知识包/自定义。素材只记 `real_path`。Host `/omnimux/assets`，tools `assets_list` / `assets_search` / `assets_get` / `assets_upload`。 |
+| `plugins/omnimux-assets/` | 创作资产库：角色/场景/风格包/道具/知识包/自定义。**导入物化到 `$DSH_HOME/omnimux/assets/data/files/<id>/`**（用户原文件不删）。Host `/omnimux/assets`，tools `assets_list` / `assets_search` / `assets_get` / `assets_upload`。合同：`docs/contracts/project-assets-contract.md`。 |
 | `plugins/omnimux-products/` | 产品库：要卖的货（名称 + 卖点/人群/品牌 + 主图路径引用）。Host `/omnimux/products`，tools `products_list` / `products_search` / `products_get` / `products_read_media` / `products_create` / `products_update`。侧栏 rank 6。 |
 | `plugins/omnimux-inspiration/` | 灵感库一级页（`shell.overlay`，sidebar rank 7）。浏览器只打 Host `/omnimux/inspiration`；云 HTTP 在中枢 `withPat`。 |
 | `plugins/omnimux-gallery/` | 专家·技能·连接器一级页（`shell.overlay`），技能双数据源（本地 + SkillHub 在线源）。 |
-| `plugins/omnimux-workflow/` | 工作流无限画布（拖拽 DAG、Agent 工具查询/执行），生成经 hub seam 提交。数据 `$DSH_HOME/omnimux/workflow/`。 |
+| `plugins/omnimux-workflow/` | 工作流无限画布（拖拽 DAG、Agent 工具查询/执行），生成经 hub seam 提交。**作品媒体落项目根** `assets/` + `artifacts/`；执行态仍可暂存 `$DSH_HOME/omnimux/workflow/`。 |
 | `plugins/omnimux-clip/` | 剪辑工坊：完整套用 OpenReel Video (MIT) 官方 GUI+管线，P1 挂 `dsh-better-sidebar` Tab（`omnimux-clip:studio`）；P2 `clip_*`；P3 与画布 JSON 事件桥。 |
 | `plugins/omnimux-publish/` | 账号发布中心（`shell.overlay`，sidebar rank 9）：草稿→多账号分发→per-account 子任务台账。Host `/omnimux/publish`，tools `publish_*` 9 个；执行只走中枢 `omnimux_publish_*` 官方通道，不直连平台、不存 secret。 |
 | `docs/contracts/openreel-vendor-contract.md` | **OpenReel 完整微应用契约**：官方 GUI+管线整包 Vendorize；禁止 Headless 拆分与自研四宫格；P1 侧边栏 Tab；DSW token 映射。 |

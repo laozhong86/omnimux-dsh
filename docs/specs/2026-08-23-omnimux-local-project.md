@@ -5,6 +5,7 @@ type: "spec"
 status: "accepted"
 authority: "L2"
 date: "2026-08-23"
+updated: "2026-08-30"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux-workflow"
 ---
@@ -167,11 +168,16 @@ MiniMax：展示 `~/Movies/Hub/Projects`，解析 `app.getPath("videos")` + `Hub
 <videos>/OmniMux/Projects/
   <可读项目名>/                 ← dsh workspace.path = 会话 cwd
     说明.md
-    images/  video/  audio/     ← 刀 3 生成物；本轮可先空
+    assets/imported/            ← 外部导入物理副本（2026-08-30 实体化）
+    assets/subjects/<id>/       ← 全局主体快照
+    artifacts/                  ← 画布生成物
     .omnimux/
-      project.json              ← 元数据
-      canvas.json               ← 刀 2 从 $DSH_HOME 搬走；本轮可后写
+      project.json
+      assets.json               ← 项目资产 SSOT（相对路径）
+      canvases/<canvasId>.json  ← 刀 2：从 $DSH_HOME workspaces 迁入
 ```
+
+媒体目录与相对路径合同：[`project-assets-contract.md`](../contracts/project-assets-contract.md)。历史草案里的 `images/ video/ audio/` 与单文件 `canvas.json` **不再作为新写入布局**。
 
 **`project.json`**
 

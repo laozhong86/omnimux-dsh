@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://omnimux.dsh/schemas/asset-lineage.schema.json",
+  "title": "AIGCAssetLineage",
+  "description": "Optional provenance on project assets and generate nodes. Persist in .omnimux/assets.json lineage; never store absolute paths here.",
+  "type": "object",
+  "required": [
+    "generatorNodeId",
+    "generatorNodeType",
+    "modelId",
+    "generatedAt"
+  ],
+  "properties": {
+    "generatorNodeId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatorNodeType": {
+      "type": "string",
+      "minLength": 1
+    },
+    "modelId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provider": {
+      "type": "string"
+    },
+    "prompt": {
+      "type": "string"
+    },
+    "negativePrompt": {
+      "type": "string"
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "upstreamAssetIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "canvasId": {
+      "type": "string"
+    },
+    "executionDurationMs": {
+      "type": "number"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

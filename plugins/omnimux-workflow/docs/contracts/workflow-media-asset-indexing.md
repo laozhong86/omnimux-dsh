@@ -1,7 +1,8 @@
 # 工作流画布本地素材索引（realPath）
 
+> **SUPERSEDED（2026-08-30）**。导入真源改为 [`docs/contracts/project-assets-contract.md`](../../../../docs/contracts/project-assets-contract.md)：必须物理 copy 进项目 `assets/imported/`，JSON 只记相对路径。下文保留 Issue #122 历史闸（loopback / MIME / 禁 blob），**不得再按「不复制」实现新功能**。
+>
 > Issue [#122](https://github.com/laozhong86/omnimux-dsh/issues/122) · 风险 **R1**（任意本地路径流式，仅 loopback）· 插件 `omnimux-workflow`
-> 本文件是导入素材的契约真源。工程师按此编码；AI 生成产物落盘不在本 Issue 范围内。
 
 ## 1. 选型与定界
 
@@ -9,12 +10,12 @@
 
 | 决策 | 结论 |
 |---|---|
-| 导入语义 | 索引本地 `realPath`，**不复制、不移动、不改源文件** |
-| 持久化 | `canvas.json` 只存绝对路径与元数据，**禁止 `blob:`** |
-| 预览 | 派生 `GET /omnimux-workflow/api/local-file?path=`（`encodeURIComponent`） |
-| 源文件丢失 | `status: offline` + `isMissing: true` + Relink，画布不崩 |
-| AI 产物 | 仍走 `$DSH_HOME/omnimux/workflow/media/executions/` + 既有 `GET /omnimux-workflow/media/*`（本 Issue **不改**） |
-| 资产库 | **对齐**「素材只记 real_path」语义；**禁止** `import` `omnimux-assets`。picker 在本插件内复制 osascript 模式 |
+| 导入语义 | ~~索引本地 `realPath`，不复制~~ **（已废止）** 新路径：ingest copy → `relativePath` |
+| 持久化 | ~~`canvas.json` 只存绝对路径~~ **禁止绝对路径与 `blob:`**；只记项目相对路径 |
+| 预览 | 新：`GET /omnimux-workflow/api/project-file?rel=`。`/api/local-file` 仅 probe/读源 |
+| 源文件丢失 | 物化后副本在项目内；惰性迁移失败才 `offline` |
+| AI 产物 | 新：`<ProjectRoot>/artifacts/`。全局 `media/executions/` 仅执行态临时 |
+| 资产库 | 全局仓 `data/files/` 实体化；**禁止** `import` `omnimux-assets` |
 | 合入 | R1，老板人工通道，不得自动合入 |
 
 非目标：云上传 / SaaS 对象存储；改 `omnimux-clip` OpenReel 或 `omnimux-assets` UI；把导入文件 copy 进项目或 `$DSH_HOME`。

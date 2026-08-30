@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L2"
 date: "2026-08-26"
-updated: "2026-08-28"
+updated: "2026-08-30"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -21,6 +21,7 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `accepted` | [2026-08-30-physical-materialization.md](2026-08-30-physical-materialization.md) | 决策：画布与资产库 100% 物理实体化 | `omnimux-workflow` | 2026-08-30 | 废止零拷贝 `real_path` 作为画布/主体库持久化策略；受管副本可随记录回收。 |
 | `accepted` | [2026-08-27-adopt-dsh-native-ui-system.md](2026-08-27-adopt-dsh-native-ui-system.md) | 决策：全面适配 DeepSeek Harness 原生 UI 规范，彻底废除外部主题覆盖层 | `omnimux` | 2026-08-27 | OmniMux 系列全量插件（Hub、Accounts、Assets、Products、Inspiration、Workflow、Clip、Publish 等）**100% 回归并严格消费 DeepS |
 | `accepted` | [2026-08-27-unified-shared-auth-config.md](2026-08-27-unified-shared-auth-config.md) | 决策：OmniMux 统一共享复用认证配置落地方案（极简纯文件标准） | `omnimux` | 2026-08-27 | 日期：2026-08-27。 |
 | `accepted` | [2026-08-26-l2-in-progress-plugin-cap.md](2026-08-26-l2-in-progress-plugin-cap.md) | 决策：L2 在研插件仍保持「每个 profile link ≤ 1」 | `omnimux-assets` | 2026-08-26 | 日期：2026-08-26。 |

@@ -3,7 +3,7 @@
 OmniMux **创作资产库**（v0.2）：一条资产是有名字、类型、描述、可选素材路径的创作对象，不是文件夹挂载。
 
 - **六类常驻**：角色 / 场景 / 风格包 / 道具 / 知识包 / 自定义（自定义 = 未选分类）
-- **素材只记 `real_path`**：不拷贝、不移动、不改原文件。路径不在磁盘上 → 该素材不显示
+- **素材物化（2026-08-30）**：导入 copy 进 `$DSH_HOME/omnimux/assets/data/files/<id>/`。用户原文件不删、不改名。删资产记录可回收受管副本。合同：`docs/contracts/project-assets-contract.md`
 - **入口**：侧栏「资产库」→ 一级页「+ 添加资产」弹窗。本轮不做导入资产包
 - **产物**：`assets_upload` 仍写入自有 artifacts 区；一级页不再作为主视图
 
@@ -32,20 +32,21 @@ npm run build # esbuild → lib/client.js（ModuleLoader 包裹，ID = omnimux-a
 
 ```
 omnimux/assets/
-├── library.json           # schema 2：assets[] + revision（素材只有 real_path）
+├── library.json           # schema 2：assets[] + revision；files[] 记仓内相对路径
 ├── mappings.json          # v0.1 遗留；启动时一次性迁成 custom 资产
+├── data/files/<assetId>/  # 全局受管物理副本（2026-08-30）
 ├── artifacts.json         # 产物索引（一级页隐藏）
 ├── scans/<mapping_id>.json
 └── artifacts/<aa>/<sha256>.<ext>
 ```
 
-真实文件永远留在原地。删除资产只删 `library.json` 记录。
+用户桌面原文件留在原地。删除资产删 `library.json` 行并回收 `data/files/<id>/`。
 
 ## 只读红线
 
-- 对用户素材路径只读（`stat`）；禁止 copy / rename / unlink `real_path`
-- 删除资产永不触碰原文件；UI 确认文案写明
-- 失效路径不进入 API visible files、卡片文件列表、Agent `files`
+- 对用户桌面原路径只读；禁止 rename / unlink 原文件。**允许** copy 进 `data/files/`
+- 删除资产永不触碰用户原文件；可删受管副本；UI 确认文案写明
+- 仓内副本缺失且无法惰性迁移时，不进入 API visible files
 - 不 import hub 任何内部模块
 - POST 路由一律过 loopback 写校验
 

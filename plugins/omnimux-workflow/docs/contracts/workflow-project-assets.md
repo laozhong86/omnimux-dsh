@@ -1,15 +1,16 @@
 # 工作流项目私有资产（assets.json）
 
+> **SUPERSEDED（2026-08-30）**。现行合同：[`docs/contracts/project-assets-contract.md`](../../../../docs/contracts/project-assets-contract.md)。账本迁到 `<ProjectRoot>/.omnimux/assets.json`，字段 `relative_path`，`POST .../assets/ingest` 物理拷贝。下文为 Issue #166 历史实现说明。
+>
 > Issue [#166](https://github.com/laozhong86/omnimux-dsh/issues/166) · 风险 **R1** · 插件 `omnimux-workflow`
-> 压缩契约。Host 真源：`src/workflow/workspace/ProjectAssetsStore.ts`；路由常量：`src/shared/api.ts`。
 
 ## 1. 定界
 
 | 决策 | 结论 |
 |---|---|
-| 磁盘 | `$DSH_HOME/omnimux/workflow/workspaces/<id>/assets.json`，与 `canvas.json` **并列** |
+| 磁盘 | **新**：`<ProjectRoot>/.omnimux/assets.json`。历史：`$DSH_HOME/.../workspaces/<id>/assets.json` |
 | 乐观锁 | 独立 `rev`；**不得**抬 `canvas.version` |
-| 语义 | 只记绝对路径，**不 copy / move / unlink** 用户源文件 |
+| 语义 | **新**：copy 进项目受管目录，账本记相对路径。用户原文件仍不 unlink |
 | 主体库 | Client 只 HTTP 消费 `GET/POST /omnimux/assets/library` 与 `POST /omnimux/assets/pick`；**禁止** `import omnimux-assets` |
 | 画布导入 | 仍走 #122 `POST /omnimux-workflow/api/pick`；资产 Tab 才走 `/omnimux/assets/pick` |
 
