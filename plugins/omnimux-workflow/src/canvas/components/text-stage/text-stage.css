@@ -37,7 +37,7 @@
   min-height: 48px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 0 16px;
   background-color: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.03));
   border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.06));
