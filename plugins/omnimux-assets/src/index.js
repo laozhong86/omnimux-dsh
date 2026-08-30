@@ -152,6 +152,106 @@ export function apply(ctx) {
   })
 
   ctx.tools.register({
+    name: 'assets_create',
+    description:
+      'Create a new creative asset (character/scene/style/prop/knowledge/custom) in the OmniMux asset library. Materializes files into the managed vault under $DSH_HOME/omnimux/assets/data/files/<id>/ without altering user originals.',
+    parameters: objectParams({
+      name: { type: 'string', required: true, description: 'Display name of the asset (1-40 characters, no slashes)' },
+      type: {
+        type: 'string',
+        enum: ['character', 'scene', 'style', 'prop', 'knowledge', 'custom'],
+        description: 'Asset category type; defaults to custom if omitted',
+      },
+      description: { type: 'string', description: 'Detailed asset description or prompt notes (max 4000 chars)' },
+      tags: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Search and classification tags (max 20 tags)',
+      },
+      files: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Array of local file paths or relative paths to ingest into the managed asset vault',
+      },
+    }),
+    output: jsonOut,
+    async execute(args) {
+      const name = typeof args.name === 'string' ? args.name : ''
+      const type = typeof args.type === 'string' ? args.type : 'custom'
+      const description = typeof args.description === 'string' ? args.description : ''
+      const tags = Array.isArray(args.tags) ? args.tags : []
+      const files = Array.isArray(args.files) ? args.files : []
+      const asset = await library.add({ name, type, description, tags, files })
+      return { ok: true, asset }
+    },
+  })
+
+  ctx.tools.register({
+    name: 'assets_update',
+    description:
+      'Update an existing creative asset in the library (name, type, description, tags, or replace files).',
+    parameters: objectParams({
+      id: { type: 'string', required: true, description: 'Asset id (ast_…) or handle' },
+      name: { type: 'string', description: 'Updated display name' },
+      type: {
+        type: 'string',
+        enum: ['character', 'scene', 'style', 'prop', 'knowledge', 'custom'],
+        description: 'Updated category type',
+      },
+      description: { type: 'string', description: 'Updated description' },
+      tags: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Updated tags array (replaces existing tags)',
+      },
+      files: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Replacement files array (ingests new paths into vault)',
+      },
+    }),
+    output: jsonOut,
+    async execute(args) {
+      const id = typeof args.id === 'string' ? args.id : ''
+      const existing = library.get(id)
+      if (!existing) throw new AssetsError('asset-not-found', `no asset ${id}`)
+      const patch = {}
+      if (typeof args.name === 'string') patch.name = args.name
+      if (typeof args.type === 'string') patch.type = args.type
+      if (typeof args.description === 'string') patch.description = args.description
+      if (Array.isArray(args.tags)) patch.tags = args.tags
+      if (Array.isArray(args.files)) patch.files = args.files
+      const asset = await library.update(existing.id, patch)
+      return { ok: true, asset }
+    },
+  })
+
+  ctx.tools.register({
+    name: 'assets_delete',
+    description:
+      'Delete a creative asset from the library and recycle its managed files copy. User originals are never unlinked. Destructive action requiring confirm=true.',
+    parameters: objectParams({
+      id: { type: 'string', required: true, description: 'Asset id (ast_…) or handle' },
+      confirm: {
+        type: 'boolean',
+        required: true,
+        description: 'Must be true to confirm permanent deletion of the asset record',
+      },
+    }),
+    output: jsonOut,
+    async execute(args) {
+      if (args.confirm !== true) {
+        throw new AssetsError('confirmation-required', 'assets_delete is destructive; confirm must be explicitly true')
+      }
+      const id = typeof args.id === 'string' ? args.id : ''
+      const existing = library.get(id)
+      if (!existing) throw new AssetsError('asset-not-found', `no asset ${id}`)
+      library.remove(existing.id)
+      return { ok: true, id: existing.id, deleted: true }
+    },
+  })
+
+  ctx.tools.register({
     name: 'assets_upload',
     description:
       'Report one produced file as an OmniMux assets artifact: copies it into the plugin-owned store under $DSH_HOME/omnimux/assets/artifacts (sha256 content-addressed, deduplicated). The source file is never modified or moved. agent is required; run_id decides whether the artifact is marked traced. Refuses content that looks like a secret token.',
