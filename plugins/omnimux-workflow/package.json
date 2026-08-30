@@ -20,6 +20,7 @@
   ],
   "scripts": {
     "build": "node scripts/build-host.mjs && node scripts/build-client.mjs && node scripts/build-canvas.mjs",
+    "prepare": "npm run build",
     "dev": "node scripts/dev.mjs",
     "harness": "node scripts/canvas-harness.mjs",
     "typecheck": "node node_modules/typescript/bin/tsc -p tsconfig.canvas.json --noEmit && node node_modules/typescript/bin/tsc -p tsconfig.host.json --noEmit",

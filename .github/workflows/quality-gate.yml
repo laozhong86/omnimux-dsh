@@ -37,9 +37,13 @@ jobs:
           node --check scripts/auto-pipeline.mjs
           node --check scripts/pipeline-state.mjs
           node --check scripts/ci-verdict.mjs
+          node --check scripts/check-tracked-artifacts.mjs
           bash -n scripts/git-wt.sh
           bash -n scripts/ego-browser-qa.sh
           bash -n scripts/materialize-with-rollback.sh
+
+      - name: Forbid tracked omnimux-workflow artifacts
+        run: node scripts/check-tracked-artifacts.mjs
 
       - name: Run diff-aware L0 static QA
         run: |
@@ -48,7 +52,18 @@ jobs:
 
       - name: Run regression tests
         run: |
-          node --test scripts/auto-pipeline.test.mjs
+          node --test scripts/auto-pipeline.test.mjs scripts/check-tracked-artifacts.test.mjs
+
+      - name: Rebuild omnimux-workflow host bundle from src
+        run: |
+          TMP="$(mktemp -d)"
+          printf '%s\n' '{"type":"module"}' > "$TMP/package.json"
+          npm --prefix "$TMP" install --ignore-scripts --no-audit --no-fund esbuild@0.28.2
+          ln -sfn "$TMP/node_modules" plugins/omnimux-workflow/node_modules
+          node plugins/omnimux-workflow/scripts/build-host.mjs
+          test -s plugins/omnimux-workflow/dist/index.js
+          rm -f plugins/omnimux-workflow/node_modules
+          rm -rf "$TMP"
 
       - name: Upload QA evidence
         uses: actions/upload-artifact@v4

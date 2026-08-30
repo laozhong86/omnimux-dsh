@@ -1,1 +1,4 @@
 dist-harness/
+dist/
+lib/client.js
+lib/canvas.js

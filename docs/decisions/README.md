@@ -21,6 +21,7 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `accepted` | [2026-08-30-workflow-artifacts-not-in-git.md](2026-08-30-workflow-artifacts-not-in-git.md) | 决策：omnimux-workflow 生成物不进 Git，源码为唯一真相 | `omnimux-workflow` | 2026-08-30 | `dist/` 与 `lib/client.js` / `lib/canvas.js` 现场 build，禁止为跟仓另开 PR。 |
 | `accepted` | [2026-08-30-physical-materialization.md](2026-08-30-physical-materialization.md) | 决策：画布与资产库 100% 物理实体化 | `omnimux-workflow` | 2026-08-30 | 废止零拷贝 `real_path` 作为画布/主体库持久化策略；受管副本可随记录回收。 |
 | `accepted` | [2026-08-27-adopt-dsh-native-ui-system.md](2026-08-27-adopt-dsh-native-ui-system.md) | 决策：全面适配 DeepSeek Harness 原生 UI 规范，彻底废除外部主题覆盖层 | `omnimux` | 2026-08-27 | OmniMux 系列全量插件（Hub、Accounts、Assets、Products、Inspiration、Workflow、Clip、Publish 等）**100% 回归并严格消费 DeepS |
 | `accepted` | [2026-08-27-unified-shared-auth-config.md](2026-08-27-unified-shared-auth-config.md) | 决策：OmniMux 统一共享复用认证配置落地方案（极简纯文件标准） | `omnimux` | 2026-08-27 | 日期：2026-08-27。 |

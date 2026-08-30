@@ -71,9 +71,11 @@
 | build-client.mjs | src/client/index.js | lib/client.js | cjs + ModuleLoader 包装，react external |
 | build-canvas.mjs | src/canvas/index.tsx | lib/canvas.js | iife + global，react 19 打包，minify，css text loader |
 
+**生成物不入库。** `dist/` 与 `lib/client.js` / `lib/canvas.js` 由 `npm run build` / `prepare` / `sync-to-app` 写出，gitignore。Git 真相是 `src/`。禁止把 minify bundle 当第二套产品源。
+
 类型检查独立于构建：`tsc -b --noEmit`（tsconfig.canvas + tsconfig.host 双 project references）。
 
-懒加载机制：首次打开画布 → `GET /dsh-workflow/api/manifest`（canvas.js sha256 前 16 位）→ 注入 `<script src="/dsh-workflow/canvas.js?v=<hash>">` → 全局 `__dshWorkflowCanvas` 可用 → CanvasBridge 调 `mountCanvas(el, props)`。
+懒加载机制：首次打开画布 → `GET /omnimux-workflow/api/manifest`（canvas.js sha256 前 16 位）→ 注入 `<script src="/omnimux-workflow/canvas.js?v=<hash>">`（hash 变化则替换旧 script，禁止复用过期 IIFE）→ 全局 `__omnimuxWorkflowCanvas` 可用 → CanvasBridge 调 `mountCanvas(el, props)`。Host 对该 JS 响应 `Cache-Control: no-cache`。Dev App 仍见旧胶囊时先硬刷新。
 
 ## 5. Gxgen 移植溯源（M1 口径）
 

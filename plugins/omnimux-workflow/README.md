@@ -37,8 +37,11 @@ dsh 会话里的 Agent 可通过三个宿主侧工具指挥画布（注册在 co
 # 本地源码位于 product/omnimux-dsh/plugins/omnimux-workflow/
 cd /path/to/omnimux-workflow
 pnpm install       # workspace 根执行亦可：pnpm install --filter omnimux-workflow
-npm run build      # 三 bundle：dist/index.js + lib/client.js + lib/canvas.js
+                   # prepare 会现场 build 三 bundle；禁止 --ignore-scripts
+npm run build      # 显式重建：dist/index.js + lib/client.js + lib/canvas.js（不进 Git）
 ```
+
+三 bundle **不入库**。新 clone 没有 `dist/` / `lib/*.js` 是正常的；`dsh plugin add` 本地目录、`yarn omnimux:sync` / `scripts/sync-to-app.sh` 都会先 build 再拷进 profile。禁止为「跟仓」提交生成物。
 
 ### Profile 方式加载（dsh 标准安装形态）
 

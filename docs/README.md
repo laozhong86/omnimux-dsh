@@ -55,6 +55,7 @@ docs/
 
 ### 2.2 [decisions/ (架构决策记录 - ADR)](decisions/README.md)
 *不可变的历史架构决策（L2），记录重大技术选型背景、裁定理由与备选方案权衡。*
+- **[2026-08-30-workflow-artifacts-not-in-git.md](decisions/2026-08-30-workflow-artifacts-not-in-git.md)**: omnimux-workflow 生成物不进 Git
 - **[2026-08-30-physical-materialization.md](decisions/2026-08-30-physical-materialization.md)**: 画布与资产库 100% 物理实体化
 - **[2026-08-27-adopt-dsh-native-ui-system.md](decisions/2026-08-27-adopt-dsh-native-ui-system.md)**: 全面适配 DSH 原生 UI 规范与废除外部主题决议
 - **[2026-08-26-ops-entry-authority.md](decisions/2026-08-26-ops-entry-authority.md)**: 运维入口收敛与 omnimux.mjs 权威裁定
