@@ -23,7 +23,10 @@ import { resolveCreationMotionSceneBinding } from "@openreel/core/creation/index
 import {
   createDownloadWritable,
   mimeForExt,
+  persistExportBlobToHost,
 } from "../services/export-runner";
+import { isCanvasClipExportSession } from "../../../export-canvas-mode.js";
+import { getActiveClipSession } from "../../../stage-store.js";
 import { createWebMotionAssetResolver } from "./motion-asset-resolver";
 import { NativeFFmpegBackend } from "../services/native-ffmpeg-backend";
 import { createStoredZip, type ZipStoreEntry } from "./zip-store";
@@ -451,6 +454,9 @@ async function prepareNativeAuroraOutputPath(
   filename: string,
   extension: MotionExportFormatDescriptor["extension"],
 ): Promise<void> {
+  if (isCanvasClipExportSession()) {
+    return;
+  }
   const showSaveDialog = window.openreel?.fs?.showSaveDialog;
   if (typeof showSaveDialog !== "function") {
     throw new Error("Native Aurora export is only available in the desktop app.");
@@ -737,7 +743,7 @@ export async function exportMotionCompositionScene({
     scale,
   );
   const nativeCandidate = resolveNativeAuroraExportCandidate(project, composition);
-  if (nativeCandidate) {
+  if (nativeCandidate && !isCanvasClipExportSession()) {
     return exportMotionCompositionSceneWithNativeAurora(
       composition,
       descriptor,
@@ -796,6 +802,28 @@ export async function exportMotionCompositionScene({
 
   if (!finalResult?.success) {
     throw new Error(finalResult?.error?.message ?? "Motion scene export failed.");
+  }
+
+  if (isCanvasClipExportSession()) {
+    const captured = (
+      writable as FileSystemWritableFileStream & { getCapturedBlob?: () => Blob | null }
+    ).getCapturedBlob?.();
+    if (captured && captured.size > 0) {
+      const session = getActiveClipSession();
+      const projectId = session?.projectId || project.id || `clip_${Date.now()}`;
+      try {
+        const persistRes = await persistExportBlobToHost(projectId, captured, {
+          durationMs: Math.round(composition.duration * 1000),
+          width: settings.width,
+          height: settings.height,
+        });
+        if (persistRes?.path) {
+          (window as { __openreelExportPath?: string }).__openreelExportPath = persistRes.path;
+        }
+      } catch (err) {
+        console.warn("[export-motion-frame] Failed to persist canvas export:", err);
+      }
+    }
   }
 
   return {

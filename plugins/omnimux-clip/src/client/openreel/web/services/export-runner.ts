@@ -8,6 +8,10 @@ import {
 import { getActiveClipSession } from "../../../stage-store.js";
 import { notifyCanvasProgress, notifyCanvasSave } from "../../../CanvasBridge.js";
 import { getVideoEngine } from "../../core/video/video-engine";
+import {
+  createSilentCanvasWritable,
+  isCanvasClipExportSession,
+} from "../../../export-canvas-mode.js";
 
 export interface ExportRunnerState {
   isExporting: boolean;
@@ -372,6 +376,10 @@ export async function createDownloadWritable(
 ): Promise<FileSystemWritableFileStream> {
   const ext = filename.split(".").pop() || "mp4";
 
+  if (isCanvasClipExportSession()) {
+    return createSilentCanvasWritable() as unknown as FileSystemWritableFileStream;
+  }
+
   if (typeof window.openreel?.fs?.showSaveDialog === "function") {
     const chosen = await window.openreel.fs.showSaveDialog({
       defaultPath: filename,
@@ -643,6 +651,10 @@ export function useExportRunner(options: ExportRunnerOptions): UseExportRunner {
       opts?: { streamToFile?: boolean },
     ): Promise<FileSystemWritableFileStream> => {
       const mime = mimeForExt(ext);
+
+      if (isCanvasClipExportSession()) {
+        return createSilentCanvasWritable() as unknown as FileSystemWritableFileStream;
+      }
 
       if (typeof window.openreel?.fs?.showSaveDialog === "function") {
         const chosen = await window.openreel.fs.showSaveDialog({
