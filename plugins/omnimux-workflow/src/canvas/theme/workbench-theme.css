@@ -313,8 +313,8 @@ body[data-ds-dark-theme] .wf-canvas-root {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 4px;
+  padding: 4px 8px;
   background: var(--wb-dock-bg);
   backdrop-filter: var(--wb-dock-blur);
   border: 1px solid var(--wb-border);
@@ -328,9 +328,9 @@ body[data-ds-dark-theme] .wf-canvas-root {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   height: 36px;
-  padding: 0 10px;
+  padding: 0 8px;
   border: none;
   border-radius: 18px;
   background: transparent;
@@ -391,9 +391,9 @@ body[data-ds-dark-theme] .wf-canvas-toolbar__item--primary-add:hover {
 
 .wf-canvas-toolbar__divider {
   width: 1px;
-  height: 20px;
+  height: 18px;
   background: var(--wb-border-strong);
-  margin: 0 2px;
+  margin: 0 1px;
 }
 
 .wf-canvas-toolbar__item--icon-only {

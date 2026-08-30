@@ -1429,9 +1429,10 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
 /* ==================== toolbar divider ==================== */
 
 .wf-canvas-toolbar__divider {
-  height: 1px;
-  margin: 2px 8px;
-  background: var(--wb-border);
+  width: 1px;
+  height: 18px;
+  margin: 0 1px;
+  background: var(--wb-border-strong, var(--wb-border));
 }
 
 /* ==================== autosave indicator (M2 → S2 chip 化) ==================== */

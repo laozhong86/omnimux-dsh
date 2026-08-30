@@ -101,13 +101,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
   const pointerMenuItems: DropdownMenuItem[] = [
     {
       key: 'select',
-      icon: <MousePointer size={15} />,
+      icon: <MousePointer size={18} />,
       label: t('toolbar.selectMode'),
       onClick: () => onPointerModeChange?.('select'),
     },
     {
       key: 'pan',
-      icon: <Hand size={15} />,
+      icon: <Hand size={18} />,
       label: t('toolbar.panMode'),
       onClick: () => onPointerModeChange?.('pan'),
     },
@@ -129,7 +129,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           title={t('toolbar.addNode')}
         >
           <span className="wf-canvas-toolbar__icon">
-            <Plus size={20} />
+            <Plus size={24} />
           </span>
         </button>
 
@@ -170,7 +170,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             title={t('toolbar.insertTemplate')}
           >
             <span className="wf-canvas-toolbar__icon">
-              <FileCode size={16} />
+              <FileCode size={20} />
             </span>
             <span className="wf-canvas-toolbar__label">{t('toolbar.insertTemplateLabel')}</span>
           </button>
@@ -211,9 +211,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
           title={pointerMode === 'select' ? t('toolbar.selectMode') : t('toolbar.panMode')}
         >
           <span className="wf-canvas-toolbar__icon">
-            {pointerMode === 'select' ? <MousePointer size={16} /> : <Hand size={16} />}
+            {pointerMode === 'select' ? <MousePointer size={20} /> : <Hand size={20} />}
           </span>
-          <ChevronUp size={12} style={{ opacity: 0.6, marginLeft: 2 }} />
+          <ChevronUp size={14} style={{ opacity: 0.6, marginLeft: 2 }} />
         </button>
       </CustomDropdown>
 
@@ -225,7 +225,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         title={t('toolbar.assets')}
       >
         <span className="wf-canvas-toolbar__icon">
-          <FolderOpen size={17} />
+          <FolderOpen size={20} />
         </span>
         <span className="wf-canvas-toolbar__label">{t('toolbar.assets')}</span>
       </button>
@@ -241,7 +241,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             title={t('toolbar.help')}
           >
             <span className="wf-canvas-toolbar__icon">
-              <HelpCircle size={16} />
+              <HelpCircle size={20} />
             </span>
             <span className="wf-canvas-toolbar__label">{t('toolbar.help')}</span>
           </button>
