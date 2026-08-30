@@ -58,6 +58,8 @@ export type {
 export {
   resolveProjectPaths,
   resolveLibraryPaths,
+  resolveProjectRelPath,
+  toProjectRelativePath,
   assertProjectInsideLibrary,
   isInsideDir,
   assertProjectWriteSafe,
@@ -118,6 +120,7 @@ export { WorkflowStoreError } from './workflow/workspace/WorkflowStoreError';
 export type { WorkspaceStore } from './workflow/workspace/WorkspaceStore';
 export { createProjectAssetsStore } from './workflow/workspace/ProjectAssetsStore';
 export type { ProjectAssetsStore } from './workflow/workspace/ProjectAssetsStore';
+export { sessionToWorkspaceId } from './shared/sessionWorkspaceId';
 export {
   PROJECT_ASSETS_SCHEMA_VERSION,
   emptyProjectAssetsDocument,

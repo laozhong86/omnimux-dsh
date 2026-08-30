@@ -2453,8 +2453,8 @@ var require_react_dom = __commonJS({
 });
 
 // src/workflow/index.ts
-import { mkdirSync as mkdirSync10 } from "node:fs";
-import { join as join16 } from "node:path";
+import { mkdirSync as mkdirSync11 } from "node:fs";
+import { join as join17 } from "node:path";
 
 // src/workflow/paths.ts
 import { homedir } from "node:os";
@@ -19606,8 +19606,14 @@ var WORKFLOW_API_ROUTES = {
   workspaceAssets: (id2) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id2}/assets`,
   /** POST: create a logical folder record in assets.json. */
   workspaceAssetsMkdir: (id2) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id2}/assets/mkdir`,
-  /** POST: index absolute paths into assets.json (no copy). */
+  /** POST: copy source files into `<ProjectRoot>/assets/imported/`. */
+  workspaceAssetsIngest: (id2) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id2}/assets/ingest`,
+  /** POST: deprecated alias of ingest (physical copy, not a path index). */
   workspaceAssetsIndex: (id2) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id2}/assets/index`,
+  /** GET: stream a project-relative file (Range 206). */
+  workspaceFile: (id2, rel) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id2}/file?rel=${encodeURIComponent(rel)}`,
+  /** GET: alias of workspaceFile (`?workspace=&rel=`). */
+  projectFile: `${WORKFLOW_ROUTE_PREFIX}/api/project-file`,
   /** GET: generation capability catalog (M3/M4 fills real data). */
   capabilities: `${WORKFLOW_ROUTE_PREFIX}/api/capabilities`,
   /** GET: media files under the plugin-owned media dir (traversal-guarded). */
@@ -20466,8 +20472,8 @@ function createExecutionManager(deps) {
 }
 
 // src/workflow/routes/canvasRoutes.ts
-import { createReadStream, statSync as statSync5 } from "node:fs";
-import { extname } from "node:path";
+import { createReadStream as createReadStream2, statSync as statSync6 } from "node:fs";
+import { extname as extname2 } from "node:path";
 
 // src/workflow/byteRange.ts
 function parseByteRange(rangeHeader, totalSize) {
@@ -20566,6 +20572,114 @@ function jsonBodyProblem(body) {
     return { status: 400, body: { error: "invalid-json", message: "request body must be a JSON object" } };
   }
   return null;
+}
+
+// src/projects/paths.ts
+import { realpathSync, statSync } from "node:fs";
+import { isAbsolute, join as join7, resolve as resolve2, sep } from "node:path";
+var ProjectPathError = class extends Error {
+  code;
+  constructor(code, message) {
+    super(message);
+    this.code = code;
+    this.name = "ProjectPathError";
+  }
+};
+var PROJECT_README_NAME = "\u8BF4\u660E.md";
+function isInsideDir(target, root2) {
+  return target === root2 || target.startsWith(root2 + sep);
+}
+function assertExistingDirectory(abs, code, label) {
+  if (typeof abs !== "string" || abs.trim() === "") {
+    throw new ProjectPathError(code, `${label} must be a non-empty string`);
+  }
+  if (!isAbsolute(abs)) {
+    throw new ProjectPathError(code, `${label} must be an absolute path`);
+  }
+  const normalized = resolve2(abs);
+  try {
+    if (!statSync(normalized).isDirectory()) {
+      throw new Error(`${label} is not a directory`);
+    }
+    realpathSync(normalized);
+  } catch (error51) {
+    if (error51 instanceof ProjectPathError) throw error51;
+    throw new ProjectPathError(code, `${label} does not exist or is not a directory`);
+  }
+  return normalized;
+}
+function resolveLibraryPaths(libraryRoot) {
+  const normalized = assertExistingDirectory(libraryRoot, "invalid-library-root", "libraryRoot");
+  return { libraryRoot: normalized };
+}
+function resolveProjectPaths(projectRoot) {
+  const normalized = assertExistingDirectory(projectRoot, "invalid-project-root", "projectRoot");
+  const metaDir = join7(normalized, ".omnimux");
+  if (!isInsideDir(metaDir, normalized)) {
+    throw new ProjectPathError("path-denied", "meta dir escapes project root");
+  }
+  return {
+    projectRoot: normalized,
+    metaDir,
+    projectFile: join7(metaDir, "project.json"),
+    assetsFile: join7(metaDir, "assets.json"),
+    importedDir: join7(normalized, "assets", "imported"),
+    readmeFile: join7(normalized, PROJECT_README_NAME)
+  };
+}
+function looksAbsolutePath2(p) {
+  return p.startsWith("/") || /^[A-Za-z]:[\\/]/.test(p);
+}
+function resolveProjectRelPath(projectRoot, rel) {
+  if (typeof rel !== "string" || rel.trim() === "") {
+    throw new ProjectPathError("path-denied", "relative path is required");
+  }
+  if (rel.includes("\0")) {
+    throw new ProjectPathError("path-denied", "relative path contains NUL");
+  }
+  const posix = rel.replace(/\\/g, "/").replace(/^\/+/, "");
+  if (looksAbsolutePath2(rel) || isAbsolute(rel)) {
+    throw new ProjectPathError("path-denied", "absolute paths are not allowed as relative_path");
+  }
+  if (posix.split("/").some((segment) => segment === "..")) {
+    throw new ProjectPathError("path-denied", "relative path escapes project root");
+  }
+  const root2 = resolve2(projectRoot);
+  const target = resolve2(join7(root2, posix));
+  if (!isInsideDir(target, root2)) {
+    throw new ProjectPathError("path-denied", "relative path escapes project root");
+  }
+  return target;
+}
+function toProjectRelativePath(projectRoot, abs) {
+  const root2 = resolve2(projectRoot);
+  const target = resolve2(abs);
+  if (!isInsideDir(target, root2)) {
+    throw new ProjectPathError("path-denied", "path is outside project root");
+  }
+  const rel = target.slice(root2.length).replace(/\\/g, "/");
+  return rel.startsWith("/") ? rel.slice(1) : rel;
+}
+function assertProjectInsideLibrary(projectRoot, libraryRoot) {
+  const root2 = resolve2(libraryRoot);
+  const target = resolve2(projectRoot);
+  if (target === root2 || !isInsideDir(target, root2)) {
+    throw new ProjectPathError("path-denied", "project root escapes library root");
+  }
+}
+function assertProjectWriteSafe(target, root2) {
+  if (!isInsideDir(target, root2)) {
+    throw new ProjectPathError("path-denied", "project path escapes containment root");
+  }
+  try {
+    const realRoot = realpathSync(root2);
+    const realTarget = realpathSync(target);
+    if (!isInsideDir(realTarget, realRoot)) {
+      throw new ProjectPathError("path-denied", "project path escapes containment root (symlink)");
+    }
+  } catch (error51) {
+    if (error51 instanceof ProjectPathError) throw error51;
+  }
 }
 
 // src/workflow/execution/ExecutionSSE.ts
@@ -20675,7 +20789,7 @@ function createSSEPublisher(res, context, opts = {}) {
 // src/projects/library.ts
 import { existsSync as existsSync4, mkdirSync as mkdirSync6 } from "node:fs";
 import { homedir as osHomedir } from "node:os";
-import { join as join7 } from "node:path";
+import { join as join8 } from "node:path";
 import { join as posixJoin } from "node:path/posix";
 import { join as win32Join } from "node:path/win32";
 var LIBRARY_BRAND_DIR = "OmniMux";
@@ -20710,7 +20824,7 @@ function defaultProjectLibrary(opts = {}) {
   return joinFor(platform, resolveVideosDir(opts), LIBRARY_BRAND_DIR, LIBRARY_PROJECTS_DIR);
 }
 function ensureLibraryRoot(opts = {}) {
-  const libraryRoot = join7(resolveVideosDir(opts), LIBRARY_BRAND_DIR, LIBRARY_PROJECTS_DIR);
+  const libraryRoot = join8(resolveVideosDir(opts), LIBRARY_BRAND_DIR, LIBRARY_PROJECTS_DIR);
   mkdirSync6(libraryRoot, { recursive: true });
   return libraryRoot;
 }
@@ -20721,82 +20835,6 @@ function displayHomePath(absPath, home = osHomedir()) {
     return `~${absPath.slice(home.length)}`;
   }
   return absPath;
-}
-
-// src/projects/paths.ts
-import { realpathSync, statSync } from "node:fs";
-import { join as join8, resolve as resolve2, sep } from "node:path";
-var ProjectPathError = class extends Error {
-  code;
-  constructor(code, message) {
-    super(message);
-    this.code = code;
-    this.name = "ProjectPathError";
-  }
-};
-var PROJECT_README_NAME = "\u8BF4\u660E.md";
-function isInsideDir(target, root2) {
-  return target === root2 || target.startsWith(root2 + sep);
-}
-function isAbsolute(p) {
-  return p.startsWith("/") || /^[A-Za-z]:[\\/]/.test(p);
-}
-function assertExistingDirectory(abs, code, label) {
-  if (typeof abs !== "string" || abs.trim() === "") {
-    throw new ProjectPathError(code, `${label} must be a non-empty string`);
-  }
-  if (!isAbsolute(abs)) {
-    throw new ProjectPathError(code, `${label} must be an absolute path`);
-  }
-  const normalized = resolve2(abs);
-  try {
-    if (!statSync(normalized).isDirectory()) {
-      throw new Error(`${label} is not a directory`);
-    }
-    realpathSync(normalized);
-  } catch (error51) {
-    if (error51 instanceof ProjectPathError) throw error51;
-    throw new ProjectPathError(code, `${label} does not exist or is not a directory`);
-  }
-  return normalized;
-}
-function resolveLibraryPaths(libraryRoot) {
-  const normalized = assertExistingDirectory(libraryRoot, "invalid-library-root", "libraryRoot");
-  return { libraryRoot: normalized };
-}
-function resolveProjectPaths(projectRoot) {
-  const normalized = assertExistingDirectory(projectRoot, "invalid-project-root", "projectRoot");
-  const metaDir = join8(normalized, ".omnimux");
-  if (!isInsideDir(metaDir, normalized)) {
-    throw new ProjectPathError("path-denied", "meta dir escapes project root");
-  }
-  return {
-    projectRoot: normalized,
-    metaDir,
-    projectFile: join8(metaDir, "project.json"),
-    readmeFile: join8(normalized, PROJECT_README_NAME)
-  };
-}
-function assertProjectInsideLibrary(projectRoot, libraryRoot) {
-  const root2 = resolve2(libraryRoot);
-  const target = resolve2(projectRoot);
-  if (target === root2 || !isInsideDir(target, root2)) {
-    throw new ProjectPathError("path-denied", "project root escapes library root");
-  }
-}
-function assertProjectWriteSafe(target, root2) {
-  if (!isInsideDir(target, root2)) {
-    throw new ProjectPathError("path-denied", "project path escapes containment root");
-  }
-  try {
-    const realRoot = realpathSync(root2);
-    const realTarget = realpathSync(target);
-    if (!isInsideDir(realTarget, realRoot)) {
-      throw new ProjectPathError("path-denied", "project path escapes containment root (symlink)");
-    }
-  } catch (error51) {
-    if (error51 instanceof ProjectPathError) throw error51;
-  }
 }
 
 // src/projects/ProjectStore.ts
@@ -20911,6 +20949,21 @@ function allocateUniqueProjectFolder(libraryRoot, baseName) {
     }
   }
   throw new ProjectPathError("directory-create-failed", "could not allocate a unique project folder");
+}
+
+// src/shared/sessionWorkspaceId.ts
+function sessionToWorkspaceId(sessionId) {
+  if (typeof sessionId !== "string" || sessionId.length === 0) return void 0;
+  let h1 = 2166136261;
+  let h2 = 1075203691;
+  for (let i = 0; i < sessionId.length; i++) {
+    const code = sessionId.charCodeAt(i);
+    h1 = Math.imul(h1 ^ code, 16777619);
+    h2 = Math.imul(h2 ^ code, 84703693);
+  }
+  const hex1 = (h1 >>> 0).toString(16).padStart(8, "0");
+  const hex22 = (h2 >>> 0).toString(16).padStart(8, "0");
+  return `ws_${(hex1 + hex22).slice(0, 12)}`;
 }
 
 // src/projects/ProjectStore.ts
@@ -21068,6 +21121,31 @@ function createProjectStore(opts) {
       const next = { ...current.project, sessionId, updatedAt: (/* @__PURE__ */ new Date()).toISOString() };
       return persistProject(current.dir, next);
     },
+    findByCanvasWorkspaceId(workspaceId) {
+      if (typeof workspaceId !== "string" || workspaceId.trim() === "") return null;
+      const id2 = workspaceId.trim();
+      for (const row of scanEntries()) {
+        const ids = row.project.canvasWorkspaceIds ?? [];
+        if (ids.includes(id2)) {
+          return { ...row.project, path: row.dir };
+        }
+        if (row.project.pages?.some((page) => page.canvasWorkspaceId === id2)) {
+          return { ...row.project, path: row.dir };
+        }
+        if (row.project.sessionId && sessionToWorkspaceId(row.project.sessionId) === id2) {
+          if (ids.includes(id2)) {
+            return { ...row.project, path: row.dir };
+          }
+          const next = {
+            ...row.project,
+            canvasWorkspaceIds: [...ids, id2],
+            updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+          };
+          return persistProject(row.dir, next);
+        }
+      }
+      return null;
+    },
     addPage(projectId, pageTitle, opts2 = {}) {
       const current = requireProject(projectId);
       const trimmed = validateTitle(pageTitle);
@@ -21162,11 +21240,11 @@ var STATUS_BY_CODE = {
   "path-denied": 403,
   "internal": 500
 };
-function scopedStore() {
-  const libraryRoot = ensureLibraryRoot();
+function scopedStore(libraryRootOverride) {
+  const libraryRoot = libraryRootOverride ?? ensureLibraryRoot();
   return { libraryRoot, store: createProjectStore({ libraryRoot }) };
 }
-function createProjectDispatcher() {
+function createProjectDispatcher(opts = {}) {
   const collectionRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}$`);
   const libraryRe = new RegExp(`^${PROJECT_LIBRARY_PATH}$`);
   const itemRe = new RegExp(`^${PROJECT_ROUTE_PREFIX}/([^/]+)$`);
@@ -21191,7 +21269,7 @@ function createProjectDispatcher() {
         if (method !== "GET") {
           return { status: 404, body: { error: "not-found", message: "unknown route" } };
         }
-        const libraryRoot = ensureLibraryRoot();
+        const libraryRoot = opts.libraryRoot ?? ensureLibraryRoot();
         return {
           status: 200,
           body: {
@@ -21203,7 +21281,7 @@ function createProjectDispatcher() {
       }
       if (collectionRe.exec(path3)) {
         if (method === "GET") {
-          const { store } = scopedStore();
+          const { store } = scopedStore(opts.libraryRoot);
           return { status: 200, body: { projects: store.list() } };
         }
         if (method === "POST") {
@@ -21213,13 +21291,14 @@ function createProjectDispatcher() {
           if (body.cwd !== void 0) {
             return { status: 400, body: { error: "invalid-json", message: "cwd is no longer a project library scope" } };
           }
-          const { store } = scopedStore();
+          const { store } = scopedStore(opts.libraryRoot);
           const title = typeof body.title === "string" ? body.title : void 0;
           const sessionId = typeof body.sessionId === "string" ? body.sessionId : null;
           const projectRoot = typeof body.projectRoot === "string" && body.projectRoot.trim() !== "" ? body.projectRoot : void 0;
+          const canvasWorkspaceIds = Array.isArray(body.canvasWorkspaceIds) ? body.canvasWorkspaceIds.filter((id2) => typeof id2 === "string" && id2.trim() !== "") : void 0;
           return {
             status: 200,
-            body: { project: store.create(title ?? "", { projectRoot, sessionId }) }
+            body: { project: store.create(title ?? "", { projectRoot, sessionId, canvasWorkspaceIds }) }
           };
         }
         return { status: 404, body: { error: "not-found", message: "unknown route" } };
@@ -21227,7 +21306,7 @@ function createProjectDispatcher() {
       const pagesMatch = pagesRe.exec(path3);
       if (pagesMatch) {
         const projectId = pagesMatch[1] ?? "";
-        const { store } = scopedStore();
+        const { store } = scopedStore(opts.libraryRoot);
         if (method === "POST") {
           const problem = jsonBodyProblem(req.body);
           if (problem) return problem;
@@ -21246,7 +21325,7 @@ function createProjectDispatcher() {
       if (pageItemMatch) {
         const projectId = pageItemMatch[1] ?? "";
         const pageId = pageItemMatch[2] ?? "";
-        const { store } = scopedStore();
+        const { store } = scopedStore(opts.libraryRoot);
         if (method === "PATCH") {
           const problem = jsonBodyProblem(req.body);
           if (problem) return problem;
@@ -21270,7 +21349,7 @@ function createProjectDispatcher() {
         if (id2 === "library") {
           return { status: 404, body: { error: "not-found", message: "unknown route" } };
         }
-        const { store } = scopedStore();
+        const { store } = scopedStore(opts.libraryRoot);
         if (method === "GET") {
           return { status: 200, body: { project: store.get(id2) } };
         }
@@ -21905,8 +21984,11 @@ function createLocalFileRoutes(deps = {}) {
 function createProjectAssetsRoutes(store) {
   const assetsRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets$`);
   const mkdirRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/mkdir$`);
+  const ingestRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/ingest$`);
   const indexRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/assets/index$`);
-  const tryHandle = (method, path3, req) => {
+  const fileRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/file$`);
+  const aliasFilePath = `${WORKFLOW_ROUTE_PREFIX}/api/project-file`;
+  const tryHandle = async (method, path3, req) => {
     const mkdirMatch = mkdirRe.exec(path3);
     if (mkdirMatch) {
       if (method !== "POST") return notFound();
@@ -21916,14 +21998,22 @@ function createProjectAssetsRoutes(store) {
       const assets = store.mkdir(mkdirMatch[1] ?? "", body);
       return { status: 200, body: { assets } };
     }
-    const indexMatch = indexRe.exec(path3);
-    if (indexMatch) {
+    const ingestMatch = ingestRe.exec(path3) ?? indexRe.exec(path3);
+    if (ingestMatch) {
       if (method !== "POST") return notFound();
       const problem = jsonBodyProblem(req.body);
       if (problem) return problem;
       const body = req.body;
-      const assets = store.index(indexMatch[1] ?? "", body);
+      const assets = await store.ingest(ingestMatch[1] ?? "", body);
       return { status: 200, body: { assets } };
+    }
+    if (method === "GET" && (fileRe.test(path3) || path3 === aliasFilePath)) {
+      const url2 = new URL(req.url, "http://127.0.0.1");
+      const fromPath = fileRe.exec(path3)?.[1];
+      const workspaceId = fromPath || url2.searchParams.get("workspace") || "";
+      const rel = url2.searchParams.get("rel") || "";
+      const file2 = store.resolveProjectFile(workspaceId, rel);
+      return { status: 200, file: file2 };
     }
     const assetsMatch = assetsRe.exec(path3);
     if (assetsMatch) {
@@ -21954,14 +22044,14 @@ function createProjectAssetsRoutes(store) {
 // src/workflow/workspace/ProjectAssetsStore.ts
 import { randomUUID as randomUUID6 } from "node:crypto";
 import {
-  existsSync as existsSync10,
-  mkdirSync as mkdirSync9,
+  existsSync as existsSync11,
+  mkdirSync as mkdirSync10,
   readFileSync as readFileSync6,
-  renameSync as renameSync5,
-  statSync as statSync4,
+  renameSync as renameSync6,
+  statSync as statSync5,
   writeFileSync as writeFileSync7
 } from "node:fs";
-import { basename as basename2, isAbsolute as isAbsolute3, join as join14 } from "node:path";
+import { join as join15 } from "node:path";
 
 // src/shared/projectAssets.ts
 var PROJECT_ASSETS_SCHEMA_VERSION = 1;
@@ -22001,15 +22091,123 @@ function validateFolderName(value) {
   }
   return { ok: true, name: name2 };
 }
-function forbiddenPathCode(raw) {
+function forbiddenSourcePathCode(raw) {
   if (typeof raw !== "string" || raw.trim() === "") return "invalid-path";
   if (raw.includes("\0")) return "invalid-path";
   if (raw.startsWith("blob:")) return "blob-url-forbidden";
   if (!looksAbsolutePath(raw)) return "invalid-path";
   return null;
 }
+function forbiddenRelativePathCode(raw) {
+  if (typeof raw !== "string" || raw.trim() === "") return "invalid-path";
+  if (raw.includes("\0")) return "invalid-path";
+  if (raw.startsWith("blob:")) return "blob-url-forbidden";
+  if (looksAbsolutePath(raw)) return "path-denied";
+  const posix = raw.replace(/\\/g, "/");
+  if (posix.split("/").some((segment) => segment === ".." || segment === "")) return "path-denied";
+  return null;
+}
 function isProjectAssetFileType(value) {
   return typeof value === "string" && PROJECT_ASSET_FILE_TYPES.includes(value);
+}
+
+// src/workflow/ingest/IngestionPipeline.ts
+import {
+  createReadStream,
+  createWriteStream,
+  existsSync as existsSync10,
+  mkdirSync as mkdirSync9,
+  renameSync as renameSync5,
+  statSync as statSync4,
+  unlinkSync
+} from "node:fs";
+import { statfsSync } from "node:fs";
+import { basename as basename2, extname, join as join14 } from "node:path";
+import { pipeline } from "node:stream/promises";
+var DISK_HEADROOM_BYTES = 500 * 1024 * 1024;
+var DISK_SIZE_FACTOR = 1.5;
+function baseAndExt(fileName) {
+  const ext = extname(fileName);
+  const base = ext ? fileName.slice(0, -ext.length) : fileName;
+  return { base: base || fileName, ext };
+}
+function uniqueImportedName(importedDir, originalName) {
+  const safe = basename2(originalName).replace(/[\u0000]/g, "");
+  if (!safe || safe === "." || safe === "..") {
+    throw new WorkflowStoreError("invalid-path", "file name is required");
+  }
+  if (!existsSync10(join14(importedDir, safe))) return safe;
+  const { base, ext } = baseAndExt(safe);
+  let n = 1;
+  while (existsSync10(join14(importedDir, `${base} (${n})${ext}`))) {
+    n += 1;
+  }
+  return `${base} (${n})${ext}`;
+}
+function assertDiskSpace(root2, incomingBytes, statfs = statfsSync) {
+  let info;
+  try {
+    info = statfs(root2);
+  } catch {
+    throw new WorkflowStoreError("disk-space-insufficient", "unable to inspect free disk space");
+  }
+  const free = Number(info.bavail) * Number(info.bsize);
+  const needed = incomingBytes * DISK_SIZE_FACTOR + DISK_HEADROOM_BYTES;
+  if (!Number.isFinite(free) || free < needed) {
+    throw new WorkflowStoreError(
+      "disk-space-insufficient",
+      `free disk ${String(free)} < required ${String(needed)}`
+    );
+  }
+}
+async function copyFileIntoImported(opts) {
+  const { projectRoot, sourceAbs, statfs } = opts;
+  if (typeof sourceAbs !== "string" || sourceAbs.trim() === "") {
+    throw new WorkflowStoreError("invalid-path", "source path is required");
+  }
+  if (sourceAbs.includes("\0") || sourceAbs.startsWith("blob:")) {
+    throw new WorkflowStoreError(
+      sourceAbs.startsWith("blob:") ? "blob-url-forbidden" : "invalid-path",
+      "source path is invalid"
+    );
+  }
+  let stat;
+  try {
+    stat = statSync4(sourceAbs);
+  } catch {
+    throw new WorkflowStoreError("not-found", `path not found: ${sourceAbs}`);
+  }
+  if (stat.isDirectory() || !stat.isFile()) {
+    throw new WorkflowStoreError("not-a-file", "path is not a regular file");
+  }
+  if (!isAllowedImportedMedia(sourceAbs)) {
+    throw new WorkflowStoreError("unsupported-media", "file type is not an imported media");
+  }
+  const paths = resolveProjectPaths(projectRoot);
+  mkdirSync9(paths.importedDir, { recursive: true });
+  assertDiskSpace(paths.projectRoot, stat.size, statfs ?? statfsSync);
+  const name2 = uniqueImportedName(paths.importedDir, basename2(sourceAbs));
+  const destAbs = join14(paths.importedDir, name2);
+  assertProjectWriteSafe(destAbs, paths.projectRoot);
+  const tmp = `${destAbs}.tmp-${process.pid}-${Date.now()}`;
+  try {
+    await pipeline(createReadStream(sourceAbs), createWriteStream(tmp));
+    assertProjectWriteSafe(tmp, paths.projectRoot);
+    renameSync5(tmp, destAbs);
+  } catch (error51) {
+    try {
+      if (existsSync10(tmp)) unlinkSync(tmp);
+    } catch {
+    }
+    if (error51 instanceof WorkflowStoreError) throw error51;
+    throw new WorkflowStoreError("internal", error51 instanceof Error ? error51.message : "copy failed");
+  }
+  return {
+    destAbs,
+    relativePath: toProjectRelativePath(paths.projectRoot, destAbs),
+    size: stat.size,
+    name: name2
+  };
 }
 
 // src/workflow/workspace/ProjectAssetsStore.ts
@@ -22023,11 +22221,11 @@ function newItemId() {
   return `ast_${randomUUID6().replace(/-/g, "").slice(0, 12)}`;
 }
 function atomicWriteJson4(filePath, value) {
-  mkdirSync9(join14(filePath, ".."), { recursive: true });
+  mkdirSync10(join15(filePath, ".."), { recursive: true });
   const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
   writeFileSync7(tmp, `${JSON.stringify(value, null, 2)}
 `, "utf8");
-  renameSync5(tmp, filePath);
+  renameSync6(tmp, filePath);
 }
 function asNumber(value, fallback) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -22036,6 +22234,19 @@ function fileTypeOf(name2) {
   const material = materialTypeFromFilename(name2);
   if (material === "image" || material === "video" || material === "audio") return material;
   return "doc";
+}
+function persistableItem(item) {
+  const next = {
+    id: item.id,
+    name: item.name,
+    type: item.type,
+    parentId: item.parentId,
+    relative_path: item.relative_path,
+    updatedAt: item.updatedAt
+  };
+  if (typeof item.size === "number" && Number.isFinite(item.size)) next.size = item.size;
+  if (item.lineage != null) next.lineage = item.lineage;
+  return next;
 }
 function hydrateFolder(row) {
   if (!row || typeof row !== "object" || Array.isArray(row)) return null;
@@ -22059,19 +22270,25 @@ function hydrateItem(row) {
   const rec = row;
   if (typeof rec.id !== "string" || rec.id.trim() === "") return null;
   if (typeof rec.name !== "string" || rec.name.trim() === "") return null;
-  if (typeof rec.real_path !== "string" || rec.real_path.trim() === "") return null;
+  const relative2 = typeof rec.relative_path === "string" ? rec.relative_path.trim() : "";
+  const legacy = typeof rec.real_path === "string" ? rec.real_path.trim() : "";
+  if (!relative2 && !legacy) return null;
   const type = isProjectAssetFileType(rec.type) ? rec.type : fileTypeOf(rec.name);
-  return {
+  const item = {
     id: rec.id,
     name: rec.name.trim(),
     type,
     parentId: normalizeParentId(rec.parentId),
-    real_path: rec.real_path,
+    relative_path: relative2,
     updatedAt: asNumber(rec.updatedAt, 0)
   };
+  if (typeof rec.size === "number" && Number.isFinite(rec.size)) item.size = rec.size;
+  if (rec.lineage != null) item.lineage = rec.lineage;
+  if (!relative2 && legacy) item.real_path = legacy;
+  return item;
 }
 function readAssetsFile(filePath) {
-  if (!existsSync10(filePath)) return emptyProjectAssetsDocument();
+  if (!existsSync11(filePath)) return emptyProjectAssetsDocument();
   let raw;
   try {
     raw = readFileSync6(filePath, "utf8");
@@ -22097,27 +22314,6 @@ function readAssetsFile(filePath) {
     items
   };
 }
-function assertWorkspaceExists(workspacesDir, id2) {
-  if (!isWorkspaceId2(id2)) {
-    throw new WorkflowStoreError("invalid-id", `invalid workspace id ${id2}`);
-  }
-  const canvas = join14(workspacesDir, id2, "canvas.json");
-  if (!existsSync10(canvas)) {
-    throw new WorkflowStoreError("workspace-not-found", `workspace ${id2} not found`);
-  }
-}
-function assertNoBlobOrRelative(path3, field) {
-  const code = forbiddenPathCode(path3);
-  if (code === "blob-url-forbidden") {
-    throw new WorkflowStoreError("blob-url-forbidden", `${field} must not be a blob: URL`);
-  }
-  if (code === "invalid-path") {
-    throw new WorkflowStoreError("invalid-path", `${field} must be an absolute path without NUL`);
-  }
-  if (!isAbsolute3(path3) || !looksAbsolutePath(path3)) {
-    throw new WorkflowStoreError("invalid-path", `${field} must be an absolute path`);
-  }
-}
 function parentExists(doc, parentId) {
   if (parentId === null) return true;
   return doc.folders.some((folder) => folder.id === parentId);
@@ -22126,6 +22322,18 @@ function siblingFolderConflict(folders, parentId, name2, exceptId) {
   return folders.some(
     (folder) => folder.parentId === parentId && folder.name === name2 && folder.id !== exceptId
   );
+}
+function assertRelativeLedgerPath(path3, field) {
+  const code = forbiddenRelativePathCode(path3);
+  if (code === "blob-url-forbidden") {
+    throw new WorkflowStoreError("blob-url-forbidden", `${field} must not be a blob: URL`);
+  }
+  if (code === "path-denied") {
+    throw new WorkflowStoreError("path-denied", `${field} must be a project-relative POSIX path`);
+  }
+  if (code === "invalid-path") {
+    throw new WorkflowStoreError("invalid-path", `${field} must be a project-relative POSIX path`);
+  }
 }
 function assertWritableDocument(next) {
   const folderIds = /* @__PURE__ */ new Set();
@@ -22139,7 +22347,8 @@ function assertWritableDocument(next) {
     }
     folderIds.add(folder.id);
     if (folder.real_path) {
-      assertNoBlobOrRelative(folder.real_path, "folder.real_path");
+      const code = forbiddenSourcePathCode(folder.real_path);
+      if (code) throw new WorkflowStoreError(code, `folder.real_path is invalid`);
     }
   }
   for (const folder of next.folders) {
@@ -22169,31 +22378,38 @@ function assertWritableDocument(next) {
     if (!isProjectAssetFileType(item.type)) {
       throw new WorkflowStoreError("invalid-path", `unknown item type ${String(item.type)}`);
     }
-    assertNoBlobOrRelative(item.real_path, "item.real_path");
     if (item.parentId && !folderIds.has(item.parentId)) {
       throw new WorkflowStoreError("invalid-id", `item parent ${item.parentId} does not exist`);
     }
-    if (existsSync10(item.real_path)) {
-      let st;
-      try {
-        st = statSync4(item.real_path);
-      } catch {
-        st = null;
-      }
-      if (st?.isDirectory()) {
-        throw new WorkflowStoreError("not-a-file", "path is not a regular file");
-      }
+    const relative2 = typeof item.relative_path === "string" ? item.relative_path.trim() : "";
+    if (relative2) {
+      assertRelativeLedgerPath(relative2, "item.relative_path");
+      continue;
     }
+    if (item.real_path) {
+      const code = forbiddenSourcePathCode(item.real_path);
+      if (code === "blob-url-forbidden") {
+        throw new WorkflowStoreError(code, "item.real_path is invalid");
+      }
+      if (code) throw new WorkflowStoreError(code, "item.real_path is invalid");
+      continue;
+    }
+    throw new WorkflowStoreError("invalid-path", "item.relative_path is required");
   }
 }
 function persist(filePath, current, next) {
-  const document2 = {
+  assertWritableDocument({
     schemaVersion: PROJECT_ASSETS_SCHEMA_VERSION,
     rev: current.rev + 1,
     folders: next.folders,
     items: next.items
+  });
+  const document2 = {
+    schemaVersion: PROJECT_ASSETS_SCHEMA_VERSION,
+    rev: current.rev + 1,
+    folders: next.folders,
+    items: next.items.map(persistableItem).filter((item) => item.relative_path.trim() !== "")
   };
-  assertWritableDocument(document2);
   atomicWriteJson4(filePath, document2);
   return document2;
 }
@@ -22207,48 +22423,73 @@ function assertExpectedRev(current, expectedRev) {
     );
   }
 }
-function indexOnePath(rawPath, parentId, now2) {
-  assertNoBlobOrRelative(rawPath, "path");
-  let stat;
-  try {
-    stat = statSync4(rawPath);
-  } catch {
-    throw new WorkflowStoreError("not-found", `path not found: ${rawPath}`);
+function createProjectAssetsStore(opts) {
+  const { workspacesDir, resolveProjectRoot } = opts;
+  function requireWorkspaceId(id2) {
+    if (!isWorkspaceId2(id2)) {
+      throw new WorkflowStoreError("invalid-id", `invalid workspace id ${id2}`);
+    }
+    return id2;
   }
-  if (stat.isDirectory()) {
-    return {
-      kind: "directory",
-      folder: {
-        id: newFolderId(),
-        name: basename2(rawPath.replace(/[/\\]+$/, "")) || rawPath,
-        parentId,
-        real_path: rawPath,
-        updatedAt: now2
+  function requireBoundProject(id2) {
+    const workspaceId = requireWorkspaceId(id2);
+    const canvas = join15(workspacesDir, workspaceId, "canvas.json");
+    const bound = resolveProjectRoot(workspaceId);
+    if (!bound) {
+      if (!existsSync11(canvas)) {
+        throw new WorkflowStoreError("workspace-not-found", `workspace ${workspaceId} not found`);
       }
+      throw new WorkflowStoreError("project-required", `workspace ${workspaceId} is not bound to a local project`);
+    }
+    if (!existsSync11(canvas)) {
+      throw new WorkflowStoreError("workspace-not-found", `workspace ${workspaceId} not found`);
+    }
+    const paths = resolveProjectPaths(bound.path);
+    return { projectRoot: paths.projectRoot, assetsFile: paths.assetsFile };
+  }
+  function load(id2) {
+    const bound = requireBoundProject(id2);
+    return {
+      current: readAssetsFile(bound.assetsFile),
+      filePath: bound.assetsFile,
+      projectRoot: bound.projectRoot
     };
   }
-  if (!stat.isFile()) {
-    throw new WorkflowStoreError("not-a-file", "path is not a regular file");
-  }
-  const name2 = basename2(rawPath);
-  return {
-    kind: "file",
-    item: {
-      id: newItemId(),
-      name: name2,
-      type: fileTypeOf(name2),
-      parentId,
-      real_path: rawPath,
-      updatedAt: now2
+  async function ingest(workspaceId, payload) {
+    const { current, filePath, projectRoot } = load(workspaceId);
+    assertExpectedRev(current, payload.expectedRev);
+    if (!Array.isArray(payload.paths)) {
+      throw new WorkflowStoreError("invalid-json", "paths must be an array");
     }
-  };
-}
-function createProjectAssetsStore(opts) {
-  const { workspacesDir } = opts;
-  const fileOf = (id2) => join14(workspacesDir, id2, "assets.json");
-  function load(id2) {
-    assertWorkspaceExists(workspacesDir, id2);
-    return { current: readAssetsFile(fileOf(id2)), filePath: fileOf(id2) };
+    const parentId = normalizeParentId(payload.parentId);
+    if (!parentExists(current, parentId)) {
+      throw new WorkflowStoreError("invalid-id", "parent folder does not exist");
+    }
+    const now2 = Date.now();
+    const items = [...current.items];
+    const existingRel = new Set(items.map((item) => item.relative_path).filter(Boolean));
+    for (const raw of payload.paths) {
+      if (typeof raw !== "string") {
+        throw new WorkflowStoreError("invalid-path", "path must be a string");
+      }
+      const sourceCode = forbiddenSourcePathCode(raw);
+      if (sourceCode) {
+        throw new WorkflowStoreError(sourceCode, "source path is invalid");
+      }
+      const copied = await copyFileIntoImported({ projectRoot, sourceAbs: raw });
+      if (existingRel.has(copied.relativePath)) continue;
+      existingRel.add(copied.relativePath);
+      items.push({
+        id: newItemId(),
+        name: copied.name,
+        type: fileTypeOf(copied.name),
+        parentId,
+        relative_path: copied.relativePath,
+        size: copied.size,
+        updatedAt: now2
+      });
+    }
+    return persist(filePath, current, { folders: current.folders, items });
   }
   return {
     get(workspaceId) {
@@ -22293,40 +22534,27 @@ function createProjectAssetsStore(opts) {
         items: current.items
       });
     },
+    ingest,
     index(workspaceId, payload) {
-      const { current, filePath } = load(workspaceId);
-      assertExpectedRev(current, payload.expectedRev);
-      if (!Array.isArray(payload.paths)) {
-        throw new WorkflowStoreError("invalid-json", "paths must be an array");
+      return ingest(workspaceId, payload);
+    },
+    resolveProjectFile(workspaceId, rel) {
+      const { projectRoot } = load(workspaceId);
+      const abs = resolveProjectRelPath(projectRoot, rel);
+      assertProjectWriteSafe(abs, projectRoot);
+      if (!existsSync11(abs)) {
+        throw new WorkflowStoreError("not-found", `file not found: ${rel}`);
       }
-      const parentId = normalizeParentId(payload.parentId);
-      if (!parentExists(current, parentId)) {
-        throw new WorkflowStoreError("invalid-id", "parent folder does not exist");
+      let st;
+      try {
+        st = statSync5(abs);
+      } catch {
+        throw new WorkflowStoreError("not-found", `file not found: ${rel}`);
       }
-      const now2 = Date.now();
-      const folders = [...current.folders];
-      const items = [...current.items];
-      const existingPaths = new Set(items.map((item) => item.real_path));
-      for (const raw of payload.paths) {
-        if (typeof raw !== "string") {
-          throw new WorkflowStoreError("invalid-path", "path must be a string");
-        }
-        const indexed = indexOnePath(raw, parentId, now2);
-        if (indexed.kind === "directory") {
-          if (siblingFolderConflict(folders, parentId, indexed.folder.name)) {
-            throw new WorkflowStoreError(
-              "name-conflict",
-              `folder name already exists at this level: ${indexed.folder.name}`
-            );
-          }
-          folders.push(indexed.folder);
-          continue;
-        }
-        if (existingPaths.has(indexed.item.real_path)) continue;
-        existingPaths.add(indexed.item.real_path);
-        items.push(indexed.item);
+      if (!st.isFile()) {
+        throw new WorkflowStoreError("not-a-file", "path is not a regular file");
       }
-      return persist(filePath, current, { folders, items });
+      return abs;
     }
   };
 }
@@ -22396,7 +22624,7 @@ var STATUS_BY_CODE3 = {
   "workspace-not-found": 404,
   "not-found": 404,
   "not-local": 403,
-  "path-denied": 403,
+  "path-denied": 400,
   "internal": 500,
   "picker-unsupported": 501,
   "picker-failed": 500,
@@ -22407,7 +22635,9 @@ var STATUS_BY_CODE3 = {
   "blob-url-forbidden": 400,
   "name-conflict": 409,
   "name-invalid": 400,
-  "version-required": 400
+  "version-required": 400,
+  "project-required": 400,
+  "disk-space-insufficient": 413
 };
 var MIME_BY_EXT2 = {
   ".js": "application/javascript; charset=utf-8",
@@ -22426,8 +22656,8 @@ var MIME_BY_EXT2 = {
 };
 var PLUGIN_ROOT = resolvePluginRoot();
 function serveFile(res, filePath, fallbackMime, rangeHeader) {
-  const mime = mimeFromFilename(filePath) ?? MIME_BY_EXT2[extname(filePath)] ?? fallbackMime;
-  const stat = statSync5(filePath);
+  const mime = mimeFromFilename(filePath) ?? MIME_BY_EXT2[extname2(filePath)] ?? fallbackMime;
+  const stat = statSync6(filePath);
   const range = parseByteRange(rangeHeader, stat.size);
   if (range && "invalid" in range) {
     res.writeHead(416, {
@@ -22446,7 +22676,7 @@ function serveFile(res, filePath, fallbackMime, rangeHeader) {
       "Accept-Ranges": "bytes",
       "Cache-Control": "no-cache"
     });
-    const stream2 = createReadStream(filePath, { start: range.start, end: range.end });
+    const stream2 = createReadStream2(filePath, { start: range.start, end: range.end });
     stream2.on("error", () => {
       res.destroy();
     });
@@ -22459,19 +22689,21 @@ function serveFile(res, filePath, fallbackMime, rangeHeader) {
     "Accept-Ranges": "bytes",
     "Cache-Control": "no-cache"
   });
-  const stream = createReadStream(filePath);
+  const stream = createReadStream2(filePath);
   stream.on("error", () => {
     res.destroy();
   });
   stream.pipe(res);
 }
 function createWorkflowDispatcher(deps) {
-  const { store, gateway, mediaDir, executionManager, picker, templates } = deps;
-  const projectDispatcher = createProjectDispatcher();
+  const { store, gateway, mediaDir, executionManager, picker, templates, libraryRoot } = deps;
+  const projectDispatcher = createProjectDispatcher(libraryRoot ? { libraryRoot } : {});
   const staticRoutes = createStaticRoutes({ pluginRoot: PLUGIN_ROOT, gateway });
   const workspaceRoutes = createWorkspaceRoutes(store);
+  const projectStore = createProjectStore({ libraryRoot: libraryRoot ?? ensureLibraryRoot() });
   const assetsStore = createProjectAssetsStore({
-    workspacesDir: store.workspacesDir
+    workspacesDir: store.workspacesDir,
+    resolveProjectRoot: (workspaceId) => projectStore.findByCanvasWorkspaceId(workspaceId)
   });
   const projectAssetsRoutes = createProjectAssetsRoutes(assetsStore);
   const executionRoutes = createExecutionRoutes({ store, executionManager });
@@ -22527,6 +22759,12 @@ function createWorkflowDispatcher(deps) {
             message: error51.message,
             ...conflict && error51.current !== void 0 ? { current: error51.current } : {}
           }
+        };
+      }
+      if (error51 instanceof ProjectPathError) {
+        return {
+          status: STATUS_BY_CODE3[error51.code] ?? 400,
+          body: { error: error51.code, message: error51.message }
         };
       }
       return { status: 500, body: { error: "internal", message: messageOf(error51) } };
@@ -22853,7 +23091,7 @@ function createCanvasGetTableNodeTool(deps) {
 }
 
 // src/workflow/agent/agentToolShared.ts
-import { join as join15 } from "node:path";
+import { join as join16 } from "node:path";
 function objectParams(fields) {
   const properties = {};
   const required2 = [];
@@ -22915,7 +23153,7 @@ function mediaUrlToPath(url2, mediaDir) {
   const marker = "/media/";
   const index2 = url2.indexOf(marker);
   if (index2 === -1 || !url2.startsWith("/")) return null;
-  return join15(mediaDir, url2.slice(index2 + marker.length));
+  return join16(mediaDir, url2.slice(index2 + marker.length));
 }
 var MEDIA_KIND = {
   video: "video",
@@ -33066,11 +33304,11 @@ var globalCheckpointManager = new CheckpointManager();
 // src/workflow/index.ts
 function mountWorkflowHost(ctx, opts = {}) {
   const paths = opts.paths ?? resolveWorkflowPaths();
-  const templatesDir = paths.templatesDir || join16(paths.root, "templates");
-  mkdirSync10(paths.workspacesDir, { recursive: true });
-  mkdirSync10(paths.mediaDir, { recursive: true });
-  mkdirSync10(paths.executionsDir, { recursive: true });
-  mkdirSync10(templatesDir, { recursive: true });
+  const templatesDir = paths.templatesDir || join17(paths.root, "templates");
+  mkdirSync11(paths.workspacesDir, { recursive: true });
+  mkdirSync11(paths.mediaDir, { recursive: true });
+  mkdirSync11(paths.executionsDir, { recursive: true });
+  mkdirSync11(templatesDir, { recursive: true });
   const store = createWorkspaceStore({ workspacesDir: paths.workspacesDir });
   const templates = new TemplateStore({ templatesDir });
   const gateway = opts.gateway ?? assembleGateway({
@@ -33089,7 +33327,8 @@ function mountWorkflowHost(ctx, opts = {}) {
     gateway,
     mediaDir: paths.mediaDir,
     executionManager,
-    templates
+    templates,
+    ...opts.libraryRoot ? { libraryRoot: opts.libraryRoot } : {}
   });
   void executionManager.recoverAll();
   const disposers = [];
@@ -33208,8 +33447,11 @@ export {
   resolveGatewayMode,
   resolveLibraryPaths,
   resolveProjectPaths,
+  resolveProjectRelPath,
   resolveVideosDir,
   sanitizeFolderName,
+  sessionToWorkspaceId,
   toExecutionMode,
+  toProjectRelativePath,
   validateProjectTitle
 };

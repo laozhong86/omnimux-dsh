@@ -10,7 +10,7 @@
  * （symlink）双重 containment。
  */
 import { realpathSync, statSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { isAbsolute, join, resolve, sep } from 'node:path';
 
 /** 结构化错误：路径非法 / 写入越界。路由层据此映射 400/403。 */
 export class ProjectPathError extends Error {
@@ -32,6 +32,10 @@ export interface ProjectPaths {
   metaDir: string;
   /** `<projectRoot>/.omnimux/project.json` */
   projectFile: string;
+  /** `<projectRoot>/.omnimux/assets.json` */
+  assetsFile: string;
+  /** `<projectRoot>/assets/imported` */
+  importedDir: string;
   /** `<projectRoot>/说明.md` */
   readmeFile: string;
 }
@@ -44,10 +48,6 @@ export interface LibraryPaths {
 /** Lexical containment（分隔符边界，杜绝前缀误判），与 canvasRoutes.ts 同款。 */
 export function isInsideDir(target: string, root: string): boolean {
   return target === root || target.startsWith(root + sep);
-}
-
-function isAbsolute(p: string): boolean {
-  return p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p);
 }
 
 function assertExistingDirectory(abs: string, code: string, label: string): string {
@@ -92,8 +92,52 @@ export function resolveProjectPaths(projectRoot: string): ProjectPaths {
     projectRoot: normalized,
     metaDir,
     projectFile: join(metaDir, 'project.json'),
+    assetsFile: join(metaDir, 'assets.json'),
+    importedDir: join(normalized, 'assets', 'imported'),
     readmeFile: join(normalized, PROJECT_README_NAME),
   };
+}
+
+function looksAbsolutePath(p: string): boolean {
+  return p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p);
+}
+
+/**
+ * Resolve a project-relative POSIX path. Absolute / `..` / NUL → path-denied.
+ */
+export function resolveProjectRelPath(projectRoot: string, rel: string): string {
+  if (typeof rel !== 'string' || rel.trim() === '') {
+    throw new ProjectPathError('path-denied', 'relative path is required');
+  }
+  if (rel.includes('\0')) {
+    throw new ProjectPathError('path-denied', 'relative path contains NUL');
+  }
+  const posix = rel.replace(/\\/g, '/').replace(/^\/+/, '');
+  if (looksAbsolutePath(rel) || isAbsolute(rel)) {
+    throw new ProjectPathError('path-denied', 'absolute paths are not allowed as relative_path');
+  }
+  if (posix.split('/').some((segment) => segment === '..')) {
+    throw new ProjectPathError('path-denied', 'relative path escapes project root');
+  }
+  const root = resolve(projectRoot);
+  const target = resolve(join(root, posix));
+  if (!isInsideDir(target, root)) {
+    throw new ProjectPathError('path-denied', 'relative path escapes project root');
+  }
+  return target;
+}
+
+/**
+ * Convert an absolute path already inside projectRoot to a POSIX relative path.
+ */
+export function toProjectRelativePath(projectRoot: string, abs: string): string {
+  const root = resolve(projectRoot);
+  const target = resolve(abs);
+  if (!isInsideDir(target, root)) {
+    throw new ProjectPathError('path-denied', 'path is outside project root');
+  }
+  const rel = target.slice(root.length).replace(/\\/g, '/');
+  return rel.startsWith('/') ? rel.slice(1) : rel;
 }
 
 /**

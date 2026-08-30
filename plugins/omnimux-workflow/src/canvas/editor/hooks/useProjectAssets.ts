@@ -161,7 +161,7 @@ export function useProjectAssets(workspaceId: string | null | undefined): UsePro
     await hydrate(workspaceId, new AbortController().signal);
   }, [hydrate, workspaceId]);
 
-  const assets = useMemo(() => flattenProjectAssets(document), [document]);
+  const assets = useMemo(() => flattenProjectAssets(document, workspaceId), [document, workspaceId]);
 
   return {
     document,

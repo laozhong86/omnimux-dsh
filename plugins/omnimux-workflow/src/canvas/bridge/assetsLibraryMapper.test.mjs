@@ -135,19 +135,19 @@ test('树按 parentId 展平至少两层', () => {
         name: 'hero.png',
         type: 'image',
         parentId: 'fld_b',
-        real_path: '/tmp/hero.png',
+        relative_path: 'assets/imported/hero.png',
         updatedAt: 3,
       },
     ],
-  });
+  }, 'ws_preview01');
   const folderA = assets.find((row) => row.id === 'fld_a');
   const folderB = assets.find((row) => row.id === 'fld_b');
   const file = assets.find((row) => row.id === 'ast_1');
   assert.equal(folderA?.parentId ?? null, null);
   assert.equal(folderB?.parentId, 'fld_a');
   assert.equal(file?.parentId, 'fld_b');
-  assert.equal(file?.real_path, '/tmp/hero.png');
-  assert.match(file?.previewUrl || '', /\/omnimux-workflow\/api\/local-file\?path=/);
+  assert.equal(file?.real_path, 'assets/imported/hero.png');
+  assert.match(file?.previewUrl || '', /\/omnimux-workflow\/api\/workspaces\/ws_preview01\/file\?rel=/);
 });
 
 test('createLibraryAsset 可携带 files[].real_path', async () => {

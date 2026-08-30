@@ -1,6 +1,7 @@
 /**
- * Local imported media: path index (realPath) → preview URL.
- * Import never copies the source file; blob: URLs must not persist.
+ * Local imported media helpers: preview URL builders + type probes.
+ * Project ingest copies into `<ProjectRoot>/assets/imported/`; `local-file`
+ * remains a probe/source stream. blob: URLs must not persist.
  */
 import { WORKFLOW_ROUTE_PREFIX } from './api.ts';
 import type { MaterialType } from './canvasTypes.ts';
@@ -72,6 +73,10 @@ export function isLocalFileUrl(url: unknown): boolean {
 
 export function localFileMediaUrl(realPath: string): string {
   return `${WORKFLOW_ROUTE_PREFIX}/api/local-file?path=${encodeURIComponent(realPath)}`;
+}
+
+export function projectFileMediaUrl(workspaceId: string, relativePath: string): string {
+  return `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${encodeURIComponent(workspaceId)}/file?rel=${encodeURIComponent(relativePath)}`;
 }
 
 export function localFilePathFromUrl(url: unknown): string | null {
