@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 # sync-agent-presets.sh — 把 OmniMux 出厂三项 Agent Preset 物化进运行时
-# 默认同步到开发版 (~/.omnimux-dev)，支持 --prod / --dsh / --all 参数扩展
+#
+# 默认（无参数 / yarn sync:presets / sync-to-app 不带 target）：
+#   只改 OmniMux Dev.app + ~/.omnimux-dev
+# 可选（显式加参，默认不是 --all）：
+#   --prod     → 再改 OmniMux.app + ~/.omnimux
+#   --dsh      → 只碰 ~/.dsh/profiles/omnimux*（不写 DSH Desktop.app，不清用户预设）
+#   --all      → Dev + Prod + ~/.dsh/omnimux*（仍不写 DSH Desktop.app，仍不清用户预设）
+#
+# 硬边界：
+# - 永不写入 /Applications/DSH Desktop.app
+# - 永不改写 ~/.dsh/.agent-presets（用户花名册：dsh-plugin-team / software-company 等）
+# - 写入 ~/.dsh/profiles 时只碰 omnimux*，跳过 desktop / web
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/presets"
@@ -97,6 +108,7 @@ else
         HAS_PROD=1
         ;;
       dsh|dsh-desktop)
+        # 只允许碰 ~/.dsh 下的 omnimux* profile；绝不写 DSH Desktop.app / 用户预设根
         add_target_home "$HOME/.dsh"
         HAS_DSH=1
         ;;
@@ -108,6 +120,28 @@ else
   done
 fi
 
+is_omnimux_profile() {
+  local home="$1"
+  local base
+  base=$(basename "$home")
+  case "$base" in
+    omnimux|omnimux-*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# ~/.dsh 是共享 Host 家：其中 desktop/web 是 DSH 开发工具 profile，禁止物化社媒三项覆盖。
+should_materialize_profile() {
+  local profile_home="$1"
+  local home_dir
+  home_dir=$(dirname "$(dirname "$profile_home")")
+  if [ "$home_dir" = "$HOME/.dsh" ]; then
+    is_omnimux_profile "$profile_home"
+    return $?
+  fi
+  return 0
+}
+
 materialize_into() {
   local dest="$1"
   if [ ! -d "$dest" ]; then
@@ -115,7 +149,6 @@ materialize_into() {
     return 0
   fi
   echo "==> 物化 Agent Presets → $dest"
-  # remove non-keep children
   for child in "$dest"/*; do
     [ -e "$child" ] || continue
     base=$(basename "$child")
@@ -141,17 +174,21 @@ shopt -s nullglob
 for home_dir in "${TARGET_HOMES[@]}"; do
   for profile_home in "$home_dir/profiles"/*; do
     [ -d "$profile_home" ] || continue
+    if ! should_materialize_profile "$profile_home"; then
+      echo "· skip non-omnimux profile under ~/.dsh: $profile_home"
+      continue
+    fi
     dest="$profile_home/node_modules/@deepseek-ai/dsh/config/agent-presets"
     materialize_into "$dest"
   done
 done
 
-# 2) App unpacked preset folders + asar headers
+# 2) OmniMux App unpacked preset folders + asar headers — never DSH Desktop.app
 patch_asar_preset_header() {
   local asar="$1"
   local unpacked="$2"
   [ -f "$asar" ] && [ -d "$unpacked" ] || return 0
-  node "$ROOT/scripts/patch-asar-agent-presets.mjs" "$asar" "$unpacked" || echo "· asar header patch failed for $asar"
+  ELECTRON_NO_ASAR=1 node "$ROOT/scripts/patch-asar-agent-presets.mjs" "$asar" "$unpacked" || echo "· asar header patch failed for $asar"
 }
 
 if [ "$HAS_DEV" -eq 1 ]; then
@@ -165,22 +202,20 @@ if [ "$HAS_PROD" -eq 1 ]; then
 fi
 
 if [ "$HAS_DSH" -eq 1 ]; then
-  materialize_into "/Applications/DSH Desktop.app/Contents/Resources/app.asar.unpacked/node_modules/@deepseek-ai/dsh/config/agent-presets"
-  materialize_into "$HOME/Desktop/Project/omnimux-desktop-fork/dsh-plugin-desktop/node_modules/@deepseek-ai/dsh/config/agent-presets"
-  patch_asar_preset_header "/Applications/DSH Desktop.app/Contents/Resources/app.asar" "/Applications/DSH Desktop.app/Contents/Resources/app.asar.unpacked/node_modules/@deepseek-ai/dsh/config/agent-presets"
+  echo "· --dsh：只物化 ~/.dsh/profiles/omnimux*；跳过 DSH Desktop.app 与 ~/.dsh/.agent-presets"
 fi
 
-# 3) ensure profile patch disables user-root merge
+# 3) OmniMux profile patch only — never rewrite desktop/web includeUserRoot
 patch_profile() {
   local patch="$1"
   [ -f "$patch" ] || return 0
   if grep -q "id: agent-presets" "$patch" 2>/dev/null; then
-    echo "· $patch 已含 agent-presets，跳过自动改写（请人工确认 includeUserRoot: false）"
+    echo "· $patch 已含 agent-presets，跳过自动改写"
     return 0
   fi
   if grep -qE '^\[\]\s*$' "$patch"; then
     cat > "$patch" <<'YAML'
-# Product defaults for this dsh profile. Edit freely.
+# Product defaults for the OmniMux desktop profile. Edit freely.
 # Applied after every bundle layer. Do not put API keys here.
 
 # OmniMux 出厂会话预设：只保留标准模式 + 两个社媒专家团
@@ -205,37 +240,14 @@ YAML
 
 for home_dir in "${TARGET_HOMES[@]}"; do
   for patch in "$home_dir/profiles"/*/cordis.patch.yml; do
+    [ -f "$patch" ] || continue
+    profile_home=$(dirname "$patch")
+    if ! should_materialize_profile "$profile_home"; then
+      echo "· skip patch for non-omnimux profile: $patch"
+      continue
+    fi
     patch_profile "$patch"
   done
 done
 
-# 4) retire obsolete user presets if dsh target or all
-if [ "$HAS_DSH" -eq 1 ]; then
-  USER_ROOT="$HOME/.dsh/.agent-presets"
-  if [ -d "$USER_ROOT" ]; then
-    echo "==> 清理旧用户预设（保留目录，移除非出厂项）"
-    for child in "$USER_ROOT"/*; do
-      [ -e "$child" ] || continue
-      base=$(basename "$child")
-      case "$base" in
-        standard|social-content-team|social-engagement-team) ;;
-        .DS_Store) rm -f "$child" || true ;;
-        *)
-          archive="$USER_ROOT/.retired"
-          mkdir -p "$archive"
-          rm -rf "$archive/$base"
-          mv "$child" "$archive/$base"
-          echo "  - retired $base → .retired/"
-          ;;
-      esac
-    done
-    for k in "${KEEP[@]}"; do
-      rm -rf "$USER_ROOT/$k"
-      mkdir -p "$USER_ROOT/$k"
-      cp -R "$SRC/$k/." "$USER_ROOT/$k/"
-      echo "  + user-root synced $k"
-    done
-  fi
-fi
-
-echo "✅ Agent Presets 物化完成。请重启对应 Host / Desktop 后刷新会话模式下拉。"
+echo "✅ OmniMux Agent Presets 物化完成。请重启对应 OmniMux Host（不要指望本脚本改 DSH Desktop 用户预设）。"
