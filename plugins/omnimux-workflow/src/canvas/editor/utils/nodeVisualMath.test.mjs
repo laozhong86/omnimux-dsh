@@ -58,6 +58,9 @@ test('panelVisible 语义（W2）：选中 且 未收起 且 非执行中', () =
   assert.equal(isConfigPanelVisible(true, false, 'pending'), true);
   // 生成节点显式 kind 不改变既有语义
   assert.equal(isConfigPanelVisible(true, false, undefined, 'generate'), true);
+  // 多选态（isMultiSelected=true）→ 强制不展开配置底栏
+  assert.equal(isConfigPanelVisible(true, false, undefined, 'generate', true), false);
+  assert.equal(isConfigPanelVisible(true, false, undefined, 'generate', false), true);
 });
 
 test('panelVisible：导入节点永不展开配置底栏', () => {

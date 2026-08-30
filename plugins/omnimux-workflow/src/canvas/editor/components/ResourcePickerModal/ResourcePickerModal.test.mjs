@@ -66,7 +66,7 @@ test('MaterialNode 挂载 ResourcePickerModal 与 useResourcePicker', () => {
 });
 
 test('导入节点选中不展开 ConfigPanel，替换走卡片按钮', () => {
-  assert.match(nodeSrc, /isConfigPanelVisible\(selected, panelDismissed, executionStatus, kind\)/);
+  assert.match(nodeSrc, /isConfigPanelVisible\(\s*selected,\s*panelDismissed,\s*executionStatus,\s*kind,\s*isMultiSelected/);
   assert.match(nodeSrc, /showReplaceButton = kind === 'import'/);
 });
 

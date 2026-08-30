@@ -21,11 +21,13 @@ import CanvasNodeHandle, {
 } from './CanvasNodeHandle';
 import type { CanvasNodeActionMenuOption } from './CanvasNodeActionMenu';
 import { inverseScaleForZoom } from '../utils/nodeVisualMath';
+import { useIsMultiSelected } from '../../store/canvasStore';
 
 export interface CanvasNodeShellSlotMeta {
   inverseScale: number;
   hovered: boolean;
   selected: boolean;
+  isMultiSelected?: boolean;
 }
 
 export interface CanvasNodeShellProps {
@@ -126,6 +128,7 @@ export const CanvasNodeShell: React.FC<CanvasNodeShellProps> = ({
 }) => {
   const [hovered, setHovered] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const isMultiSelected = useIsMultiSelected();
 
   const { zoom } = useViewport();
   const inverseScale = useMemo(() => inverseScaleForZoom(zoom), [zoom]);
@@ -134,9 +137,10 @@ export const CanvasNodeShell: React.FC<CanvasNodeShellProps> = ({
     () => ({
       inverseScale,
       hovered,
-      selected,
+      selected: selected && !isMultiSelected,
+      isMultiSelected,
     }),
-    [inverseScale, hovered, selected],
+    [inverseScale, hovered, selected, isMultiSelected],
   );
 
   const handleMouseEnter = useCallback(
@@ -193,17 +197,21 @@ export const CanvasNodeShell: React.FC<CanvasNodeShellProps> = ({
     [onDrop, onFileDrop, onFilesDrop],
   );
 
-  const floatingPillContent = typeof renderFloatingPill === 'function'
-    ? renderFloatingPill(slotMeta)
-    : renderFloatingPill;
+  const floatingPillContent = !isMultiSelected
+    ? (typeof renderFloatingPill === 'function'
+        ? renderFloatingPill(slotMeta)
+        : renderFloatingPill)
+    : null;
 
   const headerContent = typeof renderHeader === 'function'
     ? renderHeader(slotMeta)
     : renderHeader;
 
-  const configPanelContent = typeof renderConfigPanel === 'function'
-    ? renderConfigPanel(slotMeta)
-    : renderConfigPanel;
+  const configPanelContent = !isMultiSelected
+    ? (typeof renderConfigPanel === 'function'
+        ? renderConfigPanel(slotMeta)
+        : renderConfigPanel)
+    : null;
 
   return (
     <div

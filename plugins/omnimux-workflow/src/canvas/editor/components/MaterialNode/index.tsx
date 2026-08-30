@@ -33,7 +33,7 @@ import { isConfigPanelVisible, mapNodeToGenerationStatus } from '../../utils/nod
 import { getOutputOptionSpecs, parseOutputOptionKey } from '../../utils/connectionMenuOptions';
 import { createMaterialNode } from '../../utils/nodeFactory';
 import { useExecutionStore } from '../../../store/executionStore';
-import { useCanvasStore } from '../../../store/canvasStore';
+import { useCanvasStore, useIsMultiSelected } from '../../../store/canvasStore';
 import { useT } from '../../../i18n';
 import { toast } from '../../../ui';
 import type { CapabilityCatalog, NodeExecutionApiStatus } from '../../../../shared/api';
@@ -68,6 +68,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const { setNodes } = useReactFlow();
 
   const execBusy = useExecutionStore((state) => state.status === 'pending' || state.status === 'running');
+  const isMultiSelected = useIsMultiSelected();
 
   const nodeWidth = nodeData.nodeWidth ?? getDefaultNodeWidth(materialType);
   const sizeCategory = getNodeSizeCategory(materialType);
@@ -295,7 +296,13 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     }
   }, [selected]);
 
-  const panelVisible = isConfigPanelVisible(selected, panelDismissed, executionStatus, kind);
+  const panelVisible = isConfigPanelVisible(
+    selected,
+    panelDismissed,
+    executionStatus,
+    kind,
+    isMultiSelected,
+  );
   const isOffline = status === 'offline' || nodeData.isMissing === true;
   const previewUrl = resolveMediaPreviewUrl(materialType, mediaAssets, mediaUrl);
   const generationStatus = isOffline
@@ -306,6 +313,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'square';
 
   const showFloatingPill =
+    !isMultiSelected &&
     (isHovered || selected) &&
     (materialType === 'text' || (kind === 'import' && !previewUrl && !isOffline));
   const showReplaceButton = kind === 'import' && Boolean(previewUrl) && !isOffline;
