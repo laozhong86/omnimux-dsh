@@ -1,11 +1,12 @@
 #!/bin/bash
-# sync-stable.sh — 【内部实现】把已构建好的插件目录物化进生产 profile（omnimux）。
+# sync-stable.sh — 【内部实现】把已构建好的插件目录物化进目标 profile。
 #
 # ⚠ 日常请勿直调本脚本。统一入口：
 #   cd ~/Desktop/Project/omnimux-desktop-fork
-#   yarn omnimux:sync [插件...]          # 会先 build 再调本脚本
-#   yarn omnimux:restart                 # 需要时再重启 App
+#   yarn omnimux:sync [插件...] [--prod|--dsh|--all]   # 会先 build 再调本脚本
+#   yarn omnimux:restart dev                          # 需要时再重启 App
 #
+# 默认行为：仅物化到 ~/.omnimux-dev；可通过 --prod / --dsh / --all 参数扩展到其他环境。
 # 本脚本只做 rsync 物化 + file: 依赖声明 + dsh.profile.bundles 幂等入名单 + pnpm install，**不 build**。
 # 直调容易把陈旧 lib/client.js 推进生产（已踩过坑）。禁止手动 rsync/cp 进 profile。
 #
@@ -13,23 +14,112 @@
 set -euo pipefail
 
 if [ "${OMNIMUX_SYNC_VIA:-}" != "sync-to-app" ] && [ "${OMNIMUX_SYNC_VIA:-}" != "internal" ]; then
-  echo "⚠ sync-stable.sh 是内部实现。日常请用：yarn omnimux:sync [插件...]" >&2
+  echo "⚠ sync-stable.sh 是内部实现。日常请用：yarn omnimux:sync [插件...] [--prod|--dsh|--all]" >&2
   echo "  （若你确认已手动 build 且只要物化，可设 OMNIMUX_SYNC_VIA=internal 消掉本提示）" >&2
 fi
 
 PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh/plugins}"
 
-# 支持多 Home 目录同步：扫描并同步所有存在的 profile (包括 ~/.dsh, ~/.omnimux-dev, ~/.omnimux, 及显式 DSH_HOME)
-PROFILES=()
-HOMES=("$HOME/.dsh" "$HOME/.omnimux-dev" "$HOME/.omnimux")
-if [ -n "${DSH_HOME:-}" ]; then
-  HOMES+=("$DSH_HOME")
+TARGET_SELECTION=()
+PLUGINS=()
+
+if [ -n "${OMNIMUX_SYNC_TARGETS:-}" ]; then
+  IFS=',' read -ra ENV_TARGETS <<< "$OMNIMUX_SYNC_TARGETS"
+  for t in "${ENV_TARGETS[@]}"; do
+    t=$(echo "$t" | tr '[:upper:]' '[:lower:]' | xargs)
+    [ -n "$t" ] && TARGET_SELECTION+=("$t")
+  done
 fi
 
-for home_candidate in "${HOMES[@]}"; do
+parse_target_value() {
+  local val="$1"
+  IFS=',' read -ra PARTS <<< "$val"
+  for p in "${PARTS[@]}"; do
+    p=$(echo "$p" | tr '[:upper:]' '[:lower:]' | xargs)
+    [ -n "$p" ] && TARGET_SELECTION+=("$p")
+  done
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dev|--omnimux-dev)
+      TARGET_SELECTION+=("dev")
+      shift ;;
+    --prod|--omnimux)
+      TARGET_SELECTION+=("prod")
+      shift ;;
+    --dsh)
+      TARGET_SELECTION+=("dsh")
+      shift ;;
+    --all|--broadcast|--all-profiles)
+      TARGET_SELECTION+=("all")
+      shift ;;
+    --target=*|--profile=*)
+      val="${1#*=}"
+      parse_target_value "$val"
+      shift ;;
+    --target|--profile)
+      if [ $# -ge 2 ]; then
+        parse_target_value "$2"
+        shift 2
+      else
+        shift
+      fi ;;
+    --skip-build)
+      shift ;;
+    --*)
+      # 忽略其他不认识的参数
+      shift ;;
+    *)
+      PLUGINS+=("$1")
+      shift ;;
+  esac
+done
+
+TARGET_HOMES=()
+add_target_home() {
+  local h="$1"
+  if [ "${#TARGET_HOMES[@]}" -gt 0 ]; then
+    for existing in "${TARGET_HOMES[@]}"; do
+      [ "$existing" = "$h" ] && return 0
+    done
+  fi
+  TARGET_HOMES+=("$h")
+}
+
+if [ ${#TARGET_SELECTION[@]} -eq 0 ]; then
+  add_target_home "$HOME/.omnimux-dev"
+else
+  for item in "${TARGET_SELECTION[@]}"; do
+    case "$item" in
+      all|broadcast)
+        add_target_home "$HOME/.omnimux-dev"
+        add_target_home "$HOME/.omnimux"
+        add_target_home "$HOME/.dsh"
+        ;;
+      dev|omnimux-dev)
+        add_target_home "$HOME/.omnimux-dev"
+        ;;
+      prod|omnimux|omnimux-prod)
+        add_target_home "$HOME/.omnimux"
+        ;;
+      dsh|dsh-desktop)
+        add_target_home "$HOME/.dsh"
+        ;;
+      /*|~*)
+        eval expanded_path="$item"
+        add_target_home "$expanded_path"
+        ;;
+      *)
+        ;;
+    esac
+  done
+fi
+
+PROFILES=()
+for home_candidate in "${TARGET_HOMES[@]}"; do
   prof_dir="$home_candidate/profiles/omnimux"
   if [ -d "$prof_dir" ] || [ -d "$home_candidate" ]; then
-    # 避免重复加入
     already=0
     if [ "${#PROFILES[@]}" -gt 0 ]; then
       for p in "${PROFILES[@]}"; do
@@ -48,17 +138,17 @@ done
 # 产品树垂直（含产品库 / 插件市场 / 剪辑）+ omnimux-video + omnimux-analytics（埋点）+ omnimux-publish（发布中心）
 ALL_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics omnimux-publish)
 
-if [ $# -gt 0 ]; then
-  PLUGINS=("$@")
+if [ ${#PLUGINS[@]} -gt 0 ]; then
+  TARGET_PLUGINS=("${PLUGINS[@]}")
 else
-  PLUGINS=("${ALL_PLUGINS[@]}")
+  TARGET_PLUGINS=("${ALL_PLUGINS[@]}")
 fi
 
 for PROFILE in "${PROFILES[@]}"; do
   echo "== 同步目标 Profile: $PROFILE =="
   mkdir -p "$PROFILE/node_modules"
 
-  for name in "${PLUGINS[@]}"; do
+  for name in "${TARGET_PLUGINS[@]}"; do
     src="$PLUGINS_ROOT/$name"
     dst="$PROFILE/node_modules/$name"
     if [ ! -f "$src/package.json" ]; then
@@ -76,7 +166,7 @@ for PROFILE in "${PROFILES[@]}"; do
   done
 
   # 依赖声明统一回 file:（物化副本形态），声明了 dsh.bundle 的插件幂等写入加载名单
-  node - "$PROFILE" "${PLUGINS[@]}" <<'EOF'
+  node - "$PROFILE" "${TARGET_PLUGINS[@]}" <<'EOF'
 const fs = require('fs')
 const path = require('path')
 const [profile, ...plugins] = process.argv.slice(2)
@@ -117,50 +207,40 @@ for (const legacy of LEGACY_PRUNE_NAMES) {
   }
   const legacyDir = path.join(profile, 'node_modules', legacy)
   if (fs.existsSync(legacyDir)) {
-    try { fs.rmSync(legacyDir, { recursive: true, force: true }) } catch {}
+    fs.rmSync(legacyDir, { recursive: true, force: true })
+    console.log(`  - 已清理历史残留包目录: ${legacy}`)
   }
 }
 
 for (const name of plugins) {
-  const spec = `file:./node_modules/${name}`
-  if (manifest.dependencies[name] !== spec) {
-    manifest.dependencies[name] = spec
+  const targetSpec = `file:node_modules/${name}`
+  if (manifest.dependencies[name] !== targetSpec) {
+    manifest.dependencies[name] = targetSpec
     depChanged = true
   }
-}
-
-// 先处理 omnimux-assets，保证后续产品垂直能插在它后面；已存在则不动。
-// 插入不碰 @deepseek-ai/* 前缀段：只 splice 在 assets 之后，或 append。
-function ensureInBundles(name, insertAt) {
-  if (!declaresBundle(name) || bundles.includes(name)) return insertAt
-  if (insertAt >= 0) {
-    bundles.splice(insertAt, 0, name)
-    bundleChanged = true
-    return insertAt + 1
+  if (declaresBundle(name)) {
+    if (!bundles.includes(name)) {
+      bundles.push(name)
+      bundleChanged = true
+    }
+  } else {
+    const idx = bundles.indexOf(name)
+    if (idx >= 0) {
+      bundles.splice(idx, 1)
+      bundleChanged = true
+    }
   }
-  bundles.push(name)
-  bundleChanged = true
-  return bundles.length
 }
 
-const names = plugins.filter((n, i) => plugins.indexOf(n) === i)
-if (names.includes('omnimux-assets')) ensureInBundles('omnimux-assets', -1)
-let cursor = bundles.indexOf('omnimux-assets')
-cursor = cursor >= 0 ? cursor + 1 : -1
-for (const name of names) {
-  if (name === 'omnimux-assets') continue
-  cursor = ensureInBundles(name, cursor)
+if (depChanged || bundleChanged) {
+  fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n', 'utf8')
+  console.log(`  ✓ 更新 ${file} (dependencies/bundles)`)
 }
-
-if (depChanged || bundleChanged) fs.writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`)
-if (depChanged) console.log('✓ package.json 依赖声明已切回 file: 物化形态')
-else console.log('· 依赖声明已是物化形态')
-if (bundleChanged) console.log('✓ dsh.profile.bundles 已幂等补齐本次 dsh.bundle 插件')
-else console.log('· dsh.profile.bundles 无需变更')
 EOF
 
-  if [ -f "$PROFILE/package.json" ]; then
-    (cd "$PROFILE" && pnpm install --ignore-scripts --silent)
-    echo "✓ $PROFILE pnpm install 完成。"
-  fi
+  # 写入后刷新 profile 下的 node_modules 符号拓扑
+  echo "  → 刷新 profile 依赖 (corepack pnpm install)..."
+  (cd "$PROFILE" && corepack pnpm install >/dev/null 2>&1) || true
 done
+
+echo "✅ 插件物化完成。"

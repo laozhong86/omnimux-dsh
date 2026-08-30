@@ -48,7 +48,7 @@ subsystem: "omnimux-assets"
 1. **生产 profile（omnimux）MUST NOT link 工作区**；其插件一律物化副本。
 2. **dev/staging profile MUST link 源码树**；MUST NOT 出现在生产 App 的 profile 里。
 3. **一个 dev profile 里 link 的在研插件 ≤ 1 个**，其余一律物化稳定副本——这是多插件并行开发防干扰的核心规则。
-4. **同步生产副本只走 `yarn omnimux:sync` / `scripts/sync-to-app.sh`（内部再调 `sync-stable.sh`）**；MUST NOT 手动 rsync/cp 进 profile（多源目录铺平事故已发生一次）。`sync` 会先 build 再物化，避免同步到陈旧 `lib/client.js`。
+4. **同步 profile 副本只走 `yarn omnimux:sync` / `scripts/sync-to-app.sh`（内部再调 `sync-stable.sh`）**；默认同步至开发版 `~/.omnimux-dev`，可用 `--prod` / `--dsh` / `--all` 参数指定其他目标；MUST NOT 手动 rsync/cp 进 profile（多源目录铺平事故已发生一次）。`sync` 会先 build 再物化，避免同步到陈旧 `lib/client.js`。
 5. **dev 环境用完即弃**：`yarn omnimux:dev rm <name>`；MUST NOT 把 dev profile 当长期环境养。
 6. **L1 验证优先**：能写进 `node --test` 的验证 MUST NOT 依赖开 App 人工点（官方 testing.zh.md 原则）。
 7. **`omnimux:sync` 纯静态物化，绝不重启任何进程**；前端 Client 改动通过客户端/浏览器页面刷新（Cmd+R）直接生效，Host 侧改动在应用下次自然启动或人类主动重启后生效。Agent 严禁执行任何 `restart`。

@@ -1,23 +1,29 @@
 #!/bin/bash
-# sync-to-app.sh — L2/L3 日常迭代：先构建产物，再物化进生产 profile。
+# sync-to-app.sh — L2/L3 日常迭代：先构建产物，再物化进目标 profile。
 #
-# 默认不重启 App（避免打断正在用的会话）。同步完成后打印重启命令。
+# 默认行为：仅物化到开发版 ~/.omnimux-dev（安全隔离，避免污染生产/官方环境）。
+# 可选参数：可通过 --prod / --dsh / --all 或 --target 指定同步到其他环境。
 # 规范：docs/contracts/dev-pipeline.md
 #
 # 用法：
-#   ./scripts/sync-to-app.sh                     # 全部默认同步清单插件
-#   ./scripts/sync-to-app.sh omnimux-assets       # 只同步一个
-#   ./scripts/sync-to-app.sh omnimux-assets omnimux-workflow
+#   ./scripts/sync-to-app.sh                     # 默认：构建并同步全部清单插件到 ~/.omnimux-dev
+#   ./scripts/sync-to-app.sh omnimux-assets       # 默认：只同步一个插件到 ~/.omnimux-dev
+#   ./scripts/sync-to-app.sh --prod               # 同步到正式版 ~/.omnimux
+#   ./scripts/sync-to-app.sh --dsh                # 同步到官方底座 ~/.dsh
+#   ./scripts/sync-to-app.sh --all                # 广播同步到全部 Profile (~/.omnimux-dev, ~/.omnimux, ~/.dsh)
+#   ./scripts/sync-to-app.sh --target=dev,prod    # 自定义多目标同步
 #   ./scripts/sync-to-app.sh --skip-build omnimux-assets
 #
 # 主入口（推荐）：在 omnimux-desktop-fork 里跑
-#   yarn omnimux:sync [插件...]
+#   yarn omnimux:sync [插件...] [--prod|--dsh|--all]
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$ROOT/plugins}"
 SKIP_BUILD=0
 PLUGINS=()
+TARGET_SELECTION=()
+TARGET_FLAGS=()
 
 assert_origin_main_aligned() {
   if [ "${OMNIMUX_ALLOW_UNMERGED_MATERIALIZE:-0}" = "1" ]; then
@@ -35,7 +41,7 @@ assert_origin_main_aligned() {
   local branch ahead dirty
   branch=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
   if [ "$branch" != "main" ]; then
-    echo "❌ sync-to-app: 当前分支是 [$branch]，生产物化只允许在已对齐的 main 上执行。" >&2
+    echo "❌ sync-to-app: 当前分支是 [$branch]，物化只允许在已对齐的 main 上执行。" >&2
     echo "   请等待 PR MERGED 后在主仓 git pull origin main，或显式设置 OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1。" >&2
     exit 1
   fi
@@ -55,19 +61,148 @@ assert_origin_main_aligned() {
   echo "✓ HEAD 已对齐 origin/main，允许物化"
 }
 
+usage() {
+  sed -n '2,16p' "$0"
+  exit 1
+}
+
+for arg in "${@:-}"; do
+  if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
+    usage
+  fi
+done
+
 assert_origin_main_aligned
+
+# ---------------------------------------------------------------------------
+# 目标 Profiles 解析与参数处理
+# ---------------------------------------------------------------------------
+if [ -n "${OMNIMUX_SYNC_TARGETS:-}" ]; then
+  IFS=',' read -ra ENV_TARGETS <<< "$OMNIMUX_SYNC_TARGETS"
+  for t in "${ENV_TARGETS[@]}"; do
+    t=$(echo "$t" | tr '[:upper:]' '[:lower:]' | xargs)
+    [ -n "$t" ] && TARGET_SELECTION+=("$t")
+  done
+fi
+
+parse_target_value() {
+  local val="$1"
+  IFS=',' read -ra PARTS <<< "$val"
+  for p in "${PARTS[@]}"; do
+    p=$(echo "$p" | tr '[:upper:]' '[:lower:]' | xargs)
+    [ -n "$p" ] && TARGET_SELECTION+=("$p")
+  done
+}
+
+usage() {
+  sed -n '2,16p' "$0"
+  exit 1
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help) usage ;;
+    --skip-build) SKIP_BUILD=1; shift ;;
+    --dev|--omnimux-dev)
+      TARGET_SELECTION+=("dev")
+      TARGET_FLAGS+=("$1")
+      shift ;;
+    --prod|--omnimux)
+      TARGET_SELECTION+=("prod")
+      TARGET_FLAGS+=("$1")
+      shift ;;
+    --dsh)
+      TARGET_SELECTION+=("dsh")
+      TARGET_FLAGS+=("$1")
+      shift ;;
+    --all|--broadcast|--all-profiles)
+      TARGET_SELECTION+=("all")
+      TARGET_FLAGS+=("$1")
+      shift ;;
+    --target=*|--profile=*)
+      val="${1#*=}"
+      parse_target_value "$val"
+      TARGET_FLAGS+=("$1")
+      shift ;;
+    --target|--profile)
+      if [ $# -lt 2 ]; then
+        echo "❌ $1 需要提供参数值 (dev | prod | dsh | all)" >&2
+        exit 1
+      fi
+      parse_target_value "$2"
+      TARGET_FLAGS+=("$1" "$2")
+      shift 2 ;;
+    --*) echo "未知参数: $1" >&2; usage ;;
+    *) PLUGINS+=("$1"); shift ;;
+  esac
+done
+
+TARGET_HOMES=()
+add_target_home() {
+  local h="$1"
+  if [ "${#TARGET_HOMES[@]}" -gt 0 ]; then
+    for existing in "${TARGET_HOMES[@]}"; do
+      [ "$existing" = "$h" ] && return 0
+    done
+  fi
+  TARGET_HOMES+=("$h")
+}
+
+if [ ${#TARGET_SELECTION[@]} -eq 0 ]; then
+  # 默认只给 .omnimux-dev
+  add_target_home "$HOME/.omnimux-dev"
+else
+  for item in "${TARGET_SELECTION[@]}"; do
+    case "$item" in
+      all|broadcast)
+        add_target_home "$HOME/.omnimux-dev"
+        add_target_home "$HOME/.omnimux"
+        add_target_home "$HOME/.dsh"
+        ;;
+      dev|omnimux-dev)
+        add_target_home "$HOME/.omnimux-dev"
+        ;;
+      prod|omnimux|omnimux-prod)
+        add_target_home "$HOME/.omnimux"
+        ;;
+      dsh|dsh-desktop)
+        add_target_home "$HOME/.dsh"
+        ;;
+      /*|~*)
+        eval expanded_path="$item"
+        add_target_home "$expanded_path"
+        ;;
+      *)
+        echo "⚠ 未知同步目标 [$item]，忽略。可选值: dev | prod | dsh | all" >&2
+        ;;
+    esac
+  done
+fi
+
+TARGET_PROFILES=()
+for home_dir in "${TARGET_HOMES[@]}"; do
+  prof_dir="$home_dir/profiles/omnimux"
+  if [ -d "$prof_dir" ] || [ -d "$home_dir" ]; then
+    already=0
+    if [ "${#TARGET_PROFILES[@]}" -gt 0 ]; then
+      for p in "${TARGET_PROFILES[@]}"; do
+        if [ "$p" = "$prof_dir" ]; then
+          already=1
+          break
+        fi
+      done
+    fi
+    if [ "$already" -eq 0 ]; then
+      TARGET_PROFILES+=("$prof_dir")
+    fi
+  fi
+done
 
 # ---------------------------------------------------------------------------
 # dsh-ui-kit 版本漂移防护 (Issue #200)
 #
-# 背景：10 个插件通过 file: 依赖共享 kit，但构建与物化链路从未 build kit，
-# 导致生产 profile 里的 kit 停留在旧版本（实测 ~/.dsh 缺 StageHeader 等 5 个导出，
-# 而 ~/.omnimux 已是最新）——物化后会静默跑旧代码。
-#
-# 策略：物化前先构建 kit，再对所有 profile 副本做 sha256 指纹校验并自动补齐。
+# 策略：物化前先构建 kit，再对目标 profile 副本做 sha256 指纹校验并自动补齐。
 # ---------------------------------------------------------------------------
-# 默认路径：优先同级 personal/dsh-ui-kit（worktree 与主仓均在 product/ 下）；
-# 缺失时回退到 product/personal/dsh-ui-kit。可用 OMNIMUX_DSH_UI_KIT_DIR 显式覆盖。
 if [ -z "${OMNIMUX_DSH_UI_KIT_DIR:-}" ]; then
   for candidate in \
     "$ROOT/../personal/dsh-ui-kit" \
@@ -113,8 +248,6 @@ ensure_dsh_ui_kit_fresh() {
     exit 1
   fi
 
-  # pnpm 对 file: 依赖是硬拷贝到 .pnpm store，而非软链。
-  # 因此 kit 重新 build 后必须刷新 store，否则插件仍消费旧拷贝（漂移的真正上游根因）。
   local store_kit
   store_kit=$(find "$ROOT/node_modules/.pnpm" -maxdepth 4 -type d -name 'dsh-ui-kit' \
     -path '*node_modules/dsh-ui-kit' 2>/dev/null | head -1)
@@ -147,7 +280,7 @@ ensure_dsh_ui_kit_fresh() {
     return 0
   fi
 
-  for profile in "$HOME/.dsh/profiles/omnimux" "$HOME/.omnimux/profiles/omnimux" "$HOME/.omnimux-dev/profiles/omnimux"; do
+  for profile in "${TARGET_PROFILES[@]}"; do
     local dst="$profile/node_modules/dsh-ui-kit/lib/index.js"
     [ -f "$dst" ] || continue
     dst_hash=$(shasum -a 256 "$dst" 2>/dev/null | awk '{print $1}')
@@ -157,28 +290,13 @@ ensure_dsh_ui_kit_fresh() {
       sync_kit_artifact "$DSH_UI_KIT_DIR" "$profile"
     fi
   done
-  [ "$drift" -eq 0 ] && echo "  ✓ 全部 profile 的 kit 与源码一致"
+  [ "$drift" -eq 0 ] && echo "  ✓ 目标 profile 的 kit 与源码一致"
   return 0
 }
 
 ensure_dsh_ui_kit_fresh
 
-# 与 sync-stable.sh 默认同步集合对齐（含 omnimux-market 与 omnimux-clip）
 DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics omnimux-publish)
-
-usage() {
-  sed -n '2,16p' "$0"
-  exit 1
-}
-
-while [ $# -gt 0 ]; do
-  case "$1" in
-    -h|--help) usage ;;
-    --skip-build) SKIP_BUILD=1; shift ;;
-    --*) echo "未知参数: $1" >&2; usage ;;
-    *) PLUGINS+=("$1"); shift ;;
-  esac
-done
 
 if [ ${#PLUGINS[@]} -eq 0 ]; then
   PLUGINS=("${DEFAULT_PLUGINS[@]}")
@@ -222,25 +340,30 @@ build_one() {
   esac
 }
 
-echo "== sync-to-app: ${PLUGINS[*]} =="
+echo "== sync-to-app: 目标 Profile = [${TARGET_HOMES[*]}] | 插件 = [${PLUGINS[*]}] =="
 if [ "$SKIP_BUILD" -eq 0 ]; then
-  echo "== 1/2 build =="
+  echo "== 1/3 build =="
   for name in "${PLUGINS[@]}"; do
     build_one "$name"
   done
 else
-  echo "== 1/2 build 跳过 (--skip-build) =="
+  echo "== 1/3 build 跳过 (--skip-build) =="
 fi
 
-echo "== 2/3 物化进生产 profile =="
-OMNIMUX_SYNC_VIA=sync-to-app "$ROOT/scripts/sync-stable.sh" "${PLUGINS[@]}"
+echo "== 2/3 物化进 Profile 目录 =="
+OMNIMUX_SYNC_VIA=sync-to-app "$ROOT/scripts/sync-stable.sh" "${TARGET_FLAGS[@]}" "${PLUGINS[@]}"
 
 echo "== 3/3 物化出厂 Agent Presets =="
-"$ROOT/scripts/sync-agent-presets.sh"
+"$ROOT/scripts/sync-agent-presets.sh" "${TARGET_FLAGS[@]}"
 
 cat <<EOF
 
-✓ 已物化进生产 profile（零副作用，未重启任何进程）。
+✓ 已完成物化到目标 Profile（零副作用，未重启任何进程）。
+  【同步目标】: ${TARGET_HOMES[*]}
+  【提示】默认仅同步开发版 (~/.omnimux-dev)。指定其他目标可用参数：
+    - 同步正式版: ./scripts/sync-to-app.sh --prod
+    - 同步底座版: ./scripts/sync-to-app.sh --dsh
+    - 广播全同步: ./scripts/sync-to-app.sh --all
   【多 Agent 并发与生效规则】
   - 前端 Client 修改：在浏览器或已打开的客户端窗口中刷新（Cmd+R）即可加载最新 bundle。
   - 后端 Host/插件扩展修改：产物已静默就绪，在应用下次自然启动或用户闲时手动重启后生效。

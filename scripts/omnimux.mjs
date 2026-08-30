@@ -112,7 +112,8 @@ function printHelp() {
 插件目录: ${pluginsRoot}
 
 命令:
-  sync [插件...] [--skip-build]   构建并将插件物化进生产 Profile (~/.dsh/profiles/omnimux)（纯静态物化，不重启进程）
+  sync [插件...] [--prod|--dsh|--all] [--skip-build]
+                                  构建并将插件物化进目标 Profile（默认仅开发版 ~/.omnimux-dev，可用 --prod / --dsh / --all 扩展）
   dev <start|stop|ls|rm|watch|restart-host>
                                   L2 独立开发/测试环境（多 Agent 隔离端口池 442xx + Web HMR，测试验证唯一入口）
   dev restart-host <task>         【推荐】仅原地重启指定 L2 环境的 Host 进程（2秒同端口冷重启，Agent 允许调用）
