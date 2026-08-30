@@ -5,7 +5,6 @@ import type { ConversationAttachment } from './types.ts';
 
 const ATTACHMENTS_STYLE_ID = 'omnimux-attachments-styles';
 
-// 内联基础样式以确保任何场景自洽加载
 const BASE_CSS = `
 .omx-attachment-dock {
   box-sizing: border-box;
@@ -35,15 +34,15 @@ const BASE_CSS = `
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  background: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.12));
+  background: var(--dsw-alias-bg-layer-1);
+  border: 1px solid var(--dsw-alias-border-l2);
   user-select: none;
   cursor: default;
   transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 .omx-att-card:hover {
-  background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.07));
-  border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.22));
+  background: var(--dsw-alias-bg-layer-2);
+  border-color: var(--dsw-alias-border-l3);
 }
 .omx-att-card--media {
   width: 56px;
@@ -65,8 +64,8 @@ const BASE_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.08));
-  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.4));
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-tertiary);
 }
 .omx-att-card__play-icon {
   position: absolute;
@@ -78,19 +77,19 @@ const BASE_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--dsw-alias-bg-mask-1);
   backdrop-filter: blur(2px);
   border-radius: 50%;
-  color: #ffffff;
+  color: var(--dsw-alias-label-primary-inverted);
   pointer-events: none;
 }
 .omx-att-card__duration-badge {
   position: absolute;
   bottom: 4px;
   right: 4px;
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--dsw-alias-bg-mask-1);
   backdrop-filter: blur(4px);
-  color: #ffffff;
+  color: var(--dsw-alias-label-primary-inverted);
   font-size: 10px;
   font-weight: 500;
   line-height: 14px;
@@ -113,7 +112,7 @@ const BASE_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.72));
+  color: var(--dsw-alias-label-secondary);
 }
 .omx-att-card__file-info {
   flex: 1 1 auto;
@@ -127,7 +126,7 @@ const BASE_CSS = `
   font-size: 13px;
   font-weight: 500;
   line-height: 16px;
-  color: var(--dsw-alias-label-primary, #ffffff);
+  color: var(--dsw-alias-label-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -137,7 +136,7 @@ const BASE_CSS = `
   font-size: 10px;
   font-weight: 600;
   line-height: 12px;
-  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.45));
+  color: var(--dsw-alias-label-tertiary);
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
@@ -148,9 +147,9 @@ const BASE_CSS = `
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--dsw-alias-bg-elevated, #1c1c1f);
-  border: 1px solid var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.2));
-  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.7));
+  background: var(--dsw-alias-bg-elevated);
+  border: 1px solid var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,9 +165,9 @@ const BASE_CSS = `
   transform: scale(1);
 }
 .omx-att-card__remove-btn:hover {
-  background: var(--dsw-alias-state-error-primary, #ef4444);
-  border-color: var(--dsw-alias-state-error-primary, #ef4444);
-  color: #ffffff;
+  background: var(--dsw-alias-state-error-primary);
+  border-color: var(--dsw-alias-state-error-primary);
+  color: var(--dsw-alias-label-primary-inverted);
 }
 `;
 
@@ -214,7 +213,6 @@ export const AttachmentTray: React.FC<AttachmentTrayProps> = (props) => {
     [store, currentSessionId]
   );
 
-  // 空列表时零 DOM 占用，不渲染空容器
   if (!attachments || attachments.length === 0) {
     return null;
   }
