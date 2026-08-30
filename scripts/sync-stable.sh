@@ -17,7 +17,8 @@ if [ "${OMNIMUX_SYNC_VIA:-}" != "sync-to-app" ] && [ "${OMNIMUX_SYNC_VIA:-}" != 
   echo "  （若你确认已手动 build 且只要物化，可设 OMNIMUX_SYNC_VIA=internal 消掉本提示）" >&2
 fi
 
-PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh/plugins}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$ROOT/plugins}"
 
 # 支持多 Home 目录同步：扫描并同步所有存在的 profile (包括 ~/.dsh, ~/.omnimux-dev, ~/.omnimux, 及显式 DSH_HOME)
 PROFILES=()
