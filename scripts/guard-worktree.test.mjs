@@ -134,7 +134,7 @@ describe('guard-worktree decideWrite (全量版本文件拦截)', () => {
     const pluginUntracked = decideWrite({
       toolName: 'write',
       cwd: mainRepoRoot,
-      filePath: 'plugins/omnimux-workflow/src/canvas/editor/components/AddNodeMenu.tsx',
+      filePath: 'plugins/omnimux-workflow/src/canvas/editor/components/NonExistentUntrackedNode.tsx',
     })
     assert.equal(pluginUntracked.decision, 'deny')
     assert.equal(pluginUntracked.reason, 'untracked-protected-scope')
