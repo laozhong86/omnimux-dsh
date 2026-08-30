@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-08-30T15:01:00+08:00",
+  "targetStage": "omnimux-market-plaza-footer",
+  "issue": 282,
+  "port": 45120,
+  "taskSpace": "plaza-align-left-282-dev",
+  "url": "http://127.0.0.1:45120/",
+  "assertions": {
+    "1. Plaza trigger is a native BUTTON without dshUk-Button": true,
+    "2. Computed justify-content is flex-start": true,
+    "3. Padding matches Settings 0 10px 0 8px": true,
+    "4. Icon left delta vs Settings is 0px": true,
+    "5. Label left delta vs Settings is 0px": true,
+    "6. Row left delta vs Settings is 0px": true,
+    "7. Screenshot shows 扩展市场 left-aligned with 设置": true
+  },
+  "details": {
+    "plazaBox": { "left": 10, "y": 771, "w": 260, "h": 42 },
+    "settingsBox": { "left": 10, "y": 821, "w": 260, "h": 42 },
+    "plazaIconLeft": 18,
+    "settingsIconLeft": 18,
+    "plazaLabelLeft": 42,
+    "settingsLabelLeft": 42,
+    "screenshot": "docs/evidence/issue-282-plaza-footer-left-align.png",
+    "crop": "docs/evidence/issue-282-plaza-footer-left-align-crop.png",
+    "materialize": "OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1 ./scripts/sync-to-app.sh --skip-build omnimux-market"
+  },
+  "verdict": "PASS"
+}
