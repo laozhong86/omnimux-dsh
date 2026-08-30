@@ -52,18 +52,17 @@ test('mapVideoCompositionToView：渲染态固定 rendering，与 hasOutput 无�
   assert.equal(mapVideoCompositionToView('rendering', true), 'rendering');
 });
 
-test('mapVideoCompositionToView：completed/idle/editing 由 hasOutput 分流 result/launcher', () => {
-  assert.equal(mapVideoCompositionToView('completed', true), 'result');
+test('mapVideoCompositionToView：completed/idle/editing 始终 launcher，与 hasOutput 无关', () => {
+  assert.equal(mapVideoCompositionToView('completed', true), 'launcher');
   assert.equal(mapVideoCompositionToView('completed', false), 'launcher');
-  assert.equal(mapVideoCompositionToView('idle', true), 'result');
+  assert.equal(mapVideoCompositionToView('idle', true), 'launcher');
   assert.equal(mapVideoCompositionToView('idle', false), 'launcher');
-  // editing（编辑器打开）时卡片保持原产物/空态，与旧行为一致
-  assert.equal(mapVideoCompositionToView('editing', true), 'result');
+  assert.equal(mapVideoCompositionToView('editing', true), 'launcher');
   assert.equal(mapVideoCompositionToView('editing', false), 'launcher');
 });
 
-test('mapVideoCompositionToView：映射不抛异常且返回值都在四分支集合内', () => {
-  const branches = new Set(['result', 'rendering', 'error', 'launcher']);
+test('mapVideoCompositionToView：映射不抛异常且返回值都在三分支集合内', () => {
+  const branches = new Set(['rendering', 'error', 'launcher']);
   for (const status of ALL_STATUSES) {
     for (const hasOutput of [false, true]) {
       const view = mapVideoCompositionToView(status, hasOutput);
@@ -121,7 +120,7 @@ test('projectFileName：截断 48 字符与空兜底', () => {
 
 // ==================== 状态流转与产物联动契约 ====================
 
-test('状态流转：save 事件触发后状态从 rendering/editing 转换为 completed，且视图命中 result', () => {
+test('状态流转：save 事件触发后状态从 rendering/editing 转换为 completed，视图仍保持 launcher', () => {
   // 模拟从 editing 阶段开始
   const editingStatus = 'editing';
   const hasOutputBefore = false;
@@ -151,7 +150,7 @@ test('状态流转：save 事件触发后状态从 rendering/editing 转换为 c
 
   assert.equal(nextStatus, 'completed');
   assert.equal(hasOutputAfter, true);
-  assert.equal(mapVideoCompositionToView(nextStatus, hasOutputAfter), 'result');
+  assert.equal(mapVideoCompositionToView(nextStatus, hasOutputAfter), 'launcher');
   assert.equal(mapVideoCompositionToBadge(nextStatus), 'completed');
   assert.equal(formatDuration(savePayload.output.durationMs), '00:12.500');
   assert.equal(formatResolution(savePayload.output.width, savePayload.output.height), '1920×1080');

@@ -7,9 +7,8 @@
  *
  * 表现层（T4 拉齐 MaterialNode 规范）：
  * - 外置 NodeHeader + StatusBadge（mapVideoCompositionToBadge）；
- * - 主卡片四分支状态机：result / rendering / error / launcher
- *   （mapVideoCompositionToView 分流；rendering/error 走 GenerationStateContainer）；
- * - 产物态由纯展示组件 VideoCompositionResult 承载（.wf-vc-result* Token 类）。
+ * - 主卡片三分支：launcher / rendering / error
+ *   （成片预览由下游素材节点承载；本节点导出后仍保持 launcher）；
  * 功能契约 100% 不变：OMNIMUX_CLIP_* 事件桥、collectUpstreamInputs、
  * ports、executorKey、350×440 尺寸。
  */
@@ -23,7 +22,6 @@ import NodeHeader from '../../editor/components/MaterialNode/NodeHeader';
 import StatusBadge from '../../editor/components/MaterialNode/StatusBadge';
 import GenerationStateContainer from '../../editor/components/GenerationStateContainer';
 import NodeLauncherState from '../../editor/components/NodeEmptyState/NodeLauncherState';
-import VideoCompositionResult from './videoCompositionResult';
 import { planClipExportDownstream } from './videoCompositionDownstream';
 import {
   mapVideoCompositionToBadge,
@@ -140,10 +138,8 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const status: VideoCompositionStatus = nodeData.status ?? 'idle';
   const hasOutput = Boolean(nodeData.outputVideoUrl);
-  const thumbnail = nodeData.thumbnailUrl || nodeData.outputThumbnailUrl;
   const title = nodeData.title || nodeData.label || t('node.type.video_composition');
 
-  // 四分支状态机（T4）
   const view = mapVideoCompositionToView(status, hasOutput);
 
   const updateNodeData = useCallback(
@@ -341,19 +337,6 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         />
       )}
     >
-      {view === 'result' && (
-        <VideoCompositionResult
-          outputVideoUrl={nodeData.outputVideoUrl}
-          thumbnailUrl={thumbnail}
-          durationMs={nodeData.outputDurationMs}
-          width={nodeData.outputWidth}
-          height={nodeData.outputHeight}
-          title={title}
-          onReEdit={openEditor}
-          onDownload={handleDownload}
-        />
-      )}
-
       {view === 'rendering' && (
         <div className="wf-material-node__media">
           <GenerationStateContainer status="generating" loadingAspectRatio="video">

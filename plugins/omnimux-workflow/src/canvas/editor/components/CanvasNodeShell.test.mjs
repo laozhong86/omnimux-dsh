@@ -61,15 +61,14 @@ test('NodeLauncherState 契约：统一主图标、次级图标、blurb、建议
   assert.match(launcherStateSrc, /wf-node-launcher-state__pill-btn--primary/);
 });
 
-test('VideoCompositionNode 契约：接入 Shell/Header/Pill/Launcher/GSC/Result 与状态映射模块', () => {
+test('VideoCompositionNode 契约：接入 Shell/Header/Pill/Launcher/GSC 与状态映射模块', () => {
   assert.match(videoNodeSrc, /<CanvasNodeShell/);
   assert.match(videoNodeSrc, /<FloatingTopPill/);
   assert.match(videoNodeSrc, /<NodeHeader/);
   assert.match(videoNodeSrc, /<NodeLauncherState/);
-  // T4：四分支状态机依赖
   assert.match(videoNodeSrc, /mapVideoCompositionToBadge/);
   assert.match(videoNodeSrc, /mapVideoCompositionToView/);
-  assert.match(videoNodeSrc, /<VideoCompositionResult/);
+  assert.doesNotMatch(videoNodeSrc, /<VideoCompositionResult/);
   assert.match(videoNodeSrc, /<GenerationStateContainer/);
   assert.match(videoNodeSrc, /loadingAspectRatio="video"/);
   // 旧私有产物态 DOM / 内联裸色彻底移除
