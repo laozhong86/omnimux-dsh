@@ -49,8 +49,8 @@ MUST NOT use 13px labels or 16px filled icons on these rows. MUST NOT invent a s
 
 Extra rows follow [docs/contracts/plugin-offline-cloud-matrix.md](./plugin-offline-cloud-matrix.md):
 - `access: 'offline'`: Always visible. Clicking directly opens the stage without login blocking. (Workflow, Assets, Products, Clip).
-- `access: 'cloud'`: Hidden when unauthenticated (`logged_in !== true`). Dynamic appearance upon login. (Analytics, Publish, Accounts, Inspiration).
-- Policy D (Visitor Polite Interception): Cancelling a write-gate login prompt suppresses subsequent navigation prompts for the remainder of the session.
+- `access: 'cloud'`: Always visible. Clicking triggers explicit auth gating (`ensureLogin({ kind: 'explicit' })`), opening the stage upon successful login. (Analytics, Publish, Accounts, Inspiration).
+- Policy D (Visitor Polite Interception): Cancelling a login prompt suppresses subsequent passive navigation prompts (`kind: 'nav'`) for the remainder of the session, while explicit clicks (`kind: 'explicit'`) and write operations (`kind: 'write'`) are never suppressed.
 
 New extra rows MUST reuse these metrics (copy the CSS block or import the same numbers). A PR that adds a 新会话-below row with a different font-size or icon size is rejected.
 

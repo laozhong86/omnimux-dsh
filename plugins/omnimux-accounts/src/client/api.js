@@ -35,6 +35,7 @@ export function authGuard(fn) {
       if (!gate || typeof gate.ensureLogin !== 'function') return result
       return new Promise((resolve, reject) => {
         gate.ensureLogin({
+          kind: 'write',
           onSuccess: () => {
             fn(...args).then(resolve, reject)
           },

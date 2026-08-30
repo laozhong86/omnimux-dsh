@@ -60,6 +60,7 @@ export function safeOpenApp(id, title, openFn = openApp) {
   if (auth && typeof auth.ensureLogin === 'function') {
     auth.ensureLogin({
       reason: title || id,
+      kind: 'explicit',
       onSuccess: () => {
         openFn(id)
       },

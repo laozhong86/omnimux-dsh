@@ -80,6 +80,7 @@ describe('accounts api authGuard', () => {
         assert.equal(calls, 2, 'the original call is replayed once')
         assert.deepEqual(result, { ok: true, status: 200, body: { accounts: [{ id: 1 }] } })
         assert.equal(gate.args() !== null, true)
+        assert.equal(gate.args()?.kind, 'write')
       } finally {
         restore()
       }

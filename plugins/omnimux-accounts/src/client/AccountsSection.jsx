@@ -259,6 +259,7 @@ export function AccountsSection({ t, active = true }) {
       const gate = typeof window !== 'undefined' ? /** @type {any} */ (window).__omnimuxAuth : undefined
       if (gate && typeof gate.ensureLogin === 'function') {
         gate.ensureLogin({
+          kind: 'explicit',
           reason: t('needLogin'),
           onSuccess: () => { void refresh() },
         })

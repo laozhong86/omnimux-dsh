@@ -10,7 +10,7 @@ import { useInspirationFeed } from './use-inspiration-feed.js'
 function LoginGate({ t }) {
   const login = () => {
     const gate = typeof window !== 'undefined' ? window.__omnimuxAuth : undefined
-    if (gate && typeof gate.ensureLogin === 'function') gate.ensureLogin({})
+    if (gate && typeof gate.ensureLogin === 'function') gate.ensureLogin({ kind: 'explicit' })
   }
   return (
     <div className="omnimux-inspiration-gate">
