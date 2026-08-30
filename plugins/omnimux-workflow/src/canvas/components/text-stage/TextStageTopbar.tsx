@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import {
-  X,
-  Columns2,
-  FileEdit,
-  Eye,
   Undo2,
   Redo2,
   History,
-  Camera,
-  Check,
+  Save,
+  Search,
+  X,
   Edit2,
 } from 'lucide-react';
 import { useTextStageStore, calculateTextStats } from '../../store/textStageStore';
@@ -20,14 +17,13 @@ export const TextStageTopbar: React.FC = () => {
     title,
     content,
     isDirty,
-    viewMode,
     versions,
     isDrawerOpen,
+    isSearchOpen,
     setTitle,
-    setViewMode,
     toggleDrawer,
-    createSnapshot,
-    saveAndClose,
+    toggleSearch,
+    save,
     closeStage,
     undo,
     redo,
@@ -47,17 +43,8 @@ export const TextStageTopbar: React.FC = () => {
 
   return (
     <header className="wf-text-stage-topbar">
-      {/* 左侧：返回关闭 + 标题 + 保存状态 */}
+      {/* 左侧：标题 + 保存状态 */}
       <div className="wf-text-stage-topbar__left">
-        <button
-          type="button"
-          className="wf-text-stage-btn wf-text-stage-btn--icon"
-          onClick={closeStage}
-          title={t('textStage.close') || '关闭全屏 (ESC)'}
-        >
-          <X size={16} />
-        </button>
-
         <div className="wf-text-stage-title-wrap">
           {isEditingTitle ? (
             <input
@@ -95,7 +82,7 @@ export const TextStageTopbar: React.FC = () => {
           {isDirty ? (
             <span className="wf-text-stage-status-badge wf-text-stage-status-badge--unsaved">
               <span className="wf-text-stage-dot wf-text-stage-dot--unsaved" />
-              <span>{t('textStage.unsaved') || '未保存修改'}</span>
+              <span>{t('textStage.unsaved') || '未保存'}</span>
             </span>
           ) : (
             <span className="wf-text-stage-status-badge wf-text-stage-status-badge--saved">
@@ -106,38 +93,8 @@ export const TextStageTopbar: React.FC = () => {
         </div>
       </div>
 
-      {/* 中间：视图模式切换 + 字数统计 */}
+      {/* 中间：字数统计 */}
       <div className="wf-text-stage-topbar__center">
-        <div className="wf-text-stage-segmented-control">
-          <button
-            type="button"
-            className={`wf-text-stage-segment-btn ${viewMode === 'split' ? 'is-active' : ''}`}
-            onClick={() => setViewMode('split')}
-            title={t('textStage.viewSplit') || '双栏实时对照'}
-          >
-            <Columns2 size={14} />
-            <span>{t('textStage.split') || '双栏'}</span>
-          </button>
-          <button
-            type="button"
-            className={`wf-text-stage-segment-btn ${viewMode === 'edit' ? 'is-active' : ''}`}
-            onClick={() => setViewMode('edit')}
-            title={t('textStage.viewEdit') || '仅纯文本编辑'}
-          >
-            <FileEdit size={14} />
-            <span>{t('textStage.editOnly') || '编辑'}</span>
-          </button>
-          <button
-            type="button"
-            className={`wf-text-stage-segment-btn ${viewMode === 'preview' ? 'is-active' : ''}`}
-            onClick={() => setViewMode('preview')}
-            title={t('textStage.viewPreview') || '仅全屏阅读预览'}
-          >
-            <Eye size={14} />
-            <span>{t('textStage.previewOnly') || '预览'}</span>
-          </button>
-        </div>
-
         <div className="wf-text-stage-stats">
           <span className="wf-text-stage-stat-item">
             {stats.wordCount} <span className="wf-text-stage-stat-label">{t('textStage.words') || '词'}</span>
@@ -153,64 +110,71 @@ export const TextStageTopbar: React.FC = () => {
         </div>
       </div>
 
-      {/* 右侧：Undo/Redo + 历史版本 + 保存 */}
+      {/* 右侧：纯图标按钮组 (回退/前进、快照历史、保存、搜索、关闭) */}
       <div className="wf-text-stage-topbar__right">
-        <div className="wf-text-stage-action-group">
-          <button
-            type="button"
-            className="wf-text-stage-btn wf-text-stage-btn--icon"
-            onClick={undo}
-            disabled={!canUndo()}
-            title={t('textStage.undo') || '撤销 (Cmd+Z)'}
-          >
-            <Undo2 size={15} />
-          </button>
-          <button
-            type="button"
-            className="wf-text-stage-btn wf-text-stage-btn--icon"
-            onClick={redo}
-            disabled={!canRedo()}
-            title={t('textStage.redo') || '重做 (Cmd+Shift+Z)'}
-          >
-            <Redo2 size={15} />
-          </button>
-        </div>
+        {/* 撤销 / 重做 */}
+        <button
+          type="button"
+          className="wf-text-stage-btn wf-text-stage-btn--icon"
+          onClick={undo}
+          disabled={!canUndo()}
+          title={t('textStage.undo') || '撤销 (Cmd+Z)'}
+        >
+          <Undo2 size={16} />
+        </button>
+        <button
+          type="button"
+          className="wf-text-stage-btn wf-text-stage-btn--icon"
+          onClick={redo}
+          disabled={!canRedo()}
+          title={t('textStage.redo') || '重做 (Cmd+Shift+Z)'}
+        >
+          <Redo2 size={16} />
+        </button>
 
         <div className="wf-text-stage-divider" />
 
+        {/* 历史版本 / 快照 */}
         <button
           type="button"
-          className="wf-text-stage-btn"
-          onClick={() => createSnapshot()}
-          title={t('textStage.createSnapshot') || '创建当前快照版本'}
-        >
-          <Camera size={14} />
-          <span>{t('textStage.snapshot') || '创建快照'}</span>
-        </button>
-
-        <button
-          type="button"
-          className={`wf-text-stage-btn ${isDrawerOpen ? 'is-active' : ''}`}
+          className={`wf-text-stage-btn wf-text-stage-btn--icon ${isDrawerOpen ? 'is-active' : ''}`}
           onClick={toggleDrawer}
-          title={t('textStage.versionHistory') || '历史版本与对比'}
+          title={t('textStage.versionHistory') || '历史版本与快照'}
         >
-          <History size={14} />
-          <span>{t('textStage.versions') || '历史版本'}</span>
+          <History size={16} />
           {versions.length > 0 && (
-            <span className="wf-text-stage-badge">{versions.length}</span>
+            <span className="wf-text-stage-badge wf-text-stage-badge--dot" />
           )}
         </button>
 
-        <div className="wf-text-stage-divider" />
-
+        {/* 保存 */}
         <button
           type="button"
-          className="wf-text-stage-btn wf-text-stage-btn--primary"
-          onClick={saveAndClose}
-          title={t('textStage.saveAndClose') || '保存并退出全屏'}
+          className="wf-text-stage-btn wf-text-stage-btn--icon"
+          onClick={save}
+          title={t('textStage.save') || '保存 (Cmd+S)'}
         >
-          <Check size={14} />
-          <span>{t('textStage.done') || '完成'}</span>
+          <Save size={16} />
+        </button>
+
+        {/* 搜索 */}
+        <button
+          type="button"
+          className={`wf-text-stage-btn wf-text-stage-btn--icon ${isSearchOpen ? 'is-active' : ''}`}
+          onClick={toggleSearch}
+          title={t('textStage.search') || '查找 (Cmd+F)'}
+        >
+          <Search size={16} />
+        </button>
+
+        {/* 关闭 */}
+        <button
+          type="button"
+          className="wf-text-stage-btn wf-text-stage-btn--icon wf-text-stage-btn--close"
+          onClick={closeStage}
+          title={t('textStage.close') || '关闭 (ESC)'}
+        >
+          <X size={16} />
         </button>
       </div>
     </header>

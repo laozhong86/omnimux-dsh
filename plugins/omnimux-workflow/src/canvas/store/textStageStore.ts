@@ -51,6 +51,7 @@ export interface TextStageState {
   originalContent: string;
   isDirty: boolean;
   viewMode: TextViewMode;
+  isSearchOpen: boolean;
 
   // === 历史版本管理 ===
   isDrawerOpen: boolean;
@@ -71,6 +72,7 @@ export interface TextStageState {
       title?: string;
       content?: string;
       versions?: TextVersionSnapshot[];
+      mode?: TextViewMode;
     },
   ) => void;
   closeStage: () => void;
@@ -81,6 +83,8 @@ export interface TextStageState {
   setContent: (content: string) => void;
   setTitle: (title: string) => void;
   setViewMode: (mode: TextViewMode) => void;
+  toggleSearch: () => void;
+  setSearchOpen: (open: boolean) => void;
 
   // 历史版本抽屉与对比弹窗
   setDrawerOpen: (open: boolean) => void;
@@ -114,7 +118,8 @@ export const useTextStageStore = create<TextStageState>((set, get) => ({
   content: '',
   originalContent: '',
   isDirty: false,
-  viewMode: 'split',
+  viewMode: 'edit',
+  isSearchOpen: false,
 
   isDrawerOpen: false,
   diffModal: { isOpen: false, snapshot: null },
@@ -136,7 +141,8 @@ export const useTextStageStore = create<TextStageState>((set, get) => ({
       content: rawContent,
       originalContent: rawContent,
       isDirty: false,
-      viewMode: 'split',
+      viewMode: initialData.mode ?? 'edit',
+      isSearchOpen: false,
       isDrawerOpen: false,
       diffModal: { isOpen: false, snapshot: null },
       versions: [...rawVersions],
@@ -153,10 +159,19 @@ export const useTextStageStore = create<TextStageState>((set, get) => ({
     set({
       isStageOpen: false,
       nodeId: null,
+      isSearchOpen: false,
       isDrawerOpen: false,
       diffModal: { isOpen: false, snapshot: null },
       isDirty: false,
     });
+  },
+
+  toggleSearch: () => {
+    set((s) => ({ isSearchOpen: !s.isSearchOpen }));
+  },
+
+  setSearchOpen: (open: boolean) => {
+    set({ isSearchOpen: open });
   },
 
   save: () => {
@@ -387,3 +402,8 @@ export const useTextStageStore = create<TextStageState>((set, get) => ({
     };
   },
 }));
+
+if (typeof window !== 'undefined') {
+  (window as any).__textStageStore = useTextStageStore;
+}
+

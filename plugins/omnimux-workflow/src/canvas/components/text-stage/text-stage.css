@@ -871,3 +871,227 @@
   align-items: center;
   gap: 10px;
 }
+
+/* ============================================================================
+   Live Markdown 智能所见即所得行内渲染与内联搜索栏
+   ============================================================================ */
+
+/* CodeMirror 包装区与沉浸式居中布局 */
+.wf-cm-editor-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.wf-text-stage-body--live {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.wf-text-stage-pane--live {
+  width: 100%;
+  max-width: 920px;
+  height: 100%;
+  margin: 0 auto;
+}
+
+.wf-text-stage-pane--live .cm-editor {
+  padding: 20px 24px;
+}
+
+/* Markdown 语法标记隐藏（非聚焦状态） */
+.cm-md-mark-hidden {
+  opacity: 0 !important;
+  font-size: 0 !important;
+  display: inline-block !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  letter-spacing: -1em !important;
+  line-height: 0 !important;
+  user-select: none !important;
+  vertical-align: top !important;
+}
+
+/* 标题行级排版 */
+.cm-md-line-h1 {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  color: var(--dsw-alias-label-primary, #ffffff) !important;
+  padding-top: 14px !important;
+  padding-bottom: 6px !important;
+}
+
+.cm-md-line-h2 {
+  font-size: 18px !important;
+  font-weight: 650 !important;
+  line-height: 1.4 !important;
+  color: var(--dsw-alias-label-primary, #ffffff) !important;
+  padding-top: 12px !important;
+  padding-bottom: 4px !important;
+}
+
+.cm-md-line-h3 {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  color: var(--dsw-alias-label-primary, #ffffff) !important;
+  padding-top: 10px !important;
+  padding-bottom: 4px !important;
+}
+
+.cm-md-line-h4 {
+  font-size: 14.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  color: var(--dsw-alias-label-primary, #ffffff) !important;
+}
+
+/* 行内加粗与斜体 */
+.cm-md-strong {
+  font-weight: 700 !important;
+  color: var(--dsw-alias-label-primary, #ffffff) !important;
+}
+
+.cm-md-em {
+  font-style: italic !important;
+}
+
+/* 行内代码 */
+.cm-md-inline-code {
+  background-color: var(--dsw-alias-bg-layer-3, rgba(255, 255, 255, 0.08)) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 0.9em !important;
+  color: var(--dsw-alias-accent-primary, #818cf8) !important;
+}
+
+/* 引用块行 */
+.cm-md-line-quote {
+  border-left: 3px solid var(--dsw-alias-primary, #3b82f6) !important;
+  padding-left: 12px !important;
+  background-color: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.02)) !important;
+  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.8)) !important;
+}
+
+/* 分割线行 */
+.cm-md-line-hr {
+  border-bottom: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.1)) !important;
+  margin: 12px 0 !important;
+}
+
+/* 极简内联搜索浮层 */
+.wf-cm-search-panel {
+  position: absolute;
+  top: 12px;
+  right: 24px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background-color: var(--dsw-alias-bg-layer-3, rgba(28, 28, 32, 0.96));
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.16));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: wfSearchFadeIn 0.15s ease-out;
+}
+
+@keyframes wfSearchFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wf-cm-search-icon {
+  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.4));
+  flex-shrink: 0;
+}
+
+.wf-cm-search-input {
+  width: 180px;
+  height: 26px;
+  background: transparent;
+  border: none;
+  color: var(--dsw-alias-label-primary, #ffffff);
+  font-size: 13px;
+  outline: none;
+}
+
+.wf-cm-search-input::placeholder {
+  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.35));
+}
+
+.wf-cm-search-count {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.45));
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.wf-cm-search-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.wf-cm-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: var(--dsw-alias-label-secondary, rgba(255, 255, 255, 0.7));
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.wf-cm-search-btn:hover:not(:disabled) {
+  background-color: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.1));
+  color: var(--dsw-alias-label-primary, #ffffff);
+}
+
+.wf-cm-search-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.wf-cm-search-btn--close:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: var(--dsw-alias-danger, #ef4444);
+}
+
+.wf-text-stage-btn--close:hover {
+  background-color: rgba(239, 68, 68, 0.18) !important;
+  color: var(--dsw-alias-danger, #ef4444) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+.wf-text-stage-badge--dot {
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+  padding: 0;
+  border-radius: 50%;
+  background-color: var(--dsw-alias-primary, #3b82f6);
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+

@@ -53,3 +53,6 @@ export function unmountCanvas(el: HTMLElement): void {
   entry.root.unmount();
   roots.delete(el);
 }
+
+export { useTextStageStore } from './store/textStageStore';
+

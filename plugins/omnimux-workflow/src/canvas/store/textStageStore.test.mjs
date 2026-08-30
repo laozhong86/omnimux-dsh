@@ -54,9 +54,16 @@ test('TextStageStore: 舞台开启、编辑、关闭生命周期', () => {
   assert.equal(state1.title, '短剧第一集剧本');
   assert.equal(state1.content, '# 第一集：重生豪门\n\n主角登场。');
   assert.equal(state1.isDirty, false);
-  assert.equal(state1.viewMode, 'split');
+  assert.equal(state1.viewMode, 'edit');
+  assert.equal(state1.isSearchOpen, false);
   assert.equal(state1.versions.length, 1);
   assert.equal(state1.versions[0]?.name, '初始大纲');
+
+  // 搜索面板切换
+  store.toggleSearch();
+  assert.equal(useTextStageStore.getState().isSearchOpen, true);
+  store.setSearchOpen(false);
+  assert.equal(useTextStageStore.getState().isSearchOpen, false);
 
   // 修改内容
   store.setContent('# 第一集：重生豪门\n\n主角手握十亿资本强势归来！');
