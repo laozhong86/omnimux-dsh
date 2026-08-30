@@ -12,9 +12,9 @@ export const inject = ['tools', 'systemPrompt']
 
 const ASSETS_PROMPT = `This workspace may use the OmniMux creative asset library (omnimux-assets).
 Prefer assets_list with scope "assets" (optional type: character/scene/style/prop/knowledge/custom) and assets_search by name/description/tags.
-Each asset is a reusable creative object (name + type + description + path-referenced files). Cite it as @类型/名称 (example: @角色/林晓). Missing disk paths are omitted from files — do not invent them.
+Each asset is a reusable creative object (name + type + description + materialized files under the assets store). Cite it as @类型/名称 (example: @角色/林晓). Missing managed copies are omitted from files — do not invent them.
 assets_upload still reports produced files; it does not create a typed asset.
-Never modify, move, or delete a file under an asset real_path; deleting an asset only drops the library record.`
+Never modify, move, or delete the user's original desktop file; deleting an asset drops the library record and may remove the managed copy under omnimux/assets/data/files/.`
 
 /**
  * Compile a flat field table into a JSON Schema object. Raw `register`

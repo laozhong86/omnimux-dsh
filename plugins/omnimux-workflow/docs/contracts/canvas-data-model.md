@@ -12,7 +12,7 @@ $DSH_HOME/omnimux/workflow/
 └── media/<workspaceId>/<executionId>/      # M4：seam 产物落盘（静态路由回显）
 ```
 
-本地导入**不**复制进上述目录：源文件留在用户磁盘，`canvas.json` 只记 `realPath`。`media/` 仍仅服务 AI 生成产物。见 [workflow-media-asset-indexing.md](./workflow-media-asset-indexing.md)。
+**2026-08-30 起**：新写入布局是作品包 `<ProjectRoot>/.omnimux/canvases/<id>.json` + `assets.json`；导入 copy 到 `assets/imported/`，生成物到 `artifacts/`。上表 `$DSH_HOME/omnimux/workflow/workspaces/` 为历史落点，打开项目时惰性迁入。合同：[`project-assets-contract.md`](../../../../docs/contracts/project-assets-contract.md)。
 
 项目抽屉【资产】Tab 的文件夹/文件树**不**写入 `canvas.json`，落在并列的 `assets.json`（独立 `rev`，刷新/重开抽屉仍在）。见 [workflow-project-assets.md](./workflow-project-assets.md)。
 

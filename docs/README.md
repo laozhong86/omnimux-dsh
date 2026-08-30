@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L1"
 date: "2026-08-26"
-updated: "2026-08-26"
+updated: "2026-08-30"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 tags: ["portal", "index", "docs-root", "navigation"]
@@ -48,12 +48,14 @@ docs/
 - **[dev-pipeline.md](contracts/dev-pipeline.md)**: 三层开发环境（开发/预发布/生产）与隔离部署流水线
 - **[ops-entry.md](contracts/ops-entry.md)**: 运维命令唯一入口契约与各级脚本权责
 - **[plugin-git-pr.md](contracts/plugin-git-pr.md)**: 插件仓 Git 分支、Worktree 与 PR 提交流程规范
+- **[project-assets-contract.md](contracts/project-assets-contract.md)**: 画布/主体库 100% 物理实体化与相对路径合同
 - **[ui-design-guidelines.md](contracts/ui-design-guidelines.md)**: OmniMux UI 交互与视觉设计规范 (DSH 原生设计体系)
 - **[model-list-ownership.md](contracts/model-list-ownership.md)**: 模型列表单一所有权与补丁机制
 - *[👉 查看完整 22 篇契约矩阵...](contracts/README.md)*
 
 ### 2.2 [decisions/ (架构决策记录 - ADR)](decisions/README.md)
 *不可变的历史架构决策（L2），记录重大技术选型背景、裁定理由与备选方案权衡。*
+- **[2026-08-30-physical-materialization.md](decisions/2026-08-30-physical-materialization.md)**: 画布与资产库 100% 物理实体化
 - **[2026-08-27-adopt-dsh-native-ui-system.md](decisions/2026-08-27-adopt-dsh-native-ui-system.md)**: 全面适配 DSH 原生 UI 规范与废除外部主题决议
 - **[2026-08-26-ops-entry-authority.md](decisions/2026-08-26-ops-entry-authority.md)**: 运维入口收敛与 omnimux.mjs 权威裁定
 - **[2026-08-21-xai-full-shell-theme.md](decisions/2026-08-21-xai-full-shell-theme.md)**: *(Superseded)* x.ai 全壳主题桥接方案（已被 08-27 决议废除）
@@ -64,7 +66,8 @@ docs/
 
 ### 2.3 [specs/ (产品规格与技术设计)](specs/README.md)
 *各垂直插件与中枢功能的产品需求 PRD、技术设计规格 RFC 与高保真交互原型。*
-- **[2026-08-22-omnimux-assets-creative-library.md](specs/2026-08-22-omnimux-assets-creative-library.md)**: 创作资产库功能规格
+- **[2026-08-30-omnimux-physical-materialization.md](specs/2026-08-30-omnimux-physical-materialization.md)**: 画布与资产库 100% 物理实体化 PRD
+- **[2026-08-22-omnimux-assets-creative-library.md](specs/2026-08-22-omnimux-assets-creative-library.md)**: 创作资产库功能规格（Q1 零拷贝已被 08-30 取代）
 - **[2026-08-23-omnimux-products.md](specs/2026-08-23-omnimux-products.md)**: 产品库需求与设计规格
 - **[2026-08-24-omnimux-market-agent-plaza.md](specs/2026-08-23-omnimux-market-agent-plaza.md)**: 专家·技能·连接器集市设计规格
 - **[2026-08-25-social-analytics-prd.md](specs/2026-08-25-social-analytics-prd.md)**: 全社媒矩阵数据看板 PRD
