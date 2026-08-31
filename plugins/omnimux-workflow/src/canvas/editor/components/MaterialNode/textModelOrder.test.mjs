@@ -14,13 +14,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 test('sortCatalogRows：按 label A–Z，numeric collation，不改原数组', () => {
   const rows = [
     { id: 'b', label: 'Seedance 2.0' },
-    { id: 'a', label: 'Claude 4.6' },
+    { id: 'a', label: 'Claude Opus 4.6' },
     { id: 'c', label: 'Seedance 10' },
   ];
   const snapshot = rows.map((row) => row.id);
   assert.deepEqual(
     sortCatalogRows(rows).map((row) => row.label),
-    ['Claude 4.6', 'Seedance 2.0', 'Seedance 10'],
+    ['Claude Opus 4.6', 'Seedance 2.0', 'Seedance 10'],
   );
   assert.deepEqual(rows.map((row) => row.id), snapshot);
   assert.deepEqual(sortCatalogRows([]), []);

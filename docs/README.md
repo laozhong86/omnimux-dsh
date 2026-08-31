@@ -53,6 +53,7 @@ docs/
 - **[project-assets-contract.md](contracts/project-assets-contract.md)**: 画布/主体库 100% 物理实体化与相对路径合同
 - **[ui-design-guidelines.md](contracts/ui-design-guidelines.md)**: OmniMux UI 交互与视觉设计规范 (DSH 原生设计体系)
 - **[model-list-ownership.md](contracts/model-list-ownership.md)**: 模型列表单一所有权与补丁机制
+- **[model-display-label.md](contracts/model-display-label.md)**: 模型显示名/别名规范（禁止 `-`，大小写）
 - *[👉 查看完整 22 篇契约矩阵...](contracts/README.md)*
 
 ### 2.2 [decisions/ (架构决策记录 - ADR)](decisions/README.md)

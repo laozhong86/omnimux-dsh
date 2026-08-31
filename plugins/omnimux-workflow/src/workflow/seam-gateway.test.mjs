@@ -159,11 +159,11 @@ function createFakeSeamHub(opts = {}) {
           audio: 'suno',
         },
         text: [
-          { id: 'claude-opus-4-6', label: 'Claude 4.6' },
-          { id: 'deepseek-v4-flash-vision-exp', label: 'DeepSeek 4 Flash' },
+          { id: 'claude-opus-4-6', label: 'Claude Opus 4.6' },
+          { id: 'deepseek-v4-flash-vision-exp', label: 'DeepSeek V4 Flash' },
           { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
           { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
-          { id: 'gpt-5.5', label: 'GPT-5.5' },
+          { id: 'gpt-5.5', label: 'GPT 5.5' },
         ],
         image: [
           { id: 'gpt-image-2', label: 'GPT Image 2' },
@@ -174,7 +174,7 @@ function createFakeSeamHub(opts = {}) {
           { id: 'seedance-2-0-fast', label: 'Seedance 2.0 Fast' },
         ],
         audio: [
-          { id: 'gpt-4o-mini-tts', label: 'GPT-4o Mini TTS' },
+          { id: 'gpt-4o-mini-tts', label: 'GPT 4o Mini TTS' },
           { id: 'suno', label: 'Suno' },
         ],
       };
@@ -593,11 +593,11 @@ test('capabilities：seam 可达时返回 hub modelCatalog（env 不收缩列表
           audio: 'suno',
         },
         text: [
-          { id: 'claude-opus-4-6', label: 'Claude 4.6' },
-          { id: 'deepseek-v4-flash-vision-exp', label: 'DeepSeek 4 Flash' },
+          { id: 'claude-opus-4-6', label: 'Claude Opus 4.6' },
+          { id: 'deepseek-v4-flash-vision-exp', label: 'DeepSeek V4 Flash' },
           { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
           { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
-          { id: 'gpt-5.5', label: 'GPT-5.5' },
+          { id: 'gpt-5.5', label: 'GPT 5.5' },
         ],
         image: [
           { id: 'gpt-image-2', label: 'GPT Image 2' },
@@ -608,7 +608,7 @@ test('capabilities：seam 可达时返回 hub modelCatalog（env 不收缩列表
           { id: 'seedance-2-0-fast', label: 'Seedance 2.0 Fast' },
         ],
         audio: [
-          { id: 'gpt-4o-mini-tts', label: 'GPT-4o Mini TTS' },
+          { id: 'gpt-4o-mini-tts', label: 'GPT 4o Mini TTS' },
           { id: 'suno', label: 'Suno' },
         ],
       };

@@ -736,7 +736,7 @@ export const AUDIO_MODEL_SPECS = [
   },
   {
     id: 'gpt-4o-mini-tts',
-    label: 'GPT-4o Mini TTS',
+    label: 'GPT 4o Mini TTS',
     badge: '语音合成',
     subtitle: 'OpenAI 高清配音 · 6 种音色',
     family: 'openai',

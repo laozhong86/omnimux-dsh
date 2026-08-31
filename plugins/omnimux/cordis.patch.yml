@@ -84,7 +84,7 @@
             compat:
               requiresReasoningContentOnAssistantMessages: true
           - id: gpt-5.6-sol
-            name: GPT-5.6 Sol
+            name: GPT 5.6 Sol
             contextWindow: 1000000
             input: [text, image]
             reasoningEfforts:
@@ -95,7 +95,7 @@
               xhigh: xhigh
               max: max
           - id: gpt-5.5
-            name: GPT-5.5
+            name: GPT 5.5
             contextWindow: 1000000
             input: [text, image]
             reasoningEfforts:
@@ -141,7 +141,7 @@
             compat:
               requiresReasoningContentOnAssistantMessages: true
           - id: deepseek-v4-flash-vision-exp
-            name: DeepSeek V4 Flash Vision Exp
+            name: DeepSeek V4 Flash
             contextWindow: 1000000
             input: [text, image]
             reasoningEfforts:
@@ -170,7 +170,7 @@
             reasoningEfforts:
               max: max
           - id: glm-5.3
-            name: GLM-5.3
+            name: GLM 5.3
             reasoningEfforts:
               low: low
               medium: medium

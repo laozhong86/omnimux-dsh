@@ -9,11 +9,11 @@ describe('sortCatalogRows', () => {
   it('sorts by label with numeric collation and does not mutate input', () => {
     const rows = [
       { id: 'b', label: 'Seedance 2.0' },
-      { id: 'a', label: 'Claude 4.6' },
+      { id: 'a', label: 'Claude Opus 4.6' },
       { id: 'c', label: 'Seedance 10' },
     ]
     const snapshot = rows.map((row) => row.id)
-    assert.deepEqual(sortCatalogRows(rows).map((row) => row.label), ['Claude 4.6', 'Seedance 2.0', 'Seedance 10'])
+    assert.deepEqual(sortCatalogRows(rows).map((row) => row.label), ['Claude Opus 4.6', 'Seedance 2.0', 'Seedance 10'])
     assert.deepEqual(rows.map((row) => row.id), snapshot)
     assert.deepEqual(sortCatalogRows([]), [])
     assert.deepEqual(sortCatalogRows(null), [])
@@ -40,6 +40,27 @@ describe('buildModelCatalog', () => {
     const labels = catalog.text.map((row) => row.label)
     const sorted = [...labels].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
     assert.deepEqual(labels, sorted)
+    assert.equal(catalog.text.find((row) => row.id === 'claude-opus-4-6')?.label, 'Claude Opus 4.6')
+    assert.equal(catalog.text.find((row) => row.id === 'deepseek-v4-flash-vision-exp')?.label, 'DeepSeek V4 Flash')
+    assert.equal(catalog.text.find((row) => row.id === 'gpt-5.5')?.label, 'GPT 5.5')
+  })
+
+  it('forbids ASCII hyphen-minus in every catalog model label', () => {
+    const catalog = buildModelCatalog({ text: parseHubConfig({}).text, media: parseHubConfig({}).media, env: {} })
+    for (const kind of ['text', 'image', 'video', 'audio']) {
+      for (const row of catalog[kind]) {
+        assert.equal(
+          typeof row.label,
+          'string',
+          `${kind}/${row.id} missing label`,
+        )
+        assert.doesNotMatch(
+          row.label,
+          /-/,
+          `${kind} model label must not contain '-': ${row.id} → ${row.label}`,
+        )
+      }
+    }
   })
 
   it('lets env overlay defaults without shrinking lists', () => {
