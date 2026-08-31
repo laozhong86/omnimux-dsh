@@ -50,6 +50,31 @@ export const DEFAULT_MATERIAL_TOOL: Record<MaterialType, MaterialTool> = {
   audio: 'text-to-audio',
 };
 
+/**
+ * 画布节点模型白名单（针对 text、image 等模态进行治理；未配置的模态不进行过滤）。
+ */
+export const MATERIAL_NODE_WHITELIST: Partial<Record<MaterialType, readonly string[]>> = {
+  text: Object.freeze([
+    'gemini-3.7-flash',
+    'claude-opus-4-6',
+    'gpt-5.5',
+    'gemini-3.1-pro-preview',
+  ]),
+  image: Object.freeze([
+    'nanobanana-2',
+    'nano_banana_2',
+    'nanobanana-pro',
+    'nano_banana_pro',
+    'seedream-5.0-pro',
+    'seedream-4.5',
+    'midjourney-8.1',
+    'midjourney-7',
+    'midjourney-niji-7',
+    'gpt-image-2',
+  ]),
+};
+export const NODE_MODEL_WHITELIST = MATERIAL_NODE_WHITELIST;
+
 /** 生成型工具的可用画幅选项（params.aspectRatio） */
 export const ASPECT_RATIO_OPTIONS = ['1:1', '4:3', '16:9', '9:16'] as const;
 
