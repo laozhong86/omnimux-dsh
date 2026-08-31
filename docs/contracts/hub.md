@@ -151,7 +151,7 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `videoProcess` | neutral provide（provider: omnimux-video） | `{ capability, input, dest, signal? }` | `{ mode: "live", files?: [{ path, kind, meta? }], result? }` | `ffmpeg-missing`, `unknown-capability`, `video-invalid-input`, `video-ffmpeg-failed`, `video-incompatible-streams`, `video-canceled`, `video-timeout`, `video-<capability>-failed` |
 | `video_process` | omnimux-video tool over `videoProcess` | same | same | same |
 
-`audioGenerate` exposes audio generation / TTS / music capabilities (Suno, GPT-4o Mini TTS, Whisper-1). Digital-human / talking-head is a `videoGenerate` request (reference image, duration, speech constraints), not a third HTTP client.
+`audioGenerate` exposes audio generation / TTS / music capabilities (Suno, GPT 4o Mini TTS, Whisper-1). Digital-human / talking-head is a `videoGenerate` request (reference image, duration, speech constraints), not a third HTTP client.
 
 ## Official-only (C-class)
 

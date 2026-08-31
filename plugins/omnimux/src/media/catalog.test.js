@@ -40,4 +40,21 @@ describe('hub media catalog tables', () => {
     assert.ok(findMediaModel('audio', 'suno'))
     assert.ok(AUDIO_MODEL_SPECS.some((row) => row.id === 'gpt-4o-mini-tts'))
   })
+
+  it('model row labels never contain ASCII hyphen-minus', () => {
+    for (const [kind, rows] of [
+      ['image', IMAGE_MODEL_SPECS],
+      ['video', VIDEO_MODEL_SPECS],
+      ['audio', AUDIO_MODEL_SPECS],
+    ]) {
+      for (const row of rows) {
+        assert.doesNotMatch(
+          row.label,
+          /-/,
+          `${kind} model label must not contain '-': ${row.id} → ${row.label}`,
+        )
+      }
+    }
+    assert.equal(findMediaModel('audio', 'gpt-4o-mini-tts')?.label, 'GPT 4o Mini TTS')
+  })
 })

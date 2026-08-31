@@ -92,6 +92,9 @@ it that way: user layers set `agent-default-model` only.
   (`defaultTextModel` / `defaultImageModel` / `defaultVideoModel` /
   `defaultAudioModel`) → hub Config defaults → first sorted id. Existing
   node `params.model` is kept (deprecated badge if absent from catalog).
+- **Display labels** (UI aliases) are separate from routing ids. Labels MUST
+  follow [model-display-label.md](./model-display-label.md): no `-` in the
+  visible model name; brand casing preserved (`Claude Opus 4.6`, `GPT 5.5`).
 
 ## Changing the list
 
