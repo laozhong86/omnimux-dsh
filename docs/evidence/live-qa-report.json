@@ -1,36 +1,32 @@
 {
-  "timestamp": "2026-08-30T11:48:00+08:00",
-  "targetStage": "omnimux-login-gate",
-  "issue": 238,
+  "issue": 299,
+  "pr": 300,
+  "stage": "workflow-canvas",
   "port": 45120,
-  "clientSha256": "30878760bfed7d4faf6d82ab0d3c4c7fa343b59d6f1bb5c679bb01ba4841b5ba",
-  "liveClientBytes": 197435,
-  "assertions": {
-    "1. Live client.js SHA matches worktree lib/client.js": true,
-    "2. window.__omnimuxAuth present": true,
-    "3. Gate phase stays closed across 7 first-level clicks": true,
-    "4. [data-omnimux-login-gate] flash count = 0": true,
-    "5. Stages claimed: accounts/workflow/assets/products/inspiration/publish/analytics": true,
-    "6. Screenshot shows inspiration library without marketing modal": true
-  },
-  "details": {
-    "clicks": [
-      "账号 → omnimux-accounts",
-      "创作 → omnimux-workflow",
-      "资产库 → omnimux-assets",
-      "产品库 → omnimux-products",
-      "灵感库 → omnimux-inspiration",
-      "发布 → omnimux-publish",
-      "数据分析 → omnimux-analytics"
-    ],
-    "flashes": 0,
-    "gateNow": 0,
-    "authFrames": ["closed", "closed", "closed", "closed", "closed"],
-    "screenshot": "docs/evidence/issue-238-login-gate-no-flash-45120.png",
-    "taskSpace": "login-gate no-flash live probe",
-    "hostPid": 12378,
-    "hostProfileObserved": "/Users/x/.dsh/profiles/omnimux",
-    "note": "OmniMux Dev.app on 45120 was serving ~/.dsh, not ~/.omnimux-dev. After OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1 ./scripts/sync-to-app.sh --dsh omnimux, live SHA matched worktree. Prod ~/.omnimux left untouched (194796 / a80ca1d5)."
-  },
-  "verdict": "PASS"
+  "profile": "~/.omnimux-dev",
+  "verified_at": "2026-08-31T11:15:06",
+  "assertions": [
+    {
+      "name": "deselect-then-script-gen",
+      "selected": 1,
+      "panel": true,
+      "prompt_prefix": "请创作一个"
+    },
+    {
+      "name": "deselect-then-planning-gen",
+      "selected": 1,
+      "panel": true,
+      "prompt_prefix": "请撰写一份",
+      "content_empty": true
+    },
+    {
+      "name": "deselect-then-prompt-gen",
+      "selected": 1,
+      "panel": true,
+      "prompt_prefix": "根据以下创意需求",
+      "content_empty": true
+    }
+  ],
+  "screenshot": "docs/evidence/issue-299-text-preset-activate.png",
+  "result": "pass"
 }

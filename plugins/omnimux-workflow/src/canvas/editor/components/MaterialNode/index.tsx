@@ -33,6 +33,7 @@ import {
 import { isConfigPanelVisible, mapNodeToGenerationStatus } from '../../utils/nodeVisualMath';
 import { getOutputOptionSpecs, parseOutputOptionKey } from '../../utils/connectionMenuOptions';
 import { createMaterialNode } from '../../utils/nodeFactory';
+import { planSelectAndPatchNode } from '../../utils/planSelectAndPatchNode';
 import { useExecutionStore } from '../../../store/executionStore';
 import { useCanvasStore, useIsMultiSelected } from '../../../store/canvasStore';
 import { useTextStageStore } from '../../../store/textStageStore';
@@ -156,7 +157,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const effectiveTextContent = (generatedContent || content || '') as string;
 
-  // 预设注入
+  // 预设注入：写 prompt + 单选当前节点（空态按钮 nodrag 拦掉了 RF 选中手势）
   const handleApplyPreset = useCallback(
     (presetKey: string) => {
       if (materialType === 'text') {
@@ -170,13 +171,15 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         } else if (presetKey === 'storyboard') {
           injected = '镜头1：全景，城市天际线鸟瞰（缓慢下推 3s）\n镜头2：中景，主角推门走进咖啡馆（特写手部 2s）\n镜头3：特写，桌上的老式黑白照片（静止 2s）';
         }
-        updateNodeData({
+        const updates: Record<string, unknown> = {
           prompt: injected,
           selectedTool: 'text-to-text',
-        });
+        };
+        setNodes((nodes) => planSelectAndPatchNode(nodes, id, updates));
+        useCanvasStore.getState().setSelectedElement('node', id);
       }
     },
-    [materialType, updateNodeData],
+    [id, materialType, setNodes],
   );
 
   // 本地文件导入：只接受带绝对路径的 File（Electron）或 native picker。
