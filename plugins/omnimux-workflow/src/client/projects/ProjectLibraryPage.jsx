@@ -169,7 +169,7 @@ export function ProjectLibraryPage(props) {
   return (
     <div
       role="region"
-      aria-label={t('projects.pageTitle')}
+      aria-label={t('projects.title')}
       aria-hidden={visible ? undefined : 'true'}
       className="omnimux-workflow-library-page"
       data-visible={visible ? 'true' : 'false'}
@@ -183,8 +183,8 @@ export function ProjectLibraryPage(props) {
       }}
     >
       <PageHeader
-        title={t('projects.pageTitle')}
-        subtitle={t('projects.pageSubtitle')}
+        title={t('projects.title')}
+        subtitle={t('projects.subtitle')}
         actions={<WorkbenchFocusBar t={t} />}
         onRefresh={() => { void reload() }}
         refreshing={busy}
