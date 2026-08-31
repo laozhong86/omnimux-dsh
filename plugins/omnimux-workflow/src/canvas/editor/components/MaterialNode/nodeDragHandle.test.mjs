@@ -72,7 +72,7 @@ test('MaterialNode chat 胶囊是次区图标：section secondary，无可见 la
   assert.match(edit, /label:\s*t\('pill\.edit'\)/);
 
   const replace = sliceActionBlock(nodeSrc, 'replace');
-  assert.match(replace, /section:\s*'secondary'/);
+  assert.match(replace, /section:\s*'primary'/);
   assert.match(replace, /label:\s*t\('pill\.replace'\)/);
 
   const copy = sliceActionBlock(nodeSrc, 'copy');

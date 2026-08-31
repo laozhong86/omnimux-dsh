@@ -101,7 +101,7 @@ test('VideoCompositionNode 契约：接入 Shell/Header/Pill/Launcher/GSC 与状
   assert.match(videoNodeSrc, /VIDEO_COMPOSITION_NODE_HEIGHT = 440/);
 });
 
-test('VideoCompositionNode chat 胶囊是次区图标，下载仍 secondary', () => {
+test('VideoCompositionNode chat 胶囊是次区图标，下载为 primary 主按钮', () => {
   const chatStart = videoNodeSrc.indexOf("key: 'add-to-conversation'");
   assert.ok(chatStart >= 0, 'missing add-to-conversation action');
   const chatObjStart = videoNodeSrc.lastIndexOf('{', chatStart);
@@ -140,7 +140,7 @@ test('VideoCompositionNode chat 胶囊是次区图标，下载仍 secondary', ()
     }
   }
   const download = videoNodeSrc.slice(downloadObjStart, downloadEnd);
-  assert.match(download, /section:\s*'secondary'/);
+  assert.match(download, /section:\s*'primary'/);
   assert.match(download, /label:\s*t\('pill\.download'\)/);
 });
 

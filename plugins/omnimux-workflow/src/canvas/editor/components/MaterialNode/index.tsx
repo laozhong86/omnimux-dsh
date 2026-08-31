@@ -381,7 +381,6 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
     if (materialType === 'text') {
       return [
-        chat,
         {
           key: 'edit',
           label: t('pill.edit'),
@@ -415,23 +414,24 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             handleSplitText();
           },
         },
+        chat,
       ];
     }
 
     if (kind === 'import') {
       return [
-        chat,
         {
           key: 'replace',
           label: t('pill.replace'),
           icon: RefreshCw,
-          section: 'secondary',
+          section: 'primary',
           title: t('pill.replace'),
           onClick: (event) => {
             event.stopPropagation();
             void resourcePicker.fillImportNode();
           },
         },
+        chat,
       ];
     }
 
