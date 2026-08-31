@@ -24,6 +24,7 @@ import ConfigPanelShell from './ConfigPanel/ConfigPanelShell';
 import ConfigPanel from './ConfigPanel';
 import ResourcePickerModal from '../ResourcePickerModal';
 import { useResourcePicker } from '../../hooks/useResourcePicker';
+import { useUpstreamMedia } from '../../hooks/useUpstreamMedia';
 import { useAddToConversation } from '../../../hooks/useAddToConversation';
 import {
   getDefaultNodeWidth,
@@ -48,6 +49,7 @@ import { toast } from '../../../ui';
 import type { CapabilityCatalog, NodeExecutionApiStatus } from '../../../../shared/api';
 import { draftFromRealPath, nativePathOf } from '../../utils/localFileDraft.ts';
 import { planImportNodeFill } from '../../utils/resourcePickerPolicy.ts';
+import { resolveModelInputCapability } from '../../../../shared/validation/modelCompatibilityEvaluator.ts';
 
 // ==================== 主组件 ====================
 
@@ -438,6 +440,32 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     (isHovered || selected) &&
     !isMultiSelected;
 
+  // 多模态容量与降级判定（生成型节点 + 上游图片超过当前模型 max）
+  const upstreams = useUpstreamMedia(id);
+  const isDegraded = useMemo(() => {
+    if (kind !== 'generate') return false;
+    const modelId = (typeof nodeData.params?.model === 'string' && nodeData.params.model.trim())
+      ? nodeData.params.model.trim()
+      : (catalog?.defaults?.[materialType] ?? '');
+    const modelCap = resolveModelInputCapability(modelId, catalog);
+    const max = modelCap?.referenceImages?.max;
+    if (max === undefined) return false;
+    const imageCount = upstreams.filter(
+      (u) => u.materialType === 'image' || (!u.materialType && u.hasMedia),
+    ).length;
+    return imageCount > max;
+  }, [catalog, kind, materialType, nodeData.params?.model, upstreams]);
+
+  const degradedWarning = useMemo(() => {
+    if (!isDegraded) return undefined;
+    const modelId = (typeof nodeData.params?.model === 'string' && nodeData.params.model.trim())
+      ? nodeData.params.model.trim()
+      : (catalog?.defaults?.[materialType] ?? '');
+    const modelCap = resolveModelInputCapability(modelId, catalog);
+    const max = modelCap?.referenceImages?.max;
+    return t('model.compatibility.degradedWarning').replace('{max}', String(max ?? ''));
+  }, [catalog, isDegraded, materialType, nodeData.params?.model, t]);
+
   return (
     <div
       className={`wf-material-node ${selected ? 'wf-material-node--selected' : ''}`}
@@ -461,7 +489,16 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         label={label}
         materialType={kind === 'import' ? 'import_asset' : materialType}
         onLabelChange={(newLabel) => updateNodeData({ label: newLabel })}
-        trailing={<StatusBadge executionStatus={executionStatus} status={status} />}
+        isDegraded={isDegraded}
+        degradedWarning={degradedWarning}
+        trailing={
+          <StatusBadge
+            executionStatus={executionStatus}
+            status={status}
+            isDegraded={isDegraded}
+            degradedWarning={degradedWarning}
+          />
+        }
       />
 
       {/* 主内容卡片 */}

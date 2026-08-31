@@ -43,6 +43,8 @@ const en: Record<DictKey, string> = {
   'pill.download': 'Download',
   'pill.more': 'More',
   'panel.generate': 'Generate',
+  'panel.refsTitle': 'Reference Media',
+  'panel.refsEmpty': 'No reference inputs',
   'panel.promptPlaceholder': 'Describe what you want to generate...',
   'panel.textPromptPlaceholder': 'Write your story, scene, or character idea...',
   'panel.imagePromptPlaceholder': 'Describe what you want to generate',

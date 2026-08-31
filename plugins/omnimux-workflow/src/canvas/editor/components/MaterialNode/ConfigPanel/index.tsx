@@ -22,6 +22,8 @@ import {
   Play,
   FileText,
   Image as ImageIcon,
+  X,
+  AlertTriangle,
 } from 'lucide-react';
 import type { MaterialNodeData, MaterialTool } from '../../../../types/materialNode';
 import {
@@ -39,6 +41,7 @@ import {
 import { useT } from '../../../../i18n';
 import { CustomSelect, CustomSlider } from '../../../../ui';
 import { ModelBrandIcon } from '../../../../ui/ModelBrandIcon';
+import { useCanvasStore } from '../../../store/canvasStore';
 import { useUpstreamMedia } from '../../../hooks/useUpstreamMedia';
 import { useModelParameterSchema, getCachedCatalog } from '../../../hooks/useModelParameterSchema';
 import GenerateButton from './GenerateButton';
@@ -189,6 +192,20 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       });
     },
     [onUpdateNodeData],
+  );
+
+  // 解绑指定上游连线
+  const handleUnbind = useCallback(
+    (upstreamNodeId: string) => {
+      const state = useCanvasStore.getState();
+      const edgeIdsToRemove = state.edges
+        .filter((edge) => edge.target === nodeId && edge.source === upstreamNodeId)
+        .map((edge) => edge.id);
+      if (edgeIdsToRemove.length > 0) {
+        state.applyCanvasInputMutation({ removeEdgeIds: edgeIdsToRemove });
+      }
+    },
+    [nodeId],
   );
 
   // 模型列表：仅消费 hub catalog（无生产假回退）；按显示名 A–Z。
@@ -370,6 +387,29 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       ? params.resolution
       : defaultResolution;
 
+  // 当前选中模型能力与降级状态
+  const activeCatalog = catalog ?? getCachedCatalog();
+  const currentModelCap = useMemo(() => {
+    const rawRows = activeCatalog?.[materialType] ?? [];
+    const found = rawRows.find((r) => r.id === modelValue);
+    return found?.inputCapability ?? resolveModelInputCapability(modelValue, activeCatalog);
+  }, [activeCatalog, materialType, modelValue]);
+
+  const upstreamTypes = useMemo(() => upstreams.map((u) => ({ type: u.materialType })), [upstreams]);
+  const modelCompat = useMemo(
+    () => evaluateModelCompatibility(modelValue, currentModelCap, upstreamTypes),
+    [modelValue, currentModelCap, upstreamTypes],
+  );
+  const isModelDegraded =
+    modelCompat.level === 'degraded' ||
+    (currentModelCap?.referenceImages?.max !== undefined &&
+      upstreams.filter((u) => u.materialType === 'image' || !u.materialType).length >
+        currentModelCap.referenceImages.max);
+  const degradedWarningText = useMemo(() => {
+    const max = currentModelCap?.referenceImages?.max;
+    return t('model.compatibility.degradedWarning').replace('{max}', String(max ?? ''));
+  }, [currentModelCap, t]);
+
   return (
     <div className="wf-config-panel">
       {/* 1. 音频模式专属顶部 Tab */}
@@ -439,6 +479,20 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
                   {/* 状态小圆点 */}
                   {item.hasMedia && <span className="wf-config-panel__ref-thumb-dot" />}
+
+                  {/* 解绑按钮 */}
+                  <button
+                    type="button"
+                    className="wf-config-panel__ref-thumb-unbind nodrag"
+                    title={t('edge.disconnect')}
+                    aria-label={t('edge.disconnect')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnbind(item.nodeId);
+                    }}
+                  >
+                    <X size={8} />
+                  </button>
                 </div>
               ))}
               {onOpenResourcePicker ? (
@@ -456,15 +510,23 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
             <span />
           )}
 
-          {/* 右上角原地展开 / 收起，不脱离画布上下文 */}
-          <button
-            type="button"
-            className="wf-config-panel__expand-btn"
-            onClick={() => setIsExpanded((prev) => !prev)}
-            title={isExpanded ? t('panel.collapse') : t('panel.expand')}
-          >
-            {isExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-          </button>
+          {/* 右上角操作区：降级警示徽标与原地展开 / 收起 */}
+          <div className="wf-config-panel__prompt-header-actions">
+            {isModelDegraded && (
+              <span
+                className="wf-config-panel__degraded-badge wf-material-node__badge wf-material-node__badge--degraded"
+                title={degradedWarningText}
+              />
+            )}
+            <button
+              type="button"
+              className="wf-config-panel__expand-btn"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              title={isExpanded ? t('panel.collapse') : t('panel.expand')}
+            >
+              {isExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            </button>
+          </div>
         </div>
 
         {/* Prompt 输入框：展开态加高并保持底部参数栏紧贴 */}

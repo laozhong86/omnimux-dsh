@@ -8,7 +8,7 @@
  * 1. 扩展支持 `customIcon`（React 组件或 ReactNode 自定义图标）；
  * 2. 扩展支持 `video_composition` 及通用 string 材质类型；
  * 3. 保持 100% 兼容现有 TableNode / MaterialNode 调用；
- * 4. 内置双击编辑与 StatusBadge 挂载插槽。
+ * 4. 内置双击编辑、StatusBadge 挂载插槽与非破坏性降级/警示徽标。
  */
 
 import React, { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
@@ -58,6 +58,10 @@ export interface NodeHeaderProps {
   onLabelChange?: (newLabel: string) => void;
   /** 头部右侧附加内容（执行状态徽标等） */
   trailing?: React.ReactNode;
+  /** 是否处于非破坏性降级/超限警示态 */
+  isDegraded?: boolean;
+  /** 降级警告提示语 */
+  degradedWarning?: string;
 }
 
 const NodeHeader: React.FC<NodeHeaderProps> = ({
@@ -66,6 +70,8 @@ const NodeHeader: React.FC<NodeHeaderProps> = ({
   customIcon,
   onLabelChange,
   trailing,
+  isDegraded,
+  degradedWarning,
 }) => {
   const t = useT();
   const fallbackLabel = materialType ? t(`node.type.${materialType}`) : '节点';
@@ -197,6 +203,12 @@ const NodeHeader: React.FC<NodeHeaderProps> = ({
         >
           {displayLabel}
         </span>
+      )}
+      {isDegraded && !trailing && (
+        <span
+          className="wf-node-header__degraded-badge wf-material-node__badge wf-material-node__badge--degraded"
+          title={degradedWarning || t('model.compatibility.degradedWarning')}
+        />
       )}
       {trailing}
     </div>

@@ -5781,6 +5781,203 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   color: var(--wb-surface);
 }
 
+/* ==========================================================================
+   Phase 3: ReferenceSlots 容量指示器与解绑 & 节点降级警示徽标
+   ========================================================================== */
+
+.wf-ref-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--dsw-alias-bg-layer-1, var(--wb-surface-raised));
+  border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
+  border-radius: 8px;
+}
+
+.wf-ref-slot--over {
+  border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary, var(--dsw-specific-danger, var(--wb-danger))) 35%, transparent);
+}
+
+.wf-ref-slot__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wf-ref-slot__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-secondary, var(--wb-text-secondary));
+}
+
+.wf-ref-slot__capacity {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 4px;
+  color: var(--dsw-alias-label-tertiary, var(--wb-text-muted));
+  background: var(--dsw-alias-bg-layer-2, var(--wb-surface));
+  border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
+  transition: all 150ms ease;
+}
+
+.wf-ref-slot__capacity--over,
+.wf-ref-slot--over .wf-ref-slot__capacity {
+  color: var(--dsw-alias-label-danger, var(--dsw-specific-danger, var(--wb-danger)));
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary, var(--dsw-specific-danger, var(--wb-danger))) 12%, transparent);
+  border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary, var(--dsw-specific-danger, var(--wb-danger))) 35%, transparent);
+}
+
+.wf-ref-slot__warning {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--dsw-alias-label-danger, var(--dsw-specific-danger, var(--wb-danger)));
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary, var(--dsw-specific-danger, var(--wb-danger))) 8%, transparent);
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.wf-ref-slot__empty {
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary, var(--wb-text-muted));
+  padding: 4px 0;
+}
+
+.wf-ref-slot__list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.wf-ref-slot__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 48px;
+  padding: 4px;
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-elevated, var(--wb-surface));
+  border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
+}
+
+.wf-ref-slot__thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.wf-ref-slot__thumb--icon,
+.wf-ref-slot__thumb--pending {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dsw-alias-bg-layer-1, var(--wb-surface-raised));
+  color: var(--dsw-alias-label-tertiary, var(--wb-text-muted));
+}
+
+.wf-ref-slot__name {
+  font-size: 10px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-secondary, var(--wb-text-secondary));
+}
+
+.wf-ref-slot__unbind {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
+  background: var(--dsw-alias-bg-elevated, var(--wb-surface));
+  color: var(--dsw-alias-label-tertiary, var(--wb-text-muted));
+  cursor: pointer;
+  z-index: 2;
+  transition: all 150ms ease;
+}
+
+.wf-ref-slot__unbind:hover {
+  background: var(--dsw-alias-state-error-primary, var(--dsw-specific-danger, var(--wb-danger)));
+  border-color: var(--dsw-alias-state-error-primary, var(--dsw-specific-danger, var(--wb-danger)));
+  color: var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary));
+}
+
+/* ConfigPanel 内置缩略图解绑按钮 */
+.wf-config-panel__ref-thumb-unbind {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
+  background: var(--dsw-alias-bg-elevated, var(--wb-surface));
+  color: var(--dsw-alias-label-tertiary, var(--wb-text-muted));
+  cursor: pointer;
+  z-index: 3;
+}
+
+.wf-config-panel__ref-thumb-slot:hover .wf-config-panel__ref-thumb-unbind {
+  display: flex;
+}
+
+.wf-config-panel__ref-thumb-unbind:hover {
+  background: var(--dsw-alias-state-error-primary, var(--dsw-specific-danger, var(--wb-danger)));
+  border-color: var(--dsw-alias-state-error-primary, var(--dsw-specific-danger, var(--wb-danger)));
+  color: var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary));
+}
+
+/* Prompt Header 操作区 */
+.wf-config-panel__prompt-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 非破坏性降级/超限警示徽标（黄色） */
+.wf-material-node__badge--degraded {
+  background: var(--dsw-alias-warning, var(--dsw-alias-state-warn-primary, var(--wb-warning)));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsw-alias-warning, var(--wb-warning)) 25%, transparent);
+}
+
+.wf-node-header__degraded-badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+.wf-config-panel__degraded-badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+
 
 
 

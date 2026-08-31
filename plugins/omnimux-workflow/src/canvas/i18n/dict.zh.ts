@@ -50,6 +50,8 @@ const zh = {
   'pill.more': '更多',
   // 配置面板（W2，panel.*）
   'panel.generate': '生成',
+  'panel.refsTitle': '参考素材',
+  'panel.refsEmpty': '暂无参考输入',
   'panel.promptPlaceholder': '输入提示词…',
   'panel.textPromptPlaceholder': '写下你想讲的故事、场景或角色设定。例如：落魄赘婿被丈母娘当众羞辱，转身亮出隐藏的亿万富豪身份。',
   'panel.imagePromptPlaceholder': '描述你想要生成的内容',
