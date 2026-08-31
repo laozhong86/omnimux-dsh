@@ -29,6 +29,7 @@ import {
   resolveNodeKind,
 } from '../../../../types/materialNode';
 import type { CapabilityCatalog } from '../../../../../shared/api';
+import { orderTextModels } from '../../../../../shared/textModelOrder';
 import { useT } from '../../../../i18n';
 import { CustomSelect, CustomSlider, CustomModal } from '../../../../ui';
 import { ModelBrandIcon } from '../../../../ui/ModelBrandIcon';
@@ -223,6 +224,12 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
           { id: 'music-gen-v1', label: 'MusicGen V1' },
         ];
       }
+    }
+
+    // Catalog from a stale Host process may still be the old Claude-first order.
+    // Re-sort on the client so a page refresh is enough (Issue #302).
+    if (materialType === 'text') {
+      rows = orderTextModels(rows);
     }
 
     return rows.map((row) => {
