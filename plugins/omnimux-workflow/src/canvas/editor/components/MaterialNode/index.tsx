@@ -370,10 +370,8 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const pillActions: FloatingPillAction[] = useMemo(() => {
     const chat: FloatingPillAction = {
       key: 'add-to-conversation',
-      label: t('pill.addToConversation'),
       icon: MessageSquarePlus,
-      section: 'primary',
-      variant: 'primary',
+      section: 'secondary',
       title: t('pill.addToConversation'),
       onClick: (event) => {
         event.stopPropagation();

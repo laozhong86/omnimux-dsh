@@ -20,7 +20,8 @@ import { stopToolbarNativeEvent } from './toolbarPointerGuard';
 
 export interface FloatingPillAction {
   key: string;
-  label: React.ReactNode;
+  /** 可见短文案；缺省时胶囊只渲染图标，读屏走 title / aria-label。 */
+  label?: React.ReactNode;
   icon?: React.ComponentType<{ size?: number; className?: string }> | React.ReactNode;
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   section?: ToolbarSection;
@@ -69,6 +70,7 @@ const PillButton: React.FC<{
     onClick={action.onClick}
     disabled={action.disabled}
     title={action.title}
+    aria-label={action.title ? action.title : undefined}
     data-pill-measure-key={measureKey ?? action.key}
   >
     {renderIcon(action.icon)}
@@ -253,23 +255,26 @@ export const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
               onPointerDown={stopToolbarNativeEvent}
               onClick={(e) => e.stopPropagation()}
             >
-              {overflowActions.map((action) => (
-                <button
-                  key={action.key}
-                  type="button"
-                  role="menuitem"
-                  className="wf-floating-top-pill__more-item"
-                  disabled={action.disabled}
-                  title={action.title}
-                  onClick={(event) => {
-                    action.onClick?.(event);
-                    setMoreOpen(false);
-                  }}
-                >
-                  {renderIcon(action.icon)}
-                  {action.label ? <span>{action.label}</span> : null}
-                </button>
-              ))}
+              {overflowActions.map((action) => {
+                const menuLabel = action.label || action.title;
+                return (
+                  <button
+                    key={action.key}
+                    type="button"
+                    role="menuitem"
+                    className="wf-floating-top-pill__more-item"
+                    disabled={action.disabled}
+                    title={action.title}
+                    onClick={(event) => {
+                      action.onClick?.(event);
+                      setMoreOpen(false);
+                    }}
+                  >
+                    {renderIcon(action.icon)}
+                    {menuLabel ? <span>{menuLabel}</span> : null}
+                  </button>
+                );
+              })}
             </div>,
             document.body,
           )

@@ -46,6 +46,14 @@ test('FloatingTopPill 契约：支持声明式 actions 数组与反向缩放', (
   assert.match(pillSrc, /pill\.more/);
 });
 
+test('FloatingTopPill 契约：无 label 不渲染空 span，有 title 时 aria-label，overflow 回退 title', () => {
+  assert.match(pillSrc, /label\?: React\.ReactNode/);
+  assert.match(pillSrc, /action\.label \? <span>\{action\.label\}<\/span> : null/);
+  assert.match(pillSrc, /aria-label=\{action\.title \? action\.title : undefined\}/);
+  assert.match(pillSrc, /const menuLabel = action\.label \|\| action\.title/);
+  assert.match(pillSrc, /\{menuLabel \? <span>\{menuLabel\}<\/span> : null\}/);
+});
+
 test('全仓只剩一份通用 FloatingTopPill，材质私有副本已删除', () => {
   assert.equal(existsSync(join(here, 'MaterialNode/FloatingTopPill.tsx')), false);
 });
@@ -91,6 +99,49 @@ test('VideoCompositionNode 契约：接入 Shell/Header/Pill/Launcher/GSC 与状
   assert.match(videoNodeSrc, /executorKey: 'video_composition'/);
   assert.match(videoNodeSrc, /VIDEO_COMPOSITION_NODE_WIDTH = 350/);
   assert.match(videoNodeSrc, /VIDEO_COMPOSITION_NODE_HEIGHT = 440/);
+});
+
+test('VideoCompositionNode chat 胶囊是次区图标，下载仍 secondary', () => {
+  const chatStart = videoNodeSrc.indexOf("key: 'add-to-conversation'");
+  assert.ok(chatStart >= 0, 'missing add-to-conversation action');
+  const chatObjStart = videoNodeSrc.lastIndexOf('{', chatStart);
+  let depth = 0;
+  let chatEnd = -1;
+  for (let i = chatObjStart; i < videoNodeSrc.length; i++) {
+    if (videoNodeSrc[i] === '{') depth += 1;
+    else if (videoNodeSrc[i] === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        chatEnd = i + 1;
+        break;
+      }
+    }
+  }
+  const chat = videoNodeSrc.slice(chatObjStart, chatEnd);
+  assert.match(chat, /section:\s*'secondary'/);
+  assert.match(chat, /icon:\s*MessageSquarePlus/);
+  assert.match(chat, /title:\s*t\('pill\.addToConversation'\)/);
+  assert.doesNotMatch(chat, /label:\s*t\('pill\.addToConversation'\)/);
+  assert.doesNotMatch(chat, /variant:\s*'primary'/);
+
+  const downloadStart = videoNodeSrc.indexOf("key: 'download_video'");
+  assert.ok(downloadStart >= 0, 'missing download_video action');
+  const downloadObjStart = videoNodeSrc.lastIndexOf('{', downloadStart);
+  depth = 0;
+  let downloadEnd = -1;
+  for (let i = downloadObjStart; i < videoNodeSrc.length; i++) {
+    if (videoNodeSrc[i] === '{') depth += 1;
+    else if (videoNodeSrc[i] === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        downloadEnd = i + 1;
+        break;
+      }
+    }
+  }
+  const download = videoNodeSrc.slice(downloadObjStart, downloadEnd);
+  assert.match(download, /section:\s*'secondary'/);
+  assert.match(download, /label:\s*t\('pill\.download'\)/);
 });
 
 test('videoCompositionStatus 模块契约：三条映射矩阵导出（纯逻辑已由同名单测断言）', () => {

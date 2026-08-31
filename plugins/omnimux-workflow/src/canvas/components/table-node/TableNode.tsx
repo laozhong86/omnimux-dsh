@@ -59,10 +59,8 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
   const pillActions: FloatingPillAction[] = useMemo(() => [
     {
       key: 'add-to-conversation',
-      label: t('pill.addToConversation'),
       icon: MessageSquarePlus,
-      section: 'primary',
-      variant: 'primary',
+      section: 'secondary',
       title: t('pill.addToConversation'),
       onClick: handleAddToConversation,
     },

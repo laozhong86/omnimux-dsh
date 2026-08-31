@@ -32,12 +32,52 @@ test('文本壳有 padding 作为拖拽边', () => {
   assert.match(cssSrc, /\.wf-material-node__text-shell \{[\s\S]*?padding:\s*12px/);
 });
 
+function sliceActionBlock(src, key) {
+  const needle = `key: '${key}'`;
+  const keyIdx = src.indexOf(needle);
+  assert.ok(keyIdx >= 0, `missing action ${key}`);
+  const start = src.lastIndexOf('{', keyIdx);
+  assert.ok(start >= 0, `missing object start for ${key}`);
+  let depth = 0;
+  for (let i = start; i < src.length; i++) {
+    if (src[i] === '{') depth += 1;
+    else if (src[i] === '}') {
+      depth -= 1;
+      if (depth === 0) return src.slice(start, i + 1);
+    }
+  }
+  throw new Error(`unclosed action ${key}`);
+}
+
 test('MaterialNode 顶栏走通用 FloatingTopPill，有素材才显示，生成媒体也会话', () => {
   assert.match(nodeSrc, /from '\.\.\/FloatingTopPill'/);
   assert.match(nodeSrc, /hasNodeMaterial/);
   assert.match(nodeSrc, /shouldShowNodeToolbar/);
   assert.match(nodeSrc, /key:\s*'add-to-conversation'/);
-  assert.match(nodeSrc, /t\('pill\.addToConversation'\)/);
   assert.doesNotMatch(nodeSrc, /from '\.\/FloatingTopPill'/);
   assert.doesNotMatch(nodeSrc, /showReplaceButton/);
+});
+
+test('MaterialNode chat 胶囊是次区图标：section secondary，无可见 label，title 仍走 i18n', () => {
+  const chat = sliceActionBlock(nodeSrc, 'add-to-conversation');
+  assert.match(chat, /section:\s*'secondary'/);
+  assert.match(chat, /icon:\s*MessageSquarePlus/);
+  assert.match(chat, /title:\s*t\('pill\.addToConversation'\)/);
+  assert.doesNotMatch(chat, /label:\s*t\('pill\.addToConversation'\)/);
+  assert.doesNotMatch(chat, /variant:\s*'primary'/);
+  assert.doesNotMatch(chat, /label:\s*['"]/);
+
+  const edit = sliceActionBlock(nodeSrc, 'edit');
+  assert.match(edit, /section:\s*'primary'/);
+  assert.match(edit, /label:\s*t\('pill\.edit'\)/);
+
+  const replace = sliceActionBlock(nodeSrc, 'replace');
+  assert.match(replace, /section:\s*'secondary'/);
+  assert.match(replace, /label:\s*t\('pill\.replace'\)/);
+
+  const copy = sliceActionBlock(nodeSrc, 'copy');
+  assert.match(copy, /section:\s*'secondary'/);
+
+  const split = sliceActionBlock(nodeSrc, 'split');
+  assert.match(split, /section:\s*'secondary'/);
 });
