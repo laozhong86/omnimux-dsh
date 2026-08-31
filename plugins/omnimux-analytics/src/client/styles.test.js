@@ -7,7 +7,7 @@ describe('analytics styles tokens', () => {
   it('scopes every rule under the analytics prefix and names the style node', () => {
     assert.equal(STYLES_ID, 'omnimux-analytics-styles')
     assert.match(ANALYTICS_CSS, /\.omnimux-analytics-stage \{/)
-    assert.match(ANALYTICS_CSS, /--stage-top/)
+    assert.match(ANALYTICS_CSS, /position:\s*relative;/)
     assert.equal(ANALYTICS_CSS.includes('style='), false)
   })
 

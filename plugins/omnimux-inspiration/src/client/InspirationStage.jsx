@@ -1,70 +1,65 @@
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect } from 'react'
 import { PageHeader } from 'dsh-ui-kit'
 import { InspirationSection } from './InspirationSection.jsx'
 import { injectInspirationStyles } from './styles.js'
+import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
+
+const TAB_ID = 'omnimux-inspiration:library'
 
 /**
- * After the first open the subtree stays mounted and is hidden with
- * `display:none` so filters / list survive a close.
- * @param {{ t: (key: string) => string, stage: { getSnapshot: () => boolean, subscribe: Function, set: Function, readBox: () => { top: number, left: number, width: number, height: number } } }} props
+ * Inspiration workbench tab component in dsh-better-sidebar.
+ * @param {{
+ *   t: (key: string) => string,
+ *   stage?: { getSnapshot: () => boolean, subscribe: Function, set: Function },
+ *   store?: { reduce?: Function, getSnapshot?: Function },
+ *   visible?: boolean,
+ * }} props
  */
-export function InspirationStage({ t, stage }) {
+export function InspirationStage({ t, stage, store, visible = true }) {
   useEffect(() => { injectInspirationStyles() }, [])
+  const everOpened = true
 
-  // Wrap method refs — useSyncExternalStore calls subscribe/getSnapshot bare.
-  // Passing `stage.subscribe` / `stage.getSnapshot` drops `this` and can leave
-  // the Fiber memoized snapshot stuck after store flips.
-  const open = useSyncExternalStore(
-    stage ? (cb) => stage.subscribe(cb) : () => () => {},
-    stage ? () => stage.getSnapshot() : () => false,
-  )
-  const [everOpened, setEverOpened] = useState(false)
-  const [box, setBox] = useState(() => (stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 }))
+  useEffect(() => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (!api || typeof api.attachStore !== 'function' || !store) return undefined
+    api.attachStore(store)
+    return () => { api.detachStore?.(store) }
+  }, [store])
 
-  if (open && !everOpened) setEverOpened(true)
-
-  useLayoutEffect(() => {
-    if (!open || !stage) return undefined
-    const update = () => { setBox(stage.readBox()) }
-    update()
-    const scroll = document.querySelector('[data-conversation-scroll]')
-    const target = scroll instanceof HTMLElement
-      ? scroll
-      : document.querySelector('[data-slot="conversation"]')?.parentElement
-    const observer = typeof ResizeObserver === 'function' && target ? new ResizeObserver(update) : null
-    if (target && observer) observer.observe(target)
-    window.addEventListener('resize', update)
-    return () => {
-      observer?.disconnect()
-      window.removeEventListener('resize', update)
+  const handleClose = () => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (api && typeof api.closeTab === 'function') {
+      api.closeTab(TAB_ID)
+    } else {
+      stage?.set?.(false)
     }
-  }, [open, stage])
-
-  if (!stage || !everOpened) return null
+  }
 
   return (
     <div
       role="region"
       aria-label={t('title')}
-      aria-hidden={open ? undefined : 'true'}
+      aria-hidden={visible ? undefined : 'true'}
       className="omnimux-inspiration-stage"
-      data-visible={open ? 'true' : 'false'}
+      data-visible={visible ? 'true' : 'false'}
       style={{
-        display: open ? undefined : 'none',
-        '--stage-top': `${box.top}px`,
-        '--stage-left': `${box.left}px`,
-        '--stage-width': `${box.width}px`,
-        '--stage-height': `${box.height}px`,
+        display: visible ? 'flex' : 'none',
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        onClose={() => { stage.set(false) }}
+        actions={<WorkbenchFocusBar t={t} />}
+        onClose={handleClose}
         closeTitle={t('close')}
       />
       <div className="omnimux-inspiration-stage-body">
-        <InspirationSection t={t} active={open} />
+        <InspirationSection t={t} active={visible} />
       </div>
     </div>
   )

@@ -5,6 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-26"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux-assets"
 ---
@@ -36,28 +37,30 @@ MUST NOT use 13px labels or 16px filled icons on these rows. MUST NOT invent a s
 | `[data-omnimux-apps-entry]` | `omnimux` | 应用 / Apps |
 | `[data-omnimux-app-tabs]` | `omnimux` | Dynamic app tab rows (see below) |
 | `[data-dsh-taskboard-entry]` | `dsh-taskboard-plugin` (fork) | 任务看板 / Taskboard |
-| `[data-omnimux-esc-entry]` | `omnimux-gallery` | 专家·技能·连接器 |
-| `[data-dsh-omnimux-workflow-entry]` | `omnimux-workflow` | 项目 / Projects（rank 5，原「工作流」→「项目库」→「项目」） |
+| `[data-omnimux-esc-entry]` | `omnimux-gallery`（历史 marker，现网无独立 gallery 包） | 专家·技能·连接器（**已迁** `omnimux-market`） |
+| `[data-omnimux-market-entry]` | `omnimux-market` | 专家馆 / 广场（rank 3.2）。**Workbench 入口**：点开 `omnimux-market:plaza` Tab，**不得** `claimProductStage`，**不得** `sidebar.footer.action`，**不得** `document.body` 全屏 portal。见 [workbench-split.md](./workbench-split.md) |
+| `[data-dsh-omnimux-workflow-entry]` | `omnimux-workflow` | 项目 / Projects（rank 4 现网）。**Workbench 入口**：点开 `omnimux-workflow:library` Tab，**不得** `claimProductStage`。打开项目后激活 `omnimux-workflow:canvas`（默认 split），库 Tab 保留。 |
 | `[data-dsh-omnimux-new-project-entry]` | `omnimux-workflow` | 新建项目 / New Project（展开：`kind:'inline'` 并排「新建会话」。收起：CSS 藏项目按钮，点官方加号弹出「新建会话 / 新建项目」，选中再 click 原按钮。折叠态属性在 AppFrame，不在 html。收起 wrapper 可用 `display:contents`，但官方加号上的 `flex:1` **必须**收回 `flex:none` + 36×36，否则会吃掉会话列表高度变成竖条） |
-| `[data-omnimux-assets-entry]` | `omnimux-assets` | 资产库（rank 4） |
-| `[data-omnimux-products-entry]` | `omnimux-products` | 产品库（rank 6，不重排旧行） |
-| `[data-omnimux-inspiration-entry]` | `omnimux-inspiration` | 灵感库（rank 7，不重排旧行） |
-| `[data-omnimux-publish-entry]` | `omnimux-publish` | 发布（rank 9，尾部追加，不重排旧行；styleId `omnimux-publish-entry-styles`） |
-| `[data-omnimux-analytics-entry]` | `omnimux-analytics` | 数据分析（rank 10） |
-| `[data-omnimux-clip-entry]` | `omnimux-clip` | 视频剪辑（rank 8.2）。**Workbench 入口**，点开 `omnimux-clip:studio` Tab，**不得** `claimProductStage`。见 [workbench-split.md](./workbench-split.md) |
+| `[data-omnimux-assets-entry]` | `omnimux-assets` | 资产库（rank 6 现网）。**Workbench**：`omnimux-assets:library`，不得 claim |
+| `[data-omnimux-products-entry]` | `omnimux-products` | 产品库（rank 8 现网）。**Workbench**：`omnimux-products:library`，不得 claim |
+| `[data-omnimux-inspiration-entry]` | `omnimux-inspiration` | 灵感库（rank 7）。**Workbench**：`omnimux-inspiration:library`，不得 claim |
+| `[data-omnimux-publish-entry]` | `omnimux-publish` | 发布（rank 4.2 现网）。**Workbench**：`omnimux-publish:library`，不得 claim |
+| `[data-omnimux-analytics-entry]` | `omnimux-analytics` | 数据分析（rank 4.5 现网）。**Workbench**：`omnimux-analytics:library`，不得 claim |
+| `[data-omnimux-accounts-entry]` | `omnimux-accounts` | 账号（rank 3）。**Workbench**：`omnimux-accounts:library`，不得 claim；`access: cloud` |
+| `[data-omnimux-clip-entry]` | `omnimux-clip` | 视频剪辑（rank 8.2）。**Workbench**：`omnimux-clip:studio`，不得 claim。见 [workbench-split.md](./workbench-split.md) |
 
 ## Offline vs Cloud Visibility
 
 Extra rows follow [docs/contracts/plugin-offline-cloud-matrix.md](./plugin-offline-cloud-matrix.md):
-- `access: 'offline'`: Always visible. Clicking directly opens the stage without login blocking. (Workflow, Assets, Products, Clip).
-- `access: 'cloud'`: Always visible. Clicking triggers explicit auth gating (`ensureLogin({ kind: 'explicit' })`), opening the stage upon successful login. (Analytics, Publish, Accounts, Inspiration).
+- `access: 'offline'`: Always visible. Clicking directly opens the **workbench Tab** without login blocking. (Workflow, Assets, Products, Clip, Market plaza).
+- `access: 'cloud'`: Always visible. Clicking triggers explicit auth gating (`ensureLogin({ kind: 'explicit' })`), opening the **workbench Tab** upon successful login. (Analytics, Publish, Accounts, Inspiration).
 - Policy D (Visitor Polite Interception): Cancelling a login prompt suppresses subsequent passive navigation prompts (`kind: 'nav'`) for the remainder of the session, while explicit clicks (`kind: 'explicit'`) and write operations (`kind: 'write'`) are never suppressed.
 
 New extra rows MUST reuse these metrics (copy the CSS block or import the same numbers). A PR that adds a 新会话-below row with a different font-size or icon size is rejected.
 
 ## Placement
 
-There is no official slot under 新会话. Extra rows are DOM-injected after the new-session button. Order: 新会话 → 应用 → [app tab rows…] → 任务看板 → 专家·技能·连接器. Do not register these as `sidebar.footer.action` (that seat is the Settings foot).
+There is no official slot under 新会话. Extra rows are DOM-injected after the new-session button. Order is **rank-sorted** by the hub coordinator (`window.__omnimuxSidebar`); do not invent a second observer. Do not register workbench / library / plaza as `sidebar.footer.action` (that seat is the Settings foot / Hub updater).
 
 ## Dynamic app tabs
 
@@ -79,20 +82,24 @@ MUST NOT fake a tab as a real session row (no `conversation.view`, no session da
 
 ## Independent pages
 
-Library / catalog rows are first-level product pages on `shell.overlay`, not session views. **Exception:** `[data-omnimux-clip-entry]` is a workbench row — it opens `omnimux-clip:studio` on `[data-dsh-panel-host]` and MUST NOT claim `data-dsh-product-stage`. See [workbench-split.md](./workbench-split.md).
+**Workbench rows (normative, #318):** library / catalog / plaza / clip / canvas left-rows open a `dsh-better-sidebar` Tab via `window.__omnimuxWorkbench.open({ tabId })`. They **MUST NOT** claim `data-dsh-product-stage`. Occupants and default focus: [workbench-split.md](./workbench-split.md).
 
-| Rule | Detail |
-|---|---|
-| Seat | `shell.overlay` (same as Apps / ESC gallery) |
-| Cover | Whole conversation column, including official header and composer. Overlay `z-index` is 200 so session-header utilities cannot steal clicks. |
-| Top chrome | `12px 20px 12px` on every first-level page, same as official conversation header (`padding: 12px 28px 0 20px`). Window-drag is turned off while the page is open, so do not add a 44/56px inset. |
-| Mutual exclusion | Opening one page dispatches `dsh-product-stage` so the others close. Session rows lose `aria-selected` highlight while a product page is open; only the extra-row `data-active` stays on. |
-| Layout chrome | While a product page is open, hide better-sidebar's fixed `toggleCluster`, the official `conversation.session.header`, **and the right-panel host** (`[data-dsh-panel-host]`). Also force `--dsh-sidebar-width` and `--dsh-sidebar-height` to `0` so `#root` is not still squeezed. `shell.overlay` stays click-through when no product page is open so those buttons remain usable. Do not hide the panel host when `data-dsh-product-stage` is absent. |
-| Session click | Clicking **any** workspace session row (`[role="treeitem"]`, selected or not) must leave the product page and return to chat. Official workspace treats a click on the already-selected row as a no-op, so product pages must close that case themselves. Clicks on buttons inside a row (pin / delete) MUST NOT close the page. **新会话** also leaves: official `.newSession` / brand shortcut (`aria-label` 新建会话), the workspace-group plus (`在“x”中新建会话`), and the collapsed menu pick「新建会话」. Official `startSession` **reuses** an existing blank session, so the overlay must close itself — otherwise the click looks dead. 「新建项目」and the collapsed menu pick「新建项目」MUST NOT use this path (project flow releases the stage on success). Collapsed-rail plus that only opens the menu MUST NOT leave until the user picks「新建会话」(coordinator capture swallows that click). |
+**Overlay leftover (narrow):** Hub 登录门、（未挂载的）Apps 货架、Clip 画布节点 portal。只有这些表面仍可 `claimProductStage`；`PRODUCT_STAGE_CHROME` 只在 `html[data-dsh-product-stage]` 时藏右栏。
 
-MUST NOT register these pages as `conversation.view`. That slot is a session-hosted tab (chat / trajectory / team run). A first-level product page that lives there will keep the session header and composer.
+| Rule | Workbench row | Overlay leftover |
+|---|---|---|
+| Seat | `ctx.betterSidebar.registerTab` on `[data-dsh-panel-host]` | `shell.overlay` |
+| Cover | Does **not** cover the conversation column. `gui` squeezes it via panel width; `split` leaves ~420px. | Whole conversation column. Overlay `z-index` is 200. |
+| Top chrome | In-tab L1 still `12px 20px 12px` (same as official conversation header). Do not add a 44/56px inset. Window-drag stays on (no product-stage). | Same 12/20/12. Window-drag off while claimed. |
+| Mutual exclusion | Switching left-rows **activates** the other Tab; does not claim. Cross-type Tabs may coexist (`single: true` per type). | Opening one leftover dispatches `dsh-product-stage` so the others close. |
+| Layout chrome | MUST NOT hide `toggleCluster` or `[data-dsh-panel-host]`. Hub injects the chat-toggle as the cluster's first child. | While claimed, hide `toggleCluster`, `conversation.session.header`, **and** `[data-dsh-panel-host]`; force `--dsh-sidebar-width` / `--dsh-sidebar-height` to `0`. |
+| Session click | Clicking a workspace session row **does not** close workbench Tabs. The right panel follows the better-sidebar **session snapshot**. | Clicking **any** workspace session row (`[role="treeitem"]`, selected or not) must leave the leftover overlay. Official workspace treats a click on the already-selected row as a no-op, so leftovers must close that case themselves. Clicks on buttons inside a row (pin / delete) MUST NOT close. **新会话** also leaves leftovers. 「新建项目」MUST NOT use this path. |
 
-Project-session canvas (workflow scheme C) and workbench tabs (clip studio) do **not** set `data-dsh-product-stage`. The first-level library page releases the stage before opening a canvas tab, and the clip left-row never claims a stage, so this chrome MUST NOT hide the right panel for those sessions. See [workbench-split.md](./workbench-split.md).
+MUST NOT register workbench pages as `conversation.view`. That slot is a session-hosted tab (chat / trajectory / team run).
+
+MUST NOT register plaza / library as `sidebar.footer.action` (that seat is the Settings foot / Hub updater).
+
+Workbench tabs do **not** set `data-dsh-product-stage`, so product-stage chrome MUST NOT hide the right panel for them. See [workbench-split.md](./workbench-split.md).
 
 ### Overlay external-store binding
 

@@ -1,0 +1,106 @@
+classDiagram
+    class WorkbenchApi {
+        <<window.__omnimuxWorkbench>>
+        +open(opts) Promise~boolean~
+        +closePanel() boolean
+        +closeTab(tabId) boolean
+        +isOpen(tabId) boolean
+        +isWorkbenchTab(tabId) boolean
+        +resolveDefaultFocus(tabId) string|null
+        +getFocus() string
+        +setFocus(mode, store?, env?, opts?) boolean
+        +inferFocus(state, env?) string
+        +attachStore(store) void
+        +detachStore(store) void
+        +bind(deps) void
+        +subscribe(listener) function
+        +createSidebarStore(options) WorkbenchSidebarStore
+        +installChatToggle() function
+        +getSnapshot() object|null
+    }
+
+    class FocusMemory {
+        <<localStorage omnimux-workbench-focus:v1:sessionId>>
+        +mode split|gui
+        +splitWidth number
+        +read(sessionId, tabId) FocusRecord|null
+        +write(sessionId, tabId, record) void
+        +clear(sessionId) void
+    }
+
+    class DefaultFocusRule {
+        +CANVAS_TAB_ID omnimux-workflow:canvas
+        +WORKBENCH_TAB_IDS Set~string~
+        +resolveDefaultFocus(tabId) split|gui|null
+    }
+
+    class ChatToggle {
+        <<data-omnimux-chat-toggle>>
+        +mount(cluster) HTMLButtonElement
+        +sync(focus, panelOpen, activeTabId) void
+        +onClick() void
+    }
+
+    class WorkbenchSidebarStore {
+        +tabId string
+        +getSnapshot() boolean
+        +subscribe(listener) function
+        +open() void
+        +close() void
+        +set(next) void
+        +readBox() Box
+    }
+
+    class BetterSidebarService {
+        +registerTab(spec) function
+        +openTab(seed, scope) void
+        +closeTab(id, scope) void
+        +getTab(id) object
+        +getSnapshot() {sessionId, state}
+        +subscribeState(fn) function
+    }
+
+    class VerticalLibraryTab {
+        +tabId string
+        +visible boolean
+        +everOpened boolean
+        +attachStore(store) void
+        +onClose() void
+        +render() Element
+    }
+
+    class PlazaTab {
+        +tabId omnimux-market:plaza
+        +visible boolean
+        +everOpened boolean
+        +onClose() void
+    }
+
+    class CanvasTab {
+        +tabId omnimux-workflow:canvas
+        +applyProjectCanvasRatio() number|null
+    }
+
+    class ClipStudioTab {
+        +tabId omnimux-clip:studio
+        +openFromCanvas() void
+    }
+
+    class ProductStageChrome {
+        +claim(id) void
+        +release(id) void
+        +watchSelectedSessionClick() void
+    }
+
+    WorkbenchApi --> FocusMemory : persist per session×tab
+    WorkbenchApi --> DefaultFocusRule : cold open
+    WorkbenchApi --> ChatToggle : inject first child
+    WorkbenchApi --> BetterSidebarService : openTab / reduce width
+    WorkbenchApi --> WorkbenchSidebarStore : factory
+    WorkbenchSidebarStore --> WorkbenchApi : open / isOpen
+    VerticalLibraryTab --> WorkbenchApi : attachStore / closeTab
+    PlazaTab --> WorkbenchApi
+    CanvasTab --> WorkbenchApi
+    ClipStudioTab --> WorkbenchApi
+    ChatToggle --> WorkbenchApi : setFocus gui↔split
+    ProductStageChrome ..> WorkbenchApi : leftover overlay only

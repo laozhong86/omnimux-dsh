@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState } from 'react'
 import { IconDownloadOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { IconButton, PageHeader } from 'dsh-ui-kit'
 import { injectAnalyticsStyles } from './styles.js'
@@ -15,6 +15,9 @@ import { PlatformTable } from './components/PlatformTable.jsx'
 import { TopPostsTable } from './components/TopPostsTable.jsx'
 import { StrategyCharts } from './components/StrategyCharts.jsx'
 import { Banner, EmptyState, InboxPlaceholder, LoadingState } from './components/EmptyState.jsx'
+import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
+
+const TAB_ID = 'omnimux-analytics:library'
 
 function readLocale() {
   if (typeof document === 'undefined') return 'zh-CN'
@@ -24,138 +27,137 @@ function readLocale() {
 
 function openAccounts() {
   try {
-    const stage = window.__omnimuxStage
-    if (stage && typeof stage.claim === 'function') {
-      stage.claim('omnimux-accounts')
+    const workbench = window.__omnimuxWorkbench
+    if (workbench && typeof workbench.open === 'function') {
+      workbench.open({ tabId: 'omnimux-accounts:library' })
       return
     }
   } catch {}
-  window.dispatchEvent(new CustomEvent('dsh-product-stage', { detail: { id: 'omnimux-accounts' } }))
 }
 
 /**
- * Social analytics first-level page.
- *
- * After the first open the subtree stays mounted and is hidden with
- * `display:none` + `aria-hidden` so filters / chart zoom survive a close.
- * Wrap method refs — useSyncExternalStore calls subscribe/getSnapshot bare.
- * @param {{ t: (key: string) => string, stage: { getSnapshot: () => boolean, subscribe: Function, set: Function, readBox: () => { top: number, left: number, width: number, height: number } } }} props
+ * Social analytics workbench tab component in dsh-better-sidebar.
+ * @param {{
+ *   t: (key: string) => string,
+ *   stage?: { getSnapshot: () => boolean, subscribe: Function, set: Function },
+ *   store?: { reduce?: Function, getSnapshot?: Function },
+ *   visible?: boolean,
+ * }} props
  */
-export function AnalyticsStage({ t, stage }) {
+export function AnalyticsStage({ t, stage, store, visible = true }) {
   useEffect(() => { injectAnalyticsStyles() }, [])
-
-  const open = useSyncExternalStore(
-    stage ? (onStoreChange) => stage.subscribe(onStoreChange) : () => () => {},
-    stage ? () => stage.getSnapshot() : () => false,
-  )
-  const [everOpened, setEverOpened] = useState(false)
-  const [box, setBox] = useState(() => (stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 }))
-  const [now, setNow] = useState(() => Date.now())
-  const store = useAnalyticsStore()
-
-  if (open && !everOpened) setEverOpened(true)
-
-  useLayoutEffect(() => {
-    if (!open || !stage) return undefined
-    const update = () => { setBox(stage.readBox()) }
-    update()
-    const scroll = document.querySelector('[data-conversation-scroll]')
-    const target = scroll instanceof HTMLElement
-      ? scroll
-      : document.querySelector('[data-slot="conversation"]')?.parentElement
-    const observer = typeof ResizeObserver === 'function' && target ? new ResizeObserver(update) : null
-    if (target && observer) observer.observe(target)
-    window.addEventListener('resize', update)
-    return () => {
-      observer?.disconnect()
-      window.removeEventListener('resize', update)
-    }
-  }, [open, stage])
+  const everOpened = true
 
   useEffect(() => {
-    if (!open) return undefined
-    void store.load()
-    setNow(Date.now())
-    const timer = setInterval(() => setNow(Date.now()), 30_000)
-    return () => clearInterval(timer)
-  }, [open, store.load])
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (!api || typeof api.attachStore !== 'function' || !store) return undefined
+    api.attachStore(store)
+    return () => { api.detachStore?.(store) }
+  }, [store])
+
+  const [now, setNow] = useState(() => Date.now())
+  const analyticsStore = useAnalyticsStore()
+
+  useEffect(() => {
+    if (!visible) return undefined
+    const timer = setInterval(() => { setNow(Date.now()) }, 30000)
+    return () => { clearInterval(timer) }
+  }, [visible])
+
+  useEffect(() => {
+    if (!visible) return undefined
+    void analyticsStore.refresh()
+  }, [visible, analyticsStore.query])
+
+  const payload = analyticsStore.data
+  const empty = analyticsStore.emptyHint
+  const blockingEmpty = empty && (empty.code === 'no_accounts' || empty.code === 'no_data')
+  const locale = readLocale()
 
   const handleAction = (action) => {
-    if (action === 'open_accounts' || action === 'reauth') openAccounts()
-    else if (action === 'retry') void store.refresh()
-    else if (action === 'login') {
-      const gate = window.__omnimuxAuth
-      if (gate && typeof gate.ensureLogin === 'function') gate.ensureLogin({ kind: 'explicit', onSuccess: () => { void store.refresh() } })
+    if (action === 'retry') {
+      void analyticsStore.refresh()
+    } else if (action === 'sync') {
+      void analyticsStore.syncNow()
+    } else if (action === 'bind') {
+      openAccounts()
     }
   }
 
   const handleExport = () => {
-    const csv = buildDashboardCsv(store.payload)
-    downloadCsv(csv, `omnimux-analytics-${store.query.timeRange}.csv`)
+    if (!payload) return
+    const csv = buildDashboardCsv(payload, t, locale)
+    const ymd = new Date().toISOString().slice(0, 10)
+    downloadCsv(csv, `omnimux-analytics-${ymd}.csv`)
   }
 
-  if (!stage || !everOpened) return null
-
-  const payload = store.payload
-  const empty = payload?.emptyState
-  const blockingEmpty = empty?.code === 'no_accounts' || empty?.code === 'unauthorized' || empty?.code === 'fetch_failed'
-  const locale = readLocale()
+  const handleClose = () => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (api && typeof api.closeTab === 'function') {
+      api.closeTab(TAB_ID)
+    } else {
+      stage?.set?.(false)
+    }
+  }
 
   return (
     <div
       role="region"
       aria-label={t('title')}
-      aria-hidden={open ? undefined : 'true'}
+      aria-hidden={visible ? undefined : 'true'}
       className="omnimux-analytics-stage"
-      data-visible={open ? 'true' : 'false'}
+      data-visible={visible ? 'true' : 'false'}
       style={{
-        display: open ? undefined : 'none',
-        '--stage-top': `${box.top}px`,
-        '--stage-left': `${box.left}px`,
-        '--stage-width': `${box.width}px`,
-        '--stage-height': `${box.height}px`,
+        display: visible ? 'flex' : 'none',
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        actions={(
+        actions={<WorkbenchFocusBar t={t} />}
+        trailingAction={(
           <IconButton
-            variant="ghost"
+            variant="outline"
             size="sm"
-            aria-label={t('export')}
-            title={t('export')}
             onClick={handleExport}
+            disabled={!payload || analyticsStore.phase === 'loading'}
+            aria-label={t('export.csv')}
+            title={t('export.csv')}
           >
             <IconDownloadOutline16 />
           </IconButton>
         )}
-        onRefresh={() => { void store.refresh() }}
-        refreshing={store.phase === 'loading'}
+        onRefresh={() => { void analyticsStore.refresh() }}
+        refreshing={analyticsStore.phase === 'loading'}
         refreshTitle={t('refresh')}
-        onClose={() => { stage.set(false) }}
+        onClose={handleClose}
         closeTitle={t('close')}
       />
       <ActionNavRow
         t={t}
-        tab={store.query.tab}
+        tab={analyticsStore.query.tab}
         syncStatus={payload?.syncStatus}
-        syncing={store.syncing}
+        syncing={analyticsStore.syncing}
         now={now}
-        onTabChange={(tab) => store.setQuery({ tab })}
-        onSync={() => { void store.syncNow() }}
+        onTabChange={(tab) => analyticsStore.setQuery({ tab })}
+        onSync={() => { void analyticsStore.syncNow() }}
       />
       <FilterBar
         t={t}
-        query={store.query}
+        query={analyticsStore.query}
         accounts={payload?.meta?.filterAccounts}
-        disabled={store.syncing}
-        onChange={(patch) => store.setQuery(patch)}
+        disabled={analyticsStore.syncing}
+        onChange={(patch) => analyticsStore.setQuery(patch)}
       />
       <div className="omnimux-analytics-stage-body">
-        {store.phase === 'loading' && !payload ? (
+        {analyticsStore.phase === 'loading' && !payload ? (
           <LoadingState t={t} />
-        ) : store.query.tab === 'inbox' ? (
+        ) : analyticsStore.query.tab === 'inbox' ? (
           <InboxPlaceholder t={t} />
         ) : blockingEmpty ? (
           <EmptyState t={t} hint={empty} onAction={handleAction} />
@@ -164,11 +166,11 @@ export function AnalyticsStage({ t, stage }) {
         ) : (
           <>
             {empty && empty.code !== 'no_accounts' ? <Banner t={t} hint={empty} onAction={handleAction} /> : null}
-            {store.lastError && empty?.code !== 'network_error' ? (
-              <Banner t={t} hint={{ code: 'network_error', action: 'retry', detail: store.lastError }} onAction={handleAction} />
+            {analyticsStore.lastError && empty?.code !== 'network_error' ? (
+              <Banner t={t} hint={{ code: 'network_error', action: 'retry', detail: analyticsStore.lastError }} onAction={handleAction} />
             ) : null}
-            <KpiGrid t={t} kpi={payload.kpi} timeRange={store.query.timeRange} />
-            <BasicCharts t={t} basicCharts={payload.basicCharts} timeRange={store.query.timeRange} />
+            <KpiGrid t={t} kpi={payload.kpi} timeRange={analyticsStore.query.timeRange} />
+            <BasicCharts t={t} basicCharts={payload.basicCharts} timeRange={analyticsStore.query.timeRange} />
             <EngagementChart t={t} block={payload.engagementOverTime} locale={locale} />
             <section className="omnimux-analytics-grid-2">
               <HeatmapChart t={t} heatmap={payload.heatmap} locale={locale} />

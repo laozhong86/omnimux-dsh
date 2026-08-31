@@ -11,7 +11,7 @@ subsystem: "omnimux-workflow"
 
 # Client external store（useSyncExternalStore）
 
-Normative rule for first-level product pages that subscribe to Cordis / Locale faces via React `useSyncExternalStore`.
+Normative rule for first-level product pages (workbench Tab roots and leftover overlays) that subscribe to Cordis / Locale faces via React `useSyncExternalStore`.
 
 Incident source (2026-08-22): `omnimux-workflow` `WorkflowStage` passed `locale.subscribe` bare into `useSyncExternalStore`. `LocaleRuntime.subscribe` is an **instance method** that reads `this.listeners`. React calls subscribe as a plain function, so `this` became `undefined`, the slot crashed with `Cannot read properties of undefined (reading 'listeners')`, and `shell.overlay` rendered only `<div data-slot-error="shell.overlay">` — sidebar click looked like “no response / blank page”.
 

@@ -5,6 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-26"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux-accounts"
 ---
@@ -20,7 +21,7 @@ subsystem: "omnimux-accounts"
 
 ## 0. 一句话选型
 
-`挂载点 = ctx.slots.inject("shell.overlay")，形态 = 各垂直对象插件自有 Stage，产物 = dsh.bundle；共享 4 层壳下沉 dsh-ui-kit（非 Cordis 插件），不新建 omnimux-stage-shell。`
+`挂载点 = 工作台 Tab（ctx.betterSidebar.registerTab + window.__omnimuxWorkbench.open）；形态 = 各垂直对象插件自有 Stage 根填满右栏；产物 = dsh.bundle；共享 4 层壳下沉 dsh-ui-kit（非 Cordis 插件），不新建 omnimux-stage-shell。shell.overlay 仅残留 LoginGate / Apps / Clip portal。`
 
 被否决：
 
@@ -29,17 +30,17 @@ subsystem: "omnimux-accounts"
 | 中枢 `omnimux` 导出 `StageShell`，垂直 `from 'omnimux'` | `hub.md` + doctor §12 垂直禁 hub import；`dsh-plugin-dev` 禁跨包 client import |
 | 新 Cordis 插件 `omnimux-stage-shell` + Service | UI 无 Host 状态，Service 三层过重，加载序与卸载边会把一级页绑死 |
 | 会话内 `cordis_define` 动态包发壳 | 产物形态混用；动态包禁 import/JSX/TS |
-| 替换官方 `root` / `sidebar` / `conversation` | Slot Catalog 过宽；一级页座只有 `shell.overlay` |
+| 替换官方 `root` / `sidebar` / `conversation` | Slot Catalog 过宽；工作台座是 `dsh-better-sidebar`，overlay 只留登录门 / Apps / clip portal |
 | 各插件继续手抄骨架、不抽 kit | Assets 已是金标，其余 6 个一级页会继续漂移；doctor 无法钉 props |
 
 ---
 
 ## 1. 页面形态定界
 
-每个 `shell.overlay` 一级页必须先归类，再套规范。**未归类 = 默认 A 类（标准 4 层资产库）**，不得事后用「特异」逃检。
+每个一级工作台页（及残留 overlay）必须先归类，再套规范。**未归类 = 默认 A 类（标准 4 层资产库）**，不得事后用「特异」逃检。座见 [workbench-split.md](./workbench-split.md)。
 
 ```
-shell.overlay 一级页
+一级工作台页（better-sidebar Tab；残留 overlay 仅 LoginGate / Apps / Clip portal）
 ├── A. 标准 4 层资产库 / 列表页     ← 全量 Pattern A+B+C，零豁免
 ├── B. 特异形态页
 │   ├── B1 流程画布（外框合规 / 内芯豁免）
@@ -52,7 +53,7 @@ shell.overlay 一级页
 
 ### 1.1 A 类 —— 标准 4 层一级资产库 / 列表页
 
-判定：`shell.overlay` + 用户心智是「库」（增删改查 + 搜索过滤 + 网格/列表）。**必须** 4 层齐全：Header / Action Row / 单行 FilterBar / Content。主 CTA **禁止**进 FilterBar。
+判定：工作台 `*:library` / `*:plaza` Tab（或残留 overlay）+ 用户心智是「库」（增删改查 + 搜索过滤 + 网格/列表）。**必须** 4 层齐全：Header / Action Row / 单行 FilterBar / Content。主 CTA **禁止**进 FilterBar。根节点填满右栏容器（`position: absolute; inset: 0` 或等价 flex 100%），**禁止** `position: fixed` + `--stage-*` 盖住会话列。
 
 | 插件 | 页面 | 现状（相对金标） | 归类 |
 |---|---|---|---|
@@ -71,10 +72,10 @@ A 类 **零豁免**。OverviewBar / KPI 条只能作为 **L2 与 L3 之间的可
 
 | 形态 | 插件 / 表面 | 必须遵守 | 合理豁免（写进 doctor allowlist） | 禁止借口 |
 |---|---|---|---|---|
-| **B1 流程画布** | `omnimux-workflow` `WorkflowStage.jsx` 外框；`src/canvas/` 内芯 | 外框：L1 标题+Close（可无 L2/L3）；外框 Button/IconButton 走 kit；`--stage-*` 定位；关页保活 | `src/canvas/**` 节点图、连线、节点内芯、React Flow viewport、视频时间轴几何（`left/width` 百分比） | 外框手写 `<button>`；把项目库页当画布豁免；canvas Modal/Toolbar 生写控件 |
+| **B1 流程画布** | `omnimux-workflow` `CanvasTab.jsx` 外框；`src/canvas/` 内芯 | 外框：L1 标题+Close（可无 L2/L3）；外框 Button/IconButton 走 kit；填满右栏；关页保活 | `src/canvas/**` 节点图、连线、节点内芯、React Flow viewport、视频时间轴几何（`left/width` 百分比） | 外框手写 `<button>`；把项目库页当画布豁免；canvas Modal/Toolbar 生写控件 |
 | **B2 监控仪表盘** | `omnimux-analytics` `AnalyticsStage.jsx` | L1 标题+副标题+Refresh/Close（可附加 Theme/Export IconButton）；L2 用 Tab+同步，**不**造「新建」CTA；L3 单行 FilterBar；L4 滚动图表区；kit + token | L4 图表 SVG 的 `--series-color` / `--pill-color` CSS 变量注入；无 Grid/List 切换 | 自研 FilterBar 替代 kit；L4 生写 `<button>`；页面级 `data-theme` 绕开 host token（theme toggle 可留，但色值必须走 `--dsw-alias-*`） |
-| **B3 多通道集市** | `omnimux-market` `plaza-shell.js` | L1 = Tablist（插件/技能/专家/连接器）+ Close IconButton；每 Tab 内搜索走 kit `FilterBar`；关页保活 | 无「+新建」L2（集市不是资产库）；Tab 内容区各自列表/详情 | 搜索 CTA 与 FilterBar 抢行造成换行；DOM 探测侧栏宽度替代 `stage.readBox()`（P1 迁到统一 `--stage-*`） |
-| **B4 创作工作台** | `omnimux-clip` `OpenReelStudioTab`（主座）；`personal/dsh-oil-creator` inspector | 主座 = `betterSidebar.registerTab`；左侧行走 `__omnimuxWorkbench.open`；顶栏 `.omnimux-workbench-focus` 切 split/gui/chat；可见控件走 kit；token | 非 `shell.overlay` 一级资产库，不套 4 层。Clip overlay 仅保留画布 portal | 侧栏点击 `claimProductStage`；P1 用 overlay 当主入口；自研 `ActionButton` 长期替代 kit Button |
+| **B3 多通道集市** | `omnimux-market` plaza Tab（`plaza-shell` / `PlazaTab`） | L1 = Tablist（插件/技能/专家/连接器）+ Close IconButton；每 Tab 内搜索走 kit `FilterBar`；关页保活；填满右栏 | 无「+新建」L2（集市不是资产库）；Tab 内容区各自列表/详情 | 搜索 CTA 与 FilterBar 抢行造成换行；`document.body` 全屏 portal；`claimProductStage` |
+| **B4 创作工作台** | `omnimux-clip` `OpenReelStudioTab`（主座）；`CanvasTab` | 主座 = `betterSidebar.registerTab`；左侧行走 `__omnimuxWorkbench.open`；Hub `toggleCluster` 首位切 gui↔split；可见控件走 kit；token | 非一级资产库，不套 4 层。Clip overlay 仅保留画布 portal | 侧栏点击 `claimProductStage`；用 overlay 当主入口；自研 `ActionButton` 长期替代 kit Button |
 | **B5 中枢抽屉** | `omnimux` `AppsStage.jsx`、LoginGate、Profile、PluginsSection | 可见控件走 kit；零 inline blob；`--stage-*` 定位；关页保活 | 非资产库，不套 L2/L3；Settings 座走 `settings-ui.md` | 整页 `style={{ position:fixed, top, left, … }}` 几何对象；生写关闭 `<button>` |
 | **C 非页面** | 各插件 `sidebar-entry`、`settings.plugin.item` | 行高 32px / 图标 14px（`sidebar-extra-entries.md`）；kit IconButton | 不套 4 层 | 私自 observer 放置侧栏行 |
 
@@ -94,13 +95,14 @@ omnimux-workflow/src/canvas/**
 
 ```
 [Host Cordis 对象插件]  dsh.bundle / cordis.patch.yml
-        │  inject: slots, locale, connection, …
-        │  ctx.slots.inject("shell.overlay") → register(Stage)
-        │  ctx.effect 只收 style tag / observer；Slot 随 Fiber 卸
+        │  inject: slots, locale, betterSidebar, …
+        │  ctx.betterSidebar.registerTab → 工作台 Tab 根
+        │  左栏 open() → window.__omnimuxWorkbench.open({ tabId })
+        │  ctx.effect 只收 style tag / observer；Tab 随 Fiber 卸
         ▼
-[Client Stage]  各插件 src/client/*Stage.jsx
-        │  定位：style 只注入 --stage-top/left/width/height
-        │  关页：everOpened + data-visible="false"（stage-guards）
+[Client Stage / Tab 根]  各插件 src/client/*Stage.jsx（填满右栏）
+        │  定位：absolute inset 0 / flex 100%；禁止 position:fixed + --stage-* 盖会话
+        │  关页：everOpened + display:none（stage-guards）；Close = closeTab
         ▼
 [dsh-ui-kit]  共享包，非插件，打进各 client.js；external react / primitives
         ├── StageRoot / StageHeader / StageActionRow     ← Pattern A 新增
@@ -128,7 +130,8 @@ omnimux-workflow/src/canvas/**
 
 | 挂载点 | 作用 | 清理方式 | 备注 |
 |---|---|---|---|
-| `ctx.slots.inject("shell.overlay")` | 一级页 Stage | Fiber 自动 | 唯一一级页座；禁 `conversation.view` / `details` |
+| `ctx.betterSidebar.registerTab` + `window.__omnimuxWorkbench` | 一级工作台 Tab | Fiber / `unregisterTab` | **唯一一级业务座**；禁 `conversation.view` / `details`；禁库页 `shell.overlay` |
+| `ctx.slots.inject("shell.overlay")` | 残留：LoginGate / Apps / Clip portal | Fiber 自动 | 禁止再给库页注册 |
 | `window.__omnimuxSidebar.register` | 新会话下方入口 | 协调器幂等；插件卸时 `unregister` | 禁自挂 observer |
 | `window.__omnimuxStage.claim/release` | 一级页互斥 | 关页 release | 与 `dsh-product-stage` 事件双通道 |
 | `dsh-ui-kit` 值导入 | 标准控件 + Stage 壳 | 随 client bundle；kit CSS `data-dsh-ui-kit` 侧效应 | **不是** Cordis inject 服务 |

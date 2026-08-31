@@ -19,6 +19,32 @@ export const WORKBENCH_FOCUS = Object.freeze({
   chat: 'chat',
 })
 
+export const WORKBENCH_OCCUPANTS = Object.freeze([
+  'omnimux-workflow:canvas',
+  'omnimux-clip:studio',
+  'omnimux-assets:library',
+  'omnimux-products:library',
+  'omnimux-accounts:library',
+  'omnimux-inspiration:library',
+  'omnimux-publish:library',
+  'omnimux-analytics:library',
+  'omnimux-workflow:library',
+  'omnimux-market:plaza',
+])
+
+export function isWorkbenchTab(tabId) {
+  if (!tabId || typeof tabId !== 'string') return false
+  if (WORKBENCH_OCCUPANTS.includes(tabId)) return true
+  return tabId.startsWith('omnimux-') && (tabId.includes(':') || tabId.endsWith('-stage') || tabId.endsWith(':library') || tabId.endsWith(':studio') || tabId.endsWith(':plaza'))
+}
+
+export function resolveDefaultFocus(tabId) {
+  if (tabId && isWorkbenchTab(tabId) && tabId !== 'omnimux-workflow:canvas') {
+    return WORKBENCH_FOCUS.gui
+  }
+  return WORKBENCH_FOCUS.split
+}
+
 const EMPTY_BOX = Object.freeze({ top: 0, left: 0, width: 0, height: 0 })
 
 /** @type {Set<() => void>} */
@@ -40,8 +66,8 @@ const attachCounts = new WeakMap()
 /** Sessions that already received a default width write. */
 const appliedWidthSessions = new Set()
 
-/** @type {Map<string, { mode: string, splitWidth: number | null, lastOpenMode: string }>} */
-const focusBySession = new Map()
+/** In-memory focus records: sessionId -> { [tabId]: { mode, splitWidth } } */
+const focusStorageBySession = new Map()
 
 function emit() {
   for (const listener of listeners) {
@@ -78,6 +104,24 @@ export function isSeedFilesTab(tab) {
 export function listOpenTabs(state) {
   if (!state) return []
   return collectTabs(state.splits).concat(collectTabs(state.bottomSplits))
+}
+
+export function activeTabId(state) {
+  if (!state) return undefined
+  const activePaneId = state.activePane
+  const findLeaf = (node) => {
+    if (!node || typeof node !== 'object') return null
+    if (node.kind === 'leaf') return node.id === activePaneId || !activePaneId ? node : null
+    if (Array.isArray(node.children)) {
+      for (const child of node.children) {
+        const found = findLeaf(child)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  const leaf = findLeaf(state.splits) || findLeaf(state.bottomSplits)
+  return leaf?.active ?? leaf?.tabs?.[0]?.id ?? undefined
 }
 
 export function tabIsOpen(state, tabId) {
@@ -171,21 +215,50 @@ function sessionKey(explicitId) {
   return explicitId || currentSessionId() || liveSnapshot()?.sessionId || '__none__'
 }
 
-function focusRecord(sessionId = sessionKey()) {
-  if (!focusBySession.has(sessionId)) {
-    focusBySession.set(sessionId, {
-      mode: WORKBENCH_FOCUS.split,
-      splitWidth: null,
-      lastOpenMode: WORKBENCH_FOCUS.split,
-    })
+const STORAGE_PREFIX = 'omnimux-workbench-focus:v1:'
+
+function loadSessionFocusMap(sessionId = sessionKey()) {
+  if (focusStorageBySession.has(sessionId)) {
+    return focusStorageBySession.get(sessionId)
   }
-  return focusBySession.get(sessionId)
+  let map = {}
+  try {
+    const raw = hostWindow()?.localStorage?.getItem?.(STORAGE_PREFIX + sessionId)
+    if (raw) map = JSON.parse(raw) || {}
+  } catch {}
+  focusStorageBySession.set(sessionId, map)
+  return map
 }
 
-function rememberSplitWidth(state, record) {
+function persistSessionFocus(sessionId, tabId, patch) {
+  if (!sessionId || !tabId) return
+  const map = loadSessionFocusMap(sessionId)
+  map[tabId] = { ...(map[tabId] || {}), ...patch }
+  try {
+    hostWindow()?.localStorage?.setItem?.(STORAGE_PREFIX + sessionId, JSON.stringify(map))
+  } catch {}
+}
+
+export function focusRecordForTab(sessionId = sessionKey(), tabId = undefined) {
+  const snap = liveSnapshot()
+  const effectiveTabId = tabId || activeTabId(snap?.state) || 'default'
+  const map = loadSessionFocusMap(sessionId)
+  if (!map[effectiveTabId]) {
+    map[effectiveTabId] = {
+      mode: resolveDefaultFocus(effectiveTabId),
+      splitWidth: null,
+    }
+  }
+  return map[effectiveTabId]
+}
+
+function rememberSplitWidth(state, record, sessionId, tabId, env = {}) {
   if (state?.panelOpen === false) return
   if (typeof state?.width !== 'number' || !Number.isFinite(state.width)) return
-  if (record.mode !== WORKBENCH_FOCUS.gui) record.splitWidth = state.width
+  if (record.mode !== WORKBENCH_FOCUS.gui && !nearPx(state.width, workbenchGuiWidthPx(state, env))) {
+    record.splitWidth = state.width
+    if (sessionId && tabId) persistSessionFocus(sessionId, tabId, { splitWidth: state.width })
+  }
 }
 
 /**
@@ -203,7 +276,8 @@ export function inferWorkbenchFocus(state, env = {}) {
 export function getWorkbenchFocus(env = {}) {
   const snapshot = liveSnapshot()
   const inferred = inferWorkbenchFocus(snapshot?.state, env)
-  const record = focusRecord(snapshot?.sessionId)
+  const tabId = activeTabId(snapshot?.state)
+  const record = focusRecordForTab(snapshot?.sessionId, tabId)
   record.mode = inferred
   return inferred
 }
@@ -213,16 +287,23 @@ export function getWorkbenchFocus(env = {}) {
  * @param {'split' | 'gui' | 'chat'} mode
  * @returns {boolean}
  */
-export function setWorkbenchFocus(mode, store = attachedStore, env = {}) {
+export function setWorkbenchFocus(mode, store = attachedStore, env = {}, targetTabId = undefined) {
   if (mode !== WORKBENCH_FOCUS.split && mode !== WORKBENCH_FOCUS.gui && mode !== WORKBENCH_FOCUS.chat) {
     return false
   }
   const snapshot = liveSnapshot(store)
   const state = snapshot?.state
-  const record = focusRecord(snapshot?.sessionId)
-  rememberSplitWidth(state, record)
+  const sessionId = snapshot?.sessionId
+  const prevTabId = activeTabId(state)
+  const prevRecord = focusRecordForTab(sessionId, prevTabId)
+  rememberSplitWidth(state, prevRecord, sessionId, prevTabId, env)
+
+  const effectiveTabId = targetTabId || prevTabId
+  const record = focusRecordForTab(sessionId, effectiveTabId)
   record.mode = mode
-  if (mode !== WORKBENCH_FOCUS.chat) record.lastOpenMode = mode
+  if (mode !== WORKBENCH_FOCUS.chat && sessionId && effectiveTabId) {
+    persistSessionFocus(sessionId, effectiveTabId, { mode })
+  }
   if (!store || typeof store.reduce !== 'function') {
     emit()
     return false
@@ -239,7 +320,11 @@ export function setWorkbenchFocus(mode, store = attachedStore, env = {}) {
     if (current?.panelOpen === true && typeof current.width === 'number' && Math.abs(current.width - nextWidth) < 1) {
       return current
     }
-    return { ...current, panelOpen: true, width: nextWidth }
+    return {
+      ...current,
+      panelOpen: true,
+      width: nextWidth,
+    }
   })
   emit()
   return true
@@ -250,7 +335,7 @@ export function resetWorkbenchWidthMemory() {
 }
 
 export function resetWorkbenchFocusMemory() {
-  focusBySession.clear()
+  focusStorageBySession.clear()
 }
 
 function getService() {
@@ -324,20 +409,21 @@ function closeSeedFiles(service, openScope) {
  * Write the default GUI width through the tab store (public API has no setWidth).
  * @returns {number | null | undefined} number = applied; null = skip; undefined = wait
  */
-export function applyDefaultWidth(service, sessionId, store = attachedStore, env = {}, force = false) {
+export function applyDefaultWidth(service, sessionId, store = attachedStore, env = {}, force = false, targetTabId = undefined) {
   if (!sessionId) return null
-  if (!force && appliedWidthSessions.has(sessionId)) return null
+  if (!force && appliedWidthSessions.has(sessionId + ':' + (targetTabId || ''))) return null
   const snapshot = (typeof store?.getSnapshot === 'function' ? store.getSnapshot() : null)
     || service?.getSnapshot?.()
   const state = snapshot?.state
   if (!state) return undefined
-  const record = focusRecord(sessionId)
+  const tabId = targetTabId || activeTabId(state)
+  const record = focusRecordForTab(sessionId, tabId)
   if (!force && record.mode !== WORKBENCH_FOCUS.split) return null
   const nextWidth = workbenchDefaultWidthPx(state, env)
   const canReduce = snapshot?.sessionId === sessionId && typeof store?.reduce === 'function'
   if (typeof state.width === 'number' && Math.abs(state.width - nextWidth) < 1) {
     if (!canReduce) return undefined
-    appliedWidthSessions.add(sessionId)
+    appliedWidthSessions.add(sessionId + ':' + (targetTabId || ''))
     return nextWidth
   }
   if (canReduce) {
@@ -346,7 +432,7 @@ export function applyDefaultWidth(service, sessionId, store = attachedStore, env
         ? currentState
         : { ...currentState, width: nextWidth, panelOpen: currentState?.panelOpen === false ? true : currentState?.panelOpen }
     ))
-    appliedWidthSessions.add(sessionId)
+    appliedWidthSessions.add(sessionId + ':' + (targetTabId || ''))
     emit()
     return nextWidth
   }
@@ -411,9 +497,10 @@ export async function openWorkbench(opts = {}) {
   await waitForTab(service, tabId, timeoutMs)
 
   const sessionId = await ensureSessionId(deps.sessions, opts.sessionId)
+  if (!sessionId) return false
   const cwd = opts.cwd
-  const scope = sessionId ? { sessionId, ...(cwd ? { cwd } : {}) } : undefined
-  const ready = sessionId ? await waitForSidebarSession(service, sessionId, timeoutMs) : true
+  const scope = { sessionId, ...(cwd ? { cwd } : {}) }
+  const ready = await waitForSidebarSession(service, sessionId, timeoutMs)
   const openScope = ready ? scope : undefined
 
   closeSeedFiles(service, openScope)
@@ -426,11 +513,31 @@ export async function openWorkbench(opts = {}) {
     title,
     path,
   }, openScope)
-  applyDefaultWidth(service, sessionId)
+
+  const map = loadSessionFocusMap(sessionId)
+  const explicitMode = map[tabId]?.mode
+  const targetMode = explicitMode || resolveDefaultFocus(tabId)
+  setWorkbenchFocus(targetMode, attachedStore, {}, tabId)
+  emit()
+  return true
+}
+
+export function closeWorkbenchTab(tabId) {
+  if (!tabId) return false
+  const service = getService()
+  if (!service || typeof service.closeTab !== 'function') return false
   const snapshot = liveSnapshot()
-  if (inferWorkbenchFocus(snapshot?.state) === WORKBENCH_FOCUS.chat) {
-    const restore = focusRecord(snapshot?.sessionId).lastOpenMode || WORKBENCH_FOCUS.split
-    setWorkbenchFocus(restore === WORKBENCH_FOCUS.chat ? WORKBENCH_FOCUS.split : restore)
+  const sessionId = snapshot?.sessionId
+  const scope = sessionId ? { sessionId } : undefined
+  try {
+    service.closeTab(tabId, scope)
+  } catch {
+    return false
+  }
+  const afterSnap = liveSnapshot()
+  const remaining = listOpenTabs(afterSnap?.state).filter((t) => isWorkbenchTab(t.id || t.type))
+  if (remaining.length === 0) {
+    closeWorkbenchPanel()
   }
   emit()
   return true
@@ -461,14 +568,15 @@ function attachStore(store) {
   attachedStore = store
   const snapshot = liveSnapshot(store)
   const sessionId = currentSessionId() || snapshot?.sessionId
-  const record = focusRecord(sessionId)
-  rememberSplitWidth(snapshot?.state, record)
+  const tabId = activeTabId(snapshot?.state)
+  const record = focusRecordForTab(sessionId, tabId)
+  rememberSplitWidth(snapshot?.state, record, sessionId, tabId)
   if (record.mode === WORKBENCH_FOCUS.gui || record.mode === WORKBENCH_FOCUS.chat) {
     setWorkbenchFocus(record.mode, store)
     return
   }
   record.mode = inferWorkbenchFocus(snapshot?.state)
-  applyDefaultWidth(getService(), sessionId, store)
+  applyDefaultWidth(getService(), sessionId, store, {}, false, tabId)
   emit()
 }
 
@@ -503,8 +611,11 @@ function bind(next = {}) {
 function createApi() {
   return {
     open: openWorkbench,
+    closeTab: closeWorkbenchTab,
     closePanel: closeWorkbenchPanel,
     isOpen: isWorkbenchOpen,
+    isWorkbenchTab,
+    resolveDefaultFocus,
     subscribe: subscribeWorkbench,
     attachStore,
     detachStore,
@@ -543,7 +654,7 @@ export function resetWorkbenchForTests(target = hostWindow()) {
   attachedStore = null
   listeners.clear()
   appliedWidthSessions.clear()
-  focusBySession.clear()
+  focusStorageBySession.clear()
   if (target && Object.prototype.hasOwnProperty.call(target, WORKBENCH_GLOBAL_KEY)) {
     try { delete target[WORKBENCH_GLOBAL_KEY] } catch { target[WORKBENCH_GLOBAL_KEY] = undefined }
   }
@@ -594,7 +705,11 @@ export function createWorkbenchSidebarStore(options) {
     },
     close() {
       const api = apiOf()
-      api?.closePanel?.()
+      if (api && typeof api.closeTab === 'function') {
+        api.closeTab(tabId)
+      } else {
+        api?.closePanel?.()
+      }
     },
     set(next) {
       if (next) this.open()

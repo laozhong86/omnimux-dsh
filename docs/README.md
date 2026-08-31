@@ -71,6 +71,7 @@ docs/
 
 ### 2.3 [specs/ (产品规格与技术设计)](specs/README.md)
 *各垂直插件与中枢功能的产品需求 PRD、技术设计规格 RFC 与高保真交互原型。*
+- **[2026-08-31-workbench-libraries-and-toggle-prd.md](specs/2026-08-31-workbench-libraries-and-toggle-prd.md)**: 增量 PRD：一级库页迁入右侧工作台与顶部对话开关注入（#318）
 - **[2026-08-30-omnimux-physical-materialization.md](specs/2026-08-30-omnimux-physical-materialization.md)**: 画布与资产库 100% 物理实体化 PRD
 - **[2026-08-22-omnimux-assets-creative-library.md](specs/2026-08-22-omnimux-assets-creative-library.md)**: 创作资产库功能规格（Q1 零拷贝已被 08-30 取代）
 - **[2026-08-23-omnimux-products.md](specs/2026-08-23-omnimux-products.md)**: 产品库需求与设计规格

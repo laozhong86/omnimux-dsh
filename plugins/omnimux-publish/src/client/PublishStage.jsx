@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState } from 'react'
 import { PageHeader } from 'dsh-ui-kit'
 import { injectPublishStyles } from './styles.js'
 import { usePublishFeed } from './usePublishFeed.js'
@@ -6,8 +6,9 @@ import { PublishActionRow } from './views/PublishActionRow.jsx'
 import { PublishControlBar } from './views/PublishControlBar.jsx'
 import { PublishViewport } from './views/PublishViewport.jsx'
 import { PublishOverlays, PublishDeleteConfirmModal } from './views/PublishOverlays.jsx'
+import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
 
-const DEFAULT_BOX = { top: 0, left: 0, width: 0, height: 0 }
+const TAB_ID = 'omnimux-publish:library'
 
 function createBatchActions(feed) {
   return {
@@ -25,16 +26,6 @@ function createItemActions(feed, setView) {
     onEdit: (record) => setView({ name: 'composer', draftId: String(record.id) }),
     onDelete: feed.setPendingDelete,
     onRetry: feed.handleSingleRetry,
-  }
-}
-
-function buildStageStyle(box, open) {
-  return {
-    '--stage-top': `${box.top}px`,
-    '--stage-left': `${box.left}px`,
-    '--stage-width': `${box.width}px`,
-    '--stage-height': `${box.height}px`,
-    display: open ? undefined : 'none',
   }
 }
 
@@ -59,8 +50,8 @@ export function PublishStageContent(props) {
         onSortChange={feed.setSortOption}
         typeFilter={feed.typeFilter}
         onTypeChange={feed.setTypeFilter}
-        modeFilter={feed.modeFilter}
-        onModeChange={feed.setModeFilter}
+        channelFilter={feed.channelFilter}
+        onChannelChange={feed.setChannelFilter}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
       />
@@ -70,84 +61,80 @@ export function PublishStageContent(props) {
 
 export function PublishStageModals(props) {
   const { t, feed, view, setView } = props
-  const handleBack = () => setView({ name: 'list' })
-  const handleSubmitted = (recordId) => {
-    setView({ name: 'detail', recordId })
-    feed.startTracking()
-  }
-  const handleSaved = () => {
-    void feed.loadList()
-    setView({ name: 'list' })
-  }
-  const handleChange = () => {
-    void feed.loadList()
-  }
-  const handleConfirm = () => {
-    void feed.confirmDelete()
-  }
-  const handleClose = () => {
-    if (!feed.busyDelete) feed.setPendingDelete(null)
-  }
-
   return (
     <>
       <PublishOverlays
         t={t}
         view={view}
-        onBack={handleBack}
-        onSubmitted={handleSubmitted}
-        onSaved={handleSaved}
-        onChanged={handleChange}
-        detailTick={feed.detailTick}
+        setView={setView}
+        feed={feed}
       />
       <PublishDeleteConfirmModal
         t={t}
         pendingDelete={feed.pendingDelete}
-        busyDelete={feed.busyDelete}
-        onConfirm={handleConfirm}
-        onClose={handleClose}
+        onClose={() => feed.setPendingDelete(null)}
+        onConfirm={feed.handleDeleteConfirm}
       />
     </>
   )
 }
 
-function resolveInitialBox(stage) {
-  if (!stage) return DEFAULT_BOX
-  return stage.readBox()
-}
+/**
+ * Publish workbench tab component in dsh-better-sidebar.
+ * @param {{
+ *   t: (key: string) => string,
+ *   stage?: { getSnapshot: () => boolean, subscribe: Function, set: Function },
+ *   store?: { reduce?: Function, getSnapshot?: Function },
+ *   visible?: boolean,
+ * }} props
+ */
+export function PublishStage(props) {
+  const { t, stage, store, visible = true } = props
+  useEffect(() => { injectPublishStyles() }, [])
+  const everOpened = true
 
-export function useStageGeometry(stage) {
-  const open = useSyncExternalStore(
-    stage ? (cb) => stage.subscribe(cb) : () => () => {},
-    stage ? () => stage.getSnapshot() : () => false,
-  )
-  const [everOpened, setEverOpened] = useState(false)
-  const [box, setBox] = useState(() => resolveInitialBox(stage))
+  useEffect(() => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (!api || typeof api.attachStore !== 'function' || !store) return undefined
+    api.attachStore(store)
+    return () => { api.detachStore?.(store) }
+  }, [store])
 
-  if (open && !everOpened) setEverOpened(true)
-  useLayoutEffectBox(stage, open, setBox)
-  return { open, everOpened, box }
-}
-
-export function PublishStageView(props) {
-  const { t, stage, feed, viewMode, setViewMode, view, setView, open, box } = props
-  const stageStyle = buildStageStyle(box, open)
+  const [viewMode, setViewMode] = useState('grid')
+  const [view, setView] = useState({ name: 'list' })
+  const feed = usePublishFeed({ open: visible, view, t })
   const batchActions = createBatchActions(feed)
   const itemActions = createItemActions(feed, setView)
-  const handleClose = () => stage.set(false)
+
+  const handleClose = () => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (api && typeof api.closeTab === 'function') {
+      api.closeTab(TAB_ID)
+    } else {
+      stage?.set?.(false)
+    }
+  }
 
   return (
     <div
       role="region"
       aria-label={t('title')}
-      aria-hidden={open ? undefined : 'true'}
+      aria-hidden={visible ? undefined : 'true'}
       className="omnimux-publish-stage"
-      data-visible={open ? 'true' : 'false'}
-      style={stageStyle}
+      data-visible={visible ? 'true' : 'false'}
+      style={{
+        display: visible ? 'flex' : 'none',
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
     >
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
+        actions={<WorkbenchFocusBar t={t} />}
         onRefresh={feed.loadList}
         refreshing={feed.listLoading}
         refreshTitle={t('records.refresh')}
@@ -168,41 +155,4 @@ export function PublishStageView(props) {
       <PublishStageModals t={t} feed={feed} view={view} setView={setView} />
     </div>
   )
-}
-
-/**
- * Publish first-level page orchestrator.
- */
-export function PublishStage({ t, stage }) {
-  injectPublishStyles()
-  const { open, everOpened, box } = useStageGeometry(stage)
-  const [viewMode, setViewMode] = useState('grid')
-  const [view, setView] = useState({ name: 'list' })
-  const feed = usePublishFeed({ open, view, t })
-
-  if (!stage || !everOpened) return null
-
-  return (
-    <PublishStageView
-      t={t}
-      stage={stage}
-      feed={feed}
-      viewMode={viewMode}
-      setViewMode={setViewMode}
-      view={view}
-      setView={setView}
-      open={open}
-      box={box}
-    />
-  )
-}
-
-function useLayoutEffectBox(stage, open, setBox) {
-  useLayoutEffect(() => {
-    if (!open) return undefined
-    const update = () => { setBox(stage.readBox()) }
-    update()
-    window.addEventListener('resize', update)
-    return () => { window.removeEventListener('resize', update) }
-  }, [open, stage, setBox])
 }

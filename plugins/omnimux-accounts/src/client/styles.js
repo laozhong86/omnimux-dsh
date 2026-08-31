@@ -9,22 +9,18 @@
 
 export const STYLES = `
 .omnimux-accounts-stage {
-  position: fixed;
-  z-index: 200;
-  top: var(--stage-top);
-  left: var(--stage-left);
-  width: var(--stage-width);
-  height: var(--stage-height);
+  position: relative;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-primary, inherit);
   overflow: auto;
   pointer-events: auto;
-  -webkit-app-region: no-drag;
 }
 .omnimux-accounts-stage[data-visible="false"] {
-  display: none;
+  display: none !important;
   pointer-events: none;
 }
 .omnimux-accounts-stage-body {

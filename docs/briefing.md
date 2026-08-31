@@ -28,6 +28,7 @@ subsystem: "global"
 | 2026-08-16-text-complete | 2026-08-16 | decided | 一次性专家补全；白名单不是第二套 chat |
 | 2026-08-30-physical-materialization | 2026-08-30 | decided | 画布/主体库导入全部物理实体化 |
 | 2026-08-31-workbench-split | 2026-08-31 | decided | 工作台挂 better-sidebar；对话不卸载；库页 overlay |
+| 2026-08-31-workbench-libraries-318 | 2026-08-31 | proposed | #318 一级库页迁入右栏；默认开态分流；toggleCluster 对话开关 |
 
 ## 2026-08-15-briefing-log
 
@@ -146,4 +147,14 @@ subsystem: "global"
 - **why:** 官方 `conversation` 不可卸载，`details` 只有 520px。用户要人机同面。
 - **not:** 不把库页搬进右栏；不 shadow conversation；不改生产 profile。
 - **authority:** `docs/contracts/workbench-split.md`, `docs/decisions/2026-08-31-workbench-split.md`
+- **updated:** 2026-08-31
+
+## 2026-08-31-workbench-libraries-318
+
+- **status:** proposed
+- **topic:** 一级库页全量迁入右侧工作台与顶部对话开关注入（Issue #318）
+- **decision:** （待架构 ADR）产品倾向：废除「库页 = overlay」例外；8 个库页 + 广场 `registerTab`；画布默认 split、其余默认 gui；记忆按会话×Tab；`toggleCluster` 首位插入 gui↔split 对话开关；无 better-sidebar 仍不回退 overlay。
+- **why:** overlay 遮会话、藏右栏，人机无法同面；#313 只覆盖剪辑/画布。
+- **not:** 不迁 Apps/Settings；不卸载 conversation；不发明三栏壳；不改生产 profile。
+- **authority:** `docs/specs/2026-08-31-workbench-libraries-and-toggle-prd.md`
 - **updated:** 2026-08-31

@@ -1,0 +1,64 @@
+sequenceDiagram
+    autonumber
+    actor User
+    participant Row as Sidebar extra row
+    participant Store as WorkbenchSidebarStore
+    participant Api as window.__omnimuxWorkbench
+    participant Mem as FocusMemory localStorage
+    participant BS as dsh-better-sidebar
+    participant Tab as Library/Canvas Tab
+    participant Toggle as data-omnimux-chat-toggle
+    participant Conv as official conversation
+
+    User->>Row: 点「资产库」
+    Row->>Store: open()
+    Store->>Api: open({ tabId: omnimux-assets:library })
+    Api->>Api: closeDetails(); releaseCurrentProductStage()
+    alt 无 better-sidebar
+        Api-->>Store: false（禁止 overlay 回退）
+    else 无当前会话
+        Api-->>User: false + 「请先新建或打开一个会话」
+    else 正常
+        Api->>BS: wait snapshot(sessionId)
+        Api->>BS: closeSeedFiles(); openTab(library)
+        Api->>Mem: read(sessionId, tabId)
+        alt 有手切记录
+            Api->>BS: setFocus(remembered.mode, remembered.splitWidth)
+        else 无记录
+            Api->>Api: resolveDefaultFocus → gui
+            Api->>BS: setFocus(gui) 不落盘
+        end
+        Api->>Tab: visible; attachStore
+        Tab-->>User: 右栏资产页（填满容器）
+        Conv-->>User: 仍挂载；gui 时被挤到可视宽≈0
+        Note over Conv: data-dsh-product-stage 为空
+    end
+
+    User->>Toggle: 展开对话
+    Toggle->>Api: setFocus(split, persist=true)
+    Api->>Mem: write(S1, assets, {mode:split, splitWidth})
+    Api->>BS: width = splitWidth || default(~420 会话)
+    Conv-->>User: 中间对话可见
+
+    User->>Row: 点「视频剪辑」
+    Row->>Api: open({ tabId: omnimux-clip:studio })
+    Api->>Mem: read(S1, clip) 空
+    Api->>Api: default = gui（不继承资产 split）
+    Api->>BS: setFocus(gui) 不落盘
+    Note over Tab: 资产 Tab 可仍挂着（single 防重复；跨 type 共存）
+
+    User->>Row: 再点「资产库」
+    Api->>Mem: read(S1, assets) → split
+    Api->>BS: 恢复 split
+
+    User->>Tab: 点库页 Close
+    Tab->>Api: closeTab(assets)
+    Api->>BS: closeTab(assets)
+    alt 右栏已无 OmniMux 业务 Tab
+        Api->>BS: setFocus(chat)
+        Toggle-->>Toggle: hidden/disabled
+    end
+
+    User->>User: 刷新同会话
+    Api->>Mem: load table(S1)
+    Note over Mem,Api: 手切仍在；未碰过的 Tab 仍走默认矩阵

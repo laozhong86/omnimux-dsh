@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L2"
 date: "2026-08-26"
-updated: "2026-08-30"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -21,6 +21,7 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `proposed` | [2026-08-31-workbench-libraries-and-toggle-prd.md](2026-08-31-workbench-libraries-and-toggle-prd.md) | 增量 PRD：一级库页迁入右侧工作台与顶部对话开关注入（#318） | `omnimux` | 2026-08-31 | 废除库页 overlay；registerTab + Default Focus（画布 split / 其余 gui）；toggleCluster 首位插入对话开关；记忆按会话×Tab。 |
 | `accepted` | [2026-08-30-omnimux-physical-materialization.md](2026-08-30-omnimux-physical-materialization.md) | 画布与资产库 100% 物理实体化（PRD + 技术规格） | `omnimux-workflow` | 2026-08-30 | 导入/主体/生成物全部 copy 进受管目录；项目相对路径；阶段 0 文档先行。 |
 | `accepted` | [2026-08-28-canvas-project-assets-prd.md](2026-08-28-canvas-project-assets-prd.md) | 工作流画布：项目资产与画布素材双 Tab 抽屉 | `omnimux-workflow` | 2026-08-28 | 画布 Tab = 当前创作态；资产 Tab = 项目持久态。原型：`prototypes/2026-08-28-canvas-project-assets-prototype.html`。 |
 | `accepted` | [2026-08-28-inspiration-hover-replication.md](2026-08-28-inspiration-hover-replication.md) | 灵感库卡片悬停 CTA × 去对话复刻：架构规格与任务分解 | `omnimux-inspiration` | 2026-08-28 | Track C 双包；跨包唯一缝 `window.__omnimuxWorkflow.startReplicationProject`；复用 `runNewProject` 默认库路径；Composer 走市场插件已验证的 React 18 setter + 发送按钮。严禁跨包 client import。 |

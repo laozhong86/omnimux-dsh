@@ -1,23 +1,21 @@
 export const STYLES_ID = 'omnimux-workflow-styles'
 
 export const WORKFLOW_CSS = `
-.omnimux-workflow-stage {
-  position: fixed;
-  z-index: 200;
-  top: var(--stage-top);
-  left: var(--stage-left);
-  width: var(--stage-width);
-  height: var(--stage-height);
+.omnimux-workflow-stage,
+.omnimux-workflow-library-page {
+  position: relative;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--dsw-alias-bg-base, var(--dsw-bg));
   color: var(--dsw-alias-label-primary, inherit);
   overflow: hidden;
   pointer-events: auto;
-  -webkit-app-region: no-drag;
 }
-.omnimux-workflow-stage[data-visible="false"] {
-  display: none;
+.omnimux-workflow-stage[data-visible="false"],
+.omnimux-workflow-library-page[data-visible="false"] {
+  display: none !important;
   pointer-events: none;
 }
 .omnimux-workflow-action-row {
