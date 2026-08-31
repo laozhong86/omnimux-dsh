@@ -1,6 +1,7 @@
 export const zh = {
   'nav': '账号',
   'title': '账号矩阵',
+  'subtitle': '统一管理多平台社交账号授权与 Agent 访问权限，支撑内容分发与数据追踪',
   'loading': '正在加载账号…',
   'needLogin': '登录 OmniMux 以查看已连接账号。',
   'needLoginHint': '可在 设置 → 个人资料 中登录 OmniMux。',
@@ -28,6 +29,8 @@ export const zh = {
   'sort.platform': '平台',
   'sort.status': '状态',
   'sort.lastUsed': '最近使用',
+  'sort.connectedAt': '连接时间',
+  'sort.expiresAt': '授权到期',
   'status.active': '正常',
   'status.expiring': '即将过期',
   'status.expired': '已过期',
@@ -78,6 +81,7 @@ export const zh = {
 export const en = {
   'nav': 'Accounts',
   'title': 'Account Matrix',
+  'subtitle': 'Manage multi-platform social account authorization and Agent access for automated publishing and analytics.',
   'loading': 'Loading accounts…',
   'needLogin': 'Sign in to OmniMux to view connected accounts.',
   'needLoginHint': 'Sign in under Settings → Profile.',
@@ -105,6 +109,8 @@ export const en = {
   'sort.platform': 'Platform',
   'sort.status': 'Status',
   'sort.lastUsed': 'Recently used',
+  'sort.connectedAt': 'Connected time',
+  'sort.expiresAt': 'Expiration',
   'status.active': 'Active',
   'status.expiring': 'Expiring soon',
   'status.expired': 'Expired',

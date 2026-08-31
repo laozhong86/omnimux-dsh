@@ -1,4 +1,5 @@
 import { FilterBar as KitFilterBar, SearchField, DropdownSelect, IconButton } from 'dsh-ui-kit'
+import { DEFAULT_SORT_DIRECTIONS } from './view.js'
 
 /**
  * Filter toolbar: search, platform / group / status dropdowns (options are
@@ -31,6 +32,8 @@ export function FilterBar(props) {
     { value: 'platform', label: t('sort.platform') },
     { value: 'status', label: t('sort.status') },
     { value: 'last_used_at', label: t('sort.lastUsed') },
+    { value: 'connected_at', label: t('sort.connectedAt') },
+    { value: 'expires_at', label: t('sort.expiresAt') },
   ]
   const platformOptions = [
     { value: '', label: `${t('platform')} · ${t('all')}` },
@@ -98,7 +101,10 @@ export function FilterBar(props) {
             options={sortOptions}
             aria-label={t('filter.sort')}
             disabled={disabled}
-            onChange={(nextKey) => { onSortChange({ key: nextKey }) }}
+            onChange={(nextKey) => {
+              const recommendedDir = DEFAULT_SORT_DIRECTIONS[nextKey] || 'asc'
+              onSortChange({ key: nextKey, dir: recommendedDir })
+            }}
           />
           <IconButton
             variant="outline"

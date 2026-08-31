@@ -6,6 +6,7 @@ import { ConnectModal } from './ConnectModal.jsx'
 import { EmptyState } from './EmptyState.jsx'
 import { FilterBar } from './FilterBar.jsx'
 import { OverviewBar } from './OverviewBar.jsx'
+import { PlusIcon } from './icons.jsx'
 import { useAccounts } from './use-accounts.js'
 import { injectAccountsStyles } from './styles.js'
 import { disconnectAccount, patchAccount } from './api.js'
@@ -282,6 +283,16 @@ export function AccountsSection({ t, active = true }) {
 
   return (
     <div className="omnimux-accounts-root">
+      <div className="omnimux-accounts-action-row">
+        <Button
+          variant="primary"
+          leadingIcon={<PlusIcon />}
+          disabled={combinedBusy !== ''}
+          onClick={openConnect}
+        >
+          {t('connect')}
+        </Button>
+      </div>
       <OverviewBar t={t} summary={summary} filters={filters} onFilterClick={onFilterClick} busy={combinedBusy} />
       {accounts.length > 0 ? (
         <div className="omnimux-accounts-toolbar">
@@ -309,17 +320,9 @@ export function AccountsSection({ t, active = true }) {
               if (patchSort.key !== undefined) setSortKey(patchSort.key)
               if (patchSort.dir !== undefined) setSortDir(patchSort.dir)
             }}
-          onViewChange={setView}
-          busy={combinedBusy}
-        />
-          <Button
-            variant="primary"
-            className="omnimux-accounts-cta"
-            disabled={combinedBusy !== ''}
-            onClick={openConnect}
-          >
-            + {t('connect')}
-          </Button>
+            onViewChange={setView}
+            busy={combinedBusy}
+          />
         </div>
       ) : null}
       {selected.size > 0 ? (

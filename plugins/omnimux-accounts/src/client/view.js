@@ -73,9 +73,22 @@ function sortValue(row, key) {
 }
 
 /**
+ * Default recommended sort direction when selecting a sort dimension.
+ * Time/recency fields default to 'desc' (latest first), other fields default to 'asc'.
+ */
+export const DEFAULT_SORT_DIRECTIONS = Object.freeze({
+  display_name: 'asc',
+  platform: 'asc',
+  status: 'asc',
+  last_used_at: 'desc',
+  connected_at: 'desc',
+  expires_at: 'asc',
+})
+
+/**
  * Sorts a copy of the accounts list. Supported keys: display_name, platform,
- * status, last_used_at, connected_at (ISO 8601 UTC strings sort correctly as
- * plain text). Unknown keys fall back to display_name.
+ * status, last_used_at, connected_at, expires_at (ISO 8601 UTC strings sort
+ * correctly as plain text). Unknown keys fall back to display_name.
  * @param {Array<Record<string, unknown>>} accounts
  * @param {string} key
  * @param {'asc' | 'desc'} dir
@@ -83,14 +96,14 @@ function sortValue(row, key) {
  */
 export function sortAccounts(accounts, key = 'display_name', dir = 'asc') {
   const rows = Array.isArray(accounts) ? [...accounts] : []
-  const effectiveKey = ['display_name', 'platform', 'status', 'last_used_at', 'connected_at'].includes(key)
+  const effectiveKey = ['display_name', 'platform', 'status', 'last_used_at', 'connected_at', 'expires_at'].includes(key)
     ? key
     : 'display_name'
   const sign = dir === 'desc' ? -1 : 1
-  const fallbackKey = effectiveKey === 'display_name' ? 'username' : 'display_name'
+  const fallbackKey = effectiveKey === 'display_name' ? 'username' : undefined
   return rows.sort((a, b) => {
-    const av = sortValue(a, effectiveKey) ?? sortValue(a, fallbackKey)
-    const bv = sortValue(b, effectiveKey) ?? sortValue(b, fallbackKey)
+    const av = sortValue(a, effectiveKey) ?? (fallbackKey ? sortValue(a, fallbackKey) : undefined)
+    const bv = sortValue(b, effectiveKey) ?? (fallbackKey ? sortValue(b, fallbackKey) : undefined)
     if (av === undefined && bv === undefined) return 0
     if (av === undefined) return 1 // missing values last, always
     if (bv === undefined) return -1
