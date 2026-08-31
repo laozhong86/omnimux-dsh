@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 import { apply } from '../index.js'
 
 describe('hub apply composition', () => {
-  it('registers media, text, and identity seams in a stable order', () => {
+  it('registers media, text, identity, and catalog seams in a stable order', () => {
     const names = []
     const provided = []
     apply({
@@ -11,7 +11,7 @@ describe('hub apply composition', () => {
       provide(name) { provided.push(name) },
       get() { return undefined },
     }, { official: { mount: false } })
-    assert.deepEqual(provided, ['identity', 'videoGenerate', 'imageGenerate', 'audioGenerate', 'textComplete'])
+    assert.deepEqual(provided, ['identity', 'videoGenerate', 'imageGenerate', 'audioGenerate', 'textComplete', 'modelCatalog'])
     assert.deepEqual(names, [
       'omnimux_video_submit',
       'omnimux_image_submit',
@@ -35,9 +35,14 @@ describe('hub apply composition', () => {
     assert(provided.imageGenerate && typeof provided.imageGenerate.execute === 'function')
     assert(provided.videoGenerate && typeof provided.videoGenerate.execute === 'function')
     assert(provided.audioGenerate && typeof provided.audioGenerate.execute === 'function')
+    assert(provided.modelCatalog && typeof provided.modelCatalog.list === 'function')
+    const catalog = provided.modelCatalog.list()
+    assert.equal(catalog.source, 'omnimux')
+    assert.ok(Array.isArray(catalog.text))
+    assert.ok(catalog.defaults.text)
   })
 
-  it('registers all 28 tools and 5 seams by default', () => {
+  it('registers all 28 tools and 6 seams by default', () => {
     const names = []
     const provided = []
     apply({
@@ -55,7 +60,7 @@ describe('hub apply composition', () => {
     assert.ok(names.includes('omnimux_social_data'))
     assert.ok(names.includes('omnimux_accounts_list'))
 
-    assert.deepEqual(provided, ['identity', 'videoGenerate', 'imageGenerate', 'audioGenerate', 'textComplete'])
+    assert.deepEqual(provided, ['identity', 'videoGenerate', 'imageGenerate', 'audioGenerate', 'textComplete', 'modelCatalog'])
   })
 
   it('disables all gated capabilities when gate.enabled is false', () => {
@@ -68,7 +73,7 @@ describe('hub apply composition', () => {
     }, { gate: { enabled: false } })
 
     assert.equal(names.length, 0)
-    assert.deepEqual(provided, ['identity'])
+    assert.deepEqual(provided, ['identity', 'modelCatalog'])
   })
 
   it('fine-grained disables media, text models, and official tools via gate', () => {
@@ -93,7 +98,7 @@ describe('hub apply composition', () => {
     assert.ok(tools.omnimux_page_fetch)
     assert.ok(tools.omnimux_accounts_list)
 
-    assert.deepEqual(provided, ['identity', 'imageGenerate', 'audioGenerate', 'textComplete'])
+    assert.deepEqual(provided, ['identity', 'imageGenerate', 'audioGenerate', 'textComplete', 'modelCatalog'])
 
     // grok-4.6 excluded from enum
     const textEnum = tools.omnimux_text_complete.parameters.properties.model.enum

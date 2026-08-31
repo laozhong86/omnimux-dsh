@@ -19,7 +19,6 @@ import type {
   SubmitResult,
 } from './gateway';
 import type { ModelParameterSchema } from '../../shared/api';
-import { TEXT_MODEL_ORDER } from '../../shared/textModelOrder';
 import { createWorkflowLogger } from '../execution/logger';
 
 const LOG_TAG = 'OmniMuxSeamClient';
@@ -76,814 +75,56 @@ export const SEAM_CONCURRENCY_ENV = 'OMNIMUX_WORKFLOW_MAX_SEAM_CONCURRENCY';
 export const DEFAULT_SEAM_CONCURRENCY = 2;
 
 // ============================================================================
-// Capability catalog & dynamic parameter schemas
+// Capability catalog (hub modelCatalog seam)
 // ============================================================================
 
-/** Text whitelist (dropdown order = default first). Same sequence as client ConfigPanel. */
-const TEXT_MODEL_IDS: ReadonlyArray<string> = TEXT_MODEL_ORDER;
-
-const MODEL_DISPLAY_NAMES: Record<string, string> = {
-  'claude-opus-4-6': 'Claude 4.6',
-  'gemini-3.1-pro-preview': 'Gemini 3.1 Pro Preview',
-  'gemini-3.7-flash': 'Gemini 3.7 Flash',
-  'gpt-5.5': 'GPT-5.5',
-  'deepseek-v4-flash-vision-exp': 'DeepSeek 4 Flash',
-  'deepseek-v4-flash': 'DeepSeek 4 Flash',
-};
-
-const RATIO_OPTS = {
-  auto: { value: 'auto', label: '自适应' },
-  r1_1: { value: '1:1', label: '1:1' },
-  r16_9: { value: '16:9', label: '16:9' },
-  r9_16: { value: '9:16', label: '9:16' },
-  r4_3: { value: '4:3', label: '4:3' },
-  r3_4: { value: '3:4', label: '3:4' },
-  r21_9: { value: '21:9', label: '21:9' },
-  r3_2: { value: '3:2', label: '3:2' },
-  r2_3: { value: '2:3', label: '2:3' },
-  r9_21: { value: '9:21', label: '9:21' },
-};
-
-export const IMAGE_MODEL_SPECS: ReadonlyArray<{
-  id: string;
-  label: string;
-  badge?: string;
-  subtitle?: string;
-  family?: string;
-  parameters?: ModelParameterSchema;
-}> = [
-  {
-    id: 'gpt-image-2',
-    label: 'GPT Image 2',
-    badge: '默认',
-    subtitle: '1k-4k',
-    family: 'openai',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: '1024x1024', label: '1K' }, { value: '1792x1024', label: '2K' }],
-        defaultValue: '1792x1024',
-      },
-      quality: {
-        options: [{ value: 'standard', label: '标准' }, { value: 'hd', label: '高清 HD' }],
-        defaultValue: 'standard',
-      },
-    },
-  },
-  {
-    id: 'gpt-image2-hd',
-    label: 'GPT Image 2 HD',
-    subtitle: '高清 4K',
-    family: 'openai',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: '1792x1024', label: '2K' }, { value: '3840x2160', label: '4K' }],
-        defaultValue: '1792x1024',
-      },
-    },
-  },
-  {
-    id: 'grok-imagine-image',
-    label: 'Grok Imagine Image',
-    badge: '极速',
-    subtitle: 'xAI Grok',
-    family: 'grok',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: '2K', label: '2K' }, { value: '1K', label: '1K' }],
-        defaultValue: '2K',
-      },
-    },
-  },
-  {
-    id: 'grok-imagine-image-quality',
-    label: 'Grok Imagine Image Quality',
-    badge: '高画质',
-    subtitle: 'xAI Grok HD',
-    family: 'grok',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: '2K', label: '2K' }, { value: '4K', label: '4K' }],
-        defaultValue: '2K',
-      },
-    },
-  },
-  {
-    id: 'midjourney',
-    label: 'Midjourney',
-    badge: '旗舰',
-    subtitle: 'Midjourney v7/v8',
-    family: 'midjourney',
-    parameters: {
-      aspectRatio: {
-        options: [
-          RATIO_OPTS.auto,
-          RATIO_OPTS.r1_1,
-          RATIO_OPTS.r4_3,
-          RATIO_OPTS.r3_4,
-          RATIO_OPTS.r16_9,
-          RATIO_OPTS.r9_16,
-          RATIO_OPTS.r21_9,
-          RATIO_OPTS.r3_2,
-          RATIO_OPTS.r2_3,
-        ],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: '2K', label: '2K' }, { value: '1080P', label: '1080P' }],
-        defaultValue: '2K',
-      },
-    },
-  },
-  {
-    id: 'midjourney-8.1',
-    label: 'Midjourney 8.1',
-    badge: 'Yearly -20%',
-    subtitle: '2K',
-    family: 'midjourney',
-    parameters: {
-      aspectRatio: {
-        options: [
-          RATIO_OPTS.auto,
-          RATIO_OPTS.r1_1,
-          RATIO_OPTS.r4_3,
-          RATIO_OPTS.r3_4,
-          RATIO_OPTS.r16_9,
-          RATIO_OPTS.r9_16,
-          RATIO_OPTS.r21_9,
-          RATIO_OPTS.r3_2,
-          RATIO_OPTS.r2_3,
-          RATIO_OPTS.r9_21,
-        ],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: '2K', label: '2K' }, { value: '1080P', label: '1080P' }],
-        defaultValue: '2K',
-      },
-    },
-  },
-  {
-    id: 'midjourney-7',
-    label: 'Midjourney 7',
-    subtitle: '1080P',
-    family: 'midjourney',
-    parameters: {
-      aspectRatio: {
-        options: [
-          RATIO_OPTS.auto,
-          RATIO_OPTS.r1_1,
-          RATIO_OPTS.r4_3,
-          RATIO_OPTS.r3_4,
-          RATIO_OPTS.r16_9,
-          RATIO_OPTS.r9_16,
-          RATIO_OPTS.r21_9,
-          RATIO_OPTS.r3_2,
-          RATIO_OPTS.r2_3,
-        ],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: '1080P', label: '1080P' }, { value: '720P', label: '720P' }],
-        defaultValue: '1080P',
-      },
-    },
-  },
-  {
-    id: 'midjourney-niji-7',
-    label: 'Midjourney Niji 7',
-    subtitle: '二次元动漫',
-    family: 'midjourney',
-    parameters: {
-      aspectRatio: {
-        options: [
-          RATIO_OPTS.auto,
-          RATIO_OPTS.r1_1,
-          RATIO_OPTS.r4_3,
-          RATIO_OPTS.r3_4,
-          RATIO_OPTS.r16_9,
-          RATIO_OPTS.r9_16,
-          RATIO_OPTS.r21_9,
-          RATIO_OPTS.r3_2,
-          RATIO_OPTS.r2_3,
-        ],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: '1080P', label: '1080P' }],
-        defaultValue: '1080P',
-      },
-    },
-  },
-  {
-    id: 'nanobanana-2',
-    label: 'NanoBanana 2',
-    badge: 'Imagen',
-    subtitle: 'auto-4K',
-    family: 'nanobanana',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: 'auto-4K', label: 'auto-4K' }, { value: '2K', label: '2K' }, { value: '1K', label: '1K' }],
-        defaultValue: 'auto-4K',
-      },
-    },
-  },
-  {
-    id: 'nano_banana_2',
-    label: 'Nano Banana 2',
-    subtitle: 'Google Imagen',
-    family: 'nanobanana',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: 'auto-4K', label: 'auto-4K' }, { value: '2K', label: '2K' }],
-        defaultValue: 'auto-4K',
-      },
-    },
-  },
-  {
-    id: 'nanobanana-pro',
-    label: 'NanoBanana Pro',
-    subtitle: 'auto-4K Pro',
-    family: 'nanobanana',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: 'auto-4K', label: 'auto-4K' }, { value: '2K', label: '2K' }, { value: '1K', label: '1K' }],
-        defaultValue: 'auto-4K',
-      },
-    },
-  },
-  {
-    id: 'nano_banana_pro',
-    label: 'Nano Banana Pro',
-    subtitle: 'Google Imagen Pro',
-    family: 'nanobanana',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: 'auto-4K', label: 'auto-4K' }, { value: '2K', label: '2K' }],
-        defaultValue: 'auto-4K',
-      },
-    },
-  },
-  {
-    id: 'seedream-5.0-pro',
-    label: 'Seedream 5.0 Pro',
-    subtitle: '1K-2K',
-    family: 'seedream',
-    parameters: {
-      aspectRatio: {
-        options: [
-          RATIO_OPTS.auto,
-          RATIO_OPTS.r1_1,
-          RATIO_OPTS.r4_3,
-          RATIO_OPTS.r3_4,
-          RATIO_OPTS.r16_9,
-          RATIO_OPTS.r9_16,
-          RATIO_OPTS.r21_9,
-          RATIO_OPTS.r3_2,
-          RATIO_OPTS.r2_3,
-        ],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: '2K', label: '2K' }, { value: '1K', label: '1K' }],
-        defaultValue: '2K',
-      },
-    },
-  },
-  {
-    id: 'seedream-4.5',
-    label: 'Seedream 4.5',
-    subtitle: '2K-4K',
-    family: 'seedream',
-    parameters: {
-      aspectRatio: {
-        options: [
-          RATIO_OPTS.auto,
-          RATIO_OPTS.r1_1,
-          RATIO_OPTS.r4_3,
-          RATIO_OPTS.r3_4,
-          RATIO_OPTS.r16_9,
-          RATIO_OPTS.r9_16,
-          RATIO_OPTS.r21_9,
-          RATIO_OPTS.r3_2,
-          RATIO_OPTS.r2_3,
-        ],
-        defaultValue: '16:9',
-      },
-      resolution: {
-        options: [{ value: '4K', label: '4K' }, { value: '2K', label: '2K' }],
-        defaultValue: '2K',
-      },
-    },
-  },
-] as const;
-
-export const VIDEO_MODEL_SPECS: ReadonlyArray<{
-  id: string;
-  label: string;
-  badge?: string;
-  subtitle?: string;
-  family?: string;
-  parameters?: ModelParameterSchema;
-}> = [
-  {
-    id: 'seedance-2-0-fast',
-    label: 'Seedance 2.0 Fast',
-    badge: '默认',
-    subtitle: '720P · ⏱ 4-8s',
-    family: 'bytedance',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 4, label: '4s' },
-          { value: 6, label: '6s' },
-          { value: 8, label: '8s' },
-        ],
-        defaultValue: 4,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '720P', label: '720P' }, { value: '1080P', label: '1080P' }],
-        defaultValue: '720P',
-      },
-    },
-  },
-  {
-    id: 'seedance-2-5',
-    label: 'Seedance 2.5',
-    badge: '即梦旗舰',
-    subtitle: '720P-1080P · ⏱ 5-10s',
-    family: 'bytedance',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 5, label: '5s' },
-          { value: 10, label: '10s' },
-        ],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '720P', label: '720P' }, { value: '1080P', label: '1080P' }],
-        defaultValue: '720P',
-      },
-    },
-  },
-  {
-    id: 'seedance-2-0',
-    label: 'Seedance 2.0',
-    subtitle: '720P · ⏱ 5s',
-    family: 'bytedance',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [{ value: 5, label: '5s' }],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '720P', label: '720P' }],
-        defaultValue: '720P',
-      },
-    },
-  },
-  {
-    id: 'seedance2.5-stable-max-720p',
-    label: 'Seedance 2.5 Stable Max',
-    badge: '高画质稳定',
-    subtitle: '720P · ⏱ 5-10s',
-    family: 'bytedance',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [{ value: 5, label: '5s' }, { value: 10, label: '10s' }],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '720P', label: '720P' }],
-        defaultValue: '720P',
-      },
-    },
-  },
-  {
-    id: 'kling-v3',
-    label: 'Kling V3',
-    badge: '可灵 3.0',
-    subtitle: '1080P-4K · ⏱ 5-10s · 🔊',
-    family: 'kling',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 5, label: '5s' },
-          { value: 10, label: '10s' },
-        ],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '1080P', label: '1080P' }, { value: '4K', label: '4K' }],
-        defaultValue: '1080P',
-      },
-      sound: {
-        supported: true,
-        defaultValue: true,
-      },
-    },
-  },
-  {
-    id: 'kling-v2-6',
-    label: 'Kling V2.6',
-    subtitle: '1080P · ⏱ 5-10s',
-    family: 'kling',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 5, label: '5s' },
-          { value: 10, label: '10s' },
-        ],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '1080P', label: '1080P' }],
-        defaultValue: '1080P',
-      },
-    },
-  },
-  {
-    id: 'kling-v3-motion-control',
-    label: 'Kling V3 运镜控制',
-    badge: '运镜控制',
-    subtitle: '1080P · 运镜轨迹',
-    family: 'kling',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 5, label: '5s' },
-          { value: 10, label: '10s' },
-        ],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '1080P', label: '1080P' }],
-        defaultValue: '1080P',
-      },
-    },
-  },
-  {
-    id: 'kling-avatar',
-    label: 'Kling Avatar (数字人)',
-    badge: '数字人',
-    subtitle: '音频对口型',
-    family: 'kling',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 5, label: '5s' },
-          { value: 10, label: '10s' },
-        ],
-        defaultValue: 5,
-        unit: 's',
-      },
-    },
-  },
-  {
-    id: 'kling-o1',
-    label: 'Kling O1',
-    subtitle: '1080P · ⏱ 3-10s',
-    family: 'kling',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 5, label: '5s' },
-          { value: 10, label: '10s' },
-        ],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '1080P', label: '1080P' }],
-        defaultValue: '1080P',
-      },
-    },
-  },
-  {
-    id: 'kling-o3',
-    label: 'Kling O3',
-    subtitle: '4K · ⏱ 3-15s · 🔊',
-    family: 'kling',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 5, label: '5s' },
-          { value: 10, label: '10s' },
-          { value: 15, label: '15s' },
-        ],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '1080P', label: '1080P' }, { value: '4K', label: '4K' }],
-        defaultValue: '1080P',
-      },
-      sound: {
-        supported: true,
-        defaultValue: true,
-      },
-    },
-  },
-  {
-    id: 'veo-3.1',
-    label: 'Veo 3.1',
-    badge: '谷歌顶级',
-    subtitle: '720p-1080p · ⏱ 8s',
-    family: 'veo',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 5, label: '5s' },
-          { value: 8, label: '8s' },
-        ],
-        defaultValue: 8,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '1080P', label: '1080P' }, { value: '720P', label: '720P' }],
-        defaultValue: '1080P',
-      },
-    },
-  },
-  {
-    id: 'veo-3.1-fast',
-    label: 'Veo 3.1 Fast',
-    badge: '极速',
-    subtitle: '720p-1080p · ⏱ 8s',
-    family: 'veo',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 5, label: '5s' },
-          { value: 8, label: '8s' },
-        ],
-        defaultValue: 8,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '1080P', label: '1080P' }, { value: '720P', label: '720P' }],
-        defaultValue: '1080P',
-      },
-    },
-  },
-  {
-    id: 'grok-imagine-video',
-    label: 'Grok Imagine Video',
-    badge: 'xAI Grok',
-    subtitle: '720P · ⏱ 5s',
-    family: 'grok',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [{ value: 5, label: '5s' }],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '720P', label: '720P' }],
-        defaultValue: '720P',
-      },
-    },
-  },
-  {
-    id: 'grok-imagine-video-1.5',
-    label: 'Grok Imagine Video 1.5',
-    subtitle: '720P-1080P · ⏱ 5s',
-    family: 'grok',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [{ value: 5, label: '5s' }],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '1080P', label: '1080P' }, { value: '720P', label: '720P' }],
-        defaultValue: '1080P',
-      },
-    },
-  },
-  {
-    id: 'omni_flash',
-    label: 'Omni Flash Video',
-    subtitle: '多时长视频',
-    family: 'veo',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 4, label: '4s' },
-          { value: 6, label: '6s' },
-          { value: 10, label: '10s' },
-        ],
-        defaultValue: 6,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '720P', label: '720P' }],
-        defaultValue: '720P',
-      },
-    },
-  },
-  {
-    id: 'wan-2.6',
-    label: 'Wan 2.6',
-    subtitle: '720P-1080P · ⏱ 5-15s · 🔊',
-    family: 'wan',
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [
-          { value: 5, label: '5s' },
-          { value: 10, label: '10s' },
-          { value: 15, label: '15s' },
-        ],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '1080P', label: '1080P' }, { value: '720P', label: '720P' }],
-        defaultValue: '1080P',
-      },
-      sound: {
-        supported: true,
-        defaultValue: false,
-      },
-    },
-  },
-] as const;
-
-export const AUDIO_MODEL_SPECS: ReadonlyArray<{
-  id: string;
-  label: string;
-  badge?: string;
-  subtitle?: string;
-  family?: string;
-  parameters?: ModelParameterSchema;
-}> = [
-  {
-    id: 'suno',
-    label: 'Suno Music',
-    badge: '音乐创作',
-    subtitle: 'AI 歌曲 / 纯音乐 · ⏱ 30-120s',
-    family: 'suno',
-    parameters: {
-      duration: {
-        options: [
-          { value: 30, label: '30s' },
-          { value: 60, label: '60s' },
-          { value: 120, label: '120s' },
-        ],
-        defaultValue: 60,
-        unit: 's',
-      },
-      instrumental: {
-        supported: true,
-        defaultValue: false,
-      },
-    },
-  },
-  {
-    id: 'gpt-4o-mini-tts',
-    label: 'GPT-4o Mini TTS',
-    badge: '语音合成',
-    subtitle: 'OpenAI 高清配音 · 6 种音色',
-    family: 'openai',
-    parameters: {
-      voice: {
-        options: [
-          { value: 'alloy', label: 'Alloy (自然通用)' },
-          { value: 'echo', label: 'Echo (沉稳男声)' },
-          { value: 'fable', label: 'Fable (英式叙事)' },
-          { value: 'onyx', label: 'Onyx (深沉厚重)' },
-          { value: 'nova', label: 'Nova (明亮女声)' },
-          { value: 'shimmer', label: 'Shimmer (清亮柔和)' },
-        ],
-        defaultValue: 'alloy',
-      },
-    },
-  },
-  {
-    id: 'whisper-1',
-    label: 'Whisper 1',
-    badge: '语音识别',
-    subtitle: 'OpenAI 语音转文字 / ASR',
-    family: 'openai',
-    parameters: {},
-  },
-] as const;
-
-/** Hub media route defaults (src/media/route.js DEFAULT_MEDIA.models). */
-const DEFAULT_VIDEO_MODEL = 'seedance-2-0-fast';
-const DEFAULT_IMAGE_MODEL = 'gpt-image-2';
-const DEFAULT_AUDIO_MODEL = 'suno';
-
-function envString(env: NodeJS.ProcessEnv, key: string): string | undefined {
-  const value = env[key];
-  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+interface ModelCatalogSeam {
+  list(): {
+    source?: string;
+    fingerprint?: string;
+    defaults?: {
+      text?: string;
+      image?: string;
+      video?: string;
+      audio?: string;
+    };
+    text?: Array<Record<string, unknown>>;
+    image?: Array<Record<string, unknown>>;
+    video?: Array<Record<string, unknown>>;
+    audio?: Array<Record<string, unknown>>;
+  };
 }
 
-function labelOf(id: string): { id: string; label: string } {
-  return { id, label: MODEL_DISPLAY_NAMES[id] ?? id };
+function isModelCatalog(value: unknown): value is ModelCatalogSeam {
+  return (
+    typeof value === 'object'
+    && value !== null
+    && typeof (value as ModelCatalogSeam).list === 'function'
+  );
+}
+
+function asCatalogRows(value: unknown): Array<{
+  id: string;
+  label: string;
+  badge?: string;
+  subtitle?: string;
+  family?: string;
+  parameters?: ModelParameterSchema;
+}> {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null)
+    .map((row) => ({
+      id: String(row.id ?? ''),
+      label: typeof row.label === 'string' && row.label.trim() ? row.label : String(row.id ?? ''),
+      ...(typeof row.badge === 'string' ? { badge: row.badge } : {}),
+      ...(typeof row.subtitle === 'string' ? { subtitle: row.subtitle } : {}),
+      ...(typeof row.family === 'string' ? { family: row.family } : {}),
+      ...(row.parameters && typeof row.parameters === 'object'
+        ? { parameters: row.parameters as ModelParameterSchema }
+        : {}),
+    }))
+    .filter((row) => row.id.length > 0);
 }
 
 // ============================================================================
@@ -1163,6 +404,8 @@ export function createOmnimuxSeamClient(
     },
 
     async capabilities() {
+      // Generate seams still decide omnimux vs mock; modelCatalog alone must not
+      // flip the gateway (probeSeams ignores it by design).
       const hasVideo = isSeamApi(opts.getSeam('videoGenerate'));
       const hasImage = isSeamApi(opts.getSeam('imageGenerate'));
       const hasAudio = isSeamApi(opts.getSeam('audioGenerate'));
@@ -1170,51 +413,28 @@ export function createOmnimuxSeamClient(
       const source: 'omnimux' | 'static-stub' =
         hasVideo || hasImage || hasAudio || hasText ? 'omnimux' : 'static-stub';
 
-      const imageModels = (hasImage || source === 'static-stub')
-        ? (envString(env, 'OMNIMUX_IMAGE_MODEL')
-            ? [{ id: envString(env, 'OMNIMUX_IMAGE_MODEL')!, label: envString(env, 'OMNIMUX_IMAGE_MODEL')! }]
-            : IMAGE_MODEL_SPECS.map((m) => ({
-                id: m.id,
-                label: m.label,
-                badge: m.badge,
-                subtitle: m.subtitle,
-                family: m.family,
-                parameters: m.parameters,
-              })))
-        : [];
+      const catalogSeam = opts.getSeam('modelCatalog');
+      if (!isModelCatalog(catalogSeam)) {
+        return {
+          source,
+          fingerprint: undefined,
+          defaults: undefined,
+          text: [],
+          image: [],
+          video: [],
+          audio: [],
+        };
+      }
 
-      const videoModels = (hasVideo || source === 'static-stub')
-        ? (envString(env, 'OMNIMUX_VIDEO_MODEL')
-            ? [{ id: envString(env, 'OMNIMUX_VIDEO_MODEL')!, label: envString(env, 'OMNIMUX_VIDEO_MODEL')! }]
-            : VIDEO_MODEL_SPECS.map((m) => ({
-                id: m.id,
-                label: m.label,
-                badge: m.badge,
-                subtitle: m.subtitle,
-                family: m.family,
-                parameters: m.parameters,
-              })))
-        : [];
-
-      const audioModels = (hasAudio || source === 'static-stub')
-        ? (envString(env, 'OMNIMUX_AUDIO_MODEL')
-            ? [{ id: envString(env, 'OMNIMUX_AUDIO_MODEL')!, label: envString(env, 'OMNIMUX_AUDIO_MODEL')! }]
-            : AUDIO_MODEL_SPECS.map((m) => ({
-                id: m.id,
-                label: m.label,
-                badge: m.badge,
-                subtitle: m.subtitle,
-                family: m.family,
-                parameters: m.parameters,
-              })))
-        : [];
-
+      const body = catalogSeam.list();
       return {
-        source,
-        text: hasText || source === 'static-stub' ? TEXT_MODEL_IDS.map(labelOf) : [],
-        image: imageModels,
-        video: videoModels,
-        audio: audioModels,
+        source: body.source === 'omnimux' || body.source === 'static-stub' ? body.source : source,
+        fingerprint: typeof body.fingerprint === 'string' ? body.fingerprint : undefined,
+        defaults: body.defaults,
+        text: asCatalogRows(body.text),
+        image: asCatalogRows(body.image),
+        video: asCatalogRows(body.video),
+        audio: asCatalogRows(body.audio),
       };
     },
 

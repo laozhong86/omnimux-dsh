@@ -14,7 +14,13 @@ import {
 import { applyLocalMediaProbe, collectRealPaths } from '../../shared/localMedia.ts';
 import type { CapabilityCatalog } from '../../shared/api';
 import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes';
-import { getCachedCatalog, setCachedCatalog } from '../editor/hooks/useModelParameterSchema';
+import {
+  getCachedCatalog,
+  invalidateCachedCatalog,
+  isCatalogCacheStale,
+  setCachedCatalog,
+} from '../editor/hooks/useModelParameterSchema';
+import { sortCatalogRows } from '../../shared/sortCatalog';
 
 export type BootState =
   | { phase: 'loading' }
@@ -46,6 +52,25 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
     // 重跑时先退出 ready，persistence enabled=false，避免 resetStore 空图被 autosave
     setBoot({ phase: 'loading' });
 
+    function normalizeCatalog(body: CapabilityCatalog): CapabilityCatalog {
+      return {
+        ...body,
+        text: sortCatalogRows(body.text ?? []),
+        image: sortCatalogRows(body.image ?? []),
+        video: sortCatalogRows(body.video ?? []),
+        audio: sortCatalogRows(body.audio ?? []),
+      };
+    }
+
+    async function refreshCatalog(force = false): Promise<void> {
+      if (!force && !isCatalogCacheStale() && getCachedCatalog()) return;
+      const result = await fetchCapabilities();
+      if (cancelled || !result.ok) return;
+      const next = normalizeCatalog(result.body);
+      setCatalog(next);
+      setCachedCatalog(next);
+    }
+
     async function probeAndPatchImportedMedia(): Promise<void> {
       const store = useCanvasStore.getState();
       const paths = collectRealPaths(store.nodes);
@@ -58,14 +83,17 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
       store.setNodes(next);
     }
 
+    const onCatalogUpdated = () => {
+      invalidateCachedCatalog();
+      void refreshCatalog(true);
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('omnimux:model-catalog-updated', onCatalogUpdated);
+    }
+
     (async () => {
       try {
-        void fetchCapabilities().then((result) => {
-          if (!cancelled && result.ok) {
-            setCatalog(result.body);
-            setCachedCatalog(result.body);
-          }
-        });
+        void refreshCatalog(false);
 
         // 会话画布必须带 workspaceId。sessionId 空窗时不得 fallback 到
         // list()[0]（会打开别人的最新图，cleanup flush 再和自己 409）。
@@ -96,6 +124,9 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
     })();
     return () => {
       cancelled = true;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('omnimux:model-catalog-updated', onCatalogUpdated);
+      }
       // 先 capture/flush 再清空，避免未 PUT 的新节点被 reset 吃掉
       beforeResetRef.current?.();
       resetStore();

@@ -2,6 +2,7 @@
 import { NS } from './locales.js'
 import { ProfileSection } from './ProfileSection.jsx'
 import { DshPluginsSection } from './DshPluginsSection.jsx'
+import { ModelsSettingsCard } from './ModelsSettingsCard.jsx'
 import { LoginGate } from './LoginGate.jsx'
 import { SidebarUpdateAction } from './SidebarUpdateAction.jsx'
 import { getStatusCached } from './api.js'
@@ -14,6 +15,7 @@ import { getGlobalAttachmentStore } from './attachments/store.ts'
 
 export const name = 'omnimux'
 export const inject = ['slots', 'locale']
+// settingsScope is optional: Hosts without ui-settings still mount chrome.
 
 /**
  * Client seam for vertical plugins: single source of truth for the
@@ -65,6 +67,22 @@ export function apply(ctx) {
     locale: NS,
     inject: () => ({ t }),
   }, DshPluginsSection))
+  // Canvas default models — Settings → 插件 → 可配置 (keyed by Host namespace).
+  // Bind once when the slot mounts; do not re-bind inside the React card.
+  if (typeof ctx.inject === 'function') {
+    ctx.inject(['settingsScope'], (sctx) => {
+      const binder = sctx.settingsScope
+      if (!binder || typeof binder.bind !== 'function') return
+      const scope = binder.bind({ namespace: 'omnimux' })
+      ctx.slots.inject('settings.plugin.item', () => ctx.slots.register({
+        name: 'settings.plugin.item',
+        key: 'omnimux',
+        id: 'omnimux',
+        locale: NS,
+        inject: () => ({ t, scope }),
+      }, ModelsSettingsCard))
+    })
+  }
   // Unified login gate. It lives on the shell.overlay seat but renders as a
   // transient modal via createPortal(document.body) with a zIndex above every
   // other overlay; it returns null while closed so it never claims a product

@@ -14,7 +14,8 @@
     ],
     "seamsProvided": [
       { "name": "identity", "interfaceDoc": "ctx.get('identity').status / .require()" },
-      { "name": "textComplete", "interfaceDoc": "ctx.get('textComplete').generate(params)" }
+      { "name": "textComplete", "interfaceDoc": "ctx.get('textComplete').generate(params)" },
+      { "name": "modelCatalog", "interfaceDoc": "ctx.get('modelCatalog').list() → { source, fingerprint, defaults, text, image, video, audio }" }
     ],
     "seamsConsumed": [],
     "slots": [

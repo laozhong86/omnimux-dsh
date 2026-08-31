@@ -6,6 +6,7 @@ import { createOfficialDispatcher, registerOfficialRoutes } from '../official/ht
 import { createInspirationDispatcher, registerInspirationRoutes } from '../official/inspiration-http.js'
 import { createAvatarDispatcher, registerAvatarRoutes } from '../avatar/routes.js'
 import { injectBrandBoot } from '../brand/inject-index.js'
+import { registerCatalogRoutes } from '../catalog/http.js'
 
 /**
  * Mount Host HTTP faces. Match order is auth → plugins → apps → official → inspiration → avatar.
@@ -28,6 +29,7 @@ import { injectBrandBoot } from '../brand/inject-index.js'
  *   accountMetaStore: object,
  *   accountAvatarStore?: object,
  *   avatarStore: object,
+ *   listCatalog?: () => object,
  * }} deps
  */
 export function mountHubHttp(httpCtx, deps) {
@@ -53,6 +55,9 @@ export function mountHubHttp(httpCtx, deps) {
   }
   const mount = () => {
     const stopAuth = registerAuthRoutes(webServer, dispatcher)
+    const stopCatalog = registerCatalogRoutes(webServer, {
+      list: typeof deps.listCatalog === 'function' ? deps.listCatalog : () => null,
+    })
     const stopPlugins = registerPluginRoutes(webServer, createPluginDispatcher({
       appsView: shelfApps,
       tabsRemove: (id) => { deps.tabsStore.remove(id) },
@@ -84,6 +89,7 @@ export function mountHubHttp(httpCtx, deps) {
     }))
     return () => {
       stopAuth()
+      stopCatalog()
       stopPlugins()
       stopApps()
       stopOfficial()

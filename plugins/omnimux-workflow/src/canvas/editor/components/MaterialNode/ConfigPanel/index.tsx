@@ -28,8 +28,8 @@ import {
   MATERIAL_TOOLS,
   resolveNodeKind,
 } from '../../../../types/materialNode';
-import type { CapabilityCatalog } from '../../../../../shared/api';
-import { orderTextModels } from '../../../../../shared/textModelOrder';
+import type { CapabilityCatalog, CapabilityModelItem } from '../../../../../shared/api';
+import { sortCatalogRows } from '../../../../../shared/sortCatalog';
 import { useT } from '../../../../i18n';
 import { CustomSelect, CustomSlider, CustomModal } from '../../../../ui';
 import { ModelBrandIcon } from '../../../../ui/ModelBrandIcon';
@@ -185,66 +185,31 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     [onUpdateNodeData],
   );
 
-  // 模型列表
+  // 模型列表：仅消费 hub catalog（无生产假回退）；按显示名 A–Z。
+  // 已保存但不在目录中的 params.model 保留为 deprecated 项，不静默改写。
   const modelOptions = useMemo(() => {
-    let rows = catalog?.[materialType] ?? [];
-    if (rows.length === 0) {
-      if (materialType === 'text') {
-        rows = [
-          { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
-          { id: 'claude-opus-4-6', label: 'Claude 4.6' },
-          { id: 'gpt-5.5', label: 'GPT-5.5' },
-          { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
-          { id: 'deepseek-v4-flash-vision-exp', label: 'DeepSeek 4 Flash' },
-        ];
-      } else if (materialType === 'image') {
-        rows = [
-          { id: 'nanobanana-2', label: 'NanoBanana 2', badge: 'Yearly -20%', subtitle: 'auto-4K' },
-          { id: 'nanobanana-pro', label: 'NanoBanana Pro', badge: 'Yearly -20%', subtitle: 'auto-4K' },
-          { id: 'seedream-5.0-pro', label: 'Seedream 5.0 Pro', badge: 'Yearly -20%', subtitle: '1K-2K' },
-          { id: 'seedream-4.5', label: 'Seedream 4.5', badge: 'Yearly -20%', subtitle: '2K-4K' },
-          { id: 'midjourney-8.1', label: 'Midjourney 8.1', badge: 'Yearly -20%', subtitle: '2K' },
-          { id: 'midjourney-7', label: 'Midjourney 7', badge: 'Yearly -20%', subtitle: '1080P' },
-          { id: 'midjourney-niji-7', label: 'Midjourney Niji 7', badge: 'Yearly -20%', subtitle: '1080P' },
-          { id: 'gpt-image-2', label: 'GPT Image 2', badge: 'Yearly -20%', subtitle: '1k-4k' },
-        ];
-      } else if (materialType === 'video') {
-        rows = [
-          { id: 'kling-o1', label: 'Kling O1', subtitle: '1080P · ⏱ 3-10s' },
-          { id: 'kling-o3', label: 'Kling O3', subtitle: '4K · ⏱ 3-15s · 🔊' },
-          { id: 'kling-avatar', label: 'Kling Avatar' },
-          { id: 'kling-motion-control', label: 'Kling Motion Control', subtitle: '1080P' },
-          { id: 'wan-2.6', label: 'Wan 2.6', subtitle: '720P-1080P · ⏱ 5-15s · 🔊' },
-          { id: 'veo-3.1-fast', label: 'Veo3.1 Fast', subtitle: '720p-1080p · ⏱ 8s' },
-          { id: 'veo-3.1', label: 'Veo3.1', subtitle: '720p-1080p · ⏱ 8s' },
-        ];
-      } else if (materialType === 'audio') {
-        rows = [
-          { id: 'speech-2.8-hd', label: 'Speech-2.8-HD' },
-          { id: 'music-gen-v1', label: 'MusicGen V1' },
-        ];
-      }
-    }
+    const activeCatalog = catalog ?? getCachedCatalog();
+    const rows = sortCatalogRows<CapabilityModelItem>(activeCatalog?.[materialType] ?? []);
+    const savedModel = typeof params.model === 'string' ? params.model.trim() : '';
+    const orphan = savedModel && !rows.some((row) => row.id === savedModel)
+      ? [{ id: savedModel, label: savedModel, deprecated: true as const }]
+      : [];
+    const combined = [...orphan, ...rows.map((row) => ({ ...row, deprecated: false as const }))];
 
-    // Catalog from a stale Host process may still be the old Claude-first order.
-    // Re-sort on the client so a page refresh is enough (Issue #302).
-    if (materialType === 'text') {
-      rows = orderTextModels(rows);
-    }
-
-    return rows.map((row) => {
+    return combined.map((row) => {
       const visuals = getModelVisuals(row.id);
       const icon = visuals.icon;
-      const badge = row.badge ?? visuals.badge;
+      const badge = row.deprecated ? 'deprecated' : (row.badge ?? visuals.badge);
       const subtitle = row.subtitle ?? visuals.subtitle;
+      const label = row.deprecated ? `${row.label} (deprecated)` : row.label;
 
       return {
         value: row.id,
-        label: row.label,
+        label,
         triggerLabel: (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {icon ? <span style={{ display: 'inline-flex', opacity: 0.8 }}>{icon}</span> : null}
-            <span>{row.label}</span>
+            <span>{label}</span>
           </span>
         ),
         icon,
@@ -252,9 +217,18 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
         subtitle,
       };
     });
-  }, [catalog, materialType]);
+  }, [catalog, materialType, params.model]);
 
-  const modelValue = typeof params.model === 'string' ? params.model : modelOptions[0]?.value;
+  // Inheritance: keep existing params.model (even if deprecated) → defaults[type] → first sorted.
+  const modelValue = useMemo(() => {
+    if (typeof params.model === 'string' && params.model.trim()) return params.model;
+    const activeCatalog = catalog ?? getCachedCatalog();
+    const defaultId = activeCatalog?.defaults?.[materialType];
+    if (typeof defaultId === 'string' && defaultId.trim()) {
+      if (modelOptions.some((row) => row.value === defaultId)) return defaultId;
+    }
+    return modelOptions[0]?.value;
+  }, [params.model, catalog, materialType, modelOptions]);
 
   // 动态读取当前模型的 Parameter Schema 及其选项
   const {

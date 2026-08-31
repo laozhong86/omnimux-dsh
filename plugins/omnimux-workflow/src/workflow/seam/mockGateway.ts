@@ -101,9 +101,16 @@ export function createMockGateway(opts: MockGatewayOptions = {}): GenerationGate
     async capabilities() {
       return {
         source: 'static-stub' as const,
+        fingerprint: 'mock-static-stub',
+        defaults: {
+          text: 'mock-text-flash',
+          image: 'mock-image-1',
+          video: 'mock-video-1',
+          audio: 'mock-audio-speech',
+        },
         text: [
-          { id: 'mock-text-pro', label: 'MockText Pro' },
           { id: 'mock-text-flash', label: 'MockText Flash' },
+          { id: 'mock-text-pro', label: 'MockText Pro' },
         ],
         image: [
           { id: 'mock-image-1', label: 'MockImage 1' },

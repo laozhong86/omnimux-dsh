@@ -15,6 +15,8 @@ import { createAvatarStore } from '../avatar/store.js'
 import { JSON_TOOL_OUTPUT, objectParams, rethrow } from '../tools/schema.js'
 import { mountMedia } from '../media/mount.js'
 import { mountTextComplete } from '../text/mount.js'
+import { buildModelCatalog } from '../catalog/list.js'
+import { SettingsConfig } from '../settings/schema.js'
 import { mountHubHttp } from './http.js'
 import { hubHomeDir, hubProfileName } from './paths.js'
 
@@ -60,6 +62,20 @@ export function apply(ctx, config = {}) {
   })
   const tabsStore = createTabsStore({ home: homeDir })
 
+  const listCatalog = () => {
+    const settingsService = typeof ctx.get === 'function' ? ctx.get('settings') : undefined
+    const settingsDefaults = settingsService && typeof settingsService.get === 'function'
+      ? settingsService.get('omnimux')
+      : undefined
+    return buildModelCatalog({
+      text: hub.text,
+      media: hub.media,
+      gate: hub.gate,
+      env: process.env,
+      settingsDefaults,
+    })
+  }
+
   const mountHttp = (httpCtx) => mountHubHttp(httpCtx, {
     store,
     identity,
@@ -74,9 +90,30 @@ export function apply(ctx, config = {}) {
     accountMetaStore,
     accountAvatarStore,
     avatarStore,
+    listCatalog,
   })
   if (typeof ctx.inject === 'function') ctx.inject(['webServer'], mountHttp)
   else mountHttp(ctx)
+
+  if (typeof ctx.inject === 'function') {
+    ctx.inject(['settings'], (sctx) => {
+      const settings = sctx.settings
+      if (!settings || typeof settings.register !== 'function') return
+      const scope = settings.register('omnimux', SettingsConfig, {
+        base: {
+          defaultTextModel: hub.text.defaultModel,
+          defaultImageModel: hub.media.providers.omnimux.models.image,
+          defaultVideoModel: hub.media.providers.omnimux.models.video,
+          defaultAudioModel: hub.media.providers.omnimux.models.audio,
+        },
+      })
+      if (scope && typeof scope.watch === 'function') {
+        scope.watch(() => {
+          ctx.emit?.('omnimux/model-catalog-updated')
+        })
+      }
+    })
+  }
 
   const jsonOut = JSON_TOOL_OUTPUT
   mountMedia(ctx, { kind: 'video', execute: executeOmnimuxVideo, media: hub.media, gate: hub.gate, store, jsonOut })
@@ -100,6 +137,9 @@ export function apply(ctx, config = {}) {
     rethrow,
     resolveApiKey: resolveOfficialApiKey,
   })
+  if (typeof ctx.provide === 'function') {
+    ctx.provide('modelCatalog', { list: listCatalog })
+  }
 
   /**
    * Chat (`llm-pi-ai`) resolves `OMNIMUX_API_KEY` from `$DSH_HOME/.credentials.yaml`.

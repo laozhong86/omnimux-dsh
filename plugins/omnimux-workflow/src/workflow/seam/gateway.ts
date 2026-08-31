@@ -69,9 +69,16 @@ export interface GenerationGateway {
   /** Capability catalog for the config panel (model lists). */
   capabilities(): Promise<{
     source: 'static-stub' | 'omnimux';
-    text: Array<{ id: string; label: string }>;
-    image: Array<{ id: string; label: string }>;
-    video: Array<{ id: string; label: string }>;
-    audio: Array<{ id: string; label: string }>;
+    fingerprint?: string;
+    defaults?: {
+      text?: string;
+      image?: string;
+      video?: string;
+      audio?: string;
+    };
+    text: Array<{ id: string; label: string; badge?: string; subtitle?: string; family?: string; parameters?: unknown }>;
+    image: Array<{ id: string; label: string; badge?: string; subtitle?: string; family?: string; parameters?: unknown }>;
+    video: Array<{ id: string; label: string; badge?: string; subtitle?: string; family?: string; parameters?: unknown }>;
+    audio: Array<{ id: string; label: string; badge?: string; subtitle?: string; family?: string; parameters?: unknown }>;
   }>;
 }

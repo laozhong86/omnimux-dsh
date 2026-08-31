@@ -137,9 +137,18 @@ export interface CapabilityModelItem {
   parameters?: ModelParameterSchema;
 }
 
-/** GET /api/capabilities response. */
+/** GET /api/capabilities response (hub modelCatalog.list shape). */
 export interface CapabilityCatalog {
   source: 'static-stub' | 'omnimux';
+  /** Hub content hash; used by canvas cache invalidation. */
+  fingerprint?: string;
+  /** Per-type default model ids (env → settings → config → first sorted). */
+  defaults?: {
+    text?: string;
+    image?: string;
+    video?: string;
+    audio?: string;
+  };
   text: Array<CapabilityModelItem>;
   image: Array<CapabilityModelItem>;
   video: Array<CapabilityModelItem>;

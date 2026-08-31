@@ -10,7 +10,8 @@ import { useMemo } from 'react';
 import type { CapabilityCatalog, CapabilityModelItem, ModelParameterSchema } from '../../../shared/api';
 import type { MaterialType } from '../../types/materialNode';
 
-const CATALOG_CACHE_KEY = 'wf_capabilities_catalog_v1';
+const CATALOG_CACHE_KEY = 'wf_capabilities_catalog_v2';
+const CATALOG_TTL_MS = 60 * 60 * 1000;
 
 /** 针对未包含在 Catalog 中的未知模型提供的安全通用兜底 Schema */
 const DEFAULT_FALLBACK_SCHEMA: Record<MaterialType, ModelParameterSchema> = {
@@ -79,6 +80,17 @@ const DEFAULT_FALLBACK_SCHEMA: Record<MaterialType, ModelParameterSchema> = {
   text: {},
 };
 
+interface CatalogCacheEnvelope {
+  catalog: CapabilityCatalog;
+  fingerprint: string;
+  fetchedAt: number;
+}
+
+/** Module singleton — ConfigPanel open should not re-fetch when boot already has it. */
+let memoryCatalog: CapabilityCatalog | null = null;
+let memoryFingerprint = '';
+let memoryFetchedAt = 0;
+
 export interface UseModelParameterSchemaResult {
   schema: ModelParameterSchema;
   modelItem: CapabilityModelItem | undefined;
@@ -100,26 +112,67 @@ export interface UseModelParameterSchemaResult {
   defaultInstrumental: boolean;
 }
 
-/** 获取本地缓存的 Catalog（带异常保护） */
-export function getCachedCatalog(): CapabilityCatalog | null {
+function readEnvelope(): CatalogCacheEnvelope | null {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return null;
     const raw = window.localStorage.getItem(CATALOG_CACHE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as CapabilityCatalog;
+    const parsed = JSON.parse(raw) as CatalogCacheEnvelope;
+    if (!parsed || typeof parsed !== 'object' || !parsed.catalog) return null;
+    return parsed;
   } catch {
     return null;
   }
 }
 
-/** 写入本地持久化缓存 */
+/** 获取本地缓存的 Catalog（带异常保护 + TTL 过期仍可读，供 SWR） */
+export function getCachedCatalog(): CapabilityCatalog | null {
+  if (memoryCatalog) return memoryCatalog;
+  const envelope = readEnvelope();
+  if (!envelope) return null;
+  memoryCatalog = envelope.catalog;
+  memoryFingerprint = envelope.fingerprint || envelope.catalog.fingerprint || '';
+  memoryFetchedAt = typeof envelope.fetchedAt === 'number' ? envelope.fetchedAt : 0;
+  return memoryCatalog;
+}
+
+/** Whether the local cache is older than the SWR TTL (still readable). */
+export function isCatalogCacheStale(now = Date.now()): boolean {
+  if (!memoryCatalog && !readEnvelope()) return true;
+  const fetchedAt = memoryFetchedAt || readEnvelope()?.fetchedAt || 0;
+  return !fetchedAt || now - fetchedAt > CATALOG_TTL_MS;
+}
+
+/** 写入本地持久化缓存 + 内存单例 */
 export function setCachedCatalog(catalog: CapabilityCatalog): void {
+  memoryCatalog = catalog;
+  memoryFingerprint = catalog.fingerprint || '';
+  memoryFetchedAt = Date.now();
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(catalog));
+      const envelope: CatalogCacheEnvelope = {
+        catalog,
+        fingerprint: memoryFingerprint,
+        fetchedAt: memoryFetchedAt,
+      };
+      window.localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(envelope));
     }
   } catch {
     // 忽略 QuotaExceededError
+  }
+}
+
+/** Drop memory + localStorage catalog (settings save / catalog-updated). */
+export function invalidateCachedCatalog(): void {
+  memoryCatalog = null;
+  memoryFingerprint = '';
+  memoryFetchedAt = 0;
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(CATALOG_CACHE_KEY);
+    }
+  } catch {
+    // ignore
   }
 }
 

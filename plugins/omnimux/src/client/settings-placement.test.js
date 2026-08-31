@@ -30,11 +30,24 @@ function pluginsTabIds(source) {
   return ids
 }
 
+/**
+ * @param {string} source
+ * @returns {string[]}
+ */
+function pluginItemKeys(source) {
+  const keys = []
+  const inject = /ctx\.slots\.inject\(\s*'settings\.plugin\.item'[\s\S]*?key:\s*'([^']+)'/g
+  for (const match of source.matchAll(inject)) keys.push(match[1])
+  return keys
+}
+
 describe('settings placement', () => {
   it('keeps only product chrome on the first-level Settings nav', () => {
     const hub = readFileSync(join(here, 'index.js'), 'utf8')
     assert.deepEqual(sectionIds(hub), ['omnimux-profile'])
     assert.deepEqual(pluginsTabIds(hub), ['omnimux-dsh-plugins'])
+    assert.deepEqual(pluginItemKeys(hub), ['omnimux'])
+    assert.ok(!hub.includes("settings.section', () =>") || sectionIds(hub).length === 1)
   })
 
   it('registers accounts as a pinned first-level page, not a Settings seat', () => {
