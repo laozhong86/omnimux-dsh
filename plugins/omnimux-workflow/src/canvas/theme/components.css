@@ -214,6 +214,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: max-content;
+  white-space: nowrap;
   pointer-events: auto;
 }
 
@@ -231,6 +233,8 @@
   display: inline-flex;
   flex-wrap: nowrap;
   align-items: center;
+  flex-shrink: 0;
+  width: max-content;
   padding: 3px 6px;
   background: var(--dsw-alias-bg-elevated);
   border: 1px solid var(--dsw-alias-border-l1);
@@ -238,14 +242,13 @@
   box-shadow: var(--wb-dock-shadow, 0 8px 24px -2px var(--dsw-alias-bg-mask-3));
   backdrop-filter: var(--wb-dock-blur, blur(16px));
   -webkit-backdrop-filter: var(--wb-dock-blur, blur(16px));
-  max-width: 100%;
 }
 
 .wf-floating-top-pill__section {
   display: inline-flex;
   flex-wrap: nowrap;
   align-items: center;
-  min-width: 0;
+  flex-shrink: 0;
 }
 
 .wf-floating-top-pill__btn {

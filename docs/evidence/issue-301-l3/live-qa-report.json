@@ -1,0 +1,74 @@
+{
+  "issue": 301,
+  "pr": 305,
+  "stage": "workflow-canvas",
+  "plugin": "omnimux-workflow",
+  "port": 44120,
+  "requestedPort": 45120,
+  "profile": "~/.omnimux-dev",
+  "dshHome": "/Users/x/.omnimux-dev",
+  "url": "http://127.0.0.1:44120/",
+  "title": "OmniMux",
+  "taskSpaceName": "omnimux-qa-issue-301-workflow-toolbar",
+  "taskSpaceId": 269,
+  "canvasHash": "f1d3cfcf046846bc",
+  "commit": "bc256a9fda14be563f6e9c35d422d7e909074700",
+  "verified_at": "2026-08-31T12:34:00+08:00",
+  "result": "pass",
+  "note": "P0 empty-hide + filled text/table toolbar + add-to-conversation evidenced on Dev Host 44120 after unmerged materialize. Import/generate media not live-covered. Agent must not self-tag qa:pass.",
+  "assertions": [
+    {
+      "name": "empty-text-selected-hides-pill",
+      "selected": true,
+      "empty": true,
+      "pillCount": 0,
+      "canvasHash": "f1d3cfcf046846bc",
+      "pass": true
+    },
+    {
+      "name": "empty-table-selected-hides-pill",
+      "selected": true,
+      "empty": true,
+      "pillCount": 0,
+      "pass": true
+    },
+    {
+      "name": "empty-image-selected-hides-pill",
+      "selected": true,
+      "empty": true,
+      "pillCount": 0,
+      "port": 45120,
+      "pass": true
+    },
+    {
+      "name": "filled-text-toolbar-icon-label-primary-secondary",
+      "labels": ["添加到会话", "编辑", "复制", "拆分"],
+      "pill": { "width": 280, "height": 34 },
+      "primaryClass": "wf-floating-top-pill__btn--primary",
+      "pass": true
+    },
+    {
+      "name": "add-to-conversation-toast",
+      "toast": "已添加到会话：未命名文本.md",
+      "pass": true
+    },
+    {
+      "name": "filled-table-toolbar",
+      "labels": ["添加到会话", "全屏"],
+      "pill": { "width": 166, "height": 34 },
+      "pass": true
+    }
+  ],
+  "screenshots": [
+    "docs/evidence/issue-301-l3/empty-text-selected-44120.png",
+    "docs/evidence/issue-301-l3/text-filled-pill-44120.png",
+    "docs/evidence/issue-301-l3/add-to-conversation-toast-44120.png",
+    "docs/evidence/issue-301-l3/empty-table-selected-44120.png",
+    "docs/evidence/issue-301-l3/table-filled-pill-44120.png",
+    "docs/evidence/issue-301-l3/empty-image-selected.png"
+  ],
+  "gaps": [
+    "import media / generate media preview / composition download not live-tested",
+    "native file picker cannot be driven by ego-browser"
+  ]
+}

@@ -163,4 +163,6 @@ test('components.css 契约：.wf-floating-top-pill 块消费 DSW Token，本块
   assert.match(block, /\.wf-floating-top-pill__section/);
   assert.match(block, /\.wf-floating-top-pill__more-menu/);
   assert.match(block, /border-radius:\s*10px;/);
+  assert.match(block, /width:\s*max-content;/);
+  assert.doesNotMatch(block, /max-width:\s*100%;/);
 });
