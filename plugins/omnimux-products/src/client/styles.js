@@ -20,6 +20,14 @@ export const PRODUCTS_CSS = `
   display: none;
   pointer-events: none;
 }
+/* Layer 2: Action Row */
+.omnimux-products-action-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px 12px;
+}
 .omnimux-products-stage-toolbar {
   flex: none;
   padding: 0 20px 12px;

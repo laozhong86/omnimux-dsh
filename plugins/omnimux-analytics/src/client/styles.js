@@ -88,7 +88,7 @@ export const ANALYTICS_CSS = `
 .omnimux-analytics-stage-filter {
   flex: none;
   padding: 0 20px;
-  height: 48px;
+  height: 44px;
   display: flex;
   align-items: center;
   border-bottom: 1px solid var(--dsw-alias-border-l2, rgba(128,128,128,.16));
@@ -96,7 +96,7 @@ export const ANALYTICS_CSS = `
 .omnimux-analytics-filterbar {
   width: 100%;
   padding: 0 !important;
-  height: 48px !important;
+  height: 44px !important;
 }
 .omnimux-analytics-search {
   width: 220px;

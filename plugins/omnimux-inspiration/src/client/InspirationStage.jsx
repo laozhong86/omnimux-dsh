@@ -59,6 +59,7 @@ export function InspirationStage({ t, stage }) {
     >
       <PageHeader
         title={t('title')}
+        subtitle={t('subtitle')}
         onClose={() => { stage.set(false) }}
         closeTitle={t('close')}
       />
