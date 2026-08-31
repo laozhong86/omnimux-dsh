@@ -95,7 +95,7 @@ if (previousKey === undefined) delete process.env.OMNIMUX_API_KEY
       resolveAccess: async () => ({ token: '' }),
     })
     await assert.rejects(
-      () => fetchSocialData(client, { platform: 'tiktok', capability: 'video', url: 'https://t' }),
+      () => fetchSocialData(client, { platform: 'tiktok', capability: 'video', id: '7123456789012345678' }),
       (error) => error instanceof OmnimuxError && error.code === 'omnimux-unconfigured',
     )
   })

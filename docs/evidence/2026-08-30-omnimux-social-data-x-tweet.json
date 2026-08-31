@@ -1,0 +1,86 @@
+{
+  "probed_at": "2026-08-31T01:59:33.996Z",
+  "target_url": "https://x.com/topbustymodels/status/2094156823020323038?s=20",
+  "request_shape": {
+    "model": "x-tweet",
+    "messages": [
+      {
+        "role": "user",
+        "content": "."
+      }
+    ],
+    "tweet_id": "2094156823020323038"
+  },
+  "failed_shapes": [
+    {
+      "note": "messages content = tweet url → HTTP 500 get_channel_failed"
+    },
+    {
+      "note": "messages content = tweet id → HTTP 500 get_channel_failed"
+    }
+  ],
+  "envelope_keys": [
+    "code",
+    "request_id",
+    "message",
+    "message_zh",
+    "support",
+    "time",
+    "time_stamp",
+    "time_zone",
+    "docs",
+    "cache_message",
+    "cache_message_zh",
+    "cache_url",
+    "router",
+    "params",
+    "data"
+  ],
+  "data_keys": [
+    "likes",
+    "created_at",
+    "status",
+    "text",
+    "display_text",
+    "retweets",
+    "bookmarks",
+    "quotes",
+    "reply_to",
+    "replies",
+    "lang",
+    "in_reply_to_screen_name",
+    "in_reply_to_status_id_str",
+    "in_reply_to_user_id_str",
+    "sensitive",
+    "views",
+    "conversation_id",
+    "entities",
+    "conversation_control",
+    "initial_tweets",
+    "author",
+    "media",
+    "id"
+  ],
+  "author": {
+    "name": "bigbeuatytits",
+    "screen_name": "topbustymodels",
+    "image": "https://pbs.twimg.com/profile_images/1973807297487945729/G4r7s45z_normal.jpg"
+  },
+  "text": "https://t.co/3dxZ2IJ9tv",
+  "display_text": "",
+  "engagement": {
+    "likes": 936,
+    "views": "177657",
+    "retweets": 33,
+    "replies": 1,
+    "bookmarks": 699
+  },
+  "media_summary": {
+    "video_count": 1,
+    "first_thumb": "https://pbs.twimg.com/amplify_video_thumb/2094156798945071104/img/R7F0YAXkzEJpRK4i.jpg",
+    "first_mp4": "https://video.twimg.com/amplify_video/2094156798945071104/vid/avc1/470x270/YmafRGc8Ut6VkjMQ.mp4?tag=29",
+    "entities_media_types": [
+      "video"
+    ]
+  }
+}
