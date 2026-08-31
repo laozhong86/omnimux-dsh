@@ -349,10 +349,8 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         const pillActions: FloatingPillAction[] = [
           {
             key: 'add-to-conversation',
-            label: t('pill.addToConversation'),
             icon: MessageSquarePlus,
-            section: 'primary',
-            variant: 'primary',
+            section: 'secondary',
             onClick: handleAddToConversation,
             title: t('pill.addToConversation'),
           },

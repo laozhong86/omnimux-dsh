@@ -1,0 +1,31 @@
+{
+  "issue": 316,
+  "pr": 317,
+  "stage": "workflow-canvas",
+  "plugin": "omnimux-workflow",
+  "port": 44120,
+  "url": "http://127.0.0.1:44120/",
+  "taskSpaceName": "omnimux-qa-issue-316-chat-icon",
+  "taskSpaceId": 279,
+  "canvasHash": "082b9c9005acd65c",
+  "commit": "5dc5fec",
+  "verified_at": "2026-08-31T13:50:00+08:00",
+  "result": "pass",
+  "assertions": [
+    {
+      "name": "chat-icon-only-no-visible-label",
+      "pillText": "编辑 复制 拆分",
+      "chatButton": { "text": "", "title": "添加到会话", "aria": "添加到会话", "primary": false, "width": 29 },
+      "pass": true
+    },
+    {
+      "name": "click-icon-toasts",
+      "toast": "已添加到会话：未命名文本.md",
+      "pass": true
+    }
+  ],
+  "screenshots": [
+    "docs/evidence/issue-316-l3/text-chat-icon-only.png",
+    "docs/evidence/issue-316-l3/add-to-conversation-toast.png"
+  ]
+}
