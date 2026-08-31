@@ -1194,14 +1194,19 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   color: var(--wb-text-muted);
   cursor: pointer;
   padding: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 150ms ease;
+  flex-shrink: 0;
+  transition: color 150ms ease, background 150ms ease;
 }
 
 .wf-config-panel__expand-btn:hover {
   color: var(--wb-text-primary);
+  background: var(--wb-surface-raised);
 }
 
 .wf-config-panel__prompt-input {
@@ -1215,6 +1220,13 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   color: var(--wb-text-primary);
   font-family: inherit;
   padding: 0;
+  min-height: 62px;
+  overflow-y: auto;
+  transition: min-height 180ms ease;
+}
+
+.wf-config-panel__prompt-input--expanded {
+  min-height: 160px;
 }
 
 .wf-config-panel__prompt-input::placeholder {
@@ -1314,19 +1326,6 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   padding: 0 !important;
   font-size: 12px;
   color: var(--wb-text-secondary);
-}
-
-.wf-config-panel__modal-textarea {
-  width: 100%;
-  border-radius: 8px;
-  border: 1px solid var(--wb-border);
-  padding: 10px;
-  font-size: 14px;
-  line-height: 1.6;
-  outline: none;
-  font-family: inherit;
-  color: var(--wb-text-primary);
-  background: var(--wb-surface);
 }
 
 /* ParamBar 胶囊行（来源 Gxgen ConfigPanel/ParamBar.tsx 模型选择器行）。

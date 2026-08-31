@@ -66,6 +66,8 @@ const zh = {
   'panel.failAbort': '出错即中止',
   'panel.failSkip': '跳过该节点',
   'panel.advanced': '高级',
+  'panel.expand': '展开',
+  'panel.collapse': '收起',
   'panel.modelEmpty': '能力目录为空（stub）',
   'panel.runHint': '执行此节点（含上游）',
   'panel.hintTextNode': '文本编辑节点直接在卡片内编辑内容；上游输入可通过文生类工具引用',
