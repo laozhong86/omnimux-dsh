@@ -31,6 +31,7 @@ export interface NodeEmptyStateProps {
   nodeKind?: NodeKind;
   onApplyPreset?: (presetKey: string) => void;
   onStartEdit?: () => void;
+  onImport?: () => void;
 }
 
 const NodeEmptyState: React.FC<NodeEmptyStateProps> = ({
@@ -38,12 +39,30 @@ const NodeEmptyState: React.FC<NodeEmptyStateProps> = ({
   nodeKind = 'generate',
   onApplyPreset,
   onStartEdit,
+  onImport,
 }) => {
   const t = useT();
 
   if (nodeKind === 'import') {
     return (
-      <div className="wf-node-empty wf-node-empty--import-kind">
+      <div
+        className="wf-node-empty wf-node-empty--import-kind nodrag"
+        role={onImport ? 'button' : undefined}
+        tabIndex={onImport ? 0 : undefined}
+        onClick={(e) => {
+          if (!onImport) return;
+          e.stopPropagation();
+          onImport();
+        }}
+        onKeyDown={(e) => {
+          if (!onImport) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            onImport();
+          }
+        }}
+      >
         <div className="wf-node-empty__icon-box">
           <UploadCloud size={44} strokeWidth={1.5} className="wf-node-empty__icon" />
         </div>

@@ -3,7 +3,7 @@
  * （T4 四分支状态机 / T5 CSS 清洗 契约门禁）
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -40,6 +40,14 @@ test('FloatingTopPill 契约：支持声明式 actions 数组与反向缩放', (
   assert.match(pillSrc, /wf-floating-top-pill__btn--primary/);
   assert.match(pillSrc, /useViewport/);
   assert.match(pillSrc, /inverseScaleForZoom/);
+  assert.match(pillSrc, /section\?: ToolbarSection/);
+  assert.match(pillSrc, /partitionToolbarActions/);
+  assert.match(pillSrc, /maxWidth/);
+  assert.match(pillSrc, /pill\.more/);
+});
+
+test('全仓只剩一份通用 FloatingTopPill，材质私有副本已删除', () => {
+  assert.equal(existsSync(join(here, 'MaterialNode/FloatingTopPill.tsx')), false);
 });
 
 test('NodeHeader 契约：支持 customIcon、扩展 materialType、双击重命名与 StatusBadge', () => {
@@ -141,4 +149,18 @@ test('components.css 契约：wf-vc-result 新块 100% DSW Token 消费，0 裸�
   assert.ok(block.includes('.wf-vc-result {'), '缺 .wf-vc-result 根规则');
   assert.ok(block.includes('height: 32px;'), '操作按钮未达 32px 控件高');
   assert.ok(block.includes('border-radius: 8px;'), '未声明 8px 圆角');
+});
+
+test('components.css 契约：.wf-floating-top-pill 块消费 DSW Token，本块零 hex / 零 rgba', () => {
+  const start = cssSrc.indexOf('.wf-floating-top-pill {');
+  assert.ok(start >= 0, '缺少 .wf-floating-top-pill 根规则');
+  const nextSectionMatch = cssSrc.slice(start + 1).match(/\/\*\s*={3,}/);
+  const nextSection = nextSectionMatch ? start + 1 + nextSectionMatch.index : -1;
+  const block = nextSection > start ? cssSrc.slice(start, nextSection) : cssSrc.slice(start);
+  assert.doesNotMatch(block, /#[0-9a-fA-F]{3,8}/);
+  assert.doesNotMatch(block, /rgba?\(/);
+  assert.match(block, /var\(--dsw-alias-/);
+  assert.match(block, /\.wf-floating-top-pill__section/);
+  assert.match(block, /\.wf-floating-top-pill__more-menu/);
+  assert.match(block, /border-radius:\s*10px;/);
 });

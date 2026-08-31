@@ -12,7 +12,7 @@ const modalSrc = readFileSync(join(here, 'ResourcePickerModal.tsx'), 'utf8');
 const canvasPaneSrc = readFileSync(join(here, 'CanvasResourcePane.tsx'), 'utf8');
 const localPaneSrc = readFileSync(join(here, 'LocalUploadPane.tsx'), 'utf8');
 const hookSrc = readFileSync(join(here, '../../hooks/useResourcePicker.ts'), 'utf8');
-const pillSrc = readFileSync(join(here, '../MaterialNode/FloatingTopPill.tsx'), 'utf8');
+const emptySrc = readFileSync(join(here, '../MaterialNode/NodeEmptyState.tsx'), 'utf8');
 const panelSrc = readFileSync(join(here, '../MaterialNode/ConfigPanel/index.tsx'), 'utf8');
 const nodeSrc = readFileSync(join(here, '../MaterialNode/index.tsx'), 'utf8');
 const editorSrc = readFileSync(join(here, '../../CanvasEditor.tsx'), 'utf8');
@@ -47,9 +47,12 @@ test('提交走 applyCanvasInputMutation / planResourcePickerCommit', () => {
   assert.match(hookSrc, /applyCanvasInputMutation/);
 });
 
-test('FloatingTopPill 导入按钮回调 onOpenResourcePicker，无私有 file input', () => {
-  assert.match(pillSrc, /onOpenResourcePicker/);
-  assert.equal(/type="file"/.test(pillSrc), false);
+test('导入空态点击卡片唤起 fillImportNode，无私有 file input', () => {
+  assert.match(emptySrc, /onImport\?:/);
+  assert.match(nodeSrc, /onImport=\{kind === 'import'/);
+  assert.match(nodeSrc, /fillImportNode/);
+  assert.equal(/type="file"/.test(emptySrc), false);
+  assert.equal(/type="file"/.test(nodeSrc), false);
 });
 
 test('ConfigPanel Prompt 左上角 [+] 按钮唤起弹窗', () => {
@@ -65,9 +68,12 @@ test('MaterialNode 挂载 ResourcePickerModal 与 useResourcePicker', () => {
   assert.equal(/createObjectURL/.test(nodeSrc), false);
 });
 
-test('导入节点选中不展开 ConfigPanel，替换走卡片按钮', () => {
+test('导入节点选中不展开 ConfigPanel，有媒体时替换走顶栏次区', () => {
   assert.match(nodeSrc, /isConfigPanelVisible\(\s*selected,\s*panelDismissed,\s*executionStatus,\s*kind,\s*isMultiSelected/);
-  assert.match(nodeSrc, /showReplaceButton = kind === 'import'/);
+  assert.match(nodeSrc, /hasNodeMaterial/);
+  assert.match(nodeSrc, /key:\s*'replace'/);
+  assert.match(nodeSrc, /t\('pill\.replace'\)/);
+  assert.doesNotMatch(nodeSrc, /showReplaceButton/);
 });
 
 test('画布导入素材入口先选文件再落节点，取消不建空节点', () => {

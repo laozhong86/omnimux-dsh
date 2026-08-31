@@ -31,3 +31,13 @@ test('文本节点 textarea 包在可拖壳里，未聚焦不加 nodrag', () => 
 test('文本壳有 padding 作为拖拽边', () => {
   assert.match(cssSrc, /\.wf-material-node__text-shell \{[\s\S]*?padding:\s*12px/);
 });
+
+test('MaterialNode 顶栏走通用 FloatingTopPill，有素材才显示，生成媒体也会话', () => {
+  assert.match(nodeSrc, /from '\.\.\/FloatingTopPill'/);
+  assert.match(nodeSrc, /hasNodeMaterial/);
+  assert.match(nodeSrc, /shouldShowNodeToolbar/);
+  assert.match(nodeSrc, /key:\s*'add-to-conversation'/);
+  assert.match(nodeSrc, /t\('pill\.addToConversation'\)/);
+  assert.doesNotMatch(nodeSrc, /from '\.\/FloatingTopPill'/);
+  assert.doesNotMatch(nodeSrc, /showReplaceButton/);
+});

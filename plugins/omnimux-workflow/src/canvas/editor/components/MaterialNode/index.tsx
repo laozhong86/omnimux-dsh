@@ -2,14 +2,14 @@
  * MaterialNode — 统一素材节点（Unified Material Node）。
  *
  * 核心交互：
- * 1. 顶部操作胶囊（FloatingTopPill）：导入节点空态唤起系统选文件器；文本节点编辑/复制/拆分
- * 2. 空态引导模板（NodeEmptyState）：四类素材各具特色的空态与快捷 Prompt 预设
+ * 1. 顶部操作胶囊（FloatingTopPill）：仅在节点已有素材时显示；空态引导留在卡片内
+ * 2. 空态引导模板（NodeEmptyState）：四类素材各具特色的空态与快捷 Prompt 预设；导入空态整卡可点导入
  * 3. 拖拽即导入：仅导入节点接受本地媒体文件
  * 4. 底部配置底栏（ConfigPanel）：仅生成节点展开 Prompt、模型、参数与生成；导入节点不展开
  */
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { Unlink } from 'lucide-react';
+import { Check, Copy, FileEdit, Layers, MessageSquarePlus, RefreshCw, Unlink } from 'lucide-react';
 import { type NodeProps, useReactFlow } from '@xyflow/react';
 import type { MaterialNodeData, MaterialType, MaterialTool } from '../../../types/materialNode';
 import { resolveNodeKind } from '../../../types/materialNode';
@@ -19,7 +19,7 @@ import NodeHeader from './NodeHeader';
 import StatusBadge from './StatusBadge';
 import MediaPreview, { resolveMediaPreviewUrl, type MediaAssetLike } from './MediaPreview';
 import NodeEmptyState from './NodeEmptyState';
-import FloatingTopPill from './FloatingTopPill';
+import FloatingTopPill, { type FloatingPillAction } from '../FloatingTopPill';
 import ConfigPanelShell from './ConfigPanel/ConfigPanelShell';
 import ConfigPanel from './ConfigPanel';
 import ResourcePickerModal from '../ResourcePickerModal';
@@ -31,6 +31,12 @@ import {
   calculateNodeHeight,
 } from '../../utils/nodeSizeConfig';
 import { isConfigPanelVisible, mapNodeToGenerationStatus } from '../../utils/nodeVisualMath';
+import {
+  buildConversationPayloadFromNode,
+  hasNodeMaterial,
+  pillMaxWidthForNode,
+  shouldShowNodeToolbar,
+} from '../../utils/nodeToolbarLogic';
 import { getOutputOptionSpecs, parseOutputOptionKey } from '../../utils/connectionMenuOptions';
 import { createMaterialNode } from '../../utils/nodeFactory';
 import { planSelectAndPatchNode } from '../../utils/planSelectAndPatchNode';
@@ -288,9 +294,13 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     });
   }, [effectiveTextContent, id, label, nodeData.versions]);
 
+  const [copied, setCopied] = useState(false);
+
   const handleCopyText = useCallback(() => {
     if (effectiveTextContent) {
       navigator.clipboard.writeText(effectiveTextContent).catch(() => {});
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
     }
   }, [effectiveTextContent]);
 
@@ -325,29 +335,120 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const loadingAspectRatio =
     materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'square';
 
-  const showFloatingPill =
-    !isMultiSelected &&
-    (isHovered || selected) &&
-    (materialType === 'text' || (kind === 'import' && !previewUrl && !isOffline));
-  const showReplaceButton = kind === 'import' && Boolean(previewUrl) && !isOffline;
+  const hasMaterial = hasNodeMaterial({
+    nodeType: 'material',
+    materialType,
+    nodeKind: kind,
+    content: content as string | undefined,
+    generatedContent: generatedContent as string | undefined,
+    previewUrl,
+    isOffline,
+  });
+  const showFloatingPill = shouldShowNodeToolbar({
+    hasMaterial,
+    hovered: isHovered,
+    selected,
+    isMultiSelected,
+  });
 
   const { addToConversation } = useAddToConversation();
 
   const handleAddToConversation = useCallback(() => {
-    const isText = materialType === 'text';
-    const filename = isText ? `${label || '未命名文本'}.md` : `${label || materialType}.${materialType === 'video' ? 'mp4' : materialType === 'image' ? 'png' : 'bin'}`;
-    const relPath = (data as any)?.filePath || (data as any)?.previewUrl || `assets/${materialType}s/${id}.${isText ? 'md' : materialType === 'video' ? 'mp4' : 'png'}`;
-
-    addToConversation({
-      sourcePlugin: 'omnimux-workflow',
-      kind: isText ? 'document' : (materialType as any),
-      entityId: id,
-      title: filename,
-      extension: isText ? 'MD' : materialType.toUpperCase(),
-      relativePath: relPath,
-      previewUrl: resolveMediaPreviewUrl((data as any)?.asset) || (data as any)?.previewUrl,
+    const payload = buildConversationPayloadFromNode({
+      nodeType: 'material',
+      nodeId: id,
+      materialType,
+      label,
+      previewUrl,
+      relativePath:
+        (data as { filePath?: string; previewUrl?: string }).filePath
+        || (data as { previewUrl?: string }).previewUrl,
     });
-  }, [addToConversation, data, id, label, materialType]);
+    if (payload) addToConversation(payload);
+  }, [addToConversation, data, id, label, materialType, previewUrl]);
+
+  const pillActions: FloatingPillAction[] = useMemo(() => {
+    const chat: FloatingPillAction = {
+      key: 'add-to-conversation',
+      label: t('pill.addToConversation'),
+      icon: MessageSquarePlus,
+      section: 'primary',
+      variant: 'primary',
+      title: t('pill.addToConversation'),
+      onClick: (event) => {
+        event.stopPropagation();
+        handleAddToConversation();
+      },
+    };
+
+    if (materialType === 'text') {
+      return [
+        chat,
+        {
+          key: 'edit',
+          label: t('pill.edit'),
+          icon: FileEdit,
+          section: 'primary',
+          title: t('pill.edit'),
+          onClick: (event) => {
+            event.stopPropagation();
+            handleOpenTextStage();
+          },
+        },
+        {
+          key: 'copy',
+          label: copied ? t('pill.copied') : t('pill.copy'),
+          icon: copied ? Check : Copy,
+          section: 'secondary',
+          title: t('pill.copy'),
+          onClick: (event) => {
+            event.stopPropagation();
+            handleCopyText();
+          },
+        },
+        {
+          key: 'split',
+          label: t('pill.split'),
+          icon: Layers,
+          section: 'secondary',
+          title: t('pill.split'),
+          onClick: (event) => {
+            event.stopPropagation();
+            handleSplitText();
+          },
+        },
+      ];
+    }
+
+    if (kind === 'import') {
+      return [
+        chat,
+        {
+          key: 'replace',
+          label: t('pill.replace'),
+          icon: RefreshCw,
+          section: 'secondary',
+          title: t('pill.replace'),
+          onClick: (event) => {
+            event.stopPropagation();
+            void resourcePicker.fillImportNode();
+          },
+        },
+      ];
+    }
+
+    return [chat];
+  }, [
+    copied,
+    handleAddToConversation,
+    handleCopyText,
+    handleOpenTextStage,
+    handleSplitText,
+    kind,
+    materialType,
+    resourcePicker,
+    t,
+  ]);
 
   return (
     <div
@@ -359,16 +460,8 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       {/* 顶部悬浮胶囊栏 */}
       {showFloatingPill && (
         <FloatingTopPill
-          materialType={materialType}
-          nodeKind={kind}
-          selected={selected}
-          onOpenResourcePicker={() => {
-            void resourcePicker.fillImportNode();
-          }}
-          onStartTextEdit={handleOpenTextStage}
-          onCopyText={handleCopyText}
-          onSplitText={handleSplitText}
-          onAddToConversation={handleAddToConversation}
+          actions={pillActions}
+          maxWidth={pillMaxWidthForNode(nodeWidth)}
         />
       )}
 
@@ -397,21 +490,6 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {/* 导入素材：卡片内侧右上角「替换」 */}
-        {showReplaceButton && (
-          <button
-            type="button"
-            className="wf-material-node__replace-btn nodrag nopan"
-            onClick={(e) => {
-              e.stopPropagation();
-              void resourcePicker.fillImportNode();
-            }}
-            title={t('node.replace')}
-          >
-            {t('node.replace')}
-          </button>
-        )}
-
         {/* 四角缩放定位点 */}
         {selected && (
           <>
@@ -506,6 +584,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                     materialType={materialType}
                     nodeKind={nodeData.nodeKind ?? (nodeData.selectedTool === 'import' ? 'import' : 'generate')}
                     onApplyPreset={handleApplyPreset}
+                    onImport={kind === 'import' ? () => { void resourcePicker.fillImportNode(); } : undefined}
                   />
                 )}
               </GenerationStateContainer>
@@ -516,6 +595,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                 materialType={materialType}
                 nodeKind={nodeData.nodeKind ?? (nodeData.selectedTool === 'import' ? 'import' : 'generate')}
                 onApplyPreset={handleApplyPreset}
+                onImport={kind === 'import' ? () => { void resourcePicker.fillImportNode(); } : undefined}
               />
             </div>
           ))}

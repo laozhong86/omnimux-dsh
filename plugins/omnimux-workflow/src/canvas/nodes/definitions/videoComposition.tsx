@@ -19,6 +19,12 @@ import { Download, Film, Layers, Pencil, MessageSquarePlus } from 'lucide-react'
 import CanvasNodeShell from '../../editor/components/CanvasNodeShell';
 import FloatingTopPill, { type FloatingPillAction } from '../../editor/components/FloatingTopPill';
 import { useAddToConversation } from '../../hooks/useAddToConversation';
+import {
+  buildConversationPayloadFromNode,
+  hasNodeMaterial,
+  pillMaxWidthForNode,
+  shouldShowNodeToolbar,
+} from '../../editor/utils/nodeToolbarLogic';
 import NodeHeader from '../../editor/components/MaterialNode/NodeHeader';
 import StatusBadge from '../../editor/components/MaterialNode/StatusBadge';
 import GenerationStateContainer from '../../editor/components/GenerationStateContainer';
@@ -292,17 +298,15 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const handleAddToConversation = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    addToConversation({
-      sourcePlugin: 'omnimux-workflow',
-      kind: 'video',
-      entityId: id,
-      title: `${projectFileName(title)}.mp4`,
-      extension: 'MP4',
-      relativePath: nodeData.outputVideoUrl || `assets/videos/${id}.mp4`,
-      previewUrl: nodeData.outputVideoUrl,
-      duration: (nodeData as any)?.durationText || '0:31',
+    const payload = buildConversationPayloadFromNode({
+      nodeType: 'video_composition',
+      nodeId: id,
+      label: projectFileName(title),
+      outputVideoUrl: nodeData.outputVideoUrl,
+      duration: (nodeData as { durationText?: string }).durationText || '0:31',
     });
-  }, [addToConversation, id, nodeData, title]);
+    if (payload) addToConversation(payload);
+  }, [addToConversation, id, nodeData.outputVideoUrl, title]);
 
   const handleDownload = useCallback(() => {
     const url = nodeData.outputVideoUrl;
@@ -331,24 +335,42 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         event.stopPropagation();
         openEditor();
       }}
-      renderFloatingPill={({ hovered, selected: isSelected }) => {
-        if ((!hovered && !isSelected) || !hasOutput) return null;
+      renderFloatingPill={({ hovered, selected: isSelected, isMultiSelected }) => {
+        const hasMaterial = hasNodeMaterial({
+          nodeType: 'video_composition',
+          outputVideoUrl: nodeData.outputVideoUrl,
+        });
+        if (!shouldShowNodeToolbar({
+          hasMaterial,
+          hovered,
+          selected: isSelected,
+          isMultiSelected,
+        })) return null;
         const pillActions: FloatingPillAction[] = [
           {
             key: 'add-to-conversation',
+            label: t('pill.addToConversation'),
             icon: MessageSquarePlus,
+            section: 'primary',
+            variant: 'primary',
             onClick: handleAddToConversation,
-            title: '添加到会话',
+            title: t('pill.addToConversation'),
           },
           {
             key: 'download_video',
-            label: t('clip.download'),
+            label: t('pill.download'),
             icon: Download,
+            section: 'secondary',
             onClick: handleDownload,
             title: t('clip.downloadTitle'),
           },
         ];
-        return <FloatingTopPill actions={pillActions} />;
+        return (
+          <FloatingTopPill
+            actions={pillActions}
+            maxWidth={pillMaxWidthForNode(VIDEO_COMPOSITION_NODE_WIDTH)}
+          />
+        );
       }}
       renderHeader={() => (
         <NodeHeader

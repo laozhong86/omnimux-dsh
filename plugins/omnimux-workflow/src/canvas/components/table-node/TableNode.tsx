@@ -13,6 +13,13 @@ import NodeHeader from '../../editor/components/MaterialNode/NodeHeader.tsx';
 import CanvasNodeHandle from '../../editor/components/CanvasNodeHandle.tsx';
 import FloatingTopPill, { type FloatingPillAction } from '../../editor/components/FloatingTopPill.tsx';
 import { useAddToConversation } from '../../hooks/useAddToConversation';
+import { useT } from '../../i18n';
+import {
+  buildConversationPayloadFromNode,
+  hasNodeMaterial,
+  pillMaxWidthForNode,
+  shouldShowNodeToolbar,
+} from '../../editor/utils/nodeToolbarLogic.ts';
 
 const DEFAULT_TABLE_NODE_WIDTH = 380;
 const DEFAULT_TABLE_NODE_HEIGHT = 280;
@@ -27,41 +34,50 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
   const tableRelPath = (data as any)?.tablePath || (data as any)?.path || `.hilo/tables/${id}.htable`;
 
   const isMultiSelected = useIsMultiSelected();
-  const showFloatingPill = !isMultiSelected && (isHovered || selected);
+  const t = useT();
+  const hasMaterial = hasNodeMaterial({ nodeType: 'table', tableRowCount: rows.length });
+  const showFloatingPill = shouldShowNodeToolbar({
+    hasMaterial,
+    hovered: isHovered,
+    selected,
+    isMultiSelected,
+  });
 
   const { addToConversation } = useAddToConversation();
 
-  // 【Add to Conversation 链路】点击派发至全局会话附件 Store
   const handleAddToConversation = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    addToConversation({
-      sourcePlugin: 'omnimux-workflow',
-      kind: 'table',
-      entityId: id,
-      title: `${nodeTitle}.htable`,
-      extension: 'HTABLE',
-      relativePath: tableRelPath,
+    const payload = buildConversationPayloadFromNode({
+      nodeType: 'table',
+      nodeId: id,
+      label: nodeTitle,
+      tablePath: tableRelPath,
     });
+    if (payload) addToConversation(payload);
   }, [addToConversation, id, nodeTitle, tableRelPath]);
 
-  // 【全仓通用 FloatingTopPill 声明式 Actions】
   const pillActions: FloatingPillAction[] = useMemo(() => [
     {
       key: 'add-to-conversation',
+      label: t('pill.addToConversation'),
       icon: MessageSquarePlus,
-      title: '添加到会话',
+      section: 'primary',
+      variant: 'primary',
+      title: t('pill.addToConversation'),
       onClick: handleAddToConversation,
     },
     {
       key: 'fullscreen-edit',
+      label: t('pill.fullscreen'),
       icon: Maximize2,
-      title: '全屏编辑',
+      section: 'primary',
+      title: t('pill.fullscreen'),
       onClick: (e) => {
         e.stopPropagation();
         openStage();
       },
     },
-  ], [handleAddToConversation, openStage]);
+  ], [handleAddToConversation, openStage, t]);
 
   return (
     <div
@@ -72,7 +88,7 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
     >
       {/* 顶部悬浮胶囊栏 (100% 复用全仓通用 FloatingTopPill 标准组件) */}
       {showFloatingPill && (
-        <FloatingTopPill actions={pillActions} />
+        <FloatingTopPill actions={pillActions} maxWidth={pillMaxWidthForNode(DEFAULT_TABLE_NODE_WIDTH)} />
       )}
 
       {/* 左侧输入 Handle */}
