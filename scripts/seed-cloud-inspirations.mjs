@@ -1,11 +1,24 @@
 import { readFileSync, existsSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 
 async function resolveToken() {
-  if (existsSync('/Users/x/.dsh/omnimux/access-token')) {
-    const token = readFileSync('/Users/x/.dsh/omnimux/access-token', 'utf8').trim()
+  if (process.env.OMNIMUX_ACCESS_TOKEN) return process.env.OMNIMUX_ACCESS_TOKEN
+
+  const homes = []
+  if (process.env.DSH_HOME && process.env.DSH_HOME.trim()) homes.push(process.env.DSH_HOME.trim())
+  // Prefer OmniMux isolation roots, then legacy ~/.dsh.
+  homes.push(join(homedir(), '.omnimux-dev'), join(homedir(), '.omnimux'), join(homedir(), '.dsh'))
+
+  const seen = new Set()
+  for (const home of homes) {
+    if (!home || seen.has(home)) continue
+    seen.add(home)
+    const tokenPath = join(home, 'omnimux', 'access-token')
+    if (!existsSync(tokenPath)) continue
+    const token = readFileSync(tokenPath, 'utf8').trim()
     if (token) return token
   }
-  if (process.env.OMNIMUX_ACCESS_TOKEN) return process.env.OMNIMUX_ACCESS_TOKEN
   throw new Error('未找到 OmniMux Access Token，请在 设置 → 个人资料 登录')
 }
 

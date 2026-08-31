@@ -5,12 +5,58 @@
 #   docs/contracts/dev-pipeline.md
 #   docs/contracts/plugin-git-pr.md
 #   docs/contracts/ops-entry.md
+#
+# Default target is the Dev App home (~/.omnimux-dev), matching sync-to-app.sh.
+# Pass --prod / --dsh / --all to retarget; PROFILE verification must match the
+# same home(s) that sync-to-app writes.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-TARGET_PLUGIN="${1:-}"
-PROFILE_DIR="${HOME}/.dsh/profiles/omnimux"
+
+TARGET_PLUGIN=""
+SYNC_TARGET_FLAGS=()
+PROFILE_HOME="${HOME}/.omnimux-dev"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dev|--omnimux-dev)
+      PROFILE_HOME="${HOME}/.omnimux-dev"
+      SYNC_TARGET_FLAGS=(--dev)
+      shift
+      ;;
+    --prod|--omnimux)
+      PROFILE_HOME="${HOME}/.omnimux"
+      SYNC_TARGET_FLAGS=(--prod)
+      shift
+      ;;
+    --dsh)
+      PROFILE_HOME="${HOME}/.dsh"
+      SYNC_TARGET_FLAGS=(--dsh)
+      shift
+      ;;
+    --all)
+      # Snapshot/verify against prod by default when broadcasting; sync still
+      # fans out via sync-to-app.sh --all.
+      PROFILE_HOME="${HOME}/.omnimux"
+      SYNC_TARGET_FLAGS=(--all)
+      shift
+      ;;
+    -*)
+      echo "❌ materialize-with-rollback: unknown flag $1" >&2
+      exit 2
+      ;;
+    *)
+      if [[ -n "$TARGET_PLUGIN" ]]; then
+        echo "❌ materialize-with-rollback: unexpected arg $1" >&2
+        exit 2
+      fi
+      TARGET_PLUGIN="$1"
+      shift
+      ;;
+  esac
+done
+
+PROFILE_DIR="${PROFILE_HOME}/profiles/omnimux"
 SNAPSHOT_BASE="${PROFILE_DIR}/.materialize-snapshots"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 SNAPSHOT_DIR="${SNAPSHOT_BASE}/${TIMESTAMP}_$$"
@@ -50,8 +96,8 @@ rollback() {
 }
 trap rollback EXIT
 
-echo "==> 1. 执行 sync-to-app.sh 构建与物化: $TARGET_PLUGIN"
-OMNIMUX_SYNC_VIA=materialize-with-rollback "$REPO_ROOT/scripts/sync-to-app.sh" "$TARGET_PLUGIN"
+echo "==> 1. 执行 sync-to-app.sh 构建与物化: $TARGET_PLUGIN → ${PROFILE_HOME}"
+OMNIMUX_SYNC_VIA=materialize-with-rollback "$REPO_ROOT/scripts/sync-to-app.sh" "${SYNC_TARGET_FLAGS[@]}" "$TARGET_PLUGIN"
 
 echo "==> 2. 校验物化产物完整性..."
 if [[ ! -d "$TARGET_DIR" ]]; then
