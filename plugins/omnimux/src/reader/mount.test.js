@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
+import { parseGateConfig } from '../gate/config.js'
 import { apply } from '../index.js'
 import { OmnimuxError } from '../media/errors.js'
 import { objectParams, JSON_TOOL_OUTPUT, rethrow } from '../tools/schema.js'
 import { mountReader } from './mount.js'
 
 describe('mountReader', () => {
-  it('registers omnimux_page_fetch when official.mount is true', () => {
+  it('registers omnimux_page_fetch when official.mount is true and gate is enabled', () => {
     const names = []
     mountReader(
       { tools: { register(tool) { names.push(tool.name) } } },
-      { hub: { official: { mount: true } }, objectParams, jsonOut: JSON_TOOL_OUTPUT, rethrow },
+      { hub: { official: { mount: true }, gate: parseGateConfig(undefined) }, objectParams, jsonOut: JSON_TOOL_OUTPUT, rethrow },
     )
     assert.deepEqual(names, ['omnimux_page_fetch'])
   })
@@ -19,7 +20,16 @@ describe('mountReader', () => {
     const names = []
     mountReader(
       { tools: { register(tool) { names.push(tool.name) } } },
-      { hub: { official: { mount: false } }, objectParams, jsonOut: JSON_TOOL_OUTPUT, rethrow },
+      { hub: { official: { mount: false }, gate: parseGateConfig(undefined) }, objectParams, jsonOut: JSON_TOOL_OUTPUT, rethrow },
+    )
+    assert.deepEqual(names, [])
+  })
+
+  it('skips when gate.tools.omnimux_page_fetch is false', () => {
+    const names = []
+    mountReader(
+      { tools: { register(tool) { names.push(tool.name) } } },
+      { hub: { official: { mount: true }, gate: parseGateConfig({ tools: { omnimux_page_fetch: false } }) }, objectParams, jsonOut: JSON_TOOL_OUTPUT, rethrow },
     )
     assert.deepEqual(names, [])
   })
@@ -34,7 +44,7 @@ describe('mountReader', () => {
       mountReader(
         { tools: { register(tool) { tools[tool.name] = tool } } },
         {
-          hub: { official: { mount: true } },
+          hub: { official: { mount: true }, gate: parseGateConfig(undefined) },
           env: {},
           objectParams,
           jsonOut: JSON_TOOL_OUTPUT,

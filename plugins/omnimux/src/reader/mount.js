@@ -1,3 +1,4 @@
+import { assertCapabilityEnabled, isToolEnabled } from '../gate/guard.js'
 import { OmnimuxError } from '../media/errors.js'
 import { fetchPage } from './fetch.js'
 
@@ -6,7 +7,8 @@ import { fetchPage } from './fetch.js'
  *   tools: { register: (tool: object) => unknown },
  * }} ctx
  * @param {{
- *   hub: { official: { mount: boolean } },
+ *   hub: { official: { mount: boolean }, gate?: object },
+ *   gate?: object,
  *   env?: Record<string, string | undefined>,
  *   fetcher?: typeof fetch,
  *   resolveApiKey?: () => Promise<string | undefined> | string | undefined,
@@ -16,9 +18,14 @@ import { fetchPage } from './fetch.js'
  * }} deps
  */
 export function mountReader(ctx, deps) {
-  if (!deps.hub.official.mount) return
+  if (!deps.hub?.official?.mount) return
+  const gate = deps.gate ?? deps.hub?.gate ?? ctx.get?.('gate')
+  const toolName = 'omnimux_page_fetch'
+
+  if (!isToolEnabled(gate, toolName)) return
+
   ctx.tools.register({
-    name: 'omnimux_page_fetch',
+    name: toolName,
     description:
       'Fetch a public web page as markdown via OmniMux Jina Reader (POST /v1/reader, model jina-reader-v1). Official-only; uses OMNIMUX_API_KEY. Pass an http(s) url. Returns {mode, model, url, title, pageContent}. Do not invent page text if this tool fails.',
     parameters: deps.objectParams({
@@ -27,6 +34,7 @@ export function mountReader(ctx, deps) {
     output: deps.jsonOut,
     async execute(args) {
       try {
+        assertCapabilityEnabled(gate, toolName, 'tool')
         return await fetchPage(
           { env: deps.env, fetcher: deps.fetcher, resolveApiKey: deps.resolveApiKey },
           args,

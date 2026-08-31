@@ -1,3 +1,4 @@
+import { isModelEnabled } from '../gate/guard.js'
 import { OmnimuxError } from '../media/errors.js'
 
 /**
@@ -79,10 +80,14 @@ export function parseTextConfig(value) {
 }
 
 /**
+ * Merges text.models enabled flags with gate.models.textComplete.
+ * A model is enabled if and only if row.enabled !== false AND isModelEnabled(gate, id).
+ *
  * @param {ReturnType<typeof parseTextConfig>} text
+ * @param {object} [gate]
  */
-export function enabledTextModels(text) {
-  return text.models.filter((row) => row.enabled !== false)
+export function enabledTextModels(text, gate) {
+  return text.models.filter((row) => row.enabled !== false && isModelEnabled(gate, row.id))
 }
 
 /**
@@ -94,9 +99,10 @@ export function enabledTextModels(text) {
  * @param {{ model?: string, image?: string, video?: string }} request
  * @param {ReturnType<typeof parseTextConfig>} text
  * @param {Record<string, string | undefined>} [env]
+ * @param {object} [gate]
  */
-export function resolveTextRoute(request, text, env = process.env) {
-  const enabled = enabledTextModels(text)
+export function resolveTextRoute(request, text, env = process.env, gate) {
+  const enabled = enabledTextModels(text, gate)
   const hasImage = typeof request.image === 'string' && request.image.trim().length > 0
   const hasVideo = typeof request.video === 'string' && request.video.trim().length > 0
   if (hasImage && hasVideo) {

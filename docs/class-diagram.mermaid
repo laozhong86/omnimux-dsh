@@ -1,0 +1,67 @@
+classDiagram
+    class HubConfig {
+        +BrandConfig brand
+        +MediaConfig media
+        +OfficialConfig official
+        +AppsConfig apps
+        +TextConfig text
+        +GateConfig gate
+    }
+
+    class GateConfig {
+        +boolean enabled
+        +Record~string, boolean~ tools
+        +MediaGateConfig media
+        +ModelsGateConfig models
+        +Record~string, unknown~ plugins
+    }
+
+    class MediaGateConfig {
+        +boolean video
+        +boolean image
+        +boolean audio
+    }
+
+    class ModelsGateConfig {
+        +Record~string, boolean~ textComplete
+    }
+
+    class GateGuard {
+        +isGateActive(gate: GateConfig) boolean
+        +isToolEnabled(gate: GateConfig, toolName: string) boolean
+        +isMediaEnabled(gate: GateConfig, kind: string) boolean
+        +isModelEnabled(gate: GateConfig, modelId: string) boolean
+        +assertCapabilityEnabled(gate: GateConfig, capabilityName: string, kind?: string) void
+    }
+
+    class OmnimuxError {
+        +string code
+        +string message
+        +ErrorOptions options
+    }
+
+    class MediaMount {
+        +mountMedia(ctx, opts) void
+    }
+
+    class TextMount {
+        +mountTextComplete(ctx, hub, jsonOut, onError) void
+    }
+
+    class OfficialMount {
+        +mountOfficial(ctx, deps) void
+    }
+
+    class ReaderMount {
+        +mountReader(ctx, deps) void
+    }
+
+    HubConfig *-- GateConfig
+    GateConfig *-- MediaGateConfig
+    GateConfig *-- ModelsGateConfig
+    GateGuard ..> GateConfig : evaluates
+    GateGuard ..> OmnimuxError : throws on disabled
+    MediaMount ..> GateGuard : uses
+    TextMount ..> GateGuard : uses
+    OfficialMount ..> GateGuard : uses
+    ReaderMount ..> GateGuard : uses

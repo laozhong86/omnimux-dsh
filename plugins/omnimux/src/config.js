@@ -1,6 +1,7 @@
 import { parseAppsConfig } from './apps/config.js'
 import { DEFAULT_SITE, resolveSiteBaseUrl } from './auth/omnimux-auth.js'
 import { parseBrandConfig } from './brand/config.js'
+import { parseGateConfig } from './gate/config.js'
 import { parseMediaConfig } from './media/route.js'
 import { parseOfficialConfig } from './official/config.js'
 import { parseTextConfig } from './text/catalog.js'
@@ -26,6 +27,7 @@ export function parseHubConfig(value) {
       ),
     ),
     text: parseTextConfig(raw.text),
+    gate: parseGateConfig(raw.gate),
   }
 }
 

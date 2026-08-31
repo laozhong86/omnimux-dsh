@@ -75,6 +75,12 @@ it that way: user layers set `agent-default-model` only.
   `CHAT_MODELS`) is a subset of this patch list, and its `input` matrix must
   agree with the patch. `verify:models` fails on any mismatch or if a
   whitelist id is missing from the patch.
+- Deployment / instance gating for the expert whitelist only:
+  `Config.gate.models.textComplete.<id>` can hide a whitelist row from
+  `omnimux_text_complete` without editing `cordis.patch.yml`. A model is
+  callable iff `text.models[].enabled !== false` **and**
+  `gate.models.textComplete[id] !== false`. Phase-1 gate does **not** filter
+  the chat composer model list; that list remains owned solely by this patch.
 
 ## Changing the list
 

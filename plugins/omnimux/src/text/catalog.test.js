@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
+import { parseGateConfig } from '../gate/config.js'
 import { OmnimuxError } from '../media/errors.js'
 import {
   CHAT_MODEL_IDS,
@@ -50,6 +51,39 @@ describe('text whitelist', () => {
       () => resolveTextRoute({ model: 'grok-4.6' }, text),
       (error) => error instanceof OmnimuxError && error.code === 'unknown-model',
     )
+  })
+
+  it('merges gate.models.textComplete with text.models[].enabled (AND logic)', () => {
+    const text = parseTextConfig({
+      models: [
+        { id: 'grok-4.6', enabled: true },
+        { id: 'claude-opus-5', enabled: false },
+        { id: 'gemini-3.7-flash', enabled: true },
+      ],
+    })
+    const gate = parseGateConfig({
+      models: {
+        textComplete: {
+          'grok-4.6': false, // gate disabled
+          'claude-opus-5': true, // row disabled, gate enabled => disabled
+          'gemini-3.7-flash': true, // both enabled => enabled
+        },
+      },
+    })
+    const enabled = enabledTextModels(text, gate)
+    assert.deepEqual(enabled.map((r) => r.id), ['gemini-3.7-flash'])
+
+    // resolveTextRoute with gate
+    assert.throws(
+      () => resolveTextRoute({ model: 'grok-4.6' }, text, undefined, gate),
+      (error) => error instanceof OmnimuxError && error.code === 'unknown-model',
+    )
+    assert.throws(
+      () => resolveTextRoute({ model: 'claude-opus-5' }, text, undefined, gate),
+      (error) => error instanceof OmnimuxError && error.code === 'unknown-model',
+    )
+    const route = resolveTextRoute({ model: 'gemini-3.7-flash' }, text, undefined, gate)
+    assert.equal(route.modelId, 'gemini-3.7-flash')
   })
 
   it('defaults a named-less request to the configured model', () => {
