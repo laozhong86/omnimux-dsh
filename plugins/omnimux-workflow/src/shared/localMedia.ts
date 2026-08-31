@@ -35,6 +35,153 @@ const MIME_BY_EXT: Record<string, string> = {
   opus: 'audio/opus',
 };
 
+const EXT_BY_MIME: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/svg+xml': 'svg',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'audio/mpeg': 'mp3',
+  'audio/wav': 'wav',
+};
+
+const SNIFF_HEAD_BYTES = 512;
+
+interface NodeFsSync {
+  openSync(path: string, flags: string): number;
+  readSync(
+    fd: number,
+    buffer: Uint8Array,
+    offset: number,
+    length: number,
+    position: number,
+  ): number;
+  closeSync(fd: number): void;
+}
+
+function bytesEq(buf: Uint8Array, offset: number, signature: readonly number[]): boolean {
+  if (buf.length < offset + signature.length) return false;
+  for (let i = 0; i < signature.length; i += 1) {
+    if (buf[offset + i] !== signature[i]) return false;
+  }
+  return true;
+}
+
+function asciiEq(buf: Uint8Array, offset: number, text: string): boolean {
+  if (buf.length < offset + text.length) return false;
+  for (let i = 0; i < text.length; i += 1) {
+    if (buf[offset + i] !== text.charCodeAt(i)) return false;
+  }
+  return true;
+}
+
+function latin1Head(buf: Uint8Array, maxBytes = SNIFF_HEAD_BYTES): string {
+  const n = Math.min(buf.length, maxBytes);
+  if (typeof TextDecoder === 'function') {
+    return new TextDecoder('latin1').decode(buf.subarray(0, n));
+  }
+  let out = '';
+  for (let i = 0; i < n; i += 1) {
+    out += String.fromCharCode(buf[i] ?? 0);
+  }
+  return out;
+}
+
+/**
+ * Magic-byte MIME probe. Node `Buffer` is a `Uint8Array` subclass, so either
+ * is accepted. Returns undefined when the buffer is empty or unknown.
+ */
+export function sniffMimeType(buf: Uint8Array): string | undefined {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  if (bytes.length === 0) return undefined;
+
+  // PNG: 89 50 4E 47
+  if (bytesEq(bytes, 0, [0x89, 0x50, 0x4e, 0x47])) return 'image/png';
+  // JPEG: FF D8 FF
+  if (bytesEq(bytes, 0, [0xff, 0xd8, 0xff])) return 'image/jpeg';
+  // GIF: 47 49 46 38 ("GIF8")
+  if (asciiEq(bytes, 0, 'GIF8')) return 'image/gif';
+  // WebP: RIFF....WEBP
+  if (asciiEq(bytes, 0, 'RIFF') && asciiEq(bytes, 8, 'WEBP')) return 'image/webp';
+  // WAV: RIFF....WAVE
+  if (asciiEq(bytes, 0, 'RIFF') && asciiEq(bytes, 8, 'WAVE')) return 'audio/wav';
+  // MP4: offset 4 is "ftyp"
+  if (asciiEq(bytes, 4, 'ftyp')) return 'video/mp4';
+  // WebM: 1A 45 DF A3 (EBML)
+  if (bytesEq(bytes, 0, [0x1a, 0x45, 0xdf, 0xa3])) return 'video/webm';
+  // MP3: "ID3" or MPEG frame sync FF E0–FF
+  if (asciiEq(bytes, 0, 'ID3')) return 'audio/mpeg';
+  if (bytes.length >= 2 && bytes[0] === 0xff && ((bytes[1] ?? 0) & 0xe0) === 0xe0) {
+    return 'audio/mpeg';
+  }
+  // SVG: first 512 bytes contain "<svg" or "<?xml"
+  const head = latin1Head(bytes, SNIFF_HEAD_BYTES).toLowerCase();
+  if (head.includes('<svg') || head.includes('<?xml')) return 'image/svg+xml';
+
+  return undefined;
+}
+
+/** Map a sniffed buffer onto a file extension (`png`, `jpg`, `svg`, …). */
+export function sniffMediaExtension(buf: Uint8Array): string | undefined {
+  const mime = sniffMimeType(buf);
+  if (!mime) return undefined;
+  return EXT_BY_MIME[mime];
+}
+
+function nodeFsSync(): NodeFsSync | undefined {
+  try {
+    const proc = (globalThis as {
+      process?: { getBuiltinModule?: (name: string) => unknown };
+    }).process;
+    const fs = proc?.getBuiltinModule?.('node:fs') as NodeFsSync | undefined;
+    if (!fs?.openSync || !fs.readSync || !fs.closeSync) return undefined;
+    return fs;
+  } catch {
+    return undefined;
+  }
+}
+
+function readFileHead(filePath: string, maxBytes = SNIFF_HEAD_BYTES): Uint8Array | undefined {
+  const fs = nodeFsSync();
+  if (!fs) return undefined;
+  let fd: number | undefined;
+  try {
+    fd = fs.openSync(filePath, 'r');
+    const buf = new Uint8Array(maxBytes);
+    const n = fs.readSync(fd, buf, 0, maxBytes, 0);
+    if (n <= 0) return new Uint8Array();
+    return n === maxBytes ? buf : buf.subarray(0, n);
+  } catch {
+    return undefined;
+  } finally {
+    if (fd !== undefined) {
+      try {
+        fs.closeSync(fd);
+      } catch {
+        // ignore close races
+      }
+    }
+  }
+}
+
+/**
+ * Prefer magic-byte MIME over the filename extension so a historical
+ * `artifacts/*.svg` that is actually PNG still serves as `image/png`.
+ */
+export function detectMimeFromFile(
+  filePath: string,
+  fallbackMime = 'application/octet-stream',
+): string {
+  const head = readFileHead(filePath, SNIFF_HEAD_BYTES);
+  if (head && head.length > 0) {
+    const sniffed = sniffMimeType(head);
+    if (sniffed) return sniffed;
+  }
+  return mimeFromFilename(filePath) ?? MIME_BY_EXT[extensionOf(filePath)] ?? fallbackMime;
+}
+
 export function extensionOf(filename: string): string {
   const base = filename.split(/[/\\]/).pop() ?? filename;
   const dot = base.lastIndexOf('.');

@@ -80,7 +80,7 @@ test('生成物 move 进 artifacts/ 并登记账本；JSON 无绝对路径', asy
     });
     const tmp = join(dir, 'executions', 'n1.svg');
     mkdirSync(join(tmp, '..'), { recursive: true });
-    writeFileSync(tmp, '<svg />', 'utf8');
+    writeFileSync(tmp, '<svg xmlns="http://www.w3.org/2000/svg" />', 'utf8');
 
     const persisted = await persistGeneratedArtifact({
       workspaceId,
@@ -108,6 +108,44 @@ test('生成物 move 进 artifacts/ 并登记账本；JSON 无绝对路径', asy
     assert.equal(ledger.items[0].lineage.generatorNodeId, 'n1');
     assert.equal(JSON.stringify(ledger).includes('/Users'), false);
     assert.equal(JSON.stringify(ledger).includes(projectRoot), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('PNG 二进制即使临时文件叫 .svg 也按真实扩展名落盘', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 't03-art-png-'));
+  try {
+    const workspacesDir = join(dir, 'workspaces');
+    const libraryRoot = join(dir, 'library');
+    mkdirSync(workspacesDir, { recursive: true });
+    mkdirSync(libraryRoot, { recursive: true });
+    const workspaceId = 'ws_t03png';
+    mkdirSync(join(workspacesDir, workspaceId), { recursive: true });
+    writeFileSync(join(workspacesDir, workspaceId, 'canvas.json'), '{"id":"marker"}\n', 'utf8');
+    const projectRoot = seedProject(libraryRoot, workspaceId);
+    const assetsStore = createProjectAssetsStore({
+      workspacesDir,
+      resolveProjectRoot: (id) => (id === workspaceId ? { path: projectRoot } : null),
+    });
+    const tmp = join(dir, 'executions', 'n2.svg');
+    mkdirSync(join(tmp, '..'), { recursive: true });
+    writeFileSync(tmp, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00]));
+
+    const persisted = await persistGeneratedArtifact({
+      workspaceId,
+      nodeId: 'n2',
+      nodeType: 'material',
+      tmpAbs: tmp,
+      materialType: 'image',
+      resolveProjectRoot: (id) => (id === workspaceId ? { path: projectRoot } : null),
+      registerGenerated: (id, payload) => assetsStore.registerGenerated(id, payload),
+      prompt: '一张图',
+      modelId: 'gpt-image-2',
+    });
+    assert.match(persisted.relativePath, /^artifacts\/\d+_n2\.png$/);
+    assert.equal(existsSync(join(projectRoot, persisted.relativePath)), true);
+    assert.equal(existsSync(tmp), false);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
