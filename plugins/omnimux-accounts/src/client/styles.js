@@ -38,13 +38,22 @@ export const STYLES = `
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   padding: 0 20px 24px;
   color: var(--dsw-alias-label-primary, var(--dsw-text-primary, inherit));
 }
 .omnimux-accounts-root *,
 .omnimux-accounts-root *::before,
 .omnimux-accounts-root *::after { box-sizing: border-box; }
+
+/* ---------- action row (layer 2) ---------- */
+.omnimux-accounts-action-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+}
 
 /* ---------- overview bar ---------- */
 .omnimux-accounts-overview {
@@ -149,11 +158,7 @@ export const STYLES = `
   align-items: center;
   gap: 8px;
   flex-wrap: nowrap;
-  margin-bottom: 12px;
-}
-.omnimux-accounts-cta {
-  flex-shrink: 0;
-  margin-left: auto;
+  margin-bottom: 0;
 }
 /* ---------- filter bar ---------- */
 .omnimux-accounts-filterbar {

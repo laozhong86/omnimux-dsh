@@ -86,6 +86,14 @@ describe('sortAccounts', () => {
     ]
     assert.deepEqual(sortAccounts(withTimes, 'last_used_at', 'asc').map((r) => r.id), ['old', 'new', 'never'])
     assert.deepEqual(sortAccounts(withTimes, 'last_used_at', 'desc').map((r) => r.id), ['new', 'old', 'never'])
+
+    const withConnectedAndExpires = [
+      { id: 'c1', connected_at: '2026-08-01T00:00:00Z', expires_at: '2026-09-01T00:00:00Z' },
+      { id: 'c2', connected_at: '2026-08-15T00:00:00Z', expires_at: '2026-08-25T00:00:00Z' },
+      { id: 'c3' },
+    ]
+    assert.deepEqual(sortAccounts(withConnectedAndExpires, 'connected_at', 'desc').map((r) => r.id), ['c2', 'c1', 'c3'])
+    assert.deepEqual(sortAccounts(withConnectedAndExpires, 'expires_at', 'asc').map((r) => r.id), ['c2', 'c1', 'c3'])
   })
 
   it('sorts statuses by severity and falls back for unknown keys', () => {
