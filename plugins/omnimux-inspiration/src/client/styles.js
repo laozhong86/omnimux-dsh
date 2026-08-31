@@ -522,6 +522,8 @@ export const INSPIRATION_CSS = `
   gap: 6px;
   width: 100%;
   margin-bottom: 8px;
+  padding: 0 2px;
+  box-sizing: border-box;
   pointer-events: auto;
 }
 .omnimux-inspiration-grid.selecting .omnimux-inspiration-overlay-cta {
@@ -538,7 +540,7 @@ export const INSPIRATION_CSS = `
   height: 28px;
   min-height: 28px;
   max-height: 28px;
-  padding: 0 8px;
+  padding: 0 6px;
   border-radius: 9999px;
   border: 1px solid transparent;
   font: 550 12px/16px inherit;
@@ -1223,6 +1225,99 @@ export const INSPIRATION_CSS = `
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+.omnimux-inspiration-tags-collapse {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.omnimux-inspiration-tags-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 32px;
+  padding: 0 2px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: 500 13px/20px inherit;
+  cursor: pointer;
+}
+.omnimux-inspiration-tags-toggle:hover:not(:disabled) {
+  color: var(--dsw-alias-label-primary);
+}
+.omnimux-inspiration-tags-toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.omnimux-inspiration-tags-toggle-label {
+  color: inherit;
+}
+.omnimux-inspiration-tags-toggle-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 12px;
+  line-height: 1;
+  transform: rotate(-90deg);
+  transition: transform 0.15s ease;
+}
+.omnimux-inspiration-tags-toggle-chevron.is-open {
+  transform: rotate(0deg);
+}
+.omnimux-inspiration-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+.omnimux-inspiration-switch,
+.omnimux-inspiration-switch:hover,
+.omnimux-inspiration-switch:active {
+  position: relative;
+  width: 36px;
+  min-width: 36px;
+  height: 20px;
+  min-height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.30));
+  cursor: pointer;
+  transform: none;
+  transition: background 0.15s ease;
+  overflow: visible;
+}
+.omnimux-inspiration-switch[aria-checked="true"],
+.omnimux-inspiration-switch[aria-checked="true"]:hover {
+  background: var(--dsw-alias-state-success-primary, #4caf7d);
+}
+.omnimux-inspiration-switch:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.omnimux-inspiration-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--dsw-alias-label-primary-foreground, var(--dsw-alias-label-primary-inverted, #ffffff));
+  transition: transform 0.15s ease;
+  pointer-events: none;
+}
+.omnimux-inspiration-switch[aria-checked="true"] .omnimux-inspiration-switch-knob {
+  transform: translateX(16px);
+}
+.omnimux-inspiration-switch-label {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
 }
 .omnimux-inspiration-fallback-icon--lg { width: 56px; height: 56px; }
 .omnimux-inspiration-empty-breakdown-title {
