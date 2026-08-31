@@ -125,6 +125,14 @@ export const WORKFLOW_CSS = `
   gap: 6px;
   justify-content: flex-end;
   align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.omnimux-workflow-card:hover .omnimux-workflow-card-actions,
+.omnimux-workflow-card:focus-within .omnimux-workflow-card-actions {
+  opacity: 1;
+  pointer-events: auto;
 }
 .omnimux-workflow-form {
   display: flex;
