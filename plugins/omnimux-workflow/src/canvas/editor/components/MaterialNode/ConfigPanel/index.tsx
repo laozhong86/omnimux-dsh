@@ -26,6 +26,7 @@ import {
 import type { MaterialNodeData, MaterialTool } from '../../../../types/materialNode';
 import {
   ASPECT_RATIO_OPTIONS,
+  MATERIAL_NODE_WHITELIST,
   MATERIAL_TOOLS,
   resolveNodeKind,
 } from '../../../../types/materialNode';
@@ -187,13 +188,23 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
   );
 
   // 模型列表：仅消费 hub catalog（无生产假回退）；按显示名 A–Z。
-  // 已保存但不在目录中的 params.model 保留为 deprecated 项，不静默改写。
+  // 消费 MATERIAL_NODE_WHITELIST 进行白名单过滤（未配置白名单的模态不进行过滤）。
+  // 已保存但不在当前可用列表中的 params.model 保留为 deprecated 项，不静默改写。
   const modelOptions = useMemo(() => {
     const activeCatalog = catalog ?? getCachedCatalog();
-    const rows = sortCatalogRows<CapabilityModelItem>(activeCatalog?.[materialType] ?? []);
+    const rawRows = activeCatalog?.[materialType] ?? [];
+    const whitelist = MATERIAL_NODE_WHITELIST[materialType];
+    const filteredRows = whitelist
+      ? rawRows.filter((row) => whitelist.includes(row.id))
+      : rawRows;
+    const rows = sortCatalogRows<CapabilityModelItem>(filteredRows);
     const savedModel = typeof params.model === 'string' ? params.model.trim() : '';
     const orphan = savedModel && !rows.some((row) => row.id === savedModel)
-      ? [{ id: savedModel, label: savedModel, deprecated: true as const }]
+      ? [{
+          id: savedModel,
+          label: rawRows.find((r) => r.id === savedModel)?.label ?? savedModel,
+          deprecated: true as const,
+        }]
       : [];
     const combined = [...orphan, ...rows.map((row) => ({ ...row, deprecated: false as const }))];
 
@@ -220,7 +231,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     });
   }, [catalog, materialType, params.model]);
 
-  // Inheritance: keep existing params.model (even if deprecated) → defaults[type] → first sorted.
+  // Inheritance: keep existing params.model (even if deprecated) → defaults[type] → whitelist first → first sorted.
   const modelValue = useMemo(() => {
     if (typeof params.model === 'string' && params.model.trim()) return params.model;
     const activeCatalog = catalog ?? getCachedCatalog();
@@ -228,6 +239,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     if (typeof defaultId === 'string' && defaultId.trim()) {
       if (modelOptions.some((row) => row.value === defaultId)) return defaultId;
     }
+    const whitelist = MATERIAL_NODE_WHITELIST[materialType];
+    const firstWhitelisted = whitelist?.find((id) => modelOptions.some((row) => row.value === id));
+    if (firstWhitelisted) return firstWhitelisted;
     return modelOptions[0]?.value;
   }, [params.model, catalog, materialType, modelOptions]);
 

@@ -36,7 +36,7 @@ describe('buildModelCatalog', () => {
     assert.equal(catalog.audio.length, AUDIO_MODEL_SPECS.length)
     assert.ok(catalog.image.some((row) => row.id === 'gpt-image-2' && row.parameters))
     assert.ok(catalog.video.some((row) => row.id === 'kling-o1'))
-    assert.ok(catalog.video.some((row) => row.id === 'wan-2.6'))
+    assert.ok(catalog.video.some((row) => row.id === 'wan-3.0'))
     const labels = catalog.text.map((row) => row.label)
     const sorted = [...labels].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
     assert.deepEqual(labels, sorted)
