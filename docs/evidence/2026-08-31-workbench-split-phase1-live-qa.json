@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-08-31T11:40:00+08:00",
+  "targetStage": "omnimux-clip-workbench",
+  "issue": "workbench-split-phase-1",
+  "port": 45120,
+  "profile": "/Users/x/.omnimux-dev",
+  "hostPid": 62559,
+  "clientSha256": {
+    "omnimux": "8b4380d7cc8a123af5d37b19ecdaa308893d7da7016563974607027f60d5c822",
+    "omnimux-clip": "6f9bef33a4e694e1ed90ee35c4f479f19ea3276c93beeeebf3114ff7fbf51cdb"
+  },
+  "liveClientBytes": {
+    "omnimux": 231104,
+    "omnimux-clip": 9593492
+  },
+  "assertions": {
+    "1. Live hub client.js SHA matches worktree": true,
+    "2. Live clip client.js SHA matches worktree": true,
+    "3. window.__omnimuxWorkbench present": true,
+    "4. Click 视频剪辑 does not set data-dsh-product-stage": true,
+    "5. Conversation composer remains visible beside OpenReel": true,
+    "6. better-sidebar panel hosts omnimux-clip:studio (welcome 新建剪辑项目)": true,
+    "7. Collapse panel keeps tab in session state (panelOpen false, tab still open)": true,
+    "8. Re-click 视频剪辑 restores panel without overlay claim": true,
+    "9. 资产库 still claims omnimux-assets overlay": true,
+    "10. Click 视频剪辑 from assets overlay releases stage and shows studio": true
+  },
+  "details": {
+    "layout": {
+      "sidebarCollapsedPx": 56,
+      "conversationPx": 644,
+      "panelPx": 1028,
+      "viewportPx": 1728
+    },
+    "clicks": [
+      "视频剪辑 → stage=null, workbenchOpen=true, welcome=true",
+      "折叠侧边栏 → panelOpen=false, tabIds still include omnimux-clip:studio",
+      "视频剪辑 → panelOpen=true, welcome=true",
+      "资产库 → stage=omnimux-assets",
+      "视频剪辑 → stage=null, welcome=true"
+    ],
+    "screenshot": "docs/evidence/2026-08-31-workbench-split-clip-45120.png",
+    "taskSpace": "clip workbench split live probe",
+    "materialize": "OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1 ./scripts/sync-to-app.sh omnimux omnimux-clip (dev ~/.omnimux-dev only; prod untouched)"
+  },
+  "verdict": "PASS"
+}

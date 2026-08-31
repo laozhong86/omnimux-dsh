@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-08-31T12:28:00+08:00",
+  "targetStage": "omnimux-clip-workbench-focus",
+  "issue": "workbench-split-phase-2",
+  "port": 44120,
+  "profile": "/Users/x/.omnimux-dev",
+  "taskSpace": "workbench split focus probe",
+  "taskSpaceId": 271,
+  "url": "http://127.0.0.1:44120/",
+  "clientSha256": {
+    "omnimux": "e5b5b6861c73ff564c72b395c5ab860c95972537e660cdb20079b8494651d7c4"
+  },
+  "assertions": {
+    "1. window.__omnimuxWorkbench.setFocus present after reload": true,
+    "2. Click 视频剪辑 does not set data-dsh-product-stage": true,
+    "3. Focus radios 对话/分栏/工作台 render in OpenReel hostbar": true,
+    "4. gui writes panel width viewport-left-rail (1672/1728, rail 56)": true,
+    "5. conversation stays mounted in gui": true,
+    "6. chat sets panelOpen false and shows official composer": true,
+    "7. conversation stays mounted in chat": true,
+    "8. setFocus(split) restores width 1028 and panelOpen true": true,
+    "9. Re-click 视频剪辑 from chat restores lastOpenMode": true,
+    "10. No product-stage claim across gui/chat/split": true
+  },
+  "details": {
+    "gui": { "focus": "gui", "panelOpen": true, "width": 1672, "rootMarginRight": "1672px" },
+    "chat": { "focus": "chat", "panelOpen": false, "composerMounted": true },
+    "split": { "focus": "split", "panelOpen": true, "width": 1028, "welcome": true },
+    "screenshots": [
+      "docs/evidence/2026-08-31-workbench-split-focus-gui-44120.png",
+      "docs/evidence/2026-08-31-workbench-split-focus-chat-44120.png",
+      "docs/evidence/2026-08-31-workbench-split-focus-split-44120.png"
+    ]
+  },
+  "verdict": "PASS"
+}

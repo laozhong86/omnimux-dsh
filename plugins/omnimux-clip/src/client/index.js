@@ -27,6 +27,9 @@ const zh = {
   'tab.saveToNode': '保存草稿至节点',
   'tab.savedToNode': '已保存至节点',
   'tab.canvasMode': '画布联动模式',
+  'focus.chat': '对话',
+  'focus.split': '分栏',
+  'focus.gui': '工作台',
 }
 
 const en = {
@@ -46,6 +49,9 @@ const en = {
   'tab.saveToNode': 'Save draft to node',
   'tab.savedToNode': 'Saved to node',
   'tab.canvasMode': 'Canvas Link Mode',
+  'focus.chat': 'Chat',
+  'focus.split': 'Split',
+  'focus.gui': 'Studio',
 }
 
 function renderClipIcon(size = 16) {
@@ -78,9 +84,9 @@ function renderClipIcon(size = 16) {
  * OmniMux Clip client entry.
  * Mounts:
  * 1. Locale dictionaries (NS: omnimux.clip)
- * 2. Left sidebar extra entry (rank 8.2 under 新会话)
- * 3. First-level Stage on `shell.overlay` (ClipStage)
- * 4. Better Sidebar Tab (`omnimux-clip:studio`)
+ * 2. Left sidebar extra entry (rank 8.2 under 新会话) → workbench Tab
+ * 3. Overlay `ClipStage` kept only for the canvas-node portal
+ * 4. Better Sidebar Tab (`omnimux-clip:studio`) — P1 main seat
  * 5. CanvasBridge event listener for omnimux-workflow integration
  *
  * @param {{
@@ -108,10 +114,12 @@ export function apply(ctx) {
     ctx.effect(() => () => stage.dispose?.(), 'omnimux-clip: stage store')
   }
 
+  // Sidebar row opens the better-sidebar tab via window.__omnimuxWorkbench.
+  // Pass no product-stage store: claiming omnimux-clip hides the panel host.
   if (typeof ctx.effect === 'function') {
-    ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), 'omnimux-clip: sidebar entry')
+    ctx.effect(() => mountSidebarEntry(null, t, ctx.locale), 'omnimux-clip: sidebar entry')
   } else {
-    mountSidebarEntry(stage, t, ctx.locale)
+    mountSidebarEntry(null, t, ctx.locale)
   }
 
   // Mount Canvas Bridge to connect canvas workflow with stage
@@ -150,14 +158,24 @@ export function apply(ctx) {
     })
   }
 
+  const bindWorkbench = (patch) => {
+    try {
+      window.__omnimuxWorkbench?.bind?.(patch)
+    } catch { /* hub global not installed */ }
+  }
+
   if (typeof ctx.inject === 'function') {
     ctx.inject(['betterSidebar'], (inner) => {
       const sidebar = inner.betterSidebar ?? inner.get?.('betterSidebar')
+      bindWorkbench({ betterSidebar: sidebar })
       if (typeof ctx.effect === 'function') {
         ctx.effect(() => registerStudio(sidebar), 'omnimux-clip: studio tab')
       } else {
         registerStudio(sidebar)
       }
+    })
+    ctx.inject(['layout', 'sessions'], (inner) => {
+      bindWorkbench({ layout: inner.layout, sessions: inner.sessions })
     })
   }
 }

@@ -60,7 +60,7 @@ test('stage-store: openFromCanvas does not claim stage, set(false) does not rele
   store.dispose()
 })
 
-test('stage-store: standalone mode properly claims and releases product stage', () => {
+test('stage-store: set(true) still claims overlay (canvas portal / leftover only; sidebar must not call this)', () => {
   let claimed = null
   let released = null
   const mockGetStage = () => ({

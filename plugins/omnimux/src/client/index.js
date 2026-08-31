@@ -17,8 +17,9 @@ export const inject = ['slots', 'locale']
 
 /**
  * Client seam for vertical plugins: single source of truth for the
- * first-level product stage. `installStageGlobal()` installs
- * `window.__omnimuxStage` at module top-level; vertical plugins read it in
+ * first-level product stage and the workbench split. `installStageGlobal()`
+ * installs `window.__omnimuxStage`; `installWorkbenchGlobal()` installs
+ * `window.__omnimuxWorkbench`. Vertical plugins read those globals in
  * their own `apply()` instead of shipping a copy or depending on
  * cross-plugin client service ordering. Only the hub installs the chrome
  * style and the document click listener, so concurrent verticals cannot

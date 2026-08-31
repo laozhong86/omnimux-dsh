@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L1"
 date: "2026-08-26"
-updated: "2026-08-30"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -35,6 +35,7 @@ subsystem: "global"
 | `living` | [plugin-qa.md](plugin-qa.md) | plugin-qa — OmniMux 产品插件浏览器验收契约 | `omnimux` | 2026-08-26 | \| 项 \| 要求 \| |
 | `archived` | [series.md](series.md) | series/ contract | `omnimux-workflow` | 2026-08-26 | Product store. Session logs are not this store. |
 | `living` | [settings-ui.md](settings-ui.md) | Settings UI placement | `omnimux-accounts` | 2026-08-26 | Normative seat for OmniMux plugin UI in the official Web Settings panel. Live slot names come from t |
+| `living` | [workbench-split.md](workbench-split.md) | Workbench split — 对话可收、插件 GUI 常驻 | `omnimux` | 2026-08-31 | 工作台挂 `dsh-better-sidebar`；库页留 overlay；焦点 = 右栏几何（split/gui/chat）；禁止 claim product-stage。 |
 | `living` | [sidebar-extra-entries.md](sidebar-extra-entries.md) | Sidebar extra entries (under 新会话) | `omnimux-assets` | 2026-08-26 | Normative look for any extra row injected under the official **新会话** button. Official workspace sess |
 | `living` | [stage-guards.md](stage-guards.md) | stage-guards — 一级 Stage / 本地写闸 / 空态静态契约 | `omnimux-accounts` | 2026-08-26 | \| 规则 \| 判定 \| |
 | `living` | [ui-copywriting-and-naming-standards.md](ui-copywriting-and-naming-standards.md) | OmniMux 全局 UI 命名与微文案规范 (UI Copywriting & Naming Standards) | `omnimux` | 2026-08-26 | * **规则**：维度标识、筛选字段必须使用 **2~4 字纯实体名词**。 |

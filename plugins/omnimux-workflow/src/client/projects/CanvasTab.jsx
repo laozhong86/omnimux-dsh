@@ -7,6 +7,7 @@ import { sessionToWorkspaceId } from '../../shared/sessionWorkspaceId.ts'
 import { CanvasBridge } from '../CanvasBridge.jsx'
 import { injectWorkflowStyles } from '../styles.js'
 import { applyProjectCanvasRatio, getBetterSidebar } from './projectCanvas.js'
+import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
 
 /**
  * @param {{
@@ -25,6 +26,13 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
     () => (locale ? locale.getLocale().active : 'zh'),
   )
   const sessionId = scope?.sessionId
+
+  useEffect(() => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (!api || typeof api.attachStore !== 'function' || !store) return undefined
+    api.attachStore(store)
+    return () => { api.detachStore?.(store) }
+  }, [store])
 
   useEffect(() => {
     if (!visible || !sessionId) return undefined
@@ -89,13 +97,19 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
       className="omnimux-workflow-canvas-tab"
       data-visible={visible ? 'true' : 'false'}
     >
-      {targetWorkspaceId ? (
-        <CanvasBridge onClose={onClose} t={t} locale={activeLocale} workspaceId={targetWorkspaceId} />
-      ) : (
-        <div className="omnimux-workflow-canvas-status">
-          {t('canvas.loading')}
-        </div>
-      )}
+      <div className="omnimux-workflow-canvas-hostbar">
+        <div className="omnimux-workflow-canvas-hostbar-title">{t('details.canvasTab')}</div>
+        <WorkbenchFocusBar t={t} />
+      </div>
+      <div className="omnimux-workflow-canvas-body">
+        {targetWorkspaceId ? (
+          <CanvasBridge onClose={onClose} t={t} locale={activeLocale} workspaceId={targetWorkspaceId} />
+        ) : (
+          <div className="omnimux-workflow-canvas-status">
+            {t('canvas.loading')}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { useEngineStore } from './openreel/web/stores/engine-store.ts'
 import { applyOpenReelTheme } from './openreel/web/stores/theme-store.ts'
 import { resetOpenReelRouter } from './openreel/web/hooks/use-router.ts'
 import { putClipProject } from './host/projectApi.js'
+import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
 import './openreel/web/index.css'
 import './theme/dsw-map.css'
 
@@ -164,9 +165,9 @@ function StudioCreateForm({ t, onCreated }) {
 /**
  * OmniMux Clip Studio Tab component mounted in dsh-better-sidebar.
  * Wraps OpenReel with an OmniMux top action row (project name + save status + save button).
- * @param {{ t?: (key: string) => string }} props
+ * @param {{ t?: (key: string) => string, store?: { reduce?: Function, getSnapshot?: Function } }} props
  */
-export function OpenReelStudioTab({ t: tProp }) {
+export function OpenReelStudioTab({ t: tProp, store }) {
   const t = (key) => {
     if (typeof tProp === 'function') {
       try {
@@ -188,6 +189,9 @@ export function OpenReelStudioTab({ t: tProp }) {
       'tab.saved': '已保存',
       'tab.saving': '保存中…',
       'tab.saveFailed': '保存失败',
+      'focus.chat': '对话',
+      'focus.split': '分栏',
+      'focus.gui': '工作台',
     }
     return fallback[key] || key
   }
@@ -207,6 +211,13 @@ export function OpenReelStudioTab({ t: tProp }) {
       if (saveTimer.current) clearTimeout(saveTimer.current)
     }
   }, [])
+
+  useEffect(() => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (!api || typeof api.attachStore !== 'function' || !store) return undefined
+    api.attachStore(store)
+    return () => { api.detachStore?.(store) }
+  }, [store])
 
   useEffect(() => {
     if (!hasOpenProject || !project?.id) return
@@ -230,6 +241,7 @@ export function OpenReelStudioTab({ t: tProp }) {
         <div className="openreel-studio-hostbar-title">
           {project?.name || t('tab.title')}
         </div>
+        <WorkbenchFocusBar t={t} />
         <div className="openreel-studio-hostbar-status">{saveStatus}</div>
         <button
           type="button"

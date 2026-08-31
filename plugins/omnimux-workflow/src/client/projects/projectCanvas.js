@@ -319,6 +319,9 @@ export function shouldApplyProjectCanvasRatio(sessionId, state, prefs, env = {},
  * @returns {number | null | undefined}
  */
 export function applyProjectCanvasRatio(service, sessionId, store = null, env = {}, force = false) {
+  const workbench = typeof globalThis.window !== 'undefined' ? globalThis.window.__omnimuxWorkbench : undefined
+  const focus = typeof workbench?.getFocus === 'function' ? workbench.getFocus() : 'split'
+  if (focus === 'gui' || focus === 'chat') return null
   const snapshot = (typeof store?.getSnapshot === 'function' ? store.getSnapshot() : null)
     || service?.getSnapshot?.()
   const state = snapshot?.state

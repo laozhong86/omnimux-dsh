@@ -5,6 +5,7 @@ type: "log"
 status: "living"
 authority: "L3"
 date: "2026-08-15"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -26,6 +27,7 @@ subsystem: "global"
 | 2026-08-17-apps-catalog-json | 2026-08-17 | decided | 官方货架用 bundled + 远程 JSON，不做应用表 |
 | 2026-08-16-text-complete | 2026-08-16 | decided | 一次性专家补全；白名单不是第二套 chat |
 | 2026-08-30-physical-materialization | 2026-08-30 | decided | 画布/主体库导入全部物理实体化 |
+| 2026-08-31-workbench-split | 2026-08-31 | decided | 工作台挂 better-sidebar；对话不卸载；库页 overlay |
 
 ## 2026-08-15-briefing-log
 
@@ -135,3 +137,13 @@ subsystem: "global"
 - **not:** 本轮不改产品库、不改 OpenReel、不做 hardlink 去重、不隐式另存无项目画布。
 - **authority:** `docs/contracts/project-assets-contract.md`, `docs/decisions/2026-08-30-physical-materialization.md`, `docs/specs/2026-08-30-omnimux-physical-materialization.md`
 - **updated:** 2026-08-30
+
+## 2026-08-31-workbench-split
+
+- **status:** decided
+- **topic:** 工作台挂 better-sidebar；对话不卸载；库页 overlay
+- **decision:** 不发明三栏壳。剪辑 / 画布坐 `dsh-better-sidebar`；库页继续 overlay。`setFocus(split|gui|chat)` 只写右栏几何。无 better-sidebar 不回退 overlay。无当前会话不 `sessions.create`。
+- **why:** 官方 `conversation` 不可卸载，`details` 只有 520px。用户要人机同面。
+- **not:** 不把库页搬进右栏；不 shadow conversation；不改生产 profile。
+- **authority:** `docs/contracts/workbench-split.md`, `docs/decisions/2026-08-31-workbench-split.md`
+- **updated:** 2026-08-31

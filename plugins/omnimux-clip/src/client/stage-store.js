@@ -1,6 +1,7 @@
 /**
- * Shared open state and session context for the sidebar clip entry,
- * the center stage, and canvas workflow integration.
+ * Overlay / canvas-portal store. Sidebar clicks MUST NOT call `open()`.
+ * They go through `window.__omnimuxWorkbench` (see workbench-store.js).
+ * `set(true)` still claims `omnimux-clip` for leftover overlay / tests.
  *
  * @param {() => { claim: (id: string) => void, release: (id: string) => void, PRODUCT_STAGE_EVENT: string, readBox: () => { top: number, left: number, width: number, height: number } }} getStage
  */
@@ -19,12 +20,9 @@ export function getActiveClipSession() {
 }
 
 export function createStageStore(getStage) {
+  // Overlay is canvas-portal only. Do not restore a leftover product-stage
+  // claim from localStorage — that chrome hides `[data-dsh-panel-host]`.
   let open = false
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      open = window.localStorage.getItem('omnimux_active_product_stage') === STAGE_ID
-    }
-  } catch {}
 
   /** @type {null | { source: 'canvas' | 'sidebar' | 'agent', nodeId?: string, nodeTitle?: string, projectId?: string, draftSchema?: unknown, upstreamInputs?: unknown }} */
   let activeSession = null
@@ -33,19 +31,6 @@ export function createStageStore(getStage) {
 
   function emit() {
     for (const listener of listeners) listener()
-  }
-
-  if (open) {
-    const restore = () => {
-      try {
-        const stage = getStage()
-        if (stage && typeof stage.claim === 'function') {
-          stage.claim(STAGE_ID)
-        }
-      } catch {}
-    }
-    if (typeof queueMicrotask === 'function') queueMicrotask(restore)
-    else setTimeout(restore, 0)
   }
 
   const handleStageEvent = (event) => {
@@ -161,7 +146,7 @@ export function createStageStore(getStage) {
       emit()
     },
     /**
-     * Standard StageStore open method for sidebar entry activation.
+     * Overlay leftover / canvas-portal. Sidebar MUST NOT call this.
      */
     open() {
       this.set(true)
