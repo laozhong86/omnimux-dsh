@@ -1,67 +1,182 @@
 /**
- * FloatingTopPill — 悬浮在节点上方的通用操作胶囊栏。
+ * FloatingTopPill — 节点上方唯一胶囊操作栏。
  *
- * 核心特性：
- * 1. 支持声明式 `actions` 数组（`{ key, label, icon, onClick, variant, disabled, title }`）；
- * 2. 支持 `children` 自定义插槽内容（完全兼容既有自定义胶囊结构）；
- * 3. 内置 `useViewport` 与 `inverseScaleForZoom`，在画布缩放时保持恒定视觉像素尺寸；
- * 4. 居中悬浮在节点上方，阻断画布原生事件捕获（`nodrag nowheel`）。
+ * 声明式 actions：主区在左、次区在右，中间一根竖分割线；
+ * 超 maxWidth 时次区折进「更多」。空 actions / visible=false 不渲染。
  */
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Ellipsis } from 'lucide-react';
 import { useViewport } from '@xyflow/react';
+import { useT } from '../../i18n';
 import { inverseScaleForZoom } from '../utils/nodeVisualMath';
+import {
+  DEFAULT_PILL_MAX_WIDTH,
+  partitionToolbarActions,
+  type ToolbarSection,
+} from '../utils/nodeToolbarLogic';
+import { stopToolbarNativeEvent } from './toolbarPointerGuard';
 
 export interface FloatingPillAction {
   key: string;
-  label?: React.ReactNode;
+  label: React.ReactNode;
   icon?: React.ComponentType<{ size?: number; className?: string }> | React.ReactNode;
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  variant?: 'default' | 'primary';
+  section?: ToolbarSection;
+  variant?: 'default' | 'primary' | 'success';
   disabled?: boolean;
   title?: string;
   className?: string;
 }
 
 export interface FloatingTopPillProps {
-  /** 声明式操作项列表 */
   actions?: FloatingPillAction[];
-  /** 自定义子组件内容 */
+  visible?: boolean;
+  maxWidth?: number;
   children?: React.ReactNode;
-  /** 外部传入的反向缩放比例（若未传入则自动通过 useViewport 获取） */
   inverseScale?: number;
-  /** 距离节点顶部的间距基准（默认 30px） */
   topOffset?: number;
-  /** 附加类名 */
   className?: string;
-  /** 自定义样式 */
   style?: React.CSSProperties;
 }
 
+function renderIcon(icon: FloatingPillAction['icon']) {
+  if (!icon) return null;
+  if (React.isValidElement(icon)) return icon;
+  const IconComp = icon as React.ComponentType<{ size?: number; className?: string }>;
+  return <IconComp size={13} className="wf-floating-top-pill__icon" />;
+}
+
+function actionClassName(action: Pick<FloatingPillAction, 'variant' | 'className'>): string {
+  return [
+    'wf-floating-top-pill__btn',
+    action.variant === 'primary' ? 'wf-floating-top-pill__btn--primary' : '',
+    action.variant === 'success' ? 'wf-floating-top-pill__btn--success' : '',
+    action.className || '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+const PillButton: React.FC<{
+  action: FloatingPillAction;
+  measureKey?: string;
+}> = ({ action, measureKey }) => (
+  <button
+    type="button"
+    className={actionClassName(action)}
+    onClick={action.onClick}
+    disabled={action.disabled}
+    title={action.title}
+    data-pill-measure-key={measureKey ?? action.key}
+  >
+    {renderIcon(action.icon)}
+    {action.label ? <span>{action.label}</span> : null}
+  </button>
+);
+
 export const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
   actions,
+  visible = true,
+  maxWidth = DEFAULT_PILL_MAX_WIDTH,
   children,
   inverseScale: externalInverseScale,
   topOffset = 30,
   className = '',
   style,
 }) => {
+  const t = useT();
   const { zoom } = useViewport();
   const calculatedInverseScale = useMemo(() => inverseScaleForZoom(zoom), [zoom]);
   const inverseScale = externalInverseScale ?? calculatedInverseScale;
 
-  const renderIcon = (icon: FloatingPillAction['icon']) => {
-    if (!icon) return null;
-    if (React.isValidElement(icon)) {
-      return icon;
+  const measureRef = useRef<HTMLDivElement | null>(null);
+  const moreBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [overflowKeys, setOverflowKeys] = useState<string[]>([]);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  const list = actions ?? [];
+
+  useLayoutEffect(() => {
+    if (children || list.length === 0) {
+      setOverflowKeys([]);
+      return;
     }
-    const IconComp = icon as React.ComponentType<{ size?: number; className?: string }>;
-    return <IconComp size={13} className="wf-floating-top-pill__icon" />;
+
+    const measure = () => {
+      const root = measureRef.current;
+      if (!root) return;
+      const specs = list.map((action) => {
+        const el = root.querySelector(`[data-pill-measure-key="${action.key}"]`) as HTMLElement | null;
+        return {
+          id: action.key,
+          section: (action.section ?? 'secondary') as ToolbarSection,
+          width: el?.offsetWidth ?? 0,
+        };
+      });
+      const moreEl = root.querySelector('[data-pill-measure-key="__more__"]') as HTMLElement | null;
+      const dividerEl = root.querySelector('[data-pill-measure-divider]') as HTMLElement | null;
+      const result = partitionToolbarActions(specs, {
+        maxWidth,
+        moreWidth: moreEl?.offsetWidth ?? 0,
+        dividerWidth: dividerEl?.offsetWidth ?? 0,
+        gap: 0,
+      });
+      const nextKeys = result.overflow.map((item) => item.id);
+      setOverflowKeys((prev) => (prev.join('|') === nextKeys.join('|') ? prev : nextKeys));
+    };
+
+    measure();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    if (measureRef.current && observer) observer.observe(measureRef.current);
+    return () => observer?.disconnect();
+  }, [children, list, maxWidth]);
+
+  useLayoutEffect(() => {
+    if (!moreOpen) {
+      setMenuPos(null);
+      return;
+    }
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (moreBtnRef.current?.contains(target)) return;
+      const menu = document.querySelector('[data-pill-more-menu="true"]');
+      if (menu && menu.contains(target)) return;
+      setMoreOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMoreOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown, true);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown, true);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [moreOpen]);
+
+  if (!visible) return null;
+  if (!children && list.length === 0) return null;
+
+  const overflowSet = new Set(overflowKeys);
+  const visibleActions = list.filter((action) => !overflowSet.has(action.key));
+  const overflowActions = list.filter((action) => overflowSet.has(action.key));
+  const primaryActions = visibleActions.filter((action) => action.section === 'primary');
+  const secondaryActions = visibleActions.filter((action) => action.section !== 'primary');
+  const showDivider = primaryActions.length > 0 && (secondaryActions.length > 0 || overflowActions.length > 0);
+
+  const openMore = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    const rect = event.currentTarget.getBoundingClientRect();
+    setMenuPos({ top: rect.bottom + 6, left: rect.left });
+    setMoreOpen((open) => !open);
   };
 
   return (
     <div
-      className={`wf-floating-top-pill nodrag nowheel ${className}`.trim()}
+      className={`wf-floating-top-pill nodrag nowheel nopan ${className}`.trim()}
       style={{
         top: -(topOffset * inverseScale),
         transform: `translate(-50%, -100%) scale(${inverseScale})`,
@@ -69,40 +184,96 @@ export const FloatingTopPill: React.FC<FloatingTopPillProps> = ({
         ...style,
       }}
       onClick={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={stopToolbarNativeEvent}
+      onMouseDown={stopToolbarNativeEvent}
     >
       {children ? (
         children
-      ) : actions && actions.length > 0 ? (
-        <div className="wf-floating-top-pill__group">
-          {actions.map((action, index) => {
-            const isPrimary = action.variant === 'primary';
-            const btnClass = [
-              'wf-floating-top-pill__btn',
-              isPrimary ? 'wf-floating-top-pill__btn--primary' : '',
-              action.className || '',
-            ]
-              .filter(Boolean)
-              .join(' ');
+      ) : (
+        <>
+          <div
+            ref={measureRef}
+            className="wf-floating-top-pill__measure"
+            aria-hidden="true"
+          >
+            <div className="wf-floating-top-pill__group">
+              {list.map((action) => (
+                <PillButton key={action.key} action={action} />
+              ))}
+              <span className="wf-floating-top-pill__divider" data-pill-measure-divider="" />
+              <button type="button" className="wf-floating-top-pill__btn" data-pill-measure-key="__more__">
+                {renderIcon(Ellipsis)}
+                <span>{t('pill.more')}</span>
+              </button>
+            </div>
+          </div>
 
-            return (
-              <React.Fragment key={action.key}>
-                {index > 0 && <span className="wf-floating-top-pill__divider" />}
+          <div className="wf-floating-top-pill__group" style={{ maxWidth }}>
+            {primaryActions.length > 0 && (
+              <div className="wf-floating-top-pill__section">
+                {primaryActions.map((action) => (
+                  <PillButton key={action.key} action={action} />
+                ))}
+              </div>
+            )}
+            {showDivider && <span className="wf-floating-top-pill__divider" />}
+            {(secondaryActions.length > 0 || overflowActions.length > 0) && (
+              <div className="wf-floating-top-pill__section">
+                {secondaryActions.map((action) => (
+                  <PillButton key={action.key} action={action} />
+                ))}
+                {overflowActions.length > 0 && (
+                  <button
+                    ref={moreBtnRef}
+                    type="button"
+                    className="wf-floating-top-pill__btn"
+                    title={t('pill.more')}
+                    aria-haspopup="menu"
+                    aria-expanded={moreOpen}
+                    onClick={openMore}
+                  >
+                    {renderIcon(Ellipsis)}
+                    <span>{t('pill.more')}</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {moreOpen && menuPos && overflowActions.length > 0
+        ? createPortal(
+            <div
+              data-pill-more-menu="true"
+              className="wf-floating-top-pill__more-menu nodrag nopan"
+              role="menu"
+              style={{ top: menuPos.top, left: menuPos.left }}
+              onMouseDown={stopToolbarNativeEvent}
+              onPointerDown={stopToolbarNativeEvent}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {overflowActions.map((action) => (
                 <button
+                  key={action.key}
                   type="button"
-                  className={btnClass}
-                  onClick={action.onClick}
+                  role="menuitem"
+                  className="wf-floating-top-pill__more-item"
                   disabled={action.disabled}
                   title={action.title}
+                  onClick={(event) => {
+                    action.onClick?.(event);
+                    setMoreOpen(false);
+                  }}
                 >
                   {renderIcon(action.icon)}
                   {action.label ? <span>{action.label}</span> : null}
                 </button>
-              </React.Fragment>
-            );
-          })}
-        </div>
-      ) : null}
+              ))}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 };

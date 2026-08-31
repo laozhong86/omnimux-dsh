@@ -41,6 +41,13 @@ const zh = {
   'pill.copy': '复制',
   'pill.structureSplit': '结构化拆分',
   'pill.copied': '已复制',
+  'pill.addToConversation': '添加到会话',
+  'pill.edit': '编辑',
+  'pill.split': '拆分',
+  'pill.replace': '替换',
+  'pill.fullscreen': '全屏',
+  'pill.download': '下载',
+  'pill.more': '更多',
   // 配置面板（W2，panel.*）
   'panel.generate': '生成',
   'panel.promptPlaceholder': '输入提示词…',
