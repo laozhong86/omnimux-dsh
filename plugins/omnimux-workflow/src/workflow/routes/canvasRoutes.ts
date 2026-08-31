@@ -46,7 +46,7 @@ import { createReadStream, statSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { extname } from 'node:path';
 import { parseByteRange } from '../byteRange';
-import { mimeFromFilename } from '../../shared/localMedia';
+import { detectMimeFromFile } from '../../shared/localMedia';
 import {
   LEGACY_WORKFLOW_ROUTE_PREFIX,
   WORKFLOW_ROUTE_PREFIX,
@@ -148,7 +148,10 @@ function serveFile(
   fallbackMime: string,
   rangeHeader?: string,
 ): void {
-  const mime = mimeFromFilename(filePath) ?? MIME_BY_EXT[extname(filePath)] ?? fallbackMime;
+  const mime = detectMimeFromFile(
+    filePath,
+    MIME_BY_EXT[extname(filePath)] ?? fallbackMime,
+  );
   const stat = statSync(filePath);
   const range = parseByteRange(rangeHeader, stat.size);
   if (range && 'invalid' in range) {
