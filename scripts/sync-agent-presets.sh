@@ -183,11 +183,12 @@ for home_dir in "${TARGET_HOMES[@]}"; do
   done
 done
 
-# 2) OmniMux App unpacked preset folders + asar headers — never DSH Desktop.app
+# 2) OmniMux App unpacked preset folders + asar headers + Plist integrity sync — never DSH Desktop.app
 patch_asar_preset_header() {
   local asar="$1"
   local unpacked="$2"
   [ -f "$asar" ] && [ -d "$unpacked" ] || return 0
+  echo "==> 同步 Asar Header 与 Info.plist 完整性哈希: $asar"
   ELECTRON_NO_ASAR=1 node "$ROOT/scripts/patch-asar-agent-presets.mjs" "$asar" "$unpacked" || echo "· asar header patch failed for $asar"
 }
 

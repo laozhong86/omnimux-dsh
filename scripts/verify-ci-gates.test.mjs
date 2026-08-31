@@ -9,6 +9,9 @@ import { walkAgentNoteTree } from './lib/agent-note-tree.mjs'
 const here = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(here, '..')
 
+const nestedTestEnv = { ...process.env, ELECTRON_NO_ASAR: '1' }
+delete nestedTestEnv.NODE_TEST_CONTEXT
+
 test('gitBlobHash computes accurate SHA-1 blob hashes', () => {
   const content = Buffer.from('# Test Document\n')
   const hash = gitBlobHash(content)
@@ -73,6 +76,41 @@ test('verify-stage-contracts passes on all first-level Stage and StageStore file
   strictEqual(res.status, 0, `stage contract verification failed: ${res.stderr}`)
 })
 
+test('verify-slot-contracts passes static scan on all plugin client files', () => {
+  const res = spawnSync('node', [resolve(here, 'verify-slot-contracts.mjs')], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  })
+  strictEqual(res.status, 0, `slot contract verification failed: ${res.stderr}\n${res.stdout}`)
+})
+
+test('slot-contracts unit tests pass', () => {
+  const res = spawnSync('node', ['--test', resolve(here, 'verify-slot-contracts.test.mjs')], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: nestedTestEnv,
+  })
+  strictEqual(res.status, 0, `slot-contracts unit tests failed: ${res.stderr}\n${res.stdout}`)
+})
+
+test('asar integrity engine and presets patcher unit tests pass', () => {
+  const res = spawnSync('node', ['--test', resolve(here, 'patch-asar-agent-presets.test.mjs')], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: nestedTestEnv,
+  })
+  strictEqual(res.status, 0, `asar integrity tests failed: ${res.stderr}\n${res.stdout}`)
+})
+
+test('smoke probe utils and cold-start verifier unit tests pass', () => {
+  const res = spawnSync('node', ['--test', resolve(here, 'verify-dev-smoke.test.mjs')], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: nestedTestEnv,
+  })
+  strictEqual(res.status, 0, `smoke probe tests failed: ${res.stderr}\n${res.stdout}`)
+})
+
 test('verify-plugin-agent-tools passes 4-dimension audit on all 12 plugins', () => {
   const res = spawnSync('node', [resolve(here, 'verify-plugin-agent-tools.mjs')], {
     cwd: repoRoot,
@@ -80,9 +118,6 @@ test('verify-plugin-agent-tools passes 4-dimension audit on all 12 plugins', () 
   })
   strictEqual(res.status, 0, `agent tools verification failed: ${res.stderr}\n${res.stdout}`)
 })
-
-const nestedTestEnv = { ...process.env }
-delete nestedTestEnv.NODE_TEST_CONTEXT
 
 test('guard-worktree PreToolUse contract and unit tests pass', () => {
   const res = spawnSync('node', ['--test', resolve(here, 'guard-worktree.test.mjs')], {
