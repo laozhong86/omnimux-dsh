@@ -6,6 +6,16 @@ import {
   generateFingerprint,
   MAX_ATTACHMENTS_PER_SESSION,
 } from './store.ts';
+import type { AttachmentPayload } from './types.ts';
+
+function makePayload(overrides: Partial<AttachmentPayload> & { entityId: string; title: string }): AttachmentPayload {
+  return {
+    sourcePlugin: 'omnimux-workflow',
+    kind: 'document',
+    relativePath: `docs/${overrides.entityId}.md`,
+    ...overrides,
+  };
+}
 
 test('inferExtension: 正确提取全大写格式扩展名', () => {
   assert.equal(inferExtension('未命名表格.htable', '.hilo/tables/node-01.htable'), 'HTABLE');
@@ -118,4 +128,189 @@ test('AttachmentStore: 单会话上限约束 (MAX_ATTACHMENTS_PER_SESSION = 8)',
   assert.equal(resOverflow.ok, false);
   assert.equal(resOverflow.reason, 'quota-exceeded');
   assert.equal(store.getSnapshot(sessionId).length, 8);
+});
+
+test('AttachmentStore: Stage 无 sessionId 落入 default，claimPendingAttachments 认领到目标会话并通知', () => {
+  const store = createAttachmentStore();
+  const targetSession = 'session-xxx';
+
+  let defaultNotifyCount = 0;
+  let targetNotifyCount = 0;
+  const unsubDefault = store.subscribe('default', () => {
+    defaultNotifyCount++;
+  });
+  const unsubTarget = store.subscribe(targetSession, () => {
+    targetNotifyCount++;
+  });
+
+  // 模拟跨插件 Stage 未携带 sessionId：空字符串 → 落入 'default'
+  const pendingRes = store.addAttachment('', {
+    sourcePlugin: 'omnimux-inspiration',
+    kind: 'inspiration',
+    entityId: 'insp-01',
+    title: '灵感封面.png',
+    relativePath: 'inspiration/insp-01.png',
+    previewUrl: 'blob:http://localhost/cover.png',
+  });
+  assert.equal(pendingRes.ok, true);
+  assert.equal(pendingRes.attachment?.sessionId, 'default');
+  assert.equal(store.getSnapshot('default').length, 1);
+  assert.equal(store.getSnapshot(targetSession).length, 0);
+  assert.equal(defaultNotifyCount, 1);
+  assert.equal(targetNotifyCount, 0);
+
+  const pendingId = store.getSnapshot('default')[0].id;
+
+  // 目标会话 Tray 挂载后主动认领
+  const migrated = store.claimPendingAttachments(targetSession);
+  assert.equal(migrated, 1);
+  assert.equal(store.getSnapshot('default').length, 0, "'default' 分组应被清空");
+  const claimed = store.getSnapshot(targetSession);
+  assert.equal(claimed.length, 1);
+  assert.equal(claimed[0].id, pendingId);
+  assert.equal(claimed[0].sessionId, targetSession);
+  assert.equal(claimed[0].title, '灵感封面.png');
+  assert.equal(targetNotifyCount, 1, '目标会话应收到响应式通知');
+  assert.equal(defaultNotifyCount, 2, "'default' 清空后应收到通知");
+
+  // 空分组再次认领为 no-op
+  assert.equal(store.claimPendingAttachments(targetSession), 0);
+  assert.equal(store.claimPendingAttachments('default'), 0);
+  assert.equal(store.claimPendingAttachments(''), 0);
+
+  unsubDefault();
+  unsubTarget();
+});
+
+test('AttachmentStore: setActiveSessionId 自动触发 claimPendingAttachments', () => {
+  const store = createAttachmentStore();
+  const targetSession = 'session-auto-claim';
+
+  let targetNotifyCount = 0;
+  const unsubTarget = store.subscribe(targetSession, () => {
+    targetNotifyCount++;
+  });
+
+  store.addAttachment('', makePayload({
+    entityId: 'auto-1',
+    title: '自动认领.md',
+    kind: 'document',
+  }));
+  store.addAttachment('', {
+    sourcePlugin: 'omnimux-workflow',
+    kind: 'video',
+    entityId: 'auto-vid',
+    title: '镜头.mp4',
+    relativePath: 'assets/auto.mp4',
+  });
+
+  assert.equal(store.getActiveSessionId(), 'default');
+  assert.equal(store.getSnapshot('default').length, 2);
+  assert.equal(store.getSnapshot(targetSession).length, 0);
+  assert.equal(targetNotifyCount, 0);
+
+  store.setActiveSessionId(targetSession);
+
+  assert.equal(store.getActiveSessionId(), targetSession);
+  assert.equal(store.getSnapshot('default').length, 0);
+  const claimed = store.getSnapshot(targetSession);
+  assert.equal(claimed.length, 2);
+  assert.ok(claimed.every((item) => item.sessionId === targetSession));
+  assert.equal(targetNotifyCount, 1);
+
+  // 活跃会话已是真实会话时，无 sessionId 的新增应直接落入该会话
+  const directRes = store.addAttachment('', makePayload({
+    entityId: 'auto-2',
+    title: '直达活跃会话.md',
+  }));
+  assert.equal(directRes.ok, true);
+  assert.equal(directRes.attachment?.sessionId, targetSession);
+  assert.equal(store.getSnapshot(targetSession).length, 3);
+  assert.equal(store.getSnapshot('default').length, 0);
+
+  unsubTarget();
+});
+
+test('AttachmentStore: claimPendingAttachments 指纹去重，不重复迁入已有附件', () => {
+  const store = createAttachmentStore();
+  const targetSession = 'session-dedup';
+
+  const sharedPayload: AttachmentPayload = {
+    sourcePlugin: 'omnimux-workflow',
+    kind: 'table',
+    entityId: 'node-tbl-dup',
+    title: '未命名表格.htable',
+    relativePath: '.hilo/tables/node-tbl-dup.htable',
+  };
+
+  const existing = store.addAttachment(targetSession, sharedPayload);
+  assert.equal(existing.ok, true);
+
+  // default 中放入同一指纹附件 + 一份新附件
+  store.addAttachment('default', sharedPayload);
+  store.addAttachment('default', makePayload({
+    entityId: 'fresh-doc',
+    title: '新文档.md',
+  }));
+
+  assert.equal(store.getSnapshot('default').length, 2);
+  assert.equal(store.getSnapshot(targetSession).length, 1);
+
+  const fingerprint = generateFingerprint(sharedPayload);
+  const migrated = store.claimPendingAttachments(targetSession);
+  assert.equal(migrated, 1, '重复指纹应跳过，仅迁入新附件');
+  assert.equal(store.getSnapshot('default').length, 0);
+
+  const snap = store.getSnapshot(targetSession);
+  assert.equal(snap.length, 2);
+  assert.equal(snap.filter((item) => item.fingerprint === fingerprint).length, 1);
+  assert.equal(snap[0].id, existing.attachment?.id);
+  assert.equal(snap[1].entityId, 'fresh-doc');
+  assert.equal(snap[1].sessionId, targetSession);
+});
+
+test('AttachmentStore: claimPendingAttachments 遵守单会话容量上限', () => {
+  const store = createAttachmentStore();
+  const targetSession = 'session-claim-cap';
+
+  // 目标会话已有 6 项，default 待认领 4 项 → 只能再迁入 2 项
+  for (let i = 0; i < 6; i++) {
+    const res = store.addAttachment(targetSession, makePayload({
+      entityId: `existing-${i}`,
+      title: `已有_${i}.md`,
+    }));
+    assert.equal(res.ok, true);
+  }
+  for (let i = 0; i < 4; i++) {
+    const res = store.addAttachment('default', makePayload({
+      entityId: `pending-${i}`,
+      title: `待认领_${i}.md`,
+    }));
+    assert.equal(res.ok, true);
+  }
+
+  const migrated = store.claimPendingAttachments(targetSession);
+  assert.equal(migrated, 2);
+  assert.equal(store.getSnapshot(targetSession).length, MAX_ATTACHMENTS_PER_SESSION);
+  assert.equal(store.getSnapshot('default').length, 0, '即使超额未迁完，default 仍应被清空');
+
+  const titles = store.getSnapshot(targetSession).map((item) => item.title);
+  assert.ok(titles.includes('待认领_0.md'));
+  assert.ok(titles.includes('待认领_1.md'));
+  assert.ok(!titles.includes('待认领_2.md'));
+  assert.ok(!titles.includes('待认领_3.md'));
+});
+
+test('AttachmentStore: addAttachment 空 sessionId 在无活跃会话时落入 default', () => {
+  const store = createAttachmentStore();
+  assert.equal(store.getActiveSessionId(), 'default');
+
+  const res = store.addAttachment('', makePayload({
+    entityId: 'parked',
+    title: '暂存.md',
+  }));
+  assert.equal(res.ok, true);
+  assert.equal(res.attachment?.sessionId, 'default');
+  assert.equal(store.getSnapshot('default').length, 1);
+  assert.equal(store.getSnapshot('session-nobody').length, 0);
 });
