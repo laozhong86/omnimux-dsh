@@ -1,3 +1,4 @@
+import { assertCapabilityEnabled, isToolEnabled } from '../gate/guard.js'
 import { OmnimuxError } from '../media/errors.js'
 import { connectAccount, disconnectAccount, listAccounts } from './accounts.js'
 import {
@@ -29,7 +30,8 @@ import { fetchSocialData } from './social-data.js'
  *   tools: { register: (tool: object) => unknown },
  * }} ctx
  * @param {{
- *   hub: { official: { mount: boolean } },
+ *   hub: { official: { mount: boolean }, gate?: object },
+ *   gate?: object,
  *   identity: { require: Function },
  *   store: { resolve: () => Promise<string | undefined> },
  *   siteBaseUrl: string,
@@ -41,7 +43,8 @@ import { fetchSocialData } from './social-data.js'
  * }} deps
  */
 export function mountOfficial(ctx, deps) {
-  if (!deps.hub.official.mount) return
+  if (!deps.hub?.official?.mount) return
+  const gate = deps.gate ?? deps.hub?.gate ?? ctx.get?.('gate')
   const env = deps.env ?? process.env
   const client = createOfficialClient({
     fetcher: deps.fetcher,
@@ -65,6 +68,7 @@ export function mountOfficial(ctx, deps) {
    * @param {(args: Record<string, unknown>) => Promise<unknown>} run
    */
   function tool(name, description, fields, run) {
+    if (!isToolEnabled(gate, name)) return
     ctx.tools.register({
       name,
       description,
@@ -72,6 +76,7 @@ export function mountOfficial(ctx, deps) {
       output: deps.jsonOut,
       async execute(args) {
         try {
+          assertCapabilityEnabled(gate, name, 'tool')
           return await run(args)
         } catch (error) {
           if (error instanceof OmnimuxError) throw error

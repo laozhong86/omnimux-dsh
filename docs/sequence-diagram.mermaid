@@ -1,0 +1,19 @@
+sequenceDiagram
+    autonumber
+    participant Caller as Agent / Downstream Seam
+    participant Tool as Tool Execute / Seam API
+    participant Guard as guard.js (assertCapabilityEnabled)
+    participant Core as Execution Core / Upstream HTTP
+
+    Caller->>Tool: execute(args)
+    Tool->>Guard: assertCapabilityEnabled(gate, capabilityName)
+
+    alt 门禁已禁用 (Disabled)
+        Guard-->>Tool: throw OmnimuxError('capability-disabled', message)
+        Tool-->>Caller: 抛出标准化异常 (code: capability-disabled)
+    else 门禁正常开启 (Enabled)
+        Guard-->>Tool: return void
+        Tool->>Core: 正常执行底层网络请求 / AIGC 任务
+        Core-->>Tool: 返回业务数据 { mode, data, ... }
+        Tool-->>Caller: 返回执行结果
+    end

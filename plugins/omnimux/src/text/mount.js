@@ -1,3 +1,4 @@
+import { assertCapabilityEnabled, isModelEnabled, isToolEnabled } from '../gate/guard.js'
 import { OmnimuxError } from '../media/errors.js'
 import { objectParams } from '../tools/schema.js'
 import { enabledTextModels } from './catalog.js'
@@ -9,28 +10,44 @@ import { executeOmnimuxText } from './execute.js'
  *   provide?: (name: string, value: unknown) => void,
  *   get?: (name: string) => unknown,
  * }} ctx
- * @param {{ text: object }} hub
+ * @param {{ text: object, gate?: object }} hub
  * @param {object} jsonOut
  * @param {(error: unknown) => never} onError
  */
 export function mountTextComplete(ctx, hub, jsonOut, onError) {
-  const enabled = enabledTextModels(hub.text)
-  const modelIds = enabled.map((row) => row.id)
+  const gate = hub.gate ?? ctx.get?.('gate')
+
   const api = {
     /**
      * @param {{ prompt: string, model?: string, image?: string, video?: string, system?: string, maxTokens?: number, signal?: AbortSignal }} req
      */
     execute(req) {
+      assertCapabilityEnabled(gate, 'omnimux_text_complete', 'tool')
+      if (req.model) {
+        assertCapabilityEnabled(gate, req.model, 'model')
+      }
       return executeOmnimuxText({
         ...req,
         text: hub.text,
+        gate,
         llm: ctx.get?.('llm'),
         attachments: ctx.get?.('attachments'),
         env: process.env,
       })
     },
   }
-  ctx.provide('textComplete', api)
+
+  if (!isToolEnabled(gate, 'omnimux_text_complete')) {
+    return
+  }
+
+  if (typeof ctx.provide === 'function') {
+    ctx.provide('textComplete', api)
+  }
+
+  const enabled = enabledTextModels(hub.text, gate)
+  const modelIds = enabled.map((row) => row.id)
+
   ctx.tools.register({
     name: 'omnimux_text_complete',
     description:
@@ -55,6 +72,10 @@ export function mountTextComplete(ctx, hub, jsonOut, onError) {
         throw new OmnimuxError('omnimux-invalid-request', 'reason is required')
       }
       try {
+        assertCapabilityEnabled(gate, 'omnimux_text_complete', 'tool')
+        if (args.model) {
+          assertCapabilityEnabled(gate, args.model, 'model')
+        }
         return await executeOmnimuxText({
           prompt: args.prompt,
           model: args.model,
@@ -65,6 +86,7 @@ export function mountTextComplete(ctx, hub, jsonOut, onError) {
           signal: exec?.signal,
           sessionId: exec?.agent?.session?.id,
           text: hub.text,
+          gate,
           llm: ctx.get?.('llm'),
           attachments: ctx.get?.('attachments'),
           env: process.env,

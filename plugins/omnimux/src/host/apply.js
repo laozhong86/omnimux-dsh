@@ -79,9 +79,9 @@ export function apply(ctx, config = {}) {
   else mountHttp(ctx)
 
   const jsonOut = JSON_TOOL_OUTPUT
-  mountMedia(ctx, { kind: 'video', execute: executeOmnimuxVideo, media: hub.media, store, jsonOut })
-  mountMedia(ctx, { kind: 'image', execute: executeOmnimuxImage, media: hub.media, store, jsonOut })
-  mountMedia(ctx, { kind: 'audio', execute: executeOmnimuxAudio, media: hub.media, store, jsonOut })
+  mountMedia(ctx, { kind: 'video', execute: executeOmnimuxVideo, media: hub.media, gate: hub.gate, store, jsonOut })
+  mountMedia(ctx, { kind: 'image', execute: executeOmnimuxImage, media: hub.media, gate: hub.gate, store, jsonOut })
+  mountMedia(ctx, { kind: 'audio', execute: executeOmnimuxAudio, media: hub.media, gate: hub.gate, store, jsonOut })
   mountTextComplete(ctx, hub, jsonOut, rethrow)
   mountOfficial(ctx, {
     hub,

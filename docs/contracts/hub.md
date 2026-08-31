@@ -132,19 +132,19 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | Name | Kind | Request | Success | Failure |
 |---|---|---|---|---|
 | `identity` | official provide | `{ verify?: boolean }` | public profile fields only; never a token | unsigned / `token_invalid` |
-| `videoGenerate` | neutral provide | `{ dest, prompt?, duration?, image?, speech?, audio?, provider?, model?, taskId?, wait?, signal? }` | `{ mode: "live" \| "submitted", taskId, url? }` | `needs-provider`, `omnimux-unconfigured`, `unknown-provider`, `unknown-protocol`, `omnimux-invalid-request`, task/download errors |
+| `videoGenerate` | neutral provide | `{ dest, prompt?, duration?, image?, speech?, audio?, provider?, model?, taskId?, wait?, signal? }` | `{ mode: "live" \| "submitted", taskId, url? }` | `capability-disabled`, `needs-provider`, `omnimux-unconfigured`, `unknown-provider`, `unknown-protocol`, `omnimux-invalid-request`, task/download errors |
 | `imageGenerate` | neutral provide | same job handle as video | same | same |
-| `audioGenerate` | neutral provide | `{ dest, prompt?, duration?, voice?, style?, instrumental?, speed?, provider?, model?, taskId?, wait?, signal? }` | `{ mode: "live" \| "submitted", taskId, url? }` | `needs-provider`, `omnimux-unconfigured`, `unknown-provider`, `unknown-protocol`, `omnimux-invalid-request`, task/download errors |
+| `audioGenerate` | neutral provide | `{ dest, prompt?, duration?, voice?, style?, instrumental?, speed?, provider?, model?, taskId?, wait?, signal? }` | `{ mode: "live" \| "submitted", taskId, url? }` | `capability-disabled`, `needs-provider`, `omnimux-unconfigured`, `unknown-provider`, `unknown-protocol`, `omnimux-invalid-request`, task/download errors |
 | `omnimux_video_submit` | hub tool over `videoGenerate` | same as the seam | same | same |
 | `omnimux_image_submit` | hub tool over `imageGenerate` | same as the seam | same | same |
 | `omnimux_audio_submit` | hub tool over `audioGenerate` | same as the seam | same | same |
-| `textComplete` | neutral provide | `{ prompt, model?, image?, video?, system?, maxTokens?, signal? }` | `{ mode: "live", model, text }` | `needs-provider`, `omnimux-unconfigured` (video), `unknown-model`, `omnimux-invalid-request`, stream / HTTP errors |
+| `textComplete` | neutral provide | `{ prompt, model?, image?, video?, system?, maxTokens?, signal? }` | `{ mode: "live", model, text }` | `capability-disabled`, `needs-provider`, `omnimux-unconfigured` (video), `unknown-model`, `omnimux-invalid-request`, stream / HTTP errors |
 | `omnimux_text_complete` | hub tool over `textComplete` | same plus required `reason` | same | same |
-| `omnimux_social_data` | official-only tool | `platform` + `capability` + `url`/`id`/`query`; hub maps to top-level business fields (`tweet_id`/`aweme_id`/…); `sk-` | `{ platform, capability, model, field, value, data }` — for `x/tweet`, `data` includes `text`/`display_text`, `author`, engagement, and media URLs under `data.media` / `data.entities.media` | `omnimux-unconfigured`, `omnimux-invalid-request`, `omnimux-request-failed` |
-| `omnimux_page_fetch` | official-only tool | `{ url }` http(s); `sk-`; locked model `jina-reader-v1` | `{ mode: "live", model, url, title, pageContent, truncated? }` | `omnimux-unconfigured`, `needs-omnimux`, `omnimux-invalid-request`, `omnimux-request-failed`, `omnimux-invalid-response` |
-| `omnimux_accounts_*` / `omnimux_publish_*` | official-only tools | connect / list / presign / create / get post; access token | upstream JSON, secrets stripped | `needs-omnimux` |
-| `omnimux_analytics_*` | official-only tools | daily metrics / best time / frequency / decay / followers / posts / sync / inbox; access token | upstream JSON | `needs-omnimux` |
-| `omnimux_inspiration_*` | official-only tools | list / get / create / update / delete / tags / status; access token | upstream `{success,data}` envelope, media URLs unchanged | `needs-omnimux` |
+| `omnimux_social_data` | official-only tool | `platform` + `capability` + `url`/`id`/`query`; hub maps to top-level business fields (`tweet_id`/`aweme_id`/…); `sk-` | `{ platform, capability, model, field, value, data }` — for `x/tweet`, `data` includes `text`/`display_text`, `author`, engagement, and media URLs under `data.media` / `data.entities.media` | `capability-disabled`, `omnimux-unconfigured`, `omnimux-invalid-request`, `omnimux-request-failed` |
+| `omnimux_page_fetch` | official-only tool | `{ url }` http(s); `sk-`; locked model `jina-reader-v1` | `{ mode: "live", model, url, title, pageContent, truncated? }` | `capability-disabled`, `omnimux-unconfigured`, `needs-omnimux`, `omnimux-invalid-request`, `omnimux-request-failed`, `omnimux-invalid-response` |
+| `omnimux_accounts_*` / `omnimux_publish_*` | official-only tools | connect / list / presign / create / get post; access token | upstream JSON, secrets stripped | `capability-disabled`, `needs-omnimux` |
+| `omnimux_analytics_*` | official-only tools | daily metrics / best time / frequency / decay / followers / posts / sync / inbox; access token | upstream JSON | `capability-disabled`, `needs-omnimux` |
+| `omnimux_inspiration_*` | official-only tools | list / get / create / update / delete / tags / status; access token | upstream `{success,data}` envelope, media URLs unchanged | `capability-disabled`, `needs-omnimux` |
 | `videoProcess` | neutral provide（provider: omnimux-video） | `{ capability, input, dest, signal? }` | `{ mode: "live", files?: [{ path, kind, meta? }], result? }` | `ffmpeg-missing`, `unknown-capability`, `video-invalid-input`, `video-ffmpeg-failed`, `video-incompatible-streams`, `video-canceled`, `video-timeout`, `video-<capability>-failed` |
 | `video_process` | omnimux-video tool over `videoProcess` | same | same | same |
 
@@ -204,6 +204,37 @@ Writes are same-origin only. Unsigned → 401 `needs-omnimux`. Tools keep the or
 | `DEEPSEEK_API_KEY` | agent `web_search` (`web-search-deepseek` provider), written via the official credentials domain | never |
 
 Do not export a `sk-` as `OMNIMUX_ACCESS_TOKEN`.
+
+## Capability gate (`Config.gate`)
+
+The hub provides fine-grained enable/disable controls for tools, media generation, and text complete whitelist models via `Config.gate`.
+
+- **Default All Enabled**: By default, all tools, media categories, and whitelist models are enabled. Only an explicit `false` disables a capability.
+- **Dual-Stage Enforcement**:
+  1. *Registration-time prevention*: Disabled tools are omitted from `ctx.tools.register`, and disabled media/text seams are not provided on `ctx.provide`.
+  2. *Execution-time rejection*: Any invocation of a disabled capability throws `OmnimuxError('capability-disabled')`.
+- **Merging & Arbitration Rules**:
+  - `official.mount`: Acts as an absolute master switch. When `official.mount: false`, official and reader tools are not mounted regardless of `gate.tools`. When `official.mount: true`, fine-grained `gate.tools.<name>` applies.
+  - `media.<kind>`: `gate.media.<kind>: false` is equivalent to `gate.tools.omnimux_<kind>_submit: false`. Either being `false` disables both the seam and the tool.
+  - `models.textComplete.<id>`: Merged with `text.models[].enabled` via logical AND. A model is enabled if and only if `row.enabled !== false && gate.models.textComplete[id] !== false`.
+- **HTTP & Tool Decoupling**: Closing Agent tools (e.g. `omnimux_accounts_list: false`) does NOT disable corresponding Host HTTP endpoints (`/omnimux/accounts`). Host HTTP routes remain accessible to web clients.
+
+```yaml
+gate:
+  enabled: true # Master gate switch (default true)
+  tools:
+    omnimux_social_data: false
+    omnimux_video_submit: false
+  media:
+    video: false # disables omnimux_video_submit & videoGenerate
+    image: true
+    audio: true
+  models:
+    textComplete:
+      grok-4.6: false
+  plugins:
+    workflow: {}
+```
 
 ## Package layout
 

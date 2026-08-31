@@ -20,6 +20,8 @@ import { loadTextVideo, toVideoImageUrlPart } from './video.js'
  *   sessionId?: unknown,
  *   env?: Record<string, string | undefined>,
  *   text?: unknown,
+ *   gate?: object,
+ *   hub?: { gate?: object, text?: unknown },
  *   llm?: { stream: (options: object) => AsyncIterable<object> },
  *   attachments?: { saveImage: Function, imageLimits?: object },
  *   fetcher?: typeof fetch,
@@ -38,7 +40,8 @@ export async function executeOmnimuxText(input) {
   if (image && video) {
     throw new OmnimuxError('omnimux-invalid-request', 'pass image or video, not both')
   }
-  const route = resolveTextRoute({ model: input.model, image, video }, text, input.env)
+  const gate = input.gate ?? input.hub?.gate
+  const route = resolveTextRoute({ model: input.model, image, video }, text, input.env, gate)
   const maxTokens = typeof input.maxTokens === 'number' && Number.isFinite(input.maxTokens) && input.maxTokens > 0
     ? input.maxTokens
     : route.maxTokens

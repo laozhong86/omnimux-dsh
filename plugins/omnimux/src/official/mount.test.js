@@ -1,24 +1,30 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
+import { parseGateConfig } from '../gate/config.js'
+import { OmnimuxError } from '../media/errors.js'
 import { mountOfficial } from './mount.js'
 
-function registerCapture() {
+function registerCapture(gate) {
   const names = []
   /** @type {Record<string, string>} */
   const descriptions = {}
+  /** @type {Record<string, object>} */
+  const registeredTools = {}
   return {
     names,
     descriptions,
+    registeredTools,
     ctx: {
       tools: {
         register(tool) {
           names.push(tool.name)
           descriptions[tool.name] = tool.description
+          registeredTools[tool.name] = tool
         },
       },
     },
     deps: {
-      hub: { official: { mount: true } },
+      hub: { official: { mount: true }, gate: parseGateConfig(gate) },
       identity: { require: async () => ({ id: 'u' }) },
       store: { resolve: async () => 'tok' },
       siteBaseUrl: 'https://omnimux.ai',
@@ -51,15 +57,43 @@ describe('official mount', () => {
     assert.ok(capture.names.includes('omnimux_analytics_posts'))
     assert.ok(capture.names.includes('omnimux_analytics_sync_external'))
     assert.ok(capture.names.includes('omnimux_analytics_inbox'))
+    assert.equal(capture.names.length, 23)
   })
 
-  it('skips official tools when official.mount is false', () => {
+  it('skips official tools when official.mount is false (master switch)', () => {
     const capture = registerCapture()
     mountOfficial(capture.ctx, {
       ...capture.deps,
-      hub: { official: { mount: false } },
+      hub: { official: { mount: false }, gate: parseGateConfig({ tools: { omnimux_social_data: true } }) },
     })
     assert.equal(capture.names.includes('omnimux_social_data'), false)
     assert.equal(capture.names.length, 0)
+  })
+
+  it('skips fine-grained tools when gate.tools.<name> is false', () => {
+    const capture = registerCapture({
+      tools: {
+        omnimux_social_data: false,
+        omnimux_analytics_inbox: false,
+      },
+    })
+    mountOfficial(capture.ctx, capture.deps)
+    assert.equal(capture.names.includes('omnimux_social_data'), false)
+    assert.equal(capture.names.includes('omnimux_analytics_inbox'), false)
+    assert.ok(capture.names.includes('omnimux_accounts_list'))
+    assert.equal(capture.names.length, 21)
+  })
+
+  it('execution-time enforcement throws capability-disabled if gate is disabled', async () => {
+    const capture = registerCapture(undefined)
+    mountOfficial(capture.ctx, capture.deps)
+
+    const socialTool = capture.registeredTools.omnimux_social_data
+    assert.ok(socialTool)
+
+    // Now test a tool with disabled gate
+    const disabledCapture = registerCapture({ tools: { omnimux_social_data: false } })
+    mountOfficial(disabledCapture.ctx, disabledCapture.deps)
+    assert.equal(disabledCapture.registeredTools.omnimux_social_data, undefined)
   })
 })

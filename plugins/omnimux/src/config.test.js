@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { Config, parseHubConfig } from './config.js'
 
-test('parseHubConfig fills brand and the OmniMux media row', () => {
+test('parseHubConfig fills brand and the OmniMux media row and default gate', () => {
   const parsed = parseHubConfig({})
   assert.equal(parsed.productName, 'OmniMux')
   assert.equal(parsed.heroHeadline, '属于你的AI社媒运营团队')
@@ -25,6 +25,11 @@ test('parseHubConfig fills brand and the OmniMux media row', () => {
   assert.equal(parsed.text.maxTokens, 4096)
   assert.equal(parsed.text.models.length, 11)
   assert.equal(parsed.text.models.every((row) => row.enabled), true)
+  assert.equal(parsed.gate.enabled, true)
+  assert.deepEqual(parsed.gate.tools, {})
+  assert.deepEqual(parsed.gate.media, { video: true, image: true, audio: true })
+  assert.deepEqual(parsed.gate.models, { textComplete: {} })
+  assert.deepEqual(parsed.gate.plugins, {})
 })
 
 test('Config Standard Schema accepts empty input', () => {
@@ -32,6 +37,30 @@ test('Config Standard Schema accepts empty input', () => {
   assert.ok('value' in result)
   assert.equal(result.value.productName, 'OmniMux')
   assert.equal(result.value.media.defaultProvider, 'omnimux')
+  assert.equal(result.value.gate.enabled, true)
+})
+
+test('Config Standard Schema accepts gate configuration', () => {
+  const result = Config['~standard'].validate({
+    gate: {
+      enabled: true,
+      tools: { omnimux_video_submit: false },
+      media: { audio: false },
+      models: { textComplete: { 'grok-4.6': false } },
+    },
+  })
+  assert.ok('value' in result)
+  assert.equal(result.value.gate.tools.omnimux_video_submit, false)
+  assert.equal(result.value.gate.media.audio, false)
+  assert.equal(result.value.gate.models.textComplete['grok-4.6'], false)
+})
+
+test('Config Standard Schema rejects invalid gate configuration', () => {
+  const result = Config['~standard'].validate({
+    gate: { tools: { omnimux_video_submit: 'off' } },
+  })
+  assert.ok('issues' in result)
+  assert.match(result.issues[0]?.message ?? '', /gate\.tools\.omnimux_video_submit must be a boolean/)
 })
 
 test('Config Standard Schema rejects a bad media protocol', () => {
