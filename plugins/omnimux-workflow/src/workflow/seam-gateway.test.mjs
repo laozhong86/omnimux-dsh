@@ -557,8 +557,13 @@ test('capabilities：seam 可达时返回 omnimux 真实目录（含 env 覆盖�
     assert.ok(caps.body.image.some((row) => row.id === 'gpt-image-2'));
     assert.ok(caps.body.image.some((row) => row.id === 'nanobanana-2'));
     assert.equal(caps.body.text.length, 5);
-    assert.ok(caps.body.text.some((row) => row.id === 'gemini-3.7-flash'));
-    assert.ok(caps.body.text.some((row) => row.id === 'claude-opus-4-6'));
+    assert.deepEqual(caps.body.text.map((r) => r.id), [
+      'gemini-3.7-flash',
+      'claude-opus-4-6',
+      'gpt-5.5',
+      'gemini-3.1-pro-preview',
+      'deepseek-v4-flash-vision-exp',
+    ]);
     assert.ok(caps.body.audio.some((row) => row.id === 'suno'));
     assert.ok(caps.body.audio.some((row) => row.id === 'gpt-4o-mini-tts'));
   } finally {

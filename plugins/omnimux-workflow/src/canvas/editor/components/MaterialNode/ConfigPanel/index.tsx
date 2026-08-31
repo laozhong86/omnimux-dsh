@@ -190,10 +190,10 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     if (rows.length === 0) {
       if (materialType === 'text') {
         rows = [
-          { id: 'claude-opus-4-6', label: 'Claude 4.6' },
-          { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
           { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
+          { id: 'claude-opus-4-6', label: 'Claude 4.6' },
           { id: 'gpt-5.5', label: 'GPT-5.5' },
+          { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
           { id: 'deepseek-v4-flash-vision-exp', label: 'DeepSeek 4 Flash' },
         ];
       } else if (materialType === 'image') {

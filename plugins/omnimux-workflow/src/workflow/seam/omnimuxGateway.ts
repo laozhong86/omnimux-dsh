@@ -78,12 +78,12 @@ export const DEFAULT_SEAM_CONCURRENCY = 2;
 // Capability catalog & dynamic parameter schemas
 // ============================================================================
 
-/** Text whitelist: filtered to core tier models (Claude 4.6, Gemini 3.1 Pro Preview, Gemini 3.7 Flash, GPT-5.5, DeepSeek 4 Flash). */
+/** Text whitelist (dropdown order = default first): Gemini 3.7 Flash, Claude 4.6, GPT-5.5, Gemini 3.1 Pro Preview, DeepSeek 4 Flash. */
 const TEXT_MODEL_IDS: ReadonlyArray<string> = [
-  'claude-opus-4-6',
-  'gemini-3.1-pro-preview',
   'gemini-3.7-flash',
+  'claude-opus-4-6',
   'gpt-5.5',
+  'gemini-3.1-pro-preview',
   'deepseek-v4-flash-vision-exp',
 ] as const;
 
