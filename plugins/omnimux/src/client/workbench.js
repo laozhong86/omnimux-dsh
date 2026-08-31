@@ -505,7 +505,16 @@ export async function openWorkbench(opts = {}) {
 
   closeSeedFiles(service, openScope)
 
-  const title = typeof opts.title === 'string' && opts.title ? opts.title : tabId
+  let title = typeof opts.title === 'string' && opts.title ? opts.title : ''
+  if (!title && service && typeof service.getTab === 'function') {
+    try {
+      const desc = service.getTab(tabId)
+      if (desc?.title) {
+        title = typeof desc.title === 'function' ? desc.title() : String(desc.title)
+      }
+    } catch {}
+  }
+  if (!title) title = tabId
   const path = typeof opts.path === 'string' && opts.path ? opts.path : tabId
   service.openTab({
     type: tabId,
