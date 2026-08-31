@@ -182,17 +182,31 @@ function ensureStylesInjected() {
 }
 
 export interface AttachmentTrayProps {
-  session?: { id: string } | null;
+  session?: { sessionId?: string; id?: string } | null;
   sessionId?: string;
+  input?: unknown;
 }
 
 export const AttachmentTray: React.FC<AttachmentTrayProps> = (props) => {
   const store = getGlobalAttachmentStore();
-  const currentSessionId = props.session?.id || props.sessionId || store.getActiveSessionId() || 'default';
+  const currentSessionId =
+    props.session?.sessionId ||
+    props.sessionId ||
+    props.session?.id ||
+    store.getActiveSessionId() ||
+    'default';
 
   useEffect(() => {
     ensureStylesInjected();
   }, []);
+
+  // 挂载与会话切换时同步活跃会话，并把 Stage 落入 'default' 的待挂载附件认领过来
+  useEffect(() => {
+    if (currentSessionId && currentSessionId !== 'default') {
+      store.setActiveSessionId(currentSessionId);
+      store.claimPendingAttachments(currentSessionId);
+    }
+  }, [store, currentSessionId]);
 
   const subscribe = useCallback(
     (callback: () => void) => store.subscribe(currentSessionId, callback),

@@ -1,7 +1,6 @@
 import type {
   AttachmentPayload,
   ConversationAttachment,
-  AttachmentStatus,
 } from './types.ts';
 
 export const MAX_ATTACHMENTS_PER_SESSION = 8;
@@ -20,6 +19,13 @@ export interface AttachmentStore {
   clear(sessionId: string): void;
   getActiveSessionId(): string;
   setActiveSessionId(sessionId: string): void;
+  /**
+   * 将 `'default'` 待挂载附件认领迁移到目标会话。
+   * 跨插件 Stage 未携带 sessionId 时，附件会先落入 default；
+   * 会话 Tray 挂载后调用本方法完成迁移。
+   * @returns 成功迁移的数量
+   */
+  claimPendingAttachments(targetSessionId: string): number;
   installGlobalEvents(): () => void;
 }
 
@@ -74,13 +80,135 @@ export function createAttachmentStore(): AttachmentStore {
 
   const EMPTY_LIST: readonly ConversationAttachment[] = Object.freeze([]);
 
+  /**
+   * 将 `'default'` 分组中的待挂载附件依次迁移到目标会话。
+   * 遵循指纹去重与单会话容量上限；无论是否全部迁入，都会清空 default 分组。
+   */
+  function claimPendingAttachments(targetSessionId: string): number {
+    if (!targetSessionId || targetSessionId === 'default') {
+      return 0;
+    }
+    const pending = sessionMap.get('default');
+    if (!pending || pending.length === 0) {
+      return 0;
+    }
+
+    const currentList = [...(sessionMap.get(targetSessionId) || [])];
+    const fingerprints = new Set(currentList.map((item) => item.fingerprint));
+    let migrated = 0;
+
+    for (const item of pending) {
+      if (currentList.length >= MAX_ATTACHMENTS_PER_SESSION) {
+        break;
+      }
+      const fingerprint = item.fingerprint || generateFingerprint(item);
+      if (fingerprints.has(fingerprint)) {
+        continue;
+      }
+      fingerprints.add(fingerprint);
+      currentList.push({
+        ...item,
+        fingerprint,
+        sessionId: targetSessionId,
+      });
+      migrated += 1;
+    }
+
+    sessionMap.set('default', []);
+    if (migrated > 0) {
+      sessionMap.set(targetSessionId, currentList);
+      notify(targetSessionId);
+      notify('default');
+    } else {
+      // default 已清空但目标会话未新增（全部去重或已满），仍需通知 default 订阅者
+      notify('default');
+    }
+
+    return migrated;
+  }
+
+  function addAttachment(sessionId: string, payload: AttachmentPayload): AddAttachmentResult {
+    if (!payload || !payload.title) {
+      return { ok: false, reason: 'invalid-payload' };
+    }
+    const targetId = sessionId || (activeSessionId !== 'default' ? activeSessionId : 'default');
+    const currentList = sessionMap.get(targetId) || [];
+
+    // 1. 容量上限检查 (最大 8 项)
+    if (currentList.length >= MAX_ATTACHMENTS_PER_SESSION) {
+      return { ok: false, reason: 'quota-exceeded' };
+    }
+
+    // 2. 指纹去重检查
+    const fingerprint = generateFingerprint(payload);
+    const existingIndex = currentList.findIndex((item) => item.fingerprint === fingerprint);
+    if (existingIndex >= 0) {
+      // 已存在：触发微更新通知（让前端触发呼吸高亮），但不重复追加
+      notify(targetId);
+      return { ok: false, reason: 'duplicate', attachment: currentList[existingIndex] };
+    }
+
+    // 3. 构建新 Attachment
+    const extension = inferExtension(payload.title, payload.relativePath, payload.extension);
+    const now = Date.now();
+    const id = `att_${now}_${Math.random().toString(36).slice(2, 8)}`;
+    const newAttachment: ConversationAttachment = {
+      id,
+      fingerprint,
+      sessionId: targetId,
+      sourcePlugin: payload.sourcePlugin,
+      kind: payload.kind,
+      entityId: payload.entityId,
+      title: payload.title,
+      extension,
+      relativePath: payload.relativePath,
+      absolutePath: payload.absolutePath,
+      previewUrl: payload.previewUrl,
+      duration: payload.duration,
+      status: 'ready',
+      metadata: payload.metadata,
+      createdAt: now,
+    };
+
+    sessionMap.set(targetId, [...currentList, newAttachment]);
+    notify(targetId);
+
+    return { ok: true, attachment: newAttachment };
+  }
+
+  function removeAttachment(sessionId: string, attachmentId: string) {
+    const targetId = sessionId || activeSessionId;
+    const currentList = sessionMap.get(targetId);
+    if (!currentList || currentList.length === 0) return;
+
+    const filtered = currentList.filter((item) => item.id !== attachmentId);
+    if (filtered.length === currentList.length) return;
+
+    sessionMap.set(targetId, filtered);
+    notify(targetId);
+  }
+
+  function clear(sessionId: string) {
+    const targetId = sessionId || activeSessionId;
+    const currentList = sessionMap.get(targetId);
+    if (!currentList || currentList.length === 0) return;
+
+    sessionMap.set(targetId, []);
+    notify(targetId);
+  }
+
   return {
     getActiveSessionId() {
       return activeSessionId;
     },
 
     setActiveSessionId(sessionId: string) {
-      if (sessionId && sessionId !== activeSessionId) {
+      if (sessionId && sessionId !== 'default') {
+        activeSessionId = sessionId;
+        claimPendingAttachments(sessionId);
+        return;
+      }
+      if (sessionId) {
         activeSessionId = sessionId;
       }
     },
@@ -106,75 +234,13 @@ export function createAttachmentStore(): AttachmentStore {
       };
     },
 
-    addAttachment(sessionId: string, payload: AttachmentPayload): AddAttachmentResult {
-      if (!payload || !payload.title) {
-        return { ok: false, reason: 'invalid-payload' };
-      }
-      const targetId = sessionId || activeSessionId;
-      const currentList = sessionMap.get(targetId) || [];
+    addAttachment,
 
-      // 1. 容量上限检查 (最大 8 项)
-      if (currentList.length >= MAX_ATTACHMENTS_PER_SESSION) {
-        return { ok: false, reason: 'quota-exceeded' };
-      }
+    claimPendingAttachments,
 
-      // 2. 指纹去重检查
-      const fingerprint = generateFingerprint(payload);
-      const existingIndex = currentList.findIndex((item) => item.fingerprint === fingerprint);
-      if (existingIndex >= 0) {
-        // 已存在：触发微更新通知（让前端触发呼吸高亮），但不重复追加
-        notify(targetId);
-        return { ok: false, reason: 'duplicate', attachment: currentList[existingIndex] };
-      }
+    removeAttachment,
 
-      // 3. 构建新 Attachment
-      const extension = inferExtension(payload.title, payload.relativePath, payload.extension);
-      const now = Date.now();
-      const id = `att_${now}_${Math.random().toString(36).slice(2, 8)}`;
-      const newAttachment: ConversationAttachment = {
-        id,
-        fingerprint,
-        sessionId: targetId,
-        sourcePlugin: payload.sourcePlugin,
-        kind: payload.kind,
-        entityId: payload.entityId,
-        title: payload.title,
-        extension,
-        relativePath: payload.relativePath,
-        absolutePath: payload.absolutePath,
-        previewUrl: payload.previewUrl,
-        duration: payload.duration,
-        status: 'ready',
-        metadata: payload.metadata,
-        createdAt: now,
-      };
-
-      sessionMap.set(targetId, [...currentList, newAttachment]);
-      notify(targetId);
-
-      return { ok: true, attachment: newAttachment };
-    },
-
-    removeAttachment(sessionId: string, attachmentId: string) {
-      const targetId = sessionId || activeSessionId;
-      const currentList = sessionMap.get(targetId);
-      if (!currentList || currentList.length === 0) return;
-
-      const filtered = currentList.filter((item) => item.id !== attachmentId);
-      if (filtered.length === currentList.length) return;
-
-      sessionMap.set(targetId, filtered);
-      notify(targetId);
-    },
-
-    clear(sessionId: string) {
-      const targetId = sessionId || activeSessionId;
-      const currentList = sessionMap.get(targetId);
-      if (!currentList || currentList.length === 0) return;
-
-      sessionMap.set(targetId, []);
-      notify(targetId);
-    },
+    clear,
 
     installGlobalEvents(): () => void {
       if (typeof window === 'undefined') return () => {};
@@ -183,8 +249,9 @@ export function createAttachmentStore(): AttachmentStore {
         const customEvent = e as CustomEvent<AttachmentPayload & { sessionId?: string }>;
         const detail = customEvent.detail;
         if (!detail) return;
-        const targetSession = detail.sessionId || activeSessionId;
-        this.addAttachment(targetSession, detail);
+        // 跨插件 Stage 未携带 sessionId 时落入 '' → addAttachment 解析为 default（或当前活跃会话）
+        const targetSession = detail.sessionId || '';
+        addAttachment(targetSession, detail);
       };
 
       const handleRemove = (e: Event) => {
@@ -192,13 +259,13 @@ export function createAttachmentStore(): AttachmentStore {
         const detail = customEvent.detail;
         if (!detail?.id) return;
         const targetSession = detail.sessionId || activeSessionId;
-        this.removeAttachment(targetSession, detail.id);
+        removeAttachment(targetSession, detail.id);
       };
 
       const handleClear = (e: Event) => {
         const customEvent = e as CustomEvent<{ sessionId?: string }>;
         const targetSession = customEvent.detail?.sessionId || activeSessionId;
-        this.clear(targetSession);
+        clear(targetSession);
       };
 
       window.addEventListener('omnimux:add-to-conversation', handleAdd);
