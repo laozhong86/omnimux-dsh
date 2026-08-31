@@ -29,6 +29,7 @@ import {
   resolveNodeKind,
 } from '../../../../types/materialNode';
 import type { CapabilityCatalog } from '../../../../../shared/api';
+import { orderTextModels } from '../../../../../shared/textModelOrder';
 import { useT } from '../../../../i18n';
 import { CustomSelect, CustomSlider, CustomModal } from '../../../../ui';
 import { ModelBrandIcon } from '../../../../ui/ModelBrandIcon';
@@ -190,10 +191,10 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     if (rows.length === 0) {
       if (materialType === 'text') {
         rows = [
-          { id: 'claude-opus-4-6', label: 'Claude 4.6' },
-          { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
           { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
+          { id: 'claude-opus-4-6', label: 'Claude 4.6' },
           { id: 'gpt-5.5', label: 'GPT-5.5' },
+          { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
           { id: 'deepseek-v4-flash-vision-exp', label: 'DeepSeek 4 Flash' },
         ];
       } else if (materialType === 'image') {
@@ -223,6 +224,12 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
           { id: 'music-gen-v1', label: 'MusicGen V1' },
         ];
       }
+    }
+
+    // Catalog from a stale Host process may still be the old Claude-first order.
+    // Re-sort on the client so a page refresh is enough (Issue #302).
+    if (materialType === 'text') {
+      rows = orderTextModels(rows);
     }
 
     return rows.map((row) => {

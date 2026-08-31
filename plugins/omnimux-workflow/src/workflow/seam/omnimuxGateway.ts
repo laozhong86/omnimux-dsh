@@ -19,6 +19,7 @@ import type {
   SubmitResult,
 } from './gateway';
 import type { ModelParameterSchema } from '../../shared/api';
+import { TEXT_MODEL_ORDER } from '../../shared/textModelOrder';
 import { createWorkflowLogger } from '../execution/logger';
 
 const LOG_TAG = 'OmniMuxSeamClient';
@@ -78,14 +79,8 @@ export const DEFAULT_SEAM_CONCURRENCY = 2;
 // Capability catalog & dynamic parameter schemas
 // ============================================================================
 
-/** Text whitelist: filtered to core tier models (Claude 4.6, Gemini 3.1 Pro Preview, Gemini 3.7 Flash, GPT-5.5, DeepSeek 4 Flash). */
-const TEXT_MODEL_IDS: ReadonlyArray<string> = [
-  'claude-opus-4-6',
-  'gemini-3.1-pro-preview',
-  'gemini-3.7-flash',
-  'gpt-5.5',
-  'deepseek-v4-flash-vision-exp',
-] as const;
+/** Text whitelist (dropdown order = default first). Same sequence as client ConfigPanel. */
+const TEXT_MODEL_IDS: ReadonlyArray<string> = TEXT_MODEL_ORDER;
 
 const MODEL_DISPLAY_NAMES: Record<string, string> = {
   'claude-opus-4-6': 'Claude 4.6',
