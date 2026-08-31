@@ -22,18 +22,26 @@ import {
   Play,
   FileText,
   Image as ImageIcon,
+  X,
+  AlertTriangle,
 } from 'lucide-react';
 import type { MaterialNodeData, MaterialTool } from '../../../../types/materialNode';
 import {
   ASPECT_RATIO_OPTIONS,
+  MATERIAL_NODE_WHITELIST,
   MATERIAL_TOOLS,
   resolveNodeKind,
 } from '../../../../types/materialNode';
 import type { CapabilityCatalog, CapabilityModelItem } from '../../../../../shared/api';
 import { sortCatalogRows } from '../../../../../shared/sortCatalog';
+import {
+  evaluateModelCompatibility,
+  resolveModelInputCapability,
+} from '../../../../../shared/validation/modelCompatibilityEvaluator.ts';
 import { useT } from '../../../../i18n';
 import { CustomSelect, CustomSlider } from '../../../../ui';
 import { ModelBrandIcon } from '../../../../ui/ModelBrandIcon';
+import { useCanvasStore } from '../../../store/canvasStore';
 import { useUpstreamMedia } from '../../../hooks/useUpstreamMedia';
 import { useModelParameterSchema, getCachedCatalog } from '../../../hooks/useModelParameterSchema';
 import GenerateButton from './GenerateButton';
@@ -186,23 +194,72 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     [onUpdateNodeData],
   );
 
+  // 解绑指定上游连线
+  const handleUnbind = useCallback(
+    (upstreamNodeId: string) => {
+      const state = useCanvasStore.getState();
+      const edgeIdsToRemove = state.edges
+        .filter((edge) => edge.target === nodeId && edge.source === upstreamNodeId)
+        .map((edge) => edge.id);
+      if (edgeIdsToRemove.length > 0) {
+        state.applyCanvasInputMutation({ removeEdgeIds: edgeIdsToRemove });
+      }
+    },
+    [nodeId],
+  );
+
   // 模型列表：仅消费 hub catalog（无生产假回退）；按显示名 A–Z。
-  // 已保存但不在目录中的 params.model 保留为 deprecated 项，不静默改写。
+  // 消费 MATERIAL_NODE_WHITELIST 进行白名单过滤（未配置白名单的模态不进行过滤）。
+  // 已保存但不在当前可用列表中的 params.model 保留为 deprecated 项，不静默改写。
   const modelOptions = useMemo(() => {
     const activeCatalog = catalog ?? getCachedCatalog();
-    const rows = sortCatalogRows<CapabilityModelItem>(activeCatalog?.[materialType] ?? []);
+    const rawRows = activeCatalog?.[materialType] ?? [];
+    const whitelist = MATERIAL_NODE_WHITELIST[materialType];
+    const filteredRows = whitelist
+      ? rawRows.filter((row) => whitelist.includes(row.id))
+      : rawRows;
+    const rows = sortCatalogRows<CapabilityModelItem>(filteredRows);
     const savedModel = typeof params.model === 'string' ? params.model.trim() : '';
     const orphan = savedModel && !rows.some((row) => row.id === savedModel)
-      ? [{ id: savedModel, label: savedModel, deprecated: true as const }]
+      ? [{
+          id: savedModel,
+          label: rawRows.find((r) => r.id === savedModel)?.label ?? savedModel,
+          deprecated: true as const,
+        }]
       : [];
     const combined = [...orphan, ...rows.map((row) => ({ ...row, deprecated: false as const }))];
+
+    const upstreamTypes = upstreams.map((u) => ({
+      type: u.materialType,
+    }));
 
     return combined.map((row) => {
       const visuals = getModelVisuals(row.id);
       const icon = visuals.icon;
-      const badge = row.deprecated ? 'deprecated' : (row.badge ?? visuals.badge);
-      const subtitle = row.subtitle ?? visuals.subtitle;
+
+      const modelCap = row.inputCapability ?? resolveModelInputCapability(row.id, activeCatalog);
+      const compat = evaluateModelCompatibility(row.id, modelCap, upstreamTypes);
+
+      const isDegraded = compat.level === 'degraded';
+      const isDisabled = compat.level === 'disabled';
+      const reasonText = compat.reasons.join('；');
+
+      let badge = row.deprecated ? 'deprecated' : (row.badge ?? visuals.badge);
+      if (isDegraded) {
+        badge = '降级';
+      } else if (isDisabled && !row.deprecated) {
+        badge = '不可用';
+      }
+
+      let subtitle = row.subtitle ?? visuals.subtitle;
+      if (isDisabled && reasonText) {
+        subtitle = reasonText;
+      } else if (isDegraded && compat.adaptationAdvice) {
+        subtitle = compat.adaptationAdvice;
+      }
+
       const label = row.deprecated ? `${row.label} (deprecated)` : row.label;
+      const title = reasonText || (row.deprecated ? 'deprecated' : undefined);
 
       return {
         value: row.id,
@@ -216,11 +273,13 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
         icon,
         badge,
         subtitle,
+        disabled: isDisabled,
+        title,
       };
     });
-  }, [catalog, materialType, params.model]);
+  }, [catalog, materialType, params.model, upstreams]);
 
-  // Inheritance: keep existing params.model (even if deprecated) → defaults[type] → first sorted.
+  // Inheritance: keep existing params.model (even if deprecated) → defaults[type] → whitelist first → first sorted.
   const modelValue = useMemo(() => {
     if (typeof params.model === 'string' && params.model.trim()) return params.model;
     const activeCatalog = catalog ?? getCachedCatalog();
@@ -228,6 +287,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     if (typeof defaultId === 'string' && defaultId.trim()) {
       if (modelOptions.some((row) => row.value === defaultId)) return defaultId;
     }
+    const whitelist = MATERIAL_NODE_WHITELIST[materialType];
+    const firstWhitelisted = whitelist?.find((id) => modelOptions.some((row) => row.value === id));
+    if (firstWhitelisted) return firstWhitelisted;
     return modelOptions[0]?.value;
   }, [params.model, catalog, materialType, modelOptions]);
 
@@ -325,6 +387,29 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       ? params.resolution
       : defaultResolution;
 
+  // 当前选中模型能力与降级状态
+  const activeCatalog = catalog ?? getCachedCatalog();
+  const currentModelCap = useMemo(() => {
+    const rawRows = activeCatalog?.[materialType] ?? [];
+    const found = rawRows.find((r) => r.id === modelValue);
+    return found?.inputCapability ?? resolveModelInputCapability(modelValue, activeCatalog);
+  }, [activeCatalog, materialType, modelValue]);
+
+  const upstreamTypes = useMemo(() => upstreams.map((u) => ({ type: u.materialType })), [upstreams]);
+  const modelCompat = useMemo(
+    () => evaluateModelCompatibility(modelValue, currentModelCap, upstreamTypes),
+    [modelValue, currentModelCap, upstreamTypes],
+  );
+  const isModelDegraded =
+    modelCompat.level === 'degraded' ||
+    (currentModelCap?.referenceImages?.max !== undefined &&
+      upstreams.filter((u) => u.materialType === 'image' || !u.materialType).length >
+        currentModelCap.referenceImages.max);
+  const degradedWarningText = useMemo(() => {
+    const max = currentModelCap?.referenceImages?.max;
+    return t('model.compatibility.degradedWarning').replace('{max}', String(max ?? ''));
+  }, [currentModelCap, t]);
+
   return (
     <div className="wf-config-panel">
       {/* 1. 音频模式专属顶部 Tab */}
@@ -394,6 +479,20 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
                   {/* 状态小圆点 */}
                   {item.hasMedia && <span className="wf-config-panel__ref-thumb-dot" />}
+
+                  {/* 解绑按钮 */}
+                  <button
+                    type="button"
+                    className="wf-config-panel__ref-thumb-unbind nodrag"
+                    title={t('edge.disconnect')}
+                    aria-label={t('edge.disconnect')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnbind(item.nodeId);
+                    }}
+                  >
+                    <X size={8} />
+                  </button>
                 </div>
               ))}
               {onOpenResourcePicker ? (
@@ -411,15 +510,23 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
             <span />
           )}
 
-          {/* 右上角原地展开 / 收起，不脱离画布上下文 */}
-          <button
-            type="button"
-            className="wf-config-panel__expand-btn"
-            onClick={() => setIsExpanded((prev) => !prev)}
-            title={isExpanded ? t('panel.collapse') : t('panel.expand')}
-          >
-            {isExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-          </button>
+          {/* 右上角操作区：降级警示徽标与原地展开 / 收起 */}
+          <div className="wf-config-panel__prompt-header-actions">
+            {isModelDegraded && (
+              <span
+                className="wf-config-panel__degraded-badge wf-material-node__badge wf-material-node__badge--degraded"
+                title={degradedWarningText}
+              />
+            )}
+            <button
+              type="button"
+              className="wf-config-panel__expand-btn"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              title={isExpanded ? t('panel.collapse') : t('panel.expand')}
+            >
+              {isExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            </button>
+          </div>
         </div>
 
         {/* Prompt 输入框：展开态加高并保持底部参数栏紧贴 */}

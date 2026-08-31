@@ -128,12 +128,16 @@ export interface ModelParameterSchema {
   };
 }
 
+import type { ModelInputCapability } from './validation/modelCompatibilityEvaluator.ts';
+export type { ModelInputCapability };
+
 export interface CapabilityModelItem {
   id: string;
   label: string;
   badge?: string;
   subtitle?: string;
   family?: string;
+  inputCapability?: ModelInputCapability;
   parameters?: ModelParameterSchema;
 }
 

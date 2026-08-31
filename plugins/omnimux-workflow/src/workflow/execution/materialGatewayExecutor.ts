@@ -8,7 +8,7 @@
 
 import { join } from 'node:path';
 import { localFilePathFromUrl } from '../../shared/localMedia.ts';
-import type { GenerationGateway } from '../seam/gateway';
+import type { GenerationGateway, ReferenceAssetPayload } from '../seam/gateway';
 import type {
   ExecutionContext,
   NodeExecutor,
@@ -70,34 +70,47 @@ function resolveMediaSourcePath(
   return url;
 }
 
-interface UpstreamData {
+interface UpstreamMultiModalData {
   text?: string;
-  mediaUrl?: string;
-  mediaPath?: string;
-  mediaType?: 'image' | 'video' | 'audio';
+  references: ReferenceAssetPayload[];
+  audioTrack?: ReferenceAssetPayload;
 }
 
-/** Upstream output: collects text and first media asset without mutual exclusion. */
-function collectUpstream(ctx: ExecutionContext): UpstreamData {
+/** Upstream output: collects text, all media references and audio tracks without short-circuiting. */
+function collectUpstreamMultiModal(ctx: ExecutionContext): UpstreamMultiModalData {
   let text: string | undefined;
-  let mediaUrl: string | undefined;
-  let mediaPath: string | undefined;
-  let mediaType: 'image' | 'video' | 'audio' | undefined;
+  const references: ReferenceAssetPayload[] = [];
+  let audioTrack: ReferenceAssetPayload | undefined;
 
   for (const output of ctx.upstreamOutputs.values()) {
     if (!text && output.text && output.text.trim()) {
       text = output.text.trim();
     }
-    if (!mediaUrl && Array.isArray(output.mediaAssets) && output.mediaAssets.length > 0) {
-      const asset = output.mediaAssets[0];
-      if (asset && asset.type) {
-        mediaType = asset.type;
-        mediaUrl = asset.url;
-        mediaPath = resolveMediaSourcePath(asset, ctx.mediaDir);
+    if (Array.isArray(output.mediaAssets) && output.mediaAssets.length > 0) {
+      for (const asset of output.mediaAssets) {
+        if (!asset || !asset.type) continue;
+        const pathOrUrl = resolveMediaSourcePath(asset, ctx.mediaDir) || asset.url;
+        if (!pathOrUrl) continue;
+
+        if (asset.type === 'audio') {
+          if (!audioTrack) {
+            audioTrack = {
+              role: 'audio_track',
+              type: 'audio',
+              pathOrUrl,
+            };
+          }
+        } else {
+          references.push({
+            role: 'reference',
+            type: asset.type,
+            pathOrUrl,
+          });
+        }
       }
     }
   }
-  return { text, mediaUrl, mediaPath, mediaType };
+  return { text, references, audioTrack };
 }
 
 export function createMaterialGatewayExecutor(opts: {
@@ -109,7 +122,7 @@ export function createMaterialGatewayExecutor(opts: {
     key: 'material:generate',
     async execute(node, ctx): Promise<NodeOutput> {
       const data = node.data ?? {};
-      const upstream = collectUpstream(ctx);
+      const upstream = collectUpstreamMultiModal(ctx);
 
       // Generative: gateway submit -> await -> output
       const capability = readMaterialType(data);
@@ -119,16 +132,11 @@ export function createMaterialGatewayExecutor(opts: {
         ?? upstream.text
         ?? '';
 
-      // Upstream reference mapping (M4, hub seam schema)
-      let image: string | undefined;
-      let audio: string | undefined;
-      if (upstream.mediaType === 'image') {
-        image = upstream.mediaPath || upstream.mediaUrl;
-      } else if (upstream.mediaType === 'audio' && capability === 'video') {
-        audio = upstream.mediaPath || upstream.mediaUrl;
-      } else if (upstream.mediaType === 'video') {
-        ctx.reportProgress?.(15, '视频参考输入暂不支持（等待执行中枢扩展），已忽略');
-      }
+      // Upstream reference mapping (multi-modal references + audioTrack + backward compatibility)
+      const references = upstream.references;
+      const audioTrack = upstream.audioTrack;
+      const image = references.find((r) => r.type === 'image')?.pathOrUrl || undefined;
+      const audio = audioTrack?.pathOrUrl || undefined;
 
       const dest = join(ctx.mediaDir, `${node.id}.${extFor(capability)}`);
       ctx.reportProgress?.(10, '已提交生成任务');
@@ -138,6 +146,8 @@ export function createMaterialGatewayExecutor(opts: {
         prompt,
         image,
         audio,
+        references: references.length > 0 ? references : undefined,
+        audioTrack,
         duration: readDuration(data),
         model: readString(data.params as Record<string, unknown> | undefined, 'model'),
         resolution: readString(data.params as Record<string, unknown> | undefined, 'resolution'),

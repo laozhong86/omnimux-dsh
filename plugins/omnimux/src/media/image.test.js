@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { OmnimuxError } from './errors.js'
 import { executeOmnimuxImage, readOmnimuxImageConfig } from './image.js'
-import { pickMediaUrl } from './vendors/omnimux.js'
+import { mapOmnimuxInput, pickMediaUrl } from './vendors/omnimux.js'
 import { resolveMediaRoute, parseMediaConfig } from './route.js'
 
 describe('omnimux image helpers', () => {
@@ -225,6 +225,63 @@ describe('omnimux image helpers', () => {
     assert.equal(result.mode, 'live')
     assert.equal(result.taskId, 'img-7')
     assert.equal(readFileSync(dest, 'utf8'), 'resumed-png')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('mapOmnimuxInput: maps references and audioTrack with backward compatibility', () => {
+    const input = mapOmnimuxInput('image', {
+      prompt: 'test prompt',
+      references: [
+        { role: 'reference', type: 'image', pathOrUrl: 'https://example.com/ref1.png' },
+        { role: 'reference', type: 'image', pathOrUrl: 'https://example.com/ref2.png' },
+      ],
+      audioTrack: {
+        role: 'audio_track',
+        type: 'audio',
+        pathOrUrl: '/local/audio.mp3',
+      },
+    })
+    assert.equal(input.prompt, 'test prompt')
+    assert.equal(input.image, 'https://example.com/ref1.png', 'fallback image to first image reference')
+    assert.deepEqual(input.images, ['https://example.com/ref1.png', 'https://example.com/ref2.png'])
+    assert.equal(input.references.length, 2)
+    assert.equal(input.audioTrack.pathOrUrl, '/local/audio.mp3')
+  })
+
+  it('executeOmnimuxImage: passes references and audioTrack to runtime', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-refs-'))
+    const dest = join(dir, 'out.png')
+    let capturedReq = null
+    const result = await executeOmnimuxImage({
+      prompt: 'a city with references',
+      dest,
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+      references: [
+        { role: 'reference', type: 'image', pathOrUrl: '/tmp/ref1.png' },
+      ],
+      audioTrack: {
+        role: 'audio_track',
+        type: 'audio',
+        pathOrUrl: '/tmp/track.mp3',
+      },
+      runtime: {
+        async execute(req) {
+          capturedReq = req
+          return {
+            taskId: 'task-ref-1',
+            outputs: [{ type: 'image', url: 'data:image/png;base64,cmVm' }],
+          }
+        },
+      },
+    })
+    assert.ok(capturedReq)
+    assert.equal(capturedReq.input.prompt, 'a city with references')
+    assert.equal(capturedReq.input.image, '/tmp/ref1.png')
+    assert.deepEqual(capturedReq.input.images, ['/tmp/ref1.png'])
+    assert.equal(capturedReq.input.references.length, 1)
+    assert.equal(capturedReq.input.audioTrack.pathOrUrl, '/tmp/track.mp3')
+    assert.equal(result.mode, 'live')
+    assert.equal(readFileSync(dest, 'utf8'), 'ref')
     rmSync(dir, { recursive: true, force: true })
   })
 })

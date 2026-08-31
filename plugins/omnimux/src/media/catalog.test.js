@@ -36,6 +36,16 @@ describe('hub media catalog tables', () => {
     assert.equal(veo.parameters.duration?.defaultValue, 8)
   })
 
+  it('Wan 3.0 video spec and alias lookup', () => {
+    const wan3 = VIDEO_MODEL_SPECS.find((m) => m.id === 'wan-3.0')
+    assert.ok(wan3)
+    assert.equal(wan3.label, 'Wan 3.0')
+    assert.equal(wan3.family, 'wan')
+    assert.equal(findMediaModel('video', 'wan-3.0')?.id, 'wan-3.0')
+    assert.equal(findMediaModel('video', 'wan3.0')?.id, 'wan-3.0')
+    assert.equal(findMediaModel('video', 'wan_3_0')?.id, 'wan-3.0')
+  })
+
   it('audio table includes suno and gpt-4o-mini-tts', () => {
     assert.ok(findMediaModel('audio', 'suno'))
     assert.ok(AUDIO_MODEL_SPECS.some((row) => row.id === 'gpt-4o-mini-tts'))

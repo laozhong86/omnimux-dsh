@@ -20,17 +20,114 @@ import { OmnimuxError } from '../media/errors.js'
  * minimax-m3 is catalogued but this key's group 403s it, so it stays off.
  */
 export const CHAT_MODELS = Object.freeze([
-  Object.freeze({ id: 'claude-opus-5', brand: 'anthropic', role: 'flagship', input: Object.freeze(['text']) }),
-  Object.freeze({ id: 'claude-opus-4-6', brand: 'anthropic', role: 'flagship', input: Object.freeze(['text', 'image']) }),
-  Object.freeze({ id: 'gpt-5.6-sol', brand: 'openai', role: 'flagship', input: Object.freeze(['text', 'image']) }),
-  Object.freeze({ id: 'gpt-5.5', brand: 'openai', role: 'flagship', input: Object.freeze(['text', 'image']) }),
-  Object.freeze({ id: 'grok-4.6', brand: 'xai', role: 'flagship', input: Object.freeze(['text', 'image']) }),
-  Object.freeze({ id: 'kimi-k3', brand: 'moonshot', role: 'flagship', input: Object.freeze(['text', 'image']) }),
-  Object.freeze({ id: 'deepseek-v4-pro', brand: 'deepseek', role: 'flagship', input: Object.freeze(['text']) }),
-  Object.freeze({ id: 'deepseek-v4-flash-vision-exp', brand: 'deepseek', role: 'classic', input: Object.freeze(['text', 'image']) }),
-  Object.freeze({ id: 'gemini-3.7-flash', brand: 'google', role: 'flagship', input: Object.freeze(['text', 'image', 'video']) }),
-  Object.freeze({ id: 'gemini-3.1-pro-preview', brand: 'google', role: 'flagship', input: Object.freeze(['text', 'image']) }),
-  Object.freeze({ id: 'glm-5.3', brand: 'zhipu', role: 'flagship', input: Object.freeze(['text']) }),
+  Object.freeze({
+    id: 'claude-opus-5',
+    brand: 'anthropic',
+    role: 'flagship',
+    input: Object.freeze(['text']),
+    inputCapability: Object.freeze({
+      modalities: Object.freeze(['text']),
+    }),
+  }),
+  Object.freeze({
+    id: 'claude-opus-4-6',
+    brand: 'anthropic',
+    role: 'flagship',
+    input: Object.freeze(['text', 'image']),
+    inputCapability: Object.freeze({
+      modalities: Object.freeze(['text', 'image']),
+      referenceImages: Object.freeze({ min: 0, max: 10 }),
+    }),
+  }),
+  Object.freeze({
+    id: 'gpt-5.6-sol',
+    brand: 'openai',
+    role: 'flagship',
+    input: Object.freeze(['text', 'image']),
+    inputCapability: Object.freeze({
+      modalities: Object.freeze(['text', 'image']),
+      referenceImages: Object.freeze({ min: 0, max: 10 }),
+    }),
+  }),
+  Object.freeze({
+    id: 'gpt-5.5',
+    brand: 'openai',
+    role: 'flagship',
+    input: Object.freeze(['text', 'image']),
+    inputCapability: Object.freeze({
+      modalities: Object.freeze(['text', 'image']),
+      referenceImages: Object.freeze({ min: 0, max: 10 }),
+    }),
+  }),
+  Object.freeze({
+    id: 'grok-4.6',
+    brand: 'xai',
+    role: 'flagship',
+    input: Object.freeze(['text', 'image']),
+    inputCapability: Object.freeze({
+      modalities: Object.freeze(['text', 'image']),
+      referenceImages: Object.freeze({ min: 0, max: 10 }),
+    }),
+  }),
+  Object.freeze({
+    id: 'kimi-k3',
+    brand: 'moonshot',
+    role: 'flagship',
+    input: Object.freeze(['text', 'image']),
+    inputCapability: Object.freeze({
+      modalities: Object.freeze(['text', 'image']),
+      referenceImages: Object.freeze({ min: 0, max: 10 }),
+    }),
+  }),
+  Object.freeze({
+    id: 'deepseek-v4-pro',
+    brand: 'deepseek',
+    role: 'flagship',
+    input: Object.freeze(['text']),
+    inputCapability: Object.freeze({
+      modalities: Object.freeze(['text']),
+    }),
+  }),
+  Object.freeze({
+    id: 'deepseek-v4-flash-vision-exp',
+    brand: 'deepseek',
+    role: 'classic',
+    input: Object.freeze(['text', 'image']),
+    inputCapability: Object.freeze({
+      modalities: Object.freeze(['text', 'image']),
+      referenceImages: Object.freeze({ min: 0, max: 10 }),
+    }),
+  }),
+  Object.freeze({
+    id: 'gemini-3.7-flash',
+    brand: 'google',
+    role: 'flagship',
+    input: Object.freeze(['text', 'image', 'video']),
+    inputCapability: Object.freeze({
+      modalities: Object.freeze(['text', 'image', 'video']),
+      referenceImages: Object.freeze({ min: 0, max: 10 }),
+      referenceVideos: Object.freeze({ min: 0, max: 1 }),
+    }),
+  }),
+  Object.freeze({
+    id: 'gemini-3.1-pro-preview',
+    brand: 'google',
+    role: 'flagship',
+    input: Object.freeze(['text', 'image']),
+    inputCapability: Object.freeze({
+      modalities: Object.freeze(['text', 'image']),
+      referenceImages: Object.freeze({ min: 0, max: 10 }),
+    }),
+  }),
+  Object.freeze({
+    id: 'glm-5.3',
+    brand: 'zhipu',
+    role: 'flagship',
+    input: Object.freeze(['text']),
+    inputCapability: Object.freeze({
+      modalities: Object.freeze(['text']),
+    }),
+  }),
 ])
 
 /**

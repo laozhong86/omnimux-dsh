@@ -1,7 +1,8 @@
 /**
- * StatusBadge — 从 M1-M5 MaterialNode.tsx:275-296 抽出的执行状态徽标。
+ * StatusBadge — 节点执行与降级状态徽标。
  *
- * 语义原样保留：executionStatus（SSE 写入）优先，回退本地 status；
+ * 语义保留：executionStatus（SSE 写入）优先，回退本地 status；
+ * 支持非破坏性降级/超限警示徽标（isDegraded / degradedWarning）；
  * CSS 类复用 theme 的 wf-material-node__badge* 块。
  */
 
@@ -13,9 +14,16 @@ import { useT } from '../../../i18n';
 export interface StatusBadgeProps {
   executionStatus?: NodeExecutionApiStatus;
   status?: MaterialStatus;
+  isDegraded?: boolean;
+  degradedWarning?: string;
 }
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ executionStatus, status }) => {
+const StatusBadge: React.FC<StatusBadgeProps> = ({
+  executionStatus,
+  status,
+  isDegraded,
+  degradedWarning,
+}) => {
   const t = useT();
   const badge = useMemo(() => {
     switch (executionStatus) {
@@ -47,9 +55,20 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ executionStatus, status }) =>
           />
         );
       default:
-        return null;
+        break;
     }
-  }, [executionStatus, status, t]);
+
+    if (isDegraded) {
+      return (
+        <span
+          className="wf-material-node__badge wf-material-node__badge--degraded"
+          title={degradedWarning || t('model.compatibility.degradedWarning')}
+        />
+      );
+    }
+
+    return null;
+  }, [executionStatus, status, isDegraded, degradedWarning, t]);
 
   return badge;
 };

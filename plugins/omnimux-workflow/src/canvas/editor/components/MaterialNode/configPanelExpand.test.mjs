@@ -68,3 +68,13 @@ test('展开 / 收起文案入典', () => {
   assert.match(enSrc, /'panel\.expand': 'Expand'/);
   assert.match(enSrc, /'panel\.collapse': 'Collapse'/);
 });
+
+test('单图模型 + 多图上游 → 配置面板渲染 degraded 警示徽标与解绑按钮', () => {
+  // 配置面板消费 modelCompat 与 degraded 状态
+  assert.match(panelSrc, /isModelDegraded/);
+  assert.match(panelSrc, /wf-config-panel__degraded-badge/);
+  assert.match(panelSrc, /degradedWarningText/);
+  assert.match(panelSrc, /wf-config-panel__ref-thumb-unbind/);
+  assert.match(panelSrc, /handleUnbind/);
+});
+

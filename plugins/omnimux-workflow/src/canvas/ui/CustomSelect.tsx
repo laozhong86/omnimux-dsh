@@ -15,6 +15,7 @@ export interface SelectOption<T = string | number> {
   badge?: string;
   icon?: React.ReactNode;
   disabled?: boolean;
+  title?: string;
 }
 
 export interface CustomSelectProps<T = string | number> {
@@ -187,6 +188,7 @@ export function CustomSelect<T extends string | number = string>({
                       role="option"
                       aria-selected={isSelected}
                       disabled={opt.disabled}
+                      title={opt.title || (typeof opt.label === 'string' ? opt.label : undefined)}
                       className={`wf-custom-select-option ${
                         hasExtra ? 'wf-custom-select-option--rich' : ''
                       } ${isSelected ? 'wf-custom-select-option--selected' : ''} ${

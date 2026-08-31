@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { isMediaEnabled } from '../gate/guard.js'
 import { AUDIO_MODEL_SPECS, IMAGE_MODEL_SPECS, VIDEO_MODEL_SPECS } from '../media/catalog.js'
 import { DEFAULT_MEDIA } from '../media/route.js'
-import { DEFAULT_TEXT, enabledTextModels } from '../text/catalog.js'
+import { DEFAULT_TEXT, CHAT_MODELS, enabledTextModels } from '../text/catalog.js'
 import { textModelLabel } from './labels.js'
 import { sortCatalogRows } from './sort.js'
 
@@ -39,11 +39,16 @@ export function buildModelCatalog(opts = {}) {
     ? opts.settingsDefaults
     : {}
 
-  const textRows = enabledTextModels(text, gate).map((row) => ({
-    id: row.id,
-    label: textModelLabel(row.id),
-    family: row.brand,
-  }))
+  const chatMap = new Map(CHAT_MODELS.map((row) => [row.id, row]))
+  const textRows = enabledTextModels(text, gate).map((row) => {
+    const chat = chatMap.get(row.id)
+    return {
+      id: row.id,
+      label: textModelLabel(row.id),
+      family: row.brand,
+      inputCapability: chat?.inputCapability,
+    }
+  })
 
   const lists = {
     text: sortCatalogRows(textRows),

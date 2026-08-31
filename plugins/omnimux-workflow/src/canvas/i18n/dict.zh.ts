@@ -50,6 +50,8 @@ const zh = {
   'pill.more': '更多',
   // 配置面板（W2，panel.*）
   'panel.generate': '生成',
+  'panel.refsTitle': '参考素材',
+  'panel.refsEmpty': '暂无参考输入',
   'panel.promptPlaceholder': '输入提示词…',
   'panel.textPromptPlaceholder': '写下你想讲的故事、场景或角色设定。例如：落魄赘婿被丈母娘当众羞辱，转身亮出隐藏的亿万富豪身份。',
   'panel.imagePromptPlaceholder': '描述你想要生成的内容',
@@ -84,7 +86,12 @@ const zh = {
   'edge.reject.missingNode': '连接目标不存在',
   'edge.reject.cycle': '这条连线会形成循环依赖',
   'edge.reject.typeContract': '目标节点当前不接受这种素材类型',
+  'edge.reject.capacityExceeded': '已达目标模型参考图上限（最多 {max} 张）',
+  'edge.reject.modelIncompatible': '目标模型不支持该素材类型',
   'edge.reject.invalid': '连接无效',
+  // 模型多模态兼容性
+  'model.compatibility.disabledReason': '当前输入不满足模型要求：{reason}',
+  'model.compatibility.degradedWarning': '输入超出模型推荐配额，执行时按前 {max} 张处理',
   // 文本节点 / 徽标
   'node.textPlaceholder': '输入文本内容…',
   'node.skipped': '节点被跳过',
