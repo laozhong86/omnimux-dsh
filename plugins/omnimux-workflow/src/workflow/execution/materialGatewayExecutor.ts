@@ -7,6 +7,7 @@
  */
 
 import { join } from 'node:path';
+import { localFilePathFromUrl } from '../../shared/localMedia.ts';
 import type { GenerationGateway } from '../seam/gateway';
 import type {
   ExecutionContext,
@@ -44,24 +45,59 @@ function extFor(capability: 'text' | 'image' | 'video' | 'audio'): string {
   return 'txt';
 }
 
-/** First upstream output carrying text, plus first upstream media asset. */
-function collectUpstream(ctx: ExecutionContext): {
+function resolveMediaSourcePath(
+  asset: { url?: string; path?: string; relativePath?: string } | undefined,
+  mediaDir: string,
+): string | undefined {
+  if (!asset) return undefined;
+  if (typeof asset.path === 'string' && asset.path.trim().length > 0) {
+    return asset.path.trim();
+  }
+  const url = typeof asset.url === 'string' ? asset.url.trim() : '';
+  if (!url) return undefined;
+  if (url.startsWith('data:') || /^https?:\/\//i.test(url)) {
+    return url;
+  }
+  const localPath = localFilePathFromUrl(url);
+  if (localPath) {
+    return localPath;
+  }
+  const marker = '/media/';
+  const index = url.indexOf(marker);
+  if (index !== -1 && url.startsWith('/')) {
+    return join(mediaDir, url.slice(index + marker.length));
+  }
+  return url;
+}
+
+interface UpstreamData {
   text?: string;
   mediaUrl?: string;
+  mediaPath?: string;
   mediaType?: 'image' | 'video' | 'audio';
-} {
+}
+
+/** Upstream output: collects text and first media asset without mutual exclusion. */
+function collectUpstream(ctx: ExecutionContext): UpstreamData {
+  let text: string | undefined;
+  let mediaUrl: string | undefined;
+  let mediaPath: string | undefined;
+  let mediaType: 'image' | 'video' | 'audio' | undefined;
+
   for (const output of ctx.upstreamOutputs.values()) {
-    if (output.text && output.text.trim()) {
-      return { text: output.text };
+    if (!text && output.text && output.text.trim()) {
+      text = output.text.trim();
+    }
+    if (!mediaUrl && Array.isArray(output.mediaAssets) && output.mediaAssets.length > 0) {
+      const asset = output.mediaAssets[0];
+      if (asset && asset.type) {
+        mediaType = asset.type;
+        mediaUrl = asset.url;
+        mediaPath = resolveMediaSourcePath(asset, ctx.mediaDir);
+      }
     }
   }
-  for (const output of ctx.upstreamOutputs.values()) {
-    const asset = output.mediaAssets?.[0];
-    if (asset) {
-      return { mediaUrl: asset.url, mediaType: asset.type };
-    }
-  }
-  return {};
+  return { text, mediaUrl, mediaPath, mediaType };
 }
 
 export function createMaterialGatewayExecutor(opts: {
@@ -87,9 +123,9 @@ export function createMaterialGatewayExecutor(opts: {
       let image: string | undefined;
       let audio: string | undefined;
       if (upstream.mediaType === 'image') {
-        image = upstream.mediaUrl;
+        image = upstream.mediaPath || upstream.mediaUrl;
       } else if (upstream.mediaType === 'audio' && capability === 'video') {
-        audio = upstream.mediaUrl;
+        audio = upstream.mediaPath || upstream.mediaUrl;
       } else if (upstream.mediaType === 'video') {
         ctx.reportProgress?.(15, '视频参考输入暂不支持（等待执行中枢扩展），已忽略');
       }
