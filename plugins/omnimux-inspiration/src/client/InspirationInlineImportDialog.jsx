@@ -1,11 +1,16 @@
 import { useState } from 'react'
 import { Button, InputField, ModalDialog } from 'dsh-ui-kit'
 import { importLocalInspiration } from './api.js'
+import {
+  AutoAnalyzeSwitch,
+  CollapsibleTagsField,
+} from './import-dialog-controls.jsx'
+import { readAutoAnalyzePreference } from './import-dialog-prefs.js'
 
 export function InspirationInlineImportDialog({ open, t, onClose, onImported }) {
   const [url, setUrl] = useState('')
   const [tags, setTags] = useState('')
-  const [autoAnalyze, setAutoAnalyze] = useState(true)
+  const [autoAnalyze, setAutoAnalyze] = useState(() => readAutoAnalyzePreference())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -71,23 +76,18 @@ export function InspirationInlineImportDialog({ open, t, onClose, onImported }) 
           disabled={loading}
           onChange={(e) => setUrl(e.target.value)}
         />
-        <InputField
-          type="text"
-          label={t('add.tagsLabel')}
-          placeholder={t('add.tagsPlaceholder')}
+        <CollapsibleTagsField
+          t={t}
           value={tags}
           disabled={loading}
-          onChange={(e) => setTags(e.target.value)}
+          onChange={setTags}
         />
-        <label className="omnimux-inspiration-check">
-          <input
-            type="checkbox"
-            checked={autoAnalyze}
-            onChange={(e) => setAutoAnalyze(e.target.checked)}
-            disabled={loading}
-          />
-          <span>{t('add.autoAnalyze')}</span>
-        </label>
+        <AutoAnalyzeSwitch
+          t={t}
+          checked={autoAnalyze}
+          disabled={loading}
+          onChange={setAutoAnalyze}
+        />
       </form>
     </ModalDialog>
   )
