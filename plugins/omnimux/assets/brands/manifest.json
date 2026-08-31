@@ -42,7 +42,7 @@
       "company": "阿里",
       "series": { "zh": "万相 / 通义", "en": "Wan / Qwen" },
       "primaryColor": "#6366F1",
-      "models": ["wan-2.6", "wan2.6", "wan26", "wanxiang-v2-6", "happyhorse-1", "happyhorse-1.0", "qwen-max", "qwen-vl"]
+      "models": ["wan-3.0", "wan3.0", "wan30", "wan-2.7", "wan2.7", "wan-2.6", "wan2.6", "wan26", "wanxiang-v2-6", "happyhorse-1", "happyhorse-1.0", "qwen-max", "qwen-vl"]
     },
     "bytedance": {
       "id": "bytedance",
