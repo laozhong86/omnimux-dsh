@@ -17,6 +17,7 @@ const TAB_ID = 'omnimux-accounts:library'
  */
 export function AccountsStage({ t, stage, store, visible = true }) {
   useEffect(() => { injectAccountsStyles() }, [])
+  const everOpened = true
 
   useEffect(() => {
     const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined

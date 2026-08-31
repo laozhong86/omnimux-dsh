@@ -345,6 +345,7 @@ function AssetsDialogs(props) {
 export function AssetsStage(props) {
   const { t, stage, store, visible = true } = props
   useEffect(() => { injectAssetsStyles() }, [])
+  const everOpened = true
 
   useEffect(() => {
     const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined

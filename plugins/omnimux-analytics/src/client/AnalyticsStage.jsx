@@ -46,6 +46,7 @@ function openAccounts() {
  */
 export function AnalyticsStage({ t, stage, store, visible = true }) {
   useEffect(() => { injectAnalyticsStyles() }, [])
+  const everOpened = true
 
   useEffect(() => {
     const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined

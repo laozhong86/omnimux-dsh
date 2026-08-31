@@ -91,6 +91,7 @@ export function PublishStageModals(props) {
 export function PublishStage(props) {
   const { t, stage, store, visible = true } = props
   useEffect(() => { injectPublishStyles() }, [])
+  const everOpened = true
 
   useEffect(() => {
     const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined

@@ -69,4 +69,6 @@
       }
     }
 
-    return { inject, apply };
+    if (typeof module !== "undefined" && module.exports) {
+      module.exports = { inject, apply };
+    }

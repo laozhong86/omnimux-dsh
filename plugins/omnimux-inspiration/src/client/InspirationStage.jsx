@@ -17,6 +17,7 @@ const TAB_ID = 'omnimux-inspiration:library'
  */
 export function InspirationStage({ t, stage, store, visible = true }) {
   useEffect(() => { injectInspirationStyles() }, [])
+  const everOpened = true
 
   useEffect(() => {
     const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined

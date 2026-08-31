@@ -42,6 +42,7 @@ function citeOf(product) {
  */
 export function ProductsStage({ t, stage, store, visible = true }) {
   useEffect(() => { injectProductsStyles() }, [])
+  const everOpened = true
 
   useEffect(() => {
     const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
