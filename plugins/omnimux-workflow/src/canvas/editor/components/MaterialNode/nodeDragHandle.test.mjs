@@ -55,7 +55,7 @@ test('MaterialNode 顶栏走通用 FloatingTopPill，有素材才显示，生成
   assert.match(nodeSrc, /shouldShowNodeToolbar/);
   assert.match(nodeSrc, /key:\s*'add-to-conversation'/);
   assert.doesNotMatch(nodeSrc, /from '\.\/FloatingTopPill'/);
-  assert.doesNotMatch(nodeSrc, /showReplaceButton/);
+  assert.match(nodeSrc, /showReplaceButton/);
 });
 
 test('MaterialNode chat 胶囊是次区图标：section secondary，无可见 label，title 仍走 i18n', () => {
@@ -70,10 +70,6 @@ test('MaterialNode chat 胶囊是次区图标：section secondary，无可见 la
   const edit = sliceActionBlock(nodeSrc, 'edit');
   assert.match(edit, /section:\s*'primary'/);
   assert.match(edit, /label:\s*t\('pill\.edit'\)/);
-
-  const replace = sliceActionBlock(nodeSrc, 'replace');
-  assert.match(replace, /section:\s*'primary'/);
-  assert.match(replace, /label:\s*t\('pill\.replace'\)/);
 
   const copy = sliceActionBlock(nodeSrc, 'copy');
   assert.match(copy, /section:\s*'secondary'/);

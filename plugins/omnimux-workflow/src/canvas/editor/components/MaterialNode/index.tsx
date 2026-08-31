@@ -418,23 +418,6 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       ];
     }
 
-    if (kind === 'import') {
-      return [
-        {
-          key: 'replace',
-          label: t('pill.replace'),
-          icon: RefreshCw,
-          section: 'primary',
-          title: t('pill.replace'),
-          onClick: (event) => {
-            event.stopPropagation();
-            void resourcePicker.fillImportNode();
-          },
-        },
-        chat,
-      ];
-    }
-
     return [chat];
   }, [
     copied,
@@ -447,6 +430,13 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     resourcePicker,
     t,
   ]);
+
+  const showReplaceButton =
+    materialType !== 'text' &&
+    !isOffline &&
+    Boolean(previewUrl) &&
+    (isHovered || selected) &&
+    !isMultiSelected;
 
   return (
     <div
@@ -496,6 +486,23 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             <span className="wf-node-corner wf-node-corner--bl" />
             <span className="wf-node-corner wf-node-corner--br" />
           </>
+        )}
+
+        {/* 媒体节点卡片内侧右上角「替换」按钮 */}
+        {showReplaceButton && (
+          <button
+            type="button"
+            className="wf-material-node__replace-btn nodrag"
+            onClick={(e) => {
+              e.stopPropagation();
+              void resourcePicker.fillImportNode();
+            }}
+            title={t('node.replace')}
+            aria-label={t('node.replace')}
+          >
+            <RefreshCw size={12} className="wf-material-node__replace-icon" />
+            <span>{t('node.replace')}</span>
+          </button>
         )}
 
         {/* 1. 文本节点渲染 */}
