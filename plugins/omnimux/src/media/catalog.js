@@ -681,8 +681,8 @@ export const VIDEO_MODEL_SPECS = [
     },
   },
   {
-    id: 'wan-2.6',
-    label: 'Wan 2.6',
+    id: 'wan-3.0',
+    label: 'Wan 3.0',
     subtitle: '720P-1080P · ⏱ 5-15s · 🔊',
     family: 'wan',
     parameters: {
@@ -785,5 +785,10 @@ export function mediaModelIds(kind) {
 
 /** @param {'image' | 'video' | 'audio'} kind @param {string} id */
 export function findMediaModel(kind, id) {
-  return mediaModels(kind).find((row) => row.id === id) ?? null
+  if (!id || typeof id !== 'string') return null
+  const models = mediaModels(kind)
+  const match = models.find((row) => row.id === id)
+  if (match) return match
+  const stripped = id.replace(/[-_.]/g, '').toLowerCase()
+  return models.find((row) => row.id.replace(/[-_.]/g, '').toLowerCase() === stripped) ?? null
 }
