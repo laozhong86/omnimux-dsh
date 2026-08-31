@@ -59,6 +59,8 @@ const en: Record<DictKey, string> = {
   'panel.failAbort': 'Abort on error',
   'panel.failSkip': 'Skip this node',
   'panel.advanced': 'Advanced',
+  'panel.expand': 'Expand',
+  'panel.collapse': 'Collapse',
   'panel.modelEmpty': 'Capability catalog empty (stub)',
   'panel.runHint': 'Run this node (with upstream)',
   'panel.hintTextNode': 'Text editor nodes edit content directly in the card; upstream input can be referenced by text-generation tools',

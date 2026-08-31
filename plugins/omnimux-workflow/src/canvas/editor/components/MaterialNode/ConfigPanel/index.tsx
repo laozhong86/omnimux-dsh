@@ -3,7 +3,7 @@
  *
  * 1:1 还原 4 张设计截图：
  * 1. 音频模式：顶部带 [ 音频生成 ] / [ 音乐生成 ] 子模式切换 Tab
- * 2. Prompt 输入区：左上角只读参考缩略图（有上游连线时展示）、右上角 [⤢] 全屏放大、动态占位符与右下角字数统计（如 0/7500）
+ * 2. Prompt 输入区：左上角只读参考缩略图（有上游连线时展示）、右上角原地展开/收起、动态占位符与右下角字数统计（如 0/7500）
  * 3. 底部参数胶囊栏：
  *    - 文本：[模型选择] | ⚡ 10 | [↑]
  *    - 图片：[模型选择] | 自适应 | × 1 | ⚡ 60 | [↑]
@@ -14,6 +14,7 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
   Maximize2,
+  Minimize2,
   Plus,
   SlidersHorizontal,
   Music,
@@ -31,7 +32,7 @@ import {
 import type { CapabilityCatalog, CapabilityModelItem } from '../../../../../shared/api';
 import { sortCatalogRows } from '../../../../../shared/sortCatalog';
 import { useT } from '../../../../i18n';
-import { CustomSelect, CustomSlider, CustomModal } from '../../../../ui';
+import { CustomSelect, CustomSlider } from '../../../../ui';
 import { ModelBrandIcon } from '../../../../ui/ModelBrandIcon';
 import { useUpstreamMedia } from '../../../hooks/useUpstreamMedia';
 import { useModelParameterSchema, getCachedCatalog } from '../../../hooks/useModelParameterSchema';
@@ -128,7 +129,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
   const { materialType, selectedTool, params, prompt } = nodeData;
   const kind = resolveNodeKind(nodeData);
 
-  const [expandedModal, setExpandedModal] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const upstreams = useUpstreamMedia(nodeId);
@@ -424,23 +425,25 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
             <span />
           )}
 
-          {/* 右上角 [⤢] 放大按钮 */}
+          {/* 右上角原地展开 / 收起，不脱离画布上下文 */}
           <button
             type="button"
             className="wf-config-panel__expand-btn"
-            onClick={() => setExpandedModal(true)}
-            title={t('header.fitView')}
+            onClick={() => setIsExpanded((prev) => !prev)}
+            title={isExpanded ? t('panel.collapse') : t('panel.expand')}
           >
-            <Maximize2 size={13} />
+            {isExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
           </button>
         </div>
 
-        {/* Prompt 输入框 */}
+        {/* Prompt 输入框：展开态加高并保持底部参数栏紧贴 */}
         <textarea
-          className="wf-config-panel__prompt-input nowheel nodrag"
+          className={`wf-config-panel__prompt-input nowheel nodrag${
+            isExpanded ? ' wf-config-panel__prompt-input--expanded' : ''
+          }`}
           value={prompt ?? ''}
           placeholder={placeholder}
-          rows={3}
+          rows={isExpanded ? 8 : 3}
           onChange={(e) => onUpdateNodeData({ prompt: e.target.value })}
         />
 
@@ -560,22 +563,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
           </div>
         </div>
       )}
-
-      {/* 全屏 Prompt 模态框 */}
-      <CustomModal
-        title={t('panel.promptPlaceholder')}
-        open={expandedModal}
-        onCancel={() => setExpandedModal(false)}
-        width={680}
-      >
-        <textarea
-          className="wf-config-panel__modal-textarea"
-          value={prompt ?? ''}
-          placeholder={placeholder}
-          rows={10}
-          onChange={(e) => onUpdateNodeData({ prompt: e.target.value })}
-        />
-      </CustomModal>
     </div>
   );
 };
