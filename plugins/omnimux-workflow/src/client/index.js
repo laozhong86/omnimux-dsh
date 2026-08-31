@@ -1,12 +1,11 @@
 /** Client half: locale dictionaries, sidebar「项目」row + 「新建项目」inline
- *  button, the project library first-level page (shell.overlay), and the
+ *  button, the project library tab, and the
  *  project-session canvas tab on dsh-better-sidebar. */
 import { createElement } from 'react'
 import { NS, en, zh } from './locales.js'
-import { createStageStore } from './stage-store.js'
 import { mountSidebarEntry } from './sidebar-entry.js'
 import { mountNewProjectEntry } from './projects/sidebar-new-project.js'
-import { ProjectLibraryPage } from './projects/ProjectLibraryPage.jsx'
+import { ProjectLibraryPage, WORKFLOW_LIBRARY_TAB_ID } from './projects/ProjectLibraryPage.jsx'
 import { CanvasTab } from './projects/CanvasTab.jsx'
 import { bindBetterSidebar, CANVAS_TAB_ID } from './projects/projectCanvas.js'
 import { installWorkflowGlobal } from './projects/workflow-global.js'
@@ -29,14 +28,11 @@ export const inject = ['slots', 'locale', 'sessions', 'workspaces', 'layout']
 export function apply(ctx) {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'omnimux-workflow: dictionaries')
   const t = ctx.locale.bind(NS)
-  const stage = createStageStore(() => window.__omnimuxStage)
 
-  // 侧栏：项目 row（rank 5）+ 新建项目 inline 并排按钮（kind:'inline'）。
-  ctx.effect(() => mountSidebarEntry(stage, t, ctx.locale), 'omnimux-workflow: sidebar entry')
-  // 不要把未 inject 的 betterSidebar 塞进闭包：Cordis Proxy 会直接 throw。
-  // 画布服务走 bindBetterSidebar（下面 inject 回调里绑），activateProjectCanvas 会等。
+  // 侧栏：项目 row（rank 4）+ 新建项目 inline 并排按钮（kind:'inline'）。
+  ctx.effect(() => mountSidebarEntry(null, t, ctx.locale), 'omnimux-workflow: sidebar entry')
   ctx.effect(
-    () => mountNewProjectEntry({ sessions: ctx.sessions, workspaces: ctx.workspaces, layout: ctx.layout, stage }, t, ctx.locale),
+    () => mountNewProjectEntry({ sessions: ctx.sessions, workspaces: ctx.workspaces, layout: ctx.layout, stage: null }, t, ctx.locale),
     'omnimux-workflow: new-project entry',
   )
 
@@ -46,7 +42,7 @@ export function apply(ctx) {
     sessions: ctx.sessions,
     workspaces: ctx.workspaces,
     layout: ctx.layout,
-    stage,
+    stage: null,
     t,
   }
   ctx.effect(
@@ -54,26 +50,40 @@ export function apply(ctx) {
     'omnimux-workflow: global seam',
   )
 
-  // 一级页：项目列表页（shell.overlay）。依赖 face 透传 sessions/workspaces/layout。
-  const stageFace = () => ({
-    t,
-    stage,
-    locale: ctx.locale,
-    sessions: ctx.sessions,
-    workspaces: ctx.workspaces,
-    layout: ctx.layout,
-  })
-  ctx.slots.inject('shell.overlay', () => ctx.slots.register({
-    name: 'shell.overlay',
-    id: 'omnimux-workflow-stage',
-    order: 40,
-    locale: NS,
-    inject: stageFace,
-  }, ProjectLibraryPage))
+  const renderWorkflowIcon = (size = 16) => createElement('svg', {
+    width: size,
+    height: size,
+    viewBox: '0 0 20 20',
+    fill: 'none',
+    xmlns: 'http://www.w3.org/2000/svg',
+  }, [
+    createElement('path', {
+      key: 'p',
+      fill: 'currentColor',
+      d: 'M2 5.5a1.5 1.5 0 0 1 3 0V6h10v-.5a1.5 1.5 0 0 1 3 0v4.757a5.5 5.5 0 0 0-1-.657V5.5a.5.5 0 0 0-1 0v3.707a5.5 5.5 0 0 0-1-.185V7H5v6h4.207a5.5 5.5 0 0 0-.185 1H5v.5a1.5 1.5 0 0 1-3 0zm2 0a.5.5 0 0 0-1 0v9a.5.5 0 0 0 1 0zm15 9a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-2.287-.437l-2.97-1.65a.5.5 0 0 0-.743.437v3.3a.5.5 0 0 0 .743.437l2.97-1.65a.5.5 0 0 0 0-.874',
+    }),
+  ])
 
-  // 画布挂到 dsh-better-sidebar，不 shadow 官方 details。
-  // betterSidebar 由第三方插件 provide；未装时降级（项目仍可建，只是没有宽栏画布）。
-  // 可选依赖只能走 ctx.inject：顶层读未声明服务会炸整个 loader。
+  const registerWorkflowLibraryTab = (sidebar) => {
+    if (!sidebar || typeof sidebar.registerTab !== 'function') return () => {}
+    return sidebar.registerTab({
+      id: WORKFLOW_LIBRARY_TAB_ID,
+      title: () => t('nav') || '项目',
+      icon: renderWorkflowIcon,
+      order: 14,
+      hidden: false,
+      single: true,
+      component: (props) => createElement(ProjectLibraryPage, {
+        ...props,
+        t,
+        sessions: ctx.sessions,
+        workspaces: ctx.workspaces,
+        layout: ctx.layout,
+        betterSidebar: sidebar,
+      }),
+    })
+  }
+
   const renderCanvasIcon = (size = 16) => createElement('svg', {
     width: size,
     height: size,
@@ -127,9 +137,24 @@ export function apply(ctx) {
       component: (props) => createElement(CanvasTab, { ...props, t }),
     })
   }
+
+  const bindWorkbench = (patch) => {
+    try {
+      window.__omnimuxWorkbench?.bind?.(patch)
+    } catch {}
+  }
+
   if (typeof ctx.inject === 'function') {
     ctx.inject(['betterSidebar'], (inner) => {
-      ctx.effect(() => registerCanvas(inner.betterSidebar), 'omnimux-workflow: canvas tab')
+      const sidebar = inner.betterSidebar ?? inner.get?.('betterSidebar')
+      bindWorkbench({ betterSidebar: sidebar, layout: ctx.layout, sessions: ctx.sessions })
+      if (typeof ctx.effect === 'function') {
+        ctx.effect(() => registerWorkflowLibraryTab(sidebar), 'omnimux-workflow: library tab')
+        ctx.effect(() => registerCanvas(sidebar), 'omnimux-workflow: canvas tab')
+      } else {
+        registerWorkflowLibraryTab(sidebar)
+        registerCanvas(sidebar)
+      }
     })
   }
 }

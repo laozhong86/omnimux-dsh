@@ -1,77 +1,64 @@
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect } from 'react'
 import { PageHeader } from 'dsh-ui-kit'
 import { AccountsSection } from './AccountsSection.jsx'
 import { injectAccountsStyles } from './styles.js'
+import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
+
+const TAB_ID = 'omnimux-accounts:library'
 
 /**
- * Standalone pinned Accounts page. Its own sidebar row toggles the stage
- * store, which claims the product stage (mutual exclusion with 任务看板 /
- * 专家 pages) and renders over the conversation column. Open state lives in
- * the stage store, not in React state.
- *
- * After the first open the subtree stays mounted and is hidden with
- * `display:none` + `aria-hidden` so filters / list / view mode survive a
- * close. Returning `null` here would throw `AccountsSection` away and every
- * sidebar click would flash the loading skeleton.
- * @param {{ t: (key: string) => string, stage: { getSnapshot: () => boolean, subscribe: Function, set: Function, readBox: () => { top: number, left: number, width: number, height: number } } }} props
+ * Accounts workbench tab component in dsh-better-sidebar.
+ * @param {{
+ *   t: (key: string) => string,
+ *   stage?: { getSnapshot: () => boolean, subscribe: Function, set: Function },
+ *   store?: { reduce?: Function, getSnapshot?: Function },
+ *   visible?: boolean,
+ * }} props
  */
-export function AccountsStage({ t, stage }) {
+export function AccountsStage({ t, stage, store, visible = true }) {
   useEffect(() => { injectAccountsStyles() }, [])
 
-  // Wrap method refs — useSyncExternalStore calls subscribe/getSnapshot bare.
-  // Passing `stage.subscribe` / `stage.getSnapshot` drops `this` and can leave
-  // the Fiber memoized snapshot stuck after store flips (issue #14).
-  const open = useSyncExternalStore(
-    stage ? (onStoreChange) => stage.subscribe(onStoreChange) : () => () => {},
-    stage ? () => stage.getSnapshot() : () => false,
-  )
-  const [everOpened, setEverOpened] = useState(false)
-  const [box, setBox] = useState(() => (stage ? stage.readBox() : { top: 0, left: 0, width: 0, height: 0 }))
+  useEffect(() => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (!api || typeof api.attachStore !== 'function' || !store) return undefined
+    api.attachStore(store)
+    return () => { api.detachStore?.(store) }
+  }, [store])
 
-  if (open && !everOpened) setEverOpened(true)
-
-  useLayoutEffect(() => {
-    if (!open || !stage) return undefined
-    const update = () => { setBox(stage.readBox()) }
-    update()
-    const scroll = document.querySelector('[data-conversation-scroll]')
-    const target = scroll instanceof HTMLElement
-      ? scroll
-      : document.querySelector('[data-slot="conversation"]')?.parentElement
-    const observer = typeof ResizeObserver === 'function' && target ? new ResizeObserver(update) : null
-    if (target && observer) observer.observe(target)
-    window.addEventListener('resize', update)
-    return () => {
-      observer?.disconnect()
-      window.removeEventListener('resize', update)
+  const handleClose = () => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (api && typeof api.closeTab === 'function') {
+      api.closeTab(TAB_ID)
+    } else {
+      stage?.set?.(false)
     }
-  }, [open, stage])
-
-  if (!stage || !everOpened) return null
+  }
 
   return (
     <div
       role="region"
       aria-label={t('title')}
-      aria-hidden={open ? undefined : 'true'}
+      aria-hidden={visible ? undefined : 'true'}
       className="omnimux-accounts-stage"
-      data-visible={open ? 'true' : 'false'}
+      data-visible={visible ? 'true' : 'false'}
       style={{
-        display: open ? undefined : 'none',
-        '--stage-top': `${box.top}px`,
-        '--stage-left': `${box.left}px`,
-        '--stage-width': `${box.width}px`,
-        '--stage-height': `${box.height}px`,
+        display: visible ? 'flex' : 'none',
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        onClose={() => { stage.set(false) }}
+        actions={<WorkbenchFocusBar t={t} />}
+        onClose={handleClose}
         closeTitle={t('close')}
       />
       <div className="omnimux-accounts-stage-body">
-        <AccountsSection t={t} active={open} />
+        <AccountsSection t={t} active={visible} />
       </div>
     </div>
   )

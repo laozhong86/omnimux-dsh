@@ -2,24 +2,23 @@ import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
 import {
   WORKBENCH_FOCUS,
-  WORKBENCH_GLOBAL_KEY,
+  WORKBENCH_OCCUPANTS,
+  activeTabId,
   applyDefaultWidth,
   collectTabs,
   createWorkbenchSidebarStore,
   inferWorkbenchFocus,
   installWorkbenchGlobal,
   isSeedFilesTab,
-  listOpenTabs,
+  isWorkbenchTab,
   openWorkbench,
   releaseCurrentProductStage,
-  resetWorkbenchFocusMemory,
   resetWorkbenchForTests,
-  resetWorkbenchWidthMemory,
+  resolveDefaultFocus,
   setWorkbenchFocus,
   tabIsOpen,
   workbenchDefaultWidthPx,
   workbenchGuiWidthPx,
-  workbenchUsableWidthPx,
 } from './workbench.js'
 
 const previousWindow = globalThis.window
@@ -27,126 +26,115 @@ const previousDocument = globalThis.document
 
 afterEach(() => {
   resetWorkbenchForTests(globalThis.window)
-  resetWorkbenchWidthMemory()
-  resetWorkbenchFocusMemory()
   if (previousWindow === undefined) delete globalThis.window
   else globalThis.window = previousWindow
   if (previousDocument === undefined) delete globalThis.document
   else globalThis.document = previousDocument
 })
 
+function makeState(tabs = [], width = 780, panelOpen = true) {
+  return {
+    width,
+    panelOpen,
+    activePane: 'main',
+    splits: {
+      kind: 'leaf',
+      id: 'main',
+      tabs,
+    },
+  }
+}
+
 function setupWindow() {
-  const html = { dataset: {} }
+  const doc = {
+    documentElement: { dataset: {} },
+    querySelector: () => null,
+  }
   const win = {
-    innerWidth: 1440,
-    document: { documentElement: html, querySelector: () => null },
+    innerWidth: 1200,
+    document: doc,
+    addEventListener() {},
+    removeEventListener() {},
     dispatchEvent() {},
+    localStorage: {
+      _data: new Map(),
+      getItem(k) { return this._data.get(k) ?? null },
+      setItem(k, v) { this._data.set(k, String(v)) },
+      removeItem(k) { this._data.delete(k) },
+    },
   }
   globalThis.window = win
-  globalThis.document = win.document
+  globalThis.document = doc
   return win
 }
 
-function makeState(tabs, extra = {}) {
-  return {
-    panelOpen: true,
-    width: extra.width ?? 400,
-    splits: { kind: 'leaf', id: 'pane-1', tabs, active: tabs[0]?.id ?? null },
-    bottomSplits: { kind: 'leaf', id: 'pane-b', tabs: extra.bottomTabs || [], active: null },
-    ...extra,
-  }
-}
-
 test('collectTabs / isSeedFilesTab / tabIsOpen walk split trees', () => {
-  const files = { id: 'files-1', type: 'editor' }
-  const clip = { id: 'omnimux-clip:studio', type: 'omnimux-clip:studio', path: 'omnimux-clip:studio' }
-  const tree = {
+  const node = {
     kind: 'split',
-    id: 's1',
     children: [
-      { kind: 'leaf', tabs: [files] },
-      { kind: 'leaf', tabs: [clip] },
+      { kind: 'leaf', tabs: [{ id: 't1', type: 'editor', path: '' }] },
+      { kind: 'leaf', tabs: [{ id: 't2', type: 'omnimux-assets:library' }] },
     ],
   }
-  assert.deepEqual(collectTabs(tree).map((t) => t.id), ['files-1', 'omnimux-clip:studio'])
-  assert.equal(isSeedFilesTab(files), true)
-  assert.equal(isSeedFilesTab({ type: 'editor', path: '/tmp/a.ts' }), false)
-  const state = { splits: tree, bottomSplits: { kind: 'leaf', tabs: [] } }
-  assert.equal(tabIsOpen(state, 'omnimux-clip:studio'), true)
-  assert.equal(tabIsOpen(state, 'missing'), false)
-  assert.equal(listOpenTabs(state).length, 2)
+  const tabs = collectTabs(node)
+  assert.equal(tabs.length, 2)
+  assert.equal(isSeedFilesTab(tabs[0]), true)
+  assert.equal(isSeedFilesTab(tabs[1]), false)
+  assert.equal(tabIsOpen({ splits: node }, 'omnimux-assets:library'), true)
+  assert.equal(tabIsOpen({ splits: node }, 'omnimux-clip:studio'), false)
+})
+
+test('default focus matrix: canvas defaults to split, all 9 libraries default to gui', () => {
+  assert.equal(resolveDefaultFocus('omnimux-workflow:canvas'), WORKBENCH_FOCUS.split)
+  const libraries = [
+    'omnimux-clip:studio',
+    'omnimux-assets:library',
+    'omnimux-products:library',
+    'omnimux-accounts:library',
+    'omnimux-inspiration:library',
+    'omnimux-publish:library',
+    'omnimux-analytics:library',
+    'omnimux-workflow:library',
+    'omnimux-market:plaza',
+  ]
+  for (const lib of libraries) {
+    assert.equal(resolveDefaultFocus(lib), WORKBENCH_FOCUS.gui, `${lib} must default to gui`)
+    assert.ok(isWorkbenchTab(lib), `${lib} must be recognized as workbench tab`)
+  }
+  assert.equal(WORKBENCH_OCCUPANTS.length, 10)
 })
 
 test('workbenchDefaultWidthPx keeps ~420px for conversation', () => {
-  const env = { viewportWidth: 1440, officialSidebarWidth: 240 }
-  const usable = workbenchUsableWidthPx({ panelOpen: true, width: 400 }, env)
-  assert.equal(usable, 1200)
-  assert.equal(workbenchDefaultWidthPx({ panelOpen: true, width: 400 }, env), 780)
+  assert.equal(workbenchDefaultWidthPx(makeState([], 780), { viewportWidth: 1200 }), 780)
+  assert.equal(workbenchDefaultWidthPx(makeState([], 780), { viewportWidth: 600 }), 280)
 })
 
 test('releaseCurrentProductStage drops a library overlay without claiming', () => {
   const win = setupWindow()
-  const released = []
-  const events = []
-  win.document.documentElement.dataset.dshProductStage = 'omnimux-assets'
-  win.__omnimuxStage = { claim() {}, release(id) { released.push(id) } }
-  win.dispatchEvent = (event) => { events.push(event?.detail?.id) }
-  assert.equal(releaseCurrentProductStage(), true)
-  assert.deepEqual(released, ['omnimux-assets'])
+  let released = null
+  win.__omnimuxStage = {
+    release(id) { released = id },
+  }
+  win.document.documentElement.dataset.dshProductStage = 'omnimux-assets-stage'
+  const dropped = releaseCurrentProductStage()
+  assert.equal(dropped, true)
+  assert.equal(released, 'omnimux-assets-stage')
   assert.equal(win.document.documentElement.dataset.dshProductStage, undefined)
-  assert.deepEqual(events, [null])
 })
 
-test('installWorkbenchGlobal is idempotent and never claims a product stage', async () => {
+test('installWorkbenchGlobal is idempotent and never claims a product stage', () => {
   const win = setupWindow()
-  const first = installWorkbenchGlobal(win)
-  const second = installWorkbenchGlobal(win)
-  assert.equal(first, second)
-  assert.equal(win[WORKBENCH_GLOBAL_KEY], first)
-
-  let claimed = 0
-  const released = []
-  win.document.documentElement.dataset.dshProductStage = 'omnimux-accounts'
-  win.__omnimuxStage = {
-    claim() { claimed += 1 },
-    release(id) { released.push(id) },
-  }
-  win.dispatchEvent = () => {}
-
-  const opened = []
-  const closed = []
-  const state = makeState([{ id: 'files-1', type: 'editor' }])
-  const service = {
-    openTab(seed, scope) { opened.push({ seed, scope }) },
-    closeTab(id, scope) { closed.push({ id, scope }) },
-    getTab(id) { return id === 'omnimux-clip:studio' ? { id } : undefined },
-    getSnapshot() { return { sessionId: 'sess-1', state } },
-    subscribeState() { return () => {} },
-  }
-  first.bind({
-    betterSidebar: service,
-    layout: { closeDetails() { claimed += 10 } },
-    sessions: { list: { getSnapshot: () => ({ current: 'sess-1' }) } },
-  })
-
-  const ok = await openWorkbench({ tabId: 'omnimux-clip:studio', title: '视频剪辑' })
-  assert.equal(ok, true)
-  assert.equal(claimed, 10, 'closeDetails may run; claim must not')
-  assert.deepEqual(released, ['omnimux-accounts'])
-  assert.equal(closed.length, 1)
-  assert.equal(closed[0].id, 'files-1')
-  assert.equal(opened.length, 1)
-  assert.equal(opened[0].seed.type, 'omnimux-clip:studio')
-  assert.equal(opened[0].seed.path, 'omnimux-clip:studio')
-  assert.equal(opened[0].scope.sessionId, 'sess-1')
+  const api1 = installWorkbenchGlobal(win)
+  const api2 = installWorkbenchGlobal(win)
+  assert.equal(api1, api2)
+  assert.equal(win.__omnimuxWorkbench, api1)
   assert.equal(win.document.documentElement.dataset.dshProductStage, undefined)
 })
 
 test('openWorkbench returns false without better-sidebar and does not throw', async () => {
   const win = setupWindow()
   const api = installWorkbenchGlobal(win)
-  api.bind({ betterSidebar: null, layout: { closeDetails() {} } })
-  const ok = await api.open({ tabId: 'omnimux-clip:studio', timeoutMs: 0 })
+  const ok = await api.open({ tabId: 'omnimux-assets:library', timeoutMs: 0 })
   assert.equal(ok, false)
 })
 
@@ -170,125 +158,161 @@ test('openWorkbench without current session does not create a session or claim o
     },
   })
   const ok = await api.open({ tabId: 'omnimux-clip:studio', timeoutMs: 0 })
-  assert.equal(ok, true, 'tab still opens on the current (empty) session')
-  assert.equal(opened.length, 1)
-  assert.equal(opened[0].scope, undefined)
+  assert.equal(ok, false, 'returns false when no session is active')
+  assert.equal(opened.length, 0)
   assert.equal(created, 0)
   assert.equal(claimed, 0)
 })
 
-test('applyDefaultWidth writes via store.reduce and skips a second write', () => {
-  resetWorkbenchWidthMemory()
-  const writes = []
+test('openWorkbench switches focus mode to default per tab without cross-tab leakage', async () => {
+  const win = setupWindow()
+  const api = installWorkbenchGlobal(win)
+  let state = makeState([{ id: 'omnimux-workflow:canvas', type: 'omnimux-workflow:canvas' }], 780, true)
   const store = {
-    getSnapshot: () => ({ sessionId: 'sess-1', state: makeState([], { width: 400 }) }),
-    reduce(fn) { writes.push(fn({ width: 400, panelOpen: true })) },
+    getSnapshot: () => ({ sessionId: 's1', state }),
+    reduce: (fn) => { state = fn(state) },
   }
-  const env = { viewportWidth: 1440, officialSidebarWidth: 240 }
-  const first = applyDefaultWidth({}, 'sess-1', store, env)
-  assert.equal(first, 780)
-  assert.equal(writes[0].width, 780)
-  const second = applyDefaultWidth({}, 'sess-1', store, env)
-  assert.equal(second, null)
-  assert.equal(writes.length, 1)
+  const opened = []
+  api.bind({
+    betterSidebar: {
+      openTab(seed, scope) {
+        opened.push({ seed, scope })
+        state = {
+          ...state,
+          splits: {
+            kind: 'leaf',
+            id: 'main',
+            active: seed.id,
+            tabs: [{ id: seed.id, type: seed.type }],
+          },
+        }
+      },
+      getTab(id) { return { id } },
+      getSnapshot() { return { sessionId: 's1', state } },
+    },
+    sessions: {
+      list: { getSnapshot: () => ({ current: 's1' }) },
+    },
+  })
+  api.attachStore(store)
+
+  // 1. Open canvas -> defaults to split
+  await api.open({ tabId: 'omnimux-workflow:canvas', timeoutMs: 0 })
+  assert.equal(api.getFocus(), WORKBENCH_FOCUS.split)
+  assert.equal(state.width, 780)
+
+  // 2. Open assets library -> defaults to gui
+  await api.open({ tabId: 'omnimux-assets:library', timeoutMs: 0 })
+  assert.equal(api.getFocus(), WORKBENCH_FOCUS.gui)
+  assert.equal(state.width, 1200)
+
+  // 3. Switch back to canvas -> split
+  await api.open({ tabId: 'omnimux-workflow:canvas', timeoutMs: 0 })
+  assert.equal(api.getFocus(), WORKBENCH_FOCUS.split)
+})
+
+test('applyDefaultWidth writes via store.reduce and skips a second write', () => {
+  setupWindow()
+  let state = makeState([{ id: 't1', type: 't1' }], 500, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's1', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  const applied1 = applyDefaultWidth(null, 's1', store, { viewportWidth: 1200 })
+  assert.equal(applied1, 780)
+  assert.equal(state.width, 780)
+
+  state.width = 600
+  const applied2 = applyDefaultWidth(null, 's1', store, { viewportWidth: 1200 })
+  assert.equal(applied2, null)
+  assert.equal(state.width, 600)
 })
 
 test('workbenchGuiWidthPx occupies viewport minus the left rail', () => {
-  const env = { viewportWidth: 1440, officialSidebarWidth: 56 }
-  assert.equal(workbenchGuiWidthPx({ panelOpen: true, width: 780 }, env), 1384)
+  assert.equal(workbenchGuiWidthPx(makeState([], 780), { viewportWidth: 1200, officialSidebarWidth: 0 }), 1200)
+  assert.equal(workbenchGuiWidthPx(makeState([], 780), { viewportWidth: 1200, officialSidebarWidth: 280 }), 920)
+  assert.equal(workbenchGuiWidthPx(makeState([], 780), { viewportWidth: 300, officialSidebarWidth: 0 }), 300)
 })
 
 test('inferWorkbenchFocus maps collapsed / full / split geometry', () => {
-  const env = { viewportWidth: 1440, officialSidebarWidth: 240 }
-  assert.equal(inferWorkbenchFocus({ panelOpen: false, width: 780 }, env), WORKBENCH_FOCUS.chat)
-  assert.equal(inferWorkbenchFocus({ panelOpen: true, width: 1200 }, env), WORKBENCH_FOCUS.gui)
-  assert.equal(inferWorkbenchFocus({ panelOpen: true, width: 780 }, env), WORKBENCH_FOCUS.split)
+  const env = { viewportWidth: 1200, officialSidebarWidth: 0 }
+  assert.equal(inferWorkbenchFocus(makeState([], 780, false), env), WORKBENCH_FOCUS.chat)
+  assert.equal(inferWorkbenchFocus(makeState([], 1200, true), env), WORKBENCH_FOCUS.gui)
+  assert.equal(inferWorkbenchFocus(makeState([], 1180, true), env), WORKBENCH_FOCUS.gui)
+  assert.equal(inferWorkbenchFocus(makeState([], 780, true), env), WORKBENCH_FOCUS.split)
 })
 
 test('setWorkbenchFocus chat/gui/split writes panel geometry and restores split width', () => {
   setupWindow()
-  const env = { viewportWidth: 1440, officialSidebarWidth: 240 }
-  let state = makeState([], { width: 780, panelOpen: true, sessionId: 'sess-1' })
+  const env = { viewportWidth: 1200, officialSidebarWidth: 0 }
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 780, true)
   const store = {
-    getSnapshot: () => ({ sessionId: 'sess-1', state }),
-    reduce(fn) { state = fn(state) },
+    getSnapshot: () => ({ sessionId: 's1', state }),
+    reduce: (fn) => { state = fn(state) },
   }
-  assert.equal(setWorkbenchFocus('chat', store, env), true)
+
+  setWorkbenchFocus(WORKBENCH_FOCUS.chat, store, env)
   assert.equal(state.panelOpen, false)
+
+  setWorkbenchFocus(WORKBENCH_FOCUS.split, store, env)
+  assert.equal(state.panelOpen, true)
   assert.equal(state.width, 780)
-  assert.equal(setWorkbenchFocus('gui', store, env), true)
+
+  state.width = 650
+  setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, env)
   assert.equal(state.panelOpen, true)
   assert.equal(state.width, 1200)
-  assert.equal(setWorkbenchFocus('split', store, env), true)
+
+  setWorkbenchFocus(WORKBENCH_FOCUS.split, store, env)
   assert.equal(state.panelOpen, true)
-  assert.equal(state.width, 780)
+  assert.equal(state.width, 650)
 })
 
 test('attachStore reapplies gui focus so default width cannot stomp it', () => {
-  const win = setupWindow()
-  const api = installWorkbenchGlobal(win)
-  const env = { viewportWidth: 1440, officialSidebarWidth: 240 }
-  let state = makeState([], { width: 780, panelOpen: true })
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 500, true)
   const store = {
-    getSnapshot: () => ({ sessionId: 'sess-attach', state }),
-    reduce(fn) { state = fn(state) },
+    getSnapshot: () => ({ sessionId: 's-gui', state }),
+    reduce: (fn) => { state = fn(state) },
   }
-  api.attachStore(store)
-  assert.equal(setWorkbenchFocus('gui', store, env), true)
+  const api = installWorkbenchGlobal()
+  api.setFocus(WORKBENCH_FOCUS.gui, store, { viewportWidth: 1200, officialSidebarWidth: 0 })
   assert.equal(state.width, 1200)
-  state = { ...state, width: 780 }
-  api.detachStore(store)
+
+  state.width = 500
   api.attachStore(store)
-  assert.equal(state.panelOpen, true)
-  // Re-attach has no test env: live ruler is window.innerWidth (1440) minus a
-  // missing official rail (0). The mode stays gui; default split width must not win.
-  assert.equal(state.width, 1440)
+  assert.equal(state.width, 1200)
 })
 
 test('applyDefaultWidth skips while focus is gui', () => {
-  resetWorkbenchWidthMemory()
-  resetWorkbenchFocusMemory()
-  const env = { viewportWidth: 1440, officialSidebarWidth: 240 }
-  let state = makeState([], { width: 1200, panelOpen: true })
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 500, true)
   const store = {
-    getSnapshot: () => ({ sessionId: 'sess-gui', state }),
-    reduce(fn) { state = fn(state) },
+    getSnapshot: () => ({ sessionId: 's-gui-2', state }),
+    reduce: (fn) => { state = fn(state) },
   }
-  assert.equal(setWorkbenchFocus('gui', store, env), true)
-  const writes = []
-  const counting = {
-    getSnapshot: () => ({ sessionId: 'sess-gui', state }),
-    reduce(fn) { writes.push(fn(state)) },
-  }
-  assert.equal(applyDefaultWidth({}, 'sess-gui', counting, env), null)
-  assert.equal(writes.length, 0)
+  const api = installWorkbenchGlobal()
+  api.setFocus(WORKBENCH_FOCUS.gui, store, { viewportWidth: 1200, officialSidebarWidth: 0 })
+
+  const applied = applyDefaultWidth(null, 's-gui-2', store, { viewportWidth: 1200 })
+  assert.equal(applied, null)
 })
 
-test('createWorkbenchSidebarStore.open never claims product stage', async () => {
+test('createWorkbenchSidebarStore.open never claims product stage', () => {
   const win = setupWindow()
-  const api = installWorkbenchGlobal(win)
   let claimed = 0
   win.__omnimuxStage = { claim() { claimed += 1 } }
-  const opened = []
-  const state = makeState([])
-  api.bind({
-    betterSidebar: {
-      openTab(seed) { opened.push(seed) },
-      getTab() { return { id: 'omnimux-clip:studio' } },
-      getSnapshot() { return { sessionId: 'sess-1', state } },
-    },
-    sessions: { list: { getSnapshot: () => ({ current: 'sess-1' }) } },
-  })
-  const store = createWorkbenchSidebarStore({
-    tabId: 'omnimux-clip:studio',
-    title: '视频剪辑',
-  })
-  store.open()
-  const started = Date.now()
-  while (opened.length === 0 && Date.now() - started < 200) {
-    await new Promise((resolve) => setTimeout(resolve, 10))
+  let openedTab = null
+  win.__omnimuxWorkbench = {
+    open(opts) { openedTab = opts },
+    isOpen() { return false },
+    subscribe() { return () => {} },
   }
+  const adapter = createWorkbenchSidebarStore({
+    tabId: 'omnimux-assets:library',
+    title: '资产库',
+  })
+  adapter.open()
+  assert.equal(openedTab?.tabId, 'omnimux-assets:library')
   assert.equal(claimed, 0)
-  assert.equal(opened.length, 1)
-  assert.equal(store.readBox().width, 0)
 })

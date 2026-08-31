@@ -1,12 +1,9 @@
 /**
- * 项目库列表页（一级页，shell.overlay）。Phase 0 只留核心：标题+副标题、
- * +新建项目、本地项目 tab、搜索、最近更新排序、项目卡片（标题/日期）+ 空态。
- * 点项目 → 打开绑定会话 + 项目画布 tab（better-sidebar，不走官方 details）。
- *
+ * 项目库列表页（workbench tab on dsh-better-sidebar）。
  * 顶栏 chrome 遵循 sidebar-extra-entries.md 一级页规范（12px 20px 12px）。
  * 控件消费 dsh-ui-kit；颜色 100% --dsw-alias-* token。
  */
-import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   IconEditOutline16,
   IconPlusOutline16,
@@ -18,6 +15,9 @@ import { injectWorkflowStyles } from '../styles.js'
 import { NewLocalProjectDialog } from './NewLocalProjectDialog.jsx'
 import { createProjectSession, dismissProductStage, runNewProject } from './newProject.js'
 import { activateProjectCanvas } from './projectCanvas.js'
+import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
+
+export const WORKFLOW_LIBRARY_TAB_ID = 'omnimux-workflow:library'
 
 function errText(result, t) {
   const code = String(result?.body?.error ?? '')
@@ -28,22 +28,26 @@ function errText(result, t) {
 /**
  * @param {{
  *   t: (key: string) => string,
- *   stage: { getSnapshot: () => boolean, subscribe: Function, set: Function, readBox: Function },
- *   locale?: { subscribe: (fn: () => void) => () => void, getLocale: () => { active: string } },
- *   sessions: { create: Function, open: Function },
+ *   stage?: { getSnapshot: () => boolean, subscribe: Function, set: Function },
+ *   store?: { reduce?: Function, getSnapshot?: Function },
+ *   visible?: boolean,
+ *   sessions?: { create: Function, open: Function },
  *   workspaces?: object,
  *   layout?: { closeDetails?: () => void },
  *   betterSidebar?: object,
  * }} props
  */
-export function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, layout, betterSidebar }) {
+export function ProjectLibraryPage(props) {
+  const { t, stage, store, visible = true, sessions, workspaces, layout, betterSidebar } = props
   useEffect(() => { injectWorkflowStyles() }, [])
-  const open = useSyncExternalStore(
-    stage ? (onStoreChange) => stage.subscribe(onStoreChange) : () => () => {},
-    stage ? () => stage.getSnapshot() : () => false,
-  )
-  const [everOpened, setEverOpened] = useState(false)
-  const [box, setBox] = useState(() => ({ top: 0, left: 0, width: 0, height: 0 }))
+
+  useEffect(() => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (!api || typeof api.attachStore !== 'function' || !store) return undefined
+    api.attachStore(store)
+    return () => { api.detachStore?.(store) }
+  }, [store])
+
   const [projects, setProjects] = useState([])
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
@@ -51,215 +55,195 @@ export function ProjectLibraryPage({ t, stage, locale, sessions, workspaces, lay
   const [dialogOpen, setDialogOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)
 
-  if (open && !everOpened) setEverOpened(true)
-
-  useLayoutEffect(() => {
-    if (!open || !stage) return undefined
-    const update = () => { setBox(stage.readBox()) }
-    update()
-    const scroll = document.querySelector('[data-conversation-scroll]')
-    const target = scroll instanceof HTMLElement
-      ? scroll
-      : document.querySelector('[data-slot="conversation"]')?.parentElement
-    const observer = typeof ResizeObserver === 'function' && target ? new ResizeObserver(update) : null
-    if (target && observer) observer.observe(target)
-    window.addEventListener('resize', update)
-    return () => {
-      observer?.disconnect()
-      window.removeEventListener('resize', update)
+  const reload = useCallback(async () => {
+    try {
+      const res = await listProjects()
+      if (res.ok && Array.isArray(res.body?.projects)) {
+        setProjects(res.body.projects)
+        setError('')
+      } else if (!res.ok) {
+        setError(errText(res, t))
+      }
+    } catch (e) {
+      setError(String(e?.message || e || t('projects.genericError')))
     }
-  }, [open, stage])
-
-  const refresh = useCallback(async () => {
-    const result = await listProjects()
-    if (!result.ok) {
-      setError(errText(result, t))
-      return
-    }
-    setError('')
-    setProjects(Array.isArray(result.body?.projects) ? result.body.projects : [])
   }, [t])
 
   useEffect(() => {
-    if (!open) return undefined
-    void refresh()
-  }, [open, refresh])
+    if (visible) void reload()
+  }, [visible, reload])
 
-  const openProject = useCallback(async (project) => {
-    const projectRoot = typeof project.path === 'string' ? project.path : ''
-    if (!projectRoot) {
-      setError(t('projects.genericError'))
-      return
-    }
-    if (project.sessionId) {
-      dismissProductStage(stage)
-      sessions.open(project.sessionId)
-      await activateProjectCanvas({ layout, betterSidebar, t }, { sessionId: project.sessionId, cwd: projectRoot })
-      return
-    }
-    const created = await createProjectSession(sessions, workspaces, projectRoot)
-    if (!created.ok) {
-      setError(t('projects.noWorkspace'))
-      return
-    }
-    await bindProjectSession(project.id, created.sessionId)
-    dismissProductStage(stage)
-    sessions.open(created.sessionId)
-    await activateProjectCanvas({ layout, betterSidebar, t }, { sessionId: created.sessionId, cwd: created.cwd })
-  }, [sessions, workspaces, layout, betterSidebar, t, stage])
+  const filtered = projects.filter((p) => {
+    if (!query.trim()) return true
+    const q = query.trim().toLowerCase()
+    return (p.title || '').toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)
+  })
 
-  const handleNew = useCallback(() => {
-    setError('')
-    setDialogOpen(true)
-  }, [])
+  const handleOpenProject = async (project) => {
+    dismissProductStage()
+    let sessionId = project.sessionId
+    if (!sessionId && sessions && typeof sessions.create === 'function') {
+      try {
+        const created = await createProjectSession(sessions, workspaces, project.title)
+        sessionId = created?.id
+        if (sessionId) {
+          void bindProjectSession(project.id, sessionId)
+        }
+      } catch (e) {
+        console.error('[omnimux-workflow] failed to create project session', e)
+      }
+    }
+    if (sessionId && sessions && typeof sessions.open === 'function') {
+      try { sessions.open(sessionId) } catch {}
+    }
+    await activateProjectCanvas(project.id, {
+      layout,
+      betterSidebar,
+      title: project.title,
+      sessionId,
+    })
+  }
 
-  const handleDialogSubmit = useCallback(async (payload) => {
-    const title = typeof payload === 'string' ? payload : payload?.title
-    const projectRoot = typeof payload === 'object' && payload && typeof payload.projectRoot === 'string'
-      ? payload.projectRoot
-      : undefined
+  const handleDialogSubmit = async ({ title, description, templateId }) => {
     setBusy(true)
     setError('')
-    const result = await runNewProject(
-      { sessions, workspaces, layout, betterSidebar, t, stage },
-      { title, ...(projectRoot ? { projectRoot } : {}) },
-    )
-    setBusy(false)
-    if (!result.ok) {
-      setError(result.error === 'no-workspace' ? t('projects.noWorkspace') : (result.error || t('projects.genericError')))
-      return
+    try {
+      const created = await runNewProject({
+        sessions,
+        workspaces,
+        layout,
+        betterSidebar,
+        stage,
+        t,
+        title,
+        description,
+        templateId,
+      })
+      if (!created?.ok) {
+        setError(created?.error || t('projects.genericError'))
+        return
+      }
+      setDialogOpen(false)
+      void reload()
+    } finally {
+      setBusy(false)
     }
-    setDialogOpen(false)
-  }, [sessions, workspaces, layout, betterSidebar, t, stage])
+  }
 
-  const handleRename = useCallback(async (project) => {
-    const next = window.prompt(t('projects.renamePrompt'), project.title)
-    if (next === null || next.trim() === '') return
-    const result = await renameProject(project.id, next)
-    if (!result.ok) {
-      setError(errText(result, t))
-      return
+  const handleRename = async (project) => {
+    const next = window.prompt(t('projects.renamePrompt'), project.title || '')
+    if (next === null || next.trim() === '' || next.trim() === project.title) return
+    setBusy(true)
+    try {
+      const res = await renameProject(project.id, next.trim())
+      if (res.ok) void reload()
+      else setError(errText(res, t))
+    } finally {
+      setBusy(false)
     }
-    setError('')
-    void refresh()
-  }, [t, refresh])
+  }
 
-  const confirmDelete = useCallback(async () => {
+  const confirmDelete = async () => {
     if (!pendingDelete) return
-    const result = await deleteProject(pendingDelete.id)
-    if (!result.ok) {
-      setError(errText(result, t))
-      setPendingDelete(null)
-      return
-    }
-    setError('')
+    const id = pendingDelete.id
     setPendingDelete(null)
-    void refresh()
-  }, [pendingDelete, t, refresh])
+    setBusy(true)
+    try {
+      const res = await deleteProject(id)
+      if (res.ok) void reload()
+      else setError(errText(res, t))
+    } finally {
+      setBusy(false)
+    }
+  }
 
-  if (!stage || !everOpened) return null
-
-  const visible = projects.filter((project) => {
-    if (!query.trim()) return true
-    return String(project.title).toLowerCase().includes(query.trim().toLowerCase())
-  })
+  const handleClose = () => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (api && typeof api.closeTab === 'function') {
+      api.closeTab(WORKFLOW_LIBRARY_TAB_ID)
+    } else {
+      stage?.set?.(false)
+    }
+  }
 
   return (
     <div
       role="region"
-      aria-label={t('projects.title')}
-      aria-hidden={open ? undefined : 'true'}
-      className="omnimux-workflow-stage"
-      data-visible={open ? 'true' : 'false'}
+      aria-label={t('projects.pageTitle')}
+      aria-hidden={visible ? undefined : 'true'}
+      className="omnimux-workflow-library-page"
+      data-visible={visible ? 'true' : 'false'}
       style={{
-        display: open ? undefined : 'none',
-        '--stage-top': `${box.top}px`,
-        '--stage-left': `${box.left}px`,
-        '--stage-width': `${box.width}px`,
-        '--stage-height': `${box.height}px`,
+        display: visible ? 'flex' : 'none',
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
       <PageHeader
-        title={t('projects.title')}
-        subtitle={t('projects.subtitle')}
-        onClose={() => { stage.set(false) }}
+        title={t('projects.pageTitle')}
+        subtitle={t('projects.pageSubtitle')}
+        actions={<WorkbenchFocusBar t={t} />}
+        onRefresh={() => { void reload() }}
+        refreshing={busy}
+        refreshTitle={t('projects.refresh')}
+        onClose={handleClose}
         closeTitle={t('projects.close')}
       />
-
-      <div className="omnimux-workflow-action-row">
+      <div className="omnimux-workflow-library-action-row">
         <Button
           variant="primary"
-          size="sm"
           leadingIcon={<IconPlusOutline16 />}
-          disabled={busy}
-          onClick={handleNew}
+          onClick={() => { setDialogOpen(true) }}
         >
-          {t('projects.newProject')}
+          {t('projects.newButton')}
         </Button>
       </div>
-
       <FilterBar
-        className="omnimux-workflow-stage-toolbar"
-        compact
-        filters={[{ key: 'all', label: t('projects.all') }].map((chip) => (
-          <Button
-            key={chip.key}
-            variant="secondary"
-            size="sm"
-            aria-pressed="true"
-          >
-            {chip.label}
-          </Button>
-        ))}
-        tools={(
-          <div className="omnimux-workflow-tools-cluster">
-            <div className="omnimux-workflow-search-wrap">
-              <SearchField
-                value={query}
-                placeholder={t('projects.searchPlaceholder')}
-                aria-label={t('projects.searchPlaceholder')}
-                debounceMs={0}
-                stretch
-                onValueChange={setQuery}
-              />
-            </div>
-          </div>
+        className="omnimux-workflow-library-filter"
+        search={(
+          <SearchField
+            value={query}
+            placeholder={t('projects.searchPlaceholder')}
+            onChange={setQuery}
+            onClear={() => { setQuery('') }}
+          />
         )}
       />
-
-      {error !== '' && !dialogOpen ? (
-        <p className="omnimux-workflow-error">{error}</p>
-      ) : null}
-
-      <div className="omnimux-workflow-body">
-        {visible.length === 0 ? (
-          <div className="omnimux-workflow-empty">
-            <p>{query.trim() ? t('projects.emptySearch') : t('projects.empty')}</p>
-            {!query.trim() ? (
-              <Button variant="primary" size="sm" disabled={busy} onClick={handleNew}>
-                {t('projects.newProject')}
-              </Button>
-            ) : null}
+      {error ? <div className="omnimux-workflow-library-error">{error}</div> : null}
+      <div className="omnimux-workflow-library-body">
+        {filtered.length === 0 ? (
+          <div className="omnimux-workflow-library-empty">
+            <div className="omnimux-workflow-library-empty-title">{t('projects.emptyTitle')}</div>
+            <div className="omnimux-workflow-library-empty-sub">{t('projects.emptySubtitle')}</div>
+            <Button
+              variant="primary"
+              leadingIcon={<IconPlusOutline16 />}
+              onClick={() => { setDialogOpen(true) }}
+            >
+              {t('projects.newButton')}
+            </Button>
           </div>
         ) : (
           <div className="omnimux-workflow-grid">
-            {visible.map((project) => (
+            {filtered.map((project) => (
               <div
                 key={project.id}
-                role="button"
-                tabIndex={0}
                 className="omnimux-workflow-card"
-                onClick={() => { void openProject(project) }}
-                onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') void openProject(project) }}
+                onClick={() => { void handleOpenProject(project) }}
               >
-                <div className="omnimux-workflow-card-main">
+                <div className="omnimux-workflow-card-head">
                   <div className="omnimux-workflow-card-title">{project.title}</div>
-                  <div className="omnimux-workflow-card-meta">{String(project.updatedAt).slice(0, 10)}</div>
+                  <div className="omnimux-workflow-card-meta">
+                    {project.updatedAt ? new Date(project.updatedAt).toLocaleDateString() : ''}
+                  </div>
                 </div>
-                <div
-                  className="omnimux-workflow-card-actions"
-                  onClick={(event) => { event.stopPropagation() }}
-                >
+                {project.description ? (
+                  <div className="omnimux-workflow-card-desc">{project.description}</div>
+                ) : null}
+                <div className="omnimux-workflow-card-actions" onClick={(e) => { e.stopPropagation() }}>
                   <IconButton
                     variant="ghost"
                     size="xs"

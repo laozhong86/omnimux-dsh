@@ -20,6 +20,7 @@
             return () => {};
           }
         }, "omnimux-market-locale");
+        c.effect(() => mountSidebarEntry(null, lookup, c.locale), "omnimux-market: sidebar entry");
       });
       ctx.effect(() => ensureCss(), "omnimux-market-style");
       slots.inject("tool.call.toolview", () => registerSlot(
@@ -42,13 +43,30 @@
         { name: "settings.plugin.item", key: "omnimux-market", locale: "omnimux-market" },
         ConfigCard,
       ));
-      slots.inject("sidebar.footer.action", () => registerSlot(
-        slots,
-        { name: "sidebar.footer.action", id: "omnimux-market-plaza", order: 8, label: () => lookup("plaza.title"), locale: "omnimux-market" },
-        function PlazaEntry(actionProps) {
-          return h(PlazaAction, { ...actionProps, sessions });
-        },
-      ));
+
+      if (typeof ctx.inject === "function") {
+        ctx.inject(["betterSidebar"], (inner) => {
+          const sidebar = inner.betterSidebar ?? inner.get?.("betterSidebar");
+          if (!sidebar || typeof sidebar.registerTab !== "function") return;
+          try {
+            window.__omnimuxWorkbench?.bind?.({ betterSidebar: sidebar });
+          } catch {}
+          const registerPlazaTab = () => sidebar.registerTab({
+            id: PLAZA_TAB_ID,
+            title: () => lookup("plaza.title") || "广场",
+            icon: () => h(PlazaIcon),
+            order: 25,
+            hidden: false,
+            single: true,
+            component: (props) => h(PlazaView, { ...props }),
+          });
+          if (typeof ctx.effect === "function") {
+            ctx.effect(() => registerPlazaTab(), "omnimux-market: plaza tab");
+          } else {
+            registerPlazaTab();
+          }
+        });
+      }
     }
 
     return { inject, apply };

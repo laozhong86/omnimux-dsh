@@ -122,6 +122,8 @@ export const zh = {
   'attachments.preview': '图片预览',
   'attachments.closePreview': '关闭预览',
   'attachments.removeNative': '移除 {name}',
+  'workbench.chatShow': '展开中间会话栏',
+  'workbench.chatHide': '收起中间会话栏',
 }
 
 export const en = {
@@ -248,6 +250,9 @@ export const en = {
   'attachments.preview': 'Image preview',
   'attachments.closePreview': 'Close preview',
   'attachments.removeNative': 'Remove {name}',
+  'workbench.chatShow': 'Show conversation',
+  'workbench.chatHide': 'Hide conversation',
 }
+
 
 export const NS = 'omnimux'

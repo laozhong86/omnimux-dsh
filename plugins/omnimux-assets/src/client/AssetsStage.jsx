@@ -9,7 +9,9 @@ import { ConfirmRemoveDialog } from './ConfirmRemoveDialog.jsx'
 import { computeEmptyState } from './feed-helpers.js'
 import { injectAssetsStyles } from './styles.js'
 import { useAssetsFeed } from './use-assets-feed.js'
-import { useStageBox } from './use-stage-box.js'
+import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
+
+const TAB_ID = 'omnimux-assets:library'
 
 function AssetsHeader(props) {
   const { t, stage, busy, refreshState, setBusy } = props
@@ -17,15 +19,24 @@ function AssetsHeader(props) {
     setBusy(true)
     void refreshState(true).finally(() => setBusy(false))
   }
+  const onClose = () => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (api && typeof api.closeTab === 'function') {
+      api.closeTab(TAB_ID)
+    } else {
+      stage?.set?.(false)
+    }
+  }
 
   return (
     <PageHeader
       title={t('stage.title')}
       subtitle={t('stage.subtitle')}
+      actions={<WorkbenchFocusBar t={t} />}
       onRefresh={onRefresh}
       refreshing={busy}
       refreshTitle={t('stage.refresh')}
-      onClose={() => { stage.set(false) }}
+      onClose={onClose}
       closeTitle={t('stage.close')}
     />
   )
@@ -78,84 +89,122 @@ function AssetsViewToggle(props) {
   return (
     <div className="omnimux-assets-view-toggle">
       <IconButton
-        variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-        size="xs"
-        aria-pressed={viewMode === 'grid'}
+        variant="ghost"
+        size="sm"
         aria-label={t('view.grid')}
-        title={t('view.grid')}
+        aria-pressed={viewMode === 'grid'}
         onClick={() => onViewModeChange('grid')}
       >
-        <GridIcon size={14} />
+        <GridIcon />
       </IconButton>
       <IconButton
-        variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-        size="xs"
-        aria-pressed={viewMode === 'list'}
+        variant="ghost"
+        size="sm"
         aria-label={t('view.list')}
-        title={t('view.list')}
+        aria-pressed={viewMode === 'list'}
         onClick={() => onViewModeChange('list')}
       >
-        <ListIcon size={14} />
+        <ListIcon />
       </IconButton>
-    </div>
-  )
-}
-
-function AssetsToolsCluster(props) {
-  const { t, query, sortKey, viewMode, onQueryChange, onSortChange, onViewModeChange } = props
-  const sortOptions = [
-    { value: 'updated_at', label: t('sort.updated') },
-    { value: 'name', label: t('sort.name') },
-  ]
-
-  return (
-    <div className="omnimux-assets-tools-cluster">
-      <div className="omnimux-assets-search-wrap">
-        <SearchField
-          value={query}
-          placeholder={t('search.placeholder')}
-          aria-label={t('search.placeholder')}
-          debounceMs={0}
-          stretch
-          onValueChange={onQueryChange}
-        />
-      </div>
-      <div className="omnimux-assets-sort-wrap">
-        <DropdownSelect value={sortKey} options={sortOptions} onChange={onSortChange} />
-      </div>
-      <AssetsViewToggle t={t} viewMode={viewMode} onViewModeChange={onViewModeChange} />
     </div>
   )
 }
 
 function AssetsFilterBar(props) {
   const { t, feed } = props
-  const onTypeChange = (key) => {
-    feed.setFilterType(key)
-    feed.setDetail(null)
-    feed.clearSelection()
-  }
-
-  const filterButtons = <AssetsFilterChips t={t} filterType={feed.filterType} onTypeChange={onTypeChange} />
-  const tools = (
-    <AssetsToolsCluster
-      t={t}
-      query={feed.query}
-      sortKey={feed.sortKey}
-      viewMode={feed.viewMode}
-      onQueryChange={feed.setQuery}
-      onSortChange={feed.setSortKey}
-      onViewModeChange={feed.setViewMode}
-    />
-  )
+  const sortOptions = [
+    { value: 'updatedAt_desc', label: t('sort.updatedAt_desc') },
+    { value: 'updatedAt_asc', label: t('sort.updatedAt_asc') },
+    { value: 'name_asc', label: t('sort.name_asc') },
+    { value: 'name_desc', label: t('sort.name_desc') },
+  ]
 
   return (
     <FilterBar
       className="omnimux-assets-stage-toolbar"
-      compact
-      filters={filterButtons}
-      tools={tools}
+      leading={<AssetsFilterChips t={t} filterType={feed.filterType} onTypeChange={feed.setFilterType} />}
+      tools={
+        <div className="omnimux-assets-tools-cluster">
+          <div className="omnimux-assets-search-wrap">
+            <SearchField
+              placeholder={t('search.placeholder')}
+              value={feed.query}
+              onChange={feed.setQuery}
+              onClear={() => feed.setQuery('')}
+            />
+          </div>
+          <div className="omnimux-assets-sort-wrap">
+            <DropdownSelect
+              options={sortOptions}
+              value={feed.sortBy}
+              onChange={feed.setSortBy}
+              triggerTitle={t('sort.label')}
+            />
+          </div>
+          <AssetsViewToggle t={t} viewMode={feed.viewMode} onViewModeChange={feed.setViewMode} />
+        </div>
+      }
     />
+  )
+}
+
+function AssetsTableItem(props) {
+  const { t, item, feed } = props
+  const { selectedIds, toggleSelect, handleRemoveSingle, setDetail } = feed
+  const isSelected = selectedIds.includes(item.id)
+  return (
+    <tr
+      key={item.id}
+      aria-selected={isSelected}
+      className="omnimux-assets-list-row"
+      onClick={() => setDetail(item)}
+    >
+      <td className="omnimux-assets-td-check" onClick={(e) => { e.stopPropagation(); toggleSelect(item.id) }}>
+        <input type="checkbox" checked={isSelected} readOnly />
+      </td>
+      <td className="omnimux-assets-td-name">{item.name}</td>
+      <td className="omnimux-assets-td-type">{t(`type.${item.type}`)}</td>
+      <td className="omnimux-assets-td-desc">{item.description || '-'}</td>
+      <td className="omnimux-assets-td-files">{item.fileCount ?? (item.files?.length || 0)}</td>
+      <td className="omnimux-assets-td-actions" onClick={(e) => e.stopPropagation()}>
+        <Button variant="ghost" size="sm" onClick={() => handleRemoveSingle(item.id)}>
+          {t('stage.delete')}
+        </Button>
+      </td>
+    </tr>
+  )
+}
+
+function AssetsTableView(props) {
+  const { t, feed } = props
+  const { visible, selectedIds, toggleSelectAll } = feed
+  const isAllSelected = visible.length > 0 && visible.every((item) => selectedIds.includes(item.id))
+  return (
+    <div className="omnimux-assets-list-wrap">
+      <table className="omnimux-assets-list-table">
+        <thead>
+          <tr>
+            <th className="omnimux-assets-th-check">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={toggleSelectAll}
+              />
+            </th>
+            <th className="omnimux-assets-th-name">{t('field.name')}</th>
+            <th className="omnimux-assets-th-type">{t('field.type')}</th>
+            <th className="omnimux-assets-th-desc">{t('field.description')}</th>
+            <th className="omnimux-assets-th-files">{t('field.files')}</th>
+            <th className="omnimux-assets-th-actions">{t('field.actions')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visible.map((item) => (
+            <AssetsTableItem key={item.id} t={t} item={item} feed={feed} />
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
@@ -209,64 +258,59 @@ function AssetsMainView(props) {
       copiedId={copiedId}
       selectedIds={selectedIds}
       onToggleSelect={toggleSelect}
+      onBrowse={setDetail}
     />
   )
 }
 
 function AssetsBody(props) {
   const { t, feed, emptyProps } = props
-  const { detail, setDetail, busy, handleSaveDetail, filterType } = feed
   const onOpenAdd = () => {
-    feed.setCreating(filterType || 'character')
+    feed.setCreating(feed.filterType || 'character')
     feed.setFormError('')
   }
-
   return (
     <div className="omnimux-assets-body">
       <div className="omnimux-assets-main">
-        <AssetsMainView t={t} feed={feed} emptyProps={emptyProps} onOpenAdd={onOpenAdd} />
+        {feed.viewMode === 'list' && !feed.detail ? (
+          <AssetsTableView t={t} feed={feed} />
+        ) : (
+          <AssetsMainView t={t} feed={feed} emptyProps={emptyProps} onOpenAdd={onOpenAdd} />
+        )}
       </div>
-      {detail ? (
+      {feed.detail && (
         <AssetDetail
-          key={detail.id}
           t={t}
-          asset={detail}
-          busy={busy}
-          onClose={() => setDetail(null)}
-          onSave={handleSaveDetail}
+          asset={feed.detail}
+          busy={feed.busy}
+          onClose={() => feed.setDetail(null)}
+          onSave={feed.handleSaveDetail}
         />
-      ) : null}
+      )}
     </div>
   )
 }
 
 function AddAssetDialogItem(props) {
   const { t, feed } = props
-  const onCancel = () => {
-    feed.setCreating(null)
-    feed.setFormError('')
-  }
-
   return (
     <AddAssetDialog
       t={t}
+      initialType={feed.creating || 'character'}
       busy={feed.busy}
-      presetType={feed.creating}
       error={feed.formError}
-      onCancel={onCancel}
-      onPick={feed.handlePick}
-      onSubmit={feed.handleCreate}
+      onCancel={() => feed.setCreating(null)}
+      onCreate={feed.handleCreateAsset}
     />
   )
 }
 
 function ConfirmRemoveDialogItem(props) {
   const { t, feed } = props
-  const { pendingRemove, busy, setPendingRemove, handleConfirmDelete } = feed
-  const removeTitle = pendingRemove && pendingRemove.ids.length > 1
-    ? t('select.removeTitle').replace('{n}', String(pendingRemove.ids.length))
-    : undefined
-
+  const { pendingRemove, setPendingRemove, busy, handleConfirmDelete } = feed
+  const removeTitle = pendingRemove.isBatch
+    ? t('confirm.deleteSelected').replace('{n}', String(pendingRemove.ids.length))
+    : t('confirm.deleteTitle').replace('{name}', String(pendingRemove.names[0] ?? ''))
   return (
     <ConfirmRemoveDialog
       t={t}
@@ -289,53 +333,37 @@ function AssetsDialogs(props) {
   )
 }
 
-function createStageStyle(open, box) {
-  return {
-    display: open ? undefined : 'none',
-    '--stage-top': `${box.top}px`,
-    '--stage-left': `${box.left}px`,
-    '--stage-width': `${box.width}px`,
-    '--stage-height': `${box.height}px`,
-  }
-}
-
-function useStageState(stage) {
-  const open = useSyncExternalStore(
-    stage ? (cb) => stage.subscribe(cb) : () => () => {},
-    stage ? () => stage.getSnapshot() : () => false,
-  )
-  const [everOpened, setEverOpened] = useState(false)
-  if (open && !everOpened) setEverOpened(true)
-  return { open, everOpened }
-}
-
 /**
- * Creative asset library first-level page.
- * After first open, keep the subtree with display:none — never `if (!open) return null`.
+ * Creative asset library workbench tab component mounted in dsh-better-sidebar.
  * @param {{
  *   t: (key: string) => string,
- *   stage: { getSnapshot: () => boolean, subscribe: Function, set: Function, readBox: Function },
+ *   stage?: { getSnapshot: () => boolean, subscribe: Function, set: Function },
+ *   store?: { reduce?: Function, getSnapshot?: Function },
+ *   visible?: boolean,
  * }} props
  */
 export function AssetsStage(props) {
-  const { t, stage } = props
+  const { t, stage, store, visible = true } = props
   useEffect(() => { injectAssetsStyles() }, [])
-  const { open, everOpened } = useStageState(stage)
-  const box = useStageBox(open, stage)
-  const feed = useAssetsFeed({ t, open })
 
-  if (!stage || !everOpened) return null
+  useEffect(() => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (!api || typeof api.attachStore !== 'function' || !store) return undefined
+    api.attachStore(store)
+    return () => { api.detachStore?.(store) }
+  }, [store])
 
+  const feed = useAssetsFeed({ t, open: visible })
   const emptyProps = computeEmptyState(feed.filterType, feed.query, t)
 
   return (
     <div
       role="region"
       aria-label={t('stage.title')}
-      aria-hidden={open ? undefined : 'true'}
+      aria-hidden={visible ? undefined : 'true'}
       className="omnimux-assets-stage"
-      data-visible={open ? 'true' : 'false'}
-      style={createStageStyle(open, box)}
+      data-visible={visible ? 'true' : 'false'}
+      style={{ display: visible ? 'flex' : 'none', position: 'relative', width: '100%', height: '100%', flexDirection: 'column', overflow: 'hidden' }}
     >
       <AssetsHeader t={t} stage={stage} busy={feed.busy} refreshState={feed.refreshState} setBusy={feed.setBusy} />
       <AssetsActionRow t={t} feed={feed} />

@@ -5,13 +5,14 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-26"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux-assets"
 ---
 
 # OmniMux 全局插件一级页 UI 布局结构方法论与开发规范
 
-> **规范级别**：**强制 (MANDATORY)** —— 所有 OmniMux 插件一级页（`shell.overlay` 页面，包括项目库、资产中心、Skill 市场、商品中心、账号矩阵、工作流中心等）必须严格遵循此方法论。  
+> **规范级别**：**强制 (MANDATORY)** —— 所有 OmniMux 插件一级页（工作台 Tab：项目库、资产中心、Skill 市场、商品中心、账号矩阵等；座见 [workbench-split.md](./workbench-split.md)）必须严格遵循此方法论。根节点填满右栏，禁止 `position:fixed` 盖会话。  
 > **设计真源**：对齐「项目库」、「资产中心」、「Skill 市场」三张核心业务页的共同视觉与交互骨架。  
 > **形态定界 / 豁免 / 整改批次**：先读 [`client-ui-remediation.md`](./client-ui-remediation.md)。未归类的一级页默认按标准 4 层资产库执行，不得事后用「特异」逃检。  
 > **金标实现**：`plugins/omnimux-assets/src/client/AssetsStage.jsx`。Layer 3A Tab 必须用 `dsh-ui-kit` `Button role="tab"`，禁止裸 `<button>`。

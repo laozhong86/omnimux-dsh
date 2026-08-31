@@ -5,25 +5,37 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-26"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux-accounts"
 ---
 
-# stage-guards — 一级 Stage / 本地写闸 / 空态静态契约
+# stage-guards — 一级 Stage / 工作台 Tab / 本地写闸 / 空态静态契约
 
 > 解决问题：E2E 反复踩「关页卸树丢状态」「写路由无同域闸」「空态文案混用」。
 > 配套：`plugin-qa.md`（验收五维）+ `yarn omnimux:doctor`（静态拦）+ `hub.md`（垂直禁 import）。
 
-## 1. 关页保活（一级 Stage / Plaza）
+## 1. 关页保活（一级 Stage / 工作台 Tab / Plaza）
+
+座已迁到 `dsh-better-sidebar`（[workbench-split.md](./workbench-split.md)）。保活规则对 **Tab 根组件** 与残留 overlay 同样生效。关闭工作台 Tab = `closeTab` + `display:none` 保活，**不是** `claim`/`release` overlay。
 
 | 规则 | 判定 |
 |------|------|
 | MUST | 首次打开后子树保活：`everOpened`（或等价 keep 旗）+ 关闭用 `display:none` / `aria-hidden`，禁止关页卸树 |
 | MUST NOT | 以 `if (!open …) return null` 作为**已打开过**的关页路径 |
 | 允许 | 从未打开：`if (!stage \|\| !everOpened) return null`；**Modal/Dialog** 关闭 `return null` |
-| 金标（doctor **FAIL** 若回归） | `AccountsStage.jsx`、`ProductsStage.jsx`（已合入 main） |
-| 推进中（doctor **WARN** / 文件缺失则跳过） | `AssetsStage.jsx`、`plaza-shell.js` — 契约仍 MUST；待各自业务 PR 合入后再升 FAIL |
-| 已知债（doctor **WARN**） | `WorkflowStage.jsx`、`AppsStage.jsx` — 契约仍 MUST；修码 backlog |
+| 金标（doctor / `pnpm verify:stages` **FAIL** 若回归） | `AccountsStage.jsx`、`ProductsStage.jsx`、`AssetsStage.jsx`（已合入 main） |
+| 工作台 Tab 根（**FAIL**） | `ProjectLibraryPage.jsx`、`plaza-shell.js`（或继任 `PlazaTab`）、各 `*Stage.jsx` 在迁入右栏后仍要保活 |
+| 已知债（doctor **WARN**） | `WorkflowStage.jsx`（已不再挂 overlay，遗留文件）、`AppsStage.jsx`（未挂载货架）、`ClipStage.jsx`（仅 portal） |
+
+## 1.1 工作台座门禁（#318）
+
+`scripts/verify-stage-contracts.mjs` 必须同时扫：
+
+1. Tab / Stage 根保活（上表）。
+2. **禁止库页 overlay 回潮**：下列包的 `src/client/index.js`（market 为 `src/client/apply.js`）**不得** `slots.inject('shell.overlay')`：`omnimux-assets` / `products` / `accounts` / `inspiration` / `publish` / `analytics` / `workflow` / `market`。
+3. **允许 overlay 白名单**：`plugins/omnimux/src/client/index.js`（LoginGate）、`plugins/omnimux-clip/src/client/index.js`（ClipStage portal only）。
+4. **禁止库页 claim**：迁入名单包的 sidebar / workbench-store 源码不得出现 `claimProductStage` / `stage.claim(`（clip portal 除外）。
 
 ## 2. 本地写闸
 

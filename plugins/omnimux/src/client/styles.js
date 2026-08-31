@@ -968,6 +968,27 @@ export const HUB_CSS = `
   font-size: 12px;
   color: var(--dsw-alias-label-error);
 }
+.omnimux-chat-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary, inherit);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.omnimux-chat-toggle-btn:hover {
+  background: var(--dsw-alias-bg-control-hover, rgba(255, 255, 255, 0.08));
+  color: var(--dsw-alias-label-primary, inherit);
+}
+.omnimux-chat-toggle-btn[data-active="true"] {
+  color: var(--dsw-alias-accent-primary, #3b82f6);
+}
 `
 
 export function injectHubStyles() {
