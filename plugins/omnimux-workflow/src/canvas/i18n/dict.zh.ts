@@ -84,7 +84,12 @@ const zh = {
   'edge.reject.missingNode': '连接目标不存在',
   'edge.reject.cycle': '这条连线会形成循环依赖',
   'edge.reject.typeContract': '目标节点当前不接受这种素材类型',
+  'edge.reject.capacityExceeded': '已达目标模型参考图上限（最多 {max} 张）',
+  'edge.reject.modelIncompatible': '目标模型不支持该素材类型',
   'edge.reject.invalid': '连接无效',
+  // 模型多模态兼容性
+  'model.compatibility.disabledReason': '当前输入不满足模型要求：{reason}',
+  'model.compatibility.degradedWarning': '输入超出模型推荐配额，执行时按前 {max} 张处理',
   // 文本节点 / 徽标
   'node.textPlaceholder': '输入文本内容…',
   'node.skipped': '节点被跳过',

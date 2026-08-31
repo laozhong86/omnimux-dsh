@@ -17,6 +17,10 @@ const RATIO_OPTS = {
   r9_21: { value: '9:21', label: '9:21' },
 };
 
+const STANDARD_IMAGE_MIMES = ['image/png', 'image/jpeg', 'image/webp'];
+const STANDARD_VIDEO_MIMES = ['video/mp4', 'video/quicktime', 'video/webm'];
+const STANDARD_AUDIO_MIMES = ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/webm'];
+
 export const IMAGE_MODEL_SPECS = [
   {
     id: 'gpt-image-2',
@@ -24,6 +28,10 @@ export const IMAGE_MODEL_SPECS = [
     badge: '默认',
     subtitle: '1k-4k',
     family: 'openai',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
@@ -44,6 +52,10 @@ export const IMAGE_MODEL_SPECS = [
     label: 'GPT Image 2 HD',
     subtitle: '高清 4K',
     family: 'openai',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
@@ -61,6 +73,10 @@ export const IMAGE_MODEL_SPECS = [
     badge: '极速',
     subtitle: 'xAI Grok',
     family: 'grok',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 4, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4],
@@ -78,6 +94,10 @@ export const IMAGE_MODEL_SPECS = [
     badge: '高画质',
     subtitle: 'xAI Grok HD',
     family: 'grok',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 4, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4],
@@ -95,6 +115,10 @@ export const IMAGE_MODEL_SPECS = [
     badge: '旗舰',
     subtitle: 'Midjourney v7/v8',
     family: 'midjourney',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 5, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [
@@ -122,6 +146,10 @@ export const IMAGE_MODEL_SPECS = [
     badge: 'Yearly -20%',
     subtitle: '2K',
     family: 'midjourney',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 5, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [
@@ -149,6 +177,10 @@ export const IMAGE_MODEL_SPECS = [
     label: 'Midjourney 7',
     subtitle: '1080P',
     family: 'midjourney',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 5, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [
@@ -175,6 +207,10 @@ export const IMAGE_MODEL_SPECS = [
     label: 'Midjourney Niji 7',
     subtitle: '二次元动漫',
     family: 'midjourney',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 5, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [
@@ -202,6 +238,10 @@ export const IMAGE_MODEL_SPECS = [
     badge: 'Imagen',
     subtitle: 'auto-4K',
     family: 'nanobanana',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 4, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
@@ -218,6 +258,10 @@ export const IMAGE_MODEL_SPECS = [
     label: 'Nano Banana 2',
     subtitle: 'Google Imagen',
     family: 'nanobanana',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 4, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
@@ -234,6 +278,10 @@ export const IMAGE_MODEL_SPECS = [
     label: 'NanoBanana Pro',
     subtitle: 'auto-4K Pro',
     family: 'nanobanana',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 4, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
@@ -250,6 +298,10 @@ export const IMAGE_MODEL_SPECS = [
     label: 'Nano Banana Pro',
     subtitle: 'Google Imagen Pro',
     family: 'nanobanana',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 4, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.auto, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4, RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
@@ -266,6 +318,10 @@ export const IMAGE_MODEL_SPECS = [
     label: 'Seedream 5.0 Pro',
     subtitle: '1K-2K',
     family: 'seedream',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 8, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [
@@ -292,6 +348,10 @@ export const IMAGE_MODEL_SPECS = [
     label: 'Seedream 4.5',
     subtitle: '2K-4K',
     family: 'seedream',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 8, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [
@@ -322,6 +382,10 @@ export const VIDEO_MODEL_SPECS = [
     badge: '默认',
     subtitle: '720P · ⏱ 4-8s',
     family: 'bytedance',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference', 'first_frame'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
@@ -348,6 +412,10 @@ export const VIDEO_MODEL_SPECS = [
     badge: '即梦旗舰',
     subtitle: '720P-1080P · ⏱ 5-10s',
     family: 'bytedance',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference', 'first_frame'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
@@ -372,6 +440,10 @@ export const VIDEO_MODEL_SPECS = [
     label: 'Seedance 2.0',
     subtitle: '720P · ⏱ 5s',
     family: 'bytedance',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference', 'first_frame'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
@@ -394,6 +466,10 @@ export const VIDEO_MODEL_SPECS = [
     badge: '高画质稳定',
     subtitle: '720P · ⏱ 5-10s',
     family: 'bytedance',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference', 'first_frame'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
@@ -416,6 +492,10 @@ export const VIDEO_MODEL_SPECS = [
     badge: '可灵 3.0',
     subtitle: '1080P-4K · ⏱ 5-10s · 🔊',
     family: 'kling',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 2, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['first_frame', 'last_frame'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
@@ -444,6 +524,10 @@ export const VIDEO_MODEL_SPECS = [
     label: 'Kling V2.6',
     subtitle: '1080P · ⏱ 5-10s',
     family: 'kling',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 2, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['first_frame', 'last_frame'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
@@ -469,6 +553,10 @@ export const VIDEO_MODEL_SPECS = [
     badge: '运镜控制',
     subtitle: '1080P · 运镜轨迹',
     family: 'kling',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 2, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['first_frame', 'last_frame'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
@@ -494,6 +582,11 @@ export const VIDEO_MODEL_SPECS = [
     badge: '数字人',
     subtitle: '音频对口型',
     family: 'kling',
+    inputCapability: {
+      modalities: ['text', 'image', 'audio'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+      referenceAudios: { min: 0, max: 1, allowedMimeTypes: STANDARD_AUDIO_MIMES, supportedRoles: ['audio_track'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
@@ -514,6 +607,10 @@ export const VIDEO_MODEL_SPECS = [
     label: 'Kling O1',
     subtitle: '1080P · ⏱ 3-10s',
     family: 'kling',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 2, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['first_frame', 'last_frame'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
@@ -538,6 +635,10 @@ export const VIDEO_MODEL_SPECS = [
     label: 'Kling O3',
     subtitle: '4K · ⏱ 3-15s · 🔊',
     family: 'kling',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 2, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['first_frame', 'last_frame'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
@@ -568,6 +669,10 @@ export const VIDEO_MODEL_SPECS = [
     badge: '谷歌顶级',
     subtitle: '720p-1080p · ⏱ 8s',
     family: 'veo',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
@@ -593,6 +698,10 @@ export const VIDEO_MODEL_SPECS = [
     badge: '极速',
     subtitle: '720p-1080p · ⏱ 8s',
     family: 'veo',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
@@ -618,6 +727,10 @@ export const VIDEO_MODEL_SPECS = [
     badge: 'xAI Grok',
     subtitle: '720P · ⏱ 5s',
     family: 'grok',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
@@ -639,6 +752,10 @@ export const VIDEO_MODEL_SPECS = [
     label: 'Grok Imagine Video 1.5',
     subtitle: '720P-1080P · ⏱ 5s',
     family: 'grok',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
@@ -660,6 +777,10 @@ export const VIDEO_MODEL_SPECS = [
     label: 'Omni Flash Video',
     subtitle: '多时长视频',
     family: 'veo',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16],
@@ -685,6 +806,10 @@ export const VIDEO_MODEL_SPECS = [
     label: 'Wan 3.0',
     subtitle: '720P-1080P · ⏱ 5-15s · 🔊',
     family: 'wan',
+    inputCapability: {
+      modalities: ['text', 'image'],
+      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {
       aspectRatio: {
         options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1, RATIO_OPTS.r4_3, RATIO_OPTS.r3_4],
@@ -718,6 +843,9 @@ export const AUDIO_MODEL_SPECS = [
     badge: '音乐创作',
     subtitle: 'AI 歌曲 / 纯音乐 · ⏱ 30-120s',
     family: 'suno',
+    inputCapability: {
+      modalities: ['text'],
+    },
     parameters: {
       duration: {
         options: [
@@ -740,6 +868,9 @@ export const AUDIO_MODEL_SPECS = [
     badge: '语音合成',
     subtitle: 'OpenAI 高清配音 · 6 种音色',
     family: 'openai',
+    inputCapability: {
+      modalities: ['text'],
+    },
     parameters: {
       voice: {
         options: [
@@ -760,6 +891,10 @@ export const AUDIO_MODEL_SPECS = [
     badge: '语音识别',
     subtitle: 'OpenAI 语音转文字 / ASR',
     family: 'openai',
+    inputCapability: {
+      modalities: ['audio'],
+      referenceAudios: { min: 1, max: 1, allowedMimeTypes: STANDARD_AUDIO_MIMES, supportedRoles: ['reference'] },
+    },
     parameters: {},
   },
 ];
@@ -772,7 +907,7 @@ const TABLES = Object.freeze({
 
 /**
  * @param {'image' | 'video' | 'audio'} kind
- * @returns {ReadonlyArray<{ id: string, label: string, badge?: string, subtitle?: string, family?: string, parameters?: object }>}
+ * @returns {ReadonlyArray<{ id: string, label: string, badge?: string, subtitle?: string, family?: string, inputCapability?: object, parameters?: object }>}
  */
 export function mediaModels(kind) {
   return TABLES[kind] ?? []

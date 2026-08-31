@@ -32,6 +32,10 @@ import {
 } from '../../../../types/materialNode';
 import type { CapabilityCatalog, CapabilityModelItem } from '../../../../../shared/api';
 import { sortCatalogRows } from '../../../../../shared/sortCatalog';
+import {
+  evaluateModelCompatibility,
+  resolveModelInputCapability,
+} from '../../../../../shared/validation/modelCompatibilityEvaluator.ts';
 import { useT } from '../../../../i18n';
 import { CustomSelect, CustomSlider } from '../../../../ui';
 import { ModelBrandIcon } from '../../../../ui/ModelBrandIcon';
@@ -208,12 +212,37 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       : [];
     const combined = [...orphan, ...rows.map((row) => ({ ...row, deprecated: false as const }))];
 
+    const upstreamTypes = upstreams.map((u) => ({
+      type: u.materialType,
+    }));
+
     return combined.map((row) => {
       const visuals = getModelVisuals(row.id);
       const icon = visuals.icon;
-      const badge = row.deprecated ? 'deprecated' : (row.badge ?? visuals.badge);
-      const subtitle = row.subtitle ?? visuals.subtitle;
+
+      const modelCap = row.inputCapability ?? resolveModelInputCapability(row.id, activeCatalog);
+      const compat = evaluateModelCompatibility(row.id, modelCap, upstreamTypes);
+
+      const isDegraded = compat.level === 'degraded';
+      const isDisabled = compat.level === 'disabled';
+      const reasonText = compat.reasons.join('；');
+
+      let badge = row.deprecated ? 'deprecated' : (row.badge ?? visuals.badge);
+      if (isDegraded) {
+        badge = '降级';
+      } else if (isDisabled && !row.deprecated) {
+        badge = '不可用';
+      }
+
+      let subtitle = row.subtitle ?? visuals.subtitle;
+      if (isDisabled && reasonText) {
+        subtitle = reasonText;
+      } else if (isDegraded && compat.adaptationAdvice) {
+        subtitle = compat.adaptationAdvice;
+      }
+
       const label = row.deprecated ? `${row.label} (deprecated)` : row.label;
+      const title = reasonText || (row.deprecated ? 'deprecated' : undefined);
 
       return {
         value: row.id,
@@ -227,9 +256,11 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
         icon,
         badge,
         subtitle,
+        disabled: isDisabled,
+        title,
       };
     });
-  }, [catalog, materialType, params.model]);
+  }, [catalog, materialType, params.model, upstreams]);
 
   // Inheritance: keep existing params.model (even if deprecated) → defaults[type] → whitelist first → first sorted.
   const modelValue = useMemo(() => {
