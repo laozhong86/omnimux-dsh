@@ -1,5 +1,6 @@
 /**
  * Issue #325: ConfigPanel 提示词原地展开，不再走全局 CustomModal。
+ * Issue #330: 移除字数指示并收紧上下垂直间距。
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -27,7 +28,7 @@ test('ConfigPanel 原地展开切换：isExpanded / Minimize2 / Maximize2 / 动�
   assert.match(panelSrc, /Minimize2/);
   assert.match(panelSrc, /Maximize2/);
   assert.match(panelSrc, /isExpanded \? <Minimize2 size=\{13\} \/> : <Maximize2 size=\{13\} \/>/);
-  assert.match(panelSrc, /rows=\{isExpanded \? 8 : 3\}/);
+  assert.match(panelSrc, /rows=\{isExpanded \? 8 : 2\}/);
   assert.match(panelSrc, /wf-config-panel__prompt-input--expanded/);
   assert.match(panelSrc, /t\('panel\.collapse'\)/);
   assert.match(panelSrc, /t\('panel\.expand'\)/);
@@ -37,15 +38,28 @@ test('展开态仍保留底部参数栏与生成按钮，不拆成第二套编�
   assert.match(panelSrc, /wf-config-panel__bottom-bar/);
   assert.match(panelSrc, /<GenerateButton/);
   assert.match(panelSrc, /<CustomSelect/);
-  assert.match(panelSrc, /wf-config-panel__char-counter/);
   assert.match(panelSrc, /wf-config-panel__ref-slots-group/);
   assert.equal((panelSrc.match(/<textarea/g) || []).length, 1);
 });
 
+test('Issue #330: 彻底移除字数统计 DOM 与 maxLimit 计算', () => {
+  assert.doesNotMatch(panelSrc, /wf-config-panel__char-counter/);
+  assert.doesNotMatch(panelSrc, /maxLimit/);
+  assert.doesNotMatch(panelSrc, /\(prompt \|\| ''\)\.length/);
+  assert.doesNotMatch(cssSrc, /\.wf-config-panel__char-counter/);
+  assert.doesNotMatch(cssSrc, /padding:\s*0\s+0\s+20px\s+0/);
+});
+
 test('prompt 输入框展开样式提供更高编辑视野与过渡', () => {
-  assert.match(cssSrc, /\.wf-config-panel__prompt-input--expanded \{[\s\S]*?min-height:\s*160px/);
+  assert.match(cssSrc, /\.wf-config-panel__prompt-input--expanded \{[\s\S]*?min-height:\s*150px/);
+  assert.match(cssSrc, /\.wf-config-panel__prompt-input \{[\s\S]*?min-height:\s*38px/);
   assert.match(cssSrc, /\.wf-config-panel__prompt-input \{[\s\S]*?transition:\s*min-height/);
   assert.match(cssSrc, /\.wf-config-panel__expand-btn \{[\s\S]*?width:\s*22px/);
+  assert.match(cssSrc, /\.wf-panel-shell__card \{[\s\S]*?padding:\s*10px 12px/);
+  assert.match(cssSrc, /\.wf-config-panel \{[\s\S]*?gap:\s*6px/);
+  assert.match(cssSrc, /\.wf-config-panel__prompt-header \{[\s\S]*?margin-bottom:\s*4px/);
+  assert.match(cssSrc, /\.wf-config-panel__prompt-container \{[\s\S]*?padding:\s*0;/);
+  assert.match(cssSrc, /\.wf-config-panel__bottom-bar \{[\s\S]*?padding-top:\s*0;/);
 });
 
 test('展开 / 收起文案入典', () => {
