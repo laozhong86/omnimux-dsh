@@ -83,7 +83,20 @@ export function mountOfficial(ctx, deps) {
 
   tool(
     'omnimux_social_data',
-    'Fetch OmniMux social data. platform+capability must be a documented pair (tiktok/video, tiktok/user, tiktok/posts, tiktok/search, instagram/post, instagram/user, instagram/posts, instagram/search, youtube/video, youtube/user, youtube/posts, youtube/search, x/tweet, x/user, x/posts, x/search). Uses OMNIMUX_API_KEY. Pass url, id, or query.',
+    [
+      'Fetch read-only OmniMux social post/profile data (NOT publishing).',
+      'Required pair platform+capability:',
+      'tiktok/video|user|posts|search, instagram/post|user|posts|search, youtube/video|user|posts|search, x/tweet|user|posts|search.',
+      'Pass url and/or id and/or query; hub maps them to upstream top-level fields',
+      '(x/tweet→tweet_id from status URL or numeric id; tiktok/video→aweme_id; instagram/post→url;',
+      'youtube/video→video_id; */search→keyword|query|search_query; profiles→username|screen_name|channel_id|uniqueId).',
+      'Returns {platform,capability,model,field,value,data}.',
+      'For x/tweet, data typically includes text/display_text, author{name,screen_name,image},',
+      'engagement (likes/views/retweets/replies/bookmarks), and media attachments:',
+      'data.media.video[].variants[].url (mp4/m3u8), data.media.video[].media_url_https (thumb),',
+      'plus data.entities.media[] (type, media_url_https, expanded_url, video_info.variants).',
+      'Requires OMNIMUX_API_KEY. Example: {platform:"x", capability:"tweet", url:"https://x.com/<user>/status/<tweet_id>"}.',
+    ].join(' '),
     {
       platform: { type: 'string', required: true, enum: ['tiktok', 'instagram', 'youtube', 'x'] },
       capability: { type: 'string', required: true, enum: ['video', 'user', 'post', 'posts', 'tweet', 'search'] },
