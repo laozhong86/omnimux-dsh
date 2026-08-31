@@ -1,32 +1,17 @@
 {
-  "issue": 299,
-  "pr": 300,
+  "issue": 302,
+  "pr": 304,
   "stage": "workflow-canvas",
   "port": 45120,
-  "profile": "~/.omnimux-dev",
-  "verified_at": "2026-08-31T11:15:06",
-  "assertions": [
-    {
-      "name": "deselect-then-script-gen",
-      "selected": 1,
-      "panel": true,
-      "prompt_prefix": "请创作一个"
-    },
-    {
-      "name": "deselect-then-planning-gen",
-      "selected": 1,
-      "panel": true,
-      "prompt_prefix": "请撰写一份",
-      "content_empty": true
-    },
-    {
-      "name": "deselect-then-prompt-gen",
-      "selected": 1,
-      "panel": true,
-      "prompt_prefix": "根据以下创意需求",
-      "content_empty": true
-    }
+  "verified_at": "2026-08-31T11:40:10",
+  "dropdown_order": [
+    "Gemini 3.7 Flash",
+    "Claude 4.6",
+    "GPT-5.5",
+    "Gemini 3.1 Pro Preview",
+    "DeepSeek 4 Flash"
   ],
-  "screenshot": "docs/evidence/issue-299-text-preset-activate.png",
+  "default": "Gemini 3.7 Flash",
+  "screenshot": "docs/evidence/issue-302-text-model-order.png",
   "result": "pass"
 }
