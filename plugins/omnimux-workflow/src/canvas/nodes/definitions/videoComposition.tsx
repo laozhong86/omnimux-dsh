@@ -348,19 +348,19 @@ const VideoCompositionNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         })) return null;
         const pillActions: FloatingPillAction[] = [
           {
+            key: 'download_video',
+            label: t('pill.download'),
+            icon: Download,
+            section: 'primary',
+            onClick: handleDownload,
+            title: t('clip.downloadTitle'),
+          },
+          {
             key: 'add-to-conversation',
             icon: MessageSquarePlus,
             section: 'secondary',
             onClick: handleAddToConversation,
             title: t('pill.addToConversation'),
-          },
-          {
-            key: 'download_video',
-            label: t('pill.download'),
-            icon: Download,
-            section: 'secondary',
-            onClick: handleDownload,
-            title: t('clip.downloadTitle'),
           },
         ];
         return (

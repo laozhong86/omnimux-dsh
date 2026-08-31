@@ -58,13 +58,6 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
 
   const pillActions: FloatingPillAction[] = useMemo(() => [
     {
-      key: 'add-to-conversation',
-      icon: MessageSquarePlus,
-      section: 'secondary',
-      title: t('pill.addToConversation'),
-      onClick: handleAddToConversation,
-    },
-    {
       key: 'fullscreen-edit',
       label: t('pill.fullscreen'),
       icon: Maximize2,
@@ -74,6 +67,13 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
         e.stopPropagation();
         openStage();
       },
+    },
+    {
+      key: 'add-to-conversation',
+      icon: MessageSquarePlus,
+      section: 'secondary',
+      title: t('pill.addToConversation'),
+      onClick: handleAddToConversation,
     },
   ], [handleAddToConversation, openStage, t]);
 
