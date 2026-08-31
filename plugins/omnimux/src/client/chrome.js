@@ -3,6 +3,7 @@ import { ensureProductStageChrome } from './conversation-box.js'
 import { installStageGlobal } from './stage.js'
 import { installSidebarGlobal } from './sidebar-coordinator.js'
 import { installAuthGlobal } from './auth-gate.js'
+import { installWorkbenchGlobal } from './workbench.js'
 import { NS, en, zh } from './locales.js'
 // x.ai 全壳 overrideTokens 已临时关闭：发送钮在暗色下变成白底白箭头。
 // 恢复时：重新 import applyXaiShellTheme，并把 'theme' 加回 inject + package.json dsh.client.inject。
@@ -22,6 +23,17 @@ export function installHubChrome(ctx) {
   installStageGlobal()
   installSidebarGlobal()
   installAuthGlobal()
+  const workbench = installWorkbenchGlobal()
+  // Optional services: layout/sessions ship with the web client; betterSidebar
+  // is a community plugin. Never read them on the top-level inject list.
+  if (typeof ctx.inject === 'function') {
+    ctx.inject(['layout', 'sessions'], (inner) => {
+      workbench.bind({ layout: inner.layout, sessions: inner.sessions })
+    })
+    ctx.inject(['betterSidebar'], (inner) => {
+      workbench.bind({ betterSidebar: inner.betterSidebar ?? inner.get?.('betterSidebar') })
+    })
+  }
   ctx.effect(
     () => startOverlay(document, configFromWindow(window)),
     'omnimux: brand overlay',

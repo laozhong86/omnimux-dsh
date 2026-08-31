@@ -44,6 +44,7 @@ MUST NOT use 13px labels or 16px filled icons on these rows. MUST NOT invent a s
 | `[data-omnimux-inspiration-entry]` | `omnimux-inspiration` | 灵感库（rank 7，不重排旧行） |
 | `[data-omnimux-publish-entry]` | `omnimux-publish` | 发布（rank 9，尾部追加，不重排旧行；styleId `omnimux-publish-entry-styles`） |
 | `[data-omnimux-analytics-entry]` | `omnimux-analytics` | 数据分析（rank 10） |
+| `[data-omnimux-clip-entry]` | `omnimux-clip` | 视频剪辑（rank 8.2）。**Workbench 入口**，点开 `omnimux-clip:studio` Tab，**不得** `claimProductStage`。见 [workbench-split.md](./workbench-split.md) |
 
 ## Offline vs Cloud Visibility
 
@@ -78,7 +79,7 @@ MUST NOT fake a tab as a real session row (no `conversation.view`, no session da
 
 ## Independent pages
 
-These rows are first-level product pages, not session views.
+Library / catalog rows are first-level product pages on `shell.overlay`, not session views. **Exception:** `[data-omnimux-clip-entry]` is a workbench row — it opens `omnimux-clip:studio` on `[data-dsh-panel-host]` and MUST NOT claim `data-dsh-product-stage`. See [workbench-split.md](./workbench-split.md).
 
 | Rule | Detail |
 |---|---|
@@ -91,7 +92,7 @@ These rows are first-level product pages, not session views.
 
 MUST NOT register these pages as `conversation.view`. That slot is a session-hosted tab (chat / trajectory / team run). A first-level product page that lives there will keep the session header and composer.
 
-Project-session canvas (workflow scheme C) does **not** set `data-dsh-product-stage`. The first-level library page releases the stage before opening the canvas tab, so this chrome MUST NOT hide the right panel for that session.
+Project-session canvas (workflow scheme C) and workbench tabs (clip studio) do **not** set `data-dsh-product-stage`. The first-level library page releases the stage before opening a canvas tab, and the clip left-row never claims a stage, so this chrome MUST NOT hide the right panel for those sessions. See [workbench-split.md](./workbench-split.md).
 
 ### Overlay external-store binding
 

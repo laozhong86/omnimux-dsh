@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L2"
 date: "2026-08-26"
-updated: "2026-08-30"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -21,6 +21,7 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `accepted` | [2026-08-31-workbench-split.md](2026-08-31-workbench-split.md) | 决策：工作台挂 dsh-better-sidebar，库页留 overlay，对话不卸载 | `omnimux` | 2026-08-31 | 不发明三栏壳；焦点 = 右栏几何；跨插件走 `window.__omnimuxWorkbench`。 |
 | `accepted` | [2026-08-30-workflow-artifacts-not-in-git.md](2026-08-30-workflow-artifacts-not-in-git.md) | 决策：omnimux-workflow 生成物不进 Git，源码为唯一真相 | `omnimux-workflow` | 2026-08-30 | `dist/` 与 `lib/client.js` / `lib/canvas.js` 现场 build，禁止为跟仓另开 PR。 |
 | `accepted` | [2026-08-30-physical-materialization.md](2026-08-30-physical-materialization.md) | 决策：画布与资产库 100% 物理实体化 | `omnimux-workflow` | 2026-08-30 | 废止零拷贝 `real_path` 作为画布/主体库持久化策略；受管副本可随记录回收。 |
 | `accepted` | [2026-08-27-adopt-dsh-native-ui-system.md](2026-08-27-adopt-dsh-native-ui-system.md) | 决策：全面适配 DeepSeek Harness 原生 UI 规范，彻底废除外部主题覆盖层 | `omnimux` | 2026-08-27 | OmniMux 系列全量插件（Hub、Accounts、Assets、Products、Inspiration、Workflow、Clip、Publish 等）**100% 回归并严格消费 DeepS |

@@ -177,6 +177,8 @@ export const WORKFLOW_CSS = `
 }
 .omnimux-workflow-canvas-tab {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -184,6 +186,28 @@ export const WORKFLOW_CSS = `
 }
 .omnimux-workflow-canvas-tab[data-visible="false"] {
   visibility: hidden;
+}
+.omnimux-workflow-canvas-hostbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--dsw-alias-border, rgba(255, 255, 255, 0.12));
+  background: var(--dsw-alias-bg-elevated, var(--dsw-alias-bg-base));
+  color: var(--dsw-alias-label-secondary, inherit);
+  font-size: 12px;
+  line-height: 16px;
+}
+.omnimux-workflow-canvas-hostbar-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-primary, inherit);
+  font-weight: 500;
 }
 `
 

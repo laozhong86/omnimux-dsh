@@ -383,6 +383,34 @@ describe('projectCanvas isolation', () => {
     assert.equal(reduced.length, 0)
   })
 
+  it('applyProjectCanvasRatio skips while workbench focus is gui or chat', () => {
+    resetProjectCanvasRatioMemory()
+    const reduced = []
+    const previous = globalThis.window
+    globalThis.window = { __omnimuxWorkbench: { getFocus: () => 'gui' } }
+    try {
+      const store = {
+        getPrefs() { return { defaultWidthPercent: 35 } },
+        getSnapshot() {
+          return { sessionId: 'sess-gui', state: { width: 560, panelOpen: true } }
+        },
+        reduce(fn) { reduced.push(fn({ width: 560 })) },
+      }
+      const next = applyProjectCanvasRatio(
+        { getSnapshot: store.getSnapshot },
+        'sess-gui',
+        store,
+        { conversationWidth: 300, viewportWidth: 1280, officialSidebarWidth: 240 },
+        true,
+      )
+      assert.equal(next, null)
+      assert.equal(reduced.length, 0)
+    } finally {
+      if (previous === undefined) delete globalThis.window
+      else globalThis.window = previous
+    }
+  })
+
   it('activateProjectCanvas no-ops tab mutations when sidebar service is missing', async () => {
     const details = []
     const ok = await activateProjectCanvas({

@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L3"
 date: "2026-08-26"
-updated: "2026-08-28"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -21,6 +21,7 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `accepted` | [2026-08-31-workbench-split-live.md](2026-08-31-workbench-split-live.md) | Workbench split live QA — 2026-08-31 | `omnimux` | 2026-08-31 | 点「视频剪辑」不 claim overlay；对话/分栏/工作台写右栏几何。附件 png/json 同目录。 |
 | `accepted` | [2026-08-27-web-plugin-pages-qa.md](2026-08-27-web-plugin-pages-qa.md) | Web Plugin Pages QA Evidence — 2026-08-27 | `global` | 2026-08-27 | - **Entry**: fork `yarn omnimux:dev start plugin-pages omnimux` |
 | `accepted` | [2026-08-23-omnimux-brand-four.md](2026-08-23-omnimux-brand-four.md) | OmniMux live brand-four probe — 2026-08-23 | `global` | 2026-08-23 | Measured against `https://api.omnimux.ai/v1` with a real `OMNIMUX_API_KEY`. |
 | `accepted` | [2026-08-23-omnimux-reader.md](2026-08-23-omnimux-reader.md) | OmniMux live reader evidence — 2026-08-23 | `global` | 2026-08-23 | No secrets below. Probe used a stored `OMNIMUX_API_KEY` against production. |

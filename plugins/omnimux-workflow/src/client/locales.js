@@ -35,6 +35,9 @@ export const zh = {
   'details.toolTab': '工具详情',
   'details.close': '关闭',
   'details.toolEmpty': '工具详情将在后续版本中提供。',
+  'focus.chat': '对话',
+  'focus.split': '分栏',
+  'focus.gui': '工作台',
 }
 
 export const en = {
@@ -74,6 +77,9 @@ export const en = {
   'details.toolTab': 'Tool Details',
   'details.close': 'Close',
   'details.toolEmpty': 'Tool details will be available in a later version.',
+  'focus.chat': 'Chat',
+  'focus.split': 'Split',
+  'focus.gui': 'Canvas',
 }
 
 export const NS = 'dsh-workflow'

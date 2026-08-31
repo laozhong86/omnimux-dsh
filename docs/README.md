@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L1"
 date: "2026-08-26"
-updated: "2026-08-30"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 tags: ["portal", "index", "docs-root", "navigation"]
@@ -45,6 +45,7 @@ docs/
 *随系统迭代持续演进的高权威契约（L1），定义模块接口、中枢 I/O 缝、UI 规范与运维入口。*
 - **[plugin-agent-tools-inventory.md](contracts/plugin-agent-tools-inventory.md)**: 全量插件 Agent 工具与双面交付清单契约 (88 个工具全景图与 CI 门禁)
 - **[docs-governance-standard.md](contracts/docs-governance-standard.md)**: 《开发文档工程实践管理规范》（本规范）
+- **[workbench-split.md](contracts/workbench-split.md)**: 工作台三栏（对话可收、插件 GUI 常驻）；库页仍 overlay
 - **[hub.md](contracts/hub.md)**: 执行中枢（Hub）I/O 契约、中立缝与官方专属工具定义
 - **[dev-pipeline.md](contracts/dev-pipeline.md)**: 三层开发环境（开发/预发布/生产）与隔离部署流水线
 - **[ops-entry.md](contracts/ops-entry.md)**: 运维命令唯一入口契约与各级脚本权责
@@ -56,6 +57,7 @@ docs/
 
 ### 2.2 [decisions/ (架构决策记录 - ADR)](decisions/README.md)
 *不可变的历史架构决策（L2），记录重大技术选型背景、裁定理由与备选方案权衡。*
+- **[2026-08-31-workbench-split.md](decisions/2026-08-31-workbench-split.md)**: 工作台挂 better-sidebar，库页留 overlay，对话不卸载
 - **[2026-08-30-workflow-artifacts-not-in-git.md](decisions/2026-08-30-workflow-artifacts-not-in-git.md)**: omnimux-workflow 生成物不进 Git
 - **[2026-08-30-physical-materialization.md](decisions/2026-08-30-physical-materialization.md)**: 画布与资产库 100% 物理实体化
 - **[2026-08-27-adopt-dsh-native-ui-system.md](decisions/2026-08-27-adopt-dsh-native-ui-system.md)**: 全面适配 DSH 原生 UI 规范与废除外部主题决议
