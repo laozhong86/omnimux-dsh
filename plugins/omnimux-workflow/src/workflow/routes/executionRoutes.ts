@@ -62,7 +62,8 @@ function extractNodeOutputFromSnapshot(
   const realPath = typeof data.realPath === 'string' ? data.realPath : '';
   if (realPath) {
     return {
-      mediaAssets: [{ type, url: localFileMediaUrl(realPath) }],
+      realPath,
+      mediaAssets: [{ type, url: localFileMediaUrl(realPath), path: realPath }],
       text,
     };
   }

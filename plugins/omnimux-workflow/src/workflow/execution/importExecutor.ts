@@ -55,7 +55,7 @@ export function createImportExecutor(): NodeExecutor {
 
       const realPath = readString(data, 'realPath');
       if (realPath) {
-        return { mediaAssets: [{ type, url: localFileMediaUrl(realPath) }] };
+        return { realPath, mediaAssets: [{ type, url: localFileMediaUrl(realPath), path: realPath }] };
       }
 
       const nodeMediaUrl = readString(data, 'mediaUrl');

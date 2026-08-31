@@ -117,7 +117,7 @@ describe('importExecutor - 专职导入执行器契约', () => {
     assert.equal(output.mediaAssets[0].relativePath, 'assets/imported/pic.png');
   });
 
-  it('realPath 存在时透传 localFileMediaUrl', async () => {
+  it('realPath 存在时透传 localFileMediaUrl 与 path 字段', async () => {
     const executor = createImportExecutor();
     const mockCtx = {
       upstreamOutputs: new Map(),
@@ -138,6 +138,8 @@ describe('importExecutor - 专职导入执行器契约', () => {
     assert.ok(output.mediaAssets);
     assert.equal(output.mediaAssets[0].type, 'image');
     assert.match(output.mediaAssets[0].url, /local-file/);
+    assert.equal(output.mediaAssets[0].path, '/Users/test/pic.png');
+    assert.equal(output.realPath, '/Users/test/pic.png');
   });
 
   it('mediaUrl 存在时透传', async () => {
@@ -173,5 +175,109 @@ describe('materialGatewayExecutor - 专职生成执行器契约', () => {
     };
     const executor = createMaterialGatewayExecutor({ gateway: mockGateway });
     assert.equal(executor.key, 'material:generate');
+  });
+
+  it('★ Issue #320 核心回归：文本节点上游连接带文件名文本的图片节点时，必须正确传递 image 物理路径给 gateway', async () => {
+    /** @type {any[]} */
+    const submissions = [];
+    const mockGateway = {
+      submit: async (req) => {
+        submissions.push(req);
+        return { taskId: 't1', mode: 'stub' };
+      },
+      awaitTask: async () => ({ text: '这是识别到的图片内容' }),
+      capabilities: async () => ({}),
+      mode: 'mock',
+    };
+    const executor = createMaterialGatewayExecutor({ gateway: mockGateway });
+
+    const upstreamOutputs = new Map();
+    // 模拟上游导入的图片节点输出：既有 content: '截屏2026-08-09 15.18.59.png'，又有 mediaAssets
+    upstreamOutputs.set('img-node-1', {
+      text: '截屏2026-08-09 15.18.59.png',
+      realPath: '/Users/test/Screenshots/截屏2026-08-09.png',
+      mediaAssets: [
+        {
+          type: 'image',
+          url: '/omnimux-workflow/api/local-file?path=%2FUsers%2Ftest%2FScreenshots%2F%E6%88%AA%E5%B1%8F2026-08-09.png',
+          path: '/Users/test/Screenshots/截屏2026-08-09.png',
+        },
+      ],
+    });
+
+    const mockCtx = {
+      upstreamOutputs,
+      signal: new AbortController().signal,
+      mediaDir: '/tmp/workflow/media/executions/e1',
+    };
+
+    const output = await executor.execute(
+      {
+        id: 'txt-node-1',
+        type: 'material',
+        data: {
+          materialType: 'text',
+          selectedTool: 'text-to-text',
+          prompt: '解释下这个图片',
+          params: { model: 'gemini-3.7-flash' },
+        },
+      },
+      mockCtx,
+    );
+
+    assert.equal(submissions.length, 1, 'gateway.submit 应该被调用一次');
+    const req = submissions[0];
+    assert.equal(req.capability, 'text');
+    assert.equal(req.prompt, '解释下这个图片');
+    assert.equal(req.model, 'gemini-3.7-flash');
+    assert.equal(req.image, '/Users/test/Screenshots/截屏2026-08-09.png', 'image 必须成功解析为物理绝对路径');
+    assert.equal(output.text, '这是识别到的图片内容');
+  });
+
+  it('上游图片节点仅有 local-file URL 且无显式 path 时，能正确从 URL 解码物理路径', async () => {
+    /** @type {any[]} */
+    const submissions = [];
+    const mockGateway = {
+      submit: async (req) => {
+        submissions.push(req);
+        return { taskId: 't2', mode: 'stub' };
+      },
+      awaitTask: async () => ({ text: 'ok' }),
+      capabilities: async () => ({}),
+      mode: 'mock',
+    };
+    const executor = createMaterialGatewayExecutor({ gateway: mockGateway });
+
+    const upstreamOutputs = new Map();
+    upstreamOutputs.set('img-node-url', {
+      text: 'photo.jpg',
+      mediaAssets: [
+        {
+          type: 'image',
+          url: '/omnimux-workflow/api/local-file?path=%2FUsers%2Ffoo%2Fphoto.jpg',
+        },
+      ],
+    });
+
+    const mockCtx = {
+      upstreamOutputs,
+      signal: new AbortController().signal,
+      mediaDir: '/tmp/workflow/media/executions/e1',
+    };
+
+    await executor.execute(
+      {
+        id: 'txt-node-2',
+        type: 'material',
+        data: {
+          materialType: 'text',
+          prompt: '识别图片',
+        },
+      },
+      mockCtx,
+    );
+
+    assert.equal(submissions.length, 1);
+    assert.equal(submissions[0].image, '/Users/foo/photo.jpg');
   });
 });
