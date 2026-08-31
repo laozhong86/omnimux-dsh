@@ -115,6 +115,13 @@ export const zh = {
   'models.defaultAudioHint': '音频生成节点未指定模型时使用',
   'models.reset': '恢复默认',
   'models.loading': '加载模型列表…',
+  'attachments.rail': '会话关联附件导轨',
+  'attachments.dropTitle': '将图片拖放到此处',
+  'attachments.dropBlocked': '当前无法添加图片',
+  'attachments.dropDesc': '最多 {count} 张，单张不超过 {size}',
+  'attachments.preview': '图片预览',
+  'attachments.closePreview': '关闭预览',
+  'attachments.removeNative': '移除 {name}',
 }
 
 export const en = {
@@ -234,6 +241,13 @@ export const en = {
   'models.defaultAudioHint': 'Used when an audio node does not specify a model',
   'models.reset': 'Reset',
   'models.loading': 'Loading models…',
+  'attachments.rail': 'Conversation attachments',
+  'attachments.dropTitle': 'Drop images here',
+  'attachments.dropBlocked': 'Images cannot be added right now',
+  'attachments.dropDesc': 'Up to {count} images, {size} each',
+  'attachments.preview': 'Image preview',
+  'attachments.closePreview': 'Close preview',
+  'attachments.removeNative': 'Remove {name}',
 }
 
 export const NS = 'omnimux'
