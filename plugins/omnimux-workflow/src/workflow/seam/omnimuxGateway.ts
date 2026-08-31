@@ -15,11 +15,12 @@ import type {
   AwaitTaskResult,
   GenerationCapability,
   GenerationGateway,
+  ReferenceAssetPayload,
   SubmitRequest,
   SubmitResult,
 } from './gateway';
 import type { ModelParameterSchema } from '../../shared/api';
-import { createWorkflowLogger } from '../execution/logger';
+import { createWorkflowLogger } from '../execution/logger.ts';
 
 const LOG_TAG = 'OmniMuxSeamClient';
 
@@ -176,6 +177,8 @@ interface TextTaskRecord {
   prompt: string;
   model?: string;
   image?: string;
+  references?: ReferenceAssetPayload[];
+  audioTrack?: ReferenceAssetPayload;
 }
 
 type TaskRecord = MediaTaskRecord | TextTaskRecord;
@@ -274,6 +277,8 @@ export function createOmnimuxSeamClient(
           prompt: req.prompt ?? '',
           model: req.model,
           image: req.image,
+          references: req.references,
+          audioTrack: req.audioTrack,
         });
         return { taskId, mode: 'submitted' };
       }
@@ -290,6 +295,8 @@ export function createOmnimuxSeamClient(
         wait: false,
       };
       if (req.image !== undefined) request.image = req.image;
+      if (req.references !== undefined) request.references = req.references;
+      if (req.audioTrack !== undefined) request.audioTrack = req.audioTrack;
       if (req.duration !== undefined) request.duration = req.duration;
       if (req.resolution !== undefined) request.resolution = req.resolution;
       if (req.aspectRatio !== undefined) request.aspectRatio = req.aspectRatio;
@@ -354,6 +361,8 @@ export function createOmnimuxSeamClient(
         const request: Record<string, unknown> = { prompt: record.prompt };
         if (record.model !== undefined) request.model = record.model;
         if (record.image !== undefined) request.image = record.image;
+        if (record.references !== undefined) request.references = record.references;
+        if (record.audioTrack !== undefined) request.audioTrack = record.audioTrack;
         if (signal !== undefined) request.signal = signal;
 
         let result: SeamExecuteResult;

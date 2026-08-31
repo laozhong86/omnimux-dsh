@@ -6,72 +6,47 @@
  * The `@gxg/shared/canvas` module (376 lines, zero deps) was inlined
  * verbatim below; MaterialNodeData is narrowed to the fields the canvas
  * graph + connection validation actually consume.
+ *
+ * MATERIAL_TOOLS and MATERIAL_TOOL_INPUT_TYPES are dynamically derived
+ * from the unified NodeSpecRegistry SSOT.
  */
 
-import type { MaterialType } from '../canvasTypes';
+import type { MaterialType } from '../canvasTypes.ts';
+import {
+  type MaterialTool,
+  MATERIAL_TOOLS_BY_TYPE,
+  DEFAULT_MATERIAL_TOOL_BY_TYPE,
+} from '../specs/nodes/materialNodeSpec.ts';
+import { NodeSpecRegistry } from '../specs/registry.ts';
 
 // ============================================================================
 // Inlined from @gxg/shared/canvas/materialTypes.ts (verbatim)
 // ============================================================================
 
-export type { MaterialType };
-
-export type MaterialTool =
-  | 'text-editor'
-  | 'text-to-text'
-  | 'link-extract'
-  | 'audio-transcription'
-  | 'import'
-  | 'text-to-image'
-  | 'image-to-image'
-  | 'video-generation'
-  | 'motion-mimicry'
-  | 'subtitle-render'
-  | 'digital-human'
-  | 'text-to-audio'
-  | 'text-to-music'
-  | 'video-to-audio'
-  | 'voice-clone'
-  | 'audio-extract';
+export type { MaterialType, MaterialTool };
 
 export const MATERIAL_TYPES: MaterialType[] = ['text', 'image', 'video', 'audio'];
 
-export const MATERIAL_TOOLS: Record<MaterialType, readonly MaterialTool[]> = {
-  text: ['text-editor', 'text-to-text', 'link-extract', 'audio-transcription'],
-  image: ['import', 'text-to-image', 'image-to-image'],
-  video: ['import', 'video-generation', 'motion-mimicry', 'subtitle-render', 'digital-human'],
-  audio: ['import', 'text-to-audio', 'text-to-music', 'video-to-audio', 'voice-clone', 'audio-extract'],
-};
+export const MATERIAL_TOOLS: Record<MaterialType, readonly MaterialTool[]> = MATERIAL_TOOLS_BY_TYPE;
 
-export const DEFAULT_MATERIAL_TOOL: Record<MaterialType, MaterialTool> = {
-  text: 'text-editor',
-  image: 'text-to-image',
-  video: 'video-generation',
-  audio: 'text-to-audio',
-};
+export const DEFAULT_MATERIAL_TOOL: Record<MaterialType, MaterialTool> = DEFAULT_MATERIAL_TOOL_BY_TYPE;
 
 /** 生成型工具的可用画幅选项（params.aspectRatio） */
 export const ASPECT_RATIO_OPTIONS = ['1:1', '4:3', '16:9', '9:16'] as const;
 
-/** 工具 -> 可接受的上游素材类型矩阵（连接校验的类型合同） */
-export const MATERIAL_TOOL_INPUT_TYPES: Partial<Record<MaterialTool, MaterialType[]>> = {
-  'text-editor': [],
-  'text-to-text': ['text', 'image', 'video'],
-  'link-extract': ['text'],
-  'audio-transcription': ['audio'],
-  import: [],
-  'text-to-image': ['text'],
-  'image-to-image': ['text', 'image'],
-  'video-generation': ['text', 'image', 'video', 'audio'],
-  'digital-human': ['text', 'image', 'video', 'audio'],
-  'motion-mimicry': ['text', 'image', 'video'],
-  'subtitle-render': ['text', 'video'],
-  'text-to-audio': ['text'],
-  'video-to-audio': ['video'],
-  'voice-clone': ['text', 'audio'],
-  'audio-extract': ['video'],
-  'text-to-music': ['text'],
-};
+/** 工具 -> 可接受的上游素材类型矩阵（连接校验的类型合同，由 NodeSpecRegistry 动态派生） */
+function deriveMaterialToolInputTypes(): Partial<Record<MaterialTool, MaterialType[]>> {
+  const result: Partial<Record<MaterialTool, MaterialType[]>> = {};
+  const spec = NodeSpecRegistry.get('material');
+  if (spec) {
+    for (const [toolId, toolSpec] of Object.entries(spec.tools)) {
+      result[toolId as MaterialTool] = [...toolSpec.acceptedInputTypes];
+    }
+  }
+  return result;
+}
+
+export const MATERIAL_TOOL_INPUT_TYPES: Partial<Record<MaterialTool, MaterialType[]>> = deriveMaterialToolInputTypes();
 
 // ============================================================================
 // Narrowed from Gxgen apps/web/src/types/materialNode.ts

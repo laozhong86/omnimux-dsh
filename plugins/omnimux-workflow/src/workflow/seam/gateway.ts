@@ -10,12 +10,35 @@
 
 export type GenerationCapability = 'text' | 'image' | 'video' | 'audio';
 
+export type MediaInputRole =
+  | 'reference'
+  | 'first_frame'
+  | 'last_frame'
+  | 'controlnet'
+  | 'mask'
+  | 'audio_track'
+  | 'motion_source';
+
+export interface ReferenceAssetPayload {
+  role: MediaInputRole;
+  type: 'image' | 'video' | 'audio';
+  pathOrUrl: string;
+  mimeType?: string;
+  originalName?: string;
+  duration?: number;
+  dimensions?: { width: number; height: number };
+}
+
 export interface SubmitRequest {
   capability: GenerationCapability;
   /** Prompt text (or upstream text content). */
   prompt?: string;
   /** Reference image (absolute local path / http(s) / data URI). */
   image?: string;
+  /** Multi-modal reference asset payloads (images, video references, controlnet, etc.). */
+  references?: ReferenceAssetPayload[];
+  /** Audio track payload for video audio-driven or lip-sync/background audio. */
+  audioTrack?: ReferenceAssetPayload;
   /** Video duration hint in seconds. */
   duration?: number;
   /** Media resolution hint (e.g. '720P' | '1080P' | '4K'). */

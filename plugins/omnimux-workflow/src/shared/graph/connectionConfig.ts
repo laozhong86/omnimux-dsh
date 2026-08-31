@@ -2,7 +2,9 @@
  * Ported (narrowed) from Gxgen
  * `apps/web/src/pages/CanvasEditor/utils/connectionConfig.ts`
  * (validated by the extraction spike): type matrix + isNodeConnectionValid
- * + input/output options. Group/result-node branches are cut for M1.
+ * + input/output options.
+ *
+ * Input requirements are delegated to the unified NodeSpecRegistry SSOT.
  */
 
 import {
@@ -12,6 +14,9 @@ import {
   type MaterialTool,
 // 显式 .ts 扩展名：node --test 的 type-stripping 不做 TS 扩展名解析
 } from './materialNode.ts';
+import { NodeSpecRegistry } from '../specs/registry.ts';
+
+export { MATERIAL_TOOLS, MATERIAL_TOOL_INPUT_TYPES };
 
 // ==================== 输出选项 ====================
 
@@ -103,40 +108,18 @@ export function getNodeOutputInfo(node: { type?: string; data?: Record<string, u
 }
 
 /**
- * 提取节点输入需求（原样保留 material 分支核心逻辑：
- * 按「该素材类型全部工具」而非当前工具收集可接受输入，
+ * 提取节点输入需求（委托 NodeSpecRegistry 单一真源：
+ * 对 material 节点按「该素材类型全部工具」收集可接受输入，
  * 支持先连线后换工具的交互）
  */
 function getNodeInputRequirements(node: { type?: string; data?: Record<string, unknown> }): NodeInputRequirements {
   const nodeType = node.type ?? '';
   const data = node.data ?? {};
+  const selectedTool = data.selectedTool as MaterialTool | undefined;
+  const materialType = data.materialType as MaterialType | undefined;
 
-  if (nodeType === 'material') {
-    const selectedTool = data.selectedTool as MaterialTool | undefined;
-    const materialType = data.materialType as MaterialType | undefined;
-
-    const acceptedTypesSet = new Set<MaterialType>();
-    if (materialType) {
-      const availableTools = MATERIAL_TOOLS[materialType];
-      if (availableTools) {
-        for (const tool of availableTools) {
-          const toolInputTypes = MATERIAL_TOOL_INPUT_TYPES[tool];
-          if (toolInputTypes) {
-            toolInputTypes.forEach((t) => acceptedTypesSet.add(t));
-          }
-        }
-      }
-    }
-
-    return { nodeType, selectedTool, acceptedTypes: [...acceptedTypesSet] };
-  }
-
-  if (nodeType === 'video_composition') {
-    return { nodeType, acceptedTypes: ['text', 'image', 'video', 'audio'] };
-  }
-
-  // 未知类型，默认接受所有类型
-  return { nodeType, acceptedTypes: ['text', 'image', 'video', 'audio'] };
+  const req = NodeSpecRegistry.getNodeInputRequirements(nodeType, undefined, materialType);
+  return { nodeType, selectedTool, acceptedTypes: req.acceptedTypes };
 }
 
 export function canNodeAcceptIncomingConnection(

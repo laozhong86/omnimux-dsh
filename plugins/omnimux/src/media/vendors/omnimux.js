@@ -77,12 +77,39 @@ export function pickTaskStatus(raw) {
 /**
  * Map a capability request onto the OmniMux OpenAI-compat body.
  * @param {string} capability
- * @param {{ prompt: string, duration?: number, image?: string, speech?: string, audio?: string }} request
+ * @param {{
+ *   prompt: string,
+ *   duration?: number,
+ *   image?: string,
+ *   speech?: string,
+ *   audio?: string,
+ *   references?: Array<{ role?: string, type: string, pathOrUrl: string, [key: string]: unknown }>,
+ *   audioTrack?: { role?: string, type: string, pathOrUrl: string, [key: string]: unknown },
+ *   voice?: string,
+ *   style?: string,
+ *   instrumental?: boolean,
+ *   speed?: number
+ * }} request
  */
 export function mapOmnimuxInput(_capability, request) {
   const input = { prompt: request.prompt }
   if (request.duration) input.duration = request.duration
   if (request.image) input.image = request.image
+  if (Array.isArray(request.references) && request.references.length > 0) {
+    input.references = request.references
+    const imageRefs = request.references
+      .filter((r) => r && r.type === 'image' && r.pathOrUrl)
+      .map((r) => r.pathOrUrl)
+    if (imageRefs.length > 0) {
+      input.images = imageRefs
+      if (!input.image) {
+        input.image = imageRefs[0]
+      }
+    }
+  }
+  if (request.audioTrack) {
+    input.audioTrack = request.audioTrack
+  }
   /** @type {Record<string, unknown>} */
   const metadata = {}
   if (typeof request.speech === 'string' && request.speech.trim()) metadata.speech = request.speech.trim()
