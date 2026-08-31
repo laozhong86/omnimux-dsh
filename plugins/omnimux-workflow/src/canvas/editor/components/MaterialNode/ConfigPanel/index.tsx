@@ -3,7 +3,7 @@
  *
  * 1:1 还原 4 张设计截图：
  * 1. 音频模式：顶部带 [ 音频生成 ] / [ 音乐生成 ] 子模式切换 Tab
- * 2. Prompt 输入区：左上角只读参考缩略图（有上游连线时展示）、右上角原地展开/收起、动态占位符与右下角字数统计（如 0/7500）
+ * 2. Prompt 输入区：左上角只读参考缩略图（有上游连线时展示）、右上角原地展开/收起、动态占位符
  * 3. 底部参数胶囊栏：
  *    - 文本：[模型选择] | ⚡ 10 | [↑]
  *    - 图片：[模型选择] | 自适应 | × 1 | ⚡ 60 | [↑]
@@ -288,20 +288,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     [catalog, materialType, onUpdateNodeData, params],
   );
 
-  // 最大字符限制
-  const maxLimit = useMemo(() => {
-    switch (materialType) {
-      case 'audio':
-        return 10000;
-      case 'video':
-        return 7000;
-      case 'text':
-      case 'image':
-      default:
-        return 7500;
-    }
-  }, [materialType]);
-
   // 动态 Prompt 占位符
   const placeholder = useMemo(() => {
     switch (materialType) {
@@ -443,14 +429,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
           }`}
           value={prompt ?? ''}
           placeholder={placeholder}
-          rows={isExpanded ? 8 : 3}
+          rows={isExpanded ? 8 : 2}
           onChange={(e) => onUpdateNodeData({ prompt: e.target.value })}
         />
-
-        {/* 右下角字数指示 */}
-        <div className="wf-config-panel__char-counter">
-          {(prompt || '').length} / {maxLimit}
-        </div>
       </div>
 
       {/* 3. 底部参数与操作底栏 */}

@@ -1034,14 +1034,14 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   background: color-mix(in srgb, var(--wb-surface) 96%, transparent);
   backdrop-filter: blur(16px);
   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12);
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 
 /* 内容布局 */
 .wf-config-panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 /* 音频子模式 Tab 切换 */
@@ -1078,14 +1078,14 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   position: relative;
   border-radius: 10px;
   background: transparent;
-  padding: 0 0 20px 0;
+  padding: 0;
 }
 
 .wf-config-panel__prompt-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .wf-config-panel__ref-slots-group {
@@ -1220,26 +1220,17 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   color: var(--wb-text-primary);
   font-family: inherit;
   padding: 0;
-  min-height: 62px;
+  min-height: 38px;
   overflow-y: auto;
   transition: min-height 180ms ease;
 }
 
 .wf-config-panel__prompt-input--expanded {
-  min-height: 160px;
+  min-height: 150px;
 }
 
 .wf-config-panel__prompt-input::placeholder {
   color: var(--wb-text-muted);
-}
-
-.wf-config-panel__char-counter {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  font-size: 11px;
-  color: var(--wb-text-muted);
-  user-select: none;
 }
 
 /* 底部操作与参数栏 */
@@ -1248,7 +1239,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding-top: 8px;
+  padding-top: 0;
   flex-wrap: nowrap;
   min-height: 32px;
 }
