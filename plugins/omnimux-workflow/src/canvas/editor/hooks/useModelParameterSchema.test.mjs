@@ -1,41 +1,27 @@
+/**
+ * Catalog cache v2 + schema hook contract.
+ * Media SPECS ownership moved to hub `plugins/omnimux/src/media/catalog.test.js`.
+ */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const host = await import('../../../../dist/index.js');
+const here = dirname(fileURLToPath(import.meta.url));
+const src = readFileSync(join(here, 'useModelParameterSchema.ts'), 'utf8');
 
-test('IMAGE_MODEL_SPECS: GPT Image 2 只包含 auto, 1:1, 16:9, 9:16 画幅', () => {
-  const gpt = host.IMAGE_MODEL_SPECS.find((m) => m.id === 'gpt-image-2');
-  assert.ok(gpt);
-  assert.ok(gpt.parameters);
-  const ratioValues = gpt.parameters.aspectRatio?.options.map((o) => o.value);
-  assert.deepEqual(ratioValues, ['auto', '1:1', '16:9', '9:16']);
-  assert.equal(gpt.parameters.aspectRatio?.defaultValue, '16:9');
+test('catalog cache key is v2 with fingerprint + fetchedAt envelope', () => {
+  assert.match(src, /wf_capabilities_catalog_v2/);
+  assert.match(src, /fingerprint/);
+  assert.match(src, /fetchedAt/);
+  assert.match(src, /invalidateCachedCatalog/);
+  assert.match(src, /isCatalogCacheStale/);
+  assert.doesNotMatch(src, /wf_capabilities_catalog_v1/);
 });
 
-test('IMAGE_MODEL_SPECS: Seedream 5.0 Pro 包含丰富画幅 (4:3, 21:9 等)', () => {
-  const seedream = host.IMAGE_MODEL_SPECS.find((m) => m.id === 'seedream-5.0-pro');
-  assert.ok(seedream);
-  assert.ok(seedream.parameters);
-  const ratioValues = seedream.parameters.aspectRatio?.options.map((o) => o.value);
-  assert.ok(ratioValues?.includes('4:3'));
-  assert.ok(ratioValues?.includes('21:9'));
-  assert.ok(ratioValues?.includes('16:9'));
-});
-
-test('VIDEO_MODEL_SPECS: Kling O3 支持 5s, 10s, 15s 时长及 4K 分辨率', () => {
-  const klingO3 = host.VIDEO_MODEL_SPECS.find((m) => m.id === 'kling-o3');
-  assert.ok(klingO3);
-  assert.ok(klingO3.parameters);
-  const durations = klingO3.parameters.duration?.options?.map((o) => o.value);
-  assert.deepEqual(durations, [5, 10, 15]);
-  const resolutions = klingO3.parameters.resolution?.options?.map((o) => o.value);
-  assert.deepEqual(resolutions, ['1080P', '4K']);
-  assert.equal(klingO3.parameters.sound?.supported, true);
-});
-
-test('VIDEO_MODEL_SPECS: Veo 3.1 默认时长 8s', () => {
-  const veo = host.VIDEO_MODEL_SPECS.find((m) => m.id === 'veo-3.1');
-  assert.ok(veo);
-  assert.ok(veo.parameters);
-  assert.equal(veo.parameters.duration?.defaultValue, 8);
+test('workflow package no longer re-exports IMAGE_MODEL_SPECS', () => {
+  const indexSrc = readFileSync(join(here, '../../../../src/index.ts'), 'utf8');
+  assert.doesNotMatch(indexSrc, /IMAGE_MODEL_SPECS/);
+  assert.doesNotMatch(indexSrc, /VIDEO_MODEL_SPECS/);
 });

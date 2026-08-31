@@ -5,6 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-18"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux"
 ---
@@ -81,6 +82,16 @@ it that way: user layers set `agent-default-model` only.
   callable iff `text.models[].enabled !== false` **and**
   `gate.models.textComplete[id] !== false`. Phase-1 gate does **not** filter
   the chat composer model list; that list remains owned solely by this patch.
+- Canvas / workflow generation catalogs are **not** this chat list. They are
+  owned by hub `modelCatalog.list()` (`plugins/omnimux/src/catalog/list.js`)
+  over `CHAT_MODELS` + `src/media/catalog.js` SPECS. Workflow MUST consume
+  that seam / `GET /omnimux/model-catalog` (via workflow `/api/capabilities`)
+  and MUST NOT hardcode production fallbacks or live-fetch
+  `api.omnimux.ai/v1/models` for the canvas. Sort is by display name A–Z.
+  Defaults for new nodes: env overlay → Settings top-level fields
+  (`defaultTextModel` / `defaultImageModel` / `defaultVideoModel` /
+  `defaultAudioModel`) → hub Config defaults → first sorted id. Existing
+  node `params.model` is kept (deprecated badge if absent from catalog).
 
 ## Changing the list
 

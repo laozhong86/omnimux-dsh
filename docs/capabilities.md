@@ -5,7 +5,7 @@ type: "core"
 status: "living"
 authority: "L1"
 date: "2026-08-14"
-updated: "2026-08-27"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 tags: ["capabilities", "matrix", "truth", "seams"]
@@ -34,6 +34,7 @@ Honest surface for both coding agents and the product agent. If a row is stub or
 | Accounts / publish tools | **unproven** | `omnimux_accounts_*` + `omnimux_publish_*` wrap `/api/social/v1`. Unauthenticated → `needs-omnimux` |
 | omnimux-publish publish center (plugin) | **unproven** | Migrated from personal tree (PR #80). Host `/omnimux/publish` + 9 `publish_*` agent tools (drafts, assign accounts, submit per-account subtask ledger, refresh/retry) + client stage. Keyless unit tests 175 pass; execution rides hub `omnimux_publish_*` official channel only — no live OmniMux publish claimed |
 | Apps hub capability list | **real** (keyless) | Host `GET /omnimux/capabilities`. Apps overlay does not render this list |
+| `modelCatalog` / `GET /omnimux/model-catalog` | **real** (keyless) | Hub seam + public HTTP. Canvas / workflow model dropdowns consume this (via workflow `/api/capabilities`). Sorted by display name; defaults overlay env → Settings → Config. Issue #314 |
 | Custom provider in Settings (manual) | **upstream** | dsh Web → Add a custom provider → `https://api.omnimux.ai/v1` |
 | Drama Center login / upload / payout | **docs only** | skill `tiktok-drama-center`; no tool |
 | Official dsh plugin marketplace | **absent** | install via `dsh plugin add`; discover via `dsh-plugin` topic |

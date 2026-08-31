@@ -5,6 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-16"
+updated: "2026-08-31"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux"
 ---
@@ -140,6 +141,8 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `omnimux_audio_submit` | hub tool over `audioGenerate` | same as the seam | same | same |
 | `textComplete` | neutral provide | `{ prompt, model?, image?, video?, system?, maxTokens?, signal? }` | `{ mode: "live", model, text }` | `capability-disabled`, `needs-provider`, `omnimux-unconfigured` (video), `unknown-model`, `omnimux-invalid-request`, stream / HTTP errors |
 | `omnimux_text_complete` | hub tool over `textComplete` | same plus required `reason` | same | same |
+| `modelCatalog` | neutral provide | `list()` (no args) | `{ source, fingerprint, defaults, text, image, video, audio }` — lists sorted by display name; defaults = env → settings → config → first sorted | never throws for empty lists; gate may empty a media kind |
+| `GET /omnimux/model-catalog` | public Host HTTP | GET | same body as `modelCatalog.list()` | 503 when catalog unavailable |
 | `omnimux_social_data` | official-only tool | `platform` + `capability` + `url`/`id`/`query`; hub maps to top-level business fields (`tweet_id`/`aweme_id`/…); `sk-` | `{ platform, capability, model, field, value, data }` — for `x/tweet`, `data` includes `text`/`display_text`, `author`, engagement, and media URLs under `data.media` / `data.entities.media` | `capability-disabled`, `omnimux-unconfigured`, `omnimux-invalid-request`, `omnimux-request-failed` |
 | `omnimux_page_fetch` | official-only tool | `{ url }` http(s); `sk-`; locked model `jina-reader-v1` | `{ mode: "live", model, url, title, pageContent, truncated? }` | `capability-disabled`, `omnimux-unconfigured`, `needs-omnimux`, `omnimux-invalid-request`, `omnimux-request-failed`, `omnimux-invalid-response` |
 | `omnimux_accounts_*` / `omnimux_publish_*` | official-only tools | connect / list / presign / create / get post; access token | upstream JSON, secrets stripped | `capability-disabled`, `needs-omnimux` |

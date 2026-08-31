@@ -103,6 +103,18 @@ export const zh = {
   'update.status.retry': '重试更新',
   'update.status.ready': '立即更新',
   'update.tooltip.newVersion': '新版本: v{version}',
+  'models.title': '画布默认模型',
+  'models.description': '配置工作流画布新建节点时的默认模型。已保存的节点不会被覆盖。',
+  'models.defaultText': '文本默认模型',
+  'models.defaultTextHint': '文本生成节点未指定模型时使用',
+  'models.defaultImage': '图片默认模型',
+  'models.defaultImageHint': '图片生成节点未指定模型时使用',
+  'models.defaultVideo': '视频默认模型',
+  'models.defaultVideoHint': '视频生成节点未指定模型时使用',
+  'models.defaultAudio': '音频默认模型',
+  'models.defaultAudioHint': '音频生成节点未指定模型时使用',
+  'models.reset': '恢复默认',
+  'models.loading': '加载模型列表…',
 }
 
 export const en = {
@@ -210,6 +222,18 @@ export const en = {
   'update.status.retry': 'Retry Update',
   'update.status.ready': 'Update Now',
   'update.tooltip.newVersion': 'New version: v{version}',
+  'models.title': 'Canvas default models',
+  'models.description': 'Defaults for new workflow canvas nodes. Existing nodes keep their saved model.',
+  'models.defaultText': 'Default text model',
+  'models.defaultTextHint': 'Used when a text node does not specify a model',
+  'models.defaultImage': 'Default image model',
+  'models.defaultImageHint': 'Used when an image node does not specify a model',
+  'models.defaultVideo': 'Default video model',
+  'models.defaultVideoHint': 'Used when a video node does not specify a model',
+  'models.defaultAudio': 'Default audio model',
+  'models.defaultAudioHint': 'Used when an audio node does not specify a model',
+  'models.reset': 'Reset',
+  'models.loading': 'Loading models…',
 }
 
 export const NS = 'omnimux'

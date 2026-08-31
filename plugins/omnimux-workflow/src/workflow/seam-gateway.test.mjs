@@ -146,11 +146,47 @@ function createFakeSeamHub(opts = {}) {
     },
   };
 
+  const modelCatalog = {
+    list() {
+      if (typeof opts.catalogList === 'function') return opts.catalogList();
+      return {
+        source: 'omnimux',
+        fingerprint: 'fake-catalog',
+        defaults: {
+          text: 'gemini-3.7-flash',
+          image: 'gpt-image-2',
+          video: 'seedance-2-0-fast',
+          audio: 'suno',
+        },
+        text: [
+          { id: 'claude-opus-4-6', label: 'Claude 4.6' },
+          { id: 'deepseek-v4-flash-vision-exp', label: 'DeepSeek 4 Flash' },
+          { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
+          { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
+          { id: 'gpt-5.5', label: 'GPT-5.5' },
+        ],
+        image: [
+          { id: 'gpt-image-2', label: 'GPT Image 2' },
+          { id: 'nanobanana-2', label: 'NanoBanana 2' },
+        ],
+        video: [
+          { id: 'kling-o1', label: 'Kling O1' },
+          { id: 'seedance-2-0-fast', label: 'Seedance 2.0 Fast' },
+        ],
+        audio: [
+          { id: 'gpt-4o-mini-tts', label: 'GPT-4o Mini TTS' },
+          { id: 'suno', label: 'Suno' },
+        ],
+      };
+    },
+  };
+
   const seams = {
     videoGenerate: makeMediaSeam('video'),
     imageGenerate: makeMediaSeam('image'),
     audioGenerate: makeMediaSeam('audio'),
     textComplete,
+    modelCatalog,
   };
   return { seams, state };
 }
@@ -544,25 +580,60 @@ test('取消：AbortSignal 贯通到 seam 轮询，执行转为 cancelled', asyn
   }
 });
 
-test('capabilities：seam 可达时返回 omnimux 真实目录（含 env 覆盖）', async () => {
-  const hub = createFakeSeamHub();
+test('capabilities：seam 可达时返回 hub modelCatalog（env 不收缩列表）', async () => {
+  const hub = createFakeSeamHub({
+    catalogList() {
+      return {
+        source: 'omnimux',
+        fingerprint: 'fake-catalog-env',
+        defaults: {
+          text: 'gpt-5.5',
+          image: 'gpt-image-2',
+          video: 'kling-o1',
+          audio: 'suno',
+        },
+        text: [
+          { id: 'claude-opus-4-6', label: 'Claude 4.6' },
+          { id: 'deepseek-v4-flash-vision-exp', label: 'DeepSeek 4 Flash' },
+          { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
+          { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
+          { id: 'gpt-5.5', label: 'GPT-5.5' },
+        ],
+        image: [
+          { id: 'gpt-image-2', label: 'GPT Image 2' },
+          { id: 'nanobanana-2', label: 'NanoBanana 2' },
+        ],
+        video: [
+          { id: 'kling-o1', label: 'Kling O1' },
+          { id: 'seedance-2-0-fast', label: 'Seedance 2.0 Fast' },
+        ],
+        audio: [
+          { id: 'gpt-4o-mini-tts', label: 'GPT-4o Mini TTS' },
+          { id: 'suno', label: 'Suno' },
+        ],
+      };
+    },
+  });
   const h = makeHarness({
     seamHub: hub,
-    env: { OMNIMUX_VIDEO_MODEL: 'custom-video-model' },
+    env: { OMNIMUX_VIDEO_MODEL: 'kling-o1' },
   });
   try {
     const caps = await h.call({ url: '/omnimux-workflow/api/capabilities' });
     assert.equal(caps.body.source, 'omnimux');
-    assert.deepEqual(caps.body.video, [{ id: 'custom-video-model', label: 'custom-video-model' }]);
+    assert.equal(caps.body.fingerprint, 'fake-catalog-env');
+    assert.equal(caps.body.defaults.video, 'kling-o1');
+    assert.ok(caps.body.video.some((row) => row.id === 'seedance-2-0-fast'));
+    assert.ok(caps.body.video.some((row) => row.id === 'kling-o1'));
     assert.ok(caps.body.image.some((row) => row.id === 'gpt-image-2'));
     assert.ok(caps.body.image.some((row) => row.id === 'nanobanana-2'));
     assert.equal(caps.body.text.length, 5);
     assert.deepEqual(caps.body.text.map((r) => r.id), [
-      'gemini-3.7-flash',
       'claude-opus-4-6',
-      'gpt-5.5',
-      'gemini-3.1-pro-preview',
       'deepseek-v4-flash-vision-exp',
+      'gemini-3.1-pro-preview',
+      'gemini-3.7-flash',
+      'gpt-5.5',
     ]);
     assert.ok(caps.body.audio.some((row) => row.id === 'suno'));
     assert.ok(caps.body.audio.some((row) => row.id === 'gpt-4o-mini-tts'));
@@ -571,14 +642,14 @@ test('capabilities：seam 可达时返回 omnimux 真实目录（含 env 覆盖�
     rmSync(h.root, { recursive: true, force: true });
   }
 
-  // Without env override: check default rich video and image models
+  // Same catalog fixture without extra env: list stays rich; defaults come from catalog.
   const hDefault = makeHarness({ seamHub: hub });
   try {
     const caps = await hDefault.call({ url: '/omnimux-workflow/api/capabilities' });
     assert.equal(caps.body.source, 'omnimux');
     assert.ok(caps.body.video.some((row) => row.id === 'kling-o1'));
-    assert.ok(caps.body.video.some((row) => row.id === 'wan-2.6'));
-    assert.ok(caps.body.video.some((row) => row.id === 'veo-3.1-fast'));
+    assert.ok(caps.body.video.some((row) => row.id === 'seedance-2-0-fast'));
+    assert.equal(caps.body.defaults.video, 'kling-o1');
   } finally {
     hDefault.dispose();
     rmSync(hDefault.root, { recursive: true, force: true });
@@ -729,8 +800,10 @@ test('auto 晚绑定：mount 时无 seam，hub 出现后目录升级为 omnimux'
     holder.seams = hub.seams; // hub mounted later in the session
     const after = await h0call(captured, { url: '/omnimux-workflow/api/capabilities' });
     assert.equal(after.body.source, 'omnimux');
+    assert.ok(after.body.fingerprint);
     assert.ok(after.body.video.some((row) => row.id === 'kling-o1'));
-    assert.ok(after.body.video.some((row) => row.id === 'wan-2.6'));
+    assert.ok(after.body.video.some((row) => row.id === 'seedance-2-0-fast'));
+    assert.ok(after.body.defaults?.video);
   } finally {
     dispose();
     rmSync(root, { recursive: true, force: true });

@@ -38,6 +38,7 @@ const FILES = [
   'PluginsSection.jsx',
   'plugin-helpers.jsx',
   'SidebarUpdateAction.jsx',
+  'ModelsSettingsCard.jsx',
 ]
 
 describe('hub client UI kit contract (B5 drawer)', () => {

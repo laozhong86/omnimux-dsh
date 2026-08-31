@@ -909,6 +909,65 @@ export const HUB_CSS = `
 .omnimux-workbench-focus-btn:hover {
   color: var(--dsw-alias-label-primary, inherit);
 }
+
+.omnimux-models-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 0;
+}
+.omnimux-models-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.omnimux-models-card__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+.omnimux-models-card__desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-tertiary);
+}
+.omnimux-models-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.omnimux-models-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--dsw-alias-border-l2);
+}
+.omnimux-models-card__field-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.omnimux-models-card__label {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-primary);
+}
+.omnimux-models-card__hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-tertiary);
+}
+.omnimux-models-card__error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-label-error);
+}
 `
 
 export function injectHubStyles() {

@@ -115,6 +115,56 @@ describe('auth http dispatcher', () => {
     }
   })
 
+  it('lists the model catalog without secrets', async () => {
+    const homeDir = mkdtempSync(join(tmpdir(), 'omnimux-mc-'))
+    const configDir = mkdtempSync(join(tmpdir(), 'omnimux-mc-cfg-'))
+    const paths = []
+    /** @type {Function | null} */
+    let catalogHandler = null
+    apply({
+      tools: { register() {} },
+      provide() {},
+      get() { return undefined },
+      inject(deps, callback) {
+        if (deps[0] !== 'webServer') return
+        callback({
+          webServer: {
+            register(route) {
+              paths.push(route.path)
+              if (route.path === '/omnimux/model-catalog') catalogHandler = route.handler
+              return () => {}
+            },
+          },
+          effect(factory) { factory() },
+        })
+      },
+    }, { official: { mount: false } })
+    try {
+      assert.ok(paths.includes('/omnimux/model-catalog'))
+      assert.equal(typeof catalogHandler, 'function')
+      /** @type {{ status?: number, chunks: string[] }} */
+      const seen = { chunks: [] }
+      const res = {
+        writeHead(status) { seen.status = status },
+        end(chunk) { seen.chunks.push(String(chunk)) },
+      }
+      await catalogHandler({ method: 'GET', url: '/omnimux/model-catalog' }, res)
+      assert.equal(seen.status, 200)
+      const body = JSON.parse(seen.chunks.join(''))
+      assert.equal(body.source, 'omnimux')
+      assert.equal(typeof body.fingerprint, 'string')
+      assert.ok(body.defaults)
+      assert.ok(Array.isArray(body.text))
+      assert.ok(Array.isArray(body.image))
+      assert.ok(Array.isArray(body.video))
+      assert.ok(Array.isArray(body.audio))
+      assert.equal(/access_token|sk-/.test(JSON.stringify(body)), false)
+    } finally {
+      rmSync(homeDir, { recursive: true, force: true })
+      rmSync(configDir, { recursive: true, force: true })
+    }
+  })
+
   it('sendJson refuses a body that contains a token', () => {
     /** @type {{ status?: number, chunks: string[] }} */
     const seen = { chunks: [] }
@@ -137,6 +187,7 @@ describe('auth http dispatcher', () => {
       tools: { register() {} },
       provide() {},
       inject(deps, callback) {
+        if (deps[0] === 'settings') return
         assert.deepEqual(deps, ['webServer'])
         callback({
           webServer: {
@@ -155,6 +206,7 @@ describe('auth http dispatcher', () => {
       'exact:/omnimux/auth/poll',
       'exact:/omnimux/auth/logout',
       'exact:/omnimux/capabilities',
+      'exact:/omnimux/model-catalog',
       'prefix:/omnimux/plugins',
       'prefix:/omnimux/apps',
       'prefix:/omnimux/accounts',

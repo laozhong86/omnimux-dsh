@@ -118,7 +118,7 @@ hub 错误（`OmnimuxError`，带 `code`）映射为节点执行错误，格式 
 
 ### 能力目录（模型下拉数据源）
 
-`GET /omnimux-workflow/api/capabilities` 在 seam 可达时返回 `source: "omnimux"`：视频/图片模型 id 来自 hub 路由默认（`seedance-2-0-fast` / `gpt-image-2`，`OMNIMUX_VIDEO_MODEL` / `OMNIMUX_IMAGE_MODEL` env 覆盖），文本为 hub 白名单 8 行。hub 目前**没有模型目录 seam**——目录数据是 hub 契约默认值的镜像（调研结论见 `docs/m4-hub-seam-research.md` §6），hub 开放目录 seam 后替换数据源即可。hub 不可达时回退 mock 静态清单（`source: "static-stub"`）。
+`GET /omnimux-workflow/api/capabilities` 在 seam 可达时返回 hub `modelCatalog.list()`（`source: "omnimux"`，含 `fingerprint` / `defaults` / 四类模型行，按显示名 A–Z）。文本来自 hub `CHAT_MODELS`，图/视/音来自 hub `src/media/catalog.js` SPECS。`OMNIMUX_*_MODEL` env 与 Settings 默认模型字段只覆盖 **defaults**，不收缩列表。画布 ConfigPanel 无生产假回退；已保存但不在目录中的 `params.model` 保留并标 deprecated。hub 不可达 / mock 模式返回 `source: "static-stub"` 夹具。
 
 ## 性能基线（M5）
 

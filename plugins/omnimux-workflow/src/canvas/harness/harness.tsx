@@ -23,16 +23,24 @@ import type { CapabilityCatalog } from '../../shared/api';
 
 const MOCK_CATALOG: CapabilityCatalog = {
   source: 'static-stub',
+  fingerprint: 'harness-mock',
+  defaults: {
+    text: 'gemini-3.7-flash',
+    image: 'mock-img-fast',
+    video: 'mock-video-720p',
+    audio: 'mock-tts-standard',
+  },
+  // A–Z by label (Issue #314); no Claude-first override.
   text: [
-    { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
     { id: 'claude-opus-4-6', label: 'Claude 4.6' },
-    { id: 'gpt-5.5', label: 'GPT-5.5' },
-    { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
     { id: 'deepseek-v4-flash-vision-exp', label: 'DeepSeek 4 Flash' },
+    { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
+    { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
+    { id: 'gpt-5.5', label: 'GPT-5.5' },
   ],
   image: [
-    { id: 'mock-img-hd', label: 'Mock Image HD' },
     { id: 'mock-img-fast', label: 'Mock Image Fast' },
+    { id: 'mock-img-hd', label: 'Mock Image HD' },
   ],
   video: [{ id: 'mock-video-720p', label: 'Mock Video 720p' }],
   audio: [{ id: 'mock-tts-standard', label: 'Mock TTS Standard' }],
