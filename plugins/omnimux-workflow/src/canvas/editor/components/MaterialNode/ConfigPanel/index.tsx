@@ -41,7 +41,7 @@ import {
 import { useT } from '../../../../i18n';
 import { CustomSelect, CustomSlider } from '../../../../ui';
 import { ModelBrandIcon } from '../../../../ui/ModelBrandIcon';
-import { useCanvasStore } from '../../../store/canvasStore';
+import { useCanvasStore } from '../../../../store/canvasStore';
 import { useUpstreamMedia } from '../../../hooks/useUpstreamMedia';
 import { useModelParameterSchema, getCachedCatalog } from '../../../hooks/useModelParameterSchema';
 import GenerateButton from './GenerateButton';
