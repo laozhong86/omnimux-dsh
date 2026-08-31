@@ -68,12 +68,11 @@ test('MaterialNode 挂载 ResourcePickerModal 与 useResourcePicker', () => {
   assert.equal(/createObjectURL/.test(nodeSrc), false);
 });
 
-test('导入节点选中不展开 ConfigPanel，有媒体时替换走顶栏次区', () => {
+test('导入节点选中不展开 ConfigPanel，有媒体时替换统一走卡片内侧右上角', () => {
   assert.match(nodeSrc, /isConfigPanelVisible\(\s*selected,\s*panelDismissed,\s*executionStatus,\s*kind,\s*isMultiSelected/);
   assert.match(nodeSrc, /hasNodeMaterial/);
-  assert.match(nodeSrc, /key:\s*'replace'/);
-  assert.match(nodeSrc, /t\('pill\.replace'\)/);
-  assert.doesNotMatch(nodeSrc, /showReplaceButton/);
+  assert.match(nodeSrc, /showReplaceButton/);
+  assert.match(nodeSrc, /wf-material-node__replace-btn/);
 });
 
 test('画布导入素材入口先选文件再落节点，取消不建空节点', () => {
