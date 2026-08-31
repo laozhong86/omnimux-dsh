@@ -25,7 +25,7 @@ export const ASSETS_CSS = `
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 20px 14px;
+  padding: 8px 20px 12px;
 }
 .omnimux-assets-stage-toolbar {
   flex: none;

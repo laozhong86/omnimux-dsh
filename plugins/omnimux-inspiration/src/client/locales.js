@@ -1,6 +1,7 @@
 export const zh = {
   'nav': '灵感库',
   'title': '灵感素材库',
+  'subtitle': '沉淀爆款视频、图文与社媒文案灵感，支持 AI 多维解构与一键复刻',
   'close': '关闭',
   'loading': '正在加载灵感…',
   'needLogin': '登录 OmniMux 以查看云端公共灵感库。',
@@ -100,6 +101,7 @@ export const zh = {
 export const en = {
   'nav': 'Inspiration',
   'title': 'Inspiration Vault',
+  'subtitle': 'Curate viral videos, images, and copy inspirations with AI deconstruction and one-click replication.',
   'close': 'Close',
   'loading': 'Loading inspiration…',
   'needLogin': 'Sign in to OmniMux to view public cloud inspiration.',

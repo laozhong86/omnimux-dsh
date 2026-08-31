@@ -50,11 +50,20 @@ export const INSPIRATION_CSS = `
   max-width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 16px 24px 32px 24px;
-  gap: 20px;
+  padding: 0 20px 24px;
+  gap: 12px;
   background: var(--dsw-alias-bg-primary, var(--dsw-bg));
   color: var(--dsw-alias-label-primary, inherit);
   font-family: inherit;
+}
+
+/* Layer 2: Action Row */
+.omnimux-inspiration-action-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
 }
 
 @keyframes omni-shimmer {

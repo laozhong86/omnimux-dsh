@@ -14,7 +14,7 @@ describe('analytics styles tokens', () => {
   it('wraps heatmap and metric colors in CSS variables with fallbacks', () => {
     assert.match(ANALYTICS_CSS, /--omnimux-analytics-heat-4: var\(--dsw-alias-chart-heat-4, #216e39\)/)
     assert.match(ANALYTICS_CSS, /--omnimux-analytics-metric-likes: var\(--dsw-alias-state-error-primary, #ef4444\)/)
-    assert.match(ANALYTICS_CSS, /height: 48px/)
+    assert.match(ANALYTICS_CSS, /height: 44px/)
     assert.match(ANALYTICS_CSS, /width: 220px/)
   })
 })

@@ -216,6 +216,16 @@ export function ProductsStage({ t, stage }) {
         closeTitle={t('stage.close')}
       />
 
+      <div className="omnimux-products-action-row">
+        <Button
+          variant="primary"
+          leadingIcon={<PlusIcon />}
+          onClick={() => { setCreating(true); setFormError(''); setEditing(null); setEditingDirty(false) }}
+        >
+          {t('add.button')}
+        </Button>
+      </div>
+
       <FilterBar
         className="omnimux-products-stage-toolbar"
         compact
@@ -230,15 +240,6 @@ export function ProductsStage({ t, stage }) {
           />
         )}
         filters={<span className="omnimux-products-label">{t('sort.updated')}</span>}
-        actions={(
-          <Button
-            variant="primary"
-            leadingIcon={<PlusIcon />}
-            onClick={() => { setCreating(true); setFormError(''); setEditing(null); setEditingDirty(false) }}
-          >
-            {t('add.button')}
-          </Button>
-        )}
       />
 
       {selecting ? (
