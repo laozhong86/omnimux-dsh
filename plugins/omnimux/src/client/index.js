@@ -105,11 +105,15 @@ export function apply(ctx) {
   }, SidebarUpdateAction))
 
   // 全平台通用「添加到会话」附件附着槽 (挂载至输入框内侧 conversation.input.attachments)
+  // Official `dsh-client-ui-attachment` already occupies this single cell at
+  // default priority 0. Shadow it with a lower priority so OmniMux wins
+  // (lowest renders) instead of failing the client Loader.
   const attachmentStore = getGlobalAttachmentStore()
   ctx.effect?.(() => attachmentStore.installGlobalEvents(), 'omnimux: attachment global events')
   ctx.slots.inject('conversation.input.attachments', () => ctx.slots.register({
     name: 'conversation.input.attachments',
     id: 'omnimux-attachment-tray',
+    priority: -10,
     locale: NS,
   }, AttachmentTray))
   // ctx.effect(() => mountSidebarEntry(apps, t, ctx.locale, SIDEBAR_GLOBAL().register), 'omnimux: sidebar apps entry')

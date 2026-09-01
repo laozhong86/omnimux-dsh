@@ -15,6 +15,7 @@ describe('composer inner attachment slot', () => {
     assert.match(indexSource, /ctx\.slots\.inject\('conversation\.input\.attachments'/)
     assert.match(indexSource, /name: 'conversation\.input\.attachments'/)
     assert.match(indexSource, /id: 'omnimux-attachment-tray'/)
+    assert.match(indexSource, /priority: -10/)
     assert.match(indexSource, /locale: NS/)
     assert.doesNotMatch(indexSource, /conversation\.input\.dock/)
   })
