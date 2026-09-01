@@ -309,7 +309,9 @@ class TableDocumentCache {
     session.lastError = undefined;
 
     // If local document matches savedDoc signature, mark clean
-    if (JSON.stringify(session.document) === JSON.stringify(savedDoc)) {
+    const localDocument = session.document;
+    const localDocSignature = JSON.stringify(localDocument);
+    if (localDocSignature === JSON.stringify(savedDoc)) {
       session.dirty = false;
     }
     this.notify(tableId);
