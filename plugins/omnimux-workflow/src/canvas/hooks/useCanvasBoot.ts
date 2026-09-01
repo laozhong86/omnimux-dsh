@@ -21,6 +21,7 @@ import {
   setCachedCatalog,
 } from '../editor/hooks/useModelParameterSchema';
 import { sortCatalogRows } from '../../shared/sortCatalog';
+import { tableDocumentCache } from '../store/tableDocumentCache';
 
 export type BootState =
   | { phase: 'loading' }
@@ -129,6 +130,7 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
       }
       // 先 capture/flush 再清空，避免未 PUT 的新节点被 reset 吃掉
       beforeResetRef.current?.();
+      tableDocumentCache.resetAll();
       resetStore();
     };
   }, [targetWorkspaceId, hydrateGraph, resetStore]);

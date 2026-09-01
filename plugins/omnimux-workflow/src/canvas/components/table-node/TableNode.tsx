@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useMemo } from 'react';
+import React, { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import type { NodeProps } from '@xyflow/react';
 import {
   Table,
@@ -7,8 +7,9 @@ import {
   FileSpreadsheet,
   MessageSquarePlus,
 } from 'lucide-react';
-import { useTableStore } from '../../store/tableStore.ts';
-import { useIsMultiSelected } from '../../store/canvasStore.ts';
+import { useTableStore, useTableSession } from '../../store/tableStore.ts';
+import { useIsMultiSelected, useCanvasStore } from '../../store/canvasStore.ts';
+import { tableDocumentCache } from '../../store/tableDocumentCache.ts';
 import NodeHeader from '../../editor/components/MaterialNode/NodeHeader.tsx';
 import CanvasNodeHandle from '../../editor/components/CanvasNodeHandle.tsx';
 import FloatingTopPill, { type FloatingPillAction } from '../../editor/components/FloatingTopPill.tsx';
@@ -25,17 +26,26 @@ const DEFAULT_TABLE_NODE_WIDTH = 380;
 const DEFAULT_TABLE_NODE_HEIGHT = 280;
 
 export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
-  const { document, openStage, addRow } = useTableStore();
+  const nodeTitle = (data as any)?.label || (data as any)?.title || '表格';
+  const tableRelPath = (data as any)?.tablePath || (data as any)?.path || `.omnimux/tables/${id}.htable`;
+  const l1RowCount = typeof (data as any)?.rowCount === 'number' ? (data as any)?.rowCount : 0;
+  const l1PreviewRows = (data as any)?.previewRows as string[] | undefined;
+
+  const { openStage } = useTableStore();
+  const { document, addRow } = useTableSession(id, {
+    title: nodeTitle,
+    contentRev: (data as any)?.contentRev ?? 0,
+  });
+
   const [isHovered, setIsHovered] = useState(false);
 
   const rows = document.rows || [];
   const firstCol = document.columns[0];
-  const nodeTitle = (data as any)?.label || document.title || '表格';
-  const tableRelPath = (data as any)?.tablePath || (data as any)?.path || `.hilo/tables/${id}.htable`;
+  const effectiveRowCount = rows.length > 0 ? rows.length : l1RowCount;
 
   const isMultiSelected = useIsMultiSelected();
   const t = useT();
-  const hasMaterial = hasNodeMaterial({ nodeType: 'table', tableRowCount: rows.length });
+  const hasMaterial = hasNodeMaterial({ nodeType: 'table', tableRowCount: effectiveRowCount });
   const showFloatingPill = shouldShowNodeToolbar({
     hasMaterial,
     hovered: isHovered,
@@ -44,6 +54,10 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
   });
 
   const { addToConversation } = useAddToConversation();
+
+  const handleOpenFullscreen = useCallback(() => {
+    openStage(id, document);
+  }, [id, document, openStage]);
 
   const handleAddToConversation = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -65,7 +79,7 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
       title: t('pill.fullscreen'),
       onClick: (e) => {
         e.stopPropagation();
-        openStage();
+        handleOpenFullscreen();
       },
     },
     {
@@ -75,7 +89,24 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
       title: t('pill.addToConversation'),
       onClick: handleAddToConversation,
     },
-  ], [handleAddToConversation, openStage, t]);
+  ], [handleAddToConversation, handleOpenFullscreen, t]);
+
+  // 构建预览记录列表：优先从内存 rows 格式化，次选 L1 previewRows
+  const previewItems: string[] = useMemo(() => {
+    if (rows.length > 0) {
+      return rows.slice(0, 3).map((r) => {
+        const cellVal = firstCol ? r.cells[firstCol.id] : undefined;
+        if (typeof cellVal === 'string' && cellVal) return cellVal;
+        if (typeof cellVal === 'number') return String(cellVal);
+        if (Array.isArray(cellVal) && cellVal.length > 0) return `📎 附件 (${cellVal.length})`;
+        return '（空记录）';
+      });
+    }
+    if (l1PreviewRows && l1PreviewRows.length > 0) {
+      return l1PreviewRows.slice(0, 3);
+    }
+    return [];
+  }, [firstCol, l1PreviewRows, rows]);
 
   return (
     <div
@@ -105,7 +136,7 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
           width: DEFAULT_TABLE_NODE_WIDTH,
           height: DEFAULT_TABLE_NODE_HEIGHT,
         }}
-        onDoubleClick={() => openStage()}
+        onDoubleClick={handleOpenFullscreen}
       >
         {/* 四角缩放定位点 (统一风格) */}
         {selected && (
@@ -118,7 +149,7 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
         )}
 
         {/* 空态或内容展示 */}
-        {rows.length === 0 ? (
+        {effectiveRowCount === 0 ? (
           <div className="wf-node-empty wf-node-empty--text" style={{ padding: '24px 16px', height: '100%', boxSizing: 'border-box' }}>
             <div className="wf-node-empty__icon-box">
               <Table size={32} strokeWidth={1.75} className="wf-node-empty__icon" />
@@ -139,7 +170,7 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
               <button
                 type="button"
                 className="wf-node-empty__pill-btn"
-                onClick={() => openStage()}
+                onClick={handleOpenFullscreen}
               >
                 <Maximize2 size={13} className="wf-node-empty__pill-icon" />
                 <span>双击全屏编辑表格</span>
@@ -167,49 +198,37 @@ export const TableNode: React.FC<NodeProps> = memo(({ id, data, selected }) => {
                 <span>{firstCol?.title || '文本'}</span>
               </div>
               <span style={{ fontSize: 11, color: 'var(--wb-text-muted)', fontFamily: 'monospace' }}>
-                共 {rows.length} 行
+                共 {effectiveRowCount} 行
               </span>
             </div>
 
-            {/* 记录预览列表：通过 firstCol.id 从字典提取预览值 */}
+            {/* 记录预览列表 */}
             <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto' }}>
-              {rows.slice(0, 3).map((r, idx) => {
-                const cellVal = firstCol ? r.cells[firstCol.id] : undefined;
-                const previewText =
-                  typeof cellVal === 'string' && cellVal
-                    ? cellVal
-                    : typeof cellVal === 'number'
-                    ? String(cellVal)
-                    : Array.isArray(cellVal) && cellVal.length > 0
-                    ? `📎 附件 (${cellVal.length})`
-                    : '（空记录）';
+              {previewItems.map((previewText, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    padding: '8px 12px',
+                    background: 'color-mix(in srgb, var(--wb-surface) 40%, transparent)',
+                    border: '1px solid var(--wb-border)',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    color: 'var(--wb-text-primary)',
+                  }}
+                >
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 280 }}>
+                    {previewText}
+                  </span>
+                  <span style={{ color: 'var(--wb-text-muted)', fontFamily: 'monospace', fontSize: 11 }}>
+                    #{idx + 1}
+                  </span>
+                </div>
+              ))}
 
-                return (
-                  <div
-                    key={r.id || idx}
-                    style={{
-                      padding: '8px 12px',
-                      background: 'color-mix(in srgb, var(--wb-surface) 40%, transparent)',
-                      border: '1px solid var(--wb-border)',
-                      borderRadius: 8,
-                      fontSize: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      color: 'var(--wb-text-primary)',
-                    }}
-                  >
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 280 }}>
-                      {previewText}
-                    </span>
-                    <span style={{ color: 'var(--wb-text-muted)', fontFamily: 'monospace', fontSize: 11 }}>
-                      #{idx + 1}
-                    </span>
-                  </div>
-                );
-              })}
-
-              {rows.length > 3 && (
+              {effectiveRowCount > 3 && (
                 <div style={{ fontSize: 11, color: 'var(--wb-text-muted)', textAlign: 'center', marginTop: 2 }}>
                   ... 更多记录双击卡片查看
                 </div>

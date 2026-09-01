@@ -1,8 +1,8 @@
 import React from 'react';
 import { Plus, X } from 'lucide-react';
-import { useTableStore } from '../../../../store/tableStore';
+import { useTableStore } from '../../../../store/tableStore.ts';
 import { CustomSelect, type SelectOption } from '../../../../ui';
-import type { FilterOperator } from '../../../../../shared/types/htable';
+import type { FilterOperator, HTableFilterCondition } from '../../../../../shared/types/htable.ts';
 
 const OP_OPTIONS: SelectOption<FilterOperator>[] = [
   { value: 'equals', label: '等于' },
@@ -19,26 +19,40 @@ const OP_OPTIONS: SelectOption<FilterOperator>[] = [
 
 export const PopoverFilterBuilder: React.FC = () => {
   const { document, setFilterConditions } = useTableStore();
-  const conditions = document.filter?.conditions || [{ columnIndex: 0, op: 'equals', value: '' }];
+  const defaultColId = document.columns[0]?.id || 'col_text';
+  const conditions: HTableFilterCondition[] =
+    document.filter?.conditions && document.filter.conditions.length > 0
+      ? document.filter.conditions
+      : [{ columnId: defaultColId, op: 'equals', value: '' }];
 
-  const columnOptions: SelectOption<number>[] = document.columns.map((col, idx) => ({
-    value: idx,
-    label: col.title || `列 ${idx + 1}`,
+  const columnOptions: SelectOption<string>[] = document.columns.map((col) => ({
+    value: col.id,
+    label: col.title || 'Untitled',
   }));
 
-  const handleUpdateCondition = (index: number, patch: Partial<{ columnIndex: number; op: FilterOperator; value: string | number }>) => {
+  const handleUpdateCondition = (
+    index: number,
+    patch: Partial<HTableFilterCondition>,
+  ) => {
     const next = conditions.map((c, i) => (i === index ? { ...c, ...patch } : c));
     setFilterConditions(next);
   };
 
   const handleAddCondition = () => {
-    const next = [...conditions, { columnIndex: 0, op: 'equals' as FilterOperator, value: '' }];
+    const next: HTableFilterCondition[] = [
+      ...conditions,
+      { columnId: defaultColId, op: 'equals', value: '' },
+    ];
     setFilterConditions(next);
   };
 
   const handleDeleteCondition = (index: number) => {
     const next = conditions.filter((_, i) => i !== index);
-    setFilterConditions(next.length === 0 ? [{ columnIndex: 0, op: 'equals', value: '' }] : next);
+    setFilterConditions(
+      next.length === 0
+        ? [{ columnId: defaultColId, op: 'equals', value: '' }]
+        : next,
+    );
   };
 
   return (
@@ -50,14 +64,16 @@ export const PopoverFilterBuilder: React.FC = () => {
 
       <div className="wf-filter-body">
         {conditions.map((cond, idx) => {
+          const isUnary = cond.op === 'empty' || cond.op === 'notEmpty';
+
           return (
             <div key={idx} className="wf-filter-row">
               {/* 字段选择胶囊 */}
               <div style={{ width: 130, flexShrink: 0 }}>
-                <CustomSelect<number>
-                  value={cond.columnIndex}
+                <CustomSelect<string>
+                  value={cond.columnId || defaultColId}
                   options={columnOptions}
-                  onChange={(val) => handleUpdateCondition(idx, { columnIndex: val })}
+                  onChange={(val) => handleUpdateCondition(idx, { columnId: val })}
                   variant="standard"
                   className="wf-filter-capsule-select"
                 />
@@ -74,40 +90,42 @@ export const PopoverFilterBuilder: React.FC = () => {
                 />
               </div>
 
-              {/* 比较值输入框 */}
-              <input
-                type="text"
-                className="wf-filter-capsule-input"
-                placeholder="请输入筛选值..."
-                value={cond.value ?? ''}
-                disabled={cond.op === 'empty' || cond.op === 'notEmpty'}
-                onChange={(e) => handleUpdateCondition(idx, { value: e.target.value })}
-              />
+              {/* 目标值输入框 (一元运算符禁用) */}
+              <div style={{ flex: 1, minWidth: 120 }}>
+                <input
+                  type="text"
+                  className="wf-filter-val-input"
+                  placeholder={isUnary ? '无需输入' : '输入匹配值...'}
+                  disabled={isUnary}
+                  value={cond.value !== undefined ? String(cond.value) : ''}
+                  onChange={(e) => handleUpdateCondition(idx, { value: e.target.value })}
+                />
+              </div>
 
               {/* 删除条件按钮 */}
               <button
                 type="button"
-                className="wf-field-config-subtle-btn"
-                title="删除条件"
+                className="wf-filter-del-btn"
                 onClick={() => handleDeleteCondition(idx)}
+                title="删除条件"
               >
-                <X size={15} />
+                <X size={14} />
               </button>
             </div>
           );
         })}
+      </div>
 
-        <div style={{ paddingTop: 4 }}>
-          <button
-            type="button"
-            className="wf-context-menu-item"
-            style={{ width: 'auto', color: 'var(--wb-accent, #4176E6)', display: 'inline-flex', gap: 6 }}
-            onClick={handleAddCondition}
-          >
-            <Plus size={14} />
-            <span>添加条件</span>
-          </button>
-        </div>
+      {/* 底部新增条件按钮 */}
+      <div className="wf-filter-footer">
+        <button
+          type="button"
+          className="wf-filter-add-btn"
+          onClick={handleAddCondition}
+        >
+          <Plus size={14} />
+          <span>添加条件</span>
+        </button>
       </div>
     </div>
   );

@@ -307,7 +307,7 @@ try {
     Boolean(imgComplete?.data?.output?.mediaAssets?.[0]?.url?.startsWith(`${PREFIX}/media/executions/`)),
     imgComplete?.data?.output?.mediaAssets?.[0]?.url ?? 'no url',
   );
-  const imgFile = join(dir, 'media', 'executions', execId1, 'img.svg');
+  const imgFile = join(dir, 'media', 'executions', execId1, 'img.png');
   check('1c. 产物由 hub 写入 dest 并落盘', existsSync(imgFile));
   check('1d. text 节点 textComplete 回填', txtComplete?.data?.output?.text === 'echo:prompt for txt');
   check('1e. seam 流量符合契约（2 submit / 2 poll / 1 text）',

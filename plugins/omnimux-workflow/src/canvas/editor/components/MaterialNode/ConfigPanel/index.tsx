@@ -44,6 +44,7 @@ import { ModelBrandIcon } from '../../../../ui/ModelBrandIcon';
 import { useCanvasStore } from '../../../../store/canvasStore';
 import { useUpstreamMedia } from '../../../hooks/useUpstreamMedia';
 import { useModelParameterSchema, getCachedCatalog } from '../../../hooks/useModelParameterSchema';
+import { resolveNodeLifecycle } from '../../../utils/nodeMaterialLifecycle';
 import GenerateButton from './GenerateButton';
 
 export interface ConfigPanelProps {
@@ -236,30 +237,30 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     return combined.map((row) => {
       const visuals = getModelVisuals(row.id);
       const icon = visuals.icon;
-
-      const modelCap = row.inputCapability ?? resolveModelInputCapability(row.id, activeCatalog);
+      const isDeprecated = 'deprecated' in row && row.deprecated === true;
+      const modelCap = ('inputCapability' in row ? row.inputCapability : undefined) ?? resolveModelInputCapability(row.id, activeCatalog);
       const compat = evaluateModelCompatibility(row.id, modelCap, upstreamTypes);
 
       const isDegraded = compat.level === 'degraded';
       const isDisabled = compat.level === 'disabled';
       const reasonText = compat.reasons.join('；');
 
-      let badge = row.deprecated ? 'deprecated' : (row.badge ?? visuals.badge);
+      let badge = isDeprecated ? 'deprecated' : (('badge' in row ? row.badge : undefined) ?? visuals.badge);
       if (isDegraded) {
         badge = '降级';
-      } else if (isDisabled && !row.deprecated) {
+      } else if (isDisabled && !isDeprecated) {
         badge = '不可用';
       }
 
-      let subtitle = row.subtitle ?? visuals.subtitle;
+      let subtitle = ('subtitle' in row ? row.subtitle : undefined) ?? visuals.subtitle;
       if (isDisabled && reasonText) {
         subtitle = reasonText;
       } else if (isDegraded && compat.adaptationAdvice) {
         subtitle = compat.adaptationAdvice;
       }
 
-      const label = row.deprecated ? `${row.label} (deprecated)` : row.label;
-      const title = reasonText || (row.deprecated ? 'deprecated' : undefined);
+      const label = isDeprecated ? `${row.label} (deprecated)` : row.label;
+      const title = reasonText || (isDeprecated ? 'deprecated' : undefined);
 
       return {
         value: row.id,
@@ -392,12 +393,12 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
   const currentModelCap = useMemo(() => {
     const rawRows = activeCatalog?.[materialType] ?? [];
     const found = rawRows.find((r) => r.id === modelValue);
-    return found?.inputCapability ?? resolveModelInputCapability(modelValue, activeCatalog);
+    return found?.inputCapability ?? resolveModelInputCapability(modelValue || '', activeCatalog);
   }, [activeCatalog, materialType, modelValue]);
 
   const upstreamTypes = useMemo(() => upstreams.map((u) => ({ type: u.materialType })), [upstreams]);
   const modelCompat = useMemo(
-    () => evaluateModelCompatibility(modelValue, currentModelCap, upstreamTypes),
+    () => evaluateModelCompatibility(modelValue || '', currentModelCap, upstreamTypes),
     [modelValue, currentModelCap, upstreamTypes],
   );
   const isModelDegraded =
@@ -631,7 +632,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
           <GenerateButton
             onClick={onGenerate}
             disabled={execBusy}
-            isGenerating={nodeData.executionStatus === 'running'}
+            isGenerating={nodeData.executionStatus === 'running' || resolveNodeLifecycle({ type: nodeData.materialType, data: nodeData as any }) === 'loading'}
           />
         </div>
       </div>

@@ -15,11 +15,11 @@ Current upstream this product builds against. Not a fork record.
 
 | Field | Value |
 |---|---|
-| Package | `dsh@0.1.1-rc.2` |
-| SHA | `b150a551b8d465e31e418e1b2eaf5e79bbb7d28e` |
+| Package | `dsh@0.1.2-alpha.3` |
+| SHA | `dd6322d604e00eec1ba5e0c8541159906a21094a` |
 | Remote | `https://github.com/deepseek-ai/deepseek-harness.git` |
 | Default local clone | `/Users/x/Desktop/Project/Github/deepseek-harness` |
-| Recorded | 2026-08-22 |
+| Recorded | 2026-09-01 |
 
 Override the clone path with `DSH_SRC`. Decision: [decisions/2026-08-16-harness-consume-not-fork.md](decisions/2026-08-16-harness-consume-not-fork.md).
 

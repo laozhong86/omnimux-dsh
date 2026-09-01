@@ -39,7 +39,7 @@ function readMaterialType(nodeData: Record<string, unknown>): 'text' | 'image' |
 }
 
 function extFor(capability: 'text' | 'image' | 'video' | 'audio'): string {
-  if (capability === 'image') return 'svg';
+  if (capability === 'image') return 'png';
   if (capability === 'video') return 'mp4';
   if (capability === 'audio') return 'mp3';
   return 'txt';

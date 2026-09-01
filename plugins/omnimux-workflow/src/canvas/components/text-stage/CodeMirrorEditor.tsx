@@ -82,7 +82,7 @@ export const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     setMatches(found);
     setMatchIndex(found.length > 0 ? 0 : -1);
 
-    if (found.length > 0) {
+    if (found.length > 0 && found[0]) {
       const first = found[0];
       view.dispatch({
         selection: { anchor: first.from, head: first.to },

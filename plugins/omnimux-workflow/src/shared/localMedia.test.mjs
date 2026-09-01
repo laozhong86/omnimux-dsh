@@ -3,10 +3,14 @@
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   applyLocalMediaProbe,
   buildImportedMediaData,
   collectRealPaths,
+  detectMimeFromFile,
   isAllowedImportedMedia,
   isBlobUrl,
   isLocalFileUrl,
@@ -14,6 +18,8 @@ import {
   localFilePathFromUrl,
   looksAbsolutePath,
   materialTypeFromFilename,
+  sniffMediaExtension,
+  sniffMimeType,
 } from './localMedia.ts';
 
 test('localFileMediaUrl 编码绝对路径，禁止 blob', () => {
@@ -68,4 +74,86 @@ test('applyLocalMediaProbe：缺失 → offline，找回 → ready', () => {
   assert.equal(next[1].data.isMissing, false);
   assert.equal(next[2], nodes[2]);
   assert.deepEqual(collectRealPaths(nodes), ['/gone.png', '/ok.png']);
+});
+
+function u8(...bytes) {
+  return Uint8Array.from(bytes);
+}
+
+test('sniffMimeType 识别常见媒体魔数', () => {
+  assert.equal(sniffMimeType(u8(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a)), 'image/png');
+  assert.equal(sniffMimeType(u8(0xff, 0xd8, 0xff, 0xe0)), 'image/jpeg');
+  assert.equal(sniffMimeType(Buffer.from('GIF89a')), 'image/gif');
+  const webp = Buffer.alloc(12);
+  webp.write('RIFF', 0);
+  webp.write('WEBP', 8);
+  assert.equal(sniffMimeType(webp), 'image/webp');
+  const wav = Buffer.alloc(12);
+  wav.write('RIFF', 0);
+  wav.write('WAVE', 8);
+  assert.equal(sniffMimeType(wav), 'audio/wav');
+  const mp4 = Buffer.alloc(8);
+  mp4.write('ftyp', 4);
+  assert.equal(sniffMimeType(mp4), 'video/mp4');
+  assert.equal(sniffMimeType(u8(0x1a, 0x45, 0xdf, 0xa3, 0x01)), 'video/webm');
+  assert.equal(sniffMimeType(Buffer.from('ID3\x03\x00')), 'audio/mpeg');
+  assert.equal(sniffMimeType(u8(0xff, 0xfb, 0x90, 0x00)), 'audio/mpeg');
+  assert.equal(
+    sniffMimeType(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>')),
+    'image/svg+xml',
+  );
+  assert.equal(
+    sniffMimeType(Buffer.from('<?xml version="1.0"?><svg></svg>')),
+    'image/svg+xml',
+  );
+  assert.equal(sniffMimeType(u8()), undefined);
+  assert.equal(sniffMimeType(Buffer.from('hello world')), undefined);
+});
+
+test('sniffMediaExtension 返回对应扩展名', () => {
+  assert.equal(sniffMediaExtension(u8(0x89, 0x50, 0x4e, 0x47)), 'png');
+  assert.equal(sniffMediaExtension(u8(0xff, 0xd8, 0xff)), 'jpg');
+  assert.equal(sniffMediaExtension(Buffer.from('GIF8')), 'gif');
+  const webp = Buffer.alloc(12);
+  webp.write('RIFF', 0);
+  webp.write('WEBP', 8);
+  assert.equal(sniffMediaExtension(webp), 'webp');
+  assert.equal(sniffMediaExtension(Buffer.from('<svg/>')), 'svg');
+  const mp4 = Buffer.alloc(8);
+  mp4.write('ftyp', 4);
+  assert.equal(sniffMediaExtension(mp4), 'mp4');
+  assert.equal(sniffMediaExtension(Buffer.from('ID3')), 'mp3');
+  const wav = Buffer.alloc(12);
+  wav.write('RIFF', 0);
+  wav.write('WAVE', 8);
+  assert.equal(sniffMediaExtension(wav), 'wav');
+  assert.equal(sniffMediaExtension(Buffer.from('not-media')), undefined);
+});
+
+test('detectMimeFromFile：魔数优先于错误扩展名，未知内容回退文件名', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'local-media-sniff-'));
+  try {
+    const pngNamedSvg = join(dir, 'artifact.svg');
+    writeFileSync(pngNamedSvg, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    assert.equal(detectMimeFromFile(pngNamedSvg), 'image/png');
+
+    const jpegNamedBin = join(dir, 'photo.bin');
+    writeFileSync(jpegNamedBin, Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]));
+    assert.equal(detectMimeFromFile(jpegNamedBin, 'application/octet-stream'), 'image/jpeg');
+
+    const realSvg = join(dir, 'icon.svg');
+    writeFileSync(realSvg, '<svg xmlns="http://www.w3.org/2000/svg"></svg>', 'utf8');
+    assert.equal(detectMimeFromFile(realSvg), 'image/svg+xml');
+
+    const namedPngUnknown = join(dir, 'plain.png');
+    writeFileSync(namedPngUnknown, 'not a png', 'utf8');
+    assert.equal(detectMimeFromFile(namedPngUnknown, 'application/octet-stream'), 'image/png');
+
+    const unknown = join(dir, 'notes.bin');
+    writeFileSync(unknown, 'zzzz', 'utf8');
+    assert.equal(detectMimeFromFile(unknown, 'application/octet-stream'), 'application/octet-stream');
+    assert.equal(detectMimeFromFile(unknown), 'application/octet-stream');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

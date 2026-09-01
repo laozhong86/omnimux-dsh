@@ -251,7 +251,7 @@ export function evaluateModelCompatibility(
       reasons.push(`超出模型最大参考图数量（最多 ${cap.max} 张）`);
       if (!adaptationAdvice) adaptationAdvice = `建议截取前 ${cap.max} 张或更换模型`;
     } else if (cap && cap.min !== undefined && cap.min > 0 && images.length > cap.min && images.length <= cap.max) {
-      if (level !== 'disabled') level = 'degraded';
+      level = 'degraded';
       reasons.push(`输入已超出推荐配额（推荐 ${cap.min} 张，最多 ${cap.max} 张）`);
       if (!adaptationAdvice) adaptationAdvice = `输入超出模型推荐配额，执行时按前 ${cap.max} 张处理`;
     }

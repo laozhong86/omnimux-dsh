@@ -46,7 +46,7 @@ import { createReadStream, statSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { extname } from 'node:path';
 import { parseByteRange } from '../byteRange';
-import { mimeFromFilename } from '../../shared/localMedia';
+import { detectMimeFromFile } from '../../shared/localMedia';
 import {
   LEGACY_WORKFLOW_ROUTE_PREFIX,
   WORKFLOW_ROUTE_PREFIX,
@@ -81,6 +81,7 @@ import { createProjectAssetsStore } from '../workspace/ProjectAssetsStore';
 import { createProjectStore } from '../../projects/ProjectStore';
 import { ensureLibraryRoot } from '../../projects/library';
 import { createTemplateRoutes } from './templateRoutes';
+import { createTableRoutes } from './tableRoutes';
 
 export {
   MAX_JSON_BODY_BYTES,
@@ -148,7 +149,10 @@ function serveFile(
   fallbackMime: string,
   rangeHeader?: string,
 ): void {
-  const mime = mimeFromFilename(filePath) ?? MIME_BY_EXT[extname(filePath)] ?? fallbackMime;
+  const mime = detectMimeFromFile(
+    filePath,
+    MIME_BY_EXT[extname(filePath)] ?? fallbackMime,
+  );
   const stat = statSync(filePath);
   const range = parseByteRange(rangeHeader, stat.size);
   if (range && 'invalid' in range) {
@@ -206,6 +210,7 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
   const mediaRoutes = createMediaRoutes(mediaDir);
   const localFileRoutes = createLocalFileRoutes(picker ? { picker } : {});
   const templateRoutes = createTemplateRoutes(templates);
+  const tableRoutes = createTableRoutes(store);
 
   /**
    * Legacy M1 prefix compatibility: /dsh-workflow/* is rewritten (in-memory,
@@ -243,6 +248,8 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
       // workspaces, SSE/control/item/collection, capabilities, media.
       const fromBundle = await Promise.resolve(staticRoutes.tryBundle(method, path, req));
       if (fromBundle) return fromBundle;
+      const fromTable = await Promise.resolve(tableRoutes.tryHandle(method, path, req));
+      if (fromTable) return fromTable;
       const fromWorkspace = await Promise.resolve(workspaceRoutes.tryHandle(method, path, req));
       if (fromWorkspace) return fromWorkspace;
       const fromProjectAssets = await Promise.resolve(projectAssetsRoutes.tryHandle(method, path, req));

@@ -3,9 +3,9 @@
 # Desktop packaging no longer overlays this clone.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd -P)"
-pin_sha="b150a551b8d465e31e418e1b2eaf5e79bbb7d28e"
+pin_sha="dd6322d604e00eec1ba5e0c8541159906a21094a"
 src="${DSH_SRC:-/Users/x/Desktop/Project/Github/deepseek-harness}"
-patch_dir="$root/patches/dsh-0.1.1-rc.2"
+patch_dir="$root/patches/dsh-0.1.2-alpha.3"
 
 if [[ ! -d "$src/.git" ]]; then
   echo "apply-harness-overlay: DSH_SRC is not a git clone: $src" >&2
