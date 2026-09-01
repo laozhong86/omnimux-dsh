@@ -285,7 +285,14 @@ cmd_finish() {
   if [ "$skip_test" -eq 1 ]; then
     echo "==> 步骤 2: 跳过本地门禁测试 (--skip-test)"
   else
-    echo "==> 步骤 2: 执行本地门禁验证..."
+    echo "==> 步骤 2: 执行本地门禁验证与插槽静态契约卡点..."
+    if [ -f "$wt_dir/scripts/verify-slot-contracts.mjs" ]; then
+      echo "==> 运行静态插槽契约扫描 (工作区: $wt_dir)..."
+      if ! (cd "$wt_dir" && node scripts/verify-slot-contracts.mjs); then
+        echo "❌ 插槽契约静态扫描失败！已阻断交付。Worktree 现场已保留供排障: $wt_dir" >&2
+        exit 1
+      fi
+    fi
     if [ -n "$target_pkg" ]; then
       echo "==> 运行插件 [$target_pkg] 单元测试 (工作区: $wt_dir)..."
       if ! (cd "$wt_dir" && pnpm --filter "$target_pkg" test); then
