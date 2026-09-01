@@ -113,6 +113,24 @@ Body：`{ "paths": ["/abs/a.png", "/abs/b.mp4"] }`（1–64 条 string）。
 
 项目私有资产树。无 `assets.json` / 坏 JSON → `{ "assets": { "schemaVersion": 1, "rev": 0, "folders": [], "items": [] } }`。无 `canvas.json` → 404 `workspace-not-found`。legacy `/dsh-workflow` 同等改写。
 
+### GET /omnimux-workflow/api/workspaces/:wsId/tables/:tableId
+
+获取单个结构化数据表文档（L2 `.htable`）。
+- 成功 → `{ "table": { "tableId": string, "tablePath": string, "contentRev": number, "rowCount": number, "columnCount": number, "title": string, "document": HTableDocument } }`
+- 不存在 → 404 `table-not-found`
+
+### PUT /omnimux-workflow/api/workspaces/:wsId/tables/:tableId
+
+原子写入单个结构化数据表文档（tmp -> rename），支持乐观锁。请求体最大 8MB。
+- Body：`{ "expectedRev": number, "document": HTableDocument }`
+- 成功 → `{ "table": { "tableId": string, "tablePath": string, "contentRev": <新 rev，+1>, "rowCount": number, "columnCount": number, "title": string, "document": HTableDocument } }`
+- 版本冲突 → **409** `{ "error": "version_conflict", "message": "...", "currentRev": <服务端当前 rev> }`
+
+### DELETE /omnimux-workflow/api/workspaces/:wsId/tables/:tableId
+
+删除单个结构化数据表文档。
+- 成功 → `{ "ok": true }`
+
 ### PUT /omnimux-workflow/api/workspaces/:id/assets
 
 Body：`{ "expectedRev": number, "folders": Folder[], "items": Item[] }`。

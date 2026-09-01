@@ -11,9 +11,13 @@ export const tableNodeDefinition: NodeDefinition = {
   defaultData: () => ({
     label: '表格',
     title: '表格',
-    path: '',
+    tableId: '',
+    tablePath: '',
     columnCount: 1,
     rowCount: 0,
+    contentRev: 0,
+    previewRows: [],
+    status: 'empty',
   }),
   palette: {
     group: 'palette.group.data',

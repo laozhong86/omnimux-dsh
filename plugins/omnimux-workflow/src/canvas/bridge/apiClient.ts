@@ -6,26 +6,28 @@
  * src/shared/api.ts — the single source of truth shared with the host.
  */
 
-import { WORKFLOW_API_ROUTES } from '../../shared/api';
+import { WORKFLOW_API_ROUTES } from '../../shared/api.ts';
 import type {
   BuildManifest,
   CapabilityCatalog,
   CreateExecutionResponse,
   ExecutionSnapshotDto,
   ExecutionSummaryDto,
+  SaveWorkspaceTablePayload,
   StartExecutionPayload,
-} from '../../shared/api';
+  WorkspaceTableResponse,
+} from '../../shared/api.ts';
 import type {
   CanvasWorkspaceSnapshot,
   SaveCanvasWorkspacePayload,
   WorkspaceSummary,
-} from '../../shared/canvasTypes';
+} from '../../shared/canvasTypes.ts';
 import type {
   IndexProjectAssetsPayload,
   MkdirProjectAssetsPayload,
   ProjectAssetsDocument,
   SaveProjectAssetsPayload,
-} from '../../shared/projectAssets';
+} from '../../shared/projectAssets.ts';
 
 export interface ApiResult<T> {
   ok: boolean;
@@ -93,6 +95,41 @@ export function saveWorkspace(id: string, payload: SaveCanvasWorkspacePayload): 
     method: 'PUT',
     body: payload,
   });
+}
+
+export function getWorkspaceTable(
+  workspaceId: string,
+  tableId: string,
+): Promise<ApiResult<WorkspaceTableResponse>> {
+  return request<WorkspaceTableResponse>(
+    WORKFLOW_API_ROUTES.workspaceTable(encodeURIComponent(workspaceId), encodeURIComponent(tableId)),
+  );
+}
+
+export function saveWorkspaceTable(
+  workspaceId: string,
+  tableId: string,
+  payload: SaveWorkspaceTablePayload,
+): Promise<ApiResult<WorkspaceTableResponse>> {
+  return request<WorkspaceTableResponse>(
+    WORKFLOW_API_ROUTES.workspaceTable(encodeURIComponent(workspaceId), encodeURIComponent(tableId)),
+    {
+      method: 'PUT',
+      body: payload,
+    },
+  );
+}
+
+export function deleteWorkspaceTable(
+  workspaceId: string,
+  tableId: string,
+): Promise<ApiResult<{ ok?: boolean }>> {
+  return request<{ ok?: boolean }>(
+    WORKFLOW_API_ROUTES.workspaceTable(encodeURIComponent(workspaceId), encodeURIComponent(tableId)),
+    {
+      method: 'DELETE',
+    },
+  );
 }
 
 // ============================================================================

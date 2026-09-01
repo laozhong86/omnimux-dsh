@@ -69,6 +69,7 @@ import { planInstantiateTemplate } from './utils/planInstantiateTemplate';
 import { SpreadsheetStage } from '../components/table-node/stage/SpreadsheetStage';
 import { TextStage } from '../components/text-stage/TextStage';
 import { useTextStageStore } from '../store/textStageStore';
+import { registerTableCanvasSyncHandler } from '../store/tableStore';
 import type { CapabilityCatalog } from '../../shared/api';
 
 // 抽屉独立隔离保护器：确保抽屉内部发生任何未捕获错误时，画布绝不崩溃或黑屏
@@ -251,6 +252,40 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
               charCount: payload.charCount,
               status: payload.content.trim() ? 'ready' : 'empty',
               generatedContent: undefined,
+            },
+          };
+        }),
+      );
+    });
+    return unregister;
+  }, [setNodes]);
+
+  // 全表 TableStage / TableNode 提交同步器
+  useEffect(() => {
+    const unregister = registerTableCanvasSyncHandler((tableId, doc) => {
+      setNodes((currentNodes) =>
+        currentNodes.map((n) => {
+          if (n.id !== tableId) return n;
+          const firstCol = doc.columns[0];
+          const previewRows = doc.rows.slice(0, 3).map((r, idx) => {
+            const cellVal = firstCol ? r.cells[firstCol.id] : undefined;
+            if (typeof cellVal === 'string' && cellVal) return cellVal;
+            if (typeof cellVal === 'number') return String(cellVal);
+            if (Array.isArray(cellVal) && cellVal.length > 0) return `📎 附件 (${cellVal.length})`;
+            return '（空记录）';
+          });
+          return {
+            ...n,
+            data: {
+              ...(n.data || {}),
+              label: doc.title || (n.data as any)?.label || '表格',
+              title: doc.title || (n.data as any)?.title || '表格',
+              tableId,
+              tablePath: `.omnimux/tables/${tableId}.htable`,
+              rowCount: doc.rows.length,
+              columnCount: doc.columns.length,
+              previewRows,
+              status: doc.rows.length > 0 ? 'ready' : 'empty',
             },
           };
         }),

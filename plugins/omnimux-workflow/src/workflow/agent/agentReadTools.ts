@@ -3,13 +3,13 @@
  * Names, descriptions and JSON schemas are unchanged from the monolith.
  */
 
-import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes';
+import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes.ts';
 import {
   normalizeNodeIds,
   resolveExecutionSubgraph,
   subgraphContainsMediaGenerate,
   toExecutionMode,
-} from '../execution/subgraph';
+} from '../execution/subgraph.ts';
 import {
   type AgentToolSpec,
   type WorkflowAgentDeps,

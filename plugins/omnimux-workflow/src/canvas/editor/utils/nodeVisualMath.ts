@@ -763,8 +763,8 @@ export function planAlignLayout<T extends NodeSpatialInfo>(
       const row = Math.floor(index / cols);
       const { width, height, headerOffset } = resolveNodeDimensions(node);
       const totalH = height + headerOffset;
-      if (width > colWidths[col]) colWidths[col] = width;
-      if (totalH > rowHeights[row]) rowHeights[row] = totalH;
+      if (width > (colWidths[col] ?? 0)) colWidths[col] = width;
+      if (totalH > (rowHeights[row] ?? 0)) rowHeights[row] = totalH;
     });
 
     // 计算各列的 X 起始偏移
@@ -772,7 +772,7 @@ export function planAlignLayout<T extends NodeSpatialInfo>(
     let curX = minX;
     for (let c = 0; c < cols; c++) {
       colStartX[c] = curX;
-      curX += colWidths[c] + gap;
+      curX += (colWidths[c] ?? 0) + gap;
     }
 
     // 计算各行的 TopY 起始偏移
@@ -780,15 +780,15 @@ export function planAlignLayout<T extends NodeSpatialInfo>(
     let curTopY = minTopY;
     for (let r = 0; r < rows; r++) {
       rowStartTopY[r] = curTopY;
-      curTopY += rowHeights[r] + gap;
+      curTopY += (rowHeights[r] ?? 0) + gap;
     }
 
     const layoutResult = sorted.map((node, index) => {
       const col = index % cols;
       const row = Math.floor(index / cols);
       const { headerOffset } = resolveNodeDimensions(node);
-      const nextX = colStartX[col];
-      const nextY = rowStartTopY[row] + headerOffset;
+      const nextX = colStartX[col] ?? minX;
+      const nextY = (rowStartTopY[row] ?? minTopY) + headerOffset;
       return {
         ...node,
         position: { x: nextX, y: nextY },

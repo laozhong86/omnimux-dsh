@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   type HTableDocument,
   type HTableColumn,
@@ -12,6 +13,11 @@ import {
   defaultColumnWidth,
   migrateLegacyTableDocument,
 } from '../../shared/types/htable.ts';
+import {
+  tableDocumentCache,
+  createDefaultInitialDocument,
+  type TableSession,
+} from './tableDocumentCache.ts';
 
 export interface ColumnModalState {
   isOpen: boolean;
@@ -21,15 +27,34 @@ export interface ColumnModalState {
   initialType: HTableFieldType;
 }
 
+export type TableCanvasSyncHandler = (tableId: string, doc: HTableDocument) => void;
+let globalCanvasSyncHandler: TableCanvasSyncHandler | null = null;
+
+export function registerTableCanvasSyncHandler(handler: TableCanvasSyncHandler): () => void {
+  globalCanvasSyncHandler = handler;
+  return () => {
+    if (globalCanvasSyncHandler === handler) {
+      globalCanvasSyncHandler = null;
+    }
+  };
+}
+
+export function syncTableL1ToCanvasStore(tableId: string, doc: HTableDocument): void {
+  if (globalCanvasSyncHandler && tableId) {
+    globalCanvasSyncHandler(tableId, doc);
+  }
+}
+
 export interface TableStoreState {
-  // Document State
+  // Document & Session State
+  activeTableId: string | null;
   document: HTableDocument;
   isStageOpen: boolean;
 
   // Row Selection State
   selectedRowIndices: number[];
 
-  // History Stacks
+  // History Stacks (for active stage)
   undoStack: HTableDocument[];
   redoStack: HTableDocument[];
 
@@ -39,7 +64,7 @@ export interface TableStoreState {
   modalState: ColumnModalState;
 
   // Stage Control
-  openStage: (initialDoc?: HTableDocument) => void;
+  openStage: (tableIdOrDoc?: string | HTableDocument, initialDoc?: HTableDocument) => void;
   closeStage: () => void;
 
   // Row Selection Actions
@@ -61,7 +86,7 @@ export interface TableStoreState {
   openColumnModal: (mode: 'add' | 'edit', colIdx?: number) => void;
   closeColumnModal: () => void;
 
-  // Document Mutations (with automatic History Snapshot push)
+  // Document Mutations (with automatic History Snapshot push & L1 sync)
   setTitle: (title: string) => void;
   updateCell: (rowIdx: number, columnIdOrIdx: string | number, val: HTableCellValue) => void;
   addRow: (cells?: Record<string, HTableCellValue> | HTableCellValue[]) => void;
@@ -84,16 +109,6 @@ function cloneDoc(doc: HTableDocument): HTableDocument {
   return JSON.parse(JSON.stringify(doc));
 }
 
-const defaultInitialDocument: HTableDocument = {
-  version: 1,
-  title: '表格',
-  rowHeight: 'low',
-  columns: [
-    { id: 'col_text', title: '文本', type: 'text', visible: true, width: 280 },
-  ],
-  rows: [],
-};
-
 export const useTableStore = create<TableStoreState>((set, get) => {
   const pushSnapshot = (currentDoc: HTableDocument) => {
     const { undoStack } = get();
@@ -101,8 +116,25 @@ export const useTableStore = create<TableStoreState>((set, get) => {
     return { undoStack: newUndo, redoStack: [] };
   };
 
+  const applyDocMutation = (mutator: (doc: HTableDocument) => HTableDocument) => {
+    const { activeTableId, document } = get();
+    const history = pushSnapshot(document);
+    const updated = mutator(cloneDoc(document));
+
+    if (activeTableId) {
+      tableDocumentCache.mutate(activeTableId, () => updated, { trackHistory: false });
+      syncTableL1ToCanvasStore(activeTableId, updated);
+    }
+
+    set({
+      document: updated,
+      ...history,
+    });
+  };
+
   return {
-    document: defaultInitialDocument,
+    activeTableId: null,
+    document: createDefaultInitialDocument(),
     isStageOpen: false,
     selectedRowIndices: [],
     undoStack: [],
@@ -117,29 +149,49 @@ export const useTableStore = create<TableStoreState>((set, get) => {
       initialType: 'text',
     },
 
-    openStage: (initialDoc) => {
-      if (initialDoc) {
-        const normalized = migrateLegacyTableDocument(initialDoc);
-        set({
-          document: cloneDoc(normalized),
-          isStageOpen: true,
-          selectedRowIndices: [],
-          undoStack: [],
-          redoStack: [],
-          activePopover: null,
-        });
-      } else {
-        set({ isStageOpen: true, selectedRowIndices: [], activePopover: null });
+    openStage: (tableIdOrDoc, initialDoc) => {
+      let tableId: string | null = null;
+      let targetDoc: HTableDocument | null = null;
+
+      if (typeof tableIdOrDoc === 'string') {
+        tableId = tableIdOrDoc;
+        const cached = tableDocumentCache.getSession(tableId);
+        if (cached) {
+          targetDoc = cloneDoc(cached.document);
+        } else if (initialDoc) {
+          targetDoc = cloneDoc(migrateLegacyTableDocument(initialDoc));
+        }
+      } else if (tableIdOrDoc && typeof tableIdOrDoc === 'object') {
+        targetDoc = cloneDoc(migrateLegacyTableDocument(tableIdOrDoc));
       }
+
+      if (!targetDoc) {
+        targetDoc = createDefaultInitialDocument();
+      }
+
+      set({
+        activeTableId: tableId,
+        document: targetDoc,
+        isStageOpen: true,
+        selectedRowIndices: [],
+        undoStack: [],
+        redoStack: [],
+        activePopover: null,
+      });
     },
 
-    closeStage: () =>
+    closeStage: () => {
+      const { activeTableId, document } = get();
+      if (activeTableId) {
+        syncTableL1ToCanvasStore(activeTableId, document);
+      }
       set({
         isStageOpen: false,
         selectedRowIndices: [],
         activePopover: null,
         activeContextMenuColIdx: null,
-      }),
+      });
+    },
 
     toggleRowSelection: (rowIdx) => {
       const { selectedRowIndices } = get();
@@ -165,19 +217,28 @@ export const useTableStore = create<TableStoreState>((set, get) => {
     },
 
     deleteSelectedRows: () => {
-      const { document, selectedRowIndices } = get();
+      const { selectedRowIndices } = get();
       if (selectedRowIndices.length === 0) return;
-      const history = pushSnapshot(document);
-      const toDeleteSet = new Set(selectedRowIndices);
-      const newRows = document.rows.filter((_, idx) => !toDeleteSet.has(idx));
-      set({
-        document: { ...document, rows: newRows },
-        selectedRowIndices: [],
-        ...history,
+      applyDocMutation((doc) => {
+        const toDeleteSet = new Set(selectedRowIndices);
+        const newRows = doc.rows.filter((_, idx) => !toDeleteSet.has(idx));
+        return { ...doc, rows: newRows };
       });
+      set({ selectedRowIndices: [] });
     },
 
     undo: () => {
+      const { activeTableId } = get();
+      if (activeTableId && tableDocumentCache.canUndo(activeTableId)) {
+        tableDocumentCache.undo(activeTableId);
+        const session = tableDocumentCache.getSession(activeTableId);
+        if (session) {
+          set({ document: cloneDoc(session.document), selectedRowIndices: [] });
+          syncTableL1ToCanvasStore(activeTableId, session.document);
+        }
+        return;
+      }
+
       const { undoStack, document, redoStack } = get();
       if (undoStack.length === 0) return;
       const prevDoc = undoStack[undoStack.length - 1];
@@ -192,6 +253,17 @@ export const useTableStore = create<TableStoreState>((set, get) => {
     },
 
     redo: () => {
+      const { activeTableId } = get();
+      if (activeTableId && tableDocumentCache.canRedo(activeTableId)) {
+        tableDocumentCache.redo(activeTableId);
+        const session = tableDocumentCache.getSession(activeTableId);
+        if (session) {
+          set({ document: cloneDoc(session.document), selectedRowIndices: [] });
+          syncTableL1ToCanvasStore(activeTableId, session.document);
+        }
+        return;
+      }
+
       const { redoStack, document, undoStack } = get();
       if (redoStack.length === 0) return;
       const nextDoc = redoStack[redoStack.length - 1];
@@ -205,8 +277,17 @@ export const useTableStore = create<TableStoreState>((set, get) => {
       });
     },
 
-    canUndo: () => get().undoStack.length > 0,
-    canRedo: () => get().redoStack.length > 0,
+    canUndo: () => {
+      const { activeTableId, undoStack } = get();
+      if (activeTableId) return tableDocumentCache.canUndo(activeTableId);
+      return undoStack.length > 0;
+    },
+
+    canRedo: () => {
+      const { activeTableId, redoStack } = get();
+      if (activeTableId) return tableDocumentCache.canRedo(activeTableId);
+      return redoStack.length > 0;
+    },
 
     setActivePopover: (popover) => set({ activePopover: popover }),
     setContextMenuColIdx: (idx) => set({ activeContextMenuColIdx: idx }),
@@ -243,223 +324,172 @@ export const useTableStore = create<TableStoreState>((set, get) => {
       set((s) => ({ modalState: { ...s.modalState, isOpen: false } })),
 
     setTitle: (title) => {
-      const { document } = get();
-      if (document.title === title) return;
-      const history = pushSnapshot(document);
-      set({
-        document: { ...document, title },
-        ...history,
-      });
+      applyDocMutation((doc) => ({ ...doc, title }));
     },
 
     updateCell: (rowIdx, columnIdOrIdx, val) => {
-      const { document } = get();
-      const existingRow = document.rows[rowIdx];
-      if (!existingRow) return;
+      applyDocMutation((doc) => {
+        const existingRow = doc.rows[rowIdx];
+        if (!existingRow) return doc;
 
-      const columnId =
-        typeof columnIdOrIdx === 'number'
-          ? document.columns[columnIdOrIdx]?.id
-          : columnIdOrIdx;
+        const columnId =
+          typeof columnIdOrIdx === 'number'
+            ? doc.columns[columnIdOrIdx]?.id
+            : columnIdOrIdx;
 
-      if (!columnId) return;
+        if (!columnId) return doc;
 
-      const history = pushSnapshot(document);
-      const newRows = [...document.rows];
-      const targetRow: HTableRow = {
-        ...existingRow,
-        cells: { ...existingRow.cells, [columnId]: val },
-      };
-      newRows[rowIdx] = targetRow;
-      set({
-        document: { ...document, rows: newRows },
-        ...history,
+        const newRows = [...doc.rows];
+        newRows[rowIdx] = {
+          ...existingRow,
+          cells: { ...existingRow.cells, [columnId]: val },
+        };
+        return { ...doc, rows: newRows };
       });
     },
 
     addRow: (cells) => {
-      const { document } = get();
-      const history = pushSnapshot(document);
-      const cellMap: Record<string, HTableCellValue> = {};
-
-      if (cells && typeof cells === 'object' && !Array.isArray(cells)) {
-        Object.assign(cellMap, cells);
-      } else if (Array.isArray(cells)) {
-        cells.forEach((val, idx) => {
-          const col = document.columns[idx];
-          if (col) cellMap[col.id] = val;
-        });
-      }
-
-      set({
-        document: {
-          ...document,
-          rows: [...document.rows, { id: newRowId(), cells: cellMap }],
-        },
-        ...history,
+      applyDocMutation((doc) => {
+        const cellMap: Record<string, HTableCellValue> = {};
+        if (cells && typeof cells === 'object' && !Array.isArray(cells)) {
+          Object.assign(cellMap, cells);
+        } else if (Array.isArray(cells)) {
+          cells.forEach((val, idx) => {
+            const col = doc.columns[idx];
+            if (col) cellMap[col.id] = val;
+          });
+        }
+        return {
+          ...doc,
+          rows: [...doc.rows, { id: newRowId(), cells: cellMap }],
+        };
       });
     },
 
     deleteRow: (rowIdx) => {
-      const { document, selectedRowIndices } = get();
-      if (!document.rows[rowIdx]) return;
-      const history = pushSnapshot(document);
-      const newRows = document.rows.filter((_, idx) => idx !== rowIdx);
-      const newSelection = selectedRowIndices
-        .filter((idx) => idx !== rowIdx)
-        .map((idx) => (idx > rowIdx ? idx - 1 : idx));
+      const { selectedRowIndices } = get();
+      applyDocMutation((doc) => {
+        if (!doc.rows[rowIdx]) return doc;
+        const newRows = doc.rows.filter((_, idx) => idx !== rowIdx);
+        return { ...doc, rows: newRows };
+      });
       set({
-        document: { ...document, rows: newRows },
-        selectedRowIndices: newSelection,
-        ...history,
+        selectedRowIndices: selectedRowIndices
+          .filter((idx) => idx !== rowIdx)
+          .map((idx) => (idx > rowIdx ? idx - 1 : idx)),
       });
     },
 
     reorderRows: (sourceIdx, targetIdx) => {
-      const { document, selectedRowIndices } = get();
+      const { selectedRowIndices } = get();
       if (sourceIdx === targetIdx) return;
-      const rowToMove = document.rows[sourceIdx];
-      if (!rowToMove) return;
-
-      const history = pushSnapshot(document);
-      const newRows = [...document.rows];
-      const [moved] = newRows.splice(sourceIdx, 1);
-      if (moved) newRows.splice(targetIdx, 0, moved);
-
-      // 重新映射选中行
-      const newSelection = selectedRowIndices.map((idx) => {
-        if (idx === sourceIdx) return targetIdx;
-        if (sourceIdx < targetIdx && idx > sourceIdx && idx <= targetIdx) return idx - 1;
-        if (sourceIdx > targetIdx && idx >= targetIdx && idx < sourceIdx) return idx + 1;
-        return idx;
-      }).sort((a, b) => a - b);
-
-      set({
-        document: { ...document, rows: newRows },
-        selectedRowIndices: newSelection,
-        ...history,
+      applyDocMutation((doc) => {
+        const rowToMove = doc.rows[sourceIdx];
+        if (!rowToMove) return doc;
+        const newRows = [...doc.rows];
+        const [moved] = newRows.splice(sourceIdx, 1);
+        if (moved) newRows.splice(targetIdx, 0, moved);
+        return { ...doc, rows: newRows };
       });
+
+      const newSelection = selectedRowIndices
+        .map((idx) => {
+          if (idx === sourceIdx) return targetIdx;
+          if (sourceIdx < targetIdx && idx > sourceIdx && idx <= targetIdx) return idx - 1;
+          if (sourceIdx > targetIdx && idx >= targetIdx && idx < sourceIdx) return idx + 1;
+          return idx;
+        })
+        .sort((a, b) => a - b);
+      set({ selectedRowIndices: newSelection });
     },
 
     addColumn: (title, type, width) => {
-      const { document } = get();
-      const history = pushSnapshot(document);
-      const newCol: HTableColumn = {
-        id: newColumnId(),
-        title: title.trim() || 'Untitled',
-        type,
-        visible: true,
-        width: width ?? defaultColumnWidth(type),
-      };
-      set({
-        document: {
-          ...document,
-          columns: [...document.columns, newCol],
-        },
-        ...history,
+      applyDocMutation((doc) => {
+        const newCol: HTableColumn = {
+          id: newColumnId(),
+          title: title.trim() || 'Untitled',
+          type,
+          visible: true,
+          width: width ?? defaultColumnWidth(type),
+        };
+        return { ...doc, columns: [...doc.columns, newCol] };
       });
     },
 
     updateColumn: (colIdx, title, type) => {
-      const { document } = get();
-      const targetCol = document.columns[colIdx];
-      if (!targetCol) return;
-      const history = pushSnapshot(document);
-      const newCols = [...document.columns];
-      newCols[colIdx] = {
-        ...targetCol,
-        title: title.trim() || targetCol.title,
-        type,
-      };
-      set({
-        document: { ...document, columns: newCols },
-        ...history,
+      applyDocMutation((doc) => {
+        const targetCol = doc.columns[colIdx];
+        if (!targetCol) return doc;
+        const newCols = [...doc.columns];
+        newCols[colIdx] = {
+          ...targetCol,
+          title: title.trim() || targetCol.title,
+          type,
+        };
+        return { ...doc, columns: newCols };
       });
     },
 
     renameColumn: (colIdx, newTitle) => {
-      const { document } = get();
-      const targetCol = document.columns[colIdx];
-      if (!targetCol) return;
       const trimmed = newTitle.trim();
-      if (!trimmed || targetCol.title === trimmed) return;
-
-      const history = pushSnapshot(document);
-      const newCols = [...document.columns];
-      newCols[colIdx] = { ...targetCol, title: trimmed };
-      set({
-        document: { ...document, columns: newCols },
-        ...history,
+      if (!trimmed) return;
+      applyDocMutation((doc) => {
+        const targetCol = doc.columns[colIdx];
+        if (!targetCol || targetCol.title === trimmed) return doc;
+        const newCols = [...doc.columns];
+        newCols[colIdx] = { ...targetCol, title: trimmed };
+        return { ...doc, columns: newCols };
       });
     },
 
     deleteColumn: (colIdx) => {
-      const { document } = get();
-      if (!document.columns[colIdx]) return;
-      const history = pushSnapshot(document);
-      const newCols = document.columns.filter((_, idx) => idx !== colIdx);
-      // 字典模型下删除列定义无需对 rows 做破坏性清洗，保留原数据解耦
-      set({
-        document: { ...document, columns: newCols },
-        ...history,
+      applyDocMutation((doc) => {
+        if (!doc.columns[colIdx]) return doc;
+        const newCols = doc.columns.filter((_, idx) => idx !== colIdx);
+        return { ...doc, columns: newCols };
       });
     },
 
     toggleColumnVisibility: (colIdx) => {
-      const { document } = get();
-      const targetCol = document.columns[colIdx];
-      if (!targetCol) return;
-      const history = pushSnapshot(document);
-      const newCols = [...document.columns];
-      newCols[colIdx] = { ...targetCol, visible: !targetCol.visible };
-      set({
-        document: { ...document, columns: newCols },
-        ...history,
+      applyDocMutation((doc) => {
+        const targetCol = doc.columns[colIdx];
+        if (!targetCol) return doc;
+        const newCols = [...doc.columns];
+        newCols[colIdx] = { ...targetCol, visible: !targetCol.visible };
+        return { ...doc, columns: newCols };
       });
     },
 
     reorderColumns: (sourceIdx, targetIdx) => {
-      const { document } = get();
       if (sourceIdx === targetIdx) return;
-      const colToMove = document.columns[sourceIdx];
-      if (!colToMove) return;
-
-      const history = pushSnapshot(document);
-      const newCols = [...document.columns];
-      const [movedCol] = newCols.splice(sourceIdx, 1);
-      if (movedCol) newCols.splice(targetIdx, 0, movedCol);
-
-      // 字典模型下列重排无需改动 rows[].cells，纯表头顺序更新，100% 杜绝错位
-      set({
-        document: { ...document, columns: newCols },
-        ...history,
+      applyDocMutation((doc) => {
+        const colToMove = doc.columns[sourceIdx];
+        if (!colToMove) return doc;
+        const newCols = [...doc.columns];
+        const [movedCol] = newCols.splice(sourceIdx, 1);
+        if (movedCol) newCols.splice(targetIdx, 0, movedCol);
+        return { ...doc, columns: newCols };
       });
     },
 
     setFilterConditions: (conditions) => {
-      const { document } = get();
-      const history = pushSnapshot(document);
-      set({
-        document: {
-          ...document,
-          filter: { match: document.filter?.match || 'all', conditions },
-        },
-        ...history,
-      });
+      applyDocMutation((doc) => ({
+        ...doc,
+        filter: { match: doc.filter?.match || 'all', conditions },
+      }));
     },
 
     setRowHeight: (height) => {
-      const { document } = get();
-      if (document.rowHeight === height) return;
-      const history = pushSnapshot(document);
-      set({
-        document: { ...document, rowHeight: height },
-        ...history,
-      });
+      applyDocMutation((doc) => ({ ...doc, rowHeight: height }));
     },
 
     loadDocument: (doc) => {
       const normalized = migrateLegacyTableDocument(doc);
+      const { activeTableId } = get();
+      if (activeTableId) {
+        tableDocumentCache.mutate(activeTableId, () => normalized);
+        syncTableL1ToCanvasStore(activeTableId, normalized);
+      }
       set({
         document: cloneDoc(normalized),
         selectedRowIndices: [],
@@ -469,3 +499,87 @@ export const useTableStore = create<TableStoreState>((set, get) => {
     },
   };
 });
+
+/**
+ * React hook for a specific tableId session (for TableNode card rendering & editing).
+ */
+export function useTableSession(tableId: string, initialDoc?: Partial<HTableDocument>) {
+  const fallbackTitle =
+    initialDoc && typeof (initialDoc as any).title === 'string'
+      ? (initialDoc as any).title
+      : '表格';
+
+  const [session, setSession] = useState<TableSession>(() => {
+    return (
+      tableDocumentCache.getSession(tableId) || {
+        tableId,
+        tablePath: `.omnimux/tables/${tableId}.htable`,
+        document: initialDoc
+          ? migrateLegacyTableDocument(initialDoc)
+          : createDefaultInitialDocument(fallbackTitle),
+        loadState: 'idle',
+        contentRev: typeof initialDoc?.contentRev === 'number' ? initialDoc.contentRev : 0,
+        dirty: false,
+        saving: false,
+        undoStack: [],
+        redoStack: [],
+        updatedAt: Date.now(),
+      }
+    );
+  });
+
+  useEffect(() => {
+    const unsub = tableDocumentCache.subscribe(tableId, () => {
+      const current = tableDocumentCache.getSession(tableId);
+      if (current) {
+        setSession({ ...current });
+      }
+    });
+    return unsub;
+  }, [tableId]);
+
+  const mutate = useCallback(
+    (recipe: (doc: HTableDocument) => HTableDocument) => {
+      const updated = tableDocumentCache.mutate(tableId, recipe);
+      if (updated) {
+        syncTableL1ToCanvasStore(tableId, updated);
+      }
+      return updated;
+    },
+    [tableId],
+  );
+
+  const addRow = useCallback(
+    (cells?: Record<string, HTableCellValue> | HTableCellValue[]) => {
+      return mutate((doc) => {
+        const cellMap: Record<string, HTableCellValue> = {};
+        if (cells && typeof cells === 'object' && !Array.isArray(cells)) {
+          Object.assign(cellMap, cells);
+        } else if (Array.isArray(cells)) {
+          cells.forEach((val, idx) => {
+            const col = doc.columns[idx];
+            if (col) cellMap[col.id] = val;
+          });
+        }
+        return {
+          ...doc,
+          rows: [...doc.rows, { id: newRowId(), cells: cellMap }],
+        };
+      });
+    },
+    [mutate],
+  );
+
+  return {
+    document: session.document,
+    loadState: session.loadState,
+    dirty: session.dirty,
+    saving: session.saving,
+    mutate,
+    addRow,
+    undo: useCallback(() => tableDocumentCache.undo(tableId), [tableId]),
+    redo: useCallback(() => tableDocumentCache.redo(tableId), [tableId]),
+    canUndo: useCallback(() => tableDocumentCache.canUndo(tableId), [tableId]),
+    canRedo: useCallback(() => tableDocumentCache.canRedo(tableId), [tableId]),
+  };
+}

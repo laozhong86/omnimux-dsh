@@ -31,6 +31,9 @@ export const WORKFLOW_API_ROUTES = {
   workspaces: `${WORKFLOW_ROUTE_PREFIX}/api/workspaces`,
   /** GET/PUT/DELETE one workspace snapshot (PUT uses optimistic lock). */
   workspace: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}`,
+  /** GET/PUT/DELETE one tabular document (.htable) within a workspace. */
+  workspaceTable: (workspaceId: string, tableId: string) =>
+    `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${workspaceId}/tables/${tableId}`,
   /** GET: lightweight { id, version } — external-edit polling (PR3). */
   workspaceVersion: (id: string) => `${WORKFLOW_ROUTE_PREFIX}/api/workspaces/${id}/version`,
   /** GET/PUT: project-private assets.json (independent rev, never canvas.version). */
@@ -229,3 +232,30 @@ export interface ExecutionSnapshotDto {
   mediaAssets: Record<string, Array<Record<string, unknown>>>;
   breakpoints: string[];
 }
+
+// ============================================================================
+// Table Node API DTOs (.htable L2 persistence)
+// ============================================================================
+
+export interface SaveWorkspaceTablePayload {
+  expectedRev: number;
+  document: import('./types/htable').HTableDocument;
+}
+
+export interface WorkspaceTableDto {
+  tableId: string;
+  tablePath: string;
+  contentRev: number;
+  rowCount: number;
+  columnCount: number;
+  title: string;
+  document: import('./types/htable').HTableDocument;
+}
+
+export interface WorkspaceTableResponse {
+  table?: WorkspaceTableDto;
+  error?: string;
+  message?: string;
+  currentRev?: number;
+}
+

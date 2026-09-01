@@ -40,11 +40,13 @@ export interface NodeOutput {
   mediaAssets?: Array<{
     type: 'image' | 'video' | 'audio';
     url: string;
+    path?: string;
     thumbnail?: string;
     relativePath?: string;
     assetId?: string;
   }>;
   text?: string;
+  realPath?: string;
   relativePath?: string;
   assetId?: string;
 }
