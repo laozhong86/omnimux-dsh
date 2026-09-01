@@ -1,0 +1,98 @@
+sequenceDiagram
+    autonumber
+    actor User as 用户 / 开发者
+    participant UI as ConfigPanel / Canvas UI
+    participant Hook as useModelParameterSchema
+    participant Cache as ModelCacheManager (L1/L2)
+    participant Client as ApiClient (Island)
+    participant Gateway as WorkflowGateway (Host)
+    participant Seam as Hub ModelDiscoverySeam
+    participant Settings as DSH Settings / Store
+
+    %% 场景 1: 画布冷启动与多级缓存水合 (L1 -> L2 -> SWR 后台校验)
+    rect rgb(240, 248, 255)
+        Note over User, Seam: 场景 1: 画布启动水合与 L1/L2/L3 SWR 缓存时序
+        User->>UI: 打开材质节点配置面板 (ConfigPanel)
+        UI->>Hook: 获取模型 Schema (useModelParameterSchema)
+        Hook->>Cache: 读取 L1 内存缓存
+        alt L1 命中
+            Cache-->>Hook: 立即返回 Catalog (0ms 延迟)
+        else L1 未命中
+            Cache->>Cache: 读取 L2 本地存储 (localStorage)
+            alt L2 命中且未完全失效
+                Cache-->>Hook: 返回 L2 Catalog 并水合至 L1
+            else L2 未命中
+                Cache-->>Hook: 返回编译期静态兜底 DEFAULT_FALLBACK_SCHEMA
+            end
+        end
+        Hook-->>UI: 渲染 A-Z 排序模型列表与默认参数胶囊
+        UI-->>User: 0ms 瞬间展示界面
+
+        Note over Cache, Seam: 后台异步发起 SWR 静默校验 (L3)
+        Cache->>Client: fetchCapabilities()
+        Client->>Gateway: GET /omnimux-workflow/api/capabilities
+        Gateway->>Seam: ctx.get('modelDiscovery').getCatalog()
+        Seam->>Settings: 读取 DSH Settings 默认推荐模型配置
+        Settings-->>Seam: 返回 { text, image, video, audio } 默认项
+        Seam-->>Gateway: 返回整合元数据与品牌资产的 4 模态目录
+        Gateway->>Gateway: 校验版本指纹 (ETag / sha256) & 自然数 A-Z 排序
+        Gateway-->>Client: 200 OK (CapabilityCatalog DTO)
+        Client-->>Cache: 接收最新 Catalog
+        Cache->>Cache: 比对指纹并刷新 L1 内存态与 L2 持久化
+        opt 发现模型目录或默认值有实质更新
+            Cache-->>Hook: 触发 React 状态重渲染
+            Hook-->>UI: 静默平滑更新选项
+        end
+    end
+
+    %% 场景 2: DSH Settings 变更默认推荐模型并实时广播
+    rect rgb(255, 250, 240)
+        Note over User, UI: 场景 2: DSH 设置面板修改默认推荐模型
+        User->>Settings: 打开 设置 -> 插件 -> OmniMux 默认模型配置
+        Settings->>Seam: 获取 4 模态可用模型列表 (动态下拉)
+        Seam-->>Settings: 返回可用模型列表
+        User->>Settings: 修改「视频默认模型」为 Veo 3.1 Fast 并保存
+        Settings->>Settings: 持久化配置至 ~/.dsh/profiles/<profile>/config.json
+        Settings->>Settings: 触发广播 omnimux:config:model_defaults_changed
+        Settings-->>User: 提示配置已生效
+        Cache->>Cache: 监听到 window 广播事件
+        Cache->>Cache: 主动失效 L1 / L2 缓存中的 defaults 字段
+        Cache->>Client: 重新拉取最新 capabilities
+        Client->>Gateway: GET /omnimux-workflow/api/capabilities
+        Gateway-->>Client: 返回携带最新 defaults 的 Catalog
+        Client-->>Cache: 更新 L1/L2
+    end
+
+    %% 场景 3: 新建节点与参数继承 / 模型切换平滑回退
+    rect rgb(245, 255, 245)
+        Note over User, UI: 场景 3: 节点创建参数继承与切换回退状态机
+        User->>UI: 画布拖入新建「视频生成节点」
+        UI->>Cache: 获取当前最新 Catalog & defaults
+        Cache-->>UI: 返回 videoDefault: "veo-3.1-fast"
+        UI->>UI: 节点初始化 model = "veo-3.1-fast", 继承该模型 defaultSchema
+        UI-->>User: 节点就绪，参数预置为 16:9 / 1080P / 5s
+
+        User->>UI: 切换模型至 "kling-o3" (4K · 3-15s · 带音效)
+        UI->>Hook: handleModelChange("kling-o3")
+        Hook->>Hook: 读取 "kling-o3" 的参数约束 Schema
+        Hook->>Hook: 校验原参数 (16:9) 是否兼容 -> 兼容保留
+        Hook->>Hook: 校验原参数 (2K) 是否兼容 -> 不兼容自动回退至 Kling 默认 4K
+        Hook->>UI: 派发 updateNodeData({ params: nextParams })
+        UI-->>User: 配置面板动态自适应更新胶囊参数
+    end
+
+    %% 场景 4: 历史工程已下线模型告警与离线容错
+    rect rgb(255, 240, 245)
+        Note over User, UI: 场景 4: 历史工程已下线模型告警与离线回退
+        User->>UI: 加载打开包含下线模型 "old-diffusion-v1" 的历史画布
+        UI->>Hook: 校验 modelId 在当前 Catalog 中是否存在
+        Hook->>Hook: 判定为未知/已下线模型 (isUnknown = true)
+        Hook->>Hook: 采用安全兜底 DEFAULT_FALLBACK_SCHEMA
+        Hook-->>UI: 标记节点状态 status: "deprecated"
+        UI-->>User: 渲染黄色告警提示 "(模型已下线，建议更换)"，保留历史参数
+        opt 用户发起生成
+            UI->>Gateway: 尝试执行已下线模型
+            Gateway-->>UI: 拦截并提示 SeamGatewayError('unknown-model', '模型已下线，请选择可用模型')
+            UI-->>User: 弹出优雅更换模型建议弹窗
+        end
+    end
