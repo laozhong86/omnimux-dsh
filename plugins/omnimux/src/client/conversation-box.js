@@ -83,7 +83,15 @@ html[data-dsh-product-stage] [data-slot="shell.sidebar.auxiliary"]{display:none!
 html[data-dsh-product-stage]{--dsh-sidebar-width:0px!important;--dsh-sidebar-height:0px!important;}
 html[data-dsh-product-stage] #root{margin-right:0px!important;}
 html[data-dsh-product-stage] #dsh-window-drag{-webkit-app-region:no-drag!important;pointer-events:none!important;}
-html[data-dsh-product-stage] header{-webkit-app-region:no-drag!important;}
+html[data-dsh-product-stage] header{-webkit-app-region:drag!important;}
+html[data-dsh-product-stage] header button,
+html[data-dsh-product-stage] header input,
+html[data-dsh-product-stage] header a,
+html[data-dsh-product-stage] header select,
+html[data-dsh-product-stage] header [role="button"],
+html[data-dsh-product-stage] header [role="tab"],
+html[data-dsh-product-stage] header [class*="controls"],
+html[data-dsh-product-stage] header [class*="tabsContainer"]{-webkit-app-region:no-drag!important;}
 html[data-dsh-product-stage] [data-slot="conversation.session.header"],
 html[data-dsh-product-stage] [data-slot="conversation"] > header {display:none!important;}
 html[data-dsh-product-stage] [role="treeitem"][aria-selected="true"]{background:transparent!important;}
