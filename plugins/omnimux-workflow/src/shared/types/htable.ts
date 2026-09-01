@@ -86,6 +86,7 @@ export type HTableRowHeight = z.infer<typeof HTableRowHeightSchema>;
 /** 表格主文档 Schema (.htable 物理存储模型) */
 export const HTableDocumentSchema = z.object({
   version: z.literal(1),
+  contentRev: z.number().int().min(0).optional(),
   title: z.string().default('未命名表格'),
   columns: z.array(HTableColumnSchema),
   rows: z.array(HTableRowSchema),
@@ -146,7 +147,7 @@ export function migrateLegacyTableDocument(raw: unknown): HTableDocument {
   }
 
   const doc = raw as any;
-  if (doc.version !== 1) {
+  if (doc.version !== undefined && doc.version !== 1) {
     throw new Error(`Unsupported table document version: ${doc.version}`);
   }
 
@@ -221,6 +222,7 @@ export function migrateLegacyTableDocument(raw: unknown): HTableDocument {
 
   return {
     version: 1,
+    contentRev: typeof doc.contentRev === 'number' ? doc.contentRev : 0,
     title: doc.title ? String(doc.title).trim() || '未命名表格' : '未命名表格',
     columns,
     rows,
@@ -301,13 +303,17 @@ export function tableDocumentToLlmContent(doc: HTableDocument): LlmTableContent 
   };
 
   if (doc.filter && doc.filter.conditions.length > 0) {
-    const validConditions = doc.filter.conditions
-      .map((cond) => {
-        const idx = colIndexById.get(cond.columnId);
-        if (idx == null) return null;
-        return { columnIndex: idx, op: cond.op, value: cond.value };
-      })
-      .filter((c): c is LlmTableFilterCondition => c !== null);
+    const validConditions: LlmTableFilterCondition[] = [];
+    for (const cond of doc.filter.conditions) {
+      const idx = colIndexById.get(cond.columnId);
+      if (idx != null) {
+        validConditions.push({
+          columnIndex: idx,
+          op: cond.op,
+          ...(cond.value !== undefined ? { value: cond.value } : {}),
+        });
+      }
+    }
 
     if (validConditions.length > 0) {
       result.filter = {
@@ -330,6 +336,7 @@ export function tableDocumentToLlmContent(doc: HTableDocument): LlmTableContent 
 export function buildTableDocument(
   input: {
     title?: string;
+    contentRev?: number;
     columns?: LlmTableColumn[];
     rows?: LlmTableRow[];
     filter?: LlmTableFilter;
@@ -378,6 +385,7 @@ export function buildTableDocument(
 
   const doc: HTableDocument = {
     version: 1,
+    contentRev: typeof input.contentRev === 'number' ? input.contentRev : defaultDoc?.contentRev ?? 0,
     title: input.title?.trim() || defaultDoc?.title || '未命名表格',
     columns,
     rows,
@@ -385,18 +393,18 @@ export function buildTableDocument(
   };
 
   if (input.filter && Array.isArray(input.filter.conditions) && input.filter.conditions.length > 0) {
-    const conditions: HTableFilterCondition[] = input.filter.conditions
-      .map((cond) => {
-        const col = columns[cond.columnIndex];
-        if (!col) return null;
-        return {
+    const conditions: HTableFilterCondition[] = [];
+    for (const cond of input.filter.conditions) {
+      const col = columns[cond.columnIndex];
+      if (col) {
+        conditions.push({
           id: newConditionId(),
           columnId: col.id,
           op: cond.op,
           value: cond.value,
-        };
-      })
-      .filter((c): c is HTableFilterCondition => c !== null);
+        });
+      }
+    }
 
     if (conditions.length > 0) {
       doc.filter = {

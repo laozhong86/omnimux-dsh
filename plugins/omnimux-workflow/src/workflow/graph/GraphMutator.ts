@@ -19,9 +19,9 @@ import {
   type CanvasInputMutation,
   type CanvasNode,
 } from '../../shared/graph/canvasInputMutationGateway.ts';
-import type { SerializedCanvasEdge } from '../../shared/canvasTypes';
-import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes';
-import { WorkflowStoreError, type WorkspaceStore } from '../workspace/WorkspaceStore';
+import type { SerializedCanvasEdge } from '../../shared/canvasTypes.ts';
+import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes.ts';
+import { WorkflowStoreError, type WorkspaceStore } from '../workspace/WorkspaceStore.ts';
 
 export interface GraphMutationSuccess {
   ok: true;

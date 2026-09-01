@@ -3,6 +3,8 @@
  * 无 React，供组件与 node:test 共用。
  */
 
+import { resolveNodeLifecycle } from './nodeMaterialLifecycle.ts';
+
 export const DEFAULT_PILL_MAX_WIDTH = 280;
 export const PILL_NODE_GUTTER = 24;
 
@@ -24,6 +26,7 @@ export interface HasNodeMaterialInput {
   isOffline?: boolean;
   tableRowCount?: number;
   outputVideoUrl?: string;
+  [key: string]: unknown;
 }
 
 export interface PartitionToolbarOptions {
@@ -65,30 +68,20 @@ function sumSectionWidth(items: ToolbarActionSpec[], gap: number): number {
 }
 
 export function hasNodeMaterial(input: HasNodeMaterialInput): boolean {
-  if (input.isOffline) return false;
-
-  const nodeType = input.nodeType ?? '';
-  if (nodeType === 'table') return (input.tableRowCount ?? 0) > 0;
-  if (nodeType === 'video_composition') return Boolean(input.outputVideoUrl);
-  if (nodeType === 'group') return true;
-
-  const materialType =
-    input.materialType
-    || (MATERIAL_TYPES.has(nodeType) ? nodeType : undefined);
-
-  if (materialType === 'text') {
-    return Boolean((input.content || input.generatedContent || '').trim());
-  }
-
-  if (
-    materialType && MEDIA_TYPES.has(materialType)
-    || nodeType === 'import_asset'
-    || input.nodeKind === 'import'
-  ) {
-    return Boolean(input.previewUrl);
-  }
-
-  return false;
+  return resolveNodeLifecycle({
+    type: input.nodeType,
+    nodeType: input.nodeType,
+    data: {
+      materialType: input.materialType,
+      nodeKind: input.nodeKind,
+      content: input.content,
+      generatedContent: input.generatedContent,
+      previewUrl: input.previewUrl,
+      isOffline: input.isOffline,
+      rowCount: input.tableRowCount,
+      outputVideoUrl: input.outputVideoUrl,
+    },
+  }) === 'ready';
 }
 
 export function shouldShowNodeToolbar(input: {

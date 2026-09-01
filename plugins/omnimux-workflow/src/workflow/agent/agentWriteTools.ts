@@ -3,11 +3,13 @@
  * Names, descriptions and JSON schemas are unchanged from the monolith.
  */
 
-import { mutateWorkspaceGraph } from '../graph/GraphMutator';
+import path from 'node:path';
+import { mutateWorkspaceGraph } from '../graph/GraphMutator.ts';
 import { createMaterialNode } from '../../shared/graph/nodeFactory.ts';
 import type { MaterialType, MaterialTool } from '../../shared/graph/materialNode.ts';
 import type { CanvasInputMutation } from '../../shared/graph/canvasInputMutationGateway.ts';
-import { normalizeNodeIds } from '../execution/subgraph';
+import { normalizeNodeIds } from '../execution/subgraph.ts';
+import { TableStorageService } from '../storage/TableStorageService.ts';
 import {
   type AgentToolSpec,
   type WorkflowAgentDeps,
@@ -234,7 +236,7 @@ export function createWorkflowNodeRemoveTool(deps: WorkflowAgentDeps): AgentTool
       const nodeIds = normalizeNodeIds(args.node_ids);
       if (nodeIds.length === 0) return errorBody('invalid-args', 'node_ids must be a non-empty array');
 
-      return withWorkspace(store, workspaceId, (snapshot) => {
+      return await withWorkspace(store, workspaceId, async (snapshot) => {
         const existing = new Set(snapshot.nodes.map((node) => node.id));
         const toRemove = nodeIds.filter((id) => existing.has(id));
         if (toRemove.length === 0) {
@@ -243,6 +245,21 @@ export function createWorkflowNodeRemoveTool(deps: WorkflowAgentDeps): AgentTool
 
         const result = mutateWorkspaceGraph(store, workspaceId, { removeNodeIds: toRemove });
         if (!result.ok) return errorBody(result.error, result.message);
+
+        // 级联删除被移除表格节点的物理 .htable 文件
+        try {
+          const wsDir = path.dirname(store.canvasFileOf(workspaceId));
+          for (const nodeId of toRemove) {
+            const node = snapshot.nodes.find((n) => n.id === nodeId);
+            if (node && node.type === 'table') {
+              const fullTablePath = TableStorageService.resolveTablePath(wsDir, nodeId);
+              await TableStorageService.deleteTable(fullTablePath);
+            }
+          }
+        } catch {
+          // ignore table cleanup errors
+        }
+
         return {
           workspace: workspaceSummary(result.snapshot),
           removedNodes: toRemove.length,

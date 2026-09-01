@@ -17,6 +17,7 @@ import { useExecutionController } from './hooks/useExecutionController';
 import { useCanvasBoot } from './hooks/useCanvasBoot';
 import { setLocale, useT, type Locale } from './i18n';
 import { useWorkspacePersistence } from './bridge/useWorkspacePersistence';
+import { useTablePersistence } from './bridge/useTablePersistence';
 import type { CanvasWorkspaceSnapshot } from '../shared/canvasTypes';
 
 export interface CanvasAppProps {
@@ -58,10 +59,18 @@ const App: React.FC<CanvasAppProps> = ({ locale, workspaceId }) => {
   });
   flushRef.current = persistence.flushPendingSave;
 
+  const tablePersistence = useTablePersistence({
+    workspaceId: workspace ? workspace.id : null,
+    enabled: boot.phase === 'ready',
+  });
+
   // M3 execution controller: full/subset runs, SSE subscription, node-state
   // sync, and island-reload restore (re-subscribes a still-live execution).
   const execution = useExecutionController(workspace ? workspace.id : null, {
-    onBeforeStart: persistence.saveNow,
+    onBeforeStart: async () => {
+      await tablePersistence.saveNow();
+      await persistence.saveNow();
+    },
   });
 
   if (boot.phase === 'loading') {

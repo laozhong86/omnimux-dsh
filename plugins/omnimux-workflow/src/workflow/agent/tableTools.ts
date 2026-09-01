@@ -7,21 +7,23 @@ import {
   type HTableDocument,
   shortId,
 } from '../../shared/types/htable.ts';
-
-function jsonOut(args: unknown, value: unknown): Array<{ type: string; text: string }> {
-  return [{ type: 'text', text: JSON.stringify(value, null, 2) }];
-}
+import {
+  errorBody,
+  jsonOut,
+  readPosition,
+  defaultNodePosition,
+  withWorkspace,
+} from './agentToolShared.ts';
+import { mutateWorkspaceGraph } from '../graph/GraphMutator.ts';
 
 function readString(args: Record<string, unknown>, key: string): string | undefined {
   const v = args[key];
   return typeof v === 'string' && v.trim() !== '' ? v.trim() : undefined;
 }
 
-function errorBody(code: string, message: string): Record<string, unknown> {
-  return { error: code, message };
-}
-
 export function createCanvasWriteTableNodeTool(deps: WorkflowAgentDeps): AgentToolSpec {
+  const { store } = deps;
+
   return {
     name: 'canvas_write_table_node',
     description:
@@ -95,7 +97,7 @@ export function createCanvasWriteTableNodeTool(deps: WorkflowAgentDeps): AgentTo
     },
     output: {
       schema: { type: 'object' },
-      render: jsonOut,
+      render: jsonOut.render,
     },
     async execute(args) {
       const isReplace = Boolean(readString(args, 'node_id'));
@@ -110,6 +112,18 @@ export function createCanvasWriteTableNodeTool(deps: WorkflowAgentDeps): AgentTo
         return errorBody('invalid-args', 'Replacing a table requires at least one column in columns');
       }
 
+      // 确定目标工作区
+      let targetWorkspaceId = readString(args, 'workspace_id');
+      if (!targetWorkspaceId) {
+        const list = store.list();
+        if (list.length > 0 && list[0]) {
+          targetWorkspaceId = list[0].id;
+        } else {
+          const created = store.create('默认工作流');
+          targetWorkspaceId = created.id;
+        }
+      }
+
       // 1. 利用 buildTableDocument 构建标准物理字典文档
       const doc = buildTableDocument({
         title,
@@ -119,58 +133,133 @@ export function createCanvasWriteTableNodeTool(deps: WorkflowAgentDeps): AgentTo
         rowHeight,
       });
 
-      try {
-        // 2. 原子落盘 .htable 文件
-        const tableRelPath = `.hilo/tables/${nodeId}.htable`;
-        const fullPath = path.join(process.cwd(), tableRelPath);
-        await TableStorageService.saveTable(fullPath, doc);
+      return await withWorkspace(store, targetWorkspaceId, async (snapshot) => {
+        try {
+          const wsDir = path.dirname(store.canvasFileOf(targetWorkspaceId!));
+          const fullPath = TableStorageService.resolveTablePath(wsDir, nodeId);
+          await TableStorageService.saveTable(fullPath, doc);
 
-        return {
-          ok: true,
-          nodeId,
-          tablePath: tableRelPath,
-          title: doc.title,
-          columnCount: doc.columns.length,
-          rowCount: doc.rows.length,
-          created: !isReplace,
-        };
-      } catch (err: any) {
-        return errorBody('table-save-failed', err?.message || 'Failed to save table document');
-      }
+          const tableRelPath = `.omnimux/tables/${nodeId}.htable`;
+          const firstCol = doc.columns[0];
+          const previewRows: string[] = doc.rows.slice(0, 3).map((r) => {
+            const cellVal = firstCol ? r.cells[firstCol.id] : undefined;
+            if (typeof cellVal === 'string' && cellVal) return cellVal;
+            if (typeof cellVal === 'number') return String(cellVal);
+            if (Array.isArray(cellVal) && cellVal.length > 0) return `📎 附件 (${cellVal.length})`;
+            return '（空记录）';
+          });
+
+          if (!isReplace) {
+            const node = {
+              id: nodeId,
+              type: 'table',
+              position: readPosition(args) ?? defaultNodePosition(snapshot),
+              data: {
+                label: doc.title,
+                title: doc.title,
+                tableId: nodeId,
+                tablePath: tableRelPath,
+                rowCount: doc.rows.length,
+                columnCount: doc.columns.length,
+                contentRev: doc.contentRev ?? 0,
+                previewRows,
+                status: doc.rows.length > 0 ? 'ready' : 'empty',
+              },
+            };
+            const mutResult = mutateWorkspaceGraph(store, targetWorkspaceId!, { addNodes: [node] });
+            if (!mutResult.ok) {
+              return errorBody(mutResult.error, mutResult.message);
+            }
+          } else {
+            const mutResult = mutateWorkspaceGraph(store, targetWorkspaceId!, {
+              nodePatches: [{
+                nodeId,
+                data: {
+                  label: doc.title,
+                  title: doc.title,
+                  rowCount: doc.rows.length,
+                  columnCount: doc.columns.length,
+                  contentRev: doc.contentRev ?? 0,
+                  previewRows,
+                  status: doc.rows.length > 0 ? 'ready' : 'empty',
+                },
+              }],
+            });
+            if (!mutResult.ok) {
+              return errorBody(mutResult.error, mutResult.message);
+            }
+          }
+
+          return {
+            ok: true,
+            nodeId,
+            tablePath: tableRelPath,
+            title: doc.title,
+            columnCount: doc.columns.length,
+            rowCount: doc.rows.length,
+            created: !isReplace,
+          };
+        } catch (err: any) {
+          return errorBody('table-save-failed', err?.message || 'Failed to save table document');
+        }
+      });
     },
   };
 }
 
 export function createCanvasGetTableNodeTool(deps: WorkflowAgentDeps): AgentToolSpec {
+  const { store } = deps;
+
   return {
     name: 'canvas_get_table_node',
     description: '读取画布结构化数据表节点的完整数据内容 (.htable)，返回 LLM 友好的脱敏字段列表与二维行记录数据。',
     parameters: {
       type: 'object',
       properties: {
-        table_path: { type: 'string', description: '表格相对路径 (如 .hilo/tables/tbl_xxx.htable)' },
+        workspace_id: { type: 'string', description: '工作区 ID (缺省则使用默认工作区)' },
+        table_path: { type: 'string', description: '表格相对路径 (如 .omnimux/tables/tbl_xxx.htable)' },
+        node_id: { type: 'string', description: '表格节点 ID (与 table_path 二选一)' },
       },
-      required: ['table_path'],
     },
     output: {
       schema: { type: 'object' },
-      render: jsonOut,
+      render: jsonOut.render,
     },
     async execute(args) {
+      let targetWorkspaceId = readString(args, 'workspace_id');
+      if (!targetWorkspaceId) {
+        const list = store.list();
+        if (list.length > 0 && list[0]) {
+          targetWorkspaceId = list[0].id;
+        }
+      }
+
       const tablePath = readString(args, 'table_path');
-      if (!tablePath) {
-        return errorBody('invalid-args', 'table_path is required');
+      const nodeId = readString(args, 'node_id');
+
+      if (!tablePath && !nodeId) {
+        return errorBody('invalid-args', 'Either table_path or node_id is required');
       }
 
       try {
-        const fullPath = path.join(process.cwd(), tablePath);
+        let fullPath: string;
+        if (targetWorkspaceId) {
+          const wsDir = path.dirname(store.canvasFileOf(targetWorkspaceId));
+          const effectiveTableId = nodeId || (tablePath ? path.basename(tablePath, '.htable') : '');
+          fullPath = TableStorageService.resolveTablePath(wsDir, effectiveTableId);
+        } else if (tablePath) {
+          fullPath = path.isAbsolute(tablePath) ? tablePath : path.join(process.cwd(), tablePath);
+        } else {
+          fullPath = path.join(process.cwd(), `.omnimux/tables/${nodeId}.htable`);
+        }
+
         const doc = await TableStorageService.loadTable(fullPath);
         // 转换为 LLM 纯净二维格式
         const llmContent = tableDocumentToLlmContent(doc);
 
         return {
           ok: true,
-          tablePath,
+          tablePath: tablePath || `.omnimux/tables/${nodeId}.htable`,
           tableContent: llmContent,
         };
       } catch (err: any) {

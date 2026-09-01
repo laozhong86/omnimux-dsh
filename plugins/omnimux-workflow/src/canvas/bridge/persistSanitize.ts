@@ -103,6 +103,11 @@ export function sanitizeNodes(
     const raw = node as SerializedCanvasNode & Record<string, unknown>;
     const data = asRecord(raw.data);
     delete data.__catalog;
+    if (raw.type === 'table') {
+      delete data.document;
+      delete data.rows;
+      delete data.columns;
+    }
     sanitizeImportedMedia(data, opts.workspaceId);
 
     const clean: Record<string, unknown> = {
