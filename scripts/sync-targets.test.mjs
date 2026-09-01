@@ -147,6 +147,57 @@ describe('OmniMux Profile Target Selection Matrix', () => {
     assert.doesNotMatch(res.stdout, new RegExp(fakeHome + '/\\.dsh/profiles'))
   })
 
+  it('sync-stable.sh puts @deepseek-ai/dsh-base before omnimux in bundles', () => {
+    const profile = join(fakeHome, '.omnimux-dev', 'profiles', 'omnimux')
+    // Seed the wrong order that produced: patch: entry llm-pi-ai not found
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({
+      name: 'omnimux-profile-mock',
+      dependencies: {},
+      dsh: {
+        profile: {
+          bundles: [
+            'omnimux',
+            'omnimux-workflow',
+            '@deepseek-ai/dsh-base',
+            '@deepseek-ai/dsh-web-app',
+            'dsh-better-sidebar',
+          ],
+        },
+      },
+    }, null, 2) + '\n')
+    // Declare dsh.bundle so omnimux stays on the load list after sync.
+    mkdirSync(join(profile, 'node_modules', 'omnimux'), { recursive: true })
+    writeFileSync(join(profile, 'node_modules', 'omnimux', 'package.json'), JSON.stringify({
+      name: 'omnimux',
+      dsh: { bundle: { patch: './cordis.patch.yml' } },
+    }, null, 2) + '\n')
+
+    const res = spawnSync('bash', [
+      syncStableScript,
+      'omnimux',
+    ], {
+      cwd: root,
+      env: {
+        ...process.env,
+        OMNIMUX_SYNC_VIA: 'internal',
+        HOME: fakeHome,
+      },
+      encoding: 'utf8',
+    })
+    assert.equal(res.status, 0)
+    assert.match(res.stdout, /纠正 bundles 顺序/)
+
+    const next = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8'))
+    const bundles = next.dsh.profile.bundles
+    const baseAt = bundles.indexOf('@deepseek-ai/dsh-base')
+    const omnimuxAt = bundles.indexOf('omnimux')
+    assert.ok(baseAt >= 0, 'dsh-base must remain listed')
+    assert.ok(omnimuxAt >= 0, 'omnimux must remain listed')
+    assert.ok(baseAt < omnimuxAt, `expected dsh-base before omnimux, got ${JSON.stringify(bundles)}`)
+    assert.equal(bundles[0], '@deepseek-ai/dsh-base')
+    assert.equal(bundles[1], '@deepseek-ai/dsh-web-app')
+  })
+
   it('sync-agent-presets.sh targets only ~/.omnimux-dev by default', () => {
     const res = spawnSync('bash', [
       syncPresetsScript,

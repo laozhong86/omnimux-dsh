@@ -64,6 +64,22 @@ for p in "${PLUGINS[@]}"; do
   fi
 done
 
+# dsh-base must precede omnimux so the llm-pi-ai row exists before omnimux patches it.
+order_ok=$(node -e "
+const list=JSON.parse(process.argv[1]||'[]');
+const base=list.indexOf('@deepseek-ai/dsh-base');
+const hub=list.indexOf('omnimux');
+if (hub < 0) { process.stdout.write('skip'); process.exit(0); }
+if (base < 0) { process.stdout.write('missing-base'); process.exit(0); }
+process.stdout.write(base < hub ? 'ok' : 'bad');
+" "$bundles_json")
+case "$order_ok" in
+  ok) ok "bundles 顺序：@deepseek-ai/dsh-base 在 omnimux 之前" ;;
+  skip) echo "· bundles 未包含 omnimux（跳过顺序检查）" ;;
+  missing-base) bad "bundles 有 omnimux 但缺少 @deepseek-ai/dsh-base → 文本节点会 NO_ADAPTER" ;;
+  bad) bad "bundles 顺序错误：omnimux 在 @deepseek-ai/dsh-base 之前 → 会出现 patch: entry llm-pi-ai not found / 文本生成 NO_ADAPTER。修复: yarn omnimux:sync（会纠正顺序）并重启 App" ;;
+esac
+
 echo
 echo "== 4. 生产 profile store 固定 =="
 if [ -f "$PROD_PROFILE/.npmrc" ] && grep -q "store-dir=$PROD_PROFILE/.pnpm-store" "$PROD_PROFILE/.npmrc"; then

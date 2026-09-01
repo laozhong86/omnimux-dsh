@@ -233,6 +233,39 @@ for (const name of plugins) {
   }
 }
 
+// Bundle patch order is load order. dsh-base inserts the shared rows
+// (including `llm-pi-ai`); product plugins like omnimux patch those rows by
+// id. If omnimux is listed before dsh-base, the loader logs
+// `patch: entry llm-pi-ai not found`, the omnimux LLM route never registers,
+// and workflow textComplete fails with NO_ADAPTER for provider "omnimux".
+const CORE_BUNDLE_PREFIX = [
+  '@deepseek-ai/dsh-base',
+  '@deepseek-ai/dsh-web-app',
+]
+function normalizeBundleOrder(list) {
+  const seen = new Set()
+  const ordered = []
+  for (const name of CORE_BUNDLE_PREFIX) {
+    if (list.includes(name) && !seen.has(name)) {
+      ordered.push(name)
+      seen.add(name)
+    }
+  }
+  for (const name of list) {
+    if (!seen.has(name)) {
+      ordered.push(name)
+      seen.add(name)
+    }
+  }
+  return ordered
+}
+const normalized = normalizeBundleOrder(bundles)
+if (normalized.length !== bundles.length || normalized.some((name, i) => name !== bundles[i])) {
+  manifest.dsh.profile.bundles = normalized
+  bundleChanged = true
+  console.log('  ✓ 纠正 bundles 顺序：核心包 (@deepseek-ai/dsh-base …) 必须先于 omnimux')
+}
+
 if (depChanged || bundleChanged) {
   fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n', 'utf8')
   console.log(`  ✓ 更新 ${file} (dependencies/bundles)`)
