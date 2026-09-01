@@ -1,0 +1,159 @@
+classDiagram
+    direction TB
+
+    class CapabilityCatalog {
+        +string source
+        +string version
+        +string fingerprint
+        +number timestamp
+        +ModelDefaultsConfig defaults
+        +CapabilityModelItem[] text
+        +CapabilityModelItem[] image
+        +CapabilityModelItem[] video
+        +CapabilityModelItem[] audio
+    }
+
+    class ModelDefaultsConfig {
+        +string text
+        +string image
+        +string video
+        +string audio
+    }
+
+    class CapabilityModelItem {
+        +string id
+        +string label
+        +string brand
+        +string badge
+        +string subtitle
+        +string family
+        +string status
+        +ModelParameterSchema parameters
+    }
+
+    class ModelParameterSchema {
+        +ParameterField~string~ aspectRatio
+        +ParameterField~number~ duration
+        +ParameterField~string~ resolution
+        +ParameterField~string~ quality
+        +ToggleField sound
+        +ParameterField~string~ voice
+        +ToggleField instrumental
+    }
+
+    class ParameterField~T~ {
+        +ModelParameterOption~T~[] options
+        +T defaultValue
+        +RangeConfig range
+        +string unit
+    }
+
+    class ToggleField {
+        +boolean supported
+        +boolean defaultValue
+    }
+
+    class ModelParameterOption~T~ {
+        +T value
+        +string label
+    }
+
+    class RangeConfig {
+        +number min
+        +number max
+        +number step
+    }
+
+    class ModelDiscoverySeam {
+        +getCatalog() Promise~CapabilityCatalog~
+        +getDefaults() Promise~ModelDefaultsConfig~
+        +saveDefaults(config: ModelDefaultsConfig) Promise~void~
+        +validateModel(modality: string, modelId: string) boolean
+    }
+
+    class GenerationSeam {
+        <<interface>>
+        +execute(req: Record~string, unknown~) Promise~SeamExecuteResult~
+    }
+
+    class HubSettingsStore {
+        -string configPath
+        +readDefaults() ModelDefaultsConfig
+        +writeDefaults(config: ModelDefaultsConfig) void
+        +broadcastChange(config: ModelDefaultsConfig) void
+    }
+
+    class OmniMuxSeamClient {
+        -SeamGetter getSeam
+        -ProcessEnv env
+        -number maxConcurrency
+        +capabilities() Promise~CapabilityCatalog~
+        +submit(req: SubmitRequest) Promise~SubmitResult~
+        +awaitTask(req: AwaitTaskRequest) Promise~AwaitTaskResult~
+    }
+
+    class ModelCacheManager {
+        -CapabilityCatalog l1MemoryCache
+        -string CACHE_KEY
+        -number TTL_MS
+        +getCatalog() CapabilityCatalog
+        +setCatalog(catalog: CapabilityCatalog) void
+        +revalidateSWR(fetcher: Function) Promise~CapabilityCatalog~
+        +invalidate() void
+        +subscribeEvents() Function
+    }
+
+    class ModelOrderingService {
+        -Intl.Collator collator
+        +sortModels~T~(models: T[]) T[]
+        +compare(aLabel: string, bLabel: string) number
+    }
+
+    class UseModelParameterSchemaResult {
+        +ModelParameterSchema schema
+        +CapabilityModelItem modelItem
+        +ModelParameterOption~string~[] aspectRatioOptions
+        +string defaultAspectRatio
+        +isAspectRatioValid(ratio: string) boolean
+        +ModelParameterOption~number~[] durationOptions
+        +number defaultDuration
+        +isDurationValid(duration: number) boolean
+        +ModelParameterOption~string~[] resolutionOptions
+        +string defaultResolution
+        +ModelParameterOption~string~[] qualityOptions
+        +string defaultQuality
+        +boolean hasSoundSupport
+        +boolean defaultSound
+        +ModelParameterOption~string~[] voiceOptions
+        +string defaultVoice
+        +boolean hasInstrumentalSupport
+        +boolean defaultInstrumental
+    }
+
+    class ConfigPanelController {
+        +string nodeId
+        +MaterialNodeData nodeData
+        +CapabilityCatalog catalog
+        +handleModelChange(newModelId: string) void
+        +handleParamUpdate(key: string, value: unknown) void
+        +renderModelDropdown() JSX.Element
+    }
+
+    CapabilityCatalog *-- ModelDefaultsConfig : contains
+    CapabilityCatalog *-- CapabilityModelItem : text/image/video/audio
+    CapabilityModelItem *-- ModelParameterSchema : parameters
+    ModelParameterSchema *-- ParameterField : aspectRatio/duration/resolution/quality/voice
+    ModelParameterSchema *-- ToggleField : sound/instrumental
+    ParameterField *-- ModelParameterOption : options
+    ParameterField *-- RangeConfig : range
+
+    ModelDiscoverySeam --> HubSettingsStore : reads/writes defaults
+    ModelDiscoverySeam ..> CapabilityCatalog : generates
+    OmniMuxSeamClient ..> ModelDiscoverySeam : consumes via ctx.get
+    OmniMuxSeamClient ..> GenerationSeam : delegates execution
+    OmniMuxSeamClient --> ModelOrderingService : applies natural sort
+
+    ModelCacheManager --> CapabilityCatalog : caches L1 & L2
+    ConfigPanelController --> ModelCacheManager : reads catalog
+    ConfigPanelController --> UseModelParameterSchemaResult : uses hook
+    UseModelParameterSchemaResult --> ModelParameterSchema : derives options
