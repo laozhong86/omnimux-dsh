@@ -57,6 +57,13 @@ export function AnalyticsStage({ t, stage, store, visible = true }) {
 
   const [now, setNow] = useState(() => Date.now())
   const analyticsStore = useAnalyticsStore()
+  // Primitive fetch keys only — never depend on analyticsStore.query object
+  // identity. refresh()/loadDashboard() always clone query into a new object,
+  // so an object dependency re-fires this effect forever (React #185 / max update depth).
+  // tab + searchQuery are client-side only (see query.patchNeedsFetch / cacheKey).
+  const queryPlatform = analyticsStore.query.platform
+  const queryProfileId = analyticsStore.query.profileId
+  const queryTimeRange = analyticsStore.query.timeRange
 
   useEffect(() => {
     if (!visible) return undefined
@@ -67,10 +74,10 @@ export function AnalyticsStage({ t, stage, store, visible = true }) {
   useEffect(() => {
     if (!visible) return undefined
     void analyticsStore.refresh()
-  }, [visible, analyticsStore.query])
+  }, [visible, queryPlatform, queryProfileId, queryTimeRange])
 
-  const payload = analyticsStore.data
-  const empty = analyticsStore.emptyHint
+  const payload = analyticsStore.payload
+  const empty = payload?.emptyState || null
   const blockingEmpty = empty && (empty.code === 'no_accounts' || empty.code === 'no_data')
   const locale = readLocale()
 

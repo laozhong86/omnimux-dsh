@@ -59,3 +59,20 @@ describe('CACHE_TTL_MS contract', () => {
     assert.equal(FILTER_DEBOUNCE_MS, 300)
   })
 })
+
+describe('query object identity (React #185 guard)', () => {
+  it('refresh keeps the same query object reference when fields are unchanged', async () => {
+    await loadDashboard({ timeRange: '30d' })
+    const before = analyticsStore.getSnapshot().query
+    await analyticsStore.refresh()
+    const after = analyticsStore.getSnapshot().query
+    assert.equal(after, before)
+  })
+
+  it('setQuery with identical values reuses the existing query object', async () => {
+    await loadDashboard()
+    const before = analyticsStore.getSnapshot().query
+    setQuery({ platform: before.platform, timeRange: before.timeRange })
+    assert.equal(analyticsStore.getSnapshot().query, before)
+  })
+})

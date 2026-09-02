@@ -31,4 +31,16 @@ describe('analytics workbench seat (sidebar must not claim overlay)', () => {
     assert.doesNotMatch(stage, /claimProductStage/)
     assert.doesNotMatch(bar, /from ['"]omnimux/)
   })
+
+  it('refresh effect depends on primitive query fields, not query object identity', () => {
+    const stage = readFileSync(join(here, 'AnalyticsStage.jsx'), 'utf8')
+    // Regression for React #185: analyticsStore.query is a new object on every
+    // refresh()/loadDashboard clone; object identity in the dep array loops.
+    assert.doesNotMatch(stage, /\[visible,\s*analyticsStore\.query\]/)
+    assert.match(stage, /queryPlatform/)
+    assert.match(stage, /queryProfileId/)
+    assert.match(stage, /queryTimeRange/)
+    assert.match(stage, /analyticsStore\.payload/)
+    assert.doesNotMatch(stage, /analyticsStore\.data\b/)
+  })
 })
