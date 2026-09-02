@@ -4374,6 +4374,10 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   max-height: 85vh;
 }
 
+.wf-picker-modal .wf-modal-header {
+  border-bottom: none;
+}
+
 .wf-picker-modal .wf-modal-body.wf-picker-modal__body {
   padding: 0;
   overflow: hidden;
@@ -4392,7 +4396,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   display: flex;
   gap: 20px;
   padding: 0 20px;
-  border-bottom: 1px solid var(--wb-border);
+  border-bottom: none;
   flex-shrink: 0;
 }
 
@@ -4424,7 +4428,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -1px;
+  bottom: 0;
   height: 2px;
   background: var(--wb-text-primary);
   border-radius: 1px;

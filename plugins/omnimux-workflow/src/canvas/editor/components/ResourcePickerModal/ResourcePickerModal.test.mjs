@@ -124,3 +124,10 @@ test('选择资源样式覆盖 Tab / 网格 / 拖拽区 / 已添加 / [+] 按钮
   assert.match(cssSrc, /\.wf-picker-added-badge/);
   assert.match(cssSrc, /\.wf-config-panel__add-ref-btn/);
 });
+
+test('选择资源弹窗标题栏与 Tab 行不得再画分割线', () => {
+  const pickerBlock = cssSrc.slice(cssSrc.indexOf('ResourcePickerModal'));
+  assert.match(pickerBlock, /\.wf-picker-modal \.wf-modal-header[\s\S]*?border-bottom:\s*none/);
+  assert.match(pickerBlock, /\.wf-picker-tabs[\s\S]*?border-bottom:\s*none/);
+  assert.equal(/\.wf-picker-tabs[\s\S]{0,180}border-bottom:\s*1px/.test(pickerBlock), false);
+});
