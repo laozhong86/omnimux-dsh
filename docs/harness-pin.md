@@ -25,7 +25,7 @@ Override the clone path with `DSH_SRC`. Decision: [decisions/2026-08-16-harness-
 
 ## Overlay against this pin
 
-Directory: `patches/dsh-0.1.1-rc.2/`. Current overlay: `quota-403-not-auth.patch` (classify exhausted-quota 403 as `QUOTA`, not `AUTH`). Desktop packaging patches have left this clone; the shipping shell is `/Users/x/Desktop/Project/omnimux-desktop-fork` (sync per its `docs/contracts/upstream-sync.md`); the retired slim shell `omnimux-desktop` is archived.
+Directory: `patches/dsh-0.1.2-alpha.3/`. Current overlay: `llm-quota-priority.patch` (quota wording wins over a bare 403 so `insufficient_user_quota` is `QUOTA`, not `AUTH`). Official alpha.3 already carries the old client failure-display quota path; this overlay keeps the four `packages/llm/*` hunks. Desktop packaging patches have left this clone; the shipping shell is `/Users/x/Desktop/Project/omnimux-desktop-fork` (sync per its `docs/contracts/upstream-sync.md`); the retired slim shell `omnimux-desktop` is archived. Historical `patches/dsh-0.1.1-rc.2/` is not the live overlay.
 
 `pnpm-lock.yaml` is not a patch.
 
