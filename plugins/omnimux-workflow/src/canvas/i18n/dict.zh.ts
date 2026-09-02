@@ -225,6 +225,7 @@ const zh = {
   'error.nodeExecutionFailed': '节点执行失败',
   'error.executionFailed': '执行失败',
   'error.createExecutionFailed': '创建执行失败',
+  'error.projectRequired': '当前画布未绑定本地项目，无法生成媒体。请先新建或打开一个项目。',
   // 输出动作菜单选项（派生自 connectionConfig MATERIAL_OUTPUT_OPTIONS；
   // key 前缀 = 源素材类型，避免不同源同 key 冲突）
   'menu.option.text.text-text-to-text': 'AI 文本生成',

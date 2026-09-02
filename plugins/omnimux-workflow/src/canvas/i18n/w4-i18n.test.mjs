@@ -68,6 +68,7 @@ test('W4 入典代表 key：双语可取且不回退到 key 本身', () => {
     'node.skipped',
     'palette.node.material',
     'error.createExecutionFailed',
+    'error.projectRequired',
     'picker.title',
     'picker.tab.canvas',
     'picker.tab.local',

@@ -205,6 +205,7 @@ const en: Record<DictKey, string> = {
   'error.nodeExecutionFailed': 'Node execution failed',
   'error.executionFailed': 'Execution failed',
   'error.createExecutionFailed': 'Failed to create execution',
+  'error.projectRequired': 'This canvas is not bound to a local project, so media cannot be generated. Create or open a project first.',
   'menu.option.text.text-text-to-text': 'AI Text Generation',
   'menu.option.text.text-text-to-text.desc': 'Generate new text from text',
   'menu.option.text.image-text-to-image': 'Text to Image',

@@ -163,10 +163,15 @@ export function createWorkflowRunTool(deps: WorkflowAgentDeps): AgentToolSpec {
         subgraphContainsMediaGenerate(subgraph.nodes as Array<{ type?: string; data?: Record<string, unknown> }>)
         && !store.resolveProjectRoot(workspace.id)
       ) {
-        return errorBody(
-          'project-required',
-          `workspace ${workspace.id} is not bound to a local project`,
-        );
+        if (deps.ensureProjectBound) {
+          await deps.ensureProjectBound(workspace.id, workspace.name);
+        }
+        if (!store.resolveProjectRoot(workspace.id)) {
+          return errorBody(
+            'project-required',
+            `workspace ${workspace.id} is not bound to a local project`,
+          );
+        }
       }
 
       const initialOutputs = buildInitialOutputs(workspace, subgraph.nodeIdSet);

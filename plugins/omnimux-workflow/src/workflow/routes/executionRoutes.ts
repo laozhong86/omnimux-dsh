@@ -15,6 +15,7 @@ import {
   type ExecutionMode,
 } from '../execution/subgraph';
 import { notFound, type RouteTry, type WorkflowDispatchRequest } from './dispatch';
+import type { EnsureProjectBoundFn } from '../../projects/ensureProjectBound';
 
 const STATUS_BY_CODE: Record<string, number> = {
   'invalid-json': 400,
@@ -81,8 +82,9 @@ function extractNodeOutputFromSnapshot(
 export function createExecutionRoutes(opts: {
   store: WorkspaceStore;
   executionManager: ExecutionManager;
+  ensureProjectBound?: EnsureProjectBoundFn;
 }): { tryHandle: RouteTry } {
-  const { store, executionManager } = opts;
+  const { store, executionManager, ensureProjectBound } = opts;
   const executionsRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions$`);
   const executionItemRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions/([^/]+)$`);
   const executionActionRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions/([^/]+)/(pause|resume|cancel)$`);
@@ -169,10 +171,15 @@ export function createExecutionRoutes(opts: {
             subgraphContainsMediaGenerate(subgraph.nodes as Array<{ type?: string; data?: Record<string, unknown> }>)
             && !store.resolveProjectRoot(workspaceId)
           ) {
-            throw new WorkflowStoreError(
-              'project-required',
-              `workspace ${workspaceId} is not bound to a local project`,
-            );
+            if (ensureProjectBound) {
+              await ensureProjectBound(workspaceId, snapshot.name);
+            }
+            if (!store.resolveProjectRoot(workspaceId)) {
+              throw new WorkflowStoreError(
+                'project-required',
+                `workspace ${workspaceId} is not bound to a local project`,
+              );
+            }
           }
 
           // Seed initial outputs for upstream nodes not included in this execution batch

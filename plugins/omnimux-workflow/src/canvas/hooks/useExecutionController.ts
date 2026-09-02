@@ -345,7 +345,9 @@ export function useExecutionController(
       if (!result.ok || !result.body.execution) {
         useExecutionStore.getState().setExecution({
           status: 'error',
-          error: result.body.message ?? t('error.createExecutionFailed'),
+          error: result.body.error === 'project-required'
+            ? t('error.projectRequired')
+            : (result.body.message ?? t('error.createExecutionFailed')),
         });
         return;
       }

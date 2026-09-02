@@ -5,6 +5,7 @@
 
 import { join } from 'node:path';
 import type { WorkspaceStore } from '../workspace/WorkspaceStore';
+import type { EnsureProjectBoundFn } from '../../projects/ensureProjectBound';
 import type {
   ExecutionManager,
   ExecutionSnapshot,
@@ -47,6 +48,8 @@ export interface WorkflowAgentDeps {
   executionManager: ExecutionManager;
   /** Plugin media root (absolute) — resolves media URLs to local paths. */
   mediaDir: string;
+  /** Same lazy-bind helper as POST /executions (media generate needs a project root). */
+  ensureProjectBound?: EnsureProjectBoundFn;
 }
 
 type FieldSpec = Record<string, unknown> & { required?: boolean | string[] };

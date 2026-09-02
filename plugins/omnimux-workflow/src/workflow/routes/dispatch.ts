@@ -8,6 +8,8 @@ import type { GenerationGateway } from '../seam/gateway';
 import type { WorkspaceStore } from '../workspace/WorkspaceStore';
 import type { ProjectAssetsStore } from '../workspace/ProjectAssetsStore';
 import type { TemplateStore } from '../templates/TemplateStore.ts';
+import type { ProjectStore } from '../../projects/ProjectStore';
+import type { EnsureProjectBoundFn } from '../../projects/ensureProjectBound';
 
 export interface WorkflowDispatcherDeps {
   store: WorkspaceStore;
@@ -21,6 +23,10 @@ export interface WorkflowDispatcherDeps {
   templates?: TemplateStore;
   /** Shared with host mount so generate persist and HTTP ingest use one ledger. */
   assetsStore?: ProjectAssetsStore;
+  /** Same ProjectStore as mountWorkflowHost — avoid a second libraryRoot. */
+  projectStore?: ProjectStore;
+  /** Lazy-bind a local project before media generate executions. */
+  ensureProjectBound?: EnsureProjectBoundFn;
 }
 
 export interface WorkflowDispatchRequest {
