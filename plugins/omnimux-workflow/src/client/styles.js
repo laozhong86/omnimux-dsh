@@ -4,8 +4,12 @@ export const WORKFLOW_CSS = `
 .omnimux-workflow-stage,
 .omnimux-workflow-library-page {
   position: relative;
+  box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--dsw-alias-bg-base, var(--dsw-bg));
@@ -13,30 +17,64 @@ export const WORKFLOW_CSS = `
   overflow: hidden;
   pointer-events: auto;
 }
+.omnimux-workflow-library-page .dshUk-PageHeader-pageHeader,
+.omnimux-workflow-library-page .dshUk-PageHeader-heading,
+.omnimux-workflow-library-page .dshUk-PageHeader-controls {
+  min-width: 0;
+  max-width: 100%;
+}
 .omnimux-workflow-stage[data-visible="false"],
 .omnimux-workflow-library-page[data-visible="false"] {
   display: none !important;
   pointer-events: none;
 }
-.omnimux-workflow-action-row {
+.omnimux-workflow-action-row,
+.omnimux-workflow-library-action-row {
   flex: none;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 8px 20px 12px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.omnimux-workflow-library-filter {
+  flex: none;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0 20px 12px;
+}
+.omnimux-workflow-library-filter .dshUk-SearchField-root,
+.omnimux-workflow-library-filter .dshUk-SearchField-stretch {
+  width: 100%;
+  max-width: min(260px, 100%);
+  min-width: 0;
 }
 .omnimux-workflow-stage-toolbar {
   flex: none;
   padding: 0 20px 12px;
   height: 44px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 .omnimux-workflow-tools-cluster {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 .omnimux-workflow-search-wrap {
-  width: 260px;
+  width: min(260px, 100%);
+  max-width: 100%;
+  min-width: 0;
 }
 .omnimux-workflow-chip {
   font-size: 13px;
@@ -53,37 +91,68 @@ export const WORKFLOW_CSS = `
   flex-shrink: 0;
   white-space: nowrap;
 }
-.omnimux-workflow-error {
+.omnimux-workflow-error,
+.omnimux-workflow-library-error {
   margin: 0;
   padding: 6px 20px;
   font-size: 12px;
   color: var(--dsw-alias-state-error-primary, var(--dsw-alias-label-error));
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
 }
-.omnimux-workflow-body {
-  flex: 1;
+.omnimux-workflow-body,
+.omnimux-workflow-library-body {
+  flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
   overflow: auto;
-  padding: 20px;
+  padding: 16px 20px 20px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
 }
 .omnimux-workflow-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
   gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
-.omnimux-workflow-empty {
+.omnimux-workflow-empty,
+.omnimux-workflow-library-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   height: 100%;
-  min-height: 160px;
+  min-height: 200px;
+  padding: 24px 16px;
   color: var(--dsw-alias-label-secondary);
   font-size: 13px;
+  text-align: center;
   border: 1px dashed var(--dsw-alias-border-l4, var(--dsw-alias-border));
   border-radius: 12px;
 }
-.omnimux-workflow-empty p { margin: 0; }
+.omnimux-workflow-empty p,
+.omnimux-workflow-library-empty-title,
+.omnimux-workflow-library-empty-sub { margin: 0; }
+.omnimux-workflow-library-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary, inherit);
+}
+.omnimux-workflow-library-empty-sub {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+}
 .omnimux-workflow-card {
   border: 1px solid var(--dsw-alias-border-l2, var(--dsw-alias-border));
   border-radius: 12px;
@@ -91,6 +160,9 @@ export const WORKFLOW_CSS = `
   cursor: pointer;
   background: var(--dsw-alias-bg-base, var(--dsw-bg));
   min-height: 96px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -103,7 +175,11 @@ export const WORKFLOW_CSS = `
   outline: 2px solid var(--dsw-alias-label-primary);
   outline-offset: 2px;
 }
-.omnimux-workflow-card-main { flex: 1; min-width: 0; }
+.omnimux-workflow-card-main,
+.omnimux-workflow-card-head {
+  flex: 1;
+  min-width: 0;
+}
 .omnimux-workflow-card-title {
   font-size: 14px;
   font-weight: 600;
@@ -118,6 +194,15 @@ export const WORKFLOW_CSS = `
   color: var(--dsw-alias-label-secondary);
   margin-top: 4px;
 }
+.omnimux-workflow-card-desc {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .omnimux-workflow-card-actions {
   display: flex;
   gap: 6px;
@@ -131,6 +216,20 @@ export const WORKFLOW_CSS = `
 .omnimux-workflow-card:focus-within .omnimux-workflow-card-actions {
   opacity: 1;
   pointer-events: auto;
+}
+@media (max-width: 720px) {
+  .omnimux-workflow-action-row,
+  .omnimux-workflow-library-action-row,
+  .omnimux-workflow-library-filter,
+  .omnimux-workflow-body,
+  .omnimux-workflow-library-body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .omnimux-workflow-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
+    gap: 10px;
+  }
 }
 .omnimux-workflow-form {
   display: flex;
