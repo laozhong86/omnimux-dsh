@@ -20,6 +20,7 @@ test('resolveModelBrand: resolves all mainstream models accurately', () => {
   assert.equal(resolveModelBrand('midjourney-8.1'), 'midjourney');
   assert.equal(resolveModelBrand('minimax-h3'), 'minimax');
   assert.equal(resolveModelBrand('grok-imagine'), 'grok');
+  assert.equal(resolveModelBrand('grok-imagine-video-1-5'), 'grok');
   assert.equal(resolveModelBrand('viduq2'), 'vidu');
   assert.equal(resolveModelBrand('speech-2.8-hd'), 'elevenlabs');
 });
