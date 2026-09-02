@@ -63,6 +63,28 @@ function getSnapshot() {
 }
 
 /**
+ * Keep query object identity when field values did not change.
+ * Callers that mistakenly put `state.query` in a React effect dependency
+ * array must not see a new reference on every refresh (React #185).
+ * @param {Partial<typeof DEFAULT_QUERY>} query
+ */
+function normalizeQuery(query) {
+  const next = { ...DEFAULT_QUERY, ...query }
+  const cur = state.query
+  if (
+    cur.tab === next.tab
+    && cur.platform === next.platform
+    && cur.profileId === next.profileId
+    && cur.source === next.source
+    && cur.timeRange === next.timeRange
+    && cur.searchQuery === next.searchQuery
+  ) {
+    return cur
+  }
+  return next
+}
+
+/**
  * @param {Record<string, unknown>} payload
  * @param {typeof DEFAULT_QUERY} query
  */
@@ -85,7 +107,7 @@ function commitPayload(payload, query) {
  * @param {{ force?: boolean, now?: number }} [opts]
  */
 export async function loadDashboard(query = state.query, opts = {}) {
-  const nextQuery = { ...DEFAULT_QUERY, ...query }
+  const nextQuery = normalizeQuery(query)
   const key = cacheKey(nextQuery)
   const hit = cache.get(key)
   const now = opts.now ?? Date.now()
@@ -94,8 +116,13 @@ export async function loadDashboard(query = state.query, opts = {}) {
     return hit.payload
   }
   const seq = ++fetchSeq
-  if (!state.payload) setState({ phase: 'loading', query: nextQuery })
-  else setState({ query: nextQuery })
+  if (!state.payload) {
+    setState(nextQuery === state.query
+      ? { phase: 'loading' }
+      : { phase: 'loading', query: nextQuery })
+  } else if (nextQuery !== state.query) {
+    setState({ query: nextQuery })
+  }
   try {
     const payload = await fetchDashboard(nextQuery, { now })
     if (seq !== fetchSeq) return payload
@@ -119,8 +146,8 @@ export async function loadDashboard(query = state.query, opts = {}) {
  * @param {{ debounceMs?: number }} [opts]
  */
 export function setQuery(patch, opts = {}) {
-  const nextQuery = { ...state.query, ...patch }
-  setState({ query: nextQuery })
+  const nextQuery = normalizeQuery({ ...state.query, ...patch })
+  if (nextQuery !== state.query) setState({ query: nextQuery })
   if (state.snapshot) {
     setState({ payload: applyDashboardQuery(state.snapshot, nextQuery) })
   }
