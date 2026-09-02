@@ -6,9 +6,11 @@ import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const dialogPath = join(here, 'client', 'ProductFormDialog.jsx')
+const stagePath = join(here, 'client', 'ProductsStage.jsx')
 const stylesPath = join(here, 'client', 'styles.js')
 const iconsPath = join(here, 'client', 'icons.jsx')
 const dialogJsx = readFileSync(dialogPath, 'utf8')
+const stageJsx = readFileSync(stagePath, 'utf8')
 const stylesJs = readFileSync(stylesPath, 'utf8')
 const iconsJsx = readFileSync(iconsPath, 'utf8')
 
@@ -81,5 +83,21 @@ describe('OmniMux Products self-drawn form modal contract', () => {
     assert.doesNotMatch(dialogJsx, /<button\b/)
     assert.doesNotMatch(dialogJsx, /<select\b/)
     assert.doesNotMatch(dialogJsx, /style=\{\{/)
+  })
+
+  it('ProductsStage wires both ProductFormDialog calls with data/onAction (not flat props)', () => {
+    const callBlocks = [...stageJsx.matchAll(/<ProductFormDialog[\s\S]*?\/>/g)].map((m) => m[0])
+    assert.equal(callBlocks.length, 2, `expected 2 ProductFormDialog calls, got ${String(callBlocks.length)}`)
+    for (const block of callBlocks) {
+      assert.match(block, /data=\{\{/)
+      assert.match(block, /onAction=\{\{/)
+      assert.match(block, /onPick:\s*handlePick/)
+      assert.doesNotMatch(block, /onPickPath=/)
+      assert.doesNotMatch(block, /onSave=/)
+      assert.doesNotMatch(block, /onClose=/)
+      assert.doesNotMatch(block, /\bproduct=\{/)
+    }
+    assert.match(stageJsx, /mode:\s*'create'/)
+    assert.match(stageJsx, /mode:\s*'edit'/)
   })
 })

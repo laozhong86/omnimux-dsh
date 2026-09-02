@@ -284,29 +284,25 @@ export function ProductsStage({ t, stage, store, visible = true }) {
 
       {creating && (
         <ProductFormDialog
-          product={null}
-          busy={busy}
-          error={formError}
-          dirty={false}
-          onDirtyChange={() => {}}
-          onPickPath={handlePick}
-          onSave={handleSaveProduct}
-          onClose={() => { setCreating(false); setFormError('') }}
           t={t}
+          data={{ mode: 'create', busy, error: formError, dirty: false, initial: null }}
+          onAction={{
+            onCancel: () => { setCreating(false); setFormError('') },
+            onPick: handlePick,
+            onSubmit: (payload) => { void handleSaveProduct(payload) },
+          }}
         />
       )}
 
       {editing && (
         <ProductFormDialog
-          product={editing}
-          busy={busy}
-          error={formError}
-          dirty={editingDirty}
-          onDirtyChange={setEditingDirty}
-          onPickPath={handlePick}
-          onSave={handleSaveProduct}
-          onClose={() => { setEditing(null); setFormError(''); setEditingDirty(false) }}
           t={t}
+          data={{ mode: 'edit', busy, error: formError, dirty: editingDirty, initial: editing }}
+          onAction={{
+            onCancel: () => { setEditing(null); setFormError(''); setEditingDirty(false) },
+            onPick: handlePick,
+            onSubmit: (payload) => { void handleSaveProduct(payload, editing.id) },
+          }}
         />
       )}
 
