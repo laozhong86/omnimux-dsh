@@ -590,6 +590,20 @@ export function isWorkbenchOpen(tabId) {
   return tabIsOpen(snapshot?.state, tabId)
 }
 
+/**
+ * Left-row selection predicate: focused workbench tab only.
+ * Presence (`isOpen`) may be true for several coexisting tabs; only the
+ * active leaf tab lights the matching left entry. Cleared while the right
+ * panel is collapsed (`panelOpen === false` / focus `chat`).
+ */
+export function isWorkbenchActive(tabId) {
+  if (!tabId) return false
+  const snapshot = liveSnapshot()
+  const state = snapshot?.state
+  if (!state || state.panelOpen === false) return false
+  return activeTabId(state) === tabId
+}
+
 function subscribeWorkbench(listener) {
   if (typeof listener !== 'function') return () => {}
   listeners.add(listener)
@@ -650,6 +664,7 @@ function createApi() {
     closeTab: closeWorkbenchTab,
     closePanel: closeWorkbenchPanel,
     isOpen: isWorkbenchOpen,
+    isActive: isWorkbenchActive,
     isWorkbenchTab,
     resolveDefaultFocus,
     subscribe: subscribeWorkbench,
@@ -712,6 +727,7 @@ export function createWorkbenchSidebarStore(options) {
   return {
     getSnapshot() {
       const api = apiOf()
+      if (api && typeof api.isActive === 'function') return Boolean(api.isActive(tabId))
       return Boolean(api && typeof api.isOpen === 'function' && api.isOpen(tabId))
     },
     subscribe(listener) {

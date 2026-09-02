@@ -20,7 +20,7 @@ function createProductsWorkbenchStore(t) {
   const api = () => (typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined)
   return {
     getSnapshot() {
-      return Boolean(api()?.isOpen?.(PRODUCTS_TAB_ID))
+      return Boolean(api()?.isActive?.(PRODUCTS_TAB_ID))
     },
     subscribe(listener) {
       if (typeof listener !== 'function') return () => {}

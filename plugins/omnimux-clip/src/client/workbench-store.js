@@ -18,7 +18,7 @@ function workbenchApi() {
 export function createClipWorkbenchStore(t) {
   return {
     getSnapshot() {
-      return Boolean(workbenchApi()?.isOpen?.(CLIP_TAB_ID))
+      return Boolean(workbenchApi()?.isActive?.(CLIP_TAB_ID))
     },
     subscribe(listener) {
       if (typeof listener !== 'function') return () => {}

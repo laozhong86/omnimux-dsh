@@ -12,13 +12,15 @@ afterEach(() => {
 test('clip sidebar store.open talks to workbench and never claims product stage', async () => {
   let claimed = 0
   const opened = []
+  let activeId = null
   const html = { dataset: {} }
   globalThis.window = {
     __omnimuxStage: { claim() { claimed += 1 } },
     __omnimuxWorkbench: {
       isOpen: (id) => opened.some((row) => row.tabId === id),
+      isActive: (id) => activeId === id,
       subscribe: () => () => {},
-      open: async (opts) => { opened.push(opts); return true },
+      open: async (opts) => { opened.push(opts); activeId = opts.tabId; return true },
       closePanel: () => {},
     },
     document: { documentElement: html },
