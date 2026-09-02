@@ -67,7 +67,7 @@ Clip overlay (`ClipStage`) remains **only** for canvas-node portal (`openFromCan
 | mode | Geometry | Conversation |
 |---|---|---|
 | `split` | Default width (~420px conversation, rest GUI). Restores the last **per-tab** split width if the user had one. | Visible |
-| `gui` | Panel width = `viewport −` official left rail. Conversation is squeezed by better-sidebar `#root { margin-right }`. Hub **MUST** re-apply this width when the left rail expands/collapses (`installWorkbenchLeftRailObserver`); a stale width sized for the collapsed ~56px rail lets the fixed `z-index:40` panel cover the expanded session list. | Mounted, visually collapsed |
+| `gui` | Panel width = `viewport −` official left rail. Conversation is squeezed by better-sidebar `#root { margin-right }`. Hub **MUST** re-apply this width when the left rail expands/collapses (`installWorkbenchLeftRailObserver`); a stale width sized for the collapsed ~56px rail lets the fixed `z-index:40` panel cover the expanded session list. `getFocus` **MUST NOT** rewrite stored `gui` intent to `split` merely because the stale width is no longer near the new rail target (that made `syncWorkbenchGuiWidth` no-op — #356). Sync **MUST** also clamp any open panel wider than `viewport −` left rail. Left-rail measure **MUST** ignore mid-animation widths below `WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX` (200) so a half-open tween cannot poison gui math. | Mounted, visually collapsed |
 | `chat` | `panelOpen: false`. Tab ids stay in the session snapshot. | Full remaining width |
 
 ### Default Focus Rule

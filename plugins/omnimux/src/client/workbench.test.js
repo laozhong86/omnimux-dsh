@@ -3,6 +3,7 @@ import { afterEach, test } from 'node:test'
 import {
   WORKBENCH_FOCUS,
   WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX,
+  WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX,
   WORKBENCH_OCCUPANTS,
   WORKBENCH_TAB_TITLE_FALLBACKS,
   activeTabId,
@@ -21,6 +22,8 @@ import {
   resetWorkbenchForTests,
   resolveDefaultFocus,
   resolveWorkbenchTabTitle,
+  focusRecordForTab,
+  getWorkbenchFocus,
   setWorkbenchFocus,
   syncWorkbenchGuiWidth,
   tabIsOpen,
@@ -262,6 +265,28 @@ test('officialSessionSidebarWidth falls back when expanded rail is crushed to ra
   )
 })
 
+test('officialSessionSidebarWidth ignores mid-animation widths below expanded min (#356)', () => {
+  let liveWidth = 80
+  const doc = {
+    querySelector(sel) {
+      if (sel === '[data-sidebar-collapsed]') return null
+      if (sel === '[data-pane="sidebar"], [class*="sidebarCol"]') {
+        return { getBoundingClientRect: () => ({ width: liveWidth }) }
+      }
+      return null
+    },
+  }
+  globalThis.document = doc
+  globalThis.window = { document: doc }
+  assert.equal(officialSessionSidebarWidth({ officialSidebarWidth: 280 }), 280)
+  // Expand tween 80px must not replace the healthy 280 seed.
+  assert.ok(liveWidth < WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX)
+  assert.equal(officialSessionSidebarWidth(), 280)
+  assert.equal(workbenchGuiWidthPx(makeState([], 1000), { viewportWidth: 1728 }), 1448)
+  liveWidth = 280
+  assert.equal(officialSessionSidebarWidth(), 280)
+})
+
 test('syncWorkbenchGuiWidth resizes gui panel after left rail width changes', () => {
   setupWindow()
   let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 1672, true)
@@ -278,6 +303,50 @@ test('syncWorkbenchGuiWidth resizes gui panel after left rail width changes', ()
   assert.equal(synced, true)
   assert.equal(state.width, 1448)
   assert.equal(inferWorkbenchFocus(state, { viewportWidth: 1728, officialSidebarWidth: 280 }), WORKBENCH_FOCUS.gui)
+})
+
+test('getFocus keeps gui intent when stale collapsed-rail width looks like split (#356)', () => {
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 780, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-gui-stale', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  const api = installWorkbenchGlobal()
+  api.attachStore(store)
+  setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, { viewportWidth: 1728, officialSidebarWidth: 280 })
+  assert.equal(state.width, 1448)
+  // Simulate the live bug: width still sized for the collapsed 56px rail.
+  state.width = 1672
+
+  // Geometry alone says split once the left rail is 280 (1672 ≉ 1448).
+  assert.equal(
+    inferWorkbenchFocus(state, { viewportWidth: 1728, officialSidebarWidth: 280 }),
+    WORKBENCH_FOCUS.split,
+  )
+  // getFocus must not clobber stored gui — otherwise sync no-ops and the panel covers the rail.
+  assert.equal(
+    getWorkbenchFocus({ viewportWidth: 1728, officialSidebarWidth: 280 }),
+    WORKBENCH_FOCUS.gui,
+  )
+  const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 280 })
+  assert.equal(synced, true)
+  assert.equal(state.width, 1448)
+})
+
+test('syncWorkbenchGuiWidth clamps oversized width even after mode was clobbered to split', () => {
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 1672, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-clamp-split', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  const record = focusRecordForTab('s-clamp-split', 'omnimux-assets:library')
+  record.mode = WORKBENCH_FOCUS.split
+
+  const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 280 })
+  assert.equal(synced, true)
+  assert.equal(state.width, 1448)
 })
 
 test('inferWorkbenchFocus maps collapsed / full / split geometry', () => {

@@ -1,0 +1,35 @@
+{
+  "issue": 356,
+  "date": "2026-09-02",
+  "port": 44120,
+  "app": "OmniMux Dev.app",
+  "profile": "~/.omnimux-dev",
+  "unitTests": {
+    "command": "node --test plugins/omnimux/src/client/workbench.test.js",
+    "passed": 24,
+    "failed": 0
+  },
+  "liveProbes": [
+    {
+      "name": "getFocus-preserves-gui-after-stale-width",
+      "result": "pass",
+      "detail": "setFocus(gui,@56) then getFocus(@280) stayed gui (was split before fix); syncGuiWidth 1672→1448"
+    },
+    {
+      "name": "ui-path-collapse-gui-expand",
+      "result": "pass",
+      "detail": "after expand stateW auto-corrected 1672→1448; coveredHitCount=0 at x=40/100/180/250 while sideW healthy"
+    },
+    {
+      "name": "mid-animation-poison",
+      "result": "mitigated-in-code",
+      "detail": "Observed live: expand tween ~80px briefly wrote width 1648 before hardening. Fix: EXPANDED_MIN_PX=200 + 50ms debounce. Covered by unit test officialSessionSidebarWidth ignores mid-animation widths."
+    }
+  ],
+  "screenshots": [
+    "docs/evidence/issue-356-after-fix.png",
+    "docs/evidence/sidebar-overlap-before-fix.png",
+    "docs/evidence/sidebar-overlap-after-fix.png"
+  ],
+  "residualRisk": "Ego-browser tab later hung on document.readyState after repeated reloads (401 unauthenticated curl). Geometry assertions above were captured on the same Dev host before the hang."
+}

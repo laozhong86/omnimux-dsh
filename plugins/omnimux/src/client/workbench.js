@@ -15,8 +15,15 @@ export const WORKBENCH_CONVERSATION_MIN_PX = 360
 export const WORKBENCH_FOCUS_NEAR_PX = 24
 /** Official collapsed rail is ~56px; anything at or below this is "rail-sized". */
 export const WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX = 72
+/**
+ * Healthy expanded rail is ~280px. Mid-animation widths (e.g. 80–200) sit above
+ * the collapsed max but must NOT poison `lastExpandedOfficialWidth` / gui math.
+ */
+export const WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX = 200
 /** Fallback when the expanded left rail is crushed by an oversized right panel. */
 export const WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX = 280
+/** Debounce left-rail resize sync so mid-tween frames do not write a half-open width. */
+export const WORKBENCH_LEFT_RAIL_SYNC_DEBOUNCE_MS = 50
 export const WORKBENCH_FOCUS = Object.freeze({
   split: 'split',
   gui: 'gui',
@@ -203,7 +210,7 @@ export function isOfficialSidebarCollapsed(doc = hostDocument()) {
 export function officialSessionSidebarWidth(env = {}) {
   if (typeof env.officialSidebarWidth === 'number' && Number.isFinite(env.officialSidebarWidth)) {
     const forced = Math.max(0, env.officialSidebarWidth)
-    if (forced > WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX) lastExpandedOfficialWidth = Math.round(forced)
+    if (forced >= WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX) lastExpandedOfficialWidth = Math.round(forced)
     return forced
   }
   const doc = hostDocument()
@@ -213,35 +220,60 @@ export function officialSessionSidebarWidth(env = {}) {
   const width = column.getBoundingClientRect().width
   if (typeof width !== 'number' || !Number.isFinite(width) || width <= 0) return 0
   const collapsed = isOfficialSidebarCollapsed(doc)
-  if (!collapsed && width <= WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX) {
+  // Crushed under an oversized panel, or mid expand/collapse tween: keep last healthy width.
+  if (!collapsed && width < WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX) {
     return lastExpandedOfficialWidth
   }
-  if (!collapsed && width > WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX) {
+  if (!collapsed && width >= WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX) {
     lastExpandedOfficialWidth = Math.round(width)
   }
   return width
 }
 
 /**
- * Re-apply `gui` geometry from the live left rail. No-op unless focus is gui
- * (or the panel width still matches a stale gui target).
+ * Re-apply `gui` geometry from the live left rail.
+ * Also clamps any open panel that is wider than `viewport − leftRail` so the
+ * fixed right panel cannot cover the official session list (#353 / #356).
  * @returns {boolean} whether a write was attempted
  */
 export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
   const snapshot = liveSnapshot(store)
   const state = snapshot?.state
   if (!state || state.panelOpen === false) return false
-  const inferred = inferWorkbenchFocus(state, env)
   const tabId = activeTabId(state)
   const record = focusRecordForTab(snapshot?.sessionId, tabId)
-  if (inferred !== WORKBENCH_FOCUS.gui && record.mode !== WORKBENCH_FOCUS.gui) return false
-  return setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, env, tabId)
+  const target = workbenchGuiWidthPx(state, env)
+  const inferred = inferWorkbenchFocus(state, env)
+  const wantsGui = record.mode === WORKBENCH_FOCUS.gui || inferred === WORKBENCH_FOCUS.gui
+  const oversized = typeof state.width === 'number'
+    && Number.isFinite(state.width)
+    && state.width > target + WORKBENCH_FOCUS_NEAR_PX
+
+  if (wantsGui) {
+    return setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, env, tabId)
+  }
+  // Independence invariant: even a "split" record must not cover the left rail
+  // (stale gui width after getFocus clobber looks like split and used to no-op).
+  if (!oversized || !store || typeof store.reduce !== 'function') return false
+  store.reduce((current) => {
+    if (typeof current?.width !== 'number' || !Number.isFinite(current.width)) return current
+    const next = Math.min(current.width, target)
+    if (Math.abs(current.width - next) < 1) return current
+    return { ...current, width: next }
+  })
+  emit()
+  return true
 }
 
 function scheduleGuiWidthSync() {
-  if (leftRailSyncTimer != null) return
+  if (leftRailSyncTimer != null) {
+    const win = hostWindow()
+    if (win?.clearTimeout) win.clearTimeout(leftRailSyncTimer)
+    else clearTimeout(leftRailSyncTimer)
+    leftRailSyncTimer = null
+  }
   const win = hostWindow()
-  const schedule = win?.requestAnimationFrame || ((fn) => setTimeout(fn, 16))
+  const schedule = (fn) => (win?.setTimeout ? win.setTimeout(fn, WORKBENCH_LEFT_RAIL_SYNC_DEBOUNCE_MS) : setTimeout(fn, WORKBENCH_LEFT_RAIL_SYNC_DEBOUNCE_MS))
   leftRailSyncTimer = schedule(() => {
     leftRailSyncTimer = null
     syncWorkbenchGuiWidth()
@@ -303,7 +335,7 @@ export function uninstallWorkbenchLeftRailObserver() {
   }
   if (leftRailSyncTimer != null) {
     const win = hostWindow()
-    if (win?.cancelAnimationFrame) win.cancelAnimationFrame(leftRailSyncTimer)
+    if (win?.clearTimeout) win.clearTimeout(leftRailSyncTimer)
     else clearTimeout(leftRailSyncTimer)
     leftRailSyncTimer = null
   }
@@ -432,9 +464,21 @@ export function inferWorkbenchFocus(state, env = {}) {
 
 export function getWorkbenchFocus(env = {}) {
   const snapshot = liveSnapshot()
-  const inferred = inferWorkbenchFocus(snapshot?.state, env)
-  const tabId = activeTabId(snapshot?.state)
+  const state = snapshot?.state
+  const inferred = inferWorkbenchFocus(state, env)
+  const tabId = activeTabId(state)
   const record = focusRecordForTab(snapshot?.sessionId, tabId)
+
+  // Preserve explicit gui intent while the panel is open. A width sized for the
+  // collapsed ~56px rail is farther than NEAR from the expanded-rail gui target;
+  // rewriting record.mode to split here makes syncWorkbenchGuiWidth no-op and
+  // leaves the fixed panel covering the session list (#356).
+  if (record.mode === WORKBENCH_FOCUS.gui && state?.panelOpen !== false) {
+    return WORKBENCH_FOCUS.gui
+  }
+  if (record.mode === WORKBENCH_FOCUS.chat && state?.panelOpen === false) {
+    return WORKBENCH_FOCUS.chat
+  }
   record.mode = inferred
   return inferred
 }
