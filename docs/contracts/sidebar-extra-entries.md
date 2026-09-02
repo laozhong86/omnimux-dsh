@@ -38,7 +38,6 @@ MUST NOT use 13px labels or 16px filled icons on these rows. MUST NOT invent a s
 | `[data-omnimux-app-tabs]` | `omnimux` | Dynamic app tab rows (see below) |
 | `[data-dsh-taskboard-entry]` | `dsh-taskboard-plugin` (fork) | 任务看板 / Taskboard |
 | `[data-omnimux-esc-entry]` | `omnimux-gallery`（历史 marker，现网无独立 gallery 包） | 专家·技能·连接器（**已迁** `omnimux-market`） |
-| `[data-omnimux-market-entry]` | `omnimux-market` | 专家馆 / 广场（rank 3.2）。**Workbench 入口**：点开 `omnimux-market:plaza` Tab，**不得** `claimProductStage`，**不得** `sidebar.footer.action`，**不得** `document.body` 全屏 portal。见 [workbench-split.md](./workbench-split.md) |
 | `[data-dsh-omnimux-workflow-entry]` | `omnimux-workflow` | 项目 / Projects（rank 4 现网）。**Workbench 入口**：点开 `omnimux-workflow:library` Tab，**不得** `claimProductStage`。打开项目后激活 `omnimux-workflow:canvas`（默认 split），库 Tab 保留。 |
 | `[data-dsh-omnimux-new-project-entry]` | `omnimux-workflow` | 新建项目 / New Project（展开：`kind:'inline'` 并排「新建会话」。收起：CSS 藏项目按钮，点官方加号弹出「新建会话 / 新建项目」，选中再 click 原按钮。折叠态属性在 AppFrame，不在 html。收起 wrapper 可用 `display:contents`，但官方加号上的 `flex:1` **必须**收回 `flex:none` + 36×36，否则会吃掉会话列表高度变成竖条） |
 | `[data-omnimux-assets-entry]` | `omnimux-assets` | 资产库（rank 6 现网）。**Workbench**：`omnimux-assets:library`，不得 claim |
@@ -52,7 +51,7 @@ MUST NOT use 13px labels or 16px filled icons on these rows. MUST NOT invent a s
 ## Offline vs Cloud Visibility
 
 Extra rows follow [docs/contracts/plugin-offline-cloud-matrix.md](./plugin-offline-cloud-matrix.md):
-- `access: 'offline'`: Always visible. Clicking directly opens the **workbench Tab** without login blocking. (Workflow, Assets, Products, Clip, Market plaza).
+- `access: 'offline'`: Always visible. Clicking directly opens the **workbench Tab** without login blocking. (Workflow, Assets, Products, Clip). Plaza is offline too, but its left entry is the Settings-foot slot below, not an extra row.
 - `access: 'cloud'`: Always visible. Clicking triggers explicit auth gating (`ensureLogin({ kind: 'explicit' })`), opening the **workbench Tab** upon successful login. (Analytics, Publish, Accounts, Inspiration).
 - Policy D (Visitor Polite Interception): Cancelling a login prompt suppresses subsequent passive navigation prompts (`kind: 'nav'`) for the remainder of the session, while explicit clicks (`kind: 'explicit'`) and write operations (`kind: 'write'`) are never suppressed.
 
@@ -60,7 +59,11 @@ New extra rows MUST reuse these metrics (copy the CSS block or import the same n
 
 ## Placement
 
-There is no official slot under 新会话. Extra rows are DOM-injected after the new-session button. Order is **rank-sorted** by the hub coordinator (`window.__omnimuxSidebar`); do not invent a second observer. Do not register workbench / library / plaza as `sidebar.footer.action` (that seat is the Settings foot / Hub updater).
+There is no official slot under 新会话. Extra rows are DOM-injected after the new-session button. Order is **rank-sorted** by the hub coordinator (`window.__omnimuxSidebar`); do not invent a second observer.
+
+**Plaza exception (#381):** `omnimux-market` is **not** an extra row. Its left entry is `sidebar.footer.action` (id `omnimux-market-plaza`, order 8, marker `[data-omnimux-market-entry]`), immediately above the official Settings foot. Click opens workbench Tab `omnimux-market:plaza`. MUST NOT claim overlay, MUST NOT use `document.body` 全屏 portal, MUST NOT also register an extra row under 新会话.
+
+Library pages (assets / products / accounts / inspiration / publish / analytics / workflow / clip) MUST NOT register `sidebar.footer.action`. That seat is the Settings foot, Hub updater (`omnimux-desktop-updater`, order 10), and the plaza trigger.
 
 ## Dynamic app tabs
 
@@ -97,7 +100,7 @@ MUST NOT fake a tab as a real session row (no `conversation.view`, no session da
 
 MUST NOT register workbench pages as `conversation.view`. That slot is a session-hosted tab (chat / trajectory / team run).
 
-MUST NOT register plaza / library as `sidebar.footer.action` (that seat is the Settings foot / Hub updater).
+MUST NOT register library pages as `sidebar.footer.action`. Plaza is the exception: it occupies `sidebar.footer.action` above Settings and still opens `omnimux-market:plaza` on the workbench.
 
 Workbench tabs do **not** set `data-dsh-product-stage`, so product-stage chrome MUST NOT hide the right panel for them. See [workbench-split.md](./workbench-split.md).
 

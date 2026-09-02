@@ -55,7 +55,7 @@ Official AppFrame is already `sidebar | conversation | details`. Workbench does 
 | `omnimux-analytics:library` | `omnimux-analytics` | `gui` | `[data-omnimux-analytics-entry]` |
 | `omnimux-workflow:library` | `omnimux-workflow` | `gui` | `[data-dsh-omnimux-workflow-entry]` |
 | `omnimux-workflow:canvas` | `omnimux-workflow` | `split` | not a left-row; opened after a project session |
-| `omnimux-market:plaza` | `omnimux-market` | `gui` | `[data-omnimux-market-entry]` |
+| `omnimux-market:plaza` | `omnimux-market` | `gui` | `sidebar.footer.action` `[data-omnimux-market-entry]`（设置上方，不是新会话 extra row） |
 | `omnimux-clip:studio` | `omnimux-clip` | `gui` | left-row hidden（marker `[data-omnimux-clip-entry]` 保留未挂载）；画布/Agent 打开 |
 
 Clip overlay (`ClipStage`) remains **only** for canvas-node portal (`openFromCanvas`, does not claim). Sidebar clicks MUST NOT call `stage.open()`.
