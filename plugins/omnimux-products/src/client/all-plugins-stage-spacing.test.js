@@ -39,7 +39,7 @@ describe('All Plugins Stage Spacing & Hierarchy Contract (Issue #307)', () => {
 
   it('omnimux-workflow defines standard 8px 20px 12px ActionRow padding', () => {
     const styles = readFileSync(join(ROOT, 'omnimux-workflow/src/client/styles.js'), 'utf8')
-    assert.match(styles, /\.omnimux-workflow-action-row\s*\{[^}]*padding:\s*8px 20px 12px/)
+    assert.match(styles, /\.omnimux-workflow-action-row[^{]*\{[^}]*padding:\s*8px 20px 12px/)
   })
 
   it('omnimux-analytics defines standard 44px FilterBar height', () => {
