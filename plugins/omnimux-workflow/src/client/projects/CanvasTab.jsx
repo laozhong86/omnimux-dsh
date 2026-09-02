@@ -96,9 +96,6 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
       className="omnimux-workflow-canvas-tab"
       data-visible={visible ? 'true' : 'false'}
     >
-      <div className="omnimux-workflow-canvas-hostbar">
-        <div className="omnimux-workflow-canvas-hostbar-title">{t('details.canvasTab')}</div>
-      </div>
       <div className="omnimux-workflow-canvas-body">
         {targetWorkspaceId ? (
           <CanvasBridge onClose={onClose} t={t} locale={activeLocale} workspaceId={targetWorkspaceId} />
