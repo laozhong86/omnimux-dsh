@@ -1086,7 +1086,8 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  /* 素材卡槽与下方提示词输入的呼吸间距（原 4px 过紧） */
+  margin-bottom: 10px;
 }
 
 .wf-config-panel__ref-slots-group {
@@ -1220,7 +1221,8 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   line-height: 1.6;
   color: var(--wb-text-primary);
   font-family: inherit;
-  padding: 0;
+  /* 上内边距给文字呼吸；勿再回 0，否则贴卡槽 */
+  padding: 8px 0 4px;
   min-height: 38px;
   overflow-y: auto;
   transition: min-height 180ms ease;
