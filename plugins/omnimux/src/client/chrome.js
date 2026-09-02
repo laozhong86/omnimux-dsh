@@ -3,8 +3,9 @@ import { ensureProductStageChrome } from './conversation-box.js'
 import { installStageGlobal } from './stage.js'
 import { installSidebarGlobal } from './sidebar-coordinator.js'
 import { installAuthGlobal } from './auth-gate.js'
-import { installWorkbenchGlobal, installWorkbenchLeftRailObserver } from './workbench.js'
+import { installWorkbenchGlobal, installWorkbenchLeftRailObserver, hydrateConversationCollapsed } from './workbench.js'
 import { installChatToggle } from './chat-toggle.js'
+import { ensureConversationCollapseChrome } from './conversation-collapse.js'
 import { NS, en, zh } from './locales.js'
 // x.ai 全壳 overrideTokens 已临时关闭：发送钮在暗色下变成白底白箭头。
 // 恢复时：重新 import applyXaiShellTheme，并把 'theme' 加回 inject + package.json dsh.client.inject。
@@ -41,6 +42,8 @@ export function installHubChrome(ctx) {
   )
   ctx.effect(() => {
     ensureProductStageChrome()
+    ensureConversationCollapseChrome()
+    hydrateConversationCollapsed()
     const unsubToggle = installChatToggle()
     const unsubLeftRail = installWorkbenchLeftRailObserver()
     return () => {

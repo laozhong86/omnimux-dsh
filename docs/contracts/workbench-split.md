@@ -41,7 +41,7 @@ Official AppFrame is already `sidebar | conversation | details`. Workbench does 
 右：dsh-better-sidebar 工作台 Tab（可收起，Tab 状态按会话持久化）
 ```
 
-「关掉对话框」= 把右栏拉到 `viewport − 左栏`（`gui`）。`conversation` slot stays mounted. There is no official `hideConversation`. `chat` (`panelOpen: false`) 收的是**右栏工作台**，不是中间对话。
+「关掉中间会话」(#372) = sticky `conversationCollapsed`（`html[data-omnimux-conversation-collapsed]` + CSS 折叠 `[class*="centerCol"]`）。`conversation` slot stays mounted；**不得**再把「藏中」唯一实现成右栏拉满 `viewport − 左栏`（否则收左栏会让中栏回显）。`gui` 仍可顺带拉满右栏填空，但中栏可见性以 collapsed 布尔为准。There is no official `hideConversation`. `chat` (`panelOpen: false`) 收的是**右栏工作台**，不是中间对话。
 
 ## Occupants
 
@@ -66,9 +66,20 @@ Clip overlay (`ClipStage`) remains **only** for canvas-node portal (`openFromCan
 
 | mode | Geometry | Conversation |
 |---|---|---|
-| `split` | Default width (~420px conversation, rest GUI). Restores the last **per-tab** split width if the user had one. | Visible |
-| `gui` | Panel width = `viewport −` official left rail. Conversation is squeezed by better-sidebar `#root { margin-right }`. Hub **MUST** re-apply this width when the left rail expands/collapses (`installWorkbenchLeftRailObserver`); a stale width sized for the collapsed ~56px rail lets the fixed `z-index:40` panel cover the expanded session list. `getFocus` **MUST NOT** rewrite stored `gui` intent to `split` merely because the stale width is no longer near the new rail target (that made `syncWorkbenchGuiWidth` no-op — #356). Sync **MUST** also clamp any open panel wider than `viewport −` left rail. Left-rail measure **MUST** ignore mid-animation widths below `WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX` (200) so a half-open tween cannot poison gui math. | Mounted, visually collapsed |
-| `chat` | `panelOpen: false`. Tab ids stay in the session snapshot. | Full remaining width |
+| `split` | Default width (~420px conversation, rest GUI). Restores the last **per-tab** split width if the user had one. Also clears `conversationCollapsed`. | Visible |
+| `gui` | Panel width = `viewport −` official left rail (fill aesthetics). Sets `conversationCollapsed=true` (CSS). Left-rail resize may re-apply fill width; **MUST NOT** clear collapsed. Anti-cover rules from #353/#356 still apply. | Mounted, CSS-collapsed |
+| `chat` | `panelOpen: false`. Tab ids stay in the session snapshot. **MUST NOT** change `conversationCollapsed`. | Independent of right panel |
+
+### Pane independence (#372)
+
+| Pane | Control | State |
+|---|---|---|
+| Left | Official `打开/收起侧边栏` | `data-sidebar-collapsed` |
+| Middle | Hub `data-omnimux-chat-toggle` | `conversationCollapsed` |
+| Right | better-sidebar `折叠侧边栏` | `panelOpen` |
+| Bottom | better-sidebar `展开/折叠底部面板` | `bottomOpen` |
+
+Toggling one pane **MUST NOT** flip another pane's sticky intent.
 
 ### Default Focus Rule
 
@@ -106,7 +117,7 @@ Hub injects **one** button as the **first child** of better-sidebar's `toggleClu
 |---|---|
 | Marker | `data-omnimux-chat-toggle` |
 | Host | `[data-dsh-toggle-cluster]` or `[class*="toggleCluster"]` |
-| Action | Toggle `gui ↔ split` on the **active** workbench tab |
+| Action | Toggle `conversationCollapsed`; when collapsing also `setFocus(gui)` to fill the right gap; when expanding `setFocus(split)`. Middle visibility is the CSS flag, not right width alone (#372) |
 | Visible | `panelOpen === true` **and** active tab ∈ Occupants |
 | Hidden / disabled | `chat` (expand the right panel first) |
 | Copy | `gui` → aria `展开对话` / `Show chat`；`split` → `收起对话` / `Hide chat` |

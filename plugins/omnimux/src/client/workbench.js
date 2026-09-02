@@ -6,7 +6,17 @@
  * pattern as `__omnimuxStage`). Vertical plugins read the global — they
  * MUST NOT import this module. Opening a workbench tab MUST NOT set
  * `data-dsh-product-stage` (that chrome hides `[data-dsh-panel-host]`).
+ *
+ * Middle-pane hide (#372) is `conversationCollapsed` (CSS), not solely
+ * "right panel = viewport − left". Left-rail resize must not re-show chat.
  */
+
+import {
+  getConversationCollapsed,
+  hydrateConversationCollapsed,
+  resetConversationCollapseForTests,
+  setConversationCollapsed,
+} from './conversation-collapse.js'
 
 export const WORKBENCH_GLOBAL_KEY = '__omnimuxWorkbench'
 export const WORKBENCH_PANEL_MIN_PX = 280
@@ -29,6 +39,13 @@ export const WORKBENCH_FOCUS = Object.freeze({
   gui: 'gui',
   chat: 'chat',
 })
+
+export {
+  getConversationCollapsed,
+  setConversationCollapsed,
+  hydrateConversationCollapsed,
+  CONVERSATION_COLLAPSED_ATTR,
+} from './conversation-collapse.js'
 
 export const WORKBENCH_OCCUPANTS = Object.freeze([
   'omnimux-workflow:canvas',
@@ -244,7 +261,9 @@ export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
   const record = focusRecordForTab(snapshot?.sessionId, tabId)
   const target = workbenchGuiWidthPx(state, env)
   const inferred = inferWorkbenchFocus(state, env)
-  const wantsGui = record.mode === WORKBENCH_FOCUS.gui || inferred === WORKBENCH_FOCUS.gui
+  const wantsGui = record.mode === WORKBENCH_FOCUS.gui
+    || inferred === WORKBENCH_FOCUS.gui
+    || getConversationCollapsed()
   const oversized = typeof state.width === 'number'
     && Number.isFinite(state.width)
     && state.width > target + WORKBENCH_FOCUS_NEAR_PX
@@ -476,6 +495,10 @@ export function getWorkbenchFocus(env = {}) {
   if (record.mode === WORKBENCH_FOCUS.gui && state?.panelOpen !== false) {
     return WORKBENCH_FOCUS.gui
   }
+  // Sticky middle-collapse also reports as gui while the right panel is open (#372).
+  if (getConversationCollapsed() && state?.panelOpen !== false) {
+    return WORKBENCH_FOCUS.gui
+  }
   if (record.mode === WORKBENCH_FOCUS.chat && state?.panelOpen === false) {
     return WORKBENCH_FOCUS.chat
   }
@@ -505,6 +528,9 @@ export function setWorkbenchFocus(mode, store = attachedStore, env = {}, targetT
   if (mode !== WORKBENCH_FOCUS.chat && sessionId && effectiveTabId) {
     persistSessionFocus(sessionId, effectiveTabId, { mode })
   }
+  // gui/split drive middle-pane collapsed intent; chat (right closed) leaves it alone (#372).
+  if (mode === WORKBENCH_FOCUS.gui) setConversationCollapsed(true, { sessionId })
+  else if (mode === WORKBENCH_FOCUS.split) setConversationCollapsed(false, { sessionId })
   if (!store || typeof store.reduce !== 'function') {
     emit()
     return false
@@ -849,6 +875,9 @@ function createApi() {
     inferFocus: inferWorkbenchFocus,
     syncGuiWidth: syncWorkbenchGuiWidth,
     installLeftRailObserver: installWorkbenchLeftRailObserver,
+    getConversationCollapsed,
+    setConversationCollapsed,
+    hydrateConversationCollapsed,
   }
 }
 
@@ -859,7 +888,13 @@ function createApi() {
 export function installWorkbenchGlobal(target = hostWindow()) {
   if (!target) return createApi()
   const existing = target[WORKBENCH_GLOBAL_KEY]
-  if (existing !== undefined) return existing
+  // Upgrade in place when an older singleton is missing pane APIs (#372).
+  if (existing !== undefined) {
+    if (typeof existing.getConversationCollapsed === 'function') return existing
+    const api = createApi()
+    target[WORKBENCH_GLOBAL_KEY] = api
+    return api
+  }
   const api = createApi()
   target[WORKBENCH_GLOBAL_KEY] = api
   return api
@@ -879,6 +914,7 @@ export function resetWorkbenchForTests(target = hostWindow()) {
   appliedWidthSessions.clear()
   focusStorageBySession.clear()
   lastExpandedOfficialWidth = WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX
+  resetConversationCollapseForTests()
   if (target && Object.prototype.hasOwnProperty.call(target, WORKBENCH_GLOBAL_KEY)) {
     try { delete target[WORKBENCH_GLOBAL_KEY] } catch { target[WORKBENCH_GLOBAL_KEY] = undefined }
   }

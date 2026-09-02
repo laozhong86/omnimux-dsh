@@ -2,11 +2,16 @@
  * Injects a chat expand/collapse toggle button at the first position of the
  * better-sidebar toggleCluster ([data-dsh-toggle-cluster]).
  *
- * Click behavior: toggles between 'split' (chat expanded) and 'gui' (chat collapsed).
- * Visible only when the right panel is open and the active tab is an OmniMux workbench tab.
+ * Click behavior (#372): toggles independent `conversationCollapsed`.
+ * No longer uses setFocus(gui) alone to "hide" chat by stretching the right
+ * panel — that re-coupled middle visibility to left-rail width.
  */
 
-import { WORKBENCH_FOCUS, activeTabId, isWorkbenchTab } from './workbench.js'
+import { activeTabId, isWorkbenchTab } from './workbench.js'
+import {
+  getConversationCollapsed,
+  setConversationCollapsed,
+} from './conversation-collapse.js'
 
 export const CHAT_TOGGLE_ATTR = 'data-omnimux-chat-toggle'
 export const CHAT_TOGGLE_SELECTOR = `[${CHAT_TOGGLE_ATTR}="1"]`
@@ -50,12 +55,10 @@ export function syncChatToggleState(btn) {
     return
   }
 
-  const focus = api.getFocus?.() || 'split'
-  const isGui = focus === WORKBENCH_FOCUS.gui
-
+  const collapsed = getConversationCollapsed()
   btn.style.display = ''
-  btn.setAttribute('data-active', isGui ? 'false' : 'true')
-  const label = isGui
+  btn.setAttribute('data-active', collapsed ? 'false' : 'true')
+  const label = collapsed
     ? (api.t?.('workbench.chatShow') || '展开中间会话栏')
     : (api.t?.('workbench.chatHide') || '收起中间会话栏')
   btn.setAttribute('aria-label', label)
@@ -75,12 +78,17 @@ export function createChatToggleButton(doc = hostDocument()) {
     event.stopPropagation()
     const api = getWorkbenchApi()
     if (!api) return
-    const current = api.getFocus?.() || 'split'
-    if (current === WORKBENCH_FOCUS.gui) {
-      api.setFocus?.(WORKBENCH_FOCUS.split)
+    const nextCollapsed = !getConversationCollapsed()
+    // Independent middle intent first (CSS). Optionally fill the right panel
+    // when hiding chat so the layout has no dead gap — fill must not be the
+    // sole mechanism that "hides" conversation (#372).
+    setConversationCollapsed(nextCollapsed)
+    if (nextCollapsed) {
+      api.setFocus?.('gui')
     } else {
-      api.setFocus?.(WORKBENCH_FOCUS.gui)
+      api.setFocus?.('split')
     }
+    syncChatToggleState(btn)
   })
 
   syncChatToggleState(btn)
