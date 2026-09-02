@@ -8,7 +8,7 @@
 
 import type { Edge } from '@xyflow/react';
 import type { MaterialType } from '../../types/materialNode.ts';
-import { createImportNode, createMaterialNode } from '../../../shared/graph/nodeFactory.ts';
+import { createImportNode } from '../../../shared/graph/nodeFactory.ts';
 import { isNodeConnectionValid } from '../../../shared/graph/connectionConfig.ts';
 import type {
   CanvasInputMutation,
@@ -251,22 +251,17 @@ function placeUpstream(
   };
 }
 
-function targetMaterialType(target: CanvasNode): MaterialType | null {
-  return asMaterialType(nodeData(target).materialType);
-}
-
 /**
  * 计算一次提交对应的 canvas mutation。
  *
  * 画布资源：为尚未连入的选中节点添加 source→target 边。
- * 本地上传：当前节点为媒体且首个文件类型匹配 → 写入当前节点；
- * 其余文件在左侧创建上游素材节点并连线。
+ * 本地上传：全部可用文件都在当前节点左侧创建导入型上游节点并连线，
+ * 不把任何文件写入当前节点卡片（避免把所选素材 patch 进当前节点替换素材）。
  */
 export function planResourcePickerCommit(input: ResourcePickerCommitInput): ResourcePickerCommitPlan {
   const rejected: ResourcePickerRejection[] = [];
   const addEdges: NonNullable<CanvasInputMutation['addEdges']> = [];
   const addNodes: CanvasNode[] = [];
-  const nodePatches: NonNullable<CanvasInputMutation['nodePatches']> = [];
 
   const target = input.nodes.find((node) => node.id === input.targetNodeId);
   if (!target) {
@@ -298,6 +293,8 @@ export function planResourcePickerCommit(input: ResourcePickerCommitInput): Reso
     seenSources.add(nodeId);
   }
 
+  // 本地上传：全部可用文件都在当前节点左侧创建导入型上游并连线。
+  // 产品预期是新建上游节点并连到当前节点，而非把所选文件 patch 进当前卡片。
   const usableFiles = input.localFiles.filter((file) => {
     if (!file.realPath || !MEDIA_TYPES.includes(file.materialType)) {
       rejected.push({ id: file.id, reason: 'unsupported' });
@@ -306,27 +303,10 @@ export function planResourcePickerCommit(input: ResourcePickerCommitInput): Reso
     return true;
   });
 
-  const targetType = targetMaterialType(target);
-  const firstFile = usableFiles[0];
-  const canPatchCurrent =
-    !!targetType
-    && MEDIA_TYPES.includes(targetType)
-    && !!firstFile
-    && firstFile.materialType === targetType;
-
   let upstreamIndex = 0;
-  const filesForNodes = canPatchCurrent ? usableFiles.slice(1) : usableFiles;
-
-  if (canPatchCurrent && firstFile) {
-    nodePatches.push({
-      nodeId: input.targetNodeId,
-      data: mediaPatch(firstFile),
-    });
-  }
-
-  for (const file of filesForNodes) {
+  for (const file of usableFiles) {
     const position = placeUpstream(target, upstreamIndex, file.materialType);
-    const node = createMaterialNode(file.materialType, position, {
+    const node = createImportNode(file.materialType, position, {
       ...mediaPatch(file),
       label: file.name.replace(/\.[^.]+$/, '') || file.name,
     });
@@ -340,13 +320,12 @@ export function planResourcePickerCommit(input: ResourcePickerCommitInput): Reso
     upstreamIndex += 1;
   }
 
-  const hasWork = addNodes.length > 0 || addEdges.length > 0 || nodePatches.length > 0;
+  const hasWork = addNodes.length > 0 || addEdges.length > 0;
   return {
     hasWork,
     rejected,
     addNodes: addNodes.length > 0 ? addNodes : undefined,
     addEdges: addEdges.length > 0 ? addEdges : undefined,
-    nodePatches: nodePatches.length > 0 ? nodePatches : undefined,
   };
 }
 
