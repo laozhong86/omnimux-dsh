@@ -1050,15 +1050,16 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   background: color-mix(in srgb, var(--wb-surface) 96%, transparent);
   backdrop-filter: blur(16px);
   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12);
-  /* 浮层内侧：顶部素材卡槽/操作行与边框留白，上下对称 */
-  padding: 20px 12px;
+  /* 8pt 栅格：四周等距内边距，避免 20/12 上下过重、左右偏紧 */
+  padding: 12px 14px;
 }
 
 /* 内容布局 */
 .wf-config-panel {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  /* Prompt 区块 ↔ 底栏：统一 8px 垂直节奏 */
+  gap: 8px;
 }
 
 /* 音频子模式 Tab 切换 */
@@ -1102,8 +1103,9 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* 素材卡槽与下方提示词输入的呼吸间距（原 4px 过紧） */
-  margin-bottom: 10px;
+  /* 卡槽行与 Prompt 文案：单一间距源，避免再叠 input 上 padding */
+  margin-bottom: 8px;
+  min-height: 32px;
 }
 
 .wf-config-panel__ref-slots-group {
@@ -1113,9 +1115,9 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
 }
 
 .wf-config-panel__ref-thumb-slot {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   border: 1.5px solid var(--wb-border);
   background: var(--wb-surface);
   position: relative;
@@ -1124,6 +1126,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .wf-config-panel__ref-thumb-slot--ready {
@@ -1185,9 +1188,10 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
 }
 
 .wf-config-panel__add-ref-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  /* 与 32px 控件基准对齐（设计规范 IconButton） */
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   border: 1.5px dashed var(--wb-border-strong, rgba(255, 255, 255, 0.28));
   background: transparent;
   color: var(--wb-text-muted);
@@ -1211,10 +1215,11 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   border: none;
   color: var(--wb-text-muted);
   cursor: pointer;
-  padding: 4px;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
+  padding: 0;
+  /* 32px 触控热区；图标视觉仍居中 */
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1234,18 +1239,18 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   background: transparent;
   resize: none;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.55;
   color: var(--wb-text-primary);
   font-family: inherit;
-  /* 上内边距给文字呼吸；勿再回 0，否则贴卡槽 */
-  padding: 8px 0 4px;
-  min-height: 38px;
+  /* 与 header 的 margin-bottom 单一间距源，不再叠加上 padding */
+  padding: 0;
+  min-height: 40px;
   overflow-y: auto;
   transition: min-height 180ms ease;
 }
 
 .wf-config-panel__prompt-input--expanded {
-  min-height: 150px;
+  min-height: 160px;
 }
 
 .wf-config-panel__prompt-input::placeholder {
@@ -1258,9 +1263,18 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding-top: 0;
+  /* 与 panel gap 叠加的额外顶距归零；垂直对齐靠 min-height */
+  padding: 0;
+  margin: 0;
   flex-wrap: nowrap;
   min-height: 32px;
+}
+
+.wf-config-panel__action-group {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6px;
 }
 
 .wf-config-panel__params-group {
