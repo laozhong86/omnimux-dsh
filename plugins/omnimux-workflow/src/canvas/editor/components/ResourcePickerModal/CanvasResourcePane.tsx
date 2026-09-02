@@ -13,6 +13,7 @@ import {
   type ResourceTypeFilter,
   type ResourcePickerView,
 } from '../../utils/resourcePickerPolicy.ts';
+import PreviewThumb from './PreviewThumb.tsx';
 
 export interface CanvasResourcePaneProps {
   items: CanvasResourceItem[];
@@ -42,6 +43,7 @@ const CanvasResourcePane: React.FC<CanvasResourcePaneProps> = ({
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<ResourceTypeFilter>('all');
   const [view, setView] = useState<ResourcePickerView>('grid');
+  const [measured, setMeasured] = useState<Record<string, { width: number; height: number }>>({});
 
   const filterOptions = useMemo(
     () => [
@@ -119,27 +121,20 @@ const CanvasResourcePane: React.FC<CanvasResourcePaneProps> = ({
                 disabled={item.alreadyConnected}
                 title={item.title}
               >
-                <div className="wf-picker-card__thumb">
-                  {item.previewUrl && item.materialType === 'image' ? (
-                    <img src={item.previewUrl} alt="" className="wf-picker-card__media" />
-                  ) : item.previewUrl && item.materialType === 'video' ? (
-                    <video src={item.previewUrl} className="wf-picker-card__media" muted />
-                  ) : (
-                    <span className={`wf-picker-card__fallback wf-picker-card__fallback--${item.materialType}`}>
-                      {t(typeLabelKey(item.materialType))}
-                    </span>
-                  )}
-                  {item.alreadyConnected ? (
-                    <span className="wf-picker-added-badge">
-                      <Check size={11} />
-                      {t('picker.added')}
-                    </span>
-                  ) : (
-                    <span className={`wf-picker-check ${selected ? 'wf-picker-check--on' : ''}`}>
-                      {selected ? <Check size={11} /> : null}
-                    </span>
-                  )}
-                </div>
+                <PreviewThumb
+                  layout="grid"
+                  materialType={item.materialType}
+                  previewUrl={item.previewUrl}
+                  width={measured[item.nodeId]?.width ?? item.width}
+                  height={measured[item.nodeId]?.height ?? item.height}
+                  badge={item.alreadyConnected ? 'added' : selected ? 'selected' : 'none'}
+                  addedLabel={t('picker.added')}
+                  fallbackLabel={t(typeLabelKey(item.materialType))}
+                  mimeOrName={item.previewUrl}
+                  onNaturalSize={(s) =>
+                    setMeasured((prev) => ({ ...prev, [item.nodeId]: s }))
+                  }
+                />
                 <div className="wf-picker-card__meta">
                   <span className="wf-picker-card__name">{item.title}</span>
                   <span className="wf-picker-type-tag">{t(typeLabelKey(item.materialType))}</span>
@@ -162,17 +157,20 @@ const CanvasResourcePane: React.FC<CanvasResourcePaneProps> = ({
                 onClick={() => onToggle(item.nodeId, item.alreadyConnected)}
                 disabled={item.alreadyConnected}
               >
-                <div className="wf-picker-row__thumb">
-                  {item.previewUrl && item.materialType === 'image' ? (
-                    <img src={item.previewUrl} alt="" className="wf-picker-card__media" />
-                  ) : item.previewUrl && item.materialType === 'video' ? (
-                    <video src={item.previewUrl} className="wf-picker-card__media" muted />
-                  ) : (
-                    <span className={`wf-picker-card__fallback wf-picker-card__fallback--${item.materialType}`}>
-                      {t(typeLabelKey(item.materialType))}
-                    </span>
-                  )}
-                </div>
+                <PreviewThumb
+                  layout="list"
+                  materialType={item.materialType}
+                  previewUrl={item.previewUrl}
+                  width={measured[item.nodeId]?.width ?? item.width}
+                  height={measured[item.nodeId]?.height ?? item.height}
+                  badge="none"
+                  fallbackLabel={t(typeLabelKey(item.materialType))}
+                  mimeOrName={item.previewUrl}
+                  className="wf-picker-row__thumb"
+                  onNaturalSize={(s) =>
+                    setMeasured((prev) => ({ ...prev, [item.nodeId]: s }))
+                  }
+                />
                 <div className="wf-picker-row__body">
                   <span className="wf-picker-card__name">{item.title}</span>
                   <span className="wf-picker-row__sub">

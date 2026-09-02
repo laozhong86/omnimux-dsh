@@ -13,6 +13,7 @@ import {
 } from '../../utils/resourcePickerPolicy.ts';
 import { draftFromRealPath, draftsFromPickedPaths, nativePathOf } from '../../utils/localFileDraft.ts';
 import { localFileMediaUrl } from '../../../../shared/localMedia.ts';
+import PreviewThumb from './PreviewThumb.tsx';
 
 export interface LocalUploadPaneProps {
   files: LocalFileDraft[];
@@ -23,6 +24,7 @@ export interface LocalUploadPaneProps {
 const LocalUploadPane: React.FC<LocalUploadPaneProps> = ({ files, onAddFiles, onRemove }) => {
   const t = useT();
   const [dragging, setDragging] = useState(false);
+  const [measured, setMeasured] = useState<Record<string, { width: number; height: number }>>({});
 
   const ingestPaths = useCallback(
     (paths: string[]) => {
@@ -120,15 +122,19 @@ const LocalUploadPane: React.FC<LocalUploadPaneProps> = ({ files, onAddFiles, on
             return (
               <li key={file.id} className="wf-picker-file-item">
                 <div className="wf-picker-file-item__thumb">
-                  {file.materialType === 'image' ? (
-                    <img src={preview} alt="" className="wf-picker-card__media" />
-                  ) : file.materialType === 'video' ? (
-                    <video src={preview} className="wf-picker-card__media" muted />
-                  ) : (
-                    <span className="wf-picker-card__fallback wf-picker-card__fallback--audio">
-                      {t('node.type.audio')}
-                    </span>
-                  )}
+                  <PreviewThumb
+                    layout="list"
+                    materialType={file.materialType}
+                    previewUrl={preview}
+                    width={measured[file.id]?.width}
+                    height={measured[file.id]?.height}
+                    badge="none"
+                    fallbackLabel={t(`node.type.${file.materialType}`)}
+                    mimeOrName={file.mime || file.name}
+                    onNaturalSize={(s) =>
+                      setMeasured((prev) => ({ ...prev, [file.id]: s }))
+                    }
+                  />
                 </div>
                 <div className="wf-picker-row__body">
                   <span className="wf-picker-card__name">{file.name}</span>
