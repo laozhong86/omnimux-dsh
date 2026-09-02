@@ -3,6 +3,7 @@ import { afterEach, test } from 'node:test'
 import {
   WORKBENCH_FOCUS,
   WORKBENCH_OCCUPANTS,
+  WORKBENCH_TAB_TITLE_FALLBACKS,
   activeTabId,
   applyDefaultWidth,
   collectTabs,
@@ -15,6 +16,7 @@ import {
   releaseCurrentProductStage,
   resetWorkbenchForTests,
   resolveDefaultFocus,
+  resolveWorkbenchTabTitle,
   setWorkbenchFocus,
   tabIsOpen,
   workbenchDefaultWidthPx,
@@ -315,4 +317,46 @@ test('createWorkbenchSidebarStore.open never claims product stage', () => {
   adapter.open()
   assert.equal(openedTab?.tabId, 'omnimux-assets:library')
   assert.equal(claimed, 0)
+})
+
+test('resolveWorkbenchTabTitle prefers opts, then getTab, then human fallback (#345)', () => {
+  assert.equal(resolveWorkbenchTabTitle('omnimux-assets:library', '自定义', () => ({ title: '资产库' })), '自定义')
+  assert.equal(
+    resolveWorkbenchTabTitle('omnimux-assets:library', '', () => ({ title: () => '资产库' })),
+    '资产库',
+  )
+  assert.equal(
+    resolveWorkbenchTabTitle('omnimux-accounts:library', '', () => ({ title: 'omnimux-accounts:library' })),
+    WORKBENCH_TAB_TITLE_FALLBACKS['omnimux-accounts:library'],
+  )
+  assert.equal(
+    resolveWorkbenchTabTitle('omnimux-products:library', undefined, undefined),
+    '产品库',
+  )
+  assert.notEqual(
+    resolveWorkbenchTabTitle('omnimux-publish:library', '', () => null),
+    'omnimux-publish:library',
+  )
+})
+
+test('openWorkbench uses human title fallback when getTab has no title (#345)', async () => {
+  const win = setupWindow()
+  const api = installWorkbenchGlobal(win)
+  const opened = []
+  const state = makeState([])
+  api.bind({
+    betterSidebar: {
+      openTab(seed, scope) { opened.push({ seed, scope }) },
+      getTab() { return { id: 'omnimux-assets:library' } },
+      getSnapshot() { return { state } },
+    },
+    sessions: {
+      list: { getSnapshot: () => ({ current: 's-title' }) },
+    },
+  })
+  const ok = await api.open({ tabId: 'omnimux-assets:library', timeoutMs: 0 })
+  assert.equal(ok, true)
+  assert.equal(opened.length, 1)
+  assert.equal(opened[0].seed.title, '资产库')
+  assert.notEqual(opened[0].seed.title, 'omnimux-assets:library')
 })

@@ -32,6 +32,38 @@ export const WORKBENCH_OCCUPANTS = Object.freeze([
   'omnimux-market:plaza',
 ])
 
+/** Human-readable Tab titles when registerTab title is unavailable (#345). */
+export const WORKBENCH_TAB_TITLE_FALLBACKS = Object.freeze({
+  'omnimux-workflow:canvas': '画布工作区',
+  'omnimux-clip:studio': '视频剪辑',
+  'omnimux-assets:library': '资产库',
+  'omnimux-products:library': '产品库',
+  'omnimux-accounts:library': '账号',
+  'omnimux-inspiration:library': '灵感库',
+  'omnimux-publish:library': '发布',
+  'omnimux-analytics:library': '数据分析',
+  'omnimux-workflow:library': '创作',
+  'omnimux-market:plaza': '扩展市场',
+})
+
+export function resolveWorkbenchTabTitle(tabId, optsTitle, getTab) {
+  if (typeof optsTitle === 'string' && optsTitle.trim()) return optsTitle.trim()
+  if (typeof getTab === 'function' && tabId) {
+    try {
+      const desc = getTab(tabId)
+      const raw = desc?.title
+      const fromDesc = typeof raw === 'function' ? raw() : raw
+      if (typeof fromDesc === 'string' && fromDesc.trim() && fromDesc.trim() !== tabId) {
+        return fromDesc.trim()
+      }
+    } catch {
+      // fall through
+    }
+  }
+  if (tabId && WORKBENCH_TAB_TITLE_FALLBACKS[tabId]) return WORKBENCH_TAB_TITLE_FALLBACKS[tabId]
+  return tabId || ''
+}
+
 export function isWorkbenchTab(tabId) {
   if (!tabId || typeof tabId !== 'string') return false
   if (WORKBENCH_OCCUPANTS.includes(tabId)) return true
@@ -505,16 +537,11 @@ export async function openWorkbench(opts = {}) {
 
   closeSeedFiles(service, openScope)
 
-  let title = typeof opts.title === 'string' && opts.title ? opts.title : ''
-  if (!title && service && typeof service.getTab === 'function') {
-    try {
-      const desc = service.getTab(tabId)
-      if (desc?.title) {
-        title = typeof desc.title === 'function' ? desc.title() : String(desc.title)
-      }
-    } catch {}
-  }
-  if (!title) title = tabId
+  const title = resolveWorkbenchTabTitle(
+    tabId,
+    opts.title,
+    service && typeof service.getTab === 'function' ? (id) => service.getTab(id) : undefined,
+  )
   const path = typeof opts.path === 'string' && opts.path ? opts.path : tabId
   service.openTab({
     type: tabId,
