@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-09-02T18:13:30+08:00",
+  "issue": 390,
+  "port": 45120,
+  "taskSpace": "assets-pick-dead-click-390",
+  "taskSpaceId": 360,
+  "url": "http://127.0.0.1:45120/",
+  "assertions": {
+    "1. Add-asset dialog shows 选择文件 and 选择文件夹": true,
+    "2. Before fix: click 选择文件/选择文件夹 throws TypeError onPick is not a function": true,
+    "3. After materialize+reload: click 选择文件 POSTs /omnimux/assets/pick {kind:file}": true,
+    "4. After materialize+reload: click 选择文件夹 POSTs /omnimux/assets/pick {kind:directory}": true,
+    "5. After fix: no TypeError onPick is not a function": true
+  },
+  "details": {
+    "beforeErrors": [
+      "Uncaught TypeError: onPick is not a function",
+      "Uncaught TypeError: onPick is not a function"
+    ],
+    "afterErrors": [],
+    "afterFetches": [
+      { "url": "/omnimux/assets/pick", "method": "POST", "body": "{\"kind\":\"file\"}" },
+      { "url": "/omnimux/assets/pick", "method": "POST", "body": "{\"kind\":\"directory\"}" }
+    ],
+    "screenshots": [
+      "docs/evidence/issue-390/before-dead-click.png",
+      "docs/evidence/issue-390/after-pick-wired.png"
+    ],
+    "materialize": "OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1 ./scripts/sync-to-app.sh omnimux-assets"
+  },
+  "verdict": "PASS",
+  "notes": [
+    "pnpm verify:live assets on 45120 returned HTTP 401 for GET / (host auth); ego-browser session against the same origin is the UI evidence.",
+    "Root cause is workbench-migration prop mismatch in AddAssetDialogItem (88f877c), not a dsh pin / native picker API break.",
+    "Native osascript dialog itself is Host-side; this issue only restores the client click → POST /omnimux/assets/pick path."
+  ]
+}

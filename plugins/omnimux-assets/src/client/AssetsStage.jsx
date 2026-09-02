@@ -291,14 +291,19 @@ function AssetsBody(props) {
 
 function AddAssetDialogItem(props) {
   const { t, feed } = props
+  const onCancel = () => {
+    feed.setCreating(null)
+    feed.setFormError('')
+  }
   return (
     <AddAssetDialog
       t={t}
-      initialType={feed.creating || 'character'}
       busy={feed.busy}
+      presetType={feed.creating || 'character'}
       error={feed.formError}
-      onCancel={() => feed.setCreating(null)}
-      onCreate={feed.handleCreateAsset}
+      onCancel={onCancel}
+      onPick={feed.handlePick}
+      onSubmit={feed.handleCreate}
     />
   )
 }

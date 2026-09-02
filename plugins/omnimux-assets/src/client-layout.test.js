@@ -41,3 +41,22 @@ describe('OmniMux Assets Client 4-Layer Layout Contract', () => {
     assert.doesNotMatch(stylesJs, /box-shadow:\s*0\s+1px\s+2px\s+rgba\(/)
   })
 })
+
+describe('AddAssetDialogItem pick/submit wiring (#390)', () => {
+  const dialogItem = stageJsx.slice(
+    stageJsx.indexOf('function AddAssetDialogItem'),
+    stageJsx.indexOf('function ConfirmRemoveDialogItem'),
+  )
+
+  it('wires onPick and onSubmit to the feed handlers', () => {
+    assert.match(dialogItem, /onPick=\{feed\.handlePick\}/)
+    assert.match(dialogItem, /onSubmit=\{feed\.handleCreate\}/)
+    assert.match(dialogItem, /presetType=/)
+  })
+
+  it('does not use the broken workbench-migration prop names', () => {
+    assert.doesNotMatch(dialogItem, /onCreate=/)
+    assert.doesNotMatch(dialogItem, /handleCreateAsset/)
+    assert.doesNotMatch(dialogItem, /initialType=/)
+  })
+})
