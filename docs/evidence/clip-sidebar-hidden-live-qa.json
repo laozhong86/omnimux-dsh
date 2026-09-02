@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-09-02",
+  "issue": 384,
+  "port": 45120,
+  "topic": "hide-omnimux-clip-left-sidebar-entry",
+  "assertions": {
+    "clipEntryMarkerAbsent": true,
+    "exactClipLabelAbsent": true,
+    "sidebarVisible": [
+      "账号",
+      "创作",
+      "发布",
+      "数据分析",
+      "资产库",
+      "灵感库",
+      "产品库"
+    ],
+    "studioTabStillRegisteredInSource": true
+  },
+  "evidence": "docs/evidence/clip-sidebar-hidden-45120.png",
+  "verdict": "PASS"
+}
