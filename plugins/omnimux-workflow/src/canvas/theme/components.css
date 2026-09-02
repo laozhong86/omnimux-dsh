@@ -1034,7 +1034,8 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-gsc__loading-overlay {
   background: color-mix(in srgb, var(--wb-surface) 96%, transparent);
   backdrop-filter: blur(16px);
   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12);
-  padding: 10px 12px;
+  /* 上下内边距对称，避免顶部 Tab/操作按钮贴边 */
+  padding: 14px 12px;
 }
 
 /* 内容布局 */
