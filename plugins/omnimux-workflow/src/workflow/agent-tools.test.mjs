@@ -15,7 +15,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Writable } from 'node:stream';
@@ -157,7 +157,7 @@ function makeHarness({ gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 30 } }
     return ws.id;
   };
 
-  return { dir, tools, promptSections, dispose, call, tool, seedWorkspace };
+  return { dir, libraryRoot, tools, promptSections, dispose, call, tool, seedWorkspace };
 }
 
 test('agent seats register the twelve tools + workflow:ops prompt section', () => {
@@ -424,6 +424,71 @@ test('workflow_run error paths: args / workspace / mode / subgraph', async () =>
       node_ids: ['ghost'],
     });
     assert.equal(badNode.error, 'invalid-subgraph');
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
+test('workflow_run unbound media generate 惰性种子项目且幂等', async () => {
+  const h = makeHarness();
+  try {
+    const created = await h.call({
+      method: 'POST',
+      url: `${PREFIX}/api/workspaces`,
+      body: { name: '未绑定生视频' },
+    });
+    const wsId = created.body.workspace.id;
+    await h.call({
+      method: 'PUT',
+      url: `${PREFIX}/api/workspaces/${wsId}`,
+      body: {
+        expectedVersion: 0,
+        nodes: [{
+          id: 'vid',
+          type: 'material',
+          position: { x: 0, y: 0 },
+          data: {
+            label: '视频',
+            materialType: 'video',
+            selectedTool: 'video-generation',
+            prompt: '1dog',
+            status: 'ready',
+          },
+        }],
+        edges: [],
+      },
+    });
+
+    const first = await h.tool('workflow_run').execute({
+      workspace_id: wsId,
+      wait: true,
+      timeout_ms: 10000,
+    });
+    assert.ok(!first.error, first.error ?? first.message);
+    assert.ok(first.executionId);
+    assert.equal(first.status, 'completed');
+
+    const dirs = readdirSync(h.libraryRoot, { withFileTypes: true }).filter((e) => e.isDirectory());
+    const seeded = dirs.filter((e) => existsSync(join(h.libraryRoot, e.name, '.omnimux', 'project.json')));
+    assert.equal(seeded.length, 1);
+    const project = JSON.parse(
+      readFileSync(join(h.libraryRoot, seeded[0].name, '.omnimux', 'project.json'), 'utf8'),
+    );
+    assert.ok((project.canvasWorkspaceIds ?? []).includes(wsId));
+    assert.equal(project.title, '未绑定生视频');
+
+    const second = await h.tool('workflow_run').execute({
+      workspace_id: wsId,
+      wait: true,
+      timeout_ms: 10000,
+    });
+    assert.ok(!second.error, second.error ?? second.message);
+    assert.equal(second.status, 'completed');
+    const after = readdirSync(h.libraryRoot, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .filter((e) => existsSync(join(h.libraryRoot, e.name, '.omnimux', 'project.json')));
+    assert.equal(after.length, 1);
   } finally {
     h.dispose();
     rmSync(h.dir, { recursive: true, force: true });

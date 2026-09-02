@@ -7,7 +7,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Writable } from 'node:stream';
@@ -222,12 +222,26 @@ const waitUntil = async (predicate, { timeoutMs = 5000, intervalMs = 15 } = {}) 
 
 // ============================================================================
 
-test('unbound media generate → 400 project-required；text generate 仍可通过', async () => {
+function listSeededProjects(libraryRoot) {
+  if (!existsSync(libraryRoot)) return [];
+  const rows = [];
+  for (const entry of readdirSync(libraryRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const projectFile = join(libraryRoot, entry.name, '.omnimux', 'project.json');
+    if (!existsSync(projectFile)) continue;
+    const project = JSON.parse(readFileSync(projectFile, 'utf8'));
+    rows.push({ dir: join(libraryRoot, entry.name), project });
+  }
+  return rows;
+}
+
+test('unbound media generate → 惰性种子项目 200；text generate 仍可通过', async () => {
   const h = makeHarness();
   try {
     const textId = await h.createLinearWorkspace(1);
     const textExec = await h.startExecution(textId, { mode: 'full' });
     assert.equal(textExec.status, 200);
+    assert.equal(listSeededProjects(h.libraryRoot).length, 0, 'text generate 不得种子项目');
 
     const created = await h.call({
       method: 'POST',
@@ -258,8 +272,31 @@ test('unbound media generate → 400 project-required；text generate 仍可通�
       headers: h.localHeaders,
     });
     const exec = await h.startExecution(wsId, { mode: 'full' });
-    assert.equal(exec.status, 400);
-    assert.equal(exec.body.error, 'project-required');
+    assert.equal(exec.status, 200);
+    assert.ok(exec.body.execution?.id);
+    const completed = await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, exec.body.execution.id);
+      return status.body?.execution?.status === 'completed';
+    });
+    assert.ok(completed, '惰性绑定后 media generate 必须能 persist 到项目根');
+
+    const seeded = listSeededProjects(h.libraryRoot);
+    assert.equal(seeded.length, 1);
+    assert.ok(existsSync(join(seeded[0].dir, '.omnimux', 'project.json')));
+    assert.ok(
+      (seeded[0].project.canvasWorkspaceIds ?? []).includes(wsId),
+      '种子项目必须绑定该 workspace',
+    );
+    assert.equal(seeded[0].project.title, '未绑定生图');
+
+    const again = await h.startExecution(wsId, { mode: 'full' });
+    assert.equal(again.status, 200);
+    assert.equal(listSeededProjects(h.libraryRoot).length, 1, '同 workspace 再执行必须幂等');
+    const againDone = await waitUntil(async () => {
+      const status = await h.executionStatus(wsId, again.body.execution.id);
+      return status.body?.execution?.status === 'completed';
+    });
+    assert.ok(againDone, '幂等再执行仍应完成');
   } finally {
     h.dispose();
     rmSync(h.dir, { recursive: true, force: true });

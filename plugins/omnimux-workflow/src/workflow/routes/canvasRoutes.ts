@@ -80,6 +80,7 @@ import { createLibraryHttpClient } from '../library/libraryHttp';
 import { createProjectAssetsStore } from '../workspace/ProjectAssetsStore';
 import { createProjectStore } from '../../projects/ProjectStore';
 import { ensureLibraryRoot } from '../../projects/library';
+import { bindEnsureProjectBound } from '../../projects/ensureProjectBound';
 import { createTemplateRoutes } from './templateRoutes';
 import { createTableRoutes } from './tableRoutes';
 
@@ -197,7 +198,9 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
   const projectDispatcher = createProjectDispatcher(libraryRoot ? { libraryRoot } : {});
   const staticRoutes = createStaticRoutes({ pluginRoot: PLUGIN_ROOT, gateway });
   const workspaceRoutes = createWorkspaceRoutes(store);
-  const projectStore = createProjectStore({ libraryRoot: libraryRoot ?? ensureLibraryRoot() });
+  const projectStore = deps.projectStore
+    ?? createProjectStore({ libraryRoot: libraryRoot ?? ensureLibraryRoot() });
+  const ensureProjectBound = deps.ensureProjectBound ?? bindEnsureProjectBound(projectStore);
   const libraryHttp = createLibraryHttpClient();
   const assetsStore = deps.assetsStore ?? createProjectAssetsStore({
     workspacesDir: store.workspacesDir,
@@ -206,7 +209,7 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
     promoteToLibrary: libraryHttp.promoteToLibrary,
   });
   const projectAssetsRoutes = createProjectAssetsRoutes(assetsStore);
-  const executionRoutes = createExecutionRoutes({ store, executionManager });
+  const executionRoutes = createExecutionRoutes({ store, executionManager, ensureProjectBound });
   const mediaRoutes = createMediaRoutes(mediaDir);
   const localFileRoutes = createLocalFileRoutes(picker ? { picker } : {});
   const templateRoutes = createTemplateRoutes(templates);

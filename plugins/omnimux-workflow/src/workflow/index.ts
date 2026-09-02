@@ -27,6 +27,7 @@ import { resolveWorkflowPaths } from './paths';
 import { createWorkspaceStore } from './workspace/WorkspaceStore';
 import { createProjectAssetsStore } from './workspace/ProjectAssetsStore';
 import { createProjectStore } from '../projects/ProjectStore';
+import { bindEnsureProjectBound } from '../projects/ensureProjectBound';
 import { ensureLibraryRoot } from '../projects/library';
 import { TemplateStore } from './templates/TemplateStore.ts';
 import type { GenerationGateway } from './seam/gateway';
@@ -80,6 +81,7 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
 
   const libraryRoot = opts.libraryRoot ?? ensureLibraryRoot();
   const projectStore = createProjectStore({ libraryRoot });
+  const ensureProjectBound = bindEnsureProjectBound(projectStore);
   const resolveProjectRoot = (workspaceId: string) => projectStore.findByCanvasWorkspaceId(workspaceId);
   const store = createWorkspaceStore({
     workspacesDir: paths.workspacesDir,
@@ -119,6 +121,8 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
     templates,
     libraryRoot,
     assetsStore,
+    projectStore,
+    ensureProjectBound,
   });
 
   // Recovery pass (Gxgen ExecutionRecoveryService port): resume live runs
@@ -159,6 +163,7 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
           store,
           executionManager,
           mediaDir: paths.mediaDir,
+          ensureProjectBound,
         }),
       );
     };
