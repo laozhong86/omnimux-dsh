@@ -90,7 +90,7 @@ Canvas `applyProjectCanvasRatio` MUST skip while focus is `gui` or `chat`, and M
 |---|---|
 | Storage | `localStorage['omnimux-workbench-focus:v1:' + sessionId]` |
 | Shape | `{ [tabId]: { mode: 'split'\|'gui', splitWidth?: number } }` |
-| Write | User: chat-toggle, FocusBar, drag splitter |
+| Write | User: chat-toggle, drag splitter |
 | Do not write | Pure default open (so a later default-rule change still applies to untouched tabs) |
 | `chat` | Session-level `panelOpen`; **not** stored in the tab table |
 | New session | Empty table → default matrix |
@@ -115,7 +115,7 @@ Hub injects **one** button as the **first child** of better-sidebar's `toggleClu
 
 Injection is idempotent (`insertBefore` only when the button is missing or not first). Do not fork `dsh-better-sidebar`. Do not hide the whole cluster and redraw it.
 
-If a Tab still hosts `.omnimux-workbench-focus`, it MUST talk to the same `setFocus` and stay in sync with the cluster button. P1 may remove the in-tab bar.
+In-tab `.omnimux-workbench-focus` / `WorkbenchFocusBar` is **removed**. Layout focus is owned by the hub chat-toggle (gui↔split) and better-sidebar's panel collapse (`chat`). Vertical tabs MUST NOT reintroduce a FocusBar.
 
 ## Global
 

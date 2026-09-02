@@ -6,7 +6,7 @@
  * 1. 遍历 plugins 下所有 client Stage 组件（*Stage.jsx, ProjectLibraryPage.jsx）：
  *    - 严禁通过 __omnimuxStage.claim 抢占全局全屏 overlay；
  *    - 必须在顶层执行 inject*Styles()；
- *    - 8 大库组件必须包含 WorkbenchFocusBar 或 workbench focus 切换控件；
+ *    - 库页不得再挂 Tab 内 WorkbenchFocusBar（gui↔split 由 hub chat-toggle 负责）；
  *    - 根节点必须使用标准 workbench 容器样式。
  * 2. 遍历 plugins 下所有 stage-store.js：
  *    - 必须导出 createStageStore 工厂函数。
@@ -62,10 +62,10 @@ for (const file of stageFiles) {
     errors++
   }
 
-  // 3. 断言：8大库组件必须包含 WorkbenchFocusBar 或 workbench 控制头
+  // 3. 断言：库页不得再挂 Tab 内 FocusBar（顶角 chat-toggle 已覆盖 gui↔split）
   const isLibraryStage = /AssetsStage|ProductsStage|AccountsStage|InspirationStage|PublishStage|AnalyticsStage|ProjectLibraryPage/.test(basename)
-  if (isLibraryStage && !/WorkbenchFocusBar/.test(content) && !/omnimux-workbench-focus/.test(content)) {
-    console.error(`❌ [Contract Error] ${relPath}: Missing WorkbenchFocusBar component!`)
+  if (isLibraryStage && (/WorkbenchFocusBar/.test(content) || /omnimux-workbench-focus/.test(content))) {
+    console.error(`❌ [Contract Error] ${relPath}: In-tab WorkbenchFocusBar must be removed; use hub chat-toggle instead!`)
     errors++
   }
 }

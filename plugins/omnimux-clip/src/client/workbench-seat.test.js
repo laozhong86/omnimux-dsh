@@ -30,13 +30,10 @@ describe('clip workbench seat (sidebar must not claim overlay)', () => {
     assert.doesNotMatch(source, /omnimux_active_product_stage/)
   })
 
-  it('studio tab hosts the workbench focus switch without claiming overlay', () => {
-    const tab = readFileSync(join(here, 'OpenReelStudioTab.jsx'), 'utf8')
-    const bar = readFileSync(join(here, 'WorkbenchFocusBar.jsx'), 'utf8')
-    assert.match(tab, /WorkbenchFocusBar/)
-    assert.match(bar, /data-omnimux-workbench-focus/)
-    assert.match(bar, /__omnimuxWorkbench/)
-    assert.doesNotMatch(tab, /claimProductStage/)
-    assert.doesNotMatch(bar, /from ['"]omnimux/)
+  it('stage component has no in-tab FocusBar and does not claim overlay', () => {
+    const stage = readFileSync(join(here, 'OpenReelStudioTab.jsx'), 'utf8')
+    assert.doesNotMatch(stage, /WorkbenchFocusBar/)
+    assert.doesNotMatch(stage, /omnimux-workbench-focus/)
+    assert.doesNotMatch(stage, /claimProductStage/)
   })
 })

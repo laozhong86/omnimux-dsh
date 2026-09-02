@@ -9,7 +9,6 @@ import { ConfirmRemoveDialog } from './ConfirmRemoveDialog.jsx'
 import { computeEmptyState } from './feed-helpers.js'
 import { injectAssetsStyles } from './styles.js'
 import { useAssetsFeed } from './use-assets-feed.js'
-import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
 
 const TAB_ID = 'omnimux-assets:library'
 
@@ -32,7 +31,6 @@ function AssetsHeader(props) {
     <PageHeader
       title={t('stage.title')}
       subtitle={t('stage.subtitle')}
-      actions={<WorkbenchFocusBar t={t} />}
       onRefresh={onRefresh}
       refreshing={busy}
       refreshTitle={t('stage.refresh')}

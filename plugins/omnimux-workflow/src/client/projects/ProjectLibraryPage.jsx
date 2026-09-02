@@ -15,7 +15,6 @@ import { injectWorkflowStyles } from '../styles.js'
 import { NewLocalProjectDialog } from './NewLocalProjectDialog.jsx'
 import { createProjectSession, dismissProductStage, runNewProject } from './newProject.js'
 import { activateProjectCanvas } from './projectCanvas.js'
-import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
 
 export const WORKFLOW_LIBRARY_TAB_ID = 'omnimux-workflow:library'
 
@@ -187,7 +186,6 @@ export function ProjectLibraryPage(props) {
       <PageHeader
         title={t('projects.title')}
         subtitle={t('projects.subtitle')}
-        actions={<WorkbenchFocusBar t={t} />}
         onRefresh={() => { void reload() }}
         refreshing={busy}
         refreshTitle={t('projects.refresh')}

@@ -7,7 +7,6 @@ import { sessionToWorkspaceId } from '../../shared/sessionWorkspaceId.ts'
 import { CanvasBridge } from '../CanvasBridge.jsx'
 import { injectWorkflowStyles } from '../styles.js'
 import { applyProjectCanvasRatio, getBetterSidebar } from './projectCanvas.js'
-import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
 
 /**
  * @param {{
@@ -99,7 +98,6 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
     >
       <div className="omnimux-workflow-canvas-hostbar">
         <div className="omnimux-workflow-canvas-hostbar-title">{t('details.canvasTab')}</div>
-        <WorkbenchFocusBar t={t} />
       </div>
       <div className="omnimux-workflow-canvas-body">
         {targetWorkspaceId ? (

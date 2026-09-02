@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { PageHeader } from 'dsh-ui-kit'
 import { AccountsSection } from './AccountsSection.jsx'
 import { injectAccountsStyles } from './styles.js'
-import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
 
 const TAB_ID = 'omnimux-accounts:library'
 
@@ -54,7 +53,6 @@ export function AccountsStage({ t, stage, store, visible = true }) {
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        actions={<WorkbenchFocusBar t={t} />}
         onClose={handleClose}
         closeTitle={t('close')}
       />

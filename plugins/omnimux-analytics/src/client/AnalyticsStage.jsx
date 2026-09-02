@@ -15,7 +15,6 @@ import { PlatformTable } from './components/PlatformTable.jsx'
 import { TopPostsTable } from './components/TopPostsTable.jsx'
 import { StrategyCharts } from './components/StrategyCharts.jsx'
 import { Banner, EmptyState, InboxPlaceholder, LoadingState } from './components/EmptyState.jsx'
-import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
 
 const TAB_ID = 'omnimux-analytics:library'
 
@@ -126,7 +125,6 @@ export function AnalyticsStage({ t, stage, store, visible = true }) {
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        actions={<WorkbenchFocusBar t={t} />}
         trailingAction={(
           <IconButton
             variant="outline"

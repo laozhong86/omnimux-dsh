@@ -6,7 +6,6 @@ import { PlusIcon, RefreshIcon } from './icons.jsx'
 import { ProductFormDialog } from './ProductFormDialog.jsx'
 import { ProductGrid } from './ProductGrid.jsx'
 import { injectProductsStyles } from './styles.js'
-import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
 
 const POLL_MS = 5000
 const TAB_ID = 'omnimux-products:library'
@@ -209,7 +208,6 @@ export function ProductsStage({ t, stage, store, visible = true }) {
       <PageHeader
         title={t('stage.title')}
         subtitle={t('stage.subtitle')}
-        actions={<WorkbenchFocusBar t={t} />}
         onRefresh={() => {
           setBusy(true)
           void refreshState(true).finally(() => { setBusy(false) })

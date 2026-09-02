@@ -21,10 +21,11 @@ describe('market workbench seat (sidebar must not claim overlay)', () => {
     assert.doesNotMatch(source, /slots\.inject\('shell\.overlay'/)
   })
 
-  it('stage component hosts the workbench focus switch without claiming overlay', () => {
+  it('plaza shell has no in-tab FocusBar and does not claim overlay', () => {
     const shell = readFileSync(join(here, 'plaza-shell.js'), 'utf8')
-    assert.match(shell, /PlazaFocusBar/)
-    assert.match(shell, /data-omnimux-workbench-focus/)
+    assert.doesNotMatch(shell, /PlazaFocusBar/)
+    assert.doesNotMatch(shell, /data-omnimux-workbench-focus/)
+    assert.doesNotMatch(shell, /omnimux-workbench-focus/)
     assert.match(shell, /__omnimuxWorkbench/)
     assert.doesNotMatch(shell, /__omnimuxStage\.claim/)
   })

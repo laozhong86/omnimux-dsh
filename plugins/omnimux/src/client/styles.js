@@ -881,35 +881,6 @@ export const HUB_CSS = `
   align-items: center;
 }
 
-.omnimux-workbench-focus {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  height: 24px;
-  padding: 2px;
-  gap: 2px;
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-control, rgba(255, 255, 255, 0.06));
-  border: 1px solid var(--dsw-alias-border-subtle, rgba(255, 255, 255, 0.08));
-}
-.omnimux-workbench-focus-btn {
-  height: 20px;
-  padding: 0 8px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--dsw-alias-label-secondary, inherit);
-  font: var(--dsw-font-s-12, 12px / 16px sans-serif);
-  cursor: pointer;
-}
-.omnimux-workbench-focus-btn[data-active="true"] {
-  background: var(--dsw-alias-interactive-bg-active, rgba(255, 255, 255, 0.12));
-  color: var(--dsw-alias-label-primary, inherit);
-}
-.omnimux-workbench-focus-btn:hover {
-  color: var(--dsw-alias-label-primary, inherit);
-}
-
 .omnimux-models-card {
   display: flex;
   flex-direction: column;

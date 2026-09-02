@@ -1,38 +1,5 @@
     const PLAZA_TAB_ID = "omnimux-market:plaza";
 
-    function PlazaFocusBar() {
-      const [focus, setFocus] = useState(() => (typeof window !== "undefined" ? window.__omnimuxWorkbench?.getFocus?.() || "split" : "split"));
-      useEffect(() => {
-        const api = typeof window !== "undefined" ? window.__omnimuxWorkbench : undefined;
-        if (api && typeof api.subscribe === "function") {
-          return api.subscribe(() => {
-            setFocus(api.getFocus?.() || "split");
-          });
-        }
-      }, []);
-      const modes = [
-        { id: "chat", label: "对话" },
-        { id: "split", label: "分栏" },
-        { id: "gui", label: "工作台" },
-      ];
-      return h("div", { className: "omnimux-workbench-focus", role: "radiogroup", "aria-label": "布局" },
-        modes.map((m) => h("button", {
-          key: m.id,
-          type: "button",
-          role: "radio",
-          "aria-checked": focus === m.id,
-          "data-omnimux-workbench-focus": m.id,
-          "data-active": focus === m.id ? "true" : undefined,
-          className: "omnimux-workbench-focus-btn",
-          onClick: () => {
-            if (typeof window !== "undefined") {
-              window.__omnimuxWorkbench?.setFocus?.(m.id);
-            }
-          },
-        }, m.label))
-      );
-    }
-
     function PlazaTopSearch({ query, onQuery, onSubmit, onClear, placeholder }) {
       return h("div", { className: "sh-plaza-search" },
         h(SearchField, {
@@ -156,7 +123,6 @@
               onClear: handleClear,
               placeholder,
             }),
-            h(PlazaFocusBar),
             h("span", { className: "sh-plaza-close" },
               h(IconButton, {
                 variant: "ghost",
