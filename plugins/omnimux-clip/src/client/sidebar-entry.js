@@ -2,6 +2,9 @@
  * 视频剪辑 row under 新会话, placed by the single sidebar coordinator.
  * Workbench seat: click opens the better-sidebar tab. MUST NOT claim a
  * product-stage overlay (that chrome hides `[data-dsh-panel-host]`).
+ *
+ * Currently unused: `client/index.js` does not call `mountSidebarEntry`
+ * so the left rail stays empty of this row. Keep this module for re-enable.
  */
 import { createSidebarEntry } from 'dsh-ui-kit'
 import { createClipWorkbenchStore } from './workbench-store.js'

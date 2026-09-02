@@ -18,9 +18,9 @@ describe('clip workbench seat (sidebar must not claim overlay)', () => {
     assert.doesNotMatch(source, /claimProductStage/)
   })
 
-  it('client apply mounts the sidebar with a null product stage', () => {
+  it('client apply keeps the studio tab but does not mount the left sidebar row', () => {
     const source = readFileSync(join(here, 'index.js'), 'utf8')
-    assert.match(source, /mountSidebarEntry\(null, t, ctx\.locale\)/)
+    assert.doesNotMatch(source, /mountSidebarEntry\(/)
     assert.match(source, /id: 'omnimux-clip:studio'/)
     assert.match(source, /__omnimuxWorkbench/)
   })

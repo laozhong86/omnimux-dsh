@@ -1,7 +1,6 @@
 import { createElement } from 'react'
 import { OpenReelStudioTab } from './OpenReelStudioTab.jsx'
 import { createStageStore } from './stage-store.js'
-import { mountSidebarEntry } from './sidebar-entry.js'
 import { createAndMountCanvasBridge } from './CanvasBridge.js'
 import { ClipStage } from './ClipStage.jsx'
 
@@ -78,10 +77,12 @@ function renderClipIcon(size = 16) {
  * OmniMux Clip client entry.
  * Mounts:
  * 1. Locale dictionaries (NS: omnimux.clip)
- * 2. Left sidebar extra entry (rank 8.2 under 新会话) → workbench Tab
- * 3. Overlay `ClipStage` kept only for the canvas-node portal
- * 4. Better Sidebar Tab (`omnimux-clip:studio`) — P1 main seat
- * 5. CanvasBridge event listener for omnimux-workflow integration
+ * 2. Overlay `ClipStage` kept only for the canvas-node portal
+ * 3. Better Sidebar Tab (`omnimux-clip:studio`) — P1 main seat (open via canvas / Agent)
+ * 4. CanvasBridge event listener for omnimux-workflow integration
+ *
+ * Left sidebar row under 新会话 is intentionally not mounted (hidden from the rail).
+ * `sidebar-entry.js` remains for a future re-enable.
  *
  * @param {{
  *   locale?: { bind?: Function, register?: Function },
@@ -106,14 +107,6 @@ export function apply(ctx) {
 
   if (typeof ctx.effect === 'function') {
     ctx.effect(() => () => stage.dispose?.(), 'omnimux-clip: stage store')
-  }
-
-  // Sidebar row opens the better-sidebar tab via window.__omnimuxWorkbench.
-  // Pass no product-stage store: claiming omnimux-clip hides the panel host.
-  if (typeof ctx.effect === 'function') {
-    ctx.effect(() => mountSidebarEntry(null, t, ctx.locale), 'omnimux-clip: sidebar entry')
-  } else {
-    mountSidebarEntry(null, t, ctx.locale)
   }
 
   // Mount Canvas Bridge to connect canvas workflow with stage
