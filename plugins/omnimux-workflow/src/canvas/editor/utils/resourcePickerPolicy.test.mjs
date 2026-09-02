@@ -119,8 +119,8 @@ test('planResourcePickerCommit：画布资源只给未连线节点加边，已�
   assert.equal(plan.nodePatches, undefined);
 });
 
-test('planResourcePickerCommit：单文件类型匹配时写入当前节点', () => {
-  const nodes = [materialNode('target', 'image', { status: 'empty' })];
+test('planResourcePickerCommit：单文件也建上游并连线，不写入当前节点', () => {
+  const nodes = [materialNode('target', 'image', { status: 'empty', selectedTool: 'image-to-image' })];
   const plan = planResourcePickerCommit({
     nodes,
     edges: [],
@@ -138,20 +138,24 @@ test('planResourcePickerCommit：单文件类型匹配时写入当前节点', ()
     ],
   });
   assert.equal(plan.hasWork, true);
-  assert.equal(plan.addNodes, undefined);
-  assert.equal(plan.addEdges, undefined);
-  assert.equal(plan.nodePatches?.length, 1);
-  assert.equal(plan.nodePatches[0].nodeId, 'target');
-  assert.equal(plan.nodePatches[0].data.realPath, '/Users/me/hero.png');
-  assert.equal(plan.nodePatches[0].data.status, 'ready');
-  assert.equal(plan.nodePatches[0].data.content, 'hero.png');
-  assert.equal(plan.nodePatches[0].data.mediaUrl.includes('blob:'), false);
-  assert.equal(plan.nodePatches[0].data.mediaUrl.includes('/api/local-file?path='), true);
-  assert.equal(plan.nodePatches[0].data.mediaAssets[0].path, '/Users/me/hero.png');
+  assert.equal(plan.nodePatches, undefined);
+  assert.equal(plan.addNodes?.length, 1);
+  assert.equal(plan.addEdges?.length, 1);
+  assert.equal(plan.addEdges[0].target, 'target');
+  const node = plan.addNodes[0];
+  assert.equal(node.data.materialType, 'image');
+  assert.equal(node.data.nodeKind, 'import');
+  assert.equal(node.data.status, 'ready');
+  assert.equal(node.data.realPath, '/Users/me/hero.png');
+  assert.equal(node.data.content, 'hero.png');
+  assert.equal(node.data.mediaUrl.includes('blob:'), false);
+  assert.equal(node.data.mediaUrl.includes('/api/local-file?path='), true);
+  assert.equal(node.data.mediaAssets[0].path, '/Users/me/hero.png');
+  assert.ok(node.position.x < 400);
 });
 
-test('planResourcePickerCommit：多文件首个写入当前节点，其余创建上游并连线', () => {
-  const nodes = [materialNode('target', 'image', { status: 'empty', position: { x: 600, y: 100 } })];
+test('planResourcePickerCommit：多文件全部建上游，addNodes/addEdges 数等于文件数', () => {
+  const nodes = [materialNode('target', 'image', { status: 'empty', position: { x: 600, y: 100 }, selectedTool: 'image-to-image' })];
   const plan = planResourcePickerCommit({
     nodes,
     edges: [],
@@ -164,18 +168,17 @@ test('planResourcePickerCommit：多文件首个写入当前节点，其余创�
     ],
   });
   assert.equal(plan.hasWork, true);
-  assert.equal(plan.nodePatches?.length, 1);
-  assert.equal(plan.nodePatches[0].data.realPath, '/Users/me/a.png');
-  assert.equal(String(plan.nodePatches[0].data.mediaUrl).includes('blob:'), false);
-  assert.equal(plan.addNodes?.length, 2);
-  assert.equal(plan.addEdges?.length, 2);
+  assert.equal(plan.nodePatches, undefined);
+  assert.equal(plan.addNodes?.length, 3);
+  assert.equal(plan.addEdges?.length, 3);
   assert.ok(plan.addNodes.every((node) => node.position.x < 600));
   assert.ok(plan.addEdges.every((edge) => edge.target === 'target'));
   assert.ok(plan.addNodes.every((node) => node.data.materialType === 'image'));
+  assert.ok(plan.addNodes.every((node) => node.data.nodeKind === 'import'));
 });
 
-test('planResourcePickerCommit：类型合同不匹配的上游不入 mutation', () => {
-  const nodes = [materialNode('target', 'image', { status: 'empty' })];
+test('planResourcePickerCommit：类型合同匹配建上游，不匹配进 rejected 且无 nodePatches', () => {
+  const nodes = [materialNode('target', 'image', { status: 'empty', selectedTool: 'image-to-image' })];
   const plan = planResourcePickerCommit({
     nodes,
     edges: [],
@@ -186,9 +189,11 @@ test('planResourcePickerCommit：类型合同不匹配的上游不入 mutation',
       { id: 'f2', name: 'c.mp4', mime: 'video/mp4', size: 1, realPath: '/Users/me/c.mp4', materialType: 'video' },
     ],
   });
-  assert.equal(plan.nodePatches?.length, 1);
-  assert.equal(plan.addNodes, undefined);
-  assert.equal(plan.addEdges, undefined);
+  assert.equal(plan.nodePatches, undefined);
+  assert.equal(plan.addNodes?.length, 1);
+  assert.equal(plan.addEdges?.length, 1);
+  assert.equal(plan.addNodes[0].data.materialType, 'image');
+  assert.equal(plan.addNodes[0].data.nodeKind, 'import');
   assert.equal(plan.rejected.some((r) => r.id === 'f2' && r.reason === 'type_contract'), true);
 });
 

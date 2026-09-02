@@ -1,6 +1,6 @@
 /**
  * ResourcePicker 弹窗状态 + 提交。
- * 画布资源走 applyCanvasInputMutation 加边；本地文件按 realPath 索引写入当前节点或创建上游。
+ * 画布资源走 applyCanvasInputMutation 加边；本地文件在左侧创建导入型上游并连线。
  */
 
 import { useCallback, useState } from 'react';
