@@ -45,6 +45,16 @@ scripts/ego-browser-qa.sh <url> [evidence_dir]
 
 脚本必须通过 heredoc 调用 `ego-browser nodejs`，并以非零退出码表示连接失败、页面打不开、空快照或截图失败。**任何证据缺失都是 FAIL，不得标记 skip/pass。**
 
+
+## 二点五、CDP 直连 Electron 窗口（Dev App 真机验收）
+
+> `ego-browser` 访问 `http://127.0.0.1:45120` 触达的是 **web 侧页面**（host 端口），**不是 Dev App 的 Electron 渲染窗口**。两者渲染进程与 DOM 不同（尤其受 `data-dsh-desktop-platform="darwin"` 门控的壳层样式，web 侧不会触发）。凡涉及壳层样式 / 平台门控 / Electron 窗口布局的改动，必须用 CDP 直连验收。
+
+- **通道**：Dev App（Dev 构建）通过 desktop-fork #33 暴露 `--remote-debugging-port=9229`（可用 `OMNIMUX_DEV_CDP_PORT` 覆盖）。
+- **命令**：`pnpm verify:cdp`（`scripts/verify-dev-cdp.mjs`）连 `http://127.0.0.1:9229/json`，驱动窗口（创作→画布→选中节点）读取目标 selectors 的 computed 样式并断言，落盘 `docs/evidence/live-cdp-qa-report.json`。
+- **可覆盖**：`OMNIMUX_CDP_SELECTOR`（默认 `.wf-panel-shell__card`）、`OMNIMUX_CDP_PADDING_TOP`（默认 `12px`）、`OMNIMUX_CDP_PORT`。
+- **红线**：涉及壳层样式 / `data-dsh-desktop-*` / macOS 门控的改动，`ego-browser`（web 侧）不触发，必须 CDP 过 Electron 窗口才能作为完成依据；`ego-browser` 与 CDP 属于两层验收，不可互相替代。
+
 ## 三、分层验收门禁
 
 | 层 | 检查 | 通过条件 | 失败动作 |

@@ -64,6 +64,7 @@
     "verify:all": "corepack pnpm verify:gates && corepack pnpm test && corepack pnpm registry:verify && corepack pnpm doctor",
     "sync:presets": "bash scripts/sync-agent-presets.sh",
     "presets:build": "node scripts/build-agent-presets.mjs",
-    "presets:verify": "node --test scripts/verify-agent-presets.test.mjs"
+    "presets:verify": "node --test scripts/verify-agent-presets.test.mjs",
+    "verify:cdp": "node scripts/verify-dev-cdp.mjs"
   }
 }
