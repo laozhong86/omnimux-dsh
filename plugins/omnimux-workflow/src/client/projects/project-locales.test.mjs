@@ -8,16 +8,19 @@ describe('Workflow Projects Locales & i18n Dictionaries', () => {
     assert.equal(en['projects.all'], 'All')
   })
 
-  it('uses short workflow titles and Create Project button copy', () => {
+  it('uses creative-canvas library titles and Create Project button copy', () => {
     assert.equal(zh['stage.title'], '工作流')
-    assert.equal(zh['projects.title'], '工作流')
-    assert.equal(zh['projects.pageTitle'], '工作流')
+    assert.equal(zh['projects.title'], '创作画布')
+    assert.equal(zh['projects.pageTitle'], '创作画布')
+    assert.equal(zh['projects.subtitle'], '管理本地创作画布项目')
+    assert.equal(zh['projects.pageSubtitle'], '管理本地创作画布项目')
     assert.equal(zh['projects.newButton'], '创建项目')
     assert.equal(zh['projects.newProject'], '创建项目')
     assert.equal(zh['projects.refresh'], '刷新')
     assert.equal(zh['projects.emptyTitle'], '还没有工作流项目')
     assert.equal(en['stage.title'], 'Workflow')
-    assert.equal(en['projects.title'], 'Workflow')
+    assert.equal(en['projects.title'], 'Creative Canvas')
+    assert.equal(en['projects.subtitle'], 'Manage local creative canvas projects')
     assert.equal(en['projects.newButton'], 'Create Project')
     assert.equal(en['projects.refresh'], 'Refresh')
   })
