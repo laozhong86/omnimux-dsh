@@ -131,3 +131,25 @@ test('选择资源弹窗标题栏与 Tab 行不得再画分割线', () => {
   assert.match(pickerBlock, /\.wf-picker-tabs[\s\S]*?border-bottom:\s*none/);
   assert.equal(/\.wf-picker-tabs[\s\S]{0,180}border-bottom:\s*1px/.test(pickerBlock), false);
 });
+
+test('预览卡比例适配：media contain + 分档 class + 高度钳制', () => {
+  const pickerBlock = cssSrc.slice(cssSrc.indexOf('ResourcePickerModal'));
+  assert.match(pickerBlock, /object-fit:\s*contain/);
+  assert.match(cssSrc, /\.wf-picker-card__thumb--ultra-wide/);
+  assert.match(cssSrc, /\.wf-picker-card__thumb--wide/);
+  assert.match(cssSrc, /\.wf-picker-card__thumb--square/);
+  assert.match(cssSrc, /\.wf-picker-card__thumb--tall/);
+  assert.match(cssSrc, /\.wf-picker-card__thumb--ultra-tall/);
+  assert.match(cssSrc, /min-height:\s*72px/);
+  assert.match(cssSrc, /max-height:\s*112px/);
+  assert.match(cssSrc, /\.wf-picker-card__media \{[\s\S]{0,300}?object-fit:\s*contain/);
+  assert.equal(
+    /\.wf-picker-card__media[\s\S]{0,200}object-fit:\s*cover/.test(pickerBlock),
+    false,
+  );
+});
+
+test('画布面板与本地面板接入 PreviewThumb', () => {
+  assert.match(canvasPaneSrc, /PreviewThumb/);
+  assert.match(localPaneSrc, /PreviewThumb/);
+});
