@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-09-02T16:30:00+08:00",
+  "issue": 381,
+  "port": 45120,
+  "taskSpace": "plaza-footer-381",
+  "taskSpaceId": 351,
+  "url": "http://127.0.0.1:45120/",
+  "assertions": {
+    "1. Left entry exists at [data-omnimux-market-entry]": true,
+    "2. Label is 插件市场, not 扩展市场": true,
+    "3. Entry sits immediately above 设置 (leftDelta 0, yGap 8)": true,
+    "4. Footer icon is square 16x16": true,
+    "5. Workbench tab title is 插件市场": true,
+    "6. Workbench tab icon is square 14x14, not stretched": true,
+    "7. Click opens plaza tabs 插件/技能/专家/连接器": true
+  },
+  "details": {
+    "entryBox": { "x": 10, "y": 771, "w": 260, "h": 42 },
+    "settingsBox": { "x": 10, "y": 821, "w": 260, "h": 42 },
+    "leftDelta": 0,
+    "yGap": 8,
+    "entrySvg": { "w": 16, "h": 16, "square": true },
+    "tabTitle": "插件市场",
+    "tabSvg": { "w": 14, "h": 14, "square": true },
+    "screenshots": [
+      "docs/evidence/issue-381-sidebar-before-click.png",
+      "docs/evidence/issue-381-plaza-open.png",
+      "docs/evidence/issue-381-sidebar-expanded.png"
+    ],
+    "materialize": "OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1 ./scripts/sync-to-app.sh omnimux-market omnimux"
+  },
+  "verdict": "PASS",
+  "notes": [
+    "pnpm verify:live plaza on 45120 returned HTTP 401 for GET / (host auth); ego-browser session against the same origin is the UI evidence.",
+    "Search field still shows raw key plaza.searchPlugins (pre-existing missing i18n, not in this issue)."
+  ]
+}

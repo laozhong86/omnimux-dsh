@@ -157,4 +157,7 @@ subsystem: "global"
 - **why:** overlay 遮会话、藏右栏，人机无法同面；#313 只覆盖剪辑/画布。
 - **not:** 不迁 Apps/Settings；不卸载 conversation；不发明三栏壳；不改生产 profile。
 - **authority:** `docs/specs/2026-08-31-workbench-libraries-and-toggle-prd.md`
-- **updated:** 2026-08-31
+- **updated:** 2026-09-02
+
+### Amendments
+- 2026-09-02 — #381：广场产品名改为「插件市场」；左栏入口从新会话 extra row 迁回 `sidebar.footer.action`（设置正上方）。右栏仍是 `omnimux-market:plaza` Tab，不 claim overlay。其它库页继续走 extra row，禁止 footer.action。

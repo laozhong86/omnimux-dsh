@@ -177,8 +177,8 @@
 .sh-plaza-wrap:not(.rail) .sh-plaza-trigger{justify-content:flex-start;text-align:left}
 .sh-plaza-wrap.rail .sh-plaza-trigger{width:36px;height:36px;margin:8px 0 10px;padding:0;justify-content:center;border-radius:50%;gap:0;text-align:center}
 .sh-plaza-trigger:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}
-.sh-plaza-trigger svg,.sh-plaza-trigger .dshUk-Button-slot svg{flex:none;width:16px;height:16px}
-.sh-plaza-wrap.rail .sh-plaza-trigger svg,.sh-plaza-wrap.rail .sh-plaza-trigger .dshUk-Button-slot svg{width:18px;height:18px}
+.sh-plaza-trigger svg,.sh-plaza-trigger .dshUk-Button-slot svg{flex:none;flex-shrink:0;width:16px;height:16px;min-width:16px;min-height:16px;aspect-ratio:1/1;overflow:visible}
+.sh-plaza-wrap.rail .sh-plaza-trigger svg,.sh-plaza-wrap.rail .sh-plaza-trigger .dshUk-Button-slot svg{width:18px;height:18px;min-width:18px;min-height:18px}
 .sh-plaza-trigger.on,.sh-plaza-trigger[aria-expanded=true]{background:var(--dsw-specific-sidebar-nav-item-active,#ebeef2)}
 .sh-plaza-trigger .dshUk-Button-label,.sh-plaza-trigger span{white-space:nowrap;overflow:hidden}
 .sh-plaza-page{position:relative;box-sizing:border-box;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--dsw-alias-bg-base,#111215);color:var(--dsw-alias-label-primary,#fff);width:100%;height:100%}

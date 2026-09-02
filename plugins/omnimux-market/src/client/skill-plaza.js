@@ -4,13 +4,44 @@
       "education", "professional", "it-ops-security", "life-service",
     ];
 
-    function PlazaIcon() {
-      return h("svg", { viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true" },
+    function resolvePlazaIconSize(size) {
+      if (typeof size === "number" && Number.isFinite(size) && size > 0) return size;
+      if (size && typeof size === "object") {
+        const n = size.size ?? size.width;
+        if (typeof n === "number" && Number.isFinite(n) && n > 0) return n;
+      }
+      return 16;
+    }
+
+    function renderPlazaIcon(size = 16) {
+      const px = resolvePlazaIconSize(size);
+      return h("svg", {
+        width: px,
+        height: px,
+        viewBox: "0 0 16 16",
+        fill: "none",
+        xmlns: "http://www.w3.org/2000/svg",
+        "aria-hidden": "true",
+        preserveAspectRatio: "xMidYMid meet",
+        style: {
+          width: px,
+          height: px,
+          minWidth: px,
+          minHeight: px,
+          flex: "none",
+          flexShrink: 0,
+          display: "block",
+        },
+      },
         h("rect", { x: "1.75", y: "1.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" }),
         h("rect", { x: "8.75", y: "1.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" }),
         h("rect", { x: "1.75", y: "8.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" }),
         h("rect", { x: "8.75", y: "8.75", width: "5.5", height: "5.5", rx: "1.2", stroke: "currentColor", strokeWidth: "1.4" }),
       );
+    }
+
+    function PlazaIcon(props) {
+      return renderPlazaIcon(props);
     }
 
     function SkillPlaza(props) {
