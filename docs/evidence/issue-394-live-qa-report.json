@@ -1,0 +1,18 @@
+{
+  "issue": 394,
+  "stage": "omnimux-workflow",
+  "taskSpace": 364,
+  "url": "http://127.0.0.1:4794/docs/evidence/issue-394-picker-dividers.html",
+  "note": "Dev App 45120 returns HTTP 401 for GET /. Visual proof uses ego-browser against the live ResourcePicker CSS (components.css) fixture, not the 4817 harness.",
+  "computedStyle": {
+    "headerBorderBottom": "0px none rgb(0, 0, 0)",
+    "tabsBorderBottom": "0px none rgb(0, 0, 0)",
+    "footerBorderTop": "1px solid rgba(255, 255, 255, 0.08)"
+  },
+  "screenshot": "docs/evidence/issue-394-picker-dividers.png",
+  "tests": {
+    "command": "node --test plugins/omnimux-workflow/src/canvas/editor/components/ResourcePickerModal/ResourcePickerModal.test.mjs",
+    "pass": 13,
+    "fail": 0
+  }
+}
