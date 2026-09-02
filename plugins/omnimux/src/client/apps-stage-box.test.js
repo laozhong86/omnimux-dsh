@@ -223,6 +223,93 @@ describe('session-row closer', () => {
     assert.equal(document.documentElement.dataset.dshProductStage, 'omnimux-assets')
   })
 
+  it('reveals collapsed conversation when a workspace session row is clicked', () => {
+    setup()
+    delete document.documentElement.dataset.dshProductStage
+    const focusChanges = []
+    let collapsed = true
+    window.__omnimuxWorkbench = {
+      getConversationCollapsed: () => collapsed,
+      setFocus: (mode) => {
+        focusChanges.push(mode)
+        if (mode === 'split') collapsed = false
+        return true
+      },
+    }
+    ensureProductStageChrome()
+    document.getElementById('other').click()
+    assert.deepEqual(focusChanges, ['split'])
+    assert.equal(collapsed, false)
+  })
+
+  it('reveals collapsed conversation when the already-selected session row is clicked', () => {
+    setup()
+    delete document.documentElement.dataset.dshProductStage
+    const focusChanges = []
+    let collapsed = true
+    window.__omnimuxWorkbench = {
+      getConversationCollapsed: () => collapsed,
+      setFocus: (mode) => {
+        focusChanges.push(mode)
+        if (mode === 'split') collapsed = false
+        return true
+      },
+    }
+    ensureProductStageChrome()
+    document.getElementById('current').click()
+    assert.deepEqual(focusChanges, ['split'])
+  })
+
+  it('does not call setFocus when conversation is already visible', () => {
+    setup()
+    delete document.documentElement.dataset.dshProductStage
+    const focusChanges = []
+    window.__omnimuxWorkbench = {
+      getConversationCollapsed: () => false,
+      setFocus: (mode) => {
+        focusChanges.push(mode)
+        return true
+      },
+    }
+    ensureProductStageChrome()
+    document.getElementById('other').click()
+    assert.deepEqual(focusChanges, [])
+  })
+
+  it('does not reveal conversation when a pin button inside a session row is clicked', () => {
+    setup()
+    delete document.documentElement.dataset.dshProductStage
+    const focusChanges = []
+    window.__omnimuxWorkbench = {
+      getConversationCollapsed: () => true,
+      setFocus: (mode) => {
+        focusChanges.push(mode)
+        return true
+      },
+    }
+    ensureProductStageChrome()
+    document.getElementById('pin').click()
+    assert.deepEqual(focusChanges, [])
+  })
+
+  it('leaves product stage and reveals conversation on session click while collapsed', () => {
+    setup()
+    const focusChanges = []
+    let collapsed = true
+    window.__omnimuxWorkbench = {
+      getConversationCollapsed: () => collapsed,
+      setFocus: (mode) => {
+        focusChanges.push(mode)
+        if (mode === 'split') collapsed = false
+        return true
+      },
+    }
+    ensureProductStageChrome()
+    document.getElementById('other').click()
+    assert.equal(document.documentElement.dataset.dshProductStage, undefined)
+    assert.deepEqual(focusChanges, ['split'])
+  })
+
   it('does not close when collapsed-rail plus is captured to open the menu', () => {
     setup()
     ensureProductStageChrome()
