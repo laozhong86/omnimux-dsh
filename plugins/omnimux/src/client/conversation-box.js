@@ -67,10 +67,13 @@ export function releaseProductStage(id) {
 // hide BEM internals and the vendored OpenReel studio classes (e.g.
 // `bg-stage-bg`) whenever no product stage is active — the clip editor opened
 // from the workflow canvas tab (#84).
+// Idle hide MUST stay scoped to overlay direct children. Workbench Tab roots
+// (e.g. `.omnimux-assets-stage` inside dsh-better-sidebar) also end in
+// `-stage`; a document-wide idle rule blanks those panels (#344).
 export const PRODUCT_STAGE_CHROME = `
 [data-slot="shell.overlay"]{pointer-events:none!important;}
 [data-slot="shell.overlay"] > *{pointer-events:auto!important;}
-html:not([data-dsh-product-stage]) [class$="-stage"]{display:none!important;pointer-events:none!important;}
+html:not([data-dsh-product-stage]) [data-slot="shell.overlay"] > [class$="-stage"]{display:none!important;pointer-events:none!important;}
 ${STAGE_MUTUAL_EXCLUSION_RULES}
 html:not([data-dsh-product-stage]) [class*="toggleCluster"],
 html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}
@@ -103,8 +106,11 @@ html[data-dsh-product-stage] [data-slot="input.trigger"] {visibility:hidden!impo
 export function ensureProductStageChrome() {
   const existing = document.getElementById('dsh-product-stage-chrome')
   if (existing instanceof HTMLStyleElement) {
-    // 失效键：需包含 scoped better-sidebar panel 规则，否则重写以修复设置弹窗被误杀。
-    if (!existing.textContent?.includes('data-dsh-better-sidebar] [class*="_panel"]')) existing.textContent = PRODUCT_STAGE_CHROME
+    // 失效键：① scoped better-sidebar panel（设置弹窗）；② overlay-scoped idle hide（#344 workbench 白屏）。
+    const text = existing.textContent || ''
+    const stale = !text.includes('data-dsh-better-sidebar] [class*="_panel"]')
+      || !text.includes('[data-slot="shell.overlay"] > [class$="-stage"]')
+    if (stale) existing.textContent = PRODUCT_STAGE_CHROME
   } else {
     const style = document.createElement('style')
     style.id = 'dsh-product-stage-chrome'

@@ -101,8 +101,13 @@ describe('Stage Mutual Exclusion & Host Chrome Rules', () => {
     const chrome = document.getElementById('dsh-product-stage-chrome')?.textContent ?? ''
     assert.match(
       chrome,
+      /html:not\(\[data-dsh-product-stage\]\) \[data-slot="shell\.overlay"\] > \[class\$="-stage"\]\{display:none/,
+      'the idle rule must hide only overlay direct children ending in -stage (workbench *-stage roots must stay visible; #344)',
+    )
+    assert.doesNotMatch(
+      chrome,
       /html:not\(\[data-dsh-product-stage\]\) \[class\$="-stage"\]\{display:none/,
-      'the idle rule must match only first-level roots ending in -stage',
+      'a document-wide idle rule blanks workbench Tab panels whose roots also end in -stage (#344)',
     )
     assert.doesNotMatch(
       chrome,
