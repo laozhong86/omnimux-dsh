@@ -77,6 +77,10 @@ html:not([data-dsh-product-stage]) [data-slot="shell.overlay"] > [class$="-stage
 ${STAGE_MUTUAL_EXCLUSION_RULES}
 html:not([data-dsh-product-stage]) [class*="toggleCluster"],
 html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:auto!important;z-index:300!important;}
+/* Desktop compatibility/extended used to mark better-sidebar tabBar as drag; that
+   strip sits under toggleCluster and Electron app-region swallows the clicks. */
+body[data-dsh-desktop-mode] [class*="tabBar"],
+body[data-dsh-desktop-mode] [class*="tabBar"] *{-webkit-app-region:no-drag!important;}
 html[data-dsh-product-stage] [data-dsh-better-sidebar],
 html[data-dsh-product-stage] [data-dsh-better-sidebar] [class*="_panel"],
 html[data-dsh-product-stage] [data-dsh-better-sidebar] [class*="_bottomPanel"],
@@ -110,6 +114,7 @@ export function ensureProductStageChrome() {
     const text = existing.textContent || ''
     const stale = !text.includes('data-dsh-better-sidebar] [class*="_panel"]')
       || !text.includes('[data-slot="shell.overlay"] > [class$="-stage"]')
+      || !text.includes('body[data-dsh-desktop-mode] [class*="tabBar"]')
     if (stale) existing.textContent = PRODUCT_STAGE_CHROME
   } else {
     const style = document.createElement('style')
