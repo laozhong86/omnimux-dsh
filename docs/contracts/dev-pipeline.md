@@ -46,7 +46,10 @@ subsystem: "omnimux-assets"
 
 ### 物理隔离核心原则（铁律）
 1. **日常开发与生产环境绝对物理隔离**：`./scripts/sync-to-app.sh` 默认且仅物化到 `~/.omnimux-dev`。严禁 Agent 在日常研发中未经授权添加 `--prod` 或 `--all` 污染正式版 `~/.omnimux`。
-2. **真机定点验收（45120 端口红线）**：涉及 Web/Stage 界面改动的交付验收，Ego-Browser 探针必须且只能连接 `http://127.0.0.1:45120`（Dev App）真实环境；**严禁使用 4817 等独立私有 harness 沙箱作为交付完成依据**。
+2. **真机定点验收（Electron 窗口红线，CDP 直连）**：涉及 Web/Stage 界面改动的交付验收，**必须能断言 Dev App 的真实 Electron renderer**，而非 host 端口的网页。
+   - **Web 侧 ≠ Electron 窗口**：`http://127.0.0.1:45120` 是 Dev App 的 **host 端口**，用 Ego-Browser / curl / opencli 访问它只能触达 **web 侧页面**，**不是 Electron 渲染窗口**。两者的渲染进程与 DOM 不同（尤其受 `data-dsh-desktop-platform="darwin"` 门控的壳层样式，web 侧不会触发）。**严禁以 web 侧 45120 的渲染结果作为 Dev App UI 验收依据。**
+   - **CDP 直连（推荐）**：Dev App（Dev 构建）通过 desktop-fork #33 暴露 `--remote-debugging-port=9229`（可用 `OMNIMUX_DEV_CDP_PORT` 覆盖）。Agent 走 `pnpm verify:cdp`（`scripts/verify-dev-cdp.mjs`）连 `http://127.0.0.1:9229/json` 进入真实 Electron renderer，驱动窗口并断言 computed 样式，自动落盘 `docs/evidence/live-cdp-qa-report.json`。
+   - **红线**：涉及壳层样式 / `data-dsh-desktop-*` / macOS 门控的改动，web 侧不触发，必须用 CDP 连 Electron 窗口验收才能作为完成依据；**严禁使用 4817 等独立私有 harness 沙箱作为交付完成依据**。
 3. **零重启与安全刷新**：前端 Client 代码更新在 45120 Dev App 界面按 `Cmd+R` 刷新即生效；Agent 严禁强杀或重启任何桌面 App。
 
 ## 铁律（违反即事故）
