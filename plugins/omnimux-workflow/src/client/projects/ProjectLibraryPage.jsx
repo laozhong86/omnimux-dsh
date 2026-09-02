@@ -54,6 +54,8 @@ export function ProjectLibraryPage(props) {
   const [busy, setBusy] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(null)
+  /** Placeholder library scope tab. Only `local` is wired today. */
+  const [libraryTab, setLibraryTab] = useState('local')
 
   const reload = useCallback(async () => {
     try {
@@ -203,6 +205,20 @@ export function ProjectLibraryPage(props) {
       </div>
       <FilterBar
         className="omnimux-workflow-library-filter"
+        compact
+        filters={[
+          { key: 'local', label: t('projects.localTab') },
+        ].map((tabItem) => (
+          <Button
+            key={tabItem.key}
+            variant={libraryTab === tabItem.key ? 'secondary' : 'ghost'}
+            size="sm"
+            aria-pressed={libraryTab === tabItem.key}
+            onClick={() => { setLibraryTab(tabItem.key) }}
+          >
+            {tabItem.label}
+          </Button>
+        ))}
         search={(
           <SearchField
             value={query}
