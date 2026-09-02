@@ -56,40 +56,44 @@ test('GSC 映射：pending/skipped 不算生成中，按媒体与本地态落', 
   assert.equal(mapNodeToGenerationStatus('skipped', 'ready', true), 'completed');
 });
 
-test('panelVisible 语义（W2）：选中 且 未收起 且 非执行中', () => {
-  // 展开：选中 + 未收起 + 无执行态
-  assert.equal(isConfigPanelVisible(true, false, undefined), true);
+test('panelVisible 语义：单选生成节点 selected 时始终展开，无独立 dismiss', () => {
+  // 展开：选中 + 无执行态
+  assert.equal(isConfigPanelVisible(true, undefined), true);
   // 未选中 → 不展开
-  assert.equal(isConfigPanelVisible(false, false, undefined), false);
-  assert.equal(isConfigPanelVisible(undefined, false, undefined), false);
-  // 本次选中周期内已收起 → 不展开
-  assert.equal(isConfigPanelVisible(true, true, undefined), false);
+  assert.equal(isConfigPanelVisible(false, undefined), false);
+  assert.equal(isConfigPanelVisible(undefined, undefined), false);
   // 执行中（SSE running）→ 不展开
-  assert.equal(isConfigPanelVisible(true, false, 'running'), false);
+  assert.equal(isConfigPanelVisible(true, 'running'), false);
   // 其他执行态不阻塞面板
-  assert.equal(isConfigPanelVisible(true, false, 'completed'), true);
-  assert.equal(isConfigPanelVisible(true, false, 'error'), true);
-  assert.equal(isConfigPanelVisible(true, false, 'pending'), true);
+  assert.equal(isConfigPanelVisible(true, 'completed'), true);
+  assert.equal(isConfigPanelVisible(true, 'error'), true);
+  assert.equal(isConfigPanelVisible(true, 'pending'), true);
   // 生成节点显式 kind 不改变既有语义
-  assert.equal(isConfigPanelVisible(true, false, undefined, 'generate'), true);
+  assert.equal(isConfigPanelVisible(true, undefined, 'generate'), true);
   // 多选态（isMultiSelected=true）→ 强制不展开配置底栏
-  assert.equal(isConfigPanelVisible(true, false, undefined, 'generate', true), false);
-  assert.equal(isConfigPanelVisible(true, false, undefined, 'generate', false), true);
+  assert.equal(isConfigPanelVisible(true, undefined, 'generate', true), false);
+  assert.equal(isConfigPanelVisible(true, undefined, 'generate', false), true);
 });
 
 test('panelVisible：导入节点永不展开配置底栏', () => {
-  assert.equal(isConfigPanelVisible(true, false, undefined, 'import'), false);
-  assert.equal(isConfigPanelVisible(true, false, 'completed', 'import'), false);
-  assert.equal(isConfigPanelVisible(true, false, 'pending', 'import'), false);
-  assert.equal(isConfigPanelVisible(true, true, undefined, 'import'), false);
+  assert.equal(isConfigPanelVisible(true, undefined, 'import'), false);
+  assert.equal(isConfigPanelVisible(true, 'completed', 'import'), false);
+  assert.equal(isConfigPanelVisible(true, 'pending', 'import'), false);
+  assert.equal(isConfigPanelVisible(true, 'running', 'import'), false);
 });
 
 test('panelVisible：多选状态下（isMultiSelected=true，如全选）抑制展开单节点配置面板', () => {
   // 即使单个节点处于 selected=true 状态，一旦处于多选模式，一律不展开底栏
-  assert.equal(isConfigPanelVisible(true, false, undefined, 'generate', true), false);
-  assert.equal(isConfigPanelVisible(true, false, 'completed', 'generate', true), false);
+  assert.equal(isConfigPanelVisible(true, undefined, 'generate', true), false);
+  assert.equal(isConfigPanelVisible(true, 'completed', 'generate', true), false);
   // 单选时正常展开
-  assert.equal(isConfigPanelVisible(true, false, undefined, 'generate', false), true);
+  assert.equal(isConfigPanelVisible(true, undefined, 'generate', false), true);
+});
+
+test('panelVisible 回归：selected=true 时不存在独立 dismiss 能把面板藏掉', () => {
+  // 旧签名第二参 panelDismissed=true 已废止；误传布尔值不得当隐藏闸门
+  assert.equal(isConfigPanelVisible(true, true), true);
+  assert.equal(isConfigPanelVisible(true, undefined, 'generate', false), true);
 });
 
 test('calculateGroupBounds：包含 NaN / 非法对象 / 负坐标时安全兜底', () => {

@@ -72,7 +72,6 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const [isHovered, setIsHovered] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [panelDismissed, setPanelDismissed] = useState(false);
   const [textEditing, setTextEditing] = useState(false);
   const [mediaAspectHeight, setMediaAspectHeight] = useState<number | null>(null);
 
@@ -316,14 +315,12 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   useEffect(() => {
     if (!selected) {
-      setPanelDismissed(false);
       setTextEditing(false);
     }
   }, [selected]);
 
   const panelVisible = isConfigPanelVisible(
     selected,
-    panelDismissed,
     executionStatus,
     kind,
     isMultiSelected,
@@ -684,7 +681,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
       {/* 配置面板 */}
       {panelVisible && (
-        <ConfigPanelShell onClose={() => setPanelDismissed(true)}>
+        <ConfigPanelShell>
           <ConfigPanel
             nodeId={id}
             nodeData={nodeData}

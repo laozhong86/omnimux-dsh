@@ -20,20 +20,20 @@ export function inverseScaleForZoom(zoom: number): number {
 }
 
 /**
- * 配置面板可见性语义（W2）：选中 且 本次选中周期未收起 且 非执行中 且 非多选态。
+ * 配置面板可见性（单一闸门）：单选生成节点且 selected 时始终展开。
+ * 没有独立 dismiss / click-outside / Esc 收起通道——面板随选中态出现与消失。
  * 导入节点永不展开：替换走卡片右上角按钮 / 空态胶囊，不占用配置底栏。
  * 多选态（isMultiSelected=true，≥2 节点）强制收起，由 FloatingSelectionToolbar 接管。
- * 抽成纯函数供 node:test 断言（计划 §8 W2 测试点 panelVisible 语义）。
+ * 执行中（running）保持不展开。
  */
 export function isConfigPanelVisible(
   selected: boolean | undefined,
-  panelDismissed: boolean,
   executionStatus: NodeExecutionApiStatus | undefined,
   nodeKind?: 'generate' | 'import',
   isMultiSelected?: boolean,
 ): boolean {
   if (isMultiSelected || nodeKind === 'import') return false;
-  return Boolean(selected) && !panelDismissed && executionStatus !== 'running';
+  return Boolean(selected) && executionStatus !== 'running';
 }
 
 /**
