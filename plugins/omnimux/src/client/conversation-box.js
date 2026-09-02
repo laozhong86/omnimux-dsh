@@ -81,6 +81,13 @@ html:not([data-dsh-product-stage]) [class*="toggleCluster"] *{pointer-events:aut
    strip sits under toggleCluster and Electron app-region swallows the clicks. */
 body[data-dsh-desktop-mode] [class*="tabBar"],
 body[data-dsh-desktop-mode] [class*="tabBar"] *{-webkit-app-region:no-drag!important;}
+/* Desktop macOS sidebarCol::before drag strip overlays logoRow (Collapse sidebar
+   toggle). Electron app-region hit-tests the overlay; button no-drag alone cannot
+   punch through, so raise logoRow above the strip. */
+body[data-dsh-desktop-platform="darwin"] [class*="sidebarCol"] [class*="logoRow"],
+body[data-dsh-desktop-platform="darwin"] [class*="sidebarCol"] [class*="logoRow"] *{
+  position:relative;z-index:11;-webkit-app-region:no-drag!important;pointer-events:auto!important;
+}
 html[data-dsh-product-stage] [data-dsh-better-sidebar],
 html[data-dsh-product-stage] [data-dsh-better-sidebar] [class*="_panel"],
 html[data-dsh-product-stage] [data-dsh-better-sidebar] [class*="_bottomPanel"],
@@ -115,6 +122,7 @@ export function ensureProductStageChrome() {
     const stale = !text.includes('data-dsh-better-sidebar] [class*="_panel"]')
       || !text.includes('[data-slot="shell.overlay"] > [class$="-stage"]')
       || !text.includes('body[data-dsh-desktop-mode] [class*="tabBar"]')
+      || !text.includes('[class*="sidebarCol"] [class*="logoRow"]')
     if (stale) existing.textContent = PRODUCT_STAGE_CHROME
   } else {
     const style = document.createElement('style')
