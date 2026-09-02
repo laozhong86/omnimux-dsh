@@ -67,7 +67,7 @@ Clip overlay (`ClipStage`) remains **only** for canvas-node portal (`openFromCan
 | mode | Geometry | Conversation |
 |---|---|---|
 | `split` | Default width (~420px conversation, rest GUI). Restores the last **per-tab** split width if the user had one. | Visible |
-| `gui` | Panel width = `viewport −` official left rail. Conversation is squeezed by better-sidebar `#root { margin-right }`. | Mounted, visually collapsed |
+| `gui` | Panel width = `viewport −` official left rail. Conversation is squeezed by better-sidebar `#root { margin-right }`. Hub **MUST** re-apply this width when the left rail expands/collapses (`installWorkbenchLeftRailObserver`); a stale width sized for the collapsed ~56px rail lets the fixed `z-index:40` panel cover the expanded session list. | Mounted, visually collapsed |
 | `chat` | `panelOpen: false`. Tab ids stay in the session snapshot. | Full remaining width |
 
 ### Default Focus Rule

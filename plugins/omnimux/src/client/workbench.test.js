@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
 import {
   WORKBENCH_FOCUS,
+  WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX,
   WORKBENCH_OCCUPANTS,
   WORKBENCH_TAB_TITLE_FALLBACKS,
   activeTabId,
@@ -14,12 +15,14 @@ import {
   isWorkbenchActive,
   isWorkbenchOpen,
   isWorkbenchTab,
+  officialSessionSidebarWidth,
   openWorkbench,
   releaseCurrentProductStage,
   resetWorkbenchForTests,
   resolveDefaultFocus,
   resolveWorkbenchTabTitle,
   setWorkbenchFocus,
+  syncWorkbenchGuiWidth,
   tabIsOpen,
   workbenchDefaultWidthPx,
   workbenchGuiWidthPx,
@@ -236,6 +239,45 @@ test('workbenchGuiWidthPx occupies viewport minus the left rail', () => {
   assert.equal(workbenchGuiWidthPx(makeState([], 780), { viewportWidth: 1200, officialSidebarWidth: 0 }), 1200)
   assert.equal(workbenchGuiWidthPx(makeState([], 780), { viewportWidth: 1200, officialSidebarWidth: 280 }), 920)
   assert.equal(workbenchGuiWidthPx(makeState([], 780), { viewportWidth: 300, officialSidebarWidth: 0 }), 300)
+})
+
+test('officialSessionSidebarWidth falls back when expanded rail is crushed to rail size', () => {
+  const doc = {
+    querySelector(sel) {
+      if (sel === '[data-sidebar-collapsed]') return null
+      if (sel === '[data-pane="sidebar"], [class*="sidebarCol"]') {
+        return { getBoundingClientRect: () => ({ width: 56 }) }
+      }
+      return null
+    },
+  }
+  globalThis.document = doc
+  globalThis.window = { document: doc }
+  // Seed a healthy expanded width first.
+  assert.equal(officialSessionSidebarWidth({ officialSidebarWidth: 280 }), 280)
+  assert.equal(officialSessionSidebarWidth(), WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX)
+  assert.equal(
+    workbenchGuiWidthPx(makeState([], 1672), { viewportWidth: 1728 }),
+    1728 - WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX,
+  )
+})
+
+test('syncWorkbenchGuiWidth resizes gui panel after left rail width changes', () => {
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 1672, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-sync-gui', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  // Stale gui width as if measured while the left rail was collapsed (56px).
+  setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, { viewportWidth: 1728, officialSidebarWidth: 56 })
+  assert.equal(state.width, 1672)
+
+  // Left rail expands to 280 — sync must shrink the panel so it no longer covers the session list.
+  const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 280 })
+  assert.equal(synced, true)
+  assert.equal(state.width, 1448)
+  assert.equal(inferWorkbenchFocus(state, { viewportWidth: 1728, officialSidebarWidth: 280 }), WORKBENCH_FOCUS.gui)
 })
 
 test('inferWorkbenchFocus maps collapsed / full / split geometry', () => {

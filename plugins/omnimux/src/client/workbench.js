@@ -13,6 +13,10 @@ export const WORKBENCH_PANEL_MIN_PX = 280
 export const WORKBENCH_CONVERSATION_TARGET_PX = 420
 export const WORKBENCH_CONVERSATION_MIN_PX = 360
 export const WORKBENCH_FOCUS_NEAR_PX = 24
+/** Official collapsed rail is ~56px; anything at or below this is "rail-sized". */
+export const WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX = 72
+/** Fallback when the expanded left rail is crushed by an oversized right panel. */
+export const WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX = 280
 export const WORKBENCH_FOCUS = Object.freeze({
   split: 'split',
   gui: 'gui',
@@ -101,6 +105,17 @@ const appliedWidthSessions = new Set()
 /** In-memory focus records: sessionId -> { [tabId]: { mode, splitWidth } } */
 const focusStorageBySession = new Map()
 
+/** Last healthy expanded left-rail width; used when #root crush reports ~56px. */
+let lastExpandedOfficialWidth = WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX
+
+/** @type {ResizeObserver | null} */
+let leftRailResizeObserver = null
+/** @type {MutationObserver | null} */
+let leftRailAttrObserver = null
+/** @type {number | null} */
+let leftRailSyncTimer = null
+let leftRailObserverDoc = null
+
 function emit() {
   for (const listener of listeners) {
     try { listener() } catch (err) {
@@ -173,16 +188,126 @@ function viewportWidth() {
   return hostWindow()?.innerWidth || 0
 }
 
+export function isOfficialSidebarCollapsed(doc = hostDocument()) {
+  if (!doc || typeof doc.querySelector !== 'function') return false
+  return Boolean(doc.querySelector('[data-sidebar-collapsed]'))
+}
+
+/**
+ * Live width of the official left session rail.
+ * When focus is `gui`, better-sidebar crushes `#root` to `viewport − panel`.
+ * If that panel was sized while the rail was collapsed, an expanded rail can
+ * still report ~56px (or overflow under the z-index:40 panel). Prefer the last
+ * healthy expanded width so `gui` can recover instead of locking the cover.
+ */
 export function officialSessionSidebarWidth(env = {}) {
   if (typeof env.officialSidebarWidth === 'number' && Number.isFinite(env.officialSidebarWidth)) {
-    return Math.max(0, env.officialSidebarWidth)
+    const forced = Math.max(0, env.officialSidebarWidth)
+    if (forced > WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX) lastExpandedOfficialWidth = Math.round(forced)
+    return forced
   }
   const doc = hostDocument()
   if (!doc || typeof doc.querySelector !== 'function') return 0
   const column = doc.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]')
   if (!column || typeof column.getBoundingClientRect !== 'function') return 0
   const width = column.getBoundingClientRect().width
-  return typeof width === 'number' && Number.isFinite(width) ? width : 0
+  if (typeof width !== 'number' || !Number.isFinite(width) || width <= 0) return 0
+  const collapsed = isOfficialSidebarCollapsed(doc)
+  if (!collapsed && width <= WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX) {
+    return lastExpandedOfficialWidth
+  }
+  if (!collapsed && width > WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX) {
+    lastExpandedOfficialWidth = Math.round(width)
+  }
+  return width
+}
+
+/**
+ * Re-apply `gui` geometry from the live left rail. No-op unless focus is gui
+ * (or the panel width still matches a stale gui target).
+ * @returns {boolean} whether a write was attempted
+ */
+export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
+  const snapshot = liveSnapshot(store)
+  const state = snapshot?.state
+  if (!state || state.panelOpen === false) return false
+  const inferred = inferWorkbenchFocus(state, env)
+  const tabId = activeTabId(state)
+  const record = focusRecordForTab(snapshot?.sessionId, tabId)
+  if (inferred !== WORKBENCH_FOCUS.gui && record.mode !== WORKBENCH_FOCUS.gui) return false
+  return setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, env, tabId)
+}
+
+function scheduleGuiWidthSync() {
+  if (leftRailSyncTimer != null) return
+  const win = hostWindow()
+  const schedule = win?.requestAnimationFrame || ((fn) => setTimeout(fn, 16))
+  leftRailSyncTimer = schedule(() => {
+    leftRailSyncTimer = null
+    syncWorkbenchGuiWidth()
+  })
+}
+
+function findOfficialSidebarColumn(doc = hostDocument()) {
+  if (!doc || typeof doc.querySelector !== 'function') return null
+  return doc.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]')
+}
+
+/**
+ * Keep `gui` panel width glued to the official left rail as it expands/collapses.
+ * Without this, hiding chat while the rail is collapsed (or a stale 56px measure)
+ * lets the right panel cover the expanded session list (fixed host z-index 40).
+ * @returns {() => void} cleanup
+ */
+export function installWorkbenchLeftRailObserver(doc = hostDocument()) {
+  if (!doc) return () => {}
+  if (leftRailObserverDoc === doc && (leftRailResizeObserver || leftRailAttrObserver)) {
+    return uninstallWorkbenchLeftRailObserver
+  }
+  uninstallWorkbenchLeftRailObserver()
+  leftRailObserverDoc = doc
+
+  const column = findOfficialSidebarColumn(doc)
+  if (column && typeof ResizeObserver !== 'undefined') {
+    leftRailResizeObserver = new ResizeObserver(() => { scheduleGuiWidthSync() })
+    leftRailResizeObserver.observe(column)
+  }
+
+  // Attribute-only: expand/collapse flips `data-sidebar-collapsed`. Do NOT
+  // watch childList here — hub chrome already has a body MutationObserver for
+  // the chat toggle, and a second subtree childList loop would cascade.
+  if (typeof MutationObserver !== 'undefined') {
+    leftRailAttrObserver = new MutationObserver(() => { scheduleGuiWidthSync() })
+    const root = doc.documentElement || doc.body
+    if (root) {
+      leftRailAttrObserver.observe(root, {
+        attributes: true,
+        attributeFilter: ['data-sidebar-collapsed'],
+        subtree: true,
+      })
+    }
+  }
+
+  scheduleGuiWidthSync()
+  return uninstallWorkbenchLeftRailObserver
+}
+
+export function uninstallWorkbenchLeftRailObserver() {
+  if (leftRailResizeObserver) {
+    try { leftRailResizeObserver.disconnect() } catch { /* ignore */ }
+    leftRailResizeObserver = null
+  }
+  if (leftRailAttrObserver) {
+    try { leftRailAttrObserver.disconnect() } catch { /* ignore */ }
+    leftRailAttrObserver = null
+  }
+  if (leftRailSyncTimer != null) {
+    const win = hostWindow()
+    if (win?.cancelAnimationFrame) win.cancelAnimationFrame(leftRailSyncTimer)
+    else clearTimeout(leftRailSyncTimer)
+    leftRailSyncTimer = null
+  }
+  leftRailObserverDoc = null
 }
 
 export function workbenchUsableWidthPx(state, env = {}) {
@@ -678,6 +803,8 @@ function createApi() {
     getFocus: getWorkbenchFocus,
     setFocus: setWorkbenchFocus,
     inferFocus: inferWorkbenchFocus,
+    syncGuiWidth: syncWorkbenchGuiWidth,
+    installLeftRailObserver: installWorkbenchLeftRailObserver,
   }
 }
 
@@ -699,6 +826,7 @@ export function installWorkbenchGlobal(target = hostWindow()) {
  * @param {Window & { [WORKBENCH_GLOBAL_KEY]?: unknown }} [target]
  */
 export function resetWorkbenchForTests(target = hostWindow()) {
+  uninstallWorkbenchLeftRailObserver()
   deps.betterSidebar = null
   deps.layout = null
   deps.sessions = null
@@ -706,6 +834,7 @@ export function resetWorkbenchForTests(target = hostWindow()) {
   listeners.clear()
   appliedWidthSessions.clear()
   focusStorageBySession.clear()
+  lastExpandedOfficialWidth = WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX
   if (target && Object.prototype.hasOwnProperty.call(target, WORKBENCH_GLOBAL_KEY)) {
     try { delete target[WORKBENCH_GLOBAL_KEY] } catch { target[WORKBENCH_GLOBAL_KEY] = undefined }
   }

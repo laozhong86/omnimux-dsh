@@ -26,4 +26,8 @@ describe('hub chrome optional inject', () => {
     assert.doesNotMatch(chromeSource, /ctx\.sessions/)
     assert.doesNotMatch(chromeSource, /ctx\.betterSidebar/)
   })
+
+  it('installs the left-rail observer so gui width tracks expand/collapse', () => {
+    assert.match(chromeSource, /installWorkbenchLeftRailObserver/)
+  })
 })
