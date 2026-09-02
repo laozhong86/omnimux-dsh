@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-24T18:30:00.000Z",
+  "generated_at": "2026-09-02T13:24:03.000Z",
   "tabs": [
     "experts",
     "skills",
@@ -4159,6 +4159,27 @@
       }
     },
     {
+      "id": "sk-omx-brand-brief",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "品牌简报",
+      "subtitle": "Blotato",
+      "summary": "采集/更新小生意品牌简报（卖什么、买谁、CTA、故事、声线），写入 brand-brief.md 供其它内容技能引用。源：Blotato-Inc/blotato-skills（git）。",
+      "category": "sk-marketing",
+      "tags": [
+        "社媒",
+        "品牌",
+        "Blotato"
+      ],
+      "skill": "brand-brief",
+      "source": {
+        "type": "git",
+        "repo": "Blotato-Inc/blotato-skills",
+        "path": "blotato/skills/brand-brief",
+        "ref": "main"
+      }
+    },
+    {
       "id": "sk-omx-character-scene-storyboard",
       "tab": "skills",
       "kind": "skill",
@@ -5212,6 +5233,48 @@
         "type": "git",
         "repo": "infometa/OmniMux-skills",
         "path": "skills/poster-motion-generator",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-post-writer",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "社媒帖文写作",
+      "subtitle": "Blotato",
+      "summary": "按平台写完整帖文（hook + body + CTA）。可读 brand-brief，并建议配合 post-grader 质检。源：Blotato-Inc/blotato-skills（git 安装）。",
+      "category": "sk-marketing",
+      "tags": [
+        "社媒",
+        "文案",
+        "Blotato"
+      ],
+      "skill": "post-writer",
+      "source": {
+        "type": "git",
+        "repo": "Blotato-Inc/blotato-skills",
+        "path": "blotato/skills/post-writer",
+        "ref": "main"
+      }
+    },
+    {
+      "id": "sk-omx-post-grader",
+      "tab": "skills",
+      "kind": "skill",
+      "title": "帖文评分",
+      "subtitle": "Blotato",
+      "summary": "按病毒传播力给社媒帖文打分（钩子权重 50%），输出 scorecard 与 Top3 改法；可被 post-writer 自动调用。源：Blotato-Inc/blotato-skills（git）。",
+      "category": "sk-marketing",
+      "tags": [
+        "社媒",
+        "文案",
+        "Blotato"
+      ],
+      "skill": "post-grader",
+      "source": {
+        "type": "git",
+        "repo": "Blotato-Inc/blotato-skills",
+        "path": "blotato/skills/post-grader",
         "ref": "main"
       }
     },

@@ -25,6 +25,50 @@ test('installs a bundled skill once', () => {
   assert.equal(existsSync(join(env.home, 'skills', 'esc-demo-note', 'SKILL.md')), true)
 })
 
+test('installs Blotato git suite (brand-brief, post-writer, post-grader)', () => {
+  const env = roots()
+  const catalog = loadCatalog()
+  const suite = [
+    {
+      id: 'sk-omx-brand-brief',
+      skill: 'brand-brief',
+      path: 'blotato/skills/brand-brief',
+      needle: /Capture or update a small business owner's brand brief/,
+    },
+    {
+      id: 'sk-omx-post-writer',
+      skill: 'post-writer',
+      path: 'blotato/skills/post-writer',
+      needle: /Write a complete social media post/,
+    },
+    {
+      id: 'sk-omx-post-grader',
+      skill: 'post-grader',
+      path: 'blotato/skills/post-grader',
+      needle: /Grade a social media post for VIRALITY/,
+    },
+  ]
+  for (const entry of suite) {
+    const row = catalog.items.find((item) => item.id === entry.id)
+    assert.ok(row, `catalog must list ${entry.id}`)
+    assert.equal(row.kind, 'skill')
+    assert.equal(row.skill, entry.skill)
+    assert.equal(row.source?.type, 'git')
+    assert.equal(row.source?.repo, 'Blotato-Inc/blotato-skills')
+    assert.equal(row.source?.path, entry.path)
+    const first = installItem({ catalog, id: entry.id, ...env })
+    const second = installItem({ catalog, id: entry.id, ...env })
+    assert.equal(first.already, undefined, entry.id)
+    assert.equal(first.source, 'git', entry.id)
+    assert.equal(second.already, true, entry.id)
+    const skillMd = join(env.home, 'skills', entry.skill, 'SKILL.md')
+    assert.equal(existsSync(skillMd), true, skillMd)
+    const body = readFileSync(skillMd, 'utf8')
+    assert.match(body, new RegExp(`^---[\\s\\S]*name:\\s*${entry.skill}`, 'm'))
+    assert.match(body, entry.needle)
+  }
+})
+
 test('writes an mcp managed block', () => {
   const env = roots()
   writeFileSync(join(env.profileDir, 'cordis.patch.yml'), '[]\n')
