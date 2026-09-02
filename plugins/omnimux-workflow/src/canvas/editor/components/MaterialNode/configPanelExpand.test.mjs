@@ -57,7 +57,8 @@ test('prompt 输入框展开样式提供更高编辑视野与过渡', () => {
   assert.match(cssSrc, /\.wf-config-panel__expand-btn \{[\s\S]*?width:\s*22px/);
   assert.match(cssSrc, /\.wf-panel-shell__card \{[\s\S]*?padding:\s*14px 12px/);
   assert.match(cssSrc, /\.wf-config-panel \{[\s\S]*?gap:\s*6px/);
-  assert.match(cssSrc, /\.wf-config-panel__prompt-header \{[\s\S]*?margin-bottom:\s*4px/);
+  assert.match(cssSrc, /\.wf-config-panel__prompt-header \{[\s\S]*?margin-bottom:\s*10px/);
+  assert.match(cssSrc, /\.wf-config-panel__prompt-input \{[\s\S]*?padding:\s*8px 0 4px/);
   assert.match(cssSrc, /\.wf-config-panel__prompt-container \{[\s\S]*?padding:\s*0;/);
   assert.match(cssSrc, /\.wf-config-panel__bottom-bar \{[\s\S]*?padding-top:\s*0;/);
 });
