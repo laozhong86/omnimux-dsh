@@ -1,6 +1,7 @@
 /**
  * Issue #325: ConfigPanel 提示词原地展开，不再走全局 CustomModal。
  * Issue #330: 移除字数指示并收紧上下垂直间距。
+ * Spacing pass: 8pt 栅格规范化 panel shell / prompt / 底栏内外边距。
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -50,17 +51,22 @@ test('Issue #330: 彻底移除字数统计 DOM 与 maxLimit 计算', () => {
   assert.doesNotMatch(cssSrc, /padding:\s*0\s+0\s+20px\s+0/);
 });
 
-test('prompt 输入框展开样式提供更高编辑视野与过渡', () => {
-  assert.match(cssSrc, /\.wf-config-panel__prompt-input--expanded \{[\s\S]*?min-height:\s*150px/);
-  assert.match(cssSrc, /\.wf-config-panel__prompt-input \{[\s\S]*?min-height:\s*38px/);
+test('prompt 输入框展开样式与 8pt 内外间距规范', () => {
+  assert.match(cssSrc, /\.wf-config-panel__prompt-input--expanded \{[\s\S]*?min-height:\s*160px/);
+  assert.match(cssSrc, /\.wf-config-panel__prompt-input \{[\s\S]*?min-height:\s*40px/);
   assert.match(cssSrc, /\.wf-config-panel__prompt-input \{[\s\S]*?transition:\s*min-height/);
-  assert.match(cssSrc, /\.wf-config-panel__expand-btn \{[\s\S]*?width:\s*22px/);
-  assert.match(cssSrc, /\.wf-panel-shell__card \{[\s\S]*?padding:\s*20px 12px/);
-  assert.match(cssSrc, /\.wf-config-panel \{[\s\S]*?gap:\s*6px/);
-  assert.match(cssSrc, /\.wf-config-panel__prompt-header \{[\s\S]*?margin-bottom:\s*10px/);
-  assert.match(cssSrc, /\.wf-config-panel__prompt-input \{[\s\S]*?padding:\s*8px 0 4px/);
+  assert.match(cssSrc, /\.wf-config-panel__expand-btn \{[\s\S]*?width:\s*32px/);
+  assert.match(cssSrc, /\.wf-config-panel__expand-btn \{[\s\S]*?height:\s*32px/);
+  assert.match(cssSrc, /\.wf-panel-shell__card \{[\s\S]*?padding:\s*12px 14px/);
+  assert.match(cssSrc, /\.wf-config-panel \{[\s\S]*?gap:\s*8px/);
+  assert.match(cssSrc, /\.wf-config-panel__prompt-header \{[\s\S]*?margin-bottom:\s*8px/);
+  assert.match(cssSrc, /\.wf-config-panel__prompt-input \{[\s\S]*?padding:\s*0;/);
   assert.match(cssSrc, /\.wf-config-panel__prompt-container \{[\s\S]*?padding:\s*0;/);
-  assert.match(cssSrc, /\.wf-config-panel__bottom-bar \{[\s\S]*?padding-top:\s*0;/);
+  assert.match(cssSrc, /\.wf-config-panel__bottom-bar \{[\s\S]*?padding:\s*0;/);
+  assert.match(cssSrc, /\.wf-config-panel__add-ref-btn \{[\s\S]*?width:\s*32px/);
+  assert.match(cssSrc, /\.wf-config-panel__add-ref-btn \{[\s\S]*?height:\s*32px/);
+  assert.match(cssSrc, /\.wf-config-panel__ref-thumb-slot \{[\s\S]*?width:\s*32px/);
+  assert.match(cssSrc, /\.wf-config-panel__ref-thumb-slot \{[\s\S]*?height:\s*32px/);
 });
 
 test('展开 / 收起文案入典', () => {
@@ -78,4 +84,3 @@ test('单图模型 + 多图上游 → 配置面板渲染 degraded 警示徽标�
   assert.match(panelSrc, /wf-config-panel__ref-thumb-unbind/);
   assert.match(panelSrc, /handleUnbind/);
 });
-
