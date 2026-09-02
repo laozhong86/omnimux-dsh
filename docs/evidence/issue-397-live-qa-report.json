@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-09-02T12:28:00Z",
+  "issue": 397,
+  "issueUrl": "https://github.com/omnimux-ai/omnimux-dsh/issues/397",
+  "port": 45120,
+  "taskSpace": "omnimux-updates-404-397",
+  "taskSpaceId": 369,
+  "url": "http://127.0.0.1:45120/",
+  "commit": "d579334fd2b2d114c25e11783ac7e18e71058dc7",
+  "commitSubject": "fix(omnimux): stop polling missing desktop updates/status (#397)",
+  "branch": "agent/omnimux-updates-404-issue-397",
+  "l1": {
+    "command": "pnpm --filter omnimux test",
+    "tests": 643,
+    "pass": 643,
+    "fail": 0,
+    "skipped": 0,
+    "durationMs": 1734.769125
+  },
+  "assertions": {
+    "pageOpens": true,
+    "titleNonEmpty": true,
+    "url": "http://127.0.0.1:45120/",
+    "title": "尝试执行 bash 命令以验证工具状态和当前工作目录。 Bash命令 — OmniMux",
+    "hardReload": true,
+    "waitSeconds": 10,
+    "statusHits": 0,
+    "resourceHits": 0,
+    "scriptsWithCheckStatus": 0,
+    "updateActionNull": true,
+    "pageNotBlank": true,
+    "bodyLen": 111,
+    "bodyPreview": "账号\n创作\n发布\n数据分析\n资产库\n灵感库\n产品库\n详情\n点击消息流中的工具行查看详情\n画布工作区\n产品库\n创作\n文本\n试试:\n自己编写内容\n剧本生成\n策划案生成\n提示词生成\n图片\n视频\n图片\nReact Flow\n82%",
+    "snapshotTextLength": 5329,
+    "screenshot": "docs/evidence/issue-397-no-updates-404.png"
+  },
+  "sourceChecks": {
+    "SidebarUpdateActionReturnsNull": true,
+    "noFetchInSidebarUpdateAction": true,
+    "noSetIntervalInSidebarUpdateAction": true,
+    "indexStillRegistersFooterSlot": true,
+    "indexStillUsesOmnimuxDesktopUpdater": true,
+    "materializedBundleStatusUrlCount": 0,
+    "materializedBundleCheckStatusCount": 0
+  },
+  "verdict": "PASS",
+  "routing": "NoOne",
+  "notes": "L3 used ego-browser task space 369. Hard-reloaded http://127.0.0.1:45120/, installed window.fetch probe after reload, waited 10s (old bug polled every 3s). statusHits===0, performance resource entries for /api/desktop/updates/status===0, .omnimux-update-action is null, page is a real OmniMux shell (sidebar 账号/创作/发布… + 画布工作区). Screenshot saved. No business code changed."
+}
