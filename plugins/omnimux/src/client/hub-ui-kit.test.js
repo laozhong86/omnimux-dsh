@@ -37,7 +37,6 @@ const FILES = [
   'ProfileAvatar.jsx',
   'PluginsSection.jsx',
   'plugin-helpers.jsx',
-  'SidebarUpdateAction.jsx',
   'ModelsSettingsCard.jsx',
 ]
 
@@ -70,14 +69,32 @@ describe('hub client UI kit contract (B5 drawer)', () => {
     assert.match(styles, /top:\s*var\(--stage-top\)/)
   })
 
-  it('tokenizes the sidebar update action and uses 28px compact height', () => {
+  it('keeps SidebarUpdateAction as a null footer occupant (no ghost status UI)', () => {
     const source = read('SidebarUpdateAction.jsx')
-    const styles = read('styles.js')
+    const index = read('index.js')
+    assert.match(source, /return null/)
+    assert.doesNotMatch(source, /fetch\s*\(/)
     assert.doesNotMatch(source, /#DC2626|#2563EB|#1D4ED8|#93C5FD|#FFFFFF/)
-    assert.doesNotMatch(source, /height:\s*26/)
-    assert.match(source, /size="sm"/)
-    assert.match(styles, /height:\s*28px/)
-    assert.match(styles, /var\(--dsw-alias-button-primary-fill/)
+    assert.match(index, /sidebar\.footer\.action/)
+    assert.match(index, /omnimux-desktop-updater/)
+    assert.match(index, /SidebarUpdateAction/)
+  })
+
+  it('does not fetch /api/desktop/updates/status or setInterval from the footer occupant or index', () => {
+    const action = read('SidebarUpdateAction.jsx')
+    const index = read('index.js')
+    assert.doesNotMatch(action, /\bsetInterval\b/)
+    assert.doesNotMatch(index, /\bsetInterval\b/)
+    assert.doesNotMatch(action, /\/api\/desktop\/updates\/status/)
+    assert.doesNotMatch(index, /\/api\/desktop\/updates\/status/)
+    assert.doesNotMatch(action, /fetch\s*\(/)
+    assert.doesNotMatch(index, /fetch\s*\(/)
+    assert.doesNotMatch(action, /['"`]\/api\/desktop\/updates\/check['"`]/)
+    assert.doesNotMatch(index, /['"`]\/api\/desktop\/updates\/check['"`]/)
+    assert.doesNotMatch(action, /\/api\/desktop\/updates\/download/)
+    assert.doesNotMatch(action, /\/api\/desktop\/updates\/apply/)
+    assert.doesNotMatch(index, /\/api\/desktop\/updates\/download/)
+    assert.doesNotMatch(index, /\/api\/desktop\/updates\/apply/)
   })
 
   it('does not leave a naked hex/rgba as the primary color in hub styles', () => {
