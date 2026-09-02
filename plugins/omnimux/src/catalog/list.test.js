@@ -38,6 +38,7 @@ describe('buildModelCatalog', () => {
     assert.ok(catalog.video.some((row) => row.id === 'kling-o1'))
     assert.ok(catalog.video.some((row) => row.id === 'wan-3.0'))
     assert.ok(catalog.video.some((row) => row.id === 'grok-imagine-video-1-5'))
+    assert.equal(catalog.video.some((row) => row.id === 'grok-imagine-video'), false)
     assert.equal(catalog.video.some((row) => row.id === 'grok-imagine-video-1.5'), false)
     const labels = catalog.text.map((row) => row.label)
     const sorted = [...labels].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))

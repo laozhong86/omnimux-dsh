@@ -722,34 +722,9 @@ export const VIDEO_MODEL_SPECS = [
     },
   },
   {
-    id: 'grok-imagine-video',
-    label: 'Grok Imagine Video',
-    badge: 'xAI Grok',
-    subtitle: '720P · ⏱ 5s',
-    family: 'grok',
-    inputCapability: {
-      modalities: ['text', 'image'],
-      referenceImages: { min: 0, max: 1, allowedMimeTypes: STANDARD_IMAGE_MIMES, supportedRoles: ['reference'] },
-    },
-    parameters: {
-      aspectRatio: {
-        options: [RATIO_OPTS.r16_9, RATIO_OPTS.r9_16, RATIO_OPTS.r1_1],
-        defaultValue: '16:9',
-      },
-      duration: {
-        options: [{ value: 5, label: '5s' }],
-        defaultValue: 5,
-        unit: 's',
-      },
-      resolution: {
-        options: [{ value: '720P', label: '720P' }],
-        defaultValue: '720P',
-      },
-    },
-  },
-  {
     id: 'grok-imagine-video-1-5',
     label: 'Grok Imagine Video 1.5',
+    badge: 'xAI Grok',
     subtitle: '720P-1080P · ⏱ 5s',
     family: 'grok',
     inputCapability: {

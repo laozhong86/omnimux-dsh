@@ -77,7 +77,7 @@
       "company": "xAI",
       "series": { "zh": "Grok", "en": "Grok" },
       "primaryColor": "#FFFFFF",
-      "models": ["grok-imagine", "grok-imagine-video", "grok-3", "grok-2"]
+      "models": ["grok-imagine", "grok-imagine-video", "grok-imagine-video-1-5", "grok-3", "grok-2"]
     },
     "vidu": {
       "id": "vidu",

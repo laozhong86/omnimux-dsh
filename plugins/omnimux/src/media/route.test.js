@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { OmnimuxError } from './errors.js'
-import { parseMediaConfig, resolveMediaAuth, resolveMediaRoute } from './route.js'
+import { parseMediaConfig, resolveMediaAuth, resolveMediaRoute, toMediaWireModelId } from './route.js'
 import { mapOmnimuxInput } from './vendors/omnimux.js'
 
 describe('media route', () => {
@@ -60,6 +60,32 @@ describe('media route', () => {
     assert.equal(route.modelId, 'pinned')
     assert.equal(route.baseUrl, 'https://other.example/v1')
     assert.equal(route.apiKey, 'sk-b')
+  })
+
+  it('maps catalog grok-imagine-video-1-5 to the Hub wire model id', () => {
+    const media = parseMediaConfig(undefined)
+    const route = resolveMediaRoute('video', { model: 'grok-imagine-video-1-5' }, media, {})
+    assert.equal(route.modelId, 'grok-imagine-video-1.5')
+  })
+
+  it('maps stale canvas grok-imagine-video to grok-imagine-video-1.5', () => {
+    const media = parseMediaConfig(undefined)
+    const route = resolveMediaRoute('video', { model: 'grok-imagine-video' }, media, {})
+    assert.equal(route.modelId, 'grok-imagine-video-1.5')
+  })
+
+  it('passes an already-wired grok-imagine-video-1.5 id through', () => {
+    const media = parseMediaConfig(undefined)
+    const route = resolveMediaRoute('video', { model: 'grok-imagine-video-1.5' }, media, {})
+    assert.equal(route.modelId, 'grok-imagine-video-1.5')
+  })
+
+  it('toMediaWireModelId rewrites catalog ids and leaves others alone', () => {
+    assert.equal(toMediaWireModelId('grok-imagine-video-1-5'), 'grok-imagine-video-1.5')
+    assert.equal(toMediaWireModelId('grok-imagine-video'), 'grok-imagine-video-1.5')
+    assert.equal(toMediaWireModelId('grok-imagine-video-1.5'), 'grok-imagine-video-1.5')
+    assert.equal(toMediaWireModelId('seedance-2-0-fast'), 'seedance-2-0-fast')
+    assert.equal(toMediaWireModelId(''), '')
   })
 
   it('rejects an unknown provider at resolve', () => {

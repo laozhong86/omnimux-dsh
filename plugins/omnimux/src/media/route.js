@@ -3,6 +3,23 @@ import { OmnimuxError } from './errors.js'
 export const PROTOCOLS = Object.freeze(['openai-media'])
 export const AUTH_MODES = Object.freeze(['auto', 'token', 'custom'])
 
+/** Catalog ids that must be rewritten before Hub POST body.model. */
+export const MEDIA_WIRE_MODEL_IDS = Object.freeze({
+  'grok-imagine-video-1-5': 'grok-imagine-video-1.5',
+  'grok-imagine-video': 'grok-imagine-video-1.5',
+})
+
+/**
+ * Map a catalog / canvas model id to the Hub wire model id.
+ * Unknown ids pass through unchanged (including already-wired dotted ids).
+ * @param {unknown} modelId
+ * @returns {string}
+ */
+export function toMediaWireModelId(modelId) {
+  const id = typeof modelId === 'string' ? modelId.trim() : ''
+  return MEDIA_WIRE_MODEL_IDS[id] || id
+}
+
 export const DEFAULT_MEDIA = Object.freeze({
   defaultProvider: 'omnimux',
   authMode: 'auto',
@@ -111,9 +128,10 @@ export function resolveMediaRoute(capability, request, media, env = process.env)
   const envModel = providerId === 'omnimux'
     ? (capability === 'video' ? env.OMNIMUX_VIDEO_MODEL : capability === 'image' ? env.OMNIMUX_IMAGE_MODEL : capability === 'audio' ? env.OMNIMUX_AUDIO_MODEL : undefined)
     : undefined
-  const modelId = (typeof request.model === 'string' && request.model.trim()
+  const catalogModelId = (typeof request.model === 'string' && request.model.trim()
     ? request.model.trim()
     : (envModel || row.models[capability] || ''))
+  const modelId = toMediaWireModelId(catalogModelId)
   if (!modelId) {
     throw new OmnimuxError('unknown-model', `no model configured for ${providerId}/${capability}`)
   }
