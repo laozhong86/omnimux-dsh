@@ -8,6 +8,20 @@ describe('Workflow Projects Locales & i18n Dictionaries', () => {
     assert.equal(en['projects.all'], 'All')
   })
 
+  it('uses short workflow titles and Create Project button copy', () => {
+    assert.equal(zh['stage.title'], '工作流')
+    assert.equal(zh['projects.title'], '工作流')
+    assert.equal(zh['projects.pageTitle'], '工作流')
+    assert.equal(zh['projects.newButton'], '创建项目')
+    assert.equal(zh['projects.newProject'], '创建项目')
+    assert.equal(zh['projects.refresh'], '刷新')
+    assert.equal(zh['projects.emptyTitle'], '还没有工作流项目')
+    assert.equal(en['stage.title'], 'Workflow')
+    assert.equal(en['projects.title'], 'Workflow')
+    assert.equal(en['projects.newButton'], 'Create Project')
+    assert.equal(en['projects.refresh'], 'Refresh')
+  })
+
   it('ensures all projects.* keys exist in both zh and en dictionaries', () => {
     const zhKeys = Object.keys(zh).filter((k) => k.startsWith('projects.'))
     const enKeys = Object.keys(en).filter((k) => k.startsWith('projects.'))
