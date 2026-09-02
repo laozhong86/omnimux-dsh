@@ -18,7 +18,32 @@ describe('market workbench seat (sidebar must not claim overlay)', () => {
     const source = readFileSync(join(here, 'apply.js'), 'utf8')
     assert.match(source, /PLAZA_TAB_ID/)
     assert.match(source, /registerPlazaTab/)
-    assert.doesNotMatch(source, /slots\.inject\('shell\.overlay'/)
+    assert.match(source, /icon:\s*renderPlazaIcon/)
+    assert.doesNotMatch(source, /slots\.inject\(['"]shell\.overlay['"]/)
+    assert.doesNotMatch(source, /mountSidebarEntry/)
+  })
+
+  it('plaza entry sits on sidebar.footer.action above Settings', () => {
+    const source = readFileSync(join(here, 'apply.js'), 'utf8')
+    assert.match(source, /sidebar\.footer\.action/)
+    assert.match(source, /omnimux-market-plaza/)
+    assert.match(source, /PlazaAction/)
+  })
+
+  it('plaza icon SVG carries explicit square width and height', () => {
+    const source = readFileSync(join(here, 'skill-plaza.js'), 'utf8')
+    assert.match(source, /function renderPlazaIcon/)
+    assert.match(source, /width:\s*px/)
+    assert.match(source, /height:\s*px/)
+    assert.match(source, /preserveAspectRatio:\s*"xMidYMid meet"/)
+  })
+
+  it('plaza title is 插件市场 / Plugin Market', () => {
+    const source = readFileSync(join(here, 'i18n.js'), 'utf8')
+    assert.match(source, /"plaza.title": "插件市场"/)
+    assert.match(source, /"plaza.title": "Plugin Market"/)
+    assert.doesNotMatch(source, /扩展市场/)
+    assert.doesNotMatch(source, /Extension Market/)
   })
 
   it('plaza shell has no in-tab FocusBar and does not claim overlay', () => {

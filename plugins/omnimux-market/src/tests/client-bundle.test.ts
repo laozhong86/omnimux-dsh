@@ -30,11 +30,17 @@ test('client bundle keeps public slot keys and workbench tab registration', () =
     'key: "omnimux-market"',
     'settings.plugin.item',
     'omnimux-market:plaza',
-    'mountSidebarEntry',
+    'sidebar.footer.action',
+    'omnimux-market-plaza',
     'data-omnimux-market-entry',
+    'renderPlazaIcon',
+    '插件市场',
+    'Plugin Market',
   ]) {
     assert.ok(client.includes(needle), `missing ${needle}`)
   }
   assert.ok(!client.includes('PlazaFocusBar'), 'in-tab FocusBar removed')
   assert.ok(!client.includes('omnimux-workbench-focus'), 'in-tab FocusBar styles/markers removed')
+  assert.ok(!client.includes('mountSidebarEntry'), 'extra-row mount removed')
+  assert.ok(!client.includes('icon: () => h(PlazaIcon)'), 'tab icon must accept size')
 })

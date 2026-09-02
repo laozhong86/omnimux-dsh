@@ -60,7 +60,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 | `plugins/omnimux-assets/` | 创作资产库：角色/场景/风格包/道具/知识包/自定义。**导入物化到 `$DSH_HOME/omnimux/assets/data/files/<id>/`**（用户原文件不删）。Host `/omnimux/assets`，tools `assets_list` / `assets_search` / `assets_get` / `assets_upload`。合同：`docs/contracts/project-assets-contract.md`。 |
 | `plugins/omnimux-products/` | 产品库：要卖的货（名称 + 卖点/人群/品牌 + 主图路径引用）。Host `/omnimux/products`，tools `products_list` / `products_search` / `products_get` / `products_read_media` / `products_create` / `products_update`。侧栏 rank 6。 |
 | `plugins/omnimux-inspiration/` | 灵感库一级页（workbench Tab `omnimux-inspiration:library`，sidebar rank 7）。浏览器只打 Host `/omnimux/inspiration`；云 HTTP 在中枢 `withPat`。 |
-| `plugins/omnimux-market/` | 专家·技能·连接器一级页（workbench Tab `omnimux-market:plaza`，extra row rank 3.2）。技能双数据源（本地 + SkillHub 在线源）。历史名 gallery 已并入本包。 |
+| `plugins/omnimux-market/` | 插件市场一级页（workbench Tab `omnimux-market:plaza`，左栏 `sidebar.footer.action` 在设置上方）。技能双数据源（本地 + SkillHub 在线源）。历史名 gallery 已并入本包。 |
 | `plugins/omnimux-workflow/` | 工作流无限画布（拖拽 DAG、Agent 工具查询/执行），生成经 hub seam 提交。**作品媒体落项目根** `assets/` + `artifacts/`；执行态仍可暂存 `$DSH_HOME/omnimux/workflow/`。 |
 | `plugins/omnimux-clip/` | 剪辑工坊：完整套用 OpenReel Video (MIT) 官方 GUI+管线，P1 挂 `dsh-better-sidebar` Tab（`omnimux-clip:studio`）；P2 `clip_*`；P3 与画布 JSON 事件桥。 |
 | `plugins/omnimux-publish/` | 账号发布中心（workbench Tab `omnimux-publish:library`）：草稿→多账号分发→per-account 子任务台账。Host `/omnimux/publish`，tools `publish_*` 9 个；执行只走中枢 `omnimux_publish_*` 官方通道，不直连平台、不存 secret。 |

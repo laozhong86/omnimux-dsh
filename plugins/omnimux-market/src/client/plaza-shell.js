@@ -145,6 +145,22 @@
     function PlazaAction({ wide, t }) {
       useEffect(() => ensureCss(), []);
       const tr = typeof t === "function" ? t : lookup;
+      const [active, setActive] = useState(false);
+
+      useEffect(() => {
+        const api = typeof window !== "undefined" ? window.__omnimuxWorkbench : undefined;
+        if (!api) return undefined;
+        const sync = () => {
+          try {
+            setActive(typeof api.isActive === "function" ? Boolean(api.isActive(PLAZA_TAB_ID)) : false);
+          } catch {
+            setActive(false);
+          }
+        };
+        sync();
+        if (typeof api.subscribe !== "function") return undefined;
+        return api.subscribe(sync);
+      }, []);
 
       const handleClick = (e) => {
         e.preventDefault();
@@ -158,11 +174,14 @@
         h("div", { className: "sh-plaza-wrap" + (wide ? "" : " rail") },
           h("button", {
             type: "button",
-            className: "sh-plaza-trigger",
+            className: "sh-plaza-trigger" + (active ? " on" : ""),
             "aria-label": tr("plaza.title"),
+            "aria-pressed": active ? "true" : "false",
+            "data-omnimux-market-entry": "",
+            "data-active": active ? "true" : undefined,
             onClick: handleClick,
           },
-            h(PlazaIcon),
+            renderPlazaIcon(wide ? 16 : 18),
             wide ? h("span", null, tr("plaza.title")) : null,
           ),
         ),

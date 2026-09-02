@@ -505,6 +505,10 @@ test('resolveWorkbenchTabTitle prefers opts, then getTab, then human fallback (#
     resolveWorkbenchTabTitle('omnimux-products:library', undefined, undefined),
     '产品库',
   )
+  assert.equal(
+    resolveWorkbenchTabTitle('omnimux-market:plaza', undefined, undefined),
+    '插件市场',
+  )
   assert.notEqual(
     resolveWorkbenchTabTitle('omnimux-publish:library', '', () => null),
     'omnimux-publish:library',

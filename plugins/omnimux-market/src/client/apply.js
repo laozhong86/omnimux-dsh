@@ -20,7 +20,6 @@
             return () => {};
           }
         }, "omnimux-market-locale");
-        c.effect(() => mountSidebarEntry(null, lookup, c.locale), "omnimux-market: sidebar entry");
       });
       ctx.effect(() => ensureCss(), "omnimux-market-style");
       slots.inject("tool.call.toolview", () => registerSlot(
@@ -43,6 +42,19 @@
         { name: "settings.plugin.item", key: "omnimux-market", locale: "omnimux-market" },
         ConfigCard,
       ));
+      slots.inject("sidebar.footer.action", () => registerSlot(
+        slots,
+        {
+          name: "sidebar.footer.action",
+          id: "omnimux-market-plaza",
+          order: 8,
+          label: () => lookup("plaza.title") || "插件市场",
+          locale: "omnimux-market",
+        },
+        function PlazaEntry(actionProps) {
+          return h(PlazaAction, { ...actionProps });
+        },
+      ));
 
       if (typeof ctx.inject === "function") {
         ctx.inject(["betterSidebar"], (inner) => {
@@ -53,8 +65,8 @@
           } catch {}
           const registerPlazaTab = () => sidebar.registerTab({
             id: PLAZA_TAB_ID,
-            title: () => lookup("plaza.title") || "广场",
-            icon: () => h(PlazaIcon),
+            title: () => lookup("plaza.title") || "插件市场",
+            icon: renderPlazaIcon,
             order: 25,
             hidden: false,
             single: true,

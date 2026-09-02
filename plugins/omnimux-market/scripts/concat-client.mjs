@@ -33,7 +33,6 @@ const FRAGMENTS = [
   'experts.js',
   'connectors.js',
   'plaza-shell.js',
-  'sidebar-entry.js',
   'apply.js',
 ]
 
