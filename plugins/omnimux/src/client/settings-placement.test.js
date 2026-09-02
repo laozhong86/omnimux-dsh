@@ -64,7 +64,7 @@ describe('settings placement', () => {
   it('AccountsStage is rendered as a workbench tab', () => {
     const source = readFileSync(accountsStage, 'utf8')
     assert.ok(!source.includes("'omnimux-app-open'"), 'no longer listens for the hub APP_OPEN_EVENT literal')
-    assert.ok(source.includes('WorkbenchFocusBar'), 'hosts workbench focus switch')
+    assert.ok(!source.includes('WorkbenchFocusBar'), 'in-tab FocusBar removed; chat-toggle owns gui↔split')
     assert.ok(!/function claimProductStage|function readStageBox|PRODUCT_STAGE_CHROME/.test(source), 'does not duplicate the stage-claim protocol')
     assert.ok(!/import[^\n]*omnimux['"]/.test(source), 'must not import the hub package')
   })

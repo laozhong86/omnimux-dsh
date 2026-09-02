@@ -6,7 +6,6 @@ import { PublishActionRow } from './views/PublishActionRow.jsx'
 import { PublishControlBar } from './views/PublishControlBar.jsx'
 import { PublishViewport } from './views/PublishViewport.jsx'
 import { PublishOverlays, PublishDeleteConfirmModal } from './views/PublishOverlays.jsx'
-import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
 
 const TAB_ID = 'omnimux-publish:library'
 
@@ -134,7 +133,6 @@ export function PublishStage(props) {
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        actions={<WorkbenchFocusBar t={t} />}
         onRefresh={feed.loadList}
         refreshing={feed.listLoading}
         refreshTitle={t('records.refresh')}

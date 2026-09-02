@@ -22,13 +22,10 @@ describe('assets workbench seat (sidebar must not claim overlay)', () => {
     assert.doesNotMatch(source, /slots\.inject\('shell\.overlay'/)
   })
 
-  it('stage component hosts the workbench focus switch without claiming overlay', () => {
+  it('stage component has no in-tab FocusBar and does not claim overlay', () => {
     const stage = readFileSync(join(here, 'AssetsStage.jsx'), 'utf8')
-    const bar = readFileSync(join(here, 'WorkbenchFocusBar.jsx'), 'utf8')
-    assert.match(stage, /WorkbenchFocusBar/)
-    assert.match(bar, /data-omnimux-workbench-focus/)
-    assert.match(bar, /__omnimuxWorkbench/)
+    assert.doesNotMatch(stage, /WorkbenchFocusBar/)
+    assert.doesNotMatch(stage, /omnimux-workbench-focus/)
     assert.doesNotMatch(stage, /claimProductStage/)
-    assert.doesNotMatch(bar, /from ['"]omnimux/)
   })
 })

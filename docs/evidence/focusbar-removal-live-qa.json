@@ -1,0 +1,34 @@
+{
+  "date": "2026-09-02",
+  "goal": "Globally remove in-tab WorkbenchFocusBar (对话/分栏/工作台); keep hub chat-toggle for gui↔split",
+  "source": {
+    "worktree": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-remove-focus-bar",
+    "branch": "agent/omnimux-remove-focus-bar",
+    "removedComponents": [
+      "plugins/*/src/client/WorkbenchFocusBar.jsx",
+      "plugins/omnimux-workflow/src/client/projects/WorkbenchFocusBar.jsx",
+      "plugins/omnimux-market PlazaFocusBar"
+    ],
+    "gate": "pnpm verify:stages inverted: library stages MUST NOT contain WorkbenchFocusBar"
+  },
+  "unit": {
+    "verify:stages": "pass",
+    "workbench-seat.tests": "pass (9 plugins)",
+    "omnimux-market npm test": "pass (264)",
+    "settings-placement.test": "pass"
+  },
+  "materialize": {
+    "target": "~/.omnimux-dev",
+    "flag": "OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1",
+    "plugins": ["omnimux","omnimux-assets","omnimux-products","omnimux-inspiration","omnimux-publish","omnimux-analytics","omnimux-accounts","omnimux-workflow","omnimux-clip","omnimux-market"],
+    "bundleScan": "no WorkbenchFocusBar / omnimux-workbench-focus-btn in profile node_modules/*/lib/client.js"
+  },
+  "live": {
+    "port": 44120,
+    "profileHome": "~/.omnimux-dev",
+    "note": "Running renderer still held pre-change FocusBar instances until hard refresh. Automation Page.reload hung the ego-browser tab; disk bundles are clean. User/Dev window Cmd+R required for full live wipe of cached tab trees.",
+    "assetsHeaderWithoutFocusBarObserved": true,
+    "productsStillShowedCachedFocusBarWithoutRefresh": true,
+    "chatToggleStillPresent": true
+  }
+}

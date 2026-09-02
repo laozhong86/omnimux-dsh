@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { PageHeader } from 'dsh-ui-kit'
 import { InspirationSection } from './InspirationSection.jsx'
 import { injectInspirationStyles } from './styles.js'
-import { WorkbenchFocusBar } from './WorkbenchFocusBar.jsx'
 
 const TAB_ID = 'omnimux-inspiration:library'
 
@@ -54,7 +53,6 @@ export function InspirationStage({ t, stage, store, visible = true }) {
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        actions={<WorkbenchFocusBar t={t} />}
         onClose={handleClose}
         closeTitle={t('close')}
       />

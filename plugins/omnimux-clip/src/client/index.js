@@ -27,9 +27,6 @@ const zh = {
   'tab.saveToNode': '保存草稿至节点',
   'tab.savedToNode': '已保存至节点',
   'tab.canvasMode': '画布联动模式',
-  'focus.chat': '对话',
-  'focus.split': '分栏',
-  'focus.gui': '工作台',
 }
 
 const en = {
@@ -49,9 +46,6 @@ const en = {
   'tab.saveToNode': 'Save draft to node',
   'tab.savedToNode': 'Saved to node',
   'tab.canvasMode': 'Canvas Link Mode',
-  'focus.chat': 'Chat',
-  'focus.split': 'Split',
-  'focus.gui': 'Studio',
 }
 
 function renderClipIcon(size = 16) {
