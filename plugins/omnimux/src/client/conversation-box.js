@@ -178,25 +178,44 @@ function shellNewSessionControl(target) {
 }
 
 /**
+ * Session / 新会话 intent means enter the conversation column.
+ * If middle chat was sticky-collapsed (#372), restore split so the message is visible.
+ */
+function revealConversationIfCollapsed() {
+  const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+  if (!api) return
+  const collapsed = typeof api.getConversationCollapsed === 'function'
+    ? api.getConversationCollapsed()
+    : false
+  if (!collapsed) return
+  api.setFocus?.('split')
+}
+
+function handleSessionEnterIntent(target) {
+  if (!(target instanceof Element)) return false
+  return sessionRowPlainClick(target) || workspaceNewSessionButton(target) || newSessionMenuPick(target)
+}
+
+/**
  * 任意工作区会话行离开产品页；已选中行官方 no-op 也要关。
  * 「新会话」官方会复用空白会话（看起来像没点），一级页必须自己关 overlay。
+ * 藏中后点会话行 / 新会话：同时重新展开中间对话栏（进入对话意图）。
  */
 function watchSelectedSessionClick() {
   if (document.documentElement.dataset.dshSessionCloser === '1') return
   document.documentElement.dataset.dshSessionCloser = '1'
   document.addEventListener('click', (event) => {
-    if (!document.documentElement.dataset.dshProductStage) return
     const target = event.target
-    if (!(target instanceof Element)) return
-    if (sessionRowPlainClick(target) || workspaceNewSessionButton(target) || newSessionMenuPick(target)) {
-      leaveProductStage()
-    }
+    if (!handleSessionEnterIntent(target)) return
+    if (document.documentElement.dataset.dshProductStage) leaveProductStage()
+    revealConversationIfCollapsed()
   }, true)
   document.addEventListener('click', (event) => {
-    if (!document.documentElement.dataset.dshProductStage) return
     const target = event.target
     if (!(target instanceof Element)) return
-    if (shellNewSessionControl(target)) leaveProductStage()
+    if (!shellNewSessionControl(target)) return
+    if (document.documentElement.dataset.dshProductStage) leaveProductStage()
+    revealConversationIfCollapsed()
   })
 }
 

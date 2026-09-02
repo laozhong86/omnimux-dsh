@@ -81,6 +81,8 @@ Clip overlay (`ClipStage`) remains **only** for canvas-node portal (`openFromCan
 
 Toggling one pane **MUST NOT** flip another pane's sticky intent.
 
+**Exception — enter-conversation gesture:** clicking a workspace session row (`[role="treeitem"]` plain click, not pin/delete), workspace-group「新建会话」, shell「新会话」, or the brand new-session control **MUST** clear `conversationCollapsed` via `setFocus(split)` when the middle pane is hidden. Intent is to enter the conversation column, not keep it collapsed.
+
 ### Default Focus Rule
 
 Only when `(sessionId, tabId)` has **no user gesture record**:
