@@ -136,7 +136,7 @@ function simulateNodeRun(nodeId: string, outcome: 'completed' | 'error' = 'compl
         executionError: 'mock 执行失败：[image-routing] all channels failed (provider timeout)',
       });
     }
-  }, 2400);
+  }, 8000); // 给 OrganicShimmer 视觉验收留足生成态窗口
 }
 
 // ---------------------------------------------------------------------------

@@ -20,7 +20,9 @@ test('标题栏根节点不是 nodrag，重命名输入才是', () => {
 });
 
 test('文本节点 textarea 包在可拖壳里，未聚焦不加 nodrag', () => {
-  assert.match(nodeSrc, /className="wf-material-node__text-shell"/);
+  // 生成态会追加 --gsc；壳类名仍以 wf-material-node__text-shell 为根
+  assert.match(nodeSrc, /className=\{`wf-material-node__text-shell\$\{/);
+  assert.match(nodeSrc, /wf-material-node__text-shell--gsc/);
   assert.match(nodeSrc, /wf-material-node__text-editor nowheel/);
   assert.match(nodeSrc, /textEditing \? ' nodrag'/);
   assert.match(nodeSrc, /readOnly=\{!textEditing\}/);

@@ -330,12 +330,24 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   );
   const isOffline = status === 'offline' || nodeData.isMissing === true;
   const previewUrl = resolveMediaPreviewUrl(materialType, mediaAssets, mediaUrl);
+  // 文本节点用正文是否存在判定 hasResult；媒体节点用 previewUrl。
+  // 否则文本生成中/完成后 generationStatus 永远落不到 GSC，彩色动效不会出现。
+  const hasResult =
+    materialType === 'text'
+      ? Boolean(effectiveTextContent.trim())
+      : Boolean(previewUrl);
   const generationStatus = isOffline
     ? null
-    : mapNodeToGenerationStatus(executionStatus, status, Boolean(previewUrl));
+    : mapNodeToGenerationStatus(executionStatus, status, hasResult);
 
   const loadingAspectRatio =
-    materialType === 'video' ? 'video' : materialType === 'audio' ? 'audio' : 'square';
+    materialType === 'video'
+      ? 'video'
+      : materialType === 'audio'
+        ? 'audio'
+        : materialType === 'text'
+          ? 'auto'
+          : 'square';
 
   const hasMaterial = hasNodeMaterial({
     nodeType: 'material',
@@ -466,6 +478,44 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     return t('model.compatibility.degradedWarning').replace('{max}', String(max ?? ''));
   }, [catalog, isDegraded, materialType, nodeData.params?.model, t]);
 
+  const textBusy =
+    generationStatus === 'pending' ||
+    generationStatus === 'generating' ||
+    generationStatus === 'failed';
+
+  const textBody =
+    effectiveTextContent || textEditing ? (
+      <textarea
+        className={`wf-material-node__text-editor nowheel${textEditing ? ' nodrag' : ''}`}
+        readOnly={!textEditing}
+        value={effectiveTextContent}
+        placeholder={t('node.textPlaceholder')}
+        autoFocus={textEditing}
+        onMouseDown={(e) => {
+          if (!textEditing) e.preventDefault();
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          handleOpenTextStage();
+        }}
+        onFocus={() => setTextEditing(true)}
+        onBlur={() => setTextEditing(false)}
+        onChange={(e) =>
+          updateNodeData({
+            content: e.target.value,
+            status: e.target.value.trim() ? 'ready' : 'empty',
+            generatedContent: undefined,
+          })
+        }
+      />
+    ) : (
+      <NodeEmptyState
+        materialType="text"
+        onStartEdit={handleOpenTextStage}
+        onApplyPreset={handleApplyPreset}
+      />
+    );
+
   return (
     <div
       className={`wf-material-node ${selected ? 'wf-material-node--selected' : ''}`}
@@ -542,46 +592,28 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           </button>
         )}
 
-        {/* 1. 文本节点渲染 */}
+        {/* 1. 文本节点渲染（生成中走 GSC + OrganicShimmer，与图/视频/音频同款） */}
         {materialType === 'text' && (
           <div
-            className="wf-material-node__text-shell"
-            style={{ padding: '12px 14px' }}
+            className={`wf-material-node__text-shell${textBusy ? ' wf-material-node__text-shell--gsc' : ''}`}
+            style={textBusy ? { padding: 0 } : { padding: '12px 14px' }}
             onDoubleClick={(e) => {
               e.stopPropagation();
               handleOpenTextStage();
             }}
           >
-            {effectiveTextContent || textEditing ? (
-              <textarea
-                className={`wf-material-node__text-editor nowheel${textEditing ? ' nodrag' : ''}`}
-                readOnly={!textEditing}
-                value={effectiveTextContent}
-                placeholder={t('node.textPlaceholder')}
-                autoFocus={textEditing}
-                onMouseDown={(e) => {
-                  if (!textEditing) e.preventDefault();
-                }}
-                onDoubleClick={(e) => {
-                  e.stopPropagation();
-                  handleOpenTextStage();
-                }}
-                onFocus={() => setTextEditing(true)}
-                onBlur={() => setTextEditing(false)}
-                onChange={(e) =>
-                  updateNodeData({
-                    content: e.target.value,
-                    status: e.target.value.trim() ? 'ready' : 'empty',
-                    generatedContent: undefined,
-                  })
-                }
-              />
+            {generationStatus ? (
+              <GenerationStateContainer
+                status={generationStatus}
+                loadingAspectRatio="auto"
+                errorMessage={executionError ?? errorMessage}
+                taskId={nodeData.taskId}
+                onRetry={handleGenerate}
+              >
+                {textBody}
+              </GenerationStateContainer>
             ) : (
-              <NodeEmptyState
-                materialType="text"
-                onStartEdit={handleOpenTextStage}
-                onApplyPreset={handleApplyPreset}
-              />
+              textBody
             )}
           </div>
         )}
@@ -642,8 +674,10 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             </div>
           ))}
 
-        {/* 文本节点错误提示 */}
-        {materialType === 'text' && (errorMessage || executionError) && (
+        {/* 文本节点错误提示：GSC failed 分支已自带错误 UI，仅兜底未进 GSC 的残差 */}
+        {materialType === 'text' &&
+          !generationStatus &&
+          (errorMessage || executionError) && (
           <div className="wf-material-node__error">{executionError ?? errorMessage}</div>
         )}
       </div>

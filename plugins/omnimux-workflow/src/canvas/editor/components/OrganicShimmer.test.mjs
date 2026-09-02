@@ -49,9 +49,19 @@ test('components.css 契约：包含完整的 Transitions.dev 物理级流体微
   assert.match(cssSrc, /\.wf-organic-shimmer__content/);
 });
 
+test('components.css 契约：流光必须 linear + alternate 连续往返，禁止 ease-out 尾段停顿', () => {
+  assert.match(
+    cssSrc,
+    /animation:\s*wf-organic-shimmer-sweep\s+var\(--wf-shimmer-dur[^)]*\)\s+var\(--wf-shimmer-ease,\s*linear\)\s+infinite\s+var\(--wf-shimmer-direction,\s*alternate\)/,
+  );
+  assert.equal((cssSrc.match(/animation:\s*wf-organic-shimmer-sweep/g) || []).length, 2);
+  assert.doesNotMatch(cssSrc, /wf-organic-shimmer-sweep[^;]*cubic-bezier\(0\.16,\s*1,\s*0\.3,\s*1\)/);
+});
+
 test('workbench-theme.css 契约：定义双主题 SVG 湍流滤镜与物理流光 Token', () => {
   assert.match(themeCssSrc, /--wf-shimmer-dur:/);
-  assert.match(themeCssSrc, /--wf-shimmer-ease:/);
+  assert.match(themeCssSrc, /--wf-shimmer-ease:\s*linear/);
+  assert.match(themeCssSrc, /--wf-shimmer-direction:\s*alternate/);
   assert.match(themeCssSrc, /--wf-shimmer-svg-light:/);
   assert.match(themeCssSrc, /--wf-shimmer-svg-dark:/);
   assert.match(themeCssSrc, /--wf-shimmer-svg-url:/);
@@ -61,4 +71,14 @@ test('GenerationStateContainer 契约：渲染骨架屏接入 OrganicShimmerOver
   assert.match(gscSrc, /import \{ OrganicShimmerOverlay \} from '\.\/OrganicShimmer'/);
   assert.match(gscSrc, /<OrganicShimmerOverlay borderRadius="inherit">/);
   assert.match(gscSrc, /wf-gsc__progress-text/);
+});
+
+test('MaterialNode 契约：文本节点生成态也接入 GenerationStateContainer（同款 OrganicShimmer）', () => {
+  const materialSrc = readFileSync(join(here, 'MaterialNode/index.tsx'), 'utf8');
+  assert.match(materialSrc, /materialType === 'text'/);
+  assert.match(materialSrc, /loadingAspectRatio="auto"/);
+  assert.match(materialSrc, /hasResult[\s\S]*materialType === 'text'[\s\S]*effectiveTextContent/);
+  assert.match(materialSrc, /generationStatus \? \([\s\S]*<GenerationStateContainer[\s\S]*\{textBody\}/);
+  assert.match(cssSrc, /\.wf-material-node__text-shell--gsc/);
+  assert.match(cssSrc, /\.wf-material-node__text-shell > \.wf-gsc/);
 });
