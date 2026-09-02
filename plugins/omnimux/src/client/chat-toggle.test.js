@@ -7,7 +7,7 @@ import {
   ensureChatToggle,
   syncChatToggleState,
 } from './chat-toggle.js'
-import { WORKBENCH_FOCUS, installWorkbenchGlobal, resetWorkbenchForTests } from './workbench.js'
+import { WORKBENCH_FOCUS, installWorkbenchGlobal, resetWorkbenchForTests, setConversationCollapsed } from './workbench.js'
 
 const previousWindow = globalThis.window
 const previousDocument = globalThis.document
@@ -69,8 +69,16 @@ function setupFakeDOM() {
   const b2 = createElem('button')
   cluster.children.push(b1, b2)
 
+  const headChildren = []
+  const head = {
+    append(node) { headChildren.push(node) },
+  }
   const doc = {
     createElement: createElem,
+    head,
+    getElementById(id) {
+      return headChildren.find((n) => n.id === id) || null
+    },
     querySelector(sel) {
       if (sel.includes('data-dsh-toggle-cluster') || sel.includes('toggleCluster')) return cluster
       return null
@@ -113,7 +121,7 @@ test('ensureChatToggle inserts button at the first position of toggleCluster', (
   assert.equal(cluster.firstChild, toggle)
 })
 
-test('clicking chat toggle toggles focus between gui and split', () => {
+test('clicking chat toggle collapses conversation then restores split', () => {
   const { win, doc } = setupFakeDOM()
   let currentFocus = WORKBENCH_FOCUS.split
   const focusChanges = []
@@ -128,15 +136,18 @@ test('clicking chat toggle toggles focus between gui and split', () => {
     getSnapshot: () => ({ state: { panelOpen: true } }),
     subscribe: () => () => {},
   }
+  setConversationCollapsed(false, { persist: false, doc })
 
   const btn = createChatToggleButton(doc)
-  // Initially in split -> click sets to gui
+  // Visible chat -> click collapses middle (+ gui fill)
   btn.dispatchEvent({ type: 'click', preventDefault() {}, stopPropagation() {} })
   assert.deepEqual(focusChanges, [WORKBENCH_FOCUS.gui])
+  assert.equal(doc.documentElement.hasAttribute('data-omnimux-conversation-collapsed'), true)
 
-  // In gui -> click sets to split
+  // Collapsed -> click restores split + shows middle
   btn.dispatchEvent({ type: 'click', preventDefault() {}, stopPropagation() {} })
   assert.deepEqual(focusChanges, [WORKBENCH_FOCUS.gui, WORKBENCH_FOCUS.split])
+  assert.equal(doc.documentElement.hasAttribute('data-omnimux-conversation-collapsed'), false)
 })
 
 test('syncChatToggleState hides button when panel is closed or tab is not workbench occupant', () => {
@@ -149,6 +160,7 @@ test('syncChatToggleState hides button when panel is closed or tab is not workbe
     getSnapshot: () => ({ state: { panelOpen } }),
     t: (k) => (k === 'workbench.chatShow' ? '展开中间会话栏' : '收起中间会话栏'),
   }
+  setConversationCollapsed(true, { persist: false, doc })
 
   const btn = createChatToggleButton(doc)
   assert.equal(btn.style.display, '')

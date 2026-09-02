@@ -29,5 +29,7 @@ describe('hub chrome optional inject', () => {
 
   it('installs the left-rail observer so gui width tracks expand/collapse', () => {
     assert.match(chromeSource, /installWorkbenchLeftRailObserver/)
+    assert.match(chromeSource, /hydrateConversationCollapsed/)
+    assert.match(chromeSource, /ensureConversationCollapseChrome/)
   })
 })
