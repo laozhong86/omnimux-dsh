@@ -1,5 +1,5 @@
 /**
- * Catalog cache v2 + schema hook contract.
+ * Catalog cache v3 + schema hook contract.
  * Media SPECS ownership moved to hub `plugins/omnimux/src/media/catalog.test.js`.
  */
 import test from 'node:test';
@@ -11,12 +11,14 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(here, 'useModelParameterSchema.ts'), 'utf8');
 
-test('catalog cache key is v2 with fingerprint + fetchedAt envelope', () => {
-  assert.match(src, /wf_capabilities_catalog_v2/);
+test('catalog cache key is v3 with fingerprint + fetchedAt envelope', () => {
+  assert.match(src, /wf_capabilities_catalog_v3/);
   assert.match(src, /fingerprint/);
   assert.match(src, /fetchedAt/);
   assert.match(src, /invalidateCachedCatalog/);
   assert.match(src, /isCatalogCacheStale/);
+  assert.match(src, /export function getCachedFingerprint/);
+  assert.doesNotMatch(src, /wf_capabilities_catalog_v2/);
   assert.doesNotMatch(src, /wf_capabilities_catalog_v1/);
 });
 

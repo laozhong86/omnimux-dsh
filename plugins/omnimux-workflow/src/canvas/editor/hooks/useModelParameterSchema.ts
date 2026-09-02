@@ -9,8 +9,12 @@
 import { useMemo } from 'react';
 import type { CapabilityCatalog, CapabilityModelItem, ModelParameterSchema } from '../../../shared/api';
 import type { MaterialType } from '../../types/materialNode';
+import { shouldReplaceCatalogCache } from './catalogCache';
 
-const CATALOG_CACHE_KEY = 'wf_capabilities_catalog_v2';
+export { shouldReplaceCatalogCache };
+export type { ShouldReplaceCatalogCacheInput } from './catalogCache';
+
+const CATALOG_CACHE_KEY = 'wf_capabilities_catalog_v3';
 const CATALOG_TTL_MS = 60 * 60 * 1000;
 
 /** 针对未包含在 Catalog 中的未知模型提供的安全通用兜底 Schema */
@@ -125,15 +129,27 @@ function readEnvelope(): CatalogCacheEnvelope | null {
   }
 }
 
-/** 获取本地缓存的 Catalog（带异常保护 + TTL 过期仍可读，供 SWR） */
-export function getCachedCatalog(): CapabilityCatalog | null {
-  if (memoryCatalog) return memoryCatalog;
+function hydrateFromEnvelope(): CatalogCacheEnvelope | null {
   const envelope = readEnvelope();
   if (!envelope) return null;
   memoryCatalog = envelope.catalog;
   memoryFingerprint = envelope.fingerprint || envelope.catalog.fingerprint || '';
   memoryFetchedAt = typeof envelope.fetchedAt === 'number' ? envelope.fetchedAt : 0;
+  return envelope;
+}
+
+/** 获取本地缓存的 Catalog（带异常保护 + TTL 过期仍可读，供 SWR） */
+export function getCachedCatalog(): CapabilityCatalog | null {
+  if (memoryCatalog) return memoryCatalog;
+  hydrateFromEnvelope();
   return memoryCatalog;
+}
+
+/** Memory fingerprint first, else envelope.fingerprint || catalog.fingerprint. */
+export function getCachedFingerprint(): string {
+  if (memoryFingerprint) return memoryFingerprint;
+  hydrateFromEnvelope();
+  return memoryFingerprint || '';
 }
 
 /** Whether the local cache is older than the SWR TTL (still readable). */
