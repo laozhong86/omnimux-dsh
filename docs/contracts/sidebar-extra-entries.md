@@ -5,7 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-26"
-updated: "2026-08-31"
+updated: "2026-09-02"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux-assets"
 ---
@@ -82,7 +82,7 @@ MUST NOT fake a tab as a real session row (no `conversation.view`, no session da
 
 ## Independent pages
 
-**Workbench rows (normative, #318):** library / catalog / plaza / clip / canvas left-rows open a `dsh-better-sidebar` Tab via `window.__omnimuxWorkbench.open({ tabId })`. They **MUST NOT** claim `data-dsh-product-stage`. Occupants and default focus: [workbench-split.md](./workbench-split.md).
+**Workbench rows (normative, #318):** library / catalog / plaza / clip / canvas left-rows open a `dsh-better-sidebar` Tab via `window.__omnimuxWorkbench.open({ tabId })`. They **MUST NOT** claim `data-dsh-product-stage`. Occupants and default focus: [workbench-split.md](./workbench-split.md). Left-row `data-active` tracks the **focused** workbench tab (`__omnimuxWorkbench.isActive`), not tab presence (`isOpen`); cleared when the right panel is `chat` / `panelOpen === false`.
 
 **Overlay leftover (narrow):** Hub 登录门、（未挂载的）Apps 货架、Clip 画布节点 portal。只有这些表面仍可 `claimProductStage`；`PRODUCT_STAGE_CHROME` 只在 `html[data-dsh-product-stage]` 时藏右栏。
 

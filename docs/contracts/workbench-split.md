@@ -5,7 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-31"
-updated: "2026-08-31"
+updated: "2026-09-02"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux"
 related:
@@ -128,6 +128,8 @@ Hub installs `window.__omnimuxWorkbench` at module top-level (same pattern as `_
 `open()` sequence: `closeDetails` → **release any current `data-dsh-product-stage`** (leftover overlay would hide the panel) → require a current session (else `false` + toast) → wait for session snapshot → close empty Files seed tabs → `openTab({ type, id, path: sentinel })` → apply Default Focus Rule or restore `(sessionId, tabId)` memory. NEVER `claim` a stage. NEVER `sessions.create({})`.
 
 `createSidebarStore` six-pack: `getSnapshot` / `subscribe` / `open` / `close` / `set` / `readBox`. `close()` = `closeTab(tabId)` then `setFocus('chat')` if no OmniMux workbench tab remains.
+
+**Left-row `data-active`:** StageStore `getSnapshot()` MUST use `window.__omnimuxWorkbench.isActive(tabId)` (focused leaf tab), **not** `isOpen(tabId)` (tab still present). Cross-type tabs may coexist, but only the focused occupant lights its left entry. When focus is `chat` / `panelOpen === false`, every left entry clears. `isOpen` remains for presence checks.
 
 ## MUST NOT
 

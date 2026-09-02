@@ -20,7 +20,7 @@ function createWorkflowWorkbenchStore(t) {
   const api = () => (typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined)
   return {
     getSnapshot() {
-      return Boolean(api()?.isOpen?.(WORKFLOW_LIBRARY_TAB_ID))
+      return Boolean(api()?.isActive?.(WORKFLOW_LIBRARY_TAB_ID))
     },
     subscribe(listener) {
       if (typeof listener !== 'function') return () => {}

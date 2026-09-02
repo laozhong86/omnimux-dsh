@@ -11,6 +11,8 @@ import {
   inferWorkbenchFocus,
   installWorkbenchGlobal,
   isSeedFilesTab,
+  isWorkbenchActive,
+  isWorkbenchOpen,
   isWorkbenchTab,
   openWorkbench,
   releaseCurrentProductStage,
@@ -308,6 +310,7 @@ test('createWorkbenchSidebarStore.open never claims product stage', () => {
   win.__omnimuxWorkbench = {
     open(opts) { openedTab = opts },
     isOpen() { return false },
+    isActive() { return false },
     subscribe() { return () => {} },
   }
   const adapter = createWorkbenchSidebarStore({
@@ -317,6 +320,50 @@ test('createWorkbenchSidebarStore.open never claims product stage', () => {
   adapter.open()
   assert.equal(openedTab?.tabId, 'omnimux-assets:library')
   assert.equal(claimed, 0)
+})
+
+test('isActive follows focused tab; isOpen keeps coexistence; chat clears active', () => {
+  const win = setupWindow()
+  const api = installWorkbenchGlobal(win)
+  const assets = 'omnimux-assets:library'
+  const clip = 'omnimux-clip:studio'
+  let state = makeState([
+    { id: assets, type: assets },
+    { id: clip, type: clip },
+  ], 780, true)
+  state.splits.active = assets
+  api.bind({
+    betterSidebar: {
+      getSnapshot() { return { sessionId: 's-active', state } },
+      subscribeState() { return () => {} },
+    },
+  })
+
+  assert.equal(isWorkbenchOpen(assets), true)
+  assert.equal(isWorkbenchOpen(clip), true)
+  assert.equal(isWorkbenchActive(assets), true)
+  assert.equal(isWorkbenchActive(clip), false)
+  assert.equal(api.isActive(assets), true)
+  assert.equal(api.isActive(clip), false)
+
+  state = {
+    ...state,
+    splits: { ...state.splits, active: clip },
+  }
+  assert.equal(api.isActive(assets), false)
+  assert.equal(api.isActive(clip), true)
+  assert.equal(isWorkbenchOpen(assets), true)
+
+  const assetsStore = createWorkbenchSidebarStore({ tabId: assets })
+  const clipStore = createWorkbenchSidebarStore({ tabId: clip })
+  assert.equal(assetsStore.getSnapshot(), false)
+  assert.equal(clipStore.getSnapshot(), true)
+
+  state = { ...state, panelOpen: false }
+  assert.equal(api.isActive(assets), false)
+  assert.equal(api.isActive(clip), false)
+  assert.equal(assetsStore.getSnapshot(), false)
+  assert.equal(clipStore.getSnapshot(), false)
 })
 
 test('resolveWorkbenchTabTitle prefers opts, then getTab, then human fallback (#345)', () => {

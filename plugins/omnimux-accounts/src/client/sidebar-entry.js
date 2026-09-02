@@ -20,7 +20,7 @@ function createAccountsWorkbenchStore(t) {
   const api = () => (typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined)
   return {
     getSnapshot() {
-      return Boolean(api()?.isOpen?.(ACCOUNTS_TAB_ID))
+      return Boolean(api()?.isActive?.(ACCOUNTS_TAB_ID))
     },
     subscribe(listener) {
       if (typeof listener !== 'function') return () => {}

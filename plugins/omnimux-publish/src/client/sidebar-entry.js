@@ -20,7 +20,7 @@ function createPublishWorkbenchStore(t) {
   const api = () => (typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined)
   return {
     getSnapshot() {
-      return Boolean(api()?.isOpen?.(PUBLISH_TAB_ID))
+      return Boolean(api()?.isActive?.(PUBLISH_TAB_ID))
     },
     subscribe(listener) {
       if (typeof listener !== 'function') return () => {}

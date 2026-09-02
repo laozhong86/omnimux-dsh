@@ -12,7 +12,7 @@
       const api = () => (typeof window !== "undefined" ? window.__omnimuxWorkbench : undefined);
       return {
         getSnapshot() {
-          return Boolean(api()?.isOpen?.(PLAZA_TAB_ID));
+          return Boolean(api()?.isActive?.(PLAZA_TAB_ID));
         },
         subscribe(listener) {
           if (typeof listener !== "function") return () => {};

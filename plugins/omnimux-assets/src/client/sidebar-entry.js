@@ -20,7 +20,7 @@ function createAssetsWorkbenchStore(t) {
   const api = () => (typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined)
   return {
     getSnapshot() {
-      return Boolean(api()?.isOpen?.(ASSETS_TAB_ID))
+      return Boolean(api()?.isActive?.(ASSETS_TAB_ID))
     },
     subscribe(listener) {
       if (typeof listener !== 'function') return () => {}
