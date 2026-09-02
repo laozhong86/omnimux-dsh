@@ -3,7 +3,7 @@ import { ensureProductStageChrome } from './conversation-box.js'
 import { installStageGlobal } from './stage.js'
 import { installSidebarGlobal } from './sidebar-coordinator.js'
 import { installAuthGlobal } from './auth-gate.js'
-import { installWorkbenchGlobal } from './workbench.js'
+import { installWorkbenchGlobal, installWorkbenchLeftRailObserver } from './workbench.js'
 import { installChatToggle } from './chat-toggle.js'
 import { NS, en, zh } from './locales.js'
 // x.ai 全壳 overrideTokens 已临时关闭：发送钮在暗色下变成白底白箭头。
@@ -41,9 +41,13 @@ export function installHubChrome(ctx) {
   )
   ctx.effect(() => {
     ensureProductStageChrome()
-    const unsub = installChatToggle()
-    return () => { unsub?.() }
-  }, 'omnimux: product-stage chrome & chat toggle')
+    const unsubToggle = installChatToggle()
+    const unsubLeftRail = installWorkbenchLeftRailObserver()
+    return () => {
+      unsubToggle?.()
+      unsubLeftRail?.()
+    }
+  }, 'omnimux: product-stage chrome, chat toggle & workbench left-rail sync')
   // 临时关闭：ctx.effect(() => applyXaiShellTheme(ctx), 'omnimux: xai shell theme')
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'omnimux: dictionaries')
   return ctx.locale.bind(NS)
