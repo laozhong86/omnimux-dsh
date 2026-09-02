@@ -322,6 +322,20 @@ test('createWorkbenchSidebarStore.open never claims product stage', () => {
   assert.equal(claimed, 0)
 })
 
+test('createWorkbenchSidebarStore.close uses closeTab not closePanel', () => {
+  const win = setupWindow()
+  const closed = []
+  win.__omnimuxWorkbench = {
+    closeTab(id) { closed.push(['tab', id]) },
+    closePanel() { closed.push(['panel']) },
+    isActive() { return false },
+    subscribe() { return () => {} },
+  }
+  const adapter = createWorkbenchSidebarStore({ tabId: 'omnimux-clip:studio' })
+  adapter.close()
+  assert.deepEqual(closed, [['tab', 'omnimux-clip:studio']])
+})
+
 test('isActive follows focused tab; isOpen keeps coexistence; chat clears active', () => {
   const win = setupWindow()
   const api = installWorkbenchGlobal(win)

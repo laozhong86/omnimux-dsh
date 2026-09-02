@@ -87,7 +87,7 @@ Tab id **冻结**。工程师不得改前缀或把 `:library` 写成包名。`is
 | **Q9** overlay 删留 | 库页 overlay **删主路径**（`apply()` 不再 inject）。Clip overlay **只留 portal**。Apps / LoginGate 不动。 |
 | **Q10** `watchSelectedSessionClick` | **收窄保留**：仅当 `dataset.dshProductStage` 仍存在时关残留 overlay。库页迁完后点会话行不再踢出右栏 Tab（右栏跟 better-sidebar 会话快照走）。 |
 | **Q11** 15:85 磁吸 | **只限** `omnimux-workflow:canvas`。库/剪辑/广场禁止调用 `applyProjectCanvasRatio`。现有 `gui`/`chat` skip 保留。打开画布必须走 `window.__omnimuxWorkbench.open({ tabId: 'omnimux-workflow:canvas' })`，禁止旁路 `service.openTab` 绕过 Default Focus Rule。 |
-| **Q12** Sidebar store 工厂 | 对外唯一：`window.__omnimuxWorkbench.createSidebarStore({ tabId, title, path })`。垂直包 **MUST NOT** `import` hub。Clip 可保留本地薄封装（常量 `CLIP_TAB_ID`），内部仍走 window。加载顺序：工厂内已有 8s 轮询 subscribe。 |
+| **Q12** Sidebar store 工厂 | 对外唯一：`window.__omnimuxWorkbench.createSidebarStore({ tabId, title, path })`。垂直包 **MUST NOT** `import` hub，**MUST NOT** 内联复制六件套。库页直接（或经本包一行转发）调用该工厂。Clip 可保留本地薄封装（常量 `CLIP_TAB_ID` / path），内部仍走 window；`close` 跟工厂走 `closeTab`。加载顺序：hub client 先于垂直包；工厂 subscribe 另有 ≤8s 就绪轮询。 |
 
 ## 对话开关（toggleCluster 第一位）
 
@@ -124,7 +124,7 @@ localStorage['omnimux-workbench-focus:v1:' + sessionId] = {
 
 ## 8 包 Tab 化硬模板
 
-垂直包 **复制 clip 骨架，禁止再发明第二套**。金标：`omnimux-clip` 的 `registerTab` + `createClipWorkbenchStore` + `mountSidebarEntry(null, t)`。库页差异只在：组件仍是现有 `*Stage.jsx`，根节点从 `position:fixed + --stage-*` 改为填满 Tab 容器。
+垂直包 **调用 hub `createSidebarStore`，禁止再发明第二套六件套**。金标：`registerTab` + `window.__omnimuxWorkbench.createSidebarStore({ tabId, title, path })` + `mountSidebarEntry(null, t)`。Clip 可保留常量薄封装（`createClipWorkbenchStore` → 工厂）。库页差异只在：组件仍是现有 `*Stage.jsx`，根节点从 `position:fixed + --stage-*` 改为填满 Tab 容器。
 
 | 步骤 | 规则 |
 |---|---|

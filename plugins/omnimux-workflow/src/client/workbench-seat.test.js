@@ -9,7 +9,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 describe('workflow workbench seat (sidebar must not claim overlay)', () => {
   it('sidebar entry uses the workbench store, not the product stage', () => {
     const source = readFileSync(join(here, 'sidebar-entry.js'), 'utf8')
-    assert.match(source, /createWorkflowWorkbenchStore/)
+    assert.match(source, /createSidebarStore/)
     assert.match(source, /omnimux-workflow:library/)
     assert.doesNotMatch(source, /claimProductStage/)
   })

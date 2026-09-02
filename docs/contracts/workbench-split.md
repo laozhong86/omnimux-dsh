@@ -122,7 +122,7 @@ If a Tab still hosts `.omnimux-workbench-focus`, it MUST talk to the same `setFo
 Hub installs `window.__omnimuxWorkbench` at module top-level (same pattern as `__omnimuxStage` / `__omnimuxSidebar`). Vertical plugins **MUST NOT** import the hub client. They:
 
 1. `registerTab({ id, single: true, path sentinel })`
-2. Bind a StageStore-shaped adapter via `window.__omnimuxWorkbench.createSidebarStore({ tabId, title, path })` into `createSidebarEntry`. `open()` calls `window.__omnimuxWorkbench.open({ tabId, path })`
+2. Bind a StageStore-shaped adapter via `window.__omnimuxWorkbench.createSidebarStore({ tabId, title, path })` into `createSidebarEntry`. `open()` calls `window.__omnimuxWorkbench.open({ tabId, path })`. **MUST** use this factory for left-row StageStores; **MUST NOT** re-implement highlight/open/close semantics (`isActive` / `closeTab` / focus). A **thin lazy forwarder** (acquire factory when first used; ≤8s poll if hub not ready) is allowed so vertical mount order cannot crash plugin load. Clip may also keep local `CLIP_TAB_ID` / path constants (ADR Q12).
 3. `attachStore(props.store)` from the Tab component so width writes can `store.reduce` (public API has no `setWidth`)
 
 `open()` sequence: `closeDetails` → **release any current `data-dsh-product-stage`** (leftover overlay would hide the panel) → require a current session (else `false` + toast) → wait for session snapshot → close empty Files seed tabs → `openTab({ type, id, path: sentinel })` → apply Default Focus Rule or restore `(sessionId, tabId)` memory. NEVER `claim` a stage. NEVER `sessions.create({})`.
