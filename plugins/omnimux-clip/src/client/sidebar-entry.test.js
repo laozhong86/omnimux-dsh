@@ -9,19 +9,35 @@ afterEach(() => {
   else globalThis.window = previousWindow
 })
 
-test('clip sidebar store.open talks to workbench and never claims product stage', async () => {
+test('clip sidebar store forwards to hub createSidebarStore and never claims product stage', async () => {
   let claimed = 0
   const opened = []
+  const closed = []
   let activeId = null
   const html = { dataset: {} }
+  const factoryStore = {
+    getSnapshot() { return activeId === CLIP_TAB_ID },
+    subscribe() { return () => {} },
+    open() {
+      opened.push({ tabId: CLIP_TAB_ID, path: CLIP_SENTINEL_PATH, title: '视频剪辑' })
+      activeId = CLIP_TAB_ID
+    },
+    close() { closed.push(CLIP_TAB_ID) },
+    set(next) { if (next) this.open(); else this.close() },
+    readBox() { return { top: 0, left: 0, width: 0, height: 0 } },
+  }
   globalThis.window = {
     __omnimuxStage: { claim() { claimed += 1 } },
     __omnimuxWorkbench: {
-      isOpen: (id) => opened.some((row) => row.tabId === id),
-      isActive: (id) => activeId === id,
-      subscribe: () => () => {},
-      open: async (opts) => { opened.push(opts); activeId = opts.tabId; return true },
-      closePanel: () => {},
+      createSidebarStore(opts) {
+        assert.equal(opts.tabId, CLIP_TAB_ID)
+        assert.equal(opts.path, CLIP_SENTINEL_PATH)
+        assert.equal(typeof opts.title, 'function')
+        assert.equal(opts.title(), '视频剪辑')
+        return factoryStore
+      },
+      closeTab(id) { closed.push(id) },
+      closePanel() { closed.push('panel') },
     },
     document: { documentElement: html },
   }
@@ -35,12 +51,13 @@ test('clip sidebar store.open talks to workbench and never claims product stage'
   assert.equal(opened.length, 1)
   assert.equal(opened[0].tabId, CLIP_TAB_ID)
   assert.equal(opened[0].path, CLIP_SENTINEL_PATH)
-  assert.equal(opened[0].title, '视频剪辑')
   assert.equal(store.getSnapshot(), true)
   assert.equal(store.readBox().width, 0)
+  store.close()
+  assert.deepEqual(closed, [CLIP_TAB_ID])
 })
 
-test('clip sidebar store.open is a no-op when workbench global is missing', () => {
+test('clip sidebar store is a no-op when workbench factory is missing', () => {
   let claimed = 0
   globalThis.window = {
     __omnimuxStage: { claim() { claimed += 1 } },
