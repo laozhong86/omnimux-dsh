@@ -134,7 +134,7 @@ export const BUILTIN_MODEL_CAPABILITIES: Record<string, ModelInputCapability> = 
     modalities: ['text', 'image'],
     referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
   },
-  'grok-imagine-video-1.5': {
+  'grok-imagine-video-1-5': {
     modalities: ['text', 'image'],
     referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
   },

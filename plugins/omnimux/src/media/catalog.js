@@ -748,7 +748,7 @@ export const VIDEO_MODEL_SPECS = [
     },
   },
   {
-    id: 'grok-imagine-video-1.5',
+    id: 'grok-imagine-video-1-5',
     label: 'Grok Imagine Video 1.5',
     subtitle: '720P-1080P · ⏱ 5s',
     family: 'grok',
