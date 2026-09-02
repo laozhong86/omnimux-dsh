@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-09-02T20:16:00+08:00",
+  "issue": 391,
+  "port": 45120,
+  "taskSpace": "products-form-data-undefined-391",
+  "taskSpaceId": 366,
+  "url": "http://127.0.0.1:45120/",
+  "assertions": {
+    "1. Click 添加产品 before fix shows Cannot destructure property 'mode' of 'data' as it is undefined": true,
+    "2. After materialize+reload, 添加产品 opens the form dialog": true,
+    "3. Dialog shows 选择文件": true,
+    "4. Click 选择文件 POSTs /omnimux/products/pick {kind:file}": true,
+    "5. After fix: no mode destructure TypeError": true
+  },
+  "details": {
+    "beforeSnippet": "dsh-better-sidebar: Cannot destructure property 'mode' of 'data' as it is undefined.",
+    "afterErrors": [],
+    "afterFetches": [
+      { "url": "/omnimux/products/pick", "method": "POST", "body": "{\"kind\":\"file\"}" }
+    ],
+    "screenshots": [
+      "docs/evidence/issue-391/before-crash.png",
+      "docs/evidence/issue-391/after-dialog.png"
+    ],
+    "materialize": "OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1 ./scripts/sync-to-app.sh omnimux-products"
+  },
+  "verdict": "PASS",
+  "notes": [
+    "Root cause is ProductsStage passing flat props while ProductFormDialog destructures data.mode; not a dsh-better-sidebar bug.",
+    "Sibling of #390 / PR #392."
+  ]
+}
