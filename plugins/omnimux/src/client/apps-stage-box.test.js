@@ -75,6 +75,8 @@ describe('PRODUCT_STAGE_CHROME', () => {
     assert.match(PRODUCT_STAGE_CHROME, /toggleCluster/)
     assert.match(PRODUCT_STAGE_CHROME, /pointer-events:none/)
     assert.match(PRODUCT_STAGE_CHROME, /dsh-window-drag/)
+    assert.match(PRODUCT_STAGE_CHROME, /body\[data-dsh-desktop-mode\] \[class\*="tabBar"\]/)
+    assert.match(PRODUCT_STAGE_CHROME, /tabBar"\] \*\{-webkit-app-region:no-drag/)
     assert.match(PRODUCT_STAGE_CHROME, /data-dsh-panel-host/)
     assert.match(PRODUCT_STAGE_CHROME, /data-dsh-better-sidebar/)
     assert.match(PRODUCT_STAGE_CHROME, /\[data-dsh-better-sidebar\] \[class\*="_panel"\]/)
