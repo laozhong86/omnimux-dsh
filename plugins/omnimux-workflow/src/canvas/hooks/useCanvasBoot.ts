@@ -16,9 +16,10 @@ import type { CapabilityCatalog } from '../../shared/api';
 import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes';
 import {
   getCachedCatalog,
+  getCachedFingerprint,
   invalidateCachedCatalog,
-  isCatalogCacheStale,
   setCachedCatalog,
+  shouldReplaceCatalogCache,
 } from '../editor/hooks/useModelParameterSchema';
 import { sortCatalogRows } from '../../shared/sortCatalog';
 import { tableDocumentCache } from '../store/tableDocumentCache';
@@ -64,10 +65,25 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
     }
 
     async function refreshCatalog(force = false): Promise<void> {
-      if (!force && !isCatalogCacheStale() && getCachedCatalog()) return;
+      if (!force) {
+        const cached = getCachedCatalog();
+        if (cached) setCatalog(cached);
+      }
       const result = await fetchCapabilities();
       if (cancelled || !result.ok) return;
       const next = normalizeCatalog(result.body);
+      if (
+        !shouldReplaceCatalogCache({
+          cachedFingerprint: getCachedFingerprint(),
+          nextFingerprint: next.fingerprint,
+          force,
+        })
+      ) {
+        // Same fingerprint and cache already in memory: skip localStorage write.
+        // Still hydrate boot catalog state if it is empty.
+        setCatalog((prev) => prev ?? next);
+        return;
+      }
       setCatalog(next);
       setCachedCatalog(next);
     }
