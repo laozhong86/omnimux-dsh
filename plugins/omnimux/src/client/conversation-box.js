@@ -131,8 +131,8 @@ html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
-  background:var(--dsw-alias-bg-layer-2, rgba(255,255,255,.06))!important;
-  border:1px solid var(--dsw-alias-border-l2)!important;
+  background:transparent!important;
+  border:none!important;
   border-radius:8px!important;
   color:var(--dsw-alias-label-secondary)!important;
   cursor:pointer!important;

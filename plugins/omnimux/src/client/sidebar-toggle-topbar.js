@@ -19,9 +19,11 @@ export const LEFT_COLLAPSED_HTML_ATTR = 'data-omnimux-left-collapsed'
 /** Marks the hidden official AppFrame toggle used as the programmatic trigger. */
 export const SIDEBAR_ORIGINAL_TOGGLE_ATTR = 'data-omnimux-original-sidebar-toggle'
 
-/** Traffic-light safe width (darwin titlebar inset) + small gap before toggle. */
-export const TOPBAR_TOGGLE_LEFT_PX = 78
-export const TOPBAR_TOGGLE_SIZE_PX = 36
+/** Traffic-light safe width (darwin titlebar inset) + small gap before toggle.
+ *  Sits in the gap between the mac traffic lights and the sidebar brand mark so
+ *  the ghost toggle never overlays the OmniMux logo. */
+export const TOPBAR_TOGGLE_LEFT_PX = 52
+export const TOPBAR_TOGGLE_SIZE_PX = 32
 export const TOPBAR_TOGGLE_GAP_PX = 8
 export const TOPBAR_TOGGLE_TOP_PX = 0
 export const TOPBAR_TOGGLE_Z_INDEX = 9999
