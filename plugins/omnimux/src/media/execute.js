@@ -71,6 +71,8 @@ export async function executeOmnimuxMedia(capability, input) {
         style: input.style,
         instrumental: input.instrumental,
         speed: input.speed,
+        aspectRatio: input.aspectRatio,
+        resolution: input.resolution,
       }),
       timeoutMs: 10 * 60_000,
       metadata: { wait },
