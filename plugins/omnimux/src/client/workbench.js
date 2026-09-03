@@ -62,7 +62,7 @@ export const WORKBENCH_OCCUPANTS = Object.freeze([
 
 /** Human-readable Tab titles when registerTab title is unavailable (#345). */
 export const WORKBENCH_TAB_TITLE_FALLBACKS = Object.freeze({
-  'omnimux-workflow:canvas': '画布工作区',
+  'omnimux-workflow:canvas': '创作画布',
   'omnimux-clip:studio': '视频剪辑',
   'omnimux-assets:library': '资产库',
   'omnimux-products:library': '产品库',
@@ -70,7 +70,7 @@ export const WORKBENCH_TAB_TITLE_FALLBACKS = Object.freeze({
   'omnimux-inspiration:library': '灵感库',
   'omnimux-publish:library': '发布',
   'omnimux-analytics:library': '数据分析',
-  'omnimux-workflow:library': '创作',
+  'omnimux-workflow:library': '项目',
   'omnimux-market:plaza': '插件市场',
 })
 
