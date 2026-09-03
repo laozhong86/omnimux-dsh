@@ -18,7 +18,7 @@ export const COMPOSER_COMPACT_ATTR = 'data-omnimux-composer-density'
 export const COMPOSER_COMPACT_DENSITY = Object.freeze({ full: 'full', short: 'short', icon: 'icon' })
 export const COMPOSER_COMPACT_FULL_MIN_PX = 560
 export const COMPOSER_COMPACT_SHORT_MIN_PX = 460
-export const COMPOSER_COMPACT_CONVERSATION_MIN_PX = 360
+export const COMPOSER_COMPACT_CONVERSATION_MIN_PX = 260
 
 export const COMPOSER_COMPACT_CSS = `
 /* (B4) conversation column keeps a minimum width — dragging the split anywhere
@@ -36,6 +36,21 @@ html:not([data-omnimux-conversation-collapsed]) [class*="centerCol"]{
     920px,
     max(240px, calc(var(--dsh-conversation-column-width,0px) * 0.92))
   )!important;
+}
+
+/* (B6) Symmetrical card centering: eliminate scrollbar gutter bias and ensure
+   strictly balanced left/right margins inside the conversation column. */
+[data-composer-card]{
+  margin-left:auto!important;
+  margin-right:auto!important;
+  box-sizing:border-box!important;
+}
+[data-composer-seat]{
+  box-sizing:border-box!important;
+}
+[data-composer-seat] > *{
+  margin-left:auto!important;
+  margin-right:auto!important;
 }
 
 /* (B1) hero (no session yet): the whole stack is what the official scrollBody
