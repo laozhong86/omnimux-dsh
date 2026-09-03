@@ -1,0 +1,91 @@
+{
+  "scene": "T01 reproduce matrix — left-rail collapse vs centerCol dead zone",
+  "issue": "#418 follow-up (centerCol fill / anti-#372)",
+  "device": "OmniMux Dev App 2.0.4, CDP 9229, dsh web 45120, viewport 1728",
+  "method": "CDP Runtime.evaluate + real button[class*=_9I8crW_toggle] clicks",
+  "official_collapse_signal": {
+    "true_signal": "AppFrame ._6PxbcG_frame[data-sidebar-collapsed] + rail ._9I8crW_root._9I8crW_collapsed",
+    "pseudo_signal": "bare document.querySelector('[data-sidebar-collapsed]') (can hit unrelated nodes if injected)",
+    "hub_must_not": "assert collapse only via data-sidebar-collapsed on html or fake stage markers"
+  },
+  "cases": [
+    {
+      "id": "A",
+      "title": "library default gui + real official collapse left",
+      "before_expand": {
+        "mode": "gui",
+        "convCollapsed": true,
+        "sidebarCol": { "x": 0, "w": 280 },
+        "centerCol": { "x": 280, "w": 0 },
+        "panel": { "x": 72, "w": 1656 },
+        "note": "pre-fix: panel stuck near collapsed-max math while rail expanded (stale isOfficial true / width branch)"
+      },
+      "after_collapse": {
+        "mode": "gui",
+        "convCollapsed": true,
+        "sidebarCol": { "x": 0, "w": 56 },
+        "centerCol": { "x": 56, "w": 0 },
+        "panel": { "x": 72, "w": 1656 },
+        "gap_px": 16,
+        "expect_panel_w": 1672,
+        "ok_pre_fix": false,
+        "note": "center already 0 (gui); panel failed to grow to viewport-56 — observer/sync gap"
+      }
+    },
+    {
+      "id": "B",
+      "title": "split + real official collapse left",
+      "before_expand": {
+        "mode": "split",
+        "convCollapsed": false,
+        "sidebarCol": { "x": 0, "w": 280 },
+        "centerCol": { "x": 280, "w": 360 },
+        "panel": { "x": 640, "w": 1088 }
+      },
+      "after_collapse": {
+        "mode": "split",
+        "convCollapsed": false,
+        "sidebarCol": { "x": 0, "w": 56 },
+        "centerCol": { "x": 56, "w": 584 },
+        "panel": { "x": 640, "w": 1088 },
+        "gap_px": 584,
+        "note": "center absorbs freed rail width; panel fixed. Legal under #372 pane independence — user sees centerCol 'dead zone' if they expected library gui fill"
+      }
+    },
+    {
+      "id": "C",
+      "title": "pseudo attr only (hub marker on unrelated host)",
+      "setup": "set data-sidebar-collapsed on .omnimux-assets-stage while rail expanded",
+      "result": {
+        "mode": "split",
+        "rail_expanded_w": 280,
+        "panel_unchanged": true,
+        "note": "pseudo attr must NOT drive officialSessionSidebarWidth / collapse truth"
+      }
+    },
+    {
+      "id": "D",
+      "title": "B then chat-toggle",
+      "before": {
+        "mode": "split",
+        "convCollapsed": false,
+        "centerCol_w": 584,
+        "panel": { "x": 640, "w": 1088 }
+      },
+      "after_chat_toggle": {
+        "mode": "gui",
+        "convCollapsed": true,
+        "centerCol_w": 0,
+        "panel": { "x": 0, "w": 1672 },
+        "note": "chat-toggle path: setConversationCollapsed(true)+setFocus(gui) — covers dead zone; left collapse must NOT take this path (#372)"
+      }
+    }
+  ],
+  "root_causes": [
+    "syncWorkbenchGuiWidth(gui) routed through setWorkbenchFocus('gui') which re-enters setConversationCollapsed — couples left-rail resize to middle intent risk",
+    "isOfficialSidebarCollapsed used bare querySelector('[data-sidebar-collapsed]') — fragile vs frame-rooted truth",
+    "findOfficialSidebarColumn missed AdvancedFrame .dshDesktopSidebarSurface",
+    "attr observer on documentElement subtree; prefer frame host like sidebar-coordinator.collapsedHostNode"
+  ],
+  "fix_intent": "Scheme C: wantsGui = mode===gui || getConversationCollapsed(); gui path writes panel width only; never setConversationCollapsed on left collapse; keep #418 collapsed width branch; harden column/host detection"
+}

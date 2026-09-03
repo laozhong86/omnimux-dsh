@@ -212,9 +212,89 @@ function viewportWidth() {
   return hostWindow()?.innerWidth || 0
 }
 
+/**
+ * Official left-rail column: AppFrame `sidebarCol` / pane, or AdvancedFrame
+ * `dshDesktopSidebarSurface` (no sidebarCol class on that shell).
+ */
+export function findOfficialSidebarColumn(doc = hostDocument()) {
+  if (!doc || typeof doc.querySelector !== 'function') return null
+  return doc.querySelector(
+    '[data-pane="sidebar"], [class*="sidebarCol"], .dshDesktopSidebarSurface, [class*="dshDesktopSidebarSurface"]',
+  )
+}
+
+/**
+ * Host that carries `data-sidebar-collapsed` (AppFrame / AdvancedFrame root).
+ * Prefer the sidebar column's nearest marked ancestor or its parent frame —
+ * same resolution as `sidebar-coordinator.collapsedHostNode`. Bare
+ * `document.querySelector('[data-sidebar-collapsed]')` is unsafe: zero-size
+ * slot shells or unrelated markers can false-positive and lock width math.
+ */
+export function officialSidebarCollapsedHost(doc = hostDocument()) {
+  if (!doc || typeof doc.querySelector !== 'function') return null
+  const column = findOfficialSidebarColumn(doc)
+  if (column && typeof column.closest === 'function') {
+    try {
+      const marked = column.closest('[data-sidebar-collapsed]')
+      if (marked) return marked
+    } catch {
+      // ignore
+    }
+    if (column.parentElement) return column.parentElement
+    try {
+      const slot = column.closest('[data-slot="root"]')
+      if (slot) return slot
+    } catch {
+      // ignore
+    }
+  }
+  const marked = doc.querySelector(
+    '[class*="frame"][data-sidebar-collapsed], .dshDesktopFrame[data-sidebar-collapsed], [data-slot="root"] > [data-sidebar-collapsed], [data-sidebar-collapsed]',
+  )
+  if (marked) return marked
+  const slot = doc.querySelector('[data-slot="root"]')
+  if (slot) return slot
+  return null
+}
+
+/**
+ * Whether the official left session rail is collapsed.
+ * Truth order:
+ * 1. `data-sidebar-collapsed` on the frame host above the sidebar column
+ *    (AppFrame / AdvancedFrame — not a random descendant / phantom slot).
+ * 2. Optional class cue on the rail root (`_root` + `collapsed`, e.g. `_9I8crW_collapsed`).
+ */
 export function isOfficialSidebarCollapsed(doc = hostDocument()) {
   if (!doc || typeof doc.querySelector !== 'function') return false
-  return Boolean(doc.querySelector('[data-sidebar-collapsed]'))
+  const column = findOfficialSidebarColumn(doc)
+  if (column && typeof column.closest === 'function') {
+    try {
+      if (column.closest('[data-sidebar-collapsed]')) return true
+    } catch {
+      // ignore
+    }
+  }
+  // Frame-level attr without going through a crushed/missing column.
+  const frame = doc.querySelector(
+    '[class*="frame"][data-sidebar-collapsed], .dshDesktopFrame[data-sidebar-collapsed]',
+  )
+  if (frame) return true
+  // Rail class assist (official CSS-module collapsed). Do not treat this alone
+  // as stronger than a missing frame attr when the column is clearly expanded.
+  const rail = column?.querySelector?.('[class*="_root"]')
+    || doc.querySelector('[class*="_root"][class*="collapsed"]')
+  if (rail && typeof rail.className === 'string') {
+    const cls = rail.className
+    if (/\bcollapsed\b|_collapsed\b/.test(cls) || (cls.includes('_root') && cls.includes('collapsed'))) {
+      // If the grid column is already expanded, prefer geometry over a stale class.
+      if (column && typeof column.getBoundingClientRect === 'function') {
+        const w = column.getBoundingClientRect().width
+        if (typeof w === 'number' && w >= WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX) return false
+      }
+      return true
+    }
+  }
+  return false
 }
 
 /**
@@ -227,7 +307,8 @@ export function isOfficialSidebarCollapsed(doc = hostDocument()) {
  * Collapse is the inverse: AppFrame flips `data-sidebar-collapsed` before the
  * grid track finishes animating to the ~56px rail. Returning that stale live
  * width (often still ~280) makes `gui = viewport − expanded` leave a gap to
- * the right of the true rail. While collapsed, only trust rail-sized measures.
+ * the right of the true rail. While collapsed, only trust rail-sized measures
+ * (#418 collapsed branch — keep).
  */
 export function officialSessionSidebarWidth(env = {}) {
   if (typeof env.officialSidebarWidth === 'number' && Number.isFinite(env.officialSidebarWidth)) {
@@ -237,7 +318,7 @@ export function officialSessionSidebarWidth(env = {}) {
   }
   const doc = hostDocument()
   if (!doc || typeof doc.querySelector !== 'function') return 0
-  const column = doc.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]')
+  const column = findOfficialSidebarColumn(doc)
   if (!column || typeof column.getBoundingClientRect !== 'function') return 0
   const width = column.getBoundingClientRect().width
   if (typeof width !== 'number' || !Number.isFinite(width) || width <= 0) return 0
@@ -263,6 +344,10 @@ export function officialSessionSidebarWidth(env = {}) {
  * Re-apply `gui` geometry from the live left rail.
  * Also clamps any open panel that is wider than `viewport − leftRail` so the
  * fixed right panel cannot cover the official session list (#353 / #356).
+ *
+ * Left-rail resize MUST only rewrite panel width. It MUST NOT call
+ * `setConversationCollapsed` / flip middle-pane intent (#372). `wantsGui` is
+ * pure intent: stored gui mode OR an already-collapsed middle column.
  * @returns {boolean} whether a write was attempted
  */
 export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
@@ -281,7 +366,24 @@ export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
     && state.width > target + WORKBENCH_FOCUS_NEAR_PX
 
   if (wantsGui) {
-    return setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, env, tabId)
+    // Panel geometry only — do NOT route through setWorkbenchFocus (that would
+    // re-enter setConversationCollapsed and couple left-rail collapse to the
+    // middle pane, regressing #372).
+    if (!store || typeof store.reduce !== 'function') return false
+    let wrote = false
+    store.reduce((current) => {
+      if (!current || current.panelOpen === false) return current
+      const nextWidth = workbenchGuiWidthPx(current, env)
+      if (typeof current.width === 'number' && Number.isFinite(current.width)
+        && Math.abs(current.width - nextWidth) < 1
+        && current.panelOpen === true) {
+        return current
+      }
+      wrote = true
+      return { ...current, panelOpen: true, width: nextWidth }
+    })
+    if (wrote) emit()
+    return wrote
   }
   // Independence invariant + conversation-column guard: even a "split" record
   // must be clamped so it neither covers the left rail nor squeezes the middle
@@ -313,11 +415,6 @@ function scheduleGuiWidthSync() {
   })
 }
 
-function findOfficialSidebarColumn(doc = hostDocument()) {
-  if (!doc || typeof doc.querySelector !== 'function') return null
-  return doc.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]')
-}
-
 /**
  * Keep `gui` panel width glued to the official left rail as it expands/collapses.
  * Without this, hiding chat while the rail is collapsed (or a stale 56px measure)
@@ -333,22 +430,35 @@ export function installWorkbenchLeftRailObserver(doc = hostDocument()) {
   leftRailObserverDoc = doc
 
   const column = findOfficialSidebarColumn(doc)
-  if (column && typeof ResizeObserver !== 'undefined') {
+  const collapsedHost = officialSidebarCollapsedHost(doc)
+  if (typeof ResizeObserver !== 'undefined') {
     leftRailResizeObserver = new ResizeObserver(() => { scheduleGuiWidthSync() })
-    leftRailResizeObserver.observe(column)
+    if (column) leftRailResizeObserver.observe(column)
+    // Frame track animates grid-template-columns; observe the host when it is a
+    // distinct element so collapse tweens still schedule a sync.
+    if (collapsedHost && collapsedHost !== column) {
+      try { leftRailResizeObserver.observe(collapsedHost) } catch { /* ignore */ }
+    }
   }
 
-  // Attribute-only: expand/collapse flips `data-sidebar-collapsed`. Do NOT
-  // watch childList here — hub chrome already has a body MutationObserver for
-  // the chat toggle, and a second subtree childList loop would cascade.
+  // Attribute-only on the frame host (AppFrame / AdvancedFrame). Prefer the
+  // sidebar-coordinator collapsedHostNode shape over html+subtree so phantom
+  // markers elsewhere cannot thrash sync. Fall back to documentElement subtree
+  // when the host is not mounted yet.
   if (typeof MutationObserver !== 'undefined') {
     leftRailAttrObserver = new MutationObserver(() => { scheduleGuiWidthSync() })
-    const root = doc.documentElement || doc.body
-    if (root) {
-      leftRailAttrObserver.observe(root, {
+    const host = collapsedHost && collapsedHost.isConnected !== false
+      ? collapsedHost
+      : (doc.documentElement || doc.body)
+    if (host) {
+      const subtree = !collapsedHost
+        || (typeof host.getAttribute === 'function'
+          && host.getAttribute('data-slot') === 'root'
+          && !host.hasAttribute('data-sidebar-collapsed'))
+      leftRailAttrObserver.observe(host, {
         attributes: true,
         attributeFilter: ['data-sidebar-collapsed'],
-        subtree: true,
+        subtree: Boolean(subtree),
       })
     }
   }

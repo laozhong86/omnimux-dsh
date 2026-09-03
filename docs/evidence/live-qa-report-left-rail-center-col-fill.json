@@ -1,0 +1,19 @@
+{
+  "scene": "left-rail-collapse-center-col-fill",
+  "issue": "收起官方左侧侧边栏后中间 centerCol 死区留白；仅 chat-toggle 覆盖",
+  "fix": "workbench.js: findOfficialSidebarColumn(含 dshDesktopSidebarSurface) + officialSidebarCollapsedHost + isOfficialSidebarCollapsed 优先 frame-host attr；syncWorkbenchGuiWidth gui 分支直接 store.reduce 写宽，不再经 setWorkbenchFocus(避免 setConversationCollapsed 回归 #372)",
+  "device": "OmniMux Dev App 2.0.4, CDP 9229, dsh web 45120, viewport=1728",
+  "verdict": "PASS",
+  "method": "真机点击官方侧边栏真实 toggle 按钮(_9I8crW_toggle)，非改属性模拟",
+  "cases": [
+    {"mode":"gui","state":"sidebar_collapsed","sidebarCol_w":56,"centerCol_x":56,"centerCol_w":0,"panel_x":56,"panel_w":1672,"expect":"panel=(viewport-56)=1672 no left gap","ok":true},
+    {"mode":"gui","state":"sidebar_expanded","sidebarCol_w":280,"centerCol_x":280,"centerCol_w":0,"panel_x":280,"panel_w":1448,"expect":"panel=(viewport-280)=1448","ok":true},
+    {"mode":"split","state":"sidebar_collapsed","sidebarCol_w":56,"centerCol_x":56,"centerCol_w":437,"panel_x":493,"panel_w":1235,"expect":"freed width redistributed centerCol+canvas, no dead zone","ok":true},
+    {"mode":"split","state":"sidebar_expanded","sidebarCol_w":280,"centerCol_x":280,"centerCol_w":360,"panel_x":599,"panel_w":1129,"expect":"conversation visible, canvas right","ok":true}
+  ],
+  "regression_guards": {
+    "split_when_collapse": "mode stays split, convCollapsed stays false (no #372 violation)",
+    "gui_width": "viewport - collapsedRail applied without gap (pre-fix had 16px gap panel_x=72)"
+  },
+  "unittest": "omnimux 665/665, workbench.test.js includes new findOfficialSidebarColumn/officialSidebarCollapsedHost + anti-#372 cases"
+}
