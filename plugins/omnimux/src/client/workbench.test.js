@@ -775,6 +775,23 @@ test('setWorkbenchFocus chat/gui/split writes panel geometry and restores split 
   assert.equal(state.width, 650)
 })
 
+test('setWorkbenchFocus chat forces middle conversation open (right-closed session view)', () => {
+  setupWindow()
+  const env = { viewportWidth: 1200, officialSidebarWidth: 0 }
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 780, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-chat-mid', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+
+  // Hide mid via gui, then close the right panel — mid must come back.
+  setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, env)
+  assert.equal(getConversationCollapsed(), true)
+  setWorkbenchFocus(WORKBENCH_FOCUS.chat, store, env)
+  assert.equal(state.panelOpen, false)
+  assert.equal(getConversationCollapsed(), false, 'closing right panel must show the session column')
+})
+
 test('attachStore reapplies gui focus so default width cannot stomp it', () => {
   setupWindow()
   let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 500, true)

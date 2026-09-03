@@ -69,6 +69,23 @@ html:not([data-omnimux-conversation-collapsed]) [class*="centerCol"]{
   min-height:0;
 }
 
+/* (B5) hero seats row ("测试 / 标准模式") docks to the live composer-card
+   geometry. Official row is full column width with a left pad, so on wide /
+   fullscreen columns the seats sit ~100–200px left of the card. JS writes
+   --omnimux-composer-card-left / -width from the card box; fall back to the
+   shared content-width rail when the card is not measurable yet. */
+[data-phase='hero'] [class*="heroWorkspaceRow"]{
+  width:var(--omnimux-composer-card-width, var(--dsh-chat-content-width))!important;
+  max-width:var(--omnimux-composer-card-width, var(--dsh-chat-content-width))!important;
+  margin-left:var(--omnimux-composer-card-offset, auto)!important;
+  margin-right:auto!important;
+  padding-left:0!important;
+  padding-right:0!important;
+  box-sizing:border-box!important;
+  position:relative!important;
+  left:0!important;
+}
+
 /* (B3) density: short */
 html[data-omnimux-composer-density='short'] [data-composer-card] [class*="triggerLabel"]{
   max-width:88px;
@@ -170,7 +187,39 @@ function measureWidth(el) {
 }
 
 /**
+ * Dock the hero seats row to the live composer-card box (fullscreen fix).
+ * Writes CSS vars consumed by COMPOSER_COMPACT_CSS B5.
+ * @param {Document | undefined} doc
+ */
+export function syncHeroWorkspaceRowToCard(doc = hostDocument()) {
+  const root = doc?.documentElement
+  if (!root?.style?.setProperty) return
+  const card = doc?.querySelector?.('[data-composer-card]')
+  const center = doc?.querySelector?.('[class*="centerCol"], [data-slot="conversation"]')
+  if (!card || typeof card.getBoundingClientRect !== 'function') {
+    try {
+      root.style.removeProperty('--omnimux-composer-card-width')
+      root.style.removeProperty('--omnimux-composer-card-offset')
+    } catch { /* ignore */ }
+    return
+  }
+  const cardBox = card.getBoundingClientRect()
+  const centerBox = center && typeof center.getBoundingClientRect === 'function'
+    ? center.getBoundingClientRect()
+    : null
+  const width = Math.round(cardBox.width)
+  if (!(width > 0)) return
+  // Offset of the card inside the conversation column (not the viewport).
+  const offset = centerBox
+    ? Math.max(0, Math.round(cardBox.left - centerBox.left))
+    : Math.round(cardBox.left)
+  root.style.setProperty('--omnimux-composer-card-width', `${width}px`)
+  root.style.setProperty('--omnimux-composer-card-offset', `${offset}px`)
+}
+
+/**
  * Write the density attribute on `<html>` based on the current probe width.
+ * Also keeps the hero seats row docked to the composer card.
  * @param {Document | undefined} [doc]
  */
 export function applyComposerDensity(doc = hostDocument()) {
@@ -180,9 +229,10 @@ export function applyComposerDensity(doc = hostDocument()) {
   const width = target ? measureWidth(target) : null
   if (width == null) {
     if (typeof root.removeAttribute === 'function') root.removeAttribute(COMPOSER_COMPACT_ATTR)
-    return
+  } else {
+    root.setAttribute(COMPOSER_COMPACT_ATTR, composerDensityForWidth(width))
   }
-  root.setAttribute(COMPOSER_COMPACT_ATTR, composerDensityForWidth(width))
+  syncHeroWorkspaceRowToCard(doc)
 }
 
 /**
@@ -278,6 +328,12 @@ export function resetComposerCompactForTests() {
   const root = doc?.documentElement
   if (root && typeof root.removeAttribute === 'function') {
     root.removeAttribute(COMPOSER_COMPACT_ATTR)
+  }
+  if (root?.style?.removeProperty) {
+    try {
+      root.style.removeProperty('--omnimux-composer-card-width')
+      root.style.removeProperty('--omnimux-composer-card-offset')
+    } catch { /* ignore */ }
   }
   const style = doc?.getElementById?.(COMPOSER_COMPACT_STYLE_ID)
   if (style && typeof style.remove === 'function') style.remove()

@@ -736,9 +736,13 @@ export function setWorkbenchFocus(mode, store = attachedStore, env = {}, targetT
   if (mode !== WORKBENCH_FOCUS.chat && sessionId && effectiveTabId) {
     persistSessionFocus(sessionId, effectiveTabId, { mode })
   }
-  // gui/split drive middle-pane collapsed intent; chat (right closed) leaves it alone (#372).
+  // gui → mid collapsed; split → mid open; chat (right closed) → mid MUST stay
+  // open so the session view is never blank when the workbench panel is gone.
+  // (#372 still holds: left-rail collapse never flips mid on its own.)
   if (mode === WORKBENCH_FOCUS.gui) setConversationCollapsed(true, { sessionId })
-  else if (mode === WORKBENCH_FOCUS.split) setConversationCollapsed(false, { sessionId })
+  else if (mode === WORKBENCH_FOCUS.split || mode === WORKBENCH_FOCUS.chat) {
+    setConversationCollapsed(false, { sessionId })
+  }
   if (!store || typeof store.reduce !== 'function') {
     emit()
     return false
