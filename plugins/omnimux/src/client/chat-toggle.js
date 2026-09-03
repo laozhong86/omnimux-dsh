@@ -16,10 +16,28 @@ import {
 export const CHAT_TOGGLE_ATTR = 'data-omnimux-chat-toggle'
 export const CHAT_TOGGLE_SELECTOR = `[${CHAT_TOGGLE_ATTR}="1"]`
 
-const SVG_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none" role="presentation" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
-  <rect x="1.5" y="2" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.25"/>
-  <path d="M6 2.5v11" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-  <path d="M3.2 6.5h1.6M3.2 9.5h1.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+/**
+ * Lucide maximize-2 style icon: two outward diagonal arrows. Shown while the
+ * middle conversation column is visible — clicking expands (maximizes) the
+ * right workbench panel to full width.
+ */
+export const MAXIMIZE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" role="presentation" aria-hidden="true" preserveAspectRatio="xMidYMid meet" data-omnimux-icon="maximize">
+  <path d="M10 2h4v4"/>
+  <path d="M14 2L9 7"/>
+  <path d="M6 14H2v-4"/>
+  <path d="M2 14l5-5"/>
+</svg>`
+
+/**
+ * Lucide minimize-2 style icon: two inward diagonal arrows. Shown while the
+ * middle conversation column is collapsed (right panel is full width) —
+ * clicking restores (minimizes) the panel and brings the conversation back.
+ */
+export const RESTORE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" role="presentation" aria-hidden="true" preserveAspectRatio="xMidYMid meet" data-omnimux-icon="restore">
+  <path d="M13 6.5H9.5V3"/>
+  <path d="M14 2L9.5 6.5"/>
+  <path d="M3 9.5h3.5V13"/>
+  <path d="M2 14l4.5-4.5"/>
 </svg>`
 
 function hostWindow() {
@@ -57,12 +75,34 @@ export function syncChatToggleState(btn) {
 
   const collapsed = getConversationCollapsed()
   btn.style.display = ''
-  btn.setAttribute('data-active', collapsed ? 'false' : 'true')
+  const active = collapsed ? 'false' : 'true'
+  if (btn.getAttribute('data-active') !== active) {
+    btn.setAttribute('data-active', active)
+  }
+  // collapsed=true  → right panel is full width; offer "restore" (shrink panel,
+  //                   show conversation again) with the inward-arrows icon.
+  // collapsed=false → conversation visible; offer "maximize" (fill full width)
+  //                   with the outward-arrows icon.
+  //
+  // Idempotent write (critical): innerHTML assignment ALWAYS replaces child
+  // nodes even when the markup is identical, which fires a childList mutation.
+  // installChatToggleObserver watches document.body with
+  // { childList: true, subtree: true } and re-runs ensureChatToggle →
+  // syncChatToggleState on every mutation — an unconditional innerHTML write
+  // here deadlocks the main thread in an infinite synchronous observer loop.
+  // Only touch innerHTML when the icon actually flips.
+  const action = collapsed ? 'restore' : 'maximize'
+  if (btn.getAttribute('data-action') !== action) {
+    btn.innerHTML = collapsed ? RESTORE_ICON_SVG : MAXIMIZE_ICON_SVG
+    btn.setAttribute('data-action', action)
+  }
   const label = collapsed
-    ? (api.t?.('workbench.chatShow') || '展开中间会话栏')
-    : (api.t?.('workbench.chatHide') || '收起中间会话栏')
-  btn.setAttribute('aria-label', label)
-  btn.setAttribute('title', label)
+    ? (api.t?.('workbench.chatShow') || '显示会话栏')
+    : (api.t?.('workbench.chatHide') || '全屏铺满右侧栏')
+  if (btn.getAttribute('aria-label') !== label) {
+    btn.setAttribute('aria-label', label)
+    btn.setAttribute('title', label)
+  }
 }
 
 export function createChatToggleButton(doc = hostDocument()) {
@@ -71,7 +111,12 @@ export function createChatToggleButton(doc = hostDocument()) {
   btn.type = 'button'
   btn.setAttribute(CHAT_TOGGLE_ATTR, '1')
   btn.className = 'omnimux-chat-toggle-btn'
-  btn.innerHTML = SVG_ICON
+  // Default to the maximize icon; syncChatToggleState below resolves the real
+  // state-driven icon (and hides the button when it is not applicable).
+  // data-action is set alongside innerHTML so the sync below stays a no-op
+  // when the conversation is already visible (see idempotency note there).
+  btn.innerHTML = MAXIMIZE_ICON_SVG
+  btn.setAttribute('data-action', 'maximize')
 
   btn.addEventListener('click', (event) => {
     event.preventDefault()

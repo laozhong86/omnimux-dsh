@@ -3,6 +3,8 @@ import { afterEach, test } from 'node:test'
 import {
   CHAT_TOGGLE_ATTR,
   CHAT_TOGGLE_SELECTOR,
+  MAXIMIZE_ICON_SVG,
+  RESTORE_ICON_SVG,
   createChatToggleButton,
   ensureChatToggle,
   syncChatToggleState,
@@ -150,6 +152,154 @@ test('clicking chat toggle collapses conversation then restores split', () => {
   assert.equal(doc.documentElement.hasAttribute('data-omnimux-conversation-collapsed'), false)
 })
 
+function setupToggleApi(win, doc) {
+  win.__omnimuxWorkbench = {
+    getFocus: () => WORKBENCH_FOCUS.split,
+    setFocus: () => true,
+    getActiveTab: () => 'omnimux-assets:library',
+    getSnapshot: () => ({ state: { panelOpen: true } }),
+    subscribe: () => () => {},
+  }
+  setConversationCollapsed(false, { persist: false, doc })
+}
+
+test('toggle shows maximize icon when conversation is visible', () => {
+  const { win, doc } = setupFakeDOM()
+  setupToggleApi(win, doc)
+
+  const btn = createChatToggleButton(doc)
+  assert.equal(btn.style.display, '')
+  assert.equal(btn.innerHTML, MAXIMIZE_ICON_SVG)
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  assert.equal(btn.getAttribute('data-action'), 'maximize')
+})
+
+test('toggle shows restore icon when conversation is collapsed', () => {
+  const { win, doc } = setupFakeDOM()
+  setupToggleApi(win, doc)
+  setConversationCollapsed(true, { persist: false, doc })
+
+  const btn = createChatToggleButton(doc)
+  assert.equal(btn.style.display, '')
+  assert.equal(btn.innerHTML, RESTORE_ICON_SVG)
+  assert.match(btn.innerHTML, /data-omnimux-icon="restore"/)
+  assert.equal(btn.getAttribute('data-action'), 'restore')
+})
+
+test('clicking toggles icon maximize -> restore -> maximize', () => {
+  const { win, doc } = setupFakeDOM()
+  setupToggleApi(win, doc)
+
+  const btn = createChatToggleButton(doc)
+  // Initial: conversation visible -> maximize (expand right panel)
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  assert.equal(btn.getAttribute('data-action'), 'maximize')
+
+  // Click 1: collapse conversation (full width) -> restore icon
+  btn.dispatchEvent({ type: 'click', preventDefault() {}, stopPropagation() {} })
+  assert.match(btn.innerHTML, /data-omnimux-icon="restore"/)
+  assert.equal(btn.getAttribute('data-action'), 'restore')
+
+  // Click 2: show conversation again -> maximize icon
+  btn.dispatchEvent({ type: 'click', preventDefault() {}, stopPropagation() {} })
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  assert.equal(btn.getAttribute('data-action'), 'maximize')
+})
+
+/**
+ * Installs an innerHTML write counter on a fake-DOM element. Returns a getter
+ * for the number of times the innerHTML setter fired since installation.
+ * Regression guard: innerHTML assignment replaces child nodes even when the
+ * markup is identical, which fires a childList mutation and re-triggers the
+ * MutationObserver installed by installChatToggleObserver — an unconditional
+ * write deadlocks the main thread in a real browser.
+ */
+function countInnerHTMLWrites(elem) {
+  let count = 0
+  let value = elem.innerHTML
+  Object.defineProperty(elem, 'innerHTML', {
+    configurable: true,
+    get() {
+      return value
+    },
+    set(v) {
+      count += 1
+      value = v
+    },
+  })
+  return () => count
+}
+
+test('syncChatToggleState does not rewrite innerHTML when state is unchanged', () => {
+  const { win, doc } = setupFakeDOM()
+  setupToggleApi(win, doc)
+
+  const btn = createChatToggleButton(doc)
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  const writes = countInnerHTMLWrites(btn)
+
+  // Repeated syncs with unchanged state must be a complete no-op.
+  syncChatToggleState(btn)
+  syncChatToggleState(btn)
+  syncChatToggleState(btn)
+  assert.equal(writes(), 0)
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  assert.equal(btn.getAttribute('data-action'), 'maximize')
+})
+
+test('syncChatToggleState rewrites innerHTML exactly once when collapsed state flips', () => {
+  const { win, doc } = setupFakeDOM()
+  setupToggleApi(win, doc)
+
+  const btn = createChatToggleButton(doc)
+  const writes = countInnerHTMLWrites(btn)
+
+  // Flip to collapsed -> icon must actually update (maximize -> restore).
+  setConversationCollapsed(true, { persist: false, doc })
+  syncChatToggleState(btn)
+  assert.equal(writes(), 1)
+  assert.match(btn.innerHTML, /data-omnimux-icon="restore"/)
+  assert.equal(btn.getAttribute('data-action'), 'restore')
+
+  // Further syncs at the same state are no-ops again.
+  syncChatToggleState(btn)
+  syncChatToggleState(btn)
+  assert.equal(writes(), 1)
+
+  // Flip back -> one more write.
+  setConversationCollapsed(false, { persist: false, doc })
+  syncChatToggleState(btn)
+  assert.equal(writes(), 2)
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  assert.equal(btn.getAttribute('data-action'), 'maximize')
+})
+
+test('ensureChatToggle is a mutation-free no-op when button already sits first', () => {
+  const { win, doc, cluster } = setupFakeDOM()
+  setupToggleApi(win, doc)
+
+  const btn = ensureChatToggle(doc)
+  assert.ok(btn)
+  assert.equal(cluster.firstChild, btn)
+
+  const writes = countInnerHTMLWrites(btn)
+  let insertBeforeCalls = 0
+  const originalInsertBefore = cluster.insertBefore
+  cluster.insertBefore = (newChild, refChild) => {
+    insertBeforeCalls += 1
+    return originalInsertBefore(newChild, refChild)
+  }
+
+  // Simulates repeated MutationObserver callbacks: no DOM write may happen.
+  ensureChatToggle(doc)
+  ensureChatToggle(doc)
+  ensureChatToggle(doc)
+  assert.equal(writes(), 0)
+  assert.equal(insertBeforeCalls, 0)
+  assert.equal(cluster.firstChild, btn)
+  assert.equal(cluster.children.length, 3)
+})
+
 test('syncChatToggleState hides button when panel is closed or tab is not workbench occupant', () => {
   const { win, doc } = setupFakeDOM()
   let panelOpen = true
@@ -158,13 +308,16 @@ test('syncChatToggleState hides button when panel is closed or tab is not workbe
     getFocus: () => WORKBENCH_FOCUS.gui,
     getActiveTab: () => activeTab,
     getSnapshot: () => ({ state: { panelOpen } }),
-    t: (k) => (k === 'workbench.chatShow' ? '展开中间会话栏' : '收起中间会话栏'),
+    t: (k) => (k === 'workbench.chatShow' ? '显示会话栏' : '全屏铺满右侧栏'),
   }
   setConversationCollapsed(true, { persist: false, doc })
 
   const btn = createChatToggleButton(doc)
   assert.equal(btn.style.display, '')
-  assert.equal(btn.getAttribute('aria-label'), '展开中间会话栏')
+  assert.equal(btn.getAttribute('aria-label'), '显示会话栏')
+  assert.equal(btn.getAttribute('title'), '显示会话栏')
+  assert.equal(btn.getAttribute('data-action'), 'restore')
+  assert.match(btn.innerHTML, /data-omnimux-icon="restore"/)
 
   // Panel closed -> hidden
   panelOpen = false

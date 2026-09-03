@@ -1,0 +1,53 @@
+{
+  "stage": "workbench-chat-toggle-maximize-icon",
+  "date": "2026-09-03",
+  "port": 45120,
+  "profile": "~/.omnimux-dev",
+  "branch": "agent/omnimux-chat-toggle-maximize-icon",
+  "commits": ["58fa1df", "5655445"],
+  "verifier": "ego-browser (lead live probe, task space 397)",
+  "materialized": "~/.omnimux-dev/profiles/omnimux/node_modules/omnimux/lib/client.js contains idempotent data-action guard",
+  "unit": {
+    "chat-toggle.test.js": "10/10 pass",
+    "pnpm --filter omnimux test": "702/702 pass, 0 fail"
+  },
+  "live_assertions": {
+    "page_boots_healthy": true,
+    "toggle_button_exists": true,
+    "toggle_is_first_in_cluster": true,
+    "initial_state_gui": {
+      "icon": "restore",
+      "data-action": "restore",
+      "aria-label": "显示会话栏",
+      "focus": "gui",
+      "panelOpen": true
+    },
+    "click_1_to_split": {
+      "icon": "maximize",
+      "data-action": "maximize",
+      "aria-label": "全屏铺满右侧栏",
+      "focus": "split",
+      "conversation_collapsed_attr": false,
+      "composer_visible": true
+    },
+    "click_2_back_to_gui": {
+      "icon": "restore",
+      "data-action": "restore",
+      "aria-label": "显示会话栏",
+      "focus": "gui",
+      "conversation_collapsed_attr": true,
+      "composer_visible": false
+    },
+    "renderer_healthy_after_clicks": true,
+    "tab_latency_ms": 1
+  },
+  "regression_found_and_fixed": {
+    "bug": "syncChatToggleState unconditional innerHTML rewrite -> MutationObserver (childList+subtree on body) infinite sync loop -> renderer wedged at 100%+ CPU",
+    "fix_commit": "5655445",
+    "fix": "idempotent icon write: skip innerHTML when data-action already matches target; also idempotent data-active/aria-label/title; +3 regression tests",
+    "evidence_pre_fix": "two ego renderer processes at 136%/124% CPU with wedged 45120 tabs",
+    "evidence_post_fix": "tab latency 1ms, repeated clicks healthy"
+  },
+  "notes": "High-CPU renderers observed post-fix belong to unrelated user tabs (x.com etc.); the 45120 tab itself responds in 1ms.",
+  "verdict": "LIVE PASS"
+}
