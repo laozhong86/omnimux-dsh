@@ -11,6 +11,7 @@ import {
   pollVideoTask,
   readOmnimuxConfig,
 } from './video.js'
+import { mapOmnimuxInput } from './vendors/omnimux.js'
 
 describe('omnimux video helpers', () => {
   it('reads env defaults', () => {
@@ -186,5 +187,64 @@ describe('omnimux video helpers', () => {
     assert.equal(result.taskId, 'task-7')
     assert.equal(readFileSync(dest, 'utf8'), 'resumed')
     rmSync(dir, { recursive: true, force: true })
+  })
+})
+
+describe('mapOmnimuxInput video branch (#429)', () => {
+  it('maps image references to reference_images and never emits images/references/audioTrack', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'make them dance',
+      references: [
+        { role: 'reference', type: 'image', pathOrUrl: 'https://example.com/ref1.png' },
+        { role: 'reference', type: 'image', pathOrUrl: 'https://example.com/ref2.png' },
+        { role: 'bgm', type: 'audio', pathOrUrl: 'https://example.com/bgm.mp3' },
+      ],
+      audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/track.mp3' },
+    })
+    assert.deepEqual(input.reference_images, [
+      { url: 'https://example.com/ref1.png' },
+      { url: 'https://example.com/ref2.png' },
+    ])
+    assert.equal('images' in input, false, 'video 请求绝不能携带 images 字段')
+    assert.equal('references' in input, false, 'video 请求绝不能携带 references 字段')
+    assert.equal('audioTrack' in input, false, 'video 请求绝不能携带 audioTrack 字段')
+    assert.equal('image' in input, false, 'reference_images 与 image 不能同时出现')
+  })
+
+  it('passes aspectRatio and resolution through as aspect_ratio/resolution', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'wide shot',
+      aspectRatio: '16:9',
+      resolution: '720p',
+    })
+    assert.equal(input.aspect_ratio, '16:9')
+    assert.equal(input.resolution, '720p')
+  })
+
+  it('uses the image field for a first_frame reference (first-frame mode)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'animate from this frame',
+      references: [
+        { role: 'first_frame', type: 'image', pathOrUrl: 'https://example.com/first.png' },
+        { role: 'reference', type: 'image', pathOrUrl: 'https://example.com/extra.png' },
+      ],
+    })
+    assert.equal(input.image, 'https://example.com/first.png')
+    assert.equal('reference_images' in input, false, 'image 与 reference_images 不能同时使用')
+    assert.equal('images' in input, false)
+    assert.equal('references' in input, false)
+  })
+
+  it('falls back to request.image when there are no usable references', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'talk',
+      image: 'https://example.com/face.png',
+      audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/track.mp3' },
+    })
+    assert.equal(input.image, 'https://example.com/face.png')
+    assert.equal('images' in input, false)
+    assert.equal('references' in input, false)
+    assert.equal('audioTrack' in input, false)
+    assert.equal('reference_images' in input, false)
   })
 })
