@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
 import {
   WORKBENCH_FOCUS,
+  WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX,
   WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX,
   WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX,
   WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX,
@@ -335,20 +336,26 @@ test('officialSessionSidebarWidth uses collapsed rail while attr is set mid-twee
   // Seed expanded history so a wrong branch would return 280 and leave a gap.
   assert.equal(officialSessionSidebarWidth({ officialSidebarWidth: 280 }), 280)
 
-  // Collapse attr lands first; track still reports expanded width → rail max.
+  // Collapse attr lands first; track still reports expanded width → collapsed fallback (56),
+  // NOT the historic 72 max (that left a permanent 16px panel gutter on the official rail).
   liveWidth = 280
-  assert.equal(officialSessionSidebarWidth(), WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX)
+  assert.equal(officialSessionSidebarWidth(), WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX)
   assert.equal(
     workbenchGuiWidthPx(makeState([], 1000), { viewportWidth: 1728 }),
-    1728 - WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX,
+    1728 - WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX,
   )
 
   // Mid-tween below expanded min is trusted (not lastExpanded).
   liveWidth = 120
   assert.equal(officialSessionSidebarWidth(), 120)
 
-  // Real collapsed measure wins once the track finishes.
+  // Real collapsed measure wins once the track finishes and becomes the next fallback.
   liveWidth = 56
+  assert.equal(officialSessionSidebarWidth(), 56)
+  assert.equal(workbenchGuiWidthPx(makeState([], 1000), { viewportWidth: 1728 }), 1672)
+
+  // Attr-only frame again after a real 56 measure must keep 56 (no 72 regression gutter).
+  liveWidth = 280
   assert.equal(officialSessionSidebarWidth(), 56)
   assert.equal(workbenchGuiWidthPx(makeState([], 1000), { viewportWidth: 1728 }), 1672)
 
@@ -357,6 +364,66 @@ test('officialSessionSidebarWidth uses collapsed rail while attr is set mid-twee
   liveWidth = 280
   assert.equal(officialSessionSidebarWidth(), 280)
   assert.equal(workbenchGuiWidthPx(makeState([], 1000), { viewportWidth: 1728 }), 1448)
+})
+
+test('gui collapse settle never leaves 16px gutter (panel = viewport − 56)', () => {
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-workflow:canvas', type: 'omnimux-workflow:canvas' }], 1448, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-no-gutter', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, { viewportWidth: 1728, officialSidebarWidth: 280 })
+  assert.equal(state.width, 1448)
+
+  // Mid-tween collapsed attr with stale expanded live width: fallback 56, not 72.
+  // (Live path uses DOM; here we force env after seeding collapsed memory via DOM probe.)
+  let liveWidth = 56
+  let collapsedEl = { tag: 'frame' }
+  const column = {
+    getBoundingClientRect: () => ({ width: liveWidth }),
+    closest(sel) {
+      if (selIsCollapsedAttr(sel)) return collapsedEl
+      return null
+    },
+    querySelector() { return null },
+  }
+  const doc = {
+    querySelector(sel) {
+      if (selIsCollapsedAttr(sel)) return collapsedEl
+      if (selIsSidebarColumn(sel)) return column
+      return null
+    },
+  }
+  globalThis.document = doc
+  globalThis.window = {
+    document: doc,
+    innerWidth: 1728,
+    localStorage: globalThis.window?.localStorage,
+  }
+  assert.equal(officialSessionSidebarWidth(), 56)
+
+  // Stale store still at expanded gui width — sync must grow to 1672.
+  const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728 })
+  assert.equal(synced, true)
+  assert.equal(state.width, 1672)
+
+  // Even if live width briefly reports the old COLLAPSED_MAX (72) band as a
+  // sub-expanded measure, width stays rail-sized; after real 56 is remembered,
+  // a pure expanded-stale frame must not regress to 72.
+  liveWidth = 72
+  assert.equal(officialSessionSidebarWidth(), 72)
+  liveWidth = 280
+  assert.equal(officialSessionSidebarWidth(), 72)
+  // Force sync with no env override — uses lastCollapsed 72 only if that was
+  // last trusted; prefer remembering 56 by re-seeding.
+  liveWidth = 56
+  assert.equal(officialSessionSidebarWidth(), 56)
+  liveWidth = 280
+  assert.equal(officialSessionSidebarWidth(), 56)
+  syncWorkbenchGuiWidth(store, { viewportWidth: 1728 })
+  assert.equal(state.width, 1672)
+  assert.equal(getConversationCollapsed(), true)
 })
 
 test('syncWorkbenchGuiWidth expands gui when left rail collapses', () => {
