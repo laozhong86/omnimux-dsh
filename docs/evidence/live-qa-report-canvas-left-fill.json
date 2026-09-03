@@ -1,0 +1,55 @@
+{
+  "issue": "canvas-left-fill / left-rail collapse 16px gutter",
+  "device": "OmniMux Dev App 2.0.4, CDP 9229, dsh web 45120, viewport=1728",
+  "root_cause": "Dev App served stale lib/client.js (pre-Scheme-C setWorkbenchFocus path) + collapsed-attr mid-tween fallback used COLLAPSED_MAX_PX=72 instead of true rail 56, so panel.width stuck at 1656 (left=72). Node ~129px inset is React Flow camera (flowX*zoom+pan), not panel layout padding.",
+  "fix": [
+    "Keep Scheme C: syncWorkbenchGuiWidth gui branch store.reduce only (no setConversationCollapsed)",
+    "COLLAPSED_FALLBACK_PX=56 + lastCollapsedOfficialWidth memory",
+    "SETTLE_MS=320 second sync after rail tween",
+    "Rebuild lib/client.js (exports ./client entry; src alone is not served)"
+  ],
+  "expanded": {
+    "state": "LEFT_RAIL_EXPANDED",
+    "focus": "gui",
+    "convCollapsed": true,
+    "storeW": 1448,
+    "sidebarCol": {
+      "x": 0,
+      "w": 280,
+      "right": 280
+    },
+    "panel": {
+      "x": 280,
+      "w": 1448,
+      "right": 1728
+    },
+    "gap": 0,
+    "rfLeft": 281,
+    "minNode": 346,
+    "nodeInsetFromPanel": 66
+  },
+  "collapsed": {
+    "state": "LEFT_RAIL_COLLAPSED",
+    "focus": "gui",
+    "convCollapsed": true,
+    "storeW": 1672,
+    "sidebarCol": {
+      "x": 0,
+      "w": 56,
+      "right": 56
+    },
+    "panel": {
+      "x": 56,
+      "w": 1672,
+      "right": 1728
+    },
+    "gap": 0,
+    "rfLeft": 57,
+    "minNode": 122,
+    "nodeInsetFromPanel": 66,
+    "viewportTransform": "matrix(0.896964, 0, 0, 0.896964, -154.756, -185.697)"
+  },
+  "ok_no_gutter": true,
+  "ok_expand_restore": true,
+  "ok_no_372": true
+}

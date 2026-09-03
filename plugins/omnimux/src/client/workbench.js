@@ -23,8 +23,15 @@ export const WORKBENCH_PANEL_MIN_PX = 280
 export const WORKBENCH_CONVERSATION_TARGET_PX = 420
 export const WORKBENCH_CONVERSATION_MIN_PX = 360
 export const WORKBENCH_FOCUS_NEAR_PX = 24
-/** Official collapsed rail is ~56px; anything at or below this is "rail-sized". */
+/**
+ * Upper bound for "looks collapsed" live measures while the track is tweening.
+ * Official collapsed rail is ~56px; macOS advanced can sit near ~90. Values at
+ * or below this are trusted when `data-sidebar-collapsed` is set. This is NOT
+ * the preferred collapsed target — see COLLAPSED_FALLBACK_PX.
+ */
 export const WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX = 72
+/** Preferred collapsed rail when attr is set but the grid track still reports expanded. */
+export const WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX = 56
 /**
  * Healthy expanded rail is ~280px. Mid-animation widths (e.g. 80–200) sit above
  * the collapsed max but must NOT poison `lastExpandedOfficialWidth` / gui math.
@@ -34,6 +41,13 @@ export const WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX = 200
 export const WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX = 280
 /** Debounce left-rail resize sync so mid-tween frames do not write a half-open width. */
 export const WORKBENCH_LEFT_RAIL_SYNC_DEBOUNCE_MS = 50
+/**
+ * After a collapse/expand attr flip, AppFrame may still be mid-tween when the
+ * debounced sync runs. One settle pass after the track finishes re-measures the
+ * true rail (56 official / ~90 advanced) so gui width is not stuck on a stale
+ * interim measure (historically 72 → 16px gutter at panel.left).
+ */
+export const WORKBENCH_LEFT_RAIL_SETTLE_MS = 320
 export const WORKBENCH_FOCUS = Object.freeze({
   split: 'split',
   gui: 'gui',
@@ -131,6 +145,8 @@ const focusStorageBySession = new Map()
 
 /** Last healthy expanded left-rail width; used when #root crush reports ~56px. */
 let lastExpandedOfficialWidth = WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX
+/** Last trusted collapsed left-rail width (56 official / advanced rail-sized). */
+let lastCollapsedOfficialWidth = WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX
 
 /** @type {ResizeObserver | null} */
 let leftRailResizeObserver = null
@@ -138,6 +154,8 @@ let leftRailResizeObserver = null
 let leftRailAttrObserver = null
 /** @type {number | null} */
 let leftRailSyncTimer = null
+/** @type {number | null} */
+let leftRailSettleTimer = null
 let leftRailObserverDoc = null
 
 function emit() {
@@ -328,9 +346,16 @@ export function officialSessionSidebarWidth(env = {}) {
     // measure (56 official rail, ~90 macOS advanced, mid-tween). Only reject
     // still-expanded widths so gui can fill instead of leaving a gap.
     if (width > 0 && width < WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX) {
-      return Math.round(width)
+      const rounded = Math.round(width)
+      // Remember true rail-sized collapses (not loose mid-tween 100–199) so a
+      // later attr-only frame can target panel.left == rail.right instead of
+      // the historic 72 max that left a 16px gutter on the 56px official rail.
+      if (rounded <= WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX) {
+        lastCollapsedOfficialWidth = rounded
+      }
+      return rounded
     }
-    return WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX
+    return lastCollapsedOfficialWidth || WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX
   }
   // Crushed under an oversized panel, or mid expand/collapse tween: keep last healthy width.
   if (width < WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX) {
@@ -400,19 +425,30 @@ export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
   return true
 }
 
-function scheduleGuiWidthSync() {
-  if (leftRailSyncTimer != null) {
-    const win = hostWindow()
-    if (win?.clearTimeout) win.clearTimeout(leftRailSyncTimer)
-    else clearTimeout(leftRailSyncTimer)
-    leftRailSyncTimer = null
-  }
+function clearTimer(handle) {
+  if (handle == null) return
   const win = hostWindow()
-  const schedule = (fn) => (win?.setTimeout ? win.setTimeout(fn, WORKBENCH_LEFT_RAIL_SYNC_DEBOUNCE_MS) : setTimeout(fn, WORKBENCH_LEFT_RAIL_SYNC_DEBOUNCE_MS))
+  if (win?.clearTimeout) win.clearTimeout(handle)
+  else clearTimeout(handle)
+}
+
+function scheduleGuiWidthSync() {
+  clearTimer(leftRailSyncTimer)
+  leftRailSyncTimer = null
+  clearTimer(leftRailSettleTimer)
+  leftRailSettleTimer = null
+  const win = hostWindow()
+  const schedule = (fn, ms) => (win?.setTimeout ? win.setTimeout(fn, ms) : setTimeout(fn, ms))
   leftRailSyncTimer = schedule(() => {
     leftRailSyncTimer = null
     syncWorkbenchGuiWidth()
-  })
+  }, WORKBENCH_LEFT_RAIL_SYNC_DEBOUNCE_MS)
+  // Settle after the official rail track tween so a mid-animation measure
+  // (or COLLAPSED_MAX_PX=72 fallback) cannot leave a permanent 16px gutter.
+  leftRailSettleTimer = schedule(() => {
+    leftRailSettleTimer = null
+    syncWorkbenchGuiWidth()
+  }, WORKBENCH_LEFT_RAIL_SETTLE_MS)
 }
 
 /**
@@ -476,12 +512,10 @@ export function uninstallWorkbenchLeftRailObserver() {
     try { leftRailAttrObserver.disconnect() } catch { /* ignore */ }
     leftRailAttrObserver = null
   }
-  if (leftRailSyncTimer != null) {
-    const win = hostWindow()
-    if (win?.clearTimeout) win.clearTimeout(leftRailSyncTimer)
-    else clearTimeout(leftRailSyncTimer)
-    leftRailSyncTimer = null
-  }
+  clearTimer(leftRailSyncTimer)
+  leftRailSyncTimer = null
+  clearTimer(leftRailSettleTimer)
+  leftRailSettleTimer = null
   leftRailObserverDoc = null
 }
 
@@ -1068,6 +1102,7 @@ export function resetWorkbenchForTests(target = hostWindow()) {
   appliedWidthSessions.clear()
   focusStorageBySession.clear()
   lastExpandedOfficialWidth = WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX
+  lastCollapsedOfficialWidth = WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX
   resetConversationCollapseForTests()
   if (target && Object.prototype.hasOwnProperty.call(target, WORKBENCH_GLOBAL_KEY)) {
     try { delete target[WORKBENCH_GLOBAL_KEY] } catch { target[WORKBENCH_GLOBAL_KEY] = undefined }
