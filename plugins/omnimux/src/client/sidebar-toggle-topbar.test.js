@@ -326,6 +326,8 @@ describe('chrome CSS contracts (conversation-box PRODUCT_STAGE_CHROME)', () => {
     assert.match(PRODUCT_STAGE_CHROME, /z-index:\s*9999/)
     assert.match(PRODUCT_STAGE_CHROME, /data-sidebar-collapsed\][^{]*\[class\*="sidebarCol"\]/)
     assert.match(PRODUCT_STAGE_CHROME, /width:\s*0\s*!important/)
+    // Collapsed rail zeroes the first frame grid track so centerCol has balanced margins
+    assert.match(PRODUCT_STAGE_CHROME, /grid-template-columns:\s*0px\s+minmax\(0px,\s*1fr\)\s+0px\s*!important/)
     assert.match(PRODUCT_STAGE_CHROME, /\[class\*="tabBar"\]/)
     assert.match(PRODUCT_STAGE_CHROME, /padding-left:\s*var\(--omnimux-tabbar-pad-left/)
     assert.match(PRODUCT_STAGE_CHROME, /data-omnimux-left-collapsed/)
