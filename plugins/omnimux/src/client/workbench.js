@@ -1071,7 +1071,20 @@ function bind(next = {}) {
   const service = getService()
   if (service && typeof service.subscribeState === 'function' && !service.__omnimuxWorkbenchHooked) {
     try {
-      service.subscribeState(() => { emit() })
+      service.subscribeState((state) => {
+        emit()
+        if (state?.panelOpen && typeof state.width === 'number') {
+          const sessionId = currentSessionId()
+          const tabId = activeTabId(state)
+          const record = focusRecordForTab(sessionId, tabId)
+          if (record && record.mode !== WORKBENCH_FOCUS.gui && !nearPx(state.width, workbenchGuiWidthPx(state))) {
+            record.splitWidth = state.width
+            if (sessionId && tabId) {
+              persistSessionFocus(sessionId, tabId, { splitWidth: state.width })
+            }
+          }
+        }
+      })
       service.__omnimuxWorkbenchHooked = true
     } catch {
       // ignore

@@ -420,10 +420,6 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
   // every resize frame.
   const syncGeometry = () => {
     try { applyTopbarToggleCssVars(doc) } catch { /* ignore */ }
-    try {
-      const api = doc.defaultView?.__omnimuxWorkbench
-      if (api && typeof api.syncGuiWidth === 'function') api.syncGuiWidth()
-    } catch { /* ignore — layout only; never flip mid-pane */ }
   }
   let observedCol = null
   let observedPanel = null
