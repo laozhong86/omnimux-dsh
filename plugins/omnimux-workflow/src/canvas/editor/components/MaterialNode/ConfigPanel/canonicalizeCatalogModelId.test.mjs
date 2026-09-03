@@ -9,33 +9,33 @@ import {
   resolveSavedModelForPicker,
 } from './canonicalizeCatalogModelId.ts';
 
-test('canonicalizeCatalogModelId maps 1-5 and dotted 1.5 onto live grok-imagine-video', () => {
-  assert.equal(canonicalizeCatalogModelId('grok-imagine-video-1-5'), 'grok-imagine-video');
-  assert.equal(canonicalizeCatalogModelId('grok-imagine-video-1.5'), 'grok-imagine-video');
-  assert.equal(canonicalizeCatalogModelId('grok-imagine-video'), 'grok-imagine-video');
+test('canonicalizeCatalogModelId maps unversioned and dotted 1.5 onto live grok-imagine-video-1-5', () => {
+  assert.equal(canonicalizeCatalogModelId('grok-imagine-video'), 'grok-imagine-video-1-5');
+  assert.equal(canonicalizeCatalogModelId('grok-imagine-video-1.5'), 'grok-imagine-video-1-5');
+  assert.equal(canonicalizeCatalogModelId('grok-imagine-video-1-5'), 'grok-imagine-video-1-5');
   assert.equal(canonicalizeCatalogModelId(' seedance-2-0-fast '), 'seedance-2-0-fast');
   assert.equal(canonicalizeCatalogModelId(''), '');
   assert.equal(canonicalizeCatalogModelId(undefined), '');
 });
 
 test('resolveSavedModelForPicker: alias in catalog does not insert orphan', () => {
-  const catalogIds = ['seedance-2-0-fast', 'grok-imagine-video'];
+  const catalogIds = ['seedance-2-0-fast', 'grok-imagine-video-1-5'];
   assert.deepEqual(
     resolveSavedModelForPicker('grok-imagine-video-1-5', catalogIds),
-    { modelId: 'grok-imagine-video', insertOrphan: false },
+    { modelId: 'grok-imagine-video-1-5', insertOrphan: false },
   );
   assert.deepEqual(
     resolveSavedModelForPicker('grok-imagine-video-1.5', catalogIds),
-    { modelId: 'grok-imagine-video', insertOrphan: false },
+    { modelId: 'grok-imagine-video-1-5', insertOrphan: false },
   );
   assert.deepEqual(
     resolveSavedModelForPicker('grok-imagine-video', catalogIds),
-    { modelId: 'grok-imagine-video', insertOrphan: false },
+    { modelId: 'grok-imagine-video-1-5', insertOrphan: false },
   );
 });
 
 test('resolveSavedModelForPicker: unknown saved id still inserts orphan', () => {
-  const catalogIds = new Set(['grok-imagine-video']);
+  const catalogIds = new Set(['grok-imagine-video-1-5']);
   assert.deepEqual(
     resolveSavedModelForPicker('totally-gone-model', catalogIds),
     { modelId: 'totally-gone-model', insertOrphan: true },

@@ -3,8 +3,9 @@
  * Keep in sync with hub `MEDIA_WIRE_MODEL_IDS` direction (aliases → live id).
  */
 export const CANONICAL_CATALOG_MODEL_IDS: Readonly<Record<string, string>> = Object.freeze({
-  'grok-imagine-video-1-5': 'grok-imagine-video',
-  'grok-imagine-video-1.5': 'grok-imagine-video',
+  'grok-imagine-video': 'grok-imagine-video-1-5',
+  'grok-imagine-video.1.5': 'grok-imagine-video-1-5',
+  'grok-imagine-video-1.5': 'grok-imagine-video-1-5',
 });
 
 /**
