@@ -84,6 +84,7 @@ describe('media route', () => {
     assert.equal(toMediaWireModelId('grok-imagine-video-1-5'), 'grok-imagine-video-1-5')
     assert.equal(toMediaWireModelId('grok-imagine-video'), 'grok-imagine-video-1-5')
     assert.equal(toMediaWireModelId('grok-imagine-video-1.5'), 'grok-imagine-video-1-5')
+    assert.equal(toMediaWireModelId('grok-imagine-video.1.5'), 'grok-imagine-video-1-5')
     assert.equal(toMediaWireModelId('seedance-2-0-fast'), 'seedance-2-0-fast')
     assert.equal(toMediaWireModelId(''), '')
   })

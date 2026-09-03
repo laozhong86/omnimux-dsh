@@ -7,6 +7,7 @@ export const AUTH_MODES = Object.freeze(['auto', 'token', 'custom'])
 export const MEDIA_WIRE_MODEL_IDS = Object.freeze({
   'grok-imagine-video': 'grok-imagine-video-1-5',
   'grok-imagine-video-1.5': 'grok-imagine-video-1-5',
+  'grok-imagine-video.1.5': 'grok-imagine-video-1-5',
   'grok-imagine-video-1-5': 'grok-imagine-video-1-5',
 })
 
