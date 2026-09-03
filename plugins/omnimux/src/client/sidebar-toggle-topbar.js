@@ -19,13 +19,14 @@ export const LEFT_COLLAPSED_HTML_ATTR = 'data-omnimux-left-collapsed'
 /** Marks the hidden official AppFrame toggle used as the programmatic trigger. */
 export const SIDEBAR_ORIGINAL_TOGGLE_ATTR = 'data-omnimux-original-sidebar-toggle'
 
-/** Traffic-light safe width (darwin titlebar inset) + small gap before toggle.
- *  Sits in the gap between the mac traffic lights and the sidebar brand mark so
- *  the ghost toggle never overlays the OmniMux logo. */
-export const TOPBAR_TOGGLE_LEFT_PX = 52
+/** Traffic-light safe width (darwin titlebar inset) + small gap before toggle
+ *  while the rail is collapsed. When the rail expands, the toggle moves to the
+ *  sidebar's top-right corner (measured width minus the toggle size/margin). */
+export const TOPBAR_TOGGLE_LEFT_PX = 56
 export const TOPBAR_TOGGLE_SIZE_PX = 32
 export const TOPBAR_TOGGLE_GAP_PX = 8
-export const TOPBAR_TOGGLE_TOP_PX = 0
+export const TOPBAR_TOGGLE_RIGHT_MARGIN_PX = 8
+export const TOPBAR_TOGGLE_TOP_PX = 4
 export const TOPBAR_TOGGLE_Z_INDEX = 9999
 
 const TOGGLE_ARIA_LABELS = Object.freeze([
@@ -120,6 +121,28 @@ export function syncLeftCollapsedHtmlAttr(doc) {
 }
 
 /**
+ * Where the topbar toggle sits horizontally (CSS px). Collapsed rail → a small
+ * top-left offset (over the full-width tab bar). Expanded rail → the sidebar's
+ * top-right corner (measured sidebar width minus toggle size + margin).
+ * @param {Document | null | undefined} doc
+ * @returns {number}
+ */
+export function computeToggleLeftPx(doc) {
+  if (isLeftSidebarCollapsed(doc)) return TOPBAR_TOGGLE_LEFT_PX
+  const col = doc?.querySelector('[class*="sidebarCol"], [data-pane="sidebar"]')
+  let w = 0
+  if (col) {
+    try {
+      w = col.offsetWidth || Math.round(col.getBoundingClientRect().width)
+    } catch {
+      w = 0
+    }
+  }
+  const right = TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_RIGHT_MARGIN_PX
+  return Math.max(TOPBAR_TOGGLE_LEFT_PX, Math.round(w - right))
+}
+
+/**
  * Write geometry CSS variables used by tabBar padding and the fixed toggle.
  * @param {Document | null | undefined} doc
  * @param {{ left?: number, size?: number, gap?: number, top?: number }} [geom]
@@ -127,7 +150,7 @@ export function syncLeftCollapsedHtmlAttr(doc) {
 export function applyTopbarToggleCssVars(doc, geom = {}) {
   const root = doc?.documentElement
   if (!root?.style?.setProperty) return
-  const left = typeof geom.left === 'number' ? geom.left : TOPBAR_TOGGLE_LEFT_PX
+  const left = typeof geom.left === 'number' ? geom.left : computeToggleLeftPx(doc)
   const size = typeof geom.size === 'number' ? geom.size : TOPBAR_TOGGLE_SIZE_PX
   const gap = typeof geom.gap === 'number' ? geom.gap : TOPBAR_TOGGLE_GAP_PX
   const top = typeof geom.top === 'number' ? geom.top : TOPBAR_TOGGLE_TOP_PX

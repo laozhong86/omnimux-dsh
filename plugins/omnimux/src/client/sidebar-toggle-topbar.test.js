@@ -10,9 +10,11 @@ import {
   SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR,
   TOPBAR_TOGGLE_GAP_PX,
   TOPBAR_TOGGLE_LEFT_PX,
+  TOPBAR_TOGGLE_RIGHT_MARGIN_PX,
   TOPBAR_TOGGLE_SIZE_PX,
   TOPBAR_TOGGLE_Z_INDEX,
   applyTopbarToggleCssVars,
+  computeToggleLeftPx,
   ensureSidebarToggleTopbar,
   findOfficialSidebarToggle,
   installSidebarToggleTopbar,
@@ -183,6 +185,20 @@ describe('ensureSidebarToggleTopbar', () => {
     const doc = setup()
     applyTopbarToggleCssVars(doc, { left: 80, size: 36, gap: 8 })
     assert.equal(doc.documentElement.style.getPropertyValue('--omnimux-topbar-toggle-end'), '124px')
+  })
+
+  it('computeToggleLeftPx: collapsed -> top-left, expanded -> sidebar top-right', () => {
+    const doc = setup()
+    // collapsed fixture (data-sidebar-collapsed on frame)
+    assert.equal(computeToggleLeftPx(doc), TOPBAR_TOGGLE_LEFT_PX)
+    // expand: remove collapse attr and give the sidebar a real width
+    doc.querySelector('[data-sidebar-collapsed]')?.removeAttribute('data-sidebar-collapsed')
+    const col = doc.querySelector('[class*="sidebarCol"]')
+    assert.ok(col)
+    col.style.width = '280px'
+    Object.defineProperty(col, 'offsetWidth', { value: 280, configurable: true })
+    const expected = 280 - TOPBAR_TOGGLE_SIZE_PX - TOPBAR_TOGGLE_RIGHT_MARGIN_PX
+    assert.equal(computeToggleLeftPx(doc), expected)
   })
 })
 

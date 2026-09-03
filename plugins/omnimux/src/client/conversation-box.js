@@ -158,7 +158,10 @@ html[data-omnimux-sidebar-toggle-topbar] [data-sidebar-collapsed] [class*="sideb
   border:none!important;
   padding:0!important;
 }
-html[data-omnimux-sidebar-toggle-topbar] [class*="tabBar"]{
+/* Reserve toggle space for the workbench tab labels ONLY while the rail is
+   collapsed (toggle sits over the full-width tabBar). Expanded rail moves the
+   toggle to the sidebar top-right, so the tabBar keeps no left padding → no gap. */
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [class*="tabBar"]{
   padding-left:var(--omnimux-topbar-toggle-end)!important;
   box-sizing:border-box;
 }
