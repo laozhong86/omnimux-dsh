@@ -36,6 +36,20 @@ describe('hub media catalog tables', () => {
     assert.equal(veo.parameters.duration?.defaultValue, 8)
   })
 
+  it('Grok Imagine Video 1.5 is the only grok video catalog row', () => {
+    const grok = VIDEO_MODEL_SPECS.find((m) => m.id === 'grok-imagine-video-1-5')
+    assert.ok(grok)
+    assert.equal(grok.label, 'Grok Imagine Video 1.5')
+    assert.equal(grok.badge, 'xAI Grok')
+    assert.equal(grok.subtitle, '720P-1080P · ⏱ 5s')
+    assert.equal(grok.family, 'grok')
+    assert.equal(grok.parameters.duration?.defaultValue, 5)
+    assert.equal(grok.parameters.resolution?.defaultValue, '1080P')
+    assert.equal(VIDEO_MODEL_SPECS.some((row) => row.id === 'grok-imagine-video'), false)
+    assert.equal(VIDEO_MODEL_SPECS.some((row) => row.id === 'grok-imagine-video-1.5'), false)
+    assert.equal(findMediaModel('video', 'grok-imagine-video-1-5')?.id, 'grok-imagine-video-1-5')
+  })
+
   it('Wan 3.0 video spec and alias lookup', () => {
     const wan3 = VIDEO_MODEL_SPECS.find((m) => m.id === 'wan-3.0')
     assert.ok(wan3)

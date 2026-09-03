@@ -27,7 +27,7 @@ export async function getJson(fetcher, url, apiKey, signal) {
 }
 
 /**
- * @param {{ dest: string, url: string, fetcher?: typeof fetch, signal?: AbortSignal }} options
+ * @param {{ dest: string, url: string, apiKey?: string, fetcher?: typeof fetch, signal?: AbortSignal }} options
  */
 export async function downloadMediaFile(options) {
   const url = options.url
@@ -41,7 +41,15 @@ export async function downloadMediaFile(options) {
     buffer = Buffer.from(payload, 'base64')
   } else {
     const fetcher = options.fetcher ?? fetch
-    const response = await fetcher(url, options.signal ? { signal: options.signal } : {})
+    /** @type {Record<string, string>} */
+    const headers = {}
+    if (options.apiKey?.trim() && (url.includes('omnimux.ai') || url.startsWith('/'))) {
+      headers.authorization = `Bearer ${options.apiKey.trim()}`
+    }
+    const response = await fetcher(url, {
+      headers,
+      ...(options.signal ? { signal: options.signal } : {}),
+    })
     if (!response.ok) {
       throw new OmnimuxError('omnimux-download-failed', `download failed: ${response.status}`)
     }

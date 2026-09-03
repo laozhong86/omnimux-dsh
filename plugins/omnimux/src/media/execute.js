@@ -93,6 +93,7 @@ export async function executeOmnimuxMedia(capability, input) {
   await downloadMediaFile({
     dest: input.dest,
     url,
+    apiKey: auth.apiKey,
     fetcher: input.fetcher,
     signal: input.signal,
   })
@@ -138,6 +139,7 @@ export async function finishMediaTask(capability, route, input) {
   await downloadMediaFile({
     dest: input.dest,
     url,
+    apiKey,
     fetcher: input.fetcher,
     signal: input.signal,
   })

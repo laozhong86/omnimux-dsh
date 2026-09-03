@@ -81,6 +81,35 @@ describe('omnimux video helpers', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('sends authorization when downloading an omnimux.ai video url', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-vid-auth-'))
+    const dest = join(dir, 'out.mp4')
+    let downloadHeaders
+    const result = await executeOmnimuxVideo({
+      prompt: 'a wall at night',
+      dest,
+      duration: 4,
+      env: { OMNIMUX_API_KEY: 'sk-video-auth' },
+      runtime: {
+        async execute() {
+          return {
+            taskId: 'task-auth',
+            outputs: [{ type: 'video', url: 'https://omnimux.ai/v1/videos/task-auth/content' }],
+          }
+        },
+      },
+      fetcher: async (url, init) => {
+        assert.equal(String(url), 'https://omnimux.ai/v1/videos/task-auth/content')
+        downloadHeaders = init?.headers
+        return { ok: true, arrayBuffer: async () => Buffer.from('mp4-auth-bytes') }
+      },
+    })
+    assert.equal(result.mode, 'live')
+    assert.equal(downloadHeaders?.authorization, 'Bearer sk-video-auth')
+    assert.equal(readFileSync(dest, 'utf8'), 'mp4-auth-bytes')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('executes through a fake runtime and writes dest', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'omnimux-'))
     const dest = join(dir, 'out.mp4')

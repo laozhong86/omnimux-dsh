@@ -73,6 +73,34 @@ describe('omnimux image helpers', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('sends authorization when downloading an omnimux.ai image url', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-auth-'))
+    const dest = join(dir, 'out.png')
+    let downloadHeaders
+    const result = await executeOmnimuxImage({
+      prompt: 'a lamp at night',
+      dest,
+      env: { OMNIMUX_API_KEY: 'sk-image-auth' },
+      runtime: {
+        async execute() {
+          return {
+            taskId: 'img-auth',
+            outputs: [{ type: 'image', url: 'https://omnimux.ai/v1/videos/img-auth/content' }],
+          }
+        },
+      },
+      fetcher: async (url, init) => {
+        assert.equal(String(url), 'https://omnimux.ai/v1/videos/img-auth/content')
+        downloadHeaders = init?.headers
+        return { ok: true, arrayBuffer: async () => Buffer.from('png-auth-bytes') }
+      },
+    })
+    assert.equal(result.mode, 'live')
+    assert.equal(downloadHeaders?.authorization, 'Bearer sk-image-auth')
+    assert.equal(readFileSync(dest, 'utf8'), 'png-auth-bytes')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('executes through a fake runtime and writes dest', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-'))
     const dest = join(dir, 'out.png')
