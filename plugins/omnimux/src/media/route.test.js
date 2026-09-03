@@ -136,14 +136,13 @@ describe('media route', () => {
     assert.equal(route.apiKey, 'none')
   })
 
-  it('maps talking-head extras into metadata and leaves t2v clean', () => {
+  it('leaves t2v clean and omits talking-head metadata on video (#432)', () => {
     assert.deepEqual(mapOmnimuxInput('video', { prompt: 'a street at night' }), { prompt: 'a street at night' })
     assert.deepEqual(
       mapOmnimuxInput('video', { prompt: 'talk', image: 'https://face', speech: 'hello', audio: 'https://a.wav' }),
       {
         prompt: 'talk',
         image: 'https://face',
-        metadata: { speech: 'hello', audio: 'https://a.wav' },
       },
     )
   })
