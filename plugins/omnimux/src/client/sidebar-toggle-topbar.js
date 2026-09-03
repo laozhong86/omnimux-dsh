@@ -22,7 +22,7 @@ export const SIDEBAR_ORIGINAL_TOGGLE_ATTR = 'data-omnimux-original-sidebar-toggl
 /** Traffic-light safe width (darwin titlebar inset) + small gap before toggle
  *  while the rail is collapsed. When the rail expands, the toggle moves to the
  *  sidebar's top-right corner (measured width minus the toggle size/margin). */
-export const TOPBAR_TOGGLE_LEFT_PX = 68
+export const TOPBAR_TOGGLE_LEFT_PX = 84
 export const TOPBAR_TOGGLE_SIZE_PX = 32
 export const TOPBAR_TOGGLE_GAP_PX = 8
 export const TOPBAR_TOGGLE_RIGHT_MARGIN_PX = 8
