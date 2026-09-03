@@ -162,8 +162,10 @@ html[data-omnimux-sidebar-toggle-topbar] [data-sidebar-collapsed] [class*="sideb
 /* Tab labels dock by overlap: pad = max(0, toggleEnd − panel.left), written
    to --omnimux-tabbar-pad-left. Do NOT key this off left-collapsed: collapsed
    + split already starts the panel right of the toggle, so pad must stay 0.
-   Selector is the OPEN right-panel tab strip only (never tabBarPlus / bottom). */
-html[data-omnimux-sidebar-toggle-topbar] [data-dsh-better-sidebar] [class*="panel"]:not([class*="panelHidden"]):not([class*="bottomPanel"]) > [class*="tabBar"]{
+   Selector is the OPEN right-panel tab strip only (never tabBarPlus / bottom).
+   Notice tabBar is a deep descendant of panel (panelBody > workbench > pane > tabBar),
+   so do not use direct-child combinator > on panel. */
+html[data-omnimux-sidebar-toggle-topbar] [data-dsh-better-sidebar] > [class*="panel"]:not([class*="bottom"]):not([class*="Hidden"]) [class*="tabBar"]:not([class*="Plus"]){
   padding-left:var(--omnimux-tabbar-pad-left,0px)!important;
   box-sizing:border-box;
 }
