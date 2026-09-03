@@ -11,8 +11,10 @@ import {
   applyDefaultWidth,
   collectTabs,
   createWorkbenchSidebarStore,
+  findOfficialSidebarColumn,
   inferWorkbenchFocus,
   installWorkbenchGlobal,
+  isOfficialSidebarCollapsed,
   isSeedFilesTab,
   isWorkbenchActive,
   isWorkbenchOpen,
@@ -24,6 +26,7 @@ import {
   resolveDefaultFocus,
   resolveWorkbenchTabTitle,
   focusRecordForTab,
+  getConversationCollapsed,
   getWorkbenchFocus,
   setConversationCollapsed,
   setWorkbenchFocus,
@@ -33,6 +36,19 @@ import {
   workbenchGuiWidthPx,
   workbenchSplitMaxPanelPx,
 } from './workbench.js'
+
+/** Match workbench column / collapsed-host selectors used by live DOM probes. */
+function selIsSidebarColumn(sel) {
+  return typeof sel === 'string' && (
+    sel.includes('sidebarCol')
+    || sel.includes('dshDesktopSidebarSurface')
+    || sel.includes('data-pane="sidebar"')
+  )
+}
+
+function selIsCollapsedAttr(sel) {
+  return typeof sel === 'string' && sel.includes('data-sidebar-collapsed')
+}
 
 const previousWindow = globalThis.window
 const previousDocument = globalThis.document
@@ -248,12 +264,15 @@ test('workbenchGuiWidthPx occupies viewport minus the left rail', () => {
 })
 
 test('officialSessionSidebarWidth falls back when expanded rail is crushed to rail size', () => {
+  const column = {
+    getBoundingClientRect: () => ({ width: 56 }),
+    closest() { return null },
+    querySelector() { return null },
+  }
   const doc = {
     querySelector(sel) {
-      if (sel === '[data-sidebar-collapsed]') return null
-      if (sel === '[data-pane="sidebar"], [class*="sidebarCol"]') {
-        return { getBoundingClientRect: () => ({ width: 56 }) }
-      }
+      if (selIsCollapsedAttr(sel)) return null
+      if (selIsSidebarColumn(sel)) return column
       return null
     },
   }
@@ -270,12 +289,15 @@ test('officialSessionSidebarWidth falls back when expanded rail is crushed to ra
 
 test('officialSessionSidebarWidth ignores mid-animation widths below expanded min (#356)', () => {
   let liveWidth = 80
+  const column = {
+    getBoundingClientRect: () => ({ width: liveWidth }),
+    closest() { return null },
+    querySelector() { return null },
+  }
   const doc = {
     querySelector(sel) {
-      if (sel === '[data-sidebar-collapsed]') return null
-      if (sel === '[data-pane="sidebar"], [class*="sidebarCol"]') {
-        return { getBoundingClientRect: () => ({ width: liveWidth }) }
-      }
+      if (selIsCollapsedAttr(sel)) return null
+      if (selIsSidebarColumn(sel)) return column
       return null
     },
   }
@@ -293,12 +315,18 @@ test('officialSessionSidebarWidth ignores mid-animation widths below expanded mi
 test('officialSessionSidebarWidth uses collapsed rail while attr is set mid-tween', () => {
   let liveWidth = 280
   let collapsedEl = { tag: 'frame' }
+  const column = {
+    getBoundingClientRect: () => ({ width: liveWidth }),
+    closest(sel) {
+      if (selIsCollapsedAttr(sel)) return collapsedEl
+      return null
+    },
+    querySelector() { return null },
+  }
   const doc = {
     querySelector(sel) {
-      if (sel === '[data-sidebar-collapsed]') return collapsedEl
-      if (sel === '[data-pane="sidebar"], [class*="sidebarCol"]') {
-        return { getBoundingClientRect: () => ({ width: liveWidth }) }
-      }
+      if (selIsCollapsedAttr(sel)) return collapsedEl
+      if (selIsSidebarColumn(sel)) return column
       return null
     },
   }
@@ -352,6 +380,145 @@ test('syncWorkbenchGuiWidth expands gui when left rail collapses', () => {
   const expanded = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 280 })
   assert.equal(expanded, true)
   assert.equal(state.width, 1448)
+})
+
+test('left-rail collapse sync does not call setConversationCollapsed (#372 gate)', () => {
+  const win = setupWindow()
+  const api = installWorkbenchGlobal(win)
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 1448, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-no-mid-flip', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  api.attachStore(store)
+  // Start split with middle visible — left collapse must NOT hide the middle.
+  setWorkbenchFocus(WORKBENCH_FOCUS.split, store, { viewportWidth: 1728, officialSidebarWidth: 280 })
+  assert.equal(getConversationCollapsed(), false)
+
+  let collapseCalls = 0
+  const real = api.setConversationCollapsed.bind(api)
+  api.setConversationCollapsed = (...args) => {
+    collapseCalls += 1
+    return real(...args)
+  }
+
+  // Oversized panel while split: clamp only.
+  state.width = 1448
+  syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 56 })
+  assert.equal(collapseCalls, 0, 'left-rail sync must not call setConversationCollapsed')
+  assert.equal(getConversationCollapsed(), false)
+  assert.equal(focusRecordForTab('s-no-mid-flip', 'omnimux-assets:library').mode, WORKBENCH_FOCUS.split)
+
+  // Gui fill path also must not re-enter setConversationCollapsed.
+  setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, { viewportWidth: 1728, officialSidebarWidth: 280 })
+  collapseCalls = 0
+  syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 56 })
+  assert.equal(collapseCalls, 0, 'gui left-rail fill must not re-call setConversationCollapsed')
+  assert.equal(getConversationCollapsed(), true)
+  assert.equal(state.width, 1672)
+})
+
+test('split + left collapse only clamps; mode stays split; convCollapsed stays false', () => {
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 1448, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-split-clamp', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  setWorkbenchFocus(WORKBENCH_FOCUS.split, store, { viewportWidth: 1728, officialSidebarWidth: 280 })
+  // Stale oversized panel (gui-sized) while still split intent.
+  state.width = 1448
+  assert.equal(getConversationCollapsed(), false)
+
+  const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 56 })
+  assert.equal(synced, true)
+  // split max = max(280, 1728 - 56 - 360) = 1312
+  assert.equal(state.width, 1312)
+  assert.equal(focusRecordForTab('s-split-clamp', 'omnimux-assets:library').mode, WORKBENCH_FOCUS.split)
+  assert.equal(getConversationCollapsed(), false)
+})
+
+test('gui + left collapse → width = viewport − collapsedRail', () => {
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 1448, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-gui-fill', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, { viewportWidth: 1728, officialSidebarWidth: 280 })
+  assert.equal(state.width, 1448)
+  const convBefore = getConversationCollapsed()
+  assert.equal(convBefore, true)
+
+  const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 56 })
+  assert.equal(synced, true)
+  assert.equal(state.width, 1728 - 56)
+  // Middle intent unchanged (still collapsed); left-rail sync must not re-enter setConversationCollapsed path.
+  assert.equal(getConversationCollapsed(), true)
+  assert.equal(focusRecordForTab('s-gui-fill', 'omnimux-assets:library').mode, WORKBENCH_FOCUS.gui)
+})
+
+test('isOfficialSidebarCollapsed finds frame-subtree attr via column.closest', () => {
+  const frame = { tag: 'frame', hasAttribute: (n) => n === 'data-sidebar-collapsed' }
+  const column = {
+    getBoundingClientRect: () => ({ width: 56 }),
+    closest(sel) {
+      if (selIsCollapsedAttr(sel)) return frame
+      return null
+    },
+    querySelector() { return null },
+  }
+  const doc = {
+    querySelector(sel) {
+      // Bare document query would miss if only column.closest works — simulate that.
+      if (selIsCollapsedAttr(sel) && !sel.includes('frame') && !sel.includes('dshDesktopFrame')) {
+        return null
+      }
+      if (selIsCollapsedAttr(sel)) return frame
+      if (selIsSidebarColumn(sel)) return column
+      return null
+    },
+  }
+  assert.equal(isOfficialSidebarCollapsed(doc), true)
+})
+
+test('findOfficialSidebarColumn hits dshDesktopSidebarSurface fixture', () => {
+  const surface = {
+    className: 'dshDesktopSidebarSurface',
+    getBoundingClientRect: () => ({ width: 280 }),
+    closest() { return null },
+    querySelector() { return null },
+  }
+  const doc = {
+    querySelector(sel) {
+      if (typeof sel === 'string' && sel.includes('dshDesktopSidebarSurface')) return surface
+      if (selIsSidebarColumn(sel) && sel.includes('sidebarCol')) return null
+      return null
+    },
+  }
+  assert.equal(findOfficialSidebarColumn(doc), surface)
+})
+
+test('isOfficialSidebarCollapsed ignores phantom attr not above the sidebar column', () => {
+  const phantom = { tag: 'DIV', className: '', getBoundingClientRect: () => ({ width: 0 }) }
+  const column = {
+    getBoundingClientRect: () => ({ width: 280 }),
+    closest() { return null },
+    querySelector() { return null },
+  }
+  const doc = {
+    querySelector(sel) {
+      // Global bare query would return the phantom (the old bug).
+      if (sel === '[data-sidebar-collapsed]') return phantom
+      if (selIsCollapsedAttr(sel) && sel.includes('frame')) return null
+      if (selIsSidebarColumn(sel)) return column
+      return null
+    },
+  }
+  globalThis.document = doc
+  globalThis.window = { document: doc }
+  assert.equal(isOfficialSidebarCollapsed(doc), false)
+  assert.equal(officialSessionSidebarWidth({}), 280)
 })
 
 test('syncWorkbenchGuiWidth resizes gui panel after left rail width changes', () => {
