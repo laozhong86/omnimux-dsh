@@ -107,6 +107,22 @@ export function isLeftSidebarCollapsed(doc) {
 }
 
 /**
+ * Explicit user collapse intent. Protects against official AppFrame's
+ * SIDEBAR_AUTO_COLLAPSE (1024px) heuristic from flipping the left sidebar
+ * open when dragging the right workbench divider.
+ * @type {boolean | null}
+ */
+let explicitLeftCollapseIntent = null
+
+export function setExplicitLeftCollapseIntent(val) {
+  explicitLeftCollapseIntent = typeof val === 'boolean' ? val : null
+}
+
+export function getExplicitLeftCollapseIntent() {
+  return explicitLeftCollapseIntent
+}
+
+/**
  * Mirror frame `data-sidebar-collapsed` onto html for icon + blue-dot CSS.
  * @param {Document | null | undefined} doc
  * @returns {boolean}
@@ -114,7 +130,16 @@ export function isLeftSidebarCollapsed(doc) {
 export function syncLeftCollapsedHtmlAttr(doc) {
   const root = doc?.documentElement
   if (!root || typeof root.setAttribute !== 'function') return false
-  const collapsed = isLeftSidebarCollapsed(doc)
+  const isDragging = Boolean(
+    doc.body?.hasAttribute?.('data-dsh-sidebar-dragging') ||
+    doc.querySelector?.('[data-dragging]')
+  )
+  let collapsed = isLeftSidebarCollapsed(doc)
+  if (explicitLeftCollapseIntent === true) {
+    if (isDragging || !collapsed) collapsed = true
+  } else if (explicitLeftCollapseIntent === false) {
+    if (isDragging && collapsed) collapsed = false
+  }
   if (collapsed) root.setAttribute(LEFT_COLLAPSED_HTML_ATTR, '')
   else root.removeAttribute(LEFT_COLLAPSED_HTML_ATTR)
   return collapsed
@@ -170,7 +195,16 @@ export function findVisibleWorkbenchPanel(doc) {
  * }}
  */
 export function computeChromeLayout(doc) {
-  const collapsed = isLeftSidebarCollapsed(doc)
+  const isDragging = Boolean(
+    doc?.body?.hasAttribute?.('data-dsh-sidebar-dragging') ||
+    doc?.querySelector?.('[data-dragging]')
+  )
+  let collapsed = isLeftSidebarCollapsed(doc)
+  if (explicitLeftCollapseIntent === true && (isDragging || !collapsed)) {
+    collapsed = true
+  } else if (explicitLeftCollapseIntent === false && (isDragging || collapsed)) {
+    collapsed = false
+  }
   let leftRailW = 0
   if (!collapsed) {
     const col = findSidebarColumn(doc)
@@ -283,6 +317,8 @@ export function injectTopbarToggleButton(doc) {
     btn.setAttribute('aria-label', '收起侧边栏')
     btn.innerHTML = COLLAPSE_ICON_SVG + EXPAND_ICON_SVG
     btn.addEventListener('click', () => {
+      const willCollapse = !isLeftSidebarCollapsed(doc)
+      setExplicitLeftCollapseIntent(willCollapse)
       const official = findOfficialSidebarToggle(doc)
       if (official) official.click()
     })
@@ -384,10 +420,6 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
   // every resize frame.
   const syncGeometry = () => {
     try { applyTopbarToggleCssVars(doc) } catch { /* ignore */ }
-    try {
-      const api = doc.defaultView?.__omnimuxWorkbench
-      if (api && typeof api.syncGuiWidth === 'function') api.syncGuiWidth()
-    } catch { /* ignore — layout only; never flip mid-pane */ }
   }
   let observedCol = null
   let observedPanel = null
@@ -443,6 +475,7 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
       try { doc.defaultView?.removeEventListener?.('resize', resizeListener) } catch { /* ignore */ }
       resizeListener = null
     }
+    setExplicitLeftCollapseIntent(null)
     const root = doc.documentElement
     if (root) {
       root.removeAttribute(SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR)

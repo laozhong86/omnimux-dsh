@@ -21,7 +21,7 @@ import {
 export const WORKBENCH_GLOBAL_KEY = '__omnimuxWorkbench'
 export const WORKBENCH_PANEL_MIN_PX = 280
 export const WORKBENCH_CONVERSATION_TARGET_PX = 420
-export const WORKBENCH_CONVERSATION_MIN_PX = 360
+export const WORKBENCH_CONVERSATION_MIN_PX = 260
 export const WORKBENCH_FOCUS_NEAR_PX = 24
 /**
  * Upper bound for "looks collapsed" live measures while the track is tweening.
@@ -406,6 +406,12 @@ export function officialSessionSidebarWidth(env = {}) {
  * @returns {boolean} whether a write was attempted
  */
 export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
+  const doc = hostDocument()
+  // Suspend auto-clamping while user is actively dragging the panel divider to
+  // eliminate layout fighting, stutter, and cyclic resize thrashing.
+  if (doc?.body?.hasAttribute?.('data-dsh-sidebar-dragging') || doc?.querySelector?.('[data-dragging]')) {
+    return false
+  }
   const snapshot = liveSnapshot(store)
   const state = snapshot?.state
   if (!state || state.panelOpen === false) return false
@@ -1065,7 +1071,20 @@ function bind(next = {}) {
   const service = getService()
   if (service && typeof service.subscribeState === 'function' && !service.__omnimuxWorkbenchHooked) {
     try {
-      service.subscribeState(() => { emit() })
+      service.subscribeState((state) => {
+        emit()
+        if (state?.panelOpen && typeof state.width === 'number') {
+          const sessionId = currentSessionId()
+          const tabId = activeTabId(state)
+          const record = focusRecordForTab(sessionId, tabId)
+          if (record && record.mode !== WORKBENCH_FOCUS.gui && !nearPx(state.width, workbenchGuiWidthPx(state))) {
+            record.splitWidth = state.width
+            if (sessionId && tabId) {
+              persistSessionFocus(sessionId, tabId, { splitWidth: state.width })
+            }
+          }
+        }
+      })
       service.__omnimuxWorkbenchHooked = true
     } catch {
       // ignore

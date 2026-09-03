@@ -19,8 +19,10 @@ import {
   computeToggleLeftPx,
   ensureSidebarToggleTopbar,
   findOfficialSidebarToggle,
+  getExplicitLeftCollapseIntent,
   installSidebarToggleTopbar,
   isLeftSidebarCollapsed,
+  setExplicitLeftCollapseIntent,
   syncLeftCollapsedHtmlAttr,
 } from './sidebar-toggle-topbar.js'
 import { PRODUCT_STAGE_CHROME } from './conversation-box.js'
@@ -201,6 +203,25 @@ describe('ensureSidebarToggleTopbar', () => {
     Object.defineProperty(col, 'offsetWidth', { value: 280, configurable: true })
     const expected = 280 - TOPBAR_TOGGLE_SIZE_PX - TOPBAR_TOGGLE_RIGHT_MARGIN_PX
     assert.equal(computeToggleLeftPx(doc), expected)
+  })
+
+  it('explicit intent locks collapsed state even if AppFrame frame drops attr during drag', () => {
+    const doc = setup()
+    ensureSidebarToggleTopbar(doc)
+    assert.equal(doc.documentElement.hasAttribute(LEFT_COLLAPSED_HTML_ATTR), true)
+
+    // User explicitly collapsed
+    setExplicitLeftCollapseIntent(true)
+
+    // Simulate AppFrame momentarily dropping data-sidebar-collapsed during 1024px crossing while dragging
+    doc.querySelector('[data-sidebar-collapsed]')?.removeAttribute('data-sidebar-collapsed')
+    doc.body.setAttribute('data-dsh-sidebar-dragging', '')
+
+    syncLeftCollapsedHtmlAttr(doc)
+    assert.equal(doc.documentElement.hasAttribute(LEFT_COLLAPSED_HTML_ATTR), true, 'must preserve collapsed intent during drag')
+
+    doc.body.removeAttribute('data-dsh-sidebar-dragging')
+    setExplicitLeftCollapseIntent(null)
   })
 })
 

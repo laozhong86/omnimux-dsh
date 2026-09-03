@@ -40,6 +40,10 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
     let attempts = 0
     const tick = (force = false) => {
       if (cancelled) return
+      // Never apply ratio while user is actively dragging divider
+      if (typeof document !== 'undefined' && (document.body?.hasAttribute('data-dsh-sidebar-dragging') || document.querySelector?.('[data-dragging]'))) {
+        return
+      }
       // 没有 tab store.reduce 时 apply 只写盘，返回 undefined，必须继续等。
       const result = applyProjectCanvasRatio(getBetterSidebar(ctx), sessionId, store, {}, force)
       if (result === undefined && attempts < 80) {
@@ -51,13 +55,21 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
 
     // 监听左侧侧边栏宽度变化（折叠/展开）以及窗口 resize
     let sidebarObserver = null
+    let lastSidebarWidth = null
     try {
       const sidebarEl = typeof document !== 'undefined'
         ? document.querySelector('[data-pane="sidebar"], [class*="sidebarCol"]')
         : null
       if (sidebarEl && typeof ResizeObserver === 'function') {
         sidebarObserver = new ResizeObserver(() => {
-          if (!cancelled) tick(true)
+          if (cancelled) return
+          if (typeof document !== 'undefined' && (document.body?.hasAttribute('data-dsh-sidebar-dragging') || document.querySelector?.('[data-dragging]'))) {
+            return
+          }
+          const w = Math.round(sidebarEl.getBoundingClientRect().width)
+          if (lastSidebarWidth !== null && Math.abs(w - lastSidebarWidth) < 2) return
+          lastSidebarWidth = w
+          tick(false)
         })
         sidebarObserver.observe(sidebarEl)
       }
@@ -66,7 +78,12 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
     }
 
     const onResize = () => {
-      if (!cancelled) tick(true)
+      if (!cancelled) {
+        if (typeof document !== 'undefined' && (document.body?.hasAttribute('data-dsh-sidebar-dragging') || document.querySelector?.('[data-dragging]'))) {
+          return
+        }
+        tick(false)
+      }
     }
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', onResize)

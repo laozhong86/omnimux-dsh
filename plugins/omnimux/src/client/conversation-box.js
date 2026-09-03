@@ -152,7 +152,11 @@ html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omni
 html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-original-sidebar-toggle="1"]{display:none!important;}
 /* Visual 0 rail when official left sidebar is collapsed (grid may still be 56).
    Zero both the sidebar column and the frame's first grid track so centerCol
-   starts at x=0 with symmetric margins instead of leaving a 56px empty void. */
+   starts at x=0 with symmetric margins instead of leaving a 56px empty void.
+   Key on both html[data-omnimux-left-collapsed] (user intent) and frame
+   [data-sidebar-collapsed] so AppFrame's 1024px narrow auto-uncollapse flip
+   during divider drags cannot momentarily pop the left sidebar open. */
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [class*="sidebarCol"],
 html[data-omnimux-sidebar-toggle-topbar] [data-sidebar-collapsed] [class*="sidebarCol"]{
   width:0!important;
   min-width:0!important;
@@ -161,10 +165,14 @@ html[data-omnimux-sidebar-toggle-topbar] [data-sidebar-collapsed] [class*="sideb
   border:none!important;
   padding:0!important;
 }
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [class*="frame"],
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] .dshDesktopFrame,
 html[data-omnimux-sidebar-toggle-topbar] [class*="frame"][data-sidebar-collapsed],
 html[data-omnimux-sidebar-toggle-topbar] .dshDesktopFrame[data-sidebar-collapsed]{
   grid-template-columns: 0px minmax(0px, 1fr) 0px !important;
 }
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [class*="frame"]:not([data-details-collapsed="true"]),
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] .dshDesktopFrame:not([data-details-collapsed="true"]),
 html[data-omnimux-sidebar-toggle-topbar] [class*="frame"][data-sidebar-collapsed]:not([data-details-collapsed="true"]),
 html[data-omnimux-sidebar-toggle-topbar] .dshDesktopFrame[data-sidebar-collapsed]:not([data-details-collapsed="true"]){
   grid-template-columns: 0px minmax(0px, 1fr) auto !important;

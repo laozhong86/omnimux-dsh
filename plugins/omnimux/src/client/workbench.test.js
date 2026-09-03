@@ -79,6 +79,13 @@ function makeState(tabs = [], width = 780, panelOpen = true) {
 function setupWindow() {
   const doc = {
     documentElement: { dataset: {} },
+    body: {
+      dataset: {},
+      _attrs: new Set(),
+      hasAttribute(a) { return this._attrs.has(a) },
+      setAttribute(a) { this._attrs.add(a) },
+      removeAttribute(a) { this._attrs.delete(a) },
+    },
     querySelector: () => null,
   }
   const win = {
@@ -546,8 +553,8 @@ test('split + left collapse only clamps; mode stays split; convCollapsed stays f
 
   const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 56 })
   assert.equal(synced, true)
-  // split max = max(280, 1728 - 56 - 360) = 1312
-  assert.equal(state.width, 1312)
+  // split max = max(280, 1728 - 56 - 260) = 1412
+  assert.equal(state.width, 1412)
   assert.equal(focusRecordForTab('s-split-clamp', 'omnimux-assets:library').mode, WORKBENCH_FOCUS.split)
   assert.equal(getConversationCollapsed(), false)
 })
@@ -694,12 +701,12 @@ test('syncWorkbenchGuiWidth clamps oversized width even after mode was clobbered
 
   const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 280 })
   assert.equal(synced, true)
-  // Split clamp keeps the middle conversation column >= 360:
-  //   max(280, 1728 - 280 - 360) = 1088
-  assert.equal(state.width, 1088)
+  // Split clamp keeps the middle conversation column >= 260:
+  //   max(280, 1728 - 280 - 260) = 1188
+  assert.equal(state.width, 1188)
 })
 
-test('syncWorkbenchGuiWidth clamps split width so the conversation column keeps its min', () => {
+test('syncWorkbenchGuiWidth clamps split width so the conversation column keeps its min (260px)', () => {
   setupWindow()
   let state = makeState([{ id: 'omnimux-workflow:canvas', type: 'omnimux-workflow:canvas' }], 900, true)
   const store = {
@@ -709,11 +716,29 @@ test('syncWorkbenchGuiWidth clamps split width so the conversation column keeps 
   const record = focusRecordForTab('s-colsplit', 'omnimux-workflow:canvas')
   record.mode = WORKBENCH_FOCUS.split
 
-  // Viewport 1200, left rail 280 -> split max = 1200 - 280 - 360 = 560.
+  // Viewport 1200, left rail 280 -> split max = 1200 - 280 - 260 = 660.
   const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1200, officialSidebarWidth: 280 })
   assert.equal(synced, true)
-  assert.ok(state.width <= 560, `expected <=560, got ${state.width}`)
-  assert.equal(state.width, 560)
+  assert.ok(state.width <= 660, `expected <=660, got ${state.width}`)
+  assert.equal(state.width, 660)
+})
+
+test('syncWorkbenchGuiWidth suspends clamping while user is actively dragging', () => {
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-workflow:canvas', type: 'omnimux-workflow:canvas' }], 900, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-drag-suspend', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  const record = focusRecordForTab('s-drag-suspend', 'omnimux-workflow:canvas')
+  record.mode = WORKBENCH_FOCUS.split
+
+  // Simulate active drag on body
+  globalThis.document.body.setAttribute('data-dsh-sidebar-dragging', '')
+  const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1200, officialSidebarWidth: 280 })
+  assert.equal(synced, false, 'must suspend clamping during drag')
+  assert.equal(state.width, 900, 'state width must not be mutated during drag')
+  globalThis.document.body.removeAttribute('data-dsh-sidebar-dragging')
 })
 
 test('syncWorkbenchGuiWidth never clamps gui / collapsed middle column', () => {

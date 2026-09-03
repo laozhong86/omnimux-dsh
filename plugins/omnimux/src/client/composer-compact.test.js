@@ -139,14 +139,14 @@ test('ensureComposerCompactChrome injects the style id and the CSS fragments', (
   assert.equal(style.id, COMPOSER_COMPACT_STYLE_ID)
   assert.match(style.textContent, /justify-content:flex-end/)
   assert.match(style.textContent, /--dsh-chat-content-width/)
-  assert.match(style.textContent, /min-width:360px/)
+  assert.match(style.textContent, /min-width:260px/)
   assert.match(style.textContent, /data-omnimux-composer-density='short'/)
   assert.match(style.textContent, /data-omnimux-composer-density='icon'/)
   assert.match(style.textContent, /conversation-scroll/)
-  // Hero workspace row docks to the live composer-card geometry vars.
+  assert.match(style.textContent, /margin-left:auto/)
+  // Hero workspace row shares the same content-width rail and margin: auto.
   assert.match(style.textContent, /heroWorkspaceRow/)
-  assert.match(style.textContent, /--omnimux-composer-card-width/)
-  assert.match(style.textContent, /--omnimux-composer-card-offset/)
+  assert.match(style.textContent, /max-width:var\(--dsh-chat-content-width\)/)
   // Idempotent: a second call must not create a second <style>.
   const again = ensureComposerCompactChrome(doc)
   assert.equal(again, style)
