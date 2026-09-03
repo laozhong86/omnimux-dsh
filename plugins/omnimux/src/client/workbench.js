@@ -223,6 +223,11 @@ export function isOfficialSidebarCollapsed(doc = hostDocument()) {
  * If that panel was sized while the rail was collapsed, an expanded rail can
  * still report ~56px (or overflow under the z-index:40 panel). Prefer the last
  * healthy expanded width so `gui` can recover instead of locking the cover.
+ *
+ * Collapse is the inverse: AppFrame flips `data-sidebar-collapsed` before the
+ * grid track finishes animating to the ~56px rail. Returning that stale live
+ * width (often still ~280) makes `gui = viewport − expanded` leave a gap to
+ * the right of the true rail. While collapsed, only trust rail-sized measures.
  */
 export function officialSessionSidebarWidth(env = {}) {
   if (typeof env.officialSidebarWidth === 'number' && Number.isFinite(env.officialSidebarWidth)) {
@@ -237,13 +242,20 @@ export function officialSessionSidebarWidth(env = {}) {
   const width = column.getBoundingClientRect().width
   if (typeof width !== 'number' || !Number.isFinite(width) || width <= 0) return 0
   const collapsed = isOfficialSidebarCollapsed(doc)
+  if (collapsed) {
+    // Attribute lands before the track tween finishes. Trust any sub-expanded
+    // measure (56 official rail, ~90 macOS advanced, mid-tween). Only reject
+    // still-expanded widths so gui can fill instead of leaving a gap.
+    if (width > 0 && width < WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX) {
+      return Math.round(width)
+    }
+    return WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX
+  }
   // Crushed under an oversized panel, or mid expand/collapse tween: keep last healthy width.
-  if (!collapsed && width < WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX) {
+  if (width < WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX) {
     return lastExpandedOfficialWidth
   }
-  if (!collapsed && width >= WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX) {
-    lastExpandedOfficialWidth = Math.round(width)
-  }
+  lastExpandedOfficialWidth = Math.round(width)
   return width
 }
 

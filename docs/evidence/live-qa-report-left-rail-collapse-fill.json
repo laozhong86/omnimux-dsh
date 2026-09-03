@@ -1,0 +1,56 @@
+{
+  "task": "left-rail-collapse-fill officialSessionSidebarWidth",
+  "worktree": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-left-rail-collapse-fill-0",
+  "branch": "agent/omnimux-left-rail-collapse-fill-issue-0",
+  "timestamp": "2026-09-03T10:18:44+0800",
+  "unit_tests": {
+    "omnimux_package": {
+      "total": 659,
+      "passed": 659,
+      "failed": 0
+    },
+    "workbench_test_js": {
+      "total": 28,
+      "passed": 28,
+      "failed": 0,
+      "new_cases": [
+        "officialSessionSidebarWidth uses collapsed rail while attr is set mid-tween",
+        "syncWorkbenchGuiWidth expands gui when left rail collapses"
+      ]
+    }
+  },
+  "live_probe": {
+    "dev_app_port_45120": "reachable_http_401",
+    "cdp_9229": "reachable_no_origin_handshake_ok",
+    "pnpm_verify_live": "failed_status_401_script_expects_200",
+    "fix_materialized_in_dev_profile": false,
+    "profile_client_has_collapsed_branch": false,
+    "worktree_lib_client_has_collapsed_branch": true,
+    "sync_blocked_reason": [
+      "worktree branch != main",
+      "dirty uncommitted workbench.js + workbench.test.js",
+      "sync-to-app.sh assert_origin_main_aligned refuses materialize",
+      "did not set OMNIMUX_ALLOW_UNMERGED_MATERIALIZE or restart Dev App"
+    ],
+    "baseline_observation_old_bundle": {
+      "collapsedAttr": true,
+      "sidebarLivePx": 56,
+      "gui_after_setFocus": {
+        "stateWidth": 1672,
+        "note": "old code also correct once live width already 56"
+      },
+      "mid_tween_monkeypatch_live_width_280_while_collapsed": {
+        "result_state_width": "see CDP run",
+        "expected_old_bug": "viewport-280 leaves large gap",
+        "expected_after_fix": "viewport-72 or live sub-200 width"
+      }
+    },
+    "verdict": "LIVE_FIX_NOT_VERIFIED_BLOCKED_UNMATERIALIZED"
+  },
+  "source_review": {
+    "fix_scope": "officialSessionSidebarWidth collapsed branch only",
+    "conversationCollapsed_independence": "preserved; wantsGui still mode===gui || getConversationCollapsed()",
+    "expanded_crush_path": "unchanged lastExpandedOfficialWidth when !collapsed && width < 200",
+    "routing": "NoOne_unit_pass_live_blocked"
+  }
+}
