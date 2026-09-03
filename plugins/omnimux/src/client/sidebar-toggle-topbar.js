@@ -1,20 +1,30 @@
 /**
- * Relocate the official left-sidebar toggle into the topbar (traffic-light
- * safe inset → toggle → workbench tab bar). Plugin CSS + DOM only — never
- * touch harness packages, better-sidebar, middle-pane hide toggle, or
- * conversation collapse APIs.
+ * Relocate the left-sidebar toggle into the topbar (traffic-light safe inset →
+ * toggle → workbench tab bar). Plugin CSS + DOM only — never touch harness
+ * packages, better-sidebar, middle-pane hide toggle, or conversation collapse
+ * APIs.
+ *
+ * The official AppFrame toggle is trapped in the sidebar's low stacking context
+ * (logoRow z-index 11 inside a transformed fixed shell), so it cannot be fixed
+ * over the full-width workbench tab bar (better-sidebar subtree stacks above
+ * the app root). Instead we inject our OWN toggle button as a child of the
+ * better-sidebar `tabBar` (guaranteed on top + hit-testable) and drive the
+ * official sidebar action by programmatically clicking the (hidden) official
+ * button. Icons + blue-dot mirror the collapse flag on `<html>`.
  */
 
 export const SIDEBAR_TOGGLE_TOPBAR_ATTR = 'data-omnimux-sidebar-toggle-topbar'
 export const SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR = 'data-omnimux-sidebar-toggle-topbar'
 export const LEFT_COLLAPSED_HTML_ATTR = 'data-omnimux-left-collapsed'
+/** Marks the hidden official AppFrame toggle used as the programmatic trigger. */
+export const SIDEBAR_ORIGINAL_TOGGLE_ATTR = 'data-omnimux-original-sidebar-toggle'
 
 /** Traffic-light safe width (darwin titlebar inset) + small gap before toggle. */
 export const TOPBAR_TOGGLE_LEFT_PX = 78
 export const TOPBAR_TOGGLE_SIZE_PX = 36
 export const TOPBAR_TOGGLE_GAP_PX = 8
-export const TOPBAR_TOGGLE_TOP_PX = 4
-export const TOPBAR_TOGGLE_Z_INDEX = 50
+export const TOPBAR_TOGGLE_TOP_PX = 0
+export const TOPBAR_TOGGLE_Z_INDEX = 9999
 
 const TOGGLE_ARIA_LABELS = Object.freeze([
   '打开侧边栏',
@@ -23,18 +33,26 @@ const TOGGLE_ARIA_LABELS = Object.freeze([
   'Collapse sidebar',
 ])
 
+/** Shown while the sidebar is expanded (action = collapse). */
+const COLLAPSE_ICON_SVG = `<svg data-omnimux-sidebar-toggle-icon="collapse" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="2"/><line x1="6.8" y1="2.5" x2="6.8" y2="13.5"/><path d="M11.5 8h-1.3"/><path d="M11.4 6.9l-1.2 1.1 1.2 1.1"/></svg>`
+
+/** Shown while the sidebar is collapsed (action = expand). */
+const EXPAND_ICON_SVG = `<svg data-omnimux-sidebar-toggle-icon="expand" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="2"/><line x1="6.8" y1="2.5" x2="6.8" y2="13.5"/><path d="M9.8 8h1.3"/><path d="M9.9 6.9l1.2 1.1-1.2 1.1"/></svg>`
+
 /**
  * @param {Document | null | undefined} doc
  * @returns {HTMLElement | null}
  */
 export function findOfficialSidebarToggle(doc) {
   if (!doc || typeof doc.querySelector !== 'function') return null
+  // Never match our own injected topbar toggle (would cause click recursion).
+  const notInjected = `:not([${SIDEBAR_TOGGLE_TOPBAR_ATTR}])`
   for (const label of TOGGLE_ARIA_LABELS) {
-    const byAria = doc.querySelector(`button[aria-label="${label}"]`)
+    const byAria = doc.querySelector(`button[aria-label="${label}"]${notInjected}`)
     if (byAria instanceof HTMLElement) return byAria
   }
   const fallback = doc.querySelector(
-    '[class*="sidebarCol"] [class*="logoRow"] [class*="toggle"], [class*="sidebarCol"] [class*="logoRow"] button[class*="toggle"]',
+    `[class*="sidebarCol"] [class*="logoRow"] [class*="toggle"]${notInjected}, [class*="sidebarCol"] [class*="logoRow"] button[class*="toggle"]${notInjected}`,
   )
   if (fallback instanceof HTMLElement) return fallback
   return null
@@ -86,7 +104,7 @@ export function isLeftSidebarCollapsed(doc) {
 }
 
 /**
- * Mirror frame `data-sidebar-collapsed` onto html for blue-dot CSS.
+ * Mirror frame `data-sidebar-collapsed` onto html for icon + blue-dot CSS.
  * @param {Document | null | undefined} doc
  * @returns {boolean}
  */
@@ -100,9 +118,9 @@ export function syncLeftCollapsedHtmlAttr(doc) {
 }
 
 /**
- * Write geometry CSS variables used by tabBar padding and fixed toggle.
+ * Write geometry CSS variables used by tabBar padding and the fixed toggle.
  * @param {Document | null | undefined} doc
- * @param {{ left?: number, size?: number, gap?: number }} [geom]
+ * @param {{ left?: number, size?: number, gap?: number, top?: number }} [geom]
  */
 export function applyTopbarToggleCssVars(doc, geom = {}) {
   const root = doc?.documentElement
@@ -110,35 +128,62 @@ export function applyTopbarToggleCssVars(doc, geom = {}) {
   const left = typeof geom.left === 'number' ? geom.left : TOPBAR_TOGGLE_LEFT_PX
   const size = typeof geom.size === 'number' ? geom.size : TOPBAR_TOGGLE_SIZE_PX
   const gap = typeof geom.gap === 'number' ? geom.gap : TOPBAR_TOGGLE_GAP_PX
+  const top = typeof geom.top === 'number' ? geom.top : TOPBAR_TOGGLE_TOP_PX
   const end = left + size + gap
   root.style.setProperty('--omnimux-topbar-toggle-left', `${left}px`)
   root.style.setProperty('--omnimux-topbar-toggle-size', `${size}px`)
   root.style.setProperty('--omnimux-topbar-toggle-gap', `${gap}px`)
+  root.style.setProperty('--omnimux-topbar-toggle-top', `${top}px`)
   root.style.setProperty('--omnimux-topbar-toggle-end', `${end}px`)
 }
 
 /**
- * Mark the official toggle and lift it into the topbar via CSS.
+ * The better-sidebar workbench tab bar is the highest-stacking chrome in the
+ * workspace; a fixed toggle child of it is guaranteed on top + clickable.
+ * @param {Document | null | undefined} doc
+ * @returns {Element | null}
+ */
+export function findTopbarAnchor(doc) {
+  if (!doc || typeof doc.querySelector !== 'function') return null
+  return (
+    doc.querySelector('[data-dsh-better-sidebar] [class*="tabBar"], [class*="tabBar"], [data-dsh-better-sidebar]')
+  )
+}
+
+/**
+ * Inject (idempotently) our own topbar toggle button into the better-sidebar
+ * tab bar. Its click drives the official button's programmatic click.
  * @param {Document | null | undefined} doc
  * @returns {HTMLElement | null}
  */
-export function ensureSidebarToggleTopbar(doc) {
-  if (!doc?.documentElement) return null
-  const root = doc.documentElement
-  root.setAttribute(SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR, '')
-  applyTopbarToggleCssVars(doc)
-  syncLeftCollapsedHtmlAttr(doc)
-
-  const btn = findOfficialSidebarToggle(doc)
-  if (!btn) return null
-  if (btn.getAttribute(SIDEBAR_TOGGLE_TOPBAR_ATTR) !== '1') {
+export function injectTopbarToggleButton(doc) {
+  const anchor = findTopbarAnchor(doc)
+  if (!anchor) return null
+  let btn = doc.querySelector(`[${SIDEBAR_TOGGLE_TOPBAR_ATTR}="1"]`)
+  if (!btn) {
+    btn = doc.createElement('button')
+    btn.setAttribute('type', 'button')
     btn.setAttribute(SIDEBAR_TOGGLE_TOPBAR_ATTR, '1')
+    btn.setAttribute('aria-label', '收起侧边栏')
+    btn.innerHTML = COLLAPSE_ICON_SVG + EXPAND_ICON_SVG
+    btn.addEventListener('click', () => {
+      const official = findOfficialSidebarToggle(doc)
+      if (official) official.click()
+    })
+    anchor.appendChild(btn)
   }
-  // Defense in depth: inline no-drag + z-index (CSS also sets these).
-  // Electron app-region needs no-drag + z-index≥50; jsdom drops vendor-prefixed
-  // CSSOM writes, so also stamp the attribute string for tests / stubborn hosts.
+  applyButtonChrome(btn)
+  return btn
+}
+
+/**
+ * Defense in depth: inline no-drag + z-index + pointer-events (CSS also sets
+ * these; Electron app-region needs no-drag + a high z-index to be clickable).
+ * @param {HTMLElement} btn
+ */
+function applyButtonChrome(btn) {
   const inlineChrome = [
-    '-webkit-app-region:no-drag',
+    `-webkit-app-region:no-drag`,
     `z-index:${TOPBAR_TOGGLE_Z_INDEX}`,
     'pointer-events:auto',
   ].join(';')
@@ -157,11 +202,51 @@ export function ensureSidebarToggleTopbar(doc) {
   } catch {
     // ignore
   }
+}
+
+/**
+ * Hide the official AppFrame toggle (it is only used as the programmatic
+ * trigger). Also mark it so its own React onClick still fires on .click().
+ * @param {Document | null | undefined} doc
+ * @returns {HTMLElement | null}
+ */
+function hideOriginalToggle(doc) {
+  const btn = findOfficialSidebarToggle(doc)
+  if (!btn) return null
+  btn.setAttribute(SIDEBAR_ORIGINAL_TOGGLE_ATTR, '1')
+  try {
+    btn.style.setProperty('display', 'none', 'important')
+  } catch {
+    // ignore
+  }
   return btn
 }
 
 /**
- * Install MutationObserver to keep the toggle marked and collapsed attr mirrored.
+ * Wire the topbar toggle + collapsed mirror. Returns the injected toggle button.
+ * @param {Document | null | undefined} doc
+ * @returns {HTMLElement | null}
+ */
+export function ensureSidebarToggleTopbar(doc) {
+  if (!doc?.documentElement) return null
+  const root = doc.documentElement
+  root.setAttribute(SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR, '')
+  applyTopbarToggleCssVars(doc)
+  const collapsed = syncLeftCollapsedHtmlAttr(doc)
+  hideOriginalToggle(doc)
+  const btn = injectTopbarToggleButton(doc)
+  // Guard against the observer's aria-label attribute filter: setting the same
+  // value would still fire a MutationRecord and loop forever.
+  if (btn) {
+    const label = collapsed ? '打开侧边栏' : '收起侧边栏'
+    if (btn.getAttribute('aria-label') !== label) btn.setAttribute('aria-label', label)
+  }
+  return btn
+}
+
+/**
+ * Install MutationObserver to keep the injected toggle present and collapsed
+ * attr mirrored. Re-applies whenever the official toggle or tab bar re-renders.
  * @param {Document | null | undefined} [doc]
  * @returns {() => void}
  */
@@ -195,16 +280,18 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
     if (root) {
       root.removeAttribute(SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR)
       root.removeAttribute(LEFT_COLLAPSED_HTML_ATTR)
-      try {
-        root.style.removeProperty('--omnimux-topbar-toggle-left')
-        root.style.removeProperty('--omnimux-topbar-toggle-size')
-        root.style.removeProperty('--omnimux-topbar-toggle-gap')
-        root.style.removeProperty('--omnimux-topbar-toggle-end')
-      } catch { /* ignore */ }
+      for (const k of ['--omnimux-topbar-toggle-left', '--omnimux-topbar-toggle-size', '--omnimux-topbar-toggle-gap', '--omnimux-topbar-toggle-top', '--omnimux-topbar-toggle-end']) {
+        try { root.style.removeProperty(k) } catch { /* ignore */ }
+      }
     }
-    const marked = doc.querySelector?.(`[${SIDEBAR_TOGGLE_TOPBAR_ATTR}="1"]`)
-    if (marked instanceof HTMLElement) {
-      marked.removeAttribute(SIDEBAR_TOGGLE_TOPBAR_ATTR)
+    const injected = doc.querySelector?.(`[${SIDEBAR_TOGGLE_TOPBAR_ATTR}="1"]`)
+    if (injected instanceof HTMLElement) {
+      try { injected.remove() } catch { /* ignore */ }
+    }
+    const official = doc.querySelector?.(`[${SIDEBAR_ORIGINAL_TOGGLE_ATTR}="1"]`)
+    if (official instanceof HTMLElement) {
+      official.removeAttribute(SIDEBAR_ORIGINAL_TOGGLE_ATTR)
+      try { official.style.removeProperty('display') } catch { /* ignore */ }
     }
   }
 }

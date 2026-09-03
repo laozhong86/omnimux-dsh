@@ -92,7 +92,7 @@ describe('PRODUCT_STAGE_CHROME', () => {
     assert.match(PRODUCT_STAGE_CHROME, /data-omnimux-left-collapsed/)
     assert.match(PRODUCT_STAGE_CHROME, /\[data-sidebar-collapsed\] \[class\*="sidebarCol"\]/)
     assert.match(PRODUCT_STAGE_CHROME, /padding-left:var\(--omnimux-topbar-toggle-end\)/)
-    assert.match(PRODUCT_STAGE_CHROME, /z-index:50/)
+    assert.match(PRODUCT_STAGE_CHROME, /z-index:\s*(50|9999)/)
     assert.match(PRODUCT_STAGE_CHROME, /--dsw-alias-brand-primary|--dsw-alias-interactive-bg-hover-accent|--dsw-alias-label-accent/)
   })
 })

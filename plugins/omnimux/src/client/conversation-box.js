@@ -121,14 +121,34 @@ html[data-omnimux-sidebar-toggle-topbar]{
 }
 html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"]{
   position:fixed!important;
-  top:4px!important;
+  top:var(--omnimux-topbar-toggle-top)!important;
   left:var(--omnimux-topbar-toggle-left)!important;
   width:var(--omnimux-topbar-toggle-size)!important;
   height:var(--omnimux-topbar-toggle-size)!important;
-  z-index:50!important;
+  z-index:9999!important;
   -webkit-app-region:no-drag!important;
   pointer-events:auto!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:var(--dsw-alias-bg-layer-2, rgba(255,255,255,.06))!important;
+  border:1px solid var(--dsw-alias-border-l2)!important;
+  border-radius:8px!important;
+  color:var(--dsw-alias-label-secondary)!important;
+  cursor:pointer!important;
+  box-sizing:border-box!important;
 }
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"]:hover{
+  background:var(--dsw-alias-interactive-bg-hover)!important;
+  color:var(--dsw-alias-label-primary)!important;
+}
+/* Icon swap: collapse glyph while expanded, expand glyph while collapsed. */
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"] [data-omnimux-sidebar-toggle-icon]{display:none;}
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"] [data-omnimux-sidebar-toggle-icon="collapse"]{display:block;width:16px;height:16px;}
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omnimux-sidebar-toggle-topbar="1"] [data-omnimux-sidebar-toggle-icon="collapse"]{display:none;}
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omnimux-sidebar-toggle-topbar="1"] [data-omnimux-sidebar-toggle-icon="expand"]{display:block;width:16px;height:16px;}
+/* Official AppFrame toggle is now only a programmatic trigger — hide it. */
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-original-sidebar-toggle="1"]{display:none!important;}
 /* Visual 0 rail when official left sidebar is collapsed (grid may still be 56). */
 html[data-omnimux-sidebar-toggle-topbar] [data-sidebar-collapsed] [class*="sidebarCol"]{
   width:0!important;
@@ -142,10 +162,7 @@ html[data-omnimux-sidebar-toggle-topbar] [class*="tabBar"]{
   padding-left:var(--omnimux-topbar-toggle-end)!important;
   box-sizing:border-box;
 }
-/* Blue dot on toggle while left rail is collapsed (html mirror of frame attr). */
-html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omnimux-sidebar-toggle-topbar="1"]{
-  position:fixed!important;
-}
+/* Blue dot on the injected toggle while left rail is collapsed. */
 html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omnimux-sidebar-toggle-topbar="1"]::after{
   content:"";
   position:absolute;

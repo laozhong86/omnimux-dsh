@@ -123,6 +123,15 @@ describe('ensureSidebarToggleTopbar', () => {
     )
   })
 
+  it('injects the toggle into the tabBar anchor and returns it', () => {
+    const doc = setup()
+    const btn = ensureSidebarToggleTopbar(doc)
+    assert.ok(btn)
+    const tabBar = doc.querySelector('[class*="tabBar"]')
+    assert.ok(tabBar, 'fixture has a tabBar anchor')
+    assert.ok(tabBar.contains(btn), 'injected button should live inside the tabBar anchor')
+  })
+
   it('sets no-drag and z-index >= 50 on the toggle', () => {
     const doc = setup()
     const btn = ensureSidebarToggleTopbar(doc)
@@ -136,6 +145,27 @@ describe('ensureSidebarToggleTopbar', () => {
     const zMatch = String(btn.getAttribute('style') || '').match(/z-index:\s*(\d+)/)
     const z = Number(zRaw) || Number(zMatch?.[1] || 0)
     assert.ok(z >= TOPBAR_TOGGLE_Z_INDEX, `expected z-index >= ${TOPBAR_TOGGLE_Z_INDEX}, got ${z}`)
+  })
+
+  it('hides the official trigger and mirrors collapse onto html', () => {
+    const doc = setup()
+    ensureSidebarToggleTopbar(doc)
+    const official = doc.querySelector('button[aria-label="打开侧边栏"]')
+    assert.ok(official, 'official toggle present')
+    assert.equal(official.getAttribute('data-omnimux-original-sidebar-toggle'), '1')
+    assert.equal(doc.documentElement.hasAttribute(LEFT_COLLAPSED_HTML_ATTR), true)
+    // aria on the injected button follows collapse state
+    const btn = doc.querySelector('[data-omnimux-sidebar-toggle-topbar="1"]')
+    assert.equal(btn?.getAttribute('aria-label'), '打开侧边栏')
+  })
+
+  it('official finder never returns our injected button (no click recursion)', () => {
+    const doc = setup()
+    const injected = ensureSidebarToggleTopbar(doc)
+    assert.ok(injected)
+    const found = findOfficialSidebarToggle(doc)
+    assert.ok(found)
+    assert.notEqual(found, injected)
   })
 
   it('mirrors frame data-sidebar-collapsed onto html', () => {
@@ -174,7 +204,7 @@ describe('chrome CSS contracts (conversation-box PRODUCT_STAGE_CHROME)', () => {
     assert.match(PRODUCT_STAGE_CHROME, /--omnimux-topbar-toggle-end/)
     assert.match(PRODUCT_STAGE_CHROME, /position:\s*fixed/)
     assert.match(PRODUCT_STAGE_CHROME, /-webkit-app-region:\s*no-drag/)
-    assert.match(PRODUCT_STAGE_CHROME, /z-index:\s*50/)
+    assert.match(PRODUCT_STAGE_CHROME, /z-index:\s*9999/)
     assert.match(PRODUCT_STAGE_CHROME, /data-sidebar-collapsed\][^{]*\[class\*="sidebarCol"\]/)
     assert.match(PRODUCT_STAGE_CHROME, /width:\s*0\s*!important/)
     assert.match(PRODUCT_STAGE_CHROME, /\[class\*="tabBar"\]/)
