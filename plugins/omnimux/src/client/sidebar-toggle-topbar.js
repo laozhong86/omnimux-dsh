@@ -129,7 +129,7 @@ export function syncLeftCollapsedHtmlAttr(doc) {
  */
 export function computeToggleLeftPx(doc) {
   if (isLeftSidebarCollapsed(doc)) return TOPBAR_TOGGLE_LEFT_PX
-  const col = doc?.querySelector('[class*="sidebarCol"], [data-pane="sidebar"]')
+  const col = findSidebarColumn(doc)
   let w = 0
   if (col) {
     try {
@@ -140,6 +140,16 @@ export function computeToggleLeftPx(doc) {
   }
   const right = TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_RIGHT_MARGIN_PX
   return Math.max(TOPBAR_TOGGLE_LEFT_PX, Math.round(w - right))
+}
+
+/**
+ * The official left sidebar column (the width we dock the toggle against).
+ * @param {Document | null | undefined} doc
+ * @returns {Element | null}
+ */
+export function findSidebarColumn(doc) {
+  if (!doc || typeof doc.querySelector !== 'function') return null
+  return doc.querySelector('[class*="sidebarCol"], [data-pane="sidebar"]')
 }
 
 /**
@@ -280,14 +290,40 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
   ensureSidebarToggleTopbar(doc)
 
   /** @type {MutationObserver | null} */
-  let observer = null
+  let stateObserver = null
+  /** @type {ResizeObserver | null} */
+  let widthObserver = null
+
+  // Track the sidebar column width (including its collapse/expand transition)
+  // so the docked toggle repositions every frame instead of waiting for the
+  // next unrelated mutation after the animation settles. React re-creates the
+  // sidebar column on state flips, so re-observe the CURRENT column whenever
+  // the DOM changes rather than holding a stale node.
+  const syncGeometry = () => {
+    try { applyTopbarToggleCssVars(doc) } catch { /* ignore */ }
+  }
+  let observedCol = null
+  const ensureObserveCol = () => {
+    if (typeof ResizeObserver === 'undefined') return
+    const col = findSidebarColumn(doc)
+    if (!col) return
+    if (col === observedCol) return
+    if (widthObserver && observedCol) {
+      try { widthObserver.unobserve(observedCol) } catch { /* ignore */ }
+    }
+    if (!widthObserver) widthObserver = new ResizeObserver(syncGeometry)
+    try { widthObserver.observe(col) } catch { /* ignore */ }
+    observedCol = col
+  }
+
   if (typeof MutationObserver !== 'undefined') {
-    observer = new MutationObserver(() => {
+    stateObserver = new MutationObserver(() => {
       ensureSidebarToggleTopbar(doc)
+      ensureObserveCol()
     })
     const host = doc.body || doc.documentElement
     if (host) {
-      observer.observe(host, {
+      stateObserver.observe(host, {
         childList: true,
         subtree: true,
         attributes: true,
@@ -295,11 +331,16 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
       })
     }
   }
+  ensureObserveCol()
 
   return () => {
-    if (observer) {
-      try { observer.disconnect() } catch { /* ignore */ }
-      observer = null
+    if (stateObserver) {
+      try { stateObserver.disconnect() } catch { /* ignore */ }
+      stateObserver = null
+    }
+    if (widthObserver) {
+      try { widthObserver.disconnect() } catch { /* ignore */ }
+      widthObserver = null
     }
     const root = doc.documentElement
     if (root) {
