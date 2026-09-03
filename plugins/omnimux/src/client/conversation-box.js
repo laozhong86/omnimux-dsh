@@ -150,7 +150,9 @@ html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omni
 html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omnimux-sidebar-toggle-topbar="1"] [data-omnimux-sidebar-toggle-icon="expand"]{display:block;width:16px;height:16px;}
 /* Official AppFrame toggle is now only a programmatic trigger — hide it. */
 html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-original-sidebar-toggle="1"]{display:none!important;}
-/* Visual 0 rail when official left sidebar is collapsed (grid may still be 56). */
+/* Visual 0 rail when official left sidebar is collapsed (grid may still be 56).
+   Zero both the sidebar column and the frame's first grid track so centerCol
+   starts at x=0 with symmetric margins instead of leaving a 56px empty void. */
 html[data-omnimux-sidebar-toggle-topbar] [data-sidebar-collapsed] [class*="sidebarCol"]{
   width:0!important;
   min-width:0!important;
@@ -158,6 +160,14 @@ html[data-omnimux-sidebar-toggle-topbar] [data-sidebar-collapsed] [class*="sideb
   overflow:hidden!important;
   border:none!important;
   padding:0!important;
+}
+html[data-omnimux-sidebar-toggle-topbar] [class*="frame"][data-sidebar-collapsed],
+html[data-omnimux-sidebar-toggle-topbar] .dshDesktopFrame[data-sidebar-collapsed]{
+  grid-template-columns: 0px minmax(0px, 1fr) 0px !important;
+}
+html[data-omnimux-sidebar-toggle-topbar] [class*="frame"][data-sidebar-collapsed]:not([data-details-collapsed="true"]),
+html[data-omnimux-sidebar-toggle-topbar] .dshDesktopFrame[data-sidebar-collapsed]:not([data-details-collapsed="true"]){
+  grid-template-columns: 0px minmax(0px, 1fr) auto !important;
 }
 /* Tab labels dock by overlap: pad = max(0, toggleEnd − panel.left), written
    to --omnimux-tabbar-pad-left. Do NOT key this off left-collapsed: collapsed
@@ -196,6 +206,7 @@ export function ensureProductStageChrome() {
       || !text.includes('--omnimux-topbar-toggle-end')
       || !text.includes('data-omnimux-left-collapsed')
       || !text.includes('--omnimux-tabbar-pad-left')
+      || !text.includes('grid-template-columns: 0px')
     if (stale) existing.textContent = PRODUCT_STAGE_CHROME
   } else {
     const style = document.createElement('style')
