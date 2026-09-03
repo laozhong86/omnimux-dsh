@@ -14,6 +14,8 @@ import {
   TOPBAR_TOGGLE_SIZE_PX,
   TOPBAR_TOGGLE_Z_INDEX,
   applyTopbarToggleCssVars,
+  computeChromeLayout,
+  computeTabBarPadLeft,
   computeToggleLeftPx,
   ensureSidebarToggleTopbar,
   findOfficialSidebarToggle,
@@ -202,6 +204,107 @@ describe('ensureSidebarToggleTopbar', () => {
   })
 })
 
+describe('computeChromeLayout tab pad (overlap, not collapsed boolean)', () => {
+  const toggleEndCollapsed = TOPBAR_TOGGLE_LEFT_PX + TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX
+
+  function mockRect(el, { left, width, height = 900 }) {
+    el.getBoundingClientRect = () => ({
+      x: left, y: 0, left, top: 0, width, height, right: left + width, bottom: height,
+    })
+  }
+
+  it('A expanded+gui: panel at 280, pad 0 (toggle lives on the rail)', () => {
+    const doc = setup(`<!doctype html><html><body>
+      <div class="frame_abc">
+        <div class="sidebarCol_x"></div>
+      </div>
+      <div data-dsh-better-sidebar>
+        <div class="nArs4W_panel">
+          <div class="nArs4W_tabBar"></div>
+        </div>
+      </div>
+    </body></html>`)
+    const col = doc.querySelector('[class*="sidebarCol"]')
+    Object.defineProperty(col, 'offsetWidth', { value: 280, configurable: true })
+    mockRect(col, { left: 0, width: 280 })
+    mockRect(doc.querySelector('[class*="panel"]'), { left: 280, width: 1448 })
+    const layout = computeChromeLayout(doc)
+    assert.equal(layout.collapsed, false)
+    assert.equal(layout.toggleLeft, 280 - TOPBAR_TOGGLE_SIZE_PX - TOPBAR_TOGGLE_RIGHT_MARGIN_PX)
+    assert.equal(layout.tabPadLeft, 0)
+    assert.equal(computeTabBarPadLeft(doc), 0)
+  })
+
+  it('B collapsed+gui fill: panel at 0, pad = toggleEnd (labels clear the button)', () => {
+    const doc = setup(`<!doctype html><html><body>
+      <div class="frame_abc" data-sidebar-collapsed>
+        <div class="sidebarCol_x"></div>
+      </div>
+      <div data-dsh-better-sidebar>
+        <div class="nArs4W_panel">
+          <div class="nArs4W_tabBar"></div>
+        </div>
+      </div>
+    </body></html>`)
+    mockRect(doc.querySelector('[class*="panel"]'), { left: 0, width: 1728 })
+    const layout = computeChromeLayout(doc)
+    assert.equal(layout.collapsed, true)
+    assert.equal(layout.toggleLeft, TOPBAR_TOGGLE_LEFT_PX)
+    assert.equal(layout.tabPadLeft, toggleEndCollapsed)
+  })
+
+  it('D collapsed+split: panel starts right of toggle, pad 0 (must not shove tabs)', () => {
+    const doc = setup(`<!doctype html><html><body>
+      <div class="frame_abc" data-sidebar-collapsed>
+        <div class="sidebarCol_x"></div>
+      </div>
+      <div data-dsh-better-sidebar>
+        <div class="nArs4W_panel">
+          <div class="nArs4W_tabBar"></div>
+        </div>
+      </div>
+    </body></html>`)
+    mockRect(doc.querySelector('[class*="panel"]'), { left: 640, width: 1088 })
+    const layout = computeChromeLayout(doc)
+    assert.equal(layout.collapsed, true)
+    assert.equal(layout.tabPadLeft, 0)
+  })
+
+  it('stale gui (collapsed but panel still at 280) keeps pad 0 so tabs do not jump further right', () => {
+    const doc = setup(`<!doctype html><html><body>
+      <div class="frame_abc" data-sidebar-collapsed>
+        <div class="sidebarCol_x"></div>
+      </div>
+      <div data-dsh-better-sidebar>
+        <div class="nArs4W_panel">
+          <div class="nArs4W_tabBar"></div>
+        </div>
+      </div>
+    </body></html>`)
+    mockRect(doc.querySelector('[class*="panel"]'), { left: 280, width: 1448 })
+    assert.equal(computeTabBarPadLeft(doc), 0)
+  })
+
+  it('writes --omnimux-tabbar-pad-left from layout', () => {
+    const doc = setup(`<!doctype html><html><body>
+      <div class="frame_abc" data-sidebar-collapsed>
+        <div class="sidebarCol_x"></div>
+      </div>
+      <div data-dsh-better-sidebar>
+        <div class="nArs4W_panel">
+          <div class="nArs4W_tabBar"></div>
+        </div>
+      </div>
+    </body></html>`)
+    mockRect(doc.querySelector('[class*="panel"]'), { left: 0, width: 1728 })
+    applyTopbarToggleCssVars(doc)
+    assert.equal(
+      doc.documentElement.style.getPropertyValue('--omnimux-tabbar-pad-left'),
+      `${toggleEndCollapsed}px`,
+    )
+  })
+})
+
 describe('installSidebarToggleTopbar', () => {
   it('cleanup removes markers and vars', () => {
     const doc = setup()
@@ -224,8 +327,13 @@ describe('chrome CSS contracts (conversation-box PRODUCT_STAGE_CHROME)', () => {
     assert.match(PRODUCT_STAGE_CHROME, /data-sidebar-collapsed\][^{]*\[class\*="sidebarCol"\]/)
     assert.match(PRODUCT_STAGE_CHROME, /width:\s*0\s*!important/)
     assert.match(PRODUCT_STAGE_CHROME, /\[class\*="tabBar"\]/)
-    assert.match(PRODUCT_STAGE_CHROME, /padding-left:\s*var\(--omnimux-topbar-toggle-end\)/)
+    assert.match(PRODUCT_STAGE_CHROME, /padding-left:\s*var\(--omnimux-tabbar-pad-left/)
     assert.match(PRODUCT_STAGE_CHROME, /data-omnimux-left-collapsed/)
+    // Must not pad every tabBar (would shove tabBarPlus / bottom strip).
+    assert.doesNotMatch(
+      PRODUCT_STAGE_CHROME,
+      /data-omnimux-left-collapsed\] \[class\*="tabBar"\]/,
+    )
     assert.match(PRODUCT_STAGE_CHROME, /::after/)
     assert.match(PRODUCT_STAGE_CHROME, /--dsw-alias-/)
     assert.doesNotMatch(PRODUCT_STAGE_CHROME, /#[0-9a-fA-F]{3,8}\b/)
