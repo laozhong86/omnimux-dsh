@@ -130,3 +130,6 @@ export interface VideoParamPopoverProps {
   className?: string;
   children?: ReactNode;
 }
+
+export type { VideoSummaryFormatResult } from './summaryFormatter.ts';
+
