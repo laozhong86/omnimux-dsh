@@ -46,6 +46,7 @@ import { useUpstreamMedia } from '../../../hooks/useUpstreamMedia';
 import { useModelParameterSchema, getCachedCatalog } from '../../../hooks/useModelParameterSchema';
 import { resolveNodeLifecycle } from '../../../utils/nodeMaterialLifecycle';
 import GenerateButton from './GenerateButton';
+import { resolveSavedModelForPicker } from './canonicalizeCatalogModelId';
 
 export interface ConfigPanelProps {
   nodeId: string;
@@ -211,7 +212,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
   // 模型列表：仅消费 hub catalog（无生产假回退）；按显示名 A–Z。
   // 消费 MATERIAL_NODE_WHITELIST 进行白名单过滤（未配置白名单的模态不进行过滤）。
-  // 已保存但不在当前可用列表中的 params.model 保留为 deprecated 项，不静默改写。
+  // 已存 model 先 canonicalize（如 grok 1.5 别名 → 活 id）；canonicalize 后已在列表则不插 orphan。
+  // 仍不在列表的才保留为 deprecated 项，不静默改写。
   const modelOptions = useMemo(() => {
     const activeCatalog = catalog ?? getCachedCatalog();
     const rawRows = activeCatalog?.[materialType] ?? [];
@@ -220,8 +222,11 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       ? rawRows.filter((row) => whitelist.includes(row.id))
       : rawRows;
     const rows = sortCatalogRows<CapabilityModelItem>(filteredRows);
-    const savedModel = typeof params.model === 'string' ? params.model.trim() : '';
-    const orphan = savedModel && !rows.some((row) => row.id === savedModel)
+    const { modelId: savedModel, insertOrphan } = resolveSavedModelForPicker(
+      params.model,
+      rows.map((row) => row.id),
+    );
+    const orphan = insertOrphan
       ? [{
           id: savedModel,
           label: rawRows.find((r) => r.id === savedModel)?.label ?? savedModel,
@@ -282,7 +287,11 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
   // Inheritance: keep existing params.model (even if deprecated) → defaults[type] → whitelist first → first sorted.
   const modelValue = useMemo(() => {
-    if (typeof params.model === 'string' && params.model.trim()) return params.model;
+    const { modelId: savedModel } = resolveSavedModelForPicker(
+      params.model,
+      modelOptions.map((row) => row.value).filter((id): id is string => Boolean(id)),
+    );
+    if (savedModel) return savedModel;
     const activeCatalog = catalog ?? getCachedCatalog();
     const defaultId = activeCatalog?.defaults?.[materialType];
     if (typeof defaultId === 'string' && defaultId.trim()) {
