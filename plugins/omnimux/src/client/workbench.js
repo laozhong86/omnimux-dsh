@@ -259,11 +259,11 @@ export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
   if (!state || state.panelOpen === false) return false
   const tabId = activeTabId(state)
   const record = focusRecordForTab(snapshot?.sessionId, tabId)
-  const target = workbenchGuiWidthPx(state, env)
-  const inferred = inferWorkbenchFocus(state, env)
-  const wantsGui = record.mode === WORKBENCH_FOCUS.gui
-    || inferred === WORKBENCH_FOCUS.gui
-    || getConversationCollapsed()
+  // Intentional gui (or a collapsed middle column) is allowed to squeeze the
+  // conversation column, so it is NEVER clamped here. Every other "split"
+  // record is clamped to the split max so the column keeps its minimum width.
+  const wantsGui = record.mode === WORKBENCH_FOCUS.gui || getConversationCollapsed()
+  const target = wantsGui ? workbenchGuiWidthPx(state, env) : workbenchSplitMaxPanelPx(state, env)
   const oversized = typeof state.width === 'number'
     && Number.isFinite(state.width)
     && state.width > target + WORKBENCH_FOCUS_NEAR_PX
@@ -271,8 +271,10 @@ export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
   if (wantsGui) {
     return setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, env, tabId)
   }
-  // Independence invariant: even a "split" record must not cover the left rail
-  // (stale gui width after getFocus clobber looks like split and used to no-op).
+  // Independence invariant + conversation-column guard: even a "split" record
+  // must be clamped so it neither covers the left rail nor squeezes the middle
+  // conversation column below its minimum (stale gui width after getFocus
+  // clobber looks like split and used to no-op).
   if (!oversized || !store || typeof store.reduce !== 'function') return false
   store.reduce((current) => {
     if (typeof current?.width !== 'number' || !Number.isFinite(current.width)) return current
@@ -409,6 +411,26 @@ export function workbenchGuiWidthPx(state, env = {}) {
   return WORKBENCH_PANEL_MIN_PX
 }
 
+/**
+ * Largest right-panel width that still leaves the middle conversation column at
+ * least WORKBENCH_CONVERSATION_MIN_PX wide, given the viewport and the official
+ * left session rail. Split focus is clamped to this; intentional gui and the
+ * collapsed middle column are never clamped (the column is allowed to be 0).
+ * When the viewport cannot be measured it has no safe bound, so it conservatively
+ * returns the current panel width / gui upper bound (it never reduces an existing
+ * split that it cannot reason about).
+ */
+export function workbenchSplitMaxPanelPx(state, env = {}) {
+  const viewport = typeof env.viewportWidth === 'number' ? env.viewportWidth : viewportWidth()
+  const leftRail = officialSessionSidebarWidth(env)
+  if (viewport > 0) {
+    return Math.max(WORKBENCH_PANEL_MIN_PX, viewport - leftRail - WORKBENCH_CONVERSATION_MIN_PX)
+  }
+  const current = typeof state?.width === 'number' && Number.isFinite(state.width) ? state.width : 0
+  const gui = workbenchGuiWidthPx(state, env)
+  return Math.max(WORKBENCH_PANEL_MIN_PX, current, gui)
+}
+
 function nearPx(width, target) {
   return Math.abs(width - target) <= WORKBENCH_FOCUS_NEAR_PX
 }
@@ -539,11 +561,16 @@ export function setWorkbenchFocus(mode, store = attachedStore, env = {}, targetT
     if (mode === WORKBENCH_FOCUS.chat) {
       return current?.panelOpen === false ? current : { ...current, panelOpen: false }
     }
-    const nextWidth = mode === WORKBENCH_FOCUS.gui
+    let nextWidth = mode === WORKBENCH_FOCUS.gui
       ? workbenchGuiWidthPx(current, env)
       : (typeof record.splitWidth === 'number'
         ? record.splitWidth
         : workbenchDefaultWidthPx(current, env))
+    // Split focus must never push the middle conversation column below its min
+    // width (gui focus and the collapsed middle are allowed to squeeze it).
+    if (mode === WORKBENCH_FOCUS.split) {
+      nextWidth = Math.min(nextWidth, workbenchSplitMaxPanelPx(current, env))
+    }
     if (current?.panelOpen === true && typeof current.width === 'number' && Math.abs(current.width - nextWidth) < 1) {
       return current
     }
@@ -646,7 +673,11 @@ export function applyDefaultWidth(service, sessionId, store = attachedStore, env
   const tabId = targetTabId || activeTabId(state)
   const record = focusRecordForTab(sessionId, tabId)
   if (!force && record.mode !== WORKBENCH_FOCUS.split) return null
-  const nextWidth = workbenchDefaultWidthPx(state, env)
+  // Default split width, then clamp so the middle conversation column keeps its
+  // minimum width even when a narrow viewport would otherwise squeeze it.
+  const splitMax = workbenchSplitMaxPanelPx(state, env)
+  let nextWidth = workbenchDefaultWidthPx(state, env)
+  if (nextWidth > splitMax) nextWidth = splitMax
   const canReduce = snapshot?.sessionId === sessionId && typeof store?.reduce === 'function'
   if (typeof state.width === 'number' && Math.abs(state.width - nextWidth) < 1) {
     if (!canReduce) return undefined
@@ -874,6 +905,7 @@ function createApi() {
     setFocus: setWorkbenchFocus,
     inferFocus: inferWorkbenchFocus,
     syncGuiWidth: syncWorkbenchGuiWidth,
+    splitMaxPx: workbenchSplitMaxPanelPx,
     installLeftRailObserver: installWorkbenchLeftRailObserver,
     getConversationCollapsed,
     setConversationCollapsed,
