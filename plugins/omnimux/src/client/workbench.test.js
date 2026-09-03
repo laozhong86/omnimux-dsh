@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
 import {
   WORKBENCH_FOCUS,
+  WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX,
   WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX,
   WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX,
   WORKBENCH_OCCUPANTS,
@@ -287,6 +288,70 @@ test('officialSessionSidebarWidth ignores mid-animation widths below expanded mi
   assert.equal(workbenchGuiWidthPx(makeState([], 1000), { viewportWidth: 1728 }), 1448)
   liveWidth = 280
   assert.equal(officialSessionSidebarWidth(), 280)
+})
+
+test('officialSessionSidebarWidth uses collapsed rail while attr is set mid-tween', () => {
+  let liveWidth = 280
+  let collapsedEl = { tag: 'frame' }
+  const doc = {
+    querySelector(sel) {
+      if (sel === '[data-sidebar-collapsed]') return collapsedEl
+      if (sel === '[data-pane="sidebar"], [class*="sidebarCol"]') {
+        return { getBoundingClientRect: () => ({ width: liveWidth }) }
+      }
+      return null
+    },
+  }
+  globalThis.document = doc
+  globalThis.window = { document: doc }
+  // Seed expanded history so a wrong branch would return 280 and leave a gap.
+  assert.equal(officialSessionSidebarWidth({ officialSidebarWidth: 280 }), 280)
+
+  // Collapse attr lands first; track still reports expanded width → rail max.
+  liveWidth = 280
+  assert.equal(officialSessionSidebarWidth(), WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX)
+  assert.equal(
+    workbenchGuiWidthPx(makeState([], 1000), { viewportWidth: 1728 }),
+    1728 - WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX,
+  )
+
+  // Mid-tween below expanded min is trusted (not lastExpanded).
+  liveWidth = 120
+  assert.equal(officialSessionSidebarWidth(), 120)
+
+  // Real collapsed measure wins once the track finishes.
+  liveWidth = 56
+  assert.equal(officialSessionSidebarWidth(), 56)
+  assert.equal(workbenchGuiWidthPx(makeState([], 1000), { viewportWidth: 1728 }), 1672)
+
+  // Expand again: attr gone + healthy width restores expanded math.
+  collapsedEl = null
+  liveWidth = 280
+  assert.equal(officialSessionSidebarWidth(), 280)
+  assert.equal(workbenchGuiWidthPx(makeState([], 1000), { viewportWidth: 1728 }), 1448)
+})
+
+test('syncWorkbenchGuiWidth expands gui when left rail collapses', () => {
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 1448, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-collapse-fill', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  // Gui sized while left rail was expanded (280).
+  setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, { viewportWidth: 1728, officialSidebarWidth: 280 })
+  assert.equal(state.width, 1448)
+
+  // Left rail collapses to 56 — panel must grow to fill viewport − collapsed rail.
+  const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 56 })
+  assert.equal(synced, true)
+  assert.equal(state.width, 1672)
+  assert.equal(inferWorkbenchFocus(state, { viewportWidth: 1728, officialSidebarWidth: 56 }), WORKBENCH_FOCUS.gui)
+
+  // Expand again — panel shrinks back so it does not cover the session list.
+  const expanded = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 280 })
+  assert.equal(expanded, true)
+  assert.equal(state.width, 1448)
 })
 
 test('syncWorkbenchGuiWidth resizes gui panel after left rail width changes', () => {
