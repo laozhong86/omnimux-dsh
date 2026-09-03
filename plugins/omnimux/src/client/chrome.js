@@ -7,6 +7,7 @@ import { installWorkbenchGlobal, installWorkbenchLeftRailObserver, hydrateConver
 import { installChatToggle } from './chat-toggle.js'
 import { ensureConversationCollapseChrome } from './conversation-collapse.js'
 import { ensureComposerCompactChrome, installComposerCompactObserver } from './composer-compact.js'
+import { installSidebarToggleTopbar } from './sidebar-toggle-topbar.js'
 import { NS, en, zh } from './locales.js'
 // x.ai 全壳 overrideTokens 已临时关闭：发送钮在暗色下变成白底白箭头。
 // 恢复时：重新 import applyXaiShellTheme，并把 'theme' 加回 inject + package.json dsh.client.inject。
@@ -49,12 +50,14 @@ export function installHubChrome(ctx) {
     const unsubToggle = installChatToggle()
     const unsubLeftRail = installWorkbenchLeftRailObserver()
     const unsubCompact = installComposerCompactObserver()
+    const unsubSidebarTopbar = installSidebarToggleTopbar()
     return () => {
       unsubToggle?.()
       unsubLeftRail?.()
       unsubCompact?.()
+      unsubSidebarTopbar?.()
     }
-  }, 'omnimux: product-stage chrome, chat toggle & workbench left-rail sync')
+  }, 'omnimux: product-stage chrome, chat toggle, topbar sidebar toggle & workbench left-rail sync')
   // 临时关闭：ctx.effect(() => applyXaiShellTheme(ctx), 'omnimux: xai shell theme')
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'omnimux: dictionaries')
   return ctx.locale.bind(NS)

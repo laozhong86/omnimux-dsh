@@ -10,6 +10,7 @@ import {
   WORKBENCH_TAB_TITLE_FALLBACKS,
   activeTabId,
   applyDefaultWidth,
+  collapsedLeftRailFallbackPx,
   collectTabs,
   createWorkbenchSidebarStore,
   findOfficialSidebarColumn,
@@ -311,6 +312,52 @@ test('officialSessionSidebarWidth ignores mid-animation widths below expanded mi
   assert.equal(workbenchGuiWidthPx(makeState([], 1000), { viewportWidth: 1728 }), 1448)
   liveWidth = 280
   assert.equal(officialSessionSidebarWidth(), 280)
+})
+
+test('collapsedLeftRailFallbackPx is 0 when topbar sidebar-toggle feature is on', () => {
+  const doc = {
+    documentElement: {
+      hasAttribute(name) {
+        return name === 'data-omnimux-sidebar-toggle-topbar'
+      },
+    },
+  }
+  assert.equal(collapsedLeftRailFallbackPx(doc), 0)
+  assert.equal(collapsedLeftRailFallbackPx({ documentElement: { hasAttribute: () => false } }), WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX)
+  assert.equal(WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX, 56)
+})
+
+test('officialSessionSidebarWidth returns 0 when topbar feature on + collapsed (no 56 gutter)', () => {
+  let liveWidth = 56
+  const frame = { tag: 'frame' }
+  const column = {
+    getBoundingClientRect: () => ({ width: liveWidth }),
+    closest(sel) {
+      if (selIsCollapsedAttr(sel)) return frame
+      return null
+    },
+    querySelector() { return null },
+  }
+  const doc = {
+    documentElement: {
+      hasAttribute(name) {
+        return name === 'data-omnimux-sidebar-toggle-topbar'
+      },
+    },
+    querySelector(sel) {
+      if (selIsCollapsedAttr(sel)) return frame
+      if (selIsSidebarColumn(sel)) return column
+      return null
+    },
+  }
+  globalThis.document = doc
+  globalThis.window = { document: doc, innerWidth: 1728 }
+  assert.equal(collapsedLeftRailFallbackPx(doc), 0)
+  assert.equal(officialSessionSidebarWidth(), 0)
+  assert.equal(workbenchGuiWidthPx(makeState([], 1000), { viewportWidth: 1728 }), 1728)
+  // Still-expanded live width while collapsed attr set → also 0 under feature.
+  liveWidth = 280
+  assert.equal(officialSessionSidebarWidth(), 0)
 })
 
 test('officialSessionSidebarWidth uses collapsed rail while attr is set mid-tween', () => {
@@ -726,6 +773,23 @@ test('setWorkbenchFocus chat/gui/split writes panel geometry and restores split 
   setWorkbenchFocus(WORKBENCH_FOCUS.split, store, env)
   assert.equal(state.panelOpen, true)
   assert.equal(state.width, 650)
+})
+
+test('setWorkbenchFocus chat forces middle conversation open (right-closed session view)', () => {
+  setupWindow()
+  const env = { viewportWidth: 1200, officialSidebarWidth: 0 }
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 780, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-chat-mid', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+
+  // Hide mid via gui, then close the right panel — mid must come back.
+  setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, env)
+  assert.equal(getConversationCollapsed(), true)
+  setWorkbenchFocus(WORKBENCH_FOCUS.chat, store, env)
+  assert.equal(state.panelOpen, false)
+  assert.equal(getConversationCollapsed(), false, 'closing right panel must show the session column')
 })
 
 test('attachStore reapplies gui focus so default width cannot stomp it', () => {

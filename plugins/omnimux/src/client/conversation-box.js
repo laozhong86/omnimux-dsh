@@ -112,6 +112,71 @@ html[data-dsh-product-stage] [role="treeitem"][aria-selected="true"]{background:
 html[data-dsh-product-stage] .dshDesktopConversationSurface > *:not([data-slot="shell.overlay"]),
 html[data-dsh-product-stage] [data-slot="conversation.content"],
 html[data-dsh-product-stage] [data-slot="input.trigger"] {visibility:hidden!important;}
+/* Topbar sidebar toggle: traffic lights → toggle → workbench tabBar (plugin CSS only). */
+html[data-omnimux-sidebar-toggle-topbar]{
+  --omnimux-topbar-toggle-left:78px;
+  --omnimux-topbar-toggle-size:36px;
+  --omnimux-topbar-toggle-gap:8px;
+  --omnimux-topbar-toggle-end:calc(var(--omnimux-topbar-toggle-left) + var(--omnimux-topbar-toggle-size) + var(--omnimux-topbar-toggle-gap));
+}
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"]{
+  position:fixed!important;
+  top:var(--omnimux-topbar-toggle-top)!important;
+  left:var(--omnimux-topbar-toggle-left)!important;
+  width:var(--omnimux-topbar-toggle-size)!important;
+  height:var(--omnimux-topbar-toggle-size)!important;
+  z-index:9999!important;
+  -webkit-app-region:no-drag!important;
+  pointer-events:auto!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:transparent!important;
+  border:none!important;
+  border-radius:8px!important;
+  color:var(--dsw-alias-label-secondary)!important;
+  cursor:pointer!important;
+  box-sizing:border-box!important;
+}
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"]:hover{
+  background:var(--dsw-alias-interactive-bg-hover)!important;
+  color:var(--dsw-alias-label-primary)!important;
+}
+/* Icon swap: collapse glyph while expanded, expand glyph while collapsed. */
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"] [data-omnimux-sidebar-toggle-icon]{display:none;}
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"] [data-omnimux-sidebar-toggle-icon="collapse"]{display:block;width:16px;height:16px;}
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omnimux-sidebar-toggle-topbar="1"] [data-omnimux-sidebar-toggle-icon="collapse"]{display:none;}
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omnimux-sidebar-toggle-topbar="1"] [data-omnimux-sidebar-toggle-icon="expand"]{display:block;width:16px;height:16px;}
+/* Official AppFrame toggle is now only a programmatic trigger — hide it. */
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-original-sidebar-toggle="1"]{display:none!important;}
+/* Visual 0 rail when official left sidebar is collapsed (grid may still be 56). */
+html[data-omnimux-sidebar-toggle-topbar] [data-sidebar-collapsed] [class*="sidebarCol"]{
+  width:0!important;
+  min-width:0!important;
+  max-width:0!important;
+  overflow:hidden!important;
+  border:none!important;
+  padding:0!important;
+}
+/* Reserve toggle space for the workbench tab labels ONLY while the rail is
+   collapsed (toggle sits over the full-width tabBar). Expanded rail moves the
+   toggle to the sidebar top-right, so the tabBar keeps no left padding → no gap. */
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [class*="tabBar"]{
+  padding-left:var(--omnimux-topbar-toggle-end)!important;
+  box-sizing:border-box;
+}
+/* Blue dot on the injected toggle while left rail is collapsed. */
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omnimux-sidebar-toggle-topbar="1"]::after{
+  content:"";
+  position:absolute;
+  top:4px;
+  right:4px;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));
+  pointer-events:none;
+}
 `
 
 export function ensureProductStageChrome() {
@@ -123,6 +188,9 @@ export function ensureProductStageChrome() {
       || !text.includes('[data-slot="shell.overlay"] > [class$="-stage"]')
       || !text.includes('body[data-dsh-desktop-mode] [class*="tabBar"]')
       || !text.includes('[class*="sidebarCol"] [class*="logoRow"]')
+      || !text.includes('data-omnimux-sidebar-toggle-topbar')
+      || !text.includes('--omnimux-topbar-toggle-end')
+      || !text.includes('data-omnimux-left-collapsed')
     if (stale) existing.textContent = PRODUCT_STAGE_CHROME
   } else {
     const style = document.createElement('style')

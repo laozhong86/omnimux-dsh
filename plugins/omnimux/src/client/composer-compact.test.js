@@ -10,6 +10,7 @@ import {
   ensureComposerCompactChrome,
   installComposerCompactObserver,
   resetComposerCompactForTests,
+  syncHeroWorkspaceRowToCard,
 } from './composer-compact.js'
 
 const previousWindow = globalThis.window
@@ -47,11 +48,17 @@ function setupDoc() {
   const attrs = new Map()
   const headChildren = []
   let cardWidth = null
+  const cssVars = new Map()
   const html = {
     setAttribute(k, v) { attrs.set(k, String(v)) },
     removeAttribute(k) { attrs.delete(k) },
     hasAttribute(k) { return attrs.has(k) },
     getAttribute(k) { return attrs.has(k) ? attrs.get(k) : null },
+    style: {
+      setProperty(k, v) { cssVars.set(k, String(v)) },
+      removeProperty(k) { cssVars.delete(k) },
+      getPropertyValue(k) { return cssVars.has(k) ? cssVars.get(k) : '' },
+    },
   }
   const head = {
     append(node) { headChildren.push(node) },
@@ -83,7 +90,15 @@ function setupDoc() {
     },
     querySelector(sel) {
       if (sel === '[data-composer-card]') {
-        return cardWidth == null ? null : { getBoundingClientRect: () => ({ width: cardWidth }) }
+        return cardWidth == null ? null : {
+          getBoundingClientRect: () => ({ width: cardWidth, left: 524, x: 524, top: 0, height: 100, right: 524 + cardWidth, bottom: 100 }),
+        }
+      }
+      // Only the hero-dock probe asks for centerCol together with conversation slot.
+      if (sel === '[class*="centerCol"], [data-slot="conversation"]') {
+        return {
+          getBoundingClientRect: () => ({ width: 1448, left: 280, x: 280, top: 0, height: 900, right: 1728, bottom: 900 }),
+        }
       }
       return null
     },
@@ -91,7 +106,7 @@ function setupDoc() {
   win.document = doc
   globalThis.document = doc
   globalThis.window = win
-  return { doc, win, resizeListeners, attrs, setCardWidth: (w) => { cardWidth = w } }
+  return { doc, win, resizeListeners, attrs, cssVars, setCardWidth: (w) => { cardWidth = w } }
 }
 
 test('composerDensityForWidth maps widths to full/short/icon', () => {
@@ -105,6 +120,18 @@ test('composerDensityForWidth maps widths to full/short/icon', () => {
   assert.equal(composerDensityForWidth('700'), COMPOSER_COMPACT_DENSITY.full)
 })
 
+test('syncHeroWorkspaceRowToCard docks seats to the live card box', () => {
+  const { doc, cssVars, setCardWidth } = setupDoc()
+  setCardWidth(952)
+  syncHeroWorkspaceRowToCard(doc)
+  assert.equal(cssVars.get('--omnimux-composer-card-width'), '952px')
+  // card.left 524 - center.left 280 = 244
+  assert.equal(cssVars.get('--omnimux-composer-card-offset'), '244px')
+  setCardWidth(null)
+  syncHeroWorkspaceRowToCard(doc)
+  assert.equal(cssVars.has('--omnimux-composer-card-width'), false)
+})
+
 test('ensureComposerCompactChrome injects the style id and the CSS fragments', () => {
   const { doc } = setupDoc()
   const style = ensureComposerCompactChrome(doc)
@@ -116,6 +143,10 @@ test('ensureComposerCompactChrome injects the style id and the CSS fragments', (
   assert.match(style.textContent, /data-omnimux-composer-density='short'/)
   assert.match(style.textContent, /data-omnimux-composer-density='icon'/)
   assert.match(style.textContent, /conversation-scroll/)
+  // Hero workspace row docks to the live composer-card geometry vars.
+  assert.match(style.textContent, /heroWorkspaceRow/)
+  assert.match(style.textContent, /--omnimux-composer-card-width/)
+  assert.match(style.textContent, /--omnimux-composer-card-offset/)
   // Idempotent: a second call must not create a second <style>.
   const again = ensureComposerCompactChrome(doc)
   assert.equal(again, style)
