@@ -121,6 +121,85 @@ export function syncLeftCollapsedHtmlAttr(doc) {
 }
 
 /**
+ * Visible right workbench panel (not the hidden off-screen clone, not the
+ * bottom drawer, not panelBody/Resize). Used to dock tab labels to overlap
+ * with the topbar toggle instead of a collapsed-boolean padding hack.
+ * @param {Document | null | undefined} doc
+ * @returns {Element | null}
+ */
+export function findVisibleWorkbenchPanel(doc) {
+  if (!doc || typeof doc.querySelectorAll !== 'function') return null
+  const vw = (() => {
+    try {
+      const w = doc.defaultView?.innerWidth
+      return typeof w === 'number' && w > 0 ? w : 1e9
+    } catch {
+      return 1e9
+    }
+  })()
+  const scoped = doc.querySelectorAll('[data-dsh-better-sidebar] [class*="panel"]')
+  const nodes = scoped.length ? scoped : doc.querySelectorAll('[class*="panel"]')
+  for (const el of nodes) {
+    const cls = typeof el.className === 'string' ? el.className : String(el.className || '')
+    // Official right panel class fragment is `_panel` (CSS-module hashed).
+    if (!/(^|[\s_])panel($|[\s_])/i.test(cls)) continue
+    if (/panelHidden|bottomPanel|panelResize|panelBody|panelHost/i.test(cls)) continue
+    try {
+      const box = el.getBoundingClientRect?.()
+      if (!box) continue
+      if (box.width > 40 && box.height > 40 && box.left < vw - 8) return el
+    } catch {
+      // ignore
+    }
+  }
+  return null
+}
+
+/**
+ * Single chrome layout snapshot. Tab padding is the horizontal overlap
+ * between the fixed toggle and the visible workbench panel — NOT a function
+ * of the collapsed boolean alone (collapsed+split must not shove tabs right).
+ * @param {Document | null | undefined} doc
+ * @returns {{
+ *   collapsed: boolean,
+ *   leftRailW: number,
+ *   toggleLeft: number,
+ *   toggleEnd: number,
+ *   panelLeft: number | null,
+ *   tabPadLeft: number,
+ * }}
+ */
+export function computeChromeLayout(doc) {
+  const collapsed = isLeftSidebarCollapsed(doc)
+  let leftRailW = 0
+  if (!collapsed) {
+    const col = findSidebarColumn(doc)
+    if (col) {
+      try {
+        leftRailW = col.offsetWidth || Math.round(col.getBoundingClientRect().width) || 0
+      } catch {
+        leftRailW = 0
+      }
+    }
+  }
+  const toggleLeft = collapsed
+    ? TOPBAR_TOGGLE_LEFT_PX
+    : Math.max(TOPBAR_TOGGLE_LEFT_PX, Math.round(leftRailW - TOPBAR_TOGGLE_SIZE_PX - TOPBAR_TOGGLE_RIGHT_MARGIN_PX))
+  const toggleEnd = toggleLeft + TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX
+  const panel = findVisibleWorkbenchPanel(doc)
+  let panelLeft = null
+  if (panel) {
+    try {
+      panelLeft = Math.round(panel.getBoundingClientRect().left)
+    } catch {
+      panelLeft = null
+    }
+  }
+  const tabPadLeft = panelLeft == null ? 0 : Math.max(0, toggleEnd - panelLeft)
+  return { collapsed, leftRailW, toggleLeft, toggleEnd, panelLeft, tabPadLeft }
+}
+
+/**
  * Where the topbar toggle sits horizontally (CSS px). Collapsed rail → a small
  * top-left offset (over the full-width tab bar). Expanded rail → the sidebar's
  * top-right corner (measured sidebar width minus toggle size + margin).
@@ -128,18 +207,17 @@ export function syncLeftCollapsedHtmlAttr(doc) {
  * @returns {number}
  */
 export function computeToggleLeftPx(doc) {
-  if (isLeftSidebarCollapsed(doc)) return TOPBAR_TOGGLE_LEFT_PX
-  const col = findSidebarColumn(doc)
-  let w = 0
-  if (col) {
-    try {
-      w = col.offsetWidth || Math.round(col.getBoundingClientRect().width)
-    } catch {
-      w = 0
-    }
-  }
-  const right = TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_RIGHT_MARGIN_PX
-  return Math.max(TOPBAR_TOGGLE_LEFT_PX, Math.round(w - right))
+  return computeChromeLayout(doc).toggleLeft
+}
+
+/**
+ * Left padding the open workbench tabBar needs so labels clear the fixed toggle.
+ * Zero when the panel already starts to the right of toggleEnd (split / expanded).
+ * @param {Document | null | undefined} doc
+ * @returns {number}
+ */
+export function computeTabBarPadLeft(doc) {
+  return computeChromeLayout(doc).tabPadLeft
 }
 
 /**
@@ -160,16 +238,19 @@ export function findSidebarColumn(doc) {
 export function applyTopbarToggleCssVars(doc, geom = {}) {
   const root = doc?.documentElement
   if (!root?.style?.setProperty) return
-  const left = typeof geom.left === 'number' ? geom.left : computeToggleLeftPx(doc)
+  const layout = computeChromeLayout(doc)
+  const left = typeof geom.left === 'number' ? geom.left : layout.toggleLeft
   const size = typeof geom.size === 'number' ? geom.size : TOPBAR_TOGGLE_SIZE_PX
   const gap = typeof geom.gap === 'number' ? geom.gap : TOPBAR_TOGGLE_GAP_PX
   const top = typeof geom.top === 'number' ? geom.top : TOPBAR_TOGGLE_TOP_PX
   const end = left + size + gap
+  const tabPad = typeof geom.tabPadLeft === 'number' ? geom.tabPadLeft : layout.tabPadLeft
   root.style.setProperty('--omnimux-topbar-toggle-left', `${left}px`)
   root.style.setProperty('--omnimux-topbar-toggle-size', `${size}px`)
   root.style.setProperty('--omnimux-topbar-toggle-gap', `${gap}px`)
   root.style.setProperty('--omnimux-topbar-toggle-top', `${top}px`)
   root.style.setProperty('--omnimux-topbar-toggle-end', `${end}px`)
+  root.style.setProperty('--omnimux-tabbar-pad-left', `${Math.max(0, Math.round(tabPad))}px`)
 }
 
 /**
@@ -293,33 +374,42 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
   let stateObserver = null
   /** @type {ResizeObserver | null} */
   let widthObserver = null
+  /** @type {((this: Window, ev: UIEvent) => void) | null} */
+  let resizeListener = null
 
-  // Track the sidebar column width (including its collapse/expand transition)
-  // so the docked toggle repositions every frame instead of waiting for the
-  // next unrelated mutation after the animation settles. React re-creates the
-  // sidebar column on state flips, so re-observe the CURRENT column whenever
-  // the DOM changes rather than holding a stale node.
+  // Track the CURRENT sidebar column AND the visible workbench panel.
+  // React re-creates both on state flips; a stale ResizeObserver never fires,
+  // which used to leave tabs parked at the window's right edge until some
+  // unrelated mutation. Tab pad is overlap(toggleEnd, panel.left), recomputed
+  // every resize frame.
   const syncGeometry = () => {
     try { applyTopbarToggleCssVars(doc) } catch { /* ignore */ }
+    try {
+      const api = doc.defaultView?.__omnimuxWorkbench
+      if (api && typeof api.syncGuiWidth === 'function') api.syncGuiWidth()
+    } catch { /* ignore — layout only; never flip mid-pane */ }
   }
   let observedCol = null
-  const ensureObserveCol = () => {
-    if (typeof ResizeObserver === 'undefined') return
-    const col = findSidebarColumn(doc)
-    if (!col) return
-    if (col === observedCol) return
-    if (widthObserver && observedCol) {
-      try { widthObserver.unobserve(observedCol) } catch { /* ignore */ }
+  let observedPanel = null
+  const retarget = (next, prev) => {
+    if (typeof ResizeObserver === 'undefined') return prev
+    if (!next || next === prev) return prev || next
+    if (widthObserver && prev) {
+      try { widthObserver.unobserve(prev) } catch { /* ignore */ }
     }
     if (!widthObserver) widthObserver = new ResizeObserver(syncGeometry)
-    try { widthObserver.observe(col) } catch { /* ignore */ }
-    observedCol = col
+    try { widthObserver.observe(next) } catch { /* ignore */ }
+    return next
+  }
+  const ensureObserveTargets = () => {
+    observedCol = retarget(findSidebarColumn(doc), observedCol)
+    observedPanel = retarget(findVisibleWorkbenchPanel(doc), observedPanel)
   }
 
   if (typeof MutationObserver !== 'undefined') {
     stateObserver = new MutationObserver(() => {
       ensureSidebarToggleTopbar(doc)
-      ensureObserveCol()
+      ensureObserveTargets()
     })
     const host = doc.body || doc.documentElement
     if (host) {
@@ -331,7 +421,14 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
       })
     }
   }
-  ensureObserveCol()
+  ensureObserveTargets()
+  try {
+    const win = doc.defaultView
+    if (win?.addEventListener) {
+      resizeListener = () => { syncGeometry() }
+      win.addEventListener('resize', resizeListener)
+    }
+  } catch { /* ignore */ }
 
   return () => {
     if (stateObserver) {
@@ -342,11 +439,15 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
       try { widthObserver.disconnect() } catch { /* ignore */ }
       widthObserver = null
     }
+    if (resizeListener) {
+      try { doc.defaultView?.removeEventListener?.('resize', resizeListener) } catch { /* ignore */ }
+      resizeListener = null
+    }
     const root = doc.documentElement
     if (root) {
       root.removeAttribute(SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR)
       root.removeAttribute(LEFT_COLLAPSED_HTML_ATTR)
-      for (const k of ['--omnimux-topbar-toggle-left', '--omnimux-topbar-toggle-size', '--omnimux-topbar-toggle-gap', '--omnimux-topbar-toggle-top', '--omnimux-topbar-toggle-end']) {
+      for (const k of ['--omnimux-topbar-toggle-left', '--omnimux-topbar-toggle-size', '--omnimux-topbar-toggle-gap', '--omnimux-topbar-toggle-top', '--omnimux-topbar-toggle-end', '--omnimux-tabbar-pad-left']) {
         try { root.style.removeProperty(k) } catch { /* ignore */ }
       }
     }

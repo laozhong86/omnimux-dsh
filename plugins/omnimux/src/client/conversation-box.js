@@ -118,6 +118,7 @@ html[data-omnimux-sidebar-toggle-topbar]{
   --omnimux-topbar-toggle-size:36px;
   --omnimux-topbar-toggle-gap:8px;
   --omnimux-topbar-toggle-end:calc(var(--omnimux-topbar-toggle-left) + var(--omnimux-topbar-toggle-size) + var(--omnimux-topbar-toggle-gap));
+  --omnimux-tabbar-pad-left:0px;
 }
 html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"]{
   position:fixed!important;
@@ -158,11 +159,14 @@ html[data-omnimux-sidebar-toggle-topbar] [data-sidebar-collapsed] [class*="sideb
   border:none!important;
   padding:0!important;
 }
-/* Reserve toggle space for the workbench tab labels ONLY while the rail is
-   collapsed (toggle sits over the full-width tabBar). Expanded rail moves the
-   toggle to the sidebar top-right, so the tabBar keeps no left padding → no gap. */
-html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [class*="tabBar"]{
-  padding-left:var(--omnimux-topbar-toggle-end)!important;
+/* Tab labels dock by overlap: pad = max(0, toggleEnd − panel.left), written
+   to --omnimux-tabbar-pad-left. Do NOT key this off left-collapsed: collapsed
+   + split already starts the panel right of the toggle, so pad must stay 0.
+   Selector is the OPEN right-panel tab strip only (never tabBarPlus / bottom).
+   Notice tabBar is a deep descendant of panel (panelBody > workbench > pane > tabBar),
+   so do not use direct-child combinator > on panel. */
+html[data-omnimux-sidebar-toggle-topbar] [data-dsh-better-sidebar] > [class*="panel"]:not([class*="bottom"]):not([class*="Hidden"]) [class*="tabBar"]:not([class*="Plus"]){
+  padding-left:var(--omnimux-tabbar-pad-left,0px)!important;
   box-sizing:border-box;
 }
 /* Blue dot on the injected toggle while left rail is collapsed. */
@@ -191,6 +195,7 @@ export function ensureProductStageChrome() {
       || !text.includes('data-omnimux-sidebar-toggle-topbar')
       || !text.includes('--omnimux-topbar-toggle-end')
       || !text.includes('data-omnimux-left-collapsed')
+      || !text.includes('--omnimux-tabbar-pad-left')
     if (stale) existing.textContent = PRODUCT_STAGE_CHROME
   } else {
     const style = document.createElement('style')
