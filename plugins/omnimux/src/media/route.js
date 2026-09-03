@@ -5,8 +5,8 @@ export const AUTH_MODES = Object.freeze(['auto', 'token', 'custom'])
 
 /** Catalog ids that must be rewritten before Hub POST body.model. */
 export const MEDIA_WIRE_MODEL_IDS = Object.freeze({
-  'grok-imagine-video-1-5': 'grok-imagine-video-1.5',
-  'grok-imagine-video': 'grok-imagine-video-1.5',
+  'grok-imagine-video-1-5': 'grok-imagine-video',
+  'grok-imagine-video-1.5': 'grok-imagine-video',
 })
 
 /**

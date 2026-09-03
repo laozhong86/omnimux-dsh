@@ -62,28 +62,28 @@ describe('media route', () => {
     assert.equal(route.apiKey, 'sk-b')
   })
 
-  it('maps catalog grok-imagine-video-1-5 to the Hub wire model id', () => {
+  it('maps catalog grok-imagine-video-1-5 to live grok-imagine-video', () => {
     const media = parseMediaConfig(undefined)
     const route = resolveMediaRoute('video', { model: 'grok-imagine-video-1-5' }, media, {})
-    assert.equal(route.modelId, 'grok-imagine-video-1.5')
+    assert.equal(route.modelId, 'grok-imagine-video')
   })
 
-  it('maps stale canvas grok-imagine-video to grok-imagine-video-1.5', () => {
-    const media = parseMediaConfig(undefined)
-    const route = resolveMediaRoute('video', { model: 'grok-imagine-video' }, media, {})
-    assert.equal(route.modelId, 'grok-imagine-video-1.5')
-  })
-
-  it('passes an already-wired grok-imagine-video-1.5 id through', () => {
+  it('maps dotted grok-imagine-video-1.5 to live grok-imagine-video', () => {
     const media = parseMediaConfig(undefined)
     const route = resolveMediaRoute('video', { model: 'grok-imagine-video-1.5' }, media, {})
-    assert.equal(route.modelId, 'grok-imagine-video-1.5')
+    assert.equal(route.modelId, 'grok-imagine-video')
   })
 
-  it('toMediaWireModelId rewrites catalog ids and leaves others alone', () => {
-    assert.equal(toMediaWireModelId('grok-imagine-video-1-5'), 'grok-imagine-video-1.5')
-    assert.equal(toMediaWireModelId('grok-imagine-video'), 'grok-imagine-video-1.5')
-    assert.equal(toMediaWireModelId('grok-imagine-video-1.5'), 'grok-imagine-video-1.5')
+  it('passes live grok-imagine-video through unchanged', () => {
+    const media = parseMediaConfig(undefined)
+    const route = resolveMediaRoute('video', { model: 'grok-imagine-video' }, media, {})
+    assert.equal(route.modelId, 'grok-imagine-video')
+  })
+
+  it('toMediaWireModelId rewrites 1.5 aliases and leaves others alone', () => {
+    assert.equal(toMediaWireModelId('grok-imagine-video-1-5'), 'grok-imagine-video')
+    assert.equal(toMediaWireModelId('grok-imagine-video-1.5'), 'grok-imagine-video')
+    assert.equal(toMediaWireModelId('grok-imagine-video'), 'grok-imagine-video')
     assert.equal(toMediaWireModelId('seedance-2-0-fast'), 'seedance-2-0-fast')
     assert.equal(toMediaWireModelId(''), '')
   })
