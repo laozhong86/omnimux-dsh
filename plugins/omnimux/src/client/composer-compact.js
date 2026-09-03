@@ -39,8 +39,14 @@ html:not([data-omnimux-conversation-collapsed]) [class*="centerCol"]{
 }
 
 /* (B6) Symmetrical card centering: eliminate scrollbar gutter bias and ensure
-   strictly balanced left/right margins inside the conversation column. */
+   strictly balanced left/right margins inside the conversation column.
+   The composer card must ride the SAME content-width rail as the hero seats
+   row ("测试 / 标准模式"), or the two will drift apart on wide/fullscreen
+   columns (official card uses its own ~952px max-width while the seats row
+   follows --dsh-chat-content-width). Lock both to the shared var. */
 [data-composer-card]{
+  width:100%!important;
+  max-width:var(--dsh-chat-content-width)!important;
   margin-left:auto!important;
   margin-right:auto!important;
   box-sizing:border-box!important;
@@ -49,8 +55,11 @@ html:not([data-omnimux-conversation-collapsed]) [class*="centerCol"]{
   box-sizing:border-box!important;
 }
 [data-composer-seat] > *{
+  width:100%!important;
+  max-width:var(--dsh-chat-content-width)!important;
   margin-left:auto!important;
   margin-right:auto!important;
+  box-sizing:border-box!important;
 }
 
 /* (B1) hero (no session yet): the whole stack is what the official scrollBody
@@ -84,15 +93,15 @@ html:not([data-omnimux-conversation-collapsed]) [class*="centerCol"]{
   min-height:0;
 }
 
-/* (B5) hero seats row ("测试 / 标准模式") docks to the live composer-card
-   geometry. Official row is full column width with a left pad, so on wide /
-   fullscreen columns the seats sit ~100–200px left of the card. JS writes
-   --omnimux-composer-card-left / -width from the card box; fall back to the
-   shared content-width rail when the card is not measurable yet. */
+/* (B5) hero seats row ("测试 / 标准模式") shares the exact same centered content rail
+   as [data-composer-card]. Sibling elements inside composerStack both use
+   max-width: var(--dsh-chat-content-width) and margin: 0 auto so they are mathematically
+   guaranteed to share the identical left and right alignment on every reflow frame,
+   completely eliminating JS ResizeObserver lag or stale offset desynchronization. */
 [data-phase='hero'] [class*="heroWorkspaceRow"]{
-  width:var(--omnimux-composer-card-width, var(--dsh-chat-content-width))!important;
-  max-width:var(--omnimux-composer-card-width, var(--dsh-chat-content-width))!important;
-  margin-left:var(--omnimux-composer-card-offset, auto)!important;
+  width:100%!important;
+  max-width:var(--dsh-chat-content-width)!important;
+  margin-left:auto!important;
   margin-right:auto!important;
   padding-left:0!important;
   padding-right:0!important;
