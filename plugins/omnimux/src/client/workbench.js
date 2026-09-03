@@ -30,7 +30,11 @@ export const WORKBENCH_FOCUS_NEAR_PX = 24
  * the preferred collapsed target — see COLLAPSED_FALLBACK_PX.
  */
 export const WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX = 72
-/** Preferred collapsed rail when attr is set but the grid track still reports expanded. */
+/**
+ * Preferred collapsed rail when attr is set but the grid track still reports expanded.
+ * When topbar sidebar-toggle feature is on (visual 0 rail), effective fallback is 0
+ * via {@link collapsedLeftRailFallbackPx} — constant stays 56 for non-feature paths.
+ */
 export const WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX = 56
 /**
  * Healthy expanded rail is ~280px. Mid-animation widths (e.g. 80–200) sit above
@@ -226,6 +230,25 @@ function hostDocument() {
   return typeof globalThis.document !== 'undefined' ? globalThis.document : hostWindow()?.document
 }
 
+/**
+ * Effective collapsed left-rail fallback for gui geometry.
+ * Topbar feature (`html[data-omnimux-sidebar-toggle-topbar]`) visually zeros the
+ * rail; workbench must not leave a 56px gutter. Does not touch conversation collapse.
+ * @param {Document | null | undefined} [doc]
+ * @returns {number}
+ */
+export function collapsedLeftRailFallbackPx(doc) {
+  const rootDoc = doc === undefined ? hostDocument() : doc
+  try {
+    if (rootDoc?.documentElement?.hasAttribute?.('data-omnimux-sidebar-toggle-topbar')) {
+      return 0
+    }
+  } catch {
+    // ignore
+  }
+  return WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX
+}
+
 function viewportWidth() {
   return hostWindow()?.innerWidth || 0
 }
@@ -342,6 +365,13 @@ export function officialSessionSidebarWidth(env = {}) {
   if (typeof width !== 'number' || !Number.isFinite(width) || width <= 0) return 0
   const collapsed = isOfficialSidebarCollapsed(doc)
   if (collapsed) {
+    // Topbar visual-0 feature: official track may still report 56, but chrome
+    // CSS zeros the rail. Gui math must use 0 (no 56 gutter). Not middle-pane.
+    const zeroRail = collapsedLeftRailFallbackPx(doc) === 0
+    if (zeroRail) {
+      lastCollapsedOfficialWidth = 0
+      return 0
+    }
     // Attribute lands before the track tween finishes. Trust any sub-expanded
     // measure (56 official rail, ~90 macOS advanced, mid-tween). Only reject
     // still-expanded widths so gui can fill instead of leaving a gap.
@@ -355,7 +385,7 @@ export function officialSessionSidebarWidth(env = {}) {
       }
       return rounded
     }
-    return lastCollapsedOfficialWidth || WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX
+    return lastCollapsedOfficialWidth || collapsedLeftRailFallbackPx(doc)
   }
   // Crushed under an oversized panel, or mid expand/collapse tween: keep last healthy width.
   if (width < WORKBENCH_LEFT_RAIL_EXPANDED_MIN_PX) {
@@ -1102,7 +1132,7 @@ export function resetWorkbenchForTests(target = hostWindow()) {
   appliedWidthSessions.clear()
   focusStorageBySession.clear()
   lastExpandedOfficialWidth = WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX
-  lastCollapsedOfficialWidth = WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX
+  lastCollapsedOfficialWidth = collapsedLeftRailFallbackPx()
   resetConversationCollapseForTests()
   if (target && Object.prototype.hasOwnProperty.call(target, WORKBENCH_GLOBAL_KEY)) {
     try { delete target[WORKBENCH_GLOBAL_KEY] } catch { target[WORKBENCH_GLOBAL_KEY] = undefined }

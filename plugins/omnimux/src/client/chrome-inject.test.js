@@ -38,4 +38,10 @@ describe('hub chrome optional inject', () => {
     assert.match(chromeSource, /installComposerCompactObserver/)
     assert.match(chromeSource, /composer-compact\.js/)
   })
+
+  it('installs the topbar sidebar toggle with cleanup', () => {
+    assert.match(chromeSource, /installSidebarToggleTopbar/)
+    assert.match(chromeSource, /sidebar-toggle-topbar\.js/)
+    assert.match(chromeSource, /unsubSidebarTopbar/)
+  })
 })

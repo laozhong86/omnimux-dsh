@@ -86,6 +86,14 @@ describe('PRODUCT_STAGE_CHROME', () => {
     assert.match(PRODUCT_STAGE_CHROME, /--dsh-sidebar-width/)
     assert.match(PRODUCT_STAGE_CHROME, /--dsh-sidebar-height/)
     assert.match(PRODUCT_STAGE_CHROME, /margin-right:0px/)
+    // Topbar sidebar toggle layout (traffic → toggle → tabBar)
+    assert.match(PRODUCT_STAGE_CHROME, /data-omnimux-sidebar-toggle-topbar/)
+    assert.match(PRODUCT_STAGE_CHROME, /--omnimux-topbar-toggle-end/)
+    assert.match(PRODUCT_STAGE_CHROME, /data-omnimux-left-collapsed/)
+    assert.match(PRODUCT_STAGE_CHROME, /\[data-sidebar-collapsed\] \[class\*="sidebarCol"\]/)
+    assert.match(PRODUCT_STAGE_CHROME, /padding-left:var\(--omnimux-topbar-toggle-end\)/)
+    assert.match(PRODUCT_STAGE_CHROME, /z-index:50/)
+    assert.match(PRODUCT_STAGE_CHROME, /--dsw-alias-brand-primary|--dsw-alias-interactive-bg-hover-accent|--dsw-alias-label-accent/)
   })
 })
 
@@ -145,6 +153,8 @@ describe('session-row closer', () => {
     assert.match(style.textContent, /data-dsh-panel-host/)
     assert.match(style.textContent, /\[data-dsh-better-sidebar\] \[class\*="_panel"\]/)
     assert.match(style.textContent, /--dsh-sidebar-width/)
+    assert.match(style.textContent, /data-omnimux-sidebar-toggle-topbar/)
+    assert.match(style.textContent, /--omnimux-topbar-toggle-end/)
   })
 
   it('closes the product page when an unselected session row is clicked', () => {
