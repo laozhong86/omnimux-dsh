@@ -24,11 +24,13 @@ import {
   resolveWorkbenchTabTitle,
   focusRecordForTab,
   getWorkbenchFocus,
+  setConversationCollapsed,
   setWorkbenchFocus,
   syncWorkbenchGuiWidth,
   tabIsOpen,
   workbenchDefaultWidthPx,
   workbenchGuiWidthPx,
+  workbenchSplitMaxPanelPx,
 } from './workbench.js'
 
 const previousWindow = globalThis.window
@@ -346,7 +348,51 @@ test('syncWorkbenchGuiWidth clamps oversized width even after mode was clobbered
 
   const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 280 })
   assert.equal(synced, true)
-  assert.equal(state.width, 1448)
+  // Split clamp keeps the middle conversation column >= 360:
+  //   max(280, 1728 - 280 - 360) = 1088
+  assert.equal(state.width, 1088)
+})
+
+test('syncWorkbenchGuiWidth clamps split width so the conversation column keeps its min', () => {
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-workflow:canvas', type: 'omnimux-workflow:canvas' }], 900, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-colsplit', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  const record = focusRecordForTab('s-colsplit', 'omnimux-workflow:canvas')
+  record.mode = WORKBENCH_FOCUS.split
+
+  // Viewport 1200, left rail 280 -> split max = 1200 - 280 - 360 = 560.
+  const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1200, officialSidebarWidth: 280 })
+  assert.equal(synced, true)
+  assert.ok(state.width <= 560, `expected <=560, got ${state.width}`)
+  assert.equal(state.width, 560)
+})
+
+test('syncWorkbenchGuiWidth never clamps gui / collapsed middle column', () => {
+  setupWindow()
+  let state = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 900, true)
+  const store = {
+    getSnapshot: () => ({ sessionId: 's-guiglamp', state }),
+    reduce: (fn) => { state = fn(state) },
+  }
+  // Intentional gui: panel keeps viewport - rail, no conversation-column clamp.
+  setWorkbenchFocus(WORKBENCH_FOCUS.gui, store, { viewportWidth: 1200, officialSidebarWidth: 280 })
+  assert.equal(state.width, 920)
+  state.width = 900
+  const syncedGui = syncWorkbenchGuiWidth(store, { viewportWidth: 1200, officialSidebarWidth: 280 })
+  assert.equal(syncedGui, true)
+  assert.equal(state.width, 920, 'gui must not be clamped to split max')
+
+  // Collapsed middle column: also allowed to be squeezed (column is 0 anyway).
+  state.width = 900
+  setConversationCollapsed(true, { persist: false })
+  const record = focusRecordForTab('s-guiglamp', 'omnimux-assets:library')
+  record.mode = WORKBENCH_FOCUS.split
+  const syncedCollapsed = syncWorkbenchGuiWidth(store, { viewportWidth: 1200, officialSidebarWidth: 280 })
+  assert.equal(syncedCollapsed, true)
+  assert.equal(state.width, 920, 'collapsed middle must not be clamped to split max')
 })
 
 test('inferWorkbenchFocus maps collapsed / full / split geometry', () => {

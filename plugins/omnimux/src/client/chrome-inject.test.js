@@ -32,4 +32,10 @@ describe('hub chrome optional inject', () => {
     assert.match(chromeSource, /hydrateConversationCollapsed/)
     assert.match(chromeSource, /ensureConversationCollapseChrome/)
   })
+
+  it('installs the composer-compact chrome and density observer', () => {
+    assert.match(chromeSource, /ensureComposerCompactChrome/)
+    assert.match(chromeSource, /installComposerCompactObserver/)
+    assert.match(chromeSource, /composer-compact\.js/)
+  })
 })
