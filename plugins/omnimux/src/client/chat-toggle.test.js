@@ -3,6 +3,8 @@ import { afterEach, test } from 'node:test'
 import {
   CHAT_TOGGLE_ATTR,
   CHAT_TOGGLE_SELECTOR,
+  MAXIMIZE_ICON_SVG,
+  RESTORE_ICON_SVG,
   createChatToggleButton,
   ensureChatToggle,
   syncChatToggleState,
@@ -150,6 +152,60 @@ test('clicking chat toggle collapses conversation then restores split', () => {
   assert.equal(doc.documentElement.hasAttribute('data-omnimux-conversation-collapsed'), false)
 })
 
+function setupToggleApi(win, doc) {
+  win.__omnimuxWorkbench = {
+    getFocus: () => WORKBENCH_FOCUS.split,
+    setFocus: () => true,
+    getActiveTab: () => 'omnimux-assets:library',
+    getSnapshot: () => ({ state: { panelOpen: true } }),
+    subscribe: () => () => {},
+  }
+  setConversationCollapsed(false, { persist: false, doc })
+}
+
+test('toggle shows maximize icon when conversation is visible', () => {
+  const { win, doc } = setupFakeDOM()
+  setupToggleApi(win, doc)
+
+  const btn = createChatToggleButton(doc)
+  assert.equal(btn.style.display, '')
+  assert.equal(btn.innerHTML, MAXIMIZE_ICON_SVG)
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  assert.equal(btn.getAttribute('data-action'), 'maximize')
+})
+
+test('toggle shows restore icon when conversation is collapsed', () => {
+  const { win, doc } = setupFakeDOM()
+  setupToggleApi(win, doc)
+  setConversationCollapsed(true, { persist: false, doc })
+
+  const btn = createChatToggleButton(doc)
+  assert.equal(btn.style.display, '')
+  assert.equal(btn.innerHTML, RESTORE_ICON_SVG)
+  assert.match(btn.innerHTML, /data-omnimux-icon="restore"/)
+  assert.equal(btn.getAttribute('data-action'), 'restore')
+})
+
+test('clicking toggles icon maximize -> restore -> maximize', () => {
+  const { win, doc } = setupFakeDOM()
+  setupToggleApi(win, doc)
+
+  const btn = createChatToggleButton(doc)
+  // Initial: conversation visible -> maximize (expand right panel)
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  assert.equal(btn.getAttribute('data-action'), 'maximize')
+
+  // Click 1: collapse conversation (full width) -> restore icon
+  btn.dispatchEvent({ type: 'click', preventDefault() {}, stopPropagation() {} })
+  assert.match(btn.innerHTML, /data-omnimux-icon="restore"/)
+  assert.equal(btn.getAttribute('data-action'), 'restore')
+
+  // Click 2: show conversation again -> maximize icon
+  btn.dispatchEvent({ type: 'click', preventDefault() {}, stopPropagation() {} })
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  assert.equal(btn.getAttribute('data-action'), 'maximize')
+})
+
 test('syncChatToggleState hides button when panel is closed or tab is not workbench occupant', () => {
   const { win, doc } = setupFakeDOM()
   let panelOpen = true
@@ -158,13 +214,16 @@ test('syncChatToggleState hides button when panel is closed or tab is not workbe
     getFocus: () => WORKBENCH_FOCUS.gui,
     getActiveTab: () => activeTab,
     getSnapshot: () => ({ state: { panelOpen } }),
-    t: (k) => (k === 'workbench.chatShow' ? '展开中间会话栏' : '收起中间会话栏'),
+    t: (k) => (k === 'workbench.chatShow' ? '显示会话栏' : '全屏铺满右侧栏'),
   }
   setConversationCollapsed(true, { persist: false, doc })
 
   const btn = createChatToggleButton(doc)
   assert.equal(btn.style.display, '')
-  assert.equal(btn.getAttribute('aria-label'), '展开中间会话栏')
+  assert.equal(btn.getAttribute('aria-label'), '显示会话栏')
+  assert.equal(btn.getAttribute('title'), '显示会话栏')
+  assert.equal(btn.getAttribute('data-action'), 'restore')
+  assert.match(btn.innerHTML, /data-omnimux-icon="restore"/)
 
   // Panel closed -> hidden
   panelOpen = false
