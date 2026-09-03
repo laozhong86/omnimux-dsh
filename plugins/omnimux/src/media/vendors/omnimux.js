@@ -118,7 +118,9 @@ export function mapOmnimuxInput(capability, request) {
     } else if (request.image) {
       input.image = request.image
     }
-    // 严禁向 video 注入 input.images、input.references、input.audioTrack！
+    // 严禁向 video 注入 images/references/audioTrack/metadata（#429/#432）。
+    // 网关 Go 结构体 DisallowUnknownFields，metadata 会 400。
+    return input
   } else {
     // 非 video（image/audio）保持现存的向后兼容逻辑不变
     if (request.image) input.image = request.image

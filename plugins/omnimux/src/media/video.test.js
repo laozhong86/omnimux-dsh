@@ -209,6 +209,7 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     assert.equal('references' in input, false, 'video 请求绝不能携带 references 字段')
     assert.equal('audioTrack' in input, false, 'video 请求绝不能携带 audioTrack 字段')
     assert.equal('image' in input, false, 'reference_images 与 image 不能同时出现')
+    assert.equal('metadata' in input, false, 'video 请求绝不能携带 metadata 字段')
   })
 
   it('passes aspectRatio and resolution through as aspect_ratio/resolution', () => {
@@ -219,6 +220,7 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     })
     assert.equal(input.aspect_ratio, '16:9')
     assert.equal(input.resolution, '720p')
+    assert.equal('metadata' in input, false)
   })
 
   it('uses the image field for a first_frame reference (first-frame mode)', () => {
@@ -233,6 +235,7 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     assert.equal('reference_images' in input, false, 'image 与 reference_images 不能同时使用')
     assert.equal('images' in input, false)
     assert.equal('references' in input, false)
+    assert.equal('metadata' in input, false)
   })
 
   it('falls back to request.image when there are no usable references', () => {
@@ -246,5 +249,28 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     assert.equal('references' in input, false)
     assert.equal('audioTrack' in input, false)
     assert.equal('reference_images' in input, false)
+    assert.equal('metadata' in input, false)
+  })
+
+  it('does not attach metadata even when voice/style/speech are present (#432)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: '1 dog',
+      duration: 5,
+      aspectRatio: '16:9',
+      voice: 'alloy',
+      style: 'cinematic',
+      speech: 'hello',
+      audio: '/tmp/a.mp3',
+      speed: 1,
+      instrumental: false,
+    })
+    assert.equal(input.prompt, '1 dog')
+    assert.equal(input.duration, 5)
+    assert.equal(input.aspect_ratio, '16:9')
+    assert.equal('metadata' in input, false)
+    assert.equal('voice' in input, false)
+    assert.equal('style' in input, false)
+    assert.equal('speech' in input, false)
+    assert.equal('audio' in input, false)
   })
 })
