@@ -206,6 +206,100 @@ test('clicking toggles icon maximize -> restore -> maximize', () => {
   assert.equal(btn.getAttribute('data-action'), 'maximize')
 })
 
+/**
+ * Installs an innerHTML write counter on a fake-DOM element. Returns a getter
+ * for the number of times the innerHTML setter fired since installation.
+ * Regression guard: innerHTML assignment replaces child nodes even when the
+ * markup is identical, which fires a childList mutation and re-triggers the
+ * MutationObserver installed by installChatToggleObserver — an unconditional
+ * write deadlocks the main thread in a real browser.
+ */
+function countInnerHTMLWrites(elem) {
+  let count = 0
+  let value = elem.innerHTML
+  Object.defineProperty(elem, 'innerHTML', {
+    configurable: true,
+    get() {
+      return value
+    },
+    set(v) {
+      count += 1
+      value = v
+    },
+  })
+  return () => count
+}
+
+test('syncChatToggleState does not rewrite innerHTML when state is unchanged', () => {
+  const { win, doc } = setupFakeDOM()
+  setupToggleApi(win, doc)
+
+  const btn = createChatToggleButton(doc)
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  const writes = countInnerHTMLWrites(btn)
+
+  // Repeated syncs with unchanged state must be a complete no-op.
+  syncChatToggleState(btn)
+  syncChatToggleState(btn)
+  syncChatToggleState(btn)
+  assert.equal(writes(), 0)
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  assert.equal(btn.getAttribute('data-action'), 'maximize')
+})
+
+test('syncChatToggleState rewrites innerHTML exactly once when collapsed state flips', () => {
+  const { win, doc } = setupFakeDOM()
+  setupToggleApi(win, doc)
+
+  const btn = createChatToggleButton(doc)
+  const writes = countInnerHTMLWrites(btn)
+
+  // Flip to collapsed -> icon must actually update (maximize -> restore).
+  setConversationCollapsed(true, { persist: false, doc })
+  syncChatToggleState(btn)
+  assert.equal(writes(), 1)
+  assert.match(btn.innerHTML, /data-omnimux-icon="restore"/)
+  assert.equal(btn.getAttribute('data-action'), 'restore')
+
+  // Further syncs at the same state are no-ops again.
+  syncChatToggleState(btn)
+  syncChatToggleState(btn)
+  assert.equal(writes(), 1)
+
+  // Flip back -> one more write.
+  setConversationCollapsed(false, { persist: false, doc })
+  syncChatToggleState(btn)
+  assert.equal(writes(), 2)
+  assert.match(btn.innerHTML, /data-omnimux-icon="maximize"/)
+  assert.equal(btn.getAttribute('data-action'), 'maximize')
+})
+
+test('ensureChatToggle is a mutation-free no-op when button already sits first', () => {
+  const { win, doc, cluster } = setupFakeDOM()
+  setupToggleApi(win, doc)
+
+  const btn = ensureChatToggle(doc)
+  assert.ok(btn)
+  assert.equal(cluster.firstChild, btn)
+
+  const writes = countInnerHTMLWrites(btn)
+  let insertBeforeCalls = 0
+  const originalInsertBefore = cluster.insertBefore
+  cluster.insertBefore = (newChild, refChild) => {
+    insertBeforeCalls += 1
+    return originalInsertBefore(newChild, refChild)
+  }
+
+  // Simulates repeated MutationObserver callbacks: no DOM write may happen.
+  ensureChatToggle(doc)
+  ensureChatToggle(doc)
+  ensureChatToggle(doc)
+  assert.equal(writes(), 0)
+  assert.equal(insertBeforeCalls, 0)
+  assert.equal(cluster.firstChild, btn)
+  assert.equal(cluster.children.length, 3)
+})
+
 test('syncChatToggleState hides button when panel is closed or tab is not workbench occupant', () => {
   const { win, doc } = setupFakeDOM()
   let panelOpen = true
