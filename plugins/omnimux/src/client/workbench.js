@@ -1125,6 +1125,7 @@ export function getUiContext() {
   if (!panelOpen) {
     reason = 'panel-collapsed'
   } else if (activeTab) {
+    reason = 'ok'
     const contributor = contextContributors.get(activeTab)
     if (typeof contributor === 'function') {
       try {
@@ -1137,8 +1138,6 @@ export function getUiContext() {
         console.error('[workbench] contributor error:', err)
         reason = 'unavailable'
       }
-    } else {
-      reason = 'no-contributor'
     }
   } else {
     reason = 'no-workbench'
@@ -1152,6 +1151,7 @@ export function getUiContext() {
     sessionId,
     surface: {
       tabId: activeTab || null,
+      title: (activeTab && WORKBENCH_TAB_TITLE_FALLBACKS[activeTab]) || activeTab || null,
       plugin: activeTab ? activeTab.split(':')[0] : null,
       panelOpen,
       focus,
@@ -1171,7 +1171,8 @@ export function formatCompactContextBlock(envelope) {
   const lines = []
   lines.push('<ui_context schema="1">')
 
-  let firstLine = `tab: ${s.tabId || 'none'}`
+  const titleStr = s.title && s.title !== s.tabId ? ` (${s.title})` : ''
+  let firstLine = `tab: ${s.tabId || 'none'}${titleStr}`
   if (envelope.view?.filterType) {
     firstLine += ` | filter: ${envelope.view.filterType}`
   }
