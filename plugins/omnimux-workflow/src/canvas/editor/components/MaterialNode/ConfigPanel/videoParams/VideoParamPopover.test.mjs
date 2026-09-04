@@ -5,7 +5,9 @@
  * （readFileSync + node:test），对：
  * 1. VideoTriggerBar.tsx —— 摘要胶囊触发器结构契约；
  * 2. VideoParamPopover.tsx —— React Portal 浮层外壳结构契约（定位/监听/关闭/隔离）；
- * 3. components.css 新增样式块 —— 类名覆盖、overflow-y:auto 与零裸色铁律。
+ * 3. components.css 新增样式块 —— 类名覆盖、overflow-y:auto；字面量仅允许出现在
+ *    .wf-video-param-popover 私有 token 声明块内，面板组件规则必须消费 var(--wf-vp-*)，
+ *    实现 Portal 逃逸岛作用域后的深色玻璃自给自足（#438）。
  */
 
 import assert from 'node:assert/strict';
@@ -177,13 +179,103 @@ test('components.css 新样式块含 overflow-y:auto 与关键设计规格', () 
   assert.match(videoCssBlock, /cursor:\s*not-allowed/);
 });
 
-test('components.css 新样式块无裸 hex/rgba 字面量（100% Token 铁律）', () => {
+// 从新样式块中切出 .wf-video-param-popover 根规则块（私有 token 全部声明于此）
+function extractPopoverRootBlock() {
+  const rootStart = videoCssBlock.indexOf('.wf-video-param-popover {');
+  assert.notEqual(rootStart, -1, '应包含 .wf-video-param-popover 根规则');
+  const rootEnd = videoCssBlock.indexOf('}', rootStart);
+  assert.notEqual(rootEnd, -1, '应能定位 popover 根规则结束');
+  return {
+    rootStart,
+    rootEnd,
+    rootBlock: videoCssBlock.slice(rootStart, rootEnd + 1),
+  };
+}
+
+// 剔除 popover 根规则内的 --wf-vp-* 私有 token 声明行，得到纯组件规则文本
+function buildComponentRules() {
+  const { rootStart, rootEnd, rootBlock } = extractPopoverRootBlock();
+  const rootWithoutTokens = rootBlock
+    .split('\n')
+    .filter((line) => !/^\s*--wf-vp-[a-z0-9-]+\s*:/.test(line))
+    .join('\n');
+  return videoCssBlock.slice(0, rootStart) + rootWithoutTokens + videoCssBlock.slice(rootEnd + 1);
+}
+
+// 提取 popover 根规则内的私有 token 声明行
+function extractTokenDeclarations() {
+  const { rootBlock } = extractPopoverRootBlock();
+  return rootBlock
+    .split('\n')
+    .filter((line) => /^\s*--wf-vp-[a-z0-9-]+\s*:/.test(line));
+}
+
+test('components.css popover 根声明块含深色玻璃底与 blur（Portal 自给自足）', () => {
+  const { rootBlock } = extractPopoverRootBlock();
+  // 深色玻璃底色（对齐 .wf-custom-select-dropdown / .wf-popover-portal）
+  assert.match(rootBlock, /rgba\(24,\s*24,\s*27,\s*0\.96\)/);
+  // blur(20px)
+  assert.match(rootBlock, /backdrop-filter:\s*blur\(20px\)/);
+});
+
+test('components.css 新样式块字面量仅允许出现在 popover 根 token 声明块内', () => {
+  const tokenDeclLines = extractTokenDeclarations();
+  assert.ok(
+    tokenDeclLines.length >= 10,
+    `popover 根应声明完整 --wf-vp-* token 集，实际 ${tokenDeclLines.length} 条`,
+  );
+  const tokenDeclBlock = tokenDeclLines.join('\n');
+
+  // 组件规则（剔除 token 声明行后的其余全部规则）零裸色字面量
+  const componentRules = buildComponentRules();
   const bareColorRe = /#[0-9a-fA-F]{3,8}\b|rgba?\(/;
-  // 逐行检查，若命中给出具体行便于定位
-  const lines = videoCssBlock.split('\n');
-  const hits = lines
+  const hits = componentRules
+    .split('\n')
     .map((line, i) => ({ line, i }))
     .filter(({ line }) => bareColorRe.test(line))
     .map(({ line, i }) => `line ${i + 1}: ${line.trim()}`);
-  assert.deepEqual(hits, [], `新样式块禁止裸色字面量，发现：\n${hits.join('\n')}`);
+  assert.deepEqual(hits, [], `组件规则禁止裸色字面量（应消费 var(--wf-vp-*)），发现：\n${hits.join('\n')}`);
+
+  // token 声明块本身完整覆盖深色玻璃体系关键字面量
+  assert.match(tokenDeclBlock, /rgba\(24,\s*24,\s*27,\s*0\.96\)/); // 底
+  assert.match(tokenDeclBlock, /rgba\(255,\s*255,\s*255,\s*0\.12\)/); // 边 / layer-3
+  assert.match(tokenDeclBlock, /rgba\(255,\s*255,\s*255,\s*0\.04\)/); // layer-1
+  assert.match(tokenDeclBlock, /rgba\(255,\s*255,\s*255,\s*0\.08\)/); // layer-2
+  assert.match(tokenDeclBlock, /rgba\(255,\s*255,\s*255,\s*0\.35\)/); // 选中描边
+  assert.match(tokenDeclBlock, /#e4e4e7/); // 主文字
+  assert.match(tokenDeclBlock, /#a1a1aa/); // 次文字
+  assert.match(tokenDeclBlock, /#71717a/); // 弱文字
+  assert.match(tokenDeclBlock, /0 20px 40px -4px rgba\(0, 0, 0, 0\.65\)/); // 阴影
+});
+
+test('components.css 面板组件规则全部消费 var(--wf-vp-*) 且不引用岛内 --wb-*', () => {
+  const componentRules = buildComponentRules();
+  const ruleConsumers = [
+    '.wf-video-param-popover {',
+    '.wf-video-param-popover__scrollable {',
+    '.wf-video-param-popover__scrollable::-webkit-scrollbar-thumb {',
+    '.wf-video-param-popover__section + .wf-video-param-popover__section {',
+    '.wf-video-param-popover__section-title {',
+    '.wf-video-seg {',
+    '.wf-video-seg__item {',
+    '.wf-video-seg__item--active {',
+    '.wf-video-aspect-card {',
+    '.wf-video-aspect-card--active {',
+    '.wf-video-duration-pill {',
+    '.wf-video-duration-pill--active {',
+  ];
+  for (const selector of ruleConsumers) {
+    const start = componentRules.indexOf(selector);
+    assert.notEqual(start, -1, `应包含规则 ${selector}`);
+    const end = componentRules.indexOf('}', start);
+    const rule = componentRules.slice(start, end + 1);
+    assert.match(rule, /var\(--wf-vp-[a-z0-9-]+\)/, `${selector} 应消费 var(--wf-vp-*)`);
+    assert.doesNotMatch(rule, /--wb-/, `${selector} 不应引用岛内 --wb-*（Portal 逃逸后无法解析）`);
+  }
+  // TriggerBar 渲染在画布岛作用域内：保持 --wb-* / --dsw-alias-* 消费，不引用 --wf-vp-*
+  const triggerBarStart = componentRules.indexOf('.wf-video-trigger-bar {');
+  const triggerBarEnd = componentRules.indexOf('.wf-video-trigger-bar__dot', triggerBarStart);
+  const triggerBarRule = componentRules.slice(triggerBarStart, triggerBarEnd);
+  assert.match(triggerBarRule, /--wb-/, 'TriggerBar 岛内应继续消费 --wb-*');
+  assert.doesNotMatch(triggerBarRule, /--wf-vp-/, 'TriggerBar 不应消费 --wf-vp-*（岛内作用域）');
 });

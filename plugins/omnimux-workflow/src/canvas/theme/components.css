@@ -6165,15 +6165,31 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
 
 /* ---- 浮层外壳 (Popover) ---- */
 .wf-video-param-popover {
+  /* 面板私有深色玻璃 token：createPortal 挂载到 document.body 后脱离
+     .wf-canvas-root 的岛内 wb 令牌作用域，因此所有面板字面量只允许出现在本
+     声明块内，面板内所有规则一律消费 var(--wf-vp-*)（对齐
+     .wf-custom-select-dropdown / .wf-popover-portal 既有 Portal 浮层约定）。 */
+  --wf-vp-bg: rgba(24, 24, 27, 0.96);
+  --wf-vp-border: rgba(255, 255, 255, 0.12);
+  --wf-vp-border-hover: rgba(255, 255, 255, 0.2);
+  --wf-vp-border-active: rgba(255, 255, 255, 0.35);
+  --wf-vp-text: #e4e4e7;
+  --wf-vp-text-2: #a1a1aa;
+  --wf-vp-text-3: #71717a;
+  --wf-vp-layer-1: rgba(255, 255, 255, 0.04);
+  --wf-vp-layer-2: rgba(255, 255, 255, 0.08);
+  --wf-vp-layer-3: rgba(255, 255, 255, 0.12);
+  --wf-vp-shadow: 0 20px 40px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   border-radius: 12px;
   padding: 12px 16px;
   z-index: 9999;
-  background: var(--dsw-alias-bg-overlay, var(--wb-dock-bg));
-  border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
-  box-shadow: var(--wb-shadow-pop, 0 12px 28px -6px var(--dsw-alias-bg-mask-3));
+  background: var(--wf-vp-bg);
+  border: 1px solid var(--wf-vp-border);
+  box-shadow: var(--wf-vp-shadow);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   animation: wf-video-popover-in 150ms ease-out;
@@ -6194,7 +6210,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   overflow-y: auto;
   min-height: 0;
   scrollbar-width: thin;
-  scrollbar-color: var(--dsw-alias-border-l2, var(--wb-border-strong)) transparent;
+  scrollbar-color: var(--wf-vp-text-3) transparent;
 }
 
 .wf-video-param-popover__scrollable::-webkit-scrollbar {
@@ -6202,7 +6218,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
 }
 
 .wf-video-param-popover__scrollable::-webkit-scrollbar-thumb {
-  background: var(--dsw-alias-border-l2, var(--wb-border-strong));
+  background: var(--wf-vp-text-3);
   border-radius: 2px;
 }
 
@@ -6214,7 +6230,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
 }
 
 .wf-video-param-popover__section + .wf-video-param-popover__section {
-  border-top: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
+  border-top: 1px solid var(--wf-vp-border);
 }
 
 .wf-video-param-popover__section:first-child {
@@ -6230,7 +6246,7 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   font-size: 12px;
   font-weight: 500;
   line-height: 1.4;
-  color: var(--dsw-alias-label-secondary, var(--wb-text-secondary));
+  color: var(--wf-vp-text-2);
 }
 
 /* ---- 生成方式 / 清晰度 / 有声 分段控制器 (Segment) ---- */
@@ -6240,9 +6256,9 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   gap: 2px;
   height: 32px;
   padding: 2px;
-  border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
+  border: 1px solid var(--wf-vp-border);
   border-radius: 8px;
-  background: var(--dsw-alias-bg-elevated, var(--wb-surface));
+  background: var(--wf-vp-layer-1);
 }
 
 .wf-video-seg__item {
@@ -6256,19 +6272,19 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--dsw-alias-label-secondary, var(--wb-text-secondary));
+  color: var(--wf-vp-text-2);
   font-size: 12px;
   cursor: pointer;
   transition: background-color 150ms ease, color 150ms ease;
 }
 
 .wf-video-seg__item:hover {
-  background: var(--dsw-alias-interactive-bg-hover, var(--wb-pill-hover));
+  background: var(--wf-vp-layer-2);
 }
 
 .wf-video-seg__item--active {
-  background: color-mix(in srgb, var(--dsw-alias-brand-primary, var(--wb-accent)) 18%, transparent);
-  color: var(--dsw-alias-brand-primary, var(--wb-accent));
+  background: var(--wf-vp-layer-3);
+  color: var(--wf-vp-text);
   font-weight: 500;
 }
 
@@ -6291,22 +6307,22 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   justify-content: center;
   gap: 6px;
   height: 56px;
-  border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
+  border: 1px solid var(--wf-vp-border);
   border-radius: 8px;
-  background: var(--dsw-alias-bg-elevated, var(--wb-surface));
-  color: var(--dsw-alias-label-secondary, var(--wb-text-secondary));
+  background: var(--wf-vp-layer-1);
+  color: var(--wf-vp-text-2);
   cursor: pointer;
   transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
 }
 
 .wf-video-aspect-card:hover {
-  border-color: var(--dsw-alias-border-l2, var(--wb-border-strong));
+  border-color: var(--wf-vp-border-hover);
 }
 
 .wf-video-aspect-card--active {
-  border-color: var(--dsw-alias-brand-primary, var(--wb-accent));
-  background: color-mix(in srgb, var(--dsw-alias-brand-primary, var(--wb-accent)) 12%, transparent);
-  color: var(--dsw-alias-brand-primary, var(--wb-accent));
+  border-color: var(--wf-vp-border-active);
+  background: var(--wf-vp-layer-3);
+  color: var(--wf-vp-text);
 }
 
 .wf-video-aspect-card__icon {
@@ -6332,22 +6348,22 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   justify-content: center;
   height: 28px;
   padding: 0 8px;
-  border: 1px solid var(--dsw-alias-border-l1, var(--wb-border));
+  border: 1px solid var(--wf-vp-border);
   border-radius: 999px;
-  background: var(--dsw-alias-bg-elevated, var(--wb-surface));
-  color: var(--dsw-alias-label-secondary, var(--wb-text-secondary));
+  background: var(--wf-vp-layer-1);
+  color: var(--wf-vp-text-2);
   font-size: 12px;
   cursor: pointer;
   transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
 }
 
 .wf-video-duration-pill:hover {
-  border-color: var(--dsw-alias-border-l2, var(--wb-border-strong));
+  border-color: var(--wf-vp-border-hover);
 }
 
 .wf-video-duration-pill--active {
-  border-color: var(--dsw-alias-brand-primary, var(--wb-accent));
-  background: color-mix(in srgb, var(--dsw-alias-brand-primary, var(--wb-accent)) 14%, transparent);
-  color: var(--dsw-alias-brand-primary, var(--wb-accent));
+  border-color: var(--wf-vp-border-active);
+  background: var(--wf-vp-layer-3);
+  color: var(--wf-vp-text);
   font-weight: 500;
 }
