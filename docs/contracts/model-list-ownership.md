@@ -118,12 +118,21 @@ it that way: user layers set `agent-default-model` only.
     仅 fixtures）。**不改变** `buildModelCatalog` 的 runtime 投影；列表仍来自
     `CHAT_MODELS` + `src/media/catalog.js` SPECS。H1 **不做** runtime
     constraints / mapper 对账（属 H2；零 listed 防止污染选择叙事）。
-  - **H2**：逐 operation 补证后写入 listedOperations；runtime limits 对账
-    （冲突取更严）；`buildModelCatalog` 改为以契约 `models[]` 为权威，四列表
-    （text/image/video/audio）为 **output-driven 兼容投影**（只投影 listed
-    operations）；seam 载荷携带 `operations[]`（string id + per-op status/
-    listed metadata）。此后 JS SPECS / workflow `BUILTIN_*` 不得再作为能力
-    真源（绞杀时间盒见设计）。
+  - **H2（#465，已落地）**：`buildModelCatalog` 已切契约投影（Catalog v1.1）——
+    权威为扁平 `models[]`（透传 operations/research/execution/aliases/
+    parameters + `disposition` 治理字段），四列表（text/image/video/audio）
+    **仅**按可见（listed）op 的 `output.type` 派生（`speech_to_text` 产出
+    text → 入 text 桶）。旧 `CHAT_MODELS` / `src/media/catalog.js` SPECS
+    硬编码行已物理删除，两文件为**投影 facade**（目录语义：含未上架契约行；
+    契约解析/准入/处置表失败顶层 throw，无回退）。43 个 runtime ID 的治理
+    处置由 `src/catalog/contract/dispositions.json` 机器真源承载（D1–D7
+    一致性校验，`--strict` 红灯）；`catalog-defaults.json` 持有
+    `defaultsByOperation` 权威默认。runtime limits 已对账写入 YAML（冲突
+    取更严，`policy_conservative`）。**cordis 交叉验证**：verifier 断言本
+    patch 的 composer id 均可 resolve 到契约 canonical/alias
+    （`cordis_unresolvable_model`），patch 内容本身不动。seam 载荷携带
+    `operations[]`（string id + per-op status/listed metadata）。此后
+    JS SPECS / workflow `BUILTIN_*` 不得再作为能力真源（绞杀时间盒见设计）。
   - **聊天 composer 模型列表**仍唯一由本文件所述 `cordis.patch.yml` 拥有；
     H1/H2 **不**把 canvas contract 投影写进 patch，也 **不**用 canvas 目录
     替换 composer 列表。

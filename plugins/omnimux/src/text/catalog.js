@@ -1,134 +1,20 @@
 import { isModelEnabled } from '../gate/guard.js'
 import { OmnimuxError } from '../media/errors.js'
+import { getHealthyContractIndex, projectChatRows } from '../catalog/project.js'
 
 /**
- * Chat-directory rows the expert whitelist may name. Ids must stay a subset
- * of `cordis.patch.yml` `llm-pi-ai` / `omnimux.models`; an id missing there
- * fails at the adapter as UNKNOWN_MODEL.
+ * Chat directory — H2 facade. The hardcoded CHAT_MODELS rows were physically
+ * deleted; the directory is a projection of specs/text-models.yaml via
+ * src/catalog/project.js. Ids must stay a subset of `cordis.patch.yml`
+ * `llm-pi-ai` / `omnimux.models`; an id missing there fails at the adapter as
+ * UNKNOWN_MODEL. The dated evidence references that justified each row's
+ * modalities live in the YAML research blocks (docs/evidence/…).
  *
- * `input` follows the measured gateway matrix (docs/evidence/
- * omnimux-modality-2026-08-18.md) plus the 2026-08-22 video spike
- * (image_url + data:video on gemini-3.7-flash). A 64px red image plus a
- * content prompt was sent to every row; rows that answered with the image
- * color declare image. Video is declared only where the spike proved native
- * mp4 understanding. deepseek-v4-pro and glm-5.3 rejected `image_url`
- * upstream and stay text-only. claude-opus-5 supports images on the
- * Anthropic `/v1/messages` protocol but the chat-completions group is
- * currently 403 for this key; it stays text-only here. claude-opus-4-6,
- * gpt-5.5, and gemini-3.1-pro-preview answered the red-image prompt on
- * chat-completions (docs/evidence/omnimux-brand-four-2026-08-23.md).
- * minimax-m3 is catalogued but this key's group 403s it, so it stays off.
+ * Fail-closed: contract parse / admission failure throws at module load.
  */
-export const CHAT_MODELS = Object.freeze([
-  Object.freeze({
-    id: 'claude-opus-5',
-    brand: 'anthropic',
-    role: 'flagship',
-    input: Object.freeze(['text']),
-    inputCapability: Object.freeze({
-      modalities: Object.freeze(['text']),
-    }),
-  }),
-  Object.freeze({
-    id: 'claude-opus-4-6',
-    brand: 'anthropic',
-    role: 'flagship',
-    input: Object.freeze(['text', 'image']),
-    inputCapability: Object.freeze({
-      modalities: Object.freeze(['text', 'image']),
-      referenceImages: Object.freeze({ min: 0, max: 10 }),
-    }),
-  }),
-  Object.freeze({
-    id: 'gpt-5.6-sol',
-    brand: 'openai',
-    role: 'flagship',
-    input: Object.freeze(['text', 'image']),
-    inputCapability: Object.freeze({
-      modalities: Object.freeze(['text', 'image']),
-      referenceImages: Object.freeze({ min: 0, max: 10 }),
-    }),
-  }),
-  Object.freeze({
-    id: 'gpt-5.5',
-    brand: 'openai',
-    role: 'flagship',
-    input: Object.freeze(['text', 'image']),
-    inputCapability: Object.freeze({
-      modalities: Object.freeze(['text', 'image']),
-      referenceImages: Object.freeze({ min: 0, max: 10 }),
-    }),
-  }),
-  Object.freeze({
-    id: 'grok-4.6',
-    brand: 'xai',
-    role: 'flagship',
-    input: Object.freeze(['text', 'image']),
-    inputCapability: Object.freeze({
-      modalities: Object.freeze(['text', 'image']),
-      referenceImages: Object.freeze({ min: 0, max: 10 }),
-    }),
-  }),
-  Object.freeze({
-    id: 'kimi-k3',
-    brand: 'moonshot',
-    role: 'flagship',
-    input: Object.freeze(['text', 'image']),
-    inputCapability: Object.freeze({
-      modalities: Object.freeze(['text', 'image']),
-      referenceImages: Object.freeze({ min: 0, max: 10 }),
-    }),
-  }),
-  Object.freeze({
-    id: 'deepseek-v4-pro',
-    brand: 'deepseek',
-    role: 'flagship',
-    input: Object.freeze(['text']),
-    inputCapability: Object.freeze({
-      modalities: Object.freeze(['text']),
-    }),
-  }),
-  Object.freeze({
-    id: 'deepseek-v4-flash-vision-exp',
-    brand: 'deepseek',
-    role: 'classic',
-    input: Object.freeze(['text', 'image']),
-    inputCapability: Object.freeze({
-      modalities: Object.freeze(['text', 'image']),
-      referenceImages: Object.freeze({ min: 0, max: 10 }),
-    }),
-  }),
-  Object.freeze({
-    id: 'gemini-3.7-flash',
-    brand: 'google',
-    role: 'flagship',
-    input: Object.freeze(['text', 'image', 'video']),
-    inputCapability: Object.freeze({
-      modalities: Object.freeze(['text', 'image', 'video']),
-      referenceImages: Object.freeze({ min: 0, max: 10 }),
-      referenceVideos: Object.freeze({ min: 0, max: 1 }),
-    }),
-  }),
-  Object.freeze({
-    id: 'gemini-3.1-pro-preview',
-    brand: 'google',
-    role: 'flagship',
-    input: Object.freeze(['text', 'image']),
-    inputCapability: Object.freeze({
-      modalities: Object.freeze(['text', 'image']),
-      referenceImages: Object.freeze({ min: 0, max: 10 }),
-    }),
-  }),
-  Object.freeze({
-    id: 'glm-5.3',
-    brand: 'zhipu',
-    role: 'flagship',
-    input: Object.freeze(['text']),
-    inputCapability: Object.freeze({
-      modalities: Object.freeze(['text']),
-    }),
-  }),
-])
+const __contractIndex = getHealthyContractIndex()
+
+export const CHAT_MODELS = Object.freeze(projectChatRows(__contractIndex))
 
 /**
  * The whitelist a request resolves against. Charts map to the table above

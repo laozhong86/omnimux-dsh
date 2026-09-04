@@ -1,0 +1,116 @@
+classDiagram
+  direction TB
+
+  class DispositionsRegistry {
+    +string version
+    +DispositionRow[] dispositions
+    +load(path) DispositionsRegistry
+    +validate(index, runtimeIds) Issue[]
+    +resolve(id) DispositionRow
+    +forbiddenListedIds() Set~string~
+  }
+
+  class DispositionRow {
+    +string id
+    +string disposition
+    +string target
+    +string reason
+    +string[] evidence
+    +string batch
+  }
+
+  class CatalogProjector {
+    +projectCatalog(index, dispositions, defaultsCfg) CatalogV11
+    +projectKindRows(index, kind) CatalogRow[]
+    +projectChatRows(index) ChatRow[]
+    +deriveKindLists(models) Lists
+    +mergeInputCapability(ops, kind) object
+  }
+
+  class CatalogDefaults {
+    +string version
+    +Record~string,string~ byOperation
+    +validate(index) Issue[]
+  }
+
+  class CatalogV11 {
+    +string schemaVersion
+    +string source
+    +string fingerprint
+    +string contractFingerprint
+    +CatalogModelDto[] models
+    +CatalogRow[] text
+    +CatalogRow[] image
+    +CatalogRow[] video
+    +CatalogRow[] audio
+    +object defaults
+    +Record~string,string~ defaultsByOperation
+  }
+
+  class CatalogModelDto {
+    +string id
+    +string label
+    +string[] aliases
+    +OperationContractDto[] operations
+    +boolean listed
+    +string[] listedOperations
+    +string disposition
+  }
+
+  class BuildModelCatalog {
+    +list(opts) CatalogV11
+    +resolveDefault(input) string
+    +fingerprintOf(input) string
+    note: "H2: contract projection; fail-closed; fingerprint = contractFP + listedOps + defaults + schemaVersion"
+  }
+
+  class MediaCatalogFacade {
+    +IMAGE_MODEL_SPECS
+    +VIDEO_MODEL_SPECS
+    +AUDIO_MODEL_SPECS
+    +mediaModels(kind) CatalogRow[]
+    +mediaModelIds(kind) string[]
+    +findMediaModel(kind, id) CatalogRow
+    note: "rows derived from projection; top-level throw on contract failure; no legacy fallback"
+  }
+
+  class TextCatalogFacade {
+    +CHAT_MODELS
+    +CHAT_MODEL_IDS
+    +parseTextConfig(value) TextConfig
+    +enabledTextModels(text, gate) rows
+    +resolveTextRoute(req, text, env, gate) route
+    note: "CHAT_MODELS derived from contract; config parse kept"
+  }
+
+  class ContractIndex {
+    +string schemaVersion
+    +string contentFingerprint
+    +string[] listedOperations
+    +Map~string,ModelContract~ byId
+    +get(id) ModelContract
+    +resolveModelId(aliasOrId) string
+    +byOutputType(t) ModelContract[]
+  }
+
+  class CoverageAuditor {
+    +diff(runtimeIds, index, dispositions) CoverageReport
+    +strictFailures(report) Issue[]
+    note: "H2 strict: disposition-driven D1-D7; extra=0; undisposed missing=0; forbidden listed=0"
+  }
+
+  class AdmissionGate {
+    +check(index, registry, profiles) AdmissionReport
+  }
+
+  CatalogProjector --> ContractIndex : reads
+  CatalogProjector --> DispositionsRegistry : governance fields
+  CatalogProjector --> CatalogDefaults : defaultsByOperation
+  CatalogProjector --> CatalogV11 : builds
+  CatalogV11 o-- CatalogModelDto
+  BuildModelCatalog --> CatalogProjector : delegates
+  MediaCatalogFacade ..> CatalogProjector : derived rows
+  TextCatalogFacade ..> CatalogProjector : derived rows
+  CoverageAuditor --> DispositionsRegistry : D1-D7 checks
+  CoverageAuditor --> ContractIndex : listedOperations
+  DispositionsRegistry --> DispositionRow

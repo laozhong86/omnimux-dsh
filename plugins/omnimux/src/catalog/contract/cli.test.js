@@ -81,7 +81,7 @@ test('runVerify usage error JSON is pure JSON (stdout)', async () => {
   }
 });
 
-test('runVerify audit ok; strict fails coverage only', async () => {
+test('runVerify audit ok; strict ok with 43 dispositions resolved', async () => {
   const silent = () => true;
   const out = process.stdout.write;
   const err = process.stderr.write;
@@ -91,18 +91,19 @@ test('runVerify audit ok; strict fails coverage only', async () => {
     const audit = await cli.runVerify({ mode: 'audit', strict: false, json: false });
     assert.equal(audit.exitCode, 0, JSON.stringify(audit.admission));
     assert.equal(audit.ok, true);
-    assert.deepEqual(audit.listedOperations, []);
+    assert.ok(audit.listedOperations.length > 0, 'H2 lists evidence-backed ops');
     assert.equal(audit.admission.errorCount, 0);
     assert.equal(audit.schemaVersion, '1.1');
     assert.equal(Object.prototype.hasOwnProperty.call(audit, 'version'), false);
 
     const strict = await cli.runVerify({ mode: 'strict', strict: true, json: false });
-    assert.equal(strict.exitCode, 1);
-    assert.equal(strict.ok, false);
+    assert.equal(strict.exitCode, 0, JSON.stringify(strict.issues.filter((i) => i.level === 'error')));
+    assert.equal(strict.ok, true);
     assert.equal(strict.admission.errorCount, 0);
     assert.equal(strict.schemaVersion, '1.1');
-    assert.ok(strict.issues.some((i) => i.code === 'coverage_missing' && i.level === 'error'));
-    assert.ok(strict.issues.every((i) => i.level !== 'error' || i.code === 'coverage_missing'));
+    assert.equal(strict.dispositions.total, 43);
+    assert.deepEqual(strict.dispositions.unresolvedDispositions, []);
+    assert.deepEqual(strict.coverage.extraInYaml, []);
   } finally {
     process.stdout.write = out;
     process.stderr.write = err;
@@ -124,7 +125,9 @@ test('runVerify JSON report exposes schemaVersion only (no root version)', async
     const parsed = JSON.parse(chunks.join(''));
     assert.equal(parsed.schemaVersion, '1.1');
     assert.equal(Object.prototype.hasOwnProperty.call(parsed, 'version'), false);
-    assert.deepEqual(parsed.listedOperations, []);
+    assert.ok(Array.isArray(parsed.listedOperations));
+    assert.ok(parsed.listedOperations.length > 0);
+    assert.equal(parsed.dispositions.total, 43);
   } finally {
     process.stdout.write = origWrite;
     process.stderr.write = origErr;

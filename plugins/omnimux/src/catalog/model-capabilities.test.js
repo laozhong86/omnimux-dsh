@@ -9,6 +9,7 @@ import {
   verifyContracts,
   DEFAULT_SPECS_DIR,
 } from './contract/index.js';
+import { loadDispositions, forbiddenListedIds } from './contract/dispositions.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SPECS_DIR = join(__dirname, 'specs');
@@ -37,29 +38,72 @@ test('MCC 契约门禁: 视频模型能力声明文件完备性（contract loade
   assert.ok(!seedanceOps.includes('first_last_frame'), 'Seedance 严禁包含首尾帧模式');
 });
 
-test('H1 real specs listedOperations must be empty', () => {
+test('H2: 处置表 43 行 + listed 集合与处置一致', () => {
   resetContractCache();
   const index = loadAll(DEFAULT_SPECS_DIR, { useCache: false });
   assert.equal(index.schemaVersion, '1.1');
-  assert.deepEqual(index.listedOperations ?? [], []);
+
+  const doc = loadDispositions();
+  assert.equal(doc.dispositions.length, 43);
+  const byId = new Map(doc.dispositions.map((r) => [r.id, r]));
+  const forbidden = forbiddenListedIds(doc);
+
   for (const model of index.all()) {
-    assert.equal(model.listed, false, model.id);
+    const row = byId.get(model.id);
+    assert.ok(row, `model ${model.id} must have a disposition row`);
+    if (forbidden.has(model.id)) {
+      assert.deepEqual(model.listedOperations ?? [], [], `${model.id} must not list (disposition ${row.disposition})`);
+    }
     for (const op of model.operations) {
-      assert.equal(op.listed, false, `${model.id}#${op.id}`);
-      assert.ok(op.research?.status, `${model.id}#${op.id} research`);
-      assert.ok(op.execution?.status, `${model.id}#${op.id} execution`);
-      // H1: no verified+live pair on real specs
-      const verifiedLive =
-        op.research.status === 'verified' && op.execution.status === 'live';
-      assert.equal(verifiedLive, false, `${model.id}#${op.id} must not be verified+live in H1`);
+      // verified+live pair requires the op to actually be listed (profile + contract complete)
+      const verifiedLive = op.research.status === 'verified' && op.execution.status === 'live';
+      if (verifiedLive) {
+        assert.equal(op.listed, true, `${model.id}#${op.id} verified+live should be listed`);
+        assert.ok(op.research.docUrl, `${model.id}#${op.id} verified requires docUrl`);
+        assert.ok(op.research.verifiedAt, `${model.id}#${op.id} verified requires verifiedAt`);
+      }
     }
   }
 
-  const report = verifyContracts({ strict: false });
-  assert.equal(report.ok, true);
+  // Batch A: exactly the evidence-backed media ops are listed
+  assert.ok(index.listedOperations.includes('seedance-2-0-fast#text_to_video'));
+  assert.ok(index.listedOperations.includes('gpt-image-2#text_to_image'));
+  assert.ok(index.listedOperations.includes('grok-imagine-image#text_to_image'));
+  // Batch A 白名单外：同模型其它 op 不得 listed
+  assert.ok(!index.listedOperations.includes('seedance-2-0-fast#first_frame'));
+  assert.ok(!index.listedOperations.includes('seedance-2-0-fast#video_multi_ref'));
+  assert.ok(!index.listedOperations.includes('gpt-image-2#multi_reference'));
+  // audio 无 listed（suno/tts draft；whisper unavailable）
+  assert.ok(!index.listedOperations.some((key) => key.startsWith('suno#')));
+  assert.ok(!index.listedOperations.some((key) => key.startsWith('whisper-1#')));
+  assert.ok(!index.listedOperations.some((key) => key.startsWith('kling-avatar#')));
+
+  const report = verifyContracts({ strict: true });
+  assert.equal(report.ok, true, JSON.stringify(report.issues.filter((i) => i.level === 'error'), null, 2));
   assert.equal(report.schemaVersion, '1.1');
   assert.equal(Object.prototype.hasOwnProperty.call(report, 'version'), false);
-  assert.deepEqual(report.listedOperations, []);
+  assert.ok(report.listedOperations.length > 0);
+  assert.equal(report.dispositions.total, 43);
+  assert.deepEqual(report.dispositions.unresolvedDispositions, []);
+});
+
+test('H2: 冲突限制取更严（policy_conservative）写入契约', () => {
+  resetContractCache();
+  const index = loadAll(DEFAULT_SPECS_DIR, { useCache: false });
+
+  const grokVideo = index.get('grok-imagine-video-1-5');
+  const grokMultiRef = grokVideo.operations.find((op) => op.id === 'video_multi_ref');
+  const grokRefSlot = grokMultiRef.inputs.find((s) => s.type === 'image');
+  assert.equal(grokRefSlot.max, 1, 'Grok video 参考图验证前取更严 max:1');
+  assert.equal(grokRefSlot.limitSource?.kind, 'policy_conservative');
+
+  for (const id of ['seedance-2-0-fast', 'seedance-2-5']) {
+    const model = index.get(id);
+    const multiRef = model.operations.find((op) => op.id === 'video_multi_ref');
+    const slot = multiRef.inputs.find((s) => s.type === 'image');
+    assert.equal(slot.max, 1, `${id} multi-ref 验证前单图/首帧`);
+    assert.equal(slot.limitSource?.kind, 'policy_conservative');
+  }
 });
 
 test('real specs load via DEFAULT_SPECS_DIR with canonical schemaVersion', () => {
@@ -70,4 +114,8 @@ test('real specs load via DEFAULT_SPECS_DIR with canonical schemaVersion', () =>
   assert.ok(index.get('suno'));
   assert.ok(index.get('gpt-image-2'));
   assert.ok(index.get('whisper-1'));
+  // extra ghost ids deleted
+  assert.equal(index.get('deepseek-v3'), undefined);
+  assert.equal(index.get('deepseek-r1'), undefined);
+  assert.equal(index.get('gpt-4o'), undefined);
 });

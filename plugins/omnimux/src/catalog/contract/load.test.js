@@ -34,7 +34,9 @@ test('loadAll real specs: 4 files merge without parse errors', () => {
   assert.ok(index.get('whisper-1'));
   assert.ok(index.contentFingerprint);
   assert.equal(index.contentFingerprint.length, 16);
-  assert.deepEqual(index.listedOperations ?? [], []);
+  // H2: evidence-backed ops are listed (Batch A + dated text chat/vision_chat)
+  assert.ok(index.listedOperations.length > 0);
+  assert.ok(index.listedOperations.includes('seedance-2-0-fast#text_to_video'));
   // formal specs must not produce schemaVersion admission errors
   assert.ok(
     !(index.issues ?? []).some(

@@ -55,7 +55,7 @@ jobs:
         run: |
           node --test scripts/auto-pipeline.test.mjs scripts/check-tracked-artifacts.test.mjs
 
-      - name: Verify model contracts (admission-strict, coverage-audit)
+      - name: Verify model contracts (admission + dispositions strict)
         run: |
           set -euo pipefail
           # Isolate yaml install: full monorepo pnpm install needs local file: dsh-ui-kit.
@@ -77,10 +77,10 @@ jobs:
           if [[ -e "${YAML_LINK}" && ! -L "${YAML_LINK}" ]]; then
             export NODE_PATH="${TMP}/node_modules${NODE_PATH:+:$NODE_PATH}"
             YAML_LINK=""
-            node scripts/verify-model-contracts.mjs --audit
+            node scripts/verify-model-contracts.mjs --strict
           else
             ln -sfn "$TMP/node_modules/yaml" "${YAML_LINK}"
-            node scripts/verify-model-contracts.mjs --audit
+            node scripts/verify-model-contracts.mjs --strict
           fi
 
       - name: Rebuild omnimux-workflow host bundle from src

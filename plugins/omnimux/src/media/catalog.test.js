@@ -1,8 +1,17 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { AUDIO_MODEL_SPECS, IMAGE_MODEL_SPECS, VIDEO_MODEL_SPECS, findMediaModel } from './catalog.js'
+import { AUDIO_MODEL_SPECS, IMAGE_MODEL_SPECS, VIDEO_MODEL_SPECS, findMediaModel, mediaModelIds } from './catalog.js'
 
-describe('hub media catalog tables', () => {
+// H2 facade: SPECS tables are projections of the YAML contracts (full
+// directory semantics — contracted models, listed or not). No hardcoded rows.
+
+describe('hub media catalog facade (contract-derived)', () => {
+  it('projects the full contracted directory per kind', () => {
+    assert.equal(IMAGE_MODEL_SPECS.length, 12) // 14 runtime − 2 hyphen aliases folded
+    assert.equal(VIDEO_MODEL_SPECS.length, 15)
+    assert.equal(AUDIO_MODEL_SPECS.length, 3)
+  })
+
   it('GPT Image 2 only lists auto, 1:1, 16:9, 9:16 aspect ratios', () => {
     const gpt = IMAGE_MODEL_SPECS.find((m) => m.id === 'gpt-image-2')
     assert.ok(gpt)
@@ -18,6 +27,15 @@ describe('hub media catalog tables', () => {
     assert.ok(ratioValues?.includes('4:3'))
     assert.ok(ratioValues?.includes('21:9'))
     assert.ok(ratioValues?.includes('16:9'))
+  })
+
+  it('nanobanana: underscore canonical only; hyphen resolves via alias (no double row)', () => {
+    assert.equal(IMAGE_MODEL_SPECS.some((row) => row.id === 'nanobanana-2'), false)
+    assert.equal(IMAGE_MODEL_SPECS.some((row) => row.id === 'nanobanana-pro'), false)
+    assert.ok(IMAGE_MODEL_SPECS.some((row) => row.id === 'nano_banana_2'))
+    assert.ok(IMAGE_MODEL_SPECS.some((row) => row.id === 'nano_banana_pro'))
+    assert.equal(findMediaModel('image', 'nanobanana-2')?.id, 'nano_banana_2')
+    assert.equal(findMediaModel('image', 'nanobanana-pro')?.id, 'nano_banana_pro')
   })
 
   it('Kling O3 supports 5/10/15s and 4K', () => {
@@ -50,6 +68,20 @@ describe('hub media catalog tables', () => {
     assert.equal(findMediaModel('video', 'grok-imagine-video-1-5')?.id, 'grok-imagine-video-1-5')
   })
 
+  it('Grok video multi-ref reconciled to the stricter max 1 (policy_conservative)', () => {
+    const grok = VIDEO_MODEL_SPECS.find((m) => m.id === 'grok-imagine-video-1-5')
+    const multiRef = grok && findOpSlots(grok)
+    assert.ok(multiRef)
+    assert.equal(multiRef.max, 1)
+  })
+
+  it('Seedance multi-ref reconciled to the stricter max 1', () => {
+    const fast = VIDEO_MODEL_SPECS.find((m) => m.id === 'seedance-2-0-fast')
+    const slot = fast && findOpSlots(fast)
+    assert.ok(slot)
+    assert.equal(slot.max, 1)
+  })
+
   it('Wan 3.0 video spec and alias lookup', () => {
     const wan3 = VIDEO_MODEL_SPECS.find((m) => m.id === 'wan-3.0')
     assert.ok(wan3)
@@ -63,6 +95,11 @@ describe('hub media catalog tables', () => {
   it('audio table includes suno and gpt-4o-mini-tts', () => {
     assert.ok(findMediaModel('audio', 'suno'))
     assert.ok(AUDIO_MODEL_SPECS.some((row) => row.id === 'gpt-4o-mini-tts'))
+  })
+
+  it('mediaModelIds matches the table rows', () => {
+    assert.deepEqual(mediaModelIds('image'), IMAGE_MODEL_SPECS.map((row) => row.id))
+    assert.deepEqual(mediaModelIds('audio'), AUDIO_MODEL_SPECS.map((row) => row.id))
   })
 
   it('model row labels never contain ASCII hyphen-minus', () => {
@@ -82,3 +119,8 @@ describe('hub media catalog tables', () => {
     assert.equal(findMediaModel('audio', 'gpt-4o-mini-tts')?.label, 'GPT 4o Mini TTS')
   })
 })
+
+/** Locate the merged referenceImages capability of a projected row. */
+function findOpSlots(row) {
+  return row.inputCapability?.referenceImages ?? null
+}

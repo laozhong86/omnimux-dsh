@@ -1,12 +1,29 @@
 import { createHash } from 'node:crypto'
 import { isMediaEnabled } from '../gate/guard.js'
-import { AUDIO_MODEL_SPECS, IMAGE_MODEL_SPECS, VIDEO_MODEL_SPECS } from '../media/catalog.js'
 import { DEFAULT_MEDIA } from '../media/route.js'
-import { DEFAULT_TEXT, CHAT_MODELS, enabledTextModels } from '../text/catalog.js'
+import { DEFAULT_TEXT, enabledTextModels } from '../text/catalog.js'
 import { textModelLabel } from './labels.js'
-import { sortCatalogRows } from './sort.js'
+import {
+  assertContractHealthy,
+  getHealthyContractIndex,
+  projectCatalog,
+} from './project.js'
+import {
+  loadDispositions,
+  loadCatalogDefaults,
+  validateDispositionsShape,
+} from './contract/dispositions.js'
+import { CANONICAL_SCHEMA_VERSION } from './contract/schema.js'
 
 export const CATALOG_KINDS = Object.freeze(['text', 'image', 'video', 'audio'])
+
+/** Primary operation per catalog kind, used to read catalog-defaults.byOperation. */
+const KIND_PRIMARY_OP = Object.freeze({
+  text: 'chat',
+  image: 'text_to_image',
+  video: 'text_to_video',
+  audio: 'text_to_music',
+})
 
 export const ENV_DEFAULT_KEYS = Object.freeze({
   text: 'OMNIMUX_TEXT_DEFAULT_MODEL',
@@ -23,12 +40,18 @@ export const SETTINGS_DEFAULT_KEYS = Object.freeze({
 })
 
 /**
+ * Catalog v1.1: the contract projection is the authority (models[] + four
+ * lists derived from visible ops' output.type). Fail-closed: any contract
+ * parse/admission/dispositions failure throws; there is no legacy table to
+ * fall back to.
+ *
  * @param {object} [opts]
  * @param {ReturnType<typeof import('../text/catalog.js').parseTextConfig>} [opts.text]
  * @param {ReturnType<typeof import('../media/route.js').parseMediaConfig>} [opts.media]
  * @param {object} [opts.gate]
  * @param {Record<string, string | undefined>} [opts.env]
  * @param {Record<string, unknown>} [opts.settingsDefaults]
+ * @param {object} [opts.contractIndex] internal test seam: inject a preloaded index
  */
 export function buildModelCatalog(opts = {}) {
   const text = opts.text ?? DEFAULT_TEXT
@@ -39,22 +62,29 @@ export function buildModelCatalog(opts = {}) {
     ? opts.settingsDefaults
     : {}
 
-  const chatMap = new Map(CHAT_MODELS.map((row) => [row.id, row]))
-  const textRows = enabledTextModels(text, gate).map((row) => {
-    const chat = chatMap.get(row.id)
-    return {
-      id: row.id,
-      label: textModelLabel(row.id),
-      family: row.brand,
-      inputCapability: chat?.inputCapability,
-    }
-  })
+  const index = opts.contractIndex
+    ? assertContractHealthy(opts.contractIndex)
+    : getHealthyContractIndex()
+  const dispositionsDoc = loadDispositions()
+  const dispositionShapeIssues = validateDispositionsShape(dispositionsDoc)
+  if (dispositionShapeIssues.length > 0) {
+    const first = dispositionShapeIssues[0]
+    throw new Error(`model dispositions invalid: ${first.code} ${first.path ?? ''}: ${first.message}`)
+  }
+  const defaultsCfg = loadCatalogDefaults()
+  const dto = projectCatalog(index, dispositionsDoc, defaultsCfg)
+
+  // Text bucket: projected listed rows ∩ config/gate-enabled directory rows.
+  const enabledTextIds = new Set(enabledTextModels(text, gate).map((row) => row.id))
+  const textRows = dto.text
+    .filter((row) => enabledTextIds.has(row.id))
+    .map((row) => ({ ...row, label: textModelLabel(row.id) }))
 
   const lists = {
-    text: sortCatalogRows(textRows),
-    image: isMediaEnabled(gate, 'image') ? sortCatalogRows(IMAGE_MODEL_SPECS.map(cloneRow)) : [],
-    video: isMediaEnabled(gate, 'video') ? sortCatalogRows(VIDEO_MODEL_SPECS.map(cloneRow)) : [],
-    audio: isMediaEnabled(gate, 'audio') ? sortCatalogRows(AUDIO_MODEL_SPECS.map(cloneRow)) : [],
+    text: textRows,
+    image: isMediaEnabled(gate, 'image') ? dto.image : [],
+    video: isMediaEnabled(gate, 'video') ? dto.video : [],
+    audio: isMediaEnabled(gate, 'audio') ? dto.audio : [],
   }
 
   const configDefaults = {
@@ -73,20 +103,39 @@ export function buildModelCatalog(opts = {}) {
   }
   for (const kind of CATALOG_KINDS) {
     const ids = new Set(lists[kind].map((row) => row.id))
+    // env > settings > config > byOperation primary-op default > first row
+    const byOpDefault = dto.defaultsByOperation[KIND_PRIMARY_OP[kind]]
+    const fallback = typeof byOpDefault === 'string' && ids.has(byOpDefault)
+      ? byOpDefault
+      : lists[kind][0]?.id ?? ''
     defaults[kind] = resolveDefault({
       kind,
       ids,
       env,
       settingsDefaults,
       configDefault: configDefaults[kind],
-      fallback: lists[kind][0]?.id ?? '',
+      fallback,
     })
   }
 
   return {
+    schemaVersion: CANONICAL_SCHEMA_VERSION,
     source: 'omnimux',
-    fingerprint: fingerprintOf(lists, defaults),
+    fingerprint: fingerprintOf(lists, defaults, {
+      schemaVersion: CANONICAL_SCHEMA_VERSION,
+      contractFingerprint: index.contentFingerprint,
+      listedOperations: index.listedOperations ?? [],
+      defaultsByOperation: dto.defaultsByOperation,
+      dispositions: (dispositionsDoc.dispositions ?? []).map((row) => [
+        row?.id,
+        row?.disposition,
+        row?.target ?? null,
+      ]),
+    }),
+    contractFingerprint: index.contentFingerprint,
+    models: dto.models,
     defaults,
+    defaultsByOperation: dto.defaultsByOperation,
     text: lists.text,
     image: lists.image,
     video: lists.video,
@@ -118,22 +167,43 @@ function trimId(value) {
   return typeof value === 'string' && value.trim() ? value.trim() : ''
 }
 
-/** @param {object} row */
-function cloneRow(row) {
-  return structuredClone(row)
-}
-
 /**
+ * H2: contract-sensitive fingerprint. With `contract` context the input is
+ * contractFingerprint + listedOperations + defaults + defaultsByOperation +
+ * dispositions + schemaVersion (+ the projected list ids) — changing any
+ * MIME/count/size/duration/op/output/admission/disposition moves it.
+ * Legacy two-arg calls (lists + defaults only) stay deterministic (compat
+ * overload for old callers).
+ *
  * @param {{ text: Array<{ id: string }>, image: Array<{ id: string }>, video: Array<{ id: string }>, audio: Array<{ id: string }> }} lists
  * @param {{ text: string, image: string, video: string, audio: string }} defaults
+ * @param {{
+ *   schemaVersion: string,
+ *   contractFingerprint: string,
+ *   listedOperations: string[],
+ *   defaultsByOperation: Record<string, string>,
+ *   dispositions: unknown[],
+ * }} [contract]
  */
-export function fingerprintOf(lists, defaults) {
-  const payload = JSON.stringify({
+export function fingerprintOf(lists, defaults, contract) {
+  const listIds = {
     text: lists.text.map((row) => row.id),
     image: lists.image.map((row) => row.id),
     video: lists.video.map((row) => row.id),
     audio: lists.audio.map((row) => row.id),
-    defaults,
-  })
+  }
+  const payload = JSON.stringify(
+    contract && typeof contract === 'object'
+      ? {
+          schemaVersion: contract.schemaVersion,
+          contractFingerprint: contract.contractFingerprint,
+          listedOperations: [...(contract.listedOperations ?? [])].sort(),
+          defaultsByOperation: contract.defaultsByOperation ?? {},
+          dispositions: contract.dispositions ?? [],
+          lists: listIds,
+          defaults,
+        }
+      : { ...listIds, defaults },
+  )
   return createHash('sha256').update(payload).digest('hex').slice(0, 16)
 }

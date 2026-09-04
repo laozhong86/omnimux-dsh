@@ -1,0 +1,279 @@
+{
+  "version": "1.0.0",
+  "dispositions": [
+    {
+      "id": "seedance-2-0-fast",
+      "disposition": "canonical",
+      "batch": "A",
+      "reason": "命中 runtime；t2v 主路径；仓内 dated live 证据覆盖 text_to_video",
+      "evidence": [
+        "docs/evidence/2026-08-14-omnimux-video.md"
+      ],
+      "notes": "Batch A 仅 text_to_video 上架；first_frame/video_multi_ref 另证保持 draft；multi-ref 保守单图"
+    },
+    {
+      "id": "gpt-image-2",
+      "disposition": "canonical",
+      "batch": "A",
+      "reason": "命中 runtime；仓内 dated live 证据覆盖 text_to_image",
+      "evidence": [
+        "docs/evidence/2026-08-16-omnimux-image.md"
+      ],
+      "notes": "Batch A 仅 text_to_image 上架；multi_reference 另证保持 draft"
+    },
+    {
+      "id": "grok-imagine-image",
+      "disposition": "canonical",
+      "batch": "A",
+      "reason": "命中 runtime；仓内 dated live 证据覆盖 text_to_image",
+      "evidence": [
+        "docs/evidence/2026-08-16-omnimux-image.md"
+      ],
+      "notes": "Batch A 仅 text_to_image 上架；multi_reference 另证保持 draft"
+    },
+    {
+      "id": "claude-opus-5",
+      "disposition": "canonical",
+      "reason": "runtime CHAT_MODELS + cordis composer 在列；chat 有 dated 证据（/v1/messages 200）",
+      "evidence": [
+        "docs/evidence/2026-08-18-omnimux-modality.md"
+      ],
+      "notes": "chat-completions group 403，保持 text-only；vision_chat 不声明"
+    },
+    {
+      "id": "claude-opus-4-6",
+      "disposition": "canonical",
+      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "evidence": [
+        "docs/evidence/2026-08-23-omnimux-brand-four.md"
+      ]
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "disposition": "canonical",
+      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "evidence": [
+        "docs/evidence/2026-08-18-omnimux-modality.md"
+      ]
+    },
+    {
+      "id": "gpt-5.5",
+      "disposition": "canonical",
+      "reason": "runtime + cordis 在列；chat dated 证据（brand-four）+ vision dated 证据（modality image-only probe）",
+      "evidence": [
+        "docs/evidence/2026-08-18-omnimux-modality.md",
+        "docs/evidence/2026-08-23-omnimux-brand-four.md"
+      ]
+    },
+    {
+      "id": "grok-4.6",
+      "disposition": "canonical",
+      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "evidence": [
+        "docs/evidence/2026-08-18-omnimux-modality.md"
+      ]
+    },
+    {
+      "id": "kimi-k3",
+      "disposition": "canonical",
+      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "evidence": [
+        "docs/evidence/2026-08-18-omnimux-modality.md"
+      ]
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "disposition": "canonical",
+      "reason": "runtime + cordis 在列；chat dated 证据；上游拒绝 image_url 保持 text-only",
+      "evidence": [
+        "docs/evidence/2026-08-18-omnimux-modality.md",
+        "docs/evidence/2026-08-20-omnimux-reasoning.md"
+      ]
+    },
+    {
+      "id": "deepseek-v4-flash-vision-exp",
+      "disposition": "canonical",
+      "reason": "runtime + cordis 在列；产品默认 agent 模型；chat dated 证据（reasoning 矩阵 HTTP 200）",
+      "evidence": [
+        "docs/evidence/2026-08-20-omnimux-reasoning.md"
+      ],
+      "notes": "vision_chat 保持 draft：modality 矩阵实测 deepseek-v4-flash 拒绝 image_url，vision-exp 变体无独立 dated 图证据"
+    },
+    {
+      "id": "gemini-3.7-flash",
+      "disposition": "canonical",
+      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "evidence": [
+        "docs/evidence/2026-08-18-omnimux-modality.md"
+      ],
+      "notes": "vision_chat 含 video 槽（2026-08-22 spike），slot 上限 policy_conservative"
+    },
+    {
+      "id": "gemini-3.1-pro-preview",
+      "disposition": "canonical",
+      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "evidence": [
+        "docs/evidence/2026-08-23-omnimux-brand-four.md"
+      ]
+    },
+    {
+      "id": "glm-5.3",
+      "disposition": "canonical",
+      "reason": "runtime + cordis 在列；chat dated 证据；上游仅允许 text 保持 text-only",
+      "evidence": [
+        "docs/evidence/2026-08-18-omnimux-modality.md"
+      ]
+    },
+    {
+      "id": "seedance-2-5",
+      "disposition": "canonical",
+      "reason": "命中 runtime；H1 已有契约；无独立 dated live 证据保持 draft",
+      "notes": "video_multi_ref 保守 max1（policy_conservative），不承诺 max4"
+    },
+    {
+      "id": "seedance-2-0",
+      "disposition": "canonical",
+      "reason": "命中 runtime；H1 已有契约；无独立 dated live 证据保持 draft"
+    },
+    {
+      "id": "kling-v3",
+      "disposition": "canonical",
+      "reason": "命中 runtime；H1 已有契约；无独立 dated live 证据保持 draft"
+    },
+    {
+      "id": "kling-v2-6",
+      "disposition": "canonical",
+      "reason": "命中 runtime；H1 已有契约；无独立 dated live 证据保持 draft"
+    },
+    {
+      "id": "veo-3.1",
+      "disposition": "canonical",
+      "reason": "命中 runtime；H1 已有契约；无独立 dated live 证据保持 draft"
+    },
+    {
+      "id": "grok-imagine-video-1-5",
+      "disposition": "canonical",
+      "reason": "命中 runtime；H1 已有契约；无独立 dated live 证据保持 draft",
+      "notes": "video_multi_ref 参考图取更严 max:1（policy_conservative），待 dated 复测放宽"
+    },
+    {
+      "id": "wan-3.0",
+      "disposition": "canonical",
+      "reason": "命中 runtime；H1 已有契约；无独立 dated live 证据保持 draft"
+    },
+    {
+      "id": "suno",
+      "disposition": "canonical",
+      "reason": "命中 runtime；H1 已有契约；YAML 已声明 ≠ live，无 dated 证据保持 draft"
+    },
+    {
+      "id": "gpt-4o-mini-tts",
+      "disposition": "canonical",
+      "reason": "命中 runtime；H1 已有契约；无 dated 证据保持 draft"
+    },
+    {
+      "id": "gpt-image2-hd",
+      "disposition": "draft",
+      "reason": "runtime 存在；H2 补合法契约占位；证据不足不上架"
+    },
+    {
+      "id": "grok-imagine-image-quality",
+      "disposition": "draft",
+      "reason": "runtime 存在；H2 补合法契约占位；证据不足不上架"
+    },
+    {
+      "id": "midjourney",
+      "disposition": "draft",
+      "reason": "runtime 存在；H2 补合法契约占位；证据不足不上架"
+    },
+    {
+      "id": "midjourney-8.1",
+      "disposition": "draft",
+      "reason": "runtime 存在；H2 补合法契约占位；证据不足不上架"
+    },
+    {
+      "id": "midjourney-7",
+      "disposition": "draft",
+      "reason": "runtime 存在；H2 补合法契约占位；证据不足不上架"
+    },
+    {
+      "id": "midjourney-niji-7",
+      "disposition": "draft",
+      "reason": "runtime 存在；H2 补合法契约占位；证据不足不上架"
+    },
+    {
+      "id": "nano_banana_2",
+      "disposition": "canonical",
+      "reason": "runtime 存在（underscore canonical）；tokens-flow 403 修复中；契约行完整；证据不足不上架（draft 级研究状态）",
+      "notes": "hyphen 形 nanobanana-2 为 alias，禁止双列"
+    },
+    {
+      "id": "nano_banana_pro",
+      "disposition": "canonical",
+      "reason": "runtime 存在（underscore canonical）；契约行完整；证据不足不上架（draft 级研究状态）",
+      "notes": "hyphen 形 nanobanana-pro 为 alias，禁止双列"
+    },
+    {
+      "id": "seedream-5.0-pro",
+      "disposition": "draft",
+      "reason": "runtime 存在；H2 补合法契约占位；证据不足不上架"
+    },
+    {
+      "id": "seedream-4.5",
+      "disposition": "draft",
+      "reason": "runtime 存在；H2 补合法契约占位；证据不足不上架"
+    },
+    {
+      "id": "seedance2.5-stable-max-720p",
+      "disposition": "draft",
+      "reason": "runtime 存在；H2 补合法契约占位；证据不足不上架"
+    },
+    {
+      "id": "veo-3.1-fast",
+      "disposition": "draft",
+      "reason": "runtime 存在；H2 补合法契约占位；证据不足不上架"
+    },
+    {
+      "id": "nanobanana-2",
+      "disposition": "alias",
+      "target": "nano_banana_2",
+      "reason": "hyphen→underscore 归一；禁止双列"
+    },
+    {
+      "id": "nanobanana-pro",
+      "disposition": "alias",
+      "target": "nano_banana_pro",
+      "reason": "hyphen→underscore 归一；禁止双列"
+    },
+    {
+      "id": "whisper-1",
+      "disposition": "unavailable",
+      "reason": "无 speechToText live seam；audio→text 不上架；画布目录不得列出"
+    },
+    {
+      "id": "kling-avatar",
+      "disposition": "unavailable",
+      "reason": "digital_human 需 audio；video mapper 丢 audioTrack；执行未闭环；画布目录不得列出"
+    },
+    {
+      "id": "omni_flash",
+      "disposition": "quarantine",
+      "reason": "内部/不明 SKU；无官方/执行证据"
+    },
+    {
+      "id": "kling-o1",
+      "disposition": "quarantine",
+      "reason": "无官方/执行证据"
+    },
+    {
+      "id": "kling-o3",
+      "disposition": "quarantine",
+      "reason": "无官方/执行证据"
+    },
+    {
+      "id": "kling-v3-motion-control",
+      "disposition": "quarantine",
+      "reason": "无官方/执行证据"
+    }
+  ]
+}

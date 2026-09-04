@@ -210,6 +210,17 @@ UI 必须可解释；**Hide, Don't Grey**。
 | H2 | 逐 operation 补证上架；runtime limits/mapper 对账（冲突取更严）；`buildModelCatalog` 切契约投影；coverage **strict** |
 | 画布 | 消费 `modelCatalog` 目录缝；兼容判定按 listed operation；禁止 BUILTIN 第二真源长期并存 |
 
+### 6.1 H2 落地（#465，2026-09-04）
+
+- **处置表机器真源**：`plugins/omnimux/src/catalog/contract/dispositions.json` 覆盖全部 **43** 个 runtime ID（契约 model.id + wire alias 归一宇宙），每行一个治理处置 + 必填 `reason`。处置枚举：`canonical`（契约行完整）/ `draft`（合法占位、证据不足不上架）/ `alias`（须 `target` 指向表内 canonical 行）/ `unavailable` / `deprecated` / `quarantine`。处置只表达治理意图；**上架与否仍由 op 级五元判定**（verified+live 不是处置值）。
+- **一致性规则 D1–D7**（`dispositions.js`，`--strict` 下全部 error）：runtime ID 无处置行（`disposition_missing`）；canonical/draft 缺契约行（`disposition_contract_missing`）；alias 双列/target 未声明（`disposition_alias_inconsistent`）；禁上架集合出现 listed op（`disposition_listed_forbidden`）；幽灵处置行（`disposition_unknown_id`）；extra YAML 未清理（`coverage_extra`，H2 升级为 strict error）；`catalog-defaults.json` `byOperation` 指向非 canonical 或不存在 op（`defaults_unknown`）。机器真源 shape 错误（`disposition_invalid` / `defaults_invalid` / cordis 读取失败）在 `--audit` 下也失败。
+- **43 处置结论**：Batch A 三键（`seedance-2-0-fast#text_to_video`、`gpt-image-2#text_to_image`、`grok-imagine-image#text_to_image`）凭仓内 dated live 证据（`docs/evidence/2026-08-14-omnimux-video.md`、`2026-08-16-omnimux-image.md`）verified+live；text chat/vision_chat 按 `2026-08-18-omnimux-modality.md` / `2026-08-20-omnimux-reasoning.md` / `2026-08-23-omnimux-brand-four.md` 逐 op 补证（`claude-opus-5` chat 因 chat-completions group 403 保持 stub 不上架；`deepseek-v4-flash-vision-exp` vision_chat 保持 draft）；`whisper-1` / `kling-avatar` unavailable；`omni_flash` / `kling-o1` / `kling-o3` / `kling-v3-motion-control` quarantine；`nanobanana-2` / `nanobanana-pro` 为 underscore canonical 的 alias（禁止双列）；extra 三 ID（`deepseek-v3` / `deepseek-r1` / `gpt-4o`）无 runtime/wire 引用已删除。
+- **冲突限制取更严**：`grok-imagine-video-1-5` 参考图与 seedance 系 `video_multi_ref` 一律 `max: 1` + `limitSource.kind: policy_conservative`（不承诺官方 max4/max8，待 dated 复测放宽）；无可信来源上限禁止冒充 `official_docs`。
+- **投影切换**：`buildModelCatalog()` 以契约 `models[]` 为权威（Catalog v1.1，含 `schemaVersion`/`contractFingerprint`/`defaultsByOperation`/per-model `disposition`）；四列表（text/image/video/audio）**仅**按可见（listed）op 的 `output.type` 派生——`speech_to_text` 产出 text → 入 text 桶；旧 `media/catalog.js` SPECS / `text/catalog.js` `CHAT_MODELS` 硬编码行已物理删除，改为投影 facade（目录语义，含未上架契约行）；契约/处置表失败**顶层 throw**，无回退路径。
+- **fingerprint**：目录指纹输入 = contract contentFingerprint + listedOperations + defaults + defaultsByOperation + dispositions + schemaVersion；改任一 MIME/数量/大小/时长/op/output/准入/处置必变。
+- **cordis 交叉验证**：composer id 必须 resolve 到契约 canonical/alias（`cordis_unresolvable_model`）；`cordis.patch.yml` 内容不动。
+- **CI 红灯**：根 `verify:model-contracts` 与 quality-gate 均已切 `--strict`；稳态目标 extra=0、未处置 missing=0、禁上架 listed=0；禁止用改回 `--audit` 修复红灯。
+
 相关命令：`pnpm verify:model-contracts`（契约）、`pnpm verify:models`（聊天 patch / 在线存在性，职责不同）。
 
 ## 7. 非目标（指向 PRD / 设计）
