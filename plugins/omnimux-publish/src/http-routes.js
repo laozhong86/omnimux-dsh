@@ -26,6 +26,7 @@ const STATUS_BY_CODE = {
   'not-local': 403,
   'needs-hub': 503,
   'needs-omnimux': 503,
+  'quota-exceeded': 402,
   'hub-tool-error': 502,
   'upload-failed': 502,
   'aborted': 500,

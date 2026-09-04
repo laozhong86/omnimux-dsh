@@ -1,4 +1,6 @@
 import { DEFAULT_SITE, joinUrl } from '../auth/omnimux-auth.js'
+export { hasQuotaEvidence, QUOTA_EXCEEDED_CODE } from '../errors/quota-classifier.js'
+import { hasQuotaEvidence } from '../errors/quota-classifier.js'
 
 /** OmniMux wallet path on the signed-in site. */
 export const WALLET_PATH = '/wallet'
@@ -10,12 +12,7 @@ export const WALLET_PATH = '/wallet'
  */
 export function isQuotaFailure(failure) {
   if (failure === null || typeof failure !== 'object') return false
-  const record = /** @type {{ code?: unknown, message?: unknown }} */ (failure)
-  if (record.code === 'QUOTA') return true
-  const message = typeof record.message === 'string' ? record.message : ''
-  return /\binsufficient[\s_-]+(?:user[\s_-]+)?(?:quota|balance|credits?)\b/i.test(message)
-    || /\b(?:quota|usage[\s_-]+limit)[\s_-]+(?:exceeded|exhausted|reached)\b/i.test(message)
-    || /预扣费额度失败/.test(message)
+  return hasQuotaEvidence(failure)
 }
 
 /**

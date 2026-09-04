@@ -4,6 +4,8 @@ import { ProfileSection } from './ProfileSection.jsx'
 import { DshPluginsSection } from './DshPluginsSection.jsx'
 import { ModelsSettingsCard } from './ModelsSettingsCard.jsx'
 import { LoginGate } from './LoginGate.jsx'
+import { QuotaGate } from './QuotaGate.jsx'
+import { installQuotaGlobal } from './quota-gate.js'
 import { SidebarUpdateAction } from './SidebarUpdateAction.jsx'
 import { getStatusCached } from './api.js'
 import { installHubChrome } from './chrome.js'
@@ -38,6 +40,7 @@ export const inject = ['slots', 'locale']
  */
 export function apply(ctx) {
   const t = installHubChrome(ctx)
+  installQuotaGlobal(typeof window !== 'undefined' ? window : undefined)
   installHeroBrandSlot(ctx, HeroBrandMark)
   installStatsLineShadow(ctx)
   // Optional session warmup: fill the status cache so the first sidebar
@@ -98,6 +101,13 @@ export function apply(ctx) {
     locale: NS,
     inject: () => ({ t }),
   }, LoginGate))
+  ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+    name: 'shell.overlay',
+    id: 'omnimux-quota-gate',
+    order: 31,
+    locale: NS,
+    inject: () => ({ t }),
+  }, QuotaGate))
 
   // 官方侧边栏底部槽位：设置正上方的更新交互栏
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({

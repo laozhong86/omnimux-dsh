@@ -1,0 +1,82 @@
+classDiagram
+    class OmnimuxError {
+      +string code
+      +number status
+      +unknown details
+      +constructor(code, message, options)
+    }
+    class QuotaClassification {
+      +string code
+      +string message
+      +number status
+      +string capability
+      +string correlationId
+      +boolean retryable
+    }
+    class HostErrorClassifier {
+      +classify(status, body, cause) QuotaClassification
+      +hasQuotaEvidence(value) boolean
+      +flattenEvidence(value) string[]
+    }
+    class OfficialClient {
+      +withSk(path, options) Promise
+      +withPat(path, options) Promise
+      +withPatRaw(path, options) Promise~Response~
+      -request(base, path, options) Promise
+    }
+    class MediaJob {
+      +getJson(fetcher, url, key, signal) Promise~object~
+      +downloadMediaFile(options) Promise~void~
+      +preserveFailure(error) OmnimuxError
+    }
+    class HostHttpErrorMapper {
+      +toBody(error) object
+      +send(res, error) void
+    }
+    class QuotaSnapshot {
+      +string phase
+      +QuotaClassification failure
+      +string walletUrl
+      +number cooldownUntil
+    }
+    class QuotaGlobal {
+      +notify(failure, context) boolean
+      +subscribe(listener) function
+      +getSnapshot() QuotaSnapshot
+      +walletUrl() string
+      +openWallet() void
+      +close() void
+    }
+    class QuotaGuard {
+      +wrap(request, context) Promise
+      +handleResult(result, context) result
+      +notifyIfQuota(failure, context) void
+    }
+    class QuotaGate {
+      +render(snapshot) ReactElement
+      +onTopUp() void
+      +onClose() void
+      +onEscape() void
+    }
+    class VerticalApi {
+      +request(path, options) Promise
+      +authGuard(fn) function
+      +quotaGuard(fn) function
+    }
+    class WorkflowSeamClient {
+      +submit(request) Promise
+      +awaitTask(taskId, dest, signal) Promise
+      +toSeamError(error) SeamGatewayError
+    }
+    OmnimuxError <|-- QuotaError
+    HostErrorClassifier --> OmnimuxError : classifies
+    OfficialClient --> HostErrorClassifier : preserves upstream evidence
+    MediaJob --> HostErrorClassifier : preserves status/body
+    HostHttpErrorMapper --> HostErrorClassifier
+    HostHttpErrorMapper --> QuotaClassification
+    QuotaGlobal --> QuotaSnapshot
+    QuotaGuard --> QuotaGlobal : lazy window seam
+    QuotaGate --> QuotaGlobal : subscribe/close/openWallet
+    VerticalApi --> QuotaGlobal : lazy read only
+    WorkflowSeamClient --> OmnimuxError : receives code/message
+    WorkflowSeamClient --> QuotaGlobal : client-triggered event only

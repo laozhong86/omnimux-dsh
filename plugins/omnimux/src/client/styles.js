@@ -961,6 +961,14 @@ export const HUB_CSS = `
   color: var(--dsw-alias-accent-primary, #3b82f6);
 }
 
+.omnimux-quota-gate-backdrop { position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--dsw-alias-bg-mask-1); }
+.omnimux-quota-gate-dialog { position: relative; width: min(420px, calc(100vw - 32px)); padding: 24px; border: 1px solid var(--dsw-alias-border); border-radius: 16px; background: var(--dsw-alias-bg-elevated); color: var(--dsw-alias-label-primary); box-shadow: 0 16px 48px var(--dsw-alias-bg-mask-1); }
+.omnimux-quota-gate-dialog h2 { margin: 0 0 8px; font-size: 20px; }
+.omnimux-quota-gate-dialog p { margin: 0 0 16px; color: var(--dsw-alias-label-secondary); line-height: 1.5; }
+.omnimux-quota-gate-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; }
+.omnimux-quota-gate-icon { display: grid; place-items: center; width: 32px; height: 32px; margin-bottom: 16px; border-radius: 50%; background: var(--dsw-alias-label-warning); color: var(--dsw-alias-bg-elevated); font-weight: 700; }
+.omnimux-quota-gate-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
 /* ── Defensive hiding of official StatsLine in composer dock ── */
 [class*="StatsLine_root"],
 .FJxK0a_root {

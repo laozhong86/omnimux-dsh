@@ -195,6 +195,19 @@ describe('official accounts dispatcher', () => {
     assert.deepEqual(seen, ['POST /api/social/v1/connect', 'DELETE /api/social/v1/accounts/acc-1'])
   })
 
+  it('maps client quota failures to 402', async () => {
+    const message = '当前操作需要更多额度，充值后即可继续使用 OmniMux。'
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client: clientWith(async () => {
+        throw new OmnimuxError('quota-exceeded', message)
+      }),
+    })
+    const result = await dispatcher.dispatch({ method: 'GET', url: '/omnimux/accounts' })
+    assert.equal(result.status, 402)
+    assert.deepEqual(result.body, { error: 'quota-exceeded', message })
+  })
+
   it('maps unsigned calls to 401 and refuses a cross-origin write', async () => {
     const dispatcher = createOfficialDispatcher({
       official: { mount: true },

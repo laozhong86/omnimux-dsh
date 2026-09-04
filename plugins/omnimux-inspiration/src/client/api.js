@@ -21,6 +21,24 @@ export async function inspirationRequest(path, opts = {}) {
  * Wrap a Host call so a 401 pops the hub login gate, then replays once.
  * @param {(...args: any[]) => Promise<{ ok: boolean, status: number, body: any }>} fn
  */
+export function isQuotaHttpResult(result) {
+  if (!result || result.ok) return false
+  if (result.status === 402) return true
+  const err = result.body && typeof result.body === 'object' ? result.body.error : null
+  return err === 'quota-exceeded'
+}
+
+export function notifyQuota(result, context) {
+  const quota = typeof window !== 'undefined' ? window.__omnimuxQuota : undefined
+  if (!quota || typeof quota.notify !== 'function' || !isQuotaHttpResult(result)) return result
+  quota.notify({ status: result.status, body: result.body, code: result.body?.error }, context)
+  return result
+}
+
+export function quotaGuard(fn, context) {
+  return (...args) => Promise.resolve(fn(...args)).then((result) => notifyQuota(result, context))
+}
+
 export function authGuard(fn) {
   return (...args) => {
     const run = async () => {
@@ -100,7 +118,7 @@ export function listInspirations(filters = {}) {
   return inspirationRequest(`/omnimux/inspiration${suffix}`)
 }
 
-export const listInspirationsGuarded = authGuard(listInspirations)
+export const listInspirationsGuarded = quotaGuard(authGuard(listInspirations), { capability: 'inspiration' })
 
 /**
  * Local library calls
@@ -202,9 +220,9 @@ export function importLocalInspiration(payload) {
  */
 export function triggerAnalyzeInspiration(id) {
   invalidateInspirationCache()
-  return inspirationRequest(`/omnimux/inspiration/local/${encodeURIComponent(id)}/analyze`, {
+  return quotaGuard(() => inspirationRequest(`/omnimux/inspiration/local/${encodeURIComponent(id)}/analyze`, {
     method: 'POST',
-  })
+  }), { capability: 'inspiration-analyze' })()
 }
 
 /**
@@ -238,9 +256,10 @@ export function getLocalInspiration(id) {
   return inspirationRequest(`/omnimux/inspiration/local/${encodeURIComponent(id)}`)
 }
 
-export function listTags() {
-  return inspirationRequest('/omnimux/inspiration/tags')
-}
+export const listTags = quotaGuard(
+  () => inspirationRequest('/omnimux/inspiration/tags'),
+  { capability: 'inspiration' },
+)
 
 /**
  * Host-rewritten media path for <img src>. Absolute http(s) URLs pass through.

@@ -1,0 +1,49 @@
+sequenceDiagram
+    participant UI as Client UI
+    participant Guard as quotaGuard
+    participant Host as Host HTTP
+    participant Gate as __omnimuxQuota
+    participant Modal as QuotaGate
+    UI->>Guard: request()
+    Guard->>Host: fetch cloud facade
+    Host-->>Guard: 402 {error: quota-exceeded, message}
+    Guard->>Gate: notify(failure, context)
+    Gate->>Modal: subscribe snapshot
+    Modal-->>UI: show modal
+    UI->>Modal: click 去充值
+    Modal->>Gate: openWallet()
+    Note over Guard,UI: 原请求不自动重试；业务失败态保留
+
+sequenceDiagram
+    participant Canvas as Workflow canvas node
+    participant Hub as ctx.get image/videoGenerate
+    participant Client as Seam client
+    participant Gate as __omnimuxQuota
+    participant Modal as QuotaGate
+    Canvas->>Hub: execute({prompt,dest})
+    Hub-->>Client: throw OmnimuxError(code=quota-exceeded)
+    Client-->>Canvas: SeamGatewayError(quota-exceeded)
+    Canvas-->>Canvas: mark failed + explicit retry
+    Client->>Gate: notify(error, correlationId)
+    Gate->>Modal: dedupe and render one gate
+
+sequenceDiagram
+    participant UI as Client operation
+    participant Auth as __omnimuxAuth
+    participant Host as Host HTTP
+    participant Quota as __omnimuxQuota
+    UI->>Host: request()
+    Host-->>UI: 401 needs-omnimux
+    UI->>Auth: ensureLogin({onSuccess: retryOnce})
+    Auth-->>UI: login success
+    UI->>Host: retry once
+    Host-->>UI: 402 quota-exceeded
+    UI->>Quota: notify(failure)
+    Quota-->>UI: show recharge modal; no further retry
+
+sequenceDiagram
+    participant Agent as Agent tool
+    participant Hub as Hub official/media tool
+    Agent->>Hub: execute()
+    Hub-->>Agent: {code: QUOTA, error: quota-exceeded, retryable:false, message}
+    Note over Agent,Hub: 不触发 __omnimuxQuota，不弹窗
