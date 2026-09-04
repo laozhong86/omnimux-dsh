@@ -1,3 +1,7 @@
+import { createHubEventBus } from '../events/hub-event-bus.js'
+import { createWorkbenchMailbox } from '../workbench/mailbox.js'
+import { registerWorkbenchHttpRoutes } from '../workbench/http-routes.js'
+import { mountWorkbenchTools } from '../workbench/tools.js'
 import { executeOmnimuxAudio } from '../media/audio.js'
 import { executeOmnimuxImage } from '../media/image.js'
 import { executeOmnimuxVideo } from '../media/video.js'
@@ -62,6 +66,11 @@ export function apply(ctx, config = {}) {
   })
   const tabsStore = createTabsStore({ home: homeDir })
 
+  // Initialize in-process HubEventBus and Workbench mailbox
+  const hubEvents = createHubEventBus()
+  const mailbox = createWorkbenchMailbox({ hubEvents })
+  ctx.provide?.('hubEvents', hubEvents)
+
   const listCatalog = () => {
     const settingsService = typeof ctx.get === 'function' ? ctx.get('settings') : undefined
     const settingsDefaults = settingsService && typeof settingsService.get === 'function'
@@ -91,9 +100,20 @@ export function apply(ctx, config = {}) {
     accountAvatarStore,
     avatarStore,
     listCatalog,
+    hubEvents,
+    mailbox,
   })
-  if (typeof ctx.inject === 'function') ctx.inject(['webServer'], mountHttp)
-  else mountHttp(ctx)
+  if (typeof ctx.inject === 'function') {
+    ctx.inject(['webServer'], (httpCtx) => {
+      mountHttp(httpCtx)
+      const server = httpCtx.webServer ?? httpCtx.get?.('webServer')
+      if (server) {
+        registerWorkbenchHttpRoutes(server, { hubEvents, mailbox })
+      }
+    })
+  } else {
+    mountHttp(ctx)
+  }
 
   if (typeof ctx.inject === 'function') {
     ctx.inject(['settings'], (sctx) => {
@@ -136,6 +156,14 @@ export function apply(ctx, config = {}) {
     jsonOut,
     rethrow,
     resolveApiKey: resolveOfficialApiKey,
+  })
+  mountWorkbenchTools(ctx, {
+    mailbox,
+    getSettings: () => {
+      const s = typeof ctx.get === 'function' ? ctx.get('settings') : null
+      return s && typeof s.get === 'function' ? s.get('omnimux') : null
+    },
+    jsonOut,
   })
   if (typeof ctx.provide === 'function') {
     ctx.provide('modelCatalog', { list: listCatalog })

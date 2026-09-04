@@ -1,0 +1,161 @@
+classDiagram
+    direction TB
+
+    class UiContextEnvelope {
+        +int schemaVersion
+        +boolean ok
+        +string reason
+        +int capturedAt
+        +string sessionId
+        +Surface surface
+        +View view
+        +SelectionItem[] selection
+    }
+
+    class Surface {
+        +string tabId
+        +string plugin
+        +boolean panelOpen
+        +string focus
+        +boolean conversationCollapsed
+    }
+
+    class View {
+        +string kind
+        +string filterType
+        +string query
+        +string sortKey
+        +string viewMode
+        +string layer3Tab
+        +object extra
+    }
+
+    class SelectionItem {
+        +string id
+        +string name
+        +string type
+        +string kind
+    }
+
+    class HubEventBus {
+        +int nextId
+        +EventRecord[] ring
+        +emit(type, payload) EventRecord
+        +subscribe(fn) Function
+        +replaySince(lastId) EventRecord[]
+    }
+
+    class EventRecord {
+        +string id
+        +string type
+        +int at
+        +object payload
+    }
+
+    class HubSsePublisher {
+        +ServerResponse res
+        +attach(bus)
+        +send(record)
+        +heartbeat()
+        +close()
+    }
+
+    class ViewportMailbox {
+        +Envelope last
+        +int capturedAt
+        +put(envelope)
+        +get() Envelope
+        +isStale(ms) boolean
+    }
+
+    class AntiAnnoyanceGuard {
+        +string sessionId
+        +int switchCount
+        +Map undoByToken
+        +boolean allowAgentSwitchTab
+        +evaluateOpen(req, snapshot) GuardDecision
+        +rememberUndo(token, snapshot)
+        +consumeUndo(token) UndoSnapshot
+    }
+
+    class GuardDecision {
+        +boolean ok
+        +boolean applied
+        +string code
+        +string undoToken
+        +string previousTabId
+    }
+
+    class WorkbenchRpcRequest {
+        +string requestId
+        +string method
+        +string tabId
+        +string path
+        +object view
+        +string[] highlightIds
+        +string reason
+        +string previousTabId
+        +string undoToken
+        +string sessionId
+        +boolean forceOpenPanel
+    }
+
+    class WorkbenchApi {
+        +open(opts) Promise
+        +getSnapshot() object
+        +getFocus() string
+        +isActive(tabId) boolean
+        +registerContextContributor(tabId, fn)
+        +getUiContext() UiContextEnvelope
+    }
+
+    class ContextContributor {
+        +string tabId
+        +read() ContributorSlice
+    }
+
+    class ComposerEnvelopeHook {
+        +install()
+        +capture(submitEvent) UiContextEnvelope
+        +injectPrefix(textarea, compact)
+    }
+
+    class EventsClient {
+        +EventSource source
+        +boolean healthy
+        +connect()
+        +subscribe(type, fn)
+        +fanout(record)
+    }
+
+    class AssetsFeed {
+        +int lrev
+        +int arev
+        +Asset[] assets
+        +boolean sseHealthy
+        +applyEvent(payload)
+        +refreshState(force)
+        +startPoll()
+        +stopPoll()
+    }
+
+    class LibraryStore {
+        +add() Asset
+        +update() Asset
+        +remove()
+        +revision() int
+    }
+
+    UiContextEnvelope *-- Surface
+    UiContextEnvelope *-- View
+    UiContextEnvelope *-- SelectionItem
+    HubEventBus *-- EventRecord
+    HubSsePublisher --> HubEventBus : subscribe
+    ViewportMailbox --> UiContextEnvelope
+    AntiAnnoyanceGuard --> GuardDecision
+    WorkbenchApi --> ContextContributor
+    ComposerEnvelopeHook --> WorkbenchApi : getUiContext
+    EventsClient --> HubSsePublisher : EventSource
+    AssetsFeed --> EventsClient : omnimux:assets:changed
+    LibraryStore --> HubEventBus : emit
+    AntiAnnoyanceGuard --> HubEventBus : omnimux:workbench:rpc

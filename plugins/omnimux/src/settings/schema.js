@@ -12,6 +12,7 @@ export const SETTINGS_DEFAULTS = Object.freeze({
   defaultImageModel: 'gpt-image-2',
   defaultVideoModel: 'seedance-2-0-fast',
   defaultAudioModel: 'suno',
+  allowAgentSwitchTab: true,
 })
 
 const FIELD_META = Object.freeze({
@@ -19,6 +20,7 @@ const FIELD_META = Object.freeze({
   defaultImageModel: '图片节点默认模型',
   defaultVideoModel: '视频节点默认模型',
   defaultAudioModel: '音频节点默认模型',
+  allowAgentSwitchTab: '允许 Agent 控制右侧工作台切换选项卡',
 })
 
 function stringNode(key) {
@@ -37,7 +39,11 @@ function parseSettingsSection(value) {
   const out = {}
   for (const key of Object.keys(SETTINGS_DEFAULTS)) {
     const raw = input[key]
-    out[key] = typeof raw === 'string' && raw.trim() ? raw.trim() : SETTINGS_DEFAULTS[key]
+    if (typeof SETTINGS_DEFAULTS[key] === 'boolean') {
+      out[key] = typeof raw === 'boolean' ? raw : SETTINGS_DEFAULTS[key]
+    } else {
+      out[key] = typeof raw === 'string' && raw.trim() ? raw.trim() : SETTINGS_DEFAULTS[key]
+    }
   }
   return out
 }

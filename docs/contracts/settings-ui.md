@@ -35,7 +35,7 @@ MUST NOT register plugin config, plugin install, or social-account management as
 | `settings.section` | `omnimux-profile` | `omnimux` | Device login and public profile |
 | `settings.plugins.tab` | `omnimux-dsh-plugins` | `omnimux` | Install / uninstall into the `omnimux` profile |
 | `settings.plugin.item` | `web-search` | official `ui-settings-plugins` | DeepSeek search key via credentials |
-| `settings.plugin.item` | `omnimux` | `omnimux` | Canvas default models (`defaultTextModel` / `defaultImageModel` / `defaultVideoModel` / `defaultAudioModel`) |
+| `settings.plugin.item` | `omnimux` | `omnimux` | Canvas default models (`defaultTextModel` / `defaultImageModel` / `defaultVideoModel` / `defaultAudioModel`) plus `allowAgentSwitchTab`（允许 Agent 切换工作台页面，默认开；见 [agent-workbench-sync.md](./agent-workbench-sync.md)） |
 | `shell.overlay` | `omnimux-accounts-stage` | `omnimux-accounts` | Pinned Accounts page, opened directly via the product stage from its own sidebar row (not a Settings seat, not the Apps shelf) |
 | `shell.overlay` | `omnimux-inspiration-stage` | `omnimux-inspiration` | Pinned 灵感库 page, rank 7, Host `/omnimux/inspiration` only |
 

@@ -182,6 +182,18 @@ export function apply(ctx) {
       const tags = Array.isArray(args.tags) ? args.tags : []
       const files = Array.isArray(args.files) ? args.files : []
       const asset = await library.add({ name, type, description, tags, files })
+      const hubEvents = ctx.get?.('hubEvents')
+      hubEvents?.emit({
+        type: 'omnimux:assets:changed',
+        payload: {
+          lrev: library.revision(),
+          arev: artifacts.revision(),
+          op: 'create',
+          ids: [asset.id],
+          assetType: asset.type,
+          at: Date.now(),
+        },
+      })
       return { ok: true, asset }
     },
   })
@@ -222,6 +234,18 @@ export function apply(ctx) {
       if (Array.isArray(args.tags)) patch.tags = args.tags
       if (Array.isArray(args.files)) patch.files = args.files
       const asset = await library.update(existing.id, patch)
+      const hubEvents = ctx.get?.('hubEvents')
+      hubEvents?.emit({
+        type: 'omnimux:assets:changed',
+        payload: {
+          lrev: library.revision(),
+          arev: artifacts.revision(),
+          op: 'update',
+          ids: [asset.id],
+          assetType: asset.type,
+          at: Date.now(),
+        },
+      })
       return { ok: true, asset }
     },
   })
@@ -247,6 +271,18 @@ export function apply(ctx) {
       const existing = library.get(id)
       if (!existing) throw new AssetsError('asset-not-found', `no asset ${id}`)
       library.remove(existing.id)
+      const hubEvents = ctx.get?.('hubEvents')
+      hubEvents?.emit({
+        type: 'omnimux:assets:changed',
+        payload: {
+          lrev: library.revision(),
+          arev: artifacts.revision(),
+          op: 'delete',
+          ids: [existing.id],
+          assetType: existing.type,
+          at: Date.now(),
+        },
+      })
       return { ok: true, id: existing.id, deleted: true }
     },
   })
@@ -272,6 +308,18 @@ export function apply(ctx) {
         model: args.model,
         prompt_hash: args.prompt_hash,
       }, args.title)
+      const hubEvents = ctx.get?.('hubEvents')
+      hubEvents?.emit({
+        type: 'omnimux:assets:changed',
+        payload: {
+          lrev: library.revision(),
+          arev: artifacts.revision(),
+          op: 'create',
+          ids: [artifact.id],
+          assetType: 'artifact',
+          at: Date.now(),
+        },
+      })
       return { artifact }
     },
   })

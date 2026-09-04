@@ -360,6 +360,25 @@ export function AssetsStage(props) {
   const feed = useAssetsFeed({ t, open: visible })
   const emptyProps = computeEmptyState(feed.filterType, feed.query, t)
 
+  useEffect(() => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (!api || typeof api.registerContextContributor !== 'function') return undefined
+    const unsub = api.registerContextContributor(TAB_ID, () => ({
+      view: {
+        filterType: feed.filterType,
+        query: feed.query,
+        sortKey: feed.sortKey,
+      },
+      selection: Array.from(feed.selectedIds || []).map((id) => {
+        const item = feed.assets?.find((a) => a.id === id)
+        return { id, name: item?.name, type: item?.type }
+      }),
+    }))
+    return () => {
+      if (typeof unsub === 'function') unsub()
+    }
+  }, [feed.filterType, feed.query, feed.sortKey, feed.selectedIds, feed.assets])
+
   return (
     <div
       role="region"
