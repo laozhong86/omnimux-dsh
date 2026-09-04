@@ -19,6 +19,8 @@ export const COMPOSER_COMPACT_DENSITY = Object.freeze({ full: 'full', short: 'sh
 export const COMPOSER_COMPACT_FULL_MIN_PX = 560
 export const COMPOSER_COMPACT_SHORT_MIN_PX = 460
 export const COMPOSER_COMPACT_CONVERSATION_MIN_PX = 260
+/** Keep the workspace chip secondary to the adjacent Agent preset on narrow rows. */
+export const COMPOSER_WORKSPACE_MAX_WIDTH_PX = 220
 
 export const COMPOSER_COMPACT_CSS = `
 /* (B4) conversation column keeps a minimum width — dragging the split anywhere
@@ -101,13 +103,30 @@ html:not([data-omnimux-conversation-collapsed]) [class*="centerCol"]{
 [data-phase='hero'] [class*="heroWorkspaceRow"]{
   width:100%!important;
   max-width:var(--dsh-chat-content-width)!important;
+  min-width:0;
   margin-left:auto!important;
   margin-right:auto!important;
   padding-left:0!important;
   padding-right:0!important;
   box-sizing:border-box!important;
+  flex-wrap:nowrap;
+  overflow:hidden;
   position:relative!important;
   left:0!important;
+}
+/* The first control in this row is the official workspace trigger. Its 360px
+   default is too greedy beside the Agent preset when the conversation is narrow. */
+[data-phase='hero'] [class*="heroWorkspaceRow"] > button[aria-label][aria-haspopup='menu'][aria-expanded]:first-child{
+  flex:0 1 ${COMPOSER_WORKSPACE_MAX_WIDTH_PX}px;
+  min-width:0;
+  max-width:min(100%,${COMPOSER_WORKSPACE_MAX_WIDTH_PX}px)!important;
+  overflow:hidden;
+}
+[data-phase='hero'] [class*="heroWorkspaceRow"] > button[aria-label][aria-haspopup='menu'][aria-expanded]:first-child > span{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 
 /* (B3) density: short */
