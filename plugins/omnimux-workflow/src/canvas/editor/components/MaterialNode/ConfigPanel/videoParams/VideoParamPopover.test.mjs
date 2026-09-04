@@ -156,9 +156,9 @@ test('components.css 覆盖全部视频参数类名规则', () => {
 test('components.css 新样式块含 overflow-y:auto 与关键设计规格', () => {
   assert.match(videoCssBlock, /overflow-y:\s*auto/);
   assert.match(videoCssBlock, /scrollbar-width:\s*thin/);
-  // 触发条规格：28px 高 / 圆角 6px / padding 0 8px / max-width 260px
+  // 触发条规格：28px 高 / 胶囊圆角 999px（对齐同排模型选择器与 Generate） / padding 0 8px / max-width 260px
   assert.match(videoCssBlock, /\.wf-video-trigger-bar \{[\s\S]*?height:\s*28px/);
-  assert.match(videoCssBlock, /\.wf-video-trigger-bar \{[\s\S]*?border-radius:\s*6px/);
+  assert.match(videoCssBlock, /\.wf-video-trigger-bar \{[\s\S]*?border-radius:\s*999px/);
   assert.match(videoCssBlock, /\.wf-video-trigger-bar \{[\s\S]*?padding:\s*0\s+8px/);
   assert.match(videoCssBlock, /\.wf-video-trigger-bar \{[\s\S]*?max-width:\s*260px/);
   // chevron 过渡与 open 态旋转
