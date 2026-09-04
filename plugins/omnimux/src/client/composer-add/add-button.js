@@ -23,6 +23,27 @@ export function closestAddButton(target) {
   return button.closest('[data-composer-card]') ? button : null
 }
 
+const BOUND = '__omnimuxAddBound'
+
+/**
+ * Bind the official hashed + button directly. Document-level capture is not
+ * enough: React 18 listens on the root and the official onClick still fires.
+ * @param {HTMLElement} button
+ * @param {(event: Event) => void} onClick
+ */
+export function bindAddButton(button, onClick) {
+  if (!button || button[BOUND]) return false
+  button[BOUND] = true
+  button.addEventListener('click', onClick, true)
+  return true
+}
+
+export function unbindAddButton(button, onClick) {
+  if (!button || !button[BOUND]) return
+  button.removeEventListener('click', onClick, true)
+  delete button[BOUND]
+}
+
 export function replayOfficialAdd(doc, state = {}) {
   const button = findAddButton(doc)
   if (!button || typeof button.click !== 'function') return false
