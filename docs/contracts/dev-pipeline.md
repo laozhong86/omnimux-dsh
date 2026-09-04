@@ -136,6 +136,17 @@ omnimux-dev-products  → link: omnimux-products | 另一 L2 口         | DSH_H
 - 浏览器验收契约：`docs/contracts/plugin-qa.md`。
 - 源码侧可配 git worktree；主工作区 + 多任务 profile 已够用。
 
+### L1 铁律：合并前测试 = L2 独立任务环境（禁止污染公共 dev）
+
+- **合并前（PR 未 MERGED）的 UI / 交互 / 真机测试，一律在 L2 独立任务环境进行**：
+  `pnpm wt:dev <topic> [issue_id] [plugin]`（内部走 `dev-env.sh start <topic> <plugin>`，`--source` 指向该工作树 `plugins/`），
+  独立端口 44200+、独立 `~/.dsh-dev/tasks/<topic>/`、独立 profile，与其它工作树互不干扰。
+- **公共 dev（`~/.omnimux-dev` / 端口 45120）只接受「已 MERGED 的 main」物化**；公共 dev/prod 严禁出现未合并工作树产物。
+- `sync-to-app.sh` 的未合并旁路已收窄为白名单：必须显式 `OMNIMUX_ALLOW_UNMERGED_TARGET=<~/.dsh-dev/tasks/... 前缀>`，
+  且所有同步目标都必须落在该前缀内；旧布尔 `OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1` 单独设置会被拒绝（已废弃）。
+- `wt:finish` 强制要求工作树存在 `.l2-dev.env`（`wt:dev` 写入：PORT/URL/COMMIT/SOURCE）作为合并前验证证据；
+  仅 R3 / 纯文档 / 纯后端变更可用 `--skip-l2` 显式跳过。`wt:clean` 在合并后自动回收对应 L2 任务环境。
+
 ## 数据与排障
 
 - dev 环境需要真实数据时，从生产**只读拷贝**到该任务 `~/.dsh-dev/tasks/<task>/omnimux/`（或公共种子 `~/.dsh-dev/.credentials.yaml`）；MUST NOT 反向写生产。

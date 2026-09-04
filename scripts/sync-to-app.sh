@@ -26,6 +26,39 @@ TARGET_SELECTION=()
 TARGET_FLAGS=()
 
 assert_origin_main_aligned() {
+  # —— 未合并物化旁路（仅限 L2 独立任务目录）——
+  # 旧布尔旁路 OMNIMUX_ALLOW_UNMERGED_MATERIALIZE 已废弃：未合并物化必须显式
+  # 指定目标前缀 OMNIMUX_ALLOW_UNMERGED_TARGET，且只允许落在 ~/.dsh-dev/tasks/ 下
+  # （合并前测试请走 pnpm wt:dev，独立 L2 端口；公共 dev/prod 严禁未合并物化）。
+  local unmerged_target="${OMNIMUX_ALLOW_UNMERGED_TARGET:-}"
+  if [ "${OMNIMUX_ALLOW_UNMERGED_MATERIALIZE:-0}" = "1" ] && [ -z "$unmerged_target" ]; then
+    echo "❌ OMNIMUX_ALLOW_UNMERGED_MATERIALIZE 已废弃：未合并物化必须同时设置 OMNIMUX_ALLOW_UNMERGED_TARGET=<~/.dsh-dev/tasks/... 前缀>，且只允许指向 L2 任务目录。" >&2
+    echo "   合并前测试请用 pnpm wt:dev <topic>（独立 L2 端口），不要物化进公共 dev/prod。" >&2
+    exit 1
+  fi
+  if [ -n "$unmerged_target" ]; then
+    local tasks_prefix="$HOME/.dsh-dev/tasks"
+    case "$unmerged_target" in
+      "$tasks_prefix"|"$tasks_prefix"/*) ;;
+      *)
+        echo "❌ OMNIMUX_ALLOW_UNMERGED_TARGET 必须以 ${tasks_prefix}/ 开头（当前: ${unmerged_target}）。公共 dev/prod 严禁未合并物化。" >&2
+        exit 1
+        ;;
+    esac
+    if [ "${#TARGET_HOMES[@]}" -gt 0 ]; then
+      for h in "${TARGET_HOMES[@]}"; do
+        case "$h" in
+          "$unmerged_target"|"$unmerged_target"/*) ;;
+          *)
+            echo "❌ 未合并物化目标 [$h] 不在允许前缀 [$unmerged_target] 内。" >&2
+            exit 1
+            ;;
+        esac
+      done
+    fi
+    echo "⚠ OMNIMUX_ALLOW_UNMERGED_TARGET=${unmerged_target}：放行 L2 任务目录的未合并物化（仅开发验证）"
+    return 0
+  fi
   if [ "${OMNIMUX_ALLOW_UNMERGED_MATERIALIZE:-0}" = "1" ]; then
     echo "⚠ OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1：跳过 origin/main 对齐门禁（仅排障使用）"
     return 0
@@ -71,8 +104,6 @@ for arg in "${@:-}"; do
     usage
   fi
 done
-
-assert_origin_main_aligned
 
 # ---------------------------------------------------------------------------
 # 目标 Profiles 解析与参数处理
@@ -180,6 +211,11 @@ else
 fi
 
 TARGET_PROFILES=()
+
+# 对齐门禁在目标解析后执行：未合并旁路（OMNIMUX_ALLOW_UNMERGED_TARGET）能基于
+# 真实 TARGET_HOMES 做白名单校验（只允许 ~/.dsh-dev/tasks/ 下的 L2 任务目录）。
+assert_origin_main_aligned
+
 for home_dir in "${TARGET_HOMES[@]}"; do
   prof_dir="$home_dir/profiles/omnimux"
   if [ -d "$prof_dir" ] || [ -d "$home_dir" ]; then
