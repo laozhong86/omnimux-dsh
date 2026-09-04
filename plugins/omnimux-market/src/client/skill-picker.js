@@ -127,7 +127,7 @@
       return h("svg", {
         width: px,
         height: px,
-        viewBox: "0 0 16 16",
+        viewBox: "0 0 24 24",
         fill: "none",
         xmlns: "http://www.w3.org/2000/svg",
         "aria-hidden": "true",
@@ -143,9 +143,10 @@
         },
       },
         h("path", {
-          d: "M2.2 2.2h4.15a1.55 1.55 0 1 0 3.3 0H13.8v4.15a1.55 1.55 0 1 0 0 3.3V13.8H9.65a1.55 1.55 0 1 0-3.3 0H2.2V9.65a1.55 1.55 0 1 0 0-3.3V2.2z",
+          d: "M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z",
           stroke: "currentColor",
-          strokeWidth: "1.4",
+          strokeWidth: "2",
+          strokeLinecap: "round",
           strokeLinejoin: "round",
         }),
       );
@@ -241,9 +242,9 @@
           const r = anchor.getBoundingClientRect();
           const width = Math.min(400, Math.max(360, Math.min(380, window.innerWidth - 16)));
           const height = panel ? panel.offsetHeight : 420;
-          let left = r.right - width;
-          if (left < 8) left = 8;
+          let left = r.left;
           if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
+          if (left < 8) left = 8;
           let top = r.top - height - 8;
           if (top < 8) top = Math.min(r.bottom + 8, window.innerHeight - height - 8);
           setPos({ left, top: Math.max(8, top), width });
