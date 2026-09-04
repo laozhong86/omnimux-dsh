@@ -146,6 +146,10 @@ omnimux-dev-products  → link: omnimux-products | 另一 L2 口         | DSH_H
   且所有同步目标都必须落在该前缀内；旧布尔 `OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1` 单独设置会被拒绝（已废弃）。
 - `wt:finish` 强制要求工作树存在 `.l2-dev.env`（`wt:dev` 写入：PORT/URL/COMMIT/SOURCE）作为合并前验证证据；
   仅 R3 / 纯文档 / 纯后端变更可用 `--skip-l2` 显式跳过。`wt:clean` 在合并后自动回收对应 L2 任务环境。
+- **L2 源依赖预检**：`dev-env.sh start` 在新环境初始化前检查生产 dsh 层核心依赖入口
+  （`@deepseek-ai/dsh-client-ui-chat` / `dsh-base` / `dsh-web-app` / `dsh-better-sidebar`）。
+  若生产 dsh 层缺包，先 `yarn omnimux:sync`（或完整安装）修复，再重建 L2 环境；
+  未修复前 L2 环境无法启动 Host，属 dsh 层问题，不是插件代码问题。
 
 ## 数据与排障
 

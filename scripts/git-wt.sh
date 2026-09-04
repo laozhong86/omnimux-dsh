@@ -627,12 +627,13 @@ cmd_finish() {
 }
 
 cmd_clean() {
-  local topic="$1"
-  local raw_issue="$2"
-  shift 2 || true
+  local topic=""
+  local raw_issue=""
   local pr_number=""
   local force_flag=""
+  local positional=()
 
+  # flags 先解析，避免 --force / --pr 被当作 issue_id 吞掉（clean <topic> --force）
   while [ $# -gt 0 ]; do
     case "$1" in
       --pr)
@@ -643,11 +644,19 @@ cmd_clean() {
         force_flag="1"
         shift
         ;;
+      -h|--help)
+        echo "用法: ./scripts/git-wt.sh clean <topic> [issue_id] [--pr <pr_number>] [--force]"
+        return 0
+        ;;
       *)
+        positional+=("$1")
         shift
         ;;
     esac
   done
+
+  topic="${positional[0]:-}"
+  raw_issue="${positional[1]:-}"
 
   if [ -z "$topic" ]; then
     echo "❌ 错误: 必须提供 <topic>"
@@ -664,6 +673,15 @@ cmd_clean() {
   fi
 
   local wt_dir="$(cd "$REPO_ROOT/.." && pwd)/omnimux-dsh-wt-${wt_suffix}"
+  if [ ! -d "$wt_dir" ]; then
+    # 前缀匹配：clean <topic>（不带 issue）时也能找到 omnimux-dsh-wt-<topic>-<issue>
+    local matched_dir
+    matched_dir=$(ls -d "$(cd "$REPO_ROOT/.." && pwd)/omnimux-dsh-wt-${topic}"* 2>/dev/null | head -1 || true)
+    if [ -n "$matched_dir" ] && [ -d "$matched_dir" ]; then
+      wt_dir="$matched_dir"
+      wt_suffix=$(basename "$wt_dir" | sed 's/^omnimux-dsh-wt-//')
+    fi
+  fi
 
   if [ -n "$pr_number" ] && command -v gh >/dev/null 2>&1 && [ "$force_flag" != "1" ]; then
     echo "==> 校验 PR #${pr_number} 合入状态..."
