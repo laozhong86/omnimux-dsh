@@ -217,6 +217,56 @@ test('ensureComposerCompactChrome injects the style id and the CSS fragments', (
   assert.equal(again, style)
 })
 
+test('composer scrollport never scrolls horizontally but keeps vertical scroll (#517)', () => {
+  const { doc } = setupDoc()
+  const style = ensureComposerCompactChrome(doc)
+  const css = style.textContent
+
+  // 1) The official draft scrollport is addressed by its STABLE data
+  //    attribute (never a CSS-module hash). Horizontal axis must be
+  //    hidden/clip (no horizontal scrollbar, no programmatic x-scroll)
+  //    while the vertical axis stays `auto` so long drafts keep scrolling.
+  const scrollRule = css.match(
+    /\[data-composer-card\] \[data-input-scroll\]\{([^}]*)\}/,
+  )?.[1]
+  assert.ok(scrollRule, 'scrollport rule must target the stable [data-input-scroll] node')
+  assert.match(scrollRule, /overflow-x:(hidden|clip)/)
+  assert.match(scrollRule, /overflow-y:auto/)
+  // The fix must be structural (no scroll range), not a scrollbar-hiding
+  // hack that still allows horizontal movement.
+  assert.doesNotMatch(css, /data-input-scroll[^\n]*::-webkit-scrollbar/)
+  assert.doesNotMatch(scrollRule, /display:\s*none/)
+
+  // 2) The empty-state nowrap placeholder / grow wrapper must not propagate
+  //    intrinsic horizontal overflow into the scrollport (that is what made
+  //    scrollWidth 325 > clientWidth 314 on a 360px conversation column).
+  const growRule = css.match(
+    /\[data-input-scroll\] > \[class\*="grow"\]\{([^}]*)\}/,
+  )?.[1]
+  assert.ok(growRule, 'grow rule must constrain horizontal intrinsic overflow')
+  assert.match(growRule, /overflow-x:(hidden|clip)/)
+  assert.match(growRule, /max-width:100%/)
+  assert.match(growRule, /min-width:0/)
+
+  // 3) The editable draft surface keeps wrapping long tokens — the user
+  //    input must never be clipped or go nowrap. Compatible with both host
+  //    shapes: contenteditable (current) and textarea (older versions).
+  const editableRule = css.match(
+    /\[data-input-scroll\] :is\(\[contenteditable='true'\],\[data-composer-input='true'\],textarea\)\{([^}]*)\}/,
+  )?.[1]
+  assert.ok(editableRule, 'editable wrap rule must target the stable composer input semantics')
+  assert.match(editableRule, /white-space:pre-wrap/)
+  assert.match(editableRule, /word-break:break-word/)
+  assert.match(editableRule, /overflow-wrap:anywhere/)
+  assert.doesNotMatch(editableRule, /white-space:nowrap/)
+
+  // 4) The fix must not turn the whole scrollport into overflow:hidden
+  //    (that would kill vertical scrolling of long drafts) — the two axes
+  //    must be declared independently.
+  assert.doesNotMatch(scrollRule, /overflow:hidden/)
+  assert.doesNotMatch(scrollRule, /overflow:clip/)
+})
+
 test('ensureComposerCompactChrome is idempotent and copies CSS once', () => {
   const { doc } = setupDoc()
   const first = ensureComposerCompactChrome(doc)

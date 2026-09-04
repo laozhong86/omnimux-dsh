@@ -208,6 +208,38 @@ html[data-omnimux-composer-density='icon'] [data-composer-card] [class*="row"]{
   flex-wrap:nowrap!important;
   white-space:nowrap;
 }
+
+/* (#517) The official draft scrollport declares only overflow-y:auto; the
+   unspecified horizontal axis then computes to auto as well. On a narrowed
+   (360px) conversation column the empty-state placeholder / grow wrapper
+   carry nowrap intrinsic width beyond the scrollport (measured live:
+   scrollWidth 325 > clientWidth 314), so a horizontal scrollbar appears
+   even though the editable itself wraps. Pin the horizontal axis to clip
+   (no scrollbar AND no programmatic x-scroll) while keeping overflow-y:auto
+   so long drafts still scroll vertically. Axes are declared independently —
+   never a blanket overflow:hidden, which would kill vertical scrolling. */
+[data-composer-card] [data-input-scroll]{
+  overflow-x:clip!important;
+  overflow-y:auto!important;
+}
+/* clip (not hidden) pairs with the visible vertical axis without turning it
+   into a scroll container. Stops the empty-state nowrap placeholder from
+   propagating intrinsic horizontal overflow into the scrollport; text that
+   genuinely overflows is clipped at the card edge instead of scrolling. */
+[data-composer-card] [data-input-scroll] > [class*="grow"]{
+  min-width:0;
+  max-width:100%;
+  overflow-x:clip;
+}
+/* The draft surface must keep wrapping long tokens in every host version
+   (contenteditable today, textarea in older ones); user input is never
+   clipped or forced nowrap. */
+[data-composer-card] [data-input-scroll] :is([contenteditable='true'],[data-composer-input='true'],textarea){
+  white-space:pre-wrap!important;
+  word-break:break-word!important;
+  overflow-wrap:anywhere!important;
+  max-width:100%;
+}
 `
 
 function hostWindow() {
