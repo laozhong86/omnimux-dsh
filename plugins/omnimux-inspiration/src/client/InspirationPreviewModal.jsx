@@ -8,7 +8,14 @@ import {
   triggerAnalyzeInspiration,
 } from './api.js'
 
-export function InspirationPreviewModal({ row, t, onClose, onItemUpdated }) {
+const ICON_REPLICATE = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="8" y="8" width="12" height="12" rx="2" />
+    <path d="M4 16V6a2 2 0 0 1 2-2h10" />
+  </svg>
+)
+
+export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onReplicate, replicateBusy }) {
   const [item, setItem] = useState(row)
   const [viewMode, setViewMode] = useState('player') // 'player' | 'deconstruct'
   const [analyzing, setAnalyzing] = useState(false)
@@ -362,6 +369,23 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated }) {
               </div>
             ) : null}
           </div>
+
+          {typeof onReplicate === 'function' ? (
+            <div className="omnimux-inspiration-preview-cta">
+              <Button
+                variant="primary"
+                aria-label={t('card.cta.tryFull')}
+                disabled={Boolean(replicateBusy)}
+                onClick={() => {
+                  onReplicate(safeItem)
+                  if (typeof onClose === 'function') onClose()
+                }}
+              >
+                {ICON_REPLICATE}
+                {t('card.cta.try')}
+              </Button>
+            </div>
+          ) : null}
         </div>
       </div>
       </div>
