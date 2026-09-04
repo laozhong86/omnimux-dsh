@@ -50,6 +50,17 @@ describe('market workbench seat (sidebar must not claim overlay)', () => {
     assert.match(css, /\.sh-picker-trigger\{[^}]*border:0/)
     assert.match(picker, /peekPickerCache/)
     assert.match(picker, /pickerSearchCache/)
+    assert.match(picker, /商业广告/)
+    assert.match(picker, /平台工具/)
+  })
+
+  it('skill plaza uses OmniMux shelf tags instead of SkillHub categories', () => {
+    const plaza = readFileSync(join(here, 'skill-plaza.js'), 'utf8')
+    assert.match(plaza, /PLAZA_SHELF_TAGS/)
+    assert.match(plaza, /商业广告/)
+    assert.match(plaza, /平台工具/)
+    assert.doesNotMatch(plaza, /office-efficiency/)
+    assert.match(plaza, /channels: \["custom", "workbuddy"\]/)
   })
 
   it('plaza view consumes a one-shot skills tab intent', () => {

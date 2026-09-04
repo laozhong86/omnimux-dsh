@@ -14,13 +14,23 @@ export const PICKER_SEARCH_LIMIT = 20
 export const PICKER_DEBOUNCE_MS = 200
 export const PICKER_CACHE_TTL_MS = 90_000
 
+export const SKILL_SHELF_TAGS = Object.freeze([
+  '短剧漫剧',
+  '专业影视',
+  '动画',
+  '商业广告',
+  '电商',
+  '教育',
+  '创意实验',
+  '音频音乐',
+  '平台工具',
+])
+
 export const PICKER_TABS = Object.freeze([
   { id: 'all', kind: 'all' },
   { id: 'mine', kind: 'mine' },
   { id: 'featured', kind: 'featured' },
-  { id: '短剧漫剧', kind: 'tag' },
-  { id: '专业影视', kind: 'tag' },
-  { id: '动画', kind: 'tag' },
+  ...SKILL_SHELF_TAGS.map((id) => ({ id, kind: 'tag' })),
 ])
 
 export function skillToken(item) {
@@ -68,12 +78,24 @@ export function matchesDomainTag(item, tag) {
   return hay.includes(tag)
 }
 
+export function itemShelfTags(item) {
+  const tags = Array.isArray(item && item.tags) ? item.tags.map(String) : []
+  return tags.filter((tag) => SKILL_SHELF_TAGS.includes(tag))
+}
+
+export function inSkillShelf(item) {
+  if (!item) return false
+  if (itemShelfTags(item).length) return true
+  return SKILL_SHELF_TAGS.some((tag) => matchesDomainTag(item, tag))
+}
+
 export function filterPickerItems(items, tabId) {
   const list = Array.isArray(items) ? items : []
   const tab = PICKER_TABS.find((row) => row.id === tabId) || PICKER_TABS[0]
   if (tab.kind === 'mine') return list.filter((it) => it && it.installed === true)
-  if (tab.kind === 'tag') return list.filter((it) => matchesDomainTag(it, tab.id))
-  return list
+  const shelf = list.filter((it) => inSkillShelf(it))
+  if (tab.kind === 'tag') return shelf.filter((it) => matchesDomainTag(it, tab.id))
+  return shelf
 }
 
 export function installPayload(item) {

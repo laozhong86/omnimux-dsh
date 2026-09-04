@@ -56,11 +56,14 @@ describe('skill picker logic', () => {
       { slug: 'a', installed: true, tags: ['短剧漫剧'] },
       { slug: 'b', installed: false, name: '专业影视配乐', tags: [] },
       { slug: 'c', installed: false, tags: ['动画'] },
+      { slug: 'gmail', installed: false, tags: [] },
+      { slug: 'ad', installed: false, tags: ['商业广告'] },
     ]
     assert.deepEqual(filterPickerItems(items, 'mine').map((it) => it.slug), ['a'])
     assert.deepEqual(filterPickerItems(items, '短剧漫剧').map((it) => it.slug), ['a'])
     assert.deepEqual(filterPickerItems(items, '专业影视').map((it) => it.slug), ['b'])
-    assert.equal(filterPickerItems(items, 'all').length, 3)
+    assert.deepEqual(filterPickerItems(items, '商业广告').map((it) => it.slug), ['ad'])
+    assert.deepEqual(filterPickerItems(items, 'all').map((it) => it.slug), ['a', 'b', 'c', 'ad'])
   })
 
   it('installs only when the card is not already installed', () => {

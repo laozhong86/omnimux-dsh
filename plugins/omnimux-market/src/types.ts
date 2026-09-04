@@ -92,6 +92,7 @@ export interface SkillCard {
   channel: SkillChannel
   catalogId?: string
   installBackend?: SkillInstallBackend
+  tags?: string[]
 }
 
 export interface SearchResult {
