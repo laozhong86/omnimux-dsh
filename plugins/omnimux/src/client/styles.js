@@ -960,6 +960,12 @@ export const HUB_CSS = `
 .omnimux-chat-toggle-btn[data-active="true"] {
   color: var(--dsw-alias-accent-primary, #3b82f6);
 }
+
+/* ── Defensive hiding of official StatsLine in composer dock ── */
+[class*="StatsLine_root"],
+.FJxK0a_root {
+  display: none !important;
+}
 `
 
 export function injectHubStyles() {

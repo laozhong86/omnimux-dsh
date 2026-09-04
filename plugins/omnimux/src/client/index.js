@@ -10,6 +10,7 @@ import { installHubChrome } from './chrome.js'
 import { STYLES_ID, injectHubStyles } from './styles.js'
 import { HeroBrandMark } from './HeroBrandMark.jsx'
 import { installHeroBrandSlot } from './hero-brand.js'
+import { installStatsLineShadow } from './stats-line-shadow.js'
 import { AttachmentTray } from './attachments/AttachmentTray.tsx'
 import { getGlobalAttachmentStore } from './attachments/store.ts'
 import { createEventsClient, installHubEventsGlobal } from './events-client.js'
@@ -38,6 +39,7 @@ export const inject = ['slots', 'locale']
 export function apply(ctx) {
   const t = installHubChrome(ctx)
   installHeroBrandSlot(ctx, HeroBrandMark)
+  installStatsLineShadow(ctx)
   // Optional session warmup: fill the status cache so the first sidebar
   // click can take the sync short path. Not a startup gate — fire-and-forget,
   // never setState, never block apply().
