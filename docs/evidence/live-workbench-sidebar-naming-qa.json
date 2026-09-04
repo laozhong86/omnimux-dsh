@@ -1,0 +1,24 @@
+{
+  "probe": "real-device-workbench-sidebar-naming",
+  "ts": "2026-09-03",
+  "app": "OmniMux Dev.app",
+  "cdn_port": 9229,
+  "electron_renderer_url": "http://127.0.0.1:45120/?dsh-desktop-mode=compatibility&dsh-desktop-platform=darwin",
+  "scope": "workbench tab titles + account icon after PR #420",
+  "pr": 420,
+  "commit": "ab344e4",
+  "assertions": {
+    "workbench_global_mounted": true,
+    "canvas_tab_opened_via_workbench": true,
+    "rendered_title_canvas": "创作画布",
+    "rendered_title_project": "项目",
+    "dom_canvas_rendered": true,
+    "dom_project_rendered": true
+  },
+  "materialized_bundle_checks": {
+    "omnimux-workflow/lib/client.js": "contains 创作画布 (count 3)",
+    "omnimux-accounts/lib/client.js": "contains p3 path M24.026 30.727 (count 2)",
+    "omnimux/lib/client.js": "contains omnimux-workflow:canvas => 创作画布 (unicode-escaped), omnimux-workflow:library => 项目"
+  },
+  "verdict": "PASS - renamed workbench tab titles render live in Dev App Electron window; account icon path synced"
+}
