@@ -222,10 +222,14 @@ describe('prefillReplicationPrompt', () => {
     assert.deepEqual(result, { ok: false, error: 'composer-missing' })
   })
 
-  it('returns composer-rejected when the field drops inspiration_id', async () => {
+  it('returns composer-rejected when the field swallows the write', async () => {
     const field = fakeField('')
+    Object.defineProperty(field, 'value', {
+      get() { return '' },
+      set() { /* swallow */ },
+    })
     field.focus = () => { field.focused = true }
-    const result = await prefillReplicationPrompt('plain text without id', {
+    const result = await prefillReplicationPrompt('/video-deconstruct\n\n完全复刻', {
       document: {
         querySelector(sel) {
           if (sel.includes('textarea')) return field

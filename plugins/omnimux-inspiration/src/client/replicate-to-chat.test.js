@@ -161,7 +161,10 @@ describe('oneClickReplicate', () => {
     assert.equal(io.prefills.length, 1)
     assert.equal(io.closes.length, 1)
     assert.match(io.prefills[0], /^\/video-deconstruct\n/)
-    assert.match(io.prefills[0], /inspiration_id: insp-1/)
+    assert.match(io.prefills[0], /完全复刻原视频脚本和画面/)
+    assert.doesNotMatch(io.prefills[0], /inspiration_id/)
+    assert.equal(io.attaches[0].payload.metadata.inspiration_id, 'insp-1')
+    assert.equal(io.attaches[0].payload.entityId, 'insp-1')
     assert.equal(io.status.at(-1), null)
   })
 
