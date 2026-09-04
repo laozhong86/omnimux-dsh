@@ -145,6 +145,43 @@ test('ensureComposerCompactChrome injects the style id and the CSS fragments', (
   assert.match(style.textContent, /data-omnimux-composer-density='icon'/)
   assert.match(style.textContent, /conversation-scroll/)
   assert.match(style.textContent, /margin-left:auto/)
+  // Narrow densities (short + icon): model seat (trailing + aria-haspopup=menu)
+  // collapses to a 28px glyph chip — hide label/effort/chevron, paint the
+  // 3-layer box mask. Scope to the trailing rule so Permission (modes) or
+  // ContextMeter (dialog) cannot create a false green.
+  assert.match(
+    style.textContent,
+    /:is\(\[data-omnimux-composer-density='short'\], \[data-omnimux-composer-density='icon'\]\)/,
+  )
+  const modelIconRule = style.textContent.match(
+    /:is\(\[data-omnimux-composer-density='short'\], \[data-omnimux-composer-density='icon'\]\) \[data-composer-card\] \[class\*="trailing"\] button\[aria-haspopup='menu'\]\{([^}]*)\}/,
+  )?.[1]
+  assert.ok(modelIconRule, 'narrow-density model trigger sizing rule should be present')
+  assert.match(modelIconRule, /width:28px/)
+  assert.match(modelIconRule, /height:28px/)
+  assert.match(modelIconRule, /max-width:28px/)
+  assert.match(modelIconRule, /padding:0/)
+
+  assert.match(
+    style.textContent,
+    /\[class\*="trailing"\] button\[aria-haspopup='menu'\] \[class\*="triggerLabel"\]/,
+  )
+  assert.match(
+    style.textContent,
+    /\[class\*="trailing"\] button\[aria-haspopup='menu'\] \[class\*="chevron"\]/,
+  )
+  const modelIconBefore = style.textContent.match(
+    /:is\(\[data-omnimux-composer-density='short'\], \[data-omnimux-composer-density='icon'\]\) \[data-composer-card\] \[class\*="trailing"\] button\[aria-haspopup='menu'\]::before\{([^}]*)\}/,
+  )?.[1]
+  assert.ok(modelIconBefore, 'narrow-density model glyph ::before rule should be present')
+  assert.match(modelIconBefore, /mask-image/)
+  assert.match(modelIconBefore, /background-color:currentColor/)
+  assert.match(modelIconBefore, /width:14px/)
+  // Permission chip still drops its text when it already has a triggerIcon.
+  assert.match(
+    style.textContent,
+    /\[class\*="trigger"\]:has\(\[class\*="triggerIcon"\]\) \[class\*="triggerLabel"\]/,
+  )
   // Hero workspace row shares the same rail without letting a long workspace
   // name consume the adjacent Agent preset's space. Scope every assertion to
   // its rule so an unrelated compact-label declaration cannot create a green.

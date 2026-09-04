@@ -6,8 +6,8 @@
  *
  * Three density levels are driven by the live width of the composer card:
  *   full  (>= 560px) — everything shown
- *   short (>= 460px) — model label truncated, effort sub-label hidden
- *   icon  (<  460px) — only icons in the toolbar, model label minimal
+ *   short (>= 460px) — effort hidden; model seat already collapses to a box glyph
+ *   icon  (<  460px) — toolbar icons only; model seat stays the same box glyph
  *
  * Also owns the empty-state anchor (logo+tagline mid, input pinned to the
  * bottom, Codex-style) and the conversation-column min-width guard.
@@ -130,30 +130,63 @@ html:not([data-omnimux-conversation-collapsed]) [class*="centerCol"]{
   white-space:nowrap;
 }
 
-/* (B3) density: short */
+/* (B3) density: short — non-model triggers still truncate; model seat uses the
+   shared glyph rule below (same as icon). */
 html[data-omnimux-composer-density='short'] [data-composer-card] [class*="triggerLabel"]{
   max-width:88px;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
 }
-html[data-omnimux-composer-density='short'] [data-composer-card] [class*="triggerEffort"]{
-  display:none;
-}
-
-/* (B3) density: icon */
-html[data-omnimux-composer-density='icon'] [data-composer-card] [class*="triggerLabel"]{
-  max-width:56px;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
+html[data-omnimux-composer-density='short'] [data-composer-card] [class*="triggerEffort"],
 html[data-omnimux-composer-density='icon'] [data-composer-card] [class*="triggerEffort"]{
   display:none;
 }
-/* Permission / Plan chip: keep its icon, drop the text label at icon density. */
+
+/* Permission chip: keep its native triggerIcon, drop the text label (icon density). */
 html[data-omnimux-composer-density='icon'] [data-composer-card] [class*="trigger"]:has([class*="triggerIcon"]) [class*="triggerLabel"]{
   display:none;
+}
+/*
+ * Model seat (conversation.input.model): official ModelSelect has no triggerIcon —
+ * only triggerLabel + optional triggerEffort + chevron. On any narrow density
+ * (short OR icon, i.e. card < 560px) collapse the chip to a 28px glyph
+ * (3-layer box) so a long model name never squeezes the trailing row.
+ * Selector is scoped to trailing + aria-haspopup=menu so the ContextMeter
+ * (dialog) and left-side Permission/Plan chips stay untouched.
+ * title/aria-label remain on the button for hover + a11y.
+ */
+html:is([data-omnimux-composer-density='short'], [data-omnimux-composer-density='icon']) [data-composer-card] [class*="trailing"] button[aria-haspopup='menu']{
+  width:28px;
+  height:28px;
+  min-width:28px;
+  max-width:28px;
+  padding:0;
+  justify-content:center;
+  gap:0;
+}
+html:is([data-omnimux-composer-density='short'], [data-omnimux-composer-density='icon']) [data-composer-card] [class*="trailing"] button[aria-haspopup='menu'] [class*="triggerLabel"],
+html:is([data-omnimux-composer-density='short'], [data-omnimux-composer-density='icon']) [data-composer-card] [class*="trailing"] button[aria-haspopup='menu'] [class*="triggerEffort"],
+html:is([data-omnimux-composer-density='short'], [data-omnimux-composer-density='icon']) [data-composer-card] [class*="trailing"] button[aria-haspopup='menu'] [class*="chevron"]{
+  display:none!important;
+}
+html:is([data-omnimux-composer-density='short'], [data-omnimux-composer-density='icon']) [data-composer-card] [class*="trailing"] button[aria-haspopup='menu']::before{
+  content:'';
+  display:block;
+  width:14px;
+  height:14px;
+  flex:0 0 14px;
+  background-color:currentColor;
+  /* White strokes → opaque under luminance mask; currentColor paints the chip. */
+  --omnimux-model-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M12.92 2.26L19.43 5.77C20.19 6.18 20.19 7.35 19.43 7.76L12.92 11.27C12.34 11.58 11.66 11.58 11.08 11.27L4.57 7.76C3.81 7.35 3.81 6.18 4.57 5.77L11.08 2.26C11.66 1.95 12.34 1.95 12.92 2.26Z' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M3.61 10.13L9.66 13.16C10.41 13.54 10.89 14.31 10.89 15.15V20.87C10.89 21.7 10.02 22.23 9.28 21.86L3.23 18.83C2.48 18.45 2 17.68 2 16.84V11.12C2 10.29 2.87 9.76 3.61 10.13Z' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M20.39 10.13L14.34 13.16C13.59 13.54 13.11 14.31 13.11 15.15V20.87C13.11 21.7 13.98 22.23 14.72 21.86L20.77 18.83C21.52 18.45 22 17.68 22 16.84V11.12C22 10.29 21.13 9.76 20.39 10.13Z' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  -webkit-mask-image:var(--omnimux-model-icon);
+  mask-image:var(--omnimux-model-icon);
+  -webkit-mask-size:contain;
+  mask-size:contain;
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+  -webkit-mask-position:center;
+  mask-position:center;
 }
 /* Text-only toolbar buttons become icon-sized. Never touch the .add (plus)
    button — it is already an icon. */
