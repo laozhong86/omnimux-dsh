@@ -37,6 +37,17 @@ describe('market workbench seat (sidebar must not claim overlay)', () => {
     assert.match(source, /SkillPickerButton/)
   })
 
+  it('Skill trigger uses a puzzle icon and has no border', () => {
+    const picker = readFileSync(join(here, 'skill-picker.js'), 'utf8')
+    const css = readFileSync(join(here, 'css.js'), 'utf8')
+    assert.match(picker, /function renderPuzzleIcon/)
+    assert.match(picker, /renderPuzzleIcon\(16\)/)
+    assert.doesNotMatch(picker, /renderPlazaIcon\(16\)/)
+    assert.match(css, /\.sh-picker-trigger\{[^}]*border:0/)
+    assert.match(picker, /peekPickerCache/)
+    assert.match(picker, /pickerSearchCache/)
+  })
+
   it('plaza view consumes a one-shot skills tab intent', () => {
     const source = readFileSync(join(here, 'plaza-shell.js'), 'utf8')
     assert.match(source, /omnimux-market:plaza-intent/)
