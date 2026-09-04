@@ -107,7 +107,7 @@ export function apply(ctx, config = {}) {
     ctx.inject(['webServer'], (httpCtx) => {
       mountHttp(httpCtx)
       const server = httpCtx.webServer ?? httpCtx.get?.('webServer')
-      if (server) {
+      if (server && typeof server.get === 'function') {
         registerWorkbenchHttpRoutes(server, { hubEvents, mailbox })
       }
     })
