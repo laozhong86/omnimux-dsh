@@ -379,17 +379,28 @@ describe('topbar new-session control (collapsed only)', () => {
     setExplicitLeftCollapseIntent(null)
   })
 
-  it('click drives the official newSession button', () => {
+  it('click opens coordinator menu anchored to the topbar control', () => {
     const doc = setup()
+    // setup() fixture is collapsed with an official newSession button; coordinator
+    // openCollapsedNewMenuAt succeeds (session-only menu when no project row).
     ensureSidebarToggleTopbar(doc)
+    const btn = doc.querySelector(`[${TOPBAR_NEW_SESSION_ATTR}="1"]`)
+    assert.ok(btn)
+    btn.getBoundingClientRect = () => ({
+      x: 124, y: 4, left: 124, top: 4, width: 32, height: 32, right: 156, bottom: 36,
+    })
+    // Official rail button is off-screen / zeroed when left rail is collapsed.
     const official = findOfficialNewSessionButton(doc)
-    assert.ok(official)
-    let clicks = 0
-    official.addEventListener('click', () => { clicks += 1 })
-    const injected = doc.querySelector(`[${TOPBAR_NEW_SESSION_ATTR}="1"]`)
-    assert.ok(injected)
-    injected.click()
-    assert.equal(clicks, 1)
+    if (official) {
+      official.getBoundingClientRect = () => ({
+        x: 0, y: 90, left: 0, top: 90, width: 0, height: 0, right: 0, bottom: 90,
+      })
+    }
+    btn.click()
+    const menu = doc.getElementById('omnimux-sidebar-new-menu')
+    assert.ok(menu, 'menu should open under the visible topbar control')
+    assert.equal(menu.style.left, '124px')
+    assert.equal(menu.style.top, '42px')
   })
 
   it('computeChromeLayout exposes newSessionLeft only when collapsed', () => {

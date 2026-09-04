@@ -267,3 +267,53 @@ test('sidebar 就绪后 observer 收窄到侧栏列，overlay 突变不触发 pl
     disposeBelow()
   }
 })
+
+
+test('computeNewMenuPosition anchors under the visible control', async () => {
+  setup()
+  const { computeNewMenuPosition } = await import('./sidebar-coordinator.js')
+  const anchor = document.createElement('button')
+  document.body.append(anchor)
+  anchor.getBoundingClientRect = () => ({
+    x: 124, y: 4, left: 124, top: 4, width: 32, height: 32, right: 156, bottom: 36,
+  })
+  const pos = computeNewMenuPosition(anchor, { innerWidth: 1280, innerHeight: 800 })
+  assert.equal(pos.left, 124, 'left-aligned with anchor')
+  assert.equal(pos.top, 42, '6px gap below anchor bottom')
+})
+
+test('openCollapsedNewMenuAt uses topbar anchor rect not hidden rail', async () => {
+  setup()
+  const { installSidebarGlobal, SIDEBAR_GLOBAL, openCollapsedNewMenuAt } = await import('./sidebar-coordinator.js')
+  installSidebarGlobal()
+  const api = SIDEBAR_GLOBAL()
+  const inlineBtn = document.createElement('button')
+  inlineBtn.id = 'inline-topbar-anchor'
+  inlineBtn.setAttribute('aria-label', '新建项目')
+  const disposeInline = api.register({ id: 'inline-topbar-anchor', kind: 'inline', create: () => inlineBtn })
+  try {
+    const frame = document.querySelector('[data-omnimux-frame]')
+    frame.setAttribute('data-sidebar-collapsed', '')
+    api.place()
+
+    const topbar = document.createElement('button')
+    topbar.setAttribute('data-omnimux-topbar-new-session', '1')
+    document.body.append(topbar)
+    topbar.getBoundingClientRect = () => ({
+      x: 124, y: 4, left: 124, top: 4, width: 32, height: 32, right: 156, bottom: 36,
+    })
+    // Hidden official button sits far left (rail zeroed)
+    const sessionBtn = document.querySelector('.newSession')
+    sessionBtn.getBoundingClientRect = () => ({
+      x: 0, y: 90, left: 0, top: 90, width: 0, height: 0, right: 0, bottom: 90,
+    })
+
+    assert.equal(openCollapsedNewMenuAt(topbar), true)
+    const menu = document.getElementById('omnimux-sidebar-new-menu')
+    assert.ok(menu, 'menu opens')
+    assert.equal(menu.style.left, '124px', 'menu left tracks topbar anchor')
+    assert.equal(menu.style.top, '42px', 'menu sits under topbar anchor')
+  } finally {
+    disposeInline()
+  }
+})

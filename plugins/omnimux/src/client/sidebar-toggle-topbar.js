@@ -13,9 +13,12 @@
  * button. Icons + blue-dot mirror the collapse flag on `<html>`.
  *
  * While the left rail is collapsed, a second fixed control (new session) sits
- * immediately to the toggle's right and clicks the official newSession button
- * so the current workspace gets a fresh session without expanding the rail.
+ * immediately to the toggle's right and opens the coordinator new-menu anchored
+ * to that visible control (not the hidden rail button, which caused the menu
+ * to "split" away from the icon).
  */
+
+import { openCollapsedNewMenuAt } from './sidebar-coordinator.js'
 
 export const SIDEBAR_TOGGLE_TOPBAR_ATTR = 'data-omnimux-sidebar-toggle-topbar'
 export const SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR = 'data-omnimux-sidebar-toggle-topbar'
@@ -426,6 +429,14 @@ export function injectTopbarNewSessionButton(doc, collapsed) {
     btn.addEventListener('click', (event) => {
       try { event.preventDefault() } catch { /* ignore */ }
       try { event.stopPropagation() } catch { /* ignore */ }
+      // Anchor the coordinator menu to THIS visible topbar control. Clicking the
+      // official newSession button would open the menu at the hidden rail rect
+      // (x≈0) and split it away from the icon.
+      try {
+        if (openCollapsedNewMenuAt(btn)) return
+      } catch {
+        // Fall through to official click if coordinator is not ready.
+      }
       const official = findOfficialNewSessionButton(doc)
       if (official) official.click()
     })
