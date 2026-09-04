@@ -212,13 +212,13 @@ H1 已建成 operation 级契约机器真源、admission、coverage auditor，�
 
 ### 7.3 coverage_missing（29）— 必须逐 ID 落处置
 
-**Text / 多模态（11）**  
+**Text / 多模态（11）**
 `claude-opus-4-6` · `claude-opus-5` · `deepseek-v4-flash-vision-exp` · `deepseek-v4-pro` · `gemini-3.1-pro-preview` · `gemini-3.7-flash` · `glm-5.3` · `gpt-5.5` · `gpt-5.6-sol` · `grok-4.6` · `kimi-k3`
 
-**Image（12）**  
+**Image（12）**
 `gpt-image2-hd` · `grok-imagine-image-quality` · `midjourney` · `midjourney-7` · `midjourney-8.1` · `midjourney-niji-7` · `nano_banana_2` · `nano_banana_pro` · `nanobanana-2` · `nanobanana-pro` · `seedream-4.5` · `seedream-5.0-pro`
 
-**Video（6）**  
+**Video（6）**
 `kling-o1` · `kling-o3` · `kling-v3-motion-control` · `omni_flash` · `seedance2.5-stable-max-720p` · `veo-3.1-fast`
 
 ### 7.4 批次顺序（产品）
