@@ -1,5 +1,7 @@
 # 图像模型能力契约 (Image Models Capability Contract)
-version: "1.0"
+# H1: 全部 op draft + stub/none → listedOperations=[]；不顺手 verified
+schemaVersion: "1.1"
+managementGroup: "image"
 modality: "image"
 
 models:
@@ -8,44 +10,99 @@ models:
     family: "openai"
     badge: "默认"
     subtitle: "1k-4k"
-    modes:
-      - mode: "text_to_image"
+    operations:
+      - id: "text_to_image"
         label: "文生图"
-        inputs: []
-      - mode: "multi_reference"
-        label: "垫图参考"
+        output:
+          type: "image"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "multi_reference"
+        label: "垫图参考"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "reference_image"
             type: "image"
             role: "reference"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 10
+            limitSource:
+              kind: "policy_conservative"
+              note: "H1 conservative slot limit pending official re-audit"
     parameters:
       aspectRatio: ["auto", "1:1", "16:9", "9:16"]
       resolution: ["1024x1024", "1792x1024"]
       quality: ["standard", "hd"]
+    research:
+      status: "draft"
+      notes: "present in runtime IMAGE_MODEL_SPECS; full doc evidence pending H2"
+    execution:
+      status: "stub"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"
+      notes: "H1: stub only; do not claim listed"
 
   - id: "grok-imagine-image"
     label: "Grok Imagine Image"
     family: "grok"
     badge: "极速"
     subtitle: "xAI Grok"
-    modes:
-      - mode: "text_to_image"
+    operations:
+      - id: "text_to_image"
         label: "文生图"
-        inputs: []
-      - mode: "multi_reference"
-        label: "多图垫图"
+        output:
+          type: "image"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "multi_reference"
+        label: "多图垫图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "reference_images"
             type: "image"
             role: "reference"
+            source: "upstream_edge"
             min: 1
             max: 4
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 15
+            limitSource:
+              kind: "policy_conservative"
+              note: "H1 conservative slot limit pending official re-audit"
     parameters:
       aspectRatio: ["auto", "1:1", "16:9", "9:16"]
       resolution: ["1024x1024", "1792x1024"]
+    research:
+      status: "draft"
+    execution:
+      status: "stub"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"
+      notes: "H1: stub; runtime limits reconcile is H2"

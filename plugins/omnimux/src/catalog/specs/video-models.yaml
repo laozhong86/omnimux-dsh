@@ -1,5 +1,8 @@
 # 视频模型能力契约 (Video Models Capability Contract)
-version: "1.0"
+# H1: 全部 op research=draft + execution=stub|none → listedOperations=[]
+# 禁止 verified+live；Kling Avatar 不 listed；不审计 runtime limits（H2）
+schemaVersion: "1.1"
+managementGroup: "video"
 modality: "video"
 
 models:
@@ -9,100 +12,197 @@ models:
     family: "bytedance"
     badge: "默认"
     subtitle: "720P · ⏱ 4-8s"
-    modes:
-      - mode: "text_to_video"
+    operations:
+      - id: "text_to_video"
         label: "文生视频"
-        inputs: []
-      - mode: "first_frame"
-        label: "首帧生视频"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "first_frame"
+        label: "首帧生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "start_frame"
             type: "image"
             role: "first_frame"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
-      - mode: "video_multi_ref"
+            limitSource:
+              kind: "official_docs"
+              url: "https://www.volcengine.com/docs/82379/1344485"
+      - id: "video_multi_ref"
         label: "多图参考"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "reference_images"
             type: "image"
             role: "reference"
+            source: "upstream_edge"
             min: 1
             max: 4
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
+            limitSource:
+              kind: "official_docs"
+              url: "https://www.volcengine.com/docs/82379/1344485"
     parameters:
       aspectRatio: ["16:9", "9:16", "1:1"]
       duration: [4, 6, 8]
       resolution: ["720P", "1080P"]
-    governance:
+    research:
+      status: "draft"
+      notes: "H1 zero listed claim; H2 re-audit strong live path"
       docUrl: "https://www.volcengine.com/docs/82379/1344485"
-      confidence: "verified"
+    execution:
+      status: "stub"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"
 
   - id: "seedance-2-5"
     label: "Seedance 2.5"
     family: "bytedance"
     badge: "即梦旗舰"
     subtitle: "720P-1080P · ⏱ 5-10s"
-    modes:
-      - mode: "text_to_video"
+    operations:
+      - id: "text_to_video"
         label: "文生视频"
-        inputs: []
-      - mode: "first_frame"
-        label: "首帧生视频"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "first_frame"
+        label: "首帧生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "start_frame"
             type: "image"
             role: "first_frame"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
-      - mode: "video_multi_ref"
+            limitSource:
+              kind: "official_docs"
+              url: "https://www.volcengine.com/docs/82379/1344485"
+      - id: "video_multi_ref"
         label: "多图参考"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "reference_images"
             type: "image"
             role: "reference"
+            source: "upstream_edge"
             min: 1
             max: 4
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
+            limitSource:
+              kind: "official_docs"
+              url: "https://www.volcengine.com/docs/82379/1344485"
     parameters:
       aspectRatio: ["16:9", "9:16", "1:1"]
       duration: [5, 10]
       resolution: ["720P", "1080P"]
-    governance:
+    research:
+      status: "draft"
       docUrl: "https://www.volcengine.com/docs/82379/1344485"
-      confidence: "verified"
+    execution:
+      status: "stub"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"
 
   - id: "seedance-2-0"
     label: "Seedance 2.0"
     family: "bytedance"
     subtitle: "720P · ⏱ 5s"
-    modes:
-      - mode: "text_to_video"
+    operations:
+      - id: "text_to_video"
         label: "文生视频"
-        inputs: []
-      - mode: "first_frame"
-        label: "首帧生视频"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "first_frame"
+        label: "首帧生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "start_frame"
             type: "image"
             role: "first_frame"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
+            limitSource:
+              kind: "official_docs"
+              url: "https://www.volcengine.com/docs/82379/1344485"
     parameters:
       aspectRatio: ["16:9", "9:16", "1:1"]
       duration: [5]
       resolution: ["720P"]
-    governance:
+    research:
+      status: "draft"
       docUrl: "https://www.volcengine.com/docs/82379/1344485"
-      confidence: "verified"
+    execution:
+      status: "stub"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"
 
   # 快手 Kling 可灵系列：原生支持首尾帧与首帧，不支持自由多图主体参考
   - id: "kling-v3"
@@ -110,122 +210,217 @@ models:
     family: "kling"
     badge: "可灵 3.0"
     subtitle: "1080P-4K · ⏱ 5-10s · 🔊"
-    modes:
-      - mode: "text_to_video"
+    operations:
+      - id: "text_to_video"
         label: "文生视频"
-        inputs: []
-      - mode: "first_frame"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "first_frame"
         label: "首帧生视频"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "first_frame"
             type: "image"
             role: "first_frame"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 10
-      - mode: "first_last_frame"
+            limitSource:
+              kind: "official_docs"
+              url: "https://klingai.kuaishou.com/docs"
+      - id: "first_last_frame"
         label: "首尾帧"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "first_frame"
             type: "image"
             role: "first_frame"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 10
+            limitSource:
+              kind: "official_docs"
+              url: "https://klingai.kuaishou.com/docs"
           - slot: "last_frame"
             type: "image"
             role: "last_frame"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 10
+            limitSource:
+              kind: "official_docs"
+              url: "https://klingai.kuaishou.com/docs"
     parameters:
       aspectRatio: ["16:9", "9:16", "1:1"]
       duration: [5, 10]
       resolution: ["1080P", "4K"]
       sound: true
-    governance:
+    research:
+      status: "draft"
       docUrl: "https://klingai.kuaishou.com/docs"
-      confidence: "verified"
+    execution:
+      status: "stub"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"
 
   - id: "kling-v2-6"
     label: "Kling V2.6"
     family: "kling"
     subtitle: "1080P · ⏱ 5-10s"
-    modes:
-      - mode: "text_to_video"
+    operations:
+      - id: "text_to_video"
         label: "文生视频"
-        inputs: []
-      - mode: "first_frame"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "first_frame"
         label: "首帧生视频"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "first_frame"
             type: "image"
             role: "first_frame"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 10
-      - mode: "first_last_frame"
+            limitSource:
+              kind: "official_docs"
+              url: "https://klingai.kuaishou.com/docs"
+      - id: "first_last_frame"
         label: "首尾帧"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "first_frame"
             type: "image"
             role: "first_frame"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 10
+            limitSource:
+              kind: "official_docs"
+              url: "https://klingai.kuaishou.com/docs"
           - slot: "last_frame"
             type: "image"
             role: "last_frame"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 10
+            limitSource:
+              kind: "official_docs"
+              url: "https://klingai.kuaishou.com/docs"
     parameters:
       aspectRatio: ["16:9", "9:16", "1:1"]
       duration: [5, 10]
       resolution: ["1080P"]
-    governance:
+    research:
+      status: "draft"
       docUrl: "https://klingai.kuaishou.com/docs"
-      confidence: "verified"
+    execution:
+      status: "stub"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"
 
-  # 快手数字人 Kling Avatar：纯数字人口播，严禁出现首尾帧或无音频运行
+  # 快手数字人 Kling Avatar：纯数字人口播；H1 不 listed；不吃粗 videoGenerate
   - id: "kling-avatar"
     label: "Kling Avatar (数字人)"
     family: "kling"
     badge: "数字人"
     subtitle: "音频对口型"
-    modes:
-      - mode: "digital_human"
+    operations:
+      - id: "digital_human"
         label: "数字人口播"
+        output:
+          type: "video"
         inputs:
           - slot: "avatar_image"
             type: "image"
             role: "reference"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 10
+            limitSource:
+              kind: "official_docs"
+              url: "https://klingai.kuaishou.com/docs/avatar"
             hint: "需清晰单人人像图"
           - slot: "audio_track"
             type: "audio"
             role: "audio_track"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["audio/mp3", "audio/wav", "audio/m4a"]
             maxSizeMb: 25
             maxDurationSec: 60
+            limitSource:
+              kind: "official_docs"
+              url: "https://klingai.kuaishou.com/docs/avatar"
             hint: "音频驱动口型与微表情"
     parameters:
       aspectRatio: ["16:9", "9:16", "1:1"]
       duration: [5, 10]
-    governance:
+    research:
+      status: "draft"
       docUrl: "https://klingai.kuaishou.com/docs/avatar"
-      confidence: "verified"
+      notes: "H1 quarantine; dedicated videoDigitalHuman profile unavailable; mapper audio is H2"
+    execution:
+      status: "none"
+      profileId: "videoDigitalHuman"
+      notes: "H1: unavailable dedicated profile; must not use coarse videoGenerate"
 
   # 谷歌 Veo 系列：纯参考模式，无首尾帧
   - id: "veo-3.1"
@@ -233,27 +428,51 @@ models:
     family: "veo"
     badge: "谷歌顶级"
     subtitle: "720p-1080p · ⏱ 8s"
-    modes:
-      - mode: "text_to_video"
+    operations:
+      - id: "text_to_video"
         label: "文生视频"
-        inputs: []
-      - mode: "video_multi_ref"
-        label: "参考图生成"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "video_multi_ref"
+        label: "参考图生成"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "reference_image"
             type: "image"
             role: "reference"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
+            limitSource:
+              kind: "official_docs"
+              url: "https://deepmind.google/technologies/veo/"
     parameters:
       aspectRatio: ["16:9", "9:16"]
       duration: [5, 8]
       resolution: ["1080P", "720P"]
-    governance:
+    research:
+      status: "draft"
       docUrl: "https://deepmind.google/technologies/veo/"
-      confidence: "verified"
+    execution:
+      status: "stub"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"
 
   # xAI Grok 1.5 Video：区分首帧与多图参考 (1~8图)
   - id: "grok-imagine-video-1-5"
@@ -261,62 +480,123 @@ models:
     family: "grok"
     badge: "xAI Grok"
     subtitle: "720P-1080P · ⏱ 5s"
-    modes:
-      - mode: "text_to_video"
+    operations:
+      - id: "text_to_video"
         label: "文生视频"
-        inputs: []
-      - mode: "first_frame"
-        label: "首帧生视频"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "first_frame"
+        label: "首帧生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "first_frame"
             type: "image"
             role: "first_frame"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
-      - mode: "video_multi_ref"
+            limitSource:
+              kind: "official_docs"
+              url: "https://x.ai/api"
+      - id: "video_multi_ref"
         label: "多图参考"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "reference_images"
             type: "image"
             role: "reference"
+            source: "upstream_edge"
             min: 1
             max: 8
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
+            limitSource:
+              kind: "official_docs"
+              url: "https://x.ai/api"
     parameters:
       aspectRatio: ["16:9", "9:16", "1:1"]
       duration: [5]
       resolution: ["1080P", "720P"]
-    governance:
+    research:
+      status: "draft"
       docUrl: "https://x.ai/api"
-      confidence: "verified"
+      notes: "H1 draft; runtime limit reconcile is H2"
+    execution:
+      status: "stub"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"
 
   # 阿里万相 3.0：原生立体声音频，首帧与文生
   - id: "wan-3.0"
     label: "Wan 3.0"
     family: "wan"
     subtitle: "720P-1080P · ⏱ 5-15s · 🔊"
-    modes:
-      - mode: "text_to_video"
+    operations:
+      - id: "text_to_video"
         label: "文生视频"
-        inputs: []
-      - mode: "first_frame"
-        label: "首帧生视频"
+        output:
+          type: "video"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "first_frame"
+        label: "首帧生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "first_frame"
             type: "image"
             role: "first_frame"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
+            limitSource:
+              kind: "official_docs"
+              url: "https://wan.aliyun.com"
     parameters:
       aspectRatio: ["16:9", "9:16", "1:1", "4:3", "3:4"]
       duration: [5, 10, 15]
       resolution: ["1080P", "720P"]
       sound: true
-    governance:
+    research:
+      status: "draft"
       docUrl: "https://wan.aliyun.com"
-      confidence: "verified"
+    execution:
+      status: "stub"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"

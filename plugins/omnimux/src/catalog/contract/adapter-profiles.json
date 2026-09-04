@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "profiles": [
+    {
+      "id": "textComplete",
+      "seam": "textComplete",
+      "status": "live",
+      "operations": ["chat", "vision_chat", "document_analyze"],
+      "outputTypes": ["text"],
+      "notes": "文本/视觉专家调用"
+    },
+    {
+      "id": "imageGenerate",
+      "seam": "imageGenerate",
+      "status": "live",
+      "operations": ["text_to_image", "image_to_image", "multi_reference", "inpaint_outpaint"],
+      "outputTypes": ["image"],
+      "notes": "图生成"
+    },
+    {
+      "id": "videoGenerate",
+      "seam": "videoGenerate",
+      "status": "live",
+      "operations": ["text_to_video", "first_frame", "first_last_frame", "video_multi_ref", "video_edit"],
+      "outputTypes": ["video"],
+      "notes": "不含 digital_human；Avatar 需专用 profile 或显式扩表+证据"
+    },
+    {
+      "id": "audioGenerate",
+      "seam": "audioGenerate",
+      "status": "live",
+      "operations": ["text_to_speech", "voice_clone", "text_to_music"],
+      "outputTypes": ["audio"],
+      "notes": "TTS/音乐等"
+    },
+    {
+      "id": "speechToText",
+      "seam": null,
+      "status": "unavailable",
+      "operations": ["speech_to_text"],
+      "outputTypes": ["text"],
+      "notes": "H1 未挂载 live speechToText seam；ASR 不可 listed"
+    },
+    {
+      "id": "videoDigitalHuman",
+      "seam": "videoGenerate",
+      "status": "unavailable",
+      "operations": ["digital_human"],
+      "outputTypes": ["video"],
+      "notes": "Kling Avatar 专用；H1 unavailable，不得借粗 videoGenerate listed"
+    }
+  ]
+}

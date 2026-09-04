@@ -1,39 +1,92 @@
 # 文本模型能力契约 (Text Models Capability Contract)
-version: "1.0"
+# H1: managementGroup 仅分组；output.type 显式；全部 op research=draft / execution=none → listedOperations=[]
+schemaVersion: "1.1"
+managementGroup: "text"
 modality: "text"
 
 models:
   - id: "deepseek-v3"
     label: "DeepSeek V3"
     family: "deepseek"
-    modes:
-      - mode: "chat"
+    operations:
+      - id: "chat"
         label: "文本对话"
-        inputs: []
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+    research:
+      status: "draft"
+      notes: "YAML 草稿 ID；runtime CHAT_MODELS 使用 deepseek-v4-* 等，H2 对齐"
+    execution:
+      status: "none"
+      notes: "未与 runtime text catalog id 对齐前不标 live"
 
   - id: "deepseek-r1"
     label: "DeepSeek R1"
     family: "deepseek"
     badge: "深度推理"
-    modes:
-      - mode: "chat"
+    operations:
+      - id: "chat"
         label: "推理对话"
-        inputs: []
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+    research:
+      status: "draft"
+    execution:
+      status: "none"
 
   - id: "gpt-4o"
     label: "GPT 4o"
     family: "openai"
-    modes:
-      - mode: "chat"
+    operations:
+      - id: "chat"
         label: "通用对话"
-        inputs: []
-      - mode: "vision_chat"
-        label: "多模态视觉理解"
+        output:
+          type: "text"
         inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "vision_chat"
+        label: "多模态视觉理解"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
           - slot: "reference_images"
             type: "image"
             role: "reference"
+            source: "upstream_edge"
             min: 1
             max: 10
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
+            limitSource:
+              kind: "policy_conservative"
+              note: "H1 conservative; official per-model audit pending"
+    research:
+      status: "draft"
+      notes: "runtime 使用 gpt-5.x 等 id；本行保留契约样例"
+    execution:
+      status: "none"
