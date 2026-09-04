@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { attachComposerEnvelope, setComposerValue } from './composer-envelope.js'
+import { attachComposerEnvelope, getComposerText, setComposerValue } from './composer-envelope.js'
 
 describe('Composer Envelope', () => {
-  it('setComposerValue sets value and triggers event', () => {
+  it('setComposerValue sets value and triggers event on textarea', () => {
     let eventFired = false
     const fakeTextarea = {
       value: '',
@@ -15,9 +15,25 @@ describe('Composer Envelope', () => {
     assert.equal(eventFired, true)
   })
 
-  it('attachComposerEnvelope prefixes compact block', () => {
-    const fakeTextarea = {
-      value: '帮我生一张图',
+  it('setComposerValue supports contenteditable div', () => {
+    let eventFired = false
+    const fakeDiv = {
+      isContentEditable: true,
+      textContent: '',
+      dispatchEvent: () => { eventFired = true },
+    }
+
+    setComposerValue(fakeDiv, 'lexical input')
+    assert.equal(fakeDiv.textContent, 'lexical input')
+    assert.equal(eventFired, true)
+    assert.equal(getComposerText(fakeDiv), 'lexical input')
+  })
+
+  it('attachComposerEnvelope prefixes compact block on contenteditable', () => {
+    const fakeDiv = {
+      isContentEditable: true,
+      innerText: '帮我生一张图',
+      textContent: '帮我生一张图',
       dispatchEvent: () => {},
     }
 
@@ -29,13 +45,14 @@ describe('Composer Envelope', () => {
 
     const formatBlock = () => '<ui_context schema="1">' + String.fromCharCode(10) + 'tab: omnimux-assets:library' + String.fromCharCode(10) + '</ui_context>'
 
-    const attached = attachComposerEnvelope(fakeTextarea, getUiContext, formatBlock)
+    const attached = attachComposerEnvelope(fakeDiv, getUiContext, formatBlock)
     assert.equal(attached, true)
-    assert.ok(fakeTextarea.value.startsWith('<ui_context schema="1">'))
-    assert.ok(fakeTextarea.value.includes('帮我生一张图'))
+    assert.ok(fakeDiv.textContent.startsWith('<ui_context schema="1">'))
+    assert.ok(fakeDiv.textContent.includes('帮我生一张图'))
 
     // Second call does not duplicate
-    const second = attachComposerEnvelope(fakeTextarea, getUiContext, formatBlock)
+    fakeDiv.innerText = fakeDiv.textContent
+    const second = attachComposerEnvelope(fakeDiv, getUiContext, formatBlock)
     assert.equal(second, false)
   })
 })
