@@ -103,6 +103,28 @@ export function buildInspirationPayload(row) {
 /**
  * @param {{ window?: Window, tabId?: string, onDismissModal?: () => void }} [io]
  */
+/**
+ * Library tabs default to `gui` (conversationCollapsed). Closing the last
+ * workbench tab sets focus to `chat` without unhiding the middle pane, so
+ * attach/prefill land in a hidden composer — click looks like a no-op.
+ * Enter-conversation: uncollapse + split AFTER closeTab.
+ */
+function revealConversationColumn(wb) {
+  if (!wb) return
+  if (typeof wb.setConversationCollapsed === 'function') {
+    try { wb.setConversationCollapsed(false) } catch { /* ignore */ }
+  }
+  if (typeof wb.setFocus === 'function') {
+    try { wb.setFocus('split') } catch { /* ignore */ }
+  }
+}
+
+function workbenchFrom(win) {
+  if (win && win.__omnimuxWorkbench) return win.__omnimuxWorkbench
+  if (typeof window !== 'undefined' && window.__omnimuxWorkbench) return window.__omnimuxWorkbench
+  return undefined
+}
+
 export function dismissInspirationLibrary(io = {}) {
   if (typeof io.onDismissModal === 'function') {
     try { io.onDismissModal() } catch { /* ignore */ }
@@ -110,14 +132,21 @@ export function dismissInspirationLibrary(io = {}) {
   const win = io.window
     ?? (typeof window !== 'undefined' ? window : undefined)
   const tabId = io.tabId || INSPIRATION_LIBRARY_TAB_ID
-  const wb = win && win.__omnimuxWorkbench
-  if (wb && typeof wb.closeTab === 'function') {
-    wb.closeTab(tabId)
-    return
+  const wb = workbenchFrom(win)
+  const hideLibraryThenReveal = () => {
+    if (wb && typeof wb.closeTab === 'function') {
+      try { wb.closeTab(tabId) } catch { /* ignore */ }
+    } else if (wb && typeof wb.createSidebarStore === 'function') {
+      try { wb.createSidebarStore({ tabId })?.close?.() } catch { /* ignore */ }
+    }
+    revealConversationColumn(wb)
   }
-  if (wb && typeof wb.createSidebarStore === 'function') {
-    const store = wb.createSidebarStore({ tabId })
-    if (store && typeof store.close === 'function') store.close()
+  hideLibraryThenReveal()
+  // Library open() defaults to gui and can re-collapse the middle pane on the
+  // same tick as closeTab; replay after React/workbench subscribers settle.
+  if (typeof setTimeout === 'function') {
+    setTimeout(hideLibraryThenReveal, 0)
+    setTimeout(hideLibraryThenReveal, 50)
   }
 }
 
