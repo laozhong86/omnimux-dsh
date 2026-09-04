@@ -144,6 +144,10 @@ const attachCounts = new WeakMap()
 /** Sessions that already received a default width write. */
 const appliedWidthSessions = new Set()
 
+/** Sessions whose initial sidebar snapshot was classified for default seed cleanup. */
+const classifiedSeedSessions = new Set()
+const SIDEBAR_LAYOUT_STORAGE_PREFIX = 'dsh-sidebar:v1:'
+
 /** In-memory focus records: sessionId -> { [tabId]: { mode, splitWidth } } */
 const focusStorageBySession = new Map()
 
@@ -856,6 +860,44 @@ function closeSeedFiles(service, openScope) {
 }
 
 /**
+ * Classify one session exactly once when its first sidebar snapshot arrives.
+ * A reliable absent storage key identifies better-sidebar's factory state;
+ * closing its path-less editor leaves the pane empty so PaneEmptyCards renders.
+ */
+function clearInitialFilesSeed(service) {
+  if (!service || typeof service.getSnapshot !== 'function' || typeof service.closeTab !== 'function') return false
+  let snapshot
+  try {
+    snapshot = service.getSnapshot()
+  } catch {
+    return false
+  }
+  const sessionId = snapshot?.sessionId
+  const state = snapshot?.state
+  if (!sessionId || !state || classifiedSeedSessions.has(sessionId)) return false
+
+  let hasPersistedLayout
+  try {
+    const storage = hostWindow()?.localStorage
+    if (!storage || typeof storage.getItem !== 'function') return false
+    hasPersistedLayout = storage.getItem(SIDEBAR_LAYOUT_STORAGE_PREFIX + sessionId) !== null
+  } catch {
+    return false
+  }
+
+  classifiedSeedSessions.add(sessionId)
+  if (hasPersistedLayout) return false
+  const seed = listOpenTabs(state).find((tab) => isSeedFilesTab(tab) && tab.id)
+  if (!seed) return false
+  try {
+    service.closeTab(seed.id, { sessionId })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Write the default GUI width through the tab store (public API has no setWidth).
  * @returns {number | null | undefined} number = applied; null = skip; undefined = wait
  */
@@ -1119,9 +1161,17 @@ function bind(next = {}) {
   if (next.layout !== undefined) deps.layout = next.layout || null
   if (next.sessions !== undefined) deps.sessions = next.sessions || null
   const service = getService()
+  clearInitialFilesSeed(service)
   if (service && typeof service.subscribeState === 'function' && !service.__omnimuxWorkbenchHooked) {
     try {
-      service.subscribeState((state) => {
+      service.subscribeState(() => {
+        clearInitialFilesSeed(service)
+        let state
+        try {
+          state = service.getSnapshot?.()?.state
+        } catch {
+          state = undefined
+        }
         emit()
         if (state?.panelOpen && typeof state.width === 'number') {
           const sessionId = currentSessionId()
@@ -1374,6 +1424,7 @@ export function resetWorkbenchForTests(target = hostWindow()) {
   attachedStore = null
   listeners.clear()
   appliedWidthSessions.clear()
+  classifiedSeedSessions.clear()
   focusStorageBySession.clear()
   lastExpandedOfficialWidth = WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX
   lastCollapsedOfficialWidth = collapsedLeftRailFallbackPx()
