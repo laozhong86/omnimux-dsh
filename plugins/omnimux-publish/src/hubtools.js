@@ -66,6 +66,9 @@ export function createHubChannel(deps = {}) {
         || /official request unauthorized/i.test(errText)) {
         throw new PublishError('needs-omnimux', 'OmniMux 未登录：请先在 OmniMux 登录或设置 OMNIMUX_ACCESS_TOKEN，再执行发布相关操作')
       }
+      if (/quota-exceeded|insufficient_user_quota|预扣费额度失败/i.test(errText)) {
+        throw new PublishError('quota-exceeded', '当前操作需要更多额度，充值后即可继续使用 OmniMux。')
+      }
       if (/UNKNOWN_TOOL/i.test(text) || /unknown tool/i.test(text)) {
         throw new PublishError('needs-hub', `omnimux hub 插件未装载（工具 ${name} 未知），请安装/启用 omnimux hub 插件`)
       }

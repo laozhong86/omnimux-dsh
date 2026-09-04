@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { authGuard, whenAuthReady } from './api.js'
+import { authGuard, quotaGuard, whenAuthReady } from './api.js'
 
 /** Small stub of the hub's `window.__omnimuxAuth` gate. */
 function fakeGate() {
@@ -120,6 +120,20 @@ describe('accounts api authGuard', () => {
       } finally {
         restore()
       }
+    })
+  })
+})
+
+describe('accounts api quotaGuard', () => {
+  it('402 → notify once, no retry', async () => {
+    let calls = 0
+    const notified = []
+    await withWindow({ __omnimuxQuota: { notify(f, c) { notified.push([f, c]) } } }, async () => {
+      const fn = async () => { calls += 1; return { ok: false, status: 402, body: { error: 'quota-exceeded' } } }
+      const result = await quotaGuard(fn, { capability: 'accounts' })()
+      assert.equal(calls, 1)
+      assert.equal(result.status, 402)
+      assert.equal(notified.length, 1)
     })
   })
 })

@@ -71,6 +71,25 @@ describe('HubPublishChannel error mapping', () => {
     )
   })
 
+  it('maps structured quota-exceeded tool errors without any UI global', async () => {
+    const tools = {
+      get: () => ({ name: 'omnimux_publish_get' }),
+      async execute() {
+        return {
+          content: [{ type: 'text', text: 'quota failure' }],
+          isError: true,
+          error: { message: '当前操作需要更多额度', info: { code: 'quota-exceeded' } },
+        }
+      },
+    }
+    const channel = createHubChannel({ tools })
+    await assert.rejects(
+      () => channel.getPost('p1'),
+      (e) => e instanceof PublishError && e.code === 'quota-exceeded' && /更多额度/.test(e.message),
+    )
+    assert.equal(typeof globalThis.window, 'undefined')
+  })
+
   it('maps UNKNOWN_TOOL to needs-hub', async () => {
     const tools = mockTools({ omnimux_publish_get: () => ({}) }, { getNames: ['omnimux_publish_get'] })
     // get 允许（lazy 存在），execute 走 UNKNOWN_TOOL 分支：用 getNames 排除法模拟

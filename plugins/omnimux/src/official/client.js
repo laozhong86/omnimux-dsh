@@ -1,4 +1,5 @@
 import { OmnimuxError } from '../media/errors.js'
+import { classifyQuotaFailure } from '../errors/quota-classifier.js'
 
 /**
  * Two-lane HTTP for official-only tools. Never returns PAT or sk- to callers.
@@ -38,14 +39,16 @@ export function createOfficialClient(deps) {
       json = {}
     }
     assertPublic(json)
-    if (response.status === 401 || response.status === 403) {
-      throw new OmnimuxError('needs-omnimux', `official request unauthorized (HTTP ${response.status})`)
-    }
     if (!response.ok) {
+      const classification = classifyQuotaFailure({ status: response.status, body: json })
+      if (classification.kind === 'needs-omnimux') {
+        throw new OmnimuxError('needs-omnimux', classification.message, { status: response.status })
+      }
+      if (classification.kind === 'quota-exceeded') {
+        throw new OmnimuxError('quota-exceeded', classification.message, { status: response.status, details: classification })
+      }
       const message = pickErrorMessage(json) || `official request failed (HTTP ${response.status})`
-      const error = new OmnimuxError('omnimux-request-failed', message)
-      error.status = response.status
-      throw error
+      throw new OmnimuxError('omnimux-request-failed', message, { status: response.status })
     }
     return json
   }
@@ -99,6 +102,9 @@ export function createOfficialClient(deps) {
       method,
       headers: { ...headers, ...opts.headers },
     })
+    if (response.status === 402) {
+      throw new OmnimuxError('quota-exceeded', '当前操作需要更多额度，充值后即可继续使用 OmniMux。')
+    }
     if (response.status === 401 || response.status === 403) {
       throw new OmnimuxError('needs-omnimux', `official request unauthorized (HTTP ${response.status})`)
     }

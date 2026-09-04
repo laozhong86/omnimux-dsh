@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { OmnimuxError } from './errors.js'
+import { classifyQuotaFailure } from '../errors/quota-classifier.js'
 
 /**
  * @param {typeof fetch} fetcher
@@ -19,11 +20,23 @@ export async function getJson(fetcher, url, apiKey, signal) {
     headers,
     ...(signal ? { signal } : {}),
   })
-  const json = await response.json()
-  if (!response.ok) {
-    throw new OmnimuxError('omnimux-request-failed', `GET ${url} failed: ${response.status}`)
+  let body = null
+  try {
+    body = await response.json()
+  } catch {
+    try { body = await response.text() } catch { body = null }
   }
-  return json
+  if (!response.ok) {
+    const classified = classifyQuotaFailure({ status: response.status, body })
+    if (classified.kind === 'quota-exceeded') {
+      throw new OmnimuxError('quota-exceeded', classified.message, { status: response.status, details: classified })
+    }
+    if (classified.kind === 'needs-omnimux') {
+      throw new OmnimuxError('needs-omnimux', classified.message, { status: response.status })
+    }
+    throw new OmnimuxError('omnimux-request-failed', `GET request failed (HTTP ${response.status})`, { status: response.status })
+  }
+  return body
 }
 
 /**
@@ -51,7 +64,18 @@ export async function downloadMediaFile(options) {
       ...(options.signal ? { signal: options.signal } : {}),
     })
     if (!response.ok) {
-      throw new OmnimuxError('omnimux-download-failed', `download failed: ${response.status}`)
+      let body = null
+      try { body = await response.clone().json() } catch {
+        try { body = await response.clone().text() } catch { body = null }
+      }
+      const classified = classifyQuotaFailure({ status: response.status, body })
+      if (classified.kind === 'quota-exceeded') {
+        throw new OmnimuxError('quota-exceeded', classified.message, { status: response.status, details: classified })
+      }
+      if (classified.kind === 'needs-omnimux') {
+        throw new OmnimuxError('needs-omnimux', classified.message, { status: response.status })
+      }
+      throw new OmnimuxError('omnimux-download-failed', `download failed: ${response.status}`, { status: response.status })
     }
     buffer = Buffer.from(await response.arrayBuffer())
   }

@@ -21,6 +21,8 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `proposed` | [2026-09-04-omnimux-universal-quota-gate-prd.md](2026-09-04-omnimux-universal-quota-gate-prd.md) | PRD：全局额度不足与统一充值弹窗 | `omnimux` | 2026-09-04 | 28 条云调用触发盘点；P0 客户端统一 `window.__omnimuxQuota` 弹窗；Agent 只结构化 `QUOTA`；充值不自动重试。 |
+| `proposed` | [2026-09-04-omnimux-universal-quota-gate-design.md](2026-09-04-omnimux-universal-quota-gate-design.md) | 系统设计：统一额度分类器 + 充值门 | `omnimux` | 2026-09-04 | 稳定码 `quota-exceeded`；official/media 402 保真；quotaGuard 对标 authGuard；T01–T05。图：`2026-09-04-omnimux-universal-quota-gate-*.mermaid`。 |
 | `proposed` | [2026-09-04-agent-workbench-bidirectional-sync-design.md](2026-09-04-agent-workbench-bidirectional-sync-design.md) | 系统设计：Agent 页面感知与工作台双向协同 | `omnimux` | 2026-09-04 | Q1 双通道信封（composer 前缀 + viewport mailbox）；Q2 Hub 单路 SSE + hubEvents；五任务分解 T01–T05。图：`2026-09-04-agent-workbench-sync-*.mermaid`。 |
 | `proposed` | [2026-09-04-agent-workbench-bidirectional-sync-prd.md](2026-09-04-agent-workbench-bidirectional-sync-prd.md) | PRD：Agent 页面感知与工作台双向协同系统 | `omnimux` | 2026-09-04 | UI Context Envelope 随消息默认附带；`workbench_get_active_view` / `workbench_open_tab` + 防打扰；资产库写盘 P95 ≤400ms 推送，5s poll 仅作 SSE 断连兜底。 |
 | `proposed` | [2026-08-31-workbench-libraries-and-toggle-prd.md](2026-08-31-workbench-libraries-and-toggle-prd.md) | 增量 PRD：一级库页迁入右侧工作台与顶部对话开关注入（#318） | `omnimux` | 2026-08-31 | 废除库页 overlay；registerTab + Default Focus（画布 split / 其余 gui）；toggleCluster 首位插入对话开关；记忆按会话×Tab。 |

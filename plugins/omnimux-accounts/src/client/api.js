@@ -26,6 +26,24 @@ export async function accountsRequest(path, opts = {}) {
  * @param {(...args: any[]) => Promise<{ ok: boolean, status: number, body: any }>} fn
  * @returns {(...args: any[]) => Promise<{ ok: boolean, status: number, body: any }>}
  */
+export function isQuotaHttpResult(result) {
+  if (!result || result.ok) return false
+  if (result.status === 402) return true
+  const err = result.body && typeof result.body === 'object' ? result.body.error : null
+  return err === 'quota-exceeded'
+}
+
+export function notifyQuota(result, context) {
+  const quota = typeof window !== 'undefined' ? window.__omnimuxQuota : undefined
+  if (!quota || typeof quota.notify !== 'function' || !isQuotaHttpResult(result)) return result
+  quota.notify({ status: result.status, body: result.body, code: result.body?.error }, context)
+  return result
+}
+
+export function quotaGuard(fn, context) {
+  return (...args) => Promise.resolve(fn(...args)).then((result) => notifyQuota(result, context))
+}
+
 export function authGuard(fn) {
   return (...args) => {
     const run = async () => {
@@ -81,25 +99,25 @@ export function listAccounts(filters = {}) {
   if (filters.platform) query.set('platform', filters.platform)
   if (filters.group) query.set('group', filters.group)
   const suffix = query.toString() ? `?${query}` : ''
-  return accountsRequest(`/omnimux/accounts${suffix}`)
+  return quotaGuard(() => accountsRequest(`/omnimux/accounts${suffix}`), { capability: 'accounts' })()
 }
 
 /**
  * @param {string} platform
  */
-export const connectAccount = authGuard((platform) =>
-  accountsRequest('/omnimux/accounts', { method: 'POST', body: { platform } }))
+export const connectAccount = quotaGuard(authGuard((platform) =>
+  accountsRequest('/omnimux/accounts', { method: 'POST', body: { platform } })), { capability: 'accounts' })
 
 /**
  * @param {string} id
  */
-export const disconnectAccount = authGuard((id) =>
-  accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' }))
+export const disconnectAccount = quotaGuard(authGuard((id) =>
+  accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' })), { capability: 'accounts' })
 
 /**
  * Updates Host-local account metadata (group / agent_usable).
  * @param {string} id
  * @param {{ group?: string | null, agent_usable?: boolean }} body
  */
-export const patchAccount = authGuard((id, body) =>
-  accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: 'PATCH', body }))
+export const patchAccount = quotaGuard(authGuard((id, body) =>
+  accountsRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: 'PATCH', body })), { capability: 'accounts' })

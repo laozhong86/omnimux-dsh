@@ -19,6 +19,24 @@ export const HOST_PATHS = Object.freeze({
 const MOCK_LATENCY_MS = 40
 const SYNC_LATENCY_MS = 800
 
+export function isQuotaHttpResult(result) {
+  if (!result || result.ok) return false
+  if (result.status === 402) return true
+  const err = result.body && typeof result.body === 'object' ? result.body.error : null
+  return err === 'quota-exceeded'
+}
+
+export function notifyQuota(result, context) {
+  const quota = typeof window !== 'undefined' ? window.__omnimuxQuota : undefined
+  if (!quota || typeof quota.notify !== 'function' || !isQuotaHttpResult(result)) return result
+  quota.notify({ status: result.status, body: result.body, code: result.body?.error }, context)
+  return result
+}
+
+export function quotaGuard(fn, context) {
+  return (...args) => Promise.resolve(fn(...args)).then((result) => notifyQuota(result, context))
+}
+
 /**
  * @param {string} path
  * @param {{ method?: string, body?: unknown, query?: Record<string, string> }} [opts]
@@ -135,7 +153,7 @@ function emptyBlock(kind) {
  */
 export async function fetchDashboardLive(query) {
   const params = hostQuery(query)
-  const guarded = authGuard(analyticsRequest)
+  const guarded = quotaGuard(authGuard(analyticsRequest), { capability: 'analytics' })
   const [overview, insights, followers, posts] = await Promise.all([
     guarded(HOST_PATHS.overview, { query: params }),
     guarded(HOST_PATHS.insights, { query: params }),
@@ -222,7 +240,7 @@ export async function fetchDashboardLive(query) {
  * Bound accounts for the FilterBar. Browser-safe Host list — never the hub client.
  */
 export async function fetchAccounts() {
-  const result = await authGuard(analyticsRequest)('/omnimux/accounts')
+  const result = await quotaGuard(authGuard(analyticsRequest), { capability: 'analytics' })('/omnimux/accounts')
   if (!result.ok) throwHttp(result)
   const accounts = Array.isArray(result.body?.accounts) ? result.body.accounts : []
   return accounts.map((row) => ({
@@ -267,7 +285,7 @@ export async function syncNow(query = {}, opts = {}) {
     }
     return payload
   }
-  const result = await authGuard(analyticsRequest)(HOST_PATHS.sync, { method: 'POST', body: query })
+  const result = await quotaGuard(authGuard(analyticsRequest), { capability: 'analytics' })(HOST_PATHS.sync, { method: 'POST', body: query })
   if (!result.ok) {
     const error = new Error(String(result.body?.error || `HTTP ${result.status}`))
     error.status = result.status

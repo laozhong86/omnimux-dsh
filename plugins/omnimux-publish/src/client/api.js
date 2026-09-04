@@ -11,6 +11,24 @@
  * @param {unknown} body
  * @param {number} [status]
  */
+export function isQuotaHttpResult(result) {
+  if (!result || result.ok) return false
+  if (result.status === 402) return true
+  const err = result.body && typeof result.body === 'object' ? result.body.error : null
+  return err === 'quota-exceeded'
+}
+
+export function notifyQuota(result, context) {
+  const quota = typeof window !== 'undefined' ? window.__omnimuxQuota : undefined
+  if (!quota || typeof quota.notify !== 'function' || !isQuotaHttpResult(result)) return result
+  quota.notify({ status: result.status, body: result.body, code: result.body?.error }, context)
+  return result
+}
+
+export function quotaGuard(fn, context) {
+  return (...args) => Promise.resolve(fn(...args)).then((result) => notifyQuota(result, context))
+}
+
 export function errorText(body, status) {
   const row = body && typeof body === 'object' && !Array.isArray(body)
     ? /** @type {Record<string, unknown>} */ (body)
@@ -118,17 +136,17 @@ export function assignAccounts(draftId, accountIds) {
 
 /** 一键发布：立即返回，进度经 state?rev= 轮询。 */
 export function submitRecord(recordId) {
-  return publishRequest('/omnimux/publish/records/submit', { method: 'POST', body: { record_id: recordId } })
+  return quotaGuard(() => publishRequest('/omnimux/publish/records/submit', { method: 'POST', body: { record_id: recordId } }), { capability: 'publish' })()
 }
 
 /** 手动状态同步（publish_get_record refresh 同源）。 */
 export function refreshRecord(recordId) {
-  return publishRequest('/omnimux/publish/records/refresh', { method: 'POST', body: { record_id: recordId } })
+  return quotaGuard(() => publishRequest('/omnimux/publish/records/refresh', { method: 'POST', body: { record_id: recordId } }), { capability: 'publish' })()
 }
 
 /** 单账号重试（复用已上传媒体）。 */
 export function retryTask(taskId) {
-  return publishRequest('/omnimux/publish/tasks/retry', { method: 'POST', body: { task_id: taskId } })
+  return quotaGuard(() => publishRequest('/omnimux/publish/tasks/retry', { method: 'POST', body: { task_id: taskId } }), { capability: 'publish' })()
 }
 
 /**
@@ -139,5 +157,5 @@ export function listHubAccounts(filters = {}) {
   const query = new URLSearchParams()
   if (filters.platform) query.set('platform', filters.platform)
   const suffix = query.toString() ? `?${query}` : ''
-  return publishRequest(`/omnimux/accounts${suffix}`)
+  return quotaGuard(() => publishRequest(`/omnimux/accounts${suffix}`), { capability: 'publish' })()
 }

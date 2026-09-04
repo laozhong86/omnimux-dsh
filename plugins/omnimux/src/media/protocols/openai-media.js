@@ -5,6 +5,7 @@ import {
   createProviderRuntime,
 } from 'aigc-provider-runtime-kit/runtime'
 import { OmnimuxError } from '../errors.js'
+import { classifyQuotaFailure } from '../../errors/quota-classifier.js'
 import { getJson } from '../job.js'
 import { pickMediaUrl, pickTaskId, pickTaskStatus, TASK_PATH } from '../vendors/omnimux.js'
 
@@ -33,6 +34,8 @@ export async function pollOpenAiMediaTask(options) {
     const status = pickTaskStatus(json)
     if (status === 'completed' || status === 'success') return json
     if (status === 'failed' || status === 'error') {
+      const classified = classifyQuotaFailure({ body: json })
+      if (classified.kind === 'quota-exceeded') throw new OmnimuxError('quota-exceeded', classified.message, { details: classified })
       throw new OmnimuxError('omnimux-failed', `${options.capability} task ${options.taskId} failed`)
     }
     await sleep()

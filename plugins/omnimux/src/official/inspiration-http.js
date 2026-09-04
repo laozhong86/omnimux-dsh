@@ -2,6 +2,7 @@ import { sendJson, readJsonBody } from '../auth/http-routes.js'
 import { DEFAULT_SITE, resolveSiteBaseUrl } from '../auth/omnimux-auth.js'
 import { assertLocalWrite } from '../apps/origin.js'
 import { OmnimuxError } from '../media/errors.js'
+import { mapOfficialError } from './http-routes.js'
 import { createOfficialClient } from './client.js'
 import { parseOfficialConfig } from './config.js'
 import {
@@ -28,14 +29,11 @@ function queryRecord(url) {
 }
 
 function mapError(error) {
-  if (error instanceof OmnimuxError && error.code === 'needs-omnimux') {
-    return { status: 401, body: { error: error.message } }
-  }
+  const mapped = mapOfficialError(error)
+  if (mapped.status !== 502) return mapped
   const status = error instanceof OmnimuxError && typeof error.status === 'number' ? error.status : 0
-  if (status >= 400 && status < 500) {
-    return { status, body: { error: error instanceof Error ? error.message : String(error) } }
-  }
-  return { status: 502, body: { error: error instanceof Error ? error.message : String(error) } }
+  if (status >= 400 && status < 500) return { status, body: { error: error instanceof Error ? error.message : String(error) } }
+  return mapped
 }
 
 /**

@@ -85,9 +85,22 @@ export function avatarIdFromPath(pathname) {
 }
 
 /**
- * Validates a PATCH body against the metadata contract
- * `{ group?: string | null, agent_usable?: boolean }`.
- * Returns a normalized patch, or an error message on invalid input.
+ * Maps an official request failure to a safe HTTP response.
+ * @param {unknown} error
+ * @returns {{ status: number, body: Record<string, string> }}
+ */
+export function mapOfficialError(error) {
+  if (error instanceof OmnimuxError && error.code === 'quota-exceeded') {
+    return { status: 402, body: { error: 'quota-exceeded', message: '当前操作需要更多额度，充值后即可继续使用 OmniMux。' } }
+  }
+  if (error instanceof OmnimuxError && error.code === 'needs-omnimux') {
+    return { status: 401, body: { error: 'needs-omnimux', message: '请先登录 OmniMux。' } }
+  }
+  return { status: 502, body: { error: error instanceof Error ? error.message : String(error) } }
+}
+
+/**
+ * Validates a PATCH body against the metadata contract.
  * @param {unknown} body
  * @returns {{ patch: Record<string, string | boolean | null> } | { error: string }}
  */
@@ -242,10 +255,7 @@ export function createOfficialDispatcher(deps = {}) {
         }
         await deps.identity.require()
       } catch (error) {
-        if (error instanceof OmnimuxError && error.code === 'needs-omnimux') {
-          return { status: 401, body: { error: error.message } }
-        }
-        return { status: 502, body: { error: error instanceof Error ? error.message : String(error) } }
+        return mapOfficialError(error)
       }
       const hit = avatarStore.get(avatarId)
       if (!hit || !Buffer.isBuffer(hit.buffer)) return { status: 404, body: { error: 'not found' } }
@@ -415,10 +425,7 @@ export function createOfficialDispatcher(deps = {}) {
         return { status: 200, body: data }
       }
     } catch (error) {
-      if (error instanceof OmnimuxError && error.code === 'needs-omnimux') {
-        return { status: 401, body: { error: error.message } }
-      }
-      return { status: 502, body: { error: error instanceof Error ? error.message : String(error) } }
+      return mapOfficialError(error)
     }
     return { status: 404, body: { error: 'not found' } }
   }

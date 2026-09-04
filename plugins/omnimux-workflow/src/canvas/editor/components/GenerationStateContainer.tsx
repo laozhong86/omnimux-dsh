@@ -143,6 +143,21 @@ const GenerationStateContainer: React.FC<GenerationStateContainerProps> = ({
   const defaultLoadingText = status === 'pending' ? t('node.preparing') : t('node.generating');
   const resolvedErrorMessage = useUserFacingErrorMessage(errorMessage);
 
+  useEffect(() => {
+    if (!isFailed || !errorMessage) return;
+    const normalized = errorMessage.toLowerCase();
+    const isQuota = normalized.includes('quota-exceeded')
+      || normalized.includes('insufficient_user_quota')
+      || errorMessage.includes('预扣费额度失败')
+      || normalized.includes('[omnimux:quota-exceeded]');
+    if (!isQuota) return;
+    const quota = typeof window !== 'undefined' ? window.__omnimuxQuota : undefined;
+    quota?.notify?.({ message: errorMessage, code: 'quota-exceeded' }, {
+      capability: 'canvas',
+      correlationId: taskId || errorMessage,
+    });
+  }, [isFailed, errorMessage, taskId]);
+
   const transitionStyle = useCallback(
     () => ({ transition: `opacity ${transitionDuration}ms ease-out` }),
     [transitionDuration],

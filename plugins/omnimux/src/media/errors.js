@@ -4,10 +4,12 @@ export class OmnimuxError extends Error {
    * @param {string} message
    * @param {ErrorOptions} [options]
    */
-  constructor(code, message, options) {
+  constructor(code, message, options = {}) {
     super(message, options)
     this.name = 'OmnimuxError'
     this.code = code
+    if (typeof options.status === 'number') this.status = options.status
+    if (options.details !== undefined) this.details = options.details
   }
 }
 

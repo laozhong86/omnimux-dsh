@@ -1,4 +1,5 @@
 import { OmnimuxError, unwrapAdapterError } from './errors.js'
+import { classifyQuotaFailure } from '../errors/quota-classifier.js'
 import { downloadMediaFile } from './job.js'
 import { createOpenAiMediaRuntime, pollOpenAiMediaTask } from './protocols/openai-media.js'
 import { parseMediaConfig, resolveMediaAuth, resolveMediaRoute } from './route.js'
@@ -79,7 +80,12 @@ export async function executeOmnimuxMedia(capability, input) {
       ...(input.signal ? { signal: input.signal } : {}),
     })
   } catch (error) {
-    throw unwrapAdapterError(error)
+    const unwrapped = unwrapAdapterError(error)
+    const classified = classifyQuotaFailure({ error: unwrapped, cause: unwrapped, message: unwrapped?.message })
+    if (classified.kind === 'quota-exceeded') {
+      throw new OmnimuxError('quota-exceeded', classified.message, { cause: unwrapped instanceof Error ? unwrapped : undefined })
+    }
+    throw unwrapped
   }
   const url = result.outputs.find((item) => item.type === capability)?.url
   const submittedId = result.taskId ?? null
