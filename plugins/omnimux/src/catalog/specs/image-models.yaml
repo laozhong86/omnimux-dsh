@@ -1,0 +1,51 @@
+# 图像模型能力契约 (Image Models Capability Contract)
+version: "1.0"
+modality: "image"
+
+models:
+  - id: "gpt-image-2"
+    label: "GPT Image 2"
+    family: "openai"
+    badge: "默认"
+    subtitle: "1k-4k"
+    modes:
+      - mode: "text_to_image"
+        label: "文生图"
+        inputs: []
+      - mode: "multi_reference"
+        label: "垫图参考"
+        inputs:
+          - slot: "reference_image"
+            type: "image"
+            role: "reference"
+            min: 1
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 10
+    parameters:
+      aspectRatio: ["auto", "1:1", "16:9", "9:16"]
+      resolution: ["1024x1024", "1792x1024"]
+      quality: ["standard", "hd"]
+
+  - id: "grok-imagine-image"
+    label: "Grok Imagine Image"
+    family: "grok"
+    badge: "极速"
+    subtitle: "xAI Grok"
+    modes:
+      - mode: "text_to_image"
+        label: "文生图"
+        inputs: []
+      - mode: "multi_reference"
+        label: "多图垫图"
+        inputs:
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            min: 1
+            max: 4
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 15
+    parameters:
+      aspectRatio: ["auto", "1:1", "16:9", "9:16"]
+      resolution: ["1024x1024", "1792x1024"]

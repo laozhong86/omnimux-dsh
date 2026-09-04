@@ -151,14 +151,26 @@ export function VideoParamPopover({
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="wf-video-param-popover__scrollable">
-        <section className="wf-video-param-popover__section">
-          <h4 className="wf-video-param-popover__section-title">生成方式</h4>
-          <GenerationModeSegment
-            value={params.generationMode}
-            supportedRoles={modelItem?.inputCapability?.referenceImages?.supportedRoles}
-            onChange={(v) => onParamChange('generationMode', v)}
-          />
-        </section>
+        {/* 当且仅当支持模式数量 >= 2 时才渲染生成方式标题与分段，模式单一或无需切换时彻底不占地 */}
+        {(() => {
+          const roles = modelItem?.inputCapability?.referenceImages?.supportedRoles;
+          const hasRoles = Array.isArray(roles) && roles.length > 0;
+          const supportsRef = hasRoles ? roles.includes('reference') : true;
+          const supportsFirstLast = hasRoles ? (roles.includes('first_frame') && roles.includes('last_frame')) : false;
+          const modeCount = (supportsRef ? 1 : 0) + (supportsFirstLast ? 1 : 0);
+          if (modeCount <= 1) return null;
+
+          return (
+            <section className="wf-video-param-popover__section">
+              <h4 className="wf-video-param-popover__section-title">生成方式</h4>
+              <GenerationModeSegment
+                value={params.generationMode}
+                supportedRoles={modelItem?.inputCapability?.referenceImages?.supportedRoles}
+                onChange={(v) => onParamChange('generationMode', v)}
+              />
+            </section>
+          );
+        })()}
 
         <section className="wf-video-param-popover__section">
           <h4 className="wf-video-param-popover__section-title">比例</h4>

@@ -1,0 +1,47 @@
+# 音频模型能力契约 (Audio Models Capability Contract)
+version: "1.0"
+modality: "audio"
+
+models:
+  - id: "suno"
+    label: "Suno Music"
+    family: "suno"
+    badge: "音乐创作"
+    subtitle: "AI 歌曲 / 纯音乐 · ⏱ 30-120s"
+    modes:
+      - mode: "text_to_music"
+        label: "AI 音乐生成"
+        inputs: []
+    parameters:
+      duration: [30, 60, 120]
+      instrumental: true
+
+  - id: "gpt-4o-mini-tts"
+    label: "GPT 4o Mini TTS"
+    family: "openai"
+    badge: "语音合成"
+    subtitle: "OpenAI 高清配音 · 6 种音色"
+    modes:
+      - mode: "text_to_speech"
+        label: "文本转语音"
+        inputs: []
+    parameters:
+      voice: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+
+  - id: "whisper-1"
+    label: "Whisper 1"
+    family: "openai"
+    badge: "语音识别"
+    subtitle: "OpenAI 语音转文字 / ASR"
+    modes:
+      - mode: "speech_to_text"
+        label: "语音识别"
+        inputs:
+          - slot: "audio_input"
+            type: "audio"
+            role: "reference"
+            min: 1
+            max: 1
+            allowedMimes: ["audio/mp3", "audio/wav", "audio/m4a", "audio/webm"]
+            maxSizeMb: 25
+    parameters: {}
