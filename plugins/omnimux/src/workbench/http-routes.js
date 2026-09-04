@@ -6,6 +6,7 @@
  */
 
 import { assertLocalWrite } from '../apps/origin.js'
+import { readJsonBody, sendJson } from '../auth/http-routes.js'
 
 export function isLocalRequest(req) {
   const origin = req.headers?.origin || ''
@@ -32,93 +33,127 @@ export function isLocalRequest(req) {
 }
 
 export function registerWorkbenchHttpRoutes(webServer, deps) {
+  if (!webServer || typeof webServer.register !== 'function') return () => {}
   const hubEvents = deps.hubEvents
   const mailbox = deps.mailbox
+  const disposers = []
 
   // 1. SSE Stream: GET /omnimux/events/stream
-  webServer.get('/omnimux/events/stream', (req, res) => {
-    if (!isLocalRequest(req)) {
-      res.writeHead(403, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: false, error: 'not-local' }))
-      return
-    }
+  disposers.push(webServer.register({
+    kind: 'exact',
+    path: '/omnimux/events/stream',
+    handler: async (req, res) => {
+      if (req.method !== 'GET') {
+        sendJson(res, 405, { ok: false, error: 'method-not-allowed' })
+        return
+      }
 
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'X-Accel-Buffering': 'no',
-    })
+      if (!isLocalRequest(req)) {
+        sendJson(res, 403, { ok: false, error: 'not-local' })
+        return
+      }
 
-    const lastEventId = req.headers['last-event-id']
-    if (lastEventId && hubEvents) {
-      const replay = hubEvents.getEventsSince(lastEventId)
-      for (const ev of replay) {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      })
+
+      const lastEventId = req.headers?.['last-event-id']
+      if (lastEventId && hubEvents) {
+        const replay = hubEvents.getEventsSince(lastEventId)
+        for (const ev of replay) {
+          res.write(`id: ${ev.id}
+event: ${ev.type}
+data: ${JSON.stringify(ev.payload)}
+
+`)
+        }
+      }
+
+      // Heartbeat every 2s
+      const pingTimer = setInterval(() => {
+        res.write(`event: omnimux:heartbeat
+data: ${JSON.stringify({ at: Date.now() })}
+
+`)
+      }, 2000)
+
+      const unsubscribe = hubEvents?.subscribe((ev) => {
         res.write(`id: ${ev.id}
 event: ${ev.type}
 data: ${JSON.stringify(ev.payload)}
 
 `)
-      }
-    }
+      })
 
-    // Heartbeat every 2s
-    const pingTimer = setInterval(() => {
-      res.write(`event: omnimux:heartbeat
-data: ${JSON.stringify({ at: Date.now() })}
-
-`)
-    }, 2000)
-
-    const unsubscribe = hubEvents?.subscribe((ev) => {
-      res.write(`id: ${ev.id}
-event: ${ev.type}
-data: ${JSON.stringify(ev.payload)}
-
-`)
-    })
-
-    req.on('close', () => {
-      clearInterval(pingTimer)
-      if (typeof unsubscribe === 'function') unsubscribe()
-    })
-  })
+      req.on('close', () => {
+        clearInterval(pingTimer)
+        if (typeof unsubscribe === 'function') unsubscribe()
+      })
+    },
+  }))
 
   // 2. Viewport Post: POST /omnimux/workbench/viewport
-  webServer.post('/omnimux/workbench/viewport', async (req, res) => {
-    try {
-      assertLocalWrite(req)
-    } catch {
-      res.writeHead(403, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: false, error: 'not-local' }))
-      return
-    }
+  disposers.push(webServer.register({
+    kind: 'exact',
+    path: '/omnimux/workbench/viewport',
+    handler: async (req, res) => {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { ok: false, error: 'method-not-allowed' })
+        return
+      }
 
-    let body = req.body
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body) } catch { body = null }
-    }
-    const result = mailbox.updateViewport(body)
-    res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify(result))
-  })
+      try {
+        assertLocalWrite(req)
+      } catch {
+        sendJson(res, 403, { ok: false, error: 'not-local' })
+        return
+      }
+
+      const body = await readJsonBody(req)
+      if (!body) {
+        sendJson(res, 400, { ok: false, error: 'invalid-json' })
+        return
+      }
+
+      const result = mailbox.updateViewport(body)
+      sendJson(res, result.ok ? 200 : 400, result)
+    },
+  }))
 
   // 3. RPC Ack: POST /omnimux/workbench/rpc/ack
-  webServer.post('/omnimux/workbench/rpc/ack', async (req, res) => {
-    try {
-      assertLocalWrite(req)
-    } catch {
-      res.writeHead(403, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: false, error: 'not-local' }))
-      return
-    }
+  disposers.push(webServer.register({
+    kind: 'exact',
+    path: '/omnimux/workbench/rpc/ack',
+    handler: async (req, res) => {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { ok: false, error: 'method-not-allowed' })
+        return
+      }
 
-    let body = req.body
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body) } catch { body = null }
+      try {
+        assertLocalWrite(req)
+      } catch {
+        sendJson(res, 403, { ok: false, error: 'not-local' })
+        return
+      }
+
+      const body = await readJsonBody(req)
+      if (!body) {
+        sendJson(res, 400, { ok: false, error: 'invalid-json' })
+        return
+      }
+
+      const result = mailbox.handleRpcAck(body)
+      sendJson(res, result.ok ? 200 : 400, result)
+    },
+  }))
+
+  return () => {
+    for (const d of disposers) {
+      if (typeof d === 'function') d()
     }
-    const result = mailbox.handleRpcAck(body)
-    res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify(result))
-  })
+  }
 }
