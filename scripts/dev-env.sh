@@ -176,6 +176,34 @@ assert_task_home_safe() {
   esac
 }
 
+# L2 源依赖预检：L2 profile 从生产 dsh 层（PROD_PROFILE）克隆依赖。若生产层本身
+# 缺核心包（如 @deepseek-ai/dsh-client-ui-chat 只有 README 无 lib），克隆后的 L2
+# 必然启动失败且要干等 20s。此处提前检查哨兵入口，缺失立即报清晰指引。
+assert_l2_source_deps() {
+  local profile_dir="$1"
+  [ -d "$profile_dir/node_modules" ] || { echo "· 生产 dsh 层无 node_modules，跳过预检" >&2; return 0; }
+  local nm="$profile_dir/node_modules"
+  local missing=0
+  local entry
+  for entry in \
+    "@deepseek-ai/dsh-client-ui-chat/lib/index.js" \
+    "@deepseek-ai/dsh-base/package.json" \
+    "@deepseek-ai/dsh-web-app/package.json" \
+    "dsh-better-sidebar/lib/client.js"; do
+    if [ ! -f "$nm/$entry" ]; then
+      echo "  - 缺失: $entry" >&2
+      missing=1
+    fi
+  done
+  if [ "$missing" -eq 1 ]; then
+    echo "✗ L2 源依赖不完整（生产 dsh 层缺失上述包/入口）。" >&2
+    echo "   这是 dsh 层依赖问题（从 ${profile_dir}/node_modules 克隆继承），不是本任务代码问题。" >&2
+    echo "   请先修复 dsh 层：yarn omnimux:sync（或完整安装），再重建 L2 环境：dev-env.sh rm <name> && start。" >&2
+    exit 1
+  fi
+  echo "✓ L2 源依赖完整"
+}
+
 # Resolve profile dir: prefer tasks/<name>/profiles/...；兼容旧 ~/.dsh-dev/profiles/...
 profile_dir() {
   local n="$1"
@@ -441,6 +469,8 @@ case "$cmd" in
     mkdir -p "$(dirname "$pdir")"
 
     if [ ! -d "$pdir/node_modules" ]; then
+      # 新环境才做源依赖预检（既有环境已克隆过，直接复用）
+      assert_l2_source_deps "$PROD_PROFILE"
       echo "→ 初始化环境 omnimux-dev-${name}（APFS 克隆生产依赖，秒级）"
       mkdir -p "$pdir"
       cp "$PROD_PROFILE/package.json" "$PROD_PROFILE/cordis.patch.yml" "$pdir/"
@@ -487,6 +517,12 @@ case "$cmd" in
     done
     if [ -z "$port" ]; then
       echo "✗ Host 未在 20s 内监听，日志: $pdir/host.log" >&2
+      echo "---- host.log 尾部 ----" >&2
+      tail -n 15 "$pdir/host.log" 2>/dev/null >&2 || true
+      if grep -q 'ERR_MODULE_NOT_FOUND' "$pdir/host.log" 2>/dev/null; then
+        echo "⚠ Host 启动因依赖缺失失败（ERR_MODULE_NOT_FOUND）。" >&2
+        echo "   L2 依赖克隆自生产 dsh 层；若生产层缺包，请先 yarn omnimux:sync 修复，再 dev-env.sh rm ${name} && start。" >&2
+      fi
       exit 1
     fi
     if port_reserved "$port" || ! port_in_pool "$port"; then

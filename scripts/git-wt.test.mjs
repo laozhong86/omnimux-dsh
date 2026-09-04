@@ -405,4 +405,29 @@ exit 0
       cleanupSandbox()
     }
   })
+
+  it('clean honors --force even without an issue_id (arg parsing regression)', () => {
+    setupSandbox()
+    try {
+      execSync(`bash "${scriptCopy}" start common cleanforce 108`, {
+        cwd: mainRepo,
+        stdio: 'ignore'
+      })
+      const wtDir = join(testRoot, 'omnimux-dsh-wt-cleanforce-108')
+      writeFileSync(join(wtDir, 'clean-force.txt'), 'remove me')
+      execSync(`git -C "${wtDir}" add .`, { stdio: 'ignore' })
+      execSync(`git -C "${wtDir}" commit -m "feat(common): clean force test"`, { stdio: 'ignore' })
+
+      // 无 issue_id，--force 必须被正确识别（不能被吞成 issue_id）
+      const cleanOut = execSync(`bash "${scriptCopy}" clean cleanforce --force`, {
+        cwd: mainRepo,
+        encoding: 'utf8',
+      })
+      assert.ok(!cleanOut.includes('未声明 --pr / --force'), '--force must be recognized without issue_id')
+      assert.ok(cleanOut.includes('Worktree 与分支清理完成'), 'should finish the clean')
+      assert.ok(!existsSync(wtDir), 'worktree must be removed')
+    } finally {
+      cleanupSandbox()
+    }
+  })
 })
