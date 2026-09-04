@@ -1,14 +1,20 @@
 /**
  * Intercepts composer submit gestures (Enter key and Send button click)
  * to prefix UI Context Envelope to the user message before sending.
+ * Supports both standard textarea and Lexical contenteditable editors.
  * Also injects CSS to hide <ui_context> tags in rendered chat bubbles.
  */
 
 export const COMPOSER_SELECTOR = [
+  '[data-lexical-editor="true"]',
+  '[data-composer-input="true"]',
+  'div[role="textbox"][contenteditable="true"]',
+  'div[role="textbox"]',
   '[data-composer-card] textarea',
   '[data-composer-seat] textarea',
   'textarea[data-phase]',
   'textarea[placeholder]',
+  'textarea',
 ].join(', ')
 
 export const SEND_SELECTOR = [
@@ -28,9 +34,42 @@ export function findSendButton(doc) {
   return doc.querySelector(SEND_SELECTOR)
 }
 
+export function getComposerText(field) {
+  if (!field) return ''
+  if (field.isContentEditable || field.getAttribute?.('contenteditable') === 'true') {
+    return field.innerText ?? field.textContent ?? ''
+  }
+  return field.value ?? ''
+}
+
 export function setComposerValue(field, text, globals = {}) {
   if (!field) return false
   const value = String(text ?? '')
+
+  // 1. Contenteditable / Lexical editor
+  if (field.isContentEditable || field.getAttribute?.('contenteditable') === 'true' || field.__lexicalEditor) {
+    if (field.__lexicalEditor && typeof document !== 'undefined') {
+      try {
+        field.focus()
+        const sel = (globals.window || globalThis.window)?.getSelection?.()
+        if (sel) {
+          sel.selectAllChildren(field)
+        }
+        document.execCommand('insertText', false, value)
+        return true
+      } catch {
+        // fall through
+      }
+    }
+    field.textContent = value
+    const Ev = globals.InputEvent ?? globals.Event ?? (typeof InputEvent === 'function' ? InputEvent : typeof Event === 'function' ? Event : undefined)
+    if (Ev && typeof field.dispatchEvent === 'function') {
+      try { field.dispatchEvent(new Ev('input', { bubbles: true, cancelable: true })) } catch {}
+    }
+    return true
+  }
+
+  // 2. Standard HTMLTextAreaElement / HTMLInputElement
   const TextArea = globals.HTMLTextAreaElement ?? (typeof HTMLTextAreaElement === 'function' ? HTMLTextAreaElement : undefined)
   const InputEl = globals.HTMLInputElement ?? (typeof HTMLInputElement === 'function' ? HTMLInputElement : undefined)
   const proto = TextArea && field instanceof TextArea
@@ -67,9 +106,9 @@ export function injectUiContextStyle(doc = (typeof document !== 'undefined' ? do
   doc.head?.appendChild(style)
 }
 
-export function attachComposerEnvelope(textarea, getUiContext, formatCompactBlock, globals = {}) {
-  if (!textarea || typeof getUiContext !== 'function' || typeof formatCompactBlock !== 'function') return false
-  const currentVal = textarea.value || ''
+export function attachComposerEnvelope(composerEl, getUiContext, formatCompactBlock, globals = {}) {
+  if (!composerEl || typeof getUiContext !== 'function' || typeof formatCompactBlock !== 'function') return false
+  const currentVal = getComposerText(composerEl)
   if (currentVal.includes('<ui_context')) return false
 
   try {
@@ -78,7 +117,7 @@ export function attachComposerEnvelope(textarea, getUiContext, formatCompactBloc
     const block = formatCompactBlock(envelope)
     if (!block) return false
     const nextVal = block + String.fromCharCode(10, 10) + currentVal
-    return setComposerValue(textarea, nextVal, globals)
+    return setComposerValue(composerEl, nextVal, globals)
   } catch (err) {
     console.error('[composer-envelope] attach failed:', err)
     return false
@@ -94,11 +133,11 @@ export function installComposerEnvelopeCapture(doc = (typeof document !== 'undef
 
   const handleKeydown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !e.ctrlKey && !e.metaKey) {
-      const textarea = findComposer(doc)
-      if (textarea && (e.target === textarea || textarea.contains?.(e.target))) {
+      const composer = findComposer(doc)
+      if (composer && (e.target === composer || composer.contains?.(e.target))) {
         const wb = getWorkbench()
         if (wb && typeof wb.getUiContext === 'function' && typeof wb.formatCompactContextBlock === 'function') {
-          attachComposerEnvelope(textarea, wb.getUiContext, wb.formatCompactContextBlock, options.globals)
+          attachComposerEnvelope(composer, wb.getUiContext, wb.formatCompactContextBlock, options.globals)
         }
       }
     }
@@ -107,11 +146,11 @@ export function installComposerEnvelopeCapture(doc = (typeof document !== 'undef
   const handlePointerDown = (e) => {
     const sendBtn = findSendButton(doc)
     if (sendBtn && (e.target === sendBtn || sendBtn.contains?.(e.target))) {
-      const textarea = findComposer(doc)
-      if (textarea) {
+      const composer = findComposer(doc)
+      if (composer) {
         const wb = getWorkbench()
         if (wb && typeof wb.getUiContext === 'function' && typeof wb.formatCompactContextBlock === 'function') {
-          attachComposerEnvelope(textarea, wb.getUiContext, wb.formatCompactContextBlock, options.globals)
+          attachComposerEnvelope(composer, wb.getUiContext, wb.formatCompactContextBlock, options.globals)
         }
       }
     }
