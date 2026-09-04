@@ -1107,6 +1107,28 @@ export function unregisterContextContributor(tabId) {
   contextContributors.delete(tabId)
 }
 
+/**
+ * Normalize a better-sidebar tab into a stable descriptor for Agent context.
+ * Native official tabs (Files editor, terminal, browser, …) use opaque ids
+ * like `tab:5`; their human title lives on `tab.title` / `tab.type`.
+ * @param {{ id?: string, type?: string, title?: string, path?: string }} tab
+ */
+export function describeOpenTab(tab) {
+  if (!tab || typeof tab !== 'object') return null
+  const id = typeof tab.id === 'string' && tab.id ? tab.id : null
+  if (!id) return null
+  const type = typeof tab.type === 'string' && tab.type ? tab.type : id
+  const fallback = WORKBENCH_TAB_TITLE_FALLBACKS[id] || WORKBENCH_TAB_TITLE_FALLBACKS[type] || null
+  const rawTitle = typeof tab.title === 'string' ? tab.title.trim() : ''
+  const title = rawTitle || fallback || id
+  const kind = isWorkbenchTab(id) || isWorkbenchTab(type)
+    ? 'workbench'
+    : type === 'editor' || title === 'Files' || isSeedFilesTab(tab)
+      ? 'files'
+      : 'native'
+  return { id, type, title, kind }
+}
+
 export function getUiContext() {
   const service = getService()
   const snap = service?.getSnapshot?.()
@@ -1115,8 +1137,10 @@ export function getUiContext() {
   const panelOpen = Boolean(state?.panelOpen)
   const focus = getWorkbenchFocus()
   const conversationCollapsed = Boolean(getConversationCollapsed())
-  const openedTabs = listOpenTabs(state).map((t) => t.id).filter(Boolean)
+  const openedTabs = listOpenTabs(state).map(describeOpenTab).filter(Boolean)
   const sessionId = currentSessionId() || snap?.sessionId || 'default'
+  const activeDesc = openedTabs.find((t) => t.id === activeTab)
+    || (activeTab ? describeOpenTab({ id: activeTab, type: activeTab }) : null)
 
   let reason = 'ok'
   let view = null
@@ -1151,8 +1175,10 @@ export function getUiContext() {
     sessionId,
     surface: {
       tabId: activeTab || null,
-      title: (activeTab && WORKBENCH_TAB_TITLE_FALLBACKS[activeTab]) || activeTab || null,
-      plugin: activeTab ? activeTab.split(':')[0] : null,
+      title: activeDesc?.title || (activeTab && WORKBENCH_TAB_TITLE_FALLBACKS[activeTab]) || activeTab || null,
+      type: activeDesc?.type || activeTab || null,
+      kind: activeDesc?.kind || (activeTab ? 'workbench' : null),
+      plugin: activeTab && String(activeTab).includes(':') ? activeTab.split(':')[0] : null,
       panelOpen,
       focus,
       conversationCollapsed,
@@ -1187,6 +1213,16 @@ export function formatCompactContextBlock(envelope) {
     firstLine += ` | selected: ${selStr}`
   }
   lines.push(firstLine)
+
+  if (Array.isArray(s.openedTabs) && s.openedTabs.length > 0) {
+    const openStr = s.openedTabs.map((t) => {
+      if (!t) return ''
+      if (typeof t === 'string') return t
+      const label = t.title && t.title !== t.id ? t.title : (t.id || t.type || '')
+      return t.id === s.tabId ? `${label}*` : label
+    }).filter(Boolean).join(', ')
+    if (openStr) lines.push(`open: ${openStr}`)
+  }
 
   const secondLine = `panel: ${s.panelOpen ? 'open' : 'closed'} | focus: ${s.focus || 'split'}`
   lines.push(secondLine)
