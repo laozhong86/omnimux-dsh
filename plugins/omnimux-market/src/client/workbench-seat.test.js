@@ -42,6 +42,8 @@ describe('market workbench seat (sidebar must not claim overlay)', () => {
     const css = readFileSync(join(here, 'css.js'), 'utf8')
     assert.match(picker, /function renderPuzzleIcon/)
     assert.match(picker, /renderPuzzleIcon\(16\)/)
+    assert.match(picker, /viewBox: "0 0 24 24"/)
+    assert.match(picker, /M15\.39 4\.39a1 1 0 0 0 1\.68-\.474/)
     assert.doesNotMatch(picker, /renderPlazaIcon\(16\)/)
     assert.match(css, /\.sh-picker-trigger\{[^}]*border:0/)
     assert.match(picker, /peekPickerCache/)
