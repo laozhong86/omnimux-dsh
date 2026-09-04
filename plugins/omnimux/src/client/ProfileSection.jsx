@@ -135,7 +135,10 @@ function SignedIn({ t, profile, onTopUp, onSignOut }) {
  */
 export function ProfileSection({ t }) {
   useEffect(() => { injectHubStyles() }, [])
-  const { state, signOut, openUrl, recheck } = useOmnimuxAuth({ verifyOnMount: false })
+  // Settings shell mounts this section only while it is the active nav row
+  // (`renderSlot(..., { only: active })`), so every click on 个人资料 remounts
+  // and re-runs verify — live `/self` refresh keeps quota/balance current.
+  const { state, signOut, openUrl, recheck } = useOmnimuxAuth({ verifyOnMount: true })
 
   if (state.phase === 'ready') {
     const profile = state.profile || {}
@@ -158,10 +161,10 @@ export function ProfileSection({ t }) {
       gate.ensureLogin({
         reason: t('auth.gate.reason.account'),
         kind: 'explicit',
-        onSuccess: () => { void recheck() },
+        onSuccess: () => { void recheck({ verify: true }) },
       })
     } else {
-      void recheck()
+      void recheck({ verify: true })
     }
   }
 

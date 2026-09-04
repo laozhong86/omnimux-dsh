@@ -1,0 +1,27 @@
+{
+  "task": "profile-quota-refresh",
+  "plugin": "omnimux",
+  "port": 44201,
+  "url": "http://127.0.0.1:44201",
+  "verified_at": "2026-09-04",
+  "checks": [
+    {
+      "name": "profile-tab-first-open-hits-cache-then-verify",
+      "pass": true,
+      "urls": ["/omnimux/auth/status", "/omnimux/auth/status?verify=1"]
+    },
+    {
+      "name": "profile-tab-reclick-from-general-hits-verify-again",
+      "pass": true,
+      "urls": ["/omnimux/auth/status", "/omnimux/auth/status?verify=1"]
+    },
+    {
+      "name": "quota-ui-renders-live-fields",
+      "pass": true,
+      "amount": "$0.00",
+      "used": "Usage $426.32",
+      "username": "admin"
+    }
+  ],
+  "screenshot": "docs/evidence/profile-quota-refresh-l2.png"
+}
