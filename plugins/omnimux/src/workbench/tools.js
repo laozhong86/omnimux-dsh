@@ -2,16 +2,34 @@
  * Agent Workbench Tools:
  * - workbench_get_active_view: reads current client viewport
  * - workbench_open_tab: drives workbench open tab via RPC with anti-annoyance guards
+ *
+ * dsh-tools requires every register() payload to declare
+ * `output: { schema, render, presentationMeta? }` (same contract as hub media/text tools).
  */
 
 import { isValidTabId } from './schema.js'
+import { JSON_TOOL_OUTPUT } from '../tools/schema.js'
 
 export const MAX_TAB_SWITCHES_PER_SESSION = 3
 
+/**
+ * @param {object} ctx
+ * @param {{
+ *   mailbox: { getActiveView: Function, sendRpc: Function },
+ *   getSettings?: Function,
+ *   jsonOut?: { schema: object, render: Function, presentationMeta?: Function },
+ * }} deps
+ */
 export function mountWorkbenchTools(ctx, deps) {
   const mailbox = deps.mailbox
   const getSettings = deps.getSettings
-  const jsonOut = deps.jsonOut || ((res) => ({ content: [{ type: 'text', text: JSON.stringify(res) }] }))
+  // Prefer hub JSON_TOOL_OUTPUT object; never treat it as an execute wrapper.
+  const output =
+    deps.jsonOut &&
+    typeof deps.jsonOut === 'object' &&
+    typeof deps.jsonOut.render === 'function'
+      ? deps.jsonOut
+      : JSON_TOOL_OUTPUT
 
   // session auto-switch counter: sessionId -> count
   const sessionSwitchCounts = new Map()
@@ -19,28 +37,29 @@ export function mountWorkbenchTools(ctx, deps) {
   // 1. workbench_get_active_view
   ctx.tools?.register({
     name: 'workbench_get_active_view',
-    description: '获取当前右侧工作台（better-sidebar）激活的选项卡、子视图与用户选中的实体列表，感知用户界面视口。',
+    description:
+      '获取当前右侧工作台（better-sidebar）激活的选项卡、子视图与用户选中的实体列表，感知用户界面视口。',
     parameters: {
       type: 'object',
       properties: {},
       additionalProperties: false,
     },
-    execute: async () => {
-      const view = mailbox.getActiveView()
-      return jsonOut(view)
-    },
+    output,
+    execute: async () => mailbox.getActiveView(),
   })
 
   // 2. workbench_open_tab
   ctx.tools?.register({
     name: 'workbench_open_tab',
-    description: '控制右侧工作台切换并打开指定的插件选项卡（如资产库、创作画布、视频剪辑等），支持附带视图过滤与实体高亮。',
+    description:
+      '控制右侧工作台切换并打开指定的插件选项卡（如资产库、创作画布、视频剪辑等），支持附带视图过滤与实体高亮。',
     parameters: {
       type: 'object',
       properties: {
         tabId: {
           type: 'string',
-          description: '合规的 Occupant tabId，例如 omnimux-assets:library, omnimux-workflow:canvas, omnimux-clip:studio 等',
+          description:
+            '合规的 Occupant tabId，例如 omnimux-assets:library, omnimux-workflow:canvas, omnimux-clip:studio 等',
         },
         reason: {
           type: 'string',
@@ -63,21 +82,22 @@ export function mountWorkbenchTools(ctx, deps) {
       required: ['tabId', 'reason'],
       additionalProperties: false,
     },
+    output,
     execute: async (args) => {
       const { tabId, reason, view, highlightIds, undoToken } = args || {}
 
       if (!reason || typeof reason !== 'string' || reason.trim().length < 4) {
-        return jsonOut({ ok: true, applied: false, code: 'reason-required' })
+        return { ok: true, applied: false, code: 'reason-required' }
       }
 
       if (!isValidTabId(tabId)) {
-        return jsonOut({ ok: true, applied: false, code: 'unknown-tab' })
+        return { ok: true, applied: false, code: 'unknown-tab' }
       }
 
       // Check settings toggle
       const settings = typeof getSettings === 'function' ? getSettings() : null
       if (settings && settings.allowAgentSwitchTab === false) {
-        return jsonOut({ ok: true, applied: false, code: 'user-denied' })
+        return { ok: true, applied: false, code: 'user-denied' }
       }
 
       // Check current viewport state
@@ -85,17 +105,17 @@ export function mountWorkbenchTools(ctx, deps) {
       const surface = currentView?.uiContext?.surface
 
       if (surface && surface.panelOpen === false) {
-        return jsonOut({ ok: true, applied: false, code: 'panel-collapsed' })
+        return { ok: true, applied: false, code: 'panel-collapsed' }
       }
 
       if (surface && surface.tabId === tabId) {
-        return jsonOut({ ok: true, applied: true, code: 'already-active' })
+        return { ok: true, applied: true, code: 'already-active' }
       }
 
       const sessionId = currentView?.uiContext?.sessionId || 'default'
       const switchCount = sessionSwitchCounts.get(sessionId) || 0
       if (!undoToken && switchCount >= MAX_TAB_SWITCHES_PER_SESSION) {
-        return jsonOut({ ok: true, applied: false, code: 'quota-exceeded' })
+        return { ok: true, applied: false, code: 'quota-exceeded' }
       }
 
       const requestId = `rpc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
@@ -122,10 +142,10 @@ export function mountWorkbenchTools(ctx, deps) {
         }
       }
 
-      return jsonOut({
+      return {
         ...ack,
         undoToken: newUndoToken,
-      })
+      }
     },
   })
 }

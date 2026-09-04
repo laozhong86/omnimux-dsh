@@ -3,15 +3,33 @@ import { describe, it } from 'node:test'
 import { mountWorkbenchTools } from './tools.js'
 import { createHubEventBus } from '../events/hub-event-bus.js'
 import { createWorkbenchMailbox } from './mailbox.js'
+import { JSON_TOOL_OUTPUT } from '../tools/schema.js'
+
+function captureTools() {
+  const tools = new Map()
+  const ctx = {
+    tools: {
+      register: (t) => {
+        // Mirror dsh-tools: require output { schema, render }
+        if (
+          t.output === undefined ||
+          typeof t.output !== 'object' ||
+          typeof t.output.render !== 'function'
+        ) {
+          throw new TypeError(
+            `tool "${t.name}" must declare output { schema, render, presentationMeta? }`,
+          )
+        }
+        tools.set(t.name, t)
+      },
+    },
+  }
+  return { tools, ctx }
+}
 
 describe('Workbench Tools', () => {
-  it('registers tools and executes get_active_view', async () => {
-    const tools = new Map()
-    const ctx = {
-      tools: {
-        register: (t) => tools.set(t.name, t),
-      },
-    }
+  it('registers tools with dsh-tools output contract and executes get_active_view', async () => {
+    const { tools, ctx } = captureTools()
 
     const bus = createHubEventBus()
     const mailbox = createWorkbenchMailbox({ hubEvents: bus })
@@ -24,11 +42,13 @@ describe('Workbench Tools', () => {
 
     mountWorkbenchTools(ctx, {
       mailbox,
-      jsonOut: (res) => res,
+      jsonOut: JSON_TOOL_OUTPUT,
     })
 
     assert.ok(tools.has('workbench_get_active_view'))
     assert.ok(tools.has('workbench_open_tab'))
+    assert.equal(typeof tools.get('workbench_get_active_view').output.render, 'function')
+    assert.equal(typeof tools.get('workbench_open_tab').output.render, 'function')
 
     const getTool = tools.get('workbench_get_active_view')
     const viewRes = await getTool.execute({})
@@ -37,9 +57,16 @@ describe('Workbench Tools', () => {
     assert.equal(viewRes.uiContext.surface.tabId, 'omnimux-assets:library')
   })
 
+  it('defaults to JSON_TOOL_OUTPUT when jsonOut is omitted', () => {
+    const { tools, ctx } = captureTools()
+    const bus = createHubEventBus()
+    const mailbox = createWorkbenchMailbox({ hubEvents: bus })
+    mountWorkbenchTools(ctx, { mailbox })
+    assert.equal(tools.get('workbench_get_active_view').output, JSON_TOOL_OUTPUT)
+  })
+
   it('workbench_open_tab respects panel-collapsed anti-annoyance guard', async () => {
-    const tools = new Map()
-    const ctx = { tools: { register: (t) => tools.set(t.name, t) } }
+    const { tools, ctx } = captureTools()
     const bus = createHubEventBus()
     const mailbox = createWorkbenchMailbox({ hubEvents: bus })
 
@@ -50,7 +77,7 @@ describe('Workbench Tools', () => {
       surface: { tabId: 'omnimux-assets:library', panelOpen: false },
     })
 
-    mountWorkbenchTools(ctx, { mailbox, jsonOut: (r) => r })
+    mountWorkbenchTools(ctx, { mailbox, jsonOut: JSON_TOOL_OUTPUT })
     const openTool = tools.get('workbench_open_tab')
 
     const res = await openTool.execute({
@@ -64,8 +91,7 @@ describe('Workbench Tools', () => {
   })
 
   it('workbench_open_tab returns already-active when opening same active tab', async () => {
-    const tools = new Map()
-    const ctx = { tools: { register: (t) => tools.set(t.name, t) } }
+    const { tools, ctx } = captureTools()
     const bus = createHubEventBus()
     const mailbox = createWorkbenchMailbox({ hubEvents: bus })
 
@@ -76,7 +102,7 @@ describe('Workbench Tools', () => {
       surface: { tabId: 'omnimux-assets:library', panelOpen: true },
     })
 
-    mountWorkbenchTools(ctx, { mailbox, jsonOut: (r) => r })
+    mountWorkbenchTools(ctx, { mailbox, jsonOut: JSON_TOOL_OUTPUT })
     const openTool = tools.get('workbench_open_tab')
 
     const res = await openTool.execute({

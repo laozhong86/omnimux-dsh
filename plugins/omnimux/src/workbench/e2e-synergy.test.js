@@ -3,6 +3,7 @@ import { describe, it } from 'node:test'
 import { createHubEventBus } from '../events/hub-event-bus.js'
 import { createWorkbenchMailbox } from './mailbox.js'
 import { mountWorkbenchTools } from './tools.js'
+import { JSON_TOOL_OUTPUT } from '../tools/schema.js'
 import { createEventsClient } from '../client/events-client.js'
 import { formatCompactContextBlock } from '../client/workbench.js'
 import { attachComposerEnvelope } from '../client/composer-envelope.js'
@@ -14,7 +15,7 @@ describe('Agent-Workbench Synergy End-to-End Closed Loop', () => {
     const mailbox = createWorkbenchMailbox({ hubEvents: bus })
     const tools = new Map()
     const fakeCtx = { tools: { register: (t) => tools.set(t.name, t) } }
-    mountWorkbenchTools(fakeCtx, { mailbox, jsonOut: (r) => r })
+    mountWorkbenchTools(fakeCtx, { mailbox, jsonOut: JSON_TOOL_OUTPUT })
 
     // 2. Client side setup
     let currentTab = 'omnimux-assets:library'
