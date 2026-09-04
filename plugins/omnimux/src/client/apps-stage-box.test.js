@@ -100,6 +100,20 @@ describe('PRODUCT_STAGE_CHROME', () => {
     assert.match(PRODUCT_STAGE_CHROME, /data-omnimux-topbar-new-session/)
     assert.match(PRODUCT_STAGE_CHROME, /--omnimux-topbar-new-session-left/)
     assert.match(PRODUCT_STAGE_CHROME, /z-index:\s*(50|9999)/)
+    // Settings modal must outrank body-portaled better-sidebar + cluster while open,
+    // and escape the gui-mode #root width squeeze that otherwise clips it.
+    assert.match(
+      PRODUCT_STAGE_CHROME,
+      /#root:has\(\[role="dialog"\]\[aria-modal="true"\]\)\s*\{[\s\S]*?z-index:\s*1100\s*!important/,
+    )
+    assert.match(
+      PRODUCT_STAGE_CHROME,
+      /#root:has\(\[role="dialog"\]\[aria-modal="true"\]\)\s*\{[\s\S]*?width:\s*100%\s*!important/,
+    )
+    assert.match(
+      PRODUCT_STAGE_CHROME,
+      /#root:has\(\[role="dialog"\]\[aria-modal="true"\]\)\s*\{[\s\S]*?overflow:\s*visible\s*!important/,
+    )
     assert.match(PRODUCT_STAGE_CHROME, /--dsw-alias-brand-primary|--dsw-alias-interactive-bg-hover-accent|--dsw-alias-label-accent/)
   })
 })
@@ -163,6 +177,7 @@ describe('session-row closer', () => {
     assert.match(style.textContent, /data-omnimux-sidebar-toggle-topbar/)
     assert.match(style.textContent, /--omnimux-topbar-toggle-end/)
     assert.match(style.textContent, /--omnimux-tabbar-pad-left/)
+    assert.match(style.textContent, /#root:has\(\[role="dialog"\]\[aria-modal="true"\]\)/)
   })
 
   it('closes the product page when an unselected session row is clicked', () => {
