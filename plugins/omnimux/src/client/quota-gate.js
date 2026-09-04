@@ -1,6 +1,7 @@
 import { classifyQuotaFailure, QUOTA_EXCEEDED_CODE } from '../errors/quota-classifier.js'
 import { peekStatusCache } from './api-auth.js'
 import { walletUrl as buildWalletUrl } from './quota-failure.js'
+import { ensureQuota, invalidateQuotaVerify, resetQuotaPrecheck } from './quota-precheck.js'
 
 export const QUOTA_GLOBAL_KEY = '__omnimuxQuota'
 const DEFAULT_WALLET = 'https://omnimux.ai/wallet'
@@ -30,6 +31,7 @@ export function notify(failure, context = {}) {
   if (correlationId && correlationId === lastCorrelation) return false
   lastCorrelation = correlationId
   setState({ phase: 'open', failure: { ...classified, code: QUOTA_EXCEEDED_CODE, ...context }, walletUrl: currentWalletUrl(), cooldownUntil: 0 })
+  invalidateQuotaVerify()
   return true
 }
 export function openWallet() {
@@ -40,13 +42,14 @@ export function close() { setState({ phase: 'closed', failure: null, cooldownUnt
 export function installQuotaGlobal(target) {
   if (!target) return undefined
   if (target[QUOTA_GLOBAL_KEY]) return target[QUOTA_GLOBAL_KEY]
-  const api = { notify, subscribe, getSnapshot, walletUrl, openWallet, close }
+  const api = { notify, subscribe, getSnapshot, walletUrl, openWallet, close, ensureQuota }
   Object.defineProperty(target, QUOTA_GLOBAL_KEY, { value: api, configurable: true })
   return api
 }
 export function resetQuotaGate() {
   lastCorrelation = null
   state = Object.freeze({ phase: 'closed', failure: null, walletUrl: DEFAULT_WALLET, cooldownUntil: 0 })
+  resetQuotaPrecheck()
   emit()
 }
 installQuotaGlobal(typeof window !== 'undefined' ? window : undefined)

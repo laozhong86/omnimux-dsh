@@ -152,6 +152,41 @@ function emptyBlock(kind) {
  * @param {Record<string, string>} query
  */
 export async function fetchDashboardLive(query) {
+  const quota = typeof window !== 'undefined' ? window.__omnimuxQuota : undefined
+  if (quota && typeof quota.ensureQuota === 'function') {
+    const gate = await quota.ensureQuota({ capability: 'analytics' })
+    if (gate?.ok === false) {
+      return applyDashboardQuery({
+        meta: { boundAccountCount: 0, authorizedPlatforms: [], filterAccounts: [], reachApprox: false },
+        syncStatus: {
+          lastSyncedAt: null,
+          nextSyncAt: null,
+          syncIntervalMs: 3_600_000,
+          syncing: false,
+          lastError: 'quota-exceeded',
+        },
+        kpi: {
+          engagementRate: { value: null },
+          totalReach: { value: null },
+          totalFollowers: { value: null },
+          followerDiff: { value: null },
+          postsCount: { value: null },
+          postsHealth: 'none',
+          bestPost: null,
+        },
+        basicCharts: { postsPerPlatform: { labels: [], platformIds: [], values: [], total: 0 }, postsOverTime: { grain: 'week', total: 0, buckets: [] }, likesPerPlatform: { labels: [], platformIds: [], values: [], total: 0 }, likesOverTime: { grain: 'week', total: 0, buckets: [] } },
+        engagementOverTime: { grain: 'week', buckets: [], labels: [], totals: {}, deltas: {}, series: [] },
+        heatmap: emptyBlock('heatmap'),
+        followerEvolution: emptyBlock('followers'),
+        platformBreakdown: [],
+        topPosts: [],
+        strategy: emptyBlock('strategy'),
+        emptyState: gate.reason === 'auth'
+          ? { code: 'unauthorized', action: 'login' }
+          : { code: 'fetch_failed', action: 'retry' },
+      }, query)
+    }
+  }
   const params = hostQuery(query)
   const guarded = quotaGuard(authGuard(analyticsRequest), { capability: 'analytics' })
   const [overview, insights, followers, posts] = await Promise.all([
@@ -284,6 +319,11 @@ export async function syncNow(query = {}, opts = {}) {
       lastError: null,
     }
     return payload
+  }
+  const quota = typeof window !== 'undefined' ? window.__omnimuxQuota : undefined
+  if (quota && typeof quota.ensureQuota === 'function') {
+    const gate = await quota.ensureQuota({ capability: 'analytics' })
+    if (gate?.ok === false) throw new Error('quota-exceeded')
   }
   const result = await quotaGuard(authGuard(analyticsRequest), { capability: 'analytics' })(HOST_PATHS.sync, { method: 'POST', body: query })
   if (!result.ok) {

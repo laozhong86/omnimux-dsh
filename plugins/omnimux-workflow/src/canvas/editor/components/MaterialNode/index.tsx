@@ -125,6 +125,14 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         });
       }
     }
+    const quota = typeof window !== 'undefined' ? window.__omnimuxQuota : undefined;
+    if (quota && typeof quota.ensureQuota === 'function') {
+      void Promise.resolve(quota.ensureQuota({ capability: 'canvas', correlationId: id })).then((gate: { ok?: boolean } | undefined) => {
+        if (gate && gate.ok === false) return;
+        useExecutionStore.getState().startNodeExecution?.(id);
+      });
+      return;
+    }
     useExecutionStore.getState().startNodeExecution?.(id);
   }, [id, materialType, nodeData, updateNodeData]);
 

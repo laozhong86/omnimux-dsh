@@ -36,7 +36,16 @@ export function notifyQuota(result, context) {
 }
 
 export function quotaGuard(fn, context) {
-  return (...args) => Promise.resolve(fn(...args)).then((result) => notifyQuota(result, context))
+  return (...args) => {
+    const quota = typeof window !== 'undefined' ? window.__omnimuxQuota : undefined
+    const run = () => Promise.resolve(fn(...args)).then((result) => notifyQuota(result, context))
+    if (!quota || typeof quota.ensureQuota !== 'function') return run()
+    return Promise.resolve(quota.ensureQuota(context)).then((gate) => {
+      if (gate?.ok === false && gate.reason === 'quota') return { ok: false, status: 402, body: { error: 'quota-exceeded' } }
+      if (gate?.ok === false) return { ok: false, status: 401, body: { error: 'needs-omnimux' } }
+      return run()
+    })
+  }
 }
 
 export function authGuard(fn) {
