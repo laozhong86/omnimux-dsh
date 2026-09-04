@@ -223,12 +223,31 @@ html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omni
   background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));
   pointer-events:none;
 }
+/* Settings shell mounts its fixed overlay under the left-rail foot, not as a
+   body portal. Two traps then bury it under the right workbench:
+   1) Desktop frames put transform/isolation on #root, so the overlay's own
+      z-index:1000 only competes inside #root and loses to body-portaled
+      better-sidebar panels (z-index:40) and our toggleCluster override (300).
+   2) better-sidebar gui mode squeezes #root width to the left conversation
+      column with overflow:hidden, so the fixed overlay is clipped to ~280px
+      and looks like the right panel "ate" the settings window.
+   While any true aria-modal dialog is open, expand #root to the viewport and
+   raise it above the cluster (300) but below body-portaled gates (LoginGate /
+   QuotaGate ~1200) and the desktop titlebar (max int). */
+#root:has([role="dialog"][aria-modal="true"]){
+  z-index:1100!important;
+  width:100%!important;
+  left:0!important;
+  right:0!important;
+  overflow:visible!important;
+}
 `
 
 export function ensureProductStageChrome() {
   const existing = document.getElementById('dsh-product-stage-chrome')
   if (existing instanceof HTMLStyleElement) {
-    // 失效键：① scoped better-sidebar panel（设置弹窗）；② overlay-scoped idle hide（#344 workbench 白屏）。
+    // 失效键：① scoped better-sidebar panel（设置弹窗）；② overlay-scoped idle hide（#344 workbench 白屏）；
+    // ③ settings-above-right-panel（#root:has aria-modal 抬层，避免右栏压住设置）。
     const text = existing.textContent || ''
     const stale = !text.includes('data-dsh-better-sidebar] [class*="_panel"]')
       || !text.includes('[data-slot="shell.overlay"] > [class$="-stage"]')
@@ -245,6 +264,7 @@ export function ensureProductStageChrome() {
       || !text.includes('padding-left:var(--omnimux-topbar-toggle-end)')
       || !text.includes('data-omnimux-topbar-new-session')
       || !text.includes('--omnimux-topbar-new-session-left')
+      || !text.includes('#root:has([role="dialog"][aria-modal="true"])')
     if (stale) existing.textContent = PRODUCT_STAGE_CHROME
   } else {
     const style = document.createElement('style')

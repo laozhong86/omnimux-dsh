@@ -1,27 +1,35 @@
 {
-  "timestamp": "2026-09-04T09:48:35.246Z",
-  "stage": "omnimux-composer",
+  "stage": "settings-above-right-panel",
   "port": 45120,
-  "cdpPort": 9229,
-  "url": "http://127.0.0.1:45120/?dsh-desktop-mode=compatibility&dsh-desktop-platform=darwin&dsh-desktop-version=2.0.4&dsh-desktop-material=transparent&dsh-desktop-titlebar-inset=36",
+  "cdp": 9229,
+  "timestamp": "2026-09-04T12:01:29.096Z",
   "pass": true,
-  "workspaceTitle": "Way faster than shaving 🤷‍♂️ #hairremoval #bodyhair",
-  "expected": {
-    "workspaceMaxWidthPx": 220,
-    "ellipsis": true,
-    "noRowOverflow": true,
-    "adjacentPresetVisible": true
+  "state": {
+    "ok": true,
+    "rootZ": "1100",
+    "rootW": 1728,
+    "rootOverflow": "visible",
+    "dialog": {
+      "x": 464,
+      "y": 97,
+      "w": 800,
+      "h": 800
+    },
+    "centerHit": {
+      "inDialog": true,
+      "inPanel": false,
+      "cls": "WHpqha_desc"
+    },
+    "edgeHit": {
+      "inDialog": true,
+      "inPanel": false,
+      "cls": "u4ZYjG_options"
+    },
+    "chromeHasRule": true,
+    "viewport": {
+      "w": 1728,
+      "h": 994
+    }
   },
-  "measured": {
-    "workspaceWidthPx": 220,
-    "labelClientWidthPx": 168,
-    "labelScrollWidthPx": 315,
-    "presetWidthPx": 106,
-    "rowOverflow": false,
-    "childOutsideRight": false,
-    "responsiveWidthsPx": [920, 560, 460, 386, 300, 240],
-    "allResponsiveCasesPassed": true
-  },
-  "method": "Built CSS was temporarily injected into the existing hub-owned style tag for pre-merge validation, measured in the real 45120 Electron renderer, screenshotted, then restored.",
-  "screenshot": ".workbuddy/evidence/workspace-title-overflow/live-electron.png"
+  "screenshot": "docs/evidence/settings-above-right-panel.png"
 }
