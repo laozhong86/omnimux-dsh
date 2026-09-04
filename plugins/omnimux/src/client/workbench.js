@@ -12,6 +12,7 @@
  */
 
 import {
+  CONVERSATION_COLLAPSED_ATTR,
   getConversationCollapsed,
   hydrateConversationCollapsed,
   resetConversationCollapseForTests,
@@ -21,7 +22,9 @@ import {
 export const WORKBENCH_GLOBAL_KEY = '__omnimuxWorkbench'
 export const WORKBENCH_PANEL_MIN_PX = 280
 export const WORKBENCH_CONVERSATION_TARGET_PX = 420
-export const WORKBENCH_CONVERSATION_MIN_PX = 260
+/** Visible split conversation floor. CSS and live drag clamp share this value. */
+export const WORKBENCH_CONVERSATION_MIN_PX = 360
+export const WORKBENCH_SPLIT_MAX_CSS_VAR = '--omnimux-split-max'
 export const WORKBENCH_FOCUS_NEAR_PX = 24
 /**
  * Upper bound for "looks collapsed" live measures while the track is tweening.
@@ -414,6 +417,8 @@ export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
   // Suspend auto-clamping while user is actively dragging the panel divider to
   // eliminate layout fighting, stutter, and cyclic resize thrashing.
   if (doc?.body?.hasAttribute?.('data-dsh-sidebar-dragging') || doc?.querySelector?.('[data-dragging]')) {
+    const snapshot = liveSnapshot(store)
+    syncSplitMaxCssVar(snapshot?.state, { ...env, sessionId: snapshot?.sessionId })
     return false
   }
   const snapshot = liveSnapshot(store)
@@ -448,20 +453,25 @@ export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
       return { ...current, panelOpen: true, width: nextWidth }
     })
     if (wrote) emit()
+    syncSplitMaxCssVar(liveSnapshot(store)?.state, env)
     return wrote
   }
   // Independence invariant + conversation-column guard: even a "split" record
   // must be clamped so it neither covers the left rail nor squeezes the middle
   // conversation column below its minimum (stale gui width after getFocus
   // clobber looks like split and used to no-op).
-  if (!oversized || !store || typeof store.reduce !== 'function') return false
+  if (!oversized || !store || typeof store.reduce !== 'function') {
+    syncSplitMaxCssVar(state, env)
+    return false
+  }
   store.reduce((current) => {
     if (typeof current?.width !== 'number' || !Number.isFinite(current.width)) return current
-    const next = Math.min(current.width, target)
+    const next = clampSplitPanelWidth(current.width, current, { ...env, sessionId: snapshot?.sessionId })
     if (Math.abs(current.width - next) < 1) return current
     return { ...current, width: next }
   })
   emit()
+  syncSplitMaxCssVar(liveSnapshot(store)?.state, { ...env, sessionId: snapshot?.sessionId })
   return true
 }
 
@@ -627,6 +637,159 @@ export function workbenchSplitMaxPanelPx(state, env = {}) {
   return Math.max(WORKBENCH_PANEL_MIN_PX, current, gui)
 }
 
+export const WORKBENCH_SPLIT_MIN_STYLE_ID = 'omnimux-split-conversation-min-chrome'
+export const WORKBENCH_SPLIT_MIN_CSS = `
+html:not([${CONVERSATION_COLLAPSED_ATTR}]) #root{
+  margin-right:min(var(--dsh-sidebar-width,0px),var(${WORKBENCH_SPLIT_MAX_CSS_VAR},var(--dsh-sidebar-width,0px)))!important;
+}
+html:not([${CONVERSATION_COLLAPSED_ATTR}]) [data-dsh-panel-host],
+html:not([${CONVERSATION_COLLAPSED_ATTR}]) [data-dragging]{
+  max-width:min(100vw,var(${WORKBENCH_SPLIT_MAX_CSS_VAR},100vw))!important;
+}
+`
+
+const wrappedStores = new WeakSet()
+let splitMinDoc = null
+let splitMinUnsub = null
+
+export function ensureSplitMinChrome(doc = hostDocument()) {
+  if (!doc?.head) return null
+  let style = typeof doc.getElementById === 'function' ? doc.getElementById(WORKBENCH_SPLIT_MIN_STYLE_ID) : null
+  if (!style) {
+    style = doc.createElement('style')
+    style.id = WORKBENCH_SPLIT_MIN_STYLE_ID
+    doc.head.append(style)
+  }
+  if (style.textContent !== WORKBENCH_SPLIT_MIN_CSS) style.textContent = WORKBENCH_SPLIT_MIN_CSS
+  return style
+}
+
+export function splitConversationMinApplies(state, env = {}) {
+  if (!state || state.panelOpen === false) return false
+  if (getConversationCollapsed()) return false
+  const sessionId = env.sessionId || liveSnapshot()?.sessionId
+  const record = focusRecordForTab(sessionId, activeTabId(state))
+  return record.mode !== WORKBENCH_FOCUS.gui
+}
+
+export function clampSplitPanelWidth(width, state, env = {}) {
+  if (typeof width !== 'number' || !Number.isFinite(width)) return width
+  const rounded = Math.round(width)
+  if (!splitConversationMinApplies(state, env)) {
+    return Math.max(WORKBENCH_PANEL_MIN_PX, rounded)
+  }
+  const max = workbenchSplitMaxPanelPx(state, env)
+  return Math.min(max, Math.max(WORKBENCH_PANEL_MIN_PX, rounded))
+}
+
+export function syncSplitMaxCssVar(state = liveSnapshot()?.state, env = {}) {
+  const root = hostDocument()?.documentElement
+  if (!root?.style?.setProperty) return false
+  ensureSplitMinChrome()
+  if (!splitConversationMinApplies(state, env)) {
+    try { root.style.removeProperty(WORKBENCH_SPLIT_MAX_CSS_VAR) } catch { /* ignore */ }
+    return false
+  }
+  root.style.setProperty(WORKBENCH_SPLIT_MAX_CSS_VAR, `${workbenchSplitMaxPanelPx(state, env)}px`)
+  return true
+}
+
+function clampLiveSplitDom(state = liveSnapshot()?.state, env = {}) {
+  syncSplitMaxCssVar(state, env)
+  if (!splitConversationMinApplies(state, env)) return
+  const max = workbenchSplitMaxPanelPx(state, env)
+  const doc = hostDocument()
+  const root = doc?.documentElement
+  if (root?.style?.getPropertyValue) {
+    const current = Number.parseFloat(root.style.getPropertyValue('--dsh-sidebar-width'))
+    if (Number.isFinite(current) && current > max) {
+      root.style.setProperty('--dsh-sidebar-width', `${max}px`)
+    }
+  }
+  const panel = doc?.querySelector?.('[data-dragging]') || doc?.querySelector?.('[data-dsh-panel-host]')
+  if (panel?.style) {
+    const current = Number.parseFloat(panel.style.width)
+    if (Number.isFinite(current) && current > max) panel.style.width = `${max}px`
+  }
+}
+
+function wrapStoreReduce(store) {
+  if (!store || typeof store.reduce !== 'function' || wrappedStores.has(store)) return store
+  const original = store.reduce.bind(store)
+  store.reduce = (reducer) => original((current) => {
+    const next = typeof reducer === 'function' ? reducer(current) : current
+    if (!next || next === current) return next
+    if (typeof next.width !== 'number' || !Number.isFinite(next.width)) return next
+    const sessionId = typeof store.getSnapshot === 'function' ? store.getSnapshot()?.sessionId : undefined
+    const clamped = clampSplitPanelWidth(next.width, next, { sessionId })
+    if (clamped === next.width) return next
+    return { ...next, width: clamped }
+  })
+  wrappedStores.add(store)
+  return store
+}
+
+function persistClampedSplitWidth(state, record, sessionId, tabId, env = {}) {
+  if (state?.panelOpen === false) return
+  if (typeof state?.width !== 'number' || !Number.isFinite(state.width)) return
+  if (record.mode === WORKBENCH_FOCUS.gui) return
+  const width = clampSplitPanelWidth(state.width, state, env)
+  if (nearPx(width, workbenchGuiWidthPx(state, env))) return
+  record.splitWidth = width
+  if (sessionId && tabId) persistSessionFocus(sessionId, tabId, { splitWidth: width })
+}
+
+function onSplitPointerSample() {
+  const win = hostWindow()
+  const run = () => clampLiveSplitDom()
+  if (win?.requestAnimationFrame) win.requestAnimationFrame(run)
+  else run()
+}
+
+export function installSplitConversationMin(doc = hostDocument()) {
+  if (!doc) return () => {}
+  if (splitMinDoc === doc && splitMinUnsub) return splitMinUnsub
+  uninstallSplitConversationMin()
+  splitMinDoc = doc
+  ensureSplitMinChrome(doc)
+  syncSplitMaxCssVar()
+  const onMove = () => onSplitPointerSample()
+  const onUp = () => {
+    onSplitPointerSample()
+    const store = attachedStore
+    const snapshot = liveSnapshot(store)
+    const state = snapshot?.state
+    if (!store || typeof store.reduce !== 'function' || !splitConversationMinApplies(state)) return
+    const max = workbenchSplitMaxPanelPx(state)
+    if (typeof state?.width === 'number' && state.width > max) {
+      store.reduce((current) => {
+        if (typeof current?.width !== 'number') return current
+        const next = clampSplitPanelWidth(current.width, current, { sessionId: snapshot?.sessionId })
+        return next === current.width ? current : { ...current, width: next }
+      })
+    }
+  }
+  doc.addEventListener?.('pointermove', onMove, true)
+  doc.addEventListener?.('pointerup', onUp, true)
+  doc.addEventListener?.('pointercancel', onUp, true)
+  splitMinUnsub = () => {
+    doc.removeEventListener?.('pointermove', onMove, true)
+    doc.removeEventListener?.('pointerup', onUp, true)
+    doc.removeEventListener?.('pointercancel', onUp, true)
+    if (splitMinDoc === doc) {
+      splitMinDoc = null
+      splitMinUnsub = null
+    }
+  }
+  return splitMinUnsub
+}
+
+export function uninstallSplitConversationMin() {
+  if (typeof splitMinUnsub === 'function') splitMinUnsub()
+  splitMinUnsub = null
+  splitMinDoc = null
+}
+
 function nearPx(width, target) {
   return Math.abs(width - target) <= WORKBENCH_FOCUS_NEAR_PX
 }
@@ -679,12 +842,7 @@ export function focusRecordForTab(sessionId = sessionKey(), tabId = undefined) {
 }
 
 function rememberSplitWidth(state, record, sessionId, tabId, env = {}) {
-  if (state?.panelOpen === false) return
-  if (typeof state?.width !== 'number' || !Number.isFinite(state.width)) return
-  if (record.mode !== WORKBENCH_FOCUS.gui && !nearPx(state.width, workbenchGuiWidthPx(state, env))) {
-    record.splitWidth = state.width
-    if (sessionId && tabId) persistSessionFocus(sessionId, tabId, { splitWidth: state.width })
-  }
+  persistClampedSplitWidth(state, record, sessionId, tabId, env)
 }
 
 /**
@@ -769,7 +927,7 @@ export function setWorkbenchFocus(mode, store = attachedStore, env = {}, targetT
     // Split focus must never push the middle conversation column below its min
     // width (gui focus and the collapsed middle are allowed to squeeze it).
     if (mode === WORKBENCH_FOCUS.split) {
-      nextWidth = Math.min(nextWidth, workbenchSplitMaxPanelPx(current, env))
+      nextWidth = clampSplitPanelWidth(nextWidth, { ...current, panelOpen: true }, { ...env, sessionId })
     }
     if (current?.panelOpen === true && typeof current.width === 'number' && Math.abs(current.width - nextWidth) < 1) {
       return current
@@ -781,6 +939,7 @@ export function setWorkbenchFocus(mode, store = attachedStore, env = {}, targetT
     }
   })
   emit()
+  syncSplitMaxCssVar(liveSnapshot(store)?.state, env)
   return true
 }
 
@@ -1126,6 +1285,7 @@ function subscribeWorkbench(listener) {
 
 function attachStore(store) {
   if (!store) return
+  wrapStoreReduce(store)
   const next = (attachCounts.get(store) || 0) + 1
   attachCounts.set(store, next)
   if (attachedStore === store) return
@@ -1173,16 +1333,12 @@ function bind(next = {}) {
           state = undefined
         }
         emit()
+        syncSplitMaxCssVar(state)
         if (state?.panelOpen && typeof state.width === 'number') {
           const sessionId = currentSessionId()
           const tabId = activeTabId(state)
           const record = focusRecordForTab(sessionId, tabId)
-          if (record && record.mode !== WORKBENCH_FOCUS.gui && !nearPx(state.width, workbenchGuiWidthPx(state))) {
-            record.splitWidth = state.width
-            if (sessionId && tabId) {
-              persistSessionFocus(sessionId, tabId, { splitWidth: state.width })
-            }
-          }
+          persistClampedSplitWidth(state, record, sessionId, tabId)
         }
       })
       service.__omnimuxWorkbenchHooked = true
@@ -1383,6 +1539,7 @@ function createApi() {
     syncGuiWidth: syncWorkbenchGuiWidth,
     splitMaxPx: workbenchSplitMaxPanelPx,
     installLeftRailObserver: installWorkbenchLeftRailObserver,
+    installSplitMin: installSplitConversationMin,
     getConversationCollapsed,
     setConversationCollapsed,
     hydrateConversationCollapsed,
@@ -1418,6 +1575,7 @@ export function installWorkbenchGlobal(target = hostWindow()) {
  */
 export function resetWorkbenchForTests(target = hostWindow()) {
   uninstallWorkbenchLeftRailObserver()
+  uninstallSplitConversationMin()
   deps.betterSidebar = null
   deps.layout = null
   deps.sessions = null

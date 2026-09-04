@@ -66,7 +66,7 @@ Clip overlay (`ClipStage`) remains **only** for canvas-node portal (`openFromCan
 
 | mode | Geometry | Conversation |
 |---|---|---|
-| `split` | Default width (~420px conversation, rest GUI). Restores the last **per-tab** split width if the user had one. Also clears `conversationCollapsed`. | Visible |
+| `split` | Default width (~420px conversation, rest GUI). Visible conversation floor is **360px**; the right panel is clamped to `viewport − leftRail − 360` on write, live CSS drag (`--omnimux-split-max`), and persist. Restores the last **per-tab** split width if the user had one. Also clears `conversationCollapsed`. | Visible |
 | `gui` | Panel width = `viewport −` official left rail (fill aesthetics). Sets `conversationCollapsed=true` (CSS). Left-rail resize may re-apply fill width; **MUST NOT** clear collapsed. Anti-cover rules from #353/#356 still apply. | Mounted, CSS-collapsed |
 | `chat` | `panelOpen: false`. Tab ids stay in the session snapshot. **MUST NOT** change `conversationCollapsed`. | Independent of right panel |
 

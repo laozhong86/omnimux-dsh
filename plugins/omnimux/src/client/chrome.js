@@ -3,7 +3,7 @@ import { ensureProductStageChrome } from './conversation-box.js'
 import { installStageGlobal } from './stage.js'
 import { installSidebarGlobal } from './sidebar-coordinator.js'
 import { installAuthGlobal } from './auth-gate.js'
-import { installWorkbenchGlobal, installWorkbenchLeftRailObserver, hydrateConversationCollapsed } from './workbench.js'
+import { installWorkbenchGlobal, installWorkbenchLeftRailObserver, installSplitConversationMin, hydrateConversationCollapsed } from './workbench.js'
 import { installChatToggle } from './chat-toggle.js'
 import { ensureConversationCollapseChrome } from './conversation-collapse.js'
 import { ensureComposerCompactChrome, installComposerCompactObserver } from './composer-compact.js'
@@ -49,11 +49,13 @@ export function installHubChrome(ctx) {
     hydrateConversationCollapsed()
     const unsubToggle = installChatToggle()
     const unsubLeftRail = installWorkbenchLeftRailObserver()
+    const unsubSplitMin = installSplitConversationMin()
     const unsubCompact = installComposerCompactObserver()
     const unsubSidebarTopbar = installSidebarToggleTopbar()
     return () => {
       unsubToggle?.()
       unsubLeftRail?.()
+      unsubSplitMin?.()
       unsubCompact?.()
       unsubSidebarTopbar?.()
     }

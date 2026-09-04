@@ -140,7 +140,7 @@ test('ensureComposerCompactChrome injects the style id and the CSS fragments', (
   assert.equal(style.id, COMPOSER_COMPACT_STYLE_ID)
   assert.match(style.textContent, /justify-content:flex-end/)
   assert.match(style.textContent, /--dsh-chat-content-width/)
-  assert.match(style.textContent, /min-width:260px/)
+  assert.match(style.textContent, /min-width:360px/)
   assert.match(style.textContent, /data-omnimux-composer-density='short'/)
   assert.match(style.textContent, /data-omnimux-composer-density='icon'/)
   assert.match(style.textContent, /conversation-scroll/)

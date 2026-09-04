@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
 import {
+  WORKBENCH_CONVERSATION_MIN_PX,
   WORKBENCH_FOCUS,
   WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX,
   WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX,
@@ -10,11 +11,13 @@ import {
   WORKBENCH_TAB_TITLE_FALLBACKS,
   activeTabId,
   applyDefaultWidth,
+  clampSplitPanelWidth,
   collapsedLeftRailFallbackPx,
   collectTabs,
   createWorkbenchSidebarStore,
   findOfficialSidebarColumn,
   inferWorkbenchFocus,
+  installSplitConversationMin,
   installWorkbenchGlobal,
   isOfficialSidebarCollapsed,
   isSeedFilesTab,
@@ -32,6 +35,7 @@ import {
   getWorkbenchFocus,
   setConversationCollapsed,
   setWorkbenchFocus,
+  syncSplitMaxCssVar,
   syncWorkbenchGuiWidth,
   tabIsOpen,
   workbenchDefaultWidthPx,
@@ -77,8 +81,21 @@ function makeState(tabs = [], width = 780, panelOpen = true) {
 }
 
 function setupWindow() {
+  const cssVars = new Map()
+  const headChildren = []
+  const listeners = {}
   const doc = {
-    documentElement: { dataset: {} },
+    documentElement: {
+      dataset: {},
+      style: {
+        setProperty(k, v) { cssVars.set(k, String(v)) },
+        removeProperty(k) { cssVars.delete(k) },
+        getPropertyValue(k) { return cssVars.has(k) ? cssVars.get(k) : '' },
+      },
+    },
+    head: {
+      append(node) { headChildren.push(node) },
+    },
     body: {
       dataset: {},
       _attrs: new Set(),
@@ -86,7 +103,17 @@ function setupWindow() {
       setAttribute(a) { this._attrs.add(a) },
       removeAttribute(a) { this._attrs.delete(a) },
     },
+    getElementById(id) { return headChildren.find((n) => n.id === id) || null },
+    createElement(tag) {
+      return { tagName: String(tag).toUpperCase(), id: '', textContent: '' }
+    },
     querySelector: () => null,
+    addEventListener(type, fn) { (listeners[type] ||= []).push(fn) },
+    removeEventListener(type, fn) {
+      const list = listeners[type] || []
+      const i = list.indexOf(fn)
+      if (i >= 0) list.splice(i, 1)
+    },
   }
   const win = {
     innerWidth: 1200,
@@ -779,8 +806,8 @@ test('split + left collapse only clamps; mode stays split; convCollapsed stays f
 
   const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 56 })
   assert.equal(synced, true)
-  // split max = max(280, 1728 - 56 - 260) = 1412
-  assert.equal(state.width, 1412)
+  // split max = max(280, 1728 - 56 - 360) = 1312
+  assert.equal(state.width, 1312)
   assert.equal(focusRecordForTab('s-split-clamp', 'omnimux-assets:library').mode, WORKBENCH_FOCUS.split)
   assert.equal(getConversationCollapsed(), false)
 })
@@ -927,12 +954,12 @@ test('syncWorkbenchGuiWidth clamps oversized width even after mode was clobbered
 
   const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1728, officialSidebarWidth: 280 })
   assert.equal(synced, true)
-  // Split clamp keeps the middle conversation column >= 260:
-  //   max(280, 1728 - 280 - 260) = 1188
-  assert.equal(state.width, 1188)
+  // Split clamp keeps the middle conversation column >= 360:
+  //   max(280, 1728 - 280 - 360) = 1088
+  assert.equal(state.width, 1088)
 })
 
-test('syncWorkbenchGuiWidth clamps split width so the conversation column keeps its min (260px)', () => {
+test('syncWorkbenchGuiWidth clamps split width so the conversation column keeps its min (360px)', () => {
   setupWindow()
   let state = makeState([{ id: 'omnimux-workflow:canvas', type: 'omnimux-workflow:canvas' }], 900, true)
   const store = {
@@ -942,11 +969,11 @@ test('syncWorkbenchGuiWidth clamps split width so the conversation column keeps 
   const record = focusRecordForTab('s-colsplit', 'omnimux-workflow:canvas')
   record.mode = WORKBENCH_FOCUS.split
 
-  // Viewport 1200, left rail 280 -> split max = 1200 - 280 - 260 = 660.
+  // Viewport 1200, left rail 280 -> split max = 1200 - 280 - 360 = 560.
   const synced = syncWorkbenchGuiWidth(store, { viewportWidth: 1200, officialSidebarWidth: 280 })
   assert.equal(synced, true)
-  assert.ok(state.width <= 660, `expected <=660, got ${state.width}`)
-  assert.equal(state.width, 660)
+  assert.ok(state.width <= 560, `expected <=560, got ${state.width}`)
+  assert.equal(state.width, 560)
 })
 
 test('syncWorkbenchGuiWidth suspends clamping while user is actively dragging', () => {
@@ -1195,4 +1222,61 @@ test('openWorkbench uses human title fallback when getTab has no title (#345)', 
   assert.equal(opened.length, 1)
   assert.equal(opened[0].seed.title, '资产库')
   assert.notEqual(opened[0].seed.title, 'omnimux-assets:library')
+})
+
+test('clampSplitPanelWidth keeps a visible conversation at 360px including Files', () => {
+  setupWindow()
+  assert.equal(WORKBENCH_CONVERSATION_MIN_PX, 360)
+  const env = { viewportWidth: 1200, officialSidebarWidth: 280 }
+  const files = makeState([{ id: 'editor:readme', type: 'editor', title: 'Files' }], 900, true)
+  const record = focusRecordForTab('s-files-min', 'editor:readme')
+  record.mode = WORKBENCH_FOCUS.split
+  assert.equal(clampSplitPanelWidth(900, files, { ...env, sessionId: 's-files-min' }), 560)
+  assert.equal(workbenchSplitMaxPanelPx(files, env), 560)
+
+  const gui = makeState([{ id: 'omnimux-assets:library', type: 'omnimux-assets:library' }], 900, true)
+  setConversationCollapsed(true, { persist: false })
+  const guiRecord = focusRecordForTab('s-gui-min', 'omnimux-assets:library')
+  guiRecord.mode = WORKBENCH_FOCUS.gui
+  assert.equal(clampSplitPanelWidth(920, gui, { ...env, sessionId: 's-gui-min' }), 920)
+})
+
+test('syncSplitMaxCssVar writes the live split ceiling', () => {
+  const win = setupWindow()
+  const state = makeState([{ id: 'editor:home', type: 'editor', title: 'Files' }], 900, true)
+  const record = focusRecordForTab('s-live-drag', 'editor:home')
+  record.mode = WORKBENCH_FOCUS.split
+  const env = { viewportWidth: 1200, officialSidebarWidth: 280, sessionId: 's-live-drag' }
+  assert.equal(syncSplitMaxCssVar(state, env), true)
+  assert.equal(win.document.documentElement.style.getPropertyValue('--omnimux-split-max'), '560px')
+  const style = win.document.getElementById('omnimux-split-conversation-min-chrome')
+  assert.ok(style)
+  assert.match(style.textContent, /--omnimux-split-max/)
+  const unsub = installSplitConversationMin(win.document)
+  assert.equal(typeof unsub, 'function')
+})
+
+test('illegal split widths are not persisted', () => {
+  const win = setupWindow()
+  win.innerWidth = 1200
+  const column = { getBoundingClientRect: () => ({ width: 280 }) }
+  win.document.querySelector = (sel) => (String(sel).includes('sidebarCol') || String(sel).includes('data-pane="sidebar"') ? column : null)
+  let state = makeState([{ id: 'omnimux-workflow:canvas', type: 'omnimux-workflow:canvas' }], 900, true)
+  let listener = null
+  const api = installWorkbenchGlobal(win)
+  api.bind({
+    betterSidebar: {
+      getSnapshot: () => ({ sessionId: 's-persist-min', state }),
+      subscribeState(fn) { listener = fn; return () => {} },
+    },
+    sessions: {
+      list: { getSnapshot: () => ({ current: 's-persist-min' }) },
+    },
+  })
+  const record = focusRecordForTab('s-persist-min', 'omnimux-workflow:canvas')
+  record.mode = WORKBENCH_FOCUS.split
+  listener(state)
+  assert.equal(record.splitWidth, 560)
+  const raw = win.localStorage.getItem('omnimux-workbench-focus:v1:s-persist-min')
+  assert.match(String(raw), /"splitWidth":560/)
 })
