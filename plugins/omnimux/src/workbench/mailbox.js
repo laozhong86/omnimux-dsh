@@ -1,6 +1,9 @@
 /**
  * Viewport and RPC mailbox on Host side.
  * Stores last-known viewport from client and coordinates workbench_open_tab RPC waiter.
+ *
+ * Viewports are keyed by sessionId so concurrent browser tabs / headless probes
+ * cannot overwrite each other's active workbench state.
  */
 
 import { isViewportStale, validateEnvelope, validateRpcAck } from './schema.js'
@@ -11,24 +14,66 @@ export function createWorkbenchMailbox(options = {}) {
   const hubEvents = options.hubEvents
   const rpcTimeoutMs = options.rpcTimeoutMs || RPC_TIMEOUT_MS
 
-  let lastViewport = null
+  /** @type {Map<string, object>} sessionId -> viewport envelope */
+  const viewportsBySession = new Map()
+  /** Most recently updated session (fallback when caller omits sessionId). */
+  let lastSessionId = null
   const pendingRpcs = new Map() // requestId -> { resolve, timer }
+
+  function resolveSessionId(envelopeOrId) {
+    if (typeof envelopeOrId === 'string' && envelopeOrId) return envelopeOrId
+    if (envelopeOrId && typeof envelopeOrId === 'object') {
+      const sid = envelopeOrId.sessionId
+      if (typeof sid === 'string' && sid) return sid
+    }
+    return lastSessionId || 'default'
+  }
 
   function updateViewport(envelope) {
     const val = validateEnvelope(envelope)
     if (!val.valid) return { ok: false, error: val.error }
-    lastViewport = Object.freeze({
+    const sessionId = resolveSessionId(envelope)
+    const stored = Object.freeze({
       ...envelope,
+      sessionId,
       receivedAt: Date.now(),
     })
-    return { ok: true }
+    viewportsBySession.set(sessionId, stored)
+    lastSessionId = sessionId
+    return { ok: true, sessionId }
   }
 
-  function getActiveView() {
+  /**
+   * Pick the freshest non-stale viewport, else the freshest any viewport.
+   * Used when the caller does not know the session id (tool plane).
+   */
+  function pickFreshestViewport() {
+    let best = null
+    for (const vp of viewportsBySession.values()) {
+      if (!best || (vp.capturedAt || 0) > (best.capturedAt || 0)) best = vp
+    }
+    if (!best) return null
+    // Prefer a non-stale freshest if available
+    let bestFresh = null
+    for (const vp of viewportsBySession.values()) {
+      if (isViewportStale(vp)) continue
+      if (!bestFresh || (vp.capturedAt || 0) > (bestFresh.capturedAt || 0)) bestFresh = vp
+    }
+    return bestFresh || best
+  }
+
+  /**
+   * @param {string} [sessionId] optional; when omitted returns the freshest session viewport
+   */
+  function getActiveView(sessionId) {
+    const lastViewport = sessionId
+      ? viewportsBySession.get(sessionId)
+      : pickFreshestViewport()
     if (!lastViewport) {
       return {
         ok: true,
         stale: true,
+        sessionId: sessionId || lastSessionId || null,
         uiContext: null,
       }
     }
@@ -36,6 +81,7 @@ export function createWorkbenchMailbox(options = {}) {
     return {
       ok: true,
       stale,
+      sessionId: lastViewport.sessionId || sessionId || null,
       uiContext: lastViewport,
     }
   }
@@ -78,7 +124,7 @@ export function createWorkbenchMailbox(options = {}) {
   }
 
   function clearPending() {
-    for (const [id, item] of pendingRpcs.entries()) {
+    for (const [, item] of pendingRpcs.entries()) {
       clearTimeout(item.timer)
     }
     pendingRpcs.clear()

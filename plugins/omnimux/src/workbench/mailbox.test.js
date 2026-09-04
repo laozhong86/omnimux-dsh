@@ -80,4 +80,44 @@ describe('WorkbenchMailbox', () => {
     assert.equal(result.applied, false)
     assert.equal(result.code, 'rpc-timeout')
   })
+
+  it('isolates viewports by sessionId so concurrent tabs do not overwrite each other', () => {
+    const mailbox = createWorkbenchMailbox()
+    const now = Date.now()
+
+    mailbox.updateViewport({
+      schemaVersion: 1,
+      ok: true,
+      capturedAt: now - 100,
+      sessionId: 'ses_a',
+      surface: { tabId: 'omnimux-assets:library', panelOpen: true, title: '资产库' },
+    })
+    mailbox.updateViewport({
+      schemaVersion: 1,
+      ok: true,
+      capturedAt: now,
+      sessionId: 'ses_b',
+      surface: {
+        tabId: 'omnimux-workflow:canvas',
+        panelOpen: true,
+        title: '创作画布',
+        openedTabs: [
+          { id: 'tab:5', type: 'editor', title: 'Files', kind: 'files' },
+          { id: 'omnimux-workflow:canvas', type: 'omnimux-workflow:canvas', title: '创作画布', kind: 'workbench' },
+        ],
+      },
+    })
+
+    const viewA = mailbox.getActiveView('ses_a')
+    assert.equal(viewA.uiContext.surface.tabId, 'omnimux-assets:library')
+
+    const viewB = mailbox.getActiveView('ses_b')
+    assert.equal(viewB.uiContext.surface.tabId, 'omnimux-workflow:canvas')
+    assert.equal(viewB.uiContext.surface.openedTabs[0].title, 'Files')
+
+    // Without sessionId, return the freshest (ses_b)
+    const freshest = mailbox.getActiveView()
+    assert.equal(freshest.sessionId, 'ses_b')
+    assert.equal(freshest.uiContext.surface.tabId, 'omnimux-workflow:canvas')
+  })
 })

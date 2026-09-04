@@ -84,4 +84,44 @@ describe('Workbench UI Context and Envelope', () => {
     assert.equal(ctx.surface.tabId, 'omnimux-assets:library')
     assert.equal(ctx.surface.title, '资产库')
   })
+
+  it('describes native Files editor tab with human title (not opaque tab:N)', () => {
+    resetWorkbenchForTests()
+    const api = installWorkbenchGlobal()
+    api.bind({
+      betterSidebar: {
+        getSnapshot: () => ({
+          sessionId: 'ses_native',
+          state: {
+            panelOpen: true,
+            activePane: 'pane:1',
+            splits: {
+              kind: 'leaf',
+              id: 'pane:1',
+              tabs: [
+                { id: 'tab:5', type: 'editor', title: 'Files', meta: { treeOpen: true } },
+                { id: 'omnimux-workflow:canvas', type: 'omnimux-workflow:canvas', title: '创作画布' },
+              ],
+              active: 'omnimux-workflow:canvas',
+            },
+          },
+        }),
+      },
+    })
+
+    const ctx = api.getUiContext()
+    assert.equal(ctx.ok, true)
+    assert.equal(ctx.surface.tabId, 'omnimux-workflow:canvas')
+    assert.equal(ctx.surface.title, '创作画布')
+    assert.equal(ctx.surface.openedTabs.length, 2)
+    assert.equal(ctx.surface.openedTabs[0].id, 'tab:5')
+    assert.equal(ctx.surface.openedTabs[0].title, 'Files')
+    assert.equal(ctx.surface.openedTabs[0].kind, 'files')
+    assert.equal(ctx.surface.openedTabs[1].kind, 'workbench')
+
+    const block = formatCompactContextBlock(ctx)
+    assert.ok(block.includes('创作画布'))
+    assert.ok(block.includes('Files'))
+    assert.ok(block.includes('open:'))
+  })
 })
