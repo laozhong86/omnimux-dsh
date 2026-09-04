@@ -184,6 +184,25 @@ test('openWorkbench without current session does not create a session or claim o
   win.__omnimuxStage = { claim() { claimed += 1 } }
   const opened = []
   const state = makeState([])
+  // Minimal body so nudgeWorkbenchNeedsSession can mount a status toast.
+  win.document.body = {
+    appendChild(node) {
+      this._kids = this._kids || []
+      this._kids.push(node)
+      return node
+    },
+  }
+  win.document.getElementById = () => null
+  win.document.createElement = (tag) => ({
+    tagName: String(tag).toUpperCase(),
+    id: '',
+    style: { cssText: '' },
+    setAttribute() {},
+    remove() {},
+    textContent: '',
+  })
+  win.document.querySelector = () => null
+  win.setTimeout = () => 0
   api.bind({
     betterSidebar: {
       openTab(seed, scope) { opened.push({ seed, scope }) },
@@ -200,6 +219,10 @@ test('openWorkbench without current session does not create a session or claim o
   assert.equal(opened.length, 0)
   assert.equal(created, 0)
   assert.equal(claimed, 0)
+  const kids = win.document.body._kids || []
+  assert.equal(kids.length, 1, 'shows needs-session status toast')
+  assert.equal(kids[0].id, 'omnimux-workbench-needs-session')
+  assert.match(String(kids[0].textContent || ''), /工作区|会话/)
 })
 
 test('openWorkbench switches focus mode to default per tab without cross-tab leakage', async () => {

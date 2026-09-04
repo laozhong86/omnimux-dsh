@@ -940,6 +940,53 @@ export function releaseCurrentProductStage() {
  * }} opts
  * @returns {Promise<boolean>}
  */
+/**
+ * Workbench tabs are session-scoped (better-sidebar leaf). Without a current
+ * session, openTab would attach nowhere — surface a short cue instead of a
+ * silent no-op so left-rail clicks do not look "dead".
+ */
+export function nudgeWorkbenchNeedsSession(doc = hostWindow()?.document) {
+  if (!doc || typeof doc.createElement !== 'function') return false
+  const chooser =
+    doc.querySelector('button[aria-label="Choose workspace"]')
+    || doc.querySelector('button[aria-label="选择工作区"]')
+    || doc.querySelector('input[aria-label="Choose workspace"]')
+    || doc.querySelector('input[aria-label="选择工作区"]')
+  try { chooser?.focus?.({ preventScroll: false }) } catch { /* ignore */ }
+  try { chooser?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }) } catch { /* ignore */ }
+
+  const existing = doc.getElementById('omnimux-workbench-needs-session')
+  if (existing) existing.remove()
+  const toast = doc.createElement('div')
+  toast.id = 'omnimux-workbench-needs-session'
+  toast.setAttribute('role', 'status')
+  toast.textContent = '请先选择工作区并新建会话，再打开此面板'
+  toast.style.cssText = [
+    'position:fixed',
+    'left:50%',
+    'bottom:28px',
+    'transform:translateX(-50%)',
+    'z-index:100000',
+    'max-width:min(420px,90vw)',
+    'padding:10px 14px',
+    'border-radius:10px',
+    'font:var(--dsw-font-s-14, 13px/18px system-ui)',
+    'color:var(--dsw-alias-label-primary, #f8fafc)',
+    'background:var(--dsw-alias-bg-elevated, #1c1c1f)',
+    'border:1px solid var(--dsw-alias-border-l1, #334155)',
+    'box-shadow:var(--dsw-shadow-lv2, 0 8px 24px rgba(0,0,0,.35))',
+    'pointer-events:none',
+  ].join(';')
+  try {
+    doc.body?.appendChild(toast)
+    const win = hostWindow()
+    win?.setTimeout?.(() => { try { toast.remove() } catch { /* ignore */ } }, 3200)
+  } catch {
+    return false
+  }
+  return true
+}
+
 export async function openWorkbench(opts = {}) {
   const tabId = typeof opts.tabId === 'string' ? opts.tabId : ''
   if (!tabId) return false
@@ -951,7 +998,10 @@ export async function openWorkbench(opts = {}) {
   await waitForTab(service, tabId, timeoutMs)
 
   const sessionId = await ensureSessionId(deps.sessions, opts.sessionId)
-  if (!sessionId) return false
+  if (!sessionId) {
+    nudgeWorkbenchNeedsSession()
+    return false
+  }
   const cwd = opts.cwd
   const scope = { sessionId, ...(cwd ? { cwd } : {}) }
   const ready = await waitForSidebarSession(service, sessionId, timeoutMs)

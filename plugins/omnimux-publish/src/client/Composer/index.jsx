@@ -182,10 +182,12 @@ export function Composer({ t, draftId, onBack, onSubmitted, onSaved }) {
   // ---- M2 类型选择（新草稿入口）----
   if (!type) {
     return (
-      <div>
-        <Button variant="ghost" size="sm" leadingIcon={<IconChevronLeftOutline14 />} onClick={onBack}>
-          {t('form.back')}
-        </Button>
+      <div className="omnimux-publish-type-page">
+        <div className="omnimux-publish-type-toolbar">
+          <Button variant="ghost" size="sm" leadingIcon={<IconChevronLeftOutline14 />} onClick={onBack}>
+            {t('form.back')}
+          </Button>
+        </div>
         <div className="omnimux-publish-type-pick">
           <div className="omnimux-publish-type-title">{t('type.title')}</div>
           <div className="omnimux-publish-type-row">
@@ -386,17 +388,18 @@ function describeError(caught, t) {
  */
 function TypeCard({ t, value, onPick }) {
   const Icon = value === 'video' ? IconPlayOutline16 : IconPaperclipOutline16
+  // Native <button>: dsh-ui-kit Button is locked to 32px single-row; type cards
+  // are multi-line selection tiles (icon + name + hint) and must not inherit it.
   return (
-    <Button
+    <button
       type="button"
-      variant="outline"
       className="omnimux-publish-type-card"
       onClick={() => { onPick(value) }}
     >
-      <span className="omnimux-publish-type-icon"><Icon size={20} /></span>
+      <span className="omnimux-publish-type-icon" aria-hidden="true"><Icon size={20} /></span>
       <span className="omnimux-publish-type-name">{t(`type.${value}`)}</span>
       <span className="omnimux-publish-type-hint">{t(`type.${value}.hint`)}</span>
-    </Button>
+    </button>
   )
 }
 

@@ -1,35 +1,42 @@
 {
-  "stage": "settings-above-right-panel",
-  "port": 45120,
-  "cdp": 9229,
-  "timestamp": "2026-09-04T12:01:29.096Z",
-  "pass": true,
-  "state": {
-    "ok": true,
-    "rootZ": "1100",
-    "rootW": 1728,
-    "rootOverflow": "visible",
-    "dialog": {
-      "x": 464,
-      "y": 97,
-      "w": 800,
-      "h": 800
-    },
-    "centerHit": {
-      "inDialog": true,
-      "inPanel": false,
-      "cls": "WHpqha_desc"
-    },
-    "edgeHit": {
-      "inDialog": true,
-      "inPanel": false,
-      "cls": "u4ZYjG_options"
-    },
-    "chromeHasRule": true,
-    "viewport": {
-      "w": 1728,
-      "h": 994
-    }
+  "task": "fix-publish-type-pick-layout + publish-click-dead",
+  "timestamp": "2026-09-04T20:30:00+08:00",
+  "environment": {
+    "url": "http://127.0.0.1:44202",
+    "profile": "omnimux-dev-fix-type-pick-layout",
+    "port": 44202
   },
-  "screenshot": "docs/evidence/settings-above-right-panel.png"
+  "findings": [
+    {
+      "symptom": "type pick cards deformed / look dead",
+      "root_cause": "TypeCard used dsh-ui-kit Button (32px single-row) + missing CSS in styles.js",
+      "fix": "native button + composer/type CSS",
+      "verified": {
+        "cards": [{"h":124,"w":352},{"h":124,"w":352}],
+        "tag": "BUTTON",
+        "click_to_composer": true
+      }
+    },
+    {
+      "symptom": "sidebar Publish click no response when no workspace/session",
+      "root_cause": "openWorkbench returns false silently if ensureSessionId() is empty (workbench.js)",
+      "fix": "nudgeWorkbenchNeedsSession toast + focus workspace chooser",
+      "verified": {
+        "unit": "workbench.test.js openWorkbench without session shows toast",
+        "e2e_with_session": "open returns true and stage mounts"
+      }
+    }
+  ],
+  "flow_verified": [
+    "Create Project → session present",
+    "wb.open(omnimux-publish:library) → true",
+    "+ New Post → type-page with 2 cards 124px",
+    "click Video card → composer + accounts + form"
+  ],
+  "screenshots": [
+    "docs/evidence/publish-type-pick-fixed.png",
+    "docs/evidence/publish-type-pick-live-flow.png",
+    "docs/evidence/publish-click-verified.png"
+  ],
+  "result": "PASS"
 }
