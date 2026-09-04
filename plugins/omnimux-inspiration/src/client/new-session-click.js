@@ -141,9 +141,15 @@ function readActiveSessionId(win) {
   }
 }
 
-function sessionOpened(blank, doc, win, beforeId) {
+function sessionOpened(blank, doc, win, beforeId, clicked) {
   const afterId = readActiveSessionId(win)
-  if (blank(doc) || (afterId && afterId !== beforeId)) {
+  if (afterId && afterId !== beforeId) {
+    return { ok: true, sessionId: afterId !== 'default' ? afterId : undefined }
+  }
+  // After an official / menuitem click, welcome chrome with no real turns
+  // is a reused blank session (host keeps the same id). A session that still
+  // has user/assistant messages and the same id is not a success.
+  if (clicked && blank(doc)) {
     return { ok: true, sessionId: afterId && afterId !== 'default' ? afterId : undefined }
   }
   return null
@@ -177,6 +183,7 @@ export async function clickOfficialNewSession(opts = {}) {
 
   const beforeId = readActiveSessionId(win)
   let clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
+  let clickedButton = false
 
   if (!clickedMenu) {
     const button = findNewSessionButton(doc)
@@ -184,6 +191,7 @@ export async function clickOfficialNewSession(opts = {}) {
       return { ok: false, error: 'newSessionFailed' }
     }
     button.click()
+    clickedButton = true
     // Menu may open synchronously (collapsed rail interceptor).
     clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
   }
@@ -193,12 +201,12 @@ export async function clickOfficialNewSession(opts = {}) {
     if (!clickedMenu) {
       clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
     }
-    const opened = sessionOpened(blank, doc, win, beforeId)
+    const opened = sessionOpened(blank, doc, win, beforeId, clickedMenu || clickedButton)
     if (opened) return opened
     await sleep(pollMs)
   }
 
-  const opened = sessionOpened(blank, doc, win, beforeId)
+  const opened = sessionOpened(blank, doc, win, beforeId, clickedMenu || clickedButton)
   if (opened) return opened
   return { ok: false, error: 'newSessionFailed' }
 }

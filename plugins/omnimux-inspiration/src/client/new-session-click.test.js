@@ -293,4 +293,68 @@ describe('clickOfficialNewSession', () => {
     assert.equal(projectItem.clicks.length, 0)
     assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
   })
+
+  it('succeeds after a session menuitem click when welcome chrome has no message nodes and id is unchanged', async () => {
+    const sessionItem = makeMenuItem({ text: 'New Session' })
+    const projectItem = makeMenuItem({ text: 'Create Project' })
+    const scroll = {
+      textContent: '属于你的AI社媒运营团队测试环境Describe what you want'.padEnd(80, 'x'),
+      querySelector() { return null },
+    }
+    const win = { __omnimuxAttachments: { getActiveSessionId: () => 'session-294ee3ed' } }
+    const base = makeDoc([], { menuItems: [sessionItem, projectItem] })
+    const doc = {
+      ...base,
+      defaultView: win,
+      querySelector(selector) {
+        if (selector === '[data-slot="conversation.session.header"]') return { textContent: '' }
+        if (selector === '[data-conversation-scroll]') return scroll
+        return base.querySelector(selector)
+      },
+    }
+    const result = await clickOfficialNewSession({
+      document: doc,
+      window: win,
+      timeoutMs: 200,
+      pollMs: 1,
+      now: tickingNow(40),
+      sleep: async () => {},
+    })
+    assert.equal(sessionItem.clicks.length, 1)
+    assert.equal(projectItem.clicks.length, 0)
+    assert.equal(result.ok, true)
+    assert.equal(result.sessionId, 'session-294ee3ed')
+  })
+
+  it('does not treat a clicked menu as success when a real user message remains and id is unchanged', async () => {
+    const sessionItem = makeMenuItem({ text: 'New Session' })
+    const user = { textContent: 'hello from user', tagName: 'DIV' }
+    const scroll = {
+      textContent: 'hello from user'.padEnd(80, 'x'),
+      querySelector(selector) {
+        return selector === '[data-role="user"]' ? user : null
+      },
+    }
+    const win = { __omnimuxAttachments: { getActiveSessionId: () => 'session-same' } }
+    const base = makeDoc([], { menuItems: [sessionItem] })
+    const doc = {
+      ...base,
+      defaultView: win,
+      querySelector(selector) {
+        if (selector === '[data-slot="conversation.session.header"]') return { textContent: '夏日护肤' }
+        if (selector === '[data-conversation-scroll]') return scroll
+        return base.querySelector(selector)
+      },
+    }
+    const result = await clickOfficialNewSession({
+      document: doc,
+      window: win,
+      timeoutMs: 80,
+      pollMs: 10,
+      now: tickingNow(50),
+      sleep: async () => {},
+    })
+    assert.equal(sessionItem.clicks.length, 1)
+    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
+  })
 })
