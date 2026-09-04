@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { apply } from '../index.js'
+import { apply, inject } from '../index.js'
 
 describe('hub apply composition', () => {
+  it('declares every synchronously-read host service', () => {
+    assert.deepEqual(inject, ['tools', 'systemPrompt'])
+  })
+
   it('registers media, text, identity, and catalog seams in a stable order', () => {
     const names = []
     const provided = []
