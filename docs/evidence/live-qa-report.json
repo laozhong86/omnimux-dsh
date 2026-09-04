@@ -1,57 +1,27 @@
 {
+  "timestamp": "2026-09-04T09:48:35.246Z",
+  "stage": "omnimux-composer",
+  "port": 45120,
+  "cdpPort": 9229,
+  "url": "http://127.0.0.1:45120/?dsh-desktop-mode=compatibility&dsh-desktop-platform=darwin&dsh-desktop-version=2.0.4&dsh-desktop-material=transparent&dsh-desktop-titlebar-inset=36",
   "pass": true,
-  "boot": {
-    "recovery": false,
-    "factory": true,
-    "assets": true,
-    "clip": true,
-    "session": true
+  "workspaceTitle": "Way faster than shaving 🤷‍♂️ #hairremoval #bodyhair",
+  "expected": {
+    "workspaceMaxWidthPx": 220,
+    "ellipsis": true,
+    "noRowOverflow": true,
+    "adjacentPresetVisible": true
   },
-  "afterAssets": {
-    "panelOpen": true,
-    "assets": {
-      "present": true,
-      "domActive": true,
-      "isActive": true,
-      "isOpen": true
-    },
-    "clip": {
-      "present": true,
-      "domActive": false,
-      "isActive": false,
-      "isOpen": false
-    }
+  "measured": {
+    "workspaceWidthPx": 220,
+    "labelClientWidthPx": 168,
+    "labelScrollWidthPx": 315,
+    "presetWidthPx": 106,
+    "rowOverflow": false,
+    "childOutsideRight": false,
+    "responsiveWidthsPx": [920, 560, 460, 386, 300, 240],
+    "allResponsiveCasesPassed": true
   },
-  "afterClip": {
-    "panelOpen": true,
-    "assets": {
-      "present": true,
-      "domActive": false,
-      "isActive": false,
-      "isOpen": true
-    },
-    "clip": {
-      "present": true,
-      "domActive": true,
-      "isActive": true,
-      "isOpen": true
-    }
-  },
-  "afterCloseClip": {
-    "panelOpen": true,
-    "assets": {
-      "present": true,
-      "domActive": true,
-      "isActive": true,
-      "isOpen": true
-    },
-    "clip": {
-      "present": true,
-      "domActive": false,
-      "isActive": false,
-      "isOpen": false
-    }
-  },
-  "port": 44120,
-  "note": "pass predicate fixed: exclusive active within each snapshot; closeTab keeps other tabs"
+  "method": "Built CSS was temporarily injected into the existing hub-owned style tag for pre-merge validation, measured in the real 45120 Electron renderer, screenshotted, then restored.",
+  "screenshot": ".workbuddy/evidence/workspace-title-overflow/live-electron.png"
 }

@@ -5,6 +5,7 @@ import {
   COMPOSER_COMPACT_CSS,
   COMPOSER_COMPACT_DENSITY,
   COMPOSER_COMPACT_STYLE_ID,
+  COMPOSER_WORKSPACE_MAX_WIDTH_PX,
   applyComposerDensity,
   composerDensityForWidth,
   ensureComposerCompactChrome,
@@ -144,9 +145,36 @@ test('ensureComposerCompactChrome injects the style id and the CSS fragments', (
   assert.match(style.textContent, /data-omnimux-composer-density='icon'/)
   assert.match(style.textContent, /conversation-scroll/)
   assert.match(style.textContent, /margin-left:auto/)
-  // Hero workspace row shares the same content-width rail and margin: auto.
-  assert.match(style.textContent, /heroWorkspaceRow/)
-  assert.match(style.textContent, /max-width:var\(--dsh-chat-content-width\)/)
+  // Hero workspace row shares the same rail without letting a long workspace
+  // name consume the adjacent Agent preset's space. Scope every assertion to
+  // its rule so an unrelated compact-label declaration cannot create a green.
+  assert.equal(COMPOSER_WORKSPACE_MAX_WIDTH_PX, 220)
+  const rowRule = style.textContent.match(
+    /\[data-phase='hero'\] \[class\*="heroWorkspaceRow"\]\{([^}]*)\}/,
+  )?.[1]
+  assert.ok(rowRule, 'hero workspace row rule should be present')
+  assert.match(rowRule, /max-width:var\(--dsh-chat-content-width\)!important/)
+  assert.match(rowRule, /min-width:0/)
+  assert.match(rowRule, /flex-wrap:nowrap/)
+  assert.match(rowRule, /overflow:hidden/)
+
+  const triggerRule = style.textContent.match(
+    /\[data-phase='hero'\] \[class\*="heroWorkspaceRow"\] > button\[aria-label\]\[aria-haspopup='menu'\]\[aria-expanded\]:first-child\{([^}]*)\}/,
+  )?.[1]
+  assert.ok(triggerRule, 'workspace trigger rule should be present')
+  assert.match(triggerRule, new RegExp(`flex:0 1 ${COMPOSER_WORKSPACE_MAX_WIDTH_PX}px`))
+  assert.match(triggerRule, /min-width:0/)
+  assert.match(triggerRule, new RegExp(`max-width:min\\(100%,${COMPOSER_WORKSPACE_MAX_WIDTH_PX}px\\)!important`))
+  assert.match(triggerRule, /overflow:hidden/)
+
+  const labelRule = style.textContent.match(
+    /\[data-phase='hero'\] \[class\*="heroWorkspaceRow"\] > button\[aria-label\]\[aria-haspopup='menu'\]\[aria-expanded\]:first-child > span\{([^}]*)\}/,
+  )?.[1]
+  assert.ok(labelRule, 'workspace label rule should be present')
+  assert.match(labelRule, /min-width:0/)
+  assert.match(labelRule, /overflow:hidden/)
+  assert.match(labelRule, /text-overflow:ellipsis/)
+  assert.match(labelRule, /white-space:nowrap/)
   // Idempotent: a second call must not create a second <style>.
   const again = ensureComposerCompactChrome(doc)
   assert.equal(again, style)
