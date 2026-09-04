@@ -20,9 +20,12 @@ import { join } from 'node:path';
 
 const host = await import('../../dist/index.js');
 
-function makeHarness() {
+function makeHarness(options = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'omnimux-graph-tools-'));
   const tools = [];
+  const seats = {
+    workbenchMailbox: options.workbenchMailbox,
+  };
   const ctx = {
     tools: {
       register(tool) {
@@ -31,6 +34,9 @@ function makeHarness() {
       },
     },
     systemPrompt: { section() { return () => {}; } },
+    get(name) {
+      return seats[name];
+    },
   };
   const libraryRoot = join(dir, 'library');
   mkdirSync(libraryRoot, { recursive: true });
@@ -53,6 +59,7 @@ function makeHarness() {
     dir,
     libraryRoot,
     tool,
+    seats,
     cleanup: () => {
       dispose();
       rmSync(dir, { recursive: true, force: true });
@@ -479,24 +486,27 @@ test('guard clauses: write tools return invalid-args immediately on missing/bad 
     assert.equal((await h.tool('workflow_node_add').execute({ workspace_id: 'ws_1' })).error, 'invalid-args');
     assert.equal((await h.tool('workflow_node_add').execute({ workspace_id: 'ws_1', material_type: 'unknown' })).error, 'invalid-args');
 
-    // workflow_node_update missing workspace_id / node_id / patch
-    assert.equal((await h.tool('workflow_node_update').execute({})).error, 'invalid-args');
+    // No ui_context and no workspace_id → no-current-workspace (not invalid-args)
+    assert.equal((await h.tool('workflow_node_add').execute({ material_type: 'text' })).error, 'no-current-workspace');
+    assert.equal((await h.tool('workflow_node_update').execute({ node_id: 'n1', patch: { label: 'x' } })).error, 'no-current-workspace');
+    assert.equal((await h.tool('workflow_node_remove').execute({ node_ids: ['n1'] })).error, 'no-current-workspace');
+    assert.equal((await h.tool('workflow_connect').execute({ source: 'a', target: 'b' })).error, 'no-current-workspace');
+    assert.equal((await h.tool('workflow_disconnect').execute({ edge_ids: ['e1'] })).error, 'no-current-workspace');
+
+    // workflow_node_update missing node_id / patch (with explicit workspace)
     assert.equal((await h.tool('workflow_node_update').execute({ workspace_id: 'ws_1' })).error, 'invalid-args');
     assert.equal((await h.tool('workflow_node_update').execute({ workspace_id: 'ws_1', node_id: 'n1' })).error, 'invalid-args');
     assert.equal((await h.tool('workflow_node_update').execute({ workspace_id: 'ws_1', node_id: 'n1', patch: 'not-an-object' })).error, 'invalid-args');
 
-    // workflow_node_remove missing workspace_id / node_ids
-    assert.equal((await h.tool('workflow_node_remove').execute({})).error, 'invalid-args');
+    // workflow_node_remove missing node_ids
     assert.equal((await h.tool('workflow_node_remove').execute({ workspace_id: 'ws_1' })).error, 'invalid-args');
     assert.equal((await h.tool('workflow_node_remove').execute({ workspace_id: 'ws_1', node_ids: [] })).error, 'invalid-args');
 
-    // workflow_connect missing workspace_id / source / target
-    assert.equal((await h.tool('workflow_connect').execute({})).error, 'invalid-args');
+    // workflow_connect missing source / target
     assert.equal((await h.tool('workflow_connect').execute({ workspace_id: 'ws_1' })).error, 'invalid-args');
     assert.equal((await h.tool('workflow_connect').execute({ workspace_id: 'ws_1', source: 'a' })).error, 'invalid-args');
 
-    // workflow_disconnect missing workspace_id / edge_ids or source+target
-    assert.equal((await h.tool('workflow_disconnect').execute({})).error, 'invalid-args');
+    // workflow_disconnect missing edge_ids or source+target
     assert.equal((await h.tool('workflow_disconnect').execute({ workspace_id: 'ws_1' })).error, 'invalid-args');
 
     // workflow_execution_control missing execution_id / action / invalid action
@@ -505,5 +515,81 @@ test('guard clauses: write tools return invalid-args immediately on missing/bad 
     assert.equal((await h.tool('workflow_execution_control').execute({ execution_id: 'ex_1', action: 'bad' })).error, 'invalid-args');
   } finally {
     h.cleanup();
+  }
+});
+
+test('workflow_node_add defaults workspace from ui_context without workflow_list', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'omnimux-graph-ui-ctx-'));
+  const tools = [];
+  let currentWorkspaceId = null;
+  const ctx = {
+    tools: {
+      register(tool) {
+        tools.push(tool);
+        return () => {};
+      },
+    },
+    systemPrompt: { section() { return () => {}; } },
+    get(name) {
+      if (name !== 'workbenchMailbox') return undefined;
+      return {
+        getActiveView() {
+          if (!currentWorkspaceId) return { ok: true, uiContext: null };
+          return {
+            ok: true,
+            stale: false,
+            uiContext: {
+              schemaVersion: 1,
+              ok: true,
+              capturedAt: Date.now(),
+              view: {
+                kind: 'canvas',
+                extra: { workspaceId: currentWorkspaceId },
+              },
+            },
+          };
+        },
+      };
+    },
+  };
+  const libraryRoot = join(dir, 'library');
+  mkdirSync(libraryRoot, { recursive: true });
+  const dispose = host.mountWorkflowHost(ctx, {
+    paths: {
+      root: dir,
+      workspacesDir: join(dir, 'workspaces'),
+      executionsDir: join(dir, 'executions'),
+      mediaDir: join(dir, 'media'),
+    },
+    libraryRoot,
+    gateway: host.createMockGateway({ minLatencyMs: 5, maxLatencyMs: 15 }),
+  });
+  const tool = (name) => tools.find((t) => t.name === name);
+
+  try {
+    const createdWs = await tool('workflow_create').execute({ name: '当前画布' });
+    const wsId = createdWs.workspace.id;
+    // Noise: another workspace exists — must NOT be chosen.
+    await tool('workflow_create').execute({ name: '其他画布' });
+    currentWorkspaceId = wsId;
+
+    const added = await tool('workflow_node_add').execute({
+      material_type: 'video',
+      tool: 'video-generation',
+      label: '视频生成',
+    });
+    assert.equal(added.error, undefined, JSON.stringify(added));
+    assert.equal(added.workspace.id, wsId);
+    assert.equal(added.workspaceSource, 'ui-context');
+    assert.equal(added.node?.data?.materialType, 'video');
+    assert.equal(added.node?.data?.selectedTool, 'video-generation');
+
+    const snap = await tool('workflow_snapshot').execute({ include_nodes: true });
+    assert.equal(snap.error, undefined, JSON.stringify(snap));
+    assert.equal(snap.workspace.id, wsId);
+    assert.equal(snap.workspace.nodes.length, 1);
+  } finally {
+    dispose();
+    rmSync(dir, { recursive: true, force: true });
   }
 });

@@ -158,12 +158,27 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
   // Mounts when either seat is present; wrapped in ctx.effect for disposal.
   if (ctx.tools || ctx.systemPrompt) {
     const mountAgent = () => {
+      // Optional hub seam: last-known UI viewport for default workspace targeting.
+      // Vertical package must not import hub — only ctx.get('workbenchMailbox').
+      const mailbox = typeof ctx.get === 'function' ? ctx.get('workbenchMailbox') : undefined;
+      const getActiveView =
+        mailbox && typeof mailbox === 'object' && typeof (mailbox as { getActiveView?: unknown }).getActiveView === 'function'
+          ? (mailbox as { getActiveView: (sessionId?: string) => unknown }).getActiveView.bind(mailbox)
+          : undefined;
       disposers.push(
         registerWorkflowAgentSeats(ctx, {
           store,
           executionManager,
           mediaDir: paths.mediaDir,
           ensureProjectBound,
+          getActiveView: getActiveView as
+            | ((sessionId?: string) => {
+                ok?: boolean;
+                uiContext?: {
+                  view?: { kind?: string; extra?: { workspaceId?: string } } | null;
+                } | null;
+              })
+            | undefined,
         }),
       );
     };

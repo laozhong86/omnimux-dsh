@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { mountWorkbenchTools } from './tools.js'
+import { mountWorkbenchTools, WORKBENCH_VIEWPORT_PROMPT_SECTION } from './tools.js'
 import { createHubEventBus } from '../events/hub-event-bus.js'
 import { createWorkbenchMailbox } from './mailbox.js'
 import { JSON_TOOL_OUTPUT } from '../tools/schema.js'
@@ -13,6 +13,13 @@ function captureTools() {
 describe('Workbench Tools', () => {
   it('registers tools with dsh-tools output contract and executes get_active_view', async () => {
     const { tools, ctx } = captureTools()
+    const promptSections = []
+    ctx.systemPrompt = {
+      section(spec) {
+        promptSections.push(spec)
+        return () => {}
+      },
+    }
 
     const bus = createHubEventBus()
     const mailbox = createWorkbenchMailbox({ hubEvents: bus })
@@ -21,6 +28,7 @@ describe('Workbench Tools', () => {
       ok: true,
       capturedAt: Date.now(),
       surface: { tabId: 'omnimux-assets:library', panelOpen: true },
+      view: { kind: 'canvas', extra: { workspaceId: 'ws_abc' } },
     })
 
     mountWorkbenchTools(ctx, {
@@ -33,11 +41,18 @@ describe('Workbench Tools', () => {
     assert.equal(typeof tools.get('workbench_get_active_view').output.render, 'function')
     assert.equal(typeof tools.get('workbench_open_tab').output.render, 'function')
 
+    const viewportSection = promptSections.find((s) => s.name === WORKBENCH_VIEWPORT_PROMPT_SECTION.name)
+    assert.ok(viewportSection, 'workbench:viewport prompt registered')
+    assert.equal(viewportSection.order, WORKBENCH_VIEWPORT_PROMPT_SECTION.order)
+    assert.match(viewportSection.text, /ui_context/)
+    assert.match(viewportSection.text, /workspace/)
+
     const getTool = tools.get('workbench_get_active_view')
     const viewRes = await getTool.execute({})
     assert.equal(viewRes.ok, true)
     assert.equal(viewRes.stale, false)
     assert.equal(viewRes.uiContext.surface.tabId, 'omnimux-assets:library')
+    assert.equal(viewRes.uiContext.view.extra.workspaceId, 'ws_abc')
   })
 
   it('defaults to JSON_TOOL_OUTPUT when jsonOut is omitted', () => {

@@ -38,6 +38,43 @@ describe('Workbench UI Context and Envelope', () => {
     assert.ok(block.includes('</ui_context>'))
   })
 
+  it('formats canvas workspace routing keys in compact block', () => {
+    const envelope = {
+      schemaVersion: 1,
+      ok: true,
+      capturedAt: Date.now(),
+      surface: {
+        tabId: 'omnimux-workflow:canvas',
+        title: '创作画布',
+        panelOpen: true,
+        focus: 'split',
+      },
+      view: {
+        kind: 'canvas',
+        pageId: 'workflow-canvas',
+        extra: { workspaceId: 'ws_5b511f810d9f', secretPath: '/Users/x/secret' },
+      },
+      selection: [],
+    }
+    const block = formatCompactContextBlock(envelope)
+    assert.ok(block.includes('view: canvas'))
+    assert.ok(block.includes('page: workflow-canvas'))
+    assert.ok(block.includes('workspace: ws_5b511f810d9f'))
+    assert.equal(block.includes('secretPath'), false)
+    assert.equal(block.includes('/Users/'), false)
+  })
+
+  it('rejects path-like workspace ids from compact block', () => {
+    const block = formatCompactContextBlock({
+      schemaVersion: 1,
+      ok: true,
+      capturedAt: Date.now(),
+      surface: { tabId: 'omnimux-workflow:canvas', panelOpen: true },
+      view: { kind: 'canvas', extra: { workspaceId: '/tmp/evil' } },
+    })
+    assert.equal(block.includes('workspace:'), false)
+  })
+
   it('collects context from registered contributor', () => {
     resetWorkbenchForTests()
     const api = installWorkbenchGlobal()

@@ -60,8 +60,16 @@ export type {
 export { DEFAULT_RUN_WAIT_TIMEOUT_MS } from './agentToolShared.ts';
 
 const WORKFLOW_PROMPT = `This workspace may mount the OmniMux workflow canvas (omnimux-workflow): an infinite canvas where the user builds node DAGs (text/image/video/audio material nodes) and executes them through the OmniMux generation gateway.
-Reading: workflow_list enumerates the user's canvas workspaces (id, name, nodeCount); workflow_snapshot returns one workspace's structure (include_nodes=true gives the full graph — ALWAYS read it before editing: node/edge ids must come from the snapshot, never invent them); workflow_run starts an execution (full or subset with node_ids) and with wait=true returns per-node statuses, text excerpts and generated media file paths.
-Editing: workflow_create makes a new empty canvas; workflow_node_add adds a material node (returns its id); workflow_node_update patches label/prompt/tool/params/position; workflow_node_remove deletes nodes (edges cascade); workflow_connect / workflow_disconnect wire and unwire edges. Write tools fail with a structured error (invalid-args / node-not-found / mutation-rejected with reasonCode like cycle or type_contract) — fix the arguments and retry, do not work around the validation. After each edit the response carries the new workspace version; the open canvas refreshes itself within a few seconds.
+
+Workspace targeting (CRITICAL):
+1. If the latest user message <ui_context> includes view: canvas and workspace: <id>, that id IS the current canvas. Pass it as workspace_id, or omit workspace_id and the tool will use the same default.
+2. An explicit workspace_id in the user request overrides ui_context.
+3. Do NOT call workflow_list merely to rediscover the current canvas. Do NOT ask the user which canvas/workspace to use when a valid current workspace is available.
+4. workflow_list is only for: user asks to browse/list workspaces; no usable current workspace; or the user names another workspace that needs lookup/disambiguation.
+5. Never invent node/edge ids — read workflow_snapshot (include_nodes=true) before editing an existing graph.
+
+Reading: workflow_snapshot returns one workspace's structure; workflow_run starts an execution (full or subset with node_ids) and with wait=true returns per-node statuses, text excerpts and generated media file paths.
+Editing: workflow_create makes a new empty canvas; workflow_node_add adds a material node (returns its id); workflow_node_update patches label/prompt/tool/params/position; workflow_node_remove deletes nodes (edges cascade); workflow_connect / workflow_disconnect wire and unwire edges. Write tools fail with a structured error (invalid-args / no-current-workspace / node-not-found / mutation-rejected with reasonCode like cycle or type_contract) — fix the arguments and retry, do not work around the validation. After each edit the response carries the new workspace version; the open canvas refreshes itself within a few seconds.
 Control: workflow_execution_control pauses / resumes / cancels a live execution by executionId (from workflow_run).
 When the user mentions a canvas, a workflow, nodes, or asks to run/analyze/modify their graph, use these tools instead of guessing. Executions stream live progress on the canvas (SSE, pause/resume/cancel available there). Generation goes through the OmniMux hub seams when available (mock gateway offline) — never invent results: report what the tools return, including per-node errors like [omnimux:<code>].`;
 

@@ -23,6 +23,8 @@ import {
   readPosition,
   defaultNodePosition,
   withWorkspace,
+  resolveTargetWorkspaceId,
+  WORKSPACE_ID_PARAM_DESC,
 } from './agentToolShared.ts';
 
 /**
@@ -103,13 +105,13 @@ export function createWorkflowCreateTool(deps: WorkflowAgentDeps): AgentToolSpec
 }
 
 export function createWorkflowNodeAddTool(deps: WorkflowAgentDeps): AgentToolSpec {
-  const { store } = deps;
+  const { store, getActiveView } = deps;
   return {
     name: 'workflow_node_add',
     description:
-      'Add a material node to a workflow canvas. material_type picks the node kind; tool picks what the node does and must be valid for that type — text: text-editor|text-to-text|link-extract|audio-transcription, image: import|text-to-image|image-to-image, video: import|video-generation|motion-mimicry|subtitle-render|digital-human, audio: import|text-to-audio|text-to-music|video-to-audio|voice-clone|audio-extract (defaults to dedicated generative tools: text-editor for text, text-to-image for image, video-generation for video, text-to-audio for audio; pass import for static assets). position is optional (auto-placed right of the existing nodes). Node ids come from the returned node — use them for workflow_connect / workflow_run. Read workflow_snapshot first when editing an existing canvas.',
+      'Add a material node to the current or specified workflow canvas. When the user is on a canvas tab, omit workspace_id to use the ui_context workspace. material_type picks the node kind; tool picks what the node does and must be valid for that type — text: text-editor|text-to-text|link-extract|audio-transcription, image: import|text-to-image|image-to-image, video: import|video-generation|motion-mimicry|subtitle-render|digital-human, audio: import|text-to-audio|text-to-music|video-to-audio|voice-clone|audio-extract (defaults to dedicated generative tools: text-editor for text, text-to-image for image, video-generation for video, text-to-audio for audio; pass import for static assets). position is optional (auto-placed right of the existing nodes). Node ids come from the returned node — use them for workflow_connect / workflow_run. Read workflow_snapshot first when editing an existing canvas.',
     parameters: objectParams({
-      workspace_id: { type: 'string', required: true, description: 'Workspace id (from workflow_list)' },
+      workspace_id: { type: 'string', description: WORKSPACE_ID_PARAM_DESC },
       material_type: { type: 'string', enum: MATERIAL_TYPE_ENUM, required: true, description: 'Node material type' },
       tool: { type: 'string', description: 'Node tool; must belong to material_type (see description). Default: generative tool for material_type (or import for static assets)' },
       position: {
@@ -124,9 +126,6 @@ export function createWorkflowNodeAddTool(deps: WorkflowAgentDeps): AgentToolSpe
     }),
     output: jsonOut,
     async execute(args) {
-      const workspaceId = readString(args, 'workspace_id');
-      if (!workspaceId) return errorBody('invalid-args', 'workspace_id is required');
-
       const materialType = readString(args, 'material_type') as MaterialType | undefined;
       if (!materialType || !MATERIAL_TYPE_ENUM.includes(materialType)) {
         return errorBody('invalid-args', `material_type must be one of ${MATERIAL_TYPE_ENUM.join(', ')}`);
@@ -134,6 +133,10 @@ export function createWorkflowNodeAddTool(deps: WorkflowAgentDeps): AgentToolSpe
 
       const toolResolved = resolveTool(materialType, args.tool);
       if ('error' in toolResolved) return toolResolved;
+
+      const target = resolveTargetWorkspaceId(store, args, { getActiveView });
+      if ('error' in target) return target;
+      const { workspaceId } = target;
 
       return withWorkspace(store, workspaceId, (snapshot) => {
         const label = readString(args, 'label');
@@ -146,20 +149,20 @@ export function createWorkflowNodeAddTool(deps: WorkflowAgentDeps): AgentToolSpe
 
         const result = mutateWorkspaceGraph(store, workspaceId, { addNodes: [node] });
         if (!result.ok) return errorBody(result.error, result.message);
-        return { workspace: workspaceSummary(result.snapshot), node };
+        return { workspace: workspaceSummary(result.snapshot), node, workspaceSource: target.source };
       });
     },
   };
 }
 
 export function createWorkflowNodeUpdateTool(deps: WorkflowAgentDeps): AgentToolSpec {
-  const { store } = deps;
+  const { store, getActiveView } = deps;
   return {
     name: 'workflow_node_update',
     description:
-      'Patch one node on a workflow canvas: label / prompt / tool / params / position (all optional, shallow-merged into the node). tool must be valid for the node\'s material_type. Changing tool never invalidates existing edges (edge validation uses the union of all tools of the material type), but it changes what the node does on the next workflow_run. material_type and output content fields cannot be changed — remove and re-add the node instead.',
+      'Patch one node on the current or specified workflow canvas: label / prompt / tool / params / position (all optional, shallow-merged into the node). Omit workspace_id to use the ui_context current canvas. tool must be valid for the node\'s material_type. Changing tool never invalidates existing edges (edge validation uses the union of all tools of the material type), but it changes what the node does on the next workflow_run. material_type and output content fields cannot be changed — remove and re-add the node instead.',
     parameters: objectParams({
-      workspace_id: { type: 'string', required: true, description: 'Workspace id' },
+      workspace_id: { type: 'string', description: WORKSPACE_ID_PARAM_DESC },
       node_id: { type: 'string', required: true, description: 'Node id (from workflow_snapshot include_nodes=true)' },
       patch: {
         type: 'object',
@@ -182,9 +185,6 @@ export function createWorkflowNodeUpdateTool(deps: WorkflowAgentDeps): AgentTool
     }),
     output: jsonOut,
     async execute(args) {
-      const workspaceId = readString(args, 'workspace_id');
-      if (!workspaceId) return errorBody('invalid-args', 'workspace_id is required');
-
       const nodeId = readString(args, 'node_id');
       if (!nodeId) return errorBody('invalid-args', 'node_id is required');
 
@@ -192,6 +192,10 @@ export function createWorkflowNodeUpdateTool(deps: WorkflowAgentDeps): AgentTool
       if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
         return errorBody('invalid-args', 'patch object is required');
       }
+
+      const target = resolveTargetWorkspaceId(store, args, { getActiveView });
+      if ('error' in target) return target;
+      const { workspaceId } = target;
 
       return withWorkspace(store, workspaceId, (snapshot) => {
         const node = snapshot.nodes.find((row) => row.id === nodeId);
@@ -219,22 +223,23 @@ export function createWorkflowNodeUpdateTool(deps: WorkflowAgentDeps): AgentTool
 }
 
 export function createWorkflowNodeRemoveTool(deps: WorkflowAgentDeps): AgentToolSpec {
-  const { store } = deps;
+  const { store, getActiveView } = deps;
   return {
     name: 'workflow_node_remove',
     description:
-      'Remove nodes from a workflow canvas. Edges connected to removed nodes are deleted automatically (same cascade as the Delete key on the canvas). Returns the removed node/edge counts.',
+      'Remove nodes from the current or specified workflow canvas. Omit workspace_id to use the ui_context current canvas. Edges connected to removed nodes are deleted automatically (same cascade as the Delete key on the canvas). Returns the removed node/edge counts.',
     parameters: objectParams({
-      workspace_id: { type: 'string', required: true, description: 'Workspace id' },
+      workspace_id: { type: 'string', description: WORKSPACE_ID_PARAM_DESC },
       node_ids: { type: 'array', required: true, items: { type: 'string' }, description: 'Node ids to remove' },
     }),
     output: jsonOut,
     async execute(args) {
-      const workspaceId = readString(args, 'workspace_id');
-      if (!workspaceId) return errorBody('invalid-args', 'workspace_id is required');
-
       const nodeIds = normalizeNodeIds(args.node_ids);
       if (nodeIds.length === 0) return errorBody('invalid-args', 'node_ids must be a non-empty array');
+
+      const target = resolveTargetWorkspaceId(store, args, { getActiveView });
+      if ('error' in target) return target;
+      const { workspaceId } = target;
 
       return await withWorkspace(store, workspaceId, async (snapshot) => {
         const existing = new Set(snapshot.nodes.map((node) => node.id));
@@ -271,13 +276,13 @@ export function createWorkflowNodeRemoveTool(deps: WorkflowAgentDeps): AgentTool
 }
 
 export function createWorkflowConnectTool(deps: WorkflowAgentDeps): AgentToolSpec {
-  const { store } = deps;
+  const { store, getActiveView } = deps;
   return {
     name: 'workflow_connect',
     description:
-      'Connect two nodes on a workflow canvas (source output → target input). Validated exactly like a manual drag connection: no self-connection, no duplicates, no cycles, and the source material type must be accepted by the target (edge validation uses the union of all tools of the target material type). On rejection the error message carries the reason code (self_connection / duplicate_edge / missing_node / cycle / type_contract).',
+      'Connect two nodes on the current or specified workflow canvas (source output → target input). Omit workspace_id to use the ui_context current canvas. Validated exactly like a manual drag connection: no self-connection, no duplicates, no cycles, and the source material type must be accepted by the target (edge validation uses the union of all tools of the target material type). On rejection the error message carries the reason code (self_connection / duplicate_edge / missing_node / cycle / type_contract).',
     parameters: objectParams({
-      workspace_id: { type: 'string', required: true, description: 'Workspace id' },
+      workspace_id: { type: 'string', description: WORKSPACE_ID_PARAM_DESC },
       source: { type: 'string', required: true, description: 'Source (upstream) node id' },
       target: { type: 'string', required: true, description: 'Target (downstream) node id' },
       source_handle: { type: 'string', description: 'Source handle (default out)' },
@@ -285,12 +290,15 @@ export function createWorkflowConnectTool(deps: WorkflowAgentDeps): AgentToolSpe
     }),
     output: jsonOut,
     async execute(args) {
-      const workspaceId = readString(args, 'workspace_id');
       const source = readString(args, 'source');
       const target = readString(args, 'target');
-      if (!workspaceId || !source || !target) {
-        return errorBody('invalid-args', 'workspace_id, source and target are required');
+      if (!source || !target) {
+        return errorBody('invalid-args', 'source and target are required');
       }
+
+      const resolved = resolveTargetWorkspaceId(store, args, { getActiveView });
+      if ('error' in resolved) return resolved;
+      const { workspaceId } = resolved;
 
       return withWorkspace(store, workspaceId, (_snapshot) => {
         const result = mutateWorkspaceGraph(store, workspaceId, {
@@ -312,28 +320,29 @@ export function createWorkflowConnectTool(deps: WorkflowAgentDeps): AgentToolSpe
 }
 
 export function createWorkflowDisconnectTool(deps: WorkflowAgentDeps): AgentToolSpec {
-  const { store } = deps;
+  const { store, getActiveView } = deps;
   return {
     name: 'workflow_disconnect',
     description:
-      'Remove edges from a workflow canvas, either by edge ids (from workflow_snapshot include_nodes=true) or by a source+target node pair. Returns the removed edge count.',
+      'Remove edges from the current or specified workflow canvas, either by edge ids (from workflow_snapshot include_nodes=true) or by a source+target node pair. Omit workspace_id to use the ui_context current canvas. Returns the removed edge count.',
     parameters: objectParams({
-      workspace_id: { type: 'string', required: true, description: 'Workspace id' },
+      workspace_id: { type: 'string', description: WORKSPACE_ID_PARAM_DESC },
       edge_ids: { type: 'array', items: { type: 'string' }, description: 'Edge ids to remove' },
       source: { type: 'string', description: 'With target: remove the edge between these nodes' },
       target: { type: 'string', description: 'With source: remove the edge between these nodes' },
     }),
     output: jsonOut,
     async execute(args) {
-      const workspaceId = readString(args, 'workspace_id');
-      if (!workspaceId) return errorBody('invalid-args', 'workspace_id is required');
-
       const edgeIds = normalizeNodeIds(args.edge_ids);
       const source = readString(args, 'source');
       const target = readString(args, 'target');
       if (edgeIds.length === 0 && !(source && target)) {
         return errorBody('invalid-args', 'pass edge_ids or source+target');
       }
+
+      const resolved = resolveTargetWorkspaceId(store, args, { getActiveView });
+      if ('error' in resolved) return resolved;
+      const { workspaceId } = resolved;
 
       return withWorkspace(store, workspaceId, (snapshot) => {
         const resolved = new Set(edgeIds);

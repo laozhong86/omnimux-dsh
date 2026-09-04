@@ -189,6 +189,8 @@ test('agent seats register the twelve tools + workflow:ops prompt section', () =
     assert.ok(section, 'workflow:ops section registered');
     assert.equal(section.order, 60);
     assert.match(section.text, /workflow_run/);
+    assert.match(section.text, /ui_context/);
+    assert.match(section.text, /Do NOT call workflow_list merely/);
   } finally {
     h.dispose();
     rmSync(h.dir, { recursive: true, force: true });
@@ -274,7 +276,7 @@ test('workflow_snapshot errors carry the {error, message} envelope', async () =>
     assert.equal(typeof missing.message, 'string');
 
     const noArgs = await h.tool('workflow_snapshot').execute({});
-    assert.equal(noArgs.error, 'invalid-args');
+    assert.equal(noArgs.error, 'no-current-workspace');
     assert.equal(typeof noArgs.message, 'string');
   } finally {
     h.dispose();
@@ -404,7 +406,7 @@ test('workflow_run error paths: args / workspace / mode / subgraph', async () =>
     const wsId = await h.seedWorkspace();
 
     const noRef = await h.tool('workflow_run').execute({});
-    assert.equal(noRef.error, 'invalid-args');
+    assert.equal(noRef.error, 'no-current-workspace');
 
     const unknownId = await h.tool('workflow_run').execute({ workspace_id: 'ws_000000000000' });
     assert.equal(unknownId.error, 'workspace-not-found');
@@ -540,22 +542,29 @@ test('pinned schemas: workflow_* tool names and parameter contracts remain equal
 
     assert.deepEqual(toolMap.get('workflow_run').parameters.properties.mode.enum, ['full', 'subset', 'single']);
 
-    assert.deepEqual(toolMap.get('workflow_snapshot').parameters.required, ['workspace_id']);
+    // workspace_id is optional: tools default from ui_context current canvas.
+    assert.equal(toolMap.get('workflow_snapshot').parameters.required, undefined);
+    assert.ok(toolMap.get('workflow_snapshot').parameters.properties.workspace_id);
 
     assert.deepEqual(toolMap.get('workflow_create').parameters.required, undefined);
 
-    assert.deepEqual(toolMap.get('workflow_node_add').parameters.required, ['workspace_id', 'material_type']);
+    assert.deepEqual(toolMap.get('workflow_node_add').parameters.required, ['material_type']);
+    assert.ok(toolMap.get('workflow_node_add').parameters.properties.workspace_id);
     assert.deepEqual(toolMap.get('workflow_node_add').parameters.properties.material_type.enum, ['text', 'image', 'video', 'audio']);
     assert.deepEqual(toolMap.get('workflow_node_add').parameters.properties.position.required, ['x', 'y']);
 
-    assert.deepEqual(toolMap.get('workflow_node_update').parameters.required, ['workspace_id', 'node_id', 'patch']);
+    assert.deepEqual(toolMap.get('workflow_node_update').parameters.required, ['node_id', 'patch']);
+    assert.ok(toolMap.get('workflow_node_update').parameters.properties.workspace_id);
     assert.deepEqual(toolMap.get('workflow_node_update').parameters.properties.patch.properties.position.required, ['x', 'y']);
 
-    assert.deepEqual(toolMap.get('workflow_node_remove').parameters.required, ['workspace_id', 'node_ids']);
+    assert.deepEqual(toolMap.get('workflow_node_remove').parameters.required, ['node_ids']);
+    assert.ok(toolMap.get('workflow_node_remove').parameters.properties.workspace_id);
 
-    assert.deepEqual(toolMap.get('workflow_connect').parameters.required, ['workspace_id', 'source', 'target']);
+    assert.deepEqual(toolMap.get('workflow_connect').parameters.required, ['source', 'target']);
+    assert.ok(toolMap.get('workflow_connect').parameters.properties.workspace_id);
 
-    assert.deepEqual(toolMap.get('workflow_disconnect').parameters.required, ['workspace_id']);
+    assert.deepEqual(toolMap.get('workflow_disconnect').parameters.required, undefined);
+    assert.ok(toolMap.get('workflow_disconnect').parameters.properties.workspace_id);
 
     assert.deepEqual(toolMap.get('workflow_execution_control').parameters.required, ['execution_id', 'action']);
     assert.deepEqual(toolMap.get('workflow_execution_control').parameters.properties.action.enum, ['pause', 'resume', 'cancel']);
