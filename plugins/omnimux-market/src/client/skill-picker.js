@@ -242,9 +242,9 @@
           const r = anchor.getBoundingClientRect();
           const width = Math.min(400, Math.max(360, Math.min(380, window.innerWidth - 16)));
           const height = panel ? panel.offsetHeight : 420;
-          let left = r.right - width;
-          if (left < 8) left = 8;
+          let left = r.left;
           if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
+          if (left < 8) left = 8;
           let top = r.top - height - 8;
           if (top < 8) top = Math.min(r.bottom + 8, window.innerHeight - height - 8);
           setPos({ left, top: Math.max(8, top), width });
