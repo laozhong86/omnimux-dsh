@@ -187,6 +187,19 @@ html[data-omnimux-sidebar-toggle-topbar] [data-dsh-better-sidebar] > [class*="pa
   padding-left:var(--omnimux-tabbar-pad-left,0px)!important;
   box-sizing:border-box;
 }
+/* Collapsed left rail: session title shares the top row with traffic lights +
+   the fixed expand toggle. Official header still pads 20/12, so the crumb
+   starts under the lights and through the toggle. The data-slot host is a
+   wrapper DIV around the real <header> (ConversationSessionHeader), so pad
+   the header descendant — not only the slot host. Match toggle top inset so
+   title + toggle stay one 32px row. */
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-slot="conversation.session.header"] header,
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-slot="conversation.session.header"] > header,
+html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-slot="conversation"] > header{
+  padding-left:var(--omnimux-topbar-toggle-end)!important;
+  padding-top:var(--omnimux-topbar-toggle-top,4px)!important;
+  box-sizing:border-box;
+}
 /* Blue dot on the injected toggle while left rail is collapsed. */
 html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omnimux-sidebar-toggle-topbar="1"]::after{
   content:"";
@@ -215,6 +228,10 @@ export function ensureProductStageChrome() {
       || !text.includes('data-omnimux-left-collapsed')
       || !text.includes('--omnimux-tabbar-pad-left')
       || !text.includes('grid-template-columns: 0px')
+      // Session title must clear the fixed topbar toggle while left rail is collapsed.
+      // Slot host is a wrapper; the real chrome is the header descendant.
+      || !text.includes('conversation.session.header"] header')
+      || !text.includes('padding-left:var(--omnimux-topbar-toggle-end)')
     if (stale) existing.textContent = PRODUCT_STAGE_CHROME
   } else {
     const style = document.createElement('style')
