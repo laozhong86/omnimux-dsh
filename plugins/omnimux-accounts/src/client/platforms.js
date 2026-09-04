@@ -12,7 +12,7 @@
 
 export const SUPPORTED_PLATFORMS = Object.freeze(['tiktok', 'instagram', 'youtube'])
 
-export const COMING_PLATFORMS = Object.freeze(['x', 'xiaohongshu', 'douyin', 'facebook', 'wechat-channels'])
+export const COMING_PLATFORMS = Object.freeze(['x', 'facebook'])
 
 /** @typedef {{ id: string, color: string, tone: 'solid' | 'accent', coming: boolean }} PlatformInfo */
 
@@ -24,10 +24,7 @@ const REGISTRY = {
   instagram: { id: 'instagram', color: 'var(--dsw-platform-instagram, #E1306C)', tone: 'accent', coming: false },
   youtube: { id: 'youtube', color: 'var(--dsw-platform-youtube, #FF0000)', tone: 'accent', coming: false },
   x: { id: 'x', color: 'var(--dsw-platform-x, #2C2C2A)', tone: 'solid', coming: true },
-  xiaohongshu: { id: 'xiaohongshu', color: NEUTRAL_COLOR, tone: 'accent', coming: true },
-  douyin: { id: 'douyin', color: NEUTRAL_COLOR, tone: 'accent', coming: true },
   facebook: { id: 'facebook', color: NEUTRAL_COLOR, tone: 'accent', coming: true },
-  'wechat-channels': { id: 'wechat-channels', color: NEUTRAL_COLOR, tone: 'accent', coming: true },
 }
 
 /**
