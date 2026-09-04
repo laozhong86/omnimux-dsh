@@ -176,6 +176,209 @@ test('openWorkbench returns false without better-sidebar and does not throw', as
   assert.equal(ok, false)
 })
 
+test('bind removes the default Files seed when a new session snapshot materializes', () => {
+  const win = setupWindow()
+  const api = installWorkbenchGlobal(win)
+  let snapshot = { sessionId: undefined, state: undefined }
+  let notifyState = () => {}
+  const closed = []
+  const service = {
+    getSnapshot() { return snapshot },
+    subscribeState(listener) {
+      notifyState = listener
+      return () => {}
+    },
+    closeTab(id, scope) { closed.push({ id, scope }) },
+  }
+
+  api.bind({ betterSidebar: service })
+  snapshot = {
+    sessionId: 's-new',
+    state: makeState([{ id: 'tab:seed', type: 'editor', title: 'Files', meta: { treeOpen: true } }]),
+  }
+  notifyState()
+
+  assert.deepEqual(closed, [{ id: 'tab:seed', scope: { sessionId: 's-new' } }])
+})
+
+test('bind removes the default Files seed from an already materialized new-session snapshot', () => {
+  const win = setupWindow()
+  const api = installWorkbenchGlobal(win)
+  const closed = []
+  api.bind({
+    betterSidebar: {
+      getSnapshot() {
+        return {
+          sessionId: 's-ready',
+          state: makeState([{ id: 'tab:ready-seed', type: 'editor', title: 'Files' }]),
+        }
+      },
+      subscribeState() { return () => {} },
+      closeTab(id, scope) { closed.push({ id, scope }) },
+    },
+  })
+
+  assert.deepEqual(closed, [{ id: 'tab:ready-seed', scope: { sessionId: 's-ready' } }])
+})
+
+test('bind preserves an existing persisted layout even when it contains only Files', () => {
+  const win = setupWindow()
+  const api = installWorkbenchGlobal(win)
+  win.localStorage.setItem('dsh-sidebar:v1:s-saved', JSON.stringify({ panelOpen: true }))
+  const closed = []
+  api.bind({
+    betterSidebar: {
+      getSnapshot() {
+        return {
+          sessionId: 's-saved',
+          state: makeState([{ id: 'tab:saved-files', type: 'editor', title: 'Files' }]),
+        }
+      },
+      subscribeState() { return () => {} },
+      closeTab(id, scope) { closed.push({ id, scope }) },
+    },
+  })
+
+  assert.deepEqual(closed, [])
+})
+
+test('default seed cleanup is once per session so a user-opened Files tab stays open', () => {
+  const win = setupWindow()
+  const api = installWorkbenchGlobal(win)
+  let snapshot = {
+    sessionId: 's-reopen',
+    state: makeState([{ id: 'tab:initial-seed', type: 'editor', title: 'Files' }]),
+  }
+  let notifyState = () => {}
+  const closed = []
+  const service = {
+    getSnapshot() { return snapshot },
+    subscribeState(listener) {
+      notifyState = listener
+      return () => {}
+    },
+    closeTab(id, scope) {
+      closed.push({ id, scope })
+      snapshot = { ...snapshot, state: makeState([]) }
+      notifyState()
+    },
+  }
+
+  api.bind({ betterSidebar: service })
+  assert.deepEqual(closed.map((entry) => entry.id), ['tab:initial-seed'])
+
+  snapshot = {
+    ...snapshot,
+    state: makeState([{ id: 'tab:user-files', type: 'editor', title: 'Files' }]),
+  }
+  notifyState()
+  assert.deepEqual(closed.map((entry) => entry.id), ['tab:initial-seed'])
+})
+
+test('default seed cleanup safely ignores no-session and non-seed snapshots', () => {
+  const win = setupWindow()
+  const api = installWorkbenchGlobal(win)
+  let snapshot = { sessionId: undefined, state: undefined }
+  let notifyState = () => {}
+  const closed = []
+  const service = {
+    getSnapshot() { return snapshot },
+    subscribeState(listener) {
+      notifyState = listener
+      return () => {}
+    },
+    closeTab(id) { closed.push(id) },
+  }
+
+  api.bind({ betterSidebar: service })
+  notifyState()
+  assert.deepEqual(closed, [])
+
+  snapshot = {
+    sessionId: 's-empty',
+    state: makeState([]),
+  }
+  notifyState()
+  assert.deepEqual(closed, [])
+
+  snapshot = {
+    sessionId: 's-non-seed',
+    state: makeState([{ id: 'editor:/tmp/a.ts', type: 'editor', title: 'a.ts', path: '/tmp/a.ts' }]),
+  }
+  notifyState()
+  assert.deepEqual(closed, [])
+
+  snapshot = {
+    sessionId: 's-non-seed',
+    state: makeState([{ id: 'tab:user-files', type: 'editor', title: 'Files' }]),
+  }
+  notifyState()
+  assert.deepEqual(closed, [], 'a session already classified as non-seed must not be watched forever')
+})
+
+test('default seed cleanup is a safe no-op when storage or service capabilities are unavailable', () => {
+  const win = setupWindow()
+  const api = installWorkbenchGlobal(win)
+  Object.defineProperty(win, 'localStorage', {
+    configurable: true,
+    get() { throw new Error('storage unavailable') },
+  })
+
+  assert.doesNotThrow(() => {
+    api.bind({
+      betterSidebar: {
+        getSnapshot() {
+          return {
+            sessionId: 's-no-storage',
+            state: makeState([{ id: 'tab:seed', type: 'editor', title: 'Files' }]),
+          }
+        },
+        subscribeState() { return () => {} },
+        closeTab() { throw new Error('must not close without a reliable storage decision') },
+      },
+    })
+  })
+
+  assert.doesNotThrow(() => {
+    api.bind({
+      betterSidebar: {
+        getSnapshot() { throw new Error('snapshot unavailable') },
+        subscribeState() { throw new Error('subscription unavailable') },
+      },
+    })
+  })
+
+  assert.doesNotThrow(() => {
+    api.bind({
+      betterSidebar: {
+        getSnapshot() {
+          return {
+            sessionId: 's-no-close-capability',
+            state: makeState([{ id: 'tab:seed', type: 'editor', title: 'Files' }]),
+          }
+        },
+      },
+    })
+  })
+})
+
+test('bind is idempotent and subscribes to one better-sidebar service only once', () => {
+  const win = setupWindow()
+  const api = installWorkbenchGlobal(win)
+  let subscriptions = 0
+  const service = {
+    getSnapshot() { return { sessionId: undefined, state: undefined } },
+    subscribeState() {
+      subscriptions += 1
+      return () => {}
+    },
+  }
+
+  api.bind({ betterSidebar: service })
+  api.bind({ betterSidebar: service })
+  assert.equal(subscriptions, 1)
+})
+
 test('openWorkbench without current session does not create a session or claim overlay', async () => {
   const win = setupWindow()
   const api = installWorkbenchGlobal(win)
