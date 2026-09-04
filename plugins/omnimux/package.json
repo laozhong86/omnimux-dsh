@@ -26,6 +26,8 @@
     "src/settings",
     "src/client",
     "src/avatar",
+    "src/events",
+    "src/workbench",
     "apps",
     "assets",
     "lib/client.js",
