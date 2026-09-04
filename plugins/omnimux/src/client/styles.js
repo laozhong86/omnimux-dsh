@@ -961,8 +961,34 @@ export const HUB_CSS = `
   color: var(--dsw-alias-accent-primary, #3b82f6);
 }
 
-.omnimux-quota-gate-backdrop { position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--dsw-alias-bg-mask-1); }
-.omnimux-quota-gate-dialog { position: relative; width: min(420px, calc(100vw - 32px)); padding: 24px; border: 1px solid var(--dsw-alias-border); border-radius: 16px; background: var(--dsw-alias-bg-elevated); color: var(--dsw-alias-label-primary); box-shadow: 0 16px 48px var(--dsw-alias-bg-mask-1); }
+.omnimux-quota-gate-backdrop,
+.omnimux-quota-gate-backdrop *,
+.omnimux-quota-gate-dialog,
+.omnimux-quota-gate-dialog * {
+  box-sizing: border-box;
+}
+.omnimux-quota-gate-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.75));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.omnimux-quota-gate-dialog {
+  position: relative;
+  width: min(420px, calc(100vw - 32px));
+  padding: 24px;
+  border: 1px solid var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.1));
+  border-radius: 16px;
+  background: var(--dsw-alias-surface-raised, var(--dsw-alias-bg-elevated, #161618));
+  color: var(--dsw-alias-label-primary, inherit);
+  box-shadow: 0 16px 48px var(--dsw-alias-bg-mask-1, rgba(0, 0, 0, 0.75));
+}
 .omnimux-quota-gate-dialog h2 { margin: 0 0 8px; font-size: 20px; }
 .omnimux-quota-gate-dialog p { margin: 0 0 16px; color: var(--dsw-alias-label-secondary); line-height: 1.5; }
 .omnimux-quota-gate-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; }
