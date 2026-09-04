@@ -45,7 +45,9 @@ describe('hub apply composition', () => {
     const catalog = provided.modelCatalog.list()
     assert.equal(catalog.source, 'omnimux')
     assert.ok(Array.isArray(catalog.text))
-    assert.ok(catalog.defaults.text)
+    // Batch A lock: chat/vision_chat all draft/stub → no listed text row, no text default
+    assert.equal(catalog.text.length, 0)
+    assert.equal(catalog.defaults.text, '')
   })
 
   it('registers all 30 tools and 7 seams by default', () => {

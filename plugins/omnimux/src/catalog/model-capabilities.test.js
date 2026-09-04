@@ -65,10 +65,12 @@ test('H2: 处置表 43 行 + listed 集合与处置一致', () => {
     }
   }
 
-  // Batch A: exactly the evidence-backed media ops are listed
-  assert.ok(index.listedOperations.includes('seedance-2-0-fast#text_to_video'));
-  assert.ok(index.listedOperations.includes('gpt-image-2#text_to_image'));
-  assert.ok(index.listedOperations.includes('grok-imagine-image#text_to_image'));
+  // Batch A 锁定：listed 恰好为 3 条 dated 证据媒体 op，多一条少一条都是红灯
+  assert.deepEqual(index.listedOperations, [
+    'gpt-image-2#text_to_image',
+    'grok-imagine-image#text_to_image',
+    'seedance-2-0-fast#text_to_video',
+  ]);
   // Batch A 白名单外：同模型其它 op 不得 listed
   assert.ok(!index.listedOperations.includes('seedance-2-0-fast#first_frame'));
   assert.ok(!index.listedOperations.includes('seedance-2-0-fast#video_multi_ref'));

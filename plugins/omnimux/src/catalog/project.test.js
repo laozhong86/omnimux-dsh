@@ -127,9 +127,8 @@ test('real specs: buckets derive only from output.type of listed ops', () => {
   assert.deepEqual(dto.image.map((r) => r.id).sort(), ['gpt-image-2', 'grok-imagine-image']);
   assert.deepEqual(dto.video.map((r) => r.id), ['seedance-2-0-fast']);
   assert.deepEqual(dto.audio, []);
-  // text bucket = listed chat/vision_chat models (claude-opus-5 stub → excluded)
-  assert.equal(dto.text.some((r) => r.id === 'gemini-3.7-flash'), true);
-  assert.equal(dto.text.some((r) => r.id === 'claude-opus-5'), false);
+  // Batch A lock: all chat/vision_chat ops are draft/stub → text bucket empty
+  assert.deepEqual(dto.text, []);
   assert.equal(dto.defaultsByOperation.text_to_video, 'seedance-2-0-fast');
 });
 

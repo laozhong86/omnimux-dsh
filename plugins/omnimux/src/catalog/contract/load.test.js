@@ -34,9 +34,12 @@ test('loadAll real specs: 4 files merge without parse errors', () => {
   assert.ok(index.get('whisper-1'));
   assert.ok(index.contentFingerprint);
   assert.equal(index.contentFingerprint.length, 16);
-  // H2: evidence-backed ops are listed (Batch A + dated text chat/vision_chat)
-  assert.ok(index.listedOperations.length > 0);
-  assert.ok(index.listedOperations.includes('seedance-2-0-fast#text_to_video'));
+  // H2: Batch A 锁定——listed 恰好为 3 条 dated 证据媒体 op；chat/vision_chat 一律不 listed
+  assert.deepEqual(index.listedOperations, [
+    'gpt-image-2#text_to_image',
+    'grok-imagine-image#text_to_image',
+    'seedance-2-0-fast#text_to_video',
+  ]);
   // formal specs must not produce schemaVersion admission errors
   assert.ok(
     !(index.issues ?? []).some(

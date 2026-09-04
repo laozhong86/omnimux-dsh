@@ -52,7 +52,8 @@ describe('buildModelCatalog (H2 contract projection)', () => {
     assert.deepEqual(catalog.image.map((row) => row.id).sort(), ['gpt-image-2', 'grok-imagine-image'])
     assert.deepEqual(catalog.video.map((row) => row.id), ['seedance-2-0-fast'])
     assert.deepEqual(catalog.audio, [])
-    assert.equal(catalog.text.length, 10) // 11 chat directory − claude-opus-5 (stub, group 403)
+    // Batch A lock: all chat/vision_chat ops are draft/stub → text bucket empty
+    assert.deepEqual(catalog.text.map((row) => row.id), [])
 
     // unavailable / quarantine never appear in any bucket
     for (const kind of ['text', 'image', 'video', 'audio']) {
@@ -63,21 +64,17 @@ describe('buildModelCatalog (H2 contract projection)', () => {
     // nanobanana: underscore canonical only, hyphen alias never double listed
     assert.equal(catalog.image.some((row) => row.id === 'nanobanana-2'), false)
 
-    // defaults: config defaults survive where listed; audio has no listed row
-    assert.equal(catalog.defaults.text, 'gemini-3.7-flash')
+    // defaults: config defaults survive where listed; text/audio have no listed row
+    assert.equal(catalog.defaults.text, '') // Batch A lock: no listed chat op
     assert.equal(catalog.defaults.image, 'gpt-image-2')
     assert.equal(catalog.defaults.video, 'seedance-2-0-fast')
     assert.equal(catalog.defaults.audio, '')
     assert.equal(catalog.defaultsByOperation.text_to_video, 'seedance-2-0-fast')
     assert.equal(catalog.defaultsByOperation.text_to_image, 'gpt-image-2')
 
-    // text labels resolve through the display-name table and stay sorted
-    const labels = catalog.text.map((row) => row.label)
-    const sorted = [...labels].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
-    assert.deepEqual(labels, sorted)
-    assert.equal(catalog.text.find((row) => row.id === 'claude-opus-4-6')?.label, 'Claude Opus 4.6')
-    assert.equal(catalog.text.find((row) => row.id === 'deepseek-v4-flash-vision-exp')?.label, 'DeepSeek V4 Flash')
-    assert.equal(catalog.text.find((row) => row.id === 'gpt-5.5')?.label, 'GPT 5.5')
+    // text bucket is empty under the Batch A lock; hyphen-free labels are covered
+    // by the display-label contract over TEXT_MODEL_LABELS
+    assert.equal(catalog.text.length, 0)
   })
 
   it('forbids ASCII hyphen-minus in every catalog model label', () => {
@@ -99,7 +96,8 @@ describe('buildModelCatalog (H2 contract projection)', () => {
     })
     // kling-o1 is quarantine → not listed → env overlay refused
     assert.equal(catalog.defaults.video, 'seedance-2-0-fast')
-    assert.equal(catalog.defaults.text, 'gpt-5.5')
+    // gpt-5.5 chat is draft/stub under the Batch A lock → not listed → env overlay refused
+    assert.equal(catalog.defaults.text, '')
   })
 
   it('ignores env / settings ids that are not in the list', () => {
@@ -111,7 +109,7 @@ describe('buildModelCatalog (H2 contract projection)', () => {
       settingsDefaults: { defaultTextModel: 'totally-fake' },
     })
     assert.equal(catalog.defaults.video, 'seedance-2-0-fast')
-    assert.equal(catalog.defaults.text, 'gemini-3.7-flash')
+    assert.equal(catalog.defaults.text, '') // no listed text row under the Batch A lock
   })
 
   it('prefers settings overlay over config when env is absent', () => {
@@ -135,11 +133,11 @@ describe('buildModelCatalog (H2 contract projection)', () => {
     assert.ok(catalog.image.length > 0)
   })
 
-  it('hides a gated text model from the list', () => {
-    const h = parseHubConfig({ gate: { models: { textComplete: { 'grok-4.6': false } } } })
+  it('text bucket stays empty under the Batch A lock regardless of the model gate', () => {
+    const h = parseHubConfig({ gate: { models: { textComplete: { 'grok-4.6': true } } } })
     const catalog = buildModelCatalog({ text: h.text, media: h.media, gate: h.gate, env: {} })
-    assert.ok(!catalog.text.some((row) => row.id === 'grok-4.6'))
-    assert.ok(catalog.text.some((row) => row.id === 'gemini-3.7-flash'))
+    // chat/vision_chat are all draft/stub (Batch A lock) → the gate cannot resurrect them
+    assert.deepEqual(catalog.text, [])
   })
 
   it('fingerprint changes when the contract changes (limit/MIME/listed sensitivity)', () => {
