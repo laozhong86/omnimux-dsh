@@ -230,6 +230,7 @@ export function catalogItemToCard(item, channel, cfg, installed) {
         channel,
         catalogId: String(item.id || ''),
         installBackend: 'catalog',
+        tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
     };
     if (avatar)
         card.iconUrl = avatar;

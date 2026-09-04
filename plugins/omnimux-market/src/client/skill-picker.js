@@ -11,13 +11,25 @@
       name: "技能创建",
       description: "创建双语可复用Skill",
     };
+    const SKILL_SHELF_TAGS = [
+      "短剧漫剧", "专业影视", "动画", "商业广告", "电商", "教育", "创意实验", "音频音乐", "平台工具",
+    ];
+    const PICKER_TAB_LABELS = {
+      "短剧漫剧": "picker.tab.drama",
+      "专业影视": "picker.tab.film",
+      "动画": "picker.tab.anim",
+      "商业广告": "picker.tab.ad",
+      "电商": "picker.tab.ecom",
+      "教育": "picker.tab.edu",
+      "创意实验": "picker.tab.lab",
+      "音频音乐": "picker.tab.audio",
+      "平台工具": "picker.tab.platform",
+    };
     const PICKER_TABS = [
       { id: "all", kind: "all", labelKey: "picker.tab.all" },
       { id: "mine", kind: "mine", labelKey: "picker.tab.mine" },
       { id: "featured", kind: "featured", labelKey: "picker.tab.featured" },
-      { id: "短剧漫剧", kind: "tag", labelKey: "picker.tab.drama" },
-      { id: "专业影视", kind: "tag", labelKey: "picker.tab.film" },
-      { id: "动画", kind: "tag", labelKey: "picker.tab.anim" },
+      ...SKILL_SHELF_TAGS.map((id) => ({ id, kind: "tag", labelKey: PICKER_TAB_LABELS[id] })),
     ];
 
     function pickerSkillToken(item) {
@@ -56,12 +68,20 @@
       return hay.includes(tag);
     }
 
+    function pickerInShelf(item) {
+      if (!item) return false;
+      const tags = Array.isArray(item.tags) ? item.tags.map(String) : [];
+      if (tags.some((tag) => SKILL_SHELF_TAGS.includes(tag))) return true;
+      return SKILL_SHELF_TAGS.some((tag) => pickerMatchesTag(item, tag));
+    }
+
     function pickerFilterItems(items, tabId) {
       const list = Array.isArray(items) ? items : [];
       const tab = PICKER_TABS.find((row) => row.id === tabId) || PICKER_TABS[0];
       if (tab.kind === "mine") return list.filter((it) => it && it.installed === true);
-      if (tab.kind === "tag") return list.filter((it) => pickerMatchesTag(it, tab.id));
-      return list;
+      const shelf = list.filter((it) => pickerInShelf(it));
+      if (tab.kind === "tag") return shelf.filter((it) => pickerMatchesTag(it, tab.id));
+      return shelf;
     }
 
     function pickerCacheKey(payload) {

@@ -3956,7 +3956,8 @@
       "category": "sk-marketing",
       "tags": [
         "OmniMux",
-        "多模态"
+        "多模态",
+        "动画"
       ],
       "skill": "anime-game-pv",
       "source": {
@@ -4091,7 +4092,8 @@
       "category": "sk-marketing",
       "tags": [
         "OmniMux",
-        "多模态"
+        "多模态",
+        "商业广告"
       ],
       "skill": "brand-ad",
       "source": {
@@ -4169,7 +4171,8 @@
       "tags": [
         "社媒",
         "品牌",
-        "Blotato"
+        "Blotato",
+        "商业广告"
       ],
       "skill": "brand-brief",
       "source": {
@@ -4262,7 +4265,8 @@
       "category": "sk-visual",
       "tags": [
         "OmniMux",
-        "多模态"
+        "多模态",
+        "专业影视"
       ],
       "skill": "cinematic-title-sequence",
       "source": {
@@ -4336,7 +4340,8 @@
       "category": "sk-office",
       "tags": [
         "OmniMux",
-        "多模态"
+        "多模态",
+        "音频音乐"
       ],
       "skill": "cool-music-video",
       "source": {
@@ -4544,7 +4549,8 @@
       "tags": [
         "教育视频",
         "教学视频",
-        "动态讲题"
+        "动态讲题",
+        "教育"
       ],
       "skill": "education-studio",
       "source": {
@@ -4718,7 +4724,8 @@
       "category": "sk-writing",
       "tags": [
         "OmniMux",
-        "多模态"
+        "多模态",
+        "创意实验"
       ],
       "skill": "h3-visual-design",
       "source": {
@@ -4837,7 +4844,8 @@
       "category": "sk-marketing",
       "tags": [
         "OmniMux",
-        "多模态"
+        "多模态",
+        "电商"
       ],
       "skill": "koc-video",
       "source": {
@@ -5247,7 +5255,8 @@
       "tags": [
         "社媒",
         "文案",
-        "Blotato"
+        "Blotato",
+        "商业广告"
       ],
       "skill": "post-writer",
       "source": {
@@ -5268,7 +5277,8 @@
       "tags": [
         "社媒",
         "文案",
-        "Blotato"
+        "Blotato",
+        "商业广告"
       ],
       "skill": "post-grader",
       "source": {
@@ -5692,7 +5702,8 @@
       "category": "sk-visual",
       "tags": [
         "OmniMux",
-        "多模态"
+        "多模态",
+        "创意实验"
       ],
       "skill": "ui-motion",
       "source": {
@@ -5712,7 +5723,8 @@
       "category": "sk-visual",
       "tags": [
         "OmniMux",
-        "多模态"
+        "多模态",
+        "短剧漫剧"
       ],
       "skill": "video-deconstruct",
       "source": {

@@ -286,6 +286,7 @@ export function catalogItemToCard(
     channel,
     catalogId: String(item.id || ''),
     installBackend: 'catalog',
+    tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
   }
   if (avatar) card.iconUrl = avatar
   return card
