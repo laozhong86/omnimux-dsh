@@ -1,6 +1,9 @@
     const PLAZA_TAB_ID = "omnimux-market:plaza";
     const PLAZA_INTENT_KEY = "omnimux-market:plaza-intent";
-    const PLAZA_TABS = ["plugins", "skills", "experts", "connectors"];
+    // 与 skill-picker-logic.js PLAZA_HIDDEN_TABS / PLAZA_TABS 同步（skill-shelf-parity.test.js 对拍守卫）。
+    // 连接器 Tab 暂时隐藏（Issue #502）：恢复时清空 PLAZA_HIDDEN_TABS，按钮与面板分支自动还原。
+    const PLAZA_HIDDEN_TABS = ["connectors"];
+    const PLAZA_TABS = ["plugins", "skills", "experts"];
 
     function consumePlazaIntent() {
       try {
@@ -132,7 +135,7 @@
                 "aria-selected": tab === "experts",
                 onClick: () => setTab("experts"),
               }, tr("plaza.experts")),
-              h(Button, {
+              PLAZA_HIDDEN_TABS.includes("connectors") ? null : h(Button, {
                 type: "button",
                 role: "tab",
                 variant: "ghost",
@@ -162,7 +165,8 @@
             tab === "plugins" ? h(Marketplace, { t: tr, query: tabQueries.plugins, submittedQuery: submittedQueries.plugins })
               : tab === "skills" ? h(SkillPlaza, { query: tabQueries.skills, submittedQuery: submittedQueries.skills })
               : tab === "experts" ? h(ExpertPanel, { query: tabQueries.experts, onClose: handleClose })
-              : h(ConnectorPanel, { query: tabQueries.connectors }),
+              : tab === "connectors" && !PLAZA_HIDDEN_TABS.includes("connectors") ? h(ConnectorPanel, { query: tabQueries.connectors })
+              : h(Marketplace, { t: tr, query: tabQueries.plugins, submittedQuery: submittedQueries.plugins }),
           ),
         ),
       );

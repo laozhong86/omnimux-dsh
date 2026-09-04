@@ -1,7 +1,10 @@
 /** Pure helpers for the Composer Skill picker. Importable by tests; the UI fragment inlines the same rules. */
 
 export const PLAZA_INTENT_KEY = 'omnimux-market:plaza-intent'
-export const PLAZA_TABS = Object.freeze(['plugins', 'skills', 'experts', 'connectors'])
+/** 暂时隐藏的广场 Tab（Issue #502）：恢复时清空数组并在 plaza-shell.js 还原守卫。 */
+export const PLAZA_HIDDEN_TABS = Object.freeze(['connectors'])
+/** 广场可见 Tab（隐藏 Tab 不再是合法 intent 目标）。 */
+export const PLAZA_TABS = Object.freeze(['plugins', 'skills', 'experts'])
 export const CREATE_SKILL = Object.freeze({
   id: 'sk-omx-skill-creator',
   slug: 'skill-creator',
