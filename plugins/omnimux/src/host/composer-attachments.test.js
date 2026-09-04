@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 import {
   ComposerAttachmentError,
+  copyDirectoryIntoImported,
   copyFileIntoImported,
   forbiddenSourcePathCode,
   inferKindFromExtension,
@@ -88,6 +89,65 @@ describe('materializePaths', () => {
     assert.equal(copied.relativePath, 'assets/imported/a (1).txt')
     assert.equal(readFileSync(join(cwd, 'assets/imported/a.txt'), 'utf8'), 'keep')
     assert.equal(readFileSync(copied.destAbs, 'utf8'), 'new')
+  })
+
+  it('recursively copies a directory tree into assets/imported/<name>/', async () => {
+    const cwd = tempDir('omx-att-dir-cwd-')
+    const srcRoot = tempDir('omx-att-dir-src-')
+    const folder = join(srcRoot, 'Pack')
+    mkdirSync(join(folder, 'nested'), { recursive: true })
+    writeFileSync(join(folder, 'readme.md'), '# pack')
+    writeFileSync(join(folder, 'nested', 'shot.png'), 'img')
+    const { results } = await materializePaths({
+      sessionId: 'ses_dir',
+      paths: [folder],
+      resolveCwd: async () => cwd,
+    })
+    assert.equal(results.length, 1)
+    assert.equal(results[0].ok, true)
+    assert.equal(results[0].extension, 'DIR')
+    assert.equal(results[0].kind, 'document')
+    assert.equal(results[0].relativePath, 'assets/imported/Pack')
+    assert.equal(results[0].title, 'Pack')
+    assert.deepEqual(results[0].files.sort(), [
+      'assets/imported/Pack/nested/shot.png',
+      'assets/imported/Pack/readme.md',
+    ].sort())
+    assert.equal(readFileSync(join(cwd, 'assets/imported/Pack/readme.md'), 'utf8'), '# pack')
+    assert.equal(readFileSync(join(cwd, 'assets/imported/Pack/nested/shot.png'), 'utf8'), 'img')
+  })
+
+  it('materializes a mix of file and directory paths', async () => {
+    const cwd = tempDir('omx-att-mix-cwd-')
+    const srcRoot = tempDir('omx-att-mix-src-')
+    const file = join(srcRoot, 'solo.txt')
+    const folder = join(srcRoot, 'Bundle')
+    writeFileSync(file, 'solo')
+    mkdirSync(folder, { recursive: true })
+    writeFileSync(join(folder, 'a.md'), 'a')
+    const { results } = await materializePaths({
+      sessionId: 'ses_mix',
+      paths: [file, folder],
+      resolveCwd: async () => cwd,
+    })
+    assert.equal(results.length, 2)
+    assert.equal(results[0].ok, true)
+    assert.equal(results[0].relativePath, 'assets/imported/solo.txt')
+    assert.equal(results[1].ok, true)
+    assert.equal(results[1].extension, 'DIR')
+    assert.equal(results[1].relativePath, 'assets/imported/Bundle')
+    assert.deepEqual(results[1].files, ['assets/imported/Bundle/a.md'])
+  })
+
+  it('copyDirectoryIntoImported rejects a regular file', async () => {
+    const cwd = tempDir('omx-att-dir-reject-cwd-')
+    const srcDir = tempDir('omx-att-dir-reject-src-')
+    const file = join(srcDir, 'x.txt')
+    writeFileSync(file, 'x')
+    await assert.rejects(
+      () => copyDirectoryIntoImported({ cwd, sourceAbs: file }),
+      (error) => error instanceof ComposerAttachmentError && error.code === 'not-a-directory',
+    )
   })
 })
 

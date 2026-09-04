@@ -3,10 +3,9 @@
  * slash/command menu via `commandUi.register`. The composer「+」button opens
  * exactly this native command list (empty-query slash source), so the
  * contributions appear in the「+」menu with name + description and support
- * fuzzy search. Selecting one opens the official popupSelect layer with a
- * single confirm row (the only official client-command UI pattern); its
- * onSelect dispatches the business action. Optional inject — never add
- * commandUi to the hub's top-level export.
+ * fuzzy search. Selecting one opens the official popupSelect layer; add-file
+ * offers file vs folder rows, add-from-library offers a single confirm row.
+ * Optional inject — never add commandUi to the hub's top-level export.
  */
 
 /**
@@ -17,6 +16,7 @@
  * @param {{
  *   t: (key: string) => string,
  *   onAddFile: () => void,
+ *   onAddFolder?: () => void,
  *   onAddLibrary: () => void,
  * }} actions
  */
@@ -26,6 +26,9 @@ export function registerComposerAddCommands(ctx, actions) {
     const commandUi = inner.commandUi ?? inner.get?.('commandUi')
     if (!commandUi || typeof commandUi.register !== 'function') return
     const t = actions.t
+    const onFolder = typeof actions.onAddFolder === 'function'
+      ? actions.onAddFolder
+      : actions.onAddFile
     const stopFile = commandUi.register({
       name: 'add-file',
       description: t('composerAdd.addFile'),
@@ -33,9 +36,15 @@ export function registerComposerAddCommands(ctx, actions) {
       ui: {
         kind: 'popupSelect',
         async options() {
-          return [{ id: 'pick', label: t('composerAdd.pickFiles') }]
+          return [
+            { id: 'file', label: t('composerAdd.pickFiles') },
+            { id: 'folder', label: t('composerAdd.pickFolder') },
+          ]
         },
-        onSelect() { actions.onAddFile() },
+        onSelect(option) {
+          if (option?.id === 'folder') onFolder()
+          else actions.onAddFile()
+        },
       },
     })
     const stopLib = commandUi.register({
