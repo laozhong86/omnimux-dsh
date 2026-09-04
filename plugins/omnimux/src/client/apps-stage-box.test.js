@@ -97,6 +97,8 @@ describe('PRODUCT_STAGE_CHROME', () => {
       PRODUCT_STAGE_CHROME,
       /data-omnimux-left-collapsed\] \[data-slot="conversation\.session\.header"\] header/,
     )
+    assert.match(PRODUCT_STAGE_CHROME, /data-omnimux-topbar-new-session/)
+    assert.match(PRODUCT_STAGE_CHROME, /--omnimux-topbar-new-session-left/)
     assert.match(PRODUCT_STAGE_CHROME, /z-index:\s*(50|9999)/)
     assert.match(PRODUCT_STAGE_CHROME, /--dsw-alias-brand-primary|--dsw-alias-interactive-bg-hover-accent|--dsw-alias-label-accent/)
   })
