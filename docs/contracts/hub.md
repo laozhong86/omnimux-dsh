@@ -5,7 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-16"
-updated: "2026-08-31"
+updated: "2026-09-04"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux"
 ---
@@ -150,6 +150,12 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `omnimux_inspiration_*` | official-only tools | list / get / create / update / delete / tags / status; access token | upstream `{success,data}` envelope, media URLs unchanged | `capability-disabled`, `needs-omnimux` |
 | `videoProcess` | neutral provide（provider: omnimux-video） | `{ capability, input, dest, signal? }` | `{ mode: "live", files?: [{ path, kind, meta? }], result? }` | `ffmpeg-missing`, `unknown-capability`, `video-invalid-input`, `video-ffmpeg-failed`, `video-incompatible-streams`, `video-canceled`, `video-timeout`, `video-<capability>-failed` |
 | `video_process` | omnimux-video tool over `videoProcess` | same | same | same |
+| `hubEvents` | hub provide (in-process bus) | `emit(type, payload)` / `subscribe` / `replaySince` | `{ id, type, at, payload }` | missing provide → vertical emit is a no-op |
+| `GET /omnimux/events/stream` | hub Host SSE | loopback origin; `Last-Event-ID` replay | `text/event-stream` (`omnimux:heartbeat` 2s + domain events) | 403 `not-local` |
+| `workbench_get_active_view` | hub tool | `{}` | `{ ok, stale, uiContext }` Envelope snapshot | `no-workbench`, `no-session` |
+| `workbench_open_tab` | hub tool | `tabId` + `reason` (+ optional view / highlightIds / undoToken) | `{ ok, applied, code, undoToken? }` | soft-reject codes (`panel-collapsed`, `quota-exceeded`, …); MUST NOT `setFocus` |
+| `POST /omnimux/workbench/viewport` | hub Host HTTP | Envelope JSON; `assertLocalWrite` | `{ ok: true }` | 403 `not-local` |
+| `POST /omnimux/workbench/rpc/ack` | hub Host HTTP | `{ requestId, ok, applied, code, tabId }` | `{ ok: true }` | 403 `not-local` |
 
 `audioGenerate` exposes audio generation / TTS / music capabilities (Suno, GPT 4o Mini TTS, Whisper-1). Digital-human / talking-head is a `videoGenerate` request (reference image, duration, speech constraints), not a third HTTP client.
 
@@ -270,8 +276,11 @@ The plugin entry exports `Config` (Standard Schema). Brand strings, `media.provi
 | Vertical may | Vertical must not |
 |---|---|
 | `ctx.get` a listed seam | import hub modules or ship an OmniMux client |
+| `ctx.get('hubEvents')?.emit(...)` after own-store writes | open a private WebSocket / extra EventSource / cloud socket |
 | call `omnimux_*` tools via the model | store hub secrets |
 | write its own disk contract | implement chrome, login, or provider routes |
 | stub or throw `needs-provider` when a seam is absent | claim `mode: "stub"` is a model render |
+
+Workbench viewport, SSE multiplex, and `workbench_*` tools: [agent-workbench-sync.md](agent-workbench-sync.md). Hub MUST NOT parse a vertical's `library.json`. Vertical clients read `window.__omnimuxWorkbench` / `window.__omnimuxHubEvents` only.
 
 `omnimux` itself is not a shelf app. Official catalog rows: [apps-catalog.md](apps-catalog.md).

@@ -1,0 +1,43 @@
+sequenceDiagram
+    autonumber
+    actor User
+    participant Composer as ComposerEnvelopeHook
+    participant WB as __omnimuxWorkbench
+    participant Agent
+    participant Create as assets_create
+    participant Lib as LibraryStore
+    participant Bus as HubEventBus
+    participant SSE as GET /omnimux/events/stream
+    participant EC as EventsClient
+    participant Feed as useAssetsFeed
+    participant Tool as workbench_open_tab
+    participant Guard as AntiAnnoyanceGuard
+    participant Bridge as RpcBridge
+
+    User->>Composer: Send "再出一张侧脸"
+    Composer->>WB: getUiContext() ≤16ms
+    WB-->>Composer: envelope (assets · character · ast_7f3a)
+    Composer->>Composer: prepend ui_context compact block
+    Composer-->>Agent: official user message (hidden prefix)
+
+    Agent->>Create: name/type/files (filter=character)
+    Create->>Lib: add()
+    Lib->>Lib: persist + lrev++
+    Create->>Bus: emit omnimux:assets:changed
+    Bus->>SSE: record
+    SSE->>EC: event-stream
+    EC->>Feed: payload
+    Feed->>Feed: lrev>local → refreshState(true)
+    Note over Feed: card in DOM P95 ≤400ms
+
+    Agent->>Tool: tabId + reason
+    Tool->>Guard: evaluateOpen
+    alt panelOpen
+        Guard->>Bus: emit omnimux:workbench:rpc
+        Bus->>Bridge: SSE
+        Bridge->>WB: open({tabId, path})
+        Bridge->>Tool: POST rpc/ack
+        Tool-->>Agent: applied=true undoToken
+    else panel collapsed
+        Guard-->>Agent: applied=false panel-collapsed
+    end

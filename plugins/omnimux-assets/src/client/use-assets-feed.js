@@ -146,8 +146,37 @@ function useFeedPolling(open, refreshState) {
 
   useEffect(() => {
     if (!open) return undefined
-    const timer = setInterval(() => { void refreshState() }, POLL_MS)
-    return () => { clearInterval(timer) }
+
+    const hubEvents = typeof window !== 'undefined' ? window.__omnimuxHubEvents : undefined
+    let timer = null
+    const startPoll = () => {
+      if (!timer) timer = setInterval(() => { void refreshState() }, POLL_MS)
+    }
+    const stopPoll = () => {
+      if (timer) {
+        clearInterval(timer)
+        timer = null
+      }
+    }
+
+    if (!hubEvents?.isHealthy?.()) {
+      startPoll()
+    }
+
+    const unsub = hubEvents?.subscribe?.('*', (ev) => {
+      if (ev.type === 'omnimux:assets:changed') {
+        void refreshState(true)
+      } else if (ev.type === 'omnimux:connected' || ev.type === 'omnimux:heartbeat') {
+        stopPoll()
+      } else if (ev.type === 'omnimux:disconnected' || ev.type === 'omnimux:silence') {
+        startPoll()
+      }
+    })
+
+    return () => {
+      stopPoll()
+      if (typeof unsub === 'function') unsub()
+    }
   }, [open, refreshState])
 }
 

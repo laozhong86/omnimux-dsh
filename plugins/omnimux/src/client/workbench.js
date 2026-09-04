@@ -1093,6 +1093,105 @@ function bind(next = {}) {
   emit()
 }
 
+const contextContributors = new Map()
+
+export function registerContextContributor(tabId, contributor) {
+  if (!tabId || typeof contributor !== 'function') return () => {}
+  contextContributors.set(tabId, contributor)
+  return () => {
+    contextContributors.delete(tabId)
+  }
+}
+
+export function unregisterContextContributor(tabId) {
+  contextContributors.delete(tabId)
+}
+
+export function getUiContext() {
+  const service = getService()
+  const snap = service?.getSnapshot?.()
+  const activeTab = activeTabId(snap)
+  const panelOpen = Boolean(snap?.panelOpen)
+  const focus = getWorkbenchFocus()
+  const conversationCollapsed = Boolean(getConversationCollapsed())
+  const openedTabs = listOpenTabs(snap).map((t) => t.id).filter(Boolean)
+  const sessionId = currentSessionId() || 'default'
+
+  let reason = 'ok'
+  let view = null
+  let selection = []
+
+  if (!panelOpen) {
+    reason = 'panel-collapsed'
+  } else if (activeTab) {
+    const contributor = contextContributors.get(activeTab)
+    if (typeof contributor === 'function') {
+      try {
+        const res = contributor()
+        if (res) {
+          view = res.view || null
+          selection = Array.isArray(res.selection) ? res.selection : []
+        }
+      } catch (err) {
+        console.error('[workbench] contributor error:', err)
+        reason = 'unavailable'
+      }
+    } else {
+      reason = 'no-contributor'
+    }
+  } else {
+    reason = 'no-workbench'
+  }
+
+  const envelope = {
+    schemaVersion: 1,
+    ok: true,
+    capturedAt: Date.now(),
+    reason,
+    sessionId,
+    surface: {
+      tabId: activeTab || null,
+      plugin: activeTab ? activeTab.split(':')[0] : null,
+      panelOpen,
+      focus,
+      conversationCollapsed,
+      openedTabs,
+    },
+    view,
+    selection,
+  }
+
+  return envelope
+}
+
+export function formatCompactContextBlock(envelope) {
+  if (!envelope || !envelope.surface) return ''
+  const s = envelope.surface
+  const lines = []
+  lines.push('<ui_context schema="1">')
+
+  let firstLine = `tab: ${s.tabId || 'none'}`
+  if (envelope.view?.filterType) {
+    firstLine += ` | filter: ${envelope.view.filterType}`
+  }
+  if (envelope.view?.query) {
+    firstLine += ` | query: ${envelope.view.query}`
+  }
+  if (Array.isArray(envelope.selection) && envelope.selection.length > 0) {
+    const selStr = envelope.selection.slice(0, 3).map((item) => {
+      const name = item.name || item.title || item.id
+      return item.id && name !== item.id ? `${name} (${item.id})` : name
+    }).join(', ')
+    firstLine += ` | selected: ${selStr}`
+  }
+  lines.push(firstLine)
+
+  const secondLine = `panel: ${s.panelOpen ? 'open' : 'closed'} | focus: ${s.focus || 'split'}`
+  lines.push(secondLine)
+  lines.push('</ui_context>')
+  return lines.join(String.fromCharCode(10))
+}
+
 function createApi() {
   return {
     open: openWorkbench,
@@ -1119,6 +1218,10 @@ function createApi() {
     getConversationCollapsed,
     setConversationCollapsed,
     hydrateConversationCollapsed,
+    registerContextContributor,
+    unregisterContextContributor,
+    getUiContext,
+    formatCompactContextBlock,
   }
 }
 
@@ -1157,6 +1260,7 @@ export function resetWorkbenchForTests(target = hostWindow()) {
   lastExpandedOfficialWidth = WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX
   lastCollapsedOfficialWidth = collapsedLeftRailFallbackPx()
   resetConversationCollapseForTests()
+  contextContributors.clear()
   if (target && Object.prototype.hasOwnProperty.call(target, WORKBENCH_GLOBAL_KEY)) {
     try { delete target[WORKBENCH_GLOBAL_KEY] } catch { target[WORKBENCH_GLOBAL_KEY] = undefined }
   }

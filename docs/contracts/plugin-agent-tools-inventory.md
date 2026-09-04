@@ -5,7 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-30"
-updated: "2026-08-30"
+updated: "2026-09-04"
 authors: ["qi-huolin", "xu-qingchu", "gao-jianyuan", "lin-shen", "yan-guoguan"]
 subsystem: "global"
 tags: ["agent-tools", "dual-surface", "inventory", "verification", "governance"]
@@ -49,7 +49,7 @@ related:
 | 统计指标 | 数值 | 说明 |
 |---|---|---|
 | **体检插件总数** | 12 个 | 覆盖 `plugins/` 下全部生产插件 |
-| **已注册 Agent 工具总数** | 88 个 | 源码中实装并可在会话中调用的工具 (28+4+6+3+9+12+6+15+0+0+4+1) |
+| **已注册 Agent 工具总数** | 88 个 | 源码中实装并可在会话中调用的工具 (28+4+6+3+9+12+6+15+0+0+4+1)。Hub 规划 +2 `workbench_*`（`Planned`，见 [agent-workbench-sync.md](agent-workbench-sync.md)）落地后改此行。 |
 | **双面齐备标杆插件 (A+)** | 3 个 | `omnimux-workflow` (12 tools), `omnimux-publish` (9 tools), `omnimux-market` (15 tools) |
 | **需补齐写操作工具插件 (B)** | 4 个 | `omnimux-assets`, `omnimux-products`, `omnimux-inspiration`, `omnimux-accounts` |
 | **纯后端/纯中枢/纯视图插件** | 5 个 | `omnimux` (中枢 28 tools), `omnimux-video` (4 tools), `omnimux-video-preview` (1 tool), `omnimux-analytics` (0 tools), `omnimux-clip` (6 tools) |
@@ -60,7 +60,7 @@ related:
 
 ### 3.1 `omnimux`（执行中枢 Hub）
 - **功能域**：中枢官方服务、品牌/设置、社媒路由、模型调用、官方 Seams。
-- **状态**：双面就绪 (已实装 28 个核心官方工具)。
+- **状态**：双面就绪 (已实装 28 个核心官方工具 + 规划 2 个工作台视口工具)。
 
 | 业务功能描述 | 对应 UI 交互 / HTTP 路由 | Agent 工具名称 (`Tool Name`) | 分级 | 状态 | 破坏性 confirm |
 |---|---|---|---|---|---|
@@ -92,6 +92,8 @@ related:
 | 查询分析中心收件箱与系统通知 | 通知抽屉 | `omnimux_analytics_inbox` | L2 | `Implemented` | 否 |
 | 抓取网页并解析 Markdown | 灵感/知识库采集 | `omnimux_page_fetch` | L2 | `Implemented` | 否 |
 | 统一多模型文本与结构化生成 | 文本节点与大模型中继 | `omnimux_text_complete` | L2 | `Implemented` | 否 |
+| 读取当前工作台视口（Tab / Chip / 选中） | 右侧 better-sidebar 快照 | `workbench_get_active_view` | L2 | `Planned` | 否 |
+| 打开或切换 Occupant Tab（可撤销、防打扰） | 左栏 / Tab 条 / 对话内「打开」 | `workbench_open_tab` | L1 | `Planned` | 否（打扰性，走配额+撤销，非 confirm） |
 
 ---
 

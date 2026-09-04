@@ -12,6 +12,8 @@ import { HeroBrandMark } from './HeroBrandMark.jsx'
 import { installHeroBrandSlot } from './hero-brand.js'
 import { AttachmentTray } from './attachments/AttachmentTray.tsx'
 import { getGlobalAttachmentStore } from './attachments/store.ts'
+import { createEventsClient, installHubEventsGlobal } from './events-client.js'
+import { installComposerEnvelopeCapture } from './composer-envelope.js'
 
 export const name = 'omnimux'
 export const inject = ['slots', 'locale']
@@ -116,6 +118,14 @@ export function apply(ctx) {
     priority: -10,
     locale: NS,
   }, AttachmentTray))
+
+  // Agent-Workbench synergy: single EventSource client & composer envelope capture
+  const eventsClient = createEventsClient()
+  installHubEventsGlobal(eventsClient)
+  eventsClient.connect()
+  if (typeof document !== 'undefined') {
+    ctx.effect?.(() => installComposerEnvelopeCapture(document), 'omnimux: composer envelope capture')
+  }
   // ctx.effect(() => mountSidebarEntry(apps, t, ctx.locale, SIDEBAR_GLOBAL().register), 'omnimux: sidebar apps entry')
   // ctx.effect(() => mountAppTabs(t, ctx.locale, SIDEBAR_GLOBAL().register), 'omnimux: sidebar app tabs')
   // ctx.slots.inject('shell.overlay', () => ctx.slots.register({

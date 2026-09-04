@@ -5,7 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-31"
-updated: "2026-09-02"
+updated: "2026-09-04"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux"
 related:
@@ -154,3 +154,7 @@ Hub installs `window.__omnimuxWorkbench` at module top-level (same pattern as `_
 - Inherit focus across tab ids.
 - Call `applyProjectCanvasRatio` for library / clip / plaza tabs.
 - `import` the hub client from a vertical plugin.
+
+## Agent driving (pointer)
+
+Agent tools `workbench_get_active_view` / `workbench_open_tab`, UI Context Envelope, and Hub SSE (`GET /omnimux/events/stream`) are specified in [agent-workbench-sync.md](./agent-workbench-sync.md). `open()` sequence in this file still applies. Agent **MUST NOT** `setFocus` or write `conversationCollapsed`.
