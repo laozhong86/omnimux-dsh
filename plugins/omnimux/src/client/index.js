@@ -17,6 +17,7 @@ import { AttachmentTray } from './attachments/AttachmentTray.tsx'
 import { getGlobalAttachmentStore } from './attachments/store.ts'
 import { createEventsClient, installHubEventsGlobal } from './events-client.js'
 import { installComposerEnvelopeCapture } from './composer-envelope.js'
+import { installComposerAddCapture } from './composer-add/install.js'
 
 export const name = 'omnimux'
 export const inject = ['slots', 'locale']
@@ -137,6 +138,7 @@ export function apply(ctx) {
   eventsClient.connect()
   if (typeof document !== 'undefined') {
     ctx.effect?.(() => installComposerEnvelopeCapture(document), 'omnimux: composer envelope capture')
+    ctx.effect?.(() => installComposerAddCapture(document, { t }), 'omnimux: composer add capture')
   }
   // ctx.effect(() => mountSidebarEntry(apps, t, ctx.locale, SIDEBAR_GLOBAL().register), 'omnimux: sidebar apps entry')
   // ctx.effect(() => mountAppTabs(t, ctx.locale, SIDEBAR_GLOBAL().register), 'omnimux: sidebar app tabs')

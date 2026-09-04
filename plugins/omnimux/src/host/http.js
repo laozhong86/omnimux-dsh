@@ -7,6 +7,7 @@ import { createInspirationDispatcher, registerInspirationRoutes } from '../offic
 import { createAvatarDispatcher, registerAvatarRoutes } from '../avatar/routes.js'
 import { injectBrandBoot } from '../brand/inject-index.js'
 import { registerCatalogRoutes } from '../catalog/http.js'
+import { createComposerAttachmentsDispatcher, registerComposerAttachmentRoutes } from './composer-attachments-http.js'
 
 /**
  * Mount Host HTTP faces. Match order is auth → plugins → apps → official → inspiration → avatar.
@@ -87,6 +88,12 @@ export function mountHubHttp(httpCtx, deps) {
       store: deps.avatarStore,
       identity: deps.identity,
     }))
+    const stopComposerAttachments = registerComposerAttachmentRoutes(
+      webServer,
+      createComposerAttachmentsDispatcher({
+        getSessionQuery: () => deps.sessionQuery ?? null,
+      }),
+    )
     return () => {
       stopAuth()
       stopCatalog()
@@ -95,6 +102,7 @@ export function mountHubHttp(httpCtx, deps) {
       stopOfficial()
       stopInspiration()
       stopAvatar()
+      stopComposerAttachments()
     }
   }
   if (typeof httpCtx.effect === 'function') httpCtx.effect(mount, 'omnimux: http routes')
