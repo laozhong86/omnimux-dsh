@@ -38,6 +38,7 @@ jobs:
           node --check scripts/pipeline-state.mjs
           node --check scripts/ci-verdict.mjs
           node --check scripts/check-tracked-artifacts.mjs
+          node --check scripts/verify-model-contracts.mjs
           bash -n scripts/git-wt.sh
           bash -n scripts/ego-browser-qa.sh
           bash -n scripts/materialize-with-rollback.sh
@@ -53,6 +54,34 @@ jobs:
       - name: Run regression tests
         run: |
           node --test scripts/auto-pipeline.test.mjs scripts/check-tracked-artifacts.test.mjs
+
+      - name: Verify model contracts (admission-strict, coverage-audit)
+        run: |
+          set -euo pipefail
+          # Isolate yaml install: full monorepo pnpm install needs local file: dsh-ui-kit.
+          # trap ensures symlink/tmpdir cleanup even when verifier fails.
+          TMP="$(mktemp -d)"
+          YAML_LINK=""
+          cleanup() {
+            if [[ -n "${YAML_LINK}" && -L "${YAML_LINK}" ]]; then
+              rm -f "${YAML_LINK}"
+            fi
+            rm -rf "${TMP}"
+          }
+          trap cleanup EXIT
+          printf '%s\n' '{"type":"module","dependencies":{"yaml":"2.9.0"}}' > "$TMP/package.json"
+          npm --prefix "$TMP" install --ignore-scripts --no-audit --no-fund
+          mkdir -p plugins/omnimux/node_modules
+          YAML_LINK="plugins/omnimux/node_modules/yaml"
+          # Prefer NODE_PATH when a real yaml install already exists; never clobber it.
+          if [[ -e "${YAML_LINK}" && ! -L "${YAML_LINK}" ]]; then
+            export NODE_PATH="${TMP}/node_modules${NODE_PATH:+:$NODE_PATH}"
+            YAML_LINK=""
+            node scripts/verify-model-contracts.mjs --audit
+          else
+            ln -sfn "$TMP/node_modules/yaml" "${YAML_LINK}"
+            node scripts/verify-model-contracts.mjs --audit
+          fi
 
       - name: Rebuild omnimux-workflow host bundle from src
         run: |

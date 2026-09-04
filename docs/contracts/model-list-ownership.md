@@ -5,9 +5,19 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-18"
-updated: "2026-08-31"
-authors: ["x", "agent-architect"]
+updated: "2026-09-04"
+authors: ["x", "agent-architect", "gao-jianyuan"]
 subsystem: "omnimux"
+tags:
+  - "model-list"
+  - "catalog"
+  - "cordis-patch"
+supersedes: []
+superseded_by: null
+related:
+  - "docs/contracts/hub.md"
+  - "docs/contracts/model-capabilities-matrix.md"
+  - "docs/specs/2026-09-04-model-io-contract-compatibility-design.md"
 ---
 
 # OmniMux model-list ownership
@@ -83,15 +93,40 @@ it that way: user layers set `agent-default-model` only.
   `gate.models.textComplete[id] !== false`. Phase-1 gate does **not** filter
   the chat composer model list; that list remains owned solely by this patch.
 - Canvas / workflow generation catalogs are **not** this chat list. They are
-  owned by hub `modelCatalog.list()` (`plugins/omnimux/src/catalog/list.js`)
-  over `CHAT_MODELS` + `src/media/catalog.js` SPECS. Workflow MUST consume
-  that seam / `GET /omnimux/model-catalog` (via workflow `/api/capabilities`)
-  and MUST NOT hardcode production fallbacks or live-fetch
-  `api.omnimux.ai/v1/models` for the canvas. Sort is by display name A–Z.
-  Defaults for new nodes: env overlay → Settings top-level fields
-  (`defaultTextModel` / `defaultImageModel` / `defaultVideoModel` /
-  `defaultAudioModel`) → hub Config defaults → first sorted id. Existing
-  node `params.model` is kept (deprecated badge if absent from catalog).
+  owned by the execution-hub directory seam `modelCatalog.list()`
+  (`plugins/omnimux/src/catalog/list.js`). `GET /omnimux/model-catalog` is
+  **HTTP bridge only** to the same `list()` body. Workflow MUST consume that
+  seam (via workflow `/api/capabilities`) and MUST NOT hardcode production
+  fallbacks or live-fetch `api.omnimux.ai/v1/models` for the canvas. Sort is
+  by display name A–Z. Defaults for new nodes: env overlay → Settings
+  top-level fields (`defaultTextModel` / `defaultImageModel` /
+  `defaultVideoModel` / `defaultAudioModel`) → hub Config defaults → first
+  sorted id. Existing node `params.model` is kept (deprecated badge if
+  absent from catalog).
+- **Canvas catalog evolution (H1 shadow / H2 switch)** — see
+  [model I/O design](../specs/2026-09-04-model-io-contract-compatibility-design.md)
+  and [MCC](./model-capabilities-matrix.md):
+  - **H1（#464）**：契约机器真源（`operation-registry.json`、
+    `model-capability.schema.json`、`adapter-profiles.json`、YAML specs）+
+    shadow loader / admission / `pnpm verify:model-contracts`（admission 严格、
+    coverage 审计）。**research / execution / listed 以 operation 为原子**；
+    coverage 报告 `listedOperations`（`modelId#operationId`）；`model.listed`
+    仅为摘要。Model capability 文档根 canonical 字段为 **`schemaVersion: "1.1"`**
+    （Contract v1.1；**不是**根 `version`；legacy `version` 仅 loader 输入迁移；
+    index/report 只暴露 `schemaVersion`）。**现有实文件 specs 在 H1 必须
+    `listedOperations = []`**（不审计、不宣称厂商 live 事实；verified/live 正例
+    仅 fixtures）。**不改变** `buildModelCatalog` 的 runtime 投影；列表仍来自
+    `CHAT_MODELS` + `src/media/catalog.js` SPECS。H1 **不做** runtime
+    constraints / mapper 对账（属 H2；零 listed 防止污染选择叙事）。
+  - **H2**：逐 operation 补证后写入 listedOperations；runtime limits 对账
+    （冲突取更严）；`buildModelCatalog` 改为以契约 `models[]` 为权威，四列表
+    （text/image/video/audio）为 **output-driven 兼容投影**（只投影 listed
+    operations）；seam 载荷携带 `operations[]`（string id + per-op status/
+    listed metadata）。此后 JS SPECS / workflow `BUILTIN_*` 不得再作为能力
+    真源（绞杀时间盒见设计）。
+  - **聊天 composer 模型列表**仍唯一由本文件所述 `cordis.patch.yml` 拥有；
+    H1/H2 **不**把 canvas contract 投影写进 patch，也 **不**用 canvas 目录
+    替换 composer 列表。
 - **Display labels** (UI aliases) are separate from routing ids. Labels MUST
   follow [model-display-label.md](./model-display-label.md): no `-` in the
   visible model name; brand casing preserved (`Claude Opus 4.6`, `GPT 5.5`).

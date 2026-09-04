@@ -1,0 +1,34 @@
+sequenceDiagram
+  participant CI as CI / verify-model-contracts
+  participant V as verify-model-contracts.mjs
+  participant L as ContractLoader
+  participant S as StatusPolicy
+  participant A as AdmissionGate
+  participant C as CoverageAuditor
+  participant RT as runtime SPECS ids
+
+  CI->>V: run (--audit default or --strict)
+  Note over V: unknown flags / missing values / audit+strict → exit 2
+  V->>L: loadAll(specs) cacheKey=names+contentHash
+  Note over L: preNormalizeDocRoot legacy version→schemaVersion "1.1"; both/conflict/missing reject
+  alt YAML malformed or schema boom or root schemaVersion invalid
+    L-->>V: throw / error issues
+    V-->>CI: exit 1
+  else parsed canonical
+    L->>L: validateAdapterProfiles (ops ⊆ registry)
+    L->>S: materialize op research/execution + listed
+    L-->>V: ContractIndex (schemaVersion "1.1", listedOperations)
+    V->>A: check(index, registry, profiles)
+    A-->>V: AdmissionReport
+    V->>RT: collect media+text model ids
+    V->>C: diff(runtimeIds, index)
+    C-->>V: CoverageReport + listedOperations
+    alt admission errors (incl profile_operation_unknown)
+      V-->>CI: exit 1
+    else audit mode H1 default
+      V-->>CI: exit 0 + report (gaps visible; real specs listedOperations expected empty; schemaVersion only)
+    else strict mode H2 plus
+      V-->>CI: exit 1 if coverage gaps
+    end
+  end
+  Note over CI: trap cleans symlink/tmpdir always

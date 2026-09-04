@@ -1,0 +1,95 @@
+classDiagram
+  direction TB
+
+  class OperationRegistry {
+    +string version
+    +OperationMeta[] operations
+    +has(id) boolean
+    +get(id) OperationMeta
+    +promptPolicy(id) PromptPolicy
+  }
+
+  class AdapterProfileRegistry {
+    +string version
+    +AdapterProfile[] profiles
+    +get(id) AdapterProfile
+    +compatible(op, profile) boolean
+    +validateOperationsInRegistry() AdmissionIssue[]
+  }
+
+  class ContractLoader {
+    +loadAll(specsDir) ContractIndex
+    +parseFile(path) RawDoc
+    +preNormalizeDocRoot(raw) CanonicalDoc
+    +normalize(raw) ModelContract[]
+    +cacheKey(dir) contentHash
+  }
+
+  class SchemaValidator {
+    +validateDoc(canonical) AdmissionIssue[]
+    +validateModel(m) AdmissionIssue[]
+    +validateAdapterProfiles(profiles) AdmissionIssue[]
+    +parityWithJsonSchema() tests
+  }
+
+  class StatusPolicy {
+    +materializeOpStatus(op, modelDefaults) void
+    +computeOperationListed(op, profiles, gate) boolean
+    +deriveModelListed(model) boolean
+  }
+
+  class AdmissionGate {
+    +check(index, registry, profiles) AdmissionReport
+  }
+
+  class CoverageAuditor {
+    +diff(runtimeIds, index) CoverageReport
+  }
+
+  class ContractIndex {
+    +string schemaVersion
+    +string contentFingerprint
+    +Map byId
+    +listedOperations() string[]
+    +get(id) ModelContract
+    +resolveModelId(aliasOrId) string
+  }
+
+  class ModelCapabilityDocument {
+    +string schemaVersion
+    +ModelContract[] models
+  }
+
+  class ModelContract {
+    +string id
+    +string[] aliases
+    +OperationContract[] operations
+    +boolean listed
+    +string[] listedOperations
+  }
+
+  class OperationContract {
+    +string id
+    +string[] aliases
+    +OutputSpec output
+    +InputSlot[] inputs
+    +Research research
+    +Execution execution
+    +boolean listed
+  }
+
+  class BuildModelCatalog {
+    +list() CapabilityCatalog
+    note: "H1 unchanged JS SPECS; H2 projects listedOperations"
+  }
+
+  ContractLoader --> SchemaValidator : uses
+  ContractLoader --> OperationRegistry : resolve ops
+  ContractLoader --> AdapterProfileRegistry : profiles
+  ContractLoader --> StatusPolicy : op listed
+  ContractLoader --> ContractIndex : builds
+  ContractLoader --> ModelCapabilityDocument : preNormalize root
+  SchemaValidator --> AdapterProfileRegistry : profile_operation_unknown
+  AdmissionGate --> ContractIndex : reads
+  CoverageAuditor --> ContractIndex : reads
+  BuildModelCatalog ..> ContractIndex : H2 only

@@ -1,5 +1,7 @@
 # 音频模型能力契约 (Audio Models Capability Contract)
-version: "1.0"
+# H1: 全部 op draft + none|stub → listedOperations=[]；Whisper 不 listed
+schemaVersion: "1.1"
+managementGroup: "audio"
 modality: "audio"
 
 models:
@@ -8,40 +10,84 @@ models:
     family: "suno"
     badge: "音乐创作"
     subtitle: "AI 歌曲 / 纯音乐 · ⏱ 30-120s"
-    modes:
-      - mode: "text_to_music"
+    operations:
+      - id: "text_to_music"
         label: "AI 音乐生成"
-        inputs: []
+        output:
+          type: "audio"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
     parameters:
       duration: [30, 60, 120]
       instrumental: true
+    research:
+      status: "draft"
+      notes: "runtime AUDIO_MODEL_SPECS 有 suno；官方证据 URL 待 H2 补齐"
+    execution:
+      status: "stub"
+      profileId: "audioGenerate"
+      seam: "audioGenerate"
+      notes: "H1: stub only"
 
   - id: "gpt-4o-mini-tts"
     label: "GPT 4o Mini TTS"
     family: "openai"
     badge: "语音合成"
     subtitle: "OpenAI 高清配音 · 6 种音色"
-    modes:
-      - mode: "text_to_speech"
+    operations:
+      - id: "text_to_speech"
         label: "文本转语音"
-        inputs: []
+        output:
+          type: "audio"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
     parameters:
       voice: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+    research:
+      status: "draft"
+    execution:
+      status: "stub"
+      profileId: "audioGenerate"
+      seam: "audioGenerate"
+      notes: "H1: stub only"
 
   - id: "whisper-1"
     label: "Whisper 1"
     family: "openai"
     badge: "语音识别"
     subtitle: "OpenAI 语音转文字 / ASR"
-    modes:
-      - mode: "speech_to_text"
+    operations:
+      - id: "speech_to_text"
         label: "语音识别"
+        output:
+          type: "text"
         inputs:
           - slot: "audio_input"
             type: "audio"
-            role: "reference"
+            role: "source"
+            source: "upstream_edge"
             min: 1
             max: 1
             allowedMimes: ["audio/mp3", "audio/wav", "audio/m4a", "audio/webm"]
             maxSizeMb: 25
+            limitSource:
+              kind: "policy_conservative"
+              note: "OpenAI Whisper common 25MB class; seam not live in hub H1"
     parameters: {}
+    research:
+      status: "draft"
+      notes: "speech_to_text output is text; not listed until speechToText seam live; promptPolicy=none"
+    execution:
+      status: "none"
+      profileId: "speechToText"
+      notes: "H1: speechToText profile unavailable / no live seam"
