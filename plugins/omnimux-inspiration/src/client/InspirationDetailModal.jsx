@@ -1,13 +1,26 @@
 import { useState, useCallback } from 'react'
-import { Target, Clapperboard, MessageSquarePlus } from 'lucide-react'
+import { Target, Clapperboard } from 'lucide-react'
 import { Button, ModalDialog } from 'dsh-ui-kit'
-import { hostMediaSrc, pickCoverSrc } from './api.js'
+import { hostMediaSrc } from './api.js'
+
+const ICON_REPLICATE = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="8" y="8" width="12" height="12" rx="2" />
+    <path d="M4 16V6a2 2 0 0 1 2-2h10" />
+  </svg>
+)
 
 /**
- * @param {{ t: (k: string) => string, item: any, onClose: () => void }} props
+ * @param {{ t: (k: string) => string, item: any, onClose: () => void, onReplicate?: (row: any) => void, replicateBusy?: boolean }} props
  */
-export function InspirationDetailModal({ t, item, onClose }) {
+export function InspirationDetailModal({ t, item, onClose, onReplicate, replicateBusy }) {
   const [copied, setCopied] = useState(false)
+
+  const handleReplicate = useCallback(() => {
+    if (!item) return
+    if (typeof onReplicate === 'function') onReplicate(item)
+    onClose()
+  }, [item, onClose, onReplicate])
 
   if (!item) return null
 
@@ -24,36 +37,6 @@ export function InspirationDetailModal({ t, item, onClose }) {
     }
   }
 
-  const handleAddToConversation = useCallback(() => {
-    if (typeof window !== 'undefined' && item) {
-      const coverUrl = pickCoverSrc(item)
-      const itemTitle = item.title || item.source_url || '灵感素材'
-      const relPath = item.local_paths?.video || item.local_paths?.cover || `inspiration/${item.id}`
-
-      window.dispatchEvent(
-        new CustomEvent('omnimux:add-to-conversation', {
-          detail: {
-            sourcePlugin: 'omnimux-inspiration',
-            kind: 'inspiration',
-            entityId: item.id,
-            title: itemTitle,
-            extension: 'INSPIRATION',
-            relativePath: relPath,
-            previewUrl: coverUrl,
-            metadata: {
-              inspiration_id: item.id,
-              source_url: item.source_url,
-              source_platform: item.source_platform,
-            },
-          },
-        })
-      )
-      const clipText = `[灵感: ${itemTitle}](@${relPath})`
-      navigator.clipboard?.writeText?.(clipText).catch(() => {})
-    }
-    onClose()
-  }, [item, onClose])
-
   return (
     <ModalDialog
       open
@@ -63,9 +46,14 @@ export function InspirationDetailModal({ t, item, onClose }) {
       size="lg"
       footer={(
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', width: '100%' }}>
-          <Button variant="primary" onClick={handleAddToConversation}>
-            <MessageSquarePlus size={14} style={{ marginRight: 6 }} />
-            {t('card.cta.addToConversation') || '添加到会话'}
+          <Button
+            variant="primary"
+            aria-label={t('card.cta.tryFull')}
+            disabled={Boolean(replicateBusy)}
+            onClick={handleReplicate}
+          >
+            {ICON_REPLICATE}
+            {t('card.cta.try')}
           </Button>
           <Button variant="outline" onClick={onClose}>{t('close')}</Button>
         </div>

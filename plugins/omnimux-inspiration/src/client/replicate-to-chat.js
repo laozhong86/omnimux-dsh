@@ -1,14 +1,16 @@
 /**
- * Inspiration → chat orchestrator.
+ * Inspiration → chat orchestrator (official new-session semantics).
  *
- * Pipeline: derive title → exclusive lock → wait workflow global →
- * startReplicationProject → prefillReplicationPrompt.
- * Failures write onStatus(errorKey); success is silent (composer prefilled,
- * user decides when to send).
+ * Pipeline: exclusive lock → hasAnySession → reuse blank or click .newSession
+ * → addAttachment → prefillReplicationPrompt → dismissInspirationLibrary.
+ * Never starts a workflow project, never copies text, never clicks send.
  */
-import { buildReplicationPrompt, deriveProjectTitle } from './replication.js'
+import { buildReplicationPrompt } from './replication.js'
 import { prefillReplicationPrompt } from './composer-inject.js'
-import { waitForWorkflowGlobal } from './workflow-global.js'
+import { hasAnySession, isBlankSession } from './is-blank-session.js'
+import { clickOfficialNewSession } from './new-session-click.js'
+
+export const INSPIRATION_LIBRARY_TAB_ID = 'omnimux-inspiration:library'
 
 /** Module-level inflight lock. A second call returns `{ error: 'busy' }` and does not queue. */
 let replicateInflight = null
@@ -44,20 +46,125 @@ export function resetReplicateLock() {
   replicateInflight = null
 }
 
+function resolveDoc(io) {
+  if (io.document) return io.document
+  return typeof document !== 'undefined' ? document : null
+}
+
+function resolveWindow(io, doc) {
+  if (io.window) return io.window
+  if (doc && doc.defaultView) return doc.defaultView
+  if (typeof window !== 'undefined') return window
+  return undefined
+}
+
 /**
- * @param {{ id?: unknown, title?: unknown, source_url?: unknown, type?: unknown, local_paths?: object }} row
- * @param {{
- *   waitForWorkflow?: typeof waitForWorkflowGlobal,
- *   startReplication?: (input: { title: string, source: 'inspiration' }) => Promise<{ ok: boolean, error?: string }>,
- *   prefillPrompt?: typeof prefillReplicationPrompt,
- *   now?: () => number,
- *   onStatus?: (key: string | null, detail?: string) => void,
- * }} [io]
+ * Cover fallback copied from CoverCard's pickCoverSrc usage; do not import api.js.
+ * @param {object | null | undefined} row
+ * @returns {string}
  */
-export async function replicateInspirationToChat(row, io = {}) {
+export function pickReplicationPreviewUrl(row) {
+  if (!row || typeof row !== 'object') return ''
+  const rec = /** @type {Record<string, unknown>} */ (row)
+  const raw = rec.cover_key ?? rec.cover_url
+  if (typeof raw !== 'string' || raw === '') return ''
+  if (raw.includes('..')) return ''
+  if (/^https?:\/\//i.test(raw)) return raw
+  if (raw.startsWith('/omnimux/inspiration/local/media/')) return raw
+  if (raw.startsWith('/omnimux/inspiration/media/')) return raw
+  if (raw.startsWith('/api/inspiration/v1/media/')) {
+    return `/omnimux/inspiration/media/${raw.slice('/api/inspiration/v1/media/'.length)}`
+  }
+  return `/omnimux/inspiration/media/${raw.replace(/^\/+/, '')}`
+}
+
+/**
+ * Attachment payload for this CTA only.
+ * @param {object} row
+ */
+export function buildInspirationPayload(row) {
+  const id = row?.id
+  return {
+    sourcePlugin: 'omnimux-inspiration',
+    kind: 'inspiration',
+    entityId: id,
+    title: row?.title || row?.source_url || '灵感素材',
+    extension: 'INSPIRATION',
+    relativePath: row?.local_paths?.video || row?.local_paths?.cover || `inspiration/${id}`,
+    previewUrl: pickReplicationPreviewUrl(row),
+    metadata: {
+      inspiration_id: id,
+      source_url: row?.source_url,
+      source_platform: row?.source_platform,
+    },
+  }
+}
+
+/**
+ * @param {{ window?: Window, tabId?: string, onDismissModal?: () => void }} [io]
+ */
+export function dismissInspirationLibrary(io = {}) {
+  if (typeof io.onDismissModal === 'function') {
+    try { io.onDismissModal() } catch { /* ignore */ }
+  }
+  const win = io.window
+    ?? (typeof window !== 'undefined' ? window : undefined)
+  const tabId = io.tabId || INSPIRATION_LIBRARY_TAB_ID
+  const wb = win && win.__omnimuxWorkbench
+  if (wb && typeof wb.closeTab === 'function') {
+    wb.closeTab(tabId)
+    return
+  }
+  if (wb && typeof wb.createSidebarStore === 'function') {
+    const store = wb.createSidebarStore({ tabId })
+    if (store && typeof store.close === 'function') store.close()
+  }
+}
+
+function readActiveSessionId(win) {
+  const getter = win && win.__omnimuxAttachments && win.__omnimuxAttachments.getActiveSessionId
+  if (typeof getter !== 'function') return ''
+  try {
+    return String(getter.call(win.__omnimuxAttachments) || '')
+  } catch {
+    return ''
+  }
+}
+
+function resolveAttachSessionId(io, clickResult, win) {
+  if (io.sessionId != null && String(io.sessionId) !== '') {
+    const explicit = String(io.sessionId)
+    return explicit === 'default' ? '' : explicit
+  }
+  const fromClick = clickResult && clickResult.sessionId != null ? String(clickResult.sessionId) : ''
+  if (fromClick && fromClick !== 'default') return fromClick
+  const active = readActiveSessionId(win)
+  if (active && active !== 'default') return active
+  return ''
+}
+
+function defaultAddAttachment(win, doc) {
+  return (sessionId, payload) => {
+    const store = win && win.__omnimuxAttachments
+    if (store && typeof store.addAttachment === 'function') {
+      return store.addAttachment(sessionId || '', payload)
+    }
+    const target = win || (doc && doc.defaultView) || (typeof window !== 'undefined' ? window : null)
+    if (target && typeof target.dispatchEvent === 'function' && typeof target.CustomEvent === 'function') {
+      const eventName = ['omnimux', 'add-to-conversation'].join(':')
+      target.dispatchEvent(new target.CustomEvent(eventName, { detail: payload }))
+      return { ok: true }
+    }
+    return { ok: false, reason: 'invalid-payload' }
+  }
+}
+
+/**
+ * @param {{ id?: unknown, title?: unknown, source_url?: unknown, source_platform?: unknown, type?: unknown, local_paths?: object, stats?: object, deconstruction?: object, duration?: unknown }} row
+ * @param {object} [io]
+ */
+export async function oneClickReplicate(row, io = {}) {
   const onStatus = typeof io.onStatus === 'function' ? io.onStatus : () => {}
-  const wait = typeof io.waitForWorkflow === 'function' ? io.waitForWorkflow : waitForWorkflowGlobal
-  const prefill = typeof io.prefillPrompt === 'function' ? io.prefillPrompt : prefillReplicationPrompt
 
   if (isReplicateBusy()) {
     onStatus('card.cta.busy')
@@ -65,44 +172,81 @@ export async function replicateInspirationToChat(row, io = {}) {
   }
 
   return runExclusive(async () => {
+    const doc = resolveDoc(io)
+    const win = resolveWindow(io, doc)
+    const hasSession = typeof io.hasSession === 'function' ? io.hasSession : hasAnySession
+    const isBlank = typeof io.isBlank === 'function' ? io.isBlank : isBlankSession
+    const clickNew = typeof io.clickNewSession === 'function' ? io.clickNewSession : clickOfficialNewSession
+    const addAttachment = typeof io.addAttachment === 'function'
+      ? io.addAttachment
+      : defaultAddAttachment(win, doc)
+    const prefill = typeof io.prefillPrompt === 'function' ? io.prefillPrompt : prefillReplicationPrompt
+    const dismiss = typeof io.dismissLibrary === 'function'
+      ? io.dismissLibrary
+      : () => dismissInspirationLibrary({
+        window: win,
+        onDismissModal: io.onDismissModal,
+      })
+
     onStatus('card.cta.replicating')
-    const title = deriveProjectTitle(row)
-    const api = await wait()
-    if (!api) {
-      onStatus('card.cta.workflowMissing')
-      return { ok: false, error: 'workflowMissing' }
-    }
-    const start = typeof io.startReplication === 'function'
-      ? io.startReplication
-      : (typeof api.startReplicationProject === 'function'
-        ? (input) => api.startReplicationProject(input)
-        : null)
 
-    if (typeof start !== 'function') {
-      onStatus('card.cta.workflowMissing')
-      return { ok: false, error: 'workflowMissing' }
+    if (!hasSession(doc)) {
+      onStatus('card.cta.noSession')
+      return { ok: false, error: 'noSession' }
     }
 
-    let created
+    let reused = false
+    let clickedNewSession = false
+    let clickResult = null
+    if (isBlank(doc)) {
+      reused = true
+    } else {
+      try {
+        clickResult = await clickNew({ document: doc, window: win, isBlank })
+      } catch {
+        onStatus('card.cta.newSessionFailed')
+        return { ok: false, error: 'newSessionFailed' }
+      }
+      if (!clickResult || clickResult.ok !== true) {
+        onStatus('card.cta.newSessionFailed')
+        return { ok: false, error: 'newSessionFailed' }
+      }
+      clickedNewSession = true
+    }
+
+    const sessionId = resolveAttachSessionId(io, clickResult, win)
+    const payload = buildInspirationPayload(row)
+    let attached = false
+    let duplicate = false
+    let quotaExceeded = false
+    let attachResult
     try {
-      created = await start({ title, source: 'inspiration' })
+      attachResult = addAttachment(sessionId, payload)
     } catch {
-      onStatus('card.cta.createFailed')
-      return { ok: false, error: 'createFailed' }
+      onStatus('card.cta.attachFailed')
+      return { ok: false, error: 'attachFailed' }
+    }
+    if (attachResult && typeof attachResult.then === 'function') {
+      try {
+        attachResult = await attachResult
+      } catch {
+        onStatus('card.cta.attachFailed')
+        return { ok: false, error: 'attachFailed' }
+      }
     }
 
-    if (!created || created.ok !== true) {
-      const code = created && created.error ? String(created.error) : 'create-failed'
-      if (code === 'busy') {
-        onStatus('card.cta.busy')
-        return { ok: false, error: 'busy' }
-      }
-      if (code === 'unavailable') {
-        onStatus('card.cta.workflowMissing')
-        return { ok: false, error: 'workflowMissing' }
-      }
-      onStatus('card.cta.createFailed', code)
-      return { ok: false, error: code }
+    const reason = attachResult && attachResult.reason ? String(attachResult.reason) : ''
+    if (attachResult && attachResult.ok === true) {
+      attached = true
+    } else if (reason === 'duplicate') {
+      attached = true
+      duplicate = true
+    } else if (reason === 'quota-exceeded') {
+      quotaExceeded = true
+      onStatus('card.cta.attachFull')
+    } else {
+      onStatus('card.cta.attachFailed')
+      return { ok: false, error: 'attachFailed' }
     }
 
     const prompt = buildReplicationPrompt(row)
@@ -110,16 +254,36 @@ export async function replicateInspirationToChat(row, io = {}) {
     try {
       prefilled = await prefill(prompt)
     } catch {
-      onStatus('card.cta.sendManual')
-      return { ok: false, error: 'sendManual', created: true }
+      if (quotaExceeded) return { ok: false, error: 'attachFull' }
+      if (attached) {
+        onStatus('card.cta.sendManual')
+        return { ok: false, error: 'sendManual' }
+      }
+      onStatus('card.cta.attachFailed')
+      return { ok: false, error: 'attachFailed' }
+    }
+    if (!prefilled || prefilled.ok !== true) {
+      if (quotaExceeded) return { ok: false, error: 'attachFull' }
+      if (attached) {
+        onStatus('card.cta.sendManual')
+        return { ok: false, error: 'sendManual' }
+      }
+      onStatus('card.cta.attachFailed')
+      return { ok: false, error: 'attachFailed' }
     }
 
-    if (!prefilled || prefilled.ok !== true) {
-      onStatus('card.cta.sendManual')
-      return { ok: false, error: 'sendManual', created: true }
+    if (quotaExceeded) {
+      return { ok: false, error: 'attachFull' }
     }
 
     onStatus(null)
-    return { ok: true, created }
+    try { dismiss() } catch { /* ignore */ }
+    return {
+      ok: true,
+      reused,
+      clickedNewSession,
+      attached,
+      ...(duplicate ? { duplicate: true } : {}),
+    }
   })
 }

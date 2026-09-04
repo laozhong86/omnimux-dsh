@@ -244,6 +244,8 @@ export function InspirationSection({ t, active }) {
           t={t}
           onClose={() => setSelectedItem(null)}
           onItemUpdated={handleItemUpdated}
+          onReplicate={handleReplicate}
+          replicateBusy={replicateBusy}
         />
       ) : null}
 

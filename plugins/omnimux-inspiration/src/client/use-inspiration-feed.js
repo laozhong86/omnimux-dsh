@@ -14,7 +14,7 @@ import {
   toggleIdInSet,
   updateItemInList,
 } from './feed-helpers.js'
-import { replicateInspirationToChat } from './replicate-to-chat.js'
+import { oneClickReplicate } from './replicate-to-chat.js'
 
 export {
   applyCachedPage,
@@ -59,7 +59,7 @@ function useReplicateToChat() {
 
     const onStatus = createReplicateStatusHandler(flashCtaStatus, setCtaStatus)
     const execOpts = { onStatus }
-    void replicateInspirationToChat(row, execOpts).finally(() => {
+    void oneClickReplicate(row, execOpts).finally(() => {
       resetReplicateBusy(replicateBusyRef, setReplicateBusy, ticket)
     })
   }, [flashCtaStatus])

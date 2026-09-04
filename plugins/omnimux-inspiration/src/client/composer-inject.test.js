@@ -2,8 +2,10 @@ import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
 import { describe, it } from 'node:test'
 import {
+  COMPOSER_SELECTOR,
   findComposer,
   findSendButton,
+  getComposerText,
   setComposerValue,
   prefillReplicationPrompt,
 } from './composer-inject.js'
@@ -17,6 +19,27 @@ function fakeField(initial = '') {
     setSelectionRange(start, end) {
       this.selectionStart = start
       this.selectionEnd = end
+    },
+    focus() { this.focused = true },
+    dispatchEvent(event) {
+      emitter.emit(event?.type || 'input', event)
+      this.lastEvent = event
+      return true
+    },
+    on(type, fn) { emitter.on(type, fn) },
+  }
+  return field
+}
+
+function fakeContentEditable(initial = '') {
+  const emitter = new EventEmitter()
+  const field = {
+    isContentEditable: true,
+    textContent: initial,
+    get innerText() { return this.textContent },
+    set innerText(next) { this.textContent = next },
+    getAttribute(name) {
+      return name === 'contenteditable' ? 'true' : null
     },
     focus() { this.focused = true },
     dispatchEvent(event) {
@@ -67,6 +90,19 @@ describe('setComposerValue', () => {
     assert.deepEqual(calls, ['inspiration_id: z'])
     assert.equal(field.value, 'inspiration_id: z')
   })
+
+  it('writes a fake contenteditable (no value setter) so getComposerText contains inspiration_id', () => {
+    const field = fakeContentEditable('')
+    const events = []
+    field.on('input', (e) => events.push(e))
+    const ok = setComposerValue(field, 'hello inspiration_id: ce', { InputEvent: FakeInputEvent })
+    assert.equal(ok, true)
+    assert.match(getComposerText(field), /inspiration_id/)
+    assert.equal(field.textContent, 'hello inspiration_id: ce')
+    assert.equal(events.length, 1)
+    assert.equal(field.focused, true)
+    assert.equal(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), 'value'), undefined)
+  })
 })
 
 describe('findComposer / findSendButton', () => {
@@ -83,6 +119,24 @@ describe('findComposer / findSendButton', () => {
     assert.equal(findComposer(doc), textarea)
     assert.equal(findSendButton(doc), send)
   })
+
+  it('hits contenteditable when querySelector receives a contenteditable selector', () => {
+    const editable = { tag: 'div', isContentEditable: true }
+    const seen = []
+    const doc = {
+      querySelector(sel) {
+        seen.push(sel)
+        if (sel.includes('contenteditable')) return editable
+        return null
+      },
+    }
+    assert.equal(findComposer(doc), editable)
+    assert.equal(seen.length, 1)
+    assert.match(seen[0], /contenteditable/)
+    assert.match(COMPOSER_SELECTOR, /contenteditable="true"/)
+    assert.doesNotMatch(COMPOSER_SELECTOR, /(^|,)\s*textarea\s*(,|$)/)
+    assert.doesNotMatch(COMPOSER_SELECTOR, /div\[role="textbox"\](?!\[contenteditable)/)
+  })
 })
 
 describe('prefillReplicationPrompt', () => {
@@ -90,7 +144,7 @@ describe('prefillReplicationPrompt', () => {
     const field = fakeField('')
     const clicks = []
     const send = { disabled: false, click() { clicks.push(1) } }
-    const prompt = '/video-replication\n\n- inspiration_id: a'
+    const prompt = '/video-deconstruct\n\n- inspiration_id: a'
     const result = await prefillReplicationPrompt(prompt, {
       document: {
         querySelector(sel) {
@@ -110,6 +164,29 @@ describe('prefillReplicationPrompt', () => {
     assert.equal(field.selectionStart, prompt.length)
     assert.equal(field.selectionEnd, prompt.length)
     assert.deepEqual(clicks, [])
+  })
+
+  it('prefills contenteditable and never clicks send', async () => {
+    const field = fakeContentEditable('')
+    const clicks = []
+    const send = { disabled: false, click() { clicks.push(1) } }
+    const prompt = '/video-deconstruct\n\n- inspiration_id: a'
+    const result = await prefillReplicationPrompt(prompt, {
+      document: {
+        querySelector(sel) {
+          if (sel.includes('contenteditable')) return field
+          if (sel.includes('aria-label')) return send
+          return null
+        },
+      },
+      InputEvent: FakeInputEvent,
+      timeoutMs: 10,
+      pollMs: 1,
+    })
+    assert.deepEqual(result, { ok: true, via: 'prefill' })
+    assert.match(getComposerText(field), /inspiration_id: a/)
+    assert.equal(field.focused, true)
+    assert.equal(clicks.length, 0)
   })
 
   it('succeeds even when send is missing or disabled (no auto-submit)', async () => {

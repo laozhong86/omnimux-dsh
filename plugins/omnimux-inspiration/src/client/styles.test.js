@@ -100,9 +100,15 @@ describe('locale dictionaries', () => {
     assert.ok(zh['view.switch'] && en['view.switch'])
     assert.equal(zh['view.player'], '作品')
     assert.equal(zh['view.deconstruct'], '作品解析')
-    assert.equal(zh['card.cta.try'], '加会话')
+    assert.equal(zh['card.cta.try'], '一键复刻')
+    assert.equal(zh['card.cta.tryFull'], '一键复刻')
     assert.equal(zh['card.cta.detail'], '查看')
-    assert.equal(en['card.cta.try'], 'Add to chat')
+    assert.equal(en['card.cta.try'], 'Replicate')
+    assert.equal(en['card.cta.tryFull'], 'One-click replicate')
+    assert.equal(zh['card.cta.noSession'], '请先新建或打开一个会话')
+    assert.doesNotMatch(zh['card.cta.try'], /加会话/)
+    assert.doesNotMatch(en['card.cta.try'], /Add to chat/)
+    assert.doesNotMatch(zh['card.cta.addToConversation'], /添加到会话/)
   })
 })
 
@@ -120,5 +126,57 @@ describe('hover overlay CTA', () => {
     assert.equal(decl(btn, 'border-radius'), '9999px')
     assert.equal(decl(btn, 'font'), '550 12px/16px inherit')
     assert.doesNotMatch(INSPIRATION_CSS, /👁|💬/)
+  })
+
+  it('locks CoverCard to onReplicate only with replicate SVG and tryFull aria', () => {
+    const cover = readFileSync(join(here, 'InspirationCoverCard.jsx'), 'utf8')
+    assert.doesNotMatch(cover, /omnimux:add-to-conversation/)
+    assert.doesNotMatch(cover, /clipboard/)
+    assert.doesNotMatch(cover, /加会话/)
+    assert.doesNotMatch(cover, /添加到会话/)
+    assert.match(cover, /ICON_REPLICATE/)
+    assert.match(cover, /t\('card\.cta\.tryFull'\)/)
+    assert.match(cover, /t\('card\.cta\.try'\)/)
+    assert.match(cover, /<rect x="8" y="8"/)
+  })
+})
+
+describe('one-click replicate source isolation', () => {
+  const files = [
+    'replicate-to-chat.js',
+    'InspirationCoverCard.jsx',
+    'InspirationPreviewModal.jsx',
+    'InspirationDetailModal.jsx',
+    'use-inspiration-feed.js',
+    'InspirationSection.jsx',
+  ]
+
+  it('forbids startReplicationProject / waitForWorkflowGlobal / workflow import / runNewProject', () => {
+    for (const name of files) {
+      const src = readFileSync(join(here, name), 'utf8')
+      assert.doesNotMatch(src, /startReplicationProject/, name)
+      assert.doesNotMatch(src, /waitForWorkflowGlobal/, name)
+      assert.doesNotMatch(src, /omnimux-workflow/, name)
+      assert.doesNotMatch(src, /runNewProject/, name)
+    }
+  })
+
+  it('forbids this-CTA clipboard.writeText on CoverCard / Preview / orchestrator', () => {
+    for (const name of ['replicate-to-chat.js', 'InspirationCoverCard.jsx', 'InspirationPreviewModal.jsx']) {
+      const src = readFileSync(join(here, name), 'utf8')
+      assert.doesNotMatch(src, /clipboard\.writeText/, name)
+    }
+  })
+
+  it('keeps Preview/Detail primary CTA on card.cta.try and does not fallback 添加到会话', () => {
+    const preview = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
+    const detail = readFileSync(join(here, 'InspirationDetailModal.jsx'), 'utf8')
+    const section = readFileSync(join(here, 'InspirationSection.jsx'), 'utf8')
+    assert.match(preview, /t\('card\.cta\.try'\)/)
+    assert.match(preview, /onReplicate/)
+    assert.match(detail, /t\('card\.cta\.try'\)/)
+    assert.doesNotMatch(detail, /添加到会话/)
+    assert.doesNotMatch(detail, /MessageSquarePlus/)
+    assert.match(section, /onReplicate=\{handleReplicate\}/)
   })
 })
