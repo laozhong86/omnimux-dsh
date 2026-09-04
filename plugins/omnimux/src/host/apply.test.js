@@ -11,12 +11,14 @@ describe('hub apply composition', () => {
       provide(name) { provided.push(name) },
       get() { return undefined },
     }, { official: { mount: false } })
-    assert.deepEqual(provided, ['identity', 'videoGenerate', 'imageGenerate', 'audioGenerate', 'textComplete', 'modelCatalog'])
+    assert.deepEqual(provided, ['identity', 'hubEvents', 'videoGenerate', 'imageGenerate', 'audioGenerate', 'textComplete', 'modelCatalog'])
     assert.deepEqual(names, [
       'omnimux_video_submit',
       'omnimux_image_submit',
       'omnimux_audio_submit',
       'omnimux_text_complete',
+      'workbench_get_active_view',
+      'workbench_open_tab',
     ])
   })
 
@@ -42,7 +44,7 @@ describe('hub apply composition', () => {
     assert.ok(catalog.defaults.text)
   })
 
-  it('registers all 28 tools and 6 seams by default', () => {
+  it('registers all 30 tools and 7 seams by default', () => {
     const names = []
     const provided = []
     apply({
@@ -51,7 +53,7 @@ describe('hub apply composition', () => {
       get() { return undefined },
     })
 
-    assert.equal(names.length, 28)
+    assert.equal(names.length, 30)
     assert.ok(names.includes('omnimux_video_submit'))
     assert.ok(names.includes('omnimux_image_submit'))
     assert.ok(names.includes('omnimux_audio_submit'))
@@ -59,8 +61,10 @@ describe('hub apply composition', () => {
     assert.ok(names.includes('omnimux_page_fetch'))
     assert.ok(names.includes('omnimux_social_data'))
     assert.ok(names.includes('omnimux_accounts_list'))
+    assert.ok(names.includes('workbench_get_active_view'))
+    assert.ok(names.includes('workbench_open_tab'))
 
-    assert.deepEqual(provided, ['identity', 'videoGenerate', 'imageGenerate', 'audioGenerate', 'textComplete', 'modelCatalog'])
+    assert.deepEqual(provided, ['identity', 'hubEvents', 'videoGenerate', 'imageGenerate', 'audioGenerate', 'textComplete', 'modelCatalog'])
   })
 
   it('disables all gated capabilities when gate.enabled is false', () => {
@@ -72,8 +76,9 @@ describe('hub apply composition', () => {
       get() { return undefined },
     }, { gate: { enabled: false } })
 
-    assert.equal(names.length, 0)
-    assert.deepEqual(provided, ['identity', 'modelCatalog'])
+    // workbench tools are ungated core facilities
+    assert.equal(names.length, 2)
+    assert.deepEqual(provided, ['identity', 'hubEvents', 'modelCatalog'])
   })
 
   it('fine-grained disables media, text models, and official tools via gate', () => {
@@ -98,7 +103,7 @@ describe('hub apply composition', () => {
     assert.ok(tools.omnimux_page_fetch)
     assert.ok(tools.omnimux_accounts_list)
 
-    assert.deepEqual(provided, ['identity', 'imageGenerate', 'audioGenerate', 'textComplete', 'modelCatalog'])
+    assert.deepEqual(provided, ['identity', 'hubEvents', 'imageGenerate', 'audioGenerate', 'textComplete', 'modelCatalog'])
 
     // grok-4.6 excluded from enum
     const textEnum = tools.omnimux_text_complete.parameters.properties.model.enum

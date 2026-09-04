@@ -75,35 +75,45 @@ export interface GenerationModeSegmentProps {
 }
 
 /**
- * 生成方式分段：全能参考 / 首尾帧
- * - supportedRoles 存在且不含 'reference' → 全能参考禁用（title 提示）
- * - supportedRoles 存在且不含 'first_frame' 与 'last_frame' → 首尾帧禁用（title 提示）
+ * 生成方式分段：依据模型支持模式动态渲染
+ * 铁律：
+ * 1. 不支持的模式 100% 隐藏，严禁展示灰色不可用项。
+ * 2. 当有效可选模式 <= 1 时，直接返回 null（不渲染本栏，紧凑界面）。
+ * 3. 严格区分首尾帧：只有同时包含 first_frame 和 last_frame 时才允许渲染「首尾帧」。
  */
 export function GenerationModeSegment({
   value,
   supportedRoles,
   onChange,
-}: GenerationModeSegmentProps): ReactElement {
+}: GenerationModeSegmentProps): ReactElement | null {
   const hasRoles = Array.isArray(supportedRoles) && supportedRoles.length > 0;
-  const referenceDisabled = hasRoles ? !supportedRoles?.includes('reference') : false;
-  const frameDisabled = hasRoles
-    ? !supportedRoles?.includes('first_frame') && !supportedRoles?.includes('last_frame')
+  
+  // 校验模型真实支持性
+  const supportsReference = hasRoles ? supportedRoles.includes('reference') : true;
+  const supportsFirstLast = hasRoles
+    ? supportedRoles.includes('first_frame') && supportedRoles.includes('last_frame')
     : false;
 
-  const options: Array<SegmentOption<GenerationMode>> = [
-    {
+  const options: Array<SegmentOption<GenerationMode>> = [];
+
+  if (supportsReference) {
+    options.push({
       value: 'reference',
       label: '全能参考',
-      disabled: referenceDisabled,
-      title: referenceDisabled ? '当前模型不支持全能参考模式' : undefined,
-    },
-    {
+    });
+  }
+
+  if (supportsFirstLast) {
+    options.push({
       value: 'first_last_frame',
       label: '首尾帧',
-      disabled: frameDisabled,
-      title: frameDisabled ? '当前模型不支持首尾帧模式' : undefined,
-    },
-  ];
+    });
+  }
+
+  // 铁律：若可选模式不足 2 个（例如仅全能参考、仅数字人、或单模式），整栏隐藏不占地
+  if (options.length <= 1) {
+    return null;
+  }
 
   return <Segment options={options} value={value} onChange={onChange} ariaLabel="生成方式" />;
 }

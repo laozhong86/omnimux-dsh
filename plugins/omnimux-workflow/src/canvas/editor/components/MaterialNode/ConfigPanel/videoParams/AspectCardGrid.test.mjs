@@ -51,10 +51,10 @@ test('AspectCardGrid 采用 4 列网格类名与 wf-video-aspect-card 卡片结�
   assert.match(aspectSrc, /onChange\(opt\.value\)/);
 });
 
-test('SegmentControls 生成方式分段含 supportedRoles 禁用逻辑与双模式文案', () => {
+test('SegmentControls 生成方式分段依据 supportedRoles 动态渲染，不支持直接隐藏', () => {
   assert.match(segmentSrc, /supportedRoles/);
-  assert.match(segmentSrc, /当前模型不支持全能参考模式/);
-  assert.match(segmentSrc, /当前模型不支持首尾帧模式/);
+  assert.match(segmentSrc, /supportsReference/);
+  assert.match(segmentSrc, /supportsFirstLast/);
   // 两个模式 label
   assert.match(segmentSrc, /'全能参考'/);
   assert.match(segmentSrc, /'首尾帧'/);
