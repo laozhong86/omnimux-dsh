@@ -115,6 +115,24 @@ describe('dismissInspirationLibrary', () => {
     assert.deepEqual(tabs, ['omnimux-inspiration:library'])
   })
 
+  it('after closeTab unhides the conversation column (split, not collapsed)', () => {
+    const order = []
+    dismissInspirationLibrary({
+      window: {
+        __omnimuxWorkbench: {
+          closeTab(id) { order.push(`close:${id}`) },
+          setConversationCollapsed(next) { order.push(`collapsed:${next}`) },
+          setFocus(mode) { order.push(`focus:${mode}`) },
+        },
+      },
+    })
+    assert.deepEqual(order, [
+      'close:omnimux-inspiration:library',
+      'collapsed:false',
+      'focus:split',
+    ])
+  })
+
   it('falls back to createSidebarStore().close when closeTab is missing', () => {
     const closed = []
     dismissInspirationLibrary({
@@ -147,6 +165,24 @@ describe('oneClickReplicate', () => {
     assert.equal(io.prefills.length, 0)
     assert.equal(io.closes.length, 0)
     assert.equal(io.status.at(-1), 'card.cta.noSession')
+  })
+
+  it('success uses real dismissInspirationLibrary: closeTab then split', async () => {
+    const order = []
+    const win = {
+      __omnimuxWorkbench: {
+        closeTab(id) { order.push(`close:${id}`) },
+        setConversationCollapsed(v) { order.push(`collapsed:${v}`) },
+        setFocus(mode) { order.push(`focus:${mode}`) },
+      },
+    }
+    const io = makeIo({ isBlank: () => true, window: win })
+    delete io.dismissLibrary
+    const result = await oneClickReplicate(ROW, io)
+    assert.equal(result.ok, true)
+    assert.equal(order[0], 'close:omnimux-inspiration:library')
+    assert.ok(order.includes('collapsed:false'))
+    assert.ok(order.includes('focus:split'))
   })
 
   it('blank reuses the session: 0 clicks, 1 attach, 1 prefill, 1 closeTab', async () => {
