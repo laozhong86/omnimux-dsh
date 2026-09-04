@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
-import { SKILL_SHELF_TAGS, SKILL_SHELF_TAXONOMY } from './skill-picker-logic.js'
+import { PLAZA_HIDDEN_TABS, PLAZA_TABS, SKILL_SHELF_TAGS, SKILL_SHELF_TAXONOMY } from './skill-picker-logic.js'
 
 /**
  * 对拍守卫：client 片段经 concat 拼为单 factory，UI 片段无法 import 本模块，
@@ -54,6 +54,25 @@ describe('skill shelf taxonomy parity', () => {
       for (const field of fields) {
         assert.ok(src.includes(`.${field}`), `fragment must include ${field} in fallback haystack`)
       }
+    }
+  })
+})
+
+describe('plaza tab visibility parity', () => {
+  const shellSrc = readFileSync(join(here, 'plaza-shell.js'), 'utf8')
+
+  it('plaza-shell inline PLAZA_TABS matches the canonical visible tabs', () => {
+    assert.deepEqual(parseInlineStringArray(shellSrc, 'PLAZA_TABS'), [...PLAZA_TABS])
+  })
+
+  it('plaza-shell inline PLAZA_HIDDEN_TABS matches the canonical hidden tabs', () => {
+    assert.deepEqual(parseInlineStringArray(shellSrc, 'PLAZA_HIDDEN_TABS'), [...PLAZA_HIDDEN_TABS])
+  })
+
+  it('hidden tabs are excluded from visible tabs and guarded in the tab bar', () => {
+    for (const tab of PLAZA_HIDDEN_TABS) {
+      assert.ok(!PLAZA_TABS.includes(tab), `${tab} must not be a visible tab`)
+      assert.ok(shellSrc.includes(`PLAZA_HIDDEN_TABS.includes("${tab}")`), `tab bar guard for ${tab}`)
     }
   })
 })

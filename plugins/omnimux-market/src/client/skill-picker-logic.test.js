@@ -2,7 +2,9 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
   CREATE_SKILL,
+  PLAZA_HIDDEN_TABS,
   PLAZA_INTENT_KEY,
+  PLAZA_TABS,
   SKILL_SHELF_TAGS,
   SKILL_SHELF_TAXONOMY,
   appendSkillGesture,
@@ -118,6 +120,20 @@ describe('skill picker logic', () => {
     assert.equal(writePlazaIntent('skills', storage), 'skills')
     assert.equal(store.get(PLAZA_INTENT_KEY), JSON.stringify({ tab: 'skills' }))
     assert.equal(consumePlazaIntent(storage), 'skills')
+    assert.equal(consumePlazaIntent(storage), null)
+  })
+
+  it('hidden plaza tabs are not valid intents (Issue #502)', () => {
+    const store = new Map()
+    const storage = {
+      setItem(k, v) { store.set(k, v) },
+      getItem(k) { return store.has(k) ? store.get(k) : null },
+      removeItem(k) { store.delete(k) },
+    }
+    assert.ok(PLAZA_HIDDEN_TABS.includes('connectors'))
+    assert.ok(!PLAZA_TABS.includes('connectors'))
+    assert.equal(writePlazaIntent('connectors', storage), 'skills')
+    storage.setItem(PLAZA_INTENT_KEY, JSON.stringify({ tab: 'connectors' }))
     assert.equal(consumePlazaIntent(storage), null)
   })
 
