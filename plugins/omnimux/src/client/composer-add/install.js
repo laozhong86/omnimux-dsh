@@ -4,10 +4,6 @@ import { AssetPickerModal } from './AssetPickerModal.jsx'
 import { getGlobalAttachmentStore } from '../attachments/store.ts'
 import { inferKindFromName } from './kind.js'
 import { installComposerAttachmentSubmitCapture } from './submit-inject.js'
-import { ADD_BUTTON_SELECTOR, bindAddButton, findAddButton, replayOfficialAdd, unbindAddButton } from './add-button.js'
-import { closeNativeAddMenu, nativeAddMenuIsOpen, openNativeAddMenu } from './menu-dom.js'
-
-export { ADD_BUTTON_SELECTOR, findAddButton, replayOfficialAdd }
 
 const HOST_ID = 'omnimux-composer-add-host'
 
@@ -116,6 +112,10 @@ function ensureHost(doc) {
 }
 
 /**
+ * Composer 附件业务侧：资产库 modal、本地文件物化、window 事件监听与
+ * 提交拦截。「+」菜单入口由 commands.js 通过官方 commandUi.register
+ * 贡献（合并进原生命令列表），这里不再拦截任何官方按钮。
+ *
  * @param {Document | null} doc
  * @param {{ t: (key: string, vars?: object) => string, store?: object }} options
  */
@@ -127,9 +127,6 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
   let modalRoot = null
   const state = {
     libraryOpen: false,
-    fileDisabled: false,
-    fileDisabledReason: '',
-    bypass: false,
   }
 
   const renderModal = () => {
@@ -168,9 +165,7 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
     }
     const picked = await requestJson('/omnimux/assets/pick', { kind: 'file' })
     if (picked.status === 501) {
-      state.fileDisabled = true
-      state.fileDisabledReason = tx(t, 'composerAdd.pickerUnsupported')
-      toast(state.fileDisabledReason)
+      toast(tx(t, 'composerAdd.pickerUnsupported'))
       return
     }
     const paths = Array.isArray(picked.body.paths) ? picked.body.paths.filter(Boolean) : []
@@ -187,72 +182,14 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
     }
   }
 
-  const showMenu = (button) => {
-    const sessionId = currentSessionId(store)
-    const rect = typeof button.getBoundingClientRect === 'function'
-      ? button.getBoundingClientRect()
-      : { bottom: 0, left: 0 }
-    if (nativeAddMenuIsOpen(doc)) {
-      closeNativeAddMenu(doc)
-      return
-    }
-    openNativeAddMenu(doc, {
-      anchor: rect,
-      t,
-      canAdd: Boolean(sessionId),
-      fileDisabled: state.fileDisabled,
-      fileDisabledReason: state.fileDisabledReason,
-      onCommand: () => {
-        closeNativeAddMenu(doc)
-        replayOfficialAdd(doc, state)
-      },
-      onAddFile: () => {
-        closeNativeAddMenu(doc)
-        void addLocalFiles(sessionId)
-      },
-      onAddLibrary: () => {
-        closeNativeAddMenu(doc)
-        state.libraryOpen = true
-        renderModal()
-      },
-    })
-  }
-
-  const onButtonClick = (event) => {
-    if (state.bypass) return
-    event.preventDefault()
-    event.stopImmediatePropagation()
-    showMenu(event.currentTarget)
-  }
-
-  const bindIfNeeded = () => {
-    const button = findAddButton(doc)
-    if (button) bindAddButton(button, onButtonClick)
-  }
-
-  const onPointerDown = (event) => {
-    if (!nativeAddMenuIsOpen(doc)) return
-    const target = event.target
-    if (target instanceof Element && target.closest('[data-omnimux-composer-add-menu]')) return
-    if (target instanceof Element && findAddButton(doc)?.contains(target)) return
-    closeNativeAddMenu(doc)
-  }
-
   const onKey = (event) => {
     if (event.key !== 'Escape') return
-    closeNativeAddMenu(doc)
     if (state.libraryOpen) {
       state.libraryOpen = false
       renderModal()
     }
   }
 
-  const observer = typeof MutationObserver === 'function'
-    ? new MutationObserver(() => { bindIfNeeded() })
-    : null
-  observer?.observe(doc.documentElement || doc.body, { childList: true, subtree: true })
-  bindIfNeeded()
-  doc.addEventListener('pointerdown', onPointerDown, true)
   doc.addEventListener('keydown', onKey)
   const onCmdFile = () => { void addLocalFiles(currentSessionId(store)) }
   const onCmdLibrary = () => { state.libraryOpen = true; renderModal() }
@@ -263,14 +200,10 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
   const stopSubmit = installComposerAttachmentSubmitCapture(doc, { store })
 
   return () => {
-    unbindAddButton(findAddButton(doc), onButtonClick)
-    doc.removeEventListener('pointerdown', onPointerDown, true)
     doc.removeEventListener('keydown', onKey)
     win?.removeEventListener?.('omnimux:composer-add-file', onCmdFile)
     win?.removeEventListener?.('omnimux:composer-add-library', onCmdLibrary)
-    observer?.disconnect()
     stopSubmit()
-    closeNativeAddMenu(doc)
     modalRoot?.unmount()
     host.remove()
   }

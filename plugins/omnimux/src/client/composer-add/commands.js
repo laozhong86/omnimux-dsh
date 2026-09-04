@@ -1,7 +1,12 @@
 /**
- * Fallback: put the two actions on the official slash/command menu so they
- * remain visible even if the + button intercept misses. Optional inject —
- * never add commandUi to the hub's top-level export.
+ * Sole entry path: contribute the two composer 添加 actions to the official
+ * slash/command menu via `commandUi.register`. The composer「+」button opens
+ * exactly this native command list (empty-query slash source), so the
+ * contributions appear in the「+」menu with name + description and support
+ * fuzzy search. Selecting one opens the official popupSelect layer with a
+ * single confirm row (the only official client-command UI pattern); its
+ * onSelect dispatches the business action. Optional inject — never add
+ * commandUi to the hub's top-level export.
  */
 
 /**
@@ -28,7 +33,7 @@ export function registerComposerAddCommands(ctx, actions) {
       ui: {
         kind: 'popupSelect',
         async options() {
-          return [{ id: 'pick', label: t('composerAdd.addFile') }]
+          return [{ id: 'pick', label: t('composerAdd.pickFiles') }]
         },
         onSelect() { actions.onAddFile() },
       },
@@ -40,7 +45,7 @@ export function registerComposerAddCommands(ctx, actions) {
       ui: {
         kind: 'popupSelect',
         async options() {
-          return [{ id: 'open', label: t('composerAdd.fromLibrary') }]
+          return [{ id: 'open', label: t('composerAdd.openLibrary') }]
         },
         onSelect() { actions.onAddLibrary() },
       },
