@@ -1,0 +1,58 @@
+{
+  "task": "composer-skill-picker",
+  "issue": 476,
+  "pr": 478,
+  "date": "2026-09-04",
+  "commit": "cd08876",
+  "l2": {
+    "topic": "skill-picker",
+    "plugin": "omnimux-market",
+    "port": 44203,
+    "url": "http://127.0.0.1:44203/",
+    "profile": "omnimux-dev-skill-picker",
+    "dshHome": "~/.dsh-dev/tasks/skill-picker"
+  },
+  "egoBrowser": {
+    "taskSpace": "composer skill picker L2 qa",
+    "taskSpaceId": 411,
+    "pageTitle": "DSH Local Build"
+  },
+  "assertions": [
+    {
+      "id": "AC-1",
+      "result": "pass",
+      "evidence": "Composer tools order: Commands, Access mode, Skill, Select model, Send; picker height 32px; Skill is to the right of Access mode"
+    },
+    {
+      "id": "AC-2",
+      "result": "pass",
+      "evidence": "dialog panel with Search skills, tabs All/Mine/Featured/Drama/Film/Animation, 20 rows, Explore more, + Create"
+    },
+    {
+      "id": "AC-6",
+      "result": "pass",
+      "evidence": "click 有声书 /audiobook → draft='/audiobook '; panel closed"
+    },
+    {
+      "id": "AC-8",
+      "result": "pass",
+      "evidence": "click + Create → draft='/audiobook /skill-creator '"
+    },
+    {
+      "id": "AC-7",
+      "result": "pass",
+      "evidence": "Explore more opens plaza with Skills tab selected (Plugins off)"
+    }
+  ],
+  "screenshots": [
+    "docs/evidence/2026-09-04-skill-picker-panel.jpg",
+    "docs/evidence/2026-09-04-skill-picker-explore-more.png"
+  ],
+  "unitTests": {
+    "command": "pnpm --filter omnimux-market test",
+    "pass": 277,
+    "fail": 0
+  },
+  "notes": "scripts/agent-live-qa.mjs against 44203 without launch token returns 401; browser QA used the token URL from host.log and is the L3 evidence.",
+  "verdict": "pass"
+}
