@@ -120,10 +120,10 @@ html[data-omnimux-sidebar-toggle-topbar]{
   --omnimux-topbar-toggle-end:calc(var(--omnimux-topbar-toggle-left) + var(--omnimux-topbar-toggle-size) + var(--omnimux-topbar-toggle-gap));
   --omnimux-tabbar-pad-left:0px;
 }
-html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"]{
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"],
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-topbar-new-session="1"]{
   position:fixed!important;
   top:var(--omnimux-topbar-toggle-top)!important;
-  left:var(--omnimux-topbar-toggle-left)!important;
   width:var(--omnimux-topbar-toggle-size)!important;
   height:var(--omnimux-topbar-toggle-size)!important;
   z-index:9999!important;
@@ -139,9 +139,20 @@ html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"
   cursor:pointer!important;
   box-sizing:border-box!important;
 }
-html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"]:hover{
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"]{
+  left:var(--omnimux-topbar-toggle-left)!important;
+}
+/* Collapsed only: new-session sits immediately right of the expand toggle. */
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-topbar-new-session="1"]{
+  left:var(--omnimux-topbar-new-session-left,calc(var(--omnimux-topbar-toggle-left) + var(--omnimux-topbar-toggle-size) + var(--omnimux-topbar-toggle-gap)))!important;
+}
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"]:hover,
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-topbar-new-session="1"]:hover{
   background:var(--dsw-alias-interactive-bg-hover)!important;
   color:var(--dsw-alias-label-primary)!important;
+}
+html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-topbar-new-session="1"] svg{
+  display:block;width:16px;height:16px;
 }
 /* Icon swap: collapse glyph while expanded, expand glyph while collapsed. */
 html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"] [data-omnimux-sidebar-toggle-icon]{display:none;}
@@ -232,6 +243,8 @@ export function ensureProductStageChrome() {
       // Slot host is a wrapper; the real chrome is the header descendant.
       || !text.includes('conversation.session.header"] header')
       || !text.includes('padding-left:var(--omnimux-topbar-toggle-end)')
+      || !text.includes('data-omnimux-topbar-new-session')
+      || !text.includes('--omnimux-topbar-new-session-left')
     if (stale) existing.textContent = PRODUCT_STAGE_CHROME
   } else {
     const style = document.createElement('style')

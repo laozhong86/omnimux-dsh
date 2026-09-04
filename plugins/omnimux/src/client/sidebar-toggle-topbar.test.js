@@ -8,6 +8,7 @@ import {
   LEFT_COLLAPSED_HTML_ATTR,
   SIDEBAR_TOGGLE_TOPBAR_ATTR,
   SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR,
+  TOPBAR_NEW_SESSION_ATTR,
   TOPBAR_TOGGLE_GAP_PX,
   TOPBAR_TOGGLE_LEFT_PX,
   TOPBAR_TOGGLE_RIGHT_MARGIN_PX,
@@ -18,6 +19,7 @@ import {
   computeTabBarPadLeft,
   computeToggleLeftPx,
   ensureSidebarToggleTopbar,
+  findOfficialNewSessionButton,
   findOfficialSidebarToggle,
   getExplicitLeftCollapseIntent,
   installSidebarToggleTopbar,
@@ -61,6 +63,7 @@ function setup(html) {
         <div class="logoRow_y">
           <button type="button" class="iconButton_z toggle_w" aria-label="打开侧边栏">T</button>
         </div>
+        <button type="button" class="newSession_n" aria-label="新建会话">新会话</button>
       </div>
     </div>
     <div class="tabBar_n" data-dsh-better-sidebar>
@@ -122,10 +125,16 @@ describe('ensureSidebarToggleTopbar', () => {
       doc.documentElement.style.getPropertyValue('--omnimux-topbar-toggle-left'),
       `${TOPBAR_TOGGLE_LEFT_PX}px`,
     )
+    // Collapsed cluster: toggle + gap + new-session + gap
     const expectedEnd = TOPBAR_TOGGLE_LEFT_PX + TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX
+      + TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX
     assert.equal(
       doc.documentElement.style.getPropertyValue('--omnimux-topbar-toggle-end'),
       `${expectedEnd}px`,
+    )
+    assert.equal(
+      doc.documentElement.style.getPropertyValue('--omnimux-topbar-new-session-left'),
+      `${TOPBAR_TOGGLE_LEFT_PX + TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX}px`,
     )
   })
 
@@ -187,7 +196,10 @@ describe('ensureSidebarToggleTopbar', () => {
 
   it('applyTopbarToggleCssVars accepts custom geometry', () => {
     const doc = setup()
+    // Collapsed fixture expands end by one extra control (size+gap).
     applyTopbarToggleCssVars(doc, { left: 80, size: 36, gap: 8 })
+    assert.equal(doc.documentElement.style.getPropertyValue('--omnimux-topbar-toggle-end'), '168px')
+    applyTopbarToggleCssVars(doc, { left: 80, size: 36, gap: 8, end: 124 })
     assert.equal(doc.documentElement.style.getPropertyValue('--omnimux-topbar-toggle-end'), '124px')
   })
 
@@ -226,7 +238,9 @@ describe('ensureSidebarToggleTopbar', () => {
 })
 
 describe('computeChromeLayout tab pad (overlap, not collapsed boolean)', () => {
+  // toggle + new-session cluster while collapsed
   const toggleEndCollapsed = TOPBAR_TOGGLE_LEFT_PX + TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX
+    + TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX
 
   function mockRect(el, { left, width, height = 900 }) {
     el.getBoundingClientRect = () => ({
@@ -331,10 +345,88 @@ describe('installSidebarToggleTopbar', () => {
     const doc = setup()
     const cleanup = installSidebarToggleTopbar(doc)
     assert.equal(doc.documentElement.hasAttribute(SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR), true)
+    assert.ok(doc.querySelector(`[${TOPBAR_NEW_SESSION_ATTR}="1"]`))
     cleanup()
     assert.equal(doc.documentElement.hasAttribute(SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR), false)
     assert.equal(doc.documentElement.hasAttribute(LEFT_COLLAPSED_HTML_ATTR), false)
     assert.equal(doc.querySelector(`[${SIDEBAR_TOGGLE_TOPBAR_ATTR}="1"]`), null)
+    assert.equal(doc.querySelector(`[${TOPBAR_NEW_SESSION_ATTR}="1"]`), null)
+  })
+})
+
+describe('topbar new-session control (collapsed only)', () => {
+  it('finds official new session by aria-label', () => {
+    const doc = setup()
+    const btn = findOfficialNewSessionButton(doc)
+    assert.ok(btn)
+    assert.equal(btn.getAttribute('aria-label'), '新建会话')
+  })
+
+  it('injects new-session when collapsed and removes when expanded', () => {
+    const doc = setup()
+    ensureSidebarToggleTopbar(doc)
+    const injected = doc.querySelector(`[${TOPBAR_NEW_SESSION_ATTR}="1"]`)
+    assert.ok(injected)
+    assert.equal(injected.getAttribute('aria-label'), '新建会话')
+    const tabBar = doc.querySelector('[class*="tabBar"]')
+    assert.ok(tabBar.contains(injected))
+
+    // Expand: drop collapse attr and re-ensure
+    doc.querySelector('[data-sidebar-collapsed]')?.removeAttribute('data-sidebar-collapsed')
+    setExplicitLeftCollapseIntent(false)
+    ensureSidebarToggleTopbar(doc)
+    assert.equal(doc.querySelector(`[${TOPBAR_NEW_SESSION_ATTR}="1"]`), null)
+    setExplicitLeftCollapseIntent(null)
+  })
+
+  it('click opens coordinator menu anchored to the topbar control', () => {
+    const doc = setup()
+    // setup() fixture is collapsed with an official newSession button; coordinator
+    // openCollapsedNewMenuAt succeeds (session-only menu when no project row).
+    ensureSidebarToggleTopbar(doc)
+    const btn = doc.querySelector(`[${TOPBAR_NEW_SESSION_ATTR}="1"]`)
+    assert.ok(btn)
+    btn.getBoundingClientRect = () => ({
+      x: 124, y: 4, left: 124, top: 4, width: 32, height: 32, right: 156, bottom: 36,
+    })
+    // Official rail button is off-screen / zeroed when left rail is collapsed.
+    const official = findOfficialNewSessionButton(doc)
+    if (official) {
+      official.getBoundingClientRect = () => ({
+        x: 0, y: 90, left: 0, top: 90, width: 0, height: 0, right: 0, bottom: 90,
+      })
+    }
+    btn.click()
+    const menu = doc.getElementById('omnimux-sidebar-new-menu')
+    assert.ok(menu, 'menu should open under the visible topbar control')
+    assert.equal(menu.style.left, '124px')
+    assert.equal(menu.style.top, '42px')
+  })
+
+  it('computeChromeLayout exposes newSessionLeft only when collapsed', () => {
+    const doc = setup()
+    const collapsed = computeChromeLayout(doc)
+    assert.equal(collapsed.collapsed, true)
+    assert.equal(
+      collapsed.newSessionLeft,
+      TOPBAR_TOGGLE_LEFT_PX + TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX,
+    )
+    assert.equal(
+      collapsed.toggleEnd,
+      TOPBAR_TOGGLE_LEFT_PX + TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX
+        + TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX,
+    )
+
+    doc.querySelector('[data-sidebar-collapsed]')?.removeAttribute('data-sidebar-collapsed')
+    const col = doc.querySelector('[class*="sidebarCol"]')
+    Object.defineProperty(col, 'offsetWidth', { value: 280, configurable: true })
+    const expanded = computeChromeLayout(doc)
+    assert.equal(expanded.collapsed, false)
+    assert.equal(expanded.newSessionLeft, null)
+    assert.equal(
+      expanded.toggleEnd,
+      expanded.toggleLeft + TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX,
+    )
   })
 })
 
@@ -365,6 +457,8 @@ describe('chrome CSS contracts (conversation-box PRODUCT_STAGE_CHROME)', () => {
     )
     assert.match(PRODUCT_STAGE_CHROME, /padding-left:\s*var\(--omnimux-topbar-toggle-end\)/)
     assert.match(PRODUCT_STAGE_CHROME, /padding-top:\s*var\(--omnimux-topbar-toggle-top/)
+    assert.match(PRODUCT_STAGE_CHROME, /data-omnimux-topbar-new-session/)
+    assert.match(PRODUCT_STAGE_CHROME, /--omnimux-topbar-new-session-left/)
     assert.match(PRODUCT_STAGE_CHROME, /::after/)
     assert.match(PRODUCT_STAGE_CHROME, /--dsw-alias-/)
     assert.doesNotMatch(PRODUCT_STAGE_CHROME, /#[0-9a-fA-F]{3,8}\b/)

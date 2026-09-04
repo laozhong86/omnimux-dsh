@@ -116,6 +116,32 @@ function closeNewMenu() {
   document.getElementById('omnimux-sidebar-new-menu')?.remove()
 }
 
+/**
+ * Place the collapsed new-menu under (preferred) or beside the anchor.
+ * Topbar cluster anchors must not use the hidden rail button's rect — that
+ * left the menu floating far from the visible control ("分裂").
+ * @param {HTMLElement} anchor
+ * @returns {{ left: number, top: number }}
+ */
+export function computeNewMenuPosition(anchor, viewport = typeof window !== 'undefined' ? window : undefined) {
+  const rect = anchor.getBoundingClientRect()
+  const vw = viewport?.innerWidth ?? 1280
+  const vh = viewport?.innerHeight ?? 800
+  const menuW = 180
+  const menuH = 96
+  const gap = 6
+  let left = Math.round(rect.left)
+  let top = Math.round(rect.bottom + gap)
+  // Prefer left-aligned under the anchor; clamp into the viewport.
+  if (left + menuW > vw - 8) left = Math.max(8, vw - menuW - 8)
+  if (left < 8) left = 8
+  // If not enough room below, flip above the anchor.
+  if (top + menuH > vh - 8) {
+    top = Math.max(8, Math.round(rect.top - menuH - gap))
+  }
+  return { left, top }
+}
+
 function openNewMenu(anchor, sessionBtn, projectBtn) {
   closeNewMenu()
   const menu = document.createElement('div')
@@ -145,13 +171,13 @@ function openNewMenu(anchor, sessionBtn, projectBtn) {
   })
   menu.append(sessionItem, projectItem)
   document.body.append(menu)
-  const rect = anchor.getBoundingClientRect()
-  const left = Math.min(rect.right + 8, Math.max(8, window.innerWidth - 180))
-  const top = Math.min(rect.top, Math.max(8, window.innerHeight - 96))
+  const { left, top } = computeNewMenuPosition(anchor)
   menu.style.left = `${left}px`
   menu.style.top = `${top}px`
   const onDoc = (event) => {
     if (menu.contains(event.target) || event.target === anchor) return
+    // Also keep open when clicking the topbar new-session control that opened it.
+    if (event.target instanceof Element && event.target.closest?.('[data-omnimux-topbar-new-session="1"]') === anchor) return
     closeNewMenu()
   }
   const onKey = (event) => {
@@ -164,6 +190,63 @@ function openNewMenu(anchor, sessionBtn, projectBtn) {
     document.removeEventListener('mousedown', onDoc, true)
     document.removeEventListener('keydown', onKey, true)
   }
+}
+
+/**
+ * Open the collapsed 「新建会话 / 新建项目」 menu anchored to a visible control
+ * (topbar new-session icon or rail plus). Returns false when the rail is
+ * expanded or the official triggers are missing.
+ * @param {HTMLElement | null | undefined} anchor
+ * @returns {boolean}
+ */
+export function openCollapsedNewMenuAt(anchor) {
+  if (!(anchor instanceof HTMLElement)) return false
+  if (!railCollapsed()) return false
+  const root = sidebarRoot()
+  const sessionBtn = root ? newSessionButton(root) : undefined
+  const projectBtn = INLINE_ROWS[0]?.element
+  if (!(sessionBtn instanceof HTMLElement)) return false
+  if (!(projectBtn instanceof HTMLElement)) {
+    // No project inline row registered yet — still offer new-session only.
+    closeNewMenu()
+    const menu = document.createElement('div')
+    menu.id = 'omnimux-sidebar-new-menu'
+    menu.className = 'omnimux-sidebar-new-menu'
+    menu.setAttribute('role', 'menu')
+    const sessionItem = document.createElement('button')
+    sessionItem.type = 'button'
+    sessionItem.setAttribute('role', 'menuitem')
+    sessionItem.textContent = sessionLabel(sessionBtn)
+    sessionItem.addEventListener('click', (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+      closeNewMenu()
+      skipNextCollapsedClick = true
+      sessionBtn.click()
+    })
+    menu.append(sessionItem)
+    document.body.append(menu)
+    const { left, top } = computeNewMenuPosition(anchor)
+    menu.style.left = `${left}px`
+    menu.style.top = `${top}px`
+    const onDoc = (event) => {
+      if (menu.contains(event.target) || event.target === anchor) return
+      closeNewMenu()
+    }
+    const onKey = (event) => {
+      if (event.key !== 'Escape') return
+      closeNewMenu()
+    }
+    document.addEventListener('mousedown', onDoc, true)
+    document.addEventListener('keydown', onKey, true)
+    menuDocCleanup = () => {
+      document.removeEventListener('mousedown', onDoc, true)
+      document.removeEventListener('keydown', onKey, true)
+    }
+    return true
+  }
+  openNewMenu(anchor, sessionBtn, projectBtn)
+  return true
 }
 
 function onCollapsedNewSessionClick(event) {
@@ -188,16 +271,20 @@ function bindCollapsedNewMenu(sessionBtn) {
   sessionBtn.addEventListener('click', onCollapsedNewSessionClick, true)
 }
 
+function isButtonEl(el) {
+  return el instanceof HTMLElement && typeof el.click === 'function' && el.tagName === 'BUTTON'
+}
+
 function newSessionButton(root) {
   const nested = root.querySelector('button[class*="newSession"]')
-  if (nested instanceof HTMLButtonElement) return nested
+  if (isButtonEl(nested)) return nested
   for (const child of root.children) {
-    if (child instanceof HTMLButtonElement) return child
+    if (isButtonEl(child)) return child
   }
   const byAria = root.querySelector(
     'button[aria-label="新建会话"], button[aria-label="New Session"], button[aria-label*="新会话"], button[aria-label*="new session" i]',
   )
-  if (byAria instanceof HTMLButtonElement) return byAria
+  if (isButtonEl(byAria)) return byAria
   return [...root.querySelectorAll('button')].find((button) => /新会话|新建会话|new session/i.test(button.textContent ?? ''))
 }
 
