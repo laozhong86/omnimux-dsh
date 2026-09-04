@@ -3,6 +3,8 @@ import { describe, it } from 'node:test'
 import {
   CREATE_SKILL,
   PLAZA_INTENT_KEY,
+  SKILL_SHELF_TAGS,
+  SKILL_SHELF_TAXONOMY,
   appendSkillGesture,
   buildSearchPayload,
   consumePlazaIntent,
@@ -16,6 +18,31 @@ import {
   writePickerCache,
   PICKER_CACHE_TTL_MS,
 } from './skill-picker-logic.js'
+
+describe('skill shelf taxonomy', () => {
+  it('locks the shelf order: 电商 first, 平台工具 last', () => {
+    assert.deepEqual([...SKILL_SHELF_TAGS], [
+      '电商', '商业广告', '短剧漫剧', '专业影视', '动画', '教育', '创意实验', '音频音乐', '平台工具',
+    ])
+  })
+
+  it('taxonomy rows carry unique ids, label keys and keyword lists', () => {
+    assert.equal(SKILL_SHELF_TAXONOMY.length, SKILL_SHELF_TAGS.length)
+    const ids = new Set()
+    const labelKeys = new Set()
+    for (const row of SKILL_SHELF_TAXONOMY) {
+      assert.ok(row.id && typeof row.id === 'string')
+      assert.ok(/^picker\.tab\./.test(row.labelKey), `labelKey for ${row.id}`)
+      assert.ok(Array.isArray(row.keywords) && row.keywords.includes(row.id))
+      assert.ok(!ids.has(row.id), `duplicate id ${row.id}`)
+      assert.ok(!labelKeys.has(row.labelKey), `duplicate labelKey ${row.labelKey}`)
+      ids.add(row.id)
+      labelKeys.add(row.labelKey)
+    }
+    assert.ok(Object.isFrozen(SKILL_SHELF_TAXONOMY))
+    assert.ok(Object.isFrozen(SKILL_SHELF_TAGS))
+  })
+})
 
 describe('skill picker logic', () => {
   it('builds /slug gestures with a trailing space', () => {

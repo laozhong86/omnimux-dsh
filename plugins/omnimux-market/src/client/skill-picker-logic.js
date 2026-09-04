@@ -14,17 +14,25 @@ export const PICKER_SEARCH_LIMIT = 20
 export const PICKER_DEBOUNCE_MS = 200
 export const PICKER_CACHE_TTL_MS = 90_000
 
-export const SKILL_SHELF_TAGS = Object.freeze([
-  '短剧漫剧',
-  '专业影视',
-  '动画',
-  '商业广告',
-  '电商',
-  '教育',
-  '创意实验',
-  '音频音乐',
-  '平台工具',
+/**
+ * Skill 货架分类法（Taxonomy）唯一语义真源。顺序即展示顺序。
+ * UI 片段（skill-picker.js / skill-plaza.js）因 concat 单 factory 约束内联副本，
+ * 由 skill-shelf-parity.test.js 对拍守卫，漂移即测试失败。
+ * keywords 为 L2/L3 兜底匹配词表，v1 收敛为 [id]；扩充需评估误命中（见 docs/design/2026-09-skill-shelf-filter-design.md）。
+ */
+export const SKILL_SHELF_TAXONOMY = Object.freeze([
+  { id: '电商', labelKey: 'picker.tab.ecom', keywords: Object.freeze(['电商']) },
+  { id: '商业广告', labelKey: 'picker.tab.ad', keywords: Object.freeze(['商业广告']) },
+  { id: '短剧漫剧', labelKey: 'picker.tab.drama', keywords: Object.freeze(['短剧漫剧']) },
+  { id: '专业影视', labelKey: 'picker.tab.film', keywords: Object.freeze(['专业影视']) },
+  { id: '动画', labelKey: 'picker.tab.anim', keywords: Object.freeze(['动画']) },
+  { id: '教育', labelKey: 'picker.tab.edu', keywords: Object.freeze(['教育']) },
+  { id: '创意实验', labelKey: 'picker.tab.lab', keywords: Object.freeze(['创意实验']) },
+  { id: '音频音乐', labelKey: 'picker.tab.audio', keywords: Object.freeze(['音频音乐']) },
+  { id: '平台工具', labelKey: 'picker.tab.platform', keywords: Object.freeze(['平台工具']) },
 ])
+
+export const SKILL_SHELF_TAGS = Object.freeze(SKILL_SHELF_TAXONOMY.map((row) => row.id))
 
 export const PICKER_TABS = Object.freeze([
   { id: 'all', kind: 'all' },
