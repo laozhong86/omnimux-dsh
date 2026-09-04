@@ -1,0 +1,33 @@
+{
+  "title": "blotato-skills suite git index acceptance",
+  "date": "2026-09-02T13:28:03Z",
+  "pr": "https://github.com/omnimux-ai/omnimux-dsh/pull/407",
+  "issue": "https://github.com/omnimux-ai/omnimux-dsh/issues/406",
+  "commit": "8e01d91",
+  "tests": {
+    "omnimux-market": "268/268 pass"
+  },
+  "materialize": {
+    "omnimux-dev": true,
+    "dsh_profile": true,
+    "post_merge_formal": true,
+    "allow_unmerged_used_pre_merge_only": true
+  },
+  "install": {
+    "home": "/Users/x/.dsh/skills",
+    "skills": [
+      "brand-brief",
+      "post-writer",
+      "post-grader"
+    ],
+    "source": "git Blotato-Inc/blotato-skills"
+  },
+  "host_note": "Live OmniMux PID uses DSH_HOME=~/.dsh; catalog Host-reload requires Host restart (agent must not kill App). Skills files already present on disk; session skill catalog already lists brand-brief/post-writer/post-grader.",
+  "ui_tab": "skills custom channel sk-omx-*",
+  "status": "MERGED_AND_SYNCED",
+  "mergeCommit": "33aedcfc892ab65438c47bc7dd8b47e1aca208ec",
+  "mergedAt": "2026-09-02T13:42:20Z",
+  "mainHeadAtCloseout": "706807abd9982e40775c052b1901f28771a24a28",
+  "worktree": "destroyed",
+  "branch": "deleted"
+}
