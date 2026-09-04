@@ -36,11 +36,48 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$ROOT/plugins}"
 DSH_SRC="${DSH_SRC:-/Users/x/Desktop/Project/Github/deepseek-harness}"
 DEV_HOME="${DSH_DEV_HOME:-$HOME/.dsh-dev}"
+# L2 任务 Host 的 DSH_HOME 根（与安装层无关）；仅用于 credentials 等可选种子。
 PROD_HOME="${DSH_HOME:-$HOME/.dsh}"
-PROD_PROFILE="$PROD_HOME/profiles/omnimux"
 L2_PORT_POOL_START="${OMNIMUX_L2_PORT_POOL_START:-44200}"
 L2_PORT_POOL_END="${OMNIMUX_L2_PORT_POOL_END:-44299}"
 LEGACY_HOME="${OMNIMUX_DEV_LEGACY_HOME:-0}"
+
+# L2 插件依赖种子 profile：克隆 package.json / cordis.patch.yml / node_modules（OmniMux 插件树）。
+# 官方 @deepseek-ai/* 不在此层。优先级：
+#   1) OMNIMUX_L2_SEED_PROFILE（显式；测试隔离也用这个）
+#   2) ~/.omnimux-dev/profiles/omnimux（日常 sync 目标，与 Dev App 对齐）
+#   3) ~/.omnimux/profiles/omnimux（正式 profile）
+#   4) $DSH_HOME/profiles/omnimux 或 ~/.dsh/profiles/omnimux（历史底座，可能含过期 better-sidebar）
+# 注意：即使 shell 导出了 DSH_HOME=~/.dsh，也优先 omnimux-dev，避免 L2 克隆过期种子。
+resolve_l2_seed_profile() {
+  local candidate
+  if [ -n "${OMNIMUX_L2_SEED_PROFILE:-}" ]; then
+    candidate="${OMNIMUX_L2_SEED_PROFILE}"
+    case "$candidate" in
+      /*|~*) eval candidate="$candidate" ;;
+    esac
+    if [ -d "$candidate/node_modules" ] && [ -f "$candidate/package.json" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+    echo "✗ OMNIMUX_L2_SEED_PROFILE 无效: ${OMNIMUX_L2_SEED_PROFILE}（需要 package.json + node_modules）" >&2
+    exit 1
+  fi
+  for candidate in \
+    "$HOME/.omnimux-dev/profiles/omnimux" \
+    "$HOME/.omnimux/profiles/omnimux" \
+    "${DSH_HOME:-$HOME/.dsh}/profiles/omnimux"; do
+    if [ -d "$candidate/node_modules" ] && [ -f "$candidate/package.json" ] && [ -f "$candidate/cordis.patch.yml" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  echo "✗ 未找到 L2 插件依赖种子 profile（试过 OMNIMUX_L2_SEED_PROFILE / ~/.omnimux-dev / ~/.omnimux / \$DSH_HOME）" >&2
+  echo "   请先 yarn omnimux:sync 物化到 Dev profile，或设置 OMNIMUX_L2_SEED_PROFILE。" >&2
+  exit 1
+}
+# 懒解析：仅 start 需要种子；ls/stop/rm 不依赖。
+PROD_PROFILE=""
 
 # Yarn Berry prepends a short-lived xfs bin directory to PATH. A detached
 # child can outlive that directory and fail with
@@ -176,32 +213,98 @@ assert_task_home_safe() {
   esac
 }
 
-# L2 源依赖预检：L2 profile 从生产 dsh 层（PROD_PROFILE）克隆依赖。若生产层本身
-# 缺核心包（如 @deepseek-ai/dsh-client-ui-chat 只有 README 无 lib），克隆后的 L2
-# 必然启动失败且要干等 20s。此处提前检查哨兵入口，缺失立即报清晰指引。
+# L2 Host 安装闭包预检：
+# Host 由 $DSH_SRC/apps/cli/lib/bin.js 启动；app-boot 以 apps/cli/package.json 为
+# installAnchor，经 healProfilesModuleFallback 投影官方包到
+# $DSH_HOME/profiles/node_modules。官方 @deepseek-ai/* 不在 PROD_PROFILE 私有
+# node_modules（该 scope 常态为空）—— 旧预检查 PROD_PROFILE 是 false-positive。
+# 此处检查：1) DSH_SRC CLI 可启动；2) 安装闭包能 resolve web-app → ui-chat；
+# 3) PROD_PROFILE 仅需 package.json + cordis.patch.yml + node_modules 作为
+# OmniMux 插件依赖种子（不要求 @deepseek-ai）。
 assert_l2_source_deps() {
   local profile_dir="$1"
-  [ -d "$profile_dir/node_modules" ] || { echo "· 生产 dsh 层无 node_modules，跳过预检" >&2; return 0; }
-  local nm="$profile_dir/node_modules"
-  local missing=0
-  local entry
-  for entry in \
-    "@deepseek-ai/dsh-client-ui-chat/lib/index.js" \
-    "@deepseek-ai/dsh-base/package.json" \
-    "@deepseek-ai/dsh-web-app/package.json" \
-    "dsh-better-sidebar/lib/client.js"; do
-    if [ ! -f "$nm/$entry" ]; then
-      echo "  - 缺失: $entry" >&2
-      missing=1
-    fi
-  done
-  if [ "$missing" -eq 1 ]; then
-    echo "✗ L2 源依赖不完整（生产 dsh 层缺失上述包/入口）。" >&2
-    echo "   这是 dsh 层依赖问题（从 ${profile_dir}/node_modules 克隆继承），不是本任务代码问题。" >&2
-    echo "   请先修复 dsh 层：yarn omnimux:sync（或完整安装），再重建 L2 环境：dev-env.sh rm <name> && start。" >&2
+  local cli_bin="$DSH_SRC/apps/cli/lib/bin.js"
+  local cli_pkg="$DSH_SRC/apps/cli/package.json"
+
+  if [ ! -f "$cli_bin" ]; then
+    echo "✗ L2 Host 启动器缺失: ${cli_bin}" >&2
+    echo "   设置 DSH_SRC 指向完整 deepseek-harness 克隆，并确保 apps/cli 已构建。" >&2
     exit 1
   fi
-  echo "✓ L2 源依赖完整"
+  if [ ! -f "$cli_pkg" ]; then
+    echo "✗ L2 安装锚点缺失: ${cli_pkg}" >&2
+    exit 1
+  fi
+
+  # 用 Node createRequire 复现 app-boot 的安装闭包解析（CLI → web-app → ui-chat）
+  local resolve_out
+  if ! resolve_out="$("$NODE_BIN" --input-type=module -e "
+import { createRequire } from 'node:module';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+const anchor = process.argv[1];
+const req = createRequire(anchor);
+let webApp;
+try { webApp = req.resolve('@deepseek-ai/dsh-web-app/package.json'); }
+catch (e) { console.error('MISS web-app: ' + (e.code || e.message)); process.exit(2); }
+const req2 = createRequire(webApp);
+let chat;
+try { chat = req2.resolve('@deepseek-ai/dsh-client-ui-chat/package.json'); }
+catch (e) { console.error('MISS ui-chat: ' + (e.code || e.message)); process.exit(3); }
+const chatLib = join(dirname(chat), 'lib/index.js');
+if (!existsSync(chatLib)) { console.error('MISS ui-chat lib: ' + chatLib); process.exit(4); }
+console.log('web-app=' + webApp);
+console.log('ui-chat=' + chat);
+" "$cli_pkg" 2>&1)"; then
+    echo "✗ L2 Host 安装闭包不完整（DSH_SRC 无法解析官方 client 包）。" >&2
+    echo "$resolve_out" | sed 's/^/  /' >&2
+    echo "   Host 安装锚点: ${cli_pkg}" >&2
+    echo "   修复：在 DSH_SRC monorepo 执行完整 install/build，确保 packages/client/ui-chat/lib 存在；" >&2
+    echo "   若走打包 App 安装层，需重打含 dsh-client-ui-chat 的 OmniMux 包（yarn omnimux:sync 只物化插件，不修官方 client 闭包）。" >&2
+    exit 1
+  fi
+
+  # PROD_PROFILE 仅作插件依赖种子；@deepseek-ai 缺失属常态，不阻断。
+  if [ ! -f "$profile_dir/package.json" ] || [ ! -f "$profile_dir/cordis.patch.yml" ]; then
+    echo "✗ L2 插件种子 profile 不完整: ${profile_dir}（需要 package.json + cordis.patch.yml）" >&2
+    echo "   这是 OmniMux profile 种子问题，不是官方 @deepseek-ai 闭包问题。" >&2
+    exit 1
+  fi
+  if [ ! -d "$profile_dir/node_modules" ]; then
+    echo "✗ L2 插件种子 profile 无 node_modules: ${profile_dir}" >&2
+    echo "   请先 yarn omnimux:sync 物化到 ~/.omnimux-dev，或设置 OMNIMUX_L2_SEED_PROFILE。" >&2
+    exit 1
+  fi
+
+  # better-sidebar 与 DSH_SRC dsh-settings API 对齐：旧种子仍 import settingsNamespace，
+  # 而 pin alpha.3 已移除该导出 → Host 启动直接炸。优先用 ~/.omnimux-dev 种子可避免。
+  local bs_lib="$profile_dir/node_modules/dsh-better-sidebar/lib/index.js"
+  if [ -f "$bs_lib" ] && grep -q 'settingsNamespace' "$bs_lib" 2>/dev/null; then
+    local settings_has_ns=0
+    if "$NODE_BIN" --input-type=module -e "
+import { createRequire } from 'node:module';
+const req = createRequire(process.argv[1]);
+const settingsPkg = req.resolve('@deepseek-ai/dsh-settings/package.json');
+const req2 = createRequire(settingsPkg);
+const mod = await import(req2.resolve('@deepseek-ai/dsh-settings'));
+if (!('settingsNamespace' in mod)) process.exit(5);
+" "$cli_pkg" >/dev/null 2>&1; then
+      settings_has_ns=1
+    fi
+    if [ "$settings_has_ns" -eq 0 ]; then
+      echo "✗ L2 插件种子中的 dsh-better-sidebar 与 DSH_SRC dsh-settings API 不兼容。" >&2
+      echo "   种子 better-sidebar 仍 import settingsNamespace，但当前 DSH_SRC（pin alpha.3）已无该导出。" >&2
+      echo "   种子路径: ${profile_dir}" >&2
+      echo "   修复：改用 ~/.omnimux-dev/profiles/omnimux 种子（yarn omnimux:sync 后的 Dev profile），" >&2
+      echo "   或 export OMNIMUX_L2_SEED_PROFILE=... 指向含兼容 better-sidebar 的 profile；" >&2
+      echo "   不要从过期的 ~/.dsh/profiles/omnimux 克隆。" >&2
+      exit 1
+    fi
+  fi
+
+  echo "✓ L2 Host 安装闭包完整（DSH_SRC → web-app → ui-chat）"
+  echo "  插件种子: ${profile_dir}"
+  echo "$resolve_out" | sed 's/^/  /'
 }
 
 # Resolve profile dir: prefer tasks/<name>/profiles/...；兼容旧 ~/.dsh-dev/profiles/...
@@ -469,15 +572,17 @@ case "$cmd" in
     mkdir -p "$(dirname "$pdir")"
 
     if [ ! -d "$pdir/node_modules" ]; then
-      # 新环境才做源依赖预检（既有环境已克隆过，直接复用）
+      # 新环境才做源依赖预检 + 克隆种子（既有环境已克隆过，直接复用）
+      PROD_PROFILE="$(resolve_l2_seed_profile)"
       assert_l2_source_deps "$PROD_PROFILE"
-      echo "→ 初始化环境 omnimux-dev-${name}（APFS 克隆生产依赖，秒级）"
+      echo "→ 初始化环境 omnimux-dev-${name}（从种子克隆插件依赖: ${PROD_PROFILE}）"
       mkdir -p "$pdir"
       cp "$PROD_PROFILE/package.json" "$PROD_PROFILE/cordis.patch.yml" "$pdir/"
       echo "store-dir=$pdir/.pnpm-store/v10" > "$pdir/.npmrc"
       cp -Rc "$PROD_PROFILE/node_modules" "$pdir/node_modules" 2>/dev/null \
         || cp -R "$PROD_PROFILE/node_modules" "$pdir/node_modules"
     elif [ ! -f "$pdir/cordis.patch.yml" ]; then
+      PROD_PROFILE="$(resolve_l2_seed_profile)"
       cp "$PROD_PROFILE/cordis.patch.yml" "$pdir/"
     fi
 
@@ -521,7 +626,12 @@ case "$cmd" in
       tail -n 15 "$pdir/host.log" 2>/dev/null >&2 || true
       if grep -q 'ERR_MODULE_NOT_FOUND' "$pdir/host.log" 2>/dev/null; then
         echo "⚠ Host 启动因依赖缺失失败（ERR_MODULE_NOT_FOUND）。" >&2
-        echo "   L2 依赖克隆自生产 dsh 层；若生产层缺包，请先 yarn omnimux:sync 修复，再 dev-env.sh rm ${name} && start。" >&2
+        if grep -q 'dsh-client-ui-chat' "$pdir/host.log" 2>/dev/null; then
+          echo "   缺失 @deepseek-ai/dsh-client-ui-chat：检查 DSH_SRC 安装闭包（apps/cli → dsh-web-app → ui-chat），" >&2
+          echo "   或重打含该包的桌面安装层。yarn omnimux:sync 只物化 OmniMux 插件，不会补官方 client 包。" >&2
+        else
+          echo "   检查 DSH_SRC monorepo 依赖是否完整；任务 profile: ${pdir}。" >&2
+        fi
       fi
       exit 1
     fi

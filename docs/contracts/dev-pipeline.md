@@ -146,10 +146,14 @@ omnimux-dev-products  → link: omnimux-products | 另一 L2 口         | DSH_H
   且所有同步目标都必须落在该前缀内；旧布尔 `OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1` 单独设置会被拒绝（已废弃）。
 - `wt:finish` 强制要求工作树存在 `.l2-dev.env`（`wt:dev` 写入：PORT/URL/COMMIT/SOURCE）作为合并前验证证据；
   仅 R3 / 纯文档 / 纯后端变更可用 `--skip-l2` 显式跳过。`wt:clean` 在合并后自动回收对应 L2 任务环境。
-- **L2 源依赖预检**：`dev-env.sh start` 在新环境初始化前检查生产 dsh 层核心依赖入口
-  （`@deepseek-ai/dsh-client-ui-chat` / `dsh-base` / `dsh-web-app` / `dsh-better-sidebar`）。
-  若生产 dsh 层缺包，先 `yarn omnimux:sync`（或完整安装）修复，再重建 L2 环境；
-  未修复前 L2 环境无法启动 Host，属 dsh 层问题，不是插件代码问题。
+- **L2 Host 安装闭包预检**：`dev-env.sh start` 在新环境初始化前检查 **`$DSH_SRC` 安装锚点**
+  （`apps/cli/package.json` → `@deepseek-ai/dsh-web-app` → `@deepseek-ai/dsh-client-ui-chat/lib`）。
+  官方 `@deepseek-ai/*` 由 app-boot 的 `healProfilesModuleFallback` 投影到任务
+  `$DSH_HOME/profiles/node_modules`，**不**来自 profile 私有 `node_modules`。
+- **L2 插件依赖种子**：克隆自 `OMNIMUX_L2_SEED_PROFILE` 或（默认）`~/.omnimux-dev/profiles/omnimux`
+  （与 Dev App / `yarn omnimux:sync` 对齐）；不再默认使用可能过期的 `~/.dsh/profiles/omnimux`
+  （曾出现同版本 `dsh-better-sidebar` 仍 import 已删除的 `settingsNamespace` 导致 Host 起不来）。
+  `yarn omnimux:sync` 只物化 OmniMux 插件树，不修官方 client 闭包；缺 `ui-chat` 时修 DSH_SRC 或重打安装层。
 
 ## 数据与排障
 
