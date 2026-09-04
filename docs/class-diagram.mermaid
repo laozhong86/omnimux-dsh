@@ -1,67 +1,166 @@
 classDiagram
-    class HubConfig {
-        +BrandConfig brand
-        +MediaConfig media
-        +OfficialConfig official
-        +AppsConfig apps
-        +TextConfig text
-        +GateConfig gate
+    direction TB
+
+    %% 数据实体与模型层
+    class MaterialNodeData {
+        +string label
+        +MaterialType materialType
+        +NodeKind nodeKind
+        +MaterialStatus status
+        +MaterialTool selectedTool
+        +string prompt
+        +VideoNodeParams params
+        +NodeFailStrategy failStrategy
     }
 
-    class GateConfig {
-        +boolean enabled
-        +Record~string, boolean~ tools
-        +MediaGateConfig media
-        +ModelsGateConfig models
-        +Record~string, unknown~ plugins
+    class VideoNodeParams {
+        +string model
+        +GenerationMode generationMode
+        +string aspectRatio
+        +string resolution
+        +number duration
+        +boolean sound
     }
 
-    class MediaGateConfig {
-        +boolean video
-        +boolean image
-        +boolean audio
+    class CapabilityModelItem {
+        +string id
+        +string label
+        +string badge
+        +string subtitle
+        +string family
+        +InputCapability inputCapability
+        +ModelParameterSchema parameters
     }
 
-    class ModelsGateConfig {
-        +Record~string, boolean~ textComplete
+    class InputCapability {
+        +string[] modalities
+        +ReferenceImagesCap referenceImages
+        +ReferenceAudiosCap referenceAudios
     }
 
-    class GateGuard {
-        +isGateActive(gate: GateConfig) boolean
-        +isToolEnabled(gate: GateConfig, toolName: string) boolean
-        +isMediaEnabled(gate: GateConfig, kind: string) boolean
-        +isModelEnabled(gate: GateConfig, modelId: string) boolean
-        +assertCapabilityEnabled(gate: GateConfig, capabilityName: string, kind?: string) void
+    class ReferenceImagesCap {
+        +number min
+        +number max
+        +string[] allowedMimeTypes
+        +string[] supportedRoles
     }
 
-    class OmnimuxError {
-        +string code
-        +string message
-        +ErrorOptions options
+    class ModelParameterSchema {
+        +AspectRatioSchema aspectRatio
+        +DurationSchema duration
+        +ResolutionSchema resolution
+        +SoundSchema sound
     }
 
-    class MediaMount {
-        +mountMedia(ctx, opts) void
+    %% 核心算法与工具类
+    class ViewportPositioner {
+        +GAP number
+        +VIEWPORT_PADDING number
+        +PANEL_WIDTH number
+        +PANEL_DEFAULT_MAX_HEIGHT number
+        +PANEL_MIN_HEIGHT number
+        +calculatePopoverPosition(triggerRect: DOMRect, viewportWidth: number, viewportHeight: number) PopoverPosition
     }
 
-    class TextMount {
-        +mountTextComplete(ctx, hub, jsonOut, onError) void
+    class PopoverPosition {
+        +Placement placement
+        +number top
+        +number bottom
+        +number left
+        +number maxHeight
+        +number width
     }
 
-    class OfficialMount {
-        +mountOfficial(ctx, deps) void
+    class VideoParamAdapter {
+        +isGenerationModeSupported(modelItem: CapabilityModelItem, mode: GenerationMode) boolean
+        +resolveSupportedGenerationModes(modelItem: CapabilityModelItem) GenerationModeOption[]
+        +validateAndFallback(params: VideoNodeParams, newModelItem: CapabilityModelItem) VideoNodeParams
+        +resolveEffectiveParams(params: VideoNodeParams, schema: ModelParameterSchema) EffectiveVideoParams
     }
 
-    class ReaderMount {
-        +mountReader(ctx, deps) void
+    class SummaryFormatter {
+        +formatSummary(params: EffectiveVideoParams) VideoSummaryResult
     }
 
-    HubConfig *-- GateConfig
-    GateConfig *-- MediaGateConfig
-    GateConfig *-- ModelsGateConfig
-    GateGuard ..> GateConfig : evaluates
-    GateGuard ..> OmnimuxError : throws on disabled
-    MediaMount ..> GateGuard : uses
-    TextMount ..> GateGuard : uses
-    OfficialMount ..> GateGuard : uses
-    ReaderMount ..> GateGuard : uses
+    class VideoSummaryResult {
+        +string textSummary
+        +SummaryItem[] items
+    }
+
+    class SummaryItem {
+        +string key
+        +string label
+        +string iconKind
+    }
+
+    %% UI 组件与容器层
+    class ConfigPanel {
+        -isExpanded boolean
+        -isPopoverOpen boolean
+        +handleModelChange(newModelId: string) void
+        +handleParamUpdate(key: string, value: unknown) void
+    }
+
+    class VideoTriggerBar {
+        +EffectiveVideoParams params
+        +boolean isOpen
+        +boolean disabled
+        +onToggle() void
+    }
+
+    class VideoParamPopover {
+        +PopoverPosition position
+        +EffectiveVideoParams params
+        +ModelParameterSchema schema
+        +CapabilityModelItem currentModel
+        +onParamChange(key: string, value: unknown) void
+        +onClose() void
+    }
+
+    class GenerationModeSegment {
+        +GenerationMode value
+        +GenerationModeOption[] options
+        +onChange(mode: GenerationMode) void
+    }
+
+    class AspectCardGrid {
+        +string value
+        +AspectRatioOption[] options
+        +onChange(ratio: string) void
+    }
+
+    class ResolutionSegment {
+        +string value
+        +ResolutionOption[] options
+        +onChange(res: string) void
+    }
+
+    class DurationGrid {
+        +number value
+        +DurationOption[] options
+        +onChange(dur: number) void
+    }
+
+    class SoundSwitchSegment {
+        +boolean value
+        +boolean visible
+        +onChange(sound: boolean) void
+    }
+
+    %% 关系映射
+    MaterialNodeData *-- VideoNodeParams : 持有
+    CapabilityModelItem *-- InputCapability : 声明
+    CapabilityModelItem *-- ModelParameterSchema : 包含
+    InputCapability *-- ReferenceImagesCap : 约束
+
+    ConfigPanel ..> VideoParamAdapter : 依赖校验与降级
+    ConfigPanel *-- VideoTriggerBar : 渲染底栏
+    ConfigPanel *-- VideoParamPopover : Portal 呼出
+    VideoTriggerBar ..> SummaryFormatter : 渲染格式化摘要
+    VideoParamPopover ..> ViewportPositioner : 空间弹性计算
+
+    VideoParamPopover *-- GenerationModeSegment : 模块1
+    VideoParamPopover *-- AspectCardGrid : 模块2
+    VideoParamPopover *-- ResolutionSegment : 模块3
+    VideoParamPopover *-- DurationGrid : 模块4
+    VideoParamPopover *-- SoundSwitchSegment : 模块5

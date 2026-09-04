@@ -11,7 +11,7 @@
  *    - 音频：[模型选择] | ⚙ 参数 | ⚡ 30 | [↑]
  */
 
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import {
   Maximize2,
   Minimize2,
@@ -47,6 +47,12 @@ import { useModelParameterSchema, getCachedCatalog } from '../../../hooks/useMod
 import { resolveNodeLifecycle } from '../../../utils/nodeMaterialLifecycle';
 import GenerateButton from './GenerateButton';
 import { resolveSavedModelForPicker } from './canonicalizeCatalogModelId';
+import { VideoTriggerBar } from './videoParams/VideoTriggerBar';
+import { VideoParamPopover } from './videoParams/VideoParamPopover';
+import {
+  resolveEffectiveVideoParams,
+  validateAndFallbackVideoParams,
+} from './videoParams/videoParamAdapter';
 
 export interface ConfigPanelProps {
   nodeId: string;
@@ -141,6 +147,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  // 视频参数浮层开合状态与触发条 ref（必须在 import 早退分支之前声明）
+  const [videoPopoverOpen, setVideoPopoverOpen] = useState(false);
+  const videoTriggerRef = useRef<HTMLDivElement | null>(null);
 
   const upstreams = useUpstreamMedia(nodeId);
 
@@ -305,14 +314,13 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
   // 动态读取当前模型的 Parameter Schema 及其选项
   const {
+    schema,
+    modelItem,
     aspectRatioOptions,
     defaultAspectRatio,
     isAspectRatioValid,
-    durationOptions,
     defaultDuration,
     isDurationValid,
-    resolutionOptions,
-    defaultResolution,
   } = useModelParameterSchema(materialType, modelValue, catalog);
 
   const updateParam = useCallback(
@@ -322,39 +330,27 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     [onUpdateNodeData, params],
   );
 
-  // 切换模型时的安全回退：检查画幅和时长是否依然合法，不合法则平滑降级
+  // 视频节点的有效参数（仅视频分支计算，结合 schema / modelItem 清洗校验）
+  const videoEffectiveParams = useMemo(
+    () =>
+      materialType === 'video'
+        ? resolveEffectiveVideoParams(params, schema, modelItem)
+        : null,
+    [materialType, params, schema, modelItem],
+  );
+
+  // 切换模型时的安全回退：委托 videoParamAdapter 校验画幅/时长/分辨率/音效并平滑降级
   const handleModelChange = useCallback(
     (newModelId: string) => {
       const activeCatalog = catalog ?? getCachedCatalog();
       const modelList = activeCatalog?.[materialType] ?? [];
       const newModelItem = modelList.find((m) => m.id === newModelId);
-      const newSchema = newModelItem?.parameters;
-
-      const nextParams: Record<string, unknown> = { ...params, model: newModelId };
-
-      if (params.aspectRatio && newSchema?.aspectRatio?.options) {
-        const isRatioSupported = newSchema.aspectRatio.options.some((opt) => opt.value === params.aspectRatio);
-        if (!isRatioSupported) {
-          nextParams.aspectRatio = newSchema.aspectRatio.defaultValue || '16:9';
-        }
+      if (!newModelItem) {
+        // 防御：目标模型不在目录中时仅更新 model 字段，其余参数维持现状
+        onUpdateNodeData({ params: { ...params, model: newModelId } });
+        return;
       }
-
-      if (typeof params.duration === 'number' && newSchema?.duration?.options) {
-        const isDurationSupported = newSchema.duration.options.some((opt) => opt.value === params.duration);
-        if (!isDurationSupported) {
-          nextParams.duration = newSchema.duration.defaultValue || newSchema.duration.options[0]?.value || 5;
-        }
-      }
-
-      if (params.resolution && newSchema?.resolution?.options) {
-        const isResolutionSupported = newSchema.resolution.options.some((opt) => opt.value === params.resolution);
-        if (!isResolutionSupported) {
-          nextParams.resolution = newSchema.resolution.defaultValue || newSchema.resolution.options[0]?.value;
-        }
-      } else if (params.resolution && newSchema && !newSchema.resolution?.options) {
-        delete nextParams.resolution;
-      }
-
+      const nextParams = validateAndFallbackVideoParams(params, newModelItem) as any;
       onUpdateNodeData({ params: nextParams });
     },
     [catalog, materialType, onUpdateNodeData, params],
@@ -388,14 +384,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     typeof params.duration === 'number' && isDurationValid(params.duration)
       ? params.duration
       : defaultDuration;
-
-  // 当前有效分辨率（带合法性防御兜底）
-  const isResolutionValid = (value: string | undefined) =>
-    !!value && resolutionOptions.some((opt) => opt.value === value);
-  const resolutionValue =
-    typeof params.resolution === 'string' && isResolutionValid(params.resolution)
-      ? params.resolution
-      : defaultResolution;
 
   // 当前选中模型能力与降级状态
   const activeCatalog = catalog ?? getCachedCatalog();
@@ -581,41 +569,17 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
             </>
           )}
 
-          {/* 视频专属参数胶囊 */}
-          {materialType === 'video' && (
+          {/* 视频专属参数胶囊：单行摘要 TriggerBar + Portal 浮层 */}
+          {materialType === 'video' && videoEffectiveParams && (
             <>
               <span className="wf-param-pill__divider">|</span>
-              <div className="wf-param-pill wf-param-pill--video-summary">
-                <CustomSelect
-                  className="wf-param-bar__select wf-param-bar__select--ghost"
-                  variant="ghost"
-                  value={aspectRatioValue}
-                  options={aspectRatioOptions}
-                  popupMatchSelectWidth={false}
-                  onChange={(value) => updateParam('aspectRatio', value)}
+              <div ref={videoTriggerRef} className="wf-video-trigger-bar__wrap">
+                <VideoTriggerBar
+                  params={videoEffectiveParams}
+                  isOpen={videoPopoverOpen}
+                  disabled={execBusy}
+                  onToggle={() => setVideoPopoverOpen((p) => !p)}
                 />
-                <span className="wf-param-pill__dot">·</span>
-                <CustomSelect
-                  className="wf-param-bar__select wf-param-bar__select--ghost"
-                  variant="ghost"
-                  value={durationValue}
-                  options={durationOptions}
-                  popupMatchSelectWidth={false}
-                  onChange={(value) => updateParam('duration', value)}
-                />
-                {resolutionOptions.length > 0 && (
-                  <>
-                    <span className="wf-param-pill__dot">·</span>
-                    <CustomSelect
-                      className="wf-param-bar__select wf-param-bar__select--ghost"
-                      variant="ghost"
-                      value={resolutionValue}
-                      options={resolutionOptions}
-                      popupMatchSelectWidth={false}
-                      onChange={(value) => updateParam('resolution', value)}
-                    />
-                  </>
-                )}
               </div>
             </>
           )}
@@ -660,6 +624,19 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
             />
           </div>
         </div>
+      )}
+
+      {/* 视频参数浮层（Portal 挂载，随面板根部渲染） */}
+      {materialType === 'video' && videoEffectiveParams && (
+        <VideoParamPopover
+          triggerRef={videoTriggerRef as React.RefObject<HTMLElement>}
+          params={videoEffectiveParams}
+          schema={schema}
+          modelItem={modelItem}
+          isOpen={videoPopoverOpen}
+          onClose={() => setVideoPopoverOpen(false)}
+          onParamChange={(key, value) => updateParam(key as string, value)}
+        />
       )}
     </div>
   );
