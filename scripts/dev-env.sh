@@ -15,6 +15,8 @@
 #
 # 用法：
 #   ./scripts/dev-env.sh start <name> <plugin>   # 建环境 + Host + 插件 watch（后台）
+#   ./scripts/dev-env.sh start <name> <plugin> --source=<worktree-root>
+#                                                # 用指定插件树根（工作树）作为源码源
 #   ./scripts/dev-env.sh stop <name>             # 停 Host + watch
 #   ./scripts/dev-env.sh ls                      # 列出现有dev 环境
 #   ./scripts/dev-env.sh rm <name>               # 停 Host/watch 并删除整个环境
@@ -90,6 +92,50 @@ unset npm_execpath npm_node_execpath BERRY_BIN_FOLDER
 usage() { sed -n '2,30p' "$0"; exit 1; }
 [ $# -lt 1 ] && usage
 cmd="$1"; name="${2:-}"
+
+# --source=<path> / --source <path>：把「源码源」指到插件树根（如某工作树目录）。
+# 未指定时保持默认（OMNIMUX_PLUGINS_DIR 或主仓 plugins）。归一化位置参数，
+# 使 start/watch 的 <plugin> 仍位于 $3，命令语义不变。
+SOURCE_DIR=""
+_args=()
+shift 2 2>/dev/null || true
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --source=*)
+      SOURCE_DIR="${1#--source=}"
+      ;;
+    --source)
+      if [ $# -ge 2 ]; then SOURCE_DIR="$2"; shift; fi
+      ;;
+    *)
+      _args+=("$1")
+      ;;
+  esac
+  shift
+done
+set -- "" "" ${_args[@]+"${_args[@]}"}
+
+if [ -n "$SOURCE_DIR" ]; then
+  case "$SOURCE_DIR" in
+    /*|~*) eval SOURCE_DIR="$SOURCE_DIR" ;;
+  esac
+  SOURCE_DIR="$(cd "$SOURCE_DIR" 2>/dev/null && pwd -P || true)"
+  if [ -z "$SOURCE_DIR" ]; then
+    echo "✗ --source 目录不存在: ${SOURCE_DIR}" >&2
+    exit 1
+  fi
+  if [ -d "$SOURCE_DIR/plugins" ]; then
+    PLUGINS_ROOT="$SOURCE_DIR/plugins"
+  elif [ "$(basename "$SOURCE_DIR")" = "plugins" ]; then
+    PLUGINS_ROOT="$SOURCE_DIR"
+  else
+    echo "✗ --source 必须是插件树根（含 plugins/ 子目录）: $SOURCE_DIR" >&2
+    exit 1
+  fi
+  # 子进程（watch-plugin.mjs）通过同一环境变量读取插件根
+  export OMNIMUX_PLUGINS_DIR="$PLUGINS_ROOT"
+  echo "· 源码源: $PLUGINS_ROOT"
+fi
 
 validate_task_name() {
   local n="$1"
@@ -511,7 +557,7 @@ case "$cmd" in
           exit 1
         fi
         if [[ ! "$cmdline" =~ "bin.js" ]] || [[ ! "$cmdline" =~ "omnimux-dev-$name" ]]; then
-          echo "✗ PID 身份校验失败：PID $old_pid 不属于任务 omnimux-dev-$name，跳过强杀以防误伤" >&2
+          echo "✗ PID 身份校验失败：PID ${old_pid} 不属于任务 omnimux-dev-${name}，跳过强杀以防误伤" >&2
         else
           echo "· 向旧 Host (PID: $old_pid) 发送 SIGTERM..."
           # 优先杀整个进程组
