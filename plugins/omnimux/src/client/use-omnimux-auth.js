@@ -98,6 +98,28 @@ export function runLogin(opts = {}) {
 }
 
 /**
+ * Apply a status HTTP result to the local auth phase.
+ * Live verify failures (non-401) must not force sign-out when a cached ready
+ * profile is already on screen — that would flash "signed out" on transient
+ * /self blips while the user still has a valid token.
+ *
+ * @param {{ ok?: boolean, status?: number, body?: any } | null | undefined} result
+ * @param {{ hadReady?: boolean, verify?: boolean }} [opts]
+ * @returns {'ready' | 'need-login' | 'keep'}
+ */
+export function decideAuthPhase(result, opts = {}) {
+  const verify = opts.verify === true
+  const hadReady = opts.hadReady === true
+  const body = result && result.body
+  if (body && body.logged_in === true) return 'ready'
+  if (!verify) return 'need-login'
+  // verify path: only a real token invalidation (or no prior ready row) signs out
+  if (result && Number(result.status) === 401) return 'need-login'
+  if (!hadReady) return 'need-login'
+  return 'keep'
+}
+
+/**
  * Device-login session for Apps and Settings profile.
  * @param {{ verifyOnMount?: boolean }} [opts]
  */
@@ -107,13 +129,50 @@ export function useOmnimuxAuth(opts = {}) {
 
   useEffect(() => {
     let cancelled = false
-    getStatus(verifyOnMount).then((result) => {
-      if (cancelled) return
-      if (result.body.logged_in) setState({ phase: 'ready', profile: result.body })
-      else setState({ phase: 'need-login' })
-    }).catch(() => {
-      if (!cancelled) setState({ phase: 'need-login' })
-    })
+
+    /**
+     * Profile tab wants live quota: paint the disk/session cache first, then
+     * hit `/self` via `verify=1` so each Settings → 个人资料 mount refreshes
+     * balance without a full-page spinner or a false sign-out on network blips.
+     */
+    async function load() {
+      if (!verifyOnMount) {
+        try {
+          const result = await getStatus(false)
+          if (cancelled) return
+          if (result.body?.logged_in) setState({ phase: 'ready', profile: result.body })
+          else setState({ phase: 'need-login' })
+        } catch {
+          if (!cancelled) setState({ phase: 'need-login' })
+        }
+        return
+      }
+
+      let hadReady = false
+      try {
+        const cached = await getStatus(false)
+        if (cancelled) return
+        if (cached.body?.logged_in) {
+          setState({ phase: 'ready', profile: cached.body })
+          hadReady = true
+        }
+      } catch {
+        // Host unreachable for the cache read; live verify is the next attempt.
+      }
+
+      try {
+        const live = await getStatus(true)
+        if (cancelled) return
+        const decision = decideAuthPhase(live, { hadReady, verify: true })
+        if (decision === 'ready') setState({ phase: 'ready', profile: live.body })
+        else if (decision === 'need-login') setState({ phase: 'need-login' })
+        // 'keep' → leave the cached ready row as-is
+      } catch {
+        if (!cancelled && !hadReady) setState({ phase: 'need-login' })
+      }
+    }
+
+    void load()
     return () => { cancelled = true }
   }, [verifyOnMount])
 
@@ -173,17 +232,25 @@ export function useOmnimuxAuth(opts = {}) {
   }
 
   /**
-   * Re-check the (non-verify) profile status without remounting. Used by the
-   * unified gate to refresh this section after a login it drove. Kept stable so
-   * `useOmnimuxAuth` callers can depend on it.
+   * Re-check profile status without remounting.
+   * - Default `verify: false` keeps the gate resume path cheap.
+   * - `verify: true` re-hits `/self` so quota/balance refresh after top-up or
+   *   after the unified gate finishes a login the profile card did not own.
+   * Kept stable so `useOmnimuxAuth` callers can depend on it.
+   *
+   * @param {{ verify?: boolean }} [opts]
    */
-  const recheck = useCallback(() => {
-    return getStatus(false).then((result) => {
-      if (result.body.logged_in) setState({ phase: 'ready', profile: result.body })
-      else setState({ phase: 'need-login' })
+  const recheck = useCallback((opts = {}) => {
+    const verify = opts.verify === true
+    return getStatus(verify).then((result) => {
+      if (result.body?.logged_in) {
+        setState({ phase: 'ready', profile: result.body })
+      } else if (decideAuthPhase(result, { hadReady: false, verify }) === 'need-login') {
+        setState({ phase: 'need-login' })
+      }
       return result
     }).catch(() => {
-      setState({ phase: 'need-login' })
+      if (!verify) setState({ phase: 'need-login' })
       return null
     })
   }, [])
