@@ -62,7 +62,7 @@ test('assemblePromptWithAttachments: 正确组装用户 Prompt 与多模态附�
   const assembled = assemblePromptWithAttachments(userPrompt, attachments);
 
   assert.match(assembled, /请帮我分析上述表格和视频的内容/);
-  assert.match(assembled, /### 📎 会话关联上下文 \(Attached Context\):/);
+  assert.match(assembled, /### 会话关联上下文 \(Attached Context\):/);
   assert.match(assembled, /- \[视频\] 主角镜头\.mp4 \(`MP4`, 0:31\): @assets\/videos\/shot1\.mp4/);
   assert.match(assembled, /- \[表格\] 未命名表格\.htable \(`HTABLE`\): @\.hilo\/tables\/node-tbl\.htable/);
   assert.match(assembled, /- \[文档\] 请创作一个\[时长\]的\[类\.md \(`MD`\): @prompts\/template\.md/);
@@ -71,4 +71,29 @@ test('assemblePromptWithAttachments: 正确组装用户 Prompt 与多模态附�
 test('assemblePromptWithAttachments: 空附件时保持原样返回', () => {
   const userPrompt = '普通用户输入';
   assert.equal(assemblePromptWithAttachments(userPrompt, []), userPrompt);
+});
+
+test('formatAttachmentLine: 资产多文件各写一行 @path', () => {
+  const line = formatAttachmentLine({
+    id: 'att-a',
+    fingerprint: 'fp-a',
+    sessionId: 'sess-1',
+    sourcePlugin: 'omnimux',
+    kind: 'asset',
+    entityId: 'ast_1',
+    title: '林晓',
+    extension: 'PNG',
+    relativePath: 'assets/imported/ast_1/hero.png',
+    status: 'ready',
+    createdAt: 1,
+    metadata: {
+      files: [
+        'assets/imported/ast_1/hero.png',
+        'assets/imported/ast_1/pose.png',
+      ],
+    },
+  });
+  assert.match(line, /\[资产\] 林晓/);
+  assert.match(line, /@assets\/imported\/ast_1\/hero\.png/);
+  assert.match(line, /@assets\/imported\/ast_1\/pose\.png/);
 });

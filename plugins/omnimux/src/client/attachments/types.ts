@@ -14,6 +14,7 @@ export type AttachmentKind =
   | 'inspiration';  // 灵感库条目
 
 export type AttachmentSourcePlugin =
+  | 'omnimux'
   | 'omnimux-workflow'
   | 'omnimux-assets'
   | 'omnimux-products'

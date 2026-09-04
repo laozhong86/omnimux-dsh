@@ -29,13 +29,25 @@ export function formatPathReference(relativePath: string): string {
 /**
  * 组装单个附件的 Markdown 描述行
  */
+function attachmentPaths(att: ConversationAttachment): string[] {
+  const extra = att.metadata && Array.isArray(att.metadata.files)
+    ? att.metadata.files.filter((row): row is string => typeof row === 'string' && row.length > 0)
+    : [];
+  if (extra.length > 0) return extra;
+  return att.relativePath ? [att.relativePath] : [];
+}
+
 export function formatAttachmentLine(att: ConversationAttachment): string {
   const kindLabel = KIND_LABELS[att.kind] || '文件';
   const ext = att.extension || 'FILE';
-  const pathRef = formatPathReference(att.relativePath);
   const durationPart = att.duration ? `, ${att.duration}` : '';
-
-  return `- [${kindLabel}] ${att.title} (\`${ext}\`${durationPart}): ${pathRef}`;
+  const paths = attachmentPaths(att);
+  if (paths.length <= 1) {
+    const pathRef = formatPathReference(paths[0] || att.relativePath);
+    return `- [${kindLabel}] ${att.title} (\`${ext}\`${durationPart}): ${pathRef}`;
+  }
+  const lines = paths.map((rel) => `  - ${formatPathReference(rel)}`);
+  return `- [${kindLabel}] ${att.title} (\`${ext}\`${durationPart}):\n${lines.join('\n')}`;
 }
 
 /**
@@ -47,7 +59,7 @@ export function buildAttachedContextBlock(attachments: readonly ConversationAtta
   }
 
   const lines = attachments.map(formatAttachmentLine);
-  return `\n\n---\n### 📎 会话关联上下文 (Attached Context):\n${lines.join('\n')}`;
+  return `\n\n---\n### 会话关联上下文 (Attached Context):\n${lines.join('\n')}`;
 }
 
 /**

@@ -90,7 +90,7 @@ export function apply(ctx, config = {}) {
     })
   }
 
-  const mountHttp = (httpCtx) => mountHubHttp(httpCtx, {
+  const httpDeps = {
     store,
     identity,
     siteBaseUrl,
@@ -107,7 +107,9 @@ export function apply(ctx, config = {}) {
     listCatalog,
     hubEvents,
     mailbox,
-  })
+    sessionQuery: null,
+  }
+  const mountHttp = (httpCtx) => mountHubHttp(httpCtx, httpDeps)
   if (typeof ctx.inject === 'function') {
     ctx.inject(['webServer'], (httpCtx) => {
       mountHttp(httpCtx)
@@ -115,6 +117,9 @@ export function apply(ctx, config = {}) {
       if (server && typeof server.register === 'function') {
         registerWorkbenchHttpRoutes(server, { hubEvents, mailbox })
       }
+    })
+    ctx.inject(['sessionQuery'], (inner) => {
+      httpDeps.sessionQuery = inner.sessionQuery ?? inner.get?.('sessionQuery') ?? null
     })
   } else {
     mountHttp(ctx)
