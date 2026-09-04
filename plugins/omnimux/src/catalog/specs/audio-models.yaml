@@ -1,5 +1,7 @@
 # 音频模型能力契约 (Audio Models Capability Contract)
-# H1: 全部 op draft + none|stub → listedOperations=[]；Whisper 不 listed
+# H2: 3 个 runtime audio ID 全处置。suno / gpt-4o-mini-tts 有 YAML ≠ live：
+#     仓内无 dated live 证据 → 保持 draft+stub。whisper-1 unavailable
+#     （无 speechToText live seam；speech_to_text 产出 text，不得入 audio 产出桶）。
 schemaVersion: "1.1"
 managementGroup: "audio"
 modality: "audio"
@@ -23,16 +25,24 @@ models:
             min: 1
             max: 1
     parameters:
-      duration: [30, 60, 120]
-      instrumental: true
+      duration:
+        options:
+          - { value: 30, label: "30s" }
+          - { value: 60, label: "60s" }
+          - { value: 120, label: "120s" }
+        defaultValue: 60
+        unit: "s"
+      instrumental:
+        supported: true
+        defaultValue: false
     research:
       status: "draft"
-      notes: "runtime AUDIO_MODEL_SPECS 有 suno；官方证据 URL 待 H2 补齐"
+      notes: "runtime AUDIO 目录有 suno；仓内无 dated live 证据，不上架"
     execution:
       status: "stub"
       profileId: "audioGenerate"
       seam: "audioGenerate"
-      notes: "H1: stub only"
+      notes: "stub only；不得宣称 live"
 
   - id: "gpt-4o-mini-tts"
     label: "GPT 4o Mini TTS"
@@ -52,14 +62,23 @@ models:
             min: 1
             max: 1
     parameters:
-      voice: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+      voice:
+        options:
+          - { value: "alloy", label: "Alloy (自然通用)" }
+          - { value: "echo", label: "Echo (沉稳男声)" }
+          - { value: "fable", label: "Fable (英式叙事)" }
+          - { value: "onyx", label: "Onyx (深沉厚重)" }
+          - { value: "nova", label: "Nova (明亮女声)" }
+          - { value: "shimmer", label: "Shimmer (清亮柔和)" }
+        defaultValue: "alloy"
     research:
       status: "draft"
+      notes: "runtime AUDIO 目录存在；仓内无 dated live 证据，不上架"
     execution:
       status: "stub"
       profileId: "audioGenerate"
       seam: "audioGenerate"
-      notes: "H1: stub only"
+      notes: "stub only；不得宣称 live"
 
   - id: "whisper-1"
     label: "Whisper 1"
@@ -82,12 +101,12 @@ models:
             maxSizeMb: 25
             limitSource:
               kind: "policy_conservative"
-              note: "OpenAI Whisper common 25MB class; seam not live in hub H1"
+              note: "OpenAI Whisper common 25MB class; seam not live in hub"
     parameters: {}
     research:
       status: "draft"
-      notes: "speech_to_text output is text; not listed until speechToText seam live; promptPolicy=none"
+      notes: "unavailable 处置：speech_to_text output 为 text；无 speechToText live seam 不上架；promptPolicy=none"
     execution:
       status: "none"
       profileId: "speechToText"
-      notes: "H1: speechToText profile unavailable / no live seam"
+      notes: "speechToText profile unavailable / no live seam"

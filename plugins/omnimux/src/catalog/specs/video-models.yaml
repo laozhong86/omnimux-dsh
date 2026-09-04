@@ -1,6 +1,10 @@
 # 视频模型能力契约 (Video Models Capability Contract)
-# H1: 全部 op research=draft + execution=stub|none → listedOperations=[]
-# 禁止 verified+live；Kling Avatar 不 listed；不审计 runtime limits（H2）
+# H2: 15 个 runtime video ID 全处置。
+# Batch A：seedance-2-0-fast 仅 text_to_video 有仓内 dated live 证据
+# （docs/evidence/2026-08-14-omnimux-video.md）→ verified+live；first_frame/multi_ref draft。
+# 冲突限制取更严：seedance 系与 grok video 的 video_multi_ref 一律 max:1 + policy_conservative
+# （不承诺 max4/max8，待 dated 复测放宽）。kling-avatar unavailable（mapper 丢 audioTrack）。
+# omni_flash / kling-o1 / kling-o3 / kling-v3-motion-control quarantine（无证据，仅占位契约，不上架）。
 schemaVersion: "1.1"
 managementGroup: "video"
 modality: "video"
@@ -24,6 +28,14 @@ models:
             source: "node_field"
             min: 1
             max: 1
+        research:
+          status: "verified"
+          docUrl: "docs/evidence/2026-08-14-omnimux-video.md"
+          verifiedAt: "2026-08-14"
+        execution:
+          status: "live"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
       - id: "first_frame"
         label: "首帧生视频"
         output:
@@ -46,6 +58,12 @@ models:
             limitSource:
               kind: "official_docs"
               url: "https://www.volcengine.com/docs/82379/1344485"
+        research:
+          status: "draft"
+        execution:
+          status: "stub"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
       - id: "video_multi_ref"
         label: "多图参考"
         output:
@@ -61,23 +79,45 @@ models:
             type: "image"
             role: "reference"
             source: "upstream_edge"
-            min: 1
-            max: 4
+            min: 0
+            max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "official_docs"
-              url: "https://www.volcengine.com/docs/82379/1344485"
+              kind: "policy_conservative"
+              note: "runtime 对账取更严：验证完成前单图/首帧，不承诺 max4；待 dated 复测放宽"
+        research:
+          status: "draft"
+        execution:
+          status: "stub"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
     parameters:
-      aspectRatio: ["16:9", "9:16", "1:1"]
-      duration: [4, 6, 8]
-      resolution: ["720P", "1080P"]
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 4, label: "4s" }
+          - { value: 6, label: "6s" }
+          - { value: 8, label: "8s" }
+        defaultValue: 4
+        unit: "s"
+      resolution:
+        options:
+          - { value: "720P", label: "720P" }
+          - { value: "1080P", label: "1080P" }
+        defaultValue: "720P"
     research:
-      status: "draft"
-      notes: "H1 zero listed claim; H2 re-audit strong live path"
-      docUrl: "https://www.volcengine.com/docs/82379/1344485"
+      status: "verified"
+      docUrl: "docs/evidence/2026-08-14-omnimux-video.md"
+      verifiedAt: "2026-08-14"
+      notes: "Batch A 仅 text_to_video 上架；first_frame/video_multi_ref 另证"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "videoGenerate"
       seam: "videoGenerate"
 
@@ -135,17 +175,31 @@ models:
             type: "image"
             role: "reference"
             source: "upstream_edge"
-            min: 1
-            max: 4
+            min: 0
+            max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "official_docs"
-              url: "https://www.volcengine.com/docs/82379/1344485"
+              kind: "policy_conservative"
+              note: "runtime 对账取更严：验证完成前单图/首帧，不承诺 max4；待 dated 复测放宽"
     parameters:
-      aspectRatio: ["16:9", "9:16", "1:1"]
-      duration: [5, 10]
-      resolution: ["720P", "1080P"]
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 10, label: "10s" }
+        defaultValue: 5
+        unit: "s"
+      resolution:
+        options:
+          - { value: "720P", label: "720P" }
+          - { value: "1080P", label: "1080P" }
+        defaultValue: "720P"
     research:
       status: "draft"
       docUrl: "https://www.volcengine.com/docs/82379/1344485"
@@ -193,12 +247,87 @@ models:
               kind: "official_docs"
               url: "https://www.volcengine.com/docs/82379/1344485"
     parameters:
-      aspectRatio: ["16:9", "9:16", "1:1"]
-      duration: [5]
-      resolution: ["720P"]
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+        defaultValue: 5
+        unit: "s"
+      resolution:
+        options:
+          - { value: "720P", label: "720P" }
+        defaultValue: "720P"
     research:
       status: "draft"
       docUrl: "https://www.volcengine.com/docs/82379/1344485"
+    execution:
+      status: "stub"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"
+
+  - id: "seedance2.5-stable-max-720p"
+    label: "Seedance 2.5 Stable Max"
+    family: "bytedance"
+    badge: "高画质稳定"
+    subtitle: "720P · ⏱ 5-10s"
+    operations:
+      - id: "text_to_video"
+        label: "文生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "first_frame"
+        label: "首帧生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "start_frame"
+            type: "image"
+            role: "first_frame"
+            source: "upstream_edge"
+            min: 1
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行；官方审计前保守"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 10, label: "10s" }
+        defaultValue: 5
+        unit: "s"
+      resolution:
+        options:
+          - { value: "720P", label: "720P" }
+        defaultValue: "720P"
+    research:
+      status: "draft"
+      notes: "runtime 存在；H2 契约占位；证据不足不上架"
     execution:
       status: "stub"
       profileId: "videoGenerate"
@@ -278,10 +407,26 @@ models:
               kind: "official_docs"
               url: "https://klingai.kuaishou.com/docs"
     parameters:
-      aspectRatio: ["16:9", "9:16", "1:1"]
-      duration: [5, 10]
-      resolution: ["1080P", "4K"]
-      sound: true
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 10, label: "10s" }
+        defaultValue: 5
+        unit: "s"
+      resolution:
+        options:
+          - { value: "1080P", label: "1080P" }
+          - { value: "4K", label: "4K" }
+        defaultValue: "1080P"
+      sound:
+        supported: true
+        defaultValue: true
     research:
       status: "draft"
       docUrl: "https://klingai.kuaishou.com/docs"
@@ -362,9 +507,22 @@ models:
               kind: "official_docs"
               url: "https://klingai.kuaishou.com/docs"
     parameters:
-      aspectRatio: ["16:9", "9:16", "1:1"]
-      duration: [5, 10]
-      resolution: ["1080P"]
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 10, label: "10s" }
+        defaultValue: 5
+        unit: "s"
+      resolution:
+        options:
+          - { value: "1080P", label: "1080P" }
+        defaultValue: "1080P"
     research:
       status: "draft"
       docUrl: "https://klingai.kuaishou.com/docs"
@@ -373,7 +531,7 @@ models:
       profileId: "videoGenerate"
       seam: "videoGenerate"
 
-  # 快手数字人 Kling Avatar：纯数字人口播；H1 不 listed；不吃粗 videoGenerate
+  # 快手数字人 Kling Avatar：纯数字人口播；unavailable（mapper 丢 audioTrack，执行未闭环）
   - id: "kling-avatar"
     label: "Kling Avatar (数字人)"
     family: "kling"
@@ -411,16 +569,26 @@ models:
               url: "https://klingai.kuaishou.com/docs/avatar"
             hint: "音频驱动口型与微表情"
     parameters:
-      aspectRatio: ["16:9", "9:16", "1:1"]
-      duration: [5, 10]
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 10, label: "10s" }
+        defaultValue: 5
+        unit: "s"
     research:
       status: "draft"
       docUrl: "https://klingai.kuaishou.com/docs/avatar"
-      notes: "H1 quarantine; dedicated videoDigitalHuman profile unavailable; mapper audio is H2"
+      notes: "unavailable 处置；dedicated videoDigitalHuman profile unavailable；mapper audio 未闭环"
     execution:
       status: "none"
       profileId: "videoDigitalHuman"
-      notes: "H1: unavailable dedicated profile; must not use coarse videoGenerate"
+      notes: "unavailable dedicated profile; must not use coarse videoGenerate"
 
   # 谷歌 Veo 系列：纯参考模式，无首尾帧
   - id: "veo-3.1"
@@ -455,7 +623,7 @@ models:
             type: "image"
             role: "reference"
             source: "upstream_edge"
-            min: 1
+            min: 0
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
@@ -463,9 +631,22 @@ models:
               kind: "official_docs"
               url: "https://deepmind.google/technologies/veo/"
     parameters:
-      aspectRatio: ["16:9", "9:16"]
-      duration: [5, 8]
-      resolution: ["1080P", "720P"]
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 8, label: "8s" }
+        defaultValue: 8
+        unit: "s"
+      resolution:
+        options:
+          - { value: "1080P", label: "1080P" }
+          - { value: "720P", label: "720P" }
+        defaultValue: "1080P"
     research:
       status: "draft"
       docUrl: "https://deepmind.google/technologies/veo/"
@@ -474,7 +655,71 @@ models:
       profileId: "videoGenerate"
       seam: "videoGenerate"
 
-  # xAI Grok 1.5 Video：区分首帧与多图参考 (1~8图)
+  - id: "veo-3.1-fast"
+    label: "Veo 3.1 Fast"
+    family: "veo"
+    badge: "极速"
+    subtitle: "720p-1080p · ⏱ 8s"
+    operations:
+      - id: "text_to_video"
+        label: "文生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "video_multi_ref"
+        label: "参考图生成"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_image"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行；官方审计前保守"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 8, label: "8s" }
+        defaultValue: 8
+        unit: "s"
+      resolution:
+        options:
+          - { value: "1080P", label: "1080P" }
+          - { value: "720P", label: "720P" }
+        defaultValue: "1080P"
+    research:
+      status: "draft"
+      notes: "runtime 存在；H2 契约占位；证据不足不上架"
+    execution:
+      status: "stub"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"
+
+  # xAI Grok 1.5 Video：首帧与参考图（验证前参考图取更严 max:1）
   - id: "grok-imagine-video-1-5"
     label: "Grok Imagine Video 1.5"
     family: "grok"
@@ -515,7 +760,7 @@ models:
               kind: "official_docs"
               url: "https://x.ai/api"
       - id: "video_multi_ref"
-        label: "多图参考"
+        label: "参考图生成"
         output:
           type: "video"
         inputs:
@@ -529,21 +774,34 @@ models:
             type: "image"
             role: "reference"
             source: "upstream_edge"
-            min: 1
-            max: 8
+            min: 0
+            max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "official_docs"
-              url: "https://x.ai/api"
+              kind: "policy_conservative"
+              note: "runtime 对账取更严：验证前参考图 max:1，不承诺 max8；待 dated 复测放宽"
     parameters:
-      aspectRatio: ["16:9", "9:16", "1:1"]
-      duration: [5]
-      resolution: ["1080P", "720P"]
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+        defaultValue: 5
+        unit: "s"
+      resolution:
+        options:
+          - { value: "1080P", label: "1080P" }
+          - { value: "720P", label: "720P" }
+        defaultValue: "1080P"
     research:
       status: "draft"
       docUrl: "https://x.ai/api"
-      notes: "H1 draft; runtime limit reconcile is H2"
+      notes: "draft；runtime 限制已对账写保守值"
     execution:
       status: "stub"
       profileId: "videoGenerate"
@@ -589,10 +847,29 @@ models:
               kind: "official_docs"
               url: "https://wan.aliyun.com"
     parameters:
-      aspectRatio: ["16:9", "9:16", "1:1", "4:3", "3:4"]
-      duration: [5, 10, 15]
-      resolution: ["1080P", "720P"]
-      sound: true
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "4:3", label: "4:3" }
+          - { value: "3:4", label: "3:4" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 10, label: "10s" }
+          - { value: 15, label: "15s" }
+        defaultValue: 5
+        unit: "s"
+      resolution:
+        options:
+          - { value: "1080P", label: "1080P" }
+          - { value: "720P", label: "720P" }
+        defaultValue: "1080P"
+      sound:
+        supported: true
+        defaultValue: false
     research:
       status: "draft"
       docUrl: "https://wan.aliyun.com"
@@ -600,3 +877,291 @@ models:
       status: "stub"
       profileId: "videoGenerate"
       seam: "videoGenerate"
+
+  # Quarantine 占位：无官方/执行证据；契约仅描述声称形状，禁止 listed
+  - id: "kling-o1"
+    label: "Kling O1"
+    family: "kling"
+    subtitle: "1080P · ⏱ 3-10s"
+    operations:
+      - id: "text_to_video"
+        label: "文生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "first_last_frame"
+        label: "首尾帧"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "first_frame"
+            type: "image"
+            role: "first_frame"
+            source: "upstream_edge"
+            min: 1
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 10
+            limitSource:
+              kind: "policy_conservative"
+              note: "quarantine 占位；继承 runtime 表行，无官方证据"
+          - slot: "last_frame"
+            type: "image"
+            role: "last_frame"
+            source: "upstream_edge"
+            min: 1
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 10
+            limitSource:
+              kind: "policy_conservative"
+              note: "quarantine 占位；继承 runtime 表行，无官方证据"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 10, label: "10s" }
+        defaultValue: 5
+        unit: "s"
+      resolution:
+        options:
+          - { value: "1080P", label: "1080P" }
+        defaultValue: "1080P"
+    research:
+      status: "draft"
+      notes: "quarantine：无官方/执行证据"
+    execution:
+      status: "none"
+      notes: "quarantine：无执行证据，不挂 profile"
+
+  - id: "kling-o3"
+    label: "Kling O3"
+    family: "kling"
+    subtitle: "4K · ⏱ 3-15s · 🔊"
+    operations:
+      - id: "text_to_video"
+        label: "文生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "first_last_frame"
+        label: "首尾帧"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "first_frame"
+            type: "image"
+            role: "first_frame"
+            source: "upstream_edge"
+            min: 1
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 10
+            limitSource:
+              kind: "policy_conservative"
+              note: "quarantine 占位；继承 runtime 表行，无官方证据"
+          - slot: "last_frame"
+            type: "image"
+            role: "last_frame"
+            source: "upstream_edge"
+            min: 1
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 10
+            limitSource:
+              kind: "policy_conservative"
+              note: "quarantine 占位；继承 runtime 表行，无官方证据"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 10, label: "10s" }
+          - { value: 15, label: "15s" }
+        defaultValue: 5
+        unit: "s"
+      resolution:
+        options:
+          - { value: "1080P", label: "1080P" }
+          - { value: "4K", label: "4K" }
+        defaultValue: "1080P"
+      sound:
+        supported: true
+        defaultValue: true
+    research:
+      status: "draft"
+      notes: "quarantine：无官方/执行证据"
+    execution:
+      status: "none"
+      notes: "quarantine：无执行证据，不挂 profile"
+
+  - id: "kling-v3-motion-control"
+    label: "Kling V3 运镜控制"
+    family: "kling"
+    badge: "运镜控制"
+    subtitle: "1080P · 运镜轨迹"
+    operations:
+      - id: "text_to_video"
+        label: "文生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "first_last_frame"
+        label: "首尾帧"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "first_frame"
+            type: "image"
+            role: "first_frame"
+            source: "upstream_edge"
+            min: 1
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 10
+            limitSource:
+              kind: "policy_conservative"
+              note: "quarantine 占位；继承 runtime 表行，无官方证据"
+          - slot: "last_frame"
+            type: "image"
+            role: "last_frame"
+            source: "upstream_edge"
+            min: 1
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 10
+            limitSource:
+              kind: "policy_conservative"
+              note: "quarantine 占位；继承 runtime 表行，无官方证据"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 10, label: "10s" }
+        defaultValue: 5
+        unit: "s"
+      resolution:
+        options:
+          - { value: "1080P", label: "1080P" }
+        defaultValue: "1080P"
+    research:
+      status: "draft"
+      notes: "quarantine：无官方/执行证据"
+    execution:
+      status: "none"
+      notes: "quarantine：无执行证据，不挂 profile"
+
+  - id: "omni_flash"
+    label: "Omni Flash Video"
+    family: "veo"
+    subtitle: "多时长视频"
+    operations:
+      - id: "text_to_video"
+        label: "文生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "video_multi_ref"
+        label: "参考图生成"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_image"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "policy_conservative"
+              note: "quarantine 占位；继承 runtime 表行，无官方证据"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 4, label: "4s" }
+          - { value: 6, label: "6s" }
+          - { value: 10, label: "10s" }
+        defaultValue: 6
+        unit: "s"
+      resolution:
+        options:
+          - { value: "720P", label: "720P" }
+        defaultValue: "720P"
+    research:
+      status: "draft"
+      notes: "quarantine：内部/不明 SKU，无官方/执行证据"
+    execution:
+      status: "none"
+      notes: "quarantine：无执行证据，不挂 profile"

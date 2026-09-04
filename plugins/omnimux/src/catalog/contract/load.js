@@ -485,6 +485,8 @@ export function normalizeModel(raw, ctx = {}) {
   if (typeof raw.family === 'string') model.family = raw.family;
   if (typeof raw.badge === 'string') model.badge = raw.badge;
   if (typeof raw.subtitle === 'string') model.subtitle = raw.subtitle;
+  // H2: chat directory role (flagship/classic) for the text facade projection
+  if (typeof raw.role === 'string') model.role = raw.role;
   if (raw.parameters && typeof raw.parameters === 'object') {
     model.parameters = { .../** @type {object} */ (raw.parameters) };
   }

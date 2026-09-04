@@ -1,9 +1,20 @@
 import assert from 'node:assert/strict'
+import { mkdtempSync, writeFileSync, readFileSync, copyFileSync, readdirSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { describe, it } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import { parseHubConfig } from '../config.js'
 import { IMAGE_MODEL_SPECS, VIDEO_MODEL_SPECS, AUDIO_MODEL_SPECS } from '../media/catalog.js'
-import { buildModelCatalog, resolveDefault } from './list.js'
+import { buildModelCatalog, fingerprintOf, resolveDefault } from './list.js'
 import { sortCatalogRows } from './sort.js'
+import { loadAll, resetContractCache, DEFAULT_SPECS_DIR } from './contract/load.js'
+
+const here = dirname(fileURLToPath(import.meta.url))
+
+function hub() {
+  return parseHubConfig({})
+}
 
 describe('sortCatalogRows', () => {
   it('sorts by label with numeric collation and does not mutate input', () => {
@@ -20,108 +31,165 @@ describe('sortCatalogRows', () => {
   })
 })
 
-describe('buildModelCatalog', () => {
-  it('returns sorted lists, fingerprint, and config defaults', () => {
-    const catalog = buildModelCatalog({ text: parseHubConfig({}).text, media: parseHubConfig({}).media, env: {} })
+describe('buildModelCatalog (H2 contract projection)', () => {
+  it('returns Catalog v1.1: models[] authority + listed-only four lists + defaults', () => {
+    const catalog = buildModelCatalog({ text: hub().text, media: hub().media, env: {} })
+    assert.equal(catalog.schemaVersion, '1.1')
     assert.equal(catalog.source, 'omnimux')
     assert.equal(typeof catalog.fingerprint, 'string')
     assert.equal(catalog.fingerprint.length, 16)
-    assert.equal(catalog.defaults.text, 'gemini-3.7-flash')
+    assert.equal(typeof catalog.contractFingerprint, 'string')
+    assert.equal(catalog.contractFingerprint.length, 16)
+
+    // authoritative flat list: all 41 contracted models with disposition governance
+    assert.equal(catalog.models.length, 41)
+    assert.equal(catalog.models.find((m) => m.id === 'whisper-1')?.disposition, 'unavailable')
+    assert.equal(catalog.models.find((m) => m.id === 'kling-avatar')?.disposition, 'unavailable')
+    assert.equal(catalog.models.find((m) => m.id === 'omni_flash')?.disposition, 'quarantine')
+    assert.equal(catalog.models.find((m) => m.id === 'nano_banana_2')?.aliases?.includes('nanobanana-2'), true)
+
+    // four lists derive ONLY from listed ops' output.type
+    assert.deepEqual(catalog.image.map((row) => row.id).sort(), ['gpt-image-2', 'grok-imagine-image'])
+    assert.deepEqual(catalog.video.map((row) => row.id), ['seedance-2-0-fast'])
+    assert.deepEqual(catalog.audio, [])
+    // Batch A lock: all chat/vision_chat ops are draft/stub → text bucket empty
+    assert.deepEqual(catalog.text.map((row) => row.id), [])
+
+    // unavailable / quarantine never appear in any bucket
+    for (const kind of ['text', 'image', 'video', 'audio']) {
+      for (const forbidden of ['whisper-1', 'kling-avatar', 'omni_flash', 'kling-o1', 'kling-o3', 'kling-v3-motion-control']) {
+        assert.equal(catalog[kind].some((row) => row.id === forbidden), false, `${kind}:${forbidden}`)
+      }
+    }
+    // nanobanana: underscore canonical only, hyphen alias never double listed
+    assert.equal(catalog.image.some((row) => row.id === 'nanobanana-2'), false)
+
+    // defaults: config defaults survive where listed; text/audio have no listed row
+    assert.equal(catalog.defaults.text, '') // Batch A lock: no listed chat op
     assert.equal(catalog.defaults.image, 'gpt-image-2')
     assert.equal(catalog.defaults.video, 'seedance-2-0-fast')
-    assert.equal(catalog.defaults.audio, 'suno')
-    assert.ok(catalog.text.length >= 5)
-    assert.equal(catalog.image.length, IMAGE_MODEL_SPECS.length)
-    assert.equal(catalog.video.length, VIDEO_MODEL_SPECS.length)
-    assert.equal(catalog.audio.length, AUDIO_MODEL_SPECS.length)
-    assert.ok(catalog.image.some((row) => row.id === 'gpt-image-2' && row.parameters))
-    assert.ok(catalog.video.some((row) => row.id === 'kling-o1'))
-    assert.ok(catalog.video.some((row) => row.id === 'wan-3.0'))
-    assert.ok(catalog.video.some((row) => row.id === 'grok-imagine-video-1-5'))
-    assert.equal(catalog.video.some((row) => row.id === 'grok-imagine-video'), false)
-    assert.equal(catalog.video.some((row) => row.id === 'grok-imagine-video-1.5'), false)
-    const labels = catalog.text.map((row) => row.label)
-    const sorted = [...labels].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
-    assert.deepEqual(labels, sorted)
-    assert.equal(catalog.text.find((row) => row.id === 'claude-opus-4-6')?.label, 'Claude Opus 4.6')
-    assert.equal(catalog.text.find((row) => row.id === 'deepseek-v4-flash-vision-exp')?.label, 'DeepSeek V4 Flash')
-    assert.equal(catalog.text.find((row) => row.id === 'gpt-5.5')?.label, 'GPT 5.5')
+    assert.equal(catalog.defaults.audio, '')
+    assert.equal(catalog.defaultsByOperation.text_to_video, 'seedance-2-0-fast')
+    assert.equal(catalog.defaultsByOperation.text_to_image, 'gpt-image-2')
+
+    // text bucket is empty under the Batch A lock; hyphen-free labels are covered
+    // by the display-label contract over TEXT_MODEL_LABELS
+    assert.equal(catalog.text.length, 0)
   })
 
   it('forbids ASCII hyphen-minus in every catalog model label', () => {
-    const catalog = buildModelCatalog({ text: parseHubConfig({}).text, media: parseHubConfig({}).media, env: {} })
+    const catalog = buildModelCatalog({ text: hub().text, media: hub().media, env: {} })
     for (const kind of ['text', 'image', 'video', 'audio']) {
       for (const row of catalog[kind]) {
-        assert.equal(
-          typeof row.label,
-          'string',
-          `${kind}/${row.id} missing label`,
-        )
-        assert.doesNotMatch(
-          row.label,
-          /-/,
-          `${kind} model label must not contain '-': ${row.id} → ${row.label}`,
-        )
+        assert.equal(typeof row.label, 'string', `${kind}/${row.id} missing label`)
+        assert.doesNotMatch(row.label, /-/, `${kind} model label must not contain '-': ${row.id} → ${row.label}`)
       }
     }
   })
 
-  it('lets env overlay defaults without shrinking lists', () => {
-    const hub = parseHubConfig({})
+  it('lets env overlay defaults when the id is listed; ignores unlisted ids', () => {
+    const h = hub()
     const catalog = buildModelCatalog({
-      text: hub.text,
-      media: hub.media,
+      text: h.text,
+      media: h.media,
       env: { OMNIMUX_VIDEO_MODEL: 'kling-o1', OMNIMUX_TEXT_DEFAULT_MODEL: 'gpt-5.5' },
     })
-    assert.equal(catalog.defaults.video, 'kling-o1')
-    assert.equal(catalog.defaults.text, 'gpt-5.5')
-    assert.equal(catalog.video.length, VIDEO_MODEL_SPECS.length)
-    assert.ok(catalog.video.some((row) => row.id === 'seedance-2-0-fast'))
+    // kling-o1 is quarantine → not listed → env overlay refused
+    assert.equal(catalog.defaults.video, 'seedance-2-0-fast')
+    // gpt-5.5 chat is draft/stub under the Batch A lock → not listed → env overlay refused
+    assert.equal(catalog.defaults.text, '')
   })
 
   it('ignores env / settings ids that are not in the list', () => {
-    const hub = parseHubConfig({})
+    const h = hub()
     const catalog = buildModelCatalog({
-      text: hub.text,
-      media: hub.media,
+      text: h.text,
+      media: h.media,
       env: { OMNIMUX_VIDEO_MODEL: 'not-a-real-model' },
       settingsDefaults: { defaultTextModel: 'totally-fake' },
     })
     assert.equal(catalog.defaults.video, 'seedance-2-0-fast')
-    assert.equal(catalog.defaults.text, 'gemini-3.7-flash')
+    assert.equal(catalog.defaults.text, '') // no listed text row under the Batch A lock
   })
 
   it('prefers settings overlay over config when env is absent', () => {
-    const hub = parseHubConfig({})
+    const h = hub()
     const catalog = buildModelCatalog({
-      text: hub.text,
-      media: hub.media,
+      text: h.text,
+      media: h.media,
       env: {},
-      settingsDefaults: { defaultImageModel: 'nanobanana-2', defaultAudioModel: 'gpt-4o-mini-tts' },
+      settingsDefaults: { defaultImageModel: 'grok-imagine-image', defaultAudioModel: 'gpt-4o-mini-tts' },
     })
-    assert.equal(catalog.defaults.image, 'nanobanana-2')
-    assert.equal(catalog.defaults.audio, 'gpt-4o-mini-tts')
-    assert.equal(catalog.image.length, IMAGE_MODEL_SPECS.length)
+    assert.equal(catalog.defaults.image, 'grok-imagine-image')
+    // audio list is empty (suno / tts draft) → settings id refused, default empty
+    assert.equal(catalog.defaults.audio, '')
   })
 
   it('empties a media kind when the gate disables it', () => {
-    const hub = parseHubConfig({ gate: { media: { video: false } } })
-    const catalog = buildModelCatalog({ text: hub.text, media: hub.media, gate: hub.gate, env: {} })
+    const h = parseHubConfig({ gate: { media: { video: false } } })
+    const catalog = buildModelCatalog({ text: h.text, media: h.media, gate: h.gate, env: {} })
     assert.deepEqual(catalog.video, [])
     assert.equal(catalog.defaults.video, '')
     assert.ok(catalog.image.length > 0)
   })
 
-  it('hides a gated text model from the list', () => {
-    const hub = parseHubConfig({ gate: { models: { textComplete: { 'grok-4.6': false } } } })
-    const catalog = buildModelCatalog({ text: hub.text, media: hub.media, gate: hub.gate, env: {} })
-    assert.ok(!catalog.text.some((row) => row.id === 'grok-4.6'))
-    assert.ok(catalog.text.some((row) => row.id === 'gemini-3.7-flash'))
+  it('text bucket stays empty under the Batch A lock regardless of the model gate', () => {
+    const h = parseHubConfig({ gate: { models: { textComplete: { 'grok-4.6': true } } } })
+    const catalog = buildModelCatalog({ text: h.text, media: h.media, gate: h.gate, env: {} })
+    // chat/vision_chat are all draft/stub (Batch A lock) → the gate cannot resurrect them
+    assert.deepEqual(catalog.text, [])
+  })
+
+  it('fingerprint changes when the contract changes (limit/MIME/listed sensitivity)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omx-fp-'))
+    for (const name of readdirSync(DEFAULT_SPECS_DIR)) {
+      copyFileSync(join(DEFAULT_SPECS_DIR, name), join(dir, name))
+    }
+    resetContractCache()
+    const baseIndex = loadAll(DEFAULT_SPECS_DIR, { useCache: false })
+    const h = hub()
+    const base = buildModelCatalog({ text: h.text, media: h.media, env: {}, contractIndex: baseIndex })
+
+    writeFileSync(
+      join(dir, 'image-models.yaml'),
+      readFileSync(join(dir, 'image-models.yaml'), 'utf8').replace('maxSizeMb: 10', 'maxSizeMb: 12'),
+    )
+    const changedIndex = loadAll(dir, { useCache: false })
+    assert.notEqual(changedIndex.contentFingerprint, baseIndex.contentFingerprint)
+    const changed = buildModelCatalog({ text: h.text, media: h.media, env: {}, contractIndex: changedIndex })
+    assert.notEqual(changed.fingerprint, base.fingerprint)
+    assert.equal(changed.contractFingerprint, changedIndex.contentFingerprint)
+  })
+
+  it('fingerprintOf legacy two-arg overload stays deterministic', () => {
+    const lists = { text: [{ id: 'a' }], image: [], video: [], audio: [] }
+    const defaults = { text: 'a', image: '', video: '', audio: '' }
+    assert.equal(fingerprintOf(lists, defaults), fingerprintOf(lists, defaults))
+    assert.equal(fingerprintOf(lists, defaults).length, 16)
+  })
+
+  it('fail-closed: broken contract index throws instead of serving a silent catalog', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omx-broken-list-'))
+    writeFileSync(join(dir, 'broken.yaml'), 'schemaVersion: "1.1"\nmodels: [unclosed\n')
+    const broken = loadAll(dir, { useCache: false })
+    const h = hub()
+    assert.throws(
+      () => buildModelCatalog({ text: h.text, media: h.media, env: {}, contractIndex: broken }),
+      /parse failure/,
+    )
+  })
+})
+
+describe('media facade tables (derived from contracts)', () => {
+  it('facade SPECS are the full contracted directory (listed or not)', () => {
+    assert.equal(IMAGE_MODEL_SPECS.length, 12)
+    assert.equal(VIDEO_MODEL_SPECS.length, 15)
+    assert.equal(AUDIO_MODEL_SPECS.length, 3)
   })
 })
 
 describe('resolveDefault', () => {
-  it('walks env → settings → config → first sorted id', () => {
+  it('walks env → settings → config → fallback', () => {
     const ids = new Set(['a', 'b'])
     assert.equal(resolveDefault({
       kind: 'text',

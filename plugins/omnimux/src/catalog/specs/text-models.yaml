@@ -1,13 +1,22 @@
 # 文本模型能力契约 (Text Models Capability Contract)
-# H1: managementGroup 仅分组；output.type 显式；全部 op research=draft / execution=none → listedOperations=[]
+# H2: 11 个 runtime CHAT_MODELS 全处置；extra 三 ID（deepseek-v3/deepseek-r1/gpt-4o）
+#     无 runtime/wire 引用，已删除（禁止幽灵上架）。
+# listed 仅 operation 级。H2 产品锁定 Batch A：全仓仅 3 条媒体 op 允许 listed
+# （seedance-2-0-fast#text_to_video / gpt-image-2#text_to_image /
+#  grok-imagine-image#text_to_image）；chat/vision_chat 一律 research:draft +
+# execution:stub，不 listed——禁止因「runtime 能聊」就标 verified+live。
+# 契约槽位（operations/inputs/limits/profileId/seam）与处置表保留；dated 探针
+# 证据以 docUrl 引用保留，待后续批次逐 op 复审放行。
+# 证据纪律：verified 必须 docUrl + verifiedAt（dated、仓内可引用）。
 schemaVersion: "1.1"
 managementGroup: "text"
 modality: "text"
 
 models:
-  - id: "deepseek-v3"
-    label: "DeepSeek V3"
-    family: "deepseek"
+  - id: "claude-opus-5"
+    label: "Claude Opus 5"
+    family: "anthropic"
+    role: "flagship"
     operations:
       - id: "chat"
         label: "文本对话"
@@ -20,20 +29,32 @@ models:
             source: "node_field"
             min: 1
             max: 1
+        research:
+          status: "verified"
+          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+          verifiedAt: "2026-08-18"
+          notes: "Anthropic /v1/messages 200；chat-completions group 当前 403"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "hub chat-completions 通道对该 key 403（Claude Code group 限定）；不宣称 live"
     research:
-      status: "draft"
-      notes: "YAML 草稿 ID；runtime CHAT_MODELS 使用 deepseek-v4-* 等，H2 对齐"
+      status: "verified"
+      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+      verifiedAt: "2026-08-18"
     execution:
-      status: "none"
-      notes: "未与 runtime text catalog id 对齐前不标 live"
+      status: "stub"
+      profileId: "textComplete"
+      seam: "textComplete"
 
-  - id: "deepseek-r1"
-    label: "DeepSeek R1"
-    family: "deepseek"
-    badge: "深度推理"
+  - id: "claude-opus-4-6"
+    label: "Claude Opus 4.6"
+    family: "anthropic"
+    role: "flagship"
     operations:
       - id: "chat"
-        label: "推理对话"
+        label: "文本对话"
         output:
           type: "text"
         inputs:
@@ -43,28 +64,17 @@ models:
             source: "node_field"
             min: 1
             max: 1
-    research:
-      status: "draft"
-    execution:
-      status: "none"
-
-  - id: "gpt-4o"
-    label: "GPT 4o"
-    family: "openai"
-    operations:
-      - id: "chat"
-        label: "通用对话"
-        output:
-          type: "text"
-        inputs:
-          - slot: "prompt"
-            type: "text"
-            role: "prompt"
-            source: "node_field"
-            min: 1
-            max: 1
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
+          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
       - id: "vision_chat"
-        label: "多模态视觉理解"
+        label: "图文对话"
         output:
           type: "text"
         inputs:
@@ -78,15 +88,549 @@ models:
             type: "image"
             role: "reference"
             source: "upstream_edge"
+            min: 0
+            max: 10
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "measured"
+              note: "runtime 测量矩阵 max10；官方上限待审计"
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
+          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+    research:
+      status: "draft"
+      docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
+    execution:
+      status: "stub"
+      profileId: "textComplete"
+      seam: "textComplete"
+
+  - id: "gpt-5.6-sol"
+    label: "GPT 5.6 Sol"
+    family: "openai"
+    role: "flagship"
+    operations:
+      - id: "chat"
+        label: "文本对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
             min: 1
+            max: 1
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+      - id: "vision_chat"
+        label: "图文对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 10
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "measured"
+              note: "runtime 测量矩阵 max10；官方上限待审计"
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+    research:
+      status: "draft"
+      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+    execution:
+      status: "stub"
+      profileId: "textComplete"
+      seam: "textComplete"
+
+  - id: "gpt-5.5"
+    label: "GPT 5.5"
+    family: "openai"
+    role: "flagship"
+    operations:
+      - id: "chat"
+        label: "文本对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
+          notes: "探针记录：chat-completions 200（reasoning_effort=low）；省略 effort 曾超时，路由默认 max→xhigh。H2 产品锁定 Batch A：chat 不 listed，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+      - id: "vision_chat"
+        label: "图文对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 10
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "measured"
+              note: "runtime 测量矩阵 max10；官方上限待审计"
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+          notes: "探针记录：08-18 image-only 探针回答 red。H2 产品锁定 Batch A：vision_chat 不 listed，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+    research:
+      status: "draft"
+      docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
+    execution:
+      status: "stub"
+      profileId: "textComplete"
+      seam: "textComplete"
+
+  - id: "grok-4.6"
+    label: "Grok 4.6"
+    family: "xai"
+    role: "flagship"
+    operations:
+      - id: "chat"
+        label: "文本对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+      - id: "vision_chat"
+        label: "图文对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 10
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "measured"
+              note: "runtime 测量矩阵 max10；官方上限待审计"
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+    research:
+      status: "draft"
+      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+    execution:
+      status: "stub"
+      profileId: "textComplete"
+      seam: "textComplete"
+
+  - id: "kimi-k3"
+    label: "Kimi K3"
+    family: "moonshot"
+    role: "flagship"
+    operations:
+      - id: "chat"
+        label: "文本对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+      - id: "vision_chat"
+        label: "图文对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 10
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "measured"
+              note: "runtime 测量矩阵 max10；官方上限待审计"
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+    research:
+      status: "draft"
+      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+    execution:
+      status: "stub"
+      profileId: "textComplete"
+      seam: "textComplete"
+
+  - id: "deepseek-v4-pro"
+    label: "DeepSeek V4 Pro"
+    family: "deepseek"
+    role: "flagship"
+    operations:
+      - id: "chat"
+        label: "文本对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-20-omnimux-reasoning.md"
+          notes: "探针记录：上游拒绝 image_url，保持 text-only；reasoning 全枚举 HTTP 200。H2 产品锁定 Batch A：chat 不 listed，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+    research:
+      status: "draft"
+      docUrl: "docs/evidence/2026-08-20-omnimux-reasoning.md"
+    execution:
+      status: "stub"
+      profileId: "textComplete"
+      seam: "textComplete"
+
+  - id: "deepseek-v4-flash-vision-exp"
+    label: "DeepSeek V4 Flash"
+    family: "deepseek"
+    role: "classic"
+    operations:
+      - id: "chat"
+        label: "文本对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-20-omnimux-reasoning.md"
+          notes: "探针记录：reasoning 矩阵全枚举 HTTP 200；产品默认 agent 模型。H2 产品锁定 Batch A：chat 不 listed，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+      - id: "vision_chat"
+        label: "图文对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
             max: 10
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
               kind: "policy_conservative"
-              note: "H1 conservative; official per-model audit pending"
+              note: "runtime 表声明 image；modality 矩阵实测 deepseek-v4-flash 拒绝 image_url，vision-exp 变体无独立 dated 图证据"
+        research:
+          status: "draft"
+          notes: "cordis/CHAT 目录声明 image 输入；缺 vision-exp 独立 dated live 证据，保持 draft"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
     research:
       status: "draft"
-      notes: "runtime 使用 gpt-5.x 等 id；本行保留契约样例"
+      docUrl: "docs/evidence/2026-08-20-omnimux-reasoning.md"
     execution:
-      status: "none"
+      status: "stub"
+      profileId: "textComplete"
+      seam: "textComplete"
+
+  - id: "gemini-3.7-flash"
+    label: "Gemini 3.7 Flash"
+    family: "google"
+    role: "flagship"
+    operations:
+      - id: "chat"
+        label: "文本对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+      - id: "vision_chat"
+        label: "图文对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 10
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "measured"
+              note: "runtime 测量矩阵 max10；官方上限待审计"
+          - slot: "reference_videos"
+            type: "video"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 1
+            allowedMimes: ["video/mp4"]
+            maxSizeMb: 50
+            limitSource:
+              kind: "policy_conservative"
+              note: "2026-08-22 video spike（data:video 原生 mp4 理解）；保守 50MB 待官方审计"
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+    research:
+      status: "draft"
+      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+    execution:
+      status: "stub"
+      profileId: "textComplete"
+      seam: "textComplete"
+
+  - id: "gemini-3.1-pro-preview"
+    label: "Gemini 3.1 Pro Preview"
+    family: "google"
+    role: "flagship"
+    operations:
+      - id: "chat"
+        label: "文本对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
+          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+      - id: "vision_chat"
+        label: "图文对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 10
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "measured"
+              note: "runtime 测量矩阵 max10；官方上限待审计"
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
+          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+    research:
+      status: "draft"
+      docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
+    execution:
+      status: "stub"
+      profileId: "textComplete"
+      seam: "textComplete"
+
+  - id: "glm-5.3"
+    label: "GLM 5.3"
+    family: "zhipu"
+    role: "flagship"
+    operations:
+      - id: "chat"
+        label: "文本对话"
+        output:
+          type: "text"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+          notes: "探针记录：上游仅允许 text（allowed: ['text']），保持 text-only。H2 产品锁定 Batch A：chat 不 listed，待后续批次复审放行"
+        execution:
+          status: "stub"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+    research:
+      status: "draft"
+      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+    execution:
+      status: "stub"
+      profileId: "textComplete"
+      seam: "textComplete"

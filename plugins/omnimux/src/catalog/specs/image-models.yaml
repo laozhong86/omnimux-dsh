@@ -1,5 +1,8 @@
 # 图像模型能力契约 (Image Models Capability Contract)
-# H1: 全部 op draft + stub/none → listedOperations=[]；不顺手 verified
+# H2: 14 个 runtime image ID 全处置 = 12 契约行 + 2 alias（nanobanana hyphen→underscore）。
+# Batch A：gpt-image-2 / grok-imagine-image 仅 text_to_image 有仓内 dated live 证据
+# （docs/evidence/2026-08-16-omnimux-image.md）→ verified+live；multi_reference 保持 draft。
+# 其余 10 行 draft（证据不足不上架）。parameters 自旧 runtime SPECS 迁入。
 schemaVersion: "1.1"
 managementGroup: "image"
 modality: "image"
@@ -10,6 +13,85 @@ models:
     family: "openai"
     badge: "默认"
     subtitle: "1k-4k"
+    operations:
+      - id: "text_to_image"
+        label: "文生图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+        research:
+          status: "verified"
+          docUrl: "docs/evidence/2026-08-16-omnimux-image.md"
+          verifiedAt: "2026-08-16"
+        execution:
+          status: "live"
+          profileId: "imageGenerate"
+          seam: "imageGenerate"
+      - id: "multi_reference"
+        label: "垫图参考"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_image"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 10
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行 max1；官方审计前保守"
+        research:
+          status: "draft"
+        execution:
+          status: "stub"
+          profileId: "imageGenerate"
+          seam: "imageGenerate"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "1024x1024", label: "1K" }
+          - { value: "1792x1024", label: "2K" }
+        defaultValue: "1792x1024"
+      quality:
+        options:
+          - { value: "standard", label: "标准" }
+          - { value: "hd", label: "高清 HD" }
+        defaultValue: "standard"
+    research:
+      status: "verified"
+      docUrl: "docs/evidence/2026-08-16-omnimux-image.md"
+      verifiedAt: "2026-08-16"
+    execution:
+      status: "live"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"
+
+  - id: "gpt-image2-hd"
+    label: "GPT Image 2 HD"
+    family: "openai"
+    subtitle: "高清 4K"
     operations:
       - id: "text_to_image"
         label: "文生图"
@@ -37,31 +119,116 @@ models:
             type: "image"
             role: "reference"
             source: "upstream_edge"
-            min: 1
+            min: 0
             max: 1
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 10
             limitSource:
               kind: "policy_conservative"
-              note: "H1 conservative slot limit pending official re-audit"
+              note: "继承 runtime 表行 max1；官方审计前保守"
     parameters:
-      aspectRatio: ["auto", "1:1", "16:9", "9:16"]
-      resolution: ["1024x1024", "1792x1024"]
-      quality: ["standard", "hd"]
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "1792x1024", label: "2K" }
+          - { value: "3840x2160", label: "4K" }
+        defaultValue: "1792x1024"
     research:
       status: "draft"
-      notes: "present in runtime IMAGE_MODEL_SPECS; full doc evidence pending H2"
+      notes: "runtime 存在；无独立 dated live 证据，不上架"
     execution:
       status: "stub"
       profileId: "imageGenerate"
       seam: "imageGenerate"
-      notes: "H1: stub only; do not claim listed"
 
   - id: "grok-imagine-image"
     label: "Grok Imagine Image"
     family: "grok"
     badge: "极速"
     subtitle: "xAI Grok"
+    operations:
+      - id: "text_to_image"
+        label: "文生图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+        research:
+          status: "verified"
+          docUrl: "docs/evidence/2026-08-16-omnimux-image.md"
+          verifiedAt: "2026-08-16"
+        execution:
+          status: "live"
+          profileId: "imageGenerate"
+          seam: "imageGenerate"
+      - id: "multi_reference"
+        label: "多图垫图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 4
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 15
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行 max4；官方审计前保守"
+        research:
+          status: "draft"
+        execution:
+          status: "stub"
+          profileId: "imageGenerate"
+          seam: "imageGenerate"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "4:3", label: "4:3" }
+          - { value: "3:4", label: "3:4" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "2K", label: "2K" }
+          - { value: "1K", label: "1K" }
+        defaultValue: "2K"
+    research:
+      status: "verified"
+      docUrl: "docs/evidence/2026-08-16-omnimux-image.md"
+      verifiedAt: "2026-08-16"
+    execution:
+      status: "live"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"
+
+  - id: "grok-imagine-image-quality"
+    label: "Grok Imagine Image Quality"
+    family: "grok"
+    badge: "高画质"
+    subtitle: "xAI Grok HD"
     operations:
       - id: "text_to_image"
         label: "文生图"
@@ -89,20 +256,535 @@ models:
             type: "image"
             role: "reference"
             source: "upstream_edge"
-            min: 1
+            min: 0
             max: 4
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 15
             limitSource:
               kind: "policy_conservative"
-              note: "H1 conservative slot limit pending official re-audit"
+              note: "继承 runtime 表行 max4；官方审计前保守"
     parameters:
-      aspectRatio: ["auto", "1:1", "16:9", "9:16"]
-      resolution: ["1024x1024", "1792x1024"]
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "4:3", label: "4:3" }
+          - { value: "3:4", label: "3:4" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "2K", label: "2K" }
+          - { value: "4K", label: "4K" }
+        defaultValue: "2K"
     research:
       status: "draft"
     execution:
       status: "stub"
       profileId: "imageGenerate"
       seam: "imageGenerate"
-      notes: "H1: stub; runtime limits reconcile is H2"
+
+  - id: "midjourney"
+    label: "Midjourney"
+    family: "midjourney"
+    badge: "旗舰"
+    subtitle: "Midjourney v7/v8"
+    operations:
+      - id: "text_to_image"
+        label: "文生图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "multi_reference"
+        label: "多图垫图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 5
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 15
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行 max5；官方审计前保守"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "4:3", label: "4:3" }
+          - { value: "3:4", label: "3:4" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "21:9", label: "21:9" }
+          - { value: "3:2", label: "3:2" }
+          - { value: "2:3", label: "2:3" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "2K", label: "2K" }
+          - { value: "1080P", label: "1080P" }
+        defaultValue: "2K"
+    research:
+      status: "draft"
+    execution:
+      status: "stub"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"
+
+  - id: "midjourney-8.1"
+    label: "Midjourney 8.1"
+    family: "midjourney"
+    badge: "Yearly 20% off"
+    subtitle: "2K"
+    operations:
+      - id: "text_to_image"
+        label: "文生图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "multi_reference"
+        label: "多图垫图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 5
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 15
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行 max5；官方审计前保守"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "4:3", label: "4:3" }
+          - { value: "3:4", label: "3:4" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "21:9", label: "21:9" }
+          - { value: "3:2", label: "3:2" }
+          - { value: "2:3", label: "2:3" }
+          - { value: "9:21", label: "9:21" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "2K", label: "2K" }
+          - { value: "1080P", label: "1080P" }
+        defaultValue: "2K"
+    research:
+      status: "draft"
+    execution:
+      status: "stub"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"
+
+  - id: "midjourney-7"
+    label: "Midjourney 7"
+    family: "midjourney"
+    subtitle: "1080P"
+    operations:
+      - id: "text_to_image"
+        label: "文生图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "multi_reference"
+        label: "多图垫图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 5
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 15
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行 max5；官方审计前保守"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "4:3", label: "4:3" }
+          - { value: "3:4", label: "3:4" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "21:9", label: "21:9" }
+          - { value: "3:2", label: "3:2" }
+          - { value: "2:3", label: "2:3" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "1080P", label: "1080P" }
+          - { value: "720P", label: "720P" }
+        defaultValue: "1080P"
+    research:
+      status: "draft"
+    execution:
+      status: "stub"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"
+
+  - id: "midjourney-niji-7"
+    label: "Midjourney Niji 7"
+    family: "midjourney"
+    subtitle: "二次元动漫"
+    operations:
+      - id: "text_to_image"
+        label: "文生图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "multi_reference"
+        label: "多图垫图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 5
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 15
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行 max5；官方审计前保守"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "4:3", label: "4:3" }
+          - { value: "3:4", label: "3:4" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "21:9", label: "21:9" }
+          - { value: "3:2", label: "3:2" }
+          - { value: "2:3", label: "2:3" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "1080P", label: "1080P" }
+        defaultValue: "1080P"
+    research:
+      status: "draft"
+    execution:
+      status: "stub"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"
+
+  - id: "nano_banana_2"
+    label: "Nano Banana 2"
+    family: "nanobanana"
+    subtitle: "Google Imagen"
+    aliases: ["nanobanana-2"]
+    operations:
+      - id: "text_to_image"
+        label: "文生图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "multi_reference"
+        label: "多图垫图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 4
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 15
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行 max4；官方审计前保守"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "4:3", label: "4:3" }
+          - { value: "3:4", label: "3:4" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "auto-4K", label: "auto-4K" }
+          - { value: "2K", label: "2K" }
+        defaultValue: "auto-4K"
+    research:
+      status: "draft"
+      notes: "underscore 为 canonical；hyphen 形归一为 alias；tokens-flow 403 修复中（2026-08-16 证据记录）"
+    execution:
+      status: "stub"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"
+
+  - id: "nano_banana_pro"
+    label: "Nano Banana Pro"
+    family: "nanobanana"
+    subtitle: "Google Imagen Pro"
+    aliases: ["nanobanana-pro"]
+    operations:
+      - id: "text_to_image"
+        label: "文生图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "multi_reference"
+        label: "多图垫图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 4
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 15
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行 max4；官方审计前保守"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "4:3", label: "4:3" }
+          - { value: "3:4", label: "3:4" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "auto-4K", label: "auto-4K" }
+          - { value: "2K", label: "2K" }
+        defaultValue: "auto-4K"
+    research:
+      status: "draft"
+      notes: "underscore 为 canonical；hyphen 形归一为 alias"
+    execution:
+      status: "stub"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"
+
+  - id: "seedream-5.0-pro"
+    label: "Seedream 5.0 Pro"
+    family: "seedream"
+    subtitle: "1K-2K"
+    operations:
+      - id: "text_to_image"
+        label: "文生图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "multi_reference"
+        label: "多图垫图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 8
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 15
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行 max8；官方审计前保守"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "4:3", label: "4:3" }
+          - { value: "3:4", label: "3:4" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "21:9", label: "21:9" }
+          - { value: "3:2", label: "3:2" }
+          - { value: "2:3", label: "2:3" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "2K", label: "2K" }
+          - { value: "1K", label: "1K" }
+        defaultValue: "2K"
+    research:
+      status: "draft"
+    execution:
+      status: "stub"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"
+
+  - id: "seedream-4.5"
+    label: "Seedream 4.5"
+    family: "seedream"
+    subtitle: "2K-4K"
+    operations:
+      - id: "text_to_image"
+        label: "文生图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+      - id: "multi_reference"
+        label: "多图垫图"
+        output:
+          type: "image"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "reference_images"
+            type: "image"
+            role: "reference"
+            source: "upstream_edge"
+            min: 0
+            max: 8
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 15
+            limitSource:
+              kind: "policy_conservative"
+              note: "继承 runtime 表行 max8；官方审计前保守"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "auto", label: "自适应" }
+          - { value: "1:1", label: "1:1" }
+          - { value: "4:3", label: "4:3" }
+          - { value: "3:4", label: "3:4" }
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "21:9", label: "21:9" }
+          - { value: "3:2", label: "3:2" }
+          - { value: "2:3", label: "2:3" }
+        defaultValue: "16:9"
+      resolution:
+        options:
+          - { value: "4K", label: "4K" }
+          - { value: "2K", label: "2K" }
+        defaultValue: "2K"
+    research:
+      status: "draft"
+    execution:
+      status: "stub"
+      profileId: "imageGenerate"
+      seam: "imageGenerate"

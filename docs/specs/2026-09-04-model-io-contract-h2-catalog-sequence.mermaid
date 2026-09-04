@@ -1,0 +1,60 @@
+sequenceDiagram
+  autonumber
+  participant CI as CI / pnpm verify:model-contracts
+  participant V as verify-model-contracts.mjs
+  participant L as ContractLoader
+  participant D as DispositionsRegistry
+  participant A as AdmissionGate
+  participant C as CoverageAuditor
+  participant CD as cordis.patch.yml
+  participant P as CatalogProjector
+  participant B as buildModelCatalog
+  participant F as media/text facade
+
+  rect rgb(30, 34, 44)
+    Note over CI,C: Verify path (H2: --strict is the CI default)
+    CI->>V: run --strict
+    Note over V: unknown flags / missing values / audit+strict → exit 2 (H1 fail-closed)
+    V->>L: loadAll(specs) cacheKey=names+contentHash
+    alt YAML malformed / schema admission boom
+      L-->>V: issues (error)
+      V-->>CI: exit 1
+    else parsed canonical
+      L-->>V: ContractIndex (schemaVersion "1.1", listedOperations)
+      V->>D: load + validate(dispositions, index, runtimeIds)
+      alt D1-D7 violation (missing row / alias inconsistency / forbidden listed / extra ghost)
+        D-->>V: issues (disposition_* / coverage_extra)
+        V-->>CI: exit 1
+      else dispositions clean (43 rows, extra=0)
+        V->>A: checkAdmission(index, registry, profiles)
+        A-->>V: AdmissionReport
+        V->>C: diff(runtimeIds, index, dispositions)
+        C-->>V: CoverageReport + listedOperations + forbiddenListed
+        V->>CD: cross-check composer ids resolve to canonical/alias
+        alt admission error ∨ strict coverage failure ∨ cordis drift
+          V-->>CI: exit 1 (explainable: id + code + reason)
+        else clean
+          V-->>CI: exit 0 (extra=0, undisposed missing=0, forbidden listed=0)
+        end
+      end
+    end
+    Note over CI: trap cleans symlink/tmpdir always (H1)
+  end
+
+  rect rgb(24, 44, 34)
+    Note over B,F: Runtime path (hub boot / modelCatalog.list seam)
+    B->>L: getContractIndex()
+    alt parse / admission / dispositions failure
+      L-->>B: issues with errors
+      B-->>F: throw (fail-closed — legacy SPECS deleted, nothing to fall back to)
+    else healthy
+      B->>D: loadDispositions()
+      D-->>B: DispositionsRegistry
+      B->>P: projectCatalog(index, dispositions, catalogDefaults)
+      Note over P: authoritative models[]; four lists derived ONLY by op.output.type;<br/>speech_to_text (output=text) → text bucket;<br/>alias-resolved dedupe (no nanobanana double-listing);<br/>quarantine/unavailable stay in models[] with disposition, never in kind lists
+      P-->>B: CatalogV11 { models[], text/image/video/audio, defaults, defaultsByOperation }
+      B->>B: resolveDefault (env > settings > config > byOperation > first row)
+      B-->>F: CatalogV11 (fingerprint = contractFP + listedOps + defaults + schemaVersion)
+      F-->>F: IMAGE/VIDEO/AUDIO_MODEL_SPECS, CHAT_MODELS = derived rows (facade)
+    end
+  end

@@ -212,15 +212,28 @@ export async function runVerify(opts = {}, deps = {}) {
         listedIds,
         listedModelIds: report.listedModelIds ?? report.coverage?.listedModelIds ?? listedIds,
       },
+      dispositions: {
+        total: report.dispositions?.total ?? 0,
+        byDisposition: report.dispositions?.byDisposition ?? {},
+        forbiddenListed: report.dispositions?.forbiddenListed ?? [],
+        unresolvedDispositions: report.dispositions?.unresolvedDispositions ?? [],
+      },
+      defaultsByOperation: report.defaultsByOperation ?? {},
       listedOperations,
       listedIds,
       listedModelIds: report.listedModelIds ?? report.coverage?.listedModelIds ?? listedIds,
-      issues: (report.issues ?? []).filter((i) => i.level === 'error' || (i.level === 'warning' && i.code?.startsWith('coverage_'))),
+      issues: (report.issues ?? []).filter(
+        (i) =>
+          i.level === 'error' ||
+          (i.level === 'warning' &&
+            /^(coverage_|disposition_|defaults_|cordis_|evidence_)/.test(i.code ?? '')),
+      ),
     };
     process.stdout.write(`${JSON.stringify(jsonReport, null, 2)}\n`);
   } else {
     const cov = report.coverage ?? {};
     const adm = report.admission ?? {};
+    const disp = report.dispositions ?? {};
     process.stdout.write(
       [
         `model-contracts mode=${report.mode} ok=${report.ok}`,
@@ -228,6 +241,7 @@ export async function runVerify(opts = {}, deps = {}) {
         `fingerprint=${report.contentFingerprint}`,
         `admission errors=${adm.errorCount ?? 0} warnings=${adm.warningCount ?? 0}`,
         `coverage runtime=${cov.runtimeCount ?? 0} contract=${cov.contractCount ?? 0} missing=${cov.missingCount ?? 0} extra=${cov.extraCount ?? 0}`,
+        `dispositions total=${disp.total ?? 0} unresolved=${(disp.unresolvedDispositions ?? []).length} forbiddenListed=${(disp.forbiddenListed ?? []).length}`,
         `listedOperations=${listedOperations.length}`,
         `listedIds=${listedIds.length} (any-op model summary only; prefer listedOperations)`,
       ].join('\n') + '\n',
