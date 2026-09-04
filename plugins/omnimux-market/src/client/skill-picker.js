@@ -1,0 +1,394 @@
+    const PICKER_SEARCH_LIMIT = 20;
+    const PICKER_DEBOUNCE_MS = 200;
+    const CREATE_SKILL_ITEM = {
+      id: "sk-omx-skill-creator",
+      slug: "skill-creator",
+      skill: "skill-creator",
+      catalogId: "sk-omx-skill-creator",
+      name: "技能创建",
+      description: "创建双语可复用Skill",
+    };
+    const PICKER_TABS = [
+      { id: "all", kind: "all", labelKey: "picker.tab.all" },
+      { id: "mine", kind: "mine", labelKey: "picker.tab.mine" },
+      { id: "featured", kind: "featured", labelKey: "picker.tab.featured" },
+      { id: "短剧漫剧", kind: "tag", labelKey: "picker.tab.drama" },
+      { id: "专业影视", kind: "tag", labelKey: "picker.tab.film" },
+      { id: "动画", kind: "tag", labelKey: "picker.tab.anim" },
+    ];
+
+    function pickerSkillToken(item) {
+      return String((item && (item.skill || item.slug)) || "").trim().replace(/^\//, "");
+    }
+
+    function pickerSkillGesture(item) {
+      const slug = pickerSkillToken(item);
+      return slug ? "/" + slug + " " : "";
+    }
+
+    function pickerAppendGesture(draft, gesture) {
+      const token = String(gesture || "");
+      if (!token) return String(draft || "");
+      const withSpace = token.endsWith(" ") ? token : token + " ";
+      const base = String(draft || "");
+      const prefix = base && !/\s$/.test(base) ? base + " " : base;
+      return prefix + withSpace;
+    }
+
+    function pickerSearchPayload(tabId, query) {
+      const q = String(query || "").trim();
+      const tab = PICKER_TABS.find((row) => row.id === tabId) || PICKER_TABS[0];
+      const payload = { query: q, limit: PICKER_SEARCH_LIMIT, offset: 0 };
+      if (tab.kind === "featured") payload.channels = ["custom"];
+      if (tab.kind === "tag") payload.query = q ? q + " " + tab.id : tab.id;
+      return payload;
+    }
+
+    function pickerMatchesTag(item, tag) {
+      if (!item || !tag) return true;
+      const tags = Array.isArray(item.tags) ? item.tags.map(String) : [];
+      if (tags.includes(tag)) return true;
+      const hay = [item.category, item.categoryLabel, item.name, item.title, item.description, item.summary, tags.join(" ")]
+        .map((v) => String(v || "")).join(" ");
+      return hay.includes(tag);
+    }
+
+    function pickerFilterItems(items, tabId) {
+      const list = Array.isArray(items) ? items : [];
+      const tab = PICKER_TABS.find((row) => row.id === tabId) || PICKER_TABS[0];
+      if (tab.kind === "mine") return list.filter((it) => it && it.installed === true);
+      if (tab.kind === "tag") return list.filter((it) => pickerMatchesTag(it, tab.id));
+      return list;
+    }
+
+    function pickerInstallPayload(item) {
+      if (!item || item.installed === true) return null;
+      const slug = String(item.slug || item.skill || "").trim();
+      if (!slug) return null;
+      const catalogId = String(item.catalogId || (String(item.id || "").startsWith("sk-") ? item.id : "") || "").trim();
+      return catalogId ? { slug, catalogId } : { slug };
+    }
+
+    function writePlazaSkillsIntent() {
+      try {
+        window.sessionStorage.setItem("omnimux-market:plaza-intent", JSON.stringify({ tab: "skills" }));
+      } catch { /* private mode */ }
+      try {
+        window.dispatchEvent(new CustomEvent("omnimux-market:plaza-intent", { detail: { tab: "skills" } }));
+      } catch { /* ignore */ }
+    }
+
+    function focusComposerCard() {
+      if (typeof document === "undefined") return;
+      const el = document.querySelector('[data-composer-card] [contenteditable="true"], [data-composer-card] textarea, [data-lexical-editor="true"]');
+      if (el && typeof el.focus === "function") el.focus();
+    }
+
+    function PickerInfoIcon() {
+      return h("svg", {
+        width: 14, height: 14, viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true",
+      },
+        h("circle", { cx: "8", cy: "8", r: "6.25", stroke: "currentColor", strokeWidth: "1.4" }),
+        h("path", { d: "M8 7.2V11.2", stroke: "currentColor", strokeWidth: "1.4", strokeLinecap: "round" }),
+        h("circle", { cx: "8", cy: "5.15", r: "0.85", fill: "currentColor" }),
+      );
+    }
+
+    function PickerChevronIcon() {
+      return h("svg", {
+        width: 14, height: 14, viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true",
+      },
+        h("path", { d: "M6 3.5 11 8l-5 4.5", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }),
+      );
+    }
+
+    function PickerDownloadIcon() {
+      return h("svg", {
+        width: 14, height: 14, viewBox: "0 0 16 16", fill: "none", "aria-hidden": "true",
+      },
+        h("path", { d: "M8 2.5v8", stroke: "currentColor", strokeWidth: "1.4", strokeLinecap: "round" }),
+        h("path", { d: "M4.5 8.5 8 12l3.5-3.5", stroke: "currentColor", strokeWidth: "1.4", strokeLinecap: "round", strokeLinejoin: "round" }),
+        h("path", { d: "M3 13.5h10", stroke: "currentColor", strokeWidth: "1.4", strokeLinecap: "round" }),
+      );
+    }
+
+    function SkillPickerPanel({ open, anchorRef, onClose, onPick, onExplore, onCreate, t }) {
+      const tr = typeof t === "function" ? t : lookup;
+      const panelRef = useRef(null);
+      const tabsRef = useRef(null);
+      const [query, setQuery] = useState("");
+      const [debounced, setDebounced] = useState("");
+      const [tabId, setTabId] = useState("all");
+      const [items, setItems] = useState([]);
+      const [status, setStatus] = useState("loading");
+      const [err, setErr] = useState("");
+      const [remoteDown, setRemoteDown] = useState(false);
+      const [hint, setHint] = useState("");
+      const [activeIndex, setActiveIndex] = useState(0);
+      const [pos, setPos] = useState({ left: 0, top: 0, width: 380 });
+
+      useEffect(() => {
+        if (!open) return undefined;
+        const timer = setTimeout(() => setDebounced(query), PICKER_DEBOUNCE_MS);
+        return () => clearTimeout(timer);
+      }, [query, open]);
+
+      useEffect(() => {
+        if (!open) return undefined;
+        let live = true;
+        const payload = pickerSearchPayload(tabId, debounced);
+        setStatus((cur) => (cur === "ready" ? cur : "loading"));
+        api("search", payload).then((d) => {
+          if (!live) return;
+          setItems(Array.isArray(d.items) ? d.items : []);
+          setRemoteDown(Boolean(d.channelErrors && d.channelErrors.skillhub));
+          setStatus("ready");
+          setErr("");
+          setActiveIndex(0);
+        }).catch((e) => {
+          if (!live) return;
+          setItems([]);
+          setStatus("error");
+          setErr(e && e.message ? e.message : String(e || "error"));
+        });
+        return () => { live = false; };
+      }, [open, tabId, debounced]);
+
+      useLayoutEffect(() => {
+        if (!open) return undefined;
+        const place = () => {
+          const anchor = anchorRef && anchorRef.current;
+          const panel = panelRef.current;
+          if (!anchor || typeof anchor.getBoundingClientRect !== "function") return;
+          const r = anchor.getBoundingClientRect();
+          const width = Math.min(400, Math.max(360, Math.min(380, window.innerWidth - 16)));
+          const height = panel ? panel.offsetHeight : 420;
+          let left = r.right - width;
+          if (left < 8) left = 8;
+          if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
+          let top = r.top - height - 8;
+          if (top < 8) top = Math.min(r.bottom + 8, window.innerHeight - height - 8);
+          setPos({ left, top: Math.max(8, top), width });
+        };
+        place();
+        window.addEventListener("resize", place);
+        return () => window.removeEventListener("resize", place);
+      }, [open, items, status, tabId, anchorRef]);
+
+      useEffect(() => {
+        if (!open) return undefined;
+        const onDoc = (e) => {
+          const tEl = e.target;
+          if (panelRef.current && panelRef.current.contains(tEl)) return;
+          if (anchorRef && anchorRef.current && anchorRef.current.contains(tEl)) return;
+          onClose();
+        };
+        const onKey = (e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            onClose();
+          }
+        };
+        document.addEventListener("mousedown", onDoc);
+        document.addEventListener("keydown", onKey);
+        return () => {
+          document.removeEventListener("mousedown", onDoc);
+          document.removeEventListener("keydown", onKey);
+        };
+      }, [open, onClose, anchorRef]);
+
+      const visible = pickerFilterItems(items, tabId);
+
+      const handlePick = (item) => {
+        const ok = onPick(item);
+        if (!ok) setHint(tr("picker.writeFail"));
+      };
+
+      const onListKey = (e) => {
+        if (!visible.length) return;
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setActiveIndex((i) => (i + 1) % visible.length);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setActiveIndex((i) => (i - 1 + visible.length) % visible.length);
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          const item = visible[activeIndex];
+          if (item) handlePick(item);
+        }
+      };
+
+      if (!open) return null;
+
+      const emptyMine = tabId === "mine" && status === "ready" && !visible.length && !debounced.trim();
+      const emptySearch = status === "ready" && !visible.length && !emptyMine;
+
+      const node = h("div", {
+        ref: panelRef,
+        className: "sh-picker",
+        role: "dialog",
+        "aria-label": tr("picker.title"),
+        "aria-modal": "true",
+        style: { left: pos.left + "px", top: pos.top + "px", width: pos.width + "px" },
+        onKeyDown: onListKey,
+      },
+        h("div", { className: "sh-picker-head" },
+          h("div", { className: "sh-picker-title" },
+            h("span", null, tr("picker.title")),
+            h("span", { className: "sh-picker-info", title: tr("picker.hint") }, h(PickerInfoIcon)),
+          ),
+          h("div", { className: "sh-picker-search" },
+            h(SearchField, {
+              value: query,
+              placeholder: tr("picker.searchPlaceholder"),
+              onChange: setQuery,
+              onClear: () => setQuery(""),
+              stretch: true,
+            }),
+          ),
+        ),
+        h("div", { className: "sh-picker-cats" },
+          h("div", { className: "sh-picker-tabs", ref: tabsRef, role: "tablist" },
+            PICKER_TABS.map((tab) => h("button", {
+              key: tab.id,
+              type: "button",
+              role: "tab",
+              className: "sh-picker-tab" + (tabId === tab.id ? " on" : ""),
+              "aria-selected": tabId === tab.id,
+              onClick: () => { setTabId(tab.id); setActiveIndex(0); },
+            }, tr(tab.labelKey))),
+          ),
+          h("button", {
+            type: "button",
+            className: "sh-picker-more",
+            "aria-label": tr("picker.scrollCats"),
+            onClick: () => {
+              const el = tabsRef.current;
+              if (el) el.scrollBy({ left: 120, behavior: "smooth" });
+            },
+          }, h(PickerChevronIcon)),
+        ),
+        remoteDown ? h("p", { className: "sh-picker-banner", role: "status" }, tr("picker.remoteDown")) : null,
+        hint ? h("p", { className: "sh-picker-banner", role: "status" }, hint) : null,
+        h("div", { className: "sh-picker-list", role: "listbox" },
+          status === "loading" && !items.length
+            ? [0, 1, 2].map((i) => h("div", { key: i, className: "sh-picker-skel", "aria-hidden": "true" },
+              h("span", { className: "sh-picker-skel-a" }),
+              h("span", { className: "sh-picker-skel-b" }),
+            ))
+            : null,
+          status === "error" ? h("p", { className: "sh-picker-empty" }, tr("picker.error", { m: err })) : null,
+          emptyMine ? h("p", { className: "sh-picker-empty" }, tr("picker.emptyMine")) : null,
+          emptySearch ? h("p", { className: "sh-picker-empty" }, tr("picker.empty", { q: debounced || "" })) : null,
+          visible.map((item, index) => {
+            const slug = pickerSkillToken(item);
+            const name = item.name || item.title || slug;
+            const desc = item.description || item.summary || "";
+            const selected = index === activeIndex;
+            return h("button", {
+              key: (item.id || slug) + ":" + index,
+              type: "button",
+              role: "option",
+              "aria-selected": selected,
+              className: "sh-picker-row" + (selected ? " on" : ""),
+              onMouseEnter: () => setActiveIndex(index),
+              onClick: () => handlePick(item),
+            },
+              h("div", { className: "sh-picker-row-main" },
+                h("div", { className: "sh-picker-row-top" },
+                  h("span", { className: "sh-picker-name" }, name),
+                  h("span", { className: "sh-picker-slug" }, "/" + slug),
+                ),
+                h("div", { className: "sh-picker-desc" }, desc),
+              ),
+              item.installed === true ? null : h("span", {
+                className: "sh-picker-dl",
+                title: tr("picker.uninstalled"),
+              }, h(PickerDownloadIcon)),
+            );
+          }),
+        ),
+        h("div", { className: "sh-picker-foot" },
+          h("button", { type: "button", className: "sh-picker-btn", onClick: onExplore }, tr("picker.explore")),
+          h("button", { type: "button", className: "sh-picker-btn primary", onClick: onCreate }, tr("picker.create")),
+        ),
+      );
+      if (typeof document === "undefined" || !document.body) return node;
+      return createPortal(node, document.body);
+    }
+
+    function SkillPickerButton(props) {
+      const tr = lookup;
+      const [open, setOpen] = useState(false);
+      const btnRef = useRef(null);
+      const inputActions = props && props.inputActions;
+      const useInputHook = props && typeof props.useInput === "function" ? props.useInput : null;
+      const draft = useInputHook ? (useInputHook((s) => (s && s.draft) || "") || "") : "";
+      const sessionId = props && props.sessionId;
+
+      useEffect(() => { setOpen(false); }, [sessionId]);
+
+      useEffect(() => {
+        if (!open) return undefined;
+        const onPage = () => setOpen(false);
+        window.addEventListener("dsh-product-stage", onPage);
+        return () => window.removeEventListener("dsh-product-stage", onPage);
+      }, [open]);
+
+      const close = useCallback(() => setOpen(false), []);
+
+      const applyItem = useCallback((item) => {
+        const gesture = pickerSkillGesture(item);
+        if (!gesture) return false;
+        if (!inputActions || typeof inputActions.setDraft !== "function") return false;
+        inputActions.setDraft(pickerAppendGesture(draft, gesture));
+        focusComposerCard();
+        const payload = pickerInstallPayload(item);
+        if (payload) {
+          api("install", payload).catch(() => {});
+        }
+        setOpen(false);
+        return true;
+      }, [draft, inputActions]);
+
+      const onExplore = useCallback(() => {
+        writePlazaSkillsIntent();
+        setOpen(false);
+        const wb = typeof window !== "undefined" ? window.__omnimuxWorkbench : undefined;
+        if (wb && typeof wb.open === "function") {
+          wb.open({ tabId: "omnimux-market:plaza", title: tr("plaza.title") });
+        }
+      }, [tr]);
+
+      const onCreate = useCallback(() => {
+        applyItem(CREATE_SKILL_ITEM);
+      }, [applyItem]);
+
+      return h(I18nProvider, { t: tr },
+        h("div", { className: "sh-picker-wrap" },
+          h("button", {
+            ref: btnRef,
+            type: "button",
+            className: "sh-picker-trigger" + (open ? " on" : ""),
+            "aria-label": tr("picker.title"),
+            "aria-haspopup": "dialog",
+            "aria-expanded": open ? "true" : "false",
+            "data-omnimux-skill-picker": "",
+            onClick: () => setOpen((v) => !v),
+          },
+            renderPlazaIcon(16),
+            h("span", { className: "sh-picker-trigger-label" }, tr("picker.title")),
+          ),
+          h(SkillPickerPanel, {
+            open,
+            anchorRef: btnRef,
+            onClose: close,
+            onPick: applyItem,
+            onExplore,
+            onCreate,
+            t: tr,
+          }),
+        ),
+      );
+    }
