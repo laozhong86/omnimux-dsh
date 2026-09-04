@@ -81,44 +81,18 @@ export function resolveDurationBudget(row) {
   return { seconds: 15, source: 'default_15s' }
 }
 
+export const REPLICATION_PROMPT_BODY = '完全复刻原视频脚本和画面，仅将原视频中的商品替换成我的商品、如有口播内容需结合我的商品进行调整（没有则不需要出现口播），同时视频不需要出现字幕，原视频有出镜人物的话，新视频也需要有。复刻后的新脚本的时长需控制在时间范围内。'
+
 /**
- * Composer prompt: PRD §5 template. P0 `opts.product` is ignored.
- * @param {object | null | undefined} row
+ * Composer prompt: `/video-deconstruct` + user constraints only.
+ * Inspiration id is on the session attachment (entityId / metadata.inspiration_id);
+ * the agent should call inspiration_get. `row` is unused on purpose.
+ * @param {object | null | undefined} [_row]
  * @param {{ product?: unknown }} [opts]
  * @returns {string}
  */
-export function buildReplicationPrompt(row, opts = {}) {
+export function buildReplicationPrompt(_row, opts = {}) {
+  void _row
   void opts.product
-  const id = String(row?.id || '')
-  const title = String(row?.title || '').trim()
-  const url = String(row?.source_url || '').trim()
-  const media = resolveMediaType(row)
-  const budget = resolveDurationBudget(row)
-  return [
-    `/${REPLICATION_SKILL}`,
-    '',
-    '请完全复刻原视频的脚本和画面，仅将原视频中的商品替换成我的商品。',
-    '',
-    '元数据：',
-    `- inspiration_id: ${id}`,
-    `- media_type: ${media}`,
-    `- title: ${title}`,
-    `- source_url: ${url}`,
-    `- duration_budget_seconds: ${budget.seconds}`,
-    `- duration_source: ${budget.source}`,
-    '',
-    '执行步骤：',
-    '1. 读取 /video-deconstruct 技能说明书。未安装时不要改用其他 skill、不要搜索「爆款」或近义技能；按本提示词继续，发送后由运行时 JIT 安装。',
-    '2. 调用 inspiration_get，传入上述 inspiration_id，读取五维拆解与本地媒体。会话附件槽已挂 kind=inspiration 的同一条目，不要再向用户索要原片。',
-    '3. 完全复刻原片脚本结构、镜头、节奏、画面语法与出场顺序；只把原片中的商品替换为我的商品。',
-    '',
-    '硬约束：',
-    '- 商品：若用户消息或会话附件已提供商品图 / 产品库条目，用其替换原片商品，保持原片机位与卖点节奏。若尚未提供任何商品，停止出片，明确请用户补充商品主图或从产品库挂到附件，不要编造商品外观或品牌。',
-    '- 口播：仅当原片确有口播时，结合我的商品改写口播；原片没有口播则不要出现口播，禁止编口播。',
-    '- 字幕：新视频不要出现字幕。',
-    '- 出镜：原视频有出镜人物，新视频也必须有对应出镜；原片无出镜则不要强行加人。',
-    '- 时长：新脚本时长必须控制在 duration_budget_seconds 以内（可短，不可无故加长）。若能从本地成片或附件量到真实时长，以实测为准，但仍不得超过该上限。',
-    '- 媒体类型降级：media_type=image 时，复刻构图/光影/主体关系，不编造不存在的镜头运动，时长约束可忽略。media_type=link 且本地无成片时，用 source_url + 拆解报告复刻，不要假装已经下载原片。',
-    '- 不要假装已经出片。等待用户补充商品或确认后再生成。',
-  ].join('\n')
+  return `/${REPLICATION_SKILL}\n\n${REPLICATION_PROMPT_BODY}`
 }

@@ -7,6 +7,7 @@ import {
   FALLBACK_TITLE,
   MAX_TITLE,
   REPLICATION_SKILL,
+  REPLICATION_PROMPT_BODY,
   buildReplicationPrompt,
   deriveProjectTitle,
   resolveDurationBudget,
@@ -87,7 +88,7 @@ describe('resolveDurationBudget', () => {
 })
 
 describe('buildReplicationPrompt', () => {
-  it('starts with /video-deconstruct and contains id, duration, speech, captions, on-camera, product fallback', () => {
+  it('is only /video-deconstruct plus the user constraint paragraph', () => {
     const prompt = buildReplicationPrompt({
       id: 'insp-42',
       title: '夏日护肤',
@@ -95,43 +96,36 @@ describe('buildReplicationPrompt', () => {
       type: 'video',
       stats: { duration: 18 },
     })
+    assert.equal(prompt, `/${REPLICATION_SKILL}\n\n${REPLICATION_PROMPT_BODY}`)
     assert.match(prompt, /^\/video-deconstruct\n/)
-    assert.match(prompt, /inspiration_id: insp-42/)
-    assert.match(prompt, /media_type: video/)
-    assert.match(prompt, /title: 夏日护肤/)
-    assert.match(prompt, /source_url: https:\/\/tiktok.com\/@x\/video\/1/)
-    assert.match(prompt, /duration_budget_seconds: 18/)
-    assert.match(prompt, /duration_source: stats/)
-    assert.match(prompt, /inspiration_get/)
     assert.match(prompt, /口播/)
     assert.match(prompt, /字幕/)
     assert.match(prompt, /出镜/)
-    assert.match(prompt, /尚未提供任何商品/)
+    assert.match(prompt, /时长/)
+    assert.doesNotMatch(prompt, /inspiration_id/)
+    assert.doesNotMatch(prompt, /inspiration_get/)
+    assert.doesNotMatch(prompt, /media_type/)
     assert.doesNotMatch(prompt, /video-replication/)
   })
 
-  it('still emits the inspiration_id line when id is empty', () => {
+  it('does not put the inspiration id in the prompt (id lives on the attachment)', () => {
     const prompt = buildReplicationPrompt({ title: '无 id' })
-    assert.match(prompt, /inspiration_id: $|^.*inspiration_id:\s*$/m)
-    assert.match(prompt, /inspiration_id:/)
-    assert.match(prompt, /duration_source: default_15s/)
+    assert.doesNotMatch(prompt, /inspiration_id/)
+    assert.match(prompt, /^\/video-deconstruct\n/)
   })
 
-  it('keeps /video-deconstruct and adds the image/link degradation paragraph', () => {
+  it('does not switch skill for image or link rows', () => {
     const image = buildReplicationPrompt({ id: 'img-1', type: 'image' })
     assert.match(image, /^\/video-deconstruct\n/)
-    assert.match(image, /media_type: image/)
-    assert.match(image, /media_type=image/)
     assert.doesNotMatch(image, /\/image-remix/)
-
     const link = buildReplicationPrompt({ id: 'lnk-1', type: 'link', source_url: 'https://x.com/a' })
-    assert.match(link, /media_type: link/)
-    assert.match(link, /media_type=link/)
+    assert.equal(link, image)
   })
 
-  it('ignores P0 product option and does not append a product section', () => {
+  it('ignores product option; prompt stays the same two-line body', () => {
     const prompt = buildReplicationPrompt({ id: 'insp-1' }, { product: { id: 'p1', title: '面霜' } })
     assert.doesNotMatch(prompt, /已检测到商品附件/)
-    assert.match(prompt, /尚未提供任何商品/)
+    assert.doesNotMatch(prompt, /尚未提供任何商品/)
+    assert.match(prompt, /替换成我的商品/)
   })
 })

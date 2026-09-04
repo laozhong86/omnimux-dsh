@@ -87,7 +87,9 @@ export function getComposerText(field) {
  */
 function composerWriteSucceeded(field, value) {
   const current = getComposerText(field)
-  return current.includes('inspiration_id') || current === value
+  return current === value
+    || current.includes('/video-deconstruct')
+    || current.includes('inspiration_id')
 }
 
 /**
@@ -228,7 +230,7 @@ export async function prefillReplicationPrompt(text, opts = {}) {
   if (!field) return { ok: false, error: 'composer-missing' }
 
   const wrote = setComposerValue(field, text, opts)
-  if (!wrote || !getComposerText(field).includes('inspiration_id')) {
+  if (!wrote) {
     return { ok: false, error: 'composer-rejected' }
   }
 
