@@ -5,9 +5,9 @@ import { AssetPickerModal } from './AssetPickerModal.jsx'
 import { getGlobalAttachmentStore } from '../attachments/store.ts'
 import { inferKindFromName } from './kind.js'
 import { installComposerAttachmentSubmitCapture } from './submit-inject.js'
-import { ADD_BUTTON_SELECTOR, findAddButton, replayOfficialAdd } from './add-button.js'
+import { ADD_BUTTON_SELECTOR, closestAddButton, findAddButton, replayOfficialAdd } from './add-button.js'
 
-export { ADD_BUTTON_SELECTOR, findAddButton, replayOfficialAdd }
+export { ADD_BUTTON_SELECTOR, closestAddButton, findAddButton, replayOfficialAdd }
 
 const HOST_ID = 'omnimux-composer-add-host'
 
@@ -212,7 +212,7 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
 
   const onClick = (event) => {
     if (state.bypass) return
-    const button = event.target?.closest?.(ADD_BUTTON_SELECTOR)
+    const button = closestAddButton(event.target)
     if (!button) return
     event.preventDefault()
     event.stopImmediatePropagation()
@@ -225,7 +225,7 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
     if (!state.open) return
     const target = event.target
     if (target instanceof Element && target.closest('[data-omnimux-composer-add-menu]')) return
-    if (target instanceof Element && target.closest(ADD_BUTTON_SELECTOR)) return
+    if (closestAddButton(target)) return
     state.open = false
     render()
   }

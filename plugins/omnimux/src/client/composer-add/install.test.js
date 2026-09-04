@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { ADD_BUTTON_SELECTOR, findAddButton, replayOfficialAdd } from './add-button.js'
+import { ADD_BUTTON_SELECTOR, closestAddButton, findAddButton, replayOfficialAdd } from './add-button.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const installSource = readFileSync(join(here, 'install.js'), 'utf8')
@@ -40,6 +40,33 @@ describe('composer-add capture contract', () => {
     assert.match(installSource, /stopImmediatePropagation/)
     assert.match(installSource, /state\.bypass/)
     assert.match(installSource, /MutationObserver/)
+    assert.match(installSource, /closestAddButton\(event\.target\)/)
+    assert.match(buttonSource, /ADD_BUTTON_INNER_SELECTOR = 'button\[class\*="add"\]\[aria-haspopup="listbox"\]'/)
+  })
+
+  it('closestAddButton does not use a descendant combinator', () => {
+    const card = { closest(sel) { return sel === '[data-composer-card]' ? this : null } }
+    const button = {
+      nodeType: 1,
+      closest(sel) {
+        if (sel === 'button[class*="add"][aria-haspopup="listbox"]') return this
+        if (sel === '[data-composer-card]') return card
+        return null
+      },
+    }
+    const svg = {
+      nodeType: 1,
+      closest(sel) {
+        if (sel === 'button[class*="add"][aria-haspopup="listbox"]') return button
+        return null
+      },
+    }
+    assert.equal(closestAddButton(svg), button)
+    const send = {
+      nodeType: 1,
+      closest() { return null },
+    }
+    assert.equal(closestAddButton(send), null)
   })
 
   it('is installed from the hub client without new slots or extra injects', () => {
