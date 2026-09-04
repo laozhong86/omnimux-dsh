@@ -3,7 +3,7 @@ const MENU_ATTR = 'data-omnimux-composer-add-menu'
 
 const CSS = `
 .omx-composer-add-menu {
-  position:fixed; z-index:80; min-width:188px; padding:6px;
+  position:fixed; z-index:400; min-width:188px; padding:6px;
   border:1px solid var(--dsw-alias-border-l2);
   border-radius:12px;
   background: var(--dsw-alias-bg-layer-3);
@@ -57,9 +57,6 @@ export function openNativeAddMenu(doc, opts) {
   menu.className = 'omx-composer-add-menu'
   menu.setAttribute('role', 'menu')
   menu.setAttribute(MENU_ATTR, 'true')
-  menu.style.top = `${Math.round(opts.anchor.bottom + 6)}px`
-  menu.style.left = `${Math.round(opts.anchor.left)}px`
-
   const t = opts.t
   const rows = [
     { id: 'command', label: t('composerAdd.commands'), disabled: false, title: '', icon: '<path d="M6 13 L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>', run: opts.onCommand, viewBox: true },
@@ -103,7 +100,15 @@ export function openNativeAddMenu(doc, opts) {
     event.preventDefault()
     event.stopPropagation()
   })
+  const vh = doc.defaultView?.innerHeight || 800
+  const below = opts.anchor.bottom + 6
+  menu.style.left = `${Math.round(opts.anchor.left)}px`
+  menu.style.top = `${Math.round(below)}px`
   doc.body.appendChild(menu)
+  const height = menu.getBoundingClientRect().height || 110
+  if (below + height > vh - 8) {
+    menu.style.top = `${Math.round(Math.max(8, opts.anchor.top - height - 6))}px`
+  }
   return menu
 }
 
