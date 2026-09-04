@@ -357,6 +357,14 @@ describe('chrome CSS contracts (conversation-box PRODUCT_STAGE_CHROME)', () => {
       PRODUCT_STAGE_CHROME,
       /data-omnimux-left-collapsed\] \[class\*="tabBar"\]/,
     )
+    // Collapsed: session title shares the top row with traffic lights + toggle.
+    // Pad the real <header> under the slot host (wrapper DIV), not only the host.
+    assert.match(
+      PRODUCT_STAGE_CHROME,
+      /data-omnimux-left-collapsed\] \[data-slot="conversation\.session\.header"\] header/,
+    )
+    assert.match(PRODUCT_STAGE_CHROME, /padding-left:\s*var\(--omnimux-topbar-toggle-end\)/)
+    assert.match(PRODUCT_STAGE_CHROME, /padding-top:\s*var\(--omnimux-topbar-toggle-top/)
     assert.match(PRODUCT_STAGE_CHROME, /::after/)
     assert.match(PRODUCT_STAGE_CHROME, /--dsw-alias-/)
     assert.doesNotMatch(PRODUCT_STAGE_CHROME, /#[0-9a-fA-F]{3,8}\b/)
