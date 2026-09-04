@@ -25,6 +25,14 @@ export const WORKBENCH_CONVERSATION_TARGET_PX = 420
 /** Visible split conversation floor. CSS and live drag clamp share this value. */
 export const WORKBENCH_CONVERSATION_MIN_PX = 360
 export const WORKBENCH_SPLIT_MAX_CSS_VAR = '--omnimux-split-max'
+/**
+ * Marker stamped on the resolved real better-sidebar fixed panel so the
+ * split-min CSS max-width keeps applying after the drag ends — the panel
+ * itself has no host attribute and only carries `data-dragging` mid-drag
+ * (#505). React never removes attributes it did not set, so the marker
+ * survives re-renders.
+ */
+export const WORKBENCH_PANEL_ATTR = 'data-omnimux-workbench-panel'
 export const WORKBENCH_FOCUS_NEAR_PX = 24
 /**
  * Upper bound for "looks collapsed" live measures while the track is tweening.
@@ -272,6 +280,84 @@ export function findOfficialSidebarColumn(doc = hostDocument()) {
 }
 
 /**
+ * Geometry sanity check for panel candidates resolved from generic markers.
+ * `[data-dragging]` also appears on official AppFrame drag targets, so a
+ * candidate that is measurably NOT right-anchored to the viewport edge (or
+ * measurably narrower than the panel minimum) is rejected. Unmeasurable
+ * candidates (headless fakes) are given the benefit of the doubt.
+ */
+function isLikelyWorkbenchPanel(el) {
+  if (!el || typeof el !== 'object') return false
+  if (typeof el.getBoundingClientRect !== 'function') return true
+  let rect
+  try { rect = el.getBoundingClientRect() } catch { return true }
+  const viewport = viewportWidth()
+  if (!rect || typeof rect.right !== 'number' || !Number.isFinite(rect.right)) return true
+  if (viewport > 0 && rect.right < viewport - 12) return false
+  if (typeof rect.width === 'number' && Number.isFinite(rect.width)
+    && rect.width > 0 && rect.width < WORKBENCH_PANEL_MIN_PX - 1) return false
+  return true
+}
+
+/**
+ * Resolve the real rendered better-sidebar fixed panel (#505).
+ *
+ * The panel element itself has no stable marker: `data-dragging` exists only
+ * mid-drag and `data-dsh-panel-host` belongs to a different host. Resolution
+ * order, most to least specific:
+ * 1. The width resize strip — a direct child of the panel with the stable
+ *    semantic class fragment `panelResize` (the CSS-module hash prefix
+ *    varies; the bottom panel uses `bottomResize`, so no collision).
+ * 2. A panel we already tagged with {@link WORKBENCH_PANEL_ATTR}.
+ * 3. Legacy `[data-dsh-panel-host]`.
+ * 4. A `[data-dragging]` node that passes the right-anchored geometry check
+ *    (official AppFrame drag targets do not hug the viewport's right edge).
+ */
+export function findWorkbenchPanelElement(doc = hostDocument()) {
+  if (!doc || typeof doc.querySelector !== 'function') return null
+  try {
+    const handle = doc.querySelector('[class*="panelResize"]')
+    if (handle?.parentElement && isLikelyWorkbenchPanel(handle.parentElement)) {
+      return handle.parentElement
+    }
+    const tagged = doc.querySelector(`[${WORKBENCH_PANEL_ATTR}]`)
+    if (tagged) return tagged
+    const host = doc.querySelector('[data-dsh-panel-host]')
+    if (host) return host
+    const dragging = doc.querySelector('[data-dragging]')
+    if (dragging && isLikelyWorkbenchPanel(dragging)) return dragging
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+/**
+ * Stamp {@link WORKBENCH_PANEL_ATTR} on the resolved panel (idempotent) so
+ * the split-min CSS max-width binds to the real fixed panel permanently —
+ * including after pointerup, when `data-dragging` is gone (#505).
+ * @returns {Element | null} the resolved panel
+ */
+function tagWorkbenchPanel(doc = hostDocument()) {
+  const panel = findWorkbenchPanelElement(doc)
+  if (panel && typeof panel.setAttribute === 'function' && !panel.hasAttribute?.(WORKBENCH_PANEL_ATTR)) {
+    try { panel.setAttribute(WORKBENCH_PANEL_ATTR, '') } catch { /* ignore */ }
+  }
+  return panel
+}
+
+/**
+ * Whether the user is actively dragging the workbench panel divider.
+ * Scoped to the resolved panel (plus better-sidebar's body flag) — a bare
+ * `document.querySelector('[data-dragging]')` can false-positive on official
+ * AppFrame drag targets and wrongly suspend width sync.
+ */
+function isWorkbenchPanelDragging(doc = hostDocument(), panel = findWorkbenchPanelElement(doc)) {
+  if (doc?.body?.hasAttribute?.('data-dsh-sidebar-dragging')) return true
+  return Boolean(panel?.hasAttribute?.('data-dragging'))
+}
+
+/**
  * Host that carries `data-sidebar-collapsed` (AppFrame / AdvancedFrame root).
  * Prefer the sidebar column's nearest marked ancestor or its parent frame —
  * same resolution as `sidebar-coordinator.collapsedHostNode`. Bare
@@ -415,8 +501,10 @@ export function officialSessionSidebarWidth(env = {}) {
 export function syncWorkbenchGuiWidth(store = attachedStore, env = {}) {
   const doc = hostDocument()
   // Suspend auto-clamping while user is actively dragging the panel divider to
-  // eliminate layout fighting, stutter, and cyclic resize thrashing.
-  if (doc?.body?.hasAttribute?.('data-dsh-sidebar-dragging') || doc?.querySelector?.('[data-dragging]')) {
+  // eliminate layout fighting, stutter, and cyclic resize thrashing. Scoped to
+  // the resolved workbench panel so AppFrame [data-dragging] nodes cannot
+  // wrongly suspend the sync (#505).
+  if (isWorkbenchPanelDragging(doc)) {
     const snapshot = liveSnapshot(store)
     syncSplitMaxCssVar(snapshot?.state, { ...env, sessionId: snapshot?.sessionId })
     return false
@@ -638,12 +726,17 @@ export function workbenchSplitMaxPanelPx(state, env = {}) {
 }
 
 export const WORKBENCH_SPLIT_MIN_STYLE_ID = 'omnimux-split-conversation-min-chrome'
+// The panel max-width binds to the persistent WORKBENCH_PANEL_ATTR marker
+// (stamped on the resolved real fixed panel), NOT to [data-dragging]: the
+// real better-sidebar panel only carries data-dragging mid-drag, so a
+// drag-only selector releases the clamp exactly when the oversized inline
+// width is committed (#505).
 export const WORKBENCH_SPLIT_MIN_CSS = `
 html:not([${CONVERSATION_COLLAPSED_ATTR}]) #root{
   margin-right:min(var(--dsh-sidebar-width,0px),var(${WORKBENCH_SPLIT_MAX_CSS_VAR},var(--dsh-sidebar-width,0px)))!important;
 }
 html:not([${CONVERSATION_COLLAPSED_ATTR}]) [data-dsh-panel-host],
-html:not([${CONVERSATION_COLLAPSED_ATTR}]) [data-dragging]{
+html:not([${CONVERSATION_COLLAPSED_ATTR}]) [${WORKBENCH_PANEL_ATTR}]{
   max-width:min(100vw,var(${WORKBENCH_SPLIT_MAX_CSS_VAR},100vw))!important;
 }
 `
@@ -690,6 +783,9 @@ export function syncSplitMaxCssVar(state = liveSnapshot()?.state, env = {}) {
     try { root.style.removeProperty(WORKBENCH_SPLIT_MAX_CSS_VAR) } catch { /* ignore */ }
     return false
   }
+  // Tag the real fixed panel whenever the split ceiling applies so the CSS
+  // max-width keeps binding after any drag ends (#505).
+  tagWorkbenchPanel(hostDocument())
   root.style.setProperty(WORKBENCH_SPLIT_MAX_CSS_VAR, `${workbenchSplitMaxPanelPx(state, env)}px`)
   return true
 }
@@ -699,6 +795,12 @@ function clampLiveSplitDom(state = liveSnapshot()?.state, env = {}) {
   if (!splitConversationMinApplies(state, env)) return
   const max = workbenchSplitMaxPanelPx(state, env)
   const doc = hostDocument()
+  const panel = findWorkbenchPanelElement(doc)
+  // Mid-drag the panel rewrites its inline width and the layout CSS var on
+  // every frame; the tagged marker + --omnimux-split-max already clamp the
+  // visuals through CSS, so do NOT fight those writes here (jitter). Clamp
+  // the DOM only once the drag has settled (#505).
+  if (isWorkbenchPanelDragging(doc, panel)) return
   const root = doc?.documentElement
   if (root?.style?.getPropertyValue) {
     const current = Number.parseFloat(root.style.getPropertyValue('--dsh-sidebar-width'))
@@ -706,7 +808,8 @@ function clampLiveSplitDom(state = liveSnapshot()?.state, env = {}) {
       root.style.setProperty('--dsh-sidebar-width', `${max}px`)
     }
   }
-  const panel = doc?.querySelector?.('[data-dragging]') || doc?.querySelector?.('[data-dsh-panel-host]')
+  // The REAL fixed panel — resolved from its resize handle / marker, not from
+  // [data-dragging] (gone after release) or [data-dsh-panel-host] (absent).
   if (panel?.style) {
     const current = Number.parseFloat(panel.style.width)
     if (Number.isFinite(current) && current > max) panel.style.width = `${max}px`
@@ -741,6 +844,10 @@ function persistClampedSplitWidth(state, record, sessionId, tabId, env = {}) {
 
 function onSplitPointerSample() {
   const win = hostWindow()
+  // Tag synchronously: this capture-phase listener runs before the panel's
+  // own React handler writes the drag width, so the CSS max-width already
+  // binds when that write lands (#505).
+  try { tagWorkbenchPanel(hostDocument()) } catch { /* ignore */ }
   const run = () => clampLiveSplitDom()
   if (win?.requestAnimationFrame) win.requestAnimationFrame(run)
   else run()
@@ -753,21 +860,30 @@ export function installSplitConversationMin(doc = hostDocument()) {
   splitMinDoc = doc
   ensureSplitMinChrome(doc)
   syncSplitMaxCssVar()
+  tagWorkbenchPanel(doc)
   const onMove = () => onSplitPointerSample()
   const onUp = () => {
     onSplitPointerSample()
-    const store = attachedStore
-    const snapshot = liveSnapshot(store)
-    const state = snapshot?.state
-    if (!store || typeof store.reduce !== 'function' || !splitConversationMinApplies(state)) return
-    const max = workbenchSplitMaxPanelPx(state)
-    if (typeof state?.width === 'number' && state.width > max) {
-      store.reduce((current) => {
-        if (typeof current?.width !== 'number') return current
-        const next = clampSplitPanelWidth(current.width, current, { sessionId: snapshot?.sessionId })
-        return next === current.width ? current : { ...current, width: next }
-      })
+    // This capture-phase listener runs BEFORE the panel's own onPointerUp
+    // commits the final drag width to the store; defer the store read to the
+    // next frame so it never clamps against the pre-drag state (#505).
+    const clampStore = () => {
+      const store = attachedStore
+      const snapshot = liveSnapshot(store)
+      const state = snapshot?.state
+      if (!store || typeof store.reduce !== 'function' || !splitConversationMinApplies(state)) return
+      const max = workbenchSplitMaxPanelPx(state)
+      if (typeof state?.width === 'number' && state.width > max) {
+        store.reduce((current) => {
+          if (typeof current?.width !== 'number') return current
+          const next = clampSplitPanelWidth(current.width, current, { sessionId: snapshot?.sessionId })
+          return next === current.width ? current : { ...current, width: next }
+        })
+      }
     }
+    const win = hostWindow()
+    if (win?.requestAnimationFrame) win.requestAnimationFrame(clampStore)
+    else clampStore()
   }
   doc.addEventListener?.('pointermove', onMove, true)
   doc.addEventListener?.('pointerup', onUp, true)

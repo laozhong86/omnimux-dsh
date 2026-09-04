@@ -3,6 +3,8 @@ import { afterEach, test } from 'node:test'
 import {
   WORKBENCH_CONVERSATION_MIN_PX,
   WORKBENCH_FOCUS,
+  WORKBENCH_PANEL_ATTR,
+  WORKBENCH_SPLIT_MIN_CSS,
   WORKBENCH_LEFT_RAIL_COLLAPSED_FALLBACK_PX,
   WORKBENCH_LEFT_RAIL_COLLAPSED_MAX_PX,
   WORKBENCH_LEFT_RAIL_EXPANDED_FALLBACK_PX,
@@ -16,6 +18,7 @@ import {
   collectTabs,
   createWorkbenchSidebarStore,
   findOfficialSidebarColumn,
+  findWorkbenchPanelElement,
   inferWorkbenchFocus,
   installSplitConversationMin,
   installWorkbenchGlobal,
@@ -1279,4 +1282,147 @@ test('illegal split widths are not persisted', () => {
   assert.equal(record.splitWidth, 560)
   const raw = win.localStorage.getItem('omnimux-workbench-focus:v1:s-persist-min')
   assert.match(String(raw), /"splitWidth":560/)
+})
+
+/**
+ * #505 live-evidence shape: viewport 1728, left rail 280, real better-sidebar
+ * fixed panel dragged to inline width 1298 (split max = 1728 − 280 − 360 = 1088).
+ * The panel has NO [data-dsh-panel-host] and NO [data-dragging] after release;
+ * an unrelated AppFrame node carries [data-dragging] as a decoy.
+ */
+function makeIssue505Dom({ viewport = 1728, railWidth = 280, panelWidth = 1298, withHandle = true } = {}) {
+  const win = setupWindow()
+  win.innerWidth = viewport
+  const doc = win.document
+  const column = { getBoundingClientRect: () => ({ width: railWidth }) }
+  const mkAttrSet = () => {
+    const set = new Set()
+    return {
+      hasAttribute: (a) => set.has(a),
+      setAttribute: (a) => { set.add(a) },
+      removeAttribute: (a) => { set.delete(a) },
+    }
+  }
+  const panelAttrs = mkAttrSet()
+  const panel = {
+    className: 'nArs4W_panel',
+    style: { width: `${panelWidth}px` },
+    hasAttribute: panelAttrs.hasAttribute,
+    setAttribute: panelAttrs.setAttribute,
+    removeAttribute: panelAttrs.removeAttribute,
+    getBoundingClientRect: () => ({ x: viewport - panelWidth, right: viewport, width: panelWidth }),
+  }
+  const handle = { className: 'nArs4W_panelResize nArs4W_panelResizeActive', parentElement: panel }
+  const decoyAttrs = mkAttrSet()
+  decoyAttrs.setAttribute('data-dragging')
+  const decoy = {
+    className: 'appFrame_dragTarget',
+    style: { width: '' },
+    hasAttribute: decoyAttrs.hasAttribute,
+    setAttribute: decoyAttrs.setAttribute,
+    removeAttribute: decoyAttrs.removeAttribute,
+    getBoundingClientRect: () => ({ x: 0, right: railWidth, width: railWidth }),
+  }
+  doc.querySelector = (sel) => {
+    const s = String(sel)
+    if (s.includes('panelResize')) return withHandle ? handle : null
+    if (s.includes('data-dsh-panel-host')) return null
+    if (s === '[data-dragging]') return decoy
+    if (s.includes(WORKBENCH_PANEL_ATTR)) {
+      return panelAttrs.hasAttribute(WORKBENCH_PANEL_ATTR) ? panel : null
+    }
+    if (selIsSidebarColumn(s)) return column
+    return null
+  }
+  const captured = {}
+  doc.addEventListener = (type, fn) => { (captured[type] ||= []).push(fn) }
+  return { win, doc, panel, handle, decoy, captured }
+}
+
+function bindIssue505Service(win, state, sessionId = 's-505') {
+  const api = installWorkbenchGlobal(win)
+  api.bind({
+    betterSidebar: {
+      getSnapshot: () => ({ sessionId, state }),
+    },
+  })
+  return api
+}
+
+test('#505 regression: post-release oversized Files panel is clamped on the real panel node', () => {
+  const { win, doc, panel, decoy, captured } = makeIssue505Dom({})
+  // better-sidebar's committed drag state: inline width + layout var overshoot.
+  doc.documentElement.style.setProperty('--dsh-sidebar-width', '1298px')
+  const state = makeState([{ id: 'editor:readme', type: 'editor', title: 'Files' }], 1298, true)
+  bindIssue505Service(win, state)
+  const record = focusRecordForTab('s-505', 'editor:readme')
+  record.mode = WORKBENCH_FOCUS.split
+
+  installSplitConversationMin(doc)
+  assert.equal(captured.pointerup?.length, 1)
+  captured.pointerup[0]()
+
+  // The resolver must find the real fixed panel via its resize-handle parent,
+  // never the AppFrame [data-dragging] decoy.
+  assert.equal(findWorkbenchPanelElement(doc), panel)
+  assert.ok(panel.hasAttribute(WORKBENCH_PANEL_ATTR))
+  // Old code queried [data-dragging]/[data-dsh-panel-host]: after release the
+  // panel has neither, so the 1298px inline width survived and covered the
+  // conversation column down to ~150px. The clamp must land on the panel.
+  assert.equal(panel.style.width, '1088px')
+  assert.equal(doc.documentElement.style.getPropertyValue('--dsh-sidebar-width'), '1088px')
+  assert.equal(doc.documentElement.style.getPropertyValue('--omnimux-split-max'), '1088px')
+  // The decoy is never touched.
+  assert.equal(decoy.style.width, '')
+})
+
+test('#505 regression: mid-drag samples do not fight inline drag writes, release clamps', () => {
+  const { win, doc, panel, captured } = makeIssue505Dom({ panelWidth: 1400 })
+  const state = makeState([{ id: 'editor:readme', type: 'editor', title: 'Files' }], 1400, true)
+  bindIssue505Service(win, state)
+  const record = focusRecordForTab('s-505', 'editor:readme')
+  record.mode = WORKBENCH_FOCUS.split
+  installSplitConversationMin(doc)
+
+  // Mid-drag: better-sidebar sets body[data-dsh-sidebar-dragging] + panel
+  // [data-dragging] and rewrites the inline width every frame.
+  doc.body.setAttribute('data-dsh-sidebar-dragging')
+  panel.setAttribute('data-dragging')
+  panel.style.width = '1400px'
+  captured.pointermove[0]()
+  // No jitter: the inline drag write is NOT rewritten mid-drag; the persistent
+  // marker + --omnimux-split-max clamp the visuals through CSS instead.
+  assert.equal(panel.style.width, '1400px')
+  assert.ok(panel.hasAttribute(WORKBENCH_PANEL_ATTR))
+  assert.equal(doc.documentElement.style.getPropertyValue('--omnimux-split-max'), '1088px')
+
+  // Release: React commits width 1298 (clamped only to the viewport) and both
+  // dragging markers disappear; the panel must now be clamped in the DOM.
+  doc.body.removeAttribute('data-dsh-sidebar-dragging')
+  panel.removeAttribute('data-dragging')
+  panel.style.width = '1298px'
+  doc.documentElement.style.setProperty('--dsh-sidebar-width', '1298px')
+  captured.pointerup[0]()
+  assert.equal(panel.style.width, '1088px')
+  assert.equal(doc.documentElement.style.getPropertyValue('--dsh-sidebar-width'), '1088px')
+})
+
+test('#505 regression: panel resolution never mistakes an AppFrame [data-dragging] node', () => {
+  const { win, doc, decoy, captured } = makeIssue505Dom({ withHandle: false })
+  doc.documentElement.style.setProperty('--dsh-sidebar-width', '1298px')
+  const state = makeState([{ id: 'editor:readme', type: 'editor', title: 'Files' }], 1298, true)
+  bindIssue505Service(win, state)
+  installSplitConversationMin(doc)
+  // No resize handle, no host: the only [data-dragging] node is the decoy,
+  // which is not right-anchored to the viewport — it must be rejected.
+  assert.equal(findWorkbenchPanelElement(doc), null)
+  captured.pointerup[0]()
+  assert.equal(decoy.style.width, '')
+  // The layout var still clamps so #root keeps the 360px conversation floor.
+  assert.equal(doc.documentElement.style.getPropertyValue('--dsh-sidebar-width'), '1088px')
+})
+
+test('#505 split-min CSS clamps the tagged real panel, not only mid-drag nodes', () => {
+  assert.match(WORKBENCH_SPLIT_MIN_CSS, /\[data-omnimux-workbench-panel\]/)
+  assert.doesNotMatch(WORKBENCH_SPLIT_MIN_CSS, /\[data-dragging\]/)
 })
