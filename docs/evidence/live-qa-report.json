@@ -1,42 +1,59 @@
 {
-  "task": "fix-publish-type-pick-layout + publish-click-dead",
-  "timestamp": "2026-09-04T20:30:00+08:00",
+  "task": "omnimux-accounts-overseas-platforms-only",
+  "timestamp": "2026-09-05T01:29:00+08:00",
+  "issue": 514,
+  "pull_request": 515,
+  "commit": "628bc1aa05d57950d3d983f69c2b13e5dff4a344",
   "environment": {
-    "url": "http://127.0.0.1:44202",
-    "profile": "omnimux-dev-fix-type-pick-layout",
-    "port": 44202
+    "url": "http://127.0.0.1:45120/",
+    "profile": "omnimux-dev",
+    "profile_root": "~/.omnimux-dev",
+    "port": 45120,
+    "task_space_id": 454,
+    "page_title": "/3d-animation-short-generator 这个怎 — OmniMux",
+    "source_tree": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh"
   },
-  "findings": [
-    {
-      "symptom": "type pick cards deformed / look dead",
-      "root_cause": "TypeCard used dsh-ui-kit Button (32px single-row) + missing CSS in styles.js",
-      "fix": "native button + composer/type CSS",
-      "verified": {
-        "cards": [{"h":124,"w":352},{"h":124,"w":352}],
-        "tag": "BUTTON",
-        "click_to_composer": true
-      }
-    },
-    {
-      "symptom": "sidebar Publish click no response when no workspace/session",
-      "root_cause": "openWorkbench returns false silently if ensureSessionId() is empty (workbench.js)",
-      "fix": "nudgeWorkbenchNeedsSession toast + focus workspace chooser",
-      "verified": {
-        "unit": "workbench.test.js openWorkbench without session shows toast",
-        "e2e_with_session": "open returns true and stage mounts"
-      }
-    }
-  ],
   "flow_verified": [
-    "Create Project → session present",
-    "wb.open(omnimux-publish:library) → true",
-    "+ New Post → type-page with 2 cards 124px",
-    "click Video card → composer + accounts + form"
+    "Open the Accounts workbench tab",
+    "Open the Connect Account dialog",
+    "Confirm supported platforms are TikTok, Instagram, and YouTube",
+    "Confirm coming-soon platforms are X and Facebook",
+    "Confirm Xiaohongshu, Douyin, and WeChat Channels are absent in Chinese and English"
   ],
-  "screenshots": [
-    "docs/evidence/publish-type-pick-fixed.png",
-    "docs/evidence/publish-type-pick-live-flow.png",
-    "docs/evidence/publish-click-verified.png"
+  "dom_assertion": {
+    "dialog_visible": true,
+    "present": [
+      "TikTok",
+      "Instagram",
+      "YouTube",
+      "X",
+      "Facebook"
+    ],
+    "absent": [
+      "小红书",
+      "抖音",
+      "视频号",
+      "Xiaohongshu",
+      "Douyin",
+      "WeChat Channels"
+    ]
+  },
+  "evidence": {
+    "gif": "https://github.com/omnimux-ai/omnimux-dsh/blob/overseas-platforms-515-assets/accounts-overseas-platforms-515.gif?raw=true",
+    "asset_branch": "overseas-platforms-515-assets",
+    "asset_sha": "54c1fd251ac459a237c316b2f2bcb475aa0ed510",
+    "asset_bytes": 163690
+  },
+  "notes": [
+    "The merged main build was materialized to the development profile before browser verification.",
+    "The browser reused the existing authenticated development state; no mock transport or model round was used.",
+    "The legacy verify:live script defaults to port 44120 and returns a hollow success on connection refusal, so the authoritative UI evidence for this task is the ego-browser DOM assertion and GIF above."
   ],
+  "cleanup": {
+    "task_space_closed": true,
+    "feature_worktree_removed": true,
+    "feature_local_branch_removed": true,
+    "feature_remote_branch_removed": true
+  },
   "result": "PASS"
 }
