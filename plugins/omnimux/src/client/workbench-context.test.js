@@ -79,8 +79,9 @@ describe('Workbench UI Context and Envelope', () => {
 
     const ctx = api.getUiContext()
     assert.equal(ctx.ok, true)
-    assert.equal(ctx.reason, 'no-contributor')
+    assert.equal(ctx.reason, 'ok')
     assert.equal(ctx.surface.panelOpen, true)
     assert.equal(ctx.surface.tabId, 'omnimux-assets:library')
+    assert.equal(ctx.surface.title, '资产库')
   })
 })
