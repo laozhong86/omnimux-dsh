@@ -33,6 +33,11 @@ describe('hub chrome optional inject', () => {
     assert.match(chromeSource, /ensureConversationCollapseChrome/)
   })
 
+  it('installs the split conversation min clamp with cleanup', () => {
+    assert.match(chromeSource, /installSplitConversationMin/)
+    assert.match(chromeSource, /unsubSplitMin/)
+  })
+
   it('installs the composer-compact chrome and density observer', () => {
     assert.match(chromeSource, /ensureComposerCompactChrome/)
     assert.match(chromeSource, /installComposerCompactObserver/)

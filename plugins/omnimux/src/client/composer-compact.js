@@ -18,7 +18,8 @@ export const COMPOSER_COMPACT_ATTR = 'data-omnimux-composer-density'
 export const COMPOSER_COMPACT_DENSITY = Object.freeze({ full: 'full', short: 'short', icon: 'icon' })
 export const COMPOSER_COMPACT_FULL_MIN_PX = 560
 export const COMPOSER_COMPACT_SHORT_MIN_PX = 460
-export const COMPOSER_COMPACT_CONVERSATION_MIN_PX = 260
+/** Keep in lockstep with WORKBENCH_CONVERSATION_MIN_PX. */
+export const COMPOSER_COMPACT_CONVERSATION_MIN_PX = 360
 /** Keep the workspace chip secondary to the adjacent Agent preset on narrow rows. */
 export const COMPOSER_WORKSPACE_MAX_WIDTH_PX = 220
 
