@@ -11,8 +11,9 @@
       name: "技能创建",
       description: "创建双语可复用Skill",
     };
+    // 真源：skill-picker-logic.js SKILL_SHELF_TAXONOMY（顺序锁定，parity 测试对拍守卫）
     const SKILL_SHELF_TAGS = [
-      "短剧漫剧", "专业影视", "动画", "商业广告", "电商", "教育", "创意实验", "音频音乐", "平台工具",
+      "电商", "商业广告", "短剧漫剧", "专业影视", "动画", "教育", "创意实验", "音频音乐", "平台工具",
     ];
     const PICKER_TAB_LABELS = {
       "短剧漫剧": "picker.tab.drama",
