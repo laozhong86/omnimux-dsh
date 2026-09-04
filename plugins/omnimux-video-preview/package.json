@@ -13,8 +13,7 @@
     "lib",
     "scripts",
     "cordis.patch.yml",
-    "dsh.manifest.json",
-    "README.md"
+    "dsh.manifest.json"
   ],
   "scripts": {
     "build": "node scripts/build-client.mjs",

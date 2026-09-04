@@ -155,6 +155,23 @@ test('git-wt finish never locally merges or force-pushes main', () => {
   strictEqual(res.status, 0, `git-wt tests failed: ${res.stderr}\n${res.stdout}`)
 })
 
+test('verify-package-files passes on all plugins', () => {
+  const res = spawnSync('node', [resolve(here, 'verify-package-files.mjs')], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  })
+  strictEqual(res.status, 0, `package-files verification failed: ${res.stderr}\n${res.stdout}`)
+})
+
+test('verify-package-files unit tests pass', () => {
+  const res = spawnSync('node', ['--test', resolve(here, 'verify-package-files.test.mjs')], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: nestedTestEnv,
+  })
+  strictEqual(res.status, 0, `package-files unit tests failed: ${res.stderr}\n${res.stdout}`)
+})
+
 test('sync-to-app and sync-stable target selection matrix passes', () => {
   const res = spawnSync('node', ['--test', resolve(here, 'sync-targets.test.mjs')], {
     cwd: repoRoot,

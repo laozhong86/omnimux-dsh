@@ -4,27 +4,10 @@ import { mountWorkbenchTools } from './tools.js'
 import { createHubEventBus } from '../events/hub-event-bus.js'
 import { createWorkbenchMailbox } from './mailbox.js'
 import { JSON_TOOL_OUTPUT } from '../tools/schema.js'
+import { createTestToolContext } from '../test-support/tool-context.js'
 
 function captureTools() {
-  const tools = new Map()
-  const ctx = {
-    tools: {
-      register: (t) => {
-        // Mirror dsh-tools: require output { schema, render }
-        if (
-          t.output === undefined ||
-          typeof t.output !== 'object' ||
-          typeof t.output.render !== 'function'
-        ) {
-          throw new TypeError(
-            `tool "${t.name}" must declare output { schema, render, presentationMeta? }`,
-          )
-        }
-        tools.set(t.name, t)
-      },
-    },
-  }
-  return { tools, ctx }
+  return createTestToolContext()
 }
 
 describe('Workbench Tools', () => {
