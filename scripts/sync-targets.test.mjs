@@ -266,7 +266,7 @@ describe('OmniMux Profile Target Selection Matrix', () => {
     })
     assert.equal(res.status, 0)
     assert.match(res.stdout, /OmniMux Dev\.app/)
-    assert.match(res.stdout, /==> 物化 Agent Presets → \/Applications\/OmniMux\.app/)
+    assert.match(res.stdout, /OmniMux\.app\/Contents/)
     assert.doesNotMatch(res.stdout, /==> 物化 Agent Presets → .*DSH Desktop/)
     assert.doesNotMatch(res.stdout, /清理旧用户预设/)
     assert.doesNotMatch(res.stdout, /- retired /)
