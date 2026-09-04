@@ -20,6 +20,19 @@ export const MAX_TAB_SWITCHES_PER_SESSION = 3
  *   jsonOut?: { schema: object, render: Function, presentationMeta?: Function },
  * }} deps
  */
+export const WORKBENCH_VIEWPORT_PROMPT = `The user may have an OmniMux workbench tab open beside this conversation.
+Each user message may begin with an <ui_context schema="1"> block. Trust it over guessing.
+When the block includes view: canvas and workspace: <id>, that workspace is the current canvas target — pass it as workspace_id to workflow_* tools; do not call workflow_list merely to rediscover it; do not ask the user which canvas to use.
+Call workbench_get_active_view only if the block is missing, stale, or contradictory.
+Call workbench_open_tab only when the user needs to see a result; always pass reason.
+If a tool returns applied=false, tell the user in one sentence; do not retry in a loop.
+Never claim an image/video was generated unless the media result mode is "live".`
+
+export const WORKBENCH_VIEWPORT_PROMPT_SECTION = {
+  name: 'workbench:viewport',
+  order: 40,
+} 
+
 export function mountWorkbenchTools(ctx, deps) {
   const mailbox = deps.mailbox
   const getSettings = deps.getSettings
@@ -38,7 +51,7 @@ export function mountWorkbenchTools(ctx, deps) {
   ctx.tools?.register({
     name: 'workbench_get_active_view',
     description:
-      '获取当前右侧工作台（better-sidebar）激活的选项卡、子视图与用户选中的实体列表，感知用户界面视口。',
+      '获取当前右侧工作台（better-sidebar）激活的选项卡、子视图与用户选中的实体列表，感知用户界面视口。画布页返回 view.extra.workspaceId 时可直接作为 workflow_* 的 workspace_id。',
     parameters: {
       type: 'object',
       properties: {},
@@ -47,6 +60,15 @@ export function mountWorkbenchTools(ctx, deps) {
     output,
     execute: async () => mailbox.getActiveView(),
   })
+
+  // Viewport routing rules — order 40, before vertical ops (assets=50, workflow=60).
+  if (ctx.systemPrompt && typeof ctx.systemPrompt.section === 'function') {
+    ctx.systemPrompt.section({
+      name: WORKBENCH_VIEWPORT_PROMPT_SECTION.name,
+      order: WORKBENCH_VIEWPORT_PROMPT_SECTION.order,
+      text: WORKBENCH_VIEWPORT_PROMPT,
+    })
+  }
 
   // 2. workbench_open_tab
   ctx.tools?.register({

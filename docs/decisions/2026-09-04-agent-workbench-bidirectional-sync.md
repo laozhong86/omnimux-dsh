@@ -90,6 +90,19 @@ PRD（许清楚，`docs/specs/2026-09-04-agent-workbench-bidirectional-sync-prd.
 **明确不做**
 
 - `forceOpenPanel` 进 P0（P2 + 会话授权）。
-- 画布节点选中进 P0 信封（P2 `view.extra`）。
+- 画布**节点选中**进 P0 信封（P2 `selection` / 节点 id 列表）。
 - 无 better-sidebar 时回退 overlay / details（沿用 #313）。
 - 删除 5s poll。
+
+## Amendment · 2026-04-06 — 画布 workspace 寻址升为 P0 回归
+
+**原 U5** 将 `view.extra.canvasId` 标为 P2。线上回归：Agent 在当前会话画布上被要求加节点时，因信封缺少可执行 `workspaceId`，只能 `workflow_list` 枚举后 `ask_user_question`。
+
+**修订：**
+
+1. `omnimux-workflow:canvas` 的 Context Contributor **必须**贡献 `view.kind=canvas` + `view.extra.workspaceId`（= `sessionToWorkspaceId(sessionId)`）。
+2. Compact 块 **必须**序列化 `workspace:` 字段。
+3. `workflow_*` 写/读工具默认目标解析：`explicit workspace_id` > ui_context workspace > unique name；**禁止** list 优先、禁止 latest/唯一猜目标。
+4. Hub 注册 `workbench:viewport` systemPrompt；`workflow:ops` 明确「有当前 workspace 时不得 list/追问」。
+5. Hub 提供只读 `workbenchMailbox` seam（`getActiveView`），供垂直工具默认寻址；垂直包不得 import hub。
+6. 节点级 selection 仍属 P2；本 amendment 只提升 **workspace 寻址**。

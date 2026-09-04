@@ -41,6 +41,24 @@ export interface AgentSeatContext {
   tools?: ToolsSeat;
   systemPrompt?: SystemPromptSeat;
   effect?: (fn: () => unknown, label?: string) => unknown;
+  /** cordis get — used for optional hub seams like workbenchMailbox */
+  get?: (name: string) => unknown;
+}
+
+/** Read-only workbench viewport seam from hub (optional). */
+export interface WorkbenchMailboxSeat {
+  getActiveView?: (sessionId?: string) => {
+    ok?: boolean;
+    stale?: boolean;
+    sessionId?: string | null;
+    uiContext?: {
+      view?: {
+        kind?: string;
+        extra?: { workspaceId?: string };
+      } | null;
+      surface?: { tabId?: string | null } | null;
+    } | null;
+  };
 }
 
 export interface WorkflowAgentDeps {
@@ -50,6 +68,11 @@ export interface WorkflowAgentDeps {
   mediaDir: string;
   /** Same lazy-bind helper as POST /executions (media generate needs a project root). */
   ensureProjectBound?: EnsureProjectBoundFn;
+  /**
+   * Optional last-known UI viewport (hub workbenchMailbox).
+   * When present, tools may default workspace_id from view.extra.workspaceId.
+   */
+  getActiveView?: WorkbenchMailboxSeat['getActiveView'];
 }
 
 type FieldSpec = Record<string, unknown> & { required?: boolean | string[] };
@@ -225,15 +248,67 @@ export function withWorkspace<T>(
   return fn(snapshot);
 }
 
-/** Resolve a workspace by id (preferred) or exact unique name. */
+/** Extract current canvas workspaceId from workbench viewport envelope. */
+export function readUiContextWorkspaceId(
+  getActiveView?: WorkbenchMailboxSeat['getActiveView'],
+): string | undefined {
+  if (typeof getActiveView !== 'function') return undefined;
+  try {
+    const active = getActiveView();
+    const view = active?.uiContext?.view;
+    if (!view || typeof view !== 'object') return undefined;
+    // Prefer canvas kind; still accept workspaceId when tab is workflow canvas without kind.
+    const extra = view.extra;
+    const id = extra && typeof extra === 'object' ? extra.workspaceId : undefined;
+    if (typeof id !== 'string' || id.trim().length === 0) return undefined;
+    const trimmed = id.trim();
+    if (view.kind && view.kind !== 'canvas') return undefined;
+    // Reject path-like values (same rule as compact serializer).
+    if (!/^[A-Za-z0-9_.:-]{1,64}$/.test(trimmed)) return undefined;
+    return trimmed;
+  } catch {
+    return undefined;
+  }
+}
+
+export type WorkspaceResolutionSource =
+  | 'explicit'
+  | 'ui-context'
+  | 'name';
+
+/**
+ * Resolve a workspace target with UI-context-aware defaults.
+ * Priority: explicit workspace_id > ui_context workspace > unique workspace_name.
+ * Never falls back to "latest" or "only workspace in store".
+ */
 export function resolveWorkspace(
   store: WorkspaceStore,
   workspaceId: string | undefined,
   workspaceName: string | undefined,
-): { snapshot: CanvasWorkspaceSnapshot } | { error: string; message: string } {
+  options?: { getActiveView?: WorkbenchMailboxSeat['getActiveView'] },
+): {
+  snapshot: CanvasWorkspaceSnapshot;
+  source: WorkspaceResolutionSource;
+} | { error: string; message: string } {
   if (workspaceId) {
-    return withWorkspace(store, workspaceId, (snapshot) => ({ snapshot }));
+    const hit = withWorkspace(store, workspaceId, (snapshot) => ({
+      snapshot,
+      source: 'explicit' as const,
+    }));
+    return hit;
   }
+
+  const fromUi = readUiContextWorkspaceId(options?.getActiveView);
+  if (fromUi) {
+    const hit = withWorkspace(store, fromUi, (snapshot) => ({
+      snapshot,
+      source: 'ui-context' as const,
+    }));
+    if (!('error' in hit)) return hit;
+    // UI context pointed at a deleted workspace — surface that, do not invent another.
+    return hit;
+  }
+
   if (workspaceName) {
     const matches = store.list().filter((row) => row.name === workspaceName);
     const first = matches[0];
@@ -243,16 +318,43 @@ export function resolveWorkspace(
     if (matches.length > 1) {
       return errorBody(
         'ambiguous-workspace-name',
-        `multiple workspaces named "${workspaceName}" — pass workspaceId instead`,
+        `multiple workspaces named "${workspaceName}" — pass workspace_id instead`,
       );
     }
-    return withWorkspace(store, first.id, (snapshot) => ({ snapshot }));
+    return withWorkspace(store, first.id, (snapshot) => ({
+      snapshot,
+      source: 'name' as const,
+    }));
   }
+
   return errorBody(
-    'invalid-args',
-    'pass workspaceId (preferred, from workflow_list) or workspaceName',
+    'no-current-workspace',
+    'no workspace_id and no current canvas in ui_context — open a canvas tab, pass workspace_id, or call workflow_list only when the user must choose',
   );
 }
+
+/**
+ * Resolve target workspace id for write tools.
+ * Same priority as resolveWorkspace; returns only the id for mutate paths.
+ */
+export function resolveTargetWorkspaceId(
+  store: WorkspaceStore,
+  args: Record<string, unknown>,
+  options?: { getActiveView?: WorkbenchMailboxSeat['getActiveView'] },
+): { workspaceId: string; source: WorkspaceResolutionSource } | { error: string; message: string } {
+  const resolved = resolveWorkspace(
+    store,
+    readString(args, 'workspace_id'),
+    readString(args, 'workspace_name'),
+    options,
+  );
+  if ('error' in resolved) return resolved;
+  return { workspaceId: resolved.snapshot.id, source: resolved.source };
+}
+
+/** Shared parameter description for optional workspace_id on write/read tools. */
+export const WORKSPACE_ID_PARAM_DESC =
+  'Workspace id. Prefer the current canvas workspace from <ui_context> (workspace: ws_…); omit to use that default. Use workflow_list only when no current canvas is available or the user must choose another workspace.';
 
 export async function waitForTerminal(
   executionManager: ExecutionManager,

@@ -6,7 +6,10 @@ import { useCallback, useEffect, useSyncExternalStore } from 'react'
 import { sessionToWorkspaceId } from '../../shared/sessionWorkspaceId.ts'
 import { CanvasBridge } from '../CanvasBridge.jsx'
 import { injectWorkflowStyles } from '../styles.js'
-import { applyProjectCanvasRatio, getBetterSidebar } from './projectCanvas.js'
+import { applyProjectCanvasRatio, CANVAS_TAB_ID, getBetterSidebar } from './projectCanvas.js'
+
+/** Stable page id for UI Context Envelope (Agent workspace targeting). */
+export const CANVAS_PAGE_ID = 'workflow-canvas'
 
 /**
  * @param {{
@@ -25,6 +28,9 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
     () => (locale ? locale.getLocale().active : 'zh'),
   )
   const sessionId = scope?.sessionId
+  // 每个会话 / 项目拥有专属独立的画布工作区 ID，绝不串连其他项目的画布。
+  // sessionId 未就绪时禁止挂岛：否则 workspaceId=undefined，boot 会误开最新图。
+  const targetWorkspaceId = sessionToWorkspaceId(sessionId)
 
   useEffect(() => {
     const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
@@ -32,6 +38,26 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
     api.attachStore(store)
     return () => { api.detachStore?.(store) }
   }, [store])
+
+  // Contribute session-bound canvas workspaceId into the UI Context Envelope so
+  // Agents can target the current canvas without workflow_list / ask_user_question.
+  useEffect(() => {
+    const api = typeof window !== 'undefined' ? window.__omnimuxWorkbench : undefined
+    if (!api || typeof api.registerContextContributor !== 'function') return undefined
+    if (!targetWorkspaceId) return undefined
+    const unsub = api.registerContextContributor(CANVAS_TAB_ID, () => ({
+      view: {
+        kind: 'canvas',
+        pageId: CANVAS_PAGE_ID,
+        extra: { workspaceId: targetWorkspaceId },
+      },
+      selection: [],
+    }))
+    return () => {
+      if (typeof unsub === 'function') unsub()
+      else api.unregisterContextContributor?.(CANVAS_TAB_ID)
+    }
+  }, [targetWorkspaceId])
 
   useEffect(() => {
     if (!visible || !sessionId) return undefined
@@ -102,10 +128,6 @@ export function CanvasTab({ ctx, t, visible, store, scope }) {
   // 关闭走面板自己的 × / tab 关闭，不调 layout.closeDetails。
   // 必须稳定引用：CanvasBridge 虽已不再因 onClose 卸岛，但仍走 updateCanvas。
   const onClose = useCallback(() => {}, [])
-
-  // 每个会话 / 项目拥有专属独立的画布工作区 ID，绝不串连其他项目的画布。
-  // sessionId 未就绪时禁止挂岛：否则 workspaceId=undefined，boot 会误开最新图。
-  const targetWorkspaceId = sessionToWorkspaceId(sessionId)
 
   return (
     <div

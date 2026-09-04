@@ -70,6 +70,11 @@ export function apply(ctx, config = {}) {
   const hubEvents = createHubEventBus()
   const mailbox = createWorkbenchMailbox({ hubEvents })
   ctx.provide?.('hubEvents', hubEvents)
+  // Vertical tools (workflow_*) may read last-known viewport for default workspace targeting.
+  // Read-only seam: getActiveView only — no open/RPC.
+  ctx.provide?.('workbenchMailbox', {
+    getActiveView: (sessionId) => mailbox.getActiveView(sessionId),
+  })
 
   const listCatalog = () => {
     const settingsService = typeof ctx.get === 'function' ? ctx.get('settings') : undefined

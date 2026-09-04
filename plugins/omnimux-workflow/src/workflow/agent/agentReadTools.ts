@@ -25,6 +25,7 @@ import {
   waitForTerminal,
   summarizeNodes,
   mediaKindFromMaterial,
+  WORKSPACE_ID_PARAM_DESC,
 } from './agentToolShared.ts';
 
 function extractNodeInitialOutput(
@@ -90,15 +91,15 @@ export function createWorkflowListTool(deps: WorkflowAgentDeps): AgentToolSpec {
 }
 
 export function createWorkflowRunTool(deps: WorkflowAgentDeps): AgentToolSpec {
-  const { store, executionManager, mediaDir } = deps;
+  const { store, executionManager, mediaDir, getActiveView } = deps;
   return {
     name: 'workflow_run',
     description:
-      'Run a workflow canvas (node DAG) on the omnimux-workflow execution engine. mode "full" runs every node; mode "subset" runs only the given nodeIds plus their transitive upstream closure; mode "single" runs only the given nodeIds directly (inheriting existing upstream outputs). wait=false (default) returns the executionId immediately — the user can watch live progress on the canvas (per-node badges + SSE). wait=true polls until a terminal status (completed/error/cancelled) or the timeout (default 120s) and returns per-node statuses, text excerpts and media file paths. The canvas performs generation through the OmniMux gateway (real hub seams when available, mock otherwise).',
+      'Run a workflow canvas (node DAG) on the omnimux-workflow execution engine. Prefer the current canvas from ui_context when workspace_id is omitted. mode "full" runs every node; mode "subset" runs only the given nodeIds plus their transitive upstream closure; mode "single" runs only the given nodeIds directly (inheriting existing upstream outputs). wait=false (default) returns the executionId immediately — the user can watch live progress on the canvas (per-node badges + SSE). wait=true polls until a terminal status (completed/error/cancelled) or the timeout (default 120s) and returns per-node statuses, text excerpts and media file paths. The canvas performs generation through the OmniMux gateway (real hub seams when available, mock otherwise).',
     parameters: objectParams({
       workspace_id: {
         type: 'string',
-        description: 'Workspace id (preferred — from workflow_list), e.g. ws_0123456789ab',
+        description: WORKSPACE_ID_PARAM_DESC,
       },
       workspace_name: {
         type: 'string',
@@ -127,7 +128,7 @@ export function createWorkflowRunTool(deps: WorkflowAgentDeps): AgentToolSpec {
     async execute(args) {
       const workspaceId = readString(args, 'workspace_id');
       const workspaceName = readString(args, 'workspace_name');
-      const resolved = resolveWorkspace(store, workspaceId, workspaceName);
+      const resolved = resolveWorkspace(store, workspaceId, workspaceName, { getActiveView });
       if ('error' in resolved) return resolved;
       const workspace = resolved.snapshot;
 
@@ -237,16 +238,15 @@ export function createWorkflowRunTool(deps: WorkflowAgentDeps): AgentToolSpec {
 }
 
 export function createWorkflowSnapshotTool(deps: WorkflowAgentDeps): AgentToolSpec {
-  const { store } = deps;
+  const { store, getActiveView } = deps;
   return {
     name: 'workflow_snapshot',
     description:
-      'Read the current state of one workflow canvas workspace. Default: a compact summary (name, version, node/edge counts, node type/material breakdown, execution settings). includeNodes=true returns the FULL node and edge structure (positions, prompts, tools, models, connections) so the graph can be analyzed or modification advice given. Read-only. Unbound canvases live under $DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json; bound canvases live under <ProjectRoot>/.omnimux/canvases/<id>.json.',
+      'Read the current state of one workflow canvas workspace (defaults to the ui_context current canvas when workspace_id is omitted). Default: a compact summary (name, version, node/edge counts, node type/material breakdown, execution settings). includeNodes=true returns the FULL node and edge structure (positions, prompts, tools, models, connections) so the graph can be analyzed or modification advice given. Read-only. Unbound canvases live under $DSH_HOME/omnimux/workflow/workspaces/<id>/canvas.json; bound canvases live under <ProjectRoot>/.omnimux/canvases/<id>.json.',
     parameters: objectParams({
       workspace_id: {
         type: 'string',
-        required: true,
-        description: 'Workspace id (from workflow_list), e.g. ws_0123456789ab',
+        description: WORKSPACE_ID_PARAM_DESC,
       },
       include_nodes: {
         type: 'boolean',
@@ -255,10 +255,14 @@ export function createWorkflowSnapshotTool(deps: WorkflowAgentDeps): AgentToolSp
     }),
     output: jsonOut,
     async execute(args) {
-      const workspaceId = readString(args, 'workspace_id');
-      if (!workspaceId) {
-        return errorBody('invalid-args', 'workspace_id is required');
-      }
+      const resolved = resolveWorkspace(
+        store,
+        readString(args, 'workspace_id'),
+        readString(args, 'workspace_name'),
+        { getActiveView },
+      );
+      if ('error' in resolved) return resolved;
+      const workspaceId = resolved.snapshot.id;
 
       return withWorkspace(store, workspaceId, (workspace) => {
         if (readBoolean(args, 'include_nodes')) {

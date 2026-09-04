@@ -1191,19 +1191,49 @@ export function getUiContext() {
   return envelope
 }
 
+/** Logical workspace id only — reject path-like values. */
+function isSafeWorkspaceId(value) {
+  return typeof value === 'string'
+    && /^[A-Za-z0-9_.:-]{1,64}$/.test(value)
+    && !value.includes('/')
+    && !value.includes('\\')
+    && !value.includes('~')
+}
+
+function isSafeShortToken(value) {
+  return typeof value === 'string'
+    && value.length > 0
+    && value.length <= 64
+    && !value.includes('\n')
+    && !value.includes('|')
+}
+
 export function formatCompactContextBlock(envelope) {
   if (!envelope || !envelope.surface) return ''
   const s = envelope.surface
+  const view = envelope.view && typeof envelope.view === 'object' ? envelope.view : null
+  const extra = view?.extra && typeof view.extra === 'object' ? view.extra : null
   const lines = []
   lines.push('<ui_context schema="1">')
 
   const titleStr = s.title && s.title !== s.tabId ? ` (${s.title})` : ''
   let firstLine = `tab: ${s.tabId || 'none'}${titleStr}`
-  if (envelope.view?.filterType) {
-    firstLine += ` | filter: ${envelope.view.filterType}`
+  if (isSafeShortToken(view?.kind)) {
+    firstLine += ` | view: ${view.kind}`
   }
-  if (envelope.view?.query) {
-    firstLine += ` | query: ${envelope.view.query}`
+  if (isSafeShortToken(view?.pageId)) {
+    firstLine += ` | page: ${view.pageId}`
+  }
+  // Canvas workspace is a P0 routing key — whitelist only, never dump all extra.
+  const workspaceId = extra?.workspaceId
+  if (isSafeWorkspaceId(workspaceId)) {
+    firstLine += ` | workspace: ${workspaceId}`
+  }
+  if (view?.filterType) {
+    firstLine += ` | filter: ${view.filterType}`
+  }
+  if (view?.query) {
+    firstLine += ` | query: ${view.query}`
   }
   if (Array.isArray(envelope.selection) && envelope.selection.length > 0) {
     const selStr = envelope.selection.slice(0, 3).map((item) => {

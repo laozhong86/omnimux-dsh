@@ -49,7 +49,7 @@ On composer submit (click send **or** Enter), Hub:
 1. `workbench.getSnapshot()` + `getFocus()` + `getConversationCollapsed()`.
 2. If `panelOpen`: call the active tab's contributor (`registerContextContributor(tabId, fn)`). Contributor **MUST** be a synchronous pure function returning `{ view, selection }`.
 3. If `!panelOpen`: `surface` uses last Occupant tab; `selection = []`; `reason = panel-collapsed`; `ok` remains `true`.
-4. Truncate: drop `selection` from the tail, then `view.query`, then `view.extra`. **Never drop `surface`**. Target serialized compact block ≤ 800 tokens P95.
+4. Truncate: drop `selection` from the tail, then `view.query`, then non-routing `view.extra`. **Never drop `surface`**. For canvas tabs, `view.extra.workspaceId` is a **P0 routing key** and MUST be retained ahead of ordinary selection tails when budget is tight. Target serialized compact block ≤ 800 tokens P95.
 5. Strip any existing `<ui_context…>` prefix, then prepend the compact block to the composer value via the React 18 prototype setter (same pattern as inspiration `composer-inject.js`). Native send proceeds.
 6. Failure / timeout / throw → `ok: false`, `reason: timeout|unavailable|no-workbench|no-contributor`; **message still sends**.
 
@@ -63,6 +63,17 @@ tab: omnimux-assets:library | filter: character | selected: 林晓 (ast_7f3a)
 panel: open | focus: gui
 </ui_context>
 ```
+
+Canvas tab example (workflow):
+
+```text
+<ui_context schema="1">
+tab: omnimux-workflow:canvas (创作画布) | view: canvas | page: workflow-canvas | workspace: ws_0123456789ab
+panel: open | focus: split
+</ui_context>
+```
+
+Compact serializer **MUST** whitelist-serialize `view.kind`, `view.pageId`, and `view.extra.workspaceId` (logical id only; reject path-like values). **MUST NOT** dump arbitrary `view.extra`.
 
 User bubble **MUST NOT** show this block (Hub conversation filter). Dev profile may show JSON (P2).
 
