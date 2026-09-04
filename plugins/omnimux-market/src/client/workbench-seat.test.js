@@ -30,6 +30,20 @@ describe('market workbench seat (sidebar must not claim overlay)', () => {
     assert.match(source, /PlazaAction/)
   })
 
+  it('registers the composer Skill picker on conversation.input.left', () => {
+    const source = readFileSync(join(here, 'apply.js'), 'utf8')
+    assert.match(source, /conversation\.input\.left/)
+    assert.match(source, /omnimux-market-skill-picker/)
+    assert.match(source, /SkillPickerButton/)
+  })
+
+  it('plaza view consumes a one-shot skills tab intent', () => {
+    const source = readFileSync(join(here, 'plaza-shell.js'), 'utf8')
+    assert.match(source, /omnimux-market:plaza-intent/)
+    assert.match(source, /function consumePlazaIntent/)
+    assert.match(source, /setTab\(intent\)/)
+  })
+
   it('plaza icon SVG carries explicit square width and height', () => {
     const source = readFileSync(join(here, 'skill-plaza.js'), 'utf8')
     assert.match(source, /function renderPlazaIcon/)

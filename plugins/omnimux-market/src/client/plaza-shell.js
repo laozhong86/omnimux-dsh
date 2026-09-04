@@ -1,4 +1,19 @@
     const PLAZA_TAB_ID = "omnimux-market:plaza";
+    const PLAZA_INTENT_KEY = "omnimux-market:plaza-intent";
+    const PLAZA_TABS = ["plugins", "skills", "experts", "connectors"];
+
+    function consumePlazaIntent() {
+      try {
+        const raw = window.sessionStorage.getItem(PLAZA_INTENT_KEY);
+        window.sessionStorage.removeItem(PLAZA_INTENT_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        const tab = parsed && parsed.tab;
+        return PLAZA_TABS.includes(tab) ? tab : null;
+      } catch {
+        return null;
+      }
+    }
 
     function PlazaTopSearch({ query, onQuery, onSubmit, onClear, placeholder }) {
       return h("div", { className: "sh-plaza-search" },
@@ -35,6 +50,17 @@
         api.attachStore(store);
         return () => { api.detachStore?.(store); };
       }, [store]);
+
+      useEffect(() => {
+        const apply = () => {
+          const intent = consumePlazaIntent();
+          if (intent) setTab(intent);
+        };
+        if (active !== false) apply();
+        if (typeof window === "undefined" || typeof window.addEventListener !== "function") return undefined;
+        window.addEventListener("omnimux-market:plaza-intent", apply);
+        return () => window.removeEventListener("omnimux-market:plaza-intent", apply);
+      }, [active]);
 
       const currentQuery = tabQueries[tab] || "";
       const handleQueryChange = (val) => {
