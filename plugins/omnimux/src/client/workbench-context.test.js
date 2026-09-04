@@ -55,4 +55,32 @@ describe('Workbench UI Context and Envelope', () => {
 
     unsub()
   })
+
+  it('correctly reads state from snap.state when panel is open', () => {
+    resetWorkbenchForTests()
+    const api = installWorkbenchGlobal()
+    api.bind({
+      betterSidebar: {
+        getSnapshot: () => ({
+          sessionId: 'ses_test',
+          state: {
+            panelOpen: true,
+            activePane: 'pane:1',
+            splits: {
+              kind: 'leaf',
+              id: 'pane:1',
+              tabs: [{ id: 'omnimux-assets:library' }],
+              active: 'omnimux-assets:library',
+            },
+          },
+        }),
+      },
+    })
+
+    const ctx = api.getUiContext()
+    assert.equal(ctx.ok, true)
+    assert.equal(ctx.reason, 'no-contributor')
+    assert.equal(ctx.surface.panelOpen, true)
+    assert.equal(ctx.surface.tabId, 'omnimux-assets:library')
+  })
 })

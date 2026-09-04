@@ -13,20 +13,25 @@ describe('Workbench HTTP Routes', () => {
     assert.equal(isLocalRequest({ headers: { 'sec-fetch-site': 'cross-site' } }), false)
   })
 
-  it('routes register on fake webServer', () => {
-    const routes = new Map()
+  it('routes register on webServer.register', () => {
+    const routes = []
     const fakeServer = {
-      get: (path, handler) => routes.set(`GET ${path}`, handler),
-      post: (path, handler) => routes.set(`POST ${path}`, handler),
+      register: (route) => {
+        routes.push(route)
+        return () => {}
+      },
     }
 
     const bus = createHubEventBus()
     const mailbox = createWorkbenchMailbox({ hubEvents: bus })
 
-    registerWorkbenchHttpRoutes(fakeServer, { hubEvents: bus, mailbox })
+    const dispose = registerWorkbenchHttpRoutes(fakeServer, { hubEvents: bus, mailbox })
 
-    assert.ok(routes.has('GET /omnimux/events/stream'))
-    assert.ok(routes.has('POST /omnimux/workbench/viewport'))
-    assert.ok(routes.has('POST /omnimux/workbench/rpc/ack'))
+    assert.equal(routes.length, 3)
+    const paths = routes.map((r) => r.path)
+    assert.ok(paths.includes('/omnimux/events/stream'))
+    assert.ok(paths.includes('/omnimux/workbench/viewport'))
+    assert.ok(paths.includes('/omnimux/workbench/rpc/ack'))
+    dispose()
   })
 })

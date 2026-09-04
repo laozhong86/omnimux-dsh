@@ -1110,12 +1110,13 @@ export function unregisterContextContributor(tabId) {
 export function getUiContext() {
   const service = getService()
   const snap = service?.getSnapshot?.()
-  const activeTab = activeTabId(snap)
-  const panelOpen = Boolean(snap?.panelOpen)
+  const state = snap?.state || snap
+  const activeTab = activeTabId(state)
+  const panelOpen = Boolean(state?.panelOpen)
   const focus = getWorkbenchFocus()
   const conversationCollapsed = Boolean(getConversationCollapsed())
-  const openedTabs = listOpenTabs(snap).map((t) => t.id).filter(Boolean)
-  const sessionId = currentSessionId() || 'default'
+  const openedTabs = listOpenTabs(state).map((t) => t.id).filter(Boolean)
+  const sessionId = currentSessionId() || snap?.sessionId || 'default'
 
   let reason = 'ok'
   let view = null
