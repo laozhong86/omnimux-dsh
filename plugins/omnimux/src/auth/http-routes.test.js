@@ -213,6 +213,10 @@ describe('auth http dispatcher', () => {
       'prefix:/omnimux/analytics',
       'prefix:/omnimux/inspiration',
       'exact:/omnimux/avatar',
+      // #453: workbench routes register via webServer.register in the same inject
+      'exact:/omnimux/events/stream',
+      'exact:/omnimux/workbench/viewport',
+      'exact:/omnimux/workbench/rpc/ack',
     ])
   })
 
