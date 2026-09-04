@@ -12,6 +12,7 @@ export const CREATE_SKILL = Object.freeze({
 })
 export const PICKER_SEARCH_LIMIT = 20
 export const PICKER_DEBOUNCE_MS = 200
+export const PICKER_CACHE_TTL_MS = 90_000
 
 export const PICKER_TABS = Object.freeze([
   { id: 'all', kind: 'all' },
@@ -109,4 +110,50 @@ export function consumePlazaIntent(storage) {
   } catch {
     return null
   }
+}
+
+export function pickerCacheKey(payload) {
+  return JSON.stringify(payload || {})
+}
+
+export function peekPickerCache(store, key, now = Date.now(), ttlMs = PICKER_CACHE_TTL_MS) {
+  if (!store || typeof store.get !== 'function' || !key) return null
+  const hit = store.get(key)
+  if (!hit || !hit.body) return null
+  const at = Number(hit.at) || 0
+  if (now - at >= ttlMs) return null
+  return hit.body
+}
+
+export function writePickerCache(store, key, body, now = Date.now()) {
+  if (!store || typeof store.set !== 'function' || !key || !body) return false
+  store.set(key, { at: now, body })
+  return true
+}
+
+export function loadPickerSearch(payload, opts) {
+  const key = pickerCacheKey(payload)
+  const now = opts && typeof opts.now === 'number' ? opts.now : Date.now()
+  const ttl = opts && typeof opts.ttlMs === 'number' ? opts.ttlMs : PICKER_CACHE_TTL_MS
+  const cache = opts && opts.cache
+  const inflight = opts && opts.inflight
+  const fetchSearch = opts && opts.fetchSearch
+  const cached = peekPickerCache(cache, key, now, ttl)
+  if (cached) return Promise.resolve({ body: cached, fromCache: true })
+  if (inflight && typeof inflight.get === 'function' && inflight.has(key)) {
+    return inflight.get(key).then((body) => ({ body, fromCache: false }))
+  }
+  if (typeof fetchSearch !== 'function') {
+    return Promise.resolve({ body: null, fromCache: false })
+  }
+  const pending = Promise.resolve(fetchSearch(payload)).then((body) => {
+    writePickerCache(cache, key, body, now)
+    if (inflight && typeof inflight.delete === 'function') inflight.delete(key)
+    return body
+  }, (err) => {
+    if (inflight && typeof inflight.delete === 'function') inflight.delete(key)
+    throw err
+  })
+  if (inflight && typeof inflight.set === 'function') inflight.set(key, pending)
+  return pending.then((body) => ({ body, fromCache: false }))
 }

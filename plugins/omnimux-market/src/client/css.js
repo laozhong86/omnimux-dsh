@@ -210,8 +210,10 @@
 .sh-plaza-skip:hover{color:var(--dsw-alias-label-secondary,#4b5563)}
 .sh-plaza-status{margin:8px 0 0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary,#4b5563)}
 .sh-picker-wrap{display:inline-flex;align-items:center;flex:none}
-.sh-picker-trigger{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;box-sizing:border-box;padding:0 10px;border:1px solid var(--dsw-alias-border-l2,transparent);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary,inherit);font:inherit;font-size:13px;line-height:20px;cursor:pointer}
+.sh-picker-trigger{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;box-sizing:border-box;padding:0 10px;border:0;box-shadow:none;border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary,inherit);font:inherit;font-size:13px;line-height:20px;cursor:pointer}
 .sh-picker-trigger:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(38,49,72,.06))}
+.sh-picker-trigger:focus{outline:none}
+.sh-picker-trigger:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#4d6bfe);outline-offset:2px}
 .sh-picker-trigger.on{background:var(--dsw-alias-interactive-bg-hover,rgba(38,49,72,.08));color:var(--dsw-alias-label-primary,inherit)}
 .sh-picker-trigger svg{flex:none;width:16px;height:16px}
 .sh-picker-trigger-label{white-space:nowrap}

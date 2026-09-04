@@ -10,6 +10,11 @@ import {
   installPayload,
   skillGesture,
   writePlazaIntent,
+  loadPickerSearch,
+  peekPickerCache,
+  pickerCacheKey,
+  writePickerCache,
+  PICKER_CACHE_TTL_MS,
 } from './skill-picker-logic.js'
 
 describe('skill picker logic', () => {
@@ -84,5 +89,34 @@ describe('skill picker logic', () => {
     assert.equal(store.get(PLAZA_INTENT_KEY), JSON.stringify({ tab: 'skills' }))
     assert.equal(consumePlazaIntent(storage), 'skills')
     assert.equal(consumePlazaIntent(storage), null)
+  })
+
+  it('picker cache returns hits within TTL and misses after expiry', () => {
+    const cache = new Map()
+    const key = pickerCacheKey({ query: '', limit: 20 })
+    const body = { items: [{ slug: 'audiobook' }] }
+    writePickerCache(cache, key, body, 1_000)
+    assert.deepEqual(peekPickerCache(cache, key, 1_000 + 1_000), body)
+    assert.equal(peekPickerCache(cache, key, 1_000 + PICKER_CACHE_TTL_MS), null)
+  })
+
+  it('loadPickerSearch skips fetch on cache hit and dedupes inflight', async () => {
+    const cache = new Map()
+    const inflight = new Map()
+    let calls = 0
+    const fetchSearch = async () => {
+      calls += 1
+      return { items: [{ slug: 'a' }], ok: true }
+    }
+    const first = loadPickerSearch({ query: '' }, { cache, inflight, fetchSearch, now: 10 })
+    const second = loadPickerSearch({ query: '' }, { cache, inflight, fetchSearch, now: 10 })
+    const [a, b] = await Promise.all([first, second])
+    assert.equal(calls, 1)
+    assert.equal(a.fromCache, false)
+    assert.equal(b.fromCache, false)
+    const cached = await loadPickerSearch({ query: '' }, { cache, inflight, fetchSearch, now: 20 })
+    assert.equal(calls, 1)
+    assert.equal(cached.fromCache, true)
+    assert.equal(cached.body.items[0].slug, 'a')
   })
 })

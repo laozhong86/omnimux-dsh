@@ -1,5 +1,8 @@
     const PICKER_SEARCH_LIMIT = 20;
     const PICKER_DEBOUNCE_MS = 200;
+    const PICKER_CACHE_TTL_MS = 90_000;
+    const pickerSearchCache = new Map();
+    const pickerSearchInflight = new Map();
     const CREATE_SKILL_ITEM = {
       id: "sk-omx-skill-creator",
       slug: "skill-creator",
@@ -61,6 +64,41 @@
       return list;
     }
 
+    function pickerCacheKey(payload) {
+      return JSON.stringify(payload || {});
+    }
+
+    function peekPickerCache(payload) {
+      const key = pickerCacheKey(payload);
+      const hit = pickerSearchCache.get(key);
+      if (!hit || !hit.body) return null;
+      if (Date.now() - (Number(hit.at) || 0) >= PICKER_CACHE_TTL_MS) return null;
+      return hit.body;
+    }
+
+    function rememberPickerSearch(payload, body) {
+      if (!body) return;
+      pickerSearchCache.set(pickerCacheKey(payload), { at: Date.now(), body });
+    }
+
+    function loadPickerSearch(payload) {
+      const cached = peekPickerCache(payload);
+      if (cached) return Promise.resolve({ body: cached, fromCache: true });
+      const key = pickerCacheKey(payload);
+      const pending = pickerSearchInflight.get(key);
+      if (pending) return pending.then((body) => ({ body, fromCache: false }));
+      const next = api("search", payload).then((body) => {
+        rememberPickerSearch(payload, body);
+        pickerSearchInflight.delete(key);
+        return body;
+      }, (err) => {
+        pickerSearchInflight.delete(key);
+        throw err;
+      });
+      pickerSearchInflight.set(key, next);
+      return next.then((body) => ({ body, fromCache: false }));
+    }
+
     function pickerInstallPayload(item) {
       if (!item || item.installed === true) return null;
       const slug = String(item.slug || item.skill || "").trim();
@@ -82,6 +120,35 @@
       if (typeof document === "undefined") return;
       const el = document.querySelector('[data-composer-card] [contenteditable="true"], [data-composer-card] textarea, [data-lexical-editor="true"]');
       if (el && typeof el.focus === "function") el.focus();
+    }
+
+    function renderPuzzleIcon(size = 16) {
+      const px = typeof size === "number" && Number.isFinite(size) && size > 0 ? size : 16;
+      return h("svg", {
+        width: px,
+        height: px,
+        viewBox: "0 0 16 16",
+        fill: "none",
+        xmlns: "http://www.w3.org/2000/svg",
+        "aria-hidden": "true",
+        preserveAspectRatio: "xMidYMid meet",
+        style: {
+          width: px,
+          height: px,
+          minWidth: px,
+          minHeight: px,
+          flex: "none",
+          flexShrink: 0,
+          display: "block",
+        },
+      },
+        h("path", {
+          d: "M2.2 2.2h4.15a1.55 1.55 0 1 0 3.3 0H13.8v4.15a1.55 1.55 0 1 0 0 3.3V13.8H9.65a1.55 1.55 0 1 0-3.3 0H2.2V9.65a1.55 1.55 0 1 0 0-3.3V2.2z",
+          stroke: "currentColor",
+          strokeWidth: "1.4",
+          strokeLinejoin: "round",
+        }),
+      );
     }
 
     function PickerInfoIcon() {
@@ -137,16 +204,27 @@
         if (!open) return undefined;
         let live = true;
         const payload = pickerSearchPayload(tabId, debounced);
-        setStatus((cur) => (cur === "ready" ? cur : "loading"));
-        api("search", payload).then((d) => {
+        const cached = peekPickerCache(payload);
+        if (cached) {
+          setItems(Array.isArray(cached.items) ? cached.items : []);
+          setRemoteDown(Boolean(cached.channelErrors && cached.channelErrors.skillhub));
+          setStatus("ready");
+          setErr("");
+        } else {
+          setStatus((cur) => (cur === "ready" ? cur : "loading"));
+        }
+        loadPickerSearch(payload).then((result) => {
           if (!live) return;
+          const d = result && result.body;
+          if (!d) return;
           setItems(Array.isArray(d.items) ? d.items : []);
           setRemoteDown(Boolean(d.channelErrors && d.channelErrors.skillhub));
           setStatus("ready");
           setErr("");
-          setActiveIndex(0);
+          if (!result.fromCache) setActiveIndex(0);
         }).catch((e) => {
           if (!live) return;
+          if (cached) return;
           setItems([]);
           setStatus("error");
           setErr(e && e.message ? e.message : String(e || "error"));
@@ -330,6 +408,11 @@
       useEffect(() => { setOpen(false); }, [sessionId]);
 
       useEffect(() => {
+        const payload = pickerSearchPayload("all", "");
+        loadPickerSearch(payload).catch(() => {});
+      }, []);
+
+      useEffect(() => {
         if (!open) return undefined;
         const onPage = () => setOpen(false);
         window.addEventListener("dsh-product-stage", onPage);
@@ -377,7 +460,7 @@
             "data-omnimux-skill-picker": "",
             onClick: () => setOpen((v) => !v),
           },
-            renderPlazaIcon(16),
+            renderPuzzleIcon(16),
             h("span", { className: "sh-picker-trigger-label" }, tr("picker.title")),
           ),
           h(SkillPickerPanel, {
