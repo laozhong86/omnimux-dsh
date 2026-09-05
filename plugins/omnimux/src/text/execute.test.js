@@ -78,8 +78,9 @@ describe('textComplete execute', () => {
         image: dest,
         llm: collectStream(seen),
         attachments: {
-          saveImage(input) {
+          async saveImage(input) {
             saved.push(input)
+            await Promise.resolve()
             return { attachmentId: 'att-1', mediaType: input.mediaType, bytes: input.data.byteLength, width: 1, height: 1 }
           },
         },
@@ -121,7 +122,7 @@ describe('textComplete execute', () => {
   })
 
   it('ignores caller bypassSubmitGuard and rejects an incompatible operation before llm.stream', async () => {
-    let vendorCalls = 0
+    let streamCalls = 0
     await assert.rejects(
       () => executeOmnimuxText({
         prompt: 'describe',
@@ -130,7 +131,7 @@ describe('textComplete execute', () => {
         bypassSubmitGuard: true,
         llm: {
           async * stream() {
-            vendorCalls += 1
+            streamCalls += 1
             yield { type: 'text-delta', text: 'must not run' }
             yield { type: 'finish', reason: { kind: 'stop' } }
           },
@@ -138,14 +139,14 @@ describe('textComplete execute', () => {
       }),
       (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
     )
-    assert.equal(vendorCalls, 0)
+    assert.equal(streamCalls, 0)
   })
 
   it('uses probed image metadata and rejects an oversized image before saving or streaming', async () => {
     const bytes = Buffer.alloc(20 * 1024 * 1024 + 1)
     PNG.forEach((value, index) => { bytes[index] = value })
     let saved = 0
-    let vendorCalls = 0
+    let streamCalls = 0
     await assert.rejects(
       () => executeOmnimuxText({
         prompt: 'describe',
@@ -153,7 +154,7 @@ describe('textComplete execute', () => {
         assetMeta: { 'https://example.com/oversized.png': { mime: 'image/png', sizeBytes: 1 } },
         attachments: {
           imageLimits: { maxImageBytes: 25 * 1024 * 1024 },
-          saveImage() { saved += 1 },
+          async saveImage() { saved += 1 },
         },
         fetcher: async () => ({
           ok: true,
@@ -162,7 +163,7 @@ describe('textComplete execute', () => {
         }),
         llm: {
           async * stream() {
-            vendorCalls += 1
+            streamCalls += 1
             yield { type: 'text-delta', text: 'must not run' }
           },
         },
@@ -170,7 +171,7 @@ describe('textComplete execute', () => {
       (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
     )
     assert.equal(saved, 0)
-    assert.equal(vendorCalls, 0)
+    assert.equal(streamCalls, 0)
   })
 
   it('decodes a data URI and reads PNG magic', () => {

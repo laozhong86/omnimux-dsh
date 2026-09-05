@@ -118,7 +118,7 @@ export async function executeOmnimuxText(input) {
   }
   const content = [{ type: 'text', text: prompt }]
   if (probedImage) {
-    const attachment = saveProbedTextImage(probedImage, input.attachments)
+    const attachment = await saveProbedTextImage(probedImage, input.attachments)
     content.push({ type: 'image', attachment })
   }
   const options = {
