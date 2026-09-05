@@ -101,7 +101,7 @@ export const zh = {
   'modal.script.copySegment': '复制本段',
   'modal.script.empty': '暂无脚本文案',
   'modal.script.emptyHint': '可点击「用 Agent 分析」生成脚本与解构',
-  'modal.script.noSegmentsHint': '暂无分段脚本 · 分析后可按段查看',
+  'modal.script.noSegmentsHint': '分段脚本，即将上线...',
   'modal.script.translate': '翻译',
   'modal.script.translating': '翻译中…',
   'modal.script.showSource': '看原文',
