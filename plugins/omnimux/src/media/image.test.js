@@ -64,7 +64,7 @@ describe('omnimux image helpers', () => {
       },
       fetcher: async (url) => {
         assert.equal(String(url), 'https://cdn.example/out-pat.png')
-        return { ok: true, arrayBuffer: async () => Buffer.from('pat-png-bytes') }
+        return { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => Buffer.from('pat-png-bytes') }
       },
     })
     assert.equal(result.mode, 'live')
@@ -92,7 +92,7 @@ describe('omnimux image helpers', () => {
       fetcher: async (url, init) => {
         assert.equal(String(url), 'https://omnimux.ai/v1/videos/img-auth/content')
         downloadHeaders = init?.headers
-        return { ok: true, arrayBuffer: async () => Buffer.from('png-auth-bytes') }
+        return { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => Buffer.from('png-auth-bytes') }
       },
     })
     assert.equal(result.mode, 'live')
@@ -119,7 +119,7 @@ describe('omnimux image helpers', () => {
       },
       fetcher: async (url) => {
         assert.equal(String(url), 'https://cdn.example/out.png')
-        return { ok: true, arrayBuffer: async () => Buffer.from('png-bytes') }
+        return { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => Buffer.from('png-bytes') }
       },
     })
     assert.equal(result.mode, 'live')
@@ -197,12 +197,67 @@ describe('omnimux image helpers', () => {
       },
       fetcher: async (url) => {
         assert.equal(String(url), 'https://cdn.example/sync.png')
-        return { ok: true, arrayBuffer: async () => Buffer.from('sync-png') }
+        return { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => Buffer.from('sync-png') }
       },
     })
     assert.equal(result.mode, 'live')
     assert.equal(result.taskId, null)
     assert.equal(readFileSync(dest, 'utf8'), 'sync-png')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('rejects a wrong synchronous download MIME before writing dest', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-mime-'))
+    const dest = join(dir, 'out.png')
+    await assert.rejects(
+      () => executeOmnimuxImage({
+        prompt: '1 dog',
+        dest,
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        // Exercise the OpenAI protocol normalizer, which labels raw URLs as
+        // image outputs before the download response reveals its real MIME.
+        fetcher: async (url, init) => {
+          if (init?.method === 'POST') {
+            return {
+              ok: true,
+              status: 200,
+              headers: { get: () => 'application/json' },
+              json: async () => ({ data: [{ url: 'https://cdn.example/wrong.png' }] }),
+              text: async () => JSON.stringify({ data: [{ url: 'https://cdn.example/wrong.png' }] }),
+            }
+          }
+          assert.equal(String(url), 'https://cdn.example/wrong.png')
+          return {
+            ok: true,
+            headers: { get: () => 'video/mp4' },
+            arrayBuffer: async () => Buffer.from('not-an-image'),
+          }
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-response',
+    )
+    assert.equal(existsSync(dest), false)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('rejects an empty synchronous download before writing dest', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-empty-'))
+    const dest = join(dir, 'out.png')
+    await assert.rejects(
+      () => executeOmnimuxImage({
+        prompt: '1 dog',
+        dest,
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        runtime: { async execute() { return { taskId: 'img-empty', outputs: [{ type: 'image', url: 'https://cdn.example/empty.png' }] } } },
+        fetcher: async () => ({
+          ok: true,
+          headers: { get: () => 'image/png' },
+          arrayBuffer: async () => Buffer.alloc(0),
+        }),
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-response',
+    )
+    assert.equal(existsSync(dest), false)
     rmSync(dir, { recursive: true, force: true })
   })
 
@@ -246,13 +301,66 @@ describe('omnimux image helpers', () => {
           }
         }
         assert.equal(String(url), 'https://cdn.example/done.png')
-        return { ok: true, arrayBuffer: async () => Buffer.from('resumed-png') }
+        return { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => Buffer.from('resumed-png') }
       },
     })
     assert.equal(posts, 0)
     assert.equal(result.mode, 'live')
     assert.equal(result.taskId, 'img-7')
     assert.equal(readFileSync(dest, 'utf8'), 'resumed-png')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('rejects a wrong poll/finish download MIME before writing dest', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-poll-mime-'))
+    const dest = join(dir, 'out.png')
+    let posts = 0
+    await assert.rejects(
+      () => executeOmnimuxImage({
+        dest,
+        taskId: 'img-mime-poll',
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        fetcher: async (url, init) => {
+          if (init?.method === 'POST') posts += 1
+          if (String(url).includes('/images/generations/img-mime-poll')) {
+            return { ok: true, json: async () => ({ status: 'completed', url: 'https://cdn.example/wrong-polled.png' }) }
+          }
+          return {
+            ok: true,
+            headers: { get: () => 'video/mp4' },
+            arrayBuffer: async () => Buffer.from('not-an-image'),
+          }
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-response',
+    )
+    assert.equal(posts, 0)
+    assert.equal(existsSync(dest), false)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('rejects an empty poll/finish download before writing dest', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-empty-poll-'))
+    const dest = join(dir, 'out.png')
+    await assert.rejects(
+      () => executeOmnimuxImage({
+        dest,
+        taskId: 'img-empty-poll',
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        fetcher: async (url) => {
+          if (String(url).includes('/images/generations/img-empty-poll')) {
+            return { ok: true, json: async () => ({ status: 'completed', url: 'https://cdn.example/empty-polled.png' }) }
+          }
+          return {
+            ok: true,
+            headers: { get: () => 'image/png' },
+            arrayBuffer: async () => Buffer.alloc(0),
+          }
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-response',
+    )
+    assert.equal(existsSync(dest), false)
     rmSync(dir, { recursive: true, force: true })
   })
 
@@ -276,14 +384,9 @@ describe('omnimux image helpers', () => {
     assert.equal(input.audioTrack.pathOrUrl, '/local/audio.mp3')
   })
 
-  it('executeOmnimuxImage: passes references and audioTrack to runtime', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-refs-'))
-    const dest = join(dir, 'out.png')
-    let capturedReq = null
-    const result = await executeOmnimuxImage({
+  it('keeps reference/audioTrack mapping out of unchecked submit execution', () => {
+    const input = mapOmnimuxInput('image', {
       prompt: 'a city with references',
-      dest,
-      env: { OMNIMUX_API_KEY: 'sk-test' },
       references: [
         { role: 'reference', type: 'image', pathOrUrl: '/tmp/ref1.png' },
       ],
@@ -292,24 +395,11 @@ describe('omnimux image helpers', () => {
         type: 'audio',
         pathOrUrl: '/tmp/track.mp3',
       },
-      runtime: {
-        async execute(req) {
-          capturedReq = req
-          return {
-            taskId: 'task-ref-1',
-            outputs: [{ type: 'image', url: 'data:image/png;base64,cmVm' }],
-          }
-        },
-      },
     })
-    assert.ok(capturedReq)
-    assert.equal(capturedReq.input.prompt, 'a city with references')
-    assert.equal(capturedReq.input.image, '/tmp/ref1.png')
-    assert.deepEqual(capturedReq.input.images, ['/tmp/ref1.png'])
-    assert.equal(capturedReq.input.references.length, 1)
-    assert.equal(capturedReq.input.audioTrack.pathOrUrl, '/tmp/track.mp3')
-    assert.equal(result.mode, 'live')
-    assert.equal(readFileSync(dest, 'utf8'), 'ref')
-    rmSync(dir, { recursive: true, force: true })
+    assert.equal(input.prompt, 'a city with references')
+    assert.equal(input.image, '/tmp/ref1.png')
+    assert.deepEqual(input.images, ['/tmp/ref1.png'])
+    assert.equal(input.references.length, 1)
+    assert.equal(input.audioTrack.pathOrUrl, '/tmp/track.mp3')
   })
 })

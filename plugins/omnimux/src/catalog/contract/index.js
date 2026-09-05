@@ -95,6 +95,25 @@ export { mbToBytes, isWithinSizeLimit, isWithinDurationLimit, BYTES_PER_MB } fro
 
 export { LEGACY_OPERATION_MAP, mapLegacyOperation } from './legacy-operation-map.js';
 
+export {
+  GUARD_CODES,
+  guardSubmit,
+  assertGuardSubmit,
+  assertGuardOutput,
+  rejectionToError,
+  toOmnimuxErrorCode,
+  normalizeLogicalRequest,
+  mapValidatedPlanToVendor,
+  validateVendorResult,
+  resolveProfilePayloadContract,
+  DEFAULT_PROFILE_PAYLOADS,
+  admitModel,
+  admitOperation,
+  admitDisposition,
+  inferUniqueOperation,
+  assignAndValidateSlots,
+} from './submit-guard/index.js';
+
 import { loadAll, DEFAULT_SPECS_DIR, resetContractCache } from './load.js';
 import {
   loadOperationRegistry,

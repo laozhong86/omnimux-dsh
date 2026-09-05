@@ -1,0 +1,79 @@
+{
+  "schema": "omnimux-live-qa/v1",
+  "issue": 552,
+  "verdict": "FAIL",
+  "routingDecision": "Engineer",
+  "source": {
+    "commit": "7b67f4dffe2543f58872376683c832f2d881c62f",
+    "worktree": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-replicate-dismiss-reversal-552",
+    "plugin": "omnimux-inspiration"
+  },
+  "environment": {
+    "layer": "L2",
+    "url": "http://127.0.0.1:44202/",
+    "task": "replicate-dismiss-reversal",
+    "dshHome": "/Users/x/.dsh-dev/tasks/replicate-dismiss-reversal",
+    "profile": "/Users/x/.dsh-dev/tasks/replicate-dismiss-reversal/profiles/omnimux-dev-replicate-dismiss-reversal",
+    "hostPid": 15622,
+    "watchPid": 15792,
+    "taskSpaceId": 476,
+    "pageTitle": "DSH Local Build"
+  },
+  "fixture": {
+    "kind": "local-only inspiration record",
+    "id": "qa552-live-fixture",
+    "title": "QA-552 isolated inspiration fixture",
+    "createdVia": "POST /omnimux/inspiration/local from the authenticated L2 browser context",
+    "sourceUrl": "https://example.invalid/qa-552-live-fixture",
+    "cloudWrite": false,
+    "externalPublication": false
+  },
+  "cases": [
+    {
+      "id": "A-library-only-empty-session",
+      "result": "FAIL",
+      "action": "Hovered and clicked the real .omnimux-inspiration-overlay-cta-btn.primary for the local fixture.",
+      "observed": {
+        "initialSessionId": "session-bdc04d83-3a50-4546-b2cd-5604bb110c46",
+        "sessionIdAfterClick": "session-bdc04d83-3a50-4546-b2cd-5604bb110c46",
+        "elapsedToInitialInspectionMs": 446,
+        "attachmentSnapshotAfterOneSecond": [],
+        "composerInnerTextAfterOneSecond": "",
+        "composerTextContentAfterOneSecond": "",
+        "sendDisabled": true,
+        "libraryStillOpen": true,
+        "workbenchTabsAfterOneSecond": ["omnimux-inspiration:library"],
+        "workbenchPanelOpen": true
+      },
+      "requiredButMissing": [
+        "official new-session action resulting in a new non-default id",
+        "inspiration attachment bound to that new id",
+        "one exact visible Lexical prompt with /video-deconstruct, a blank line, and one body",
+        "conversation uncollapsed/split"
+      ],
+      "evidence": [
+        "docs/evidence/qa-552-live/A-before-cta.png",
+        "docs/evidence/qa-552-live/A-after-cta.png",
+        "docs/evidence/qa-552-live/A-settled-fail.png"
+      ]
+    },
+    {
+      "id": "B-library-plus-canvas",
+      "result": "NOT_RUN",
+      "reason": "Per the no-blind-retry boundary, Scene A exposed a release-blocking source/runtime defect on the first real CTA invocation. Scene B cannot establish the required new-session/attachment/prompt baseline and was not attempted."
+    }
+  ],
+  "safety": {
+    "noProductSourceChanged": true,
+    "noPublic45120": true,
+    "noProd44200": true,
+    "noDsh43120": true,
+    "noAppRestart": true,
+    "noAlternativeServer": true,
+    "noSend": true,
+    "noUserDraft": true,
+    "noTokenRecorded": true,
+    "l2Retained": true
+  },
+  "conclusion": "The #552 merge-precondition L2 live gate is not satisfied. This is an isolated L2 result at 44202, not a 45120 materialized-after-the-fact acceptance."
+}

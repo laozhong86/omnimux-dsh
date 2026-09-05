@@ -58,6 +58,10 @@ export function mountTextComplete(ctx, hub, jsonOut, onError) {
         ...(modelIds.length > 0 ? { enum: modelIds } : {}),
         description: 'Whitelist model id. Omit to use the configured default (gemini-3.7-flash).',
       },
+      operation: {
+        type: 'string',
+        description: 'Contract operation id (chat | vision_chat | document_analyze). Optional when uniquely inferable from inputs.',
+      },
       prompt: { type: 'string', required: true, description: 'Self-contained prompt. The expert cannot see the parent chat.' },
       image: { type: 'string', description: 'Absolute path, http(s) URL, or data URI. Model must accept image input. Mutually exclusive with video.' },
       video: { type: 'string', description: 'Absolute path (.mp4/.webm/.mov) or data:video URI. Model must accept video input. Mutually exclusive with image.' },
@@ -79,6 +83,7 @@ export function mountTextComplete(ctx, hub, jsonOut, onError) {
         return await executeOmnimuxText({
           prompt: args.prompt,
           model: args.model,
+          operation: args.operation,
           image: args.image,
           video: args.video,
           system: args.system,

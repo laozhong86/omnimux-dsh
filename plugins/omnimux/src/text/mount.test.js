@@ -23,6 +23,7 @@ describe('mountTextComplete capability gate', () => {
     assert.equal(tools[0].name, 'omnimux_text_complete')
     assert.ok(provided.textComplete)
     assert.equal(tools[0].parameters.properties.model.enum.length, 11)
+    assert.equal(tools[0].parameters.properties.metadata, undefined)
   })
 
   it('skips register and provide when omnimux_text_complete tool is disabled in gate', () => {
@@ -111,5 +112,42 @@ describe('mountTextComplete capability gate', () => {
         return true
       },
     )
+  })
+
+  it('registered tool and seam reject an incompatible operation before llm.stream', async () => {
+    const tools = []
+    const provided = {}
+    let vendorCalls = 0
+    const ctx = {
+      tools: { register(tool) { tools.push(tool) } },
+      provide(name, api) { provided[name] = api },
+      get(name) {
+        if (name !== 'llm') return undefined
+        return {
+          async * stream() {
+            vendorCalls += 1
+            yield { type: 'text-delta', text: 'must not run' }
+          },
+        }
+      },
+    }
+    const hub = { text: parseTextConfig(undefined), gate: parseGateConfig(undefined) }
+    mountTextComplete(ctx, hub, {}, (error) => { throw error })
+    const request = {
+      prompt: 'describe',
+      model: 'gemini-3.7-flash',
+      operation: 'digital_human',
+      bypassSubmitGuard: true,
+      reason: 'guard regression',
+    }
+    await assert.rejects(
+      () => tools[0].execute(request, {}),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    await assert.rejects(
+      () => provided.textComplete.execute(request),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(vendorCalls, 0)
   })
 })

@@ -103,6 +103,57 @@ describe('setComposerValue', () => {
     assert.equal(field.focused, true)
     assert.equal(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), 'value'), undefined)
   })
+
+  it('does not fall back to textContent after an accepted delayed insert command', async () => {
+    const prompt = '/video-deconstruct\n\n完全复刻原视频脚本和画面'
+    const field = fakeContentEditable('')
+    const commandCalls = []
+    const execDocument = {
+      execCommand(command, _showUi, value) {
+        commandCalls.push({ command, value })
+        queueMicrotask(() => { field.textContent += value })
+        return true
+      },
+    }
+
+    const ok = setComposerValue(field, prompt, {
+      document: execDocument,
+      InputEvent: FakeInputEvent,
+    })
+    await Promise.resolve()
+
+    assert.equal(ok, true)
+    assert.deepEqual(commandCalls, [{ command: 'insertText', value: prompt }])
+    assert.equal(field.textContent, prompt)
+    assert.equal(field.textContent.split(prompt).length - 1, 1)
+    assert.equal(field.lastEvent, undefined)
+  })
+
+  it('uses textContent fallback only when insert command rejects', () => {
+    const field = fakeContentEditable('')
+    const prompt = '/video-deconstruct\n\n完全复刻原视频脚本和画面'
+    const ok = setComposerValue(field, prompt, {
+      document: { execCommand() { return false } },
+      InputEvent: FakeInputEvent,
+    })
+
+    assert.equal(ok, true)
+    assert.equal(field.textContent, prompt)
+    assert.equal(field.lastEvent.inputType, 'insertText')
+  })
+
+  it('uses textContent fallback when insert command throws', () => {
+    const field = fakeContentEditable('')
+    const prompt = '/video-deconstruct\n\n完全复刻原视频脚本和画面'
+    const ok = setComposerValue(field, prompt, {
+      document: { execCommand() { throw new Error('command unavailable') } },
+      InputEvent: FakeInputEvent,
+    })
+
+    assert.equal(ok, true)
+    assert.equal(field.textContent, prompt)
+    assert.equal(field.lastEvent.inputType, 'insertText')
+  })
 })
 
 describe('findComposer / findSendButton', () => {
@@ -220,6 +271,96 @@ describe('prefillReplicationPrompt', () => {
       async sleep(ms) { clock += ms },
     })
     assert.deepEqual(result, { ok: false, error: 'composer-missing' })
+  })
+
+  it('waits for an accepted delayed command to commit exactly one prompt', async () => {
+    const prompt = '/video-deconstruct\n\n完全复刻原视频脚本和画面'
+    const field = fakeContentEditable('')
+    const commandCalls = []
+    const result = await prefillReplicationPrompt(prompt, {
+      document: {
+        querySelector(sel) {
+          if (sel.includes('contenteditable')) return field
+          return null
+        },
+        execCommand(command, _showUi, value) {
+          commandCalls.push({ command, value })
+          queueMicrotask(() => { field.textContent = value })
+          return true
+        },
+      },
+      InputEvent: FakeInputEvent,
+      commitTimeoutMs: 10,
+      commitPollMs: 1,
+    })
+
+    assert.deepEqual(result, { ok: true, via: 'prefill' })
+    assert.deepEqual(commandCalls, [{ command: 'insertText', value: prompt }])
+    assert.equal(field.textContent, prompt)
+    assert.equal(field.textContent.split(prompt).length - 1, 1)
+    assert.equal(field.lastEvent, undefined)
+  })
+
+  it('returns composer-rejected when an accepted command never commits', async () => {
+    let clock = 0
+    const field = fakeContentEditable('')
+    const commandCalls = []
+    const result = await prefillReplicationPrompt('/video-deconstruct\n\n完全复刻', {
+      document: {
+        querySelector(sel) {
+          if (sel.includes('contenteditable')) return field
+          return null
+        },
+        execCommand(command, _showUi, value) {
+          commandCalls.push({ command, value })
+          return true
+        },
+      },
+      now: () => clock,
+      sleep: async (ms) => { clock += ms },
+      commitTimeoutMs: 4,
+      commitPollMs: 2,
+    })
+
+    assert.deepEqual(result, { ok: false, error: 'composer-rejected' })
+    assert.deepEqual(commandCalls, [{ command: 'insertText', value: '/video-deconstruct\n\n完全复刻' }])
+    assert.equal(field.textContent, '')
+    assert.equal(field.lastEvent, undefined)
+  })
+
+  it('verifies accepted delayed full-composer selection replacement exactly once', async () => {
+    const prompt = '/video-deconstruct\n\n完全复刻原视频脚本和画面'
+    const field = fakeContentEditable('保留的无关草稿')
+    let selectedField = null
+    const commandCalls = []
+    const result = await prefillReplicationPrompt(prompt, {
+      document: {
+        querySelector(sel) {
+          if (sel.includes('contenteditable')) return field
+          return null
+        },
+        execCommand(command, _showUi, value) {
+          commandCalls.push({ command, value })
+          queueMicrotask(() => {
+            if (selectedField === field) field.textContent = value
+          })
+          return true
+        },
+      },
+      window: {
+        getSelection() {
+          return { selectAllChildren(next) { selectedField = next } }
+        },
+      },
+      commitTimeoutMs: 10,
+      commitPollMs: 1,
+    })
+
+    assert.deepEqual(result, { ok: true, via: 'prefill' })
+    assert.equal(selectedField, field)
+    assert.deepEqual(commandCalls, [{ command: 'insertText', value: prompt }])
+    assert.equal(field.textContent, prompt)
+    assert.doesNotMatch(field.textContent, /保留的无关草稿/)
   })
 
   it('returns composer-rejected when the field swallows the write', async () => {

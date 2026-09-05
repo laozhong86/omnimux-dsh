@@ -73,7 +73,7 @@ describe('omnimux video helpers', () => {
       },
       fetcher: async (url) => {
         assert.equal(String(url), 'https://cdn.example/out-pat.mp4')
-        return { ok: true, arrayBuffer: async () => Buffer.from('mp4-pat-bytes') }
+        return { ok: true, headers: { get: () => 'video/mp4' }, arrayBuffer: async () => Buffer.from('mp4-pat-bytes') }
       },
     })
     assert.equal(result.mode, 'live')
@@ -102,7 +102,7 @@ describe('omnimux video helpers', () => {
       fetcher: async (url, init) => {
         assert.equal(String(url), 'https://omnimux.ai/v1/videos/task-auth/content')
         downloadHeaders = init?.headers
-        return { ok: true, arrayBuffer: async () => Buffer.from('mp4-auth-bytes') }
+        return { ok: true, headers: { get: () => 'video/mp4' }, arrayBuffer: async () => Buffer.from('mp4-auth-bytes') }
       },
     })
     assert.equal(result.mode, 'live')
@@ -129,7 +129,7 @@ describe('omnimux video helpers', () => {
       },
       fetcher: async (url) => {
         assert.equal(String(url), 'https://cdn.example/out.mp4')
-        return { ok: true, arrayBuffer: async () => Buffer.from('mp4-bytes') }
+        return { ok: true, headers: { get: () => 'video/mp4' }, arrayBuffer: async () => Buffer.from('mp4-bytes') }
       },
     })
     assert.equal(result.mode, 'live')
@@ -179,7 +179,7 @@ describe('omnimux video helpers', () => {
           }
         }
         assert.equal(String(url), 'https://cdn.example/done.mp4')
-        return { ok: true, arrayBuffer: async () => Buffer.from('resumed') }
+        return { ok: true, headers: { get: () => 'video/mp4' }, arrayBuffer: async () => Buffer.from('resumed') }
       },
     })
     assert.equal(posts, 0)
@@ -333,39 +333,61 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     assert.equal('image_tail' in input, false)
   })
 
-  it('executeOmnimuxVideo preserves image + image_tail on the runtime POST input (#566)', async () => {
+  it('executeOmnimuxVideo rejects unlisted FLF when an external caller sends bypassSubmitGuard', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'omnimux-flf-'))
     const dest = join(dir, 'out.mp4')
-    let capturedReq
-    const result = await executeOmnimuxVideo({
+    let vendorCalls = 0
+    await assert.rejects(
+      () => executeOmnimuxVideo({
+        prompt: 'morph first to last',
+        dest,
+        model: 'kling-v3',
+        operation: 'first_last_frame',
+        bypassSubmitGuard: true,
+        references: [
+          { role: 'first_frame', type: 'image', pathOrUrl: 'https://example.com/first.png' },
+          { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/last.png' },
+        ],
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        runtime: {
+          async execute() {
+            vendorCalls += 1
+            return {
+              taskId: 'task-flf',
+              outputs: [{ type: 'video', url: 'https://cdn.example/flf.mp4' }],
+            }
+          },
+        },
+        fetcher: async (url) => {
+          assert.match(String(url), /^https:\/\/example\.com\/(?:first|last)\.png$/)
+          return {
+            ok: true,
+            headers: { get: () => 'image/png' },
+            arrayBuffer: async () => Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+          }
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(vendorCalls, 0, 'unlisted FLF must not reach vendor')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('maps image + image_tail without submitting an unchecked FLF request (#566)', () => {
+    const input = mapOmnimuxInput('video', {
       prompt: 'morph first to last',
-      dest,
       model: 'kling-v3',
       references: [
         { role: 'first_frame', type: 'image', pathOrUrl: 'https://example.com/first.png' },
         { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/last.png' },
         { role: 'reference', type: 'image', pathOrUrl: 'https://example.com/extra.png' },
       ],
-      env: { OMNIMUX_API_KEY: 'sk-test' },
-      runtime: {
-        async execute(req) {
-          capturedReq = req
-          return {
-            taskId: 'task-flf',
-            outputs: [{ type: 'video', url: 'https://cdn.example/flf.mp4' }],
-          }
-        },
-      },
-      fetcher: async () => ({ ok: true, arrayBuffer: async () => Buffer.from('mp4-flf') }),
     })
-    assert.equal(result.mode, 'live')
-    assert.equal(capturedReq.input.image, 'https://example.com/first.png')
-    assert.equal(capturedReq.input.image_tail, 'https://example.com/last.png')
-    assert.equal('reference_images' in capturedReq.input, false)
-    assert.equal('images' in capturedReq.input, false)
-    assert.equal('references' in capturedReq.input, false)
-    assert.equal(readFileSync(dest, 'utf8'), 'mp4-flf')
-    rmSync(dir, { recursive: true, force: true })
+    assert.equal(input.image, 'https://example.com/first.png')
+    assert.equal(input.image_tail, 'https://example.com/last.png')
+    assert.equal('reference_images' in input, false)
+    assert.equal('images' in input, false)
+    assert.equal('references' in input, false)
   })
 
   it('end_frame only-last maps image_tail without inventing image (#567 M1/M2/M3)', () => {
@@ -384,41 +406,36 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     assert.notEqual(input.image_tail, input.image)
   })
 
-  it('executeOmnimuxVideo posts the complete end-frame model and image_tail only (#567 M7)', async () => {
+  it('executeOmnimuxVideo rejects draft end-frame before submit (#567 M7)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'omnimux-endframe-'))
     const dest = join(dir, 'out.mp4')
-    let posted
-    const result = await executeOmnimuxVideo({
-      prompt: 'end frame only',
-      dest,
-      model: 'minimax-h3-endframe',
-      references: [
-        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/end-only.png' },
-      ],
-      env: { OMNIMUX_API_KEY: 'sk-test' },
-      fetcher: async (url, init) => {
-        if (init?.method === 'POST') {
-          posted = { url: String(url), body: JSON.parse(init.body) }
-          return {
-            ok: true,
-            status: 200,
-            headers: { get() { return undefined } },
-            text: async () => JSON.stringify({ video_url: 'https://cdn.example/end.mp4' }),
-            json: async () => ({ video_url: 'https://cdn.example/end.mp4' }),
+    let postCalls = 0
+    await assert.rejects(
+      executeOmnimuxVideo({
+        prompt: 'end frame only',
+        dest,
+        model: 'minimax-h3-endframe',
+        operation: 'end_frame',
+        references: [
+          { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/end-only.png' },
+        ],
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        fetcher: async (url, init) => {
+          if (String(url) === 'https://example.com/end-only.png') {
+            return {
+              ok: true,
+              status: 200,
+              headers: { get() { return 'image/png' } },
+              arrayBuffer: async () => Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+            }
           }
-        }
-        assert.equal(String(url), 'https://cdn.example/end.mp4')
-        return { ok: true, arrayBuffer: async () => Buffer.from('mp4-end') }
-      },
-    })
-    assert.equal(result.mode, 'live')
-    assert.equal(posted.url, 'https://api.omnimux.ai/v1/video/generations')
-    assert.equal(posted.body.model, 'minimax-h3-endframe')
-    assert.equal(posted.body.image_tail, 'https://example.com/end-only.png')
-    assert.equal('image' in posted.body, false)
-    assert.equal('reference_images' in posted.body, false)
-    assert.equal('images' in posted.body, false)
-    assert.equal(readFileSync(dest, 'utf8'), 'mp4-end')
+          if (init?.method === 'POST') postCalls += 1
+          throw new Error(`unexpected request: ${String(url)}`)
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(postCalls, 0)
     rmSync(dir, { recursive: true, force: true })
   })
 
@@ -501,37 +518,48 @@ describe('mapOmnimuxInput digital_human audioTrack passthrough (#538)', () => {
     assert.equal('audioTrack' in input, false)
   })
 
-  it('executeOmnimuxVideo forwards audioTrack to the runtime for kling-avatar', async () => {
+  it('executeOmnimuxVideo rejects draft kling-avatar even when seam can carry audioTrack (#468)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'omnimux-avatar-'))
     const dest = join(dir, 'out.mp4')
-    let capturedReq
-    const result = await executeOmnimuxVideo({
+    let vendorCalls = 0
+    await assert.rejects(
+      () => executeOmnimuxVideo({
+        prompt: 'speak',
+        dest,
+        model: 'kling-avatar',
+        operation: 'digital_human',
+        image: 'https://example.com/face.png',
+        audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/voice.mp3' },
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        runtime: {
+          async execute() {
+            vendorCalls += 1
+            return {
+              taskId: 'task-avatar',
+              outputs: [{ type: 'video', url: 'https://cdn.example/avatar.mp4' }],
+            }
+          },
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(vendorCalls, 0)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('maps kling-avatar audioTrack without submitting an unchecked draft request (#538)', () => {
+    const input = mapOmnimuxInput('video', {
       prompt: 'speak',
-      dest,
       model: 'kling-avatar',
       image: 'https://example.com/face.png',
       audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/voice.mp3' },
-      env: { OMNIMUX_API_KEY: 'sk-test' },
-      runtime: {
-        async execute(req) {
-          capturedReq = req
-          return {
-            taskId: 'task-avatar',
-            outputs: [{ type: 'video', url: 'https://cdn.example/avatar.mp4' }],
-          }
-        },
-      },
-      fetcher: async () => ({ ok: true, arrayBuffer: async () => Buffer.from('mp4-avatar') }),
     })
-    assert.equal(result.mode, 'live')
-    assert.equal(capturedReq.input.image, 'https://example.com/face.png')
-    assert.deepEqual(capturedReq.input.audioTrack, {
+    assert.equal(input.image, 'https://example.com/face.png')
+    assert.deepEqual(input.audioTrack, {
       role: 'audio_track',
       type: 'audio',
       pathOrUrl: '/local/voice.mp3',
     })
-    assert.equal(readFileSync(dest, 'utf8'), 'mp4-avatar')
-    rmSync(dir, { recursive: true, force: true })
   })
 
   it('executeOmnimuxVideo keeps dropping audioTrack for a generic video model', async () => {
@@ -542,7 +570,7 @@ describe('mapOmnimuxInput digital_human audioTrack passthrough (#538)', () => {
       prompt: 'speak',
       dest,
       model: 'seedance-2-0-fast',
-      audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/voice.mp3' },
+      operation: 'text_to_video',
       env: { OMNIMUX_API_KEY: 'sk-test' },
       runtime: {
         async execute(req) {
@@ -553,7 +581,7 @@ describe('mapOmnimuxInput digital_human audioTrack passthrough (#538)', () => {
           }
         },
       },
-      fetcher: async () => ({ ok: true, arrayBuffer: async () => Buffer.from('mp4-generic') }),
+      fetcher: async () => ({ ok: true, headers: { get: () => 'video/mp4' }, arrayBuffer: async () => Buffer.from('mp4-generic') }),
     })
     assert.equal('audioTrack' in capturedReq.input, false)
     rmSync(dir, { recursive: true, force: true })
