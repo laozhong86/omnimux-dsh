@@ -16,6 +16,9 @@ import { installItem } from './install.js'
  * @property {string} description
  * @property {string} [whenToUse]
  * @property {InvocationPolicy} invocation
+ * @property {string} source
+ * @property {number} rank
+ * @property {string} provider
  * @property {string} [locator]
  */
 
@@ -25,6 +28,8 @@ import { installItem } from './install.js'
  * @property {string} description
  * @property {string} content
  * @property {InvocationPolicy} invocation
+ * @property {string} source
+ * @property {string} provider
  */
 
 /** 在 ctx.skills 上注册的提供方名称；候选的 provider 字段必须与之完全一致。 */
@@ -86,12 +91,7 @@ export function resolveSkillDefinition(name, roots) {
   if (existsSync(localInstalled)) {
     const content = readFileSync(localInstalled, 'utf8')
     const desc = extractDescription(content) || name
-    return {
-      name,
-      description: desc,
-      content,
-      invocation: { modelInvocable: false, userInvocable: true },
-    }
+    return def(name, content, desc)
   }
 
   // 2. Bundled package skills/experts
@@ -208,16 +208,20 @@ export function createCatalogSkillProvider(opts = {}) {
       return { candidates, complete: true }
     },
 
-    async get(name) {
-      const def = resolveSkillDefinition(name, {
+    /**
+     * @param {SkillCandidate} candidate
+     * @param {unknown} [_options]
+     * @returns {Promise<SkillDefinition | undefined>}
+     */
+    async get(candidate, _options) {
+      const name = candidate?.name
+      if (typeof name !== 'string') return undefined
+
+      return resolveSkillDefinition(name, {
         home,
         packageRoot: pkgRoot,
         catalog: opts.catalog,
-      })
-      if (!def) {
-        throw new Error(`omnimux-catalog: skill '${name}' not found`)
-      }
-      return def
+      }) ?? undefined
     },
   }
 }

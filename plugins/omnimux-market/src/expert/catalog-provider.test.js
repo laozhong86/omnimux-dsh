@@ -3,16 +3,50 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { loadCatalog } from './catalog.js'
-import { createCatalogSkillProvider, registerCatalogSkillProvider, resolveSkillDefinition } from './catalog-provider.js'
-
-const PACKAGE_ROOT = join(import.meta.dirname, '..', '..')
+import { loadCatalog, parseCatalog } from './catalog.js'
+import { createCatalogSkillProvider, registerCatalogSkillProvider } from './catalog-provider.js'
 
 function env() {
   const home = mkdtempSync(join(tmpdir(), 'omx-catprov-'))
   const profileDir = join(home, 'profiles', 'omnimux')
+  const packageRoot = join(home, 'package')
   mkdirSync(profileDir, { recursive: true })
-  return { home, profileDir, packageRoot: PACKAGE_ROOT }
+  mkdirSync(packageRoot, { recursive: true })
+  return { home, profileDir, packageRoot }
+}
+
+function writeBundledSkill(roots, name, content) {
+  const dir = join(roots.packageRoot, 'catalog', 'skills', name)
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(join(dir, 'SKILL.md'), content, 'utf8')
+}
+
+async function listedCandidate(provider, name) {
+  const { candidates } = await provider.list({ cwd: undefined })
+  const candidate = candidates.find((row) => row.name === name)
+  assert.ok(candidate, `expected ${name} in provider candidates`)
+  return candidate
+}
+
+async function getListedDefinition(provider, name) {
+  return provider.get(await listedCandidate(provider, name), { cwd: undefined })
+}
+
+function catalogWithMissingDefinition() {
+  return parseCatalog({
+    schema: 1,
+    generated_at: '2026-09-05T00:00:00.000Z',
+    items: [{
+      id: 'missing-definition-fixture',
+      tab: 'skills',
+      kind: 'skill',
+      title: 'Missing Definition Fixture',
+      summary: 'A candidate whose bundled fixture is intentionally absent.',
+      category: 'fixture',
+      skill: 'missing-definition-fixture',
+      source: { type: 'bundled', path: 'catalog/skills/missing-definition-fixture/SKILL.md' },
+    }],
+  })
 }
 
 test('catalog provider list returns candidates with 0 token modelInvocable: false', async () => {
@@ -46,43 +80,40 @@ test('catalog provider list returns candidates with 0 token modelInvocable: fals
   assert.ok(names.has('clip-export'), 'should contain clip-export')
 })
 
-test('catalog provider get resolves bundled Tier 1 skills', async () => {
+test('catalog provider loads a previously listed candidate with the official provider.get shape', async () => {
   const roots = env()
+  writeBundledSkill(roots, 'ad-creative', '# Ad Creative\n\nBundled fixture.')
   const provider = createCatalogSkillProvider({
     catalog: loadCatalog(),
     ...roots,
   })
 
-  const def = await provider.get('ad-creative')
+  const def = await getListedDefinition(provider, 'ad-creative')
   assert.equal(def.name, 'ad-creative')
   assert.equal(def.invocation.modelInvocable, false)
   assert.equal(def.invocation.userInvocable, true)
   assert.ok(def.content.includes('Ad Creative') || def.content.includes('ad-creative'))
 })
 
-test('catalog provider get resolves bundled social-engagement-team skills', async () => {
-  const roots = env()
-  const provider = createCatalogSkillProvider({
-    catalog: loadCatalog(),
-    ...roots,
-  })
+test('catalog provider returns undefined when a candidate has no definition', async () => {
+  const provider = createCatalogSkillProvider({ catalog: catalogWithMissingDefinition(), ...env() })
 
-  const def = await provider.get('social-engagement-ops')
-  assert.equal(def.name, 'social-engagement-ops')
-  assert.ok(def.content.length > 0)
+  const definition = await getListedDefinition(provider, 'missing-definition-fixture')
+  assert.equal(definition, undefined)
 })
 
-test('catalog provider get throws on unknown skill', async () => {
+test('catalog provider returns valid definition metadata for an installed candidate', async () => {
   const roots = env()
-  const provider = createCatalogSkillProvider({
-    catalog: loadCatalog(),
-    ...roots,
-  })
+  const dir = join(roots.home, 'skills', 'ad-creative')
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(join(dir, 'SKILL.md'), '---\ndescription: Installed fixture\n---\n\nInstalled body.', 'utf8')
+  const provider = createCatalogSkillProvider({ catalog: loadCatalog(), ...roots })
 
-  await assert.rejects(
-    () => provider.get('non-existent-skill-xyz-12345'),
-    /not found/
-  )
+  const definition = await getListedDefinition(provider, 'ad-creative')
+  validateDefinition(definition)
+  assert.equal(definition.source, 'omnimux-market')
+  assert.equal(definition.provider, provider.name)
+  assert.equal(definition.content, '---\ndescription: Installed fixture\n---\n\nInstalled body.')
 })
 
 test('registerCatalogSkillProvider registers with ctx.skills', () => {
@@ -182,13 +213,13 @@ test('catalog rank loses to filesystem so installed skills stay model-invocable'
 })
 
 test('resolved definitions satisfy official validateDefinition', async () => {
-  const provider = createCatalogSkillProvider({ catalog: loadCatalog(), ...env() })
-  for (const name of ['ad-creative', 'social-engagement-ops']) {
-    const definition = await provider.get(name)
-    validateDefinition(definition)
-    assert.equal(definition.provider, provider.name)
-    assert.equal(definition.source, 'omnimux-market')
-  }
+  const roots = env()
+  writeBundledSkill(roots, 'ad-creative', '# Ad Creative\n\nBundled fixture.')
+  const provider = createCatalogSkillProvider({ catalog: loadCatalog(), ...roots })
+  const definition = await getListedDefinition(provider, 'ad-creative')
+  validateDefinition(definition)
+  assert.equal(definition.provider, provider.name)
+  assert.equal(definition.source, 'omnimux-market')
 })
 
 test('host.ts declares skills in inject so ctx.skills is safely readable', () => {
