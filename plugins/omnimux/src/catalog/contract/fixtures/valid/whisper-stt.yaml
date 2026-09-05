@@ -29,4 +29,4 @@ models:
     execution:
       status: "none"
       profileId: "speechToText"
-      notes: "H1 speechToText seam unavailable"
+      notes: "speechToText seam mounted (#538); model-level execution pending probe"

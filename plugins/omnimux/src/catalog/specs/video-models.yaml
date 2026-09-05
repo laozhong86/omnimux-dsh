@@ -3,7 +3,7 @@
 # Batch A：seedance-2-0-fast 仅 text_to_video 有仓内 dated live 证据
 # （docs/evidence/2026-08-14-omnimux-video.md）→ verified+live；first_frame/multi_ref draft。
 # 冲突限制取更严：seedance 系与 grok video 的 video_multi_ref 一律 max:1 + policy_conservative
-# （不承诺 max4/max8，待 dated 复测放宽）。kling-avatar unavailable（mapper 丢 audioTrack）。
+# （不承诺 max4/max8，待 dated 复测放宽）。kling-avatar draft（#538 已修 audioTrack 透传，可探测；待探测翻 live）。
 # omni_flash / kling-o1 / kling-o3 / kling-v3-motion-control quarantine（无证据，仅占位契约，不上架）。
 schemaVersion: "1.1"
 managementGroup: "video"
@@ -584,11 +584,12 @@ models:
     research:
       status: "draft"
       docUrl: "https://klingai.kuaishou.com/docs/avatar"
-      notes: "unavailable 处置；dedicated videoDigitalHuman profile unavailable；mapper audio 未闭环"
+      notes: "draft 处置；videoDigitalHuman profile 已 live（#538 audioTrack 透传已修），可探测；待 dated 探测证据翻 live"
     execution:
       status: "none"
       profileId: "videoDigitalHuman"
-      notes: "unavailable dedicated profile; must not use coarse videoGenerate"
+      seam: "videoGenerate"
+      notes: "dedicated videoDigitalHuman profile（seam videoGenerate）；模型级 execution 待探测翻 live；不得借粗 videoGenerate listed"
 
   # 谷歌 Veo 系列：纯参考模式，无首尾帧
   - id: "veo-3.1"

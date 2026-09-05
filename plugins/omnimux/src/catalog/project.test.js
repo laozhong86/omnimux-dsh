@@ -111,12 +111,12 @@ test('quarantine models stay out of four lists but remain in authoritative model
   for (const kind of ['text', 'image', 'video', 'audio']) {
     assert.equal(dto[kind].some((r) => r.id === 'omni_flash'), false, kind);
   }
-  // unavailable whisper-1 / kling-avatar likewise absent from buckets
+  // draft-probeable whisper-1 / kling-avatar likewise absent from buckets
   for (const kind of ['text', 'image', 'video', 'audio']) {
     assert.equal(dto[kind].some((r) => r.id === 'whisper-1'), false, kind);
     assert.equal(dto[kind].some((r) => r.id === 'kling-avatar'), false, kind);
   }
-  assert.equal(dto.models.find((m) => m.id === 'whisper-1')?.disposition, 'unavailable');
+  assert.equal(dto.models.find((m) => m.id === 'whisper-1')?.disposition, 'draft');
 });
 
 test('real specs: buckets derive only from output.type of listed ops', () => {

@@ -62,6 +62,7 @@ export async function executeOmnimuxMedia(capability, input) {
       modelId: `${route.providerId}-${capability}`,
       input: mapOmnimuxInput(capability, {
         prompt,
+        model: route.modelId,
         duration: input.duration,
         image: input.image,
         speech: input.speech,

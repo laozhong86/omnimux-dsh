@@ -123,7 +123,7 @@
       "group": "audio",
       "defaultOutputType": "text",
       "promptPolicy": "none",
-      "notes": "source audio only；不得强制 prompt；H1 无 live speechToText 执行面"
+      "notes": "source audio only；不得强制 prompt；#538 已挂载 speechToText 执行面，待 #530 探测翻 live"
     }
   ]
 }

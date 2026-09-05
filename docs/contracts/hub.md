@@ -136,9 +136,11 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `videoGenerate` | neutral provide | `{ dest, prompt?, duration?, image?, speech?, audio?, provider?, model?, taskId?, wait?, signal? }` | `{ mode: "live" \| "submitted", taskId, url? }` | `capability-disabled`, `needs-provider`, `omnimux-unconfigured`, `unknown-provider`, `unknown-protocol`, `omnimux-invalid-request`, task/download errors |
 | `imageGenerate` | neutral provide | same job handle as video | same | same |
 | `audioGenerate` | neutral provide | `{ dest, prompt?, duration?, voice?, style?, instrumental?, speed?, provider?, model?, taskId?, wait?, signal? }` | `{ mode: "live" \| "submitted", taskId, url? }` | `capability-disabled`, `needs-provider`, `omnimux-unconfigured`, `unknown-provider`, `unknown-protocol`, `omnimux-invalid-request`, task/download errors |
+| `speechToText` | neutral provide | `{ audio, model?, provider?, language?, signal? }` (`audio` = absolute path / http(s) URL / `data:audio` URI) | `{ mode: "live", model, text }` | `capability-disabled`, `needs-omnimux`, `omnimux-unconfigured`, `unknown-provider`, `unknown-protocol`, `omnimux-invalid-request`, `omnimux-request-failed`, `omnimux-invalid-response`, `quota-exceeded` |
 | `omnimux_video_submit` | hub tool over `videoGenerate` | same as the seam | same | same |
 | `omnimux_image_submit` | hub tool over `imageGenerate` | same as the seam | same | same |
 | `omnimux_audio_submit` | hub tool over `audioGenerate` | same as the seam | same | same |
+| `omnimux_speech_to_text` | hub tool over `speechToText` | same as the seam | same | same |
 | `textComplete` | neutral provide | `{ prompt, model?, image?, video?, system?, maxTokens?, signal? }` | `{ mode: "live", model, text }` | `capability-disabled`, `needs-provider`, `omnimux-unconfigured` (video), `unknown-model`, `omnimux-invalid-request`, stream / HTTP errors |
 | `omnimux_text_complete` | hub tool over `textComplete` | same plus required `reason` | same | same |
 | `modelCatalog` | neutral provide | `list()` (no args) | `{ source, fingerprint, defaults, text, image, video, audio }` — lists sorted by display name; defaults = env → settings → config → first sorted | never throws for empty lists; gate may empty a media kind |
@@ -158,7 +160,7 @@ A request may name `model` or omit it for `defaultModel`. The image is an absolu
 | `POST /omnimux/workbench/viewport` | hub Host HTTP | Envelope JSON; `assertLocalWrite` | `{ ok: true }` | 403 `not-local` |
 | `POST /omnimux/workbench/rpc/ack` | hub Host HTTP | `{ requestId, ok, applied, code, tabId }` | `{ ok: true }` | 403 `not-local` |
 
-`audioGenerate` exposes audio generation / TTS / music capabilities (Suno, GPT 4o Mini TTS, Whisper-1). Digital-human / talking-head is a `videoGenerate` request (reference image, duration, speech constraints), not a third HTTP client.
+`audioGenerate` exposes audio generation / TTS / music capabilities (Suno, GPT 4o Mini TTS). Speech-to-text is the separate `speechToText` seam (Whisper-1 class): one synchronous multipart POST to `/v1/audio/transcriptions` (file bytes + model) → `{ text }`; no task poll, no dest download. Its gate key is `gate.tools.omnimux_speech_to_text` (there is no `gate.media.stt` kind). Digital-human / talking-head is a `videoGenerate` request on a digital-human model (kling-avatar): reference image + duration + `audioTrack`; the mapper passes `audioTrack` through only for `DIGITAL_HUMAN_MODEL_IDS` and still strips it from generic video requests (#429/#538). Not a third HTTP client.
 
 ## Official-only (C-class)
 
@@ -263,6 +265,8 @@ config.js              plugin Config (brand + media + apps + text)
     route.js             resolve provider + protocol + model
     job.js               download dest
     video.js             videoGenerate over the route
+    stt.js               speechToText over the route (audio bytes → text)
+    stt-mount.js         speechToText seam + omnimux_speech_to_text tool
     protocols/           openai-media.js  (HTTP)
     vendors/             omnimux.js       (envelope + defaults)
   official/              social-data, publish tools, Host /omnimux/accounts

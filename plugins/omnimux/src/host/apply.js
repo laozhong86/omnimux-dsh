@@ -18,6 +18,8 @@ import { mountReader } from '../reader/mount.js'
 import { createAvatarStore } from '../avatar/store.js'
 import { JSON_TOOL_OUTPUT, objectParams, rethrow } from '../tools/schema.js'
 import { mountMedia } from '../media/mount.js'
+import { mountSpeechToText } from '../media/stt-mount.js'
+import { executeOmnimuxSpeechToText } from '../media/stt.js'
 import { mountTextComplete } from '../text/mount.js'
 import { buildModelCatalog } from '../catalog/list.js'
 import { SettingsConfig } from '../settings/schema.js'
@@ -149,6 +151,7 @@ export function apply(ctx, config = {}) {
   mountMedia(ctx, { kind: 'video', execute: executeOmnimuxVideo, media: hub.media, gate: hub.gate, store, jsonOut })
   mountMedia(ctx, { kind: 'image', execute: executeOmnimuxImage, media: hub.media, gate: hub.gate, store, jsonOut })
   mountMedia(ctx, { kind: 'audio', execute: executeOmnimuxAudio, media: hub.media, gate: hub.gate, store, jsonOut })
+  mountSpeechToText(ctx, { execute: executeOmnimuxSpeechToText, media: hub.media, gate: hub.gate, store, jsonOut })
   mountTextComplete(ctx, hub, jsonOut, rethrow)
   mountOfficial(ctx, {
     hub,

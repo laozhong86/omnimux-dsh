@@ -6,6 +6,45 @@ export const TASK_PATH = Object.freeze({
   audio: 'audio/generations',
 })
 
+/** Speech-to-text is synchronous: one multipart POST, no task poll. */
+export const TRANSCRIPTION_PATH = 'audio/transcriptions'
+
+/**
+ * Catalog ids whose video-class operation is digital_human (talking-head).
+ * Unlike generic video generation, these REQUIRE a driving audio track.
+ */
+export const DIGITAL_HUMAN_MODEL_IDS = Object.freeze(['kling-avatar'])
+
+/**
+ * @param {unknown} modelId
+ * @returns {boolean}
+ */
+export function isDigitalHumanModel(modelId) {
+  const id = typeof modelId === 'string' ? modelId.trim().toLowerCase() : ''
+  return DIGITAL_HUMAN_MODEL_IDS.includes(id)
+}
+
+/**
+ * Transcript text from an OmniMux / OpenAI-compat transcription envelope.
+ * @param {unknown} raw
+ * @returns {string | undefined}
+ */
+export function pickTranscriptionText(raw) {
+  if (typeof raw === 'string') {
+    const text = raw.trim()
+    return text || undefined
+  }
+  if (!raw || typeof raw !== 'object') return undefined
+  const row = /** @type {Record<string, unknown>} */ (raw)
+  const data = row.data && typeof row.data === 'object' && !Array.isArray(row.data)
+    ? /** @type {Record<string, unknown>} */ (row.data)
+    : undefined
+  const direct = row.text ?? row.transcript ?? row.transcription
+    ?? data?.text ?? data?.transcript ?? data?.transcription
+  if (typeof direct === 'string' && direct.trim()) return direct.trim()
+  return undefined
+}
+
 /**
  * @param {unknown} raw
  * @returns {string | undefined}
@@ -79,6 +118,7 @@ export function pickTaskStatus(raw) {
  * @param {string} capability
  * @param {{
  *   prompt: string,
+ *   model?: string,
  *   duration?: number,
  *   image?: string,
  *   speech?: string,
@@ -118,7 +158,13 @@ export function mapOmnimuxInput(capability, request) {
     } else if (request.image) {
       input.image = request.image
     }
-    // 严禁向 video 注入 images/references/audioTrack/metadata（#429/#432）。
+    // digital_human（如 kling-avatar）：audioTrack 是驱动音频，属于该模型契约的
+    // 已知字段，必须透传（#538）。普通 video 模型仍严禁携带 audioTrack（#429），
+    // 网关 Go 结构体 DisallowUnknownFields 会 400。
+    if (isDigitalHumanModel(request.model) && request.audioTrack && request.audioTrack.pathOrUrl) {
+      input.audioTrack = request.audioTrack
+    }
+    // 严禁向 video 注入 images/references/metadata（#429/#432）。
     // 网关 Go 结构体 DisallowUnknownFields，metadata 会 400。
     return input
   } else {

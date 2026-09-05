@@ -43,8 +43,8 @@ describe('buildModelCatalog (H2 contract projection)', () => {
 
     // authoritative flat list: all 41 contracted models with disposition governance
     assert.equal(catalog.models.length, 41)
-    assert.equal(catalog.models.find((m) => m.id === 'whisper-1')?.disposition, 'unavailable')
-    assert.equal(catalog.models.find((m) => m.id === 'kling-avatar')?.disposition, 'unavailable')
+    assert.equal(catalog.models.find((m) => m.id === 'whisper-1')?.disposition, 'draft')
+    assert.equal(catalog.models.find((m) => m.id === 'kling-avatar')?.disposition, 'draft')
     assert.equal(catalog.models.find((m) => m.id === 'omni_flash')?.disposition, 'quarantine')
     assert.equal(catalog.models.find((m) => m.id === 'nano_banana_2')?.aliases?.includes('nanobanana-2'), true)
 
@@ -55,7 +55,7 @@ describe('buildModelCatalog (H2 contract projection)', () => {
     // Batch A lock: all chat/vision_chat ops are draft/stub → text bucket empty
     assert.deepEqual(catalog.text.map((row) => row.id), [])
 
-    // unavailable / quarantine never appear in any bucket
+    // draft-unlisted (#538 probeable) / quarantine never appear in any bucket
     for (const kind of ['text', 'image', 'video', 'audio']) {
       for (const forbidden of ['whisper-1', 'kling-avatar', 'omni_flash', 'kling-o1', 'kling-o3', 'kling-v3-motion-control']) {
         assert.equal(catalog[kind].some((row) => row.id === forbidden), false, `${kind}:${forbidden}`)

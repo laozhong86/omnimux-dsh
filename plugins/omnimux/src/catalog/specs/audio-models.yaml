@@ -1,7 +1,8 @@
 # 音频模型能力契约 (Audio Models Capability Contract)
 # H2: 3 个 runtime audio ID 全处置。suno / gpt-4o-mini-tts 有 YAML ≠ live：
-#     仓内无 dated live 证据 → 保持 draft+stub。whisper-1 unavailable
-#     （无 speechToText live seam；speech_to_text 产出 text，不得入 audio 产出桶）。
+#     仓内无 dated live 证据 → 保持 draft+stub。whisper-1 draft（#538 已挂载
+#     speechToText seam，可探测；#530 探测翻 live；speech_to_text 产出 text，
+#     不得入 audio 产出桶）。
 schemaVersion: "1.1"
 managementGroup: "audio"
 modality: "audio"
@@ -105,8 +106,9 @@ models:
     parameters: {}
     research:
       status: "draft"
-      notes: "unavailable 处置：speech_to_text output 为 text；无 speechToText live seam 不上架；promptPolicy=none"
+      notes: "draft 处置：speech_to_text output 为 text；speechToText seam 已挂载（#538）可探测；promptPolicy=none；#530 探测翻 live"
     execution:
       status: "none"
       profileId: "speechToText"
-      notes: "speechToText profile unavailable / no live seam"
+      seam: "speechToText"
+      notes: "speechToText profile live（seam 已挂载）；模型级 execution 待 #530 探测证据方可翻 live"
