@@ -254,7 +254,7 @@ test('ConfigPanel 源码契约：只消费 buildFilteredModelOptions，禁止 MA
   assert.doesNotMatch(src, /orderTextModels/);
   assert.doesNotMatch(src, /nanobanana-2/);
   assert.doesNotMatch(src, /kling-o1/);
-  assert.match(src, /defaults\?\.\[materialType\]/);
+  assert.doesNotMatch(src, /defaults\?\.\[materialType\]/);
   assert.doesNotMatch(src, /evaluateModelCompatibility/);
   assert.doesNotMatch(src, /level === 'disabled'/);
 });

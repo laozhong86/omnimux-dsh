@@ -71,12 +71,6 @@ function resolveModeText(params: EffectiveVideoParams): string {
   if (params.operation && params.operation.trim()) {
     return params.operation.trim();
   }
-  // Last-resort legacy mirror (should be rare after W2).
-  if (params.generationMode === 'first_last_frame') return '首尾帧';
-  if (params.generationMode === 'reference') return '全能参考';
-  if (typeof params.generationMode === 'string' && params.generationMode.trim()) {
-    return params.generationMode.trim();
-  }
   return '';
 }
 

@@ -323,8 +323,28 @@ export const useCanvasStore = create<CanvasState>()(
 
     hydrateGraph: (nodes, edges) => {
       clearPersistSessionFlags();
-      set({ nodes, edges, selectedElement: { type: 'none', id: null }, past: [], future: [] });
-      history.current = snapshotOf(nodes, edges);
+      const catalog = get().catalogRuntime;
+      // Catalog-first boot has already stored its fingerprint while the graph
+      // was empty. Reconcile the newly loaded nodes regardless of that prior
+      // runtime fingerprint so picker state and submitted params stay aligned.
+      const reconciled = catalog
+        ? reconcileCanvasForCatalog({
+            nodes,
+            edges,
+            catalog,
+            previousFingerprint: '',
+          })
+        : null;
+      const nextNodes = reconciled?.nodes ?? nodes;
+      const nextEdges = reconciled?.edges ?? edges;
+      set({
+        nodes: nextNodes,
+        edges: nextEdges,
+        selectedElement: { type: 'none', id: null },
+        past: [],
+        future: [],
+      });
+      history.current = snapshotOf(nextNodes, nextEdges);
       history.lastPushAt = 0;
     },
 

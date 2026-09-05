@@ -76,7 +76,6 @@ export function shouldReconcileCatalog(args: {
  * Implementation: issue a no-op structural plan that still runs the soft
  * recompute path by patching each generate node with its current prompt
  * (identity patch). The gateway's soft recompute re-runs auto-adaptation,
- * writes `params.operation`, drops legacy `generationMode`, and stamps
  * `data.compat.catalogFingerprint`. Zero candidates → configuration_error,
  * edges retained.
  */

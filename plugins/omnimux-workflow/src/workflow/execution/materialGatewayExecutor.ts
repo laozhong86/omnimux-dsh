@@ -188,6 +188,9 @@ export function createMaterialGatewayExecutor(opts: {
             url: persisted.url,
             relativePath: persisted.relativePath,
             assetId: persisted.assetId,
+            ...(persisted.mimeType ? { mimeType: persisted.mimeType } : {}),
+            ...(persisted.sizeBytes != null ? { sizeBytes: persisted.sizeBytes } : {}),
+            ...(persisted.durationSec != null ? { durationSec: persisted.durationSec } : {}),
           }],
         };
       }

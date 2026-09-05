@@ -23,7 +23,6 @@ import {
   buildUpstreamFingerprint,
   evaluateCatalogCompat,
   evaluateModelCompat,
-  mapLegacyOperation,
   resolveModelView,
   type CompatReasonCode,
   type CompatRejection,
@@ -190,7 +189,7 @@ export function resolveOperationLabel(
   modelId: string | undefined,
   operationId: string,
 ): string {
-  const canonical = mapLegacyOperation(operationId) || operationId;
+  const canonical = operationId.trim();
   if (!canonical) return '';
   if (!catalog || !modelId) return canonical;
   const view = buildContractView(catalog);
@@ -221,21 +220,16 @@ function matchToOption(
 }
 
 /**
- * Read the preferred operation from node params.
- * Prefer canonical `params.operation`; fall back to legacy `generationMode`
- * via LEGACY_OPERATION_MAP. Empty → undefined (no invented default).
+ * Read the canonical operation id from node params.
+ * Empty means no preferred operation; no fallback is inferred.
  */
 export function readPreferredOperationId(
   params: Record<string, unknown> | null | undefined,
 ): string | undefined {
   if (!params || typeof params !== 'object') return undefined;
-  if (typeof params.operation === 'string' && params.operation.trim()) {
-    return mapLegacyOperation(params.operation);
-  }
-  if (typeof params.generationMode === 'string' && params.generationMode.trim()) {
-    return mapLegacyOperation(params.generationMode);
-  }
-  return undefined;
+  return typeof params.operation === 'string' && params.operation.trim()
+    ? params.operation.trim()
+    : undefined;
 }
 
 /**
@@ -249,7 +243,6 @@ export function buildEffectiveOpsUiState(args: {
   catalog: CapabilityCatalog | null | undefined;
   modelId: string | undefined;
   fingerprint: UpstreamFingerprint;
-  /** Preferred operation (params.operation / legacy generationMode). */
   preferredOperationId?: string;
   outputType?: string;
 }): EffectiveOpsUiState {
@@ -290,9 +283,10 @@ export function buildEffectiveOpsUiState(args: {
     };
   }
 
-  const preferred = args.preferredOperationId
-    ? mapLegacyOperation(args.preferredOperationId)
-    : undefined;
+  const preferred =
+    typeof args.preferredOperationId === 'string' && args.preferredOperationId.trim()
+      ? args.preferredOperationId.trim()
+      : undefined;
   const verdict = evaluateModelCompat(model, args.fingerprint, {
     ...(preferred ? { operationId: preferred } : {}),
     ...(args.outputType ? { outputType: args.outputType } : {}),
@@ -480,23 +474,17 @@ export function isZeroCandidateEmptyState(result: FilteredModelListResult): bool
 }
 
 /**
- * Migrate a params bag: prefer operation, drop generationMode after mapping.
- * Pure — does not mutate the input.
+ * Write a canonical operation id into a params bag without mutating the input.
  */
-export function migrateParamsOperation(
+export function setParamsOperation(
   params: Record<string, unknown> | null | undefined,
   nextOperationId?: string,
 ): Record<string, unknown> {
   const next: Record<string, unknown> = { ...(params ?? {}) };
-  const preferred = nextOperationId
-    ? mapLegacyOperation(nextOperationId)
+  const operation = typeof nextOperationId === 'string' && nextOperationId.trim()
+    ? nextOperationId.trim()
     : readPreferredOperationId(next);
-  if (preferred) {
-    next.operation = preferred;
-  }
-  if ('generationMode' in next) {
-    delete next.generationMode;
-  }
+  if (operation) next.operation = operation;
   return next;
 }
 

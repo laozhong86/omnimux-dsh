@@ -7,6 +7,7 @@ import {
   readOptionalMime,
   type UpstreamMediaSnapshot,
 } from '../../../shared/validation/operationUi.ts';
+import { readExplicitTargetSlot } from '../../../shared/validation/compatKernel.ts';
 
 export interface UpstreamMediaItem {
   nodeId: string;
@@ -57,12 +58,7 @@ export function useUpstreamMedia(nodeId: string): UpstreamMediaItem[] {
         typeof edgeData.role === 'string' && edgeData.role.trim()
           ? edgeData.role.trim()
           : undefined;
-      const targetSlot =
-        typeof edgeData.targetSlot === 'string' && edgeData.targetSlot.trim()
-          ? edgeData.targetSlot.trim()
-          : typeof edge.targetHandle === 'string' && edge.targetHandle.trim()
-            ? edge.targetHandle.trim()
-            : undefined;
+      const targetSlot = readExplicitTargetSlot(edgeData, edge.targetHandle);
 
       return [
         {

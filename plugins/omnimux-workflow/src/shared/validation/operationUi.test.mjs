@@ -5,7 +5,7 @@
  *   - effectiveOps 0/1/2+ visibility + blockGenerate
  *   - filtered models: incompatible / unlisted never enter the option list
  *   - Whisper-not-listed stays hidden; ASR zero-candidate empty state
- *   - legacy generationMode → params.operation migration
+ *   - params.operation is the sole operation contract
  *   - unknown media metadata stays null/undefined (never 0 / octet-stream)
  *   - image / video / audio / text each have at least one path
  */
@@ -18,7 +18,7 @@ import {
   buildFilteredModelOptions,
   buildUiUpstreamFingerprint,
   isZeroCandidateEmptyState,
-  migrateParamsOperation,
+  setParamsOperation,
   readPreferredOperationId,
   resolveTriggerModeText,
   shouldRenderModeUi,
@@ -275,33 +275,19 @@ describe('filtered model list (Hide, Don\'t Grey)', () => {
   });
 });
 
-describe('legacy migration + preferred operation', () => {
-  it('readPreferredOperationId prefers params.operation over generationMode', () => {
-    assert.equal(
-      readPreferredOperationId({ operation: 'first_last_frame', generationMode: 'reference' }),
-      'first_last_frame',
-    );
-    assert.equal(readPreferredOperationId({ generationMode: 'reference' }), 'video_multi_ref');
-    assert.equal(readPreferredOperationId({ generationMode: 'flf' }), 'first_last_frame');
+describe('canonical preferred operation', () => {
+  it('reads only params.operation', () => {
+    assert.equal(readPreferredOperationId({ operation: 'first_last_frame' }), 'first_last_frame');
     assert.equal(readPreferredOperationId({}), undefined);
   });
 
-  it('migrateParamsOperation writes operation and strips generationMode', () => {
-    const next = migrateParamsOperation(
-      { model: 'vid-frames', generationMode: 'reference', aspectRatio: '16:9' },
-    );
-    assert.equal(next.operation, 'video_multi_ref');
-    assert.equal('generationMode' in next, false);
-    assert.equal(next.aspectRatio, '16:9');
-  });
-
-  it('migrateParamsOperation accepts explicit next operation id', () => {
-    const next = migrateParamsOperation(
-      { generationMode: 'reference' },
+  it('setParamsOperation writes an explicit canonical operation id', () => {
+    const next = setParamsOperation(
+      { model: 'vid-frames', aspectRatio: '16:9' },
       'first_last_frame',
     );
     assert.equal(next.operation, 'first_last_frame');
-    assert.equal('generationMode' in next, false);
+    assert.equal(next.aspectRatio, '16:9');
   });
 });
 

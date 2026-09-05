@@ -55,7 +55,7 @@ describe('reconcileCanvasForCatalog', () => {
   });
 
   it('fingerprint change recomputes generate nodes and stamps catalogFingerprint', () => {
-    const nodes = [genNode('g1', { model: 'img-ref', generationMode: 'reference' })];
+    const nodes = [genNode('g1', { model: 'img-ref', operation: 'image_to_image' })];
     const edges = [];
     const result = reconcileCanvasForCatalog({
       nodes,
@@ -67,8 +67,6 @@ describe('reconcileCanvasForCatalog', () => {
     assert.equal(result.fingerprint, catalog.fingerprint);
     const gen = result.nodes.find((n) => n.id === 'g1');
     assert.ok(gen);
-    // Legacy generationMode migrated off; operation written.
-    assert.equal('generationMode' in gen.data.params, false);
     assert.equal(typeof gen.data.params.operation, 'string');
     assert.equal(gen.data.compat.catalogFingerprint, catalog.fingerprint);
   });

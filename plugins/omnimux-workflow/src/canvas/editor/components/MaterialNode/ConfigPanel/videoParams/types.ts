@@ -2,7 +2,6 @@
  * VideoParams Types & Contracts (Issue 467 / W2).
  *
  * Generation mode is an open-string Catalog operation id (`params.operation`).
- * The historical `GenerationMode = 'reference' | 'first_last_frame'` union is
  * retired from the write path; legacy values are read-time migrated only.
  */
 
@@ -10,23 +9,12 @@ import type { ReactNode, Ref } from 'react';
 import type { OperationUiOption } from '../../../../../../shared/validation/operationUi.ts';
 
 /**
- * @deprecated Read-time legacy wire only. New writes use `params.operation`.
- * Kept so old fixtures / snapshots typecheck during migration.
- */
-export type GenerationMode = 'reference' | 'first_last_frame' | string;
-
-/**
  * 存放于 nodeData.params 中的视频参数原始/持久化结构
  */
 export interface VideoNodeParams {
   model?: string;
-  /** Canonical operation id (Catalog DTO). Preferred over generationMode. */
+  /** Canonical operation id from the Catalog DTO. */
   operation?: string;
-  /**
-   * @deprecated Legacy wire. Read-time mapped via LEGACY_OPERATION_MAP; stripped
-   * on the next write.
-   */
-  generationMode?: GenerationMode;
   aspectRatio?: string;
   resolution?: string;
   duration?: number | string;
@@ -56,12 +44,6 @@ export interface EffectiveVideoParams {
   hasSoundSupport: boolean;
   firstFrameUrl?: string;
   lastFrameUrl?: string;
-  /**
-   * @deprecated Mirror of `operation` after legacy mapping. Present so older
-   * summary/tests that still read generationMode keep compiling during the
-   * cutover; new code must use `operation`.
-   */
-  generationMode?: string;
 }
 
 /**

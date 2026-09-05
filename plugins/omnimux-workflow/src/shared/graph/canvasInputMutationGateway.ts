@@ -25,9 +25,9 @@ import {
   buildContractView,
   buildUpstreamFingerprint,
   evaluateCatalogCompat,
-  mapLegacyOperation,
   planAutoAdaptation,
   primaryRejectionCode,
+  readExplicitTargetSlot,
   resolveModelView,
   type AutoAdaptationPick,
   type CompatReasonCode,
@@ -119,18 +119,12 @@ function readParams(node: CanvasNode): Record<string, unknown> {
 }
 
 /**
- * Read-time migration: prefer canonical `params.operation`; fall back to the
- * historical `generationMode` wire string via LEGACY_OPERATION_MAP. Never
- * invent a default — empty means "no preferred operation".
+ * Read the canonical operation id from params. Empty means no preference.
  */
 function readCurrentOperationId(params: Record<string, unknown>): string | undefined {
-  if (typeof params.operation === 'string' && params.operation.trim()) {
-    return mapLegacyOperation(params.operation);
-  }
-  if (typeof params.generationMode === 'string' && params.generationMode.trim()) {
-    return mapLegacyOperation(params.generationMode);
-  }
-  return undefined;
+  return typeof params.operation === 'string' && params.operation.trim()
+    ? params.operation.trim()
+    : undefined;
 }
 
 function readFiniteNumber(value: unknown): number | undefined {
@@ -143,7 +137,7 @@ function assetFromEdge(edge: Edge, nodes: CanvasNode[]): UpstreamAssetFingerprin
   const data = (source.data ?? {}) as Record<string, unknown>;
   const type = (typeof data.materialType === 'string' ? data.materialType : source.type) ?? 'text';
   const edgeData = (edge.data ?? {}) as Record<string, unknown>;
-  // Explicit targetHandle / edge metadata wins over inferred defaults.
+  // Explicit semantic edge metadata wins over inferred defaults.
   const role =
     (typeof edgeData.role === 'string' && edgeData.role.trim() ? edgeData.role.trim() : undefined)
     ?? (typeof edgeData.slotBinding === 'object'
@@ -151,18 +145,7 @@ function assetFromEdge(edge: Edge, nodes: CanvasNode[]): UpstreamAssetFingerprin
       && typeof (edgeData.slotBinding as { role?: unknown }).role === 'string'
       ? String((edgeData.slotBinding as { role: string }).role)
       : undefined);
-  const targetSlot =
-    (typeof edgeData.targetSlot === 'string' && edgeData.targetSlot.trim()
-      ? edgeData.targetSlot.trim()
-      : undefined)
-    ?? (typeof edge.targetHandle === 'string' && edge.targetHandle.trim()
-      ? edge.targetHandle.trim()
-      : undefined)
-    ?? (typeof edgeData.slotBinding === 'object'
-      && edgeData.slotBinding
-      && typeof (edgeData.slotBinding as { slot?: unknown }).slot === 'string'
-      ? String((edgeData.slotBinding as { slot: string }).slot)
-      : undefined);
+  const targetSlot = readExplicitTargetSlot(edgeData, edge.targetHandle);
   // Prefer canonical sizeBytes / durationSec; fall back to legacy fileSize / duration.
   // Unknown stays omitted — never invent 0.
   const sizeBytes =
@@ -273,8 +256,6 @@ function applyPickToNode(
   if (pick) {
     params.model = pick.modelId;
     params.operation = pick.operationId;
-    // Canonical operation wins; drop the legacy generationMode key once migrated.
-    if ('generationMode' in params) delete params.generationMode;
   }
   return {
     ...node,

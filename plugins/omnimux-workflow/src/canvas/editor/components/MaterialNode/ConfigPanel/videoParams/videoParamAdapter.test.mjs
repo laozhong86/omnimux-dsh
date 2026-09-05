@@ -2,8 +2,7 @@
  * Unit tests for videoParamAdapter (Issue #467 / W2).
  *
  * Operation resolution is catalog-driven. Without a catalog the adapter still
- * scrubs aspect/duration/resolution/sound and migrates legacy generationMode
- * onto params.operation via migrateParamsOperation.
+ * scrubs aspect/duration/resolution/sound using canonical params.operation.
  */
 
 import assert from 'node:assert/strict';
@@ -65,7 +64,7 @@ const veoItem = { id: 'vid-frames', label: 'vid-frames', parameters: veoSchema }
 describe('videoParamAdapter - resolveEffectiveVideoParams (W2)', () => {
   it('catalog + no media → operation set; schema fields scrubbed', () => {
     const result = resolveEffectiveVideoParams({
-      params: { model: 'vid-frames', generationMode: 'reference', aspectRatio: '9:16', duration: 10, sound: true },
+      params: { model: 'vid-frames', operation: 'video_multi_ref', aspectRatio: '9:16', duration: 10, sound: true },
       schema: klingSchema,
       modelItem: klingItem,
       catalog,
@@ -85,9 +84,9 @@ describe('videoParamAdapter - resolveEffectiveVideoParams (W2)', () => {
     assert.equal(result.hasSoundSupport, true);
   });
 
-  it('legacy generationMode is read but EffectiveVideoParams exposes operation', () => {
+  it('canonical operation remains selected when effective', () => {
     const result = resolveEffectiveVideoParams({
-      params: { model: 'vid-frames', generationMode: 'first_last_frame', aspectRatio: '16:9' },
+      params: { model: 'vid-frames', operation: 'first_last_frame', aspectRatio: '16:9' },
       schema: klingSchema,
       modelItem: klingItem,
       catalog,
@@ -125,14 +124,13 @@ describe('videoParamAdapter - resolveEffectiveVideoParams (W2)', () => {
 });
 
 describe('videoParamAdapter - validateAndFallbackVideoParams (W2)', () => {
-  it('strips generationMode and writes params.operation', () => {
+  it('keeps canonical params.operation when changing model', () => {
     const next = validateAndFallbackVideoParams(
-      { model: 'old', generationMode: 'reference', aspectRatio: '9:16', duration: 10, sound: true, resolution: '4K' },
+      { model: 'old', operation: 'text_to_video', aspectRatio: '9:16', duration: 10, sound: true, resolution: '4K' },
       klingItem,
       { catalog, upstreams: [], prompt: '' },
     );
     assert.equal(next.model, 'vid-frames');
-    assert.equal('generationMode' in next, false);
     assert.equal(typeof next.operation, 'string');
     assert.ok(next.operation.length > 0);
     assert.equal(next.aspectRatio, '9:16');
@@ -158,42 +156,7 @@ describe('videoParamAdapter - validateAndFallbackVideoParams (W2)', () => {
       { catalog, nextOperationId: 'text_to_video' },
     );
     assert.equal(next.operation, 'text_to_video');
-    assert.equal('generationMode' in next, false);
   });
 
-  it('A2: generationMode on EffectiveVideoParams is view-only; store write path never persists it', () => {
-    const view = resolveEffectiveVideoParams({
-      params: { model: 'vid-frames', operation: 'text_to_video', aspectRatio: '16:9' },
-      schema: klingSchema,
-      modelItem: klingItem,
-      catalog,
-      upstreams: [],
-      prompt: 'hi',
-    });
-    // Local view-model may mirror operation for transitional summary paths.
-    assert.equal(view.operation, 'text_to_video');
-    if (view.generationMode !== undefined) {
-      assert.equal(view.generationMode, view.operation);
-    }
 
-    // Store-bound write helper must only emit params.operation.
-    const persisted = validateAndFallbackVideoParams(
-      { model: 'vid-frames', generationMode: 'reference', aspectRatio: '16:9' },
-      klingItem,
-      { catalog, upstreams: [], prompt: 'hi' },
-    );
-    assert.equal('generationMode' in persisted, false);
-    assert.equal(typeof persisted.operation, 'string');
-    assert.ok(String(persisted.operation).length > 0);
-
-    // Even when view.generationMode is present, callers must not spread it into store.
-    const accidentalSpread = { ...view };
-    const scrubbed = validateAndFallbackVideoParams(
-      accidentalSpread,
-      klingItem,
-      { catalog },
-    );
-    assert.equal('generationMode' in scrubbed, false);
-    assert.equal(typeof scrubbed.operation, 'string');
-  });
 });

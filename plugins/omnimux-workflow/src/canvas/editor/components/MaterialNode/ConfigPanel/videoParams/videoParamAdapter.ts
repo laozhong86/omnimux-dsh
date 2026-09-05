@@ -3,7 +3,6 @@
  *
  * Resolves EffectiveVideoParams from node params + model schema + the
  * contract-driven effective operation set. Writes only `params.operation`
- * (legacy `generationMode` is read-time migrated and stripped).
  */
 
 import type {
@@ -14,7 +13,7 @@ import type {
 import {
   buildEffectiveOpsUiState,
   buildUiUpstreamFingerprint,
-  migrateParamsOperation,
+  setParamsOperation,
   readPreferredOperationId,
   shouldRenderModeUi,
   type OperationUiOption,
@@ -27,12 +26,6 @@ export const DEFAULT_ASPECT_RATIO = '16:9';
 
 /** 默认时长（秒） */
 export const DEFAULT_DURATION = 5;
-
-/**
- * @deprecated Legacy default GenerationMode. New code uses catalog operation
- * ids via buildEffectiveOpsUiState; kept only for transitional callers.
- */
-export const DEFAULT_GENERATION_MODE = 'reference';
 
 export interface ResolveEffectiveVideoParamsArgs {
   params: VideoNodeParams | undefined;
@@ -51,31 +44,13 @@ export interface ResolveEffectiveVideoParamsArgs {
  *
  * Operation resolution order:
  *   1. effective ops from the W1 kernel (catalog × fingerprint × model)
- *   2. preferred params.operation / legacy generationMode (when still effective)
+ *   2. preferred canonical params.operation (when still effective)
  *   3. sole effective op (count === 1) or first effective (≥2)
  *   4. empty string when zero effective ops (mode UI hidden, generate blocked)
  */
 export function resolveEffectiveVideoParams(
-  paramsOrArgs: VideoNodeParams | undefined | ResolveEffectiveVideoParamsArgs,
-  schemaArg?: ModelParameterSchema | undefined,
-  modelItemArg?: CapabilityModelItem | undefined,
+  args: ResolveEffectiveVideoParamsArgs,
 ): EffectiveVideoParams {
-  // Back-compat: previous signature was (params, schema, modelItem).
-  const args: ResolveEffectiveVideoParamsArgs =
-    paramsOrArgs !== null
-    && typeof paramsOrArgs === 'object'
-    && 'params' in (paramsOrArgs as object)
-    && (schemaArg === undefined && modelItemArg === undefined
-      || 'catalog' in (paramsOrArgs as object)
-      || 'upstreams' in (paramsOrArgs as object)
-      || 'prompt' in (paramsOrArgs as object))
-      ? (paramsOrArgs as ResolveEffectiveVideoParamsArgs)
-      : {
-          params: paramsOrArgs as VideoNodeParams | undefined,
-          schema: schemaArg,
-          modelItem: modelItemArg,
-        };
-
   const params = args.params;
   const schema = args.schema;
   const modelItem = args.modelItem;
@@ -164,8 +139,6 @@ export function resolveEffectiveVideoParams(
     duration,
     sound,
     hasSoundSupport,
-    // Transitional mirror so older summary paths keep working.
-    generationMode: operation || undefined,
   };
 
   if (resolution !== undefined) result.resolution = resolution;
@@ -179,10 +152,7 @@ export function resolveEffectiveVideoParams(
  * Pure function: model-switch fallback + parameter scrubbing.
  *
  * 1. Inherit previous params and update `model`.
- * 2. Migrate operation (preferred / legacy generationMode) onto
- *    `params.operation` and strip `generationMode`.
- * 3. Validate aspectRatio / duration / resolution / sound against the target
- *    schema (unchanged behaviour).
+ * 2. Keep or write the canonical operation id.
  */
 export function validateAndFallbackVideoParams(
   oldParams: Record<string, unknown>,
@@ -201,10 +171,10 @@ export function validateAndFallbackVideoParams(
     model: targetModelItem?.id ?? oldParams['model'],
   };
 
-  // Operation: migrate legacy → canonical, optionally force nextOperationId.
+  // Operation: keep or explicitly replace the canonical operation id.
   const preferred = opts.nextOperationId
     ?? readPreferredOperationId(nextParams);
-  nextParams = migrateParamsOperation(nextParams, preferred);
+  nextParams = setParamsOperation(nextParams, preferred);
 
   // When a catalog is available, clamp the operation to an effective one.
   if (opts.catalog && targetModelItem?.id) {
@@ -220,7 +190,7 @@ export function validateAndFallbackVideoParams(
       outputType: 'video',
     });
     if (opsState.selectedOperationId) {
-      nextParams = migrateParamsOperation(nextParams, opsState.selectedOperationId);
+      nextParams = setParamsOperation(nextParams, opsState.selectedOperationId);
     } else if (opsState.count === 0) {
       // Zero effective ops: keep operation empty so UI can show the error.
       delete nextParams.operation;

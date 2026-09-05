@@ -4,7 +4,7 @@
  * Contract-driven:
  *   - model picker = only compatible (acceptsCurrentInputs) rows; Hide, Don't Grey
  *   - effectiveOps 0/1 → no mode UI; ≥2 → OperationSegment only for effective ops
- *   - writes params.operation only (legacy generationMode read-migrated)
+ *   - writes canonical params.operation only
  *   - zero candidates → empty state + block generate with typed reason
  *   - Whisper / unlisted ASR never enter the DOM
  */
@@ -34,7 +34,6 @@ import { useUpstreamMedia, toUpstreamSnapshots } from '../../../hooks/useUpstrea
 import { useModelParameterSchema, getCachedCatalog } from '../../../hooks/useModelParameterSchema';
 import { resolveNodeLifecycle } from '../../../utils/nodeMaterialLifecycle';
 import GenerateButton from './GenerateButton';
-import { resolveSavedModelForPicker } from './canonicalizeCatalogModelId';
 import { VideoTriggerBar } from './videoParams/VideoTriggerBar';
 import { VideoParamPopover } from './videoParams/VideoParamPopover';
 import {
@@ -45,7 +44,7 @@ import {
   buildEffectiveOpsUiState,
   buildFilteredModelOptions,
   buildUiUpstreamFingerprint,
-  migrateParamsOperation,
+  setParamsOperation,
   readPreferredOperationId,
   shouldRenderModeUi,
 } from '../../../../../shared/validation/operationUi.ts';
@@ -228,23 +227,10 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     });
   }, [filteredModels.options]);
 
-  // Inheritance: keep existing params.model when still in the filtered list →
-  // defaults[type] → first filtered. Auto-pick from gateway already wrote a
-  // compatible model when a connection was allowed; UI just mirrors it.
-  const modelValue = useMemo(() => {
-    const { modelId: savedModel } = resolveSavedModelForPicker(
-      params.model,
-      modelOptions.map((row) => row.value).filter((id): id is string => Boolean(id)),
-    );
-    if (savedModel && modelOptions.some((row) => row.value === savedModel)) return savedModel;
-    // If the saved model is no longer compatible, fall through to a filtered default
-    // (gateway soft-recompute should already have swapped it; this is a UI safety net).
-    const defaultId = activeCatalog?.defaults?.[materialType];
-    if (typeof defaultId === 'string' && defaultId.trim()) {
-      if (modelOptions.some((row) => row.value === defaultId)) return defaultId;
-    }
-    return modelOptions[0]?.value;
-  }, [params.model, activeCatalog, materialType, modelOptions]);
+  // The picker reflects the exact model the executor receives. Catalog
+  // reconciliation owns replacement of stale saved ids; the UI never renders
+  // a different default without writing it back to params.
+  const modelValue = typeof params.model === 'string' ? params.model.trim() : '';
 
   const {
     schema,
@@ -258,9 +244,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
   const updateParam = useCallback(
     (key: string, value: unknown) => {
-      // Operation writes go through migrateParamsOperation so generationMode is stripped.
-      if (key === 'operation' || key === 'generationMode') {
-        const next = migrateParamsOperation(
+      if (key === 'operation') {
+        const next = setParamsOperation(
           params as Record<string, unknown>,
           typeof value === 'string' ? value : undefined,
         );
@@ -308,7 +293,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       const newModelItem = modelList.find((m) => m.id === newModelId);
       if (!newModelItem) {
         onUpdateNodeData({
-          params: migrateParamsOperation({ ...params, model: newModelId }),
+          params: setParamsOperation({ ...params, model: newModelId }),
         });
         return;
       }

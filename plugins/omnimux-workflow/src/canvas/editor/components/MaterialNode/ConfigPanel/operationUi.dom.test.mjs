@@ -34,7 +34,7 @@ const opUiSrc = readFileSync(
 test('ConfigPanel 消费 buildFilteredModelOptions / buildEffectiveOpsUiState（唯一判定）', () => {
   assert.match(configSrc, /buildFilteredModelOptions/);
   assert.match(configSrc, /buildEffectiveOpsUiState/);
-  assert.match(configSrc, /migrateParamsOperation/);
+  assert.match(configSrc, /setParamsOperation/);
   // 不再用 disabled 灰置不兼容模型
   assert.match(configSrc, /disabled:\s*false/);
   assert.match(configSrc, /Hide, Don't Grey|Hide, Don\\'t Grey|zeroCandidates|wf-model-empty/);
@@ -58,7 +58,7 @@ test('ConfigPanel 0/1/≥2 mode UI 接线：视频走 Popover，其它模态 inl
   assert.match(configSrc, /opsState\.blockGenerate|filteredModels\.zeroCandidates|configuration_error/);
 });
 
-test('ConfigPanel 写入 params.operation，不再写 generationMode', () => {
+test('ConfigPanel 写入 canonical params.operation', () => {
   assert.match(configSrc, /updateParam\('operation'/);
   assert.doesNotMatch(configSrc, /updateParam\('generationMode'/);
   assert.doesNotMatch(configSrc, /onParamChange\('generationMode'/);
@@ -73,8 +73,7 @@ test('SegmentControls：OperationSegment 仅渲染 effective ops；≤1 返回 n
   assert.doesNotMatch(segmentSrc, /value:\s*'first_last_frame'/);
   assert.doesNotMatch(segmentSrc, /'全能参考'/);
   assert.doesNotMatch(segmentSrc, /supportsReference/);
-  // 仍导出 GenerationModeSegment 别名以兼容
-  assert.match(segmentSrc, /export function GenerationModeSegment/);
+  assert.doesNotMatch(segmentSrc, /GenerationModeSegment/);
   assert.match(segmentSrc, /data-operation-id/);
 });
 
@@ -112,10 +111,10 @@ test('types：EffectiveVideoParams 以 operation + showModeUi 为主', () => {
   assert.match(typesSrc, /operation\?:/);
 });
 
-test('videoParamAdapter：消费 catalog / migrateParamsOperation，不再写 generationMode', () => {
+test('videoParamAdapter：消费 catalog / setParamsOperation，不再写 generationMode', () => {
   assert.match(adapterSrc, /buildEffectiveOpsUiState/);
-  assert.match(adapterSrc, /migrateParamsOperation/);
-  assert.match(adapterSrc, /params\.operation|nextParams = migrateParamsOperation/);
+  assert.match(adapterSrc, /setParamsOperation/);
+  assert.match(adapterSrc, /params\.operation|nextParams = setParamsOperation/);
   assert.doesNotMatch(adapterSrc, /nextParams\['generationMode'\]/);
 });
 

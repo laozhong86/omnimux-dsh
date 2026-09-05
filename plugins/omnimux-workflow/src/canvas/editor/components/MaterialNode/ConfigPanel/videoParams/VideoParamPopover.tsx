@@ -3,7 +3,6 @@
  *
  * Mode section renders only when effectiveOps ≥ 2 (params.showModeUi).
  * Operation ids come from Catalog DTO options (open strings). Writes
- * `params.operation` only — never `generationMode`.
  *
  * Styles: only `wf-video-param-popover*` classes / `--dsw-*` tokens via CSS.
  * No raw hex, no `banned token island`, no JS theme branch. light/dark follows host cascade.

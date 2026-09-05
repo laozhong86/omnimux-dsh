@@ -18,9 +18,8 @@
  * Fail-closed: unknown models, a missing catalog and zero candidates never
  * fall back to a permissive "available".
  *
- * Operation ids are open strings + metadata — the MCC 17-entry union is NOT
- * copied here (cross-package iron rule). Historical GenerationMode strings
- * are translated at read time via LEGACY_OPERATION_MAP.
+ * Operation ids are canonical open strings + metadata — the MCC 17-entry union
+ * is not copied here (cross-package iron rule).
  */
 
 import type {
@@ -69,34 +68,26 @@ function rejection(
   return { code, message, ...(extra ?? {}) };
 }
 
-// ============================================================================
-// Legacy operation mapping (read-time only; mirrors the hub legacy map
-// semantically WITHOUT importing plugins/omnimux)
-// ============================================================================
-
-export const LEGACY_OPERATION_MAP: Readonly<Record<string, string>> = Object.freeze({
-  reference: 'video_multi_ref',
-  first_last_frame: 'first_last_frame',
-  first_frame: 'first_frame',
-  text_to_video: 'text_to_video',
-  i2v: 'first_frame',
-  t2v: 'text_to_video',
-  flf: 'first_last_frame',
-  avatar: 'digital_human',
-  digital_human: 'digital_human',
-  tts: 'text_to_speech',
-  asr: 'speech_to_text',
-  stt: 'speech_to_text',
-  music: 'text_to_music',
-  t2i: 'text_to_image',
-  i2i: 'image_to_image',
-});
-
-/** Map a historical GenerationMode / wire operation string to the canonical id. */
-export function mapLegacyOperation(raw: string | undefined | null): string {
-  const key = String(raw ?? '').trim();
-  if (!key) return '';
-  return LEGACY_OPERATION_MAP[key] ?? key;
+/**
+ * Read a semantic target slot from an edge.
+ *
+ * in and input are graph handles for ordinary connections, not contract slots.
+ * Explicit edge metadata and real frame slot handles remain semantic slots.
+ */
+export function readExplicitTargetSlot(
+  edgeData: Record<string, unknown>,
+  targetHandle: unknown,
+): string | undefined {
+  const direct = typeof edgeData.targetSlot === 'string' ? edgeData.targetSlot.trim() : '';
+  if (direct) return direct;
+  const binding = edgeData.slotBinding;
+  if (binding && typeof binding === 'object') {
+    const slot = (binding as { slot?: unknown }).slot;
+    if (typeof slot === 'string' && slot.trim()) return slot.trim();
+  }
+  if (typeof targetHandle !== 'string') return undefined;
+  const slot = targetHandle.trim();
+  return slot && slot !== 'in' && slot !== 'input' ? slot : undefined;
 }
 
 // ============================================================================
@@ -647,7 +638,10 @@ export function evaluateModelCompat(
     };
   }
 
-  const requestedOperationId = opts.operationId ? mapLegacyOperation(opts.operationId) : undefined;
+  const requestedOperationId =
+    typeof opts.operationId === 'string' && opts.operationId.trim()
+      ? opts.operationId.trim()
+      : undefined;
   const listedOps = model.operations.filter((op) => op.listed);
   const candidateOps = opts.outputType
     ? listedOps.filter((op) => op.output.type === opts.outputType)
@@ -830,9 +824,10 @@ export function planAutoAdaptation(args: {
   if (!view.available) return null;
 
   const outputType = args.outputType;
-  const currentOperationId = args.currentOperationId
-    ? mapLegacyOperation(args.currentOperationId)
-    : undefined;
+  const currentOperationId =
+    typeof args.currentOperationId === 'string' && args.currentOperationId.trim()
+      ? args.currentOperationId.trim()
+      : undefined;
 
   const evaluate = (model: ContractModelView) =>
     evaluateModelCompat(model, args.fingerprint, {

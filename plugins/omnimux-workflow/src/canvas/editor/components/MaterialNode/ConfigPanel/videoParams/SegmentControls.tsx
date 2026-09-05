@@ -1,8 +1,8 @@
 /**
  * Video Param Segment Controls (Issue 467 / W2).
  *
- * GenerationModeSegment is now an OperationSegment driven by Catalog DTO
- * effective operations (open string ids + labels). Unsupported ops are not
+ * OperationSegment is driven by Catalog DTO effective operations (open string
+ * ids + labels). Unsupported ops are not
  * rendered (Hide, Don't Grey). effectiveOps ≤ 1 → return null (no DOM).
  */
 
@@ -66,7 +66,7 @@ function Segment<T extends string | number | boolean>({
   );
 }
 
-/** OperationSegment / GenerationModeSegment 属性 */
+/** OperationSegment 属性 */
 export interface OperationSegmentProps {
   /** Currently selected canonical operation id. */
   value: string;
@@ -107,33 +107,6 @@ export function OperationSegment({
       value={value}
       onChange={onChange}
       ariaLabel="生成方式"
-    />
-  );
-}
-
-/**
- * @deprecated Alias kept so transitional imports compile. Prefer OperationSegment.
- * The old supportedRoles / reference|first_last_frame dual-button path is gone.
- */
-export interface GenerationModeSegmentProps {
-  value: string;
-  /** @deprecated Ignored — operations prop is the sole source. */
-  supportedRoles?: string[];
-  /** Effective operations (required for W2). */
-  operations?: OperationUiOption[];
-  onChange: (mode: string) => void;
-}
-
-export function GenerationModeSegment({
-  value,
-  operations,
-  onChange,
-}: GenerationModeSegmentProps): ReactElement | null {
-  return (
-    <OperationSegment
-      value={value}
-      operations={operations ?? []}
-      onChange={onChange}
     />
   );
 }

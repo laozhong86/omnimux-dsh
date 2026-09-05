@@ -2,15 +2,13 @@
  * Issue #466 (W1): contract-driven compat kernel tests.
  *
  * Covers: fingerprint, contract view (v1.1 + legacy synthesis + aliases),
- * legacy operation mapping, slot matcher (role / capacity / MIME / size /
+ * slot matcher (role / capacity / MIME / size /
  * duration / determinism), accepts vs ready, per-model verdicts, catalog
  * evaluation, fail-closed paths and the locked auto-adaptation ordering.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  LEGACY_OPERATION_MAP,
-  mapLegacyOperation,
   buildUpstreamFingerprint,
   buildContractView,
   resolveModelView,
@@ -97,21 +95,6 @@ test('contract view：无 models[] 时从旧桶行 inputCapability 合成（数�
   assert.equal(model?.operations[0].output.type, 'image');
   const slot = model?.operations[0].inputs.find((s) => s.type === 'image');
   assert.equal(slot?.max, 3);
-});
-
-// ============================================================================
-// Legacy operation mapping
-// ============================================================================
-
-test('legacy operation map：读时映射 canonical operation（string + metadata）', () => {
-  assert.equal(mapLegacyOperation('reference'), 'video_multi_ref');
-  assert.equal(mapLegacyOperation('first_last_frame'), 'first_last_frame');
-  assert.equal(mapLegacyOperation('i2v'), 'first_frame');
-  assert.equal(mapLegacyOperation('t2i'), 'text_to_image');
-  assert.equal(mapLegacyOperation('digital_human'), 'digital_human');
-  assert.equal(mapLegacyOperation('some_future_op'), 'some_future_op');
-  assert.equal(mapLegacyOperation(''), '');
-  assert.equal(Object.keys(LEGACY_OPERATION_MAP).length > 0, true);
 });
 
 // ============================================================================
@@ -246,11 +229,11 @@ test('model verdict：零 listed operation → not_listed；unlisted op 不参�
   assert.equal(three.acceptsCurrentInputs, false);
 });
 
-test('model verdict：outputType 过滤 + 请求的 operation 优先（读时映射）', () => {
+test('model verdict：outputType 过滤 + 请求的 canonical operation 优先', () => {
   const view = buildContractView(createCompatTestCatalog());
   const vid = resolveModelView(view, 'vid-frames');
   const frames = fp([img({ role: 'first_frame' }), img({ sourceNodeId: 'b', role: 'last_frame' })]);
-  const verdict = evaluateModelCompat(vid, frames, { operationId: 'flf', outputType: 'video' });
+  const verdict = evaluateModelCompat(vid, frames, { operationId: 'first_last_frame', outputType: 'video' });
   assert.equal(verdict.requestedOperationId, 'first_last_frame');
   assert.equal(verdict.acceptsCurrentInputs, true);
   assert.equal(verdict.chosenOperationId, 'first_last_frame');
