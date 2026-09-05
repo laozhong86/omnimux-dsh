@@ -33,6 +33,30 @@ function fp(upstreams = [], prompt = 'hello') {
   return buildUiUpstreamFingerprint({ prompt, upstreams });
 }
 
+function urlRequiredCatalog() {
+  return {
+    source: 'omnimux',
+    text: [], image: [], audio: [],
+    video: [{ id: 'url-video', label: 'URL Video' }],
+    models: [{
+      id: 'url-video',
+      label: 'URL Video',
+      operations: [
+        {
+          id: 'document_to_video', label: '文档参考生视频', listed: true, output: { type: 'video' }, inputs: [
+            { slot: 'file_url', type: 'document', role: 'document', source: 'node_field', min: 1, max: 1 },
+          ],
+        },
+        {
+          id: 'webpage_to_video', label: '网页参考生视频', listed: true, output: { type: 'video' }, inputs: [
+            { slot: 'link_url', type: 'document', role: 'webpage', source: 'node_field', min: 1, max: 1 },
+          ],
+        },
+      ],
+    }],
+  };
+}
+
 describe('effectiveOps UI state (0 / 1 / ≥2)', () => {
   it('0 effective ops → hide mode UI + block generate + typed reason', () => {
     // img-prompt-only cannot absorb a reference image.
@@ -107,6 +131,41 @@ describe('effectiveOps UI state (0 / 1 / ≥2)', () => {
     assert.ok(state.count >= 1);
     assert.ok(state.selectedOperationId);
     assert.notEqual(state.selectedOperationId, 'future_unknown_op_xyz');
+  });
+
+  it('selected URL operation blocks generate until its required node field is valid', () => {
+    const urlCatalog = urlRequiredCatalog();
+    const documentMissing = buildEffectiveOpsUiState({
+      catalog: urlCatalog,
+      modelId: 'url-video',
+      fingerprint: buildUiUpstreamFingerprint({ prompt: '生成视频', nodeFields: { operation: 'document_to_video' } }),
+      preferredOperationId: 'document_to_video',
+      outputType: 'video',
+    });
+    assert.equal(documentMissing.blockGenerate, true);
+    assert.equal(documentMissing.reasonCode, 'metadata_required');
+
+    const webpageMissing = buildEffectiveOpsUiState({
+      catalog: urlCatalog,
+      modelId: 'url-video',
+      fingerprint: buildUiUpstreamFingerprint({ prompt: '生成视频', nodeFields: { operation: 'webpage_to_video' } }),
+      preferredOperationId: 'webpage_to_video',
+      outputType: 'video',
+    });
+    assert.equal(webpageMissing.blockGenerate, true);
+    assert.equal(webpageMissing.reasonCode, 'metadata_required');
+
+    const documentReady = buildEffectiveOpsUiState({
+      catalog: urlCatalog,
+      modelId: 'url-video',
+      fingerprint: buildUiUpstreamFingerprint({
+        prompt: '生成视频',
+        nodeFields: { operation: 'document_to_video', fileUrl: 'https://cdn.example.com/deck.pdf' },
+      }),
+      preferredOperationId: 'document_to_video',
+      outputType: 'video',
+    });
+    assert.equal(documentReady.blockGenerate, false);
   });
 });
 

@@ -183,6 +183,7 @@ function fingerprintForNode(
     .filter((asset): asset is UpstreamAssetFingerprint => asset !== null);
   return buildUpstreamFingerprint({
     prompt: typeof data.prompt === 'string' ? data.prompt : '',
+    nodeFields: readParams(node),
     assets,
   });
 }
@@ -214,6 +215,7 @@ export function buildCanvasUpstreamFingerprint(
   }
   return buildUpstreamFingerprint({
     prompt: typeof data.prompt === 'string' ? data.prompt : '',
+    nodeFields: target ? readParams(target) : {},
     assets,
   });
 }

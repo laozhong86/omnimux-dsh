@@ -158,6 +158,8 @@ export interface UpstreamAssetFingerprint {
 
 export interface UpstreamFingerprint {
   prompt: string;
+  /** Values supplied on the node itself (for `source: node_field` contract slots). */
+  nodeFields: Record<string, unknown>;
   /** All upstream assets in deterministic (caller-supplied) order. */
   assets: UpstreamAssetFingerprint[];
   /** Media assets only (image/video/audio) — the hard-gate population. */
@@ -179,13 +181,17 @@ export function canonicalJson(value: unknown): string {
 
 export function buildUpstreamFingerprint(input: {
   prompt?: string;
+  nodeFields?: Record<string, unknown>;
   assets?: UpstreamAssetFingerprint[];
 }): UpstreamFingerprint {
   const prompt = typeof input.prompt === 'string' ? input.prompt : '';
+  const nodeFields = Object.fromEntries(
+    Object.entries(input.nodeFields ?? {}).filter(([, value]) => value !== undefined),
+  );
   const assets = (input.assets ?? []).map((asset) => ({ ...asset }));
   const mediaAssets = assets.filter((asset) => isMediaInputType(asset.type));
-  const signature = canonicalJson({ prompt, assets });
-  return { prompt, assets, mediaAssets, signature };
+  const signature = canonicalJson({ prompt, nodeFields, assets });
+  return { prompt, nodeFields, assets, mediaAssets, signature };
 }
 
 // ============================================================================
@@ -451,6 +457,28 @@ export interface OperationMatch {
   pending: CompatRejection[];
 }
 
+function camelCaseSlot(slot: string): string {
+  return slot.replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase());
+}
+
+function readNodeField(slot: InputSlotDto, fingerprint: UpstreamFingerprint): unknown {
+  if (slot.slot === 'prompt' || slot.role === 'prompt') return fingerprint.prompt;
+  return fingerprint.nodeFields[slot.slot] ?? fingerprint.nodeFields[camelCaseSlot(slot.slot)];
+}
+
+function isRequiredNodeFieldPresent(slot: InputSlotDto, value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (!slot.slot.endsWith('_url')) return true;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 /** Slots that upstream edges can bind into (prompt/node_field slots excluded). */
 function bindableSlots(op: ContractOperationView): InputSlotDto[] {
   return op.inputs.filter(
@@ -693,10 +721,19 @@ export function matchOperationInputs(
       }
     }
     const promptRequired = op.inputs.some(
-      (slot) => (slot.role === 'prompt' || slot.source === 'node_field') && slot.min >= 1,
+      (slot) => (slot.role === 'prompt' || slot.slot === 'prompt') && slot.min >= 1,
     );
     if (promptRequired && !fingerprint.prompt.trim()) {
       pending.push(rejection('prompt_required', '该 operation 需要非空 prompt', { operationId: op.id }));
+    }
+    for (const slot of op.inputs) {
+      if (slot.source !== 'node_field' || slot.min < 1 || slot.role === 'prompt' || slot.slot === 'prompt') continue;
+      if (isRequiredNodeFieldPresent(slot, readNodeField(slot, fingerprint))) continue;
+      const name = slot.slot.endsWith('_url') ? '有效 URL' : '非空值';
+      pending.push(rejection('metadata_required', `槽位 ${slot.slot} 需要${name}`, {
+        operationId: op.id,
+        slot: slot.slot,
+      }));
     }
   }
 

@@ -53,6 +53,8 @@ export interface OperationUiOption {
   effective: boolean;
   /** Ready-to-submit for this operation under the current fingerprint. */
   ready: boolean;
+  /** Blocking readiness reasons for this operation. */
+  pending: OperationMatch['pending'];
 }
 
 export type ModeUiVisibility = 'hidden' | 'selector';
@@ -71,7 +73,7 @@ export interface EffectiveOpsUiState {
   implicitOperationId?: string;
   /** Currently selected / preferred operation (canonical). */
   selectedOperationId?: string;
-  /** True when generation must be blocked solely due to zero effective ops. */
+  /** True when the selected operation cannot be submitted. */
   blockGenerate: boolean;
   /** Primary typed reason when blocked / configuration error. */
   reasonCode?: EffectiveOpsReasonCode;
@@ -177,11 +179,13 @@ export function assetFromUpstreamSnapshot(snap: UpstreamMediaSnapshot): Upstream
 
 export function buildUiUpstreamFingerprint(input: {
   prompt?: string;
+  nodeFields?: Record<string, unknown>;
   upstreams?: UpstreamMediaSnapshot[];
 }): UpstreamFingerprint {
   const assets = (input.upstreams ?? []).map(assetFromUpstreamSnapshot);
   return buildUpstreamFingerprint({
     prompt: typeof input.prompt === 'string' ? input.prompt : '',
+    nodeFields: input.nodeFields,
     assets,
   });
 }
@@ -225,6 +229,7 @@ function matchToOption(
     bindings: match.bindings,
     effective: match.accepts,
     ready: match.ready,
+    pending: match.pending,
   };
 }
 
@@ -331,25 +336,29 @@ export function buildEffectiveOpsUiState(args: {
 
   if (count === 1) {
     const sole = effectiveOps[0]!;
+    const pending = sole.pending[0];
     return {
       effectiveOps,
       count: 1,
       visibility: 'hidden',
       implicitOperationId: sole.id,
       selectedOperationId: sole.id,
-      blockGenerate: false,
+      blockGenerate: !sole.ready,
+      ...(pending ? { reasonCode: pending.code, reasonMessage: pending.message } : {}),
     };
   }
 
   // ≥2: prefer the requested op when still effective, else first effective.
   const selected =
     (preferred ? effectiveOps.find((op) => op.id === preferred) : undefined) ?? effectiveOps[0]!;
+  const pending = selected.pending[0];
   return {
     effectiveOps,
     count,
     visibility: 'selector',
     selectedOperationId: selected.id,
-    blockGenerate: false,
+    blockGenerate: !selected.ready,
+    ...(pending ? { reasonCode: pending.code, reasonMessage: pending.message } : {}),
   };
 }
 

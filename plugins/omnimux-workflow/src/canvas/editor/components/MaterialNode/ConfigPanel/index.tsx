@@ -205,8 +205,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
   // Fingerprint for the current node (prompt + upstream media metadata).
   const fingerprint = useMemo(
-    () => buildUiUpstreamFingerprint({ prompt, upstreams: upstreamSnapshots }),
-    [prompt, upstreamSnapshots],
+    () => buildUiUpstreamFingerprint({ prompt, nodeFields: params, upstreams: upstreamSnapshots }),
+    [params, prompt, upstreamSnapshots],
   );
 
   // ASR (speech_to_text) uses outputType 'text' even on a text node with audio upstream.

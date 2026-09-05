@@ -50,7 +50,7 @@ function fakeReq({ method = 'GET', url = '/', headers = {}, body = undefined }) 
   };
 }
 
-function makeHarness({ dir, gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 30 } } = {}) {
+function makeHarness({ dir, gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 30 }, gateway } = {}) {
   const root = dir ?? mkdtempSync(join(tmpdir(), 'omnimux-exec-routes-'));
   const registered = [];
   const captured = { handler: null, path: '' };
@@ -74,7 +74,7 @@ function makeHarness({ dir, gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 3
         mediaDir: join(root, 'media'),
       },
       libraryRoot,
-      gateway: host.createMockGateway(gatewayLatency),
+      gateway: gateway ?? host.createMockGateway(gatewayLatency),
     },
   );
   const localHeaders = { origin: 'http://localhost:3000' };
@@ -220,6 +220,61 @@ const waitUntil = async (predicate, { timeoutMs = 5000, intervalMs = 15 } = {}) 
   return false;
 };
 
+function urlRequiredCatalog() {
+  return {
+    source: 'omnimux', text: [], image: [], audio: [],
+    video: [{ id: 'url-video', label: 'URL Video' }],
+    models: [{
+      id: 'url-video', label: 'URL Video', listed: true,
+      operations: [
+        {
+          id: 'document_to_video', label: '文档参考生视频', listed: true, output: { type: 'video' }, inputs: [
+            { slot: 'file_url', type: 'document', role: 'document', source: 'node_field', min: 1, max: 1 },
+          ],
+        },
+        {
+          id: 'webpage_to_video', label: '网页参考生视频', listed: true, output: { type: 'video' }, inputs: [
+            { slot: 'link_url', type: 'document', role: 'webpage', source: 'node_field', min: 1, max: 1 },
+          ],
+        },
+      ],
+    }],
+  };
+}
+
+async function createUrlWorkspace(h, id, operation, params = {}) {
+  const created = await h.call({
+    method: 'POST',
+    url: '/omnimux-workflow/api/workspaces',
+    body: { name: `${operation} 校验` },
+    headers: h.localHeaders,
+  });
+  const workspaceId = created.body.workspace.id;
+  await h.call({
+    method: 'PUT',
+    url: `/omnimux-workflow/api/workspaces/${workspaceId}`,
+    body: {
+      expectedVersion: 0,
+      nodes: [{
+        id,
+        type: 'material',
+        position: { x: 0, y: 0 },
+        data: {
+          label: operation,
+          materialType: 'video',
+          selectedTool: 'video-generation',
+          prompt: '生成一段视频',
+          status: 'ready',
+          params: { model: 'url-video', operation, ...params },
+        },
+      }],
+      edges: [],
+    },
+    headers: h.localHeaders,
+  });
+  return workspaceId;
+}
+
 // ============================================================================
 
 function listSeededProjects(libraryRoot) {
@@ -234,6 +289,60 @@ function listSeededProjects(libraryRoot) {
   }
   return rows;
 }
+
+test('execution API blocks missing contract URL fields before every create mode and permits a valid retry', async () => {
+  const baseGateway = host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 10 });
+  const submitted = [];
+  const gateway = {
+    ...baseGateway,
+    async submit(request) {
+      submitted.push(request);
+      return baseGateway.submit(request);
+    },
+    async capabilities() {
+      return urlRequiredCatalog();
+    },
+  };
+  const h = makeHarness({ gateway });
+  try {
+    const documentWorkspace = await createUrlWorkspace(h, 'document', 'document_to_video');
+    const documentFull = await h.startExecution(documentWorkspace, { mode: 'full' });
+    assert.equal(documentFull.status, 400);
+    assert.equal(documentFull.body.error, 'configuration_error');
+    assert.equal(documentFull.body.reasonCode, 'metadata_required');
+    assert.equal(documentFull.body.nodeId, 'document');
+
+    const webpageWorkspace = await createUrlWorkspace(h, 'webpage', 'webpage_to_video');
+    const webpageSubset = await h.startExecution(webpageWorkspace, { mode: 'subset', nodeIds: ['webpage'] });
+    assert.equal(webpageSubset.status, 400);
+    assert.equal(webpageSubset.body.error, 'configuration_error');
+    assert.equal(webpageSubset.body.nodeId, 'webpage');
+
+    // ConfigPanel's retry path uses single-node execution; it must hit the same guard.
+    const documentSingle = await h.startExecution(documentWorkspace, { mode: 'single', nodeIds: ['document'] });
+    assert.equal(documentSingle.status, 400);
+    assert.equal(documentSingle.body.error, 'configuration_error');
+    assert.equal(submitted.length, 0, 'a blocked execution must not submit a gateway request');
+
+    const validWorkspace = await createUrlWorkspace(
+      h,
+      'valid-document',
+      'document_to_video',
+      { fileUrl: 'https://cdn.example.com/deck.pdf' },
+    );
+    const valid = await h.startExecution(validWorkspace, { mode: 'single', nodeIds: ['valid-document'] });
+    assert.equal(valid.status, 200);
+    const completed = await waitUntil(async () => {
+      const status = await h.executionStatus(validWorkspace, valid.body.execution.id);
+      return status.body?.execution?.status === 'completed';
+    });
+    assert.ok(completed, 'valid URL should start and complete the retry path');
+    assert.equal(submitted.length, 1);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
 
 test('unbound media generate → 惰性种子项目 200；text generate 仍可通过', async () => {
   const h = makeHarness();

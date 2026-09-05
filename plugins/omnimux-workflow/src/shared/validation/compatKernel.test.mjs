@@ -25,8 +25,8 @@ import { createCompatTestCatalog } from './compatTestCatalog.ts';
 
 const MB = 1024 * 1024;
 
-function fp(assets, prompt = '画一只猫') {
-  return buildUpstreamFingerprint({ prompt, assets });
+function fp(assets, prompt = '画一只猫', nodeFields = undefined) {
+  return buildUpstreamFingerprint({ prompt, assets, nodeFields });
 }
 
 function img(overrides = {}) {
@@ -275,6 +275,36 @@ test('slot matcher：acceptsCurrentInputs ≠ readyToSubmit（min / prompt）', 
   assert.equal(noPrompt.accepts, true);
   assert.equal(noPrompt.ready, false);
   assert.equal(noPrompt.pending.some((p) => p.code === 'prompt_required'), true);
+});
+
+test('slot matcher：必填 node_field URL 映射 camelCase 参数并参与 readiness', () => {
+  const op = {
+    id: 'document_to_video',
+    label: 'document_to_video',
+    output: { type: 'video' },
+    inputs: [{
+      slot: 'file_url',
+      type: 'document',
+      role: 'document',
+      source: 'node_field',
+      min: 1,
+      max: 1,
+    }],
+    inputGroups: [],
+    listed: true,
+  };
+  const missing = matchOperationInputs(op, fp([], '可选提示词'));
+  assert.equal(missing.accepts, true);
+  assert.equal(missing.ready, false);
+  assert.equal(missing.pending[0].code, 'metadata_required');
+  assert.equal(missing.pending[0].slot, 'file_url');
+
+  const invalid = matchOperationInputs(op, fp([], '可选提示词', { fileUrl: 'ftp://example.com/deck.pdf' }));
+  assert.equal(invalid.ready, false);
+  assert.equal(invalid.pending[0].code, 'metadata_required');
+
+  const valid = matchOperationInputs(op, fp([], '可选提示词', { fileUrl: 'https://cdn.example.com/deck.pdf' }));
+  assert.equal(valid.ready, true);
 });
 
 // ============================================================================
