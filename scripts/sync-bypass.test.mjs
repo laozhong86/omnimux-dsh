@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const scriptPath = join(here, 'sync-to-app.sh')
+const resolverPath = join(here, 'resolve-omnimux-profile.sh')
 const source = readFileSync(scriptPath, 'utf8')
 
 describe('sync-to-app.sh unmerged bypass whitelist', () => {
@@ -25,6 +26,7 @@ describe('sync-to-app.sh unmerged bypass whitelist', () => {
     // 非 main 分支，触发对齐门禁
     execSync(`git -C "${repoRoot}" checkout -b agent/feature-bypass`, { stdio: 'ignore' })
     copyFileSync(scriptPath, join(repoRoot, 'scripts', 'sync-to-app.sh'))
+    copyFileSync(resolverPath, join(repoRoot, 'scripts', 'resolve-omnimux-profile.sh'))
     writeFileSync(join(repoRoot, 'package.json'), JSON.stringify({ name: 'omnimux-dsh', private: true }))
     execSync(`git -C "${repoRoot}" add .`, { stdio: 'ignore' })
     execSync(`git -C "${repoRoot}" commit -m "chore: test repo"`, { stdio: 'ignore' })

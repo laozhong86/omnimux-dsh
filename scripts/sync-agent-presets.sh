@@ -14,6 +14,7 @@
 # - 写入 ~/.dsh/profiles 时只碰 omnimux*，跳过 desktop / web
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/scripts/resolve-omnimux-profile.sh"
 SRC="$ROOT/presets"
 KEEP=(standard social-content-team social-engagement-team)
 
@@ -26,7 +27,7 @@ TARGET_SELECTION=()
 if [ -n "${OMNIMUX_SYNC_TARGETS:-}" ]; then
   IFS=',' read -ra ENV_TARGETS <<< "$OMNIMUX_SYNC_TARGETS"
   for t in "${ENV_TARGETS[@]}"; do
-    t=$(echo "$t" | tr '[:upper:]' '[:lower:]' | xargs)
+    t=$(normalize_omnimux_sync_target "$t")
     [ -n "$t" ] && TARGET_SELECTION+=("$t")
   done
 fi
@@ -35,7 +36,7 @@ parse_target_value() {
   local val="$1"
   IFS=',' read -ra PARTS <<< "$val"
   for p in "${PARTS[@]}"; do
-    p=$(echo "$p" | tr '[:upper:]' '[:lower:]' | xargs)
+    p=$(normalize_omnimux_sync_target "$p")
     [ -n "$p" ] && TARGET_SELECTION+=("$p")
   done
 }
@@ -112,8 +113,8 @@ else
         add_target_home "$HOME/.dsh"
         HAS_DSH=1
         ;;
-      /*|~*)
-        eval expanded_path="$item"
+      /*|"~"|"~/"*)
+        expanded_path=$(expand_omnimux_sync_target_home "$item") || exit 1
         add_target_home "$expanded_path"
         ;;
     esac

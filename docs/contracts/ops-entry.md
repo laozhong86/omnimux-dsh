@@ -22,7 +22,8 @@ subsystem: "omnimux-workflow"
 |------|------|----------------|
 | `yarn omnimux:dev …` | L2 预发布 Host + 统一 watch（打印 URL/port/`DSH_HOME=…/tasks/<task>`，**Agent 唯一测试入口**） | `scripts/dev-env.sh` + `scripts/watch-plugin.mjs` |
 | `yarn omnimux:dev restart-host <task>` | 原地冷重启 L2 Host（保端口/保数据，Agent 可用） | `scripts/dev-env.sh restart-host` |
-| `yarn omnimux:sync [插件…]` | build + 物化进生产 profile（**零副作用静态落盘，不重启进程**） | `scripts/sync-to-app.sh` → `scripts/sync-stable.sh` |
+| `yarn omnimux:sync <插件…>` | 只 build + 物化点名插件；只读核对其声明的受管 shared kit snapshot，绝不重建/覆盖 kit，也不写预设、`app.asar` 或 `Info.plist`。缺失或漂移须先通过官方完整 profile rebuild 建立稳定源。 | `scripts/sync-to-app.sh` → `scripts/sync-stable.sh` |
+| `yarn omnimux:sync` | 完整 build + 物化；先构建权威 shared kit 并更新既有受管 snapshot，再由 stable 的 pnpm 输出 `node_modules`，随后物化 Agent Presets（**零副作用静态落盘，不重启进程**）。 | `scripts/sync-to-app.sh` → `scripts/sync-stable.sh` → `scripts/sync-agent-presets.sh` |
 | `yarn omnimux:restart dev` | 重启开发版应用 `/Applications/OmniMux Dev.app`（**仅限人类**，Agent 严禁以防撞车） | `pkill -f 'OmniMux Dev'` + `open -a 'OmniMux Dev'` |
 | `yarn omnimux:restart prod` | 手动重启生产版应用 `/Applications/OmniMux.app`（**仅限人类**，Agent 严禁） | `pkill -f OmniMux` + `open -a OmniMux` |
 | `yarn omnimux:doctor` | 三层环境合规自检 | `scripts/dev-doctor.sh` |
