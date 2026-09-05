@@ -17,6 +17,15 @@ export const STAGE_CONTENT = Object.freeze({
   market: '.sh-plaza-body',
 })
 
+export const STAGE_STATUS = Object.freeze({
+  analytics: {
+    loading: '.omnimux-analytics-empty[data-code="loading"]',
+    error: '.omnimux-analytics-empty[data-code="fetch_failed"], .omnimux-analytics-banner[data-code="network_error"]',
+  },
+  inspiration: { loading: '.omnimux-inspiration-skeleton' },
+  market: { ready: '.sh-mkt-results' },
+})
+
 export function selectStages(stage) {
   assert.ok(stage === 'all' || Object.hasOwn(STAGE_CONTENT, stage), `Unknown stage: ${stage}`)
   return stage === 'all' ? Object.keys(STAGE_CONTENT) : [stage]
@@ -124,7 +133,7 @@ export async function captureStageContract(root, stage) {
       for (let i = 0; i < 12; i++) await Promise.resolve()
       const tabId = state().splits.active
       assert.ok(tabs.has(tabId) && api.isActive(tabId), 'Market action must activate its registered Tab')
-      return { stage, plugin, selector: `[${datasetKey}]`, tabId, content: STAGE_CONTENT[stage], adapter: 'footer-slot' }
+      return { stage, plugin, selector: `[${datasetKey}]`, tabId, content: STAGE_CONTENT[stage], ...STAGE_STATUS[stage], adapter: 'footer-slot' }
     }
     const client = evaluate(await compile(`plugins/${plugin}/src/client/index.js`))
     client.apply(ctx)
@@ -151,6 +160,19 @@ export async function captureStageContract(root, stage) {
     adapter.open()
     await settle()
     assert.equal(adapter.getSnapshot(), true, `${plugin}: explicit open must restore a collapsed panel`)
+    for (const mode of ['split', 'gui']) {
+      api.setFocus(mode)
+      const width = state().width
+      api.closePanel()
+      assert.equal(api.getFocus(), 'chat')
+      api.detachStore(store)
+      api.attachStore(store)
+      assert.equal(state().panelOpen, false, `${plugin}: attaching a closed session must not reopen it`)
+      adapter.open()
+      await settle()
+      assert.equal(api.getFocus(), mode, `${plugin}: reopen must preserve ${mode} preference`)
+      assert.equal(state().width, width, `${plugin}: reopen must preserve ${mode} width`)
+    }
     const box = adapter.readBox()
     for (const key of ['top', 'left', 'width', 'height']) assert.ok(Number.isFinite(box[key]), `${plugin}: invalid readBox.${key}`)
     adapter.set(false)
@@ -171,7 +193,7 @@ export async function captureStageContract(root, stage) {
     adapter.close()
     assert.equal(adapter.getSnapshot(), false)
     assert.equal(notifications, afterUnsubscribe, `${plugin}: listener survived unsubscribe`)
-    return { stage, plugin, selector: `[${datasetKey}]`, tabId, content: STAGE_CONTENT[stage], adapter: 'six-methods-and-disposer' }
+    return { stage, plugin, selector: `[${datasetKey}]`, tabId, content: STAGE_CONTENT[stage], ...STAGE_STATUS[stage], adapter: 'six-methods-and-disposer' }
   } finally {
     for (const dispose of disposers.reverse()) dispose()
     win.close()

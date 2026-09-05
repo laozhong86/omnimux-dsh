@@ -6,9 +6,9 @@ import { join } from 'node:path'
 import { createRequire } from 'node:module'
 import { afterEach, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { resolveTarget, runLiveQa, validateBrowserReport } from './live-qa.mjs'
-import { captureStageContracts, selectStages } from './live-stage-contracts.mjs'
-import { assertStageState, readStageState, STAGE_ASSERTIONS } from './live-stage-probe.mjs'
+import { resolveTarget, runLiveQa, validateBrowserReport, verifyL2Runtime } from './live-qa.mjs'
+import { captureStageContracts, selectStages, STAGE_STATUS } from './live-stage-contracts.mjs'
+import { assertStageState, readStageState, runStageProbe, PROBE_ASSERTIONS, STAGE_ASSERTIONS } from './live-stage-probe.mjs'
 
 const repo = fileURLToPath(new URL('..', import.meta.url))
 const roots = []
@@ -26,7 +26,7 @@ function fixture() {
 function allocate(root, changes = {}) {
   const values = { TOPIC: 'qa', PLUGIN: 'omnimux', PORT: '44201', URL: 'http://127.0.0.1:44201',
     COMMIT: execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
-    SOURCE: join(root, 'plugins'), ...changes }
+    SOURCE: join(root, 'plugins'), PROFILE_DIR: join(root, 'omnimux-dev-qa'), ...changes }
   writeFileSync(join(root, '.l2-dev.env'), Object.entries(values).map(([key, value]) => `${key}=${value}`).join('\n'))
 }
 
@@ -51,6 +51,28 @@ test('L2 must match its worktree URL, port, source and current code revision', (
   }
   allocate(root, { PORT: '44200', URL: 'http://127.0.0.1:44200' })
   assert.throws(() => resolveTarget({ target: 'l2', url: 'http://127.0.0.1:44200' }, root), /production/)
+})
+
+test('reused L2 ports and changed plugin links cannot certify another worktree', () => {
+  const root = fixture()
+  allocate(root)
+  const target = resolveTarget({ target: 'l2', url: 'http://127.0.0.1:44201' }, root)
+  const dir = target.allocation.profileDir
+  mkdirSync(join(dir, 'node_modules'), { recursive: true })
+  writeFileSync(join(dir, 'port.txt'), '44201')
+  writeFileSync(join(dir, 'host.pid'), '123')
+  const linked = join(dir, 'node_modules/omnimux')
+  symlinkSync(join(root, 'plugins/omnimux'), linked)
+  const processInfo = (command, args) => command === 'lsof' ? 'p123\n' : args.at(-1) === 'command='
+    ? 'node bin.js --profile omnimux-dev-qa --port 44201' : 'Sat Sep 5 12:00:00 2026'
+  const runtime = verifyL2Runtime(target, processInfo)
+  assert.equal(runtime.pid, '123')
+  assert.throws(() => verifyL2Runtime(target, () => 'p456\n'), /not listening/)
+  assert.throws(() => verifyL2Runtime(target, (command, args) => command === 'ps' && args.at(-1) === 'command='
+    ? 'node bin.js --profile another-task' : processInfo(command, args)), /profile does not match/)
+  rmSync(linked)
+  symlinkSync(join(root, 'plugins/omnimux-assets'), linked)
+  assert.throws(() => verifyL2Runtime(target, processInfo), /another worktree source/)
 })
 
 test('stage selection and actual runtime discovery reject empty or unknown targets', async () => {
@@ -101,13 +123,76 @@ test('positive-size content outside the viewport or covered by another panel is 
   } finally { dom.window.close() }
 })
 
+test('session drift aborts cleanup without modifying the newly active session', async () => {
+  const { JSDOM } = createRequire(join(repo, 'plugins/omnimux/package.json'))('jsdom')
+  const dom = new JSDOM('', { runScripts: 'outside-only' })
+  const mutations = []
+  let sessionId = 'qa-a'
+  dom.window.__omnimuxWorkbench = {
+    getSnapshot: () => ({ sessionId, state: { panelOpen: false } }),
+    isActive: () => false,
+    getUiContext: () => ({ sessionId, surface: { focus: 'chat', openedTabs: [] } }),
+    waitForService: async () => ({ closeTab: (...args) => mutations.push(args) }),
+    setFocus: (...args) => mutations.push(args),
+  }
+  try {
+    await assert.rejects(runStageProbe({
+      js: (source) => dom.window.eval(source),
+      waitForElement() { sessionId = 'user-b'; throw new Error('session changed during wait') },
+    }, { targets: [target], evidenceDir: '/unused' }), /Restoration is forbidden/)
+    assert.deepEqual(mutations, [])
+  } finally { dom.window.close() }
+})
+
+test('stage-specific loading and failure markers cannot pass as valid empty content', async () => {
+  const require = createRequire(join(repo, 'plugins/omnimux/package.json'))
+  const { JSDOM } = require('jsdom')
+  const { build } = require('esbuild')
+  const React = require('react')
+  const { renderToStaticMarkup } = require('react-dom/server')
+  const output = await build({ entryPoints: [join(repo, 'plugins/omnimux-analytics/src/client/components/EmptyState.jsx')],
+    bundle: true, packages: 'external', platform: 'node', format: 'cjs', jsx: 'automatic', write: false })
+  const module = { exports: {} }
+  new Function('module', 'exports', 'require', output.outputFiles[0].text)(module, module.exports, (name) => name === 'dsh-ui-kit' ? {} : require(name))
+  const { LoadingState, EmptyState } = module.exports
+  const dom = new JSDOM('<main></main>', { runScripts: 'outside-only' })
+  try {
+    const win = dom.window
+    win.HTMLElement.prototype.getAnimations = () => []
+    Object.defineProperty(win.HTMLElement.prototype, 'innerText', { get() { return this.textContent } })
+    win.Element.prototype.getBoundingClientRect = () => ({ x: 0, y: 0, left: 0, top: 0, right: 400, bottom: 200, width: 400, height: 200 })
+    const body = win.document.querySelector('main')
+    const read = (status) => {
+      win.document.elementFromPoint = () => body.lastElementChild || body
+      return win.eval(`(${readStageState.toString()})(${JSON.stringify({ ...target, content: 'main', ...status })}, [])`)
+    }
+    for (const text of ['正在加载数据看板…', 'Loading analytics…']) {
+      body.innerHTML = renderToStaticMarkup(React.createElement(LoadingState, { t: () => text }))
+      assert.equal(read(STAGE_STATUS.analytics).loadingOnly, true)
+    }
+    for (const code of ['fetch_failed', 'no_accounts', 'no_data']) {
+      body.innerHTML = renderToStaticMarkup(React.createElement(EmptyState, { t: (key) => key, hint: { code } }))
+      assert.equal(read(STAGE_STATUS.analytics).visibleErrors, code === 'fetch_failed' ? 1 : 0)
+      assert.equal(Boolean(read(STAGE_STATUS.analytics).loadingOnly), false)
+    }
+    body.innerHTML = '<button>Add inspiration</button><div class="omnimux-inspiration-skeleton"></div>'
+    assert.equal(read(STAGE_STATUS.inspiration).loadingOnly, true)
+    body.innerHTML = '<div class="sh-mkt"><p class="sh-mkt-status">Loading plugins...</p></div>'
+    assert.equal(read(STAGE_STATUS.market).loadingOnly, true)
+    body.innerHTML = '<div class="sh-mkt"><div class="sh-mkt-results">0 plugins</div><p class="sh-mkt-status">No plugins</p></div>'
+    win.document.elementFromPoint = () => body.querySelector('.sh-mkt-results')
+    const ready = win.eval(`(${readStageState.toString()})(${JSON.stringify({ ...target, content: 'main', ...STAGE_STATUS.market })}, [])`)
+    assert.equal(Boolean(ready.loadingOnly), false)
+  } finally { dom.window.close() }
+})
+
 test('fresh evidence is required even when a child exits zero', () => {
   const evidenceDir = fixture()
   const screenshot = join(evidenceDir, 'assets.png')
   writeFileSync(screenshot, 'test screenshot')
   const report = { runId: 'new', commitSha: 'head', url: 'http://127.0.0.1:45120/', targets: [target], evidenceDir }
   const browser = { ...report, requestedUrl: report.url, pass: true, cleanup: { success: true },
-    probe: { targets: [target], assertions: STAGE_ASSERTIONS.map((suffix) => ({ name: `assets:${suffix}`, pass: true })), screenshots: [screenshot] } }
+    probe: { targets: [target], assertions: [...STAGE_ASSERTIONS.map((suffix) => `assets:${suffix}`), ...PROBE_ASSERTIONS].map((name) => ({ name, pass: true })), screenshots: [screenshot] } }
   validateBrowserReport(browser, report, 0)
   assert.throws(() => validateBrowserReport({ ...browser, runId: 'old' }, report, 0), /Stale/)
   assert.throws(() => validateBrowserReport(browser, report, 23), /failed/)

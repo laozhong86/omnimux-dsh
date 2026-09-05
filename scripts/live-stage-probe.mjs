@@ -3,6 +3,7 @@ import { copyFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 export const STAGE_ASSERTIONS = ['active-content-selection', 'idempotent-open', 'chat-clears-selection', 'restore']
+export const PROBE_ASSERTIONS = ['initial-session-restored', 'initial-workbench-restored']
 
 /** Runs in the page; only the real public workbench snapshot is accepted. */
 export function readStageState(target, sidebarSelectors) {
@@ -26,6 +27,7 @@ export function readStageState(target, sidebarSelectors) {
   const selected = sidebarSelectors.flatMap((selector) => [...document.querySelectorAll(selector)]
     .filter((node) => visible(node) && node.getAttribute('data-active') === 'true').map(() => selector))
   const layoutNodes = [document.getElementById('root'), ...entries, ...content].filter(Boolean)
+  const hasVisible = (selector) => Boolean(selector && [...document.querySelectorAll(selector)].some(visible))
   return {
     sessionId: snapshot?.sessionId,
     hasState: Boolean(snapshot?.state),
@@ -49,8 +51,8 @@ export function readStageState(target, sidebarSelectors) {
     entryCount: entries.length, selected,
     contentCount: content.length,
     contentLength: content.reduce((length, node) => length + node.innerText.trim().length, 0),
-    loadingOnly: content.length > 0 && content.every((node) => /^(加载中[.…]*|loading[.…]*)$/i.test(node.innerText.trim())),
-    visibleErrors: content.flatMap((node) => [...(node.closest('[role="region"]') || node).querySelectorAll('[role="alert"], [data-error], [class$="-error"]')])
+    loadingOnly: hasVisible(target.loading) || (target.ready && !hasVisible(target.ready)) || (content.length > 0 && content.every((node) => /^(加载中[.…]*|loading[.…]*)$/i.test(node.innerText.trim()))),
+    visibleErrors: content.flatMap((node) => [...(node.closest('[role="region"]') || node).querySelectorAll(['[role="alert"]', '[data-error]', '[class$="-error"]', target.error].filter(Boolean).join(','))])
       .filter((node) => visible(node) && node.innerText.trim()).length,
   }
 }
@@ -94,6 +96,7 @@ export async function runStageProbe(browser, { targets, sidebarSelectors = targe
     let previousLayout
     await until(async () => {
       last = await read(target)
+      assert.equal(last.sessionId, initial.sessionId, 'Active session changed; stop UI operations')
       // AppFrame may auto-collapse the rail when GUI focus shrinks its own box.
       if (last.panelOpen && last.active && last.sidebarCollapsed) {
         await browser.click('button[aria-label="打开侧边栏"]')
@@ -109,6 +112,7 @@ export async function runStageProbe(browser, { targets, sidebarSelectors = targe
     })
   }
   const clickEntry = async (target) => {
+    assert.equal((await read(target)).sessionId, initial.sessionId, 'Active session changed; stop UI operations')
     if (await browser.js('Boolean(document.querySelector(\'[data-sidebar-collapsed="true"]\'))')) {
       await browser.click('button[aria-label="打开侧边栏"]')
     }
@@ -119,6 +123,7 @@ export async function runStageProbe(browser, { targets, sidebarSelectors = targe
       previous = box
       return stable && (await read(target)).entryCount === 1
     }, `${target.stage}: sidebar entry geometry is not stable`)
+    assert.equal((await read(target)).sessionId, initial.sessionId, 'Active session changed; stop UI operations')
     await browser.click(target.selector)
   }
   try {
@@ -147,7 +152,11 @@ export async function runStageProbe(browser, { targets, sidebarSelectors = targe
       result.screenshots.push(destination)
       result.targets.push({ stage: target.stage, tabId: target.tabId })
       onProgress(result)
-      await browser.js('window.__omnimuxWorkbench.closePanel()')
+      await browser.js(`(() => {
+        const wb = window.__omnimuxWorkbench;
+        if (wb.getSnapshot()?.sessionId !== ${JSON.stringify(initial.sessionId)}) throw new Error('Active session changed; stop UI operations');
+        wb.closePanel();
+      })()`)
       await until(async () => !(await read(target)).panelOpen, `${target.stage}: panel failed to close`)
       const closed = await read(target)
       record(`${target.stage}:chat-clears-selection`, !closed.active && closed.selected.length === 0 && closed.openedTabs.includes(target.tabId), closed)
@@ -162,14 +171,25 @@ export async function runStageProbe(browser, { targets, sidebarSelectors = targe
     onProgress(result)
     throw error
   } finally {
-    await browser.js(`(async () => {
+    const restored = await browser.js(`(async () => {
       const wb = window.__omnimuxWorkbench;
-      for (const tab of ${JSON.stringify(targets.filter((t) => !initialTabs.has(t.tabId)).map((t) => t.tabId))}) wb.closeTab(tab);
-      if (${JSON.stringify(initial.activeTab || null)}) await wb.open({tabId: ${JSON.stringify(initial.activeTab || null)}});
+      const service = await wb.waitForService();
+      const scope = {sessionId: ${JSON.stringify(initial.sessionId)}};
+      if (wb.getSnapshot()?.sessionId !== scope.sessionId) return false;
+      for (const tab of ${JSON.stringify(targets.filter((t) => !initialTabs.has(t.tabId)).map((t) => t.tabId))}) service.closeTab(tab, scope);
+      if (${JSON.stringify(initial.activeTab || null)}) service.activateTab(${JSON.stringify(initial.activeTab || null)}, scope);
       wb.setFocus(${JSON.stringify(initial.focus || 'chat')});
+      return true;
     })()`)
+    record('initial-session-restored', restored, 'Restoration is forbidden after a session change')
     if (initial.sidebarCollapsed && !(await browser.js('Boolean(document.querySelector(\'[data-sidebar-collapsed="true"]\'))'))) {
+      assert.equal((await read(targets[0])).sessionId, initial.sessionId, 'Active session changed; stop UI operations')
       await browser.click('button[aria-label="收起侧边栏"]')
     }
+    const after = await read(targets[0])
+    record('initial-workbench-restored', after.sessionId === initial.sessionId
+      && (after.activeTab || null) === (initial.activeTab || null)
+      && after.focus === initial.focus
+      && JSON.stringify([...after.openedTabs].sort()) === JSON.stringify([...initialTabs].sort()), after)
   }
 }

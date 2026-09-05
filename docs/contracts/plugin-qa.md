@@ -57,13 +57,13 @@ pnpm verify:live assets
 pnpm verify:live all
 ```
 
-Stage 参数为 `accounts`、`workflow`、`assets`、`products`、`inspiration`、`publish`、`analytics`、`market` 或 `all`。没有公开侧栏行的 canvas/clip 不列入 `all`。未知或缺失 Stage、零目标均失败。默认 Dev 固定为 `http://127.0.0.1:45120/`，不读取旧 `OMNIMUX_PORT`。L2 必须校验当前 worktree 的 `.l2-dev.env` URL、PORT、SOURCE 和 COMMIT；提交后需重新绑定 L2 验证记录。
+Stage 参数为 `accounts`、`workflow`、`assets`、`products`、`inspiration`、`publish`、`analytics`、`market` 或 `all`。没有公开侧栏行的 canvas/clip 不列入 `all`。未知或缺失 Stage、零目标均失败。默认 Dev 固定为 `http://127.0.0.1:45120/`，不读取旧 `OMNIMUX_PORT`。L2 必须校验当前 worktree 的 `.l2-dev.env` URL、PORT、SOURCE、COMMIT 和 PROFILE_DIR；提交后需重新绑定 L2 验证记录。探针前后核对 Host PID、启动时间、监听端口、profile 与插件 symlink；停机后被重新分配的端口不能作为原任务证据。
 
-先在该任务的 ego-browser task space 完成 Host 本地认证、首次提示和 QA 会话准备。使用 `EGO_TASK_SPACE_NAME` 复用同一 task space。探针只操作所选 QA 会话的 Tab，不发送消息、生成媒体或提交账号任务。
+先在该任务的 ego-browser task space 完成 Host 本地认证、首次提示和 QA 会话准备。使用 `EGO_TASK_SPACE_NAME` 复用同一 task space；collector 按实际 task space ID 独占，重叠运行直接报 busy。探针只操作所选 QA 会话的 Tab，不发送消息、生成媒体或提交账号任务。会话发生变化时停止操作与恢复，不向新会话写入；正常结束必须核对原 Tab、focus 与打开列表已恢复。
 
 `verify:stages` 保留源码静态检查，并通过受控 Host/kit 座执行实际 client 装配入口。七个 kit sidebar adapter 必须通过 `getSnapshot`、`subscribe`、`open`、`close`、`set`、`readBox`，以及取消订阅、会话隔离和关闭重开检查。Market 验证其 footer slot 与注册 Tab；旧 `stage-store.js` 的存在不代表覆盖了实际 adapter。
 
-`verify:live` 使用捕获的真实 `datasetKey` 和注册 Tab ID 点击侧栏；断言目标内容可见且非空、active Tab 与选中项唯一、重复点击幂等、多个 Tabs 共存、关闭后选中清空与再次打开恢复。viewport/context 必须归属当前 session。仅首页 HTTP 200、加载占位或页面标题非空不能通过。
+`verify:live` 使用捕获的真实 `datasetKey` 和注册 Tab ID 点击侧栏；断言目标内容可见且非空、active Tab 与选中项唯一、重复点击幂等、多个 Tabs 共存、关闭后选中清空与再次打开恢复。viewport/context 必须归属当前 session。布局过渡结束后才保存截图；根据实际页面的 loading/error/ready 结构区分加载、失败和合法空态。仅首页 HTTP 200、加载占位或页面标题非空不能通过。
 
 每次运行产生独立 UUID，默认汇总报告为 `docs/evidence/live-qa-report.json`（本机生成文件，不提交），完整证据放在 `.workbuddy/evidence/live-qa/<run-id>/`。`--evidence-dir=<目录>` 可改变独立证据父目录。报告含代码 SHA、源码 dirty 状态、目标 profile/URL、Stage、逐项断言、截图、起止时间及 collector 清理结果。子进程失败、旧 run ID/SHA/URL、缺少断言或截图均返回非零；失败报告覆盖默认汇总，但独立证据保留。回收 worktree 前必须把证据保存到不会被回收的任务目录。
 

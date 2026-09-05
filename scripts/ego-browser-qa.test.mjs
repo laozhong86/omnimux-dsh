@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { acquireTaskLock, releaseTaskLock } from './ego-task-lock.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const scriptPath = join(here, 'ego-browser-qa.sh')
@@ -352,4 +353,17 @@ test('a concurrent collector cannot overwrite the active run evidence', () => {
   assert.equal(rejected.runId, 'run-lock-contention')
   assert.equal(rejected.exitCode, 75)
   assert.match(rejected.errors.join('\n'), /证据目录正在被另一个/)
+})
+
+test('different evidence directories cannot control the same browser task concurrently', () => {
+  const taskName = `lock-test-${process.pid}`
+  const lock = acquireTaskLock(`task:${taskName}`, 'other-run', process.pid)
+  try {
+    const run = runCollector({ taskName, evidenceName: 'new-run-directory' })
+    assert.notEqual(run.status, 0)
+    assert.match(run.report.errors.join(';'), /task space .* is busy/)
+    assert.equal(run.report.cleanup.attempted, false)
+    assert.equal(run.report.taskLock, undefined)
+    assert.deepEqual(run.trace, [])
+  } finally { releaseTaskLock(lock) }
 })

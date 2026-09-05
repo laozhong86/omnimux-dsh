@@ -16,6 +16,7 @@ ISSUE_ID="${EGO_ISSUE_ID:-local}"
 PLUGIN="${EGO_PLUGIN:-surface}"
 TASK_NAME="${EGO_TASK_SPACE_NAME:-omnimux-qa-issue-${ISSUE_ID}-${PLUGIN}}"
 TARGET_PROFILE="${EGO_TARGET_PROFILE:-l2}"
+TASK_LOCK_MODULE="$(cd "$(dirname "$0")" && pwd)/ego-task-lock.mjs"
 
 if [[ -n "$EVIDENCE_DIR_INPUT" ]]; then
   mkdir -p "$EVIDENCE_DIR_INPUT"
@@ -46,6 +47,21 @@ release_lock() {
     rmdir "$LOCK_DIR" 2>/dev/null || true
   fi
   LOCK_HELD=0
+}
+
+release_task_lock() {
+  node --input-type=module - "$TASK_LOCK_MODULE" "$REPORT_PATH" "$$" "$RUN_ID" <<'EOF'
+import { readFileSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
+const [modulePath, reportPath, pid, runId] = process.argv.slice(2)
+try {
+  const { taskLock } = JSON.parse(readFileSync(reportPath, 'utf8'))
+  if (taskLock?.pid === Number(pid) && taskLock.runId === runId) {
+    const { releaseTaskLock } = await import(pathToFileURL(modulePath).href)
+    releaseTaskLock(taskLock)
+  }
+} catch (error) { console.error(`Browser lock release failed: ${error.message}`); process.exitCode = 1 }
+EOF
 }
 
 reclaim_stale_lock() {
@@ -120,7 +136,7 @@ if ! mkdir "$LOCK_DIR" 2>/dev/null; then
   fi
 fi
 LOCK_HELD=1
-trap release_lock EXIT
+trap 'qa_exit_status=$?; release_task_lock || qa_exit_status=1; release_lock; exit "$qa_exit_status"' EXIT
 
 node --input-type=module - "$LOCK_DIR/owner.json" "$$" "$RUN_ID" <<'EOF'
 import { writeFileSync } from 'node:fs'
@@ -242,8 +258,8 @@ fi
 
 # ego-browser nodejs filters custom environment variables. Encode all values in
 # a base64 JSON prelude so quotes, newlines, and Unicode cannot become code.
-EGO_INPUT_B64="$(node -e 'const values={url:process.argv[1],expected:process.argv[2],taskName:process.argv[3],reportPath:process.argv[4],evidenceDir:process.argv[5],runId:process.argv[6],failOnErrors:process.argv[7]||"",target:process.argv[8],probeFile:process.argv[9],probeOptionsFile:process.argv[10]};process.stdout.write(Buffer.from(JSON.stringify(values),"utf8").toString("base64"))' \
-  "$URL" "$EXPECTED" "$TASK_NAME" "$REPORT_PATH" "$EVIDENCE_DIR" "$RUN_ID" "${EGO_BROWSER_FAIL_ON_ERRORS:-}" "$TARGET_PROFILE" "${EGO_BROWSER_PROBE_FILE:-}" "${EGO_BROWSER_PROBE_OPTIONS:-}")"
+EGO_INPUT_B64="$(node -e 'const values={url:process.argv[1],expected:process.argv[2],taskName:process.argv[3],reportPath:process.argv[4],evidenceDir:process.argv[5],runId:process.argv[6],failOnErrors:process.argv[7]||"",target:process.argv[8],probeFile:process.argv[9],probeOptionsFile:process.argv[10],taskLockModule:process.argv[11],ownerPid:Number(process.argv[12])};process.stdout.write(Buffer.from(JSON.stringify(values),"utf8").toString("base64"))' \
+  "$URL" "$EXPECTED" "$TASK_NAME" "$REPORT_PATH" "$EVIDENCE_DIR" "$RUN_ID" "${EGO_BROWSER_FAIL_ON_ERRORS:-}" "$TARGET_PROFILE" "${EGO_BROWSER_PROBE_FILE:-}" "${EGO_BROWSER_PROBE_OPTIONS:-}" "$TASK_LOCK_MODULE" "$$")"
 
 emit_ego_input_prelude() {
   printf "const EGO_INPUT = JSON.parse(Buffer.from('%s', 'base64').toString('utf8'))\n" "$EGO_INPUT_B64"
@@ -279,6 +295,11 @@ try {
     throw new Error('useOrCreateTaskSpace() 未返回 task space id')
   }
   report.taskSpaceId = task.id
+  const { pathToFileURL } = await import('node:url')
+  const { acquireTaskLock } = await import(pathToFileURL(EGO_INPUT.taskLockModule).href)
+  report.cleanup = { ...report.cleanup, success: false, state: 'failed', error: 'Browser task lock not acquired' }
+  writeReport()
+  report.taskLock = acquireTaskLock(task.id, EGO_INPUT.runId, EGO_INPUT.ownerPid)
   report.cleanup.success = null
   report.cleanup.state = 'pending'
   writeReport()
@@ -398,7 +419,7 @@ if [[ "$REPORT_PASS" != '1' && "$BROWSER_STATUS" -eq 0 ]]; then
   BROWSER_STATUS=1
 fi
 
-TASK_SPACE_PRESENT="$(node -e 'const r=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));process.stdout.write(r.runId===process.argv[2]&&r.taskSpaceId!==null&&r.taskSpaceId!==undefined?"1":"0")' "$REPORT_PATH" "$RUN_ID")"
+TASK_SPACE_PRESENT="$(node -e 'const r=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));process.stdout.write(r.runId===process.argv[2]&&r.taskLock?"1":"0")' "$REPORT_PATH" "$RUN_ID")"
 CLEANUP_STATUS=0
 
 if [[ "$TASK_SPACE_PRESENT" == '1' ]]; then

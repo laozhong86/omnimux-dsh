@@ -145,7 +145,7 @@ Prod omnimux         → 全部物化副本（仅授权发布）| App 口 44200
 - **公共 dev（`~/.omnimux-dev` / 端口 45120）只接受「已 MERGED 的 main」物化**；公共 dev/prod 严禁出现未合并工作树产物。
 - `sync-to-app.sh` 的未合并旁路已收窄为白名单：必须显式 `OMNIMUX_ALLOW_UNMERGED_TARGET=<~/.dsh-dev/tasks/... 前缀>`，
   且所有同步目标都必须落在该前缀内；旧布尔 `OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1` 单独设置会被拒绝（已废弃）。
-- `wt:finish` 强制要求工作树存在 `.l2-dev.env`（`wt dev` 写入：PORT/URL/COMMIT/SOURCE）作为合并前验证证据；
+- `wt:finish` 强制要求工作树存在 `.l2-dev.env`（`wt dev` 写入：PORT/URL/COMMIT/SOURCE/PROFILE_DIR）作为合并前验证记录；`verify:live` 另核对实际运行身份与行为证据。
   仅 R3 / 纯文档 / 纯后端变更可用 `--skip-l2` 显式跳过。`wt:clean` 在合并后自动回收对应 L2 任务环境。
 - **L2 Host 安装闭包预检**：`dev-env.sh start` 在新环境初始化前检查 **`$DSH_SRC` 安装锚点**
   （`apps/cli/package.json` → `@deepseek-ai/dsh-web-app` → `@deepseek-ai/dsh-client-ui-chat/lib`）。

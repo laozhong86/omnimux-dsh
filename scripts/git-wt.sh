@@ -243,11 +243,12 @@ cmd_dev() {
   fi
   echo "$dev_out"
 
-  local port url commit
+  local port url commit profile_dir
   port=$(echo "$dev_out" | sed -n 's/.*port:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | tail -1)
   url=$(echo "$dev_out" | sed -n 's#.*URL:[[:space:]]*\(http://[^ ]*\).*#\1#p' | tail -1)
   [ -z "$url" ] && [ -n "$port" ] && url="http://127.0.0.1:${port}"
   commit=$(git -C "$wt_dir" rev-parse --short HEAD 2>/dev/null || echo "?")
+  profile_dir=$(echo "$dev_out" | sed -n 's/^[[:space:]]*profile:[[:space:]]*//p' | tail -1)
 
   # 写 L2 验证记录（finish 门禁读取）
   cat > "$wt_dir/.l2-dev.env" <<EOF
@@ -257,6 +258,7 @@ PORT=${port}
 URL=${url}
 COMMIT=${commit}
 SOURCE=${wt_dir}/plugins
+PROFILE_DIR=${profile_dir}
 EOF
   echo "✓ L2 验证记录已写入: $wt_dir/.l2-dev.env"
 

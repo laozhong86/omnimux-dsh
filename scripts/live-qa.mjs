@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import assert from 'node:assert/strict'
 import { captureStageContracts, selectStages } from './live-stage-contracts.mjs'
-import { STAGE_ASSERTIONS } from './live-stage-probe.mjs'
+import { PROBE_ASSERTIONS, STAGE_ASSERTIONS } from './live-stage-probe.mjs'
 
 export function resolveTarget({ target = 'dev', url }, root) {
   assert.ok(target === 'dev' || target === 'l2', `Unknown target: ${target}`)
@@ -29,7 +29,30 @@ export function resolveTarget({ target = 'dev', url }, root) {
   assert.match(allocation.TOPIC || '', /^[a-zA-Z0-9_-]+$/, 'Missing or invalid L2 topic')
   const sha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
   assert.ok(allocation.COMMIT?.length >= 7 && sha.startsWith(allocation.COMMIT), 'L2 allocation has a stale COMMIT; rerun pnpm wt dev')
-  return { target, profile: `omnimux-dev-${allocation.TOPIC}`, url: address.href }
+  const profile = `omnimux-dev-${allocation.TOPIC}`
+  assert.ok(allocation.PROFILE_DIR && isAbsolute(allocation.PROFILE_DIR) && basename(allocation.PROFILE_DIR) === profile, 'Missing L2 PROFILE_DIR; rerun pnpm wt dev')
+  assert.match(allocation.PLUGIN || '', /^omnimux(?:-[a-z0-9-]+)?$/, 'Invalid L2 plugin')
+  return { target, profile, url: address.href, allocation: { profileDir: allocation.PROFILE_DIR, plugin: allocation.PLUGIN, source: allocation.SOURCE } }
+}
+
+/** Bind evidence to the Host actually listening, not a reusable port number. */
+export function verifyL2Runtime(target, exec = execFileSync) {
+  const { profileDir, plugin, source } = target.allocation
+  const port = new URL(target.url).port
+  assert.equal(readFileSync(join(profileDir, 'port.txt'), 'utf8').trim(), port, 'L2 profile port changed')
+  const linked = join(profileDir, 'node_modules', plugin)
+  assert.ok(lstatSync(linked).isSymbolicLink(), 'L2 plugin is not linked')
+  assert.equal(realpathSync(linked), realpathSync(join(source, plugin)), 'L2 is running another worktree source')
+  const pid = readFileSync(join(profileDir, 'host.pid'), 'utf8').trim()
+  assert.match(pid, /^[1-9][0-9]*$/, 'Invalid L2 Host PID')
+  const options = { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
+  const listening = exec('lsof', ['-nP', '-a', '-p', pid, `-iTCP:${port}`, '-sTCP:LISTEN', '-Fp'], options)
+  assert.ok(listening.split('\n').includes(`p${pid}`), 'Allocated L2 Host is not listening on its port')
+  const command = exec('ps', ['-p', pid, '-o', 'command='], options)
+  assert.ok(command.split(/\s+/).includes(target.profile), 'L2 Host profile does not match allocation')
+  const startedAt = exec('ps', ['-p', pid, '-o', 'lstart='], options).trim()
+  assert.ok(startedAt, 'Missing L2 process identity')
+  return { profileDir, plugin, source: realpathSync(linked), pid, port, startedAt }
 }
 
 export function validateBrowserReport(browser, report, processStatus) {
@@ -49,6 +72,7 @@ export function validateBrowserReport(browser, report, processStatus) {
     assert.ok(browser.probe.screenshots?.some((file) => file === join(report.evidenceDir, `${target.stage}.png`) && existsSync(file)), `Missing screenshot: ${target.stage}`)
   }
   assert.ok(browser.probe.assertions.length > 0 && browser.probe.assertions.every((item) => item.pass), 'Missing or failed browser assertions')
+  for (const name of PROBE_ASSERTIONS) assert.ok(browser.probe.assertions.some((item) => item.name === name && item.pass), `Missing assertion: ${name}`)
   assert.equal(browser.cleanup?.success, true, 'Browser task cleanup failed')
 }
 
@@ -70,6 +94,7 @@ export async function runLiveQa(args, { root = process.cwd(), collect = spawnSyn
     report.stage = positionals[0]
     const stages = selectStages(report.stage)
     Object.assign(report, resolveTarget(values, root))
+    if (report.target === 'l2') report.runtime = verifyL2Runtime(report)
     if (values['evidence-dir']) evidenceDir = resolve(root, values['evidence-dir'], report.runId)
     report.evidenceDir = evidenceDir
     mkdirSync(evidenceDir, { recursive: true })
@@ -79,7 +104,7 @@ export async function runLiveQa(args, { root = process.cwd(), collect = spawnSyn
     const optionsFile = join(evidenceDir, 'probe-options.json')
     writeFileSync(optionsFile, JSON.stringify({ targets: report.targets, sidebarSelectors: registry.map((t) => t.selector), runId: report.runId }), { mode: 0o600 })
     const result = collect('/bin/bash', [join(root, 'scripts/ego-browser-qa.sh'), report.url, evidenceDir], {
-      cwd: root, encoding: 'utf8', timeout: 300_000,
+      cwd: root, encoding: 'utf8',
       env: {
         ...process.env, EGO_RUN_ID: report.runId, EGO_GIT_SHA: report.commitSha,
         EGO_TARGET_PROFILE: report.target,
@@ -93,6 +118,7 @@ export async function runLiveQa(args, { root = process.cwd(), collect = spawnSyn
     report.screenshots = browser.probe?.screenshots || []
     report.browser = { report: join(evidenceDir, 'ego-browser-report.json'), exitCode: result.status, cleanup: browser.cleanup }
     validateBrowserReport(browser, report, result.status)
+    if (report.target === 'l2') assert.deepEqual(verifyL2Runtime(report), report.runtime, 'L2 Host changed during verification')
     report.pass = true
   } catch (error) {
     report.errors.push(error instanceof Error ? error.message : String(error))
