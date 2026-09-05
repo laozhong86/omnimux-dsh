@@ -25,7 +25,7 @@ def run_showcase(video_path: str, audio_path: str = None):
     print("JianYing Editor Skill - 完整功能演示")
     print("=" * 60)
 
-    project = JyProject("Skill_Demo_完整演示", overwrite=True)
+    project = JyProject("Skill_Demo_完整演示", overwrite=False)
 
     cursor = 0  # 当前时间游标（微秒）
     SEC = 1_000_000
