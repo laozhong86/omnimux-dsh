@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L2"
 date: "2026-08-26"
-updated: "2026-09-04"
+updated: "2026-09-05"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -21,6 +21,8 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `proposed` | [2026-09-05-model-evidence-backfill-design.md](2026-09-05-model-evidence-backfill-design.md) | 增量设计：模型证据补齐（Evidence Backfill）证据协议与分批任务分解（#530） | `omnimux/catalog` | 2026-09-05 | 证据标准模板 `docs/evidence/_template-model-evidence.md`（per-op 文件 `YYYY-MM-DD-model-<id>-<op>.md`：existence/minimal/boundary/mime-size-duration/conclusion + 署名环境 + limitSource）；verified/live 逐 op 人工翻转、docUrl 只指本 op 文件、Batch A 外禁共享证据；draft/quarantine 书面结论路径（dispositions notes dated）；任务 T01 模板基线 → T02 PR-A text(19) → T03 PR-B image(20) → T04 PR-C video(24) → T05 PR-D audio(2)+收尾；每批 `pnpm --filter omnimux test` + `--strict --json` 绿、listed 差集==声明清单；零新增依赖、R1 人工合入、不写 Prod。 |
+| `proposed` | [2026-09-05-model-evidence-backfill-prd.md](2026-09-05-model-evidence-backfill-prd.md) | 增量 PRD：模型证据补齐（Evidence Backfill）与分批上架（#530） | `omnimux/catalog` | 2026-09-05 | 相对 H2：65 个未 listed op 逐键补证；四要素证据标准（existence/最小生成/输入边界/MIME·size·duration）+ 独立 dated 证据禁止挪用；分批 PR-A text(19) / PR-B image(20) / PR-C video(24) / PR-D audio(2) 顺序人工合入、每批独立 `--strict` 绿；whisper-1/kling-avatar 锁 unavailable、quarantine 四 ID 不接、nanobanana 不双列；「不接留 draft/quarantine」也算交付；R1 不写 Prod。 |
 | `proposed` | [2026-09-04-model-io-contract-h2-catalog-prd.md](2026-09-04-model-io-contract-h2-catalog-prd.md) | 增量 PRD：H2 审计 43 模型并切换 Catalog v1.1 契约投影（#465） | `omnimux/catalog` | 2026-09-04 | 相对 H1：43 ID 全处置；listed 仅 operation 级；Batch A 仅三 op 强证据；quarantine 铁律；Catalog 权威 models[]、四列表按 output.type；旧 JS 表 facade 且解析失败不回退；不做 Workflow UI；R1 人工合入。 |
 | `proposed` | [2026-09-04-model-io-contract-h2-catalog-design.md](2026-09-04-model-io-contract-h2-catalog-design.md) | 增量设计：H2 审计 43 模型并切换 Catalog v1.1 契约投影（#465） | `omnimux/catalog` | 2026-09-04 | `dispositions.json` 43 处置机器真源（D1–D7 校验）；Batch A 三键证据不足则 draft；冲突限制取更严（policy_conservative）；Catalog v1.1 权威 `models[]` + 四列表仅按 `output.type` 派生（STT→text 桶）；`buildModelCatalog` 切投影、media/text 旧表 facade + fail-closed；coverage `--strict` 转红灯 + cordis 交叉验证；fingerprint 含 contractFP+listedOps；T01–T05 有序任务。图：`2026-09-04-model-io-contract-h2-catalog-*.mermaid`。 |
 | `accepted` | [2026-09-04-model-io-contract-compatibility-design.md](2026-09-04-model-io-contract-compatibility-design.md) | 设计：全模态模型 I/O 契约 + 画布兼容（H1 foundation #464 · R1 / **R1.1**） | `omnimux/catalog` | 2026-09-04 | Hub `yaml@^2.9` + registry/schema/profiles；**operation 级** research/execution/listed（`listedOperations`）；**canonical 根 `schemaVersion: "1.1"`**（legacy `version` 仅 loader 输入迁移）；model.aliases=wire 归一；profile.operations ⊆ registry（`profile_operation_unknown`）；H1 实 specs 零 listed claim；promptPolicy；content-hash cache；schema↔JS parity；CLI fail-closed；CI trap；对账属 H2。图：`2026-09-04-model-io-contract-*.mermaid`。 |
