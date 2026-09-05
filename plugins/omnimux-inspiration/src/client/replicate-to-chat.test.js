@@ -115,7 +115,7 @@ describe('dismissInspirationLibrary', () => {
     assert.deepEqual(tabs, ['omnimux-inspiration:library'])
   })
 
-  it('after closeTab unhides the conversation column (split, not collapsed)', () => {
+  it('after closeTab unhides the conversation column (chat, not collapsed)', () => {
     const order = []
     dismissInspirationLibrary({
       window: {
@@ -129,8 +129,28 @@ describe('dismissInspirationLibrary', () => {
     assert.deepEqual(order, [
       'close:omnimux-inspiration:library',
       'collapsed:false',
-      'focus:split',
+      'focus:chat',
     ])
+  })
+
+  it('closes leftover canvas panel so gui cannot re-collapse the middle column (#528)', () => {
+    const order = []
+    dismissInspirationLibrary({
+      window: {
+        __omnimuxWorkbench: {
+          closeTab(id) { order.push(`close:${id}`) },
+          setConversationCollapsed(next) { order.push(`collapsed:${next}`) },
+          closePanel() { order.push('closePanel') },
+          setFocus(mode) { order.push(`focus:${mode}`) },
+        },
+      },
+    })
+    assert.deepEqual(order, [
+      'close:omnimux-inspiration:library',
+      'collapsed:false',
+      'closePanel',
+    ])
+    assert.ok(!order.includes('focus:split'))
   })
 
   it('falls back to createSidebarStore().close when closeTab is missing', () => {
@@ -167,12 +187,13 @@ describe('oneClickReplicate', () => {
     assert.equal(io.status.at(-1), 'card.cta.noSession')
   })
 
-  it('success uses real dismissInspirationLibrary: closeTab then split', async () => {
+  it('success uses real dismissInspirationLibrary: closeTab then chat', async () => {
     const order = []
     const win = {
       __omnimuxWorkbench: {
         closeTab(id) { order.push(`close:${id}`) },
         setConversationCollapsed(v) { order.push(`collapsed:${v}`) },
+        closePanel() { order.push('closePanel') },
         setFocus(mode) { order.push(`focus:${mode}`) },
       },
     }
@@ -182,7 +203,27 @@ describe('oneClickReplicate', () => {
     assert.equal(result.ok, true)
     assert.equal(order[0], 'close:omnimux-inspiration:library')
     assert.ok(order.includes('collapsed:false'))
-    assert.ok(order.includes('focus:split'))
+    assert.ok(order.includes('closePanel'))
+    assert.ok(!order.includes('focus:split'))
+  })
+
+  it('dismisses before prefill so a hidden composer can become visible (#528)', async () => {
+    const order = []
+    const io = makeIo({
+      isBlank: () => true,
+      dismissLibrary() {
+        order.push('dismiss')
+        io.closes.push(1)
+      },
+      async prefillPrompt(text) {
+        order.push('prefill')
+        io.prefills.push(text)
+        return { ok: true, via: 'prefill' }
+      },
+    })
+    const result = await oneClickReplicate(ROW, io)
+    assert.equal(result.ok, true)
+    assert.deepEqual(order, ['dismiss', 'prefill'])
   })
 
   it('blank reuses the session: 0 clicks, 1 attach, 1 prefill, 1 closeTab', async () => {
@@ -283,7 +324,7 @@ describe('oneClickReplicate', () => {
     assert.equal(io.status.at(-1), 'card.cta.attachFull')
   })
 
-  it('prefill failure after attach is sendManual and never clicks send', async () => {
+  it('prefill failure after attach still dismisses so the conversation column appears (#528)', async () => {
     let sendClicks = 0
     const io = makeIo({
       async prefillPrompt() {
@@ -298,7 +339,8 @@ describe('oneClickReplicate', () => {
     assert.equal(result.error, 'sendManual')
     assert.equal(io.status.at(-1), 'card.cta.sendManual')
     assert.equal(sendClicks, 0)
-    assert.equal(io.closes.length, 0)
+    assert.equal(io.closes.length, 1)
+    assert.equal(io.attaches.length, 1)
   })
 
   it('runExclusive does not queue: two concurrent calls invoke the worker once', async () => {
