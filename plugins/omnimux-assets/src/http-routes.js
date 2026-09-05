@@ -384,7 +384,13 @@ export function createAssetsDispatcher(deps) {
         const problem = jsonBodyProblem(req)
         if (problem) return problem
         const body = /** @type {{ kind?: string }} */ (req.body)
-        const kind = body.kind === 'file' ? 'file' : 'directory'
+        // 白名单三值；缺省保持 directory（既有调用兼容），显式非法值 400
+        const kind = body.kind === undefined
+          ? 'directory'
+          : (body.kind === 'file' || body.kind === 'directory' || body.kind === 'any' ? body.kind : null)
+        if (kind === null) {
+          return { status: 400, body: { error: 'picker-invalid-kind', message: `unknown pick kind: ${String(body.kind)}` } }
+        }
         const result = await picker(kind)
         const paths = Array.isArray(result?.paths)
           ? result.paths.filter((row) => typeof row === 'string' && row !== '')
