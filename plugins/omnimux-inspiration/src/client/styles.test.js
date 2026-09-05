@@ -34,7 +34,7 @@ describe('inspiration triptych modal', () => {
   it('uses a three-column grid with independently scrolling panels', () => {
     const body = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-body')
     assert.match(decl(body, 'display'), /grid/)
-    assert.match(decl(body, 'grid-template-columns'), /minmax/)
+    assert.equal(decl(body, 'grid-template-columns'), 'minmax(240px, 0.9fr) minmax(320px, 1.2fr) minmax(300px, 1.1fr)')
     const panel = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-panel')
     assert.equal(decl(panel, 'min-width'), '0')
     assert.equal(decl(panel, 'overflow-y'), 'auto')
@@ -46,6 +46,9 @@ describe('inspiration triptych modal', () => {
     assert.match(section, /modal\.header\.analyze/)
     assert.match(section, /modal-footer/)
     assert.match(section, /onReplicate\(data\.safeItem\)/)
+    assert.match(section, /modal\.script\.noSegmentsHint/)
+    assert.match(INSPIRATION_CSS, /justify-content: space-between/)
+    assert.match(INSPIRATION_CSS, /padding: 10px;\s*margin-bottom: 8px/)
   })
 
   it('provides narrow-screen tabs without horizontal overflow', () => {
@@ -57,7 +60,7 @@ describe('inspiration triptych modal', () => {
   it('preserves portrait player geometry and compact header controls', () => {
     const player = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-player-box')
     assert.equal(decl(player, 'aspect-ratio'), '9 / 16')
-    assert.match(decl(player, 'max-height'), /56vh/)
+    assert.equal(decl(player, 'max-height'), 'min(38vh, 380px)')
     assert.equal(decl(player, 'display'), 'flex')
     const header = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-header')
     assert.equal(decl(header, 'flex-wrap'), 'nowrap')
