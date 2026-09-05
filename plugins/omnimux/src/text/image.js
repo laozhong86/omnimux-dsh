@@ -8,6 +8,10 @@ const MIME_MEDIA = Object.freeze({
   'image/jpg': 'image/jpeg',
   'image/webp': 'image/webp',
   'image/gif': 'image/gif',
+  'image/bmp': 'image/bmp',
+  'image/tiff': 'image/tiff',
+  'image/heic': 'image/heic',
+  'image/heif': 'image/heif',
 })
 
 const DEFAULT_BYTE_CAP = 10 * 1024 * 1024
@@ -35,7 +39,7 @@ export async function probeTextImage(source, deps) {
       : await readLocalImage(raw, deps.signal)
   const probedMediaType = mediaFromMagic(loaded.data)
   if (!probedMediaType) {
-    throw new OmnimuxError('omnimux-invalid-request', 'image must be PNG, JPEG, WebP, or GIF')
+    throw new OmnimuxError('omnimux-invalid-request', 'image format is not recognized')
   }
   if (loaded.mediaType && loaded.mediaType !== probedMediaType) {
     throw new OmnimuxError('omnimux-invalid-request', `image MIME ${loaded.mediaType} does not match its bytes`)
@@ -143,7 +147,7 @@ async function fetchRemoteImage(url, deps) {
 
 /**
  * @param {Uint8Array} bytes
- * @returns {'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif' | undefined}
+ * @returns {'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif' | 'image/bmp' | 'image/tiff' | 'image/heic' | 'image/heif' | undefined}
  */
 export function mediaFromMagic(bytes) {
   if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
@@ -161,6 +165,24 @@ export function mediaFromMagic(bytes) {
   }
   if (bytes.length >= 6 && bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) {
     return 'image/gif'
+  }
+  if (bytes.length >= 2 && bytes[0] === 0x42 && bytes[1] === 0x4d) {
+    return 'image/bmp'
+  }
+  if (
+    bytes.length >= 4
+    && ((bytes[0] === 0x49 && bytes[1] === 0x49 && bytes[2] === 0x2a && bytes[3] === 0x00)
+      || (bytes[0] === 0x4d && bytes[1] === 0x4d && bytes[2] === 0x00 && bytes[3] === 0x2a))
+  ) {
+    return 'image/tiff'
+  }
+  if (bytes.length >= 12 && bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) {
+    const brands = []
+    for (let offset = 8; offset + 4 <= Math.min(bytes.length, 40); offset += 4) {
+      brands.push(String.fromCharCode(bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]).toLowerCase())
+    }
+    if (brands.some((brand) => ['heic', 'heix', 'hevc', 'hevx'].includes(brand))) return 'image/heic'
+    if (brands.some((brand) => ['heif', 'mif1', 'msf1'].includes(brand))) return 'image/heif'
   }
   return undefined
 }

@@ -47,7 +47,7 @@ export const CustomSlider: React.FC<CustomSliderProps> = ({
         onChange={handleChange}
         className="wf-custom-slider__input"
         style={{
-          background: `linear-gradient(to right, var(--wb-accent, #679EFE) 0%, var(--wb-accent, #679EFE) ${percentage}%, rgba(255,255,255,0.12) ${percentage}%, rgba(255,255,255,0.12) 100%)`,
+          background: `linear-gradient(to right, var(--dsw-alias-brand-primary) 0%, var(--dsw-alias-brand-primary) ${percentage}%, var(--dsw-alias-bg-layer-3) ${percentage}%, var(--dsw-alias-bg-layer-3) 100%)`,
         }}
       />
     </div>

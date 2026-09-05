@@ -125,7 +125,15 @@ test('real specs: buckets derive only from output.type of listed ops', () => {
   assert.equal(dto.schemaVersion, '1.1');
   assert.equal(dto.source, 'omnimux');
   assert.deepEqual(dto.image.map((r) => r.id).sort(), ['gpt-image-2', 'grok-imagine-image']);
-  assert.deepEqual(dto.video.map((r) => r.id), ['seedance-2-0', 'seedance-2-0-fast', 'seedance-2-0-mini', 'seedance-2-5']);
+  assert.deepEqual(dto.video.map((r) => r.id), [
+    'grok-imagine-video-1-5',
+    'minimax-h3',
+    'seedance-2-0',
+    'seedance-2-0-fast',
+    'seedance-2-0-mini',
+    'seedance-2-5',
+    'wan-3.0',
+  ]);
   assert.deepEqual(dto.audio, []);
   // #530 PR-A: text bucket carries 11 models with verified+live chat/vision_chat
   assert.deepEqual(dto.text.map((r) => r.id), [
@@ -248,7 +256,7 @@ test('visibleOps only surfaces listed ops', () => {
   const seedance = index.get('seedance-2-0-fast');
   assert.deepEqual(
     visibleOps(seedance).map((op) => op.id),
-    ['text_to_video', 'video_multi_ref'],
+    ['text_to_video', 'first_frame', 'first_last_frame', 'video_multi_ref'],
   );
-  assert.equal(projectKindRows(index, 'video').length, 4);
+  assert.equal(projectKindRows(index, 'video').length, 7);
 });

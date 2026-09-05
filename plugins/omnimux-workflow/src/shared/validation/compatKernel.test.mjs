@@ -156,6 +156,28 @@ test('slot matcher：体积超 slot 声明上限 → size_exceeded', () => {
   assert.equal(match.rejections[0].code, 'size_exceeded');
 });
 
+test('slot matcher：严格体积上限在等于边界时拒绝', () => {
+  const op = {
+    id: 'strict-image',
+    label: 'strict-image',
+    output: { type: 'video' },
+    inputs: [{
+      slot: 'reference_images',
+      type: 'image',
+      role: 'reference',
+      min: 1,
+      max: 1,
+      maxSizeMb: 30,
+      maxSizeExclusive: true,
+    }],
+    inputGroups: [],
+    parameters: {},
+  };
+  const match = matchOperationInputs(op, fp([img({ sizeBytes: 30 * MB })]));
+  assert.equal(match.accepts, false);
+  assert.equal(match.rejections[0].code, 'size_exceeded');
+});
+
 test('slot matcher：时长超 slot 声明上限 → duration_exceeded', () => {
   const op = opView('vid-frames', 'video_edit');
   const match = matchOperationInputs(op, fp([

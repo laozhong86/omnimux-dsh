@@ -17,14 +17,21 @@ export type MediaInputRole =
   | 'controlnet'
   | 'mask'
   | 'audio_track'
+  | 'source'
+  | 'document'
+  | 'webpage'
   | 'motion_source';
 
 export interface ReferenceAssetPayload {
   role: MediaInputRole;
-  type: 'image' | 'video' | 'audio';
+  type: 'image' | 'video' | 'audio' | 'document';
   pathOrUrl: string;
+  targetSlot?: string;
   mimeType?: string;
+  sizeBytes?: number;
   originalName?: string;
+  durationSec?: number;
+  /** Legacy alias; new callers should use durationSec. */
   duration?: number;
   dimensions?: { width: number; height: number };
 }
@@ -41,6 +48,8 @@ export interface SubmitRequest {
   audioTrack?: ReferenceAssetPayload;
   /** Video duration hint in seconds. */
   duration?: number;
+  /** Canonical operation id from the model contract. */
+  operation?: string;
   /** Media resolution hint (e.g. '720P' | '1080P' | '4K'). */
   resolution?: string;
   /** Aspect ratio hint (e.g. '16:9' | '9:16' | '1:1'). */
@@ -56,6 +65,17 @@ export interface SubmitRequest {
   instrumental?: boolean;
   /** Speed multiplier for speech. */
   speed?: number;
+  sound?: boolean;
+  seed?: number;
+  watermark?: boolean;
+  outputFormat?: string;
+  referenceTaskType?: string;
+  generationType?: string;
+  returnLastFrame?: boolean;
+  webSearch?: boolean;
+  nsfwCheck?: boolean;
+  fileUrl?: string;
+  linkUrl?: string;
   /** Model id from the capability catalog; omit for hub default. */
   model?: string;
   /** Absolute download destination (plugin-owned media dir). */

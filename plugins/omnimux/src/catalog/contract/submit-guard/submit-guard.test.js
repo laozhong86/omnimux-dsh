@@ -36,10 +36,10 @@ const index = getContractIndex()
 const profiles = loadAdapterProfiles()
 
 describe('SubmitGuard listed profile coverage (#468)', () => {
-  it('strict listedOperations is exactly 27 and every key has a live profile payload contract', () => {
+  it('strict listedOperations is exactly 52 and every key has a ready profile payload contract', () => {
     const report = verifyContracts({ strict: true })
     assert.equal(report.ok, true)
-    assert.equal(report.listedOperations.length, 27)
+    assert.equal(report.listedOperations.length, 52)
     const profileById = new Map((profiles.profiles ?? []).map((p) => [p.id, p]))
     for (const key of report.listedOperations) {
       const [modelId, opId] = key.split('#')
@@ -47,7 +47,7 @@ describe('SubmitGuard listed profile coverage (#468)', () => {
       assert.ok(model, `model ${modelId}`)
       const op = model.operations.find((o) => o.id === opId)
       assert.ok(op?.listed, key)
-      const profileId = op.execution?.profileId
+      const profileId = op.implementation?.profileId
       assert.ok(profileId, `${key} profileId`)
       const profile = profileById.get(profileId)
       assert.ok(profile && profile.status === 'live', `${key} live profile`)
@@ -64,16 +64,39 @@ describe('SubmitGuard listed profile coverage (#468)', () => {
         operation: opId,
         prompt: 'hello from coverage',
       }
-      if (mediaSlots.some((s) => (s.min ?? 0) >= 1)) {
-        // listed ops today: only prompt-required text/image/video — no mandatory media
-        // if future listed requires media, supply dummy
-        for (const slot of mediaSlots) {
-          if ((slot.min ?? 0) < 1) continue
-          const url = `https://example.com/cov-${slot.slot}.png`
-          if (slot.type === 'image') {
-            req.references = [...(req.references ?? []), { role: slot.role, type: 'image', pathOrUrl: url }]
-            req.assetMeta = { ...(req.assetMeta ?? {}), [url]: { mime: 'image/png', sizeBytes: 100 } }
-          }
+      const selectedCounts = new Map()
+      const appendSlotAssets = (slot, count) => {
+        const current = selectedCounts.get(slot.slot) ?? 0
+        const extension = { image: 'png', video: 'mp4', audio: 'mp3', document: 'txt' }[slot.type] ?? 'bin'
+        for (let offset = 0; offset < count; offset += 1) {
+          const index = current + offset
+          const durationFloor = Math.max(
+            1,
+            slot.minDurationSec ?? 0,
+            (slot.totalMinDurationSec ?? 0) + (slot.totalMinExclusive ? 1 : 0),
+          )
+          req.assets = [...(req.assets ?? []), {
+            role: slot.role,
+            targetSlot: slot.slot,
+            type: slot.type,
+            pathOrUrl: `https://example.com/cov-${modelId}-${slot.slot}-${index}.${extension}`,
+            mime: slot.allowedMimes?.[0],
+            sizeBytes: 100,
+            durationSec: durationFloor,
+          }]
+        }
+        selectedCounts.set(slot.slot, current + count)
+      }
+      for (const slot of mediaSlots) {
+        const count = Number.isFinite(slot.min) ? slot.min : 0
+        if (count > 0) appendSlotAssets(slot, count)
+      }
+      for (const group of op.inputGroups ?? []) {
+        const count = group.slots.reduce((sum, name) => sum + (selectedCounts.get(name) ?? 0), 0)
+        if (count < group.min) {
+          const slot = mediaSlots.find((candidate) => group.slots.includes(candidate.slot))
+          assert.ok(slot, `${key} input group slot`)
+          appendSlotAssets(slot, group.min - count)
         }
       }
       const plan = guardSubmit(req, {
@@ -196,15 +219,24 @@ describe('SubmitGuard legacy operation inference', () => {
     assert.equal(hit.code, GUARD_CODES.OPERATION_REQUIRED)
   })
 
-  it('guardSubmit records deprecation diagnostic when operation inferred', () => {
+  it('guardSubmit records deprecation diagnostic only when the operation is unique', () => {
+    const plan = guardSubmit(
+      { model: 'claude-opus-5', prompt: 'hello' },
+      { index, profiles, seam: 'textComplete', outputType: 'text' },
+    )
+    assert.equal(plan.ok, true)
+    assert.equal(plan.operationInferred, true)
+    assert.equal(plan.operationId, 'chat')
+    assert.ok(plan.diagnostics.some((d) => d.code === 'legacy_operation_inferred'))
+  })
+
+  it('requires an explicit operation for a multi-mode phase-one model', () => {
     const plan = guardSubmit(
       { model: 'seedance-2-0-fast', prompt: 'a cat runs' },
       { index, profiles, seam: 'videoGenerate', outputType: 'video' },
     )
-    assert.equal(plan.ok, true)
-    assert.equal(plan.operationInferred, true)
-    assert.equal(plan.operationId, 'text_to_video')
-    assert.ok(plan.diagnostics.some((d) => d.code === 'legacy_operation_inferred'))
+    assert.equal(plan.ok, false)
+    assert.equal(plan.code, GUARD_CODES.OPERATION_REQUIRED)
   })
 })
 
@@ -249,6 +281,21 @@ describe('SubmitGuard slots', () => {
     )
     assert.equal(bad.ok, false)
     assert.equal(bad.rejections[0].code, GUARD_CODES.SIZE_EXCEEDED)
+  })
+
+  it('strict size boundary rejects equality when official docs say less than', () => {
+    const op = index.get('seedance-2-5').operations.find((candidate) => candidate.id === 'first_frame')
+    const slot = op.inputs.find((candidate) => candidate.slot === 'first_frame')
+    assert.equal(slot.maxSizeExclusive, true)
+    const result = assignAndValidateSlots(op, [{
+      type: 'image',
+      role: 'first_frame',
+      pathOrUrl: 'https://x/frame.png',
+      mime: 'image/png',
+      sizeBytes: slot.maxSizeMb * 1024 * 1024,
+    }], { prompt: 'start here' })
+    assert.equal(result.ok, false)
+    assert.equal(result.rejections[0].code, GUARD_CODES.SIZE_EXCEEDED)
   })
 
   it('metadata_unknown when maxSizeMb set but sizeBytes missing', () => {
@@ -309,6 +356,39 @@ describe('SubmitGuard slots', () => {
     assert.equal(r.ok, false)
     assert.equal(r.rejections[0].code, GUARD_CODES.SLOT_CAPACITY)
   })
+
+  it('Wan reference limits use the published image and combined-duration boundaries', () => {
+    const op = index.get('wan-3.0').operations.find((candidate) => candidate.id === 'video_multi_ref')
+    const images = Array.from({ length: 10 }, (_, index) => ({
+      type: 'image',
+      role: 'reference',
+      targetSlot: 'reference_images',
+      pathOrUrl: `https://x/${index}.png`,
+      mime: 'image/png',
+      sizeBytes: 100,
+    }))
+    assert.equal(assignAndValidateSlots(op, images, { prompt: '', duration: 5 }).ok, true)
+    const overImages = assignAndValidateSlots(op, [
+      ...images,
+      { ...images[0], pathOrUrl: 'https://x/10.png' },
+    ], { prompt: '', duration: 5 })
+    assert.equal(overImages.ok, false)
+    assert.equal(overImages.rejections[0].code, GUARD_CODES.SLOT_CAPACITY)
+
+    const video = [{
+      type: 'video',
+      role: 'reference',
+      targetSlot: 'reference_videos',
+      pathOrUrl: 'https://x/reference.mp4',
+      mime: 'video/mp4',
+      sizeBytes: 100,
+      durationSec: 15,
+    }]
+    assert.equal(assignAndValidateSlots(op, video, { prompt: '', duration: 15 }).ok, true)
+    const overDuration = assignAndValidateSlots(op, video, { prompt: '', duration: 16 })
+    assert.equal(overDuration.ok, false)
+    assert.equal(overDuration.rejections[0].code, GUARD_CODES.DURATION_EXCEEDED)
+  })
 })
 
 describe('SubmitGuard vendor mapper exclusivity', () => {
@@ -325,7 +405,7 @@ describe('SubmitGuard vendor mapper exclusivity', () => {
     }))
   }
 
-  it('first_frame maps only image', () => {
+  it('first_frame maps one role-tagged APIMart frame', () => {
     const op = { id: 'first_frame', output: { type: 'video' }, inputs: [] }
     const mapped = mapValidatedPlanToVendor({
       operation: op,
@@ -339,13 +419,15 @@ describe('SubmitGuard vendor mapper exclusivity', () => {
       bySlot: new Map(),
     })
     assert.equal(mapped.ok, true)
-    assert.equal(mapped.vendorPayload.image, 'https://f.png')
-    assert.equal('reference_images' in mapped.vendorPayload, false)
+    assert.deepEqual(mapped.vendorPayload.image_with_roles, [
+      { url: 'https://f.png', role: 'first_frame' },
+    ])
+    assert.equal('image_urls' in mapped.vendorPayload, false)
     assert.equal('audioTrack' in mapped.vendorPayload, false)
     assert.equal('metadata' in mapped.vendorPayload, false)
   })
 
-  it('video_multi_ref maps only reference_images', () => {
+  it('video_multi_ref preserves ordered APIMart image_urls', () => {
     const op = { id: 'video_multi_ref', output: { type: 'video' }, inputs: [] }
     const mapped = mapValidatedPlanToVendor({
       operation: op,
@@ -359,11 +441,34 @@ describe('SubmitGuard vendor mapper exclusivity', () => {
       bySlot: new Map(),
     })
     assert.equal(mapped.ok, true)
-    assert.deepEqual(mapped.vendorPayload.reference_images, [{ url: 'https://a.png' }, { url: 'https://b.png' }])
-    assert.equal('image' in mapped.vendorPayload, false)
+    assert.deepEqual(mapped.vendorPayload.image_urls, ['https://a.png', 'https://b.png'])
+    assert.equal('image_with_roles' in mapped.vendorPayload, false)
   })
 
-  it('first_last_frame maps image + image_tail', () => {
+  it('video_extend keeps supplemental image and audio references with the required source video', () => {
+    const op = index.get('seedance-2-5').operations.find((candidate) => candidate.id === 'video_extend')
+    const assigned = assignAndValidateSlots(op, [
+      { role: 'source', type: 'video', pathOrUrl: 'https://source.mp4', mime: 'video/mp4', sizeBytes: 100, durationSec: 10 },
+      { role: 'reference', type: 'image', pathOrUrl: 'https://look.png', mime: 'image/png', sizeBytes: 100 },
+      { role: 'reference', type: 'audio', pathOrUrl: 'https://sound.mp3', mime: 'audio/mp3', sizeBytes: 100, durationSec: 3 },
+    ], { prompt: 'continue', duration: 8, aspectRatio: 'adaptive' })
+    assert.equal(assigned.ok, true)
+    const mapped = mapValidatedPlanToVendor({
+      operation: op,
+      profile: videoProfile,
+      modelId: 'seedance-2-5',
+      prompt: 'continue',
+      bindings: assigned.bindings,
+      bySlot: assigned.bySlot,
+      logical: { duration: 8, aspectRatio: 'adaptive' },
+    })
+    assert.equal(mapped.ok, true)
+    assert.deepEqual(mapped.vendorPayload.video_urls, ['https://source.mp4'])
+    assert.deepEqual(mapped.vendorPayload.image_urls, ['https://look.png'])
+    assert.deepEqual(mapped.vendorPayload.audio_urls, ['https://sound.mp3'])
+  })
+
+  it('first_last_frame maps ordered role-tagged APIMart frames', () => {
     const op = { id: 'first_last_frame', output: { type: 'video' }, inputs: [] }
     const mapped = mapValidatedPlanToVendor({
       operation: op,
@@ -377,30 +482,33 @@ describe('SubmitGuard vendor mapper exclusivity', () => {
       bySlot: new Map(),
     })
     assert.equal(mapped.ok, true)
-    assert.equal(mapped.vendorPayload.image, 'https://f.png')
-    assert.equal(mapped.vendorPayload.image_tail, 'https://l.png')
-    assert.equal('reference_images' in mapped.vendorPayload, false)
+    assert.deepEqual(mapped.vendorPayload.image_with_roles, [
+      { url: 'https://f.png', role: 'first_frame' },
+      { url: 'https://l.png', role: 'last_frame' },
+    ])
+    assert.equal('image_urls' in mapped.vendorPayload, false)
   })
 
-  it('end_frame maps the end_frame/last_frame binding to image_tail only', () => {
-    const op = index.get('minimax-h3-endframe').operations.find((candidate) => candidate.id === 'end_frame')
+  it('end_frame maps the canonical H3 last frame role only', () => {
+    const op = index.get('minimax-h3').operations.find((candidate) => candidate.id === 'end_frame')
     const assigned = assignAndValidateSlots(op, [
-      { type: 'image', role: 'last_frame', targetSlot: 'end_frame', pathOrUrl: 'https://end.png', mime: 'image/png', sizeBytes: 100 },
+      { type: 'image', role: 'last_frame', targetSlot: 'last_frame', pathOrUrl: 'https://end.png', mime: 'image/png', sizeBytes: 100 },
     ], { prompt: 'end here' })
     assert.equal(assigned.ok, true)
-    assert.deepEqual(assigned.bindings.map(({ slot, role }) => ({ slot, role })), [{ slot: 'end_frame', role: 'last_frame' }])
+    assert.deepEqual(assigned.bindings.map(({ slot, role }) => ({ slot, role })), [{ slot: 'last_frame', role: 'last_frame' }])
     const mapped = mapValidatedPlanToVendor({
       operation: op,
       profile: videoProfile,
-      modelId: 'minimax-h3-endframe',
+      modelId: 'minimax-h3',
       prompt: 'end here',
       bindings: assigned.bindings,
       bySlot: assigned.bySlot,
     })
     assert.equal(mapped.ok, true)
-    assert.equal(mapped.vendorPayload.image_tail, 'https://end.png')
-    assert.equal('image' in mapped.vendorPayload, false)
-    assert.equal('reference_images' in mapped.vendorPayload, false)
+    assert.deepEqual(mapped.vendorPayload.image_with_roles, [
+      { url: 'https://end.png', role: 'last_frame' },
+    ])
+    assert.equal('image_urls' in mapped.vendorPayload, false)
   })
 
   it('digital_human maps image + audioTrack only', () => {
@@ -497,14 +605,14 @@ describe('SubmitGuard execute integration', () => {
       model: 'seedance-2-0-fast',
       operation: 'text_to_video',
       duration: 4,
-      resolution: '720P',
+      resolution: '720p',
       env: { OMNIMUX_API_KEY: 'sk-test' },
       runtime: {
         async execute(req) {
           calls += 1
           assert.equal(req.input.prompt, 'a wall at night')
           assert.equal(req.input.duration, 4)
-          assert.equal(req.input.resolution, '720P')
+          assert.equal(req.input.resolution, '720p')
           assert.equal('audioTrack' in req.input, false)
           assert.equal('metadata' in req.input, false)
           return { taskId: 't1', outputs: [{ type: 'video', url: 'https://cdn.example/a.mp4' }] }

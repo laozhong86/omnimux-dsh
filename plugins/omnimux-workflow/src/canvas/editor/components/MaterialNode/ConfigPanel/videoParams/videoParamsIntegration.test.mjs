@@ -65,10 +65,10 @@ test('视频分支已移除旧版胶囊块（wf-param-pill--video-summary 仅剩
   assert.ok(videoBlock.includes('wf-video-trigger-bar__wrap'), '视频分支应含 TriggerBar 包裹层');
 });
 
-test('handleModelChange 消费 validateAndFallbackVideoParams 并保留防御分支', () => {
+test('handleModelChange 消费带显式提示的 buildVideoParamTransition 并保留防御分支', () => {
   assert.ok(
-    source.includes('validateAndFallbackVideoParams('),
-    'handleModelChange 应委托 validateAndFallbackVideoParams',
+    source.includes('buildVideoParamTransition('),
+    'handleModelChange 应委托 buildVideoParamTransition',
   );
   assert.ok(
     source.includes('if (!newModelItem) {'),

@@ -26,6 +26,7 @@ import {
 import { createWorkflowLogger } from './logger.ts';
 import { WORKFLOW_ROUTE_PREFIX } from '../../shared/api.ts';
 import { resolveNodeKind } from '../../shared/graph/materialNode.ts';
+import { readExplicitTargetSlot } from '../../shared/validation/compatKernel.ts';
 
 const LOG_TAG = 'nodeExecutors';
 
@@ -89,9 +90,11 @@ export function createDispatchingNodeExecutor(
     }
 
     const upstreamOutputs = resolveUpstreamOutputs(node, opts.edges, context);
+    const upstreamBindings = resolveUpstreamBindings(node, opts.edges, context);
 
     const ctx: ExecutorContext = {
       upstreamOutputs,
+      upstreamBindings,
       signal: opts.abortController.signal,
       mediaDir,
       workspaceId: opts.workspaceId,
@@ -115,6 +118,39 @@ export function createDispatchingNodeExecutor(
   };
 
   return { executor, mediaDir };
+}
+
+function resolveUpstreamBindings(
+  node: ExecutableNode,
+  edges: ExecutableEdge[],
+  context: ExecutionContext,
+): NonNullable<ExecutorContext['upstreamBindings']> {
+  const bindings: NonNullable<ExecutorContext['upstreamBindings']> = [];
+  for (const edge of edges) {
+    if (edge.target !== node.id) continue;
+    const rawOutput = context.getNodeOutput(edge.source);
+    if (rawOutput === undefined) continue;
+    const edgeData = edge.data && typeof edge.data === 'object' ? edge.data : {};
+    const slotBinding = edgeData.slotBinding && typeof edgeData.slotBinding === 'object'
+      ? edgeData.slotBinding as { role?: unknown }
+      : undefined;
+    const role = typeof edgeData.role === 'string' && edgeData.role.trim()
+      ? edgeData.role.trim()
+      : typeof slotBinding?.role === 'string' && slotBinding.role.trim()
+        ? slotBinding.role.trim()
+        : undefined;
+    const targetSlot = readExplicitTargetSlot(edgeData, edge.targetHandle);
+    bindings.push({
+      ...(edge.id ? { edgeId: edge.id } : {}),
+      sourceNodeId: edge.source,
+      ...(edge.sourceHandle !== undefined ? { sourceHandle: edge.sourceHandle } : {}),
+      ...(edge.targetHandle !== undefined ? { targetHandle: edge.targetHandle } : {}),
+      ...(role ? { role } : {}),
+      ...(targetSlot ? { targetSlot } : {}),
+      output: normalizeOutput(rawOutput),
+    });
+  }
+  return bindings;
 }
 
 function resolveUpstreamOutputs(

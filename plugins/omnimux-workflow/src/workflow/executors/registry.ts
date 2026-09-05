@@ -12,6 +12,16 @@
 export interface ExecutionContext {
   /** Node outputs keyed by upstream node id. */
   upstreamOutputs: Map<string, NodeOutput>;
+  /** Inbound edges in canvas order, including semantic slot metadata. */
+  upstreamBindings?: Array<{
+    edgeId?: string;
+    sourceNodeId: string;
+    sourceHandle?: string | null;
+    targetHandle?: string | null;
+    role?: string;
+    targetSlot?: string;
+    output: NodeOutput;
+  }>;
   /** Cooperative cancellation (aborted when the execution is cancelled). */
   signal: AbortSignal;
   /** Destination dir for artifacts of this execution (absolute path). */

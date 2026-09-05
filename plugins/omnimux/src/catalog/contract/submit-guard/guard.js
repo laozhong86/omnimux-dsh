@@ -201,8 +201,25 @@ export function guardSubmit(request, opts = {}) {
     return reject({ ...opAdmit, modelId: modelAdmit.modelId })
   }
 
+  const parameterResult = validateDeclaredParameters(
+    { ...request, ...normalized.extras, prompt: normalized.prompt },
+    opAdmit.operation.parameters,
+    modelAdmit.model.parameters,
+  )
+  if (!parameterResult.ok) {
+    return reject({
+      code: parameterResult.code,
+      message: parameterResult.message,
+      modelId: modelAdmit.modelId,
+      operationId: opAdmit.operationId,
+      field: parameterResult.field,
+      diagnostics,
+    })
+  }
+
   const slotResult = assignAndValidateSlots(opAdmit.operation, normalized.assets, {
     prompt: normalized.prompt,
+    duration: parameterResult.values.duration,
   })
   if (!slotResult.ok) {
     const top = slotResult.rejections[0] ?? {
@@ -216,22 +233,6 @@ export function guardSubmit(request, opts = {}) {
       operationId: opAdmit.operationId,
       slot: top.slot,
       extra: { rejections: slotResult.rejections },
-      diagnostics,
-    })
-  }
-
-  const parameterResult = validateDeclaredParameters(
-    request,
-    opAdmit.operation.parameters,
-    modelAdmit.model.parameters,
-  )
-  if (!parameterResult.ok) {
-    return reject({
-      code: parameterResult.code,
-      message: parameterResult.message,
-      modelId: modelAdmit.modelId,
-      operationId: opAdmit.operationId,
-      field: parameterResult.field,
       diagnostics,
     })
   }
@@ -254,7 +255,7 @@ export function guardSubmit(request, opts = {}) {
       bySlot: slotResult.bySlot,
       vendorPayload: {},
       logicalPayload: { prompt: normalized.prompt },
-      extras: normalized.extras,
+      extras: parameterResult.values,
       diagnostics,
       disposition: disp.disposition ?? undefined,
       payloadContract: resolveProfilePayloadContract(opAdmit.profile),
@@ -268,7 +269,7 @@ export function guardSubmit(request, opts = {}) {
     prompt: normalized.prompt,
     bindings: slotResult.bindings,
     bySlot: slotResult.bySlot,
-    extras: normalized.extras,
+    extras: parameterResult.values,
   })
   if (!mapped.ok) {
     return reject({
@@ -296,7 +297,7 @@ export function guardSubmit(request, opts = {}) {
     bySlot: slotResult.bySlot,
     vendorPayload: mapped.vendorPayload,
     logicalPayload: mapped.logicalPayload,
-    extras: normalized.extras,
+    extras: parameterResult.values,
     diagnostics,
     disposition: disp.disposition ?? undefined,
     payloadContract: resolveProfilePayloadContract(opAdmit.profile),
@@ -339,24 +340,105 @@ function validateDeclaredParameters(request, operationParameters, modelParameter
   const operation = operationParameters && typeof operationParameters === 'object' ? operationParameters : {}
   const model = modelParameters && typeof modelParameters === 'object' ? modelParameters : {}
   const definitions = { ...model, ...operation }
+  const values = {}
   for (const [field, definition] of Object.entries(definitions)) {
-    if (!Object.prototype.hasOwnProperty.call(request, field)) continue
-    const value = request[field]
-    if (value === undefined || value === null || value === '') continue
-    if (!definition || typeof definition !== 'object' || !Array.isArray(definition.options) || definition.options.length === 0) {
-      continue
+    if (!definition || typeof definition !== 'object') continue
+    const supplied = Object.prototype.hasOwnProperty.call(request, field)
+      && request[field] !== undefined
+      && request[field] !== null
+      && request[field] !== ''
+    const hasDefault = Object.prototype.hasOwnProperty.call(definition, 'defaultValue')
+    if (!supplied && !hasDefault) continue
+    const value = supplied ? request[field] : definition.defaultValue
+
+    if (Array.isArray(definition.options) && definition.options.length > 0) {
+      const allowed = definition.options.map((option) => option && typeof option === 'object' && 'value' in option ? option.value : option)
+      const optionMatches = allowed.some((candidate) => Object.is(candidate, value)
+        || (definition.caseInsensitive === true
+          && typeof candidate === 'string'
+          && typeof value === 'string'
+          && candidate.toLowerCase() === value.toLowerCase()))
+      if (!optionMatches) {
+        return {
+          ok: false,
+          code: GUARD_CODES.PARAMETER_UNSUPPORTED,
+          field,
+          message: `parameter "${field}" does not accept ${JSON.stringify(value)}`,
+        }
+      }
     }
-    const allowed = definition.options.map((option) => option && typeof option === 'object' && 'value' in option ? option.value : option)
-    if (!allowed.some((candidate) => Object.is(candidate, value))) {
+
+    if (definition.supported === true && typeof value !== 'boolean') {
       return {
         ok: false,
         code: GUARD_CODES.PARAMETER_UNSUPPORTED,
         field,
-        message: `parameter "${field}" does not accept ${JSON.stringify(value)}`,
+        message: `parameter "${field}" must be boolean`,
       }
     }
+    if (definition.supported === false && supplied) {
+      return {
+        ok: false,
+        code: GUARD_CODES.PARAMETER_UNSUPPORTED,
+        field,
+        message: `parameter "${field}" is not supported`,
+      }
+    }
+    if (definition.type === 'integer' && !Number.isInteger(value)) {
+      return {
+        ok: false,
+        code: GUARD_CODES.PARAMETER_UNSUPPORTED,
+        field,
+        message: `parameter "${field}" must be an integer`,
+      }
+    }
+    if (definition.range && typeof definition.range === 'object') {
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        return {
+          ok: false,
+          code: GUARD_CODES.PARAMETER_UNSUPPORTED,
+          field,
+          message: `parameter "${field}" must be numeric`,
+        }
+      }
+      const auto = definition.allowAuto === true && value === -1
+      if (!auto && (
+        (typeof definition.range.min === 'number' && value < definition.range.min)
+        || (typeof definition.range.max === 'number' && value > definition.range.max)
+        || (typeof definition.range.step === 'number'
+          && typeof definition.range.min === 'number'
+          && Math.abs((value - definition.range.min) / definition.range.step - Math.round((value - definition.range.min) / definition.range.step)) > Number.EPSILON)
+      )) {
+        return {
+          ok: false,
+          code: GUARD_CODES.PARAMETER_UNSUPPORTED,
+          field,
+          message: `parameter "${field}" is outside its documented range`,
+        }
+      }
+    }
+    if (typeof value === 'string') {
+      const length = Array.from(value).length
+      if (typeof definition.minLength === 'number' && length < definition.minLength) {
+        return {
+          ok: false,
+          code: GUARD_CODES.PARAMETER_UNSUPPORTED,
+          field,
+          message: `parameter "${field}" is shorter than ${definition.minLength} characters`,
+        }
+      }
+      if (typeof definition.maxLength === 'number' && length > definition.maxLength) {
+        return {
+          ok: false,
+          code: GUARD_CODES.PARAMETER_UNSUPPORTED,
+          field,
+          message: `parameter "${field}" exceeds ${definition.maxLength} characters`,
+        }
+      }
+    }
+    values[field] = value
   }
-  return { ok: true }
+  return { ok: true, values }
 }
 
 export { GUARD_CODES, validateVendorResult, normalizeLogicalRequest, mapValidatedPlanToVendor }

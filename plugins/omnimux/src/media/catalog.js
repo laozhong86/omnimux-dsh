@@ -39,7 +39,7 @@ export function mediaModelIds(kind) {
 }
 
 /**
- * Exact id → contract alias normalization (resolveModelId) → legacy fuzzy match.
+ * Exact id → documented contract alias normalization (resolveModelId).
  * @param {'image' | 'video' | 'audio'} kind
  * @param {string} id
  */
@@ -53,6 +53,5 @@ export function findMediaModel(kind, id) {
     const aliased = models.find((row) => row.id === canonical)
     if (aliased) return aliased
   }
-  const stripped = id.replace(/[-_.]/g, '').toLowerCase()
-  return models.find((row) => row.id.replace(/[-_.]/g, '').toLowerCase() === stripped) ?? null
+  return null
 }

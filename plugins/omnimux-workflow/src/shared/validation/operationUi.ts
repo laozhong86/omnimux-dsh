@@ -45,6 +45,10 @@ export interface OperationUiOption {
   slots: OperationContractDto['inputs'];
   /** Output type when known. */
   outputType?: string;
+  /** Operation-level parameter overrides from the model contract. */
+  parameters?: Record<string, unknown>;
+  /** Deterministic edge-to-slot bindings produced by the compatibility kernel. */
+  bindings: OperationMatch['bindings'];
   /** True when this operation absorbs the current fingerprint. */
   effective: boolean;
   /** Ready-to-submit for this operation under the current fingerprint. */
@@ -217,6 +221,8 @@ function matchToOption(
     label: (opView?.label && opView.label.trim()) || match.operationId,
     slots: opView?.inputs ?? [],
     ...(opView?.output?.type ? { outputType: opView.output.type } : {}),
+    ...(opView?.parameters ? { parameters: opView.parameters } : {}),
+    bindings: match.bindings,
     effective: match.accepts,
     ready: match.ready,
   };

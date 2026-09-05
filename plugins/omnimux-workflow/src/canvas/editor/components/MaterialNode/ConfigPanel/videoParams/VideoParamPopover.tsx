@@ -12,9 +12,15 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactElement, RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import type { CapabilityModelItem, ModelParameterSchema } from '../../../../../../shared/api.ts';
+import { CustomSelect, CustomSlider } from '../../../../../ui/index.ts';
 import { AspectCardGrid } from './AspectCardGrid.tsx';
 import { DurationGrid } from './DurationGrid.tsx';
-import { OperationSegment, ResolutionSegment, SoundSwitchSegment } from './SegmentControls.tsx';
+import {
+  BooleanSwitchSegment,
+  OperationSegment,
+  ResolutionSegment,
+  SoundSwitchSegment,
+} from './SegmentControls.tsx';
 import type { EffectiveVideoParams, PopoverPosition, VideoNodeParams } from './types.ts';
 import { calculatePopoverPosition } from './viewportPositioner.ts';
 
@@ -91,6 +97,7 @@ export function VideoParamPopover({
       if (
         panelRef.current?.contains(target)
         || triggerRef.current?.contains(target)
+        || (target instanceof Element && target.closest('.wf-custom-select-dropdown'))
       ) {
         return;
       }
@@ -117,7 +124,27 @@ export function VideoParamPopover({
 
   const resolutionOptions = schema.resolution?.options ?? [];
   const durationOptions = schema.duration?.options ?? [];
+  const durationRange = schema.duration?.range;
   const showModeUi = Boolean(params.showModeUi) && (params.effectiveOperations?.length ?? 0) >= 2;
+  const activeOperation = params.effectiveOperations.find((operation) => operation.id === params.operation);
+  const needsFileUrl = activeOperation?.slots.some((slot) => slot.slot === 'file_url') ?? false;
+  const needsLinkUrl = activeOperation?.slots.some((slot) => slot.slot === 'link_url') ?? false;
+  const booleanControls = [
+    ['watermark', 'AI 水印', schema.watermark, params.watermark],
+    ['returnLastFrame', '返回尾帧', schema.returnLastFrame, params.returnLastFrame],
+    ['webSearch', '联网搜索', schema.webSearch, params.webSearch],
+    ['nsfwCheck', '内容审核', schema.nsfwCheck, params.nsfwCheck],
+  ] as const;
+  const enumControls = [
+    ['outputFormat', '输出格式', schema.outputFormat, params.outputFormat],
+    ['referenceTaskType', '参考任务类型', schema.referenceTaskType, params.referenceTaskType],
+    ['generationType', '生成类型', schema.generationType, params.generationType],
+  ] as const;
+  const showAdvanced = Boolean(
+    schema.seed
+    || booleanControls.some(([, , definition]) => definition?.supported)
+    || enumControls.some(([, , definition]) => definition?.options?.length),
+  );
 
   const panelClass = position?.placement === 'bottom'
     ? 'wf-video-param-popover wf-video-param-popover--bottom'
@@ -160,14 +187,16 @@ export function VideoParamPopover({
           </section>
         ) : null}
 
-        <section className="wf-video-param-popover__section">
-          <h4 className="wf-video-param-popover__section-title">比例</h4>
-          <AspectCardGrid
-            value={params.aspectRatio}
-            options={schema.aspectRatio?.options ?? []}
-            onChange={(v) => onParamChange('aspectRatio', v)}
-          />
-        </section>
+        {(schema.aspectRatio?.options?.length ?? 0) > 0 ? (
+          <section className="wf-video-param-popover__section">
+            <h4 className="wf-video-param-popover__section-title">比例</h4>
+            <AspectCardGrid
+              value={params.aspectRatio}
+              options={schema.aspectRatio?.options ?? []}
+              onChange={(v) => onParamChange('aspectRatio', v)}
+            />
+          </section>
+        ) : null}
 
         {resolutionOptions.length > 0 && (
           <section className="wf-video-param-popover__section">
@@ -191,6 +220,39 @@ export function VideoParamPopover({
           </section>
         )}
 
+        {durationOptions.length === 0 && durationRange ? (
+          <section className="wf-video-param-popover__section">
+            <div className="wf-video-param-popover__section-heading">
+              <h4 className="wf-video-param-popover__section-title">时长</h4>
+              <span className="wf-video-param-popover__value">
+                {params.duration === -1 ? '自动' : `${params.duration}s`}
+              </span>
+            </div>
+            <div className="wf-video-param-popover__range-row">
+              <CustomSlider
+                className="wf-video-param-popover__slider"
+                min={durationRange.min}
+                max={durationRange.max}
+                step={durationRange.step ?? 1}
+                value={typeof params.duration === 'number' && params.duration >= durationRange.min
+                  ? params.duration
+                  : schema.duration?.defaultValue ?? durationRange.min}
+                onChange={(value) => onParamChange('duration', value)}
+              />
+              {schema.duration?.allowAuto ? (
+                <button
+                  type="button"
+                  className={`wf-video-duration-pill${params.duration === -1 ? ' wf-video-duration-pill--active' : ''}`}
+                  aria-pressed={params.duration === -1}
+                  onClick={() => onParamChange('duration', -1)}
+                >
+                  自动
+                </button>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
         {params.hasSoundSupport && (
           <section className="wf-video-param-popover__section">
             <h4 className="wf-video-param-popover__section-title">有声视频</h4>
@@ -200,6 +262,67 @@ export function VideoParamPopover({
             />
           </section>
         )}
+
+        {needsFileUrl || needsLinkUrl ? (
+          <section className="wf-video-param-popover__section">
+            <h4 className="wf-video-param-popover__section-title">
+              {needsFileUrl ? '文档地址' : '网页地址'}
+            </h4>
+            <input
+              type="url"
+              className="wf-video-param-popover__input"
+              value={(needsFileUrl ? params.fileUrl : params.linkUrl) ?? ''}
+              placeholder={needsFileUrl ? 'https://example.com/document.pdf' : 'https://example.com/page'}
+              onChange={(event) => onParamChange(needsFileUrl ? 'fileUrl' : 'linkUrl', event.target.value)}
+            />
+          </section>
+        ) : null}
+
+        {showAdvanced ? (
+          <section className="wf-video-param-popover__section" data-testid="wf-video-advanced-parameters">
+            <h4 className="wf-video-param-popover__section-title">高级参数</h4>
+            {schema.seed ? (
+              <label className="wf-video-param-popover__field-row">
+                <span>随机种子</span>
+                <input
+                  type="number"
+                  className="wf-video-param-popover__input"
+                  min={schema.seed.range?.min}
+                  max={schema.seed.range?.max}
+                  step={schema.seed.range?.step ?? 1}
+                  value={params.seed ?? ''}
+                  placeholder="随机"
+                  onChange={(event) => {
+                    const value = event.target.value.trim();
+                    onParamChange('seed', value === '' ? undefined : Number(value));
+                  }}
+                />
+              </label>
+            ) : null}
+            {enumControls.map(([field, label, definition, value]) => definition?.options?.length ? (
+              <div className="wf-video-param-popover__field-row" key={field}>
+                <span>{label}</span>
+                <CustomSelect
+                  className="wf-video-param-popover__select"
+                  value={value ?? definition.defaultValue}
+                  options={definition.options}
+                  disabled={definition.options.length === 1}
+                  onChange={(next) => onParamChange(field, String(next))}
+                />
+              </div>
+            ) : null)}
+            {booleanControls.map(([field, label, definition, value]) => definition?.supported ? (
+              <div className="wf-video-param-popover__field-row" key={field}>
+                <span>{label}</span>
+                <BooleanSwitchSegment
+                  ariaLabel={label}
+                  value={typeof value === 'boolean' ? value : definition.defaultValue}
+                  onChange={(next) => onParamChange(field, next)}
+                />
+              </div>
+            ) : null)}
+          </section>
+        ) : null}
       </div>
     </div>,
     document.body,

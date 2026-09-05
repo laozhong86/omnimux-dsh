@@ -20,6 +20,7 @@ import {
 } from './schema.js';
 import {
   normalizeResearch,
+  normalizeImplementation,
   normalizeExecution,
   materializeOpStatus,
   computeOperationListed,
@@ -348,11 +349,18 @@ function normalizeSlot(slot) {
     role,
     source,
     min: Number(slot.min),
-    max: Number(slot.max),
+    max: slot.max === null ? null : Number(slot.max),
   };
   if (Array.isArray(slot.allowedMimes)) out.allowedMimes = [...slot.allowedMimes];
   if (slot.maxSizeMb != null) out.maxSizeMb = Number(slot.maxSizeMb);
+  if (typeof slot.maxSizeExclusive === 'boolean') out.maxSizeExclusive = slot.maxSizeExclusive;
+  if (slot.minDurationSec != null) out.minDurationSec = Number(slot.minDurationSec);
   if (slot.maxDurationSec != null) out.maxDurationSec = Number(slot.maxDurationSec);
+  if (slot.totalMinDurationSec != null) out.totalMinDurationSec = Number(slot.totalMinDurationSec);
+  if (slot.totalMaxDurationSec != null) out.totalMaxDurationSec = Number(slot.totalMaxDurationSec);
+  if (slot.combinedOutputMaxDurationSec != null) out.combinedOutputMaxDurationSec = Number(slot.combinedOutputMaxDurationSec);
+  if (typeof slot.totalMinExclusive === 'boolean') out.totalMinExclusive = slot.totalMinExclusive;
+  if (typeof slot.totalMaxExclusive === 'boolean') out.totalMaxExclusive = slot.totalMaxExclusive;
   if (slot.limitSource && typeof slot.limitSource === 'object') {
     out.limitSource = { .../** @type {object} */ (slot.limitSource) };
   }
@@ -375,7 +383,7 @@ function applyPromptPolicy(inputs, policy) {
 
 /**
  * @param {Record<string, unknown>} op
- * @param {{ research?: object, execution?: object, governance?: object }} modelDefaults
+ * @param {{ research?: object, implementation?: object, execution?: object, governance?: object }} modelDefaults
  * @param {object} registry
  * @param {object} profiles
  * @param {string} modelId
@@ -417,19 +425,24 @@ function normalizeOperation(op, modelDefaults, registry, profiles, modelId, ctx 
   if (op.parameters && typeof op.parameters === 'object') {
     out.parameters = { .../** @type {object} */ (op.parameters) };
   }
+  if (Array.isArray(op.inputGroups)) {
+    out.inputGroups = op.inputGroups.map((group) => ({ .../** @type {object} */ (group) }));
+  }
   if (Array.isArray(op.aliases)) {
     out.aliases = [...op.aliases];
   }
 
-  // Carry raw research/execution for materialize
+  // Carry raw statuses for materialize.
   if (op.research != null) out._rawResearch = op.research;
+  if (op.implementation != null) out._rawImplementation = op.implementation;
   if (op.execution != null) out._rawExecution = op.execution;
 
-  const { research, execution } = materializeOpStatus(
-    { research: op.research, execution: op.execution },
+  const { research, implementation, execution } = materializeOpStatus(
+    { research: op.research, implementation: op.implementation, execution: op.execution },
     modelDefaults,
   );
   out.research = research;
+  out.implementation = implementation;
   out.execution = execution;
 
   return { op: out, warnings };
@@ -445,9 +458,11 @@ export function normalizeModel(raw, ctx = {}) {
   const profiles = ctx.profiles ?? loadAdapterProfiles();
 
   const modelResearch = normalizeResearch(raw.research, /** @type {any} */ (raw.governance));
+  const modelImplementation = normalizeImplementation(raw.implementation);
   const modelExecution = normalizeExecution(raw.execution);
   const modelDefaults = {
     research: modelResearch,
+    implementation: modelImplementation,
     execution: modelExecution,
     governance: raw.governance,
   };
@@ -480,6 +495,7 @@ export function normalizeModel(raw, ctx = {}) {
     operations,
     // Keep model-level defaults for diagnostics (optional after normalize)
     research: modelResearch,
+    implementation: modelImplementation,
     execution: modelExecution,
   };
   if (typeof raw.family === 'string') model.family = raw.family;
@@ -489,6 +505,9 @@ export function normalizeModel(raw, ctx = {}) {
   if (typeof raw.role === 'string') model.role = raw.role;
   if (raw.parameters && typeof raw.parameters === 'object') {
     model.parameters = { .../** @type {object} */ (raw.parameters) };
+  }
+  if (raw.routing && typeof raw.routing === 'object') {
+    model.routing = { .../** @type {object} */ (raw.routing) };
   }
   if (Array.isArray(raw.aliases)) model.aliases = [...raw.aliases];
   if (ctx.managementGroup) model.managementGroup = ctx.managementGroup;
@@ -507,12 +526,16 @@ export function normalizeModel(raw, ctx = {}) {
         label: op.label,
         output: op.output,
         inputs: op.inputs,
+        inputGroups: op.inputGroups,
         research: op.research,
+        implementation: op.implementation,
         execution: op.execution,
         aliases: op.aliases,
       })),
       research: model.research,
+      implementation: model.implementation,
       execution: model.execution,
+      routing: model.routing,
       aliases: model.aliases,
     },
     { profiles, registry },
@@ -543,6 +566,7 @@ export function normalizeModel(raw, ctx = {}) {
     });
     // strip internal
     delete op._rawResearch;
+    delete op._rawImplementation;
     delete op._rawExecution;
   }
 

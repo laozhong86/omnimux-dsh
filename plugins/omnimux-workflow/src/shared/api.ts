@@ -92,6 +92,11 @@ export interface ModelParameterOption<T = string | number> {
 }
 
 export interface ModelParameterSchema {
+  /** Prompt length constraints, measured in Unicode code points. */
+  prompt?: {
+    minLength?: number;
+    maxLength?: number;
+  };
   /** 画幅选项与默认值 */
   aspectRatio?: {
     options: Array<ModelParameterOption<string>>;
@@ -103,11 +108,15 @@ export interface ModelParameterSchema {
     range?: { min: number; max: number; step?: number };
     defaultValue: number;
     unit?: string;
+    /** -1 asks the provider to choose the output duration. */
+    allowAuto?: boolean;
   };
   /** 分辨率选项与默认值 */
   resolution?: {
     options: Array<ModelParameterOption<string>>;
     defaultValue: string;
+    /** Provider enum accepts case-insensitive input and emits the documented spelling. */
+    caseInsensitive?: boolean;
   };
   /** 生成质量/模式选项 */
   quality?: {
@@ -116,6 +125,38 @@ export interface ModelParameterSchema {
   };
   /** 音效支持 */
   sound?: {
+    supported: boolean;
+    defaultValue: boolean;
+  };
+  seed?: {
+    type: 'integer';
+    range?: { min: number; max: number; step?: number };
+  };
+  watermark?: {
+    supported: boolean;
+    defaultValue: boolean;
+  };
+  outputFormat?: {
+    options: Array<ModelParameterOption<string>>;
+    defaultValue: string;
+  };
+  referenceTaskType?: {
+    options: Array<ModelParameterOption<string>>;
+    defaultValue: string;
+  };
+  generationType?: {
+    options: Array<ModelParameterOption<string>>;
+    defaultValue: string;
+  };
+  returnLastFrame?: {
+    supported: boolean;
+    defaultValue: boolean;
+  };
+  webSearch?: {
+    supported: boolean;
+    defaultValue: boolean;
+  };
+  nsfwCheck?: {
     supported: boolean;
     defaultValue: boolean;
   };
@@ -150,10 +191,20 @@ export interface InputSlotDto {
   role: string;
   source?: 'user' | 'upstream_edge' | 'node_field';
   min: number;
-  max: number;
+  /** null means the official source does not publish an upper bound. */
+  max: number | null;
   allowedMimes?: string[];
   maxSizeMb?: number;
+  /** True when the official limit is strictly less than maxSizeMb. */
+  maxSizeExclusive?: boolean;
+  minDurationSec?: number;
   maxDurationSec?: number;
+  totalMinDurationSec?: number;
+  totalMaxDurationSec?: number;
+  /** Input duration plus requested output duration must not exceed this value. */
+  combinedOutputMaxDurationSec?: number;
+  totalMinExclusive?: boolean;
+  totalMaxExclusive?: boolean;
   limitSource?: { kind: string; url?: string; note?: string };
 }
 
@@ -163,8 +214,10 @@ export interface OperationContractDto {
   label?: string;
   output: { type: string; allowedMimes?: string[]; min?: number; max?: number };
   inputs: InputSlotDto[];
+  inputGroups?: Array<{ slots: string[]; min: number; hint?: string }>;
   research?: { status?: string; docUrl?: string; verifiedAt?: string; notes?: string };
   execution?: { status?: string; profileId?: string; seam?: string; notes?: string };
+  implementation?: { status?: string; profileId?: string; seam?: string; verifiedAt?: string; notes?: string };
   listed?: boolean;
   /** Legacy operation-name aliases (read-time mapping only). */
   aliases?: string[];
@@ -182,6 +235,7 @@ export interface CatalogModelDto {
   aliases?: string[];
   operations?: OperationContractDto[];
   parameters?: ModelParameterSchema | Record<string, unknown>;
+  routing?: { channel: string; wireModel: string; endpoint: string; automaticFallback?: boolean };
   /** Derived summary only — never use as a per-operation gate. */
   listed?: boolean;
   listedOperations?: string[];
@@ -319,4 +373,3 @@ export interface WorkspaceTableResponse {
   message?: string;
   currentRev?: number;
 }
-

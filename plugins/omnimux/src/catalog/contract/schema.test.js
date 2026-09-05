@@ -33,7 +33,7 @@ test('operation registry has unique MCC ids with valid promptPolicy (count from 
   assert.ok(ids.includes('end_frame'), 'registry must include end_frame (#567)');
   const endFrame = reg.operations.find((o) => o.id === 'end_frame');
   assert.equal(endFrame.defaultOutputType, 'video');
-  assert.equal(endFrame.promptPolicy, 'required');
+  assert.equal(endFrame.promptPolicy, 'optional');
   assert.equal(endFrame.group, 'video');
   const stt = reg.operations.find((o) => o.id === 'speech_to_text');
   assert.equal(stt.defaultOutputType, 'text');
@@ -313,6 +313,7 @@ test('profile_incompatible rejects wrong output type on live profile', () => {
           },
         ],
         research: { status: 'verified', docUrl: 'https://x' },
+        implementation: { status: 'ready', profileId: 'videoGenerate', seam: 'videoGenerate' },
         execution: { status: 'live', profileId: 'videoGenerate', seam: 'videoGenerate' },
       },
     ],

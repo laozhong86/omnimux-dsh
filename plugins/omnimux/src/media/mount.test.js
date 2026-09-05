@@ -10,6 +10,22 @@ const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const MP4 = Buffer.from([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d])
 const MP3 = Buffer.from([0x49, 0x44, 0x33, 0x04, 0x00, 0x00])
 
+function mp4WithDuration(seconds, timescale = 1_000) {
+  const box = (type, payload) => {
+    const header = Buffer.alloc(8)
+    header.writeUInt32BE(header.length + payload.length, 0)
+    header.write(type, 4, 4, 'ascii')
+    return Buffer.concat([header, payload])
+  }
+  const mvhd = Buffer.alloc(20)
+  mvhd.writeUInt32BE(timescale, 12)
+  mvhd.writeUInt32BE(Math.round(seconds * timescale), 16)
+  return Buffer.concat([
+    box('ftyp', Buffer.from([0x69, 0x73, 0x6f, 0x6d, 0, 0, 0, 0])),
+    box('moov', box('mvhd', mvhd)),
+  ])
+}
+
 function pngData(extra) {
   return `data:image/png;base64,${Buffer.concat([PNG, Buffer.from([extra])]).toString('base64')}`
 }
@@ -39,6 +55,33 @@ describe('mountMedia capability gate', () => {
         { type: 'audio', mime: 'audio/mp3', sizeBytes: MP3.byteLength },
       ],
     )
+  })
+
+  it('replaces caller video duration with container metadata and accepts the 100MB Wan range', async () => {
+    const bytes = mp4WithDuration(15)
+    const assets = await probeMediaAssets({
+      references: [{
+        type: 'video',
+        role: 'reference',
+        pathOrUrl: 'https://cdn.example.com/reference.mp4',
+        durationSec: 1,
+      }],
+      fetcher: async () => ({
+        ok: true,
+        status: 200,
+        headers: {
+          get(name) {
+            if (name === 'content-type') return 'video/mp4'
+            if (name === 'content-length') return String(100 * 1024 * 1024)
+            return null
+          },
+        },
+        arrayBuffer: async () => bytes,
+      }),
+    }, { capability: 'video', seam: 'videoGenerate' })
+
+    assert.equal(assets[0].sizeBytes, bytes.byteLength)
+    assert.equal(assets[0].durationSec, 15)
   })
 
   it('registers tool and provides seam when gate is enabled by default', () => {
@@ -98,6 +141,30 @@ describe('mountMedia capability gate', () => {
     assert.ok(tools[0].parameters.properties.image_tail)
     assert.ok(tools[0].parameters.properties.references)
     assert.ok(tools[0].parameters.properties.audioTrack)
+    assert.ok(tools[0].parameters.properties.fileUrl)
+    assert.ok(tools[0].parameters.properties.linkUrl)
+    assert.ok(tools[0].parameters.properties.referenceTaskType)
+  })
+
+  it('probes Wan document metadata with an offline HEAD response', async () => {
+    const assets = await probeMediaAssets({
+      fileUrl: 'https://cdn.example.com/deck.pdf',
+      fetcher: async (_url, init) => ({
+        ok: true,
+        status: 200,
+        headers: { get: (name) => name === 'content-length' ? '8192' : null },
+        method: init.method,
+      }),
+    }, { capability: 'video', seam: 'videoGenerate' })
+
+    assert.deepEqual(assets, [{
+      type: 'document',
+      pathOrUrl: 'https://cdn.example.com/deck.pdf',
+      role: 'document',
+      targetSlot: 'file_url',
+      mime: 'application/pdf',
+      sizeBytes: 8192,
+    }])
   })
 
   it('uses internal video semantics when probing workflow media', async () => {
@@ -157,7 +224,7 @@ describe('mountMedia capability gate', () => {
         { type: 'image', role: 'reference', pathOrUrl: secondReference },
       ],
       duration: 4,
-      resolution: '720P',
+      resolution: '720p',
       aspectRatio: '16:9',
       wait: false,
     }
@@ -188,12 +255,8 @@ describe('mountMedia capability gate', () => {
 
     assert.equal(runtimeCalls.length, 2)
     for (const call of runtimeCalls) {
-      assert.deepEqual(call.input.reference_images, [
-        { url: firstReference },
-        { url: secondReference },
-      ])
-      assert.equal('image' in call.input, false)
-      assert.equal('image_tail' in call.input, false)
+      assert.deepEqual(call.input.image_urls, [firstReference, secondReference])
+      assert.equal('image_with_roles' in call.input, false)
       assert.equal('references' in call.input, false)
       assert.equal('audioTrack' in call.input, false)
     }

@@ -6,6 +6,7 @@
  */
 
 import type { ReactNode, Ref } from 'react';
+import type { ModelParameterSchema } from '../../../../../../shared/api.ts';
 import type { OperationUiOption } from '../../../../../../shared/validation/operationUi.ts';
 
 /**
@@ -19,6 +20,16 @@ export interface VideoNodeParams {
   resolution?: string;
   duration?: number | string;
   sound?: boolean;
+  seed?: number;
+  watermark?: boolean;
+  outputFormat?: string;
+  referenceTaskType?: string;
+  generationType?: string;
+  returnLastFrame?: boolean;
+  webSearch?: boolean;
+  nsfwCheck?: boolean;
+  fileUrl?: string;
+  linkUrl?: string;
   firstFrameUrl?: string;
   lastFrameUrl?: string;
   [key: string]: unknown;
@@ -37,11 +48,23 @@ export interface EffectiveVideoParams {
   effectiveOperations: OperationUiOption[];
   /** True when the mode segment / TriggerBar mode text must render. */
   showModeUi: boolean;
+  /** Model schema merged with the selected operation override. */
+  schema: ModelParameterSchema;
   aspectRatio: string;
   resolution?: string;
   duration: number | string;
   sound: boolean;
   hasSoundSupport: boolean;
+  seed?: number;
+  watermark?: boolean;
+  outputFormat?: string;
+  referenceTaskType?: string;
+  generationType?: string;
+  returnLastFrame?: boolean;
+  webSearch?: boolean;
+  nsfwCheck?: boolean;
+  fileUrl?: string;
+  linkUrl?: string;
   firstFrameUrl?: string;
   lastFrameUrl?: string;
 }

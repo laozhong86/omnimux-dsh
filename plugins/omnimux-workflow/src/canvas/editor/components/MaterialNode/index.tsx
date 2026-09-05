@@ -466,7 +466,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       : (catalog?.defaults?.[materialType] ?? '');
     const modelCap = resolveModelInputCapability(modelId, catalog);
     const max = modelCap?.referenceImages?.max;
-    if (max === undefined) return false;
+    if (typeof max !== 'number') return false;
     const imageCount = upstreams.filter(
       (u) => u.materialType === 'image' || (!u.materialType && u.hasMedia),
     ).length;

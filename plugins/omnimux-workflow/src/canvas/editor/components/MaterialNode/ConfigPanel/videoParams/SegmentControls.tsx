@@ -6,7 +6,7 @@
  * rendered (Hide, Don't Grey). effectiveOps ≤ 1 → return null (no DOM).
  */
 
-import { Volume2, VolumeX } from 'lucide-react';
+import { Check, Volume2, VolumeX, X } from 'lucide-react';
 import { type ReactElement, type ReactNode } from 'react';
 import type { OperationUiOption } from '../../../../../../shared/validation/operationUi.ts';
 
@@ -152,4 +152,26 @@ export function SoundSwitchSegment({ value, onChange }: SoundSwitchSegmentProps)
   ];
 
   return <Segment options={options} value={value} onChange={onChange} ariaLabel="音效" />;
+}
+
+export function BooleanSwitchSegment({
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  value: boolean;
+  onChange: (value: boolean) => void;
+  ariaLabel: string;
+}): ReactElement {
+  return (
+    <Segment
+      options={[
+        { value: true, label: '开启', icon: <Check size={13} /> },
+        { value: false, label: '关闭', icon: <X size={13} /> },
+      ]}
+      value={value}
+      onChange={onChange}
+      ariaLabel={ariaLabel}
+    />
+  );
 }

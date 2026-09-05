@@ -220,15 +220,17 @@ export function useModelParameterSchema(
     };
 
     // 时长
-    const durationOptions =
-      schema.duration?.options && schema.duration.options.length > 0
-        ? schema.duration.options
-        : (fallback.duration?.options ?? [{ value: 5, label: '5s' }]);
+    const durationOptions = schema.duration?.options ?? fallback.duration?.options ?? [];
     const defaultDuration = schema.duration?.defaultValue ?? durationOptions[0]?.value ?? 5;
 
     const isDurationValid = (duration: number | undefined) => {
       if (typeof duration !== 'number') return false;
-      return durationOptions.some((opt) => opt.value === duration);
+      if (schema.duration?.allowAuto && duration === -1) return true;
+      if (durationOptions.some((opt) => opt.value === duration)) return true;
+      const range = schema.duration?.range;
+      if (!range || duration < range.min || duration > range.max) return false;
+      const step = range.step ?? 1;
+      return Math.abs((duration - range.min) / step - Math.round((duration - range.min) / step)) <= Number.EPSILON;
     };
 
     // 分辨率

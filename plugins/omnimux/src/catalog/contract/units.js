@@ -2,7 +2,7 @@
  * Size / duration unit helpers for model capability contracts.
  *
  * Contract declares maxSizeMb (decimal MB number). Runtime comparison uses
- * binary MiB: sizeBytes <= maxSizeMb * 1024 * 1024.
+ * binary MiB. Each slot states whether equality is allowed.
  * MUST NOT default missing limits to a global 100MB ceiling.
  */
 
@@ -23,13 +23,14 @@ export function mbToBytes(maxSizeMb) {
 /**
  * @param {number} sizeBytes
  * @param {number} maxSizeMb
+ * @param {boolean} [exclusive]
  * @returns {boolean}
  */
-export function isWithinSizeLimit(sizeBytes, maxSizeMb) {
+export function isWithinSizeLimit(sizeBytes, maxSizeMb, exclusive = false) {
   if (typeof sizeBytes !== 'number' || !Number.isFinite(sizeBytes) || sizeBytes < 0) {
     throw new TypeError(`sizeBytes must be a non-negative finite number, got ${sizeBytes}`);
   }
-  return sizeBytes <= mbToBytes(maxSizeMb);
+  return exclusive ? sizeBytes < mbToBytes(maxSizeMb) : sizeBytes <= mbToBytes(maxSizeMb);
 }
 
 /**

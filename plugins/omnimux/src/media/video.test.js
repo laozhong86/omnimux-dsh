@@ -47,7 +47,13 @@ describe('omnimux video helpers', () => {
 
   it('refuses to execute without a key', async () => {
     await assert.rejects(
-      () => executeOmnimuxVideo({ prompt: 'x', dest: '/tmp/no.mp4', env: {} }),
+      () => executeOmnimuxVideo({
+        prompt: 'x',
+        dest: '/tmp/no.mp4',
+        model: 'seedance-2-0-fast',
+        operation: 'text_to_video',
+        env: {},
+      }),
       (error) => error instanceof OmnimuxError && error.code === 'needs-omnimux',
     )
   })
@@ -58,6 +64,8 @@ describe('omnimux video helpers', () => {
     const result = await executeOmnimuxVideo({
       prompt: 'a wall with pat',
       dest,
+      model: 'seedance-2-0-fast',
+      operation: 'text_to_video',
       duration: 4,
       env: {},
       store: {
@@ -89,6 +97,8 @@ describe('omnimux video helpers', () => {
     const result = await executeOmnimuxVideo({
       prompt: 'a wall at night',
       dest,
+      model: 'seedance-2-0-fast',
+      operation: 'text_to_video',
       duration: 4,
       env: { OMNIMUX_API_KEY: 'sk-video-auth' },
       runtime: {
@@ -117,6 +127,8 @@ describe('omnimux video helpers', () => {
     const result = await executeOmnimuxVideo({
       prompt: 'a wall at night',
       dest,
+      model: 'seedance-2-0-fast',
+      operation: 'text_to_video',
       duration: 4,
       env: { OMNIMUX_API_KEY: 'sk-test' },
       runtime: {
@@ -144,6 +156,8 @@ describe('omnimux video helpers', () => {
     const result = await executeOmnimuxVideo({
       prompt: 'a wall at night',
       dest,
+      model: 'seedance-2-0-fast',
+      operation: 'text_to_video',
       wait: false,
       env: { OMNIMUX_API_KEY: 'sk-test' },
       runtime: {
@@ -393,7 +407,7 @@ describe('mapOmnimuxInput video branch (#429)', () => {
   it('end_frame only-last maps image_tail without inventing image (#567 M1/M2/M3)', () => {
     const input = mapOmnimuxInput('video', {
       prompt: 'end-frame only',
-      model: 'minimax-h3-endframe',
+      model: 'minimax-h3',
       references: [
         { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/end-only.png' },
       ],
@@ -406,36 +420,41 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     assert.notEqual(input.image_tail, input.image)
   })
 
-  it('executeOmnimuxVideo rejects draft end-frame before submit (#567 M7)', async () => {
+  it('executeOmnimuxVideo submits canonical H3 end-frame through the offline runtime', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'omnimux-endframe-'))
     const dest = join(dir, 'out.mp4')
-    let postCalls = 0
-    await assert.rejects(
-      executeOmnimuxVideo({
-        prompt: 'end frame only',
-        dest,
-        model: 'minimax-h3-endframe',
-        operation: 'end_frame',
-        references: [
-          { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/end-only.png' },
-        ],
-        env: { OMNIMUX_API_KEY: 'sk-test' },
-        fetcher: async (url, init) => {
-          if (String(url) === 'https://example.com/end-only.png') {
-            return {
-              ok: true,
-              status: 200,
-              headers: { get() { return 'image/png' } },
-              arrayBuffer: async () => Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-            }
-          }
-          if (init?.method === 'POST') postCalls += 1
-          throw new Error(`unexpected request: ${String(url)}`)
+    let runtimeCalls = 0
+    const result = await executeOmnimuxVideo({
+      prompt: 'end frame only',
+      dest,
+      model: 'minimax-h3',
+      operation: 'end_frame',
+      references: [
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/end-only.png' },
+      ],
+      wait: false,
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+      runtime: {
+        async execute(request) {
+          runtimeCalls += 1
+          assert.deepEqual(request.input.image_with_roles, [
+            { url: 'https://example.com/end-only.png', role: 'last_frame' },
+          ])
+          return { taskId: 'task-h3-end-frame', outputs: [] }
         },
-      }),
-      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
-    )
-    assert.equal(postCalls, 0)
+      },
+      fetcher: async (url) => {
+        assert.equal(String(url), 'https://example.com/end-only.png')
+        return {
+          ok: true,
+          status: 200,
+          headers: { get() { return 'image/png' } },
+          arrayBuffer: async () => Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        }
+      },
+    })
+    assert.equal(result.mode, 'submitted')
+    assert.equal(runtimeCalls, 1)
     rmSync(dir, { recursive: true, force: true })
   })
 

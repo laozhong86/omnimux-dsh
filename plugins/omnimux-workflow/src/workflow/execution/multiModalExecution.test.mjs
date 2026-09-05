@@ -135,7 +135,7 @@ describe('Phase 0: multiModalExecution (多模态数据流与执行调度)', () 
     assert.equal(req.references[2].pathOrUrl, '/assets/frame3.png');
   });
 
-  it('测试 3：混合上游（1 文本 + 2 图片 + 1 音频） -> 文本进入 prompt，图片进入 references，音频进入 audioTrack', async () => {
+  it('测试 3：混合上游（1 文本 + 2 图片 + 1 音频） -> 音频默认保留为有序参考素材', async () => {
     /** @type {any[]} */
     const submissions = [];
     const mockGateway = {
@@ -204,15 +204,15 @@ describe('Phase 0: multiModalExecution (多模态数据流与执行调度)', () 
     assert.equal(req.prompt, 'Upstream story narrative text', '上游文本作为 prompt 回退');
     assert.equal(req.image, '/assets/character.png', '向后兼容 image 字段');
     assert.equal(req.audio, '/assets/voiceover.mp3', '向后兼容 audio 字段');
-    assert.ok(req.audioTrack, 'audioTrack 应存在');
-    assert.deepEqual(req.audioTrack, {
-      role: 'audio_track',
+    assert.equal(req.audioTrack, undefined, '未显式标为 audio_track 时不应改写参考音频角色');
+    assert.equal(req.references.length, 3, '2 张图片和 1 个参考音频均进入 references');
+    assert.equal(req.references[0].pathOrUrl, '/assets/character.png');
+    assert.equal(req.references[1].pathOrUrl, '/assets/background.png');
+    assert.deepEqual(req.references[2], {
+      role: 'reference',
       type: 'audio',
       pathOrUrl: '/assets/voiceover.mp3',
     });
-    assert.equal(req.references.length, 2, '2 张图片进入 references');
-    assert.equal(req.references[0].pathOrUrl, '/assets/character.png');
-    assert.equal(req.references[1].pathOrUrl, '/assets/background.png');
   });
 
   it('测试 4：无上游媒体纯文本 -> references 为空/undefined，prompt 正常', async () => {

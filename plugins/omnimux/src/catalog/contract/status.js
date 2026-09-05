@@ -1,11 +1,11 @@
 /**
- * Operation-level research / execution materialization and listed conjunction.
+ * Operation-level research / implementation / execution materialization and listed conjunction.
  *
  * operationListed ⇔
  *   contractComplete(op)
  *   ∧ op.research.status === 'verified'
- *   ∧ op.execution.status === 'live'
- *   ∧ adapterProfileCompatible(op)  // live profile + operations/outputTypes/seam
+ *   ∧ op.implementation.status === 'ready'
+ *   ∧ adapterProfileCompatible(op)  // ready implementation profile + operations/outputTypes/seam
  *   ∧ gateAllows(modelId, opId)
  *
  * model.listed = any(op.listed)  // summary only
@@ -13,9 +13,11 @@
  */
 
 /** @typedef {'draft'|'verified'|'rejected'} ResearchStatus */
+/** @typedef {'none'|'ready'} ImplementationStatus */
 /** @typedef {'none'|'stub'|'live'} ExecutionStatus */
 
 const RESEARCH_STATUSES = new Set(['draft', 'verified', 'rejected']);
+const IMPLEMENTATION_STATUSES = new Set(['none', 'ready']);
 const EXECUTION_STATUSES = new Set(['none', 'stub', 'live']);
 
 /**
@@ -70,7 +72,25 @@ export function normalizeExecution(raw) {
 }
 
 /**
- * Deep-copy research/execution so ops do not share mutable defaults.
+ * Adapter readiness is independent from historical execution evidence.
+ * @param {unknown} raw
+ * @returns {{ status: ImplementationStatus, profileId?: string, seam?: string, verifiedAt?: string, notes?: string }}
+ */
+export function normalizeImplementation(raw) {
+  const src = raw && typeof raw === 'object' ? /** @type {Record<string, unknown>} */ (raw) : {};
+  let status = typeof src.status === 'string' ? src.status : 'none';
+  if (!IMPLEMENTATION_STATUSES.has(status)) status = 'none';
+  return {
+    status: /** @type {ImplementationStatus} */ (status),
+    ...(typeof src.profileId === 'string' && src.profileId ? { profileId: src.profileId } : {}),
+    ...(typeof src.seam === 'string' && src.seam ? { seam: src.seam } : {}),
+    ...(typeof src.verifiedAt === 'string' && src.verifiedAt ? { verifiedAt: src.verifiedAt } : {}),
+    ...(typeof src.notes === 'string' ? { notes: src.notes } : {}),
+  };
+}
+
+/**
+ * Deep-copy status objects so ops do not share mutable defaults.
  * @param {object} value
  * @returns {object}
  */
@@ -79,10 +99,10 @@ function cloneStatusObject(value) {
 }
 
 /**
- * Materialize operation-level research/execution from op overrides + model defaults.
+ * Materialize operation-level research/implementation/execution from op overrides + model defaults.
  * @param {object} op
- * @param {{ research?: object, execution?: object, governance?: object }} modelDefaults
- * @returns {{ research: object, execution: object }}
+ * @param {{ research?: object, implementation?: object, execution?: object, governance?: object }} modelDefaults
+ * @returns {{ research: object, implementation: object, execution: object }}
  */
 export function materializeOpStatus(op, modelDefaults = {}) {
   const modelResearch = modelDefaults.research
@@ -91,6 +111,9 @@ export function materializeOpStatus(op, modelDefaults = {}) {
   const modelExecution = modelDefaults.execution
     ? cloneStatusObject(modelDefaults.execution)
     : normalizeExecution(undefined);
+  const modelImplementation = modelDefaults.implementation
+    ? cloneStatusObject(modelDefaults.implementation)
+    : normalizeImplementation(undefined);
 
   const research =
     op.research != null
@@ -119,7 +142,20 @@ export function materializeOpStatus(op, modelDefaults = {}) {
     execution = cloneStatusObject(modelExecution);
   }
 
-  return { research, execution };
+  let implementation;
+  if (op.implementation != null) {
+    implementation = normalizeImplementation(op.implementation);
+    if (!implementation.profileId && modelImplementation.profileId) {
+      implementation.profileId = modelImplementation.profileId;
+    }
+    if (!implementation.seam && modelImplementation.seam) {
+      implementation.seam = modelImplementation.seam;
+    }
+  } else {
+    implementation = cloneStatusObject(modelImplementation);
+  }
+
+  return { research, implementation, execution };
 }
 
 /**
@@ -152,8 +188,8 @@ export function adapterProfileExists(profiles, profileId) {
  * @returns {{ ok: boolean, reason?: string, profile?: object|null }}
  */
 export function adapterProfileCompatible(op, profiles) {
-  const execution = op?.execution ?? {};
-  const profileId = execution.profileId;
+  const implementation = op?.implementation ?? {};
+  const profileId = implementation.profileId;
   if (!profileId || typeof profileId !== 'string') {
     return { ok: false, reason: 'missing profileId', profile: null };
   }
@@ -186,11 +222,11 @@ export function adapterProfileCompatible(op, profiles) {
 
   // Seam consistency: if both declare seam, they must match; null profile.seam only ok for unavailable
   const profileSeam = profile.seam ?? null;
-  const opSeam = typeof execution.seam === 'string' ? execution.seam : undefined;
+  const opSeam = typeof implementation.seam === 'string' ? implementation.seam : undefined;
   if (opSeam && profileSeam && opSeam !== profileSeam) {
     return {
       ok: false,
-      reason: `op.seam "${opSeam}" !== profile.seam "${profileSeam}"`,
+      reason: `implementation.seam "${opSeam}" !== profile.seam "${profileSeam}"`,
       profile,
     };
   }
@@ -242,12 +278,12 @@ export function computeOperationListed(op, modelId, profiles, opts = {}) {
   if (!contractComplete) return false;
 
   const research = op.research ?? normalizeResearch(undefined);
-  const execution = op.execution ?? normalizeExecution(undefined);
+  const implementation = op.implementation ?? normalizeImplementation(undefined);
 
   if (research.status !== 'verified') return false;
-  if (execution.status !== 'live') return false;
+  if (implementation.status !== 'ready') return false;
 
-  const compat = adapterProfileCompatible({ ...op, research, execution }, profiles);
+  const compat = adapterProfileCompatible({ ...op, research, implementation }, profiles);
   if (!compat.ok) return false;
 
   if (!gateAllowsModel(modelId, op.id, opts.gateAllows)) return false;
@@ -276,8 +312,8 @@ export function computeListed(model, profiles, opts = {}) {
     const contractComplete = opts.contractComplete !== false;
     if (!contractComplete) return false;
     if (virtual.research?.status !== 'verified') return false;
-    if (virtual.execution?.status !== 'live') return false;
-    if (!adapterProfileExists(profiles, virtual.execution?.profileId)) return false;
+    if (model.implementation?.status !== 'ready') return false;
+    if (!adapterProfileExists(profiles, model.implementation?.profileId)) return false;
     if (!gateAllowsModel(model.id, undefined, opts.gateAllows)) return false;
     return true;
   }
@@ -314,4 +350,5 @@ export function researchHasEvidence(research) {
 }
 
 export const RESEARCH_STATUS_SET = RESEARCH_STATUSES;
+export const IMPLEMENTATION_STATUS_SET = IMPLEMENTATION_STATUSES;
 export const EXECUTION_STATUS_SET = EXECUTION_STATUSES;

@@ -19,6 +19,10 @@ models:
         research:
           status: "verified"
           docUrl: "https://example.com/fixture-chat"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
         execution:
           status: "live"
           profileId: "textComplete"

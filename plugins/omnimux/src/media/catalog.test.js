@@ -58,32 +58,32 @@ describe('hub media catalog facade (contract-derived)', () => {
     const grok = VIDEO_MODEL_SPECS.find((m) => m.id === 'grok-imagine-video-1-5')
     assert.ok(grok)
     assert.equal(grok.label, 'Grok Imagine Video 1.5')
-    assert.equal(grok.badge, 'xAI Grok')
-    assert.equal(grok.subtitle, '720P-1080P · ⏱ 5s')
+    assert.equal(grok.badge, 'xAI 官方 1.5')
+    assert.equal(grok.subtitle, '480p–1080p · 1–15s')
     assert.equal(grok.family, 'grok')
-    assert.equal(grok.parameters.duration?.defaultValue, 5)
-    assert.equal(grok.parameters.resolution?.defaultValue, '1080P')
+    assert.equal(grok.parameters.duration?.defaultValue, 8)
+    assert.equal(grok.parameters.resolution?.defaultValue, '480p')
     assert.equal(VIDEO_MODEL_SPECS.some((row) => row.id === 'grok-imagine-video'), false)
     assert.equal(VIDEO_MODEL_SPECS.some((row) => row.id === 'grok-imagine-video-1.5'), false)
     assert.equal(findMediaModel('video', 'grok-imagine-video-1-5')?.id, 'grok-imagine-video-1-5')
   })
 
-  it('Grok video multi-ref reconciled to the stricter max 1 (policy_conservative)', () => {
+  it('Grok video keeps the unpublished reference-image maximum unknown', () => {
     const grok = VIDEO_MODEL_SPECS.find((m) => m.id === 'grok-imagine-video-1-5')
     const multiRef = grok && findOpSlots(grok)
     assert.ok(multiRef)
-    assert.equal(multiRef.max, 1)
+    assert.equal(multiRef.max, null)
   })
 
-  it('Seedance multi-ref: fast max 2 measured; 2.5 max 1 measured', () => {
+  it('Seedance multi-ref uses APIMart documented image limits', () => {
     const fast = VIDEO_MODEL_SPECS.find((m) => m.id === 'seedance-2-0-fast')
     const slot = fast && findOpSlots(fast)
     assert.ok(slot)
-    assert.equal(slot.max, 2)
+    assert.equal(slot.max, 9)
     const s25 = VIDEO_MODEL_SPECS.find((m) => m.id === 'seedance-2-5')
     const slot25 = s25 && findOpSlots(s25)
     assert.ok(slot25)
-    assert.equal(slot25.max, 1)
+    assert.equal(slot25.max, 30)
   })
 
   it('Wan 3.0 video spec and alias lookup', () => {
@@ -92,8 +92,9 @@ describe('hub media catalog facade (contract-derived)', () => {
     assert.equal(wan3.label, 'Wan 3.0')
     assert.equal(wan3.family, 'wan')
     assert.equal(findMediaModel('video', 'wan-3.0')?.id, 'wan-3.0')
-    assert.equal(findMediaModel('video', 'wan3.0')?.id, 'wan-3.0')
-    assert.equal(findMediaModel('video', 'wan_3_0')?.id, 'wan-3.0')
+    assert.equal(findMediaModel('video', 'wan3.0-video')?.id, 'wan-3.0')
+    assert.equal(findMediaModel('video', 'wan3.0'), null)
+    assert.equal(findOpSlots(wan3)?.max, 10)
   })
 
   it('audio table includes suno and gpt-4o-mini-tts', () => {

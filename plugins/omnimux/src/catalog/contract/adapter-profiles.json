@@ -27,36 +27,49 @@
       "id": "videoGenerate",
       "seam": "videoGenerate",
       "status": "live",
-      "operations": ["text_to_video", "first_frame", "first_last_frame", "end_frame", "video_multi_ref", "video_edit"],
+      "operations": ["text_to_video", "first_frame", "first_last_frame", "end_frame", "video_multi_ref", "video_edit", "video_extend", "document_to_video", "webpage_to_video"],
       "outputTypes": ["video"],
-      "logicalFields": ["prompt", "image", "references", "image_tail", "duration", "aspectRatio", "resolution"],
-      "vendorFields": ["prompt", "image", "image_tail", "reference_images", "duration", "aspect_ratio", "resolution"],
-      "forbiddenVendorFields": ["images", "references", "audioTrack", "metadata", "speech", "audio", "voice", "style"],
+      "logicalFields": ["prompt", "references", "duration", "aspectRatio", "resolution", "sound", "seed", "watermark", "outputFormat", "referenceTaskType", "generationType", "returnLastFrame", "webSearch", "nsfwCheck", "fileUrl", "linkUrl"],
+      "vendorFields": ["operation", "prompt", "image_with_roles", "image_urls", "video_urls", "audio_urls", "file_url", "link_url", "duration", "size", "aspect_ratio", "resolution", "generate_audio", "audio", "seed", "watermark", "output_format", "omni_reference_task_type", "generation_type", "return_last_frame", "tools", "nsfw_check"],
+      "forbiddenVendorFields": ["images", "references", "audioTrack", "metadata", "speech", "voice", "style", "image", "image_tail", "reference_images"],
       "unknownFieldPolicy": "reject",
       "operationVendorShapes": {
         "text_to_video": {
-          "allow": ["prompt", "duration", "aspect_ratio", "resolution"]
+          "allow": ["operation", "prompt", "duration", "size", "aspect_ratio", "resolution", "generate_audio", "audio", "seed", "watermark", "output_format", "return_last_frame", "tools", "nsfw_check"]
         },
         "first_frame": {
-          "allow": ["prompt", "image", "duration", "aspect_ratio", "resolution"],
-          "require": ["image"]
+          "allow": ["operation", "prompt", "image_with_roles", "duration", "size", "aspect_ratio", "resolution", "generate_audio", "audio", "seed", "watermark", "output_format", "generation_type", "return_last_frame", "tools", "nsfw_check"],
+          "require": ["image_with_roles"]
         },
         "first_last_frame": {
-          "allow": ["prompt", "image", "image_tail", "duration", "aspect_ratio", "resolution"],
-          "require": ["image", "image_tail"]
+          "allow": ["operation", "prompt", "image_with_roles", "duration", "size", "aspect_ratio", "resolution", "generate_audio", "audio", "seed", "watermark", "output_format", "generation_type", "return_last_frame", "tools", "nsfw_check"],
+          "require": ["image_with_roles"]
         },
         "end_frame": {
-          "allow": ["prompt", "image_tail", "duration", "aspect_ratio", "resolution"],
-          "require": ["image_tail"]
+          "allow": ["operation", "prompt", "image_with_roles", "duration", "size", "aspect_ratio", "resolution", "generate_audio", "audio", "seed", "watermark", "output_format", "generation_type", "return_last_frame", "tools", "nsfw_check"],
+          "require": ["image_with_roles"]
         },
         "video_multi_ref": {
-          "allow": ["prompt", "reference_images", "duration", "aspect_ratio", "resolution"]
+          "allow": ["operation", "prompt", "image_urls", "video_urls", "audio_urls", "duration", "size", "aspect_ratio", "resolution", "generate_audio", "audio", "seed", "watermark", "output_format", "omni_reference_task_type", "generation_type", "return_last_frame", "tools", "nsfw_check"]
         },
         "video_edit": {
-          "allow": ["prompt", "image", "reference_images", "duration", "aspect_ratio", "resolution"]
+          "allow": ["operation", "prompt", "image_urls", "video_urls", "audio_urls", "duration", "size", "aspect_ratio", "resolution", "generate_audio", "audio", "seed", "watermark", "output_format", "omni_reference_task_type", "generation_type", "return_last_frame", "tools", "nsfw_check"],
+          "require": ["video_urls"]
+        },
+        "video_extend": {
+          "allow": ["operation", "prompt", "image_urls", "video_urls", "audio_urls", "duration", "size", "aspect_ratio", "resolution", "generate_audio", "audio", "seed", "watermark", "output_format", "omni_reference_task_type", "return_last_frame", "tools", "nsfw_check"],
+          "require": ["video_urls"]
+        },
+        "document_to_video": {
+          "allow": ["operation", "prompt", "file_url", "duration", "size", "aspect_ratio", "resolution", "generate_audio", "audio", "seed", "watermark", "generation_type", "nsfw_check"],
+          "require": ["file_url"]
+        },
+        "webpage_to_video": {
+          "allow": ["operation", "prompt", "link_url", "duration", "size", "aspect_ratio", "resolution", "generate_audio", "audio", "seed", "watermark", "generation_type", "nsfw_check"],
+          "require": ["link_url"]
         }
       },
-      "notes": "不含 digital_human；first_frame 仅 image；end_frame 仅 image_tail；multi_ref 仅 reference_images；FLF 为 image+image_tail"
+      "notes": "APIMart 文档字段；帧输入使用 image_with_roles，参考输入按 image/video/audio_urls 分组；文档与网页互斥。"
     },
     {
       "id": "audioGenerate",

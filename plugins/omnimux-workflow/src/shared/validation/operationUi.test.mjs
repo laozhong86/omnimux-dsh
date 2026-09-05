@@ -140,7 +140,7 @@ describe('filtered model list (Hide, Don\'t Grey)', () => {
       outputType: 'video',
     });
     const ids = result.options.map((o) => o.id);
-    assert.deepEqual(ids, ['vid-frames']);
+    assert.deepEqual(ids, ['vid-frames', 'vid-endframe']);
     assert.ok(!ids.includes('img-ref'));
     assert.ok(!ids.includes('aud-tts'));
   });

@@ -22,6 +22,8 @@ import {
   Image as ImageIcon,
   X,
   AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import type { MaterialNodeData } from '../../../../types/materialNode';
 import { resolveNodeKind } from '../../../../types/materialNode';
@@ -37,8 +39,9 @@ import GenerateButton from './GenerateButton';
 import { VideoTriggerBar } from './videoParams/VideoTriggerBar';
 import { VideoParamPopover } from './videoParams/VideoParamPopover';
 import {
+  buildVideoParamTransition,
   resolveEffectiveVideoParams,
-  validateAndFallbackVideoParams,
+  validateVideoParamsForUi,
 } from './videoParams/videoParamAdapter';
 import {
   buildEffectiveOpsUiState,
@@ -110,6 +113,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [videoPopoverOpen, setVideoPopoverOpen] = useState(false);
+  const [videoParamNotices, setVideoParamNotices] = useState<string[]>([]);
   const videoTriggerRef = useRef<HTMLDivElement | null>(null);
 
   const upstreams = useUpstreamMedia(nodeId);
@@ -169,10 +173,10 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
   );
 
   const handleUnbind = useCallback(
-    (upstreamNodeId: string) => {
+    (upstreamNodeId: string, edgeId?: string) => {
       const state = useCanvasStore.getState();
       const edgeIdsToRemove = state.edges
-        .filter((edge) => edge.target === nodeId && edge.source === upstreamNodeId)
+        .filter((edge) => edge.target === nodeId && (edgeId ? edge.id === edgeId : edge.source === upstreamNodeId))
         .map((edge) => edge.id);
       if (edgeIdsToRemove.length > 0) {
         state.applyCanvasInputMutation({ removeEdgeIds: edgeIdsToRemove });
@@ -180,6 +184,24 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     },
     [nodeId],
   );
+
+  const handleMoveUpstream = useCallback((edgeId: string, direction: -1 | 1) => {
+    const state = useCanvasStore.getState();
+    const inbound = state.edges.filter((edge) => edge.target === nodeId);
+    const index = inbound.findIndex((edge) => edge.id === edgeId);
+    const other = inbound[index + direction];
+    const current = inbound[index];
+    if (!current || !other) return;
+    const currentIndex = state.edges.findIndex((edge) => edge.id === current.id);
+    const otherIndex = state.edges.findIndex((edge) => edge.id === other.id);
+    if (currentIndex < 0 || otherIndex < 0) return;
+    state.pushHistory();
+    state.setEdges((edges) => {
+      const next = [...edges];
+      [next[currentIndex], next[otherIndex]] = [next[otherIndex]!, next[currentIndex]!];
+      return next;
+    });
+  }, [nodeId]);
 
   // Fingerprint for the current node (prompt + upstream media metadata).
   const fingerprint = useMemo(
@@ -245,16 +267,32 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
   const updateParam = useCallback(
     (key: string, value: unknown) => {
       if (key === 'operation') {
-        const next = setParamsOperation(
-          params as Record<string, unknown>,
-          typeof value === 'string' ? value : undefined,
-        );
-        onUpdateNodeData({ params: next });
+        if (materialType === 'video' && modelItem) {
+          const transition = buildVideoParamTransition(
+            params as Record<string, unknown>,
+            modelItem,
+            {
+              catalog: activeCatalog,
+              upstreams: upstreamSnapshots,
+              prompt,
+              nextOperationId: typeof value === 'string' ? value : undefined,
+            },
+          );
+          setVideoParamNotices(transition.notices);
+          onUpdateNodeData({ params: transition.params });
+        } else {
+          const next = setParamsOperation(
+            params as Record<string, unknown>,
+            typeof value === 'string' ? value : undefined,
+          );
+          onUpdateNodeData({ params: next });
+        }
         return;
       }
+      setVideoParamNotices([]);
       onUpdateNodeData({ params: { ...params, [key]: value } });
     },
-    [onUpdateNodeData, params],
+    [activeCatalog, materialType, modelItem, onUpdateNodeData, params, prompt, upstreamSnapshots],
   );
 
   // Effective ops for the currently selected model (all modalities).
@@ -297,7 +335,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
         });
         return;
       }
-      const nextParams = validateAndFallbackVideoParams(
+      const transition = buildVideoParamTransition(
         params as Record<string, unknown>,
         newModelItem,
         {
@@ -306,7 +344,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
           prompt,
         },
       );
-      onUpdateNodeData({ params: nextParams });
+      setVideoParamNotices(transition.notices);
+      onUpdateNodeData({ params: transition.params });
     },
     [activeCatalog, materialType, onUpdateNodeData, params, upstreamSnapshots, prompt],
   );
@@ -339,6 +378,17 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       ? params.duration
       : defaultDuration;
 
+  const videoValidationErrors = useMemo(
+    () => materialType === 'video' && videoEffectiveParams
+      ? validateVideoParamsForUi({
+          prompt,
+          params: videoEffectiveParams,
+          upstreams: upstreamSnapshots,
+        })
+      : [],
+    [materialType, prompt, upstreamSnapshots, videoEffectiveParams],
+  );
+
   // Generate gate: blocked when zero effective ops / zero candidates / configuration_error.
   const nodeCompat = (nodeData as Record<string, unknown>).compat as
     | { status?: string; readyToSubmit?: boolean; reasonCodes?: string[] }
@@ -347,10 +397,12 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     opsState.blockGenerate
     || filteredModels.zeroCandidates
     || nodeCompat?.status === 'configuration_error'
+    || videoValidationErrors.length > 0
     || execBusy;
   const blockReason =
     opsState.reasonMessage
     || filteredModels.reasonMessage
+    || videoValidationErrors[0]
     || (nodeCompat?.status === 'configuration_error'
       ? '节点配置错误：当前输入没有可兼容的已上架模型'
       : undefined);
@@ -409,14 +461,28 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
         </div>
       ) : null}
 
+      {videoValidationErrors.length > 0 && !opsState.blockGenerate && !showEmptyModels ? (
+        <div className="wf-config-panel__validation-list" role="alert" data-testid="wf-video-validation-errors">
+          <AlertTriangle size={14} aria-hidden="true" />
+          <span>{videoValidationErrors.join('；')}</span>
+        </div>
+      ) : null}
+
+      {videoParamNotices.length > 0 ? (
+        <div className="wf-config-panel__param-notice" role="status" data-testid="wf-video-param-notice">
+          <AlertTriangle size={14} aria-hidden="true" />
+          <span>{videoParamNotices.join('；')}</span>
+        </div>
+      ) : null}
+
       {/* 2. Prompt 输入区容器 */}
       <div className="wf-config-panel__prompt-container">
         <div className="wf-config-panel__prompt-header">
           {upstreams.length > 0 || onOpenResourcePicker ? (
             <div className="wf-config-panel__ref-slots-group" data-testid="wf-slot-cards">
-              {upstreams.map((item) => (
+              {upstreams.map((item, index) => (
                 <div
-                  key={item.nodeId}
+                  key={item.edgeId ?? item.nodeId}
                   className={`wf-config-panel__ref-thumb-slot ${
                     item.hasMedia ? 'wf-config-panel__ref-thumb-slot--ready' : ''
                   }`}
@@ -424,6 +490,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                   data-mime={item.mimeType ?? 'unknown'}
                   data-size-bytes={item.sizeBytes ?? 'unknown'}
                   data-duration-sec={item.durationSec ?? 'unknown'}
+                  data-reference-order={index + 1}
+                  data-reference-role={item.role ?? 'auto'}
                 >
                   {item.url && item.materialType === 'image' ? (
                     <img
@@ -452,6 +520,37 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
                   {item.hasMedia && <span className="wf-config-panel__ref-thumb-dot" />}
 
+                  <span className="wf-config-panel__ref-thumb-order" title={item.role ?? `素材 ${index + 1}`}>
+                    {item.role === 'first_frame' ? '首' : item.role === 'last_frame' ? '尾' : index + 1}
+                  </span>
+
+                  {item.edgeId && upstreams.length > 1 ? (
+                    <span className="wf-config-panel__ref-thumb-sort">
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        aria-label={`将素材 ${index + 1} 前移`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleMoveUpstream(item.edgeId!, -1);
+                        }}
+                      >
+                        <ArrowLeft size={8} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === upstreams.length - 1}
+                        aria-label={`将素材 ${index + 1} 后移`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleMoveUpstream(item.edgeId!, 1);
+                        }}
+                      >
+                        <ArrowRight size={8} />
+                      </button>
+                    </span>
+                  ) : null}
+
                   <button
                     type="button"
                     className="wf-config-panel__ref-thumb-unbind nodrag"
@@ -459,7 +558,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                     aria-label={t('edge.disconnect')}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleUnbind(item.nodeId);
+                      handleUnbind(item.nodeId, item.edgeId);
                     }}
                   >
                     <X size={8} />
@@ -632,7 +731,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
         <VideoParamPopover
           triggerRef={videoTriggerRef as React.RefObject<HTMLElement>}
           params={videoEffectiveParams}
-          schema={schema}
+          schema={videoEffectiveParams.schema}
           modelItem={modelItem}
           isOpen={videoPopoverOpen}
           onClose={() => setVideoPopoverOpen(false)}

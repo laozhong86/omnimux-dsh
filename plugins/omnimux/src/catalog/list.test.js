@@ -50,7 +50,15 @@ describe('buildModelCatalog (H2 contract projection)', () => {
 
     // four lists derive ONLY from listed ops' output.type
     assert.deepEqual(catalog.image.map((row) => row.id).sort(), ['gpt-image-2', 'grok-imagine-image'])
-    assert.deepEqual(catalog.video.map((row) => row.id), ['seedance-2-0', 'seedance-2-0-fast', 'seedance-2-0-mini', 'seedance-2-5'])
+    assert.deepEqual(catalog.video.map((row) => row.id), [
+      'grok-imagine-video-1-5',
+      'minimax-h3',
+      'seedance-2-0',
+      'seedance-2-0-fast',
+      'seedance-2-0-mini',
+      'seedance-2-5',
+      'wan-3.0',
+    ])
     assert.deepEqual(catalog.audio, [])
     // #530 PR-A: 11 text models with verified+live chat/vision_chat enter text bucket
     assert.deepEqual(catalog.text.map((row) => row.id), [

@@ -11,6 +11,7 @@ import { createCompatTestCatalog } from '../../../../../../shared/validation/com
 import {
   resolveEffectiveVideoParams,
   validateAndFallbackVideoParams,
+  validateVideoParamsForUi,
 } from './videoParamAdapter.ts';
 
 const catalog = createCompatTestCatalog();
@@ -138,14 +139,14 @@ describe('videoParamAdapter - validateAndFallbackVideoParams (W2)', () => {
     assert.equal(next.sound, true);
   });
 
-  it('target schema without resolution/sound deletes those fields', () => {
+  it('target schema without resolution/sound keeps dormant values for a reversible switch', () => {
     const next = validateAndFallbackVideoParams(
       { model: 'vid-frames', operation: 'text_to_video', aspectRatio: '16:9', duration: 5, resolution: '4K', sound: true },
       veoItem,
       { catalog },
     );
-    assert.equal('resolution' in next, false);
-    assert.equal('sound' in next, false);
+    assert.equal(next.resolution, '4K');
+    assert.equal(next.sound, true);
     assert.equal(next.duration, 5);
   });
 
@@ -159,4 +160,102 @@ describe('videoParamAdapter - validateAndFallbackVideoParams (W2)', () => {
   });
 
 
+});
+
+describe('videoParamAdapter - immediate combined-duration validation', () => {
+  const params = {
+    model: 'wan-3.0',
+    operation: 'video_multi_ref',
+    operationLabel: '全能参考生视频',
+    effectiveOperations: [
+      {
+        id: 'video_multi_ref',
+        label: '全能参考生视频',
+        slots: [
+          {
+            slot: 'reference_videos',
+            type: 'video',
+            role: 'reference',
+            source: 'upstream_edge',
+            min: 1,
+            max: 5,
+            combinedOutputMaxDurationSec: 30,
+          },
+        ],
+        bindings: [
+          {
+            edgeId: 'edge-video',
+            sourceNodeId: 'video-1',
+            slot: 'reference_videos',
+            role: 'reference',
+            type: 'video',
+          },
+        ],
+        effective: true,
+        ready: true,
+      },
+    ],
+    showModeUi: false,
+    schema: {},
+    aspectRatio: '16:9',
+    duration: 15,
+    sound: true,
+    hasSoundSupport: true,
+  };
+
+  it('accepts a 15s reference plus 15s output', () => {
+    assert.deepEqual(validateVideoParamsForUi({
+      params,
+      upstreams: [{ nodeId: 'video-1', edgeId: 'edge-video', materialType: 'video', durationSec: 15 }],
+    }), []);
+  });
+
+  it('blocks a 16s reference plus 15s output', () => {
+    assert.deepEqual(validateVideoParamsForUi({
+      params,
+      upstreams: [{ nodeId: 'video-1', edgeId: 'edge-video', materialType: 'video', durationSec: 16 }],
+    }), ['参考视频与输出时长合计不能超过 30 秒']);
+  });
+});
+
+describe('videoParamAdapter - document URL validation', () => {
+  const baseParams = {
+    model: 'wan-3.0',
+    operation: 'document_to_video',
+    operationLabel: '文档参考生视频',
+    effectiveOperations: [{
+      id: 'document_to_video',
+      label: '文档参考生视频',
+      slots: [{
+        slot: 'file_url',
+        type: 'document',
+        role: 'document',
+        source: 'node_field',
+        min: 1,
+        max: 1,
+        allowedMimes: ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+      }],
+      bindings: [],
+      effective: true,
+      ready: true,
+    }],
+    showModeUi: true,
+    schema: {},
+    aspectRatio: '16:9',
+    duration: 5,
+    sound: true,
+    hasSoundSupport: true,
+  };
+
+  it('accepts a documented file extension and preserves signed query parameters', () => {
+    assert.deepEqual(validateVideoParamsForUi({
+      params: { ...baseParams, fileUrl: 'https://cdn.example.com/deck.pptx?signature=fixed' },
+    }), []);
+  });
+
+  it('blocks a document extension outside the contract MIME list', () => {
+    assert.deepEqual(validateVideoParamsForUi({
+      params: { ...baseParams, fileUrl: 'https://cdn.example.com/archive.zip' },
+    }), ['文档格式不在当前模型支持列表']);
+  });
 });

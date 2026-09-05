@@ -32,6 +32,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-claude-opus-5-chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 token45：/v1/chat/completions 200 live（历史 chat-completions 403 已解除于本 key）"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -41,6 +46,11 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-09-05-model-claude-opus-5-chat.md"
       verifiedAt: "2026-09-05"
+    implementation:
+      status: "ready"
+      profileId: "textComplete"
+      seam: "textComplete"
+      notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
     execution:
       status: "live"
       profileId: "textComplete"
@@ -67,6 +77,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-claude-opus-4-6-chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -99,6 +114,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-claude-opus-4-6-vision_chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -108,6 +128,11 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-09-05-model-claude-opus-4-6-chat.md"
       verifiedAt: "2026-09-05"
+    implementation:
+      status: "ready"
+      profileId: "textComplete"
+      seam: "textComplete"
+      notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
     execution:
       status: "live"
       profileId: "textComplete"
@@ -134,6 +159,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-gpt-5.6-sol-chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -166,6 +196,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-gpt-5.6-sol-vision_chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -175,6 +210,11 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-09-05-model-gpt-5.6-sol-chat.md"
       verifiedAt: "2026-09-05"
+    implementation:
+      status: "ready"
+      profileId: "textComplete"
+      seam: "textComplete"
+      notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
     execution:
       status: "live"
       profileId: "textComplete"
@@ -201,6 +241,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-gpt-5.5-chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 live；请求 reasoning_effort=low"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -233,6 +278,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-gpt-5.5-vision_chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -242,6 +292,11 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-09-05-model-gpt-5.5-chat.md"
       verifiedAt: "2026-09-05"
+    implementation:
+      status: "ready"
+      profileId: "textComplete"
+      seam: "textComplete"
+      notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
     execution:
       status: "live"
       profileId: "textComplete"
@@ -268,6 +323,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-grok-4.6-chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -300,6 +360,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-grok-4.6-vision_chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -309,6 +374,11 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-09-05-model-grok-4.6-chat.md"
       verifiedAt: "2026-09-05"
+    implementation:
+      status: "ready"
+      profileId: "textComplete"
+      seam: "textComplete"
+      notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
     execution:
       status: "live"
       profileId: "textComplete"
@@ -335,6 +405,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-kimi-k3-chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -367,6 +442,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-kimi-k3-vision_chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -376,6 +456,11 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-09-05-model-kimi-k3-chat.md"
       verifiedAt: "2026-09-05"
+    implementation:
+      status: "ready"
+      profileId: "textComplete"
+      seam: "textComplete"
+      notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
     execution:
       status: "live"
       profileId: "textComplete"
@@ -402,6 +487,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-deepseek-v4-pro-chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -411,6 +501,11 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-09-05-model-deepseek-v4-pro-chat.md"
       verifiedAt: "2026-09-05"
+    implementation:
+      status: "ready"
+      profileId: "textComplete"
+      seam: "textComplete"
+      notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
     execution:
       status: "live"
       profileId: "textComplete"
@@ -437,6 +532,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-deepseek-v4-flash-vision-exp-chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 独立 live；小 max_tokens 时 reasoning 占满 content 空，max_tokens≥256 得 pong"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -469,6 +569,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-deepseek-v4-flash-vision-exp-vision_chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 独立 vision-exp live（禁止继承 deepseek-v4-flash）；PNG/JPEG/WebP 识别 red"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -478,6 +583,11 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-09-05-model-deepseek-v4-flash-vision-exp-chat.md"
       verifiedAt: "2026-09-05"
+    implementation:
+      status: "ready"
+      profileId: "textComplete"
+      seam: "textComplete"
+      notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
     execution:
       status: "live"
       profileId: "textComplete"
@@ -504,6 +614,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-gemini-3.7-flash-chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -547,6 +662,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-gemini-3.7-flash-vision_chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 image live；video 槽未本批证实，保持 policy_conservative"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -556,6 +676,11 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-09-05-model-gemini-3.7-flash-chat.md"
       verifiedAt: "2026-09-05"
+    implementation:
+      status: "ready"
+      profileId: "textComplete"
+      seam: "textComplete"
+      notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
     execution:
       status: "live"
       profileId: "textComplete"
@@ -582,6 +707,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-gemini-3.1-pro-preview-chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -614,6 +744,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-gemini-3.1-pro-preview-vision_chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -623,6 +758,11 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-09-05-model-gemini-3.1-pro-preview-chat.md"
       verifiedAt: "2026-09-05"
+    implementation:
+      status: "ready"
+      profileId: "textComplete"
+      seam: "textComplete"
+      notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
     execution:
       status: "live"
       profileId: "textComplete"
@@ -649,6 +789,11 @@ models:
           docUrl: "docs/evidence/2026-09-05-model-glm-5.3-chat.md"
           verifiedAt: "2026-09-05"
           notes: "2026-09-05 #530 PR-A live 四要素齐全"
+        implementation:
+          status: "ready"
+          profileId: "textComplete"
+          seam: "textComplete"
+          notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
         execution:
           status: "live"
           profileId: "textComplete"
@@ -658,6 +803,11 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-09-05-model-glm-5.3-chat.md"
       verifiedAt: "2026-09-05"
+    implementation:
+      status: "ready"
+      profileId: "textComplete"
+      seam: "textComplete"
+      notes: "迁移既有已落地适配；与历史 execution 证据分开记录"
     execution:
       status: "live"
       profileId: "textComplete"
