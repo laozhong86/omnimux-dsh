@@ -14,15 +14,17 @@
  */
 
 import { spawnSync } from 'node:child_process'
+import assert from 'node:assert/strict'
 import {
   existsSync,
   readFileSync,
   readdirSync,
   writeFileSync,
 } from 'node:fs'
-import { extname, isAbsolute, join, resolve, sep } from 'node:path'
+import { extname, join, resolve, sep } from 'node:path'
 import { maskNonCode, normalizedRelative, staticScan } from './auto-qa-scan.mjs'
 import { isForbiddenWorkflowArtifact } from './check-tracked-artifacts.mjs'
+import { validateLiveQaReport } from './live-qa-validation.mjs'
 
 export { maskNonCode }
 
@@ -39,6 +41,7 @@ export function parseArgs(argv = process.argv.slice(2)) {
     requireBrowser: false,
     evidenceDir: '',
     output: '',
+    browserRunId: '', browserStage: '', browserTarget: '', browserRoot: '',
   }
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]
@@ -46,6 +49,10 @@ export function parseArgs(argv = process.argv.slice(2)) {
     else if (arg === '--base' && argv[i + 1]) options.base = argv[++i]
     else if (arg === '--evidence-dir' && argv[i + 1]) options.evidenceDir = resolve(argv[++i])
     else if (arg === '--output' && argv[i + 1]) options.output = resolve(argv[++i])
+    else if (arg === '--browser-run-id' && argv[i + 1]) options.browserRunId = argv[++i]
+    else if (arg === '--browser-stage' && argv[i + 1]) options.browserStage = argv[++i]
+    else if (arg === '--browser-target' && argv[i + 1]) options.browserTarget = argv[++i]
+    else if (arg === '--browser-root' && argv[i + 1]) options.browserRoot = resolve(argv[++i])
     else if (arg === '--json') options.outputJson = true
     else if (arg === '--diff') options.diff = true
     else if (arg === '--require-browser') options.requireBrowser = true
@@ -170,38 +177,34 @@ export function createReport(options) {
       required: options.requireBrowser,
       pass: !options.requireBrowser,
       evidenceDir: options.evidenceDir || null,
-      errors: options.requireBrowser ? ['未提供 ego-browser evidence'] : [],
+      errors: options.requireBrowser ? ['未提供 Codex IAB live QA evidence'] : [],
     },
     summary: '',
   }
 }
 
-export function validateBrowserEvidence(evidenceDir) {
+export function validateBrowserEvidence(evidenceDir, expected = {}) {
   const result = { pass: false, errors: [], report: null }
   if (!evidenceDir) {
-    result.errors.push('未提供 ego-browser evidence 目录')
+    result.errors.push('未提供 Codex IAB live QA evidence 目录')
     return result
   }
-  const reportPath = join(evidenceDir, 'ego-browser-report.json')
+  const reportPath = join(evidenceDir, 'live-qa-report.json')
+  const requestPath = join(evidenceDir, 'codex-browser-qa-request.json')
   if (!existsSync(reportPath)) {
     result.errors.push(`缺少 ${reportPath}`)
     return result
   }
   try {
     const browserReport = JSON.parse(readFileSync(reportPath, 'utf8'))
+    const request = JSON.parse(readFileSync(requestPath, 'utf8'))
     result.report = browserReport
-    const screenshot = browserReport.screenshot
-      ? (isAbsolute(browserReport.screenshot) ? browserReport.screenshot : join(evidenceDir, browserReport.screenshot))
-      : null
-    if (browserReport.tool !== 'ego-browser') result.errors.push('证据工具不是 ego-browser')
-    if (!browserReport.pass) result.errors.push('ego-browser 报告结论不是 pass')
-    if (!browserReport.taskSpaceId) result.errors.push('缺少 task space id')
-    if (!/^https?:\/\//.test(browserReport.actualUrl || '')) result.errors.push('缺少真实 L2 URL')
-    if (!(browserReport.snapshot || '').trim()) result.errors.push('缺少 snapshotText 语义证据')
-    if (!browserReport.dom) result.errors.push('缺少 DOM 断言证据')
-    if (!screenshot || !existsSync(screenshot)) result.errors.push('缺少 captureScreenshot 截图工件')
+    const root = expected.root || gitRoot(evidenceDir)
+    assert.ok(root, 'Cannot resolve current worktree for browser evidence')
+    assert.ok(expected.runId && expected.stage && expected.target, 'Browser evidence requires the current expected run ID, Stage, and target')
+    validateLiveQaReport(browserReport, request, { ...expected, root })
   } catch (error) {
-    result.errors.push(`无法解析 ego-browser 报告：${error.message}`)
+    result.errors.push(`无法解析 Codex IAB 报告：${error.message}`)
   }
   result.pass = result.errors.length === 0
   return result
@@ -226,7 +229,7 @@ export function runGate(options) {
     report.browser = {
       required: true,
       evidenceDir: options.evidenceDir || null,
-      ...validateBrowserEvidence(options.evidenceDir),
+      ...validateBrowserEvidence(options.evidenceDir, { root: options.browserRoot || root, runId: options.browserRunId, stage: options.browserStage, target: options.browserTarget }),
     }
   } else {
     report.browser = {
