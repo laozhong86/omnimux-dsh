@@ -1172,9 +1172,9 @@ th[style*="--pub-min-w"] { min-width: var(--pub-min-w); }
   padding: 8px 10px;
   border-radius: 8px;
   font-size: 12px;
-  color: var(--dsw-alias-state-error-text, #dc2626);
-  background: var(--dsw-alias-state-error-subtle, rgba(239, 68, 68, 0.12));
-  border: 1px solid var(--dsw-alias-state-error, #ef4444);
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover-danger);
+  border: 1px solid var(--dsw-alias-state-error-primary);
 }
 `
 

@@ -89,6 +89,17 @@ describe('publish composer type-pick styles (layout regression)', () => {
     }
   })
 
+  it('uses defined native tokens for readable account-modal errors', () => {
+    ensureCss()
+    const css = String(stub.appended[0].textContent)
+    const match = css.match(/\.omnimux-publish-accounts-modal-error\s*\{([^}]*)\}/)
+    assert.ok(match, 'missing account-modal error style')
+    assert.match(match[1], /color:\s*var\(--dsw-alias-label-primary\)/)
+    assert.match(match[1], /background:\s*var\(--dsw-alias-interactive-bg-hover-danger\)/)
+    assert.match(match[1], /border:\s*1px solid var\(--dsw-alias-state-error-primary\)/)
+    assert.doesNotMatch(match[1], /state-error-(text|subtle)(?:\s|,|\))/)
+  })
+
   it('TypeCard uses native button, not dsh-ui-kit Button (32px single-row trap)', () => {
     assert.match(composerSrc, /function TypeCard\(/)
     assert.match(composerSrc, /className="omnimux-publish-type-card"/)
