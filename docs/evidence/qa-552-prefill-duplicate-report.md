@@ -1,126 +1,99 @@
-# QA-552 独立验收：预填 prompt 重复
+# QA-552 第 2 轮独立验收：预填 prompt 重复
 
-- **验收对象**：`7b1764659c6001a9d626a953f84a54cc41e2ee40`
-- **前置**：`b7f8afa`、`e4fca92`
-- **范围**：`plugins/omnimux-inspiration/src/client/composer-inject.js` 的 Lexical/contenteditable 预填通道；不发送、不改产品源码、不物化/同步环境。
-- **结论**：**不通过（Engineer 路由）**。补丁确实修复了一个可控的“双写”回归，但将 `execCommand(...) === true` 直接作为写入成功，未作异步回读/重试或失败报告；因此在实际 Lexical 命令被接受却未提交到编辑器状态的情况下，函数会报告预填成功而丢失整条 prompt。该风险与本次“仅有一条 skill 命令 + 空行 + 一份正文”的验收目标直接相关。45120 真机也未能证明该 commit 在运行。
+- **验收对象**：`efbfec50449208c82a8ae8994b0ebc84d9039a70`（前置 QA 报告提交：`c64eb0f116886feca57d97dd652eabcfd58d6fa1`；工程初修：`7b17646`）
+- **工作树**：`/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-replicate-dismiss-reversal-552`
+- **范围**：仅审查与验证 `plugins/omnimux-inspiration/src/client/composer-inject.js` / `.test.js`；不改产品源码、不发送、不启动替代服务器、不物化或同步公共环境。
+- **轮次限制**：这是本重复 Bug 的 **第 2/2 轮 QA**。本报告不触发第 3 轮；剩余环境和真实渲染风险只记录。
+- **结论**：**代码级 F1 已修复；整体交付仍为 BLOCKED，不得宣称 App PASS。** 目标插件单测和适用静态门禁通过，且新增的“accepted but never commits”测试在 `c64eb0f` 红、在目标提交绿。构建因缺 `esbuild` 阻断；45120 无可追溯承载证据且本轮 ego-browser 导航在 40 秒超时，故无真实 Lexical/页面证据。
 
-## 根因与截图解释
+## 需求与代码逐项核验
 
-### 已证实的重复根因（高置信）
+| 验收点 | 代码审查结论 | 证据 |
+|---|---|---|
+| F1：`execCommand() === true` 但不提交不能误报成功 | **PASS（代码级）** | `prefillReplicationPrompt()` 在 `setComposerValue()` 后通过 `waitForComposerCommit()` 精确确认 `getComposerText(field) === prompt`；100 ms / 10 ms 默认窗口超时返回 `composer-rejected`，而非 `{ok:true}`。见 `composer-inject.js:102-110,257-269`。 |
+| accepted 后不能 fallback / 重写 | **PASS（代码级）** | `setComposerValue()` 对严格 `true` 立即返回，且后续等待只读、不 retry、不 fallback；`textContent` 仅在 `false` / throw 或同步已失败时写入。见 `:152-172`。 |
+| 单一命令 + 空行 + 一份正文 | **PASS（纯构造与受控注入）** | `buildReplicationPrompt()` 固定返回 `/${REPLICATION_SKILL}\n\n${REPLICATION_PROMPT_BODY}`；回读从宽松 `includes('/video-deconstruct')` / `includes('inspiration_id')` 改为完整字符串严格相等。见 `replication.js:84-98`、`composer-inject.js:88-90`。 |
+| 延迟提交只写一次 | **PASS（受控时序）** | accepted-delayed 测试只观察一次 `insertText`、一份完整 prompt、零 fallback input event；旧版会在同步 DOM 为空时 fallback，造成双写。 |
+| 已有草稿 selection replacement 后延迟提交 | **PASS（受控时序）** | 测试模拟 `selectAllChildren(field)` 后微任务提交，严格确认旧草稿不残留且只留目标 prompt。 |
+| 轮询不会追加 | **PASS（代码级）** | `waitForComposerCommit()` 只有 `getComposerText()`；循环不写 DOM、不发 event、不再调用 `execCommand`。 |
+| `false` / throw fallback 不制造本类双写 | **PASS（单元）** | 两个分支仅走 `textContent` + 单 input event；accepted 分支不会再进入该 fallback。 |
+| 用户既有草稿、附件、库 Tab/画布、不发送 | **未见本提交退化；页面层未验证** | 本提交仅两文件，未改 `replicate-to-chat.js`。既有插件回归涵盖 official new session、attachment、library/canvas red lines、never send；但不能替代真机。 |
 
-`composer-inject.js` 旧版在 contenteditable 路径调用 `execCommand('insertText', false, value)` 后立刻执行 `composerWriteSucceeded()`。Lexical 的 DOM 同步可以在微任务之后才到达：同步回读仍为空，旧代码随即走 `field.textContent = value` + input fallback；随后 Lexical 将已接受的命令再写入，形成 `value + value`。
+## 红绿回归证据
 
-这准确解释截图中的内容形状：第一份正文中的命令与正文粘连/层次受编辑器 DOM 序列化影响，而第二个纯文本命令、空行、及完整正文来自后续的命令提交；重复的完整正文是两个独立写通道竞争，而不是 `buildReplicationPrompt()` 构造了两份 prompt。
+### 红：目标测试能杀死 F1 的旧实现
 
-`replication.js:94-98` 仍只生成：
-
-```text
-/video-deconstruct
-
-完全复刻原视频脚本和画面，仅将原视频中的商品替换成我的商品、如有口播内容需结合我的商品进行调整（没有则不需要出现口播），同时视频不需要出现字幕，原视频有出镜人物的话，新视频也需要有。复刻后的新脚本的时长需控制在时间范围内。
-```
-
-该构造满足唯一 skill token + 空行 + 一份约束正文，且不含 `inspiration_id`；附件归会话 attachment。
-
-### 本提交的实际变化（高置信）
-
-`composer-inject.js:146-147` 保存 `execCommand` 返回值；返回严格 `true` 时立即返回，避免 fallback。拒绝（`false`）或异常才用 `textContent` fallback。修复范围仅两文件，`git diff --check` 无输出。
-
-## 红绿证据
-
-### 新增测试不是仅靠 mock 结论
-
-`composer-inject.test.js:107-130` 用独立的“接受命令后，在微任务才追加 DOM”的 fake execCommand 表达了本 bug 的 API/事件时序：调用后先返回 `true`，然后 `queueMicrotask` 才模拟 Lexical reconcile。它断言：
-
-1. 只调用一次 `insertText`；
-2. 微任务结算后文本严格等于一份 prompt；
-3. prompt 出现一次；
-4. 未派发 fallback input event。
-
-这个 oracle 不是复述实现：它从用户可见的单份完整 prompt 导出，且包含旧代码不会同步暴露的延迟提交时序。
-
-### 红：新测试在未修复源码失败
-
-在临时目录取 `e4fca92:composer-inject.js`，配对执行 `7b17646` 的两条新测试：
+在临时目录使用 `c64eb0f:plugins/omnimux-inspiration/src/client/composer-inject.js`，配对目标提交的 `composer-inject.test.js`，执行：
 
 ```text
-node --test --test-name-pattern='accepted delayed|insert command rejects' ...
+node --test --test-name-pattern='accepted command never commits|accepted delayed full-composer' ...
 pass 1, fail 1
-actual:   prompt + prompt
-expected: prompt
 ```
 
-失败发生在 `does not fall back to textContent after an accepted delayed insert command` 的严格字符串断言，证实它能杀死旧双写实现，而非人为制造绿灯。
-
-### 绿：当前提交
+失败测试为 `returns composer-rejected when an accepted command never commits`：
 
 ```text
+actual:   { ok: true, via: 'prefill' }
+expected: { ok: false, error: 'composer-rejected' }
+```
+
+因此该测试不是仅凭 mock 复述新实现：它使第 1 轮 F1 的“accepted 但未提交仍成功”旧行为稳定失败。
+
+### 绿：目标提交
+
+```text
+node --test src/client/composer-inject.test.js src/client/replication.test.js
+29 pass, 0 fail, 0 skip
+
 pnpm --filter omnimux-inspiration test
-172 tests, 170 pass, 0 fail, 2 skip
+176 tests | 174 pass | 0 fail | 2 skip（既有 legacy 替换项）
+
+pnpm verify:stages && pnpm check:package-files && pnpm verify:tools && git diff --check
+PASS
 ```
 
-其中新增的 accepted-delayed 和 rejected-fallback 两项均通过。
+静态门禁实际结果：Stage 10/10、12 个插件 package files 清单、Agent tools 契约扫描均通过；`git diff --check c64eb0f..efbfec5` 无输出。
 
-```text
-pnpm verify:stages && pnpm check:package-files && pnpm verify:tools
-```
+## 精确回读与 100 ms 边界审查
 
-三项均通过（Stage 10/10、12 个插件 files 规则、工具契约扫描）。
+1. **正向改进**：删除基于 skill token 或 `inspiration_id` 的 `includes` 判定是必要修复。此类部分匹配会将“旧草稿 + 片段命令”、重复 prompt 或不完整正文错误认定为成功；当前完整字符串 equality 能把这些情况受控报告为 `composer-rejected`，不会再通过另一写通道补写。
+2. **真实 Lexical 等价性尚无证据**：contenteditable 回读优先使用 `innerText`，后备 `textContent`（`composer-inject.js:74-81`）。真实 Lexical 的段落序列化可能带尾随换行、`\r\n`，或与目标 `\n\n` 不同的 DOM-to-text 表示；在可见内容正确时，严格 equality 会将其判为 `composer-rejected`。本轮 fake 仅令 `textContent` 恰好等于目标字符串，不能证明真实段落、空行和 `/video-deconstruct` token 的 `innerText` 表示严格相等。
+3. **100 ms 是受控失败边界，但没有性能证据证明其足够**：窗口有确定上限（默认 100 ms、10 ms 间隔）并且超时不会重写，故不会回归截图中的双写；然而测试仅覆盖微任务提交和永不提交，未覆盖真实 Lexical 的 10–100 ms、刚超过 100 ms、后台节流或重渲染延迟。它应被视为“防双写且显式失败”的安全策略，不是已证明的真实编辑器成功率。
+4. **迟到提交的行为**：超时后不会产生第二写或第二轮 command，故不会重复；如果首次 accepted command 在 100 ms 后才显示，函数/上游会报告 `sendManual`，但迟到内容仍可能出现在 composer。这是可观察的失败恢复风险，必须由目标环境验证，不能由单测宣称已解决。
 
-## 阻断性发现：`true` 不是完整写入证明
+这些是 **BLOCKED 的真实环境/兼容性风险**，不是本轮在当前源码中已经复现的新增产品缺陷；按两轮上限只报告，不新增第 3 轮。
 
-### F1 — 高优先级：接受的 `execCommand` 可造成静默丢预填
+## 构建与实机层
 
-- **位置**：`plugins/omnimux-inspiration/src/client/composer-inject.js:146-147`
-- **触发序列**：Lexical/contenteditable 的 `execCommand('insertText', ...)` 返回 `true`（命令被浏览器接受/可执行），但编辑器未把该操作提交到可观察的编辑器状态，例如 editor 状态/selection 已失效、composition/reconciliation 丢弃该 mutation、或宿主命令在该时刻未生效。
-- **实际行为**：函数直接返回 `true`，`prefillReplicationPrompt()` 回报 `{ ok:true, via:'prefill' }`，不会调用 fallback、不会异步回读、不会重试、更不会返回 `composer-rejected`。用户只会看到空内容或旧草稿，而 CTA 被上游视为成功。
-- **为什么现有保护没有覆盖**：`composerWriteSucceeded()` 在 accepted 分支完全不执行；`prefillReplicationPrompt()` 仅在 `setComposerValue()` 同步返回 false 时失败。现有新增测试恰好将 accepted 命令安排为必然在微任务成功追加，未覆盖“accepted 但不提交”的反例。
-- **影响**：虽不再重复，但不能证明“唯一一条完整 prompt”存在；这是相同 CTA 的数据完整性回归，不能接受为完整交付。
-- **建议工程修复**：保留 `true` 后禁止立即 fallback 的原则，但把结果变为 pending：在一个有界的、事件/微任务驱动的 Lexical 回读窗口内确认 `getComposerText(field) === value`（且只出现一次）；未确认则返回 `composer-rejected`/受控错误，而非再直接写 `textContent`。只有经项目确认安全时才考虑幂等、精确替换的单次重试。新增至少三条测试：accepted-delayed success、accepted-no-commit -> rejected、accepted-existing-draft selection replacement -> exact one prompt。
-
-## 范围审查
-
-- **命令 + 正文混合**：`replication.js` 的固定 `/${REPLICATION_SKILL}\n\n${REPLICATION_PROMPT_BODY}` 通过既有 `replication.test.js`（“only /video-deconstruct plus user constraint paragraph”）；当前插件测试也通过。新重复测试用相同的 command + 两换行 + 文本形状，覆盖主要截图字符串。
-- **selection 与已有草稿**：源码在 `composer-inject.js:137-141` 调 `selectAllChildren(field)` 再 insert，意图为整字段替换；但新增测试没有 fake selection、也没有“已有草稿 + accepted delayed insert”端到端证明。因此不能确认用户已有草稿时一定仅留下目标 prompt，也不能把该点判为通过。
-- **同一 CTA 多次轮询/重复附加**：`prefillReplicationPrompt()` 在找到 field 后仅写一次（:228-248）；`replicate-to-chat.js:184-189` 的 module-level exclusive lock 防止并发 CTA 排队，现有插件回归包含 `second concurrent click returns busy and does not queue`。在同一次 orchestrator 调用中，未见 prefill 轮询重复追加。
-- **附件、新会话、库 Tab/画布、不发送**：`replicate-to-chat.js:206-286` 先创建官方新会话、将 attachment 绑定返回 sessionId、reveal 再 prefill；已有 172 测试中的 #552 red-line、fallback attachment、never clicks send、canvas/library 保护均通过。此提交未改这些文件，未发现本提交引入的退化证据；但这不能替代真实 UI 验收。
-- **同形风险扫描**：本仓 `execCommand('insertText')` 仅另见 `plugins/omnimux/src/client/composer-envelope.js:58`。它仍无返回值/回读验证，但用于 UI Context Envelope 的提交拦截，而不是本 CTA 的预填路径；本次不扩范围修改，记录为未解决的相似风险。
-
-## 构建与真机证据
-
-### 构建
+### 构建：BLOCKED
 
 ```text
 pnpm --filter omnimux-inspiration run build
 ERR_MODULE_NOT_FOUND: Cannot find package 'esbuild'
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL]
 ```
 
-worktree 本地 `node_modules` 缺失。依据约束，没有安装依赖或修改/破坏共享 node_modules；这是环境阻断，非已归因的产品源码失败。
+`plugins/omnimux-inspiration/package.json` 已声明 `esbuild` 为 devDependency；当前 worktree 缺 node_modules。遵守约束，本轮没有安装依赖、没有破坏共享 node_modules，也没有绕过构建门禁。
 
-### 45120 真机
+### 45120 / ego-browser：LIVE BLOCKED
 
-- 直接读取 `http://127.0.0.1:45120/` 得到 `401 dsh web authentication required`，不能以 curl 做页面验收。
-- 已按要求使用 ego-browser 试图打开同一地址；浏览器操作在 60 秒超时、无 snapshot/截图输出。没有重试、没有启动替代服务器、没有注入临时代码，也没有复用 modal-complete 证据。
-- 当前 45120 无可追溯证明承载 `7b17646`：本 worktree 未 build/物化，且用户前置信息已说明端口承载版本不能关联该 commit。
+按要求仅一次只读尝试现有 `http://127.0.0.1:45120/`，未点 CTA、未修改草稿、未发送、未启动替代服务。`ego-browser` 在 40 秒内没有产生 pageInfo、snapshot 或 screenshot，进程被 harness 超时终止。此前已知的 401/无可追溯版本承载问题仍未获得相反证据。
 
-因此：**没有真实页面通过证据，也没有截图。** 真机层为交付阻断，不能由单测替代。
+此外，当前未合并 worktree 不得物化到公共 45120；现有 45120 也没有证据载入 `efbfec5`。因此不得将 HTTP、mock、其他版本或此处的单元测试称为 App/真实 Lexical 通过。没有 evidence bundle 或截图。
 
 ## 测试报告
 
 | 项目 | 结果 |
 |---|---|
-| 总插件测试 | 172 |
-| 通过 | 170 |
-| 失败 | 0 |
-| 跳过 | 2（既有 legacy 替换项） |
-| 旧源码红测 | 1 failed / 1 passed（预期，证明新防重测试有效） |
-| 静态 gates | `verify:stages`、`check:package-files`、`verify:tools` 全通过 |
-| 构建 | 阻断：本 worktree 缺 `esbuild` |
-| 45120/ego 实机 | 阻断：认证端点 + ego 60 秒导航超时，且不可关联目标 commit |
-| 覆盖估计 | 已变更分支的高覆盖；真实 Lexical/selection/实际页面为未覆盖 |
-| Routing Decision | **Engineer**（F1 源码行为问题）；真机证据另为 release blocker |
+| 本轮目标单测 | 29 passed / 0 failed / 0 skipped |
+| 完整 inspiration 插件测试 | 176 total / 174 passed / 0 failed / 2 skipped |
+| F1 旧提交红测 | 1 failed / 1 passed（预期） |
+| 适用静态门禁 | PASS：`verify:stages`、`check:package-files`、`verify:tools`、diff check |
+| 构建 | BLOCKED：本 worktree 缺 `esbuild` |
+| 实机 / 真 Lexical | LIVE BLOCKED：45120 不可验证目标 commit，ego-browser 无 snapshot/screenshot |
+| 估计覆盖 | 写入分支高；真实 Lexical DOM 序列化、实际时间边界、UI 交互未覆盖 |
+| Routing Decision | **Known Issues / release-blocked**；F1 无需退回 Engineer，本 Bug QA 两轮已用尽 |
 
-## 工程回传建议
+## 唯一可执行下一步（需要环境授权/证据）
 
-请工程师在不恢复同步 fallback 的前提下，补“accepted 但未 commit”的受控失败/验证逻辑和上述三项测试；然后在可构建并物化 `7b17646`（或后续修复 commit）的 45120 Dev App，用 ego-browser完成一条 CTA：保留灵感缩略附件、库 Tab、画布；不发送；截图中 composer 必严格为一个 `/video-deconstruct`、一个空行、一个完整约束段。QA 需对该新工程修复作为本重复 bug 的第 2 轮回归复验。
+由具备环境所有权者提供一个**与 `efbfec5`（或后续合入 SHA）可追溯关联的、已装依赖的隔离 L2 runtime**，并允许按 `docs/contracts/plugin-qa.md` 使用 ego-browser 进行一条真实 CTA 验收。证据必须包含 task-space id、实际 L2 URL、snapshot/DOM、截图、commit、task/DSH_HOME 与清理记录；同时读取真实 composer 的 `innerText` / `textContent`，确认其与唯一 `/video-deconstruct\n\n<完整正文>` 的比较语义。未具备此环境授权/证据前，整体不得交付 PASS。
