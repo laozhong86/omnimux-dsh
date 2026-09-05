@@ -41,9 +41,9 @@ describe('inspiration triptych modal', () => {
     assert.equal(decl(panel, 'overflow-x'), 'hidden')
   })
 
-  it('keeps footer replication separate from header analysis', () => {
+  it('keeps footer replication separate from in-panel analysis', () => {
     const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
-    assert.match(section, /modal\.header\.analyze/)
+    assert.match(section, /modal\.deconstruction\.analyze/)
     assert.match(section, /modal-footer/)
     assert.match(section, /onReplicate\(data\.safeItem\)/)
     assert.match(section, /modal\.script\.noSegmentsHint/)
@@ -57,14 +57,30 @@ describe('inspiration triptych modal', () => {
     assert.match(INSPIRATION_CSS, /\.omnimux-inspiration-modal-panel\.is-active/)
   })
 
-  it('preserves portrait player geometry and compact header controls', () => {
+  it('uses a larger portrait player and compact title-only header', () => {
     const player = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-player-box')
     assert.equal(decl(player, 'aspect-ratio'), '9 / 16')
-    assert.equal(decl(player, 'max-height'), 'min(38vh, 380px)')
+    assert.equal(decl(player, 'max-height'), 'min(43vh, 430px)')
     assert.equal(decl(player, 'display'), 'flex')
     const header = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-header')
+    const heading = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-heading')
+    assert.equal(decl(header, 'height'), '60px')
     assert.equal(decl(header, 'flex-wrap'), 'nowrap')
+    assert.equal(decl(heading, 'max-width'), 'min(680px, calc(100% - 40px))')
     assert.match(INSPIRATION_CSS, /modal-copy\.is-icon-only/)
+  })
+
+  it('removes platform, favorite, and re-analyze controls from the modal header', () => {
+    const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
+    const header = section.slice(
+      section.indexOf('<header className="omnimux-inspiration-modal-header">'),
+      section.indexOf('</header>'),
+    )
+    assert.doesNotMatch(header, /modal\.header\.favorite/)
+    assert.doesNotMatch(header, /modal\.header\.reanalyze/)
+    assert.doesNotMatch(header, /modal-header-meta/)
+    assert.doesNotMatch(header, /modal-actions/)
+    assert.match(header, /omnimux-inspiration-modal-close/)
   })
 
   it('supports optional timecode columns and quote blocks without fabricating timestamps', () => {

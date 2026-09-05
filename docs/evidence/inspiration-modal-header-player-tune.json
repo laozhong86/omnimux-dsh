@@ -1,0 +1,34 @@
+{
+  "stage": "omnimux-inspiration:library",
+  "topic": "modal-header-player-tune",
+  "result": "PASS",
+  "l2": {
+    "port": 44200
+  },
+  "checks": {
+    "player": "218x387, 9:16",
+    "noVideoScroll": true,
+    "longTitleEllipsis": true,
+    "headerButtons": [
+      "Copy title",
+      "Close"
+    ],
+    "removed": [
+      "platform",
+      "favorite",
+      "reanalyze"
+    ],
+    "mobile": {
+      "width": 375,
+      "header": 60,
+      "closeVisible": true,
+      "tabsVisible": true
+    }
+  },
+  "tests": {
+    "pass": 167,
+    "fail": 0,
+    "skipped": 2
+  },
+  "timestamp": "2026-09-05T02:48:38.388Z"
+}

@@ -1428,44 +1428,33 @@ export const INSPIRATION_CSS = `
   border-radius: 16px;
 }
 .omnimux-inspiration-modal-header {
+  height: 60px;
   min-height: 60px;
-  flex: 0 0 auto;
+  flex: 0 0 60px;
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 16px;
-  padding: 8px 16px;
+  gap: 8px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--dsw-alias-border-l2);
 }
 .omnimux-inspiration-modal-heading {
   min-width: 0;
-  flex: 1 1 auto;
+  max-width: min(680px, calc(100% - 40px));
+  flex: 0 1 680px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .omnimux-inspiration-modal-heading h2 {
+  min-width: 0;
+  flex: 1 1 auto;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 16px;
   color: var(--dsw-alias-label-primary);
-}
-.omnimux-inspiration-modal-header-meta,
-.omnimux-inspiration-modal-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.omnimux-inspiration-modal-platform,
-.omnimux-inspiration-modal-header-meta span {
-  padding: 4px 8px;
-  border-radius: 9999px;
-  background: var(--dsw-alias-bg-layer-1);
-  color: var(--dsw-alias-label-secondary);
-  font-size: 12px;
 }
 .omnimux-inspiration-modal-copy {
   display: inline-flex;
@@ -1496,6 +1485,8 @@ export const INSPIRATION_CSS = `
   width: 32px !important;
   height: 32px !important;
   min-width: 32px;
+  margin-left: auto;
+  flex: 0 0 32px;
   border-radius: 8px !important;
   border: 0 !important;
   background: transparent !important;
@@ -1536,7 +1527,7 @@ export const INSPIRATION_CSS = `
   width: auto;
   max-width: 100%;
   aspect-ratio: 9 / 16;
-  max-height: min(38vh, 380px);
+  max-height: min(43vh, 430px);
   margin: 0 auto 14px;
   overflow: hidden;
   border-radius: 8px;
@@ -1742,7 +1733,7 @@ export const INSPIRATION_CSS = `
   .omnimux-inspiration-modal-backdrop { padding: 12px; }
   .omnimux-inspiration-modal-container { height: min(92vh, 760px); }
   .omnimux-inspiration-modal-header { gap: 8px; padding: 0 12px; }
-  .omnimux-inspiration-modal-header-meta { display: none; }
+  .omnimux-inspiration-modal-heading { max-width: calc(100% - 40px); }
   .omnimux-inspiration-modal-mobile-tabs {
     display: flex;
     flex: 0 0 44px;
