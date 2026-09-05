@@ -1341,7 +1341,9 @@ export async function openWorkbench(opts = {}) {
 
   const map = loadSessionFocusMap(sessionId)
   const explicitMode = map[tabId]?.mode
-  const targetMode = explicitMode || resolveDefaultFocus(tabId)
+  const targetMode = explicitMode === WORKBENCH_FOCUS.gui || explicitMode === WORKBENCH_FOCUS.split
+    ? explicitMode
+    : resolveDefaultFocus(tabId)
   setWorkbenchFocus(targetMode, attachedStore, {}, tabId)
   emit()
   return true

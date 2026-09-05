@@ -75,6 +75,7 @@ globalThis.completeTaskSpace = async (id, options) => {
   return { done: true, id, keep: options.keep }
 }
 globalThis.cliLog = (value) => console.log(value)
+for (const name of ['click', 'gotoAndWait', 'waitForElement']) globalThis[name] = async () => {}
 \`
 
 const child = spawnSync(process.execPath, ['--input-type=module'], {
@@ -102,6 +103,8 @@ function runCollector({
   root: suppliedRoot,
   evidenceDir: suppliedEvidenceDir,
   runId = `run-${mode}`,
+  target = 'l2',
+  probeSource,
 } = {}) {
   const root = suppliedRoot || mkdtempSync(join(tmpdir(), 'omnimux-ego-qa-'))
   if (!suppliedRoot) temporaryRoots.push(root)
@@ -112,6 +115,10 @@ function runCollector({
   mkdirSync(binDir, { recursive: true })
   mkdirSync(evidenceDir, { recursive: true })
   writeFakeEgoBrowser(join(binDir, 'ego-browser'))
+  if (probeSource) {
+    writeFileSync(join(root, 'probe.mjs'), probeSource)
+    writeFileSync(join(root, 'probe-options.json'), '{}')
+  }
 
   if (staleEvidence) {
     writeFileSync(join(evidenceDir, 'ego-browser-report.json'), '{"pass":true,"runId":"stale"}\n')
@@ -130,6 +137,9 @@ function runCollector({
       EGO_PLUGIN: 'cross',
       EGO_RUN_ID: runId,
       EGO_TASK_SPACE_NAME: taskName,
+      EGO_TARGET_PROFILE: target,
+      EGO_BROWSER_PROBE_FILE: probeSource ? join(root, 'probe.mjs') : '',
+      EGO_BROWSER_PROBE_OPTIONS: probeSource ? join(root, 'probe-options.json') : '',
       MOCK_EGO_MODE: mode,
       MOCK_EGO_SNAPSHOT: snapshot,
       MOCK_EGO_SCREENSHOT_SOURCE: screenshotSource,
@@ -190,6 +200,27 @@ test('empty optional values remain empty without breaking a successful report', 
   assert.equal(run.report.expectedText, null)
   assert.equal(run.report.dshHome, null)
   assert.equal(run.report.errors.length, 0)
+})
+
+test('Dev is explicit and production is rejected before browser task creation', () => {
+  assert.equal(runCollector({ target: 'dev', url: 'http://127.0.0.1:45120/' }).status, 0)
+  for (const options of [{ url: 'http://127.0.0.1:44200/' }, { url: 'http://127.0.0.1:45120/' }, { target: 'dev', url: 'http://127.0.0.1:44201/' }]) {
+    const result = runCollector(options)
+    assert.notEqual(result.status, 0)
+    assert.equal(result.report.phase, 'preflight')
+    assert.equal(result.report.taskSpaceId, null)
+  }
+})
+
+test('semantic probe failure survives the collector and keeps the failed task evidence', () => {
+  const result = runCollector({ probeSource: `export async function runStageProbe(browser, options) {
+    options.onProgress({ assertions: [{ name: 'empty-stage', pass: false }] });
+    throw new Error('empty stage despite HTTP 200');
+  }` })
+  assert.notEqual(result.status, 0)
+  assert.match(result.report.errors.join(';'), /empty stage despite HTTP 200/)
+  assert.equal(result.report.probe.assertions[0].pass, false)
+  assert.equal(result.report.cleanup.state, 'retained')
 })
 
 test('browser failure exits nonzero, records the error, and retains the task space', () => {

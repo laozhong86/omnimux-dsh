@@ -15,6 +15,7 @@ EXPECTED="${3:-${OMNIMUX_EGO_EXPECT:-}}"
 ISSUE_ID="${EGO_ISSUE_ID:-local}"
 PLUGIN="${EGO_PLUGIN:-surface}"
 TASK_NAME="${EGO_TASK_SPACE_NAME:-omnimux-qa-issue-${ISSUE_ID}-${PLUGIN}}"
+TARGET_PROFILE="${EGO_TARGET_PROFILE:-l2}"
 
 if [[ -n "$EVIDENCE_DIR_INPUT" ]]; then
   mkdir -p "$EVIDENCE_DIR_INPUT"
@@ -227,10 +228,22 @@ if ! command -v ego-browser >/dev/null 2>&1; then
   fail_preflight 127 '命令不可用；UI 验收不得降级为 skip'
 fi
 
+if ! node --input-type=module - "$URL" "$TARGET_PROFILE" <<'EOF' >> "$LOG_PATH" 2>&1
+const [raw, target] = process.argv.slice(2)
+const url = new URL(raw)
+const local = url.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(url.hostname)
+const port = Number(url.port)
+const allowed = target === 'dev' ? port === 45120 : target === 'l2' && port >= 44201 && port <= 44299
+if (!local || !allowed) throw new Error('目标必须是 Dev 45120 或 L2 44201–44299；禁止生产 44200')
+EOF
+then
+  fail_preflight 2 '目标 URL 或 profile 不符合 Dev/L2 隔离契约'
+fi
+
 # ego-browser nodejs filters custom environment variables. Encode all values in
 # a base64 JSON prelude so quotes, newlines, and Unicode cannot become code.
-EGO_INPUT_B64="$(node -e 'const values={url:process.argv[1],expected:process.argv[2],taskName:process.argv[3],reportPath:process.argv[4],evidenceDir:process.argv[5],runId:process.argv[6],failOnErrors:process.argv[7]||""};process.stdout.write(Buffer.from(JSON.stringify(values),"utf8").toString("base64"))' \
-  "$URL" "$EXPECTED" "$TASK_NAME" "$REPORT_PATH" "$EVIDENCE_DIR" "$RUN_ID" "${EGO_BROWSER_FAIL_ON_ERRORS:-}")"
+EGO_INPUT_B64="$(node -e 'const values={url:process.argv[1],expected:process.argv[2],taskName:process.argv[3],reportPath:process.argv[4],evidenceDir:process.argv[5],runId:process.argv[6],failOnErrors:process.argv[7]||"",target:process.argv[8],probeFile:process.argv[9],probeOptionsFile:process.argv[10]};process.stdout.write(Buffer.from(JSON.stringify(values),"utf8").toString("base64"))' \
+  "$URL" "$EXPECTED" "$TASK_NAME" "$REPORT_PATH" "$EVIDENCE_DIR" "$RUN_ID" "${EGO_BROWSER_FAIL_ON_ERRORS:-}" "$TARGET_PROFILE" "${EGO_BROWSER_PROBE_FILE:-}" "${EGO_BROWSER_PROBE_OPTIONS:-}")"
 
 emit_ego_input_prelude() {
   printf "const EGO_INPUT = JSON.parse(Buffer.from('%s', 'base64').toString('utf8'))\n" "$EGO_INPUT_B64"
@@ -281,10 +294,21 @@ try {
   if (!info?.url || !/^https?:\/\//.test(info.url)) throw new Error('实际页面 URL 无效')
   const actual = new URL(info.url)
   const port = Number(actual.port)
-  if (!Number.isInteger(port) || port < 44200 || port > 44299) {
-    throw new Error(`实际页面不是 L2 端口（要求 44200-44299，实际 ${actual.port || '默认端口'}）`)
+  const expected = new URL(EGO_INPUT.url)
+  if (actual.origin !== expected.origin || !(EGO_INPUT.target === 'dev' ? port === 45120 : port >= 44201 && port <= 44299)) {
+    throw new Error('实际页面偏离分配的 Dev/L2 目标')
   }
   if (!info.w || !info.h || info.w <= 0 || info.h <= 0) throw new Error('浏览器 viewport 无效')
+
+  if (EGO_INPUT.probeFile) {
+    const { pathToFileURL } = await import('node:url')
+    const { runStageProbe } = await import(pathToFileURL(EGO_INPUT.probeFile).href)
+    const options = JSON.parse(fs.readFileSync(EGO_INPUT.probeOptionsFile, 'utf8'))
+    report.probe = await runStageProbe({ js, click, snapshotText, pageInfo, captureScreenshot, gotoAndWait, waitForElement }, {
+      ...options, evidenceDir: EGO_INPUT.evidenceDir,
+      onProgress(probe) { report.probe = probe; writeReport() },
+    })
+  }
 
   const snapshot = await snapshotText()
   report.snapshot = typeof snapshot === 'string' ? snapshot : String(snapshot ?? '')
@@ -493,11 +517,11 @@ if [[ "$FINAL_STATUS" -eq 0 && "$CLEANUP_STATUS" -ne 0 ]]; then
 fi
 
 set +e
-node --input-type=module - "$REPORT_PATH" "$EVIDENCE_DIR" "$RUN_ID" "$FINAL_STATUS" <<'EOF'
+node --input-type=module - "$REPORT_PATH" "$EVIDENCE_DIR" "$RUN_ID" "$FINAL_STATUS" "$TARGET_PROFILE" <<'EOF'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-const [reportPath, evidenceDir, expectedRunId, rawStatus] = process.argv.slice(2)
+const [reportPath, evidenceDir, expectedRunId, rawStatus, target] = process.argv.slice(2)
 const processStatus = Number(rawStatus)
 const report = JSON.parse(readFileSync(reportPath, 'utf8'))
 const screenshot = report.screenshot && join(evidenceDir, report.screenshot)
@@ -514,7 +538,8 @@ if (processStatus === 0) {
   if (!report.pass || report.tool !== 'ego-browser') structuralErrors.push('报告结论或工具不正确')
   if (report.taskSpaceId === null || report.taskSpaceId === undefined) structuralErrors.push('缺少 task space id')
   if (!/^https?:\/\//.test(report.actualUrl || '')) structuralErrors.push('缺少真实 L2 URL')
-  if (!report.actualUrl || !/:442\d{2}\b/.test(report.actualUrl)) structuralErrors.push('实际 URL 不在 L2 端口池')
+  const actual = new URL(report.actualUrl)
+  if (actual.origin !== new URL(report.requestedUrl).origin || !(target === 'dev' ? actual.port === '45120' : Number(actual.port) >= 44201 && Number(actual.port) <= 44299)) structuralErrors.push('实际 URL 偏离 Dev/L2 目标')
   if (!(report.snapshot || '').trim()) structuralErrors.push('缺少 snapshotText 证据')
   if (!report.dom || typeof report.dom.bodyTextLength !== 'number') structuralErrors.push('缺少 DOM 断言证据')
   if (!report.screenshot || !existsSync(screenshot)) structuralErrors.push('缺少截图工件')

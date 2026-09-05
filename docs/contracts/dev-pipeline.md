@@ -39,7 +39,7 @@ subsystem: "omnimux-assets"
 | 环境类型 | 目的 | 载体与端口 | Profile 目录 | 权限与物化规则 |
 |---|---|---|---|---|
 | **L1 本地单测** | 代码级快速测试 | `node --test` / `vitest` | 无 / 临时目录 | 源码直读，零副作用 |
-| **L2 任务沙箱** | 隔离并发调试 | 独立端口 (44200~44299) | `~/.dsh-dev/tasks/<task>` | 任务隔离，用完即弃 |
+| **L2 任务沙箱** | 隔离并发调试 | 独立端口 (44201~44299) | `~/.dsh-dev/tasks/<task>` | 任务隔离，用完即弃 |
 | **L3-Dev 开发版** | 日常 Agent 物化与真机验收 | `OmniMux Dev.app` (端口 `45120`) | `~/.omnimux-dev` | **日常开发唯一目标**：`./scripts/sync-to-app.sh` 默认写入，Cmd+R / 重启即见最新改动 |
 | **L3-Prod 正式版** | 用户日常高可用生产 | `OmniMux.app` (正式端口) | `~/.omnimux` | **严格物理锁定**：日常严禁写入，仅在人类明确下达发布指令时通过 `./scripts/sync-to-app.sh --prod` 单向发布 |
 | **L3-Base 底座版** | 官方原生底座 | `DSH Desktop.app` | `~/.dsh` | 官方原生干净目录，禁止业务污染 |
@@ -127,24 +127,25 @@ L3 旧壳是 `~/Desktop/Project/omnimux-desktop`（独立 Electron 壳，spawn H
 ## 并行开发矩阵（多插件同时在研）
 
 ```
-omnimux-dev-assets    → link: omnimux-assets   | port ∈ 44200-44299 | DSH_HOME=~/.dsh-dev/tasks/assets
+omnimux-dev-assets    → link: omnimux-assets   | port ∈ 44201-44299 | DSH_HOME=~/.dsh-dev/tasks/assets
 omnimux-dev-products  → link: omnimux-products | 另一 L2 口         | DSH_HOME=~/.dsh-dev/tasks/products
-生产 omnimux          → 全部物化副本（日常用，绝不被开发污染）| App 口 44120-44151
+Dev omnimux          → 全部物化副本（日常验收）| App 口 45120
+Prod omnimux         → 全部物化副本（仅授权发布）| App 口 44200
 ```
 
-- L2 端口池 **44200–44299**（`dev-env.sh` 写 patch + `port.txt`）；保留窗 43120–43151 / 44120–44151。
+- L2 端口池 **44201–44299**（`dev-env.sh` 写 patch + `port.txt`）；生产 **44200** 永不分配，另保留 43120–43151 / 44120–44151。
 - 浏览器验收契约：`docs/contracts/plugin-qa.md`。
 - 源码侧可配 git worktree；主工作区 + 多任务 profile 已够用。
 
 ### L1 铁律：合并前测试 = L2 独立任务环境（禁止污染公共 dev）
 
 - **合并前（PR 未 MERGED）的 UI / 交互 / 真机测试，一律在 L2 独立任务环境进行**：
-  `pnpm wt:dev <topic> [issue_id] [plugin]`（内部走 `dev-env.sh start <topic> <plugin>`，`--source` 指向该工作树 `plugins/`），
-  独立端口 44200+、独立 `~/.dsh-dev/tasks/<topic>/`、独立 profile，与其它工作树互不干扰。
+  `pnpm wt dev <topic> [issue_id] [plugin]`（内部走 `dev-env.sh start <topic> <plugin>`，`--source` 指向该工作树 `plugins/`），
+  独立端口 44201–44299、独立 `~/.dsh-dev/tasks/<topic>/`、独立 profile，与其它工作树互不干扰。
 - **公共 dev（`~/.omnimux-dev` / 端口 45120）只接受「已 MERGED 的 main」物化**；公共 dev/prod 严禁出现未合并工作树产物。
 - `sync-to-app.sh` 的未合并旁路已收窄为白名单：必须显式 `OMNIMUX_ALLOW_UNMERGED_TARGET=<~/.dsh-dev/tasks/... 前缀>`，
   且所有同步目标都必须落在该前缀内；旧布尔 `OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1` 单独设置会被拒绝（已废弃）。
-- `wt:finish` 强制要求工作树存在 `.l2-dev.env`（`wt:dev` 写入：PORT/URL/COMMIT/SOURCE）作为合并前验证证据；
+- `wt:finish` 强制要求工作树存在 `.l2-dev.env`（`wt dev` 写入：PORT/URL/COMMIT/SOURCE）作为合并前验证证据；
   仅 R3 / 纯文档 / 纯后端变更可用 `--skip-l2` 显式跳过。`wt:clean` 在合并后自动回收对应 L2 任务环境。
 - **L2 Host 安装闭包预检**：`dev-env.sh start` 在新环境初始化前检查 **`$DSH_SRC` 安装锚点**
   （`apps/cli/package.json` → `@deepseek-ai/dsh-web-app` → `@deepseek-ai/dsh-client-ui-chat/lib`）。
