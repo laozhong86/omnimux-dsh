@@ -2,7 +2,7 @@
 
 - **Language**: 中文（zh-CN）
 - **归属插件**: `plugins/omnimux`（composer 侧）、`plugins/omnimux-assets`（native picker 侧）
-- **状态**: proposed（路线 B 由架构师确认，待老板最终拍板）
+- **状态**: superseded（历史 capture 路线；现行方案见 `2026-09-05-composer-add-client-action-overlay-design.md`）
 - **日期**: 2026-09-05
 - **上游档案**: [2026-09-05-composer-add-direct-trigger-prd.md](2026-09-05-composer-add-direct-trigger-prd.md)（增量 PRD）、[2026-09-04-composer-add-file-assets-prd.md](2026-09-04-composer-add-file-assets-prd.md)（基线 PRD）
 - **架构师**: 高见远（Gao）
@@ -11,7 +11,7 @@
 
 ## 0. 路线确认（PRD §7/Q1）
 
-**拍板路线 B：capture 拦截直达 + 官方 popupSelect 兜底保留。** 理由：
+**历史路线 B：capture 拦截直达。** 该路线已由正式 `clientAction` overlay 取代，以下内容只保留设计沿革，不作为实现指引。
 
 1. 老板要求「点击即直达」且「命令列表保持现状」，A（纯官方 popup）不满足，C（input.left 插槽加图标）改变工具行视觉、引入双入口心智，非老板所求。
 2. B 的技术可行性有双重实证：
@@ -19,7 +19,7 @@
    - 官方菜单行的 pick 绑定在 **`onMouseDown`**（`dsh-client-ui-input-trigger/lib/client.js` MenuView，见 §1.2），事件面清晰、可在 capture 阶段完整拦截。
 3. 兜底零成本：拦截的语义是「命中才 stopPropagation」，未命中时官方 dispatch → popupSelect 链路**天然不受干扰**（`commands.js` 零改动），键盘 Enter 路径自动回落现状。
 
-**macOS 单面板混选已实测成立**（`choose file of type {"public.folder","public.data"} with multiple selections allowed`），故直达路径「添加文件或文件夹」**一步到位打开混选面板**（picker 新增 `kind: 'any'`），无需面板内切换、无需拆两个条目。popup 兜底层仍保留「选择文件…/选择文件夹…」两行现状。
+`kind: 'any'` 仅请求 `public.folder` 与 `public.data` 的 UTI union。macOS 是否在同一原生面板中接受文件与文件夹的混选尚无可复核证据；此 native picker 门禁未通过前，不得宣称一步混选可用。
 
 ---
 
@@ -101,14 +101,14 @@ installMenuDirect(doc, { onAddFileFolder, onAddLibrary, t? }) → dispose()
 
 - `src/picker.js`：
   - `PROMPTS.any = '选择要添加的文件或文件夹'`；
-  - `pickScript('any')` 生成 `choose file of type {"public.folder", "public.data"} with prompt "..." with multiple selections allowed`（**已实测**单面板混选成立，文件/文件夹同一面板均可多选）；
+  - `pickScript('any')` 生成 `choose file of type {"public.folder", "public.data"} with prompt "..." with multiple selections allowed`，但该 UTI union 的单面板混选行为仍待原生实测；
   - `pickNativePath` kind 白名单 `['file', 'directory', 'any']`。
 - `src/http-routes.js` `/omnimux/assets/pick`：kind 解析由 `body.kind === 'file' ? 'file' : 'directory'` 改为显式白名单 `{file, directory, any}`，非法值抛 `PickerError('picker-invalid-kind')`（400 映射已存在）。
 
 **Client 侧（`plugins/omnimux`）：**
 
 - `composer-add/install.js` `addLocalPaths(sessionId, kind)`：kind 白名单扩为 `'file' | 'directory' | 'any'`，`'any'` 直通 `/omnimux/assets/pick`。
-- 直达动作 `onAddFileFolder` = `addLocalPaths(sessionId, 'any')`（**单面板混选，一步到位**）。
+- 直达动作请求 `addLocalPaths(sessionId, 'any')`；在 native picker 门禁通过前，不把结果描述为单面板混选。
 - popup 兜底层（`commands.js`）**零改动**：仍提供「选择文件…」（file）/「选择文件夹…」（directory）两行。
 - 后续 `/omnimux/composer/attachments/materialize` 管线不变（PR #523 已支持文件+目录混合入参）。
 
@@ -303,7 +303,7 @@ sequenceDiagram
     MD->>Menu: 合成 Escape keydown（兜底：菜单外 pointerdown）→ 菜单关闭
     MD->>Inst: onAddFileFolder() → addLocalPaths(sid, 'any')
     Inst->>Host: POST /omnimux/assets/pick { kind:'any' }
-    Host-->>U: osascript 单面板混选（文件+文件夹）
+    Host-->>U: osascript UTI-union 请求（原生混选结果待验收）
     U-->>Host: 选定 paths（取消则到此为止，无副作用）
     Inst->>Host: POST /omnimux/composer/attachments/materialize { sessionId, paths }
     Host-->>Inst: results[]（混合文件/目录物化，PR #523 能力）
@@ -373,7 +373,7 @@ graph LR
 | R3 | 拦截后菜单未关闭（焦点/合成事件被官方忽略） | Escape → pointerdown 双段关闭；均失效则菜单留开但不阻塞功能（下一次外部点击官方自关），记录 debug |
 | R4 | React 大版本升级改变事件委托根 | 监听器直接绑行元素（capture），与委托根位置无关；行随菜单卸载自动回收 |
 | R5 | 右键 / 辅助技术（VoiceOver）触发路径 | 非鼠标主键路径不经拦截，走官方 dispatch popup，功能完整可用 |
-| R6 | 混选面板在旧 macOS 的 UTI 行为差异 | `public.folder`/`public.data` 为系统标准 UTI；失败/501 走现状 toast；popup 兜底仍可分别选 file/directory |
+| R6 | 原生 UTI union 是否支持文件与目录混选尚未实测 | native picker 门禁阻断；只保留 `kind:'any'` 请求及错误处理，不将脚本/模拟 paths 作为原生混选证据 |
 | R7 | AssetPicker 抽离导致行为漂移 | 薄适配 + 单测平移 + ego-browser 截图对比；`composer-add/` 禁止第二份实现（PRD §4.4） |
 | R8 | RC 升级静默破坏直达 | **checklist 增补**：`omnimux-rc-upgrade` 新增「composer「+」列表两行直达 + Enter 兜底」人工核对项（对应 PRD Q6，待主理人确认） |
 

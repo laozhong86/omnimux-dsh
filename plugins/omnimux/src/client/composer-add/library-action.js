@@ -1,6 +1,7 @@
 /** Keep one pending AssetPicker action from settling another action's UI. */
 export function createLibraryActionController() {
   let current = null
+  let revision = 0
 
   const settle = (action, restoreComposerFocus) => {
     if (!action || current !== action) return false
@@ -14,6 +15,7 @@ export function createLibraryActionController() {
     start(action) {
       settle(current, false)
       current = action
+      revision += 1
       return action
     },
     current() {
@@ -21,6 +23,9 @@ export function createLibraryActionController() {
     },
     isCurrent(action) {
       return current === action
+    },
+    revision() {
+      return revision
     },
     settle(action) {
       return settle(action, true)

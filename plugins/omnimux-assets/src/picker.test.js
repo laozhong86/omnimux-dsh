@@ -111,7 +111,7 @@ describe('pickNativePath happy path', () => {
     assert.ok(!scripts[0].includes('$'))
   })
 
-  it('kind "any" builds a single-panel mixed file+folder chooser', async () => {
+  it('kind "any" builds the UTI-union picker request', async () => {
     const scripts = []
     const run = async (_command, argv) => {
       scripts.push(argv[1])

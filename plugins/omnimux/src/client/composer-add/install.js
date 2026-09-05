@@ -89,11 +89,12 @@ function applyAddResults(store, sessionId, items, t) {
   return { added, duplicate, quota, failed }
 }
 
-async function requestJson(path, body) {
+async function requestJson(path, body, signal) {
   const response = await fetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    signal,
   })
   let json = {}
   try { json = await response.json() } catch { json = {} }
@@ -140,6 +141,7 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
     const sessionId = action?.sessionId || ''
     if (!modalRoot) modalRoot = createRoot(host)
     modalRoot.render(createElement(AssetPickerModal, {
+      key: `library-action-${libraryActions.revision()}`,
       open: state.libraryOpen,
       onClose: () => {
         closeLibraryAction(action)
@@ -176,7 +178,7 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
   async function addLocalPaths(sessionId, kind = 'file', signal) {
     if (!sessionId || signal?.aborted) return
     const pickKind = kind === 'directory' || kind === 'any' ? kind : 'file'
-    const picked = await requestJson('/omnimux/assets/pick', { kind: pickKind })
+    const picked = await requestJson('/omnimux/assets/pick', { kind: pickKind }, signal)
     if (signal?.aborted) return
     if (picked.status === 501) {
       toast(tx(t, 'composerAdd.pickerUnsupported'))
@@ -188,7 +190,7 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
       return
     }
     if (paths.length === 0) return
-    const materialized = await requestJson('/omnimux/composer/attachments/materialize', { sessionId, paths })
+    const materialized = await requestJson('/omnimux/composer/attachments/materialize', { sessionId, paths }, signal)
     if (signal?.aborted) return
     const rows = Array.isArray(materialized.body.results) ? materialized.body.results : []
     applyAddResults(store, sessionId, rows, t)
@@ -205,25 +207,27 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
   }
 
   doc.addEventListener('keydown', onKey)
-  const onAddFile = async (sessionId, signal, restoreComposerFocus) => {
+  const onAddFile = async (sessionId, signal, restoreComposerFocus, registrationSignal) => {
+    const actionSignal = AbortSignal.any([signal, registrationSignal])
     try {
-      await addLocalPaths(sessionId, 'any', signal)
+      await addLocalPaths(sessionId, 'any', actionSignal)
+    } catch (error) {
+      if (!actionSignal.aborted) throw error
     } finally {
-      if (!signal.aborted) restoreComposerFocus()
+      if (!actionSignal.aborted) restoreComposerFocus()
     }
   }
-  const onAddLibrary = (sessionId, signal, restoreComposerFocus) => new Promise((resolve) => {
-    if (signal.aborted) {
+  const onAddLibrary = (sessionId, signal, restoreComposerFocus, registrationSignal) => new Promise((resolve) => {
+    if (signal.aborted || registrationSignal.aborted) {
       resolve()
       return
     }
-    libraryActions.start({ sessionId, signal, restoreComposerFocus, resolve })
+    const action = libraryActions.start({ sessionId, signal, restoreComposerFocus, resolve })
     state.libraryOpen = true
     renderModal()
-    signal.addEventListener('abort', () => {
-      const action = libraryActions.current()
-      if (action?.signal === signal) closeLibraryAction(action)
-    }, { once: true })
+    const closeIfCurrent = () => { closeLibraryAction(action) }
+    signal.addEventListener('abort', closeIfCurrent, { once: true })
+    registrationSignal.addEventListener('abort', closeIfCurrent, { once: true })
   })
   registerComposerAddCommands(options.ctx || {}, {
     t,

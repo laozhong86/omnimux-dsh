@@ -610,7 +610,7 @@ index e6f9cd3..06dddd1 100644
        .toThrow(/not available on this host/)
    })
  
-@@ -157,14 +158,14 @@ describe('ui-permission browser plugin', () => {
+@@ -157,13 +158,13 @@ describe('ui-permission browser plugin', () => {
      const c = b.decoration()!
      const proj = { sessionId: sid('s1') }
      b.values.set(sid('s1'), SELECT)
@@ -628,4 +628,3 @@ index e6f9cd3..06dddd1 100644
 +    await expect((c.ui as PopupSelectSpec).onSelect({ id: 'read-only', label: 'read-only' }, { sessionId: sid('ghost') }))
        .rejects.toThrow(/not materialized/)
    })
- 

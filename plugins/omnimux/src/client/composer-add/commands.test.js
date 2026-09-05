@@ -43,7 +43,12 @@ describe('registerComposerAddCommands', () => {
     const restore = () => {}
     await registrations[0].ui.run({ session: { sessionId: 's1' }, signal, restoreComposerFocus: restore })
     await registrations[1].ui.run({ session: { sessionId: 's2' }, signal, restoreComposerFocus: restore })
-    assert.deepEqual(calls, [['file', 's1', signal, restore], ['library', 's2', signal, restore]])
+    assert.deepEqual(calls.map(([kind, sessionId, actionSignal, actionRestore]) => [kind, sessionId, actionSignal, actionRestore]), [
+      ['file', 's1', signal, restore],
+      ['library', 's2', signal, restore],
+    ])
+    assert.equal(calls[0][4].aborted, false)
+    assert.equal(calls[0][4], calls[1][4])
   })
 
   it('cleans both registrations through the caller effect', () => {
@@ -75,5 +80,41 @@ describe('registerComposerAddCommands', () => {
     const upgradedRuntime = makeCtx({ clientAction: true })
     registerComposerAddCommands(upgradedRuntime.ctx, { t, onAddFile() {}, onAddLibrary() {} })
     assert.deepEqual(upgradedRuntime.registrations.map(row => row.name), ['add-file', 'add-from-library'])
+  })
+
+  it('settles a delayed old registration on dispose without aborting its replacement', async () => {
+    const first = makeCtx()
+    let oldRegistrationSignal
+    let oldWrites = 0
+    registerComposerAddCommands(first.ctx, {
+      t,
+      onAddFile(_sessionId, _signal, _restore, registrationSignal) {
+        oldRegistrationSignal = registrationSignal
+        return new Promise((resolve) => {
+          registrationSignal.addEventListener('abort', () => resolve(), { once: true })
+          queueMicrotask(() => { if (!registrationSignal.aborted) oldWrites += 1 })
+        })
+      },
+      onAddLibrary() {},
+    })
+    const pending = first.registrations[0].ui.run({
+      session: { sessionId: 's1' }, signal: new AbortController().signal, restoreComposerFocus() {},
+    })
+    first.effects[0]()()
+    await pending
+    assert.equal(oldRegistrationSignal.aborted, true)
+    assert.equal(oldWrites, 0)
+
+    const replacement = makeCtx()
+    let replacementRegistrationSignal
+    registerComposerAddCommands(replacement.ctx, {
+      t,
+      onAddFile(_sessionId, _signal, _restore, registrationSignal) { replacementRegistrationSignal = registrationSignal },
+      onAddLibrary() {},
+    })
+    await replacement.registrations[0].ui.run({
+      session: { sessionId: 's1' }, signal: new AbortController().signal, restoreComposerFocus() {},
+    })
+    assert.equal(replacementRegistrationSignal.aborted, false)
   })
 })

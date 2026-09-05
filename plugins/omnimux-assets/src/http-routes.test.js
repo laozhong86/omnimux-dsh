@@ -288,7 +288,7 @@ describe('AssetsDispatcher mappings routes', () => {
     assert.deepEqual(cancelled.body.paths, [])
   })
 
-  it('passes kind "any" through to the picker for mixed file+folder panels', async () => {
+  it('passes kind "any" through to the picker request', async () => {
     const seen = []
     const { dispatcher } = makeDispatcher({
       picker: async (kind) => {

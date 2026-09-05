@@ -7,7 +7,8 @@
  *
  * File picks allow multiple selections. Folder picks also allow multiple
  * folders; each folder is stored as one path ref (never flattened).
- * `any` mixes files and folders in a single panel (UTI union trick).
+ * `any` requests a UTI union in one panel; native mixed selection remains
+ * unverified until the macOS picker gate has real evidence.
  *
  * The runner is injectable for deterministic tests.
  */
@@ -25,7 +26,7 @@ const PROMPTS = {
 function pickScript(kind) {
   const prompt = PROMPTS[kind]
   if (kind === 'any') {
-    // 单面板混选：用户已人工确认该 UTI 联合选择器可选择文件与文件夹。
+    // UTI union request only; do not infer mixed native selection from this script.
     return [
       `set theItems to choose file of type {"public.folder", "public.data"} with prompt "${prompt}" with multiple selections allowed`,
       'set posixPaths to ""',

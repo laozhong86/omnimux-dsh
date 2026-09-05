@@ -7,8 +7,8 @@
  * }} ctx
  * @param {{
  *   t: (key: string) => string,
- *   onAddFile: (sessionId: string, signal: AbortSignal, restoreComposerFocus: () => void) => void | Promise<void>,
- *   onAddLibrary: (sessionId: string, signal: AbortSignal, restoreComposerFocus: () => void) => void | Promise<void>,
+ *   onAddFile: (sessionId: string, signal: AbortSignal, restoreComposerFocus: () => void, registrationSignal: AbortSignal) => void | Promise<void>,
+ *   onAddLibrary: (sessionId: string, signal: AbortSignal, restoreComposerFocus: () => void, registrationSignal: AbortSignal) => void | Promise<void>,
  *   onClientActionUnavailable?: () => void,
  * }} actions
  */
@@ -22,6 +22,7 @@ export function registerComposerAddCommands(ctx, actions) {
       return
     }
     const t = actions.t
+    const registration = new AbortController()
     const stopFile = commandUi.register({
       name: 'add-file',
       description: t('composerAdd.addFile'),
@@ -29,7 +30,7 @@ export function registerComposerAddCommands(ctx, actions) {
       ui: {
         kind: 'clientAction',
         run: ({ session, signal, restoreComposerFocus }) =>
-          actions.onAddFile(session.sessionId, signal, restoreComposerFocus),
+          actions.onAddFile(session.sessionId, signal, restoreComposerFocus, registration.signal),
       },
     })
     const stopLibrary = commandUi.register({
@@ -39,10 +40,11 @@ export function registerComposerAddCommands(ctx, actions) {
       ui: {
         kind: 'clientAction',
         run: ({ session, signal, restoreComposerFocus }) =>
-          actions.onAddLibrary(session.sessionId, signal, restoreComposerFocus),
+          actions.onAddLibrary(session.sessionId, signal, restoreComposerFocus, registration.signal),
       },
     })
     ctx.effect?.(() => () => {
+      registration.abort()
       try { stopFile?.() } catch { /* ignore disposer failures */ }
       try { stopLibrary?.() } catch { /* ignore disposer failures */ }
     }, 'omnimux: composer add commands')

@@ -100,6 +100,7 @@ export interface CommandUiContract {
 - token 消费为 runtime 的责任，不是插件 action 的责任：**在开始 `clientAction` 前**按 menu `span` / bare-enter `token` 调用已有 `consumeVia()`。这与 Host bare command 的草稿 token 清除语义一致，并保持 “+” 空 span 安全 no-op。若 CAS miss，仍执行 UI action（命令是菜单中已选定的一项）；不能因陈旧 draft 让用户点按无响应。
 - 菜单关闭仍由 `InputTriggerController.settle()` 在 `onPick()` 返回后统一完成（该逻辑已适用于所有来源）；`clientAction` 不合成 Escape、不派发 outside pointer、不改 DOM。
 - `register()`/`decorate()` 继续返回 fiber disposer；runtime dispose 将 abort 并删除活动 action。旧 `popupSelect`、`decorate`、`leadingInput`、host execute 的决策分支字节语义不变。
+- composer-add registration 自己持有 lifecycle signal。其 disposer 先 abort 该 registration 的 file request 或 library owner，使旧 runtime action 结算并释放 busy；新 registration 使用新的 signal，不能被旧 disposer 中止。
 - `capabilities.clientAction === true` 是插件声明这两条 `clientAction` 的唯一准入条件。旧 runtime 缺少该能力时，两条均不注册；绝不声明为 `popupSelect` 或走菜单二级回退。插件仅显示一次本地、非聊天、非模态的运行时更新提示。当前 Host 未暴露可靠 build/version 标识，提示保守地按 origin 去重一次；运行时升级并重新加载后能力重新读取，条目自动恢复注册。
 
 ### 1.3 Runtime dispatch 变化
@@ -125,7 +126,7 @@ export interface CommandUiContract {
 
 - `install.js` 导出/注入 session-bound action factory，而不是读取 `currentSessionId(store)`；仅 legacy window custom events 如仍被其他代码使用才保留该查找，且在本 PR 移除前应有引用检索证明。
 - `addLocalPaths` 在 `await requestJson()` 前后读取 `signal.aborted`；取消 picker（`paths=[]`）不 materialize、不 toast、不写 AttachmentStore；abort 不 toast。
-- AssetPicker modal state 必须按 action generation/session 绑定；另一个动作、scope dispose 或 signal abort 时仅关闭**本动作拥有的 modal root**，不影响后来打开的 modal。确认请求返回后再次核验 owner；关闭或 Escape 后的延迟响应不得写 AttachmentStore、关闭或 resolve 后来打开的 action。`onConfirm` busy 保留；重复确认不重复 instantiate。
+- AssetPicker modal state 必须按 action generation/session 绑定；另一个动作、scope dispose 或 signal abort 时仅关闭**本动作拥有的 modal root**，不影响后来打开的 modal。渲染以 action revision 为 key，跨 session replacement 会重置 selected/busy/error。确认请求返回后再次核验 owner；关闭或 Escape 后的延迟响应不得写 AttachmentStore、关闭或 resolve 后来打开的 action。`onConfirm` busy 保留；重复确认不重复 instantiate。
 - `AssetPicker` 共享组件、`picker-model`、assets picker `kind:'any'` 留在 PR #558；它们不是本 Host overlay 的职责。
 
 ### 1.5 真实 overlay 文件、出口与测试位置
@@ -415,8 +416,8 @@ graph LR
 | 无聊天噪音 | 每个 clientAction 成功、取消、失败 | session/event 与 UI 无 `command/run`、`command/done`、无 flow node |
 | token/焦点 | slash token、+ 空 span、native picker cancel、AssetPicker Esc、随后立即打开另一 modal/panel | token CAS 已消费；仅原 action current 时恢复焦点；不关闭/抢焦新 UI |
 | 取消与异常 | Abort、scope dispose、HTTP/network reject、501 picker unsupported | abort/cancel 零 materialize/instantiate/store；非 abort 一个受控 notice/toast；无 unhandled rejection |
-| busy/重复 | 双击、重复 Enter、mouse+Enter 连续、确认双击、确认请求挂起后 Escape→重开→旧响应返回 | 每 session/action 只开一个 picker；每确认最多一次 instantiate；旧响应不写 tray、不关闭或结算新 action；busy 清理后才允许下一次 |
-| 业务回归 | 混选文件+目录，8 配额、alreadyIds、重复指纹、asset 选 1/多选 | `kind:'any'` paths 全部进入现有 materialize；quota/duplicate 汇总和 Picker disabled/busy 正确 |
+| busy/重复 | 双击、重复 Enter、mouse+Enter 连续、确认双击、确认请求挂起后 Escape→重开→旧响应返回、registration 热重载 | 每 session/action 只开一个 picker；每确认最多一次 instantiate；旧响应不写 tray、不关闭或结算新 action；旧 registration 结算，新的 registration 不受 abort；busy 清理后才允许下一次 |
+| 业务回归 | `kind:'any'` 请求、8 配额、alreadyIds、重复指纹、asset 选 1/多选 | `kind:'any'` 仅验证请求和 materialize 管线；macOS 文件/目录混选需独立原生 picker 证据，未通过前不可作为验收；quota/duplicate 汇总和 Picker disabled/busy 正确 |
 | overlay 可逆 | apply / already apply / reset | 临时干净 pin clone exit 0、diff check、无手改安装包 |
 | L2 + 45120 | 认证的内置浏览器 + `pnpm verify:live <stage>`；合并后的 Dev45120 browser + live evidence | L2 是 PR 前验证；**45120 report、DOM/snapshot/screenshot 是最终硬门禁，L2 不替代** |
 

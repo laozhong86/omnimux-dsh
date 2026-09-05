@@ -18,11 +18,14 @@ describe('composer-add install contract', () => {
     assert.match(installSource, /\/omnimux\/assets\/pick/)
     assert.match(installSource, /kind === 'directory' \|\| kind === 'any' \? kind : 'file'/)
     assert.match(installSource, /registerComposerAddCommands/)
-    assert.match(installSource, /addLocalPaths\(sessionId, 'any', signal\)/)
+    assert.match(installSource, /addLocalPaths\(sessionId, 'any', actionSignal\)/)
+    assert.match(installSource, /AbortSignal\.any\(\[signal, registrationSignal\]\)/)
+    assert.match(installSource, /async function requestJson\(path, body, signal\)/)
     assert.match(installSource, /signal\?\.aborted/)
     assert.match(installSource, /libraryActions\.isCurrent\(action\)/)
     assert.match(installSource, /closeLibraryAction\(libraryActions\.current\(\)\)/)
     assert.match(installSource, /\/omnimux\/composer\/attachments\/materialize/)
+    assert.match(installSource, /key: `library-action-\$\{libraryActions\.revision\(\)\}`/)
   })
 
   it('does not intercept the official + button or draw a replacement menu', () => {

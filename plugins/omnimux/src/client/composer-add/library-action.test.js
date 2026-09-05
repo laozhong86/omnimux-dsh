@@ -63,11 +63,13 @@ describe('library action ownership', () => {
     }
 
     controller.start(oldAction)
+    assert.equal(controller.revision(), 1)
     controller.start(nextAction)
 
     assert.equal(oldSettled, 1)
     assert.equal(oldFocus, 0)
     assert.equal(controller.isCurrent(oldAction), false)
     assert.equal(controller.isCurrent(nextAction), true)
+    assert.equal(controller.revision(), 2)
   })
 })
