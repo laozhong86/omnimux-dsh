@@ -1506,7 +1506,7 @@ export const INSPIRATION_CSS = `
   min-height: 0;
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.1fr) minmax(280px, 1.1fr);
+  grid-template-columns: minmax(240px, 0.9fr) minmax(320px, 1.2fr) minmax(300px, 1.1fr);
   overflow: hidden;
 }
 .omnimux-inspiration-modal-panel {
@@ -1536,7 +1536,7 @@ export const INSPIRATION_CSS = `
   width: auto;
   max-width: 100%;
   aspect-ratio: 9 / 16;
-  max-height: min(56vh, 560px);
+  max-height: min(38vh, 380px);
   margin: 0 auto 14px;
   overflow: hidden;
   border-radius: 8px;
@@ -1559,6 +1559,19 @@ export const INSPIRATION_CSS = `
   font-size: 13px;
   line-height: 1.65;
   color: var(--dsw-alias-label-secondary);
+}
+.omnimux-inspiration-modal-script-content.is-card {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1);
+}
+.omnimux-inspiration-modal-script-hint {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
 }
 .omnimux-inspiration-modal-panel-actions {
   display: flex;
@@ -1626,8 +1639,8 @@ export const INSPIRATION_CSS = `
   color: var(--dsw-alias-label-secondary);
 }
 .omnimux-inspiration-modal-dimensions article {
-  padding: 12px;
-  margin-bottom: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
   border-radius: 8px;
   background: var(--dsw-alias-bg-layer-1);
 }
@@ -1657,7 +1670,43 @@ export const INSPIRATION_CSS = `
   font-size: 13px;
   color: var(--dsw-alias-label-primary);
 }
-.omnimux-inspiration-modal-dimensions p { margin: 0; }
+.omnimux-inspiration-modal-dimensions p {
+  margin: 0;
+  line-height: 1.55;
+}
+.omnimux-inspiration-modal-chevron {
+  display: inline-flex;
+  transition: transform 120ms ease;
+}
+.omnimux-inspiration-modal-chevron.is-collapsed { transform: rotate(-90deg); }
+.omnimux-inspiration-modal-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.omnimux-inspiration-modal-footer-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+}
+.omnimux-inspiration-modal-footer-stats {
+  display: inline-flex;
+  align-items: center;
+}
+.omnimux-inspiration-modal-footer-stats > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
 .omnimux-inspiration-modal-dimensions pre {
   margin: 0;
   font-family: ui-monospace, monospace;
@@ -1685,7 +1734,7 @@ export const INSPIRATION_CSS = `
   flex: 0 0 56px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 0 16px;
   border-top: 1px solid var(--dsw-alias-border-l2);
 }

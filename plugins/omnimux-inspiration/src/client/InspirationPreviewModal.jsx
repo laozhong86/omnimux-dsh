@@ -22,6 +22,14 @@ const ICON_REPLICATE = <svg width="14" height="14" viewBox="0 0 24 24" fill="non
 const ICON_EXTERNAL = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M14 4h6v6M20 4 11 13" /><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" /></svg>
 const ICON_STAR = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9" /></svg>
 const ICON_STAR_ON = <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9" /></svg>
+const ICON_LIKE = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M7 10v10H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h3ZM7 20h9.5a2 2 0 0 0 1.9-1.4l2.2-7A2 2 0 0 0 18.7 9H14l.7-3.5A2 2 0 0 0 12.8 3L7 10v10Z" /></svg>
+const ICON_COMMENT = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 9.7 9.7 0 0 1-4-.9L3 21l1.9-4A8.4 8.4 0 1 1 21 11.5Z" /></svg>
+const ICON_SHARE = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m15 8 5-5m0 0v4m0-4h-4M10 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-4" /></svg>
+const ICON_CHEVRON = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+
+function statValue(stats, key, fallback) {
+  return stats[key] ?? stats[fallback]
+}
 
 function CopyButton({ value, label, copiedLabel, iconOnly = false }) {
   const [copied, setCopied] = useState(false)
@@ -250,7 +258,7 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
                   </span>
                 ) : null}
               </div>
-              {Object.keys(data.stats).length ? (
+              {!embedUrl && Object.keys(data.stats).length ? (
                 <div className="omnimux-inspiration-stats-grid">
                   {[['likes', 'stat.likes', 'digg_count'], ['comments', 'stat.comments', 'comment_count'], ['shares', 'stat.shares', 'share_count']].map(([key, label, fallback]) => (
                     <div className="omnimux-inspiration-stat-item" key={key}>
@@ -292,7 +300,10 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
                   ))}
                 </ol>
               ) : data.script ? (
-                <div className="omnimux-inspiration-modal-script-content">{renderPlainBreakdownText(showTranslation && data.translationText ? data.translationText : data.script)}</div>
+                <>
+                  <div className="omnimux-inspiration-modal-script-content is-card">{renderPlainBreakdownText(showTranslation && data.translationText ? data.translationText : data.script)}</div>
+                  <div className="omnimux-inspiration-modal-script-hint">{t('modal.script.noSegmentsHint')}</div>
+                </>
               ) : (
                 <div className="omnimux-inspiration-modal-empty">
                   <p>{t('modal.script.empty')}</p>
@@ -334,8 +345,16 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
                     </article>
                   )) : dimensions.map(([key, label, value]) => value ? (
                     <article key={key}>
-                      <h4>{label}</h4>
-                      <p>{renderPlainBreakdownText(value)}</p>
+                      <button
+                        type="button"
+                        className="omnimux-inspiration-modal-fold"
+                        onClick={() => setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }))}
+                        aria-expanded={!collapsed[key]}
+                      >
+                        <h4>{label}</h4>
+                        <span className={`omnimux-inspiration-modal-chevron${collapsed[key] ? ' is-collapsed' : ''}`}>{ICON_CHEVRON}</span>
+                      </button>
+                      {collapsed[key] ? null : <p>{renderPlainBreakdownText(value)}</p>}
                     </article>
                   ) : null)}
                   {data.rawMarkdown ? (
@@ -358,6 +377,23 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
           </main>
 
           <footer className="omnimux-inspiration-modal-footer">
+            {(data.publishedAt || data.createdAt || Object.keys(data.stats).length) ? (
+              <div className="omnimux-inspiration-modal-footer-meta">
+                {data.publishedAt || data.createdAt ? <span>{data.publishedAt || data.createdAt}</span> : null}
+                {Object.keys(data.stats).length ? (
+                  <span className="omnimux-inspiration-modal-footer-stats">
+                    {[
+                      ['likes', 'digg_count', ICON_LIKE, 'stat.likes'],
+                      ['comments', 'comment_count', ICON_COMMENT, 'stat.comments'],
+                      ['shares', 'share_count', ICON_SHARE, 'stat.shares'],
+                    ].map(([key, fallback, icon, label], index) => {
+                      const value = statValue(data.stats, key, fallback)
+                      return value == null ? null : <span key={key}>{index ? ', ' : ''}{icon}<span className="omnimux-inspiration-modal-sr-only">{t(label)} </span>{value}</span>
+                    })}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
             {typeof onReplicate === 'function' ? (
               <Button
                 variant="primary"
