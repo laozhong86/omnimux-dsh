@@ -13,6 +13,8 @@ const PNG = Uint8Array.from([
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
   0x00, 0x00, 0x00, 0x00,
 ])
+const MP4 = Buffer.from([0, 0, 0, 16, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d])
+const WEBM = Buffer.from([0x1a, 0x45, 0xdf, 0xa3])
 
 function pngFile() {
   const dir = mkdtempSync(join(tmpdir(), 'omnimux-text-'))
@@ -76,8 +78,9 @@ describe('textComplete execute', () => {
         image: dest,
         llm: collectStream(seen),
         attachments: {
-          saveImage(input) {
+          async saveImage(input) {
             saved.push(input)
+            await Promise.resolve()
             return { attachmentId: 'att-1', mediaType: input.mediaType, bytes: input.data.byteLength, width: 1, height: 1 }
           },
         },
@@ -118,6 +121,59 @@ describe('textComplete execute', () => {
     )
   })
 
+  it('ignores caller bypassSubmitGuard and rejects an incompatible operation before llm.stream', async () => {
+    let streamCalls = 0
+    await assert.rejects(
+      () => executeOmnimuxText({
+        prompt: 'describe',
+        model: 'gemini-3.7-flash',
+        operation: 'digital_human',
+        bypassSubmitGuard: true,
+        llm: {
+          async * stream() {
+            streamCalls += 1
+            yield { type: 'text-delta', text: 'must not run' }
+            yield { type: 'finish', reason: { kind: 'stop' } }
+          },
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(streamCalls, 0)
+  })
+
+  it('uses probed image metadata and rejects an oversized image before saving or streaming', async () => {
+    const bytes = Buffer.alloc(20 * 1024 * 1024 + 1)
+    PNG.forEach((value, index) => { bytes[index] = value })
+    let saved = 0
+    let streamCalls = 0
+    await assert.rejects(
+      () => executeOmnimuxText({
+        prompt: 'describe',
+        image: 'https://example.com/oversized.png',
+        assetMeta: { 'https://example.com/oversized.png': { mime: 'image/png', sizeBytes: 1 } },
+        attachments: {
+          imageLimits: { maxImageBytes: 25 * 1024 * 1024 },
+          async saveImage() { saved += 1 },
+        },
+        fetcher: async () => ({
+          ok: true,
+          headers: { get: () => 'image/png' },
+          arrayBuffer: async () => bytes,
+        }),
+        llm: {
+          async * stream() {
+            streamCalls += 1
+            yield { type: 'text-delta', text: 'must not run' }
+          },
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(saved, 0)
+    assert.equal(streamCalls, 0)
+  })
+
   it('decodes a data URI and reads PNG magic', () => {
     const decoded = decodeDataUri(`data:image/png;base64,${Buffer.from(PNG).toString('base64')}`)
     assert.equal(decoded.mediaType, 'image/png')
@@ -129,7 +185,7 @@ describe('textComplete execute', () => {
       () => executeOmnimuxText({
         prompt: 'describe',
         image: 'data:image/png;base64,iVBORw0KGgo=',
-        video: 'data:video/mp4;base64,AAAA',
+        video: `data:video/mp4;base64,${MP4.toString('base64')}`,
         llm: collectStream([]),
       }),
       (error) => error instanceof OmnimuxError
@@ -143,7 +199,7 @@ describe('textComplete execute', () => {
       () => executeOmnimuxText({
         prompt: 'describe',
         model: 'grok-4.6',
-        video: 'data:video/mp4;base64,AAAA',
+        video: `data:video/mp4;base64,${MP4.toString('base64')}`,
         env: { OMNIMUX_API_KEY: 'sk-test' },
         fetcher: async () => ({ ok: true, json: async () => ({}) }),
       }),
@@ -187,11 +243,29 @@ describe('textComplete execute', () => {
     assert.equal(parts[1].type === 'video_url', false)
   })
 
+  it('guards video MIME from loaded bytes before the chat HTTP request', async () => {
+    let vendorCalls = 0
+    await assert.rejects(
+      () => executeOmnimuxText({
+        prompt: 'describe',
+        video: `data:video/webm;base64,${WEBM.toString('base64')}`,
+        assetMeta: { [`data:video/webm;base64,${WEBM.toString('base64')}`]: { mime: 'video/mp4', sizeBytes: 1 } },
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        fetcher: async () => {
+          vendorCalls += 1
+          return { ok: true, status: 200, json: async () => ({}) }
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(vendorCalls, 0)
+  })
+
   it('throws omnimux-unconfigured when video lacks an API key', async () => {
     await assert.rejects(
       () => executeOmnimuxText({
         prompt: 'describe',
-        video: 'data:video/mp4;base64,AAAA',
+        video: `data:video/mp4;base64,${MP4.toString('base64')}`,
         env: {},
         fetcher: async () => ({ ok: true, json: async () => ({}) }),
       }),
@@ -200,7 +274,7 @@ describe('textComplete execute', () => {
   })
 
   it('packs loadTextVideo into image_url only', async () => {
-    const packed = await loadTextVideo('data:video/webm;base64,AAAA')
+    const packed = await loadTextVideo(`data:video/webm;base64,${WEBM.toString('base64')}`)
     const part = toVideoImageUrlPart(packed)
     assert.equal(part.type, 'image_url')
     assert.match(part.image_url.url, /^data:video\/webm;base64,/)

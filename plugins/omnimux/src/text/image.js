@@ -2,14 +2,6 @@ import { readFile } from 'node:fs/promises'
 import { basename, isAbsolute } from 'node:path'
 import { OmnimuxError } from '../media/errors.js'
 
-const EXT_MEDIA = Object.freeze({
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.gif': 'image/gif',
-})
-
 const MIME_MEDIA = Object.freeze({
   'image/png': 'image/png',
   'image/jpeg': 'image/jpeg',
@@ -21,17 +13,17 @@ const MIME_MEDIA = Object.freeze({
 const DEFAULT_BYTE_CAP = 10 * 1024 * 1024
 
 /**
- * Load one image from an absolute path, http(s) URL, or data URI and commit
- * it through the durable attachment store. The ref lives only on this
- * one-shot request; the hub does not append it to the parent session.
+ * Probe one image from an absolute path, http(s) URL, or data URI. The
+ * returned MIME and byte count come from the loaded bytes and are safe for
+ * SubmitGuard admission; this function has no durable-store side effect.
  * @param {string} source
  * @param {{
- *   attachments: { saveImage: Function, imageLimits?: { maxImageBytes?: number, mediaTypes?: string[] } },
+ *   attachments: { imageLimits?: { maxImageBytes?: number, mediaTypes?: string[] } },
  *   fetcher?: typeof fetch,
  *   signal?: AbortSignal,
  * }} deps
  */
-export async function loadTextImage(source, deps) {
+export async function probeTextImage(source, deps) {
   const raw = String(source || '').trim()
   if (!raw) {
     throw new OmnimuxError('omnimux-invalid-request', 'image is empty')
@@ -41,10 +33,14 @@ export async function loadTextImage(source, deps) {
     : /^https?:\/\//i.test(raw)
       ? await fetchRemoteImage(raw, deps)
       : await readLocalImage(raw, deps.signal)
-  const mediaType = loaded.mediaType ?? mediaFromMagic(loaded.data)
-  if (!mediaType) {
+  const probedMediaType = mediaFromMagic(loaded.data)
+  if (!probedMediaType) {
     throw new OmnimuxError('omnimux-invalid-request', 'image must be PNG, JPEG, WebP, or GIF')
   }
+  if (loaded.mediaType && loaded.mediaType !== probedMediaType) {
+    throw new OmnimuxError('omnimux-invalid-request', `image MIME ${loaded.mediaType} does not match its bytes`)
+  }
+  const mediaType = probedMediaType
   const allowed = deps.attachments.imageLimits?.mediaTypes
   if (Array.isArray(allowed) && allowed.length > 0 && !allowed.includes(mediaType)) {
     throw new OmnimuxError('omnimux-invalid-request', `image type ${mediaType} is not accepted`)
@@ -53,10 +49,24 @@ export async function loadTextImage(source, deps) {
   if (loaded.data.byteLength > cap) {
     throw new OmnimuxError('omnimux-invalid-request', `image exceeds ${cap} bytes`)
   }
-  return deps.attachments.saveImage({
+  return {
     data: loaded.data,
     mediaType,
     name: loaded.name,
+    sizeBytes: loaded.data.byteLength,
+  }
+}
+
+/**
+ * Commit a previously probed image through the durable attachment store.
+ * @param {{ data: Uint8Array, mediaType: string, name: string }} image
+ * @param {{ saveImage: Function }} attachments
+ */
+export function saveProbedTextImage(image, attachments) {
+  return attachments.saveImage({
+    data: image.data,
+    mediaType: image.mediaType,
+    name: image.name,
   })
 }
 
@@ -88,7 +98,6 @@ async function readLocalImage(filePath, signal) {
   if (!isAbsolute(filePath)) {
     throw new OmnimuxError('omnimux-invalid-request', 'image path must be absolute')
   }
-  const ext = extnameOf(filePath)
   let data
   try {
     data = new Uint8Array(await readFile(filePath, signal ? { signal } : undefined))
@@ -100,7 +109,6 @@ async function readLocalImage(filePath, signal) {
   }
   return {
     data,
-    mediaType: EXT_MEDIA[ext] ?? mediaFromMagic(data),
     name: basename(filePath),
   }
 }
@@ -128,18 +136,9 @@ async function fetchRemoteImage(url, deps) {
   }
   return {
     data: buffer,
-    mediaType: headerType ?? mediaFromMagic(buffer),
+    mediaType: headerType,
     name: basename(new URL(url).pathname) || 'image',
   }
-}
-
-/**
- * @param {string} filePath
- */
-function extnameOf(filePath) {
-  const base = basename(filePath).toLowerCase()
-  const dot = base.lastIndexOf('.')
-  return dot === -1 ? '' : base.slice(dot)
 }
 
 /**
