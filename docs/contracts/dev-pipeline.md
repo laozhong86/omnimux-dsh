@@ -57,7 +57,8 @@ subsystem: "omnimux-assets"
 1. **生产 profile（omnimux）MUST NOT link 工作区**；其插件一律物化副本。
 2. **dev/staging profile MUST link 源码树**；MUST NOT 出现在生产 App 的 profile 里。
 3. **一个 dev profile 里 link 的在研插件 ≤ 1 个**，其余一律物化稳定副本——这是多插件并行开发防干扰的核心规则。
-4. **同步 profile 副本只走 `yarn omnimux:sync` / `scripts/sync-to-app.sh`（内部再调 `sync-stable.sh`）**；默认同步至开发版 `~/.omnimux-dev`，可用 `--prod` / `--dsh` / `--all` 参数指定其他目标；MUST NOT 手动 rsync/cp 进 profile（多源目录铺平事故已发生一次）。`sync` 会先 build 再物化，避免同步到陈旧 `lib/client.js`。
+4. **同步 profile 副本只走 `yarn omnimux:sync` / `scripts/sync-to-app.sh`（内部再调 `sync-stable.sh`）**；默认同步至开发版 `~/.omnimux-dev`，可用 `--prod` / `--dsh` / `--all` 参数指定其他目标；MUST NOT 手动 rsync/cp 进 profile（多源目录铺平事故已发生一次）。`sync` 会先 build 再物化，避免同步到陈旧 `lib/client.js`。物化源固定在 profile 的 `.materialize-snapshots/plugins/`，`node_modules` 仅由 pnpm 管理；建立新布局时必须在同次 sync 里显式选择全部仍为旧 `file:node_modules/<插件>` 的依赖，从当前源码重新物化，并核验每个已安装入口的身份与 SHA-256。若单插件 sync 遇到未选中的旧产品自引用，或任意 sync 遇到未受管的旧自引用，必须在写入前失败并先通过官方完整 profile 安装建立该依赖；禁止迁移、保留自引用或静默跳过。
+4b. **`dsh-ui-kit` 唯一稳定源**：官方完整 profile rebuild 用权威构建输入写入 `.materialize-snapshots/plugins/dsh-ui-kit`；full sync 只替换该受管源，named sync 只读并核验它。`sync-stable.sh` 不得从 `node_modules` 回填 kit；受管源缺失时必须在任一插件源码、profile manifest 或 pnpm 写入前失败。
 4a. **`omnimux-workflow` 源码唯一真相**：Git 只跟踪 `src/`。`dist/index.js`（Host）、`lib/client.js`、`lib/canvas.js` 由 `prepare` 或 `sync-to-app` 现场生成，**禁止提交、禁止为对齐仓内旧包另开 PR**。新 clone 未 install/build 时没有这些文件是目标态。其它插件的 `lib/client.js` 本阶段仍跟踪。禁止 `--ignore-scripts` 安装本插件（会跳过 prepare，Host 入口缺失）。画布 island 必须带 `canvas.js?v=<canvasHash>`；Dev App 验收若仍见旧 UI，先硬刷新，不得据此判断源码未合入。
 5. **dev 环境用完即弃**：`yarn omnimux:dev rm <name>`；MUST NOT 把 dev profile 当长期环境养。
 6. **L1 验证优先**：能写进 `node --test` 的验证 MUST NOT 依赖开 App 人工点（官方 testing.zh.md 原则）。
