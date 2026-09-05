@@ -328,6 +328,19 @@ describe('oneClickReplicate', () => {
     assert.match(io.prefills[0], /^\/video-deconstruct\n\n/)
   })
 
+  it('draft-protected target performs zero attachment writes and exposes the protected state', async () => {
+    const io = makeIo({
+      async prefillPrompt() {
+        io.prefills.push('attempt')
+        return { ok: false, error: 'draft-protected' }
+      },
+    })
+    const result = await oneClickReplicate(ROW, io)
+    assert.deepEqual(result, { ok: false, error: 'draftProtected' })
+    assert.equal(io.attaches.length, 0)
+    assert.deepEqual(io.status.at(-1), 'card.cta.draftProtected')
+  })
+
   it('fallback attachment event carries the returned new session id', async () => {
     const events = []
     const win = {
@@ -390,7 +403,7 @@ describe('oneClickReplicate', () => {
     assert.equal(io.prefills.length, 1)
   })
 
-  it('quota-exceeded still reveals and prefills but returns attachFull', async () => {
+  it('quota-exceeded returns attachFull after one safe prefill', async () => {
     const io = makeIo({
       addAttachment(sessionId, payload) {
         io.attaches.push({ sessionId, payload })
@@ -427,7 +440,7 @@ describe('oneClickReplicate', () => {
     assert.equal(io.status.at(-1), 'card.cta.sendManual')
     assert.equal(sendClicks, 0)
     assert.equal(io.reveals.length, 1)
-    assert.equal(io.attaches.length, 1)
+    assert.equal(io.attaches.length, 0)
     assert.deepEqual(closedTabs, [])
   })
 

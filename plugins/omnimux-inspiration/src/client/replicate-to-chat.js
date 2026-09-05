@@ -8,7 +8,7 @@
  * CTA 唯一副作用 = 展开中间会话栏（split）+ 预填 prompt（P-2）。
  */
 import { buildReplicationPrompt } from './replication.js'
-import { prefillReplicationPrompt } from './composer-inject.js'
+import { queueSessionPrefill } from './session-prefill.js'
 import { clickOfficialNewSession } from './new-session-click.js'
 
 /** Module-level inflight lock. A second call returns `{ error: 'busy' }` and does not queue. */
@@ -193,7 +193,9 @@ export async function oneClickReplicate(row, io = {}) {
     const addAttachment = typeof io.addAttachment === 'function'
       ? io.addAttachment
       : defaultAddAttachment(win, doc)
-    const prefill = typeof io.prefillPrompt === 'function' ? io.prefillPrompt : prefillReplicationPrompt
+    const prefill = typeof io.prefillPrompt === 'function'
+      ? io.prefillPrompt
+      : (prompt) => queueSessionPrefill({ targetSessionId: sessionId, prompt })
     const reveal = typeof io.revealConversation === 'function'
       ? io.revealConversation
       : () => revealConversationForReplicate({
@@ -232,10 +234,26 @@ export async function oneClickReplicate(row, io = {}) {
       onStatus('card.cta.newSessionFailed')
       return { ok: false, error: 'newSessionFailed' }
     }
+    // Establish that the rendered target has an empty, session-scoped composer
+    // before adding an attachment. A reused blank session may contain an
+    // unsent draft even though its message log is blank; that draft is never
+    // replaced, appended to, or paired with a new attachment.
+    const prompt = buildReplicationPrompt(row)
+    let prefilled
+    try {
+      prefilled = await prefill(prompt)
+    } catch {
+      onStatus('card.cta.sendManual')
+      return { ok: false, error: 'sendManual' }
+    }
+    if (!prefilled || prefilled.ok !== true) {
+      onStatus(prefilled?.error === 'draft-protected' ? 'card.cta.draftProtected' : 'card.cta.sendManual')
+      return { ok: false, error: prefilled?.error === 'draft-protected' ? 'draftProtected' : 'sendManual' }
+    }
+
     const payload = buildInspirationPayload(row)
     let attached = false
     let duplicate = false
-    let quotaExceeded = false
     let attachResult
     try {
       attachResult = addAttachment(sessionId, payload)
@@ -259,31 +277,11 @@ export async function oneClickReplicate(row, io = {}) {
       attached = true
       duplicate = true
     } else if (reason === 'quota-exceeded') {
-      quotaExceeded = true
       onStatus('card.cta.attachFull')
+      return { ok: false, error: 'attachFull' }
     } else {
       onStatus('card.cta.attachFailed')
       return { ok: false, error: 'attachFailed' }
-    }
-
-    // The column was already revealed immediately after action dispatch, before
-    // official target resolution; keep that visible state for every outcome.
-    const prompt = buildReplicationPrompt(row)
-    if (quotaExceeded) {
-      try { await prefill(prompt) } catch { /* ignore */ }
-      return { ok: false, error: 'attachFull' }
-    }
-
-    let prefilled
-    try {
-      prefilled = await prefill(prompt)
-    } catch {
-      onStatus('card.cta.sendManual')
-      return { ok: false, error: 'sendManual' }
-    }
-    if (!prefilled || prefilled.ok !== true) {
-      onStatus('card.cta.sendManual')
-      return { ok: false, error: 'sendManual' }
     }
 
     onStatus(null)

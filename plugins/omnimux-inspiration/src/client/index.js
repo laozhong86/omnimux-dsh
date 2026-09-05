@@ -1,13 +1,36 @@
-import { createElement } from 'react'
+import { createElement, useEffect } from 'react'
 import { NS, en, zh } from './locales.js'
 import { mountSidebarEntry } from './sidebar-entry.js'
 import { InspirationStage } from './InspirationStage.jsx'
 import { bindOfficialSessions } from './new-session-click.js'
+import { consumeSessionPrefill, getPendingSessionPrefill } from './session-prefill.js'
 
 export const name = 'omnimux-inspiration'
 export const inject = ['slots', 'locale']
 
 export const INSPIRATION_TAB_ID = 'omnimux-inspiration:library'
+export const SESSION_PREFILL_SLOT = 'conversation.composer.dock'
+
+/**
+ * Consume a queued replication prefill only from its official session-scoped
+ * composer slot. The hook sees the slot's current draft before any write.
+ * @param {{ sessionId?: string, useInput?: Function, inputActions?: { setDraft?: Function } }} props
+ * @returns {null}
+ */
+export function SessionPrefillConsumer(props) {
+  const draft = typeof props?.useInput === 'function'
+    ? String(props.useInput((state) => state?.draft ?? '') ?? '')
+    : ''
+  const sessionId = String(props?.sessionId ?? '')
+  useEffect(() => {
+    consumeSessionPrefill(getPendingSessionPrefill(), {
+      sessionId,
+      draft,
+      inputActions: props?.inputActions,
+    })
+  }, [draft, sessionId, props?.inputActions])
+  return null
+}
 
 function renderInspirationIcon(size = 16) {
   return createElement('svg', {
@@ -46,6 +69,11 @@ export function apply(ctx) {
   const t = ctx.locale.bind(NS)
 
   ctx.effect(() => mountSidebarEntry(null, t, ctx.locale), 'omnimux-inspiration: sidebar entry')
+  ctx.slots.inject(SESSION_PREFILL_SLOT, () => ctx.slots.register({
+    name: SESSION_PREFILL_SLOT,
+    id: 'omnimux-inspiration:session-prefill',
+    order: 100,
+  }, SessionPrefillConsumer))
 
   const registerInspirationTab = (sidebar) => {
     if (!sidebar || typeof sidebar.registerTab !== 'function') return () => {}
