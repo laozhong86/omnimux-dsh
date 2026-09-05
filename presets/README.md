@@ -30,9 +30,11 @@
 
 DSH **不允许**已开始的会话热切换 preset（`agentPreset.select` 会 `agent-preset-locked`）。产品路径是：
 
-- **默认停在 `standard`**：主会话按指令 spawn 10 个具名专家（创作 6 + 增长 4），header 仍显示「标准模式」。
+- **默认停在 `standard`**：主会话保留完整通用能力，并可按任务收益选用 10 个具名专家工具；不固定调用整队，header 仍显示「标准模式」。
 - **专用团 preset**：用户开新会话就要整场沉浸该团时，用下拉选团（仅空白会话可 `select`）。
 - 专家 spawn 真源在 `presets/fragments/`，由 `scripts/build-agent-presets.mjs` 插入三个 `agent.cordis.yml`。
+
+三种 preset 共用以下协作原则：保持用户已授权意图；只在缺少关键决策或外部写操作缺少具体授权时询问；Skill 按需读取；专家只有在独立有收益时才委派；以真实工具、文件和数据证据收尾。
 
 ## 命名契约
 

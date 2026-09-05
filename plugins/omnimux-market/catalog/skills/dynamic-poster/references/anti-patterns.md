@@ -20,5 +20,5 @@
 - **Don't make the escalation instant**: The absurd event must build progressively so the audience watches it unfold — not a single flash cut.
 - **Don't lose the product in the escalation**: No matter how dramatic the event, the product must remain the visual and narrative center.
 - **Don't describe scenes in motion prompts**: Motion prompt 的 80% 必须是变化动作描述，不是静态场景描述。如果 prompt 读起来像 3 张图的说明文字而不是一段连续动作，视频就不会有叙事张力。
-- **Don't show frontal faces**: Seedance 对正面人脸极度敏感，会直接拒绝。所有分镜图和 motion prompt 中禁止正面人脸——用背影、剪影、局部肢体、物体代替人物。
-- **Don't write vague motion prompts**: Seedance 的 prompt 必须极度详细——每个 Visual Delta 展开为 ≥2 句动作描述，包含起点位置、扩展方向、速度节奏、物理形态。一句话概括 = 模型乱猜。
+- **Don't add people by default**: 人物是否出镜应由创意和已授权参考决定。不要为了迁就某模型的审核而偷偷改成背影、拼图或换模型重投；遇到政策拒绝就停止并改成合规概念。
+- **Don't write vague motion prompts**: 每个 Visual Delta 要写明起点、方向、速度节奏和物理形态；细节量按所选模型的实际提示词合同调整。

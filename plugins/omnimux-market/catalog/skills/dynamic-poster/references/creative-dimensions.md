@@ -93,7 +93,7 @@
 | **Sublime** | 庄严 | 令人敬畏，画廊级别的美感 | 奢侈品、美妆、手表、高端家居 |
 | **Provocative** | 冒犯 | 挑战预期，态度鲜明 | 潮牌、科技、实验性品牌 |
 
-**3 个方案必须至少在 Seed × Dimension × Tone 三轴中有 2 个不同。**
+仅当创意方向未决且需要比较时提供多个方案；方案之间至少在 Seed × Dimension × Tone 三轴中有 2 个不同。用户已给明确方向时直接深化该方向。
 
 ---
 
@@ -122,9 +122,9 @@
 
 ## 检查清单
 
-- [ ] 3 个方案用了 3 个不同的 Creative Seed？
-- [ ] 至少用了 2 种不同的 Creative Dimension？
-- [ ] 3 种 Emotional Tone 各出现至少一次？
+- [ ] 若提供多个方案，它们是否使用不同 Creative Seed？
+- [ ] 若提供多个方案，是否覆盖至少 2 种 Creative Dimension？
+- [ ] Emotional Tone 是否与每个方向及品牌目标匹配？
 - [ ] 每个方案只有 ONE 个超现实元素？
 - [ ] 冲突弧线有 Setup → Escalation → Payoff 三段？
 - [ ] 环境干净整洁（白色空间/城市/开阔天空），反差突出超现实元素？

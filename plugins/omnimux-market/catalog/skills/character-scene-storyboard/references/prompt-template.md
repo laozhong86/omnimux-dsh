@@ -1,11 +1,11 @@
-# g-image-2 Prompt 模板
+# 综合设定图 Prompt 模板
 
-第 2 阶段调用 g-image-2 时使用此模板。所有 `{占位符}` 必须填实,`{STYLE_*}` 字段从 `references/style-dictionary.md` 选定的风格里取。
+仅在目标输出是单张综合设定图时使用。按用户选择的兼容模型/运行时能力调整语法；只填写适用占位符，删除不适用模块。`{STYLE_*}` 字段从 `references/style-dictionary.md` 选定的风格里取。
 
 ## 关键填写规则
 
 - **风格字段全部基于第 1 阶段确认的 `{STYLE_NAME}`**,从风格词典对应行抄写
-- **`{LAYOUT_INSTRUCTION}` 描述各模块的相对权重**(不是固定坐标),让 g-image-2 自行排版
+- **`{LAYOUT_INSTRUCTION}` 描述各模块的相对权重**(不是固定坐标),让所选兼容图像能力自行排版
 - **`{panel_ratio}` 是分镜格内的画面比例**,与文档整体比例无关
 - **NEGATIVE 段必须按选定风格调整**——若选中 S6 二次元则不能再写 `color anime style`,若选中 S5 欧美动漫则不能再禁掉 `halftone`,若选中 S2 写实电影感则不能再禁 `photorealistic`
 - **`{STYLE_PANEL_RENDER}` 已在每种风格里定义**,storyboard 模块直接用占位符,不要再硬编码 "ink sketch / gray wash"
@@ -13,9 +13,9 @@
 ## 模板正文
 
 ```
-Generate a single comprehensive pre-production design sheet image using g-image-2.
-This must be ONE single image — a professional animation/film concept art document.
-Do NOT output separate images.
+Generate a single comprehensive pre-production design sheet image with the selected compatible image capability.
+This prompt is for ONE professional animation/film concept art document.
+If the requested deliverable is separate images or multiple sheets, do not use this template unchanged.
 
 ⚠️ DOCUMENT STYLE — SELECTED VISUAL STYLE: {STYLE_NAME} (highest priority)
 Fill in the following from the Style Dictionary based on the user's chosen style:
@@ -43,8 +43,8 @@ based on their relative size needs. Let the layout emerge from the content:
    scene concept gets a medium region at bottom-left;
    storyboard needs the largest area at bottom-right since it has 12 panels")
 - The overall document aspect ratio and exact region boundaries are YOUR choice —
-  optimize for readability of each module. Do NOT let any fixed ratio constraint
-  appear anywhere in this prompt.
+  optimize for readability of each module unless the selected model requires
+  an explicit supported output ratio.
 
 ⚠️ REFERENCE IMAGES define character appearances:
 - {char_ref_path_A}: {CHARACTER_A_NAME} — {detailed_appearance_description}
