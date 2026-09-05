@@ -1,9 +1,31 @@
 import assert from 'node:assert/strict'
-import { copyFileSync } from 'node:fs'
+import { copyFileSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { PNG } from 'pngjs'
 
 export const STAGE_ASSERTIONS = ['active-content-selection', 'idempotent-open', 'chat-clears-selection', 'restore']
 export const PROBE_ASSERTIONS = ['initial-session-restored', 'initial-workbench-restored']
+
+export function assertPng(bytes) {
+  const data = Buffer.from(bytes)
+  assert.ok(data.length > 32, 'Screenshot PNG is empty')
+  let decoded
+  try { decoded = PNG.sync.read(data, { checkCRC: true }) } catch (error) { throw new Error(`Screenshot PNG cannot decode: ${error.message}`) }
+  assert.ok(decoded.width > 0 && decoded.height > 0, 'Screenshot PNG has empty dimensions')
+  assert.equal(decoded.data.length, decoded.width * decoded.height * 4, 'Screenshot PNG pixels do not match dimensions')
+  return { width: decoded.width, height: decoded.height }
+}
+
+export function saveProbeScreenshot(screenshot, destination) {
+  if (screenshot instanceof Uint8Array || Buffer.isBuffer(screenshot)) {
+    assertPng(screenshot); writeFileSync(destination, screenshot, { mode: 0o600 }); return destination
+  }
+  const source = typeof screenshot === 'string' ? screenshot : screenshot?.path || screenshot?.screenshot
+  assert.ok(source, 'Missing stage screenshot')
+  copyFileSync(source, destination)
+  assertPng(readFileSync(destination))
+  return destination
+}
 
 /** Runs in the page; only the real public workbench snapshot is accepted. */
 export function readStageState(target, sidebarSelectors) {
@@ -70,13 +92,13 @@ export function assertStageState(state, target, sessionId) {
   assert.equal(state.entryCount, 1, `${target.stage}: missing or duplicate sidebar entry`)
   assert.ok(state.panelOpen && state.active, `${target.stage}: sidebar click did not activate the Tab`)
   assert.equal(state.activeTab, target.tabId, `${target.stage}: wrong active Tab`)
-  assert.deepEqual(state.selected, [target.selector], `${target.stage}: sidebar selection must be unique`)
+  assert.ok(state.selected?.length === 1 && state.selected[0] === target.selector, `${target.stage}: sidebar selection must be unique`)
   assert.equal(state.contentCount, 1, `${target.stage}: content root missing, hidden or duplicated`)
   assert.ok(state.contentLength > 0 && !state.loadingOnly, `${target.stage}: empty or loading-only content`)
   assert.equal(state.visibleErrors, 0, `${target.stage}: visible content error`)
 }
 
-/** Ego helpers are passed explicitly; they are not imported from a second browser stack. */
+/** Browser operations are passed by the selected transport adapter. */
 export async function runStageProbe(browser, { targets, sidebarSelectors = targets.map((t) => t.selector), evidenceDir, onProgress = () => {} }) {
   assert.ok(targets.length > 0, 'Zero stage targets')
   const result = { targets: [], assertions: [], screenshots: [] }
@@ -100,6 +122,7 @@ export async function runStageProbe(browser, { targets, sidebarSelectors = targe
   const waitForStage = async (target) => {
     let last
     let previousLayout
+    let lastAssertionError
     await until(async () => {
       last = await read(target)
       assert.equal(last.sessionId, initial.sessionId, 'Active session changed; stop UI operations')
@@ -112,9 +135,16 @@ export async function runStageProbe(browser, { targets, sidebarSelectors = targe
       const layout = JSON.stringify(last.layout)
       const stable = !last.transitioning && layout === previousLayout
       previousLayout = layout
-      try { assertStageState(last, target, initial.sessionId); return stable } catch { return false }
+      try {
+        assertStageState(last, target, initial.sessionId)
+        lastAssertionError = null
+        return stable
+      } catch (error) {
+        lastAssertionError = error
+        return false
+      }
     }, `${target.stage}: visible Stage assertions did not settle`).catch((error) => {
-      throw new Error(`${error.message}: ${JSON.stringify(last)}`)
+      throw new Error(`${error.message}; last assertion: ${lastAssertionError?.message || 'layout still changing'}; state: ${JSON.stringify(last)}`)
     })
   }
   const clickEntry = async (target) => {
@@ -151,10 +181,8 @@ export async function runStageProbe(browser, { targets, sidebarSelectors = targe
       record(`${target.stage}:idempotent-open`, repeated.openedTabs.filter((id) => id === target.tabId).length === 1, target.tabId)
       const screenshot = await browser.captureScreenshot()
       assertStageState(await read(target), target, initial.sessionId)
-      const source = typeof screenshot === 'string' ? screenshot : screenshot?.path || screenshot?.screenshot
-      assert.ok(source, 'Missing stage screenshot')
       const destination = join(evidenceDir, `${target.stage}.png`)
-      copyFileSync(source, destination)
+      saveProbeScreenshot(screenshot, destination)
       result.screenshots.push(destination)
       result.targets.push({ stage: target.stage, tabId: target.tabId })
       onProgress(result)
