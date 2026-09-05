@@ -24,7 +24,7 @@ const BASE_CSS = `
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
-  padding: 2px 0 2px 0;
+  padding: 6px 0 2px 0;
 }
 .omx-attachment-tray::-webkit-scrollbar {
   display: none;
@@ -44,6 +44,7 @@ const BASE_CSS = `
 .omx-att-card:hover {
   background: var(--dsw-alias-bg-layer-2);
   border-color: var(--dsw-alias-border-l3);
+  z-index: 2;
 }
 .omx-att-card--highlight {
   animation: omx-att-pulse 0.6s ease-in-out;
@@ -57,10 +58,15 @@ const BASE_CSS = `
   width: 44px;
   height: 44px;
   border-radius: 8px;
-  overflow: hidden;
   padding: 0;
   justify-content: center;
   cursor: zoom-in;
+}
+.omx-att-card__media-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 8px;
 }
 .omx-att-card__media-thumb {
   width: 100%;
@@ -91,7 +97,7 @@ const BASE_CSS = `
   background: var(--dsw-alias-bg-mask-1);
   backdrop-filter: blur(2px);
   border-radius: 50%;
-  color: var(--dsw-alias-label-primary-inverted);
+  color: var(--dsw-static-neutral-00);
   pointer-events: none;
 }
 .omx-att-card__duration-badge {
@@ -100,7 +106,7 @@ const BASE_CSS = `
   right: 2px;
   background: var(--dsw-alias-bg-mask-1);
   backdrop-filter: blur(4px);
-  color: var(--dsw-alias-label-primary-inverted);
+  color: var(--dsw-static-neutral-00);
   font-size: 9px;
   font-weight: 500;
   line-height: 11px;
@@ -155,8 +161,8 @@ const BASE_CSS = `
   position: absolute;
   top: -4px;
   right: -4px;
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   font-size: 9px;
   background: var(--dsw-alias-bg-elevated);
@@ -170,7 +176,14 @@ const BASE_CSS = `
   opacity: 0;
   transform: scale(0.8);
   transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-  z-index: 5;
+  z-index: 6;
+}
+.omx-att-card__remove-btn--media {
+  background: var(--dsw-alias-bg-mask-1);
+  border-color: transparent;
+  color: var(--dsw-static-neutral-00);
+  backdrop-filter: blur(2px);
+  box-shadow: var(--dsw-shadow-lv1);
 }
 .omx-att-card:hover .omx-att-card__remove-btn,
 .omx-att-card__remove-btn:focus-visible {
@@ -180,7 +193,7 @@ const BASE_CSS = `
 .omx-att-card__remove-btn:hover {
   background: var(--dsw-alias-state-error-primary);
   border-color: var(--dsw-alias-state-error-primary);
-  color: var(--dsw-alias-label-primary-inverted);
+  color: var(--dsw-static-neutral-00);
 }
 @media (pointer: coarse) {
   .omx-att-card__remove-btn {
@@ -529,20 +542,22 @@ export const AttachmentTray: React.FC<AttachmentTrayProps> = (props) => {
                   title={title}
                   onClick={() => handleOpenNative(att)}
                 >
-                  {att.previewUrl ? (
-                    <img
-                      src={att.previewUrl}
-                      alt={title}
-                      className="omx-att-card__media-thumb"
-                    />
-                  ) : (
-                    <div className="omx-att-card__media-placeholder">
-                      <MediaPlaceholderIcon />
-                    </div>
-                  )}
+                  <div className="omx-att-card__media-frame">
+                    {att.previewUrl ? (
+                      <img
+                        src={att.previewUrl}
+                        alt={title}
+                        className="omx-att-card__media-thumb"
+                      />
+                    ) : (
+                      <div className="omx-att-card__media-placeholder">
+                        <MediaPlaceholderIcon />
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
-                    className="omx-att-card__remove-btn"
+                    className="omx-att-card__remove-btn omx-att-card__remove-btn--media"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleRemoveNative(att.id);

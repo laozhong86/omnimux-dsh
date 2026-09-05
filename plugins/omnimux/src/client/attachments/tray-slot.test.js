@@ -43,9 +43,12 @@ describe('composer inner attachment slot', () => {
       assert.match(source, /padding: 4px 8px/)
       assert.match(source, /font-size: 12px/)
       assert.match(source, /font-size: 9px/)
-      assert.match(source, /width: 15px/)
+      assert.match(source, /width: 16px/)
       assert.match(source, /top: -4px/)
       assert.match(source, /right: -4px/)
+      assert.match(source, /omx-att-card__media-frame/)
+      assert.match(source, /omx-att-card__remove-btn--media/)
+      assert.match(source, /z-index: 6/)
       assert.doesNotMatch(source, /width: 56px/)
       assert.doesNotMatch(source, /height: 56px/)
     }
