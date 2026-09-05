@@ -264,17 +264,17 @@ else
 fi
 
 managed_dsh_ui_kit_dir() {
-  local profile="$1"
-  printf '%s/%s\n' "$profile" "$MANAGED_DSH_UI_KIT_RELATIVE_PATH"
+  local PROFILE="$1"
+  local MANAGED_KIT_SOURCE="${PROFILE}/${MANAGED_DSH_UI_KIT_RELATIVE_PATH}"
+  printf '%s\n' "$MANAGED_KIT_SOURCE"
 }
 
 assert_managed_dsh_ui_kit_is_ready() {
-  local profile managed_kit
-  for profile in "${TARGET_PROFILES[@]}"; do
-    managed_kit="$(managed_dsh_ui_kit_dir "$profile")"
-    if [ ! -f "$managed_kit/package.json" ] || [ ! -f "$managed_kit/lib/index.js" ]; then
-      echo "❌ 目标 profile 缺少受管 dsh-ui-kit：${managed_kit}。" >&2
-      echo "   请先通过官方完整 profile rebuild 建立稳定源；本同步不会从 node_modules 或 .ignored 回退。" >&2
+  local PROFILE MANAGED_KIT_SOURCE
+  for PROFILE in "${TARGET_PROFILES[@]}"; do
+    MANAGED_KIT_SOURCE="${PROFILE}/${MANAGED_DSH_UI_KIT_RELATIVE_PATH}"
+    if [ ! -f "$MANAGED_KIT_SOURCE/package.json" ] || [ ! -f "$MANAGED_KIT_SOURCE/lib/index.js" ]; then
+      echo "✗ 缺少受管 dsh-ui-kit: ${MANAGED_KIT_SOURCE}；请先通过官方完整 profile rebuild 建立稳定源。" >&2
       return 1
     fi
   done
@@ -284,7 +284,14 @@ materialize_authoritative_dsh_ui_kit() {
   local profile="$1" managed_kit parent temporary backup=''
   managed_kit="$(managed_dsh_ui_kit_dir "$profile")"
   parent="$(dirname "$managed_kit")"
-  temporary="$(mktemp -d "$parent/.dsh-ui-kit.next.XXXXXX")"
+  if ! temporary="$(mktemp -d "$parent/.dsh-ui-kit.next.XXXXXX")"; then
+    echo "❌ 无法创建受管 dsh-ui-kit 临时目录：${parent}。" >&2
+    return 1
+  fi
+  if [ -z "$temporary" ] || [ "$temporary" = / ] || [ ! -d "$temporary" ] || [ "$(dirname "$temporary")" != "$parent" ]; then
+    echo "❌ 非法受管 dsh-ui-kit 临时目录，拒绝物化。" >&2
+    return 1
+  fi
 
   if ! rsync -a --delete --exclude 'node_modules/' "$DSH_UI_KIT_DIR/" "$temporary/"; then
     rm -rf "$temporary"
@@ -298,13 +305,19 @@ materialize_authoritative_dsh_ui_kit() {
   fi
 
   backup="$parent/.dsh-ui-kit.previous.$$"
-  mv "$managed_kit" "$backup"
+  if ! mv "$managed_kit" "$backup"; then
+    rm -rf "$temporary"
+    echo "❌ 无法备份受管 dsh-ui-kit：${managed_kit}。" >&2
+    return 1
+  fi
   if mv "$temporary" "$managed_kit"; then
     rm -rf "$backup"
     echo "  ✓ 已物化权威 dsh-ui-kit → ${managed_kit}"
     return 0
   fi
-  mv "$backup" "$managed_kit" 2>/dev/null || true
+  if ! mv "$backup" "$managed_kit"; then
+    echo "❌ 无法恢复受管 dsh-ui-kit：${managed_kit}。" >&2
+  fi
   rm -rf "$temporary"
   echo "❌ 无法替换受管 dsh-ui-kit：${managed_kit}。" >&2
   return 1

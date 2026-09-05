@@ -75,6 +75,32 @@ function setupFixture({
     'printf "kit-build:%s\\n" "$*" >> "$SYNC_EVENTS"',
     '',
   ].join('\n'))
+  writeExecutable(join(bin, 'mktemp'), [
+    '#!/bin/bash',
+    'set -euo pipefail',
+    'if [ "${FAIL_KIT_MKTEMP:-0}" = "1" ]; then exit 73; fi',
+    'exec /usr/bin/mktemp "$@"',
+    '',
+  ].join('\n'))
+  writeExecutable(join(bin, 'rsync'), [
+    '#!/bin/bash',
+    'set -euo pipefail',
+    'if [ "${FAIL_KIT_MKTEMP:-0}" = "1" ]; then',
+    '  printf "rsync:%s\\n" "$*" >> "$SYNC_EVENTS"',
+    '  exit 99',
+    'fi',
+    'exec /usr/bin/rsync "$@"',
+    '',
+  ].join('\n'))
+  writeExecutable(join(bin, 'mv'), [
+    '#!/bin/bash',
+    'set -euo pipefail',
+    'if [ "${FAIL_FIRST_KIT_MOVE:-0}" = "1" ] && [[ "$1" == */.materialize-snapshots/plugins/dsh-ui-kit ]] && [[ "$2" == */.dsh-ui-kit.previous.* ]]; then',
+    '  exit 74',
+    'fi',
+    'exec /bin/mv "$@"',
+    '',
+  ].join('\n'))
 
   writeFileSync(join(plugin, 'package.json'), JSON.stringify({
     name: 'omnimux-assets',
@@ -229,5 +255,28 @@ describe('sync-to-app named-plugin scope', () => {
     assert.match(result.stderr, /缺少受管 dsh-ui-kit/)
     assert.match(result.stderr, /官方完整 profile rebuild/)
     assert.equal(events(fixture), '')
+  })
+
+  it('does not invoke rsync when creating the managed-kit temporary directory fails', () => {
+    const fixture = setupFixture({ kitTarget: 'old-kit' })
+    const result = run(fixture, ['--skip-build', `--target=${fixture.targetHome}`], { FAIL_KIT_MKTEMP: '1' })
+
+    assert.notEqual(result.status, 0)
+    assert.match(result.stderr, /无法创建受管 dsh-ui-kit 临时目录/)
+    assert.match(events(fixture), /kit-build:pnpm build/)
+    assert.doesNotMatch(events(fixture), /rsync:|stable:|presets:/)
+    assert.equal(readFileSync(join(fixture.managedKit, 'lib', 'index.js'), 'utf8'), 'old-kit')
+  })
+
+  it('preserves the managed kit and does not continue when its backup move fails', () => {
+    const fixture = setupFixture({ kitTarget: 'old-kit' })
+    const result = run(fixture, ['--skip-build', `--target=${fixture.targetHome}`], { FAIL_FIRST_KIT_MOVE: '1' })
+
+    assert.notEqual(result.status, 0)
+    assert.match(result.stderr, /无法备份受管 dsh-ui-kit/)
+    assert.match(events(fixture), /kit-build:pnpm build/)
+    assert.doesNotMatch(events(fixture), /stable:|presets:/)
+    assert.equal(readFileSync(join(fixture.managedKit, 'lib', 'index.js'), 'utf8'), 'old-kit')
+    assert.equal(existsSync(join(fixture.managedKit, 'source-marker.txt')), false)
   })
 })
