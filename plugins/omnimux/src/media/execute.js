@@ -71,7 +71,7 @@ export async function executeOmnimuxMedia(capability, input) {
 
   const prompt = typeof input.prompt === 'string' ? input.prompt : ''
   const seam = CAPABILITY_SEAM[capability] ?? capability
-  const assets = await probeMediaAssets(input)
+  const assets = await probeMediaAssets(input, { capability, seam })
   const guardPlan = assertGuardSubmit(
     {
       prompt,
@@ -172,8 +172,23 @@ export async function executeOmnimuxMedia(capability, input) {
  * bytes. A reference with an unknown type deliberately reaches the guard
  * without MIME/size metadata, where any restricted slot rejects it.
  * @param {Record<string, unknown>} input
+ * @param {{ capability?: string, seam?: string }} [context]
  */
-export async function probeMediaAssets(input) {
+export async function probeMediaAssets(input, context = {}) {
+  const capability = typeof context.capability === 'string' ? context.capability : undefined
+  const seam = typeof context.seam === 'string' ? context.seam : undefined
+  const topImage = typeof input.image === 'string' ? input.image.trim() : ''
+  const explicitReferences = new Set(
+    Array.isArray(input.references)
+      ? input.references
+        .map((reference) => {
+          if (!reference || typeof reference !== 'object') return ''
+          const row = /** @type {Record<string, unknown>} */ (reference)
+          return typeof row.pathOrUrl === 'string' ? row.pathOrUrl.trim() : ''
+        })
+        .filter(Boolean)
+      : [],
+  )
   const normalized = normalizeLogicalRequest({
     ...input,
     assetMeta: {},
@@ -181,8 +196,24 @@ export async function probeMediaAssets(input) {
     imageMeta: undefined,
     imageTailMeta: undefined,
     audioMeta: undefined,
+    // This boundary owns capability semantics. Mounted callers must not be
+    // able to turn video shorthand into a generic reference.
+    capability,
+    seam,
   })
-  return Promise.all(normalized.assets.map(async (asset) => {
+  return Promise.all(normalized.assets
+    // A workflow often keeps its first reference in both `image` and
+    // `references`. The explicit reference is authoritative; do not invent a
+    // second first_frame for the same source.
+    .filter((asset) => !(
+      capability === 'video' &&
+      topImage &&
+      asset.type === 'image' &&
+      asset.role === 'first_frame' &&
+      asset.pathOrUrl === topImage &&
+      explicitReferences.has(topImage)
+    ))
+    .map(async (asset) => {
     const identity = {
       type: asset.type,
       pathOrUrl: asset.pathOrUrl,
@@ -216,7 +247,7 @@ export async function probeMediaAssets(input) {
       }
     }
     return identity
-  }))
+    }))
 }
 
 /**
