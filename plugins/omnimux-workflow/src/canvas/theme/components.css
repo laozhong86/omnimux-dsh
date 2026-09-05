@@ -6152,6 +6152,19 @@ body[data-ds-dark-theme] .wf-canvas-root .wf-edge-disconnect__button:focus-visib
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsw-alias-warning, var(--wb-warning)) 25%, transparent);
 }
 
+.wf-material-node__badge--simulated {
+  width: auto;
+  min-height: 20px;
+  padding: 0 6px;
+  border-radius: 6px;
+  color: var(--dsw-alias-label-warning);
+  background: color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
 .wf-node-header__degraded-badge {
   width: 8px;
   height: 8px;

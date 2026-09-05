@@ -135,3 +135,27 @@ test('generated artifact metadata reaches node.data, unlocks vision compatibilit
   assert.equal(source.data.sizeBytes, 1024);
   assert.equal(vision.data.compat.status, 'ok');
 });
+
+test('simulated output is persisted into node data and a later real result clears the marker', () => {
+  const store = useCanvasStore.getState();
+  store.hydrateGraph([
+    { id: 'simulated-output', type: 'material', position: { x: 0, y: 0 }, data: {} },
+  ], []);
+
+  applyExecutionNodeOutput('simulated-output', {
+    text: 'offline placeholder',
+    simulated: true,
+  }, { executionStatus: 'completed' });
+  assert.equal(
+    useCanvasStore.getState().nodes.find((node) => node.id === 'simulated-output')?.data.simulated,
+    true,
+  );
+
+  applyExecutionNodeOutput('simulated-output', {
+    text: 'real result',
+  }, { executionStatus: 'completed' });
+  assert.equal(
+    useCanvasStore.getState().nodes.find((node) => node.id === 'simulated-output')?.data.simulated,
+    undefined,
+  );
+});

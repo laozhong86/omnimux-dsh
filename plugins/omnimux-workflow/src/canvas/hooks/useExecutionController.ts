@@ -59,6 +59,7 @@ interface SseEventData {
     text?: string;
     relativePath?: string;
     assetId?: string;
+    simulated?: boolean;
   };
 }
 
@@ -75,6 +76,7 @@ export interface ExecutionNodeOutput {
   text?: string;
   relativePath?: string;
   assetId?: string;
+  simulated?: boolean;
 }
 
 /** Apply transport output to node.data and recompute dependent contracts. */
@@ -84,6 +86,7 @@ export function applyExecutionNodeOutput(
   basePatch: Record<string, unknown> = {},
 ): void {
   const patch: Record<string, unknown> = { ...basePatch };
+  patch.simulated = output.simulated === true ? true : undefined;
   if (output.text) patch.generatedContent = output.text;
   const first = output.mediaAssets?.[0];
   if (output.mediaAssets && output.mediaAssets.length > 0 && first) {

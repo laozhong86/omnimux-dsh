@@ -223,6 +223,7 @@ export function createMockGateway(opts: MockGatewayOptions = {}): GenerationGate
       return {
         url: dest,
         ...(task.req.capability === 'text' ? { text: MOCK_TEXT_PLACEHOLDER } : {}),
+        simulated: true,
       };
     },
 

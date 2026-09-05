@@ -442,6 +442,7 @@ test('execution API: create -> SSE full event sequence -> completed snapshot', a
     // node_complete carries the mock gateway output.
     const first = events.find((e) => e.event === 'node_complete');
     assert.match(String(first.data.output?.text ?? ''), /mock 生成结果/);
+    assert.equal(first.data.output?.simulated, true);
 
     // Final snapshot via GET.
     const final = await waitUntil(async () => {
@@ -452,6 +453,7 @@ test('execution API: create -> SSE full event sequence -> completed snapshot', a
     const snapshot = (await h.executionStatus(wsId, executionId)).body.execution;
     assert.equal(snapshot.completedNodes, 3);
     assert.equal(snapshot.progress.percentage, 100);
+    assert.equal(snapshot.nodeOutputs.n1?.simulated, true);
   } finally {
     h.dispose();
     rmSync(h.dir, { recursive: true, force: true });

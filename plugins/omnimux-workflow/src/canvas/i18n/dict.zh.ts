@@ -22,6 +22,7 @@ const zh = {
   'node.generating': '生成中…',
   'node.generationFailed': '生成失败',
   'node.taskIdLabel': '任务 ID：',
+  'node.simulatedResult': '模拟结果',
   'node.regenerate': '重新生成',
   'node.offline': '媒体已脱机',
   'node.offlineHint': '源文件不存在或已被移动，可重新链接。',

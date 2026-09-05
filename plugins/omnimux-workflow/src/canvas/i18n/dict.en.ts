@@ -18,6 +18,7 @@ const en: Record<DictKey, string> = {
   'node.generating': 'Generating...',
   'node.generationFailed': 'Generation Failed',
   'node.taskIdLabel': 'Task ID:',
+  'node.simulatedResult': 'Simulated result',
   'node.regenerate': 'Regenerate',
   'node.offline': 'Media offline',
   'node.offlineHint': 'The source file is missing or moved. Relink to restore preview.',

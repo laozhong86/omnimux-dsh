@@ -67,6 +67,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
   const executionStatus = nodeData.executionStatus as NodeExecutionApiStatus | undefined;
   const executionError = nodeData.executionError as string | undefined;
+  const simulated = nodeData.simulated === true;
   const mediaAssets = nodeData.mediaAssets as MediaAssetLike[] | undefined;
   const catalog = (data as { __catalog?: CapabilityCatalog }).__catalog ?? null;
 
@@ -552,6 +553,7 @@ const MaterialNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             status={status}
             isDegraded={isDegraded}
             degradedWarning={degradedWarning}
+            simulated={simulated}
           />
         }
       />

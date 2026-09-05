@@ -69,6 +69,8 @@ export interface NodeOutput {
   realPath?: string;
   relativePath?: string;
   assetId?: string;
+  /** True only when this node's artifact came from the offline mock gateway. */
+  simulated?: boolean;
 }
 
 export interface NodeExecutor {

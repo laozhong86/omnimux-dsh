@@ -211,9 +211,13 @@ export function createMaterialGatewayExecutor(opts: {
       ctx.reportProgress?.(40, '生成中…');
       const settled = await gateway.awaitTask(submitted.taskId, dest, ctx.signal);
       ctx.reportProgress?.(90, '生成完成');
+      const simulated = settled.simulated === true;
 
       if (capability === 'text') {
-        return { text: settled.text ?? `[gateway:${capability}] ${prompt}` };
+        return {
+          text: settled.text ?? `[gateway:${capability}] ${prompt}`,
+          ...(simulated ? { simulated: true } : {}),
+        };
       }
 
       if (ctx.persistGenerated) {
@@ -228,6 +232,7 @@ export function createMaterialGatewayExecutor(opts: {
         return {
           relativePath: persisted.relativePath,
           assetId: persisted.assetId,
+          ...(simulated ? { simulated: true } : {}),
           mediaAssets: [{
             type: capability,
             url: persisted.url,
@@ -242,6 +247,7 @@ export function createMaterialGatewayExecutor(opts: {
 
       const url = ctx.toPublicUrl ? ctx.toPublicUrl(settled.url) : settled.url;
       return {
+        ...(simulated ? { simulated: true } : {}),
         mediaAssets: [{ type: capability as 'image' | 'video' | 'audio', url }],
       };
     },

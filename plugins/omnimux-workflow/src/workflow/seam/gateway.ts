@@ -102,6 +102,8 @@ export interface AwaitTaskResult {
   url: string;
   /** Text capability output (mock gateway / future text seam). */
   text?: string;
+  /** True only for artifacts produced by the offline mock gateway. */
+  simulated?: boolean;
 }
 
 export interface GenerationGateway {
