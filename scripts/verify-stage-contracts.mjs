@@ -8,13 +8,13 @@
  *    - 必须在顶层执行 inject*Styles()；
  *    - 库页不得再挂 Tab 内 WorkbenchFocusBar（gui↔split 由 hub chat-toggle 负责）；
  *    - 根节点必须使用标准 workbench 容器样式。
- * 2. 遍历 plugins 下所有 stage-store.js：
- *    - 必须导出 createStageStore 工厂函数。
+ * 2. 执行实际 client 装配入口，捕获 sidebar adapter 并验证六方法与取消订阅。
  */
 
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { captureStageContracts } from './live-stage-contracts.mjs'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -37,12 +37,12 @@ const stageFiles = findFiles(path.join(rootDir, 'plugins'), (name) =>
   name.endsWith('.jsx') && (name.endsWith('Stage.jsx') || name === 'ProjectLibraryPage.jsx')
 )
 
-const storeFiles = findFiles(path.join(rootDir, 'plugins'), (name) =>
-  name === 'stage-store.js' || name === 'stageStore.js'
-)
-
 let errors = 0
-console.log(`[Stage Contract Linter] Auditing ${stageFiles.length} Stage components and ${storeFiles.length} StageStore modules...`)
+console.log(`[Stage Contract Linter] Auditing ${stageFiles.length} Stage components and actual sidebar registrations...`)
+if (stageFiles.length === 0) {
+  console.error('No Stage components discovered')
+  errors++
+}
 
 // --- Part 1: Audit JSX Stage Components ---
 for (const file of stageFiles) {
@@ -70,21 +70,17 @@ for (const file of stageFiles) {
   }
 }
 
-// --- Part 2: Audit StageStore Modules ---
-for (const file of storeFiles) {
-  const relPath = path.relative(rootDir, file)
-  const content = fs.readFileSync(file, 'utf8')
-
-  // 必须导出 createStageStore
-  if (!/export\s+(function\s+createStageStore|const\s+createStageStore)/.test(content)) {
-    console.error(`❌ [Store Contract Error] ${relPath}: Must export createStageStore factory function!`)
-    errors++
-  }
+let targets = []
+try {
+  targets = await captureStageContracts(rootDir)
+} catch (error) {
+  console.error(`[Sidebar Contract Error] ${error.message}`)
+  errors++
 }
 
 if (errors > 0) {
   console.error(`\n❌ Found ${errors} Stage/Store contract violations!`)
   process.exit(1)
 } else {
-  console.log(`✅ All ${stageFiles.length} Stage components & ${storeFiles.length} StageStores satisfy architectural contracts perfectly.\n`)
+  console.log(`PASS: ${stageFiles.length} Stage components; ${targets.length} registered sidebar targets and their runtime contracts.\n`)
 }

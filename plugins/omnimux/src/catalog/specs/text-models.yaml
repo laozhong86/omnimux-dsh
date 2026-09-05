@@ -1,12 +1,10 @@
 # 文本模型能力契约 (Text Models Capability Contract)
 # H2: 11 个 runtime CHAT_MODELS 全处置；extra 三 ID（deepseek-v3/deepseek-r1/gpt-4o）
 #     无 runtime/wire 引用，已删除（禁止幽灵上架）。
-# listed 仅 operation 级。H2 产品锁定 Batch A：全仓仅 3 条媒体 op 允许 listed
-# （seedance-2-0-fast#text_to_video / gpt-image-2#text_to_image /
-#  grok-imagine-image#text_to_image）；chat/vision_chat 一律 research:draft +
-# execution:stub，不 listed——禁止因「runtime 能聊」就标 verified+live。
-# 契约槽位（operations/inputs/limits/profileId/seam）与处置表保留；dated 探针
-# 证据以 docUrl 引用保留，待后续批次逐 op 复审放行。
+# listed 仅 operation 级。#530 PR-A（2026-09-05）：text 19 op 均有独立 dated live 证据，
+# research:verified + execution:live → 进入 listedOperations。媒体 Batch A 三键仍在。
+# vision_chat reference_images max:10 因 11 图上游未拒，limitSource=policy_conservative。
+# gemini-3.7-flash video 槽未在本批独立证实，保持 policy_conservative。
 # 证据纪律：verified 必须 docUrl + verifiedAt（dated、仓内可引用）。
 schemaVersion: "1.1"
 managementGroup: "text"
@@ -31,20 +29,20 @@ models:
             max: 1
         research:
           status: "verified"
-          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-          verifiedAt: "2026-08-18"
-          notes: "Anthropic /v1/messages 200；chat-completions group 当前 403"
+          docUrl: "docs/evidence/2026-09-05-model-claude-opus-5-chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 token45：/v1/chat/completions 200 live（历史 chat-completions 403 已解除于本 key）"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "hub chat-completions 通道对该 key 403（Claude Code group 限定）；不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
     research:
       status: "verified"
-      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-      verifiedAt: "2026-08-18"
+      docUrl: "docs/evidence/2026-09-05-model-claude-opus-5-chat.md"
+      verifiedAt: "2026-09-05"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "textComplete"
       seam: "textComplete"
 
@@ -65,14 +63,15 @@ models:
             min: 1
             max: 1
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
-          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-claude-opus-4-6-chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
       - id: "vision_chat"
         label: "图文对话"
         output:
@@ -93,22 +92,24 @@ models:
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "measured"
-              note: "runtime 测量矩阵 max10；官方上限待审计"
+              kind: "policy_conservative"
+              note: "2026-09-05 live：1/2/10 图 200；11 图仍 200 未拒，不得写 max10 measured；契约 max10 保守"
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
-          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-claude-opus-4-6-vision_chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
     research:
-      status: "draft"
-      docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-claude-opus-4-6-chat.md"
+      verifiedAt: "2026-09-05"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "textComplete"
       seam: "textComplete"
 
@@ -129,14 +130,15 @@ models:
             min: 1
             max: 1
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-gpt-5.6-sol-chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
       - id: "vision_chat"
         label: "图文对话"
         output:
@@ -157,22 +159,24 @@ models:
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "measured"
-              note: "runtime 测量矩阵 max10；官方上限待审计"
+              kind: "policy_conservative"
+              note: "2026-09-05 live：1/2/10 图 200；11 图仍 200 未拒，不得写 max10 measured；契约 max10 保守"
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-gpt-5.6-sol-vision_chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
     research:
-      status: "draft"
-      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-gpt-5.6-sol-chat.md"
+      verifiedAt: "2026-09-05"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "textComplete"
       seam: "textComplete"
 
@@ -193,14 +197,15 @@ models:
             min: 1
             max: 1
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
-          notes: "探针记录：chat-completions 200（reasoning_effort=low）；省略 effort 曾超时，路由默认 max→xhigh。H2 产品锁定 Batch A：chat 不 listed，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-gpt-5.5-chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 live；请求 reasoning_effort=low"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
       - id: "vision_chat"
         label: "图文对话"
         output:
@@ -221,22 +226,24 @@ models:
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "measured"
-              note: "runtime 测量矩阵 max10；官方上限待审计"
+              kind: "policy_conservative"
+              note: "2026-09-05 live：1/2/10 图 200；11 图仍 200 未拒，不得写 max10 measured；契约 max10 保守"
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-          notes: "探针记录：08-18 image-only 探针回答 red。H2 产品锁定 Batch A：vision_chat 不 listed，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-gpt-5.5-vision_chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
     research:
-      status: "draft"
-      docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-gpt-5.5-chat.md"
+      verifiedAt: "2026-09-05"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "textComplete"
       seam: "textComplete"
 
@@ -257,14 +264,15 @@ models:
             min: 1
             max: 1
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-grok-4.6-chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
       - id: "vision_chat"
         label: "图文对话"
         output:
@@ -285,22 +293,24 @@ models:
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "measured"
-              note: "runtime 测量矩阵 max10；官方上限待审计"
+              kind: "policy_conservative"
+              note: "2026-09-05 live：1/2/10 图 200；11 图仍 200 未拒，不得写 max10 measured；契约 max10 保守"
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-grok-4.6-vision_chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
     research:
-      status: "draft"
-      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-grok-4.6-chat.md"
+      verifiedAt: "2026-09-05"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "textComplete"
       seam: "textComplete"
 
@@ -321,14 +331,15 @@ models:
             min: 1
             max: 1
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-kimi-k3-chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
       - id: "vision_chat"
         label: "图文对话"
         output:
@@ -349,22 +360,24 @@ models:
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "measured"
-              note: "runtime 测量矩阵 max10；官方上限待审计"
+              kind: "policy_conservative"
+              note: "2026-09-05 live：1/2/10 图 200；11 图仍 200 未拒，不得写 max10 measured；契约 max10 保守"
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-kimi-k3-vision_chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
     research:
-      status: "draft"
-      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-kimi-k3-chat.md"
+      verifiedAt: "2026-09-05"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "textComplete"
       seam: "textComplete"
 
@@ -385,19 +398,21 @@ models:
             min: 1
             max: 1
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-20-omnimux-reasoning.md"
-          notes: "探针记录：上游拒绝 image_url，保持 text-only；reasoning 全枚举 HTTP 200。H2 产品锁定 Batch A：chat 不 listed，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-deepseek-v4-pro-chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
     research:
-      status: "draft"
-      docUrl: "docs/evidence/2026-08-20-omnimux-reasoning.md"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-deepseek-v4-pro-chat.md"
+      verifiedAt: "2026-09-05"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "textComplete"
       seam: "textComplete"
 
@@ -418,14 +433,15 @@ models:
             min: 1
             max: 1
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-20-omnimux-reasoning.md"
-          notes: "探针记录：reasoning 矩阵全枚举 HTTP 200；产品默认 agent 模型。H2 产品锁定 Batch A：chat 不 listed，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-deepseek-v4-flash-vision-exp-chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 独立 live；小 max_tokens 时 reasoning 占满 content 空，max_tokens≥256 得 pong"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
       - id: "vision_chat"
         label: "图文对话"
         output:
@@ -447,19 +463,23 @@ models:
             maxSizeMb: 20
             limitSource:
               kind: "policy_conservative"
-              note: "runtime 表声明 image；modality 矩阵实测 deepseek-v4-flash 拒绝 image_url，vision-exp 变体无独立 dated 图证据"
+              note: "2026-09-05 独立 vision-exp live：PNG/JPEG/WebP + 1/2/10/11 图均 200；11 未拒故 max10 保守，非 measured"
         research:
-          status: "draft"
-          notes: "cordis/CHAT 目录声明 image 输入；缺 vision-exp 独立 dated live 证据，保持 draft"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-deepseek-v4-flash-vision-exp-vision_chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 独立 vision-exp live（禁止继承 deepseek-v4-flash）；PNG/JPEG/WebP 识别 red"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
+          notes: "2026-09-05 dated live chat-completions 200"
     research:
-      status: "draft"
-      docUrl: "docs/evidence/2026-08-20-omnimux-reasoning.md"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-deepseek-v4-flash-vision-exp-chat.md"
+      verifiedAt: "2026-09-05"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "textComplete"
       seam: "textComplete"
 
@@ -480,14 +500,15 @@ models:
             min: 1
             max: 1
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-gemini-3.7-flash-chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
       - id: "vision_chat"
         label: "图文对话"
         output:
@@ -508,8 +529,8 @@ models:
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "measured"
-              note: "runtime 测量矩阵 max10；官方上限待审计"
+              kind: "policy_conservative"
+              note: "2026-09-05 live：1/2/10 图 200；11 图仍 200 未拒，不得写 max10 measured；契约 max10 保守"
           - slot: "reference_videos"
             type: "video"
             role: "reference"
@@ -522,19 +543,21 @@ models:
               kind: "policy_conservative"
               note: "2026-08-22 video spike（data:video 原生 mp4 理解）；保守 50MB 待官方审计"
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-gemini-3.7-flash-vision_chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 image live；video 槽未本批证实，保持 policy_conservative"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
     research:
-      status: "draft"
-      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-gemini-3.7-flash-chat.md"
+      verifiedAt: "2026-09-05"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "textComplete"
       seam: "textComplete"
 
@@ -555,14 +578,15 @@ models:
             min: 1
             max: 1
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
-          notes: "H2 产品锁定 Batch A：chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-gemini-3.1-pro-preview-chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
       - id: "vision_chat"
         label: "图文对话"
         output:
@@ -583,22 +607,24 @@ models:
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "measured"
-              note: "runtime 测量矩阵 max10；官方上限待审计"
+              kind: "policy_conservative"
+              note: "2026-09-05 live：1/2/10 图 200；11 图仍 200 未拒，不得写 max10 measured；契约 max10 保守"
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
-          notes: "H2 产品锁定 Batch A：vision_chat 不 listed；dated 探针证据保留，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-gemini-3.1-pro-preview-vision_chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
     research:
-      status: "draft"
-      docUrl: "docs/evidence/2026-08-23-omnimux-brand-four.md"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-gemini-3.1-pro-preview-chat.md"
+      verifiedAt: "2026-09-05"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "textComplete"
       seam: "textComplete"
 
@@ -619,18 +645,20 @@ models:
             min: 1
             max: 1
         research:
-          status: "draft"
-          docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
-          notes: "探针记录：上游仅允许 text（allowed: ['text']），保持 text-only。H2 产品锁定 Batch A：chat 不 listed，待后续批次复审放行"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-glm-5.3-chat.md"
+          verifiedAt: "2026-09-05"
+          notes: "2026-09-05 #530 PR-A live 四要素齐全"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "textComplete"
           seam: "textComplete"
-          notes: "执行通道保留契约槽位；未获产品放行，不宣称 live"
+          notes: "2026-09-05 dated live chat-completions 200"
     research:
-      status: "draft"
-      docUrl: "docs/evidence/2026-08-18-omnimux-modality.md"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-glm-5.3-chat.md"
+      verifiedAt: "2026-09-05"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "textComplete"
       seam: "textComplete"

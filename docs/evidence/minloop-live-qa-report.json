@@ -1,0 +1,98 @@
+{
+  "stage": "omnimux-publish:library",
+  "url": "http://127.0.0.1:44200/?token=yBWXDy8WGbmVkOGq9crGb3oNYDd5z0cNldiwUQc7oDY",
+  "task": "tiktok-sidebar-min-loop acceptance (remove FAQ/Tutorial links + commerce tabs)",
+  "qa": "Yan (严过关)",
+  "checks": {
+    "static.gitScope": {
+      "pass": true,
+      "evidence": "git status: 7 modified files, all under plugins/omnimux-publish/src/client/ (AccountsSidebar.jsx, account-sidebar-view.js, account-sidebar-view.test.js, api.js, icons/accounts.js, locales.js, styles.js); diff +19/-292"
+    },
+    "static.grepZeroResidue": {
+      "pass": true,
+      "evidence": "grep -rnE 'ACCOUNTS_HELP_URL|ACCOUNTS_TUTORIAL_URL|IconBookOutline16|IconExternalLinkOutline16|COMMERCE_GROUP_LABEL|isCommerceAccount|countAccountTabs|ACCOUNT_TABS|acct.help|acct.tutorial|acct.tab.|accounts-help|accounts-tutorial|accounts-tab|openExternal' plugins/omnimux-publish/src/ -> 0 hits (exit 1)"
+    },
+    "static.localeKeyParity": {
+      "pass": true,
+      "evidence": "zh keys=166, en keys=166, onlyZh=[], onlyEn=[]; acct.help / acct.tutorial / acct.tab.* absent on both sides"
+    },
+    "static.noDaihuo": {
+      "pass": true,
+      "note": "grep '带货' has exactly 1 hit: test fixture ROW_A { group: '带货' } in account-sidebar-view.test.js — inert test data proving the group field no longer affects rendering/filtering; zero functional residue. Logged as cosmetic note (route: NoOne)."
+    },
+    "unit.tests": {
+      "pass": true,
+      "evidence": "pnpm --filter omnimux-publish test: tests 210, suites 63, pass 210, fail 0 (baseline 215 -> 210 = -5 as expected)"
+    },
+    "unit.build": {
+      "pass": true,
+      "evidence": "pnpm --filter omnimux-publish build: wrote lib/client.js (243242 bytes), exit 0"
+    },
+    "gates.verifyStageContracts": {
+      "pass": true,
+      "evidence": "node scripts/verify-stage-contracts.mjs: 10 Stage components & 8 StageStores satisfy contracts, exit 0"
+    },
+    "gates.scanUiGates": {
+      "pass": true,
+      "evidence": "node scripts/scan-ui-gates.mjs exit 0 (UI01 items reported as informational, gate green)"
+    },
+    "live.headerNoFaqLink": {
+      "pass": true,
+      "evidence": "Accounts view header contains only 'Accounts' title; DOM regex /常见问题|FAQ|Frequently Asked/i negative; zero <a> elements in entire publish stage"
+    },
+    "live.addButtonAndSearch": {
+      "pass": true,
+      "evidence": "'Add Account' button and searchbox input[placeholder='Search accounts…'] present"
+    },
+    "live.noTabsRow": {
+      "pass": true,
+      "evidence": "no tablist/pill row for 全部/带货/非带货 (All/Commerce/Standard regex negative); stage tablist contains only Publish|Accounts view switcher which is out of removal scope"
+    },
+    "live.accountRowRender": {
+      "pass": true,
+      "evidence": "mock row renders: avatar svg + 'GeminiX' + '@geminix56' + status 'Connected'"
+    },
+    "live.searchCaseInsensitive": {
+      "pass": true,
+      "evidence": "'GEMINIX' (upper) keeps row; real-keyboard round-trip MIA-NOPE -> empty -> full clear -> row restored (geminix:true, empty:false)"
+    },
+    "live.searchEmptyState": {
+      "pass": true,
+      "evidence": "no-match query shows 'No authorized accounts' empty state; empty state has NO 使用教程/Tutorial link (regex negative, 0 <a> in stage)"
+    },
+    "live.authorizeModal": {
+      "pass": true,
+      "evidence": "modal title 'Add TikTok Account'; VPN banner title 'Confirm your VPN node first'; detail contains '...publishing videos via OmniMux is no longer limited by your network' (= 通过 OmniMux 发布视频将不再受网络限制); no CreatOK; Cancel + Authorize buttons present; banner expand/collapse verified via aria-expanded true->false->true with detail text toggling accordingly"
+    },
+    "live.authorizePost": {
+      "pass": true,
+      "evidence": "fetch hook recorded POST /omnimux/accounts with body exactly {\"platform\":\"tiktok\"} (preceded by GET /omnimux/auth/status?verify=1)"
+    },
+    "live.waitingStateAndPolling": {
+      "pass": true,
+      "evidence": "waiting copy + Reopen + I'm Done rendered; 5 GET /omnimux/accounts?platform=tiktok at ~3.4-3.6s intervals (3s poll + fetch latency)"
+    },
+    "live.escCloseTimerCleanup": {
+      "pass": true,
+      "evidence": "Esc closed modal; account-request count frozen at 10 for +7.5s after close (polling timer cleared); 0 console errors across whole session"
+    },
+    "live.postModalRegression": {
+      "pass": true,
+      "evidence": "after modal close, account list still shows GeminiX row; Refresh re-fetch returns mock account; direct gateway probe GET /omnimux/accounts?platform=tiktok returns 1 account"
+    }
+  },
+  "screenshots": [
+    "docs/evidence/minloop-01-accounts-view.png",
+    "docs/evidence/minloop-02-search-empty.png",
+    "docs/evidence/minloop-03-authorize-modal.png",
+    "docs/evidence/minloop-04-authorize-waiting.png"
+  ],
+  "consoleErrors": [],
+  "notes": [
+    "L2 instance UI renders in English locale; assertions mapped to en strings from locales.js (acct.title=Accounts etc.), zh keys verified statically.",
+    "fillInput('') does not emit React onChange in this harness — empty-clear restore was re-verified with real keyboard (Backspace xN) and passed; this was a test-method artifact, not a source bug (route: QA, resolved).",
+    "did NOT overwrite docs/evidence/live-qa-report.json (belongs to another task on main)."
+  ],
+  "verdict": "PASS",
+  "timestamp": "2026-09-05T10:02:00+08:00"
+}

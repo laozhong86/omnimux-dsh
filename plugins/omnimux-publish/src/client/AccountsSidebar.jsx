@@ -1,39 +1,26 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Button } from 'dsh-ui-kit'
-import { IconPlusOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Button, ConfirmModal, IconButton } from 'dsh-ui-kit'
+import { IconEllipsisOutline16, IconPlusOutline16, Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import {
-  ACCOUNTS_HELP_URL,
-  ACCOUNTS_TUTORIAL_URL,
+  disconnectHubAccount,
   errorText,
   listHubAccounts,
 } from './api.js'
 import {
   ACCOUNT_PLATFORM,
-  ACCOUNT_TABS,
   accountDisplayName,
   accountHandle,
   accountStatusTone,
-  countAccountTabs,
   extractAccounts,
   filterAccounts,
   isNeedsLogin,
 } from './account-sidebar-view.js'
 import { AuthorizeModal, authorizeBaseline } from './AuthorizeModal.jsx'
+import { createDisconnectController } from './disconnect-controller.js'
 import {
-  IconBookOutline16,
-  IconExternalLinkOutline16,
   IconSearchOutline16,
   IconUserOutline16,
 } from './icons/accounts.js'
-
-/**
- * 打开外链（仅当常量已配置；空字符串不渲染入口）。
- * @param {string} url
- */
-function openExternal(url) {
-  if (typeof url !== 'string' || url === '') return
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
 
 /**
  * 账号行状态文案：优先已知状态映射，未知值原样透传，空值回退「已连接」。
@@ -53,16 +40,37 @@ function statusLabel(t, row) {
  * 单个账号行：头像（hub 同源重写 avatar_url，缺失/加载失败退 SVG 占位）
  * + 显示名 + @username + 状态 pill（agent_usable=false 另置灰标注）。
  * @param {{
- *   t: (key: string) => string,
+ *   t: (key: string, vars?: Record<string, unknown>) => string,
  *   row: Record<string, unknown>,
+ *   onDisconnect: (row: Record<string, unknown>) => void,
  * }} props
  */
-function AccountItem({ t, row }) {
+function AccountItem({ t, row, onDisconnect }) {
   const [avatarFailed, setAvatarFailed] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [anchorEl, setAnchorEl] = useState(null)
   const avatarUrl = typeof row.avatar_url === 'string' ? row.avatar_url : ''
   const tone = row.agent_usable === false ? 'muted' : accountStatusTone(row)
   const name = accountDisplayName(row)
   const handle = accountHandle(row)
+  const accountId = String(row.id ?? '')
+
+  const handleMenuToggle = (event) => {
+    event.stopPropagation()
+    setAnchorEl(event.currentTarget)
+    setMenuOpen((open) => !open)
+  }
+
+  const handleMenuClose = (event) => {
+    event?.stopPropagation?.()
+    setMenuOpen(false)
+  }
+
+  const handleDisconnect = () => {
+    setMenuOpen(false)
+    onDisconnect(row)
+  }
+
   return (
     <div className="omnimux-publish-accounts-item">
       <span className="omnimux-publish-accounts-avatar">
@@ -87,12 +95,41 @@ function AccountItem({ t, row }) {
       <span className={`omnimux-publish-accounts-item-status ${tone}`}>
         {row.agent_usable === false ? t('acct.agentOff') : statusLabel(t, row)}
       </span>
+      <div className="omnimux-publish-accounts-item-menu" onClick={(event) => event.stopPropagation()}>
+        <IconButton
+          variant="ghost"
+          size="sm"
+          aria-label={t('acct.more', { name })}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={handleMenuToggle}
+        >
+          <IconEllipsisOutline16 />
+        </IconButton>
+        {menuOpen && anchorEl ? (
+          <Menu
+            open={menuOpen}
+            portal
+            anchor={null}
+            getAnchorRect={() => anchorEl.getBoundingClientRect()}
+            align="end"
+            dense
+            items={[{
+              id: `disconnect-${accountId}`,
+              label: t('acct.disconnect'),
+              danger: true,
+            }]}
+            onSelect={() => { handleDisconnect() }}
+            onClose={handleMenuClose}
+          />
+        ) : null}
+      </div>
     </div>
   )
 }
 
 /**
- * 空态：暂无授权账号 + 新增账号主按钮 + 使用教程外链（常量配置后渲染）。
+ * 空态：暂无授权账号 + 新增账号主按钮。
  * @param {{
  *   t: (key: string) => string,
  *   onAdd: () => void,
@@ -110,24 +147,13 @@ function EmptyState({ t, onAdd }) {
       >
         {t('acct.add')}
       </Button>
-      {ACCOUNTS_TUTORIAL_URL !== '' ? (
-        <button
-          type="button"
-          className="omnimux-publish-accounts-tutorial"
-          onClick={() => { openExternal(ACCOUNTS_TUTORIAL_URL) }}
-        >
-          <IconBookOutline16 />
-          <span>{t('acct.tutorial')}</span>
-          <IconExternalLinkOutline16 size={12} />
-        </button>
-      ) : null}
     </div>
   )
 }
 
 /**
  * 发布 Stage 内「账号」侧栏视图：左侧 336px 账号列表面板（头部 + 新增 +
- * 搜索 + 分段 tabs + 账号行 / 空态 / 登录引导态），右侧说明留白区。
+ * 搜索 + 账号行 / 空态 / 登录引导态），右侧说明留白区。
  * 数据源：GET /omnimux/accounts?platform=tiktok（hub 权威 ViewRow 合并，
  * 本插件不自建账号路由）。「新增账号」弹 AuthorizeModal 走官方授权。
  * @param {{
@@ -138,12 +164,17 @@ export function AccountsSidebar({ t }) {
   const [phase, setPhase] = useState('loading') // loading | ready | need-login
   const [rows, setRows] = useState([])
   const [error, setError] = useState('')
-  const [tab, setTab] = useState('all')
   const [query, setQuery] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [pendingDisconnect, setPendingDisconnect] = useState(null)
+  const [disconnectingId, setDisconnectingId] = useState('')
+  const [disconnectError, setDisconnectError] = useState('')
+  const mountedRef = useRef(true)
+  const disconnectControllerRef = useRef(null)
 
   const loadAccounts = useCallback(() => {
     return listHubAccounts({ platform: ACCOUNT_PLATFORM }).then((result) => {
+      if (!mountedRef.current) return true
       if (isNeedsLogin(result)) {
         setPhase('need-login')
         setRows([])
@@ -159,18 +190,21 @@ export function AccountsSidebar({ t }) {
       setRows(extractAccounts(result.body))
       return true
     }).catch((caught) => {
-      setPhase('ready')
-      setError(caught instanceof Error ? caught.message : String(caught))
+      if (mountedRef.current) {
+        setPhase('ready')
+        setError(caught instanceof Error ? caught.message : String(caught))
+      }
       return true
     })
   }, [])
 
   useEffect(() => {
+    mountedRef.current = true
     void loadAccounts()
+    return () => { mountedRef.current = false }
   }, [loadAccounts])
 
-  const counts = countAccountTabs(rows)
-  const filtered = filterAccounts(rows, { tab, query })
+  const filtered = filterAccounts(rows, query)
 
   /** 授权完成（检测到新账号或用户点「我已完成」）：关弹窗并刷新列表。 */
   const handleConnected = useCallback(() => {
@@ -184,23 +218,56 @@ export function AccountsSidebar({ t }) {
     setPhase('need-login')
   }, [])
 
-  const tabLabels = { all: 'acct.tab.all', commerce: 'acct.tab.commerce', standard: 'acct.tab.standard' }
+  /** 仅打开确认框；取消/关闭不会发送 DELETE。 */
+  const handleDisconnectRequest = useCallback((row) => {
+    setDisconnectError('')
+    setPendingDisconnect(row)
+  }, [])
+
+  const handleDisconnectClose = useCallback(() => {
+    if (disconnectingId !== '') return
+    setPendingDisconnect(null)
+    setDisconnectError('')
+  }, [disconnectingId])
+
+  /**
+   * Host 以 id 精确定位账号。控制器在 React state 生效前同步加锁；失败时不改
+   * rows，让用户看到可重试的同一确认框，卸载后的迟到结果不再更新组件状态。
+   */
+  const handleDisconnectConfirm = useCallback(() => {
+    const accountId = pendingDisconnect?.id
+    if (disconnectControllerRef.current === null) {
+      disconnectControllerRef.current = createDisconnectController({
+        disconnect: disconnectHubAccount,
+        reload: loadAccounts,
+        isMounted: () => mountedRef.current,
+        isNeedsLogin,
+        errorText,
+        onStart: (id) => {
+          setDisconnectingId(id)
+          setDisconnectError('')
+        },
+        onFailure: setDisconnectError,
+        onNeedLogin: () => {
+          setPendingDisconnect(null)
+          setPhase('need-login')
+        },
+        onSuccess: () => { setPendingDisconnect(null) },
+        onFinally: () => { setDisconnectingId('') },
+      })
+    }
+    void disconnectControllerRef.current.confirm(accountId)
+  }, [loadAccounts, pendingDisconnect])
+
+  const pendingDisconnectName = accountDisplayName(pendingDisconnect ?? {})
+  const pendingDisconnectId = String(pendingDisconnect?.id ?? '')
+  const disconnecting = pendingDisconnectId !== '' && disconnectingId === pendingDisconnectId
 
   return (
     <div className="omnimux-publish-accounts-view">
       <aside className="omnimux-publish-accounts-sidebar">
         <div className="omnimux-publish-accounts-head">
           <span className="omnimux-publish-accounts-head-title">{t('acct.title')}</span>
-          {ACCOUNTS_HELP_URL !== '' ? (
-            <button
-              type="button"
-              className="omnimux-publish-accounts-help"
-              onClick={() => { openExternal(ACCOUNTS_HELP_URL) }}
-            >
-              <span>{t('acct.help')}</span>
-              <IconExternalLinkOutline16 size={12} />
-            </button>
-          ) : null}
         </div>
 
         {phase === 'need-login' ? (
@@ -231,22 +298,6 @@ export function AccountsSidebar({ t }) {
               />
             </div>
 
-            <div className="omnimux-publish-accounts-tabs" role="tablist">
-              {ACCOUNT_TABS.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === key}
-                  className={`omnimux-publish-accounts-tab${tab === key ? ' active' : ''}`}
-                  onClick={() => { setTab(key) }}
-                >
-                  <span>{t(tabLabels[key])}</span>
-                  <span className="omnimux-publish-accounts-tab-count">{counts[key]}</span>
-                </button>
-              ))}
-            </div>
-
             {phase === 'loading' ? (
               <div className="omnimux-publish-accounts-note">{t('acct.loading')}</div>
             ) : null}
@@ -265,7 +316,12 @@ export function AccountsSidebar({ t }) {
               ) : (
                 <div className="omnimux-publish-accounts-items">
                   {filtered.map((row) => (
-                    <AccountItem key={String(row.id)} t={t} row={row} />
+                    <AccountItem
+                      key={String(row.id)}
+                      t={t}
+                      row={row}
+                      onDisconnect={handleDisconnectRequest}
+                    />
                   ))}
                 </div>
               )
@@ -288,6 +344,24 @@ export function AccountsSidebar({ t }) {
           onConnected={handleConnected}
         />
       ) : null}
+      <ConfirmModal
+        open={pendingDisconnect !== null}
+        title={t('acct.disconnectTitle')}
+        confirmLabel={disconnectError === '' ? t('acct.disconnect') : t('acct.retry')}
+        cancelLabel={t('auth.cancel')}
+        closeLabel={t('close')}
+        confirmVariant="danger"
+        confirmLoading={disconnecting}
+        onConfirm={() => { void handleDisconnectConfirm() }}
+        onClose={handleDisconnectClose}
+      >
+        <p>{t('acct.disconnectConfirm', { name: pendingDisconnectName })}</p>
+        {disconnectError !== '' ? (
+          <p className="omnimux-publish-accounts-modal-error" role="alert">
+            {t('acct.disconnectFailed', { reason: disconnectError })}
+          </p>
+        ) : null}
+      </ConfirmModal>
     </div>
   )
 }

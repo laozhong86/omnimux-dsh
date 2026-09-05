@@ -42,7 +42,7 @@ describe('buildModelCatalog (H2 contract projection)', () => {
     assert.equal(catalog.contractFingerprint.length, 16)
 
     // authoritative flat list: all 41 contracted models with disposition governance
-    assert.equal(catalog.models.length, 41)
+    assert.equal(catalog.models.length, 42)
     assert.equal(catalog.models.find((m) => m.id === 'whisper-1')?.disposition, 'draft')
     assert.equal(catalog.models.find((m) => m.id === 'kling-avatar')?.disposition, 'draft')
     assert.equal(catalog.models.find((m) => m.id === 'omni_flash')?.disposition, 'quarantine')
@@ -50,10 +50,22 @@ describe('buildModelCatalog (H2 contract projection)', () => {
 
     // four lists derive ONLY from listed ops' output.type
     assert.deepEqual(catalog.image.map((row) => row.id).sort(), ['gpt-image-2', 'grok-imagine-image'])
-    assert.deepEqual(catalog.video.map((row) => row.id), ['seedance-2-0-fast'])
+    assert.deepEqual(catalog.video.map((row) => row.id), ['seedance-2-0', 'seedance-2-0-fast', 'seedance-2-0-mini', 'seedance-2-5'])
     assert.deepEqual(catalog.audio, [])
-    // Batch A lock: all chat/vision_chat ops are draft/stub → text bucket empty
-    assert.deepEqual(catalog.text.map((row) => row.id), [])
+    // #530 PR-A: 11 text models with verified+live chat/vision_chat enter text bucket
+    assert.deepEqual(catalog.text.map((row) => row.id), [
+      'claude-opus-4-6',
+      'claude-opus-5',
+      'deepseek-v4-flash-vision-exp',
+      'deepseek-v4-pro',
+      'gemini-3.1-pro-preview',
+      'gemini-3.7-flash',
+      'glm-5.3',
+      'gpt-5.5',
+      'gpt-5.6-sol',
+      'grok-4.6',
+      'kimi-k3',
+    ])
 
     // draft-unlisted (#538 probeable) / quarantine never appear in any bucket
     for (const kind of ['text', 'image', 'video', 'audio']) {
@@ -64,17 +76,16 @@ describe('buildModelCatalog (H2 contract projection)', () => {
     // nanobanana: underscore canonical only, hyphen alias never double listed
     assert.equal(catalog.image.some((row) => row.id === 'nanobanana-2'), false)
 
-    // defaults: config defaults survive where listed; text/audio have no listed row
-    assert.equal(catalog.defaults.text, '') // Batch A lock: no listed chat op
+    // defaults: config defaults survive where listed; audio still has no listed row
+    assert.equal(catalog.defaults.text, 'gemini-3.7-flash')
     assert.equal(catalog.defaults.image, 'gpt-image-2')
     assert.equal(catalog.defaults.video, 'seedance-2-0-fast')
     assert.equal(catalog.defaults.audio, '')
     assert.equal(catalog.defaultsByOperation.text_to_video, 'seedance-2-0-fast')
     assert.equal(catalog.defaultsByOperation.text_to_image, 'gpt-image-2')
+    assert.equal(catalog.defaultsByOperation.chat, 'gemini-3.7-flash')
 
-    // text bucket is empty under the Batch A lock; hyphen-free labels are covered
-    // by the display-label contract over TEXT_MODEL_LABELS
-    assert.equal(catalog.text.length, 0)
+    assert.equal(catalog.text.length, 11)
   })
 
   it('forbids ASCII hyphen-minus in every catalog model label', () => {
@@ -96,8 +107,8 @@ describe('buildModelCatalog (H2 contract projection)', () => {
     })
     // kling-o1 is quarantine → not listed → env overlay refused
     assert.equal(catalog.defaults.video, 'seedance-2-0-fast')
-    // gpt-5.5 chat is draft/stub under the Batch A lock → not listed → env overlay refused
-    assert.equal(catalog.defaults.text, '')
+    // #530 PR-A: gpt-5.5#chat is listed → env overlay accepted
+    assert.equal(catalog.defaults.text, 'gpt-5.5')
   })
 
   it('ignores env / settings ids that are not in the list', () => {
@@ -109,7 +120,8 @@ describe('buildModelCatalog (H2 contract projection)', () => {
       settingsDefaults: { defaultTextModel: 'totally-fake' },
     })
     assert.equal(catalog.defaults.video, 'seedance-2-0-fast')
-    assert.equal(catalog.defaults.text, '') // no listed text row under the Batch A lock
+    // fake text id refused → fall back to listed config default
+    assert.equal(catalog.defaults.text, 'gemini-3.7-flash')
   })
 
   it('prefers settings overlay over config when env is absent', () => {
@@ -133,11 +145,13 @@ describe('buildModelCatalog (H2 contract projection)', () => {
     assert.ok(catalog.image.length > 0)
   })
 
-  it('text bucket stays empty under the Batch A lock regardless of the model gate', () => {
+  it('text bucket lists PR-A verified models; gate cannot invent unlisted ids', () => {
     const h = parseHubConfig({ gate: { models: { textComplete: { 'grok-4.6': true } } } })
     const catalog = buildModelCatalog({ text: h.text, media: h.media, gate: h.gate, env: {} })
-    // chat/vision_chat are all draft/stub (Batch A lock) → the gate cannot resurrect them
-    assert.deepEqual(catalog.text, [])
+    // #530 PR-A listed text set is contract-driven, not gate-invented
+    assert.ok(catalog.text.some((row) => row.id === 'grok-4.6'))
+    assert.equal(catalog.text.length, 11)
+    assert.equal(catalog.text.some((row) => row.id === 'whisper-1'), false)
   })
 
   it('fingerprint changes when the contract changes (limit/MIME/listed sensitivity)', () => {
@@ -183,7 +197,7 @@ describe('buildModelCatalog (H2 contract projection)', () => {
 describe('media facade tables (derived from contracts)', () => {
   it('facade SPECS are the full contracted directory (listed or not)', () => {
     assert.equal(IMAGE_MODEL_SPECS.length, 12)
-    assert.equal(VIDEO_MODEL_SPECS.length, 15)
+    assert.equal(VIDEO_MODEL_SPECS.length, 16)
     assert.equal(AUDIO_MODEL_SPECS.length, 3)
   })
 })

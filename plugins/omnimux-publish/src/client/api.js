@@ -170,14 +170,6 @@ export function listHubAccounts(filters = {}) {
 }
 
 /**
- * 账号侧栏外链常量。「常见问题」/「使用教程」的跳转地址收敛于此：
- * 默认空字符串时 UI 不渲染对应链接；配置后由
- * window.open(url, '_blank', 'noopener,noreferrer') 打开。
- */
-export const ACCOUNTS_HELP_URL = ''
-export const ACCOUNTS_TUTORIAL_URL = ''
-
-/**
  * 发起 TikTok 授权：hub `POST /omnimux/accounts`（中枢 withPat → 网关
  * /api/social/v1/connect，pickConnectView 保证仅 https auth_url 透出）。
  * 成功响应体 { auth_url }；401/needs-omnimux 走登录引导。
@@ -185,6 +177,26 @@ export const ACCOUNTS_TUTORIAL_URL = ''
 export function connectTikTokAccount() {
   return quotaGuard(
     () => publishRequest('/omnimux/accounts', { method: 'POST', body: { platform: 'tiktok' } }),
+    { capability: 'publish' },
+  )()
+}
+
+/**
+ * 断开一个已连接账号。该请求只移除 OmniMux 中的账号连接，不宣称撤销
+ * TikTok 的全局 token；Host 仍负责同源写入保护与上游协议转换。
+ * @param {string} accountId
+ * @returns {Promise<{ ok: boolean, status: number, body: any }>}
+ */
+export function disconnectHubAccount(accountId) {
+  if (typeof accountId !== 'string') {
+    return Promise.resolve({ ok: false, status: 400, body: { error: 'id is required' } })
+  }
+  const id = accountId.trim()
+  if (id === '') {
+    return Promise.resolve({ ok: false, status: 400, body: { error: 'id is required' } })
+  }
+  return quotaGuard(
+    () => publishRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     { capability: 'publish' },
   )()
 }

@@ -91,6 +91,7 @@ export function useConnectionMenu(options?: {
           { source: fromId, target: toId, sourceHandle: null, targetHandle: null },
           state.nodes,
           state.edges,
+          state.catalogRuntime,
         );
         rejectReason = !detail.valid ? t(rejectReasonKey(detail.reasonCode)) : null;
       }

@@ -1,0 +1,320 @@
+{
+  "id": "seedance-2-0-fast",
+  "operation": "first_frame",
+  "date": "2026-09-05",
+  "author": "kou-douma",
+  "batch": "C1",
+  "existence": {
+    "httpStatus": 200,
+    "present": true,
+    "totalModels": 127
+  },
+  "minimal": {
+    "requestShape": {
+      "model": "seedance-2-0-fast",
+      "op": "first_frame",
+      "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+      "duration": 4,
+      "resolution": "720P",
+      "aspect_ratio": "16:9",
+      "image": null,
+      "reference_images": null,
+      "images": [
+        {
+          "path": "ff-blue-64.png",
+          "mime": "image/png",
+          "bytes": 132,
+          "field": "images[]"
+        }
+      ]
+    },
+    "submitHttp": 200,
+    "submitBody": {
+      "created": 1788579996,
+      "id": "task_6Uh074um1eu8uWw7xYH0Yp27yGkRZ9sn",
+      "model": "seedance-2-0-fast",
+      "object": "video",
+      "status": "queued",
+      "task_id": "task_6Uh074um1eu8uWw7xYH0Yp27yGkRZ9sn"
+    },
+    "taskId": "task_6Uh074um1eu8uWw7xYH0Yp27yGkRZ9sn",
+    "terminalStatus": "success",
+    "mode": "live",
+    "bytes": 1640231,
+    "elapsedMs": 150001,
+    "url": "https://files.evolink.ai/.../media.mp4",
+    "ok": true,
+    "error": null,
+    "pollsKept": 8,
+    "artifact": {
+      "url": "https://files.evolink.ai/.../media.mp4",
+      "bytes": 1640231,
+      "urlSuffix": ".mp4",
+      "mimeInferred": "video/mp4",
+      "containerMagic": {
+        "container": "iso_bmff",
+        "ftypBrand": "isom",
+        "headHex": "000000206674797069736f6d"
+      },
+      "localBytesMatched": true,
+      "downloadHttpStatus": null,
+      "notes": "No live re-fetch in QA; MIME inferred from .mp4 URL + ISO BMFF ftyp magic on retained local artifact bytes. Download HTTP status was not captured by probe runner; terminal success + nonzero bytes + container magic used."
+    }
+  },
+  "extras": [
+    {
+      "file": "seedance-2-0-fast__first_frame_jpeg.json",
+      "requestShape": {
+        "model": "seedance-2-0-fast",
+        "op": "first_frame",
+        "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+        "duration": 4,
+        "resolution": "720P",
+        "aspect_ratio": "16:9",
+        "image": null,
+        "reference_images": null,
+        "images": [
+          {
+            "path": "ff-blue-64.jpg",
+            "mime": "image/jpeg",
+            "bytes": 861,
+            "field": "images[]"
+          }
+        ]
+      },
+      "submitHttp": 200,
+      "submitBody": {
+        "created": 1788581279,
+        "id": "task_qPwZBKMU0XsYMz2gA5Cc43kdRTb9QeSb",
+        "model": "seedance-2-0-fast",
+        "object": "video",
+        "status": "queued",
+        "task_id": "task_qPwZBKMU0XsYMz2gA5Cc43kdRTb9QeSb"
+      },
+      "taskId": "task_qPwZBKMU0XsYMz2gA5Cc43kdRTb9QeSb",
+      "terminalStatus": "success",
+      "mode": "live",
+      "bytes": 1119401,
+      "elapsedMs": 110271,
+      "url": "https://files.evolink.ai/.../media-extra.mp4",
+      "ok": true,
+      "error": null,
+      "pollsKept": 8,
+      "artifact": {
+        "url": "https://files.evolink.ai/.../media-extra.mp4",
+        "bytes": 1119401,
+        "urlSuffix": ".mp4",
+        "mimeInferred": "video/mp4",
+        "containerMagic": {
+          "container": "iso_bmff",
+          "ftypBrand": "isom",
+          "headHex": "000000206674797069736f6d"
+        },
+        "localBytesMatched": true
+      }
+    },
+    {
+      "file": "seedance-2-0-fast__first_frame_webp_submit.json",
+      "requestShape": {
+        "model": "seedance-2-0-fast",
+        "op": "first_frame",
+        "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+        "duration": 4,
+        "resolution": "720P",
+        "aspect_ratio": "16:9",
+        "image": null,
+        "reference_images": null,
+        "images": [
+          {
+            "path": "ff-blue-64.webp",
+            "mime": "image/webp",
+            "bytes": 86,
+            "field": "images[]"
+          }
+        ]
+      },
+      "submitHttp": 200,
+      "submitBody": {
+        "created": 1788581581,
+        "id": "task_EiiXD7mFxOExesO1sbudWYPjKckN3oYf",
+        "model": "seedance-2-0-fast",
+        "object": "video",
+        "status": "queued",
+        "task_id": "task_EiiXD7mFxOExesO1sbudWYPjKckN3oYf"
+      },
+      "taskId": "task_EiiXD7mFxOExesO1sbudWYPjKckN3oYf",
+      "terminalStatus": null,
+      "mode": "submitted",
+      "bytes": null,
+      "elapsedMs": 735,
+      "url": null,
+      "ok": true,
+      "error": null,
+      "pollsKept": 0,
+      "artifact": {
+        "url": null,
+        "bytes": null,
+        "urlSuffix": null,
+        "mimeInferred": null,
+        "containerMagic": null,
+        "localBytesMatched": null
+      }
+    }
+  ],
+  "boundary": {
+    "durationProbe": {
+      "httpStatus": 400,
+      "request": {
+        "model": "seedance-2-0-fast",
+        "prompt": "boundary reject probe — invalid duration",
+        "duration": 3,
+        "aspect_ratio": "16:9",
+        "resolution": "720P"
+      },
+      "body": {
+        "code": "fail_to_fetch_task",
+        "message": "{\"error\":{\"code\":\"invalid_parameter\",\"message\":\"duration too short: 3s (model seedance-2.0-fast-text-to-video requires minimum 4s)\",\"type\":\"invalid_request_error\"}}",
+        "data": null
+      },
+      "taskId": null,
+      "elapsedMs": 650
+    }
+  },
+  "mime": "PNG+JPEG full live; WebP submit 200 task id (wait=false, 完整 generation 不记成功)",
+  "wireField": "images[]",
+  "listedCandidate": false,
+  "blockReason": "同家族：singular `image` 400 拒绝；`images[]` PNG/JPEG live 出片、WebP submit 200。product mapper 仍发 image → 不 listed。",
+  "logs": {
+    "primary": "docs/evidence/2026-09-05-model-seedance-2-0-fast-first_frame.json",
+    "companionMarkdown": "docs/evidence/2026-09-05-model-seedance-2-0-fast-first_frame.md",
+    "note": "Raw probe scratch under /tmp was not committed; auditable fields are inlined below."
+  },
+  "notes": [
+    "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",
+    "no API key values stored",
+    "media files not committed; bytes recorded only"
+  ],
+  "wireFieldProbes": [
+    {
+      "label": "image_jpeg",
+      "model": "seedance-2-0-fast",
+      "httpStatus": 400,
+      "requestFields": [
+        "aspect_ratio",
+        "duration",
+        "image",
+        "model",
+        "resolution"
+      ],
+      "imageFieldShape": "image:string",
+      "bodyError": {
+        "code": "invalid_parameter",
+        "message": "seedance text-to-video does not support image, video or audio input",
+        "type": "invalid_request_error"
+      },
+      "submitTaskId": null,
+      "terminal": null
+    },
+    {
+      "label": "image_string",
+      "model": "seedance-2-0-fast",
+      "httpStatus": 400,
+      "requestFields": [
+        "aspect_ratio",
+        "duration",
+        "image",
+        "model",
+        "resolution"
+      ],
+      "imageFieldShape": "image:string",
+      "bodyError": {
+        "code": "invalid_parameter",
+        "message": "seedance text-to-video does not support image, video or audio input",
+        "type": "invalid_request_error"
+      },
+      "submitTaskId": null,
+      "terminal": null
+    },
+    {
+      "label": "images_array_obj_url",
+      "model": "seedance-2-0-fast",
+      "httpStatus": 200,
+      "requestFields": [
+        "aspect_ratio",
+        "duration",
+        "images",
+        "model",
+        "resolution"
+      ],
+      "imageFieldShape": "images:[{url}]",
+      "bodyError": null,
+      "submitTaskId": "task_MgsNjC4xMH0YlfKOpFlCKUEqzIVseTHY",
+      "terminal": {
+        "status": "success",
+        "bytes": 1602665,
+        "ok": true
+      }
+    },
+    {
+      "label": "images_array_string",
+      "model": "seedance-2-0-fast",
+      "httpStatus": 200,
+      "requestFields": [
+        "aspect_ratio",
+        "duration",
+        "images",
+        "model",
+        "resolution"
+      ],
+      "imageFieldShape": "images:[string]",
+      "bodyError": null,
+      "submitTaskId": "task_rUKJI75C9eWD0RiqVqcZGTqL7BLwBppZ",
+      "terminal": {
+        "status": "success",
+        "bytes": 2739179,
+        "ok": true
+      }
+    },
+    {
+      "label": "2-5_image",
+      "model": "seedance-2-5",
+      "httpStatus": 400,
+      "requestFields": [
+        "aspect_ratio",
+        "duration",
+        "image",
+        "model",
+        "resolution"
+      ],
+      "imageFieldShape": "image:string",
+      "bodyError": {
+        "code": "invalid_parameter",
+        "message": "seedance-2.5-text-to-video does not support image, video or audio input",
+        "type": "invalid_request_error"
+      },
+      "submitTaskId": null,
+      "terminal": null
+    },
+    {
+      "label": "mini_image",
+      "model": "seedance-2-0-mini",
+      "httpStatus": 400,
+      "requestFields": [
+        "aspect_ratio",
+        "duration",
+        "image",
+        "model",
+        "resolution"
+      ],
+      "imageFieldShape": "image:string",
+      "bodyError": {
+        "code": "invalid_parameter",
+        "message": "seedance text-to-video does not support image, video or audio input",
+        "type": "invalid_request_error"
+      },
+      "submitTaskId": null,
+      "terminal": null
+    }
+  ],
+  "wireFieldProbeNote": "Product hub mapper (plugins/omnimux/src/media/vendors/omnimux.js) maps first_frame → singular `image` string. Upstream rejects `image` with 400; accepts `images` JSON array (string or {url}) and `reference_images`[{url}]. Executor-ready listed requires mapper alignment; images[] live alone is documented non-admission."
+}

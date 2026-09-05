@@ -42,7 +42,7 @@ describe('scripts/dev-env.sh L2 Host install-closure preflight', () => {
     writePkg(chatDir, '@deepseek-ai/dsh-client-ui-chat', {})
     writeFileSync(join(chatDir, 'lib', 'index.js'), 'export default {}\n')
     writeFileSync(join(cliDir, 'lib', 'bin.js'),
-      "const i = process.argv.indexOf('--port');\nconst port = i >= 0 ? process.argv[i+1] : 44200;\nconsole.log('http://127.0.0.1:' + port);\n")
+      "const i = process.argv.indexOf('--port');\nconst port = i >= 0 ? process.argv[i+1] : 44201;\nconsole.log('http://127.0.0.1:' + port);\n")
 
     // node resolution graph: cli → web-app; web-app → ui-chat (optional)
     symlinkSync(webAppDir, join(cliDir, 'node_modules', '@deepseek-ai', 'dsh-web-app'))
@@ -96,6 +96,8 @@ describe('scripts/dev-env.sh L2 Host install-closure preflight', () => {
         DSH_HOME: join(testRoot, 'prod'),
         DSH_DEV_HOME: join(testRoot, 'dev'),
         DSH_SRC: fakeDshSrc,
+        // Even an older caller requesting 44200 must never allocate production.
+        OMNIMUX_L2_PORT_POOL_START: '44200',
       },
       stdio: ['pipe', 'pipe', 'pipe'],
     },
@@ -107,6 +109,8 @@ describe('scripts/dev-env.sh L2 Host install-closure preflight', () => {
       const out = runStart()
       assert.ok(out.includes('L2 Host 安装闭包完整'), `expected install-closure pass, got: ${out}`)
       assert.ok(out.includes('dev 环境已启动'), 'complete DSH_SRC closure should start Host')
+      const allocated = Number(readFileSync(join(testRoot, 'dev/tasks/deps-test/profiles/omnimux-dev-deps-test/port.txt'), 'utf8').trim())
+      assert.ok(allocated >= 44201 && allocated <= 44299, `unsafe allocated port: ${allocated}`)
       // Empty prod @deepseek-ai must not be treated as missing deps
       assert.ok(!out.includes('生产 dsh 层缺失'), 'must not blame empty prod profile scope')
     } finally {

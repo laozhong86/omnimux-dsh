@@ -6,7 +6,7 @@ status: "living"
 authority: "L3"
 date: "2026-08-26"
 updated: "2026-09-05"
-authors: ["x", "agent-architect"]
+authors: ["x", "agent-architect", "kou-douma"]
 subsystem: "global"
 ---
 
@@ -29,6 +29,34 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `accepted` | [2026-09-05-model-seedance-2-0-text_to_video.md](2026-09-05-model-seedance-2-0-text_to_video.md) | model evidence — seedance-2-0#text_to_video — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 C1 Seedance live t2v；token id 45；listed。 |
+| `accepted` | [2026-09-05-model-seedance-2-0-first_frame.md](2026-09-05-model-seedance-2-0-first_frame.md) | model evidence — seedance-2-0#first_frame — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 C1 images[] live / mapper image 拒；不 listed。 |
+| `accepted` | [2026-09-05-model-seedance-2-0-fast-first_frame.md](2026-09-05-model-seedance-2-0-fast-first_frame.md) | model evidence — seedance-2-0-fast#first_frame — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 C1 PNG/JPEG images[] live；mapper gap；不 listed。 |
+| `accepted` | [2026-09-05-model-seedance-2-0-fast-video_multi_ref.md](2026-09-05-model-seedance-2-0-fast-video_multi_ref.md) | model evidence — seedance-2-0-fast#video_multi_ref — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 C1 multi_ref 1/2 图 live；listed max2。 |
+| `accepted` | [2026-09-05-model-seedance-2-0-mini-text_to_video.md](2026-09-05-model-seedance-2-0-mini-text_to_video.md) | model evidence — seedance-2-0-mini#text_to_video — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 C1 新 runtime mini t2v live；listed。 |
+| `accepted` | [2026-09-05-model-seedance-2-0-mini-first_frame.md](2026-09-05-model-seedance-2-0-mini-first_frame.md) | model evidence — seedance-2-0-mini#first_frame — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 C1 mini first_frame images[] live；mapper gap；不 listed。 |
+| `accepted` | [2026-09-05-model-seedance-2-5-text_to_video.md](2026-09-05-model-seedance-2-5-text_to_video.md) | model evidence — seedance-2-5#text_to_video — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 C1 2.5 t2v live；listed。 |
+| `accepted` | [2026-09-05-model-seedance-2-5-first_frame.md](2026-09-05-model-seedance-2-5-first_frame.md) | model evidence — seedance-2-5#first_frame — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 C1 2.5 first_frame images[] live；mapper gap；不 listed。 |
+| `accepted` | [2026-09-05-model-seedance-2-5-video_multi_ref.md](2026-09-05-model-seedance-2-5-video_multi_ref.md) | model evidence — seedance-2-5#video_multi_ref — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 C1 2.5 multi_ref×1 live；listed max1。 |
+| `accepted` | [2026-09-05-model-claude-opus-5-chat.md](2026-09-05-model-claude-opus-5-chat.md) | model evidence — claude-opus-5#chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-claude-opus-4-6-chat.md](2026-09-05-model-claude-opus-4-6-chat.md) | model evidence — claude-opus-4-6#chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-claude-opus-4-6-vision_chat.md](2026-09-05-model-claude-opus-4-6-vision_chat.md) | model evidence — claude-opus-4-6#vision_chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-gpt-5.6-sol-chat.md](2026-09-05-model-gpt-5.6-sol-chat.md) | model evidence — gpt-5.6-sol#chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-gpt-5.6-sol-vision_chat.md](2026-09-05-model-gpt-5.6-sol-vision_chat.md) | model evidence — gpt-5.6-sol#vision_chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-gpt-5.5-chat.md](2026-09-05-model-gpt-5.5-chat.md) | model evidence — gpt-5.5#chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-gpt-5.5-vision_chat.md](2026-09-05-model-gpt-5.5-vision_chat.md) | model evidence — gpt-5.5#vision_chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-grok-4.6-chat.md](2026-09-05-model-grok-4.6-chat.md) | model evidence — grok-4.6#chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-grok-4.6-vision_chat.md](2026-09-05-model-grok-4.6-vision_chat.md) | model evidence — grok-4.6#vision_chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-kimi-k3-chat.md](2026-09-05-model-kimi-k3-chat.md) | model evidence — kimi-k3#chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-kimi-k3-vision_chat.md](2026-09-05-model-kimi-k3-vision_chat.md) | model evidence — kimi-k3#vision_chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-deepseek-v4-pro-chat.md](2026-09-05-model-deepseek-v4-pro-chat.md) | model evidence — deepseek-v4-pro#chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-deepseek-v4-flash-vision-exp-chat.md](2026-09-05-model-deepseek-v4-flash-vision-exp-chat.md) | model evidence — deepseek-v4-flash-vision-exp#chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-deepseek-v4-flash-vision-exp-vision_chat.md](2026-09-05-model-deepseek-v4-flash-vision-exp-vision_chat.md) | model evidence — deepseek-v4-flash-vision-exp#vision_chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-gemini-3.7-flash-chat.md](2026-09-05-model-gemini-3.7-flash-chat.md) | model evidence — gemini-3.7-flash#chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-gemini-3.7-flash-vision_chat.md](2026-09-05-model-gemini-3.7-flash-vision_chat.md) | model evidence — gemini-3.7-flash#vision_chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-gemini-3.1-pro-preview-chat.md](2026-09-05-model-gemini-3.1-pro-preview-chat.md) | model evidence — gemini-3.1-pro-preview#chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-gemini-3.1-pro-preview-vision_chat.md](2026-09-05-model-gemini-3.1-pro-preview-vision_chat.md) | model evidence — gemini-3.1-pro-preview#vision_chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
+| `accepted` | [2026-09-05-model-glm-5.3-chat.md](2026-09-05-model-glm-5.3-chat.md) | model evidence — glm-5.3#chat — 2026-09-05 | `omnimux/catalog` | 2026-09-05 | #530 PR-A live chat-completions；token id 45；四要素齐全。 |
 | `accepted` | [2026-08-31-workbench-split-live.md](2026-08-31-workbench-split-live.md) | Workbench split live QA — 2026-08-31 | `omnimux` | 2026-08-31 | 点「视频剪辑」不 claim overlay；对话/分栏/工作台写右栏几何。附件 png/json 同目录。 |
 | `accepted` | [2026-08-27-web-plugin-pages-qa.md](2026-08-27-web-plugin-pages-qa.md) | Web Plugin Pages QA Evidence — 2026-08-27 | `global` | 2026-08-27 | - **Entry**: fork `yarn omnimux:dev start plugin-pages omnimux` |
 | `accepted` | [2026-08-23-omnimux-brand-four.md](2026-08-23-omnimux-brand-four.md) | OmniMux live brand-four probe — 2026-08-23 | `global` | 2026-08-23 | Measured against `https://api.omnimux.ai/v1` with a real `OMNIMUX_API_KEY`. |

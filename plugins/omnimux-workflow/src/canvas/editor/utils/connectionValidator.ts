@@ -3,17 +3,24 @@
  * `apps/web/src/pages/CanvasEditor/utils/connectionValidator.ts`
  * (validated by the extraction spike). Two-stage validation:
  * Stage 1: Structural & type contract validation
- * Stage 2: Dynamic model input capacity validation
+ * Stage 2: Contract-driven model compatibility validation (Issue #466)
+ *
+ * Stage 2 uses the SAME compat kernel + catalog injection as the mutation
+ * gateway: a connection is valid iff at least one LISTED operation in the
+ * catalog can absorb the simulated upstream fingerprint. Unknown models,
+ * a missing catalog and zero candidates fail closed (typed reason codes).
  */
 
 import { type Node, type Edge, type Connection } from '@xyflow/react';
 // 显式 .ts 扩展名：node --test 的 type-stripping 不做 TS 扩展名解析
 import { validateCanvasConnectionStructure } from './canvasConnectionStructure.ts';
-import { resolveNodeKind, type MaterialType } from '../../../shared/graph/materialNode.ts';
+import { resolveNodeKind } from '../../../shared/graph/materialNode.ts';
+import { buildCanvasUpstreamFingerprint } from '../../../shared/graph/canvasInputMutationGateway.ts';
 import {
-  resolveModelInputCapability,
-  type ModelInputCapability,
-} from '../../../shared/validation/modelCompatibilityEvaluator.ts';
+  evaluateCatalogCompat,
+  primaryRejectionCode,
+  type CompatReasonCode,
+} from '../../../shared/validation/compatKernel.ts';
 import type { CapabilityCatalog } from '../../../shared/api.ts';
 
 /** 结构与能力校验拒绝码（文案由 UI 层经 i18n 字典 edge.reject.* 解析，见 rejectReasonKey）。 */
@@ -24,7 +31,8 @@ export type ConnectionRejectReasonCode =
   | 'cycle'
   | 'type_contract'
   | 'capacity_exceeded'
-  | 'model_incompatible';
+  | 'model_incompatible'
+  | CompatReasonCode;
 
 export interface DetailedConnectionValidation {
   valid: boolean;
@@ -52,16 +60,42 @@ export function rejectReasonKey(reasonCode: string | undefined | null): string {
     case 'type_contract':
       return 'edge.reject.typeContract';
     case 'capacity_exceeded':
+    case 'slot_capacity':
       return 'edge.reject.capacityExceeded';
     case 'model_incompatible':
       return 'edge.reject.modelIncompatible';
+    case 'mime_unsupported':
+      return 'edge.reject.mimeUnsupported';
+    case 'size_exceeded':
+      return 'edge.reject.sizeExceeded';
+    case 'duration_exceeded':
+      return 'edge.reject.durationExceeded';
+    case 'role_conflict':
+      return 'edge.reject.roleConflict';
+    case 'no_compatible_model':
+      return 'edge.reject.noCompatibleModel';
+    case 'unknown_model':
+      return 'edge.reject.unknownModel';
+    case 'contract_missing':
+      return 'edge.reject.contractMissing';
+    case 'catalog_unavailable':
+      return 'edge.reject.catalogUnavailable';
+    case 'operation_incompatible':
+      return 'edge.reject.operationIncompatible';
+    case 'min_unsatisfied':
+      return 'edge.reject.minUnsatisfied';
+    case 'prompt_required':
+      return 'edge.reject.promptRequired';
     default:
       return 'edge.reject.invalid';
   }
 }
 
 /**
- * Stage 2 动态模型容量与多模态兼容性校验
+ * Stage 2 契约驱动模型兼容性校验（Issue #466）
+ *
+ * 能连上 ⟺ 模拟后目录中至少一个 listed operation 能吸收当前输入。
+ * 文本-only 指纹不触发硬闸（prompt 政策由 node_field 槽与 readyToSubmit 管）。
  */
 export function validateDynamicModelCapacity(
   connection: Pick<Connection, 'source' | 'target'>,
@@ -79,123 +113,60 @@ export function validateDynamicModelCapacity(
     return { valid: true };
   }
 
-  const params = (targetData.params || {}) as Record<string, unknown>;
-  const modelId = typeof params.model === 'string' ? params.model.trim() : '';
-  if (!modelId) {
-    return { valid: true };
-  }
-
-  const modelCap = resolveModelInputCapability(modelId, catalog);
-  if (!modelCap) {
-    return { valid: true };
-  }
-
   const sourceNode = nodes.find((node) => node.id === connection.source);
   if (!sourceNode) {
     return { valid: true };
   }
 
-  const sourceData = (sourceNode.data || {}) as Record<string, unknown>;
-  const sourceMaterialType = (sourceData.materialType as MaterialType) || (sourceNode.type as MaterialType) || 'image';
+  const params = (targetData.params || {}) as Record<string, unknown>;
+  const modelId = typeof params.model === 'string' ? params.model.trim() : '';
 
-  // 计算模拟连线后的全部上游节点集合
-  const existingSourceIds = edges
-    .filter((edge) => edge.target === connection.target && edge.source !== connection.source)
-    .map((edge) => edge.source);
-  const simulatedSourceIds = Array.from(new Set([...existingSourceIds, connection.source]));
+  // 模拟连线后的上游指纹：既有入边（排除同源重复）+ pending source。
+  const pendingSourceIds = edges.some(
+    (edge) => edge.target === connection.target && edge.source === connection.source,
+  )
+    ? []
+    : [connection.source];
+  const fingerprint = buildCanvasUpstreamFingerprint(
+    connection.target,
+    nodes,
+    edges,
+    pendingSourceIds,
+  );
 
-  const upstreams: Array<{ type: MaterialType; mimeType?: string }> = [];
-  for (const sId of simulatedSourceIds) {
-    const sNode = nodes.find((node) => node.id === sId);
-    if (!sNode) continue;
-    const sData = (sNode.data || {}) as Record<string, unknown>;
-    const sType = (sData.materialType as MaterialType) || (sNode.type as MaterialType) || 'image';
-    upstreams.push({
-      type: sType,
-      mimeType: typeof sData.mimeType === 'string' ? sData.mimeType : undefined,
-    });
+  // 纯文本指纹：软输入，不触发媒体硬闸。
+  if (fingerprint.mediaAssets.length === 0) {
+    return { valid: true };
   }
 
-  const imageCount = upstreams.filter((u) => u.type === 'image').length;
-  const videoCount = upstreams.filter((u) => u.type === 'video').length;
-  const audioCount = upstreams.filter((u) => u.type === 'audio').length;
-
-  // 1. 检查图片容量超限
-  if (sourceMaterialType === 'image') {
-    if (modelCap.referenceImages && modelCap.referenceImages.max !== undefined && imageCount > modelCap.referenceImages.max) {
-      return {
-        valid: false,
-        blockedBy: 'model-capability',
-        reasonCode: 'capacity_exceeded',
-        meta: {
-          modelId,
-          maxAllowed: modelCap.referenceImages.max,
-          currentCount: imageCount,
-        },
-      };
-    }
-    if (modelCap.referenceImages?.max === 0 || (modelCap.modalities && !modelCap.modalities.includes('image'))) {
-      return {
-        valid: false,
-        blockedBy: 'model-capability',
-        reasonCode: 'model_incompatible',
-        meta: {
-          modelId,
-        },
-      };
-    }
+  if (!catalog) {
+    return {
+      valid: false,
+      blockedBy: 'model-capability',
+      reasonCode: 'catalog_unavailable',
+      meta: { modelId: modelId || undefined },
+    };
   }
 
-  // 2. 检查视频容量超限
-  if (sourceMaterialType === 'video') {
-    if (modelCap.referenceVideos && modelCap.referenceVideos.max !== undefined && videoCount > modelCap.referenceVideos.max) {
-      return {
-        valid: false,
-        blockedBy: 'model-capability',
-        reasonCode: 'capacity_exceeded',
-        meta: {
-          modelId,
-          maxAllowed: modelCap.referenceVideos.max,
-          currentCount: videoCount,
-        },
-      };
-    }
-    if (modelCap.referenceVideos?.max === 0 || (modelCap.modalities && !modelCap.modalities.includes('video'))) {
-      return {
-        valid: false,
-        blockedBy: 'model-capability',
-        reasonCode: 'model_incompatible',
-        meta: {
-          modelId,
-        },
-      };
-    }
+  const outputType = typeof targetData.materialType === 'string' ? targetData.materialType : undefined;
+  const evaluation = evaluateCatalogCompat(catalog, fingerprint, {
+    ...(outputType ? { outputType } : {}),
+  });
+  if (!evaluation.catalogAvailable) {
+    return {
+      valid: false,
+      blockedBy: 'model-capability',
+      reasonCode: 'catalog_unavailable',
+      meta: { modelId: modelId || undefined },
+    };
   }
-
-  // 3. 检查音频容量超限
-  if (sourceMaterialType === 'audio') {
-    if (modelCap.referenceAudios && modelCap.referenceAudios.max !== undefined && audioCount > modelCap.referenceAudios.max) {
-      return {
-        valid: false,
-        blockedBy: 'model-capability',
-        reasonCode: 'capacity_exceeded',
-        meta: {
-          modelId,
-          maxAllowed: modelCap.referenceAudios.max,
-          currentCount: audioCount,
-        },
-      };
-    }
-    if (modelCap.referenceAudios?.max === 0 || (modelCap.modalities && !modelCap.modalities.includes('audio'))) {
-      return {
-        valid: false,
-        blockedBy: 'model-capability',
-        reasonCode: 'model_incompatible',
-        meta: {
-          modelId,
-        },
-      };
-    }
+  if (evaluation.zeroCandidates) {
+    return {
+      valid: false,
+      blockedBy: 'model-capability',
+      reasonCode: primaryRejectionCode(evaluation),
+      meta: { modelId: modelId || undefined },
+    };
   }
 
   return { valid: true };
@@ -231,7 +202,7 @@ export function validateConnectionDetailed(
     };
   }
 
-  // Stage 2: 动态模型能力与容量校验
+  // Stage 2: 契约驱动模型兼容性校验
   const stage2 = validateDynamicModelCapacity(
     connection,
     nodes as Node<Record<string, unknown>>[],

@@ -46,7 +46,7 @@ subsystem: "global"
 12. **跟 PR 细节交棒** `omnimux-pr-handoff`；跟踪写入本仓 `.workbuddy/pr-board.md`。该 board 不作为质量门禁的唯一信任源。
 13. **插件进 App** 仍走桌面壳 `yarn omnimux:*`（见 `ops-entry.md`）。本合同不允许 Agent 重启公共桌面 App。
 14. **`omnimux-workflow` 生成物不进 Git**。`dist/index.js`、`lib/client.js`、`lib/canvas.js` 由 `prepare` / `sync-to-app` 现场 build；禁止为「跟仓」另开 PR 提交这些文件。其它插件的 `lib/client.js` 仍跟踪，直至后续统一。
-15. **合并前测试必须走 L2 独立任务环境**（`pnpm wt:dev <topic>`，独立端口 44200+，工作树源码 link）；公共 dev（`~/.omnimux-dev`/45120）与 prod **严禁**物化未合并工作树产物。`wt:finish` 强制要求 `.l2-dev.env` 验证记录（`--skip-l2` 仅限 R3/纯文档/纯后端）；`wt:clean` 合并后自动回收对应 L2 环境。
+15. **合并前测试必须走 L2 独立任务环境**（`pnpm wt dev <topic>`，独立端口 44201–44299，工作树源码 link）；公共 dev（`~/.omnimux-dev`/45120）与 prod **严禁**物化未合并工作树产物。`wt:finish` 强制要求 `.l2-dev.env` 验证记录（`--skip-l2` 仅限 R3/纯文档/纯后端）；`wt:clean` 合并后自动回收对应 L2 环境。
 
 ## 合入决策矩阵
 
@@ -108,8 +108,8 @@ cd ../omnimux-dsh-wt-<topic>-[issue-id]
 git add <changed-files>
 git commit -m "feat(<plugin>): ... (#<issue-id>)"
 
-# 2.5 合并前测试：在独立 L2 任务环境验证（独立端口 44200+，工作树源码 link）
-pnpm wt:dev <topic> [issue-id] [plugin]
+# 2.5 合并前测试：在独立 L2 任务环境验证（独立端口 44201–44299，工作树源码 link）
+pnpm wt dev <topic> [issue-id] [plugin]
 # → 打印独立 URL；写入 <worktree>/.l2-dev.env（finish 门禁读取）
 
 # 3. 本地门禁 → 推送特性分支 → 创建 PR（主仓 main 保持干净）

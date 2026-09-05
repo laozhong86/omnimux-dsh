@@ -1,0 +1,99 @@
+{
+  "id": "seedance-2-5",
+  "operation": "text_to_video",
+  "date": "2026-09-05",
+  "author": "kou-douma",
+  "batch": "C1",
+  "existence": {
+    "httpStatus": 200,
+    "present": true,
+    "totalModels": 127
+  },
+  "minimal": {
+    "requestShape": {
+      "model": "seedance-2-5",
+      "op": "text_to_video",
+      "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+      "duration": 5,
+      "resolution": "720P",
+      "aspect_ratio": "16:9",
+      "image": null,
+      "reference_images": null
+    },
+    "submitHttp": 200,
+    "submitBody": {
+      "created": 1788579500,
+      "id": "task_tgmrU2mITJAq6shZI5EMugC0xhUpPHU2",
+      "model": "seedance-2-5",
+      "object": "video",
+      "status": "queued",
+      "task_id": "task_tgmrU2mITJAq6shZI5EMugC0xhUpPHU2"
+    },
+    "taskId": "task_tgmrU2mITJAq6shZI5EMugC0xhUpPHU2",
+    "terminalStatus": "success",
+    "mode": "live",
+    "bytes": 4296075,
+    "elapsedMs": 195465,
+    "url": "https://files.evolink.ai/.../media.mp4",
+    "ok": true,
+    "error": null,
+    "pollsKept": 8,
+    "artifact": {
+      "url": "https://files.evolink.ai/.../media.mp4",
+      "bytes": 4296075,
+      "urlSuffix": ".mp4",
+      "mimeInferred": "video/mp4",
+      "containerMagic": {
+        "container": "iso_bmff",
+        "ftypBrand": "isom",
+        "headHex": "000000206674797069736f6d"
+      },
+      "localBytesMatched": true,
+      "downloadHttpStatus": null,
+      "notes": "Historical generation artifact: MIME inferred from .mp4 URL + ISO BMFF ftyp magic on retained local bytes. The post-generation readback below is a separate observation, not a generation-time response header.",
+      "readback": {
+        "observedAt": "2026-09-05T04:56:18.350Z",
+        "httpStatus": 200,
+        "contentType": "video/mp4",
+        "bytes": 4296075,
+        "sha256": "bfa323c9fc357894ec4c61978012b990c54157adceaf43cea04a113ac6936e1e",
+        "bytesMatchHistoricalArtifact": true,
+        "sha256MatchHistoricalArtifact": true
+      }
+    }
+  },
+  "extras": [],
+  "boundary": {
+    "durationProbe": {
+      "httpStatus": 400,
+      "request": {
+        "model": "seedance-2-5",
+        "prompt": "boundary reject probe — invalid duration",
+        "duration": 0,
+        "aspect_ratio": "16:9",
+        "resolution": "720P"
+      },
+      "body": {
+        "code": "fail_to_fetch_task",
+        "message": "{\"error\":{\"code\":\"invalid_parameter\",\"message\":\"duration must be an integer between 4 and 30 seconds, or -1 for automatic duration\",\"type\":\"invalid_request_error\"}}",
+        "data": null
+      },
+      "taskId": null,
+      "elapsedMs": 1072
+    }
+  },
+  "mime": "N/A",
+  "wireField": null,
+  "listedCandidate": true,
+  "blockReason": null,
+  "logs": {
+    "primary": "docs/evidence/2026-09-05-model-seedance-2-5-text_to_video.json",
+    "companionMarkdown": "docs/evidence/2026-09-05-model-seedance-2-5-text_to_video.md",
+    "note": "Raw probe scratch under /tmp was not committed; auditable fields are inlined below."
+  },
+  "notes": [
+    "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",
+    "no API key values stored",
+    "media files not committed; bytes recorded only"
+  ]
+}

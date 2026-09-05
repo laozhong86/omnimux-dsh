@@ -33,6 +33,7 @@ import {
   type CanvasInputMutationPlan,
   type CanvasNode,
 } from '../editor/utils/canvasInputMutationGateway';
+import type { CapabilityCatalog } from '../../shared/api';
 import {
   clearPersistSessionFlags,
   noteGraphReset,
@@ -84,6 +85,9 @@ export interface CanvasState {
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
   applyCanvasInputMutation: (mutation: CanvasInputMutation) => CanvasInputMutationPlan;
+  /** Catalog v1.1 runtime DTO (boot-synced; runtime-only, never persisted). */
+  catalogRuntime: CapabilityCatalog | null;
+  setCatalogRuntime: (catalog: CapabilityCatalog | null) => void;
   setNodes: (nodes: CanvasNode[] | ((nodes: CanvasNode[]) => CanvasNode[])) => void;
   setEdges: (edges: Edge[] | ((edges: Edge[]) => Edge[])) => void;
   removeEdge: (edgeId: string) => void;
@@ -162,6 +166,9 @@ export const useCanvasStore = create<CanvasState>()(
       const plan = planCanvasInputMutation(
         { nodes: current.nodes, edges: current.edges },
         mutation,
+        // Issue #466: catalog-aware compat pass — edge + slot binding +
+        // model/operation auto-adaptation commit as ONE store set.
+        { catalog: current.catalogRuntime },
       );
       if (plan.status !== 'allowed') return plan;
       set({ nodes: plan.nodes, edges: plan.edges });
@@ -170,6 +177,12 @@ export const useCanvasStore = create<CanvasState>()(
       ));
       dispatchSuccessfulConnectionEvents(addedEdges);
       return plan;
+    },
+
+    catalogRuntime: null as CapabilityCatalog | null,
+
+    setCatalogRuntime: (catalog: CapabilityCatalog | null) => {
+      set({ catalogRuntime: catalog });
     },
 
     setNodes: (nodesOrUpdater) => {
@@ -362,6 +375,7 @@ export const useCanvasStore = create<CanvasState>()(
         selectedElement: { type: 'none', id: null },
         past: [],
         future: [],
+        catalogRuntime: null,
       });
       history.current = null;
       history.lastPushAt = 0;

@@ -127,7 +127,7 @@ describe('scripts/git-wt.sh finish lifecycle in isolated environment', () => {
     writeFileSync(syncScript, `#!/usr/bin/env bash\necho "MOCK SYNC: $1 synced"\nexit 0\n`, { mode: 0o755 })
 
     // 创建 dev-env.sh 模拟脚本（L2 独立环境：start 打印 port/URL，ls/rm 可驱动）
-    // 供 wt:dev / finish L2 门禁 / clean 回收测试使用。
+    // 供 wt dev / finish L2 门禁 / clean 回收测试使用。
     const devEnvScript = join(mainRepo, 'scripts', 'dev-env.sh')
     writeFileSync(devEnvScript, `#!/usr/bin/env bash
 cmd="\$1"; name="\${2:-}"

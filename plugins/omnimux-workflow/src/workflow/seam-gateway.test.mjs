@@ -662,6 +662,100 @@ test('回退：无 seam 时 auto 装配 mock 网关（static-stub 目录）', as
     const caps = await h.call({ url: '/omnimux-workflow/api/capabilities' });
     assert.equal(caps.body.source, 'static-stub');
     assert.ok(caps.body.image.some((row) => row.id === 'mock-image-1'));
+    // mock fixture 也是 Catalog v1.1：models[] 带完整 operation 契约。
+    assert.equal(caps.body.schemaVersion, '1.1');
+    const mockImage = caps.body.models.find((row) => row.id === 'mock-image-1');
+    assert.ok(mockImage);
+    const i2i = mockImage.operations.find((op) => op.id === 'image_to_image');
+    assert.equal(i2i.listed, true);
+    assert.equal(i2i.output.type, 'image');
+    assert.ok(i2i.inputs.some((slot) => slot.role === 'reference'));
+    assert.ok(caps.body.defaultsByOperation.image_to_image);
+  } finally {
+    h.dispose();
+    rmSync(h.root, { recursive: true, force: true });
+  }
+});
+
+test('capabilities v1.1：models/operations/research/execution/aliases/parameters 全字段透传', async () => {
+  const hub = createFakeSeamHub({
+    catalogList() {
+      return {
+        source: 'omnimux',
+        schemaVersion: '1.1',
+        fingerprint: 'v11-pass',
+        defaults: { video: 'seedance-2-0-fast' },
+        defaultsByOperation: { text_to_video: 'seedance-2-0-fast' },
+        models: [
+          {
+            id: 'seedance-2-0-fast',
+            label: 'Seedance 2.0 Fast',
+            family: 'bytedance',
+            aliases: ['seedance-2.0-fast'],
+            listed: true,
+            listedOperations: ['seedance-2-0-fast#text_to_video'],
+            disposition: 'canonical',
+            parameters: { aspectRatio: { options: [{ value: '16:9', label: '16:9' }], defaultValue: '16:9' } },
+            operations: [
+              {
+                id: 'text_to_video',
+                label: '文生视频',
+                output: { type: 'video' },
+                inputs: [
+                  { slot: 'prompt', type: 'text', role: 'prompt', source: 'node_field', min: 1, max: 1 },
+                ],
+                research: { status: 'verified', docUrl: 'docs/evidence/x.md', verifiedAt: '2026-08-14' },
+                execution: { status: 'live', profileId: 'videoGenerate', seam: 'videoGenerate' },
+                listed: true,
+              },
+            ],
+          },
+        ],
+        text: [],
+        image: [],
+        video: [
+          {
+            id: 'seedance-2-0-fast',
+            label: 'Seedance 2.0 Fast',
+            aliases: ['seedance-2.0-fast'],
+            inputCapability: { modalities: ['text', 'image'] },
+          },
+        ],
+        audio: [],
+      };
+    },
+  });
+  const h = makeHarness({ seamHub: hub });
+  try {
+    const caps = await h.call({ url: '/omnimux-workflow/api/capabilities' });
+    assert.equal(caps.body.source, 'omnimux');
+    assert.equal(caps.body.schemaVersion, '1.1');
+    assert.equal(caps.body.fingerprint, 'v11-pass');
+    assert.deepEqual(caps.body.defaultsByOperation, { text_to_video: 'seedance-2-0-fast' });
+
+    // 权威 models[]：operations/inputs/output/research/execution/aliases/parameters 不丢。
+    assert.equal(caps.body.models.length, 1);
+    const model = caps.body.models[0];
+    assert.equal(model.id, 'seedance-2-0-fast');
+    assert.deepEqual(model.aliases, ['seedance-2.0-fast']);
+    assert.deepEqual(model.listedOperations, ['seedance-2-0-fast#text_to_video']);
+    assert.equal(model.disposition, 'canonical');
+    assert.equal(model.parameters.aspectRatio.defaultValue, '16:9');
+    const op = model.operations[0];
+    assert.equal(op.id, 'text_to_video');
+    assert.equal(op.output.type, 'video');
+    assert.equal(op.inputs[0].slot, 'prompt');
+    assert.equal(op.inputs[0].source, 'node_field');
+    assert.equal(op.research.status, 'verified');
+    assert.equal(op.research.docUrl, 'docs/evidence/x.md');
+    assert.equal(op.execution.status, 'live');
+    assert.equal(op.execution.seam, 'videoGenerate');
+    assert.equal(op.listed, true);
+
+    // 桶行保留 inputCapability / aliases（旧 UI 消费路径）。
+    const row = caps.body.video[0];
+    assert.deepEqual(row.aliases, ['seedance-2.0-fast']);
+    assert.deepEqual(row.inputCapability, { modalities: ['text', 'image'] });
   } finally {
     h.dispose();
     rmSync(h.root, { recursive: true, force: true });
