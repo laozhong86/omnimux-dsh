@@ -18,6 +18,7 @@ export const GUARD_CODES = Object.freeze({
   OPERATION_NOT_ON_MODEL: 'operation_not_on_model',
   NOT_LISTED: 'not_listed',
   RESEARCH_NOT_VERIFIED: 'research_not_verified',
+  IMPLEMENTATION_UNAVAILABLE: 'implementation_unavailable',
   EXECUTION_UNAVAILABLE: 'execution_unavailable',
   PROFILE_MISSING: 'profile_missing',
   PROFILE_INCOMPATIBLE: 'profile_incompatible',

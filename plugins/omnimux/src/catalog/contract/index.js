@@ -51,6 +51,7 @@ export {
 
 export {
   normalizeResearch,
+  normalizeImplementation,
   normalizeExecution,
   materializeOpStatus,
   computeListed,

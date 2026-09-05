@@ -13,7 +13,7 @@ const storeSrc = readFileSync(join(here, 'canvasStore.ts'), 'utf8');
 
 test('applyCanvasInputMutation：catalogRuntime 注入 + 一次 set 提交 nodes/edges', () => {
   assert.match(storeSrc, /catalogRuntime:\s*CapabilityCatalog\s*\|\s*null/);
-  assert.match(storeSrc, /setCatalogRuntime:\s*\(catalog:\s*CapabilityCatalog\s*\|\s*null\)\s*=>\s*void/);
+  assert.match(storeSrc, /setCatalogRuntime:\s*\(catalog:\s*CapabilityCatalog\s*\|\s*null\)\s*=>/);
   assert.match(storeSrc, /planCanvasInputMutation\(/);
   assert.match(storeSrc, /\{\s*catalog:\s*current\.catalogRuntime\s*\}/);
   // Allowed path commits nodes + edges in a single set call (atomic).
@@ -22,6 +22,9 @@ test('applyCanvasInputMutation：catalogRuntime 注入 + 一次 set 提交 nodes
   assert.match(storeSrc, /if \(plan\.status !== 'allowed'\) return plan;/);
   // resetStore clears runtime catalog (not persisted).
   assert.match(storeSrc, /catalogRuntime:\s*null/);
+  // W2: fingerprint change triggers reconcile (no oscillation via same-fp skip).
+  assert.match(storeSrc, /reconcileCanvasForCatalog/);
+  assert.match(storeSrc, /previousFingerprint/);
 });
 
 test('onConnect / removeEdge 均走 applyCanvasInputMutation（无 useEffect 事后修模）', () => {

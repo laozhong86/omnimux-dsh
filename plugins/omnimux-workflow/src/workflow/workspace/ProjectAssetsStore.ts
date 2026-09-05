@@ -89,7 +89,12 @@ export interface RegisterGeneratedAssetPayload {
   relative_path: string;
   name: string;
   type?: ProjectAssetFileType;
-  size?: number;
+  /** Byte size when known; omit / null when unknown (never invent 0). */
+  size?: number | null;
+  /** Canonical MIME; null/omit when unknown. */
+  mimeType?: string | null;
+  /** Duration seconds for AV; null/omit when unknown. */
+  durationSec?: number | null;
   lineage?: unknown;
 }
 
@@ -173,6 +178,27 @@ function hydrateItem(row: unknown): ProjectAssetsItem | null {
     updatedAt: asNumber(rec.updatedAt, 0),
   };
   if (typeof rec.size === 'number' && Number.isFinite(rec.size)) item.size = rec.size;
+  else if (rec.size === null) item.size = null;
+  if (typeof rec.sizeBytes === 'number' && Number.isFinite(rec.sizeBytes)) {
+    item.sizeBytes = rec.sizeBytes;
+    if (item.size === undefined) item.size = rec.sizeBytes;
+  } else if (rec.sizeBytes === null) {
+    item.sizeBytes = null;
+  } else if (typeof item.size === 'number') {
+    item.sizeBytes = item.size;
+  }
+  if (typeof rec.mimeType === 'string' && rec.mimeType.trim()) {
+    const mime = rec.mimeType.trim();
+    item.mimeType =
+      mime.toLowerCase() === 'unknown' || mime === 'application/octet-stream' ? null : mime;
+  } else if (rec.mimeType === null) {
+    item.mimeType = null;
+  }
+  if (typeof rec.durationSec === 'number' && Number.isFinite(rec.durationSec)) {
+    item.durationSec = rec.durationSec;
+  } else if (rec.durationSec === null) {
+    item.durationSec = null;
+  }
   if (rec.lineage != null) item.lineage = rec.lineage;
   if (rec.snapshot && typeof rec.snapshot === 'object' && !Array.isArray(rec.snapshot)) {
     const snap = rec.snapshot as Record<string, unknown>;
@@ -572,17 +598,54 @@ export function createProjectAssetsStore(opts: {
       if (existing) {
         const items = current.items.map((item) => {
           if (item.relative_path !== relative) return item;
+          const size =
+            typeof payload.size === 'number' && Number.isFinite(payload.size)
+              ? payload.size
+              : payload.size === null
+                ? null
+                : item.size;
+          const mimeType =
+            typeof payload.mimeType === 'string' && payload.mimeType.trim()
+              ? (payload.mimeType.trim().toLowerCase() === 'unknown'
+                  || payload.mimeType.trim() === 'application/octet-stream'
+                  ? null
+                  : payload.mimeType.trim())
+              : payload.mimeType === null
+                ? null
+                : item.mimeType;
+          const durationSec =
+            typeof payload.durationSec === 'number' && Number.isFinite(payload.durationSec)
+              ? payload.durationSec
+              : payload.durationSec === null
+                ? null
+                : item.durationSec;
           return {
             ...item,
             name,
             type: payload.type && isProjectAssetFileType(payload.type) ? payload.type : item.type,
-            size: typeof payload.size === 'number' ? payload.size : item.size,
+            size,
+            sizeBytes: size ?? null,
+            mimeType: mimeType ?? null,
+            durationSec: durationSec ?? null,
             lineage: payload.lineage ?? item.lineage,
             updatedAt: Date.now(),
           };
         });
         return persist(filePath, current, { folders: current.folders, items });
       }
+      const size =
+        typeof payload.size === 'number' && Number.isFinite(payload.size) ? payload.size : null;
+      const mimeType =
+        typeof payload.mimeType === 'string' && payload.mimeType.trim()
+          ? (payload.mimeType.trim().toLowerCase() === 'unknown'
+              || payload.mimeType.trim() === 'application/octet-stream'
+              ? null
+              : payload.mimeType.trim())
+          : null;
+      const durationSec =
+        typeof payload.durationSec === 'number' && Number.isFinite(payload.durationSec)
+          ? payload.durationSec
+          : null;
       const items = [
         ...current.items,
         {
@@ -591,7 +654,10 @@ export function createProjectAssetsStore(opts: {
           type: payload.type && isProjectAssetFileType(payload.type) ? payload.type : fileTypeOf(name),
           parentId: null,
           relative_path: relative,
-          size: payload.size,
+          size,
+          sizeBytes: size,
+          mimeType,
+          durationSec,
           lineage: payload.lineage,
           updatedAt: Date.now(),
         },

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "omnimux://catalog/model-capability.schema.json",
   "title": "OmniMux Model Capability Contract",
-  "description": "Machine contract for plugins/omnimux/src/catalog/specs/*.yaml (Contract v1.1). Canonical root field is schemaVersion (exact \"1.1\"), never root version. JSON Schema is normative; runtime validation is pure JS parity-checked against this file and operation-registry.json. research/execution are operation-level (model fields are defaults only). Legacy root version is handled only by loader pre-normalization, not by this schema.",
+  "description": "Machine contract for plugins/omnimux/src/catalog/specs/*.yaml (Contract v1.1). Canonical root field is schemaVersion (exact \"1.1\"), never root version. JSON Schema is normative; runtime validation is pure JS parity-checked against this file and operation-registry.json. research/implementation/execution are operation-level (model fields are defaults only): official documentation, adapter readiness, and historical execution evidence are separate facts. Legacy root version is handled only by loader pre-normalization, not by this schema.",
   "type": "object",
   "required": ["schemaVersion", "models"],
   "additionalProperties": true,
@@ -43,6 +43,10 @@
       "type": "string",
       "enum": ["none", "stub", "live"]
     },
+    "implementationStatus": {
+      "type": "string",
+      "enum": ["none", "ready"]
+    },
     "limitSourceKind": {
       "type": "string",
       "enum": ["official_docs", "measured", "policy_conservative"]
@@ -78,7 +82,13 @@
           "enum": ["user", "upstream_edge", "node_field"]
         },
         "min": { "$ref": "#/$defs/nonNegativeNumber" },
-        "max": { "$ref": "#/$defs/nonNegativeNumber" },
+        "max": {
+          "anyOf": [
+            { "$ref": "#/$defs/nonNegativeNumber" },
+            { "type": "null" }
+          ],
+          "description": "Maximum cardinality. null means the official source does not publish an upper bound."
+        },
         "allowedMimes": {
           "type": "array",
           "minItems": 1,
@@ -86,8 +96,33 @@
           "uniqueItems": true
         },
         "maxSizeMb": { "$ref": "#/$defs/nonNegativeNumber" },
+        "maxSizeExclusive": { "type": "boolean" },
         "maxDurationSec": { "$ref": "#/$defs/nonNegativeNumber" },
+        "minDurationSec": { "$ref": "#/$defs/nonNegativeNumber" },
+        "totalMinDurationSec": { "$ref": "#/$defs/nonNegativeNumber" },
+        "totalMaxDurationSec": { "$ref": "#/$defs/nonNegativeNumber" },
+        "combinedOutputMaxDurationSec": {
+          "$ref": "#/$defs/nonNegativeNumber",
+          "description": "Maximum of this slot's total input duration plus requested output duration."
+        },
+        "totalMinExclusive": { "type": "boolean" },
+        "totalMaxExclusive": { "type": "boolean" },
         "limitSource": { "$ref": "#/$defs/limitSource" },
+        "hint": { "type": "string" }
+      }
+    },
+    "inputGroup": {
+      "type": "object",
+      "required": ["slots", "min"],
+      "additionalProperties": true,
+      "properties": {
+        "slots": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/nonEmptyString" },
+          "uniqueItems": true
+        },
+        "min": { "$ref": "#/$defs/nonNegativeNumber" },
         "hint": { "type": "string" }
       }
     },
@@ -129,6 +164,29 @@
         "notes": { "type": "string" }
       }
     },
+    "implementation": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": true,
+      "properties": {
+        "status": { "$ref": "#/$defs/implementationStatus" },
+        "profileId": { "type": "string" },
+        "seam": { "type": "string" },
+        "verifiedAt": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "required": ["channel", "wireModel", "endpoint"],
+      "additionalProperties": true,
+      "properties": {
+        "channel": { "$ref": "#/$defs/nonEmptyString" },
+        "wireModel": { "$ref": "#/$defs/nonEmptyString" },
+        "endpoint": { "$ref": "#/$defs/nonEmptyString" },
+        "automaticFallback": { "type": "boolean" }
+      }
+    },
     "operation": {
       "type": "object",
       "required": ["output", "inputs"],
@@ -146,6 +204,10 @@
           "type": "array",
           "items": { "$ref": "#/$defs/inputSlot" }
         },
+        "inputGroups": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/inputGroup" }
+        },
         "parameters": { "type": "object" },
         "research": {
           "$ref": "#/$defs/research",
@@ -154,6 +216,10 @@
         "execution": {
           "$ref": "#/$defs/execution",
           "description": "Operation-level execution; inherits model default when omitted"
+        },
+        "implementation": {
+          "$ref": "#/$defs/implementation",
+          "description": "Operation-level adapter readiness; inherits model default when omitted"
         },
         "aliases": {
           "type": "array",
@@ -194,6 +260,11 @@
           "$ref": "#/$defs/execution",
           "description": "Model-level default only; normalize materializes onto each operation"
         },
+        "implementation": {
+          "$ref": "#/$defs/implementation",
+          "description": "Model-level adapter-readiness default only; normalize materializes onto each operation"
+        },
+        "routing": { "$ref": "#/$defs/routing" },
         "aliases": {
           "type": "array",
           "minItems": 1,

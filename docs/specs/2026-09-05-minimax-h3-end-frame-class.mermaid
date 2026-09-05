@@ -1,0 +1,76 @@
+classDiagram
+  direction TB
+
+  class OperationRegistry {
+    +string version
+    +OperationDef[] operations
+  }
+  class OperationDef {
+    +string id
+    +string label
+    +string group
+    +string defaultOutputType
+    +string promptPolicy
+    +string notes
+  }
+  class AdapterProfile {
+    +string id
+    +string seam
+    +string status
+    +string[] operations
+    +string[] outputTypes
+  }
+  class LegacyOperationMap {
+    +mapLegacyOperation(raw) string
+  }
+  class ModelCapability {
+    +string id
+    +OperationSpec[] operations
+    +string[] listedOperations
+  }
+  class OperationSpec {
+    +string id
+    +OutputSpec output
+    +InputSlot[] inputs
+    +ResearchStatus research
+    +ExecutionStatus execution
+    +boolean listed
+  }
+  class InputSlot {
+    +string slot
+    +string type
+    +string role
+    +number min
+    +number max
+  }
+  class VideoInputMapper {
+    +mapOmnimuxInput(capability, request) object
+  }
+  class VideoRequest {
+    +string model
+    +string prompt
+    +Reference[] references
+    +string image
+  }
+  class Reference {
+    +string role
+    +string type
+    +string pathOrUrl
+  }
+  class UpstreamVideoBody {
+    +string model
+    +string prompt
+    +string image
+    +string image_tail
+    +object[] reference_images
+  }
+
+  OperationRegistry "1" *-- "18" OperationDef : includes end_frame
+  AdapterProfile --> OperationDef : operations ⊆ registry
+  LegacyOperationMap --> OperationDef : endframe→end_frame
+  ModelCapability "1" *-- "*" OperationSpec
+  OperationSpec --> OperationDef : id ∈ registry
+  OperationSpec "1" *-- "*" InputSlot
+  VideoInputMapper --> VideoRequest : reads
+  VideoInputMapper --> UpstreamVideoBody : writes
+  Reference --> VideoInputMapper : role last_frame

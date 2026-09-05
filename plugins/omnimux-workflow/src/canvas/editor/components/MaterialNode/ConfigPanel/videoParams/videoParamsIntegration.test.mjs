@@ -65,15 +65,17 @@ test('视频分支已移除旧版胶囊块（wf-param-pill--video-summary 仅剩
   assert.ok(videoBlock.includes('wf-video-trigger-bar__wrap'), '视频分支应含 TriggerBar 包裹层');
 });
 
-test('handleModelChange 消费 validateAndFallbackVideoParams 并保留防御分支', () => {
+test('handleModelChange 消费带显式提示的 buildVideoParamTransition 并保留防御分支', () => {
   assert.ok(
-    source.includes("validateAndFallbackVideoParams(params, newModelItem)"),
-    'handleModelChange 应委托 validateAndFallbackVideoParams',
+    source.includes('buildVideoParamTransition('),
+    'handleModelChange 应委托 buildVideoParamTransition',
   );
   assert.ok(
     source.includes('if (!newModelItem) {'),
     'newModelItem 不存在时应保留防御分支',
   );
+  // W2: catalog/upstreams 传入 fallback，便于 operation 收敛
+  assert.ok(source.includes('catalog: activeCatalog') || source.includes('catalog,'));
 });
 
 test('videoPopoverOpen 状态与 setVideoPopoverOpen 接线存在', () => {
@@ -83,11 +85,12 @@ test('videoPopoverOpen 状态与 setVideoPopoverOpen 接线存在', () => {
   assert.ok(source.includes('videoTriggerRef'));
 });
 
-test('视频有效参数经 resolveEffectiveVideoParams 解析（消费 schema/modelItem）', () => {
+test('视频有效参数经 resolveEffectiveVideoParams 解析（消费 catalog/upstreams）', () => {
   assert.ok(
-    source.includes('resolveEffectiveVideoParams(params, schema, modelItem)'),
-    '应通过 resolveEffectiveVideoParams 解析有效视频参数',
+    source.includes('resolveEffectiveVideoParams({'),
+    '应通过 resolveEffectiveVideoParams 对象参数解析有效视频参数',
   );
+  assert.ok(source.includes('catalog: activeCatalog') || source.includes('catalog,'), '应传入 catalog');
   assert.ok(source.includes('videoEffectiveParams'));
 });
 
@@ -120,4 +123,14 @@ test('i18n 决策锁定：videoParams 组件群保持硬编码中文，不引入
     !zh.includes('videoParam') && !en.includes('videoParam'),
     '不应新增 panel.videoParam* i18n key（与仓库硬编码中文先例保持一致）',
   );
+});
+
+test('待确认视频参数调整持久化，并提供确认或保留原值的显式动作', () => {
+  assert.ok(source.includes('readPendingVideoParamAdjustment(params as Record<string, unknown>)'));
+  assert.ok(source.includes('applyPendingVideoParamAdjustment(params as Record<string, unknown>)'));
+  assert.ok(source.includes('keepCurrentVideoParamValues(params as Record<string, unknown>)'));
+  assert.ok(source.includes('确认调整'));
+  assert.ok(source.includes('保留原值'));
+  assert.ok(source.includes('Boolean(pendingVideoParamAdjustment)'));
+  assert.equal(source.includes('const [videoParamNotices'), false, '提示必须保存在节点 params 中，重载后仍可确认');
 });

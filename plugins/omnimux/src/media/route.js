@@ -3,17 +3,20 @@ import { OmnimuxError } from './errors.js'
 export const PROTOCOLS = Object.freeze(['openai-media'])
 export const AUTH_MODES = Object.freeze(['auto', 'token', 'custom'])
 
-/** Catalog ids that must be rewritten before Hub POST body.model. */
+/** Channel wire ids accepted at the boundary and normalized to product ids. */
 export const MEDIA_WIRE_MODEL_IDS = Object.freeze({
-  'grok-imagine-video': 'grok-imagine-video-1-5',
+  'seedance-2.0': 'seedance-2-0',
+  'seedance-2.0-fast': 'seedance-2-0-fast',
+  'seedance-2.0-mini': 'seedance-2-0-mini',
+  'seedance-2.5': 'seedance-2-5',
+  'wan3.0-video': 'wan-3.0',
+  'MiniMax-H3': 'minimax-h3',
   'grok-imagine-video-1.5': 'grok-imagine-video-1-5',
-  'grok-imagine-video.1.5': 'grok-imagine-video-1-5',
-  'grok-imagine-video-1-5': 'grok-imagine-video-1-5',
 })
 
 /**
- * Map a catalog / canvas model id to the Hub wire model id.
- * Unknown ids pass through unchanged (including already-wired dotted ids).
+ * Map a channel id to the canonical product id. The cloud APIMart adapter owns
+ * product-id → official wire-model conversion.
  * @param {unknown} modelId
  * @returns {string}
  */

@@ -209,7 +209,12 @@ export function createWorkflowDispatcher(deps: WorkflowDispatcherDeps) {
     promoteToLibrary: libraryHttp.promoteToLibrary,
   });
   const projectAssetsRoutes = createProjectAssetsRoutes(assetsStore);
-  const executionRoutes = createExecutionRoutes({ store, executionManager, ensureProjectBound });
+  const executionRoutes = createExecutionRoutes({
+    store,
+    executionManager,
+    ensureProjectBound,
+    getCatalog: async () => (await gateway.capabilities()) as import('../../shared/api').CapabilityCatalog,
+  });
   const mediaRoutes = createMediaRoutes(mediaDir);
   const localFileRoutes = createLocalFileRoutes(picker ? { picker } : {});
   const templateRoutes = createTemplateRoutes(templates);

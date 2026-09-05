@@ -2,7 +2,7 @@
  * Issue #466 (W1): contract-driven compat kernel tests.
  *
  * Covers: fingerprint, contract view (v1.1 + legacy synthesis + aliases),
- * legacy operation mapping, slot matcher (role / capacity / MIME / size /
+ * slot matcher (role / capacity / MIME / size /
  * duration / determinism), accepts vs ready, per-model verdicts, catalog
  * evaluation, fail-closed paths and the locked auto-adaptation ordering.
  */
@@ -25,8 +25,8 @@ import { createCompatTestCatalog } from './compatTestCatalog.ts';
 
 const MB = 1024 * 1024;
 
-function fp(assets, prompt = '画一只猫') {
-  return buildUpstreamFingerprint({ prompt, assets });
+function fp(assets, prompt = '画一只猫', nodeFields = undefined) {
+  return buildUpstreamFingerprint({ prompt, assets, nodeFields });
 }
 
 function img(overrides = {}) {
@@ -54,7 +54,7 @@ test('fingerprint：mediaAssets 只含 image/video/audio；signature 随内容�
 test('contract view：v1.1 models[] 规范化 + alias 归一 + 稳定 order', () => {
   const view = buildContractView(createCompatTestCatalog());
   assert.equal(view.available, true);
-  assert.equal(view.models.length, 8);
+  assert.equal(view.models.length, 9);
   assert.equal(view.models[1].id, 'img-ref');
   assert.equal(view.models[1].order, 1);
   const viaAlias = resolveModelView(view, 'alias-img-wire');
@@ -109,6 +109,13 @@ test('legacy operation map：读时映射 canonical operation（string + metadat
   assert.equal(mapLegacyOperation('i2v'), 'first_frame');
   assert.equal(mapLegacyOperation('t2i'), 'text_to_image');
   assert.equal(mapLegacyOperation('digital_human'), 'digital_human');
+  assert.equal(mapLegacyOperation('end_frame'), 'end_frame');
+  assert.equal(mapLegacyOperation('endframe'), 'end_frame');
+  assert.equal(mapLegacyOperation('end-frame'), 'end_frame');
+  assert.notEqual(mapLegacyOperation('endframe'), 'first_frame');
+  assert.notEqual(mapLegacyOperation('endframe'), 'first_last_frame');
+  assert.equal(mapLegacyOperation('i2v'), 'first_frame');
+  assert.notEqual(mapLegacyOperation('i2v'), 'end_frame');
   assert.equal(mapLegacyOperation('some_future_op'), 'some_future_op');
   assert.equal(mapLegacyOperation(''), '');
   assert.equal(Object.keys(LEGACY_OPERATION_MAP).length > 0, true);
@@ -145,6 +152,28 @@ test('slot matcher：MIME 不允许 → mime_unsupported', () => {
 test('slot matcher：体积超 slot 声明上限 → size_exceeded', () => {
   const op = opView('img-ref', 'image_to_image');
   const match = matchOperationInputs(op, fp([img({ sizeBytes: 11 * MB })]));
+  assert.equal(match.accepts, false);
+  assert.equal(match.rejections[0].code, 'size_exceeded');
+});
+
+test('slot matcher：严格体积上限在等于边界时拒绝', () => {
+  const op = {
+    id: 'strict-image',
+    label: 'strict-image',
+    output: { type: 'video' },
+    inputs: [{
+      slot: 'reference_images',
+      type: 'image',
+      role: 'reference',
+      min: 1,
+      max: 1,
+      maxSizeMb: 30,
+      maxSizeExclusive: true,
+    }],
+    inputGroups: [],
+    parameters: {},
+  };
+  const match = matchOperationInputs(op, fp([img({ sizeBytes: 30 * MB })]));
   assert.equal(match.accepts, false);
   assert.equal(match.rejections[0].code, 'size_exceeded');
 });
@@ -189,6 +218,32 @@ test('slot matcher：显式 targetSlot 优先于一切；未知槽 → role_conf
   assert.equal(bad.rejections[0].code, 'role_conflict');
 });
 
+
+test('slot matcher A1：旧 FLF targetSlot=last_frame 切到 end_frame 不得静默错误绑定 (#567)', () => {
+  const endOp = opView('vid-endframe', 'end_frame');
+  assert.ok(endOp, 'fixture must expose end_frame op');
+  // Stale FLF edge still points at last_frame slot name which end_frame op does not own.
+  const stale = matchOperationInputs(endOp, fp([img({ targetSlot: 'last_frame', role: 'last_frame', edgeId: 'e-stale' })]));
+  assert.equal(stale.accepts, false, 'stale last_frame targetSlot must not bind on end_frame');
+  assert.equal(stale.rejections[0].code, 'role_conflict');
+});
+
+test('slot matcher A1：canonical end_frame 新边 targetSlot=end_frame + role=last_frame 可绑定 (#567)', () => {
+  const endOp = opView('vid-endframe', 'end_frame');
+  const ok = matchOperationInputs(endOp, fp([
+    img({ targetSlot: 'end_frame', role: 'last_frame', edgeId: 'e-end' }),
+  ]));
+  assert.equal(ok.accepts, true);
+  assert.equal(ok.bindings.length, 1);
+  assert.equal(ok.bindings[0].slot, 'end_frame');
+  assert.equal(ok.bindings[0].role, 'last_frame');
+  // targetSlot wins: wrong role still binds to explicit end_frame slot when present
+  const bySlot = matchOperationInputs(endOp, fp([img({ targetSlot: 'end_frame', edgeId: 'e2' })]));
+  assert.equal(bySlot.accepts, true);
+  assert.equal(bySlot.bindings[0].slot, 'end_frame');
+  assert.equal(bySlot.bindings[0].role, 'last_frame');
+});
+
 test('slot matcher：必填窄槽先于通用 reference，分配确定（首帧→尾帧）', () => {
   const op = opView('vid-frames', 'first_last_frame');
   const match = matchOperationInputs(op, fp([
@@ -222,6 +277,36 @@ test('slot matcher：acceptsCurrentInputs ≠ readyToSubmit（min / prompt）', 
   assert.equal(noPrompt.pending.some((p) => p.code === 'prompt_required'), true);
 });
 
+test('slot matcher：必填 node_field URL 映射 camelCase 参数并参与 readiness', () => {
+  const op = {
+    id: 'document_to_video',
+    label: 'document_to_video',
+    output: { type: 'video' },
+    inputs: [{
+      slot: 'file_url',
+      type: 'document',
+      role: 'document',
+      source: 'node_field',
+      min: 1,
+      max: 1,
+    }],
+    inputGroups: [],
+    listed: true,
+  };
+  const missing = matchOperationInputs(op, fp([], '可选提示词'));
+  assert.equal(missing.accepts, true);
+  assert.equal(missing.ready, false);
+  assert.equal(missing.pending[0].code, 'metadata_required');
+  assert.equal(missing.pending[0].slot, 'file_url');
+
+  const invalid = matchOperationInputs(op, fp([], '可选提示词', { fileUrl: 'ftp://example.com/deck.pdf' }));
+  assert.equal(invalid.ready, false);
+  assert.equal(invalid.pending[0].code, 'metadata_required');
+
+  const valid = matchOperationInputs(op, fp([], '可选提示词', { fileUrl: 'https://cdn.example.com/deck.pdf' }));
+  assert.equal(valid.ready, true);
+});
+
 // ============================================================================
 // Model verdict
 // ============================================================================
@@ -246,11 +331,11 @@ test('model verdict：零 listed operation → not_listed；unlisted op 不参�
   assert.equal(three.acceptsCurrentInputs, false);
 });
 
-test('model verdict：outputType 过滤 + 请求的 operation 优先（读时映射）', () => {
+test('model verdict：outputType 过滤 + 请求的 canonical operation 优先', () => {
   const view = buildContractView(createCompatTestCatalog());
   const vid = resolveModelView(view, 'vid-frames');
   const frames = fp([img({ role: 'first_frame' }), img({ sourceNodeId: 'b', role: 'last_frame' })]);
-  const verdict = evaluateModelCompat(vid, frames, { operationId: 'flf', outputType: 'video' });
+  const verdict = evaluateModelCompat(vid, frames, { operationId: 'first_last_frame', outputType: 'video' });
   assert.equal(verdict.requestedOperationId, 'first_last_frame');
   assert.equal(verdict.acceptsCurrentInputs, true);
   assert.equal(verdict.chosenOperationId, 'first_last_frame');

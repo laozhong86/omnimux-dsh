@@ -35,6 +35,10 @@ models:
         research:
           status: "verified"
           docUrl: "https://example.com/avatar"
+        implementation:
+          status: "ready"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
         execution:
           status: "live"
           profileId: "videoGenerate"

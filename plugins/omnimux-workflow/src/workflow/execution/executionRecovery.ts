@@ -40,7 +40,14 @@ export interface RecoverExecutionDeps {
     materialType: 'image' | 'video' | 'audio';
     prompt?: string;
     modelId?: string;
-  }) => Promise<{ url: string; relativePath: string; assetId: string }>;
+  }) => Promise<{
+      url: string;
+      relativePath: string;
+      assetId: string;
+      mimeType?: string | null;
+      sizeBytes?: number | null;
+      durationSec?: number | null;
+    }>;
 }
 
 function handleTimedOutExecution(

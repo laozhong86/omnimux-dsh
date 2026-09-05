@@ -12,6 +12,16 @@
 export interface ExecutionContext {
   /** Node outputs keyed by upstream node id. */
   upstreamOutputs: Map<string, NodeOutput>;
+  /** Inbound edges in canvas order, including semantic slot metadata. */
+  upstreamBindings?: Array<{
+    edgeId?: string;
+    sourceNodeId: string;
+    sourceHandle?: string | null;
+    targetHandle?: string | null;
+    role?: string;
+    targetSlot?: string;
+    output: NodeOutput;
+  }>;
   /** Cooperative cancellation (aborted when the execution is cancelled). */
   signal: AbortSignal;
   /** Destination dir for artifacts of this execution (absolute path). */
@@ -31,7 +41,14 @@ export interface ExecutionContext {
     materialType: 'image' | 'video' | 'audio';
     prompt?: string;
     modelId?: string;
-  }) => Promise<{ url: string; relativePath: string; assetId: string }>;
+  }) => Promise<{
+      url: string;
+      relativePath: string;
+      assetId: string;
+      mimeType?: string | null;
+      sizeBytes?: number | null;
+      durationSec?: number | null;
+    }>;
   /** Progress reporter wired to node_progress SSE events (0-100). */
   reportProgress?: (progress: number, message?: string) => void;
 }
@@ -44,11 +61,16 @@ export interface NodeOutput {
     thumbnail?: string;
     relativePath?: string;
     assetId?: string;
+    mimeType?: string;
+    sizeBytes?: number;
+    durationSec?: number;
   }>;
   text?: string;
   realPath?: string;
   relativePath?: string;
   assetId?: string;
+  /** True only when this node's artifact came from the offline mock gateway. */
+  simulated?: boolean;
 }
 
 export interface NodeExecutor {

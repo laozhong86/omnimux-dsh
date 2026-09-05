@@ -1,0 +1,22 @@
+sequenceDiagram
+  participant Canvas as workflow consumer
+  participant Hub as videoGenerate seam
+  participant Map as mapOmnimuxInput
+  participant Up as OmniMux POST /v1/video/generations
+
+  Canvas->>Hub: model=minimax-h3-endframe<br/>operation=end_frame<br/>refs=[{role:last_frame,type:image,url}]
+  Hub->>Map: capability=video
+  Map->>Map: find last_frame image ref
+  Map->>Map: set image_tail=url<br/>do not invent first_frame<br/>no reference_images
+  Map-->>Hub: {prompt, image_tail, duration?}
+  Hub->>Up: body.model=minimax-h3-endframe + mapped input
+  alt A-auth / C-channel
+    Up-->>Hub: 401/403/500 routing
+    Note over Hub: do not burn shape hypothesis
+  else F-unknown field
+    Up-->>Hub: 400 unknown field
+    Note over Hub: reject H1 shape; try budgeted alt
+  else S-schema-ok
+    Up-->>Hub: 200 task_id queued
+    Note over Hub: wire hypothesis held<br/>still not listed
+  end

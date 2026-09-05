@@ -318,12 +318,9 @@ export function createOmnimuxSeamClient(
 
       const capability = req.capability === 'video' ? 'video' : req.capability === 'audio' ? 'audio' : 'image';
       const seam = requireMediaSeam(opts.getSeam, capability);
-      if (!req.prompt || !req.prompt.trim()) {
-        throw new SeamGatewayError('omnimux-invalid-request', '生成节点缺少 prompt');
-      }
 
       const request: Record<string, unknown> = {
-        prompt: req.prompt,
+        prompt: req.prompt ?? '',
         dest: req.dest,
         wait: false,
       };
@@ -331,6 +328,7 @@ export function createOmnimuxSeamClient(
       if (req.references !== undefined) request.references = req.references;
       if (req.audioTrack !== undefined) request.audioTrack = req.audioTrack;
       if (req.duration !== undefined) request.duration = req.duration;
+      if (req.operation !== undefined) request.operation = req.operation;
       if (req.resolution !== undefined) request.resolution = req.resolution;
       if (req.aspectRatio !== undefined) request.aspectRatio = req.aspectRatio;
       if (req.speech !== undefined) request.speech = req.speech;
@@ -339,6 +337,17 @@ export function createOmnimuxSeamClient(
       if (req.style !== undefined) request.style = req.style;
       if (req.instrumental !== undefined) request.instrumental = req.instrumental;
       if (req.speed !== undefined) request.speed = req.speed;
+      if (req.sound !== undefined) request.sound = req.sound;
+      if (req.seed !== undefined) request.seed = req.seed;
+      if (req.watermark !== undefined) request.watermark = req.watermark;
+      if (req.outputFormat !== undefined) request.outputFormat = req.outputFormat;
+      if (req.referenceTaskType !== undefined) request.referenceTaskType = req.referenceTaskType;
+      if (req.generationType !== undefined) request.generationType = req.generationType;
+      if (req.returnLastFrame !== undefined) request.returnLastFrame = req.returnLastFrame;
+      if (req.webSearch !== undefined) request.webSearch = req.webSearch;
+      if (req.nsfwCheck !== undefined) request.nsfwCheck = req.nsfwCheck;
+      if (req.fileUrl !== undefined) request.fileUrl = req.fileUrl;
+      if (req.linkUrl !== undefined) request.linkUrl = req.linkUrl;
       if (req.model !== undefined) request.model = req.model;
       if (req.signal !== undefined) request.signal = req.signal;
 

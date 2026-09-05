@@ -1,11 +1,9 @@
 /**
- * Video TriggerBar — 单行紧凑摘要胶囊触发器
+ * Video TriggerBar — 单行紧凑摘要胶囊触发器 (Issue 467 / W2).
  *
- * 在 MaterialNode 配置面板中渲染视频参数的紧凑摘要胶囊（TriggerBar）。
- * 消费 formatVideoSummary 产出的结构化文案，节点间以中点分隔符连接，
- * 支持打开态（--open）、禁用态（disabled + aria-disabled）与摘要超长省略。
- * 所有样式仅消费 `wf-video-trigger-bar*` CSS 类名（由 components.css 统一落地），
- * 本文件不含任何色值或裸 hex/rgba 字面量。
+ * When effectiveOps ≤ 1, mode text and its leading separator are omitted
+ * entirely (no dangling "·"). Styles consume only `wf-video-trigger-bar*`
+ * classes (no raw hex / banned token island).
  */
 
 import { ChevronDown, Clock, Volume2 } from 'lucide-react';
@@ -28,9 +26,6 @@ export interface VideoTriggerBarProps {
 
 /**
  * 单行紧凑摘要胶囊触发器。
- *
- * @param props VideoTriggerBarProps
- * @returns ReactElement
  */
 export function VideoTriggerBar({
   params,
@@ -39,6 +34,7 @@ export function VideoTriggerBar({
   onToggle,
 }: VideoTriggerBarProps): ReactElement {
   const summary = formatVideoSummary(params);
+  const showMode = Boolean(summary.modeText && params.showModeUi);
 
   const className = [
     'wf-video-trigger-bar',
@@ -55,29 +51,37 @@ export function VideoTriggerBar({
       aria-disabled={disabled}
       aria-haspopup="dialog"
       aria-expanded={isOpen}
+      aria-label={summary.fullText || '视频参数'}
       title={summary.fullText}
+      data-show-mode={showMode ? 'true' : 'false'}
       onClick={onToggle}
     >
-      <span className="wf-video-trigger-bar__mode">{summary.modeText}</span>
-      <span className="wf-video-trigger-bar__dot">·</span>
+      {showMode ? (
+        <>
+          <span className="wf-video-trigger-bar__mode" data-testid="wf-trigger-mode">
+            {summary.modeText}
+          </span>
+          <span className="wf-video-trigger-bar__dot" aria-hidden="true">·</span>
+        </>
+      ) : null}
       <span className="wf-video-trigger-bar__ratio">
         <AspectRatioIcon ratio={params.aspectRatio} size={12} />
         <span className="wf-video-trigger-bar__ratio-text">{summary.ratioText}</span>
       </span>
       {summary.resolutionText ? (
         <>
-          <span className="wf-video-trigger-bar__dot">·</span>
+          <span className="wf-video-trigger-bar__dot" aria-hidden="true">·</span>
           <span className="wf-video-trigger-bar__resolution">{summary.resolutionText}</span>
         </>
       ) : null}
-      <span className="wf-video-trigger-bar__dot">·</span>
+      <span className="wf-video-trigger-bar__dot" aria-hidden="true">·</span>
       <span className="wf-video-trigger-bar__duration">
         <Clock size={11} />
         <span className="wf-video-trigger-bar__duration-text">{summary.durationText}</span>
       </span>
       {summary.soundText ? (
         <>
-          <span className="wf-video-trigger-bar__dot">·</span>
+          <span className="wf-video-trigger-bar__dot" aria-hidden="true">·</span>
           <span className="wf-video-trigger-bar__sound">
             <Volume2 size={11} />
             <span className="wf-video-trigger-bar__sound-text">{summary.soundText}</span>

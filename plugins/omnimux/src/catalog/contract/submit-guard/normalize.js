@@ -67,7 +67,7 @@ function pickMeta(row, byPath = {}) {
  */
 function assetFromRow(row, fallbackType, fallbackRole, metaByPath) {
   if (!row || typeof row !== 'object') return null
-  const pathOrUrl = str(row.pathOrUrl || row.url || row.path || row.image || row.audio)
+  const pathOrUrl = str(row.pathOrUrl || row.url || row.path || row.image || row.audio || row.file || row.link)
   if (!pathOrUrl) return null
   const type = str(row.type) || fallbackType
   const role = str(row.role) || fallbackRole
@@ -107,10 +107,10 @@ export function normalizeLogicalRequest(request = {}) {
   /**
    * @param {LogicalAsset|null} asset
    */
-  function push(asset) {
+  function push(asset, preserveDuplicate = false) {
     if (!asset) return
     const key = `${asset.type}|${asset.role ?? ''}|${asset.targetSlot ?? ''}|${asset.pathOrUrl}`
-    if (seen.has(key)) return
+    if (!preserveDuplicate && seen.has(key)) return
     seen.add(key)
     assets.push(asset)
   }
@@ -118,14 +118,54 @@ export function normalizeLogicalRequest(request = {}) {
   if (Array.isArray(raw.references)) {
     for (const row of raw.references) {
       const type = str(row?.type) || 'image'
-      push(assetFromRow(row, type, str(row?.role) || 'reference', metaByPath))
+      push(assetFromRow(row, type, str(row?.role) || 'reference', metaByPath), true)
     }
   }
 
   if (Array.isArray(raw.assets)) {
     for (const row of raw.assets) {
-      push(assetFromRow(row, str(row?.type) || 'image', str(row?.role) || undefined, metaByPath))
+      push(assetFromRow(row, str(row?.type) || 'image', str(row?.role) || undefined, metaByPath), true)
     }
+  }
+
+  if (Array.isArray(raw.image_with_roles)) {
+    for (const row of raw.image_with_roles) {
+      const wireRole = str(row?.role) || 'reference_image'
+      const role = wireRole === 'reference_image' || wireRole === 'reference' ? 'reference' : wireRole
+      push(assetFromRow(row, 'image', role, metaByPath), true)
+    }
+  }
+
+  if (Array.isArray(raw.image_urls)) {
+    const frameMode = str(raw.operation) === 'first_frame'
+      || str(raw.operation) === 'first_last_frame'
+      || str(raw.generation_type) === 'frame'
+    raw.image_urls.forEach((value, index) => {
+      const role = frameMode ? (index === 0 ? 'first_frame' : 'last_frame') : 'reference'
+      push(assetFromRow({ url: value, role }, 'image', role, metaByPath), true)
+    })
+  }
+
+  if (Array.isArray(raw.video_urls)) {
+    for (const value of raw.video_urls) {
+      push(assetFromRow({ url: value, role: 'reference' }, 'video', 'reference', metaByPath), true)
+    }
+  }
+
+  if (Array.isArray(raw.audio_urls)) {
+    for (const value of raw.audio_urls) {
+      push(assetFromRow({ url: value, role: 'reference' }, 'audio', 'reference', metaByPath), true)
+    }
+  }
+
+  const fileUrl = str(raw.fileUrl || raw.file_url)
+  if (fileUrl) {
+    push(assetFromRow({ url: fileUrl, role: 'document', targetSlot: 'file_url' }, 'document', 'document', metaByPath))
+  }
+
+  const linkUrl = str(raw.linkUrl || raw.link_url)
+  if (linkUrl) {
+    push(assetFromRow({ url: linkUrl, role: 'webpage', targetSlot: 'link_url' }, 'document', 'webpage', metaByPath))
   }
 
   const image = str(raw.image)
@@ -203,22 +243,41 @@ export function normalizeLogicalRequest(request = {}) {
 
   /** @type {Record<string, unknown>} */
   const extras = {}
-  for (const key of [
-    'duration',
-    'voice',
-    'style',
-    'instrumental',
-    'speed',
-    'aspectRatio',
-    'resolution',
-    'language',
-    'system',
-    'maxTokens',
-    'speech',
-  ]) {
-    if (raw[key] !== undefined && raw[key] !== null && raw[key] !== '') {
-      extras[key] = raw[key]
+  const aliases = {
+    duration: ['duration'],
+    voice: ['voice'],
+    style: ['style'],
+    instrumental: ['instrumental'],
+    speed: ['speed'],
+    aspectRatio: ['aspectRatio', 'aspect_ratio', 'size', 'ratio'],
+    resolution: ['resolution'],
+    language: ['language'],
+    system: ['system'],
+    maxTokens: ['maxTokens', 'max_tokens'],
+    speech: ['speech'],
+    sound: ['sound', 'generate_audio'],
+    seed: ['seed'],
+    watermark: ['watermark', 'aigc_watermark'],
+    outputFormat: ['outputFormat', 'output_format'],
+    referenceTaskType: ['referenceTaskType', 'omni_reference_task_type'],
+    generationType: ['generationType', 'generation_type'],
+    returnLastFrame: ['returnLastFrame', 'return_last_frame'],
+    webSearch: ['webSearch'],
+    nsfwCheck: ['nsfwCheck', 'nsfw_check'],
+  }
+  if (typeof raw.audio === 'boolean' && raw.sound === undefined && raw.generate_audio === undefined) {
+    extras.sound = raw.audio
+  }
+  for (const [key, candidates] of Object.entries(aliases)) {
+    for (const candidate of candidates) {
+      if (raw[candidate] !== undefined && raw[candidate] !== null && raw[candidate] !== '') {
+        extras[key] = raw[candidate]
+        break
+      }
     }
+  }
+  if (Array.isArray(raw.tools)) {
+    extras.webSearch = raw.tools.some((tool) => tool && typeof tool === 'object' && tool.type === 'web_search')
   }
   if (speech) extras.speech = speech
 

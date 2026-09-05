@@ -50,7 +50,7 @@ function fakeReq({ method = 'GET', url = '/', headers = {}, body = undefined }) 
   };
 }
 
-function makeHarness({ dir, gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 30 } } = {}) {
+function makeHarness({ dir, gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 30 }, gateway } = {}) {
   const root = dir ?? mkdtempSync(join(tmpdir(), 'omnimux-exec-routes-'));
   const registered = [];
   const captured = { handler: null, path: '' };
@@ -74,7 +74,7 @@ function makeHarness({ dir, gatewayLatency = { minLatencyMs: 10, maxLatencyMs: 3
         mediaDir: join(root, 'media'),
       },
       libraryRoot,
-      gateway: host.createMockGateway(gatewayLatency),
+      gateway: gateway ?? host.createMockGateway(gatewayLatency),
     },
   );
   const localHeaders = { origin: 'http://localhost:3000' };
@@ -220,6 +220,65 @@ const waitUntil = async (predicate, { timeoutMs = 5000, intervalMs = 15 } = {}) 
   return false;
 };
 
+function urlRequiredCatalog() {
+  return {
+    source: 'omnimux', text: [], image: [], audio: [],
+    video: [{ id: 'url-video', label: 'URL Video' }],
+    models: [{
+      id: 'url-video', label: 'URL Video', listed: true,
+      parameters: {
+        aspectRatio: { options: [{ value: '16:9' }, { value: '9:16' }], defaultValue: '16:9' },
+        resolution: { options: [{ value: '720p' }, { value: '1080p' }], defaultValue: '720p' },
+      },
+      operations: [
+        {
+          id: 'document_to_video', label: '文档参考生视频', listed: true, output: { type: 'video' }, inputs: [
+            { slot: 'file_url', type: 'document', role: 'document', source: 'node_field', min: 1, max: 1 },
+          ],
+        },
+        {
+          id: 'webpage_to_video', label: '网页参考生视频', listed: true, output: { type: 'video' }, inputs: [
+            { slot: 'link_url', type: 'document', role: 'webpage', source: 'node_field', min: 1, max: 1 },
+          ],
+        },
+      ],
+    }],
+  };
+}
+
+async function createUrlWorkspace(h, id, operation, params = {}) {
+  const created = await h.call({
+    method: 'POST',
+    url: '/omnimux-workflow/api/workspaces',
+    body: { name: `${operation} 校验` },
+    headers: h.localHeaders,
+  });
+  const workspaceId = created.body.workspace.id;
+  await h.call({
+    method: 'PUT',
+    url: `/omnimux-workflow/api/workspaces/${workspaceId}`,
+    body: {
+      expectedVersion: 0,
+      nodes: [{
+        id,
+        type: 'material',
+        position: { x: 0, y: 0 },
+        data: {
+          label: operation,
+          materialType: 'video',
+          selectedTool: 'video-generation',
+          prompt: '生成一段视频',
+          status: 'ready',
+          params: { model: 'url-video', operation, ...params },
+        },
+      }],
+      edges: [],
+    },
+    headers: h.localHeaders,
+  });
+  return workspaceId;
+}
+
 // ============================================================================
 
 function listSeededProjects(libraryRoot) {
@@ -234,6 +293,60 @@ function listSeededProjects(libraryRoot) {
   }
   return rows;
 }
+
+test('execution API blocks missing contract URL fields before every create mode and permits a valid retry', async () => {
+  const baseGateway = host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 10 });
+  const submitted = [];
+  const gateway = {
+    ...baseGateway,
+    async submit(request) {
+      submitted.push(request);
+      return baseGateway.submit(request);
+    },
+    async capabilities() {
+      return urlRequiredCatalog();
+    },
+  };
+  const h = makeHarness({ gateway });
+  try {
+    const documentWorkspace = await createUrlWorkspace(h, 'document', 'document_to_video');
+    const documentFull = await h.startExecution(documentWorkspace, { mode: 'full' });
+    assert.equal(documentFull.status, 400);
+    assert.equal(documentFull.body.error, 'configuration_error');
+    assert.equal(documentFull.body.reasonCode, 'metadata_required');
+    assert.equal(documentFull.body.nodeId, 'document');
+
+    const webpageWorkspace = await createUrlWorkspace(h, 'webpage', 'webpage_to_video');
+    const webpageSubset = await h.startExecution(webpageWorkspace, { mode: 'subset', nodeIds: ['webpage'] });
+    assert.equal(webpageSubset.status, 400);
+    assert.equal(webpageSubset.body.error, 'configuration_error');
+    assert.equal(webpageSubset.body.nodeId, 'webpage');
+
+    // ConfigPanel's retry path uses single-node execution; it must hit the same guard.
+    const documentSingle = await h.startExecution(documentWorkspace, { mode: 'single', nodeIds: ['document'] });
+    assert.equal(documentSingle.status, 400);
+    assert.equal(documentSingle.body.error, 'configuration_error');
+    assert.equal(submitted.length, 0, 'a blocked execution must not submit a gateway request');
+
+    const validWorkspace = await createUrlWorkspace(
+      h,
+      'valid-document',
+      'document_to_video',
+      { fileUrl: 'https://cdn.example.com/deck.pdf' },
+    );
+    const valid = await h.startExecution(validWorkspace, { mode: 'single', nodeIds: ['valid-document'] });
+    assert.equal(valid.status, 200);
+    const completed = await waitUntil(async () => {
+      const status = await h.executionStatus(validWorkspace, valid.body.execution.id);
+      return status.body?.execution?.status === 'completed';
+    });
+    assert.ok(completed, 'valid URL should start and complete the retry path');
+    assert.equal(submitted.length, 1);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
 
 test('unbound media generate → 惰性种子项目 200；text generate 仍可通过', async () => {
   const h = makeHarness();
@@ -333,6 +446,7 @@ test('execution API: create -> SSE full event sequence -> completed snapshot', a
     // node_complete carries the mock gateway output.
     const first = events.find((e) => e.event === 'node_complete');
     assert.match(String(first.data.output?.text ?? ''), /mock 生成结果/);
+    assert.equal(first.data.output?.simulated, true);
 
     // Final snapshot via GET.
     const final = await waitUntil(async () => {
@@ -343,6 +457,7 @@ test('execution API: create -> SSE full event sequence -> completed snapshot', a
     const snapshot = (await h.executionStatus(wsId, executionId)).body.execution;
     assert.equal(snapshot.completedNodes, 3);
     assert.equal(snapshot.progress.percentage, 100);
+    assert.equal(snapshot.nodeOutputs.n1?.simulated, true);
   } finally {
     h.dispose();
     rmSync(h.dir, { recursive: true, force: true });
@@ -587,6 +702,190 @@ test('execution API: legacy /dsh-workflow prefix serves executions too', async (
       return status.body?.execution?.status === 'completed';
     });
     assert.ok(completed, 'legacy prefix execution should complete');
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
+test('execution API blocks a persisted pending video parameter adjustment before submission', async () => {
+  const baseGateway = host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 10 });
+  const submitted = [];
+  const gateway = {
+    ...baseGateway,
+    async submit(request) {
+      submitted.push(request);
+      return baseGateway.submit(request);
+    },
+    async capabilities() {
+      return urlRequiredCatalog();
+    },
+  };
+  const h = makeHarness({ gateway });
+  try {
+    const workspaceId = await createUrlWorkspace(h, 'pending-adjustment', 'document_to_video', {
+      fileUrl: 'https://cdn.example.com/deck.pdf',
+      pendingVideoParamAdjustment: {
+        suggestedParams: { duration: -1 },
+        notices: ['时长将从 5 调整为 -1'],
+      },
+    });
+    const blocked = await h.startExecution(workspaceId, { mode: 'single', nodeIds: ['pending-adjustment'] });
+    assert.equal(blocked.status, 400);
+    assert.equal(blocked.body.error, 'configuration_error');
+    assert.equal(blocked.body.reasonCode, 'parameter_adjustment_required');
+    assert.equal(blocked.body.nodeId, 'pending-adjustment');
+    assert.equal(submitted.length, 0);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
+
+test('execution API keeps an invalid user parameter but rejects it before mock submission', async () => {
+  const baseGateway = host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 10 });
+  const submitted = [];
+  const gateway = {
+    ...baseGateway,
+    async submit(request) {
+      submitted.push(request);
+      return baseGateway.submit(request);
+    },
+    async capabilities() {
+      return urlRequiredCatalog();
+    },
+  };
+  const h = makeHarness({ gateway });
+  try {
+    const workspaceId = await createUrlWorkspace(h, 'kept-invalid', 'document_to_video', {
+      fileUrl: 'https://cdn.example.com/deck.pdf', aspectRatio: 'auto', resolution: '480p',
+    });
+    const blocked = await h.startExecution(workspaceId, { mode: 'single', nodeIds: ['kept-invalid'] });
+    assert.equal(blocked.status, 400);
+    assert.equal(blocked.body.error, 'configuration_error');
+    assert.equal(blocked.body.reasonCode, 'parameter_unsupported');
+    assert.equal(blocked.body.nodeId, 'kept-invalid');
+    assert.match(blocked.body.message, /aspectRatio/);
+    assert.equal(submitted.length, 0);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
+
+function operationOverrideCatalog() {
+  return {
+    source: 'omnimux', text: [], image: [], audio: [], video: [{ id: 'url-video', label: 'URL Video' }],
+    models: [{
+      id: 'url-video', label: 'URL Video', listed: true,
+      operations: [{
+        id: 'video_edit', label: 'Edit', listed: true, output: { type: 'video' }, inputs: [],
+        parameters: { duration: { options: [{ value: -1 }], defaultValue: -1 } },
+      }],
+    }],
+  };
+}
+
+test('execution API blocks stale explicit and invalid implicit operations before mock submission', async () => {
+  const baseGateway = host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 10 });
+  const submitted = [];
+  const gateway = {
+    ...baseGateway,
+    async submit(request) {
+      submitted.push(request);
+      return baseGateway.submit(request);
+    },
+    async capabilities() {
+      return operationOverrideCatalog();
+    },
+  };
+  const h = makeHarness({ gateway });
+  try {
+    const staleWorkspace = await createUrlWorkspace(h, 'stale-operation', 'old_op');
+    const stale = await h.startExecution(staleWorkspace, { mode: 'single', nodeIds: ['stale-operation'] });
+    assert.equal(stale.status, 400);
+    assert.equal(stale.body.error, 'configuration_error');
+    assert.equal(stale.body.reasonCode, 'operation_incompatible');
+
+    const created = await h.call({
+      method: 'POST', url: '/omnimux-workflow/api/workspaces', body: { name: 'implicit override' }, headers: h.localHeaders,
+    });
+    const implicitWorkspace = created.body.workspace.id;
+    await h.call({
+      method: 'PUT', url: `/omnimux-workflow/api/workspaces/${implicitWorkspace}`,
+      body: {
+        expectedVersion: 0,
+        nodes: [{
+          id: 'implicit-operation', type: 'material', position: { x: 0, y: 0 },
+          data: {
+            label: 'implicit operation', materialType: 'video', selectedTool: 'video-generation', status: 'ready',
+            params: { model: 'url-video', duration: 5 },
+          },
+        }], edges: [],
+      }, headers: h.localHeaders,
+    });
+    const implicit = await h.startExecution(implicitWorkspace, { mode: 'single', nodeIds: ['implicit-operation'] });
+    assert.equal(implicit.status, 400);
+    assert.equal(implicit.body.error, 'configuration_error');
+    assert.equal(implicit.body.reasonCode, 'parameter_unsupported');
+    assert.equal(submitted.length, 0, 'invalid operation contracts must never hit mock submit');
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
+function multiOperationCatalog() {
+  return {
+    source: 'omnimux', text: [], image: [], audio: [], video: [{ id: 'multi-video', label: 'Multi video' }],
+    models: [{
+      id: 'multi-video', label: 'Multi video', listed: true,
+      operations: [
+        { id: 'text_to_video', label: 'Text', listed: true, output: { type: 'video' }, inputs: [] },
+        { id: 'video_edit', label: 'Edit', listed: true, output: { type: 'video' }, inputs: [] },
+      ],
+    }],
+  };
+}
+
+test('execution API requires an explicit video mode when multiple modes are effective', async () => {
+  const baseGateway = host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 10 });
+  const submitted = [];
+  const gateway = {
+    ...baseGateway,
+    async submit(request) {
+      submitted.push(request);
+      return baseGateway.submit(request);
+    },
+    async capabilities() {
+      return multiOperationCatalog();
+    },
+  };
+  const h = makeHarness({ gateway });
+  try {
+    const created = await h.call({ method: 'POST', url: '/omnimux-workflow/api/workspaces', body: { name: 'multi operation' }, headers: h.localHeaders });
+    const workspaceId = created.body.workspace.id;
+    await h.call({
+      method: 'PUT', url: `/omnimux-workflow/api/workspaces/${workspaceId}`,
+      body: {
+        expectedVersion: 0,
+        nodes: [{
+          id: 'multi-operation', type: 'material', position: { x: 0, y: 0 },
+          data: {
+            label: 'multi operation', materialType: 'video', selectedTool: 'video-generation', status: 'ready',
+            params: { model: 'multi-video' },
+          },
+        }], edges: [],
+      }, headers: h.localHeaders,
+    });
+    const blocked = await h.startExecution(workspaceId, { mode: 'single', nodeIds: ['multi-operation'] });
+    assert.equal(blocked.status, 400);
+    assert.equal(blocked.body.error, 'configuration_error');
+    assert.equal(blocked.body.reasonCode, 'operation_incompatible');
+    assert.equal(blocked.body.message, '请选择生成方式');
+    assert.equal(submitted.length, 0);
   } finally {
     h.dispose();
     rmSync(h.dir, { recursive: true, force: true });

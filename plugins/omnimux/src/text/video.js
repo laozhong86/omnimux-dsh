@@ -19,6 +19,7 @@ const DEFAULT_BYTE_CAP = 20 * 1024 * 1024
  * @param {string} source
  * @param {{
  *   maxVideoBytes?: number,
+ *   fetcher?: typeof fetch,
  *   signal?: AbortSignal,
  * }} [opts]
  */
@@ -35,7 +36,7 @@ export async function loadTextVideo(source, opts = {}) {
 /**
  * Read and identify a video without repacking it for chat transport.
  * @param {string} source
- * @param {{ maxVideoBytes?: number, signal?: AbortSignal }} [opts]
+ * @param {{ maxVideoBytes?: number, fetcher?: typeof fetch, signal?: AbortSignal }} [opts]
  */
 export async function probeTextVideo(source, opts = {}) {
   const raw = String(source || '').trim()
@@ -45,12 +46,7 @@ export async function probeTextVideo(source, opts = {}) {
   const loaded = raw.startsWith('data:')
     ? decodeVideoDataUri(raw)
     : /^https?:\/\//i.test(raw)
-      ? (() => {
-          throw new OmnimuxError(
-            'omnimux-invalid-request',
-            'video URL input is not supported yet; pass an absolute path or data URI',
-          )
-        })()
+      ? await fetchRemoteVideo(raw, opts)
       : await readLocalVideo(raw, opts.signal)
   const probedMediaType = mediaFromVideoMagic(loaded.data)
   if (!probedMediaType) {
@@ -66,11 +62,106 @@ export async function probeTextVideo(source, opts = {}) {
   if (loaded.data.byteLength > cap) {
     throw new OmnimuxError('omnimux-invalid-request', `video exceeds ${cap} bytes`)
   }
+  const durationSec = durationFromIsoBmff(loaded.data)
   return {
     data: loaded.data,
     mediaType,
     sizeBytes: loaded.data.byteLength,
     name: loaded.name,
+    ...(durationSec !== undefined ? { durationSec } : {}),
+  }
+}
+
+/**
+ * Read the movie-header duration from an MP4/QuickTime ISO-BMFF container.
+ * Missing or malformed metadata stays unknown so the model contract can fail
+ * closed when it declares a duration limit.
+ * @param {Uint8Array} bytes
+ * @returns {number | undefined}
+ */
+export function durationFromIsoBmff(bytes) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+
+  /** @param {number} start @param {number} end */
+  function scan(start, end) {
+    let offset = start
+    while (offset + 8 <= end) {
+      const size32 = view.getUint32(offset)
+      const type = String.fromCharCode(bytes[offset + 4], bytes[offset + 5], bytes[offset + 6], bytes[offset + 7])
+      let headerSize = 8
+      let boxSize = size32
+      if (size32 === 1) {
+        if (offset + 16 > end) return undefined
+        const size64 = view.getBigUint64(offset + 8)
+        if (size64 > BigInt(Number.MAX_SAFE_INTEGER)) return undefined
+        boxSize = Number(size64)
+        headerSize = 16
+      } else if (size32 === 0) {
+        boxSize = end - offset
+      }
+      if (boxSize < headerSize || offset + boxSize > end) return undefined
+      const payloadStart = offset + headerSize
+      const boxEnd = offset + boxSize
+      if (type === 'mvhd') {
+        if (payloadStart + 4 > boxEnd) return undefined
+        const version = bytes[payloadStart]
+        const timescaleOffset = version === 0 ? payloadStart + 12 : version === 1 ? payloadStart + 20 : -1
+        const durationOffset = version === 0 ? payloadStart + 16 : payloadStart + 24
+        const durationBytes = version === 0 ? 4 : 8
+        if (timescaleOffset < 0 || durationOffset + durationBytes > boxEnd) return undefined
+        const timescale = view.getUint32(timescaleOffset)
+        const duration = version === 0
+          ? view.getUint32(durationOffset)
+          : view.getBigUint64(durationOffset)
+        if (timescale === 0) return undefined
+        const seconds = typeof duration === 'bigint'
+          ? Number(duration) / timescale
+          : duration / timescale
+        return Number.isFinite(seconds) && seconds >= 0 ? seconds : undefined
+      }
+      if (type === 'moov') {
+        const nested = scan(payloadStart, boxEnd)
+        if (nested !== undefined) return nested
+      }
+      offset = boxEnd
+    }
+    return undefined
+  }
+
+  return scan(0, bytes.byteLength)
+}
+
+/**
+ * @param {string} url
+ * @param {{ maxVideoBytes?: number, fetcher?: typeof fetch, signal?: AbortSignal }} opts
+ */
+async function fetchRemoteVideo(url, opts) {
+  const fetcher = opts.fetcher ?? fetch
+  const cap = typeof opts.maxVideoBytes === 'number' && opts.maxVideoBytes > 0
+    ? opts.maxVideoBytes
+    : DEFAULT_BYTE_CAP
+  let response
+  try {
+    response = await fetcher(url, opts.signal ? { signal: opts.signal } : undefined)
+  } catch (error) {
+    throw new OmnimuxError('omnimux-invalid-request', `failed to fetch video: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  if (!response.ok) {
+    throw new OmnimuxError('omnimux-invalid-request', `video URL returned HTTP ${response.status}`)
+  }
+  const declaredLength = Number(response.headers?.get?.('content-length'))
+  if (Number.isFinite(declaredLength) && declaredLength > cap) {
+    throw new OmnimuxError('omnimux-invalid-request', `video exceeds ${cap} bytes`)
+  }
+  const headerType = MIME_MEDIA[(response.headers?.get?.('content-type') || '').split(';')[0].trim().toLowerCase()]
+  const data = new Uint8Array(await response.arrayBuffer())
+  if (data.byteLength > cap) {
+    throw new OmnimuxError('omnimux-invalid-request', `video exceeds ${cap} bytes`)
+  }
+  return {
+    data,
+    mediaType: headerType,
+    name: basename(new URL(url).pathname) || 'video',
   }
 }
 

@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
-import { executeOmnimuxSpeechToText, loadAudioBytes, transcribeSpeechToTextRequest } from './stt.js'
+import { durationFromAudioBytes, executeOmnimuxSpeechToText, loadAudioBytes, transcribeSpeechToTextRequest } from './stt.js'
 import { mountSpeechToText, STT_TOOL_NAME } from './stt-mount.js'
 import { OmnimuxError } from './errors.js'
 import { JSON_TOOL_OUTPUT } from '../tools/schema.js'
@@ -11,6 +11,34 @@ import { JSON_TOOL_OUTPUT } from '../tools/schema.js'
 const AUDIO_BYTES = Buffer.from([0x49, 0x44, 0x33, 0x04, 0x00, 0x00])
 const WAV_BYTES = Buffer.from([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x41, 0x56, 0x45])
 const M4A_BYTES = Buffer.from([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x41, 0x20])
+
+function wavFixture(seconds) {
+  const byteRate = 16_000
+  const dataSize = byteRate * seconds
+  const bytes = Buffer.alloc(44 + dataSize)
+  bytes.write('RIFF', 0)
+  bytes.writeUInt32LE(36 + dataSize, 4)
+  bytes.write('WAVEfmt ', 8)
+  bytes.writeUInt32LE(16, 16)
+  bytes.writeUInt16LE(1, 20)
+  bytes.writeUInt16LE(1, 22)
+  bytes.writeUInt32LE(8_000, 24)
+  bytes.writeUInt32LE(byteRate, 28)
+  bytes.writeUInt16LE(2, 32)
+  bytes.writeUInt16LE(16, 34)
+  bytes.write('data', 36)
+  bytes.writeUInt32LE(dataSize, 40)
+  return bytes
+}
+
+function mp3Fixture(frameCount) {
+  const frameBytes = Math.floor(144 * 128_000 / 44_100)
+  const bytes = Buffer.alloc(frameBytes * frameCount)
+  for (let offset = 0; offset < bytes.length; offset += frameBytes) {
+    bytes.set([0xff, 0xfb, 0x90, 0x00], offset)
+  }
+  return bytes
+}
 
 async function withTempAudio(fn) {
   const dir = mkdtempSync(join(tmpdir(), 'omnimux-stt-'))
@@ -92,6 +120,17 @@ describe('loadAudioBytes', () => {
       () => loadAudioBytes(`data:audio/wav;base64,${AUDIO_BYTES.toString('base64')}`),
       (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
     )
+  })
+})
+
+describe('audio byte metadata', () => {
+  it('reads PCM WAV duration from byte rate and data length', () => {
+    assert.equal(durationFromAudioBytes(wavFixture(2), 'audio/wav'), 2)
+  })
+
+  it('sums MPEG audio frame durations', () => {
+    const duration = durationFromAudioBytes(mp3Fixture(77), 'audio/mpeg')
+    assert.ok(Math.abs(duration - (77 * 1152 / 44_100)) < 1e-9)
   })
 })
 

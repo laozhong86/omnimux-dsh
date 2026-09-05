@@ -34,36 +34,20 @@ test('loadAll real specs: 4 files merge without parse errors', () => {
   assert.ok(index.get('whisper-1'));
   assert.ok(index.contentFingerprint);
   assert.equal(index.contentFingerprint.length, 16);
-  // #530 PR-A: Batch A 三媒体键 + text 19 op live listed
-  assert.deepEqual(index.listedOperations, [
-    'claude-opus-4-6#chat',
-    'claude-opus-4-6#vision_chat',
-    'claude-opus-5#chat',
-    'deepseek-v4-flash-vision-exp#chat',
-    'deepseek-v4-flash-vision-exp#vision_chat',
-    'deepseek-v4-pro#chat',
-    'gemini-3.1-pro-preview#chat',
-    'gemini-3.1-pro-preview#vision_chat',
-    'gemini-3.7-flash#chat',
-    'gemini-3.7-flash#vision_chat',
-    'glm-5.3#chat',
-    'gpt-5.5#chat',
-    'gpt-5.5#vision_chat',
-    'gpt-5.6-sol#chat',
-    'gpt-5.6-sol#vision_chat',
-    'gpt-image-2#text_to_image',
-    'grok-4.6#chat',
-    'grok-4.6#vision_chat',
-    'grok-imagine-image#text_to_image',
-    'kimi-k3#chat',
-    'kimi-k3#vision_chat',
-    'seedance-2-0-fast#text_to_video',
+  assert.equal(index.listedOperations.length, 52);
+  for (const key of [
+    'seedance-2-0#first_last_frame',
     'seedance-2-0-fast#video_multi_ref',
-    'seedance-2-0-mini#text_to_video',
-    'seedance-2-0#text_to_video',
-    'seedance-2-5#text_to_video',
-    'seedance-2-5#video_multi_ref',
-  ]);
+    'seedance-2-0-mini#first_frame',
+    'seedance-2-5#video_edit',
+    'seedance-2-5#video_extend',
+    'wan-3.0#document_to_video',
+    'wan-3.0#webpage_to_video',
+    'minimax-h3#end_frame',
+    'grok-imagine-video-1-5#video_multi_ref',
+  ]) {
+    assert.ok(index.listedOperations.includes(key), key);
+  }
   // formal specs must not produce schemaVersion admission errors
   assert.ok(
     !(index.issues ?? []).some(

@@ -11,14 +11,17 @@ import {
 } from '../catalog/contract/submit-guard/index.js'
 import { probeTextImage } from '../text/image.js'
 import { probeTextVideo } from '../text/video.js'
-import { loadAudioBytes } from './stt.js'
+import { probeRemoteDocument } from '../text/document.js'
+import { durationFromAudioBytes, loadAudioBytes } from './stt.js'
 
 const CAPABILITY_SEAM = Object.freeze({
   video: 'videoGenerate',
   image: 'imageGenerate',
   audio: 'audioGenerate',
 })
-const MAX_PROBED_MEDIA_BYTES = 50 * 1024 * 1024
+const MAX_PROBED_IMAGE_BYTES = 50 * 1024 * 1024
+const MAX_PROBED_VIDEO_BYTES = 200 * 1024 * 1024
+const MAX_PROBED_DOCUMENT_BYTES = 100 * 1024 * 1024
 
 /**
  * @param {string} capability
@@ -35,6 +38,19 @@ const MAX_PROBED_MEDIA_BYTES = 50 * 1024 * 1024
  *   style?: string,
  *   instrumental?: boolean,
  *   speed?: number,
+ *   aspectRatio?: string,
+ *   resolution?: string,
+ *   sound?: boolean,
+ *   seed?: number,
+ *   watermark?: boolean,
+ *   outputFormat?: string,
+ *   referenceTaskType?: string,
+ *   generationType?: string,
+ *   returnLastFrame?: boolean,
+ *   webSearch?: boolean,
+ *   nsfwCheck?: boolean,
+ *   fileUrl?: string,
+ *   linkUrl?: string,
  *   provider?: string,
  *   model?: string,
  *   operation?: string,
@@ -85,6 +101,17 @@ export async function executeOmnimuxMedia(capability, input) {
       speed: input.speed,
       aspectRatio: input.aspectRatio,
       resolution: input.resolution,
+      sound: input.sound,
+      seed: input.seed,
+      watermark: input.watermark,
+      outputFormat: input.outputFormat,
+      referenceTaskType: input.referenceTaskType,
+      generationType: input.generationType,
+      returnLastFrame: input.returnLastFrame,
+      webSearch: input.webSearch,
+      nsfwCheck: input.nsfwCheck,
+      fileUrl: input.fileUrl,
+      linkUrl: input.linkUrl,
       assets,
       capability,
       seam,
@@ -212,7 +239,7 @@ export async function probeMediaAssets(input, context = {}) {
     }
     if (asset.type === 'image') {
       const image = await probeTextImage(asset.pathOrUrl, {
-        attachments: { imageLimits: { maxImageBytes: MAX_PROBED_MEDIA_BYTES } },
+        attachments: { imageLimits: { maxImageBytes: MAX_PROBED_IMAGE_BYTES } },
         fetcher: input.fetcher,
         signal: input.signal,
       })
@@ -220,21 +247,37 @@ export async function probeMediaAssets(input, context = {}) {
     }
     if (asset.type === 'video') {
       const video = await probeTextVideo(asset.pathOrUrl, {
-        maxVideoBytes: MAX_PROBED_MEDIA_BYTES,
+        maxVideoBytes: MAX_PROBED_VIDEO_BYTES,
+        fetcher: input.fetcher,
         signal: input.signal,
       })
-      return { ...identity, mime: video.mediaType, sizeBytes: video.sizeBytes }
+      return {
+        ...identity,
+        mime: video.mediaType,
+        sizeBytes: video.sizeBytes,
+        ...(video.durationSec !== undefined ? { durationSec: video.durationSec } : {}),
+      }
     }
     if (asset.type === 'audio') {
       const audio = await loadAudioBytes(asset.pathOrUrl, {
         fetcher: input.fetcher,
         signal: input.signal,
       })
+      const durationSec = durationFromAudioBytes(audio.bytes, audio.contentType)
       return {
         ...identity,
         mime: audio.contentType === 'audio/mpeg' ? 'audio/mp3' : audio.contentType,
         sizeBytes: audio.bytes.byteLength,
+        ...(durationSec !== undefined ? { durationSec } : {}),
       }
+    }
+    if (asset.type === 'document' && (asset.role === 'document' || asset.targetSlot === 'file_url')) {
+      const document = await probeRemoteDocument(asset.pathOrUrl, {
+        maxDocumentBytes: MAX_PROBED_DOCUMENT_BYTES,
+        fetcher: input.fetcher,
+        signal: input.signal,
+      })
+      return { ...identity, mime: document.mime, sizeBytes: document.sizeBytes }
     }
     return identity
   }))
