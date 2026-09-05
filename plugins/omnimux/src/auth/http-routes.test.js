@@ -126,17 +126,28 @@ describe('auth http dispatcher', () => {
       provide() {},
       get() { return undefined },
       inject(deps, callback) {
-        if (deps[0] !== 'webServer') return
-        callback({
-          webServer: {
-            register(route) {
-              paths.push(route.path)
-              if (route.path === '/omnimux/model-catalog') catalogHandler = route.handler
-              return () => {}
+        if (deps[0] === 'webServer') {
+          assert.deepEqual(deps, ['webServer'])
+          callback({
+            webServer: {
+              register(route) {
+                paths.push(route.path)
+                if (route.path === '/omnimux/model-catalog') catalogHandler = route.handler
+                return () => {}
+              },
             },
-          },
-          effect(factory) { factory() },
-        })
+            effect(factory) { factory() },
+          })
+          return
+        }
+        // sessionQuery / settings are optional for this scenario: model the
+        // services as absent, but never swallow an unknown dependency.
+        if (deps[0] === 'sessionQuery') {
+          assert.deepEqual(deps, ['sessionQuery'])
+          return
+        }
+        if (deps[0] === 'settings') return
+        assert.fail(`unexpected inject deps: ${JSON.stringify(deps)}`)
       },
     }, { official: { mount: false } })
     try {
@@ -181,23 +192,45 @@ describe('auth http dispatcher', () => {
     assert.equal(/pat-nope/.test(seen.chunks.join('')), false)
   })
 
-  it('apply mounts auth routes when webServer arrives through inject', () => {
+  it('apply mounts auth routes when webServer arrives through inject', async () => {
     const paths = []
+    /** @type {{ kind: string, path: string, handler: Function }[]} */
+    const routes = []
+    /** @type {string[]} */
+    const observedSessionIds = []
+    // Sentinel with identity: the sessionQuery inject callback must run and
+    // later routes must depend on this exact instance (#522 regression).
+    const sessionQuerySentinel = {
+      async observeSession(id) {
+        observedSessionIds.push(id)
+        return { header: { cwd: tmpdir() } }
+      },
+    }
     apply({
       tools: { register() {} },
       provide() {},
       inject(deps, callback) {
-        if (deps[0] === 'settings') return
-        assert.deepEqual(deps, ['webServer'])
-        callback({
-          webServer: {
-            register(route) {
-              paths.push(`${route.kind}:${route.path}`)
-              return () => {}
+        if (deps[0] === 'webServer') {
+          assert.deepEqual(deps, ['webServer'])
+          callback({
+            webServer: {
+              register(route) {
+                paths.push(`${route.kind}:${route.path}`)
+                routes.push(route)
+                return () => {}
+              },
             },
-          },
-          effect(factory) { factory() },
-        })
+            effect(factory) { factory() },
+          })
+          return
+        }
+        if (deps[0] === 'sessionQuery') {
+          assert.deepEqual(deps, ['sessionQuery'])
+          callback({ sessionQuery: sessionQuerySentinel })
+          return
+        }
+        if (deps[0] === 'settings') return
+        assert.fail(`unexpected inject deps: ${JSON.stringify(deps)}`)
       },
     })
     assert.deepEqual(paths, [
@@ -213,11 +246,33 @@ describe('auth http dispatcher', () => {
       'prefix:/omnimux/analytics',
       'prefix:/omnimux/inspiration',
       'exact:/omnimux/avatar',
+      'prefix:/omnimux/composer/attachments',
       // #453: workbench routes register via webServer.register in the same inject
       'exact:/omnimux/events/stream',
       'exact:/omnimux/workbench/viewport',
       'exact:/omnimux/workbench/rpc/ack',
     ])
+    // #522 regression: drive a composer attachments request and prove the
+    // injected sentinel is the sessionQuery the route dispatcher holds.
+    const composerRoute = routes.find((route) => route.path === '/omnimux/composer/attachments')
+    assert.ok(composerRoute, 'composer attachments route must be registered')
+    /** @type {{ status?: number, chunks: string[] }} */
+    const seen = { chunks: [] }
+    const req = {
+      method: 'POST',
+      url: '/omnimux/composer/attachments/materialize',
+      headers: {},
+      async *[Symbol.asyncIterator]() {
+        yield Buffer.from(JSON.stringify({ sessionId: 'sess-522', paths: [] }))
+      },
+    }
+    const res = {
+      writeHead(status) { seen.status = status },
+      end(chunk) { seen.chunks.push(String(chunk)) },
+    }
+    await composerRoute.handler(req, res)
+    assert.equal(seen.status, 200)
+    assert.deepEqual(observedSessionIds, ['sess-522'])
   })
 
   it('apply still registers the video tool when webServer is absent', () => {
