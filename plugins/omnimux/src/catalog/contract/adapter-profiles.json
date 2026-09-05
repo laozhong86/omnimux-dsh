@@ -35,19 +35,19 @@
     },
     {
       "id": "speechToText",
-      "seam": null,
-      "status": "unavailable",
+      "seam": "speechToText",
+      "status": "live",
       "operations": ["speech_to_text"],
       "outputTypes": ["text"],
-      "notes": "H1 未挂载 live speechToText seam；ASR 不可 listed"
+      "notes": "#538 已挂载 speechToText seam（audio bytes → text）；whisper-1 待 #530 探测翻 live，未探测前不得 listed"
     },
     {
       "id": "videoDigitalHuman",
       "seam": "videoGenerate",
-      "status": "unavailable",
+      "status": "live",
       "operations": ["digital_human"],
       "outputTypes": ["video"],
-      "notes": "Kling Avatar 专用；H1 unavailable，不得借粗 videoGenerate listed"
+      "notes": "Kling Avatar 专用；#538 已修 audioTrack 透传，执行层可探测；待探测翻 live 前不得 listed"
     }
   ]
 }

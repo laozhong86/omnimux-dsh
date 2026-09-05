@@ -34,6 +34,7 @@ export const DEFAULT_MEDIA = Object.freeze({
         video: 'seedance-2-0-fast',
         image: 'gpt-image-2',
         audio: 'suno',
+        stt: 'whisper-1',
       }),
     }),
   }),
@@ -128,7 +129,15 @@ export function resolveMediaRoute(capability, request, media, env = process.env)
   const envBase = providerId === 'omnimux' ? env.OMNIMUX_BASE_URL : undefined
   const baseUrl = (envBase || row.baseUrl).replace(/\/+$/, '')
   const envModel = providerId === 'omnimux'
-    ? (capability === 'video' ? env.OMNIMUX_VIDEO_MODEL : capability === 'image' ? env.OMNIMUX_IMAGE_MODEL : capability === 'audio' ? env.OMNIMUX_AUDIO_MODEL : undefined)
+    ? (capability === 'video'
+      ? env.OMNIMUX_VIDEO_MODEL
+      : capability === 'image'
+        ? env.OMNIMUX_IMAGE_MODEL
+        : capability === 'audio'
+          ? env.OMNIMUX_AUDIO_MODEL
+          : capability === 'stt'
+            ? env.OMNIMUX_STT_MODEL
+            : undefined)
     : undefined
   const catalogModelId = (typeof request.model === 'string' && request.model.trim()
     ? request.model.trim()

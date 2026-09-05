@@ -247,13 +247,15 @@
     },
     {
       "id": "whisper-1",
-      "disposition": "unavailable",
-      "reason": "无 speechToText live seam；audio→text 不上架；画布目录不得列出"
+      "disposition": "draft",
+      "reason": "speechToText seam 已挂载（#538），可探测；仓内无 dated live 证据不上架，#530 探测后方可翻 live",
+      "notes": "speech_to_text 产出 text，不得入 audio 产出桶；探测前 listed 保持空"
     },
     {
       "id": "kling-avatar",
-      "disposition": "unavailable",
-      "reason": "digital_human 需 audio；video mapper 丢 audioTrack；执行未闭环；画布目录不得列出"
+      "disposition": "draft",
+      "reason": "audioTrack 透传已修（#538），digital_human 执行层可探测；仓内无 dated live 证据不上架",
+      "notes": "digital_human 走 videoDigitalHuman profile，不得借粗 videoGenerate listed；探测前 listed 保持空"
     },
     {
       "id": "omni_flash",

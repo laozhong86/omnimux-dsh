@@ -32,8 +32,9 @@ test('normalizeExecution defaults none', () => {
 
 test('adapterProfileExists requires live profile', () => {
   assert.equal(adapterProfileExists(profiles, 'videoGenerate'), true);
-  assert.equal(adapterProfileExists(profiles, 'speechToText'), false);
-  assert.equal(adapterProfileExists(profiles, 'videoDigitalHuman'), false);
+  // #538: speechToText seam mounted; videoDigitalHuman audioTrack passthrough fixed
+  assert.equal(adapterProfileExists(profiles, 'speechToText'), true);
+  assert.equal(adapterProfileExists(profiles, 'videoDigitalHuman'), true);
   assert.equal(adapterProfileExists(profiles, 'missing'), false);
   assert.equal(adapterProfileExists(profiles, undefined), false);
 });

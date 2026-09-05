@@ -274,3 +274,104 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     assert.equal('audio' in input, false)
   })
 })
+
+describe('mapOmnimuxInput digital_human audioTrack passthrough (#538)', () => {
+  it('keeps audioTrack for digital-human models (kling-avatar)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'talk',
+      model: 'kling-avatar',
+      image: 'https://example.com/face.png',
+      audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/track.mp3' },
+    })
+    assert.equal(input.image, 'https://example.com/face.png')
+    assert.deepEqual(input.audioTrack, { role: 'audio_track', type: 'audio', pathOrUrl: '/local/track.mp3' })
+    assert.equal('metadata' in input, false, 'digital_human 同样严禁 metadata（#432）')
+    assert.equal('images' in input, false)
+    assert.equal('references' in input, false)
+  })
+
+  it('matches the digital-human model id case-insensitively', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'talk',
+      model: 'Kling-Avatar',
+      audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/track.mp3' },
+    })
+    assert.equal(input.audioTrack.pathOrUrl, '/local/track.mp3')
+  })
+
+  it('still drops audioTrack for non-digital-human video models', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'talk',
+      model: 'seedance-2-0-fast',
+      audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/track.mp3' },
+    })
+    assert.equal('audioTrack' in input, false)
+  })
+
+  it('drops an audioTrack without pathOrUrl even for digital-human models', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'talk',
+      model: 'kling-avatar',
+      audioTrack: { role: 'audio_track', type: 'audio' },
+    })
+    assert.equal('audioTrack' in input, false)
+  })
+
+  it('executeOmnimuxVideo forwards audioTrack to the runtime for kling-avatar', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-avatar-'))
+    const dest = join(dir, 'out.mp4')
+    let capturedReq
+    const result = await executeOmnimuxVideo({
+      prompt: 'speak',
+      dest,
+      model: 'kling-avatar',
+      image: 'https://example.com/face.png',
+      audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/voice.mp3' },
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+      runtime: {
+        async execute(req) {
+          capturedReq = req
+          return {
+            taskId: 'task-avatar',
+            outputs: [{ type: 'video', url: 'https://cdn.example/avatar.mp4' }],
+          }
+        },
+      },
+      fetcher: async () => ({ ok: true, arrayBuffer: async () => Buffer.from('mp4-avatar') }),
+    })
+    assert.equal(result.mode, 'live')
+    assert.equal(capturedReq.input.image, 'https://example.com/face.png')
+    assert.deepEqual(capturedReq.input.audioTrack, {
+      role: 'audio_track',
+      type: 'audio',
+      pathOrUrl: '/local/voice.mp3',
+    })
+    assert.equal(readFileSync(dest, 'utf8'), 'mp4-avatar')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('executeOmnimuxVideo keeps dropping audioTrack for a generic video model', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-avatar-guard-'))
+    const dest = join(dir, 'out.mp4')
+    let capturedReq
+    await executeOmnimuxVideo({
+      prompt: 'speak',
+      dest,
+      model: 'seedance-2-0-fast',
+      audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/voice.mp3' },
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+      runtime: {
+        async execute(req) {
+          capturedReq = req
+          return {
+            taskId: 'task-generic',
+            outputs: [{ type: 'video', url: 'https://cdn.example/generic.mp4' }],
+          }
+        },
+      },
+      fetcher: async () => ({ ok: true, arrayBuffer: async () => Buffer.from('mp4-generic') }),
+    })
+    assert.equal('audioTrack' in capturedReq.input, false)
+    rmSync(dir, { recursive: true, force: true })
+  })
+})

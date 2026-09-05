@@ -57,7 +57,7 @@ test('adapter profiles declare operations/outputTypes; digital_human not in vide
   assert.deepEqual(vg.outputTypes, ['video']);
   const dh = profiles.profiles.find((p) => p.id === 'videoDigitalHuman');
   assert.ok(dh);
-  assert.equal(dh.status, 'unavailable');
+  assert.equal(dh.status, 'live');
   assert.ok(dh.operations.includes('digital_human'));
 });
 

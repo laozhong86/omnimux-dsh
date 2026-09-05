@@ -60,10 +60,11 @@ test('43 disposition rows mirror the runtime universe exactly (no missing, no gh
   assert.deepEqual(issues, [], JSON.stringify(issues, null, 2));
 });
 
-test('locked dispositions: unavailable / quarantine / alias / Batch A canonical', () => {
+test('locked dispositions: draft-probeable / quarantine / alias / Batch A canonical', () => {
   const doc = loadDispositions();
-  assert.equal(resolveDisposition(doc, 'whisper-1')?.disposition, 'unavailable');
-  assert.equal(resolveDisposition(doc, 'kling-avatar')?.disposition, 'unavailable');
+  // #538: seams mounted and probeable but unprobed → draft; listed stays empty until #530
+  assert.equal(resolveDisposition(doc, 'whisper-1')?.disposition, 'draft');
+  assert.equal(resolveDisposition(doc, 'kling-avatar')?.disposition, 'draft');
   for (const id of ['omni_flash', 'kling-o1', 'kling-o3', 'kling-v3-motion-control']) {
     assert.equal(resolveDisposition(doc, id)?.disposition, 'quarantine', id);
   }
