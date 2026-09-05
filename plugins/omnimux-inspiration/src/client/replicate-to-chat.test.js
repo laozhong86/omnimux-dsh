@@ -115,7 +115,7 @@ describe('dismissInspirationLibrary', () => {
     assert.deepEqual(tabs, ['omnimux-inspiration:library'])
   })
 
-  it('after closeTab unhides the conversation column (chat, not collapsed)', () => {
+  it('after closeTab unhides the conversation column (split, not collapsed)', () => {
     const order = []
     dismissInspirationLibrary({
       window: {
@@ -129,11 +129,11 @@ describe('dismissInspirationLibrary', () => {
     assert.deepEqual(order, [
       'close:omnimux-inspiration:library',
       'collapsed:false',
-      'focus:chat',
+      'focus:split',
     ])
   })
 
-  it('closes leftover canvas panel so gui cannot re-collapse the middle column (#528)', () => {
+  it('keeps the right panel open (canvas stays) and reveals split (#531)', () => {
     const order = []
     dismissInspirationLibrary({
       window: {
@@ -148,9 +148,10 @@ describe('dismissInspirationLibrary', () => {
     assert.deepEqual(order, [
       'close:omnimux-inspiration:library',
       'collapsed:false',
-      'closePanel',
+      'focus:split',
     ])
-    assert.ok(!order.includes('focus:split'))
+    assert.ok(!order.includes('closePanel'))
+    assert.ok(!order.includes('focus:chat'))
   })
 
   it('falls back to createSidebarStore().close when closeTab is missing', () => {
@@ -187,7 +188,7 @@ describe('oneClickReplicate', () => {
     assert.equal(io.status.at(-1), 'card.cta.noSession')
   })
 
-  it('success uses real dismissInspirationLibrary: closeTab then chat', async () => {
+  it('success uses real dismissInspirationLibrary: closeTab then split', async () => {
     const order = []
     const win = {
       __omnimuxWorkbench: {
@@ -203,8 +204,8 @@ describe('oneClickReplicate', () => {
     assert.equal(result.ok, true)
     assert.equal(order[0], 'close:omnimux-inspiration:library')
     assert.ok(order.includes('collapsed:false'))
-    assert.ok(order.includes('closePanel'))
-    assert.ok(!order.includes('focus:split'))
+    assert.ok(order.includes('focus:split'))
+    assert.ok(!order.includes('closePanel'))
   })
 
   it('dismisses before prefill so a hidden composer can become visible (#528)', async () => {

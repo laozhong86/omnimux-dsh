@@ -105,22 +105,18 @@ export function buildInspirationPayload(row) {
  */
 /**
  * Library tabs default to `gui` (conversationCollapsed). Closing the library
- * while another occupant (创作画布) remains does NOT close the panel, so
- * `setFocus('split')` is overwritten by the leftover tab's gui record and
- * the middle composer stays width 0 — click looks like a no-op (#528).
- * Enter-conversation: close leftover panel + uncollapse AFTER closeTab.
+ * while another occupant (创作画布) remains does NOT close the panel, and
+ * `closePanel` would hide the canvas — but the user expects the canvas to
+ * stay and the conversation to appear side by side (#531).
+ * Enter-conversation: uncollapse + split AFTER closeTab, never closePanel.
  */
 function revealConversationColumn(wb) {
   if (!wb) return
   if (typeof wb.setConversationCollapsed === 'function') {
     try { wb.setConversationCollapsed(false) } catch { /* ignore */ }
   }
-  if (typeof wb.closePanel === 'function') {
-    try { wb.closePanel() } catch { /* ignore */ }
-    return
-  }
   if (typeof wb.setFocus === 'function') {
-    try { wb.setFocus('chat') } catch { /* ignore */ }
+    try { wb.setFocus('split') } catch { /* ignore */ }
   }
 }
 
