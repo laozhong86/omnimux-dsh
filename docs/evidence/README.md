@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L3"
 date: "2026-08-26"
-updated: "2026-08-31"
+updated: "2026-09-05"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -16,6 +16,14 @@ subsystem: "global"
 
 ## 1. 目录职能
 自动化测试、真机实测、基线度量与能力验证的客观证据记录。
+
+## 1.1 模型证据命名规约（#530）
+
+- **模板**：[`_template-model-evidence.md`](_template-model-evidence.md)（下划线前缀 = 非证据本体，不进下方索引矩阵）。
+- **命名**：`YYYY-MM-DD-model-<id>-<op>.md`；日期 = 实测日期 = YAML `verifiedAt`（禁止后填）。
+- **身份**：一 op 一文件；`<id>` 用 canonical runtime ID（alias 不单独出证据）；YAML `research.docUrl` 只能指向本 op 自己的文件。
+- **四要素**：existence / minimal / boundary / mime-size-duration 缺一 → 该 op 不得 listed；§5 conclusion 二选一（可上架 / 不接）。
+- 详细规约：[`docs/specs/2026-09-05-model-evidence-backfill-design.md`](../specs/2026-09-05-model-evidence-backfill-design.md) §3。
 
 ## 2. 索引矩阵 (Index Matrix)
 
