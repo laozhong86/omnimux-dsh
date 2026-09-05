@@ -460,10 +460,13 @@ function runCompatPass(
     }
   }
 
-  // ---- 3. Soft recompute: removed edges / cascades / prompt·operation patches ----
+  // ---- 3. Soft recompute: newly added nodes / removed edges / prompt·operation patches ----
   const removedEdgeIds = new Set(mutation.removeEdgeIds ?? []);
   const removedNodeIds = new Set(mutation.removeNodeIds ?? []);
   const recomputeTargets = new Set<string>();
+  for (const node of mutation.addNodes ?? []) {
+    if (isGenerateMaterialNode(node)) recomputeTargets.add(node.id);
+  }
   for (const edge of current.edges) {
     const removed =
       removedEdgeIds.has(edge.id) || removedNodeIds.has(edge.source) || removedNodeIds.has(edge.target);

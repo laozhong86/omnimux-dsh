@@ -53,6 +53,9 @@ export interface OperationUiOption {
 
 export type ModeUiVisibility = 'hidden' | 'selector';
 
+/** UI-only state: no model has been selected yet, distinct from catalog availability. */
+export type EffectiveOpsReasonCode = CompatReasonCode | 'model_unselected';
+
 export interface EffectiveOpsUiState {
   /** Effective (absorbing) operations for the current model + fingerprint. */
   effectiveOps: OperationUiOption[];
@@ -67,7 +70,7 @@ export interface EffectiveOpsUiState {
   /** True when generation must be blocked solely due to zero effective ops. */
   blockGenerate: boolean;
   /** Primary typed reason when blocked / configuration error. */
-  reasonCode?: CompatReasonCode;
+  reasonCode?: EffectiveOpsReasonCode;
   /** Human-readable explanation (typed, stable). */
   reasonMessage?: string;
 }
@@ -248,7 +251,7 @@ export function buildEffectiveOpsUiState(args: {
 }): EffectiveOpsUiState {
   const catalog = args.catalog;
   const modelId = typeof args.modelId === 'string' ? args.modelId.trim() : '';
-  if (!catalog || !modelId) {
+  if (!catalog) {
     return {
       effectiveOps: [],
       count: 0,
@@ -256,6 +259,16 @@ export function buildEffectiveOpsUiState(args: {
       blockGenerate: true,
       reasonCode: 'catalog_unavailable',
       reasonMessage: '模型目录不可用，无法计算有效 operation',
+    };
+  }
+  if (!modelId) {
+    return {
+      effectiveOps: [],
+      count: 0,
+      visibility: 'hidden',
+      blockGenerate: true,
+      reasonCode: 'model_unselected',
+      reasonMessage: '请先选择模型',
     };
   }
 

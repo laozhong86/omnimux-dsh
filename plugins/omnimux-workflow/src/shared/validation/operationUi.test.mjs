@@ -338,4 +338,16 @@ describe('catalog missing / fail-closed', () => {
     assert.equal(models.catalogAvailable, false);
     assert.equal(models.zeroCandidates, true);
   });
+
+  it('catalog ready but no selected model → model_unselected', () => {
+    const state = buildEffectiveOpsUiState({
+      catalog,
+      modelId: '',
+      fingerprint: fp([]),
+      outputType: 'video',
+    });
+    assert.equal(state.blockGenerate, true);
+    assert.equal(state.reasonCode, 'model_unselected');
+    assert.equal(state.reasonMessage, '请先选择模型');
+  });
 });

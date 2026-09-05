@@ -17,6 +17,7 @@ buildSync({
 });
 const { useCanvasStore } = await import(pathToFileURL(bundle).href);
 import { createCompatTestCatalog } from '../../shared/validation/compatTestCatalog.ts';
+import { createMaterialNode } from '../../shared/graph/nodeFactory.ts';
 
 function graph(model = 'img-prompt-only') {
   return {
@@ -80,4 +81,35 @@ test('graph-first hydrate reconciles after catalog arrives and preserves an expl
   const node = useCanvasStore.getState().nodes.find((candidate) => candidate.id === 'gen');
   assert.equal(node.data.params.model, 'img-ref');
   assert.equal(node.data.params.operation, 'image_to_image');
+});
+
+test('catalog-ready standalone video creation writes the effective listed model and operation atomically', () => {
+  const store = useCanvasStore.getState();
+  store.setCatalogRuntime(createCompatTestCatalog());
+  store.setNodes([{
+    id: 'selected-existing',
+    type: 'material',
+    position: { x: 0, y: 0 },
+    selected: true,
+    data: {
+      materialType: 'text',
+      nodeKind: 'generate',
+      selectedTool: 'text-to-text',
+      params: {},
+    },
+  }]);
+
+  const video = { ...createMaterialNode('video', { x: 200, y: 100 }), selected: true };
+  const result = store.applyCanvasInputMutation({
+    addNodes: [video],
+    nodePatches: [{ nodeId: 'selected-existing', data: {}, node: { selected: false } }],
+  });
+
+  assert.equal(result.status, 'allowed');
+  const added = useCanvasStore.getState().nodes.find((node) => node.id === video.id);
+  assert.equal(added?.selected, true);
+  assert.equal(useCanvasStore.getState().nodes.find((node) => node.id === 'selected-existing')?.selected, false);
+  assert.equal(added?.data.params.model, 'vid-frames');
+  assert.equal(added?.data.params.operation, 'text_to_video');
+  assert.equal(added?.data.compat.status, 'ok');
 });
