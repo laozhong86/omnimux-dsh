@@ -48,13 +48,14 @@ if (mode === 'subprocess-failure' && phase === 'browser') {
 const config = {
   mode,
   phase,
+  taskId: process.env.MOCK_EGO_TASK_ID,
   snapshot: process.env.MOCK_EGO_SNAPSHOT || 'OmniMux ready',
   screenshotSource: process.env.MOCK_EGO_SCREENSHOT_SOURCE,
   tracePath: process.env.MOCK_EGO_TRACE_PATH,
 }
 const prelude = \`const __mockConfig = \${JSON.stringify(config)}
 const __mockFs = await import('node:fs')
-globalThis.useOrCreateTaskSpace = async (name) => ({ id: 'task:' + name })
+globalThis.useOrCreateTaskSpace = async () => ({ id: __mockConfig.taskId })
 globalThis.openOrReuseTab = async () => {
   if (__mockConfig.mode === 'browser-hard-exit-after-task') process.exit(23)
   if (__mockConfig.mode === 'browser-failure') throw new Error('mock browser open failed')
@@ -99,6 +100,7 @@ function runCollector({
   expected = '',
   snapshot = expected || 'OmniMux ready',
   taskName = 'qa task',
+  taskId: suppliedTaskId,
   evidenceName = 'evidence',
   staleEvidence = false,
   root: suppliedRoot,
@@ -108,6 +110,7 @@ function runCollector({
   probeSource,
 } = {}) {
   const root = suppliedRoot || mkdtempSync(join(tmpdir(), 'omnimux-ego-qa-'))
+  const taskId = suppliedTaskId || `task:${taskName}:${root}`
   if (!suppliedRoot) temporaryRoots.push(root)
   const binDir = join(root, 'bin')
   const evidenceDir = suppliedEvidenceDir || join(root, evidenceName)
@@ -142,6 +145,7 @@ function runCollector({
       EGO_BROWSER_PROBE_FILE: probeSource ? join(root, 'probe.mjs') : '',
       EGO_BROWSER_PROBE_OPTIONS: probeSource ? join(root, 'probe-options.json') : '',
       MOCK_EGO_MODE: mode,
+      MOCK_EGO_TASK_ID: taskId,
       MOCK_EGO_SNAPSHOT: snapshot,
       MOCK_EGO_SCREENSHOT_SOURCE: screenshotSource,
       MOCK_EGO_TRACE_PATH: tracePath,
@@ -152,6 +156,7 @@ function runCollector({
   assert.ok(existsSync(reportPath), `collector must write a report; stderr=${result.stderr}`)
   return {
     ...result,
+    taskId,
     evidenceDir,
     report: JSON.parse(readFileSync(reportPath, 'utf8')),
     trace: existsSync(tracePath)
@@ -189,7 +194,7 @@ test('success preserves escaped JSON values and completes the task space', () =>
   assert.equal(run.report.cleanup.state, 'completed')
   assert.equal(run.report.cleanup.keep, false)
   assert.equal(run.report.cleanup.success, true)
-  assert.deepEqual(run.trace, [{ id: `task:${taskName}`, keep: false }])
+  assert.deepEqual(run.trace, [{ id: run.taskId, keep: false }])
   assert.equal(readFileSync(join(run.evidenceDir, 'ego-browser.png'), 'utf8'), 'mock png')
 })
 
@@ -232,7 +237,7 @@ test('browser failure exits nonzero, records the error, and retains the task spa
   assert.match(run.report.errors.join('\n'), /mock browser open failed/)
   assert.equal(run.report.cleanup.state, 'retained')
   assert.equal(run.report.cleanup.keep, true)
-  assert.deepEqual(run.trace, [{ id: 'task:qa task', keep: true }])
+  assert.deepEqual(run.trace, [{ id: run.taskId, keep: true }])
 })
 
 test('empty snapshot fails closed and retains the task space', () => {
@@ -306,10 +311,10 @@ test('a hard browser exit after task creation persists the task id and retains i
 
   assert.equal(run.status, 23, run.stderr)
   assert.equal(run.report.pass, false)
-  assert.equal(run.report.taskSpaceId, 'task:qa task')
+  assert.equal(run.report.taskSpaceId, run.taskId)
   assert.equal(run.report.cleanup.state, 'retained')
   assert.equal(run.report.cleanup.keep, true)
-  assert.deepEqual(run.trace, [{ id: 'task:qa task', keep: true }])
+  assert.deepEqual(run.trace, [{ id: run.taskId, keep: true }])
 })
 
 test('a cleanup child that exits successfully without writing a result is recorded as failed', () => {
@@ -359,7 +364,7 @@ test('different evidence directories cannot control the same browser task concur
   const taskName = `lock-test-${process.pid}`
   const lock = acquireTaskLock(`task:${taskName}`, 'other-run', process.pid)
   try {
-    const run = runCollector({ taskName, evidenceName: 'new-run-directory' })
+    const run = runCollector({ taskName: `${taskName}-alias`, taskId: `task:${taskName}`, evidenceName: 'new-run-directory' })
     assert.notEqual(run.status, 0)
     assert.match(run.report.errors.join(';'), /task space .* is busy/)
     assert.equal(run.report.cleanup.attempted, false)
