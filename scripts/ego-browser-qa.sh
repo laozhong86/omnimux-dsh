@@ -3,7 +3,7 @@
 #
 # Every browser self-check in this repository must go through ego-browser.
 # The script fails closed when the browser, L2 page, semantic evidence, DOM
-# evidence, or screenshot cannot be obtained.
+# evidence, screenshot, or task-space cleanup cannot be obtained.
 #
 # Usage:
 #   scripts/ego-browser-qa.sh <l2-url> [evidence_dir] [expected_text]
@@ -16,19 +16,6 @@ ISSUE_ID="${EGO_ISSUE_ID:-local}"
 PLUGIN="${EGO_PLUGIN:-surface}"
 TASK_NAME="${EGO_TASK_SPACE_NAME:-omnimux-qa-issue-${ISSUE_ID}-${PLUGIN}}"
 
-if [[ -z "$URL" ]]; then
-  echo "✗ ego-browser: 必须提供 L2 URL" >&2
-  exit 2
-fi
-if [[ ! "$URL" =~ ^https?:// ]]; then
-  echo "✗ ego-browser: URL 必须是 http(s): $URL" >&2
-  exit 2
-fi
-if ! command -v ego-browser >/dev/null 2>&1; then
-  echo "✗ ego-browser: 命令不可用；UI 验收不得降级为 skip" >&2
-  exit 127
-fi
-
 if [[ -n "$EVIDENCE_DIR_INPUT" ]]; then
   mkdir -p "$EVIDENCE_DIR_INPUT"
   EVIDENCE_DIR="$(cd "$EVIDENCE_DIR_INPUT" && pwd)"
@@ -40,61 +27,149 @@ fi
 
 REPORT_PATH="$EVIDENCE_DIR/ego-browser-report.json"
 LOG_PATH="$EVIDENCE_DIR/ego-browser.log"
+SCREENSHOT_PATH="$EVIDENCE_DIR/ego-browser.png"
 GIT_SHA="${EGO_GIT_SHA:-$(git rev-parse HEAD 2>/dev/null || echo unknown)}"
 DSH_HOME_VALUE="${DSH_HOME:-}"
-export EGO_BROWSER_URL="$URL"
-export EGO_BROWSER_EXPECT="$EXPECTED"
-export EGO_BROWSER_TASK_NAME="$TASK_NAME"
-export EGO_BROWSER_REPORT_PATH="$REPORT_PATH"
-export EGO_BROWSER_EVIDENCE_DIR="$EVIDENCE_DIR"
-export EGO_BROWSER_GIT_SHA="$GIT_SHA"
-export EGO_BROWSER_ISSUE_ID="$ISSUE_ID"
-export EGO_BROWSER_PLUGIN="$PLUGIN"
-export EGO_BROWSER_DSH_HOME="$DSH_HOME_VALUE"
+RUN_ID="${EGO_RUN_ID:-$(node -e "process.stdout.write(require('node:crypto').randomUUID())")}"
 
-set +e
-EGO_OUTPUT="$(ego-browser nodejs <<'EOF'
-const fs = require('node:fs')
-const path = require('node:path')
+# Never accept a report or screenshot left by an earlier run as current proof.
+rm -f "$REPORT_PATH" "$SCREENSHOT_PATH"
+: > "$LOG_PATH"
+chmod 600 "$LOG_PATH"
 
-const url = process.env.EGO_BROWSER_URL
-const expected = process.env.EGO_BROWSER_EXPECT || ''
-const taskName = process.env.EGO_BROWSER_TASK_NAME
-const reportPath = process.env.EGO_BROWSER_REPORT_PATH
-const evidenceDir = process.env.EGO_BROWSER_EVIDENCE_DIR
+node --input-type=module - \
+  "$REPORT_PATH" "$RUN_ID" "$TASK_NAME" "$ISSUE_ID" "$PLUGIN" \
+  "$GIT_SHA" "$DSH_HOME_VALUE" "$URL" "$EXPECTED" <<'EOF'
+import { writeFileSync } from 'node:fs'
 
-const result = {
+const [
+  reportPath,
+  runId,
+  taskSpaceName,
+  issueId,
+  plugin,
+  commitSha,
+  dshHome,
+  requestedUrl,
+  expectedText,
+] = process.argv.slice(2)
+
+const report = {
   pass: false,
   tool: 'ego-browser',
-  taskSpaceName: taskName,
+  runId,
+  phase: 'pending',
+  taskSpaceName,
   taskSpaceId: null,
-  issueId: process.env.EGO_BROWSER_ISSUE_ID || null,
-  plugin: process.env.EGO_BROWSER_PLUGIN || null,
-  commitSha: process.env.EGO_BROWSER_GIT_SHA || null,
-  dshHome: process.env.EGO_BROWSER_DSH_HOME || null,
-  requestedUrl: url,
+  issueId: issueId || null,
+  plugin: plugin || null,
+  commitSha: commitSha || null,
+  dshHome: dshHome || null,
+  requestedUrl,
   actualUrl: null,
   title: null,
   viewport: null,
   snapshot: null,
   dom: null,
   screenshot: null,
-  expectedText: expected || null,
+  expectedText: expectedText || null,
+  browserProcessExitCode: null,
+  cleanup: {
+    attempted: false,
+    keep: null,
+    success: true,
+    state: 'not-created',
+    result: null,
+    error: null,
+  },
   errors: [],
   capturedAt: new Date().toISOString(),
+  completedAt: null,
+}
+
+writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 })
+EOF
+
+record_failure() {
+  local exit_code="$1"
+  local phase="$2"
+  local message="$3"
+  node --input-type=module - "$REPORT_PATH" "$phase" "$message" "$exit_code" <<'EOF'
+import { readFileSync, writeFileSync } from 'node:fs'
+
+const [reportPath, phase, message, exitCode] = process.argv.slice(2)
+const report = JSON.parse(readFileSync(reportPath, 'utf8'))
+report.pass = false
+report.phase = phase
+report.exitCode = Number(exitCode)
+if (!report.errors.includes(message)) report.errors.push(message)
+report.completedAt = new Date().toISOString()
+writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 })
+EOF
+  printf '%s\n' "$message" >> "$LOG_PATH"
+}
+
+fail_preflight() {
+  local exit_code="$1"
+  local message="$2"
+  record_failure "$exit_code" 'preflight' "$message"
+  echo "✗ ego-browser: $message（证据: ${EVIDENCE_DIR}）" >&2
+  exit "$exit_code"
+}
+
+if [[ -z "$URL" ]]; then
+  fail_preflight 2 '必须提供 L2 URL'
+fi
+if [[ ! "$URL" =~ ^https?:// ]]; then
+  fail_preflight 2 "URL 必须是 http(s): $URL"
+fi
+if ! command -v ego-browser >/dev/null 2>&1; then
+  fail_preflight 127 '命令不可用；UI 验收不得降级为 skip'
+fi
+
+# ego-browser nodejs filters custom environment variables. Encode all values in
+# a base64 JSON prelude so quotes, newlines, and Unicode cannot become code.
+EGO_INPUT_B64="$(node -e 'const values={url:process.argv[1],expected:process.argv[2],taskName:process.argv[3],reportPath:process.argv[4],evidenceDir:process.argv[5],runId:process.argv[6],failOnErrors:process.argv[7]||""};process.stdout.write(Buffer.from(JSON.stringify(values),"utf8").toString("base64"))' \
+  "$URL" "$EXPECTED" "$TASK_NAME" "$REPORT_PATH" "$EVIDENCE_DIR" "$RUN_ID" "${EGO_BROWSER_FAIL_ON_ERRORS:-}")"
+
+emit_ego_input_prelude() {
+  printf "const EGO_INPUT = JSON.parse(Buffer.from('%s', 'base64').toString('utf8'))\n" "$EGO_INPUT_B64"
+}
+
+set +e
+{
+  emit_ego_input_prelude
+  cat <<'EOF'
+const fs = await import('node:fs')
+const path = await import('node:path')
+
+const report = JSON.parse(fs.readFileSync(EGO_INPUT.reportPath, 'utf8'))
+report.phase = 'browser'
+report.cleanup = {
+  attempted: false,
+  keep: null,
+  success: true,
+  state: 'not-created',
+  result: null,
+  error: null,
 }
 
 try {
-  const task = await useOrCreateTaskSpace(taskName)
-  result.taskSpaceId = task.id
+  const task = await useOrCreateTaskSpace(EGO_INPUT.taskName)
+  if (!task || task.id === null || task.id === undefined) {
+    throw new Error('useOrCreateTaskSpace() 未返回 task space id')
+  }
+  report.taskSpaceId = task.id
+  report.cleanup.success = null
+  report.cleanup.state = 'pending'
 
-  const tab = await openOrReuseTab(url, { wait: true, timeout: 20 })
+  const tab = await openOrReuseTab(EGO_INPUT.url, { wait: true, timeout: 20 })
   if (!tab) throw new Error('openOrReuseTab 未返回页面')
 
   const info = await pageInfo()
-  result.actualUrl = info?.url || null
-  result.title = info?.title || null
-  result.viewport = info ? { w: info.w, h: info.h, pw: info.pw, ph: info.ph } : null
+  report.actualUrl = info?.url || null
+  report.title = info?.title || null
+  report.viewport = info ? { w: info.w, h: info.h, pw: info.pw, ph: info.ph } : null
   if (info?.dialog) throw new Error(`页面存在未处理原生对话框: ${JSON.stringify(info.dialog)}`)
   if (!info?.url || !/^https?:\/\//.test(info.url)) throw new Error('实际页面 URL 无效')
   const actual = new URL(info.url)
@@ -105,8 +180,8 @@ try {
   if (!info.w || !info.h || info.w <= 0 || info.h <= 0) throw new Error('浏览器 viewport 无效')
 
   const snapshot = await snapshotText()
-  result.snapshot = typeof snapshot === 'string' ? snapshot : String(snapshot ?? '')
-  if (!result.snapshot.trim()) throw new Error('snapshotText() 为空')
+  report.snapshot = typeof snapshot === 'string' ? snapshot : String(snapshot ?? '')
+  if (!report.snapshot.trim()) throw new Error('snapshotText() 为空')
 
   const dom = await js(String.raw`(() => ({
     bodyText: (document.body?.innerText || '').slice(0, 4000),
@@ -115,17 +190,17 @@ try {
     errorCount: document.querySelectorAll('[role="alert"], .error, [data-error]').length,
     hasDocumentRoot: Boolean(document.documentElement),
   }))()`)
-  result.dom = dom
+  report.dom = dom
   if (!dom || typeof dom.bodyTextLength !== 'number' || !dom.hasDocumentRoot) {
     throw new Error('DOM 断言未返回有效结果')
   }
-  if (dom.bodyTextLength === 0 && result.snapshot.trim().length === 0) {
+  if (dom.bodyTextLength === 0 && report.snapshot.trim().length === 0) {
     throw new Error('页面没有可见语义内容')
   }
-  if (expected && !result.snapshot.includes(expected) && !String(dom.bodyText || '').includes(expected)) {
-    throw new Error(`页面未包含期望文本: ${expected}`)
+  if (EGO_INPUT.expected && !report.snapshot.includes(EGO_INPUT.expected) && !String(dom.bodyText || '').includes(EGO_INPUT.expected)) {
+    throw new Error(`页面未包含期望文本: ${EGO_INPUT.expected}`)
   }
-  if (process.env.EGO_BROWSER_FAIL_ON_ERRORS === '1' && dom.errorCount > 0) {
+  if (EGO_INPUT.failOnErrors === '1' && dom.errorCount > 0) {
     throw new Error(`页面存在 ${dom.errorCount} 个可见错误节点`)
   }
 
@@ -134,67 +209,212 @@ try {
     ? screenshot
     : screenshot?.path || screenshot?.screenshot || null
   if (!source || !fs.existsSync(source)) throw new Error('captureScreenshot() 未返回可复制的截图路径')
-  const destination = path.join(evidenceDir, 'ego-browser.png')
-  fs.copyFileSync(source, destination)
-  result.screenshot = 'ego-browser.png'
-  result.pass = true
+  const destination = path.join(EGO_INPUT.evidenceDir, 'ego-browser.png')
+  if (path.resolve(source) !== path.resolve(destination)) fs.copyFileSync(source, destination)
+  report.screenshot = 'ego-browser.png'
+  report.pass = true
 } catch (error) {
-  result.errors.push(error instanceof Error ? error.message : String(error))
+  report.pass = false
+  report.errors.push(error instanceof Error ? error.message : String(error))
 }
 
-fs.writeFileSync(reportPath, JSON.stringify(result, null, 2) + '\n', { mode: 0o600 })
+report.completedAt = new Date().toISOString()
+fs.writeFileSync(EGO_INPUT.reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 })
 cliLog(JSON.stringify({
-  pass: result.pass,
-  taskSpaceId: result.taskSpaceId,
-  actualUrl: result.actualUrl,
-  screenshot: result.screenshot,
-  errors: result.errors,
+  runId: report.runId,
+  pass: report.pass,
+  taskSpaceId: report.taskSpaceId,
+  actualUrl: report.actualUrl,
+  screenshot: report.screenshot,
+  errors: report.errors,
 }, null, 2))
-if (!result.pass) process.exitCode = 1
+if (!report.pass) process.exitCode = 1
 EOF
-)"
-STATUS=$?
-printf '%s\n' "$EGO_OUTPUT" > "$LOG_PATH"
+} | ego-browser nodejs >> "$LOG_PATH" 2>&1
+BROWSER_STATUS=$?
+set -e
 
-# Complete successful spaces; retain failed spaces for diagnosis and reruns.
-if [[ -s "$REPORT_PATH" ]]; then
-  set +e
-  ego-browser nodejs <<'EOF' >> "$LOG_PATH" 2>&1
-const fs = require('node:fs')
-const report = JSON.parse(fs.readFileSync(process.env.EGO_BROWSER_REPORT_PATH, 'utf8'))
-if (report.taskSpaceId !== null && report.taskSpaceId !== undefined) {
-  const cleanup = await completeTaskSpace(report.taskSpaceId, { keep: !report.pass })
-  cliLog(JSON.stringify({ taskSpaceCleanup: cleanup, retained: !report.pass }, null, 2))
+# Record even a hard child-process failure that happened before browser code
+# could write its structured result.
+node --input-type=module - "$REPORT_PATH" "$BROWSER_STATUS" "$LOG_PATH" <<'EOF'
+import { readFileSync, writeFileSync } from 'node:fs'
+
+const [reportPath, rawStatus, logPath] = process.argv.slice(2)
+const status = Number(rawStatus)
+const report = JSON.parse(readFileSync(reportPath, 'utf8'))
+report.browserProcessExitCode = status
+if (status !== 0) {
+  report.pass = false
+  if (report.phase === 'pending' || report.errors.length === 0) {
+    const detail = readFileSync(logPath, 'utf8').trim().slice(0, 2000)
+    report.errors.push(`ego-browser nodejs 子进程失败（exit ${status}）${detail ? `: ${detail}` : ''}`)
+  }
 }
+if (status === 0 && report.phase === 'pending') {
+  report.pass = false
+  report.errors.push('ego-browser nodejs 未写入浏览器阶段报告')
+}
+report.completedAt = new Date().toISOString()
+writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 })
 EOF
+
+REPORT_PASS="$(node -e 'const r=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));process.stdout.write(r.pass?"1":"0")' "$REPORT_PATH")"
+if [[ "$REPORT_PASS" != '1' && "$BROWSER_STATUS" -eq 0 ]]; then
+  BROWSER_STATUS=1
+fi
+
+TASK_SPACE_PRESENT="$(node -e 'const r=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));process.stdout.write(r.taskSpaceId===null||r.taskSpaceId===undefined?"0":"1")' "$REPORT_PATH")"
+CLEANUP_STATUS=0
+
+if [[ "$TASK_SPACE_PRESENT" == '1' ]]; then
+  node --input-type=module - "$REPORT_PATH" <<'EOF'
+import { readFileSync, writeFileSync } from 'node:fs'
+const reportPath = process.argv[2]
+const report = JSON.parse(readFileSync(reportPath, 'utf8'))
+report.cleanup = {
+  attempted: true,
+  keep: !report.pass,
+  success: null,
+  state: 'pending',
+  result: null,
+  error: null,
+}
+writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 })
+EOF
+
+  set +e
+  {
+    emit_ego_input_prelude
+    cat <<'EOF'
+const fs = await import('node:fs')
+const report = JSON.parse(fs.readFileSync(EGO_INPUT.reportPath, 'utf8'))
+const keep = !report.pass
+
+try {
+  const cleanup = await completeTaskSpace(report.taskSpaceId, { keep })
+  if (!cleanup || cleanup.done !== true) {
+    throw new Error(`completeTaskSpace 未完成: ${JSON.stringify(cleanup ?? null)}`)
+  }
+  report.cleanup = {
+    attempted: true,
+    keep,
+    success: true,
+    state: keep ? 'retained' : 'completed',
+    result: cleanup ?? null,
+    error: null,
+  }
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error)
+  report.pass = false
+  report.errors.push(`task space 清理失败: ${message}`)
+  report.cleanup = {
+    attempted: true,
+    keep,
+    success: false,
+    state: 'failed',
+    result: null,
+    error: message,
+  }
+  process.exitCode = 1
+}
+
+report.completedAt = new Date().toISOString()
+fs.writeFileSync(EGO_INPUT.reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 })
+cliLog(JSON.stringify({ runId: report.runId, taskSpaceCleanup: report.cleanup }, null, 2))
+EOF
+  } | ego-browser nodejs >> "$LOG_PATH" 2>&1
   CLEANUP_STATUS=$?
-  # A retained failed task is intentional; only a successful-run cleanup error
-  # should change an otherwise successful result.
-  if [[ $STATUS -eq 0 && "$CLEANUP_STATUS" -ne 0 ]]; then STATUS=$CLEANUP_STATUS; fi
+  set -e
+
+  if [[ "$CLEANUP_STATUS" -ne 0 ]]; then
+    node --input-type=module - "$REPORT_PATH" "$CLEANUP_STATUS" <<'EOF'
+import { readFileSync, writeFileSync } from 'node:fs'
+const [reportPath, rawStatus] = process.argv.slice(2)
+const report = JSON.parse(readFileSync(reportPath, 'utf8'))
+const status = Number(rawStatus)
+const message = `task space 清理子进程失败（exit ${status}）`
+report.pass = false
+if (!report.errors.some((entry) => entry.startsWith('task space 清理失败:'))) report.errors.push(message)
+report.cleanup = {
+  ...report.cleanup,
+  attempted: true,
+  success: false,
+  state: 'failed',
+  error: report.cleanup?.error || message,
+}
+report.completedAt = new Date().toISOString()
+writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 })
+EOF
+  fi
 fi
 
-if [[ $STATUS -ne 0 ]]; then
-  echo "✗ ego-browser 验收失败（证据: $EVIDENCE_DIR；失败空间将保留）" >&2
-  exit "$STATUS"
+FINAL_STATUS="$BROWSER_STATUS"
+if [[ "$FINAL_STATUS" -eq 0 && "$CLEANUP_STATUS" -ne 0 ]]; then
+  FINAL_STATUS="$CLEANUP_STATUS"
 fi
 
-node --input-type=module - "$REPORT_PATH" "$EVIDENCE_DIR" <<'EOF'
-import { existsSync, readFileSync } from 'node:fs'
+set +e
+node --input-type=module - "$REPORT_PATH" "$EVIDENCE_DIR" "$FINAL_STATUS" <<'EOF'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-const report = JSON.parse(readFileSync(process.argv[2], 'utf8'))
-const evidenceDir = process.argv[3]
+
+const [reportPath, evidenceDir, rawStatus] = process.argv.slice(2)
+const processStatus = Number(rawStatus)
+const report = JSON.parse(readFileSync(reportPath, 'utf8'))
 const screenshot = report.screenshot && join(evidenceDir, report.screenshot)
-const errors = []
-if (!report.pass || report.tool !== 'ego-browser') errors.push('报告结论或工具不正确')
-if (!report.taskSpaceId) errors.push('缺少 task space id')
-if (!/^https?:\/\//.test(report.actualUrl || '')) errors.push('缺少真实 L2 URL')
-if (!report.actualUrl || !/:(44(?:2[0-9]{2}))\b/.test(report.actualUrl)) errors.push('实际 URL 不在 L2 端口池')
-if (!(report.snapshot || '').trim()) errors.push('缺少 snapshotText 证据')
-if (!report.dom || typeof report.dom.bodyTextLength !== 'number') errors.push('缺少 DOM 断言证据')
-if (!report.screenshot || !existsSync(screenshot)) errors.push('缺少截图工件')
-if (errors.length) {
-  console.error(`✗ ego-browser 报告不完整: ${errors.join('；')}`)
+const structuralErrors = []
+
+if (!report.runId) structuralErrors.push('缺少 run id')
+if (!report.commitSha) structuralErrors.push('缺少 commit SHA')
+if (typeof report.requestedUrl !== 'string') structuralErrors.push('缺少请求 URL')
+if (!Array.isArray(report.errors)) structuralErrors.push('errors 不是数组')
+if (!report.cleanup || typeof report.cleanup.state !== 'string') structuralErrors.push('缺少 task space 清理状态')
+
+if (processStatus === 0) {
+  if (!report.pass || report.tool !== 'ego-browser') structuralErrors.push('报告结论或工具不正确')
+  if (report.taskSpaceId === null || report.taskSpaceId === undefined) structuralErrors.push('缺少 task space id')
+  if (!/^https?:\/\//.test(report.actualUrl || '')) structuralErrors.push('缺少真实 L2 URL')
+  if (!report.actualUrl || !/:442\d{2}\b/.test(report.actualUrl)) structuralErrors.push('实际 URL 不在 L2 端口池')
+  if (!(report.snapshot || '').trim()) structuralErrors.push('缺少 snapshotText 证据')
+  if (!report.dom || typeof report.dom.bodyTextLength !== 'number') structuralErrors.push('缺少 DOM 断言证据')
+  if (!report.screenshot || !existsSync(screenshot)) structuralErrors.push('缺少截图工件')
+  if (!report.cleanup.success || report.cleanup.state !== 'completed' || report.cleanup.keep !== false) {
+    structuralErrors.push('成功任务未完成 task space 清理')
+  }
+} else {
+  if (report.pass) structuralErrors.push('失败进程被报告为通过')
+  if (report.errors.length === 0) structuralErrors.push('失败报告没有错误')
+  if (report.taskSpaceId !== null && report.taskSpaceId !== undefined && report.cleanup.state !== 'retained' && report.cleanup.state !== 'failed') {
+    structuralErrors.push('失败 task space 未保留或记录清理失败')
+  }
+}
+
+if (structuralErrors.length) {
+  report.pass = false
+  for (const message of structuralErrors) {
+    const entry = `报告不完整: ${message}`
+    if (!report.errors.includes(entry)) report.errors.push(entry)
+  }
+  report.completedAt = new Date().toISOString()
+  writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 })
+  console.error(`✗ ego-browser 报告不完整: ${structuralErrors.join('；')}`)
   process.exit(1)
 }
-console.log(`✓ ego-browser evidence: task=${report.taskSpaceId} url=${report.actualUrl} screenshot=${screenshot}`)
+
+if (processStatus === 0) {
+  console.log(`✓ ego-browser evidence: run=${report.runId} task=${report.taskSpaceId} url=${report.actualUrl} screenshot=${screenshot}`)
+} else {
+  console.error(`✗ ego-browser run=${report.runId} failed: ${report.errors.join('；')}`)
+}
 EOF
+VALIDATION_STATUS=$?
+set -e
+
+if [[ "$VALIDATION_STATUS" -ne 0 && "$FINAL_STATUS" -eq 0 ]]; then
+  FINAL_STATUS="$VALIDATION_STATUS"
+fi
+
+if [[ "$FINAL_STATUS" -ne 0 ]]; then
+  echo "✗ ego-browser 验收失败（证据: ${EVIDENCE_DIR}；失败空间将保留）" >&2
+  exit "$FINAL_STATUS"
+fi
