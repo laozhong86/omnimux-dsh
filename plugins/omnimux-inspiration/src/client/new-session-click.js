@@ -29,13 +29,6 @@ function resolveDoc(doc) {
   return typeof document !== 'undefined' ? document : null
 }
 
-function resolveWindow(doc, win) {
-  if (win) return win
-  if (doc && doc.defaultView) return doc.defaultView
-  if (typeof window !== 'undefined') return window
-  return undefined
-}
-
 function isVisible(el) {
   if (!el) return false
   if (typeof el.getClientRects !== 'function') return true
@@ -153,20 +146,11 @@ export function findNewSessionMenuItem(doc) {
   return queryMenuItems(doc).find((el) => isNewSessionMenuItem(el)) || null
 }
 
-function clickIfPossible(el) {
+function clickIfPossible(el, beforeClick) {
   if (!el || typeof el.click !== 'function') return false
+  if (typeof beforeClick === 'function') beforeClick()
   el.click()
   return true
-}
-
-function readActiveSessionId(win) {
-  const getter = win && win.__omnimuxAttachments && win.__omnimuxAttachments.getActiveSessionId
-  if (typeof getter !== 'function') return ''
-  try {
-    return String(getter.call(win.__omnimuxAttachments) || '')
-  } catch {
-    return ''
-  }
 }
 
 function sessionSnapshot(sessions) {
@@ -194,12 +178,6 @@ function resolvedOfficialTarget(sessions, beforeId) {
   }
 }
 
-function resolvedAttachmentTarget(win, beforeId) {
-  const afterId = readActiveSessionId(win)
-  if (!afterId || afterId === 'default' || afterId === beforeId) return null
-  return { ok: true, sessionId: afterId }
-}
-
 /**
  * Only `button.click()` / menuitem.click(). Never the sessions API.
  * Collapsed rail: click the already-open session menuitem, or click the
@@ -209,7 +187,7 @@ function resolvedAttachmentTarget(win, beforeId) {
  *   window?: unknown,
  *   now?: () => number,
  *   sleep?: (ms: number) => Promise<void>,
- *   sessions?: { list?: { getSnapshot?: () => unknown } },
+ *   sessions?: { list?: { getSnapshot?: () => unknown, subscribe?: (listener: () => void) => (() => void) } },
  *   timeoutMs?: number,
  *   pollMs?: number,
  * }} [opts]
@@ -217,7 +195,6 @@ function resolvedAttachmentTarget(win, beforeId) {
  */
 export async function clickOfficialNewSession(opts = {}) {
   const doc = resolveDoc(opts.document)
-  const win = resolveWindow(doc, opts.window)
   const sessions = opts.sessions || officialSessions
   const timeoutMs = Number.isFinite(opts.timeoutMs) ? opts.timeoutMs : NEW_SESSION_WAIT_MS
   const pollMs = Number.isFinite(opts.pollMs) ? opts.pollMs : NEW_SESSION_POLL_MS
@@ -225,47 +202,62 @@ export async function clickOfficialNewSession(opts = {}) {
   const sleep = typeof opts.sleep === 'function'
     ? opts.sleep
     : (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-  const beforeId = sessionSnapshot(sessions)?.current || readActiveSessionId(win)
-  const hasOfficialCurrent = Boolean(sessionSnapshot(sessions)?.current)
-  let clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
-
-  if (!clickedMenu) {
-    // The generic action clears selection when this L2 runtime has neither a
-    // current session nor a projected recent workspace. Its single visible
-    // workspace control is the official explicit-target action and therefore
-    // the only reliable product-equivalent gesture for this baseline.
-    const button = !hasOfficialCurrent
-      ? (findSingleWorkspaceNewSessionButton(doc) || findNewSessionButton(doc))
-      : findNewSessionButton(doc)
-    if (!button || typeof button.click !== 'function') {
-      return { ok: false, error: 'newSessionFailed' }
-    }
-    button.click()
-    // Menu may open synchronously (collapsed rail interceptor).
-    clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
+  const list = sessions?.list
+  if (!list || typeof list.getSnapshot !== 'function' || typeof list.subscribe !== 'function') {
+    return { ok: false, error: 'newSessionFailed' }
   }
+  const beforeId = sessionSnapshot(sessions)?.current || ''
+  const hasOfficialCurrent = Boolean(beforeId)
+  let directActionPending = false
+  let menuActionDispatched = false
+  let observedTarget = null
+  const unsubscribe = list.subscribe(() => {
+    if (!directActionPending && !menuActionDispatched) return
+    observedTarget = resolvedOfficialTarget(sessions, beforeId)
+  })
+  const dispatchMenu = (el) => clickIfPossible(el, () => { menuActionDispatched = true })
+  const dispatchButton = (el) => clickIfPossible(el, () => { directActionPending = true })
 
-  const started = now()
-  while (now() - started < timeoutMs) {
+  try {
+    let clickedMenu = dispatchMenu(findNewSessionMenuItem(doc))
     if (!clickedMenu) {
-      clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
+      // The generic action clears selection when this L2 runtime has neither a
+      // current session nor a projected recent workspace. Its single visible
+      // workspace control is the official explicit-target action and therefore
+      // the only reliable product-equivalent gesture for this baseline.
+      const button = !hasOfficialCurrent
+        ? (findSingleWorkspaceNewSessionButton(doc) || findNewSessionButton(doc))
+        : findNewSessionButton(doc)
+      if (!button || typeof button.click !== 'function') {
+        return { ok: false, error: 'newSessionFailed' }
+      }
+      dispatchButton(button)
+      // Menu may open synchronously (collapsed rail interceptor).
+      const menuItem = findNewSessionMenuItem(doc)
+      if (menuItem) {
+        // The button was a menu opener, not the session action. Discard any
+        // selection projection it observed and wait for the menuitem gesture.
+        directActionPending = false
+        observedTarget = null
+        clickedMenu = dispatchMenu(menuItem)
+      }
     }
-    const officialTarget = resolvedOfficialTarget(sessions, beforeId)
-    if (officialTarget) return officialTarget
-    // Compatibility only for runtimes predating the public `sessions` seam.
-    // Once the official seam is present, never infer success from attachments.
-    if (!sessions) {
-      const attachmentTarget = resolvedAttachmentTarget(win, beforeId)
-      if (attachmentTarget) return attachmentTarget
-    }
-    await sleep(pollMs)
-  }
 
-  const officialTarget = resolvedOfficialTarget(sessions, beforeId)
-  if (officialTarget) return officialTarget
-  if (!sessions) {
-    const attachmentTarget = resolvedAttachmentTarget(win, beforeId)
-    if (attachmentTarget) return attachmentTarget
+    const started = now()
+    while (now() - started < timeoutMs) {
+      if (!clickedMenu) {
+        const menuItem = findNewSessionMenuItem(doc)
+        if (menuItem) {
+          directActionPending = false
+          observedTarget = null
+          clickedMenu = dispatchMenu(menuItem)
+        }
+      }
+      if (observedTarget) return observedTarget
+      await sleep(pollMs)
+    }
+    return observedTarget || { ok: false, error: 'newSessionFailed' }
+  } finally {
+    try { unsubscribe() } catch { /* public-store cleanup */ }
   }
-  return { ok: false, error: 'newSessionFailed' }
 }

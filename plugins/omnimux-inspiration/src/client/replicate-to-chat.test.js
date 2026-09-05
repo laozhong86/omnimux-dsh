@@ -50,9 +50,13 @@ function makeIo(overrides = {}) {
       attaches.push({ sessionId, payload })
       return { ok: true }
     },
-    async prefillPrompt(text) {
-      prefills.push(text)
-      return { ok: true, via: 'prefill' }
+    async prefillPrompt(request) {
+      prefills.push(request.prompt)
+      const attachment = request.attach()
+      if (attachment?.ok === true) return { ok: true, via: 'prefill' }
+      if (attachment?.reason === 'duplicate') return { ok: true, via: 'prefill', duplicate: true }
+      if (attachment?.reason === 'quota-exceeded') return { ok: false, error: 'attach-full' }
+      return { ok: false, error: 'attach-failed' }
     },
     revealConversation() {
       reveals.push(1)
@@ -341,7 +345,7 @@ describe('oneClickReplicate', () => {
     assert.deepEqual(io.status.at(-1), 'card.cta.draftProtected')
   })
 
-  it('fallback attachment event carries the returned new session id', async () => {
+  it('fails explicitly when the official attachment store is unavailable', async () => {
     const events = []
     const win = {
       CustomEvent: class CustomEvent {
@@ -358,11 +362,8 @@ describe('oneClickReplicate', () => {
     const io = makeIo({ window: win })
     delete io.addAttachment
     const result = await oneClickReplicate(ROW, io)
-    assert.equal(result.ok, true)
-    assert.equal(events.length, 1)
-    assert.equal(events[0].type, 'omnimux:add-to-conversation')
-    assert.equal(events[0].detail.sessionId, 'sess-new')
-    assert.equal(events[0].detail.entityId, 'insp-1')
+    assert.deepEqual(result, { ok: false, error: 'attachFailed' })
+    assert.deepEqual(events, [])
   })
 
   it('second concurrent click returns busy and does not queue', async () => {

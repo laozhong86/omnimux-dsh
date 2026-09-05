@@ -2,7 +2,7 @@
 title: "灵感库「一键复刻」：官方新会话语义增量系统设计"
 id: "spec-inspiration-one-click-replicate"
 type: "spec"
-status: "accepted"
+status: "superseded"
 authority: "L2"
 date: "2026-09-04"
 authors: ["高见远"]
@@ -22,6 +22,8 @@ supersedes:
 ---
 
 # 灵感库「一键复刻」：官方新会话语义增量系统设计
+
+> **历史稿，全文已被替代。** 当前实现及验收以 [#552 当前设计](2026-09-05-inspiration-replicate-dismiss-reversal-design.md) 为准。下文的 DOM 空白判定、全局编辑器写入、关闭库页与附件先写规则不再生效。
 
 > **需求更正（#552，已批准）**：本稿中所有「空白会话复用」「仅非空会话点击新会话」「无会话直接报 noSession」「附件回退到 `default`」及「成功后关闭灵感库」的表述均已失效。CTA 无论当前会话状态都必须走一次官方新会话动作，且只在返回的新 session id 上挂附件并预填；动作失败或未返回新 id 时不得向旧会话或 `default` 添加附件。灵感库 Tab 保留，链路只 reveal 中间会话栏，不触碰画布。
 

@@ -2,7 +2,7 @@
 title: "灵感库卡片 CTA：加会话 → 一键复刻（增量 PRD）"
 id: "prd-inspiration-one-click-replicate"
 type: "prd"
-status: "draft"
+status: "superseded"
 authority: "L2"
 date: "2026-09-03"
 updated: "2026-09-04"
@@ -22,6 +22,8 @@ supersedes:
 ---
 
 # 灵感库卡片 CTA：加会话 → 一键复刻（增量 PRD）
+
+> **历史稿，全文已被替代。** 当前产品约束、精确提示词、官方空白会话复用及草稿保护以 [#552 当前设计](2026-09-05-inspiration-replicate-dismiss-reversal-design.md) 为准。下文保留需求演变记录，不再用于实施或验收；其中新 ID 必须变化、DOM 整框覆盖、附件失败仍预填等要求均不适用。
 
 > 作者：许清楚（产品）  
 > 输入：用户原话（最高优先级）+ 本轮已拍板（含 2026-09-04 新会话语义）+ 现网 Inspect  

@@ -11,6 +11,13 @@ import {
 
 afterEach(() => resetSessionPrefill())
 
+function queue(request) {
+  return queueSessionPrefill({
+    ...request,
+    attach: request.attach || (() => ({ ok: true })),
+  })
+}
+
 describe('session-scoped replication prefill', () => {
   it('registers in the official input dock, which remains mounted for a blank-session Hero', () => {
     const source = readFileSync(new URL('./index.js', import.meta.url), 'utf8')
@@ -29,7 +36,7 @@ describe('session-scoped replication prefill', () => {
 
   it('writes one exact prompt through target inputActions only', async () => {
     const prompt = '/video-deconstruct\n\n完整正文'
-    const completion = queueSessionPrefill({ targetSessionId: 'new-session', prompt })
+    const completion = queue({ targetSessionId: 'new-session', prompt })
     const writes = []
 
     assert.equal(consumeSessionPrefill(getPendingSessionPrefill(), {
@@ -53,7 +60,12 @@ describe('session-scoped replication prefill', () => {
   })
 
   it('protects an existing target draft without attaching replacement text', async () => {
-    const completion = queueSessionPrefill({ targetSessionId: 'blank-reused', prompt: '/video-deconstruct\n\n正文' })
+    let attachmentWrites = 0
+    const completion = queue({
+      targetSessionId: 'blank-reused',
+      prompt: '/video-deconstruct\n\n正文',
+      attach() { attachmentWrites += 1; return { ok: true } },
+    })
     const writes = []
     assert.equal(consumeSessionPrefill(getPendingSessionPrefill(), {
       sessionId: 'blank-reused',
@@ -62,10 +74,37 @@ describe('session-scoped replication prefill', () => {
     }), 'protected')
     assert.deepEqual(await completion, { ok: false, error: 'draft-protected' })
     assert.deepEqual(writes, [])
+    assert.equal(attachmentWrites, 0)
+  })
+
+  it('keeps the draft empty after an attachment-full failure so a retry can complete', async () => {
+    let attachmentCount = 8
+    let draft = ''
+    const slot = {
+      sessionId: 'new-session',
+      get draft() { return draft },
+      inputActions: { setDraft(next) { draft = next } },
+    }
+    const attach = () => {
+      if (attachmentCount >= 8) return { ok: false, reason: 'quota-exceeded' }
+      attachmentCount += 1
+      return { ok: true }
+    }
+
+    const full = queue({ targetSessionId: 'new-session', prompt: '复刻提示词', attach })
+    assert.equal(consumeSessionPrefill(getPendingSessionPrefill(), slot), 'attach-full')
+    assert.deepEqual(await full, { ok: false, error: 'attach-full' })
+    assert.equal(draft, '')
+
+    attachmentCount = 7
+    const retry = queue({ targetSessionId: 'new-session', prompt: '复刻提示词', attach })
+    assert.equal(consumeSessionPrefill(getPendingSessionPrefill(), slot), 'consumed')
+    assert.deepEqual(await retry, { ok: true, via: 'input-actions' })
+    assert.equal(draft, '复刻提示词')
   })
 
   it('does not let a delayed old composer consume a newer target intent', async () => {
-    const completion = queueSessionPrefill({ targetSessionId: 'new-session', prompt: '正文' })
+    const completion = queue({ targetSessionId: 'new-session', prompt: '正文' })
     const writes = []
     assert.equal(consumeSessionPrefill(getPendingSessionPrefill(), {
       sessionId: 'old-session', draft: '', inputActions: { setDraft(next) { writes.push(next) } },
@@ -89,14 +128,14 @@ describe('session-scoped replication prefill', () => {
       })
     })
 
-    const completion = queueSessionPrefill({ targetSessionId: 'mounted-target', prompt: '挂载后排队' })
+    const completion = queue({ targetSessionId: 'mounted-target', prompt: '挂载后排队' })
     assert.deepEqual(await completion, { ok: true, via: 'input-actions' })
     assert.deepEqual(writes, ['挂载后排队'])
     unsubscribe()
   })
 
   it('expires an unconsumed intent and ignores its stale target afterward', async () => {
-    const completion = queueSessionPrefill({
+    const completion = queue({
       targetSessionId: 'expired-target',
       prompt: '超时不应再写入',
       timeoutMs: 0,
@@ -115,7 +154,7 @@ describe('session-scoped replication prefill', () => {
   })
 
   it('fails safely when target inputActions are unavailable', async () => {
-    const completion = queueSessionPrefill({ targetSessionId: 'new-session', prompt: '正文' })
+    const completion = queue({ targetSessionId: 'new-session', prompt: '正文' })
     assert.equal(consumeSessionPrefill(getPendingSessionPrefill(), {
       sessionId: 'new-session', draft: '', inputActions: undefined,
     }), 'rejected')
@@ -123,8 +162,8 @@ describe('session-scoped replication prefill', () => {
   })
 
   it('releases a busy CTA when the scoped prefill fails', async () => {
-    const first = queueSessionPrefill({ targetSessionId: 'first', prompt: '一' })
-    const second = queueSessionPrefill({ targetSessionId: 'second', prompt: '二' })
+    const first = queue({ targetSessionId: 'first', prompt: '一' })
+    const second = queue({ targetSessionId: 'second', prompt: '二' })
     assert.deepEqual(await first, { ok: false, error: 'composer-rejected' })
     assert.equal(consumeSessionPrefill(getPendingSessionPrefill(), {
       sessionId: 'second', draft: '', inputActions: { setDraft() {} },

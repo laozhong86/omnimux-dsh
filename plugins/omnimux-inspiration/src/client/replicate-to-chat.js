@@ -2,7 +2,7 @@
  * Inspiration → chat orchestrator (official new-session semantics).
  *
  * Pipeline: exclusive lock → clickOfficialNewSession → reveal conversation →
- * session-scoped prefill → addAttachment to the returned new session.
+ * one guarded session-scoped attachment + prefill intent.
  * Never starts a workflow project, never copies text, never clicks send.
  * 灵感库 Tab 永不由此链路关闭（#552 P-1）；画布开关权归用户，本链路完全不触碰（P-3）。
  * CTA 唯一副作用 = 展开中间会话栏（split）+ 预填 prompt（P-2）。
@@ -156,19 +156,11 @@ function resolveNewSessionId(clickResult) {
   return sessionId !== 'default' ? sessionId : ''
 }
 
-function defaultAddAttachment(win, doc) {
+function defaultAddAttachment(win) {
   return (sessionId, payload) => {
     const store = win && win.__omnimuxAttachments
     if (store && typeof store.addAttachment === 'function') {
       return store.addAttachment(sessionId || '', payload)
-    }
-    const target = win || (doc && doc.defaultView) || (typeof window !== 'undefined' ? window : null)
-    if (target && typeof target.dispatchEvent === 'function' && typeof target.CustomEvent === 'function') {
-      const eventName = ['omnimux', 'add-to-conversation'].join(':')
-      target.dispatchEvent(new target.CustomEvent(eventName, {
-        detail: { ...payload, sessionId },
-      }))
-      return { ok: true }
     }
     return { ok: false, reason: 'invalid-payload' }
   }
@@ -192,10 +184,10 @@ export async function oneClickReplicate(row, io = {}) {
     const clickNew = typeof io.clickNewSession === 'function' ? io.clickNewSession : clickOfficialNewSession
     const addAttachment = typeof io.addAttachment === 'function'
       ? io.addAttachment
-      : defaultAddAttachment(win, doc)
+      : defaultAddAttachment(win)
     const prefill = typeof io.prefillPrompt === 'function'
       ? io.prefillPrompt
-      : (prompt) => queueSessionPrefill({ targetSessionId: sessionId, prompt })
+      : queueSessionPrefill
     const reveal = typeof io.revealConversation === 'function'
       ? io.revealConversation
       : () => revealConversationForReplicate({
@@ -234,62 +226,40 @@ export async function oneClickReplicate(row, io = {}) {
       onStatus('card.cta.newSessionFailed')
       return { ok: false, error: 'newSessionFailed' }
     }
-    // Establish that the rendered target has an empty, session-scoped composer
-    // before adding an attachment. A reused blank session may contain an
-    // unsent draft even though its message log is blank; that draft is never
-    // replaced, appended to, or paired with a new attachment.
+    // The input.dock consumer performs the empty-draft guard, attachment write,
+    // and official setDraft in that order. This keeps an attachment failure
+    // retryable: it cannot leave a system-owned prompt in the draft.
     const prompt = buildReplicationPrompt(row)
+    const payload = buildInspirationPayload(row)
     let prefilled
     try {
-      prefilled = await prefill(prompt)
+      prefilled = await prefill({
+        targetSessionId: sessionId,
+        prompt,
+        attach: () => addAttachment(sessionId, payload),
+      })
     } catch {
       onStatus('card.cta.sendManual')
       return { ok: false, error: 'sendManual' }
     }
     if (!prefilled || prefilled.ok !== true) {
-      onStatus(prefilled?.error === 'draft-protected' ? 'card.cta.draftProtected' : 'card.cta.sendManual')
-      return { ok: false, error: prefilled?.error === 'draft-protected' ? 'draftProtected' : 'sendManual' }
-    }
-
-    const payload = buildInspirationPayload(row)
-    let attached = false
-    let duplicate = false
-    let attachResult
-    try {
-      attachResult = addAttachment(sessionId, payload)
-    } catch {
-      onStatus('card.cta.attachFailed')
-      return { ok: false, error: 'attachFailed' }
-    }
-    if (attachResult && typeof attachResult.then === 'function') {
-      try {
-        attachResult = await attachResult
-      } catch {
-        onStatus('card.cta.attachFailed')
-        return { ok: false, error: 'attachFailed' }
-      }
-    }
-
-    const reason = attachResult && attachResult.reason ? String(attachResult.reason) : ''
-    if (attachResult && attachResult.ok === true) {
-      attached = true
-    } else if (reason === 'duplicate') {
-      attached = true
-      duplicate = true
-    } else if (reason === 'quota-exceeded') {
-      onStatus('card.cta.attachFull')
-      return { ok: false, error: 'attachFull' }
-    } else {
-      onStatus('card.cta.attachFailed')
-      return { ok: false, error: 'attachFailed' }
+      const error = prefilled?.error === 'draft-protected'
+        ? 'draftProtected'
+        : prefilled?.error === 'attach-full'
+          ? 'attachFull'
+          : prefilled?.error === 'attach-failed'
+            ? 'attachFailed'
+            : 'sendManual'
+      onStatus(`card.cta.${error}`)
+      return { ok: false, error }
     }
 
     onStatus(null)
     return {
       ok: true,
       clickedNewSession: true,
-      attached,
-      ...(duplicate ? { duplicate: true } : {}),
+      attached: true,
+      ...(prefilled.duplicate ? { duplicate: true } : {}),
     }
   })
 }

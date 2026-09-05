@@ -1,151 +1,74 @@
 ---
-title: 灵感库一键复刻 dismiss/reveal 方向修正 — 增量设计（Issue #552）
-date: 2026-09-05
-author: 高见远（Gao, Architect)
-status: approved-direction / ready-for-engineer
+title: "灵感库一键复刻：会话交接与草稿保护"
+id: "spec-inspiration-replicate-dismiss-reversal"
+type: "spec"
+status: "accepted"
+authority: "L2"
+date: "2026-09-05"
+subsystem: "omnimux-inspiration"
 issue: 552
-supersedes: PR #516 / #529 / #532 的「关闭灵感库」核心假设
+supersedes:
+  - "2026-09-03-inspiration-one-click-replicate-prd.md"
+  - "2026-09-04-inspiration-one-click-replicate-design.md"
 ---
 
-# 灵感库一键复刻 dismiss/reveal 方向修正 — 增量设计
+# 一键复刻：会话交接与草稿保护
 
-## 0. 产品红线（PM PRD，用户已批准，不可协商）
+本文件是 #552 当前产品与实现约束。历史 PRD 和设计中的会话启发式、长提示词、DOM 编辑器写入与关闭灵感库方案均由本文件替代。执行状态与验证版本记录在 `docs/evidence/`，不由规格宣告测试通过。
 
-- **P-1** 灵感库 Tab 不自动关闭 —— 删除 dismiss 里的 `closeTab('omnimux-inspiration:library')`
-- **P-2** CTA 唯一副作用 = 激活中间会话栏 + 预填 prompt
-- **P-3** 画布开关权归用户 —— 灵感库链路不得调用 `closePanel`，也不得 open 画布（完全解耦）
-- **P-4** 灵感库与画布解耦
+## 产品结果
 
-终态：
-- 状态 A（仅灵感库打开）：`[左栏][会话栏(已预填)][灵感库(原样保留，split 宽度)]`
-- 状态 B（灵感库+画布同在右侧面板 tabs）：三栏并存，右侧面板 tabs 由用户自行切换
+点击卡片、预览或详情中的「一键复刻」后，执行一次官方「新会话」动作，展开中间会话栏，并在官方最终选中的空白会话准备一条灵感附件及下面的完整提示词。停在可编辑状态，等待用户发送。
 
-## 1. 关键疑点查证结论（读代码后的确定结论）
+- 灵感库 Tab 保留，不调用 `closeTab`、`closePanel` 或打开画布。
+- 已存在的画布 Tab、节点、边及视口由用户控制。
+- 不创建项目、文件夹或工作区，不调用 workflow 建项目链路。
+- 不自动发送、不写剪贴板、不在点击时安装 skill，也不要求先选择商品。
+- 卡片「查看」只打开预览；三个复刻入口共享同一编排器。
 
-### 疑点 1：focus 模式是否 sticky？不 closeTab 仅 `setConversationCollapsed(false)` + `setFocus('split')` 能否稳定得到终态？
+## 官方目标会话
 
-**结论：能，且 split 是 sticky 的。现有 workbench 状态机没有任何路径会把 focus 打回 gui。**
+任意当前状态都必须执行官方新会话动作。插件通过官方按钮及折叠菜单触发，不直接调用 `sessions.create`。
 
-证据链（`plugins/omnimux/src/client/workbench.js` + `conversation-collapse.js`）：
+官方动作可以创建会话，也可以复用一个合法空白会话；因此目标 ID 不必与点击前不同。插件不得因为点击前的当前会话已经 blank 就跳过动作或提前确认成功。存在多个空白会话时，必须等官方动作最终选定目标，不能把旧 current 当作结果。
 
-1. `wb.setFocus('split')` 即 `setWorkbenchFocus('split', attachedStore)`（L1653 全局 API 映射）。它做了三件事：
-   - 把**当前活跃 tab**（CTA 在灵感库页面内被点击 ⇒ 活跃 tab 必为 `omnimux-inspiration:library`）的 `record.mode` 改写为 `'split'`，并通过 `persistSessionFocus` 持久化到 `localStorage["omnimux-workbench-focus:v1:<sessionId>"]`（L1017–1022）；
-   - 自己内部调用 `setConversationCollapsed(false, { sessionId })`（L1026–1029）——所以 reveal 里显式的 `setConversationCollapsed(false)` 是**冗余但无害**的双保险；
-   - `store.reduce` 写入 `panelOpen: true` + split 宽度（`record.splitWidth ?? workbenchDefaultWidthPx`，并被 `clampSplitPanelWidth` 钳到 split max，保证中间会话栏 ≥360px）（L1034–1056）。
-2. 持久化之后，所有"重算 focus"的入口都读到 split 而非 gui 默认值：
-   - `focusRecordForTab` 只在 `map[tabId]` 不存在时才 seed `resolveDefaultFocus`（L951–956）——记录已存在，默认值不再生效；
-   - `openWorkbench` 优先取 `map[tabId]?.mode`（explicitMode），split 胜过 `resolveDefaultFocus(tabId)`（L1342–1345）——即使用户之后重开灵感库，也以 split 打开（行为变化，见 §5 待明确事项 M-1）；
-   - `attachStore` 只在 `record.mode ∈ {gui, chat}` 时重放 `setWorkbenchFocus(record.mode)`；split 走 `inferWorkbenchFocus` 几何推断，面板宽度刚被写成 split 宽度，推断结果就是 split（L1414–1419）；
-   - `getWorkbenchFocus` 的 sticky-gui 分支要求 `record.mode === 'gui'`（L987–989），不满足；sticky collapse 分支要求 `getConversationCollapsed()` 为真（L991–993），已被置 false。
-3. 唯一会持续运行的几何同步 `syncWorkbenchGuiWidth` 的 `wantsGui = record.mode === 'gui' || getConversationCollapsed()`（L520）为 false → 走 split 钳制分支，**只钳面板宽度，绝不触碰 conversation collapse**（注释明确写了 "Left-rail resize MUST NOT flip middle-pane intent, #372"）。
-4. `conversation-collapse.js` 的 collapsed 是 per-session sticky boolean（内存 + localStorage `omnimux-conversation-collapsed:v1:`），只有 `setWorkbenchFocus('gui')` 会把它打回 true；灵感库链路不再有任何代码调 `setFocus('gui')`。
+会话身份及 blank 状态来自官方 `sessions.list`。标题、消息 DOM 长度、欢迎文案和附件 active ID 都不能替代官方确认。缺失目标、动作失败或超时应提示失败；不向旧会话或 `default` 回退写入。
 
-**唯一残余风险（低）**：`setWorkbenchFocus` 不带 `targetTabId` 时作用于"活跃 tab"。CTA 只在灵感库 tab 可见时可点（非活跃 tab 的 Stage 是 `display:none`），所以活跃 tab 必为灵感库。另：`getWorkbenchFocus` 末尾有 `record.mode = inferred`（L997）的内存改写——仅在 `attachedStore` 缺失导致宽度没写进去时才可能误推 gui；真实 App 中灵感库 Stage mount 时已 `attachStore`（InspirationStage.jsx L21–26），面板打开 ⇒ store 必在，该路径不可达。不需要为此加防御代码。
+## 安全准备
 
-### 疑点 2：0ms/50ms replay 去留？
+目标会话的 `conversation.input.dock` 消费一次性意图。该官方 session-scoped slot 在 blank Hero 和有内容会话的 InputZone 中都会渲染；`conversation.composer.dock` 在 Hero 中不渲染，不可用于此消费者。
 
-**结论：保留，但 replay 的内容从「closeTab + reveal」缩为「仅 reveal」。**
+消费者订阅意图变化，以唤醒已挂载的 composer，并核对目标 session ID。草稿通过官方 `useInput` 读取，预填通过同一会话的 `inputActions.setDraft` 完成，不查询或修改全局 DOM 编辑器。
 
-- 原 replay 针对的竞态注释写得很清楚："Library open() defaults to gui and can re-collapse the middle pane **on the same tick as closeTab**"。该竞态的主体是 closeTab 引发的 subscriber 级联（`closeWorkbenchTab` → 最后一个 workbench tab 关闭时 `closeWorkbenchPanel()` → `setWorkbenchFocus('chat')` → store/subscriber 重新布局）。
-- 删掉 closeTab 后，上述级联整体消失。剩余的同 tick 写入源只有：better-sidebar 自身 openTab/geometry settle、以及 `attachStore`/subscriber 的 `persistClampedSplitWidth`——这些都不写 collapse、不写 mode=gui（疑点 1 已证）。
-- 因此 replay **严格来说不再需要**。但鉴于本链路已因竞态被否决 3 次，且 reveal-only replay 是**纯幂等几何断言**（不再 mutate tab 集合，不持久化任何新状态——split 已在首次调用时持久化），保留 0ms/50ms 两次 reveal 重放的工程成本为零、收益是抵御"CTA 点击恰逢面板几何过渡中"的边角。决策：**保留双 replay，reveal-only**。
+- 目标已有未发送草稿：提示保护，文本与附件均不得改变。
+- 成功：同一官方目标具有精确 prompt 和所选灵感附件；只写一次。
+- 附件满或添加失败：提示失败，不能留下阻断下次重试的系统预填草稿。用户解除附件限制后可再次点击。
+- 目标尚未挂载、意图过期或被替换：不允许延迟的旧 composer 写入，释放 busy 状态。
+- 并发点击：模块锁拒绝第二次请求，不排队制造多次写入。
 
-### 疑点 3：prefill 失败路径的顺序取舍
+展开会话栏使用现有 workbench 的 `setConversationCollapsed(false)` 与 `setFocus('split')`。关闭详情 Modal 仅用于露出会话，不关闭一级库页。会话切换完成后的布局也必须满足可见性要求。
 
-**结论：维持「先 reveal 后 prefill」，并把 reveal 统一上移到 attach 解析之后（覆盖 quota 分支）。不重排为「先 prefill 后 reveal」。**
+## 精确提示词与附件
 
-理由：
-1. **reveal 必须先于 prefill（技术硬约束）**：`conversation-collapse.js` 的 gui 折叠用 CSS `visibility:hidden; pointer-events:none` 隐藏 `[data-slot="conversation"]`。composer DOM 仍 mounted，`findComposer` 能选中，但对 hidden 字段 `focus()` + `execCommand('insertText')` 不可靠（#528 的历史教训，现有注释 L288–289 也记录了这一点）。所以"先 prefill 成功再 reveal"不可行。
-2. **prefill 失败的新 UX 严格优于旧方向**：灵感库原样保留（用户零损失），中间栏已展开且附件卡片已挂上，状态 `card.cta.sendManual` 提示手动发送。合理，无需额外补偿逻辑。
-3. **quota 分支统一**：现代码 quota-exceeded 时 prefill 但**跳过 dismiss**（测试断言 `closes.length === 0`）。新语义下 reveal 不再是"关闭动作"而是"激活会话栏"，quota 分支同样应该 reveal 后再 prefill——否则预填进了隐藏 composer，用户看不见。P-2 的"唯一副作用"对 attach 结果不做区分。改动：把 reveal 调用移到 attach 结果解析之后、quota 分支判断之前。
+`buildReplicationPrompt` 输出以下文本，命令和正文之间恰好两个换行；不追加元数据或额外步骤：
 
-### 疑点 4：测试重写策略
+```text
+/video-deconstruct
 
-`replicate-to-chat.test.js`（18 个测试）处理明细：
-
-**源码级红线断言（isolation describe，新增 3 条）**：
-- `assert.doesNotMatch(source, /closeTab/)` —— P-1
-- `assert.doesNotMatch(source, /closePanel/)` —— P-3
-- `assert.doesNotMatch(source, /createSidebarStore/)` —— 删除 close 兜底路径
-
-**`dismissInspirationLibrary` describe（4 个）→ 整体改写为 `revealConversationForReplicate` describe**：
-
-| 旧测试 | 处置 |
-|---|---|
-| `calls onDismissModal then closeTab with the library tab id` | **改写**：断言 onDismissModal 被调；fake wb 上放 closeTab spy，断言**未被调用**；断言 `collapsed:false` + `focus:split` |
-| `after closeTab unhides the conversation column` | **改写**：调用顺序断言改为 `['collapsed:false','focus:split']`，无 close |
-| `keeps the right panel open (canvas stays) #531` | **改写保留**：fake wb 同时提供 closeTab/closePanel/setFocus spy，断言无 closeTab、无 closePanel、无 focus:chat，有 focus:split |
-| `falls back to createSidebarStore().close when closeTab is missing` | **删除**（兜底路径随 closeTab 一并移除） |
-| （新增）`replay re-asserts reveal only` | **新增**：用计数 spy 断言 0/50ms replay 只重复 collapsed:false + focus:split，全程不触碰 closeTab |
-
-**`oneClickReplicate` describe**：
-
-| 旧测试 | 处置 |
-|---|---|
-| `never invokes startReplication` | 保留不动 |
-| `noSession …` | **删除**：无当前会话同样必须尝试官方新会话；失败时只断言无附件、无 reveal、无预填 |
-| `success uses real dismissInspirationLibrary: closeTab then split` | **改写**：`delete io.dismissLibrary` 改 `delete io.revealConversation`；fake wb 断言无 closeTab/closePanel，有 collapsed:false + focus:split |
-| `dismisses before prefill (#528)` | **改写保留**：更名 `reveals conversation before prefill`，顺序断言 `['reveal','prefill']` 不变 |
-| `blank reuses … 1 closeTab` / `non-blank clicks … +close` | **改写**：空白与非空会话均断言 1 次官方新会话动作、附件目标为返回的新 session id、`io.reveals` 与预填各 1 次；删除 `reused` 返回语义 |
-| `quota-exceeded still prefills but returns attachFull` | **改写**：`reveals.length` 从 0 改为 **1**（对应疑点 3 的 quota 统一 reveal） |
-| `prefill failure after attach still dismisses (#528)` | **改写保留**：更名 `prefill failure still reveals conversation`；断言 sendManual + reveal 1 次 + attach 1 次 + 灵感库未被 close |
-| busy / runExclusive / duplicate 等 | 保留不动（closes→reveals 改名处同步） |
-
-预计测试数 18 → 19（删 1、增 2）。
-
-## 2. 增量改动点清单（精确到函数）
-
-### 文件 1：`plugins/omnimux-inspiration/src/client/replicate-to-chat.js`
-
-| # | 位置 | 改动 |
-|---|---|---|
-| C-1 | 模块头注释（L1–7） | 管线描述改为 `exclusive lock → clickOfficialNewSession → addAttachment（返回的新 session id）→ revealConversationForReplicate → prefillReplicationPrompt`；不检查或复用既有空白会话；补一句红线注释："灵感库 Tab 永不由此链路关闭（#552 P-1），画布开关权归用户（P-3）" |
-| C-2 | `revealConversationColumn(wb)`（L113–121） | 逻辑不变（collapsed:false + focus:split 双保险），更新上方块注释：删除 "AFTER closeTab" 表述，改为 "Enter-conversation: uncollapse + split only. Never closeTab, never closePanel（#552）" |
-| C-3 | `dismissInspirationLibrary(io)`（L129–152） | **重命名为 `revealConversationForReplicate(io)`**。删除 `tabId` 解析、`wb.closeTab(tabId)` 调用、`createSidebarStore` 兜底分支。保留：`onDismissModal` 调用（卡片详情弹窗关闭，与 tab 无关）+ `revealConversationColumn(wb)` + 0/50ms reveal-only replay |
-| C-4 | `INSPIRATION_LIBRARY_TAB_ID` 常量（L13）与 `io.tabId` | 删除（closeTab 移除后成死代码；全仓 grep 确认仅本文件与其测试引用） |
-| C-5 | `oneClickReplicate` io seam（L214–219） | `io.dismissLibrary` → `io.revealConversation`；默认实现改调 `revealConversationForReplicate({ window: win, onDismissModal: io.onDismissModal })` |
-| C-6 | 调用点顺序（L282–302） | reveal 调用从"quota 分支之后、prefill 之前"上移到 **attach 结果解析完成之后立即执行**（quota 与正常分支共用同一次 reveal）；更新 L288–289 注释 |
-
-不改：`runExclusive`/`isReplicateBusy`/`resetReplicateLock`、`pickReplicationPreviewUrl`、`buildInspirationPayload`、`readActiveSessionId`/`resolveAttachSessionId`、`defaultAddAttachment`、状态 key 体系（`card.cta.*`）。
-
-### 文件 2：`plugins/omnimux-inspiration/src/client/replicate-to-chat.test.js`
-
-按疑点 4 表格执行：3 条源码红线断言 + dismiss describe 整体改写 + oneClickReplicate 中 6 个测试改写 + 其余保留。
-
-### 不触碰的文件
-
-- `plugins/omnimux/src/client/workbench.js` / `conversation-collapse.js` —— 状态机已满足需求，零改动（疑点 1 结论）
-- `InspirationStage.jsx` L28–35 的 `handleClose` —— 那是用户点关闭按钮的主动行为，不在红线范围
-- `use-inspiration-feed.js` —— 只传 `onStatus`，io seam 改名不影响它
-- `composer-inject.js`、`replication.js`、`is-blank-session.js`、`new-session-click.js`
-
-## 3. 任务列表（给工程师寇豆码）
-
-| Task ID | 任务名 | 源文件 | 依赖 | 优先级 |
-|---|---|---|---|---|
-| T01 | 编排器改造：删除 closeTab、重命名 reveal、统一 quota reveal | `plugins/omnimux-inspiration/src/client/replicate-to-chat.js`（C-1~C-6 全部） | 无 | P0 |
-| T02 | 测试重写：红线断言 + reveal 语义改写 | `plugins/omnimux-inspiration/src/client/replicate-to-chat.test.js` | T01 | P0 |
-| T03 | 真机探针验收：`pnpm verify:live omnimux-inspiration`，状态 A/状态 B 两幕截图 + `docs/evidence/live-qa-report.json`（状态 A：三栏 `[左栏][会话栏(已预填)][灵感库 split]`；状态 B：灵感库+画布 tabs 并存，点击 CTA 后面板不收、tabs 不丢） | evidence 输出 | T01、T02 | P0 |
-
-```mermaid
-graph LR
-  T01 --> T02 --> T03
+完全复刻原视频脚本和画面，仅将原视频中的商品替换成我的商品、如有口播内容需结合我的商品进行调整（没有则不需要出现口播），同时视频不需要出现字幕，原视频有出镜人物的话，新视频也需要有。复刻后的新脚本的时长需控制在时间范围内。
 ```
 
-## 4. 共享知识 / 跨文件约定
+灵感身份放入附件：`sourcePlugin: 'omnimux-inspiration'`、`kind: 'inspiration'`、`entityId: row.id`、`extension: 'INSPIRATION'`，以及 `metadata.inspiration_id/source_url/source_platform`。附件调用必须带已确认的目标 session ID，并读取添加结果。重复附件视为已存在；满额或无效载荷不能被单向事件广播伪装成成功。
 
-- **workbench 全局 API**：插件只读 `window.__omnimuxWorkbench`，禁止 import `plugins/omnimux` 内部模块。相关方法：`setConversationCollapsed(bool)`、`setFocus('split'|'gui'|'chat')`、`closeTab(tabId)`、`closePanel()`。
-- **focus 状态机事实**（本设计查证，可作为后续维护共识）：
-  - focus record 按 `(sessionId, tabId)` 持久化在 `localStorage["omnimux-workbench-focus:v1:<sessionId>"]`；`resolveDefaultFocus` 只在记录缺失时 seed 一次；
-  - `setFocus('split')` 自带 `setConversationCollapsed(false)`，显式调 collapsed 是冗余双保险；
-  - 左栏 resize 同步（`syncWorkbenchGuiWidth`）永不翻转 conversation collapse（#372 不变量）。
-- **CTA 可见性 ⇒ 灵感库 tab 必为活跃 tab**：非活跃 Stage `display:none`，因此 `setFocus('split')` 不带 targetTabId 是安全的。
-- **reveal 幂等**：reveal-only replay（0/50ms）不 mutate tab 集合、不写新持久化状态，可安全重放。
-- **状态 key 不变**：`card.cta.*` 全套沿用，包括 prefill 失败的 `card.cta.sendManual`。
-- **io seam 命名**：`io.revealConversation`（替代 `io.dismissLibrary`）；`onDismissModal` 保留（只管卡片详情弹窗）。
+## 验收
 
-## 5. Anything UNCLEAR / 待明确事项
+| 场景 | 必须观察的结果 |
+| --- | --- |
+| A：仅灵感库 | 真实 CTA 后目标 composer 有精确 prompt 和一个匹配附件；库页保留、会话栏可见、没有发送。 |
+| B：灵感库与画布共存 | A 的结果成立，两个 Tab 保留，画布节点、边、视口不变。空画布证据不能声称覆盖有内容画布。 |
+| C：空白会话已有 draft | 真实 CTA 提示保护，draft 与附件前后完全相同。 |
+| 多个 blank | 官方异步选择 A、点击前 current B 时，只接受最终的 A；折叠菜单未触发实际动作前不得成功。 |
+| 附件失败后重试 | 首次失败不会污染草稿；解除限制后再次点击可以准备成功。 |
+| 异步切换 | 有内容会话到新空白目标时不写旧 composer，目标会话栏最终可见。 |
 
-- **M-1（行为变化，已在授权范围内，仅备案）**：`setFocus('split')` 会把灵感库 tab 的 focus 持久化为 split。此后用户在该会话**重开**灵感库时默认 split 而非全屏 gui。这与终态 A 一致，且用户可拖分屏条调整；若 PM 希望"每次重开都回全屏"，需要额外的"一次性 reveal 不持久化"机制（workbench 侧新 API），本期不做。
-- **M-2**：状态 B 下若用户把画布 tab 切为活跃后，灵感库 reveal 写入的 split 记录挂在灵感库 tab 上；切回灵感库 tab 时 panel 宽度按灵感库 record 恢复（split 宽度）——符合"tabs 由用户自行切换"预期。
-- 无其他阻塞项。
+先执行相关单测、构建及 slot/stage 门禁，再在专属 L2 用内置浏览器驱动真实 CTA。证据记录提交 SHA、源树、服务端版本、页面及 DOM 前后状态。历史截图和单测通过不能代替当前版本浏览器结果。合并后的共享 Dev App 交付走统一物化入口与 `verify:live`，由来源任务协调窗口；生产不在本任务范围内。

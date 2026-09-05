@@ -11,14 +11,15 @@ const listeners = new Set()
 const DEFAULT_TIMEOUT_MS = 6000
 
 /**
- * @param {{ targetSessionId: string, prompt: string, timeoutMs?: number }} request
- * @returns {Promise<{ ok: true, via: 'input-actions' } | { ok: false, error: 'draft-protected' | 'composer-missing' | 'composer-rejected' }>}
+ * @param {{ targetSessionId: string, prompt: string, attach: () => unknown, timeoutMs?: number }} request
+ * @returns {Promise<{ ok: true, via: 'input-actions', duplicate?: boolean } | { ok: false, error: 'draft-protected' | 'composer-missing' | 'composer-rejected' | 'attach-full' | 'attach-failed' }>}
  */
 export function queueSessionPrefill(request) {
   const targetSessionId = String(request?.targetSessionId ?? '')
   const prompt = String(request?.prompt ?? '')
+  const attach = typeof request?.attach === 'function' ? request.attach : null
   const timeoutMs = Number.isFinite(request?.timeoutMs) ? Math.max(0, request.timeoutMs) : DEFAULT_TIMEOUT_MS
-  if (!targetSessionId || targetSessionId === 'default' || !prompt) {
+  if (!targetSessionId || targetSessionId === 'default' || !prompt || !attach) {
     return Promise.resolve({ ok: false, error: 'composer-missing' })
   }
 
@@ -27,6 +28,7 @@ export function queueSessionPrefill(request) {
     const intent = {
       targetSessionId,
       prompt,
+      attach,
       resolve,
       timer: setTimeout(() => finishIntent(intent, { ok: false, error: 'composer-missing' }), timeoutMs),
     }
@@ -49,9 +51,9 @@ export function subscribeSessionPrefill(listener) {
 /**
  * Testable official-slot decision. `inputActions` belongs to the slot's
  * rendered session, so a match proves the target and current session agree.
- * @param {{ targetSessionId: string, prompt: string, resolve: Function, timer: ReturnType<typeof setTimeout> } | null} intent
+ * @param {{ targetSessionId: string, prompt: string, attach: () => unknown, resolve: Function, timer: ReturnType<typeof setTimeout> } | null} intent
  * @param {{ sessionId?: string, draft?: string, inputActions?: { setDraft?: (draft: string) => void } }} slot
- * @returns {'waiting' | 'consumed' | 'protected' | 'rejected'}
+ * @returns {'waiting' | 'consumed' | 'protected' | 'rejected' | 'attach-full' | 'attach-failed'}
  */
 export function consumeSessionPrefill(intent, slot) {
   if (!intent || pendingIntent !== intent) return 'waiting'
@@ -64,9 +66,30 @@ export function consumeSessionPrefill(intent, slot) {
     finishIntent(intent, { ok: false, error: 'composer-rejected' })
     return 'rejected'
   }
+  let attachment
+  try {
+    attachment = intent.attach()
+  } catch {
+    finishIntent(intent, { ok: false, error: 'attach-failed' })
+    return 'attach-failed'
+  }
+  if (attachment && typeof attachment.then === 'function') {
+    finishIntent(intent, { ok: false, error: 'attach-failed' })
+    return 'attach-failed'
+  }
+  const reason = String(attachment?.reason ?? '')
+  if (attachment?.ok !== true && reason !== 'duplicate') {
+    const error = reason === 'quota-exceeded' ? 'attach-full' : 'attach-failed'
+    finishIntent(intent, { ok: false, error })
+    return error
+  }
   try {
     slot.inputActions.setDraft(intent.prompt)
-    finishIntent(intent, { ok: true, via: 'input-actions' })
+    finishIntent(intent, {
+      ok: true,
+      via: 'input-actions',
+      ...(reason === 'duplicate' ? { duplicate: true } : {}),
+    })
     return 'consumed'
   } catch {
     finishIntent(intent, { ok: false, error: 'composer-rejected' })
