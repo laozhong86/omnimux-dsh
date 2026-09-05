@@ -39,12 +39,15 @@ function setupFixture({
   const home = homeSegment ? join(fixture, homeSegment) : fixture
   const targetHome = l2Task ? join(home, '.dsh-dev', 'tasks', 'client-action') : join(home, targetRelative)
   const profile = join(targetHome, 'profiles', l2Task ? 'omnimux-dev-client-action' : 'omnimux')
+  const managedKit = join(profile, '.materialize-snapshots', 'plugins', 'dsh-ui-kit')
   const events = join(fixture, 'events.log')
   const bin = join(fixture, 'bin')
 
   mkdirSync(scripts, { recursive: true })
   mkdirSync(join(plugin, 'scripts'), { recursive: true })
   mkdirSync(join(kit, 'lib'), { recursive: true })
+  mkdirSync(join(kit, 'node_modules', 'excluded-dependency'), { recursive: true })
+  mkdirSync(join(managedKit, 'lib'), { recursive: true })
   mkdirSync(join(profile, 'node_modules', 'dsh-ui-kit', 'lib'), { recursive: true })
   mkdirSync(join(profile, 'node_modules', 'omnimux-workflow'), { recursive: true })
   mkdirSync(bin, { recursive: true })
@@ -78,8 +81,13 @@ function setupFixture({
     dependencies: { 'dsh-ui-kit': 'file:../../../../personal/dsh-ui-kit' },
   }), 'utf8')
   writeFileSync(join(plugin, 'scripts', 'build-client.mjs'), `${selectedBuild}\n`, 'utf8')
+  writeFileSync(join(kit, 'package.json'), JSON.stringify({ name: 'dsh-ui-kit', version: '1.0.0' }), 'utf8')
   writeFileSync(join(kit, 'lib', 'index.js'), kitSource, 'utf8')
-  writeFileSync(join(profile, 'node_modules', 'dsh-ui-kit', 'lib', 'index.js'), kitTarget, 'utf8')
+  writeFileSync(join(kit, 'source-marker.txt'), 'complete package', 'utf8')
+  writeFileSync(join(kit, 'node_modules', 'excluded-dependency', 'sentinel.txt'), 'must not copy', 'utf8')
+  writeFileSync(join(managedKit, 'package.json'), JSON.stringify({ name: 'dsh-ui-kit', version: '0.0.0' }), 'utf8')
+  writeFileSync(join(managedKit, 'lib', 'index.js'), kitTarget, 'utf8')
+  writeFileSync(join(profile, 'node_modules', 'dsh-ui-kit', 'lib', 'index.js'), 'pnpm output sentinel', 'utf8')
   writeFileSync(join(profile, 'node_modules', 'omnimux-workflow', 'sentinel.txt'), 'unselected plugin', 'utf8')
   writeFileSync(join(profile, 'package.json'), JSON.stringify({ name: 'fixture-profile' }), 'utf8')
 
@@ -90,7 +98,7 @@ function setupFixture({
   writeFileSync(asar, 'asar sentinel', 'utf8')
   writeFileSync(infoPlist, 'plist sentinel', 'utf8')
 
-  return { fixture, home, targetHome, profile, kit, events, bin, preset, asar, infoPlist }
+  return { fixture, home, targetHome, profile, managedKit, kit, events, bin, preset, asar, infoPlist }
 }
 
 function run(fixture, args, extraEnv = {}) {
@@ -126,7 +134,8 @@ describe('sync-to-app named-plugin scope', () => {
     assert.match(result.stdout, /本次命名插件同步未更新预设或应用包/)
     assert.match(events(fixture), /stable:.*omnimux-assets/)
     assert.doesNotMatch(events(fixture), /kit-build|presets:/)
-    assert.equal(readFileSync(join(fixture.profile, 'node_modules', 'dsh-ui-kit', 'lib', 'index.js'), 'utf8'), 'current-kit')
+    assert.equal(readFileSync(join(fixture.managedKit, 'lib', 'index.js'), 'utf8'), 'current-kit')
+    assert.equal(readFileSync(join(fixture.profile, 'node_modules', 'dsh-ui-kit', 'lib', 'index.js'), 'utf8'), 'pnpm output sentinel')
     assert.equal(readFileSync(join(fixture.profile, 'node_modules', 'omnimux-workflow', 'sentinel.txt'), 'utf8'), 'unselected plugin')
     assert.equal(readFileSync(fixture.preset, 'utf8'), 'preset sentinel')
     assert.equal(readFileSync(fixture.asar, 'utf8'), 'asar sentinel')
@@ -141,7 +150,7 @@ describe('sync-to-app named-plugin scope', () => {
     assert.match(result.stderr, /dsh-ui-kit 漂移/)
     assert.match(result.stderr, /完整 yarn omnimux:sync/)
     assert.equal(events(fixture), '')
-    assert.equal(readFileSync(join(fixture.profile, 'node_modules', 'dsh-ui-kit', 'lib', 'index.js'), 'utf8'), 'stale-kit')
+    assert.equal(readFileSync(join(fixture.managedKit, 'lib', 'index.js'), 'utf8'), 'stale-kit')
   })
 
   it('uses the real L2 profile name for a case-sensitive target home', () => {
@@ -159,6 +168,17 @@ describe('sync-to-app named-plugin scope', () => {
 
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
     assert.match(events(fixture), /stable:.*omnimux-assets/)
+  })
+
+  it('rejects a missing managed kit before any named-plugin materialization', () => {
+    const fixture = setupFixture()
+    rmSync(fixture.managedKit, { recursive: true, force: true })
+    const result = run(fixture, ['--skip-build', `--target=${fixture.targetHome}`, 'omnimux-assets'])
+
+    assert.notEqual(result.status, 0)
+    assert.match(result.stderr, /缺少受管 dsh-ui-kit/)
+    assert.match(result.stderr, /官方完整 profile rebuild/)
+    assert.equal(events(fixture), '')
   })
 
   it('keeps selected-plugin build and materialization failures nonzero', () => {
@@ -180,8 +200,12 @@ describe('sync-to-app named-plugin scope', () => {
     const fixture = setupFixture()
     const fullHome = join(fixture.fixture, 'home')
     const fullProfile = join(fullHome, '.omnimux-dev', 'profiles', 'omnimux')
+    const fullManagedKit = join(fullProfile, '.materialize-snapshots', 'plugins', 'dsh-ui-kit')
     mkdirSync(join(fullProfile, 'node_modules', 'dsh-ui-kit', 'lib'), { recursive: true })
-    writeFileSync(join(fullProfile, 'node_modules', 'dsh-ui-kit', 'lib', 'index.js'), 'current-kit', 'utf8')
+    mkdirSync(join(fullManagedKit, 'lib'), { recursive: true })
+    writeFileSync(join(fullManagedKit, 'package.json'), JSON.stringify({ name: 'dsh-ui-kit', version: '0.0.0' }), 'utf8')
+    writeFileSync(join(fullManagedKit, 'lib', 'index.js'), 'stale-kit', 'utf8')
+    writeFileSync(join(fullProfile, 'node_modules', 'dsh-ui-kit', 'lib', 'index.js'), 'pnpm output sentinel', 'utf8')
 
     const result = run(fixture, ['--skip-build'], { HOME: fullHome })
 
@@ -190,5 +214,20 @@ describe('sync-to-app named-plugin scope', () => {
     assert.match(events(fixture), /stable:/)
     assert.match(events(fixture), /presets:/)
     assert.match(result.stdout, /会话预设下拉：已同步/)
+    assert.equal(readFileSync(join(fullManagedKit, 'lib', 'index.js'), 'utf8'), 'current-kit')
+    assert.equal(readFileSync(join(fullManagedKit, 'source-marker.txt'), 'utf8'), 'complete package')
+    assert.equal(existsSync(join(fullManagedKit, 'node_modules')), false)
+    assert.equal(readFileSync(join(fullProfile, 'node_modules', 'dsh-ui-kit', 'lib', 'index.js'), 'utf8'), 'pnpm output sentinel')
+  })
+
+  it('rejects a missing managed kit before full-sync build or profile writes', () => {
+    const fixture = setupFixture()
+    rmSync(fixture.managedKit, { recursive: true, force: true })
+    const result = run(fixture, ['--skip-build', `--target=${fixture.targetHome}`])
+
+    assert.notEqual(result.status, 0)
+    assert.match(result.stderr, /缺少受管 dsh-ui-kit/)
+    assert.match(result.stderr, /官方完整 profile rebuild/)
+    assert.equal(events(fixture), '')
   })
 })

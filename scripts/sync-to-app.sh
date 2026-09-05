@@ -243,8 +243,11 @@ done
 # ---------------------------------------------------------------------------
 # dsh-ui-kit 版本漂移防护 (Issue #200)
 #
-# 策略：物化前先构建 kit，再对目标 profile 副本做 sha256 指纹校验并自动补齐。
+# 策略：node_modules 只由 stable 的 pnpm 输出。完整同步只更新既有受管 kit
+# snapshot；官方完整 Profile rebuild 负责首次建立该 snapshot。
 # ---------------------------------------------------------------------------
+MANAGED_DSH_UI_KIT_RELATIVE_PATH='.materialize-snapshots/plugins/dsh-ui-kit'
+
 if [ -z "${OMNIMUX_DSH_UI_KIT_DIR:-}" ]; then
   for candidate in \
     "$ROOT/../personal/dsh-ui-kit" \
@@ -260,84 +263,75 @@ else
   DSH_UI_KIT_DIR="$OMNIMUX_DSH_UI_KIT_DIR"
 fi
 
-sync_kit_artifact() {
-  local kit_dir="$1" profile="$2"
-  local src="$kit_dir/lib/index.js"
-  local dst="$profile/node_modules/dsh-ui-kit/lib/index.js"
-  [ -f "$dst" ] || return 0
-  if [ -f "$src" ]; then
-    cp -f "$src" "$dst"
-    local extra
-    for extra in index.d.ts index.js.map index.d.ts.map; do
-      [ -f "$kit_dir/lib/$extra" ] && cp -f "$kit_dir/lib/$extra" "$(dirname "$dst")/$extra"
-    done
-    echo "  ✓ 已同步 kit → $profile"
+managed_dsh_ui_kit_dir() {
+  local profile="$1"
+  printf '%s/%s\n' "$profile" "$MANAGED_DSH_UI_KIT_RELATIVE_PATH"
+}
+
+assert_managed_dsh_ui_kit_is_ready() {
+  local profile managed_kit
+  for profile in "${TARGET_PROFILES[@]}"; do
+    managed_kit="$(managed_dsh_ui_kit_dir "$profile")"
+    if [ ! -f "$managed_kit/package.json" ] || [ ! -f "$managed_kit/lib/index.js" ]; then
+      echo "❌ 目标 profile 缺少受管 dsh-ui-kit：${managed_kit}。" >&2
+      echo "   请先通过官方完整 profile rebuild 建立稳定源；本同步不会从 node_modules 或 .ignored 回退。" >&2
+      return 1
+    fi
+  done
+}
+
+materialize_authoritative_dsh_ui_kit() {
+  local profile="$1" managed_kit parent temporary backup=''
+  managed_kit="$(managed_dsh_ui_kit_dir "$profile")"
+  parent="$(dirname "$managed_kit")"
+  temporary="$(mktemp -d "$parent/.dsh-ui-kit.next.XXXXXX")"
+
+  if ! rsync -a --delete --exclude 'node_modules/' "$DSH_UI_KIT_DIR/" "$temporary/"; then
+    rm -rf "$temporary"
+    echo "❌ 无法物化权威 dsh-ui-kit 到 ${managed_kit}。" >&2
+    return 1
   fi
+  if [ ! -f "$temporary/package.json" ] || [ ! -f "$temporary/lib/index.js" ]; then
+    rm -rf "$temporary"
+    echo "❌ 权威 dsh-ui-kit 不完整：需要 package.json 与 lib/index.js。" >&2
+    return 1
+  fi
+
+  backup="$parent/.dsh-ui-kit.previous.$$"
+  mv "$managed_kit" "$backup"
+  if mv "$temporary" "$managed_kit"; then
+    rm -rf "$backup"
+    echo "  ✓ 已物化权威 dsh-ui-kit → ${managed_kit}"
+    return 0
+  fi
+  mv "$backup" "$managed_kit" 2>/dev/null || true
+  rm -rf "$temporary"
+  echo "❌ 无法替换受管 dsh-ui-kit：${managed_kit}。" >&2
+  return 1
 }
 
 ensure_dsh_ui_kit_fresh() {
-  if [ ! -d "$DSH_UI_KIT_DIR" ]; then
-    echo "· 未发现 dsh-ui-kit ($DSH_UI_KIT_DIR)，跳过 kit 校验"
-    return 0
-  fi
-  if [ "${OMNIMUX_SKIP_KIT_BUILD:-0}" = "1" ]; then
-    echo "· OMNIMUX_SKIP_KIT_BUILD=1，跳过 kit 构建校验"
-    return 0
-  fi
-
-  echo "== kit 校验: dsh-ui-kit =="
-  if ! (cd "$DSH_UI_KIT_DIR" && corepack pnpm build >/dev/null 2>&1); then
-    echo "❌ dsh-ui-kit 构建失败，禁止物化（否则插件会消费到残缺 kit）。" >&2
-    echo "   请先在 $DSH_UI_KIT_DIR 修复构建，或设置 OMNIMUX_SKIP_KIT_BUILD=1 旁路。" >&2
+  assert_managed_dsh_ui_kit_is_ready || exit 1
+  if [ ! -f "$DSH_UI_KIT_DIR/package.json" ] || [ ! -f "$DSH_UI_KIT_DIR/lib/index.js" ]; then
+    echo "❌ 权威 dsh-ui-kit 不完整：${DSH_UI_KIT_DIR}。" >&2
+    echo "   请修复权威 source；完整同步不会从已安装 kit 回退。" >&2
     exit 1
   fi
-
-  local store_kit=""
-  if [ -d "$ROOT/node_modules/.pnpm" ]; then
-    store_kit=$(find "$ROOT/node_modules/.pnpm" -maxdepth 4 -type d -name 'dsh-ui-kit' \
-      -path '*node_modules/dsh-ui-kit' 2>/dev/null | head -1 || true)
-  fi
-  if [ -n "$store_kit" ] && [ -f "$store_kit/lib/index.js" ]; then
-    local store_hash
-    store_hash=$(shasum -a 256 "$store_kit/lib/index.js" 2>/dev/null | awk '{print $1}')
-    local src_build_hash
-    src_build_hash=$(shasum -a 256 "$DSH_UI_KIT_DIR/lib/index.js" 2>/dev/null | awk '{print $1}')
-    if [ -n "$src_build_hash" ] && [ "$store_hash" != "$src_build_hash" ]; then
-      echo "  ⚠ pnpm store 中的 kit 已过期，正在刷新（file: 依赖为硬拷贝）…"
-      (cd "$ROOT" && corepack pnpm install --filter omnimux... --filter omnimux-assets... \
-        --filter omnimux-accounts... --filter omnimux-products... --filter omnimux-inspiration... \
-        --filter omnimux-publish... --filter omnimux-analytics... --filter omnimux-workflow... \
-        --filter omnimux-clip... --filter omnimux-market... >/dev/null 2>&1) || \
-      (cd "$ROOT" && corepack pnpm install >/dev/null 2>&1) || {
-        echo "❌ pnpm store 刷新失败，禁止物化。" >&2
-        exit 1
-      }
-      echo "  ✓ pnpm store 已刷新"
-    else
-      echo "  ✓ pnpm store 中的 kit 已是最新"
+  if [ "${OMNIMUX_SKIP_KIT_BUILD:-0}" = "1" ]; then
+    echo "· OMNIMUX_SKIP_KIT_BUILD=1，跳过权威 kit 构建"
+  else
+    echo "== kit 构建: dsh-ui-kit =="
+    if ! (cd "$DSH_UI_KIT_DIR" && corepack pnpm build >/dev/null 2>&1); then
+      echo "❌ dsh-ui-kit 构建失败，禁止物化（否则插件会消费到残缺 kit）。" >&2
+      echo "   请先在 $DSH_UI_KIT_DIR 修复构建。" >&2
+      exit 1
     fi
   fi
 
-  local src="$DSH_UI_KIT_DIR/lib/index.js"
-  local src_hash dst_hash profile drift=0
-  src_hash=$(shasum -a 256 "$src" 2>/dev/null | awk '{print $1}')
-  if [ -z "$src_hash" ]; then
-    echo "· 无法计算 kit 指纹，跳过校验"
-    return 0
-  fi
-
+  local profile
   for profile in "${TARGET_PROFILES[@]}"; do
-    local dst="$profile/node_modules/dsh-ui-kit/lib/index.js"
-    [ -f "$dst" ] || continue
-    dst_hash=$(shasum -a 256 "$dst" 2>/dev/null | awk '{print $1}')
-    if [ "$src_hash" != "$dst_hash" ]; then
-      echo "  ⚠ kit 漂移: $profile"
-      drift=1
-      sync_kit_artifact "$DSH_UI_KIT_DIR" "$profile"
-    fi
+    materialize_authoritative_dsh_ui_kit "$profile" || exit 1
   done
-  [ "$drift" -eq 0 ] && echo "  ✓ 目标 profile 的 kit 与源码一致"
-  return 0
 }
 
 plugin_declares_dsh_ui_kit() {
@@ -369,6 +363,8 @@ assert_dsh_ui_kit_scope_is_ready() {
     return 0
   fi
 
+  assert_managed_dsh_ui_kit_is_ready || exit 1
+
   local source_kit="$DSH_UI_KIT_DIR/lib/index.js"
   if [ ! -f "$source_kit" ]; then
     echo "❌ 命名插件依赖 dsh-ui-kit，但无法读取 ${source_kit}。" >&2
@@ -379,12 +375,7 @@ assert_dsh_ui_kit_scope_is_ready() {
   local source_hash target_hash profile target_kit
   source_hash=$(shasum -a 256 "$source_kit" | awk '{print $1}')
   for profile in "${TARGET_PROFILES[@]}"; do
-    target_kit="$profile/node_modules/dsh-ui-kit/lib/index.js"
-    if [ ! -f "$target_kit" ]; then
-      echo "❌ 命名插件依赖 dsh-ui-kit，但目标 profile 缺少 ${target_kit}。" >&2
-      echo "   单插件同步不会安装或复制 shared kit；请执行无插件参数的完整 yarn omnimux:sync。" >&2
-      exit 1
-    fi
+    target_kit="$(managed_dsh_ui_kit_dir "$profile")/lib/index.js"
     target_hash=$(shasum -a 256 "$target_kit" | awk '{print $1}')
     if [ "$source_hash" != "$target_hash" ]; then
       echo "❌ dsh-ui-kit 漂移: ${profile}。" >&2
@@ -392,7 +383,7 @@ assert_dsh_ui_kit_scope_is_ready() {
       exit 1
     fi
   done
-  echo "  ✓ 命名插件所需 dsh-ui-kit 已就绪（未写 shared kit）"
+  echo "  ✓ 命名插件所需受管 dsh-ui-kit 已就绪（未写 shared kit）"
 }
 
 if [ "$EXPLICIT_PLUGIN_SCOPE" -eq 1 ]; then
