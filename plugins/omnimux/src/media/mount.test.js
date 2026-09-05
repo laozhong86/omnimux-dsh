@@ -10,6 +10,10 @@ const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const MP4 = Buffer.from([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d])
 const MP3 = Buffer.from([0x49, 0x44, 0x33, 0x04, 0x00, 0x00])
 
+function pngData(extra) {
+  return `data:image/png;base64,${Buffer.concat([PNG, Buffer.from([extra])]).toString('base64')}`
+}
+
 describe('mountMedia capability gate', () => {
   it('derives reference metadata from media bytes instead of caller metadata', async () => {
     const image = `data:image/png;base64,${PNG.toString('base64')}`
@@ -54,6 +58,132 @@ describe('mountMedia capability gate', () => {
     assert.equal(tools.length, 1)
     assert.equal(tools[0].name, 'omnimux_video_submit')
     assert.ok(provided.videoGenerate)
+  })
+
+  it('mounts the complete workflow media shape through both tool and seam', async () => {
+    const tools = []
+    const provided = {}
+    const runtimeCalls = []
+    mountMedia({
+      tools: { register(tool) { tools.push(tool) } },
+      provide(name, api) { provided[name] = api },
+    }, {
+      kind: 'video',
+      execute: async (request) => {
+        runtimeCalls.push(request)
+        return { mode: 'live' }
+      },
+      media: {},
+      jsonOut: {},
+    })
+    const workflow = {
+      prompt: 'transition between the frames',
+      dest: '/tmp/omnimux-mounted-shape.mp4',
+      image: 'https://example.com/first.png',
+      image_tail: 'https://example.com/last.png',
+      references: [{ type: 'image', role: 'reference', pathOrUrl: 'https://example.com/reference.png' }],
+      audioTrack: { type: 'audio', role: 'audio_track', pathOrUrl: 'https://example.com/track.mp3' },
+    }
+
+    await tools[0].execute(workflow, {})
+    await provided.videoGenerate.execute(workflow)
+
+    assert.equal(runtimeCalls.length, 2)
+    for (const request of runtimeCalls) {
+      assert.equal(request.image, workflow.image)
+      assert.equal(request.image_tail, workflow.image_tail)
+      assert.deepEqual(request.references, workflow.references)
+      assert.deepEqual(request.audioTrack, workflow.audioTrack)
+    }
+    assert.ok(tools[0].parameters.properties.image_tail)
+    assert.ok(tools[0].parameters.properties.references)
+    assert.ok(tools[0].parameters.properties.audioTrack)
+  })
+
+  it('uses internal video semantics when probing workflow media', async () => {
+    const first = pngData(1)
+    const reference = pngData(2)
+    const last = pngData(3)
+    const audio = `data:audio/mpeg;base64,${MP3.toString('base64')}`
+    const assets = await probeMediaAssets({
+      // These caller fields must not alter the mounted video boundary.
+      capability: 'image',
+      seam: 'imageGenerate',
+      image: first,
+      image_tail: last,
+      references: [{ type: 'image', role: 'reference', pathOrUrl: reference }],
+      audioTrack: { type: 'audio', role: 'audio_track', pathOrUrl: audio },
+    }, { capability: 'video', seam: 'videoGenerate' })
+
+    assert.deepEqual(
+      assets.map(({ type, role, pathOrUrl }) => ({ type, role, pathOrUrl })),
+      [
+        { type: 'image', role: 'reference', pathOrUrl: reference },
+        { type: 'image', role: 'first_frame', pathOrUrl: first },
+        { type: 'image', role: 'last_frame', pathOrUrl: last },
+        { type: 'audio', role: 'audio_track', pathOrUrl: audio },
+      ],
+    )
+  })
+
+  it('submits mounted duplicate image shorthand as the listed multi-reference operation', async () => {
+    const tools = []
+    const provided = {}
+    const runtimeCalls = []
+    const firstReference = pngData(4)
+    const secondReference = pngData(5)
+    const request = {
+      prompt: 'two reference subjects in one scene',
+      dest: '/tmp/omnimux-mounted-multi-ref.mp4',
+      model: 'seedance-2-0-fast',
+      operation: 'video_multi_ref',
+      // Workflow stores the leading reference in image as well as references.
+      image: firstReference,
+      references: [
+        { type: 'image', role: 'reference', pathOrUrl: firstReference },
+        { type: 'image', role: 'reference', pathOrUrl: secondReference },
+      ],
+      duration: 4,
+      resolution: '720P',
+      aspectRatio: '16:9',
+      wait: false,
+    }
+    mountMedia({
+      tools: { register(tool) { tools.push(tool) } },
+      provide(name, api) { provided[name] = api },
+    }, {
+      kind: 'video',
+      execute: (mountedRequest) => executeOmnimuxVideo({
+        ...mountedRequest,
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        fetcher: async () => {
+          throw new Error('network disabled in mounted media guard test')
+        },
+        runtime: {
+          async execute(call) {
+            runtimeCalls.push(call)
+            return { taskId: `task-${runtimeCalls.length}`, outputs: [] }
+          },
+        },
+      }),
+      media: undefined,
+      jsonOut: {},
+    })
+
+    await tools[0].execute(request, {})
+    await provided.videoGenerate.execute(request)
+
+    assert.equal(runtimeCalls.length, 2)
+    for (const call of runtimeCalls) {
+      assert.deepEqual(call.input.reference_images, [
+        { url: firstReference },
+        { url: secondReference },
+      ])
+      assert.equal('image' in call.input, false)
+      assert.equal('image_tail' in call.input, false)
+      assert.equal('references' in call.input, false)
+      assert.equal('audioTrack' in call.input, false)
+    }
   })
 
   it('skips tool and provide when gate.media.video is false', () => {
