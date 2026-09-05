@@ -75,13 +75,14 @@ export function validateAssetAgainstSlot(asset, slot) {
         }),
       }
     }
-    if (!isWithinSizeLimit(asset.sizeBytes, slot.maxSizeMb)) {
+    if (!isWithinSizeLimit(asset.sizeBytes, slot.maxSizeMb, slot.maxSizeExclusive === true)) {
       return {
         ok: false,
         rejection: rejection(GUARD_CODES.SIZE_EXCEEDED, `sizeBytes ${asset.sizeBytes} exceeds slot ${slot.slot} maxSizeMb ${slot.maxSizeMb}`, {
           slot: slot.slot,
           sizeBytes: asset.sizeBytes,
           maxSizeMb: slot.maxSizeMb,
+          maxSizeExclusive: slot.maxSizeExclusive === true,
         }),
       }
     }
@@ -110,6 +111,29 @@ export function validateAssetAgainstSlot(asset, slot) {
     }
   }
 
+  if (typeof slot.minDurationSec === 'number' && Number.isFinite(slot.minDurationSec)) {
+    if (asset.durationSec === undefined || asset.durationSec === null) {
+      return {
+        ok: false,
+        rejection: rejection(GUARD_CODES.METADATA_UNKNOWN, `durationSec unknown for slot ${slot.slot} which declares minDurationSec=${slot.minDurationSec}`, {
+          slot: slot.slot,
+          field: 'durationSec',
+          minDurationSec: slot.minDurationSec,
+        }),
+      }
+    }
+    if (asset.durationSec < slot.minDurationSec) {
+      return {
+        ok: false,
+        rejection: rejection(GUARD_CODES.DURATION_EXCEEDED, `durationSec ${asset.durationSec} is below slot ${slot.slot} minimum ${slot.minDurationSec}`, {
+          slot: slot.slot,
+          durationSec: asset.durationSec,
+          minDurationSec: slot.minDurationSec,
+        }),
+      }
+    }
+  }
+
   return { ok: true }
 }
 
@@ -117,7 +141,7 @@ export function validateAssetAgainstSlot(asset, slot) {
  * Greedy assign assets → slots. Does not fold everything into reference.
  * @param {object} op
  * @param {import('./normalize.js').LogicalAsset[]} assets
- * @param {{ prompt?: string }} [ctx]
+ * @param {{ prompt?: string, duration?: number }} [ctx]
  * @returns {{
  *   ok: boolean,
  *   bindings: Array<{ slot: string, role?: string, type: string, pathOrUrl: string, asset: import('./normalize.js').LogicalAsset }>,
@@ -266,6 +290,75 @@ export function assignAndValidateSlots(op, assets, ctx = {}) {
             current: count,
           }),
         )
+      }
+
+      const bucket = assigned.get(slot) ?? []
+      const hasTotalDurationConstraint =
+        typeof slot.totalMinDurationSec === 'number'
+        || typeof slot.totalMaxDurationSec === 'number'
+      if (bucket.length > 0 && hasTotalDurationConstraint) {
+        if (bucket.some((asset) => typeof asset.durationSec !== 'number' || !Number.isFinite(asset.durationSec))) {
+          rejections.push(rejection(GUARD_CODES.METADATA_UNKNOWN, `durationSec unknown for slot ${slot.slot} total-duration validation`, {
+            slot: slot.slot,
+            field: 'durationSec',
+          }))
+          continue
+        }
+        const total = bucket.reduce((sum, asset) => sum + asset.durationSec, 0)
+        if (
+          typeof slot.totalMinDurationSec === 'number'
+          && (slot.totalMinExclusive ? total <= slot.totalMinDurationSec : total < slot.totalMinDurationSec)
+        ) {
+          rejections.push(rejection(GUARD_CODES.DURATION_EXCEEDED, `slot ${slot.slot} total duration ${total}s is below the documented minimum`, {
+            slot: slot.slot,
+            totalDurationSec: total,
+            totalMinDurationSec: slot.totalMinDurationSec,
+            exclusive: slot.totalMinExclusive === true,
+          }))
+        }
+        if (
+          typeof slot.totalMaxDurationSec === 'number'
+          && (slot.totalMaxExclusive ? total >= slot.totalMaxDurationSec : total > slot.totalMaxDurationSec)
+        ) {
+          rejections.push(rejection(GUARD_CODES.DURATION_EXCEEDED, `slot ${slot.slot} total duration ${total}s exceeds the documented maximum`, {
+            slot: slot.slot,
+            totalDurationSec: total,
+            totalMaxDurationSec: slot.totalMaxDurationSec,
+            exclusive: slot.totalMaxExclusive === true,
+          }))
+        }
+        if (
+          typeof slot.combinedOutputMaxDurationSec === 'number'
+          && typeof ctx.duration === 'number'
+          && Number.isFinite(ctx.duration)
+          && ctx.duration >= 0
+          && total + ctx.duration > slot.combinedOutputMaxDurationSec
+        ) {
+          rejections.push(rejection(
+            GUARD_CODES.DURATION_EXCEEDED,
+            `slot ${slot.slot} input duration ${total}s plus output duration ${ctx.duration}s exceeds the documented maximum`,
+            {
+              slot: slot.slot,
+              totalDurationSec: total,
+              outputDurationSec: ctx.duration,
+              combinedOutputMaxDurationSec: slot.combinedOutputMaxDurationSec,
+            },
+          ))
+        }
+      }
+    }
+
+    for (const group of op.inputGroups ?? []) {
+      const count = (group.slots ?? []).reduce(
+        (sum, slotName) => sum + (bySlot.get(slotName)?.length ?? 0),
+        0,
+      )
+      if (count < group.min) {
+        rejections.push(rejection(GUARD_CODES.MIN_UNSATISFIED, group.hint || `input group needs min ${group.min}, got ${count}`, {
+          slots: [...(group.slots ?? [])],
+          min: group.min,
+          current: count,
+        }))
       }
     }
 

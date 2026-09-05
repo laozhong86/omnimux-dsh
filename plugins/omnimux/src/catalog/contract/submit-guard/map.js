@@ -39,56 +39,59 @@ export const DEFAULT_PROFILE_PAYLOADS = Object.freeze({
   videoGenerate: Object.freeze({
     logicalFields: Object.freeze([
       'prompt',
-      'image',
       'references',
-      'image_tail',
       'duration',
       'aspectRatio',
       'resolution',
+      'sound',
+      'seed',
+      'watermark',
+      'outputFormat',
+      'referenceTaskType',
+      'generationType',
+      'returnLastFrame',
+      'webSearch',
+      'nsfwCheck',
+      'fileUrl',
+      'linkUrl',
     ]),
     vendorFields: Object.freeze([
+      'operation',
       'prompt',
-      'image',
-      'image_tail',
-      'reference_images',
+      'image_with_roles',
+      'image_urls',
+      'video_urls',
+      'audio_urls',
+      'file_url',
+      'link_url',
       'duration',
+      'size',
       'aspect_ratio',
       'resolution',
+      'generate_audio',
+      'audio',
+      'seed',
+      'watermark',
+      'output_format',
+      'omni_reference_task_type',
+      'generation_type',
+      'return_last_frame',
+      'tools',
+      'nsfw_check',
     ]),
-    // Hard deny — #429 / #432
     forbiddenVendorFields: Object.freeze([
       'images',
       'references',
       'audioTrack',
       'metadata',
       'speech',
-      'audio',
       'voice',
       'style',
+      'image',
+      'image_tail',
+      'reference_images',
     ]),
     unknownFieldPolicy: 'reject',
-    /**
-     * Operation-specific exclusivity.
-     * first_frame → only image
-     * video_multi_ref → only reference_images
-     * first_last_frame → image + image_tail
-     * text_to_video → prompt (+ optional duration/aspect)
-     */
-    operationVendorShapes: Object.freeze({
-      text_to_video: Object.freeze({ allow: Object.freeze(['prompt', 'duration', 'aspect_ratio', 'resolution']) }),
-      first_frame: Object.freeze({ allow: Object.freeze(['prompt', 'image', 'duration', 'aspect_ratio', 'resolution']), require: Object.freeze(['image']) }),
-      first_last_frame: Object.freeze({
-        allow: Object.freeze(['prompt', 'image', 'image_tail', 'duration', 'aspect_ratio', 'resolution']),
-        require: Object.freeze(['image', 'image_tail']),
-      }),
-      video_multi_ref: Object.freeze({
-        allow: Object.freeze(['prompt', 'reference_images', 'duration', 'aspect_ratio', 'resolution']),
-        require: Object.freeze([]),
-      }),
-      video_edit: Object.freeze({
-        allow: Object.freeze(['prompt', 'image', 'reference_images', 'duration', 'aspect_ratio', 'resolution']),
-      }),
-    }),
   }),
   audioGenerate: Object.freeze({
     logicalFields: Object.freeze([
@@ -197,6 +200,16 @@ export function mapValidatedPlanToVendor(args) {
   const genericAudio = []
   /** @type {string[]} */
   const genericVideo = []
+  /** @type {string[]} */
+  const sourceVideos = []
+  /** @type {string[]} */
+  const referenceVideos = []
+  /** @type {string[]} */
+  const referenceAudios = []
+  /** @type {string[]} */
+  const documentUrls = []
+  /** @type {string[]} */
+  const webpageUrls = []
 
   for (const b of args.bindings ?? []) {
     const role = b.role || b.asset?.role || ''
@@ -206,13 +219,23 @@ export function mapValidatedPlanToVendor(args) {
     else if (role === 'last_frame') lastFrames.push(url)
     else if (role === 'audio_track') audioTracks.push(url)
     else if (role === 'source' && b.type === 'audio') sources.push(url)
-    else if (role === 'source' && b.type === 'video') genericVideo.push(url)
+    else if (role === 'source' && b.type === 'video') {
+      sourceVideos.push(url)
+      genericVideo.push(url)
+    }
+    else if (role === 'document' || b.slot === 'file_url') documentUrls.push(url)
+    else if (role === 'webpage' || b.slot === 'link_url') webpageUrls.push(url)
     else if (role === 'reference' || role === 'style' || !role) {
       if (b.type === 'image') {
         references.push(url)
         genericImages.push(url)
-      } else if (b.type === 'audio') genericAudio.push(url)
-      else if (b.type === 'video') genericVideo.push(url)
+      } else if (b.type === 'audio') {
+        genericAudio.push(url)
+        referenceAudios.push(url)
+      } else if (b.type === 'video') {
+        genericVideo.push(url)
+        referenceVideos.push(url)
+      }
     } else if (b.type === 'image') {
       genericImages.push(url)
     } else if (b.type === 'audio') {
@@ -244,35 +267,45 @@ export function mapValidatedPlanToVendor(args) {
   const profileId = profile.id
 
   if (profileId === 'videoGenerate' || profile.seam === 'videoGenerate' && profileId !== 'videoDigitalHuman') {
-    // Mutual exclusion by operation
-    if (opId === 'first_frame' || (firstFrames.length && !lastFrames.length && opId !== 'video_multi_ref' && opId !== 'first_last_frame')) {
-      const img = firstFrames[0] || genericImages[0]
-      if (img) {
-        vendor.image = img
-        logical.image = img
+    // The Hub sends the canonical operation to the cloud adapter. It is
+    // stripped before APIMart and is never forwarded as an upstream field.
+    vendor.operation = opId
+    logical.operation = opId
+
+    if (opId === 'first_frame' || opId === 'first_last_frame' || opId === 'end_frame') {
+      const rows = []
+      if (opId !== 'end_frame' && firstFrames[0]) rows.push({ url: firstFrames[0], role: 'first_frame' })
+      if ((opId === 'end_frame' || opId === 'first_last_frame') && lastFrames[0]) {
+        rows.push({ url: lastFrames[0], role: 'last_frame' })
       }
-    } else if (opId === 'first_last_frame' || (firstFrames.length && lastFrames.length)) {
-      const img = firstFrames[0] || genericImages[0]
-      const tail = lastFrames[0]
-      if (img) {
-        vendor.image = img
-        logical.image = img
-      }
-      if (tail) {
-        vendor.image_tail = tail
-        logical.image_tail = tail
-      }
-    } else if (opId === 'video_multi_ref' || (references.length > 0 && !firstFrames.length && !lastFrames.length)) {
-      const urls = references.length ? references : genericImages
-      if (urls.length) {
-        vendor.reference_images = urls.map((url) => ({ url }))
-        logical.references = urls.map((pathOrUrl) => ({ type: 'image', role: 'reference', pathOrUrl }))
-      }
-    } else if (genericImages.length === 1 && opId !== 'text_to_video') {
-      vendor.image = genericImages[0]
-      logical.image = genericImages[0]
+      if (rows.length) vendor.image_with_roles = rows
+    } else if (opId === 'video_multi_ref' || opId === 'video_edit') {
+      const images = references.length ? references : genericImages
+      const videos = opId === 'video_edit'
+        ? [...sourceVideos, ...referenceVideos]
+        : referenceVideos
+      if (images.length) vendor.image_urls = [...images]
+      if (videos.length) vendor.video_urls = [...videos]
+      if (referenceAudios.length) vendor.audio_urls = [...referenceAudios]
+    } else if (opId === 'video_extend') {
+      const images = references.length ? references : genericImages
+      if (images.length) vendor.image_urls = [...images]
+      if (sourceVideos.length) vendor.video_urls = [...sourceVideos]
+      if (referenceAudios.length) vendor.audio_urls = [...referenceAudios]
+    } else if (opId === 'document_to_video') {
+      if (documentUrls[0]) vendor.file_url = documentUrls[0]
+    } else if (opId === 'webpage_to_video') {
+      if (webpageUrls[0]) vendor.link_url = webpageUrls[0]
     }
-    // Never attach audioTrack on plain videoGenerate
+
+    if ((args.bindings ?? []).length > 0) {
+      logical.references = (args.bindings ?? []).map((binding) => ({
+        type: binding.type,
+        role: binding.role || binding.asset?.role,
+        slot: binding.slot,
+        pathOrUrl: binding.pathOrUrl,
+      }))
+    }
   } else if (profileId === 'videoDigitalHuman') {
     const img = firstFrames[0] || genericImages[0] || references[0]
     if (img) {
@@ -312,14 +345,16 @@ export function mapValidatedPlanToVendor(args) {
     if (genericVideo.length) logical.video = genericVideo[0]
   }
 
-  // Extras → vendor (filtered)
-  if (typeof extras.duration === 'number' && extras.duration > 0) {
+  // Extras → vendor (filtered). Values have already passed the effective
+  // model+operation parameter contract in guard.js.
+  if (typeof extras.duration === 'number' && (extras.duration > 0 || extras.duration === -1)) {
     vendor.duration = extras.duration
     logical.duration = extras.duration
   }
   if (typeof extras.aspectRatio === 'string' && extras.aspectRatio) {
     if (profileId === 'videoGenerate' || profileId === 'videoDigitalHuman') {
-      vendor.aspect_ratio = extras.aspectRatio
+      const useAspectRatio = args.modelId === 'minimax-h3' || args.modelId === 'grok-imagine-video-1-5'
+      vendor[useAspectRatio ? 'aspect_ratio' : 'size'] = extras.aspectRatio
     }
     logical.aspectRatio = extras.aspectRatio
   }
@@ -328,6 +363,45 @@ export function mapValidatedPlanToVendor(args) {
       vendor.resolution = extras.resolution
     }
     logical.resolution = extras.resolution
+  }
+
+  if (profileId === 'videoGenerate') {
+    if (typeof extras.sound === 'boolean') {
+      vendor[args.modelId === 'wan-3.0' ? 'audio' : 'generate_audio'] = extras.sound
+      logical.sound = extras.sound
+    }
+    if (typeof extras.seed === 'number' && Number.isInteger(extras.seed)) {
+      vendor.seed = extras.seed
+      logical.seed = extras.seed
+    }
+    if (typeof extras.watermark === 'boolean') {
+      vendor.watermark = extras.watermark
+      logical.watermark = extras.watermark
+    }
+    if (typeof extras.outputFormat === 'string' && extras.outputFormat) {
+      vendor.output_format = extras.outputFormat
+      logical.outputFormat = extras.outputFormat
+    }
+    if (typeof extras.referenceTaskType === 'string' && extras.referenceTaskType) {
+      vendor.omni_reference_task_type = extras.referenceTaskType
+      logical.referenceTaskType = extras.referenceTaskType
+    }
+    if (typeof extras.generationType === 'string' && extras.generationType) {
+      vendor.generation_type = extras.generationType
+      logical.generationType = extras.generationType
+    }
+    if (typeof extras.returnLastFrame === 'boolean') {
+      vendor.return_last_frame = extras.returnLastFrame
+      logical.returnLastFrame = extras.returnLastFrame
+    }
+    if (extras.webSearch === true) {
+      vendor.tools = [{ type: 'web_search' }]
+      logical.webSearch = true
+    }
+    if (typeof extras.nsfwCheck === 'boolean') {
+      vendor.nsfw_check = extras.nsfwCheck
+      logical.nsfwCheck = extras.nsfwCheck
+    }
   }
 
   if (profileId === 'audioGenerate' || profileId === 'imageGenerate') {
@@ -426,12 +500,23 @@ export function mapValidatedPlanToVendor(args) {
     }
   }
 
-  // Video exclusivity: image vs reference_images must not coexist
-  if ('image' in vendor && 'reference_images' in vendor) {
+  const hasFrameFamily = Array.isArray(vendor.image_with_roles)
+    && vendor.image_with_roles.some((row) => row?.role === 'first_frame' || row?.role === 'last_frame')
+  const hasReferenceFamily = ['image_urls', 'video_urls', 'audio_urls', 'file_url', 'link_url']
+    .some((field) => vendor[field] !== undefined)
+  if (hasFrameFamily && hasReferenceFamily) {
     return {
       ok: false,
       code: GUARD_CODES.VENDOR_FIELD_FORBIDDEN,
-      message: 'image and reference_images must not coexist',
+      message: 'frame inputs and reference inputs must not coexist',
+      profileId,
+    }
+  }
+  if (vendor.file_url !== undefined && vendor.link_url !== undefined) {
+    return {
+      ok: false,
+      code: GUARD_CODES.VENDOR_FIELD_FORBIDDEN,
+      message: 'file_url and link_url must not coexist',
       profileId,
     }
   }

@@ -1,21 +1,26 @@
 /**
- * Video Param Popover — 基于 React Portal 的上方自适应浮层外壳
+ * Video Param Popover — Portal 浮层 (Issue 467 / W2).
  *
- * 打开时通过 createPortal 挂载到 document.body，依据触发器矩形与视口调用
- * calculatePopoverPosition 计算固定定位（placement/top/bottom/left/maxHeight/width），
- * 监听 resize 与捕获阶段 scroll（passive）动态重算；全局捕获阶段 mousedown 与
- * Escape 用于关闭；卸载/关闭时注销全部监听器。根容器含 `nowheel nodrag` 事件隔离。
- * 参考同仓库 CustomSelect.tsx 的 Portal / 监听 / 关闭实现风格保持一致。
- * 所有样式仅消费 `wf-video-param-popover*` CSS 类名，不含任何色值。
+ * Mode section renders only when effectiveOps ≥ 2 (params.showModeUi).
+ * Operation ids come from Catalog DTO options (open strings). Writes
+ *
+ * Styles: only `wf-video-param-popover*` classes / `--dsw-*` tokens via CSS.
+ * No raw hex, no `banned token island`, no JS theme branch. light/dark follows host cascade.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactElement, RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import type { CapabilityModelItem, ModelParameterSchema } from '../../../../../../shared/api.ts';
+import { CustomSelect, CustomSlider } from '../../../../../ui/index.ts';
 import { AspectCardGrid } from './AspectCardGrid.tsx';
 import { DurationGrid } from './DurationGrid.tsx';
-import { GenerationModeSegment, ResolutionSegment, SoundSwitchSegment } from './SegmentControls.tsx';
+import {
+  BooleanSwitchSegment,
+  OperationSegment,
+  ResolutionSegment,
+  SoundSwitchSegment,
+} from './SegmentControls.tsx';
 import type { EffectiveVideoParams, PopoverPosition, VideoNodeParams } from './types.ts';
 import { calculatePopoverPosition } from './viewportPositioner.ts';
 
@@ -27,7 +32,7 @@ export interface VideoParamPopoverProps {
   params: EffectiveVideoParams;
   /** 当前选定模型的参数 Schema */
   schema: ModelParameterSchema;
-  /** 当前选定模型详情（可选，含 inputCapability） */
+  /** 当前选定模型详情（可选） */
   modelItem?: CapabilityModelItem;
   /** 浮层是否打开 */
   isOpen: boolean;
@@ -39,15 +44,12 @@ export interface VideoParamPopoverProps {
 
 /**
  * 基于 React Portal 的上方自适应浮层外壳组件。
- *
- * @param props VideoParamPopoverProps
- * @returns ReactElement | null（未打开或非浏览器环境时不渲染）
  */
 export function VideoParamPopover({
   triggerRef,
   params,
   schema,
-  modelItem,
+  modelItem: _modelItem,
   isOpen,
   onClose,
   onParamChange,
@@ -55,7 +57,6 @@ export function VideoParamPopover({
   const panelRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<PopoverPosition | null>(null);
 
-  // 打开时读取触发器矩形与视口尺寸，计算固定定位
   const recompute = (): void => {
     if (!triggerRef.current) {
       return;
@@ -65,7 +66,6 @@ export function VideoParamPopover({
     setPosition(calculatePopoverPosition(rect, viewport));
   };
 
-  // 定位监听：打开时注册 resize 与捕获阶段 scroll（passive），关闭/卸载时注销
   useEffect(() => {
     if (!isOpen) {
       setPosition(null);
@@ -85,7 +85,6 @@ export function VideoParamPopover({
     };
   }, [isOpen, triggerRef]);
 
-  // 关闭监听：全局捕获阶段 mousedown（目标不在面板与触发器内则关闭）+ Escape
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -96,8 +95,9 @@ export function VideoParamPopover({
         return;
       }
       if (
-        panelRef.current?.contains(target) ||
-        triggerRef.current?.contains(target)
+        panelRef.current?.contains(target)
+        || triggerRef.current?.contains(target)
+        || (target instanceof Element && target.closest('.wf-custom-select-dropdown'))
       ) {
         return;
       }
@@ -118,13 +118,33 @@ export function VideoParamPopover({
     };
   }, [isOpen, onClose, triggerRef]);
 
-  // 关闭态或非浏览器环境不渲染
   if (!isOpen || typeof document === 'undefined') {
     return null;
   }
 
   const resolutionOptions = schema.resolution?.options ?? [];
   const durationOptions = schema.duration?.options ?? [];
+  const durationRange = schema.duration?.range;
+  const showModeUi = Boolean(params.showModeUi) && (params.effectiveOperations?.length ?? 0) >= 2;
+  const activeOperation = params.effectiveOperations.find((operation) => operation.id === params.operation);
+  const needsFileUrl = activeOperation?.slots.some((slot) => slot.slot === 'file_url') ?? false;
+  const needsLinkUrl = activeOperation?.slots.some((slot) => slot.slot === 'link_url') ?? false;
+  const booleanControls = [
+    ['watermark', 'AI 水印', schema.watermark, params.watermark],
+    ['returnLastFrame', '返回尾帧', schema.returnLastFrame, params.returnLastFrame],
+    ['webSearch', '联网搜索', schema.webSearch, params.webSearch],
+    ['nsfwCheck', '内容审核', schema.nsfwCheck, params.nsfwCheck],
+  ] as const;
+  const enumControls = [
+    ['outputFormat', '输出格式', schema.outputFormat, params.outputFormat],
+    ['referenceTaskType', '参考任务类型', schema.referenceTaskType, params.referenceTaskType],
+    ['generationType', '生成类型', schema.generationType, params.generationType],
+  ] as const;
+  const showAdvanced = Boolean(
+    schema.seed
+    || booleanControls.some(([, , definition]) => definition?.supported)
+    || enumControls.some(([, , definition]) => definition?.options?.length),
+  );
 
   const panelClass = position?.placement === 'bottom'
     ? 'wf-video-param-popover wf-video-param-popover--bottom'
@@ -147,39 +167,36 @@ export function VideoParamPopover({
       style={style}
       role="dialog"
       aria-label="视频参数配置"
+      data-show-mode={showModeUi ? 'true' : 'false'}
       onWheel={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="wf-video-param-popover__scrollable">
-        {/* 当且仅当支持模式数量 >= 2 时才渲染生成方式标题与分段，模式单一或无需切换时彻底不占地 */}
-        {(() => {
-          const roles = modelItem?.inputCapability?.referenceImages?.supportedRoles;
-          const hasRoles = Array.isArray(roles) && roles.length > 0;
-          const supportsRef = hasRoles ? roles.includes('reference') : true;
-          const supportsFirstLast = hasRoles ? (roles.includes('first_frame') && roles.includes('last_frame')) : false;
-          const modeCount = (supportsRef ? 1 : 0) + (supportsFirstLast ? 1 : 0);
-          if (modeCount <= 1) return null;
+        {/* effectiveOps ≥ 2 only — 0/1 不渲染 mode DOM */}
+        {showModeUi ? (
+          <section
+            className="wf-video-param-popover__section"
+            data-testid="wf-operation-mode-section"
+          >
+            <h4 className="wf-video-param-popover__section-title">生成方式</h4>
+            <OperationSegment
+              value={params.operation}
+              operations={params.effectiveOperations}
+              onChange={(operationId) => onParamChange('operation', operationId)}
+            />
+          </section>
+        ) : null}
 
-          return (
-            <section className="wf-video-param-popover__section">
-              <h4 className="wf-video-param-popover__section-title">生成方式</h4>
-              <GenerationModeSegment
-                value={params.generationMode}
-                supportedRoles={modelItem?.inputCapability?.referenceImages?.supportedRoles}
-                onChange={(v) => onParamChange('generationMode', v)}
-              />
-            </section>
-          );
-        })()}
-
-        <section className="wf-video-param-popover__section">
-          <h4 className="wf-video-param-popover__section-title">比例</h4>
-          <AspectCardGrid
-            value={params.aspectRatio}
-            options={schema.aspectRatio?.options ?? []}
-            onChange={(v) => onParamChange('aspectRatio', v)}
-          />
-        </section>
+        {(schema.aspectRatio?.options?.length ?? 0) > 0 ? (
+          <section className="wf-video-param-popover__section">
+            <h4 className="wf-video-param-popover__section-title">比例</h4>
+            <AspectCardGrid
+              value={params.aspectRatio}
+              options={schema.aspectRatio?.options ?? []}
+              onChange={(v) => onParamChange('aspectRatio', v)}
+            />
+          </section>
+        ) : null}
 
         {resolutionOptions.length > 0 && (
           <section className="wf-video-param-popover__section">
@@ -203,6 +220,39 @@ export function VideoParamPopover({
           </section>
         )}
 
+        {durationOptions.length === 0 && durationRange ? (
+          <section className="wf-video-param-popover__section">
+            <div className="wf-video-param-popover__section-heading">
+              <h4 className="wf-video-param-popover__section-title">时长</h4>
+              <span className="wf-video-param-popover__value">
+                {params.duration === -1 ? '自动' : `${params.duration}s`}
+              </span>
+            </div>
+            <div className="wf-video-param-popover__range-row">
+              <CustomSlider
+                className="wf-video-param-popover__slider"
+                min={durationRange.min}
+                max={durationRange.max}
+                step={durationRange.step ?? 1}
+                value={typeof params.duration === 'number' && params.duration >= durationRange.min
+                  ? params.duration
+                  : schema.duration?.defaultValue ?? durationRange.min}
+                onChange={(value) => onParamChange('duration', value)}
+              />
+              {schema.duration?.allowAuto ? (
+                <button
+                  type="button"
+                  className={`wf-video-duration-pill${params.duration === -1 ? ' wf-video-duration-pill--active' : ''}`}
+                  aria-pressed={params.duration === -1}
+                  onClick={() => onParamChange('duration', -1)}
+                >
+                  自动
+                </button>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
         {params.hasSoundSupport && (
           <section className="wf-video-param-popover__section">
             <h4 className="wf-video-param-popover__section-title">有声视频</h4>
@@ -212,6 +262,67 @@ export function VideoParamPopover({
             />
           </section>
         )}
+
+        {needsFileUrl || needsLinkUrl ? (
+          <section className="wf-video-param-popover__section">
+            <h4 className="wf-video-param-popover__section-title">
+              {needsFileUrl ? '文档地址' : '网页地址'}
+            </h4>
+            <input
+              type="url"
+              className="wf-video-param-popover__input"
+              value={(needsFileUrl ? params.fileUrl : params.linkUrl) ?? ''}
+              placeholder={needsFileUrl ? 'https://example.com/document.pdf' : 'https://example.com/page'}
+              onChange={(event) => onParamChange(needsFileUrl ? 'fileUrl' : 'linkUrl', event.target.value)}
+            />
+          </section>
+        ) : null}
+
+        {showAdvanced ? (
+          <section className="wf-video-param-popover__section" data-testid="wf-video-advanced-parameters">
+            <h4 className="wf-video-param-popover__section-title">高级参数</h4>
+            {schema.seed ? (
+              <label className="wf-video-param-popover__field-row">
+                <span>随机种子</span>
+                <input
+                  type="number"
+                  className="wf-video-param-popover__input"
+                  min={schema.seed.range?.min}
+                  max={schema.seed.range?.max}
+                  step={schema.seed.range?.step ?? 1}
+                  value={params.seed ?? ''}
+                  placeholder="随机"
+                  onChange={(event) => {
+                    const value = event.target.value.trim();
+                    onParamChange('seed', value === '' ? undefined : Number(value));
+                  }}
+                />
+              </label>
+            ) : null}
+            {enumControls.map(([field, label, definition, value]) => definition?.options?.length ? (
+              <div className="wf-video-param-popover__field-row" key={field}>
+                <span>{label}</span>
+                <CustomSelect
+                  className="wf-video-param-popover__select"
+                  value={value ?? definition.defaultValue}
+                  options={definition.options}
+                  disabled={definition.options.length === 1}
+                  onChange={(next) => onParamChange(field, String(next))}
+                />
+              </div>
+            ) : null)}
+            {booleanControls.map(([field, label, definition, value]) => definition?.supported ? (
+              <div className="wf-video-param-popover__field-row" key={field}>
+                <span>{label}</span>
+                <BooleanSwitchSegment
+                  ariaLabel={label}
+                  value={typeof value === 'boolean' ? value : definition.defaultValue}
+                  onChange={(next) => onParamChange(field, next)}
+                />
+              </div>
+            ) : null)}
+          </section>
+        ) : null}
       </div>
     </div>,
     document.body,

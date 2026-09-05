@@ -25,9 +25,9 @@ import {
   buildContractView,
   buildUpstreamFingerprint,
   evaluateCatalogCompat,
-  mapLegacyOperation,
   planAutoAdaptation,
   primaryRejectionCode,
+  readExplicitTargetSlot,
   resolveModelView,
   type AutoAdaptationPick,
   type CompatReasonCode,
@@ -119,18 +119,16 @@ function readParams(node: CanvasNode): Record<string, unknown> {
 }
 
 /**
- * Read-time migration: prefer canonical `params.operation`; fall back to the
- * historical `generationMode` wire string via LEGACY_OPERATION_MAP. Never
- * invent a default — empty means "no preferred operation".
+ * Read the canonical operation id from params. Empty means no preference.
  */
 function readCurrentOperationId(params: Record<string, unknown>): string | undefined {
-  if (typeof params.operation === 'string' && params.operation.trim()) {
-    return mapLegacyOperation(params.operation);
-  }
-  if (typeof params.generationMode === 'string' && params.generationMode.trim()) {
-    return mapLegacyOperation(params.generationMode);
-  }
-  return undefined;
+  return typeof params.operation === 'string' && params.operation.trim()
+    ? params.operation.trim()
+    : undefined;
+}
+
+function readFiniteNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function assetFromEdge(edge: Edge, nodes: CanvasNode[]): UpstreamAssetFingerprint | null {
@@ -139,15 +137,36 @@ function assetFromEdge(edge: Edge, nodes: CanvasNode[]): UpstreamAssetFingerprin
   const data = (source.data ?? {}) as Record<string, unknown>;
   const type = (typeof data.materialType === 'string' ? data.materialType : source.type) ?? 'text';
   const edgeData = (edge.data ?? {}) as Record<string, unknown>;
+  // Explicit semantic edge metadata wins over inferred defaults.
+  const role =
+    (typeof edgeData.role === 'string' && edgeData.role.trim() ? edgeData.role.trim() : undefined)
+    ?? (typeof edgeData.slotBinding === 'object'
+      && edgeData.slotBinding
+      && typeof (edgeData.slotBinding as { role?: unknown }).role === 'string'
+      ? String((edgeData.slotBinding as { role: string }).role)
+      : undefined);
+  const targetSlot = readExplicitTargetSlot(edgeData, edge.targetHandle);
+  // Prefer canonical sizeBytes / durationSec; fall back to legacy fileSize / duration.
+  // Unknown stays omitted — never invent 0.
+  const sizeBytes =
+    readFiniteNumber(data.sizeBytes) ?? readFiniteNumber(data.fileSize);
+  const durationSec =
+    readFiniteNumber(data.durationSec) ?? readFiniteNumber(data.duration);
+  const mimeType =
+    typeof data.mimeType === 'string' && data.mimeType.trim()
+    && data.mimeType.trim().toLowerCase() !== 'unknown'
+    && data.mimeType.trim() !== 'application/octet-stream'
+      ? data.mimeType.trim()
+      : undefined;
   return {
     edgeId: edge.id,
     sourceNodeId: source.id,
     type,
-    ...(typeof data.mimeType === 'string' && data.mimeType ? { mimeType: data.mimeType } : {}),
-    ...(Number.isFinite(data.fileSize) ? { sizeBytes: data.fileSize as number } : {}),
-    ...(Number.isFinite(data.duration) ? { durationSec: data.duration as number } : {}),
-    ...(typeof edgeData.role === 'string' && edgeData.role ? { role: edgeData.role } : {}),
-    ...(typeof edgeData.targetSlot === 'string' && edgeData.targetSlot ? { targetSlot: edgeData.targetSlot } : {}),
+    ...(mimeType ? { mimeType } : {}),
+    ...(sizeBytes !== undefined ? { sizeBytes } : {}),
+    ...(durationSec !== undefined ? { durationSec } : {}),
+    ...(role ? { role } : {}),
+    ...(targetSlot ? { targetSlot } : {}),
   };
 }
 
@@ -164,6 +183,7 @@ function fingerprintForNode(
     .filter((asset): asset is UpstreamAssetFingerprint => asset !== null);
   return buildUpstreamFingerprint({
     prompt: typeof data.prompt === 'string' ? data.prompt : '',
+    nodeFields: readParams(node),
     assets,
   });
 }
@@ -195,6 +215,7 @@ export function buildCanvasUpstreamFingerprint(
   }
   return buildUpstreamFingerprint({
     prompt: typeof data.prompt === 'string' ? data.prompt : '',
+    nodeFields: target ? readParams(target) : {},
     assets,
   });
 }
@@ -237,8 +258,6 @@ function applyPickToNode(
   if (pick) {
     params.model = pick.modelId;
     params.operation = pick.operationId;
-    // Canonical operation wins; drop the legacy generationMode key once migrated.
-    if ('generationMode' in params) delete params.generationMode;
   }
   return {
     ...node,
@@ -394,6 +413,10 @@ function runCompatPass(
     const target = nodeById(edgeLike.target);
     if (!isGenerateMaterialNode(target)) continue;
     if (gatedNodeIds.includes(edgeLike.target)) continue;
+    // Only a media-bearing edge has passed strict adaptation. Text-only edges
+    // must still reach the soft pass so a just-created target receives its
+    // catalog-derived model and operation.
+    if (fingerprintForNode(target!, nodes, edges).mediaAssets.length === 0) continue;
     gatedNodeIds.push(edgeLike.target);
     const rejected = gateNode(edgeLike.target);
     if (rejected) {
@@ -443,10 +466,13 @@ function runCompatPass(
     }
   }
 
-  // ---- 3. Soft recompute: removed edges / cascades / prompt·operation patches ----
+  // ---- 3. Soft recompute: newly added nodes / removed edges / prompt·operation patches ----
   const removedEdgeIds = new Set(mutation.removeEdgeIds ?? []);
   const removedNodeIds = new Set(mutation.removeNodeIds ?? []);
   const recomputeTargets = new Set<string>();
+  for (const node of mutation.addNodes ?? []) {
+    if (isGenerateMaterialNode(node)) recomputeTargets.add(node.id);
+  }
   for (const edge of current.edges) {
     const removed =
       removedEdgeIds.has(edge.id) || removedNodeIds.has(edge.source) || removedNodeIds.has(edge.target);

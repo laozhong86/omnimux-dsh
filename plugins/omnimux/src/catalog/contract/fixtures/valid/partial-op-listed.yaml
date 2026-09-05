@@ -25,6 +25,10 @@ models:
         research:
           status: "verified"
           docUrl: "https://example.com/fixture-partial-t2i"
+        implementation:
+          status: "ready"
+          profileId: "imageGenerate"
+          seam: "imageGenerate"
         execution:
           status: "live"
           profileId: "imageGenerate"
@@ -53,6 +57,9 @@ models:
               note: "fixture"
         research:
           status: "draft"
+        implementation:
+          status: "none"
+          profileId: "imageGenerate"
         execution:
           status: "stub"
           profileId: "imageGenerate"

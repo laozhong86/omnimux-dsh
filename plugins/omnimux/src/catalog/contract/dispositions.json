@@ -5,23 +5,25 @@
       "id": "seedance-2-0-fast",
       "disposition": "canonical",
       "batch": "A",
-      "reason": "命中 runtime；t2v+video_multi_ref dated live 证据",
+      "reason": "APIMart 官方文档确认 Fast 接口和四种模式；适配与离线合同已补齐；历史真实执行独立保留",
       "evidence": [
         "docs/evidence/2026-08-14-omnimux-video.md",
         "docs/evidence/2026-09-05-model-seedance-2-0-fast-video_multi_ref.md",
-        "docs/evidence/2026-09-05-model-seedance-2-0-fast-first_frame.md"
+        "docs/evidence/2026-09-05-model-seedance-2-0-fast-first_frame.md",
+        "docs/specs/2026-09-05-video-phase-one-scope.md"
       ],
-      "notes": "Batch A t2v listed；2026-09-05 C1 video_multi_ref listed（max2 live）；first_frame draft（mapper image≠images[]）"
+      "notes": "产品 id 精确映射 seedance-2.0-fast；参考上限 9 图/3 视频/3 音频；不自动切换渠道"
     },
     {
       "id": "seedance-2-0-mini",
       "disposition": "canonical",
-      "reason": "2026-09-05 existence 命中 runtime；C1 dated live 覆盖 text_to_video；新 runtime Y-new/D-new",
+      "reason": "APIMart 官方文档确认 Mini 接口和四种模式；适配与离线合同已补齐；历史真实执行独立保留",
       "evidence": [
         "docs/evidence/2026-09-05-model-seedance-2-0-mini-text_to_video.md",
-        "docs/evidence/2026-09-05-model-seedance-2-0-mini-first_frame.md"
+        "docs/evidence/2026-09-05-model-seedance-2-0-mini-first_frame.md",
+        "docs/specs/2026-09-05-video-phase-one-scope.md"
       ],
-      "notes": "C1 新 ID：text_to_video listed；first_frame draft（mapper image 字段缺口）"
+      "notes": "产品 id 精确映射 seedance-2.0-mini；参考上限 9 图/3 视频/3 音频；不自动切换渠道"
     },
     {
       "id": "gpt-image-2",
@@ -166,23 +168,25 @@
     {
       "id": "seedance-2-5",
       "disposition": "canonical",
-      "reason": "命中 runtime；C1 dated live 覆盖 t2v 与 multi_ref",
-      "notes": "2026-09-05 C1：text_to_video + video_multi_ref listed（max1）；first_frame draft（mapper gap）",
+      "reason": "APIMart 官方文档确认 2.5 的生成、参考、编辑与延长模式；适配与离线合同已补齐；历史真实执行独立保留",
+      "notes": "产品 id 精确映射 seedance-2.5；参考上限 30 图/10 视频/10 音频；不自动切换渠道",
       "evidence": [
         "docs/evidence/2026-09-05-model-seedance-2-5-text_to_video.md",
         "docs/evidence/2026-09-05-model-seedance-2-5-video_multi_ref.md",
-        "docs/evidence/2026-09-05-model-seedance-2-5-first_frame.md"
+        "docs/evidence/2026-09-05-model-seedance-2-5-first_frame.md",
+        "docs/specs/2026-09-05-video-phase-one-scope.md"
       ]
     },
     {
       "id": "seedance-2-0",
       "disposition": "canonical",
-      "reason": "命中 runtime；C1 dated live 覆盖 text_to_video",
+      "reason": "APIMart 官方文档确认 2.0 接口和四种模式；适配与离线合同已补齐；历史真实执行独立保留",
       "evidence": [
         "docs/evidence/2026-09-05-model-seedance-2-0-text_to_video.md",
-        "docs/evidence/2026-09-05-model-seedance-2-0-first_frame.md"
+        "docs/evidence/2026-09-05-model-seedance-2-0-first_frame.md",
+        "docs/specs/2026-09-05-video-phase-one-scope.md"
       ],
-      "notes": "2026-09-05 C1：text_to_video listed；first_frame draft（images[] live；mapper image；本型号 singular-image 未单测，家族 fast/mini/2.5 观察 400）"
+      "notes": "产品 id 精确映射 seedance-2.0；参考上限 9 图/3 视频/3 音频；不自动切换渠道"
     },
     {
       "id": "kling-v3",
@@ -202,13 +206,29 @@
     {
       "id": "grok-imagine-video-1-5",
       "disposition": "canonical",
-      "reason": "命中 runtime；H1 已有契约；无独立 dated live 证据保持 draft",
-      "notes": "video_multi_ref 参考图取更严 max:1（policy_conservative），待 dated 复测放宽"
+      "reason": "APIMart 官方文档确认 Grok Imagine Video 1.5 文生和有序参考图模式；适配与离线合同已补齐",
+      "notes": "精确映射 grok-imagine-video-1.5；参考图上限官方未公布，保持 unknown；不混入 EXT",
+      "evidence": [
+        "docs/specs/2026-09-05-video-phase-one-scope.md"
+      ]
     },
     {
       "id": "wan-3.0",
       "disposition": "canonical",
-      "reason": "命中 runtime；H1 已有契约；无独立 dated live 证据保持 draft"
+      "reason": "APIMart 官方文档确认 Wan 3.0 的帧、全模态、文档和网页模式；适配与离线合同已补齐",
+      "notes": "产品 id 精确映射 wan3.0-video；参考图上限 10；不扩成 Prime 派生型号",
+      "evidence": [
+        "docs/specs/2026-09-05-video-phase-one-scope.md"
+      ]
+    },
+    {
+      "id": "minimax-h3",
+      "disposition": "canonical",
+      "reason": "APIMart 官方文档确认 MiniMax H3 的首帧、尾帧、首尾帧与全能参考模式；适配与离线合同已补齐",
+      "notes": "单一产品 id 精确映射 MiniMax-H3；不保留 minimax-h3-endframe 伪型号",
+      "evidence": [
+        "docs/specs/2026-09-05-video-phase-one-scope.md"
+      ]
     },
     {
       "id": "suno",
@@ -293,6 +313,48 @@
       "disposition": "alias",
       "target": "nano_banana_pro",
       "reason": "hyphen→underscore 归一；禁止双列"
+    },
+    {
+      "id": "seedance-2.0",
+      "disposition": "alias",
+      "target": "seedance-2-0",
+      "reason": "APIMart wire model；产品目录只展示 canonical id"
+    },
+    {
+      "id": "seedance-2.0-fast",
+      "disposition": "alias",
+      "target": "seedance-2-0-fast",
+      "reason": "APIMart wire model；产品目录只展示 canonical id"
+    },
+    {
+      "id": "seedance-2.0-mini",
+      "disposition": "alias",
+      "target": "seedance-2-0-mini",
+      "reason": "APIMart wire model；产品目录只展示 canonical id"
+    },
+    {
+      "id": "seedance-2.5",
+      "disposition": "alias",
+      "target": "seedance-2-5",
+      "reason": "APIMart wire model；产品目录只展示 canonical id"
+    },
+    {
+      "id": "wan3.0-video",
+      "disposition": "alias",
+      "target": "wan-3.0",
+      "reason": "APIMart wire model；产品目录只展示 canonical id"
+    },
+    {
+      "id": "MiniMax-H3",
+      "disposition": "alias",
+      "target": "minimax-h3",
+      "reason": "APIMart wire model 大小写敏感；产品目录只展示 canonical id"
+    },
+    {
+      "id": "grok-imagine-video-1.5",
+      "disposition": "alias",
+      "target": "grok-imagine-video-1-5",
+      "reason": "APIMart wire model；产品目录只展示 canonical id"
     },
     {
       "id": "whisper-1",

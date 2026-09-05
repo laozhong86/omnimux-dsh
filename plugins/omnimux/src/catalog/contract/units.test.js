@@ -19,6 +19,11 @@ test('isWithinSizeLimit boundary inclusive', () => {
   assert.equal(isWithinSizeLimit(0, 1), true);
 });
 
+test('isWithinSizeLimit supports strict official limits', () => {
+  assert.equal(isWithinSizeLimit(30 * 1024 * 1024 - 1, 30, true), true);
+  assert.equal(isWithinSizeLimit(30 * 1024 * 1024, 30, true), false);
+});
+
 test('isWithinDurationLimit boundary', () => {
   assert.equal(isWithinDurationLimit(60, 60), true);
   assert.equal(isWithinDurationLimit(61, 60), false);

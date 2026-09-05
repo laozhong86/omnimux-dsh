@@ -42,8 +42,8 @@ L2_PORT_POOL_START="${OMNIMUX_L2_PORT_POOL_START:-44201}"
 L2_PORT_POOL_END="${OMNIMUX_L2_PORT_POOL_END:-44299}"
 LEGACY_HOME="${OMNIMUX_DEV_LEGACY_HOME:-0}"
 
-# L2 插件依赖种子 profile：克隆 package.json / cordis.patch.yml / node_modules（OmniMux 插件树）。
-# 官方 @deepseek-ai/* 不在此层。优先级：
+# L2 插件依赖种子 profile：克隆 package.json / cordis.patch.yml / 受管 snapshot，
+# 再由 L2 自己的 pnpm 生成 node_modules。官方 @deepseek-ai/* 不在此层。优先级：
 #   1) OMNIMUX_L2_SEED_PROFILE（显式；测试隔离也用这个）
 #   2) ~/.omnimux-dev/profiles/omnimux（日常 sync 目标，与 Dev App 对齐）
 #   3) ~/.omnimux/profiles/omnimux（正式 profile）
@@ -56,18 +56,18 @@ resolve_l2_seed_profile() {
     case "$candidate" in
       /*|~*) eval candidate="$candidate" ;;
     esac
-    if [ -d "$candidate/node_modules" ] && [ -f "$candidate/package.json" ]; then
+    if [ -d "$candidate/.materialize-snapshots/plugins" ] && [ -f "$candidate/package.json" ]; then
       printf '%s\n' "$candidate"
       return 0
     fi
-    echo "✗ OMNIMUX_L2_SEED_PROFILE 无效: ${OMNIMUX_L2_SEED_PROFILE}（需要 package.json + node_modules）" >&2
+    echo "✗ OMNIMUX_L2_SEED_PROFILE 无效: ${OMNIMUX_L2_SEED_PROFILE}（需要 package.json + 受管 snapshot）" >&2
     exit 1
   fi
   for candidate in \
     "$HOME/.omnimux-dev/profiles/omnimux" \
     "$HOME/.omnimux/profiles/omnimux" \
     "${DSH_HOME:-$HOME/.dsh}/profiles/omnimux"; do
-    if [ -d "$candidate/node_modules" ] && [ -f "$candidate/package.json" ] && [ -f "$candidate/cordis.patch.yml" ]; then
+    if [ -d "$candidate/.materialize-snapshots/plugins" ] && [ -f "$candidate/package.json" ] && [ -f "$candidate/cordis.patch.yml" ]; then
       printf '%s\n' "$candidate"
       return 0
     fi
@@ -219,8 +219,7 @@ assert_task_home_safe() {
 # $DSH_HOME/profiles/node_modules。官方 @deepseek-ai/* 不在 PROD_PROFILE 私有
 # node_modules（该 scope 常态为空）—— 旧预检查 PROD_PROFILE 是 false-positive。
 # 此处检查：1) DSH_SRC CLI 可启动；2) 安装闭包能 resolve web-app → ui-chat；
-# 3) PROD_PROFILE 仅需 package.json + cordis.patch.yml + node_modules 作为
-# OmniMux 插件依赖种子（不要求 @deepseek-ai）。
+# 3) seed 的 file: 依赖必须全部落在受管 snapshot；L2 的 node_modules 只由 pnpm 生成。
 assert_l2_source_deps() {
   local profile_dir="$1"
   local cli_bin="$DSH_SRC/apps/cli/lib/bin.js"
@@ -264,21 +263,54 @@ console.log('ui-chat=' + chat);
     exit 1
   fi
 
-  # PROD_PROFILE 仅作插件依赖种子；@deepseek-ai 缺失属常态，不阻断。
+  # seed 仅作 OmniMux 受管 source；@deepseek-ai 缺失属常态，不阻断。
   if [ ! -f "$profile_dir/package.json" ] || [ ! -f "$profile_dir/cordis.patch.yml" ]; then
     echo "✗ L2 插件种子 profile 不完整: ${profile_dir}（需要 package.json + cordis.patch.yml）" >&2
     echo "   这是 OmniMux profile 种子问题，不是官方 @deepseek-ai 闭包问题。" >&2
     exit 1
   fi
-  if [ ! -d "$profile_dir/node_modules" ]; then
-    echo "✗ L2 插件种子 profile 无 node_modules: ${profile_dir}" >&2
-    echo "   请先 yarn omnimux:sync 物化到 ~/.omnimux-dev，或设置 OMNIMUX_L2_SEED_PROFILE。" >&2
+  if [ ! -d "$profile_dir/.materialize-snapshots/plugins" ]; then
+    echo "✗ L2 插件种子 profile 无受管 snapshot: ${profile_dir}" >&2
+    echo "   请先通过官方完整 profile rebuild 建立稳定源；不得从 node_modules 反向回填。" >&2
+    exit 1
+  fi
+  if [ ! -f "$profile_dir/pnpm-lock.yaml" ] || [ ! -f "$profile_dir/pnpm-workspace.yaml" ]; then
+    echo "✗ L2 插件种子 profile 缺少 pnpm 锁或 workspace 配置: ${profile_dir}" >&2
+    echo "   L2 需要用同一相对 file: 路径的锁文件重建私有 node_modules。" >&2
+    exit 1
+  fi
+
+  # 所有 profile-level file: 依赖必须精确落到受管 snapshot；锁文件也必须仅保留
+  # 可在新 L2 profile 原样解析的相对路径。绝不从 seed node_modules 反推 source。
+  if ! "$NODE_BIN" --input-type=commonjs - "$profile_dir" <<'EOF'
+const fs = require('fs')
+const path = require('path')
+const profile = process.argv[2]
+const manifest = JSON.parse(fs.readFileSync(path.join(profile, 'package.json'), 'utf8'))
+const root = path.join(profile, '.materialize-snapshots', 'plugins')
+for (const [name, spec] of Object.entries(manifest.dependencies || {})) {
+  if (typeof spec !== 'string' || !spec.startsWith('file:')) continue
+  const expected = `file:.materialize-snapshots/plugins/${name}`
+  if (spec !== expected) throw new Error(`未受管 file: 依赖 ${name} = ${spec}`)
+  const source = path.join(root, name)
+  if (!fs.statSync(source, { throwIfNoEntry: false })?.isDirectory() || !fs.statSync(path.join(source, 'package.json'), { throwIfNoEntry: false })?.isFile()) {
+    throw new Error(`受管物化源缺失: ${source}`)
+  }
+}
+const lock = fs.readFileSync(path.join(profile, 'pnpm-lock.yaml'), 'utf8')
+if (lock.includes(profile) || /\bfile:(?!\.materialize-snapshots\/plugins\/)/.test(lock)) {
+  throw new Error('pnpm 锁文件含不可迁移的 file: 路径')
+}
+EOF
+  then
+    echo "✗ L2 插件种子受管 source 或 pnpm 锁无效: ${profile_dir}" >&2
+    echo "   需要完整受管 snapshot 与可重定位 file:.materialize-snapshots/plugins/... 锁；不得使用旧 node_modules。" >&2
     exit 1
   fi
 
   # better-sidebar 与 DSH_SRC dsh-settings API 对齐：旧种子仍 import settingsNamespace，
   # 而 pin alpha.3 已移除该导出 → Host 启动直接炸。优先用 ~/.omnimux-dev 种子可避免。
-  local bs_lib="$profile_dir/node_modules/dsh-better-sidebar/lib/index.js"
+  local bs_lib="$profile_dir/.materialize-snapshots/plugins/dsh-better-sidebar/lib/index.js"
   if [ -f "$bs_lib" ] && grep -q 'settingsNamespace' "$bs_lib" 2>/dev/null; then
     local settings_has_ns=0
     if "$NODE_BIN" --input-type=module -e "
@@ -293,7 +325,7 @@ if (!('settingsNamespace' in mod)) process.exit(5);
     fi
     if [ "$settings_has_ns" -eq 0 ]; then
       echo "✗ L2 插件种子中的 dsh-better-sidebar 与 DSH_SRC dsh-settings API 不兼容。" >&2
-      echo "   种子 better-sidebar 仍 import settingsNamespace，但当前 DSH_SRC（pin alpha.3）已无该导出。" >&2
+      echo "   受管 snapshot 中的 better-sidebar 仍 import settingsNamespace，但当前 DSH_SRC（pin alpha.3）已无该导出。" >&2
       echo "   种子路径: ${profile_dir}" >&2
       echo "   修复：改用 ~/.omnimux-dev/profiles/omnimux 种子（yarn omnimux:sync 后的 Dev profile），" >&2
       echo "   或 export OMNIMUX_L2_SEED_PROFILE=... 指向含兼容 better-sidebar 的 profile；" >&2
@@ -305,6 +337,53 @@ if (!('settingsNamespace' in mod)) process.exit(5);
   echo "✓ L2 Host 安装闭包完整（DSH_SRC → web-app → ui-chat）"
   echo "  插件种子: ${profile_dir}"
   echo "$resolve_out" | sed 's/^/  /'
+}
+
+# 新 L2 只能由稳定 profile 的受管 snapshot 建立：profile 级 node_modules 不可复制，
+# 因为其中的 symlink/store 可能回指共享 Dev。先在同级临时目录完整组装，pnpm 成功后再发布。
+clone_l2_seed_profile() {
+  local seed="$1" target="$2" parent temporary
+  parent="$(dirname "$target")"
+  if [ -e "$target" ]; then
+    echo "✗ 已有不完整 L2 profile: ${target}；拒绝用新 seed 覆盖旧任务环境。" >&2
+    exit 1
+  fi
+  if ! temporary="$(mktemp -d "$parent/.omnimux-l2-seed.XXXXXX")"; then
+    echo "✗ 无法创建 L2 初始化临时目录: ${parent}" >&2
+    exit 1
+  fi
+  if [ -z "$temporary" ] || [ ! -d "$temporary" ] || [ "$(dirname "$temporary")" != "$parent" ]; then
+    echo "✗ 非法 L2 初始化临时目录，拒绝继续。" >&2
+    rm -rf "$temporary"
+    exit 1
+  fi
+
+  if ! cp "$seed/package.json" "$seed/cordis.patch.yml" "$seed/pnpm-lock.yaml" "$seed/pnpm-workspace.yaml" "$temporary/" \
+    || ! rsync -aL --delete "$seed/.materialize-snapshots/" "$temporary/.materialize-snapshots/"; then
+    rm -rf "$temporary"
+    echo "✗ 无法复制 L2 受管 snapshot；未创建任务 profile。" >&2
+    exit 1
+  fi
+
+  # 不复制 seed .npmrc（它可能含认证或共享 store）。store 必须在任务 profile 的
+  # 同级目录：pnpm 可在临时安装期间创建它，但不能提前创建 $target 并让后续 mv 嵌套。
+  echo "store-dir=$parent/.pnpm-store/v10" > "$temporary/.npmrc"
+  echo "→ 由 pnpm 重建 L2 私有 node_modules"
+  if ! (cd "$temporary" && corepack pnpm install --frozen-lockfile); then
+    rm -rf "$temporary"
+    echo "✗ pnpm 无法从 L2 受管 snapshot 重建 node_modules；未创建任务 profile。" >&2
+    exit 1
+  fi
+  if [ ! -d "$temporary/node_modules" ]; then
+    rm -rf "$temporary"
+    echo "✗ pnpm 未生成 L2 node_modules；未创建任务 profile。" >&2
+    exit 1
+  fi
+  if ! mv "$temporary" "$target"; then
+    rm -rf "$temporary"
+    echo "✗ 无法发布已初始化的 L2 profile: ${target}" >&2
+    exit 1
+  fi
 }
 
 # Resolve profile dir: prefer tasks/<name>/profiles/...；兼容旧 ~/.dsh-dev/profiles/...
@@ -573,18 +652,14 @@ case "$cmd" in
     mkdir -p "$(dirname "$pdir")"
 
     if [ ! -d "$pdir/node_modules" ]; then
-      # 新环境才做源依赖预检 + 克隆种子（既有环境已克隆过，直接复用）
+      # 新环境才做源依赖预检 + 克隆受管 source（既有环境绝不自动修复或覆盖）。
       PROD_PROFILE="$(resolve_l2_seed_profile)"
       assert_l2_source_deps "$PROD_PROFILE"
-      echo "→ 初始化环境 omnimux-dev-${name}（从种子克隆插件依赖: ${PROD_PROFILE}）"
-      mkdir -p "$pdir"
-      cp "$PROD_PROFILE/package.json" "$PROD_PROFILE/cordis.patch.yml" "$pdir/"
-      echo "store-dir=$pdir/.pnpm-store/v10" > "$pdir/.npmrc"
-      cp -Rc "$PROD_PROFILE/node_modules" "$pdir/node_modules" 2>/dev/null \
-        || cp -R "$PROD_PROFILE/node_modules" "$pdir/node_modules"
+      echo "→ 初始化环境 omnimux-dev-${name}（从受管 snapshot 克隆: ${PROD_PROFILE}）"
+      clone_l2_seed_profile "$PROD_PROFILE" "$pdir"
     elif [ ! -f "$pdir/cordis.patch.yml" ]; then
-      PROD_PROFILE="$(resolve_l2_seed_profile)"
-      cp "$PROD_PROFILE/cordis.patch.yml" "$pdir/"
+      echo "✗ 既有 L2 profile 缺少 cordis.patch.yml: ${pdir}；拒绝用 seed 修补旧任务环境。" >&2
+      exit 1
     fi
 
     # 记录本任务 DSH_HOME（Host 启动用）

@@ -1,230 +1,383 @@
 /**
- * Unit tests for videoParamAdapter
+ * Unit tests for videoParamAdapter (Issue #467 / W2).
  *
- * 遵循 Node 纯单测规范，覆盖 4 大场景：
- * 1. Kling V3 型模型（仅 first_frame/last_frame，resolution 1080P/4K，sound 支持）下的有效参数解析（含非法 params 安全回退）
- * 2. Veo 3.1 型模型（仅 reference、无音效）下的解析与不支持项压制
- * 3. 模型切换：Kling V3 态参数切换到 Veo 型模型时 generationMode/resolution/sound 的降级与字段清除
- * 4. 空 params / 空 schema / 无 modelItem 的安全兜底
+ * Operation resolution is catalog-driven. Without a catalog the adapter still
+ * scrubs aspect/duration/resolution/sound using canonical params.operation.
  */
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { createCompatTestCatalog } from '../../../../../../shared/validation/compatTestCatalog.ts';
 import {
+  applyPendingVideoParamAdjustment,
+  buildVideoParamTransition,
+  keepCurrentVideoParamValues,
   resolveEffectiveVideoParams,
   validateAndFallbackVideoParams,
+  validateVideoParamsForUi,
 } from './videoParamAdapter.ts';
 
-/** Kling V3 型模型：仅支持 first_frame/last_frame，含分辨率与音效能力 */
-const klingV3Model = {
-  id: 'kling-v3',
-  label: 'Kling V3',
-  inputCapability: {
-    referenceImages: {
-      min: 0,
-      max: 2,
-      supportedRoles: ['first_frame', 'last_frame'],
-    },
+const catalog = createCompatTestCatalog();
+
+const klingSchema = {
+  aspectRatio: {
+    options: [
+      { value: '16:9', label: '16:9' },
+      { value: '9:16', label: '9:16' },
+      { value: '1:1', label: '1:1' },
+    ],
+    defaultValue: '16:9',
   },
-  parameters: {
-    aspectRatio: {
-      options: [
-        { value: '16:9', label: '16:9' },
-        { value: '9:16', label: '9:16' },
-        { value: '1:1', label: '1:1' },
-      ],
-      defaultValue: '16:9',
-    },
-    resolution: {
-      options: [
-        { value: '1080P', label: '1080P' },
-        { value: '4K', label: '4K' },
-      ],
-      defaultValue: '1080P',
-    },
-    duration: {
-      options: [
-        { value: 5, label: '5s' },
-        { value: 10, label: '10s' },
-      ],
-      defaultValue: 10,
-    },
-    sound: { supported: true, defaultValue: true },
+  resolution: {
+    options: [
+      { value: '1080P', label: '1080P' },
+      { value: '4K', label: '4K' },
+    ],
+    defaultValue: '1080P',
+  },
+  duration: {
+    options: [
+      { value: 5, label: '5s' },
+      { value: 10, label: '10s' },
+    ],
+    defaultValue: 10,
+  },
+  sound: { supported: true, defaultValue: true },
+};
+
+const veoSchema = {
+  aspectRatio: {
+    options: [
+      { value: '16:9', label: '16:9' },
+      { value: '9:16', label: '9:16' },
+    ],
+    defaultValue: '16:9',
+  },
+  duration: {
+    options: [
+      { value: 5, label: '5s' },
+      { value: 8, label: '8s' },
+    ],
+    defaultValue: 8,
   },
 };
 
-/** Veo 3.1 型模型：仅支持 reference，无分辨率选项，无音效 */
-const veoModel = {
-  id: 'veo-3.1',
-  label: 'Veo 3.1',
-  inputCapability: {
-    referenceImages: {
-      min: 0,
-      max: 1,
-      supportedRoles: ['reference'],
-    },
-  },
-  parameters: {
-    aspectRatio: {
-      options: [
-        { value: '16:9', label: '16:9' },
-        { value: '9:16', label: '9:16' },
-      ],
-      defaultValue: '16:9',
-    },
-    duration: {
-      options: [
-        { value: 5, label: '5s' },
-        { value: 8, label: '8s' },
-      ],
-      defaultValue: 8,
-    },
-  },
-};
+const klingItem = { id: 'vid-frames', label: 'vid-frames', parameters: klingSchema };
+const veoItem = { id: 'vid-frames', label: 'vid-frames', parameters: veoSchema };
 
-describe('videoParamAdapter - resolveEffectiveVideoParams 有效参数解析', () => {
-  it('场景 1a: Kling V3 型模型合法参数 -> 生成模式强制首尾帧、其余参数透传', () => {
-    const params = {
-      model: 'kling-v3',
-      generationMode: 'reference', // 与能力冲突，应被强制为 first_last_frame
-      aspectRatio: '9:16',
-      resolution: '4K',
-      duration: 10,
-      sound: true,
-    };
-
-    const result = resolveEffectiveVideoParams(params, klingV3Model.parameters, klingV3Model);
-
-    assert.equal(result.model, 'kling-v3');
-    // 仅支持 first_frame/last_frame，不含 reference -> 强制 first_last_frame
-    assert.equal(result.generationMode, 'first_last_frame');
+describe('videoParamAdapter - resolveEffectiveVideoParams (W2)', () => {
+  it('catalog + no media → operation set; schema fields scrubbed', () => {
+    const result = resolveEffectiveVideoParams({
+      params: { model: 'vid-frames', operation: 'video_multi_ref', aspectRatio: '9:16', duration: 10, sound: true },
+      schema: klingSchema,
+      modelItem: klingItem,
+      catalog,
+      upstreams: [],
+      prompt: 'hi',
+    });
+    assert.equal(result.model, 'vid-frames');
+    assert.equal(typeof result.operation, 'string');
+    assert.ok(result.operation.length > 0);
+    // Kernel treats min-unsatisfied as accepts+pending, so multiple listed video
+    // ops may still be effective with empty media — mode UI follows count.
+    assert.ok(result.effectiveOperations.length >= 1);
+    assert.equal(result.showModeUi, result.effectiveOperations.length >= 2);
     assert.equal(result.aspectRatio, '9:16');
-    assert.equal(result.resolution, '4K');
     assert.equal(result.duration, 10);
     assert.equal(result.sound, true);
     assert.equal(result.hasSoundSupport, true);
   });
 
-  it('场景 1b: Kling V3 型模型非法/脏参数 -> 安全回退到 schema 默认值', () => {
-    const dirtyParams = {
-      model: 'kling-v3',
-      generationMode: 'bogus',
-      aspectRatio: '999:999', // 不在选项中
-      resolution: '8K', // 不在选项中
-      duration: 999, // 不在选项中
-      sound: 'yes', // 非布尔值
-    };
-
-    const result = resolveEffectiveVideoParams(dirtyParams, klingV3Model.parameters, klingV3Model);
-
-    assert.equal(result.generationMode, 'first_last_frame');
-    assert.equal(result.aspectRatio, '16:9'); // defaultValue
-    assert.equal(result.resolution, '1080P'); // defaultValue
-    assert.equal(result.duration, 10); // defaultValue
-    assert.equal(result.sound, true); // 非布尔 -> 使用 schema 默认 true
-    assert.equal(result.hasSoundSupport, true);
+  it('canonical operation remains selected when effective', () => {
+    const result = resolveEffectiveVideoParams({
+      params: { model: 'vid-frames', operation: 'first_last_frame', aspectRatio: '16:9' },
+      schema: klingSchema,
+      modelItem: klingItem,
+      catalog,
+      upstreams: [],
+    });
+    // Preferred first_last_frame stays selected when still effective (accepts with pending min).
+    assert.equal(result.operation, 'first_last_frame');
+    assert.equal(typeof result.operationLabel, 'string');
   });
 
-  it('场景 2a: Veo 3.1 型模型 -> 生成模式强制 reference、分辨率压制、音效关闭', () => {
-    const params = {
-      model: 'veo-3.1',
-      generationMode: 'first_last_frame', // 与能力冲突，应被强制为 reference
-      aspectRatio: '9:16',
-      resolution: '4K', // 目标模型无分辨率选项，应被压制为 undefined
-      duration: 8,
-      sound: true, // 目标模型不支持音效，应被强制为 false
-    };
+  it('saved unsupported values remain visible until the user decides', () => {
+    const result = resolveEffectiveVideoParams({
+      params: { model: 'vid-frames', aspectRatio: 'bogus', duration: 99, resolution: '8K' },
+      schema: klingSchema,
+      modelItem: klingItem,
+      catalog,
+    });
+    assert.equal(result.aspectRatio, 'bogus');
+    assert.equal(result.duration, 99);
+    assert.equal(result.resolution, '8K');
+  });
 
-    const result = resolveEffectiveVideoParams(params, veoModel.parameters, veoModel);
-
-    assert.equal(result.model, 'veo-3.1');
-    // 仅支持 reference，不含 first/last frame -> 强制 reference
-    assert.equal(result.generationMode, 'reference');
-    assert.equal(result.aspectRatio, '9:16');
-    assert.equal(result.resolution, undefined);
-    assert.equal(result.duration, 8);
-    assert.equal(result.sound, false);
+  it('no catalog → still returns shape; operation may be empty; block via showModeUi false', () => {
+    const result = resolveEffectiveVideoParams({
+      params: { model: 'x', aspectRatio: '16:9', duration: 5 },
+      schema: veoSchema,
+      modelItem: veoItem,
+      catalog: null,
+    });
+    assert.equal(result.showModeUi, false);
+    assert.equal(result.effectiveOperations.length, 0);
     assert.equal(result.hasSoundSupport, false);
-  });
-
-  it('场景 4a: 空 params / 空 schema / 无 modelItem -> 全量安全兜底', () => {
-    const result = resolveEffectiveVideoParams(undefined, undefined, undefined);
-
-    assert.equal(result.model, '');
-    assert.equal(result.generationMode, 'reference');
-    assert.equal(result.aspectRatio, '16:9');
-    assert.equal(result.resolution, undefined);
-    assert.equal(result.duration, 5);
     assert.equal(result.sound, false);
-    assert.equal(result.hasSoundSupport, false);
-  });
-
-  it('场景 4b: 空对象 params 与空 schema -> 仍安全兜底', () => {
-    const result = resolveEffectiveVideoParams({}, {}, {});
-
-    assert.equal(result.model, '');
-    assert.equal(result.generationMode, 'reference');
-    assert.equal(result.aspectRatio, '16:9');
-    assert.equal(result.duration, 5);
-    assert.equal(result.sound, false);
-    assert.equal(result.hasSoundSupport, false);
-  });
-
-  it('场景 4c: supportedRoles 为空数组（无限定）-> 优先采纳 params.generationMode', () => {
-    const unlimitedModel = {
-      id: 'unlimited-model',
-      inputCapability: { referenceImages: { supportedRoles: [] } },
-      parameters: {
-        aspectRatio: { options: [{ value: '16:9' }], defaultValue: '16:9' },
-      },
-    };
-
-    const result = resolveEffectiveVideoParams(
-      { generationMode: 'first_last_frame', aspectRatio: '16:9', duration: 5 },
-      unlimitedModel.parameters,
-      unlimitedModel,
-    );
-
-    assert.equal(result.generationMode, 'first_last_frame');
   });
 });
 
-describe('videoParamAdapter - validateAndFallbackVideoParams 模型切换降级', () => {
-  it('场景 3: Kling V3 态参数切换到 Veo 型模型 -> generationMode 回退 reference、resolution 重置、sound 字段删除', () => {
-    const klingState = {
-      model: 'kling-v3',
-      generationMode: 'first_last_frame',
-      aspectRatio: '16:9',
-      resolution: '4K',
-      duration: 8,
-      sound: true,
-      firstFrameUrl: 'https://example.com/first.png',
-    };
-
-    const next = validateAndFallbackVideoParams(klingState, veoModel);
-
-    // model 字段切换到目标模型
-    assert.equal(next.model, 'veo-3.1');
-    // generationMode 回退为 reference
-    assert.equal(next.generationMode, 'reference');
-    // aspectRatio 与 duration 目标模型支持，保留
-    assert.equal(next.aspectRatio, '16:9');
-    assert.equal(next.duration, 8);
-    // firstFrameUrl 等未知/透传字段保留
-    assert.equal(next.firstFrameUrl, 'https://example.com/first.png');
-
-    // resolution：目标模型无选项 -> 彻底删除
-    assert.equal(Object.prototype.hasOwnProperty.call(next, 'resolution'), false);
-    // sound：目标模型不支持 -> 彻底删除
-    assert.equal(Object.prototype.hasOwnProperty.call(next, 'sound'), false);
+describe('videoParamAdapter - validateAndFallbackVideoParams (W2)', () => {
+  it('keeps canonical params.operation when changing model', () => {
+    const next = validateAndFallbackVideoParams(
+      { model: 'old', operation: 'text_to_video', aspectRatio: '9:16', duration: 10, sound: true, resolution: '4K' },
+      klingItem,
+      { catalog, upstreams: [], prompt: '' },
+    );
+    assert.equal(next.model, 'vid-frames');
+    assert.equal(typeof next.operation, 'string');
+    assert.ok(next.operation.length > 0);
+    assert.equal(next.aspectRatio, '9:16');
+    assert.equal(next.resolution, '4K');
+    assert.equal(next.sound, true);
   });
 
-  it('场景 3b: 目标模型为 undefined -> 仅继承旧参数并保留 model', () => {
-    const oldParams = { model: 'legacy', generationMode: 'first_last_frame', aspectRatio: '9:16' };
-    const next = validateAndFallbackVideoParams(oldParams, undefined);
+  it('holds a sole compatible operation replacement for explicit confirmation', () => {
+    const transition = buildVideoParamTransition(
+      { model: 'old', operation: 'obsolete_video_op', aspectRatio: '16:9', duration: 5 },
+      {
+        id: 'replacement-model', label: 'Replacement',
+        parameters: { duration: { options: [{ value: -1 }], defaultValue: -1 } },
+      },
+      {
+        catalog: {
+          source: 'omnimux', text: [], image: [], audio: [], video: [],
+          models: [{
+            id: 'replacement-model', label: 'Replacement', listed: true,
+            parameters: { duration: { options: [{ value: -1 }], defaultValue: -1 } },
+            operations: [{ id: 'video_edit', label: 'Edit', listed: true, output: { type: 'video' }, inputs: [] }],
+          }],
+        },
+      },
+    );
+    assert.equal(transition.params.operation, 'obsolete_video_op');
+    assert.equal(transition.pending?.suggestedParams.operation, 'video_edit');
+    assert.equal(transition.pending?.originalParams.operation, 'obsolete_video_op');
+    assert.match(transition.pending?.notices.join(' ') ?? '', /生成方式/);
+  });
 
-    assert.equal(next.model, 'legacy');
-    assert.equal(next.generationMode, 'first_last_frame');
-    assert.equal(next.aspectRatio, '9:16');
+  it('target schema without resolution/sound keeps dormant values for a reversible switch', () => {
+    const next = validateAndFallbackVideoParams(
+      { model: 'vid-frames', operation: 'text_to_video', aspectRatio: '16:9', duration: 5, resolution: '4K', sound: true },
+      veoItem,
+      { catalog },
+    );
+    assert.equal(next.resolution, '4K');
+    assert.equal(next.sound, true);
+    assert.equal(next.duration, 5);
+  });
+
+  it('model-only transitions retain a legacy operation field unchanged', () => {
+    const next = validateAndFallbackVideoParams(
+      { model: 'old', generationMode: 'reference', aspectRatio: '16:9' },
+      klingItem,
+      { catalog },
+    );
+    assert.equal(next.generationMode, 'reference');
+    assert.equal('operation' in next, false);
+  });
+
+  it('explicit nextOperationId is migrated onto params.operation', () => {
+    const next = validateAndFallbackVideoParams(
+      { model: 'vid-frames' },
+      klingItem,
+      { catalog, nextOperationId: 'text_to_video' },
+    );
+    assert.equal(next.operation, 'text_to_video');
+  });
+
+  it('holds existing Seedance values as a persisted proposal until confirmation', () => {
+    const seedanceCatalog = {
+      ...catalog,
+      models: [
+        ...catalog.models,
+        {
+          id: 'seedance-2.5',
+          label: 'Seedance 2.5',
+          family: 'seedance',
+          listed: true,
+          listedOperations: ['seedance-2.5#video_multi_ref', 'seedance-2.5#video_edit'],
+          operations: [
+            {
+              id: 'video_multi_ref', label: '多参考', listed: true,
+              output: { type: 'video' }, inputs: [{ slot: 'prompt', type: 'text', role: 'prompt', source: 'node_field', min: 0, max: 1 }],
+            },
+            {
+              id: 'video_edit', label: '编辑', listed: true,
+              output: { type: 'video' }, inputs: [{ slot: 'prompt', type: 'text', role: 'prompt', source: 'node_field', min: 0, max: 1 }],
+              parameters: {
+                aspectRatio: { options: [{ value: 'adaptive', label: '自适应' }], defaultValue: 'adaptive' },
+                duration: { options: [{ value: -1, label: '自动' }], defaultValue: -1, allowAuto: true },
+                referenceTaskType: { options: [{ value: 'edit', label: '编辑' }], defaultValue: 'edit' },
+                seed: { type: 'integer', range: { min: 0, max: 9 } },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const oldParams = {
+      model: 'seedance-2.5', operation: 'video_multi_ref', duration: 5,
+      aspectRatio: '16:9', referenceTaskType: 'reference', seed: 42,
+    };
+    const transition = buildVideoParamTransition(oldParams, {
+      id: 'seedance-2.5', label: 'Seedance 2.5', parameters: {},
+    }, { catalog: seedanceCatalog, nextOperationId: 'video_edit' });
+
+    assert.equal(transition.params.operation, 'video_edit');
+    assert.equal(transition.params.duration, 5);
+    assert.equal(transition.params.aspectRatio, '16:9');
+    assert.equal(transition.params.referenceTaskType, 'reference');
+    assert.equal(transition.params.seed, 42);
+    assert.ok(transition.params.pendingVideoParamAdjustment);
+    assert.deepEqual(transition.pending?.suggestedParams, {
+      duration: -1,
+      aspectRatio: 'adaptive',
+      referenceTaskType: 'edit',
+      seed: 0,
+    });
+    assert.deepEqual(transition.pending?.originalParams, {
+      duration: 5,
+      aspectRatio: '16:9',
+      referenceTaskType: 'reference',
+      seed: 42,
+    });
+
+    const current = resolveEffectiveVideoParams({
+      params: transition.params,
+      schema: {},
+      modelItem: { id: 'seedance-2.5', label: 'Seedance 2.5', parameters: {} },
+      catalog: seedanceCatalog,
+    });
+    assert.equal(current.duration, 5);
+    assert.equal(current.aspectRatio, '16:9');
+    assert.equal(current.referenceTaskType, 'reference');
+    assert.equal(current.seed, 42);
+    assert.deepEqual(applyPendingVideoParamAdjustment(transition.params), {
+      ...oldParams,
+      operation: 'video_edit',
+      ...transition.pending?.suggestedParams,
+    });
+    assert.deepEqual(applyPendingVideoParamAdjustment({ ...transition.params, duration: 7 }), {
+      ...oldParams,
+      operation: 'video_edit',
+      duration: 7,
+      aspectRatio: 'adaptive',
+      referenceTaskType: 'edit',
+      seed: 0,
+    }, 'confirm must not overwrite a parameter changed after the proposal was created');
+    assert.deepEqual(keepCurrentVideoParamValues(transition.params), {
+      ...oldParams,
+      operation: 'video_edit',
+    });
+  });
+
+});
+
+describe('videoParamAdapter - immediate combined-duration validation', () => {
+  const params = {
+    model: 'wan-3.0',
+    operation: 'video_multi_ref',
+    operationLabel: '全能参考生视频',
+    effectiveOperations: [
+      {
+        id: 'video_multi_ref',
+        label: '全能参考生视频',
+        slots: [
+          {
+            slot: 'reference_videos',
+            type: 'video',
+            role: 'reference',
+            source: 'upstream_edge',
+            min: 1,
+            max: 5,
+            combinedOutputMaxDurationSec: 30,
+          },
+        ],
+        bindings: [
+          {
+            edgeId: 'edge-video',
+            sourceNodeId: 'video-1',
+            slot: 'reference_videos',
+            role: 'reference',
+            type: 'video',
+          },
+        ],
+        effective: true,
+        ready: true,
+      },
+    ],
+    showModeUi: false,
+    schema: {},
+    aspectRatio: '16:9',
+    duration: 15,
+    sound: true,
+    hasSoundSupport: true,
+  };
+
+  it('accepts a 15s reference plus 15s output', () => {
+    assert.deepEqual(validateVideoParamsForUi({
+      params,
+      upstreams: [{ nodeId: 'video-1', edgeId: 'edge-video', materialType: 'video', durationSec: 15 }],
+    }), []);
+  });
+
+  it('blocks a 16s reference plus 15s output', () => {
+    assert.deepEqual(validateVideoParamsForUi({
+      params,
+      upstreams: [{ nodeId: 'video-1', edgeId: 'edge-video', materialType: 'video', durationSec: 16 }],
+    }), ['参考视频与输出时长合计不能超过 30 秒']);
+  });
+});
+
+describe('videoParamAdapter - document URL validation', () => {
+  const baseParams = {
+    model: 'wan-3.0',
+    operation: 'document_to_video',
+    operationLabel: '文档参考生视频',
+    effectiveOperations: [{
+      id: 'document_to_video',
+      label: '文档参考生视频',
+      slots: [{
+        slot: 'file_url',
+        type: 'document',
+        role: 'document',
+        source: 'node_field',
+        min: 1,
+        max: 1,
+        allowedMimes: ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+      }],
+      bindings: [],
+      effective: true,
+      ready: true,
+    }],
+    showModeUi: true,
+    schema: {},
+    aspectRatio: '16:9',
+    duration: 5,
+    sound: true,
+    hasSoundSupport: true,
+  };
+
+  it('accepts a documented file extension and preserves signed query parameters', () => {
+    assert.deepEqual(validateVideoParamsForUi({
+      params: { ...baseParams, fileUrl: 'https://cdn.example.com/deck.pptx?signature=fixed' },
+    }), []);
+  });
+
+  it('blocks a document extension outside the contract MIME list', () => {
+    assert.deepEqual(validateVideoParamsForUi({
+      params: { ...baseParams, fileUrl: 'https://cdn.example.com/archive.zip' },
+    }), ['文档格式不在当前模型支持列表']);
   });
 });

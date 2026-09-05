@@ -1,33 +1,41 @@
 ---
-name: "🐛 02. 缺陷修复 / 热修补丁 (Track D)"
-description: "用于现有插件的 Bug 修复、运行时异常排查与紧急热修 (Patch)"
-title: "fix(<scope>): <简要描述>"
-labels: ["status:triage", "track:D-patch"]
+name: "Bug fix or hotfix"
+about: "Reproduce and fix an existing defect with bounded regression evidence"
+title: "fix(<plugin>): <observed failure>"
+labels: "status:triage, track:D-patch, risk:R1"
+assignees: ""
 ---
 
-```yaml
-# Agent 结构化元数据 (由 许清楚 / 齐活林 填充)
-track: "Track D (增量热修与版本迭代)"
-scope: "" # 插件名或子系统
-priority: "P0" # P0 / P1
-assignee: "林深"
-qa: "严过关"
-```
+---
+type: fix
+plugin: <plugin-or-common>
+track: D
+risk-tier: R1
+pre-authorized: false
+dependencies: none
+acceptance: "Replace with a reproduction that fails before and passes after the fix"
+non-goals: "Replace with unrelated refactors or behavior not changed by this fix"
+---
 
-### 1. 🛑 问题描述与复现路径
-- **现象描述**：
-- **复现步骤**：
-- **错误堆栈 / 日志**：
+## Observed failure
 
-### 2. 🔍 根因分析 (林深)
-- **问题根因**：
-- **影响范围**：
+- Environment/version:
+- Reproduction steps:
+- Actual result and logs:
+- Expected result:
 
-### 3. 🛠️ 修复方案与 Minimal Patch
-- **改动策略**：针对性最小 Patch，严禁无关重构
-- **回归验证范围**：
+## Root cause and bounded fix
 
-### 4. 🧪 验收标准
-- [ ] 1. 缺陷复现用例补充并通过
-- [ ] 2. 原有单测与回归测试全部通过
-- [ ] 3. 严过关五维立体验收放行 (`qa:pass`)
+- Root cause evidence:
+- Proposed change:
+- Regression surface:
+- Rollback/recovery:
+
+## Acceptance
+
+- [ ] Reproduction or regression test demonstrates the original failure and fixed behavior.
+- [ ] Relevant tests execute with counts; skips and environment limits are explicit.
+- [ ] Runtime evidence follows `docs/contracts/plugin-qa.md` only when applicable.
+- [ ] Independent final acceptance checks scope, regression risk, evidence, and authorization.
+
+The R1 default is conservative and does not approve push or merge. Reclassify only from the actual diff under `docs/contracts/plugin-git-pr.md`; never use labels to lower real risk.

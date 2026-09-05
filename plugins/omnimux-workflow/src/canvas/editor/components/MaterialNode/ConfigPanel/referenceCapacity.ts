@@ -10,7 +10,7 @@ import {
 
 export interface ReferenceCapacityCalculation {
   imageCount: number;
-  max: number | undefined;
+  max: number | null | undefined;
   isOver: boolean;
   capacityLabel: string;
   warningText: string | undefined;
@@ -29,14 +29,14 @@ export function calculateReferenceCapacity(params: {
     (u) => u.materialType === 'image' || !u.materialType,
   ).length;
 
-  let resolvedMax: number | undefined = max;
+  let resolvedMax: number | null | undefined = max;
   if (resolvedMax === undefined) {
     const cap = modelCap ?? (modelId ? resolveModelInputCapability(modelId, catalog) : undefined);
     resolvedMax = cap?.referenceImages?.max;
   }
 
-  const isOver = resolvedMax !== undefined && imageCount > resolvedMax;
-  const maxLabel = resolvedMax !== undefined ? String(resolvedMax) : '--';
+  const isOver = typeof resolvedMax === 'number' && imageCount > resolvedMax;
+  const maxLabel = typeof resolvedMax === 'number' ? String(resolvedMax) : '未公布';
   const capacityLabel = `参考图 ${imageCount}/${maxLabel}`;
   const warningText = isOver
     ? (warningTemplate || '输入超出模型推荐配额，执行时按前 {max} 张处理').replace(

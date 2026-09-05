@@ -102,6 +102,7 @@ export function createCompatTestCatalog(): CapabilityCatalog {
         inputs: [
           promptSlot(),
           refImageSlot({ slot: 'start_frame', role: 'first_frame', min: 1, max: 1, maxSizeMb: 20 }),
+          // FLF fixture keeps historical slot name end_frame for last role (pre-#567).
           refImageSlot({ slot: 'end_frame', role: 'last_frame', min: 1, max: 1, maxSizeMb: 20 }),
         ],
       }),
@@ -121,6 +122,18 @@ export function createCompatTestCatalog(): CapabilityCatalog {
             maxDurationSec: 30,
             limitSource: { kind: 'official_docs', url: 'fixture' },
           },
+        ],
+      }),
+    ]),
+    // order 3b — end_frame-only model (#567). Slot name end_frame + role last_frame.
+    // Intentionally separate from FLF so stale targetSlot=last_frame cannot silently bind.
+    model('vid-endframe', 'gamma', [
+      op({
+        id: 'end_frame',
+        outputType: 'video',
+        inputs: [
+          promptSlot(),
+          refImageSlot({ slot: 'end_frame', role: 'last_frame', min: 1, max: 1, maxSizeMb: 20 }),
         ],
       }),
     ]),
@@ -157,6 +170,7 @@ export function createCompatTestCatalog(): CapabilityCatalog {
       image_to_image: 'img-hd',
       text_to_video: 'vid-frames',
       first_last_frame: 'vid-frames',
+      end_frame: 'vid-endframe',
       video_edit: 'vid-frames',
       text_to_speech: 'aud-tts',
     },
@@ -167,7 +181,7 @@ export function createCompatTestCatalog(): CapabilityCatalog {
       { id: 'img-ref', label: 'img-ref' },
       { id: 'img-hd', label: 'img-hd' },
     ],
-    video: [{ id: 'vid-frames', label: 'vid-frames' }],
+    video: [{ id: 'vid-frames', label: 'vid-frames' }, { id: 'vid-endframe', label: 'vid-endframe' }],
     audio: [{ id: 'aud-tts', label: 'aud-tts' }],
   };
 }

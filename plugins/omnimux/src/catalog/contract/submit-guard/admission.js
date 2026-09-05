@@ -1,6 +1,6 @@
 /**
  * Model + operation admission for SubmitGuard.
- * Fail closed: unknown / unlisted / draft / disposition-forbidden / profile gaps.
+ * Fail closed: unknown / unlisted / unverified / implementation/profile gaps.
  */
 
 import { mapLegacyOperation } from '../legacy-operation-map.js'
@@ -126,7 +126,7 @@ export function admitOperation(model, operationId, profiles, opts = {}) {
 
   if (requireListed && !op.listed) {
     const research = op.research?.status ?? 'draft'
-    const execution = op.execution?.status ?? 'none'
+    const implementation = op.implementation?.status ?? 'none'
     if (research !== 'verified') {
       return fail(GUARD_CODES.RESEARCH_NOT_VERIFIED, `operation ${model.id}#${opId} research is ${research}, not verified`, {
         modelId: model.id,
@@ -134,11 +134,11 @@ export function admitOperation(model, operationId, profiles, opts = {}) {
         research,
       })
     }
-    if (execution !== 'live') {
-      return fail(GUARD_CODES.EXECUTION_UNAVAILABLE, `operation ${model.id}#${opId} execution is ${execution}, not live`, {
+    if (implementation !== 'ready') {
+      return fail(GUARD_CODES.IMPLEMENTATION_UNAVAILABLE, `operation ${model.id}#${opId} implementation is ${implementation}, not ready`, {
         modelId: model.id,
         operationId: opId,
-        execution,
+        implementation,
       })
     }
     return fail(GUARD_CODES.NOT_LISTED, `operation ${model.id}#${opId} is not listed`, {
@@ -153,16 +153,16 @@ export function admitOperation(model, operationId, profiles, opts = {}) {
       operationId: opId,
     })
   }
-  if (op.execution?.status && op.execution.status !== 'live' && requireListed) {
-    return fail(GUARD_CODES.EXECUTION_UNAVAILABLE, `execution status ${op.execution.status}`, {
+  if (op.implementation?.status && op.implementation.status !== 'ready' && requireListed) {
+    return fail(GUARD_CODES.IMPLEMENTATION_UNAVAILABLE, `implementation status ${op.implementation.status}`, {
       modelId: model.id,
       operationId: opId,
     })
   }
 
-  const profileId = op.execution?.profileId
+  const profileId = op.implementation?.profileId
   if (!profileId) {
-    return fail(GUARD_CODES.PROFILE_MISSING, `operation ${opId} has no execution.profileId`, {
+    return fail(GUARD_CODES.PROFILE_MISSING, `operation ${opId} has no implementation.profileId`, {
       modelId: model.id,
       operationId: opId,
     })
@@ -186,7 +186,7 @@ export function admitOperation(model, operationId, profiles, opts = {}) {
 
   if (opts.seam) {
     const profileSeam = profile.seam
-    const opSeam = op.execution?.seam
+    const opSeam = op.implementation?.seam
     if (profileSeam && opts.seam !== profileSeam && opts.seam !== opSeam) {
       // Allow capability aliases: videoGenerate seam vs capability "video"
       const seamAliases = SEAM_ALIASES[profileSeam] ?? [profileSeam]
@@ -235,7 +235,7 @@ const SEAM_ALIASES = Object.freeze({
 })
 
 /**
- * Infer a unique listed live operation from model + current assets.
+ * Infer a unique listed implementation-ready operation from model + current assets.
  * Multiple candidates → operation_required (never guess).
  * @param {object} model
  * @param {import('./normalize.js').LogicalAsset[]} assets
@@ -249,7 +249,7 @@ export function inferUniqueOperation(model, assets, ctx = {}) {
   }
   if (ctx.seam && ctx.profiles) {
     candidates = candidates.filter((op) => {
-      const profile = getAdapterProfile(ctx.profiles, op.execution?.profileId)
+      const profile = getAdapterProfile(ctx.profiles, op.implementation?.profileId)
       if (!profile) return false
       const aliases = SEAM_ALIASES[profile.seam] ?? [profile.seam]
       return aliases.includes(ctx.seam) || profile.seam === ctx.seam
