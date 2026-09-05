@@ -53,6 +53,15 @@ describe('inspiration triptych modal', () => {
     assert.match(INSPIRATION_CSS, /modal-mobile-tabs/)
     assert.match(INSPIRATION_CSS, /\.omnimux-inspiration-modal-panel\.is-active/)
   })
+
+  it('supports optional timecode columns and quote blocks without fabricating timestamps', () => {
+    const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
+    assert.match(INSPIRATION_CSS, /omnimux-inspiration-modal-script-list\.has-timecode/)
+    assert.match(INSPIRATION_CSS, /omnimux-inspiration-modal-dimensions blockquote/)
+    assert.match(section, /translateInspiration/)
+    assert.match(section, /modal\.script\.translate/)
+    assert.doesNotMatch(section, /00:00 hello/)
+  })
 })
 
 describe('legacy inspiration modal segmented switch', () => {

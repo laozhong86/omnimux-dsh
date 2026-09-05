@@ -1441,12 +1441,12 @@ export const INSPIRATION_CSS = `
   border-radius: 16px;
 }
 .omnimux-inspiration-modal-header {
-  height: 60px;
-  flex: 0 0 60px;
+  min-height: 60px;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 0 16px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--dsw-alias-border-l2);
 }
 .omnimux-inspiration-modal-heading {
@@ -1556,11 +1556,79 @@ export const INSPIRATION_CSS = `
   line-height: 1.65;
   color: var(--dsw-alias-label-secondary);
 }
+.omnimux-inspiration-modal-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.omnimux-inspiration-modal-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.omnimux-inspiration-modal-script-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.omnimux-inspiration-modal-script-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: start;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.omnimux-inspiration-modal-script-list.has-timecode li {
+  grid-template-columns: 52px 1fr auto;
+}
+.omnimux-inspiration-modal-script-list li.is-active,
+.omnimux-inspiration-modal-dimensions article.is-active {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+.omnimux-inspiration-modal-timecode {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+.omnimux-inspiration-modal-script-line {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--dsw-alias-label-secondary);
+}
 .omnimux-inspiration-modal-dimensions article {
   padding: 12px;
   margin-bottom: 10px;
   border-radius: 8px;
   background: var(--dsw-alias-bg-layer-1);
+}
+.omnimux-inspiration-modal-fold {
+  display: flex;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+}
+.omnimux-inspiration-modal-dimensions blockquote {
+  margin: 0 0 8px;
+  padding: 0 0 0 10px;
+  border-left: 2px solid var(--dsw-alias-border-l3);
+  color: var(--dsw-alias-label-tertiary);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+.omnimux-inspiration-modal-raw {
+  margin-top: 8px;
 }
 .omnimux-inspiration-modal-dimensions h4 {
   margin: 0 0 6px;

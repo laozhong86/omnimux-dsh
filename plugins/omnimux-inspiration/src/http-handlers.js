@@ -2,6 +2,13 @@ import { existsSync } from 'node:fs'
 import { downloadMedia } from './downloader.js'
 import { analyzeInspirationVideo } from './analyzer.js'
 import { getCanonicalItemKey, normalizeUrl } from './url-normalizer.js'
+import {
+  buildTranslatePrompt,
+  extractScriptStructure,
+  parseDurationSeconds,
+  parsePublishedAt,
+  parseTranslateJson,
+} from './structure-script.js'
 
 /** Module-level singleton — never construct per request. */
 export const importLocks = new Set()
@@ -55,7 +62,17 @@ function parseSocialMeta(data, rawUrl) {
     likes: data.likes || data.digg_count,
     comments: data.comments || data.comment_count,
     shares: data.shares || data.share_count,
+    duration: data.duration || data.video_duration,
   }
+  const duration = parseDurationSeconds(data.duration)
+    ?? parseDurationSeconds(data.video_duration)
+    ?? parseDurationSeconds(stats.duration)
+    ?? parseDurationSeconds(stats.video_duration)
+  const published_at = parsePublishedAt(data.create_time)
+    || parsePublishedAt(data.createTime)
+    || parsePublishedAt(data.published_at)
+    || parsePublishedAt(data.upload_date)
+    || parsePublishedAt(data.created_at)
   return {
     title: firstFilled(data, ['title', 'desc', 'text'], rawUrl),
     text: firstFilled(data, ['text', 'desc', 'content']),
@@ -64,6 +81,8 @@ function parseSocialMeta(data, rawUrl) {
     images: Array.isArray(data.images) ? data.images : [],
     author,
     stats,
+    duration,
+    published_at,
     resolvedUrl: data.url || data.canonical_url,
   }
 }
@@ -185,6 +204,8 @@ function buildImportRecord(args, meta, media, deconstruction) {
     tags: args.customTags,
     author: meta.author,
     stats: meta.stats,
+    duration: meta.duration,
+    published_at: meta.published_at,
     deconstruction,
   }
 }
@@ -269,11 +290,64 @@ async function persistAnalysis(ctx, item, videoPath) {
   if (!analysisResult.deconstruction) {
     return fail(500, analysisResult.error || 'AI 视频拆解失败，请确保大模型视觉分析服务可用')
   }
+  const markdown = analysisResult.deconstruction.markdown || analysisResult.deconstruction.raw_markdown || ''
+  let structure = { segments: [], sections: [] }
+  try {
+    structure = await extractScriptStructure(ctx.textComplete, {
+      content: item.content || '',
+      markdown,
+    })
+  } catch {
+    structure = { segments: [], sections: [] }
+  }
+  const deconstruction = {
+    ...analysisResult.deconstruction,
+    analyzed_at: new Date().toISOString(),
+    segments: structure.segments,
+    sections: structure.sections,
+  }
   const updated = ctx.store.update(ctx.id, {
-    deconstruction: analysisResult.deconstruction,
+    deconstruction,
     local_paths: item.local_paths,
   })
   return { status: 200, body: { data: updated } }
+}
+
+export async function handleTranslate(ctx) {
+  const item = ctx.store.get(ctx.id)
+  if (!item) return fail(404, 'not found')
+  const lang = String(ctx.req.body?.lang || ctx.req.body?.target || 'zh').trim() || 'zh'
+  const analysis = item.deconstruction && typeof item.deconstruction === 'object' ? item.deconstruction : {}
+  const segments = Array.isArray(analysis.segments) ? analysis.segments : []
+  const source = segments.length
+    ? segments.map((row) => row.text).filter(Boolean).join('\n')
+    : (item.content || '')
+  if (!source.trim()) return fail(422, '暂无脚本文案可翻译')
+  if (!ctx.textComplete || typeof ctx.textComplete.execute !== 'function') {
+    return fail(503, '文本翻译能力未就绪')
+  }
+  try {
+    const result = await ctx.textComplete.execute({
+      reason: 'inspiration-script-translate',
+      prompt: buildTranslatePrompt({
+        lang,
+        source,
+        segmentIds: segments.map((row) => row.id),
+      }),
+      maxTokens: 1800,
+    })
+    const parsed = parseTranslateJson(result?.text || result, source)
+    const updated = ctx.store.update(ctx.id, {
+      script_translation: {
+        lang,
+        text: parsed.text,
+        segments: parsed.segments,
+      },
+    })
+    return { status: 200, body: { data: updated } }
+  } catch (error) {
+    return fail(502, error instanceof Error ? error.message : String(error))
+  }
 }
 
 async function resolveAnalyzeVideo(args) {

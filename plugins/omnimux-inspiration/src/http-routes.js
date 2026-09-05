@@ -9,6 +9,7 @@ import {
   handleImportUrl,
   handleList,
   handlePatchItem,
+  handleTranslate,
 } from './http-handlers.js'
 
 export const LOCAL_PREFIX = '/omnimux/inspiration/local'
@@ -43,6 +44,7 @@ const ROUTE_HANDLERS = {
   create: handleCreate,
   'import-url': handleImportUrl,
   analyze: handleAnalyze,
+  translate: handleTranslate,
   'batch-delete': handleBatchDelete,
   get: handleGetItem,
   patch: handlePatchItem,
@@ -133,9 +135,10 @@ function isCollectionPath(path) {
   return path === LOCAL_PREFIX || path === `${LOCAL_PREFIX}/`
 }
 
-function parseAnalyzeId(path) {
-  if (!path.startsWith(`${LOCAL_PREFIX}/`) || !path.endsWith('/analyze')) return ''
-  return decodeURIComponent(path.slice(`${LOCAL_PREFIX}/`.length, -'/analyze'.length))
+function parseActionId(path, action) {
+  const suffix = `/${action}`
+  if (!path.startsWith(`${LOCAL_PREFIX}/`) || !path.endsWith(suffix)) return ''
+  return decodeURIComponent(path.slice(`${LOCAL_PREFIX}/`.length, -suffix.length))
 }
 
 function parseItemId(path) {
@@ -162,9 +165,11 @@ const SPECIAL_PATHS = {
 
 function matchAnalyze(method, path) {
   if (method !== 'POST') return null
-  const id = parseAnalyzeId(path)
-  if (!id) return null
-  return { name: 'analyze', id }
+  const analyzeId = parseActionId(path, 'analyze')
+  if (analyzeId) return { name: 'analyze', id: analyzeId }
+  const translateId = parseActionId(path, 'translate')
+  if (translateId) return { name: 'translate', id: translateId }
+  return null
 }
 
 function matchSpecial(method, path) {
@@ -279,6 +284,7 @@ export function createLocalInspirationDispatcher(deps) {
     paths,
     socialFetcher: deps.socialFetcher,
     videoAnalyzeTool: deps.videoAnalyzeTool,
+    textComplete: deps.textComplete,
     fetcher,
     detectPlatformFromUrl,
     formatErrorMessage,

@@ -71,6 +71,24 @@ describe('Local Inspiration Store', () => {
     assert.equal(store.list().total, 1)
   })
 
+  it('persists optional duration/published_at and stamps favorited_at on first favorite', () => {
+    const store = createLocalStore({ paths })
+    const item = store.add({
+      title: 'Meta',
+      source_url: 'https://www.tiktok.com/@u/video/9',
+      duration: 17,
+      published_at: '2024-02-02T00:00:00.000Z',
+    })
+    assert.equal(item.duration, 17)
+    assert.equal(item.published_at, '2024-02-02T00:00:00.000Z')
+    assert.equal(item.favorited_at, '')
+    const faved = store.update(item.id, { is_favorite: true })
+    assert.equal(faved.is_favorite, true)
+    assert.match(faved.favorited_at, /^\d{4}-/)
+    const again = store.update(item.id, { is_favorite: true, title: 'Meta 2' })
+    assert.equal(again.favorited_at, faved.favorited_at)
+  })
+
   it('extracts structured markdown sections', () => {
     const sampleMd = `
 ## 一句话视频描述
