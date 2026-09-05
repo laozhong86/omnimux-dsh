@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -462,14 +462,37 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       assert.equal(existsSync(join(workflowSource, 'node_modules')), false)
 
       rmSync(linkedWorkflow, { recursive: true, force: true })
-      symlinkSync(join(fixturePlugins, 'omnimux'), linkedWorkflow)
-      const blocked = spawnSync('bash', [syncStableScript, `--target=${l2Home}`, 'omnimux'], {
+      const wrongLinkTarget = join(fixturePlugins, 'omnimux')
+      symlinkSync(wrongLinkTarget, linkedWorkflow)
+      const blockBin = join(testHome, 'blocked-bin')
+      const blockedCalls = join(testHome, 'blocked-calls.log')
+      mkdirSync(blockBin, { recursive: true })
+      for (const command of ['corepack', 'mv']) {
+        const file = join(blockBin, command)
+        writeFileSync(file, `#!/bin/bash\nprintf '${command} %s\\n' "$*" >> ${JSON.stringify(blockedCalls)}\nexit 91\n`)
+        chmodSync(file, 0o755)
+      }
+      const blockedEnv = syncEnv({ HOME: testHome, PATH: `${blockBin}:${process.env.PATH}` })
+      const blockedOther = spawnSync('bash', [syncStableScript, `--target=${l2Home}`, 'omnimux'], {
         cwd: root,
-        env: syncEnv({ HOME: testHome }),
+        env: blockedEnv,
         encoding: 'utf8',
       })
-      assert.equal(blocked.status, 1, `${blocked.stdout}\n${blocked.stderr}`)
-      assert.match(blocked.stderr, /已安装包解析到 profile 外部: omnimux-workflow/)
+      assert.equal(blockedOther.status, 1, `${blockedOther.stdout}\n${blockedOther.stderr}`)
+      assert.match(blockedOther.stderr, /非法 L2 在研 link: omnimux-workflow 未指向当前 worktree source/)
+      assert.ok(lstatSync(linkedWorkflow).isSymbolicLink())
+      assert.equal(readlinkSync(linkedWorkflow), wrongLinkTarget)
+
+      const blockedSelected = spawnSync('bash', [syncStableScript, `--target=${l2Home}`, 'omnimux-workflow'], {
+        cwd: root,
+        env: blockedEnv,
+        encoding: 'utf8',
+      })
+      assert.equal(blockedSelected.status, 1, `${blockedSelected.stdout}\n${blockedSelected.stderr}`)
+      assert.match(blockedSelected.stderr, /非法 L2 在研 link: omnimux-workflow 未指向当前 worktree source/)
+      assert.ok(lstatSync(linkedWorkflow).isSymbolicLink())
+      assert.equal(readlinkSync(linkedWorkflow), wrongLinkTarget)
+      assert.equal(existsSync(blockedCalls), false)
     } finally {
       rmSync(testHome, { recursive: true, force: true })
     }

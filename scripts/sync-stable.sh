@@ -463,28 +463,37 @@ EOF
   # L2 可以保留唯一一条当前 worktree 的在研 link。pnpm 会尝试为这条 link
   # 的源目录补齐依赖；先暂存它，让 install 只读取 profile 内的受管 snapshot，
   # 随后立即还原 link。其它 profile、多个 link 或任何非当前源路径都不放行。
-  IN_PROGRESS_LINK_NAME="$(node - "$PROFILE" "$MANAGED_SOURCE_ROOT" "$PLUGINS_ROOT" <<'EOF'
+  if ! IN_PROGRESS_LINK_NAME="$(node - "$PROFILE" "$MANAGED_SOURCE_ROOT" "$PLUGINS_ROOT" <<'EOF'
 const fs = require('fs')
 const path = require('path')
 const [profile, managedRoot, pluginsRoot] = process.argv.slice(2)
+const reject = reason => {
+  console.error(`✗ 非法 L2 在研 link: ${reason}`)
+  process.exit(1)
+}
 try {
   const taskRoot = path.dirname(path.dirname(profile))
   if (path.basename(path.dirname(taskRoot)) !== 'tasks' || path.basename(path.dirname(path.dirname(taskRoot))) !== '.dsh-dev') process.exit(0)
   const modules = path.join(profile, 'node_modules')
   const links = fs.readdirSync(modules).filter(name => fs.lstatSync(path.join(modules, name)).isSymbolicLink())
-  if (links.length !== 1) process.exit(0)
+  if (links.length === 0) process.exit(0)
+  if (links.length !== 1) reject(`顶层 link 数 ${links.length}（必须为 1）`)
   const name = links[0]
   const manifest = JSON.parse(fs.readFileSync(path.join(profile, 'package.json'), 'utf8'))
-  if (manifest.dependencies?.[name] !== `file:.materialize-snapshots/plugins/${name}`) process.exit(0)
-  if (!fs.existsSync(path.join(managedRoot, name, 'package.json'))) process.exit(0)
+  if (manifest.dependencies?.[name] !== `file:.materialize-snapshots/plugins/${name}`) reject(`${name} 未声明为受管 snapshot`)
+  if (!fs.existsSync(path.join(managedRoot, name, 'package.json'))) reject(`${name} 缺少受管 snapshot`)
   const installed = path.join(modules, name)
   const source = path.join(pluginsRoot, name)
-  if (fs.realpathSync(installed) !== fs.realpathSync(source)) process.exit(0)
-  if (JSON.parse(fs.readFileSync(path.join(installed, 'package.json'), 'utf8')).name !== name) process.exit(0)
+  if (fs.realpathSync(installed) !== fs.realpathSync(source)) reject(`${name} 未指向当前 worktree source`)
+  if (JSON.parse(fs.readFileSync(path.join(installed, 'package.json'), 'utf8')).name !== name) reject(`${name} 包身份错误`)
   process.stdout.write(name)
-} catch {}
+} catch (error) {
+  reject(error instanceof Error ? error.message : String(error))
+}
 EOF
-)"
+)"; then
+    exit 1
+  fi
 
   REFRESH_BACKUP_DIR=""
   REFRESH_BACKED_UP=()
