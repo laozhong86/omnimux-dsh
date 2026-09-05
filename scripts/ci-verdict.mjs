@@ -12,7 +12,8 @@
 
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
+import { validateLiveQaReport } from './live-qa-validation.mjs'
 
 const REPO = process.env.GITHUB_REPOSITORY || process.env.OMNIMUX_REPO || 'laozhong86/omnimux-dsh'
 
@@ -22,6 +23,10 @@ function parseArgs(argv = process.argv.slice(2)) {
     report: '',
     browserReport: '',
     requireBrowser: false,
+    browserRunId: process.env.OMNIMUX_BROWSER_RUN_ID || '',
+    browserStage: process.env.OMNIMUX_BROWSER_STAGE || '',
+    browserTarget: process.env.OMNIMUX_BROWSER_TARGET || '',
+    browserRoot: process.env.GITHUB_WORKSPACE || '',
     dryRun: false,
   }
   for (let i = 0; i < argv.length; i += 1) {
@@ -30,6 +35,10 @@ function parseArgs(argv = process.argv.slice(2)) {
     else if (arg === '--report' && argv[i + 1]) options.report = resolve(argv[++i])
     else if (arg === '--browser-report' && argv[i + 1]) options.browserReport = resolve(argv[++i])
     else if (arg === '--require-browser') options.requireBrowser = true
+    else if (arg === '--browser-run-id' && argv[i + 1]) options.browserRunId = argv[++i]
+    else if (arg === '--browser-stage' && argv[i + 1]) options.browserStage = argv[++i]
+    else if (arg === '--browser-target' && argv[i + 1]) options.browserTarget = argv[++i]
+    else if (arg === '--browser-root' && argv[i + 1]) options.browserRoot = resolve(argv[++i])
     else if (arg === '--dry-run') options.dryRun = true
   }
   return options
@@ -54,19 +63,19 @@ export function evaluateVerdict(qaReport, browserReport, options = {}) {
 
   if (options.requireBrowser) {
     if (!browserReport) {
-      errors.push('缺少 ego-browser-report.json 浏览器验收报告')
+      errors.push('缺少 Codex IAB live-qa-report.json 浏览器验收报告')
     } else {
-      if (browserReport.tool !== 'ego-browser') errors.push('浏览器验收工具不是 ego-browser')
-      if (!browserReport.pass) errors.push(`ego-browser 结论为 FAIL: ${(browserReport.errors || []).join('；')}`)
-      if (!browserReport.taskSpaceId) errors.push('缺少 taskSpaceId')
-      if (!browserReport.actualUrl) errors.push('缺少 actualUrl')
+      try {
+        if (!options.browserRunId || !options.browserStage || !options.browserTarget || !options.browserRoot) throw new Error('Missing CI expected browser run ID, Stage, target, or worktree')
+        validateLiveQaReport(browserReport, options.browserRequest, { root: options.browserRoot, runId: options.browserRunId, stage: options.browserStage, target: options.browserTarget })
+      } catch (error) { errors.push(`Codex IAB 证据无效: ${error.message}`) }
     }
   }
 
   return {
     pass: errors.length === 0,
     errors,
-    summary: errors.length === 0 ? 'PASS: 所有 CI 门禁与证据均通过' : `FAIL: ${errors.join('；')}`,
+    summary: errors.length === 0 ? 'PASS: 已配置的 L0 报告与所需 IAB 证据均通过' : `FAIL: ${errors.join('；')}`,
   }
 }
 
@@ -91,7 +100,8 @@ export function main(argv = process.argv.slice(2)) {
   const options = parseArgs(argv)
   const qaReport = readJson(options.report)
   const browserReport = readJson(options.browserReport)
-  const verdict = evaluateVerdict(qaReport, browserReport, options)
+  const browserRequest = options.browserReport ? readJson(join(dirname(options.browserReport), 'codex-browser-qa-request.json')) : null
+  const verdict = evaluateVerdict(qaReport, browserReport, { ...options, browserRequest })
 
   process.stdout.write(`\n======================================================\n`)
   process.stdout.write(`🛡️ CI 聚合门禁最终判定: ${verdict.pass ? '✅ PASS' : '❌ FAIL'}\n`)

@@ -4,6 +4,7 @@ import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { PNG } from 'pngjs'
 
 import {
   assessAuthorization,
@@ -23,6 +24,21 @@ import { evaluateVerdict } from './ci-verdict.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repoRoot = join(here, '..')
+
+function tinyPng() {
+  return PNG.sync.write({ width: 1, height: 1, data: Buffer.from([0, 0, 0, 255]) })
+}
+
+function liveEvidence(dir) {
+  const target = { stage: 'assets', tabId: 'omnimux-assets:library' }
+  const now = new Date().toISOString()
+  const request = { root: repoRoot, runId: 'run-1', commitSha: execSync('git rev-parse HEAD', { cwd: repoRoot, encoding: 'utf8' }).trim(), target: 'l2', profile: 'omnimux-dev-qa', url: 'http://127.0.0.1:44201/', stage: 'assets', targets: [target], evidenceDir: dir, allocation: null, createdAt: new Date(Date.now() - 2_000).toISOString(), consumedAt: now, expiresAt: new Date(Date.now() + 60_000).toISOString() }
+  const bundle = plugin => ({ plugin, bundleSha256: 'b'.repeat(64), bundlePath: `plugins/${plugin}/client.js`, bundleBytes: 1, loadedScriptUrl: `http://127.0.0.1:44201/plugins/${plugin}/client.js`, loadedScriptSha256: 'c'.repeat(64), matchingScriptCount: 1 })
+  const assertions = ['active-content-selection', 'idempotent-open', 'chat-clears-selection', 'restore'].map(suffix => ({ name: `assets:${suffix}`, pass: true })).concat([{ name: 'initial-session-restored', pass: true }, { name: 'initial-workbench-restored', pass: true }])
+  const proof = { requestedOrigin: 'http://127.0.0.1:44201', target: 'l2', allocation: null, bundles: [bundle('omnimux'), bundle('omnimux-assets')] }
+  const report = { ...request, pass: true, status: 'completed', tool: 'codex-iab', tabId: 'iab-tab-1', actualUrl: request.url, completedAt: now, runtimeProof: { before: proof, after: structuredClone(proof) }, screenshots: [join(dir, 'assets.png')], probe: { targets: [target], assertions, screenshots: [join(dir, 'assets.png')] } }
+  return { request, report }
+}
 
 describe('OmniMux 自动化交付流水线与质量门禁套件', () => {
   it('auto-qa-gate.mjs 脚本存在且支持 JSON 输出模式与五维指标', () => {
@@ -167,27 +183,30 @@ allow-skips: false
     const tmpEvidence = join(repoRoot, '.workbuddy', 'tmp-test-evidence')
     mkdirSync(tmpEvidence, { recursive: true })
     try {
-      const shotFile = join(tmpEvidence, 'shot.png')
-      writeFileSync(shotFile, 'fake image data')
+      const shotFile = join(tmpEvidence, 'assets.png')
+      writeFileSync(shotFile, tinyPng())
+      const { request, report: validReport } = liveEvidence(tmpEvidence)
+      writeFileSync(join(tmpEvidence, 'live-qa-report.json'), JSON.stringify(validReport))
+      writeFileSync(join(tmpEvidence, 'codex-browser-qa-request.json'), JSON.stringify(request))
 
-      const validReport = {
-        pass: true,
-        tool: 'ego-browser',
-        taskSpaceId: 'task-1',
-        actualUrl: 'http://127.0.0.1:44201/',
-        snapshot: 'OmniMux Stage Content',
-        dom: { bodyTextLength: 100 },
-        screenshot: 'shot.png',
-      }
-      writeFileSync(join(tmpEvidence, 'ego-browser-report.json'), JSON.stringify(validReport))
-
-      const validResult = validateBrowserEvidence(tmpEvidence)
+      const expected = { root: repoRoot, runId: request.runId, stage: request.stage, target: request.target }
+      const validResult = validateBrowserEvidence(tmpEvidence, expected)
       assert.equal(validResult.pass, true, '合法证据必须放行')
 
       const invalidReport = { ...validReport, pass: false, errors: ['页面崩溃'] }
-      writeFileSync(join(tmpEvidence, 'ego-browser-report.json'), JSON.stringify(invalidReport))
-      const invalidResult = validateBrowserEvidence(tmpEvidence)
+      writeFileSync(join(tmpEvidence, 'live-qa-report.json'), JSON.stringify(invalidReport))
+      const invalidResult = validateBrowserEvidence(tmpEvidence, expected)
       assert.equal(invalidResult.pass, false, 'FAIL 证据必须拦截')
+
+      for (const mutation of [
+        { commitSha: 'stale' },
+        { actualUrl: 'http://127.0.0.1:44202/' },
+        { targets: [], probe: { ...validReport.probe, targets: [] }, screenshots: [] },
+        { runtimeProof: { before: {}, after: {} } },
+      ]) {
+        writeFileSync(join(tmpEvidence, 'live-qa-report.json'), JSON.stringify({ ...validReport, ...mutation }))
+        assert.equal(validateBrowserEvidence(tmpEvidence, expected).pass, false, `伪造证据必须拒绝: ${JSON.stringify(mutation)}`)
+      }
     } finally {
       rmSync(tmpEvidence, { recursive: true, force: true })
     }
@@ -196,12 +215,16 @@ allow-skips: false
   it('evaluateVerdict 聚合 CI 判定逻辑正确', () => {
     const passQa = { pass: true, summary: 'L0 PASS' }
     const failQa = { pass: false, summary: 'L0 FAIL' }
-    const passBrowser = { pass: true, tool: 'ego-browser', taskSpaceId: 't1', actualUrl: 'http://127.0.0.1:44205' }
+    const verdictDir = join(repoRoot, '.workbuddy', 'tmp-test-verdict')
+    mkdirSync(verdictDir, { recursive: true })
+    const { request: browserRequest, report: passBrowser } = liveEvidence(verdictDir)
+    writeFileSync(join(verdictDir, 'assets.png'), tinyPng())
 
     assert.equal(evaluateVerdict(passQa, null, { requireBrowser: false }).pass, true)
     assert.equal(evaluateVerdict(failQa, null, { requireBrowser: false }).pass, false)
-    assert.equal(evaluateVerdict(passQa, passBrowser, { requireBrowser: true }).pass, true)
+    assert.equal(evaluateVerdict(passQa, passBrowser, { requireBrowser: true, browserRequest, root: repoRoot, browserRoot: repoRoot, browserRunId: browserRequest.runId, browserStage: browserRequest.stage, browserTarget: browserRequest.target }).pass, true)
     assert.equal(evaluateVerdict(passQa, null, { requireBrowser: true }).pass, false)
+    rmSync(verdictDir, { recursive: true, force: true })
   })
 
   it('slugifyTopic 截断长度且保留有效字符', () => {

@@ -41,7 +41,7 @@ subsystem: "global"
 7. **显式预授权必须可机检**：Issue 同时具备 `status:ready-to-run`、`risk:R2` 或 `risk:R3`、frontmatter `pre-authorized: true`，以及维护者白名单作者的 `/auto-approve risk:R2` 或 `/auto-approve risk:R3` 评论。老板可以在合入前用移除标签或 `/revoke` 撤销。
 8. **默认一插件一 PR**。跨插件改动必须在 Issue 与 PR 中说明理由；R0/R1 跨包改动自动进入人工通道。PR 必须显式声明 `Closes #<issue-id>`。
 9. **质量证据先于状态标签**。`qa:pass` 只能由 CI 聚合门禁在真实检查全绿后写入；本地 Agent、`auto-pipeline` 或 PR 作者不得自打 `qa:pass`。
-10. **未验收不得标完成**。本地测绿 / sync 成功 ≠ UI 验收；涉及浏览器的变更必须使用 `ego-browser`，缺 task space、URL、`snapshotText()`/DOM 断言或 `captureScreenshot()` 工件即 FAIL。
+10. **未验收不得标完成**。本地测绿 / sync 成功 ≠ UI 验收；涉及浏览器的变更必须使用 Codex 内置浏览器及共享探针；缺运行 ID、实际 URL、DOM 断言、有效截图或运行版本证明即 FAIL。
 11. **禁止提交密钥**。credentials / token / `.env` / 私钥不进仓。所有敏感配置只能由环境或受控 Host 注入。
 12. **跟 PR 细节交棒** `omnimux-pr-handoff`；跟踪写入本仓 `.workbuddy/pr-board.md`。该 board 不作为质量门禁的唯一信任源。
 13. **插件进 App** 仍走桌面壳 `yarn omnimux:*`（见 `ops-entry.md`）。本合同不允许 Agent 重启公共桌面 App。
@@ -54,7 +54,7 @@ subsystem: "global"
 |---|---|---:|---|---|
 | R0 | P0、生产发布/回滚、凭据或权限边界、破坏性恢复 | 否 | 完整 L0–L3 | 老板人工 |
 | R1 | 跨插件、一级 `shell.overlay`、公开 I/O、manifest/工具入口、模型列表、合同/CI/门禁 | 否 | 完整 L0–L3；必要时老板审查 | 老板人工 |
-| R2 | 单插件常规功能、兼容性修复、非破坏性 Host/Client 改动 | 是（需预授权） | L0–L3 全绿、非 skip 测试、CI required checks、UI 用 ego-browser | 受控自动 |
+| R2 | 单插件常规功能、兼容性修复、非破坏性 Host/Client 改动 | 是（需预授权） | L0–L3 全绿、非 skip 测试、CI required checks、UI 用 Codex 内置浏览器 | 受控自动 |
 | R3 | 纯文档、测试补齐、格式化、低风险脚本/标签描述 | 是（需预授权；可由策略默认开启） | L0–L2 全绿；若触及 UI 仍需 ego-browser | 受控自动 |
 
 **风险高于标签**：任何变更只要命中 R0/R1 特征，流水线必须拒绝自动合入并转 `status:ready-for-boss`。不能通过把 Issue 改标成 R2/R3 绕过定级。
@@ -69,7 +69,7 @@ subsystem: "global"
 4. L0 diff-aware 静态扫描通过；
 5. L1 相关包真实执行测试，失败、0 tests、未声明的 skip 均阻断；
 6. L2 集成/注册表/边界/doctor 检查通过；
-7. 触及 UI/Host/Stage 时，L3 使用 `ego-browser` 取得 task space、真实 L2 URL、快照/DOM 断言与截图工件；ego-browser 不可用或证据缺失即阻断；
+7. 触及 UI/Host/Stage 时，L3 使用 Codex 内置浏览器取得真实 L2 URL、DOM 断言、截图和运行版本证明；浏览器不可用或证据缺失即阻断；
 8. PR 已创建，CI 聚合 required check 通过，且合入确认接口返回 `state=MERGED`、`mergedAt` 与 merge commit；
 9. 只有确认合入后，才允许 pull、物化、清理 Worktree 与更新终态。
 
@@ -87,7 +87,7 @@ subsystem: "global"
 
 ## 本机 board（不进 git）
 
-真源：`.workbuddy/pr-board.md`（已 gitignore `.workbuddy/`）。每个 open PR 至少含 PR 号、Issue、分支、插件、风险、状态、CI、Review、下次动作、ego-browser 证据位置、会话、是否允许 force-with-lease。
+真源：`.workbuddy/pr-board.md`（已 gitignore `.workbuddy/`）。每个 open PR 至少含 PR 号、Issue、分支、插件、风险、状态、CI、Review、下次动作、浏览器证据位置、会话、是否允许 force-with-lease。
 
 状态建议：`draft` / `pipeline-running` / `ci-red` / `changes-requested` / `ready-for-boss` / `auto-merge-pending` / `merged` / `blocked` / `abandoned`。
 
@@ -138,7 +138,7 @@ git add <changed-files>
 git commit -m "feat(<plugin>): ... (#<issue-id>)"
 git push -u origin HEAD
 gh -R laozhong86/omnimux-dsh pr create --base main --body-file <generated-body.md>
-# UI 验收：涉及 UI/Stage 必须使用 ego-browser 收集截图与 DOM 工件
+# UI 验收：涉及 UI/Stage 必须使用内置浏览器执行共享探针
 ```
 
 ## 本地验证
@@ -151,7 +151,7 @@ gh -R laozhong86/omnimux-dsh pr create --base main --body-file <generated-body.m
 | 生产 profile 是否误 link | `node scripts/omnimux.mjs doctor` | 生产 profile 无工作区 symlink |
 | 某插件 `src/` | `pnpm --filter <pkg> test` | 真实执行、无失败、非 skip；有代码 diff 且 0 tests = FAIL |
 | 合同/脚本/标签 | `pnpm test:gates` + 对应脚本测试 | 退出码 0，测试计数真实 |
-| UI / Host / 一级页 | `node scripts/omnimux.mjs dev start <task> <plugin>`，随后 `scripts/ego-browser-qa.sh <url>` | task space + URL + `snapshotText()`/DOM + 截图工件齐全 |
+| UI / Host / 一级页 | `node scripts/omnimux.mjs dev start <task> <plugin>`，随后 `pnpm verify:live <stage> --target=l2 --url=<url>` 并在 IAB 执行请求 | 运行 ID + 实际 URL + DOM + 有效截图 + 运行版本证明齐全 |
 | L2 通过后物化 | `node scripts/omnimux.mjs sync <plugin>` | 仅在合入确认后执行；静态复制不等于验收 |
 
 `skip ≠ pass`：`smoke` / `verify:image-live` / `verify:models` 因缺 `dsh` 或 key 而 skip 时，必须记录环境限制；若该检查被 Issue DoD 声明为必需，流水线阻断。
@@ -171,7 +171,7 @@ gh -R laozhong86/omnimux-dsh pr create --base main --body-file <generated-body.m
 - Agent 擅自 merge；
 - 用 `git merge` 绕过 PR、required checks 或风险通道；
 - 用标签伪造 `qa:pass`；
-- 把缺失的 ego-browser 证据写成「人工看过」；
+- 把缺失的浏览器证据写成「人工看过」；
 - 用桌面壳的 `fork` remote / base=`omnimux` 套到本仓；
 - 在外层 `dsh-plugin/` `git init`、装 Husky、加 GitHub Actions；
 - 把 `--force-with-lease` 写成默认动作；

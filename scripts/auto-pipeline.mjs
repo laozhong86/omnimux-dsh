@@ -104,6 +104,9 @@ export function parseArgs(argv = process.argv.slice(2)) {
     implementationCommand: process.env.OMNIMUX_IMPLEMENT_COMMAND || '',
     l2Url: process.env.OMNIMUX_L2_URL || '',
     expectedText: process.env.OMNIMUX_EGO_EXPECT || '',
+    browserRunId: process.env.OMNIMUX_BROWSER_RUN_ID || '',
+    browserStage: process.env.OMNIMUX_BROWSER_STAGE || '',
+    browserTarget: process.env.OMNIMUX_BROWSER_TARGET || '',
     evidenceDir: '',
     waitSeconds: Number(process.env.OMNIMUX_PIPELINE_WAIT_SECONDS || DEFAULT_WAIT_SECONDS),
     noMerge: false,
@@ -125,6 +128,9 @@ export function parseArgs(argv = process.argv.slice(2)) {
     else if (arg === '--implementation-command' || arg === '--implement-command') options.implementationCommand = next()
     else if (arg === '--l2-url') options.l2Url = next()
     else if (arg === '--expected-text') options.expectedText = next()
+    else if (arg === '--browser-run-id') options.browserRunId = next()
+    else if (arg === '--browser-stage') options.browserStage = next()
+    else if (arg === '--browser-target') options.browserTarget = next()
     else if (arg === '--evidence-dir') options.evidenceDir = resolve(next())
     else if (arg === '--wait-seconds') options.waitSeconds = Number(next())
     else if (arg === '--worktree') options.worktree = resolve(next())
@@ -528,40 +534,38 @@ function runImplementation(wtDir, plugin, topic, issueId, options) {
   return { before, after }
 }
 
+function expectedBrowserEvidence(wtDir, options) {
+  if (!options.browserRunId || !options.browserStage || !options.browserTarget) {
+    throw new PipelineError('Codex IAB evidence requires --browser-run-id, --browser-stage, and --browser-target from this pipeline run')
+  }
+  return { root: wtDir, runId: options.browserRunId, stage: options.browserStage, target: options.browserTarget }
+}
+
 function runStaticQa(wtDir, plugin, base, options, evidenceDir) {
   const qaScript = join(wtDir, 'scripts', 'auto-qa-gate.mjs')
   if (!existsSync(qaScript)) throw new PipelineError(`Worktree 缺少 auto-qa-gate.mjs: ${qaScript}`)
   const reportPath = join(evidenceDir, 'auto-qa-report.json')
   const args = [qaScript, wtDir, '--plugin', plugin, '--diff', '--base', base, '--json', '--output', reportPath]
   const browserRequired = options.browserRequired
-  if (browserRequired) args.push('--require-browser', '--evidence-dir', evidenceDir)
+  if (browserRequired) {
+    const expected = expectedBrowserEvidence(wtDir, options)
+    args.push('--require-browser', '--evidence-dir', evidenceDir, '--browser-root', expected.root, '--browser-run-id', expected.runId, '--browser-stage', expected.stage, '--browser-target', expected.target)
+  }
   const result = runCommand('node', args, { cwd: wtDir, dryRun: options.dryRun })
   if (options.dryRun) return { pass: true, reportPath, browserRequired }
   const report = readJsonFile(reportPath)
   if (!report || !report.pass || result.status !== 0) throw new PipelineError('L0 auto-qa-gate 未通过', { report })
-  if (browserRequired && !validateBrowserEvidence(evidenceDir).pass) {
-    throw new PipelineError('UI 变更缺少完整 ego-browser 证据')
+  if (browserRequired && !validateBrowserEvidence(evidenceDir, expectedBrowserEvidence(wtDir, options)).pass) {
+    throw new PipelineError('UI 变更缺少当前运行的 Codex IAB 证据')
   }
   return { pass: true, reportPath, browserRequired, report }
 }
 
 function runBrowserQa(wtDir, issueId, plugin, options, evidenceDir) {
   if (!options.browserRequired) return { required: false, pass: true }
-  if (!options.l2Url) throw new PipelineError('检测到 UI/Host/Stage 变更，但未提供 --l2-url；ego-browser 是硬门禁，不能 skip')
-  const script = join(wtDir, 'scripts', 'ego-browser-qa.sh')
-  if (!existsSync(script)) throw new PipelineError(`缺少 ego-browser 验收脚本: ${script}`)
-  const result = runCommand('bash', [script, options.l2Url, evidenceDir, options.expectedText], {
-    cwd: wtDir,
-    dryRun: options.dryRun,
-    env: {
-      EGO_ISSUE_ID: String(issueId),
-      EGO_PLUGIN: plugin,
-      EGO_TASK_SPACE_NAME: `omnimux-qa-issue-${issueId}-${plugin}`,
-    },
-  })
   if (options.dryRun) return { required: true, pass: true }
-  const evidence = validateBrowserEvidence(evidenceDir)
-  if (result.status !== 0 || !evidence.pass) throw new PipelineError('ego-browser L3 验收失败', { evidence })
+  const evidence = validateBrowserEvidence(evidenceDir, expectedBrowserEvidence(wtDir, options))
+  if (!evidence.pass) throw new PipelineError('UI 变更需要同一运行的 Codex IAB L3 验收；自动流水线不能伪造或回退到 ego-browser', { evidence, issueId, plugin })
   return { required: true, pass: true, evidence: evidence.report }
 }
 
