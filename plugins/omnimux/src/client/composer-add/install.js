@@ -158,12 +158,17 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
     }))
   }
 
-  async function addLocalFiles(sessionId) {
+  /**
+   * @param {string} sessionId
+   * @param {'file' | 'directory'} kind
+   */
+  async function addLocalPaths(sessionId, kind = 'file') {
     if (!sessionId) {
       toast(tx(t, 'composerAdd.needSession'))
       return
     }
-    const picked = await requestJson('/omnimux/assets/pick', { kind: 'file' })
+    const pickKind = kind === 'directory' ? 'directory' : 'file'
+    const picked = await requestJson('/omnimux/assets/pick', { kind: pickKind })
     if (picked.status === 501) {
       toast(tx(t, 'composerAdd.pickerUnsupported'))
       return
@@ -191,10 +196,12 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
   }
 
   doc.addEventListener('keydown', onKey)
-  const onCmdFile = () => { void addLocalFiles(currentSessionId(store)) }
+  const onCmdFile = () => { void addLocalPaths(currentSessionId(store), 'file') }
+  const onCmdFolder = () => { void addLocalPaths(currentSessionId(store), 'directory') }
   const onCmdLibrary = () => { state.libraryOpen = true; renderModal() }
   const win = doc.defaultView || (typeof window !== 'undefined' ? window : null)
   win?.addEventListener?.('omnimux:composer-add-file', onCmdFile)
+  win?.addEventListener?.('omnimux:composer-add-folder', onCmdFolder)
   win?.addEventListener?.('omnimux:composer-add-library', onCmdLibrary)
   renderModal()
   const stopSubmit = installComposerAttachmentSubmitCapture(doc, { store })
@@ -202,6 +209,7 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
   return () => {
     doc.removeEventListener('keydown', onKey)
     win?.removeEventListener?.('omnimux:composer-add-file', onCmdFile)
+    win?.removeEventListener?.('omnimux:composer-add-folder', onCmdFolder)
     win?.removeEventListener?.('omnimux:composer-add-library', onCmdLibrary)
     stopSubmit()
     modalRoot?.unmount()

@@ -144,6 +144,7 @@ export function apply(ctx) {
   registerComposerAddCommands(ctx, {
     t,
     onAddFile: () => { window.dispatchEvent(new CustomEvent('omnimux:composer-add-file')) },
+    onAddFolder: () => { window.dispatchEvent(new CustomEvent('omnimux:composer-add-folder')) },
     onAddLibrary: () => { window.dispatchEvent(new CustomEvent('omnimux:composer-add-library')) },
   })
   // ctx.effect(() => mountSidebarEntry(apps, t, ctx.locale, SIDEBAR_GLOBAL().register), 'omnimux: sidebar apps entry')
