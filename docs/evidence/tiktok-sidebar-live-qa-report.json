@@ -1,0 +1,52 @@
+{
+  "stage": "omnimux-publish:library",
+  "url": "http://127.0.0.1:44200/?token=H2PYDtSJKKhok_sIR42_bZ7ypCeQGVtrINA_NVUYfNc",
+  "environment": {
+    "instance": "L2 isolated (port 44200), data root ~/.dsh-dev/tasks/tiktok-account-sidebar",
+    "backend": "mock gateway (returned 1 mock account: GeminiX @geminix56, group=Standard)",
+    "browserLocale": "en (ego-browser navigator.language=en; CDP Emulation.setLocaleOverride zh-CN did not stick) — UI asserted with en dictionary equivalents; zh strings verified in locales.js source and round-1 unit tests",
+    "sessionPrerequisite": "workbench tab open requires an active session (workbench.js ensureSessionId); created workspace '测试环境' + one session inside the isolated L2 data root"
+  },
+  "checks": [
+    { "id": "C1", "name": "App loads at token URL", "result": "pass", "evidence": "title 'DSH Local Build', workbench global present" },
+    { "id": "C2", "name": "Sidebar 'Publish' entry exists and opens workbench tab omnimux-publish:library", "result": "pass", "evidence": "entry visible in left rail; __omnimuxWorkbench.open({tabId}) -> openResult=true, isOpen=true, focus=gui" },
+    { "id": "C3", "name": "Stage segmented switch Publish / Accounts", "result": "pass", "evidence": "tablist with tabs 'Publish' and 'Accounts'; click switches to accounts view" },
+    { "id": "C4", "name": "Sidebar title 'Accounts' (zh: 账号列表)", "result": "pass", "evidence": "rendered in accounts sidebar header" },
+    { "id": "C5", "name": "'Add Account' button (zh: + 新增账号) in header", "result": "pass", "evidence": "1 header button rendered; empty-state duplicate exists in source (EmptyState component, AccountsSidebar.jsx L101-120) but not observable live because mock returned 1 account" },
+    { "id": "C6", "name": "Search box placeholder 'Search accounts…' (zh: 搜索账号…)", "result": "pass", "evidence": "input[placeholder='Search accounts…'] present" },
+    { "id": "C7", "name": "Segment tabs with counts: All 1 / Commerce 0 / Standard 1 (zh: 全部/带货账号/非带货账号)", "result": "pass", "evidence": "counts consistent with mock data (1 standard account, 0 commerce)" },
+    { "id": "C8", "name": "Account row rendering", "result": "pass", "evidence": "row 'GeminiX @geminix56' with status badge 'Connected'" },
+    { "id": "C9", "name": "Empty state 'No authorized accounts' (zh: 暂无授权账号)", "result": "pass", "evidence": "verified via search no-match path ('zzz' -> row hidden, empty text shown); true zero-account state blocked by mock data, covered by unit tests" },
+    { "id": "C10", "name": "No 'CreatOK' string anywhere", "result": "pass", "evidence": "document.body.innerText scan before/after modal: no match" },
+    { "id": "C11", "name": "Authorize modal: title + VPN warning banner + warning svg icon", "result": "pass", "evidence": "dialog 'Add TikTok Account', banner 'Confirm your VPN node first' (zh: 授权前请确认 VPN 节点), 3 inline SVGs, no emoji" },
+    { "id": "C12", "name": "Chevron expand/collapse of warning detail", "result": "pass", "evidence": "aria-expanded true->false->true; detail text hidden/shown accordingly; default expanded" },
+    { "id": "C13", "name": "Warning detail copy matches spec", "result": "pass", "evidence": "'Connect to the node of the matching country while scanning the QR code. Once authorized, publishing videos via OmniMux is no longer limited by your network.' (zh equivalent verified in locales.js)" },
+    { "id": "C14", "name": "Modal buttons Cancel / Authorize (zh: 取消/去授权)", "result": "pass", "evidence": "both rendered and clickable" },
+    { "id": "C15", "name": "Authorize triggers POST /omnimux/accounts with body {platform:'tiktok'}", "result": "pass", "evidence": "fetch hook recorded POST /omnimux/accounts body {\"platform\":\"tiktok\"} -> 200 {auth_url: https://www.tiktok.com/v2/auth/authorize?...}" },
+    { "id": "C16", "name": "auth_url is https and window.open called", "result": "pass", "evidence": "window.open hook captured the https auth_url exactly once per authorize click" },
+    { "id": "C17", "name": "Waiting state after authorize (Reopen / waiting copy / I'm Done)", "result": "pass", "evidence": "modal text: 'Authorization page opened in a new window...' + 'Reopen' + 'Waiting for authorization...' + 'Cancel' + 'I'm Done'" },
+    { "id": "C18", "name": "3s polling for new account while waiting", "result": "pass", "evidence": "GET /omnimux/accounts?platform=tiktok repeated; measured gaps ~3.43-3.58s" },
+    { "id": "C19", "name": "Cancel closes modal and stops polling (timer cleanup)", "result": "pass", "evidence": "dialog removed from DOM; network log frozen (22 -> 22 over 4.5s after close)" },
+    { "id": "C20", "name": "Esc closes modal", "result": "pass", "evidence": "dialogOpenAfterEsc=false" },
+    { "id": "C21", "name": "Search local filter: case-insensitive, clear restores", "result": "pass", "evidence": "'gemini' and 'GEMINI' both match GeminiX; clearing input restores row" },
+    { "id": "C22", "name": "No JS console errors during full flow", "result": "pass", "evidence": "window error/unhandledrejection/console.error hooks: 0 entries" }
+  ],
+  "screenshots": [
+    "docs/evidence/tiktok-sidebar-publish-view.png",
+    "docs/evidence/tiktok-sidebar-accounts-view.png",
+    "docs/evidence/tiktok-sidebar-auth-modal.png",
+    "docs/evidence/tiktok-sidebar-auth-waiting.png",
+    "docs/evidence/tiktok-sidebar-empty-state.png",
+    "docs/evidence/tiktok-sidebar-modal-closed.png"
+  ],
+  "consoleErrors": [],
+  "notes": [
+    "UI rendered in English because ego-browser navigator.language=en; zh strings verified in locales.js source and round-1 unit tests (215/215). All asserted en strings are exact dictionary equivalents of the zh baseline.",
+    "window.open was invoked with the https auth_url, but no new tab surfaced inside the ego-browser task space (popup likely handled outside the task space / intercepted by host browser-intercept prefs). Code behavior verified via window.open hook.",
+    "Zero-account empty state (with its own 'Add Account' button + 'Tutorial' link) not directly observable because mock backend returned 1 account; verified at source (AccountsSidebar.jsx EmptyState) and unit tests.",
+    "Opening the workbench tab requires an active session (harness gate, workbench.js ensureSessionId). A workspace + session were created inside the isolated L2 data root for acceptance.",
+    "Previous docs/evidence/live-qa-report.json belonged to issue #514 (omnimux-accounts overseas platforms); preserved as docs/evidence/issue-514-live-qa-report.json before writing this report."
+  ],
+  "verdict": "PASS WITH NOTES",
+  "timestamp": "2026-09-05T09:20:00+08:00"
+}
