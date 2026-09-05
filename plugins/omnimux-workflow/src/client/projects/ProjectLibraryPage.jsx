@@ -105,7 +105,7 @@ export function ProjectLibraryPage(props) {
     })
   }
 
-  const handleDialogSubmit = async ({ title, description, templateId }) => {
+  const handleDialogSubmit = async ({ title, projectRoot }) => {
     setBusy(true)
     setError('')
     try {
@@ -116,10 +116,7 @@ export function ProjectLibraryPage(props) {
         betterSidebar,
         stage,
         t,
-        title,
-        description,
-        templateId,
-      })
+      }, { title, projectRoot })
       if (!created?.ok) {
         setError(created?.error || t('projects.genericError'))
         return
