@@ -93,6 +93,24 @@ export function findNewSessionButton(doc) {
   return visible || pool[0]
 }
 
+/**
+ * Resolve the official per-workspace new-session control only when it is
+ * unambiguous. This preserves the official action while avoiding the generic
+ * action's no-current/no-recent clear path in a single-workspace baseline.
+ * @param {Document | { querySelectorAll?: Function, querySelector?: Function } | null | undefined} [doc]
+ * @returns {HTMLElement | null}
+ */
+export function findSingleWorkspaceNewSessionButton(doc) {
+  const d = resolveDoc(doc)
+  if (!d || typeof d.querySelectorAll !== 'function') return null
+  const matches = Array.from(d.querySelectorAll('button')).filter((button) => {
+    if (!isVisible(button) || typeof button.getAttribute !== 'function') return false
+    const aria = String(button.getAttribute('aria-label') || '').trim()
+    return /^(在.+中新建会话|New session in .+)$/i.test(aria)
+  })
+  return matches.length === 1 ? matches[0] : null
+}
+
 function menuItemLabel(el) {
   if (!el) return ''
   const text = el.textContent
@@ -208,16 +226,21 @@ export async function clickOfficialNewSession(opts = {}) {
     ? opts.sleep
     : (ms) => new Promise((resolve) => setTimeout(resolve, ms))
   const beforeId = sessionSnapshot(sessions)?.current || readActiveSessionId(win)
+  const hasOfficialCurrent = Boolean(sessionSnapshot(sessions)?.current)
   let clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
-  let clickedButton = false
 
   if (!clickedMenu) {
-    const button = findNewSessionButton(doc)
+    // The generic action clears selection when this L2 runtime has neither a
+    // current session nor a projected recent workspace. Its single visible
+    // workspace control is the official explicit-target action and therefore
+    // the only reliable product-equivalent gesture for this baseline.
+    const button = !hasOfficialCurrent
+      ? (findSingleWorkspaceNewSessionButton(doc) || findNewSessionButton(doc))
+      : findNewSessionButton(doc)
     if (!button || typeof button.click !== 'function') {
       return { ok: false, error: 'newSessionFailed' }
     }
     button.click()
-    clickedButton = true
     // Menu may open synchronously (collapsed rail interceptor).
     clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
   }

@@ -3,7 +3,11 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { clickOfficialNewSession, findNewSessionButton } from './new-session-click.js'
+import {
+  clickOfficialNewSession,
+  findNewSessionButton,
+  findSingleWorkspaceNewSessionButton,
+} from './new-session-click.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'new-session-click.js'), 'utf8')
@@ -139,6 +143,19 @@ describe('findNewSessionButton', () => {
   })
 })
 
+describe('findSingleWorkspaceNewSessionButton', () => {
+  it('returns the one visible official workspace action only', () => {
+    const official = makeButton({ aria: '在“测试环境”中新建会话' })
+    assert.equal(findSingleWorkspaceNewSessionButton(makeDoc([official])), official)
+  })
+
+  it('does not guess when multiple workspace controls are visible', () => {
+    const first = makeButton({ aria: '在“测试环境”中新建会话' })
+    const second = makeButton({ aria: '在“另一个工作区”中新建会话' })
+    assert.equal(findSingleWorkspaceNewSessionButton(makeDoc([first, second])), null)
+  })
+})
+
 describe('clickOfficialNewSession', () => {
   it('fails without a button and never creates a session', () => {
     return clickOfficialNewSession({
@@ -150,6 +167,35 @@ describe('clickOfficialNewSession', () => {
     }).then((result) => {
       assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
     })
+  })
+
+  it('uses the one official workspace action when no official current exists', async () => {
+    const generic = makeButton({ className: 'newSession' })
+    const workspace = makeButton({ aria: '在“测试环境”中新建会话' })
+    const snapshots = [
+      { current: undefined, byId: {} },
+      { current: undefined, byId: {} },
+      { current: 'session-new', byId: { 'session-new': { blank: true } } },
+    ]
+    let index = 0
+    const sessions = {
+      list: {
+        getSnapshot() {
+          return snapshots[Math.min(index++, snapshots.length - 1)]
+        },
+      },
+    }
+    const result = await clickOfficialNewSession({
+      document: makeDoc([generic, workspace]),
+      sessions,
+      timeoutMs: 200,
+      pollMs: 1,
+      now: tickingNow(40),
+      sleep: async () => {},
+    })
+    assert.equal(workspace.clicks.length, 1)
+    assert.equal(generic.clicks.length, 0)
+    assert.deepEqual(result, { ok: true, sessionId: 'session-new', reusedBlank: false })
   })
 
   it('clicks the official button once and returns the new session id', async () => {
