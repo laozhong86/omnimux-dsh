@@ -12,6 +12,13 @@ import {
 afterEach(() => resetSessionPrefill())
 
 describe('session-scoped replication prefill', () => {
+  it('registers in the official input dock, which remains mounted for a blank-session Hero', () => {
+    const source = readFileSync(new URL('./index.js', import.meta.url), 'utf8')
+    assert.match(source, /SESSION_PREFILL_SLOT = 'conversation\.input\.dock'/)
+    assert.match(source, /ctx\.slots\.inject\(SESSION_PREFILL_SLOT,/)
+    assert.doesNotMatch(source, /SESSION_PREFILL_SLOT = 'conversation\.composer\.dock'/)
+  })
+
   it('wires queued intents into the mounted official composer consumer', () => {
     const source = readFileSync(new URL('./index.js', import.meta.url), 'utf8')
     assert.match(

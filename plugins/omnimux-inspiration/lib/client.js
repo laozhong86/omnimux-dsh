@@ -5336,7 +5336,7 @@ function InspirationStage({ t, stage, store, visible = true }) {
 var name = "omnimux-inspiration";
 var inject = ["slots", "locale"];
 var INSPIRATION_TAB_ID2 = "omnimux-inspiration:library";
-var SESSION_PREFILL_SLOT = "conversation.composer.dock";
+var SESSION_PREFILL_SLOT = "conversation.input.dock";
 function SessionPrefillConsumer(props) {
   const intent = (0, import_react9.useSyncExternalStore)(
     subscribeSessionPrefill,

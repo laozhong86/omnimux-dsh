@@ -13,7 +13,12 @@ export const name = 'omnimux-inspiration'
 export const inject = ['slots', 'locale']
 
 export const INSPIRATION_TAB_ID = 'omnimux-inspiration:library'
-export const SESSION_PREFILL_SLOT = 'conversation.composer.dock'
+// A newly created or reused blank session is rendered as the Hero. The
+// official renderer omits `conversation.composer.dock` in that branch, while
+// `conversation.input.dock` is rendered for every live session InputZone.
+// Keep the consumer in the latter so the target's session-scoped
+// `inputActions` are available before the first message exists.
+export const SESSION_PREFILL_SLOT = 'conversation.input.dock'
 
 /**
  * Consume a queued replication prefill only from its official session-scoped
