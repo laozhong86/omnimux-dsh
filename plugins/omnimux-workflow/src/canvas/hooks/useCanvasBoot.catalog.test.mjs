@@ -94,5 +94,6 @@ test('源码契约：refreshCatalog(false) 始终 fetchCapabilities，不因 TTL
   const body = bootSrc.slice(refreshStart, refreshEnd);
   assert.doesNotMatch(body, /if \(!force && !isCatalogCacheStale/);
   assert.match(body, /const result = await fetchCapabilities\(\)/);
-  assert.match(body, /if \(cached\) setCatalog\(cached\)/);
+  // Issue #466: catalog also hydrates the store runtime slot in the same branch.
+  assert.match(body, /if \(cached\) \{[\s\S]*setCatalog\(cached\);[\s\S]*setCatalogRuntime\(cached\);/);
 });

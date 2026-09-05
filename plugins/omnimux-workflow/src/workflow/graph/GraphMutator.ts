@@ -17,11 +17,14 @@
 import {
   planCanvasInputMutation,
   type CanvasInputMutation,
+  type CanvasMutationRuntimeContext,
   type CanvasNode,
 } from '../../shared/graph/canvasInputMutationGateway.ts';
 import type { SerializedCanvasEdge } from '../../shared/canvasTypes.ts';
 import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes.ts';
 import { WorkflowStoreError, type WorkspaceStore } from '../workspace/WorkspaceStore.ts';
+
+export type { CanvasMutationRuntimeContext } from '../../shared/graph/canvasInputMutationGateway.ts';
 
 export interface GraphMutationSuccess {
   ok: true;
@@ -50,11 +53,13 @@ function planAndSave(
   store: WorkspaceStore,
   workspaceId: string,
   mutation: CanvasInputMutation,
+  context?: CanvasMutationRuntimeContext,
 ): GraphMutationSuccess | GraphMutationError {
   const snapshot = store.get(workspaceId);
   const plan = planCanvasInputMutation(
     { nodes: snapshot.nodes as CanvasNode[], edges: snapshot.edges },
     mutation,
+    context,
   );
   if (plan.status !== 'allowed') {
     return envelope(
@@ -75,10 +80,11 @@ export function mutateWorkspaceGraph(
   store: WorkspaceStore,
   workspaceId: string,
   mutation: CanvasInputMutation,
+  context?: CanvasMutationRuntimeContext,
 ): GraphMutationResult {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      return planAndSave(store, workspaceId, mutation);
+      return planAndSave(store, workspaceId, mutation, context);
     } catch (error) {
       if (error instanceof WorkflowStoreError) {
         // version_conflict: the canvas (or another tool call) moved the doc

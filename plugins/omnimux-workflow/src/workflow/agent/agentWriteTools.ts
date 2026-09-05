@@ -7,7 +7,11 @@ import path from 'node:path';
 import { mutateWorkspaceGraph } from '../graph/GraphMutator.ts';
 import { createMaterialNode } from '../../shared/graph/nodeFactory.ts';
 import type { MaterialType, MaterialTool } from '../../shared/graph/materialNode.ts';
-import type { CanvasInputMutation } from '../../shared/graph/canvasInputMutationGateway.ts';
+import type {
+  CanvasInputMutation,
+  CanvasMutationRuntimeContext,
+} from '../../shared/graph/canvasInputMutationGateway.ts';
+import type { CapabilityCatalog } from '../../shared/api.ts';
 import { normalizeNodeIds } from '../execution/subgraph.ts';
 import { TableStorageService } from '../storage/TableStorageService.ts';
 import {
@@ -26,6 +30,17 @@ import {
   resolveTargetWorkspaceId,
   WORKSPACE_ID_PARAM_DESC,
 } from './agentToolShared.ts';
+
+/**
+ * Compat-kernel runtime context (Issue #466): the Catalog v1.1 DTO arrives
+ * via deps.getCatalog (hub modelCatalog seam) and never enters the persisted
+ * graph. Agent mutations get the SAME evaluator + catalog injection as the
+ * canvas; a missing catalog fails closed on media connections.
+ */
+function mutationContext(deps: WorkflowAgentDeps): CanvasMutationRuntimeContext {
+  const catalog = typeof deps.getCatalog === 'function' ? deps.getCatalog() : null;
+  return { catalog: (catalog ?? null) as CapabilityCatalog | null };
+}
 
 /**
  * Validate and parse patch payload for workflow_node_update.
@@ -147,7 +162,7 @@ export function createWorkflowNodeAddTool(deps: WorkflowAgentDeps): AgentToolSpe
           ...(prompt !== undefined ? { prompt } : {}),
         });
 
-        const result = mutateWorkspaceGraph(store, workspaceId, { addNodes: [node] });
+        const result = mutateWorkspaceGraph(store, workspaceId, { addNodes: [node] }, mutationContext(deps));
         if (!result.ok) return errorBody(result.error, result.message);
         return { workspace: workspaceSummary(result.snapshot), node, workspaceSource: target.source };
       });
@@ -211,7 +226,7 @@ export function createWorkflowNodeUpdateTool(deps: WorkflowAgentDeps): AgentTool
             ...(parsed.position !== undefined ? { node: { position: parsed.position } } : {}),
           }],
         };
-        const result = mutateWorkspaceGraph(store, workspaceId, mutation);
+        const result = mutateWorkspaceGraph(store, workspaceId, mutation, mutationContext(deps));
         if (!result.ok) return errorBody(result.error, result.message);
         return {
           workspace: workspaceSummary(result.snapshot),
@@ -248,7 +263,7 @@ export function createWorkflowNodeRemoveTool(deps: WorkflowAgentDeps): AgentTool
           return errorBody('node-not-found', `none of ${nodeIds.join(', ')} exists in workspace ${workspaceId}`);
         }
 
-        const result = mutateWorkspaceGraph(store, workspaceId, { removeNodeIds: toRemove });
+        const result = mutateWorkspaceGraph(store, workspaceId, { removeNodeIds: toRemove }, mutationContext(deps));
         if (!result.ok) return errorBody(result.error, result.message);
 
         // 级联删除被移除表格节点的物理 .htable 文件
@@ -308,7 +323,7 @@ export function createWorkflowConnectTool(deps: WorkflowAgentDeps): AgentToolSpe
             sourceHandle: readString(args, 'source_handle'),
             targetHandle: readString(args, 'target_handle'),
           }],
-        });
+        }, mutationContext(deps));
         if (!result.ok) return errorBody(result.error, result.message);
         const edge = result.snapshot.edges.find(
           (row) => row.source === source && row.target === target,
@@ -357,7 +372,7 @@ export function createWorkflowDisconnectTool(deps: WorkflowAgentDeps): AgentTool
           return errorBody('edge-not-found', 'no matching edges in this workspace');
         }
 
-        const result = mutateWorkspaceGraph(store, workspaceId, { removeEdgeIds: toRemove });
+        const result = mutateWorkspaceGraph(store, workspaceId, { removeEdgeIds: toRemove }, mutationContext(deps));
         if (!result.ok) return errorBody(result.error, result.message);
         return { workspace: workspaceSummary(result.snapshot), removedEdges: toRemove.length };
       });
