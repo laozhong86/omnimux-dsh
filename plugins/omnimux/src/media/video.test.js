@@ -232,10 +232,140 @@ describe('mapOmnimuxInput video branch (#429)', () => {
       ],
     })
     assert.equal(input.image, 'https://example.com/first.png')
+    assert.equal('image_tail' in input, false)
     assert.equal('reference_images' in input, false, 'image 与 reference_images 不能同时使用')
     assert.equal('images' in input, false)
     assert.equal('references' in input, false)
     assert.equal('metadata' in input, false)
+  })
+
+  it('maps last_frame to image_tail without entering reference_images (#566)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'end on this frame',
+      references: [
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/last.png' },
+      ],
+    })
+    assert.equal(input.image_tail, 'https://example.com/last.png')
+    assert.equal('image' in input, false)
+    assert.equal('reference_images' in input, false, 'last_frame 不得落入 reference_images')
+    assert.equal('images' in input, false)
+    assert.equal('last_frame' in input, false)
+  })
+
+  it('maps first_frame + last_frame to image + image_tail independently (#566)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'morph first to last',
+      references: [
+        { role: 'first_frame', type: 'image', pathOrUrl: 'https://example.com/first.png' },
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/last.png' },
+        { role: 'reference', type: 'image', pathOrUrl: 'https://example.com/extra.png' },
+      ],
+    })
+    assert.equal(input.image, 'https://example.com/first.png')
+    assert.equal(input.image_tail, 'https://example.com/last.png')
+    assert.equal('reference_images' in input, false, 'frame 模式不混用 reference_images')
+    assert.notEqual(input.image, input.image_tail)
+    assert.equal('images' in input, false)
+    assert.equal('references' in input, false)
+  })
+
+  it('keeps last_frame from overwriting first_frame when both are present (#566)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'order safety',
+      references: [
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/last.png' },
+        { role: 'first_frame', type: 'image', pathOrUrl: 'https://example.com/first.png' },
+      ],
+    })
+    assert.equal(input.image, 'https://example.com/first.png')
+    assert.equal(input.image_tail, 'https://example.com/last.png')
+  })
+
+  it('uses request.image with only last_frame without inventing a first_frame role (#566)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'legacy image + last',
+      image: 'https://example.com/legacy-first.png',
+      references: [
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/last.png' },
+      ],
+    })
+    assert.equal(input.image, 'https://example.com/legacy-first.png')
+    assert.equal(input.image_tail, 'https://example.com/last.png')
+    assert.equal('reference_images' in input, false)
+  })
+
+  it('ignores non-image last_frame and duplicate frame roles take first wins (#566)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'dedupe frames',
+      references: [
+        { role: 'first_frame', type: 'image', pathOrUrl: 'https://example.com/first-a.png' },
+        { role: 'first_frame', type: 'image', pathOrUrl: 'https://example.com/first-b.png' },
+        { role: 'last_frame', type: 'audio', pathOrUrl: 'https://example.com/not-an-image.mp3' },
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/last-a.png' },
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/last-b.png' },
+        { role: 'last_frame', type: 'image' },
+      ],
+    })
+    assert.equal(input.image, 'https://example.com/first-a.png')
+    assert.equal(input.image_tail, 'https://example.com/last-a.png')
+    assert.equal('reference_images' in input, false)
+  })
+
+  it('dedupes generic reference_images by url and still excludes last_frame (#566)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'multi ref',
+      references: [
+        { role: 'reference', type: 'image', pathOrUrl: 'https://example.com/a.png' },
+        { role: 'reference', type: 'image', pathOrUrl: 'https://example.com/a.png' },
+        { role: 'reference', type: 'image', pathOrUrl: 'https://example.com/b.png' },
+        { role: 'style', type: 'image', pathOrUrl: 'https://example.com/c.png' },
+        // non-image last_frame must not force frame mode or pollute multi-ref
+        { role: 'last_frame', type: 'audio', pathOrUrl: 'https://example.com/tail.mp3' },
+      ],
+    })
+    assert.deepEqual(input.reference_images, [
+      { url: 'https://example.com/a.png' },
+      { url: 'https://example.com/b.png' },
+      { url: 'https://example.com/c.png' },
+    ])
+    assert.equal('image' in input, false)
+    assert.equal('image_tail' in input, false)
+  })
+
+  it('executeOmnimuxVideo preserves image + image_tail on the runtime POST input (#566)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-flf-'))
+    const dest = join(dir, 'out.mp4')
+    let capturedReq
+    const result = await executeOmnimuxVideo({
+      prompt: 'morph first to last',
+      dest,
+      model: 'kling-v3',
+      references: [
+        { role: 'first_frame', type: 'image', pathOrUrl: 'https://example.com/first.png' },
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/last.png' },
+        { role: 'reference', type: 'image', pathOrUrl: 'https://example.com/extra.png' },
+      ],
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+      runtime: {
+        async execute(req) {
+          capturedReq = req
+          return {
+            taskId: 'task-flf',
+            outputs: [{ type: 'video', url: 'https://cdn.example/flf.mp4' }],
+          }
+        },
+      },
+      fetcher: async () => ({ ok: true, arrayBuffer: async () => Buffer.from('mp4-flf') }),
+    })
+    assert.equal(result.mode, 'live')
+    assert.equal(capturedReq.input.image, 'https://example.com/first.png')
+    assert.equal(capturedReq.input.image_tail, 'https://example.com/last.png')
+    assert.equal('reference_images' in capturedReq.input, false)
+    assert.equal('images' in capturedReq.input, false)
+    assert.equal('references' in capturedReq.input, false)
+    assert.equal(readFileSync(dest, 'utf8'), 'mp4-flf')
+    rmSync(dir, { recursive: true, force: true })
   })
 
   it('falls back to request.image when there are no usable references', () => {
