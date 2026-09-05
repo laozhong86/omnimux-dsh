@@ -9,6 +9,22 @@ function text(value) {
   return typeof value === 'string' ? value : ''
 }
 
+/**
+ * Convert common Markdown list and emphasis markers into readable plain text.
+ * The preview intentionally keeps raw Markdown available behind the raw toggle,
+ * while rendered breakdown content stays free of formatting syntax.
+ */
+export function renderPlainBreakdownText(value) {
+  return text(value)
+    .replace(/(^|\n)[ \t]*(?:#{1,6})[ \t]*/g, '$1')
+    .replace(/(^|\n)[ \t]*(?:[*-]|\d+[.)])[ \t]+/g, '$1· ')
+    .replace(/[*_]{2}/g, '')
+    .replace(/(^|\n)[ \t]*>[ \t]?/g, '$1')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 function analysisOf(item) {
   if (item.analysis && typeof item.analysis === 'object') return item.analysis
   if (item.deconstruction && typeof item.deconstruction === 'object') return item.deconstruction
