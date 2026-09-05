@@ -7,7 +7,7 @@ import { createRequire } from 'node:module'
 import { afterEach, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { resolveTarget, runLiveQa, validateBrowserReport, verifyL2Runtime } from './live-qa.mjs'
-import { captureStageContracts, selectStages, STAGE_STATUS } from './live-stage-contracts.mjs'
+import { captureStageContract, captureStageContracts, selectStages, STAGE_STATUS } from './live-stage-contracts.mjs'
 import { assertStageState, readStageState, runStageProbe, PROBE_ASSERTIONS, STAGE_ASSERTIONS } from './live-stage-probe.mjs'
 
 const repo = fileURLToPath(new URL('..', import.meta.url))
@@ -145,6 +145,7 @@ test('session drift aborts cleanup without modifying the newly active session', 
 })
 
 test('stage-specific loading and failure markers cannot pass as valid empty content', async () => {
+  const market = await captureStageContract(repo, 'market')
   const require = createRequire(join(repo, 'plugins/omnimux/package.json'))
   const { JSDOM } = require('jsdom')
   const { build } = require('esbuild')
@@ -164,7 +165,7 @@ test('stage-specific loading and failure markers cannot pass as valid empty cont
     const body = win.document.querySelector('main')
     const read = (status) => {
       win.document.elementFromPoint = () => body.lastElementChild || body
-      return win.eval(`(${readStageState.toString()})(${JSON.stringify({ ...target, content: 'main', ...status })}, [])`)
+      return win.eval(`(${readStageState.toString()})(${JSON.stringify({ ...target, ...status, content: 'main' })}, [])`)
     }
     for (const text of ['正在加载数据看板…', 'Loading analytics…']) {
       body.innerHTML = renderToStaticMarkup(React.createElement(LoadingState, { t: () => text }))
@@ -178,11 +179,15 @@ test('stage-specific loading and failure markers cannot pass as valid empty cont
     body.innerHTML = '<button>Add inspiration</button><div class="omnimux-inspiration-skeleton"></div>'
     assert.equal(read(STAGE_STATUS.inspiration).loadingOnly, true)
     body.innerHTML = '<div class="sh-mkt"><p class="sh-mkt-status">Loading plugins...</p></div>'
-    assert.equal(read(STAGE_STATUS.market).loadingOnly, true)
-    body.innerHTML = '<div class="sh-mkt"><div class="sh-mkt-results">0 plugins</div><p class="sh-mkt-status">No plugins</p></div>'
-    win.document.elementFromPoint = () => body.querySelector('.sh-mkt-results')
-    const ready = win.eval(`(${readStageState.toString()})(${JSON.stringify({ ...target, content: 'main', ...STAGE_STATUS.market })}, [])`)
-    assert.equal(Boolean(ready.loadingOnly), false)
+    assert.equal(read(market).loadingOnly, true)
+    for (const text of market.allowedStatusTexts) {
+      body.innerHTML = '<div class="sh-mkt"><p class="sh-mkt-status"></p></div>'
+      body.querySelector('p').textContent = text
+      assert.equal(Boolean(read(market).loadingOnly), false)
+    }
+    body.innerHTML = '<div class="sh-mkt"><div class="sh-mkt-results">50 plugins</div><article>Plugin</article></div>'
+    body.querySelector('.sh-mkt-results').getBoundingClientRect = () => ({ left: 0, right: 400, top: -200, bottom: -100, width: 400, height: 100 })
+    assert.equal(Boolean(read(market).loadingOnly), false)
   } finally { dom.window.close() }
 })
 

@@ -12,19 +12,7 @@ export function acquireTaskLock(taskId, runId, pid) {
   mkdirSync(join(dir, '..'), { recursive: true, mode: 0o700 })
   try { mkdirSync(dir, { mode: 0o700 }) } catch (error) {
     if (error.code !== 'EEXIST') throw error
-    const busy = new Error(`Browser task space ${taskId} is busy`)
-    let owner
-    try { owner = JSON.parse(readFileSync(join(dir, 'owner.json'), 'utf8')) } catch { throw busy }
-    if (!Number.isSafeInteger(owner.pid) || owner.pid <= 0) throw busy
-    try { process.kill(owner.pid, 0); throw busy } catch (error) {
-      if (error.code !== 'ESRCH') throw busy
-    }
-    // Only one contender may reclaim a dead owner's directory.
-    try { mkdirSync(join(dir, 'reclaim')) } catch { throw busy }
-    unlinkSync(join(dir, 'owner.json'))
-    rmdirSync(join(dir, 'reclaim'))
-    rmdirSync(dir)
-    mkdirSync(dir, { mode: 0o700 })
+    throw new Error(`Browser task space ${taskId} is busy; inspect its owner before recovering an abandoned lock`)
   }
   const lock = { taskId, runId, pid }
   writeFileSync(join(dir, 'owner.json'), JSON.stringify(lock), { mode: 0o600 })

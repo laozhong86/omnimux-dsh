@@ -23,7 +23,7 @@ export const STAGE_STATUS = Object.freeze({
     error: '.omnimux-analytics-empty[data-code="fetch_failed"], .omnimux-analytics-banner[data-code="network_error"]',
   },
   inspiration: { loading: '.omnimux-inspiration-skeleton' },
-  market: { ready: '.sh-mkt-results' },
+  market: { status: '.sh-mkt-status:not(.left)' },
 })
 
 export function selectStages(stage) {
@@ -133,7 +133,13 @@ export async function captureStageContract(root, stage) {
       for (let i = 0; i < 12; i++) await Promise.resolve()
       const tabId = state().splits.active
       assert.ok(tabs.has(tabId) && api.isActive(tabId), 'Market action must activate its registered Tab')
-      return { stage, plugin, selector: `[${datasetKey}]`, tabId, content: STAGE_CONTENT[stage], ...STAGE_STATUS[stage], adapter: 'footer-slot' }
+      const i18n = readFileSync(join(root, 'plugins', plugin, 'src/client/i18n.js'), 'utf8')
+      const allowedStatusTexts = evaluate(`module.exports = (() => {
+        const React = require('react'); ${i18n}
+        return [ZH, EN].flatMap(dict => [dict['mkt.empty'], dict['search.empty'], dict['expert.empty']]);
+      })()`)
+      assert.ok(allowedStatusTexts.length === 6 && allowedStatusTexts.every((text) => typeof text === 'string' && text.trim()), 'Market empty-state translations are missing')
+      return { stage, plugin, selector: `[${datasetKey}]`, tabId, content: STAGE_CONTENT[stage], ...STAGE_STATUS[stage], allowedStatusTexts, adapter: 'footer-slot' }
     }
     const client = evaluate(await compile(`plugins/${plugin}/src/client/index.js`))
     client.apply(ctx)

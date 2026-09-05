@@ -367,3 +367,14 @@ test('different evidence directories cannot control the same browser task concur
     assert.deepEqual(run.trace, [])
   } finally { releaseTaskLock(lock) }
 })
+
+test('a stale owner cannot be replaced by racing collectors', () => {
+  const id = `abandoned-test-${process.pid}`
+  const lock = acquireTaskLock(id, 'abandoned-run', 99999999)
+  try {
+    for (const runId of ['contender-a', 'contender-b']) {
+      assert.throws(() => acquireTaskLock(id, runId, process.pid), /is busy/)
+    }
+    // Release succeeds only if neither contender replaced the original owner.
+  } finally { releaseTaskLock(lock) }
+})

@@ -10,13 +10,17 @@ export function readStageState(target, sidebarSelectors) {
   const wb = window.__omnimuxWorkbench
   const snapshot = wb?.getSnapshot()
   const context = wb?.getUiContext()
-  const visible = (node) => {
-    const box = node.getBoundingClientRect()
-    if (box.width <= 0 || box.height <= 0 || box.right <= 0 || box.bottom <= 0 || box.left >= innerWidth || box.top >= innerHeight || node.closest('[aria-hidden="true"]')) return false
+  const rendered = (node) => {
+    if (node.closest('[aria-hidden="true"]')) return false
     for (let parent = node; parent; parent = parent.parentElement) {
       const css = getComputedStyle(parent)
       if (css.visibility === 'hidden' || css.display === 'none' || css.opacity === '0') return false
     }
+    return true
+  }
+  const visible = (node) => {
+    const box = node.getBoundingClientRect()
+    if (box.width <= 0 || box.height <= 0 || box.right <= 0 || box.bottom <= 0 || box.left >= innerWidth || box.top >= innerHeight || !rendered(node)) return false
     const x = (Math.max(0, box.left) + Math.min(innerWidth, box.right)) / 2
     const y = (Math.max(0, box.top) + Math.min(innerHeight, box.bottom)) / 2
     const hit = document.elementFromPoint(x, y)
@@ -28,6 +32,8 @@ export function readStageState(target, sidebarSelectors) {
     .filter((node) => visible(node) && node.getAttribute('data-active') === 'true').map(() => selector))
   const layoutNodes = [document.getElementById('root'), ...entries, ...content].filter(Boolean)
   const hasVisible = (selector) => Boolean(selector && [...document.querySelectorAll(selector)].some(visible))
+  const pendingStatus = target.status && content.some((node) => [...node.querySelectorAll(target.status)]
+    .some((status) => rendered(status) && !target.allowedStatusTexts?.includes(status.textContent.trim())))
   return {
     sessionId: snapshot?.sessionId,
     hasState: Boolean(snapshot?.state),
@@ -51,7 +57,7 @@ export function readStageState(target, sidebarSelectors) {
     entryCount: entries.length, selected,
     contentCount: content.length,
     contentLength: content.reduce((length, node) => length + node.innerText.trim().length, 0),
-    loadingOnly: hasVisible(target.loading) || (target.ready && !hasVisible(target.ready)) || (content.length > 0 && content.every((node) => /^(加载中[.…]*|loading[.…]*)$/i.test(node.innerText.trim()))),
+    loadingOnly: Boolean(pendingStatus) || hasVisible(target.loading) || (content.length > 0 && content.every((node) => /^(加载中[.…]*|loading[.…]*)$/i.test(node.innerText.trim()))),
     visibleErrors: content.flatMap((node) => [...(node.closest('[role="region"]') || node).querySelectorAll(['[role="alert"]', '[data-error]', '[class$="-error"]', target.error].filter(Boolean).join(','))])
       .filter((node) => visible(node) && node.innerText.trim()).length,
   }
