@@ -1,14 +1,12 @@
 /**
- * ConfigPanel — 统一材质创作底栏（Unified Config Dock）。
+ * ConfigPanel — 统一材质创作底栏（Issue 467 / W2）。
  *
- * 1:1 还原 4 张设计截图：
- * 1. 音频模式：顶部带 [ 音频生成 ] / [ 音乐生成 ] 子模式切换 Tab
- * 2. Prompt 输入区：左上角只读参考缩略图（有上游连线时展示）、右上角原地展开/收起、动态占位符
- * 3. 底部参数胶囊栏：
- *    - 文本：[模型选择] | ⚡ 10 | [↑]
- *    - 图片：[模型选择] | 自适应 | × 1 | ⚡ 60 | [↑]
- *    - 视频：[模型选择] | 全能参考 · ▱ 16:9 · 2K · ⏱ 5s | × 1 | [领取免费机会] | ⚡ 600 | [↑]
- *    - 音频：[模型选择] | ⚙ 参数 | ⚡ 30 | [↑]
+ * Contract-driven:
+ *   - model picker = only compatible (acceptsCurrentInputs) rows; Hide, Don't Grey
+ *   - effectiveOps 0/1 → no mode UI; ≥2 → OperationSegment only for effective ops
+ *   - writes canonical params.operation only
+ *   - zero candidates → empty state + block generate with typed reason
+ *   - Whisper / unlisted ASR never enter the DOM
  */
 
 import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
@@ -25,34 +23,32 @@ import {
   X,
   AlertTriangle,
 } from 'lucide-react';
-import type { MaterialNodeData, MaterialTool } from '../../../../types/materialNode';
-import {
-  ASPECT_RATIO_OPTIONS,
-  MATERIAL_NODE_WHITELIST,
-  MATERIAL_TOOLS,
-  resolveNodeKind,
-} from '../../../../types/materialNode';
+import type { MaterialNodeData } from '../../../../types/materialNode';
+import { resolveNodeKind } from '../../../../types/materialNode';
 import type { CapabilityCatalog, CapabilityModelItem } from '../../../../../shared/api';
-import { sortCatalogRows } from '../../../../../shared/sortCatalog';
-import {
-  evaluateModelCompatibility,
-  resolveModelInputCapability,
-} from '../../../../../shared/validation/modelCompatibilityEvaluator.ts';
 import { useT } from '../../../../i18n';
 import { CustomSelect, CustomSlider } from '../../../../ui';
 import { ModelBrandIcon } from '../../../../ui/ModelBrandIcon';
 import { useCanvasStore } from '../../../../store/canvasStore';
-import { useUpstreamMedia } from '../../../hooks/useUpstreamMedia';
+import { useUpstreamMedia, toUpstreamSnapshots } from '../../../hooks/useUpstreamMedia';
 import { useModelParameterSchema, getCachedCatalog } from '../../../hooks/useModelParameterSchema';
 import { resolveNodeLifecycle } from '../../../utils/nodeMaterialLifecycle';
 import GenerateButton from './GenerateButton';
-import { resolveSavedModelForPicker } from './canonicalizeCatalogModelId';
 import { VideoTriggerBar } from './videoParams/VideoTriggerBar';
 import { VideoParamPopover } from './videoParams/VideoParamPopover';
 import {
   resolveEffectiveVideoParams,
   validateAndFallbackVideoParams,
 } from './videoParams/videoParamAdapter';
+import {
+  buildEffectiveOpsUiState,
+  buildFilteredModelOptions,
+  buildUiUpstreamFingerprint,
+  setParamsOperation,
+  readPreferredOperationId,
+  shouldRenderModeUi,
+} from '../../../../../shared/validation/operationUi.ts';
+import { OperationSegment } from './videoParams/SegmentControls';
 
 export interface ConfigPanelProps {
   nodeId: string;
@@ -69,67 +65,33 @@ function getModelVisuals(id: string) {
   const icon = <ModelBrandIcon modelId={id} size={15} />;
 
   if (id.startsWith('nanobanana')) {
-    return {
-      icon,
-      badge: 'Yearly -20%',
-      subtitle: 'auto-4K',
-    };
+    return { icon, badge: 'Yearly -20%', subtitle: 'auto-4K' };
   }
   if (id.startsWith('seedream')) {
     const subtitle = id.includes('5.0') || id.includes('5-0') ? '1K-2K' : '2K-4K';
-    return {
-      icon,
-      badge: 'Yearly -20%',
-      subtitle,
-    };
+    return { icon, badge: 'Yearly -20%', subtitle };
   }
   if (id.startsWith('midjourney')) {
     const subtitle = id.includes('8.1') || id.includes('8-1') ? '2K' : '1080P';
-    return {
-      icon,
-      badge: 'Yearly -20%',
-      subtitle,
-    };
+    return { icon, badge: 'Yearly -20%', subtitle };
   }
   if (id.startsWith('gpt-image') || id.startsWith('openai')) {
-    return {
-      icon,
-      badge: 'Yearly -20%',
-      subtitle: '1k-4k',
-    };
+    return { icon, badge: 'Yearly -20%', subtitle: '1k-4k' };
   }
   if (id.startsWith('kling')) {
     let subtitle = '1080P · ⏱ 3-10s';
     if (id === 'kling-o3') subtitle = '4K · ⏱ 3-15s · 🔊';
     else if (id === 'kling-avatar') subtitle = 'Digital Human';
     else if (id === 'kling-motion-control') subtitle = '1080P';
-    return {
-      icon,
-      subtitle,
-    };
+    return { icon, subtitle };
   }
   if (id.startsWith('wan')) {
-    return {
-      icon,
-      subtitle: '720P-1080P · ⏱ 5-15s · 🔊',
-    };
+    return { icon, subtitle: '720P-1080P · ⏱ 5-15s · 🔊' };
   }
   if (id.startsWith('veo')) {
-    return {
-      icon,
-      subtitle: '720p-1080p · ⏱ 8s',
-    };
+    return { icon, subtitle: '720p-1080p · ⏱ 8s' };
   }
   return { icon };
-}
-
-/** 模型选项 label：带精致图标/首字母圆片 */
-function modelOptionLabel(label: string) {
-  return (
-    <span className="wf-model-option">
-      <span className="wf-model-option__name">{label}</span>
-    </span>
-  );
 }
 
 const ConfigPanel: React.FC<ConfigPanelProps> = ({
@@ -147,26 +109,27 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  // 视频参数浮层开合状态与触发条 ref（必须在 import 早退分支之前声明）
   const [videoPopoverOpen, setVideoPopoverOpen] = useState(false);
   const videoTriggerRef = useRef<HTMLDivElement | null>(null);
 
   const upstreams = useUpstreamMedia(nodeId);
+  const upstreamSnapshots = useMemo(() => toUpstreamSnapshots(upstreams), [upstreams]);
+  const activeCatalog = catalog ?? getCachedCatalog();
 
-  // 导入类节点的专属面板展示：仅展示资源概览与替换入口，不提供模型生成设置
+  // 导入类节点：仅资源概览与替换入口
   if (kind === 'import') {
     return (
       <div className="wf-config-panel wf-config-panel--import">
         <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--wb-text-secondary)' }}>
+            <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--dsw-alias-label-secondary, var(--wb-text-secondary))' }}>
               {t('panel.hintImportNode')}
             </span>
             {Boolean(nodeData.realPath) && (
               <span
                 style={{
                   fontSize: '11px',
-                  color: 'var(--wb-text-muted)',
+                  color: 'var(--dsw-alias-label-tertiary, var(--wb-text-muted))',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -193,8 +156,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     );
   }
 
-  // 音频子模式：音频生成 (text-to-audio) / 音乐生成 (text-to-music)
   const audioSubMode = selectedTool === 'text-to-music' ? 'music' : 'speech';
+  const isAsrTool = selectedTool === 'audio-transcription';
 
   const handleAudioSubModeChange = useCallback(
     (mode: 'speech' | 'music') => {
@@ -205,7 +168,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     [onUpdateNodeData],
   );
 
-  // 解绑指定上游连线
   const handleUnbind = useCallback(
     (upstreamNodeId: string) => {
       const state = useCanvasStore.getState();
@@ -219,100 +181,57 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     [nodeId],
   );
 
-  // 模型列表：仅消费 hub catalog（无生产假回退）；按显示名 A–Z。
-  // 消费 MATERIAL_NODE_WHITELIST 进行白名单过滤（未配置白名单的模态不进行过滤）。
-  // 已存 model 先 canonicalize（如 grok 1.5 别名 → 活 id）；canonicalize 后已在列表则不插 orphan。
-  // 仍不在列表的才保留为 deprecated 项，不静默改写。
+  // Fingerprint for the current node (prompt + upstream media metadata).
+  const fingerprint = useMemo(
+    () => buildUiUpstreamFingerprint({ prompt, upstreams: upstreamSnapshots }),
+    [prompt, upstreamSnapshots],
+  );
+
+  // ASR (speech_to_text) uses outputType 'text' even on a text node with audio upstream.
+  const outputTypeForCompat = isAsrTool ? 'text' : materialType;
+
+  // ---- Filtered model list (Hide, Don't Grey) ----
+  // Sole truth = W1 Catalog + compatibility kernel (no product allowlist).
+  const filteredModels = useMemo(
+    () => buildFilteredModelOptions({
+      catalog: activeCatalog,
+      fingerprint,
+      outputType: outputTypeForCompat,
+    }),
+    [activeCatalog, fingerprint, outputTypeForCompat],
+  );
+
   const modelOptions = useMemo(() => {
-    const activeCatalog = catalog ?? getCachedCatalog();
-    const rawRows = activeCatalog?.[materialType] ?? [];
-    const whitelist = MATERIAL_NODE_WHITELIST[materialType];
-    const filteredRows = whitelist
-      ? rawRows.filter((row) => whitelist.includes(row.id))
-      : rawRows;
-    const rows = sortCatalogRows<CapabilityModelItem>(filteredRows);
-    const { modelId: savedModel, insertOrphan } = resolveSavedModelForPicker(
-      params.model,
-      rows.map((row) => row.id),
-    );
-    const orphan = insertOrphan
-      ? [{
-          id: savedModel,
-          label: rawRows.find((r) => r.id === savedModel)?.label ?? savedModel,
-          deprecated: true as const,
-        }]
-      : [];
-    const combined = [...orphan, ...rows.map((row) => ({ ...row, deprecated: false as const }))];
-
-    const upstreamTypes = upstreams.map((u) => ({
-      type: u.materialType,
-    }));
-
-    return combined.map((row) => {
+    // Only compatible rows enter the DOM. No disabled greys for incompatible /
+    // unlisted / Whisper-when-not-listed models.
+    return filteredModels.options.map((row) => {
       const visuals = getModelVisuals(row.id);
       const icon = visuals.icon;
-      const isDeprecated = 'deprecated' in row && row.deprecated === true;
-      const modelCap = ('inputCapability' in row ? row.inputCapability : undefined) ?? resolveModelInputCapability(row.id, activeCatalog);
-      const compat = evaluateModelCompatibility(row.id, modelCap, upstreamTypes);
-
-      const isDegraded = compat.level === 'degraded';
-      const isDisabled = compat.level === 'disabled';
-      const reasonText = compat.reasons.join('；');
-
-      let badge = isDeprecated ? 'deprecated' : (('badge' in row ? row.badge : undefined) ?? visuals.badge);
-      if (isDegraded) {
-        badge = '降级';
-      } else if (isDisabled && !isDeprecated) {
-        badge = '不可用';
-      }
-
-      let subtitle = ('subtitle' in row ? row.subtitle : undefined) ?? visuals.subtitle;
-      if (isDisabled && reasonText) {
-        subtitle = reasonText;
-      } else if (isDegraded && compat.adaptationAdvice) {
-        subtitle = compat.adaptationAdvice;
-      }
-
-      const label = isDeprecated ? `${row.label} (deprecated)` : row.label;
-      const title = reasonText || (isDeprecated ? 'deprecated' : undefined);
-
+      const badge = row.badge ?? visuals.badge;
+      const subtitle = row.subtitle ?? visuals.subtitle;
       return {
         value: row.id,
-        label,
+        label: row.label,
         triggerLabel: (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {icon ? <span style={{ display: 'inline-flex', opacity: 0.8 }}>{icon}</span> : null}
-            <span>{label}</span>
+            <span>{row.label}</span>
           </span>
         ),
         icon,
         badge,
         subtitle,
-        disabled: isDisabled,
-        title,
+        // Never mark compatible rows disabled — Hide, Don't Grey.
+        disabled: false,
       };
     });
-  }, [catalog, materialType, params.model, upstreams]);
+  }, [filteredModels.options]);
 
-  // Inheritance: keep existing params.model (even if deprecated) → defaults[type] → whitelist first → first sorted.
-  const modelValue = useMemo(() => {
-    const { modelId: savedModel } = resolveSavedModelForPicker(
-      params.model,
-      modelOptions.map((row) => row.value).filter((id): id is string => Boolean(id)),
-    );
-    if (savedModel) return savedModel;
-    const activeCatalog = catalog ?? getCachedCatalog();
-    const defaultId = activeCatalog?.defaults?.[materialType];
-    if (typeof defaultId === 'string' && defaultId.trim()) {
-      if (modelOptions.some((row) => row.value === defaultId)) return defaultId;
-    }
-    const whitelist = MATERIAL_NODE_WHITELIST[materialType];
-    const firstWhitelisted = whitelist?.find((id) => modelOptions.some((row) => row.value === id));
-    if (firstWhitelisted) return firstWhitelisted;
-    return modelOptions[0]?.value;
-  }, [params.model, catalog, materialType, modelOptions]);
+  // The picker reflects the exact model the executor receives. Catalog
+  // reconciliation owns replacement of stale saved ids; the UI never renders
+  // a different default without writing it back to params.
+  const modelValue = typeof params.model === 'string' ? params.model.trim() : '';
 
-  // 动态读取当前模型的 Parameter Schema 及其选项
   const {
     schema,
     modelItem,
@@ -325,39 +244,75 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
   const updateParam = useCallback(
     (key: string, value: unknown) => {
+      if (key === 'operation') {
+        const next = setParamsOperation(
+          params as Record<string, unknown>,
+          typeof value === 'string' ? value : undefined,
+        );
+        onUpdateNodeData({ params: next });
+        return;
+      }
       onUpdateNodeData({ params: { ...params, [key]: value } });
     },
     [onUpdateNodeData, params],
   );
 
-  // 视频节点的有效参数（仅视频分支计算，结合 schema / modelItem 清洗校验）
+  // Effective ops for the currently selected model (all modalities).
+  const preferredOperationId = readPreferredOperationId(params as Record<string, unknown>);
+  const opsState = useMemo(
+    () => buildEffectiveOpsUiState({
+      catalog: activeCatalog,
+      modelId: modelValue,
+      fingerprint,
+      ...(preferredOperationId ? { preferredOperationId } : {}),
+      outputType: outputTypeForCompat,
+    }),
+    [activeCatalog, modelValue, fingerprint, preferredOperationId, outputTypeForCompat],
+  );
+  const showModeUi = shouldRenderModeUi(opsState);
+
+  // 视频节点的有效参数（contract-driven operation + schema scrubbing）
   const videoEffectiveParams = useMemo(
     () =>
       materialType === 'video'
-        ? resolveEffectiveVideoParams(params, schema, modelItem)
+        ? resolveEffectiveVideoParams({
+            params,
+            schema,
+            modelItem,
+            catalog: activeCatalog,
+            upstreams: upstreamSnapshots,
+            prompt,
+          })
         : null,
-    [materialType, params, schema, modelItem],
+    [materialType, params, schema, modelItem, activeCatalog, upstreamSnapshots, prompt],
   );
 
-  // 切换模型时的安全回退：委托 videoParamAdapter 校验画幅/时长/分辨率/音效并平滑降级
   const handleModelChange = useCallback(
     (newModelId: string) => {
-      const activeCatalog = catalog ?? getCachedCatalog();
-      const modelList = activeCatalog?.[materialType] ?? [];
+      const modelList = (activeCatalog?.[materialType] ?? []) as CapabilityModelItem[];
       const newModelItem = modelList.find((m) => m.id === newModelId);
       if (!newModelItem) {
-        // 防御：目标模型不在目录中时仅更新 model 字段，其余参数维持现状
-        onUpdateNodeData({ params: { ...params, model: newModelId } });
+        onUpdateNodeData({
+          params: setParamsOperation({ ...params, model: newModelId }),
+        });
         return;
       }
-      const nextParams = validateAndFallbackVideoParams(params, newModelItem) as any;
+      const nextParams = validateAndFallbackVideoParams(
+        params as Record<string, unknown>,
+        newModelItem,
+        {
+          catalog: activeCatalog,
+          upstreams: upstreamSnapshots,
+          prompt,
+        },
+      );
       onUpdateNodeData({ params: nextParams });
     },
-    [catalog, materialType, onUpdateNodeData, params],
+    [activeCatalog, materialType, onUpdateNodeData, params, upstreamSnapshots, prompt],
   );
 
-  // 动态 Prompt 占位符
   const placeholder = useMemo(() => {
+    if (isAsrTool) return t('panel.promptPlaceholder');
     switch (materialType) {
       case 'text':
         return t('panel.textPromptPlaceholder');
@@ -372,9 +327,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       default:
         return t('panel.promptPlaceholder');
     }
-  }, [materialType, audioSubMode, t]);
+  }, [materialType, audioSubMode, isAsrTool, t]);
 
-  // 当前有效画幅与时长（带合法性防御兜底）
   const aspectRatioValue =
     typeof params.aspectRatio === 'string' && isAspectRatioValid(params.aspectRatio)
       ? params.aspectRatio
@@ -385,33 +339,28 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       ? params.duration
       : defaultDuration;
 
-  // 当前选中模型能力与降级状态
-  const activeCatalog = catalog ?? getCachedCatalog();
-  const currentModelCap = useMemo(() => {
-    const rawRows = activeCatalog?.[materialType] ?? [];
-    const found = rawRows.find((r) => r.id === modelValue);
-    return found?.inputCapability ?? resolveModelInputCapability(modelValue || '', activeCatalog);
-  }, [activeCatalog, materialType, modelValue]);
+  // Generate gate: blocked when zero effective ops / zero candidates / configuration_error.
+  const nodeCompat = (nodeData as Record<string, unknown>).compat as
+    | { status?: string; readyToSubmit?: boolean; reasonCodes?: string[] }
+    | undefined;
+  const blockGenerate =
+    opsState.blockGenerate
+    || filteredModels.zeroCandidates
+    || nodeCompat?.status === 'configuration_error'
+    || execBusy;
+  const blockReason =
+    opsState.reasonMessage
+    || filteredModels.reasonMessage
+    || (nodeCompat?.status === 'configuration_error'
+      ? '节点配置错误：当前输入没有可兼容的已上架模型'
+      : undefined);
 
-  const upstreamTypes = useMemo(() => upstreams.map((u) => ({ type: u.materialType })), [upstreams]);
-  const modelCompat = useMemo(
-    () => evaluateModelCompatibility(modelValue || '', currentModelCap, upstreamTypes),
-    [modelValue, currentModelCap, upstreamTypes],
-  );
-  const isModelDegraded =
-    modelCompat.level === 'degraded' ||
-    (currentModelCap?.referenceImages?.max !== undefined &&
-      upstreams.filter((u) => u.materialType === 'image' || !u.materialType).length >
-        currentModelCap.referenceImages.max);
-  const degradedWarningText = useMemo(() => {
-    const max = currentModelCap?.referenceImages?.max;
-    return t('model.compatibility.degradedWarning').replace('{max}', String(max ?? ''));
-  }, [currentModelCap, t]);
+  const showEmptyModels = filteredModels.zeroCandidates || modelOptions.length === 0;
 
   return (
-    <div className="wf-config-panel">
-      {/* 1. 音频模式专属顶部 Tab */}
-      {materialType === 'audio' && (
+    <div className="wf-config-panel" data-effective-ops={opsState.count}>
+      {/* 1. 音频模式专属顶部 Tab（ASR 工具不显示 TTS/音乐切换） */}
+      {materialType === 'audio' && !isAsrTool && (
         <div className="wf-config-panel__audio-tabs">
           <button
             type="button"
@@ -436,12 +385,35 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
         </div>
       )}
 
+      {/* Configuration / zero-candidate error banner */}
+      {(opsState.blockGenerate || showEmptyModels) && blockReason ? (
+        <div
+          className="wf-config-panel__compat-error"
+          role="alert"
+          data-testid="wf-compat-error"
+          data-reason-code={opsState.reasonCode || filteredModels.reasonCode || 'no_compatible_model'}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 12px',
+            fontSize: 12,
+            color: 'var(--dsw-alias-label-primary)',
+            background: 'var(--dsw-alias-bg-secondary)',
+            borderRadius: 8,
+            margin: '8px 12px 0',
+          }}
+        >
+          <AlertTriangle size={14} aria-hidden="true" />
+          <span>{blockReason}</span>
+        </div>
+      ) : null}
+
       {/* 2. Prompt 输入区容器 */}
       <div className="wf-config-panel__prompt-container">
         <div className="wf-config-panel__prompt-header">
-          {/* 左上角参考素材缩略图：只读展示，仅在有上游连线时渲染 */}
           {upstreams.length > 0 || onOpenResourcePicker ? (
-            <div className="wf-config-panel__ref-slots-group">
+            <div className="wf-config-panel__ref-slots-group" data-testid="wf-slot-cards">
               {upstreams.map((item) => (
                 <div
                   key={item.nodeId}
@@ -449,6 +421,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                     item.hasMedia ? 'wf-config-panel__ref-thumb-slot--ready' : ''
                   }`}
                   title={`${item.label} (${item.hasMedia ? '素材已就绪' : '等待素材'})`}
+                  data-mime={item.mimeType ?? 'unknown'}
+                  data-size-bytes={item.sizeBytes ?? 'unknown'}
+                  data-duration-sec={item.durationSec ?? 'unknown'}
                 >
                   {item.url && item.materialType === 'image' ? (
                     <img
@@ -475,10 +450,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                     </div>
                   )}
 
-                  {/* 状态小圆点 */}
                   {item.hasMedia && <span className="wf-config-panel__ref-thumb-dot" />}
 
-                  {/* 解绑按钮 */}
                   <button
                     type="button"
                     className="wf-config-panel__ref-thumb-unbind nodrag"
@@ -508,14 +481,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
             <span />
           )}
 
-          {/* 右上角操作区：降级警示徽标与原地展开 / 收起 */}
           <div className="wf-config-panel__prompt-header-actions">
-            {isModelDegraded && (
-              <span
-                className="wf-config-panel__degraded-badge wf-material-node__badge wf-material-node__badge--degraded"
-                title={degradedWarningText}
-              />
-            )}
             <button
               type="button"
               className="wf-config-panel__expand-btn"
@@ -527,7 +493,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
           </div>
         </div>
 
-        {/* Prompt 输入框：展开态加高并保持底部参数栏紧贴 */}
         <textarea
           className={`wf-config-panel__prompt-input nowheel nodrag${
             isExpanded ? ' wf-config-panel__prompt-input--expanded' : ''
@@ -541,16 +506,49 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
       {/* 3. 底部参数与操作底栏 */}
       <div className="wf-config-panel__bottom-bar">
-        {/* 左侧参数区 */}
         <div className="wf-config-panel__params-group">
-          {/* 模型下拉选择 */}
-          <CustomSelect
-            className="wf-param-bar__select wf-param-bar__select--model"
-            value={modelValue}
-            options={modelOptions}
-            popupMatchSelectWidth={false}
-            onChange={(value) => handleModelChange(value)}
-          />
+          {/* 模型下拉：仅兼容模型；零候选显示空态 */}
+          {showEmptyModels ? (
+            <div
+              className="wf-param-pill wf-param-pill--empty-models"
+              data-testid="wf-model-empty"
+              role="status"
+              aria-live="polite"
+              style={{
+                height: 32,
+                borderRadius: 8,
+                padding: '0 12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                fontSize: 12,
+                color: 'var(--dsw-alias-label-secondary)',
+              }}
+            >
+              {isAsrTool ? '暂无可用转写模型' : '暂无兼容模型'}
+            </div>
+          ) : (
+            <CustomSelect
+              className="wf-param-bar__select wf-param-bar__select--model"
+              value={modelValue}
+              options={modelOptions}
+              popupMatchSelectWidth={false}
+              onChange={(value) => handleModelChange(String(value))}
+            />
+          )}
+
+          {/* 多 operation（≥2）通用 mode 段：text/image/audio 也复用；视频走 Popover 内段 */}
+          {showModeUi && materialType !== 'video' ? (
+            <>
+              <span className="wf-param-pill__divider">|</span>
+              <div data-testid="wf-operation-mode-inline">
+                <OperationSegment
+                  value={opsState.selectedOperationId || ''}
+                  operations={opsState.effectiveOps}
+                  onChange={(operationId) => updateParam('operation', operationId)}
+                />
+              </div>
+            </>
+          ) : null}
 
           {/* 图片专属参数胶囊 */}
           {materialType === 'image' && (
@@ -585,7 +583,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
           )}
 
           {/* 音频专属设置按钮 */}
-          {materialType === 'audio' && (
+          {materialType === 'audio' && !isAsrTool && (
             <>
               <span className="wf-param-pill__divider">|</span>
               <button
@@ -604,8 +602,11 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
         <div className="wf-config-panel__action-group">
           <GenerateButton
             onClick={onGenerate}
-            disabled={execBusy}
-            isGenerating={nodeData.executionStatus === 'running' || resolveNodeLifecycle({ type: nodeData.materialType, data: nodeData as any }) === 'loading'}
+            disabled={blockGenerate}
+            isGenerating={
+              nodeData.executionStatus === 'running'
+              || resolveNodeLifecycle({ type: nodeData.materialType, data: nodeData as any }) === 'loading'
+            }
           />
         </div>
       </div>

@@ -31,7 +31,14 @@ export interface ExecutionContext {
     materialType: 'image' | 'video' | 'audio';
     prompt?: string;
     modelId?: string;
-  }) => Promise<{ url: string; relativePath: string; assetId: string }>;
+  }) => Promise<{
+      url: string;
+      relativePath: string;
+      assetId: string;
+      mimeType?: string | null;
+      sizeBytes?: number | null;
+      durationSec?: number | null;
+    }>;
   /** Progress reporter wired to node_progress SSE events (0-100). */
   reportProgress?: (progress: number, message?: string) => void;
 }
@@ -44,6 +51,9 @@ export interface NodeOutput {
     thumbnail?: string;
     relativePath?: string;
     assetId?: string;
+    mimeType?: string;
+    sizeBytes?: number;
+    durationSec?: number;
   }>;
   text?: string;
   realPath?: string;
