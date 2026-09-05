@@ -3,14 +3,10 @@
 import { chmodSync, existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-
 const SCHEMA = 'omnimux.inspiration-cover-repair/v1'
 const TIMEOUT_MS = 15_000
 const OMIT_AFTER_PATCH = new Set(['cover_key', 'cover_url', 'updated_at'])
-
-function now(deps) {
-  return (deps.now || (() => new Date().toISOString()))()
-}
+function now(deps) { return (deps.now || (() => new Date().toISOString()))() }
 
 function dataOf(body, label) {
   if (!body || typeof body !== 'object' || body.success === false || !body.data || typeof body.data !== 'object') {
@@ -19,10 +15,7 @@ function dataOf(body, label) {
   return body.data
 }
 
-async function request(url, init, deps) {
-  const response = await deps.fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) })
-  return response
-}
+async function request(url, init, deps) { return deps.fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) }) }
 
 async function jsonRequest(url, init, deps, label) {
   const response = await request(url, init, deps)
@@ -36,9 +29,7 @@ async function jsonRequest(url, init, deps, label) {
   return body
 }
 
-function hostPath(host, path) {
-  return new URL(path, `${host}/`).toString()
-}
+function hostPath(host, path) { return new URL(path, `${host}/`).toString() }
 
 async function getRecord(host, id, deps) {
   const body = await jsonRequest(hostPath(host, `/omnimux/inspiration/${encodeURIComponent(id)}`), { method: 'GET' }, deps, `GET inspiration ${id}`)
@@ -70,6 +61,7 @@ async function freshThumbnail(sourceUrl, deps) {
   return {
     canonical_url: canonicalUrl,
     thumbnail_url: thumbnailUrl,
+    http_status: image.status,
     content_type: contentType,
     content_length: image.headers.get('content-length') || null,
   }
@@ -88,21 +80,15 @@ function same(left, right, omitted) {
   return JSON.stringify(comparable(select(left))) === JSON.stringify(comparable(select(right)))
 }
 
-function assertOriginal(current, original, id) {
-  if (!same(current, original)) throw new Error(`conflict: inspiration ${id} changed since planning`)
-}
+function assertOriginal(current, original, id) { if (!same(current, original)) throw new Error(`conflict: inspiration ${id} changed since planning`) }
 
-function assertNonMedia(current, original, id) {
-  if (!same(current, original, OMIT_AFTER_PATCH)) throw new Error(`verification failed: non-media fields changed for inspiration ${id}`)
-}
+function assertNonMedia(current, original, id) { if (!same(current, original, OMIT_AFTER_PATCH)) throw new Error(`verification failed: non-media fields changed for inspiration ${id}`) }
 
 function validKey(key) {
   return typeof key === 'string' && /^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(key) && !key.split('/').includes('..') && !/^https?:/i.test(key)
 }
 
-function mediaPath(host, key) {
-  return hostPath(host, `/omnimux/inspiration/media/${key.split('/').map(encodeURIComponent).join('/')}`)
-}
+function mediaPath(host, key) { return hostPath(host, `/omnimux/inspiration/media/${key.split('/').map(encodeURIComponent).join('/')}`) }
 
 async function verifyUploaded(host, upload, deps) {
   if (!validKey(upload.key)) throw new Error('media upload returned an unsafe or non-persistent key')
@@ -154,6 +140,7 @@ const defaultDeps = { fetch: globalThis.fetch }
 export async function planRepair({ host, ids, file }, deps = defaultDeps) {
   host = String(host || '').replace(/\/$/, '')
   if (!isAbsolute(file)) throw new Error('--file must be an absolute path')
+  if (existsSync(file)) throw new Error(`refusing to overwrite existing plan: ${file}`)
   if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(host)) throw new Error('--host must be explicit loopback HTTP')
   if (!Array.isArray(ids) || ids.length === 0 || new Set(ids.map(String)).size !== ids.length || ids.some((id) => !/^[1-9]\d*$/.test(String(id)))) {
     throw new Error('--ids must contain unique positive numeric ids')
