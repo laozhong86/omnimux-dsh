@@ -203,8 +203,13 @@ html[data-omnimux-composer-density='icon'] [data-composer-card] [class*="tools"]
   height:14px;
 }
 /* Keep the toolbar single-row: the official .row wraps, which drops the
-   trailing cluster onto a second line and deforms the card. */
-html[data-omnimux-composer-density='icon'] [data-composer-card] [class*="row"]{
+   trailing cluster onto a second line and deforms the card.
+   Issue 517: scope to the card's direct-child toolbar only. A descendant
+   [class*="row"] also matches the scrollport grow wrapper because "grow"
+   contains "row", forcing white-space:nowrap and a horizontal scrollbar at
+   360px. Direct child + :has(> [class*="tools"]) keeps the rule off grow
+   and other card children. Never widen this back to a descendant selector. */
+html[data-omnimux-composer-density='icon'] [data-composer-card] > [class*="row"]:has(> [class*="tools"]){
   flex-wrap:nowrap!important;
   white-space:nowrap;
 }

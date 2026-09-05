@@ -217,6 +217,56 @@ test('ensureComposerCompactChrome injects the style id and the CSS fragments', (
   assert.equal(again, style)
 })
 
+test('icon toolbar nowrap selector does not match grow (#517)', () => {
+  const { doc } = setupDoc()
+  const style = ensureComposerCompactChrome(doc)
+  const css = style.textContent
+
+  // Toolbar nowrap is scoped to the card's DIRECT-CHILD row that hosts tools.
+  // A descendant [class*="row"] also matches hash_grow ("grow" contains "row")
+  // and is the real source of the 360px horizontal scrollbar.
+  const toolbarRule = css.match(
+    /html\[data-omnimux-composer-density='icon'\] \[data-composer-card\] > \[class\*="row"\]:has\(> \[class\*="tools"\]\)\{([^}]*)\}/,
+  )?.[1]
+  assert.ok(toolbarRule, 'toolbar nowrap must target the card direct-child row that has tools')
+  assert.match(toolbarRule, /flex-wrap:nowrap/)
+  assert.match(toolbarRule, /white-space:nowrap/)
+
+  // The old broad descendant selector is forbidden.
+  assert.doesNotMatch(
+    css,
+    /html\[data-omnimux-composer-density='icon'\] \[data-composer-card\] \[class\*="row"\]\{/,
+  )
+
+  // Do not paper over the nowrap leak with a scrollport clip workaround.
+  assert.doesNotMatch(
+    css,
+    /\[data-composer-card\] \[data-input-scroll\]\{[^}]*overflow-x:(hidden|clip)/,
+  )
+
+  // Structural proof with hashed class names: hash_grow contains "row" so a
+  // descendant [class*="row"] would match it; the scoped direct-child + tools
+  // guard does not.
+  const card = { children: [] }
+  const grow = { className: 'bTetRa_grow', parent: null, children: [] }
+  const scroll = { className: 'bTetRa_scroll', parent: card, children: [grow] }
+  const tools = { className: 'bTetRa_tools', parent: null, children: [] }
+  const row = { className: 'bTetRa_row', parent: card, children: [tools] }
+  grow.parent = scroll
+  tools.parent = row
+  card.children = [scroll, row]
+
+  const containsRow = (el) => el.className.includes('row')
+  const hasDirectTools = (el) => el.children.some((c) => c.className.includes('tools'))
+  const isDirectChild = (el) => el.parent === card
+  const matchesScoped = (el) => isDirectChild(el) && containsRow(el) && hasDirectTools(el)
+
+  assert.equal(containsRow(grow), true, 'grow contains substring row')
+  assert.equal(containsRow(row), true)
+  assert.equal(matchesScoped(grow), false, 'grow is not a card direct-child with tools')
+  assert.equal(matchesScoped(row), true, 'toolbar row is the intended target')
+})
+
 test('ensureComposerCompactChrome is idempotent and copies CSS once', () => {
   const { doc } = setupDoc()
   const first = ensureComposerCompactChrome(doc)
