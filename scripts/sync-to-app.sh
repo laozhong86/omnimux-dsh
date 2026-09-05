@@ -24,6 +24,7 @@ SKIP_BUILD=0
 PLUGINS=()
 TARGET_SELECTION=()
 TARGET_FLAGS=()
+EXPLICIT_PLUGIN_SCOPE=0
 
 assert_origin_main_aligned() {
   # —— 未合并物化旁路（仅限 L2 独立任务目录）——
@@ -168,6 +169,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+if [ ${#PLUGINS[@]} -gt 0 ]; then
+  EXPLICIT_PLUGIN_SCOPE=1
+fi
+
 TARGET_HOMES=()
 add_target_home() {
   local h="$1"
@@ -250,6 +255,8 @@ if [ -z "${OMNIMUX_DSH_UI_KIT_DIR:-}" ]; then
     fi
   done
   DSH_UI_KIT_DIR="${DSH_UI_KIT_DIR:-$ROOT/../personal/dsh-ui-kit}"
+else
+  DSH_UI_KIT_DIR="$OMNIMUX_DSH_UI_KIT_DIR"
 fi
 
 sync_kit_artifact() {
@@ -332,7 +339,66 @@ ensure_dsh_ui_kit_fresh() {
   return 0
 }
 
-ensure_dsh_ui_kit_fresh
+plugin_declares_dsh_ui_kit() {
+  local package_file="$1"
+  node --input-type=commonjs - "$package_file" <<'EOF'
+const fs = require('fs')
+const packageFile = process.argv[2]
+try {
+  const pkg = JSON.parse(fs.readFileSync(packageFile, 'utf8'))
+  process.exit(pkg.dependencies?.['dsh-ui-kit'] ? 0 : 1)
+} catch {
+  process.exit(1)
+}
+EOF
+}
+
+assert_dsh_ui_kit_scope_is_ready() {
+  local name package_file requires_kit=0
+  for name in "${PLUGINS[@]}"; do
+    package_file="$PLUGINS_ROOT/$name/package.json"
+    if plugin_declares_dsh_ui_kit "$package_file"; then
+      requires_kit=1
+      break
+    fi
+  done
+
+  if [ "$requires_kit" -eq 0 ]; then
+    echo "· 命名插件不声明 dsh-ui-kit，跳过 shared kit 校验"
+    return 0
+  fi
+
+  local source_kit="$DSH_UI_KIT_DIR/lib/index.js"
+  if [ ! -f "$source_kit" ]; then
+    echo "❌ 命名插件依赖 dsh-ui-kit，但无法读取 ${source_kit}。" >&2
+    echo "   单插件同步不会重建 shared kit；请先修复 kit 构建，或执行无插件参数的完整 yarn omnimux:sync。" >&2
+    exit 1
+  fi
+
+  local source_hash target_hash profile target_kit
+  source_hash=$(shasum -a 256 "$source_kit" | awk '{print $1}')
+  for profile in "${TARGET_PROFILES[@]}"; do
+    target_kit="$profile/node_modules/dsh-ui-kit/lib/index.js"
+    if [ ! -f "$target_kit" ]; then
+      echo "❌ 命名插件依赖 dsh-ui-kit，但目标 profile 缺少 ${target_kit}。" >&2
+      echo "   单插件同步不会安装或复制 shared kit；请执行无插件参数的完整 yarn omnimux:sync。" >&2
+      exit 1
+    fi
+    target_hash=$(shasum -a 256 "$target_kit" | awk '{print $1}')
+    if [ "$source_hash" != "$target_hash" ]; then
+      echo "❌ dsh-ui-kit 漂移: ${profile}。" >&2
+      echo "   单插件同步不会覆盖 shared kit；请执行无插件参数的完整 yarn omnimux:sync。" >&2
+      exit 1
+    fi
+  done
+  echo "  ✓ 命名插件所需 dsh-ui-kit 已就绪（未写 shared kit）"
+}
+
+if [ "$EXPLICIT_PLUGIN_SCOPE" -eq 1 ]; then
+  assert_dsh_ui_kit_scope_is_ready
+else
+  ensure_dsh_ui_kit_fresh
+fi
 
 DEFAULT_PLUGINS=(omnimux omnimux-accounts omnimux-assets omnimux-products omnimux-workflow omnimux-market omnimux-inspiration omnimux-clip omnimux-video omnimux-analytics omnimux-publish)
 
@@ -391,8 +457,12 @@ fi
 echo "== 2/3 物化进 Profile 目录 =="
 OMNIMUX_SYNC_VIA=sync-to-app "$ROOT/scripts/sync-stable.sh" ${TARGET_FLAGS[@]+"${TARGET_FLAGS[@]}"} "${PLUGINS[@]}"
 
-echo "== 3/3 物化出厂 Agent Presets =="
-"$ROOT/scripts/sync-agent-presets.sh" ${TARGET_FLAGS[@]+"${TARGET_FLAGS[@]}"}
+if [ "$EXPLICIT_PLUGIN_SCOPE" -eq 1 ]; then
+  echo "== 3/3 跳过 Agent Presets（命名插件同步不修改预设或应用包）=="
+else
+  echo "== 3/3 物化出厂 Agent Presets =="
+  "$ROOT/scripts/sync-agent-presets.sh" ${TARGET_FLAGS[@]+"${TARGET_FLAGS[@]}"}
+fi
 
 cat <<EOF
 
