@@ -133,21 +133,57 @@ function readCurrentOperationId(params: Record<string, unknown>): string | undef
   return undefined;
 }
 
+function readFiniteNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
 function assetFromEdge(edge: Edge, nodes: CanvasNode[]): UpstreamAssetFingerprint | null {
   const source = nodes.find((node) => node.id === edge.source);
   if (!source) return null;
   const data = (source.data ?? {}) as Record<string, unknown>;
   const type = (typeof data.materialType === 'string' ? data.materialType : source.type) ?? 'text';
   const edgeData = (edge.data ?? {}) as Record<string, unknown>;
+  // Explicit targetHandle / edge metadata wins over inferred defaults.
+  const role =
+    (typeof edgeData.role === 'string' && edgeData.role.trim() ? edgeData.role.trim() : undefined)
+    ?? (typeof edgeData.slotBinding === 'object'
+      && edgeData.slotBinding
+      && typeof (edgeData.slotBinding as { role?: unknown }).role === 'string'
+      ? String((edgeData.slotBinding as { role: string }).role)
+      : undefined);
+  const targetSlot =
+    (typeof edgeData.targetSlot === 'string' && edgeData.targetSlot.trim()
+      ? edgeData.targetSlot.trim()
+      : undefined)
+    ?? (typeof edge.targetHandle === 'string' && edge.targetHandle.trim()
+      ? edge.targetHandle.trim()
+      : undefined)
+    ?? (typeof edgeData.slotBinding === 'object'
+      && edgeData.slotBinding
+      && typeof (edgeData.slotBinding as { slot?: unknown }).slot === 'string'
+      ? String((edgeData.slotBinding as { slot: string }).slot)
+      : undefined);
+  // Prefer canonical sizeBytes / durationSec; fall back to legacy fileSize / duration.
+  // Unknown stays omitted — never invent 0.
+  const sizeBytes =
+    readFiniteNumber(data.sizeBytes) ?? readFiniteNumber(data.fileSize);
+  const durationSec =
+    readFiniteNumber(data.durationSec) ?? readFiniteNumber(data.duration);
+  const mimeType =
+    typeof data.mimeType === 'string' && data.mimeType.trim()
+    && data.mimeType.trim().toLowerCase() !== 'unknown'
+    && data.mimeType.trim() !== 'application/octet-stream'
+      ? data.mimeType.trim()
+      : undefined;
   return {
     edgeId: edge.id,
     sourceNodeId: source.id,
     type,
-    ...(typeof data.mimeType === 'string' && data.mimeType ? { mimeType: data.mimeType } : {}),
-    ...(Number.isFinite(data.fileSize) ? { sizeBytes: data.fileSize as number } : {}),
-    ...(Number.isFinite(data.duration) ? { durationSec: data.duration as number } : {}),
-    ...(typeof edgeData.role === 'string' && edgeData.role ? { role: edgeData.role } : {}),
-    ...(typeof edgeData.targetSlot === 'string' && edgeData.targetSlot ? { targetSlot: edgeData.targetSlot } : {}),
+    ...(mimeType ? { mimeType } : {}),
+    ...(sizeBytes !== undefined ? { sizeBytes } : {}),
+    ...(durationSec !== undefined ? { durationSec } : {}),
+    ...(role ? { role } : {}),
+    ...(targetSlot ? { targetSlot } : {}),
   };
 }
 

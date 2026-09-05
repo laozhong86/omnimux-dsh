@@ -67,13 +67,15 @@ test('视频分支已移除旧版胶囊块（wf-param-pill--video-summary 仅剩
 
 test('handleModelChange 消费 validateAndFallbackVideoParams 并保留防御分支', () => {
   assert.ok(
-    source.includes("validateAndFallbackVideoParams(params, newModelItem)"),
+    source.includes('validateAndFallbackVideoParams('),
     'handleModelChange 应委托 validateAndFallbackVideoParams',
   );
   assert.ok(
     source.includes('if (!newModelItem) {'),
     'newModelItem 不存在时应保留防御分支',
   );
+  // W2: catalog/upstreams 传入 fallback，便于 operation 收敛
+  assert.ok(source.includes('catalog: activeCatalog') || source.includes('catalog,'));
 });
 
 test('videoPopoverOpen 状态与 setVideoPopoverOpen 接线存在', () => {
@@ -83,11 +85,12 @@ test('videoPopoverOpen 状态与 setVideoPopoverOpen 接线存在', () => {
   assert.ok(source.includes('videoTriggerRef'));
 });
 
-test('视频有效参数经 resolveEffectiveVideoParams 解析（消费 schema/modelItem）', () => {
+test('视频有效参数经 resolveEffectiveVideoParams 解析（消费 catalog/upstreams）', () => {
   assert.ok(
-    source.includes('resolveEffectiveVideoParams(params, schema, modelItem)'),
-    '应通过 resolveEffectiveVideoParams 解析有效视频参数',
+    source.includes('resolveEffectiveVideoParams({'),
+    '应通过 resolveEffectiveVideoParams 对象参数解析有效视频参数',
   );
+  assert.ok(source.includes('catalog: activeCatalog') || source.includes('catalog,'), '应传入 catalog');
   assert.ok(source.includes('videoEffectiveParams'));
 });
 

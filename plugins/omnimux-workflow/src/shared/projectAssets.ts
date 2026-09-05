@@ -26,7 +26,14 @@ export interface ProjectAssetsItem {
   parentId: string | null;
   /** POSIX path relative to the project root, e.g. `assets/imported/hero.png`. */
   relative_path: string;
-  size?: number;
+  /** Byte size when known; omit / null when unknown (never invent 0). */
+  size?: number | null;
+  /** Canonical MIME; null/omit when unknown (never invent octet-stream). */
+  mimeType?: string | null;
+  /** Duration in seconds for AV; null/omit when unknown. */
+  durationSec?: number | null;
+  /** Alias of size for readers that still look at sizeBytes. */
+  sizeBytes?: number | null;
   lineage?: unknown;
   snapshot?: { globalSubjectId: string };
   /**

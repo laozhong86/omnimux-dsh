@@ -35,6 +35,10 @@ import {
 } from '../editor/utils/canvasInputMutationGateway';
 import type { CapabilityCatalog } from '../../shared/api';
 import {
+  readGraphCatalogFingerprint,
+  reconcileCanvasForCatalog,
+} from '../../shared/graph/catalogReconcile.ts';
+import {
   clearPersistSessionFlags,
   noteGraphReset,
   noteUserDeletedGraphElements,
@@ -182,6 +186,42 @@ export const useCanvasStore = create<CanvasState>()(
     catalogRuntime: null as CapabilityCatalog | null,
 
     setCatalogRuntime: (catalog: CapabilityCatalog | null) => {
+      const current = get();
+      const previousFingerprint =
+        (typeof current.catalogRuntime?.fingerprint === 'string'
+          ? current.catalogRuntime.fingerprint
+          : '')
+        || readGraphCatalogFingerprint(current.nodes);
+      const nextFingerprint =
+        typeof catalog?.fingerprint === 'string' ? catalog.fingerprint : '';
+
+      // Always store the runtime catalog first so subsequent mutations see it.
+      if (
+        previousFingerprint === nextFingerprint
+        && current.catalogRuntime === catalog
+      ) {
+        // Identical reference + fingerprint: pure no-op (oscillation guard).
+        return;
+      }
+
+      // Soft reconcile generate nodes when the fingerprint changes. Historical
+      // zero-candidate graphs keep their edges and only flip configuration_error.
+      if (previousFingerprint !== nextFingerprint && current.nodes.length > 0) {
+        const reconciled = reconcileCanvasForCatalog({
+          nodes: current.nodes,
+          edges: current.edges,
+          catalog,
+          previousFingerprint,
+        });
+        if (reconciled.changed) {
+          set({
+            catalogRuntime: catalog,
+            nodes: reconciled.nodes,
+            edges: reconciled.edges,
+          });
+          return;
+        }
+      }
       set({ catalogRuntime: catalog });
     },
 

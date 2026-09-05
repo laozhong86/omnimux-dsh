@@ -1,76 +1,111 @@
 /**
- * Video Parameter Adapter & Fallback Engine
+ * Video Parameter Adapter & Fallback Engine (Issue 467 / W2).
  *
- * 负责结合节点的 params、模型 schema 以及 modelItem (包含 inputCapability)，
- * 清洗、验证并解析出当前合法且用于 UI 渲染的 EffectiveVideoParams；
- * 并提供模型切换时的纯函数降级与字段自动清洗机制。
+ * Resolves EffectiveVideoParams from node params + model schema + the
+ * contract-driven effective operation set. Writes only `params.operation`
+ * (legacy `generationMode` is read-time migrated and stripped).
  */
 
-import type { CapabilityModelItem, ModelParameterSchema } from '../../../../../../shared/api.ts';
-import type { EffectiveVideoParams, GenerationMode, VideoNodeParams } from './types.ts';
+import type {
+  CapabilityCatalog,
+  CapabilityModelItem,
+  ModelParameterSchema,
+} from '../../../../../../shared/api.ts';
+import {
+  buildEffectiveOpsUiState,
+  buildUiUpstreamFingerprint,
+  migrateParamsOperation,
+  readPreferredOperationId,
+  shouldRenderModeUi,
+  type OperationUiOption,
+  type UpstreamMediaSnapshot,
+} from '../../../../../../shared/validation/operationUi.ts';
+import type { EffectiveVideoParams, VideoNodeParams } from './types.ts';
 
-/**
- * 默认画幅比例
- */
+/** 默认画幅比例 */
 export const DEFAULT_ASPECT_RATIO = '16:9';
 
-/**
- * 默认时长（秒）
- */
+/** 默认时长（秒） */
 export const DEFAULT_DURATION = 5;
 
 /**
- * 默认生成模式
+ * @deprecated Legacy default GenerationMode. New code uses catalog operation
+ * ids via buildEffectiveOpsUiState; kept only for transitional callers.
  */
-export const DEFAULT_GENERATION_MODE: GenerationMode = 'reference';
+export const DEFAULT_GENERATION_MODE = 'reference';
+
+export interface ResolveEffectiveVideoParamsArgs {
+  params: VideoNodeParams | undefined;
+  schema: ModelParameterSchema | undefined;
+  modelItem: CapabilityModelItem | undefined;
+  /** Catalog v1.1 DTO — required for contract-driven operation resolution. */
+  catalog?: CapabilityCatalog | null;
+  /** Upstream media snapshots (for effective-ops filtering). */
+  upstreams?: UpstreamMediaSnapshot[];
+  /** Node prompt (fingerprint). */
+  prompt?: string;
+}
 
 /**
- * 解析出当前生效、合法且可直接用于 UI 渲染的完整视频参数
+ * Resolve the effective, UI-ready video params.
  *
- * @param params 节点上持久化的参数对象 (可能缺失或包含脏数据)
- * @param schema 当前选定模型的参数配置规范 (包含宽高比、分辨率、时长、音效等可选范围及默认值)
- * @param modelItem 当前选定模型的详情条目 (包含 inputCapability referenceImages 支持的角色)
- * @returns 清洗校验后的有效参数对象 EffectiveVideoParams
+ * Operation resolution order:
+ *   1. effective ops from the W1 kernel (catalog × fingerprint × model)
+ *   2. preferred params.operation / legacy generationMode (when still effective)
+ *   3. sole effective op (count === 1) or first effective (≥2)
+ *   4. empty string when zero effective ops (mode UI hidden, generate blocked)
  */
 export function resolveEffectiveVideoParams(
-  params: VideoNodeParams | undefined,
-  schema: ModelParameterSchema | undefined,
-  modelItem: CapabilityModelItem | undefined,
+  paramsOrArgs: VideoNodeParams | undefined | ResolveEffectiveVideoParamsArgs,
+  schemaArg?: ModelParameterSchema | undefined,
+  modelItemArg?: CapabilityModelItem | undefined,
 ): EffectiveVideoParams {
-  // 1. 模型 ID
+  // Back-compat: previous signature was (params, schema, modelItem).
+  const args: ResolveEffectiveVideoParamsArgs =
+    paramsOrArgs !== null
+    && typeof paramsOrArgs === 'object'
+    && 'params' in (paramsOrArgs as object)
+    && (schemaArg === undefined && modelItemArg === undefined
+      || 'catalog' in (paramsOrArgs as object)
+      || 'upstreams' in (paramsOrArgs as object)
+      || 'prompt' in (paramsOrArgs as object))
+      ? (paramsOrArgs as ResolveEffectiveVideoParamsArgs)
+      : {
+          params: paramsOrArgs as VideoNodeParams | undefined,
+          schema: schemaArg,
+          modelItem: modelItemArg,
+        };
+
+  const params = args.params;
+  const schema = args.schema;
+  const modelItem = args.modelItem;
+  const catalog = args.catalog ?? null;
+
   const model = modelItem?.id ?? (typeof params?.model === 'string' ? params.model : '');
 
-  // 2. 生成方式 (generationMode)
-  // 读取 roles = modelItem?.inputCapability?.referenceImages?.supportedRoles
-  const roles = modelItem?.inputCapability?.referenceImages?.supportedRoles;
-  let generationMode: GenerationMode = DEFAULT_GENERATION_MODE;
+  const fingerprint = buildUiUpstreamFingerprint({
+    prompt: args.prompt,
+    upstreams: args.upstreams,
+  });
+  const preferred = readPreferredOperationId(
+    (params ?? {}) as Record<string, unknown>,
+  );
+  const opsState = buildEffectiveOpsUiState({
+    catalog,
+    modelId: model,
+    fingerprint,
+    ...(preferred ? { preferredOperationId: preferred } : {}),
+    outputType: 'video',
+  });
 
-  if (Array.isArray(roles) && roles.length > 0) {
-    const hasReference = roles.includes('reference');
-    const hasFrameRoles = roles.includes('first_frame') || roles.includes('last_frame');
-
-    if (!hasReference && hasFrameRoles) {
-      // 若 roles 存在且不包含 reference（例如可灵系列仅支持 first_frame, last_frame），强制回退或默认采用 'first_last_frame'
-      generationMode = 'first_last_frame';
-    } else if (hasReference && !hasFrameRoles) {
-      // 若 roles 存在且不包含 first_frame 与 last_frame（例如谷歌 Veo 仅支持 reference），强制回退或默认采用 'reference'
-      generationMode = 'reference';
-    } else {
-      // 若两者都支持或无限定，优先使用 params?.generationMode，无则默认 'reference'
-      if (params?.generationMode === 'first_last_frame' || params?.generationMode === 'reference') {
-        generationMode = params.generationMode;
-      } else {
-        generationMode = DEFAULT_GENERATION_MODE;
-      }
-    }
-  } else {
-    // roles 未定义或无限定，优先使用 params?.generationMode，无则默认 'reference'
-    if (params?.generationMode === 'first_last_frame' || params?.generationMode === 'reference') {
-      generationMode = params.generationMode;
-    } else {
-      generationMode = DEFAULT_GENERATION_MODE;
-    }
-  }
+  const effectiveOperations: OperationUiOption[] = opsState.effectiveOps;
+  const showModeUi = shouldRenderModeUi(opsState);
+  const operation = opsState.selectedOperationId
+    ?? opsState.implicitOperationId
+    ?? '';
+  const operationLabel = operation
+    ? (effectiveOperations.find((op) => op.id === operation)?.label ?? operation)
+    : '';
 
   // 3. 画幅比例 (aspectRatio)
   let aspectRatio = DEFAULT_ASPECT_RATIO;
@@ -81,16 +116,14 @@ export function resolveEffectiveVideoParams(
     } else {
       aspectRatio = schema?.aspectRatio?.defaultValue ?? ratioOptions[0]?.value ?? DEFAULT_ASPECT_RATIO;
     }
+  } else if (typeof params?.aspectRatio === 'string' && params.aspectRatio.trim().length > 0) {
+    aspectRatio = params.aspectRatio;
   } else {
-    if (typeof params?.aspectRatio === 'string' && params.aspectRatio.trim().length > 0) {
-      aspectRatio = params.aspectRatio;
-    } else {
-      aspectRatio = schema?.aspectRatio?.defaultValue ?? DEFAULT_ASPECT_RATIO;
-    }
+    aspectRatio = schema?.aspectRatio?.defaultValue ?? DEFAULT_ASPECT_RATIO;
   }
 
   // 4. 清晰度 (resolution)
-  let resolution: string | undefined = undefined;
+  let resolution: string | undefined;
   const resOptions = schema?.resolution?.options;
   if (Array.isArray(resOptions) && resOptions.length > 0) {
     if (params?.resolution && resOptions.some((opt) => opt.value === params.resolution)) {
@@ -98,8 +131,6 @@ export function resolveEffectiveVideoParams(
     } else {
       resolution = schema?.resolution?.defaultValue ?? resOptions[0]?.value;
     }
-  } else {
-    resolution = undefined;
   }
 
   // 5. 时长 (duration)
@@ -111,121 +142,116 @@ export function resolveEffectiveVideoParams(
     } else {
       duration = schema?.duration?.defaultValue ?? durOptions[0]?.value ?? DEFAULT_DURATION;
     }
+  } else if (typeof params?.duration === 'number') {
+    duration = params.duration;
   } else {
-    if (typeof params?.duration === 'number') {
-      duration = params.duration;
-    } else {
-      duration = schema?.duration?.defaultValue ?? DEFAULT_DURATION;
-    }
+    duration = schema?.duration?.defaultValue ?? DEFAULT_DURATION;
   }
 
-  // 6. 有声音效 (sound 与 hasSoundSupport)
+  // 6. 有声音效
   const hasSoundSupport = Boolean(schema?.sound?.supported);
-  let sound = false;
-  if (hasSoundSupport) {
-    sound = typeof params?.sound === 'boolean' ? params.sound : Boolean(schema?.sound?.defaultValue);
-  } else {
-    sound = false;
-  }
+  const sound = hasSoundSupport
+    ? (typeof params?.sound === 'boolean' ? params.sound : Boolean(schema?.sound?.defaultValue))
+    : false;
 
-  // 组装最终对象
   const result: EffectiveVideoParams = {
     model,
-    generationMode,
+    operation,
+    operationLabel,
+    effectiveOperations,
+    showModeUi,
     aspectRatio,
     duration,
     sound,
     hasSoundSupport,
+    // Transitional mirror so older summary paths keep working.
+    generationMode: operation || undefined,
   };
 
-  if (resolution !== undefined) {
-    result.resolution = resolution;
-  }
-
-  if (typeof params?.firstFrameUrl === 'string') {
-    result.firstFrameUrl = params.firstFrameUrl;
-  }
-  if (typeof params?.lastFrameUrl === 'string') {
-    result.lastFrameUrl = params.lastFrameUrl;
-  }
+  if (resolution !== undefined) result.resolution = resolution;
+  if (typeof params?.firstFrameUrl === 'string') result.firstFrameUrl = params.firstFrameUrl;
+  if (typeof params?.lastFrameUrl === 'string') result.lastFrameUrl = params.lastFrameUrl;
 
   return result;
 }
 
 /**
- * 纯函数：模拟模型切换时的回退与参数清洗逻辑
+ * Pure function: model-switch fallback + parameter scrubbing.
  *
- * 1. 继承原有参数并更新 model 字段；
- * 2. 依据目标模型的 supportedRoles 校验 generationMode；
- * 3. 依据目标模型的 schema 校验 aspectRatio 与 duration；
- * 4. 校验 resolution，若目标模型不支持或选项为空则彻底 delete；
- * 5. 校验 sound，若目标模型不支持 sound 则彻底 delete；若支持但当前非布尔值则填充默认值。
- *
- * @param oldParams 切换前节点保存的参数字典
- * @param targetModelItem 目标模型的详情条目 (包含 schema 及 inputCapability)
- * @returns 经过清洗与降级后的全新参数字典
+ * 1. Inherit previous params and update `model`.
+ * 2. Migrate operation (preferred / legacy generationMode) onto
+ *    `params.operation` and strip `generationMode`.
+ * 3. Validate aspectRatio / duration / resolution / sound against the target
+ *    schema (unchanged behaviour).
  */
 export function validateAndFallbackVideoParams(
   oldParams: Record<string, unknown>,
   targetModelItem: CapabilityModelItem | undefined,
+  opts: {
+    catalog?: CapabilityCatalog | null;
+    upstreams?: UpstreamMediaSnapshot[];
+    prompt?: string;
+    /** Explicit next operation (user pick); otherwise keep preferred if still valid. */
+    nextOperationId?: string;
+  } = {},
 ): Record<string, unknown> {
-  const nextParams: Record<string, unknown> = {
+  const schema = targetModelItem?.parameters;
+  let nextParams: Record<string, unknown> = {
     ...oldParams,
     model: targetModelItem?.id ?? oldParams['model'],
   };
 
-  const schema = targetModelItem?.parameters;
-  const roles = targetModelItem?.inputCapability?.referenceImages?.supportedRoles;
+  // Operation: migrate legacy → canonical, optionally force nextOperationId.
+  const preferred = opts.nextOperationId
+    ?? readPreferredOperationId(nextParams);
+  nextParams = migrateParamsOperation(nextParams, preferred);
 
-  // 1. 校验并修正 generationMode
-  if (Array.isArray(roles) && roles.length > 0) {
-    const hasReference = roles.includes('reference');
-    const hasFrameRoles = roles.includes('first_frame') || roles.includes('last_frame');
-
-    if (!hasReference && hasFrameRoles) {
-      nextParams['generationMode'] = 'first_last_frame';
-    } else if (hasReference && !hasFrameRoles) {
-      nextParams['generationMode'] = 'reference';
-    } else {
-      const currentMode = nextParams['generationMode'];
-      if (currentMode !== 'first_last_frame' && currentMode !== 'reference') {
-        nextParams['generationMode'] = DEFAULT_GENERATION_MODE;
-      }
-    }
-  } else {
-    const currentMode = nextParams['generationMode'];
-    if (currentMode !== 'first_last_frame' && currentMode !== 'reference') {
-      nextParams['generationMode'] = DEFAULT_GENERATION_MODE;
+  // When a catalog is available, clamp the operation to an effective one.
+  if (opts.catalog && targetModelItem?.id) {
+    const fingerprint = buildUiUpstreamFingerprint({
+      prompt: opts.prompt,
+      upstreams: opts.upstreams,
+    });
+    const opsState = buildEffectiveOpsUiState({
+      catalog: opts.catalog,
+      modelId: targetModelItem.id,
+      fingerprint,
+      ...(preferred ? { preferredOperationId: preferred } : {}),
+      outputType: 'video',
+    });
+    if (opsState.selectedOperationId) {
+      nextParams = migrateParamsOperation(nextParams, opsState.selectedOperationId);
+    } else if (opsState.count === 0) {
+      // Zero effective ops: keep operation empty so UI can show the error.
+      delete nextParams.operation;
     }
   }
 
-  // 2. 校验并修正 aspectRatio
+  // aspectRatio
   const ratioOptions = schema?.aspectRatio?.options;
   if (Array.isArray(ratioOptions) && ratioOptions.length > 0) {
     const isSupported = ratioOptions.some((opt) => opt.value === nextParams['aspectRatio']);
     if (!isSupported) {
-      nextParams['aspectRatio'] = schema?.aspectRatio?.defaultValue ?? ratioOptions[0]?.value ?? DEFAULT_ASPECT_RATIO;
+      nextParams['aspectRatio'] =
+        schema?.aspectRatio?.defaultValue ?? ratioOptions[0]?.value ?? DEFAULT_ASPECT_RATIO;
     }
-  } else {
-    if (!nextParams['aspectRatio']) {
-      nextParams['aspectRatio'] = schema?.aspectRatio?.defaultValue ?? DEFAULT_ASPECT_RATIO;
-    }
+  } else if (!nextParams['aspectRatio']) {
+    nextParams['aspectRatio'] = schema?.aspectRatio?.defaultValue ?? DEFAULT_ASPECT_RATIO;
   }
 
-  // 3. 校验并修正 duration
+  // duration
   const durOptions = schema?.duration?.options;
   if (Array.isArray(durOptions) && durOptions.length > 0) {
     const isSupported = durOptions.some((opt) => opt.value === nextParams['duration']);
     if (!isSupported) {
-      nextParams['duration'] = schema?.duration?.defaultValue ?? durOptions[0]?.value ?? DEFAULT_DURATION;
+      nextParams['duration'] =
+        schema?.duration?.defaultValue ?? durOptions[0]?.value ?? DEFAULT_DURATION;
     }
-  } else {
-    if (typeof nextParams['duration'] !== 'number') {
-      nextParams['duration'] = schema?.duration?.defaultValue ?? DEFAULT_DURATION;
-    }
+  } else if (typeof nextParams['duration'] !== 'number') {
+    nextParams['duration'] = schema?.duration?.defaultValue ?? DEFAULT_DURATION;
   }
 
-  // 4. 校验并修正 resolution
+  // resolution
   const resOptions = schema?.resolution?.options;
   if (Array.isArray(resOptions) && resOptions.length > 0) {
     const isSupported = resOptions.some((opt) => opt.value === nextParams['resolution']);
@@ -233,18 +259,16 @@ export function validateAndFallbackVideoParams(
       nextParams['resolution'] = schema?.resolution?.defaultValue ?? resOptions[0]?.value;
     }
   } else {
-    // 目标模型无 resolution 选项，直接删除 resolution 字段
     delete nextParams['resolution'];
   }
 
-  // 5. 校验并修正 sound
+  // sound
   const hasSoundSupport = Boolean(schema?.sound?.supported);
   if (hasSoundSupport) {
     if (typeof nextParams['sound'] !== 'boolean') {
       nextParams['sound'] = Boolean(schema?.sound?.defaultValue);
     }
   } else {
-    // 目标模型不支持音效，彻底清除 sound 字段
     delete nextParams['sound'];
   }
 

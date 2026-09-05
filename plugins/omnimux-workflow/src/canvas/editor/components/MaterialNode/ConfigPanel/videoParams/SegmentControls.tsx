@@ -1,15 +1,14 @@
 /**
- * Video Param Segment Controls
+ * Video Param Segment Controls (Issue 467 / W2).
  *
- * 三个横向分段控制器：生成方式、分辨率、有声/无声。
- * 通用风格：横向分段，高度 32px，容器内边距 2px，单项 flex:1 均分，选中项高亮。
- * 仅消费 `wf-video-seg*` CSS 类名（具体样式由 T04 统一落地，本文件不含任何色值）。
- * 全部使用 <button> 语义，禁用态设置 disabled + aria-disabled。
+ * GenerationModeSegment is now an OperationSegment driven by Catalog DTO
+ * effective operations (open string ids + labels). Unsupported ops are not
+ * rendered (Hide, Don't Grey). effectiveOps ≤ 1 → return null (no DOM).
  */
 
 import { Volume2, VolumeX } from 'lucide-react';
 import { type ReactElement, type ReactNode } from 'react';
-import type { GenerationMode } from './types.ts';
+import type { OperationUiOption } from '../../../../../../shared/validation/operationUi.ts';
 
 /** 通用分段选项结构 */
 interface SegmentOption<T extends string | number | boolean> {
@@ -51,6 +50,7 @@ function Segment<T extends string | number | boolean>({
             disabled={isDisabled}
             title={opt.title}
             className={cls}
+            data-operation-id={typeof opt.value === 'string' ? opt.value : undefined}
             onClick={() => {
               if (!isDisabled) {
                 onChange(opt.value);
@@ -66,56 +66,76 @@ function Segment<T extends string | number | boolean>({
   );
 }
 
-/** GenerationModeSegment 属性 */
-export interface GenerationModeSegmentProps {
-  value: GenerationMode;
-  /** 模型 inputCapability.referenceImages.supportedRoles，可选 */
-  supportedRoles?: string[];
-  onChange: (mode: GenerationMode) => void;
+/** OperationSegment / GenerationModeSegment 属性 */
+export interface OperationSegmentProps {
+  /** Currently selected canonical operation id. */
+  value: string;
+  /**
+   * Effective operations only (already filtered by the kernel). Unsupported
+   * ops must NOT be passed here — they must not enter the DOM.
+   */
+  operations: OperationUiOption[];
+  onChange: (operationId: string) => void;
 }
 
 /**
- * 生成方式分段：依据模型支持模式动态渲染
+ * Operation mode segment (Catalog-driven).
+ *
  * 铁律：
- * 1. 不支持的模式 100% 隐藏，严禁展示灰色不可用项。
- * 2. 当有效可选模式 <= 1 时，直接返回 null（不渲染本栏，紧凑界面）。
- * 3. 严格区分首尾帧：只有同时包含 first_frame 和 last_frame 时才允许渲染「首尾帧」。
+ * 1. 只渲染传入的 effective operations；不支持项不在 DOM。
+ * 2. operations.length <= 1 → return null（0/1 无 mode UI）。
+ * 3. 未知未来合法 id 以 string 消费，不穷举 17-union。
  */
-export function GenerationModeSegment({
+export function OperationSegment({
   value,
-  supportedRoles,
+  operations,
   onChange,
-}: GenerationModeSegmentProps): ReactElement | null {
-  const hasRoles = Array.isArray(supportedRoles) && supportedRoles.length > 0;
-  
-  // 校验模型真实支持性
-  const supportsReference = hasRoles ? supportedRoles.includes('reference') : true;
-  const supportsFirstLast = hasRoles
-    ? supportedRoles.includes('first_frame') && supportedRoles.includes('last_frame')
-    : false;
-
-  const options: Array<SegmentOption<GenerationMode>> = [];
-
-  if (supportsReference) {
-    options.push({
-      value: 'reference',
-      label: '全能参考',
-    });
-  }
-
-  if (supportsFirstLast) {
-    options.push({
-      value: 'first_last_frame',
-      label: '首尾帧',
-    });
-  }
-
-  // 铁律：若可选模式不足 2 个（例如仅全能参考、仅数字人、或单模式），整栏隐藏不占地
-  if (options.length <= 1) {
+}: OperationSegmentProps): ReactElement | null {
+  const effective = (operations ?? []).filter((op) => op && typeof op.id === 'string' && op.id);
+  if (effective.length <= 1) {
     return null;
   }
 
-  return <Segment options={options} value={value} onChange={onChange} ariaLabel="生成方式" />;
+  const options: Array<SegmentOption<string>> = effective.map((op) => ({
+    value: op.id,
+    label: op.label || op.id,
+  }));
+
+  return (
+    <Segment
+      options={options}
+      value={value}
+      onChange={onChange}
+      ariaLabel="生成方式"
+    />
+  );
+}
+
+/**
+ * @deprecated Alias kept so transitional imports compile. Prefer OperationSegment.
+ * The old supportedRoles / reference|first_last_frame dual-button path is gone.
+ */
+export interface GenerationModeSegmentProps {
+  value: string;
+  /** @deprecated Ignored — operations prop is the sole source. */
+  supportedRoles?: string[];
+  /** Effective operations (required for W2). */
+  operations?: OperationUiOption[];
+  onChange: (mode: string) => void;
+}
+
+export function GenerationModeSegment({
+  value,
+  operations,
+  onChange,
+}: GenerationModeSegmentProps): ReactElement | null {
+  return (
+    <OperationSegment
+      value={value}
+      operations={operations ?? []}
+      onChange={onChange}
+    />
+  );
 }
 
 /** ResolutionSegment 属性 */

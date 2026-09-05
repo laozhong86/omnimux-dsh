@@ -1,24 +1,31 @@
 /**
- * VideoParams Types & Contracts
+ * VideoParams Types & Contracts (Issue 467 / W2).
  *
- * 定义视频生成参数底栏、浮层及画幅几何等全套 TypeScript 接口与类型定义。
- * 严格遵循 DSH 原生 UI 设计规范与工作流画布节点契约。
+ * Generation mode is an open-string Catalog operation id (`params.operation`).
+ * The historical `GenerationMode = 'reference' | 'first_last_frame'` union is
+ * retired from the write path; legacy values are read-time migrated only.
  */
 
 import type { ReactNode, Ref } from 'react';
+import type { OperationUiOption } from '../../../../../../shared/validation/operationUi.ts';
 
 /**
- * 视频生成模式：
- * - reference: 全能参考模式（支持图生视频、文生视频等）
- * - first_last_frame: 首尾帧模式（首帧和尾帧生成视频过渡）
+ * @deprecated Read-time legacy wire only. New writes use `params.operation`.
+ * Kept so old fixtures / snapshots typecheck during migration.
  */
-export type GenerationMode = 'reference' | 'first_last_frame';
+export type GenerationMode = 'reference' | 'first_last_frame' | string;
 
 /**
  * 存放于 nodeData.params 中的视频参数原始/持久化结构
  */
 export interface VideoNodeParams {
   model?: string;
+  /** Canonical operation id (Catalog DTO). Preferred over generationMode. */
+  operation?: string;
+  /**
+   * @deprecated Legacy wire. Read-time mapped via LEGACY_OPERATION_MAP; stripped
+   * on the next write.
+   */
   generationMode?: GenerationMode;
   aspectRatio?: string;
   resolution?: string;
@@ -34,7 +41,14 @@ export interface VideoNodeParams {
  */
 export interface EffectiveVideoParams {
   model: string;
-  generationMode: GenerationMode;
+  /** Canonical operation id (may be '' when zero effective ops). */
+  operation: string;
+  /** Resolved label for the current operation ('' when mode UI hidden). */
+  operationLabel: string;
+  /** Effective operations (≥2 → mode selector visible). */
+  effectiveOperations: OperationUiOption[];
+  /** True when the mode segment / TriggerBar mode text must render. */
+  showModeUi: boolean;
   aspectRatio: string;
   resolution?: string;
   duration: number | string;
@@ -42,6 +56,12 @@ export interface EffectiveVideoParams {
   hasSoundSupport: boolean;
   firstFrameUrl?: string;
   lastFrameUrl?: string;
+  /**
+   * @deprecated Mirror of `operation` after legacy mapping. Present so older
+   * summary/tests that still read generationMode keep compiling during the
+   * cutover; new code must use `operation`.
+   */
+  generationMode?: string;
 }
 
 /**
@@ -132,4 +152,3 @@ export interface VideoParamPopoverProps {
 }
 
 export type { VideoSummaryFormatResult } from './summaryFormatter.ts';
-
