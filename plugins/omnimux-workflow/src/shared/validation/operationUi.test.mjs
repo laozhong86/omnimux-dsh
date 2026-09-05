@@ -1,0 +1,353 @@
+/**
+ * Issue #467 / W2 — contract-driven operation UI + filtered model list.
+ *
+ * Covers:
+ *   - effectiveOps 0/1/2+ visibility + blockGenerate
+ *   - filtered models: incompatible / unlisted never enter the option list
+ *   - Whisper-not-listed stays hidden; ASR zero-candidate empty state
+ *   - params.operation is the sole operation contract
+ *   - unknown media metadata stays null/undefined (never 0 / octet-stream)
+ *   - image / video / audio / text each have at least one path
+ */
+
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { createCompatTestCatalog } from './compatTestCatalog.ts';
+import {
+  buildEffectiveOpsUiState,
+  buildFilteredModelOptions,
+  buildUiUpstreamFingerprint,
+  isZeroCandidateEmptyState,
+  setParamsOperation,
+  readPreferredOperationId,
+  resolveTriggerModeText,
+  shouldRenderModeUi,
+  assetFromUpstreamSnapshot,
+  readOptionalMediaNumber,
+  readOptionalMime,
+} from './operationUi.ts';
+
+const catalog = createCompatTestCatalog();
+
+function fp(upstreams = [], prompt = 'hello') {
+  return buildUiUpstreamFingerprint({ prompt, upstreams });
+}
+
+describe('effectiveOps UI state (0 / 1 / ≥2)', () => {
+  it('0 effective ops → hide mode UI + block generate + typed reason', () => {
+    // img-prompt-only cannot absorb a reference image.
+    const state = buildEffectiveOpsUiState({
+      catalog,
+      modelId: 'img-prompt-only',
+      fingerprint: fp([{ nodeId: 's1', materialType: 'image', mimeType: 'image/png', sizeBytes: 1024 }]),
+      outputType: 'image',
+    });
+    assert.equal(state.count, 0);
+    assert.equal(state.visibility, 'hidden');
+    assert.equal(state.blockGenerate, true);
+    assert.equal(shouldRenderModeUi(state), false);
+    assert.ok(state.reasonCode);
+    assert.ok(state.reasonMessage);
+  });
+
+  it('1 effective op → hide mode UI, implicit sole operation, allow generate', () => {
+    // No media upstream → text_to_image is the sole effective op for img-prompt-only.
+    const state = buildEffectiveOpsUiState({
+      catalog,
+      modelId: 'img-prompt-only',
+      fingerprint: fp([]),
+      outputType: 'image',
+    });
+    assert.equal(state.count, 1);
+    assert.equal(state.visibility, 'hidden');
+    assert.equal(state.blockGenerate, false);
+    assert.equal(shouldRenderModeUi(state), false);
+    assert.equal(state.implicitOperationId, 'text_to_image');
+    assert.equal(state.selectedOperationId, 'text_to_image');
+    assert.equal(resolveTriggerModeText(state), '');
+  });
+
+  it('≥2 effective ops → selector visibility, only effective ids, mode text from label', () => {
+    // img-ref with no media: text_to_image is effective; image_to_image needs min=1 so not effective.
+    // With one reference image both text_to_image? no — text_to_image has no image slot so
+    // a media asset makes it reject; image_to_image accepts. Still 1.
+    // Force ≥2 by using vid-frames with no media: text_to_video only (first_last needs frames).
+    // Build a catalog-local multi-op by evaluating img-ref without media:
+    const noMedia = buildEffectiveOpsUiState({
+      catalog,
+      modelId: 'img-ref',
+      fingerprint: fp([]),
+      outputType: 'image',
+    });
+    // img-ref listed ops that accept empty media: text_to_image (image_to_image min=1 pending but accepts?).
+    // matchOperationInputs: min unsatisfied → accepts=true, ready=false. So both accept.
+    assert.ok(noMedia.count >= 2, `expected ≥2 effective ops, got ${noMedia.count}`);
+    assert.equal(noMedia.visibility, 'selector');
+    assert.equal(shouldRenderModeUi(noMedia), true);
+    assert.equal(noMedia.blockGenerate, false);
+    for (const op of noMedia.effectiveOps) {
+      assert.equal(typeof op.id, 'string');
+      assert.ok(op.id.length > 0);
+      assert.equal(typeof op.label, 'string');
+      assert.equal(op.effective, true);
+    }
+    const modeText = resolveTriggerModeText(noMedia, noMedia.selectedOperationId);
+    assert.ok(modeText.length > 0);
+  });
+
+  it('unknown future operation id does not crash (open string)', () => {
+    const state = buildEffectiveOpsUiState({
+      catalog,
+      modelId: 'img-ref',
+      fingerprint: fp([]),
+      preferredOperationId: 'future_unknown_op_xyz',
+      outputType: 'image',
+    });
+    // Preferred unknown is ignored; still returns effective set.
+    assert.ok(state.count >= 1);
+    assert.ok(state.selectedOperationId);
+    assert.notEqual(state.selectedOperationId, 'future_unknown_op_xyz');
+  });
+});
+
+describe('filtered model list (Hide, Don\'t Grey)', () => {
+  it('only compatible models appear; incompatible / unlisted stay out', () => {
+    const result = buildFilteredModelOptions({
+      catalog,
+      fingerprint: fp([{ nodeId: 's1', materialType: 'image', mimeType: 'image/png', sizeBytes: 1024 }]),
+      outputType: 'image',
+    });
+    assert.equal(result.catalogAvailable, true);
+    assert.equal(result.zeroCandidates, false);
+    const ids = result.options.map((o) => o.id);
+    // img-prompt-only cannot absorb image → hidden
+    assert.ok(!ids.includes('img-prompt-only'));
+    // unlisted-model has zero listed ops → hidden
+    assert.ok(!ids.includes('unlisted-model'));
+    // img-ref / img-hd / alias-img can absorb → present
+    assert.ok(ids.includes('img-ref'));
+    assert.ok(ids.includes('img-hd') || ids.includes('alias-img'));
+    // No disabled flag concept — options are the DOM set.
+    for (const opt of result.options) {
+      assert.equal(opt.verdict.acceptsCurrentInputs, true);
+    }
+  });
+
+  it('video node filters to video-output models only', () => {
+    const result = buildFilteredModelOptions({
+      catalog,
+      fingerprint: fp([]),
+      outputType: 'video',
+    });
+    const ids = result.options.map((o) => o.id);
+    assert.deepEqual(ids, ['vid-frames']);
+    assert.ok(!ids.includes('img-ref'));
+    assert.ok(!ids.includes('aud-tts'));
+  });
+
+  it('audio node filters to audio-output models', () => {
+    const result = buildFilteredModelOptions({
+      catalog,
+      fingerprint: fp([]),
+      outputType: 'audio',
+    });
+    const ids = result.options.map((o) => o.id);
+    assert.deepEqual(ids, ['aud-tts']);
+  });
+
+  it('text node with empty catalog bucket still evaluates models[] by outputType', () => {
+    const result = buildFilteredModelOptions({
+      catalog,
+      fingerprint: fp([]),
+      outputType: 'text',
+    });
+    // Fixture has no text-output listed ops → zero candidates empty state.
+    assert.equal(result.zeroCandidates, true);
+    assert.equal(isZeroCandidateEmptyState(result), true);
+    assert.equal(result.options.length, 0);
+  });
+
+  it('Whisper / speech_to_text stays hidden when not listed', () => {
+    // Inject an unlisted whisper row into a cloned catalog.
+    const withWhisper = {
+      ...catalog,
+      models: [
+        ...(catalog.models ?? []),
+        {
+          id: 'whisper-1',
+          label: 'Whisper',
+          family: 'openai',
+          operations: [
+            {
+              id: 'speech_to_text',
+              label: '语音转写',
+              output: { type: 'text' },
+              inputs: [
+                {
+                  slot: 'audio',
+                  type: 'audio',
+                  role: 'source',
+                  source: 'upstream_edge',
+                  min: 1,
+                  max: 1,
+                  allowedMimes: ['audio/mpeg', 'audio/wav'],
+                },
+              ],
+              listed: false,
+              research: { status: 'draft' },
+              execution: { status: 'none' },
+            },
+          ],
+          listed: false,
+          listedOperations: [],
+        },
+      ],
+      text: [...(catalog.text ?? []), { id: 'whisper-1', label: 'Whisper' }],
+    };
+    const result = buildFilteredModelOptions({
+      catalog: withWhisper,
+      fingerprint: fp([
+        { nodeId: 'a1', materialType: 'audio', mimeType: 'audio/mpeg', sizeBytes: 2048 },
+      ]),
+      outputType: 'text',
+    });
+    const ids = result.options.map((o) => o.id);
+    assert.ok(!ids.includes('whisper-1'), 'unlisted Whisper must not enter DOM');
+    assert.equal(result.zeroCandidates, true);
+  });
+
+  it('no productAllowlist param — listed+compatible survive even with zero whitelist intersection', () => {
+    // Fixture ids (img-*, alias-*) have zero intersection with the retired
+    // MATERIAL_NODE_WHITELIST image set. Candidates must still be non-empty.
+    const legacyWhitelist = [
+      'nanobanana-2', 'nano_banana_2', 'nanobanana-pro', 'nano_banana_pro',
+      'seedream-5.0-pro', 'seedream-4.5', 'midjourney-8.1', 'midjourney-7',
+      'midjourney-niji-7', 'gpt-image-2',
+    ];
+    const fingerprint = fp([
+      { nodeId: 's1', materialType: 'image', mimeType: 'image/png', sizeBytes: 1024 },
+    ]);
+    const result = buildFilteredModelOptions({
+      catalog,
+      fingerprint,
+      outputType: 'image',
+    });
+    assert.equal(result.zeroCandidates, false);
+    assert.ok(result.options.length >= 1);
+    const ids = result.options.map((o) => o.id);
+    for (const id of ids) {
+      assert.ok(!legacyWhitelist.includes(id), `${id} is fixture-only (zero whitelist intersection)`);
+    }
+    // API surface must not accept a second capability filter.
+    assert.equal(
+      buildFilteredModelOptions.length,
+      1,
+      'buildFilteredModelOptions takes a single args object',
+    );
+    // Passing a stale productAllowlist key must be ignored if ever present on the object.
+    const sneaky = buildFilteredModelOptions({
+      catalog,
+      fingerprint,
+      outputType: 'image',
+      // @ts-expect-error intentional stale key — must not filter
+      productAllowlist: legacyWhitelist,
+    });
+    assert.equal(sneaky.zeroCandidates, false);
+    assert.deepEqual(
+      sneaky.options.map((o) => o.id).sort(),
+      result.options.map((o) => o.id).sort(),
+    );
+  });
+
+  it('picker options parity with evaluateCatalogCompat compatible set (connection gate)', async () => {
+    const { evaluateCatalogCompat } = await import('./compatKernel.ts');
+    const fingerprint = fp([
+      { nodeId: 's1', materialType: 'image', mimeType: 'image/png', sizeBytes: 1024 },
+    ]);
+    const evaluation = evaluateCatalogCompat(catalog, fingerprint, { outputType: 'image' });
+    const picker = buildFilteredModelOptions({ catalog, fingerprint, outputType: 'image' });
+    assert.equal(evaluation.zeroCandidates, false);
+    assert.equal(picker.zeroCandidates, false);
+    assert.deepEqual(
+      picker.options.map((o) => o.id).sort(),
+      evaluation.compatible.map((v) => v.modelId).sort(),
+    );
+  });
+});
+
+describe('canonical preferred operation', () => {
+  it('reads only params.operation', () => {
+    assert.equal(readPreferredOperationId({ operation: 'first_last_frame' }), 'first_last_frame');
+    assert.equal(readPreferredOperationId({}), undefined);
+  });
+
+  it('setParamsOperation writes an explicit canonical operation id', () => {
+    const next = setParamsOperation(
+      { model: 'vid-frames', aspectRatio: '16:9' },
+      'first_last_frame',
+    );
+    assert.equal(next.operation, 'first_last_frame');
+    assert.equal(next.aspectRatio, '16:9');
+  });
+});
+
+describe('media metadata unknown semantics', () => {
+  it('readOptionalMediaNumber never invents 0 from null/undefined/NaN', () => {
+    assert.equal(readOptionalMediaNumber(null), undefined);
+    assert.equal(readOptionalMediaNumber(undefined), undefined);
+    assert.equal(readOptionalMediaNumber(Number.NaN), undefined);
+    assert.equal(readOptionalMediaNumber('nope'), undefined);
+    assert.equal(readOptionalMediaNumber(0), 0); // measured zero is kept
+    assert.equal(readOptionalMediaNumber(12.5), 12.5);
+  });
+
+  it('readOptionalMime rejects unknown / octet-stream / empty', () => {
+    assert.equal(readOptionalMime(null), undefined);
+    assert.equal(readOptionalMime(''), undefined);
+    assert.equal(readOptionalMime('unknown'), undefined);
+    assert.equal(readOptionalMime('application/octet-stream'), undefined);
+    assert.equal(readOptionalMime('image/png'), 'image/png');
+  });
+
+  it('assetFromUpstreamSnapshot omits unknown fields (no 0 / no catch-all MIME)', () => {
+    const asset = assetFromUpstreamSnapshot({
+      nodeId: 'n1',
+      materialType: 'video',
+      mimeType: 'unknown',
+      sizeBytes: null,
+      durationSec: undefined,
+    });
+    assert.equal(asset.sourceNodeId, 'n1');
+    assert.equal(asset.type, 'video');
+    assert.equal('mimeType' in asset, false);
+    assert.equal('sizeBytes' in asset, false);
+    assert.equal('durationSec' in asset, false);
+  });
+});
+
+describe('catalog missing / fail-closed', () => {
+  it('null catalog → block generate + catalog_unavailable', () => {
+    const state = buildEffectiveOpsUiState({
+      catalog: null,
+      modelId: 'img-ref',
+      fingerprint: fp([]),
+    });
+    assert.equal(state.blockGenerate, true);
+    assert.equal(state.reasonCode, 'catalog_unavailable');
+    const models = buildFilteredModelOptions({ catalog: null, fingerprint: fp([]) });
+    assert.equal(models.catalogAvailable, false);
+    assert.equal(models.zeroCandidates, true);
+  });
+
+  it('catalog ready but no selected model → model_unselected', () => {
+    const state = buildEffectiveOpsUiState({
+      catalog,
+      modelId: '',
+      fingerprint: fp([]),
+      outputType: 'video',
+    });
+    assert.equal(state.blockGenerate, true);
+    assert.equal(state.reasonCode, 'model_unselected');
+    assert.equal(state.reasonMessage, '请先选择模型');
+  });
+});

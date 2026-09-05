@@ -113,20 +113,22 @@ test('VideoParamPopover 滚动容器与五大 section 条件渲染', () => {
   assert.match(popoverSrc, /durationOptions\.length > 0/);
   // 有声 section 仅在支持音效时渲染
   assert.match(popoverSrc, /params\.hasSoundSupport &&/);
-  // 各子控件消费 onParamChange 透传
-  assert.match(popoverSrc, /onParamChange\('generationMode'/);
+  // 各子控件消费 onParamChange 透传（W2：写 operation，不写 generationMode）
+  assert.match(popoverSrc, /onParamChange\('operation'/);
+  assert.doesNotMatch(popoverSrc, /onParamChange\('generationMode'/);
   assert.match(popoverSrc, /onParamChange\('aspectRatio'/);
   assert.match(popoverSrc, /onParamChange\('resolution'/);
   assert.match(popoverSrc, /onParamChange\('duration'/);
   assert.match(popoverSrc, /onParamChange\('sound'/);
-  // 消费既有子控件
-  assert.match(popoverSrc, /GenerationModeSegment/);
+  // 消费既有子控件（W2：OperationSegment）
+  assert.match(popoverSrc, /OperationSegment/);
   assert.match(popoverSrc, /AspectCardGrid/);
   assert.match(popoverSrc, /ResolutionSegment/);
   assert.match(popoverSrc, /DurationGrid/);
   assert.match(popoverSrc, /SoundSwitchSegment/);
-  // 生成方式分段透传 supportedRoles
-  assert.match(popoverSrc, /supportedRoles=\{modelItem\?\.inputCapability\?\.referenceImages\?\.supportedRoles\}/);
+  // mode section 受 showModeUi 门控
+  assert.match(popoverSrc, /showModeUi/);
+  assert.doesNotMatch(popoverSrc, /supportedRoles=\{modelItem/);
 });
 
 test('components.css 覆盖全部视频参数类名规则', () => {
