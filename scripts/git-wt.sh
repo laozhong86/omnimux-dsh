@@ -15,7 +15,7 @@ OmniMux 多 Agent Worktree 隔离与管理工具 (支持 GitHub Issue 绑定与�
 用法:
   ./scripts/git-wt.sh start <plugin> <topic> [issue_id]   从 origin/main 切出专属 Worktree
   ./scripts/git-wt.sh auto-start <issue_id>               根据 Issue ID 自动解析创建 Worktree
-  ./scripts/git-wt.sh dev <topic> [issue_id] [plugin]     在独立 L2 任务环境（端口 44200+）启动该工作树源码（合并前验证）
+  ./scripts/git-wt.sh dev <topic> [issue_id] [plugin]     在独立 L2 任务环境（端口 44201–44299）启动该工作树源码（合并前验证）
   ./scripts/git-wt.sh finish <topic> [issue_id] [flags]   本地门禁 → 推送特性分支 → 创建/核验 PR（禁止本地合 main）
   ./scripts/git-wt.sh clean <topic> [issue_id]            PR MERGED 后安全销毁 Worktree 及本地分支
   ./scripts/git-wt.sh list                                列出当前全部活跃的 Worktree 与对应分支
@@ -30,7 +30,7 @@ OmniMux 多 Agent Worktree 隔离与管理工具 (支持 GitHub Issue 绑定与�
 示例:
   # 推荐: 绑定 GitHub Issue ID
   ./scripts/git-wt.sh start workflow table-node 42
-  ./scripts/git-wt.sh dev table-node 42            # 独立 L2 环境验证（44200+ 端口）
+  ./scripts/git-wt.sh dev table-node 42            # 独立 L2 环境验证（44201–44299 端口）
   ./scripts/git-wt.sh finish table-node 42
   ./scripts/git-wt.sh clean table-node 42
 
@@ -243,11 +243,12 @@ cmd_dev() {
   fi
   echo "$dev_out"
 
-  local port url commit
+  local port url commit profile_dir
   port=$(echo "$dev_out" | sed -n 's/.*port:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | tail -1)
   url=$(echo "$dev_out" | sed -n 's#.*URL:[[:space:]]*\(http://[^ ]*\).*#\1#p' | tail -1)
   [ -z "$url" ] && [ -n "$port" ] && url="http://127.0.0.1:${port}"
   commit=$(git -C "$wt_dir" rev-parse --short HEAD 2>/dev/null || echo "?")
+  profile_dir=$(echo "$dev_out" | sed -n 's/^[[:space:]]*profile:[[:space:]]*//p' | tail -1)
 
   # 写 L2 验证记录（finish 门禁读取）
   cat > "$wt_dir/.l2-dev.env" <<EOF
@@ -257,6 +258,7 @@ PORT=${port}
 URL=${url}
 COMMIT=${commit}
 SOURCE=${wt_dir}/plugins
+PROFILE_DIR=${profile_dir}
 EOF
   echo "✓ L2 验证记录已写入: $wt_dir/.l2-dev.env"
 
@@ -414,11 +416,11 @@ cmd_finish() {
       l2_ok=1
       echo "==> 步骤 2.5: ✓ L2 独立环境验证记录存在 (port=${l2_port:-?} url=${l2_url:-?})"
     else
-      echo "❌ .l2-dev.env 缺少 PORT/URL，请重跑: pnpm wt:dev ${topic}" >&2
+      echo "❌ .l2-dev.env 缺少 PORT/URL，请重跑: pnpm wt dev ${topic}" >&2
       exit 1
     fi
   else
-    echo "❌ 缺少 L2 独立环境验证记录。合并前测试请先运行: pnpm wt:dev ${topic}" >&2
+    echo "❌ 缺少 L2 独立环境验证记录。合并前测试请先运行: pnpm wt dev ${topic}" >&2
     echo "   （仅 R3/纯文档/纯后端变更可用 --skip-l2 显式跳过）" >&2
     exit 1
   fi

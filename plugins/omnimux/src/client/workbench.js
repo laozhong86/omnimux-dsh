@@ -976,6 +976,7 @@ export function inferWorkbenchFocus(state, env = {}) {
 export function getWorkbenchFocus(env = {}) {
   const snapshot = liveSnapshot()
   const state = snapshot?.state
+  if (!state || state.panelOpen === false) return WORKBENCH_FOCUS.chat
   const inferred = inferWorkbenchFocus(state, env)
   const tabId = activeTabId(state)
   const record = focusRecordForTab(snapshot?.sessionId, tabId)
@@ -990,9 +991,6 @@ export function getWorkbenchFocus(env = {}) {
   // Sticky middle-collapse also reports as gui while the right panel is open (#372).
   if (getConversationCollapsed() && state?.panelOpen !== false) {
     return WORKBENCH_FOCUS.gui
-  }
-  if (record.mode === WORKBENCH_FOCUS.chat && state?.panelOpen === false) {
-    return WORKBENCH_FOCUS.chat
   }
   record.mode = inferred
   return inferred
@@ -1016,8 +1014,8 @@ export function setWorkbenchFocus(mode, store = attachedStore, env = {}, targetT
 
   const effectiveTabId = targetTabId || prevTabId
   const record = focusRecordForTab(sessionId, effectiveTabId)
-  record.mode = mode
   if (mode !== WORKBENCH_FOCUS.chat && sessionId && effectiveTabId) {
+    record.mode = mode
     persistSessionFocus(sessionId, effectiveTabId, { mode })
   }
   // gui → mid collapsed; split → mid open; chat (right closed) → mid MUST stay
@@ -1341,7 +1339,9 @@ export async function openWorkbench(opts = {}) {
 
   const map = loadSessionFocusMap(sessionId)
   const explicitMode = map[tabId]?.mode
-  const targetMode = explicitMode || resolveDefaultFocus(tabId)
+  const targetMode = explicitMode === WORKBENCH_FOCUS.gui || explicitMode === WORKBENCH_FOCUS.split
+    ? explicitMode
+    : resolveDefaultFocus(tabId)
   setWorkbenchFocus(targetMode, attachedStore, {}, tabId)
   emit()
   return true
@@ -1407,11 +1407,16 @@ function attachStore(store) {
   if (attachedStore === store) return
   attachedStore = store
   const snapshot = liveSnapshot(store)
+  if (!snapshot?.state || snapshot.state.panelOpen === false) {
+    setConversationCollapsed(false)
+    emit()
+    return
+  }
   const sessionId = currentSessionId() || snapshot?.sessionId
   const tabId = activeTabId(snapshot?.state)
   const record = focusRecordForTab(sessionId, tabId)
   rememberSplitWidth(snapshot?.state, record, sessionId, tabId)
-  if (record.mode === WORKBENCH_FOCUS.gui || record.mode === WORKBENCH_FOCUS.chat) {
+  if (record.mode === WORKBENCH_FOCUS.gui) {
     setWorkbenchFocus(record.mode, store)
     return
   }
