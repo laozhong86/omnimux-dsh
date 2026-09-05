@@ -773,3 +773,66 @@ test('execution API keeps an invalid user parameter but rejects it before mock s
     rmSync(h.dir, { recursive: true, force: true });
   }
 });
+
+
+function operationOverrideCatalog() {
+  return {
+    source: 'omnimux', text: [], image: [], audio: [], video: [{ id: 'url-video', label: 'URL Video' }],
+    models: [{
+      id: 'url-video', label: 'URL Video', listed: true,
+      operations: [{
+        id: 'video_edit', label: 'Edit', listed: true, output: { type: 'video' }, inputs: [],
+        parameters: { duration: { options: [{ value: -1 }], defaultValue: -1 } },
+      }],
+    }],
+  };
+}
+
+test('execution API blocks stale explicit and invalid implicit operations before mock submission', async () => {
+  const baseGateway = host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 10 });
+  const submitted = [];
+  const gateway = {
+    ...baseGateway,
+    async submit(request) {
+      submitted.push(request);
+      return baseGateway.submit(request);
+    },
+    async capabilities() {
+      return operationOverrideCatalog();
+    },
+  };
+  const h = makeHarness({ gateway });
+  try {
+    const staleWorkspace = await createUrlWorkspace(h, 'stale-operation', 'old_op');
+    const stale = await h.startExecution(staleWorkspace, { mode: 'single', nodeIds: ['stale-operation'] });
+    assert.equal(stale.status, 400);
+    assert.equal(stale.body.error, 'configuration_error');
+    assert.equal(stale.body.reasonCode, 'operation_incompatible');
+
+    const created = await h.call({
+      method: 'POST', url: '/omnimux-workflow/api/workspaces', body: { name: 'implicit override' }, headers: h.localHeaders,
+    });
+    const implicitWorkspace = created.body.workspace.id;
+    await h.call({
+      method: 'PUT', url: `/omnimux-workflow/api/workspaces/${implicitWorkspace}`,
+      body: {
+        expectedVersion: 0,
+        nodes: [{
+          id: 'implicit-operation', type: 'material', position: { x: 0, y: 0 },
+          data: {
+            label: 'implicit operation', materialType: 'video', selectedTool: 'video-generation', status: 'ready',
+            params: { model: 'url-video', duration: 5 },
+          },
+        }], edges: [],
+      }, headers: h.localHeaders,
+    });
+    const implicit = await h.startExecution(implicitWorkspace, { mode: 'single', nodeIds: ['implicit-operation'] });
+    assert.equal(implicit.status, 400);
+    assert.equal(implicit.body.error, 'configuration_error');
+    assert.equal(implicit.body.reasonCode, 'parameter_unsupported');
+    assert.equal(submitted.length, 0, 'invalid operation contracts must never hit mock submit');
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});

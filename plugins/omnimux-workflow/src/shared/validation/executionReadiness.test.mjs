@@ -59,3 +59,43 @@ test('kept invalid declared parameters remain a readiness error after the pendin
     message: '参数“aspectRatio”不支持值 "auto"',
   });
 });
+
+
+const operationOverrideCatalog = {
+  source: 'omnimux', text: [], image: [], audio: [], video: [],
+  models: [{
+    id: 'operation-model', label: 'Operation model', listed: true,
+    operations: [{
+      id: 'video_edit', label: 'Edit', listed: true, output: { type: 'video' }, inputs: [],
+      parameters: { duration: { options: [{ value: -1 }], defaultValue: -1 } },
+    }],
+  }],
+};
+
+test('stale explicit operation blocks readiness instead of falling through to the gateway', () => {
+  const failure = findExecutionReadinessFailure([{
+    id: 'video-stale', type: 'material', data: {
+      materialType: 'video', selectedTool: 'video-generation',
+      params: { model: 'operation-model', operation: 'old_op' },
+    },
+  }], operationOverrideCatalog);
+  assert.deepEqual(failure, {
+    nodeId: 'video-stale',
+    reasonCode: 'operation_incompatible',
+    message: '当前模型不支持已保存的生成方式 old_op',
+  });
+});
+
+test('implicit sole operation validates its override parameters', () => {
+  const failure = findExecutionReadinessFailure([{
+    id: 'video-implicit', type: 'material', data: {
+      materialType: 'video', selectedTool: 'video-generation',
+      params: { model: 'operation-model', duration: 5 },
+    },
+  }], operationOverrideCatalog);
+  assert.deepEqual(failure, {
+    nodeId: 'video-implicit',
+    reasonCode: 'parameter_unsupported',
+    message: '参数“duration”不支持值 5',
+  });
+});

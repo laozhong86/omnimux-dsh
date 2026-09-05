@@ -318,6 +318,11 @@ export function buildEffectiveOpsUiState(args: {
 
   const effectiveOps = verdict.effectiveOperations.map((match) => matchToOption(match, model));
   const count = effectiveOps.length;
+  // A persisted choice is a contract, not a hint. Do not silently replace it
+  // with an implicit operation merely because the new model has one available.
+  // Model transitions may offer a persisted confirmation plan for the sole
+  // compatible replacement; until then the raw operation remains blocked.
+  const preferredIsEffective = !preferred || effectiveOps.some((op) => op.id === preferred);
 
   if (count === 0) {
     const primary = verdict.rejections[0] as CompatRejection | undefined;
@@ -337,6 +342,18 @@ export function buildEffectiveOpsUiState(args: {
   if (count === 1) {
     const sole = effectiveOps[0]!;
     const pending = sole.pending[0];
+    if (!preferredIsEffective) {
+      return {
+        effectiveOps,
+        count: 1,
+        visibility: 'hidden',
+        implicitOperationId: sole.id,
+        selectedOperationId: preferred,
+        blockGenerate: true,
+        reasonCode: 'operation_incompatible',
+        reasonMessage: `当前模型不支持已保存的生成方式 ${preferred}`,
+      };
+    }
     return {
       effectiveOps,
       count: 1,
@@ -348,7 +365,19 @@ export function buildEffectiveOpsUiState(args: {
     };
   }
 
-  // ≥2: prefer the requested op when still effective, else first effective.
+  // ≥2: a stale requested operation remains blocked until the user chooses
+  // one of the effective operations; never auto-select a replacement.
+  if (!preferredIsEffective) {
+    return {
+      effectiveOps,
+      count,
+      visibility: 'selector',
+      selectedOperationId: preferred,
+      blockGenerate: true,
+      reasonCode: 'operation_incompatible',
+      reasonMessage: `当前模型不支持已保存的生成方式 ${preferred}`,
+    };
+  }
   const selected =
     (preferred ? effectiveOps.find((op) => op.id === preferred) : undefined) ?? effectiveOps[0]!;
   const pending = selected.pending[0];

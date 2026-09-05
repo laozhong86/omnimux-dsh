@@ -302,6 +302,15 @@ export function buildVideoParamTransition(
     operationOption = requestedOperation
       ? opsState.effectiveOps.find((option) => option.id === requestedOperation)
       : selectedOperation(opsState);
+    // A model-only switch retains the raw operation. When there is exactly one
+    // compatible replacement, stage it behind the same explicit confirmation
+    // gate as parameter changes instead of silently rewriting the contract.
+    if (requestedOperation && !operationOption && opsState.effectiveOps.length === 1) {
+      const replacement = opsState.effectiveOps[0]!.id;
+      suggestedParams.operation = replacement;
+      originalParams.operation = nextParams.operation;
+      pushUnique(notices, `生成方式将从 ${requestedOperation} 调整为 ${replacement}`);
+    }
   }
 
   const schema = mergeVideoParameterSchema(targetModelItem?.parameters, operationOption?.parameters);

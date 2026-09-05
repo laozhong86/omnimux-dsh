@@ -127,10 +127,12 @@ describe('effectiveOps UI state (0 / 1 / ≥2)', () => {
       preferredOperationId: 'future_unknown_op_xyz',
       outputType: 'image',
     });
-    // Preferred unknown is ignored; still returns effective set.
+    // Unknown ids remain open strings, but a persisted value is no longer
+    // silently replaced by an implicit operation.
     assert.ok(state.count >= 1);
-    assert.ok(state.selectedOperationId);
-    assert.notEqual(state.selectedOperationId, 'future_unknown_op_xyz');
+    assert.equal(state.selectedOperationId, 'future_unknown_op_xyz');
+    assert.equal(state.blockGenerate, true);
+    assert.equal(state.reasonCode, 'operation_incompatible');
   });
 
   it('selected URL operation blocks generate until its required node field is valid', () => {

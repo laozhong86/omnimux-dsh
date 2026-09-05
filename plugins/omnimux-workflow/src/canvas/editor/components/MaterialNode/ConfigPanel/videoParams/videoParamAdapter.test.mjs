@@ -142,6 +142,30 @@ describe('videoParamAdapter - validateAndFallbackVideoParams (W2)', () => {
     assert.equal(next.sound, true);
   });
 
+  it('holds a sole compatible operation replacement for explicit confirmation', () => {
+    const transition = buildVideoParamTransition(
+      { model: 'old', operation: 'obsolete_video_op', aspectRatio: '16:9', duration: 5 },
+      {
+        id: 'replacement-model', label: 'Replacement',
+        parameters: { duration: { options: [{ value: -1 }], defaultValue: -1 } },
+      },
+      {
+        catalog: {
+          source: 'omnimux', text: [], image: [], audio: [], video: [],
+          models: [{
+            id: 'replacement-model', label: 'Replacement', listed: true,
+            parameters: { duration: { options: [{ value: -1 }], defaultValue: -1 } },
+            operations: [{ id: 'video_edit', label: 'Edit', listed: true, output: { type: 'video' }, inputs: [] }],
+          }],
+        },
+      },
+    );
+    assert.equal(transition.params.operation, 'obsolete_video_op');
+    assert.equal(transition.pending?.suggestedParams.operation, 'video_edit');
+    assert.equal(transition.pending?.originalParams.operation, 'obsolete_video_op');
+    assert.match(transition.pending?.notices.join(' ') ?? '', /生成方式/);
+  });
+
   it('target schema without resolution/sound keeps dormant values for a reversible switch', () => {
     const next = validateAndFallbackVideoParams(
       { model: 'vid-frames', operation: 'text_to_video', aspectRatio: '16:9', duration: 5, resolution: '4K', sound: true },

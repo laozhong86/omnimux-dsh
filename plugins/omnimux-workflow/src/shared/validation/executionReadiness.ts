@@ -9,10 +9,10 @@
 
 import type { CapabilityCatalog, CatalogModelDto } from '../api.ts';
 import { findDeclaredParameterFailure } from './declaredParameterValidation.ts';
+import { buildEffectiveOpsUiState, buildUiUpstreamFingerprint } from './operationUi.ts';
 import { resolveNodeKind } from '../graph/materialNode.ts';
 import {
   buildContractView,
-  buildUpstreamFingerprint,
   matchOperationInputs,
   resolveModelView,
 } from './compatKernel.ts';
@@ -25,7 +25,7 @@ export interface ExecutionReadinessNode {
 
 export interface ExecutionReadinessFailure {
   nodeId: string;
-  reasonCode: 'metadata_required' | 'parameter_adjustment_required' | 'parameter_unsupported';
+  reasonCode: 'metadata_required' | 'parameter_adjustment_required' | 'parameter_unsupported' | 'operation_incompatible';
   message: string;
 }
 
@@ -68,16 +68,45 @@ export function findExecutionReadinessFailure(
       : {};
     const model = resolveModelView(view, readString(params.model));
     if (!model) continue;
-    const operationId = readString(params.operation);
-    const operation = operationId
-      ? model.operations.find((candidate) => candidate.id === operationId && candidate.listed)
+    const fingerprint = buildUiUpstreamFingerprint({
+      prompt: typeof data.prompt === 'string' ? data.prompt : '',
+      nodeFields: params,
+    });
+    const outputType = typeof data.materialType === 'string' ? data.materialType : undefined;
+    const opsState = buildEffectiveOpsUiState({
+      catalog,
+      modelId: model.id,
+      fingerprint,
+      ...(outputType ? { outputType } : {}),
+      ...(readString(params.operation) ? { preferredOperationId: readString(params.operation) } : {}),
+    });
+    const rawOperation = readString(params.operation);
+    const selectedOperationId = rawOperation ?? opsState.selectedOperationId ?? opsState.implicitOperationId;
+    const operation = selectedOperationId
+      ? model.operations.find((candidate) => candidate.id === selectedOperationId && candidate.listed)
       : undefined;
+    const selectedIsEffective = Boolean(
+      selectedOperationId && opsState.effectiveOps.some((candidate) => candidate.id === selectedOperationId),
+    );
+    // Raw persisted operation ids are never a soft preference: if no longer
+    // listed/effective for this model and node shape, block before mock or hub
+    // submission. For an omitted id, the kernel's implicit/chosen operation is
+    // used so its parameters and node fields receive the same checks as UI.
+    if (!operation || !selectedIsEffective) {
+      return {
+        nodeId: node.id,
+        reasonCode: 'operation_incompatible',
+        message: rawOperation
+          ? `当前模型不支持已保存的生成方式 ${rawOperation}`
+          : (opsState.reasonMessage ?? '当前模型没有可用的生成方式'),
+      };
+    }
     const catalogModel = (catalog?.models ?? []).find((candidate: CatalogModelDto) =>
       candidate.id === model.id || candidate.aliases?.includes(model.id),
     );
     const parameterFailure = findDeclaredParameterFailure(
       params,
-      operation?.parameters,
+      operation.parameters,
       catalogModel?.parameters as Record<string, unknown> | undefined,
     );
     if (parameterFailure) {
@@ -87,13 +116,6 @@ export function findExecutionReadinessFailure(
         message: parameterFailure.message,
       };
     }
-    // An operation must be explicit before its operation-specific input slots
-    // can be checked. Its absence never authorizes invalid model parameters.
-    if (!operation) continue;
-    const fingerprint = buildUpstreamFingerprint({
-      prompt: typeof data.prompt === 'string' ? data.prompt : '',
-      nodeFields: params,
-    });
     const missing = matchOperationInputs(operation, fingerprint).pending.find(
       (rejection) => rejection.code === 'metadata_required',
     );
