@@ -9,6 +9,13 @@ import type { ReactNode, Ref } from 'react';
 import type { ModelParameterSchema } from '../../../../../../shared/api.ts';
 import type { OperationUiOption } from '../../../../../../shared/validation/operationUi.ts';
 
+export interface PendingVideoParamAdjustment {
+  suggestedParams: Record<string, unknown>;
+  /** Values observed when each suggestion was created; protects later edits. */
+  originalParams: Record<string, unknown>;
+  notices: string[];
+}
+
 /**
  * 存放于 nodeData.params 中的视频参数原始/持久化结构
  */
@@ -28,6 +35,8 @@ export interface VideoNodeParams {
   returnLastFrame?: boolean;
   webSearch?: boolean;
   nsfwCheck?: boolean;
+  /** Suggested parameter replacements that require explicit user confirmation. */
+  pendingVideoParamAdjustment?: PendingVideoParamAdjustment;
   fileUrl?: string;
   linkUrl?: string;
   firstFrameUrl?: string;
@@ -63,6 +72,8 @@ export interface EffectiveVideoParams {
   returnLastFrame?: boolean;
   webSearch?: boolean;
   nsfwCheck?: boolean;
+  /** Suggested parameter replacements that require explicit user confirmation. */
+  pendingVideoParamAdjustment?: PendingVideoParamAdjustment;
   fileUrl?: string;
   linkUrl?: string;
   firstFrameUrl?: string;

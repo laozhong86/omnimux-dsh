@@ -226,6 +226,10 @@ function urlRequiredCatalog() {
     video: [{ id: 'url-video', label: 'URL Video' }],
     models: [{
       id: 'url-video', label: 'URL Video', listed: true,
+      parameters: {
+        aspectRatio: { options: [{ value: '16:9' }, { value: '9:16' }], defaultValue: '16:9' },
+        resolution: { options: [{ value: '720p' }, { value: '1080p' }], defaultValue: '720p' },
+      },
       operations: [
         {
           id: 'document_to_video', label: '文档参考生视频', listed: true, output: { type: 'video' }, inputs: [
@@ -698,6 +702,72 @@ test('execution API: legacy /dsh-workflow prefix serves executions too', async (
       return status.body?.execution?.status === 'completed';
     });
     assert.ok(completed, 'legacy prefix execution should complete');
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
+test('execution API blocks a persisted pending video parameter adjustment before submission', async () => {
+  const baseGateway = host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 10 });
+  const submitted = [];
+  const gateway = {
+    ...baseGateway,
+    async submit(request) {
+      submitted.push(request);
+      return baseGateway.submit(request);
+    },
+    async capabilities() {
+      return urlRequiredCatalog();
+    },
+  };
+  const h = makeHarness({ gateway });
+  try {
+    const workspaceId = await createUrlWorkspace(h, 'pending-adjustment', 'document_to_video', {
+      fileUrl: 'https://cdn.example.com/deck.pdf',
+      pendingVideoParamAdjustment: {
+        suggestedParams: { duration: -1 },
+        notices: ['时长将从 5 调整为 -1'],
+      },
+    });
+    const blocked = await h.startExecution(workspaceId, { mode: 'single', nodeIds: ['pending-adjustment'] });
+    assert.equal(blocked.status, 400);
+    assert.equal(blocked.body.error, 'configuration_error');
+    assert.equal(blocked.body.reasonCode, 'parameter_adjustment_required');
+    assert.equal(blocked.body.nodeId, 'pending-adjustment');
+    assert.equal(submitted.length, 0);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});
+
+
+test('execution API keeps an invalid user parameter but rejects it before mock submission', async () => {
+  const baseGateway = host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 10 });
+  const submitted = [];
+  const gateway = {
+    ...baseGateway,
+    async submit(request) {
+      submitted.push(request);
+      return baseGateway.submit(request);
+    },
+    async capabilities() {
+      return urlRequiredCatalog();
+    },
+  };
+  const h = makeHarness({ gateway });
+  try {
+    const workspaceId = await createUrlWorkspace(h, 'kept-invalid', 'document_to_video', {
+      fileUrl: 'https://cdn.example.com/deck.pdf', aspectRatio: 'auto', resolution: '480p',
+    });
+    const blocked = await h.startExecution(workspaceId, { mode: 'single', nodeIds: ['kept-invalid'] });
+    assert.equal(blocked.status, 400);
+    assert.equal(blocked.body.error, 'configuration_error');
+    assert.equal(blocked.body.reasonCode, 'parameter_unsupported');
+    assert.equal(blocked.body.nodeId, 'kept-invalid');
+    assert.match(blocked.body.message, /aspectRatio/);
+    assert.equal(submitted.length, 0);
   } finally {
     h.dispose();
     rmSync(h.dir, { recursive: true, force: true });

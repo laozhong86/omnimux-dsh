@@ -90,3 +90,12 @@ describe('summaryFormatter - 胶囊摘要格式化引擎 (W2)', () => {
     assert.ok(result.fullText.includes('1080P'));
   });
 });
+
+
+describe('summaryFormatter - 自动时长', () => {
+  it('duration -1 displays the existing automatic-duration label', () => {
+    const result = formatVideoSummary(base({ duration: -1 }));
+    assert.equal(result.durationText, '自动');
+    assert.equal(result.fullText, '16:9 · 自动');
+  });
+});

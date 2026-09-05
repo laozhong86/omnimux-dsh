@@ -39,7 +39,10 @@ import GenerateButton from './GenerateButton';
 import { VideoTriggerBar } from './videoParams/VideoTriggerBar';
 import { VideoParamPopover } from './videoParams/VideoParamPopover';
 import {
+  applyPendingVideoParamAdjustment,
   buildVideoParamTransition,
+  keepCurrentVideoParamValues,
+  readPendingVideoParamAdjustment,
   resolveEffectiveVideoParams,
   validateVideoParamsForUi,
 } from './videoParams/videoParamAdapter';
@@ -113,7 +116,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [videoPopoverOpen, setVideoPopoverOpen] = useState(false);
-  const [videoParamNotices, setVideoParamNotices] = useState<string[]>([]);
   const videoTriggerRef = useRef<HTMLDivElement | null>(null);
 
   const upstreams = useUpstreamMedia(nodeId);
@@ -278,7 +280,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
               nextOperationId: typeof value === 'string' ? value : undefined,
             },
           );
-          setVideoParamNotices(transition.notices);
           onUpdateNodeData({ params: transition.params });
         } else {
           const next = setParamsOperation(
@@ -289,7 +290,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
         }
         return;
       }
-      setVideoParamNotices([]);
       onUpdateNodeData({ params: { ...params, [key]: value } });
     },
     [activeCatalog, materialType, modelItem, onUpdateNodeData, params, prompt, upstreamSnapshots],
@@ -344,7 +344,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
           prompt,
         },
       );
-      setVideoParamNotices(transition.notices);
       onUpdateNodeData({ params: transition.params });
     },
     [activeCatalog, materialType, onUpdateNodeData, params, upstreamSnapshots, prompt],
@@ -378,10 +377,16 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
       ? params.duration
       : defaultDuration;
 
+  const pendingVideoParamAdjustment = useMemo(
+    () => readPendingVideoParamAdjustment(params as Record<string, unknown>),
+    [params],
+  );
+
   const videoValidationErrors = useMemo(
     () => materialType === 'video' && videoEffectiveParams
       ? validateVideoParamsForUi({
           prompt,
+          rawParams: params as Record<string, unknown>,
           params: videoEffectiveParams,
           upstreams: upstreamSnapshots,
         })
@@ -398,10 +403,12 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
     || filteredModels.zeroCandidates
     || nodeCompat?.status === 'configuration_error'
     || videoValidationErrors.length > 0
+    || Boolean(pendingVideoParamAdjustment)
     || execBusy;
   const blockReason =
     opsState.reasonMessage
     || filteredModels.reasonMessage
+    || pendingVideoParamAdjustment?.notices[0]
     || videoValidationErrors[0]
     || (nodeCompat?.status === 'configuration_error'
       ? '节点配置错误：当前输入没有可兼容的已上架模型'
@@ -468,10 +475,30 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
         </div>
       ) : null}
 
-      {videoParamNotices.length > 0 ? (
-        <div className="wf-config-panel__param-notice" role="status" data-testid="wf-video-param-notice">
+      {pendingVideoParamAdjustment ? (
+        <div className="wf-config-panel__param-notice" role="alert" data-testid="wf-video-param-notice">
           <AlertTriangle size={14} aria-hidden="true" />
-          <span>{videoParamNotices.join('；')}</span>
+          <span>{pendingVideoParamAdjustment.notices.join('；')}</span>
+          <div className="wf-config-panel__param-notice-actions">
+            <button
+              type="button"
+              className="wf-config-panel__param-notice-action"
+              onClick={() => onUpdateNodeData({
+                params: applyPendingVideoParamAdjustment(params as Record<string, unknown>),
+              })}
+            >
+              确认调整
+            </button>
+            <button
+              type="button"
+              className="wf-config-panel__param-notice-action wf-config-panel__param-notice-action--secondary"
+              onClick={() => onUpdateNodeData({
+                params: keepCurrentVideoParamValues(params as Record<string, unknown>),
+              })}
+            >
+              保留原值
+            </button>
+          </div>
         </div>
       ) : null}
 

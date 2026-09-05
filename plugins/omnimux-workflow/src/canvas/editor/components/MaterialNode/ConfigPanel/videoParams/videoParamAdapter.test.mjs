@@ -9,6 +9,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { createCompatTestCatalog } from '../../../../../../shared/validation/compatTestCatalog.ts';
 import {
+  applyPendingVideoParamAdjustment,
+  buildVideoParamTransition,
+  keepCurrentVideoParamValues,
   resolveEffectiveVideoParams,
   validateAndFallbackVideoParams,
   validateVideoParamsForUi,
@@ -98,16 +101,16 @@ describe('videoParamAdapter - resolveEffectiveVideoParams (W2)', () => {
     assert.equal(typeof result.operationLabel, 'string');
   });
 
-  it('schema scrubbing: unsupported aspect/duration fall back to defaults', () => {
+  it('saved unsupported values remain visible until the user decides', () => {
     const result = resolveEffectiveVideoParams({
       params: { model: 'vid-frames', aspectRatio: 'bogus', duration: 99, resolution: '8K' },
       schema: klingSchema,
       modelItem: klingItem,
       catalog,
     });
-    assert.equal(result.aspectRatio, '16:9');
-    assert.equal(result.duration, 10);
-    assert.equal(result.resolution, '1080P');
+    assert.equal(result.aspectRatio, 'bogus');
+    assert.equal(result.duration, 99);
+    assert.equal(result.resolution, '8K');
   });
 
   it('no catalog → still returns shape; operation may be empty; block via showModeUi false', () => {
@@ -150,6 +153,16 @@ describe('videoParamAdapter - validateAndFallbackVideoParams (W2)', () => {
     assert.equal(next.duration, 5);
   });
 
+  it('model-only transitions retain a legacy operation field unchanged', () => {
+    const next = validateAndFallbackVideoParams(
+      { model: 'old', generationMode: 'reference', aspectRatio: '16:9' },
+      klingItem,
+      { catalog },
+    );
+    assert.equal(next.generationMode, 'reference');
+    assert.equal('operation' in next, false);
+  });
+
   it('explicit nextOperationId is migrated onto params.operation', () => {
     const next = validateAndFallbackVideoParams(
       { model: 'vid-frames' },
@@ -159,6 +172,91 @@ describe('videoParamAdapter - validateAndFallbackVideoParams (W2)', () => {
     assert.equal(next.operation, 'text_to_video');
   });
 
+  it('holds existing Seedance values as a persisted proposal until confirmation', () => {
+    const seedanceCatalog = {
+      ...catalog,
+      models: [
+        ...catalog.models,
+        {
+          id: 'seedance-2.5',
+          label: 'Seedance 2.5',
+          family: 'seedance',
+          listed: true,
+          listedOperations: ['seedance-2.5#video_multi_ref', 'seedance-2.5#video_edit'],
+          operations: [
+            {
+              id: 'video_multi_ref', label: '多参考', listed: true,
+              output: { type: 'video' }, inputs: [{ slot: 'prompt', type: 'text', role: 'prompt', source: 'node_field', min: 0, max: 1 }],
+            },
+            {
+              id: 'video_edit', label: '编辑', listed: true,
+              output: { type: 'video' }, inputs: [{ slot: 'prompt', type: 'text', role: 'prompt', source: 'node_field', min: 0, max: 1 }],
+              parameters: {
+                aspectRatio: { options: [{ value: 'adaptive', label: '自适应' }], defaultValue: 'adaptive' },
+                duration: { options: [{ value: -1, label: '自动' }], defaultValue: -1, allowAuto: true },
+                referenceTaskType: { options: [{ value: 'edit', label: '编辑' }], defaultValue: 'edit' },
+                seed: { type: 'integer', range: { min: 0, max: 9 } },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const oldParams = {
+      model: 'seedance-2.5', operation: 'video_multi_ref', duration: 5,
+      aspectRatio: '16:9', referenceTaskType: 'reference', seed: 42,
+    };
+    const transition = buildVideoParamTransition(oldParams, {
+      id: 'seedance-2.5', label: 'Seedance 2.5', parameters: {},
+    }, { catalog: seedanceCatalog, nextOperationId: 'video_edit' });
+
+    assert.equal(transition.params.operation, 'video_edit');
+    assert.equal(transition.params.duration, 5);
+    assert.equal(transition.params.aspectRatio, '16:9');
+    assert.equal(transition.params.referenceTaskType, 'reference');
+    assert.equal(transition.params.seed, 42);
+    assert.ok(transition.params.pendingVideoParamAdjustment);
+    assert.deepEqual(transition.pending?.suggestedParams, {
+      duration: -1,
+      aspectRatio: 'adaptive',
+      referenceTaskType: 'edit',
+      seed: 0,
+    });
+    assert.deepEqual(transition.pending?.originalParams, {
+      duration: 5,
+      aspectRatio: '16:9',
+      referenceTaskType: 'reference',
+      seed: 42,
+    });
+
+    const current = resolveEffectiveVideoParams({
+      params: transition.params,
+      schema: {},
+      modelItem: { id: 'seedance-2.5', label: 'Seedance 2.5', parameters: {} },
+      catalog: seedanceCatalog,
+    });
+    assert.equal(current.duration, 5);
+    assert.equal(current.aspectRatio, '16:9');
+    assert.equal(current.referenceTaskType, 'reference');
+    assert.equal(current.seed, 42);
+    assert.deepEqual(applyPendingVideoParamAdjustment(transition.params), {
+      ...oldParams,
+      operation: 'video_edit',
+      ...transition.pending?.suggestedParams,
+    });
+    assert.deepEqual(applyPendingVideoParamAdjustment({ ...transition.params, duration: 7 }), {
+      ...oldParams,
+      operation: 'video_edit',
+      duration: 7,
+      aspectRatio: 'adaptive',
+      referenceTaskType: 'edit',
+      seed: 0,
+    }, 'confirm must not overwrite a parameter changed after the proposal was created');
+    assert.deepEqual(keepCurrentVideoParamValues(transition.params), {
+      ...oldParams,
+      operation: 'video_edit',
+    });
+  });
 
 });
 

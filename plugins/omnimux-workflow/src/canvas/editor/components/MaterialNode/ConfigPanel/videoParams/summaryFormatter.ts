@@ -46,6 +46,7 @@ function normalizeResolution(resolution: string | undefined): string | null {
  * 格式化时长标签（如 5 -> '5s'，'8s' -> '8s'）
  */
 function normalizeDuration(duration: number | string | undefined): string {
+  if (duration === -1) return '自动';
   if (duration === undefined || duration === null) {
     return '5s';
   }

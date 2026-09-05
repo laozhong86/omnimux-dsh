@@ -7,7 +7,8 @@
  * gateway has received it.
  */
 
-import type { CapabilityCatalog } from '../api.ts';
+import type { CapabilityCatalog, CatalogModelDto } from '../api.ts';
+import { findDeclaredParameterFailure } from './declaredParameterValidation.ts';
 import { resolveNodeKind } from '../graph/materialNode.ts';
 import {
   buildContractView,
@@ -24,7 +25,7 @@ export interface ExecutionReadinessNode {
 
 export interface ExecutionReadinessFailure {
   nodeId: string;
-  reasonCode: 'metadata_required';
+  reasonCode: 'metadata_required' | 'parameter_adjustment_required' | 'parameter_unsupported';
   message: string;
 }
 
@@ -33,15 +34,29 @@ function readString(value: unknown): string | undefined {
 }
 
 /**
- * Return the first missing contract-required node field for selected material
- * operations. It intentionally leaves existing edge/input validation to the
- * scheduler: this guard only closes the node-field URL/value gap before a
- * gateway request can start.
+ * Return the first selected-material configuration failure before execution.
+ * It checks the same declared model/operation parameters as the hub submit
+ * guard, then checks contract-required node fields. Edge/input scheduling
+ * remains the scheduler's responsibility.
  */
 export function findExecutionReadinessFailure(
   nodes: ExecutionReadinessNode[],
   catalog: CapabilityCatalog | null | undefined,
 ): ExecutionReadinessFailure | null {
+  for (const node of nodes) {
+    if (node.type !== 'material' || resolveNodeKind(node.data ?? {}) !== 'generate') continue;
+    const params = node.data?.params && typeof node.data.params === 'object'
+      ? node.data.params as Record<string, unknown>
+      : {};
+    if (params.pendingVideoParamAdjustment && typeof params.pendingVideoParamAdjustment === 'object') {
+      return {
+        nodeId: node.id,
+        reasonCode: 'parameter_adjustment_required',
+        message: '视频参数调整等待确认；请确认建议调整或保留原值后重新提交',
+      };
+    }
+  }
+
   const view = buildContractView(catalog);
   if (!view.available) return null;
 
@@ -52,10 +67,28 @@ export function findExecutionReadinessFailure(
       ? data.params as Record<string, unknown>
       : {};
     const model = resolveModelView(view, readString(params.model));
+    if (!model) continue;
     const operationId = readString(params.operation);
-    if (!model || !operationId) continue;
-
-    const operation = model.operations.find((candidate) => candidate.id === operationId && candidate.listed);
+    const operation = operationId
+      ? model.operations.find((candidate) => candidate.id === operationId && candidate.listed)
+      : undefined;
+    const catalogModel = (catalog?.models ?? []).find((candidate: CatalogModelDto) =>
+      candidate.id === model.id || candidate.aliases?.includes(model.id),
+    );
+    const parameterFailure = findDeclaredParameterFailure(
+      params,
+      operation?.parameters,
+      catalogModel?.parameters as Record<string, unknown> | undefined,
+    );
+    if (parameterFailure) {
+      return {
+        nodeId: node.id,
+        reasonCode: 'parameter_unsupported',
+        message: parameterFailure.message,
+      };
+    }
+    // An operation must be explicit before its operation-specific input slots
+    // can be checked. Its absence never authorizes invalid model parameters.
     if (!operation) continue;
     const fingerprint = buildUpstreamFingerprint({
       prompt: typeof data.prompt === 'string' ? data.prompt : '',
