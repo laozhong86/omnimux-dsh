@@ -30,7 +30,39 @@ function decl(body, property) {
   return match[1].trim()
 }
 
-describe('inspiration modal segmented switch', () => {
+describe('inspiration triptych modal', () => {
+  it('uses a three-column grid with independently scrolling panels', () => {
+    const body = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-body')
+    assert.match(decl(body, 'display'), /grid/)
+    assert.match(decl(body, 'grid-template-columns'), /minmax/)
+    const panel = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-panel')
+    assert.equal(decl(panel, 'min-width'), '0')
+    assert.equal(decl(panel, 'overflow-y'), 'auto')
+    assert.equal(decl(panel, 'overflow-x'), 'hidden')
+  })
+
+  it('keeps footer replication separate from header analysis', () => {
+    const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
+    assert.match(section, /modal\.header\.analyze/)
+    assert.match(section, /modal-footer/)
+    assert.match(section, /onReplicate\(data\.safeItem\)/)
+  })
+
+  it('provides narrow-screen tabs without horizontal overflow', () => {
+    assert.match(INSPIRATION_CSS, /@media \(max-width: 860px\)/)
+    assert.match(INSPIRATION_CSS, /modal-mobile-tabs/)
+    assert.match(INSPIRATION_CSS, /\.omnimux-inspiration-modal-panel\.is-active/)
+  })
+})
+
+describe('legacy inspiration modal segmented switch', () => {
+  it('keeps mobile tabs native and accessible', () => {
+    const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
+    assert.match(section, /modal-mobile-tabs[\s\S]*role="tablist"/)
+    assert.match(section, /role="tab"/)
+    assert.match(section, /<button\s+type="button"/)
+  })
+
   it('keeps the track at 32px with overflow clipping so the inner pill cannot burst', () => {
     const body = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-switch-group')
     assert.equal(decl(body, 'display'), 'inline-flex')
@@ -61,7 +93,7 @@ describe('inspiration modal segmented switch', () => {
     assert.notEqual(decl(body, 'height'), '26px')
   })
 
-  it('renders native tab buttons instead of dsh-ui-kit Button so kit geometry cannot win', () => {
+  it.skip('legacy segmented switch was replaced by triptych mobile tabs', () => {
     const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
     const switchBlock = section.slice(
       section.indexOf('omnimux-inspiration-preview-switch'),
@@ -73,7 +105,7 @@ describe('inspiration modal segmented switch', () => {
     assert.doesNotMatch(switchBlock, /<Button[\s\S]*omnimux-inspiration-switch-btn/)
   })
 
-  it('uses 16px glyphs and forbids the 13px lucide layers polyline blob', () => {
+  it.skip('legacy switch glyph contract was replaced by triptych mobile tabs', () => {
     const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
     const switchBlock = section.slice(
       section.indexOf('omnimux-inspiration-preview-switch'),
