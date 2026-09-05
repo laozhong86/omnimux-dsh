@@ -836,3 +836,58 @@ test('execution API blocks stale explicit and invalid implicit operations before
     rmSync(h.dir, { recursive: true, force: true });
   }
 });
+
+function multiOperationCatalog() {
+  return {
+    source: 'omnimux', text: [], image: [], audio: [], video: [{ id: 'multi-video', label: 'Multi video' }],
+    models: [{
+      id: 'multi-video', label: 'Multi video', listed: true,
+      operations: [
+        { id: 'text_to_video', label: 'Text', listed: true, output: { type: 'video' }, inputs: [] },
+        { id: 'video_edit', label: 'Edit', listed: true, output: { type: 'video' }, inputs: [] },
+      ],
+    }],
+  };
+}
+
+test('execution API requires an explicit video mode when multiple modes are effective', async () => {
+  const baseGateway = host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 10 });
+  const submitted = [];
+  const gateway = {
+    ...baseGateway,
+    async submit(request) {
+      submitted.push(request);
+      return baseGateway.submit(request);
+    },
+    async capabilities() {
+      return multiOperationCatalog();
+    },
+  };
+  const h = makeHarness({ gateway });
+  try {
+    const created = await h.call({ method: 'POST', url: '/omnimux-workflow/api/workspaces', body: { name: 'multi operation' }, headers: h.localHeaders });
+    const workspaceId = created.body.workspace.id;
+    await h.call({
+      method: 'PUT', url: `/omnimux-workflow/api/workspaces/${workspaceId}`,
+      body: {
+        expectedVersion: 0,
+        nodes: [{
+          id: 'multi-operation', type: 'material', position: { x: 0, y: 0 },
+          data: {
+            label: 'multi operation', materialType: 'video', selectedTool: 'video-generation', status: 'ready',
+            params: { model: 'multi-video' },
+          },
+        }], edges: [],
+      }, headers: h.localHeaders,
+    });
+    const blocked = await h.startExecution(workspaceId, { mode: 'single', nodeIds: ['multi-operation'] });
+    assert.equal(blocked.status, 400);
+    assert.equal(blocked.body.error, 'configuration_error');
+    assert.equal(blocked.body.reasonCode, 'operation_incompatible');
+    assert.equal(blocked.body.message, '请选择生成方式');
+    assert.equal(submitted.length, 0);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});

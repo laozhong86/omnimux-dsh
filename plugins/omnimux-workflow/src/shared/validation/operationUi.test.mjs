@@ -412,3 +412,54 @@ describe('catalog missing / fail-closed', () => {
     assert.equal(state.reasonMessage, '请先选择模型');
   });
 });
+
+describe('video operation selection gate', () => {
+  const multiVideoCatalog = {
+    source: 'omnimux', text: [], image: [], audio: [], video: [],
+    models: [{
+      id: 'multi-video', label: 'Multi video', listed: true,
+      operations: [
+        { id: 'text_to_video', label: 'Text', listed: true, output: { type: 'video' }, inputs: [] },
+        { id: 'video_edit', label: 'Edit', listed: true, output: { type: 'video' }, inputs: [] },
+      ],
+    }],
+  };
+
+  it('requires an explicit persisted choice only when video has multiple effective operations', () => {
+    const state = buildEffectiveOpsUiState({
+      catalog: multiVideoCatalog,
+      modelId: 'multi-video',
+      fingerprint: fp([]),
+      outputType: 'video',
+      });
+    assert.equal(state.count, 2);
+    assert.equal(state.visibility, 'selector');
+    assert.equal(state.selectedOperationId, undefined);
+    assert.equal(state.blockGenerate, true);
+    assert.equal(state.reasonCode, 'operation_incompatible');
+    assert.equal(state.reasonMessage, '请选择生成方式');
+  });
+
+  it('allows a listed effective video choice and blocks a stale one', () => {
+    const ready = buildEffectiveOpsUiState({
+      catalog: multiVideoCatalog,
+      modelId: 'multi-video',
+      fingerprint: fp([]),
+      outputType: 'video',
+        preferredOperationId: 'video_edit',
+    });
+    assert.equal(ready.selectedOperationId, 'video_edit');
+    assert.equal(ready.blockGenerate, false);
+
+    const stale = buildEffectiveOpsUiState({
+      catalog: multiVideoCatalog,
+      modelId: 'multi-video',
+      fingerprint: fp([]),
+      outputType: 'video',
+        preferredOperationId: 'removed_operation',
+    });
+    assert.equal(stale.selectedOperationId, 'removed_operation');
+    assert.equal(stale.blockGenerate, true);
+    assert.equal(stale.reasonCode, 'operation_incompatible');
+  });
+});

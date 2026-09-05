@@ -378,6 +378,18 @@ export function buildEffectiveOpsUiState(args: {
       reasonMessage: `当前模型不支持已保存的生成方式 ${preferred}`,
     };
   }
+  // This stricter gate belongs to video only. Other modality callers retain
+  // their established first-effective behavior unless they opt in.
+  if (!preferred && args.outputType === 'video') {
+    return {
+      effectiveOps,
+      count,
+      visibility: 'selector',
+      blockGenerate: true,
+      reasonCode: 'operation_incompatible',
+      reasonMessage: '请选择生成方式',
+    };
+  }
   const selected =
     (preferred ? effectiveOps.find((op) => op.id === preferred) : undefined) ?? effectiveOps[0]!;
   const pending = selected.pending[0];

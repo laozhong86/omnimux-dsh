@@ -736,3 +736,54 @@ test('workflow_run blocks stale explicit and invalid implicit operation contract
     rmSync(h.dir, { recursive: true, force: true });
   }
 });
+
+const multiOperationCatalog = {
+  source: 'omnimux', text: [], image: [], audio: [], video: [],
+  models: [{
+    id: 'multi-video', label: 'Multi video', listed: true,
+    operations: [
+      { id: 'text_to_video', label: 'Text', listed: true, output: { type: 'video' }, inputs: [] },
+      { id: 'video_edit', label: 'Edit', listed: true, output: { type: 'video' }, inputs: [] },
+    ],
+  }],
+};
+
+test('workflow_run requires an explicit video mode when multiple modes are effective', async () => {
+  const baseGateway = host.createMockGateway({ minLatencyMs: 10, maxLatencyMs: 10 });
+  const submitted = [];
+  const h = makeHarness({
+    catalog: multiOperationCatalog,
+    gateway: {
+      ...baseGateway,
+      async submit(request) {
+        submitted.push(request);
+        return baseGateway.submit(request);
+      },
+    },
+  });
+  try {
+    const created = await h.call({ method: 'POST', url: `${PREFIX}/api/workspaces`, body: { name: 'multi operation' } });
+    const workspaceId = created.body.workspace.id;
+    await h.call({
+      method: 'PUT', url: `${PREFIX}/api/workspaces/${workspaceId}`,
+      body: {
+        expectedVersion: 0,
+        nodes: [{
+          id: 'multi-operation', type: 'material', position: { x: 0, y: 0 },
+          data: {
+            label: 'multi operation', materialType: 'video', selectedTool: 'video-generation', status: 'ready',
+            params: { model: 'multi-video' },
+          },
+        }], edges: [],
+      },
+    });
+    const blocked = await h.tool('workflow_run').execute({ workspace_id: workspaceId });
+    assert.equal(blocked.error, 'configuration_error');
+    assert.equal(blocked.reasonCode, 'operation_incompatible');
+    assert.equal(blocked.message, '请选择生成方式');
+    assert.equal(submitted.length, 0);
+  } finally {
+    h.dispose();
+    rmSync(h.dir, { recursive: true, force: true });
+  }
+});

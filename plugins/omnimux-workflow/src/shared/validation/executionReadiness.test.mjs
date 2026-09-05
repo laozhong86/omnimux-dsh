@@ -123,3 +123,27 @@ test('implicit sole operation validates its required node fields', () => {
     message: '槽位 file_url 需要有效 URL',
   });
 });
+
+test('multiple effective video operations require a persisted selection', () => {
+  const catalog = {
+    source: 'omnimux', text: [], image: [], audio: [], video: [],
+    models: [{
+      id: 'multi-video', label: 'Multi video', listed: true,
+      operations: [
+        { id: 'text_to_video', label: 'Text', listed: true, output: { type: 'video' }, inputs: [] },
+        { id: 'video_edit', label: 'Edit', listed: true, output: { type: 'video' }, inputs: [] },
+      ],
+    }],
+  };
+  const failure = findExecutionReadinessFailure([{
+    id: 'video-multi', type: 'material', data: {
+      materialType: 'video', selectedTool: 'video-generation',
+      params: { model: 'multi-video' },
+    },
+  }], catalog);
+  assert.deepEqual(failure, {
+    nodeId: 'video-multi',
+    reasonCode: 'operation_incompatible',
+    message: '请选择生成方式',
+  });
+});
