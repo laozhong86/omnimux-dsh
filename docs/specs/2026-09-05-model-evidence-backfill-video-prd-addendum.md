@@ -17,7 +17,7 @@ tags:
   - "operation-listed"
   - "prd-addendum"
 supersedes: []
-superseded_by: null
+superseded_by: "docs/specs/2026-09-05-model-contract-docs-first.md"
 related:
   - "docs/specs/2026-09-05-model-evidence-backfill-prd.md"
   - "docs/specs/2026-09-05-model-evidence-backfill-design.md"
@@ -31,18 +31,20 @@ related:
 
 # 增量产品附录：#530 视频优先范围修订（C1–C4）
 
+> **2026-09-05 当前方法**：[模型合同文档优先方法修订](2026-09-05-model-contract-docs-first.md) 与 [模型 API 权威](../contracts/model-api-authority.md) 取代本文关于存在性、最小生成、边界探测、样本上限、真实执行和按执行翻转 `listed` 的可执行指令。本文保留原模型范围、历史快照与已发生执行；它们不得被当作当前输入合同。具体 EvoLink/APIMart 模型 API 文档未说明的字段、角色、数量、格式、时长和模式均为未知，不得猜测、试探或跨渠道借用。
+
 > **文档地位**：L2 增量 **产品附录**（Epic #463 / Issue #530 · 视频优先批次）。相对 `2026-09-05-model-evidence-backfill-prd.md` / `...-design.md` 的 **PR-C 视频批局部产品修订**；不推倒 H1/H2 五元判定与 schema。
 > **作者**：许清楚（产品经理） · 2026-09-05
 > **用户批准**：全量接入路径 + **视频优先**（Seedance / Wan 3.0 / MiniMax H3 / Kling）；本附录 status = **`accepted`**。
 > **配对架构附录**：`2026-09-05-model-evidence-backfill-video-design-addendum.md`（工程任务 / 探针 / BI）。
 > **术语**：`omnimux` = **执行中枢**；禁止称「网关」。
-> **原则金句**：**listed 的唯一瓶颈仍是证据**；**测不过不 listed**；**新 runtime 可入表，入表 ≠ 上架**；**bare 展示名 ≠ wire 能力**。
+> **当前范围**：保留视频 SKU 范围与历史 wire/目录快照。首尾帧、普通多参考和全能参考均须按渠道官方 API 文档分别核对；未说明即未知，不能由实测、失败、样本或同名模型推断。
 
 ---
 
 ## 0. 对原 PRD / design 的局部产品修订（必读）
 
-本附录**显式局部修订**原 PRD/design 下列产品约束。未列出的条款（证据四要素、一 op 一文件、禁止跨模型挪用、`--strict` 常绿、R1、不写 Prod、不改判定语义）**全部继承**。
+本附录的下列 C1–C4 约束是历史计划索引，保留其 SKU 范围和当时目录事实。关于探测、样本、限额、`listed` 翻转和“不测即不支持”的条款已由当前方法替代。
 **不修改**旧 PRD/design 文件的 `status` 字段。
 
 | # | 原约束（PRD/design） | 本附录修订 | 生效范围 |
@@ -177,7 +179,7 @@ related:
 
 ---
 
-## 6. PR-C 拆分：C1–C4（可独立合并）
+## 6. 历史 C1–C4 拆分（已替代，不可执行）
 
 ### 6.1 批次定义
 
@@ -239,7 +241,7 @@ existence（runtime/上游可达）
 
 ---
 
-## 8. 需求池（本附录增量）
+## 8. 历史需求池（已替代，不可执行）
 
 ### 8.1 P0
 
@@ -269,7 +271,7 @@ existence（runtime/上游可达）
 
 ---
 
-## 9. 验收矩阵（视频附录 DoD）
+## 9. 历史验收矩阵（已替代，不可执行）
 
 | # | 完成标准 | 优先级 |
 |---|---|---|

@@ -15,7 +15,7 @@ tags:
   - "operation-listed"
   - "h2-followup"
 supersedes: []
-superseded_by: null
+superseded_by: "docs/specs/2026-09-05-model-contract-docs-first.md"
 related:
   - "docs/specs/2026-09-04-model-io-contract-h2-catalog-prd.md"
   - "docs/specs/2026-09-04-model-io-contract-h2-catalog-design.md"
@@ -27,12 +27,14 @@ related:
 
 # 增量 PRD：模型证据补齐（Evidence Backfill）与分批上架 #530
 
+> **2026-09-05 当前方法**：[模型合同文档优先方法修订](2026-09-05-model-contract-docs-first.md) 与 [模型 API 权威](../contracts/model-api-authority.md) 取代本文关于存在性、最小生成、边界探测、样本上限、真实执行和按执行翻转 `listed` 的可执行指令。本文保留原模型范围、历史快照与已发生执行；它们不得被当作当前输入合同。具体 EvoLink/APIMart 模型 API 文档未说明的字段、角色、数量、格式、时长和模式均为未知，不得猜测、试探或跨渠道借用。
+
 > **文档地位**：L2 增量 PRD（Epic #463 / Issue #530）。**只描述相对 H2（#465 / PR #507 已合入 main）的变更**；契约 schema、op 级五元判定、dispositions 机器真源、Catalog v1.1 投影、facade fail-closed、`--strict` 红灯门禁等以 H1/H2 文档为准，本文不推倒。
 > **作者**：许清楚（产品经理） · 2026-09-05
 > **工作树**：`omnimux-dsh-wt-model-evidence-backfill-530` / 分支 `agent/omnimux-model-evidence-backfill-issue-530`
 > **用户原话**：「证据不够就补齐证据，目标是全量接入」。
 > **术语**：`omnimux` 一律称**执行中枢**；禁止称「网关」。
-> **原则金句（#530 增量）**：**listed 的唯一瓶颈是证据，不是意愿**；**每个拟 listed op 必须有独立 dated 证据，禁止挪用别家模型的证据**；**不接就留 draft/quarantine 也是合法交付，不强行全 listed**；**每批 PR 独立可合、独立可回滚、`--strict` 常绿**。
+> **当前范围**：保留 #530 的模型范围和历史目录快照。输入合同按渠道官方 API 文档逐模型、逐 operation 记录；真实执行、样本和 dated 记录只可作为历史事实，不能决定字段、上限或渠道支持。
 
 ---
 
@@ -48,7 +50,7 @@ related:
 
 ### 1.1 原始需求复述
 
-H2 交付后，43 个 runtime ID 已 100% 处置、`--strict` 常绿，但 `listedOperations` 只有 Batch A 三键。本 Issue 要把「全量接入」推进为**证据驱动的逐 op 上架**：对每一个有契约但 research/execution 未达标（draft/stub）的 operation，补齐独立 dated 证据后翻 verified+live 进入 listed；补不了证据的，显式留在 draft/quarantine，同样算交付。
+H2 交付后的 43 个 runtime ID、`--strict` 与 `listedOperations` 数值是历史快照。本修订保留该范围，但不再把逐 op 真实请求、dated 记录或试探边界作为输入合同和上架发现方法。后续先按渠道官方 API 文档建立合同，再以离线验证确认实现覆盖；当前 `listed` 的 `execution.live` 依赖是待单独对齐的实现差异。
 
 ### 1.2 strict 基线快照（主仓 @ 2026-09-05，`node scripts/verify-model-contracts.mjs --strict --json`）
 
@@ -117,7 +119,7 @@ H2 交付后，43 个 runtime ID 已 100% 处置、`--strict` 常绿，但 `list
 
 ---
 
-## 6. 需求池（P0 / P1 / P2）
+## 6. 历史需求池（已替代，不可执行）
 
 ### 6.1 P0 — Must have
 
@@ -149,7 +151,7 @@ H2 交付后，43 个 runtime ID 已 100% 处置、`--strict` 常绿，但 `list
 
 ---
 
-## 7. 逐 ID 补证清单（按模态分组 · 现状来自 strict JSON + specs YAML 实读）
+## 7. 历史补证清单（范围保留，方法已替代）
 
 > 口径：`missingInYaml` 的两个 alias ID（nanobanana-2 / nanobanana-pro）**不在补证面**（设计内无 YAML 行，随 canonical `nano_banana_2` / `nano_banana_pro` 归一）。下表 = 65 个候选 op 全集。
 
@@ -214,7 +216,7 @@ H2 交付后，43 个 runtime ID 已 100% 处置、`--strict` 常绿，但 `list
 
 ---
 
-## 8. 分批策略
+## 8. 历史分批策略（已替代，不可执行）
 
 ```text
 PR-A  text   19 op（11 model）   证据：docs/evidence/2026-09-XX-omnimux-text-backfill.md
@@ -234,7 +236,7 @@ PR-D  audio   2 op（2 model）    证据：docs/evidence/2026-09-XX-omnimux-aud
 
 ---
 
-## 9. 验收矩阵（DoD）
+## 9. 历史验收矩阵（已替代，不可执行）
 
 | # | 完成标准 | 优先级 |
 |---|---|---|

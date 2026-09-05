@@ -5,7 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-24"
-updated: "2026-08-30"
+updated: "2026-09-05"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -154,7 +154,7 @@ gh -R laozhong86/omnimux-dsh pr create --base main --body-file <generated-body.m
 | UI / Host / 一级页 | `node scripts/omnimux.mjs dev start <task> <plugin>`，随后 `pnpm verify:live <stage> --target=l2 --url=<url>` 并在 IAB 执行请求 | 运行 ID + 实际 URL + DOM + 有效截图 + 运行版本证明齐全 |
 | L2 通过后物化 | `node scripts/omnimux.mjs sync <plugin>` | 仅在合入确认后执行；静态复制不等于验收 |
 
-`skip ≠ pass`：`smoke` / `verify:image-live` / `verify:models` 因缺 `dsh` 或 key 而 skip 时，必须记录环境限制；若该检查被 Issue DoD 声明为必需，流水线阻断。
+`skip ≠ pass`：有效验收要求中的检查若因环境限制跳过，必须记录，不能声称通过。模型调研、接入和约束验收遵循 [渠道 API 准据](model-api-authority.md)，不执行 `verify:image-live` / `verify:models` 等真实模型请求检查；旧 Issue DoD/方案中的真实请求条款由该合同取代，改为官方文档核对与离线验证。此项不取消真实浏览器验收。
 根目录 `pnpm test` 目前 filter：`omnimux`、`omnimux-accounts`、`omnimux-inspiration`、`omnimux-market`、`omnimux-publish`。改 `assets` / `products` / `workflow` / `clip` / `analytics` / `omnimux-video` 必须跑 **该包** test，不能用根 `pnpm test` 代替。
 
 **本仓 CI 约定**：允许在 `omnimux-dsh/.github/workflows/` 放置本仓 required checks；禁止在外层 `dsh-plugin/` 添加独立 Git 仓、Husky、commitlint 或工作流。

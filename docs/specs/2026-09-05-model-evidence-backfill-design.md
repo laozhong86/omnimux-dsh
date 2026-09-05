@@ -15,7 +15,7 @@ tags:
   - "evidence-protocol"
   - "operation-listed"
 supersedes: []
-superseded_by: null
+superseded_by: "docs/specs/2026-09-05-model-contract-docs-first.md"
 related:
   - "docs/specs/2026-09-05-model-evidence-backfill-prd.md"
   - "docs/specs/2026-09-04-model-io-contract-h2-catalog-design.md"
@@ -27,17 +27,19 @@ related:
 
 # 增量系统设计：模型证据补齐（Evidence Backfill）证据协议与分批任务分解 #530
 
+> **2026-09-05 当前方法**：[模型合同文档优先方法修订](2026-09-05-model-contract-docs-first.md) 与 [模型 API 权威](../contracts/model-api-authority.md) 取代本文关于存在性、最小生成、边界探测、样本上限、真实执行和按执行翻转 `listed` 的可执行指令。本文保留原模型范围、历史快照与已发生执行；它们不得被当作当前输入合同。具体 EvoLink/APIMart 模型 API 文档未说明的字段、角色、数量、格式、时长和模式均为未知，不得猜测、试探或跨渠道借用。
+
 > **文档地位**：L2 增量设计（Epic #463 / Issue #530）。**只描述相对 H2（#465 / PR #507 已合入 main）的增量**；契约 schema、listed 五元判定、dispositions 机器真源、Catalog v1.1 投影、facade fail-closed、`--strict` 红灯门禁以 H1/H2 文档为准，本文不推倒。
 > **作者**：高见远（架构师） · 2026-09-05
 > **工作树**：`omnimux-dsh-wt-model-evidence-backfill-530` / 分支 `agent/omnimux-model-evidence-backfill-issue-530`
 > **术语**：`omnimux` 一律称**执行中枢**；禁止称「网关」。
-> **一句话边界**：#530 是纯「证据文件 + YAML op 状态 + dispositions 注记」的数据迭代。**判定码、执行码、投影码、workflow 一律零改动**；不新增 npm 依赖；R1；批批人工合入；不写 Prod；合入前不物化 45120。
+> **当前边界**：本文件的 YAML 翻转和探测任务已由文档优先方法替代；本次只保留它们的历史范围。渠道合同、离线实现验证和历史真实执行分列，且本修订不改代码、YAML、目录状态或环境。
 
 ---
 
 # Part A：系统设计
 
-## 1. 实现方案（Implementation Approach）
+## 1. 历史实现方案（已替代，不可执行）
 
 ### 1.1 核心技术挑战与对策
 
@@ -84,7 +86,7 @@ docs/contracts/model-capabilities-matrix.md  [#530 修改] 每批合入后更新
 
 ---
 
-## 2. 文件列表（精确表 · 相对仓库根）
+## 2. 历史文件列表（已替代，不可执行）
 
 ### 2.1 新建
 
@@ -120,7 +122,7 @@ docs/contracts/model-capabilities-matrix.md  [#530 修改] 每批合入后更新
 
 ---
 
-## 3. 证据文件标准模板（Evidence Protocol）
+## 3. 历史证据模板（已替代，不可执行）（Evidence Protocol）
 
 ### 3.1 命名与身份
 
@@ -201,7 +203,7 @@ tags: ["model-evidence", "backfill-530", "<domain:text|image|video|audio>"]
 
 ---
 
-## 4. YAML 变更规则（逐 op 纪律）
+## 4. 历史 YAML 变更规则（已替代，不可执行）
 
 ### 4.1 verified/live 只能逐 op 改
 
@@ -240,7 +242,7 @@ execution:
 
 ---
 
-## 5. 探测任务有序分解（65 op 全集 → 4 批）
+## 5. 历史探测任务分解（已替代，不可执行）
 
 > 每批 = 一个独立 PR，独立 `pnpm --filter omnimux test` + `--strict` 绿，独立回滚。批内「不接」不阻塞合入。允许批内按厂商拆子批（规则不变）。顺序合入 A→B→C→D，**不并发开 PR**（避免 YAML/dispositions 冲突与指纹抖动）。
 
@@ -302,7 +304,7 @@ execution:
 
 ---
 
-## 6. CI / 测试门禁（每批必跑）
+## 6. 历史 CI / 测试门禁（已替代，不可执行）
 
 ### 6.1 每批 PR 的硬门禁
 
@@ -360,7 +362,7 @@ pnpm verify:models                                          # keyless 自跳过�
 - 探测复用：scripts/verify-omnimux-live.mjs、curl、omnimux tokens exec
 ```
 
-## 9. Task List（有序 · 依赖 · 每个可独立验证）
+## 9. 历史任务列表（已替代，不可执行）
 
 ### T01 — 证据协议落盘与 strict 基线锁定
 

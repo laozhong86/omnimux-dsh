@@ -18,7 +18,7 @@ tags:
   - "issue-569"
   - "bi-4"
 supersedes: []
-superseded_by: null
+superseded_by: "docs/specs/2026-09-05-model-contract-docs-first.md"
 related:
   - "docs/specs/2026-09-05-model-evidence-backfill-video-prd-addendum.md"
   - "docs/specs/2026-09-05-model-evidence-backfill-video-design-addendum.md"
@@ -37,15 +37,18 @@ related:
 
 # 增量设计：#569 Wan 3.0 reference 系列 wire 与 mapper/探针路径
 
+> **2026-09-05 当前方法**：[模型合同文档优先方法修订](2026-09-05-model-contract-docs-first.md) 与 [模型 API 权威](../contracts/model-api-authority.md) 取代本文关于存在性、最小生成、边界探测、样本上限、真实执行和按执行翻转 `listed` 的可执行指令。本文保留原模型范围、历史快照与已发生执行；它们不得被当作当前输入合同。具体 EvoLink/APIMart 模型 API 文档未说明的字段、角色、数量、格式、时长和模式均为未知，不得猜测、试探或跨渠道借用。
+
+
 > **文档地位**：L2 增量设计（Issue **#569** · 关闭 #530 视频附录 **BI-4** 的前置）。只设计、不实现、不做 live API、不 push/PR/物化。
 > **作者**：高见远（架构师） · 2026-09-05
-> **status = `draft`**：**客户 submit 参考图字段 shape 尚未被官方精确文档或 dated probe 钉死**；禁止伪 `accepted`。升格条件见 §12。
+> **status = `draft`**：Wan 的具体渠道、模型版本、端点和参考输入字段尚未形成可引用的渠道官方 API 文档记录；不得用 dated probe、旧 body 或同名模型填补。历史升格/探测条件已替代。
 > **术语**：`omnimux` = **执行中枢**；禁止称「网关」。上游 HTTP 云端仍称 OmniMux API / 上游。
 > **原则**：**不得凭 ID 猜请求体**；**一 op 一 evidence**；**成功才 verified/live/listed**；**无 wire 证据不得 listed**；**禁止第二 HTTP client**。
 
 ---
 
-## 0. 为何是 draft（升格门槛）
+## 0. 为何是 draft（历史升格门槛已替代）
 
 | 条件 | 本文件落盘时 | 升格 `accepted` 所需 |
 |---|---|---|
@@ -90,7 +93,7 @@ L4  第三方猜测 / 阿里云万相原生 SDK 字段名  → 禁止当 wire �
 | updates / llms | `11-updates-en.md` / `13-docs-llms.txt.md` | 本 worktree 摘录 **未**列出 Wan 四 SKU 专页索引（H3/Seedance 有）；**不能**用 updates 证明 ref body | 中（索引不全） |
 | 第三方 | 任意非 OmniMux 文档 | **禁止**当 #569 wire 真源 | 禁 |
 
-### 1.3 关键冲突（必须 live 仲裁）
+### 1.3 历史关键冲突（不得以 live 仲裁）
 
 | 主张 A | 主张 B | 设计立场 |
 |---|---|---|
@@ -100,7 +103,7 @@ L4  第三方猜测 / 阿里云万相原生 SDK 字段名  → 禁止当 wire �
 
 ---
 
-## 2. 四个 runtime ID：existence 与 operation 分级
+## 2. 历史 runtime 范围与 operation 假设（非合同）
 
 ### 2.1 ID 锁定（禁止短名 wire）
 
@@ -148,7 +151,7 @@ L4  第三方猜测 / 阿里云万相原生 SDK 字段名  → 禁止当 wire �
 
 ---
 
-## 3. 客户 submit body：字段证据强度
+## 3. 历史 submit body 假设（非合同，不可实现）
 
 ### 3.1 公共信封（强度：高）
 
@@ -201,7 +204,7 @@ H4：字段名其它（referenceImages / refs / ...）
 
 ---
 
-## 4. 边界维度：official vs 必须 probe
+## 4. 历史边界与 probe 计划（已替代，不可执行）
 
 | 维度 | Official（可引用） | 必须 probe | 写入契约时 limitSource |
 |---|---|---|---|
@@ -218,7 +221,7 @@ H4：字段名其它（referenceImages / refs / ...）
 
 ---
 
-## 5. Current mapper 是否足够
+## 5. 历史 mapper 草案（待渠道文档与离线验证后重审）
 
 ### 5.1 结论（设计裁决）
 
@@ -275,7 +278,7 @@ mapOmnimuxInput(capability='video', request):
 
 ---
 
-## 6. 低成本探针协议（live discovery）
+## 6. 历史 live discovery 协议（已替代，不可执行）
 
 > 本设计 **不执行** live；下列为工程师/录入 Agent 的可执行规程。Key：仅 `omnimux tokens exec`；禁止 key 入盘/日志/PR。
 
@@ -378,7 +381,7 @@ Phase F  结论：钉死 wire ∨ 书面不接 ∨ 升级 BI-4b
 
 ---
 
-## 7. 测试矩阵（实现 / 合入门禁）
+## 7. 历史测试矩阵（已替代，不可执行）
 
 ### 7.1 单测（无 key）
 
@@ -410,7 +413,7 @@ Phase F  结论：钉死 wire ∨ 书面不接 ∨ 升级 BI-4b
 
 ---
 
-## 8. 任务列表与依赖（≤5）
+## 8. 历史任务列表（已替代，不可执行）
 
 ### T01 — 设计真源 + 探针计划冻结（本 PR 文档）
 

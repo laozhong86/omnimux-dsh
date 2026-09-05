@@ -5,7 +5,7 @@ type: "spec"
 status: "accepted"
 authority: "L2"
 date: "2026-09-04"
-updated: "2026-09-04"
+updated: "2026-09-05"
 authors: ["xu-qingchu"]
 subsystem: "omnimux/catalog"
 tags:
@@ -18,6 +18,7 @@ tags:
 supersedes: []
 superseded_by: null
 related:
+  - "docs/specs/2026-09-05-model-contract-docs-first.md"
   - "docs/contracts/model-capabilities-matrix.md"
   - "docs/contracts/hub.md"
   - "docs/contracts/model-list-ownership.md"
@@ -27,6 +28,8 @@ related:
 ---
 
 # PRD：全模态模型输入输出契约 + 画布兼容性与自动适配
+
+> **2026-09-05 当前方法**：[模型合同文档优先方法修订](2026-09-05-model-contract-docs-first.md) 与 [模型 API 权威](../contracts/model-api-authority.md) 取代本文关于存在性、最小生成、边界探测、样本上限、真实执行和按执行翻转 `listed` 的可执行指令。本文保留原模型范围、历史快照与已发生执行；它们不得被当作当前输入合同。具体 EvoLink/APIMart 模型 API 文档未说明的字段、角色、数量、格式、时长和模式均为未知，不得猜测、试探或跨渠道借用。
 
 > **文档地位**：L2 已接受 PRD（Issue #463 / #464）。供架构师收敛 MCC 运行时真源、画布连线 / 列表 / 模式 UI 规则；**只写产品行为与验收，不写模块级实现**。
 > **问题起源**：视频生成模式分裂（runtime 旧别名 vs MCC 标准 operation）暴露的是架构级缺口——文本 / 图片 / 视频 / 音频缺少统一 I/O 契约，且契约未在「录入模型时」闭环。
@@ -51,7 +54,7 @@ related:
 
 ### 1.1 原始需求复述
 
-从视频生成模式问题延伸，要在架构层统一**全模态**模型输入输出规范；规范必须在**录入模型时**研究并配置完成，而不是画布报错后再补。录入时需明确：支持格式与类型、输入素材限制（数量 / MIME / 体积 / 时长 / 角色）、**显式产出类型**，并映射到节点交互。画布侧：上游可接文本 / 图 / 视频 / 音频；模型列表做支持检测；仅支持文本的模型在上游有图 / 视频时不可选；体积上限**按 slot 声明真实或保守政策上限并记录来源**（100MB 仅为测试 / 声明示例，不是全平台统一硬顶）；只要能连上，列表里至少有一个支持模型且必须自动适配；模式 UI 已锁定（0/1 不显示，≥2 才显示有效项，隐藏不置灰）。
+从视频生成模式问题延伸，要在架构层统一**全模态**模型输入输出规范；规范必须在**录入模型时**研究并配置完成，而不是画布报错后再补。录入时需明确：支持格式与类型、输入素材限制（数量 / MIME / 体积 / 时长 / 角色）、**显式产出类型**，并映射到节点交互。画布侧：上游可接文本 / 图 / 视频 / 音频；模型列表做支持检测；仅支持文本的模型在上游有图 / 视频时不可选；体积、时长、数量与格式按 slot 记录该渠道该模型 operation 的官方 API 文档；文档未说明即标为未知，不用测试样本或保守政策值填补。100MB 仅为测试 / 声明示例，不是全平台统一硬顶；只要能连上，列表里至少有一个支持模型且必须自动适配；模式 UI 已锁定（0/1 不显示，≥2 才显示有效项，隐藏不置灰）。
 
 ---
 
@@ -164,8 +167,8 @@ related:
 | `role` | 语义角色 | `first_frame` / `last_frame` / `reference` / `source` / `voice_sample` / `mask` 等 |
 | `min` / `max` | 数量上下限 | 决定「还能不能再连」、超额拒绝；也参与 `readyToSubmit` |
 | `allowedMimes` | 允许 MIME | 不匹配则不可连 / 不可提交 |
-| `maxSizeMb`（或等价体积上限） | **单素材体积上限** | **必须按 slot 声明真实上限或保守政策上限，并记录来源**（官方文档 / 实测 / 政策）。**100MB 仅是测试或某模型声明示例，不是所有模型统一硬上限**。无可信边界 → 该模型 / operation 保持 `draft` 或 `unavailable`，**不得**上架为画布可选 |
-| `maxDurationSec` | 时长上限（音视频） | 超时不可连或提交前 Fail-fast；同样要求来源可追溯 |
+| `maxSizeMb`（或等价体积上限） | **单素材体积上限** | **按 slot 记录该渠道、该模型、该 operation 的官方 API 文档上限及精确来源。**100MB 仅是测试或某模型声明示例，不是所有模型统一硬上限**。文档未说明则标为未知；不得以实测、拒绝或保守政策值代替渠道限制。本 PRD 不由未知项直接推断渠道不支持或变更上架状态 |
+| `maxDurationSec` | 时长上限（音视频） | 若官方文档声明则用于提交前校验，并记录精确来源；未声明则为未知，不得猜测时长上限 |
 | `inputs: []` | 无媒体槽 | 该 operation 仅文本提示（如纯 `chat`、`text_to_video`） |
 
 **录入即契约**：文档根须合法 `schemaVersion: "1.1"`；模型须具备完整 operation + inputs（含限制）+ 显式 `output.type`。否则 **No Spec No Model**，**不得**进入可被画布选择的目录。
@@ -181,7 +184,7 @@ related:
 推论：
 
 - **Whisper**（及同类 ASR）：在 **speechToText seam 未实现**前，即使 YAML 草稿存在，**不得**进入画布模型列表。
-- 契约残缺、无可信体积 / 时长边界、research 未过、执行面不存在 → `draft` / `unavailable`，对选择 UI **隐藏**。
+- 契约残缺、research 未过或执行面不存在可影响当前实现可见性；体积 / 时长的官方文档缺项只表示未知，不能由历史实测、探测失败或保守取值推断为渠道不支持。
 
 ---
 
@@ -384,7 +387,7 @@ related:
 
 ### 7.3 录入 / 治理（Agent 与平台，非创作者主路径）
 
-- 缺字段、缺来源上限、缺 `output.type`、research 未过 → 门禁失败信息明确到字段。
+- 缺 `output.type` 或已声明字段不合法 → 门禁失败信息明确到字段；渠道文档缺项明确显示为未知，不以探测或保守值补齐。
 - 覆盖率矩阵（P1）按模态 × operation 显示在架 / draft / unavailable。
 
 ---
@@ -397,7 +400,7 @@ related:
 | D2 | 在架且画布可见的模型均有完整 YAML；根为 **`schemaVersion: "1.1"`**（无根 `version`）；含显式 `output.type`；`chat` vs `vision_chat` 对上游图片差异可测 | P0 |
 | D2a | **schemaVersion 合同**：正式 specs 仅 `schemaVersion`；legacy 仅 `version` 可迁移且输出剥离；both/conflict/missing/wrong 拒绝 + typed reason；normalize/index/export/fingerprint/report 只暴露 schemaVersion；registry/profile 文档 `version` 未误改 | P0 |
 | D2b | **aliases / profile**：model aliases 用于 runtime/wire model ID 归一；operation aliases 仅 legacy 附属；profile.operations[] 均 ∈ 标准 registry，未知 op 拒绝 | P0 |
-| D3 | 每 slot 体积 / 时长上限有来源；无「全局 100MB 硬顶」作为唯一政策；无来源者不可见 | P0 |
+| D3 | 每 slot 的数量、MIME、体积与时长均回指具体渠道模型 operation 的官方 API 文档，或明确标为未知；无「全局 100MB 硬顶」和实测样本上限冒充渠道限制 | P0 |
 | D4 | 可见性三元组生效；Whisper 在 speechToText 未实现前不在画布列表 | P0 |
 | D5 | 画布：图 / 视频 / 音频 / 文本上游指纹驱动列表过滤；不兼容模型不可见（Hide） | P0 |
 | D6 | 不变量：任意**新**合法连线后，生成节点模型列表长度 ≥ 1 且当前模型兼容；不兼容时有自动切换证据 | P0 |

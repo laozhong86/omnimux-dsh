@@ -5,7 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-09-04"
-updated: "2026-09-04"
+updated: "2026-09-05"
 authors: ["qi-huolin", "xu-qingchu", "gao-jianyuan"]
 subsystem: "omnimux/catalog"
 tags:
@@ -17,6 +17,7 @@ tags:
 supersedes: []
 superseded_by: null
 related:
+  - "docs/contracts/model-api-authority.md"
   - "docs/contracts/hub.md"
   - "docs/contracts/model-list-ownership.md"
   - "docs/specs/2026-09-04-model-io-contract-compatibility-prd.md"
@@ -30,10 +31,12 @@ related:
 > **设计**：[2026-09-04 model I/O design](../specs/2026-09-04-model-io-contract-compatibility-design.md)（H1 shadow · **operation 级 listed** · Contract v1.1 **`schemaVersion: "1.1"`** · H2 投影）。
 > **R1.1 合同纠偏**：model capability YAML/normalized **根字段 canonical 名是 `schemaVersion`**（值精确 `"1.1"`），**不是**根 `version`。把批准 Contract v1.1 改名为 `version` 属**未授权漂移**。
 
+> **渠道接口准据**：[模型接口准据](model-api-authority.md) 规定以 EvoLink、APIMart 各自官方 API 文档确定模式和输入限制；不发真实模型请求。下述机器字段与历史阶段记录不构成实测要求。
+
 ## 1. 核心治理原则
 
 1. **单一真源 (Single Source of Truth)**
-   模型支持的 **operation**、输入槽、**显式产出**、MIME / 数量 / 体积 / 时长、参数空间，定义在 `plugins/omnimux/src/catalog/specs/*.yaml`，并由 Hub `operation-registry.json` + `model-capability.schema.json` + `adapter-profiles.json` 机器校验。严禁在前端组件、Workflow 或私有适配器中硬编码第二套穷尽 operation 枚举。
+   渠道文档定义接口能力；仓内实现将已核对的 **operation**、输入槽、**显式产出**、MIME / 数量 / 体积 / 时长、参数空间，记录在 `plugins/omnimux/src/catalog/specs/*.yaml`，并由 Hub `operation-registry.json` + `model-capability.schema.json` + `adapter-profiles.json` 机器校验。严禁在前端组件、Workflow 或私有适配器中硬编码第二套穷尽 operation 枚举。
 
 2. **隐藏优于置灰 (Hide, Don't Grey)**
    选择 UI 中：不支持的模型 / operation **100% 隐藏**，禁止灰色不可用主路径。当有效 operation 为 0 或 1 时，不渲染生成方式分段栏；0 时并阻止生成。
@@ -45,14 +48,14 @@ related:
    新增模型必须先有完整 YAML 契约（含显式 `output.type`、槽位限制与上限来源）。无契约不得进入可选择目录。
 
 5. **无执行面不上架 (No Executor / No Evidence, No List) — operation 原子**
-   仅有纸面 YAML 不足。画布 / 选择列表资格见 §4：**listed 的原子单位是 operation**（键建议 `modelId#operationId`）。需要该 op 的 research 验证、execution live、**与 adapter profile 在 operation/output/seam 上相容**，且 gate 允许。
+   仅有纸面 YAML 不足。画布 / 选择列表资格见 §4：**listed 的原子单位是 operation**（键建议 `modelId#operationId`）。当前机器实现检查该 op 的 research 验证、execution live、**与 adapter profile 在 operation/output/seam 上相容**，且 gate 允许。
    - **禁止**仅因 model 级 `research: verified` + `execution: live` 把该模型**所有** operation 一并放行。
    - `model.listed` 若存在，仅为 `any(operation.listed)` 的**摘要**，不得作为 UI 放行全 op 的依据。
    - 无 speechToText 等执行缝时，对应 ASR **operation** 不得 listed。
    - 粗 `videoGenerate` profile **不得**自动使 `digital_human` listed。
 
 6. **体积非全局 100MB**
-   **不存在**「全平台统一 100MB 模型硬顶」作为 MCC 政策。每输入槽声明真实或保守政策上限，并记录 `limitSource`。无可信边界 → 该 **operation** draft / 不可 listed。禁止默填全局 ceiling。
+   **不存在**「全平台统一 100MB 模型硬顶」作为 MCC 政策。每输入槽依据渠道官方文档声明上限并记录来源。文档未说明时保留未知及实现缺口；产品自身限制单独注明，不得作为渠道上限。禁止默填全局 ceiling 或用实测数量代替上限。
 
 7. **Prompt 政策由 registry 声明**
    每个标准 operation 在 `operation-registry.json` 携带 `promptPolicy: required | optional | none`。
@@ -86,6 +89,8 @@ related:
 | 音频 | `voice_clone` | 声音克隆 | voice_sample 音频 | `audio` | optional/required |
 | 音频 | `text_to_music` | 音乐创作 | 文本 ± 参考音频 | `audio` | required |
 | 音频 | `speech_to_text` | 语音转文字 | source **音频** | **`text`（非 audio）** | **none** |
+
+以上是现有标准 operation 表，不是渠道完整模式清单。首尾帧及全能参考须按渠道文档核对；全能参考不能直接等同于 `video_multi_ref`，registry 无对应表达时记录实现缺口。
 
 参数（aspectRatio、duration、seed…）**不是** operation，挂在 model/operation 的 `parameters` 上。
 
@@ -141,7 +146,7 @@ Normative JSON Schema（`model-capability.schema.json`）`required` = **`["schem
 | `allowedMimes` | 允许 MIME（数组元素非空字符串） |
 | `maxSizeMb` | 单素材体积上限（MB）；比较时按 MiB 字节 |
 | `maxDurationSec` | 时长上限（秒） |
-| `limitSource` | 上限来源：`official_docs` / `measured` / `policy_conservative` + url/note |
+| `limitSource` | 现有 schema 支持 `official_docs` / `measured` / `policy_conservative` + url/note；新增接口约束以渠道 `official_docs` 为准，后两类仅保留历史或单独的产品限制含义，不可覆盖官方规范 |
 
 ### 3.3 文件分组 vs Catalog 投影
 
@@ -177,13 +182,15 @@ Normative JSON Schema（`model-capability.schema.json`）`required` = **`["schem
 
 Model 级 `research` / `execution` **仅作 defaults**：normalize 时写入每个未显式声明的 operation。Catalog / coverage / UI 门禁 **只读 operation 级结果**。
 
-**operationListed**（可出现在画布/生成选择 UI 的原子资格）当且仅当：
+**当前 `operationListed` 实现**（可出现在画布/生成选择 UI 的原子资格）检查：
 
 1. **contract complete**（该 op schema 通过，slots/显式 output 齐备，有可信上限来源规则）；
 2. **`op.research.status = verified`**；
 3. **`op.execution.status = live`**；
 4. **adapter profile compatible**（exists + live + operations/outputTypes/seam）；
 5. **gate allowed**（`Config.gate` 未关闭该能力/模型/op；H1 可先 model 级钩子）。
+
+该五项是当前代码行为记录。后续须按 [接口准据 §5](model-api-authority.md#5-与当前目录实现的关系) 分离实现覆盖与历史真实执行；不得为满足 `live` 字段发真实请求或伪造状态。本次文档修订不改变运行时准入。
 
 派生：
 
@@ -207,21 +214,23 @@ UI 必须可解释；**Hide, Don't Grey**。
 | 阶段 | 要求 |
 |---|---|
 | H1 | shadow loader + admission；**operation 级** status/listed；实 specs **零 listedOperations**；正式 specs **`schemaVersion: "1.1"`**（legacy 根 `version` 仅 fixture 输入迁移）；`pnpm verify:model-contracts` 默认 **admission 严格 / coverage 审计**；malformed YAML / **profile fake op** / schemaVersion conflict **必须失败**；CLI 用法错误 fail-closed；cache 用内容哈希；JSON Schema 与 JS validator parity（required=`schemaVersion`+`models`）；coverage 缺口可见但不因历史 missing 永久红灯；**不做** runtime constraints 对账 |
-| H2 | 逐 operation 补证上架；runtime limits/mapper 对账（冲突取更严）；`buildModelCatalog` 切契约投影；coverage **strict** |
+| H2 | 逐 operation 补证上架；runtime limits/mapper 按渠道官方文档对账（未知和冲突显式记录）；`buildModelCatalog` 切契约投影；coverage **strict** |
 | 画布 | 消费 `modelCatalog` 目录缝；兼容判定按 listed operation；禁止 BUILTIN 第二真源长期并存 |
 
-### 6.1 H2 落地（#465，2026-09-04）
+### 6.1 H2 落地历史快照（#465，2026-09-04）
+
+以下数量及处置结论是该日期的历史快照，当前状态须读机器目录；历史实测不是后续输入限制或上架验收规范。
 
 - **处置表机器真源**：`plugins/omnimux/src/catalog/contract/dispositions.json` 覆盖全部 **43** 个 runtime ID（契约 model.id + wire alias 归一宇宙），每行一个治理处置 + 必填 `reason`。处置枚举：`canonical`（契约行完整）/ `draft`（合法占位、证据不足不上架）/ `alias`（须 `target` 指向表内 canonical 行）/ `unavailable` / `deprecated` / `quarantine`。处置只表达治理意图；**上架与否仍由 op 级五元判定**（verified+live 不是处置值）。
 - **一致性规则 D1–D7**（`dispositions.js`，`--strict` 下全部 error）：runtime ID 无处置行（`disposition_missing`）；canonical/draft 缺契约行（`disposition_contract_missing`）；alias 双列/target 未声明（`disposition_alias_inconsistent`）；禁上架集合出现 listed op（`disposition_listed_forbidden`）；幽灵处置行（`disposition_unknown_id`）；extra YAML 未清理（`coverage_extra`，H2 升级为 strict error）；`catalog-defaults.json` `byOperation` 指向非 canonical 或不存在 op（`defaults_unknown`）。机器真源 shape 错误（`disposition_invalid` / `defaults_invalid` / cordis 读取失败）在 `--audit` 下也失败。
 - **43 处置结论**：Batch A 三键（`seedance-2-0-fast#text_to_video`、`gpt-image-2#text_to_image`、`grok-imagine-image#text_to_image`）凭仓内 dated live 证据（`docs/evidence/2026-08-14-omnimux-video.md`、`2026-08-16-omnimux-image.md`）verified+live；text chat/vision_chat 按 `2026-08-18-omnimux-modality.md` / `2026-08-20-omnimux-reasoning.md` / `2026-08-23-omnimux-brand-four.md` 逐 op 补证（`claude-opus-5` chat 因 chat-completions group 403 保持 stub 不上架；`deepseek-v4-flash-vision-exp` vision_chat 保持 draft）；`whisper-1` / `kling-avatar` unavailable；`omni_flash` / `kling-o1` / `kling-o3` / `kling-v3-motion-control` quarantine；`nanobanana-2` / `nanobanana-pro` 为 underscore canonical 的 alias（禁止双列）；extra 三 ID（`deepseek-v3` / `deepseek-r1` / `gpt-4o`）无 runtime/wire 引用已删除。
-- **冲突限制取更严**：`grok-imagine-video-1-5` 参考图与 seedance 系 `video_multi_ref` 一律 `max: 1` + `limitSource.kind: policy_conservative`（不承诺官方 max4/max8，待 dated 复测放宽）；无可信来源上限禁止冒充 `official_docs`。
+- **历史限制纠正**：当时对 Grok/Seedance 参考图采用 `max: 1` 的保守策略，不是渠道 API 上限。取消「dated 复测后才放宽」要求；后续逐渠道核对官方数量、角色与组合限制并离线修正实现，不沿用跨渠道的 max4/max8 推断。
 - **投影切换**：`buildModelCatalog()` 以契约 `models[]` 为权威（Catalog v1.1，含 `schemaVersion`/`contractFingerprint`/`defaultsByOperation`/per-model `disposition`）；四列表（text/image/video/audio）**仅**按可见（listed）op 的 `output.type` 派生——`speech_to_text` 产出 text → 入 text 桶；旧 `media/catalog.js` SPECS / `text/catalog.js` `CHAT_MODELS` 硬编码行已物理删除，改为投影 facade（目录语义，含未上架契约行）；契约/处置表失败**顶层 throw**，无回退路径。
 - **fingerprint**：目录指纹输入 = contract contentFingerprint + listedOperations + defaults + defaultsByOperation + dispositions + schemaVersion；改任一 MIME/数量/大小/时长/op/output/准入/处置必变。
 - **cordis 交叉验证**：composer id 必须 resolve 到契约 canonical/alias（`cordis_unresolvable_model`）；`cordis.patch.yml` 内容不动。
 - **CI 红灯**：根 `verify:model-contracts` 与 quality-gate 均已切 `--strict`；稳态目标 extra=0、未处置 missing=0、禁上架 listed=0；禁止用改回 `--audit` 修复红灯。
 
-相关命令：`pnpm verify:model-contracts`（契约）、`pnpm verify:models`（聊天 patch / 在线存在性，职责不同）。
+相关命令：`pnpm verify:model-contracts`（离线契约校验）。`pnpm verify:models` 会查询在线模型存在性，不属于本合同的研究或验收步骤，不执行。
 
 ## 7. 非目标（指向 PRD / 设计）
 
