@@ -68,10 +68,6 @@ export function mountTextComplete(ctx, hub, jsonOut, onError) {
       reason: { type: 'string', required: true, description: 'Which missing capability, or which user / contract line authorizes this call.' },
       system: { type: 'string', description: 'Optional system text for this one request only.' },
       max_tokens: { type: 'number', description: 'Optional output cap. Defaults to Config.text.maxTokens.' },
-      metadata: {
-        type: 'object',
-        description: 'Optional asset metadata (sizeBytes, mime) for SubmitGuard slot checks.',
-      },
     }),
     output: jsonOut,
     async execute(args, exec) {
@@ -92,8 +88,6 @@ export function mountTextComplete(ctx, hub, jsonOut, onError) {
           video: args.video,
           system: args.system,
           maxTokens: args.max_tokens,
-          metadata: args.metadata,
-          assetMeta: args.metadata,
           signal: exec?.signal,
           sessionId: exec?.agent?.session?.id,
           text: hub.text,

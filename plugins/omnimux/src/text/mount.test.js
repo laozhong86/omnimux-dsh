@@ -23,6 +23,7 @@ describe('mountTextComplete capability gate', () => {
     assert.equal(tools[0].name, 'omnimux_text_complete')
     assert.ok(provided.textComplete)
     assert.equal(tools[0].parameters.properties.model.enum.length, 11)
+    assert.equal(tools[0].parameters.properties.metadata, undefined)
   })
 
   it('skips register and provide when omnimux_text_complete tool is disabled in gate', () => {
