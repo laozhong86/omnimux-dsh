@@ -113,3 +113,38 @@ test('catalog-ready standalone video creation writes the effective listed model 
   assert.equal(added?.data.params.operation, 'text_to_video');
   assert.equal(added?.data.compat.status, 'ok');
 });
+
+test('catalog-ready text edges still initialize new video and image targets', () => {
+  const store = useCanvasStore.getState();
+  store.setCatalogRuntime(createCompatTestCatalog());
+  store.setNodes([{
+    id: 'text-source',
+    type: 'material',
+    position: { x: 0, y: 0 },
+    data: {
+      materialType: 'text',
+      nodeKind: 'generate',
+      selectedTool: 'text-to-text',
+      params: {},
+    },
+  }]);
+
+  const video = createMaterialNode('video', { x: 200, y: 0 });
+  const image = createMaterialNode('image', { x: 200, y: 200 });
+  const result = store.applyCanvasInputMutation({
+    addNodes: [video, image],
+    addEdges: [
+      { source: 'text-source', target: video.id, sourceHandle: 'out', targetHandle: 'in' },
+      { source: 'text-source', target: image.id, sourceHandle: 'out', targetHandle: 'in' },
+    ],
+  });
+
+  assert.equal(result.status, 'allowed');
+  const nodes = useCanvasStore.getState().nodes;
+  const videoNode = nodes.find((node) => node.id === video.id);
+  const imageNode = nodes.find((node) => node.id === image.id);
+  assert.equal(videoNode?.data.params.model, 'vid-frames');
+  assert.equal(videoNode?.data.params.operation, 'text_to_video');
+  assert.equal(imageNode?.data.params.model, 'img-prompt-only');
+  assert.equal(imageNode?.data.params.operation, 'text_to_image');
+});

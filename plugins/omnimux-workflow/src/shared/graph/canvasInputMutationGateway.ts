@@ -411,6 +411,10 @@ function runCompatPass(
     const target = nodeById(edgeLike.target);
     if (!isGenerateMaterialNode(target)) continue;
     if (gatedNodeIds.includes(edgeLike.target)) continue;
+    // Only a media-bearing edge has passed strict adaptation. Text-only edges
+    // must still reach the soft pass so a just-created target receives its
+    // catalog-derived model and operation.
+    if (fingerprintForNode(target!, nodes, edges).mediaAssets.length === 0) continue;
     gatedNodeIds.push(edgeLike.target);
     const rejected = gateNode(edgeLike.target);
     if (rejected) {
