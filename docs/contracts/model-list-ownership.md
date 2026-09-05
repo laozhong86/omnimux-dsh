@@ -5,7 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-18"
-updated: "2026-09-04"
+updated: "2026-09-05"
 authors: ["x", "agent-architect", "gao-jianyuan"]
 subsystem: "omnimux"
 tags:
@@ -15,6 +15,7 @@ tags:
 supersedes: []
 superseded_by: null
 related:
+  - "docs/contracts/model-api-authority.md"
   - "docs/contracts/hub.md"
   - "docs/contracts/model-capabilities-matrix.md"
   - "docs/specs/2026-09-04-model-io-contract-compatibility-design.md"
@@ -23,6 +24,8 @@ related:
 # OmniMux model-list ownership
 
 The app's OmniMux model list has exactly one owner: `plugins/omnimux/cordis.patch.yml`.
+
+Model modes, input modalities, limits and wire parameters MUST follow the selected channel's official API documentation under [model API authority](model-api-authority.md). EvoLink and APIMart are the primary channels. Do not issue real model requests for research or contract acceptance. Historical measurements below do not define current channel support.
 
 ## Why one owner
 
@@ -51,37 +54,16 @@ it that way: user layers set `agent-default-model` only.
 
 - The `omnimux` provider row under `llm-pi-ai` (`apiKeyEnv`,
   `baseURL`, `api`).
-- The model list. Every id is verified live against
-  `api.omnimux.ai/v1/models`; `contextWindow` values come from
-  `api.omnimux.ai/api/pricing` and are set only where that catalog documents
-  the number. Undocumented windows stay unset and fall back to the requester's
-  `defaultContextWindow` — an over-high client-side window causes context
-  over-fill and server rejects, so an unset window is the safe direction.
-- Input modalities: `input: [text, image]` is declared only where the measured
-  gateway matrix confirms image input (`docs/evidence/omnimux-modality-2026-08-18.md`
-  — a 64px red image plus a content prompt; rows that read the color declare
-  image). gpt-5.6-sol, grok-4.6, kimi-k3, gemini-3.7-flash accept images;
-  deepseek-v4-pro/flash and glm-5.3 reject `image_url` upstream and stay
-  text-only; claude-opus-5 accepts images on `/v1/messages` but the
-  chat-completions group is 403 for this key. The pi-ai adapter refuses an
-  image before it attaches when the model's `input` lacks `image`, and a model
-  over-claiming image input is rejected by the provider mid-turn after the
-  message is durable — so the measured matrix, not the pricing catalog text
-  (which lags reality: it only mentions grok-4.6), is the gate.
-  `verify:models` enforces both directions keyless against `CHAT_MODELS`.
-- Reasoning efforts: each model declares `reasoningEfforts` from the measured
-  gateway matrix (`docs/evidence/omnimux-reasoning-2026-08-20.md`). Only
-  levels that returned HTTP 200 on `POST /v1/chat/completions` with
-  `reasoning_effort` are listed; the route default is `reasoning: max` so the
-  composer effort pane opens on Max. A literal `off` 400s on most upstreams
-  — rows that can disable thinking map `off` to wire `none`; rows that still
-  think when the field is omitted do not offer Off. The route also sets
-  `supportsDeveloperRole: false` because this gateway rejects the
-  `developer` role pi-ai would otherwise send on a reasoning model.
-  `verify:models` fails if a patch row omits the `reasoningEfforts.max`
-  key or if the route default is not `max`. The UI `max` value is usually
-  wire `max`; `gpt-5.5` maps it to `xhigh` because the wire enum has no
-  literal `max` (`docs/evidence/omnimux-brand-four-2026-08-23.md`).
+- The model list and context windows. Resolve the actual channel, model ID and
+  endpoint, then record the corresponding official API documentation and date.
+  Undocumented values remain unknown; do not infer them through requests.
+- Input modalities and reasoning efforts. Declare the selected channel's documented
+  fields, enums and conditions, then verify adapter mapping offline. Historical
+  observations in `docs/evidence/2026-08-18-omnimux-modality.md`,
+  `2026-08-20-omnimux-reasoning.md` and `2026-08-23-omnimux-brand-four.md`
+  remain execution records, not a requirement to repeat calls or a substitute
+  for channel documentation. A narrower current adapter is an implementation
+  gap, not evidence that the channel lacks the capability.
 - The one-shot expert whitelist (`plugins/omnimux/src/text/catalog.js`
   `CHAT_MODELS`) is a subset of this patch list, and its `input` matrix must
   agree with the patch. `verify:models` fails on any mismatch or if a
@@ -118,7 +100,7 @@ it that way: user layers set `agent-default-model` only.
     仅 fixtures）。**不改变** `buildModelCatalog` 的 runtime 投影；列表仍来自
     `CHAT_MODELS` + `src/media/catalog.js` SPECS。H1 **不做** runtime
     constraints / mapper 对账（属 H2；零 listed 防止污染选择叙事）。
-  - **H2（#465，已落地）**：`buildModelCatalog` 已切契约投影（Catalog v1.1）——
+  - **H2（#465，2026-09-04 历史快照）**：`buildModelCatalog` 已切契约投影（Catalog v1.1）——
     权威为扁平 `models[]`（透传 operations/research/execution/aliases/
     parameters + `disposition` 治理字段），四列表（text/image/video/audio）
     **仅**按可见（listed）op 的 `output.type` 派生（`speech_to_text` 产出
@@ -127,8 +109,8 @@ it that way: user layers set `agent-default-model` only.
     契约解析/准入/处置表失败顶层 throw，无回退）。43 个 runtime ID 的治理
     处置由 `src/catalog/contract/dispositions.json` 机器真源承载（D1–D7
     一致性校验，`--strict` 红灯）；`catalog-defaults.json` 持有
-    `defaultsByOperation` 权威默认。runtime limits 已对账写入 YAML（冲突
-    取更严，`policy_conservative`）。**cordis 交叉验证**：verifier 断言本
+    `defaultsByOperation` 权威默认。当时 runtime limits 按保守策略写入 YAML；该历史策略不定义渠道上限。
+    后续对账以渠道官方文档为准，不取实测样本或跨渠道更严值。**cordis 交叉验证**：verifier 断言本
     patch 的 composer id 均可 resolve 到契约 canonical/alias
     （`cordis_unresolvable_model`），patch 内容本身不动。seam 载荷携带
     `operations[]`（string id + per-op status/listed metadata）。此后
@@ -143,9 +125,9 @@ it that way: user layers set `agent-default-model` only.
 ## Changing the list
 
 1. Edit `plugins/omnimux/cordis.patch.yml` (provider row + models).
-2. Run `pnpm verify:models` — modality consistency always runs (keyless);
-   the gateway existence check needs `OMNIMUX_API_KEY` (reads
-   `~/.config/omnimux/dsh.env` when the env var is absent).
+2. Compare the patch and mapper against the selected channel documentation; run
+   offline `pnpm verify:model-contracts` and relevant isolated fixture checks.
+   Do not run `verify:models`: it can load a key and query the real service.
 3. Restart the app (patches resolve at every launch) and check the Settings →
    Models list shows the new set.
 
@@ -158,10 +140,9 @@ reference shape.
 
 ## Verify
 
-- `pnpm verify:models` — modality declarations match the measured matrix in
-  `CHAT_MODELS` (keyless), every patch model declares `reasoningEfforts.max`
-  with route `reasoning: max` (keyless), and every declared model id exists
-  on the live gateway (with a key).
+- `pnpm verify:model-contracts` — offline contract/schema/profile consistency.
+  Verify patch-specific field mapping with isolated fixtures as needed.
+  Online existence and real-generation scripts are not acceptance requirements.
 - `dsh --profile <name> --dump-config` — the composed `llm-pi-ai` provider
   block must come from `omnimux` (dump headers name the patching layer),
   and no `omnimux-compat` provider may exist anywhere.

@@ -5,7 +5,7 @@ type: "index"
 status: "living"
 authority: "L1"
 date: "2026-08-26"
-updated: "2026-09-04"
+updated: "2026-09-05"
 authors: ["x", "agent-architect"]
 subsystem: "global"
 ---
@@ -47,6 +47,7 @@ subsystem: "global"
 | `living` | [gxgen-workflow-migration.md](gxgen-workflow-migration.md) | Gxgen → OmniMux 工作流迁移蓝图（代理必读） | `omnimux-workflow` | 2026-08-22 | \| 项 \| 决定 \| |
 | `living` | [dev-pipeline.md](dev-pipeline.md) | dev-pipeline — 开发 / 预发布 / 生产三层环境契约 | `omnimux-assets` | 2026-08-30 | 日常入口 fork `yarn omnimux:*`；`omnimux-workflow` 生成物不入库，sync 现场 build。 |
 | `living` | [model-capabilities-matrix.md](model-capabilities-matrix.md) | OmniMux 全模态模型能力契约与治理规范 (MCC 1.0) | `omnimux/catalog` | 2026-09-04 | 执行中枢 catalog SSOT；operation 17 + 显式 output；**op 级** research/execution/listedOperations；**docs 根 `schemaVersion: "1.1"`**；model.aliases wire 归一；profile.operations ∈ registry；promptPolicy；无全局 100MB；H1 零实文件 listed / H2 逐 op 上架投影。 |
+| living | [model-api-authority.md](model-api-authority.md) | 模型接口准据：渠道官方 API 文档 | omnimux/catalog | 2026-09-05 | EvoLink/APIMart 分渠道文档准据、离线验收、禁止真实请求探测约束 |
 | `living` | [model-list-ownership.md](model-list-ownership.md) | OmniMux model-list ownership | `omnimux` | 2026-09-04 | Composer 列表唯一 owner=`cordis.patch.yml`；Canvas=`modelCatalog` 目录缝（H1 shadow 零 listedOperations · capability 根 `schemaVersion: "1.1"` / H2 按 listed op 投影）；HTTP 仅桥接。 |
 | `living` | [apps-catalog.md](apps-catalog.md) | Apps catalog | `omnimux-accounts` | 2026-08-17 | Normative local + remote JSON catalog for the Apps shelf. Status of the live UI is capabilities.md.  |
 | `living` | [hub.md](hub.md) | Execution hub | `omnimux` | 2026-08-16 | Normative I/O for `omnimux` and every vertical/domain plugin. Status of a live surface is capabiliti |

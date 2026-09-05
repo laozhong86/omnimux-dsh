@@ -21,6 +21,7 @@ OmniMux landing on official DeepSeek Harness as out-of-tree plugins. This produc
 - MUST call `omnimux` the execution hub. MUST NOT call it a gateway or implement a second OmniMux router inside it. I/O: [docs/contracts/hub.md](docs/contracts/hub.md).
 - A plugin MUST NOT import the hub, ship a brand-specific HTTP client, or store provider keys. It inputs through `ctx.get` / `omnimux_*` seams and writes only its own domain store.
 - MUST NOT claim live video/image generation unless media submission returned `mode: "live"`. `mode: "stub"` is a file copy.
+- MUST derive model modes and input constraints from the selected channel's official API documentation; primary channels are EvoLink and APIMart. MUST NOT make real model API requests to discover or validate these contracts. Follow [docs/contracts/model-api-authority.md](docs/contracts/model-api-authority.md).
 - Provider HTTP + keys live in `omnimux` only. Neutral seams and official-only tools are listed in `docs/contracts/hub.md`.
 - MUST NOT commit secrets. Inject with `omnimux tokens exec` or the process environment.
 - Briefing (`docs/briefing.md`) is project memory, not truth. On conflict, live code, this file, and `docs/contracts/` win.
@@ -122,11 +123,10 @@ Doc index inside `design.md`: ยง1 architectural principles & native regression ย
 pnpm test
 ./scripts/smoke.sh
 ./scripts/accept-apps-install.sh
-pnpm verify:models
-pnpm verify:image-live
+pnpm verify:model-contracts
 ```
 
-Smoke exits 0 and prints a skip line when `dsh` is missing. `verify:models` asserts every model in `plugins/omnimux/cordis.patch.yml` exists on the live gateway; it self-skips without `OMNIMUX_API_KEY` (see [docs/model-list-ownership.md](docs/model-list-ownership.md)). `verify:image-live` is the P8 image evidence gate; same key rule; not part of `pnpm test`.
+Smoke exits 0 and prints a skip line when `dsh` is missing. Model contract verification uses offline `verify:model-contracts`. `verify:models` (online existence) and `verify:image-live` (real generation) are historical diagnostic tools, not contract acceptance requirements; do not run them for model research, integration, or parameter validation. UI `verify:live` remains required for UI changes and does not authorize model API requests.
 
 ## Pointers
 

@@ -5,7 +5,7 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-16"
-updated: "2026-09-04"
+updated: "2026-09-05"
 authors: ["x", "agent-architect"]
 subsystem: "omnimux"
 ---
@@ -105,7 +105,7 @@ media:
 
 `textComplete` is a one-shot expert call, not a second chat. It does not inherit parent messages, does not pass tools, and does not write the image/video into the parent session. Authorization is the enabled whitelist plus the tool's required `reason`. The hub does not prompt the user.
 
-The callable set is `Config.text.models`. Every `id` must already be a `cordis.patch.yml` `omnimux` chat model. `enabled: false` hides that row from the tool. Omitted `models` uses the eleven chat-directory defaults, all enabled. `defaultModel` is what an omitted `model` resolves to on text-only, image, and video requests; `OMNIMUX_TEXT_DEFAULT_MODEL` overlays it. Image / video are not separate seams: a request with `image` must land on a row whose measured `input` includes `image` (gpt-5.6-sol, gpt-5.5, grok-4.6, kimi-k3, deepseek-v4-flash-vision-exp, gemini-3.7-flash, gemini-3.1-pro-preview, claude-opus-4-6 — evidence: `docs/evidence/omnimux-modality-2026-08-18.md` plus `docs/evidence/omnimux-brand-four-2026-08-23.md`); a request with `video` must land on a row whose `input` includes `video` (**today only `gemini-3.7-flash`**, evidence: 2026-08-22 spike — pack as `image_url` + `data:video/…`, never `video_url`). `image` and `video` are mutually exclusive. deepseek-v4-pro and glm-5.3 stay text-only; claude-opus-5 is listed but its chat-completions group is temporarily 403. `minimax-m3` is on the live catalog but this key's group 403s it, so it is not in the directory.
+The callable set is `Config.text.models`. Every `id` must already be a `cordis.patch.yml` `omnimux` chat model. `enabled: false` hides that row from the tool. Omitted `models` uses the eleven chat-directory defaults, all enabled. `defaultModel` is what an omitted `model` resolves to on text-only, image, and video requests; `OMNIMUX_TEXT_DEFAULT_MODEL` overlays it. Image / video are not separate seams: the selected row must declare the corresponding `input`, and the mapper must support that payload; `image` and `video` are mutually exclusive in the current seam. Model/channel capabilities and wire constraints are determined by the selected channel's official API documentation under [model API authority](model-api-authority.md), then checked against this implementation offline. Historical modality, video-spike and per-key 403 observations are dated execution records, not current channel support rules. Do not repeat real calls to determine the input matrix or treat a missing mapper as a channel limitation.
 
 ```text
 text:
