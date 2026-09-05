@@ -1,6 +1,6 @@
 import { afterEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const sourceSync = readFileSync(join(root, 'scripts', 'sync-to-app.sh'), 'utf8')
+const sourceProfileResolver = readFileSync(join(root, 'scripts', 'resolve-omnimux-profile.sh'), 'utf8')
 const temporaryRoots = []
 
 afterEach(() => {
@@ -21,15 +22,22 @@ function writeExecutable(file, contents) {
   chmodSync(file, 0o755)
 }
 
-function setupFixture({ kitSource = 'current-kit', kitTarget = kitSource, selectedBuild = 'process.exit(0)' } = {}) {
+function setupFixture({
+  kitSource = 'current-kit',
+  kitTarget = kitSource,
+  selectedBuild = 'process.exit(0)',
+  l2Task = false,
+  homeSegment = '',
+} = {}) {
   const fixture = mkdtempSync(join(tmpdir(), 'omnimux-plugin-scope-'))
   temporaryRoots.push(fixture)
 
   const scripts = join(fixture, 'scripts')
   const plugin = join(fixture, 'plugins', 'omnimux-assets')
   const kit = join(fixture, 'kit')
-  const targetHome = join(fixture, 'target')
-  const profile = join(targetHome, 'profiles', 'omnimux')
+  const home = homeSegment ? join(fixture, homeSegment) : fixture
+  const targetHome = l2Task ? join(home, '.dsh-dev', 'tasks', 'client-action') : join(home, 'target')
+  const profile = join(targetHome, 'profiles', l2Task ? 'omnimux-dev-client-action' : 'omnimux')
   const events = join(fixture, 'events.log')
   const bin = join(fixture, 'bin')
 
@@ -42,6 +50,8 @@ function setupFixture({ kitSource = 'current-kit', kitTarget = kitSource, select
 
   writeFileSync(join(scripts, 'sync-to-app.sh'), sourceSync, 'utf8')
   chmodSync(join(scripts, 'sync-to-app.sh'), 0o755)
+  writeFileSync(join(scripts, 'resolve-omnimux-profile.sh'), sourceProfileResolver, 'utf8')
+  chmodSync(join(scripts, 'resolve-omnimux-profile.sh'), 0o755)
   writeExecutable(join(scripts, 'sync-stable.sh'), [
     '#!/bin/bash',
     'set -euo pipefail',
@@ -79,7 +89,7 @@ function setupFixture({ kitSource = 'current-kit', kitTarget = kitSource, select
   writeFileSync(asar, 'asar sentinel', 'utf8')
   writeFileSync(infoPlist, 'plist sentinel', 'utf8')
 
-  return { fixture, targetHome, profile, kit, events, bin, preset, asar, infoPlist }
+  return { fixture, home, targetHome, profile, kit, events, bin, preset, asar, infoPlist }
 }
 
 function run(fixture, args, extraEnv = {}) {
@@ -88,6 +98,7 @@ function run(fixture, args, extraEnv = {}) {
     encoding: 'utf8',
     env: {
       ...process.env,
+      HOME: fixture.home,
       ...extraEnv,
       OMNIMUX_DSH_UI_KIT_DIR: fixture.kit,
       SYNC_EVENTS: fixture.events,
@@ -111,6 +122,7 @@ describe('sync-to-app named-plugin scope', () => {
 
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
     assert.match(result.stdout, /跳过 Agent Presets/)
+    assert.match(result.stdout, /本次命名插件同步未更新预设或应用包/)
     assert.match(events(fixture), /stable:.*omnimux-assets/)
     assert.doesNotMatch(events(fixture), /kit-build|presets:/)
     assert.equal(readFileSync(join(fixture.profile, 'node_modules', 'dsh-ui-kit', 'lib', 'index.js'), 'utf8'), 'current-kit')
@@ -129,6 +141,15 @@ describe('sync-to-app named-plugin scope', () => {
     assert.match(result.stderr, /完整 yarn omnimux:sync/)
     assert.equal(events(fixture), '')
     assert.equal(readFileSync(join(fixture.profile, 'node_modules', 'dsh-ui-kit', 'lib', 'index.js'), 'utf8'), 'stale-kit')
+  })
+
+  it('uses the real L2 profile name for a case-sensitive target home', () => {
+    const fixture = setupFixture({ l2Task: true, homeSegment: 'Case Sensitive Home' })
+    const result = run(fixture, ['--skip-build', `--target=${fixture.targetHome}`, 'omnimux-assets'])
+
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
+    assert.match(events(fixture), /stable:.*omnimux-assets/)
+    assert.equal(existsSync(join(fixture.targetHome, 'profiles', 'omnimux')), false)
   })
 
   it('keeps selected-plugin build and materialization failures nonzero', () => {
@@ -159,5 +180,6 @@ describe('sync-to-app named-plugin scope', () => {
     assert.match(events(fixture), /kit-build:pnpm build/)
     assert.match(events(fixture), /stable:/)
     assert.match(events(fixture), /presets:/)
+    assert.match(result.stdout, /会话预设下拉：已同步/)
   })
 })

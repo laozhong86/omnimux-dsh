@@ -20,6 +20,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$ROOT/plugins}"
+source "$ROOT/scripts/resolve-omnimux-profile.sh"
 SKIP_BUILD=0
 PLUGINS=()
 TARGET_SELECTION=()
@@ -112,7 +113,7 @@ done
 if [ -n "${OMNIMUX_SYNC_TARGETS:-}" ]; then
   IFS=',' read -ra ENV_TARGETS <<< "$OMNIMUX_SYNC_TARGETS"
   for t in "${ENV_TARGETS[@]}"; do
-    t=$(echo "$t" | tr '[:upper:]' '[:lower:]' | xargs)
+    t=$(normalize_omnimux_sync_target "$t")
     [ -n "$t" ] && TARGET_SELECTION+=("$t")
   done
 fi
@@ -121,7 +122,7 @@ parse_target_value() {
   local val="$1"
   IFS=',' read -ra PARTS <<< "$val"
   for p in "${PARTS[@]}"; do
-    p=$(echo "$p" | tr '[:upper:]' '[:lower:]' | xargs)
+    p=$(normalize_omnimux_sync_target "$p")
     [ -n "$p" ] && TARGET_SELECTION+=("$p")
   done
 }
@@ -204,8 +205,8 @@ else
       dsh|dsh-desktop)
         add_target_home "$HOME/.dsh"
         ;;
-      /*|~*)
-        eval expanded_path="$item"
+      /*|~|~/*)
+        expanded_path=$(expand_omnimux_sync_target_home "$item") || exit 1
         add_target_home "$expanded_path"
         ;;
       *)
@@ -222,7 +223,7 @@ TARGET_PROFILES=()
 assert_origin_main_aligned
 
 for home_dir in "${TARGET_HOMES[@]}"; do
-  prof_dir="$home_dir/profiles/omnimux"
+  prof_dir="$(resolve_omnimux_profile_dir "$home_dir")" || exit 1
   if [ -d "$prof_dir" ] || [ -d "$home_dir" ]; then
     already=0
     if [ "${#TARGET_PROFILES[@]}" -gt 0 ]; then
@@ -475,6 +476,11 @@ cat <<EOF
   【多 Agent 并发与生效规则】
   - 前端 Client 修改：在浏览器或已打开的客户端窗口中刷新（Cmd+R）即可加载最新 bundle。
   - 后端 Host/插件扩展修改：产物已静默就绪，在应用下次自然启动或用户闲时手动重启后生效。
-  - 会话预设下拉：已同步为「标准模式 / 社媒内容创作专家团 / 社媒互动增长专家团」，需重启 Host 后生效。
   - 【安全红线】Agent 严禁强杀或重启任何桌面 App（测试验证一律在 L2 独立隔离环境内闭环）。
 EOF
+
+if [ "$EXPLICIT_PLUGIN_SCOPE" -eq 1 ]; then
+  echo "  - 会话预设下拉：本次命名插件同步未更新预设或应用包。"
+else
+  echo "  - 会话预设下拉：已同步为「标准模式 / 社媒内容创作专家团 / 社媒互动增长专家团」，需重启 Host 后生效。"
+fi
