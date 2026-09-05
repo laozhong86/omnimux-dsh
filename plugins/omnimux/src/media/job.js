@@ -85,6 +85,9 @@ export async function downloadMediaFile(options) {
       : ''
     buffer = Buffer.from(await response.arrayBuffer())
   }
+  if (buffer.byteLength === 0) {
+    throw new OmnimuxError('omnimux-invalid-response', `${options.capability ?? 'media'} download contained no bytes`)
+  }
   assertDownloadedMediaType(contentType, options.capability)
   mkdirSync(dirname(options.dest), { recursive: true })
   writeFileSync(options.dest, buffer)

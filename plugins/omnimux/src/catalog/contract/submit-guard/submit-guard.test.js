@@ -475,11 +475,15 @@ describe('SubmitGuard execute integration', () => {
       dest,
       model: 'seedance-2-0-fast',
       operation: 'text_to_video',
+      duration: 4,
+      resolution: '720P',
       env: { OMNIMUX_API_KEY: 'sk-test' },
       runtime: {
         async execute(req) {
           calls += 1
           assert.equal(req.input.prompt, 'a wall at night')
+          assert.equal(req.input.duration, 4)
+          assert.equal(req.input.resolution, '720P')
           assert.equal('audioTrack' in req.input, false)
           assert.equal('metadata' in req.input, false)
           return { taskId: 't1', outputs: [{ type: 'video', url: 'https://cdn.example/a.mp4' }] }
@@ -514,6 +518,24 @@ describe('SubmitGuard execute integration', () => {
     )
     assert.equal(calls, 0)
     rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('rejects unsupported declared parameters before vendor execution', async () => {
+    let calls = 0
+    await assert.rejects(
+      () => executeOmnimuxVideo({
+        prompt: 'a wall at night',
+        dest: '/tmp/sg-unsupported-parameter.mp4',
+        model: 'seedance-2-0-fast',
+        operation: 'text_to_video',
+        duration: 3,
+        resolution: 'bogus',
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        runtime: { async execute() { calls += 1; return { outputs: [] } } },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(calls, 0)
   })
 
   it('taskId poll path does not require prompt or assets', async () => {

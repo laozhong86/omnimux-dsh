@@ -220,6 +220,22 @@ export function guardSubmit(request, opts = {}) {
     })
   }
 
+  const parameterResult = validateDeclaredParameters(
+    request,
+    opAdmit.operation.parameters,
+    modelAdmit.model.parameters,
+  )
+  if (!parameterResult.ok) {
+    return reject({
+      code: parameterResult.code,
+      message: parameterResult.message,
+      modelId: modelAdmit.modelId,
+      operationId: opAdmit.operationId,
+      field: parameterResult.field,
+      diagnostics,
+    })
+  }
+
   if (opts.skipVendorMap) {
     return {
       ok: true,
@@ -309,6 +325,38 @@ export function assertGuardOutput(plan, result, opts = {}) {
   const check = validateVendorResult(result, plan.operation, opts)
   if (!check.ok) throw rejectionToError(check)
   return check.result
+}
+
+/**
+ * Validate only values the caller actually supplied. Operation declarations
+ * override model declarations; absent declarations intentionally impose no
+ * inferred constraint.
+ * @param {Record<string, unknown>} request
+ * @param {object | undefined} operationParameters
+ * @param {object | undefined} modelParameters
+ */
+function validateDeclaredParameters(request, operationParameters, modelParameters) {
+  const operation = operationParameters && typeof operationParameters === 'object' ? operationParameters : {}
+  const model = modelParameters && typeof modelParameters === 'object' ? modelParameters : {}
+  const definitions = { ...model, ...operation }
+  for (const [field, definition] of Object.entries(definitions)) {
+    if (!Object.prototype.hasOwnProperty.call(request, field)) continue
+    const value = request[field]
+    if (value === undefined || value === null || value === '') continue
+    if (!definition || typeof definition !== 'object' || !Array.isArray(definition.options) || definition.options.length === 0) {
+      continue
+    }
+    const allowed = definition.options.map((option) => option && typeof option === 'object' && 'value' in option ? option.value : option)
+    if (!allowed.some((candidate) => Object.is(candidate, value))) {
+      return {
+        ok: false,
+        code: GUARD_CODES.PARAMETER_UNSUPPORTED,
+        field,
+        message: `parameter "${field}" does not accept ${JSON.stringify(value)}`,
+      }
+    }
+  }
+  return { ok: true }
 }
 
 export { GUARD_CODES, validateVendorResult, normalizeLogicalRequest, mapValidatedPlanToVendor }

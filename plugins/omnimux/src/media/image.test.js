@@ -240,6 +240,27 @@ describe('omnimux image helpers', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('rejects an empty synchronous download before writing dest', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-empty-'))
+    const dest = join(dir, 'out.png')
+    await assert.rejects(
+      () => executeOmnimuxImage({
+        prompt: '1 dog',
+        dest,
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        runtime: { async execute() { return { taskId: 'img-empty', outputs: [{ type: 'image', url: 'https://cdn.example/empty.png' }] } } },
+        fetcher: async () => ({
+          ok: true,
+          headers: { get: () => 'image/png' },
+          arrayBuffer: async () => Buffer.alloc(0),
+        }),
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-response',
+    )
+    assert.equal(existsSync(dest), false)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('wait false returns submitted without writing dest', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-'))
     const dest = join(dir, 'out.png')
@@ -314,6 +335,31 @@ describe('omnimux image helpers', () => {
       (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-response',
     )
     assert.equal(posts, 0)
+    assert.equal(existsSync(dest), false)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('rejects an empty poll/finish download before writing dest', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-img-empty-poll-'))
+    const dest = join(dir, 'out.png')
+    await assert.rejects(
+      () => executeOmnimuxImage({
+        dest,
+        taskId: 'img-empty-poll',
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        fetcher: async (url) => {
+          if (String(url).includes('/images/generations/img-empty-poll')) {
+            return { ok: true, json: async () => ({ status: 'completed', url: 'https://cdn.example/empty-polled.png' }) }
+          }
+          return {
+            ok: true,
+            headers: { get: () => 'image/png' },
+            arrayBuffer: async () => Buffer.alloc(0),
+          }
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-response',
+    )
     assert.equal(existsSync(dest), false)
     rmSync(dir, { recursive: true, force: true })
   })

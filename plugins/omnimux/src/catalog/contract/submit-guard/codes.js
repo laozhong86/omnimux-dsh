@@ -34,6 +34,7 @@ export const GUARD_CODES = Object.freeze({
   METADATA_UNKNOWN: 'metadata_unknown',
   OPERATION_INCOMPATIBLE: 'operation_incompatible',
   ASSET_TYPE_MISMATCH: 'asset_type_mismatch',
+  PARAMETER_UNSUPPORTED: 'parameter_unsupported',
 
   // Vendor mapping
   VENDOR_FIELD_FORBIDDEN: 'vendor_field_forbidden',
