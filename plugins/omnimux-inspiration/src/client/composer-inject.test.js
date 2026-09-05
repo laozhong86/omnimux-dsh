@@ -103,6 +103,44 @@ describe('setComposerValue', () => {
     assert.equal(field.focused, true)
     assert.equal(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), 'value'), undefined)
   })
+
+  it('does not fall back to textContent after an accepted delayed insert command', async () => {
+    const prompt = '/video-deconstruct\n\n完全复刻原视频脚本和画面'
+    const field = fakeContentEditable('')
+    const commandCalls = []
+    const execDocument = {
+      execCommand(command, _showUi, value) {
+        commandCalls.push({ command, value })
+        queueMicrotask(() => { field.textContent += value })
+        return true
+      },
+    }
+
+    const ok = setComposerValue(field, prompt, {
+      document: execDocument,
+      InputEvent: FakeInputEvent,
+    })
+    await Promise.resolve()
+
+    assert.equal(ok, true)
+    assert.deepEqual(commandCalls, [{ command: 'insertText', value: prompt }])
+    assert.equal(field.textContent, prompt)
+    assert.equal(field.textContent.split(prompt).length - 1, 1)
+    assert.equal(field.lastEvent, undefined)
+  })
+
+  it('uses textContent fallback only when insert command rejects', () => {
+    const field = fakeContentEditable('')
+    const prompt = '/video-deconstruct\n\n完全复刻原视频脚本和画面'
+    const ok = setComposerValue(field, prompt, {
+      document: { execCommand() { return false } },
+      InputEvent: FakeInputEvent,
+    })
+
+    assert.equal(ok, true)
+    assert.equal(field.textContent, prompt)
+    assert.equal(field.lastEvent.inputType, 'insertText')
+  })
 })
 
 describe('findComposer / findSendButton', () => {

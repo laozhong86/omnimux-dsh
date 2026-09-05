@@ -139,8 +139,12 @@ export function setComposerValue(field, text, globals = {}) {
         if (sel && typeof sel.selectAllChildren === 'function') {
           sel.selectAllChildren(field)
         }
-        execDoc.execCommand('insertText', false, value)
-        if (composerWriteSucceeded(field, value)) return true
+        // `execCommand` may report success before Lexical has reconciled the
+        // DOM. A second direct write in that window becomes a duplicate once
+        // Lexical applies the accepted command. Treat an accepted command as
+        // the single write channel; only fall back when the command rejects.
+        const accepted = execDoc.execCommand('insertText', false, value)
+        if (accepted === true || composerWriteSucceeded(field, value)) return true
       } catch {
         // fall through to textContent
       }
