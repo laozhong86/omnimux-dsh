@@ -7,13 +7,18 @@ import { mapOmnimuxInput, pickMediaUrl } from './vendors/omnimux.js'
 import {
   assertGuardOutput,
   assertGuardSubmit,
+  normalizeLogicalRequest,
 } from '../catalog/contract/submit-guard/index.js'
+import { probeTextImage } from '../text/image.js'
+import { probeTextVideo } from '../text/video.js'
+import { loadAudioBytes } from './stt.js'
 
 const CAPABILITY_SEAM = Object.freeze({
   video: 'videoGenerate',
   image: 'imageGenerate',
   audio: 'audioGenerate',
 })
+const MAX_PROBED_MEDIA_BYTES = 50 * 1024 * 1024
 
 /**
  * @param {string} capability
@@ -33,8 +38,6 @@ const CAPABILITY_SEAM = Object.freeze({
  *   provider?: string,
  *   model?: string,
  *   operation?: string,
- *   metadata?: object,
- *   assetMeta?: object,
  *   image_tail?: string,
  *   imageTail?: string,
  *   taskId?: string,
@@ -68,16 +71,12 @@ export async function executeOmnimuxMedia(capability, input) {
 
   const prompt = typeof input.prompt === 'string' ? input.prompt : ''
   const seam = CAPABILITY_SEAM[capability] ?? capability
+  const assets = await probeMediaAssets(input)
   const guardPlan = assertGuardSubmit(
     {
       prompt,
       model: route.modelId,
       operation: input.operation,
-      image: input.image,
-      image_tail: input.image_tail ?? input.imageTail,
-      references: input.references,
-      audioTrack: input.audioTrack,
-      audio: input.audio,
       speech: input.speech,
       duration: input.duration,
       voice: input.voice,
@@ -86,8 +85,7 @@ export async function executeOmnimuxMedia(capability, input) {
       speed: input.speed,
       aspectRatio: input.aspectRatio,
       resolution: input.resolution,
-      metadata: input.metadata,
-      assetMeta: input.assetMeta,
+      assets,
       capability,
       seam,
     },
@@ -167,6 +165,58 @@ export async function executeOmnimuxMedia(capability, input) {
     signal: input.signal,
   })
   return { mode: 'live', taskId: submittedId, url }
+}
+
+/**
+ * Ignore caller-provided media metadata and derive every guard asset from its
+ * bytes. A reference with an unknown type deliberately reaches the guard
+ * without MIME/size metadata, where any restricted slot rejects it.
+ * @param {Record<string, unknown>} input
+ */
+export async function probeMediaAssets(input) {
+  const normalized = normalizeLogicalRequest({
+    ...input,
+    assetMeta: {},
+    metadata: undefined,
+    imageMeta: undefined,
+    imageTailMeta: undefined,
+    audioMeta: undefined,
+  })
+  return Promise.all(normalized.assets.map(async (asset) => {
+    const identity = {
+      type: asset.type,
+      pathOrUrl: asset.pathOrUrl,
+      ...(asset.role ? { role: asset.role } : {}),
+      ...(asset.targetSlot ? { targetSlot: asset.targetSlot } : {}),
+    }
+    if (asset.type === 'image') {
+      const image = await probeTextImage(asset.pathOrUrl, {
+        attachments: { imageLimits: { maxImageBytes: MAX_PROBED_MEDIA_BYTES } },
+        fetcher: input.fetcher,
+        signal: input.signal,
+      })
+      return { ...identity, mime: image.mediaType, sizeBytes: image.sizeBytes }
+    }
+    if (asset.type === 'video') {
+      const video = await probeTextVideo(asset.pathOrUrl, {
+        maxVideoBytes: MAX_PROBED_MEDIA_BYTES,
+        signal: input.signal,
+      })
+      return { ...identity, mime: video.mediaType, sizeBytes: video.sizeBytes }
+    }
+    if (asset.type === 'audio') {
+      const audio = await loadAudioBytes(asset.pathOrUrl, {
+        fetcher: input.fetcher,
+        signal: input.signal,
+      })
+      return {
+        ...identity,
+        mime: audio.contentType === 'audio/mpeg' ? 'audio/mp3' : audio.contentType,
+        sizeBytes: audio.bytes.byteLength,
+      }
+    }
+    return identity
+  }))
 }
 
 /**

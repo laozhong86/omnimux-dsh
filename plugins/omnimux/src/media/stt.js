@@ -12,17 +12,6 @@ import { pickTranscriptionText, TRANSCRIPTION_PATH } from './vendors/omnimux.js'
 /** Route capability key for speech-to-text (audio bytes in, text out). */
 export const STT_CAPABILITY = 'stt'
 
-/** Extension → wire Content-Type for the multipart upload. */
-const AUDIO_MIME_BY_EXT = Object.freeze({
-  '.mp3': 'audio/mpeg',
-  '.wav': 'audio/wav',
-  '.m4a': 'audio/m4a',
-  '.webm': 'audio/webm',
-  '.ogg': 'audio/ogg',
-  '.flac': 'audio/flac',
-  '.mp4': 'audio/mp4',
-})
-
 const AUDIO_EXT_BY_MIME = Object.freeze({
   'audio/mpeg': '.mp3',
   'audio/mp3': '.mp3',
@@ -35,18 +24,6 @@ const AUDIO_EXT_BY_MIME = Object.freeze({
   'audio/flac': '.flac',
   'audio/mp4': '.mp4',
 })
-
-/**
- * @param {string} filename
- * @returns {string}
- */
-function mimeForFilename(filename) {
-  const lower = filename.toLowerCase()
-  for (const [ext, mime] of Object.entries(AUDIO_MIME_BY_EXT)) {
-    if (lower.endsWith(ext)) return mime
-  }
-  return 'audio/mpeg'
-}
 
 /**
  * Resolve the request audio into uploadable bytes.
@@ -68,9 +45,8 @@ export async function loadAudioBytes(audio, deps = {}) {
     if (!payload) {
       throw new OmnimuxError('omnimux-invalid-request', 'audio data URI has no payload')
     }
-    const mime = header.split(';')[0] || 'audio/mpeg'
-    const ext = AUDIO_EXT_BY_MIME[mime] ?? '.mp3'
-    return { bytes: Buffer.from(payload, 'base64'), filename: `audio${ext}`, contentType: mime }
+    const bytes = Buffer.from(payload, 'base64')
+    return audioFromBytes(bytes, header.split(';')[0], 'audio')
   }
 
   if (/^https?:\/\//i.test(value)) {
@@ -88,7 +64,7 @@ export async function loadAudioBytes(audio, deps = {}) {
       throw new OmnimuxError('omnimux-download-failed', `audio download failed: ${response.status}`, { status: response.status })
     }
     const bytes = Buffer.from(await response.arrayBuffer())
-    let filename = 'audio.mp3'
+    let filename = 'audio'
     try {
       const name = basename(new URL(value).pathname)
       if (name && name !== '/') filename = name
@@ -98,8 +74,7 @@ export async function loadAudioBytes(audio, deps = {}) {
     const headerType = typeof response.headers?.get === 'function'
       ? String(response.headers.get('content-type') ?? '').split(';')[0].trim()
       : ''
-    const contentType = headerType.startsWith('audio/') ? headerType : mimeForFilename(filename)
-    return { bytes, filename, contentType }
+    return audioFromBytes(bytes, headerType, filename)
   }
 
   let bytes
@@ -110,8 +85,54 @@ export async function loadAudioBytes(audio, deps = {}) {
       cause: error instanceof Error ? error : undefined,
     })
   }
-  const filename = basename(value) || 'audio.mp3'
-  return { bytes, filename, contentType: mimeForFilename(filename) }
+  return audioFromBytes(bytes, '', basename(value) || 'audio')
+}
+
+/**
+ * @param {Buffer} bytes
+ * @param {string} declaredType
+ * @param {string} filename
+ */
+function audioFromBytes(bytes, declaredType, filename) {
+  const contentType = mediaFromAudioMagic(bytes)
+  if (!contentType) {
+    throw new OmnimuxError('omnimux-invalid-request', 'audio type cannot be identified from bytes')
+  }
+  const declared = normalizeAudioMime(declaredType)
+  if (declared && declared !== contentType) {
+    throw new OmnimuxError('omnimux-invalid-request', `audio MIME ${declaredType} does not match its bytes`)
+  }
+  const ext = AUDIO_EXT_BY_MIME[contentType] ?? '.mp3'
+  const name = filename.includes('.') ? filename : `${filename}${ext}`
+  return { bytes, filename: name, contentType }
+}
+
+/**
+ * @param {string} mime
+ */
+function normalizeAudioMime(mime) {
+  const value = String(mime || '').trim().toLowerCase()
+  if (value === 'audio/mp3') return 'audio/mpeg'
+  if (value === 'audio/x-wav') return 'audio/wav'
+  if (value === 'audio/x-m4a') return 'audio/m4a'
+  return value
+}
+
+/**
+ * @param {Uint8Array} bytes
+ * @returns {'audio/mpeg' | 'audio/wav' | 'audio/m4a' | 'audio/webm' | 'audio/ogg' | 'audio/flac' | 'audio/mp4' | undefined}
+ */
+export function mediaFromAudioMagic(bytes) {
+  if (bytes.length >= 4 && bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) return 'audio/mpeg'
+  if (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0) return 'audio/mpeg'
+  if (bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x41 && bytes[10] === 0x56 && bytes[11] === 0x45) return 'audio/wav'
+  if (bytes.length >= 4 && bytes[0] === 0x4f && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) return 'audio/ogg'
+  if (bytes.length >= 4 && bytes[0] === 0x66 && bytes[1] === 0x4c && bytes[2] === 0x61 && bytes[3] === 0x43) return 'audio/flac'
+  if (bytes.length >= 4 && bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) return 'audio/webm'
+  const ftyp = bytes.length >= 12 && bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70
+  if (!ftyp) return undefined
+  if (bytes[8] === 0x4d && bytes[9] === 0x34 && bytes[10] === 0x41) return 'audio/m4a'
+  return 'audio/mp4'
 }
 
 /**
@@ -142,21 +163,12 @@ export async function executeOmnimuxSpeechToText(input) {
 
   // SubmitGuard (#468): whisper/STT must be listed+verified+live. Seam presence alone
   // does not admit draft models (whisper-1 remains draft → reject before HTTP).
-  const audioPath = input.audio.trim()
-  /** @type {Record<string, object>} */
-  const assetMeta = { ...(input.assetMeta && typeof input.assetMeta === 'object' ? input.assetMeta : {}) }
-  if (!assetMeta[audioPath]) {
-    // Defaults so size/duration ceilings do not mask admission (draft) failures;
-    // callers with real metadata should pass assetMeta.
-    assetMeta[audioPath] = { mime: 'audio/mp3', sizeBytes: 1024, durationSec: 1 }
-  }
   const guardPlan = assertGuardSubmit(
     {
       model: route.modelId,
       operation: input.operation ?? 'speech_to_text',
-      audio: audioPath,
+      audio: input.audio.trim(),
       language: input.language,
-      assetMeta,
       seam: 'speechToText',
       capability: 'stt',
     },

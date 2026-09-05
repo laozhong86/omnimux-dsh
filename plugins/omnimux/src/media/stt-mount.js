@@ -63,10 +63,6 @@ export function mountSpeechToText(ctx, opts) {
         description: 'Contract operation id (default speech_to_text). Draft/unlisted models are rejected by SubmitGuard.',
       },
       language: { type: 'string', description: 'ISO language hint (e.g. zh, en). Optional.' },
-      metadata: {
-        type: 'object',
-        description: 'Optional asset metadata (sizeBytes, mime, durationSec). Used by SubmitGuard.',
-      },
     }),
     output: jsonOut,
     async execute(args, exec) {
@@ -77,8 +73,6 @@ export function mountSpeechToText(ctx, opts) {
           model: args.model,
           operation: args.operation,
           language: args.language,
-          metadata: args.metadata,
-          assetMeta: args.metadata,
           signal: exec?.signal,
         })
       } catch (error) {

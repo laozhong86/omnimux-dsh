@@ -8,7 +8,9 @@ import { mountSpeechToText, STT_TOOL_NAME } from './stt-mount.js'
 import { OmnimuxError } from './errors.js'
 import { JSON_TOOL_OUTPUT } from '../tools/schema.js'
 
-const AUDIO_BYTES = Buffer.from('fake-mp3-frames')
+const AUDIO_BYTES = Buffer.from([0x49, 0x44, 0x33, 0x04, 0x00, 0x00])
+const WAV_BYTES = Buffer.from([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x41, 0x56, 0x45])
+const M4A_BYTES = Buffer.from([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x41, 0x20])
 
 async function withTempAudio(fn) {
   const dir = mkdtempSync(join(tmpdir(), 'omnimux-stt-'))
@@ -55,7 +57,7 @@ function transcribeFixture(input) {
 }
 
 describe('loadAudioBytes', () => {
-  it('reads an absolute file path with mime from extension', async () => {
+  it('reads an absolute file path with MIME from bytes', async () => {
     await withTempAudio(async (file) => {
       const audio = await loadAudioBytes(file)
       assert.deepEqual(audio.bytes, AUDIO_BYTES)
@@ -65,8 +67,8 @@ describe('loadAudioBytes', () => {
   })
 
   it('decodes a data:audio URI', async () => {
-    const audio = await loadAudioBytes(`data:audio/wav;base64,${AUDIO_BYTES.toString('base64')}`)
-    assert.deepEqual(audio.bytes, AUDIO_BYTES)
+    const audio = await loadAudioBytes(`data:audio/wav;base64,${WAV_BYTES.toString('base64')}`)
+    assert.deepEqual(audio.bytes, WAV_BYTES)
     assert.equal(audio.filename, 'audio.wav')
     assert.equal(audio.contentType, 'audio/wav')
   })
@@ -81,6 +83,13 @@ describe('loadAudioBytes', () => {
   it('rejects an empty audio value', async () => {
     await assert.rejects(
       () => loadAudioBytes('   '),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+  })
+
+  it('rejects a declared audio MIME that does not match its bytes', async () => {
+    await assert.rejects(
+      () => loadAudioBytes(`data:audio/wav;base64,${AUDIO_BYTES.toString('base64')}`),
       (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
     )
   })
@@ -102,6 +111,7 @@ describe('executeOmnimuxSpeechToText', () => {
           audio: file,
           operation: 'speech_to_text',
           bypassSubmitGuard: true,
+          assetMeta: { [file]: { mime: 'audio/mp3', sizeBytes: 1, durationSec: 1 } },
           env: { OMNIMUX_API_KEY: 'sk-stt' },
           fetcher: async () => {
             vendorCalls += 1
@@ -176,7 +186,7 @@ describe('executeOmnimuxSpeechToText', () => {
           ok: true,
           status: 200,
           headers: { get: () => 'audio/m4a' },
-          arrayBuffer: async () => AUDIO_BYTES,
+          arrayBuffer: async () => M4A_BYTES,
         }
       },
     })

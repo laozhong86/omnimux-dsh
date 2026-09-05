@@ -75,10 +75,6 @@ export function mountMedia(ctx, opts) {
       speed: { type: 'number', description: 'Speech speed multiplier. Optional.' },
       wait: { type: 'boolean', description: 'If false, return after submit. Default true.' },
       task_id: { type: 'string', description: 'Resume poll and download; skips submit and initial asset guard' },
-      metadata: {
-        type: 'object',
-        description: 'Optional asset/request metadata (sizeBytes, mime, durationSec per path). Used by SubmitGuard.',
-      },
     }),
     output: jsonOut,
     async execute(args, exec) {
@@ -95,8 +91,6 @@ export function mountMedia(ctx, opts) {
           audio: args.audio,
           wait: args.wait,
           taskId: args.task_id,
-          metadata: args.metadata,
-          assetMeta: args.metadata,
           signal: exec?.signal,
         })
       } catch (error) {

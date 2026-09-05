@@ -23,6 +23,21 @@ const DEFAULT_BYTE_CAP = 20 * 1024 * 1024
  * }} [opts]
  */
 export async function loadTextVideo(source, opts = {}) {
+  const probed = await probeTextVideo(source, opts)
+  return {
+    dataUri: `data:${probed.mediaType};base64,${Buffer.from(probed.data).toString('base64')}`,
+    mediaType: probed.mediaType,
+    bytes: probed.sizeBytes,
+    name: probed.name,
+  }
+}
+
+/**
+ * Read and identify a video without repacking it for chat transport.
+ * @param {string} source
+ * @param {{ maxVideoBytes?: number, signal?: AbortSignal }} [opts]
+ */
+export async function probeTextVideo(source, opts = {}) {
   const raw = String(source || '').trim()
   if (!raw) {
     throw new OmnimuxError('omnimux-invalid-request', 'video is empty')
@@ -51,11 +66,10 @@ export async function loadTextVideo(source, opts = {}) {
   if (loaded.data.byteLength > cap) {
     throw new OmnimuxError('omnimux-invalid-request', `video exceeds ${cap} bytes`)
   }
-  const dataUri = `data:${mediaType};base64,${Buffer.from(loaded.data).toString('base64')}`
   return {
-    dataUri,
+    data: loaded.data,
     mediaType,
-    bytes: loaded.data.byteLength,
+    sizeBytes: loaded.data.byteLength,
     name: loaded.name,
   }
 }
