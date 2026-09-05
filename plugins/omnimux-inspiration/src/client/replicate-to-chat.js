@@ -1,16 +1,16 @@
 /**
  * Inspiration → chat orchestrator (official new-session semantics).
  *
- * Pipeline: exclusive lock → hasAnySession → reuse blank or click .newSession
- * → addAttachment → dismissInspirationLibrary → prefillReplicationPrompt.
+ * Pipeline: exclusive lock → hasAnySession/isBlankSession → clickOfficialNewSession
+ * → addAttachment → revealConversationForReplicate → prefillReplicationPrompt.
  * Never starts a workflow project, never copies text, never clicks send.
+ * 灵感库 Tab 永不由此链路关闭（#552 P-1）；画布开关权归用户，本链路完全不触碰（P-3）。
+ * CTA 唯一副作用 = 展开中间会话栏（split）+ 预填 prompt（P-2）。
  */
 import { buildReplicationPrompt } from './replication.js'
 import { prefillReplicationPrompt } from './composer-inject.js'
 import { hasAnySession, isBlankSession } from './is-blank-session.js'
 import { clickOfficialNewSession } from './new-session-click.js'
-
-export const INSPIRATION_LIBRARY_TAB_ID = 'omnimux-inspiration:library'
 
 /** Module-level inflight lock. A second call returns `{ error: 'busy' }` and does not queue. */
 let replicateInflight = null
@@ -101,14 +101,13 @@ export function buildInspirationPayload(row) {
 }
 
 /**
- * @param {{ window?: Window, tabId?: string, onDismissModal?: () => void }} [io]
+ * @param {{ setConversationCollapsed?: (next: boolean) => void, setFocus?: (mode: string) => void } | undefined} wb
  */
 /**
- * Library tabs default to `gui` (conversationCollapsed). Closing the library
- * while another occupant (创作画布) remains does NOT close the panel, and
- * `closePanel` would hide the canvas — but the user expects the canvas to
- * stay and the conversation to appear side by side (#531).
- * Enter-conversation: uncollapse + split AFTER closeTab, never closePanel.
+ * Enter-conversation: uncollapse + split only. The library tab stays open
+ * (#552 P-1) and the canvas panel is left untouched (#552 P-3).
+ * `setFocus('split')` already uncollapses the conversation internally;
+ * the explicit call is a redundant-but-harmless double safety.
  */
 function revealConversationColumn(wb) {
   if (!wb) return
@@ -126,28 +125,28 @@ function workbenchFrom(win) {
   return undefined
 }
 
-export function dismissInspirationLibrary(io = {}) {
+/**
+ * Reveal the conversation column for a replicate CTA. The library tab is
+ * never closed and the canvas panel is never touched (#552 P-1/P-3); the
+ * only side effects are uncollapse + split focus, plus closing the card
+ * detail modal via `onDismissModal` (unrelated to tabs).
+ * @param {{ window?: Window, onDismissModal?: () => void }} [io]
+ */
+export function revealConversationForReplicate(io = {}) {
   if (typeof io.onDismissModal === 'function') {
     try { io.onDismissModal() } catch { /* ignore */ }
   }
   const win = io.window
     ?? (typeof window !== 'undefined' ? window : undefined)
-  const tabId = io.tabId || INSPIRATION_LIBRARY_TAB_ID
   const wb = workbenchFrom(win)
-  const hideLibraryThenReveal = () => {
-    if (wb && typeof wb.closeTab === 'function') {
-      try { wb.closeTab(tabId) } catch { /* ignore */ }
-    } else if (wb && typeof wb.createSidebarStore === 'function') {
-      try { wb.createSidebarStore({ tabId })?.close?.() } catch { /* ignore */ }
-    }
-    revealConversationColumn(wb)
-  }
-  hideLibraryThenReveal()
-  // Library open() defaults to gui and can re-collapse the middle pane on the
-  // same tick as closeTab; replay after React/workbench subscribers settle.
+  revealConversationColumn(wb)
+  // Reveal-only replay after React/workbench subscribers settle. Idempotent
+  // geometry assertion: re-asserts uncollapse + split without mutating the
+  // tab set or persisting any new state (#552).
   if (typeof setTimeout === 'function') {
-    setTimeout(hideLibraryThenReveal, 0)
-    setTimeout(hideLibraryThenReveal, 50)
+    const replay = () => revealConversationColumn(wb)
+    setTimeout(replay, 0)
+    setTimeout(replay, 50)
   }
 }
 
@@ -211,9 +210,9 @@ export async function oneClickReplicate(row, io = {}) {
       ? io.addAttachment
       : defaultAddAttachment(win, doc)
     const prefill = typeof io.prefillPrompt === 'function' ? io.prefillPrompt : prefillReplicationPrompt
-    const dismiss = typeof io.dismissLibrary === 'function'
-      ? io.dismissLibrary
-      : () => dismissInspirationLibrary({
+    const reveal = typeof io.revealConversation === 'function'
+      ? io.revealConversation
+      : () => revealConversationForReplicate({
         window: win,
         onDismissModal: io.onDismissModal,
       })
@@ -279,15 +278,16 @@ export async function oneClickReplicate(row, io = {}) {
       return { ok: false, error: 'attachFailed' }
     }
 
+    // Reveal before prefill for every attach outcome (quota included), so a
+    // gui-hidden composer never swallows the prefill (#528). Reveal errors
+    // still allow prefill to proceed; prefill errors leave the column up.
+    try { reveal() } catch { /* ignore */ }
+
     const prompt = buildReplicationPrompt(row)
     if (quotaExceeded) {
       try { await prefill(prompt) } catch { /* ignore */ }
       return { ok: false, error: 'attachFull' }
     }
-
-    // Reveal before prefill so a gui-hidden composer does not fail first
-    // and skip dismiss. Prefill errors still leave the conversation column up.
-    try { dismiss() } catch { /* ignore */ }
 
     let prefilled
     try {
