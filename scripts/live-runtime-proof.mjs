@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { join, relative, resolve, sep } from 'node:path'
-import { transform } from 'esbuild'
 
 const SCRIPT_METHOD = 'Debugger.scriptParsed'
 const MAX_SCRIPT_EVENTS = 1000
+const { transform } = createRequire(import.meta.url)('esbuild')
 
 const sha256 = (value) => createHash('sha256').update(value).digest('hex')
 

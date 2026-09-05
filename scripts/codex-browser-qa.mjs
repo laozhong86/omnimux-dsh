@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs'
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runStageProbe } from './live-stage-probe.mjs'
@@ -72,7 +72,7 @@ export async function runPreparedQa(requestPath, { tab, now = () => Date.now() }
     assert.ok(existsSync(requestPath), 'Prepared QA request does not exist')
     request = JSON.parse(readFileSync(requestPath, 'utf8'))
     const root = request.root || moduleRoot
-    assert.equal(resolve(root), resolve(moduleRoot), 'Prepared QA request belongs to another worktree')
+    assert.equal(realpathSync(root), realpathSync(moduleRoot), 'Prepared QA request belongs to another worktree')
     assert.ok(isInside(join(root, '.workbuddy', 'evidence', 'live-qa'), resolve(request.evidenceDir)), 'Prepared QA evidence directory is outside this worktree')
     assert.equal(resolve(request.reportPath), resolve(root, 'docs/evidence/live-qa-report.json'), 'Prepared QA report path is outside this worktree')
     safeRequest = true
