@@ -28,6 +28,7 @@ function setupFixture({
   selectedBuild = 'process.exit(0)',
   l2Task = false,
   homeSegment = '',
+  targetRelative = 'target',
 } = {}) {
   const fixture = mkdtempSync(join(tmpdir(), 'omnimux-plugin-scope-'))
   temporaryRoots.push(fixture)
@@ -36,7 +37,7 @@ function setupFixture({
   const plugin = join(fixture, 'plugins', 'omnimux-assets')
   const kit = join(fixture, 'kit')
   const home = homeSegment ? join(fixture, homeSegment) : fixture
-  const targetHome = l2Task ? join(home, '.dsh-dev', 'tasks', 'client-action') : join(home, 'target')
+  const targetHome = l2Task ? join(home, '.dsh-dev', 'tasks', 'client-action') : join(home, targetRelative)
   const profile = join(targetHome, 'profiles', l2Task ? 'omnimux-dev-client-action' : 'omnimux')
   const events = join(fixture, 'events.log')
   const bin = join(fixture, 'bin')
@@ -150,6 +151,14 @@ describe('sync-to-app named-plugin scope', () => {
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
     assert.match(events(fixture), /stable:.*omnimux-assets/)
     assert.equal(existsSync(join(fixture.targetHome, 'profiles', 'omnimux')), false)
+  })
+
+  it('preserves a ~/ target with case and spaces through the wrapper', () => {
+    const fixture = setupFixture({ targetRelative: 'Case Sensitive/Task' })
+    const result = run(fixture, ['--skip-build', '--target=~/Case Sensitive/Task', 'omnimux-assets'])
+
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
+    assert.match(events(fixture), /stable:.*omnimux-assets/)
   })
 
   it('keeps selected-plugin build and materialization failures nonzero', () => {

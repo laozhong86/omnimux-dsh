@@ -6,7 +6,7 @@
 normalize_omnimux_sync_target() {
   local target="$1"
   case "$target" in
-    /*|~|~/*)
+    /*|"~"|"~/"*)
       printf '%s\n' "$target"
       ;;
     *)

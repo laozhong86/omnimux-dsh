@@ -205,7 +205,7 @@ else
       dsh|dsh-desktop)
         add_target_home "$HOME/.dsh"
         ;;
-      /*|~|~/*)
+      /*|"~"|"~/"*)
         expanded_path=$(expand_omnimux_sync_target_home "$item") || exit 1
         add_target_home "$expanded_path"
         ;;
