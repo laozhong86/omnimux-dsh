@@ -90,35 +90,38 @@ export const AttachmentCard: React.FC<AttachmentCardProps> = ({
         title={`${attachment.title} (${attachment.relativePath})`}
         onClick={onOpen ? handleOpen : undefined}
       >
-        {attachment.previewUrl && !imageError ? (
-          <img
-            src={attachment.previewUrl}
-            alt={attachment.title}
-            className="omx-att-card__media-thumb"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div className="omx-att-card__media-placeholder">
-            <MediaPlaceholderIcon />
-          </div>
-        )}
-
-        {isVideo && (
-          <>
-            <div className="omx-att-card__play-icon">
-              <PlayTriangleIcon />
+        {/* 圆角裁剪收敛到内部 frame，外凸的移除按钮不再被 overflow 裁掉 */}
+        <div className="omx-att-card__media-frame">
+          {attachment.previewUrl && !imageError ? (
+            <img
+              src={attachment.previewUrl}
+              alt={attachment.title}
+              className="omx-att-card__media-thumb"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="omx-att-card__media-placeholder">
+              <MediaPlaceholderIcon />
             </div>
-            {attachment.duration && (
-              <span className="omx-att-card__duration-badge">
-                {attachment.duration}
-              </span>
-            )}
-          </>
-        )}
+          )}
+
+          {isVideo && (
+            <>
+              <div className="omx-att-card__play-icon">
+                <PlayTriangleIcon />
+              </div>
+              {attachment.duration && (
+                <span className="omx-att-card__duration-badge">
+                  {attachment.duration}
+                </span>
+              )}
+            </>
+          )}
+        </div>
 
         <button
           type="button"
-          className="omx-att-card__remove-btn"
+          className="omx-att-card__remove-btn omx-att-card__remove-btn--media"
           onClick={handleRemoveClick}
           aria-label={`移除 ${attachment.title}`}
         >

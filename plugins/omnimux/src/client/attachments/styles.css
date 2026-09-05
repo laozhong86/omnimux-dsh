@@ -21,7 +21,8 @@
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
-  padding: 2px 0 2px 0;
+  /* 顶部让位 6px：卡片移除按钮 -4px 外凸落在 padding 区内，不被纵向滚动裁剪 */
+  padding: 6px 0 2px 0;
 }
 
 .omx-attachment-tray::-webkit-scrollbar {
@@ -48,6 +49,8 @@
 .omx-att-card:hover {
   background: var(--dsw-alias-bg-layer-2);
   border-color: var(--dsw-alias-border-l3);
+  /* 悬停提层：外凸的移除按钮压过相邻后序卡片 */
+  z-index: 2;
 }
 
 .omx-att-card--highlight {
@@ -68,10 +71,18 @@
   width: 44px;
   height: 44px;
   border-radius: 8px;
-  overflow: hidden;
   padding: 0;
   justify-content: center;
   cursor: zoom-in;
+}
+
+/* 圆角裁剪只作用于内部 frame；卡片自身不 overflow:hidden，
+   外凸的移除按钮才能完整浮在缩略图之上 */
+.omx-att-card__media-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 8px;
 }
 
 .omx-att-card__media-thumb {
@@ -177,15 +188,15 @@
 }
 
 /* ==========================================================================
-   卡片悬浮移除按钮 — 15×15 / top -4 / right -4
+   卡片悬浮移除按钮 — 16×16 / top -4 / right -4（悬停显现，最上层）
    ========================================================================== */
 
 .omx-att-card__remove-btn {
   position: absolute;
   top: -4px;
   right: -4px;
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   font-size: 9px;
   background: var(--dsw-alias-bg-elevated);
@@ -199,7 +210,16 @@
   opacity: 0;
   transform: scale(0.8);
   transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-  z-index: 5;
+  z-index: 6;
+}
+
+/* 媒体缩略图上的变体：深色 scrim 保证任意图片上可读 */
+.omx-att-card__remove-btn--media {
+  background: var(--dsw-alias-bg-mask-1);
+  border-color: transparent;
+  color: var(--dsw-alias-label-primary-inverted);
+  backdrop-filter: blur(2px);
+  box-shadow: var(--dsw-shadow-lv1);
 }
 
 .omx-att-card:hover .omx-att-card__remove-btn,
