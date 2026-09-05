@@ -38,13 +38,13 @@ test('MCC 契约门禁: 视频模型能力声明文件完备性（contract loade
   assert.ok(!seedanceOps.includes('first_last_frame'), 'Seedance 严禁包含首尾帧模式');
 });
 
-test('H2: 处置表 44 行 + listed 集合与处置一致', () => {
+test('H2: 处置表 45 行 + listed 集合与处置一致', () => {
   resetContractCache();
   const index = loadAll(DEFAULT_SPECS_DIR, { useCache: false });
   assert.equal(index.schemaVersion, '1.1');
 
   const doc = loadDispositions();
-  assert.equal(doc.dispositions.length, 44);
+  assert.equal(doc.dispositions.length, 45);
   const byId = new Map(doc.dispositions.map((r) => [r.id, r]));
   const forbidden = forbiddenListedIds(doc);
 
@@ -89,10 +89,15 @@ test('H2: 处置表 44 行 + listed 集合与处置一致', () => {
     'kimi-k3#chat',
     'kimi-k3#vision_chat',
     'seedance-2-0-fast#text_to_video',
+    'seedance-2-0-fast#video_multi_ref',
+    'seedance-2-0-mini#text_to_video',
+    'seedance-2-0#text_to_video',
+    'seedance-2-5#text_to_video',
+    'seedance-2-5#video_multi_ref',
   ]);
   // 媒体同模型其它 op 仍不得 listed
   assert.ok(!index.listedOperations.includes('seedance-2-0-fast#first_frame'));
-  assert.ok(!index.listedOperations.includes('seedance-2-0-fast#video_multi_ref'));
+  assert.ok(index.listedOperations.includes('seedance-2-0-fast#video_multi_ref'));
   assert.ok(!index.listedOperations.includes('gpt-image-2#multi_reference'));
   // audio 无 listed（suno/tts draft；whisper unavailable）
   assert.ok(!index.listedOperations.some((key) => key.startsWith('suno#')));
@@ -106,7 +111,7 @@ test('H2: 处置表 44 行 + listed 集合与处置一致', () => {
   assert.equal(report.schemaVersion, '1.1');
   assert.equal(Object.prototype.hasOwnProperty.call(report, 'version'), false);
   assert.ok(report.listedOperations.length > 0);
-  assert.equal(report.dispositions.total, 44);
+  assert.equal(report.dispositions.total, 45);
   assert.deepEqual(report.dispositions.unresolvedDispositions, []);
 });
 
@@ -120,13 +125,17 @@ test('H2: 冲突限制取更严（policy_conservative）写入契约', () => {
   assert.equal(grokRefSlot.max, 1, 'Grok video 参考图验证前取更严 max:1');
   assert.equal(grokRefSlot.limitSource?.kind, 'policy_conservative');
 
-  for (const id of ['seedance-2-0-fast', 'seedance-2-5']) {
-    const model = index.get(id);
-    const multiRef = model.operations.find((op) => op.id === 'video_multi_ref');
-    const slot = multiRef.inputs.find((s) => s.type === 'image');
-    assert.equal(slot.max, 1, `${id} multi-ref 验证前单图/首帧`);
-    assert.equal(slot.limitSource?.kind, 'policy_conservative');
-  }
+  const fast = index.get('seedance-2-0-fast');
+  const fastMulti = fast.operations.find((op) => op.id === 'video_multi_ref');
+  const fastSlot = fastMulti.inputs.find((s) => s.type === 'image');
+  assert.equal(fastSlot.max, 2, 'seedance-2-0-fast multi-ref C1 live 2 图');
+  assert.equal(fastSlot.limitSource?.kind, 'measured');
+
+  const s25 = index.get('seedance-2-5');
+  const s25Multi = s25.operations.find((op) => op.id === 'video_multi_ref');
+  const s25Slot = s25Multi.inputs.find((s) => s.type === 'image');
+  assert.equal(s25Slot.max, 1, 'seedance-2-5 multi-ref 仅 1 图 live，保持 max1');
+  assert.equal(s25Slot.limitSource?.kind, 'measured');
 });
 
 test('real specs load via DEFAULT_SPECS_DIR with canonical schemaVersion', () => {

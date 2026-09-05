@@ -10,6 +10,7 @@
   },
   "files": [
     "src",
+    "docs",
     "lib/client.js",
     "scripts/build-client.mjs",
     "cordis.patch.yml",
@@ -52,6 +53,7 @@
   "devDependencies": {
     "@deepseek-ai/dsh-client-ui-primitives": "0.1.0-rc.8",
     "esbuild": "^0.25.0",
+    "jsdom": "^30.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

@@ -5,11 +5,23 @@
       "id": "seedance-2-0-fast",
       "disposition": "canonical",
       "batch": "A",
-      "reason": "命中 runtime；t2v 主路径；仓内 dated live 证据覆盖 text_to_video",
+      "reason": "命中 runtime；t2v+video_multi_ref dated live 证据",
       "evidence": [
-        "docs/evidence/2026-08-14-omnimux-video.md"
+        "docs/evidence/2026-08-14-omnimux-video.md",
+        "docs/evidence/2026-09-05-model-seedance-2-0-fast-video_multi_ref.md",
+        "docs/evidence/2026-09-05-model-seedance-2-0-fast-first_frame.md"
       ],
-      "notes": "Batch A 仅 text_to_video 上架；first_frame/video_multi_ref 另证保持 draft；multi-ref 保守单图"
+      "notes": "Batch A t2v listed；2026-09-05 C1 video_multi_ref listed（max2 live）；first_frame draft（mapper image≠images[]）"
+    },
+    {
+      "id": "seedance-2-0-mini",
+      "disposition": "canonical",
+      "reason": "2026-09-05 existence 命中 runtime；C1 dated live 覆盖 text_to_video；新 runtime Y-new/D-new",
+      "evidence": [
+        "docs/evidence/2026-09-05-model-seedance-2-0-mini-text_to_video.md",
+        "docs/evidence/2026-09-05-model-seedance-2-0-mini-first_frame.md"
+      ],
+      "notes": "C1 新 ID：text_to_video listed；first_frame draft（mapper image 字段缺口）"
     },
     {
       "id": "gpt-image-2",
@@ -154,13 +166,23 @@
     {
       "id": "seedance-2-5",
       "disposition": "canonical",
-      "reason": "命中 runtime；H1 已有契约；无独立 dated live 证据保持 draft",
-      "notes": "video_multi_ref 保守 max1（policy_conservative），不承诺 max4"
+      "reason": "命中 runtime；C1 dated live 覆盖 t2v 与 multi_ref",
+      "notes": "2026-09-05 C1：text_to_video + video_multi_ref listed（max1）；first_frame draft（mapper gap）",
+      "evidence": [
+        "docs/evidence/2026-09-05-model-seedance-2-5-text_to_video.md",
+        "docs/evidence/2026-09-05-model-seedance-2-5-video_multi_ref.md",
+        "docs/evidence/2026-09-05-model-seedance-2-5-first_frame.md"
+      ]
     },
     {
       "id": "seedance-2-0",
       "disposition": "canonical",
-      "reason": "命中 runtime；H1 已有契约；无独立 dated live 证据保持 draft"
+      "reason": "命中 runtime；C1 dated live 覆盖 text_to_video",
+      "evidence": [
+        "docs/evidence/2026-09-05-model-seedance-2-0-text_to_video.md",
+        "docs/evidence/2026-09-05-model-seedance-2-0-first_frame.md"
+      ],
+      "notes": "2026-09-05 C1：text_to_video listed；first_frame draft（images[] live；mapper image；本型号 singular-image 未单测，家族 fast/mini/2.5 观察 400）"
     },
     {
       "id": "kling-v3",

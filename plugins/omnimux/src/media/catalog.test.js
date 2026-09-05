@@ -8,7 +8,7 @@ import { AUDIO_MODEL_SPECS, IMAGE_MODEL_SPECS, VIDEO_MODEL_SPECS, findMediaModel
 describe('hub media catalog facade (contract-derived)', () => {
   it('projects the full contracted directory per kind', () => {
     assert.equal(IMAGE_MODEL_SPECS.length, 12) // 14 runtime − 2 hyphen aliases folded
-    assert.equal(VIDEO_MODEL_SPECS.length, 16)
+    assert.equal(VIDEO_MODEL_SPECS.length, 17)
     assert.equal(AUDIO_MODEL_SPECS.length, 3)
   })
 
@@ -75,11 +75,15 @@ describe('hub media catalog facade (contract-derived)', () => {
     assert.equal(multiRef.max, 1)
   })
 
-  it('Seedance multi-ref reconciled to the stricter max 1', () => {
+  it('Seedance multi-ref: fast max 2 measured; 2.5 max 1 measured', () => {
     const fast = VIDEO_MODEL_SPECS.find((m) => m.id === 'seedance-2-0-fast')
     const slot = fast && findOpSlots(fast)
     assert.ok(slot)
-    assert.equal(slot.max, 1)
+    assert.equal(slot.max, 2)
+    const s25 = VIDEO_MODEL_SPECS.find((m) => m.id === 'seedance-2-5')
+    const slot25 = s25 && findOpSlots(s25)
+    assert.ok(slot25)
+    assert.equal(slot25.max, 1)
   })
 
   it('Wan 3.0 video spec and alias lookup', () => {

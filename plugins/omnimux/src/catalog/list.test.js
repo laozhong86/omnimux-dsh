@@ -41,8 +41,8 @@ describe('buildModelCatalog (H2 contract projection)', () => {
     assert.equal(typeof catalog.contractFingerprint, 'string')
     assert.equal(catalog.contractFingerprint.length, 16)
 
-    // authoritative flat list: all 42 contracted models with disposition governance
-    assert.equal(catalog.models.length, 42)
+    // authoritative flat list: all 43 contracted models with disposition governance
+    assert.equal(catalog.models.length, 43)
     assert.equal(catalog.models.find((m) => m.id === 'whisper-1')?.disposition, 'draft')
     assert.equal(catalog.models.find((m) => m.id === 'kling-avatar')?.disposition, 'draft')
     assert.equal(catalog.models.find((m) => m.id === 'omni_flash')?.disposition, 'quarantine')
@@ -50,7 +50,7 @@ describe('buildModelCatalog (H2 contract projection)', () => {
 
     // four lists derive ONLY from listed ops' output.type
     assert.deepEqual(catalog.image.map((row) => row.id).sort(), ['gpt-image-2', 'grok-imagine-image'])
-    assert.deepEqual(catalog.video.map((row) => row.id), ['seedance-2-0-fast'])
+    assert.deepEqual(catalog.video.map((row) => row.id), ['seedance-2-0', 'seedance-2-0-fast', 'seedance-2-0-mini', 'seedance-2-5'])
     assert.deepEqual(catalog.audio, [])
     // #530 PR-A: 11 text models with verified+live chat/vision_chat enter text bucket
     assert.deepEqual(catalog.text.map((row) => row.id), [
@@ -197,7 +197,7 @@ describe('buildModelCatalog (H2 contract projection)', () => {
 describe('media facade tables (derived from contracts)', () => {
   it('facade SPECS are the full contracted directory (listed or not)', () => {
     assert.equal(IMAGE_MODEL_SPECS.length, 12)
-    assert.equal(VIDEO_MODEL_SPECS.length, 16)
+    assert.equal(VIDEO_MODEL_SPECS.length, 17)
     assert.equal(AUDIO_MODEL_SPECS.length, 3)
   })
 })
