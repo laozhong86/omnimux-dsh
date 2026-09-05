@@ -49,5 +49,5 @@ tags: ["model-evidence", "backfill-530", "video", "backfill-530-c1"]
 - limitSource 摘要：existence=live_probe；minimal=live_probe；duration 边界=live_probe 或 policy_conservative；size=policy_conservative
 
 ## 5. conclusion（结论）
-- **不接**：images[] live 成功，但 hub mapper 的 first_frame→image 被上游拒绝；本批不改 mapper → 不 listed。 证据仍落盘供复核；YAML 保持 draft/stub。
+- **不接（documented non-admission）**：`images[]` live 出片；本模型 singular `image` 实测 HTTP 400。Hub first_frame→`image` 与上游 `images[]` 不一致 → **不 listed**（非 unsupported，是 mapper gap）。
 - logs：`docs/evidence/2026-09-05-model-seedance-2-0-mini-first_frame.json`

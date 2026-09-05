@@ -41,10 +41,34 @@
     "mode": "live",
     "bytes": 1301353,
     "elapsedMs": 118415,
-    "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/f4a33fb65d464002ac09cfbbecda0ebb.mp4",
+    "url": "https://files.evolink.ai/.../media.mp4",
     "ok": true,
     "error": null,
-    "pollsKept": 8
+    "pollsKept": 8,
+    "artifact": {
+      "url": "https://files.evolink.ai/.../media.mp4",
+      "bytes": 1301353,
+      "urlSuffix": ".mp4",
+      "mimeInferred": "video/mp4",
+      "containerMagic": {
+        "container": "iso_bmff",
+        "ftypBrand": "isom",
+        "headHex": "000000206674797069736f6d"
+      },
+      "localBytesMatched": true,
+      "downloadHttpStatus": null,
+      "notes": "Historical generation artifact: MIME inferred from .mp4 URL + ISO BMFF ftyp magic on retained local bytes. The post-generation readback below is a separate observation, not a generation-time response header.",
+      "readback": {
+        "observedAt": "2026-09-05T04:56:16.817Z",
+        "httpStatus": 200,
+        "contentType": "video/mp4",
+        "bytes": 1301353,
+        "sha256": "ae5809d0a5be5d0480d84399426782881c56e4a93f3f1ad76faff41329280100",
+        "bytesMatchHistoricalArtifact": true,
+        "sha256MatchHistoricalArtifact": true,
+        "notes": "Readback covers the minimal 1-reference artifact only; it does not supply HTTP/MIME evidence for the separate 2-reference success."
+      }
+    }
   },
   "extras": [
     {
@@ -86,10 +110,34 @@
       "mode": "live",
       "bytes": 1365038,
       "elapsedMs": 131659,
-      "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/d616c88f6d0947b996bb22eb331e34d9.mp4",
+      "url": "https://files.evolink.ai/.../media-extra.mp4",
       "ok": true,
       "error": null,
-      "pollsKept": 8
+      "pollsKept": 8,
+      "artifact": {
+        "url": "https://files.evolink.ai/.../media-extra.mp4",
+        "bytes": 1365038,
+        "urlSuffix": ".mp4",
+        "mimeInferred": "video/mp4",
+        "containerMagic": {
+          "container": "iso_bmff",
+          "ftypBrand": "isom",
+          "headHex": "000000206674797069736f6d"
+        },
+        "localBytesMatched": true,
+        "notes": "Historical generation artifact: MIME inferred from .mp4 URL + ISO BMFF ftyp magic on retained local bytes. The post-generation readback below is a separate observation, not a generation-time response header.",
+        "readback": {
+          "observedAt": "2026-09-05T05:05:53.473Z",
+          "sourceField": "recovery.url",
+          "httpStatus": 200,
+          "contentType": "video/mp4",
+          "bytes": 1365038,
+          "sha256": "f8f7fb85221a2572bf124d648a0358f0bf3171cf3cf7797a5c286fca003b6f5b",
+          "bytesMatchHistoricalArtifact": true,
+          "sha256MatchHistoricalArtifact": true,
+          "notes": "Post-generation GET used recovery.url without re-submitting the task."
+        }
+      }
     }
   ],
   "boundary": {
@@ -116,14 +164,36 @@
   "listedCandidate": true,
   "blockReason": null,
   "logs": {
-    "primary": "/tmp/omx-seedance-c1-probe/logs/seedance-2-0-fast__video_multi_ref_1.json",
-    "extras": [
-      "/tmp/omx-seedance-c1-probe/logs/seedance-2-0-fast__video_multi_ref_2.json"
-    ]
+    "primary": "docs/evidence/2026-09-05-model-seedance-2-0-fast-video_multi_ref.json",
+    "companionMarkdown": "docs/evidence/2026-09-05-model-seedance-2-0-fast-video_multi_ref.md",
+    "note": "Raw probe scratch under /tmp was not committed; auditable fields are inlined below."
   },
   "notes": [
     "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",
     "no API key values stored",
     "media files not committed; bytes recorded only"
-  ]
+  ],
+  "wireFieldProbes": [
+    {
+      "label": "reference_images",
+      "model": "seedance-2-0-fast",
+      "httpStatus": 200,
+      "requestFields": [
+        "aspect_ratio",
+        "duration",
+        "model",
+        "reference_images",
+        "resolution"
+      ],
+      "imageFieldShape": "reference_images:[{url}]",
+      "bodyError": null,
+      "submitTaskId": "task_Uba7y7oN71BEfPgmNJzNOJy1nOW3SeGB",
+      "terminal": {
+        "status": "success",
+        "bytes": 5392284,
+        "ok": true
+      }
+    }
+  ],
+  "wireFieldProbeNote": "Hub mapper emits reference_images:[{url}] for generic image refs — matches live wire used in minimal."
 }

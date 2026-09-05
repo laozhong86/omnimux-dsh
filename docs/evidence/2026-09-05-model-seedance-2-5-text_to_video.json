@@ -34,10 +34,33 @@
     "mode": "live",
     "bytes": 4296075,
     "elapsedMs": 195465,
-    "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/c0dcbb8d35a241f4b97854353900fa3b.mp4",
+    "url": "https://files.evolink.ai/.../media.mp4",
     "ok": true,
     "error": null,
-    "pollsKept": 8
+    "pollsKept": 8,
+    "artifact": {
+      "url": "https://files.evolink.ai/.../media.mp4",
+      "bytes": 4296075,
+      "urlSuffix": ".mp4",
+      "mimeInferred": "video/mp4",
+      "containerMagic": {
+        "container": "iso_bmff",
+        "ftypBrand": "isom",
+        "headHex": "000000206674797069736f6d"
+      },
+      "localBytesMatched": true,
+      "downloadHttpStatus": null,
+      "notes": "Historical generation artifact: MIME inferred from .mp4 URL + ISO BMFF ftyp magic on retained local bytes. The post-generation readback below is a separate observation, not a generation-time response header.",
+      "readback": {
+        "observedAt": "2026-09-05T04:56:18.350Z",
+        "httpStatus": 200,
+        "contentType": "video/mp4",
+        "bytes": 4296075,
+        "sha256": "bfa323c9fc357894ec4c61978012b990c54157adceaf43cea04a113ac6936e1e",
+        "bytesMatchHistoricalArtifact": true,
+        "sha256MatchHistoricalArtifact": true
+      }
+    }
   },
   "extras": [],
   "boundary": {
@@ -64,8 +87,9 @@
   "listedCandidate": true,
   "blockReason": null,
   "logs": {
-    "primary": "/tmp/omx-seedance-c1-probe/logs/seedance-2-5__text_to_video.json",
-    "extras": []
+    "primary": "docs/evidence/2026-09-05-model-seedance-2-5-text_to_video.json",
+    "companionMarkdown": "docs/evidence/2026-09-05-model-seedance-2-5-text_to_video.md",
+    "note": "Raw probe scratch under /tmp was not committed; auditable fields are inlined below."
   },
   "notes": [
     "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",

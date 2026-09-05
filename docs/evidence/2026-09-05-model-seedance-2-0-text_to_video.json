@@ -37,7 +37,47 @@
     "url": "https://files.evolink.ai/.../2315c678e8c846689b1525be9fd084e9.mp4",
     "ok": true,
     "error": null,
-    "pollsKept": 8
+    "pollsKept": 8,
+    "artifact": {
+      "url": "https://files.evolink.ai/.../2315c678e8c846689b1525be9fd084e9.mp4",
+      "bytes": 2154146,
+      "urlSuffix": ".mp4",
+      "mimeInferred": "video/mp4",
+      "containerMagic": {
+        "container": "iso_bmff",
+        "ftypBrand": "isom",
+        "headHex": "000000206674797069736f6d"
+      },
+      "localBytesMatched": true,
+      "downloadHttpStatus": null,
+      "notes": "Historical generation artifact: MIME inferred from .mp4 URL + ISO BMFF ftyp magic on retained local bytes. The post-generation readback below is a separate observation, not a generation-time response header.",
+      "readbacks": [
+        {
+          "observedAt": "2026-09-05T04:56:15.896Z",
+          "source": "historical_media_url",
+          "httpStatus": 404,
+          "contentType": "text/html",
+          "bytes": 28088,
+          "sha256": "21696e378ea2503957d2b2d7e6afed4d145fabb5479bcc4e51fb5ad23986826a",
+          "category": "http_error",
+          "bytesMatchHistoricalArtifact": false,
+          "sha256MatchHistoricalArtifact": false,
+          "notes": "Old media URL was unavailable at this readback; it does not revise the historical terminal success."
+        },
+        {
+          "observedAt": "2026-09-05T04:58:50.041Z",
+          "source": "task_get_then_current_media_get",
+          "taskHttpStatus": 200,
+          "httpStatus": 200,
+          "contentType": "video/mp4",
+          "bytes": 2154146,
+          "sha256": "f6e2c35540f1299a0f5a0a593fd066833fea1ee081d83204f7f7be4fd6a9743f",
+          "bytesMatchHistoricalArtifact": true,
+          "sha256MatchHistoricalArtifact": true,
+          "notes": "Original task was read without re-submit, then its current media URL was read. This is a post-generation readback, not a generation-time response header."
+        }
+      ]
+    }
   },
   "extras": [],
   "boundary": {
@@ -67,8 +107,9 @@
   "listedCandidate": true,
   "blockReason": null,
   "logs": {
-    "primary": "/tmp/omx-seedance-c1-probe/logs/seedance-2-0__text_to_video.json",
-    "extras": []
+    "primary": "docs/evidence/2026-09-05-model-seedance-2-0-text_to_video.json",
+    "companionMarkdown": "docs/evidence/2026-09-05-model-seedance-2-0-text_to_video.md",
+    "note": "Raw probe scratch under /tmp was not committed; auditable fields are inlined below."
   },
   "notes": [
     "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",

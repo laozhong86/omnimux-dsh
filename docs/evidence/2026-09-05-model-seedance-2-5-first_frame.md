@@ -49,5 +49,5 @@ tags: ["model-evidence", "backfill-530", "video", "backfill-530-c1"]
 - limitSource 摘要：existence=live_probe；minimal=live_probe；duration 边界=live_probe 或 policy_conservative；size=policy_conservative
 
 ## 5. conclusion（结论）
-- **不接**：images[] live 成功；singular image 400；mapper gap → 不 listed。 证据仍落盘供复核；YAML 保持 draft/stub。
+- **不接（documented non-admission）**：`images[]` live 出片；本模型 singular `image` 实测 HTTP 400（seedance-2.5-text-to-video does not support image）。Mapper gap → **不 listed**。
 - logs：`docs/evidence/2026-09-05-model-seedance-2-5-first_frame.json`

@@ -49,5 +49,6 @@ tags: ["model-evidence", "backfill-530", "video", "backfill-530-c1"]
 - limitSource 摘要：existence=live_probe；minimal=live_probe；duration 边界=live_probe 或 policy_conservative；size=policy_conservative
 
 ## 5. conclusion（结论）
-- **可上架**：四要素齐全（existence 在列 + minimal live task 终态 success + bytes>0 + boundary/mime 记录）→ YAML 翻 research verified（docUrl=本文件, verifiedAt=2026-09-05）+ execution live。
+- **当前 YAML 上架状态保持不变**：最小 1-reference 的生成后 readback（2026-09-05T04:56:16.817Z）为 `HTTP 200 / video/mp4`，bytes 与 SHA-256 均匹配历史本地件；2-reference 成功点也在 2026-09-05T05:05:53.473Z 通过 `recovery.url` 只读 GET 得到 `HTTP 200 / video/mp4`，1,365,038 bytes 与 SHA-256 均匹配其历史本地件。两项 readback 都是生成后的独立观测，不倒填为生成当时的响应头；`max=2` 的既有 live_probe/policy 说明保持原样。
+- artifact（历史生成）：两项 terminal success 后的本地保留件均为 nonzero bytes，URL `.mp4` 与 ISO BMFF `ftypisom` 支持 `mimeInferred=video/mp4`；各自当前 HTTP/MIME readback 见 JSON。
 - logs：`docs/evidence/2026-09-05-model-seedance-2-0-fast-video_multi_ref.json`

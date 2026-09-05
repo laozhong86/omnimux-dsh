@@ -42,10 +42,24 @@
     "mode": "live",
     "bytes": 1406407,
     "elapsedMs": 289793,
-    "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/76da72a636924ee4b54a9e1337f3c3b6.mp4",
+    "url": "https://files.evolink.ai/.../media.mp4",
     "ok": true,
     "error": null,
-    "pollsKept": 8
+    "pollsKept": 8,
+    "artifact": {
+      "url": "https://files.evolink.ai/.../media.mp4",
+      "bytes": 1406407,
+      "urlSuffix": ".mp4",
+      "mimeInferred": "video/mp4",
+      "containerMagic": {
+        "container": "iso_bmff",
+        "ftypBrand": "isom",
+        "headHex": "000000206674797069736f6d"
+      },
+      "localBytesMatched": true,
+      "downloadHttpStatus": null,
+      "notes": "No live re-fetch in QA; MIME inferred from .mp4 URL + ISO BMFF ftyp magic on retained local artifact bytes. Download HTTP status was not captured by probe runner; terminal success + nonzero bytes + container magic used."
+    }
   },
   "extras": [],
   "boundary": {
@@ -70,17 +84,101 @@
       "elapsedMs": 1445
     }
   },
-  "mime": "PNG live via images[]; JPEG/WebP family-proven on fast; singular image rejected",
+  "mime": "This op: PNG live via images[]. Family comparison: fast PNG/JPEG have live terminals; WebP only received submit HTTP 200 and has no terminal evidence. Singular image HTTP 400 was probed only on seedance-2-0-fast / seedance-2-0-mini / seedance-2-5, not seedance-2-0.",
   "wireField": "images[]",
   "listedCandidate": false,
-  "blockReason": "hub mapper emits singular `image` for first_frame; Seedance upstream rejects image with \"seedance text-to-video does not support image\"; live wire succeeds only with `images[]` (documented). Mapper/executor 本批禁止修改 → 不 listed。",
+  "blockReason": "Hub mapper emits singular `image` for first_frame, while this op succeeded only with `images[]`. Singular-image HTTP 400 was live-probed on seedance-2-0-fast / seedance-2-0-mini / seedance-2-5; seedance-2-0 itself was not issued a dedicated singular-image probe. Mapper/executor 本批禁止修改 → 不 listed。",
   "logs": {
-    "primary": "/tmp/omx-seedance-c1-probe/logs/seedance-2-0__first_frame_png.json",
-    "extras": []
+    "primary": "docs/evidence/2026-09-05-model-seedance-2-0-first_frame.json",
+    "companionMarkdown": "docs/evidence/2026-09-05-model-seedance-2-0-first_frame.md",
+    "note": "Raw probe scratch under /tmp was not committed; auditable fields are inlined below."
   },
   "notes": [
     "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",
     "no API key values stored",
     "media files not committed; bytes recorded only"
-  ]
+  ],
+  "wireFieldProbes": [
+    {
+      "label": "2-5_image",
+      "model": "seedance-2-5",
+      "httpStatus": 400,
+      "requestFields": [
+        "aspect_ratio",
+        "duration",
+        "image",
+        "model",
+        "resolution"
+      ],
+      "imageFieldShape": "image:string",
+      "bodyError": {
+        "code": "invalid_parameter",
+        "message": "seedance-2.5-text-to-video does not support image, video or audio input",
+        "type": "invalid_request_error"
+      },
+      "submitTaskId": null,
+      "terminal": null
+    },
+    {
+      "label": "image_jpeg",
+      "model": "seedance-2-0-fast",
+      "httpStatus": 400,
+      "requestFields": [
+        "aspect_ratio",
+        "duration",
+        "image",
+        "model",
+        "resolution"
+      ],
+      "imageFieldShape": "image:string",
+      "bodyError": {
+        "code": "invalid_parameter",
+        "message": "seedance text-to-video does not support image, video or audio input",
+        "type": "invalid_request_error"
+      },
+      "submitTaskId": null,
+      "terminal": null
+    },
+    {
+      "label": "image_string",
+      "model": "seedance-2-0-fast",
+      "httpStatus": 400,
+      "requestFields": [
+        "aspect_ratio",
+        "duration",
+        "image",
+        "model",
+        "resolution"
+      ],
+      "imageFieldShape": "image:string",
+      "bodyError": {
+        "code": "invalid_parameter",
+        "message": "seedance text-to-video does not support image, video or audio input",
+        "type": "invalid_request_error"
+      },
+      "submitTaskId": null,
+      "terminal": null
+    },
+    {
+      "label": "mini_image",
+      "model": "seedance-2-0-mini",
+      "httpStatus": 400,
+      "requestFields": [
+        "aspect_ratio",
+        "duration",
+        "image",
+        "model",
+        "resolution"
+      ],
+      "imageFieldShape": "image:string",
+      "bodyError": {
+        "code": "invalid_parameter",
+        "message": "seedance text-to-video does not support image, video or audio input",
+        "type": "invalid_request_error"
+      },
+      "submitTaskId": null,
+      "terminal": null
+    }
+  ],
+  "wireFieldProbeNote": "Singular `image` 400 was live-probed on seedance-2-0-fast / seedance-2-0-mini / seedance-2-5 (same Seedance t2v gateway family). seedance-2-0 itself was not re-issued a dedicated singular-image 400 call; non-admission rests on hub mapper emitting `image` + family 400 + this op succeeding only via `images[]`."
 }

@@ -49,5 +49,5 @@ tags: ["model-evidence", "backfill-530", "video", "backfill-530-c1"]
 - limitSource 摘要：existence=live_probe；minimal=live_probe；duration 边界=live_probe 或 policy_conservative；size=policy_conservative
 
 ## 5. conclusion（结论）
-- **不接**：同家族：singular `image` 400 拒绝；`images[]` PNG/JPEG live 出片、WebP submit 200。product mapper 仍发 image → 不 listed。 证据仍落盘供复核；YAML 保持 draft/stub。
-- logs：`docs/evidence/2026-09-05-model-seedance-2-0-fast-first_frame.json`
+- **不接（documented non-admission）**：本模型 singular `image`（string）live 400；`images` 数组（string 与 `{url}` 两种 JSON 形态）可 terminal success；PNG/JPEG `images[]` live 出片，WebP 仅 submit200（未等终态）。Hub mapper 仍发 `image` → **不 listed**。
+- logs：`docs/evidence/2026-09-05-model-seedance-2-0-fast-first_frame.json`（wireFieldProbes 含 image vs images[] vs images[{url}]；无 /tmp 路径）

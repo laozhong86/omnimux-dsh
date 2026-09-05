@@ -1,7 +1,7 @@
 # 视频模型能力契约 (Video Models Capability Contract)
 # H2 + #530 C1：Seedance 系补证。seedance-2-0-fast t2v（Batch A）+ multi_ref（C1）；
 # seedance-2-0 / mini / 2-5 的 text_to_video（及 2-5 multi_ref）C1 listed。
-# first_frame 全家族：images[] 可出片但 hub mapper 发 singular image 被上游拒 → 保持 draft。
+# first_frame 全家族：images[] 可出片；hub mapper 发 singular image。singular-image 400 实测于 fast/mini/2.5，2.0 未单测；全部保持 draft。
 # multi_ref：fast max2 live_probe；2-5 max1；禁 first_last_frame。kling-avatar 仍 draft。
 # omni_flash / kling-o1 / kling-o3 / kling-v3-motion-control quarantine（无证据，仅占位契约，不上架）。
 schemaVersion: "1.1"
@@ -369,7 +369,7 @@ models:
         research:
           status: "draft"
           docUrl: "docs/evidence/2026-09-05-model-seedance-2-0-first_frame.md"
-          notes: "2026-09-05：images[] live；singular image 400；mapper gap → 不 listed"
+          notes: "2026-09-05：images[] live；hub mapper 发 singular image；singular image 400 仅实测于 fast/mini/2.5，seedance-2-0 未单测；mapper gap → 不 listed"
         execution:
           status: "stub"
           profileId: "videoGenerate"
