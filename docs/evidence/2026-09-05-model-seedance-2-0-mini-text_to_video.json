@@ -1,0 +1,78 @@
+{
+  "id": "seedance-2-0-mini",
+  "operation": "text_to_video",
+  "date": "2026-09-05",
+  "author": "kou-douma",
+  "batch": "C1",
+  "existence": {
+    "httpStatus": 200,
+    "present": true,
+    "totalModels": 127
+  },
+  "minimal": {
+    "requestShape": {
+      "model": "seedance-2-0-mini",
+      "op": "text_to_video",
+      "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+      "duration": 4,
+      "resolution": "720P",
+      "aspect_ratio": "16:9",
+      "image": null,
+      "reference_images": null
+    },
+    "submitHttp": 200,
+    "submitBody": {
+      "created": 1788579375,
+      "id": "task_hOXqeQURbX4A0ICKjRjtiq0LD3lhtxJZ",
+      "model": "seedance-2-0-mini",
+      "object": "video",
+      "status": "queued",
+      "task_id": "task_hOXqeQURbX4A0ICKjRjtiq0LD3lhtxJZ"
+    },
+    "taskId": "task_hOXqeQURbX4A0ICKjRjtiq0LD3lhtxJZ",
+    "terminalStatus": "success",
+    "mode": "live",
+    "bytes": 1560922,
+    "elapsedMs": 123876,
+    "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/2973c88263be40e897ac54e6e70121d3.mp4",
+    "ok": true,
+    "error": null,
+    "pollsKept": 8
+  },
+  "extras": [],
+  "boundary": {
+    "durationProbe": {
+      "httpStatus": 200,
+      "request": {
+        "model": "seedance-2-0-mini",
+        "prompt": "boundary reject probe — invalid duration",
+        "duration": 0,
+        "aspect_ratio": "16:9",
+        "resolution": "720P"
+      },
+      "body": {
+        "created": 1788581528,
+        "id": "task_aUcweKnF8ZntRjiXkwRkPnpvChUCppM6",
+        "model": "seedance-2-0-mini",
+        "object": "video",
+        "status": "queued",
+        "task_id": "task_aUcweKnF8ZntRjiXkwRkPnpvChUCppM6"
+      },
+      "taskId": "task_aUcweKnF8ZntRjiXkwRkPnpvChUCppM6",
+      "elapsedMs": 708
+    }
+  },
+  "mime": "N/A",
+  "wireField": null,
+  "listedCandidate": true,
+  "blockReason": null,
+  "logs": {
+    "primary": "/tmp/omx-seedance-c1-probe/logs/seedance-2-0-mini__text_to_video.json",
+    "extras": []
+  },
+  "notes": [
+    "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",
+    "no API key values stored",
+    "media files not committed; bytes recorded only"
+  ]
+}

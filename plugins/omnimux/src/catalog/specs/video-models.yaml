@@ -1,9 +1,8 @@
 # 视频模型能力契约 (Video Models Capability Contract)
-# H2: 15 个 runtime video ID 全处置。
-# Batch A：seedance-2-0-fast 仅 text_to_video 有仓内 dated live 证据
-# （docs/evidence/2026-08-14-omnimux-video.md）→ verified+live；first_frame/multi_ref draft。
-# 冲突限制取更严：seedance 系与 grok video 的 video_multi_ref 一律 max:1 + policy_conservative
-# （不承诺 max4/max8，待 dated 复测放宽）。kling-avatar draft（#538 已修 audioTrack 透传，可探测；待探测翻 live）。
+# H2 + #530 C1：Seedance 系补证。seedance-2-0-fast t2v（Batch A）+ multi_ref（C1）；
+# seedance-2-0 / mini / 2-5 的 text_to_video（及 2-5 multi_ref）C1 listed。
+# first_frame 全家族：images[] 可出片但 hub mapper 发 singular image 被上游拒 → 保持 draft。
+# multi_ref：fast max2 live_probe；2-5 max1；禁 first_last_frame。kling-avatar 仍 draft。
 # omni_flash / kling-o1 / kling-o3 / kling-v3-motion-control quarantine（无证据，仅占位契约，不上架）。
 schemaVersion: "1.1"
 managementGroup: "video"
@@ -60,6 +59,8 @@ models:
               url: "https://www.volcengine.com/docs/82379/1344485"
         research:
           status: "draft"
+          docUrl: "docs/evidence/2026-09-05-model-seedance-2-0-fast-first_frame.md"
+          notes: "2026-09-05：images[] live PNG/JPEG；singular image 400；hub mapper 发 image → 不 listed（待执行层字段对齐）"
         execution:
           status: "stub"
           profileId: "videoGenerate"
@@ -80,16 +81,18 @@ models:
             role: "reference"
             source: "upstream_edge"
             min: 0
-            max: 1
+            max: 2
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "policy_conservative"
-              note: "runtime 对账取更严：验证完成前单图/首帧，不承诺 max4；待 dated 复测放宽"
+              kind: "measured"
+              note: "2026-09-05 C1：reference_images 1 图与 2 图均 live 出片；未测 3+ 拒绝点，不承诺 max4"
         research:
-          status: "draft"
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-seedance-2-0-fast-video_multi_ref.md"
+          verifiedAt: "2026-09-05"
         execution:
-          status: "stub"
+          status: "live"
           profileId: "videoGenerate"
           seam: "videoGenerate"
     parameters:
@@ -115,7 +118,90 @@ models:
       status: "verified"
       docUrl: "docs/evidence/2026-08-14-omnimux-video.md"
       verifiedAt: "2026-08-14"
-      notes: "Batch A 仅 text_to_video 上架；first_frame/video_multi_ref 另证"
+      notes: "Batch A t2v + 2026-09-05 C1 video_multi_ref 上架；first_frame 因 mapper image 字段与上游 images[] 不一致保持 draft"
+    execution:
+      status: "live"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"
+
+
+  - id: "seedance-2-0-mini"
+    label: "Seedance 2.0 Mini"
+    family: "bytedance"
+    badge: "成本向"
+    subtitle: "720P · ⏱ 4s+"
+    operations:
+      - id: "text_to_video"
+        label: "文生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+        research:
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-seedance-2-0-mini-text_to_video.md"
+          verifiedAt: "2026-09-05"
+        execution:
+          status: "live"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
+      - id: "first_frame"
+        label: "首帧生视频"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "start_frame"
+            type: "image"
+            role: "first_frame"
+            source: "upstream_edge"
+            min: 1
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "policy_conservative"
+              note: "wire 支持 images[]；hub mapper 仍发 image 被拒；size 未撞拒绝点"
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-09-05-model-seedance-2-0-mini-first_frame.md"
+          notes: "2026-09-05：images[] live；mapper image 字段缺口 → 不 listed"
+        execution:
+          status: "stub"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 4, label: "4s" }
+          - { value: 5, label: "5s" }
+        defaultValue: 4
+        unit: "s"
+      resolution:
+        options:
+          - { value: "720P", label: "720P" }
+        defaultValue: "720P"
+    research:
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-seedance-2-0-mini-text_to_video.md"
+      verifiedAt: "2026-09-05"
+      notes: "C1 新 runtime：仅 text_to_video listed；first_frame draft"
     execution:
       status: "live"
       profileId: "videoGenerate"
@@ -138,6 +224,14 @@ models:
             source: "node_field"
             min: 1
             max: 1
+        research:
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-seedance-2-5-text_to_video.md"
+          verifiedAt: "2026-09-05"
+        execution:
+          status: "live"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
       - id: "first_frame"
         label: "首帧生视频"
         output:
@@ -160,6 +254,14 @@ models:
             limitSource:
               kind: "official_docs"
               url: "https://www.volcengine.com/docs/82379/1344485"
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-09-05-model-seedance-2-5-first_frame.md"
+          notes: "2026-09-05：images[] live；singular image 400；mapper gap → 不 listed"
+        execution:
+          status: "stub"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
       - id: "video_multi_ref"
         label: "多图参考"
         output:
@@ -180,8 +282,16 @@ models:
             allowedMimes: ["image/png", "image/jpeg", "image/webp"]
             maxSizeMb: 20
             limitSource:
-              kind: "policy_conservative"
-              note: "runtime 对账取更严：验证完成前单图/首帧，不承诺 max4；待 dated 复测放宽"
+              kind: "measured"
+              note: "2026-09-05 C1：reference_images×1 live；2+ 未本模型复测，保持 max1"
+        research:
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-seedance-2-5-video_multi_ref.md"
+          verifiedAt: "2026-09-05"
+        execution:
+          status: "live"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
     parameters:
       aspectRatio:
         options:
@@ -201,10 +311,12 @@ models:
           - { value: "1080P", label: "1080P" }
         defaultValue: "720P"
     research:
-      status: "draft"
-      docUrl: "https://www.volcengine.com/docs/82379/1344485"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-seedance-2-5-text_to_video.md"
+      verifiedAt: "2026-09-05"
+      notes: "C1：text_to_video + video_multi_ref listed；first_frame draft（mapper image 字段缺口）"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "videoGenerate"
       seam: "videoGenerate"
 
@@ -224,6 +336,14 @@ models:
             source: "node_field"
             min: 1
             max: 1
+        research:
+          status: "verified"
+          docUrl: "docs/evidence/2026-09-05-model-seedance-2-0-text_to_video.md"
+          verifiedAt: "2026-09-05"
+        execution:
+          status: "live"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
       - id: "first_frame"
         label: "首帧生视频"
         output:
@@ -246,6 +366,14 @@ models:
             limitSource:
               kind: "official_docs"
               url: "https://www.volcengine.com/docs/82379/1344485"
+        research:
+          status: "draft"
+          docUrl: "docs/evidence/2026-09-05-model-seedance-2-0-first_frame.md"
+          notes: "2026-09-05：images[] live；singular image 400；mapper gap → 不 listed"
+        execution:
+          status: "stub"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
     parameters:
       aspectRatio:
         options:
@@ -263,10 +391,12 @@ models:
           - { value: "720P", label: "720P" }
         defaultValue: "720P"
     research:
-      status: "draft"
-      docUrl: "https://www.volcengine.com/docs/82379/1344485"
+      status: "verified"
+      docUrl: "docs/evidence/2026-09-05-model-seedance-2-0-text_to_video.md"
+      verifiedAt: "2026-09-05"
+      notes: "C1：仅 text_to_video listed；first_frame draft（mapper image 字段缺口）"
     execution:
-      status: "stub"
+      status: "live"
       profileId: "videoGenerate"
       seam: "videoGenerate"
 

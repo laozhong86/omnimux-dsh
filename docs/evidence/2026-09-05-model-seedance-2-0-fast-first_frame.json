@@ -1,0 +1,165 @@
+{
+  "id": "seedance-2-0-fast",
+  "operation": "first_frame",
+  "date": "2026-09-05",
+  "author": "kou-douma",
+  "batch": "C1",
+  "existence": {
+    "httpStatus": 200,
+    "present": true,
+    "totalModels": 127
+  },
+  "minimal": {
+    "requestShape": {
+      "model": "seedance-2-0-fast",
+      "op": "first_frame",
+      "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+      "duration": 4,
+      "resolution": "720P",
+      "aspect_ratio": "16:9",
+      "image": null,
+      "reference_images": null,
+      "images": [
+        {
+          "path": "ff-blue-64.png",
+          "mime": "image/png",
+          "bytes": 132,
+          "field": "images[]"
+        }
+      ]
+    },
+    "submitHttp": 200,
+    "submitBody": {
+      "created": 1788579996,
+      "id": "task_6Uh074um1eu8uWw7xYH0Yp27yGkRZ9sn",
+      "model": "seedance-2-0-fast",
+      "object": "video",
+      "status": "queued",
+      "task_id": "task_6Uh074um1eu8uWw7xYH0Yp27yGkRZ9sn"
+    },
+    "taskId": "task_6Uh074um1eu8uWw7xYH0Yp27yGkRZ9sn",
+    "terminalStatus": "success",
+    "mode": "live",
+    "bytes": 1640231,
+    "elapsedMs": 150001,
+    "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/13757180abeb4f19917909aba7dcca0a.mp4",
+    "ok": true,
+    "error": null,
+    "pollsKept": 8
+  },
+  "extras": [
+    {
+      "file": "seedance-2-0-fast__first_frame_jpeg.json",
+      "requestShape": {
+        "model": "seedance-2-0-fast",
+        "op": "first_frame",
+        "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+        "duration": 4,
+        "resolution": "720P",
+        "aspect_ratio": "16:9",
+        "image": null,
+        "reference_images": null,
+        "images": [
+          {
+            "path": "ff-blue-64.jpg",
+            "mime": "image/jpeg",
+            "bytes": 861,
+            "field": "images[]"
+          }
+        ]
+      },
+      "submitHttp": 200,
+      "submitBody": {
+        "created": 1788581279,
+        "id": "task_qPwZBKMU0XsYMz2gA5Cc43kdRTb9QeSb",
+        "model": "seedance-2-0-fast",
+        "object": "video",
+        "status": "queued",
+        "task_id": "task_qPwZBKMU0XsYMz2gA5Cc43kdRTb9QeSb"
+      },
+      "taskId": "task_qPwZBKMU0XsYMz2gA5Cc43kdRTb9QeSb",
+      "terminalStatus": "success",
+      "mode": "live",
+      "bytes": 1119401,
+      "elapsedMs": 110271,
+      "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/b902ab632d064c40bf976bb6e892ddef.mp4",
+      "ok": true,
+      "error": null,
+      "pollsKept": 8
+    },
+    {
+      "file": "seedance-2-0-fast__first_frame_webp_submit.json",
+      "requestShape": {
+        "model": "seedance-2-0-fast",
+        "op": "first_frame",
+        "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+        "duration": 4,
+        "resolution": "720P",
+        "aspect_ratio": "16:9",
+        "image": null,
+        "reference_images": null,
+        "images": [
+          {
+            "path": "ff-blue-64.webp",
+            "mime": "image/webp",
+            "bytes": 86,
+            "field": "images[]"
+          }
+        ]
+      },
+      "submitHttp": 200,
+      "submitBody": {
+        "created": 1788581581,
+        "id": "task_EiiXD7mFxOExesO1sbudWYPjKckN3oYf",
+        "model": "seedance-2-0-fast",
+        "object": "video",
+        "status": "queued",
+        "task_id": "task_EiiXD7mFxOExesO1sbudWYPjKckN3oYf"
+      },
+      "taskId": "task_EiiXD7mFxOExesO1sbudWYPjKckN3oYf",
+      "terminalStatus": null,
+      "mode": "submitted",
+      "bytes": null,
+      "elapsedMs": 735,
+      "url": null,
+      "ok": true,
+      "error": null,
+      "pollsKept": 0
+    }
+  ],
+  "boundary": {
+    "durationProbe": {
+      "httpStatus": 400,
+      "request": {
+        "model": "seedance-2-0-fast",
+        "prompt": "boundary reject probe — invalid duration",
+        "duration": 3,
+        "aspect_ratio": "16:9",
+        "resolution": "720P"
+      },
+      "body": {
+        "code": "fail_to_fetch_task",
+        "message": "{\"error\":{\"code\":\"invalid_parameter\",\"message\":\"duration too short: 3s (model seedance-2.0-fast-text-to-video requires minimum 4s)\",\"type\":\"invalid_request_error\"}}",
+        "data": null
+      },
+      "taskId": null,
+      "elapsedMs": 650
+    }
+  },
+  "mime": "PNG+JPEG full live; WebP submit 200 task id (wait=false, 完整 generation 不记成功)",
+  "wireField": "images[]",
+  "listedCandidate": false,
+  "blockReason": "同家族：singular `image` 400 拒绝；`images[]` PNG/JPEG live 出片、WebP submit 200。product mapper 仍发 image → 不 listed。",
+  "logs": {
+    "primary": "/tmp/omx-seedance-c1-probe/logs/seedance-2-0-fast__first_frame_png.json",
+    "extras": [
+      "/tmp/omx-seedance-c1-probe/logs/seedance-2-0-fast__first_frame_jpeg.json",
+      "/tmp/omx-seedance-c1-probe/logs/seedance-2-0-fast__first_frame_webp_submit.json"
+    ]
+  },
+  "notes": [
+    "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",
+    "no API key values stored",
+    "media files not committed; bytes recorded only"
+  ]
+}

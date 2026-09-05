@@ -1,0 +1,78 @@
+{
+  "id": "seedance-2-0",
+  "operation": "text_to_video",
+  "date": "2026-09-05",
+  "author": "kou-douma",
+  "batch": "C1",
+  "existence": {
+    "httpStatus": 200,
+    "present": true,
+    "totalModels": 127
+  },
+  "minimal": {
+    "requestShape": {
+      "model": "seedance-2-0",
+      "op": "text_to_video",
+      "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+      "duration": 5,
+      "resolution": "720P",
+      "aspect_ratio": "16:9",
+      "image": null,
+      "reference_images": null
+    },
+    "submitHttp": 200,
+    "submitBody": {
+      "created": 1788578797,
+      "id": "task_AWjxGtm2B1iNCmcD6N61TtlHLyz0hORf",
+      "model": "seedance-2-0",
+      "object": "video",
+      "status": "queued",
+      "task_id": "task_AWjxGtm2B1iNCmcD6N61TtlHLyz0hORf"
+    },
+    "taskId": "task_AWjxGtm2B1iNCmcD6N61TtlHLyz0hORf",
+    "terminalStatus": "success",
+    "mode": "live",
+    "bytes": 2154146,
+    "elapsedMs": 206022,
+    "url": "https://files.evolink.ai/.../2315c678e8c846689b1525be9fd084e9.mp4",
+    "ok": true,
+    "error": null,
+    "pollsKept": 8
+  },
+  "extras": [],
+  "boundary": {
+    "durationProbe": {
+      "httpStatus": 200,
+      "request": {
+        "model": "seedance-2-0",
+        "prompt": "boundary reject probe — invalid duration",
+        "duration": 0,
+        "aspect_ratio": "16:9",
+        "resolution": "720P"
+      },
+      "body": {
+        "created": 1788581523,
+        "id": "task_98Ac6OvpkRcl46GcivlxEA8vzobm4pGn",
+        "model": "seedance-2-0",
+        "object": "video",
+        "status": "queued",
+        "task_id": "task_98Ac6OvpkRcl46GcivlxEA8vzobm4pGn"
+      },
+      "taskId": "task_98Ac6OvpkRcl46GcivlxEA8vzobm4pGn",
+      "elapsedMs": 1445
+    }
+  },
+  "mime": "N/A text-only",
+  "wireField": null,
+  "listedCandidate": true,
+  "blockReason": null,
+  "logs": {
+    "primary": "/tmp/omx-seedance-c1-probe/logs/seedance-2-0__text_to_video.json",
+    "extras": []
+  },
+  "notes": [
+    "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",
+    "no API key values stored",
+    "media files not committed; bytes recorded only"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "id": "seedance-2-0",
+  "operation": "first_frame",
+  "date": "2026-09-05",
+  "author": "kou-douma",
+  "batch": "C1",
+  "existence": {
+    "httpStatus": 200,
+    "present": true,
+    "totalModels": 127
+  },
+  "minimal": {
+    "requestShape": {
+      "model": "seedance-2-0",
+      "op": "first_frame",
+      "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+      "duration": 5,
+      "resolution": "720P",
+      "aspect_ratio": "16:9",
+      "image": null,
+      "reference_images": null,
+      "images": [
+        {
+          "path": "ff-blue-64.png",
+          "mime": "image/png",
+          "bytes": 132,
+          "field": "images[]"
+        }
+      ]
+    },
+    "submitHttp": 200,
+    "submitBody": {
+      "created": 1788579705,
+      "id": "task_FSGXMHcrd9omJnfBtoeEVoI5BYNrjuuF",
+      "model": "seedance-2-0",
+      "object": "video",
+      "status": "queued",
+      "task_id": "task_FSGXMHcrd9omJnfBtoeEVoI5BYNrjuuF"
+    },
+    "taskId": "task_FSGXMHcrd9omJnfBtoeEVoI5BYNrjuuF",
+    "terminalStatus": "success",
+    "mode": "live",
+    "bytes": 1406407,
+    "elapsedMs": 289793,
+    "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/76da72a636924ee4b54a9e1337f3c3b6.mp4",
+    "ok": true,
+    "error": null,
+    "pollsKept": 8
+  },
+  "extras": [],
+  "boundary": {
+    "durationProbe": {
+      "httpStatus": 200,
+      "request": {
+        "model": "seedance-2-0",
+        "prompt": "boundary reject probe — invalid duration",
+        "duration": 0,
+        "aspect_ratio": "16:9",
+        "resolution": "720P"
+      },
+      "body": {
+        "created": 1788581523,
+        "id": "task_98Ac6OvpkRcl46GcivlxEA8vzobm4pGn",
+        "model": "seedance-2-0",
+        "object": "video",
+        "status": "queued",
+        "task_id": "task_98Ac6OvpkRcl46GcivlxEA8vzobm4pGn"
+      },
+      "taskId": "task_98Ac6OvpkRcl46GcivlxEA8vzobm4pGn",
+      "elapsedMs": 1445
+    }
+  },
+  "mime": "PNG live via images[]; JPEG/WebP family-proven on fast; singular image rejected",
+  "wireField": "images[]",
+  "listedCandidate": false,
+  "blockReason": "hub mapper emits singular `image` for first_frame; Seedance upstream rejects image with \"seedance text-to-video does not support image\"; live wire succeeds only with `images[]` (documented). Mapper/executor 本批禁止修改 → 不 listed。",
+  "logs": {
+    "primary": "/tmp/omx-seedance-c1-probe/logs/seedance-2-0__first_frame_png.json",
+    "extras": []
+  },
+  "notes": [
+    "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",
+    "no API key values stored",
+    "media files not committed; bytes recorded only"
+  ]
+}

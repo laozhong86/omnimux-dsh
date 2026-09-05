@@ -1,0 +1,82 @@
+{
+  "id": "seedance-2-5",
+  "operation": "video_multi_ref",
+  "date": "2026-09-05",
+  "author": "kou-douma",
+  "batch": "C1",
+  "existence": {
+    "httpStatus": 200,
+    "present": true,
+    "totalModels": 127
+  },
+  "minimal": {
+    "requestShape": {
+      "model": "seedance-2-5",
+      "op": "video_multi_ref",
+      "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+      "duration": 5,
+      "resolution": "720P",
+      "aspect_ratio": "16:9",
+      "image": null,
+      "reference_images": [
+        {
+          "path": "ff-blue-64.png",
+          "mime": "image/png",
+          "bytes": 132,
+          "field": "reference_images[].url"
+        }
+      ]
+    },
+    "submitHttp": 200,
+    "submitBody": {
+      "created": 1788580940,
+      "id": "task_KzVsJ2EpaQAUIeHlkfhsvePX4ysDA3Wz",
+      "model": "seedance-2-5",
+      "object": "video",
+      "status": "queued",
+      "task_id": "task_KzVsJ2EpaQAUIeHlkfhsvePX4ysDA3Wz"
+    },
+    "taskId": "task_KzVsJ2EpaQAUIeHlkfhsvePX4ysDA3Wz",
+    "terminalStatus": "success",
+    "mode": "live",
+    "bytes": 5032675,
+    "elapsedMs": 300696,
+    "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/5c0d4762fc4d4f1c92142e3afab32f41.mp4",
+    "ok": true,
+    "error": null,
+    "pollsKept": 8
+  },
+  "extras": [],
+  "boundary": {
+    "durationProbe": {
+      "httpStatus": 400,
+      "request": {
+        "model": "seedance-2-5",
+        "prompt": "boundary reject probe — invalid duration",
+        "duration": 0,
+        "aspect_ratio": "16:9",
+        "resolution": "720P"
+      },
+      "body": {
+        "code": "fail_to_fetch_task",
+        "message": "{\"error\":{\"code\":\"invalid_parameter\",\"message\":\"duration must be an integer between 4 and 30 seconds, or -1 for automatic duration\",\"type\":\"invalid_request_error\"}}",
+        "data": null
+      },
+      "taskId": null,
+      "elapsedMs": 1072
+    }
+  },
+  "mime": "PNG reference_images×1 live; 2-ref 未本模型复测，max 保持 1 policy_conservative",
+  "wireField": "reference_images",
+  "listedCandidate": true,
+  "blockReason": null,
+  "logs": {
+    "primary": "/tmp/omx-seedance-c1-probe/logs/seedance-2-5__video_multi_ref_1.json",
+    "extras": []
+  },
+  "notes": [
+    "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",
+    "no API key values stored",
+    "media files not committed; bytes recorded only"
+  ]
+}

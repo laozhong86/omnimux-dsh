@@ -1,0 +1,129 @@
+{
+  "id": "seedance-2-0-fast",
+  "operation": "video_multi_ref",
+  "date": "2026-09-05",
+  "author": "kou-douma",
+  "batch": "C1",
+  "existence": {
+    "httpStatus": 200,
+    "present": true,
+    "totalModels": 127
+  },
+  "minimal": {
+    "requestShape": {
+      "model": "seedance-2-0-fast",
+      "op": "video_multi_ref",
+      "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+      "duration": 4,
+      "resolution": "720P",
+      "aspect_ratio": "16:9",
+      "image": null,
+      "reference_images": [
+        {
+          "path": "ff-blue-64.png",
+          "mime": "image/png",
+          "bytes": 132,
+          "field": "reference_images[].url"
+        }
+      ]
+    },
+    "submitHttp": 200,
+    "submitBody": {
+      "created": 1788580701,
+      "id": "task_1QnYqvEYsIkf5gMfi6HCkve9LXgc5KKV",
+      "model": "seedance-2-0-fast",
+      "object": "video",
+      "status": "queued",
+      "task_id": "task_1QnYqvEYsIkf5gMfi6HCkve9LXgc5KKV"
+    },
+    "taskId": "task_1QnYqvEYsIkf5gMfi6HCkve9LXgc5KKV",
+    "terminalStatus": "success",
+    "mode": "live",
+    "bytes": 1301353,
+    "elapsedMs": 118415,
+    "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/f4a33fb65d464002ac09cfbbecda0ebb.mp4",
+    "ok": true,
+    "error": null,
+    "pollsKept": 8
+  },
+  "extras": [
+    {
+      "file": "seedance-2-0-fast__video_multi_ref_2.json",
+      "requestShape": {
+        "model": "seedance-2-0-fast",
+        "op": "video_multi_ref",
+        "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+        "duration": 4,
+        "resolution": "720P",
+        "aspect_ratio": "16:9",
+        "image": null,
+        "reference_images": [
+          {
+            "path": "ff-blue-64.png",
+            "mime": "image/png",
+            "bytes": 132,
+            "field": "reference_images[].url"
+          },
+          {
+            "path": "ref-red-64.png",
+            "mime": "image/png",
+            "bytes": 132,
+            "field": "reference_images[].url"
+          }
+        ]
+      },
+      "submitHttp": 200,
+      "submitBody": {
+        "created": 1788581390,
+        "id": "task_8rn2smqkG5cOx4BNOkwVzizSC9aA8YIj",
+        "model": "seedance-2-0-fast",
+        "object": "video",
+        "status": "queued",
+        "task_id": "task_8rn2smqkG5cOx4BNOkwVzizSC9aA8YIj"
+      },
+      "taskId": "task_8rn2smqkG5cOx4BNOkwVzizSC9aA8YIj",
+      "terminalStatus": "success",
+      "mode": "live",
+      "bytes": 1365038,
+      "elapsedMs": 131659,
+      "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/d616c88f6d0947b996bb22eb331e34d9.mp4",
+      "ok": true,
+      "error": null,
+      "pollsKept": 8
+    }
+  ],
+  "boundary": {
+    "durationProbe": {
+      "httpStatus": 400,
+      "request": {
+        "model": "seedance-2-0-fast",
+        "prompt": "boundary reject probe — invalid duration",
+        "duration": 3,
+        "aspect_ratio": "16:9",
+        "resolution": "720P"
+      },
+      "body": {
+        "code": "fail_to_fetch_task",
+        "message": "{\"error\":{\"code\":\"invalid_parameter\",\"message\":\"duration too short: 3s (model seedance-2.0-fast-text-to-video requires minimum 4s)\",\"type\":\"invalid_request_error\"}}",
+        "data": null
+      },
+      "taskId": null,
+      "elapsedMs": 650
+    }
+  },
+  "mime": "PNG reference_images 1/2 live; mapper field=reference_images 相容",
+  "wireField": "reference_images",
+  "listedCandidate": true,
+  "blockReason": null,
+  "logs": {
+    "primary": "/tmp/omx-seedance-c1-probe/logs/seedance-2-0-fast__video_multi_ref_1.json",
+    "extras": [
+      "/tmp/omx-seedance-c1-probe/logs/seedance-2-0-fast__video_multi_ref_2.json"
+    ]
+  },
+  "notes": [
+    "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",
+    "no API key values stored",
+    "media files not committed; bytes recorded only"
+  ]
+}

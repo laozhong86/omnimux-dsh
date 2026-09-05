@@ -1,0 +1,83 @@
+{
+  "id": "seedance-2-5",
+  "operation": "first_frame",
+  "date": "2026-09-05",
+  "author": "kou-douma",
+  "batch": "C1",
+  "existence": {
+    "httpStatus": 200,
+    "present": true,
+    "totalModels": 127
+  },
+  "minimal": {
+    "requestShape": {
+      "model": "seedance-2-5",
+      "op": "first_frame",
+      "prompt": "A calm blue sky over quiet water, minimal motion, cinematic soft light",
+      "duration": 5,
+      "resolution": "720P",
+      "aspect_ratio": "16:9",
+      "image": null,
+      "reference_images": null,
+      "images": [
+        {
+          "path": "ff-blue-64.png",
+          "mime": "image/png",
+          "bytes": 132,
+          "field": "images[]"
+        }
+      ]
+    },
+    "submitHttp": 200,
+    "submitBody": {
+      "created": 1788580507,
+      "id": "task_4IOm8Out8wZE5qBz9Olf1KjEpZuLkwkx",
+      "model": "seedance-2-5",
+      "object": "video",
+      "status": "queued",
+      "task_id": "task_4IOm8Out8wZE5qBz9Olf1KjEpZuLkwkx"
+    },
+    "taskId": "task_4IOm8Out8wZE5qBz9Olf1KjEpZuLkwkx",
+    "terminalStatus": "success",
+    "mode": "live",
+    "bytes": 4141595,
+    "elapsedMs": 192692,
+    "url": "https://files.evolink.ai/004WHG72X3R4OM77IN/videos/2026/09/05/ffaf0afaec324ad98b1927558de88165.mp4",
+    "ok": true,
+    "error": null,
+    "pollsKept": 8
+  },
+  "extras": [],
+  "boundary": {
+    "durationProbe": {
+      "httpStatus": 400,
+      "request": {
+        "model": "seedance-2-5",
+        "prompt": "boundary reject probe — invalid duration",
+        "duration": 0,
+        "aspect_ratio": "16:9",
+        "resolution": "720P"
+      },
+      "body": {
+        "code": "fail_to_fetch_task",
+        "message": "{\"error\":{\"code\":\"invalid_parameter\",\"message\":\"duration must be an integer between 4 and 30 seconds, or -1 for automatic duration\",\"type\":\"invalid_request_error\"}}",
+        "data": null
+      },
+      "taskId": null,
+      "elapsedMs": 1072
+    }
+  },
+  "mime": "PNG via images[] live",
+  "wireField": "images[]",
+  "listedCandidate": false,
+  "blockReason": "images[] live 成功；singular image 400；mapper gap → 不 listed。",
+  "logs": {
+    "primary": "/tmp/omx-seedance-c1-probe/logs/seedance-2-5__first_frame_png.json",
+    "extras": []
+  },
+  "notes": [
+    "key injection: omnimux tokens exec 45; base https://api.omnimux.ai/v1",
+    "no API key values stored",
+    "media files not committed; bytes recorded only"
+  ]
+}
