@@ -139,22 +139,44 @@ export function mapOmnimuxInput(capability, request) {
 
   if (capability === 'video') {
     // 视频请求：画幅/分辨率透传；上游网关对 video 结构体启用了 DisallowUnknownFields，
-    // 只允许 image / reference_images 等已知字段，绝不能注入 images/references/audioTrack（#429）。
+    // 只允许 image / image_tail / reference_images 等已知字段，绝不能注入
+    // images/references/audioTrack（#429）。last_frame wire 证据见 #566：image_tail。
     if (request.aspectRatio) input.aspect_ratio = request.aspectRatio
     if (request.resolution) input.resolution = request.resolution
 
     const references = Array.isArray(request.references) ? request.references : []
-    const firstFrameRef = references.find((r) => r && r.role === 'first_frame' && r.pathOrUrl)
-    const otherImageRefs = references
-      .filter((r) => r && r.type === 'image' && r.role !== 'first_frame' && r.pathOrUrl)
-      .map((r) => r.pathOrUrl)
+    /** @type {Array<{ role?: string, type: string, pathOrUrl: string, [key: string]: unknown }>} */
+    const imageRefs = references.filter(
+      (r) => r && r.type === 'image' && typeof r.pathOrUrl === 'string' && r.pathOrUrl,
+    )
+    const firstFrameRef = imageRefs.find((r) => r.role === 'first_frame')
+    const lastFrameRef = imageRefs.find((r) => r.role === 'last_frame')
+    // Generic refs only — last_frame must never collapse into reference_images (#566).
+    const otherImageUrls = []
+    const seenOther = new Set()
+    for (const ref of imageRefs) {
+      if (ref.role === 'first_frame' || ref.role === 'last_frame') continue
+      if (seenOther.has(ref.pathOrUrl)) continue
+      seenOther.add(ref.pathOrUrl)
+      otherImageUrls.push(ref.pathOrUrl)
+    }
 
-    if (firstFrameRef) {
-      // 首帧模式：单张图，用 image 字段
-      input.image = firstFrameRef.pathOrUrl
-    } else if (otherImageRefs.length > 0) {
+    if (firstFrameRef || lastFrameRef) {
+      // Frame roles are independent: first → image, last → image_tail.
+      // Tail never overwrites first; tail never enters reference_images.
+      // Extra generic refs are dropped in frame mode (same exclusivity as #429 first_frame).
+      if (firstFrameRef) {
+        input.image = firstFrameRef.pathOrUrl
+      } else if (request.image) {
+        // only-last + legacy request.image still maps first slot without inventing a fake ref
+        input.image = request.image
+      }
+      if (lastFrameRef) {
+        input.image_tail = lastFrameRef.pathOrUrl
+      }
+    } else if (otherImageUrls.length > 0) {
       // 参考图模式：用 reference_images 数组（每项 { url }）
-      input.reference_images = otherImageRefs.map((url) => ({ url }))
+      input.reference_images = otherImageUrls.map((url) => ({ url }))
     } else if (request.image) {
       input.image = request.image
     }
