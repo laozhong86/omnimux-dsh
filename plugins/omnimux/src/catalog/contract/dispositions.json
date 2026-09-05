@@ -34,95 +34,122 @@
     {
       "id": "claude-opus-5",
       "disposition": "canonical",
-      "reason": "runtime CHAT_MODELS + cordis composer 在列；chat 有 dated 证据（/v1/messages 200）",
+      "reason": "runtime + cordis 在列；2026-09-05 dated live 证据覆盖 chat",
       "evidence": [
-        "docs/evidence/2026-08-18-omnimux-modality.md"
+        "docs/evidence/2026-08-18-omnimux-modality.md",
+        "docs/evidence/2026-09-05-model-claude-opus-5-chat.md"
       ],
-      "notes": "chat-completions group 403，保持 text-only；vision_chat 不声明"
+      "notes": "2026-09-05 探测：token45 /v1/chat/completions 200 live，翻 chat listed；vision_chat 仍不声明（text-only 契约）"
     },
     {
       "id": "claude-opus-4-6",
       "disposition": "canonical",
-      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "reason": "runtime + cordis 在列；2026-09-05 dated live 证据覆盖 chat+vision_chat",
       "evidence": [
-        "docs/evidence/2026-08-23-omnimux-brand-four.md"
-      ]
+        "docs/evidence/2026-08-23-omnimux-brand-four.md",
+        "docs/evidence/2026-09-05-model-claude-opus-4-6-chat.md",
+        "docs/evidence/2026-09-05-model-claude-opus-4-6-vision_chat.md"
+      ],
+      "notes": "2026-09-05 #530 PR-A：chat, vision_chat 四要素齐全 → research verified + execution live → listed"
     },
     {
       "id": "gpt-5.6-sol",
       "disposition": "canonical",
-      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "reason": "runtime + cordis 在列；2026-09-05 dated live 证据覆盖 chat+vision_chat",
       "evidence": [
-        "docs/evidence/2026-08-18-omnimux-modality.md"
-      ]
+        "docs/evidence/2026-08-18-omnimux-modality.md",
+        "docs/evidence/2026-09-05-model-gpt-5.6-sol-chat.md",
+        "docs/evidence/2026-09-05-model-gpt-5.6-sol-vision_chat.md"
+      ],
+      "notes": "2026-09-05 #530 PR-A：chat, vision_chat 四要素齐全 → research verified + execution live → listed"
     },
     {
       "id": "gpt-5.5",
       "disposition": "canonical",
-      "reason": "runtime + cordis 在列；chat dated 证据（brand-four）+ vision dated 证据（modality image-only probe）",
+      "reason": "runtime + cordis 在列；2026-09-05 dated live 证据覆盖 chat+vision_chat",
       "evidence": [
         "docs/evidence/2026-08-18-omnimux-modality.md",
-        "docs/evidence/2026-08-23-omnimux-brand-four.md"
-      ]
+        "docs/evidence/2026-08-23-omnimux-brand-four.md",
+        "docs/evidence/2026-09-05-model-gpt-5.5-chat.md",
+        "docs/evidence/2026-09-05-model-gpt-5.5-vision_chat.md"
+      ],
+      "notes": "2026-09-05 #530 PR-A：chat, vision_chat 四要素齐全 → research verified + execution live → listed"
     },
     {
       "id": "grok-4.6",
       "disposition": "canonical",
-      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "reason": "runtime + cordis 在列；2026-09-05 dated live 证据覆盖 chat+vision_chat",
       "evidence": [
-        "docs/evidence/2026-08-18-omnimux-modality.md"
-      ]
+        "docs/evidence/2026-08-18-omnimux-modality.md",
+        "docs/evidence/2026-09-05-model-grok-4.6-chat.md",
+        "docs/evidence/2026-09-05-model-grok-4.6-vision_chat.md"
+      ],
+      "notes": "2026-09-05 #530 PR-A：chat, vision_chat 四要素齐全 → research verified + execution live → listed"
     },
     {
       "id": "kimi-k3",
       "disposition": "canonical",
-      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "reason": "runtime + cordis 在列；2026-09-05 dated live 证据覆盖 chat+vision_chat",
       "evidence": [
-        "docs/evidence/2026-08-18-omnimux-modality.md"
-      ]
+        "docs/evidence/2026-08-18-omnimux-modality.md",
+        "docs/evidence/2026-09-05-model-kimi-k3-chat.md",
+        "docs/evidence/2026-09-05-model-kimi-k3-vision_chat.md"
+      ],
+      "notes": "2026-09-05 #530 PR-A：chat, vision_chat 四要素齐全 → research verified + execution live → listed"
     },
     {
       "id": "deepseek-v4-pro",
       "disposition": "canonical",
-      "reason": "runtime + cordis 在列；chat dated 证据；上游拒绝 image_url 保持 text-only",
+      "reason": "runtime + cordis 在列；2026-09-05 dated live 证据覆盖 chat",
       "evidence": [
         "docs/evidence/2026-08-18-omnimux-modality.md",
-        "docs/evidence/2026-08-20-omnimux-reasoning.md"
-      ]
+        "docs/evidence/2026-08-20-omnimux-reasoning.md",
+        "docs/evidence/2026-09-05-model-deepseek-v4-pro-chat.md"
+      ],
+      "notes": "2026-09-05 #530 PR-A：chat 四要素齐全 → research verified + execution live → listed"
     },
     {
       "id": "deepseek-v4-flash-vision-exp",
       "disposition": "canonical",
-      "reason": "runtime + cordis 在列；产品默认 agent 模型；chat dated 证据（reasoning 矩阵 HTTP 200）",
+      "reason": "runtime + cordis 在列；2026-09-05 dated live 证据覆盖 chat+vision_chat",
       "evidence": [
-        "docs/evidence/2026-08-20-omnimux-reasoning.md"
+        "docs/evidence/2026-08-20-omnimux-reasoning.md",
+        "docs/evidence/2026-09-05-model-deepseek-v4-flash-vision-exp-chat.md",
+        "docs/evidence/2026-09-05-model-deepseek-v4-flash-vision-exp-vision_chat.md"
       ],
-      "notes": "vision_chat 保持 draft：modality 矩阵实测 deepseek-v4-flash 拒绝 image_url，vision-exp 变体无独立 dated 图证据"
+      "notes": "2026-09-05 探测：chat+vision_chat 独立 live 四要素齐全，翻 listed；vision max10 policy_conservative（11 未拒）；禁止继承 deepseek-v4-flash 证据"
     },
     {
       "id": "gemini-3.7-flash",
       "disposition": "canonical",
-      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "reason": "runtime + cordis 在列；2026-09-05 dated live 证据覆盖 chat+vision_chat",
       "evidence": [
-        "docs/evidence/2026-08-18-omnimux-modality.md"
+        "docs/evidence/2026-08-18-omnimux-modality.md",
+        "docs/evidence/2026-09-05-model-gemini-3.7-flash-chat.md",
+        "docs/evidence/2026-09-05-model-gemini-3.7-flash-vision_chat.md"
       ],
-      "notes": "vision_chat 含 video 槽（2026-08-22 spike），slot 上限 policy_conservative"
+      "notes": "2026-09-05 探测：chat+vision_chat(image) live listed；video 槽未独立证实，policy_conservative"
     },
     {
       "id": "gemini-3.1-pro-preview",
       "disposition": "canonical",
-      "reason": "runtime + cordis 在列；chat/vision_chat dated 证据",
+      "reason": "runtime + cordis 在列；2026-09-05 dated live 证据覆盖 chat+vision_chat",
       "evidence": [
-        "docs/evidence/2026-08-23-omnimux-brand-four.md"
-      ]
+        "docs/evidence/2026-08-23-omnimux-brand-four.md",
+        "docs/evidence/2026-09-05-model-gemini-3.1-pro-preview-chat.md",
+        "docs/evidence/2026-09-05-model-gemini-3.1-pro-preview-vision_chat.md"
+      ],
+      "notes": "2026-09-05 #530 PR-A：chat, vision_chat 四要素齐全 → research verified + execution live → listed"
     },
     {
       "id": "glm-5.3",
       "disposition": "canonical",
-      "reason": "runtime + cordis 在列；chat dated 证据；上游仅允许 text 保持 text-only",
+      "reason": "runtime + cordis 在列；2026-09-05 dated live 证据覆盖 chat",
       "evidence": [
-        "docs/evidence/2026-08-18-omnimux-modality.md"
-      ]
+        "docs/evidence/2026-08-18-omnimux-modality.md",
+        "docs/evidence/2026-09-05-model-glm-5.3-chat.md"
+      ],
+      "notes": "2026-09-05 探测：models 在列且 chat live 200，翻 listed；text-only"
     },
     {
       "id": "seedance-2-5",
