@@ -1,0 +1,346 @@
+diff --git a/packages/client/ui-commands/src/client/contract.ts b/packages/client/ui-commands/src/client/contract.ts
+index 4f4374735b..e17bc67e52 100644
+--- a/packages/client/ui-commands/src/client/contract.ts
++++ b/packages/client/ui-commands/src/client/contract.ts
+@@ -31,12 +31,29 @@ export interface SelectOption {
+  * The shell component is owned by ui-commands; business never sees it. Both
+  * callbacks receive the ClientSessionContext captured at popup open.
+  */
+-export type CommandUiSpec = {
++export interface PopupSelectSpec {
+   readonly kind: 'popupSelect'
+   options(session: ClientSessionContext, signal: AbortSignal): Promise<readonly SelectOption[]>
+   onSelect(option: SelectOption, session: ClientSessionContext): void | Promise<void>
+ }
+
++/** Context handed to a session-bound client action. */
++export interface ClientActionContext {
++  readonly session: ClientSessionContext
++  readonly signal: AbortSignal
++  restoreComposerFocus(): void
++}
++
++/** A client-owned asynchronous action with no popupSelect or Host command run. */
++export interface ClientActionSpec {
++  readonly kind: 'clientAction'
++  readonly busy?: 'ignore'
++  run(context: ClientActionContext): void | Promise<void>
++}
++
++/** The client behavior contributed by a command row. */
++export type CommandUiSpec = PopupSelectSpec | ClientActionSpec
++
+ /**
+  * One client-owned command contribution: a slash-menu entry whose behavior
+  * lives entirely on the client (no host descriptor). Merged with the host
+diff --git a/packages/client/ui-commands/src/client/index.ts b/packages/client/ui-commands/src/client/index.ts
+index 26e8a32e09..18641695b4 100644
+--- a/packages/client/ui-commands/src/client/index.ts
++++ b/packages/client/ui-commands/src/client/index.ts
+@@ -27,7 +27,8 @@ export { filterOptions, PopupSelectController } from './popup.ts'
+ export type { PopupSelectDeps, PopupSpec, PopupState, TokenSegment } from './popup.ts'
+ export type { PopupSelectInjected, PopupSelectViewProps } from './PopupSelectView.tsx'
+ export type {
+-  CommandContribution, CommandDecoration, CommandUiContract, CommandUiSpec, SelectConfirmation, SelectOption,
++  ClientActionContext, ClientActionSpec, CommandContribution, CommandDecoration, CommandUiContract, CommandUiSpec,
++  PopupSelectSpec, SelectConfirmation, SelectOption,
+ } from './contract.ts'
+ export type { CommandKey } from './locales.ts'
+
+diff --git a/packages/client/ui-commands/src/client/service.ts b/packages/client/ui-commands/src/client/service.ts
+index 4a606fe607..b176812cbc 100644
+--- a/packages/client/ui-commands/src/client/service.ts
++++ b/packages/client/ui-commands/src/client/service.ts
+@@ -21,7 +21,9 @@ import type {
+   CandidateRequest, ClientSessionContext, CommandClaim, PickOutcome, InputTriggerCandidate, InputTriggerPick,
+   SubmitEnvelope, SubmitImageAttachment, SubmitOutcome,
+ } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
+-import type { CommandContribution, CommandDecoration, CommandUiContract } from './contract.ts'
++import type {
++  ClientActionContext, ClientActionSpec, CommandContribution, CommandDecoration, CommandUiContract, PopupSelectSpec,
++} from './contract.ts'
+ import type { CommandDescriptor } from './directory.ts'
+ import { CommandDirectory } from './directory.ts'
+ import { PopupSelectController } from './popup.ts'
+@@ -50,10 +52,18 @@ function submittedCommandName(line: string): string {
+ }
+
+ /** Live mutable state in one holder (service methods run behind the caller-ctx tracker). */
++interface ActiveClientAction {
++  readonly generation: number
++  readonly abort: AbortController
++  focusRestored: boolean
++}
++
+ interface LiveState {
+   readonly contributions: Map<string, CommandContribution>
+   readonly decorations: Map<string, CommandDecoration>
+   readonly popups: Map<SessionId, PopupSelectController<ClientSessionContext>>
++  readonly actions: Map<SessionId, ActiveClientAction>
++  readonly actionScopes: Map<SessionId, ClientContext>
+ }
+
+ /** One fuzzy match with its stable source position. */
+@@ -124,7 +134,9 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+   static inject = ['inputTriggers', 'sessions', 'remote', 'remote.commands']
+
+   private readonly directory: CommandDirectory
+-  private readonly live: LiveState = { contributions: new Map(), decorations: new Map(), popups: new Map() }
++  private readonly live: LiveState = {
++    contributions: new Map(), decorations: new Map(), popups: new Map(), actions: new Map(), actionScopes: new Map(),
++  }
+   /** `command`-namespace translator (composer refusal notices). */
+   private readonly t: TranslateNS<'command'>
+
+@@ -160,6 +172,9 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+     // prewarming so a newly opened menu waits for the replacement catalog.
+     ctx.remote.$on('agent-preset/selected', (sessionId) => { this.directory.resetSession(sessionId) })
+     ctx.on('connection/reset', () => { this.directory.resetConnected() })
++    ctx.effect(() => () => {
++      for (const id of [...this.live.actions.keys()]) this.abortClientAction(id)
++    }, 'command: client actions')
+   }
+
+   /**
+@@ -225,6 +240,8 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+     actx.effect(() => () => {
+       controller.dispose()
+       popups.delete(id)
++      this.abortClientAction(id)
++      this.live.actionScopes.delete(id)
+       this.focusHooks.delete(id)
+     }, 'command: session popup')
+     return controller
+@@ -273,7 +290,9 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+     const name = pick.candidate.name
+     const contribution = this.live.contributions.get(name)
+     if (contribution !== undefined && contribution.available(pick.session)) {
+-      this.openPopup(name, contribution.ui, pick.session, { via: 'menu', span: pick.span })
++      const segment = { via: 'menu', span: pick.span } as const
++      if (contribution.ui.kind === 'clientAction') this.startClientAction(name, contribution.ui, pick.session, segment)
++      else this.openPopup(name, contribution.ui, pick.session, segment)
+       return 'handled'
+     }
+     const desc = this.directory.resolve(pick.session.sessionId, name)
+@@ -283,7 +302,9 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+     // manufactures one, and never touches the argument claim below.
+     const decoration = this.live.decorations.get(name)
+     if (decoration !== undefined && decoration.available(pick.session)) {
+-      this.openPopup(name, decoration.ui, pick.session, { via: 'menu', span: pick.span })
++      const segment = { via: 'menu', span: pick.span } as const
++      if (decoration.ui.kind === 'clientAction') this.startClientAction(name, decoration.ui, pick.session, segment)
++      else this.openPopup(name, decoration.ui, pick.session, segment)
+       return 'handled'
+     }
+     if (desc.input !== undefined) return { claim: this.leadingClaim(desc, pick.session) }
+@@ -336,7 +357,9 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+     if (contribution !== undefined && contribution.available(session)) {
+       if (!bare) return undefined
+       if (envelope.images > 0) refuseImages()
+-      this.openPopup(name, contribution.ui, session, { via: 'enter', token })
++      const segment = { via: 'enter', token } as const
++      if (contribution.ui.kind === 'clientAction') this.startClientAction(name, contribution.ui, session, segment)
++      else this.openPopup(name, contribution.ui, session, segment)
+       return 'handled'
+     }
+     await this.directory.ensureReady(session.sessionId, signal)
+@@ -348,7 +371,9 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+       const decoration = this.live.decorations.get(name)
+       if (decoration !== undefined && decoration.available(session)) {
+         if (envelope.images > 0) refuseImages()
+-        this.openPopup(name, decoration.ui, session, { via: 'enter', token })
++        const segment = { via: 'enter', token } as const
++        if (decoration.ui.kind === 'clientAction') this.startClientAction(name, decoration.ui, session, segment)
++        else this.openPopup(name, decoration.ui, session, segment)
+         return 'handled'
+       }
+     }
+@@ -366,7 +391,7 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+   /** Open the session's popup for one contribution or decoration (menu pick / bare enter). */
+   private openPopup(
+     name: string,
+-    ui: CommandContribution['ui'],
++    ui: PopupSelectSpec,
+     session: ClientSessionContext,
+     segment: TokenSegment,
+   ): void {
+@@ -375,6 +400,73 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+     this.popupFor(actx).open(name, ui, session, segment)
+   }
+
++  /** Start a session-owned client action without invoking the Host command executor. */
++  private startClientAction(
++    name: string,
++    spec: ClientActionSpec,
++    session: ClientSessionContext,
++    segment: TokenSegment,
++  ): void {
++    const id = session.sessionId
++    if (this.live.actions.has(id)) return
++    const actx = this.scopeFor(id)
++    if (actx === undefined) return
++    this.consumeVia(id, segment)
++    const active: ActiveClientAction = {
++      generation: ++this.actionGeneration,
++      abort: new AbortController(),
++      focusRestored: false,
++    }
++    this.live.actions.set(id, active)
++    this.live.actionScopes.set(id, actx)
++    actx.effect(() => () => this.clearOrAbortClientAction(id, active), 'command: session client action')
++    const context: ClientActionContext = {
++      session,
++      signal: active.abort.signal,
++      restoreComposerFocus: () => {
++        if (this.live.actions.get(id) !== active || active.abort.signal.aborted || active.focusRestored) return
++        active.focusRestored = true
++        this.focusHooks.get(id)?.()
++      },
++    }
++    let completion: Promise<void>
++    try {
++      completion = Promise.resolve(spec.run(context))
++    } catch (error) {
++      completion = Promise.reject(error)
++    }
++    void completion.then(
++      () => this.clearClientAction(id, active),
++      (error: unknown) => {
++        if (!active.abort.signal.aborted) {
++          this.noticeFor(id, 'error', error instanceof Error ? error.message : String(error || `/${name} failed`))
++        }
++        this.clearClientAction(id, active)
++      },
++    )
++  }
++
++  /** Monotonic owner token prevents an earlier action from clearing a successor. */
++  private actionGeneration = 0
++
++  private clearClientAction(id: SessionId, active: ActiveClientAction): void {
++    if (this.live.actions.get(id) !== active) return
++    this.live.actions.delete(id)
++    this.live.actionScopes.delete(id)
++  }
++
++  private clearOrAbortClientAction(id: SessionId, active: ActiveClientAction): void {
++    if (this.live.actions.get(id) !== active) return
++    active.abort.abort()
++    this.live.actions.delete(id)
++    this.live.actionScopes.delete(id)
++  }
++
++  private abortClientAction(id: SessionId): void {
++    const active = this.live.actions.get(id)
++    if (active !== undefined) this.clearOrAbortClientAction(id, active)
++  }
++
+   /** Build the leadingInput claim: token `/name ` + the command.execute submit transaction. */
+   private leadingClaim(desc: CommandDescriptor, session: ClientSessionContext): CommandClaim {
+     const token = `/${desc.name} `
+diff --git a/packages/client/ui-commands/tests/service.client.spec.ts b/packages/client/ui-commands/tests/service.client.spec.ts
+index ae8ef7a884..2e56041c2a 100644
+--- a/packages/client/ui-commands/tests/service.client.spec.ts
++++ b/packages/client/ui-commands/tests/service.client.spec.ts
+@@ -14,7 +14,7 @@ import { createScope, scopeOf } from '@deepseek-ai/dsh-api-session-controller/cl
+ import type { SessionId } from '@deepseek-ai/dsh-session/types'
+ import { RemoteError, TestRemote } from '@deepseek-ai/dsh-client-test-runtime'
+ import type { ClientSessionContext, ConsumeTokenRequest, InputTriggerPick, InputTriggerSource, SubmitImageAttachment } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
+-import type { CommandContribution, CommandDecoration, CommandUiSpec, SelectOption } from '../src/client/contract.ts'
++import type { ClientActionSpec, CommandContribution, CommandDecoration, CommandUiSpec, SelectOption } from '../src/client/contract.ts'
+ import type { CommandDescriptor } from '../src/client/directory.ts'
+ import { CommandUiRuntime } from '../src/client/service.ts'
+
+@@ -170,6 +170,15 @@ const themeContribution = (over: Partial<CommandContribution> = {}): CommandCont
+   ...over,
+ })
+
++const actionUi = (run: ClientActionSpec['run']): ClientActionSpec => ({ kind: 'clientAction', run })
++
++const actionContribution = (run: ClientActionSpec['run'], name = 'client-action'): CommandContribution => ({
++  name,
++  description: 'client action kind',
++  available: () => true,
++  ui: actionUi(run),
++})
++
+ const req = (query: string, position: 'leading' | 'inline' = 'leading') =>
+   ({ query, position, drilled: false, signal: new AbortController().signal })
+
+@@ -390,6 +399,76 @@ describe('dispatch (menu column)', () => {
+   })
+ })
+
++describe('clientAction', () => {
++  it('uses one client action path for menu and bare Enter, consumes tokens, and never executes a Host command', async () => {
++    const { command, source, mint, executeCalls } = await bench()
++    const scope = mint('s1')
++    const consumes: ConsumeTokenRequest[] = []
++    scope.ctx.on('slash/input-consume-token', (request) => {
++      consumes.push(request)
++      return true
++    })
++    const calls: ClientSessionContext[] = []
++    command.register(actionContribution(({ session }) => { calls.push(session) }, 'act'))
++    expect(menuPick(source, 'act', proj('s1'), 4)).toBe('handled')
++    await expect(source.matchEnter!(proj('s1'), '/act', new AbortController().signal, { images: 0 })).resolves.toBe('handled')
++    await Promise.resolve()
++    expect(calls).toEqual([proj('s1')])
++    expect(consumes).toEqual([{ guard: { kind: 'span', span: { start: 0, end: 4, draftRev: 3 } } }])
++    expect(executeCalls).toEqual([])
++  })
++
++  it('ignores same-session re-entry until the active client action settles', async () => {
++    const { command, source, mint } = await bench()
++    mint('s1')
++    let release!: () => void
++    const run = vi.fn(() => new Promise<void>(resolve => { release = resolve }))
++    command.register(actionContribution(run, 'act'))
++    expect(menuPick(source, 'act', proj('s1'))).toBe('handled')
++    expect(menuPick(source, 'act', proj('s1'))).toBe('handled')
++    await Promise.resolve()
++    expect(run).toHaveBeenCalledOnce()
++    release()
++    await Promise.resolve()
++    await Promise.resolve()
++    expect(menuPick(source, 'act', proj('s1'))).toBe('handled')
++    await vi.waitFor(() => { expect(run).toHaveBeenCalledTimes(2) })
++  })
++
++  it('aborts an active client action when its session scope disposes', async () => {
++    const { command, source, mint } = await bench()
++    const scope = mint('s1')
++    let signal: AbortSignal | undefined
++    command.register(actionContribution(({ signal: received }) => {
++      signal = received
++      return new Promise<void>(() => {})
++    }, 'act'))
++    expect(menuPick(source, 'act', proj('s1'))).toBe('handled')
++    await Promise.resolve()
++    expect(signal?.aborted).toBe(false)
++    await scope.fiber.dispose()
++    expect(signal?.aborted).toBe(true)
++  })
++
++  it('notices non-abort action failures and permits an action-owned guarded focus restoration', async () => {
++    const { command, source, mint, notices } = await bench()
++    const scope = mint('s1')
++    const focus = vi.fn()
++    command.bindComposerFocus(sid('s1'), focus)
++    command.register(actionContribution(({ restoreComposerFocus }) => {
++      restoreComposerFocus()
++      restoreComposerFocus()
++      return Promise.reject(new Error('action failed'))
++    }, 'act'))
++    expect(menuPick(source, 'act', proj('s1'))).toBe('handled')
++    await vi.waitFor(() => {
++      expect(focus).toHaveBeenCalledOnce()
++      expect(notices).toEqual([{ scope: sid('s1'), level: 'error', text: 'action failed' }])
++    })
++    await scope.fiber.dispose()
++  })
++})
++
+ describe('matchSpace (space column)', () => {
+   it('answers undefined from a not-ready key (no waiting, no RPC)', async () => {
+     const { source, listCalls } = await bench()
