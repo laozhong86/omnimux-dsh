@@ -1,7 +1,8 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,8 +14,42 @@ const syncPresetsScript = join(root, 'scripts/sync-agent-presets.sh')
 
 describe('OmniMux Profile Target Selection Matrix', () => {
   const fakeHome = join(tmpdir(), 'test-fake-home-omnimux-' + Date.now())
+  const fixturePlugins = join(fakeHome, 'fixture-plugins')
+
+  function syncEnv(extra = {}) {
+    return {
+      ...process.env,
+      OMNIMUX_SYNC_VIA: 'internal',
+      OMNIMUX_PLUGINS_DIR: fixturePlugins,
+      HOME: fakeHome,
+      COREPACK_HOME: '/Users/x/.cache/node/corepack',
+      CI: 'true',
+      npm_config_offline: 'true',
+      ...extra,
+    }
+  }
+
+  function writeFixturePlugin(name, version = '1.0.0', revision = version, extra = {}) {
+    const plugin = join(fixturePlugins, name)
+    mkdirSync(plugin, { recursive: true })
+    writeFileSync(join(plugin, 'package.json'), JSON.stringify({
+      name,
+      version,
+      main: 'index.js',
+      dsh: { bundle: { patch: './cordis.patch.yml' } },
+      ...extra,
+    }, null, 2) + '\n')
+    writeFileSync(join(plugin, 'index.js'), `module.exports = { name: ${JSON.stringify(name)}, revision: ${JSON.stringify(revision)} }\n`)
+    writeFileSync(join(plugin, 'cordis.patch.yml'), '[]\n')
+  }
 
   before(() => {
+    for (const name of [
+      'omnimux', 'omnimux-accounts', 'omnimux-assets', 'omnimux-products',
+      'omnimux-workflow', 'omnimux-market', 'omnimux-inspiration', 'omnimux-clip',
+      'omnimux-video', 'omnimux-analytics', 'omnimux-publish',
+    ]) writeFixturePlugin(name, '1.0.0')
+    writeFixturePlugin('dsh-ui-kit', '1.0.0')
     // 创建包含 profiles/omnimux/package.json 的测试环境
     for (const sub of ['.omnimux-dev', '.omnimux', '.dsh']) {
       const p = join(fakeHome, sub, 'profiles', 'omnimux')
@@ -54,11 +89,7 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       'omnimux-video'
     ], {
       cwd: root,
-      env: {
-        ...process.env,
-        OMNIMUX_SYNC_VIA: 'internal',
-        HOME: fakeHome,
-      },
+      env: syncEnv(),
       encoding: 'utf8',
     })
     assert.equal(res.status, 0)
@@ -74,11 +105,7 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       'omnimux-video'
     ], {
       cwd: root,
-      env: {
-        ...process.env,
-        OMNIMUX_SYNC_VIA: 'internal',
-        HOME: fakeHome,
-      },
+      env: syncEnv(),
       encoding: 'utf8',
     })
     assert.equal(res.status, 0)
@@ -94,11 +121,7 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       'omnimux-video'
     ], {
       cwd: root,
-      env: {
-        ...process.env,
-        OMNIMUX_SYNC_VIA: 'internal',
-        HOME: fakeHome,
-      },
+      env: syncEnv(),
       encoding: 'utf8',
     })
     assert.equal(res.status, 0)
@@ -114,11 +137,7 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       'omnimux-video'
     ], {
       cwd: root,
-      env: {
-        ...process.env,
-        OMNIMUX_SYNC_VIA: 'internal',
-        HOME: fakeHome,
-      },
+      env: syncEnv(),
       encoding: 'utf8',
     })
     assert.equal(res.status, 0)
@@ -134,11 +153,7 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       'omnimux-video'
     ], {
       cwd: root,
-      env: {
-        ...process.env,
-        OMNIMUX_SYNC_VIA: 'internal',
-        HOME: fakeHome,
-      },
+      env: syncEnv(),
       encoding: 'utf8',
     })
     assert.equal(res.status, 0)
@@ -149,6 +164,9 @@ describe('OmniMux Profile Target Selection Matrix', () => {
 
   it('sync-stable.sh puts @deepseek-ai/dsh-base before omnimux in bundles', () => {
     const profile = join(fakeHome, '.omnimux-dev', 'profiles', 'omnimux')
+    rmSync(join(profile, 'node_modules'), { recursive: true, force: true })
+    rmSync(join(profile, '.materialize-snapshots'), { recursive: true, force: true })
+    rmSync(join(profile, 'pnpm-lock.yaml'), { force: true })
     // Seed the wrong order that produced: patch: entry llm-pi-ai not found
     writeFileSync(join(profile, 'package.json'), JSON.stringify({
       name: 'omnimux-profile-mock',
@@ -177,11 +195,7 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       'omnimux',
     ], {
       cwd: root,
-      env: {
-        ...process.env,
-        OMNIMUX_SYNC_VIA: 'internal',
-        HOME: fakeHome,
-      },
+      env: syncEnv(),
       encoding: 'utf8',
     })
     assert.equal(res.status, 0)
@@ -196,6 +210,267 @@ describe('OmniMux Profile Target Selection Matrix', () => {
     assert.ok(baseAt < omnimuxAt, `expected dsh-base before omnimux, got ${JSON.stringify(bundles)}`)
     assert.equal(bundles[0], '@deepseek-ai/dsh-base')
     assert.equal(bundles[1], '@deepseek-ai/dsh-web-app')
+  })
+
+  it('requires old self-references to be selected, then keeps all managed entries loadable after a repeated pnpm sync', () => {
+    const migrationHome = join(tmpdir(), 'test-managed-materialization-' + Date.now())
+    const profile = join(migrationHome, '.omnimux-dev', 'profiles', 'omnimux')
+    mkdirSync(profile, { recursive: true })
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({
+      name: 'managed-materialization-profile',
+      private: true,
+      dependencies: {
+        'omnimux-assets': 'file:node_modules/omnimux-assets',
+        'dsh-ui-kit': 'file:./node_modules/dsh-ui-kit',
+      },
+      dsh: { profile: { bundles: [] } },
+    }, null, 2) + '\n')
+    const profileKit = join(profile, 'node_modules', 'dsh-ui-kit')
+    mkdirSync(profileKit, { recursive: true })
+    writeFileSync(join(profileKit, 'package.json'), readFileSync(join(fixturePlugins, 'dsh-ui-kit', 'package.json')))
+    writeFileSync(join(profileKit, 'index.js'), readFileSync(join(fixturePlugins, 'dsh-ui-kit', 'index.js')))
+    writeFileSync(join(profileKit, 'cordis.patch.yml'), readFileSync(join(fixturePlugins, 'dsh-ui-kit', 'cordis.patch.yml')))
+    const verifiedKitEntry = readFileSync(join(profileKit, 'index.js'), 'utf8')
+    const staleStagedKit = join(profile, '.materialize-snapshots', 'plugins', 'dsh-ui-kit')
+    mkdirSync(staleStagedKit, { recursive: true })
+    writeFileSync(join(staleStagedKit, 'package.json'), JSON.stringify({ name: 'dsh-ui-kit', version: '0.0.0', main: 'index.js' }) + '\n')
+    writeFileSync(join(staleStagedKit, 'index.js'), "module.exports = { revision: 'stale-kit' }\n")
+    writeFixturePlugin('omnimux-video', '1.0.0', 'first')
+    writeFixturePlugin('omnimux-assets', '1.0.0', 'assets', {
+      dependencies: { 'dsh-ui-kit': 'file:../../../../personal/dsh-ui-kit' },
+    })
+
+    try {
+      const manifestBeforeRejectedSingle = readFileSync(join(profile, 'package.json'), 'utf8')
+      const kitBeforeRejectedSingle = readFileSync(join(profileKit, 'index.js'), 'utf8')
+      const single = spawnSync('bash', [syncStableScript, 'omnimux-video'], {
+        cwd: root,
+        env: syncEnv({ HOME: migrationHome }),
+        encoding: 'utf8',
+      })
+      assert.notEqual(single.status, 0)
+      assert.match(single.stderr, /未选中的旧物化依赖 omnimux-assets/)
+      assert.ok(!existsSync(join(profile, '.materialize-snapshots', 'plugins', 'omnimux-video')))
+      assert.equal(readFileSync(join(profile, 'package.json'), 'utf8'), manifestBeforeRejectedSingle)
+      assert.equal(readFileSync(join(profileKit, 'index.js'), 'utf8'), kitBeforeRejectedSingle)
+
+      const first = spawnSync('bash', [syncStableScript], {
+        cwd: root,
+        env: syncEnv({ HOME: migrationHome }),
+        encoding: 'utf8',
+      })
+      assert.equal(first.status, 0, `${first.stdout}\n${first.stderr}`)
+
+      const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8'))
+      for (const name of ['omnimux-video', 'omnimux-assets']) {
+        assert.equal(manifest.dependencies[name], `file:.materialize-snapshots/plugins/${name}`)
+        assert.ok(existsSync(join(profile, '.materialize-snapshots', 'plugins', name, 'package.json')))
+      }
+      assert.equal(manifest.dependencies['dsh-ui-kit'], 'file:.materialize-snapshots/plugins/dsh-ui-kit')
+      const stagedAssets = JSON.parse(readFileSync(join(profile, '.materialize-snapshots', 'plugins', 'omnimux-assets', 'package.json'), 'utf8'))
+      assert.equal(stagedAssets.dependencies['dsh-ui-kit'], 'file:../dsh-ui-kit')
+      assert.ok(existsSync(join(profile, '.materialize-snapshots', 'plugins', 'dsh-ui-kit', 'package.json')))
+      assert.equal(
+        readFileSync(join(profile, '.materialize-snapshots', 'plugins', 'dsh-ui-kit', 'index.js'), 'utf8'),
+        verifiedKitEntry,
+        'a full sync replaces an existing stable kit with the verified profile-local kit',
+      )
+      const requireFromProfile = createRequire(join(profile, 'package.json'))
+      assert.equal(requireFromProfile('omnimux-video').revision, 'first')
+      assert.equal(requireFromProfile('omnimux-assets').revision, 'assets')
+
+      writeFixturePlugin('omnimux-video', '1.0.1', 'second')
+      const second = spawnSync('bash', [syncStableScript, 'omnimux-video'], {
+        cwd: root,
+        env: syncEnv({ HOME: migrationHome }),
+        encoding: 'utf8',
+      })
+      assert.equal(second.status, 0, second.stderr)
+      delete requireFromProfile.cache[requireFromProfile.resolve('omnimux-video')]
+      assert.equal(requireFromProfile('omnimux-video').revision, 'second')
+      assert.equal(requireFromProfile('omnimux-assets').revision, 'assets')
+      assert.match(second.stdout, /已核验 omnimux-video@1\.0\.1 index\.js \+ \d+ 个打包文件/)
+      assert.match(second.stdout, /已核验 omnimux-assets@1\.0\.0 index\.js \+ \d+ 个打包文件/)
+    } finally {
+      rmSync(migrationHome, { recursive: true, force: true })
+    }
+  })
+
+  it('fails closed when pnpm leaves a managed package without its declared entry', () => {
+    const validationHome = join(tmpdir(), 'test-managed-validation-' + Date.now())
+    const profile = join(validationHome, '.omnimux-dev', 'profiles', 'omnimux')
+    mkdirSync(profile, { recursive: true })
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({
+      name: 'managed-validation-profile', private: true, dependencies: {}, dsh: { profile: { bundles: [] } },
+    }, null, 2) + '\n')
+    writeFixturePlugin('omnimux-broken', '1.0.0', 'broken', { main: 'missing.js' })
+
+    try {
+      const result = spawnSync('bash', [syncStableScript, 'omnimux-broken'], {
+        cwd: root,
+        env: syncEnv({ HOME: validationHome }),
+        encoding: 'utf8',
+      })
+      assert.notEqual(result.status, 0)
+      assert.match(result.stderr, /已安装包入口缺失: omnimux-broken → missing\.js/)
+    } finally {
+      rmSync(validationHome, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects an unowned node_modules self-reference before it can be moved to .ignored', () => {
+    const legacyHome = join(tmpdir(), 'test-managed-unowned-self-reference-' + Date.now())
+    const profile = join(legacyHome, '.omnimux-dev', 'profiles', 'omnimux')
+    const sidebar = join(profile, 'node_modules', 'dsh-better-sidebar')
+    mkdirSync(sidebar, { recursive: true })
+    const manifest = {
+      name: 'managed-unowned-self-reference-profile',
+      private: true,
+      dependencies: { 'dsh-better-sidebar': 'file:./node_modules/dsh-better-sidebar' },
+      dsh: { profile: { bundles: [] } },
+    }
+    writeFileSync(join(profile, 'package.json'), JSON.stringify(manifest, null, 2) + '\n')
+    writeFileSync(join(sidebar, 'package.json'), JSON.stringify({ name: 'dsh-better-sidebar', version: '1.0.0', main: 'index.js' }) + '\n')
+    writeFileSync(join(sidebar, 'index.js'), "module.exports = { revision: 'profile-sidebar' }\n")
+
+    try {
+      const manifestBefore = readFileSync(join(profile, 'package.json'), 'utf8')
+      const sidebarBefore = readFileSync(join(sidebar, 'index.js'), 'utf8')
+      const result = spawnSync('bash', [syncStableScript, 'omnimux-video'], {
+        cwd: root,
+        env: syncEnv({ HOME: legacyHome }),
+        encoding: 'utf8',
+      })
+      assert.notEqual(result.status, 0)
+      assert.match(result.stderr, /非产品旧自引用 dsh-better-sidebar = file:\.\/node_modules\/dsh-better-sidebar/)
+      assert.equal(readFileSync(join(profile, 'package.json'), 'utf8'), manifestBefore)
+      assert.equal(readFileSync(join(sidebar, 'index.js'), 'utf8'), sidebarBefore)
+      assert.ok(!existsSync(join(profile, '.materialize-snapshots', 'plugins', 'omnimux-video')))
+      assert.ok(!existsSync(join(profile, 'node_modules', '.ignored')))
+    } finally {
+      rmSync(legacyHome, { recursive: true, force: true })
+    }
+  })
+
+  it('fails closed when pnpm returns a stale packed helper despite an unchanged main entry', () => {
+    const validationHome = join(tmpdir(), 'test-managed-stale-helper-' + Date.now())
+    const profile = join(validationHome, '.omnimux-dev', 'profiles', 'omnimux')
+    const bin = join(validationHome, 'bin')
+    const plugin = join(fixturePlugins, 'omnimux-stale-helper')
+    const staleHelper = join(profile, 'node_modules', 'omnimux-stale-helper', 'helper.js')
+    mkdirSync(profile, { recursive: true })
+    mkdirSync(bin, { recursive: true })
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({
+      name: 'managed-stale-helper-profile', private: true, dependencies: {}, dsh: { profile: { bundles: [] } },
+    }, null, 2) + '\n')
+    writeFixturePlugin('omnimux-stale-helper', '1.0.0', 'stable-main', { files: ['index.js', 'helper.js', 'cordis.patch.yml'] })
+    writeFileSync(join(plugin, 'index.js'), "module.exports = require('./helper.js')\n")
+    writeFileSync(join(plugin, 'helper.js'), "module.exports = { revision: 'fresh-helper' }\n")
+    const realCorepack = join(dirname(process.execPath), 'corepack')
+    const corepack = join(bin, 'corepack')
+    writeFileSync(corepack, `#!/bin/bash\n${JSON.stringify(realCorepack)} "$@"\nresult=$?\nif [ "$result" -eq 0 ] && [ -n "$OMNIMUX_TEST_STALE_FILE" ]; then\n  printf '%s\\n' "module.exports = { revision: 'stale-helper' }" > "$OMNIMUX_TEST_STALE_FILE.stale"\n  mv "$OMNIMUX_TEST_STALE_FILE.stale" "$OMNIMUX_TEST_STALE_FILE"\nfi\nexit "$result"\n`)
+    chmodSync(corepack, 0o755)
+
+    try {
+      const result = spawnSync('bash', [syncStableScript, 'omnimux-stale-helper'], {
+        cwd: root,
+        env: syncEnv({
+          HOME: validationHome,
+          PATH: `${bin}:${process.env.PATH}`,
+          OMNIMUX_TEST_STALE_FILE: staleHelper,
+        }),
+        encoding: 'utf8',
+      })
+      assert.notEqual(result.status, 0)
+      assert.match(result.stderr, /已安装包打包文件指纹不匹配: omnimux-stale-helper → helper\.js/)
+    } finally {
+      rmSync(validationHome, { recursive: true, force: true })
+    }
+  })
+
+  it('fails closed when a matching installed package resolves outside the profile', () => {
+    const validationHome = join(tmpdir(), 'test-managed-external-package-' + Date.now())
+    const profile = join(validationHome, '.omnimux-dev', 'profiles', 'omnimux')
+    const bin = join(validationHome, 'bin')
+    const plugin = join(fixturePlugins, 'omnimux-external-package')
+    const installedPlugin = join(profile, 'node_modules', 'omnimux-external-package')
+    mkdirSync(profile, { recursive: true })
+    mkdirSync(bin, { recursive: true })
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({
+      name: 'managed-external-package-profile', private: true, dependencies: {}, dsh: { profile: { bundles: [] } },
+    }, null, 2) + '\n')
+    writeFixturePlugin('omnimux-external-package', '1.0.0', 'same-content')
+    const realCorepack = join(dirname(process.execPath), 'corepack')
+    const corepack = join(bin, 'corepack')
+    writeFileSync(corepack, `#!/bin/bash\n${JSON.stringify(realCorepack)} "$@"\nresult=$?\nif [ "$result" -eq 0 ] && [ -n "$OMNIMUX_TEST_EXTERNAL_PACKAGE" ]; then\n  rm -rf "$OMNIMUX_TEST_INSTALLED_PACKAGE"\n  ln -s "$OMNIMUX_TEST_EXTERNAL_PACKAGE" "$OMNIMUX_TEST_INSTALLED_PACKAGE"\nfi\nexit "$result"\n`)
+    chmodSync(corepack, 0o755)
+
+    try {
+      const result = spawnSync('bash', [syncStableScript, 'omnimux-external-package'], {
+        cwd: root,
+        env: syncEnv({
+          HOME: validationHome,
+          PATH: `${bin}:${process.env.PATH}`,
+          OMNIMUX_TEST_INSTALLED_PACKAGE: installedPlugin,
+          OMNIMUX_TEST_EXTERNAL_PACKAGE: plugin,
+        }),
+        encoding: 'utf8',
+      })
+      assert.notEqual(result.status, 0)
+      assert.match(result.stderr, /已安装包解析到 profile 外部: omnimux-external-package/)
+    } finally {
+      rmSync(validationHome, { recursive: true, force: true })
+    }
+  })
+
+  it('restores pnpm links and transitive package resolution after a failed materialization', () => {
+    const rollbackHome = join(tmpdir(), 'test-managed-rollback-' + Date.now())
+    const rollbackRepo = join(rollbackHome, 'rollback-repo')
+    const rollbackScripts = join(rollbackRepo, 'scripts')
+    const profile = join(rollbackHome, '.omnimux-dev', 'profiles', 'omnimux')
+    const stage = join(profile, '.materialize-snapshots', 'plugins')
+    const plugin = join(stage, 'rollback-plugin')
+    const dependency = join(stage, 'rollback-dependency')
+    const rollbackScript = join(rollbackScripts, 'materialize-with-rollback.sh')
+    mkdirSync(rollbackScripts, { recursive: true })
+    mkdirSync(plugin, { recursive: true })
+    mkdirSync(dependency, { recursive: true })
+    cpSync(join(root, 'scripts', 'materialize-with-rollback.sh'), rollbackScript)
+    writeFileSync(join(dependency, 'package.json'), JSON.stringify({ name: 'rollback-dependency', version: '1.0.0', main: 'index.js' }) + '\n')
+    writeFileSync(join(dependency, 'index.js'), "module.exports = { revision: 'old-dependency' }\n")
+    writeFileSync(join(plugin, 'package.json'), JSON.stringify({
+      name: 'rollback-plugin', version: '1.0.0', main: 'index.js', dependencies: { 'rollback-dependency': 'file:../rollback-dependency' },
+    }) + '\n')
+    writeFileSync(join(plugin, 'index.js'), "module.exports = require('rollback-dependency')\n")
+    mkdirSync(profile, { recursive: true })
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({
+      name: 'rollback-profile', private: true, dependencies: { 'rollback-plugin': 'file:.materialize-snapshots/plugins/rollback-plugin' },
+    }, null, 2) + '\n')
+    const initialInstall = spawnSync('corepack', ['pnpm', 'install'], {
+      cwd: profile,
+      env: syncEnv({ HOME: rollbackHome }),
+      encoding: 'utf8',
+    })
+    assert.equal(initialInstall.status, 0, initialInstall.stderr)
+    const originalRequire = createRequire(join(profile, 'package.json'))
+    assert.equal(originalRequire('rollback-plugin').revision, 'old-dependency')
+    writeFileSync(join(rollbackScripts, 'sync-to-app.sh'), `#!/usr/bin/env bash\nset -euo pipefail\nprofile="$HOME/.omnimux-dev/profiles/omnimux"\nprintf '%s\\n' "module.exports = { revision: 'new-dependency' }" > "$profile/.materialize-snapshots/plugins/rollback-dependency/index.js"\n(cd "$profile" && corepack pnpm install)\nexit 42\n`)
+    chmodSync(join(rollbackScripts, 'sync-to-app.sh'), 0o755)
+
+    try {
+      const result = spawnSync('bash', [rollbackScript, 'rollback-plugin'], {
+        cwd: rollbackRepo,
+        env: syncEnv({ HOME: rollbackHome, OMNIMUX_MERGE_CONFIRMED: '1' }),
+        encoding: 'utf8',
+      })
+      assert.equal(result.status, 42, result.stderr)
+      assert.match(result.stderr, /已恢复 pnpm 受管依赖拓扑/)
+      assert.ok(lstatSync(join(profile, 'node_modules', 'rollback-plugin')).isSymbolicLink())
+      const restoredRequire = createRequire(join(profile, 'package.json'))
+      assert.equal(restoredRequire('rollback-plugin').revision, 'old-dependency')
+    } finally {
+      rmSync(rollbackHome, { recursive: true, force: true })
+    }
   })
 
   it('sync-agent-presets.sh targets only ~/.omnimux-dev by default', () => {

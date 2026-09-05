@@ -58,6 +58,21 @@ describe('resolve_omnimux_profile_dir', () => {
     assert.equal(result.stdout.trim(), join(home, 'Case Sensitive Target'))
   })
 
+  it('preserves a case-sensitive ~/ target through normalization and expansion', () => {
+    const home = fixture()
+    const result = spawnSync('bash', ['-c', [
+      'source "$1"',
+      'target=$(normalize_omnimux_sync_target "$2")',
+      'expand_omnimux_sync_target_home "$target"',
+    ].join('\n'), 'resolver', resolver, '~/Case Sensitive/Task'], {
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home },
+    })
+
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(result.stdout.trim(), join(home, 'Case Sensitive', 'Task'))
+  })
+
   it('uses the conventional profile for regular target homes', () => {
     const home = fixture()
     const target = join(home, '.omnimux-dev')
