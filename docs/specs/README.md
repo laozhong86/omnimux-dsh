@@ -21,6 +21,7 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `accepted` | [2026-09-05-video-phase-one-scope.md](2026-09-05-video-phase-one-scope.md) | 视频模型阶段一范围：七个产品型号 | `omnimux/catalog` | 2026-09-05 | 当前阶段仅 Seedance 2.0/2.0 Fast/2.0 Mini/2.5、Wan 3.0、MiniMax H3 和 Grok 视频 1.5；wire 和模式按具体渠道官方 API 文档核对，Kling 与 Wan 派生型号延后不排期。 |
 | `accepted` | [2026-09-05-model-contract-docs-first.md](2026-09-05-model-contract-docs-first.md) | 模型合同：渠道官方 API 文档优先方法修订 | `omnimux/catalog` | 2026-09-05 | 当前方法：具体 EvoLink/APIMart 模型 API 文档决定模式、字段、角色、数量、格式与时长；文档支持、离线实现验证、历史真实执行分列。无真实请求例外；`execution.live` 是待对齐实现差异。 |
 | `accepted` | [2026-09-05-market-skill-candidate.md](2026-09-05-market-skill-candidate.md) | Market 技能候选对象加载修复 | `omnimux-market` | 2026-09-05 | #593：当前 SkillProvider 候选对象契约、完整定义元数据、零模型回归；Dev 激活单独交付。 |
 | `accepted` | [2026-09-05-inspiration-cover-repair.md](2026-09-05-inspiration-cover-repair.md) | 云灵感过期封面修复 | `omnimux` | 2026-09-05 | #584：原 ID 备份、官方来源恢复、持久媒体上传、只更新 cover_key、冲突检查与真实浏览器回读。 |
