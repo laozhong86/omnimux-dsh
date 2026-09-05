@@ -255,7 +255,22 @@ for PROFILE in "${PROFILES[@]}"; do
     echo "✓ 使用受管 dsh-ui-kit → $MANAGED_KIT_SOURCE"
   }
 
-  if [ "$LEGACY_KIT_SELF_REFERENCE" -eq 1 ]; then
+  package_needs_managed_kit() {
+    node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(p.dependencies?.['dsh-ui-kit']==='file:../dsh-ui-kit'?'1':'0')" "$1"
+  }
+
+  requires_managed_kit="$LEGACY_KIT_SELF_REFERENCE"
+  managed_kit_spec=$(node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(p.dependencies?.['dsh-ui-kit']||'')" "$PROFILE/package.json")
+  if [ "$managed_kit_spec" = "file:$MANAGED_DSH_UI_KIT_RELATIVE_PATH" ]; then
+    requires_managed_kit=1
+  fi
+  for name in "${MANAGED_PLUGINS[@]-}"; do
+    [ -n "$name" ] || continue
+    if [ "$(package_needs_managed_kit "$MANAGED_SOURCE_ROOT/$name/package.json")" = "1" ]; then
+      requires_managed_kit=1
+    fi
+  done
+  if [ "$requires_managed_kit" -eq 1 ]; then
     ensure_managed_kit
   fi
 
@@ -303,11 +318,17 @@ EOF
     echo "✓ $name 已物化进 $MANAGED_SOURCE_ROOT"
   done
 
+  managed_plugins_csv=""
+  if [ "${#MANAGED_PLUGINS[@]}" -gt 0 ]; then
+    managed_plugins_csv=$(IFS=,; printf '%s' "${MANAGED_PLUGINS[*]}")
+  fi
+
   # 依赖声明统一回 profile 外的受管 file: 源；声明了 dsh.bundle 的插件幂等写入加载名单。
-  node - "$PROFILE" "$MANAGED_SOURCE_ROOT" "$syncs_all_plugins" "$MANAGES_KIT" "${MANAGED_PLUGINS[@]}" <<'EOF'
+  node - "$PROFILE" "$MANAGED_SOURCE_ROOT" "$syncs_all_plugins" "$MANAGES_KIT" "$managed_plugins_csv" <<'EOF'
 const fs = require('fs')
 const path = require('path')
-const [profile, managedRoot, pruneLegacy, managesKit, ...plugins] = process.argv.slice(2)
+const [profile, managedRoot, pruneLegacy, managesKit, pluginsCsv] = process.argv.slice(2)
+const plugins = pluginsCsv ? pluginsCsv.split(',') : []
 const file = path.join(profile, 'package.json')
 if (!fs.existsSync(file)) {
   process.exit(0)
@@ -421,12 +442,13 @@ EOF
   (cd "$PROFILE" && corepack pnpm install)
 
   # 安装后同时核验 package 身份、声明入口和内容指纹；不能只相信 pnpm 退出码。
-  node - "$PROFILE" "$MANAGED_SOURCE_ROOT" "$MANAGES_KIT" "${MANAGED_PLUGINS[@]}" <<'EOF'
+  node - "$PROFILE" "$MANAGED_SOURCE_ROOT" "$MANAGES_KIT" "$managed_plugins_csv" <<'EOF'
 const crypto = require('crypto')
 const { spawnSync } = require('child_process')
 const fs = require('fs')
 const path = require('path')
-const [profile, managedRoot, managesKit, ...plugins] = process.argv.slice(2)
+const [profile, managedRoot, managesKit, pluginsCsv] = process.argv.slice(2)
+const plugins = pluginsCsv ? pluginsCsv.split(',') : []
 const manifest = JSON.parse(fs.readFileSync(path.join(profile, 'package.json'), 'utf8'))
 const fingerprint = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')
 const packedFiles = root => {

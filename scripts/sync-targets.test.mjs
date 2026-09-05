@@ -346,6 +346,44 @@ describe('OmniMux Profile Target Selection Matrix', () => {
     }
   })
 
+  it('requires a missing kit before a named non-kit sync can retain a kit-dependent plugin', () => {
+    const retainedHome = join(tmpdir(), 'test-retained-managed-kit-source-' + Date.now())
+    const profile = join(retainedHome, '.omnimux-dev', 'profiles', 'omnimux')
+    const retainedAssets = join(profile, '.materialize-snapshots', 'plugins', 'omnimux-assets')
+    mkdirSync(retainedAssets, { recursive: true })
+    writeFileSync(join(retainedAssets, 'package.json'), JSON.stringify({
+      name: 'omnimux-assets', version: '1.0.0', main: 'index.js', dependencies: { 'dsh-ui-kit': 'file:../dsh-ui-kit' },
+    }, null, 2) + '\n')
+    writeFileSync(join(retainedAssets, 'index.js'), "module.exports = { revision: 'retained-assets' }\n")
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({
+      name: 'retained-managed-kit-profile',
+      private: true,
+      dependencies: {
+        'omnimux-assets': 'file:.materialize-snapshots/plugins/omnimux-assets',
+        'dsh-ui-kit': 'file:.materialize-snapshots/plugins/dsh-ui-kit',
+      },
+      dsh: { profile: { bundles: [] } },
+    }, null, 2) + '\n')
+    writeFixturePlugin('omnimux-video', '1.0.0', 'named-video')
+
+    try {
+      const manifestBefore = readFileSync(join(profile, 'package.json'), 'utf8')
+      const retainedBefore = readFileSync(join(retainedAssets, 'index.js'), 'utf8')
+      const result = spawnSync('bash', [syncStableScript, 'omnimux-video'], {
+        cwd: root,
+        env: syncEnv({ HOME: retainedHome }),
+        encoding: 'utf8',
+      })
+      assert.notEqual(result.status, 0)
+      assert.match(result.stderr, /缺少受管 dsh-ui-kit/)
+      assert.equal(readFileSync(join(profile, 'package.json'), 'utf8'), manifestBefore)
+      assert.equal(readFileSync(join(retainedAssets, 'index.js'), 'utf8'), retainedBefore)
+      assert.ok(!existsSync(join(profile, '.materialize-snapshots', 'plugins', 'omnimux-video')))
+    } finally {
+      rmSync(retainedHome, { recursive: true, force: true })
+    }
+  })
+
   it('rejects an unowned node_modules self-reference before it can be moved to .ignored', () => {
     const legacyHome = join(tmpdir(), 'test-managed-unowned-self-reference-' + Date.now())
     const profile = join(legacyHome, '.omnimux-dev', 'profiles', 'omnimux')
