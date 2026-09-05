@@ -1,63 +1,50 @@
 {
   "stage": "omnimux-inspiration:library",
-  "topic": "modal-triptych",
+  "topic": "modal-complete",
   "l2": {
-    "port": 44200,
-    "url": "http://127.0.0.1:44200"
+    "port": 44201,
+    "url": "http://127.0.0.1:44201"
   },
   "result": "PASS",
   "checks": [
     {
-      "id": "modal-open",
+      "id": "triptych-grid",
       "pass": true,
-      "detail": "View opens InspirationPreviewModal backdrop"
+      "detail": "3-col grid 368/405/405"
     },
     {
-      "id": "header-analyze",
-      "pass": true,
-      "detail": "Analyze with Agent button present"
+      "id": "translate",
+      "pass": true
     },
     {
-      "id": "triptych-panels",
-      "pass": true,
-      "detail": "video/script/deconstruction panels present"
+      "id": "favorite",
+      "pass": true
     },
     {
-      "id": "desktop-grid",
-      "pass": true,
-      "detail": "body display grid with 3 columns ~368/405/405"
+      "id": "analyze-reanalyze",
+      "pass": true
     },
     {
-      "id": "footer-replicate",
-      "pass": true,
-      "detail": "footer Replicate separate from analyze"
+      "id": "replicate-footer",
+      "pass": true
     },
     {
-      "id": "narrow-tabs",
+      "id": "date-format",
       "pass": true,
-      "detail": "at 780px mobile tabs flex; panel single display"
+      "detail": "Added on 2026-08-27, no ISO leak"
     },
     {
-      "id": "tab-switch",
-      "pass": true,
-      "detail": "Script tab activates script panel only"
-    },
-    {
-      "id": "meta-created",
-      "pass": true,
-      "detail": "Added on / 入库于 created_at shown"
+      "id": "no-fake-timecode",
+      "pass": true
     }
   ],
   "evidence": [
-    "docs/evidence/inspiration-modal-triptych-desktop.png",
-    "docs/evidence/inspiration-modal-triptych-narrow.png"
+    "docs/evidence/inspiration-modal-complete-desktop.png"
   ],
   "tests": {
-    "clientAndSrc": {
-      "pass": 152,
-      "fail": 0,
-      "skipped": 2
-    }
+    "pass": 164,
+    "fail": 0,
+    "skipped": 2
   },
-  "timestamp": "2026-09-04T17:56:36.250Z"
+  "timestamp": "2026-09-05T01:14:14.397Z"
 }

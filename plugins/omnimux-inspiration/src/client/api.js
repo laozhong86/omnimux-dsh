@@ -234,6 +234,22 @@ export function triggerAnalyzeInspiration(id) {
   }), { capability: 'inspiration-analyze' })()
 }
 
+export function translateInspiration(id, lang = 'zh') {
+  invalidateInspirationCache()
+  return quotaGuard(() => inspirationRequest(`/omnimux/inspiration/local/${encodeURIComponent(id)}/translate`, {
+    method: 'POST',
+    body: { lang },
+  }), { capability: 'inspiration-analyze' })()
+}
+
+export function patchLocalInspiration(id, patch) {
+  invalidateInspirationCache()
+  return inspirationRequest(`/omnimux/inspiration/local/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: patch,
+  })
+}
+
 /**
  * Batch delete multiple local inspirations
  * @param {string[]} ids

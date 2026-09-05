@@ -90,10 +90,21 @@ export function apply(ctx) {
     },
   }
 
+  const textComplete = {
+    async execute(args) {
+      const tool = getTool('omnimux_text_complete')
+      if (tool && typeof tool.execute === 'function') {
+        return tool.execute(args)
+      }
+      throw new Error('omnimux_text_complete 未就绪')
+    },
+  }
+
   const dispatcher = createLocalInspirationDispatcher({
     localStore: store,
     socialFetcher,
     videoAnalyzeTool,
+    textComplete,
   })
 
   // Mount HTTP server routes for /omnimux/inspiration/local

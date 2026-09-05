@@ -36,6 +36,10 @@ export class InspirationError extends Error {
  * @property {Record<string, unknown> | string} [deconstruction] five-dimension breakdown object or markdown
  * @property {Record<string, unknown>} [stats] likes, comments, shares, etc.
  * @property {Record<string, unknown>} [author] name, handle, avatar
+ * @property {number} [duration] seconds
+ * @property {string} [published_at]
+ * @property {string} [favorited_at]
+ * @property {{ lang?: string, text?: string, segments?: Array<{ id: string, text: string }> }} [script_translation]
  * @property {string} created_at
  * @property {string} updated_at
  */
@@ -213,6 +217,10 @@ export function createLocalStore(opts = {}) {
         deconstruction: record.deconstruction,
         stats: record.stats || {},
         author: record.author || {},
+        duration: record.duration,
+        published_at: record.published_at || '',
+        favorited_at: record.favorited_at || (record.is_favorite ? now : ''),
+        script_translation: record.script_translation,
         created_at: record.created_at || now,
         updated_at: now,
       }
@@ -230,11 +238,17 @@ export function createLocalStore(opts = {}) {
       const index = items.findIndex((item) => item.id === id)
       if (index === -1) throw new InspirationError('not-found', `inspiration ${id} not found`, 404)
       const current = items[index]
+      const now = new Date().toISOString()
+      const nextFavorite = patch.is_favorite !== undefined ? Boolean(patch.is_favorite) : current.is_favorite
       const updated = {
         ...current,
         ...patch,
         id: current.id,
-        updated_at: new Date().toISOString(),
+        is_favorite: nextFavorite,
+        favorited_at: nextFavorite
+          ? (patch.favorited_at || current.favorited_at || now)
+          : (patch.favorited_at !== undefined ? patch.favorited_at : current.favorited_at),
+        updated_at: now,
       }
       items[index] = updated
       writeAll(items)
