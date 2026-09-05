@@ -97,7 +97,7 @@ const BASE_CSS = `
   background: var(--dsw-alias-bg-mask-1);
   backdrop-filter: blur(2px);
   border-radius: 50%;
-  color: var(--dsw-alias-label-primary-inverted);
+  color: var(--dsw-static-neutral-00);
   pointer-events: none;
 }
 .omx-att-card__duration-badge {
@@ -106,7 +106,7 @@ const BASE_CSS = `
   right: 2px;
   background: var(--dsw-alias-bg-mask-1);
   backdrop-filter: blur(4px);
-  color: var(--dsw-alias-label-primary-inverted);
+  color: var(--dsw-static-neutral-00);
   font-size: 9px;
   font-weight: 500;
   line-height: 11px;
@@ -181,7 +181,7 @@ const BASE_CSS = `
 .omx-att-card__remove-btn--media {
   background: var(--dsw-alias-bg-mask-1);
   border-color: transparent;
-  color: var(--dsw-alias-label-primary-inverted);
+  color: var(--dsw-static-neutral-00);
   backdrop-filter: blur(2px);
   box-shadow: var(--dsw-shadow-lv1);
 }
@@ -193,7 +193,7 @@ const BASE_CSS = `
 .omx-att-card__remove-btn:hover {
   background: var(--dsw-alias-state-error-primary);
   border-color: var(--dsw-alias-state-error-primary);
-  color: var(--dsw-alias-label-primary-inverted);
+  color: var(--dsw-static-neutral-00);
 }
 @media (pointer: coarse) {
   .omx-att-card__remove-btn {
