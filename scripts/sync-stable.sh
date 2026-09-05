@@ -21,6 +21,7 @@ fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$ROOT/plugins}"
+MANAGED_DSH_UI_KIT_RELATIVE_PATH='.materialize-snapshots/plugins/dsh-ui-kit'
 # Keep L2 task profiles aligned with dev-env.sh; shared with sync-to-app.sh.
 source "$ROOT/scripts/resolve-omnimux-profile.sh"
 
@@ -151,7 +152,7 @@ fi
 for PROFILE in "${PROFILES[@]}"; do
   echo "== 同步目标 Profile: $PROFILE =="
   MANAGED_SOURCE_ROOT="$PROFILE/.materialize-snapshots/plugins"
-  MANAGED_KIT_SOURCE="$MANAGED_SOURCE_ROOT/dsh-ui-kit"
+  MANAGED_KIT_SOURCE="$PROFILE/$MANAGED_DSH_UI_KIT_RELATIVE_PATH"
   MANAGED_PLUGINS=()
   MANAGES_KIT=0
   LEGACY_KIT_SELF_REFERENCE=0
@@ -239,59 +240,52 @@ for PROFILE in "${PROFILES[@]}"; do
     esac
   done
 
-  mkdir -p "$PROFILE/node_modules" "$MANAGED_SOURCE_ROOT"
-
   ensure_managed_kit() {
-    if [ "$syncs_all_plugins" -ne 1 ] && [ -f "$MANAGED_KIT_SOURCE/package.json" ]; then
-      MANAGES_KIT=1
-      return 0
-    fi
-    if [ "$syncs_all_plugins" -ne 1 ]; then
-      echo "✗ 缺少受管 dsh-ui-kit；命名 sync 不刷新 kit，请先执行完整 sync。" >&2
+    if [ ! -f "$MANAGED_KIT_SOURCE/package.json" ]; then
+      echo "✗ 缺少受管 dsh-ui-kit: ${MANAGED_KIT_SOURCE}；请先通过官方完整 profile rebuild 建立稳定源。" >&2
       exit 1
     fi
-    local installed_kit="$PROFILE/node_modules/dsh-ui-kit"
-    if [ ! -e "$installed_kit" ]; then
-      echo "✗ profile 缺少已核验的 dsh-ui-kit；请先执行完整 sync 以建立稳定 kit。" >&2
+    local kit_name
+    kit_name=$(node -e "const fs=require('fs');process.stdout.write(JSON.parse(fs.readFileSync(process.argv[1],'utf8')).name||'')" "$MANAGED_KIT_SOURCE/package.json")
+    if [ "$kit_name" != "dsh-ui-kit" ]; then
+      echo "✗ 受管 dsh-ui-kit 身份错误: $MANAGED_KIT_SOURCE" >&2
       exit 1
     fi
-    local resolved_kit
-    resolved_kit=$(node -e "const fs=require('fs');process.stdout.write(fs.realpathSync(process.argv[1]))" "$installed_kit")
-    local profile_modules_real
-    profile_modules_real=$(node -e "const fs=require('fs');process.stdout.write(fs.realpathSync(process.argv[1]))" "$PROFILE/node_modules")
-    case "$resolved_kit" in
-      "$profile_modules_real"/*)
-        ;;
-      *)
-        echo "✗ dsh-ui-kit 不在 profile 内，拒绝将工作树或外部 kit 作为物化源: $resolved_kit" >&2
-        exit 1
-        ;;
-    esac
-    mkdir -p "$MANAGED_KIT_SOURCE"
-    rsync -aL --delete --exclude node_modules "$installed_kit/" "$MANAGED_KIT_SOURCE/"
     MANAGES_KIT=1
-    echo "✓ 已固定 profile 内 dsh-ui-kit → $MANAGED_KIT_SOURCE"
+    echo "✓ 使用受管 dsh-ui-kit → $MANAGED_KIT_SOURCE"
   }
 
   if [ "$LEGACY_KIT_SELF_REFERENCE" -eq 1 ]; then
     ensure_managed_kit
   fi
 
-  materialize_plugin_source() {
-    local name="$1" src="$2" dst="$MANAGED_SOURCE_ROOT/$1"
+  # Validate every selected source and its stable-kit prerequisite before
+  # materializing the first one, so a missing kit cannot leave a partial sync.
+  for name in "${TARGET_PLUGINS[@]}"; do
+    src="$PLUGINS_ROOT/$name"
     if [ ! -f "$src/package.json" ]; then
       echo "✗ 源码缺失: $src" >&2
       exit 1
     fi
+    needs_kit=$(node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(typeof p.dependencies?.['dsh-ui-kit']==='string'&&p.dependencies['dsh-ui-kit'].startsWith('file:')?'1':'0')" "$src/package.json")
+    if [ "$needs_kit" = "1" ]; then
+      ensure_managed_kit
+    fi
+  done
+
+  mkdir -p "$PROFILE/node_modules" "$MANAGED_SOURCE_ROOT"
+
+  materialize_plugin_source() {
+    local name="$1" src="$2" dst="$MANAGED_SOURCE_ROOT/$1"
+    local needs_kit
+    needs_kit=$(node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(typeof p.dependencies?.['dsh-ui-kit']==='string'&&p.dependencies['dsh-ui-kit'].startsWith('file:')?'1':'0')" "$src/package.json")
     mkdir -p "$dst"
     rsync -aL --delete \
       --exclude node_modules \
       --exclude '*.test.js' \
       --exclude '*.spec.js' \
       "$src/" "$dst/"
-    needs_kit=$(node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(typeof p.dependencies?.['dsh-ui-kit']==='string'&&p.dependencies['dsh-ui-kit'].startsWith('file:')?'1':'0')" "$dst/package.json")
     if [ "$needs_kit" = "1" ]; then
-      ensure_managed_kit
       node - "$dst/package.json" <<'EOF'
 const fs = require('fs')
 const file = process.argv[2]

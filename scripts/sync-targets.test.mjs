@@ -225,16 +225,12 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       },
       dsh: { profile: { bundles: [] } },
     }, null, 2) + '\n')
-    const profileKit = join(profile, 'node_modules', 'dsh-ui-kit')
-    mkdirSync(profileKit, { recursive: true })
-    writeFileSync(join(profileKit, 'package.json'), readFileSync(join(fixturePlugins, 'dsh-ui-kit', 'package.json')))
-    writeFileSync(join(profileKit, 'index.js'), readFileSync(join(fixturePlugins, 'dsh-ui-kit', 'index.js')))
-    writeFileSync(join(profileKit, 'cordis.patch.yml'), readFileSync(join(fixturePlugins, 'dsh-ui-kit', 'cordis.patch.yml')))
-    const verifiedKitEntry = readFileSync(join(profileKit, 'index.js'), 'utf8')
-    const staleStagedKit = join(profile, '.materialize-snapshots', 'plugins', 'dsh-ui-kit')
-    mkdirSync(staleStagedKit, { recursive: true })
-    writeFileSync(join(staleStagedKit, 'package.json'), JSON.stringify({ name: 'dsh-ui-kit', version: '0.0.0', main: 'index.js' }) + '\n')
-    writeFileSync(join(staleStagedKit, 'index.js'), "module.exports = { revision: 'stale-kit' }\n")
+    const managedKit = join(profile, '.materialize-snapshots', 'plugins', 'dsh-ui-kit')
+    mkdirSync(managedKit, { recursive: true })
+    writeFileSync(join(managedKit, 'package.json'), readFileSync(join(fixturePlugins, 'dsh-ui-kit', 'package.json')))
+    writeFileSync(join(managedKit, 'index.js'), "module.exports = { revision: 'managed-kit' }\n")
+    writeFileSync(join(managedKit, 'cordis.patch.yml'), readFileSync(join(fixturePlugins, 'dsh-ui-kit', 'cordis.patch.yml')))
+    const managedKitEntry = readFileSync(join(managedKit, 'index.js'), 'utf8')
     writeFixturePlugin('omnimux-video', '1.0.0', 'first')
     writeFixturePlugin('omnimux-assets', '1.0.0', 'assets', {
       dependencies: { 'dsh-ui-kit': 'file:../../../../personal/dsh-ui-kit' },
@@ -242,7 +238,7 @@ describe('OmniMux Profile Target Selection Matrix', () => {
 
     try {
       const manifestBeforeRejectedSingle = readFileSync(join(profile, 'package.json'), 'utf8')
-      const kitBeforeRejectedSingle = readFileSync(join(profileKit, 'index.js'), 'utf8')
+      const kitBeforeRejectedSingle = readFileSync(join(managedKit, 'index.js'), 'utf8')
       const single = spawnSync('bash', [syncStableScript, 'omnimux-video'], {
         cwd: root,
         env: syncEnv({ HOME: migrationHome }),
@@ -252,7 +248,7 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       assert.match(single.stderr, /未选中的旧物化依赖 omnimux-assets/)
       assert.ok(!existsSync(join(profile, '.materialize-snapshots', 'plugins', 'omnimux-video')))
       assert.equal(readFileSync(join(profile, 'package.json'), 'utf8'), manifestBeforeRejectedSingle)
-      assert.equal(readFileSync(join(profileKit, 'index.js'), 'utf8'), kitBeforeRejectedSingle)
+      assert.equal(readFileSync(join(managedKit, 'index.js'), 'utf8'), kitBeforeRejectedSingle)
 
       const first = spawnSync('bash', [syncStableScript], {
         cwd: root,
@@ -272,8 +268,8 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       assert.ok(existsSync(join(profile, '.materialize-snapshots', 'plugins', 'dsh-ui-kit', 'package.json')))
       assert.equal(
         readFileSync(join(profile, '.materialize-snapshots', 'plugins', 'dsh-ui-kit', 'index.js'), 'utf8'),
-        verifiedKitEntry,
-        'a full sync replaces an existing stable kit with the verified profile-local kit',
+        managedKitEntry,
+        'sync-stable reads the managed kit source without overwriting it from node_modules',
       )
       const requireFromProfile = createRequire(join(profile, 'package.json'))
       assert.equal(requireFromProfile('omnimux-video').revision, 'first')
@@ -315,6 +311,38 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       assert.match(result.stderr, /已安装包入口缺失: omnimux-broken → missing\.js/)
     } finally {
       rmSync(validationHome, { recursive: true, force: true })
+    }
+  })
+
+  it('requires the managed kit source before writing a selected kit-dependent plugin', () => {
+    const kitHome = join(tmpdir(), 'test-managed-kit-source-' + Date.now())
+    const profile = join(kitHome, '.omnimux-dev', 'profiles', 'omnimux')
+    mkdirSync(join(profile, 'node_modules', 'dsh-ui-kit'), { recursive: true })
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({
+      name: 'managed-kit-source-profile', private: true, dependencies: {}, dsh: { profile: { bundles: [] } },
+    }, null, 2) + '\n')
+    writeFileSync(join(profile, 'node_modules', 'dsh-ui-kit', 'package.json'), JSON.stringify({ name: 'dsh-ui-kit', version: '1.0.0', main: 'index.js' }) + '\n')
+    writeFileSync(join(profile, 'node_modules', 'dsh-ui-kit', 'index.js'), "module.exports = { revision: 'node-modules-only' }\n")
+    writeFixturePlugin('omnimux-assets', '1.0.0', 'assets', {
+      dependencies: { 'dsh-ui-kit': 'file:../../../../personal/dsh-ui-kit' },
+    })
+
+    try {
+      const manifestBefore = readFileSync(join(profile, 'package.json'), 'utf8')
+      const installedKitBefore = readFileSync(join(profile, 'node_modules', 'dsh-ui-kit', 'index.js'), 'utf8')
+      const result = spawnSync('bash', [syncStableScript], {
+        cwd: root,
+        env: syncEnv({ HOME: kitHome }),
+        encoding: 'utf8',
+      })
+      assert.notEqual(result.status, 0)
+      assert.match(result.stderr, /缺少受管 dsh-ui-kit/)
+      assert.equal(readFileSync(join(profile, 'package.json'), 'utf8'), manifestBefore)
+      assert.equal(readFileSync(join(profile, 'node_modules', 'dsh-ui-kit', 'index.js'), 'utf8'), installedKitBefore)
+      assert.ok(!existsSync(join(profile, '.materialize-snapshots', 'plugins', 'omnimux-assets')))
+      assert.ok(!existsSync(join(profile, '.materialize-snapshots', 'plugins', 'omnimux')))
+    } finally {
+      rmSync(kitHome, { recursive: true, force: true })
     }
   })
 
@@ -466,8 +494,13 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       assert.equal(result.status, 42, result.stderr)
       assert.match(result.stderr, /已恢复 pnpm 受管依赖拓扑/)
       assert.ok(lstatSync(join(profile, 'node_modules', 'rollback-plugin')).isSymbolicLink())
-      const restoredRequire = createRequire(join(profile, 'package.json'))
-      assert.equal(restoredRequire('rollback-plugin').revision, 'old-dependency')
+      const restored = spawnSync(process.execPath, ['-e', [
+        "const { createRequire } = require('node:module')",
+        "const requireFromProfile = createRequire(process.argv[1])",
+        "process.stdout.write(requireFromProfile('rollback-plugin').revision)",
+      ].join('; '), join(profile, 'package.json')], { encoding: 'utf8' })
+      assert.equal(restored.status, 0, restored.stderr)
+      assert.equal(restored.stdout, 'old-dependency')
     } finally {
       rmSync(rollbackHome, { recursive: true, force: true })
     }
